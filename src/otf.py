@@ -57,7 +57,7 @@ mass_dict = {'H': 1.0,
 
 
 class OTF(object):
-    def __init__(self, qe_input, dt, number_of_steps, kernel):
+    def __init__(self, qe_input, dt, number_of_steps, kernel,cutoff):
         """
         On-the-fly learning engine, containing methods to run OTF calculation
 
@@ -317,7 +317,7 @@ if __name__ == '__main__':
     os.system('cp pwscf.in.orig pwscf.in')
 
     k = fake_kernel()
-    otf = OTF('pwscf.in', .1, 10, kernel=k)
+    otf = OTF('pwscf.in', .1, 10, kernel=k,cutoff=10)
     otf.run()
     # parse_output('otf_run.out')
     pass
