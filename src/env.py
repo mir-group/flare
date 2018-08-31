@@ -1,4 +1,40 @@
+"""
+Jon V
+"""
+
 import numpy as np
+from math import exp
+from numba import njit
+
+
+# get two body kernel between chemical environments
+@njit
+def two_body_jit(bond_array_1, bond_types_1, bond_array_2,
+                 bond_types_2, d1, d2, sig, ls):
+    d = sig*sig/(ls*ls*ls*ls)
+    e = ls*ls
+    f = 1/(2*ls*ls)
+    kern = 0
+
+    x1_len = len(bond_types_1)
+    x2_len = len(bond_types_2)
+
+    for m in range(x1_len):
+        r1 = bond_array_1[m, 0]
+        coord1 = bond_array_1[m, d1]
+        typ1 = bond_types_1[m]
+
+        for n in range(x2_len):
+            r2 = bond_array_2[n, 0]
+            coord2 = bond_array_2[n, d2]
+            typ2 = bond_types_2[n]
+
+            # check that bonds match
+            if typ1 == typ2:
+                rr = (r1-r2)*(r1-r2)
+                kern += d*exp(-f*rr)*coord1*coord2*(e-rr)
+
+    return kern
 
 
 class TwoBodyEnvironment:
@@ -16,11 +52,11 @@ class TwoBodyEnvironment:
         self.positions = positions
         self.species = species
 
-        bond_lengths, bond_pos, bonds, etyps, ctyp =\
+        bond_array, bond_types, etyps, ctyp =\
             self.get_atoms_within_cutoff(atom)
-        self.bond_lengths = bond_lengths
-        self.bond_pos = bond_pos
-        self.bonds = bonds
+
+        self.bond_array = bond_array
+        self.bond_types = bond_types
         self.etyps = etyps
         self.ctyp = ctyp
 
@@ -128,10 +164,9 @@ class TwoBodyEnvironment:
         pos_atom = self.positions[atom]  # position of central atom
         central_type = self.species[atom]  # type of central atom
 
-        positions = []
-        distances = []
+        bond_array = []
+        bond_types = []
         environment_types = []
-        bonds = []
 
         # find all atoms and images in the neighborhood
         for n in range(len(self.positions)):
@@ -145,12 +180,14 @@ class TwoBodyEnvironment:
             for vec, dist in zip(vecs, dists):
                 # ignore self interaction
                 if dist != 0:
-                    positions.append(vec)
-                    distances.append(dist)
                     environment_types.append(typ_curr)
-                    bonds.append(bond_curr)
+                    bond_array.append([dist, vec[0]/dist, vec[1]/dist,
+                                       vec[2]/dist])
+                    bond_types.append(bond_curr)
 
-        return distances, positions, bonds, environment_types, central_type
+        bond_array = np.array(bond_array)
+        bond_types = np.array(bond_types)
+        return bond_array, bond_types, environment_types, central_type
 
 
 # testing ground (will be moved to test suite later)
@@ -185,7 +222,7 @@ if __name__ == '__main__':
 
     # test get_atoms_within_cutoff
     atom = 0
-    distances, positions, bonds, environment_types, central_type = \
+    bond_array, bonds, environment_types, central_type =\
         test_env.get_atoms_within_cutoff(atom)
 
-    assert(len(distances) == 8)
+    assert(bond_array.shape[0] == 8)
