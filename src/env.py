@@ -8,35 +8,6 @@ from struc import Structure
 import time
 
 
-@njit
-def jit_outside(bond_array_1, bond_types_1, bond_array_2,
-                bond_types_2, d1, d2, sig, ls):
-    d = sig*sig/(ls*ls*ls*ls)
-    e = ls*ls
-    f = 1/(2*ls*ls)
-    kern = 0
-
-    x1_len = len(bond_types_1)
-    x2_len = len(bond_types_2)
-
-    for m in range(x1_len):
-        r1 = bond_array_1[m, 0]
-        coord1 = bond_array_1[m, d1]
-        typ1 = bond_types_1[m]
-
-        for n in range(x2_len):
-            r2 = bond_array_2[n, 0]
-            coord2 = bond_array_2[n, d2]
-            typ2 = bond_types_2[n]
-
-            # check that bonds match
-            if typ1 == typ2:
-                rr = (r1-r2)*(r1-r2)
-                kern += d*exp(-f*rr)*coord1*coord2*(e-rr)
-
-    return kern
-
-
 class TwoBodyEnvironment:
 
     def __init__(self, structure, atom):
@@ -49,33 +20,6 @@ class TwoBodyEnvironment:
         self.bond_types = bond_types
         self.etyps = etyps
         self.ctyp = ctyp
-
-    @staticmethod
-    def species_to_bonds(species_list):
-        """Converts list of species to a list of bonds.
-
-        :param species_list: all species in the simulation
-        :type species_list: list of strings
-        :return: all possible bonds
-        :rtype: list of lists of two strings
-        """
-
-        # get unique species
-        unique_species = []
-        for species in species_list:
-            if species not in unique_species:
-                unique_species.append(species)
-
-        # create bond list
-        bond_list = []
-        for m in range(len(unique_species)):
-            species_1 = unique_species[m]
-
-            for n in range(m, len(unique_species)):
-                species_2 = unique_species[n]
-                bond_list.append([species_1, species_2])
-
-        return bond_list
 
     @staticmethod
     def is_bond(species1, species2, bond):
@@ -333,23 +277,3 @@ if __name__ == '__main__':
 
     assert(jit_test == py_test)
     print('speed up is %.3f' % (py_time / jit_time))
-
-    # check outside jit function
-    # warm up jit
-    jit_test = jit_outside(test_env_1.bond_array,
-                           test_env_1.bond_types,
-                           test_env_2.bond_array,
-                           test_env_2.bond_types,
-                           d1, d2, sig, ls)
-
-    # do a performance run
-    time0 = time.time()
-    for n in range(its):
-        jit_test = jit_outside(test_env_1.bond_array,
-                               test_env_1.bond_types,
-                               test_env_2.bond_array,
-                               test_env_2.bond_types,
-                               d1, d2, sig, ls)
-    time1 = time.time()
-    out_time = (time1 - time0) / its
-    print(out_time / jit_time)
