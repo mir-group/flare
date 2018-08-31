@@ -1,3 +1,8 @@
+"""" Gaussian Process test suite
+
+Simon Batzner
+"""
+
 import pytest
 
 from gp import GaussianProcess

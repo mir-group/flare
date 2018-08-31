@@ -16,10 +16,10 @@ import numpy as np
 from scipy.linalg import solve_triangular
 from scipy.optimize import minimize
 
-from two_body import two_body
-from kern_help import get_envs
-from otf import parse_qe_input, parse_qe_forces, Structure
-from MD_Parser import parse_qe_pwscf_md_output
+from dev.two_body import two_body
+from dev.kern_help import get_envs
+from otf import parse_qe_input, parse_qe_forces
+from dev.MD_Parser import parse_qe_pwscf_md_output
 
 
 def get_outfiles(root_dir, out=True):
@@ -252,39 +252,35 @@ if __name__ == "__main__":
     outfile = os.path.join(os.environ['ML_HOME'], '/data/SiC_MD/sic_md.out')
     Si_MD_Parsed = parse_qe_pwscf_md_output(outfile)
 
-    # # set crystal structure
-    # dim = 3
-    # alat_si = 4.344404578
-    # unit_cell = [[0.0, alat_si / 2, alat_si / 2],
-    #              [alat_si / 2, 0.0, alat_si / 2],
-    #              [alat_si / 2, alat_si / 2, 0.0]]
-    # unit_pos = [['Si', [0, 0, 0]],
-    #             ['Si', [alat_si / 4, alat_si / 4, alat_si / 4]]]
-    # brav_mat_si = np.array([[0.0, alat_si / 2, alat_si / 2],
-    #                        [alat_si / 2, 0.0, alat_si / 2],
-    #                        [alat_si / 2, alat_si / 2, 0.0]]) * dim
-    # brav_inv_si = np.linalg.inv(brav_mat_si)
-    #
-    # # bravais vectors
-    # vec1_si = brav_mat_si[:, 0].reshape(3, 1)
-    # vec2_si = brav_mat_si[:, 1].reshape(3, 1)
-    # vec3_si = brav_mat_si[:, 2].reshape(3, 1)
-    # cutoff_si = 4.5
-    #
-    # positions, species, cell = parse_qe_input('../pwscf.in')
-    # forces = parse_qe_forces('../pwscf.out')
-    # structure = Structure(positions, species, cell)
-    #
-    # #
-    # pos = Si_MD_Parsed[1]['positions']
-    # fcs = fc_conv(Si_MD_Parsed[2]['forces'])
-    # #
+    # set crystal structure
+    dim = 3
+    alat_si = 4.344404578
+    unit_cell = [[0.0, alat_si / 2, alat_si / 2],
+                 [alat_si / 2, 0.0, alat_si / 2],
+                 [alat_si / 2, alat_si / 2, 0.0]]
+    unit_pos = [['Si', [0, 0, 0]],
+                ['Si', [alat_si / 4, alat_si / 4, alat_si / 4]]]
+    brav_mat_si = np.array([[0.0, alat_si / 2, alat_si / 2],
+                           [alat_si / 2, 0.0, alat_si / 2],
+                           [alat_si / 2, alat_si / 2, 0.0]]) * dim
+    brav_inv_si = np.linalg.inv(brav_mat_si)
 
-    # gp = GaussianProcess(kernel=two_body)
-    # gp.init_db(root_dir='..',
-    #            brav_mat=brav_mat_si,
-    #            brav_inv=brav_inv_si,
-    #            vec1=vec1_si, vec2=vec2_si, vec3=vec3_si,
-    #            cutoff=cutoff_si)
-    # gp.train()
+    # bravais vectors
+    vec1_si = brav_mat_si[:, 0].reshape(3, 1)
+    vec2_si = brav_mat_si[:, 1].reshape(3, 1)
+    vec3_si = brav_mat_si[:, 2].reshape(3, 1)
+    cutoff_si = 4.5
+
+    positions, species, cell = parse_qe_input('../pwscf.in')
+    forces = parse_qe_forces('../pwscf.out')
+
+    # build gp and train
+    gp = GaussianProcess(kernel=two_body)
+    gp.init_db(root_dir='..',
+               brav_mat=brav_mat_si,
+               brav_inv=brav_inv_si,
+               vec1=vec1_si, vec2=vec2_si, vec3=vec3_si,
+               cutoff=cutoff_si)
+    gp.train()
+
 
