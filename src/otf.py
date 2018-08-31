@@ -10,26 +10,7 @@ Steven Torrisi, Jon Vandermause, Simon Batzner
 import numpy as np
 import os
 import datetime
-
-
-class Structure(object):
-    def __init__(self, positions, species, cell):
-        """
-        Contains positions, species, cell, previous positions, forces, and
-        stds of forces
-
-        :param positions: List[nparray],  List of np array positions
-        :param species: List[str], List of element symbols
-        :param cell: nparray, 3x3 np array of Bravais lattice
-        """
-        self.positions = positions
-        self.species = species
-        self.cell = cell
-
-        self.prev_positions = list(positions)
-        self.forces = [np.zeros(3) for pos in positions]
-        self.stds = [np.zeros(3) for pos in positions]
-
+from src.struc import Structure
 
 class fake_kernel(object):
     """
@@ -72,8 +53,8 @@ class OTF(object):
         self.Nsteps = number_of_steps
         self.kernel = kernel
 
-        positions, species, cell = parse_qe_input(self.qe_input)
-        self.structure = Structure(positions, species, cell)
+        positions, species, cell, = parse_qe_input(self.qe_input)
+        self.structure = Structure(positions, species, cell, cutoff)
 
         self.curr_step = 0
 
