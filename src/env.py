@@ -1,10 +1,10 @@
 """
 Jon V
 """
-
 import numpy as np
 from math import exp
 from numba import njit
+from struc import Structure
 
 
 # get two body kernel between chemical environments
@@ -39,18 +39,8 @@ def two_body_jit(bond_array_1, bond_types_1, bond_array_2,
 
 class TwoBodyEnvironment:
 
-    def __init__(self, positions, species, cell, cutoff, atom):
-        # set permanent features if needed
-        if not hasattr(self, 'bond_list'):
-            TwoBodyEnvironment.bond_list = self.species_to_bonds(species)
-            TwoBodyEnvironment.brav_inv = np.linalg.inv(cell)
-            TwoBodyEnvironment.vec1 = cell[:, 0]
-            TwoBodyEnvironment.vec2 = cell[:, 1]
-            TwoBodyEnvironment.vec3 = cell[:, 2]
-            TwoBodyEnvironment.cutoff = cutoff
-
-        self.positions = positions
-        self.species = species
+    def __init__(self, structure, atom):
+        self.structure = structure
 
         bond_array, bond_types, etyps, ctyp =\
             self.get_atoms_within_cutoff(atom)
@@ -116,7 +106,7 @@ class TwoBodyEnvironment:
         :rtype: integer
         """
 
-        for bond_index, bond in enumerate(self.bond_list):
+        for bond_index, bond in enumerate(self.structure.bond_list):
             if TwoBodyEnvironment.is_bond(species1, species2, bond):
                 return bond_index
 
@@ -130,7 +120,7 @@ class TwoBodyEnvironment:
         """
 
         # get bravais coefficients
-        coeff = np.matmul(self.brav_inv, vec)
+        coeff = np.matmul(self.structure.inv_lattice, vec)
 
         # get bravais coefficients for atoms within one super-super-cell
         coeffs = [[], [], []]
@@ -147,12 +137,12 @@ class TwoBodyEnvironment:
         for m in range(len(coeffs[0])):
             for n in range(len(coeffs[1])):
                 for p in range(len(coeffs[2])):
-                    vec_curr = coeffs[0][m]*self.vec1 +\
-                               coeffs[1][n]*self.vec2 +\
-                               coeffs[2][p]*self.vec3
+                    vec_curr = coeffs[0][m]*self.structure.vec1 +\
+                               coeffs[1][n]*self.structure.vec2 +\
+                               coeffs[2][p]*self.structure.vec3
                     dist = np.linalg.norm(vec_curr)
 
-                    if dist < self.cutoff:
+                    if dist < self.structure.cutoff:
                         vecs.append(vec_curr)
                         dists.append(dist)
 
@@ -161,17 +151,17 @@ class TwoBodyEnvironment:
     # return information about atoms inside cutoff region
     def get_atoms_within_cutoff(self, atom):
 
-        pos_atom = self.positions[atom]  # position of central atom
-        central_type = self.species[atom]  # type of central atom
+        pos_atom = self.structure.positions[atom]  # position of central atom
+        central_type = self.structure.species[atom]  # type of central atom
 
         bond_array = []
         bond_types = []
         environment_types = []
 
         # find all atoms and images in the neighborhood
-        for n in range(len(self.positions)):
-            diff_curr = self.positions[n] - pos_atom
-            typ_curr = self.species[n]
+        for n in range(len(self.structure.positions)):
+            diff_curr = self.structure.positions[n] - pos_atom
+            typ_curr = self.structure.species[n]
             bond_curr = self.species_to_index(central_type, typ_curr)
 
             # get images within cutoff
@@ -192,17 +182,19 @@ class TwoBodyEnvironment:
 
 # testing ground (will be moved to test suite later)
 if __name__ == '__main__':
-    # create simple test environment
+    # create test structure
     positions = [np.array([0, 0, 0]), np.array([0.5, 0.5, 0.5])]
     species = ['B', 'A']
     cell = np.eye(3)
     cutoff = np.linalg.norm(np.array([0.5, 0.5, 0.5])) + 0.001
-    atom = 0
+    test_structure = Structure(cell, species, positions, cutoff)
 
-    test_env = TwoBodyEnvironment(positions, species, cell, cutoff, atom)
+    # create environment
+    atom = 0
+    test_env = TwoBodyEnvironment(test_structure, atom)
 
     # test species_to_bond
-    assert(test_env.bond_list == [['B', 'B'], ['B', 'A'], ['A', 'A']])
+    assert(test_env.structure.bond_list == [['B', 'B'], ['B', 'A'], ['A', 'A']])
 
     # test is_bond (static method)
     assert(TwoBodyEnvironment.is_bond('A', 'B', ['A', 'B']))
