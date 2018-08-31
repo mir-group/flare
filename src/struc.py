@@ -22,7 +22,14 @@ class Structure(object):
         self.vec3 = lattice[2, :]
 
         self.species = species
-        self.elements = list(set(species))
+
+        # get unique species
+        unique_species = []
+        for spec in species:
+            if spec not in unique_species:
+                unique_species.append(spec)
+
+        self.elements = unique_species
         self.bond_list = self.calc_bond_list(self.elements)
 
         self.inv_lattice = inv(lattice)
