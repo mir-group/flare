@@ -123,7 +123,15 @@ class TwoBodyEnvironment:
         bond_types = np.array(bond_types)
         return bond_array, bond_types, environment_types, central_type
 
-    # get two body kernel between chemical environments
+    # get two body kernel between two environments
+    def two_body(self, other, d1, d2, sig, ls):
+        return TwoBodyEnvironment.two_body_jit(self.bond_array,
+                                               self.bond_types,
+                                               other.bond_array,
+                                               other.bond_types,
+                                               d1, d2, sig, ls)
+
+    # jit function that computes two body kernel
     @staticmethod
     @njit
     def two_body_jit(bond_array_1, bond_types_1, bond_array_2,
@@ -276,4 +284,21 @@ if __name__ == '__main__':
     py_time = (time1 - time0) / its
 
     assert(jit_test == py_test)
+    print('jit time is %.5e' % jit_time)
     print('speed up is %.3f' % (py_time / jit_time))
+
+    # test two_body
+    time0 = time.time()
+    obj_test = test_env_1.two_body(test_env_2, d1, d2, sig, ls)
+    time1 = time.time()
+
+    assert(py_test == obj_test)
+    print(time1 - time0)
+
+    time0 = time.time()
+    for n in range(its):
+        obj_test = test_env_1.two_body(test_env_2, d1, d2, sig, ls)
+    time1 = time.time()
+
+    obj_time = (time1 - time0) / its
+    print(obj_time)
