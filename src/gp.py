@@ -63,13 +63,7 @@ class GaussianProcess:
         self.pred_var = None
 
         # gp kernel and hyperparameters
-        self.kernel = kernel
-
-        try:
-            self.get_kernel_function(kernel=kernel)
-        except ValueError:
-            print("{} is not a valid kernel".format(kernel))
-
+        self.kernel_type = kernel
         self.length_scale = None
         self.sigma_n = None
         self.sigma_f = None
@@ -83,20 +77,12 @@ class GaussianProcess:
         self.training_data = np.empty(0,)
         self.training_labels = np.empty(0,)
 
-    def get_kernel_function(self, kernel):
-        """Specify kernel function to be used
-
-        :param kernel: kernel specified
-        :type kernel: str
-        """
-        if kernel == 'two_body':
-            pass
-
-        elif kernel == 'three_body':
-            pass
-
+    def kernel(self, x1, x2, d1, d2, sig, ls):
+        """Evaluate specified kernel."""
+        if self.kernel_type == 'two_body':
+            return two_body(x1, x2, d1, d2, sig, ls)
         else:
-            raise ValueError
+            raise ValueError('{} is not a valid kernel'.format(self.kernel))
 
     def init_db(self, init_type='dir', **kwargs):
         """Initialize database from root directory containing training data.
@@ -175,7 +161,8 @@ class GaussianProcess:
 
         # get predictive variance
         v_vec = solve_triangular(self.l_mat, k_v, lower=True)
-        self_kern = two_body(x_t, x_t, d, d, self.sigma_f, self.length_scale)
+        self_kern = self.kernel(x_t, x_t, d, d,
+                                self.sigma_f, self.length_scale)
         self.pred_var = self_kern - np.matmul(v_vec.transpose(), v_vec)
 
     def minus_like_hyp(self, hyp):
@@ -254,7 +241,7 @@ class GaussianProcess:
                 d_2 = d_s[n_index % 3]
 
                 # calculate kernel
-                cov = two_body(x_1, x_2, d_1, d_2, sigma_f, length_scale)
+                cov = self.kernel(x_1, x_2, d_1, d_2, sigma_f, length_scale)
                 k_mat[m_index, n_index] = cov
                 k_mat[n_index, m_index] = cov
 
@@ -279,8 +266,8 @@ class GaussianProcess:
         for m in range(size):
             x_2 = self.training_data[int(math.floor(m / 3))]
             d_2 = d_s[m % 3]
-            k_v[m] = two_body(x, x_2, d_1, d_2,
-                              self.sigma_f, self.length_scale)
+            k_v[m] = self.kernel(x, x_2, d_1, d_2,
+                                 self.sigma_f, self.length_scale)
 
         return k_v
 
