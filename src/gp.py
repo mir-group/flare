@@ -17,7 +17,7 @@ from scipy.linalg import solve_triangular
 from scipy.optimize import minimize
 
 from dev.two_body import two_body
-from dev.kern_help import get_envs
+from dev.kern_help import get_envs, fc_conv
 from otf import parse_qe_input, parse_qe_forces
 from dev.MD_Parser import parse_qe_pwscf_md_output
 
@@ -49,9 +49,7 @@ def get_outfiles(root_dir, out=True):
 
 
 class GaussianProcess:
-    """
-    Gaussian Process Regression Model
-    """
+    """ Gaussian Process Regression Model """
 
     def __init__(self, kernel):
         """Initialize GP parameters and training data.
@@ -65,7 +63,7 @@ class GaussianProcess:
         self.pred_var = None
 
         # gp kernel and hyperparameters
-        self.kernel = None
+        self.kernel = kernel
 
         try:
             self.get_kernel_function(kernel=kernel)
@@ -92,7 +90,7 @@ class GaussianProcess:
         :type kernel: str
         """
         if kernel == 'two_body':
-            self.kernel = two_body()
+            pass
 
         elif kernel == 'three_body':
             pass
@@ -100,31 +98,38 @@ class GaussianProcess:
         else:
             raise ValueError
 
-    def init_db(self, root_dir, brav_mat, brav_inv,
-                vec1, vec2, vec3, cutoff):
-        """Initialize database from root directory containing training data"""
-        pos, _, _, frcs = [], [], [], []
+    def init_db(self, init_type='dir', **kwargs):
+        """Initialize database from root directory containing training data.
 
-        for file in get_outfiles(root_dir=root_dir, out=False):
-            pos = parse_qe_input(file)[0]
+        :param init_type: whether to init from files in dir or pass data
+        :type init_type: str
+        """
 
-        for file in get_outfiles(root_dir=root_dir, out=True):
-            frcs = parse_qe_forces(file)
+        if init_type == 'dir':
+            pos, _, _, frcs = [], [], [], []
 
-        self.training_data = np.asarray(get_envs(pos=pos,
-                                                 typs=['Si'],
-                                                 brav_mat=brav_mat,
-                                                 brav_inv=brav_inv,
-                                                 vec1=vec1,
-                                                 vec2=vec2,
-                                                 vec3=vec3,
-                                                 cutoff=cutoff))
-        self.training_labels = np.asarray(frcs)
+            for file in get_outfiles(root_dir=kwargs['root_dir'], out=False):
+                pos = parse_qe_input(file)[0]
+
+            for file in get_outfiles(root_dir=kwargs['root_dir'], out=True):
+                frcs = parse_qe_forces(file)
+
+            self.training_data = np.asarray(get_envs(
+                                             pos=pos,
+                                             brav_mat=kwargs['brav_mat'],
+                                             brav_inv=kwargs['brav_inv'],
+                                             vec1=kwargs['vec1'],
+                                             vec2=kwargs['vec2'],
+                                             vec3=kwargs['vec3'],
+                                             cutoff=kwargs['cutoff']))
+            self.training_labels = np.asarray(frcs)
+
+        elif init_type == 'data':
+            self.training_data = kwargs['positions']
+            self.training_labels = kwargs['forces']
 
     def train(self):
-        """
-        Train Gaussian Process model on training data
-        """
+        """ Train Gaussian Process model on training data """
 
         # optimize hyperparameters
         self.opt_hyper()
@@ -170,9 +175,7 @@ class GaussianProcess:
 
         # get predictive variance
         v_vec = solve_triangular(self.l_mat, k_v, lower=True)
-        self_kern = self.kernel(x_t, x_t, d, d,
-                                self.sigma_f,
-                                self.length_scale)
+        self_kern = two_body(x_t, x_t, d, d, self.sigma_f, self.length_scale)
         self.pred_var = self_kern - np.matmul(v_vec.transpose(), v_vec)
 
     def minus_like_hyp(self, hyp):
@@ -251,7 +254,7 @@ class GaussianProcess:
                 d_2 = d_s[n_index % 3]
 
                 # calculate kernel
-                cov = self.kernel(x_1, x_2, d_1, d_2, sigma_f, length_scale)
+                cov = two_body(x_1, x_2, d_1, d_2, sigma_f, length_scale)
                 k_mat[m_index, n_index] = cov
                 k_mat[n_index, m_index] = cov
 
@@ -276,9 +279,8 @@ class GaussianProcess:
         for m in range(size):
             x_2 = self.training_data[int(math.floor(m / 3))]
             d_2 = d_s[m % 3]
-            k_v[m] = self.kernel(x, x_2, d_1, d_2,
-                                 self.sigma_f,
-                                 self.length_scale)
+            k_v[m] = two_body(x, x_2, d_1, d_2,
+                              self.sigma_f, self.length_scale)
 
         return k_v
 
@@ -289,39 +291,39 @@ class GaussianProcess:
 
         self.alpha = alpha
 
-
 if __name__ == "__main__":
-
-    outfile = os.path.join(os.environ['ML_HOME'], '/data/SiC_MD/sic_md.out')
+    outfile = os.path.join(os.environ['ML_HOME'],
+                           'data/Si_Supercell_MD/si.md.out')
     Si_MD_Parsed = parse_qe_pwscf_md_output(outfile)
 
     # set crystal structure
     dim = 3
-    alat_si = 4.344404578
-    unit_cell = [[0.0, alat_si / 2, alat_si / 2],
-                 [alat_si / 2, 0.0, alat_si / 2],
-                 [alat_si / 2, alat_si / 2, 0.0]]
+    alat = 5.431
+    unit_cell = [[0.0, alat / 2, alat / 2],
+                 [alat / 2, 0.0, alat / 2],
+                 [alat / 2, alat / 2, 0.0]]
+
     unit_pos = [['Si', [0, 0, 0]],
-                ['Si', [alat_si / 4, alat_si / 4, alat_si / 4]]]
-    brav_mat_si = np.array([[0.0, alat_si / 2, alat_si / 2],
-                           [alat_si / 2, 0.0, alat_si / 2],
-                           [alat_si / 2, alat_si / 2, 0.0]]) * dim
-    brav_inv_si = np.linalg.inv(brav_mat_si)
+                ['Si', [alat / 4, alat / 4, alat / 4]]]
+
+    brav_mat = np.array([[0.0, alat / 2, alat / 2],
+                         [alat / 2, 0.0, alat / 2],
+                         [alat / 2, alat / 2, 0.0]]) * dim
+
+    brav_inv = np.linalg.inv(brav_mat)
 
     # bravais vectors
-    vec1_si = brav_mat_si[:, 0].reshape(3, 1)
-    vec2_si = brav_mat_si[:, 1].reshape(3, 1)
-    vec3_si = brav_mat_si[:, 2].reshape(3, 1)
-    cutoff_si = 4.5
+    vec1 = brav_mat[:, 0].reshape(3, 1)
+    vec2 = brav_mat[:, 1].reshape(3, 1)
+    vec3 = brav_mat[:, 2].reshape(3, 1)
 
-    positions, species, cell = parse_qe_input('../pwscf.in')
-    forces = parse_qe_forces('../pwscf.out')
+    # build force field from single snapshot
+    cutoff = 4.5
+    positions = np.asarray(Si_MD_Parsed[1]['positions'])
+    envs = get_envs(positions, brav_mat, brav_inv, vec1, vec2, vec3, cutoff)
+    fcs = fc_conv(Si_MD_Parsed[2]['forces'])
 
     # build gp and train
     gp = GaussianProcess(kernel='two_body')
-    gp.init_db(root_dir='..',
-               brav_mat=brav_mat_si,
-               brav_inv=brav_inv_si,
-               vec1=vec1_si, vec2=vec2_si, vec3=vec3_si,
-               cutoff=cutoff_si)
+    gp.init_db(init_type='data', positions=positions, forces=fcs)
     gp.train()

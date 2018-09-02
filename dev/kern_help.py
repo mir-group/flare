@@ -157,55 +157,45 @@ def get_trip_dict(tb_dict):
                 
     return trip_dict
 
+
 # given list of cartesian coordinates, get chemical environment of specified atom
 # pos = list of cartesian coordinates
-# typs = list of atom types
-def get_env_struc(pos, typs, atom, brav_mat, brav_inv, vec1, vec2, vec3, cutoff):
-    pos_atom = np.array(pos[atom]).reshape(3,1)
-    typ = typs[atom]
-    env = {'central_atom':typ, 'dists':[],'xs':[],'ys':[],'zs':[],\
-           'xrel':[],'yrel':[],'zrel':[],'types':[]}
-    
+def get_env(pos, atom, brav_mat, brav_inv, vec1, vec2, vec3, cutoff):
+    env = [[], [], [], []]
+    pos_atom = np.array(pos[atom]).reshape(3, 1)
+
     # loop through positions to find all atoms and images in the neighborhood
     for n in range(len(pos)):
         # position relative to reference atom
-        diff_curr = np.array(pos[n]).reshape(3,1) - pos_atom
+        diff_curr = np.array(pos[n]).reshape(3, 1) - pos_atom
 
         # get images within cutoff
         vecs, dists = get_cutoff_vecs(diff_curr, brav_mat, \
-            brav_inv, vec1, vec2, vec3, cutoff)
+                                      brav_inv, vec1, vec2, vec3, cutoff)
 
         for vec, dist in zip(vecs, dists):
             # ignore self interaction
             if dist != 0:
                 # append distance
-                env['dists'].append(dist)
-                
-                # append coordinate differences
-                env['xs'].append(vec[0][0])
-                env['ys'].append(vec[1][0])
-                env['zs'].append(vec[2][0])
-                
-                # append relative coordinate differences
-                env['xrel'].append(vec[0][0]/dist)
-                env['yrel'].append(vec[1][0]/dist)
-                env['zrel'].append(vec[2][0]/dist)
-                
-                # append atom type
-                env['types'].append(typs[n])
+                env[0].append(dist)
 
-    env['trip_dict']=get_trip_dict(env)
-    
+                # append coordinate differences
+                env[1].append(-vec[0][0])
+                env[2].append(-vec[1][0])
+                env[3].append(-vec[2][0])
+
+    env = np.array(env)
     return env
 
+
 # given list of cartesian coordinates, return list of chemical environments
-def get_envs(pos, typs, brav_mat, brav_inv, vec1, vec2, vec3, cutoff):
+def get_envs(pos, brav_mat, brav_inv, vec1, vec2, vec3, cutoff):
     envs = []
     for n in range(len(pos)):
         atom = n
-        env = get_env_struc(pos, typs, atom, brav_mat, brav_inv, vec1, vec2, vec3, cutoff)
+        env = get_env(pos, atom, brav_mat, brav_inv, vec1, vec2, vec3, cutoff)
         envs.append(env)
-        
+
     return envs
 
 # -----------------------------------------
