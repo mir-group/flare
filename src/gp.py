@@ -9,7 +9,6 @@ Simon Batzner
 """
 import os
 
-import math
 
 import numpy as np
 from scipy.linalg import solve_triangular
@@ -65,7 +64,7 @@ class GaussianProcess:
         self.kernel_type = kernel
         self.length_scale = 1
         self.sigma_n = 1
-        self.sigma_f = 1
+        self.sigma_f = 0.01
 
         # quantities used in GPR algorithm
         self.k_mat = None
@@ -138,6 +137,7 @@ class GaussianProcess:
         """
         # initial guess
         x_0 = np.array([self.sigma_f, self.length_scale, self.sigma_n])
+        # x_0 = x_0.reshape(3, 1)
 
         # nelder-mead optimization
         res = minimize(self.minus_like_hyp, x_0, method='nelder-mead',
@@ -229,7 +229,6 @@ class GaussianProcess:
         :type sigma_n: float
 
         """
-        d_s = ['xrel', 'yrel', 'zrel']
 
         # hard-coded for testing purposes
         d_1 = 1
@@ -265,15 +264,16 @@ class GaussianProcess:
         :return: kernel vector
         :rtype:
         """
-        d_s = ['xrel', 'yrel', 'zrel']
-        size = len(self.training_data) * 3
+        size = len(self.training_data)
         k_v = np.zeros([size, 1])
 
-        for m in range(size):
-            x_2 = self.training_data[int(math.floor(m / 3))]
-            d_2 = d_s[m % 3]
-            k_v[m] = self.kernel(x, x_2, d_1, d_2,
-                                 self.sigma_f, self.length_scale)
+        # hard-coded for testing purposes
+        d_2 = 1
+
+        for m_index in range(size):
+            x_2 = self.training_data[m_index]
+            k_v[m_index] = self.kernel(x, x_2, d_1, d_2,
+                                       self.sigma_f, self.length_scale)
 
         return k_v
 
@@ -310,12 +310,11 @@ if __name__ == "__main__":
 
         # generate random force vectors
         train_forces.append(np.array([np.random.rand(),
-                      np.random.rand(),
-                      np.random.rand()]))
+                            np.random.rand(),
+                            np.random.rand()]))
 
 
     # build gp and train
     gp = GaussianProcess(kernel='two_body_py')
     gp.init_db(init_type='data', envs=train_envs, forces=train_forces)
     gp.train()
-
