@@ -23,12 +23,14 @@ from dev.MD_Parser import parse_qe_pwscf_md_output
 
 
 def get_outfiles(root_dir, out=True):
-    """
-    Find all files matching *.out or *.in
+    """Find all files matching *.out or *.in.
 
-    :param root_dir:    (str), dir to walk from
-    :param out:         (bool), whether to look for .out or .in files
-    :return: matching   (list), files in root_dir ending with .out
+    :param root_dir: dir to walk from
+    :type root_dir: str
+    :param out: whether to look for .out or .in files
+    :type out: bool
+    :return: files in root_dir ending with .out
+    :rtype: list<str>
     """
     matching = []
 
@@ -52,10 +54,10 @@ class GaussianProcess:
     """
 
     def __init__(self, kernel):
-        """
-        Initialize GP parameters and training data
+        """Initialize GP parameters and training data.
 
-        :param: kernel  (func) func specifying used GP kernel
+        :param kernel: covariance/ kernel function used
+        :type kernel: str
         """
 
         # predictive mean and variance
@@ -63,7 +65,13 @@ class GaussianProcess:
         self.pred_var = None
 
         # gp kernel and hyperparameters
-        self.kernel = kernel
+        self.kernel = None
+
+        try:
+            self.get_kernel_function(kernel=kernel)
+        except ValueError:
+            print("{} is not a valid kernel".format(kernel))
+
         self.length_scale = None
         self.sigma_n = None
         self.sigma_f = None
@@ -76,6 +84,21 @@ class GaussianProcess:
         # training set
         self.training_data = np.empty(0,)
         self.training_labels = np.empty(0,)
+
+    def get_kernel_function(self, kernel):
+        """Specify kernel function to be used
+
+        :param kernel: kernel specified
+        :type kernel: str
+        """
+        if kernel == 'two_body':
+            self.kernel = two_body()
+
+        elif kernel == 'three_body':
+            pass
+
+        else:
+            raise ValueError
 
     def init_db(self, root_dir, brav_mat, brav_inv,
                 vec1, vec2, vec3, cutoff):
@@ -131,7 +154,13 @@ class GaussianProcess:
         self.sigma_n = res.x[2]
 
     def predict(self, x_t, d):
-        """ Make GP prediction with SE kernel """
+        """Make GP prediction with SE kernel
+
+        :param x_t: data point to predict on
+        :type x_t:
+        :param d:
+        :type d:
+        """
 
         # get kernel vector
         k_v = self.get_kernel_vector(x=x_t, d_1=1)
@@ -275,12 +304,10 @@ if __name__ == "__main__":
     forces = parse_qe_forces('../pwscf.out')
 
     # build gp and train
-    gp = GaussianProcess(kernel=two_body)
+    gp = GaussianProcess(kernel='two_body')
     gp.init_db(root_dir='..',
                brav_mat=brav_mat_si,
                brav_inv=brav_inv_si,
                vec1=vec1_si, vec2=vec2_si, vec3=vec3_si,
                cutoff=cutoff_si)
     gp.train()
-
-
