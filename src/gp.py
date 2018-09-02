@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 """" Gaussian Process Regression model
 
@@ -17,9 +16,9 @@ from scipy.linalg import solve_triangular
 from scipy.optimize import minimize
 
 from dev.two_body import two_body
-from dev.kern_help import get_envs, fc_conv
-from otf import parse_qe_input, parse_qe_forces
-from dev.MD_Parser import parse_qe_pwscf_md_output
+from dev.kern_help import get_envs
+from env import ChemicalEnvironment, two_body, two_body_py
+from otf import parse_qe_input, parse_qe_forces, Structure
 
 
 def get_outfiles(root_dir, out=True):
@@ -64,9 +63,9 @@ class GaussianProcess:
 
         # gp kernel and hyperparameters
         self.kernel_type = kernel
-        self.length_scale = None
-        self.sigma_n = None
-        self.sigma_f = None
+        self.length_scale = 1
+        self.sigma_n = 1
+        self.sigma_f = 1
 
         # quantities used in GPR algorithm
         self.k_mat = None
@@ -77,17 +76,21 @@ class GaussianProcess:
         self.training_data = np.empty(0,)
         self.training_labels = np.empty(0,)
 
-    def kernel(self, x1, x2, d1, d2, sig, ls):
+    def kernel(self, env1, env2, d1, d2, sig, ls):
         """Evaluate specified kernel."""
         if self.kernel_type == 'two_body':
-            return two_body(x1, x2, d1, d2, sig, ls)
+            return two_body(env1, env2, d1, d2, sig, ls)
+
+        elif self.kernel_type == 'two_body_py':
+            return two_body_py(env1, env2, d1, d2, sig, ls)
+
         else:
             raise ValueError('{} is not a valid kernel'.format(self.kernel))
 
     def init_db(self, init_type='dir', **kwargs):
-        """Initialize database from root directory containing training data.
+        """Initialize database from dir or directly from chemical envs
 
-        :param init_type: whether to init from files in dir or pass data
+        :param init_type: whether to init from files in dir or pass envs
         :type init_type: str
         """
 
@@ -111,8 +114,8 @@ class GaussianProcess:
             self.training_labels = np.asarray(frcs)
 
         elif init_type == 'data':
-            self.training_data = kwargs['positions']
-            self.training_labels = kwargs['forces']
+            self.training_data = kwargs['envs']
+            self.training_labels = np.asarray(kwargs['forces'])
 
     def train(self):
         """ Train Gaussian Process model on training data """
@@ -228,17 +231,20 @@ class GaussianProcess:
         """
         d_s = ['xrel', 'yrel', 'zrel']
 
+        # hard-coded for testing purposes
+        d_1 = 1
+        d_2 = 1
+
         # initialize matrix
-        size = len(self.training_data) * 3
+        size = len(self.training_data)
         k_mat = np.zeros([size, size])
 
         # calculate elements
         for m_index in range(size):
-            x_1 = self.training_data[int(math.floor(m_index / 3))]
-            d_1 = d_s[m_index % 3]
+            x_1 = self.training_data[m_index]
+
             for n_index in range(m_index, size):
-                x_2 = self.training_data[int(math.floor(n_index / 3))]
-                d_2 = d_s[n_index % 3]
+                x_2 = self.training_data[n_index]
 
                 # calculate kernel
                 cov = self.kernel(x_1, x_2, d_1, d_2, sigma_f, length_scale)
@@ -279,38 +285,37 @@ class GaussianProcess:
         self.alpha = alpha
 
 if __name__ == "__main__":
-    outfile = os.path.join(os.environ['ML_HOME'],
-                           'data/Si_Supercell_MD/si.md.out')
-    Si_MD_Parsed = parse_qe_pwscf_md_output(outfile)
 
-    # set crystal structure
-    dim = 3
-    alat = 5.431
-    unit_cell = [[0.0, alat / 2, alat / 2],
-                 [alat / 2, 0.0, alat / 2],
-                 [alat / 2, alat / 2, 0.0]]
+    # set up a few test environments
+    n_train = 10
+    cell = np.eye(3)
+    cutoff = np.linalg.norm(np.array([0.5, 0.5, 0.5])) + 0.001
+    train_envs = []
+    species = ['B', 'A']
+    atom = 0
+    train_forces = []
 
-    unit_pos = [['Si', [0, 0, 0]],
-                ['Si', [alat / 4, alat / 4, alat / 4]]]
+    for i in range(n_train):
 
-    brav_mat = np.array([[0.0, alat / 2, alat / 2],
-                         [alat / 2, 0.0, alat / 2],
-                         [alat / 2, alat / 2, 0.0]]) * dim
+        # generate random positions and build chem env
+        pos = [np.array([np.random.rand() * 0.5,
+                         np.random.rand() * 0.5,
+                         np.random.rand() * 0.5]),
+               np.array([np.random.rand() * 0.5,
+                         np.random.rand() * 0.5,
+                         np.random.rand() * 0.5])]
 
-    brav_inv = np.linalg.inv(brav_mat)
+        test_structure = Structure(cell, species, pos, cutoff)
+        train_envs.append(ChemicalEnvironment(test_structure, atom))
 
-    # bravais vectors
-    vec1 = brav_mat[:, 0].reshape(3, 1)
-    vec2 = brav_mat[:, 1].reshape(3, 1)
-    vec3 = brav_mat[:, 2].reshape(3, 1)
+        # generate random force vectors
+        train_forces.append(np.array([np.random.rand(),
+                      np.random.rand(),
+                      np.random.rand()]))
 
-    # build force field from single snapshot
-    cutoff = 4.5
-    positions = np.asarray(Si_MD_Parsed[1]['positions'])
-    envs = get_envs(positions, brav_mat, brav_inv, vec1, vec2, vec3, cutoff)
-    fcs = fc_conv(Si_MD_Parsed[2]['forces'])
 
     # build gp and train
-    gp = GaussianProcess(kernel='two_body')
-    gp.init_db(init_type='data', positions=positions, forces=fcs)
+    gp = GaussianProcess(kernel='two_body_py')
+    gp.init_db(init_type='data', envs=train_envs, forces=train_forces)
     gp.train()
+
