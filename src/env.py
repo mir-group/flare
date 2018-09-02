@@ -8,7 +8,24 @@ from struc import Structure
 import time
 
 
-class TwoBodyEnvironment:
+# get two body kernel between two environments
+def two_body(env1, env2, d1, d2, sig, ls):
+    return ChemicalEnvironment.two_body_jit(env1.bond_array,
+                                            env1.bond_types,
+                                            env2.bond_array,
+                                            env2.bond_types,
+                                            d1, d2, sig, ls)
+
+
+def two_body_py(env1, env2, d1, d2, sig, ls):
+    return ChemicalEnvironment.two_body_nojit(env1.bond_array,
+                                              env1.bond_types,
+                                              env2.bond_array,
+                                              env2.bond_types,
+                                              d1, d2, sig, ls)
+
+
+class ChemicalEnvironment:
 
     def __init__(self, structure, atom):
         self.structure = structure
@@ -51,7 +68,7 @@ class TwoBodyEnvironment:
         """
 
         for bond_index, bond in enumerate(self.structure.bond_list):
-            if TwoBodyEnvironment.is_bond(species1, species2, bond):
+            if ChemicalEnvironment.is_bond(species1, species2, bond):
                 return bond_index
 
     def get_local_atom_images(self, vec):
@@ -123,14 +140,6 @@ class TwoBodyEnvironment:
         bond_types = np.array(bond_types)
         return bond_array, bond_types, environment_types, central_type
 
-    # get two body kernel between two environments
-    def two_body(self, other, d1, d2, sig, ls):
-        return TwoBodyEnvironment.two_body_jit(self.bond_array,
-                                               self.bond_types,
-                                               other.bond_array,
-                                               other.bond_types,
-                                               d1, d2, sig, ls)
-
     # jit function that computes two body kernel
     @staticmethod
     @njit
@@ -163,8 +172,8 @@ class TwoBodyEnvironment:
 
     # for testing purposes, define python version of two body kernel
     @staticmethod
-    def two_body_py(bond_array_1, bond_types_1, bond_array_2,
-                    bond_types_2, d1, d2, sig, ls):
+    def two_body_nojit(bond_array_1, bond_types_1, bond_array_2,
+                       bond_types_2, d1, d2, sig, ls):
         d = sig*sig/(ls*ls*ls*ls)
         e = ls*ls
         f = 1/(2*ls*ls)
@@ -202,7 +211,7 @@ if __name__ == '__main__':
 
     # create environment
     atom = 0
-    test_env = TwoBodyEnvironment(test_structure, atom)
+    test_env = ChemicalEnvironment(test_structure, atom)
 
     # test species_to_bond
     is_bl_right = test_env.structure.bond_list ==\
@@ -210,9 +219,9 @@ if __name__ == '__main__':
     assert(is_bl_right)
 
     # test is_bond (static method)
-    assert(TwoBodyEnvironment.is_bond('A', 'B', ['A', 'B']))
-    assert(TwoBodyEnvironment.is_bond('B', 'A', ['A', 'B']))
-    assert(not TwoBodyEnvironment.is_bond('C', 'A', ['A', 'B']))
+    assert(ChemicalEnvironment.is_bond('A', 'B', ['A', 'B']))
+    assert(ChemicalEnvironment.is_bond('B', 'A', ['A', 'B']))
+    assert(not ChemicalEnvironment.is_bond('C', 'A', ['A', 'B']))
 
     # test species_to_index
     assert(test_env.species_to_index('B', 'B') == 0)
@@ -232,73 +241,63 @@ if __name__ == '__main__':
 
     assert(bond_array.shape[0] == 8)
 
-    # test two_body_jit
+    # test jit and python two body kernels
+    def kernel_performance(env1, env2, d1, d2, sig, ls, kernel, its):
+        # warm up jit
+        time0 = time.time()
+        kern_val = kernel(env1, env2, d1, d2, sig, ls)
+        time1 = time.time()
+        warm_up_time = time1 - time0
+
+        # test run time performance
+        time2 = time.time()
+        for n in range(its):
+            kernel(env1, env2, d1, d2, sig, ls)
+        time3 = time.time()
+        run_time = (time3 - time2) / its
+
+        return kern_val, run_time, warm_up_time
+
+    def get_jit_speedup(env1, env2, d1, d2, sig, ls, jit_kern, py_kern,
+                        its):
+
+        kern_val_jit, run_time_jit, warm_up_time_jit = \
+            kernel_performance(env1, env2, d1, d2, sig, ls, jit_kern, its)
+
+        kern_val_py, run_time_py, warm_up_time_py = \
+            kernel_performance(env1, env2, d1, d2, sig, ls, py_kern, its)
+
+        speed_up = run_time_py / run_time_jit
+
+        return speed_up, kern_val_jit, kern_val_py, warm_up_time_jit,\
+            warm_up_time_py
+
+    # set up two test environments
     positions_1 = [np.array([0, 0, 0]), np.array([0.1, 0.2, 0.3])]
     species_1 = ['B', 'A']
     atom_1 = 0
     test_structure_1 = Structure(cell, species_1, positions_1, cutoff)
-    test_env_1 = TwoBodyEnvironment(test_structure_1, atom_1)
+    env1 = ChemicalEnvironment(test_structure_1, atom_1)
 
     positions_2 = [np.array([0, 0, 0]), np.array([0.25, 0.3, 0.4])]
     species_2 = ['B', 'A']
     atom_2 = 0
     test_structure_2 = Structure(cell, species_2, positions_2, cutoff)
-    test_env_2 = TwoBodyEnvironment(test_structure_2, atom_2)
+    env2 = ChemicalEnvironment(test_structure_2, atom_2)
 
     d1 = 1
     d2 = 1
     sig = 1
     ls = 1
 
-    # to do: add methods for testing jit and py performance
-    # warm up jit
-    jit_test = TwoBodyEnvironment.two_body_jit(test_env_1.bond_array,
-                                               test_env_1.bond_types,
-                                               test_env_2.bond_array,
-                                               test_env_2.bond_types,
-                                               d1, d2, sig, ls)
-
-    # do a performance run
     its = 100000
-    time0 = time.time()
-    for n in range(its):
-        jit_test = TwoBodyEnvironment.two_body_jit(test_env_1.bond_array,
-                                                   test_env_1.bond_types,
-                                                   test_env_2.bond_array,
-                                                   test_env_2.bond_types,
-                                                   d1, d2, sig, ls)
-    time1 = time.time()
 
-    jit_time = (time1 - time0) / its
+    # compare performance
+    speed_up, kern_val_jit, kern_val_py, warm_up_time_jit, warm_up_time_py = \
+        get_jit_speedup(env1, env2, d1, d2, sig, ls,
+                        two_body, two_body_py, its)
 
-    # compare with Python
-    time0 = time.time()
-    for n in range(its):
-        py_test = TwoBodyEnvironment.two_body_py(test_env_1.bond_array,
-                                                 test_env_1.bond_types,
-                                                 test_env_2.bond_array,
-                                                 test_env_2.bond_types,
-                                                 d1, d2, sig, ls)
-    time1 = time.time()
+    assert(kern_val_jit == kern_val_py)
+    assert(speed_up > 1)
 
-    py_time = (time1 - time0) / its
-
-    assert(jit_test == py_test)
-    print('jit time is %.5e' % jit_time)
-    print('speed up is %.3f' % (py_time / jit_time))
-
-    # test two_body
-    time0 = time.time()
-    obj_test = test_env_1.two_body(test_env_2, d1, d2, sig, ls)
-    time1 = time.time()
-
-    assert(py_test == obj_test)
-    print(time1 - time0)
-
-    time0 = time.time()
-    for n in range(its):
-        obj_test = test_env_1.two_body(test_env_2, d1, d2, sig, ls)
-    time1 = time.time()
-
-    obj_time = (time1 - time0) / its
-    print(obj_time)
+    print(speed_up)
