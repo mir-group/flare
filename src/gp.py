@@ -158,7 +158,7 @@ class GaussianProcess:
 
         :param x_t: data point to predict on
         :type x_t:
-        :param d:
+        :param d: kernel parameter
         :type d:
         """
 
@@ -176,11 +176,12 @@ class GaussianProcess:
         self.pred_var = self_kern - np.matmul(v_vec.transpose(), v_vec)
 
     def minus_like_hyp(self, hyp):
-        """
-        Get minus likelihood as a function of hyperparameters
+        """Get minus likelihood as a function of hyperparameters
 
-        :param hyp          list of hyperparameters to optimize
-        :return minus_like  negative likelihood
+        :param hyp: hyperparameters to optimize
+        :type hyp: list<float>
+        :return: negative likelihood
+        :rtype:
         """
         like = self.like_hyp(hyp)
         minus_like = -like
@@ -188,11 +189,12 @@ class GaussianProcess:
         return minus_like
 
     def like_hyp(self, hyp):
-        """
-        Get likelihood as a function of hyperparameters
+        """ Get likelihood as a function of hyperparameters
 
-        :param  hyp      hyperparameters to be optimized
-        :return like    likelihood
+        :param hyp: hyperparameters to optimize
+        :type hyp: list<float>
+        :return: likelihood
+        :rtype:
         """
 
         # unpack hyperparameters
@@ -213,7 +215,8 @@ class GaussianProcess:
         """
         Get log marginal likelihood
 
-        :return like    likelihood
+        :return: likelihood
+        :rtype:
         """
         like = -(1 / 2) * \
             np.matmul(self.training_labels.transpose(), self.alpha) - \
@@ -223,8 +226,15 @@ class GaussianProcess:
         return like
 
     def set_kernel(self, sigma_f, length_scale, sigma_n):
-        """
-        Compute 3Nx3N noiseless kernel matrix
+        """ Compute 3Nx3N noiseless kernel matrix
+
+        :param sigma_f: signal variance
+        :type sigma_f: float
+        :param length_scale: length scale of the GP
+        :type length_scale: float
+        :param sigma_n: noise variance
+        :type sigma_n: float
+
         """
         d_s = ['xrel', 'yrel', 'zrel']
 
@@ -250,8 +260,14 @@ class GaussianProcess:
         self.k_mat = k_mat
 
     def get_kernel_vector(self, x, d_1):
-        """
-        Compute kernel vector
+        """ Compute kernel vector
+
+        :param x: data point to compare against kernel matrix
+        :type x:
+        :param d_1:
+        :type d_1:
+        :return: kernel vector
+        :rtype:
         """
         d_s = ['xrel', 'yrel', 'zrel']
         size = len(self.training_data) * 3
@@ -267,9 +283,7 @@ class GaussianProcess:
         return k_v
 
     def set_alpha(self):
-        """
-        Set weight vector alpha
-        """
+        """ Set weight vector alpha """
         ts1 = solve_triangular(self.l_mat, self.training_labels, lower=True)
         alpha = solve_triangular(self.l_mat.transpose(), ts1)
 
