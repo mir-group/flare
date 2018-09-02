@@ -10,7 +10,8 @@ Steven Torrisi, Jon Vandermause, Simon Batzner
 import numpy as np
 import os
 import datetime
-from src.struc import Structure
+from struc import Structure
+
 
 class fake_kernel(object):
     """
