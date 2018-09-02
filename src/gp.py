@@ -9,7 +9,6 @@ Simon Batzner
 """
 import os
 
-
 import numpy as np
 from scipy.linalg import solve_triangular
 from scipy.optimize import minimize
@@ -77,6 +76,7 @@ class GaussianProcess:
 
     def kernel(self, env1, env2, d1, d2, sig, ls):
         """Evaluate specified kernel."""
+
         if self.kernel_type == 'two_body':
             return two_body(env1, env2, d1, d2, sig, ls)
 
@@ -140,7 +140,10 @@ class GaussianProcess:
         # x_0 = x_0.reshape(3, 1)
 
         # nelder-mead optimization
-        res = minimize(self.minus_like_hyp, x_0, method='nelder-mead',
+        res = minimize(fun=GaussianProcess.minus_like_hyp,
+                       x0=x_0,
+                       args=(self,),
+                       method='nelder-mead',
                        options={'xtol': 1e-8, 'disp': True})
 
         self.sigma_f = res.x[0]
@@ -168,15 +171,12 @@ class GaussianProcess:
                                 self.sigma_f, self.length_scale)
         self.pred_var = self_kern - np.matmul(v_vec.transpose(), v_vec)
 
-    def minus_like_hyp(self, hyp):
+    @staticmethod
+    def minus_like_hyp(hyp, gp):
         """Get minus likelihood as a function of hyperparameters
 
-        :param hyp: hyperparameters to optimize
-        :type hyp: list<float>
-        :return: negative likelihood
-        :rtype:
         """
-        like = self.like_hyp(hyp)
+        like = gp.like_hyp(hyp)
         minus_like = -like
 
         return minus_like
@@ -199,6 +199,7 @@ class GaussianProcess:
         self.set_kernel(sigma_f=sigma_f,
                         length_scale=length_scale,
                         sigma_n=sigma_n)
+
         self.set_alpha()
         like = self.get_likelihood()
 
@@ -280,9 +281,7 @@ class GaussianProcess:
     def set_alpha(self):
         """ Set weight vector alpha """
         ts1 = solve_triangular(self.l_mat, self.training_labels, lower=True)
-        alpha = solve_triangular(self.l_mat.transpose(), ts1)
-
-        self.alpha = alpha
+        self.alpha = solve_triangular(self.l_mat.transpose(), ts1)
 
 if __name__ == "__main__":
 
@@ -298,14 +297,14 @@ if __name__ == "__main__":
     for i in range(n_train):
 
         # generate random positions and build chem env
-        pos = [np.array([np.random.rand() * 0.5,
-                         np.random.rand() * 0.5,
-                         np.random.rand() * 0.5]),
-               np.array([np.random.rand() * 0.5,
-                         np.random.rand() * 0.5,
-                         np.random.rand() * 0.5])]
+        positions = [np.array([np.random.rand() * 0.5,
+                               np.random.rand() * 0.5,
+                               np.random.rand() * 0.5]),
+                     np.array([np.random.rand() * 0.5,
+                               np.random.rand() * 0.5,
+                               np.random.rand() * 0.5])]
 
-        test_structure = Structure(cell, species, pos, cutoff)
+        test_structure = Structure(cell, species, positions, cutoff)
         train_envs.append(ChemicalEnvironment(test_structure, atom))
 
         # generate random force vectors
@@ -313,8 +312,7 @@ if __name__ == "__main__":
                             np.random.rand(),
                             np.random.rand()]))
 
-
     # build gp and train
-    gp = GaussianProcess(kernel='two_body_py')
-    gp.init_db(init_type='data', envs=train_envs, forces=train_forces)
-    gp.train()
+    gaussian = GaussianProcess(kernel='two_body_py')
+    gaussian.init_db(init_type='data', envs=train_envs, forces=train_forces)
+    gaussian.train()
