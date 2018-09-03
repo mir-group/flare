@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# pylint: disable=redefined-outer-name
 
 """" Gaussian Process Regression model
 
@@ -7,23 +8,20 @@ Implementation is based on Algorithm 2.1 (pg. 19) of
 
 Simon Batzner
 """
-import os
+
 import math
 import time
+
 import numpy as np
 from scipy.linalg import solve_triangular
 from scipy.optimize import minimize
 
-# from dev.two_body import two_body
-# from dev.kern_help import get_envs
 from env import ChemicalEnvironment, two_body, two_body_py
-from otf import parse_qe_input, parse_qe_forces, Structure
+from otf import Structure
 
 
 def minus_like_hyp(hyp, gp):
-    """Get minus likelihood as a function of hyperparameters
-
-    """
+    """Get minus likelihood as a function of hyperparameters"""
     like = gp.like_hyp(hyp)
     minus_like = -like
 
@@ -329,25 +327,16 @@ if __name__ == "__main__":
                                                noa)
     test_pt = ChemicalEnvironment(test_structure_2, 0)
 
-    # test update_db
+    # update_db
     gaussian = GaussianProcess(kernel='two_body')
     gaussian.update_db(test_structure, forces)
-    assert(len(gaussian.training_data) == noa)
-    assert(len(gaussian.training_data) == len(gaussian.training_data))
-    assert(len(gaussian.training_labels_np) == len(gaussian.training_data * 3))
 
-    # test get_kernel
+    # get_kernel
     gaussian.set_kernel(sigma_f=1, length_scale=1, sigma_n=0.1)
     db_pts = 3 * len(gaussian.training_data)
-    assert(gaussian.k_mat.shape == (db_pts, db_pts))
 
-    # test get_alpha
+    # get_alpha
     gaussian.set_alpha()
-    assert(gaussian.alpha.shape == (db_pts,))
-
-    # test get_kernel_vector
-    assert(gaussian.get_kernel_vector(test_pt, 1).shape ==
-           (db_pts,))
 
     # test get_likelihood and like_hyp
     like = gaussian.get_likelihood()
