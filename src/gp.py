@@ -157,7 +157,7 @@ class GaussianProcess:
         :param hyp: hyperparameters to optimize
         :type hyp: list<float>
         :return: likelihood
-        :rtype:
+        :rtype: float
         """
 
         # unpack hyperparameters

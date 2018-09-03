@@ -10,7 +10,7 @@ import pytest
 
 import numpy as np
 
-from gp import GaussianProcess
+from gp import GaussianProcess, minus_like_hyp
 from env import Structure, ChemicalEnvironment
 
 
@@ -35,7 +35,7 @@ def get_random_structure(cell, unique_species, cutoff, noa):
 
 # set the scope to module so it will only be setup once
 @pytest.fixture(scope='module')
-def two_body_gp(params):
+def two_body_gp():
     """Returns a GP instance with an rbf kernel"""
 
     print("\nSetting up...\n")
@@ -69,8 +69,11 @@ def two_body_gp(params):
 
 @pytest.fixture(scope='module')
 def params():
-    parameters = {'unique_species': ['B', 'A'], 'cutoff': 0.8, 'noa': 10,
-              'db_pts': 30}
+    parameters = {'unique_species': ['B', 'A'],
+                  'cutoff': 0.8,
+                  'noa': 10,
+                  'cell': np.eye(3),
+                  'db_pts': 60}
     yield parameters
     del parameters
 
@@ -97,12 +100,29 @@ def test_point():
 #                   test GP methods
 # ------------------------------------------------------
 
-def test_update_db(two_body_gp, params):
-    assert(len(two_body_gp.training_data) == params['noa'])
-    assert(len(two_body_gp.training_data) == len(two_body_gp.training_data))
-    assert(len(two_body_gp.training_labels_np) ==
-           len(two_body_gp.training_data * 3))
 
+def test_update_db(two_body_gp, params):
+
+    # params
+    test_structure, forces = get_random_structure(params['cell'],
+                                                  params['unique_species'],
+                                                  params['cutoff'],
+                                                  params['noa'])
+
+    # add structure and forces to db
+    two_body_gp.update_db(test_structure, forces)
+
+    assert(len(two_body_gp.training_data) == params['noa'] * 2)
+    assert(len(two_body_gp.training_labels_np) == params['noa'] * 2 * 3)
+
+
+def test_minus_like_hyp(two_body_gp):
+    neg_like = minus_like_hyp(hyp=[1, 1, 1], gp=two_body_gp)
+    assert(isinstance(neg_like, float))
+
+def test_like_hyp(two_body_gp):
+    like = two_body_gp.like_hyp(hyp=[1, 1, 1])
+    assert(isinstance(like, float))
 
 
 def test_set_kernel(two_body_gp, params):
@@ -110,14 +130,47 @@ def test_set_kernel(two_body_gp, params):
     assert(two_body_gp.k_mat.shape == (params['db_pts'], params['db_pts']))
 
 
+def test_set_alpha(two_body_gp, params):
+    two_body_gp.set_alpha()
+    assert (two_body_gp.alpha.shape == (params['db_pts'],))
+
+
+def test_get_likelihood(two_body_gp, params):
+    like = two_body_gp.get_likelihood()
+    assert (isinstance(like, float))
+
+
 def test_get_kernel_vector(two_body_gp, test_point, params):
     assert(two_body_gp.get_kernel_vector(test_point, 1).shape ==
            (params['db_pts'],))
 
 
-def test_set_alpha(two_body_gp, params):
-    two_body_gp.set_alpha()
-    assert(two_body_gp.alpha.shape == (params['db_pts'],))
+def test_train(two_body_gp, params):
+    hyp = [two_body_gp.sigma_f,
+           two_body_gp.length_scale,
+           two_body_gp.sigma_n]
+
+    # add struc and forces to db
+    test_structure, forces = get_random_structure(params['cell'],
+                                                  params['unique_species'],
+                                                  params['cutoff'],
+                                                  params['noa'])
+    two_body_gp.update_db(test_structure, forces)
+
+    two_body_gp.train()
+
+    hyp_post = [two_body_gp.sigma_f,
+                two_body_gp.length_scale,
+                two_body_gp.sigma_n]
+
+    assert(hyp != hyp_post)
+
+
+def test_predict(two_body_gp, test_point):
+    pred = two_body_gp.predict(x_t=test_point, d=1)
+    assert(len(pred) == 2)
+    assert(isinstance(pred[0], float))
+    assert(isinstance(pred[1], float))
 
 
 # ------------------------------------------------------
@@ -128,8 +181,3 @@ def test_set_alpha(two_body_gp, params):
 #                          [(1, 2, 3), (4, 5, 6)])
 # def test_dummy(sigma_f, length_scale, sigma_n):
 #     pass
-
-
-
-
-
