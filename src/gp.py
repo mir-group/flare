@@ -8,13 +8,13 @@ Implementation is based on Algorithm 2.1 (pg. 19) of
 Simon Batzner
 """
 import os
-
+import math
 import numpy as np
 from scipy.linalg import solve_triangular
 from scipy.optimize import minimize
 
-from dev.two_body import two_body
-from dev.kern_help import get_envs
+# from dev.two_body import two_body
+# from dev.kern_help import get_envs
 from env import ChemicalEnvironment, two_body, two_body_py
 from otf import parse_qe_input, parse_qe_forces, Structure
 
@@ -45,6 +45,16 @@ def get_outfiles(root_dir, out=True):
     return matching
 
 
+def minus_like_hyp(hyp, gp):
+    """Get minus likelihood as a function of hyperparameters
+
+    """
+    like = gp.like_hyp(hyp)
+    minus_like = -like
+
+    return minus_like
+
+
 class GaussianProcess:
     """ Gaussian Process Regression Model """
 
@@ -71,8 +81,9 @@ class GaussianProcess:
         self.alpha = None
 
         # training set
-        self.training_data = np.empty(0,)
-        self.training_labels = np.empty(0,)
+        self.training_data = []
+        self.training_labels = []
+        self.training_labels_np = np.empty(0,)
 
     def kernel(self, env1, env2, d1, d2, sig, ls):
         """Evaluate specified kernel."""
@@ -86,35 +97,35 @@ class GaussianProcess:
         else:
             raise ValueError('{} is not a valid kernel'.format(self.kernel))
 
-    def init_db(self, init_type='dir', **kwargs):
-        """Initialize database from dir or directly from chemical envs
+    def update_db(self, struc, forces):
+        """Given structure and forces, add to training set.
 
-        :param init_type: whether to init from files in dir or pass envs
-        :type init_type: str
+        :param struc: [description]
+        :type struc: [type]
+        :param forces: [description]
+        :type forces: [type]
         """
 
-        if init_type == 'dir':
-            pos, _, _, frcs = [], [], [], []
+        noa = len(struc.positions)
 
-            for file in get_outfiles(root_dir=kwargs['root_dir'], out=False):
-                pos = parse_qe_input(file)[0]
+        for atom in range(noa):
+            env_curr = ChemicalEnvironment(struc, atom)
+            forces_curr = forces[atom]
 
-            for file in get_outfiles(root_dir=kwargs['root_dir'], out=True):
-                frcs = parse_qe_forces(file)
+            self.training_data.append(env_curr)
+            self.training_labels.append(forces_curr)
 
-            self.training_data = np.asarray(get_envs(
-                                             pos=pos,
-                                             brav_mat=kwargs['brav_mat'],
-                                             brav_inv=kwargs['brav_inv'],
-                                             vec1=kwargs['vec1'],
-                                             vec2=kwargs['vec2'],
-                                             vec3=kwargs['vec3'],
-                                             cutoff=kwargs['cutoff']))
-            self.training_labels = np.asarray(frcs)
+        # create numpy array of training labels
+        self.training_labels_np = self.force_list_to_np(self.training_labels)
 
-        elif init_type == 'data':
-            self.training_data = kwargs['envs']
-            self.training_labels = np.asarray(kwargs['forces'])
+    @staticmethod
+    def force_list_to_np(forces):
+        forces_np = []
+        for m in range(len(forces)):
+            for n in range(3):
+                forces_np.append(forces[m][n])
+        forces_np = np.array(forces_np)
+        return forces_np
 
     def train(self):
         """ Train Gaussian Process model on training data """
@@ -137,12 +148,10 @@ class GaussianProcess:
         """
         # initial guess
         x_0 = np.array([self.sigma_f, self.length_scale, self.sigma_n])
-        # x_0 = x_0.reshape(3, 1)
 
         # nelder-mead optimization
-        res = minimize(fun=GaussianProcess.minus_like_hyp,
-                       x0=x_0,
-                       args=(self,),
+        args = (self)
+        res = minimize(minus_like_hyp, x_0, args,
                        method='nelder-mead',
                        options={'xtol': 1e-8, 'disp': True})
 
@@ -170,16 +179,6 @@ class GaussianProcess:
         self_kern = self.kernel(x_t, x_t, d, d,
                                 self.sigma_f, self.length_scale)
         self.pred_var = self_kern - np.matmul(v_vec.transpose(), v_vec)
-
-    @staticmethod
-    def minus_like_hyp(hyp, gp):
-        """Get minus likelihood as a function of hyperparameters
-
-        """
-        like = gp.like_hyp(hyp)
-        minus_like = -like
-
-        return minus_like
 
     def like_hyp(self, hyp):
         """ Get likelihood as a function of hyperparameters
@@ -213,7 +212,7 @@ class GaussianProcess:
         :rtype:
         """
         like = -(1 / 2) * \
-            np.matmul(self.training_labels.transpose(), self.alpha) - \
+            np.matmul(self.training_labels_np.transpose(), self.alpha) - \
             np.sum(np.log(np.diagonal(self.l_mat))) - np.log(2 * np.pi) * \
             self.k_mat.shape[1] / 2
 
@@ -231,20 +230,20 @@ class GaussianProcess:
 
         """
 
-        # hard-coded for testing purposes
-        d_1 = 1
-        d_2 = 1
-
         # initialize matrix
-        size = len(self.training_data)
+        size = len(self.training_data)*3
         k_mat = np.zeros([size, size])
+
+        ds = [1, 2, 3]
 
         # calculate elements
         for m_index in range(size):
-            x_1 = self.training_data[m_index]
+            x_1 = self.training_data[int(math.floor(m_index / 3))]
+            d_1 = ds[m_index % 3]
 
             for n_index in range(m_index, size):
-                x_2 = self.training_data[n_index]
+                x_2 = self.training_data[int(math.floor(n_index / 3))]
+                d_2 = ds[n_index % 3]
 
                 # calculate kernel
                 cov = self.kernel(x_1, x_2, d_1, d_2, sigma_f, length_scale)
@@ -280,39 +279,89 @@ class GaussianProcess:
 
     def set_alpha(self):
         """ Set weight vector alpha """
-        ts1 = solve_triangular(self.l_mat, self.training_labels, lower=True)
+        ts1 = solve_triangular(self.l_mat, self.training_labels_np, lower=True)
         self.alpha = solve_triangular(self.l_mat.transpose(), ts1)
+
+
+# def update_db_from_directory(self):
+#     pos, _, _, frcs = [], [], [], []
+
+#     for file in get_outfiles(root_dir=kwargs['root_dir'], out=False):
+#         pos = parse_qe_input(file)[0]
+
+#     for file in get_outfiles(root_dir=kwargs['root_dir'], out=True):
+#         frcs = parse_qe_forces(file)
+
+#     self.training_data = np.asarray(get_envs(
+#                                         pos=pos,
+#                                         brav_mat=kwargs['brav_mat'],
+#                                         brav_inv=kwargs['brav_inv'],
+#                                         vec1=kwargs['vec1'],
+#                                         vec2=kwargs['vec2'],
+#                                         vec3=kwargs['vec3'],
+#                                         cutoff=kwargs['cutoff']))
+#     self.training_labels = np.asarray(frcs)
 
 if __name__ == "__main__":
 
-    # set up a few test environments
-    n_train = 10
+    # create a random test structure
     cell = np.eye(3)
-    cutoff = np.linalg.norm(np.array([0.5, 0.5, 0.5])) + 0.001
-    train_envs = []
-    species = ['B', 'A']
-    atom = 0
-    train_forces = []
+    unique_species = ['B', 'A']
+    cutoff = 0.8
 
-    for i in range(n_train):
+    noa = 10
+    positions = []
+    forces = []
+    species = []
+    for n in range(noa):
+        positions.append(np.random.uniform(-1, 1, 3))
+        forces.append(np.random.uniform(-1, 1, 3))
+        species.append(unique_species[np.random.randint(0, 2)])
 
-        # generate random positions and build chem env
-        positions = [np.array([np.random.rand() * 0.5,
-                               np.random.rand() * 0.5,
-                               np.random.rand() * 0.5]),
-                     np.array([np.random.rand() * 0.5,
-                               np.random.rand() * 0.5,
-                               np.random.rand() * 0.5])]
+    test_structure = Structure(cell, species, positions, cutoff)
+    gaussian = GaussianProcess(kernel='two_body')
 
-        test_structure = Structure(cell, species, positions, cutoff)
-        train_envs.append(ChemicalEnvironment(test_structure, atom))
+    # test update_db
+    gaussian.update_db(test_structure, forces)
+    assert(len(gaussian.training_data) == noa)
+    assert(len(gaussian.training_data) == len(gaussian.training_data))
+    assert(len(gaussian.training_labels_np) == len(gaussian.training_data * 3))
 
-        # generate random force vectors
-        train_forces.append(np.array([np.random.rand(),
-                            np.random.rand(),
-                            np.random.rand()]))
+    # test get_kernel
+    gaussian.set_kernel(sigma_f=1, length_scale=1, sigma_n=0.1)
+    print(gaussian.k_mat.shape)
+    print(gaussian.l_mat.shape)
 
-    # build gp and train
-    gaussian = GaussianProcess(kernel='two_body_py')
-    gaussian.init_db(init_type='data', envs=train_envs, forces=train_forces)
-    gaussian.train()
+
+
+    # # set up a few test environments
+    # n_train = 10
+    # cell = np.eye(3)
+    # cutoff = np.linalg.norm(np.array([0.5, 0.5, 0.5])) + 0.001
+    # train_envs = []
+    # species = ['B', 'A']
+    # atom = 0
+    # train_forces = []
+
+    # for i in range(n_train):
+
+    #     # generate random positions and build chem env
+    #     positions = [np.array([np.random.rand() * 0.5,
+    #                            np.random.rand() * 0.5,
+    #                            np.random.rand() * 0.5]),
+    #                  np.array([np.random.rand() * 0.5,
+    #                            np.random.rand() * 0.5,
+    #                            np.random.rand() * 0.5])]
+
+    #     test_structure = Structure(cell, species, positions, cutoff)
+    #     train_envs.append(ChemicalEnvironment(test_structure, atom))
+
+    #     # generate random force vectors
+    #     train_forces.append(np.array([np.random.rand(),
+    #                         np.random.rand(),
+    #                         np.random.rand()]))
+
+    # # build gp and train
+    # gaussian = GaussianProcess(kernel='two_body_py')
+    # gaussian.init_db(init_type='data', envs=train_envs, forces=train_forces)
+    # # gaussian.train()
