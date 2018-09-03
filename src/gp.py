@@ -9,6 +9,7 @@ Simon Batzner
 """
 import os
 import math
+import time
 import numpy as np
 from scipy.linalg import solve_triangular
 from scipy.optimize import minimize
@@ -17,32 +18,6 @@ from scipy.optimize import minimize
 # from dev.kern_help import get_envs
 from env import ChemicalEnvironment, two_body, two_body_py
 from otf import parse_qe_input, parse_qe_forces, Structure
-
-
-def get_outfiles(root_dir, out=True):
-    """Find all files matching *.out or *.in.
-
-    :param root_dir: dir to walk from
-    :type root_dir: str
-    :param out: whether to look for .out or .in files
-    :type out: bool
-    :return: files in root_dir ending with .out
-    :rtype: list<str>
-    """
-    matching = []
-
-    for root, _, filenames in os.walk(root_dir):
-        for filename in filenames:
-
-            if out:
-                if filename.endswith('.out'):
-                    matching.append(os.path.join(root, filename))
-
-            else:
-                if filename.endswith('.in'):
-                    matching.append(os.path.join(root, filename))
-
-    return matching
 
 
 def minus_like_hyp(hyp, gp):
@@ -64,10 +39,6 @@ class GaussianProcess:
         :param kernel: covariance/ kernel function used
         :type kernel: str
         """
-
-        # predictive mean and variance
-        self.pred_mean = None
-        self.pred_var = None
 
         # gp kernel and hyperparameters
         self.kernel_type = kernel
@@ -153,7 +124,7 @@ class GaussianProcess:
         args = (self)
         res = minimize(minus_like_hyp, x_0, args,
                        method='nelder-mead',
-                       options={'xtol': 1e-8, 'disp': True})
+                       options={'xtol': 1e-8, 'disp': False})
 
         self.sigma_f = res.x[0]
         self.length_scale = res.x[1]
@@ -169,16 +140,18 @@ class GaussianProcess:
         """
 
         # get kernel vector
-        k_v = self.get_kernel_vector(x=x_t, d_1=1)
+        k_v = self.get_kernel_vector(x_t, d)
 
         # get predictive mean
-        self.pred_mean = np.matmul(k_v.transpose(), self.alpha)
+        pred_mean = np.matmul(k_v, self.alpha)
 
         # get predictive variance
         v_vec = solve_triangular(self.l_mat, k_v, lower=True)
         self_kern = self.kernel(x_t, x_t, d, d,
                                 self.sigma_f, self.length_scale)
-        self.pred_var = self_kern - np.matmul(v_vec.transpose(), v_vec)
+        pred_var = self_kern - np.matmul(v_vec, v_vec)
+
+        return pred_mean, pred_var
 
     def like_hyp(self, hyp):
         """ Get likelihood as a function of hyperparameters
@@ -264,14 +237,13 @@ class GaussianProcess:
         :return: kernel vector
         :rtype:
         """
-        size = len(self.training_data)
-        k_v = np.zeros([size, 1])
-
-        # hard-coded for testing purposes
-        d_2 = 1
+        ds = [1, 2, 3]
+        size = len(self.training_data)*3
+        k_v = np.zeros(size,)
 
         for m_index in range(size):
-            x_2 = self.training_data[m_index]
+            x_2 = self.training_data[int(math.floor(m_index/3))]
+            d_2 = ds[m_index % 3]
             k_v[m_index] = self.kernel(x, x_2, d_1, d_2,
                                        self.sigma_f, self.length_scale)
 
@@ -282,6 +254,33 @@ class GaussianProcess:
         ts1 = solve_triangular(self.l_mat, self.training_labels_np, lower=True)
         self.alpha = solve_triangular(self.l_mat.transpose(), ts1)
 
+# # append data from directory
+# # likely won't be used in this paper, so not necessary now
+
+# def get_outfiles(root_dir, out=True):
+#     """Find all files matching *.out or *.in.
+
+#     :param root_dir: dir to walk from
+#     :type root_dir: str
+#     :param out: whether to look for .out or .in files
+#     :type out: bool
+#     :return: files in root_dir ending with .out
+#     :rtype: list<str>
+#     """
+#     matching = []
+
+#     for root, _, filenames in os.walk(root_dir):
+#         for filename in filenames:
+
+#             if out:
+#                 if filename.endswith('.out'):
+#                     matching.append(os.path.join(root, filename))
+
+#             else:
+#                 if filename.endswith('.in'):
+#                     matching.append(os.path.join(root, filename))
+
+#     return matching
 
 # def update_db_from_directory(self):
 #     pos, _, _, frcs = [], [], [], []
@@ -305,23 +304,33 @@ class GaussianProcess:
 if __name__ == "__main__":
 
     # create a random test structure
+    def get_random_structure(cell, unique_species, cutoff, noa):
+        positions = []
+        forces = []
+        species = []
+        for n in range(noa):
+            positions.append(np.random.uniform(-1, 1, 3))
+            forces.append(np.random.uniform(-1, 1, 3))
+            species.append(unique_species[np.random.randint(0, 2)])
+
+        test_structure = Structure(cell, species, positions, cutoff)
+
+        return test_structure, forces
+
     cell = np.eye(3)
     unique_species = ['B', 'A']
     cutoff = 0.8
-
     noa = 10
-    positions = []
-    forces = []
-    species = []
-    for n in range(noa):
-        positions.append(np.random.uniform(-1, 1, 3))
-        forces.append(np.random.uniform(-1, 1, 3))
-        species.append(unique_species[np.random.randint(0, 2)])
+    test_structure, forces = \
+        get_random_structure(cell, unique_species, cutoff, noa)
 
-    test_structure = Structure(cell, species, positions, cutoff)
-    gaussian = GaussianProcess(kernel='two_body')
+    # create test point
+    test_structure_2, _ = get_random_structure(cell, unique_species, cutoff,
+                                               noa)
+    test_pt = ChemicalEnvironment(test_structure_2, 0)
 
     # test update_db
+    gaussian = GaussianProcess(kernel='two_body')
     gaussian.update_db(test_structure, forces)
     assert(len(gaussian.training_data) == noa)
     assert(len(gaussian.training_data) == len(gaussian.training_data))
@@ -329,39 +338,49 @@ if __name__ == "__main__":
 
     # test get_kernel
     gaussian.set_kernel(sigma_f=1, length_scale=1, sigma_n=0.1)
-    print(gaussian.k_mat.shape)
-    print(gaussian.l_mat.shape)
+    db_pts = 3 * len(gaussian.training_data)
+    assert(gaussian.k_mat.shape == (db_pts, db_pts))
 
+    # test get_alpha
+    gaussian.set_alpha()
+    assert(gaussian.alpha.shape == (db_pts,))
 
+    # test get_kernel_vector
+    assert(gaussian.get_kernel_vector(test_pt, 1).shape ==
+           (db_pts,))
 
-    # # set up a few test environments
-    # n_train = 10
-    # cell = np.eye(3)
-    # cutoff = np.linalg.norm(np.array([0.5, 0.5, 0.5])) + 0.001
-    # train_envs = []
-    # species = ['B', 'A']
-    # atom = 0
-    # train_forces = []
+    # test get_likelihood and like_hyp
+    like = gaussian.get_likelihood()
 
-    # for i in range(n_train):
+    def like_performance(its, kernel_type, hyp, gp):
+        # set kernel type
+        gp.kernel_type = kernel_type
 
-    #     # generate random positions and build chem env
-    #     positions = [np.array([np.random.rand() * 0.5,
-    #                            np.random.rand() * 0.5,
-    #                            np.random.rand() * 0.5]),
-    #                  np.array([np.random.rand() * 0.5,
-    #                            np.random.rand() * 0.5,
-    #                            np.random.rand() * 0.5])]
+        # warm up jit
+        like_hyp = gp.like_hyp(hyp)
 
-    #     test_structure = Structure(cell, species, positions, cutoff)
-    #     train_envs.append(ChemicalEnvironment(test_structure, atom))
+        # test performance
+        time0 = time.time()
+        for n in range(its):
+            like_hyp = gp.like_hyp(hyp)
+        time1 = time.time()
+        like_time = (time1 - time0) / its
 
-    #     # generate random force vectors
-    #     train_forces.append(np.array([np.random.rand(),
-    #                         np.random.rand(),
-    #                         np.random.rand()]))
+        return like_time, like_hyp
 
-    # # build gp and train
-    # gaussian = GaussianProcess(kernel='two_body_py')
-    # gaussian.init_db(init_type='data', envs=train_envs, forces=train_forces)
-    # # gaussian.train()
+    its = 10
+    jit_kern = 'two_body'
+    py_kern = 'two_body_py'
+    hyp = np.array([1, 1, 0.1])
+    jit_time, jit_like = like_performance(its, jit_kern, hyp, gaussian)
+    py_time, py_like = like_performance(its, py_kern, hyp, gaussian)
+    assert(py_time / jit_time > 1)
+    assert(round(py_like, 8) == round(jit_like, 8))
+    assert(round(like, 8) == round(jit_like, 8))
+
+    # test train
+    gaussian.kernel_type = 'two_body'
+    gaussian.train()
+
+    # test predict
+    print(gaussian.predict(test_pt, 1))
