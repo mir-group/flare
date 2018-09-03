@@ -71,7 +71,7 @@ class ChemicalEnvironment:
             if ChemicalEnvironment.is_bond(species1, species2, bond):
                 return bond_index
 
-    def get_local_atom_images(self, vec):
+    def get_local_atom_images(self, vec, super_check=3):
         """Get periodic images of an atom within the cutoff radius.
 
         :param vec: atomic position
@@ -83,14 +83,15 @@ class ChemicalEnvironment:
         # get bravais coefficients
         coeff = np.matmul(self.structure.inv_lattice, vec)
 
-        # get bravais coefficients for atoms within one super-super-cell
+        # get bravais coefficients for atoms within supercell
         coeffs = [[], [], []]
         for n in range(3):
-            coeffs[n].append(coeff[n])
-            coeffs[n].append(coeff[n]-1)
-            coeffs[n].append(coeff[n]+1)
-            coeffs[n].append(coeff[n]-2)
-            coeffs[n].append(coeff[n]+2)
+            for m in range(super_check):
+                if m == 0:
+                    coeffs[n].append(coeff[n])
+                else:
+                    coeffs[n].append(coeff[n]-m)
+                    coeffs[n].append(coeff[n]+m)
 
         # get vectors within cutoff
         vecs = []
@@ -300,4 +301,4 @@ if __name__ == '__main__':
     assert(kern_val_jit == kern_val_py)
     assert(speed_up > 1)
 
-    print(speed_up)
+    print('numba speed up is %.3f.' % speed_up)
