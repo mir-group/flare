@@ -302,3 +302,4 @@ if __name__ == '__main__':
     assert(speed_up > 1)
 
     print('numba speed up is %.3f.' % speed_up)
+    print(test_structure.bond_list)

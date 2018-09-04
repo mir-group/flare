@@ -29,8 +29,8 @@ class Structure(object):
             if spec not in unique_species:
                 unique_species.append(spec)
 
-        self.elements = unique_species
-        self.bond_list = self.calc_bond_list(self.elements)
+        self.unique_species = unique_species
+        self.bond_list = self.calc_bond_list(self.unique_species)
 
         self.inv_lattice = inv(lattice)
 
