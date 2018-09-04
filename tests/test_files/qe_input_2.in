@@ -1,0 +1,46 @@
+&CONTROL
+    prefix = 'Al'
+    calculation = 'scf'
+    pseudo_dir = '/Users/steven/Documents/Schoolwork/CDMAT275/ESPRESSO/qe-6.0/pseudo'
+    outdir = '.'
+    tstress = .true.
+    tprnfor = .true.
+    disk_io = 'medium'
+    wf_collect = .false.
+/ 
+&SYSTEM
+    ecutwfc = 30
+    ecutrho = 240
+    occupations = 'smearing'
+    smearing = 'mp'
+    degauss = 0.02
+    ntyp = 1
+    nat = 8
+    ibrav = 0
+/ 
+&ELECTRONS
+    diagonalization = 'david'
+    mixing_beta = 0.5
+    conv_thr = 1e-07
+/ 
+&IONS
+/ 
+&CELL
+/ 
+K_POINTS {automatic}
+ 2 4 4  0 0 0
+ATOMIC_SPECIES
+  Al 26.9815385 Al.pz-vbc.UPF
+CELL_PARAMETERS {angstrom}
+ 7.8 0.0 0.0
+ 0.0 3.9 0.0
+ 0.0 0.0 3.9
+ATOMIC_POSITIONS {angstrom}
+  Al 0.10000 0.10000 0.10000
+  Al 0.00000 1.95000 1.95000
+  Al 1.95000 0.00000 1.95000
+  Al 1.95000 1.95000 0.00000
+  Al 3.90000 0.10000 0.10000
+  Al 3.90000 1.95000 1.95000
+  Al 5.85000 0.00000 1.95000
+  Al 5.85000 1.95000 0.00000

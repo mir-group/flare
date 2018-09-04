@@ -3,6 +3,10 @@
 
 """" OTF Regression test suite based on py.test
 
+qe_input_1: H2 dimer
+
+qe_input_2: 2x1x1 Al Supercell
+
 Steven Torrisi, Simon Batzner
 """
 
@@ -14,12 +18,54 @@ from otf import parse_qe_input, parse_qe_forces, OTF
 from test_GaussianProcess import get_random_structure
 from struc import Structure
 import os
-
+from gp import GaussianProcess
 
 def fake_espresso(noa):
     """ Returns a list of random forces.
     """
     return
+
+class Fake_GP(GaussianProcess):
+    """
+    Fake GP that returns random forces and variances when asked to predict.
+    """
+
+    def __init__(self, kernel):
+        super(GaussianProcess, self).__init__()
+
+        pass
+
+    def train(self):
+        """
+        Neuters the train method of GaussianProcess
+        """
+        pass
+
+    def update_db(self, structure, forces):
+        """
+        Neuters the update_db method of GaussianProcess
+        """
+        pass
+
+    def predict(self, structure, _):
+        """
+        Substitutes in the predict method of GaussianProcess
+        """
+        structure.forces = [np.random.randn(3) for n in range(structure.nat)]
+        structure.stds = [np.random.randn(3) for n in range(structure.nat)]
+
+        return structure
+
+    def predict_on_structure(self, structure):
+        """
+        Substitutes in the predict_on_structure method of GaussianProcess
+        """
+
+        structure.forces = [np.random.randn(3) for n in structure.positions]
+        structure.stds = [np.random.randn(3) for n in structure.positions]
+
+        return structure
+
 
 
 # ------------------------------------------------------
@@ -28,7 +74,7 @@ def fake_espresso(noa):
 
 
 @pytest.fixture(scope='module')
-def test_params():
+def test_params_1():
     params = {'qe_input': 'tests/test_files/qe_input_1.in',
               'dt': .01,
               'num_steps': 10,
@@ -38,12 +84,12 @@ def test_params():
 
 
 @pytest.fixture(scope='module')
-def test_otf_engine(test_params):
-    engine = OTF(qe_input=test_params['qe_input'],
-                 dt=test_params['dt'],
-                 number_of_steps=test_params['num_steps'],
-                 kernel=test_params['kernel'],
-                 cutoff=test_params['cutoff'])
+def test_otf_engine_1(test_params_1):
+    engine = OTF(qe_input=test_params_1['qe_input'],
+                 dt=test_params_1['dt'],
+                 number_of_steps=test_params_1['num_steps'],
+                 kernel=test_params_1['kernel'],
+                 cutoff=test_params_1['cutoff'])
 
     yield engine
 
@@ -108,21 +154,50 @@ def test_force_parsing(qe_output, exp_forces):
         assert np.all(force == exp_forces[i])
 
 
-def test_espresso_calling(test_otf_engine):
+def test_espresso_calling_1(test_otf_engine_1):
     assert os.environ.get('PWSCF_COMMAND',
                           False), 'PWSCF_COMMAND not found ' \
                                   'in environment'
 
-    forces = test_otf_engine.run_espresso()
+    forces = test_otf_engine_1.run_espresso()
     assert isinstance(forces, list)
-    assert len(forces) == len(test_otf_engine.structure.forces)
+    assert len(forces) == len(test_otf_engine_1.structure.forces)
 
-    if test_otf_engine.qe_input == 'tests/test_files/qe_input_1.in':
+    if test_otf_engine_1.qe_input == 'tests/test_files/qe_input_1.in':
         test1forces = [np.array([0.07413986, 0.0, 0.0]),
                        np.array([-0.07413986,
                                  0.0, 0.0])]
         for i, force in enumerate(forces):
             assert np.equal(force, test1forces[i]).all()
+
+# ------------------------------------------------------
+#                   test  otf methods
+# ------------------------------------------------------
+
+#TODO see if there is a better way to to set up the different input runs
+
+def test_update_1(test_otf_engine_1):
+
+    test_otf_engine_1.structure.prev_positions=[[2.5,2.5,2.5],
+                                                [4.5,2.5,2.5]]
+
+    test_otf_engine_1.structure.forces=[np.array([.07413986, 0.0, 0.0]),
+                                      np.array([-0.07413986, 0.0, 0.0])]
+
+    test_otf_engine_1.update_positions()
+
+    target_positions=[  np.array([2.53714741,2.5,2.5]),
+                        np.array([4.46285259,2.5,2.5])
+                                 ]
+
+    for i,pos in enumerate(test_otf_engine_1.structure.positions):
+        assert np.isclose(pos,target_positions[i],rtol=1e-6).all()
+
+
+
+
+
+
 
 
 # ------------------------------------------------------

@@ -11,52 +11,10 @@ import numpy as np
 import os
 import datetime
 from struc import Structure
+from math import sqrt
 
 from gp import GaussianProcess
 from env import ChemicalEnvironment
-
-
-class Fake_GP(GaussianProcess):
-    """
-    Fake GP that returns random forces and variances.
-    Hope we do better than this!
-    """
-
-    def __init__(self, kernel):
-        super(GaussianProcess, self).__init__()
-
-        pass
-
-    def train(self):
-        """
-        Neuters the train method of GaussianProcess
-        """
-        pass
-
-    def update_db(self, structure, forces):
-        """
-        Neuters the update_db method of GaussianProcess
-        """
-        pass
-
-    def predict(self, structure, _):
-        """
-        Substitutes in the predict method of GaussianProcess
-        """
-        structure.forces = [np.random.randn(3) for n in range(structure.nat)]
-        structure.stds = [np.random.randn(3) for n in range(structure.nat)]
-
-        return structure
-
-    def predict_on_structure(self, structure):
-        """
-        Substitutes in the predict_on_structure method of GaussianProcess
-        """
-
-        structure.forces = [np.random.randn(3) for n in structure.positions]
-        structure.stds = [np.random.randn(3) for n in structure.positions]
-
-        return structure
 
 
 # todo strike this; replace with QE input
@@ -65,7 +23,8 @@ mass_dict = {'H': 1.0,
              'C': 12.0107,
              'Au': 196.96657,
              'Ag': 107.8682,
-             'Pd': 106.42}
+             'Pd': 106.42,
+             'Al': 26.981539}
 
 
 class OTF(object):
@@ -82,7 +41,7 @@ class OTF(object):
         self.qe_input = qe_input
         self.dt = dt
         self.Nsteps = number_of_steps
-        self.gp = Fake_GP(kernel)  # GaussianProcess(kernel)
+        self.gp = GaussianProcess(kernel)  # Fake_GP(kernel)  #
 
         positions, species, cell, = parse_qe_input(self.qe_input)
         self.structure = Structure(lattice=cell, species=species,
@@ -108,40 +67,64 @@ class OTF(object):
         # Main loop
         while self.curr_step < self.Nsteps:
 
-            self.structure = self.predict_on_structure(self.structure)
+            self.predict_on_structure()
 
             if not self.is_std_in_bound():
                 self.run_and_train()
                 continue
 
             self.update_positions()
-            self.write_step()
+            self.write_config()
             self.curr_step += 1
 
-    def predict_on_structure(self, structure):
+    def predict_on_structure(self):
         """
-        :param structure: Structure to have forces predicted upon by GP
-        :type structure: Structure
-        :return: Structure with forces and stds
-        :rtype: Structure
+        Assign forces to self.structure based on self.gp
         """
 
-        for n in range(structure.nat):
-            chemenv = ChemicalEnvironment(structure, n)
+        for n in range(self.structure.nat):
+            chemenv = ChemicalEnvironment(self.structure, n)
             for i in range(3):
-                structure.forces[n][i], structure.stds[n][i] = \
-                    self.gp.predict(chemenv, i)
+                force, var = self.gp.predict(chemenv, i + 1)
+                self.structure.forces[n][i] = float(force)
+                self.structure.stds[n][i] = sqrt(var)
 
-        return structure
 
     def run_and_train(self):
         """
         Runs QE on the current self.structure config and re-trains  self.GP.
         :return:
         """
+
+        # Run espresso and write out results
+        self.write_to_output(['=' * 20 + '\n', 'Calling QE... '])
         forces = self.run_espresso()
+        self.write_to_output(['Done.\n'])
+
+        # Write input positions and force results
+        qe_strings = ['Resultant Positions and Forces:\n']
+        for n in range(self.structure.nat):
+            qe_strings.append(self.structure.species[n] + ': ')
+            for i in range(3):
+                qe_strings.append('%.3f  ' % self.structure.positions[n][i])
+            qe_strings.append('\t ')
+            for i in range(3):
+                qe_strings.append('%.3f  ' % forces[n][i])
+            qe_strings.append('\n')
+        self.write_to_output(qe_strings)
+
+        # Update hyperparameters and write results
+        self.write_to_output('Updating database hyperparameters...\n')
         self.gp.update_db(self.structure, forces)
         self.gp.train()
+        self.write_to_output(['New GP Hyperparameters:\n',
+                              'Signal variance: \t' + str(
+                                  self.gp.sigma_f) + '\n',
+                              'Length scale: \t\t' + str(
+                                  self.gp.length_scale) + '\n',
+                              'Noise variance: \t' + str(self.gp.sigma_n) +
+                              '\n',
+                              ])
 
     def update_positions(self):
         """
@@ -153,9 +136,9 @@ class OTF(object):
         for i, prev_pos in enumerate(self.structure.prev_positions):
             temp_pos = self.structure.positions[i]
             self.structure.positions[i] = 2 * self.structure.positions[i] - \
-                                          prev_pos + self.dt ** 2 * \
-                                          self.structure.forces[i] / \
-                                          mass_dict[self.structure.species[i]]
+                      prev_pos + self.dt ** 2 * \
+                      self.structure.forces[i] / \
+                      mass_dict[self.structure.species[i]]
             self.structure.prev_positions[i] = np.array(temp_pos)
 
     def run_espresso(self):
@@ -165,6 +148,7 @@ class OTF(object):
         :return: List [nparray] List of forces
         """
 
+        self.write_to_output('')
         self.write_qe_input_positions()
 
         pw_loc = os.environ.get('PWSCF_COMMAND', 'pwscf.x')
@@ -178,7 +162,8 @@ class OTF(object):
 
     def write_qe_input_positions(self):
         """
-        Write the current configuration of the OTF structure to the qe input file
+        Write the current configuration of the OTF structure to the
+        qe input file
         """
 
         with open(self.qe_input, 'r') as f:
@@ -203,33 +188,52 @@ class OTF(object):
             for line in lines:
                 f.write(line)
 
-    def write_step(self):
+    def write_to_output(self, strings):
         """
-        Write current step to the output file including positions, forces, and force variances
+        Write a string or list of strings to the output file.
+        :param strings:
+        :type str or list:
         """
+        if isinstance(strings, str):
+            strings = [strings]
 
         with open('otf_run.out', 'a') as f:
+            for line in strings:
+                f.write(line)
 
-            f.write("====================== \n")
-            f.write(
-                ' '.join(["-", "Frame", str(self.curr_step), 'Time',
-                          str(np.round(self.dt * self.curr_step, 3)), '\n']))
+    def write_config(self):
+        """
+        Write current step to the output file including positions, forces, and
+        force variances
+        """
 
-            for i in range(len(self.structure.positions)):
-                to_write = [self.structure.species[i]]
-                for j in range(3):
-                    to_write.append(
-                        str(np.round(self.structure.positions[i][j], 3)))
-                for j in range(3):
-                    to_write.append(
-                        str(np.round(self.structure.forces[i][j], 3)))
-                for j in range(3):
-                    to_write.append(
-                        str(np.round(self.structure.stds[i][j], 3)))
-                curr_line = ','.join(to_write)
-                curr_line += '\n'
+        strings = []
 
-                f.write(curr_line)
+        strings.append("-------------------- \n")
+
+        strings.append("- Frame " + str(self.curr_step))
+        strings.append(" Sim. Time ")
+        strings.append(str(np.round(self.dt * self.curr_step, 3)) + '\n')
+
+        strings.append('El \t\t\t Position \t\t\t\t\t Force \t\t\t\t\t\t\t '
+                       'Std. Dev \n')
+
+        for i in range(len(self.structure.positions)):
+            strings.append(self.structure.species[i]+' ')
+            for j in range(3):
+                strings.append(
+                    str("%.6f" % self.structure.positions[i][j]) + ' ')
+            strings.append('\t')
+            for j in range(3):
+                strings.append(
+                    str(np.round(self.structure.forces[i][j], 6)) + ' ')
+            strings.append('\t')
+            for j in range(3):
+                strings.append(
+                    str('%.6e' % self.structure.stds[i][j]) + ' ')
+            strings.append('\n')
+
+        self.write_to_output(strings)
 
     def is_std_in_bound(self):
         """
@@ -247,7 +251,8 @@ def parse_qe_input(qe_input):
     Reads the positions, species, and cell in from the
 
     :param qe_input: str, Path to PWSCF input file
-    :return: List[nparray], List[str], nparray, Positions, species, 3x3 Bravais cell
+    :return: List[nparray], List[str], nparray, Positions, species,
+                    3x3 Bravais cell
     """
     positions = []
     species = []
@@ -318,17 +323,19 @@ def parse_qe_forces(outfile):
                     temp_forces.append(float(x))
                 forces.append(np.array(list(temp_forces)))
 
-    assert total_energy != np.nan, "Quantum ESPRESSO parser failed to read the file {}. Run failed.".format(
-        outfile)
+    assert total_energy != np.nan, "Quantum ESPRESSO parser failed to read " \
+                                   "the file {}. Run failed.".format(outfile)
 
     return forces
 
 
-def parse_output(outfile):
+# TODO Needs to be re-done in light of new output formatting
+def parse_otf_output(outfile):
     """
     Parse the output of a otf run for analysis
     :param outfile: str, Path to file
-    :return: dict{int:value,'species':list}, Dict of positions, forces, vars indexed by frame and of species
+    :return: dict{int:value,'species':list}, Dict of positions, forces,
+    vars indexed by frame and of species
     """
 
     results = {}
@@ -366,7 +373,7 @@ def parse_output(outfile):
 
 
 if __name__ == '__main__':
-    os.system('cp tests/test_files/qe_input_1.in pwscf.in')
+    os.system('cp tests/test_files/qe_input_2.in pwscf.in')
 
     otf = OTF('pwscf.in', .1, 10, kernel='two_body',
               cutoff=10)
