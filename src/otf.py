@@ -12,24 +12,54 @@ import os
 import datetime
 from struc import Structure
 
+from gp import GaussianProcess
+from env import ChemicalEnvironment
 
-class fake_kernel(object):
+
+class Fake_GP(GaussianProcess):
     """
-    Fake kernel that returns random forces and variances. 
+    Fake GP that returns random forces and variances.
     Hope we do better than this!
     """
 
-    def train(self, structure):
-        # zippa dee doo da
+    def __init__(self, kernel):
+        super(GaussianProcess, self).__init__()
+
         pass
 
-    def predict(self, structure):
+    def train(self):
+        """
+        Neuters the train method of GaussianProcess
+        """
+        pass
+
+    def update_db(self, structure, forces):
+        """
+        Neuters the update_db method of GaussianProcess
+        """
+        pass
+
+    def predict(self, structure, _):
+        """
+        Substitutes in the predict method of GaussianProcess
+        """
+        structure.forces = [np.random.randn(3) for n in range(structure.nat)]
+        structure.stds = [np.random.randn(3) for n in range(structure.nat)]
+
+        return structure
+
+    def predict_on_structure(self, structure):
+        """
+        Substitutes in the predict_on_structure method of GaussianProcess
+        """
+
         structure.forces = [np.random.randn(3) for n in structure.positions]
         structure.stds = [np.random.randn(3) for n in structure.positions]
 
         return structure
 
 
+# todo strike this; replace with QE input
 mass_dict = {'H': 1.0,
              'Si': 28.0855,
              'C': 12.0107,
@@ -39,7 +69,7 @@ mass_dict = {'H': 1.0,
 
 
 class OTF(object):
-    def __init__(self, qe_input, dt, number_of_steps, kernel,cutoff):
+    def __init__(self, qe_input, dt, number_of_steps, kernel, cutoff):
         """
         On-the-fly learning engine, containing methods to run OTF calculation
 
@@ -52,10 +82,12 @@ class OTF(object):
         self.qe_input = qe_input
         self.dt = dt
         self.Nsteps = number_of_steps
-        self.kernel = kernel
+        self.gp = Fake_GP(kernel)  # GaussianProcess(kernel)
 
         positions, species, cell, = parse_qe_input(self.qe_input)
-        self.structure = Structure(positions, species, cell, cutoff)
+        self.structure = Structure(lattice=cell, species=species,
+                                   positions=positions, cutoff=cutoff,
+                                   mass_dict=mass_dict)
 
         self.curr_step = 0
 
@@ -71,27 +103,49 @@ class OTF(object):
         """
 
         # Bootstrap first training point
-        self.structure.forces = self.run_espresso()
-        self.kernel.train(self.structure)
+        self.run_and_train()
 
         # Main loop
         while self.curr_step < self.Nsteps:
 
-            self.structure = self.kernel.predict(self.structure)
+            self.structure = self.predict_on_structure(self.structure)
 
             if not self.is_std_in_bound():
-                self.structure.forces = self.run_espresso()
-                self.kernel.train(self.structure)
+                self.run_and_train()
                 continue
 
             self.update_positions()
             self.write_step()
             self.curr_step += 1
 
+    def predict_on_structure(self, structure):
+        """
+        :param structure: Structure to have forces predicted upon by GP
+        :type structure: Structure
+        :return: Structure with forces and stds
+        :rtype: Structure
+        """
+
+        for n in range(structure.nat):
+            chemenv = ChemicalEnvironment(structure, n)
+            for i in range(3):
+                structure.forces[n][i], structure.stds[n][i] = \
+                    self.gp.predict(chemenv, i)
+
+        return structure
+
+    def run_and_train(self):
+        """
+        Runs QE on the current self.structure config and re-trains  self.GP.
+        :return:
+        """
+        forces = self.run_espresso()
+        self.gp.update_db(self.structure, forces)
+        self.gp.train()
+
     def update_positions(self):
         """
-        Apply a timestep to the structure at self.structure based on current
-        forces.
+        Apply a timestep to self.structure based on current structure's forces.
         """
 
         # Maintain list of elemental masses in amu to calculate acceleration
@@ -99,8 +153,9 @@ class OTF(object):
         for i, prev_pos in enumerate(self.structure.prev_positions):
             temp_pos = self.structure.positions[i]
             self.structure.positions[i] = 2 * self.structure.positions[i] - \
-                prev_pos + self.dt ** 2 * self.structure.forces[i] / \
-                mass_dict[self.structure.species[i]]
+                                          prev_pos + self.dt ** 2 * \
+                                          self.structure.forces[i] / \
+                                          mass_dict[self.structure.species[i]]
             self.structure.prev_positions[i] = np.array(temp_pos)
 
     def run_espresso(self):
@@ -114,7 +169,8 @@ class OTF(object):
 
         pw_loc = os.environ.get('PWSCF_COMMAND', 'pwscf.x')
 
-        qe_command = '{0} < {1} > {2}'.format(pw_loc, self.qe_input, 'pwscf.out')
+        qe_command = '{0} < {1} > {2}'.format(pw_loc, self.qe_input,
+                                              'pwscf.out')
 
         os.system(qe_command)
 
@@ -134,11 +190,13 @@ class OTF(object):
                 file_pos_index = int(i + 1)
         assert file_pos_index is not None, 'Failed to find positions in input'
 
-        for pos_index, line_index in enumerate(range(file_pos_index, len(lines))):
+        for pos_index, line_index in enumerate(
+                range(file_pos_index, len(lines))):
             pos_string = ' '.join([self.structure.species[pos_index],
                                    str(self.structure.positions[pos_index][0]),
                                    str(self.structure.positions[pos_index][1]),
-                                   str(self.structure.positions[pos_index][2])])
+                                   str(self.structure.positions[pos_index][
+                                           2])])
             lines[line_index] = str(pos_string + '\n')
 
         with open(self.qe_input, 'w') as f:
@@ -154,16 +212,20 @@ class OTF(object):
 
             f.write("====================== \n")
             f.write(
-                ' '.join(["-", "Frame", str(self.curr_step), 'Time', str(np.round(self.dt * self.curr_step, 3)), '\n']))
+                ' '.join(["-", "Frame", str(self.curr_step), 'Time',
+                          str(np.round(self.dt * self.curr_step, 3)), '\n']))
 
             for i in range(len(self.structure.positions)):
                 to_write = [self.structure.species[i]]
                 for j in range(3):
-                    to_write.append(str(np.round(self.structure.positions[i][j], 3)))
+                    to_write.append(
+                        str(np.round(self.structure.positions[i][j], 3)))
                 for j in range(3):
-                    to_write.append(str(np.round(self.structure.forces[i][j], 3)))
+                    to_write.append(
+                        str(np.round(self.structure.forces[i][j], 3)))
                 for j in range(3):
-                    to_write.append(str(np.round(self.structure.stds[i][j], 3)))
+                    to_write.append(
+                        str(np.round(self.structure.stds[i][j], 3)))
                 curr_line = ','.join(to_write)
                 curr_line += '\n'
 
@@ -229,6 +291,7 @@ def parse_qe_input(qe_input):
     return positions, species, cell
 
 
+# TODO get masses
 def parse_qe_forces(outfile):
     """
     Get forces from a pwscf file in Ryd/bohr
@@ -253,9 +316,10 @@ def parse_qe_forces(outfile):
                 temp_forces = []
                 for x in line:
                     temp_forces.append(float(x))
-                forces.append(list(temp_forces))
+                forces.append(np.array(list(temp_forces)))
 
-    assert total_energy != np.nan, "Quantum ESPRESSO parser failed to read the file {}. Run failed.".format(outfile)
+    assert total_energy != np.nan, "Quantum ESPRESSO parser failed to read the file {}. Run failed.".format(
+        outfile)
 
     return forces
 
@@ -277,15 +341,21 @@ def parse_output(outfile):
     for frame_number, index in enumerate(frame_indices):
         positions = []
         forces = []
-        vars = []
+        stds = []
         species = []
 
         for at_index in range(n_atoms):
             at_line = lines[index + at_index + 1].strip().split(',')
             species.append(at_line[0])
-            positions.append(np.fromstring(','.join((at_line[1], at_line[2], at_line[3])), sep=','))
-            forces.append(np.fromstring(','.join((at_line[4], at_line[5], at_line[6])), sep=','))
-            vars.append(np.fromstring(','.join((at_line[7], at_line[8], at_line[9])), sep=','))
+            positions.append(
+                np.fromstring(','.join((at_line[1], at_line[2], at_line[3])),
+                              sep=','))
+            forces.append(
+                np.fromstring(','.join((at_line[4], at_line[5], at_line[6])),
+                              sep=','))
+            stds.append(
+                np.fromstring(','.join((at_line[7], at_line[8], at_line[9])),
+                              sep=','))
 
             results[frame_number] = {'positions': positions,
                                      'forces': forces,
@@ -296,10 +366,10 @@ def parse_output(outfile):
 
 
 if __name__ == '__main__':
-    os.system('cp pwscf.in.orig pwscf.in')
+    os.system('cp tests/test_files/qe_input_1.in pwscf.in')
 
-    k = fake_kernel()
-    otf = OTF('pwscf.in', .1, 10, kernel=k,cutoff=10)
+    otf = OTF('pwscf.in', .1, 10, kernel='two_body',
+              cutoff=10)
     otf.run()
     # parse_output('otf_run.out')
     pass

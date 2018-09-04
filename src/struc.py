@@ -1,6 +1,5 @@
 from numpy import zeros
 from numpy.linalg import inv
-import numpy as np
 
 
 class Structure(object):
@@ -15,13 +14,14 @@ class Structure(object):
 
     """
 
-    def __init__(self, lattice, species, positions, cutoff):
+    def __init__(self, lattice, species, positions, cutoff, mass_dict=None):
         self.lattice = lattice
         self.vec1 = lattice[0, :]
         self.vec2 = lattice[1, :]
         self.vec3 = lattice[2, :]
 
         self.species = species
+        self.nat = len(species)
 
         # get unique species
         unique_species = []
@@ -36,10 +36,12 @@ class Structure(object):
 
         self.positions = positions
         self.prev_positions = list(positions)
-        self.forces = [zeros(3) for pos in positions]
-        self.stds = [zeros(3) for pos in positions]
+        self.forces = [zeros(3) for _ in positions]
+        self.stds = [zeros(3) for _ in positions]
 
         self.cutoff = cutoff
+
+        self.mass_dict = mass_dict
 
     @staticmethod
     def calc_bond_list(unique_species):
@@ -62,15 +64,7 @@ class Structure(object):
 
         return bond_list
 
+
 if __name__ == '__main__':
     # create simple structure
-    lattice = np.eye(3)
-    species = ['B', 'A']
-    positions = [np.array([0, 0, 0]), np.array([0.5, 0.5, 0.5])]
-    cutoff = np.linalg.norm(np.array([0.5, 0.5, 0.5])) + 0.001
-
-    test_structure = Structure(lattice, species, positions, cutoff)
-
-    # test species_to_bond
-    print(test_structure.bond_list)
-    assert(test_structure.bond_list == [['B', 'B'], ['B', 'A'], ['A', 'A']])
+    pass

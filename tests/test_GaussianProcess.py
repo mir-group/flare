@@ -11,7 +11,8 @@ import pytest
 import numpy as np
 
 from gp import GaussianProcess, minus_like_hyp
-from env import Structure, ChemicalEnvironment
+from env import ChemicalEnvironment
+from struc import Structure
 
 
 def get_random_structure(cell, unique_species, cutoff, noa):
@@ -27,6 +28,7 @@ def get_random_structure(cell, unique_species, cutoff, noa):
     test_structure = Structure(cell, species, positions, cutoff)
 
     return test_structure, forces
+
 
 # ------------------------------------------------------
 #          fixtures
@@ -135,7 +137,6 @@ def test_point():
 # ------------------------------------------------------
 
 def test_update_db(two_body_gp, params):
-
     # params
     test_structure, forces = get_random_structure(params['cell'],
                                                   params['unique_species'],
@@ -145,12 +146,11 @@ def test_update_db(two_body_gp, params):
     # add structure and forces to db
     two_body_gp.update_db(test_structure, forces)
 
-    assert(len(two_body_gp.training_data) == params['noa'] * 2)
-    assert(len(two_body_gp.training_labels_np) == params['noa'] * 2 * 3)
+    assert (len(two_body_gp.training_data) == params['noa'] * 2)
+    assert (len(two_body_gp.training_labels_np) == params['noa'] * 2 * 3)
 
 
 def test_update_db_py(two_body_gp_py, params):
-
     # params
     test_structure, forces = get_random_structure(params['cell'],
                                                   params['unique_species'],
@@ -160,38 +160,38 @@ def test_update_db_py(two_body_gp_py, params):
     # add structure and forces to db
     two_body_gp_py.update_db(test_structure, forces)
 
-    assert(len(two_body_gp_py.training_data) == params['noa'] * 2)
-    assert(len(two_body_gp_py.training_labels_np) == params['noa'] * 2 * 3)
+    assert (len(two_body_gp_py.training_data) == params['noa'] * 2)
+    assert (len(two_body_gp_py.training_labels_np) == params['noa'] * 2 * 3)
 
 
 def test_minus_like_hyp(two_body_gp):
     neg_like = minus_like_hyp(hyp=[1, 1, 1], gp=two_body_gp)
-    assert(isinstance(neg_like, float))
+    assert (isinstance(neg_like, float))
 
 
 def test_minus_like_hyp_py(two_body_gp_py):
     neg_like = minus_like_hyp(hyp=[1, 1, 1], gp=two_body_gp_py)
-    assert(isinstance(neg_like, float))
+    assert (isinstance(neg_like, float))
 
 
 def test_like_hyp(two_body_gp):
     like = two_body_gp.like_hyp(hyp=[1, 1, 1])
-    assert(isinstance(like, float))
+    assert (isinstance(like, float))
 
 
 def test_like_hyp_py(two_body_gp_py):
     like = two_body_gp_py.like_hyp(hyp=[1, 1, 1])
-    assert(isinstance(like, float))
+    assert (isinstance(like, float))
 
 
 def test_set_kernel(two_body_gp, params):
     two_body_gp.set_kernel(sigma_f=1, length_scale=1, sigma_n=0.1)
-    assert(two_body_gp.k_mat.shape == (params['db_pts'], params['db_pts']))
+    assert (two_body_gp.k_mat.shape == (params['db_pts'], params['db_pts']))
 
 
 def test_set_kernel_py(two_body_gp_py, params):
     two_body_gp_py.set_kernel(sigma_f=1, length_scale=1, sigma_n=0.1)
-    assert(two_body_gp_py.k_mat.shape == (params['db_pts'], params['db_pts']))
+    assert (two_body_gp_py.k_mat.shape == (params['db_pts'], params['db_pts']))
 
 
 def test_set_alpha(two_body_gp, params):
@@ -215,13 +215,13 @@ def test_get_likelihood_py(two_body_gp_py, params):
 
 
 def test_get_kernel_vector(two_body_gp, test_point, params):
-    assert(two_body_gp.get_kernel_vector(test_point, 1).shape ==
-           (params['db_pts'],))
+    assert (two_body_gp.get_kernel_vector(test_point, 1).shape ==
+            (params['db_pts'],))
 
 
 def test_get_kernel_vector_py(two_body_gp_py, test_point, params):
-    assert(two_body_gp_py.get_kernel_vector(test_point, 1).shape ==
-           (params['db_pts'],))
+    assert (two_body_gp_py.get_kernel_vector(test_point, 1).shape ==
+            (params['db_pts'],))
 
 
 def test_train(two_body_gp, params):
@@ -244,22 +244,21 @@ def test_train(two_body_gp, params):
                 two_body_gp.sigma_n]
 
     # check if hyperparams have been updated
-    assert(hyp != hyp_post)
+    assert (hyp != hyp_post)
 
 
 def test_predict(two_body_gp, test_point):
     pred = two_body_gp.predict(x_t=test_point, d=1)
-    assert(len(pred) == 2)
-    assert(isinstance(pred[0], float))
-    assert(isinstance(pred[1], float))
+    assert (len(pred) == 2)
+    assert (isinstance(pred[0], float))
+    assert (isinstance(pred[1], float))
 
 
 def test_predict_py(two_body_gp_py, test_point):
     pred = two_body_gp_py.predict(x_t=test_point, d=1)
-    assert(len(pred) == 2)
-    assert(isinstance(pred[0], float))
-    assert(isinstance(pred[1], float))
-
+    assert (len(pred) == 2)
+    assert (isinstance(pred[0], float))
+    assert (isinstance(pred[1], float))
 
 # ------------------------------------------------------
 #        example of how to do parametrized testing

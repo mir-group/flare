@@ -17,7 +17,7 @@ from scipy.linalg import solve_triangular
 from scipy.optimize import minimize
 
 from env import ChemicalEnvironment, two_body, two_body_py
-from otf import Structure
+from struc import Structure
 
 
 def minus_like_hyp(hyp, gp):
@@ -251,6 +251,7 @@ class GaussianProcess:
         """ Set weight vector alpha """
         ts1 = solve_triangular(self.l_mat, self.training_labels_np, lower=True)
         self.alpha = solve_triangular(self.l_mat.transpose(), ts1)
+
 
 # # append data from directory
 # # likely won't be used in this paper, so not necessary now
