@@ -38,8 +38,7 @@ def get_random_structure(cell, unique_species, cutoff, noa):
 # set the scope to module so it will only be setup once
 @pytest.fixture(scope='module')
 def two_body_gp():
-    """Returns a GP instance with an rbf kernel"""
-
+    """Returns a GP instance with a two-body numba-based kernel"""
     print("\nSetting up...\n")
 
     # params
@@ -72,7 +71,7 @@ def two_body_gp():
 # set the scope to module so it will only be setup once
 @pytest.fixture(scope='module')
 def two_body_gp_py():
-    """Returns a GP instance with an rbf kernel"""
+    """Returns a GP instance with an two-body python-based kernel"""
 
     print("\nSetting up...\n")
 
