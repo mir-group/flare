@@ -113,9 +113,9 @@ def test_espresso_calling(test_otf_engine):
                           False), 'PWSCF_COMMAND not found ' \
                                   'in environment'
 
-    forces = test_OTF_engine.run_espresso()
+    forces = test_otf_engine.run_espresso()
     assert isinstance(forces, list)
-    assert len(forces) == len(test_OTF_engine.structure.forces)
+    assert len(forces) == len(test_otf_engine.structure.forces)
 
     if test_otf_engine.qe_input == 'tests/test_files/qe_input_1.in':
         test1forces = [np.array([0.07413986, 0.0, 0.0]),
