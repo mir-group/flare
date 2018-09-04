@@ -30,13 +30,18 @@ class ChemicalEnvironment:
     def __init__(self, structure, atom):
         self.structure = structure
 
-        bond_array, bond_types, etyps, ctyp =\
+        bond_array, bond_types, bond_positions, etyps, ctyp =\
             self.get_atoms_within_cutoff(atom)
 
         self.bond_array = bond_array
         self.bond_types = bond_types
+        self.bond_positions = bond_positions
         self.etyps = etyps
         self.ctyp = ctyp
+
+        cross_bond_dists, cross_bond_types = self.get_cross_bonds()
+        self.cross_bond_dists = cross_bond_dists
+        self.cross_bond_types = cross_bond_types
 
     @staticmethod
     def is_bond(species1, species2, bond):
@@ -54,6 +59,10 @@ class ChemicalEnvironment:
 
         return ([species1, species2] == bond) or ([species2, species1] == bond)
 
+    @staticmethod
+    def is_triplet(species1, species2, species3, triplet):
+        return [species1, species2, species3] == triplet
+
     def species_to_index(self, species1, species2):
         """Given two species, get the corresponding bond index.
 
@@ -70,6 +79,12 @@ class ChemicalEnvironment:
         for bond_index, bond in enumerate(self.structure.bond_list):
             if ChemicalEnvironment.is_bond(species1, species2, bond):
                 return bond_index
+
+    def triplet_to_index(self, species1, species2, species3):
+        for triplet_index, triplet in enumerate(self.structure.triplet_list):
+            if ChemicalEnvironment.is_triplet(species1, species2, species3,
+                                              triplet):
+                return triplet_index
 
     def get_local_atom_images(self, vec, super_check=3):
         """Get periodic images of an atom within the cutoff radius.
@@ -118,6 +133,7 @@ class ChemicalEnvironment:
 
         bond_array = []
         bond_types = []
+        bond_positions = []
         environment_types = []
 
         # find all atoms and images in the neighborhood
@@ -136,10 +152,35 @@ class ChemicalEnvironment:
                     bond_array.append([dist, vec[0]/dist, vec[1]/dist,
                                        vec[2]/dist])
                     bond_types.append(bond_curr)
+                    bond_positions.append([vec[0], vec[1], vec[2]])
 
         bond_array = np.array(bond_array)
         bond_types = np.array(bond_types)
-        return bond_array, bond_types, environment_types, central_type
+        bond_positions = np.array(bond_positions)
+        return bond_array, bond_types, bond_positions, environment_types,\
+            central_type
+
+    # return information about cross bonds
+    def get_cross_bonds(self):
+        nat = len(self.etyps)
+        cross_bond_dists = np.zeros([nat, nat])
+        cross_bond_types = np.zeros([nat, nat])
+
+        ctyp = self.ctyp
+
+        for m in range(nat):
+            pos1 = self.bond_positions[m]
+            etyp1 = self.etyps[m]
+            for n in range(nat):
+                pos2 = self.bond_positions[n]
+                etyp2 = self.etyps[n]
+
+                dist_curr = np.linalg.norm(pos1 - pos2)
+                trip_ind = self.triplet_to_index(ctyp, etyp1, etyp2)
+
+                cross_bond_dists[m, n] = dist_curr
+                cross_bond_types[m, n] = trip_ind
+        return cross_bond_dists, cross_bond_types
 
     # jit function that computes two body kernel
     @staticmethod
@@ -224,10 +265,19 @@ if __name__ == '__main__':
     assert(ChemicalEnvironment.is_bond('B', 'A', ['A', 'B']))
     assert(not ChemicalEnvironment.is_bond('C', 'A', ['A', 'B']))
 
+    # test is_triplet (static method)
+    assert(ChemicalEnvironment.is_triplet('A', 'B', 'C', ['A', 'B', 'C']))
+    assert(ChemicalEnvironment.is_triplet('A', 'B', 'B', ['A', 'B', 'B']))
+    assert(not ChemicalEnvironment.is_triplet('C', 'B', 'B', ['A', 'B', 'B']))
+
     # test species_to_index
     assert(test_env.species_to_index('B', 'B') == 0)
     assert(test_env.species_to_index('B', 'A') == 1)
     assert(test_env.species_to_index('A', 'A') == 2)
+
+    # test triplet_to_index
+    assert(test_structure.triplet_list.index(['A', 'B', 'B']) ==
+           test_env.triplet_to_index('A', 'B', 'B'))
 
     # test get_local_atom_images
     vec = np.array([0.5, 0.5, 0.5])
@@ -237,10 +287,20 @@ if __name__ == '__main__':
 
     # test get_atoms_within_cutoff
     atom = 0
-    bond_array, bonds, environment_types, central_type =\
+    bond_array, bonds, bond_positions, environment_types, central_type =\
         test_env.get_atoms_within_cutoff(atom)
 
     assert(bond_array.shape[0] == 8)
+    assert(bond_array[0, 1] == bond_positions[0, 0] / bond_array[0, 0])
+
+    # test get_cross_bonds
+    nat = len(test_env.etyps)
+    mrand = np.random.randint(0, nat)
+    nrand = np.random.randint(0, nat)
+    pos1 = test_env.bond_positions[mrand]
+    pos2 = test_env.bond_positions[nrand]
+    assert(test_env.cross_bond_dists[mrand, nrand] ==
+           np.linalg.norm(pos1-pos2))
 
     # test jit and python two body kernels
     def kernel_performance(env1, env2, d1, d2, sig, ls, kernel, its):
@@ -302,4 +362,3 @@ if __name__ == '__main__':
     assert(speed_up > 1)
 
     print('numba speed up is %.3f.' % speed_up)
-    print(test_structure.bond_list)
