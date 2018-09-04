@@ -29,8 +29,9 @@ class Structure(object):
             if spec not in unique_species:
                 unique_species.append(spec)
 
-        self.elements = unique_species
-        self.bond_list = self.calc_bond_list(self.elements)
+        self.unique_species = unique_species
+        self.bond_list = self.calc_bond_list(self.unique_species)
+        self.triplet_list = self.calc_triplet_list(self.unique_species)
 
         self.inv_lattice = inv(lattice)
 
@@ -64,6 +65,15 @@ class Structure(object):
 
         return bond_list
 
+    @staticmethod
+    # given list of unique species, return list of possible triplets
+    def calc_triplet_list(unique_species):
+        triplet_list = []
+        for m in unique_species:
+            for n in unique_species:
+                for p in unique_species:
+                    triplet_list.append([m, n, p])
+        return triplet_list
 
 if __name__ == '__main__':
     # create simple structure
