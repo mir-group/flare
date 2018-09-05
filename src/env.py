@@ -21,6 +21,18 @@ def three_body(env1, env2, d1, d2, sig, ls):
                                               d1, d2, sig, ls)
 
 
+def three_body_py(env1, env2, d1, d2, sig, ls):
+    return ChemicalEnvironment.three_body_nojit(env1.bond_array,
+                                                env1.bond_types,
+                                                env1.cross_bond_dists,
+                                                env1.cross_bond_types,
+                                                env2.bond_array,
+                                                env2.bond_types,
+                                                env2.cross_bond_dists,
+                                                env2.cross_bond_types,
+                                                d1, d2, sig, ls)
+
+
 # get two body kernel between two environments
 def two_body(env1, env2, d1, d2, sig, ls):
     return ChemicalEnvironment.two_body_jit(env1.bond_array,
@@ -255,6 +267,65 @@ class ChemicalEnvironment:
 
         return kern
 
+    # python version of three body kernel for testing purposes
+    @staticmethod
+    def three_body_nojit(bond_array_1, bond_types_1,
+                         cross_bond_dists_1, cross_bond_types_1,
+                         bond_array_2, bond_types_2,
+                         cross_bond_dists_2, cross_bond_types_2,
+                         d1, d2, sig, ls):
+        d = sig*sig/(ls*ls*ls*ls)
+        e = ls*ls
+        f = 1/(2*ls*ls)
+        kern = 0
+
+        x1_len = len(bond_types_1)
+        x2_len = len(bond_types_2)
+
+        # loop over triplets in environment 1
+        for m in range(x1_len):
+            for n in range(x1_len):
+                if m == n:  # consider distinct bonds
+                    continue
+                # loop over triplets in environment 2
+                for p in range(x2_len):
+                    for q in range(x2_len):
+                        if p == q:  # consider distinct bonds
+                            continue
+
+                        # get triplet types
+                        t1 = cross_bond_types_1[m, n]
+                        t2 = cross_bond_types_2[p, q]
+
+                        # proceed if triplet types match
+                        if t1 == t2:
+                            # get triplet 1 details
+                            ri1 = bond_array_1[m, 0]
+                            ci1 = bond_array_1[m, d1]
+                            ri2 = bond_array_1[n, 0]
+                            ci2 = bond_array_1[n, d1]
+                            ri3 = cross_bond_dists_1[m, n]
+
+                            # get triplet 2 details
+                            rj1 = bond_array_2[p, 0]
+                            cj1 = bond_array_2[p, d2]
+                            rj2 = bond_array_2[q, 0]
+                            cj2 = bond_array_2[q, d2]
+                            rj3 = cross_bond_dists_2[p, q]
+
+                            r11 = ri1-rj1
+                            r22 = ri2-rj2
+                            r33 = ri3-rj3
+
+                            # add to kernel
+                            kern += (e * (ci1 * cj1 + ci2 * cj2) -
+                                     (r11 * ci1 + r22 * ci2) *
+                                     (r11 * cj1 + r22 * cj2)) *\
+                                d * exp(-f * (r11 * r11 + r22 * r22 +
+                                              r33 * r33))
+
+        return kern
+
     # jit function that computes two body kernel
     @staticmethod
     @njit
@@ -424,7 +495,7 @@ if __name__ == '__main__':
     sig = 1
     ls = 1
 
-    its = 1000
+    its = 10
 
     # compare performance
     speed_up, kern_val_jit, kern_val_py, warm_up_time_jit, warm_up_time_py = \
@@ -433,8 +504,6 @@ if __name__ == '__main__':
 
     assert(kern_val_jit == kern_val_py)
     assert(speed_up > 1)
-
-    print('numba speed up of two body kernel is %.3f.' % speed_up)
 
     # test three body function
     def get_random_structure(cell, unique_species, cutoff, noa):
@@ -453,7 +522,7 @@ if __name__ == '__main__':
     cell = np.eye(3)
     unique_species = ['B', 'A']
     cutoff = 0.8
-    noa = 10
+    noa = 15
 
     # create two test environments
     test_structure_1, _ = \
@@ -465,24 +534,23 @@ if __name__ == '__main__':
     test_env_1 = ChemicalEnvironment(test_structure_1, 0)
     test_env_2 = ChemicalEnvironment(test_structure_2, 0)
 
-    print('there are %i atoms in env 1.' % len(test_env_1.bond_types))
+    print('there are %i atoms in env1.' % len(test_env_1.bond_types))
     print('there are %i atoms in env2.' % len(test_env_2.bond_types))
 
     two_body(test_env_1, test_env_2, d1, d2, sig, ls)
     three_body(test_env_1, test_env_2, d1, d2, sig, ls)
 
-    time0 = time.time()
-    for n in range(its):
-        two_test = two_body(test_env_1, test_env_2, d1, d2, sig, ls)
-    time1 = time.time()
-    two_time = (time1 - time0) / its
-    print('two time is %.3e' % two_time)
+    its = 10
 
-    time0 = time.time()
-    for n in range(its):
-        three_test = three_body(test_env_1, test_env_2, d1, d2, sig, ls)
-    time1 = time.time()
-    three_time = (time1 - time0) / its
-    print('three time is %.3e' % three_time)
-    print('two body kernel is %.3f times faster than three body' %
-          (three_time / two_time))
+    two_speed_up, kern_val_jit, kern_val_py, warm_up_time_jit,\
+        warm_up_time_py =\
+        get_jit_speedup(test_env_1, test_env_2, d1, d2, sig, ls, two_body,
+                        two_body_py, its)
+
+    three_speed_up, kern_val_jit, kern_val_py, warm_up_time_jit,\
+        warm_up_time_py =\
+        get_jit_speedup(test_env_1, test_env_2, d1, d2, sig, ls, three_body,
+                        three_body_py, its)
+
+    print('two body speed up is %.3f' % two_speed_up)
+    print('three body speed up is %.3f' % three_speed_up)
