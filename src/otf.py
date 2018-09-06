@@ -89,7 +89,6 @@ class OTF(object):
                 self.structure.forces[n][i] = float(force)
                 self.structure.stds[n][i] = sqrt(var)
 
-
     def run_and_train(self):
         """
         Runs QE on the current self.structure config and re-trains  self.GP.
@@ -136,9 +135,9 @@ class OTF(object):
         for i, prev_pos in enumerate(self.structure.prev_positions):
             temp_pos = self.structure.positions[i]
             self.structure.positions[i] = 2 * self.structure.positions[i] - \
-                      prev_pos + self.dt ** 2 * \
-                      self.structure.forces[i] / \
-                      mass_dict[self.structure.species[i]]
+                prev_pos + self.dt ** 2 * \
+                self.structure.forces[i] / \
+                mass_dict[self.structure.species[i]]
             self.structure.prev_positions[i] = np.array(temp_pos)
 
     def run_espresso(self):

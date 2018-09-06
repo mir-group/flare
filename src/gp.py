@@ -16,14 +16,19 @@ import numpy as np
 from scipy.linalg import solve_triangular
 from scipy.optimize import minimize
 
-from env import ChemicalEnvironment, two_body, two_body_py
+from env import ChemicalEnvironment, two_body, two_body_py, three_body,\
+    three_body_py
 from struc import Structure
 
 
-def minus_like_hyp(hyp, gp):
+def minus_like_hyp(hyp, gp, verbose=True):
     """Get minus likelihood as a function of hyperparameters"""
     like = gp.like_hyp(hyp)
     minus_like = -like
+
+    if verbose:
+        print(hyp)
+        print(like)
 
     return minus_like
 
@@ -62,6 +67,12 @@ class GaussianProcess:
 
         elif self.kernel_type == 'two_body_py':
             return two_body_py(env1, env2, d1, d2, sig, ls)
+
+        elif self.kernel_type == 'three_body':
+            return three_body(env1, env2, d1, d2, sig, ls)
+
+        elif self.kernel_type == 'three_body_py':
+            return three_body_py(env1, env2, d1, d2, sig, ls)
 
         else:
             raise ValueError('{} is not a valid kernel'.format(self.kernel))
