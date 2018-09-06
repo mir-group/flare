@@ -287,7 +287,6 @@ def parse_qe_input(qe_input):
     # Load positions
     for i in range(positions_index, k_index):
         line_string = lines[i].strip().split()
-        print(line_string)
         species.append(line_string[0])
 
         pos_string = ' '.join(line_string[1:4])

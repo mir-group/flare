@@ -6,7 +6,7 @@
 Implementation is based on Algorithm 2.1 (pg. 19) of
 "Gaussian Processes for Machine Learning" by Rasmussen and Williams
 
-Simon Batzner
+Simon Batzner, Jon V
 """
 
 import math
