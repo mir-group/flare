@@ -269,6 +269,8 @@ def parse_qe_input(qe_input):
             cell_index = int(i + 1)
         if 'ATOMIC_POSITIONS' in line:
             positions_index = int(i + 1)
+        if 'K_POINTS' in line:
+            k_index = int(i)
     assert cell_index is not None, 'Failed to find cell in output'
     assert positions_index is not None, 'Failed to find positions in output'
 
@@ -283,8 +285,9 @@ def parse_qe_input(qe_input):
     assert np.shape(cell) == (3, 3), 'Cell failed to load correctly'
 
     # Load positions
-    for i in range(positions_index, len(lines)):
+    for i in range(positions_index, k_index):
         line_string = lines[i].strip().split()
+        print(line_string)
         species.append(line_string[0])
 
         pos_string = ' '.join(line_string[1:4])

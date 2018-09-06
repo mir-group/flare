@@ -225,31 +225,29 @@ class ChemicalEnvironment:
 
         # loop over triplets in environment 1
         for m in range(x1_len):
-            for n in range(x1_len):
-                if m == n:  # consider distinct bonds
-                    continue
+            ri1 = bond_array_1[m, 0]
+            ci1 = bond_array_1[m, d1]
+
+            for n in range(m+1, x1_len):
+                ri2 = bond_array_1[n, 0]
+                ci2 = bond_array_1[n, d1]
+                ri3 = cross_bond_dists_1[m, n]
+                t1 = cross_bond_types_1[m, n]
+
                 # loop over triplets in environment 2
                 for p in range(x2_len):
+                    rj1 = bond_array_2[p, 0]
+                    cj1 = bond_array_2[p, d2]
+
                     for q in range(x2_len):
                         if p == q:  # consider distinct bonds
                             continue
 
                         # get triplet types
-                        t1 = cross_bond_types_1[m, n]
                         t2 = cross_bond_types_2[p, q]
 
                         # proceed if triplet types match
                         if t1 == t2:
-                            # get triplet 1 details
-                            ri1 = bond_array_1[m, 0]
-                            ci1 = bond_array_1[m, d1]
-                            ri2 = bond_array_1[n, 0]
-                            ci2 = bond_array_1[n, d1]
-                            ri3 = cross_bond_dists_1[m, n]
-
-                            # get triplet 2 details
-                            rj1 = bond_array_2[p, 0]
-                            cj1 = bond_array_2[p, d2]
                             rj2 = bond_array_2[q, 0]
                             cj2 = bond_array_2[q, d2]
                             rj3 = cross_bond_dists_2[p, q]
@@ -284,31 +282,29 @@ class ChemicalEnvironment:
 
         # loop over triplets in environment 1
         for m in range(x1_len):
-            for n in range(x1_len):
-                if m == n:  # consider distinct bonds
-                    continue
+            ri1 = bond_array_1[m, 0]
+            ci1 = bond_array_1[m, d1]
+
+            for n in range(m+1, x1_len):
+                ri2 = bond_array_1[n, 0]
+                ci2 = bond_array_1[n, d1]
+                ri3 = cross_bond_dists_1[m, n]
+                t1 = cross_bond_types_1[m, n]
+
                 # loop over triplets in environment 2
                 for p in range(x2_len):
+                    rj1 = bond_array_2[p, 0]
+                    cj1 = bond_array_2[p, d2]
+
                     for q in range(x2_len):
                         if p == q:  # consider distinct bonds
                             continue
 
                         # get triplet types
-                        t1 = cross_bond_types_1[m, n]
                         t2 = cross_bond_types_2[p, q]
 
                         # proceed if triplet types match
                         if t1 == t2:
-                            # get triplet 1 details
-                            ri1 = bond_array_1[m, 0]
-                            ci1 = bond_array_1[m, d1]
-                            ri2 = bond_array_1[n, 0]
-                            ci2 = bond_array_1[n, d1]
-                            ri3 = cross_bond_dists_1[m, n]
-
-                            # get triplet 2 details
-                            rj1 = bond_array_2[p, 0]
-                            cj1 = bond_array_2[p, d2]
                             rj2 = bond_array_2[q, 0]
                             cj2 = bond_array_2[q, d2]
                             rj3 = cross_bond_dists_2[p, q]
@@ -522,7 +518,7 @@ if __name__ == '__main__':
     cell = np.eye(3)
     unique_species = ['B', 'A']
     cutoff = 0.8
-    noa = 15
+    noa = 10
 
     # create two test environments
     test_structure_1, _ = \
@@ -540,17 +536,23 @@ if __name__ == '__main__':
     two_body(test_env_1, test_env_2, d1, d2, sig, ls)
     three_body(test_env_1, test_env_2, d1, d2, sig, ls)
 
-    its = 10
+    its = 1000
 
-    two_speed_up, kern_val_jit, kern_val_py, warm_up_time_jit,\
-        warm_up_time_py =\
-        get_jit_speedup(test_env_1, test_env_2, d1, d2, sig, ls, two_body,
-                        two_body_py, its)
+    kern_val, run_time, warm_up_time =\
+        kernel_performance(test_env_1, test_env_2, d1, d2, sig, ls, three_body,
+                           its)
 
-    three_speed_up, kern_val_jit, kern_val_py, warm_up_time_jit,\
-        warm_up_time_py =\
-        get_jit_speedup(test_env_1, test_env_2, d1, d2, sig, ls, three_body,
-                        three_body_py, its)
+    print(run_time)
 
-    print('two body speed up is %.3f' % two_speed_up)
-    print('three body speed up is %.3f' % three_speed_up)
+    # two_speed_up, kern_val_jit, kern_val_py, warm_up_time_jit,\
+    #     warm_up_time_py =\
+    #     get_jit_speedup(test_env_1, test_env_2, d1, d2, sig, ls, two_body,
+    #                     two_body_py, its)
+
+    # three_speed_up, kern_val_jit, kern_val_py, warm_up_time_jit,\
+    #     warm_up_time_py =\
+    #     get_jit_speedup(test_env_1, test_env_2, d1, d2, sig, ls, three_body,
+    #                     three_body_py, its)
+
+    # print('two body speed up is %.3f' % two_speed_up)
+    # print('three body speed up is %.3f' % three_speed_up)
