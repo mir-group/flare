@@ -11,13 +11,11 @@ Steven Torrisi, Simon Batzner
 """
 
 import pytest
-
-import numpy as np
-
-from otf import parse_qe_input, parse_qe_forces, OTF
-from test_GaussianProcess import get_random_structure
-from struc import Structure
 import os
+import sys
+import numpy as np
+sys.path.append("../src")
+from otf import parse_qe_input, parse_qe_forces, OTF
 from gp import GaussianProcess
 
 def fake_espresso(noa):
@@ -37,13 +35,13 @@ class Fake_GP(GaussianProcess):
 
     def train(self):
         """
-        Neuters the train method of GaussianProcess
+        Invalidates the train method of GaussianProcess
         """
         pass
 
     def update_db(self, structure, forces):
         """
-        Neuters the update_db method of GaussianProcess
+        Invalidates the update_db method of GaussianProcess
         """
         pass
 
@@ -67,6 +65,10 @@ class Fake_GP(GaussianProcess):
         return structure
 
 
+def cleanup_otf_run():
+    os.system('rm otf_run.out')
+    os.system('rm pwscf.out')
+    os.system('rm pwscf.wfc')
 
 # ------------------------------------------------------
 #          fixtures
@@ -75,7 +77,7 @@ class Fake_GP(GaussianProcess):
 
 @pytest.fixture(scope='module')
 def test_params_1():
-    params = {'qe_input': 'tests/test_files/qe_input_1.in',
+    params = {'qe_input': './test_files/qe_input_1.in',
               'dt': .01,
               'num_steps': 10,
               'kernel': 'two_body',
@@ -102,7 +104,7 @@ def test_otf_engine_1(test_params_1):
 
 @pytest.mark.parametrize("qe_input,exp_pos",
                          [
-                             ('tests/test_files/qe_input_1.in',
+                             ('./test_files/qe_input_1.in',
                               [np.array([2.51857, 2.5, 2.5]),
                                np.array([4.48143, 2.5, 2.5])])
                          ]
@@ -117,7 +119,7 @@ def test_position_parsing(qe_input, exp_pos):
 
 @pytest.mark.parametrize("qe_input,exp_spec",
                          [
-                             ('tests/test_files/qe_input_1.in',
+                             ('./test_files/qe_input_1.in',
                               ['H', 'H'])
                          ]
                          )
@@ -130,7 +132,7 @@ def test_species_parsing(qe_input, exp_spec):
 
 @pytest.mark.parametrize("qe_input,exp_cell",
                          [
-                             ('tests/test_files/qe_input_1.in',
+                             ('./test_files/qe_input_1.in',
                               5.0 * np.eye(3))
                          ]
                          )
@@ -141,7 +143,7 @@ def test_cell_parsing(qe_input, exp_cell):
 
 @pytest.mark.parametrize('qe_output,exp_forces',
                          [
-                             ('tests/test_files/qe_output_1.out',
+                             ('./test_files/qe_output_1.out',
                               [np.array([0.07413986, 0., 0.]),
                                np.array([-0.07413986, 0., 0.])])
                          ]
@@ -163,16 +165,19 @@ def test_espresso_calling_1(test_otf_engine_1):
     assert isinstance(forces, list)
     assert len(forces) == len(test_otf_engine_1.structure.forces)
 
-    if test_otf_engine_1.qe_input == 'tests/test_files/qe_input_1.in':
+    if test_otf_engine_1.qe_input == './test_files/qe_input_1.in':
         test1forces = [np.array([0.07413986, 0.0, 0.0]),
                        np.array([-0.07413986,
                                  0.0, 0.0])]
         for i, force in enumerate(forces):
             assert np.equal(force, test1forces[i]).all()
 
+    cleanup_otf_run()
+
 # ------------------------------------------------------
 #                   test  otf methods
 # ------------------------------------------------------
+
 
 #TODO see if there is a better way to to set up the different input runs
 
@@ -195,41 +200,3 @@ def test_update_1(test_otf_engine_1):
 
 
 
-
-
-
-
-
-# ------------------------------------------------------
-#                   test  Structure functions
-# ------------------------------------------------------
-
-
-def test_random_structure_setup():
-    struct, forces = get_random_structure(cell=np.eye(3),
-                                          unique_species=["A", "B", ],
-                                          cutoff=np.random.uniform(1, 10.),
-                                          noa=2)
-
-    assert np.equal(struct.lattice, np.eye(3)).all()
-    assert 'A' in struct.elements or 'B' in struct.elements
-    assert len(struct.positions) == 2
-
-
-def test_2_body_bond_order():
-    """
-    Written by Simon B
-    :return:
-    """
-    lattice = np.eye(3)
-    species = ['B', 'A']
-    positions = [np.array([0, 0, 0]), np.array([0.5, 0.5, 0.5])]
-    cutoff = np.linalg.norm(np.array([0.5, 0.5, 0.5])) + 0.001
-
-    test_structure = Structure(lattice, species, positions, cutoff)
-
-    # test species_to_bond
-    assert (test_structure.bond_list == [['B', 'B'], ['B', 'A'], ['A', 'A']])
-
-# TODO IO-based unit tests for pasrsing the output files of runs (even though
-# some may be random
