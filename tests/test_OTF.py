@@ -18,10 +18,14 @@ sys.path.append("../src")
 from otf import parse_qe_input, parse_qe_forces, OTF
 from gp import GaussianProcess
 
-def fake_espresso(noa):
+def fake_espresso(noa: int):
     """ Returns a list of random forces.
     """
-    return
+    forces = [np.random.normal(loc=0,scale=1,size=3) for n in range(noa)]
+    print(forces)
+    return forces
+
+
 
 class Fake_GP(GaussianProcess):
     """
@@ -69,6 +73,7 @@ def cleanup_otf_run():
     os.system('rm otf_run.out')
     os.system('rm pwscf.out')
     os.system('rm pwscf.wfc')
+    os.system('rm pwscf.save')
 
 # ------------------------------------------------------
 #          fixtures
@@ -110,7 +115,7 @@ def test_otf_engine_1(test_params_1):
                          ]
                          )
 def test_position_parsing(qe_input, exp_pos):
-    positions, species, cell = parse_qe_input(qe_input)
+    positions, species, cell, masses = parse_qe_input(qe_input)
     assert len(positions) == len(exp_pos)
 
     for i, pos in enumerate(positions):
@@ -124,7 +129,7 @@ def test_position_parsing(qe_input, exp_pos):
                          ]
                          )
 def test_species_parsing(qe_input, exp_spec):
-    positions, species, cell = parse_qe_input(qe_input)
+    positions, species, cell, masses = parse_qe_input(qe_input)
     assert len(species) == len(exp_spec)
     for i, spec in enumerate(species):
         assert spec == exp_spec[i]
@@ -137,9 +142,21 @@ def test_species_parsing(qe_input, exp_spec):
                          ]
                          )
 def test_cell_parsing(qe_input, exp_cell):
-    positions, species, cell = parse_qe_input(qe_input)
+    positions, species, cell, masses = parse_qe_input(qe_input)
     assert np.all(exp_cell == cell)
 
+@pytest.mark.parametrize("qe_input,mass_dict",
+                         [
+                             ('./test_files/qe_input_1.in',
+                              {'H':1.0}),
+                             ('./test_files/qe_input_2.in',
+                              {'Al':26.9815385})
+                         ]
+                         )
+def test_cell_parsing(qe_input, mass_dict):
+    positions, species, cell, masses = parse_qe_input(qe_input)
+    print(masses)
+    assert masses == mass_dict
 
 @pytest.mark.parametrize('qe_output,exp_forces',
                          [
