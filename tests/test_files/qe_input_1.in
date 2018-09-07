@@ -1,5 +1,5 @@
 &CONTROL
-	pseudo_dir = '/Users/steven/Documents/Schoolwork/CDMAT275/ESPRESSO/qe-6.0/pseudo'
+	pseudo_dir = './test_files/pseudos'
 	outdir = '.'
 	calculation = 'scf'
 	disk_io = 'low'
