@@ -10,6 +10,8 @@ Steven Torrisi, Jon Vandermause, Simon Batzner
 import numpy as np
 import os
 import datetime
+import sys
+sys.path.append('../src')
 from struc import Structure
 from math import sqrt
 from gp import GaussianProcess
@@ -383,10 +385,10 @@ def parse_otf_output(outfile: str):
 
 
 if __name__ == '__main__':
-    os.system('cp tests/test_files/qe_input_2.in pwscf.in')
+    #os.system('cp ../tests/test_files/qe_input_2.in pwscf.in')
 
-    otf = OTF('pwscf.in', .1, 10, kernel='two_body',
-              cutoff=10)
-    otf.run()
+    #otf = OTF('pwscf.in', .1, 10, kernel='two_body',
+    #          cutoff=10)
+    #otf.run()
     # parse_output('otf_run.out')
     pass
