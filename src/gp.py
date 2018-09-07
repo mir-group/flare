@@ -6,7 +6,7 @@
 Implementation is based on Algorithm 2.1 (pg. 19) of
 "Gaussian Processes for Machine Learning" by Rasmussen and Williams
 
-Simon Batzner, Jon V
+Simon Batzner, Jon Vandermause
 """
 
 import math
@@ -21,14 +21,13 @@ from env import ChemicalEnvironment, two_body, two_body_py, three_body,\
 from struc import Structure
 
 
-
 class GaussianProcess:
     """ Gaussian Process Regression Model """
 
     def __init__(self, kernel: str):
         """Initialize GP parameters and training data.
 
-        :param kernel: covariance/ kernel function used
+        :param kernel: covariance / kernel function to be used
         :type kernel: str
         """
 
@@ -49,20 +48,34 @@ class GaussianProcess:
         self.training_labels_np = np.empty(0,)
 
     def kernel(self, env1: ChemicalEnvironment, env2: ChemicalEnvironment,
-               d1: int, d2: int, sig: float, ls: float):
-        """Evaluate specified kernel."""
+               d1: int, d2: int, sig: float, length_scale: float):
+        """Evaluate specified kernel.
+
+        :param env1: first chemical environment to compare
+        :type evn1: ChemicalEnvironment
+        :param env2: second chemical environment to compare
+        :type env2: ChemicalEnvironment
+        :param d1:
+        :type d1: int
+        :param d2:
+        :type d2: int
+        :param sig: signal variance
+        :type sig: float
+        :param length_scale: length scale of kernel
+        :type: length_scale: float
+        """
 
         if self.kernel_type == 'two_body':
-            return two_body(env1, env2, d1, d2, sig, ls)
+            return two_body(env1, env2, d1, d2, sig, length_scale)
 
         elif self.kernel_type == 'two_body_py':
-            return two_body_py(env1, env2, d1, d2, sig, ls)
+            return two_body_py(env1, env2, d1, d2, sig, length_scale)
 
         elif self.kernel_type == 'three_body':
-            return three_body(env1, env2, d1, d2, sig, ls)
+            return three_body(env1, env2, d1, d2, sig, length_scale)
 
         elif self.kernel_type == 'three_body_py':
-            return three_body_py(env1, env2, d1, d2, sig, ls)
+            return three_body_py(env1, env2, d1, d2, sig, length_scale)
 
         else:
             raise ValueError('{} is not a valid kernel'.format(self.kernel))
@@ -70,10 +83,10 @@ class GaussianProcess:
     def update_db(self, struc: Structure, forces: list):
         """Given structure and forces, add to training set.
 
-        :param struc: [description]
-        :type struc: [type]
-        :param forces: [description]
-        :type forces: [type]
+        :param struc: structure to add to db
+        :type struc: Structure
+        :param forces: list of corresponding forces to add to db
+        :type forces: list<float>
         """
 
         noa = len(struc.positions)
@@ -90,15 +103,25 @@ class GaussianProcess:
 
     @staticmethod
     def force_list_to_np(forces: list) -> np.ndarray:
+        """ Convert list of forces to numpy array of forces.
+
+        :param forces: list of forces to convert
+        :type forces: list<float>
+        :return: numpy array forces
+        :rtype: np.ndarray
+        """
         forces_np = []
+
         for m in range(len(forces)):
             for n in range(3):
                 forces_np.append(forces[m][n])
+
         forces_np = np.array(forces_np)
+
         return forces_np
 
     def train(self):
-        """ Train Gaussian Process model on training data """
+        """ Train Gaussian Process model on training data. """
 
         # optimize hyperparameters
         self.opt_hyper()
@@ -114,8 +137,7 @@ class GaussianProcess:
 
     def opt_hyper(self):
         """
-        Optimize hyperparameters of GP by minimizing minus log likelihood
-        """
+        Optimize hyperparameters of GP by minimizing minus log likelihood. """
         # initial guess
         x_0 = np.array([self.sigma_f, self.length_scale, self.sigma_n])
 
@@ -130,12 +152,14 @@ class GaussianProcess:
         self.sigma_n = res.x[2]
 
     def predict(self, x_t: ChemicalEnvironment, d: int) -> [float, float]:
-        """Make GP prediction with SE kernel
+        """ Make GP prediction with SE kernel.
 
         :param x_t: data point to predict on
-        :type x_t:
-        :param d: kernel parameter
-        :type d:
+        :type x_t: ChemicalEnvironment
+        :param d:
+        :type d: int
+        :return: predictive mean and predictive variance
+        :rtype: [float, float]
         """
 
         # get kernel vector
@@ -153,7 +177,7 @@ class GaussianProcess:
         return pred_mean, pred_var
 
     def like_hyp(self, hyp: List[float]) -> float:
-        """ Get likelihood as a function of hyperparameters
+        """ Get likelihood as a function of hyperparameters.
 
         :param hyp: hyperparameters to optimize
         :type hyp: list<float>
@@ -177,11 +201,10 @@ class GaussianProcess:
         return like
 
     def get_likelihood(self) -> float:
-        """
-        Get log marginal likelihood
+        """ Get log marginal likelihood.
 
         :return: likelihood
-        :rtype:
+        :rtype: float
         """
         like = np.asscalar(-(1 / 2) *
                            np.matmul(self.training_labels_np.transpose(),
@@ -192,7 +215,7 @@ class GaussianProcess:
         return like
 
     def set_kernel(self, sigma_f: float, length_scale: float, sigma_n: float):
-        """ Compute 3Nx3N noiseless kernel matrix
+        """ Compute 3Nx3N noiseless kernel matrix.
 
         :param sigma_f: signal variance
         :type sigma_f: float
@@ -228,15 +251,16 @@ class GaussianProcess:
         self.k_mat = k_mat
 
     def get_kernel_vector(self, x: ChemicalEnvironment, d_1: int)-> np.ndarray:
-        """ Compute kernel vector
+        """ Compute kernel vector.
 
         :param x: data point to compare against kernel matrix
-        :type x:
+        :type x: ChemicalEnvironment
         :param d_1:
-        :type d_1:
+        :type d_1: int
         :return: kernel vector
-        :rtype:
+        :rtype: np.ndarray
         """
+
         ds = [1, 2, 3]
         size = len(self.training_data)*3
         k_v = np.zeros(size,)
@@ -250,15 +274,24 @@ class GaussianProcess:
         return k_v
 
     def set_alpha(self):
-        """ Set weight vector alpha """
+        """ Set weight vector alpha. """
         ts1 = solve_triangular(self.l_mat, self.training_labels_np, lower=True)
         self.alpha = solve_triangular(self.l_mat.transpose(), ts1)
 
 
-def minus_like_hyp(hyp: List[float],
-                   gp: GaussianProcess,
+def minus_like_hyp(hyp: List[float], gp: GaussianProcess,
                    verbose: bool = True) -> float:
-    """Get minus likelihood as a function of hyperparameters"""
+    """Get minus likelihood as a function of hyperparameters.
+
+    :param hyp: hyperparmeters to optimize: signal var, length scale, noise var
+    :type hyp: [float, float, float]
+    :param gp: gp object
+    :type gp: GaussianProcess
+    :param verbose: whether to print hyperparameters and likelihood
+    :type verbose: bool
+    :return: negative likelihood
+    :rtype: float
+    """
     like = gp.like_hyp(hyp)
     minus_like = -like
 
@@ -267,4 +300,3 @@ def minus_like_hyp(hyp: List[float],
         print(like)
 
     return minus_like
-
