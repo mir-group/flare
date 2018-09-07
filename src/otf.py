@@ -12,7 +12,8 @@ import os
 import datetime
 from struc import Structure
 from math import sqrt
-
+import sys
+sys.path.append("../src")
 from gp import GaussianProcess
 from env import ChemicalEnvironment
 
@@ -247,7 +248,7 @@ class OTF(object):
 
 def parse_qe_input(qe_input):
     """
-    Reads the positions, species, and cell in from the
+    Reads the positions, species, and cell in from the qe input file
 
     :param qe_input: str, Path to PWSCF input file
     :return: List[nparray], List[str], nparray, Positions, species,
@@ -263,13 +264,17 @@ def parse_qe_input(qe_input):
     # Find the cell and positions in the output file
     cell_index = None
     positions_index = None
+
+    nat = None
+
     for i, line in enumerate(lines):
         if 'CELL_PARAMETERS' in line:
             cell_index = int(i + 1)
         if 'ATOMIC_POSITIONS' in line:
             positions_index = int(i + 1)
-        if 'K_POINTS' in line:
-            k_index = int(i)
+        if 'nat' in line:
+            nat = int(line.split('=')[1])
+
     assert cell_index is not None, 'Failed to find cell in output'
     assert positions_index is not None, 'Failed to find positions in output'
 
@@ -284,7 +289,7 @@ def parse_qe_input(qe_input):
     assert np.shape(cell) == (3, 3), 'Cell failed to load correctly'
 
     # Load positions
-    for i in range(positions_index, k_index):
+    for i in range(positions_index,positions_index+nat):
         line_string = lines[i].strip().split()
         species.append(line_string[0])
 
