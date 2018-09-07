@@ -10,15 +10,10 @@ Steven Torrisi, Jon Vandermause, Simon Batzner
 import numpy as np
 import os
 import datetime
-import sys
-sys.path.append('../src')
 from struc import Structure
 from math import sqrt
 from gp import GaussianProcess
 from env import ChemicalEnvironment
-
-
-# todo strike this; replace with QE input
 
 
 class OTF(object):
@@ -37,7 +32,7 @@ class OTF(object):
         self.qe_input = qe_input
         self.dt = dt
         self.Nsteps = number_of_steps
-        self.gp = GaussianProcess(kernel)  # Fake_GP(kernel)  #
+        self.gp = GaussianProcess(kernel)
 
         positions, species, cell, masses = parse_qe_input(self.qe_input)
         self.structure = Structure(lattice=cell, species=species,
@@ -128,15 +123,13 @@ class OTF(object):
 
         # Maintain list of elemental masses in amu to calculate acceleration
 
-        # Load in masses using list comprehension
-        masses = [self.structure.mass_dict[spec] for spec in
-                  self.structure.species]
-
         for i, prev_pos in enumerate(self.structure.prev_positions):
             temp_pos = self.structure.positions[i]
             self.structure.positions[i] = 2 * self.structure.positions[i] - \
                                           prev_pos + self.dt ** 2 * \
-                                          self.structure.forces[i] / masses[i]
+                                          self.structure.forces[i] \
+                                          / self.structure.mass_dict[
+                                              self.structure.species[i]]
 
             self.structure.prev_positions[i] = np.array(temp_pos)
 
@@ -237,6 +230,7 @@ class OTF(object):
         """
 
         # Some decision making criteria
+
         return True
 
 
@@ -326,7 +320,6 @@ def parse_qe_forces(outfile: str):
                 line = line.split('force =')[-1]
                 line = line.strip()
                 line = line.split(' ')
-                # print("Parsed line",line,"\n")
                 line = [x for x in line if x != '']
                 temp_forces = []
                 for x in line:
@@ -385,10 +378,10 @@ def parse_otf_output(outfile: str):
 
 
 if __name__ == '__main__':
-    #os.system('cp ../tests/test_files/qe_input_2.in pwscf.in')
+    # os.system('cp ../tests/test_files/qe_input_2.in pwscf.in')
 
-    #otf = OTF('pwscf.in', .1, 10, kernel='two_body',
+    # otf = OTF('pwscf.in', .1, 10, kernel='two_body',
     #          cutoff=10)
-    #otf.run()
+    # otf.run()
     # parse_output('otf_run.out')
     pass
