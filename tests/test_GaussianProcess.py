@@ -17,9 +17,12 @@ from struc import Structure
 
 def get_random_structure(cell, unique_species, cutoff, noa):
     """Create a random test structure """
+    np.random.seed(0)
+
     positions = []
     forces = []
     species = []
+
     for n in range(noa):
         positions.append(np.random.uniform(-1, 1, 3))
         forces.append(np.random.uniform(-1, 1, 3))
@@ -182,12 +185,12 @@ def test_like_hyp_py(two_body_gp_py):
     like = two_body_gp_py.like_hyp(hyp=[1, 1, 1])
     assert (isinstance(like, float))
 
-# def test_compare_like_hyp(two_body_gp, two_body_gp_py, params):
-#     jit_like = two_body_gp.like_hyp(hyp=[1, 1, 1])
-#     py_like = two_body_gp_py.like_hyp(hyp=[1, 1, 1])
-#
-#     assert(np.isclose(jit_like, py_like))
 
+def test_compare_like_hyp(two_body_gp, two_body_gp_py, params):
+    jit_like = two_body_gp.like_hyp(hyp=[1, 1, 1])
+    py_like = two_body_gp_py.like_hyp(hyp=[1, 1, 1])
+
+    assert(np.isclose(jit_like, py_like))
 
 
 def test_set_kernel(two_body_gp, params):
