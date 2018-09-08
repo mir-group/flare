@@ -103,6 +103,7 @@ class OTF(object):
 
 
         forces = run_espresso(self.qe_input,self.train_structure)
+
         self.write_to_output('Done.\n')
 
         # Write input positions and force results
@@ -213,14 +214,19 @@ def run_espresso(qe_input: str, structure: Structure):
     :return: List [nparray] List of forces
     """
 
-    edit_qe_input_positions(qe_input, structure)
+    run_qe_path = qe_input+'_run'
+
+    os.system(' '.join(['cp',qe_input,run_qe_path]))
+    edit_qe_input_positions(run_qe_path, structure)
 
     pw_loc = os.environ.get('PWSCF_COMMAND', 'pwscf.x')
 
-    qe_command = '{0} < {1} > {2}'.format(pw_loc, qe_input,
+    qe_command = '{0} < {1} > {2}'.format(pw_loc, run_qe_path,
                                           'pwscf.out')
 
     os.system(qe_command)
+
+    #os.system(' '.join(['rm', run_qe_path]))
 
     return parse_qe_forces('pwscf.out')
 
@@ -310,8 +316,11 @@ def edit_qe_input_positions(qe_input: str, structure: Structure):
             file_pos_index = int(i + 1)
         if 'CELL_PARAMETERS' in line:
             cell_index = int(i + 1)
+        # Load nat into variable then overwrite it with new nat
         if 'nat' in line:
             nat = int(line.split('=')[1])
+            nat_index = int(i)
+            lines[nat_index]='nat = '+str(structure.nat)+'\n'
 
     assert file_pos_index is not None, 'Failed to find positions in input'
     assert cell_index is not None, 'Failed to find cell in input'
@@ -328,9 +337,10 @@ def edit_qe_input_positions(qe_input: str, structure: Structure):
                                        2])])
         lines[line_index] = str(pos_string + '\n')
 
-    # TODO current assumption: the new structure has fewer atoms than the
-    # previous one. If we are always 'editing' a copy of the larger structure
-    # than this will be okay with the punchout method.
+    # TODO current assumption: if there is a new structure, then the new
+    # structure has fewer atoms than the  previous one. If we are always
+    # 'editing' a version of the larger structure than this will be okay with
+    # the punchout method.
     for line_index in range(file_pos_index+structure.nat,
                             file_pos_index + nat):
             lines[line_index]=''
@@ -427,7 +437,7 @@ if __name__ == '__main__':
      #os.system('cp ../tests/test_files/qe_input_2.in pwscf.in')
 
      otf = OTF('pwscf.in', .1, 10, kernel='two_body',
-              cutoff=10)
+              cutoff=10,punchout_d=None)
      otf.run()
      # parse_output('otf_run.out')
      pass
