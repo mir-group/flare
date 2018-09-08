@@ -15,17 +15,28 @@ import os
 import sys
 import numpy as np
 sys.path.append("../src")
-from otf import parse_qe_input, parse_qe_forces, OTF
+from otf import parse_qe_input, parse_qe_forces, OTF, edit_qe_input_positions,\
+            run_espresso
 from gp import GaussianProcess
+from struc import Structure
 
-def fake_espresso(noa: int):
-    """ Returns a list of random forces.
+def fake_espresso(qe_input: str, structure: Structure):
     """
-    forces = [np.random.normal(loc=0,scale=1,size=3) for n in range(noa)]
-    print(forces)
-    return forces
+    Returns a list of random forces. Takes the same argument as real ESPRESSO
+    in order to allow for substitution.
+    """
+    noa = len(structure.positions)
+    return [np.random.normal(loc=0,scale=1,size=3) for _ in range(noa)]
 
+def fake_predict_on_structure(self, structure):
+        """
+        Substitutes in the predict_on_structure method of GaussianProcess
+        """
 
+        structure.forces = [np.random.randn(3) for n in structure.positions]
+        structure.stds = [np.random.randn(3) for n in structure.positions]
+
+        return structure
 
 class Fake_GP(GaussianProcess):
     """
@@ -34,6 +45,10 @@ class Fake_GP(GaussianProcess):
 
     def __init__(self, kernel):
         super(GaussianProcess, self).__init__()
+
+        self.sigma_f = 0
+        self.length_scale = 0
+        self.sigma_n = 0
 
         pass
 
@@ -49,24 +64,15 @@ class Fake_GP(GaussianProcess):
         """
         pass
 
-    def predict(self, structure, _):
+    def predict(self, chemenv, i):
         """
         Substitutes in the predict method of GaussianProcess
         """
-        structure.forces = [np.random.randn(3) for n in range(structure.nat)]
-        structure.stds = [np.random.randn(3) for n in range(structure.nat)]
+        #structure.forces = [np.random.randn(3) for n in range(structure.nat)]
+        #structure.stds = [np.random.randn(3) for n in range(structure.nat)]
 
-        return structure
+        return chemenv
 
-    def predict_on_structure(self, structure):
-        """
-        Substitutes in the predict_on_structure method of GaussianProcess
-        """
-
-        structure.forces = [np.random.randn(3) for n in structure.positions]
-        structure.stds = [np.random.randn(3) for n in structure.positions]
-
-        return structure
 
 
 def cleanup_otf_run():
@@ -74,6 +80,7 @@ def cleanup_otf_run():
     os.system('rm pwscf.out')
     os.system('rm pwscf.wfc')
     os.system('rm pwscf.save')
+    os.system('rm otf_run.out')
 
 # ------------------------------------------------------
 #          fixtures
@@ -155,7 +162,6 @@ def test_cell_parsing(qe_input, exp_cell):
                          )
 def test_cell_parsing(qe_input, mass_dict):
     positions, species, cell, masses = parse_qe_input(qe_input)
-    print(masses)
     assert masses == mass_dict
 
 @pytest.mark.parametrize('qe_output,exp_forces',
@@ -178,7 +184,8 @@ def test_espresso_calling_1(test_otf_engine_1):
                           False), 'PWSCF_COMMAND not found ' \
                                   'in environment'
 
-    forces = test_otf_engine_1.run_espresso()
+    forces = run_espresso(test_otf_engine_1.qe_input,
+                          test_otf_engine_1.structure)
     assert isinstance(forces, list)
     assert len(forces) == len(test_otf_engine_1.structure.forces)
 
@@ -190,6 +197,30 @@ def test_espresso_calling_1(test_otf_engine_1):
             assert np.equal(force, test1forces[i]).all()
 
     cleanup_otf_run()
+
+def test_espresso_input_edit():
+    """
+    Load a structure in from qe_input_1, change the position and cell,
+    then edit and re-parse
+    :return:
+    """
+    os.system('cp test_files/qe_input_1.in .')
+    positions, species, cell, masses =  parse_qe_input('./qe_input_1.in')
+    struc = Structure(cell,species,positions,masses)
+
+    struc.vec1 += np.random.randn(3)
+    struc.positions[0]+= np.random.randn(3)
+
+    edit_qe_input_positions('./qe_input_1.in', structure=struc)
+
+    positions, species, cell, masses =  parse_qe_input('./qe_input_1.in')
+
+    assert np.equal(positions[0],struc.positions[0]).all()
+    assert np.equal(struc.vec1,cell[0, :]).all()
+
+    os.system('rm ./qe_input_1.in')
+
+
 
 # ------------------------------------------------------
 #                   test  otf methods
@@ -215,5 +246,18 @@ def test_update_1(test_otf_engine_1):
     for i,pos in enumerate(test_otf_engine_1.structure.positions):
         assert np.isclose(pos,target_positions[i],rtol=1e-6).all()
 
+# ------------------------------------------------------
+#                   test  otf runs
+# ------------------------------------------------------
+# Under development
+"""
+def test_otf_1():
+     os.system('cp ./test_files/qe_input_1.in ./pwscf.in')
 
-
+     otf = OTF('./pwscf.in', .1, 2, kernel='two_body',
+              cutoff=10)
+     otf.run_espresso = fake_espresso
+     otf.gp = Fake_GP(kernel='')
+     otf.run()
+     cleanup_otf_run()
+"""
