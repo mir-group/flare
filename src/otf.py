@@ -14,11 +14,11 @@ from struc import Structure
 from math import sqrt
 from gp import GaussianProcess
 from env import ChemicalEnvironment
-
+from punchout import punchout
 
 class OTF(object):
     def __init__(self, qe_input: str, dt: float, number_of_steps: int,
-                 kernel: str, cutoff: float):
+                 kernel: str, cutoff: float, punchout_d: float=None):
         """
         On-the-fly learning engine, containing methods to run OTF calculation
 
@@ -27,12 +27,16 @@ class OTF(object):
         :param number_of_steps: int, Number of steps
         :param kernel: Type of kernel for GP regression model
         :param cutoff: Cutoff radius for kernel
+        :param punchout_d: Box distance around a high-uncertainty atom to
+                         punch out
         """
 
         self.qe_input = qe_input
         self.dt = dt
         self.Nsteps = number_of_steps
         self.gp = GaussianProcess(kernel)
+        self.cutoff = cutoff
+        self.punchout_d = punchout_d
 
         positions, species, cell, masses = parse_qe_input(self.qe_input)
         self.structure = Structure(lattice=cell, species=species,
@@ -40,6 +44,7 @@ class OTF(object):
                                    mass_dict=masses)
 
         self.curr_step = 0
+        self.train_structure = None
 
         # Create blank output file with time header and structure information
         with open('otf_run.out', 'w') as f:
@@ -88,15 +93,24 @@ class OTF(object):
 
         # Run espresso and write out results
         self.write_to_output('=' * 20 + '\n' + 'Calling QE... ')
-        forces = self.run_espresso()
+
+        if self.punchout_d == None:
+            self.train_structure = self.structure
+        elif self.train_structure is None:
+            target_atom = np.random.randint(0,len(self.structure.positions))
+            self.train_structure = punchout(self.structure,target_atom,
+                                            d=self.punchout_d)
+
+
+        forces = run_espresso(self.qe_input,self.train_structure)
         self.write_to_output('Done.\n')
 
         # Write input positions and force results
         qe_strings = 'Resultant Positions and Forces:\n'
-        for n in range(self.structure.nat):
-            qe_strings += self.structure.species[n] + ': '
+        for n in range(self.train_structure.nat):
+            qe_strings += self.train_structure.species[n] + ': '
             for i in range(3):
-                qe_strings += '%.3f  ' % self.structure.positions[n][i]
+                qe_strings += '%.3f  ' % self.train_structure.positions[n][i]
             qe_strings += '\t '
             for i in range(3):
                 qe_strings += '%.3f  ' % forces[n][i]
@@ -105,7 +119,7 @@ class OTF(object):
 
         # Update hyperparameters and write results
         self.write_to_output('Updating database hyperparameters...\n')
-        self.gp.update_db(self.structure, forces)
+        self.gp.update_db(self.train_structure, forces)
         self.gp.train()
         self.write_to_output('New GP Hyperparameters:\n' +
                              'Signal variance: \t' +
@@ -132,53 +146,6 @@ class OTF(object):
                                               self.structure.species[i]]
 
             self.structure.prev_positions[i] = np.array(temp_pos)
-
-    def run_espresso(self):
-        """
-        Calls quantum espresso from input located at self.qe_input
-
-        :return: List [nparray] List of forces
-        """
-
-        self.write_to_output('')
-        self.write_qe_input_positions()
-
-        pw_loc = os.environ.get('PWSCF_COMMAND', 'pwscf.x')
-
-        qe_command = '{0} < {1} > {2}'.format(pw_loc, self.qe_input,
-                                              'pwscf.out')
-
-        os.system(qe_command)
-
-        return parse_qe_forces('pwscf.out')
-
-    def write_qe_input_positions(self):
-        """
-        Write the current configuration of the OTF structure to the
-        qe input file
-        """
-
-        with open(self.qe_input, 'r') as f:
-            lines = f.readlines()
-
-        file_pos_index = None
-        for i, line in enumerate(lines):
-            if 'ATOMIC_POSITIONS' in line:
-                file_pos_index = int(i + 1)
-        assert file_pos_index is not None, 'Failed to find positions in input'
-
-        for pos_index, line_index in enumerate(
-                range(file_pos_index, len(lines))):
-            pos_string = ' '.join([self.structure.species[pos_index],
-                                   str(self.structure.positions[pos_index][0]),
-                                   str(self.structure.positions[pos_index][1]),
-                                   str(self.structure.positions[pos_index][
-                                           2])])
-            lines[line_index] = str(pos_string + '\n')
-
-        with open(self.qe_input, 'w') as f:
-            for line in lines:
-                f.write(line)
 
     def write_to_output(self, string: str, output_file: str = 'otf_run.out'):
         """
@@ -220,8 +187,11 @@ class OTF(object):
                 string += str('%.6e' % self.structure.stds[i][j]) + ' '
             string += '\n'
 
-            self.write_to_output(string)
+        self.write_to_output(string)
 
+    # TODO @Simon and Jon perhaps this should return the integer index of an
+    # atom which has a variance outside of bounds, and it could return
+    # something like -1 if all the atoms have acceptable force variance?
     def is_std_in_bound(self):
         """
         Evaluate if the model error are within predefined criteria
@@ -231,7 +201,28 @@ class OTF(object):
 
         # Some decision making criteria
 
+
         return True
+
+
+
+def run_espresso(qe_input: str, structure: Structure):
+    """
+    Calls quantum espresso from input located at self.qe_input
+
+    :return: List [nparray] List of forces
+    """
+
+    edit_qe_input_positions(qe_input, structure)
+
+    pw_loc = os.environ.get('PWSCF_COMMAND', 'pwscf.x')
+
+    qe_command = '{0} < {1} > {2}'.format(pw_loc, qe_input,
+                                          'pwscf.out')
+
+    os.system(qe_command)
+
+    return parse_qe_forces('pwscf.out')
 
 
 def parse_qe_input(qe_input: str):
@@ -299,6 +290,62 @@ def parse_qe_input(qe_input: str):
         masses[line[0]] = float(line[1])
 
     return positions, species, cell, masses
+
+
+def edit_qe_input_positions(qe_input: str, structure: Structure):
+    """
+    Write the current configuration of the OTF structure to the
+    qe input file
+    """
+
+    with open(qe_input, 'r') as f:
+        lines = f.readlines()
+
+
+    file_pos_index = None
+    cell_index = None
+    nat = None
+    for i, line in enumerate(lines):
+        if 'ATOMIC_POSITIONS' in line:
+            file_pos_index = int(i + 1)
+        if 'CELL_PARAMETERS' in line:
+            cell_index = int(i + 1)
+        if 'nat' in line:
+            nat = int(line.split('=')[1])
+
+    assert file_pos_index is not None, 'Failed to find positions in input'
+    assert cell_index is not None, 'Failed to find cell in input'
+    assert nat is not None, 'Failed to find nat in input'
+
+    for pos_index, line_index in enumerate(
+            range(file_pos_index, file_pos_index+structure.nat)):
+        pos_string = ' '.join([structure.species[pos_index],
+                               str(structure.positions[pos_index][
+                                       0]),
+                               str(structure.positions[pos_index][
+                                       1]),
+                               str(structure.positions[pos_index][
+                                       2])])
+        lines[line_index] = str(pos_string + '\n')
+
+    # TODO current assumption: the new structure has fewer atoms than the
+    # previous one. If we are always 'editing' a copy of the larger structure
+    # than this will be okay with the punchout method.
+    for line_index in range(file_pos_index+structure.nat,
+                            file_pos_index + nat):
+            lines[line_index]=''
+
+    lines[cell_index] = ' '.join([str(x) for x in structure.vec1]) + '\n'
+    lines[cell_index + 1] = ' '.join([str(x) for x in structure.vec2]) \
+                            +'\n'
+    lines[cell_index + 2] = ' '.join([str(x) for x in structure.vec3]) \
+                            +'\n'
+
+
+    with open(qe_input, 'w') as f:
+        for line in lines:
+            f.write(line)
+
 
 
 def parse_qe_forces(outfile: str):
@@ -376,12 +423,11 @@ def parse_otf_output(outfile: str):
         results['species'] = species
         print(results)
 
-
 if __name__ == '__main__':
-    # os.system('cp ../tests/test_files/qe_input_2.in pwscf.in')
+     #os.system('cp ../tests/test_files/qe_input_2.in pwscf.in')
 
-    # otf = OTF('pwscf.in', .1, 10, kernel='two_body',
-    #          cutoff=10)
-    # otf.run()
-    # parse_output('otf_run.out')
-    pass
+     otf = OTF('pwscf.in', .1, 10, kernel='two_body',
+              cutoff=10)
+     otf.run()
+     # parse_output('otf_run.out')
+     pass
