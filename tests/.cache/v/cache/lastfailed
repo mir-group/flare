@@ -5,5 +5,6 @@
   "test_OTF_Struc.py::test_position_parsing[tests/test_files/qe_input_1.in-exp_pos0]": true,
   "test_OTF_Struc.py::test_random_structure_setup": true,
   "test_OTF_Struc.py::test_species_parsing[tests/test_files/qe_input_1.in-exp_spec0]": true,
-  "test_OTF_Struc.py::test_update_1": true
+  "test_OTF_Struc.py::test_update_1": true,
+  "test_struc.py": true
 }
