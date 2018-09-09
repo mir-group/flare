@@ -111,6 +111,7 @@ class ChemicalEnvironment:
                                               triplet):
                 return triplet_index
 
+    # TODO: make this static
     def get_local_atom_images(self, vec, super_check=3):
         """Get periodic images of an atom within the cutoff radius.
 

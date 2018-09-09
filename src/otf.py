@@ -126,10 +126,8 @@ class OTF(object):
         for i, prev_pos in enumerate(self.structure.prev_positions):
             temp_pos = self.structure.positions[i]
             self.structure.positions[i] = 2 * self.structure.positions[i] - \
-                                          prev_pos + self.dt ** 2 * \
-                                          self.structure.forces[i] \
-                                          / self.structure.mass_dict[
-                                              self.structure.species[i]]
+                prev_pos + self.dt ** 2 * self.structure.forces[i] / \
+                self.structure.mass_dict[self.structure.species[i]]
 
             self.structure.prev_positions[i] = np.array(temp_pos)
 
