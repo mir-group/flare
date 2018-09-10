@@ -155,7 +155,7 @@ def test_triplet_to_index(test_env):
 
 def test_get_local_atom_images(test_env):
     vec = np.array([0.5, 0.5, 0.5])
-    vecs, dists = test_env.get_local_atom_images(vec)
+    vecs, dists = test_env.get_local_atom_images(test_env.structure, vec)
     assert(len(dists) == 8)
     assert(len(vecs) == 8)
 

@@ -111,8 +111,8 @@ class ChemicalEnvironment:
                                               triplet):
                 return triplet_index
 
-    # TODO: make this static
-    def get_local_atom_images(self, vec, super_check=3):
+    @staticmethod
+    def get_local_atom_images(structure, vec, super_check=3):
         """Get periodic images of an atom within the cutoff radius.
 
         :param vec: atomic position
@@ -122,7 +122,7 @@ class ChemicalEnvironment:
         """
 
         # get bravais coefficients
-        coeff = np.matmul(self.structure.inv_lattice, vec)
+        coeff = np.matmul(structure.inv_lattice, vec)
 
         # get bravais coefficients for atoms within supercell
         coeffs = [[], [], []]
@@ -140,12 +140,12 @@ class ChemicalEnvironment:
         for m in range(len(coeffs[0])):
             for n in range(len(coeffs[1])):
                 for p in range(len(coeffs[2])):
-                    vec_curr = coeffs[0][m]*self.structure.vec1 +\
-                               coeffs[1][n]*self.structure.vec2 +\
-                               coeffs[2][p]*self.structure.vec3
+                    vec_curr = coeffs[0][m]*structure.vec1 +\
+                               coeffs[1][n]*structure.vec2 +\
+                               coeffs[2][p]*structure.vec3
                     dist = np.linalg.norm(vec_curr)
 
-                    if dist < self.structure.cutoff:
+                    if dist < structure.cutoff:
                         vecs.append(vec_curr)
                         dists.append(dist)
 
@@ -169,7 +169,7 @@ class ChemicalEnvironment:
             bond_curr = self.species_to_index(central_type, typ_curr)
 
             # get images within cutoff
-            vecs, dists = self.get_local_atom_images(diff_curr)
+            vecs, dists = self.get_local_atom_images(self.structure, diff_curr)
 
             for vec, dist in zip(vecs, dists):
                 # ignore self interaction
