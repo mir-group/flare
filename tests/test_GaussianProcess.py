@@ -10,7 +10,6 @@ import pytest
 
 import numpy as np
 import sys
-sys.path.append('../src')
 from gp import GaussianProcess, minus_like_hyp
 from env import ChemicalEnvironment
 from struc import Structure

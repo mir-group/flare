@@ -140,7 +140,7 @@ class OTF(object):
 
         # Precompute dt squared for efficiency
         dtdt = self.dt ** 2
-
+    
         for i, pre_pos in enumerate(self.structure.prev_positions):
             temp_pos = np.array(self.structure.positions[i])
             mass = self.structure.mass_dict[self.structure.species[i]]
