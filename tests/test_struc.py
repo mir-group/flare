@@ -13,7 +13,7 @@ import numpy as np
 import sys
 from test_GaussianProcess import get_random_structure
 
-sys.path.append('../src')
+sys.path.append('../otf_engine')
 from struc import Structure
 
 # ------------------------------------------------------

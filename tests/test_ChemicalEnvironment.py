@@ -8,7 +8,7 @@ import pytest
 import numpy as np
 import sys
 import time
-sys.path.append('../src')
+sys.path.append('../otf_engine')
 import env
 import struc
 

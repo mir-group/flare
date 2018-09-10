@@ -16,7 +16,7 @@ from numpy.random import randint,normal,uniform
 from test_GaussianProcess import get_random_structure
 
 import sys
-sys.path.append('../src')
+sys.path.append('../otf_engine')
 from struc import Structure
 from qe_util import run_espresso
 from rcut import perturb_position,perturb_outside_radius

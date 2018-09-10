@@ -15,7 +15,7 @@ import os
 import sys
 import numpy as np
 
-sys.path.append("../src")
+sys.path.append('../otf_engine')
 from otf import OTF
 from gp import GaussianProcess
 from struc import Structure
