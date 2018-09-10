@@ -10,7 +10,7 @@
 	ecutwfc = 50
 	ecutrho = 100
 	ntyp = 1
-	nat = 2
+nat = 2
 	ibrav = 0
 / 
 &ELECTRONS

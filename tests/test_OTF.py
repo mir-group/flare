@@ -14,11 +14,14 @@ import pytest
 import os
 import sys
 import numpy as np
+
 sys.path.append("../src")
-from otf import parse_qe_input, parse_qe_forces, OTF, edit_qe_input_positions,\
-            run_espresso
+from otf import OTF
 from gp import GaussianProcess
 from struc import Structure
+from qe_util import parse_qe_forces, parse_qe_input, \
+    edit_qe_input_positions, run_espresso
+
 
 def fake_espresso(qe_input: str, structure: Structure):
     """
@@ -26,17 +29,19 @@ def fake_espresso(qe_input: str, structure: Structure):
     in order to allow for substitution.
     """
     noa = len(structure.positions)
-    return [np.random.normal(loc=0,scale=1,size=3) for _ in range(noa)]
+    return [np.random.normal(loc=0, scale=1, size=3) for _ in range(noa)]
+
 
 def fake_predict_on_structure(self, structure):
-        """
+    """
         Substitutes in the predict_on_structure method of GaussianProcess
         """
 
-        structure.forces = [np.random.randn(3) for n in structure.positions]
-        structure.stds = [np.random.randn(3) for n in structure.positions]
+    structure.forces = [np.random.randn(3) for n in structure.positions]
+    structure.stds = [np.random.randn(3) for n in structure.positions]
 
-        return structure
+    return structure
+
 
 class Fake_GP(GaussianProcess):
     """
@@ -68,11 +73,10 @@ class Fake_GP(GaussianProcess):
         """
         Substitutes in the predict method of GaussianProcess
         """
-        #structure.forces = [np.random.randn(3) for n in range(structure.nat)]
-        #structure.stds = [np.random.randn(3) for n in range(structure.nat)]
+        # structure.forces = [np.random.randn(3) for n in range(structure.nat)]
+        # structure.stds = [np.random.randn(3) for n in range(structure.nat)]
 
         return chemenv
-
 
 
 def cleanup_otf_run():
@@ -81,6 +85,7 @@ def cleanup_otf_run():
     os.system('rm pwscf.wfc')
     os.system('rm pwscf.save')
     os.system('rm otf_run.out')
+
 
 # ------------------------------------------------------
 #          fixtures
@@ -152,17 +157,19 @@ def test_cell_parsing(qe_input, exp_cell):
     positions, species, cell, masses = parse_qe_input(qe_input)
     assert np.all(exp_cell == cell)
 
+
 @pytest.mark.parametrize("qe_input,mass_dict",
                          [
                              ('./test_files/qe_input_1.in',
-                              {'H':1.0}),
+                              {'H': 1.0}),
                              ('./test_files/qe_input_2.in',
-                              {'Al':26.9815385})
+                              {'Al': 26.9815385})
                          ]
                          )
 def test_cell_parsing(qe_input, mass_dict):
     positions, species, cell, masses = parse_qe_input(qe_input)
     assert masses == mass_dict
+
 
 @pytest.mark.parametrize('qe_output,exp_forces',
                          [
@@ -185,7 +192,7 @@ def test_espresso_calling_1(test_otf_engine_1):
                                   'in environment'
 
     forces = run_espresso(test_otf_engine_1.qe_input,
-                          test_otf_engine_1.structure)
+                          test_otf_engine_1.structure, temp=False)
     assert isinstance(forces, list)
     assert len(forces) == len(test_otf_engine_1.structure.forces)
 
@@ -198,6 +205,7 @@ def test_espresso_calling_1(test_otf_engine_1):
 
     cleanup_otf_run()
 
+
 def test_espresso_input_edit():
     """
     Load a structure in from qe_input_1, change the position and cell,
@@ -205,46 +213,44 @@ def test_espresso_input_edit():
     :return:
     """
     os.system('cp test_files/qe_input_1.in .')
-    positions, species, cell, masses =  parse_qe_input('./qe_input_1.in')
-    struc = Structure(cell,species,positions,masses)
+    positions, species, cell, masses = parse_qe_input('./qe_input_1.in')
+    struc = Structure(cell, species, positions, masses)
 
     struc.vec1 += np.random.randn(3)
-    struc.positions[0]+= np.random.randn(3)
+    struc.positions[0] += np.random.randn(3)
 
     edit_qe_input_positions('./qe_input_1.in', structure=struc)
 
-    positions, species, cell, masses =  parse_qe_input('./qe_input_1.in')
+    positions, species, cell, masses = parse_qe_input('./qe_input_1.in')
 
-    assert np.equal(positions[0],struc.positions[0]).all()
-    assert np.equal(struc.vec1,cell[0, :]).all()
+    assert np.equal(positions[0], struc.positions[0]).all()
+    assert np.equal(struc.vec1, cell[0, :]).all()
 
     os.system('rm ./qe_input_1.in')
-
 
 
 # ------------------------------------------------------
 #                   test  otf methods
 # ------------------------------------------------------
 
-
-#TODO see if there is a better way to to set up the different input runs
+# TODO see if there is a better way to to set up the different input runs
 
 def test_update_1(test_otf_engine_1):
+    test_otf_engine_1.structure.prev_positions = [[2.5, 2.5, 2.5],
+                                                  [4.5, 2.5, 2.5]]
 
-    test_otf_engine_1.structure.prev_positions=[[2.5,2.5,2.5],
-                                                [4.5,2.5,2.5]]
-
-    test_otf_engine_1.structure.forces=[np.array([.07413986, 0.0, 0.0]),
-                                      np.array([-0.07413986, 0.0, 0.0])]
+    test_otf_engine_1.structure.forces = [np.array([.07413986, 0.0, 0.0]),
+                                          np.array([-0.07413986, 0.0, 0.0])]
 
     test_otf_engine_1.update_positions()
 
-    target_positions=[  np.array([2.53714741,2.5,2.5]),
-                        np.array([4.46285259,2.5,2.5])
-                                 ]
+    target_positions = [np.array([2.53714741, 2.5, 2.5]),
+                        np.array([4.46285259, 2.5, 2.5])
+                        ]
 
-    for i,pos in enumerate(test_otf_engine_1.structure.positions):
-        assert np.isclose(pos,target_positions[i],rtol=1e-6).all()
+    for i, pos in enumerate(test_otf_engine_1.structure.positions):
+        assert np.isclose(pos, target_positions[i], rtol=1e-6).all()
+
 
 # ------------------------------------------------------
 #                   test  otf runs

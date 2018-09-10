@@ -14,7 +14,6 @@ from punchout import is_within_d_box, punchout
 from test_GaussianProcess import get_random_structure
 from struc import Structure
 
-
 # -----------------------
 # Test helper methods
 # -----------------------
