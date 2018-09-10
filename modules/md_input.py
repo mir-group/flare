@@ -1,29 +1,42 @@
 import numpy as np
 
 
-class MDInput:
-    def __init__(self, pseudo_dir: str, outdir: str, dt: float, nstep: int,
-                 nat: int, ntyp: int, ecut: float, cell: np.ndarray,
-                 species: list, positions: list, nk: np.ndarray,
-                 ion_names: list, ion_masses: list, ion_pseudo: list,
-                 ion_temperature: str = 'rescaling',
-                 tempw: float = 1000):
-        self.pseudo_dir = pseudo_dir
-        self.outdir = outdir
-        self.dt = dt
-        self.nstep = nstep
-        self.nat = nat
-        self.ntyp = ntyp
-        self.ecut = ecut
-        self.cell = cell
-        self.species = species
-        self.positions = positions
-        self.nk = nk
-        self.ion_names = ion_names
-        self.ion_masses = ion_masses
-        self.ion_pseudo = ion_pseudo
-        self.ion_temperature = ion_temperature
-        self.tempw = tempw
+class QEInput:
+    def __init__(self, input_file_name: str, calculation: str,
+                 scf_inputs: dict, md_inputs: dict = None):
+
+        self.input_file_name = input_file_name
+        self.calculation = calculation
+
+        self.pseudo_dir = scf_inputs['pseudo_dir']
+        self.outdir = scf_inputs['outdir']
+        self.nat = scf_inputs['nat']
+        self.ntyp = scf_inputs['ntyp']
+        self.ecutwfc = scf_inputs['ecutwfc']
+        self.cell = scf_inputs['cell']
+        self.species = scf_inputs['species']
+        self.positions = scf_inputs['positions']
+        self.kvec = scf_inputs['kvec']
+        self.ion_names = scf_inputs['ion_names']
+        self.ion_masses = scf_inputs['ion_masses']
+        self.ion_pseudo = scf_inputs['ion_pseudo']
+
+        # get text blocks
+        self.species_txt = self.get_species_txt()
+        self.position_txt = self.get_position_txt()
+        self.cell_txt = self.get_cell_txt()
+        self.kpt_txt = self.get_kpt_txt()
+
+        if self.calculation == 'md':
+            self.dt = md_inputs['dt']
+            self.nstep = md_inputs['nstep']
+            self.ion_temperature = md_inputs['ion_temperature']
+            self.tempw = md_inputs['tempw']
+
+        self.input_text = self.get_input_text()
+
+        # write input file
+        self.write_file()
 
     def get_species_txt(self):
         spectxt = ''
@@ -51,71 +64,83 @@ class MDInput:
 
         return celltxt
 
-    @staticmethod
-    def write_file(fname, text):
-        with open(fname, 'w') as fin:
-            fin.write(text)
+    def get_kpt_txt(self):
+        ktxt = ''
+        ktxt += 'K_POINTS automatic'
+        ktxt += '\n {} {} {}  0 0 0'.format(*self.kvec)
 
-    @staticmethod
-    def md_input(pseudo_dir, outdir, dt, nstep,
-                 nat, ntyp, ecut, cell, pos, nk,
-                 ion_temperature, tempw):
+        return ktxt
 
-        md_text = """ &control
-    calculation = 'md'
-    pseudo_dir = '{0}'
-    outdir = '{1}'
-    dt = {2}
-    nstep = {3}
+    def get_input_text(self):
+
+        input_text = """ &control
+    calculation = '{}'
+    pseudo_dir = '{}'
+    outdir = '{}'""".format(self.calculation, self.pseudo_dir, self.outdir)
+
+        if self.calculation == 'md':
+            input_text += """
+    dt = {}
+    nstep = {}""".format(self.dt, self.nstep)
+
+        input_text += """
  /
  &system
     ibrav= 0
-    nat= {4}
-    ntyp= {5}
-    ecutwfc ={6}
+    nat= {}
+    ntyp= {}
+    ecutwfc ={}
     nosym = .true.
  /
  &electrons
     conv_thr =  1.0d-10
-    mixing_beta = 0.7
+    mixing_beta = 0.7""".format(self.nat, self.ntyp, self.ecutwfc)
+
+        if self.calculation == 'md':
+            input_text += """
  /
  &ions
     pot_extrapolation = 'second-order'
     wfc_extrapolation = 'second-order'
- /
-ATOMIC_SPECIES
- Si  28.086  Si.pz-vbc.UPF
- C  12.011  C.pz-rrkjus.UPF
-{7}
-{8}
-K_POINTS automatic
- {9} {9} {9}  0 0 0
-    """.format(pseudo_dir, outdir, dt, nstep,
-               nat, ntyp, ecut, cell, pos, nk)
+    ion_temperature = {}
+    tempw = {}""".format(self.ion_temperature, self.tempw)
 
-        return md_text
+        input_text += """
+ /
+{}
+{}
+{}
+{}
+""".format(self.species_txt, self.cell_txt, self.position_txt, self.kpt_txt)
+
+        return input_text
+
+    def write_file(self):
+        with open(self.input_file_name, 'w') as fin:
+            fin.write(self.input_text)
+
 
 if __name__ == '__main__':
     # make test input
-    pseudo_dir = 'test/pseudo'
-    outdir = '.'
-    dt = 20
-    nstep = 1000
-    nat = 2
-    ntyp = 2
-    ecut = 18.0
-    cell = np.eye(3)
-    species = ['C', 'Si']
-    positions = [np.array([0, 0, 0]),
-                 np.array([0.5, 0.5, 0.5])]
-    nk = np.array([4, 4, 4])
-    ion_names = ['C', 'Si']
-    ion_masses = [2.0, 3.0]
-    ion_pseudo = ['pseudo/c', 'pseudo/si']
+    input_file = './test.in'
+    calculation = 'scf'
+    scf_inputs = dict(pseudo_dir='test/pseudo',
+                      outdir='.',
+                      nat=2,
+                      ntyp=2,
+                      ecutwfc=18.0,
+                      cell=np.eye(3),
+                      species=['C', 'Si'],
+                      positions=[np.array([0, 0, 0]),
+                                 np.array([0.5, 0.5, 0.5])],
+                      kvec=np.array([4, 4, 4]),
+                      ion_names=['C', 'Si'],
+                      ion_masses=[2.0, 3.0],
+                      ion_pseudo=['C.pz-rrkjus.UPF', 'Si.pz-rrkjus.UPF'])
 
-    test_md = MDInput(pseudo_dir, outdir, dt, nstep, nat, ntyp, ecut,
-                      cell, species, positions, nk, ion_names, ion_masses,
-                      ion_pseudo)
+    md_inputs = dict(dt=20,
+                     nstep=1000,
+                     ion_temperature='rescaling',
+                     tempw=1000)
 
-    test_spec = test_md.get_species_txt()
-    print(test_spec)
+    test_md = QEInput(input_file, calculation, scf_inputs, md_inputs)
