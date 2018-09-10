@@ -9,10 +9,7 @@ Simon Batzner
 import pytest
 
 import numpy as np
-
 import sys
-sys.path.append('../src')
-
 from gp import GaussianProcess, minus_like_hyp
 from env import ChemicalEnvironment
 from struc import Structure
@@ -29,7 +26,7 @@ def get_random_structure(cell, unique_species, cutoff, noa):
     for n in range(noa):
         positions.append(np.random.uniform(-1, 1, 3))
         forces.append(np.random.uniform(-1, 1, 3))
-        species.append(unique_species[np.random.randint(0, 2)])
+        species.append(unique_species[np.random.randint(0, len(unique_species))])
 
     test_structure = Structure(cell, species, positions, cutoff)
 

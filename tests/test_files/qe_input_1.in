@@ -10,7 +10,7 @@
 	ecutwfc = 50
 	ecutrho = 100
 	ntyp = 1
-	nat = 2
+nat = 2
 	ibrav = 0
 / 
 &ELECTRONS
@@ -21,14 +21,14 @@
 &IONS
 / 
 &CELL
-/ 
-K_POINTS {gamma}
+/
 ATOMIC_SPECIES
   H 1.0 H.pbe-kjpaw.UPF
 CELL_PARAMETERS {angstrom}
- 5 0 0
- 0 5 0
- 0 0 5
+5.0 0.0 0.0
+0.0 5.0 0.0
+0.0 0.0 5.0
 ATOMIC_POSITIONS {angstrom}
 H 2.51857 2.5 2.5
 H 4.48143 2.5 2.5
+K_POINTS {gamma}
