@@ -9,6 +9,8 @@ Steven Torrisi
 
 import numpy as np
 
+from env import ChemicalEnvironment
+
 from struc import Structure
 
 

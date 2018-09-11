@@ -15,7 +15,7 @@ from struc import Structure
 from typing import List
 
 
-def run_espresso(qe_input: str, structure: Structure, temp: bool = True) -> \
+def run_espresso(qe_input: str, structure: Structure, temp: bool = False) -> \
         List[np.array]:
     """
     Calls quantum espresso from input located at self.qe_input
@@ -32,7 +32,7 @@ def run_espresso(qe_input: str, structure: Structure, temp: bool = True) -> \
 
     # If temp, copy the extant file into a new run directory
     run_qe_path = qe_input
-    run_qe_path += '_run ' if temp else ''
+    run_qe_path += '_run' if temp else ''
 
     os.system(' '.join(['cp', qe_input, run_qe_path]))
     edit_qe_input_positions(run_qe_path, structure)
@@ -106,11 +106,12 @@ def parse_qe_input(qe_input: str):
     assert positions != [], "Positions failed to load"
 
     # Load masses
+    massconvert = 9648.53
     masses = {}
     for i in range(species_index, species_index + len(set(species))):
         # Expects lines of format like: H 1.0 H_pseudo_name.ext
         line = lines[i].strip().split()
-        masses[line[0]] = float(line[1])
+        masses[line[0]] = float(line[1]) * massconvert
 
     return positions, species, cell, masses
 
@@ -185,7 +186,7 @@ def parse_qe_forces(outfile: str):
     with open(outfile, 'r') as outf:
         for line in outf:
             if line.lower().startswith('!    total energy'):
-                total_energy = float(line.split()[-2]) * 13.605698066
+                total_energy = float(line.split()[-2])
 
             if line.find('force') != -1 and line.find('atom') != -1:
                 line = line.split('force =')[-1]
@@ -199,5 +200,10 @@ def parse_qe_forces(outfile: str):
 
     assert total_energy != np.nan, "Quantum ESPRESSO parser failed to read " \
                                    "the file {}. Run failed.".format(outfile)
+
+    # Convert from ry/au to ev/angstrom
+    conversion_factor = 25.71104309541616
+
+    forces = [conversion_factor * force for force in forces]
 
     return forces
