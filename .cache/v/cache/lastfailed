@@ -1,8 +1,0 @@
-{
-  "tests/test_ChemicalEnvironment.py": true,
-  "tests/test_GaussianProcess.py": true,
-  "tests/test_OTF.py": true,
-  "tests/test_punchout.py": true,
-  "tests/test_rcut.py": true,
-  "tests/test_struc.py": true
-}
