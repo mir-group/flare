@@ -9,6 +9,10 @@ import numpy.random as rand
 
 from math import sin, cos
 from struc import Structure
+
+import sys
+sys.path.append('../otf_engine')
+
 from qe_util import run_espresso
 
 def perturb_position(pos: np.array, r: float=.1, rscale = .02,):

@@ -17,6 +17,7 @@ from test_GaussianProcess import get_random_structure
 
 import sys
 sys.path.append('../otf_engine')
+sys.path.append('../modules')
 from struc import Structure
 from qe_util import run_espresso
 from rcut import perturb_position,perturb_outside_radius
