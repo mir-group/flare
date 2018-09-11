@@ -80,7 +80,8 @@ class QEInput:
         input_text = """ &control
     calculation = '{}'
     pseudo_dir = '{}'
-    outdir = '{}'""".format(self.calculation, self.pseudo_dir, self.outdir)
+    outdir = '{}'
+    tprnfor = .true.""".format(self.calculation, self.pseudo_dir, self.outdir)
 
         if self.calculation == 'md':
             input_text += """
