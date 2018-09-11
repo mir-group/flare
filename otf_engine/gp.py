@@ -145,7 +145,7 @@ class GaussianProcess:
         args = (self,)
         res = minimize(minus_like_hyp, x_0, args,
                        method='nelder-mead',
-                       options={'xtol': 1e-8, 'disp': True})
+                       options={'xtol': 1e-8, 'disp': False})
 
         self.sigma_f = res.x[0]
         self.length_scale = res.x[1]
@@ -280,7 +280,7 @@ class GaussianProcess:
 
 
 def minus_like_hyp(hyp: List[float], gp: GaussianProcess,
-                   verbose: bool = True) -> float:
+                   verbose: bool = False) -> float:
     """Get minus likelihood as a function of hyperparameters.
 
     :param hyp: hyperparmeters to optimize: signal var, length scale, noise var
@@ -298,7 +298,6 @@ def minus_like_hyp(hyp: List[float], gp: GaussianProcess,
     except:
         like = -10
         minus_like = -like
-        print('K not semidefinite')
 
     if verbose:
         print(hyp)

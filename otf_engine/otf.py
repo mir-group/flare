@@ -27,7 +27,7 @@ class OTF(object):
         :param dt: float, Timestep size
         :param number_of_steps: int, Number of steps
         :param kernel: Type of kernel for GP regression model
-        :param cutoff: Cutoff radius for kernel
+        :param cutoff: Cutoff radius for kernel in angstrom
         :param punchout_d: Box distance around a high-uncertainty atom to
                          punch out
         """
@@ -140,7 +140,7 @@ class OTF(object):
 
         # Precompute dt squared for efficiency
         dtdt = self.dt ** 2
-    
+
         for i, pre_pos in enumerate(self.structure.prev_positions):
             temp_pos = np.array(self.structure.positions[i])
             mass = self.structure.mass_dict[self.structure.species[i]]
@@ -148,7 +148,7 @@ class OTF(object):
             forces = self.structure.forces[i]
 
             self.structure.positions[i] = 2 * pos - pre_pos + dtdt * forces / \
-                                                              mass
+                mass
 
             self.structure.prev_positions[i] = np.array(temp_pos)
 

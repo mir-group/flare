@@ -15,7 +15,7 @@ from struc import Structure
 from typing import List
 
 
-def run_espresso(qe_input: str, structure: Structure, temp: bool = True) -> \
+def run_espresso(qe_input: str, structure: Structure, temp: bool = False) -> \
         List[np.array]:
     """
     Calls quantum espresso from input located at self.qe_input
