@@ -66,11 +66,11 @@ class OTF(object):
             self.predict_on_structure()
 
             if not self.is_std_in_bound():
+                self.write_config()
                 self.run_and_train()
                 continue
-
-            self.update_positions()
             self.write_config()
+            self.update_positions()
             self.curr_step += 1
 
     def predict_on_structure(self):
@@ -186,7 +186,7 @@ class OTF(object):
                 string += str("%.8f"%self.structure.positions[i][j]) + ' '
             string += '\t'
             for j in range(3):
-                string += str(np.round(self.structure.forces[i][j], 8)) + ' '
+                string += str("%.8f"%self.structure.forces[i][j]) + ' '
             string += '\t'
             for j in range(3):
                 string += str('%.6e' % self.structure.stds[i][j]) + ' '
@@ -213,8 +213,11 @@ class OTF(object):
             high_error_atom, d= self.punchout_d )
             return False
         """
-
-        return True
+        print(np.nanmax(self.structure.stds))
+        if np.nanmax(self.structure.stds) > .1:
+            return False
+        else:
+            return True
 
 
 # TODO Currently won't work: needs to be re-done when we finalize our output
@@ -266,7 +269,7 @@ if __name__ == '__main__':
     import os
     os.system('cp qe_input_1.in pwscf.in')
 
-    otf = OTF('pwscf.in', .001, 10, kernel='two_body',
+    otf = OTF('pwscf.in', .0001, 100, kernel='two_body',
               cutoff=10, punchout_d=None)
     otf.run()
     # parse_output('otf_run.out')
