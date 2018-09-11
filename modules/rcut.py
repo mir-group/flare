@@ -12,7 +12,6 @@ from struc import Structure
 
 import sys
 sys.path.append('../otf_engine')
-
 from qe_util import run_espresso
 
 def perturb_position(pos: np.array, r: float=.1, rscale = .02,):
@@ -39,7 +38,7 @@ def perturb_position(pos: np.array, r: float=.1, rscale = .02,):
 
 
 def perturb_outside_radius(structure: Structure, atom: int, r_fix: float,
-                           mean_pert: float, pert_sigma = .02):
+                           mean_pert: float, pert_sigma : float = .02):
 
 
     assert r_fix > 0, "Radius must be positive"
@@ -60,10 +59,6 @@ def perturb_outside_radius(structure: Structure, atom: int, r_fix: float,
                          positions=new_positions,cutoff=structure.cutoff)
 
     return newstruc
-
-
-
-
 
 
 
