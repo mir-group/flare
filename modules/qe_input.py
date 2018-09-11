@@ -1,11 +1,15 @@
 import numpy as np
+import os
 
 
 class QEInput:
-    def __init__(self, input_file_name: str, calculation: str,
+    def __init__(self, input_file_name: str, output_file_name: str,
+                 pw_loc: str, calculation: str,
                  scf_inputs: dict, md_inputs: dict = None):
 
         self.input_file_name = input_file_name
+        self.output_file_name = output_file_name
+        self.pw_loc = pw_loc
         self.calculation = calculation
 
         self.pseudo_dir = scf_inputs['pseudo_dir']
@@ -96,13 +100,16 @@ class QEInput:
     conv_thr =  1.0d-10
     mixing_beta = 0.7""".format(self.nat, self.ntyp, self.ecutwfc)
 
-        if self.calculation == 'md':
+        if (self.calculation == 'md') or (self.calculation == 'relax'):
             input_text += """
  /
  &ions
     pot_extrapolation = 'second-order'
-    wfc_extrapolation = 'second-order'
-    ion_temperature = {}
+    wfc_extrapolation = 'second-order'"""
+
+        if (self.calculation == 'md'):
+            input_text += """
+    ion_temperature = '{}'
     tempw = {}""".format(self.ion_temperature, self.tempw)
 
         input_text += """
@@ -119,6 +126,13 @@ class QEInput:
         with open(self.input_file_name, 'w') as fin:
             fin.write(self.input_text)
 
+    def run_espresso(self):
+
+        qe_command = '{0} < {1} > {2}'.format(self.pw_loc,
+                                              self.input_file_name,
+                                              self.output_file_name)
+
+        os.system(qe_command)
 
 if __name__ == '__main__':
     # make test input
