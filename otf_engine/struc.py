@@ -1,6 +1,7 @@
-from numpy import zeros,ndarray
+from numpy import zeros, ndarray
 from numpy.linalg import inv
 from typing import List
+
 
 class Structure(object):
     """
@@ -14,8 +15,9 @@ class Structure(object):
 
     """
 
-    def __init__(self, lattice: ndarray, species:List[str],
-            positions: List[ndarray],cutoff: float,mass_dict: dict = None):
+    def __init__(self, lattice: ndarray, species: List[str],
+                 positions: List[ndarray], cutoff: float,
+                 mass_dict: dict = None):
         self.lattice = lattice
         self.vec1 = lattice[0, :]
         self.vec2 = lattice[1, :]
@@ -45,7 +47,7 @@ class Structure(object):
 
         self.mass_dict = mass_dict
 
-    def translate_positions(self, vector : ndarray=zeros(3)):
+    def translate_positions(self, vector: ndarray=zeros(3)):
         """
         Translate all positions, and previous positions by vector
         :param vector: vector to translate by
@@ -88,9 +90,6 @@ class Structure(object):
                 for p in unique_species:
                     triplet_list.append([m, n, p])
         return triplet_list
-
-
-
 
 
 if __name__ == '__main__':
