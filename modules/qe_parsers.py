@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def parse_md_output(outfile):
 
     steps = {}

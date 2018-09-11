@@ -1,13 +1,13 @@
 # Fdb version 3
-["bibtex otf"] 1536587543 "otf.aux" "otf.bbl" "otf" 1536587543
+["bibtex otf"] 1536675743 "otf.aux" "otf.bbl" "otf" 1536679734
   "/usr/local/texlive/2017/texmf-dist/bibtex/bst/revtex/apsrev4-1.bst" 1480098436 71518 fec93f06df0c073f83d2330456bd19c2 ""
-  "otf.aux" 1536587543 1402 f62c9784b08127699796f96700693fe8 ""
-  "otfNotes.bib" 1536587543 103 48ad29797468f16e2853d8797278d7af ""
+  "otf.aux" 1536679734 1402 16357211838da7b2d20e2216ef23c203 ""
+  "otfNotes.bib" 1536679734 103 48ad29797468f16e2853d8797278d7af ""
   (generated)
-  "otf.blg"
   "otf.bbl"
-["pdflatex"] 1536587543 "/Users/jonpvandermause/Research/GP/otf/paper/otf.tex" "otf.pdf" "otf" 1536587543
-  "/Users/jonpvandermause/Research/GP/otf/paper/otf.tex" 1536587542 9935 055ef5fb28704068b2d498d33f19e0d7 ""
+  "otf.blg"
+["pdflatex"] 1536679733 "/Users/jonpvandermause/Research/GP/otf/paper/otf.tex" "otf.pdf" "otf" 1536679734
+  "/Users/jonpvandermause/Research/GP/otf/paper/otf.tex" 1536679733 10000 6dca29d111103f43c1c2a3c910a7d795 ""
   "/usr/local/texlive/2017/texmf-dist/fonts/map/fontname/texfonts.map" 1480098670 3287 e6b82fe08f5336d4d5ebc73fb1152e87 ""
   "/usr/local/texlive/2017/texmf-dist/fonts/tfm/public/amsfonts/cmextra/cmbsy5.tfm" 1480098698 1120 1e8878807317373affa7f7bba4cf2f6a ""
   "/usr/local/texlive/2017/texmf-dist/fonts/tfm/public/amsfonts/cmextra/cmbsy6.tfm" 1480098698 1124 14ccf5552bc7f77ca02a8a402bea8bfb ""
@@ -99,11 +99,11 @@
   "/usr/local/texlive/2017/texmf-var/fonts/map/pdftex/updmap/pdftex.map" 1495593472 2350277 a699055bee05bf8a40b0504752487295 ""
   "/usr/local/texlive/2017/texmf-var/web2c/pdftex/pdflatex.fmt" 1495593487 4129592 0e6cfee100d68e6d96b92c0258f2ff73 ""
   "/usr/local/texlive/2017/texmf.cnf" 1495593465 577 2b71d4d888f9e5560b2e99985915a9fa ""
-  "otf.aux" 1536587543 1402 f62c9784b08127699796f96700693fe8 ""
-  "otf.bbl" 1536587543 1983 c789b8b2e2ff60989c671635ad8473c2 "bibtex otf"
-  "otf.tex" 1536587542 9935 055ef5fb28704068b2d498d33f19e0d7 ""
+  "otf.aux" 1536679734 1402 16357211838da7b2d20e2216ef23c203 ""
+  "otf.bbl" 1536675743 1983 c789b8b2e2ff60989c671635ad8473c2 "bibtex otf"
+  "otf.tex" 1536679733 10000 6dca29d111103f43c1c2a3c910a7d795 ""
   (generated)
   "otf.log"
-  "otfNotes.bib"
-  "otf.pdf"
   "otf.aux"
+  "otf.pdf"
+  "otfNotes.bib"
