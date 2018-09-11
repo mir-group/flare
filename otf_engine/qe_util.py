@@ -106,7 +106,7 @@ def parse_qe_input(qe_input: str):
     assert positions != [], "Positions failed to load"
 
     # Load masses
-    massconvert = 9648.53
+    massconvert = 0.00010364269933008285
     masses = {}
     for i in range(species_index, species_index + len(set(species))):
         # Expects lines of format like: H 1.0 H_pseudo_name.ext

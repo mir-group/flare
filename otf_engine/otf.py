@@ -183,10 +183,10 @@ class OTF(object):
         for i in range(len(self.structure.positions)):
             string += self.structure.species[i] + ' '
             for j in range(3):
-                string += str("%f"%self.structure.positions[i][j]) + ' '
+                string += str("%.8f"%self.structure.positions[i][j]) + ' '
             string += '\t'
             for j in range(3):
-                string += str(np.round(self.structure.forces[i][j], 6)) + ' '
+                string += str(np.round(self.structure.forces[i][j], 8)) + ' '
             string += '\t'
             for j in range(3):
                 string += str('%.6e' % self.structure.stds[i][j]) + ' '
@@ -266,7 +266,7 @@ if __name__ == '__main__':
     import os
     os.system('cp qe_input_1.in pwscf.in')
 
-    otf = OTF('pwscf.in', .1, 10, kernel='two_body',
+    otf = OTF('pwscf.in', .001, 10, kernel='two_body',
               cutoff=10, punchout_d=None)
     otf.run()
     # parse_output('otf_run.out')

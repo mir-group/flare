@@ -163,9 +163,9 @@ def test_cell_parsing(qe_input, exp_cell):
 @pytest.mark.parametrize("qe_input,mass_dict",
                          [
                              ('./test_files/qe_input_1.in',
-                              {'H': 9648.53}),
+                              {'H': 0.00010364269933008285}),
                              ('./test_files/qe_input_2.in',
-                              {'Al': 9648.53*26.9815385})
+                              {'Al': 0.00010364269933008285*26.9815385})
                          ]
                          )
 def test_cell_parsing(qe_input, mass_dict):
@@ -245,8 +245,8 @@ def test_update_1(test_otf_engine_1):
 
     test_otf_engine_1.update_positions()
 
-    target_positions = [np.array([2.53714, 2.5, 2.5]),
-                        np.array([4.46286, 2.5, 2.5])
+    target_positions = [np.array([2.60867409, 2.5, 2.5]),
+                        np.array([4.39132591, 2.5, 2.5])
                         ]
 
     for i, pos in enumerate(test_otf_engine_1.structure.positions):
