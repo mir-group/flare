@@ -10,7 +10,6 @@ Steven Torrisi, Jon Vandermause, Simon Batzner
 import numpy as np
 import datetime
 from struc import Structure
-from math import sqrt
 from gp import GaussianProcess
 from env import ChemicalEnvironment
 from punchout import punchout
@@ -84,7 +83,7 @@ class OTF(object):
             for i in range(3):
                 force, var = self.gp.predict(chemenv, i + 1)
                 self.structure.forces[n][i] = float(force)
-                self.structure.stds[n][i] = sqrt(var)
+                self.structure.stds[n][i] = np.sqrt(var)
 
     def run_and_train(self):
         """
@@ -113,10 +112,10 @@ class OTF(object):
         for n in range(self.train_structure.nat):
             qe_strings += self.train_structure.species[n] + ': '
             for i in range(3):
-                qe_strings += '%.3f  ' % self.train_structure.positions[n][i]
+                qe_strings += '%.8f  ' % self.train_structure.positions[n][i]
             qe_strings += '\t '
             for i in range(3):
-                qe_strings += '%.3f  ' % forces[n][i]
+                qe_strings += '%.8f  ' % forces[n][i]
             qe_strings += '\n'
         self.write_to_output(qe_strings)
 
@@ -125,11 +124,11 @@ class OTF(object):
         self.gp.update_db(self.train_structure, forces)
         self.gp.train()
         self.write_to_output('New GP Hyperparameters:\n' +
-                             'Signal variance: \t' +
+                             'Signal std: \t' +
                              str(self.gp.sigma_f) + '\n' +
                              'Length scale: \t\t' +
                              str(self.gp.length_scale) + '\n' +
-                             'Noise variance: \t' + str(self.gp.sigma_n) +
+                             'Noise std: \t' + str(self.gp.sigma_n) +
                              '\n'
                              )
 
@@ -140,6 +139,7 @@ class OTF(object):
 
         # Precompute dt squared for efficiency
         dtdt = self.dt ** 2
+
     
         for i, pre_pos in enumerate(self.structure.prev_positions):
             temp_pos = np.array(self.structure.positions[i])
@@ -184,7 +184,7 @@ class OTF(object):
         for i in range(len(self.structure.positions)):
             string += self.structure.species[i] + ' '
             for j in range(3):
-                string += str("%.6f" % self.structure.positions[i][j]) + ' '
+                string += str("%f"%self.structure.positions[i][j]) + ' '
             string += '\t'
             for j in range(3):
                 string += str(np.round(self.structure.forces[i][j], 6)) + ' '
@@ -263,7 +263,9 @@ def parse_otf_output(outfile: str):
 
 
 if __name__ == '__main__':
-    # os.system('cp ../tests/test_files/qe_input_2.in pwscf.in')
+
+    import os
+    os.system('cp qe_input_1.in pwscf.in')
 
     otf = OTF('pwscf.in', .1, 10, kernel='two_body',
               cutoff=10, punchout_d=None)

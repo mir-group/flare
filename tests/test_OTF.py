@@ -85,6 +85,8 @@ def cleanup_otf_run():
     os.system('rm pwscf.wfc')
     os.system('rm pwscf.save')
     os.system('rm otf_run.out')
+    os.system('rm pwscf.in')
+    os.system('rm pwscf.wfc1')
 
 
 # ------------------------------------------------------
@@ -161,9 +163,9 @@ def test_cell_parsing(qe_input, exp_cell):
 @pytest.mark.parametrize("qe_input,mass_dict",
                          [
                              ('./test_files/qe_input_1.in',
-                              {'H': 1.0}),
+                              {'H': 9648.53}),
                              ('./test_files/qe_input_2.in',
-                              {'Al': 26.9815385})
+                              {'Al': 9648.53*26.9815385})
                          ]
                          )
 def test_cell_parsing(qe_input, mass_dict):
@@ -174,8 +176,8 @@ def test_cell_parsing(qe_input, mass_dict):
 @pytest.mark.parametrize('qe_output,exp_forces',
                          [
                              ('./test_files/qe_output_1.out',
-                              [np.array([0.07413986, 0., 0.]),
-                               np.array([-0.07413986, 0., 0.])])
+                              [np.array([1.9062131355, 0., 0.]),
+                               np.array([-1.9062131355, 0., 0.])])
                          ]
                          )
 def test_force_parsing(qe_output, exp_forces):
@@ -183,7 +185,7 @@ def test_force_parsing(qe_output, exp_forces):
     assert len(forces) == len(exp_forces)
 
     for i, force in enumerate(forces):
-        assert np.all(force == exp_forces[i])
+        assert np.isclose(force, exp_forces[i]).all()
 
 
 def test_espresso_calling_1(test_otf_engine_1):
@@ -197,11 +199,11 @@ def test_espresso_calling_1(test_otf_engine_1):
     assert len(forces) == len(test_otf_engine_1.structure.forces)
 
     if test_otf_engine_1.qe_input == './test_files/qe_input_1.in':
-        test1forces = [np.array([0.07413986, 0.0, 0.0]),
-                       np.array([-0.07413986,
+        test1forces = [np.array([1.90621314, 0.0, 0.0]),
+                       np.array([-1.90621314,
                                  0.0, 0.0])]
         for i, force in enumerate(forces):
-            assert np.equal(force, test1forces[i]).all()
+            assert np.isclose(force, test1forces[i]).all()
 
     cleanup_otf_run()
 
@@ -234,7 +236,6 @@ def test_espresso_input_edit():
 # ------------------------------------------------------
 
 # TODO see if there is a better way to to set up the different input runs
-
 def test_update_1(test_otf_engine_1):
     test_otf_engine_1.structure.prev_positions = [[2.5, 2.5, 2.5],
                                                   [4.5, 2.5, 2.5]]
@@ -244,8 +245,8 @@ def test_update_1(test_otf_engine_1):
 
     test_otf_engine_1.update_positions()
 
-    target_positions = [np.array([2.53714741, 2.5, 2.5]),
-                        np.array([4.46285259, 2.5, 2.5])
+    target_positions = [np.array([2.53714, 2.5, 2.5]),
+                        np.array([4.46286, 2.5, 2.5])
                         ]
 
     for i, pos in enumerate(test_otf_engine_1.structure.positions):

@@ -1,4 +1,4 @@
-from numpy import zeros,ndarray
+from numpy import zeros,ndarray,dot,isclose,mod,ones
 from numpy.linalg import inv
 from typing import List
 
@@ -56,6 +56,35 @@ class Structure(object):
 
         for prev_pos in self.prev_positions:
             prev_pos += vector
+
+    def get_index_from_position(self, position):
+        """
+        Gets the index of an atom from a position, folding back into the
+        unit cell
+        :param position:
+        :return:
+        """
+
+        reduced_pos = dot(self.inv_lattice,position)
+        reduced_pos = mod(reduced_pos, ones(3))
+
+        newvec = zeros(3)
+
+        newvec += reduced_pos[0] * self.vec1
+        newvec += reduced_pos[1] * self.vec2
+        newvec += reduced_pos[2] * self.vec3
+
+        for i in range(self.nat):
+            if isclose(newvec, self.positions[i], atol=1e-6).all():
+                return i
+
+        raise Exception("Position does not correspond to location in unit "
+                        "cell")
+
+
+
+
+
 
 
     @staticmethod

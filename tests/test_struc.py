@@ -47,5 +47,29 @@ def test_2_body_bond_order():
     # test species_to_bond
     assert (test_structure.bond_list == [['B', 'B'], ['B', 'A'], ['A', 'A']])
 
+
+"""
+def test_index_finding():
+    noa=30
+    struc,_ = get_random_structure(cell=2*np.eye(3),unique_species=['A'],
+                                 cutoff=1,noa=noa)
+
+    target_atom = np.random.randint(0,noa)
+
+    target_pos = struc.positions[target_atom]
+
+    assert struc.get_index_from_position(target_pos) == target_atom
+
+    for _ in range(10000):
+        shift = np.random.randint(-10,10,3)
+        target_pos_shifted = target_pos + shift[0]*struc.vec1 + shift[1]*struc.vec2 + \
+                   shift[2]*struc.vec3
+
+        assert struc.get_index_from_position(target_pos_shifted) == target_atom
+
+
+"""
+
+
 # TODO IO-based unit tests for pasrsing the output files of runs (even though
 # some may be random
