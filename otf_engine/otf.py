@@ -175,7 +175,7 @@ class OTF(object):
 
         string += "- Frame " + str(self.curr_step)
         string += " Sim. Time "
-        string += str(np.round(self.dt * self.curr_step, 3)) + '\n'
+        string += str(np.round(self.dt * self.curr_step, 6)) + '\n'
 
         string += 'El \t\t\t Position \t\t\t\t\t Force \t\t\t\t\t\t\t ' \
                   'Std. Dev \n'
@@ -213,7 +213,6 @@ class OTF(object):
             high_error_atom, d= self.punchout_d )
             return False
         """
-        print(np.nanmax(self.structure.stds))
         if np.nanmax(self.structure.stds) > .1:
             return False
         else:
