@@ -139,6 +139,10 @@ class GaussianProcess:
         """
         Optimize hyperparameters of GP by minimizing minus log likelihood. """
         # initial guess
+        self.sigma_f = 1
+        self.length_scale = 1
+        self.sigma_n = 0.01
+
         x_0 = np.array([self.sigma_f, self.length_scale, self.sigma_n])
 
         # nelder-mead optimization
