@@ -35,7 +35,7 @@ class GaussianProcess:
         self.kernel_type = kernel
         self.length_scale = 1
         self.sigma_n = 1
-        self.sigma_f = 0.01
+        self.sigma_f = 1
 
         # quantities used in GPR algorithm
         self.k_mat = None
@@ -138,10 +138,11 @@ class GaussianProcess:
     def opt_hyper(self):
         """
         Optimize hyperparameters of GP by minimizing minus log likelihood. """
+        
         # initial guess
         self.sigma_f = 1
         self.length_scale = 1
-        self.sigma_n = 0.01
+        self.sigma_n = 1
 
         x_0 = np.array([self.sigma_f, self.length_scale, self.sigma_n])
 
@@ -154,6 +155,7 @@ class GaussianProcess:
         self.sigma_f = res.x[0]
         self.length_scale = res.x[1]
         self.sigma_n = res.x[2]
+
 
     def predict(self, x_t: ChemicalEnvironment, d: int) -> [float, float]:
         """ Make GP prediction with SE kernel.

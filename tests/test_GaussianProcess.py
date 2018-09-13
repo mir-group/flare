@@ -253,6 +253,7 @@ def test_train(two_body_gp, params):
                 two_body_gp.length_scale,
                 two_body_gp.sigma_n]
 
+
     # check if hyperparams have been updated
     assert (hyp != hyp_post)
 
