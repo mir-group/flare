@@ -19,214 +19,129 @@
 %  4)  latex apssamp.tex
 %
 \documentclass[%
-    reprint,
-   %superscriptaddress,
-   %groupedaddress,
-   %unsortedaddress,
-   %runinaddress,
-   %frontmatterverbose, 
-   %preprint,
-   %showpacs,preprintnumbers,
-   %nofootinbib,
-   %nobibnotes,
-   %bibnotes,
-    amsmath,amssymb,
-    aps,
-   %pra,
-   %prb,
-   %rmp,
-   %prstab,
-   %prstper,
-   %floatfix,
-   ]{revtex4-1}
-   
-   \usepackage{graphicx}% Include figure files
-   \usepackage{dcolumn}% Align table columns on decimal point
-   \usepackage{bm}% bold math
-   %\usepackage{hyperref}% add hypertext capabilities
-   %\usepackage[mathlines]{lineno}% Enable numbering of text and display math
-   %\linenumbers\relax % Commence numbering lines
-   
-   %\usepackage[showframe,%Uncomment any one of the following lines to test 
-   %%scale=0.7, marginratio={1:1, 2:3}, ignoreall,% default settings
-   %%text={7in,10in},centering,
-   %%margin=1.5in,
-   %%total={6.5in,8.75in}, top=1.2in, left=0.9in, includefoot,
-   %%height=10in,a5paper,hmargin={3cm,0.8in},
-   %]{geometry}
-   
-   \begin{document}
-   
-   \preprint{APS/123-QED}
-   
-   \title{Simulating Rare Events in Large Systems with On-the-Fly
-   Machine Learning}% Force line breaks with \\
-%    \thanks{A footnote to the article title}%
-   
-   \author{Jonathan Vandermause,$^{1,2}$ Steven B. Torrisi,$^{2}$
-           Simon Batzner,$^{3}$ and Boris Kozinsky$^{1}$}
-   \affiliation{$^{1}$John A. Paulson School of Engineering and Applied
-    Sciences, Harvard University, Cambridge, Massachusetts 02138, USA \\
-   $^{2}$Department of Physics, Harvard University, Cambridge, Massachusetts
-    02138, USA \\
-   $^{3}$Center for Computational Engineering, Massachusetts Institute of
-   Technology, Cambridge, Massachusetts 02139, USA}
+reprint,
+%superscriptaddress,
+%groupedaddress,
+%unsortedaddress,
+%runinaddress,
+%frontmatterverbose, 
+%preprint,
+%showpacs,preprintnumbers,
+%nofootinbib,
+%nobibnotes,
+%bibnotes,
+amsmath,amssymb,
+aps,
+%pra,
+%prb,
+%rmp,
+%prstab,
+%prstper,
+%floatfix,
+]{revtex4-1}
 
-    % \altaffiliation[Also at ]{Physics Department, XYZ University.}%Lines break automatically or can be forced with \\
-%    \author{Second Author}%
-    % \email{Second.Author@institution.edu}
-%    \affiliation{%
-%     Authors' institution and/or address\\
-%     This line break forced with \textbackslash\textbackslash
-%    }%
-   
-%    \collaboration{MUSO Collaboration}%\noaffiliation
-   
-%    \author{Charlie Author}
-%     \homepage{http://www.Second.institution.edu/~Charlie.Author}
-%    \affiliation{
-%     Second institution and/or address\\
-%     This line break forced% with \\
-%    }%
-%    \affiliation{
-%     Third institution, the second for Charlie Author
-%    }%
-%    \author{Delta Author}
-%    \affiliation{%
-%     Authors' institution and/or address\\
-%     This line break forced with \textbackslash\textbackslash
-%    }%
-   
-%    \collaboration{CLEO Collaboration}%\noaffiliation
-   
-   \date{\today}% It is always \today, today,
-                %  but any date may be explicitly specified
-   
-   \begin{abstract}
-   An article usually includes an abstract, a concise summary of the work
-   covered at length in the main body of the article. 
-%    \begin{description}
-%    \item[Usage]
-%    Secondary publications and information retrieval purposes.
-%    \item[PACS numbers]
-%    May be entered using the \verb+\pacs{#1}+ command.
-%    \item[Structure]
-%    You may use the \texttt{description} environment to structure your abstract;
-%    use the optional argument of the \verb+\item+ command to give the category of each item. 
-%    \end{description}
-   \end{abstract}
-   
-   \pacs{Valid PACS appear here}% PACS, the Physics and Astronomy
-                                % Classification Scheme.
-   %\keywords{Suggested keywords}%Use showkeys class option if keyword
-                                 %display desired
-   \maketitle
-   
-   %\tableofcontents
-   
-   \section{\label{sec:level1}Introduction}
-   
-   This sample document demonstrates proper use of REV\TeX~4.1 (and
-   \LaTeXe) in mansucripts prepared for submission to APS
-   journals. Further information can be found in the REV\TeX~4.1
-   documentation included in the distribution or available at
-   \url{http://authors.aps.org/revtex4/}.
-   
-   When commands are referred to in this example file, they are always
-   shown with their required arguments, using normal \TeX{} format. In
-   this format, \verb+#1+, \verb+#2+, etc. stand for required
-   author-supplied arguments to commands. For example, in
-   \verb+\section{#1}+ the \verb+#1+ stands for the title text of the
-   author's section heading, and in \verb+\title{#1}+ the \verb+#1+
-   stands for the title text of the paper.
-   
-   Line breaks in section headings at all levels can be introduced using
-   \textbackslash\textbackslash. A blank input line tells \TeX\ that the
-   paragraph has ended. Note that top-level section headings are
-   automatically uppercased. If a specific letter or word should appear in
-   lowercase instead, you must escape it using \verb+\lowercase{#1}+ as
-   in the word ``via'' above.
-   
-   \subsection{\label{sec:level2}Second-level heading: Formatting}
-   
-   This file may be formatted in either the \texttt{preprint} or
-   \texttt{reprint} style. \texttt{reprint} format mimics final journal output. 
-   Either format may be used for submission purposes. \texttt{letter} sized paper should
-   be used when submitting to APS journals.
-   
-   \subsubsection{Wide text (A level-3 head)}
-   The \texttt{widetext} environment will make the text the width of the
-   full page, as on page~\pageref{eq:wideeq}. (Note the use the
-   \verb+\pageref{#1}+ command to refer to the page number.) 
-   \paragraph{Note (Fourth-level head is run in)}
-   The width-changing commands only take effect in two-column formatting. 
-   There is no effect if text is in a single column.
-   
-   \subsection{\label{sec:citeref}Citations and References}
-   A citation in text uses the command \verb+\cite{#1}+ or
-   \verb+\onlinecite{#1}+ and refers to an entry in the bibliography. 
-   An entry in the bibliography is a reference to another document.
-   
-   \subsubsection{Citations}
-   Because REV\TeX\ uses the \verb+natbib+ package of Patrick Daly, 
-   the entire repertoire of commands in that package are available for your document;
-   see the \verb+natbib+ documentation for further details. Please note that
-   REV\TeX\ requires version 8.31a or later of \verb+natbib+.
-   
-   \paragraph{Syntax}
-   The argument of \verb+\cite+ may be a single \emph{key}, 
-   or may consist of a comma-separated list of keys.
-   The citation \emph{key} may contain 
-   letters, numbers, the dash (-) character, or the period (.) character. 
-   New with natbib 8.3 is an extension to the syntax that allows for 
-   a star (*) form and two optional arguments on the citation key itself.
-   The syntax of the \verb+\cite+ command is thus (informally stated)
-   \begin{quotation}\flushleft\leftskip1em
-   \verb+\cite+ \verb+{+ \emph{key} \verb+}+, or\\
-   \verb+\cite+ \verb+{+ \emph{optarg+key} \verb+}+, or\\
-   \verb+\cite+ \verb+{+ \emph{optarg+key} \verb+,+ \emph{optarg+key}\ldots \verb+}+,
-   \end{quotation}\noindent
-   where \emph{optarg+key} signifies 
-   \begin{quotation}\flushleft\leftskip1em
-   \emph{key}, or\\
-   \texttt{*}\emph{key}, or\\
-   \texttt{[}\emph{pre}\texttt{]}\emph{key}, or\\
-   \texttt{[}\emph{pre}\texttt{]}\texttt{[}\emph{post}\texttt{]}\emph{key}, or even\\
-   \texttt{*}\texttt{[}\emph{pre}\texttt{]}\texttt{[}\emph{post}\texttt{]}\emph{key}.
-   \end{quotation}\noindent
-   where \emph{pre} and \emph{post} is whatever text you wish to place 
-   at the beginning and end, respectively, of the bibliographic reference
-   (see Ref.~[\onlinecite{witten2001}] and the two under Ref.~[\onlinecite{feyn54}]).
-   (Keep in mind that no automatic space or punctuation is applied.)
-   It is highly recommended that you put the entire \emph{pre} or \emph{post} portion 
-   within its own set of braces, for example: 
-   \verb+\cite+ \verb+{+ \texttt{[} \verb+{+\emph{text}\verb+}+\texttt{]}\emph{key}\verb+}+.
-   The extra set of braces will keep \LaTeX\ out of trouble if your \emph{text} contains the comma (,) character.
-   
-   The star (*) modifier to the \emph{key} signifies that the reference is to be 
-   merged with the previous reference into a single bibliographic entry, 
-   a common idiom in APS and AIP articles (see below, Ref.~[\onlinecite{epr}]). 
-   When references are merged in this way, they are separated by a semicolon instead of 
-   the period (full stop) that would otherwise appear.
-   
-   \paragraph{Eliding repeated information}
-   When a reference is merged, some of its fields may be elided: for example, 
-   when the author matches that of the previous reference, it is omitted. 
-   If both author and journal match, both are omitted.
-   If the journal matches, but the author does not, the journal is replaced by \emph{ibid.},
-   as exemplified by Ref.~[\onlinecite{epr}]. 
-   These rules embody common editorial practice in APS and AIP journals and will only
-   be in effect if the markup features of the APS and AIP Bib\TeX\ styles is employed.
-   
-   \paragraph{The options of the cite command itself}
-   Please note that optional arguments to the \emph{key} change the reference in the bibliography, 
-   not the citation in the body of the document. 
-   For the latter, use the optional arguments of the \verb+\cite+ command itself:
-   \verb+\cite+ \texttt{*}\allowbreak
-   \texttt{[}\emph{pre-cite}\texttt{]}\allowbreak
-   \texttt{[}\emph{post-cite}\texttt{]}\allowbreak
-   \verb+{+\emph{key-list}\verb+}+.
-   
-   \end{document}
-   %
-   % ****** End of file apssamp.tex ******
+\usepackage{graphicx}% Include figure files
+\usepackage{dcolumn}% Align table columns on decimal point
+\usepackage{bm}% bold math
+%\usepackage{hyperref}% add hypertext capabilities
+%\usepackage[mathlines]{lineno}% Enable numbering of text and display math
+%\linenumbers\relax % Commence numbering lines
+
+%\usepackage[showframe,%Uncomment any one of the following lines to test 
+%%scale=0.7, marginratio={1:1, 2:3}, ignoreall,% default settings
+%%text={7in,10in},centering,
+%%margin=1.5in,
+%%total={6.5in,8.75in}, top=1.2in, left=0.9in, includefoot,
+%%height=10in,a5paper,hmargin={3cm,0.8in},
+%]{geometry}
+
+\begin{document}
+
+\title{Accelerating \textit{Ab Initio} Molecular Dynamics with On-the-Fly
+Machine Learning}
+
+\author{Jonathan Vandermause,$^{1,2}$ Steven B. Torrisi,$^{2}$
+    Simon Batzner,$^{3}$ and Boris Kozinsky$^{1}$}
+\affiliation{$^{1}$John A. Paulson School of Engineering and Applied
+Sciences, Harvard University, Cambridge, Massachusetts 02138, USA \\
+$^{2}$Department of Physics, Harvard University, Cambridge, Massachusetts
+02138, USA \\
+$^{3}$Center for Computational Engineering, Massachusetts Institute of
+Technology, Cambridge, Massachusetts 02139, USA}
+
+% \date{\today}
+
+\begin{abstract}
+\textit{Ab initio} molecular dynamics is a powerful tool for
+accurately probing the dynamics of molecules and solids, but it is limited
+to system sizes on the order of 1000 atoms and time scales on the order of
+10 ps. We present a scheme for rapidly training a machine learning 
+model of the interatomic force field that approaches the accuracy of \textit{ab initio} force calculations but can be applied to larger systems over longer time scales. Gaussian Process models are trained “on-the-fly”, with density-functional theory calculations of the atomic forces performed whenever the model encounters chemical configurations outside of the training set. We demonstrate the flexibility of our approach by testing it on a range of single- and multi-component systems.
+\end{abstract}
+
+\maketitle
+
+\section{\label{sec:level1}Introduction}
+\noindent
+Key literature:
+
+\begin{enumerate}
+
+\item On-the-fly force fields with GPs \cite{li2015molecular, botu2015adaptive, botu2015learning}
+
+\item Gaussian Approximation Potentials (GAP)
+\cite{bartok2010gaussian, bartok2015gaussian, deringer2017machine}
+
+\item The SOAP kernel \cite{bartok2013representing}
+
+\item Other covariant kernels (two- and three-body) \cite{deringer2017machine, bartok2015gaussian, glielmo2017accurate, glielmo2018efficient}
+
+\item Vector-valued GPs and ICM \cite{alvarez2012kernels}
+
+\item DFT and Quantum Espresso \cite{kohn1999nobel, giannozzi2009quantum}
+
+\end{enumerate}
+
+\section{Covariant kernels}
+
+This section will discuss our approach to modelling multi-species systems.
+\begin{enumerate}
+\item Review our two- and three-body single-component kernels, which are similar to the ones used in \cite{glielmo2018efficient, deringer2017machine}. Our three-body kernel is slightly different from both: \cite{glielmo2018efficient} does not distinguish between cross-bonds and central-bonds, and \cite{deringer2017machine} combines the central-bond lengths in a way that doesn't easily generalize to multi-component systems.
+
+We should also highlight our approach to selecting the GP hyperparameters, which hasn't been discussed at length in the GAP literature. Our approach maximizes the marginal likelihood, and is therefore data-driven rather than empirical. Optimizing the hyperparameters in this way can reveal interesting physics. For example, in the two-plus-three body kernel,
+\begin{equation}
+    k(\rho_1, \rho_2) = \delta_2 k_2 (\rho_1, \rho_2) + \delta_3 k_3(\rho_1, \rho_2),
+\end{equation}
+the size of the hyperparameters $\delta_2$ and $\delta_3$ indicates the relative importance of two- and three-body interactions in the system.
+
+There is one ``special" hyperparameter, the cutoff radius, which can't be easily optimized using gradient descent. We should justify our cutoff choice using the ``freeze-and-perturb" method of \cite{deringer2017machine}. This will also give a lower bound on the error of any local ML model, which is a useful benchmark. It might be interesting to compare this lower bound with the noise variance of the model, which is an internal measure of how well the model is able to capture the data.
+
+It would be nice to benchmark the performance of the two-body, three-body, and two-plus-three body single-component kernels by showing the model performance as a function of training set size for a representative system (e.g. solid-state C at 1000 K). Since the focus of this section is on characterizing and benchmarking the kernel, we can train on a constant-T AIMD trajectory.
+
+\item Discuss our generalization to multi-component systems. There are three plausible ways of going about this: comparing every bond to every other bond (no distinction between different species, which might make sense for similar atoms); comparing bonds of the same type only (which wastes information by neglecting similarities between different bond types); and weighting each bond pair with a hyperparameter. The third method, which is equivalent to an ICM model, provides a general way to capture covariance between different outputs that should be more accurate than the first approach and more efficient than the second. 
+
+We can plot model performance versus training set size on a SiC system for each of the three methods mentioned above and for each of the three kernels (two-body, three-body, and two-plus-three body). The two-plus-three body kernel will have a lot of hyperparameters (on the order of 100), but it should be feasible with our gradient descent scheme.
+\end{enumerate}
+
+\section{On-the-fly learning}
+We've so far come up with three interesting applications that highlight the utility of our on-the-fly program: large systems outside the reach of AIMD, bond formation and bond breaking in molecules, and diffusion in solids. In all examples that we try, it will be important to use the converged force field to predict a physical property (e.g. phonon dispersion, bond length, activation energy) and compare the prediction against the ``exact'' value computed with DFT.
+
+\begin{enumerate}
+\item Large systems. As a test case, we can consider a simple solid-state example, e.g. a 5000-atom bulk SiC sample, and use the ``punchout" method to train an initial force field. In this approach, an atom is first selected at random, a small cubic cell containing the atom and 20-30 of its neighbors is sent to Quantum Espresso, and the resulting force data is used to build a GP model. The model then loops through the remaining atoms and makes predictions, augmenting the database whenever the uncertainty threshold is reached. Once the model converges, it can be tested by predicting the phonon spectrum of SiC and comparing against DFPT.
+
+\item Bond formation and bond breaking. The simplest example is on-the-fly modelling of the bond energy of $\text{H}_2$. We might also try more complicated examples: 
+\begin{itemize}
+\item Starting a simulation with separated C and O atoms and allowing bonds to form, comparing the model's predicted bond lengths against bond lengths computed with DFT.
+\item Taking a perturbed benzene molecule and seeing if the model correctly predicts the equilibrium configuration.
+\end{itemize}
+
+\item Diffusion in solids. Gold diffusing on a silver slab or self-diffusion in bulk aluminum are worth trying. Following \cite{botu2015adaptive, botu2015learning}, once the model has converged, a good test is to predict the potential energy along the migration trajectory by integrating the force field. This energy activation profile can be compared against the corresponding DFT prediction.
+
+\end{enumerate}
+
+
+\bibliography{otf.bib}
+
+\end{document}
+%
+% ****** End of file apssamp.tex ******
