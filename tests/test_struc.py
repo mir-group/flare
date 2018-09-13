@@ -7,14 +7,14 @@ Steven Torrisi
 """
 
 import pytest
-
-
+#TODO import every individual numpy function/method/class
 import numpy as np
 import sys
 from test_GaussianProcess import get_random_structure
 
 sys.path.append('../otf_engine')
 from struc import Structure
+
 
 # ------------------------------------------------------
 #                   test  Structure functions
@@ -48,28 +48,81 @@ def test_2_body_bond_order():
     assert (test_structure.bond_list == [['B', 'B'], ['B', 'A'], ['A', 'A']])
 
 
-"""
-def test_index_finding():
-    noa=30
-    struc,_ = get_random_structure(cell=2*np.eye(3),unique_species=['A'],
-                                 cutoff=1,noa=noa)
+@pytest.fixture(scope='module')
+def rand_struct():
+    noa = np.random.randint(3, 30)
+    lattice = np.random.uniform(2, 10, 3)
+    struct, _ = get_random_structure(cell=np.diag(lattice),
+                                     unique_species=["A", "B", ],
+                                     cutoff=np.random.uniform(1, 10.),
+                                     noa=noa)
 
-    target_atom = np.random.randint(0,noa)
-
-    target_pos = struc.positions[target_atom]
-
-    assert struc.get_index_from_position(target_pos) == target_atom
-
-    for _ in range(10000):
-        shift = np.random.randint(-10,10,3)
-        target_pos_shifted = target_pos + shift[0]*struc.vec1 + shift[1]*struc.vec2 + \
-                   shift[2]*struc.vec3
-
-        assert struc.get_index_from_position(target_pos_shifted) == target_atom
+    yield struct
 
 
-"""
+def test_periodic_images_returns(rand_struct):
+    assert len(rand_struct.get_periodic_images(np.zeros(3),
+                                               super_check=1)) == 1
+    assert len(rand_struct.get_periodic_images(np.zeros(3),
+                                               super_check=2)) == 27
+    assert len(rand_struct.get_periodic_images(np.zeros(3),
+                                               super_check=3)) == 125
 
 
-# TODO IO-based unit tests for pasrsing the output files of runs (even though
-# some may be random
+def test_periodic_images(rand_struct):
+    rand_at = np.random.randint(0, rand_struct.nat)
+
+    target_pos = rand_struct.positions[rand_at]
+
+    images_1 = rand_struct.get_periodic_images(target_pos, super_check=1)
+
+    assert np.array(target_pos == image for image in images_1).all()
+
+    # Manually generate all shifts and see if they are in the images
+    a = rand_struct.vec1
+    b = rand_struct.vec2
+    c = rand_struct.vec3
+
+    shift_vectors = [np.zeros(3),
+                     a, b, c,
+                     -a, -b, -c,
+                     a + b, a - b, a + c, a - c,
+                     b + c, b - c,
+                     -a + b, -a - b,
+                     -a + c, -a - c,
+                     -b + c, -b - c,
+                     a + b + c,
+                     -a + b + c, a - b + c, a + b - c,
+                     -a - b + c, -a + b - c, a - b - c,
+                     -a - b - c
+                     ]
+
+    shifted_pos = [target_pos + shift for shift in shift_vectors]
+
+    images_2 = rand_struct.get_periodic_images(target_pos, super_check=2)
+
+    # Demonstrate that both sets are subsets of each other
+    for shift in shifted_pos:
+        assert np.array(shift == image for image in images_2).any()
+    for image in images_2:
+        assert np.array(image == shift for shift in shifted_pos).any()
+
+
+def test_index_finding(rand_struct):
+    for n in range(rand_struct.nat):
+        target_pos = rand_struct.positions[n]
+        assert rand_struct.get_index_from_position(target_pos) == n
+
+
+def test_translate_structure(rand_struct):
+    trans = np.random.randn(3)
+
+    pre_trans_pos = [np.copy(pos) for pos in rand_struct.positions]
+    pre_trans_prev_pos = [np.copy(pos) for pos in rand_struct.prev_positions]
+    rand_struct.translate_positions(trans)
+
+    for n in range(rand_struct.nat):
+        assert np.isclose(rand_struct.positions[n], pre_trans_pos[
+            n] + trans).all()
+        assert np.isclose(rand_struct.prev_positions[n],
+                          pre_trans_prev_pos[n] + trans).all()

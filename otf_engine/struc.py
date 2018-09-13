@@ -1,5 +1,10 @@
+""""
+OTF engine
 
-from numpy import zeros, ndarray, dot, isclose, mod, ones
+Steven Torrisi, Jon Vandermause
+"""
+
+from numpy import zeros, ndarray, dot, isclose, mod, ones, equal, matmul, copy
 from numpy.linalg import inv
 from typing import List
 
@@ -40,7 +45,7 @@ class Structure(object):
         self.inv_lattice = inv(lattice)
 
         self.positions = positions
-        self.prev_positions = list(positions)
+        self.prev_positions = [copy(pos) for pos in self.positions]
         self.forces = [zeros(3) for _ in positions]
         self.stds = [zeros(3) for _ in positions]
 
@@ -48,7 +53,7 @@ class Structure(object):
 
         self.mass_dict = mass_dict
 
-    def translate_positions(self, vector: ndarray=zeros(3)):
+    def translate_positions(self, vector: ndarray = zeros(3)):
         """
         Translate all positions, and previous positions by vector
         :param vector: vector to translate by
@@ -60,35 +65,54 @@ class Structure(object):
         for prev_pos in self.prev_positions:
             prev_pos += vector
 
+    def get_periodic_images(self, vec, super_check: int = 2):
+        """
+        Given vec, find the periodic images of it out to super_check
+        neighbors
+
+        :param vec:
+        :param super_check:
+        :return:
+        """
+        coeff = matmul(self.inv_lattice, vec)
+
+        # get bravais coefficients for atoms within supercell
+        coeffs = [[], [], []]
+        for n in range(3):
+            for m in range(super_check):
+                if m == 0:
+                    coeffs[n].append(coeff[n])
+                else:
+                    coeffs[n].append(coeff[n] - m)
+                    coeffs[n].append(coeff[n] + m)
+
+        # get vectors within cutoff
+        images = []
+        for m in range(len(coeffs[0])):
+            for n in range(len(coeffs[1])):
+                for p in range(len(coeffs[2])):
+                    curr_image = coeffs[0][m] * self.vec1 + \
+                                 coeffs[1][n] * self.vec2 + \
+                                 coeffs[2][p] * self.vec3
+                    images.append(curr_image)
+
+        return images
+
     def get_index_from_position(self, position):
         """
         Gets the index of an atom from a position, folding back into the
         unit cell
-        :param position:
+        :param position: Atom to get position of
+        :param fold: Attempt to find the index of the 'original' atom in a
+        unit cell corresponding to a periodic image of position
         :return:
         """
 
-        reduced_pos = dot(self.inv_lattice,position)
-        reduced_pos = mod(reduced_pos, ones(3))
-
-        newvec = zeros(3)
-
-        newvec += reduced_pos[0] * self.vec1
-        newvec += reduced_pos[1] * self.vec2
-        newvec += reduced_pos[2] * self.vec3
-
         for i in range(self.nat):
-            if isclose(newvec, self.positions[i], atol=1e-6).all():
+            if isclose(position, self.positions[i], atol=1e-6).all():
                 return i
 
-        raise Exception("Position does not correspond to location in unit "
-                        "cell")
-
-
-
-
-
-
+        raise Exception("Position does not correspond to atom in structure")
 
     @staticmethod
     def calc_bond_list(unique_species):

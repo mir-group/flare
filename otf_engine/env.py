@@ -55,7 +55,7 @@ class ChemicalEnvironment:
     def __init__(self, structure, atom):
         self.structure = structure
 
-        bond_array, bond_types, bond_positions, etyps, ctyp =\
+        bond_array, bond_types, bond_positions, etyps, ctyp = \
             self.get_atoms_within_cutoff(atom)
 
         self.bond_array = bond_array
@@ -115,39 +115,25 @@ class ChemicalEnvironment:
     def get_local_atom_images(structure, vec, super_check=3):
         """Get periodic images of an atom within the cutoff radius.
 
+        :param structure: structure defined lattice vectors
+        :type structure: Structure
         :param vec: atomic position
         :type vec: nparray of shape (3,)
         :return: vectors and distances of atoms within cutoff radius
         :rtype: list of nparrays, list of floats
         """
 
-        # get bravais coefficients
-        coeff = np.matmul(structure.inv_lattice, vec)
-
-        # get bravais coefficients for atoms within supercell
-        coeffs = [[], [], []]
-        for n in range(3):
-            for m in range(super_check):
-                if m == 0:
-                    coeffs[n].append(coeff[n])
-                else:
-                    coeffs[n].append(coeff[n]-m)
-                    coeffs[n].append(coeff[n]+m)
-
-        # get vectors within cutoff
         vecs = []
         dists = []
-        for m in range(len(coeffs[0])):
-            for n in range(len(coeffs[1])):
-                for p in range(len(coeffs[2])):
-                    vec_curr = coeffs[0][m]*structure.vec1 +\
-                               coeffs[1][n]*structure.vec2 +\
-                               coeffs[2][p]*structure.vec3
-                    dist = np.linalg.norm(vec_curr)
 
-                    if dist < structure.cutoff:
-                        vecs.append(vec_curr)
-                        dists.append(dist)
+        images = structure.get_periodic_images(vec, super_check)
+
+        for image in images:
+            dist = np.linalg.norm(image)
+
+            if dist < structure.cutoff:
+                vecs.append(image)
+                dists.append(dist)
 
         return vecs, dists
 
@@ -175,15 +161,15 @@ class ChemicalEnvironment:
                 # ignore self interaction
                 if dist != 0:
                     environment_types.append(typ_curr)
-                    bond_array.append([dist, vec[0]/dist, vec[1]/dist,
-                                       vec[2]/dist])
+                    bond_array.append([dist, vec[0] / dist, vec[1] / dist,
+                                       vec[2] / dist])
                     bond_types.append(bond_curr)
                     bond_positions.append([vec[0], vec[1], vec[2]])
 
         bond_array = np.array(bond_array)
         bond_types = np.array(bond_types)
         bond_positions = np.array(bond_positions)
-        return bond_array, bond_types, bond_positions, environment_types,\
+        return bond_array, bond_types, bond_positions, environment_types, \
             central_type
 
     # return information about cross bonds
@@ -216,9 +202,9 @@ class ChemicalEnvironment:
                        bond_array_2, bond_types_2,
                        cross_bond_dists_2, cross_bond_types_2,
                        d1, d2, sig, ls):
-        d = sig*sig/(ls*ls*ls*ls)
-        e = ls*ls
-        f = 1/(2*ls*ls)
+        d = sig * sig / (ls * ls * ls * ls)
+        e = ls * ls
+        f = 1 / (2 * ls * ls)
         kern = 0
 
         x1_len = len(bond_types_1)
@@ -229,7 +215,7 @@ class ChemicalEnvironment:
             ri1 = bond_array_1[m, 0]
             ci1 = bond_array_1[m, d1]
 
-            for n in range(m+1, x1_len):
+            for n in range(m + 1, x1_len):
                 ri2 = bond_array_1[n, 0]
                 ci2 = bond_array_1[n, d1]
                 ri3 = cross_bond_dists_1[m, n]
@@ -253,16 +239,16 @@ class ChemicalEnvironment:
                             cj2 = bond_array_2[q, d2]
                             rj3 = cross_bond_dists_2[p, q]
 
-                            r11 = ri1-rj1
-                            r22 = ri2-rj2
-                            r33 = ri3-rj3
+                            r11 = ri1 - rj1
+                            r22 = ri2 - rj2
+                            r33 = ri3 - rj3
 
                             # add to kernel
                             kern += (e * (ci1 * cj1 + ci2 * cj2) -
                                      (r11 * ci1 + r22 * ci2) *
-                                     (r11 * cj1 + r22 * cj2)) *\
-                                d * exp(-f * (r11 * r11 + r22 * r22 +
-                                              r33 * r33))
+                                     (r11 * cj1 + r22 * cj2)) * \
+                                    d * exp(-f * (r11 * r11 + r22 * r22 +
+                                                  r33 * r33))
 
         return kern
 
@@ -273,9 +259,9 @@ class ChemicalEnvironment:
                          bond_array_2, bond_types_2,
                          cross_bond_dists_2, cross_bond_types_2,
                          d1, d2, sig, ls):
-        d = sig*sig/(ls*ls*ls*ls)
-        e = ls*ls
-        f = 1/(2*ls*ls)
+        d = sig * sig / (ls * ls * ls * ls)
+        e = ls * ls
+        f = 1 / (2 * ls * ls)
         kern = 0
 
         x1_len = len(bond_types_1)
@@ -286,7 +272,7 @@ class ChemicalEnvironment:
             ri1 = bond_array_1[m, 0]
             ci1 = bond_array_1[m, d1]
 
-            for n in range(m+1, x1_len):
+            for n in range(m + 1, x1_len):
                 ri2 = bond_array_1[n, 0]
                 ci2 = bond_array_1[n, d1]
                 ri3 = cross_bond_dists_1[m, n]
@@ -310,16 +296,16 @@ class ChemicalEnvironment:
                             cj2 = bond_array_2[q, d2]
                             rj3 = cross_bond_dists_2[p, q]
 
-                            r11 = ri1-rj1
-                            r22 = ri2-rj2
-                            r33 = ri3-rj3
+                            r11 = ri1 - rj1
+                            r22 = ri2 - rj2
+                            r33 = ri3 - rj3
 
                             # add to kernel
                             kern += (e * (ci1 * cj1 + ci2 * cj2) -
                                      (r11 * ci1 + r22 * ci2) *
-                                     (r11 * cj1 + r22 * cj2)) *\
-                                d * exp(-f * (r11 * r11 + r22 * r22 +
-                                              r33 * r33))
+                                     (r11 * cj1 + r22 * cj2)) * \
+                                    d * exp(-f * (r11 * r11 + r22 * r22 +
+                                                  r33 * r33))
 
         return kern
 
@@ -328,9 +314,9 @@ class ChemicalEnvironment:
     @njit
     def two_body_jit(bond_array_1, bond_types_1, bond_array_2,
                      bond_types_2, d1, d2, sig, ls):
-        d = sig*sig/(ls*ls*ls*ls)
-        e = ls*ls
-        f = 1/(2*ls*ls)
+        d = sig * sig / (ls * ls * ls * ls)
+        e = ls * ls
+        f = 1 / (2 * ls * ls)
         kern = 0
 
         x1_len = len(bond_types_1)
@@ -348,8 +334,8 @@ class ChemicalEnvironment:
 
                 # check that bonds match
                 if typ1 == typ2:
-                    rr = (r1-r2)*(r1-r2)
-                    kern += d*exp(-f*rr)*coord1*coord2*(e-rr)
+                    rr = (r1 - r2) * (r1 - r2)
+                    kern += d * exp(-f * rr) * coord1 * coord2 * (e - rr)
 
         return kern
 
@@ -357,9 +343,9 @@ class ChemicalEnvironment:
     @staticmethod
     def two_body_nojit(bond_array_1, bond_types_1, bond_array_2,
                        bond_types_2, d1, d2, sig, ls):
-        d = sig*sig/(ls*ls*ls*ls)
-        e = ls*ls
-        f = 1/(2*ls*ls)
+        d = sig * sig / (ls * ls * ls * ls)
+        e = ls * ls
+        f = 1 / (2 * ls * ls)
         kern = 0
 
         x1_len = len(bond_types_1)
@@ -377,8 +363,8 @@ class ChemicalEnvironment:
 
                 # check that bonds match
                 if typ1 == typ2:
-                    rr = (r1-r2)*(r1-r2)
-                    kern += d*exp(-f*rr)*coord1*coord2*(e-rr)
+                    rr = (r1 - r2) * (r1 - r2)
+                    kern += d * exp(-f * rr) * coord1 * coord2 * (e - rr)
 
         return kern
 
