@@ -37,12 +37,15 @@ def run_espresso(qe_input: str, structure: Structure, temp: bool = False) -> \
     os.system(' '.join(['cp', qe_input, run_qe_path]))
     edit_qe_input_positions(run_qe_path, structure)
 
-    pw_loc = os.environ.get('PWSCF_COMMAND', 'pwscf.x')
+    pw_loc = os.environ.get('PWSCF_COMMAND', 'pw.x')
 
     qe_command = '{0} < {1} > {2}'.format(pw_loc, run_qe_path,
                                           'pwscf.out')
 
     os.system(qe_command)
+
+    if temp:
+        os.system(' '.join(['rm', run_qe_path]))
 
     return parse_qe_forces('pwscf.out')
 

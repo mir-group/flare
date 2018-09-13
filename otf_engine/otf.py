@@ -141,15 +141,15 @@ class OTF(object):
         dtdt = self.dt ** 2
 
         for i, pre_pos in enumerate(self.structure.prev_positions):
-            temp_pos = np.array(self.structure.positions[i])
+            temp_pos = np.copy(self.structure.positions[i])
             mass = self.structure.mass_dict[self.structure.species[i]]
             pos = self.structure.positions[i]
             forces = self.structure.forces[i]
 
             self.structure.positions[i] = 2 * pos - pre_pos + dtdt * forces / \
-                mass
+                                          mass
 
-            self.structure.prev_positions[i] = np.array(temp_pos)
+            self.structure.prev_positions[i] = np.copy(temp_pos)
 
     @staticmethod
     def write_to_output(string: str, output_file: str = 'otf_run.out'):
@@ -183,10 +183,10 @@ class OTF(object):
         for i in range(len(self.structure.positions)):
             string += self.structure.species[i] + ' '
             for j in range(3):
-                string += str("%.8f"%self.structure.positions[i][j]) + ' '
+                string += str("%.8f" % self.structure.positions[i][j]) + ' '
             string += '\t'
             for j in range(3):
-                string += str("%.8f"%self.structure.forces[i][j]) + ' '
+                string += str("%.8f" % self.structure.forces[i][j]) + ' '
             string += '\t'
             for j in range(3):
                 string += str('%.6e' % self.structure.stds[i][j]) + ' '
@@ -264,8 +264,8 @@ def parse_otf_output(outfile: str):
 
 
 if __name__ == '__main__':
-
     import os
+
     os.system('cp qe_input_1.in pwscf.in')
 
     otf = OTF('pwscf.in', .0001, 100, kernel='two_body',
