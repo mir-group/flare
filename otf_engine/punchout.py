@@ -47,7 +47,7 @@ def punchout(structure: Structure, atom: int, d: float, center: bool = True):
     :type center: bool
     """
 
-    # TODO replace this with the env's method for finding neighbors
+    # TODO replace this with the struc's method for finding neighbors
     a = structure.vec1
     b = structure.vec2
     c = structure.vec3
