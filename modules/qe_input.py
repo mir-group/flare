@@ -83,6 +83,7 @@ class QEInput:
     outdir = '{}'
     tprnfor = .true.""".format(self.calculation, self.pseudo_dir, self.outdir)
 
+        # if MD, add time step and number of steps
         if self.calculation == 'md':
             input_text += """
     dt = {}
@@ -94,25 +95,42 @@ class QEInput:
     ibrav= 0
     nat= {}
     ntyp= {}
-    ecutwfc ={}
-    nosym = .true.
+    ecutwfc ={}""".format(self.nat, self.ntyp, self.ecutwfc)
+
+        # if MD or relax, don't reduce number of k points based on symmetry,
+        # since the symmetry might change throughout the calculation
+        if (self.calculation == 'md') or (self.calculation == 'relax'):
+            input_text += """
+    nosym = .true."""
+
+        input_text += """
  /
  &electrons
     conv_thr =  1.0d-10
-    mixing_beta = 0.7""".format(self.nat, self.ntyp, self.ecutwfc)
+    mixing_beta = 0.7"""
 
-        if (self.calculation == 'md') or (self.calculation == 'relax'):
+        # if MD or relax, need to add an &IONS block
+        if (self.calculation == 'md') or (self.calculation == 'relax') or \
+           (self.calculation == 'vc-relax'):
             input_text += """
  /
- &ions
-    pot_extrapolation = 'second-order'
-    wfc_extrapolation = 'second-order'"""
+ &ions"""
 
-        if (self.calculation == 'md'):
+        # if MD, add additional details about ions
+        if self.calculation == 'md':
             input_text += """
+    pot_extrapolation = 'second-order'
+    wfc_extrapolation = 'second-order'
     ion_temperature = '{}'
     tempw = {}""".format(self.ion_temperature, self.tempw)
 
+        # if vc-relax, add cell block
+        if self.calculation == 'vc-relax':
+            input_text += """
+ /
+ &cell"""
+
+        # insert species, cell, position and k-point textblocks
         input_text += """
  /
 {}
@@ -134,6 +152,7 @@ class QEInput:
                                               self.output_file_name)
 
         os.system(qe_command)
+
 
 if __name__ == '__main__':
     pass

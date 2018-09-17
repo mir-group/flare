@@ -1,12 +1,13 @@
 import numpy as np
 import sys
-sys.path.append('../../modules')
+import os
+sys.path.append('../../../modules')
 import qe_input
 
-input_file_name = './H2_md.in'
-output_file_name = 'H2_md.out'
-pw_loc = '/Users/jonpvandermause/AP275/qe-6.0/bin/pw.x'
-calculation = 'md'
+input_file_name = './H2_relax.in'
+output_file_name = './H2_relax.out'
+pw_loc = os.environ.get('PWSCF_COMMAND')
+calculation = 'relax'
 
 scf_inputs = dict(pseudo_dir='/Users/jonpvandermause/AP275/qe-6.0/pseudo',
                   outdir='./output',
@@ -22,12 +23,11 @@ scf_inputs = dict(pseudo_dir='/Users/jonpvandermause/AP275/qe-6.0/pseudo',
                   ion_masses=[1.008],
                   ion_pseudo=['H.pbe-kjpaw.UPF'])
 
-md_inputs = dict(dt=5,
-                 nstep=10,
-                 ion_temperature='not_controlled',
-                 tempw=300)
+H2_relax = qe_input.QEInput(input_file_name, output_file_name, pw_loc,
+                            calculation, scf_inputs)
 
-H2_md = qe_input.QEInput(input_file_name, output_file_name, pw_loc,
-                         calculation, scf_inputs, md_inputs)
+H2_relax.run_espresso()
 
-H2_md.run_espresso()
+# remove output directory
+if os.path.isdir('output'):
+    os.system('rm -r output')

@@ -1,0 +1,31 @@
+ &control
+    calculation = 'vc-relax'
+    pseudo_dir = '/Users/jonpvandermause/AP275/qe-6.0/pseudo'
+    outdir = './output'
+    tprnfor = .true.
+ /
+ &system
+    ibrav= 0
+    nat= 2
+    ntyp= 1
+    ecutwfc =18.0
+ /
+ &electrons
+    conv_thr =  1.0d-10
+    mixing_beta = 0.7
+ /
+ &ions
+ /
+ &cell
+ /
+ATOMIC_SPECIES
+ C  12.011  C.pz-rrkjus.UPF
+CELL_PARAMETERS {angstrom}
+ 0.00000 1.70000 1.70000
+ 1.70000 0.00000 1.70000
+ 1.70000 1.70000 0.00000
+ATOMIC_POSITIONS {angstrom}
+ C 0.00000 0.00000 0.00000
+ C 0.85000 0.85000 0.85000
+K_POINTS automatic
+ 4 4 4  0 0 0
