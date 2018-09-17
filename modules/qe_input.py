@@ -2,10 +2,52 @@ import numpy as np
 import os
 
 
+class BashInput:
+    def __init__(self, bash_name, bash_inputs):
+        self.bash_name = bash_name
+
+        self.n = bash_inputs['n']
+        self.N = bash_inputs['N']
+        self.t = bash_inputs['t']
+        self.e = bash_inputs['e']
+        self.p = bash_inputs['p']
+        self.o = bash_inputs['o']
+        self.mem_per_cpu = bash_inputs['mem_per_cpu']
+        self.mail_user = bash_inputs['mail_user']
+        self.command = bash_inputs['command']
+
+        self.bash_text = self.get_bash_text()
+
+    def get_bash_text(self):
+        sh_text = """#!/bin/sh
+    #SBATCH -n {}
+    #SBATCH -N {}
+    #SBATCH -t {}-00:00
+    #SBATCH -e {}
+    #SBATCH -p {}
+    #SBATCH -o {}
+    #SBATCH --mem-per-cpu={}
+    #SBATCH --mail-type=ALL
+    #SBATCH --mail-user={}
+
+    module load gcc/4.9.3-fasrc01 openmpi/2.1.0-fasrc01
+    module load python/3.6.3-fasrc01
+
+    {}""".format(self.n, self.N, self.t, self.e, self.p, self.o,
+                 self.mem_per_cpu, self.mail_user, self.command)
+
+        return sh_text
+
+    def write_bash_text(self):
+        with open(self.bash_name, 'w') as fin:
+            fin.write(self.bash_text)
+
+
 class QEInput:
     def __init__(self, input_file_name: str, output_file_name: str,
                  pw_loc: str, calculation: str,
-                 scf_inputs: dict, md_inputs: dict = None):
+                 scf_inputs: dict, md_inputs: dict = None,
+                 press_conv_thr=None):
 
         self.input_file_name = input_file_name
         self.output_file_name = output_file_name
@@ -17,6 +59,7 @@ class QEInput:
         self.nat = scf_inputs['nat']
         self.ntyp = scf_inputs['ntyp']
         self.ecutwfc = scf_inputs['ecutwfc']
+        self.ecutrho = scf_inputs['ecutrho']
         self.cell = scf_inputs['cell']
         self.species = scf_inputs['species']
         self.positions = scf_inputs['positions']
@@ -31,11 +74,16 @@ class QEInput:
         self.cell_txt = self.get_cell_txt()
         self.kpt_txt = self.get_kpt_txt()
 
+        # get md parameters
         if self.calculation == 'md':
             self.dt = md_inputs['dt']
             self.nstep = md_inputs['nstep']
             self.ion_temperature = md_inputs['ion_temperature']
             self.tempw = md_inputs['tempw']
+
+        # if vc, get pressure convergence threshold
+        if self.calculation == 'vc-relax':
+            self.press_conv_thr = press_conv_thr
 
         self.input_text = self.get_input_text()
 
@@ -81,6 +129,7 @@ class QEInput:
     calculation = '{}'
     pseudo_dir = '{}'
     outdir = '{}'
+    tstress = .true.
     tprnfor = .true.""".format(self.calculation, self.pseudo_dir, self.outdir)
 
         # if MD, add time step and number of steps
@@ -95,7 +144,9 @@ class QEInput:
     ibrav= 0
     nat= {}
     ntyp= {}
-    ecutwfc ={}""".format(self.nat, self.ntyp, self.ecutwfc)
+    ecutwfc ={}
+    ecutrho = {}""".format(self.nat, self.ntyp, self.ecutwfc,
+                           self.ecutrho)
 
         # if MD or relax, don't reduce number of k points based on symmetry,
         # since the symmetry might change throughout the calculation
@@ -128,7 +179,8 @@ class QEInput:
         if self.calculation == 'vc-relax':
             input_text += """
  /
- &cell"""
+ &cell
+    press_conv_thr = {}""".format(self.press_conv_thr)
 
         # insert species, cell, position and k-point textblocks
         input_text += """

@@ -23,6 +23,7 @@ scf_inputs = dict(pseudo_dir=os.environ.get('ESPRESSO_PSEUDO'),
                   nat=2,
                   ntyp=1,
                   ecutwfc=18.0,
+                  ecutrho = 18.0 * 4
                   cell=cell,
                   species=['Si', 'Si'],
                   positions=positions,

@@ -1,32 +1,29 @@
  &control
-    calculation = 'vc-relax'
+    calculation = 'scf'
     pseudo_dir = '/Users/jonpvandermause/AP275/qe-6.0/pseudo'
     outdir = './output'
+    tstress = .true.
     tprnfor = .true.
  /
  &system
     ibrav= 0
     nat= 2
     ntyp= 1
-    ecutwfc =18.0
+    ecutwfc =75
+    ecutrho = 600
  /
  &electrons
     conv_thr =  1.0d-10
     mixing_beta = 0.7
  /
- &ions
- /
- &cell
-    press_conv_thr = 'None'
- /
 ATOMIC_SPECIES
- Si  28.086  Si.pz-vbc.UPF
+ C  12.011  C.pz-rrkjus.UPF
 CELL_PARAMETERS {angstrom}
- 0.00000 2.69000 2.69000
- 2.69000 0.00000 2.69000
- 2.69000 2.69000 0.00000
+ 0.00000 1.76300 1.76300
+ 1.76300 0.00000 1.76300
+ 1.76300 1.76300 0.00000
 ATOMIC_POSITIONS {angstrom}
- Si 0.00000 0.00000 0.00000
- Si 1.34500 1.34500 1.34500
+ C 0.00000 0.00000 0.00000
+ C 0.88150 0.88150 0.88150
 K_POINTS automatic
- 4 4 4  0 0 0
+ 30 30 30  0 0 0

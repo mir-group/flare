@@ -7,25 +7,29 @@ import qe_input
 input_file_name = './C_vc.in'
 output_file_name = './C_vc.out'
 pw_loc = os.environ.get('PWSCF_COMMAND')
-calculation = 'vc-relax'
+calculation = 'scf'
 
 # specify diamnond crystal structure
-cp = 1.76
+cp = 1.763
 # cp = 1.641877323
 cell = np.array([[0, cp, cp],
                  [cp, 0, cp],
                  [cp, cp, 0]])
 positions = [np.array([0, 0, 0]),
              np.array([cp/2, cp/2, cp/2])]
-nk = 20
+
+# set convergence parameters
+nk = 30
+ecutwfc = 75
+ecutrho = 8 * ecutwfc
 
 
 scf_inputs = dict(pseudo_dir=os.environ.get('ESPRESSO_PSEUDO'),
                   outdir='./output',
                   nat=2,
                   ntyp=1,
-                  ecutwfc=50.0,
-                  ecutrho=200.0,
+                  ecutwfc=ecutwfc,
+                  ecutrho=ecutrho,
                   cell=cell,
                   species=['C', 'C'],
                   positions=positions,
@@ -34,11 +38,10 @@ scf_inputs = dict(pseudo_dir=os.environ.get('ESPRESSO_PSEUDO'),
                   ion_masses=[12.011],
                   ion_pseudo=['C.pz-rrkjus.UPF'])
 
-C_vc = qe_input.QEInput(input_file_name, output_file_name, pw_loc,
-                        calculation, scf_inputs,
-                        press_conv_thr='0.5D0')
+scf = qe_input.QEInput(input_file_name, output_file_name, pw_loc,
+                       calculation, scf_inputs)
 
-C_vc.run_espresso()
+scf.run_espresso()
 
 # remove output directory
 if os.path.isdir('output'):
