@@ -1,0 +1,37 @@
+ &control
+    calculation = 'md'
+    pseudo_dir = 'test/pseudo'
+    outdir = '.'
+    tprnfor = .true.
+    dt = 20
+    nstep = 1000
+ /
+ &system
+    ibrav= 0
+    nat= 2
+    ntyp= 2
+    ecutwfc =18.0
+    nosym = .true.
+ /
+ &electrons
+    conv_thr =  1.0d-10
+    mixing_beta = 0.7
+ /
+ &ions
+    pot_extrapolation = 'second-order'
+    wfc_extrapolation = 'second-order'
+    ion_temperature = 'rescaling'
+    tempw = 1000
+ /
+ATOMIC_SPECIES
+ C  2.0  C.pz-rrkjus.UPF
+ Si  3.0  Si.pz-rrkjus.UPF
+CELL_PARAMETERS {angstrom}
+ 1.00000 0.00000 0.00000
+ 0.00000 1.00000 0.00000
+ 0.00000 0.00000 1.00000
+ATOMIC_POSITIONS {angstrom}
+ C 0.00000 0.00000 0.00000
+ Si 0.50000 0.50000 0.50000
+K_POINTS automatic
+ 4 4 4  0 0 0
