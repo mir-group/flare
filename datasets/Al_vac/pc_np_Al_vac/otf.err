@@ -1,0 +1,12 @@
+cp: `./Al_scf.in' and `./Al_scf.in' are the same file
+cp: `./Al_scf.in' and `./Al_scf.in' are the same file
+../../otf_engine/otf.py:86: RuntimeWarning: invalid value encountered in sqrt
+  self.structure.stds[n][i] = np.sqrt(var)
+Traceback (most recent call last):
+  File "al_vac.py", line 88, in <module>
+    results = run_otf_md(input_file=input_file_name_scf, output_file=output_file_name_otf)
+  File "al_vac.py", line 65, in run_otf_md
+    return parse_md_output(output_file)
+  File "../../modules/qe_parsers.py", line 8, in parse_md_output
+    with open(outfile, 'r') as outf:
+FileNotFoundError: [Errno 2] No such file or directory: './Al_OTF.out'

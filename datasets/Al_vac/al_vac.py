@@ -83,8 +83,8 @@ if __name__ == '__main__':
     # nk = 1
 
     # run otf
-    output_file_name_otf = '../datasets/Al_vac/Al_OTF.out'
-    input_file_name_scf = '../datasets/Al_vac/Al_scf.in'
+    output_file_name_otf = './Al_OTF.out'
+    input_file_name_scf = './Al_scf.in'
     results = run_otf_md(input_file=input_file_name_scf, output_file=output_file_name_otf)
 
     with open('al_results.json', 'w') as fp:
