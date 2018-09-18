@@ -2,10 +2,52 @@ import numpy as np
 import os
 
 
+class BashInput:
+    def __init__(self, bash_name, bash_inputs):
+        self.bash_name = bash_name
+
+        self.n = bash_inputs['n']
+        self.N = bash_inputs['N']
+        self.t = bash_inputs['t']
+        self.e = bash_inputs['e']
+        self.p = bash_inputs['p']
+        self.o = bash_inputs['o']
+        self.mem_per_cpu = bash_inputs['mem_per_cpu']
+        self.mail_user = bash_inputs['mail_user']
+        self.command = bash_inputs['command']
+
+        self.bash_text = self.get_bash_text()
+
+    def get_bash_text(self):
+        sh_text = """#!/bin/sh
+    #SBATCH -n {}
+    #SBATCH -N {}
+    #SBATCH -t {}-00:00
+    #SBATCH -e {}
+    #SBATCH -p {}
+    #SBATCH -o {}
+    #SBATCH --mem-per-cpu={}
+    #SBATCH --mail-type=ALL
+    #SBATCH --mail-user={}
+
+    module load gcc/4.9.3-fasrc01 openmpi/2.1.0-fasrc01
+    module load python/3.6.3-fasrc01
+
+    {}""".format(self.n, self.N, self.t, self.e, self.p, self.o,
+                 self.mem_per_cpu, self.mail_user, self.command)
+
+        return sh_text
+
+    def write_bash_text(self):
+        with open(self.bash_name, 'w') as fin:
+            fin.write(self.bash_text)
+
+
 class QEInput:
     def __init__(self, input_file_name: str, output_file_name: str,
                  pw_loc: str, calculation: str,
-                 scf_inputs: dict, md_inputs: dict = None):
+                 scf_inputs: dict, md_inputs: dict = None,
+                 press_conv_thr=None):
 
         self.input_file_name = input_file_name
         self.output_file_name = output_file_name
@@ -17,6 +59,7 @@ class QEInput:
         self.nat = scf_inputs['nat']
         self.ntyp = scf_inputs['ntyp']
         self.ecutwfc = scf_inputs['ecutwfc']
+        self.ecutrho = scf_inputs['ecutrho']
         self.cell = scf_inputs['cell']
         self.species = scf_inputs['species']
         self.positions = scf_inputs['positions']
@@ -31,11 +74,16 @@ class QEInput:
         self.cell_txt = self.get_cell_txt()
         self.kpt_txt = self.get_kpt_txt()
 
+        # get md parameters
         if self.calculation == 'md':
             self.dt = md_inputs['dt']
             self.nstep = md_inputs['nstep']
             self.ion_temperature = md_inputs['ion_temperature']
             self.tempw = md_inputs['tempw']
+
+        # if vc, get pressure convergence threshold
+        if self.calculation == 'vc-relax':
+            self.press_conv_thr = press_conv_thr
 
         self.input_text = self.get_input_text()
 
@@ -81,8 +129,10 @@ class QEInput:
     calculation = '{}'
     pseudo_dir = '{}'
     outdir = '{}'
+    tstress = .true.
     tprnfor = .true.""".format(self.calculation, self.pseudo_dir, self.outdir)
 
+        # if MD, add time step and number of steps
         if self.calculation == 'md':
             input_text += """
     dt = {}
@@ -95,24 +145,44 @@ class QEInput:
     nat= {}
     ntyp= {}
     ecutwfc ={}
-    nosym = .true.
+    ecutrho = {}""".format(self.nat, self.ntyp, self.ecutwfc,
+                           self.ecutrho)
+
+        # if MD or relax, don't reduce number of k points based on symmetry,
+        # since the symmetry might change throughout the calculation
+        if (self.calculation == 'md') or (self.calculation == 'relax'):
+            input_text += """
+    nosym = .true."""
+
+        input_text += """
  /
  &electrons
     conv_thr =  1.0d-10
-    mixing_beta = 0.7""".format(self.nat, self.ntyp, self.ecutwfc)
+    mixing_beta = 0.7"""
 
-        if (self.calculation == 'md') or (self.calculation == 'relax'):
+        # if MD or relax, need to add an &IONS block
+        if (self.calculation == 'md') or (self.calculation == 'relax') or \
+           (self.calculation == 'vc-relax'):
             input_text += """
  /
- &ions
-    pot_extrapolation = 'second-order'
-    wfc_extrapolation = 'second-order'"""
+ &ions"""
 
-        if (self.calculation == 'md'):
+        # if MD, add additional details about ions
+        if self.calculation == 'md':
             input_text += """
+    pot_extrapolation = 'second-order'
+    wfc_extrapolation = 'second-order'
     ion_temperature = '{}'
     tempw = {}""".format(self.ion_temperature, self.tempw)
 
+        # if vc-relax, add cell block
+        if self.calculation == 'vc-relax':
+            input_text += """
+ /
+ &cell
+    press_conv_thr = {}""".format(self.press_conv_thr)
+
+        # insert species, cell, position and k-point textblocks
         input_text += """
  /
 {}
@@ -135,27 +205,6 @@ class QEInput:
 
         os.system(qe_command)
 
+
 if __name__ == '__main__':
-    # make test input
-    input_file = './test.in'
-    calculation = 'scf'
-    scf_inputs = dict(pseudo_dir='test/pseudo',
-                      outdir='.',
-                      nat=2,
-                      ntyp=2,
-                      ecutwfc=18.0,
-                      cell=np.eye(3),
-                      species=['C', 'Si'],
-                      positions=[np.array([0, 0, 0]),
-                                 np.array([0.5, 0.5, 0.5])],
-                      kvec=np.array([4, 4, 4]),
-                      ion_names=['C', 'Si'],
-                      ion_masses=[2.0, 3.0],
-                      ion_pseudo=['C.pz-rrkjus.UPF', 'Si.pz-rrkjus.UPF'])
-
-    md_inputs = dict(dt=20,
-                     nstep=1000,
-                     ion_temperature='rescaling',
-                     tempw=1000)
-
-    test_md = QEInput(input_file, calculation, scf_inputs, md_inputs)
+    pass

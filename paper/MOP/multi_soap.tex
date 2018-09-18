@@ -1,0 +1,139 @@
+\documentclass[%
+% reprint,
+%superscriptaddress,
+%groupedaddress,
+%unsortedaddress,
+%runinaddress,
+%frontmatterverbose, 
+preprint,
+%showpacs,preprintnumbers,
+%nofootinbib,
+%nobibnotes,
+%bibnotes,
+amsmath,amssymb,
+aps,
+%pra,
+%prb,
+%rmp,
+%prstab,
+%prstper,
+%floatfix,
+]{revtex4-1}
+
+\usepackage{braket}
+\usepackage{graphicx}% Include figure files
+% \usepackage{dcolumn}% Align table columns on decimal point
+\usepackage{bm}% bold math
+%\usepackage{hyperref}% add hypertext capabilities
+%\usepackage[mathlines]{lineno}% Enable numbering of text and display math
+%\linenumbers\relax % Commence numbering lines
+
+%\usepackage[showframe,%Uncomment any one of the following lines to test 
+%%scale=0.7, marginratio={1:1, 2:3}, ignoreall,% default settings
+%%text={7in,10in},centering,
+%%margin=1.5in,
+%%total={6.5in,8.75in}, top=1.2in, left=0.9in, includefoot,
+%%height=10in,a5paper,hmargin={3cm,0.8in},
+%]{geometry}
+
+\begin{document}
+
+\title{Some notes on extending the SOAP kernel to multi-component systems}
+
+\author{Jonathan Vandermause}
+% \affiliation{$^{1}$John A. Paulson School of Engineering and Applied
+% Sciences, Harvard University, Cambridge, Massachusetts 02138, USA \\
+% $^{2}$Department of Physics, Harvard University, Cambridge, Massachusetts
+% 02138, USA \\
+% $^{3}$Center for Computational Engineering, Massachusetts Institute of
+% Technology, Cambridge, Massachusetts 02139, USA \\
+% $^{4}$ Department of Mechanical Engineering, Massachusetts Institute of Technology, Cambridge, Massachusetts 02139, USA}
+
+\date{\today}
+
+% \begin{abstract}
+% \end{abstract}
+
+\maketitle
+
+\section{Review of the single-component SOAP kernel}
+
+\subsection{SOAP as a dot product of normalized rotational power spectra}
+
+In the SOAP scheme, an atomic environment is represented by an atomic neighbor density function $\rho(\vec{r})$, where
+\begin{equation}
+\rho(\vec{r}) = \sum_i \exp\left(-\alpha | \vec{r} - \vec{r}_i|^2 \right),
+\end{equation}
+$\alpha$ is a hyperparameter, and $\vec{r}_i$ is the position of atom $i$ in the environment of the central atom. The single-component SOAP kernel between two atomic neighbor densities $\rho$ and $\rho'$ is defined by Eq.\ (36) of \cite{bartok2013representing} as:
+
+\begin{equation}
+    K(\rho, \rho') = \left(\frac{k (\rho, \rho')}{\sqrt{k(\rho, \rho) k(\rho', \rho')}} \right) ^{\xi},
+\end{equation}
+where $k(\rho, \rho')$ is a rotationally invariant symmetry kernel given by
+\begin{equation}
+k(\rho, \rho') = \int d\hat{R} \left| \int \rho(\vec{r}) \rho'(\hat{R}\vec{r}) d\vec{r} \right| ^n,
+\end{equation}
+and $\hat{R}$ is a 3-D rotation. The integral is over all rotations and ensures that the kernel is rotationally symmetric.
+
+In Section IV(B) of \cite{bartok2013representing}, it is shown that $k(\rho, \rho')$ is equal to the dot product of the ``rotational power spectra'' of densities $\rho$ and $\rho'$, which is efficient to compute. I will review this derivation here, since a similar argument can be applied to multi-component systems.
+
+Letting $g_n(r)$ be an orthonormal set of radial basis functions, so that
+\begin{equation}
+\int dr r^2 g_n(r) g_{n'}(r) = \delta_{n n'},
+\end{equation}
+an atomic neighbor density $\rho(\vec{r})$ may be expanded into spherical harmonics as
+\begin{equation}
+\rho(\vec{r}) = \sum_{n l m} c_{n l m} g_n(r) Y_{l m} (\vec{r}).
+\end{equation}
+We first compute that
+\begin{equation} \label{S_eq}
+\begin{split}
+   S(\rho, \hat{R} \rho') &\equiv \int d\vec{r} \rho(\vec{r}) \rho'(\hat{R} \vec{r}) \\
+   &= \int d\vec{r} \left(\sum_{n l m} c_{n l m}^* g_n(r)Y_{l m}^*(\hat{r}) \right)\left(\sum_{n' l' m'} c'_{n' l' m'} g_{n'}(r)Y_{l' m'}(\hat{R} \vec{r}) \right) \\
+   &= \sum_{n l m n' l' m'} c^*_{n l m} c'_{n' l' m'} \int dr g_n(r) g_{n'}(r) \int d\hat{r} Y^*_{l m}(\hat{r}) Y_{l' m'}(\hat{R} \vec{r}) \\
+   &= \sum_{n l m l' m'} c^*_{n l m} c'_{n l' m'} \int d\hat{r} Y^*_{l m}(\hat{r}) Y_{l' m'} (\hat{R} \vec{r}).
+\end{split}
+\end{equation}
+Note that
+\begin{equation}
+    \begin{split}
+Y_{l' m'}(\vec{R} \hat{r}) &= \braket{\vec{r} | \hat{R}^\dagger | Y_{l' m'}} \\
+&= \sum_{m''} \braket{\vec{r} | Y_{l' m''}} \braket{Y_{l' m''} | \hat{R}^\dagger | Y_{l' m'}} \\
+&= \sum_{m''} \braket{\vec{r} | Y_{l' m''}} \braket{Y_{l' m'} | \hat{R} | Y_{l' m''}}^* \\
+&= \sum_{m''} Y_{l' m''}(\hat{r}) D^*(\hat{R})_{m' m''}^{l'},
+    \end{split}
+\end{equation}
+where the Wigner function $D(\hat{R})_{m m'}^{l}$ is defined as
+\begin{equation}
+D(\hat{R})_{m m'}^{l} = \braket{Y_{l m} | \hat{R} | Y_{l m'}}.
+\end{equation}
+Plugging into Eq.\ (\ref{S_eq}) gives
+\begin{equation}
+    \begin{split}
+S(\rho, \hat{R} \rho') &= \sum_{n l m l' m' m''} c^*_{n l m} c'_{n l' m'} D^*(\hat{R})^{l'}_{m' m''} \int d\hat{r} Y^*_{l m }(\hat{r}) Y_{l' m''}(\hat{r}) \\
+&= \sum_{n l m m'} c^*_{n l m} c'_{n l m'} D^*(\hat{R})^l_{m' m}.
+    \end{split}
+\end{equation}
+The symmetry kernel $k(\rho, \rho')$ with $n = 2$ then takes the form
+\begin{equation}
+    \begin{split}
+k(\rho, \rho') &= \int d\hat{R} S(\rho, \hat{R}\rho') S^*(\rho, \hat{R} \rho') \\
+&= \sum_{n l m m' n' \lambda \mu \mu'} c^*_{n l m} c'_{n l m'} c_{n' \lambda \mu} (c'_{n' \lambda \mu'})^* \int d\hat{R} D^*(\hat{R})^l_{m' m} D(\hat{R})^\lambda_{\mu' \mu} \\
+&= \sum_{n l m m' n'} c^*_{n l m} c'_{n l m'} c_{n' l m} (c'_{n' l m'})^* \\
+&= \sum_{n n' l} \left(\sum_{m} c^*_{n l m} c_{n' l m} \right) \left(\sum_{m'} c'_{n l m'} (c'_{n' l m'})^* \right) \\
+&= \sum_{n n' l} p_{n' n l} p'_{n n' l}.
+    \end{split}
+\end{equation}
+Because the atomic densities $\rho$ and $\rho'$ are real-valued functions, $p_{n' n l} = p_{n n' l}$, so $k(\rho, \rho')$ may be expressed as the dot product of the power spectra $\vec{p}$ and $\vec{p'}$:
+\begin{equation}
+k(\rho, \rho') = \vec{p} \cdot \vec{p'}.
+\end{equation}
+The full SOAP kernel $K(\rho, \rho')$ is
+\begin{equation}
+K(\rho, \rho') = \left( \frac{\vec{p}}{|\vec{p}|} \cdot \frac{\vec{p'}}{|\vec{p}'|} \right)^{\xi}.
+\end{equation}
+
+\subsection{Computing the SOAP kernel}
+The key step in compuing $K(\rho, \rho')$ is determining the coefficients $c_{n l m}(r, \{\vec{r}_i\})$, which depend on the radial distance $r$, the positions $\vec{r}_i$ of the environment atoms, and the radial basis set.
+\bibliography{multi_soap.bib}
+\end{document}
