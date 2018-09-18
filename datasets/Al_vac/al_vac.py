@@ -65,6 +65,15 @@ def run_test_md(input_file, output_file):
     return parse_md_output(output_file_name)
 
 
+def relax_vac(input_file, output_file):
+    """ Relax structure with vacancy """
+
+    pw_loc = os.environ['PWSCF_COMMAND']
+
+    qe_command = '{0} < {1} > {2}'.format(pw_loc, input_file, output_file)
+    os.system(qe_command)
+
+
 def run_otf_md(input_file, output_file):
     """ Run OTF engine with specified QE input file """
 
@@ -114,7 +123,9 @@ if __name__ == '__main__':
 
     output_file_name_otf = './Al_OTF_pert.out'
     output_file_name_scf = './Al_scf_pert.out'
+    output_file_name_scf_relax = './Al_scf_relax.out'
     input_file_name_scf = './Al_scf_pert.in'
+    input_file_name_scf_relax = './Al_scf_relax.in'
 
     # # debug mode
     # local = True
@@ -124,6 +135,9 @@ if __name__ == '__main__':
     #cell, al_pos, nat = create_structure(el=el, alat=alat, size=size, perturb=True)
 
     #write_scf_input(input_file=input_file_name_scf, output_file=output_file_name_scf, nat=nat, ecut=ecut, cell=cell, pos=al_pos, nk=nk)
+
+    # relax vacancy structure
+    relax_vac(input_file=input_file_name_scf, output_file=output_file_name_scf_relax)
 
     # run otf
     results = run_otf_md(input_file=input_file_name_scf, output_file=output_file_name_otf)

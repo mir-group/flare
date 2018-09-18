@@ -1,6 +1,6 @@
 &CONTROL
     calculation = 'scf'
-    pseudo_dir = '/home/homesoftware/espresso-6.1/qe-6.1/pseudo/'
+    pseudo_dir = '/Users/simonbatzner1/Sci_Software/QE/qe-6.0/pseudo'
     outdir = '.'
     tstress = .true.
     tprnfor = .true.
