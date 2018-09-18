@@ -5,8 +5,12 @@
 
 Simon Batzner
 """
-import os
+import os, sys
 import json
+
+print("cwd: ", os.getcwd())
+sys.path.append('../../modules')
+sys.path.append('../../otf_engine')
 
 import numpy as np
 
@@ -38,6 +42,7 @@ def create_structure(el, alat, size):
 
 def run_test_md(input_file, output_file):
     """ Run test QE MD run """
+
     input_file_name = '../datasets/Al_vac/Al_scf.in'
     output_file_name = '../datasets/Al_vac/Al_scf.out'
     pw_loc = os.environ['PWSCF_COMMAND']
@@ -52,11 +57,7 @@ def run_otf_md(input_file, output_file):
     """ Run OTF engine with specified QE input file """
 
     # setup run from QE input file
-    al_otf = OTF(qe_input=input_file,
-                     dt=0.0001,
-                     number_of_steps=1000,
-                     kernel='two_body',
-                     cutoff=3)
+    al_otf = OTF(qe_input=input_file, dt=0.0001, number_of_steps=1000, kernel='two_body', cutoff=3)
 
     # run otf
     al_otf.run()

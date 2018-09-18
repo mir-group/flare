@@ -11,7 +11,7 @@
  /
  &SYSTEM
     ibrav= 0
-    nat = 31
+nat = 31
     ntyp= 1
     ecutwfc = 38
     nosym = .true.
