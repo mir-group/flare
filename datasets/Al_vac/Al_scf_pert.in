@@ -11,7 +11,7 @@
  /
 &SYSTEM
     ibrav= 0
-    nat = 31
+nat = 31
     ntyp= 1
     ecutwfc = 10
     nosym = .true.
@@ -65,5 +65,6 @@ ATOMIC_POSITIONS {angstrom}
  Al 3.90740 5.99179 6.22223
  Al 6.11188 4.14432 6.05614
  Al 5.99655 6.08272 4.16853
+
 K_POINTS automatic
  7 7 7  0 0 0

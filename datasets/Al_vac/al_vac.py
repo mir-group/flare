@@ -82,7 +82,7 @@ def run_otf_md(input_file, output_file):
     """ Run OTF engine with specified QE input file """
 
     # setup run from QE input file
-    al_otf = OTF(qe_input=input_file, dt=0.001, number_of_steps=3, kernel='two_body', cutoff=5)
+    al_otf = OTF(qe_input=input_file, dt=0.001, number_of_steps=1000, kernel='two_body', cutoff=5)
 
     # run otf
     al_otf.run()
@@ -125,12 +125,12 @@ if __name__ == '__main__':
     alat = 3.978153546
     nk = 4
 
-    output_file_name_otf = '../datasets/Al_vac/Al_OTF_pert.out'
-    output_file_name_scf = '../datasets/Al_vac/Al_scf_pert.out'
-    output_file_name_scf_relax = '../datasets/Al_vac/Al_scf_relax.out'
-    input_file_name_scf = '../datasets/Al_vac/Al_scf.in'
-    input_file_name_scf_pert = '../datasets/Al_vac/Al_scf_pert.in'
-    input_file_name_scf_relax = '../datasets/Al_vac/Al_scf_relax.in'
+    output_file_name_otf = '../Al_vac/Al_OTF_pert.out'
+    output_file_name_scf = '../Al_vac/Al_scf_pert.out'
+    output_file_name_scf_relax = '../Al_vac/Al_scf_relax.out'
+    input_file_name_scf = '../Al_vac/Al_scf.in'
+    input_file_name_scf_pert = '../Al_vac/Al_scf_pert.in'
+    input_file_name_scf_relax = '../Al_vac/Al_scf_relax.in'
 
     # # debug mode
     # local = True
@@ -144,12 +144,10 @@ if __name__ == '__main__':
     # write_scf_input(input_file=input_file_name_scf_pert, output_file=output_file_name_scf, nat=nat, ecut=ecut, cell=cell, pos=al_pos, nk=nk)
 
     # relax vacancy structure
-    # relax_vac(input_file=input_file_name_scf, output_file=output_file_name_scf_relax)
+    relax_vac(input_file=input_file_name_scf_relax, output_file=output_file_name_scf_relax)
 
     # run otf
-    results = run_otf_md(input_file=input_file_name_scf_pert, output_file=output_file_name_otf)
+    #results = run_otf_md(input_file=input_file_name_scf_pert, output_file=output_file_name_otf)
 
-    with open('al_results.json', 'w') as fp:
-        json.dump(results, fp)
-
-
+    #with open('al_results.json', 'w') as fp:
+    #    json.dump(results, fp)
