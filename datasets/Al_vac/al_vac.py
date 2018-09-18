@@ -20,9 +20,10 @@ from qe_input import QEInput
 
 from qe_parsers import parse_md_output
 from otf import OTF
+from parse_relax import parse_pos_relax
 
 
-def create_structure(el, alat, size, perturb=False):
+def create_structure(el, alat, size, perturb=False, pass_relax=False, pass_pos=None):
     """ Create bulk structure with vacancy, return cell, position, number of atoms"""
 
     # create bulk cell
@@ -40,6 +41,9 @@ def create_structure(el, alat, size, perturb=False):
 
     # get unpertubed positions
     al_pos = np.asarray(supercell.positions)
+
+    if pass_relax:
+        al_pos = pass_pos
 
     if perturb:
         for atom in range(al_pos.shape[0]):
@@ -117,9 +121,9 @@ if __name__ == '__main__':
     # params
     el = 'Al'
     size = 2
-    ecut = 38
+    ecut = 30
     alat = 3.978153546
-    nk = 7
+    nk = 4
 
     output_file_name_otf = '../datasets/Al_vac/Al_OTF_pert.out'
     output_file_name_scf = '../datasets/Al_vac/Al_scf_pert.out'
@@ -133,9 +137,11 @@ if __name__ == '__main__':
     # ecut = 5
     # nk = 1
 
-    #cell, al_pos, nat = create_structure(el=el, alat=alat, size=size, perturb=True)
-
-    #write_scf_input(input_file=input_file_name_scf, output_file=output_file_name_scf, nat=nat, ecut=ecut, cell=cell, pos=al_pos, nk=nk)
+    # pos_relax = parse_pos_relax(filename='/Users/simonbatzner1/Desktop/Research/Research_Code/otf/datasets/Al_vac/relaxpos.txt')
+    #
+    # cell, al_pos, nat = create_structure(el=el, alat=alat, size=size, perturb=True, pass_relax=True, pass_pos=pos_relax)
+    #
+    # write_scf_input(input_file=input_file_name_scf_pert, output_file=output_file_name_scf, nat=nat, ecut=ecut, cell=cell, pos=al_pos, nk=nk)
 
     # relax vacancy structure
     # relax_vac(input_file=input_file_name_scf, output_file=output_file_name_scf_relax)
