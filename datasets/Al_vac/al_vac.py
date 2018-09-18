@@ -16,16 +16,20 @@ import numpy as np
 
 from ase.build import *
 from ase.spacegroup import crystal
+from qe_input import QEInput
 
 from qe_parsers import parse_md_output
 from otf import OTF
 
 
-def create_structure(el, alat, size):
+def create_structure(el, alat, size, perturb=False):
     """ Create bulk structure with vacancy, return cell, position, number of atoms"""
 
     # create bulk cell
     unit_cell = crystal(el, [(0, 0, 0)], spacegroup=225, cellpar=[alat, alat, alat, 90, 90, 90])
+
+    # size of initial perturbation
+    pert_size = 0.05 * alat
 
     # make supercell
     multiplier = np.identity(3) * size
@@ -33,8 +37,16 @@ def create_structure(el, alat, size):
 
     # remove atom
     supercell.pop(supercell.get_number_of_atoms() // 2)
-    cell = supercell.get_cell()
+
+    # get unpertubed positions
     al_pos = np.asarray(supercell.positions)
+
+    if perturb:
+        for atom in range(al_pos.shape[0]):
+            for coord in range(3):
+                al_pos[atom][coord] += np.random.uniform(-pert_size, pert_size)
+
+    cell = supercell.get_cell()
     nat = supercell.get_number_of_atoms()
 
     return cell, al_pos, nat
@@ -64,27 +76,56 @@ def run_otf_md(input_file, output_file):
 
     return parse_md_output(output_file)
 
+
+def write_scf_input(input_file, output_file, nat, ecut, cell, pos, nk):
+    """ Write QE scf input file from structure and QE params """
+    calculation = 'scf'
+    pw_loc = os.environ['PWSCF_COMMAND']
+
+    scf_inputs = dict(pseudo_dir=os.environ['ESPRESSO_PSEUDO'],
+                      outdir='.',
+                      nat=nat,
+                      ntyp=1,
+                      ecutwfc=ecut,
+                      ecutrho=ecut * 4,
+                      cell=cell,
+                      species=['Al'] * nat,
+                      positions=pos,
+                      kvec=np.array([nk] * 3),
+                      ion_names=['Al'],
+                      ion_masses=[26.981539],
+                      ion_pseudo=['Al.pz-vbc.UPF'])
+
+    QEInput(input_file, output_file, pw_loc, calculation, scf_inputs)
+
+
 if __name__ == '__main__':
     workdir = os.getcwd()
     print(os.environ['ESPRESSO_PSEUDO'])
     print(os.environ['PWSCF_COMMAND'])
     print(workdir)
 
-    # # params
-    # el = 'Al'
-    # size = 2
-    # ecut = 38
-    # alat = 3.978153546
-    # nk = 7
-    #
+    # params
+    el = 'Al'
+    size = 2
+    ecut = 38
+    alat = 3.978153546
+    nk = 7
+
+    output_file_name_otf = './Al_OTF_pert.out'
+    output_file_name_scf = './Al_scf_pert.out'
+    input_file_name_scf = './Al_scf_pert.in'
+
     # # debug mode
     # local = True
     # ecut = 5
     # nk = 1
 
+    #cell, al_pos, nat = create_structure(el=el, alat=alat, size=size, perturb=True)
+
+    #write_scf_input(input_file=input_file_name_scf, output_file=output_file_name_scf, nat=nat, ecut=ecut, cell=cell, pos=al_pos, nk=nk)
+
     # run otf
-    output_file_name_otf = './Al_OTF.out'
-    input_file_name_scf = './Al_scf.in'
     results = run_otf_md(input_file=input_file_name_scf, output_file=output_file_name_otf)
 
     with open('al_results.json', 'w') as fp:
