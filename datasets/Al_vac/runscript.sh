@@ -2,9 +2,9 @@
 #SBATCH -n 16
 #SBATCH -N 1
 #SBATCH -p batch
-#SBATCH -o otf.out
-#SBATCH -e otf.err 
-#SBATCH -J otf
+#SBATCH -o relax.out
+#SBATCH -e relax.err 
+#SBATCH -J relax
 
 module purge
 module load espresso-6.1-gnu
