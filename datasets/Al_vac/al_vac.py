@@ -144,10 +144,10 @@ if __name__ == '__main__':
     # write_scf_input(input_file=input_file_name_scf_pert, output_file=output_file_name_scf, nat=nat, ecut=ecut, cell=cell, pos=al_pos, nk=nk)
 
     # relax vacancy structure
-    relax_vac(input_file=input_file_name_scf_relax, output_file=output_file_name_scf_relax)
+    # relax_vac(input_file=input_file_name_scf_relax, output_file=output_file_name_scf_relax)
 
     # run otf
-    #results = run_otf_md(input_file=input_file_name_scf_pert, output_file=output_file_name_otf)
+    results = run_otf_md(input_file=input_file_name_scf_pert, output_file=output_file_name_otf)
 
-    #with open('al_results.json', 'w') as fp:
-    #    json.dump(results, fp)
+    with open('al_results.json', 'w') as fp:
+       json.dump(results, fp)
