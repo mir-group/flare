@@ -2,7 +2,7 @@
 
     prefix = 'Al'
     calculation = 'scf'
-    pseudo_dir = '/Users/simonbatzner1/Sci_Software/QE/qe-6.0/pseudo'
+    pseudo_dir = '/home/homesoftware/espresso-6.1/qe-6.1/pseudo/'
     outdir = '.'
     tstress = .true.
     tprnfor = .true.
@@ -13,7 +13,7 @@
     ibrav= 0
     nat = 31
     ntyp= 1
-    ecutwfc =5
+    ecutwfc = 38
     nosym = .true.
     occupations = 'smearing'
     smearing = 'mp'
@@ -28,6 +28,7 @@
  /
 ATOMIC_SPECIES
    Al  26.981539  Al.pz-vbc.UPF
+
 CELL_PARAMETERS {angstrom}
 7.95631 0.0 0.0
 0.0 7.95631 0.0
@@ -65,5 +66,6 @@ Al 3.97815 3.97815 3.97815
 Al 3.97815 5.96723 5.96723
 Al 5.96723 3.97815 5.96723
 Al 5.96723 5.96723 3.97815
+
 K_POINTS automatic
- 1 1 1  0 0 0
+ 7 7 7  0 0 0

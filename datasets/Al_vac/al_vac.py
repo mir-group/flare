@@ -6,6 +6,7 @@
 Simon Batzner
 """
 import os
+import json
 
 import numpy as np
 
@@ -17,6 +18,8 @@ from otf import OTF
 
 
 def create_structure(el, alat, size):
+    """ Create bulk structure with vacancy, return cell, position, number of atoms"""
+
     # create bulk cell
     unit_cell = crystal(el, [(0, 0, 0)], spacegroup=225, cellpar=[alat, alat, alat, 90, 90, 90])
 
@@ -33,9 +36,10 @@ def create_structure(el, alat, size):
     return cell, al_pos, nat
 
 
-def run_test_md():
-    input_file_name = './Al_scf.in'
-    output_file_name = './Al_scf.out'
+def run_test_md(input_file, output_file):
+    """ Run test QE MD run """
+    input_file_name = '../datasets/Al_vac/Al_scf.in'
+    output_file_name = '../datasets/Al_vac/Al_scf.out'
     pw_loc = os.environ['PWSCF_COMMAND']
 
     qe_command = '{0} < {1} > {2}'.format(pw_loc, input_file_name, output_file_name)
@@ -44,20 +48,20 @@ def run_test_md():
     return parse_md_output(output_file_name)
 
 
-def run_otf_md(input_file):
-    output_file_name = './Al_OTF.out'
+def run_otf_md(input_file, output_file):
+    """ Run OTF engine with specified QE input file """
 
     # setup run from QE input file
-    Al_OTF = OTF(qe_input=input_file,
+    al_otf = OTF(qe_input=input_file,
                      dt=0.0001,
                      number_of_steps=1000,
                      kernel='two_body',
                      cutoff=3)
 
     # run otf
-    Al_OTF.run()
+    al_otf.run()
 
-    return parse_md_output(output_file_name)
+    return parse_md_output(output_file)
 
 if __name__ == '__main__':
     workdir = os.getcwd()
@@ -78,8 +82,11 @@ if __name__ == '__main__':
     # nk = 1
 
     # run otf
-    input_file_name = './Al_scf.in'
-    results = run_otf_md(input_file=input_file_name)
+    output_file_name_otf = '../datasets/Al_vac/Al_OTF.out'
+    input_file_name_scf = '../datasets/Al_vac/Al_scf.in'
+    results = run_otf_md(input_file=input_file_name_scf, output_file=output_file_name_otf)
 
+    with open('al_results.json', 'w') as fp:
+        json.dump(results, fp)
 
 
