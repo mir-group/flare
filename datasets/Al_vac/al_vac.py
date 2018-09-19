@@ -82,7 +82,7 @@ def run_otf_md(input_file, output_file):
     """ Run OTF engine with specified QE input file """
 
     # setup run from QE input file
-    al_otf = OTF(qe_input=input_file, dt=0.001, number_of_steps=1000, kernel='two_body', cutoff=5)
+    al_otf = OTF(qe_input=input_file, dt=0.001, number_of_steps=10000, kernel='two_body', cutoff=5)
 
     # run otf
     al_otf.run()
@@ -125,7 +125,7 @@ if __name__ == '__main__':
     alat = 3.978153546
     nk = 4
 
-    output_file_name_otf = '../Al_vac/Al_OTF_pert.out'
+    output_file_name_otf = '/home/sbatzner/otf/datasets/Al_vac/Al_OTF_pert.out'
     output_file_name_scf = '../Al_vac/Al_scf_pert.out'
     output_file_name_scf_relax = '../Al_vac/Al_scf_relax.out'
     input_file_name_scf = '../Al_vac/Al_scf.in'

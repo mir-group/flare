@@ -58,8 +58,6 @@ aps,
 
 \section{Review of the single-component SOAP kernel}
 
-\subsection{SOAP as a dot product of normalized rotational power spectra}
-
 In the SOAP scheme, an atomic environment is represented by an atomic neighbor density function $\rho(\vec{r})$, where
 \begin{equation}
 \rho(\vec{r}) = \sum_i \exp\left(-\alpha | \vec{r} - \vec{r}_i|^2 \right),
@@ -73,7 +71,7 @@ where $k(\rho, \rho')$ is a rotationally invariant symmetry kernel given by
 \begin{equation}
 k(\rho, \rho') = \int d\hat{R} \left| \int \rho(\vec{r}) \rho'(\hat{R}\vec{r}) d\vec{r} \right| ^n,
 \end{equation}
-and $\hat{R}$ is a 3-D rotation. The integral is over all rotations and ensures that the kernel is rotationally symmetric.
+and $\hat{R}$ is a 3-D rotation. The outer integral is over all rotations and ensures that the kernel is rotationally symmetric.
 
 In Section IV(B) of \cite{bartok2013representing}, it is shown that $k(\rho, \rho')$ is equal to the dot product of the ``rotational power spectra'' of densities $\rho$ and $\rho'$, which is efficient to compute. I will review this derivation here, since a similar argument can be applied to multi-component systems.
 
@@ -90,7 +88,7 @@ We first compute that
 \begin{split}
    S(\rho, \hat{R} \rho') &\equiv \int d\vec{r} \rho(\vec{r}) \rho'(\hat{R} \vec{r}) \\
    &= \int d\vec{r} \left(\sum_{n l m} c_{n l m}^* g_n(r)Y_{l m}^*(\hat{r}) \right)\left(\sum_{n' l' m'} c'_{n' l' m'} g_{n'}(r)Y_{l' m'}(\hat{R} \vec{r}) \right) \\
-   &= \sum_{n l m n' l' m'} c^*_{n l m} c'_{n' l' m'} \int dr g_n(r) g_{n'}(r) \int d\hat{r} Y^*_{l m}(\hat{r}) Y_{l' m'}(\hat{R} \vec{r}) \\
+   &= \sum_{n l m n' l' m'} c^*_{n l m} c'_{n' l' m'} \int dr r^2 g_n(r) g_{n'}(r) \int d\hat{r} Y^*_{l m}(\hat{r}) Y_{l' m'}(\hat{R} \vec{r}) \\
    &= \sum_{n l m l' m'} c^*_{n l m} c'_{n l' m'} \int d\hat{r} Y^*_{l m}(\hat{r}) Y_{l' m'} (\hat{R} \vec{r}).
 \end{split}
 \end{equation}
@@ -119,21 +117,64 @@ The symmetry kernel $k(\rho, \rho')$ with $n = 2$ then takes the form
     \begin{split}
 k(\rho, \rho') &= \int d\hat{R} S(\rho, \hat{R}\rho') S^*(\rho, \hat{R} \rho') \\
 &= \sum_{n l m m' n' \lambda \mu \mu'} c^*_{n l m} c'_{n l m'} c_{n' \lambda \mu} (c'_{n' \lambda \mu'})^* \int d\hat{R} D^*(\hat{R})^l_{m' m} D(\hat{R})^\lambda_{\mu' \mu} \\
-&= \sum_{n l m m' n'} c^*_{n l m} c'_{n l m'} c_{n' l m} (c'_{n' l m'})^* \\
-&= \sum_{n n' l} \left(\sum_{m} c^*_{n l m} c_{n' l m} \right) \left(\sum_{m'} c'_{n l m'} (c'_{n' l m'})^* \right) \\
-&= \sum_{n n' l} p_{n' n l} p'_{n n' l}.
+&= \sum_{n l m m' n'} \frac{8 \pi^2}{2l+1} c^*_{n l m} c'_{n l m'} c_{n' l m} (c'_{n' l m'})^* \\
+&= \sum_{n n' l} \frac{8\pi^2}{2l+1} \left(\sum_{m} c^*_{n l m} c_{n' l m} \right) \left(\sum_{m'} c'_{n l m'} (c'_{n' l m'})^* \right) \\
+&= \sum_{n n' l} \frac{8\pi^2}{2l+1} p_{n' n l} p'_{n n' l},
     \end{split}
 \end{equation}
-Because the atomic densities $\rho$ and $\rho'$ are real-valued functions, $p_{n' n l} = p_{n n' l}$, so $k(\rho, \rho')$ may be expressed as the dot product of the power spectra $\vec{p}$ and $\vec{p'}$:
+where $p_{n n' l} \equiv \sum_{m} c_{n l m} c_{n' l m}^*$ is the rotational power spectrum. Because the atomic densities $\rho$ and $\rho'$ are real-valued functions, $p_{n' n l} = p_{n n' l}$. An easy way to see this is to note that we are free to choose a real basis for the spherical harmonics, in which case the coefficients $c_{n l m}$ and $c'_{n' l' m'}$ are real. Thus $k(\rho, \rho')$ may be expressed as the dot product of the power spectra $\vec{p}$ and $\vec{p'}$:
 \begin{equation}
 k(\rho, \rho') = \vec{p} \cdot \vec{p'}.
 \end{equation}
-The full SOAP kernel $K(\rho, \rho')$ is
+The full SOAP kernel $K(\rho, \rho')$ is the dot product of normalized power spectra raised to a positive power:
 \begin{equation}
 K(\rho, \rho') = \left( \frac{\vec{p}}{|\vec{p}|} \cdot \frac{\vec{p'}}{|\vec{p}'|} \right)^{\xi}.
 \end{equation}
 
-\subsection{Computing the SOAP kernel}
-The key step in compuing $K(\rho, \rho')$ is determining the coefficients $c_{n l m}(r, \{\vec{r}_i\})$, which depend on the radial distance $r$, the positions $\vec{r}_i$ of the environment atoms, and the radial basis set.
+% \subsection{Computing the SOAP kernel}
+% The key step in compuing $K(\rho, \rho')$ is determining the coefficients $c_{n l m}(r, \{\vec{r}_i\})$, which depend on the radial distance $r$, the positions $\vec{r}_i$ of the environment atoms, and the radial basis set.
+
+\section{Multi-component Overlap of Positions (MOP)}
+
+Consider a two-component system. Let $\rho$ and $\rho'$ denote two atomic environments, with $\rho_A, \rho_B$ the atomic neighbor densities of atom types $A$ and $B$ in environment $\rho$, and $\rho'_A, \rho'_B$ the densities of $A$ and $B$ in environment $\rho'$. We define the MOP kernel between $\rho$ and $\rho'$ by direct analogy to the SOAP kernel:
+\begin{equation}
+    K_{\text{MOP}}(\rho, \rho') = \left(\frac{k_{\text{MOP}} (\rho, \rho')}{\sqrt{k_{\text{MOP}}(\rho, \rho) k_{\text{MOP}}(\rho', \rho')}} \right) ^{\xi},
+\end{equation}
+where $k_{\text{MOP}}(\rho, \rho')$ is a rotationally invariant symmetry kernel given by
+\begin{equation}
+    \begin{split}
+    k_{\text{MOP}}(\rho, \rho') &= \int d\hat{R} \left| \int \left( \rho_A(\vec{r}) \rho'_A(\hat{R}\vec{r}) + \rho_B(\vec{r}) \rho'_B(\hat{R}\vec{r}) \right) d\vec{r} \right| ^2 \\
+    &= \int d\hat{R} \left| \int \rho_A(\vec{r}) \rho'_A(\hat{R}\vec{r}) d\vec{r} \right|^2 + \int d\hat{R} \left| \int \rho_B(\vec{r}) \rho'_B(\hat{R}\vec{r}) d\vec{r} \right|^2 \\
+    &+ \int d \hat{R} \left( \int d\vec{r} \rho_A(\vec{r}) \rho'_A(\hat{R} \vec{r}) \right) \left( \int d\vec{r} \rho_B(\vec{r}) \rho'_B(\hat{R} \vec{r}) \right)^* \\
+    &+ \int d \hat{R} \left( \int d\vec{r} \rho_A(\vec{r}) \rho'_A(\hat{R} \vec{r}) \right)^* \left( \int d\vec{r} \rho_B(\vec{r}) \rho'_B(\hat{R} \vec{r}) \right) \\
+    &= k(\rho_A, \rho'_A) + k(\rho_B, \rho'_B) + k_{\text{cross}}(\rho, \rho') + k_{\text{cross}}^*(\rho, \rho'),
+    \end{split}
+\end{equation}
+which is the sum of the SOAP kernels between the two density types plus a cross term $k_{\text{cross}}$, which we now analyze in detail.
+
+From the derivation in part 1, we have that
+\begin{equation}
+\int d\vec{r} \rho_A(\vec{r}) \rho'_A(\hat{R}\hat{r}) = \sum_{n l m m'} (c_{n l m}^A)^* c_{n l m}^{'A} D^* (\hat{R})^l_{m' m},
+\end{equation}
+
+\begin{equation}
+\int d\vec{r} \rho_B(\vec{r}) \rho'_B(\hat{R}\hat{r}) = \sum_{n' \lambda \mu \mu'} (c_{n' \lambda \mu}^B)^* c_{n' \lambda \mu}^{'B} D^* (\hat{R})^l_{\mu' \mu},
+\end{equation}
+and thus
+\begin{equation}
+    \begin{split}
+k_{\text{cross}}(\rho, \rho') &= \int d\hat{R} S(\rho_A, \hat{R} \rho'_A) S^*(\rho_B, \hat{R}\rho'_B) \\
+&= \sum_{n l m m' n' \lambda \mu \mu'} (c_{n l m}^A)^* c_{n l m'}^{'A} c_{n' \lambda \mu}^B (c_{n' \lambda \mu'}^{'B})^* \int d\hat{R} D^*(\hat{R})_{m' m}^l D(\hat{R})_{\mu' \mu}^\lambda \\
+&= \sum_{n l m m' n'} \frac{8\pi^2}{2l + 1} (c_{n l m}^A)^* c_{n l m'}^{'A} c_{n' l m}^B (c_{n' l m'}^{'B})^* \\
+&= \sum_{n n' l} \frac{8\pi^2}{2l+1} \left( \sum_{m} (c_{n l m}^A)^* c_{n' l m}^B \right) \left( \sum_{m} c_{n l m'}^{'A} (c_{n' l m'}^{'B})^* \right) \\
+&= \vec{p}_{AB} \cdot \vec{p}'_{AB},
+    \end{split}
+\end{equation}
+which is the dot product of the cross power spectra of the two environments. The symmetric MOP kernel $k_{\text{MOP}}(\rho, \rho')$ before normalization therefore takes the form
+\begin{equation}
+k_{\text{MOP}}(\rho, \rho') = \vec{p}_A \cdot \vec{p}'_A + \vec{p}_B \cdot \vec{p}'_B + 2 \vec{p}_{AB} \cdot \vec{p}'_{AB}.
+\end{equation}
+Notice that if one of the densities vanishes, e.g.\ $\vec{\rho}_A = 0$, the MOP kernel reduces to the SOAP kernel. MOP may therefore be viewed as a generalization of SOAP that is suitable for multicomponent systems.
+
 \bibliography{multi_soap.bib}
 \end{document}

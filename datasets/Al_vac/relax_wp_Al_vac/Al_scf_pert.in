@@ -1,0 +1,68 @@
+&CONTROL
+
+    prefix = 'Al'
+    calculation = 'scf'
+    pseudo_dir = '/home/homesoftware/espresso-6.1/qe-6.1/pseudo/'
+    outdir = '.'
+    tstress = .true.
+    tprnfor = .true.
+    disk_io = 'medium'
+    wf_collect = .false.
+ /
+&SYSTEM
+    ibrav= 0
+nat = 31
+    ntyp= 1
+    ecutwfc = 40
+    nosym = .true.
+    occupations = 'smearing'
+    smearing = 'mp'
+    degauss = 0.02
+ /
+&ELECTRONS
+    diagonalization = 'david'
+    mixing_beta = 0.5
+    conv_thr = 1e-07
+ /
+&IONS
+ /
+ATOMIC_SPECIES
+ Al  26.981539  Al.pz-vbc.UPF
+CELL_PARAMETERS {angstrom}
+7.95631 0.0 0.0
+0.0 7.95631 0.0
+0.0 0.0 7.95631
+ATOMIC_POSITIONS {angstrom}
+Al -0.17377 -0.09998 0.12419
+Al 0.12746 2.15694 2.13047
+Al 2.07783 -0.0072 1.90597
+Al 2.07349 1.88292 -0.01157
+Al -0.01059 -0.11207 3.85946
+Al 0.1805 1.89062 6.01005
+Al 1.9017 -0.10913 6.18641
+Al 1.91276 1.86973 3.97634
+Al -0.13715 3.89217 0.19801
+Al 0.11416 5.78731 1.92495
+Al 1.91764 4.14285 2.10733
+Al 1.94446 5.96581 0.14011
+Al -0.04767 3.82369 3.98828
+Al 0.17001 6.00551 5.99543
+Al 2.11672 3.79177 5.83672
+Al 2.17041 5.93457 3.89017
+Al 3.82554 1.96797 2.07136
+Al 5.87574 -0.16908 1.7658
+Al 5.79857 1.83933 0.04779
+Al 4.07682 -0.18312 3.84414
+Al 4.13644 2.08939 5.8711
+Al 5.74306 0.13074 6.1655
+Al 6.03154 1.92013 4.04738
+Al 4.1546 3.974 -0.13581
+Al 3.85566 5.98529 2.07312
+Al 5.7945 4.15252 2.01711
+Al 5.77917 6.12958 -0.17353
+Al 4.11418 4.03671 4.10611
+Al 3.78479 5.87907 6.07089
+Al 6.11034 4.04195 5.86821
+Al 5.99537 5.89069 4.08297
+K_POINTS automatic
+ 7 7 7  0 0 0
