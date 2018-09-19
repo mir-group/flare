@@ -1,0 +1,4 @@
+cwd:  /home/sbatzner/otf/datasets/Al_vac
+/home/homesoftware/espresso-6.1/qe-6.1/pseudo/
+mpirun -np 16 /home/homesoftware/espresso-6.1/qe-6.1/bin/pw.x
+/home/sbatzner/otf/datasets/Al_vac
