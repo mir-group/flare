@@ -1,8 +1,8 @@
-PWD /Users/jonpvandermause/Research/Kernels
+PWD /Users/jonpvandermause/Research/GP/otf/paper/MOP
 INPUT /usr/local/texlive/2017/texmf.cnf
 INPUT /usr/local/texlive/2017/texmf-dist/web2c/texmf.cnf
 INPUT /usr/local/texlive/2017/texmf-var/web2c/pdftex/pdflatex.fmt
-INPUT /Users/jonpvandermause/Research/Kernels/multi_soap.tex
+INPUT /Users/jonpvandermause/Research/GP/otf/paper/MOP/multi_soap.tex
 OUTPUT multi_soap.log
 INPUT /usr/local/texlive/2017/texmf-dist/tex/latex/revtex/revtex4-1.cls
 INPUT /usr/local/texlive/2017/texmf-dist/tex/latex/revtex/revtex4-1.cls
