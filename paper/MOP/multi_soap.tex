@@ -170,8 +170,29 @@ Finally, it is easy to show that
 \end{equation}
 again assuming that the central atom is fixed at the origin.
 
+\section{Computing the derivative of the SOAP kernel}
 
-
+The full SOAP kernel is the dot product of normalized power spectra raised to a positive power. In our approach, the covariance between local energies $\epsilon_i$ is modelled by the SOAP kernel,
+\begin{equation}
+\langle \epsilon_i \epsilon_j \rangle = K(\hat{p}_i, \hat{p}_j) = \left( \hat{p}_i \cdot \hat{p}_j \right)^{\xi},
+\end{equation}
+where $\hat{p}_i$ denotes the normalized power spectrum of environment $i$. To model forces, the covariance of the partial derivatives of the local energies is needed:
+\begin{equation}
+    \begin{split}
+\bigg\langle \frac{\partial \epsilon_i}{\partial \xi_{ik}}, \frac{\partial \epsilon_j}{\partial\xi_{jl}}\bigg\rangle &= \frac{\partial^2 \langle \epsilon_i \epsilon_j \rangle}{\partial \xi_{ik} \partial \xi_{jl}}\\
+&= \frac{\partial^2 K(\hat{p}_i, \hat{p}_j)}{\partial \xi_{ik} \partial \xi_{jl}} \\
+&= \sum_{\alpha \beta} \frac{\partial p_{i\alpha}}{\partial \xi_{ik}} \frac{\partial^2 K(\hat{p}_i, \hat{p}_j)}{\partial p_{i\alpha} \partial p_{j\beta}} \frac{\partial p_{j\beta}}{\partial \xi_{jl}},
+    \end{split}
+\end{equation}
+where $p_{i\alpha}$ is component $\alpha$ of the normalized power spectrum $\hat{p}_i$. The derivatives of the power spectra with respect to Cartesian components may be evaluated using the expressions from Section 2. The remaining term is
+\begin{equation}
+\begin{split}
+\frac{\partial^2 K(\hat{p}_i, \hat{p}_j)}{\partial p_{i\alpha} \partial p_{j\beta}} &= \frac{\partial}{\partial p_{i \alpha}} \left( \xi (\hat{p}_i \cdot \hat{p}_j)^{\xi - 1} p_{i \beta} \right) \\
+&= \xi (\xi - 1) (\hat{p}_i \cdot \hat{p}_j)^{\xi - 2} p_{j\alpha} p_{i \beta} + \xi (\hat{p}_i \cdot \hat{p}_j)^{\xi - 1} \delta_{\alpha \beta} \\
+&= \xi (\hat{p}_i \cdot \hat{p}_j)^{\xi - 2} \left( (\xi - 1) p_{j\alpha} p_{i\beta} + (\hat{p}_i \cdot \hat{p}_j) \delta_{\alpha \beta} \right).
+\end{split}
+\end{equation}
+Note that if $\xi = 1$, the double sum collapses into a single sum. Raising the SOAP kernel to a power $\xi > 1$ therefore comes at a significant computational cost. Moreover, the distance between environments can be "sharpened"
 
 
 \section{Review of the single-component SOAP kernel}
@@ -191,7 +212,7 @@ k(\rho, \rho') = \int d\hat{R} \left| \int \rho(\vec{r}) \rho'(\hat{R}\vec{r}) d
 \end{equation}
 and $\hat{R}$ is a 3-D rotation. The outer integral is over all rotations and ensures that the kernel is rotationally symmetric.
 
-In Section IV(B) of \cite{bartok2013representing}, it is shown that $k(\rho, \rho')$ is equal to the dot product of the ``rotational power spectra'' of densities $\rho$ and $\rho'$, which is efficient to compute. I will review this derivation here, since a similar argument can be applied to multi-component systems.
+In Section IV(B) of \cite{bartok2013representing}, it is shown that $k(\rho, \rho')$ is equal to the dot product of the "rotational power spectra" of densities $\rho$ and $\rho'$, which is efficient to compute. I will review this derivation here, since a similar argument can be applied to multi-component systems.
 
 Letting $g_n(r)$ be an orthonormal set of radial basis functions, so that
 \begin{equation}
