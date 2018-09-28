@@ -192,7 +192,7 @@ where $p_{i\alpha}$ is component $\alpha$ of the normalized power spectrum $\hat
 &= \xi (\hat{p}_i \cdot \hat{p}_j)^{\xi - 2} \left( (\xi - 1) p_{j\alpha} p_{i\beta} + (\hat{p}_i \cdot \hat{p}_j) \delta_{\alpha \beta} \right).
 \end{split}
 \end{equation}
-Note that if $\xi = 1$, the double sum collapses into a single sum. Raising the SOAP kernel to a power $\xi > 1$ therefore comes at a significant computational cost. Moreover, the distance between environments can be "sharpened"
+Notice that if $\xi = 1$, the double sum collapses into a single sum. Raising the SOAP kernel to a power $\xi > 1$ therefore comes at a significant computational cost. In \cite{szlachta2014accuracy}, it is claimed that the role of $\xi$ is to sharpen the selectivity of the similarity measure. However, it seems that the hyperparameter $\alpha$ plays the exact same role. To see this, notice that in the limit of infinite $\alpha$, the atomic density becomes a sum of Dirac delta functions, and the covariance is nonzero only if the atomic environments are identical. In the limit $\alpha \rightarrow 0$, the atomic density becomes a constant, and all atomic densities are treated the same (up to a constant). Tuning $\alpha$ properly may make the $\xi$ hyperparameter unnecessary.
 
 
 \section{Review of the single-component SOAP kernel}
@@ -212,7 +212,7 @@ k(\rho, \rho') = \int d\hat{R} \left| \int \rho(\vec{r}) \rho'(\hat{R}\vec{r}) d
 \end{equation}
 and $\hat{R}$ is a 3-D rotation. The outer integral is over all rotations and ensures that the kernel is rotationally symmetric.
 
-In Section IV(B) of \cite{bartok2013representing}, it is shown that $k(\rho, \rho')$ is equal to the dot product of the "rotational power spectra" of densities $\rho$ and $\rho'$, which is efficient to compute. I will review this derivation here, since a similar argument can be applied to multi-component systems.
+In Section IV(B) of \cite{bartok2013representing}, it is shown that $k(\rho, \rho')$ is equal to the dot product of the ``rotational power spectra'' of densities $\rho$ and $\rho'$, which is efficient to compute. I will review this derivation here, since a similar argument can be applied to multi-component systems.
 
 Letting $g_n(r)$ be an orthonormal set of radial basis functions, so that
 \begin{equation}

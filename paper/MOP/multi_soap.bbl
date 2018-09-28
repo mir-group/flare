@@ -6,7 +6,7 @@
 %Control: page (0) single
 %Control: year (1) truncated
 %Control: production of eprint (0) enabled
-\begin{thebibliography}{3}%
+\begin{thebibliography}{4}%
 \makeatletter
 \providecommand \@ifxundefined [1]{%
  \@ifx{#1\undefined}
@@ -64,16 +64,25 @@
   \BibitemOpen
   \href@noop {} {\bibinfo  {journal} {Digital Library of Mathematical
   Functions: https://dlmf.nist.gov/10.43}\ }\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Szlachta}\ \emph {et~al.}(2014)\citenamefont
+  {Szlachta}, \citenamefont {Bart{\'o}k},\ and\ \citenamefont
+  {Cs{\'a}nyi}}]{szlachta2014accuracy}%
+  \BibitemOpen
+\bibfield  {journal} {  }\bibfield  {author} {\bibinfo {author} {\bibfnamefont
+  {W.~J.}\ \bibnamefont {Szlachta}}, \bibinfo {author} {\bibfnamefont {A.~P.}\
+  \bibnamefont {Bart{\'o}k}}, \ and\ \bibinfo {author} {\bibfnamefont
+  {G.}~\bibnamefont {Cs{\'a}nyi}},\ }\href@noop {} {\bibfield  {journal}
+  {\bibinfo  {journal} {Physical Review B}\ }\textbf {\bibinfo {volume} {90}},\
+  \bibinfo {pages} {104108} (\bibinfo {year} {2014})}\BibitemShut {NoStop}%
 \bibitem [{\citenamefont {De}\ \emph {et~al.}(2016)\citenamefont {De},
   \citenamefont {Bart{\'o}k}, \citenamefont {Cs{\'a}nyi},\ and\ \citenamefont
   {Ceriotti}}]{de2016comparing}%
   \BibitemOpen
-\bibfield  {journal} {  }\bibfield  {author} {\bibinfo {author} {\bibfnamefont
-  {S.}~\bibnamefont {De}}, \bibinfo {author} {\bibfnamefont {A.~P.}\
-  \bibnamefont {Bart{\'o}k}}, \bibinfo {author} {\bibfnamefont
-  {G.}~\bibnamefont {Cs{\'a}nyi}}, \ and\ \bibinfo {author} {\bibfnamefont
-  {M.}~\bibnamefont {Ceriotti}},\ }\href@noop {} {\bibfield  {journal}
-  {\bibinfo  {journal} {Physical Chemistry Chemical Physics}\ }\textbf
-  {\bibinfo {volume} {18}},\ \bibinfo {pages} {13754} (\bibinfo {year}
-  {2016})}\BibitemShut {NoStop}%
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {S.}~\bibnamefont
+  {De}}, \bibinfo {author} {\bibfnamefont {A.~P.}\ \bibnamefont {Bart{\'o}k}},
+  \bibinfo {author} {\bibfnamefont {G.}~\bibnamefont {Cs{\'a}nyi}}, \ and\
+  \bibinfo {author} {\bibfnamefont {M.}~\bibnamefont {Ceriotti}},\ }\href@noop
+  {} {\bibfield  {journal} {\bibinfo  {journal} {Physical Chemistry Chemical
+  Physics}\ }\textbf {\bibinfo {volume} {18}},\ \bibinfo {pages} {13754}
+  (\bibinfo {year} {2016})}\BibitemShut {NoStop}%
 \end{thebibliography}%

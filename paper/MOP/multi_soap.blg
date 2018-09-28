@@ -25,45 +25,45 @@ Control: year (1) truncated
 Control: production of eprint (0) enabled
 Warning--empty author in dlmf
 Warning--empty year in dlmf
-You've used 5 entries,
+You've used 6 entries,
             5847 wiz_defined-function locations,
-            1621 strings with 15156 characters,
-and the built_in function-call counts, 3524 in all, are:
-= -- 181
-> -- 72
-< -- 48
-+ -- 27
-- -- 33
-* -- 511
-:= -- 322
-add.period$ -- 3
-call.type$ -- 5
-change.case$ -- 12
-chr.to.int$ -- 13
-cite$ -- 9
-duplicate$ -- 372
-empty$ -- 218
-format.name$ -- 34
-if$ -- 634
+            1627 strings with 15343 characters,
+and the built_in function-call counts, 4533 in all, are:
+= -- 248
+> -- 98
+< -- 54
++ -- 35
+- -- 39
+* -- 666
+:= -- 421
+add.period$ -- 4
+call.type$ -- 6
+change.case$ -- 16
+chr.to.int$ -- 14
+cite$ -- 10
+duplicate$ -- 464
+empty$ -- 294
+format.name$ -- 49
+if$ -- 838
 int.to.chr$ -- 1
-int.to.str$ -- 12
-missing$ -- 59
-newline$ -- 61
-num.names$ -- 6
-pop$ -- 190
+int.to.str$ -- 13
+missing$ -- 71
+newline$ -- 64
+num.names$ -- 9
+pop$ -- 229
 preamble$ -- 1
-purify$ -- 14
+purify$ -- 19
 quote$ -- 0
-skip$ -- 124
+skip$ -- 162
 stack$ -- 0
-substring$ -- 85
-swap$ -- 317
-text.length$ -- 7
+substring$ -- 117
+swap$ -- 403
+text.length$ -- 10
 text.prefix$ -- 0
 top$ -- 10
-type$ -- 52
+type$ -- 66
 warning$ -- 3
-while$ -- 15
+while$ -- 18
 width$ -- 0
-write$ -- 73
+write$ -- 81
 (There were 3 warnings)
