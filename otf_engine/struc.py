@@ -50,7 +50,8 @@ class Structure(object):
         if prev_positions is None:
             self.prev_positions = [copy(pos) for pos in self.positions]
         else:
-            assert len(positions) == len(prev_pos), 'Previous positions and ' \
+            assert len(positions) == len(prev_positions), 'Previous ' \
+                                                          'positions and ' \
                                             'positions are not same length'
             self.prev_positions = prev_positions
 
