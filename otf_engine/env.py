@@ -247,8 +247,8 @@ class ChemicalEnvironment:
                             kern += (e * (ci1 * cj1 + ci2 * cj2) -
                                      (r11 * ci1 + r22 * ci2) *
                                      (r11 * cj1 + r22 * cj2)) * \
-                                    d * exp(-f * (r11 * r11 + r22 * r22 +
-                                                  r33 * r33))
+                                d * exp(-f * (r11 * r11 + r22 * r22 +
+                                              r33 * r33))
 
         return kern
 
@@ -304,8 +304,8 @@ class ChemicalEnvironment:
                             kern += (e * (ci1 * cj1 + ci2 * cj2) -
                                      (r11 * ci1 + r22 * ci2) *
                                      (r11 * cj1 + r22 * cj2)) * \
-                                    d * exp(-f * (r11 * r11 + r22 * r22 +
-                                                  r33 * r33))
+                                d * exp(-f * (r11 * r11 + r22 * r22 +
+                                              r33 * r33))
 
         return kern
 

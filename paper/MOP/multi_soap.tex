@@ -56,6 +56,145 @@ aps,
 
 \maketitle
 
+\section{Computing the power spectrum}
+We wish to efficiently compute the power spectrum
+\begin{equation}
+p_{n \nu l} = \sqrt{\frac{8\pi^2}{2l+1}} \sum_m c_{nlm}c^*_{\nu l m},
+\end{equation}
+where $c_{nlm}$ are expansion coefficients determined by
+\begin{equation}
+    \rho(\vec{r}) = \sum_{nlm} c_{nlm} g_{nl}(r) Y_{lm}(\hat{r}).
+\end{equation}
+$\rho(\vec{r})$ is the atomic neighbor density
+\begin{equation}
+    \rho(\vec{r}) = \sum_i \exp(-\alpha |\vec{r} - \vec{r}_i|^2)
+\end{equation}
+and $g_{nl}(r)$ are an orthonormal set of radial basis functions
+\begin{equation}
+    \int dr r^2 g_{nl}(r) g_{n' l}(r) = \delta_{n n'}.
+\end{equation}
+Note that we allow the radial basis set to depend on $l$.
+
+
+From \cite{bartok2013representing}, we have the following exact formula for $\rho(\vec{r})$:
+\begin{equation}
+    \rho(\vec{r}) = \sum_{ilm} c_{lm}^i(r) Y_{lm}(\hat{r})
+\end{equation}
+where
+\begin{equation}
+    c_{lm}^i(r) = 4\pi \exp(-\alpha(r^2+r_i^2)) i_l (2\alpha r r_i) Y_{lm}^*(\hat{r}_i).
+\end{equation}
+Here $i_l(x)$ is the modified spherical Bessel function of the first kind and is related to the modified Bessel function of the first kind $I_l(x)$ according to
+\begin{equation}
+    i_l(x) = \sqrt{\frac{\pi}{2 x}} I_{l+1/2}(x).
+\end{equation}
+
+Let $\phi_{nl}(r)$ be a set of functions and let
+\begin{equation}
+g_{nl}(r) = \sum_{n'} U_{n n'} \phi_{n'}(r)
+\end{equation}
+be an orthonormal basis constructed out of $\phi_n(r)$. Then 
+\begin{equation}
+    c_{nlm} = \sum_{i n'} 4\pi Y^*_{lm}(\hat{r}_i) U_{n n'} I_{n'l}(r_i)
+\end{equation}
+where
+\begin{equation}
+    I_{n' l} \equiv \int_0^\infty dr r^2 \exp(-\alpha(r^2 + r_i^2)) i_l(2\alpha r r_i) \phi_{n' l}(r).
+\end{equation}
+The integral identity \cite{dlmf}
+\begin{equation}
+\int_0^\infty t^{\nu+1} I_\nu(bt)\exp(-p^2 t^2) dt = \frac{b^\nu}{(2p^2)^{\nu+1}} \exp\left(\frac{b^2}{4p^2}\right)
+\end{equation}
+suggests that we choose the functions
+\begin{equation}
+    \phi_{nl}(r) = r^l \exp\left(-\beta_n r^2\right),
+\end{equation}
+which gives
+\begin{equation}
+I_{nl}(r_i) = \frac{1}{4} \sqrt{\frac{\pi}{\alpha r_i}} \exp\left(-\frac{ \alpha \beta_n r_i^2}{\alpha + \beta_n}\right) \frac{(\alpha r_i)^{l+1/2}}{(\alpha+\beta_n)^{l+3/2}}.
+\end{equation}
+Defining
+\begin{equation}
+a_{nl}(r_i) \equiv \sum_{n'} U_{n n'} I_{n' l}(r_i),
+\end{equation}
+we may write the expansion coefficients $c_{nlm}$ as
+\begin{equation}
+c_{nlm} = \sum_i 4\pi a_{nl}(r_i) Y^*_{lm}(\hat{r}_i).
+\end{equation}
+The power spectrum then takes the form
+\begin{equation}
+\begin{split}
+p_{n\nu l} &= \frac{32 \pi^3 \sqrt{2}}{\sqrt{2l+1}} \sum_{m i i'} a_{nl}(r_i) a_{\nu l}(r_{i'}) Y^*_{lm}(\hat{r}_i) Y_{lm}(\hat{r}_{i'}) \\
+&= \frac{32 \pi^3 \sqrt{2}}{\sqrt{2l+1}} \sum_{i i'} a_{nl}(r_i) a_{\nu l}(r_{i'}) \left( \sum_m Y^*_{lm}(\hat{r}_i) Y_{lm}(\hat{r}_{i'}) \right).
+\end{split}
+\end{equation}
+By the addition theorem 
+\begin{equation}
+\sum_m Y_{lm}(\hat{x}) Y^*_{lm}(\hat{y}) = \frac{2l+1}{4\pi} P_l(\hat{x} \cdot \hat{y}),
+\end{equation}
+where $P_l$ is the Legendre polynomial of degree $l$, the expression for the power spectrum becomes
+\begin{equation}
+    \boxed{p_{n\nu l} = 8\pi^2 \sqrt{4l+2} \sum_{i i'} a_{nl}(r_i) a_{\nu l}(r_{i'}) P_l(\hat{r}_i \cdot \hat{r}_{i'})}
+\end{equation}
+
+\section{Computing the derivative of the power spectrum}
+To predict forces, the derivative of the power spectrum with respect to the Cartesian coordinates of the central atom is needed. Let $\xi_{ki}$ denote the $k^{\text{th}}$ Cartesian component of atom $i$ and $\xi_{k0}$ denote the $k^{\text{th}}$ Cartesian component of the central atom. The derivative of the power spectrum is given by
+\begin{equation}
+    \boxed{
+\begin{split}
+\frac{\partial p_{n\nu l}}{\partial \xi_{k0}} = 8 \pi^2 \sqrt{4l + 2} \sum_{ii'} \bigg( &\frac{\partial a_{nl}(r_i)}{\partial r_i} \frac{\partial r_i}{\partial \xi_{k0}} a_{\nu l}(r_{i'}) P_l(\hat{r}_i \cdot \hat{r}_{i'}) + \\
+&a_{nl}(r_i) \frac{\partial a_{\nu l}(r_{i'})}{\partial r_{i'}} \frac{\partial r_{i'}}{\partial \xi_{k0}} P_l(\hat{r}_i \cdot \hat{r}_{i'}) + \\
+&a_{nl}(r_i) a_{\nu l}(r_{i'}) \frac{\partial P_l(\hat{r}_i \cdot \hat{r}_{i'})}{\partial (\hat{r}_i \cdot \hat{r}_{i'})} \frac{{\partial (\hat{r}_i \cdot \hat{r}_{i'})}}{\partial \xi_{k0}}  \bigg)
+\end{split}
+    }
+\end{equation}
+We now show how each of the derivatives appearing in this expression can be efficiently evaluated. First, note that
+\begin{equation}
+a_{nl}'(r_i) \equiv \frac{\partial a_{nl}}{\partial r_i} = \sum_{n'} U_{n n'} I_{n'l}'(r_i),
+\end{equation}
+where
+\begin{equation}
+I_{nl}'(r_i) \equiv \frac{\partial I_{nl}}{\partial r_i} = \frac{\sqrt{\pi}\alpha}{4} \left(\frac{1}{\alpha r_i} \right)^{3/2} \frac{(\alpha r_i)^{l+1/2}}{(\alpha+\beta_n)^{l+5/2}} (-2 r_i^2 \alpha \beta_n + l(\alpha+\beta_n)).
+\end{equation}
+Next, note that
+\begin{equation}
+\frac{\partial r_i}{\partial \xi_{k0}} = -\frac{\xi_{ki}}{r_i},
+\end{equation}
+assuming the central atom is fixed at the origin. The derivative of the Legendre polynomial may be efficiently evaluated using the identity
+\begin{equation}
+\frac{d P_n(x)}{d x} = \frac{n}{x^2-1}(x P_n(x) - P_{n-1}(x)).
+\end{equation}
+Finally, it is easy to show that
+\begin{equation}
+\frac{\partial (\hat{r}_i \cdot \hat{r}_j)}{\partial \xi_0} = \frac{-(\xi_{ki} + \xi_{kj}) r_i r_j + (\hat{r}_i \cdot \hat{r}_j)(r_j^2 \xi_{ki}+r_i^2 \xi_{kj})}{r_i^2 r_j^2},
+\end{equation}
+again assuming that the central atom is fixed at the origin.
+
+\section{Computing the derivative of the SOAP kernel}
+
+The full SOAP kernel is the dot product of normalized power spectra raised to a positive power. In our approach, the covariance between local energies $\epsilon_i$ is modelled by the SOAP kernel,
+\begin{equation}
+\langle \epsilon_i \epsilon_j \rangle = K(\hat{p}_i, \hat{p}_j) = \left( \hat{p}_i \cdot \hat{p}_j \right)^{\xi},
+\end{equation}
+where $\hat{p}_i$ denotes the normalized power spectrum of environment $i$. To model forces, the covariance of the partial derivatives of the local energies is needed:
+\begin{equation}
+    \begin{split}
+\bigg\langle \frac{\partial \epsilon_i}{\partial \xi_{ik}}, \frac{\partial \epsilon_j}{\partial\xi_{jl}}\bigg\rangle &= \frac{\partial^2 \langle \epsilon_i \epsilon_j \rangle}{\partial \xi_{ik} \partial \xi_{jl}}\\
+&= \frac{\partial^2 K(\hat{p}_i, \hat{p}_j)}{\partial \xi_{ik} \partial \xi_{jl}} \\
+&= \sum_{\alpha \beta} \frac{\partial p_{i\alpha}}{\partial \xi_{ik}} \frac{\partial^2 K(\hat{p}_i, \hat{p}_j)}{\partial p_{i\alpha} \partial p_{j\beta}} \frac{\partial p_{j\beta}}{\partial \xi_{jl}},
+    \end{split}
+\end{equation}
+where $p_{i\alpha}$ is component $\alpha$ of the normalized power spectrum $\hat{p}_i$. The derivatives of the power spectra with respect to Cartesian components may be evaluated using the expressions from Section 2. The remaining term is
+\begin{equation}
+\begin{split}
+\frac{\partial^2 K(\hat{p}_i, \hat{p}_j)}{\partial p_{i\alpha} \partial p_{j\beta}} &= \frac{\partial}{\partial p_{i \alpha}} \left( \xi (\hat{p}_i \cdot \hat{p}_j)^{\xi - 1} p_{i \beta} \right) \\
+&= \xi (\xi - 1) (\hat{p}_i \cdot \hat{p}_j)^{\xi - 2} p_{j\alpha} p_{i \beta} + \xi (\hat{p}_i \cdot \hat{p}_j)^{\xi - 1} \delta_{\alpha \beta} \\
+&= \xi (\hat{p}_i \cdot \hat{p}_j)^{\xi - 2} \left( (\xi - 1) p_{j\alpha} p_{i\beta} + (\hat{p}_i \cdot \hat{p}_j) \delta_{\alpha \beta} \right).
+\end{split}
+\end{equation}
+Notice that if $\xi = 1$, the double sum collapses into a single sum. Raising the SOAP kernel to a power $\xi > 1$ therefore comes at a significant computational cost. In \cite{szlachta2014accuracy}, it is claimed that the role of $\xi$ is to sharpen the selectivity of the similarity measure. However, it seems that the hyperparameter $\alpha$ plays the exact same role. To see this, notice that in the limit of infinite $\alpha$, the atomic density becomes a sum of Dirac delta functions, and the covariance is nonzero only if the atomic environments are identical. In the limit $\alpha \rightarrow 0$, the atomic density becomes a constant, and all atomic densities are treated the same (up to a constant). Tuning $\alpha$ properly may make the $\xi$ hyperparameter unnecessary.
+
+
 \section{Review of the single-component SOAP kernel}
 
 In the SOAP scheme, an atomic environment is represented by an atomic neighbor density function $\rho(\vec{r})$, where
@@ -122,7 +261,7 @@ k(\rho, \rho') &= \int d\hat{R} S(\rho, \hat{R}\rho') S^*(\rho, \hat{R} \rho') \
 &= \sum_{n n' l} \frac{8\pi^2}{2l+1} p_{n' n l} p'_{n n' l},
     \end{split}
 \end{equation}
-where $p_{n n' l} \equiv \sum_{m} c_{n l m} c_{n' l m}^*$ is the rotational power spectrum. Because $p_{n' n l} = p_{n n' l}^*$, $k(\rho, \rho')$ may be expressed as the dot product of the power spectra $\vec{p}$ and $\vec{p'}$:
+where $p_{n n' l} \equiv \sum_{m} c_{n l m} c_{n' l m}^*$ is the rotational power spectrum. The power spectrum of a real function is real, so $p_{n' n l} = p_{n n' l}$, and $k(\rho, \rho')$ may be expressed as the dot product of the power spectra $\vec{p}$ and $\vec{p'}$:
 \begin{equation}
 k(\rho, \rho') = \vec{p} \cdot \vec{p'}.
 \end{equation}
@@ -134,9 +273,8 @@ K(\rho, \rho') = \left( \frac{\vec{p}}{|\vec{p}|} \cdot \frac{\vec{p'}}{|\vec{p}
 % \subsection{Computing the SOAP kernel}
 % The key step in compuing $K(\rho, \rho')$ is determining the coefficients $c_{n l m}(r, \{\vec{r}_i\})$, which depend on the radial distance $r$, the positions $\vec{r}_i$ of the environment atoms, and the radial basis set.
 
-\section{Multi-component Overlap of Positions (MOP)}
-
-Consider a two-component system. Let $\rho$ and $\rho'$ denote two atomic environments, with $\rho_A, \rho_B$ the atomic neighbor densities of atom types $A$ and $B$ in environment $\rho$, and $\rho'_A, \rho'_B$ the densities of $A$ and $B$ in environment $\rho'$. We define the MOP kernel between $\rho$ and $\rho'$ by direct analogy to the SOAP kernel:
+\section{Review of the Multi-component SOAP kernel}
+We now review the multi-species version of the SOAP kernel proposed in \cite{de2016comparing}. Consider a two-component system. Let $\rho$ and $\rho'$ denote two atomic environments, with $\rho_A, \rho_B$ the atomic neighbor densities of atom types $A$ and $B$ in environment $\rho$, and $\rho'_A, \rho'_B$ the densities of $A$ and $B$ in environment $\rho'$. We define the MOP kernel between $\rho$ and $\rho'$ by direct analogy to the SOAP kernel:
 \begin{equation}
     K_{\text{MOP}}(\rho, \rho') = \left(\frac{k_{\text{MOP}} (\rho, \rho')}{\sqrt{k_{\text{MOP}}(\rho, \rho) k_{\text{MOP}}(\rho', \rho')}} \right) ^{\xi},
 \end{equation}
