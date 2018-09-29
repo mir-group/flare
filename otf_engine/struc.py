@@ -23,7 +23,7 @@ class Structure(object):
 
     def __init__(self, lattice: ndarray, species: List[str],
                  positions: List[ndarray], cutoff: float,
-                 mass_dict: dict = None, prev_positions : List[ndarray]=None):
+                 mass_dict: dict = None, prev_positions: List[ndarray]=None):
         self.lattice = lattice
         self.vec1 = lattice[0, :]
         self.vec2 = lattice[1, :]
@@ -31,6 +31,7 @@ class Structure(object):
 
         self.species = species
         self.nat = len(species)
+
 
         # get unique species
         unique_species = []

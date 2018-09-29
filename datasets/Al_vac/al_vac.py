@@ -30,7 +30,8 @@ def create_structure(el, alat, size, perturb=False, pass_relax=False, pass_pos=N
     unit_cell = crystal(el, [(0, 0, 0)], spacegroup=225, cellpar=[alat, alat, alat, 90, 90, 90])
 
     # size of initial perturbation
-    pert_size = 0.05 * alat
+    pert_size = 0.1 * alat
+    print("Pert Size", pert_size)
 
     # make supercell
     multiplier = np.identity(3) * size
@@ -78,11 +79,11 @@ def relax_vac(input_file, output_file):
     os.system(qe_command)
 
 
-def run_otf_md(input_file, output_file):
+def run_otf_md(input_file, output_file, prev_pos_init):
     """ Run OTF engine with specified QE input file """
 
     # setup run from QE input file
-    al_otf = OTF(qe_input=input_file, dt=0.001, number_of_steps=10000, kernel='two_body', cutoff=5)
+    al_otf = OTF(qe_input=input_file, dt=0.001, number_of_steps=10000, kernel='two_body', cutoff=5, prev_pos_init=prev_pos_init)
 
     # run otf
     al_otf.run()
@@ -112,7 +113,26 @@ def write_scf_input(input_file, output_file, nat, ecut, cell, pos, nk):
     QEInput(input_file, output_file, pw_loc, calculation, scf_inputs)
 
 
-if __name__ == '__main__':
+def parse_prev_pos(filename):
+    prev_pos = []
+
+    with open(filename, 'r') as outf:
+        lines = outf.readlines()
+
+    curr_pos = np.zeros(shape=(3,))
+
+    for line in lines:
+        line = line.split()
+        curr_pos[0] = str(line[1])
+        curr_pos[1] = str(line[2])
+        curr_pos[2] = str(line[3])
+        print(curr_pos)
+        prev_pos.append(curr_pos)
+
+    return prev_pos
+
+
+if __name__ == "__main__":
     workdir = os.getcwd()
     print(os.environ['ESPRESSO_PSEUDO'])
     print(os.environ['PWSCF_COMMAND'])
@@ -138,16 +158,19 @@ if __name__ == '__main__':
     # nk = 1
 
     # pos_relax = parse_pos_relax(filename='/Users/simonbatzner1/Desktop/Research/Research_Code/otf/datasets/Al_vac/relaxpos.txt')
-    #
+    # #
     # cell, al_pos, nat = create_structure(el=el, alat=alat, size=size, perturb=True, pass_relax=True, pass_pos=pos_relax)
-    #
+    # #
     # write_scf_input(input_file=input_file_name_scf_pert, output_file=output_file_name_scf, nat=nat, ecut=ecut, cell=cell, pos=al_pos, nk=nk)
 
     # relax vacancy structure
     # relax_vac(input_file=input_file_name_scf_relax, output_file=output_file_name_scf_relax)
 
+    # parse previous positions to init with velocity
+    prev_pos_init = parse_prev_pos(filename='prev_pos.txt')
+
     # run otf
-    results = run_otf_md(input_file=input_file_name_scf_pert, output_file=output_file_name_otf)
+    results = run_otf_md(input_file=input_file_name_scf_pert, output_file=output_file_name_otf, prev_pos_init=prev_pos_init)
 
     with open('al_results.json', 'w') as fp:
        json.dump(results, fp)

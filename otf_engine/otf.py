@@ -9,6 +9,9 @@ Steven Torrisi, Jon Vandermause, Simon Batzner
 
 import numpy as np
 import datetime
+
+from typing import List
+
 from struc import Structure
 from gp import GaussianProcess
 from env import ChemicalEnvironment
@@ -18,7 +21,7 @@ from qe_util import run_espresso, parse_qe_input
 
 class OTF(object):
     def __init__(self, qe_input: str, dt: float, number_of_steps: int,
-                 kernel: str, cutoff: float, punchout_d: float = None):
+                 kernel: str, cutoff: float, punchout_d: float=None, prev_pos_init: List[np.ndarray]=None):
         """
         On-the-fly learning engine, containing methods to run OTF calculation
 
@@ -41,7 +44,7 @@ class OTF(object):
         positions, species, cell, masses = parse_qe_input(self.qe_input)
         self.structure = Structure(lattice=cell, species=species,
                                    positions=positions, cutoff=cutoff,
-                                   mass_dict=masses)
+                                   mass_dict=masses, prev_positions=prev_pos_init)
 
         self.curr_step = 0
         self.train_structure = None
@@ -69,6 +72,7 @@ class OTF(object):
                 self.write_config()
                 self.run_and_train()
                 continue
+
             self.write_config()
             self.update_positions()
             self.curr_step += 1
