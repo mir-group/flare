@@ -83,7 +83,7 @@ def run_otf_md(input_file, output_file, prev_pos_init):
     """ Run OTF engine with specified QE input file """
 
     # setup run from QE input file
-    al_otf = OTF(qe_input=input_file, dt=0.001, number_of_steps=10000, kernel='two_body', cutoff=5, prev_pos_init=prev_pos_init)
+    al_otf = OTF(qe_input=input_file, dt=0.001, number_of_steps=1000000, kernel='two_body', cutoff=5, prev_pos_init=prev_pos_init)
 
     # run otf
     al_otf.run()
@@ -145,11 +145,9 @@ if __name__ == "__main__":
     alat = 3.978153546
     nk = 4
 
-    output_file_name_otf = '/home/sbatzner/otf/datasets/Al_vac/Al_OTF_pert.out'
     output_file_name_scf = '../Al_vac/Al_scf_pert.out'
     output_file_name_scf_relax = '../Al_vac/Al_scf_relax.out'
     input_file_name_scf = '../Al_vac/Al_scf.in'
-    input_file_name_scf_pert = '../Al_vac/Al_scf_pert.in'
     input_file_name_scf_relax = '../Al_vac/Al_scf_relax.in'
 
     # # debug mode
@@ -167,10 +165,12 @@ if __name__ == "__main__":
     # relax_vac(input_file=input_file_name_scf_relax, output_file=output_file_name_scf_relax)
 
     # parse previous positions to init with velocity
-    prev_pos_init = parse_prev_pos(filename='prev_pos.txt')
+    prev_pos_init = parse_prev_pos(filename='/home/sbatzner/otf/datasets/Al_vac/relax_wp_wv_nvt/prev_pos.txt')
 
     # run otf
+    input_file_name_scf_pert = '/home/sbatzner/otf/datasets/Al_vac/relax_wp_wv_nvt/Al_scf_pert.in'
+    output_file_name_otf = '/home/sbatzner/otf/datasets/Al_vac/relax_wp_wv_nvt/Al_OTF_pert.out'
     results = run_otf_md(input_file=input_file_name_scf_pert, output_file=output_file_name_otf, prev_pos_init=prev_pos_init)
 
     with open('al_results.json', 'w') as fp:
-       json.dump(results, fp)
+        json.dump(results, fp)
