@@ -1,0 +1,4 @@
+mpirun: Forwarding signal 18 to job
+slurmstepd: error: *** JOB 10418 ON node01 CANCELLED AT 2018-09-30T11:02:30 ***
+mpirun: abort is already in progress...hit ctrl-c again to forcibly terminate
+
