@@ -4,13 +4,13 @@
 Self-Contained Code which allows for the
 """
 
+import sys
+
 import numpy as np
 import numpy.random as rand
-import sys
 
 sys.path.append('../otf_engine')
 
-from env import ChemicalEnvironment
 from math import sin, cos
 from struc import Structure
 from qe_util import run_espresso, parse_qe_input
@@ -87,8 +87,9 @@ def is_within_r_periodic(structure, central_pos, neighbor_pos, radius):
     return False
 
 
-def gauge_force_variance(qe_input: str, trials: int, atom: int, r_fix: \
-        float, mean_pert: float = .1, pert_sigma: float = .02):
+def gauge_force_variance(qe_input: str, trials: int, atom: int, r_fix:
+    float, mean_pert: float = .1, pert_sigma: float = .02, write_output:
+    bool = True):
     """
 
     :param qe_input:
@@ -97,6 +98,7 @@ def gauge_force_variance(qe_input: str, trials: int, atom: int, r_fix: \
     :param r_fix:
     :param mean_pert:
     :param pert_sigma:
+    :param write_output:
     :return:
     """
     positions, species, cell, masses = parse_qe_input(qe_input)
@@ -114,6 +116,30 @@ def gauge_force_variance(qe_input: str, trials: int, atom: int, r_fix: \
         for j in range(struc.nat):
             for k in range(3):
                 total_forces[i, j, k] = float(pert_forces[j][k])
+
+        if write_output:
+            with open("rcut.out", 'a') as f:
+                f.write('Perturbed structure about atom {} and radius {}'
+                        ': \n'.format(atom, r_fix))
+                for pos in pert_struct.positions:
+                    f.write(str(pos)+'\n')
+                f.write("All Forces (normed force on atom {}: {}) : "
+                        "\n".format(atom,
+                                    np.linalg.norm(total_forces[i,atom,:])))
+                for force in total_forces[i,:]:
+                    f.write(str(force)+'\n')
+                #f.write(str(total_forces[i, :, :]))
+
+    all_forces = [total_forces[i][atom][0:3] for i in range(trials)]
+
+    report_str = 'Std dev of force on atom {} : {} Ry/Au \n'.format(atom,
+        np.std([np.linalg.norm(force) for force in all_forces]))
+
+    print(report_str)
+
+    if write_output:
+        with open("rcut.out", 'a') as f:
+            f.write(report_str)
 
     return total_forces
 
