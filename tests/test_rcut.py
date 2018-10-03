@@ -110,11 +110,17 @@ def test_within_radius():
 
 
 def test_gauge_rcut_run():
+    """
+    Runs an rcut run on the H2 dimer; checks that the forces did not change
+    for the first 'perturbation' (in which the second atom does not move)
+    and that the forces do change for the second perturbation.
+    :return:
+    """
     os.system('cp ./test_files/qe_input_1.in pwscf.in')
 
     total_forces_1 = gauge_force_variance(qe_input='pwscf.in', trials=3,
                                           atom=0, r_fix=3.0,
-                                          mean_pert=.1)
+                                          mean_pert=.1,write_output=True)
 
     for i in range(3):
         for j in range(3):
@@ -122,11 +128,13 @@ def test_gauge_rcut_run():
                 assert isclose(total_forces_1[i], total_forces_1[j]).all()
 
     total_forces_2 = gauge_force_variance(qe_input='pwscf.in', trials=3,
-                                          atom=0, r_fix=.5, mean_pert=.1)
+                                          atom=0, r_fix=.5, mean_pert=.1,
+                                          write_output=True)
 
     for i in range(3):
         for j in range(3):
             if i != j:
                 assert not isclose(total_forces_2[i], total_forces_2[j]).all()
 
+    os.system('rm rcut.out')
     cleanup_espresso_run()

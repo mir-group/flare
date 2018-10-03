@@ -38,7 +38,7 @@ aps,
 
 \begin{document}
 
-\title{Some notes on extending the SOAP kernel to multi-component systems}
+\title{Multi-component kernel notes}
 
 \author{Jonathan Vandermause}
 % \affiliation{$^{1}$John A. Paulson School of Engineering and Applied
@@ -55,6 +55,30 @@ aps,
 % \end{abstract}
 
 \maketitle
+
+\section{Computing a covariant N-body kernel}
+
+\section{SOAP is a three-body kernel}
+Consider the multi-component SOAP kernel defined in Ref.\ \cite{de2016comparing},
+\begin{equation}
+    k(\rho_1, \rho_2) = \int d\hat{R} \left( \int d\vec{r} \sum_{\alpha \alpha'} \kappa_{\alpha \alpha'} \rho_1^\alpha(\vec{r}) \rho_2^{\alpha'} (\hat{R} \vec{r}) \right)^2.
+\end{equation}
+Recalling that
+\begin{equation}
+    \rho_1^\alpha(\vec{r}) = \sum_{i \in \rho_1^\alpha} \exp\left(-\frac{(\vec{x}_i - \vec{r})^2}{2\sigma^2}\right)
+\end{equation}
+and performing the integral gives
+\begin{equation}
+\int d\vec{r} \sum_{\alpha \alpha'} \kappa_{\alpha \alpha'} \rho_1^\alpha(\vec{r}) \rho_2^{\alpha'}(\hat{R} \vec{r}) = \sum_{\alpha \alpha'} \sum_{i\in\rho_1^\alpha} \sum_{j\in\rho_2^{\alpha'}} \kappa_{\alpha\alpha'}\pi^{3/2}\sigma^3 \exp\left(-\frac{(\vec{x}_i-\hat{R}\vec{x}_j)}{4\sigma^2}\right).
+\end{equation}
+The full kernel may therefore be written as
+\begin{equation}
+k(\rho_1, \rho_2) = \pi^3 \sigma^6 \sum_{\alpha\alpha'\beta\beta'} \kappa_{\alpha\alpha'} \kappa_{\beta\beta'} \sum\limits_{\substack{i\in\rho_1^\alpha \\ j_\in\rho_2^{\alpha'}}} \sum\limits_{\substack{k \in \rho_1^\beta \\ l \in \rho_2^{\beta'}}} \int d\hat{R} \exp\left(-\frac{(\vec{x}_i - \hat{R}\vec{x}_j)^2}{4 \sigma^2}\right)\exp\left(-\frac{(\vec{x}_k - \hat{R}\vec{x}_l)^2}{4 \sigma^2}\right).
+\end{equation}
+This kernel captures angular information between at most two atoms in the environment. It is therefore not expected to be more accurate than Glielmo's three-body kernel \cite{glielmo2018efficient}, which directly compares pairs and triplets of distances without performing an integral over SO(3).
+
+Normalizing the kernel and raising to a positive power may allow the model to capture many-body interactions, but the same procedure can be applied to the two- and three-body kernels of Ref.\ \cite{glielmo2018efficient}.
+
 
 \section{Computing the power spectrum}
 We wish to efficiently compute the power spectrum

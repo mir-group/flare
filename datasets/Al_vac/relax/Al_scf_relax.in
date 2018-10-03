@@ -5,14 +5,14 @@
     outdir = '.'
     tstress = .true.
     tprnfor = .true.
-    disk_io = 'medium'
+    disk_io = 'low'
     wf_collect = .false.
  /
  &SYSTEM
     ibrav= 0
     nat = 31
     ntyp= 1
-    ecutwfc = 30
+    ecutwfc = 40
     nosym = .true.
     occupations = 'smearing'
     smearing = 'mp'
@@ -26,7 +26,7 @@
  &IONS
  /
 ATOMIC_SPECIES
-   Al  26.981539  Al.pz-vbc.UPF
+   Al  26.981539  Al.pbe-rrkj.UPF
 
 CELL_PARAMETERS {angstrom}
 7.95631 0.0 0.0
@@ -67,4 +67,4 @@ Al 5.968046381570055 3.978148982906722 5.966413652033363
 Al 5.968046381570055 5.966413652033336 3.978148982906649
 
 K_POINTS automatic
- 4 4 4  0 0 0
+ 7 7 7  0 0 0

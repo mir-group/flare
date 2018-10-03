@@ -1,14 +1,14 @@
 # Fdb version 3
-["bibtex multi_soap"] 1538169125 "multi_soap.aux" "multi_soap.bbl" "multi_soap" 1538169126
+["bibtex multi_soap"] 1538428934 "multi_soap.aux" "multi_soap.bbl" "multi_soap" 1538428934
   "/usr/local/texlive/2017/texmf-dist/bibtex/bst/revtex/apsrev4-1.bst" 1480098436 71518 fec93f06df0c073f83d2330456bd19c2 ""
-  "multi_soap.aux" 1538169126 1513 b0b322193c28df2e101a866b21702546 ""
-  "multi_soap.bib" 1538168464 1061 cc0401449f0eb3e8124e6b5ed7bc7d8d ""
-  "multi_soapNotes.bib" 1538169126 103 48ad29797468f16e2853d8797278d7af ""
+  "multi_soap.aux" 1538428934 1864 aef1469c65ec0d7f2945c321e2717615 ""
+  "multi_soap.bib" 1538427827 1352 bcf2526415ebac7a4e57eed10c3f38ef ""
+  "multi_soapNotes.bib" 1538428934 103 48ad29797468f16e2853d8797278d7af ""
   (generated)
-  "multi_soap.bbl"
   "multi_soap.blg"
-["pdflatex"] 1538169125 "/Users/jonpvandermause/Research/GP/otf/paper/MOP/multi_soap.tex" "multi_soap.pdf" "multi_soap" 1538169126
-  "/Users/jonpvandermause/Research/GP/otf/paper/MOP/multi_soap.tex" 1538169124 17894 edabeee7ef2456949b280a979dd2e8d8 ""
+  "multi_soap.bbl"
+["pdflatex"] 1538428934 "/Users/jonpvandermause/Research/GP/otf/paper/MOP/multi_soap.tex" "multi_soap.pdf" "multi_soap" 1538428934
+  "/Users/jonpvandermause/Research/GP/otf/paper/MOP/multi_soap.tex" 1538428933 19757 a234616c6d321f0a6cfe19cd6aa94adb ""
   "/usr/local/texlive/2017/texmf-dist/fonts/map/fontname/texfonts.map" 1480098670 3287 e6b82fe08f5336d4d5ebc73fb1152e87 ""
   "/usr/local/texlive/2017/texmf-dist/fonts/tfm/public/amsfonts/cmextra/cmbsy6.tfm" 1480098698 1124 14ccf5552bc7f77ca02a8a402bea8bfb ""
   "/usr/local/texlive/2017/texmf-dist/fonts/tfm/public/amsfonts/cmextra/cmbsy8.tfm" 1480098698 1120 200be8b775682cdf80acad4be5ef57e4 ""
@@ -42,9 +42,11 @@
   "/usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb" 1480098733 32080 340ef9bf63678554ee606688e7b5339d ""
   "/usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb" 1480098733 30251 6afa5cb1d0204815a708a080681d4674 ""
   "/usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi12.pfb" 1480098733 36741 fa121aac0049305630cf160b86157ee4 ""
+  "/usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi6.pfb" 1480098733 37166 8ab3487cbe3ab49ebce74c29ea2418db ""
   "/usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi8.pfb" 1480098733 35469 70d41d2b9ea31d5d813066df7c99281c ""
   "/usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb" 1480098733 35752 024fb6c41858982481f6968b5fc26508 ""
   "/usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmr12.pfb" 1480098733 32722 d7379af29a190c3f453aba36302ff5a9 ""
+  "/usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmr6.pfb" 1480098733 32734 69e00a6b65cedb993666e42eedb3d48f ""
   "/usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmr8.pfb" 1480098733 32726 0a1aea6fcd6468ee2cf64d891f5c43c8 ""
   "/usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb" 1480098733 32569 5e5ddc8df908dea60932f3c484a54c0d ""
   "/usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy6.pfb" 1480098733 32587 1788b0c1c5b39540c96f5e42ccd6dae8 ""
@@ -90,11 +92,11 @@
   "/usr/local/texlive/2017/texmf-var/fonts/map/pdftex/updmap/pdftex.map" 1495593472 2350277 a699055bee05bf8a40b0504752487295 ""
   "/usr/local/texlive/2017/texmf-var/web2c/pdftex/pdflatex.fmt" 1495593487 4129592 0e6cfee100d68e6d96b92c0258f2ff73 ""
   "/usr/local/texlive/2017/texmf.cnf" 1495593465 577 2b71d4d888f9e5560b2e99985915a9fa ""
-  "multi_soap.aux" 1538169126 1513 b0b322193c28df2e101a866b21702546 ""
-  "multi_soap.bbl" 1538169125 4128 0a3d69a3e9174f0f11fbabc2734be3f7 "bibtex multi_soap"
-  "multi_soap.tex" 1538169124 17894 edabeee7ef2456949b280a979dd2e8d8 ""
+  "multi_soap.aux" 1538428934 1864 aef1469c65ec0d7f2945c321e2717615 ""
+  "multi_soap.bbl" 1538428934 4721 66045015bcd284091eb280c6627a53f9 "bibtex multi_soap"
+  "multi_soap.tex" 1538428933 19757 a234616c6d321f0a6cfe19cd6aa94adb ""
   (generated)
-  "multi_soap.log"
   "multi_soapNotes.bib"
   "multi_soap.pdf"
+  "multi_soap.log"
   "multi_soap.aux"

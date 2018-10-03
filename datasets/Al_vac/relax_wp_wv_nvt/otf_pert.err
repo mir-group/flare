@@ -1,0 +1,20 @@
+cp: `/home/sbatzner/otf/datasets/Al_vac/relax_wp_wv_nvt/Al_scf_pert.in' and `/home/sbatzner/otf/datasets/Al_vac/relax_wp_wv_nvt/Al_scf_pert.in' are the same file
+cp: `/home/sbatzner/otf/datasets/Al_vac/relax_wp_wv_nvt/Al_scf_pert.in' and `/home/sbatzner/otf/datasets/Al_vac/relax_wp_wv_nvt/Al_scf_pert.in' are the same file
+Traceback (most recent call last):
+  File "al_vac.py", line 173, in <module>
+    results = run_otf_md(input_file=input_file_name_scf_pert, output_file=output_file_name_otf, prev_pos_init=prev_pos_init)
+  File "al_vac.py", line 89, in run_otf_md
+    al_otf.run()
+  File "../../otf_engine/otf.py", line 73, in run
+    self.run_and_train()
+  File "../../otf_engine/otf.py", line 129, in run_and_train
+    self.gp.train()
+  File "../../otf_engine/gp.py", line 133, in train
+    sigma_n=self.sigma_n)
+  File "../../otf_engine/gp.py", line 256, in set_kernel
+    self.l_mat = np.linalg.cholesky(k_mat + sigma_n ** 2 * np.eye(size))
+  File "/home/sbatzner/.local/lib/python3.6/site-packages/numpy/linalg/linalg.py", line 721, in cholesky
+    r = gufunc(a, signature=signature, extobj=extobj)
+  File "/home/sbatzner/.local/lib/python3.6/site-packages/numpy/linalg/linalg.py", line 92, in _raise_linalgerror_nonposdef
+    raise LinAlgError("Matrix is not positive definite")
+numpy.linalg.linalg.LinAlgError: Matrix is not positive definite
