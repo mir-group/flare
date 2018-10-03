@@ -1,7 +1,7 @@
  &CONTROL
     calculation = 'scf'
     pseudo_dir = '/home/homesoftware/espresso-6.1/qe-6.1/pseudo/'
-    outdir = '/home/sbatzner/otf/datasets/Al_vac/relax_wp_wv_nvt'
+    outdir = '.'
     tstress = .true.
     tprnfor = .true.
     disk_io = 'low'
