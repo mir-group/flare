@@ -156,19 +156,22 @@ if __name__ == "__main__":
     # nk = 1
 
     # pos_relax = parse_pos_relax(filename='/Users/simonbatzner1/Desktop/Research/Research_Code/otf/datasets/Al_vac/relaxpos.txt')
-    # #
+    #
     # cell, al_pos, nat = create_structure(el=el, alat=alat, size=size, perturb=True, pass_relax=True, pass_pos=pos_relax)
-    # #
+    #
+    # input_file_name_scf_pert = '/Users/simonbatzner1/Desktop/Research/Research_Code/otf/datasets/Al_vac/Al_md_pbe_pert.in'
     # write_scf_input(input_file=input_file_name_scf_pert, output_file=output_file_name_scf, nat=nat, ecut=ecut, cell=cell, pos=al_pos, nk=nk)
 
     # relax vacancy structure
     # relax_vac(input_file=input_file_name_scf_relax, output_file=output_file_name_scf_relax)
-
+    #
     # parse previous positions to init with velocity
     prev_pos_init = parse_prev_pos(filename='/home/sbatzner/otf/datasets/Al_vac/relax_wp_wv_nvt/prev_pos.txt')
-
+    #
     # run otf
-    input_file_name_scf_pert = '/home/sbatzner/otf/datasets/Al_vac/relax_wp_wv_nvt/Al_scf_pert.in'
+
+    input_file_name_scf_pert = None
+
     output_file_name_otf = '/home/sbatzner/otf/datasets/Al_vac/relax_wp_wv_nvt/Al_OTF_pert.out'
     results = run_otf_md(input_file=input_file_name_scf_pert, output_file=output_file_name_otf, prev_pos_init=prev_pos_init)
 
