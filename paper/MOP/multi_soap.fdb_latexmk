@@ -1,14 +1,14 @@
 # Fdb version 3
-["bibtex multi_soap"] 1538428934 "multi_soap.aux" "multi_soap.bbl" "multi_soap" 1538428934
+["bibtex multi_soap"] 1538600986 "multi_soap.aux" "multi_soap.bbl" "multi_soap" 1538601174
   "/usr/local/texlive/2017/texmf-dist/bibtex/bst/revtex/apsrev4-1.bst" 1480098436 71518 fec93f06df0c073f83d2330456bd19c2 ""
-  "multi_soap.aux" 1538428934 1864 aef1469c65ec0d7f2945c321e2717615 ""
+  "multi_soap.aux" 1538601174 1860 9e07e69b3004dfa2f1ad45664e7a286c ""
   "multi_soap.bib" 1538427827 1352 bcf2526415ebac7a4e57eed10c3f38ef ""
-  "multi_soapNotes.bib" 1538428934 103 48ad29797468f16e2853d8797278d7af ""
+  "multi_soapNotes.bib" 1538601174 103 48ad29797468f16e2853d8797278d7af ""
   (generated)
-  "multi_soap.blg"
   "multi_soap.bbl"
-["pdflatex"] 1538428934 "/Users/jonpvandermause/Research/GP/otf/paper/MOP/multi_soap.tex" "multi_soap.pdf" "multi_soap" 1538428934
-  "/Users/jonpvandermause/Research/GP/otf/paper/MOP/multi_soap.tex" 1538428933 19757 a234616c6d321f0a6cfe19cd6aa94adb ""
+  "multi_soap.blg"
+["pdflatex"] 1538601174 "/Users/jonpvandermause/Research/GP/otf/paper/MOP/multi_soap.tex" "multi_soap.pdf" "multi_soap" 1538601174
+  "/Users/jonpvandermause/Research/GP/otf/paper/MOP/multi_soap.tex" 1538601174 21446 deedbd04676ae4e042c13e908ac589d5 ""
   "/usr/local/texlive/2017/texmf-dist/fonts/map/fontname/texfonts.map" 1480098670 3287 e6b82fe08f5336d4d5ebc73fb1152e87 ""
   "/usr/local/texlive/2017/texmf-dist/fonts/tfm/public/amsfonts/cmextra/cmbsy6.tfm" 1480098698 1124 14ccf5552bc7f77ca02a8a402bea8bfb ""
   "/usr/local/texlive/2017/texmf-dist/fonts/tfm/public/amsfonts/cmextra/cmbsy8.tfm" 1480098698 1120 200be8b775682cdf80acad4be5ef57e4 ""
@@ -92,11 +92,11 @@
   "/usr/local/texlive/2017/texmf-var/fonts/map/pdftex/updmap/pdftex.map" 1495593472 2350277 a699055bee05bf8a40b0504752487295 ""
   "/usr/local/texlive/2017/texmf-var/web2c/pdftex/pdflatex.fmt" 1495593487 4129592 0e6cfee100d68e6d96b92c0258f2ff73 ""
   "/usr/local/texlive/2017/texmf.cnf" 1495593465 577 2b71d4d888f9e5560b2e99985915a9fa ""
-  "multi_soap.aux" 1538428934 1864 aef1469c65ec0d7f2945c321e2717615 ""
-  "multi_soap.bbl" 1538428934 4721 66045015bcd284091eb280c6627a53f9 "bibtex multi_soap"
-  "multi_soap.tex" 1538428933 19757 a234616c6d321f0a6cfe19cd6aa94adb ""
+  "multi_soap.aux" 1538601174 1860 9e07e69b3004dfa2f1ad45664e7a286c ""
+  "multi_soap.bbl" 1538600986 4721 66045015bcd284091eb280c6627a53f9 "bibtex multi_soap"
+  "multi_soap.tex" 1538601174 21446 deedbd04676ae4e042c13e908ac589d5 ""
   (generated)
-  "multi_soapNotes.bib"
-  "multi_soap.pdf"
-  "multi_soap.log"
   "multi_soap.aux"
+  "multi_soap.log"
+  "multi_soap.pdf"
+  "multi_soapNotes.bib"
