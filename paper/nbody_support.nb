@@ -1,0 +1,220 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 10.4' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[      5737,        210]
+NotebookOptionsPosition[      4942,        176]
+NotebookOutlinePosition[      5296,        192]
+CellTagsIndexPosition[      5253,        189]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+
+Cell[CellGroupData[{
+Cell["Calculate derivative with respect to l.", "Section",
+ CellChangeTimes->{{3.747747302603653*^9, 3.747747343660655*^9}, 
+   3.747762487585805*^9}],
+
+Cell["Define the kernel.", "Text",
+ CellChangeTimes->{{3.747747348196752*^9, 3.747747353510483*^9}}],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"kNTildeL", "=", 
+  RowBox[{"Exp", "[", 
+   RowBox[{"-", 
+    FractionBox["C", 
+     RowBox[{"2", " ", 
+      SuperscriptBox["l", "2"]}]]}], "]"}]}]], "Input",
+ CellChangeTimes->{{3.747747356093687*^9, 3.7477473806198187`*^9}, {
+  3.7477474559073057`*^9, 3.747747473202615*^9}}],
+
+Cell[BoxData[
+ SuperscriptBox["\[ExponentialE]", 
+  RowBox[{"-", 
+   FractionBox["C", 
+    RowBox[{"2", " ", 
+     SuperscriptBox["l", "2"]}]]}]]], "Output",
+ CellChangeTimes->{3.7477474746554623`*^9}]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"kDTildeL", "=", 
+  RowBox[{
+   RowBox[{
+    RowBox[{
+     RowBox[{"-", 
+      FractionBox["kNTildeL", 
+       SuperscriptBox["l", "4"]]}], "A"}], "+", 
+    RowBox[{
+     FractionBox["kNTildeL", 
+      SuperscriptBox["l", "2"]], "B"}]}], "//", "FullSimplify"}]}]], "Input",
+ CellChangeTimes->{{3.747747477065415*^9, 3.747747505570595*^9}, {
+  3.74776249633917*^9, 3.7477625378162603`*^9}}],
+
+Cell[BoxData[
+ FractionBox[
+  RowBox[{
+   SuperscriptBox["\[ExponentialE]", 
+    RowBox[{"-", 
+     FractionBox["C", 
+      RowBox[{"2", " ", 
+       SuperscriptBox["l", "2"]}]]}]], " ", 
+   RowBox[{"(", 
+    RowBox[{
+     RowBox[{"-", "A"}], "+", 
+     RowBox[{"B", " ", 
+      SuperscriptBox["l", "2"]}]}], ")"}]}], 
+  SuperscriptBox["l", "4"]]], "Output",
+ CellChangeTimes->{{3.747762534570571*^9, 3.747762538341138*^9}}]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"D", "[", 
+   RowBox[{"kDTildeL", ",", "l"}], "]"}], "//", "FullSimplify"}]], "Input",
+ CellChangeTimes->{{3.747762541007793*^9, 3.7477625485005407`*^9}}],
+
+Cell[BoxData[
+ FractionBox[
+  RowBox[{
+   SuperscriptBox["\[ExponentialE]", 
+    RowBox[{"-", 
+     FractionBox["C", 
+      RowBox[{"2", " ", 
+       SuperscriptBox["l", "2"]}]]}]], " ", 
+   RowBox[{"(", 
+    RowBox[{
+     RowBox[{
+      RowBox[{"-", "A"}], " ", "C"}], "+", 
+     RowBox[{
+      RowBox[{"(", 
+       RowBox[{
+        RowBox[{"4", " ", "A"}], "+", 
+        RowBox[{"B", " ", "C"}]}], ")"}], " ", 
+      SuperscriptBox["l", "2"]}], "-", 
+     RowBox[{"2", " ", "B", " ", 
+      SuperscriptBox["l", "4"]}]}], ")"}]}], 
+  SuperscriptBox["l", "7"]]], "Output",
+ CellChangeTimes->{3.747762548939948*^9}]
+}, Open  ]],
+
+Cell["Check that the result reduces to the two-body expression.", "Text",
+ CellChangeTimes->{{3.747764935563303*^9, 3.747764944828157*^9}}],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{
+   FractionBox[
+    RowBox[{
+     SuperscriptBox["\[ExponentialE]", 
+      RowBox[{"-", 
+       FractionBox["C", 
+        RowBox[{"2", " ", 
+         SuperscriptBox["l", "2"]}]]}]], " ", 
+     RowBox[{"(", 
+      RowBox[{
+       RowBox[{
+        RowBox[{"-", "A"}], " ", "C"}], "+", 
+       RowBox[{
+        RowBox[{"(", 
+         RowBox[{
+          RowBox[{"4", " ", "A"}], "+", 
+          RowBox[{"B", " ", "C"}]}], ")"}], " ", 
+        SuperscriptBox["l", "2"]}], "-", 
+       RowBox[{"2", " ", "B", " ", 
+        SuperscriptBox["l", "4"]}]}], ")"}]}], 
+    SuperscriptBox["l", "7"]], "/.", 
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{"A", "\[Rule]", 
+      RowBox[{"rr", " ", "c1", " ", "c2"}]}], ",", 
+     RowBox[{"C", "\[Rule]", "rr"}], ",", 
+     RowBox[{"B", "\[Rule]", 
+      RowBox[{"c1", " ", "c2"}]}]}], "}"}]}], "//", "FullSimplify"}]], "Input",\
+
+ CellChangeTimes->{{3.747764296374653*^9, 3.7477643577163982`*^9}, {
+   3.7477645885271807`*^9, 3.747764592626582*^9}, 3.747764672505496*^9}],
+
+Cell[BoxData[
+ RowBox[{"-", 
+  FractionBox[
+   RowBox[{"c1", " ", "c2", " ", 
+    SuperscriptBox["\[ExponentialE]", 
+     RowBox[{"-", 
+      FractionBox["rr", 
+       RowBox[{"2", " ", 
+        SuperscriptBox["l", "2"]}]]}]], " ", 
+    RowBox[{"(", 
+     RowBox[{
+      RowBox[{"2", " ", 
+       SuperscriptBox["l", "4"]}], "-", 
+      RowBox[{"5", " ", 
+       SuperscriptBox["l", "2"], " ", "rr"}], "+", 
+      SuperscriptBox["rr", "2"]}], ")"}]}], 
+   SuperscriptBox["l", "7"]]}]], "Output",
+ CellChangeTimes->{{3.747764340633934*^9, 3.7477643612926617`*^9}, 
+   3.747764593718186*^9, 3.7477646752614927`*^9}]
+}, Open  ]]
+}, Open  ]]
+},
+WindowSize->{575, 755},
+WindowMargins->{{85, Automatic}, {Automatic, 0}},
+FrontEndVersion->"10.4 for Mac OS X x86 (32-bit, 64-bit Kernel) (April 11, \
+2016)",
+StyleDefinitions->"Default.nb"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[CellGroupData[{
+Cell[580, 22, 150, 2, 64, "Section"],
+Cell[733, 26, 100, 1, 30, "Text"],
+Cell[CellGroupData[{
+Cell[858, 31, 301, 8, 48, "Input"],
+Cell[1162, 41, 201, 6, 42, "Output"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[1400, 52, 412, 12, 49, "Input"],
+Cell[1815, 66, 424, 14, 63, "Output"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[2276, 85, 188, 4, 28, "Input"],
+Cell[2467, 91, 614, 21, 63, "Output"]
+}, Open  ]],
+Cell[3096, 115, 139, 1, 30, "Text"],
+Cell[CellGroupData[{
+Cell[3260, 120, 1038, 32, 85, "Input"],
+Cell[4301, 154, 613, 18, 62, "Output"]
+}, Open  ]]
+}, Open  ]]
+}
+]
+*)
+
+(* End of internal cache information *)
+
