@@ -1,12 +1,60 @@
 import numpy as np
 from math import exp
+from math import factorial
+from itertools import combinations
+from itertools import permutations
 from numba import njit
 from struc import Structure
 from env import ChemicalEnvironment
 import time
 
+
 # -----------------------------------------------------------------------------
-#                   kernels acting on environment objects
+#                   combinatorics helper functions
+# -----------------------------------------------------------------------------
+# count combinations
+def get_comb_no(N, M):
+    return int(factorial(N) / (factorial(M) * factorial(N - M)))
+
+
+# count permutations
+def get_perm_no(N, M):
+    return int(factorial(N) / factorial(N - M))
+
+
+# get combination array
+def get_comb_array(list_len, tuple_size):
+    lst = np.arange(0, list_len)
+
+    no_combs = get_comb_no(list_len, tuple_size)
+    comb_store = np.zeros([no_combs, tuple_size])
+
+    for count, combo in enumerate(combinations(lst, tuple_size)):
+        comb_store[count, :] = combo
+
+    # convert to ints
+    comb_store = comb_store.astype(int)
+
+    return comb_store
+
+
+# get permutation array
+def get_perm_array(list_len, tuple_size):
+    lst = np.arange(0, list_len)
+
+    no_perms = get_perm_no(list_len, tuple_size)
+    perm_store = np.zeros([no_perms, tuple_size])
+
+    for count, perm in enumerate(permutations(lst, tuple_size)): 
+        perm_store[count, :] = perm
+
+    # convert to ints
+    perm_store = perm_store.astype(int)
+
+    return perm_store
+
+# -----------------------------------------------------------------------------
+#                kernels acting on environment objects
 # -----------------------------------------------------------------------------
 
 
@@ -33,8 +81,16 @@ def two_body(env1, env2, d1, d2, sig, ls):
 
 
 # -----------------------------------------------------------------------------
-#                   kernels acting on arrays
+#           kernels acting on numpy arrays (can be jitted)
 # -----------------------------------------------------------------------------
+
+
+# single component n body kernel
+def n_body_jit_sc(bond_array_1, cross_bond_dists_1, combinations,
+                  bond_array_2, cross_bond_dists_2, permutations,
+                  d1, d2, sig, ls):
+    pass
+
 
 # jit function that computes three body kernel
 @njit
@@ -122,3 +178,18 @@ def two_body_jit(bond_array_1, bond_types_1, bond_array_2,
                 kern += d * exp(-f * rr) * coord1 * coord2 * (e - rr)
 
     return kern
+
+
+# testing ground
+if __name__ == '__main__':
+    # test get_comb_no and get_perm_no
+    assert(get_comb_no(3, 2) == 3)
+    assert(get_perm_no(3, 2) == 6)
+
+    # test get_comb_array
+    N = 10
+    M = 5
+    assert(get_comb_array(N, M).shape[0] == get_comb_no(N, M))
+
+    # test get_perm_array
+    assert(get_perm_array(N, M).shape[0] == get_perm_no(N, M))
