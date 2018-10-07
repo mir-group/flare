@@ -20,21 +20,21 @@ class BashInput:
 
     def get_bash_text(self):
         sh_text = """#!/bin/sh
-    #SBATCH -n {}
-    #SBATCH -N {}
-    #SBATCH -t {}-00:00
-    #SBATCH -e {}
-    #SBATCH -p {}
-    #SBATCH -o {}
-    #SBATCH --mem-per-cpu={}
-    #SBATCH --mail-type=ALL
-    #SBATCH --mail-user={}
+#SBATCH -n {}
+#SBATCH -N {}
+#SBATCH -t {}-00:00
+#SBATCH -e {}
+#SBATCH -p {}
+#SBATCH -o {}
+#SBATCH --mem-per-cpu={}
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user={}
 
-    module load gcc/4.9.3-fasrc01 openmpi/2.1.0-fasrc01
-    module load python/3.6.3-fasrc01
+module load gcc/4.9.3-fasrc01 openmpi/2.1.0-fasrc01
+module load python/3.6.3-fasrc01
 
-    {}""".format(self.n, self.N, self.t, self.e, self.p, self.o,
-                 self.mem_per_cpu, self.mail_user, self.command)
+{}""".format(self.n, self.N, self.t, self.e, self.p, self.o,
+             self.mem_per_cpu, self.mail_user, self.command)
 
         return sh_text
 
@@ -199,9 +199,9 @@ class QEInput:
 
     def run_espresso(self):
 
-        qe_command = '{0} < {1} > {2}'.format(self.pw_loc,
-                                              self.input_file_name,
-                                              self.output_file_name)
+        qe_command = 'mpirun {0} < {1} > {2}'.format(self.pw_loc,
+                                                     self.input_file_name,
+                                                     self.output_file_name)
 
         os.system(qe_command)
 
