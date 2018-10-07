@@ -62,6 +62,15 @@ def get_perm_array(list_len, tuple_size):
 # -----------------------------------------------------------------------------
 
 
+def n_body_sc(env1, env2, bodies, d1, d2, sig, ls):
+    combs = get_comb_array(env1.bond_array.shape[0], bodies-1)
+    perms = get_perm_array(env2.bond_array.shape[0], bodies-1)
+
+    return n_body_jit_sc(env1.bond_array, env1.cross_bond_dists, combs,
+                         env2.bond_array, env2.cross_bond_dists, perms,
+                         d1, d2, sig, ls)
+
+
 # get three body kernel between two environments
 def three_body(env1, env2, d1, d2, sig, ls):
     return ChemicalEnvironment.three_body_jit(env1.bond_array,
@@ -90,14 +99,17 @@ def two_body(env1, env2, d1, d2, sig, ls):
 
 
 # single component n body kernel
+@njit
 def n_body_jit_sc(bond_array_1, cross_bond_dists_1, combinations,
                   bond_array_2, cross_bond_dists_2, permutations,
                   d1, d2, sig, ls):
 
     kern = 0
 
-    for comb in combinations:
-        for perm in permutations:
+    for m in range(combinations.shape[0]):
+        comb = combinations[m]
+        for n in range(permutations.shape[0]):
+            perm = permutations[n]
             A_cp = 0
             B_cp_1 = 0
             B_cp_2 = 0
@@ -116,10 +128,14 @@ def n_body_jit_sc(bond_array_1, cross_bond_dists_1, combinations,
                 for c_ind_2, p_ind_2 in zip(comb[q+1:], perm[q+1:]):
                     cb_diff = cross_bond_dists_1[c_ind, c_ind_2] - \
                         cross_bond_dists_2[p_ind, p_ind_2]
-
                     C_cp += cb_diff * cb_diff
 
             B_cp = B_cp_1 * B_cp_2
+
+            kern += (sig*sig / (ls**4)) * (A_cp * ls * ls - B_cp) * \
+                exp(-C_cp / (2 * ls * ls))
+
+    return kern
 
 
 # jit function that computes three body kernel
@@ -224,9 +240,31 @@ if __name__ == '__main__':
     # test get_perm_array
     assert(get_perm_array(N, M).shape[0] == get_perm_no(N, M))
 
-    test1 = np.array([1, 4, 5])
-    test2 = np.array([9, 7, 5])
-    for a, (b, c) in enumerate(zip(test1, test2)):
-        print(b)
+    # create environment 1
+    cell = np.eye(3)
+    cutoff = np.linalg.norm(np.array([0.5, 0.5, 0.5])) + 0.001
 
-    print(test1[0+1:])
+    positions_1 = [np.array([0, 0, 0]), np.array([0.1, 0.2, 0.3])]
+    species_1 = ['B', 'A']
+    atom_1 = 0
+    test_structure_1 = Structure(cell, species_1, positions_1, cutoff)
+    env1 = ChemicalEnvironment(test_structure_1, atom_1)
+
+    # create environment 2
+    cell = np.eye(3)
+    cutoff = np.linalg.norm(np.array([0.5, 0.5, 0.5])) + 0.001
+
+    positions_2 = [np.array([0, 0, 0]), np.array([0.25, 0.3, 0.4])]
+    species_2 = ['B', 'A']
+    atom_2 = 0
+    test_structure_2 = Structure(cell, species_2, positions_2, cutoff)
+    env2 = ChemicalEnvironment(test_structure_2, atom_2)
+
+    d1 = 3
+    d2 = 3
+    sig = 0.5
+    ls = 0.2
+    print(three_body(env1, env2, d1, d2, sig, ls))
+
+    bodies = 3
+    print(n_body_sc(env1, env2, bodies, d1, d2, sig, ls))
