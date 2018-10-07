@@ -14,11 +14,15 @@ import time
 # -----------------------------------------------------------------------------
 # count combinations
 def get_comb_no(N, M):
+    if M > N:
+        return 0
     return int(factorial(N) / (factorial(M) * factorial(N - M)))
 
 
 # count permutations
 def get_perm_no(N, M):
+    if M > N:
+        return 0
     return int(factorial(N) / factorial(N - M))
 
 
@@ -89,7 +93,33 @@ def two_body(env1, env2, d1, d2, sig, ls):
 def n_body_jit_sc(bond_array_1, cross_bond_dists_1, combinations,
                   bond_array_2, cross_bond_dists_2, permutations,
                   d1, d2, sig, ls):
-    pass
+
+    kern = 0
+
+    for comb in combinations:
+        for perm in permutations:
+            A_cp = 0
+            B_cp_1 = 0
+            B_cp_2 = 0
+            C_cp = 0
+
+            for q, (c_ind, p_ind) in enumerate(zip(comb, perm)):
+                rdiff = bond_array_1[c_ind, 0] - bond_array_2[p_ind, 0]
+                coord1 = bond_array_1[c_ind, d1]
+                coord2 = bond_array_2[p_ind, d2]
+
+                A_cp += coord1 * coord2
+                B_cp_1 += rdiff * coord1
+                B_cp_2 += rdiff * coord2
+                C_cp += rdiff * rdiff
+
+                for c_ind_2, p_ind_2 in zip(comb[q+1:], perm[q+1:]):
+                    cb_diff = cross_bond_dists_1[c_ind, c_ind_2] - \
+                        cross_bond_dists_2[p_ind, p_ind_2]
+
+                    C_cp += cb_diff * cb_diff
+
+            B_cp = B_cp_1 * B_cp_2
 
 
 # jit function that computes three body kernel
@@ -193,3 +223,10 @@ if __name__ == '__main__':
 
     # test get_perm_array
     assert(get_perm_array(N, M).shape[0] == get_perm_no(N, M))
+
+    test1 = np.array([1, 4, 5])
+    test2 = np.array([9, 7, 5])
+    for a, (b, c) in enumerate(zip(test1, test2)):
+        print(b)
+
+    print(test1[0+1:])

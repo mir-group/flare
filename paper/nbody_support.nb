@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[      5737,        210]
-NotebookOptionsPosition[      4942,        176]
-NotebookOutlinePosition[      5296,        192]
-CellTagsIndexPosition[      5253,        189]
+NotebookDataLength[      5906,        212]
+NotebookOptionsPosition[      5111,        178]
+NotebookOutlinePosition[      5465,        194]
+CellTagsIndexPosition[      5422,        191]
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -45,7 +45,7 @@ Cell[BoxData[
    FractionBox["C", 
     RowBox[{"2", " ", 
      SuperscriptBox["l", "2"]}]]}]]], "Output",
- CellChangeTimes->{3.7477474746554623`*^9}]
+ CellChangeTimes->{3.7477474746554623`*^9, 3.747777489924048*^9}]
 }, Open  ]],
 
 Cell[CellGroupData[{
@@ -57,12 +57,13 @@ Cell[BoxData[
     RowBox[{
      RowBox[{"-", 
       FractionBox["kNTildeL", 
-       SuperscriptBox["l", "4"]]}], "A"}], "+", 
+       SuperscriptBox["l", "4"]]}], "B"}], "+", 
     RowBox[{
      FractionBox["kNTildeL", 
-      SuperscriptBox["l", "2"]], "B"}]}], "//", "FullSimplify"}]}]], "Input",
+      SuperscriptBox["l", "2"]], "A"}]}], "//", "FullSimplify"}]}]], "Input",
  CellChangeTimes->{{3.747747477065415*^9, 3.747747505570595*^9}, {
-  3.74776249633917*^9, 3.7477625378162603`*^9}}],
+  3.74776249633917*^9, 3.7477625378162603`*^9}, {3.747777249078947*^9, 
+  3.747777251761652*^9}}],
 
 Cell[BoxData[
  FractionBox[
@@ -74,11 +75,12 @@ Cell[BoxData[
        SuperscriptBox["l", "2"]}]]}]], " ", 
    RowBox[{"(", 
     RowBox[{
-     RowBox[{"-", "A"}], "+", 
-     RowBox[{"B", " ", 
+     RowBox[{"-", "B"}], "+", 
+     RowBox[{"A", " ", 
       SuperscriptBox["l", "2"]}]}], ")"}]}], 
   SuperscriptBox["l", "4"]]], "Output",
- CellChangeTimes->{{3.747762534570571*^9, 3.747762538341138*^9}}]
+ CellChangeTimes->{{3.747762534570571*^9, 3.747762538341138*^9}, 
+   3.747777252627631*^9, {3.7477774885806313`*^9, 3.747777490768032*^9}}]
 }, Open  ]],
 
 Cell[CellGroupData[{
@@ -100,17 +102,17 @@ Cell[BoxData[
    RowBox[{"(", 
     RowBox[{
      RowBox[{
-      RowBox[{"-", "A"}], " ", "C"}], "+", 
+      RowBox[{"-", "B"}], " ", "C"}], "+", 
      RowBox[{
       RowBox[{"(", 
        RowBox[{
-        RowBox[{"4", " ", "A"}], "+", 
-        RowBox[{"B", " ", "C"}]}], ")"}], " ", 
+        RowBox[{"4", " ", "B"}], "+", 
+        RowBox[{"A", " ", "C"}]}], ")"}], " ", 
       SuperscriptBox["l", "2"]}], "-", 
-     RowBox[{"2", " ", "B", " ", 
+     RowBox[{"2", " ", "A", " ", 
       SuperscriptBox["l", "4"]}]}], ")"}]}], 
   SuperscriptBox["l", "7"]]], "Output",
- CellChangeTimes->{3.747762548939948*^9}]
+ CellChangeTimes->{3.747762548939948*^9, 3.7477774918829203`*^9}]
 }, Open  ]],
 
 Cell["Check that the result reduces to the two-body expression.", "Text",
@@ -196,25 +198,23 @@ Cell[580, 22, 150, 2, 64, "Section"],
 Cell[733, 26, 100, 1, 30, "Text"],
 Cell[CellGroupData[{
 Cell[858, 31, 301, 8, 48, "Input"],
-Cell[1162, 41, 201, 6, 42, "Output"]
+Cell[1162, 41, 223, 6, 42, "Output"]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[1400, 52, 412, 12, 49, "Input"],
-Cell[1815, 66, 424, 14, 63, "Output"]
+Cell[1422, 52, 461, 13, 49, "Input"],
+Cell[1886, 67, 498, 15, 63, "Output"]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[2276, 85, 188, 4, 28, "Input"],
-Cell[2467, 91, 614, 21, 63, "Output"]
+Cell[2421, 87, 188, 4, 28, "Input"],
+Cell[2612, 93, 638, 21, 63, "Output"]
 }, Open  ]],
-Cell[3096, 115, 139, 1, 30, "Text"],
+Cell[3265, 117, 139, 1, 30, "Text"],
 Cell[CellGroupData[{
-Cell[3260, 120, 1038, 32, 85, "Input"],
-Cell[4301, 154, 613, 18, 62, "Output"]
+Cell[3429, 122, 1038, 32, 85, "Input"],
+Cell[4470, 156, 613, 18, 62, "Output"]
 }, Open  ]]
 }, Open  ]]
 }
 ]
 *)
-
-(* End of internal cache information *)
 
