@@ -62,6 +62,7 @@ def get_perm_array(list_len, tuple_size):
 # -----------------------------------------------------------------------------
 
 
+# get n body single component kernel between two environments
 def n_body_sc(env1, env2, bodies, d1, d2, sig, ls):
     combs = get_comb_array(env1.bond_array.shape[0], bodies-1)
     perms = get_perm_array(env2.bond_array.shape[0], bodies-1)
@@ -226,6 +227,45 @@ def two_body_jit(bond_array_1, bond_types_1, bond_array_2,
     return kern
 
 
+def two_body_grad_from_env(bond_array_1, bond_types_1, bond_array_2,
+                           bond_types_2, d1, d2, hyps):
+    sig = hyps[0]
+    ls = hyps[1]
+    S = sig * sig
+    L = 1 / (ls * ls)
+    sig_conv = 2 * sig
+    ls_conv = -2 / (ls * ls * ls)
+
+    kern = 0
+    sig_derv = 0
+    ls_derv = 0
+
+    x1_len = len(bond_types_1)
+    x2_len = len(bond_types_2)
+
+    for m in range(x1_len):
+        r1 = bond_array_1[m, 0]
+        coord1 = bond_array_1[m, d1]
+        typ1 = bond_types_1[m]
+
+        for n in range(x2_len):
+            r2 = bond_array_2[n, 0]
+            coord2 = bond_array_2[n, d2]
+            typ2 = bond_types_2[n]
+
+            # check that bonds match
+            if typ1 == typ2:
+                rr = (r1-r2)*(r1-r2)
+                kern += S*L*exp(-0.5*L*rr)*coord1*coord2*(1-L*rr)
+                sig_derv += L*exp(-0.5*L*rr)*coord1*coord2*(1-L*rr) * sig_conv
+                ls_derv += 0.5*coord1*coord2*S*exp(-L*rr/2) * \
+                    (2+L*rr*(-5+L*rr))*ls_conv
+
+    kern_grad = np.array([sig_derv, ls_derv])
+
+    return kern, kern_grad
+
+
 # testing ground
 if __name__ == '__main__':
     # test get_comb_no and get_perm_no
@@ -260,11 +300,18 @@ if __name__ == '__main__':
     test_structure_2 = Structure(cell, species_2, positions_2, cutoff)
     env2 = ChemicalEnvironment(test_structure_2, atom_2)
 
+    # set kernel parameters
     d1 = 3
-    d2 = 3
+    d2 = 2
     sig = 0.5
     ls = 0.2
-    print(three_body(env1, env2, d1, d2, sig, ls))
 
-    bodies = 3
-    print(n_body_sc(env1, env2, bodies, d1, d2, sig, ls))
+    # test two body kernel
+    two_body_old = two_body(env1, env2, d1, d2, sig, ls)
+    two_body_new = n_body_sc(env1, env2, 2, d1, d2, sig, ls)
+    assert(np.isclose(two_body_old, two_body_new))
+
+    # test three body kernel
+    three_body_old = three_body(env1, env2, d1, d2, sig, ls)
+    three_body_new = n_body_sc(env1, env2, 3, d1, d2, sig, ls)
+    assert(np.isclose(three_body_old, three_body_new))
