@@ -46,3 +46,5 @@ def convergence(input_file_name, output_file_name, pw_loc,
     # remove output directory
     if os.path.isdir('output'):
         os.system('rm -r output')
+    if os.path.isdir('__pycache__'):
+        os.system('rm -r __pycache__')

@@ -4,14 +4,17 @@ import os
 import qe_input
 import qe_parsers
 
+ryd_to_ev = 13.6056980659
+
 
 def print_results(nk, ecutwfc, ecutrho, energy, conv_energy):
     print('\n')
     print('nk: '+str(nk))
     print('ecutwfc: '+str(ecutwfc))
     print('ecutrho: '+str(ecutrho))
-    print('energy: '+str(energy))
-    print('difference from converged value: '+str(energy-conv_energy))
+    print('energy: '+str(energy*ryd_to_ev)+' eV')
+    print('difference from converged value: ' +
+          str((energy-conv_energy)*ryd_to_ev)+' eV')
     print('\n')
 
 

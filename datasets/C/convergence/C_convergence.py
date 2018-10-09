@@ -18,7 +18,7 @@ positions = [np.array([0, 0, 0]),
 
 # set convergence parameters
 nk = 40
-ecutwfc = 100
+ecutwfc = 150
 ecutrho = 8 * ecutwfc
 
 
@@ -37,8 +37,8 @@ scf_inputs = dict(pseudo_dir=pseudo_dir,
                   ion_pseudo=['C.pz-rrkjus.UPF'])
 
 # choose parameter grid
-nks = [10, 30]
-ecutwfcs = [20, 40]
+nks = [5, 10, 20, 30]
+ecutwfcs = [40, 50, 60, 70, 80]
 rho_facs = [4, 8]
 
 convergence(input_file_name, output_file_name, pw_loc,

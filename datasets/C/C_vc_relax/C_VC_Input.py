@@ -1,17 +1,16 @@
 import numpy as np
 import sys
 import os
-sys.path.append('../../../modules')
 import qe_input
 
 input_file_name = './C_vc.in'
 output_file_name = './C_vc.out'
-pw_loc = os.environ.get('PWSCF_COMMAND')
+pw_loc = '/n/holylfs/LABS/kozinsky_lab/Software/qe-6.2.1/bin/pw.x'
+pseudo_dir = '/n/holylfs/LABS/kozinsky_lab/Software/qe-6.2.1/pseudo'
 calculation = 'vc-relax'
 
 # specify diamnond crystal structure
 cp = 1.76
-# cp = 1.641877323
 cell = np.array([[0, cp, cp],
                  [cp, 0, cp],
                  [cp, cp, 0]])
@@ -20,12 +19,12 @@ positions = [np.array([0, 0, 0]),
 nk = 20
 
 
-scf_inputs = dict(pseudo_dir=os.environ.get('ESPRESSO_PSEUDO'),
+scf_inputs = dict(pseudo_dir=pseudo_dir,
                   outdir='./output',
                   nat=2,
                   ntyp=1,
-                  ecutwfc=50.0,
-                  ecutrho=200.0,
+                  ecutwfc=70.0,
+                  ecutrho=280.0,
                   cell=cell,
                   species=['C', 'C'],
                   positions=positions,

@@ -1,5 +1,5 @@
  &control
-    calculation = 'scf'
+    calculation = 'vc-relax'
     pseudo_dir = '/n/holylfs/LABS/kozinsky_lab/Software/qe-6.2.1/pseudo'
     outdir = './output'
     tstress = .true.
@@ -9,21 +9,26 @@
     ibrav= 0
     nat= 2
     ntyp= 1
-    ecutwfc =75
-    ecutrho = 600
+    ecutwfc =70.0
+    ecutrho = 280.0
  /
  &electrons
     conv_thr =  1.0d-10
     mixing_beta = 0.7
  /
+ &ions
+ /
+ &cell
+    press_conv_thr = 0.5D0
+ /
 ATOMIC_SPECIES
  C  12.011  C.pz-rrkjus.UPF
 CELL_PARAMETERS {angstrom}
- 0.00000 1.76300 1.76300
- 1.76300 0.00000 1.76300
- 1.76300 1.76300 0.00000
+ 0.00000 1.76000 1.76000
+ 1.76000 0.00000 1.76000
+ 1.76000 1.76000 0.00000
 ATOMIC_POSITIONS {angstrom}
  C 0.00000 0.00000 0.00000
- C 0.88150 0.88150 0.88150
+ C 0.88000 0.88000 0.88000
 K_POINTS automatic
- 30 30 30  0 0 0
+ 20 20 20  0 0 0

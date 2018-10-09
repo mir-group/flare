@@ -138,7 +138,7 @@ class ChemicalEnvironment:
         return vecs, dists
 
     # return information about atoms inside cutoff region
-    def get_atoms_within_cutoff(self, atom):
+    def get_atoms_within_cutoff(self, atom, super_check=3):
 
         pos_atom = self.structure.positions[atom]  # position of central atom
         central_type = self.structure.species[atom]  # type of central atom
@@ -155,7 +155,9 @@ class ChemicalEnvironment:
             bond_curr = self.species_to_index(central_type, typ_curr)
 
             # get images within cutoff
-            vecs, dists = self.get_local_atom_images(self.structure, diff_curr)
+            vecs, dists = self.get_local_atom_images(self.structure,
+                                                     diff_curr,
+                                                     super_check)
 
             for vec, dist in zip(vecs, dists):
                 # ignore self interaction
