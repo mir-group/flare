@@ -1,4 +1,5 @@
 import numpy as np
+import math
 from math import exp
 from math import factorial
 from itertools import combinations
@@ -6,70 +7,121 @@ from itertools import permutations
 from numba import njit
 from struc import Structure
 from env import ChemicalEnvironment
+import gp
+import struc
+import env
 import time
 
 
 # -----------------------------------------------------------------------------
-#                   combinatorics helper functions
+#                        likelihood and gradients
 # -----------------------------------------------------------------------------
-# count combinations
-def get_comb_no(N, M):
-    if M > N:
-        return 0
-    return int(factorial(N) / (factorial(M) * factorial(N - M)))
+
+def get_likelihood(training_data, training_labels_np,
+                   kernel, bodies, hyps, sigma_n):
+
+    # initialize matrices
+    size = len(training_data)*3
+    k_mat = np.zeros([size, size])
+
+    ds = [1, 2, 3]
+
+    # calculate elements
+    for m_index in range(size):
+        x_1 = training_data[int(math.floor(m_index / 3))]
+        d_1 = ds[m_index % 3]
+
+        for n_index in range(m_index, size):
+            x_2 = training_data[int(math.floor(n_index / 3))]
+            d_2 = ds[n_index % 3]
+
+            # calculate kernel and gradient
+            cov = kernel(x_1, x_2, bodies, d_1, d_2, hyps)
+
+            # store kernel value
+            k_mat[m_index, n_index] = cov
+            k_mat[n_index, m_index] = cov
+
+    # matrix manipulation
+    ky_mat = k_mat + sigma_n ** 2 * np.eye(size)
+    ky_mat_inv = np.linalg.inv(ky_mat)
+    alpha = np.matmul(ky_mat_inv, training_labels_np)
+
+    # calculate likelihood
+    like = (-0.5*np.matmul(training_labels_np, alpha) -
+            0.5*math.log(np.linalg.det(ky_mat)) -
+            math.log(2 * np.pi) * k_mat.shape[1] / 2)
+
+    return like
 
 
-# count permutations
-def get_perm_no(N, M):
-    if M > N:
-        return 0
-    return int(factorial(N) / factorial(N - M))
+def get_likelihood_gradient(training_data, training_labels_np,
+                            kernel_grad, bodies, hyps, sigma_n):
 
+    number_of_hyps = len(hyps)
 
-# get combination array
-def get_comb_array(list_len, tuple_size):
-    lst = np.arange(0, list_len)
+    # initialize matrices
+    size = len(training_data)*3
+    k_mat = np.zeros([size, size])
 
-    no_combs = get_comb_no(list_len, tuple_size)
-    comb_store = np.zeros([no_combs, tuple_size])
+    # add a matrix to include noise variance:
+    hyp_mat = np.zeros([size, size, number_of_hyps+1])
 
-    for count, combo in enumerate(combinations(lst, tuple_size)):
-        comb_store[count, :] = combo
+    ds = [1, 2, 3]
 
-    # convert to ints
-    comb_store = comb_store.astype(int)
+    # calculate elements
+    for m_index in range(size):
+        x_1 = training_data[int(math.floor(m_index / 3))]
+        d_1 = ds[m_index % 3]
 
-    return comb_store
+        for n_index in range(m_index, size):
+            x_2 = training_data[int(math.floor(n_index / 3))]
+            d_2 = ds[n_index % 3]
 
+            # calculate kernel and gradient
+            cov = kernel_grad(x_1, x_2, bodies, d_1, d_2, hyps)
 
-# get permutation array
-def get_perm_array(list_len, tuple_size):
-    lst = np.arange(0, list_len)
+            # store kernel value
+            k_mat[m_index, n_index] = cov[0]
+            k_mat[n_index, m_index] = cov[0]
 
-    no_perms = get_perm_no(list_len, tuple_size)
-    perm_store = np.zeros([no_perms, tuple_size])
+            # store gradients (excluding noise variance)
+            for p_index in range(number_of_hyps):
+                hyp_mat[m_index, n_index, p_index] = cov[1][p_index]
+                hyp_mat[n_index, m_index, p_index] = cov[1][p_index]
 
-    for count, perm in enumerate(permutations(lst, tuple_size)): 
-        perm_store[count, :] = perm
+    # add gradient of noise variance
+    hyp_mat[:, :, number_of_hyps] = np.eye(size) * 2 * sigma_n
 
-    # convert to ints
-    perm_store = perm_store.astype(int)
+    # matrix manipulation
+    ky_mat = k_mat + sigma_n ** 2 * np.eye(size)
+    ky_mat_inv = np.linalg.inv(ky_mat)
+    alpha = np.matmul(ky_mat_inv, training_labels_np)
+    alpha_mat = np.matmul(alpha.reshape(alpha.shape[0], 1),
+                          alpha.reshape(1, alpha.shape[0]))
+    like_mat = alpha_mat - ky_mat_inv
 
-    return perm_store
+    # calculate likelihood gradient
+    like_grad = np.zeros(number_of_hyps + 1)
+    for n in range(number_of_hyps + 1):
+        like_grad[n] = 0.5 * np.trace(np.matmul(like_mat, hyp_mat[:, :, n]))
+
+    return like_grad
+
 
 # -----------------------------------------------------------------------------
-#                kernels acting on environment objects
+#               kernels and gradients acting on environment objects
 # -----------------------------------------------------------------------------
 
 
 # get n body single component kernel between two environments
-def n_body_sc(env1, env2, bodies, d1, d2, sig, ls):
+def n_body_sc(env1, env2, bodies, d1, d2, hyps):
     combs = get_comb_array(env1.bond_array.shape[0], bodies-1)
     perms = get_perm_array(env2.bond_array.shape[0], bodies-1)
 
     return n_body_jit_sc(env1.bond_array, env1.cross_bond_dists, combs,
                          env2.bond_array, env2.cross_bond_dists, perms,
-                         d1, d2, sig, ls)
+                         d1, d2, hyps)
 
 
 def n_body_sc_grad(env1, env2, bodies, d1, d2, hyps):
@@ -112,8 +164,10 @@ def two_body(env1, env2, d1, d2, sig, ls):
 @njit
 def n_body_jit_sc(bond_array_1, cross_bond_dists_1, combinations,
                   bond_array_2, cross_bond_dists_2, permutations,
-                  d1, d2, sig, ls):
+                  d1, d2, hyps):
 
+    sig = hyps[0]
+    ls = hyps[1]
     kern = 0
 
     for m in range(combinations.shape[0]):
@@ -234,6 +288,57 @@ def two_body_jit(bond_array_1, bond_types_1, bond_array_2,
                 kern += d * exp(-f * rr) * coord1 * coord2 * (e - rr)
 
     return kern
+
+
+# -----------------------------------------------------------------------------
+#                   combinatorics helper functions
+# -----------------------------------------------------------------------------
+
+
+# count combinations
+def get_comb_no(N, M):
+    if M > N:
+        return 0
+    return int(factorial(N) / (factorial(M) * factorial(N - M)))
+
+
+# count permutations
+def get_perm_no(N, M):
+    if M > N:
+        return 0
+    return int(factorial(N) / factorial(N - M))
+
+
+# get combination array
+def get_comb_array(list_len, tuple_size):
+    lst = np.arange(0, list_len)
+
+    no_combs = get_comb_no(list_len, tuple_size)
+    comb_store = np.zeros([no_combs, tuple_size])
+
+    for count, combo in enumerate(combinations(lst, tuple_size)):
+        comb_store[count, :] = combo
+
+    # convert to ints
+    comb_store = comb_store.astype(int)
+
+    return comb_store
+
+
+# get permutation array
+def get_perm_array(list_len, tuple_size):
+    lst = np.arange(0, list_len)
+
+    no_perms = get_perm_no(list_len, tuple_size)
+    perm_store = np.zeros([no_perms, tuple_size])
+
+    for count, perm in enumerate(permutations(lst, tuple_size)):
+        perm_store[count, :] = perm
+
+    # convert to ints
+    perm_store = perm_store.astype(int)
+
+    return perm_store
 
 
 # -----------------------------------------------------------------------------
@@ -376,12 +481,12 @@ if __name__ == '__main__':
 
     # test two body kernel
     two_body_old = two_body(env1, env2, d1, d2, sig, ls)
-    two_body_new = n_body_sc(env1, env2, 2, d1, d2, sig, ls)
+    two_body_new = n_body_sc(env1, env2, 2, d1, d2, hyps)
     assert(np.isclose(two_body_old, two_body_new))
 
     # test three body kernel
     three_body_old = three_body(env1, env2, d1, d2, sig, ls)
-    three_body_new = n_body_sc(env1, env2, 3, d1, d2, sig, ls)
+    three_body_new = n_body_sc(env1, env2, 3, d1, d2, hyps)
     assert(np.isclose(three_body_old, three_body_new))
 
     # test n body grad
@@ -393,11 +498,59 @@ if __name__ == '__main__':
     new_sig = sig + delta
     new_ls = ls + delta
 
-    sig_derv_brute = (n_body_sc(env1, env2, bodies, d1, d2, new_sig, ls) -
-                      n_body_sc(env1, env2, bodies, d1, d2, sig, ls)) / delta
+    sig_derv_brute = (n_body_sc(env1, env2, bodies, d1, d2,
+                      np.array([new_sig, ls])) -
+                      n_body_sc(env1, env2, bodies, d1, d2, hyps)) / delta
 
-    l_derv_brute = (n_body_sc(env1, env2, bodies, d1, d2, sig, new_ls) -
-                    n_body_sc(env1, env2, bodies, d1, d2, sig, ls)) / delta
+    l_derv_brute = (n_body_sc(env1, env2, bodies, d1, d2,
+                    np.array([sig, new_ls])) -
+                    n_body_sc(env1, env2, bodies, d1, d2, hyps)) / delta
 
     assert(np.isclose(kern_grad[0], sig_derv_brute, tol))
     assert(np.isclose(kern_grad[1], l_derv_brute, tol))
+
+    # check likelihood gradient
+    sigma_n = 3
+    forces = [np.array([1, 2, 3]), np.array([4, 5, 6])]
+
+    gp_test = gp.GaussianProcess('two_body')
+    hyp_gp = [sig, ls, sigma_n]
+    gp_test.update_db(test_structure_1, forces)
+    gp_like = gp_test.like_hyp(hyp_gp)
+
+    tb = gp_test.training_data
+    training_labels_np = gp_test.training_labels_np
+
+    bodies = 4
+
+    like_test = get_likelihood(tb, training_labels_np,
+                               n_body_sc, bodies, hyps, sigma_n)
+
+    grad_test = get_likelihood_gradient(tb, training_labels_np,
+                                        n_body_sc_grad, bodies, hyps, sigma_n)
+
+    # calculate likelihood gradient numerically
+    delta = 1e-7
+    new_sig = np.array([sig + delta, ls])
+    new_ls = np.array([sig, ls + delta])
+    new_n = sigma_n + delta
+
+    sig_grad_brute = (get_likelihood(tb, training_labels_np, n_body_sc,
+                                     bodies, new_sig, sigma_n) -
+                      get_likelihood(tb, training_labels_np, n_body_sc,
+                                     bodies, hyps, sigma_n)) / delta
+
+    ls_grad_brute = (get_likelihood(tb, training_labels_np, n_body_sc,
+                                    bodies, new_ls, sigma_n) -
+                     get_likelihood(tb, training_labels_np, n_body_sc,
+                                    bodies, hyps, sigma_n)) / delta
+
+    n_grad_brute = (get_likelihood(tb, training_labels_np, n_body_sc,
+                                   bodies, hyps, new_n) -
+                    get_likelihood(tb, training_labels_np, n_body_sc,
+                                   bodies, hyps, sigma_n)) / delta
+
+    tol = 1e-3
+    assert(np.isclose(grad_test[0], sig_grad_brute, tol))
+    assert(np.isclose(grad_test[1], ls_grad_brute, tol))
+    assert(np.isclose(grad_test[2], n_grad_brute, tol))
