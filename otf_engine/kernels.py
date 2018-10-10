@@ -72,6 +72,15 @@ def n_body_sc(env1, env2, bodies, d1, d2, sig, ls):
                          d1, d2, sig, ls)
 
 
+def n_body_sc_grad(env1, env2, bodies, d1, d2, hyps):
+    combs = get_comb_array(env1.bond_array.shape[0], bodies-1)
+    perms = get_perm_array(env2.bond_array.shape[0], bodies-1)
+
+    return n_body_sc_grad_array(env1.bond_array, env1.cross_bond_dists, combs,
+                                env2.bond_array, env2.cross_bond_dists, perms,
+                                d1, d2, hyps)
+
+
 # get three body kernel between two environments
 def three_body(env1, env2, d1, d2, sig, ls):
     return ChemicalEnvironment.three_body_jit(env1.bond_array,
@@ -227,6 +236,64 @@ def two_body_jit(bond_array_1, bond_types_1, bond_array_2,
     return kern
 
 
+# -----------------------------------------------------------------------------
+#                               kernel gradients
+# -----------------------------------------------------------------------------
+
+
+@njit
+def n_body_sc_grad_array(bond_array_1, cross_bond_dists_1, combinations,
+                         bond_array_2, cross_bond_dists_2, permutations,
+                         d1, d2, hyps):
+
+    sig = hyps[0]
+    ls = hyps[1]
+
+    kern = 0
+    sig_derv = 0
+    ls_derv = 0
+
+    for m in range(combinations.shape[0]):
+        comb = combinations[m]
+        for n in range(permutations.shape[0]):
+            perm = permutations[n]
+            A_cp = 0
+            B_cp_1 = 0
+            B_cp_2 = 0
+            C_cp = 0
+
+            for q, (c_ind, p_ind) in enumerate(zip(comb, perm)):
+                rdiff = bond_array_1[c_ind, 0] - bond_array_2[p_ind, 0]
+                coord1 = bond_array_1[c_ind, d1]
+                coord2 = bond_array_2[p_ind, d2]
+
+                A_cp += coord1 * coord2
+                B_cp_1 += rdiff * coord1
+                B_cp_2 += rdiff * coord2
+                C_cp += rdiff * rdiff
+
+                for c_ind_2, p_ind_2 in zip(comb[q+1:], perm[q+1:]):
+                    cb_diff = cross_bond_dists_1[c_ind, c_ind_2] - \
+                        cross_bond_dists_2[p_ind, p_ind_2]
+                    C_cp += cb_diff * cb_diff
+
+            B_cp = B_cp_1 * B_cp_2
+
+            kern += (sig*sig / (ls**4)) * (A_cp * ls * ls - B_cp) * \
+                exp(-C_cp / (2 * ls * ls))
+
+            sig_derv += (2*sig / (ls**4)) * (A_cp * ls * ls - B_cp) * \
+                exp(-C_cp / (2 * ls * ls))
+
+            ls_derv += ((sig*sig)/(ls**7)) * \
+                (-B_cp*C_cp+(4*B_cp+A_cp*C_cp)*ls*ls-2*A_cp*ls**4) * \
+                exp(-C_cp / (2 * ls * ls))
+
+    kern_grad = np.array([sig_derv, ls_derv])
+
+    return kern, kern_grad
+
+
 def two_body_grad_from_env(bond_array_1, bond_types_1, bond_array_2,
                            bond_types_2, d1, d2, hyps):
     sig = hyps[0]
@@ -305,6 +372,7 @@ if __name__ == '__main__':
     d2 = 2
     sig = 0.5
     ls = 0.2
+    hyps = np.array([sig, ls])
 
     # test two body kernel
     two_body_old = two_body(env1, env2, d1, d2, sig, ls)
@@ -315,3 +383,21 @@ if __name__ == '__main__':
     three_body_old = three_body(env1, env2, d1, d2, sig, ls)
     three_body_new = n_body_sc(env1, env2, 3, d1, d2, sig, ls)
     assert(np.isclose(three_body_old, three_body_new))
+
+    # test n body grad
+    bodies = 4
+    kern, kern_grad = n_body_sc_grad(env1, env2, bodies, d1, d2, hyps)
+
+    delta = 1e-8
+    tol = 1e-5
+    new_sig = sig + delta
+    new_ls = ls + delta
+
+    sig_derv_brute = (n_body_sc(env1, env2, bodies, d1, d2, new_sig, ls) -
+                      n_body_sc(env1, env2, bodies, d1, d2, sig, ls)) / delta
+
+    l_derv_brute = (n_body_sc(env1, env2, bodies, d1, d2, sig, new_ls) -
+                    n_body_sc(env1, env2, bodies, d1, d2, sig, ls)) / delta
+
+    assert(np.isclose(kern_grad[0], sig_derv_brute, tol))
+    assert(np.isclose(kern_grad[1], l_derv_brute, tol))
