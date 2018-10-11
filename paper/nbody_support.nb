@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[      5906,        212]
-NotebookOptionsPosition[      5111,        178]
-NotebookOutlinePosition[      5465,        194]
-CellTagsIndexPosition[      5422,        191]
+NotebookDataLength[      7980,        291]
+NotebookOptionsPosition[      6961,        249]
+NotebookOutlinePosition[      7316,        265]
+CellTagsIndexPosition[      7273,        262]
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -173,11 +173,82 @@ Cell[BoxData[
    SuperscriptBox["l", "7"]]}]], "Output",
  CellChangeTimes->{{3.747764340633934*^9, 3.7477643612926617`*^9}, 
    3.747764593718186*^9, 3.7477646752614927`*^9}]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"kD", "=", 
+  RowBox[{
+   FractionBox[
+    SuperscriptBox["sig", "2"], 
+    SuperscriptBox["l", "4"]], 
+   RowBox[{"(", 
+    RowBox[{
+     RowBox[{"A", " ", 
+      SuperscriptBox["l", "2"]}], "-", "B"}], ")"}], 
+   RowBox[{"Exp", "[", 
+    RowBox[{"-", 
+     FractionBox["C", 
+      RowBox[{"2", " ", 
+       SuperscriptBox["l", "2"]}]]}], "]"}]}]}]], "Input",
+ CellChangeTimes->{{3.748186108103298*^9, 3.748186109517302*^9}, {
+  3.7481861461589622`*^9, 3.748186189664585*^9}}],
+
+Cell[BoxData[
+ FractionBox[
+  RowBox[{
+   SuperscriptBox["\[ExponentialE]", 
+    RowBox[{"-", 
+     FractionBox["C", 
+      RowBox[{"2", " ", 
+       SuperscriptBox["l", "2"]}]]}]], " ", 
+   RowBox[{"(", 
+    RowBox[{
+     RowBox[{"-", "B"}], "+", 
+     RowBox[{"A", " ", 
+      SuperscriptBox["l", "2"]}]}], ")"}], " ", 
+   SuperscriptBox["sig", "2"]}], 
+  SuperscriptBox["l", "4"]]], "Output",
+ CellChangeTimes->{3.748186192930316*^9}]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"D", "[", 
+   RowBox[{"kD", ",", "l"}], "]"}], "//", "FullSimplify"}]], "Input",
+ CellChangeTimes->{{3.748186193871848*^9, 3.748186199805387*^9}}],
+
+Cell[BoxData[
+ FractionBox[
+  RowBox[{
+   SuperscriptBox["\[ExponentialE]", 
+    RowBox[{"-", 
+     FractionBox["C", 
+      RowBox[{"2", " ", 
+       SuperscriptBox["l", "2"]}]]}]], " ", 
+   RowBox[{"(", 
+    RowBox[{
+     RowBox[{
+      RowBox[{"-", "B"}], " ", "C"}], "+", 
+     RowBox[{
+      RowBox[{"(", 
+       RowBox[{
+        RowBox[{"4", " ", "B"}], "+", 
+        RowBox[{"A", " ", "C"}]}], ")"}], " ", 
+      SuperscriptBox["l", "2"]}], "-", 
+     RowBox[{"2", " ", "A", " ", 
+      SuperscriptBox["l", "4"]}]}], ")"}], " ", 
+   SuperscriptBox["sig", "2"]}], 
+  SuperscriptBox["l", "7"]]], "Output",
+ CellChangeTimes->{3.7481862001229763`*^9}]
 }, Open  ]]
 }, Open  ]]
 },
-WindowSize->{575, 755},
-WindowMargins->{{85, Automatic}, {Automatic, 0}},
+WindowSize->{895, 855},
+WindowMargins->{{Automatic, 253}, {Automatic, 0}},
 FrontEndVersion->"10.4 for Mac OS X x86 (32-bit, 64-bit Kernel) (April 11, \
 2016)",
 StyleDefinitions->"Default.nb"
@@ -210,8 +281,16 @@ Cell[2612, 93, 638, 21, 63, "Output"]
 }, Open  ]],
 Cell[3265, 117, 139, 1, 30, "Text"],
 Cell[CellGroupData[{
-Cell[3429, 122, 1038, 32, 85, "Input"],
+Cell[3429, 122, 1038, 32, 64, "Input"],
 Cell[4470, 156, 613, 18, 62, "Output"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[5120, 179, 500, 16, 51, "Input"],
+Cell[5623, 197, 437, 15, 63, "Output"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[6097, 217, 180, 4, 28, "Input"],
+Cell[6280, 223, 653, 22, 63, "Output"]
 }, Open  ]]
 }, Open  ]]
 }

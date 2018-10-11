@@ -205,6 +205,5 @@ class QEInput:
 
         os.system(qe_command)
 
-
 if __name__ == '__main__':
     pass
