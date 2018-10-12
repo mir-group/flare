@@ -124,6 +124,17 @@ class Structure(object):
 
         raise Exception("Position does not correspond to atom in structure")
 
+    def get_species_count(self):
+        """
+        Returns dicionary with keys:values of species:count.
+        :return:
+        """
+
+        spec_dict = {}
+        for element in set(self.species):
+            spec_dict[element] = self.species.count(element)
+        return spec_dict
+
     @staticmethod
     def calc_bond_list(unique_species):
         """Converts unique species to a list of bonds.

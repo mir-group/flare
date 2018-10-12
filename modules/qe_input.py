@@ -43,6 +43,8 @@ class BashInput:
             fin.write(self.bash_text)
 
 
+
+
 class QEInput:
     def __init__(self, input_file_name: str, output_file_name: str,
                  pw_loc: str, calculation: str,
@@ -204,6 +206,54 @@ class QEInput:
                                               self.output_file_name)
 
         os.system(qe_command)
+
+
+
+def create_structure(el: str, alat: float, size: int, perturb: bool=False,
+                     pass_relax: bool=False,
+                     pass_pos: bool= None):
+    """
+    Create bulk structure with vacancy, return cell, position, number of atoms
+
+    :param el:
+    :param alat:
+    :param size:
+    :param perturb:
+    :param pass_relax:
+    :param pass_pos:
+    :return:
+    """
+
+    # create bulk cell
+    unit_cell = crystal(el, [(0, 0, 0)], spacegroup=225, cellpar=[alat, alat, alat, 90, 90, 90])
+
+    # size of initial perturbation
+    pert_size = 0.1 * alat
+    print("Pert Size", pert_size)
+
+    # make supercell
+    multiplier = np.identity(3) * size
+    supercell = make_supercell(unit_cell, multiplier)
+
+    # remove atom
+    supercell.pop(supercell.get_number_of_atoms() // 2)
+
+    # get unpertubed positions
+    al_pos = np.asarray(supercell.positions)
+
+    if pass_relax:
+        al_pos = pass_pos
+
+    if perturb:
+        for atom in range(al_pos.shape[0]):
+            for coord in range(3):
+                al_pos[atom][coord] += np.random.uniform(-pert_size, pert_size)
+
+    cell = supercell.get_cell()
+    nat = supercell.get_number_of_atoms()
+
+    return cell, al_pos, nat
+
 
 
 if __name__ == '__main__':
