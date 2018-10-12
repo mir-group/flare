@@ -153,24 +153,18 @@ def n_body_sc_grad(env1, env2, bodies, d1, d2, hyps):
 
 # get three body kernel between two environments
 def three_body(env1, env2, d1, d2, sig, ls):
-    return ChemicalEnvironment.three_body_jit(env1.bond_array,
-                                              env1.bond_types,
-                                              env1.cross_bond_dists,
-                                              env1.cross_bond_types,
-                                              env2.bond_array,
-                                              env2.bond_types,
-                                              env2.cross_bond_dists,
-                                              env2.cross_bond_types,
-                                              d1, d2, sig, ls)
+    return three_body_jit(env1.bond_array, env1.bond_types,
+                          env1.cross_bond_dists, env1.cross_bond_types,
+                          env2.bond_array, env2.bond_types,
+                          env2.cross_bond_dists, env2.cross_bond_types,
+                          d1, d2, sig, ls)
 
 
 # get two body kernel between two environments
 def two_body(env1, env2, d1, d2, sig, ls):
-    return ChemicalEnvironment.two_body_jit(env1.bond_array,
-                                            env1.bond_types,
-                                            env2.bond_array,
-                                            env2.bond_types,
-                                            d1, d2, sig, ls)
+    return two_body_jit(env1.bond_array, env1.bond_types,
+                        env2.bond_array, env2.bond_types,
+                        d1, d2, sig, ls)
 
 
 # -----------------------------------------------------------------------------

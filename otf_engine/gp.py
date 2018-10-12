@@ -16,8 +16,8 @@ from scipy.linalg import solve_triangular
 from scipy.optimize import minimize
 from typing import List
 
-from env import ChemicalEnvironment, two_body, two_body_py, three_body,\
-    three_body_py
+from env import ChemicalEnvironment
+from kernels import two_body, three_body
 from struc import Structure
 
 
@@ -68,15 +68,8 @@ class GaussianProcess:
         if self.kernel_type == 'two_body':
             return two_body(env1, env2, d1, d2, sig, length_scale)
 
-        elif self.kernel_type == 'two_body_py':
-            return two_body_py(env1, env2, d1, d2, sig, length_scale)
-
         elif self.kernel_type == 'three_body':
             return three_body(env1, env2, d1, d2, sig, length_scale)
-
-        elif self.kernel_type == 'three_body_py':
-            return three_body_py(env1, env2, d1, d2, sig, length_scale)
-
         else:
             raise ValueError('{} is not a valid kernel'.format(self.kernel))
 

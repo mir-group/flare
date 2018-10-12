@@ -200,8 +200,8 @@ class QEInput:
     def run_espresso(self):
 
         qe_command = 'mpirun {0} < {1} > {2}'.format(self.pw_loc,
-                                                     self.input_file_name,
-                                                     self.output_file_name)
+                                                        self.input_file_name,
+                                                        self.output_file_name)
 
         os.system(qe_command)
 
