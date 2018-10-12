@@ -32,7 +32,6 @@ class Structure(object):
         self.species = species
         self.nat = len(species)
 
-
         # get unique species
         unique_species = []
         for spec in species:

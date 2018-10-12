@@ -1,6 +1,18 @@
 import numpy as np
 
 
+# get energy from scf run
+def parse_scf_energy(outfile):
+    with open(outfile, 'r') as outf:
+        lines = outf.readlines()
+
+    for line in lines:
+        if '!' in line:
+            energy = float(line.split()[-2])
+
+    return energy
+
+
 def parse_md_output(outfile):
 
     steps = {}

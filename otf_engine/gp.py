@@ -138,7 +138,7 @@ class GaussianProcess:
     def opt_hyper(self):
         """
         Optimize hyperparameters of GP by minimizing minus log likelihood. """
-        
+
         # initial guess
         self.sigma_f = 1
         self.length_scale = 1
@@ -155,7 +155,6 @@ class GaussianProcess:
         self.sigma_f = res.x[0]
         self.length_scale = res.x[1]
         self.sigma_n = res.x[2]
-
 
     def predict(self, x_t: ChemicalEnvironment, d: int) -> [float, float]:
         """ Make GP prediction with SE kernel.

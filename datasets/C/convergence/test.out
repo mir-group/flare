@@ -1,0 +1,370 @@
+converged values:
+
+
+nk: 40
+ecutwfc: 150
+ecutrho: 1200
+energy: -311.0082190798643 eV
+difference from converged value: 0.0 eV
+
+
+
+
+nk: 5
+ecutwfc: 40
+ecutrho: 160
+energy: -310.96268312140637 eV
+difference from converged value: 0.045535958457919065 eV
+
+
+
+
+nk: 5
+ecutwfc: 40
+ecutrho: 320
+energy: -310.9624608043 eV
+difference from converged value: 0.04575827556429402 eV
+
+
+
+
+nk: 5
+ecutwfc: 50
+ecutrho: 200
+energy: -310.9701175469435 eV
+difference from converged value: 0.038101532920761426 eV
+
+
+
+
+nk: 5
+ecutwfc: 50
+ecutrho: 400
+energy: -310.9700454367438 eV
+difference from converged value: 0.03817364312048332 eV
+
+
+
+
+nk: 5
+ecutwfc: 60
+ecutrho: 240
+energy: -310.97327420495185 eV
+difference from converged value: 0.034944874912474534 eV
+
+
+
+
+nk: 5
+ecutwfc: 60
+ecutrho: 480
+energy: -310.9732014144672 eV
+difference from converged value: 0.03501766539710767 eV
+
+
+
+
+nk: 5
+ecutwfc: 70
+ecutrho: 280
+energy: -310.97356523083346 eV
+difference from converged value: 0.03465384903083724 eV
+
+
+
+
+nk: 5
+ecutwfc: 70
+ecutrho: 560
+energy: -310.97345679341987 eV
+difference from converged value: 0.03476228644445225 eV
+
+
+
+
+nk: 5
+ecutwfc: 80
+ecutrho: 320
+energy: -310.97390768625377 eV
+difference from converged value: 0.03431139361050922 eV
+
+
+
+
+nk: 5
+ecutwfc: 80
+ecutrho: 640
+energy: -310.9739108155643 eV
+difference from converged value: 0.03430826429998517 eV
+
+
+
+
+nk: 10
+ecutwfc: 40
+ecutrho: 160
+energy: -310.99616592800464 eV
+difference from converged value: 0.012053151859638674 eV
+
+
+
+
+nk: 10
+ecutwfc: 40
+ecutrho: 320
+energy: -310.99594483541114 eV
+difference from converged value: 0.012274244453183052 eV
+
+
+
+
+nk: 10
+ecutwfc: 50
+ecutrho: 200
+energy: -311.0035645705559 eV
+difference from converged value: 0.004654509308358146 eV
+
+
+
+
+nk: 10
+ecutwfc: 50
+ecutrho: 400
+energy: -311.00349286852713 eV
+difference from converged value: 0.004726211337152622 eV
+
+
+
+
+nk: 10
+ecutwfc: 60
+ecutrho: 240
+energy: -311.0068043593794 eV
+difference from converged value: 0.0014147204849225407 eV
+
+
+
+
+nk: 10
+ecutwfc: 60
+ecutrho: 480
+energy: -311.00673224917966 eV
+difference from converged value: 0.0014868306846444288 eV
+
+
+
+
+nk: 10
+ecutwfc: 70
+ecutrho: 280
+energy: -311.0071179707198 eV
+difference from converged value: 0.0011011091445122763 eV
+
+
+
+
+nk: 10
+ecutwfc: 70
+ecutrho: 560
+energy: -311.0069861315055 eV
+difference from converged value: 0.0012329483587550768 eV
+
+
+
+
+nk: 10
+ecutwfc: 80
+ecutrho: 320
+energy: -311.0074337589719 eV
+difference from converged value: 0.0007853208923763609 eV
+
+
+
+
+nk: 10
+ecutwfc: 80
+ecutrho: 640
+energy: -311.00744858918284 eV
+difference from converged value: 0.0007704906814659015 eV
+
+
+
+
+nk: 20
+ecutwfc: 40
+ecutrho: 160
+energy: -310.9962711000507 eV
+difference from converged value: 0.01194797981358798 eV
+
+
+
+
+nk: 20
+ecutwfc: 40
+ecutrho: 320
+energy: -310.99605000745714 eV
+difference from converged value: 0.012169072407132359 eV
+
+
+
+
+nk: 20
+ecutwfc: 50
+ecutrho: 200
+energy: -311.0036613070692 eV
+difference from converged value: 0.004557772795129549 eV
+
+
+
+
+nk: 20
+ecutwfc: 50
+ecutrho: 400
+energy: -311.00358960504036 eV
+difference from converged value: 0.004629474823924025 eV
+
+
+
+
+nk: 20
+ecutwfc: 60
+ecutrho: 240
+energy: -311.00687973494666 eV
+difference from converged value: 0.0013393449176363444 eV
+
+
+
+
+nk: 20
+ecutwfc: 60
+ecutrho: 480
+energy: -311.00680762474695 eV
+difference from converged value: 0.0014114551173582326 eV
+
+
+
+
+nk: 20
+ecutwfc: 70
+ecutrho: 280
+energy: -311.0071974279965 eV
+difference from converged value: 0.001021651867806948 eV
+
+
+
+
+nk: 20
+ecutwfc: 70
+ecutrho: 560
+energy: -311.00706558878227 eV
+difference from converged value: 0.0011534910820497487 eV
+
+
+
+
+nk: 20
+ecutwfc: 80
+ecutrho: 320
+energy: -311.0075128080777 eV
+difference from converged value: 0.0007062717865984448 eV
+
+
+
+
+nk: 20
+ecutwfc: 80
+ecutrho: 640
+energy: -311.00752763828854 eV
+difference from converged value: 0.0006914415757363225 eV
+
+
+
+
+nk: 30
+ecutwfc: 40
+ecutrho: 160
+energy: -310.9962783110707 eV
+difference from converged value: 0.011940768793596457 eV
+
+
+
+
+nk: 30
+ecutwfc: 40
+ecutrho: 320
+energy: -310.9960572184772 eV
+difference from converged value: 0.012161861387140835 eV
+
+
+
+
+nk: 30
+ecutwfc: 50
+ecutrho: 200
+energy: -311.0036595383284 eV
+difference from converged value: 0.0045595415358794505 eV
+
+
+
+
+nk: 30
+ecutwfc: 50
+ecutrho: 400
+energy: -311.00358783629963 eV
+difference from converged value: 0.004631243564673927 eV
+
+
+
+
+nk: 30
+ecutwfc: 60
+ecutrho: 240
+energy: -311.0068794628327 eV
+difference from converged value: 0.0013396170315718402 eV
+
+
+
+
+nk: 30
+ecutwfc: 60
+ecutrho: 480
+energy: -311.00680735263296 eV
+difference from converged value: 0.0014117272313420655 eV
+
+
+
+
+nk: 30
+ecutwfc: 70
+ecutrho: 280
+energy: -311.00719770011045 eV
+difference from converged value: 0.0010213797538231153 eV
+
+
+
+
+nk: 30
+ecutwfc: 70
+ecutrho: 560
+energy: -311.00706572483926 eV
+difference from converged value: 0.0011533550250578323 eV
+
+
+
+
+nk: 30
+ecutwfc: 80
+ecutrho: 320
+energy: -311.0075128080777 eV
+difference from converged value: 0.0007062717865984448 eV
+
+
+
+
+nk: 30
+ecutwfc: 80
+ecutrho: 640
+energy: -311.00752750223154 eV
+difference from converged value: 0.0006915776327282389 eV
+
+
