@@ -13,10 +13,10 @@ import numpy as np
 import sys
 sys.path.append('../otf_engine')
 
-from punchout import is_within_d_box, punchout
+from punchout import is_within_d_box, punchout,punchout_structure
 from test_GaussianProcess import get_random_structure
 from struc import Structure
-
+from env import ChemicalEnvironment
 # -----------------------
 # Test helper methods
 # -----------------------
@@ -75,7 +75,8 @@ def test_punchout_random_struc():
     print(struct)
     target_atom = np.random.randint(0, noa)
     d = np.random.uniform(1, 8)
-    punchstruc = punchout(struct, target_atom, d=d)
+    punchstruc = punchout_structure(structure=struct, atom=target_atom, d=d)
+
     assert isinstance(punchstruc, Structure)
 
     yield (punchstruc, d)
@@ -104,14 +105,14 @@ def test_punchout_edges_1():
     struc = Structure(cell, species, positions, cutoff=1,
                         mass_dict={'A': 1})
 
-    p1 = punchout(structure=struc, atom=0, d=.25,center=False)
+    p1 = punchout_structure(structure=struc, atom=0, d=.25, center=False)
     assert len(p1.positions) == 1
     assert np.equal(p1.positions, .5 * np.ones(3)).all()
 
-    p2 = punchout(structure=struc, atom=0, d=2.,center=False)
+    p2 = punchout_structure(structure=struc, atom=0, d=2., center=False)
     assert len(p2.positions) == 27
 
-    p3 = punchout(structure=struc, atom=0, d=1.0,center=True)
+    p3 = punchout_structure(structure=struc, atom=0, d=1.0, center=True)
     assert np.equal(p3.positions,np.zeros(3)).all()
 
 def test_punchout_edges_2():
@@ -120,17 +121,16 @@ def test_punchout_edges_2():
     positions = [np.zeros(3), .25 * np.ones(3)]
     struc = Structure(cell, species, positions, cutoff=1,
                       mass_dict={'A': 1})
-    p1 = punchout(structure=struc, atom=0, d=.01,center=False)
+    p1 = punchout_structure(structure=struc, atom=0, d=.01,center=False)
     print(p1)
     assert len(p1.positions) == 1
     assert np.equal(p1.positions, np.zeros(3)).all()
 
-    p2 = punchout(structure=struc, atom=0, d=.5,center=False)
+    p2 = punchout_structure(structure=struc, atom=0, d=.5,center=False)
     assert np.equal(p2.positions, positions).all()
 
-    p3 = punchout(structure=struc, atom=1, d=1.,center=False)
+    p3 = punchout_structure(structure=struc, atom=1, d=1.,center=False)
     assert np.equal(p3.positions, positions).all()
-
 
 def test_punchout_edges_3():
     species = ['A'] * 2
@@ -138,18 +138,70 @@ def test_punchout_edges_3():
     positions = [np.zeros(3), .9 * np.ones(3)]
     struc = Structure(cell, species, positions, cutoff=1,
                       mass_dict={'A': 1})
-    p1 = punchout(structure=struc, atom=0, d=.01,center=False)
+    p1 = punchout_structure(structure=struc, atom=0, d=.01,center=False)
     assert len(p1.positions) == 1
     assert np.equal(p1.positions, np.zeros(3)).all()
 
-    p2 = punchout(structure=struc, atom=0, d=.5,center=False)
+    p2 = punchout_structure(structure=struc, atom=0, d=.5,center=False)
     assert np.isclose(p2.positions, [np.zeros(3), -.1 * np.ones(3)]).all()
 
-    p3 = punchout(structure=struc, atom=1, d=.5,center=True)
+    p3 = punchout_structure(structure=struc, atom=1, d=.5,center=True)
     assert np.isclose(p3.positions, [.1 * np.ones(3),np.zeros(3) ]).all()
 
-    p4 = punchout(structure=struc, atom=1, d=1.,center=False)
+    p4 = punchout_structure(structure=struc, atom=1, d=1.,center=False)
     assert np.isclose(p4.positions, [np.ones(3), .9*np.ones(3)]).all()
+
+
+
+def test_punchout_too_close1():
+
+    cell = 10*np.eye(3)
+    positions = [ [.01,0,0], [1,0,0], [1.99,0,0] ]
+    species = ['A'] * len(positions)
+
+    struc = Structure(cell, species, positions, cutoff=1,
+                      mass_dict={'A':1})
+
+    badstruc  = punchout_structure(struc,atom=1,d=2.0,center=False)
+    for i in [0,2]:
+        bond_array, _, _, _, _ = \
+                    ChemicalEnvironment.get_atoms_within_cutoff(badstruc,
+                                                                atom=i)
+        distances =[array[0] for array in bond_array]
+        assert np.min(distances) < .25
+
+
+    newstruc = punchout(struc, atom = 1, d = 2.0, check_too_close=.25,
+                        center=False)
+    for i in range(newstruc.nat):
+        bond_array, _, _, _, _ = \
+                    ChemicalEnvironment.get_atoms_within_cutoff(newstruc, atom=i)
+        distances =[array[0] for array in bond_array]
+        assert np.min(distances) > .25
+
+
+
+def test_punchout_stoichiometry():
+
+
+    cell = 10 * np.eye(3)
+    positions = [[.01, 0, 0], [1, 0, 0], [1.99, 0, 0], [2.4,0,0]]
+    species = ['B','A','A','B']
+
+    struc = Structure(cell, species, positions, cutoff=1,
+                      mass_dict={'A': 1,'B':1})
+
+    badstruc = punchout_structure(struc, atom=1, d=2.0, center=False)
+
+
+    assert badstruc.get_species_count()["A"] == 2
+    assert badstruc.get_species_count()['B'] == 1
+
+    newstruc = punchout(struc, atom=1, d=2.0, check_stoichiometry=['A','B'],
+                        center=False)
+
+    assert newstruc.get_species_count()["A"] == 2
+    assert newstruc.get_species_count()['B'] == 2
 
 
 

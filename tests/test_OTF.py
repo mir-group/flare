@@ -164,6 +164,18 @@ def test_otf_1_2():
     otf.run()
     cleanup_otf_run()
 
+def test_otf_1_3():
+    """
+    Test that an otf run will succeed in punchout mode
+    :return:
+    """
+    os.system('cp ./test_files/qe_input_1.in ./pwscf.in')
+
+    otf = OTF(qe_input='./pwscf.in', dt=.0001, number_of_steps=5,
+              kernel='two_body', punchout_d=5, cutoff=3)
+    otf.run()
+    cleanup_otf_run()
+
 def test_otf_2_1():
     """
     Tests a slightly more complex system with artificially low cutoff energy
@@ -178,4 +190,11 @@ def test_otf_2_1():
            cutoff=10)
     otf.run()
     cleanup_otf_run()
+    os.system('rm Al.wfc')
+    os.system('rm -rf Al.save')
+
+
+
+
+
 

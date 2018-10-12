@@ -1,1 +1,4 @@
 __pycache__/
+pwscf.save/
+.cache/
+.pytest_cache/
