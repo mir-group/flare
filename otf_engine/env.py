@@ -56,7 +56,7 @@ class ChemicalEnvironment:
         self.structure = structure
 
         bond_array, bond_types, bond_positions, etyps, ctyp = \
-            self.get_atoms_within_cutoff(atom)
+            self.get_atoms_within_cutoff(self.structure, atom)
 
         self.bond_array = bond_array
         self.bond_types = bond_types
@@ -88,7 +88,8 @@ class ChemicalEnvironment:
     def is_triplet(species1, species2, species3, triplet):
         return [species1, species2, species3] == triplet
 
-    def species_to_index(self, species1, species2):
+    @staticmethod
+    def species_to_index(structure, species1, species2):
         """Given two species, get the corresponding bond index.
 
         :param species1: first species
@@ -101,7 +102,7 @@ class ChemicalEnvironment:
         :rtype: integer
         """
 
-        for bond_index, bond in enumerate(self.structure.bond_list):
+        for bond_index, bond in enumerate(structure.bond_list):
             if ChemicalEnvironment.is_bond(species1, species2, bond):
                 return bond_index
 
@@ -138,10 +139,12 @@ class ChemicalEnvironment:
         return vecs, dists
 
     # return information about atoms inside cutoff region
-    def get_atoms_within_cutoff(self, atom, super_check=3):
+    @staticmethod
+    def get_atoms_within_cutoff(structure: Structure, atom: int,
+                                super_check: int = 3):
 
-        pos_atom = self.structure.positions[atom]  # position of central atom
-        central_type = self.structure.species[atom]  # type of central atom
+        pos_atom = structure.positions[atom]  # position of central atom
+        central_type = structure.species[atom]  # type of central atom
 
         bond_array = []
         bond_types = []
@@ -149,13 +152,14 @@ class ChemicalEnvironment:
         environment_types = []
 
         # find all atoms and images in the neighborhood
-        for n in range(len(self.structure.positions)):
-            diff_curr = self.structure.positions[n] - pos_atom
-            typ_curr = self.structure.species[n]
-            bond_curr = self.species_to_index(central_type, typ_curr)
+        for n in range(len(structure.positions)):
+            diff_curr = structure.positions[n] - pos_atom
+            typ_curr = structure.species[n]
+            bond_curr = ChemicalEnvironment.species_to_index(
+                structure, central_type, typ_curr)
 
             # get images within cutoff
-            vecs, dists = self.get_local_atom_images(self.structure,
+            vecs, dists = ChemicalEnvironment.get_local_atom_images(structure,
                                                      diff_curr,
                                                      super_check)
 
