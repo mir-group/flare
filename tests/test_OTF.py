@@ -137,14 +137,45 @@ def test_update_1(test_otf_engine_1):
 #                   test  otf runs
 # ------------------------------------------------------
 # Under development
-"""
-def test_otf_1():
-     os.system('cp ./test_files/qe_input_1.in ./pwscf.in')
 
-     otf = OTF('./pwscf.in', .1, 2, kernel='two_body',
-              cutoff=10)
-     otf.run_espresso = fake_espresso
-     otf.gp = Fake_GP(kernel='')
-     otf.run()
-     cleanup_otf_run()
-"""
+def test_otf_1_1():
+    """
+    Test that an OTF run can complete after two steps
+    :return:
+    """
+    os.system('cp ./test_files/qe_input_1.in ./pwscf.in')
+
+    otf = OTF(qe_input='./pwscf.in', dt= .0001, number_of_steps= 2,
+           kernel='two_body',
+          cutoff=10)
+    otf.run()
+    cleanup_otf_run()
+
+def test_otf_1_2():
+    """
+    Test that an otf run can survive going for more steps
+    :return:
+    """
+    os.system('cp ./test_files/qe_input_1.in ./pwscf.in')
+
+    otf = OTF(qe_input='./pwscf.in', dt=.0001, number_of_steps=50,
+              kernel='two_body',
+              cutoff=5)
+    otf.run()
+    cleanup_otf_run()
+
+def test_otf_2_1():
+    """
+    Tests a slightly more complex system with artificially low cutoff energy
+    and k-point values; largely used to test the OTF workflow for
+    hyperparameter optimization
+    :return:
+    """
+    os.system('cp ./test_files/qe_input_2.in ./pwscf.in')
+
+    otf = OTF(qe_input='./pwscf.in', dt=.001, number_of_steps=5,
+           kernel='two_body',
+           cutoff=10)
+    otf.run()
+    cleanup_otf_run()
+
