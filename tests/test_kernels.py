@@ -165,14 +165,12 @@ def test_n_body_grad(env1, env2):
 def test_likelihood_gradient(env1, env2, test_structure_1, test_structure_2):
     sig = 0.5
     ls = 0.2
-    hyps = np.array([sig, ls])
-
-    # check likelihood gradient
     sigma_n = 3
+    hyps = np.array([sig, ls, sigma_n])
     forces = [np.array([1, 2, 3]), np.array([4, 5, 6])]
 
+    # check likelihood gradient
     gp_test = gp.GaussianProcess('two_body')
-    hyp_gp = [sig, ls, sigma_n]
     gp_test.update_db(test_structure_1, forces)
 
     tb = gp_test.training_data
@@ -180,36 +178,37 @@ def test_likelihood_gradient(env1, env2, test_structure_1, test_structure_2):
 
     bodies = 4
 
-    grad_test = kernels.get_likelihood_gradient(tb, training_labels_np,
-                                                kernels.n_body_sc_grad,
-                                                bodies, hyps, sigma_n)
+    grad_test = kernels.get_likelihood_and_gradients(hyps, tb,
+                                                     training_labels_np,
+                                                     kernels.n_body_sc_grad,
+                                                     bodies)[1]
 
     # calculate likelihood gradient numerically
     delta = 1e-7
-    new_sig = np.array([sig + delta, ls])
-    new_ls = np.array([sig, ls + delta])
-    new_n = sigma_n + delta
+    new_sig = np.array([sig + delta, ls, sigma_n])
+    new_ls = np.array([sig, ls + delta, sigma_n])
+    new_n = np.array([sig, ls, sigma_n + delta])
 
-    sig_grad_brute = (kernels.get_likelihood(tb, training_labels_np,
+    sig_grad_brute = (kernels.get_likelihood(new_sig, tb, training_labels_np,
                                              kernels.n_body_sc,
-                                             bodies, new_sig, sigma_n) -
-                      kernels.get_likelihood(tb, training_labels_np,
+                                             bodies) -
+                      kernels.get_likelihood(hyps, tb, training_labels_np,
                                              kernels.n_body_sc,
-                                             bodies, hyps, sigma_n)) / delta
+                                             bodies)) / delta
 
-    ls_grad_brute = (kernels.get_likelihood(tb, training_labels_np,
+    ls_grad_brute = (kernels.get_likelihood(new_ls, tb, training_labels_np,
                                             kernels.n_body_sc,
-                                            bodies, new_ls, sigma_n) -
-                     kernels.get_likelihood(tb, training_labels_np,
+                                            bodies) -
+                     kernels.get_likelihood(hyps, tb, training_labels_np,
                                             kernels.n_body_sc,
-                                            bodies, hyps, sigma_n)) / delta
+                                            bodies)) / delta
 
-    n_grad_brute = (kernels.get_likelihood(tb, training_labels_np,
+    n_grad_brute = (kernels.get_likelihood(new_n, tb, training_labels_np,
                                            kernels.n_body_sc,
-                                           bodies, hyps, new_n) -
-                    kernels.get_likelihood(tb, training_labels_np,
+                                           bodies) -
+                    kernels.get_likelihood(hyps, tb, training_labels_np,
                                            kernels.n_body_sc,
-                                           bodies, hyps, sigma_n)) / delta
+                                           bodies)) / delta
 
     tol = 1e-3
     assert(np.isclose(grad_test[0], sig_grad_brute, tol))

@@ -75,8 +75,8 @@ def get_likelihood_and_gradients(hyps, training_data, training_labels_np,
     for n in range(number_of_hyps):
         like_grad[n] = 0.5 * np.trace(np.matmul(like_mat, hyp_mat[:, :, n]))
 
-    print(hyps)
-    print(-like)
+    # print(hyps)
+    # print(-like)
     return -like, -like_grad
 
 
