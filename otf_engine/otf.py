@@ -21,7 +21,8 @@ from qe_util import run_espresso, parse_qe_input
 
 class OTF(object):
     def __init__(self, qe_input: str, dt: float, number_of_steps: int,
-                 kernel: str, cutoff: float, punchout_d: float=None,
+                 kernel: str, bodies: int, cutoff: float,
+                 punchout_d: float=None,
                  prev_pos_init: List[np.ndarray]=None):
         """
         On-the-fly learning engine, containing methods to run OTF calculation
@@ -38,7 +39,7 @@ class OTF(object):
         self.qe_input = qe_input
         self.dt = dt
         self.Nsteps = number_of_steps
-        self.gp = GaussianProcess(kernel)
+        self.gp = GaussianProcess(kernel, bodies)
         self.cutoff = cutoff
         self.punchout_d = punchout_d
 

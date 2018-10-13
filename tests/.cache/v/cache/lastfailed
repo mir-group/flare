@@ -2,11 +2,16 @@
   "test_ChemicalEnvironment.py::test_two_body_kernels": true,
   "test_GaussianProcess.py::test_compare_like_hyp": true,
   "test_GaussianProcess.py::test_get_kernel_vector_py": true,
+  "test_GaussianProcess.py::test_get_likelihood": true,
   "test_GaussianProcess.py::test_get_likelihood_py": true,
+  "test_GaussianProcess.py::test_like_hyp": true,
   "test_GaussianProcess.py::test_like_hyp_py": true,
+  "test_GaussianProcess.py::test_minus_like_hyp": true,
   "test_GaussianProcess.py::test_minus_like_hyp_py": true,
   "test_GaussianProcess.py::test_predict_py": true,
+  "test_GaussianProcess.py::test_set_alpha": true,
   "test_GaussianProcess.py::test_set_alpha_py": true,
+  "test_GaussianProcess.py::test_set_kernel": true,
   "test_GaussianProcess.py::test_set_kernel_py": true,
   "test_kernels.py::test_haha": true
 }

@@ -93,7 +93,8 @@ def test_params_1():
     params = {'qe_input': './test_files/qe_input_1.in',
               'dt': .01,
               'num_steps': 10,
-              'kernel': 'two_body',
+              'kernel': 'n_body_sc',
+              'bodies': 2,
               'cutoff': 5.0}
     yield params
 
@@ -104,6 +105,7 @@ def test_otf_engine_1(test_params_1):
                  dt=test_params_1['dt'],
                  number_of_steps=test_params_1['num_steps'],
                  kernel=test_params_1['kernel'],
+                 bodies=test_params_1['bodies'],
                  cutoff=test_params_1['cutoff'])
 
     yield engine

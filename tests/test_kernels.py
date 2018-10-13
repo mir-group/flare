@@ -170,7 +170,7 @@ def test_likelihood_gradient(env1, env2, test_structure_1, test_structure_2):
     forces = [np.array([1, 2, 3]), np.array([4, 5, 6])]
 
     # check likelihood gradient
-    gp_test = gp.GaussianProcess('two_body')
+    gp_test = gp.GaussianProcess('n_body_sc', 2)
     gp_test.update_db(test_structure_1, forces)
 
     tb = gp_test.training_data
