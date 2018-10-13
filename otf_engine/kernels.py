@@ -76,57 +76,7 @@ def get_likelihood_and_gradients(hyps, training_data, training_labels_np,
     for n in range(number_of_hyps):
         like_grad[n] = 0.5 * np.trace(np.matmul(like_mat, hyp_mat[:, :, n]))
 
-    print(hyps)
-    print(like_grad)
-    print(like)
     return -like, -like_grad
-
-
-def get_likelihood(hyps, training_data, training_labels_np,
-                   kernel, bodies):
-
-    # assume sigma_n is the final hyperparameter
-    number_of_hyps = len(hyps)
-    sigma_n = hyps[number_of_hyps-1]
-    kern_hyps = hyps[0:(number_of_hyps - 1)]
-
-    # initialize matrices
-    size = len(training_data)*3
-    k_mat = np.zeros([size, size])
-    hyp_mat = np.zeros([size, size, number_of_hyps])
-
-    ds = [1, 2, 3]
-
-    # calculate elements
-    for m_index in range(size):
-        x_1 = training_data[int(math.floor(m_index / 3))]
-        d_1 = ds[m_index % 3]
-
-        for n_index in range(m_index, size):
-            x_2 = training_data[int(math.floor(n_index / 3))]
-            d_2 = ds[n_index % 3]
-
-            # calculate kernel and gradient
-            cov = kernel(x_1, x_2, bodies, d_1, d_2, kern_hyps)
-
-            # store kernel value
-            k_mat[m_index, n_index] = cov
-            k_mat[n_index, m_index] = cov
-
-    # add gradient of noise variance
-    hyp_mat[:, :, number_of_hyps-1] = np.eye(size) * 2 * sigma_n
-
-    # matrix manipulation
-    ky_mat = k_mat + sigma_n ** 2 * np.eye(size)
-    ky_mat_inv = np.linalg.inv(ky_mat)
-    alpha = np.matmul(ky_mat_inv, training_labels_np)
-
-    # calculate likelihood
-    like = (-0.5*np.matmul(training_labels_np, alpha) -
-            0.5*math.log(np.linalg.det(ky_mat)) -
-            math.log(2 * np.pi) * k_mat.shape[1] / 2)
-
-    return -like
 
 
 def get_K_L_alpha(hyps, training_data, training_labels_np,

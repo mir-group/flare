@@ -131,12 +131,7 @@ class OTF(object):
         self.gp.update_db(self.train_structure, forces)
         self.gp.train()
         self.write_to_output('New GP Hyperparameters:\n' +
-                             'Signal std: \t' +
-                             str(self.gp.sigma_f) + '\n' +
-                             'Length scale: \t\t' +
-                             str(self.gp.length_scale) + '\n' +
-                             'Noise std: \t' + str(self.gp.sigma_n) +
-                             '\n'
+                             str(self.gp.hyps)
                              )
 
     def update_positions(self):
@@ -154,7 +149,7 @@ class OTF(object):
             forces = self.structure.forces[i]
 
             self.structure.positions[i] = 2 * pos - pre_pos + dtdt * forces / \
-                                          mass
+                mass
 
             self.structure.prev_positions[i] = np.copy(temp_pos)
 
@@ -275,7 +270,7 @@ if __name__ == '__main__':
 
     os.system('cp qe_input_1.in pwscf.in')
 
-    otf = OTF('pwscf.in', .0001, 100, kernel='two_body',
+    otf = OTF('pwscf.in', .0001, 100, kernel='n_body_sc', bodies=2,
               cutoff=10, punchout_d=None)
     otf.run()
     # parse_output('otf_run.out')
