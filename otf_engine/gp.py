@@ -102,7 +102,7 @@ class GaussianProcess:
                        options={'disp': False, 'gtol': 1e-4, 'maxiter': 1000})
 
         self.hyps = res.x
-        self.set_K_L_alpha()
+        self.set_L_alpha()
 
     def predict(self, x_t: ChemicalEnvironment, d: int) -> [float, float]:
         """ Make GP prediction with SE kernel.
@@ -213,7 +213,7 @@ class GaussianProcess:
 
         return -like, -like_grad
 
-    def set_K_L_alpha(self):
+    def set_L_alpha(self):
         # assume sigma_n is the final hyperparameter
         number_of_hyps = len(self.hyps)
         sigma_n = self.hyps[number_of_hyps-1]
