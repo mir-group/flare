@@ -148,8 +148,8 @@ def test_otf_1_1():
     os.system('cp ./test_files/qe_input_1.in ./pwscf.in')
 
     otf = OTF(qe_input='./pwscf.in', dt= .0001, number_of_steps= 2,
-           kernel='two_body',
-          cutoff=10)
+           bodies=2,kernel='n_body_sc',
+          cutoff=4)
     otf.run()
     cleanup_otf_run()
 
@@ -161,7 +161,7 @@ def test_otf_1_2():
     os.system('cp ./test_files/qe_input_1.in ./pwscf.in')
 
     otf = OTF(qe_input='./pwscf.in', dt=.0001, number_of_steps=50,
-              kernel='two_body',
+              bodies=2,kernel='n_body_sc',
               cutoff=5)
     otf.run()
     cleanup_otf_run()
@@ -174,7 +174,7 @@ def test_otf_1_3():
     os.system('cp ./test_files/qe_input_1.in ./pwscf.in')
 
     otf = OTF(qe_input='./pwscf.in', dt=.0001, number_of_steps=5,
-              kernel='two_body', punchout_d=5, cutoff=3)
+              bodies=2, punchout_d=5, cutoff=3,kernel='n_body_sc')
     otf.run()
     cleanup_otf_run()
 
@@ -188,15 +188,11 @@ def test_otf_2_1():
     os.system('cp ./test_files/qe_input_2.in ./pwscf.in')
 
     otf = OTF(qe_input='./pwscf.in', dt=.001, number_of_steps=5,
-           kernel='two_body',
+           bodies=2,kernel='n_body_sc',
            cutoff=10)
     otf.run()
     cleanup_otf_run()
     os.system('rm Al.wfc')
     os.system('rm -rf Al.save')
-
-
-
-
 
 
