@@ -90,16 +90,17 @@ class GaussianProcess:
 
         return forces_np
 
-    def train(self):
+    def train(self, monitor=False):
         """ Train Gaussian Process model on training data. """
 
         x_0 = self.hyps
+
         args = (self.training_data, self.training_labels_np,
-                self.kernel_grad, self.bodies)
+                self.kernel_grad, self.bodies, monitor)
 
         res = minimize(self.get_likelihood_and_gradients, x_0, args,
                        method='BFGS', jac=True,
-                       options={'disp': False, 'gtol': 1e-4, 'maxiter': 1000})
+                       options={'disp': False, 'gtol': 1e-2, 'maxiter': 100})
 
         self.hyps = res.x
         self.set_L_alpha()
@@ -153,7 +154,7 @@ class GaussianProcess:
 
     @staticmethod
     def get_likelihood_and_gradients(hyps, training_data, training_labels_np,
-                                     kernel_grad, bodies):
+                                     kernel_grad, bodies, monitor=False):
 
         # assume sigma_n is the final hyperparameter
         number_of_hyps = len(hyps)
@@ -211,6 +212,11 @@ class GaussianProcess:
             like_grad[n] = 0.5 * \
                 np.trace(np.matmul(like_mat, hyp_mat[:, :, n]))
 
+        if monitor:
+            print('hyps: '+str(hyps))
+            print('like grad: '+str(like_grad))
+            print('like: '+str(like))
+            print('\n')
         return -like, -like_grad
 
     def set_L_alpha(self):
