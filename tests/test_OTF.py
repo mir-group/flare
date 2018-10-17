@@ -178,21 +178,6 @@ def test_otf_1_3():
     otf.run()
     cleanup_otf_run()
 
-def test_otf_2_1():
-    """
-    Tests a slightly more complex system with artificially low cutoff energy
-    and k-point values; largely used to test the OTF workflow for
-    hyperparameter optimization
-    :return:
-    """
-    os.system('cp ./test_files/qe_input_2.in ./pwscf.in')
 
-    otf = OTF(qe_input='./pwscf.in', dt=.001, number_of_steps=5,
-           bodies=2,kernel='n_body_sc',
-           cutoff=10)
-    otf.run()
-    cleanup_otf_run()
-    os.system('rm Al.wfc')
-    os.system('rm -rf Al.save')
 
 
