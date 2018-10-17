@@ -37,7 +37,7 @@ class GaussianProcess:
         if kernel == 'n_body_sc':
             self.kernel = n_body_sc
             self.kernel_grad = n_body_sc_grad
-            self.hyps = np.array([1, 1, 1])
+            self.hyps = np.array([1, 1, 1.1])
         else:
             raise ValueError('not a valid kernel')
 
@@ -97,8 +97,12 @@ class GaussianProcess:
         args = (self.training_data, self.training_labels_np,
                 self.kernel_grad, self.bodies)
 
+        # Bound signal noise below to avoid overfitting
+        bounds = np.array([(-np.inf,np.inf)]*len(x_0))
+        bounds[-1] = (1e-6,np.inf)
+
         res = minimize(self.get_likelihood_and_gradients, x_0, args,
-                       method='BFGS', jac=True,
+                       method='L-BFGS-B', jac=True, bounds=bounds,
                        options={'disp': False, 'gtol': 1e-4, 'maxiter': 1000})
 
         self.hyps = res.x
@@ -158,6 +162,8 @@ class GaussianProcess:
         # assume sigma_n is the final hyperparameter
         number_of_hyps = len(hyps)
         sigma_n = hyps[number_of_hyps-1]
+        #sigma_n = max(abs(hyps[number_of_hyps-1]),1e-6)
+
         kern_hyps = hyps[0:(number_of_hyps - 1)]
 
         # initialize matrices
@@ -193,8 +199,15 @@ class GaussianProcess:
 
         # matrix manipulation
         ky_mat = k_mat + sigma_n ** 2 * np.eye(size)
-        ky_mat_inv = np.linalg.inv(ky_mat)
-        l_mat = np.linalg.cholesky(ky_mat)
+        try:
+            ky_mat_inv = np.linalg.inv(ky_mat)
+            l_mat = np.linalg.cholesky(ky_mat)
+        except:
+            ky_mat = k_mat + 1e-6 ** 2 * np.eye(size)
+            ky_mat_inv = np.linalg.inv(ky_mat)
+            l_mat = np.linalg.cholesky(ky_mat)
+
+
         alpha = np.matmul(ky_mat_inv, training_labels_np)
         alpha_mat = np.matmul(alpha.reshape(alpha.shape[0], 1),
                               alpha.reshape(1, alpha.shape[0]))
@@ -217,6 +230,7 @@ class GaussianProcess:
         # assume sigma_n is the final hyperparameter
         number_of_hyps = len(self.hyps)
         sigma_n = self.hyps[number_of_hyps-1]
+        #sigma_n = max(abs(self.hyps[number_of_hyps-1]),1e-6)
         kern_hyps = self.hyps[0:(number_of_hyps - 1)]
 
         # initialize matrices
