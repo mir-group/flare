@@ -125,7 +125,7 @@ class Structure(object):
 
     def get_species_count(self):
         """
-        Returns dicionary with keys:values of species:count.
+        Returns dictionary with keys:values of species:count.
         :return:
         """
 
