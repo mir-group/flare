@@ -21,7 +21,8 @@ from qe_util import run_espresso, parse_qe_input
 
 class OTF(object):
     def __init__(self, qe_input: str, dt: float, number_of_steps: int,
-                 kernel: str, cutoff: float, punchout_d: float=None,
+                 kernel: str, bodies: int, cutoff: float,
+                 punchout_d: float=None,
                  prev_pos_init: List[np.ndarray]=None):
         """
         On-the-fly learning engine, containing methods to run OTF calculation
@@ -38,7 +39,7 @@ class OTF(object):
         self.qe_input = qe_input
         self.dt = dt
         self.Nsteps = number_of_steps
-        self.gp = GaussianProcess(kernel)
+        self.gp = GaussianProcess(kernel, bodies)
         self.cutoff = cutoff
         self.punchout_d = punchout_d
 
@@ -139,12 +140,7 @@ class OTF(object):
         self.gp.update_db(self.train_structure, forces)
         self.gp.train()
         self.write_to_output('New GP Hyperparameters:\n' +
-                             'Signal std: \t' +
-                             str(self.gp.sigma_f) + '\n' +
-                             'Length scale: \t\t' +
-                             str(self.gp.length_scale) + '\n' +
-                             'Noise std: \t' + str(self.gp.sigma_n) +
-                             '\n'
+                             str(self.gp.hyps)
                              )
 
     def update_positions(self):
@@ -162,7 +158,7 @@ class OTF(object):
             forces = self.structure.forces[i]
 
             self.structure.positions[i] = 2 * pos - pre_pos + dtdt * forces / \
-                                          mass
+                mass
 
             self.structure.prev_positions[i] = np.copy(temp_pos)
 
@@ -277,7 +273,7 @@ if __name__ == '__main__':
 
     os.system('cp qe_input_1.in pwscf.in')
 
-    otf = OTF('pwscf.in', .0001, 100, kernel='two_body',
+    otf = OTF('pwscf.in', .0001, 100, kernel='n_body_sc', bodies=2,
               cutoff=10, punchout_d=None)
     otf.run()
     # parse_output('otf_run.out')

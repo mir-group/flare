@@ -178,19 +178,3 @@ def test_get_cross_bonds(test_env):
     pos2 = test_env.bond_positions[nrand]
     assert(test_env.cross_bond_dists[mrand, nrand] ==
            np.linalg.norm(pos1-pos2))
-
-
-def test_two_body_kernels(env1, env2):
-    d1 = 1
-    d2 = 1
-    sig = 1
-    ls = 1
-    its = 1000
-
-    # compare performance
-    speed_up, kern_val_jit, kern_val_py, _, _ = \
-        get_jit_speedup(env1, env2, d1, d2, sig, ls,
-                        env.two_body, env.two_body_py, its)
-
-    assert(kern_val_jit == kern_val_py)
-    assert(speed_up > 1)
