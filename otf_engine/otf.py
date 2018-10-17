@@ -70,9 +70,17 @@ class OTF(object):
 
             self.predict_on_structure()
 
-            if not self.is_std_in_bound():
+            std_in_bound, problem_atoms = self.is_std_in_bound()
+
+            if not std_in_bound:
                 self.write_config()
-                self.run_and_train()
+
+                if self.punchout_d:
+                    target_atom = np.random.choice(problem_atoms)
+                else:
+                    target_atom = None
+
+                self.run_and_train(target_atom)
                 continue
 
             self.write_config()
@@ -89,11 +97,11 @@ class OTF(object):
             for i in range(3):
                 force, var = self.gp.predict(chemenv, i + 1)
                 self.structure.forces[n][i] = float(force)
-                self.structure.stds[n][i] = np.sqrt(var)
+                self.structure.stds[n][i] = np.sqrt(np.absolute(var))
 
-    def run_and_train(self):
+    def run_and_train(self, punchout_target: int = None):
         """
-        Runs QE on the current self.structure config and re-trains  self.GP.
+        Runs QE on the current self.structure config and re-trains self.GP.
         :return:
         """
 
@@ -103,10 +111,11 @@ class OTF(object):
         # If not in punchout mode, run QE on the entire structure
         if self.punchout_d is None:
             self.train_structure = self.structure
-        # If first run, pick a random atom to punch out a structure around
-        elif self.train_structure is None:
-            target_atom = np.random.randint(0, len(self.structure.positions))
-            self.train_structure = punchout(self.structure, target_atom,
+        else:
+            # If first run, pick a random atom to punch out a structure around
+            if self.train_structure is None:
+                punchout_target = np.random.randint(0, self.structure.nat)
+            self.train_structure = punchout(self.structure, punchout_target,
                                             d=self.punchout_d)
 
         forces = run_espresso(self.qe_input, self.train_structure)
@@ -203,26 +212,20 @@ class OTF(object):
     # TODO change this to use the signal variance
     def is_std_in_bound(self):
         """
-        Evaluate if the model error are within predefined criteria
+        Return bool, list of if
 
-        :return: Bool, If model error is within acceptable bounds
+        :return: Int, -1 f model error is within acceptable bounds
         """
 
-        # Some decision making criteria
+        if np.nanmax(self.structure.stds) >= .1:
+            problem_atoms = []
+            for i, std in enumerate(self.structure.stds):
+                if np.max(std) >= .1:
+                    problem_atoms.append(i)
 
-        # SKETCH OF EVENTUAL CODE:
-        """
-        high_error_atom = -1 
-        
-        if self.punchout_d is not None:
-            self.train_structure= punchout(self.structure,atom= 
-            high_error_atom, d= self.punchout_d )
-            return False
-        """
-        if np.nanmax(self.structure.stds) > .1:
-            return False
+            return False, problem_atoms
         else:
-            return True
+            return True, []
 
 
 # TODO Currently won't work: needs to be re-done when we finalize our output
