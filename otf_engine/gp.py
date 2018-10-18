@@ -12,6 +12,7 @@ Simon Batzner, Jon Vandermause
 import math
 
 import numpy as np
+from qe_util import timeit
 from scipy.linalg import solve_triangular
 from scipy.optimize import minimize
 from typing import List
@@ -90,7 +91,8 @@ class GaussianProcess:
 
         return forces_np
 
-    def train(self, monitor=False):
+    @timeit
+    def train(self, monitor=True):
         """ Train Gaussian Process model on training data. """
 
         x_0 = self.hyps
@@ -224,7 +226,7 @@ class GaussianProcess:
         return -like, -like_grad
 
     def set_L_alpha(self):
-        # sigma_n is the final hyperparameter
+        # assume sigma_n is the final hyperparameter
         sigma_n = self.hyps[-1]
         kern_hyps = self.hyps[0:-1]
 
