@@ -18,7 +18,7 @@ import numpy as np
 sys.path.append('../otf_engine')
 from struc import Structure
 from qe_util import parse_qe_input, parse_qe_forces, run_espresso, \
-    edit_qe_input_positions
+    edit_qe_input_positions, qe_input_to_structure
 import pytest
 
 
@@ -87,6 +87,17 @@ def test_cell_parsing(qe_input, exp_cell):
 def test_cell_parsing(qe_input, mass_dict):
     positions, species, cell, masses = parse_qe_input(qe_input)
     assert masses == mass_dict
+
+@pytest.mark.parametrize("qe_input",
+                         [
+                             ('./test_files/qe_input_1.in'),
+                             ('./test_files/qe_input_2.in'),
+                             ('./test_files/qe_input_3.in')
+                         ]
+                         )
+def test_input_to_structure(qe_input):
+    cutoff = np.random.uniform(1,5)
+    assert isinstance(qe_input_to_structure(qe_input,cutoff),Structure)
 
 
 @pytest.mark.parametrize('qe_output,exp_forces',
