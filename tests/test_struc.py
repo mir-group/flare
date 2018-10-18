@@ -163,7 +163,14 @@ def test_translate_structure(rand_struct):
     rand_struct.translate_positions(trans)
 
     for n in range(rand_struct.nat):
-        assert np.isclose(rand_struct.positions[n], pre_trans_pos[
-            n] + trans).all()
+        assert np.isclose(rand_struct.positions[n], pre_trans_pos[n] +
+                          trans).all()
         assert np.isclose(rand_struct.prev_positions[n],
                           pre_trans_prev_pos[n] + trans).all()
+
+
+def test_perturb_structure(rand_struct):
+    old_positions = np.copy(rand_struct.positions)
+    rand_struct.perturb_positions()
+    assert not np.isclose(rand_struct.positions, old_positions).all()
+

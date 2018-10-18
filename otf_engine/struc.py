@@ -4,9 +4,13 @@ OTF engine
 Steven Torrisi, Jon Vandermause
 """
 
-from numpy import zeros, ndarray, dot, isclose, mod, ones, equal, matmul, copy
+from numpy import zeros, ndarray, dot, isclose, mod, ones, equal, matmul, \
+copy, arccos, array
+from numpy import abs as npabs
 from numpy.linalg import inv
+from numpy.random import uniform, normal
 from typing import List
+from math import sin, cos
 
 
 class Structure(object):
@@ -133,6 +137,28 @@ class Structure(object):
         for element in set(self.species):
             spec_dict[element] = self.species.count(element)
         return spec_dict
+
+    def perturb_positions(self, r_pert: float = .2, rscale: float = .1):
+        """
+        Perturbs all positions in structure by a gaussian with mean radius
+        r_pert and std dev rscale
+        :param r_pert:
+        :param rscale:
+        :return:
+        """
+        theta = uniform(-180, 180, size=self.nat)
+        X = uniform(0, 1,size=self.nat)
+        phi = array([arccos(2 * x - 1) for x in X])
+
+        r = npabs(normal(loc=r_pert, scale=rscale, size=self.nat))
+
+        for i,pos in enumerate(self.positions):
+            newpos = zeros(3)
+            newpos[0] = r[i] * sin(phi[i]) * cos(theta[i])
+            newpos[1] = r[i] * sin(phi[i]) * sin(theta[i])
+            newpos[2] = r[i] * cos(phi[i])
+            pos += newpos
+
 
     @staticmethod
     def calc_bond_list(unique_species):
