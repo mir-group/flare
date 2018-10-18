@@ -65,6 +65,31 @@ def predict_forces_on_structure(gp_model, md_trajectory, snap, cutoff):
     return predictions, variances, forces, MAE, MAS
 
 
+def predict_forces_on_test_set(gp_model, md_trajectory, snaps, cutoff):
+    all_predictions = []
+    all_variances = []
+    all_forces = []
+    for snap in snaps:
+        predictions, variances, forces, _, _ = \
+            predict_forces_on_structure(gp_model, md_trajectory, snap, cutoff)
+        predictions = predictions.reshape(predictions.size)
+        variances = variances.reshape(variances.size)
+        forces = forces.reshape(forces.size)
+
+        for m in range(len(predictions)):
+            all_predictions.append(predictions[m])
+            all_variances.append(variances[m])
+            all_forces.append(forces[m])
+
+    all_predictions = np.array(all_predictions)
+    all_variances = np.array(all_variances)
+    all_forces = np.array(all_forces)
+
+    return all_predictions, all_variances, all_forces
+
+
+
+
 if __name__ == '__main__':
     # define md trajectory object
     print('making md object...')
@@ -78,14 +103,14 @@ if __name__ == '__main__':
     # make example gp
     print('training gp model...')
     training_snaps = [200]
-    cutoff = 4
+    cutoff = 3
     kernel = 'n_body_sc'
-    bodies = 2
+    bodies = 3
 
     gp_test = \
         get_gp_from_snaps(md_trajectory, training_snaps, cutoff, kernel,
                           bodies)
-    gp_test.train()
+    gp_test.train(True)
 
     # make prediction
     print('making prediction...')
