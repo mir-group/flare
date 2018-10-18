@@ -16,11 +16,9 @@ import numpy as np
 
 from struc import Structure
 from typing import List
-import functools
 
 
 def timeit(method):
-
     def write_time(*args, **kw):
 
         # Only decorate if time_log is an argument
@@ -33,7 +31,7 @@ def timeit(method):
             # Get method name to tally total time on this method
 
             # Get custom name e.g. 'last_dft_run'
-            custom_name = kw.get('log_name','')
+            custom_name = kw.get('log_name', '')
             # Remove custom name from kwargs before passing to method
             if 'log_name' in kw.keys():
                 kw.pop('log_name')
@@ -45,20 +43,22 @@ def timeit(method):
 
             # Assign time of custom name
             if custom_name:
-                time_dict[custom_name] = te -ts
+                time_dict[custom_name] = te - ts
 
             # Tally total time spent on this method
             method_name = method.__name__
             if time_dict.get(method_name, False):
-                time_dict[method_name] += te-ts
+                time_dict[method_name] += te - ts
             else:
-                time_dict[method_name]= te-ts
+                time_dict[method_name] = te - ts
 
         else:
             result = method(*args, **kw)
 
         return result
+
     return write_time
+
 
 @timeit
 def run_espresso(qe_input: str, structure: Structure, temp: bool = False) -> \
@@ -96,7 +96,8 @@ def run_espresso(qe_input: str, structure: Structure, temp: bool = False) -> \
     return parse_qe_forces('pwscf.out')
 
 
-def parse_qe_input(qe_input: str)-> (List[np.array],List[str],np.array,dict):
+def parse_qe_input(qe_input: str) -> (
+        List[np.array], List[str], np.array, dict):
     """
     Reads the positions, species, cell, and masses in from the qe input file
 
@@ -164,17 +165,17 @@ def parse_qe_input(qe_input: str)-> (List[np.array],List[str],np.array,dict):
 
     return positions, species, cell, masses
 
-# TODO unit test this
-def qe_input_to_structure(qe_input: str,cutoff: float =5) -> Structure:
+
+def qe_input_to_structure(qe_input: str, cutoff: float = 5) -> Structure:
     """
     Parses a qe input and returns the atoms in the file as a Structure object
-    :param qe_input:
+    :param qe_input: QE Input file to parse
+    :param cutoff: Cutoff radius for structure
     :return:
     """
     positions, species, cell, masses = parse_qe_input(qe_input)
-    return Structure(positions=positions,species=species,lattice=cell,
-                     mass_dict=masses,cutoff=5)
-
+    return Structure(positions=positions, species=species, lattice=cell,
+                     mass_dict=masses, cutoff=cutoff)
 
 
 def edit_qe_input_positions(qe_input: str, structure: Structure):
@@ -204,7 +205,7 @@ def edit_qe_input_positions(qe_input: str, structure: Structure):
     assert cell_index is not None, 'Failed to find cell in input'
     assert nat is not None, 'Failed to find nat in input'
 
-    #TODO Catch case where the punchout structure has more atoms than the
+    # TODO Catch case where the punchout structure has more atoms than the
     # original structure
 
     for pos_index, line_index in enumerate(
@@ -216,7 +217,7 @@ def edit_qe_input_positions(qe_input: str, structure: Structure):
                                        1]),
                                str(structure.positions[pos_index][
                                        2])])
-        if line_index< len(lines):
+        if line_index < len(lines):
             lines[line_index] = str(pos_string + '\n')
         else:
             lines.append(str(pos_string + '\n'))
