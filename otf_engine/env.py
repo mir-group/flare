@@ -117,9 +117,10 @@ class ChemicalEnvironment:
                 structure, central_type, typ_curr)
 
             # get images within cutoff
-            vecs, dists = ChemicalEnvironment.get_local_atom_images(structure,
-                                                     diff_curr,
-                                                     super_check)
+            vecs, dists = \
+                ChemicalEnvironment.get_local_atom_images(structure,
+                                                          diff_curr,
+                                                          super_check)
 
             for vec, dist in zip(vecs, dists):
                 # ignore self interaction
