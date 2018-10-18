@@ -23,7 +23,8 @@ class OTF(object):
     def __init__(self, qe_input: str, dt: float, number_of_steps: int,
                  kernel: str, bodies: int, cutoff: float,
                  punchout_d: float=None,
-                 prev_pos_init: List[np.ndarray]=None):
+                 prev_pos_init: List[np.ndarray]=None,
+                 punchout_settings: dict=None):
         """
         On-the-fly learning engine, containing methods to run OTF calculation
 
@@ -41,7 +42,8 @@ class OTF(object):
         self.Nsteps = number_of_steps
         self.gp = GaussianProcess(kernel, bodies)
         self.cutoff = cutoff
-        self.punchout_d = punchout_d
+
+        self.punchout_settings = punchout_settings
 
         positions, species, cell, masses = parse_qe_input(self.qe_input)
         self.structure = Structure(lattice=cell, species=species,
@@ -69,21 +71,17 @@ class OTF(object):
         # Main loop
         while self.curr_step < self.Nsteps:
 
+            # Assign forces to atoms in structure
             self.predict_on_structure()
 
-            std_in_bound, problem_atoms = self.is_std_in_bound()
-
+            # Check error before proceeding
+            std_in_bound, target_atom = self.is_std_in_bound()
             if not std_in_bound:
                 self.write_config()
-
-                if self.punchout_d:
-                    target_atom = np.random.choice(problem_atoms)
-                else:
-                    target_atom = None
-
                 self.run_and_train(target_atom)
                 continue
 
+            # Print and propagate
             self.write_config()
             self.update_positions()
             self.curr_step += 1
@@ -100,24 +98,35 @@ class OTF(object):
                 self.structure.forces[n][i] = float(force)
                 self.structure.stds[n][i] = np.sqrt(np.absolute(var))
 
-    def run_and_train(self, punchout_target: int = None):
+    def run_and_train(self, target_atom: int = None):
         """
         Runs QE on the current self.structure config and re-trains self.GP.
         :return:
         """
 
         # Run espresso and write out results
-        self.write_to_output('=' * 20 + '\n' + 'Calling QE... ')
+
+        self.write_to_output('=' * 20 + '\n')
+
+        # First run will not have a target atom
+        if self.train_structure is None:
+            self.write_to_output('Calling bootstrap DFT run...')
+        else:
+            self.write_to_output('Calling DFT due to atom {} at position {} '
+                             'with uncertainties {}...\n'.format(target_atom,
+                            self.structure.positions[target_atom],
+                            self.structure.stds[target_atom]))
 
         # If not in punchout mode, run QE on the entire structure
-        if self.punchout_d is None:
+        if self.punchout_settings is None:
             self.train_structure = self.structure
         else:
-            # If first run, pick a random atom to punch out a structure around
+            # On first run, pick a random target atom to punch out around
             if self.train_structure is None:
-                punchout_target = np.random.randint(0, self.structure.nat)
-            self.train_structure = punchout(self.structure, punchout_target,
-                                            d=self.punchout_d)
+                target_atom = np.random.randint(0, self.structure.nat)
+            self.train_structure = punchout(self.structure,
+                                            atom=target_atom,
+                                            d=self.punchout_settings['d'])
 
         forces = run_espresso(self.qe_input, self.train_structure)
 
@@ -206,22 +215,22 @@ class OTF(object):
         self.write_to_output(string)
 
     # TODO change this to use the signal variance
-    def is_std_in_bound(self):
+    def is_std_in_bound(self) -> (bool,int):
         """
-        Return bool, list of if
+        Return (std is in bound, index of highest uncertainty atom)
 
         :return: Int, -1 f model error is within acceptable bounds
         """
+        stds = self.structure.stds
 
-        if np.nanmax(self.structure.stds) >= .1:
-            problem_atoms = []
-            for i, std in enumerate(self.structure.stds):
-                if np.max(std) >= .1:
-                    problem_atoms.append(i)
+        if np.nanmax(stds) >= .1:
+            # Find atom with highest associated uncertainty
+            nat = self.structure.nat
+            target_atom = np.argmax([np.max(stds[i]) for i in range(nat) ])
 
-            return False, problem_atoms
+            return False, target_atom
         else:
-            return True, []
+            return True, -1
 
 
 # TODO Currently won't work: needs to be re-done when we finalize our output
