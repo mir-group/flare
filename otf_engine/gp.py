@@ -90,7 +90,7 @@ class GaussianProcess:
 
         return forces_np
 
-    def train(self, monitor=False):
+    def train(self, algorithm='L-BFGS-B', monitor=False):
         """ Train Gaussian Process model on training data. """
 
         x_0 = self.hyps
@@ -98,13 +98,21 @@ class GaussianProcess:
         args = (self.training_data, self.training_labels_np,
                 self.kernel_grad, self.bodies, monitor)
 
-        # Bound signal noise below to avoid overfitting
-        bounds = np.array([(-np.inf,np.inf)]*len(x_0))
-        bounds[-1] = (1e-6,np.inf)
+        if algorithm == 'L-BFGS-B':
+            # bound signal noise below to avoid overfitting
+            bounds = np.array([(-np.inf, np.inf)]*len(x_0))
+            bounds[-1] = (1e-6, np.inf)
 
-        res = minimize(self.get_likelihood_and_gradients, x_0, args,
-                       method='L-BFGS-B', jac=True, bounds=bounds,
-                       options={'disp': False, 'gtol': 1e-4, 'maxiter': 1000})
+            res = minimize(self.get_likelihood_and_gradients, x_0, args,
+                           method='L-BFGS-B', jac=True, bounds=bounds,
+                           options={'disp': False, 'gtol': 1e-4,
+                                    'maxiter': 1000})
+        elif algorithm == 'BFGS':
+            res = minimize(self.get_likelihood_and_gradients, x_0, args,
+                           method='BFGS', jac=True,
+                           options={'disp': False, 'gtol': 1e-4,
+                                    'maxiter': 1000})
+
         self.hyps = res.x
         self.set_L_alpha()
 
@@ -156,8 +164,10 @@ class GaussianProcess:
         return k_v
 
     @staticmethod
-    def get_likelihood_and_gradients(hyps, training_data, training_labels_np,
-                                     kernel_grad, bodies, monitor=False):
+    def get_likelihood_and_gradients(hyps: np.ndarray, training_data: list,
+                                     training_labels_np: np.ndarray,
+                                     kernel_grad, bodies: int,
+                                     monitor: bool = False):
 
         # assume sigma_n is the final hyperparameter
         number_of_hyps = len(hyps)
