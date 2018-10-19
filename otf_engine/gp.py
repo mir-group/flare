@@ -114,7 +114,7 @@ class GaussianProcess:
         if self.algo == 'L-BFGS-B':
             # bound signal noise below to avoid overfitting
             bounds = np.array([(-np.inf, np.inf)]*len(x_0))
-            bounds[-1] = (1e-6, np.inf)
+            bounds[-1] = (1e-5, np.inf)
 
             # Catch linear algebra errors and switch to BFGS if necessary
             try:
