@@ -9,6 +9,7 @@ Steven Torrisi, Jon Vandermause, Simon Batzner
 
 import numpy as np
 import datetime
+import time
 
 from typing import List
 
@@ -16,25 +17,23 @@ from struc import Structure
 from gp import GaussianProcess
 from env import ChemicalEnvironment
 from punchout import punchout
-from qe_util import run_espresso, parse_qe_input
+from qe_util import run_espresso, parse_qe_input, timeit
 
 
 class OTF(object):
     def __init__(self, qe_input: str, dt: float, number_of_steps: int,
                  kernel: str, bodies: int, cutoff: float,
-                 punchout_d: float=None,
-                 prev_pos_init: List[np.ndarray]=None,
-                 punchout_settings: dict=None):
+                 prev_pos_init: List[np.ndarray] = None,
+                 punchout_settings: dict = None):
         """
         On-the-fly learning engine, containing methods to run OTF calculation
 
         :param qe_input: str, Location of QE input
-        :param dt: float, Timestep size
+        :param dt: float, Timestep size, Picoseconds
         :param number_of_steps: int, Number of steps
         :param kernel: Type of kernel for GP regression model
         :param cutoff: Cutoff radius for kernel in angstrom
-        :param punchout_d: Box distance around a high-uncertainty atom to
-                         punch out
+        :param punchout_settings: Settings for punchout mode
         """
 
         self.qe_input = qe_input
@@ -54,16 +53,30 @@ class OTF(object):
         self.curr_step = 0
         self.train_structure = None
 
+        # Instantiate time attributes
+        self.start_time = 0
+        self.end_time = 0
+        self.run_stats = {'dft_calls': 0}
+
         # Create blank output file with time header and structure information
         with open('otf_run.out', 'w') as f:
             f.write(str(datetime.datetime.now()) + '\n')
-            # f.write(str(self.structure.species)+'\n')
+
+        headerstring = ''
+        headerstring += 'Timestep (ps): {}\n'.format(self.dt)
+        headerstring += 'Number of Frames: {}\n'.format(self.Nsteps)
+        headerstring += 'Number of Atoms: {}\n'.format(self.structure.nat)
+        headerstring += 'System Species: {}\n'.format(set(
+            self.structure.species))
+
+        self.write_to_output(headerstring)
 
     def run(self):
         """
         Performs main loop of OTF engine.
         :return:
         """
+        self.start_time = time.time()
 
         # Bootstrap first training point
         self.run_and_train()
@@ -72,7 +85,7 @@ class OTF(object):
         while self.curr_step < self.Nsteps:
 
             # Assign forces to atoms in structure
-            self.predict_on_structure()
+            self.predict_on_structure(time_log=self.run_stats)
 
             # Check error before proceeding
             std_in_bound, target_atom = self.is_std_in_bound()
@@ -86,11 +99,13 @@ class OTF(object):
             self.update_positions()
             self.curr_step += 1
 
+        self.conclude_run()
+
+    @timeit
     def predict_on_structure(self):
         """
         Assign forces to self.structure based on self.gp
         """
-
         for n in range(self.structure.nat):
             chemenv = ChemicalEnvironment(self.structure, n)
             for i in range(3):
@@ -110,12 +125,12 @@ class OTF(object):
 
         # First run will not have a target atom
         if self.train_structure is None:
-            self.write_to_output('Calling bootstrap DFT run...')
+            self.write_to_output('Calling initial bootstrap DFT run...')
         else:
             self.write_to_output('Calling DFT due to atom {} at position {} '
-                             'with uncertainties {}...\n'.format(target_atom,
-                            self.structure.positions[target_atom],
-                            self.structure.stds[target_atom]))
+                                 'with uncertainties {}...'.format(target_atom,
+                                        self.structure.positions[target_atom],
+                                        self.structure.stds[target_atom]))
 
         # If not in punchout mode, run QE on the entire structure
         if self.punchout_settings is None:
@@ -128,12 +143,19 @@ class OTF(object):
                                             atom=target_atom,
                                             d=self.punchout_settings['d'])
 
-        forces = run_espresso(self.qe_input, self.train_structure)
+        forces = run_espresso(self.qe_input, self.train_structure,
+                              time_log=self.run_stats, log_name='last_dft')
 
         self.write_to_output('Done.\n')
+        self.run_stats['dft_calls'] += 1
 
         # Write input positions and force results
-        qe_strings = 'Resultant Positions and Forces:\n'
+        qe_strings = '~ DFT Call : {}   DFT Time: {} s \n'.format(
+            self.run_stats['dft_calls'],
+            np.round(self.run_stats['last_dft'], 3))
+
+        qe_strings += 'El \t\t\t  Position (A) \t\t\t\t\t DFT Force (ev/A) \n'
+
         for n in range(self.train_structure.nat):
             qe_strings += self.train_structure.species[n] + ': '
             for i in range(3):
@@ -142,15 +164,22 @@ class OTF(object):
             for i in range(3):
                 qe_strings += '%.8f  ' % forces[n][i]
             qe_strings += '\n'
+
         self.write_to_output(qe_strings)
+        self.write_to_output('=' * 20 + '\n')
 
         # Update hyperparameters and write results
         self.write_to_output('Updating database hyperparameters...\n')
         self.gp.update_db(self.train_structure, forces)
-        self.gp.train()
-        self.write_to_output('New GP Hyperparameters:\n' +
-                             str(self.gp.hyps)
-                             )
+
+        self.gp.train(time_log=self.run_stats)
+
+        self.write_to_output('New GP Hyperparameters for DFT call {}: '
+                             '\n'.format(self.run_stats['dft_calls']))
+
+        for i, label in enumerate(self.gp.hyp_labels):
+            self.write_to_output('Hyp{} : {} = {}\n'.format(i, label,
+                                                            self.gp.hyps[i]))
 
     def update_positions(self):
         """
@@ -167,7 +196,7 @@ class OTF(object):
             forces = self.structure.forces[i]
 
             self.structure.positions[i] = 2 * pos - pre_pos + dtdt * forces / \
-                mass
+                                          mass
 
             self.structure.prev_positions[i] = np.copy(temp_pos)
 
@@ -189,16 +218,17 @@ class OTF(object):
         force variances
         """
 
-        string = ''
+        string = ' '
 
         string += "-------------------- \n"
 
-        string += "- Frame " + str(self.curr_step)
-        string += " Sim. Time "
+        string += "- Frame: " + str(self.curr_step)
+        string += " Simulation Time: "
         string += str(np.round(self.dt * self.curr_step, 6)) + '\n'
 
-        string += 'El \t\t\t Position \t\t\t\t\t Force \t\t\t\t\t\t\t ' \
-                  'Std. Dev \n'
+        string += 'El \t\t\t  Position (A) \t\t\t\t\t GP Force (ev/A) ' \
+                  '\t\t\t\t\t\t' \
+                  'Std. Dev (ev/A) \n'
 
         for i in range(len(self.structure.positions)):
             string += self.structure.species[i] + ' '
@@ -214,8 +244,29 @@ class OTF(object):
 
         self.write_to_output(string)
 
+    def conclude_run(self):
+        """
+        Print summary information about the OTF run into the output
+        :return:
+        """
+        self.end_time = time.time()
+
+        footer = '▬' * 20 + '\n'
+        footer += 'Run complete. \n'
+        footer += 'Total DFT Time: {} s \n'.format(
+            np.round(self.run_stats['run_espresso'], 3))
+        footer += 'Total Train Time: {} s \n'.format(
+            np.round(self.run_stats['train'], 3))
+        footer += 'Total Prediction Time: {} s \n'.format(
+            np.round(self.run_stats['predict_on_structure'], 3))
+        footer += 'Total Time: {} m {} s \n'.format(
+            int((self.end_time - self.start_time) / 60),
+            np.round(self.end_time - self.start_time, 3))
+
+        self.write_to_output(footer)
+
     # TODO change this to use the signal variance
-    def is_std_in_bound(self) -> (bool,int):
+    def is_std_in_bound(self) -> (bool, int):
         """
         Return (std is in bound, index of highest uncertainty atom)
 
@@ -223,58 +274,15 @@ class OTF(object):
         """
         stds = self.structure.stds
 
+        # if np.nanmax(stds) >= np.abs(self.gp.hyps[1]):
         if np.nanmax(stds) >= .1:
             # Find atom with highest associated uncertainty
             nat = self.structure.nat
-            target_atom = np.argmax([np.max(stds[i]) for i in range(nat) ])
+            target_atom = np.argmax([np.max(stds[i]) for i in range(nat)])
 
             return False, target_atom
         else:
             return True, -1
-
-
-# TODO Currently won't work: needs to be re-done when we finalize our output
-#  formatting
-def parse_otf_output(outfile: str):
-    """
-    Parse the output of a otf run for analysis
-    :param outfile: str, Path to file
-    :return: dict{int:value,'species':list}, Dict of positions, forces,
-    vars indexed by frame and of species
-    """
-
-    results = {}
-    with open(outfile, 'r') as f:
-        lines = f.readlines()
-
-    frame_indices = [lines.index(line) for line in lines if line[0] == '-']
-    n_atoms = frame_indices[1] - frame_indices[0] - 2
-
-    for frame_number, index in enumerate(frame_indices):
-        positions = []
-        forces = []
-        stds = []
-        species = []
-
-        for at_index in range(n_atoms):
-            at_line = lines[index + at_index + 1].strip().split(',')
-            species.append(at_line[0])
-            positions.append(
-                np.fromstring(','.join((at_line[1], at_line[2], at_line[3])),
-                              sep=','))
-            forces.append(
-                np.fromstring(','.join((at_line[4], at_line[5], at_line[6])),
-                              sep=','))
-            stds.append(
-                np.fromstring(','.join((at_line[7], at_line[8], at_line[9])),
-                              sep=','))
-
-            results[frame_number] = {'positions': positions,
-                                     'forces': forces,
-                                     'vars': vars}
-
-        results['species'] = species
-        print(results)
 
 
 if __name__ == '__main__':
@@ -282,8 +290,9 @@ if __name__ == '__main__':
 
     os.system('cp qe_input_1.in pwscf.in')
 
-    otf = OTF('pwscf.in', .0001, 100, kernel='n_body_sc', bodies=2,
-              cutoff=10, punchout_d=None)
+    otf = OTF('pwscf.in', .0001, 5, kernel='n_body_sc', bodies=2,
+              cutoff=5)
     otf.run()
+    # otf.run_and_train(target_atom=0)
     # parse_output('otf_run.out')
     pass
