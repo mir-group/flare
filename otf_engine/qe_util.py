@@ -156,6 +156,8 @@ def parse_qe_input(qe_input: str) -> (
     assert positions != [], "Positions failed to load"
 
     # Load masses
+    # Convert from amu to mass units with picosecond timescale and angstrom
+    # length scale such that the unit of energy is in natural units (=1)
     massconvert = 0.00010364269933008285
     masses = {}
     for i in range(species_index, species_index + len(set(species))):

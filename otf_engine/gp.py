@@ -39,10 +39,11 @@ class GaussianProcess:
             self.kernel = n_body_sc
             self.kernel_grad = n_body_sc_grad
             self.hyps = np.array([1, 1, 1.1])
+            self.hyp_labels = ['Length Sca 1', 'Signal Std 1', 'Noise Sigma']
         else:
             raise ValueError('not a valid kernel')
 
-        if opt_algorithm not in ['BFGS','L-BFGS-B']:
+        if opt_algorithm not in ['BFGS', 'L-BFGS-B']:
             raise ValueError('Not a valid algorithm')
 
         self.algo = opt_algorithm
@@ -54,11 +55,11 @@ class GaussianProcess:
         # training set
         self.training_data = []
         self.training_labels = []
-        self.training_labels_np = np.empty(0,)
+        self.training_labels_np = np.empty(0, )
 
     # TODO unit test custom range
     def update_db(self, struc: Structure, forces: list,
-                  custom_range: List[int]=[]):
+                  custom_range: List[int] = ()):
         """Given structure and forces, add to training set.
 
         :param struc: structure to add to db
@@ -113,15 +114,15 @@ class GaussianProcess:
 
         if self.algo == 'L-BFGS-B':
             # bound signal noise below to avoid overfitting
-            bounds = np.array([(-np.inf, np.inf)]*len(x_0))
+            bounds = np.array([(-np.inf, np.inf)] * len(x_0))
             bounds[-1] = (1e-5, np.inf)
 
             # Catch linear algebra errors and switch to BFGS if necessary
             try:
                 res = minimize(self.get_likelihood_and_gradients, x_0, args,
-                           method='L-BFGS-B', jac=True, bounds=bounds,
-                           options={'disp': False, 'gtol': 1e-4,
-                                    'maxiter': 1000})
+                               method='L-BFGS-B', jac=True, bounds=bounds,
+                               options={'disp': False, 'gtol': 1e-4,
+                                        'maxiter': 1000})
             except:
                 print("Warning! Algorithm for L-BFGS-B failed. Changing to "
                       "BFGS for remainder of run.")
@@ -160,7 +161,8 @@ class GaussianProcess:
 
         return pred_mean, pred_var
 
-    def get_kernel_vector(self, x: ChemicalEnvironment, d_1: int)-> np.ndarray:
+    def get_kernel_vector(self, x: ChemicalEnvironment,
+                          d_1: int) -> np.ndarray:
         """ Compute kernel vector.
 
         :param x: data point to compare against kernel matrix
@@ -172,11 +174,11 @@ class GaussianProcess:
         """
 
         ds = [1, 2, 3]
-        size = len(self.training_data)*3
-        k_v = np.zeros(size,)
+        size = len(self.training_data) * 3
+        k_v = np.zeros(size, )
 
         for m_index in range(size):
-            x_2 = self.training_data[int(math.floor(m_index/3))]
+            x_2 = self.training_data[int(math.floor(m_index / 3))]
             d_2 = ds[m_index % 3]
             k_v[m_index] = self.kernel(x, x_2, self.bodies, d_1, d_2,
                                        self.hyps)
@@ -190,15 +192,15 @@ class GaussianProcess:
                                      monitor: bool = False):
 
         if monitor:
-            print('hyps: '+str(hyps))
-            
+            print('hyps: ' + str(hyps))
+
         # assume sigma_n is the final hyperparameter
         number_of_hyps = len(hyps)
-        sigma_n = hyps[number_of_hyps-1]
+        sigma_n = hyps[number_of_hyps - 1]
         kern_hyps = hyps[0:(number_of_hyps - 1)]
 
         # initialize matrices
-        size = len(training_data)*3
+        size = len(training_data) * 3
         k_mat = np.zeros([size, size])
         hyp_mat = np.zeros([size, size, number_of_hyps])
 
@@ -221,12 +223,12 @@ class GaussianProcess:
                 k_mat[n_index, m_index] = cov[0]
 
                 # store gradients (excluding noise variance)
-                for p_index in range(number_of_hyps-1):
+                for p_index in range(number_of_hyps - 1):
                     hyp_mat[m_index, n_index, p_index] = cov[1][p_index]
                     hyp_mat[n_index, m_index, p_index] = cov[1][p_index]
 
         # add gradient of noise variance
-        hyp_mat[:, :, number_of_hyps-1] = np.eye(size) * 2 * sigma_n
+        hyp_mat[:, :, number_of_hyps - 1] = np.eye(size) * 2 * sigma_n
 
         # matrix manipulation
         ky_mat = k_mat + sigma_n ** 2 * np.eye(size)
@@ -239,7 +241,7 @@ class GaussianProcess:
         like_mat = alpha_mat - ky_mat_inv
 
         # calculate likelihood
-        like = (-0.5*np.matmul(training_labels_np, alpha) -
+        like = (-0.5 * np.matmul(training_labels_np, alpha) -
                 np.sum(np.log(np.diagonal(l_mat))) -
                 math.log(2 * np.pi) * k_mat.shape[1] / 2)
 
@@ -247,11 +249,11 @@ class GaussianProcess:
         like_grad = np.zeros(number_of_hyps)
         for n in range(number_of_hyps):
             like_grad[n] = 0.5 * \
-                np.trace(np.matmul(like_mat, hyp_mat[:, :, n]))
+                           np.trace(np.matmul(like_mat, hyp_mat[:, :, n]))
 
         if monitor:
-            print('like grad: '+str(like_grad))
-            print('like: '+str(like))
+            print('like grad: ' + str(like_grad))
+            print('like: ' + str(like))
             print('\n')
         return -like, -like_grad
 
@@ -261,7 +263,7 @@ class GaussianProcess:
         kern_hyps = self.hyps[0:-1]
 
         # initialize matrices
-        size = len(self.training_data)*3
+        size = len(self.training_data) * 3
         k_mat = np.zeros([size, size])
 
         ds = [1, 2, 3]
