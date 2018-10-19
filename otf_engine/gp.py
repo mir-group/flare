@@ -51,18 +51,24 @@ class GaussianProcess:
         self.training_labels = []
         self.training_labels_np = np.empty(0,)
 
-    def update_db(self, struc: Structure, forces: list):
+    # TODO unit test custom range
+    def update_db(self, struc: Structure, forces: list,
+                  custom_range: List[int]=[]):
         """Given structure and forces, add to training set.
 
         :param struc: structure to add to db
         :type struc: Structure
         :param forces: list of corresponding forces to add to db
         :type forces: list<float>
+        :param custom_range: Indices to use in lieu of the whole structure
+        :type custom_range: List[int]
         """
 
+        # By default, use all atoms in the structure
         noa = len(struc.positions)
+        update_indices = custom_range or list(range(noa))
 
-        for atom in range(noa):
+        for atom in update_indices:
             env_curr = ChemicalEnvironment(struc, atom)
             forces_curr = forces[atom]
 
@@ -92,7 +98,7 @@ class GaussianProcess:
         return forces_np
 
     @timeit
-    def train(self, monitor=True):
+    def train(self, monitor=False):
         """ Train Gaussian Process model on training data. """
 
         x_0 = self.hyps
