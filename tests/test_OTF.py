@@ -138,7 +138,6 @@ def test_update_1(test_otf_engine_1):
 # ------------------------------------------------------
 #                   test  otf runs
 # ------------------------------------------------------
-# Under development
 
 def test_otf_1_1():
     """
@@ -147,11 +146,12 @@ def test_otf_1_1():
     """
     os.system('cp ./test_files/qe_input_1.in ./pwscf.in')
 
-    otf = OTF(qe_input='./pwscf.in', dt= .0001, number_of_steps= 2,
-           bodies=2,kernel='n_body_sc',
-          cutoff=4)
+    otf = OTF(qe_input='./pwscf.in', dt=.0001, number_of_steps=2,
+              bodies=2, kernel='n_body_sc',
+              cutoff=4)
     otf.run()
     cleanup_otf_run()
+
 
 def test_otf_1_2():
     """
@@ -161,23 +161,22 @@ def test_otf_1_2():
     os.system('cp ./test_files/qe_input_1.in ./pwscf.in')
 
     otf = OTF(qe_input='./pwscf.in', dt=.0001, number_of_steps=50,
-              bodies=2,kernel='n_body_sc',
+              bodies=2, kernel='n_body_sc',
               cutoff=5)
     otf.run()
     cleanup_otf_run()
 
+
 def test_otf_1_3():
     """
     Test that an otf run will succeed in punchout mode
+    with trivial conditions (punch out a cell with one other atom)
     :return:
     """
     os.system('cp ./test_files/qe_input_1.in ./pwscf.in')
 
     otf = OTF(qe_input='./pwscf.in', dt=.0001, number_of_steps=5,
-              bodies=2, punchout_d=5, cutoff=3,kernel='n_body_sc')
+              bodies=2, punchout_settings={'d': 5}, cutoff=3,
+              kernel='n_body_sc')
     otf.run()
     cleanup_otf_run()
-
-
-
-
