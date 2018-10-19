@@ -169,6 +169,9 @@ class GaussianProcess:
                                      kernel_grad, bodies: int,
                                      monitor: bool = False):
 
+        if monitor:
+            print('hyps: '+str(hyps))
+            
         # assume sigma_n is the final hyperparameter
         number_of_hyps = len(hyps)
         sigma_n = hyps[number_of_hyps-1]
@@ -227,7 +230,6 @@ class GaussianProcess:
                 np.trace(np.matmul(like_mat, hyp_mat[:, :, n]))
 
         if monitor:
-            print('hyps: '+str(hyps))
             print('like grad: '+str(like_grad))
             print('like: '+str(like))
             print('\n')
