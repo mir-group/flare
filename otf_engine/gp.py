@@ -25,7 +25,7 @@ from struc import Structure
 class GaussianProcess:
     """ Gaussian Process Regression Model """
 
-    def __init__(self, kernel: str, bodies: int):
+    def __init__(self, kernel: str, bodies: int, opt_algorithm='L-BFGS-B'):
         """Initialize GP parameters and training data.
 
         :param kernel: covariance / kernel function to be used
@@ -41,6 +41,11 @@ class GaussianProcess:
             self.hyps = np.array([1, 1, 1.1])
         else:
             raise ValueError('not a valid kernel')
+
+        if opt_algorithm not in ['BFGS','L-BFGS-B']:
+            raise ValueError('Not a valid algorithm')
+
+        self.algo = opt_algorithm
 
         # quantities used in GPR algorithm
         self.l_mat = None
@@ -106,13 +111,28 @@ class GaussianProcess:
         args = (self.training_data, self.training_labels_np,
                 self.kernel_grad, self.bodies, monitor)
 
-        # Bound signal noise below to avoid overfitting
-        bounds = np.array([(-np.inf,np.inf)]*len(x_0))
-        bounds[-1] = (1e-6,np.inf)
+        if self.algo == 'L-BFGS-B':
+            # bound signal noise below to avoid overfitting
+            bounds = np.array([(-np.inf, np.inf)]*len(x_0))
+            bounds[-1] = (1e-6, np.inf)
 
-        res = minimize(self.get_likelihood_and_gradients, x_0, args,
-                       method='L-BFGS-B', jac=True, bounds=bounds,
-                       options={'disp': False, 'gtol': 1e-4, 'maxiter': 1000})
+            # Catch linear algebra errors and switch to BFGS if necessary
+            try:
+                res = minimize(self.get_likelihood_and_gradients, x_0, args,
+                           method='L-BFGS-B', jac=True, bounds=bounds,
+                           options={'disp': False, 'gtol': 1e-4,
+                                    'maxiter': 1000})
+            except:
+                print("Warning! Algorithm for L-BFGS-B failed. Changing to "
+                      "BFGS for remainder of run.")
+                self.algo = 'BFGS'
+
+        if self.algo == 'BFGS':
+            res = minimize(self.get_likelihood_and_gradients, x_0, args,
+                           method='BFGS', jac=True,
+                           options={'disp': False, 'gtol': 1e-4,
+                                    'maxiter': 1000})
+
         self.hyps = res.x
         self.set_L_alpha()
 
@@ -146,7 +166,7 @@ class GaussianProcess:
         :param x: data point to compare against kernel matrix
         :type x: ChemicalEnvironment
         :param d_1:
-        :type d_1: int
+        n t:type d_1: int
         :return: kernel vector
         :rtype: np.ndarray
         """
@@ -164,9 +184,14 @@ class GaussianProcess:
         return k_v
 
     @staticmethod
-    def get_likelihood_and_gradients(hyps, training_data, training_labels_np,
-                                     kernel_grad, bodies, monitor=False):
+    def get_likelihood_and_gradients(hyps: np.ndarray, training_data: list,
+                                     training_labels_np: np.ndarray,
+                                     kernel_grad, bodies: int,
+                                     monitor: bool = False):
 
+        if monitor:
+            print('hyps: '+str(hyps))
+            
         # assume sigma_n is the final hyperparameter
         number_of_hyps = len(hyps)
         sigma_n = hyps[number_of_hyps-1]
@@ -225,7 +250,6 @@ class GaussianProcess:
                 np.trace(np.matmul(like_mat, hyp_mat[:, :, n]))
 
         if monitor:
-            print('hyps: '+str(hyps))
             print('like grad: '+str(like_grad))
             print('like: '+str(like))
             print('\n')
