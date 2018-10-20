@@ -22,6 +22,8 @@ class ChemicalEnvironment:
         self.etyps = etyps
         self.ctyp = ctyp
 
+        self.sort_arrays()
+
         cross_bond_dists, cross_bond_types = self.get_cross_bonds()
         self.cross_bond_dists = cross_bond_dists
         self.cross_bond_types = cross_bond_types
@@ -134,6 +136,7 @@ class ChemicalEnvironment:
         bond_array = np.array(bond_array)
         bond_types = np.array(bond_types)
         bond_positions = np.array(bond_positions)
+
         return bond_array, bond_types, bond_positions, environment_types, \
             central_type
 
@@ -159,6 +162,12 @@ class ChemicalEnvironment:
                 cross_bond_types[m, n] = trip_ind
         return cross_bond_dists, cross_bond_types
 
+    def sort_arrays(self):
+        sort_inds = self.bond_array[:,0].argsort()
+        self.bond_array = self.bond_array[sort_inds]
+        self.bond_types = self.bond_types[sort_inds]
+        self.bond_positions = self.bond_positions[sort_inds]
+        self.etyps = [self.etyps[n] for n in sort_inds]
 
 if __name__ == '__main__':
     pass

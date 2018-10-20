@@ -23,7 +23,7 @@
     pot_extrapolation = 'second-order'
     wfc_extrapolation = 'second-order'
     ion_temperature = 'rescale-v'
-    tempw = 4000
+    tempw = 6000
  /
 ATOMIC_SPECIES
  C  12  C.pz-rrkjus.UPF

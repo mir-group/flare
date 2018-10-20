@@ -28,7 +28,7 @@ class MDAnalysis:
 
 # return untrained gp model
 def get_gp_from_snaps(md_trajectory, training_snaps, cutoff, kernel, bodies):
-    gp_model = gp.GaussianProcess(kernel, bodies)
+    gp_model = gp.GaussianProcess(kernel, bodies, 'BFGS')
 
     for snap in training_snaps:
         structure = md_trajectory.get_structure_from_snap(snap, cutoff)

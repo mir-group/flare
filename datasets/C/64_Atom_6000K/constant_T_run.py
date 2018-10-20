@@ -53,7 +53,7 @@ scf_inputs = dict(pseudo_dir=pseudo_dir,
 dt = 20
 nstep = 1000
 ion_temperature = 'rescale-v'
-tempw = 4000
+tempw = 6000
 
 md_inputs = dict(dt=dt,
                  nstep=nstep,
