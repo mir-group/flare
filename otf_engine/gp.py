@@ -39,7 +39,7 @@ class GaussianProcess:
             self.kernel = n_body_sc
             self.kernel_grad = n_body_sc_grad
             self.hyps = np.array([1, 1, 1.1])
-            self.hyp_labels = ['Length Sca 1', 'Signal Std 1', 'Noise Sigma']
+            self.hyp_labels = ['Signal Std', 'Length Scale', 'Noise Std']
         else:
             raise ValueError('not a valid kernel')
 
