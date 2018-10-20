@@ -43,8 +43,6 @@ module load python/3.6.3-fasrc01
             fin.write(self.bash_text)
 
 
-
-
 class QEInput:
     def __init__(self, input_file_name: str, output_file_name: str,
                  pw_loc: str, calculation: str,
@@ -199,14 +197,14 @@ class QEInput:
         with open(self.input_file_name, 'w') as fin:
             fin.write(self.input_text)
 
-    def run_espresso(self):
+    def run_espresso(self, npool):
 
-        qe_command = 'mpirun {0} < {1} > {2}'.format(self.pw_loc,
-                                                        self.input_file_name,
-                                                        self.output_file_name)
+        qe_command = \
+            'mpirun -npool {0} {1} < {2} > {3}'.format(npool, self.pw_loc,
+                                                       self.input_file_name,
+                                                       self.output_file_name)
 
         os.system(qe_command)
-
 
 
 def create_structure(el: str, alat: float, size: int, perturb: bool=False,
