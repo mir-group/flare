@@ -14,6 +14,8 @@ def get_supercell_positions(sc_size, cell, positions):
                 for pos in positions:
                     sc_positions.append(pos+vec1+vec2+vec3)
 
+    return sc_positions
+
 # -----------------------------------------------------------------------------
 #                        diamond helper functions
 # -----------------------------------------------------------------------------

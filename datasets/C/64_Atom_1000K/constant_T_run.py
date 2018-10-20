@@ -19,7 +19,9 @@ outdir = './output'
 cube_lat = 2 * 1.763391008
 cell = np.eye(3) * cube_lat
 positions = crystals.cubic_diamond_positions(cube_lat)
-nat = len(positions)
+sc_size = 2
+sc_positions = crystals.get_supercell_positions(sc_size, cell, positions)
+nat = len(sc_positions)
 ntyp = 1
 species = ['C'] * nat
 ion_names = ['C']
@@ -27,7 +29,7 @@ ion_masses = [12]
 ion_pseudo = ['C.pz-rrkjus.UPF']
 
 # converged parameters
-nk = 5
+nk = 3
 kvec = np.array([nk, nk, nk])
 ecutwfc = 50
 ecutrho = 4 * ecutwfc
@@ -40,7 +42,7 @@ scf_inputs = dict(pseudo_dir=pseudo_dir,
                   ecutrho=ecutrho,
                   cell=cell,
                   species=species,
-                  positions=positions,
+                  positions=sc_positions,
                   kvec=kvec,
                   ion_names=ion_names,
                   ion_masses=ion_masses,
@@ -50,17 +52,36 @@ scf_inputs = dict(pseudo_dir=pseudo_dir,
 dt = 20
 nstep = 1000
 ion_temperature = 'rescale-v'
-tempw = 1000
+tempw = 4000
 
 md_inputs = dict(dt=dt,
                  nstep=nstep,
                  ion_temperature=ion_temperature,
                  tempw=tempw)
 
-# make input file and run QE
+# make input file
 calc = qe_input.QEInput(input_file_name, output_file_name, pw_loc,
                         calculation, scf_inputs, md_inputs)
-# calc.run_espresso()
+
+# make bash file
+bash_name = 'constant_T_run.sh'
+npool = 20
+command = 'mpirun -npool {0} {1} < {2} > {3}'.format(npool, pw_loc,
+                                                     input_file_name,
+                                                     output_file_name)
+
+bash_inputs = dict(n=180,
+                   N=6,
+                   t=7,
+                   e='test.err',
+                   p='kozinsky',
+                   o='test.out',
+                   mem_per_cpu=1000,
+                   mail_user='jonathan_vandermause@g.harvard.edu',
+                   command=command)
+
+bash = qe_input.BashInput(bash_name, bash_inputs)
+bash.write_bash_text()
 
 # remove output directory
 if os.path.isdir('output'):
