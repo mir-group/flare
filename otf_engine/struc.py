@@ -159,7 +159,6 @@ class Structure(object):
             newpos[2] = r[i] * cos(phi[i])
             pos += newpos
 
-
     @staticmethod
     def calc_bond_list(unique_species):
         """Converts unique species to a list of bonds.
@@ -193,5 +192,4 @@ class Structure(object):
 
 
 if __name__ == '__main__':
-    # create simple structure
     pass
