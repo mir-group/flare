@@ -17,6 +17,30 @@ import time
 # -----------------------------------------------------------------------------
 
 
+def n_body_sc_cutoff(env1, env2, bodies, d1, d2, hyps, cutoff):
+    bond_array_1, cross_bond_1 = \
+        get_restricted_arrays(env1.bond_array, env1.cross_bond_dists, cutoff)
+    bond_array_2, cross_bond_2 = \
+        get_restricted_arrays(env2.bond_array, env2.cross_bond_dists, cutoff)
+    combs = get_comb_array(bond_array_1.shape[0], bodies-1)
+    perms = get_perm_array(bond_array_2.shape[0], bodies-1)
+    return n_body_jit_sc(bond_array_1, cross_bond_1, combs,
+                         bond_array_2, cross_bond_2, perms,
+                         d1, d2, hyps)
+
+
+def n_body_sc_cutoff_grad(env1, env2, bodies, d1, d2, hyps, cutoff):
+    bond_array_1, cross_bond_1 = \
+        get_restricted_arrays(env1.bond_array, env1.cross_bond_dists, cutoff)
+    bond_array_2, cross_bond_2 = \
+        get_restricted_arrays(env2.bond_array, env2.cross_bond_dists, cutoff)
+    combs = get_comb_array(bond_array_1.shape[0], bodies-1)
+    perms = get_perm_array(bond_array_2.shape[0], bodies-1)
+    return n_body_sc_grad_array(bond_array_1, cross_bond_1, combs,
+                                bond_array_2, cross_bond_2, perms,
+                                d1, d2, hyps)
+
+
 # get n body single component kernel between two environments
 def n_body_sc(env1, env2, bodies, d1, d2, hyps):
     combs = get_comb_array(env1.bond_array.shape[0], bodies-1)
@@ -51,6 +75,102 @@ def two_body(env1, env2, d1, d2, sig, ls):
                         env2.bond_array, env2.bond_types,
                         d1, d2, sig, ls)
 
+
+# -----------------------------------------------------------------------------
+#                               kernel gradients
+# -----------------------------------------------------------------------------
+
+
+@njit
+def n_body_sc_grad_array(bond_array_1, cross_bond_dists_1, combinations,
+                         bond_array_2, cross_bond_dists_2, permutations,
+                         d1, d2, hyps):
+
+    sig = hyps[0]
+    ls = hyps[1]
+
+    kern = 0
+    sig_derv = 0
+    ls_derv = 0
+
+    for m in range(combinations.shape[0]):
+        comb = combinations[m]
+        for n in range(permutations.shape[0]):
+            perm = permutations[n]
+            A_cp = 0
+            B_cp_1 = 0
+            B_cp_2 = 0
+            C_cp = 0
+
+            for q, (c_ind, p_ind) in enumerate(zip(comb, perm)):
+                rdiff = bond_array_1[c_ind, 0] - bond_array_2[p_ind, 0]
+                coord1 = bond_array_1[c_ind, d1]
+                coord2 = bond_array_2[p_ind, d2]
+
+                A_cp += coord1 * coord2
+                B_cp_1 += rdiff * coord1
+                B_cp_2 += rdiff * coord2
+                C_cp += rdiff * rdiff
+
+                for c_ind_2, p_ind_2 in zip(comb[q+1:], perm[q+1:]):
+                    cb_diff = cross_bond_dists_1[c_ind, c_ind_2] - \
+                        cross_bond_dists_2[p_ind, p_ind_2]
+                    C_cp += cb_diff * cb_diff
+
+            B_cp = B_cp_1 * B_cp_2
+
+            kern += (sig*sig / (ls**4)) * (A_cp * ls * ls - B_cp) * \
+                exp(-C_cp / (2 * ls * ls))
+
+            sig_derv += (2*sig / (ls**4)) * (A_cp * ls * ls - B_cp) * \
+                exp(-C_cp / (2 * ls * ls))
+
+            ls_derv += ((sig*sig)/(ls**7)) * \
+                (-B_cp*C_cp+(4*B_cp+A_cp*C_cp)*ls*ls-2*A_cp*ls**4) * \
+                exp(-C_cp / (2 * ls * ls))
+
+    kern_grad = np.array([sig_derv, ls_derv])
+
+    return kern, kern_grad
+
+
+def two_body_grad_from_env(bond_array_1, bond_types_1, bond_array_2,
+                           bond_types_2, d1, d2, hyps):
+    sig = hyps[0]
+    ls = hyps[1]
+    S = sig * sig
+    L = 1 / (ls * ls)
+    sig_conv = 2 * sig
+    ls_conv = -2 / (ls * ls * ls)
+
+    kern = 0
+    sig_derv = 0
+    ls_derv = 0
+
+    x1_len = len(bond_types_1)
+    x2_len = len(bond_types_2)
+
+    for m in range(x1_len):
+        r1 = bond_array_1[m, 0]
+        coord1 = bond_array_1[m, d1]
+        typ1 = bond_types_1[m]
+
+        for n in range(x2_len):
+            r2 = bond_array_2[n, 0]
+            coord2 = bond_array_2[n, d2]
+            typ2 = bond_types_2[n]
+
+            # check that bonds match
+            if typ1 == typ2:
+                rr = (r1-r2)*(r1-r2)
+                kern += S*L*exp(-0.5*L*rr)*coord1*coord2*(1-L*rr)
+                sig_derv += L*exp(-0.5*L*rr)*coord1*coord2*(1-L*rr) * sig_conv
+                ls_derv += 0.5*coord1*coord2*S*exp(-L*rr/2) * \
+                    (2+L*rr*(-5+L*rr))*ls_conv
+
+    kern_grad = np.array([sig_derv, ls_derv])
+
+    return kern, kern_grad
 
 # -----------------------------------------------------------------------------
 #           kernels acting on numpy arrays (can be jitted)
@@ -188,7 +308,7 @@ def two_body_jit(bond_array_1, bond_types_1, bond_array_2,
 
 
 # -----------------------------------------------------------------------------
-#                   combinatorics helper functions
+#                               helper functions
 # -----------------------------------------------------------------------------
 
 
@@ -238,101 +358,20 @@ def get_perm_array(list_len, tuple_size):
     return perm_store
 
 
-# -----------------------------------------------------------------------------
-#                               kernel gradients
-# -----------------------------------------------------------------------------
+@njit
+def get_cutoff_index(bond_array, cutoff):
+    for count, dist in enumerate(bond_array[:, 0]):
+        if dist > cutoff:
+            return count
+    return count+1
 
 
 @njit
-def n_body_sc_grad_array(bond_array_1, cross_bond_dists_1, combinations,
-                         bond_array_2, cross_bond_dists_2, permutations,
-                         d1, d2, hyps):
-
-    sig = hyps[0]
-    ls = hyps[1]
-
-    kern = 0
-    sig_derv = 0
-    ls_derv = 0
-
-    for m in range(combinations.shape[0]):
-        comb = combinations[m]
-        for n in range(permutations.shape[0]):
-            perm = permutations[n]
-            A_cp = 0
-            B_cp_1 = 0
-            B_cp_2 = 0
-            C_cp = 0
-
-            for q, (c_ind, p_ind) in enumerate(zip(comb, perm)):
-                rdiff = bond_array_1[c_ind, 0] - bond_array_2[p_ind, 0]
-                coord1 = bond_array_1[c_ind, d1]
-                coord2 = bond_array_2[p_ind, d2]
-
-                A_cp += coord1 * coord2
-                B_cp_1 += rdiff * coord1
-                B_cp_2 += rdiff * coord2
-                C_cp += rdiff * rdiff
-
-                for c_ind_2, p_ind_2 in zip(comb[q+1:], perm[q+1:]):
-                    cb_diff = cross_bond_dists_1[c_ind, c_ind_2] - \
-                        cross_bond_dists_2[p_ind, p_ind_2]
-                    C_cp += cb_diff * cb_diff
-
-            B_cp = B_cp_1 * B_cp_2
-
-            kern += (sig*sig / (ls**4)) * (A_cp * ls * ls - B_cp) * \
-                exp(-C_cp / (2 * ls * ls))
-
-            sig_derv += (2*sig / (ls**4)) * (A_cp * ls * ls - B_cp) * \
-                exp(-C_cp / (2 * ls * ls))
-
-            ls_derv += ((sig*sig)/(ls**7)) * \
-                (-B_cp*C_cp+(4*B_cp+A_cp*C_cp)*ls*ls-2*A_cp*ls**4) * \
-                exp(-C_cp / (2 * ls * ls))
-
-    kern_grad = np.array([sig_derv, ls_derv])
-
-    return kern, kern_grad
-
-
-def two_body_grad_from_env(bond_array_1, bond_types_1, bond_array_2,
-                           bond_types_2, d1, d2, hyps):
-    sig = hyps[0]
-    ls = hyps[1]
-    S = sig * sig
-    L = 1 / (ls * ls)
-    sig_conv = 2 * sig
-    ls_conv = -2 / (ls * ls * ls)
-
-    kern = 0
-    sig_derv = 0
-    ls_derv = 0
-
-    x1_len = len(bond_types_1)
-    x2_len = len(bond_types_2)
-
-    for m in range(x1_len):
-        r1 = bond_array_1[m, 0]
-        coord1 = bond_array_1[m, d1]
-        typ1 = bond_types_1[m]
-
-        for n in range(x2_len):
-            r2 = bond_array_2[n, 0]
-            coord2 = bond_array_2[n, d2]
-            typ2 = bond_types_2[n]
-
-            # check that bonds match
-            if typ1 == typ2:
-                rr = (r1-r2)*(r1-r2)
-                kern += S*L*exp(-0.5*L*rr)*coord1*coord2*(1-L*rr)
-                sig_derv += L*exp(-0.5*L*rr)*coord1*coord2*(1-L*rr) * sig_conv
-                ls_derv += 0.5*coord1*coord2*S*exp(-L*rr/2) * \
-                    (2+L*rr*(-5+L*rr))*ls_conv
-
-    kern_grad = np.array([sig_derv, ls_derv])
-
-    return kern, kern_grad
+def get_restricted_arrays(bond_array, cross_bond_array, cutoff):
+    cutoff_ind = get_cutoff_index(bond_array, cutoff)
+    restricted_bond_array = bond_array[0:cutoff_ind, :]
+    restricted_cross_bond_array = cross_bond_array[0:cutoff_ind, 0:cutoff_ind]
+    return restricted_bond_array, restricted_cross_bond_array
 
 
 if __name__ == '__main__':
