@@ -17,7 +17,36 @@ import time
 # -----------------------------------------------------------------------------
 
 
-def n_body_sc_cutoff(env1, env2, bodies, d1, d2, hyps, cutoff):
+def combo_kernel_sc(env1: ChemicalEnvironment, env2: ChemicalEnvironment,
+                    bodies_array: list, d1: int, d2: int,
+                    hyps: np.ndarray, cutoffs: np.ndarray) -> float:
+    kern = 0
+    for count, (bodies, cutoff) in enumerate(zip(bodies_array, cutoffs)):
+        hyp_ind = 2 * count
+        hyps_curr = hyps[hyp_ind:hyp_ind+2]
+        kern += n_body_sc_cutoff(env1, env2, bodies, d1, d2, hyps_curr,
+                                 cutoff)
+    return kern
+
+
+def combo_kernel_sc_grad(env1: ChemicalEnvironment, env2: ChemicalEnvironment,
+                         bodies_array: list, d1: int, d2: int,
+                         hyps: np.ndarray, cutoffs: np.ndarray) -> float:
+    kern = 0
+    kern_grad = np.zeros(hyps.size)
+    for count, (bodies, cutoff) in enumerate(zip(bodies_array, cutoffs)):
+        hyp_ind = 2 * count
+        hyps_curr = hyps[hyp_ind:hyp_ind+2]
+        kern_curr = n_body_sc_cutoff_grad(env1, env2, bodies, d1, d2,
+                                          hyps_curr, cutoff)
+        kern += kern_curr[0]
+        kern_grad[hyp_ind:hyp_ind+2] = kern_curr[1]
+    return kern, kern_grad
+
+
+def n_body_sc_cutoff(env1: ChemicalEnvironment, env2: ChemicalEnvironment,
+                     bodies: int, d1: int, d2: int, hyps: np.ndarray,
+                     cutoff: float) -> float:
     bond_array_1, cross_bond_1 = \
         get_restricted_arrays(env1.bond_array, env1.cross_bond_dists, cutoff)
     bond_array_2, cross_bond_2 = \
