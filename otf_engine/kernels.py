@@ -71,7 +71,7 @@ def n_body_sc_cutoff_grad(env1, env2, bodies, d1, d2, hyps, cutoff):
 
 
 # get n body single component kernel between two environments
-def n_body_sc(env1, env2, bodies, d1, d2, hyps):
+def n_body_sc(env1, env2, bodies, d1, d2, hyps, cutoffs=None):
     combs = get_comb_array(env1.bond_array.shape[0], bodies-1)
     perms = get_perm_array(env2.bond_array.shape[0], bodies-1)
 
@@ -80,7 +80,7 @@ def n_body_sc(env1, env2, bodies, d1, d2, hyps):
                          d1, d2, hyps)
 
 
-def n_body_sc_grad(env1, env2, bodies, d1, d2, hyps):
+def n_body_sc_grad(env1, env2, bodies, d1, d2, hyps, cutoffs=None):
     combs = get_comb_array(env1.bond_array.shape[0], bodies-1)
     perms = get_perm_array(env2.bond_array.shape[0], bodies-1)
 

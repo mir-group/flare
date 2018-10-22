@@ -18,14 +18,16 @@ from scipy.optimize import minimize
 from typing import List
 
 from env import ChemicalEnvironment
-from kernels import n_body_sc, n_body_sc_grad
+from kernels import n_body_sc, n_body_sc_grad, combo_kernel_sc,\
+    combo_kernel_sc_grad
 from struc import Structure
 
 
 class GaussianProcess:
     """ Gaussian Process Regression Model """
 
-    def __init__(self, kernel: str, bodies: int, opt_algorithm='L-BFGS-B'):
+    def __init__(self, kernel: str, bodies, opt_algorithm='L-BFGS-B',
+                 cutoffs=None):
         """Initialize GP parameters and training data.
 
         :param kernel: covariance / kernel function to be used
@@ -40,6 +42,14 @@ class GaussianProcess:
             self.kernel_grad = n_body_sc_grad
             self.hyps = np.array([1, 1, 1.1])
             self.hyp_labels = ['Signal Std', 'Length Scale', 'Noise Std']
+            self.cutoffs = None
+        elif kernel == 'combo_kernel_sc':
+            self.kernel = combo_kernel_sc
+            self.kernel_grad = combo_kernel_sc_grad
+            self.hyps = np.ones([len(bodies)+1])
+            self.hyp_labels = ['Signal Std', 'Length Scale']*len(bodies)
+            self.hyp_labels.append('Noise Std')
+            self.cutoffs = cutoffs
         else:
             raise ValueError('not a valid kernel')
 
@@ -110,7 +120,7 @@ class GaussianProcess:
         x_0 = self.hyps
 
         args = (self.training_data, self.training_labels_np,
-                self.kernel_grad, self.bodies, monitor)
+                self.kernel_grad, self.bodies, self.cutoffs, monitor)
 
         if self.algo == 'L-BFGS-B':
             # bound signal noise below to avoid overfitting
@@ -156,7 +166,8 @@ class GaussianProcess:
 
         # get predictive variance
         v_vec = solve_triangular(self.l_mat, k_v, lower=True)
-        self_kern = self.kernel(x_t, x_t, self.bodies, d, d, self.hyps)
+        self_kern = self.kernel(x_t, x_t, self.bodies, d, d, self.hyps,
+                                self.cutoffs)
         pred_var = self_kern - np.matmul(v_vec, v_vec)
 
         return pred_mean, pred_var
@@ -181,7 +192,7 @@ class GaussianProcess:
             x_2 = self.training_data[int(math.floor(m_index / 3))]
             d_2 = ds[m_index % 3]
             k_v[m_index] = self.kernel(x, x_2, self.bodies, d_1, d_2,
-                                       self.hyps)
+                                       self.hyps, self.cutoffs)
 
         return k_v
 
@@ -189,6 +200,7 @@ class GaussianProcess:
     def get_likelihood_and_gradients(hyps: np.ndarray, training_data: list,
                                      training_labels_np: np.ndarray,
                                      kernel_grad, bodies: int,
+                                     cutoffs=None,
                                      monitor: bool = False):
 
         if monitor:
@@ -216,7 +228,8 @@ class GaussianProcess:
                 d_2 = ds[n_index % 3]
 
                 # calculate kernel and gradient
-                cov = kernel_grad(x_1, x_2, bodies, d_1, d_2, kern_hyps)
+                cov = kernel_grad(x_1, x_2, bodies, d_1, d_2, kern_hyps,
+                                  cutoffs)
 
                 # store kernel value
                 k_mat[m_index, n_index] = cov[0]
@@ -278,7 +291,8 @@ class GaussianProcess:
                 d_2 = ds[n_index % 3]
 
                 # calculate kernel and gradient
-                cov = self.kernel(x_1, x_2, self.bodies, d_1, d_2, kern_hyps)
+                cov = self.kernel(x_1, x_2, self.bodies, d_1, d_2, kern_hyps,
+                                  self.cutoffs)
 
                 # store kernel value
                 k_mat[m_index, n_index] = cov
