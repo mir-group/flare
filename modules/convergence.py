@@ -18,8 +18,6 @@ def print_results(nk, ecutwfc, ecutrho, energy, forces, conv_energy,
     print('ecutwfc: %.2f' % ecutwfc)
     print('ecutrho: %.2f' % ecutrho)
     print('energy: %f' % energy)
-    print('forces:')
-    print(forces)
 
     en_diff = energy - conv_energy
     print('energy difference from converged value: %.2e eV' % en_diff)
@@ -30,6 +28,9 @@ def print_results(nk, ecutwfc, ecutrho, energy, forces, conv_energy,
     force_diff = conv_forces_array - forces_array
     force_MAE = np.mean(np.abs(force_diff))
     print('force MAE: %.2e eV/A' % force_MAE)
+
+    max_err = np.max(np.abs(force_diff))
+    print('max force error: %.2e eV/A' % max_err)
     print('\n')
 
 
