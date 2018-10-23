@@ -46,7 +46,7 @@ class GaussianProcess:
         elif kernel == 'combo_kernel_sc':
             self.kernel = combo_kernel_sc
             self.kernel_grad = combo_kernel_sc_grad
-            self.hyps = np.ones([len(bodies)+1])
+            self.hyps = np.ones([2*len(bodies)+1])
             self.hyp_labels = ['Signal Std', 'Length Scale']*len(bodies)
             self.hyp_labels.append('Noise Std')
             self.cutoffs = cutoffs
