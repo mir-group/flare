@@ -13,6 +13,43 @@ def parse_scf_energy(outfile):
     return energy
 
 
+def parse_scf(outfile: str):
+    """
+    Get forces from a pwscf file in eV/A
+
+    :param outfile: str, Path to pwscf output file
+    :return: list[nparray] , List of forces acting on atoms
+    """
+    forces = []
+    total_energy = np.nan
+
+    with open(outfile, 'r') as outf:
+        for line in outf:
+            if line.lower().startswith('!    total energy'):
+                total_energy = float(line.split()[-2])
+
+            if line.find('force') != -1 and line.find('atom') != -1:
+                line = line.split('force =')[-1]
+                line = line.strip()
+                line = line.split(' ')
+                line = [x for x in line if x != '']
+                temp_forces = []
+                for x in line:
+                    temp_forces.append(float(x))
+                forces.append(np.array(list(temp_forces)))
+
+    assert total_energy != np.nan, "Quantum ESPRESSO parser failed to read " \
+                                   "the file {}. Run failed.".format(outfile)
+
+    en_conv = 13.6056925330  # bohr to eV
+    force_conv = 25.71104309541616  # bohr/Ry to eV/A
+
+    total_energy = total_energy * en_conv
+    forces = [force_conv * force for force in forces]
+
+    return total_energy, forces
+
+
 def parse_md_output(outfile):
 
     steps = {}

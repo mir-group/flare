@@ -245,7 +245,7 @@ def edit_qe_input_positions(qe_input: str, structure: Structure):
 
 def parse_qe_forces(outfile: str):
     """
-    Get forces from a pwscf file in Ryd/bohr
+    Get forces from a pwscf file in eV/A
 
     :param outfile: str, Path to pwscf output file
     :return: list[nparray] , List of forces acting on atoms
