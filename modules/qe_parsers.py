@@ -1,6 +1,10 @@
 import numpy as np
 
 
+en_conv = 13.6056925330  # bohr to eV
+force_conv = 25.71104309541616  # bohr/Ry to eV/A
+
+
 # get energy from scf run
 def parse_scf_energy(outfile):
     with open(outfile, 'r') as outf:
@@ -40,9 +44,6 @@ def parse_scf(outfile: str):
 
     assert total_energy != np.nan, "Quantum ESPRESSO parser failed to read " \
                                    "the file {}. Run failed.".format(outfile)
-
-    en_conv = 13.6056925330  # bohr to eV
-    force_conv = 25.71104309541616  # bohr/Ry to eV/A
 
     total_energy = total_energy * en_conv
     forces = [force_conv * force for force in forces]
@@ -90,8 +91,9 @@ def parse_md_output(outfile):
         forces = []
         for line in current_chunk[force_start_index:force_end_index+1]:
             forceline = line.split('=')[-1].split()
-            forces.append(np.array([float(forceline[0]), float(forceline[1]),
-                          float(forceline[2])]))
+            forces.append(force_conv * np.array([float(forceline[0]),
+                                                 float(forceline[1]),
+                                                 float(forceline[2])]))
         total_force = float(force_end_line.split('=')[1].strip().split()[0])
         SCF_corr = float(force_end_line.split('=')[2].strip()[0])
 

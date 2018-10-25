@@ -3,6 +3,57 @@ import sys
 import os
 import qe_input
 import qe_parsers
+import datetime
+
+
+def convergence(txt_name, input_file_string, output_file_string, pw_loc,
+                calculation, scf_inputs, nks, ecutwfcs, rho_facs):
+    # initialize update text
+    txt = update_init()
+    write_file(txt_name, txt)
+
+    # converged run
+    initial_input_name = input_file_string + '.in'
+    initial_output_name = output_file_string + '.out'
+
+    scf = qe_input.QEInput(initial_input_name, initial_output_name, pw_loc,
+                           calculation, scf_inputs)
+    scf.run_espresso(npool=False)
+    conv_energy, conv_forces = qe_parsers.parse_scf(initial_output_name)
+
+    txt += record_results(scf_inputs['kvec'][0], scf_inputs['ecutwfc'],
+                          scf_inputs['ecutrho'], conv_energy, conv_forces,
+                          conv_energy, conv_forces)
+    write_file(txt_name, txt)
+
+    # loop over parameters
+    for nk in nks:
+        for ecutwfc in ecutwfcs:
+            for rho_fac in rho_facs:
+                ecutrho = ecutwfc * rho_fac
+                scf_inputs['kvec'] = np.array([nk, nk, nk])
+                scf_inputs['ecutrho'] = ecutrho
+                scf_inputs['ecutwfc'] = ecutwfc
+
+                input_name = input_file_string + \
+                    '_nk%i_e%i_rho%i.in' % (nk, ecutwfc, rho_fac)
+                output_name = output_file_string + \
+                    '_nk%i_e%i_rho%i.out' % (nk, ecutwfc, rho_fac)
+
+                scf = qe_input.QEInput(input_name, output_name,
+                                       pw_loc, calculation, scf_inputs)
+                scf.run_espresso(npool=False)
+                energy, forces = qe_parsers.parse_scf(output_name)
+
+                txt += record_results(nk, ecutwfc, ecutrho, energy, forces,
+                                      conv_energy, conv_forces)
+                write_file(txt_name, txt)
+
+    # remove output directory
+    if os.path.isdir('output'):
+        os.system('rm -r output')
+    if os.path.isdir('__pycache__'):
+        os.system('rm -r __pycache__')
 
 
 def reshape_forces(forces: list) -> np.ndarray:
@@ -34,38 +85,62 @@ def print_results(nk, ecutwfc, ecutrho, energy, forces, conv_energy,
     print('\n')
 
 
-def convergence(input_file_name, output_file_name, pw_loc,
-                calculation, scf_inputs, nks, ecutwfcs, rho_facs):
+def record_results(nk, ecutwfc, ecutrho, energy, forces, conv_energy,
+                   conv_forces):
+    txt = """
 
-    # converged run
-    scf = qe_input.QEInput(input_file_name, output_file_name, pw_loc,
-                           calculation, scf_inputs)
-    scf.run_espresso(npool=False)
-    conv_energy, conv_forces = qe_parsers.parse_scf(output_file_name)
+Inputs:
+nk: %i
+ecutwfc: %.2f
+ecutrho: %.2f
 
-    print('converged values:')
-    print_results(scf_inputs['kvec'][0], scf_inputs['ecutwfc'],
-                  scf_inputs['ecutrho'], conv_energy, conv_forces,
-                  conv_energy, conv_forces)
+Convergence results:
+energy: %f eV.""" % (nk, ecutwfc, ecutrho, energy)
 
-    # loop over parameters
-    for nk in nks:
-        for ecutwfc in ecutwfcs:
-            for rho_fac in rho_facs:
-                ecutrho = ecutwfc * rho_fac
-                scf_inputs['kvec'] = np.array([nk, nk, nk])
-                scf_inputs['ecutrho'] = ecutrho
-                scf_inputs['ecutwfc'] = ecutwfc
+    en_diff = energy - conv_energy
+    txt += """
+energy difference from converged value: %.2e eV.""" % en_diff
 
-                scf = qe_input.QEInput(input_file_name, output_file_name,
-                                       pw_loc, calculation, scf_inputs)
-                scf.run_espresso(npool=False)
-                energy, forces = qe_parsers.parse_scf(output_file_name)
-                print_results(nk, ecutwfc, ecutrho, energy, forces,
-                              conv_energy, conv_forces)
+    # reshape converged force
+    conv_forces_array = reshape_forces(conv_forces)
+    forces_array = reshape_forces(forces)
+    force_diff = conv_forces_array - forces_array
+    force_MAE = np.mean(np.abs(force_diff))
+    txt += """
+force MAE: %.2e eV/A.""" % force_MAE
 
-    # remove output directory
-    if os.path.isdir('output'):
-        os.system('rm -r output')
-    if os.path.isdir('__pycache__'):
-        os.system('rm -r __pycache__')
+    max_err = np.max(np.abs(force_diff))
+    txt += """
+max force error: %.2e eV/A.
+""" % max_err
+
+    return txt
+
+
+# -----------------------------------------------------------------------------
+#                          monitor code progress
+# -----------------------------------------------------------------------------
+
+def write_file(fname, text):
+    with open(fname, 'w') as fin:
+        fin.write(text)
+
+
+def update_init():
+    init_text = """Quantum Espresso convergence test: %s.
+Author: Jonathan Vandermause.
+""" % str(datetime.datetime.now())
+
+    return init_text
+
+if __name__ == '__main__':
+    nk = 5
+    ecutwfc = 50
+    ecutrho = 100
+    energy = 24.5
+    forces = [np.array([1, 2, 3])]
+    conv_energy = 25
+    conv_forces = [np.array([4, 5, 6])]
+    record_test = record_results(nk, ecutwfc, ecutrho, energy, forces,
+                                 conv_energy, conv_forces)
+    print(record_test)
