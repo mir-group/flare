@@ -4,6 +4,7 @@ import os
 import qe_input
 import qe_parsers
 import datetime
+import time
 
 
 def convergence(txt_name, input_file_string, output_file_string, pw_loc,
@@ -18,12 +19,18 @@ def convergence(txt_name, input_file_string, output_file_string, pw_loc,
 
     scf = qe_input.QEInput(initial_input_name, initial_output_name, pw_loc,
                            calculation, scf_inputs)
+
+    # perform and time converged scf run
+    time0 = time.time()
     scf.run_espresso(npool=False)
+    time1 = time.time()
+    scf_time = time1 - time0
+
     conv_energy, conv_forces = qe_parsers.parse_scf(initial_output_name)
 
     txt += record_results(scf_inputs['kvec'][0], scf_inputs['ecutwfc'],
                           scf_inputs['ecutrho'], conv_energy, conv_forces,
-                          conv_energy, conv_forces)
+                          conv_energy, conv_forces, scf_time)
     write_file(txt_name, txt)
 
     # loop over parameters
@@ -42,12 +49,21 @@ def convergence(txt_name, input_file_string, output_file_string, pw_loc,
 
                 scf = qe_input.QEInput(input_name, output_name,
                                        pw_loc, calculation, scf_inputs)
+
+                # perform and time scf run
+                time0 = time.time()
                 scf.run_espresso(npool=False)
+                time1 = time.time()
+                scf_time = time1 - time0
+
                 energy, forces = qe_parsers.parse_scf(output_name)
 
                 txt += record_results(nk, ecutwfc, ecutrho, energy, forces,
-                                      conv_energy, conv_forces)
+                                      conv_energy, conv_forces, scf_time)
                 write_file(txt_name, txt)
+
+    txt += update_fin()
+    write_file(txt_name, txt)
 
     # remove output directory
     if os.path.isdir('output'):
@@ -86,7 +102,7 @@ def print_results(nk, ecutwfc, ecutrho, energy, forces, conv_energy,
 
 
 def record_results(nk, ecutwfc, ecutrho, energy, forces, conv_energy,
-                   conv_forces):
+                   conv_forces, scf_time):
     txt = """
 
 Inputs:
@@ -112,7 +128,8 @@ force MAE: %.2e eV/A.""" % force_MAE
     max_err = np.max(np.abs(force_diff))
     txt += """
 max force error: %.2e eV/A.
-""" % max_err
+scf time: %.2f s.
+""" % (max_err, scf_time)
 
     return txt
 
@@ -133,6 +150,15 @@ Author: Jonathan Vandermause.
 
     return init_text
 
+
+def update_fin():
+    fin_text = """
+-------------------------------------------------------------------------------
+   JOB DONE.
+-------------------------------------------------------------------------------
+"""
+    return fin_text
+
 if __name__ == '__main__':
     nk = 5
     ecutwfc = 50
@@ -142,5 +168,5 @@ if __name__ == '__main__':
     conv_energy = 25
     conv_forces = [np.array([4, 5, 6])]
     record_test = record_results(nk, ecutwfc, ecutrho, energy, forces,
-                                 conv_energy, conv_forces)
+                                 conv_energy, conv_forces, 4)
     print(record_test)

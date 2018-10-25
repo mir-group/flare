@@ -1,7 +1,7 @@
 #!/bin/sh
 #SBATCH -n 32
 #SBATCH -N 1
-#SBATCH -t 1-00:00
+#SBATCH -t 7-00:00
 #SBATCH -e test.err
 #SBATCH -p kozinsky
 #SBATCH -o test.out

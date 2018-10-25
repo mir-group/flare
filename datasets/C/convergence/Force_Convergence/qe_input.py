@@ -1,4 +1,5 @@
 import numpy as np
+import subprocess
 import os
 
 
@@ -208,6 +209,7 @@ class QEInput:
                     npool, self.pw_loc, self.input_file_name,
                     self.output_file_name)
         os.system(qe_command)
+        # subprocess.call(qe_command, shell=True)
 
 
 def create_structure(el: str, alat: float, size: int, perturb: bool=False,

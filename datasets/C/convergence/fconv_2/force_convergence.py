@@ -9,10 +9,11 @@ data_file = 'C.out'
 steps = qe_parsers.parse_md_output(data_file)
 
 # set up convergence run
-input_file_name = './C_conv.in'
-output_file_name = './C_conv.out'
-pw_loc = '/n/holylfs/LABS/kozinsky_lab/Software/qe-6.2.1/bin/pw.x'
-pseudo_dir = '/n/holylfs/LABS/kozinsky_lab/Software/qe-6.2.1/pseudo'
+txt_name = 'C_conv_output.txt'
+input_file_string = './C_conv'
+output_file_string = './C_conv'
+pw_loc = '/n/home03/jonpvandermause/qe-6.2.1/bin/pw.x'
+pseudo_dir = '/n/home03/jonpvandermause/qe-6.2.1/pseudo'
 outdir = './output'
 calculation = 'scf'
 
@@ -33,7 +34,7 @@ ion_pseudo = ['C.pz-rrkjus.UPF']
 nk = 5
 kvec = np.array([nk, nk, nk])
 ecutwfc = 100
-ecutrho = 8 * ecutwfc
+ecutrho = 4 * ecutwfc
 
 scf_inputs = dict(pseudo_dir=pseudo_dir,
                   outdir=outdir,
@@ -51,8 +52,8 @@ scf_inputs = dict(pseudo_dir=pseudo_dir,
 
 # choose parameter grid
 nks = [3, 4, 5]
-ecutwfcs = [40, 50, 60, 70, 80, 90, 100]
-rho_facs = [2, 4]
+ecutwfcs = [50, 75, 150]
+rho_facs = [4, 8]
 
-convergence(input_file_name, output_file_name, pw_loc,
+convergence(txt_name, input_file_string, output_file_string, pw_loc,
             calculation, scf_inputs, nks, ecutwfcs, rho_facs)
