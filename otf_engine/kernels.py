@@ -18,13 +18,23 @@ import time
 
 
 # get n body single component kernel between two environments
-def energy_force_sc(env1, env2, bodies, d1, d2, hyps, cutoffs=None):
+def energy_sc(env1, env2, bodies, hyps, cutoffs=None):
+    combs = get_comb_array(env1.bond_array.shape[0], bodies-1)
+    perms = get_perm_array(env2.bond_array.shape[0], bodies-1)
+
+    return energy_jit_sc(env1.bond_array, env1.cross_bond_dists, combs,
+                         env2.bond_array, env2.cross_bond_dists, perms,
+                         hyps)
+
+
+# get n body single component kernel between two environments
+def energy_force_sc(env1, env2, bodies, d1, hyps, cutoffs=None):
     combs = get_comb_array(env1.bond_array.shape[0], bodies-1)
     perms = get_perm_array(env2.bond_array.shape[0], bodies-1)
 
     return energy_force_jit_sc(env1.bond_array, env1.cross_bond_dists, combs,
                                env2.bond_array, env2.cross_bond_dists, perms,
-                               d1, d2, hyps)
+                               d1, hyps)
 
 
 def combo_kernel_sc(env1: ChemicalEnvironment, env2: ChemicalEnvironment,
@@ -216,13 +226,42 @@ def two_body_grad_from_env(bond_array_1, bond_types_1, bond_array_2,
 # -----------------------------------------------------------------------------
 
 
+# single component n body energy kernel
+@njit
+def energy_jit_sc(bond_array_1, cross_bond_dists_1, combinations,
+                  bond_array_2, cross_bond_dists_2, permutations,
+                  hyps):
+    sig = hyps[0]
+    ls = hyps[1]
+    kern = 0
+
+    for m in range(combinations.shape[0]):
+        comb = combinations[m]
+        for n in range(permutations.shape[0]):
+            perm = permutations[n]
+            C_cp = 0
+
+            for q, (c_ind, p_ind) in enumerate(zip(comb, perm)):
+                rdiff = bond_array_1[c_ind, 0] - bond_array_2[p_ind, 0]
+                C_cp += rdiff * rdiff
+
+                for c_ind_2, p_ind_2 in zip(comb[q+1:], perm[q+1:]):
+                    cb_diff = cross_bond_dists_1[c_ind, c_ind_2] - \
+                        cross_bond_dists_2[p_ind, p_ind_2]
+                    C_cp += cb_diff * cb_diff
+
+            kern += sig * sig * exp(-C_cp / (2 * ls * ls))
+
+    return kern
+
+
 # single component n body energy/force kernel
 # bond array 1: force environment
 # bond array 2: local energy environment
 @njit
 def energy_force_jit_sc(bond_array_1, cross_bond_dists_1, combinations,
                         bond_array_2, cross_bond_dists_2, permutations,
-                        d1, d2, hyps):
+                        d1, hyps):
     sig = hyps[0]
     ls = hyps[1]
     kern = 0

@@ -19,7 +19,7 @@ from typing import List
 
 from env import ChemicalEnvironment
 from kernels import n_body_sc, n_body_sc_grad, combo_kernel_sc,\
-    combo_kernel_sc_grad
+    combo_kernel_sc_grad, energy_force_sc, energy_sc
 from struc import Structure
 
 
@@ -40,12 +40,16 @@ class GaussianProcess:
         if kernel == 'n_body_sc':
             self.kernel = n_body_sc
             self.kernel_grad = n_body_sc_grad
+            self.energy_force_kernel = energy_force_sc
+            self.energy_kernel = energy_sc
             self.hyps = np.array([1, 1, 1.1])
             self.hyp_labels = ['Signal Std', 'Length Scale', 'Noise Std']
             self.cutoffs = None
         elif kernel == 'combo_kernel_sc':
             self.kernel = combo_kernel_sc
             self.kernel_grad = combo_kernel_sc_grad
+            self.energy_force_kernel = energy_force_sc
+            self.energy_kernel = energy_sc
             self.hyps = np.ones([2*len(bodies)+1])
             self.hyp_labels = ['Signal Std', 'Length Scale']*len(bodies)
             self.hyp_labels.append('Noise Std')
@@ -172,6 +176,21 @@ class GaussianProcess:
 
         return pred_mean, pred_var
 
+    def predict_local_energy(self, x_t: ChemicalEnvironment) -> [float, float]:
+        # get kernel vector
+        k_v = self.en_kern_vec(x_t)
+
+        # get predictive mean
+        pred_mean = np.matmul(k_v, self.alpha)
+
+        # get predictive variance
+        v_vec = solve_triangular(self.l_mat, k_v, lower=True)
+        self_kern = self.energy_kernel(x_t, x_t, self.bodies, self.hyps,
+                                       self.cutoffs)
+        pred_var = self_kern - np.matmul(v_vec, v_vec)
+
+        return pred_mean, pred_var
+
     def get_kernel_vector(self, x: ChemicalEnvironment,
                           d_1: int) -> np.ndarray:
         """ Compute kernel vector.
@@ -193,6 +212,19 @@ class GaussianProcess:
             d_2 = ds[m_index % 3]
             k_v[m_index] = self.kernel(x, x_2, self.bodies, d_1, d_2,
                                        self.hyps, self.cutoffs)
+
+        return k_v
+
+    def en_kern_vec(self, x: ChemicalEnvironment) -> np.ndarray:
+        ds = [1, 2, 3]
+        size = len(self.training_data) * 3
+        k_v = np.zeros(size, )
+
+        for m_index in range(size):
+            x_2 = self.training_data[int(math.floor(m_index / 3))]
+            d_2 = ds[m_index % 3]
+            k_v[m_index] = self.energy_force_kernel(x_2, x, self.bodies, d_2,
+                                                    self.hyps, self.cutoffs)
 
         return k_v
 

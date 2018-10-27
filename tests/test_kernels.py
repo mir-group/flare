@@ -249,9 +249,9 @@ def test_force_en(env1, env2, delt_env):
     bodies = 2
     hyps = np.array([sig, ls])
 
-    en_force_test = kernels.energy_force_sc(env1, env2, bodies, d1, d2, hyps)
+    en_force_test = kernels.energy_force_sc(env1, env2, bodies, d1, hyps)
     en_force_test_2 = \
-        kernels.energy_force_sc(env1, delt_env, bodies, d1, d2, hyps)
+        kernels.energy_force_sc(env1, delt_env, bodies, d1, hyps)
     force_diff = (en_force_test_2-en_force_test)/delta
 
     print(force_diff)
