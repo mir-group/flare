@@ -65,6 +65,7 @@ def env2():
 
     del env2
 
+
 @pytest.fixture(scope='module')
 def test_structure_2():
     cell = np.eye(3)
@@ -78,6 +79,23 @@ def test_structure_2():
 
     del test_structure_2
 
+
+# set up two test environments
+@pytest.fixture(scope='module')
+def delt_env():
+    delta = 1e-8
+    cell = np.eye(3)
+    cutoff = np.linalg.norm(np.array([0.5, 0.5, 0.5])) + 0.001
+
+    positions_2 = [np.array([delta, 0, 0]), np.array([0.25, 0.3, 0.4])]
+    species_2 = ['B', 'A']
+    atom_2 = 0
+    test_structure_2 = struc.Structure(cell, species_2, positions_2, cutoff)
+    delt_env = env.ChemicalEnvironment(test_structure_2, atom_2)
+
+    yield delt_env
+
+    del delt_env
 
 # -----------------------------------------------------------------------------
 #                          test kernel functions
@@ -220,3 +238,23 @@ def test_likelihood_gradient(env1, env2, test_structure_1, test_structure_2):
     assert(np.isclose(grad_test[0], sig_grad_brute, tol))
     assert(np.isclose(grad_test[1], ls_grad_brute, tol))
     assert(np.isclose(grad_test[2], n_grad_brute, tol))
+
+
+def test_force_en(env1, env2, delt_env):
+    delta = 1e-8
+    d1 = 1
+    d2 = 1
+    sig = 0.5
+    ls = 0.2
+    bodies = 2
+    hyps = np.array([sig, ls])
+
+    en_force_test = kernels.energy_force_sc(env1, env2, bodies, d1, d2, hyps)
+    en_force_test_2 = \
+        kernels.energy_force_sc(env1, delt_env, bodies, d1, d2, hyps)
+    force_diff = (en_force_test_2-en_force_test)/delta
+
+    print(force_diff)
+
+    force_kern = kernels.n_body_sc(env1, env2, bodies, d1, d2, hyps)
+    assert(np.isclose(-force_diff, force_kern))
