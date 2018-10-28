@@ -254,7 +254,22 @@ def test_force_en(env1, env2, delt_env):
         kernels.energy_force_sc(env1, delt_env, bodies, d1, hyps)
     force_diff = (en_force_test_2-en_force_test)/delta
 
-    print(force_diff)
-
     force_kern = kernels.n_body_sc(env1, env2, bodies, d1, d2, hyps)
     assert(np.isclose(-force_diff, force_kern))
+
+
+def test_en_kern(env1, env2, delt_env):
+    delta = 1e-8
+    d1 = 1
+    sig = 0.5
+    ls = 0.2
+    bodies = 2
+    hyps = np.array([sig, ls])
+
+    en_test = kernels.energy_sc(env1, env2, bodies, hyps)
+    en_test_2 = kernels.energy_sc(env1, delt_env, bodies, hyps)
+    en_diff = (en_test_2 - en_test) / delta
+
+    en_force_test = kernels.energy_force_sc(env2, env1, bodies, d1, hyps)
+
+    assert(np.isclose(-en_diff, en_force_test))
