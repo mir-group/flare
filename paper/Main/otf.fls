@@ -1,8 +1,8 @@
-PWD /Users/jonpvandermause/Research/GP/otf/paper
+PWD /Users/jonpvandermause/Research/GP/otf/paper/Main
 INPUT /usr/local/texlive/2017/texmf.cnf
 INPUT /usr/local/texlive/2017/texmf-dist/web2c/texmf.cnf
 INPUT /usr/local/texlive/2017/texmf-var/web2c/pdftex/pdflatex.fmt
-INPUT /Users/jonpvandermause/Research/GP/otf/paper/otf.tex
+INPUT /Users/jonpvandermause/Research/GP/otf/paper/Main/otf.tex
 OUTPUT otf.log
 INPUT /usr/local/texlive/2017/texmf-dist/tex/latex/revtex/revtex4-1.cls
 INPUT /usr/local/texlive/2017/texmf-dist/tex/latex/revtex/revtex4-1.cls

@@ -226,6 +226,50 @@ def two_body_grad_from_env(bond_array_1, bond_types_1, bond_array_2,
 # -----------------------------------------------------------------------------
 
 
+# multi component n body kernel
+@njit
+def n_body_jit_mc(bond_array_1, cross_bond_dists_1, combinations,
+                  central_species_1, environment_species_1,
+                  bond_array_2, cross_bond_dists_2, permutations,
+                  central_species_2, environment_species_2,
+                  d1, d2, sig, ls, ICM_array):
+    kern = 0
+    ICM_coeff = ICM_array[central_species_1, central_species_2]
+
+    for m in range(combinations.shape[0]):
+        comb = combinations[m]
+        for n in range(permutations.shape[0]):
+            perm = permutations[n]
+            A_cp = 0
+            B_cp_1 = 0
+            B_cp_2 = 0
+            C_cp = 0
+
+            for q, (c_ind, p_ind) in enumerate(zip(comb, perm)):
+                rdiff = bond_array_1[c_ind, 0] - bond_array_2[p_ind, 0]
+                coord1 = bond_array_1[c_ind, d1]
+                coord2 = bond_array_2[p_ind, d2]
+
+                A_cp += coord1 * coord2
+                B_cp_1 += rdiff * coord1
+                B_cp_2 += rdiff * coord2
+                C_cp += rdiff * rdiff
+
+                ICM_coeff *= ICM_array[c_ind, p_ind]
+
+                for c_ind_2, p_ind_2 in zip(comb[q+1:], perm[q+1:]):
+                    cb_diff = cross_bond_dists_1[c_ind, c_ind_2] - \
+                        cross_bond_dists_2[p_ind, p_ind_2]
+                    C_cp += cb_diff * cb_diff
+
+            B_cp = B_cp_1 * B_cp_2
+
+            kern += (sig*sig / (ls**4)) * (A_cp * ls * ls - B_cp) * \
+                exp(-C_cp / (2 * ls * ls)) * ICM_coeff
+
+    return kern
+
+
 # single component n body energy kernel
 @njit
 def energy_jit_sc(bond_array_1, cross_bond_dists_1, combinations,
