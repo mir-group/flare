@@ -17,6 +17,25 @@ import time
 # -----------------------------------------------------------------------------
 
 
+# get n body multi component kernel between two environments
+# TODO add nos (number of species) attribute to environment
+# TODO add integer coded central species attribute to environment
+# TODO add integer coded environment species attribute to environment
+def n_body_mc(env1, env2, bodies, d1, d2, hyps, cutoff=None):
+    combs = get_comb_array(env1.bond_array.shape[0], bodies-1)
+    perms = get_perm_array(env2.bond_array.shape[0], bodies-1)
+    sig = hyps[0]
+    ls = hyps[1]
+    ICM_vec = hyps[2: len(hyps-1)]
+    ICM_array = get_ICM_array_from_vector(ICM_vec, env1.nos)
+
+    return n_body_jit_mc(env1.bond_array, env1.cross_bond_dists, combs,
+                         env1.central_species, env1.environment_species,
+                         env2.bond_array, env2.cross_bond_dists, perms,
+                         env2.central_species, env2.environment_species,
+                         d1, d2, sig, ls, ICM_array)
+
+
 # get n body single component kernel between two environments
 def energy_sc(env1, env2, bodies, hyps, cutoffs=None):
     combs = get_comb_array(env1.bond_array.shape[0], bodies-1)
@@ -531,5 +550,21 @@ def get_restricted_arrays(bond_array, cross_bond_array, cutoff):
     return restricted_bond_array, restricted_cross_bond_array
 
 
+def get_ICM_array_from_vector(ICM_vector, nos):
+    ICM_array = np.empty([nos, nos])
+
+    count = 0
+    for m in range(nos):
+        for n in range(m, nos):
+            if m == n:
+                ICM_array[m, n] = 1
+            else:
+                ICM_array[m, n] = ICM_vector[count]
+                ICM_array[n, m] = ICM_vector[count]
+                count += 1
+    return ICM_array
+
 if __name__ == '__main__':
-    pass
+    ICM_vector = np.array([0.5, 0.7, 0.8, 0.2, 0.3, 0.1])
+    nos = 4
+    print(get_ICM_array_from_vector(ICM_vector, nos))
