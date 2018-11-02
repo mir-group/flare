@@ -30,9 +30,9 @@ def n_body_mc(env1, env2, bodies, d1, d2, hyps, cutoff=None):
     ICM_array = get_ICM_array_from_vector(ICM_vec, env1.nos)
 
     return n_body_jit_mc(env1.bond_array, env1.cross_bond_dists, combs,
-                         env1.central_species, env1.environment_species,
+                         env1.ctyp, env1.etyps,
                          env2.bond_array, env2.cross_bond_dists, perms,
-                         env2.central_species, env2.environment_species,
+                         env2.ctyp, env2.etyps,
                          d1, d2, sig, ls, ICM_array)
 
 

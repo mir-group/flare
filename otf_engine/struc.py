@@ -41,6 +41,7 @@ class Structure(object):
 
         self.unique_species = unique_species
         self.coded_species = coded_species
+        self.nos = len(unique_species)
         self.bond_list = self.calc_bond_list(self.unique_species)
         self.triplet_list = self.calc_triplet_list(self.unique_species)
 
