@@ -27,7 +27,7 @@ class GaussianProcess:
     """ Gaussian Process Regression Model """
 
     def __init__(self, kernel: str, bodies, opt_algorithm='L-BFGS-B',
-                 cutoffs=None):
+                 cutoffs=None, nos=None):
         """Initialize GP parameters and training data.
 
         :param kernel: covariance / kernel function to be used

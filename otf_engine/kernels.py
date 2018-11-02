@@ -17,8 +17,24 @@ import time
 # -----------------------------------------------------------------------------
 
 
+def n_body_mc_grad(env1, env2, bodies, d1, d2, hyps, cutoffs=None):
+    combs = get_comb_array(env1.bond_array.shape[0], bodies-1)
+    perms = get_perm_array(env2.bond_array.shape[0], bodies-1)
+    sig = hyps[0]
+    ls = hyps[1]
+    ICM_vec = hyps[2: len(hyps-1)]
+
+    ICM_array = get_ICM_array_from_vector(ICM_vec, env1.structure.nos)
+
+    return n_body_jit_mc_grad_array(env1.bond_array, env1.cross_bond_dists,
+                                    combs, env1.ctyp, env1.etyps,
+                                    env2.bond_array, env2.cross_bond_dists,
+                                    perms, env2.ctyp, env2.etyps,
+                                    d1, d2, sig, ls, ICM_array)
+
+
 # get n body multi component kernel between two environments
-def n_body_mc(env1, env2, bodies, d1, d2, hyps, cutoff=None):
+def n_body_mc(env1, env2, bodies, d1, d2, hyps, cutoffs=None):
     combs = get_comb_array(env1.bond_array.shape[0], bodies-1)
     perms = get_perm_array(env2.bond_array.shape[0], bodies-1)
     sig = hyps[0]
@@ -140,6 +156,86 @@ def two_body(env1, env2, d1, d2, sig, ls):
 # -----------------------------------------------------------------------------
 #                               kernel gradients
 # -----------------------------------------------------------------------------
+
+# multi component n body kernel
+@njit
+def n_body_jit_mc_grad_array(bond_array_1, cross_bond_dists_1, combinations,
+                             central_species_1, environment_species_1,
+                             bond_array_2, cross_bond_dists_2, permutations,
+                             central_species_2, environment_species_2,
+                             d1, d2, sig, ls, ICM_array):
+    kern = 0
+    sig_derv = 0
+    ls_derv = 0
+    nos = ICM_array.shape[0]
+    no_ICM_param = int(nos*(nos-1)/2)
+    ICM_derv = np.zeros(no_ICM_param)
+    ICM_coeff_start = ICM_array[central_species_1, central_species_2]
+    kern_grad = np.zeros(no_ICM_param+2)
+
+    for m in range(combinations.shape[0]):
+        comb = combinations[m]
+        for n in range(permutations.shape[0]):
+            perm = permutations[n]
+            A_cp = 0
+            B_cp_1 = 0
+            B_cp_2 = 0
+            C_cp = 0
+
+            ICM_coeff = ICM_coeff_start
+            ICM_counter = np.zeros((nos, nos))
+
+            for q, (c_ind, p_ind) in enumerate(zip(comb, perm)):
+                rdiff = bond_array_1[c_ind, 0] - bond_array_2[p_ind, 0]
+                coord1 = bond_array_1[c_ind, d1]
+                coord2 = bond_array_2[p_ind, d2]
+
+                A_cp += coord1 * coord2
+                B_cp_1 += rdiff * coord1
+                B_cp_2 += rdiff * coord2
+                C_cp += rdiff * rdiff
+
+                c_typ = environment_species_1[c_ind]
+                p_typ = environment_species_2[p_ind]
+                ICM_coeff *= ICM_array[c_typ, p_typ]
+                ICM_counter[c_typ, p_typ] += 1
+                ICM_counter[p_typ, c_typ] += 1
+
+                # account for cross bonds
+                for c_ind_2, p_ind_2 in zip(comb[q+1:], perm[q+1:]):
+                    cb_diff = cross_bond_dists_1[c_ind, c_ind_2] - \
+                        cross_bond_dists_2[p_ind, p_ind_2]
+                    C_cp += cb_diff * cb_diff
+
+            B_cp = B_cp_1 * B_cp_2
+
+            # update kernel
+            kern += (sig*sig / (ls**4)) * (A_cp * ls * ls - B_cp) * \
+                exp(-C_cp / (2 * ls * ls)) * ICM_coeff
+
+            # update sig and ls derivatives
+            sig_derv += (2*sig / (ls**4)) * (A_cp * ls * ls - B_cp) * \
+                exp(-C_cp / (2 * ls * ls)) * ICM_coeff
+
+            ls_derv += ((sig*sig)/(ls**7)) * \
+                (-B_cp*C_cp+(4*B_cp+A_cp*C_cp)*ls*ls-2*A_cp*ls**4) * \
+                exp(-C_cp / (2 * ls * ls)) * ICM_coeff
+
+            # update ICM derivatives
+            ICM_count = 0
+            for ICM_ind_1 in range(nos):
+                for ICM_ind_2 in range(ICM_ind_1+1, nos):
+                    ICM_derv[ICM_count] += \
+                        (sig*sig / (ls**4)) * (A_cp * ls * ls - B_cp) * \
+                        exp(-C_cp / (2 * ls * ls)) * \
+                        ICM_coeff * ICM_counter[ICM_ind_1, ICM_ind_2] / \
+                        ICM_array[ICM_ind_1, ICM_ind_2]
+                    ICM_count += 1
+
+    kern_grad[0] = sig_derv
+    kern_grad[1] = ls_derv
+    kern_grad[2:] = ICM_derv
+    return kern, kern_grad
 
 
 @njit
@@ -549,6 +645,54 @@ def get_ICM_array_from_vector(ICM_vector, nos):
     return ICM_array
 
 if __name__ == '__main__':
-    ICM_vector = np.array([0.5, 0.7, 0.8, 0.2, 0.3, 0.1])
-    nos = 4
-    print(get_ICM_array_from_vector(ICM_vector, nos))
+    # make environment 1
+    cell = np.eye(3)
+    cutoff = np.linalg.norm(np.array([0.5, 0.5, 0.5]))
+
+    positions_1 = [np.array([0, 0, 0]),
+                   np.array([0.1, 0.2, 0.3]),
+                   np.array([0.15, 0.25, 0.35])]
+    species_1 = ['A', 'B', 'C']
+    atom_1 = 0
+    test_structure_1 = struc.Structure(cell, species_1, positions_1, cutoff)
+    env1 = env.ChemicalEnvironment(test_structure_1, atom_1)
+
+    # make environment 2
+    cell = np.eye(3)
+    cutoff = np.linalg.norm(np.array([0.5, 0.5, 0.5]))
+
+    positions_1 = [np.array([0.08, 0.31, 0.41]),
+                   np.array([0.05, 0.21, 0.39]),
+                   np.array([0, 0, 0])]
+    species_1 = ['A', 'B', 'C']
+    atom_1 = 2
+    test_structure_1 = struc.Structure(cell, species_1, positions_1, cutoff)
+    env2 = env.ChemicalEnvironment(test_structure_1, atom_1)
+
+    bodies = 3
+    d1 = 1
+    d2 = 1
+    hyps = np.array([1, 1, 1])
+    sc_grad = n_body_sc_grad(env1, env2, bodies, d1, d2, hyps, cutoffs=None)
+
+    hyps_mc = np.array([1, 1, 1, 1, 1, 1])
+    mc_grad = n_body_mc_grad(env1, env2, bodies, d1, d2, hyps_mc)
+    assert(np.isclose(sc_grad[0], mc_grad[0]))
+    assert(np.isclose(sc_grad[1][0], mc_grad[1][0]))
+    assert(np.isclose(sc_grad[1][1], mc_grad[1][1]))
+
+    # finite difference test
+    delta = 1e-8
+    hyps_mc_delta_1 = np.array([1, 1, 1+delta, 1, 1, 1])
+    hyps_mc_delta_2 = np.array([1, 1, 1, 1+delta, 1, 1])
+    hyps_mc_delta_3 = np.array([1, 1, 1, 1, 1+delta, 1])
+    mc_grad_delta_1 = n_body_mc_grad(env1, env2, bodies, d1, d2,
+                                     hyps_mc_delta_1)
+    mc_grad_delta_2 = n_body_mc_grad(env1, env2, bodies, d1, d2,
+                                     hyps_mc_delta_2)
+    mc_grad_delta_3 = n_body_mc_grad(env1, env2, bodies, d1, d2,
+                                     hyps_mc_delta_3)
+
+    np.isclose((mc_grad_delta_1[0] - mc_grad[0])/delta, mc_grad[1][2])
+    np.isclose((mc_grad_delta_2[0] - mc_grad[0])/delta, mc_grad[1][3])
+    np.isclose((mc_grad_delta_3[0] - mc_grad[0])/delta, mc_grad[1][4])

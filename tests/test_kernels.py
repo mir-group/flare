@@ -11,7 +11,7 @@ import env
 import gp
 import struc
 import kernels
-from kernels import n_body_sc_grad
+from kernels import n_body_sc_grad, n_body_mc_grad
 
 
 # -----------------------------------------------------------------------------
@@ -96,6 +96,42 @@ def delt_env():
     yield delt_env
 
     del delt_env
+
+
+@pytest.fixture(scope='module')
+def mc_env_1():
+    cell = np.eye(3)
+    cutoff = np.linalg.norm(np.array([0.5, 0.5, 0.5]))
+
+    positions_1 = [np.array([0, 0, 0]),
+                   np.array([0.1, 0.2, 0.3]),
+                   np.array([0.15, 0.25, 0.35])]
+    species_1 = ['A', 'B', 'C']
+    atom_1 = 0
+    test_structure_1 = struc.Structure(cell, species_1, positions_1, cutoff)
+    mc_env_1 = env.ChemicalEnvironment(test_structure_1, atom_1)
+
+    yield mc_env_1
+
+    del mc_env_1
+
+
+@pytest.fixture(scope='module')
+def mc_env_2():
+    cell = np.eye(3)
+    cutoff = np.linalg.norm(np.array([0.5, 0.5, 0.5]))
+
+    positions_1 = [np.array([0.08, 0.31, 0.41]),
+                   np.array([0.05, 0.21, 0.39]),
+                   np.array([0, 0, 0])]
+    species_1 = ['A', 'B', 'C']
+    atom_1 = 2
+    test_structure_1 = struc.Structure(cell, species_1, positions_1, cutoff)
+    mc_env_2 = env.ChemicalEnvironment(test_structure_1, atom_1)
+
+    yield mc_env_2
+
+    del mc_env_2
 
 # -----------------------------------------------------------------------------
 #                          test kernel functions
@@ -288,3 +324,40 @@ def test_en_kern(env1, env2, delt_env):
     en_force_test = kernels.energy_force_sc(env2, env1, bodies, d1, hyps)
 
     assert(np.isclose(-en_diff, en_force_test))
+
+
+def test_mc_grad(mc_env_1, mc_env_2):
+    bodies = 3
+    d1 = 1
+    d2 = 1
+    hyps = np.array([1, 1, 1])
+    sc_grad = n_body_sc_grad(mc_env_1, mc_env_2, bodies, d1, d2, hyps)
+
+    hyps_mc = np.array([1, 1, 1, 1, 1, 1])
+    mc_grad = n_body_mc_grad(mc_env_1, mc_env_2, bodies, d1, d2, hyps_mc)
+    assert(np.isclose(sc_grad[0], mc_grad[0]))
+    assert(np.isclose(sc_grad[1][0], mc_grad[1][0]))
+    assert(np.isclose(sc_grad[1][1], mc_grad[1][1]))
+
+
+def test_mc_grad_finite_difference(mc_env_1, mc_env_2):
+    bodies = 3
+    d1 = 1
+    d2 = 1
+    delta = 1e-8
+    hyps_mc_delta_1 = np.array([1, 1, 1+delta, 1, 1, 1])
+    hyps_mc_delta_2 = np.array([1, 1, 1, 1+delta, 1, 1])
+    hyps_mc_delta_3 = np.array([1, 1, 1, 1, 1+delta, 1])
+    mc_grad_delta_1 = n_body_mc_grad(mc_env_1, mc_env_2, bodies, d1, d2,
+                                     hyps_mc_delta_1)
+    mc_grad_delta_2 = n_body_mc_grad(mc_env_1, mc_env_2, bodies, d1, d2,
+                                     hyps_mc_delta_2)
+    mc_grad_delta_3 = n_body_mc_grad(mc_env_1, mc_env_2, bodies, d1, d2,
+                                     hyps_mc_delta_3)
+
+    hyps_mc = np.array([1, 1, 1, 1, 1, 1])
+    mc_grad = n_body_mc_grad(mc_env_1, mc_env_2, bodies, d1, d2, hyps_mc)
+
+    np.isclose((mc_grad_delta_1[0] - mc_grad[0])/delta, mc_grad[1][2])
+    np.isclose((mc_grad_delta_2[0] - mc_grad[0])/delta, mc_grad[1][3])
+    np.isclose((mc_grad_delta_3[0] - mc_grad[0])/delta, mc_grad[1][4])
