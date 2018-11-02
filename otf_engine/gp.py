@@ -6,7 +6,7 @@
 Implementation is based on Algorithm 2.1 (pg. 19) of
 "Gaussian Processes for Machine Learning" by Rasmussen and Williams
 
-Simon Batzner, Jon Vandermause
+Jon Vandermause, Simon Batzner
 """
 
 import math
@@ -19,7 +19,8 @@ from typing import List
 
 from env import ChemicalEnvironment
 from kernels import n_body_sc, n_body_sc_grad, combo_kernel_sc,\
-    combo_kernel_sc_grad, energy_force_sc, energy_sc
+    combo_kernel_sc_grad, energy_force_sc, energy_sc, n_body_mc,\
+    n_body_mc_grad
 from struc import Structure
 
 
@@ -45,14 +46,34 @@ class GaussianProcess:
             self.hyps = np.array([1, 1, 1.1])
             self.hyp_labels = ['Signal Std', 'Length Scale', 'Noise Std']
             self.cutoffs = None
+
+        # TODO: make energy and energy/force kernels for combination kernel
         elif kernel == 'combo_kernel_sc':
             self.kernel = combo_kernel_sc
             self.kernel_grad = combo_kernel_sc_grad
-            self.energy_force_kernel = energy_force_sc
-            self.energy_kernel = energy_sc
+            # self.energy_force_kernel = energy_force_sc
+            # self.energy_kernel = energy_sc
             self.hyps = np.ones([2*len(bodies)+1])
             self.hyp_labels = ['Signal Std', 'Length Scale']*len(bodies)
             self.hyp_labels.append('Noise Std')
+            self.cutoffs = cutoffs
+
+        # TODO: make energy and energy/force kernels for ICM kernels
+        elif kernel == 'n_body_mc':
+            self.kernel = n_body_mc
+            self.kernel_grad = n_body_mc_grad
+
+            # self.energy_force_kernel = energy_force_sc
+            # self.energy_kernel = energy_sc
+
+            no_ICM = int(nos*(nos-1)/2)
+            self.hyps = np.ones(no_ICM+3)
+
+            hyp_labels = ['Signal Std', 'Length Scale'] + \
+                ['ICM_'+str(n) for n in range(no_ICM)] + \
+                ['Noise Std']
+            self.hyp_labels = hyp_labels
+
             self.cutoffs = cutoffs
         else:
             raise ValueError('not a valid kernel')
