@@ -153,7 +153,7 @@ bool = True, check_too_close: float = 0, check_stoichiometry: List[str] = [],
             # check_too_close radius
 
             for i in range(newstruc.nat):
-                bond_array, _, _, _, _ = \
+                bond_array, _, _, _ = \
                     ChemicalEnvironment.get_atoms_within_cutoff(newstruc, atom=i)
                 for array in bond_array:
                     if array[0]<check_too_close:

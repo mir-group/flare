@@ -5,7 +5,7 @@ Steven Torrisi, Jon Vandermause
 """
 
 from numpy import zeros, ndarray, dot, isclose, mod, ones, equal, matmul, \
-copy, arccos, array
+    copy, arccos, array
 from numpy import abs as npabs
 from numpy.linalg import inv
 from numpy.random import uniform, normal
@@ -37,12 +37,11 @@ class Structure(object):
         self.nat = len(species)
 
         # get unique species
-        unique_species = []
-        for spec in species:
-            if spec not in unique_species:
-                unique_species.append(spec)
+        unique_species, coded_species = self.get_unique_species(species)
 
         self.unique_species = unique_species
+        self.coded_species = coded_species
+        self.nos = len(unique_species)
         self.bond_list = self.calc_bond_list(self.unique_species)
         self.triplet_list = self.calc_triplet_list(self.unique_species)
 
@@ -152,12 +151,25 @@ class Structure(object):
 
         r = npabs(normal(loc=r_pert, scale=rscale, size=self.nat))
 
-        for i,pos in enumerate(self.positions):
+        for i, pos in enumerate(self.positions):
             newpos = zeros(3)
             newpos[0] = r[i] * sin(phi[i]) * cos(theta[i])
             newpos[1] = r[i] * sin(phi[i]) * sin(theta[i])
             newpos[2] = r[i] * cos(phi[i])
             pos += newpos
+
+    @staticmethod
+    def get_unique_species(species):
+        unique_species = []
+        coded_species = []
+        for spec in species:
+            if spec in unique_species:
+                coded_species.append(unique_species.index(spec))
+            else:
+                coded_species.append(len(unique_species))
+                unique_species.append(spec)
+
+        return unique_species, coded_species
 
     @staticmethod
     def calc_bond_list(unique_species):

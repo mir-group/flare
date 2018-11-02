@@ -1,4 +1,5 @@
 import numpy as np
+import subprocess
 import os
 
 
@@ -198,13 +199,17 @@ class QEInput:
             fin.write(self.input_text)
 
     def run_espresso(self, npool):
-
-        qe_command = \
-            'mpirun -npool {0} {1} < {2} > {3}'.format(npool, self.pw_loc,
-                                                       self.input_file_name,
-                                                       self.output_file_name)
-
+        if npool is False:
+            qe_command = \
+                'mpirun {0} < {1} > {2}'.format(
+                    self.pw_loc, self.input_file_name, self.output_file_name)
+        else:
+            qe_command = \
+                'mpirun -npool {0} {1} < {2} > {3}'.format(
+                    npool, self.pw_loc, self.input_file_name,
+                    self.output_file_name)
         os.system(qe_command)
+        # subprocess.call(qe_command, shell=True)
 
 
 def create_structure(el: str, alat: float, size: int, perturb: bool=False,

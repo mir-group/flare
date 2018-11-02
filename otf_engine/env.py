@@ -13,20 +13,18 @@ class ChemicalEnvironment:
     def __init__(self, structure, atom):
         self.structure = structure
 
-        bond_array, bond_types, bond_positions, etyps, ctyp = \
+        bond_array, bond_positions, etyps, ctyp = \
             self.get_atoms_within_cutoff(self.structure, atom)
 
         self.bond_array = bond_array
-        self.bond_types = bond_types
         self.bond_positions = bond_positions
         self.etyps = etyps
         self.ctyp = ctyp
 
         self.sort_arrays()
 
-        cross_bond_dists, cross_bond_types = self.get_cross_bonds()
+        cross_bond_dists = self.get_cross_bonds()
         self.cross_bond_dists = cross_bond_dists
-        self.cross_bond_types = cross_bond_types
 
     @staticmethod
     def is_bond(species1, species2, bond):
@@ -104,19 +102,16 @@ class ChemicalEnvironment:
                                 super_check: int = 3):
 
         pos_atom = structure.positions[atom]  # position of central atom
-        central_type = structure.species[atom]  # type of central atom
+        central_type = structure.coded_species[atom]  # type of central atom
 
         bond_array = []
-        bond_types = []
         bond_positions = []
         environment_types = []
 
         # find all atoms and images in the neighborhood
         for n in range(len(structure.positions)):
             diff_curr = structure.positions[n] - pos_atom
-            typ_curr = structure.species[n]
-            bond_curr = ChemicalEnvironment.species_to_index(
-                structure, central_type, typ_curr)
+            typ_curr = structure.coded_species[n]
 
             # get images within cutoff
             vecs, dists = \
@@ -130,42 +125,30 @@ class ChemicalEnvironment:
                     environment_types.append(typ_curr)
                     bond_array.append([dist, vec[0] / dist, vec[1] / dist,
                                        vec[2] / dist])
-                    bond_types.append(bond_curr)
                     bond_positions.append([vec[0], vec[1], vec[2]])
 
         bond_array = np.array(bond_array)
-        bond_types = np.array(bond_types)
         bond_positions = np.array(bond_positions)
+        environment_types = np.array(environment_types)
 
-        return bond_array, bond_types, bond_positions, environment_types, \
-            central_type
+        return bond_array, bond_positions, environment_types, central_type
 
     # return information about cross bonds
     def get_cross_bonds(self):
         nat = len(self.etyps)
         cross_bond_dists = np.zeros([nat, nat])
-        cross_bond_types = np.zeros([nat, nat])
-
-        ctyp = self.ctyp
 
         for m in range(nat):
             pos1 = self.bond_positions[m]
-            etyp1 = self.etyps[m]
             for n in range(nat):
                 pos2 = self.bond_positions[n]
-                etyp2 = self.etyps[n]
-
                 dist_curr = np.linalg.norm(pos1 - pos2)
-                trip_ind = self.triplet_to_index(ctyp, etyp1, etyp2)
-
                 cross_bond_dists[m, n] = dist_curr
-                cross_bond_types[m, n] = trip_ind
-        return cross_bond_dists, cross_bond_types
+        return cross_bond_dists
 
     def sort_arrays(self):
-        sort_inds = self.bond_array[:,0].argsort()
+        sort_inds = self.bond_array[:, 0].argsort()
         self.bond_array = self.bond_array[sort_inds]
-        self.bond_types = self.bond_types[sort_inds]
         self.bond_positions = self.bond_positions[sort_inds]
         self.etyps = [self.etyps[n] for n in sort_inds]
 
