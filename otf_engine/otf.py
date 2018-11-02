@@ -135,6 +135,8 @@ class OTF(object):
         # If not in punchout mode, run QE on the entire structure
         if self.punchout_settings is None:
             self.train_structure = self.structure
+            # Train on all atoms
+            train_atoms = list(range(self.train_structure.nat))
         else:
             # On first run, pick a random target atom to punch out around
             if self.train_structure is None:
@@ -142,6 +144,9 @@ class OTF(object):
             self.train_structure = punchout(self.structure,
                                             atom=target_atom,
                                             d=self.punchout_settings['d'])
+            # Get the index of the central atom
+            train_atoms = [self.train_structure.get_index_from_position((
+                np.zeros(3)))]
 
         forces = run_espresso(self.qe_input, self.train_structure,
                               time_log=self.run_stats, log_name='last_dft')
@@ -170,7 +175,8 @@ class OTF(object):
 
         # Update hyperparameters and write results
         self.write_to_output('Updating database hyperparameters...\n')
-        self.gp.update_db(self.train_structure, forces)
+        self.gp.update_db(self.train_structure, forces,
+                          custom_range=train_atoms)
 
         self.gp.train(time_log=self.run_stats)
 
@@ -196,7 +202,7 @@ class OTF(object):
             forces = self.structure.forces[i]
 
             self.structure.positions[i] = 2 * pos - pre_pos + dtdt * forces / \
-                                          mass
+                                        mass
 
             self.structure.prev_positions[i] = np.copy(temp_pos)
 
