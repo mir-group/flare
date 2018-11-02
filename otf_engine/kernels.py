@@ -18,16 +18,13 @@ import time
 
 
 # get n body multi component kernel between two environments
-# TODO add nos (number of species) attribute to environment
-# TODO add integer coded central species attribute to environment
-# TODO add integer coded environment species attribute to environment
 def n_body_mc(env1, env2, bodies, d1, d2, hyps, cutoff=None):
     combs = get_comb_array(env1.bond_array.shape[0], bodies-1)
     perms = get_perm_array(env2.bond_array.shape[0], bodies-1)
     sig = hyps[0]
     ls = hyps[1]
     ICM_vec = hyps[2: len(hyps-1)]
-    ICM_array = get_ICM_array_from_vector(ICM_vec, env1.nos)
+    ICM_array = get_ICM_array_from_vector(ICM_vec, env1.structure.nos)
 
     return n_body_jit_mc(env1.bond_array, env1.cross_bond_dists, combs,
                          env1.ctyp, env1.etyps,
@@ -249,7 +246,7 @@ def n_body_jit_mc(bond_array_1, cross_bond_dists_1, combinations,
                   central_species_2, environment_species_2,
                   d1, d2, sig, ls, ICM_array):
     kern = 0
-    ICM_coeff = ICM_array[central_species_1, central_species_2]
+    ICM_coeff_start = ICM_array[central_species_1, central_species_2]
 
     for m in range(combinations.shape[0]):
         comb = combinations[m]
@@ -259,6 +256,8 @@ def n_body_jit_mc(bond_array_1, cross_bond_dists_1, combinations,
             B_cp_1 = 0
             B_cp_2 = 0
             C_cp = 0
+
+            ICM_coeff = ICM_coeff_start
 
             for q, (c_ind, p_ind) in enumerate(zip(comb, perm)):
                 rdiff = bond_array_1[c_ind, 0] - bond_array_2[p_ind, 0]
@@ -270,7 +269,9 @@ def n_body_jit_mc(bond_array_1, cross_bond_dists_1, combinations,
                 B_cp_2 += rdiff * coord2
                 C_cp += rdiff * rdiff
 
-                ICM_coeff *= ICM_array[c_ind, p_ind]
+                c_typ = environment_species_1[c_ind]
+                p_typ = environment_species_2[p_ind]
+                ICM_coeff *= ICM_array[c_typ, p_typ]
 
                 for c_ind_2, p_ind_2 in zip(comb[q+1:], perm[q+1:]):
                     cb_diff = cross_bond_dists_1[c_ind, c_ind_2] - \

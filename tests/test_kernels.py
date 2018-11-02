@@ -26,7 +26,7 @@ def env1():
     cutoff = np.linalg.norm(np.array([0.5, 0.5, 0.5])) + 0.001
 
     positions_1 = [np.array([0, 0, 0]), np.array([0.1, 0.2, 0.3])]
-    species_1 = ['B', 'A']
+    species_1 = ['A', 'A']
     atom_1 = 0
     test_structure_1 = struc.Structure(cell, species_1, positions_1, cutoff)
     env1 = env.ChemicalEnvironment(test_structure_1, atom_1)
@@ -42,7 +42,7 @@ def test_structure_1():
     cutoff = np.linalg.norm(np.array([0.5, 0.5, 0.5])) + 0.001
 
     positions_1 = [np.array([0, 0, 0]), np.array([0.1, 0.2, 0.3])]
-    species_1 = ['B', 'A']
+    species_1 = ['A', 'A']
     test_structure_1 = struc.Structure(cell, species_1, positions_1, cutoff)
 
     yield test_structure_1
@@ -56,7 +56,7 @@ def env2():
     cutoff = np.linalg.norm(np.array([0.5, 0.5, 0.5])) + 0.001
 
     positions_2 = [np.array([0, 0, 0]), np.array([0.25, 0.3, 0.4])]
-    species_2 = ['B', 'A']
+    species_2 = ['A', 'A']
     atom_2 = 0
     test_structure_2 = struc.Structure(cell, species_2, positions_2, cutoff)
     env2 = env.ChemicalEnvironment(test_structure_2, atom_2)
@@ -72,7 +72,7 @@ def test_structure_2():
     cutoff = np.linalg.norm(np.array([0.5, 0.5, 0.5])) + 0.001
 
     positions_2 = [np.array([0, 0, 0]), np.array([0.25, 0.3, 0.4])]
-    species_2 = ['B', 'A']
+    species_2 = ['A', 'A']
     test_structure_2 = struc.Structure(cell, species_2, positions_2, cutoff)
 
     yield test_structure_2
@@ -88,7 +88,7 @@ def delt_env():
     cutoff = np.linalg.norm(np.array([0.5, 0.5, 0.5])) + 0.001
 
     positions_2 = [np.array([delta, 0, 0]), np.array([0.25, 0.3, 0.4])]
-    species_2 = ['B', 'A']
+    species_2 = ['A', 'A']
     atom_2 = 0
     test_structure_2 = struc.Structure(cell, species_2, positions_2, cutoff)
     delt_env = env.ChemicalEnvironment(test_structure_2, atom_2)
@@ -150,6 +150,21 @@ def test_three_body(env1, env2):
     three_body_old = kernels.three_body(env1, env2, d1, d2, sig, ls)
     three_body_new = kernels.n_body_sc(env1, env2, 3, d1, d2, hyps)
     assert(np.isclose(three_body_old, three_body_new))
+
+
+def test_n_body_mc(env1, env2):
+    # set kernel parameters
+    d1 = 3
+    d2 = 2
+    sig = 0.5
+    ls = 0.2
+    hyps = np.array([sig, ls])
+
+    # test two body kernel
+    three_body_sc = kernels.n_body_mc(env1, env2, 3, d1, d2, hyps)
+    three_body_mc = kernels.n_body_sc(env1, env2, 3, d1, d2, hyps)
+
+    assert(np.isclose(three_body_sc, three_body_mc))
 
 
 def test_n_body_grad(env1, env2):
