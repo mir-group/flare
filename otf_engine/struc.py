@@ -5,7 +5,7 @@ Steven Torrisi, Jon Vandermause
 """
 
 from numpy import zeros, ndarray, dot, isclose, mod, ones, equal, matmul, \
-copy, arccos, array
+    copy, arccos, array
 from numpy import abs as npabs
 from numpy.linalg import inv
 from numpy.random import uniform, normal

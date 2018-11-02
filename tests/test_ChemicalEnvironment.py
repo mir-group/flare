@@ -163,8 +163,8 @@ def test_get_local_atom_images(test_env):
 
 def test_get_atoms_within_cutoff(test_env):
     atom = 0
-    bond_array, _, bond_positions, _, _ =\
-        test_env.get_atoms_within_cutoff(test_env.structure,atom)
+    bond_array, bond_positions, _, _ =\
+        test_env.get_atoms_within_cutoff(test_env.structure, atom)
 
     assert(bond_array.shape[0] == 8)
     assert(bond_array[0, 1] == bond_positions[0, 0] / bond_array[0, 0])
