@@ -298,8 +298,13 @@ class GaussianProcess:
 
         # matrix manipulation
         ky_mat = k_mat + sigma_n ** 2 * np.eye(size)
-        ky_mat_inv = np.linalg.inv(ky_mat)
-        l_mat = np.linalg.cholesky(ky_mat)
+
+        # catch linear algebra errors
+        try:
+            ky_mat_inv = np.linalg.inv(ky_mat)
+            l_mat = np.linalg.cholesky(ky_mat)
+        except:
+            return 1e8, np.zeros(number_of_hyps)
 
         alpha = np.matmul(ky_mat_inv, training_labels_np)
         alpha_mat = np.matmul(alpha.reshape(alpha.shape[0], 1),
