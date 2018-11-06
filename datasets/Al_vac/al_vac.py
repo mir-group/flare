@@ -6,7 +6,6 @@
 Simon Batzner
 """
 import os, sys
-import json
 
 print("cwd: ", os.getcwd())
 sys.path.append('../../modules')
@@ -15,6 +14,7 @@ sys.path.append('../../otf_engine')
 import numpy as np
 
 from ase.build import *
+from ase.io import write
 from ase.spacegroup import crystal
 from qe_input import QEInput
 
@@ -30,15 +30,19 @@ def create_structure(el, alat, size, perturb=False, pass_relax=False, pass_pos=N
     unit_cell = crystal(el, [(0, 0, 0)], spacegroup=225, cellpar=[alat, alat, alat, 90, 90, 90])
 
     # size of initial perturbation
-    pert_size = 0.1 * alat
-    print("Pert Size", pert_size)
+    if perturb:
+        pert_size = 0.1 * alat
+        print("Pert Size", pert_size)
 
     # make supercell
     multiplier = np.identity(3) * size
     supercell = make_supercell(unit_cell, multiplier)
 
-    # remove atom
+
+    # remove atom for vacancy
     supercell.pop(supercell.get_number_of_atoms() // 2)
+    print(supercell.get_number_of_atoms())
+    write('vac_cell.cif', supercell, format='cif')
 
     # get unpertubed positions
     al_pos = np.asarray(supercell.positions)
@@ -119,10 +123,10 @@ def parse_prev_pos(filename):
     with open(filename, 'r') as outf:
         lines = outf.readlines()
 
-    curr_pos = np.zeros(shape=(3,))
-
     for line in lines:
         line = line.split()
+
+        curr_pos = np.zeros(shape=(3,))
         curr_pos[0] = str(line[1])
         curr_pos[1] = str(line[2])
         curr_pos[2] = str(line[3])
@@ -140,40 +144,36 @@ if __name__ == "__main__":
 
     # params
     el = 'Al'
-    size = 2
-    ecut = 30
+    size = 2.5
+    ecut = 40
     alat = 3.978153546
-    nk = 4
+    nk = 7
 
     output_file_name_scf = '../Al_vac/Al_scf_pert.out'
-    output_file_name_scf_relax = '../Al_vac/Al_scf_relax.out'
-    input_file_name_scf = '../Al_vac/Al_scf.in'
-    input_file_name_scf_relax = '../Al_vac/Al_scf_relax.in'
+    # output_file_name_scf_relax = '../Al_vac/Al_scf_relax.out'
+    # input_file_name_scf = '../Al_vac/Al_scf.in'
+    # input_file_name_scf_relax = '../Al_vac/Al_scf_relax.in'
 
-    # # debug mode
-    # local = True
-    # ecut = 5
-    # nk = 1
 
     # pos_relax = parse_pos_relax(filename='/Users/simonbatzner1/Desktop/Research/Research_Code/otf/datasets/Al_vac/relaxpos.txt')
-    #
-    # cell, al_pos, nat = create_structure(el=el, alat=alat, size=size, perturb=True, pass_relax=True, pass_pos=pos_relax)
-    #
-    # input_file_name_scf_pert = '/Users/simonbatzner1/Desktop/Research/Research_Code/otf/datasets/Al_vac/Al_md_pbe_pert.in'
-    # write_scf_input(input_file=input_file_name_scf_pert, output_file=output_file_name_scf, nat=nat, ecut=ecut, cell=cell, pos=al_pos, nk=nk)
+
+    cell, al_pos, nat = create_structure(el=el, alat=alat, size=size, perturb=False, pass_relax=False)
+
+    input_file_name_scf_pert = '/Users/simonbatzner1/Desktop/Research/Research_Code/otf/datasets/Al_vac/Al_vc_relax_62_pbe.in'
+    write_scf_input(input_file=input_file_name_scf_pert, output_file=output_file_name_scf, nat=nat, ecut=ecut, cell=cell, pos=al_pos, nk=nk)
 
     # relax vacancy structure
     # relax_vac(input_file=input_file_name_scf_relax, output_file=output_file_name_scf_relax)
-    #
+
+
     # parse previous positions to init with velocity
-    prev_pos_init = parse_prev_pos(filename='/home/sbatzner/otf/datasets/Al_vac/relax_wp_wv_nvt/prev_pos.txt')
-    #
+    # prev_pos_init = parse_prev_pos(filename='/Users/simonbatzner1/Desktop/Research/Research_Code/otf/datasets/Al_vac/prev_pos.txt')
+
     # run otf
-
-    input_file_name_scf_pert = None
-
-    output_file_name_otf = '/home/sbatzner/otf/datasets/Al_vac/relax_wp_wv_nvt/Al_OTF_pert.out'
-    results = run_otf_md(input_file=input_file_name_scf_pert, output_file=output_file_name_otf, prev_pos_init=prev_pos_init)
-
-    with open('al_results.json', 'w') as fp:
-        json.dump(results, fp)
+    # input_file_name_scf_pert = 'Al_scf_relax_debug.in'
+    #
+    # output_file_name_otf = '/home/sbatzner/otf/datasets/Al_vac/relax_wp_wv_nvt/Al_OTF_pert.out'
+    # results = run_otf_md(input_file=input_file_name_scf_pert, output_file=output_file_name_otf, prev_pos_init=prev_pos_init)
+    #
+    # with open('al_results.json', 'w') as fp:
+    #     json.dump(results, fp)
