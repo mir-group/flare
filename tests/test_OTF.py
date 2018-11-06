@@ -93,7 +93,8 @@ def test_params_1():
     params = {'qe_input': './test_files/qe_input_1.in',
               'dt': .01,
               'num_steps': 10,
-              'kernel': 'two_body',
+              'kernel': 'n_body_sc',
+              'bodies': 2,
               'cutoff': 5.0}
     yield params
 
@@ -104,6 +105,7 @@ def test_otf_engine_1(test_params_1):
                  dt=test_params_1['dt'],
                  number_of_steps=test_params_1['num_steps'],
                  kernel=test_params_1['kernel'],
+                 bodies=test_params_1['bodies'],
                  cutoff=test_params_1['cutoff'])
 
     yield engine
@@ -136,15 +138,45 @@ def test_update_1(test_otf_engine_1):
 # ------------------------------------------------------
 #                   test  otf runs
 # ------------------------------------------------------
-# Under development
-"""
-def test_otf_1():
-     os.system('cp ./test_files/qe_input_1.in ./pwscf.in')
 
-     otf = OTF('./pwscf.in', .1, 2, kernel='two_body',
-              cutoff=10)
-     otf.run_espresso = fake_espresso
-     otf.gp = Fake_GP(kernel='')
-     otf.run()
-     cleanup_otf_run()
-"""
+def test_otf_1_1():
+    """
+    Test that an OTF run can complete after two steps
+    :return:
+    """
+    os.system('cp ./test_files/qe_input_1.in ./pwscf.in')
+
+    otf = OTF(qe_input='./pwscf.in', dt=.0001, number_of_steps=2,
+              bodies=2, kernel='n_body_sc',
+              cutoff=4)
+    otf.run()
+    cleanup_otf_run()
+
+
+def test_otf_1_2():
+    """
+    Test that an otf run can survive going for more steps
+    :return:
+    """
+    os.system('cp ./test_files/qe_input_1.in ./pwscf.in')
+
+    otf = OTF(qe_input='./pwscf.in', dt=.0001, number_of_steps=50,
+              bodies=2, kernel='n_body_sc',
+              cutoff=5)
+    otf.run()
+    cleanup_otf_run()
+
+
+def test_otf_1_3():
+    """
+    Test that an otf run will succeed in punchout mode
+    with trivial conditions (punch out a cell with one other atom)
+    :return:
+    """
+    os.system('cp ./test_files/qe_input_1.in ./pwscf.in')
+
+    otf = OTF(qe_input='./pwscf.in', dt=.0001, number_of_steps=5,
+              bodies=2, punchout_settings={'d': 5}, cutoff=3,
+              kernel='n_body_sc')
+    otf.run()
+    cleanup_otf_run()

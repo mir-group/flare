@@ -56,7 +56,76 @@ aps,
 
 \maketitle
 
-\section{Computing a covariant N-body kernel}
+\section{A multi-component N-body kernel}
+We define the N-body kernel
+\begin{equation}
+k_{N} (\rho, \rho') = \sum\limits_{\substack{c \in C(\rho, N-1) \\ p \in P(\rho', N-1)}}  \sigma^2 \kappa_{c,p}^{\rho,\rho'} \exp(-||\vec{q}_c - \vec{q}_p||^2 / 2 \ell^2)
+\end{equation}
+where $C(\rho, N-1)$ and $P(\rho, N-1)$ are all the combinations and permutations, respectively, of $N-1$ atoms from environment $\rho$. The kernel is $N$-body because it includes the central atom, accounting for $N$ atoms in total. Summing over all combinations and permutations ensures that the kernel is permutationally invariant. $\kappa_{c,p}^{\rho,\rho'}$ is defined as
+\begin{equation}
+\kappa_{c,p}^{\rho,\rho'} = \kappa_{\rho\rho'} \prod_{n=1}^N \kappa_{c_n p_n},
+\end{equation}
+where $\kappa_{ab}$ is the ICM coefficient assigned to atom types $a$ and $b$. $\kappa_{\rho\rho'}$ denotes the comparison of the central atoms of environments $\rho$ and $\rho'$.
+
+The vectors $\vec{q}_c$ and $\vec{q}_p$ contain all the interatomic distances of the $N-1$ atoms in $c$ and $p$, respectively. The vector norm appearing in the kernel is
+\begin{equation}
+||\vec{q}_c - \vec{q}_p||^2 = \sum_{q=1}^{N-1} (r_{cq} - r_{pq})^2 + \sum_{q=1}^{N-2} \sum_{s = q+1}^{N-1} (r_{cq,cs} - r_{pq,ps})^2.
+\end{equation}
+Notice that the norm is split into two terms. The first compares bonds containing the central atom, and the second compares bonds involving environment atoms.
+
+Let us define
+\begin{equation}
+    \tilde{k}_N(c,p, \ell) = \exp(-||\vec{q}_c - \vec{q}_p||^2 / 2 \ell^2).
+\end{equation}
+In order to predict derivative observations, we need derivatives of $\tilde{k}_N$ with respect to the Cartesian coordinates of the central atom. Letting $\xi_{c0k}$ denote the $k^{\text{th}}$ Cartesian component of the central atom of set $c$, we have
+\begin{equation}
+    \begin{split}
+    \frac{\partial \tilde{k}_N}{\partial \xi_{c0k}} = -\frac{\tilde{k}_N}{\ell^2} \sum_{q=1}^{N-1} (r_{cq} - r_{pq}) \frac{\partial r_{cq}}{\partial \xi_{c0k}}.
+    \end{split}
+\end{equation}
+To compute $\frac{\partial r_{cq}}{\partial \xi_{c0k}}$, recall that
+\begin{equation}
+    r_{cq} = \sqrt{\sum_{k=1}^3 (\xi_{cqk} - \xi_{c0k})^2},
+\end{equation}
+where $\xi_{cqk}$ is the $k^{\text{th}}$ Cartesian component of the $q^{\text{th}}$ atom in set $c$. The partial is then
+\begin{equation}
+    \frac{\partial r_{cq}}{\partial \xi_{c0k}} = \frac{\xi_{c0k} - \xi_{cqk}}{r_{cq}}.
+\end{equation}
+The second derivative with respect to the Cartesian coordinates of the central atoms of both environments is
+\begin{equation}
+    \begin{split}
+\tilde{k}_D \equiv \frac{\partial^2 \tilde{k}_N}{\partial \xi_{c0k} \partial \xi_{p0m}} = &-\frac{\tilde{k}_N}{\ell^4} \left( \sum_{q=1}^{N-1} (r_{cq} - r_{pq}) \frac{\partial r_{cq}}{\partial \xi_{c0k}} \right)\left( \sum_{q=1}^{N-1} (r_{cq} - r_{pq}) \frac{\partial r_{pq}}{\partial \xi_{p0m}} \right)\\
+& +\frac{\tilde{k}_N}{\ell^2} \sum_{q=1}^{N-1} \frac{\partial r_{cq}}{\partial \xi_{c0k}} \frac{\partial r_{pq}}{\partial \xi_{p0m}}.
+    \end{split}
+\end{equation}
+
+To perform hyperparameter optimization efficiently, derivatives of the kernel with respect to the hyperparameters are needed. The full derivative kernel may be written as
+\begin{equation}
+k_D = \sum\limits_{\substack{c \in C(\rho, N-1) \\ p \in P(\rho', N-1)}} \frac{\sigma^2}{\ell^4} (A_{cp} \ell^2 - B_{cp})\kappa_{c,p}^{\rho, \rho'} \exp(-C_{cp} / 2 \ell^2),
+\end{equation}
+where
+\begin{equation}
+A_{cp} \equiv \sum_{q=1}^{N-1} \frac{\partial r_{cq}}{\partial \xi_{c0k}} \frac{\partial r_{pq}}{\partial \xi_{p0m}},
+\end{equation}
+\begin{equation}
+B_{cp} \equiv \left( \sum_{q=1}^{N-1} (r_{cq} - r_{pq}) \frac{\partial r_{cq}}{\partial \xi_{c0k}} \right)\left( \sum_{q=1}^{N-1} (r_{cq} - r_{pq}) \frac{\partial r_{pq}}{\partial \xi_{p0m}} \right),
+\end{equation}
+and
+\begin{equation}
+   C_{cp} \equiv ||\vec{q}_c - \vec{q}_p||^2
+\end{equation}
+are independent of the hyperparameters, depending only on the distances and coordinates of the environment atoms. We then have that
+\begin{equation}
+\frac{\partial k_D}{\partial \sigma} = \sum\limits_{\substack{c \in C(\rho, N-1) \\ p \in P(\rho', N-1)}} \frac{2 \sigma}{\ell^4} (A_{cp} \ell^2 - B_{cp})\kappa_{c,p}^{\rho, \rho'} \exp(-C_{cp} / 2 \ell^2),
+\end{equation}
+\begin{equation}
+\frac{\partial k_D}{\partial \ell} = \sum\limits_{\substack{c \in C(\rho, N-1) \\ p \in P(\rho', N-1)}} \frac{\sigma^2}{\ell^7} (-B_{cp} C_{cp} + (4 B_{cp} + A_{cp} C_{cp}) \ell^2 - 2 A_{cp} \ell^4)\kappa_{c,p}^{\rho, \rho'} \exp(-C_{cp} / 2 \ell^2),
+\end{equation}
+\begin{equation}
+\frac{\partial k_D}{\partial \kappa_{ab}} = \sum\limits_{\substack{c \in C(\rho, N-1) \\ p \in P(\rho', N-1)}} \frac{\sigma^2}{\ell^4} (A_{cp} \ell^2 - B_{cp}) \frac{\kappa_{c,p}^{\rho, \rho'}}{\kappa_{ab}} N_{c,p}^{a,b} \exp(-C_{cp} / 2 \ell^2),
+\end{equation}
+where $N_{c,p}^{a,b}$ is the number of a, b comparisons that arise when comparing the $(N-1)$-tuples $c$ and $p$.
+
 
 \section{SOAP is a three-body kernel}
 Consider the multi-component SOAP kernel defined in Ref.\ \cite{de2016comparing},
@@ -67,17 +136,17 @@ Recalling that
 \begin{equation}
     \rho_1^\alpha(\vec{r}) = \sum_{i \in \rho_1^\alpha} \exp\left(-\frac{(\vec{x}_i - \vec{r})^2}{2\sigma^2}\right)
 \end{equation}
-and performing the integral gives
+and performing the inner integral gives
 \begin{equation}
-\int d\vec{r} \sum_{\alpha \alpha'} \kappa_{\alpha \alpha'} \rho_1^\alpha(\vec{r}) \rho_2^{\alpha'}(\hat{R} \vec{r}) = \sum_{\alpha \alpha'} \sum_{i\in\rho_1^\alpha} \sum_{j\in\rho_2^{\alpha'}} \kappa_{\alpha\alpha'}\pi^{3/2}\sigma^3 \exp\left(-\frac{(\vec{x}_i-\hat{R}\vec{x}_j)}{4\sigma^2}\right).
+\int d\vec{r} \sum_{\alpha \alpha'} \kappa_{\alpha \alpha'} \rho_1^\alpha(\vec{r}) \rho_2^{\alpha'}(\hat{R} \vec{r}) = \sum_{\alpha \alpha'} \sum\limits_{\substack{i\in\rho_1^\alpha \\ j\in\rho_2^{\alpha'}}} \kappa_{\alpha\alpha'}\pi^{3/2}\sigma^3 \exp\left(-\frac{(\vec{x}_i-\hat{R}\vec{x}_j)}{4\sigma^2}\right).
 \end{equation}
 The full kernel may therefore be written as
 \begin{equation}
-k(\rho_1, \rho_2) = \pi^3 \sigma^6 \sum_{\alpha\alpha'\beta\beta'} \kappa_{\alpha\alpha'} \kappa_{\beta\beta'} \sum\limits_{\substack{i\in\rho_1^\alpha \\ j_\in\rho_2^{\alpha'}}} \sum\limits_{\substack{k \in \rho_1^\beta \\ l \in \rho_2^{\beta'}}} \int d\hat{R} \exp\left(-\frac{(\vec{x}_i - \hat{R}\vec{x}_j)^2}{4 \sigma^2}\right)\exp\left(-\frac{(\vec{x}_k - \hat{R}\vec{x}_l)^2}{4 \sigma^2}\right).
+k(\rho_1, \rho_2) = \pi^3 \sigma^6 \sum\limits_{\substack{\alpha\alpha' \\ \beta\beta'}} \kappa_{\alpha\alpha'} \kappa_{\beta\beta'} \sum\limits_{\substack{i\in\rho_1^\alpha \\ j_\in\rho_2^{\alpha'}}} \sum\limits_{\substack{k \in \rho_1^\beta \\ l \in \rho_2^{\beta'}}} \int d\hat{R} \exp\left(-\frac{(\vec{x}_i - \hat{R}\vec{x}_j)^2}{4 \sigma^2}\right)\exp\left(-\frac{(\vec{x}_k - \hat{R}\vec{x}_l)^2}{4 \sigma^2}\right).
 \end{equation}
-This kernel captures angular information between at most two atoms in the environment. It is therefore not expected to be more accurate than Glielmo's three-body kernel \cite{glielmo2018efficient}, which directly compares pairs and triplets of distances without performing an integral over SO(3).
+This kernel captures angular information between at most two atoms in the environment. It is therefore not expected to be any more accurate than Glielmo's three-body kernel \cite{glielmo2018efficient}, which directly compares pairs and triplets of distances without performing an integral over SO(3). Normalizing the SOAP kernel and raising to a positive power may allow the model to capture many-body interactions, but the same procedure can be applied to the two- and three-body kernels of Ref.\ \cite{glielmo2018efficient}, which are much easier to compute.
 
-Normalizing the kernel and raising to a positive power may allow the model to capture many-body interactions, but the same procedure can be applied to the two- and three-body kernels of Ref.\ \cite{glielmo2018efficient}.
+Note that the multi-component SOAP kernel handles different species by assigning ICM coeffients to pairs of atoms rather than pairs of triplets. This significantly reduces the number of ICM hyperparameters needed.
 
 
 \section{Computing the power spectrum}

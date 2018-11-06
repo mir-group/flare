@@ -143,9 +143,10 @@ def test_is_triplet():
 
 
 def test_species_to_index(test_env):
-    assert(test_env.species_to_index('B', 'B') == 0)
-    assert(test_env.species_to_index('B', 'A') == 1)
-    assert(test_env.species_to_index('A', 'A') == 2)
+    struc = test_env.structure
+    assert(test_env.species_to_index(struc, 'B', 'B') == 0)
+    assert(test_env.species_to_index(struc, 'B', 'A') == 1)
+    assert(test_env.species_to_index(struc, 'A', 'A') == 2)
 
 
 def test_triplet_to_index(test_env):
@@ -162,8 +163,8 @@ def test_get_local_atom_images(test_env):
 
 def test_get_atoms_within_cutoff(test_env):
     atom = 0
-    bond_array, _, bond_positions, _, _ =\
-        test_env.get_atoms_within_cutoff(atom)
+    bond_array, bond_positions, _, _ =\
+        test_env.get_atoms_within_cutoff(test_env.structure, atom)
 
     assert(bond_array.shape[0] == 8)
     assert(bond_array[0, 1] == bond_positions[0, 0] / bond_array[0, 0])
@@ -177,19 +178,3 @@ def test_get_cross_bonds(test_env):
     pos2 = test_env.bond_positions[nrand]
     assert(test_env.cross_bond_dists[mrand, nrand] ==
            np.linalg.norm(pos1-pos2))
-
-
-def test_two_body_kernels(env1, env2):
-    d1 = 1
-    d2 = 1
-    sig = 1
-    ls = 1
-    its = 1000
-
-    # compare performance
-    speed_up, kern_val_jit, kern_val_py, _, _ = \
-        get_jit_speedup(env1, env2, d1, d2, sig, ls,
-                        env.two_body, env.two_body_py, its)
-
-    assert(kern_val_jit == kern_val_py)
-    assert(speed_up > 1)

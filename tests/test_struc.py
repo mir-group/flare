@@ -79,7 +79,7 @@ def rand_struct():
     noa = np.random.randint(3, 30)
     lattice = np.random.uniform(2, 10, 3)
     struct, _ = get_random_structure(cell=np.diag(lattice),
-                                     unique_species=["A", "B", ],
+                                     unique_species=["A", "B",'C'],
                                      cutoff=np.random.uniform(1, 10.),
                                      noa=noa)
 
@@ -140,6 +140,21 @@ def test_index_finding(rand_struct):
         assert rand_struct.get_index_from_position(target_pos) == n
 
 
+def test_species_count(rand_struct):
+
+    uniq_species=[]
+
+    for spec in rand_struct.species:
+        if spec not in uniq_species:
+            uniq_species.append(spec)
+
+
+    spec_count = rand_struct.get_species_count()
+
+    for spec in uniq_species:
+        assert spec_count[spec] == rand_struct.species.count(spec)
+
+
 def test_translate_structure(rand_struct):
     trans = np.random.randn(3)
 
@@ -148,7 +163,14 @@ def test_translate_structure(rand_struct):
     rand_struct.translate_positions(trans)
 
     for n in range(rand_struct.nat):
-        assert np.isclose(rand_struct.positions[n], pre_trans_pos[
-            n] + trans).all()
+        assert np.isclose(rand_struct.positions[n], pre_trans_pos[n] +
+                          trans).all()
         assert np.isclose(rand_struct.prev_positions[n],
                           pre_trans_prev_pos[n] + trans).all()
+
+
+def test_perturb_structure(rand_struct):
+    old_positions = np.copy(rand_struct.positions)
+    rand_struct.perturb_positions()
+    assert not np.isclose(rand_struct.positions, old_positions).all()
+

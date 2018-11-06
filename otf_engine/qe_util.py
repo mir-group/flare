@@ -10,11 +10,57 @@ Steven Torrisi
 """
 
 import os
+import time
+
 import numpy as np
+
 from struc import Structure
 from typing import List
 
 
+def timeit(method):
+    def write_time(*args, **kw):
+
+        # Only decorate if time_log is an argument
+        if 'time_log' in kw:
+
+            # Remove time_log from kwargs before passing to method
+            time_dict = kw['time_log']
+            kw.pop('time_log')
+
+            # Get method name to tally total time on this method
+
+            # Get custom name e.g. 'last_dft_run'
+            custom_name = kw.get('log_name', '')
+            # Remove custom name from kwargs before passing to method
+            if 'log_name' in kw.keys():
+                kw.pop('log_name')
+
+            # Time the method
+            ts = time.time()
+            result = method(*args, **kw)
+            te = time.time()
+
+            # Assign time of custom name
+            if custom_name:
+                time_dict[custom_name] = te - ts
+
+            # Tally total time spent on this method
+            method_name = method.__name__
+            if time_dict.get(method_name, False):
+                time_dict[method_name] += te - ts
+            else:
+                time_dict[method_name] = te - ts
+
+        else:
+            result = method(*args, **kw)
+
+        return result
+
+    return write_time
+
+
+@timeit
 def run_espresso(qe_input: str, structure: Structure, temp: bool = False) -> \
         List[np.array]:
     """
@@ -50,7 +96,8 @@ def run_espresso(qe_input: str, structure: Structure, temp: bool = False) -> \
     return parse_qe_forces('pwscf.out')
 
 
-def parse_qe_input(qe_input: str):
+def parse_qe_input(qe_input: str) -> (
+        List[np.array], List[str], np.array, dict):
     """
     Reads the positions, species, cell, and masses in from the qe input file
 
@@ -109,6 +156,8 @@ def parse_qe_input(qe_input: str):
     assert positions != [], "Positions failed to load"
 
     # Load masses
+    # Convert from amu to  mass units with picosecond timescale and angstrom
+    # length scale such that the unit of energy is in natural units (=1)
     massconvert = 0.00010364269933008285
     masses = {}
     for i in range(species_index, species_index + len(set(species))):
@@ -117,6 +166,18 @@ def parse_qe_input(qe_input: str):
         masses[line[0]] = float(line[1]) * massconvert
 
     return positions, species, cell, masses
+
+
+def qe_input_to_structure(qe_input: str, cutoff: float = 5) -> Structure:
+    """
+    Parses a qe input and returns the atoms in the file as a Structure object
+    :param qe_input: QE Input file to parse
+    :param cutoff: Cutoff radius for structure
+    :return:
+    """
+    positions, species, cell, masses = parse_qe_input(qe_input)
+    return Structure(positions=positions, species=species, lattice=cell,
+                     mass_dict=masses, cutoff=cutoff)
 
 
 def edit_qe_input_positions(qe_input: str, structure: Structure):
@@ -146,6 +207,9 @@ def edit_qe_input_positions(qe_input: str, structure: Structure):
     assert cell_index is not None, 'Failed to find cell in input'
     assert nat is not None, 'Failed to find nat in input'
 
+    # TODO Catch case where the punchout structure has more atoms than the
+    # original structure
+
     for pos_index, line_index in enumerate(
             range(file_pos_index, file_pos_index + structure.nat)):
         pos_string = ' '.join([structure.species[pos_index],
@@ -155,7 +219,10 @@ def edit_qe_input_positions(qe_input: str, structure: Structure):
                                        1]),
                                str(structure.positions[pos_index][
                                        2])])
-        lines[line_index] = str(pos_string + '\n')
+        if line_index < len(lines):
+            lines[line_index] = str(pos_string + '\n')
+        else:
+            lines.append(str(pos_string + '\n'))
 
     # TODO current assumption: if there is a new structure, then the new
     # structure has fewer atoms than the  previous one. If we are always
@@ -178,7 +245,7 @@ def edit_qe_input_positions(qe_input: str, structure: Structure):
 
 def parse_qe_forces(outfile: str):
     """
-    Get forces from a pwscf file in Ryd/bohr
+    Get forces from a pwscf file in eV/A
 
     :param outfile: str, Path to pwscf output file
     :return: list[nparray] , List of forces acting on atoms

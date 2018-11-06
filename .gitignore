@@ -1,1 +1,5 @@
 __pycache__/
+pwscf.save/
+.cache/
+.pytest_cache/
+tests/otf_run.out
