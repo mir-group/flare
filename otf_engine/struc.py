@@ -65,6 +65,9 @@ class Structure(object):
 
         self.mass_dict = mass_dict
 
+        # Sentinel variable to keep track of if forces are from DFT or GP
+        self.dft_forces = False
+
     def translate_positions(self, vector: ndarray = zeros(3)):
         """
         Translate all positions, and previous positions by vector

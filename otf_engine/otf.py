@@ -81,6 +81,11 @@ class OTF(object):
         # Bootstrap first training point
         self.run_and_train()
 
+        # If not in punchout mode, take first step with DFT forces
+        if not self.punchout_settings:
+            self.write_md_config()
+            self.update_positions()
+
         # Main loop
         while self.curr_step < self.Nsteps:
 
@@ -90,14 +95,16 @@ class OTF(object):
             # Check error before proceeding
             std_in_bound, target_atom = self.is_std_in_bound()
             if not std_in_bound:
-                self.write_config()
+                self.write_md_config()
                 self.run_and_train(target_atom)
-                continue
+
+                # Re-evaluate forces if in punchout; else use DFT forces
+                if self.punchout_settings:
+                    continue
 
             # Print and propagate
-            self.write_config()
+            self.write_md_config()
             self.update_positions()
-            self.curr_step += 1
 
         self.conclude_run()
 
@@ -106,12 +113,15 @@ class OTF(object):
         """
         Assign forces to self.structure based on self.gp
         """
+
         for n in range(self.structure.nat):
             chemenv = ChemicalEnvironment(self.structure, n)
             for i in range(3):
                 force, var = self.gp.predict(chemenv, i + 1)
                 self.structure.forces[n][i] = float(force)
                 self.structure.stds[n][i] = np.sqrt(np.absolute(var))
+
+        self.structure.dft_forces = False
 
     def run_and_train(self, target_atom: int = None):
         """
@@ -151,10 +161,17 @@ class OTF(object):
         forces = run_espresso(self.qe_input, self.train_structure,
                               time_log=self.run_stats, log_name='last_dft')
 
+        # Assign forces to structure if not in punchout mode
+        if not self.punchout_settings:
+            self.structure.dft_forces = True
+            self.structure.forces = forces
+            self.structure.stds = [np.zeros(3)] * self.structure.nat
+
         self.write_to_output('Done.\n')
         self.run_stats['dft_calls'] += 1
 
         # Write input positions and force results
+
         qe_strings = '~ DFT Call : {}   DFT Time: {} s \n'.format(
             self.run_stats['dft_calls'],
             np.round(self.run_stats['last_dft'], 3))
@@ -174,6 +191,7 @@ class OTF(object):
         self.write_to_output('=' * 20 + '\n')
 
         # Update hyperparameters and write results
+
         self.write_to_output('Updating database hyperparameters...\n')
         self.gp.update_db(self.train_structure, forces,
                           custom_range=train_atoms)
@@ -201,10 +219,13 @@ class OTF(object):
             pos = self.structure.positions[i]
             forces = self.structure.forces[i]
 
+            # Verlet step
             self.structure.positions[i] = 2 * pos - pre_pos + dtdt * forces / \
                                         mass
 
             self.structure.prev_positions[i] = np.copy(temp_pos)
+
+        self.curr_step += 1
 
     @staticmethod
     def write_to_output(string: str, output_file: str = 'otf_run.out'):
@@ -218,23 +239,34 @@ class OTF(object):
         with open(output_file, 'a') as f:
             f.write(string)
 
-    def write_config(self):
+    def write_md_config(self):
         """
         Write current step to the output file including positions, forces, and
         force variances
+
+        :return:
         """
 
         string = ' '
 
         string += "-------------------- \n"
 
-        string += "- Frame: " + str(self.curr_step)
+        # Mark if a frame had DFT forces with an asterisk
+        string += "-" + ('*' if self.structure.dft_forces else ' ') + \
+                  "Frame: " + str(self.curr_step)
+
         string += " Simulation Time: "
         string += str(np.round(self.dt * self.curr_step, 6)) + '\n'
 
-        string += 'El \t\t\t  Position (A) \t\t\t\t\t GP Force (ev/A) ' \
-                  '\t\t\t\t\t\t' \
-                  'Std. Dev (ev/A) \n'
+        # Construct Header line
+        string += 'El \t\t\t  Position (A) \t\t\t\t\t '
+        if not self.structure.dft_forces:
+            string += 'GP Force (ev/A) '
+        else:
+            string += 'DFT Force (ev/A) '
+        string += '\t\t\t\t\t\t Std. Dev (ev/A) \n'
+
+        # Construct atom-by-atom description
 
         for i in range(len(self.structure.positions)):
             string += self.structure.species[i] + ' '
