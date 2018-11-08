@@ -32,7 +32,7 @@ def fcc_positions(cube_lat):
     return positions
 
 # -----------------------------------------------------------------------------
-#                        diamond helper functions
+#                          diamond helper functions
 # -----------------------------------------------------------------------------
 
 

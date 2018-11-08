@@ -25,7 +25,7 @@ class MDAnalysis:
         forces = self.MD_data[snap+1]['forces']
         return forces
 
-
+    
 # return untrained gp model
 def get_gp_from_snaps(md_trajectory, training_snaps, cutoff, kernel,
                       bodies, algorithm='BFGS', cutoffs=None, nos=None):
@@ -35,6 +35,19 @@ def get_gp_from_snaps(md_trajectory, training_snaps, cutoff, kernel,
         structure = md_trajectory.get_structure_from_snap(snap, cutoff)
         forces = md_trajectory.get_forces_from_snap(snap)
         gp_model.update_db(structure, forces)
+
+    return gp_model
+
+
+# return untrained gp model
+def custom_range_gp(md_trajectory, training_snaps, training_range, cutoff, 
+                    kernel, bodies, algorithm='BFGS', cutoffs=None, nos=None):
+    gp_model = gp.GaussianProcess(kernel, bodies, algorithm, cutoffs, nos=nos)
+
+    for snap_count, snap in enumerate(training_snaps):
+        structure = md_trajectory.get_structure_from_snap(snap, cutoff)
+        forces = md_trajectory.get_forces_from_snap(snap)
+        gp_model.update_db(structure, forces, training_range[snap_count])
 
     return gp_model
 
