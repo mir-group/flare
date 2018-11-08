@@ -180,3 +180,18 @@ def test_otf_1_3():
               kernel='n_body_sc')
     otf.run()
     cleanup_otf_run()
+
+
+def test_otf_1_long():
+    """
+    Test that an otf run will succeed after calling DFT twice
+    Should produce OTF output which resembles otf_output_2.out
+    :return:
+    """
+    os.system('cp ./test_files/qe_input_1.in ./pwscf.in')
+
+    otf = OTF(qe_input='./pwscf.in', dt=.0001, number_of_steps=50,
+              bodies=2, cutoff=5,
+              kernel='n_body_sc')
+    otf.run()
+    cleanup_otf_run()

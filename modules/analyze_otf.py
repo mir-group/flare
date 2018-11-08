@@ -25,8 +25,45 @@ def strip_and_split(line):
     return stripped_line
 
 
+def parse_header_information(outfile: str = 'otf_run.out')->dict:
+    """
+    Get information about the run from the header of the file
+    :param outfile:
+    :return:
+    """
+    with open(outfile, 'r') as f:
+        lines = f.readlines()
+
+    header_info = {}
+
+    for line in lines:
+        if '-' in line or '=' in line:
+            stopreading = lines.index(line)
+            break
+
+    for line in lines[:stopreading]:
+
+        if 'Frames' in line:
+            header_info['frames'] = int(line.split(':')[1])
+        if 'Atoms' in line:
+            header_info['atoms'] = int(line.split(':')[1])
+        if 'Cutoff' in line:
+            header_info['cutoff'] = float(line.split(':')[1])
+        if 'Timestep' in line:
+            header_info['dt'] = float(line.split(':')[1])
+        if 'Species' in line:
+            header_info['dt'] = set(line.split(":")[1])
+
+    return header_info
+
+
 def parse_md_information(outfile: str = 'otf_run.out') -> (List[str], np.array,
                                                            np.array, np.array):
+    """
+    Parse information about the OTF MD run
+    :param outfile:
+    :return:
+    """
     with open(outfile, 'r') as f:
         lines = f.readlines()
 
@@ -66,7 +103,8 @@ def parse_md_information(outfile: str = 'otf_run.out') -> (List[str], np.array,
     return species, run_positions, run_forces, run_stds
 
 
-def parse_dft_information(outfile: str):
+def parse_dft_information(outfile: str) -> (List[str], List[np.array], \
+                                                    List[np.array]):
     """
     Parse the output of a otf run for analysis
     :param outfile: str, Path to file
@@ -83,6 +121,7 @@ def parse_dft_information(outfile: str):
 
     # Species and positions may vary from DFT run to DFT run
     # TODO turn into numpy array and extend array with each new data point
+
     dft_species = []
     dft_positions = []
     dft_forces = []
@@ -99,12 +138,12 @@ def parse_dft_information(outfile: str):
             dft_run_nat += 1
 
         for at in range(dft_run_nat):
-            data = strip_and_split(lines[frame_index])
+            data = strip_and_split(lines[frame_index+at])
 
-            dft_run_species.append(data[0])
+            dft_run_species.append(data[0].strip(':'))
 
-            curr_position = np.array([data[1], data[2], data[3]])
-            curr_force = np.array([data[4], data[5], data[6]])
+            curr_position = np.array([data[1], data[2], data[3]],dtype='float')
+            curr_force = np.array([data[4], data[5], data[6]],dtype='float')
 
             dft_run_positions.append(curr_position)
             dft_run_forces.append(curr_force)
