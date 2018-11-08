@@ -37,7 +37,7 @@ def parse_header_information(outfile: str = 'otf_run.out')->dict:
     header_info = {}
 
     for line in lines:
-        if '-' in line or '=' in line:
+        if '---' in line or '=' in line:
             stopreading = lines.index(line)
             break
 
@@ -52,7 +52,12 @@ def parse_header_information(outfile: str = 'otf_run.out')->dict:
         if 'Timestep' in line:
             header_info['dt'] = float(line.split(':')[1])
         if 'Species' in line:
-            header_info['dt'] = set(line.split(":")[1])
+            line = line.split(':')[1]
+            line = line.split("'")
+
+            species = [item for item in line if item.isalpha()]
+
+            header_info['species'] = set(species)
 
     return header_info
 

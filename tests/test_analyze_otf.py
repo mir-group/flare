@@ -32,7 +32,6 @@ def test_parse_header_2():
 
     header_dict = parse_header_information('otf_run.out')
 
-
     assert header_dict['frames'] == 50
     assert header_dict['atoms'] == 2
     assert header_dict['cutoff'] ==5
