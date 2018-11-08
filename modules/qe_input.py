@@ -48,7 +48,8 @@ class QEInput:
     def __init__(self, input_file_name: str, output_file_name: str,
                  pw_loc: str, calculation: str,
                  scf_inputs: dict, md_inputs: dict = None,
-                 press_conv_thr=None):
+                 press_conv_thr=None,
+                 electron_maxstep=100):
 
         self.input_file_name = input_file_name
         self.output_file_name = output_file_name
@@ -68,6 +69,7 @@ class QEInput:
         self.ion_names = scf_inputs['ion_names']
         self.ion_masses = scf_inputs['ion_masses']
         self.ion_pseudo = scf_inputs['ion_pseudo']
+        self.electron_maxstep = electron_maxstep
 
         # get text blocks
         self.species_txt = self.get_species_txt()
@@ -159,7 +161,8 @@ class QEInput:
  /
  &electrons
     conv_thr =  1.0d-10
-    mixing_beta = 0.7"""
+    mixing_beta = 0.7
+    electron_maxstep = {}""".format(self.electron_maxstep)
 
         # if MD or relax, need to add an &IONS block
         if (self.calculation == 'md') or (self.calculation == 'relax') or \
