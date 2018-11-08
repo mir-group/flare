@@ -17,6 +17,60 @@ import time
 # -----------------------------------------------------------------------------
 
 
+def n_body_sc_norm(env1, env2, bodies, hyps, cutoffs=None):
+    combs = get_comb_array(env1.bond_array.shape[0], bodies-1)
+    perms = get_perm_array(env2.bond_array.shape[0], bodies-1)
+    en_kern = energy_jit_sc(env1.bond_array, env1.cross_bond_dists, combs,
+                            env2.bond_array, env2.cross_bond_dists, perms,
+                            hyps)
+    self_kern_1 = energy_jit_sc(env1.bond_array, env1.cross_bond_dists, combs,
+                                env1.bond_array, env1.cross_bond_dists, perms,
+                                hyps)
+    self_kern_2 = energy_jit_sc(env2.bond_array, env2.cross_bond_dists, combs,
+                                env2.bond_array, env2.cross_bond_dists, perms,
+                                hyps)
+    kern = en_kern / np.sqrt(self_kern_1 * self_kern_2)
+
+    return kern
+
+
+def n_body_sc_norm_derv(env1, env2, bodies, d1, d2, hyps, cutoffs=None):
+    combs = get_comb_array(env1.bond_array.shape[0], bodies-1)
+    perms = get_perm_array(env2.bond_array.shape[0], bodies-1)
+
+    doub_kern = n_body_jit_sc(env1.bond_array, env1.cross_bond_dists, combs,
+                              env2.bond_array, env2.cross_bond_dists, perms,
+                              d1, d2, hyps)
+    en_kern = energy_jit_sc(env1.bond_array, env1.cross_bond_dists, combs,
+                            env2.bond_array, env2.cross_bond_dists, perms,
+                            hyps)
+    force_kern_1 = -energy_force_jit_sc(env1.bond_array, env1.cross_bond_dists,
+                                        combs, env2.bond_array,
+                                        env2.cross_bond_dists, perms, d1, hyps)
+    force_kern_2 = -energy_force_jit_sc(env2.bond_array, env2.cross_bond_dists,
+                                        combs, env1.bond_array,
+                                        env1.cross_bond_dists, perms, d2, hyps)
+    self_kern_1 = energy_jit_sc(env1.bond_array, env1.cross_bond_dists, combs,
+                                env1.bond_array, env1.cross_bond_dists, perms,
+                                hyps)
+    self_kern_2 = energy_jit_sc(env2.bond_array, env2.cross_bond_dists, combs,
+                                env2.bond_array, env2.cross_bond_dists, perms,
+                                hyps)
+    self_derv_1 = kern_self_sc(env1.bond_array, env1.cross_bond_dists, combs,
+                               perms, d1, hyps)
+    self_derv_2 = kern_self_sc(env2.bond_array, env2.cross_bond_dists, combs,
+                               perms, d2, hyps)
+    k_sqrt = 1 / (np.sqrt(self_kern_1 * self_kern_2))
+    k_sqrt_d1 = -(1/2)*(k_sqrt**3)*self_derv_1*self_kern_2
+    k_sqrt_d2 = -(1/2)*(k_sqrt**3)*self_derv_2*self_kern_1
+    k_sqrt_doub = (1/4)*(k_sqrt**3)*k_sqrt_d1*k_sqrt_d2
+
+    kern = doub_kern * k_sqrt + force_kern_1 * k_sqrt_d2 + \
+        force_kern_2 * k_sqrt_d1 + en_kern * k_sqrt_doub
+
+    return kern
+
+
 def n_body_mc_grad(env1, env2, bodies, d1, d2, hyps, cutoffs=None):
     combs = get_comb_array(env1.bond_array.shape[0], bodies-1)
     perms = get_perm_array(env2.bond_array.shape[0], bodies-1)
@@ -334,6 +388,42 @@ def two_body_grad_from_env(bond_array_1, bond_types_1, bond_array_2,
 # -----------------------------------------------------------------------------
 
 
+# derivative of kernel between environment and itself
+# bond array 1: force environment
+# bond array 2: local energy environment
+@njit
+def kern_self_sc(bond_array_1, cross_bond_dists_1, combinations,
+                 permutations, d1, hyps):
+    sig = hyps[0]
+    ls = hyps[1]
+    kern = 0
+
+    for m in range(combinations.shape[0]):
+        comb = combinations[m]
+        for n in range(permutations.shape[0]):
+            perm = permutations[n]
+            B_cp_1 = 0
+            C_cp = 0
+
+            for q, (c_ind, p_ind) in enumerate(zip(comb, perm)):
+                rdiff = bond_array_1[c_ind, 0] - bond_array_1[p_ind, 0]
+                coord1 = bond_array_1[c_ind, d1]
+                coord2 = bond_array_1[p_ind, d1]
+
+                B_cp_1 += rdiff * (coord1 - coord2)
+                C_cp += rdiff * rdiff
+
+                for c_ind_2, p_ind_2 in zip(comb[q+1:], perm[q+1:]):
+                    cb_diff = cross_bond_dists_1[c_ind, c_ind_2] - \
+                        cross_bond_dists_1[p_ind, p_ind_2]
+                    C_cp += cb_diff * cb_diff
+
+            kern += (sig*sig / (ls*ls)) * B_cp_1 * \
+                exp(-C_cp / (2 * ls * ls))
+
+    return kern
+
+
 # multi component n body kernel
 @njit
 def n_body_jit_mc(bond_array_1, cross_bond_dists_1, combinations,
@@ -645,4 +735,65 @@ def get_ICM_array_from_vector(ICM_vector, nos):
     return ICM_array
 
 if __name__ == '__main__':
-    pass
+    cell = np.eye(3)
+    cutoff = np.linalg.norm(np.array([0.5, 0.5, 0.5])) + 0.001
+
+    positions_1 = [np.array([0, 0, 0]), np.array([0.1, 0.2, 0.3])]
+    species_1 = ['A', 'A']
+    atom_1 = 0
+    test_structure_1 = struc.Structure(cell, species_1, positions_1, cutoff)
+    env1 = env.ChemicalEnvironment(test_structure_1, atom_1)
+
+    # make perturbed environment
+    delta = 1e-4
+    cell = np.eye(3)
+    cutoff = np.linalg.norm(np.array([0.5, 0.5, 0.5])) + 0.001
+
+    positions_1 = [np.array([delta, 0, 0]), np.array([0.1, 0.2, 0.3])]
+    species_1 = ['A', 'A']
+    atom_1 = 0
+    test_structure_1 = struc.Structure(cell, species_1, positions_1, cutoff)
+    delt_env = env.ChemicalEnvironment(test_structure_1, atom_1)
+
+    # make env2
+    cell = np.eye(3)
+    cutoff = np.linalg.norm(np.array([0.5, 0.5, 0.5])) + 0.001
+
+    positions_2 = [np.array([0, 0, 0]), np.array([0.25, 0.3, 0.4])]
+    species_2 = ['A', 'A']
+    atom_2 = 0
+    test_structure_2 = struc.Structure(cell, species_2, positions_2, cutoff)
+    env2 = env.ChemicalEnvironment(test_structure_2, atom_2)
+
+    # make delta_env2
+    cell = np.eye(3)
+    cutoff = np.linalg.norm(np.array([0.5, 0.5, 0.5])) + 0.001
+
+    positions_2 = [np.array([delta, 0, 0]), np.array([0.25, 0.3, 0.4])]
+    species_2 = ['A', 'A']
+    atom_2 = 0
+    test_structure_2 = struc.Structure(cell, species_2, positions_2, cutoff)
+    delt_env2 = env.ChemicalEnvironment(test_structure_2, atom_2)
+
+    bodies = 2
+    d1 = 1
+    d2 = 1
+    hyps = np.array([1, 1, 1])
+    en_kern_1 = energy_sc(env1, env1, bodies, hyps)
+    en_kern_2 = energy_sc(delt_env, delt_env, bodies, hyps)
+
+    combs = get_comb_array(env1.bond_array.shape[0], bodies-1)
+    perms = get_perm_array(env1.bond_array.shape[0], bodies-1)
+
+    assert(n_body_sc_norm(env1, env1, bodies, hyps) == 1)
+    assert(n_body_sc_norm(env2, env2, bodies, hyps) == 1)
+
+    derv_ex = n_body_sc_norm_derv(env1, env2, bodies, 1, 1, hyps)
+
+    derv2 = (n_body_sc_norm(delt_env, delt_env2, bodies, hyps) -
+             n_body_sc_norm(delt_env, env2, bodies, hyps))
+    derv1 = (n_body_sc_norm(env1, delt_env2, bodies, hyps) -
+             n_body_sc_norm(env1, env2, bodies, hyps))
+    derv_est = (derv2 - derv1)/delta**2
+
+    assert(np.isclose(derv_est, derv_ex, 1e-2))
