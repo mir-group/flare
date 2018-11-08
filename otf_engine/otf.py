@@ -7,6 +7,7 @@ OTF engine
 Steven Torrisi, Jon Vandermause, Simon Batzner
 """
 
+import sys
 import numpy as np
 import datetime
 import time
@@ -17,7 +18,11 @@ from struc import Structure
 from gp import GaussianProcess
 from env import ChemicalEnvironment
 from punchout import punchout
-from qe_util import run_espresso, parse_qe_input, timeit
+from qe_util import run_espresso, parse_qe_input, timeit, \
+                    qe_input_to_structure, parse_qe_forces
+
+sys.path.append('../modules')
+from analyze_otf import parse_header_information, parse_dft_information
 
 
 class OTF(object):
@@ -63,11 +68,14 @@ class OTF(object):
             f.write(str(datetime.datetime.now()) + '\n')
 
         headerstring = ''
+        headerstring += 'Structure Cutoff Radius: {}\n'.format(
+            self.structure.cutoff)
         headerstring += 'Timestep (ps): {}\n'.format(self.dt)
         headerstring += 'Number of Frames: {}\n'.format(self.Nsteps)
         headerstring += 'Number of Atoms: {}\n'.format(self.structure.nat)
         headerstring += 'System Species: {}\n'.format(set(
             self.structure.species))
+
 
         self.write_to_output(headerstring)
 
@@ -160,6 +168,7 @@ class OTF(object):
 
         forces = run_espresso(self.qe_input, self.train_structure,
                               time_log=self.run_stats, log_name='last_dft')
+        self.train_structure.forces = forces
 
         # Assign forces to structure if not in punchout mode
         if not self.punchout_settings:
@@ -172,23 +181,7 @@ class OTF(object):
 
         # Write input positions and force results
 
-        qe_strings = '~ DFT Call : {}   DFT Time: {} s \n'.format(
-            self.run_stats['dft_calls'],
-            np.round(self.run_stats['last_dft'], 3))
-
-        qe_strings += 'El \t\t\t  Position (A) \t\t\t\t\t DFT Force (ev/A) \n'
-
-        for n in range(self.train_structure.nat):
-            qe_strings += self.train_structure.species[n] + ': '
-            for i in range(3):
-                qe_strings += '%.8f  ' % self.train_structure.positions[n][i]
-            qe_strings += '\t '
-            for i in range(3):
-                qe_strings += '%.8f  ' % forces[n][i]
-            qe_strings += '\n'
-
-        self.write_to_output(qe_strings)
-        self.write_to_output('=' * 20 + '\n')
+        self.write_last_dft_run()
 
         # Update hyperparameters and write results
 
@@ -209,7 +202,6 @@ class OTF(object):
         """
         Apply a timestep to self.structure based on current structure's forces.
         """
-
         # Precompute dt squared for efficiency
         dtdt = self.dt ** 2
 
@@ -282,6 +274,28 @@ class OTF(object):
 
         self.write_to_output(string)
 
+    def write_last_dft_run(self):
+
+        qe_strings = '~ DFT Call : {}   DFT Time: {} s \n'.format(
+            self.run_stats['dft_calls'],
+            np.round(self.run_stats['last_dft'], 3))
+
+        qe_strings += 'El \t\t\t  Position (A) \t\t\t\t\t DFT Force (ev/A) \n'
+
+        for n in range(self.train_structure.nat):
+            qe_strings += self.train_structure.species[n] + ': '
+            for i in range(3):
+                qe_strings += '%.8f  ' % self.train_structure.positions[n][i]
+            qe_strings += '\t '
+            for i in range(3):
+                qe_strings += '%.8f  ' % self.train_structure.forces[n][i]
+            qe_strings += '\n'
+
+        self.write_to_output(qe_strings)
+        self.write_to_output('=' * 20 + '\n')
+
+
+
     def conclude_run(self):
         """
         Print summary information about the OTF run into the output
@@ -321,6 +335,70 @@ class OTF(object):
             return False, target_atom
         else:
             return True, -1
+
+    #TODO Unit test this
+    def augment_db_from_pwscf(self, pwscf_in_file: str, pwscf_out_file: str,
+                              cutoff : float = None, train: bool = True,
+                              origin_atom_only: bool = False):
+        """
+        Augment training database from a pre-existing pwscf output file
+        Useful to start off an OTF run non-bootstrap
+        :param pwscf_in_file: Input file to get structure from
+        :param pwscf_out_file:  Output file to get forces from
+        :param cutoff: Cutoff radius for new structure to use in db
+        :param train: Train GP after augmenting DB
+        :param origin_atom_only: Only use an atom at (0,0,0)
+        :return:
+        """
+
+        if not cutoff:
+            cutoff = self.structure.cutoff
+
+        pw_structure = qe_input_to_structure(qe_input= pwscf_in_file,
+                                            cutoff=cutoff)
+        forces = parse_qe_forces(pwscf_out_file)
+
+        if origin_atom_only:
+            central_atom = [pw_structure.get_index_from_position([np.zeros(
+                3)])]
+        else:
+            central_atom = []
+
+        self.gp.update_db(pw_structure, forces,central_atom)
+
+        if train:
+            self.gp.train(time_log=self.run_stats)
+
+
+    # TODO finish implementing this
+    def augment_db_from_otf_run(self,otf_run_output: str, train : bool =
+        True,cutoff : float = None):
+        """
+        Parses OTF run and augments gp database with QE runs
+        :param otf_run_output:
+        :return:
+        """
+
+
+        header_info = parse_header_information(otf_run_output)
+
+        cutoff = header_info['cutoff']
+
+        species_set, positions_set, forces_set = parse_dft_information
+
+
+        # Loop through
+        for i in range(len(positions_set)):
+
+            cur_spec = species_set[i]
+            cur_pos = positions_set[i]
+            cur_forces = forces_set[i]
+
+            curr_struc = Structure(positions=cur_pos, species=cur_spec,
+                             lattice=cell, mass_dict={}, cutoff=cutoff)
+
+        raise NotImplementedError
+
 
 
 if __name__ == '__main__':
