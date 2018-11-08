@@ -78,7 +78,7 @@ class GaussianProcess:
         else:
             raise ValueError('not a valid kernel')
 
-        if opt_algorithm not in ['BFGS', 'L-BFGS-B']:
+        if opt_algorithm not in ['BFGS', 'L-BFGS-B', 'nelder-mead']:
             raise ValueError('Not a valid algorithm')
 
         self.algo = opt_algorithm
@@ -144,10 +144,10 @@ class GaussianProcess:
 
         x_0 = self.hyps
 
-        args = (self.training_data, self.training_labels_np,
-                self.kernel_grad, self.bodies, self.cutoffs, monitor)
-
         if self.algo == 'L-BFGS-B':
+            args = (self.training_data, self.training_labels_np,
+                    self.kernel_grad, self.bodies, self.cutoffs, monitor)
+
             # bound signal noise below to avoid overfitting
             bounds = np.array([(-np.inf, np.inf)] * len(x_0))
             bounds[-1] = (1e-5, np.inf)
@@ -164,10 +164,21 @@ class GaussianProcess:
                 self.algo = 'BFGS'
 
         if self.algo == 'BFGS':
+            args = (self.training_data, self.training_labels_np,
+                    self.kernel_grad, self.bodies, self.cutoffs, monitor)
+
             res = minimize(self.get_likelihood_and_gradients, x_0, args,
                            method='BFGS', jac=True,
                            options={'disp': False, 'gtol': 1e-4,
                                     'maxiter': 1000})
+
+        if self.algo == 'nelder-mead':
+            args = (self.training_data, self.training_labels_np,
+                    self.kernel, self.bodies, self.cutoffs, monitor)
+
+            res = minimize(self.get_likelihood, x_0, args,
+                           method='nelder-mead',
+                           options={'disp': False, 'xtol': 1e-5})
 
         self.hyps = res.x
         self.set_L_alpha()
@@ -327,6 +338,66 @@ class GaussianProcess:
             print('like: ' + str(like))
             print('\n')
         return -like, -like_grad
+
+    @staticmethod
+    def get_likelihood(hyps: np.ndarray, training_data: list,
+                       training_labels_np: np.ndarray,
+                       kernel, bodies: int,
+                       cutoffs=None,
+                       monitor: bool = False):
+
+        if monitor:
+            print('hyps: ' + str(hyps))
+
+        # assume sigma_n is the final hyperparameter
+        number_of_hyps = len(hyps)
+        sigma_n = hyps[number_of_hyps - 1]
+        kern_hyps = hyps[0:(number_of_hyps - 1)]
+
+        # initialize matrices
+        size = len(training_data) * 3
+        k_mat = np.zeros([size, size])
+
+        ds = [1, 2, 3]
+
+        # calculate elements
+        for m_index in range(size):
+            x_1 = training_data[int(math.floor(m_index / 3))]
+            d_1 = ds[m_index % 3]
+
+            for n_index in range(m_index, size):
+                x_2 = training_data[int(math.floor(n_index / 3))]
+                d_2 = ds[n_index % 3]
+
+                # calculate kernel and gradient
+                kern_curr = kernel(x_1, x_2, bodies, d_1, d_2, kern_hyps,
+                                   cutoffs)
+
+                # store kernel value
+                k_mat[m_index, n_index] = kern_curr
+                k_mat[n_index, m_index] = kern_curr
+
+        # matrix manipulation
+        ky_mat = k_mat + sigma_n ** 2 * np.eye(size)
+
+        # catch linear algebra errors
+        try:
+            ky_mat_inv = np.linalg.inv(ky_mat)
+            l_mat = np.linalg.cholesky(ky_mat)
+        except:
+            return 1e8, np.zeros(number_of_hyps)
+
+        alpha = np.matmul(ky_mat_inv, training_labels_np)
+
+        # calculate likelihood
+        like = (-0.5 * np.matmul(training_labels_np, alpha) -
+                np.sum(np.log(np.diagonal(l_mat))) -
+                math.log(2 * np.pi) * k_mat.shape[1] / 2)
+
+        if monitor:
+            print('like: ' + str(like))
+            print('\n')
+        return -like
 
     def set_L_alpha(self):
         # assume sigma_n is the final hyperparameter
