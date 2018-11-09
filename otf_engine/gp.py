@@ -16,7 +16,6 @@ from qe_util import timeit
 from scipy.linalg import solve_triangular
 from scipy.optimize import minimize
 from typing import List
-from copy import deepcopy
 
 from env import ChemicalEnvironment
 from kernels import n_body_sc, n_body_sc_grad, combo_kernel_sc,\
@@ -39,7 +38,6 @@ class GaussianProcess:
         # gp kernel and hyperparameters
         self.bodies = bodies
 
-<<<<<<< HEAD
         # TODO: implement kernel gradient
         if kernel == 'n_body_sc_norm_derv':
             self.kernel = n_body_sc_norm_derv
@@ -51,10 +49,6 @@ class GaussianProcess:
             self.cutoffs = None
 
         elif kernel == 'n_body_sc':
-=======
-        if kernel == 'n_body_sc':
-            self.kernel_name ='N-Body Single Component Force'
->>>>>>> 5c753c62f126a198f7183f62721ced6454aeddad
             self.kernel = n_body_sc
             self.kernel_grad = n_body_sc_grad
             self.energy_force_kernel = energy_force_sc
@@ -65,7 +59,6 @@ class GaussianProcess:
 
         # TODO: make energy and energy/force kernels for combination kernel
         elif kernel == 'combo_kernel_sc':
-            self.kernel_name ='N-Body Single Component Force/Energy'
             self.kernel = combo_kernel_sc
             self.kernel_grad = combo_kernel_sc_grad
             # self.energy_force_kernel = energy_force_sc
@@ -77,7 +70,6 @@ class GaussianProcess:
 
         # TODO: make energy and energy/force kernels for ICM kernels
         elif kernel == 'n_body_mc':
-            self.kernel_name = 'N-Body Multiple Component Force'
             self.kernel = n_body_mc
             self.kernel_grad = n_body_mc_grad
 
@@ -129,15 +121,13 @@ class GaussianProcess:
 
         for atom in update_indices:
             env_curr = ChemicalEnvironment(struc, atom)
-            forces_curr = np.array(forces[atom])
+            forces_curr = forces[atom]
 
             self.training_data.append(env_curr)
             self.training_labels.append(forces_curr)
 
         # create numpy array of training labels
         self.training_labels_np = self.force_list_to_np(self.training_labels)
-
-        pass
 
     @staticmethod
     def force_list_to_np(forces: list) -> np.ndarray:
@@ -170,7 +160,7 @@ class GaussianProcess:
 
             # bound signal noise below to avoid overfitting
             bounds = np.array([(-np.inf, np.inf)] * len(x_0))
-            bounds[-1] = (1e-6, np.inf)
+            bounds[-1] = (1e-5, np.inf)
 
             # Catch linear algebra errors and switch to BFGS if necessary
             try:
