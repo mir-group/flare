@@ -41,6 +41,7 @@ class GaussianProcess:
 
         # TODO: implement kernel gradient
         if kernel == 'n_body_sc_norm_derv':
+            self.kernel_name = 'Normalized N-Body Single Component'
             self.kernel = n_body_sc_norm_derv
             # self.kernel_grad = n_body_sc_grad
             # self.energy_force_kernel = energy_force_sc
@@ -50,7 +51,7 @@ class GaussianProcess:
             self.cutoffs = None
 
         elif kernel == 'n_body_sc':
-            self.kernel_name ='N-Body Single Component Force'
+            self.kernel_name ='N-Body Single Component'
             self.kernel = n_body_sc
             self.kernel_grad = n_body_sc_grad
             self.energy_force_kernel = energy_force_sc
@@ -61,7 +62,7 @@ class GaussianProcess:
 
         # TODO: make energy and energy/force kernels for combination kernel
         elif kernel == 'combo_kernel_sc':
-            self.kernel_name ='N-Body Single Component Force/Energy'
+            self.kernel_name ='Combined N-Body Single Component'
             self.kernel = combo_kernel_sc
             self.kernel_grad = combo_kernel_sc_grad
             # self.energy_force_kernel = energy_force_sc
