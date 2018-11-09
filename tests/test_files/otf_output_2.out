@@ -1,13 +1,15 @@
-2018-11-07 12:24:54.338613
+2018-11-07 23:34:19.565939
+Structure Cutoff Radius: 5
 Timestep (ps): 0.0001
+# Hyperparameters: 3
 Number of Frames: 50
 Number of Atoms: 2
 System Species: {'H'}
-Structure Cutoff Radius: 5
 ====================
 Calling initial bootstrap DFT run...Done.
-~ DFT Call : 1   DFT Time: 0.935 s
-El 			  Position (A) 					 DFT Force (ev/A)
+~ DFT Call : 1   DFT Time: 0.443 s
+Lattice: [[5. 0. 0.], [0. 5. 0.], [0. 0. 5.]]
+ El 			  Position (A) 					 DFT Force (ev/A)
 H: 2.51857000  2.50000000  2.50000000  	 1.90621314  0.00000000  0.00000000
 H: 4.48143000  2.50000000  2.50000000  	 -1.90621314  0.00000000  0.00000000
 ====================
@@ -113,8 +115,9 @@ H 2.55027962 2.50000000 2.50000000 	1.99019190 0.00000000 0.00000000 	1.030435e-
 H 4.44972038 2.50000000 2.50000000 	-1.99019190 0.00000000 0.00000000 	1.030435e-01 0.000000e+00 0.000000e+00
 ====================
 Calling DFT due to atom 0 at position [2.55027962 2.5        2.5       ] with uncertainties [0.10304352 0.         0.        ]...Done.
-~ DFT Call : 2   DFT Time: 0.47 s
-El 			  Position (A) 					 DFT Force (ev/A)
+~ DFT Call : 2   DFT Time: 0.448 s
+Lattice: [[5. 0. 0.], [0. 5. 0.], [0. 0. 5.]]
+ El 			  Position (A) 					 DFT Force (ev/A)
 H: 2.55027962  2.50000000  2.50000000  	 2.13952851  0.00000000  0.00000000
 H: 4.44972038  2.50000000  2.50000000  	 -2.13952851  0.00000000  0.00000000
 ====================
@@ -285,7 +288,7 @@ H 2.76452787 2.50000000 2.50000000 	2.46355363 0.00000000 0.00000000 	5.209458e-
 H 4.23547213 2.50000000 2.50000000 	-2.46355363 0.00000000 0.00000000 	5.209458e-02 0.000000e+00 0.000000e+00
 ▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
 Run complete.
-Total DFT Time: 1.405 s
-Total Train Time: 2.585 s
-Total Prediction Time: 0.373 s
-Total Time: 0 m 4.411 s
+Total DFT Time: 0.891 s
+Total Train Time: 0.907 s
+Total Prediction Time: 0.357 s
+Total Time: 0 m 2.202 s

@@ -16,6 +16,7 @@ from qe_util import timeit
 from scipy.linalg import solve_triangular
 from scipy.optimize import minimize
 from typing import List
+from copy import deepcopy
 
 from env import ChemicalEnvironment
 from kernels import n_body_sc, n_body_sc_grad, combo_kernel_sc,\
@@ -39,6 +40,7 @@ class GaussianProcess:
         self.bodies = bodies
 
         if kernel == 'n_body_sc':
+            self.kernel_name ='N-Body Single Component Force'
             self.kernel = n_body_sc
             self.kernel_grad = n_body_sc_grad
             self.energy_force_kernel = energy_force_sc
@@ -49,6 +51,7 @@ class GaussianProcess:
 
         # TODO: make energy and energy/force kernels for combination kernel
         elif kernel == 'combo_kernel_sc':
+            self.kernel_name ='N-Body Single Component Force/Energy'
             self.kernel = combo_kernel_sc
             self.kernel_grad = combo_kernel_sc_grad
             # self.energy_force_kernel = energy_force_sc
@@ -60,6 +63,7 @@ class GaussianProcess:
 
         # TODO: make energy and energy/force kernels for ICM kernels
         elif kernel == 'n_body_mc':
+            self.kernel_name = 'N-Body Multiple Component Force'
             self.kernel = n_body_mc
             self.kernel_grad = n_body_mc_grad
 
@@ -119,6 +123,7 @@ class GaussianProcess:
         # create numpy array of training labels
         self.training_labels_np = self.force_list_to_np(self.training_labels)
 
+        pass
     @staticmethod
     def force_list_to_np(forces: list) -> np.ndarray:
         """ Convert list of forces to numpy array of forces.

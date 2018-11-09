@@ -13,21 +13,24 @@ import datetime
 import time
 
 from typing import List
+from copy import deepcopy
 
 from struc import Structure
 from gp import GaussianProcess
 from env import ChemicalEnvironment
 from punchout import punchout
 from qe_util import run_espresso, parse_qe_input, timeit, \
-                    qe_input_to_structure, parse_qe_forces
+    qe_input_to_structure, parse_qe_forces
 
 sys.path.append('../modules')
-from analyze_otf import parse_header_information, parse_dft_information
+from analyze_otf import parse_header_information, parse_dft_information, \
+                        parse_hyperparameter_information
 
 
 class OTF(object):
     def __init__(self, qe_input: str, dt: float, number_of_steps: int,
-                 kernel: str, bodies: int, cutoff: float,
+                 kernel: str, bodies: int, cutoff: float, std_tolerance_factor:
+                 float = 1, opt_algo : str =  'L-BFGS-B',
                  prev_pos_init: List[np.ndarray] = None,
                  punchout_settings: dict = None):
         """
@@ -38,14 +41,18 @@ class OTF(object):
         :param number_of_steps: int, Number of steps
         :param kernel: Type of kernel for GP regression model
         :param cutoff: Cutoff radius for kernel in angstrom
+        :param std_tolerance_factor: Sensitivity factor for calling DFT run,
+                if positive, will be relative to signal variance 
+                hyperparameter, if negative, will be absolute
         :param punchout_settings: Settings for punchout mode
         """
 
         self.qe_input = qe_input
         self.dt = dt
         self.Nsteps = number_of_steps
-        self.gp = GaussianProcess(kernel, bodies)
+        self.gp = GaussianProcess(kernel, bodies,opt_algorithm=opt_algo)
         self.cutoff = cutoff
+        self.std_tolerance = std_tolerance_factor
 
         self.punchout_settings = punchout_settings
 
@@ -63,21 +70,7 @@ class OTF(object):
         self.end_time = 0
         self.run_stats = {'dft_calls': 0}
 
-        # Create blank output file with time header and structure information
-        with open('otf_run.out', 'w') as f:
-            f.write(str(datetime.datetime.now()) + '\n')
-
-        headerstring = ''
-        headerstring += 'Structure Cutoff Radius: {}\n'.format(
-            self.structure.cutoff)
-        headerstring += 'Timestep (ps): {}\n'.format(self.dt)
-        headerstring += 'Number of Frames: {}\n'.format(self.Nsteps)
-        headerstring += 'Number of Atoms: {}\n'.format(self.structure.nat)
-        headerstring += 'System Species: {}\n'.format(set(
-            self.structure.species))
-
-
-        self.write_to_output(headerstring)
+        self.write_header()
 
     def run(self):
         """
@@ -86,13 +79,14 @@ class OTF(object):
         """
         self.start_time = time.time()
 
-        # Bootstrap first training point
-        self.run_and_train()
+        # Bootstrap first training point if DFT is on
+        if self.std_tolerance != 0:
+            self.run_and_train()
 
-        # If not in punchout mode, take first step with DFT forces
-        if not self.punchout_settings:
-            self.write_md_config()
-            self.update_positions()
+            # If not in punchout mode, take first step with DFT forces
+            if not self.punchout_settings:
+                self.write_md_config()
+                self.update_positions()
 
         # Main loop
         while self.curr_step < self.Nsteps:
@@ -147,8 +141,10 @@ class OTF(object):
         else:
             self.write_to_output('Calling DFT due to atom {} at position {} '
                                  'with uncertainties {}...'.format(target_atom,
-                                        self.structure.positions[target_atom],
-                                        self.structure.stds[target_atom]))
+                                                   self.structure.positions[
+                                                       target_atom],
+                                                   self.structure.stds[
+                                                       target_atom]))
 
         # If not in punchout mode, run QE on the entire structure
         if self.punchout_settings is None:
@@ -173,7 +169,7 @@ class OTF(object):
         # Assign forces to structure if not in punchout mode
         if not self.punchout_settings:
             self.structure.dft_forces = True
-            self.structure.forces = forces
+            self.structure.forces = [np.array(force) for force in forces]
             self.structure.stds = [np.zeros(3)] * self.structure.nat
 
         self.write_to_output('Done.\n')
@@ -191,12 +187,7 @@ class OTF(object):
 
         self.gp.train(time_log=self.run_stats)
 
-        self.write_to_output('New GP Hyperparameters for DFT call {}: '
-                             '\n'.format(self.run_stats['dft_calls']))
-
-        for i, label in enumerate(self.gp.hyp_labels):
-            self.write_to_output('Hyp{} : {} = {}\n'.format(i, label,
-                                                            self.gp.hyps[i]))
+        self.write_hyps()
 
     def update_positions(self):
         """
@@ -213,7 +204,7 @@ class OTF(object):
 
             # Verlet step
             self.structure.positions[i] = 2 * pos - pre_pos + dtdt * forces / \
-                                        mass
+                                          mass
 
             self.structure.prev_positions[i] = np.copy(temp_pos)
 
@@ -230,6 +221,28 @@ class OTF(object):
         """
         with open(output_file, 'a') as f:
             f.write(string)
+
+    def write_header(self):
+        # Create blank output file with time header and structure information
+        with open('otf_run.out', 'w') as f:
+            f.write(str(datetime.datetime.now()) + '\n')
+
+        headerstring = ''
+        headerstring += 'Structure Cutoff Radius: {}\n'.format(
+            self.structure.cutoff)
+        headerstring += 'Kernel: {}\n'.format(
+            self.gp.kernel_name)
+        headerstring += '# Hyperparameters: {}\n'.format(
+            len(self.gp.hyps))
+        headerstring += 'Initial Hyperparameter Optimization Algorithm: {}' \
+                        '\n'.format(self.gp.algo)
+        headerstring += 'Timestep (ps): {}\n'.format(self.dt)
+        headerstring += 'Number of Frames: {}\n'.format(self.Nsteps)
+        headerstring += 'Number of Atoms: {}\n'.format(self.structure.nat)
+        headerstring += 'System Species: {}\n'.format(set(
+            self.structure.species))
+
+        self.write_to_output(headerstring)
 
     def write_md_config(self):
         """
@@ -279,6 +292,12 @@ class OTF(object):
         qe_strings = '~ DFT Call : {}   DFT Time: {} s \n'.format(
             self.run_stats['dft_calls'],
             np.round(self.run_stats['last_dft'], 3))
+        qe_strings += 'Lattice: [{}, {}, {}] \n '.format(self.structure.vec1,
+                                                         self.structure.vec2,
+                                                         self.structure.vec3)
+        # np.array2string(self.structure.vec1, separator=','),
+        # np.array2string(self.structure.vec2, separator=','),
+        # np.array2string(self.structure.vec3, separator=','))
 
         qe_strings += 'El \t\t\t  Position (A) \t\t\t\t\t DFT Force (ev/A) \n'
 
@@ -294,6 +313,15 @@ class OTF(object):
         self.write_to_output(qe_strings)
         self.write_to_output('=' * 20 + '\n')
 
+    def write_hyps(self):
+
+        self.write_to_output('New GP Hyperparameters for DFT call {}: '
+                             '\n'.format(self.run_stats['dft_calls']))
+
+        for i, label in enumerate(self.gp.hyp_labels):
+            self.write_to_output('Hyp{} : {} = {}\n'.format(i, label,
+                                                            self.gp.hyps[i]))
+
 
 
     def conclude_run(self):
@@ -305,10 +333,11 @@ class OTF(object):
 
         footer = '▬' * 20 + '\n'
         footer += 'Run complete. \n'
-        footer += 'Total DFT Time: {} s \n'.format(
-            np.round(self.run_stats['run_espresso'], 3))
-        footer += 'Total Train Time: {} s \n'.format(
-            np.round(self.run_stats['train'], 3))
+
+        dft_time = self.run_stats.get('run_espresso', 0)
+        footer += 'Total DFT Time: {} s \n'.format(np.round(dft_time, 3))
+        train_time = self.run_stats.get('train', 0)
+        footer += 'Total Train Time: {} s \n'.format(np.round(train_time, 3))
         footer += 'Total Prediction Time: {} s \n'.format(
             np.round(self.run_stats['predict_on_structure'], 3))
         footer += 'Total Time: {} m {} s \n'.format(
@@ -317,7 +346,6 @@ class OTF(object):
 
         self.write_to_output(footer)
 
-    # TODO change this to use the signal variance
     def is_std_in_bound(self) -> (bool, int):
         """
         Return (std is in bound, index of highest uncertainty atom)
@@ -325,21 +353,31 @@ class OTF(object):
         :return: Int, -1 f model error is within acceptable bounds
         """
         stds = self.structure.stds
+        max_std = np.nanmax(stds)
 
-        # if np.nanmax(stds) >= np.abs(self.gp.hyps[1]):
-        if np.nanmax(stds) >= .1:
-            # Find atom with highest associated uncertainty
+        # Negative tolerance is a hard user-defined std cutoff; Positive is a
+        # coefficient on the noise variance; 0 means no failure condition
+
+        tol = self.std_tolerance
+
+        if tol == 0:
+            return True, -1
+        constant_cutoff_trip = tol < 0 and max_std >= np.abs(tol)
+        rel_cutoff_trip = tol > 0 and max_std >= tol * np.abs(self.gp.hyps[-1])
+
+        # Check if either condition tripped
+        if constant_cutoff_trip or rel_cutoff_trip:
             nat = self.structure.nat
             target_atom = np.argmax([np.max(stds[i]) for i in range(nat)])
-
             return False, target_atom
         else:
             return True, -1
 
-    #TODO Unit test this
+    # TODO Unit test this
     def augment_db_from_pwscf(self, pwscf_in_file: str, pwscf_out_file: str,
-                              cutoff : float = None, train: bool = True,
-                              origin_atom_only: bool = False):
+                              cutoff_rad: float = None, train: bool = True,
+                              origin_atom_only: bool = False,
+                              write_hyps: bool = True):
         """
         Augment training database from a pre-existing pwscf output file
         Useful to start off an OTF run non-bootstrap
@@ -351,11 +389,13 @@ class OTF(object):
         :return:
         """
 
-        if not cutoff:
+        if not cutoff_rad:
             cutoff = self.structure.cutoff
+        else:
+            cutoff = float(cutoff_rad)
 
-        pw_structure = qe_input_to_structure(qe_input= pwscf_in_file,
-                                            cutoff=cutoff)
+        pw_structure = qe_input_to_structure(qe_input=pwscf_in_file,
+                                             cutoff=cutoff)
         forces = parse_qe_forces(pwscf_out_file)
 
         if origin_atom_only:
@@ -364,50 +404,68 @@ class OTF(object):
         else:
             central_atom = []
 
-        self.gp.update_db(pw_structure, forces,central_atom)
+        self.gp.update_db(pw_structure, forces, central_atom)
 
         if train:
             self.gp.train(time_log=self.run_stats)
+            if write_hyps:
+                self.write_hyps()
 
-
-    # TODO finish implementing this
-    def augment_db_from_otf_run(self,otf_run_output: str, train : bool =
-        True,cutoff : float = None):
+    def augment_db_from_otf_run(self, otf_run_output: str, train: bool =
+        True, origin_atom_only: bool = False, write_hyps: bool = True,
+            use_prev_hyps: bool = True):
         """
         Parses OTF run and augments gp database with QE runs
+        :param origin_atom_only:
+        :param train:
         :param otf_run_output:
         :return:
         """
-
 
         header_info = parse_header_information(otf_run_output)
 
         cutoff = header_info['cutoff']
 
-        species_set, positions_set, forces_set = parse_dft_information
-
+        lattices_set, species_set, positions_set, forces_set = \
+            parse_dft_information(outfile=otf_run_output)
 
         # Loop through
         for i in range(len(positions_set)):
-
             cur_spec = species_set[i]
             cur_pos = positions_set[i]
             cur_forces = forces_set[i]
+            cur_lattice = lattices_set[i]
 
             curr_struc = Structure(positions=cur_pos, species=cur_spec,
-                             lattice=cell, mass_dict={}, cutoff=cutoff)
+                                   lattice=cur_lattice, mass_dict={},
+                                   cutoff=cutoff)
 
-        raise NotImplementedError
+            if origin_atom_only:
+                central_atom = [curr_struc.get_index_from_position([np.zeros(
+                    3)])]
+            else:
+                central_atom = []
 
+            self.gp.update_db(struc=curr_struc, forces=cur_forces,
+                              custom_range=central_atom)
+        if use_prev_hyps:
+            last_hyps = parse_hyperparameter_information(otf_run_output)[-1]
+            self.gp.hyps = np.array(last_hyps)
+
+        if train:
+            self.gp.train(time_log=self.run_stats)
+
+        if write_hyps:
+            self.write_hyps()
 
 
 if __name__ == '__main__':
     import os
 
-    os.system('cp qe_input_1.in pwscf.in')
+    os.system('cp qe_input_3.in pwscf.in')
 
-    otf = OTF('pwscf.in', .0001, 5, kernel='n_body_sc', bodies=2,
-              cutoff=5)
+    otf = OTF('pwscf.in', .0001, 500, kernel='n_body_sc', bodies=2,
+              cutoff=5, std_tolerance_factor=.5,opt_algo='nelder-mead')
     otf.run()
     # otf.run_and_train(target_atom=0)
     # parse_output('otf_run.out')

@@ -1,7 +1,7 @@
 &CONTROL
     prefix = 'Al'
     calculation = 'scf'
-    pseudo_dir = './test_files/pseudos'
+    pseudo_dir = '.'
     outdir = '.'
     tstress = .true.
     tprnfor = .true.
