@@ -1,10 +1,10 @@
 
-     Program PWSCF v.6.0 (svn rev. 13079) starts on  3Sep2018 at 17:31: 1 
+     Program PWSCF v.6.0 (svn rev. 13079) starts on  8Nov2018 at  0:34: 7
 
      This program is part of the open-source Quantum ESPRESSO suite
      for quantum simulation of materials; please cite
          "P. Giannozzi et al., J. Phys.:Condens. Matter 21 395502 (2009);
-          URL http://www.quantum-espresso.org", 
+          URL http://www.quantum-espresso.org",
      in publications or presentations arising from this work. More details at
      http://www.quantum-espresso.org/quote
 
@@ -49,26 +49,26 @@ Warning: card / ignored
      celldm(4)=   0.000000  celldm(5)=   0.000000  celldm(6)=   0.000000
 
      crystal axes: (cart. coord. in units of alat)
-               a(1) = (   1.000000   0.000000   0.000000 )  
-               a(2) = (   0.000000   1.000000   0.000000 )  
-               a(3) = (   0.000000   0.000000   1.000000 )  
+               a(1) = (   1.000000   0.000000   0.000000 )
+               a(2) = (   0.000000   1.000000   0.000000 )
+               a(3) = (   0.000000   0.000000   1.000000 )
 
      reciprocal axes: (cart. coord. in units 2 pi/alat)
-               b(1) = (  1.000000  0.000000  0.000000 )  
-               b(2) = (  0.000000  1.000000  0.000000 )  
-               b(3) = (  0.000000  0.000000  1.000000 )  
+               b(1) = (  1.000000  0.000000  0.000000 )
+               b(2) = (  0.000000  1.000000  0.000000 )
+               b(3) = (  0.000000  0.000000  1.000000 )
 
 
      PseudoPot. # 1 for  H read from file:
-     /Users/steven/Documents/Schoolwork/CDMAT275/ESPRESSO/qe-6.0/pseudo/H.pbe-kjpaw.UPF
+     ./test_files/pseudos/H.pbe-kjpaw.UPF
      MD5 check sum: f0c5446d8b45f1c04d25babcc032f843
      Pseudo is Projector augmented-wave, Zval =  1.0
      Generated using "atomic" code by A. Dal Corso  (Quantum ESPRESSO distribution)
      Shape of augmentation charge: PSQ
-     Using radial grid of  929 points,  2 beta functions with: 
+     Using radial grid of  929 points,  2 beta functions with:
                 l(1) =   0
                 l(2) =   0
-     Q(r) pseudized with 0 coefficients 
+     Q(r) pseudized with 0 coefficients
 
 
      atomic species   valence    mass     pseudopotential
@@ -176,7 +176,7 @@ Warning: card / ignored
 
      negative rho (up, down):  2.391E-05 0.000E+00
 
-     total cpu time spent up to now is        0.3 secs
+     total cpu time spent up to now is        0.2 secs
 
      total energy              =      -2.04975691 Ry
      Harris-Foulkes estimate   =      -2.04975722 Ry
@@ -236,7 +236,7 @@ Warning: card / ignored
 
      negative rho (up, down):  2.383E-05 0.000E+00
 
-     total cpu time spent up to now is        0.4 secs
+     total cpu time spent up to now is        0.3 secs
 
      total energy              =      -2.04975704 Ry
      Harris-Foulkes estimate   =      -2.04975707 Ry
@@ -285,7 +285,7 @@ Warning: card / ignored
 
      init_run     :      0.05s CPU      0.05s WALL (       1 calls)
      electrons    :      0.25s CPU      0.26s WALL (       1 calls)
-     forces       :      0.00s CPU      0.01s WALL (       1 calls)
+     forces       :      0.00s CPU      0.00s WALL (       1 calls)
 
      Called by init_run:
      wfcinit      :      0.00s CPU      0.00s WALL (       1 calls)
@@ -294,7 +294,7 @@ Warning: card / ignored
      Called by electrons:
      c_bands      :      0.03s CPU      0.03s WALL (      13 calls)
      sum_band     :      0.03s CPU      0.03s WALL (      13 calls)
-     v_of_rho     :      0.16s CPU      0.17s WALL (      13 calls)
+     v_of_rho     :      0.17s CPU      0.17s WALL (      13 calls)
      newd         :      0.01s CPU      0.01s WALL (      13 calls)
      PAW_pot      :      0.01s CPU      0.01s WALL (      13 calls)
      mix_rho      :      0.02s CPU      0.02s WALL (      13 calls)
@@ -321,15 +321,15 @@ Warning: card / ignored
 
      General routines
      calbec       :      0.00s CPU      0.00s WALL (      50 calls)
-     fft          :      0.07s CPU      0.08s WALL (     173 calls)
+     fft          :      0.07s CPU      0.07s WALL (     173 calls)
      fftw         :      0.02s CPU      0.02s WALL (      79 calls)
      davcio       :      0.00s CPU      0.00s WALL (       1 calls)
 
 
-     PWSCF        :     0.39s CPU         0.41s WALL
+     PWSCF        :     0.38s CPU         0.40s WALL
 
 
-   This run was terminated on:  17:31: 1   3Sep2018            
+   This run was terminated on:   0:34: 8   8Nov2018
 
 =------------------------------------------------------------------------------=
    JOB DONE.

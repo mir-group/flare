@@ -18,14 +18,13 @@ def strip_and_split(line):
     :return:
     """
 
-    line = line.strip()
-    line = line.split()
+    line = line.strip().split()
     stripped_line = [subline.strip() for subline in line]
 
     return stripped_line
 
 
-def parse_header_information(outfile: str = 'otf_run.out')->dict:
+def parse_header_information(outfile: str = 'otf_run.out') -> dict:
     """
     Get information about the run from the header of the file
     :param outfile:
@@ -36,15 +35,26 @@ def parse_header_information(outfile: str = 'otf_run.out')->dict:
 
     header_info = {}
 
+    stopreading = None
+
     for line in lines:
         if '---' in line or '=' in line:
             stopreading = lines.index(line)
             break
 
+    if stopreading is None:
+        raise Exception("OTF File is malformed")
+
     for line in lines[:stopreading]:
 
         if 'Frames' in line:
             header_info['frames'] = int(line.split(':')[1])
+        if 'Kernel' in line:
+            header_info['kernel'] = line.split(':')[1].strip()
+        if 'Hyperparameters' in line:
+            header_info['n_hyps'] = int(line.split(':')[1])
+        if 'Optimization Algorithm' in line:
+            header_info['algo'] = line.split(':')[1].strip()
         if 'Atoms' in line:
             header_info['atoms'] = int(line.split(':')[1])
         if 'Cutoff' in line:
@@ -109,7 +119,7 @@ def parse_md_information(outfile: str = 'otf_run.out') -> (List[str], np.array,
 
 
 def parse_dft_information(outfile: str) -> (List[str], List[np.array], \
-                                                    List[np.array]):
+                                            List[np.array]):
     """
     Parse the output of a otf run for analysis
     :param outfile: str, Path to file
@@ -121,12 +131,15 @@ def parse_dft_information(outfile: str) -> (List[str], List[np.array], \
         lines = f.readlines()
 
     # DFT indices start with ~ and are 2 lines above the data
-    dft_indices = [lines.index(line) + 2 for line in lines if line[0] == '~']
+    dft_indices = [lines.index(line) + 3 for line in lines if line[0] == '~']
     # Frame indices start with - and are 2 lines above the data
 
     # Species and positions may vary from DFT run to DFT run
-    # TODO turn into numpy array and extend array with each new data point
 
+    # TODO turn into numpy array and extend array with each new data point;
+    # would be more efficient for large files
+
+    dft_lattices = []
     dft_species = []
     dft_positions = []
     dft_forces = []
@@ -135,20 +148,35 @@ def parse_dft_information(outfile: str) -> (List[str], List[np.array], \
 
         dft_run_nat = 0
 
+        dft_run_lattice = []
         dft_run_species = []
         dft_run_positions = []
         dft_run_forces = []
+
+        # Read lattice in
+        lattice_line = lines[frame_index - 2].strip().split(':')[1]
+        lattice_line = lattice_line.strip().strip('[').strip(']')
+        lattice_sublines = lattice_line.split(',')
+
+        for vec in lattice_sublines:
+            vec = vec.strip().strip('[').strip(']')
+            dft_run_lattice.append(np.fromstring(vec, dtype=float, sep=' '))
+
+        dft_lattices.append(np.array(dft_run_lattice))
+
+        # Read atoms, positions, forces in
 
         while lines[frame_index + dft_run_nat][0] != '=':
             dft_run_nat += 1
 
         for at in range(dft_run_nat):
-            data = strip_and_split(lines[frame_index+at])
+            data = strip_and_split(lines[frame_index + at])
 
             dft_run_species.append(data[0].strip(':'))
 
-            curr_position = np.array([data[1], data[2], data[3]],dtype='float')
-            curr_force = np.array([data[4], data[5], data[6]],dtype='float')
+            curr_position = np.array([data[1], data[2], data[3]],
+                                     dtype='float')
+            curr_force = np.array([data[4], data[5], data[6]], dtype='float')
 
             dft_run_positions.append(curr_position)
             dft_run_forces.append(curr_force)
@@ -157,20 +185,37 @@ def parse_dft_information(outfile: str) -> (List[str], List[np.array], \
         dft_positions.append(np.array(dft_run_positions))
         dft_forces.append(np.array(dft_run_forces))
 
-    return dft_species, dft_positions, dft_forces
+    return dft_lattices, dft_species, dft_positions, dft_forces
 
 
-# TODO Implement these
-def parse_hyperparameter_information(outfile: str = 'otf_run.out'):
+def parse_hyperparameter_information(outfile: str = 'otf_run.out')-> List[
+    np.array]:
+
     with open(outfile, 'r') as f:
         lines = f.readlines()
 
-    raise NotImplementedError
+    header_info = parse_header_information(outfile)
+    n_hyps = header_info['n_hyps']
+
+    hyp_indices = [i+1 for i,text in enumerate(lines) if 'New GP Hyper' in
+                   text]
+
+    hyperparameter_set = [np.zeros(n_hyps)]*len(hyp_indices)
+
+    for set_index,line_index in enumerate(hyp_indices):
+
+        for j in range(n_hyps):
+
+            cur_hyp = lines[line_index+j].strip().split('=')[1]
+
+            hyperparameter_set[set_index][j] = float(cur_hyp)
+
+    return hyperparameter_set
 
 
 def parse_time_information(outfile: str = 'otf_run.out'):
-    with open(outfile, 'r') as f:
-        lines = f.readlines()
+    # with open(outfile, 'r') as f:
+    #    lines = f.readlines()
 
     raise NotImplementedError
 

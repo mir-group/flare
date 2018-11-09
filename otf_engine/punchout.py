@@ -34,7 +34,7 @@ def is_within_d_box(pos1: np.array, pos2: np.array, d: float) -> bool:
 
 
 def punchout_structure(structure: Structure, atom: int, d: float, center:
-bool = True,neighbor_step = 2):
+bool = True,neighbor_step = 2,isolated_cluster_d = 0):
     """
     Punch out a cube of side-length d around the target atom
 
@@ -86,7 +86,7 @@ bool = True,neighbor_step = 2):
                 new_species.append(structure.species[i])
 
     # Set up other new structural properties
-    newlatt = d * np.eye(3)
+    newlatt = d * np.eye(3) + isolated_cluster_d * np.eye(3)
     new_mass_dict = {}
 
     for spec in set(new_species):
@@ -107,7 +107,8 @@ bool = True,neighbor_step = 2):
 def punchout(structure: Structure, atom: int, d: float, center:
 bool = True, check_too_close: float = 0, check_stoichiometry: List[str] = [],
              check_bond_break = None,
-    adjust_tries = 100):
+             adjust_tries = 100,
+             isolated_cluster_d : float = 0):
     """
     Punch out a cube of side-length d around the target atom
 
@@ -134,8 +135,8 @@ bool = True, check_too_close: float = 0, check_stoichiometry: List[str] = [],
     """
 
     newstruc = punchout_structure(structure=structure,atom=atom, d=d,
-                                  center=center)
-
+                                  center=center,
+                                  isolated_cluster_d = isolated_cluster_d)
 
     # Check to see if any two atoms are unphysically close
 
@@ -211,8 +212,8 @@ bool = True, check_too_close: float = 0, check_stoichiometry: List[str] = [],
 
             adjust_counter+=1
             newd = newd * 1.01
-            newstruc = punchout_structure(structure,atom=atom,d=newd,
-                                          center=center)
+            newstruc = punchout_structure(structure,atom=atom, d=newd,
+                      center=center, isolated_cluster_d=isolated_cluster_d)
 
     # TODO put in the new method here, except applied on the newstructure
 

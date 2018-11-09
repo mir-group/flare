@@ -31,13 +31,13 @@ def fake_espresso(qe_input: str, structure: Structure):
     return [np.random.normal(loc=0, scale=1, size=3) for _ in range(noa)]
 
 
-def fake_predict_on_structure(self, structure):
+def fake_predict_on_structure( structure):
     """
         Substitutes in the predict_on_structure method of GaussianProcess
         """
 
-    structure.forces = [np.random.randn(3) for n in structure.positions]
-    structure.stds = [np.random.randn(3) for n in structure.positions]
+    structure.forces = [np.random.randn(3) for _ in structure.positions]
+    structure.stds = [np.random.randn(3) for _ in structure.positions]
 
     return structure
 
@@ -141,14 +141,14 @@ def test_update_1(test_otf_engine_1):
 
 def test_otf_1_1():
     """
-    Test that an OTF run can complete after two steps
+    Test that a minimal OTF run can complete after two steps
     :return:
     """
     os.system('cp ./test_files/qe_input_1.in ./pwscf.in')
 
     otf = OTF(qe_input='./pwscf.in', dt=.0001, number_of_steps=2,
               bodies=2, kernel='n_body_sc',
-              cutoff=4)
+              cutoff=4, std_tolerance_factor=-.1)
     otf.run()
     cleanup_otf_run()
 
@@ -160,14 +160,14 @@ def test_otf_1_2():
     """
     os.system('cp ./test_files/qe_input_1.in ./pwscf.in')
 
-    otf = OTF(qe_input='./pwscf.in', dt=.0001, number_of_steps=50,
+    otf = OTF(qe_input='./pwscf.in', dt=.0001, number_of_steps=20,
               bodies=2, kernel='n_body_sc',
-              cutoff=5)
+              cutoff=5, std_tolerance_factor=-.1)
     otf.run()
-    cleanup_otf_run()
+    #cleanup_otf_run()
 
 
-def test_otf_1_3():
+def test_otf_1_3_punchout():
     """
     Test that an otf run will succeed in punchout mode
     with trivial conditions (punch out a cell with one other atom)
@@ -177,21 +177,65 @@ def test_otf_1_3():
 
     otf = OTF(qe_input='./pwscf.in', dt=.0001, number_of_steps=5,
               bodies=2, punchout_settings={'d': 5}, cutoff=3,
-              kernel='n_body_sc')
+              kernel='n_body_sc', std_tolerance_factor=-.1)
     otf.run()
     cleanup_otf_run()
 
 
-def test_otf_1_long():
+def test_adapt_from_pwscf_1():
     """
-    Test that an otf run will succeed after calling DFT twice
-    Should produce OTF output which resembles otf_output_2.out
+    Load in a pwscf file and test to make sure that hyper parameter
+    training is reproduced from the same input; them that a run can be
+    performed with no DFT calls
     :return:
     """
     os.system('cp ./test_files/qe_input_1.in ./pwscf.in')
 
-    otf = OTF(qe_input='./pwscf.in', dt=.0001, number_of_steps=50,
-              bodies=2, cutoff=5,
-              kernel='n_body_sc')
+    otf = OTF(qe_input='./pwscf.in', dt=.0001,
+              number_of_steps=20,
+              bodies=2, cutoff=4,
+              kernel='n_body_sc', std_tolerance_factor=0)
+
+    otf.augment_db_from_pwscf(
+            pwscf_in_file='./test_files/qe_input_1.in',
+            pwscf_out_file='./test_files/qe_output_1.out',
+            train = False)
+
+    otf.augment_db_from_pwscf(
+        pwscf_in_file='./test_files/qe_input_4.in',
+        pwscf_out_file='./test_files/qe_output_4.out',
+        train=True, write_hyps=True)
+
+    # Check to see if hyperparameters are as they should be
+    # assert np.isclose(otf.gp.hyps, [1.1041008754, 0.9002923226, 1e-05]).all()
     otf.run()
+    assert otf.run_stats['dft_calls'] == 0
     cleanup_otf_run()
+
+
+def test_adapt_from_otf_1():
+    """
+    Test that the adaptation procedure can work with a simple OTF run
+    and reproduce the correct hyperparameters
+    :return:
+    """
+    os.system('cp ./test_files/qe_input_1.in ./pwscf.in')
+
+    otf = OTF(qe_input='./pwscf.in', dt=.0001,
+              number_of_steps=2,
+              bodies=2, cutoff=4,
+              kernel='n_body_sc', std_tolerance_factor=0)
+
+    otf.augment_db_from_otf_run(
+        otf_run_output='./test_files/otf_output_1.out',
+        train=True,use_prev_hyps=True)
+
+    otf.run()
+    assert otf.run_stats['dft_calls'] == 0
+    cleanup_otf_run()
+
+
+
+
+
+
