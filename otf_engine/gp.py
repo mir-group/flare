@@ -115,7 +115,7 @@ class GaussianProcess:
 
         for atom in update_indices:
             env_curr = ChemicalEnvironment(struc, atom)
-            forces_curr = forces[atom]
+            forces_curr = np.array(forces[atom])
 
             self.training_data.append(env_curr)
             self.training_labels.append(forces_curr)
@@ -124,6 +124,7 @@ class GaussianProcess:
         self.training_labels_np = self.force_list_to_np(self.training_labels)
 
         pass
+
     @staticmethod
     def force_list_to_np(forces: list) -> np.ndarray:
         """ Convert list of forces to numpy array of forces.
@@ -155,7 +156,7 @@ class GaussianProcess:
 
             # bound signal noise below to avoid overfitting
             bounds = np.array([(-np.inf, np.inf)] * len(x_0))
-            bounds[-1] = (1e-5, np.inf)
+            bounds[-1] = (1e-6, np.inf)
 
             # Catch linear algebra errors and switch to BFGS if necessary
             try:

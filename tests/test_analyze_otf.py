@@ -32,7 +32,7 @@ def test_parse_header_2():
 
     header_dict = parse_header_information('otf_run.out')
 
-    assert header_dict['frames'] == 50
+    assert header_dict['frames'] == 20
     assert header_dict['atoms'] == 2
     assert header_dict['cutoff'] == 5
     assert header_dict['species'] == {'H'}
@@ -65,10 +65,7 @@ def test_parse_dft_2():
     force1 = np.array([[1.90621314, 0.00000000, 0.00000000],
                        [-1.90621314, 0.00000000, 0.00000000]])
 
-    force2 = np.array([[2.13952851, 0.00000000, 0.00000000],
-                       [-2.13952851, 0.00000000, 0.00000000]])
 
     forces = np.array(forces)
 
     assert np.isclose(forces[0], force1).all()
-    assert np.isclose(forces[1], force2).all()

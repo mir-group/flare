@@ -462,10 +462,10 @@ class OTF(object):
 if __name__ == '__main__':
     import os
 
-    os.system('cp qe_input_3.in pwscf.in')
+    os.system('cp qe_input_1.in pwscf.in')
 
-    otf = OTF('pwscf.in', .0001, 500, kernel='n_body_sc', bodies=2,
-              cutoff=5, std_tolerance_factor=.5,opt_algo='nelder-mead')
+    otf = OTF('pwscf.in', .0001, 20, kernel='n_body_sc', bodies=2,
+              cutoff=5, std_tolerance_factor=-.1,opt_algo='L-BFGS-B')
     otf.run()
     # otf.run_and_train(target_atom=0)
     # parse_output('otf_run.out')
