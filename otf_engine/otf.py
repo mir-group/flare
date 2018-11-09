@@ -13,7 +13,6 @@ import datetime
 import time
 
 from typing import List
-from copy import deepcopy
 
 from struc import Structure
 from gp import GaussianProcess
@@ -157,7 +156,7 @@ class OTF(object):
                 target_atom = np.random.randint(0, self.structure.nat)
             self.train_structure = punchout(self.structure,
                                             atom=target_atom,
-                                            d=self.punchout_settings['d'])
+                                            settings = self.punchout_settings)
             # Get the index of the central atom
             train_atoms = [self.train_structure.get_index_from_position((
                 np.zeros(3)))]
@@ -185,7 +184,7 @@ class OTF(object):
         self.gp.update_db(self.train_structure, forces,
                           custom_range=train_atoms)
 
-        self.gp.train(time_log=self.run_stats)
+        self.gp.train(time_log=self.run_stats,monitor=True)
 
         self.write_hyps()
 
@@ -462,10 +461,11 @@ class OTF(object):
 if __name__ == '__main__':
     import os
 
-    os.system('cp qe_input_1.in pwscf.in')
+    os.system('cp qe_input_3.in pwscf.in')
 
-    otf = OTF('pwscf.in', .0001, 20, kernel='n_body_sc', bodies=2,
-              cutoff=5, std_tolerance_factor=-.1,opt_algo='L-BFGS-B')
+    otf = OTF('pwscf.in', dt=.0001, number_of_steps=100, kernel='n_body_sc', \
+                                                             bodies=2,
+              cutoff=5, std_tolerance_factor=1,opt_algo='BFGS')
     otf.run()
     # otf.run_and_train(target_atom=0)
     # parse_output('otf_run.out')
