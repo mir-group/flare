@@ -21,7 +21,7 @@ from copy import deepcopy
 from env import ChemicalEnvironment
 from kernels import n_body_sc, n_body_sc_grad, combo_kernel_sc,\
     combo_kernel_sc_grad, energy_force_sc, energy_sc, n_body_mc,\
-    n_body_mc_grad
+    n_body_mc_grad, n_body_sc_norm_derv
 from struc import Structure
 
 
@@ -39,8 +39,19 @@ class GaussianProcess:
         # gp kernel and hyperparameters
         self.bodies = bodies
 
-        if kernel == 'n_body_sc':
-            self.kernel_name ='N-Body Single Component Force'
+        # TODO: implement kernel gradient
+        if kernel == 'n_body_sc_norm_derv':
+            self.kernel_name = 'Normalized N-Body Single Component'
+            self.kernel = n_body_sc_norm_derv
+            # self.kernel_grad = n_body_sc_grad
+            # self.energy_force_kernel = energy_force_sc
+            # self.energy_kernel = energy_sc
+            self.hyps = np.array([1, 1, 1])
+            self.hyp_labels = ['Signal Std', 'Length Scale', 'Noise Std']
+            self.cutoffs = None
+
+        elif kernel == 'n_body_sc':
+            self.kernel_name ='N-Body Single Component'
             self.kernel = n_body_sc
             self.kernel_grad = n_body_sc_grad
             self.energy_force_kernel = energy_force_sc
@@ -51,7 +62,7 @@ class GaussianProcess:
 
         # TODO: make energy and energy/force kernels for combination kernel
         elif kernel == 'combo_kernel_sc':
-            self.kernel_name ='N-Body Single Component Force/Energy'
+            self.kernel_name ='Combined N-Body Single Component'
             self.kernel = combo_kernel_sc
             self.kernel_grad = combo_kernel_sc_grad
             # self.energy_force_kernel = energy_force_sc
@@ -391,7 +402,7 @@ class GaussianProcess:
             ky_mat_inv = np.linalg.inv(ky_mat)
             l_mat = np.linalg.cholesky(ky_mat)
         except:
-            return 1e8, np.zeros(number_of_hyps)
+            return 1e8
 
         alpha = np.matmul(ky_mat_inv, training_labels_np)
 
@@ -404,6 +415,45 @@ class GaussianProcess:
             print('like: ' + str(like))
             print('\n')
         return -like
+
+    @staticmethod
+    def get_ky_mat(hyps: np.ndarray, training_data: list,
+                   training_labels_np: np.ndarray,
+                   kernel, bodies: int,
+                   cutoffs=None):
+
+        # assume sigma_n is the final hyperparameter
+        number_of_hyps = len(hyps)
+        sigma_n = hyps[number_of_hyps - 1]
+        kern_hyps = hyps[0:(number_of_hyps - 1)]
+
+        # initialize matrices
+        size = len(training_data) * 3
+        k_mat = np.zeros([size, size])
+
+        ds = [1, 2, 3]
+
+        # calculate elements
+        for m_index in range(size):
+            x_1 = training_data[int(math.floor(m_index / 3))]
+            d_1 = ds[m_index % 3]
+
+            for n_index in range(m_index, size):
+                x_2 = training_data[int(math.floor(n_index / 3))]
+                d_2 = ds[n_index % 3]
+
+                # calculate kernel and gradient
+                kern_curr = kernel(x_1, x_2, bodies, d_1, d_2, kern_hyps,
+                                   cutoffs)
+
+                # store kernel value
+                k_mat[m_index, n_index] = kern_curr
+                k_mat[n_index, m_index] = kern_curr
+
+        # matrix manipulation
+        ky_mat = k_mat + sigma_n ** 2 * np.eye(size)
+
+        return ky_mat
 
     def set_L_alpha(self):
         # assume sigma_n is the final hyperparameter
