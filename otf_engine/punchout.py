@@ -104,7 +104,7 @@ bool = True,neighbor_step = 2,isolated_cluster_d = 0):
     return newstruc
 
 
-def punchout(structure: Structure, atom: int, settings: dict, d: float, center:
+def punchout(structure: Structure, atom: int, settings: dict, center:
 bool = True, check_too_close: float = 0, check_stoichiometry: List[str] = [],
              check_bond_break = None,
              adjust_tries = 100,
