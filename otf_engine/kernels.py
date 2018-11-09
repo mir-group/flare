@@ -18,48 +18,62 @@ import time
 
 
 def n_body_sc_norm(env1, env2, bodies, hyps, cutoffs=None):
-    combs = get_comb_array(env1.bond_array.shape[0], bodies-1)
-    perms = get_perm_array(env2.bond_array.shape[0], bodies-1)
-    en_kern = energy_jit_sc(env1.bond_array, env1.cross_bond_dists, combs,
-                            env2.bond_array, env2.cross_bond_dists, perms,
+    combs_1 = get_comb_array(env1.bond_array.shape[0], bodies-1)
+    perms_1 = get_perm_array(env1.bond_array.shape[0], bodies-1)
+    combs_2 = get_comb_array(env2.bond_array.shape[0], bodies-1)
+    perms_2 = get_perm_array(env2.bond_array.shape[0], bodies-1)
+
+    en_kern = energy_jit_sc(env1.bond_array, env1.cross_bond_dists, combs_1,
+                            env2.bond_array, env2.cross_bond_dists, perms_2,
                             hyps)
-    self_kern_1 = energy_jit_sc(env1.bond_array, env1.cross_bond_dists, combs,
-                                env1.bond_array, env1.cross_bond_dists, perms,
+    self_kern_1 = energy_jit_sc(env1.bond_array, env1.cross_bond_dists,
+                                combs_1,
+                                env1.bond_array, env1.cross_bond_dists,
+                                perms_1,
                                 hyps)
-    self_kern_2 = energy_jit_sc(env2.bond_array, env2.cross_bond_dists, combs,
-                                env2.bond_array, env2.cross_bond_dists, perms,
+    self_kern_2 = energy_jit_sc(env2.bond_array, env2.cross_bond_dists,
+                                combs_2,
+                                env2.bond_array, env2.cross_bond_dists,
+                                perms_2,
                                 hyps)
+
     kern = en_kern / np.sqrt(self_kern_1 * self_kern_2)
 
     return kern
 
 
 def n_body_sc_norm_derv(env1, env2, bodies, d1, d2, hyps, cutoffs=None):
-    combs = get_comb_array(env1.bond_array.shape[0], bodies-1)
-    perms = get_perm_array(env2.bond_array.shape[0], bodies-1)
+    combs_1 = get_comb_array(env1.bond_array.shape[0], bodies-1)
+    perms_1 = get_perm_array(env1.bond_array.shape[0], bodies-1)
+    combs_2 = get_comb_array(env2.bond_array.shape[0], bodies-1)
+    perms_2 = get_perm_array(env2.bond_array.shape[0], bodies-1)
 
-    doub_kern = n_body_jit_sc(env1.bond_array, env1.cross_bond_dists, combs,
-                              env2.bond_array, env2.cross_bond_dists, perms,
+    doub_kern = n_body_jit_sc(env1.bond_array, env1.cross_bond_dists, combs_1,
+                              env2.bond_array, env2.cross_bond_dists, perms_2,
                               d1, d2, hyps)
-    en_kern = energy_jit_sc(env1.bond_array, env1.cross_bond_dists, combs,
-                            env2.bond_array, env2.cross_bond_dists, perms,
+    en_kern = energy_jit_sc(env1.bond_array, env1.cross_bond_dists, combs_1,
+                            env2.bond_array, env2.cross_bond_dists, perms_2,
                             hyps)
     force_kern_1 = -energy_force_jit_sc(env1.bond_array, env1.cross_bond_dists,
-                                        combs, env2.bond_array,
-                                        env2.cross_bond_dists, perms, d1, hyps)
+                                        combs_1, env2.bond_array,
+                                        env2.cross_bond_dists, perms_2,
+                                        d1, hyps)
     force_kern_2 = -energy_force_jit_sc(env2.bond_array, env2.cross_bond_dists,
-                                        combs, env1.bond_array,
-                                        env1.cross_bond_dists, perms, d2, hyps)
-    self_kern_1 = energy_jit_sc(env1.bond_array, env1.cross_bond_dists, combs,
-                                env1.bond_array, env1.cross_bond_dists, perms,
-                                hyps)
-    self_kern_2 = energy_jit_sc(env2.bond_array, env2.cross_bond_dists, combs,
-                                env2.bond_array, env2.cross_bond_dists, perms,
-                                hyps)
-    self_derv_1 = kern_self_sc(env1.bond_array, env1.cross_bond_dists, combs,
-                               perms, d1, hyps)
-    self_derv_2 = kern_self_sc(env2.bond_array, env2.cross_bond_dists, combs,
-                               perms, d2, hyps)
+                                        combs_2, env1.bond_array,
+                                        env1.cross_bond_dists, perms_1,
+                                        d2, hyps)
+    self_kern_1 = energy_jit_sc(env1.bond_array, env1.cross_bond_dists,
+                                combs_1,
+                                env1.bond_array, env1.cross_bond_dists,
+                                perms_1, hyps)
+    self_kern_2 = energy_jit_sc(env2.bond_array, env2.cross_bond_dists,
+                                combs_2,
+                                env2.bond_array, env2.cross_bond_dists,
+                                perms_2, hyps)
+    self_derv_1 = kern_self_sc(env1.bond_array, env1.cross_bond_dists, combs_1,
+                               perms_1, d1, hyps)
+    self_derv_2 = kern_self_sc(env2.bond_array, env2.cross_bond_dists, combs_2,
+                               perms_2, d2, hyps)
     k_sqrt = 1 / (np.sqrt(self_kern_1 * self_kern_2))
     k_sqrt_d1 = -(1/2)*(k_sqrt**3)*self_derv_1*self_kern_2
     k_sqrt_d2 = -(1/2)*(k_sqrt**3)*self_derv_2*self_kern_1
