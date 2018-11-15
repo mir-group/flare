@@ -9,7 +9,7 @@ import time
 
 def convergence(txt_name, input_file_string, output_file_string, pw_loc,
                 calculation, scf_inputs, nks, ecutwfcs, rho_facs,
-                electron_maxstep=100):
+                electron_maxstep=100, metal=False):
     # initialize update text
     txt = update_init()
     write_file(txt_name, txt)
@@ -20,7 +20,8 @@ def convergence(txt_name, input_file_string, output_file_string, pw_loc,
 
     scf = qe_input.QEInput(initial_input_name, initial_output_name, pw_loc,
                            calculation, scf_inputs,
-                           electron_maxstep=electron_maxstep)
+                           electron_maxstep=electron_maxstep,
+                           metal=metal)
 
     # perform and time converged scf run
     time0 = time.time()
@@ -51,7 +52,8 @@ def convergence(txt_name, input_file_string, output_file_string, pw_loc,
 
                 scf = qe_input.QEInput(input_name, output_name,
                                        pw_loc, calculation, scf_inputs,
-                                       electron_maxstep=electron_maxstep)
+                                       electron_maxstep=electron_maxstep,
+                                       metal=metal)
 
                 # perform and time scf run
                 time0 = time.time()

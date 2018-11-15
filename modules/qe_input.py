@@ -49,7 +49,8 @@ class QEInput:
                  pw_loc: str, calculation: str,
                  scf_inputs: dict, md_inputs: dict = None,
                  press_conv_thr=None,
-                 electron_maxstep=100):
+                 electron_maxstep=100,
+                 metal=False):
 
         self.input_file_name = input_file_name
         self.output_file_name = output_file_name
@@ -70,6 +71,7 @@ class QEInput:
         self.ion_masses = scf_inputs['ion_masses']
         self.ion_pseudo = scf_inputs['ion_pseudo']
         self.electron_maxstep = electron_maxstep
+        self.metal = metal
 
         # get text blocks
         self.species_txt = self.get_species_txt()
@@ -150,6 +152,13 @@ class QEInput:
     ecutwfc ={}
     ecutrho = {}""".format(self.nat, self.ntyp, self.ecutwfc,
                            self.ecutrho)
+
+        # if metal is true, add smearing
+        if self.metal is True:
+            input_text += """
+    occupations = 'smearing'
+    smearing = 'mp'
+    degauss = 0.01"""
 
         # if MD or relax, don't reduce number of k points based on symmetry,
         # since the symmetry might change throughout the calculation
@@ -259,7 +268,6 @@ def create_structure(el: str, alat: float, size: int, perturb: bool=False,
     nat = supercell.get_number_of_atoms()
 
     return cell, al_pos, nat
-
 
 
 if __name__ == '__main__':
