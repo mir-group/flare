@@ -170,7 +170,7 @@ def test_punchout_too_close1():
         assert np.min(distances) < .25
 
 
-    newstruc = punchout(struc, atom = 1, d = 2.0, check_too_close=.25,
+    newstruc = punchout(struc, atom = 1, settings={'d':2.0}, check_too_close=.25,
                         center=False)
     for i in range(newstruc.nat):
         bond_array, _, _, _ = \
@@ -192,7 +192,7 @@ def test_punchout_stoichiometry():
     assert badstruc.get_species_count()["A"] == 2
     assert badstruc.get_species_count()['B'] == 1
 
-    newstruc = punchout(struc, atom=1, d=2.0, check_stoichiometry=['A','B'],
+    newstruc = punchout(struc, atom=1, settings={'d':2.0}, check_stoichiometry=['A','B'],
                         center=False)
 
     assert newstruc.get_species_count()["A"] == 2
