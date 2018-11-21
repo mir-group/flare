@@ -17,6 +17,19 @@ import time
 # -----------------------------------------------------------------------------
 
 
+def many_body_sc_grad(env1, env2, bodies, d1, d2, hyps, cutoffs=None):
+    return many_body_sc_grad_jit(env1.bond_array, env1.cross_bond_dists,
+                                 env2.bond_array, env2.cross_bond_dists,
+                                 d1, d2, hyps, bodies)
+
+
+# get many body single component kernel between two environments
+def many_body_sc(env1, env2, bodies, d1, d2, hyps, cutoffs=None):
+    return many_body_sc_jit(env1.bond_array, env1.cross_bond_dists,
+                            env2.bond_array, env2.cross_bond_dists,
+                            d1, d2, hyps, bodies)
+
+
 def n_body_sc_norm(env1, env2, bodies, hyps, cutoffs=None):
     combs_1 = get_comb_array(env1.bond_array.shape[0], bodies-1)
     perms_1 = get_perm_array(env1.bond_array.shape[0], bodies-1)
@@ -225,6 +238,60 @@ def two_body(env1, env2, d1, d2, sig, ls):
 #                               kernel gradients
 # -----------------------------------------------------------------------------
 
+# many body single component kernel
+@njit
+def many_body_sc_grad_jit(full_bond_array_1, full_cross_bond_dists_1,
+                          full_bond_array_2, full_cross_bond_dists_2,
+                          d1, d2, hyps, atoms):
+    sig = hyps[0]
+    ls = hyps[1]
+    kern = 0
+    sig_derv = 0
+    ls_derv = 0
+
+    # get restricted array
+    bond_array_1 = full_bond_array_1[0:atoms, :]
+    cross_bond_dists_1 = full_cross_bond_dists_1[0:atoms, 0:atoms]
+    bond_array_2 = full_bond_array_2[0:atoms, :]
+    cross_bond_dists_2 = full_cross_bond_dists_2[0:atoms, 0:atoms]
+
+    A_cp = 0
+    B_cp_1 = 0
+    B_cp_2 = 0
+    C_cp = 0
+
+    for bond_ind in range(atoms):
+        rdiff = bond_array_1[bond_ind, 0] - bond_array_2[bond_ind, 0]
+        coord1 = bond_array_1[bond_ind, d1]
+        coord2 = bond_array_2[bond_ind, d2]
+
+        A_cp += coord1 * coord2
+        B_cp_1 += rdiff * coord1
+        B_cp_2 += rdiff * coord2
+        C_cp += rdiff * rdiff
+
+        for bond_ind_2 in range(bond_ind+1, atoms):
+            cb_diff = cross_bond_dists_1[bond_ind, bond_ind_2] - \
+                cross_bond_dists_2[bond_ind, bond_ind_2]
+            C_cp += cb_diff * cb_diff
+
+    B_cp = B_cp_1 * B_cp_2
+
+    kern += (sig*sig / (ls**4)) * (A_cp * ls * ls - B_cp) * \
+        exp(-C_cp / (2 * ls * ls))
+
+    sig_derv += (2*sig / (ls**4)) * (A_cp * ls * ls - B_cp) * \
+        exp(-C_cp / (2 * ls * ls))
+
+    ls_derv += ((sig*sig)/(ls**7)) * \
+        (-B_cp*C_cp+(4*B_cp+A_cp*C_cp)*ls*ls-2*A_cp*ls**4) * \
+        exp(-C_cp / (2 * ls * ls))
+
+    kern_grad = np.array([sig_derv, ls_derv])
+
+    return kern, kern_grad
+
+
 # multi component n body kernel
 @njit
 def n_body_jit_mc_grad_array(bond_array_1, cross_bond_dists_1, combinations,
@@ -400,6 +467,49 @@ def two_body_grad_from_env(bond_array_1, bond_types_1, bond_array_2,
 # -----------------------------------------------------------------------------
 #           kernels acting on numpy arrays (can be jitted)
 # -----------------------------------------------------------------------------
+
+
+# many body single component kernel
+@njit
+def many_body_sc_jit(full_bond_array_1, full_cross_bond_dists_1,
+                     full_bond_array_2, full_cross_bond_dists_2,
+                     d1, d2, hyps, atoms):
+    sig = hyps[0]
+    ls = hyps[1]
+    kern = 0
+
+    # get restricted array
+    bond_array_1 = full_bond_array_1[0:atoms, :]
+    cross_bond_dists_1 = full_cross_bond_dists_1[0:atoms, 0:atoms]
+    bond_array_2 = full_bond_array_2[0:atoms, :]
+    cross_bond_dists_2 = full_cross_bond_dists_2[0:atoms, 0:atoms]
+
+    A_cp = 0
+    B_cp_1 = 0
+    B_cp_2 = 0
+    C_cp = 0
+
+    for bond_ind in range(atoms):
+        rdiff = bond_array_1[bond_ind, 0] - bond_array_2[bond_ind, 0]
+        coord1 = bond_array_1[bond_ind, d1]
+        coord2 = bond_array_2[bond_ind, d2]
+
+        A_cp += coord1 * coord2
+        B_cp_1 += rdiff * coord1
+        B_cp_2 += rdiff * coord2
+        C_cp += rdiff * rdiff
+
+        for bond_ind_2 in range(bond_ind+1, atoms):
+            cb_diff = cross_bond_dists_1[bond_ind, bond_ind_2] - \
+                cross_bond_dists_2[bond_ind, bond_ind_2]
+            C_cp += cb_diff * cb_diff
+
+    B_cp = B_cp_1 * B_cp_2
+
+    kern += (sig*sig / (ls**4)) * (A_cp * ls * ls - B_cp) * \
+        exp(-C_cp / (2 * ls * ls))
+
+    return kern
 
 
 # derivative of kernel between environment and itself

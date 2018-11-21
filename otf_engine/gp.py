@@ -21,7 +21,7 @@ from copy import deepcopy
 from env import ChemicalEnvironment
 from kernels import n_body_sc, n_body_sc_grad, combo_kernel_sc,\
     combo_kernel_sc_grad, energy_force_sc, energy_sc, n_body_mc,\
-    n_body_mc_grad, n_body_sc_norm_derv
+    n_body_mc_grad, n_body_sc_norm_derv, many_body_sc, many_body_sc_grad
 from struc import Structure
 
 
@@ -51,7 +51,7 @@ class GaussianProcess:
             self.cutoffs = None
 
         elif kernel == 'n_body_sc':
-            self.kernel_name ='N-Body Single Component'
+            self.kernel_name = 'N-Body Single Component'
             self.kernel = n_body_sc
             self.kernel_grad = n_body_sc_grad
             self.energy_force_kernel = energy_force_sc
@@ -60,9 +60,19 @@ class GaussianProcess:
             self.hyp_labels = ['Signal Std', 'Length Scale', 'Noise Std']
             self.cutoffs = None
 
+        elif kernel == 'many_body_sc':
+            self.kernel_name = 'Many Body Single Component'
+            self.kernel = many_body_sc
+            self.kernel_grad = many_body_sc_grad
+            # self.energy_force_kernel = energy_force_sc
+            # self.energy_kernel = energy_sc
+            self.hyps = np.array([1, 1, 1])
+            self.hyp_labels = ['Signal Std', 'Length Scale', 'Noise Std']
+            self.cutoffs = None
+
         # TODO: make energy and energy/force kernels for combination kernel
         elif kernel == 'combo_kernel_sc':
-            self.kernel_name ='Combined N-Body Single Component'
+            self.kernel_name = 'Combined N-Body Single Component'
             self.kernel = combo_kernel_sc
             self.kernel_grad = combo_kernel_sc_grad
             # self.energy_force_kernel = energy_force_sc
