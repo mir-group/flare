@@ -103,9 +103,6 @@ class GaussianProcess:
         else:
             raise ValueError('not a valid kernel')
 
-        if opt_algorithm not in ['BFGS', 'L-BFGS-B', 'nelder-mead']:
-            raise ValueError('Not a valid algorithm')
-
         self.algo = opt_algorithm
 
         # quantities used in GPR algorithm
@@ -166,7 +163,7 @@ class GaussianProcess:
         return forces_np
 
     @timeit
-    def train(self, monitor=False):
+    def train(self, monitor=False, custom_bounds=None):
         """ Train Gaussian Process model on training data. """
 
         x_0 = self.hyps
@@ -190,7 +187,16 @@ class GaussianProcess:
                       "BFGS for remainder of run.")
                 self.algo = 'BFGS'
 
-        if self.algo == 'BFGS':
+        if custom_bounds is not None:
+            args = (self.training_data, self.training_labels_np,
+                    self.kernel_grad, self.bodies, self.cutoffs, monitor)
+
+            res = minimize(self.get_likelihood_and_gradients, x_0, args,
+                           method='L-BFGS-B', jac=True, bounds=custom_bounds,
+                           options={'disp': False, 'gtol': 1e-4, 
+                                    'maxiter': 1000})
+
+        elif self.algo == 'BFGS':
             args = (self.training_data, self.training_labels_np,
                     self.kernel_grad, self.bodies, self.cutoffs, monitor)
 
@@ -199,7 +205,7 @@ class GaussianProcess:
                            options={'disp': False, 'gtol': 1e-4,
                                     'maxiter': 1000})
 
-        if self.algo == 'nelder-mead':
+        elif self.algo == 'nelder-mead':
             args = (self.training_data, self.training_labels_np,
                     self.kernel, self.bodies, self.cutoffs, monitor)
 
