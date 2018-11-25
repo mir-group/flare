@@ -12,7 +12,7 @@ Jon Vandermause, Simon Batzner
 import math
 
 import numpy as np
-from qe_util import timeit
+# from qe_util import timeit
 from scipy.linalg import solve_triangular
 from scipy.optimize import minimize
 from typing import List
@@ -162,7 +162,6 @@ class GaussianProcess:
 
         return forces_np
 
-    @timeit
     def train(self, monitor=False, custom_bounds=None):
         """ Train Gaussian Process model on training data. """
 

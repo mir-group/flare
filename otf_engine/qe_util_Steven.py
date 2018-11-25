@@ -1,3 +1,14 @@
+#!/usr/bin/env python3
+# pylint: disable=redefined-outer-name
+""""
+Assembly of helper functions which call pw.x in the Quantum ESPRESSO suite
+
+Assumes the environment variable PWSCF_COMMAND is set as a path to the pw.x
+binary
+
+Steven Torrisi
+"""
+
 import os
 import time
 
@@ -7,18 +18,94 @@ from struc import Structure
 from typing import List
 
 
-def run_espresso(qe_input, structure, pw_loc):
+def timeit(method):
+    def write_time(*args, **kw):
+
+        # Only decorate if time_log is an argument
+        if 'time_log' in kw:
+
+            # Remove time_log from kwargs before passing to method
+            time_dict = kw['time_log']
+            kw.pop('time_log')
+
+            # Get method name to tally total time on this method
+
+            # Get custom name e.g. 'last_dft_run'
+            custom_name = kw.get('log_name', '')
+            # Remove custom name from kwargs before passing to method
+            if 'log_name' in kw.keys():
+                kw.pop('log_name')
+
+            # Time the method
+            ts = time.time()
+            result = method(*args, **kw)
+            te = time.time()
+
+            # Assign time of custom name
+            if custom_name:
+                time_dict[custom_name] = te - ts
+
+            # Tally total time spent on this method
+            method_name = method.__name__
+            if time_dict.get(method_name, False):
+                time_dict[method_name] += te - ts
+            else:
+                time_dict[method_name] = te - ts
+
+        else:
+            result = method(*args, **kw)
+
+        return result
+
+    return write_time
+
+
+@timeit
+def run_espresso(qe_input: str, structure: Structure, temp: bool = False) -> \
+        List[np.array]:
+    """
+    Calls quantum espresso from input located at self.qe_input
+
+    :param qe_input: Path to pwscf.in file
+    :type qe_input: str
+    :param structure: Structure object for the edited
+    :type structure: Structure
+    :param temp: Run pwscf off of an edited QE input instead of the original
+    :type temp: Bool
+
+    :return: List [nparray] List of forces
+    """
+
+    # If temp, copy the extant file into a new run directory
     run_qe_path = qe_input
+    run_qe_path += '_run' if temp else ''
+
     os.system(' '.join(['cp', qe_input, run_qe_path]))
     edit_qe_input_positions(run_qe_path, structure)
-    qe_command = 'mpirun {0} < {1} > {2}'.format(pw_loc, run_qe_path,
-                                                 'pwscf.out')
+
+    pw_loc = os.environ.get('PWSCF_COMMAND', 'pw.x')
+
+    qe_command = '{0} < {1} > {2}'.format(pw_loc, run_qe_path,
+                                          'pwscf.out')
+
     os.system(qe_command)
+
+    if temp:
+        os.system(' '.join(['rm', run_qe_path]))
 
     return parse_qe_forces('pwscf.out')
 
 
-def parse_qe_input(qe_input: str):
+def parse_qe_input(qe_input: str) -> (
+        List[np.array], List[str], np.array, dict):
+    """
+    Reads the positions, species, cell, and masses in from the qe input file
+
+    :param qe_input: Path to PWSCF input file
+    :type qe_input: str
+    :return: List[nparray], List[str], nparray, Positions, species,
+                    3x3 Bravais cell
+    """
     positions = []
     species = []
     cell = []
@@ -69,7 +156,7 @@ def parse_qe_input(qe_input: str):
     assert positions != [], "Positions failed to load"
 
     # Load masses
-    # Convert from amu to mass units with picosecond timescale and angstrom
+    # Convert from amu to  mass units with picosecond timescale and angstrom
     # length scale such that the unit of energy is in natural units (=1)
     massconvert = 0.00010364269933008285
     masses = {}

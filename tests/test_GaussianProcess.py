@@ -1,11 +1,3 @@
-#!/usr/bin/env python3
-# pylint: disable=redefined-outer-name
-
-"""" Gaussian Process Regression test suite based on py.test
-
-Simon Batzner
-"""
-
 import pytest
 
 import numpy as np

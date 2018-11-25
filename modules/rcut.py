@@ -5,6 +5,7 @@ Self-Contained Code which allows for the
 """
 
 import sys
+import os
 
 import numpy as np
 import numpy.random as rand
@@ -106,12 +107,13 @@ def gauge_force_variance(qe_input: str, trials: int, atom: int, r_fix:
                       cutoff=1, mass_dict=masses)
 
     total_forces = np.empty(shape=(trials, struc.nat, 3))
+    pw_loc = os.environ.get('PWSCF_COMMAND')
 
     for i in range(trials):
         pert_struct = perturb_outside_radius(struc, atom, r_fix, mean_pert,
                                              pert_sigma)
         pert_forces = run_espresso(qe_input=qe_input, structure=pert_struct,
-                                   temp=True)
+                                   pw_loc=pw_loc)
 
         for j in range(struc.nat):
             for k in range(3):

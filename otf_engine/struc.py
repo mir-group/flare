@@ -26,8 +26,8 @@ class Structure(object):
     """
 
     def __init__(self, lattice: ndarray, species: List[str],
-                 positions: List[ndarray], cutoff: float,
-                 mass_dict: dict = None, prev_positions: List[ndarray]=None):
+                 positions: ndarray, cutoff: float,
+                 mass_dict: dict = None, prev_positions: ndarray=None):
         self.lattice = lattice
         self.vec1 = lattice[0, :]
         self.vec2 = lattice[1, :]
@@ -51,7 +51,7 @@ class Structure(object):
 
         # Default: atoms have no velocity
         if prev_positions is None:
-            self.prev_positions = [copy(pos) for pos in self.positions]
+            self.prev_positions = copy(self.positions)
         else:
             assert len(positions) == len(prev_positions), 'Previous ' \
                                                           'positions and ' \

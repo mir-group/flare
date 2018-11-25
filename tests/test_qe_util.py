@@ -103,8 +103,8 @@ def test_input_to_structure(qe_input):
 @pytest.mark.parametrize('qe_output,exp_forces',
                          [
                              ('./test_files/qe_output_1.out',
-                              [np.array([1.9062131355, 0., 0.]),
-                               np.array([-1.9062131355, 0., 0.])])
+                              [np.array([1.90627356, 0., 0.]),
+                               np.array([-1.90627356, 0., 0.])])
                          ]
                          )
 def test_force_parsing(qe_output, exp_forces):
@@ -126,6 +126,7 @@ def test_espresso_calling(qe_input, qe_output):
                           False), 'PWSCF_COMMAND not found ' \
                                   'in environment'
 
+    pw_loc = os.environ.get('PWSCF_COMMAND')
     os.system(' '.join(['cp', qe_input, 'pwscf.in']))
     positions, species, cell, masses = parse_qe_input(qe_input)
 
@@ -134,9 +135,7 @@ def test_espresso_calling(qe_input, qe_output):
                       mass_dict=masses)
 
     forces = run_espresso('pwscf.in',
-                          struc, temp=True)
-
-    assert isinstance(forces, list)
+                          struc, pw_loc)
 
     ref_forces = parse_qe_forces(qe_output)
 
@@ -145,7 +144,7 @@ def test_espresso_calling(qe_input, qe_output):
     for i in range(struc.nat):
         assert np.isclose(forces[i], ref_forces[i]).all()
 
-    cleanup_espresso_run()
+    # cleanup_espresso_run()
 
 
 def test_espresso_input_edit():
