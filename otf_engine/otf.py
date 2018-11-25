@@ -29,7 +29,7 @@ from analyze_otf import parse_header_information, parse_dft_information, \
 class OTF(object):
     def __init__(self, qe_input: str, dt: float, number_of_steps: int,
                  kernel: str, bodies: int, cutoff: float, std_tolerance_factor:
-                 float = 1, opt_algo : str =  'L-BFGS-B',
+                 float = 1, opt_algo: str='L-BFGS-B',
                  prev_pos_init: List[np.ndarray] = None,
                  punchout_settings: dict = None):
         """
@@ -320,8 +320,6 @@ class OTF(object):
         for i, label in enumerate(self.gp.hyp_labels):
             self.write_to_output('Hyp{} : {} = {}\n'.format(i, label,
                                                             self.gp.hyps[i]))
-
-
 
     def conclude_run(self):
         """

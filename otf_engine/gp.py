@@ -504,5 +504,42 @@ class GaussianProcess:
         l_mat = np.linalg.cholesky(ky_mat)
         ky_mat_inv = np.linalg.inv(ky_mat)
         alpha = np.matmul(ky_mat_inv, self.training_labels_np)
+        self.k_mat = k_mat
         self.l_mat = l_mat
         self.alpha = alpha
+
+    def augment_K(self, structure, forces, atoms):
+        noa = len(atoms)
+        k_dim = self.k_mat.shape
+        k_aug = np.zeros((k_dim[0], k_dim[0] + noa * 3))
+        k_aug[0:k_dim[0], 0:k_dim[1]] = self.k_mat
+        force_aug = np.zeros(k_dim[0] + noa * 3)
+        force_aug[0:k_dim[0]] = self.training_labels_np
+
+        count = 0
+        for atom in atoms:
+            env_curr = ChemicalEnvironment(structure, atom)
+            forces_curr = np.array(forces[atom])
+            for d in [1, 2, 3]:
+                kvec_curr = self.get_kernel_vector(env_curr, d)
+                k_aug[:, k_dim[0]+count] = kvec_curr
+                force_aug[k_dim[0]+count] = forces_curr[d-1]
+                count += 1
+        self.k_aug = k_aug
+        self.force_aug = force_aug
+
+        k_aug_squared = np.matmul(k_aug, np.transpose(k_aug))
+        sigma_n = self.hyps[-1]
+        inv_aug = np.linalg.inv(k_aug_squared + sigma_n**2 * self.k_mat)
+        k_aug_force = np.matmul(k_aug, force_aug)
+        alpha_aug = np.matmul(inv_aug, k_aug_force)
+        self.alpha_aug = alpha_aug
+
+    def sparsified_prediction(self, x_t, d):
+        # get kernel vector
+        k_v = self.get_kernel_vector(x_t, d)
+
+        # get predictive mean
+        pred_mean = np.matmul(k_v, self.alpha_aug)
+
+        return pred_mean
