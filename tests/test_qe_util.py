@@ -144,7 +144,7 @@ def test_espresso_calling(qe_input, qe_output):
     for i in range(struc.nat):
         assert np.isclose(forces[i], ref_forces[i]).all()
 
-    # cleanup_espresso_run()
+    cleanup_espresso_run()
 
 
 def test_espresso_input_edit():

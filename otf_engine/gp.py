@@ -216,16 +216,6 @@ class GaussianProcess:
         self.set_L_alpha()
 
     def predict(self, x_t: ChemicalEnvironment, d: int) -> [float, float]:
-        """ Make GP prediction with SE kernel.
-
-        :param x_t: data point to predict on
-        :type x_t: ChemicalEnvironment
-        :param d:
-        :type d: int
-        :return: predictive mean and predictive variance
-        :rtype: [float, float]
-        """
-
         # get kernel vector
         k_v = self.get_kernel_vector(x_t, d)
 

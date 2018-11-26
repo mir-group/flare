@@ -47,7 +47,7 @@ class Structure(object):
 
         self.inv_lattice = inv(lattice)
 
-        self.positions = positions
+        self.positions = array(positions)
 
         # Default: atoms have no velocity
         if prev_positions is None:
@@ -58,14 +58,10 @@ class Structure(object):
                                             'positions are not same length'
             self.prev_positions = prev_positions
 
-        self.forces = [zeros(3) for _ in positions]
-        self.stds = [zeros(3) for _ in positions]
-
+        self.forces = zeros((3, len(positions)))
+        self.stds = zeros((3, len(positions)))
         self.cutoff = cutoff
-
         self.mass_dict = mass_dict
-
-        # Sentinel variable to keep track of if forces are from DFT or GP
         self.dft_forces = False
 
     def translate_positions(self, vector: ndarray = zeros(3)):

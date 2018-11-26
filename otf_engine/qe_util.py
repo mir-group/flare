@@ -67,6 +67,7 @@ def parse_qe_input(qe_input: str):
         positions.append(np.fromstring(pos_string, sep=' '))
     # Check position IO
     assert positions != [], "Positions failed to load"
+    positions = np.array(positions)
 
     # Load masses
     # Convert from amu to mass units with picosecond timescale and angstrom
@@ -188,5 +189,6 @@ def parse_qe_forces(outfile: str):
     conversion_factor = 25.71104309541616
 
     forces = [conversion_factor * force for force in forces]
+    forces = np.array(forces)
 
     return forces

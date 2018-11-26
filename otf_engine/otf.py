@@ -14,7 +14,7 @@ class OTF(object):
     def __init__(self, qe_input: str, dt: float, number_of_steps: int,
                  kernel: str, bodies: int, cutoff: float, pw_loc: str,
                  std_tolerance_factor: float = 1, opt_algo: str='BFGS',
-                 prev_pos_init: List[np.ndarray] = None):
+                 prev_pos_init=None):
 
         self.qe_input = qe_input
         self.dt = dt
@@ -24,11 +24,16 @@ class OTF(object):
         self.std_tolerance = std_tolerance_factor
         self.pw_loc = pw_loc
 
+        # parse input file
         positions, species, cell, masses = parse_qe_input(self.qe_input)
+
         self.structure = Structure(lattice=cell, species=species,
                                    positions=positions, cutoff=cutoff,
                                    mass_dict=masses,
                                    prev_positions=prev_pos_init)
+
+        self.velocities = (self.structure.positions -
+                           self.structure.prev_positions) / self.dt
 
         self.curr_step = 0
         self.train_structure = None
@@ -39,7 +44,7 @@ class OTF(object):
 
         if self.std_tolerance != 0:
             self.run_and_train()
-            self.write_md_config()
+            # self.write_md_config()
 
         while self.curr_step < self.Nsteps:
 
@@ -109,6 +114,8 @@ class OTF(object):
 
             self.structure.prev_positions[i] = np.copy(temp_pos)
 
+        self.velocities = (self.structure.positions -
+                           self.structure.prev_positions) / self.dt
         self.curr_step += 1
 
     @staticmethod
@@ -153,9 +160,11 @@ class OTF(object):
             string += 'GP Force (ev/A) '
         else:
             string += 'DFT Force (ev/A) '
-        string += '\t\t\t\t\t\t Std. Dev (ev/A) \n'
+        string += '\t\t\t\t\t\t Std. Dev (ev/A)'
+        string += '\t\t\t\t\t\t Velocity (A/ps) \n'
 
         # Construct atom-by-atom description
+        KE = 0
         for i in range(len(self.structure.positions)):
             string += self.structure.species[i] + ' '
             for j in range(3):
@@ -166,7 +175,19 @@ class OTF(object):
             string += '\t'
             for j in range(3):
                 string += str('%.6e' % self.structure.stds[i][j]) + ' '
+            string += '\t'
+            for j in range(3):
+                string += str('%.6e' % self.velocities[i][j]) + ' '
+                KE += 0.5 * \
+                    self.structure.mass_dict[self.structure.species[i]] * \
+                    self.velocities[i][j] * self.velocities[i][j]
             string += '\n'
+
+        kb = 0.0000861733034
+        temperature = 2 * KE / (3 * len(self.structure.positions) * kb)
+        string += 'temperature: %.2f K \n' % temperature
+        string += 'wall time from start: %.2f s \n' % \
+            (time.time() - self.start_time)
 
         self.write_to_output(string)
 
@@ -182,6 +203,8 @@ class OTF(object):
                 qe_strings += '%.8f  ' % self.train_structure.forces[n][i]
             qe_strings += '\n'
 
+        qe_strings += 'wall time from start: %.2f s \n' % \
+            (time.time() - self.start_time)
         self.write_to_output(qe_strings)
         self.write_to_output('=' * 20 + '\n')
 
@@ -191,6 +214,8 @@ class OTF(object):
         for i, label in enumerate(self.gp.hyp_labels):
             self.write_to_output('Hyp{} : {} = {}\n'
                                  .format(i, label, self.gp.hyps[i]))
+        time_curr = time.time() - self.start_time
+        self.write_to_output('wall time from start: %.2f s \n' % time_curr)
 
     def conclude_run(self):
         footer = '▬' * 20 + '\n'
