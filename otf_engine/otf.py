@@ -8,13 +8,16 @@ from gp import GaussianProcess
 from env import ChemicalEnvironment
 from qe_util import run_espresso, parse_qe_input, \
     qe_input_to_structure, parse_qe_forces
+import multiprocessing as mp
 
 
 class OTF(object):
     def __init__(self, qe_input: str, dt: float, number_of_steps: int,
                  kernel: str, bodies: int, cutoff: float, pw_loc: str,
                  std_tolerance_factor: float = 1, opt_algo: str='BFGS',
-                 prev_pos_init=None):
+                 prev_pos_init=None,
+                 par=False,
+                 parsimony=False):
 
         self.qe_input = qe_input
         self.dt = dt
@@ -36,19 +39,28 @@ class OTF(object):
                            self.structure.prev_positions) / self.dt
 
         self.curr_step = 0
-        self.train_structure = None
         self.write_header()
+
+        # set parallelization parameters
+        self.par = par
+        if par is True:
+            self.pool = mp.Pool(processes=32)
+
+        # set parsimony parameters
+        self.parsimony = parsimony
 
     def run(self):
         self.start_time = time.time()
 
         if self.std_tolerance != 0:
             self.run_and_train()
-            # self.write_md_config()
 
         while self.curr_step < self.Nsteps:
 
-            self.predict_on_structure()
+            if self.par is True:
+                self.predict_on_structure_par()
+            else:
+                self.predict_on_structure()
 
             std_in_bound, target_atom = self.is_std_in_bound()
             if not std_in_bound:
@@ -70,10 +82,21 @@ class OTF(object):
 
         self.structure.dft_forces = False
 
+    # TODO: parallelize prediction by atom
+    def predict_on_structure_par(self):
+        for n in range(self.structure.nat):
+            chemenv = ChemicalEnvironment(self.structure, n)
+            for i in range(3):
+                force, var = self.gp.predict(chemenv, i + 1)
+                self.structure.forces[n][i] = float(force)
+                self.structure.stds[n][i] = np.sqrt(np.absolute(var))
+
+        self.structure.dft_forces = False
+
     def run_and_train(self, target_atom: int = None):
         self.write_to_output('=' * 20 + '\n')
 
-        if self.train_structure is None:
+        if target_atom is None:
             self.write_to_output('Calling Quantum Espresso...')
         else:
             self.write_to_output('Calling DFT due to atom {} at position {} '
@@ -82,20 +105,18 @@ class OTF(object):
                                          self.structure.positions[target_atom],
                                          self.structure.stds[target_atom]))
 
-        self.train_structure = self.structure
-        train_atoms = list(range(self.train_structure.nat))
-        forces = run_espresso(self.qe_input, self.train_structure,
+        train_atoms = list(range(self.structure.nat))
+        forces = run_espresso(self.qe_input, self.structure,
                               self.pw_loc)
-        self.train_structure.forces = forces
-
-        self.structure.dft_forces = True
-        self.structure.forces = [np.array(force) for force in forces]
+        self.structure.forces = forces
         self.structure.stds = [np.zeros(3) for n in range(self.structure.nat)]
+        self.structure.dft_forces = True
+
         self.write_to_output('Done.\n')
         self.write_last_dft_run()
 
         self.write_to_output('Updating database hyperparameters...\n')
-        self.gp.update_db(self.train_structure, forces,
+        self.gp.update_db(self.structure, forces,
                           custom_range=train_atoms)
         self.gp.train()
         self.write_hyps()
@@ -151,8 +172,7 @@ class OTF(object):
         string += "-" + ('*' if self.structure.dft_forces else ' ') + \
                   "Frame: " + str(self.curr_step)
 
-        string += " Simulation Time: "
-        string += str(np.round(self.dt * self.curr_step, 6)) + '\n'
+        string += ' Simulation Time: %.3f ps \n' % (self.dt * self.curr_step)
 
         # Construct Header line
         string += 'El \t\t\t  Position (A) \t\t\t\t\t '
@@ -194,13 +214,13 @@ class OTF(object):
     def write_last_dft_run(self):
         qe_strings = 'El \t\t\t  Position (A) \t\t\t\t\t DFT Force (ev/A) \n'
 
-        for n in range(self.train_structure.nat):
-            qe_strings += self.train_structure.species[n] + ': '
+        for n in range(self.structure.nat):
+            qe_strings += self.structure.species[n] + ': '
             for i in range(3):
-                qe_strings += '%.8f  ' % self.train_structure.positions[n][i]
+                qe_strings += '%.8f  ' % self.structure.positions[n][i]
             qe_strings += '\t '
             for i in range(3):
-                qe_strings += '%.8f  ' % self.train_structure.forces[n][i]
+                qe_strings += '%.8f  ' % self.structure.forces[n][i]
             qe_strings += '\n'
 
         qe_strings += 'wall time from start: %.2f s \n' % \
