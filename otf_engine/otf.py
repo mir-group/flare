@@ -122,6 +122,8 @@ class OTF(object):
         self.structure.dft_forces = True
 
         self.write_to_output('Done.\n')
+        time_curr = time.time() - self.start_time
+        self.write_to_output('wall time from start: %.2f s \n' % time_curr)
 
         self.write_to_output('Updating database hyperparameters...\n')
         self.gp.update_db(self.structure, forces,
