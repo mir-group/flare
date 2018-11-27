@@ -1,0 +1,196 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 10.4' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[      5286,        186]
+NotebookOptionsPosition[      4027,        135]
+NotebookOutlinePosition[      4382,        151]
+CellTagsIndexPosition[      4339,        148]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell["\<\
+Calculation of conversion constants appearing in otf program
+Jon V\
+\>", "Text",
+ CellChangeTimes->{{3.7522707438635*^9, 3.752270754234103*^9}}],
+
+Cell[CellGroupData[{
+
+Cell["Mass conversion.", "Section",
+ CellChangeTimes->{{3.752252290790174*^9, 3.752252292136108*^9}}],
+
+Cell["Number of Joules in an electron volt:", "Text",
+ CellChangeTimes->{{3.752252294461432*^9, 3.752252306573257*^9}}],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"ev", "=", "1.602176620898`13*^-19"}]], "Input",
+ CellChangeTimes->{{3.752148053820462*^9, 3.7521480757668953`*^9}, {
+  3.7521481115725403`*^9, 3.752148118996441*^9}, {3.752148184976042*^9, 
+  3.752148200936721*^9}, {3.752148319117928*^9, 3.752148322526099*^9}}],
+
+Cell[BoxData["1.602176620898`13.*^-19"], "Output",
+ CellChangeTimes->{
+  3.752148076517158*^9, 3.75214811935898*^9, 3.752148157215296*^9, 
+   3.752148201433016*^9, {3.752148319717039*^9, 3.752148322874395*^9}}]
+}, Open  ]],
+
+Cell["Number of kilograms in an atomic mass unit:", "Text",
+ CellChangeTimes->{{3.7522523095350113`*^9, 3.752252321007628*^9}}],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"amu", " ", "=", " ", "1.66053904020`12*^-27"}]], "Input",
+ CellChangeTimes->{{3.7521482071025677`*^9, 3.752148247437278*^9}}],
+
+Cell[BoxData["1.6605390402000000000000000000001`12.*^-27"], "Output",
+ CellChangeTimes->{3.752148247828907*^9}]
+}, Open  ]],
+
+Cell["Mass conversion from amu to MD unit:", "Text",
+ CellChangeTimes->{{3.7522523386363897`*^9, 3.752252359033002*^9}}],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"N", "[", 
+  RowBox[{
+   RowBox[{"amu", "/", 
+    RowBox[{"(", 
+     RowBox[{"ev", "*", 
+      SuperscriptBox["10", 
+       RowBox[{"-", "4"}]]}], ")"}]}], ",", "25"}], "]"}]], "Input",
+ CellChangeTimes->{{3.752148456128587*^9, 3.752148464045577*^9}, {
+  3.752148550741253*^9, 3.7521485583800488`*^9}}],
+
+Cell[BoxData["0.00010364269572659776999961165488755889`11.958607314841776"], \
+"Output",
+ CellChangeTimes->{
+  3.752148465711503*^9, {3.7521485513701677`*^9, 3.752148558723278*^9}}]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Boltzmann constant conversion.", "Section",
+ CellChangeTimes->{{3.752252364101955*^9, 3.752252366816544*^9}}],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"kb", "=", "1.38064852`9*^-23"}]], "Input",
+ CellChangeTimes->{{3.752252575924234*^9, 3.752252607124992*^9}}],
+
+Cell[BoxData["1.38064852`9.*^-23"], "Output",
+ CellChangeTimes->{{3.752252590301111*^9, 3.752252607318487*^9}}]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"m", "=", "0.000103642695727`12"}]], "Input",
+ CellChangeTimes->{{3.7522526162847767`*^9, 3.7522526620594597`*^9}}],
+
+Cell[BoxData["0.000103642695727`12."], "Output",
+ CellChangeTimes->{{3.75225264974713*^9, 3.752252663180113*^9}}]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"amu", " ", "=", " ", "1.66053904020`12*^-27"}]], "Input"],
+
+Cell[BoxData["1.6605390402000000000000000000001`12.*^-27"], "Output",
+ CellChangeTimes->{3.752252673624091*^9}]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"N", "[", 
+  RowBox[{
+   FractionBox[
+    RowBox[{"kb", " ", "*", " ", 
+     SuperscriptBox["10", 
+      RowBox[{"-", "4"}]], "*", "m"}], "amu"], ",", "20"}], "]"}]], "Input",
+ CellChangeTimes->{{3.752252677767193*^9, 3.752252742302891*^9}}],
+
+Cell[BoxData["0.00008617330336723562570775383568123642`8.999132278468773"], \
+"Output",
+ CellChangeTimes->{{3.752252726371904*^9, 3.7522527425670547`*^9}}]
+}, Open  ]]
+}, Open  ]]
+},
+WindowSize->{808, 796},
+WindowMargins->{{Automatic, 149}, {Automatic, 0}},
+FrontEndVersion->"10.4 for Mac OS X x86 (32-bit, 64-bit Kernel) (April 11, \
+2016)",
+StyleDefinitions->"Default.nb"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[558, 20, 154, 4, 49, "Text"],
+Cell[CellGroupData[{
+Cell[737, 28, 101, 1, 64, "Section"],
+Cell[841, 31, 119, 1, 30, "Text"],
+Cell[CellGroupData[{
+Cell[985, 36, 285, 4, 28, "Input"],
+Cell[1273, 42, 210, 3, 32, "Output"]
+}, Open  ]],
+Cell[1498, 48, 127, 1, 30, "Text"],
+Cell[CellGroupData[{
+Cell[1650, 53, 149, 2, 28, "Input"],
+Cell[1802, 57, 111, 1, 32, "Output"]
+}, Open  ]],
+Cell[1928, 61, 120, 1, 30, "Text"],
+Cell[CellGroupData[{
+Cell[2073, 66, 325, 9, 35, "Input"],
+Cell[2401, 77, 181, 3, 28, "Output"]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[2631, 86, 115, 1, 64, "Section"],
+Cell[CellGroupData[{
+Cell[2771, 91, 132, 2, 28, "Input"],
+Cell[2906, 95, 111, 1, 32, "Output"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[3054, 101, 138, 2, 28, "Input"],
+Cell[3195, 105, 113, 1, 28, "Output"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[3345, 111, 81, 1, 28, "Input"],
+Cell[3429, 114, 111, 1, 32, "Output"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[3577, 120, 264, 7, 51, "Input"],
+Cell[3844, 129, 155, 2, 28, "Output"]
+}, Open  ]]
+}, Open  ]]
+}
+]
+*)
+
+(* End of internal cache information *)
+
