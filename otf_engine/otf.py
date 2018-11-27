@@ -52,23 +52,24 @@ class OTF(object):
     def run(self):
         self.start_time = time.time()
 
-        if self.std_tolerance != 0:
-            self.run_and_train()
-
         while self.curr_step < self.Nsteps:
+            # run DFT and train initial model if first step and DFT is on
+            if self.curr_step == 0 and self.std_tolerance != 0:
+                self.run_and_train()
+                self.write_md_config()
+                self.update_positions()
 
-            if self.par is True:
-                self.predict_on_structure_par()
+            # otherwise, try predicting with GP model
             else:
                 self.predict_on_structure()
 
-            std_in_bound, target_atom = self.is_std_in_bound()
-            if not std_in_bound:
-                self.write_md_config()
-                self.run_and_train(target_atom)
+                std_in_bound, target_atom = self.is_std_in_bound()
+                if not std_in_bound:
+                    self.write_md_config()
+                    self.run_and_train(target_atom)
 
-            self.write_md_config()
-            self.update_positions()
+                self.write_md_config()
+                self.update_positions()
 
         self.conclude_run()
 
@@ -96,16 +97,24 @@ class OTF(object):
     def run_and_train(self, target_atom: int = None):
         self.write_to_output('=' * 20 + '\n')
 
-        if target_atom is None:
+        if target_atom is None and self.parsimony is False:
             self.write_to_output('Calling Quantum Espresso...')
+        elif target_atom is None and self.parsimony is True:
+            train_atoms = [int(n) for n in
+                           np.round(np.linspace(0, self.structure.nat-1, 2))]
+            self.write_to_output('Calling DFT with training atoms {}...'
+                                 .format(train_atoms))
         else:
             self.write_to_output('Calling DFT due to atom {} at position {} '
                                  'with uncertainties {}...'
                                  .format(target_atom,
                                          self.structure.positions[target_atom],
                                          self.structure.stds[target_atom]))
+            train_atoms = [target_atom]
 
-        train_atoms = list(range(self.structure.nat))
+        if self.parsimony is False:
+            train_atoms = list(range(self.structure.nat))
+
         forces = run_espresso(self.qe_input, self.structure,
                               self.pw_loc)
         self.structure.forces = forces
@@ -113,7 +122,6 @@ class OTF(object):
         self.structure.dft_forces = True
 
         self.write_to_output('Done.\n')
-        self.write_last_dft_run()
 
         self.write_to_output('Updating database hyperparameters...\n')
         self.gp.update_db(self.structure, forces,
@@ -194,10 +202,10 @@ class OTF(object):
                 string += str("%.8f" % self.structure.forces[i][j]) + ' '
             string += '\t'
             for j in range(3):
-                string += str('%.6e' % self.structure.stds[i][j]) + ' '
+                string += str("%.6e" % self.structure.stds[i][j]) + ' '
             string += '\t'
             for j in range(3):
-                string += str('%.6e' % self.velocities[i][j]) + ' '
+                string += str("%.6e" % self.velocities[i][j]) + ' '
                 KE += 0.5 * \
                     self.structure.mass_dict[self.structure.species[i]] * \
                     self.velocities[i][j] * self.velocities[i][j]
@@ -210,23 +218,6 @@ class OTF(object):
             (time.time() - self.start_time)
 
         self.write_to_output(string)
-
-    def write_last_dft_run(self):
-        qe_strings = 'El \t\t\t  Position (A) \t\t\t\t\t DFT Force (ev/A) \n'
-
-        for n in range(self.structure.nat):
-            qe_strings += self.structure.species[n] + ': '
-            for i in range(3):
-                qe_strings += '%.8f  ' % self.structure.positions[n][i]
-            qe_strings += '\t '
-            for i in range(3):
-                qe_strings += '%.8f  ' % self.structure.forces[n][i]
-            qe_strings += '\n'
-
-        qe_strings += 'wall time from start: %.2f s \n' % \
-            (time.time() - self.start_time)
-        self.write_to_output(qe_strings)
-        self.write_to_output('=' * 20 + '\n')
 
     def write_hyps(self):
         self.write_to_output('New GP Hyperparameters: \n')
