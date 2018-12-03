@@ -5,7 +5,7 @@ Steven Torrisi, Jon Vandermause
 """
 
 from numpy import zeros, ndarray, dot, isclose, mod, ones, equal, matmul, \
-    copy, arccos, array
+    copy, arccos, array, arange
 from numpy import abs as npabs
 from numpy.linalg import inv
 from numpy.random import uniform, normal
@@ -76,7 +76,7 @@ class Structure(object):
         for prev_pos in self.prev_positions:
             prev_pos += vector
 
-    def get_periodic_images(self, vec, super_check: int = 2):
+    def get_periodic_images(self, vec, super_check: int = 1):
         """
         Given vec, find the periodic images of it out to super_check
         neighbors
@@ -85,26 +85,14 @@ class Structure(object):
         :param super_check:
         :return:
         """
-        coeff = matmul(self.inv_lattice, vec)
 
-        # get bravais coefficients for atoms within supercell
-        coeffs = [[], [], []]
-        for n in range(3):
-            for m in range(super_check):
-                if m == 0:
-                    coeffs[n].append(coeff[n])
-                else:
-                    coeffs[n].append(coeff[n] - m)
-                    coeffs[n].append(coeff[n] + m)
-
-        # get vectors within cutoff
         images = []
-        for m in range(len(coeffs[0])):
-            for n in range(len(coeffs[1])):
-                for p in range(len(coeffs[2])):
-                    curr_image = coeffs[0][m] * self.vec1 + \
-                                 coeffs[1][n] * self.vec2 + \
-                                 coeffs[2][p] * self.vec3
+        sweep = arange(-super_check, super_check+1, 1)
+        for m in sweep:
+            for n in sweep:
+                for p in sweep:
+                    curr_image = vec + self.vec1 * m + self.vec2 * n +\
+                        self.vec3 * p
                     images.append(curr_image)
 
         return images

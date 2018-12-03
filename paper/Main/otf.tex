@@ -61,7 +61,7 @@ aps,
 Machine Learning}
 
 \author{Jonathan Vandermause,$^{1,2}$ Steven B. Torrisi,$^{2}$
-    Simon Batzner,$^{3}$ Alexie Kolpak,$^{4}$, and Boris Kozinsky$^{1}$}
+    Simon Batzner,$^{3}$ Alexie Kolpak,$^{4}$ and Boris Kozinsky$^{1}$}
 \affiliation{$^{1}$John A. Paulson School of Engineering and Applied
 Sciences, Harvard University, Cambridge, Massachusetts 02138, USA \\
 $^{2}$Department of Physics, Harvard University, Cambridge, Massachusetts
@@ -103,42 +103,46 @@ Key literature:
 
 \end{enumerate}
 
-\section{Covariant kernels}
-
-This section will discuss our approach to modelling multi-species systems.
-\begin{enumerate}
-\item Review our two- and three-body single-component kernels, which are similar to the ones used in \cite{glielmo2018efficient, deringer2017machine}. Our three-body kernel is slightly different from both: \cite{glielmo2018efficient} does not distinguish between cross-bonds and central-bonds, and \cite{deringer2017machine} combines the central-bond lengths in a way that doesn't easily generalize to multi-component systems.
-
-We should also highlight our approach to selecting the GP hyperparameters, which hasn't been discussed at length in the GAP literature. Our approach maximizes the marginal likelihood, and is therefore data-driven rather than empirical. Optimizing the hyperparameters in this way can reveal interesting physics. For example, in the two-plus-three body kernel,
-\begin{equation}
-    k(\rho_1, \rho_2) = \delta_2 k_2 (\rho_1, \rho_2) + \delta_3 k_3(\rho_1, \rho_2),
-\end{equation}
-the size of the hyperparameters $\delta_2$ and $\delta_3$ indicates the relative importance of two- and three-body interactions in the system.
-
-There is one ``special" hyperparameter, the cutoff radius, which can't be easily optimized using gradient descent. We should justify our cutoff choice using the ``freeze-and-perturb" method of \cite{deringer2017machine}. This will also give a lower bound on the error of any local ML model, which is a useful benchmark. It might be interesting to compare this lower bound with the noise variance of the model, which is an internal measure of how well the model is able to capture the data.
-
-It would be nice to benchmark the performance of the two-body, three-body, and two-plus-three body single-component kernels by showing the model performance as a function of training set size for a representative system (e.g. solid-state C at 1000 K). Since the focus of this section is on characterizing and benchmarking the kernel, we can train on a constant-T AIMD trajectory.
-
-\item Discuss our generalization to multi-component systems. There are three plausible ways of going about this: comparing every bond to every other bond (no distinction between different species, which might make sense for similar atoms); comparing bonds of the same type only (which wastes information by neglecting similarities between different bond types); and weighting each bond pair with a hyperparameter. The third method, which is equivalent to an ICM model, provides a general way to capture covariance between different outputs that should be more accurate than the first approach and more efficient than the second. 
-
-We can plot model performance versus training set size on a SiC system for each of the three methods mentioned above and for each of the three kernels (two-body, three-body, and two-plus-three body). The two-plus-three body kernel will have a lot of hyperparameters (on the order of 100), but it should be feasible with our gradient descent scheme.
-\end{enumerate}
-
 \section{On-the-fly learning}
-We've so far come up with three interesting applications that highlight the utility of our on-the-fly program: large systems outside the reach of AIMD, bond formation and bond breaking in molecules, and diffusion in solids. In all examples that we try, it will be important to use the converged force field to predict a physical property (e.g. phonon dispersion, bond length, activation energy) and compare the prediction against the ``exact'' value computed with DFT.
 
-\begin{enumerate}
-\item Large systems. As a test case, we can consider a simple solid-state example, e.g. a 5000-atom bulk SiC sample, and use the ``punchout" method to train an initial force field. In this approach, an atom is first selected at random, a small cubic cell containing the atom and 20-30 of its neighbors is sent to Quantum Espresso, and the resulting force data is used to build a GP model. The model then loops through the remaining atoms and makes predictions, augmenting the database whenever the uncertainty threshold is reached. Once the model converges, it can be tested by predicting the phonon spectrum of SiC and comparing against DFPT.
+\section{Computational details}
 
-\item Bond formation and bond breaking. The simplest example is on-the-fly modelling of the bond energy of $\text{H}_2$. We might also try more complicated examples: 
-\begin{itemize}
-\item Starting a simulation with separated C and O atoms and allowing bonds to form, comparing the model's predicted bond lengths against bond lengths computed with DFT.
-\item Taking a perturbed benzene molecule and seeing if the model correctly predicts the equilibrium configuration.
-\end{itemize}
+% \section{Covariant kernels}
 
-\item Diffusion in solids. Gold diffusing on a silver slab or self-diffusion in bulk aluminum are worth trying. Following \cite{botu2015adaptive, botu2015learning}, once the model has converged, a good test is to predict the potential energy along the migration trajectory by integrating the force field. This energy activation profile can be compared against the corresponding DFT prediction.
+% This section will discuss our approach to modelling multi-species systems.
+% \begin{enumerate}
+% \item Review our two- and three-body single-component kernels, which are similar to the ones used in \cite{glielmo2018efficient, deringer2017machine}. Our three-body kernel is slightly different from both: \cite{glielmo2018efficient} does not distinguish between cross-bonds and central-bonds, and \cite{deringer2017machine} combines the central-bond lengths in a way that doesn't easily generalize to multi-component systems.
 
-\end{enumerate}
+% We should also highlight our approach to selecting the GP hyperparameters, which hasn't been discussed at length in the GAP literature. Our approach maximizes the marginal likelihood, and is therefore data-driven rather than empirical. Optimizing the hyperparameters in this way can reveal interesting physics. For example, in the two-plus-three body kernel,
+% \begin{equation}
+%     k(\rho_1, \rho_2) = \delta_2 k_2 (\rho_1, \rho_2) + \delta_3 k_3(\rho_1, \rho_2),
+% \end{equation}
+% the size of the hyperparameters $\delta_2$ and $\delta_3$ indicates the relative importance of two- and three-body interactions in the system.
+
+% There is one ``special" hyperparameter, the cutoff radius, which can't be easily optimized using gradient descent. We should justify our cutoff choice using the ``freeze-and-perturb" method of \cite{deringer2017machine}. This will also give a lower bound on the error of any local ML model, which is a useful benchmark. It might be interesting to compare this lower bound with the noise variance of the model, which is an internal measure of how well the model is able to capture the data.
+
+% It would be nice to benchmark the performance of the two-body, three-body, and two-plus-three body single-component kernels by showing the model performance as a function of training set size for a representative system (e.g. solid-state C at 1000 K). Since the focus of this section is on characterizing and benchmarking the kernel, we can train on a constant-T AIMD trajectory.
+
+% \item Discuss our generalization to multi-component systems. There are three plausible ways of going about this: comparing every bond to every other bond (no distinction between different species, which might make sense for similar atoms); comparing bonds of the same type only (which wastes information by neglecting similarities between different bond types); and weighting each bond pair with a hyperparameter. The third method, which is equivalent to an ICM model, provides a general way to capture covariance between different outputs that should be more accurate than the first approach and more efficient than the second. 
+
+% We can plot model performance versus training set size on a SiC system for each of the three methods mentioned above and for each of the three kernels (two-body, three-body, and two-plus-three body). The two-plus-three body kernel will have a lot of hyperparameters (on the order of 100), but it should be feasible with our gradient descent scheme.
+% \end{enumerate}
+
+% \section{On-the-fly learning}
+% We've so far come up with three interesting applications that highlight the utility of our on-the-fly program: large systems outside the reach of AIMD, bond formation and bond breaking in molecules, and diffusion in solids. In all examples that we try, it will be important to use the converged force field to predict a physical property (e.g. phonon dispersion, bond length, activation energy) and compare the prediction against the ``exact'' value computed with DFT.
+
+% \begin{enumerate}
+% \item Large systems. As a test case, we can consider a simple solid-state example, e.g. a 5000-atom bulk SiC sample, and use the ``punchout" method to train an initial force field. In this approach, an atom is first selected at random, a small cubic cell containing the atom and 20-30 of its neighbors is sent to Quantum Espresso, and the resulting force data is used to build a GP model. The model then loops through the remaining atoms and makes predictions, augmenting the database whenever the uncertainty threshold is reached. Once the model converges, it can be tested by predicting the phonon spectrum of SiC and comparing against DFPT.
+
+% \item Bond formation and bond breaking. The simplest example is on-the-fly modelling of the bond energy of $\text{H}_2$. We might also try more complicated examples: 
+% \begin{itemize}
+% \item Starting a simulation with separated C and O atoms and allowing bonds to form, comparing the model's predicted bond lengths against bond lengths computed with DFT.
+% \item Taking a perturbed benzene molecule and seeing if the model correctly predicts the equilibrium configuration.
+% \end{itemize}
+
+% \item Diffusion in solids. Gold diffusing on a silver slab or self-diffusion in bulk aluminum are worth trying. Following \cite{botu2015adaptive, botu2015learning}, once the model has converged, a good test is to predict the potential energy along the migration trajectory by integrating the force field. This energy activation profile can be compared against the corresponding DFT prediction.
+
+% \end{enumerate}
 
 
 \bibliography{otf.bib}

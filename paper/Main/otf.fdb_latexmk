@@ -1,14 +1,14 @@
 # Fdb version 3
-["bibtex otf"] 1536856782 "otf.aux" "otf.bbl" "otf" 1541011030
+["bibtex otf"] 1543609598 "otf.aux" "otf.bbl" "otf" 1543609599
   "/usr/local/texlive/2017/texmf-dist/bibtex/bst/revtex/apsrev4-1.bst" 1480098436 71518 fec93f06df0c073f83d2330456bd19c2 ""
-  "otf.aux" 1541011029 2439 2ba927909ce399876b5568b88c1fceca ""
+  "otf.aux" 1543609598 2252 8f66a861ba9a59f60b4cb32fd193da76 ""
   "otf.bib" 1536861927 3852 be09c73e4017c9555c56bd72c496e67b ""
-  "otfNotes.bib" 1541011029 103 48ad29797468f16e2853d8797278d7af ""
+  "otfNotes.bib" 1543609598 103 48ad29797468f16e2853d8797278d7af ""
   (generated)
-  "otf.bbl"
   "otf.blg"
-["pdflatex"] 1541011029 "/Users/jonpvandermause/Research/GP/otf/paper/Main/otf.tex" "otf.pdf" "otf" 1541011030
-  "/Users/jonpvandermause/Research/GP/otf/paper/Main/otf.tex" 1541011029 8879 6cfa62b0f74f1ad3565d550986ec6f2e ""
+  "otf.bbl"
+["pdflatex"] 1543609598 "/Users/jonpvandermause/Research/GP/otf/paper/Main/otf.tex" "otf.pdf" "otf" 1543609599
+  "/Users/jonpvandermause/Research/GP/otf/paper/Main/otf.tex" 1543609597 8992 c7f82b06fcef3629935bd508569721a9 ""
   "/usr/local/texlive/2017/texmf-dist/fonts/map/fontname/texfonts.map" 1480098670 3287 e6b82fe08f5336d4d5ebc73fb1152e87 ""
   "/usr/local/texlive/2017/texmf-dist/fonts/tfm/public/amsfonts/cmextra/cmbsy5.tfm" 1480098698 1120 1e8878807317373affa7f7bba4cf2f6a ""
   "/usr/local/texlive/2017/texmf-dist/fonts/tfm/public/amsfonts/cmextra/cmbsy6.tfm" 1480098698 1124 14ccf5552bc7f77ca02a8a402bea8bfb ""
@@ -46,13 +46,11 @@
   "/usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb" 1480098733 32080 340ef9bf63678554ee606688e7b5339d ""
   "/usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx9.pfb" 1480098733 32298 c6d25bb16d1eac01ebdc6d7084126a1e ""
   "/usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmbxti10.pfb" 1480098733 36554 b67dc2cfa451409e100b3fcf5f506509 ""
-  "/usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb" 1480098733 36299 5f9df58c2139e7edcf37c8fca4bd384d ""
   "/usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi7.pfb" 1480098733 36281 c355509802a035cadc5f15869451dcee ""
   "/usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb" 1480098733 35752 024fb6c41858982481f6968b5fc26508 ""
   "/usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmr6.pfb" 1480098733 32734 69e00a6b65cedb993666e42eedb3d48f ""
   "/usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmr7.pfb" 1480098733 32762 224316ccc9ad3ca0423a14971cfa7fc1 ""
   "/usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmr9.pfb" 1480098733 33993 9b89b85fd2d9df0482bd47194d1d3bf3 ""
-  "/usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb" 1480098733 32569 5e5ddc8df908dea60932f3c484a54c0d ""
   "/usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy9.pfb" 1480098733 32442 c975af247b6702f7ca0c299af3616b80 ""
   "/usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmti9.pfb" 1480098733 36310 f5ddc6715cc60deb16d9db5ded6a9391 ""
   "/usr/local/texlive/2017/texmf-dist/tex/context/base/mkii/supp-pdf.mkii" 1480098806 71627 94eb9990bed73c364d7f53f960cc8c5b ""
@@ -98,11 +96,11 @@
   "/usr/local/texlive/2017/texmf-var/fonts/map/pdftex/updmap/pdftex.map" 1495593472 2350277 a699055bee05bf8a40b0504752487295 ""
   "/usr/local/texlive/2017/texmf-var/web2c/pdftex/pdflatex.fmt" 1495593487 4129592 0e6cfee100d68e6d96b92c0258f2ff73 ""
   "/usr/local/texlive/2017/texmf.cnf" 1495593465 577 2b71d4d888f9e5560b2e99985915a9fa ""
-  "otf.aux" 1541011029 2439 2ba927909ce399876b5568b88c1fceca ""
-  "otf.bbl" 1536856782 9373 852704973f3c7f2c0212c9dcf452b523 "bibtex otf"
-  "otf.tex" 1541011029 8879 6cfa62b0f74f1ad3565d550986ec6f2e ""
+  "otf.aux" 1543609598 2252 8f66a861ba9a59f60b4cb32fd193da76 ""
+  "otf.bbl" 1543609598 9373 852704973f3c7f2c0212c9dcf452b523 "bibtex otf"
+  "otf.tex" 1543609597 8992 c7f82b06fcef3629935bd508569721a9 ""
   (generated)
-  "otfNotes.bib"
   "otf.log"
   "otf.pdf"
   "otf.aux"
+  "otfNotes.bib"

@@ -88,11 +88,11 @@ def rand_struct():
 
 def test_periodic_images_returns(rand_struct):
     assert len(rand_struct.get_periodic_images(np.zeros(3),
-                                               super_check=1)) == 1
+                                               super_check=1)) == 3**3
     assert len(rand_struct.get_periodic_images(np.zeros(3),
-                                               super_check=2)) == 27
+                                               super_check=2)) == 5**3
     assert len(rand_struct.get_periodic_images(np.zeros(3),
-                                               super_check=3)) == 125
+                                               super_check=3)) == 7**3
 
 
 def test_periodic_images(rand_struct):

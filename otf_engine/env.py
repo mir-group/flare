@@ -71,7 +71,7 @@ class ChemicalEnvironment:
                 return triplet_index
 
     @staticmethod
-    def get_local_atom_images(structure, vec, super_check=2):
+    def get_local_atom_images(structure, vec, super_check=1):
         """Get periodic images of an atom within the cutoff radius.
 
         :param structure: structure defined lattice vectors
@@ -99,7 +99,7 @@ class ChemicalEnvironment:
     # return information about atoms inside cutoff region
     @staticmethod
     def get_atoms_within_cutoff(structure: Structure, atom: int,
-                                super_check: int = 2):
+                                super_check: int = 1):
 
         pos_atom = structure.positions[atom]  # position of central atom
         central_type = structure.coded_species[atom]  # type of central atom
