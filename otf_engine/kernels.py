@@ -17,6 +17,17 @@ import time
 # -----------------------------------------------------------------------------
 
 
+def many_body_ncov(env1, env2, bodies, d1, d2, hyps, cutoffs=None):
+    return many_body_ncov_jit(env1.bond_positions, env2.bond_positions,
+                              d1, d2, hyps)
+
+
+def many_body_ncov_grad(env1, env2, bodies, d1, d2, hyps, cutoffs=None):
+    return many_body_ncov_grad_jit(env1.bond_positions,
+                                   env2.bond_positions,
+                                   d1, d2, hyps)
+
+
 def many_body_sc_grad(env1, env2, bodies, d1, d2, hyps, cutoffs=None):
     return many_body_sc_grad_jit(env1.bond_array, env1.cross_bond_dists,
                                  env2.bond_array, env2.cross_bond_dists,
@@ -237,6 +248,44 @@ def two_body(env1, env2, d1, d2, sig, ls):
 # -----------------------------------------------------------------------------
 #                               kernel gradients
 # -----------------------------------------------------------------------------
+
+
+@njit
+def many_body_ncov_grad_jit(bond_positions_1, bond_positions_2,
+                            d1, d2, hyps):
+    sig = hyps[0]
+    ls = hyps[1]
+    ls_fac = (1/(4*ls**4))
+    ls_fac_2 = (1/(8*ls**7))
+    sig_sq = sig*sig
+    kern = 0
+    sig_derv = 0
+    ls_derv = 0
+    for m in range(bond_positions_1.shape[0]):
+        pos1 = bond_positions_1[m]
+        for n in range(bond_positions_2.shape[0]):
+            pos2 = bond_positions_2[n]
+            pos_diff = pos1 - pos2
+            dist_sq = pos_diff[0]*pos_diff[0] + pos_diff[1]*pos_diff[1] + \
+                pos_diff[2]*pos_diff[2]
+            exp_term = exp(-dist_sq/(4*ls*ls))
+            coord_prod = (pos1[d1-1]-pos2[d1-1])*(pos1[d2-1]-pos2[d2-1])
+
+            parenth_term = -coord_prod
+            ls_term = coord_prod * (-8*ls**2 + dist_sq)
+
+            if d1 == d2:
+                parenth_term += 2*ls**2
+                ls_term += 8*ls**4 - 2*ls**2*dist_sq
+
+            kern += sig_sq*ls_fac*exp_term*parenth_term
+            sig_derv += 2*sig*ls_fac*exp_term*parenth_term
+            ls_derv += -ls_fac_2*sig_sq*exp_term*ls_term
+
+    kern_grad = np.array([sig_derv, ls_derv])
+
+    return kern, kern_grad
+
 
 # many body single component kernel
 @njit
@@ -467,6 +516,29 @@ def two_body_grad_from_env(bond_array_1, bond_types_1, bond_array_2,
 # -----------------------------------------------------------------------------
 #           kernels acting on numpy arrays (can be jitted)
 # -----------------------------------------------------------------------------
+
+
+# many body non-covariant kernel
+@njit
+def many_body_ncov_jit(bond_positions_1, bond_positions_2,
+                       d1, d2, hyps):
+    sig = hyps[0]
+    ls = hyps[1]
+    ls_fac = (1/(4*ls*ls*ls*ls))
+    kern = 0
+    for m in range(bond_positions_1.shape[0]):
+        pos1 = bond_positions_1[m]
+        for n in range(bond_positions_2.shape[0]):
+            pos2 = bond_positions_2[n]
+            pos_diff = pos1 - pos2
+            dist_sq = pos_diff[0]*pos_diff[0] + pos_diff[1]*pos_diff[1] + \
+                pos_diff[2]*pos_diff[2]
+            exp_term = exp(-dist_sq/(4*ls*ls))
+            parenth_term = -(pos1[d1-1]-pos2[d1-1])*(pos1[d2-1]-pos2[d2-1])
+            if d1 == d2:
+                parenth_term += 2 * ls * ls
+            kern += ls_fac*exp_term*parenth_term
+    return sig*sig*kern
 
 
 # many body single component kernel
@@ -868,18 +940,6 @@ if __name__ == '__main__':
     test_structure_1 = struc.Structure(cell, species_1, positions_1, cutoff)
     env1 = env.ChemicalEnvironment(test_structure_1, atom_1)
 
-    # make perturbed environment
-    delta = 1e-4
-    cell = np.eye(3)
-    cutoff = np.linalg.norm(np.array([0.5, 0.5, 0.5])) + 0.001
-
-    positions_1 = [np.array([delta, 0, 0]), np.array([0.1, 0.2, 0.3])]
-    species_1 = ['A', 'A']
-    atom_1 = 0
-    test_structure_1 = struc.Structure(cell, species_1, positions_1, cutoff)
-    delt_env = env.ChemicalEnvironment(test_structure_1, atom_1)
-
-    # make env2
     cell = np.eye(3)
     cutoff = np.linalg.norm(np.array([0.5, 0.5, 0.5])) + 0.001
 
@@ -889,35 +949,30 @@ if __name__ == '__main__':
     test_structure_2 = struc.Structure(cell, species_2, positions_2, cutoff)
     env2 = env.ChemicalEnvironment(test_structure_2, atom_2)
 
-    # make delta_env2
-    cell = np.eye(3)
-    cutoff = np.linalg.norm(np.array([0.5, 0.5, 0.5])) + 0.001
+    d1 = 3
+    d2 = 3
+    sig = 0.5
+    ls = 0.2
+    hyps = np.array([sig, ls])
 
-    positions_2 = [np.array([delta, 0, 0]), np.array([0.25, 0.3, 0.4])]
-    species_2 = ['A', 'A']
-    atom_2 = 0
-    test_structure_2 = struc.Structure(cell, species_2, positions_2, cutoff)
-    delt_env2 = env.ChemicalEnvironment(test_structure_2, atom_2)
+    _, kern_grad = many_body_ncov_grad(env1, env2, d1, d2, hyps)
+    print(kern_grad)
 
-    bodies = 2
-    d1 = 1
-    d2 = 1
-    hyps = np.array([1, 1, 1])
-    en_kern_1 = energy_sc(env1, env1, bodies, hyps)
-    en_kern_2 = energy_sc(delt_env, delt_env, bodies, hyps)
+    delta = 1e-8
+    tol = 1e-5
+    new_sig = sig + delta
+    new_ls = ls + delta
 
-    combs = get_comb_array(env1.bond_array.shape[0], bodies-1)
-    perms = get_perm_array(env1.bond_array.shape[0], bodies-1)
+    sig_derv_brute = (many_body_ncov(env1, env2, d1, d2,
+                                     np.array([new_sig, ls])) -
+                      many_body_ncov(env1, env2, d1, d2,
+                                     hyps)) / delta
 
-    assert(n_body_sc_norm(env1, env1, bodies, hyps) == 1)
-    assert(n_body_sc_norm(env2, env2, bodies, hyps) == 1)
+    print(sig_derv_brute)
 
-    derv_ex = n_body_sc_norm_derv(env1, env2, bodies, 1, 1, hyps)
+    l_derv_brute = (many_body_ncov(env1, env2, d1, d2,
+                                   np.array([sig, new_ls])) -
+                    many_body_ncov(env1, env2, d1, d2,
+                                   hyps)) / delta
 
-    derv2 = (n_body_sc_norm(delt_env, delt_env2, bodies, hyps) -
-             n_body_sc_norm(delt_env, env2, bodies, hyps))
-    derv1 = (n_body_sc_norm(env1, delt_env2, bodies, hyps) -
-             n_body_sc_norm(env1, env2, bodies, hyps))
-    derv_est = (derv2 - derv1)/delta**2
-
-    assert(np.isclose(derv_est, derv_ex, 1e-2))
+    print(l_derv_brute)

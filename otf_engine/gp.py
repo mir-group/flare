@@ -21,7 +21,8 @@ from copy import deepcopy
 from env import ChemicalEnvironment
 from kernels import n_body_sc, n_body_sc_grad, combo_kernel_sc,\
     combo_kernel_sc_grad, energy_force_sc, energy_sc, n_body_mc,\
-    n_body_mc_grad, n_body_sc_norm_derv, many_body_sc, many_body_sc_grad
+    n_body_mc_grad, n_body_sc_norm_derv, many_body_sc, many_body_sc_grad,\
+    many_body_ncov, many_body_ncov_grad
 from struc import Structure
 
 
@@ -66,6 +67,14 @@ class GaussianProcess:
             self.kernel_grad = many_body_sc_grad
             # self.energy_force_kernel = energy_force_sc
             # self.energy_kernel = energy_sc
+            self.hyps = np.array([1, 1, 1])
+            self.hyp_labels = ['Signal Std', 'Length Scale', 'Noise Std']
+            self.cutoffs = None
+
+        elif kernel == 'many_body_ncov':
+            self.kernel_name = 'Many Body Non-Covariant'
+            self.kernel = many_body_ncov
+            self.kernel_grad = many_body_ncov_grad
             self.hyps = np.array([1, 1, 1])
             self.hyp_labels = ['Signal Std', 'Length Scale', 'Noise Std']
             self.cutoffs = None

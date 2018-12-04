@@ -232,6 +232,36 @@ def test_n_body_grad(env1, env2):
     assert(np.isclose(kern_grad[1], l_derv_brute, tol))
 
 
+def test_ncov_grad(env1, env2):
+    d1 = 3
+    d2 = 2
+    sig = 0.5
+    ls = 0.2
+    hyps = np.array([sig, ls])
+    bodies = 0
+
+    _, kern_grad = kernels.many_body_ncov_grad(env1, env2,
+                                               bodies, d1, d2, hyps)
+
+    delta = 1e-8
+    tol = 1e-5
+    new_sig = sig + delta
+    new_ls = ls + delta
+
+    sig_derv_brute = (kernels.many_body_ncov(env1, env2, bodies, d1, d2,
+                      np.array([new_sig, ls])) -
+                      kernels.many_body_ncov(env1, env2, bodies, d1, d2,
+                                             hyps)) / delta
+
+    l_derv_brute = (kernels.many_body_ncov(env1, env2, bodies, d1, d2,
+                                           np.array([sig, new_ls])) -
+                    kernels.many_body_ncov(env1, env2, bodies, d1, d2,
+                                           hyps)) / delta
+
+    assert(np.isclose(kern_grad[0], sig_derv_brute, tol))
+    assert(np.isclose(kern_grad[1], l_derv_brute, tol))
+
+
 def test_likelihood_gradient(env1, env2, test_structure_1, test_structure_2):
     sig = 0.5
     ls = 0.2
