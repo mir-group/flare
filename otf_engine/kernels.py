@@ -17,6 +17,27 @@ import time
 # -----------------------------------------------------------------------------
 
 
+def two_body_mc_grad(env1, env2, bodies, d1, d2, hyps, cutoffs=None):
+    ls = hyps[0]
+    ICM_vec = hyps[1: len(hyps)]
+    ICM_array = get_ICM_array_from_vector_diag(ICM_vec, env1.structure.nos)
+
+    return two_body_mc_grad_jit(env1.bond_array, env1.etyps,
+                                env2.bond_array, env2.etyps,
+                                d1, d2, ICM_array, ls)
+
+
+# get n body multi component kernel between two environments
+def two_body_mc(env1, env2, bodies, d1, d2, hyps, cutoffs=None):
+    ls = hyps[0]
+    ICM_vec = hyps[1: len(hyps)]
+    ICM_array = get_ICM_array_from_vector_diag(ICM_vec, env1.structure.nos)
+
+    return two_body_mc_jit(env1.bond_array, env1.etyps,
+                           env2.bond_array, env2.etyps,
+                           d1, d2, ICM_array, ls)
+
+
 def many_body_ncov(env1, env2, bodies, d1, d2, hyps, cutoffs=None):
     return many_body_ncov_jit(env1.bond_positions, env2.bond_positions,
                               d1, d2, hyps)
@@ -518,6 +539,87 @@ def two_body_grad_from_env(bond_array_1, bond_types_1, bond_array_2,
 # -----------------------------------------------------------------------------
 
 
+# multi component n body kernel
+@njit
+def two_body_mc_grad_jit(bond_array_1, environment_species_1,
+                         bond_array_2, environment_species_2,
+                         d1, d2, ICM_array, ls):
+    kern = 0
+    ls_derv = 0
+    nos = ICM_array.shape[0]
+    no_ICM_param = int(nos*(nos+1)/2)
+    ICM_derv = np.zeros(no_ICM_param)
+    ICM_derv_array = np.zeros((nos, nos))
+    kern_grad = np.zeros(no_ICM_param+1)
+
+    for m in range(bond_array_1.shape[0]):
+        r1 = bond_array_1[m, 0]
+        coord1 = bond_array_1[m, d1]
+        c_typ = environment_species_1[m]
+        for n in range(bond_array_2.shape[0]):
+            r2 = bond_array_2[n, 0]
+            coord2 = bond_array_2[n, d2]
+            p_typ = environment_species_2[n]
+
+            ICM_coeff = ICM_array[c_typ, p_typ]
+            rdiff = r1 - r2
+
+            A_cp = coord1 * coord2
+            B_cp = rdiff * coord1 * rdiff * coord2
+            C_cp = rdiff * rdiff
+
+            kern_val = (ICM_coeff*ICM_coeff/(ls**4))*(A_cp*ls*ls-B_cp) * \
+                exp(-C_cp / (2*ls*ls))
+            kern += kern_val
+
+            ICM_derv_val = 2 * kern_val / ICM_coeff
+            ICM_derv_array[c_typ, p_typ] += ICM_derv_val
+            if c_typ != p_typ:
+                ICM_derv_array[p_typ, c_typ] += ICM_derv_val
+
+            ls_derv += ((ICM_coeff*ICM_coeff)/(ls**7)) * \
+                (-B_cp*C_cp+(4*B_cp+A_cp*C_cp)*ls*ls-2*A_cp*ls**4) * \
+                exp(-C_cp / (2 * ls * ls))
+
+    ICM_count = 0
+    for ICM_ind_1 in range(nos):
+        for ICM_ind_2 in range(ICM_ind_1, nos):
+            ICM_derv[ICM_count] += ICM_derv_array[ICM_ind_1, ICM_ind_2]
+            ICM_count += 1
+
+    kern_grad[0] = ls_derv
+    kern_grad[1:] = ICM_derv
+    return kern, kern_grad
+
+
+# multi component 2-body kernel with diagonal ICM terms
+@njit
+def two_body_mc_jit(bond_array_1, environment_species_1,
+                    bond_array_2, environment_species_2,
+                    d1, d2, ICM_array, ls):
+    kern = 0
+
+    for m in range(bond_array_1.shape[0]):
+        r1 = bond_array_1[m, 0]
+        coord1 = bond_array_1[m, d1]
+        c_typ = environment_species_1[m]
+        for n in range(bond_array_2.shape[0]):
+            r2 = bond_array_2[n, 0]
+            coord2 = bond_array_2[n, d2]
+            p_typ = environment_species_2[n]
+
+            ICM_coeff = ICM_array[c_typ, p_typ]
+            rdiff = r1 - r2
+
+            A_cp = coord1 * coord2
+            B_cp = rdiff * coord1 * rdiff * coord2
+            C_cp = rdiff * rdiff
+
+            kern += (ICM_coeff*ICM_coeff/(ls**4))*(A_cp*ls*ls-B_cp) * \
+                exp(-C_cp / (2*ls*ls))
+    return kern
+
+
 # many body non-covariant kernel
 @njit
 def many_body_ncov_jit(bond_positions_1, bond_positions_2,
@@ -930,12 +1032,31 @@ def get_ICM_array_from_vector(ICM_vector, nos):
                 count += 1
     return ICM_array
 
+
+def get_ICM_array_from_vector_diag(ICM_vector, nos):
+    ICM_array = np.empty([nos, nos])
+
+    count = 0
+    for m in range(nos):
+        for n in range(m, nos):
+            if m == n:
+                ICM_array[m, n] = ICM_vector[count]
+                count += 1
+            else:
+                ICM_array[m, n] = ICM_vector[count]
+                ICM_array[n, m] = ICM_vector[count]
+                count += 1
+    return ICM_array
+
+
 if __name__ == '__main__':
     cell = np.eye(3)
     cutoff = np.linalg.norm(np.array([0.5, 0.5, 0.5])) + 0.001
 
-    positions_1 = [np.array([0, 0, 0]), np.array([0.1, 0.2, 0.3])]
-    species_1 = ['A', 'A']
+    positions_1 = [np.array([0, 0, 0]),
+                   np.array([0.1, 0.2, 0.3]),
+                   np.array([0.3, 0.2, 0.1])]
+    species_1 = ['A', 'B', 'A']
     atom_1 = 0
     test_structure_1 = struc.Structure(cell, species_1, positions_1, cutoff)
     env1 = env.ChemicalEnvironment(test_structure_1, atom_1)
@@ -943,36 +1064,55 @@ if __name__ == '__main__':
     cell = np.eye(3)
     cutoff = np.linalg.norm(np.array([0.5, 0.5, 0.5])) + 0.001
 
-    positions_2 = [np.array([0, 0, 0]), np.array([0.25, 0.3, 0.4])]
-    species_2 = ['A', 'A']
+    positions_2 = [np.array([0, 0, 0]),
+                   np.array([0.25, 0.3, 0.4]),
+                   np.array([0.4, 0.3, 0.25])]
+    species_2 = ['A', 'A', 'B']
     atom_2 = 0
     test_structure_2 = struc.Structure(cell, species_2, positions_2, cutoff)
     env2 = env.ChemicalEnvironment(test_structure_2, atom_2)
 
     d1 = 3
     d2 = 3
-    sig = 0.5
     ls = 0.2
-    hyps = np.array([sig, ls])
+    bodies = None
 
-    _, kern_grad = many_body_ncov_grad(env1, env2, d1, d2, hyps)
-    print(kern_grad)
+    # check that all one ICM matrix agrees with single component kernel
+    hyps_sc = np.array([ls, 1, 1, 1])
+    new_val = two_body_mc(env1, env2, bodies, d1, d2, hyps_sc)
+    old_val = n_body_sc(env1, env2, 2, d1, d2, np.array([1, 0.2]))
+
+    hyps = np.array([ls, 0.2, 0.5, 0.6])
+    kern_val, kern_grad = two_body_mc_grad(env1, env2, bodies, d1, d2, hyps)
 
     delta = 1e-8
     tol = 1e-5
-    new_sig = sig + delta
     new_ls = ls + delta
 
-    sig_derv_brute = (many_body_ncov(env1, env2, d1, d2,
-                                     np.array([new_sig, ls])) -
-                      many_body_ncov(env1, env2, d1, d2,
-                                     hyps)) / delta
+    l_derv_brute = (two_body_mc(env1, env2, bodies, d1, d2,
+                                np.array([new_ls, 0.2, 0.5, 0.6])) -
+                    two_body_mc(env1, env2, bodies, d1, d2,
+                                np.array([ls, 0.2, 0.5, 0.6]))) / delta
 
-    print(sig_derv_brute)
+    assert(np.isclose(kern_grad[0], l_derv_brute, tol))
 
-    l_derv_brute = (many_body_ncov(env1, env2, d1, d2,
-                                   np.array([sig, new_ls])) -
-                    many_body_ncov(env1, env2, d1, d2,
-                                   hyps)) / delta
+    icm1_derv_brute = (two_body_mc(env1, env2, bodies, d1, d2,
+                                   np.array([ls, 0.2+delta, 0.5, 0.6])) -
+                       two_body_mc(env1, env2, bodies, d1, d2,
+                                   np.array([ls, 0.2, 0.5, 0.6]))) / delta
 
-    print(l_derv_brute)
+    assert(np.isclose(kern_grad[1], icm1_derv_brute))
+
+    icm2_derv_brute = (two_body_mc(env1, env2, bodies, d1, d2,
+                                   np.array([ls, 0.2, 0.5+delta, 0.6])) -
+                       two_body_mc(env1, env2, bodies, d1, d2,
+                                   np.array([ls, 0.2, 0.5, 0.6]))) / delta
+
+    assert(np.isclose(kern_grad[2], icm2_derv_brute))
+
+    icm3_derv_brute = (two_body_mc(env1, env2, bodies, d1, d2,
+                                   np.array([ls, 0.2, 0.5, 0.6+delta])) -
+                       two_body_mc(env1, env2, bodies, d1, d2,
+                                   np.array([ls, 0.2, 0.5, 0.6]))) / delta
+
+    assert(np.isclose(kern_grad[3], icm3_derv_brute))

@@ -96,10 +96,6 @@ class GaussianProcess:
             self.kernel_name = 'N-Body Multiple Component Force'
             self.kernel = n_body_mc
             self.kernel_grad = n_body_mc_grad
-
-            # self.energy_force_kernel = energy_force_sc
-            # self.energy_kernel = energy_sc
-
             no_ICM = int(nos*(nos-1)/2)
             self.hyps = np.ones(no_ICM+3)
 

@@ -1,5 +1,5 @@
 # Fdb version 3
-["bibtex otf"] 1543609598 "otf.aux" "otf.bbl" "otf" 1543609599
+["bibtex otf"] 1543609598 "otf.aux" "otf.bbl" "otf" 1543985375
   "/usr/local/texlive/2017/texmf-dist/bibtex/bst/revtex/apsrev4-1.bst" 1480098436 71518 fec93f06df0c073f83d2330456bd19c2 ""
   "otf.aux" 1543609598 2252 8f66a861ba9a59f60b4cb32fd193da76 ""
   "otf.bib" 1536861927 3852 be09c73e4017c9555c56bd72c496e67b ""
@@ -7,8 +7,8 @@
   (generated)
   "otf.blg"
   "otf.bbl"
-["pdflatex"] 1543609598 "/Users/jonpvandermause/Research/GP/otf/paper/Main/otf.tex" "otf.pdf" "otf" 1543609599
-  "/Users/jonpvandermause/Research/GP/otf/paper/Main/otf.tex" 1543609597 8992 c7f82b06fcef3629935bd508569721a9 ""
+["pdflatex"] 1543609598 "/Users/jonpvandermause/Research/GP/otf/paper/Main/otf.tex" "otf.pdf" "otf" 1543985375
+  "/Users/jonpvandermause/Research/GP/otf/paper/Main/otf.tex" 1543985375 8992 c7f82b06fcef3629935bd508569721a9 ""
   "/usr/local/texlive/2017/texmf-dist/fonts/map/fontname/texfonts.map" 1480098670 3287 e6b82fe08f5336d4d5ebc73fb1152e87 ""
   "/usr/local/texlive/2017/texmf-dist/fonts/tfm/public/amsfonts/cmextra/cmbsy5.tfm" 1480098698 1120 1e8878807317373affa7f7bba4cf2f6a ""
   "/usr/local/texlive/2017/texmf-dist/fonts/tfm/public/amsfonts/cmextra/cmbsy6.tfm" 1480098698 1124 14ccf5552bc7f77ca02a8a402bea8bfb ""
@@ -98,9 +98,9 @@
   "/usr/local/texlive/2017/texmf.cnf" 1495593465 577 2b71d4d888f9e5560b2e99985915a9fa ""
   "otf.aux" 1543609598 2252 8f66a861ba9a59f60b4cb32fd193da76 ""
   "otf.bbl" 1543609598 9373 852704973f3c7f2c0212c9dcf452b523 "bibtex otf"
-  "otf.tex" 1543609597 8992 c7f82b06fcef3629935bd508569721a9 ""
+  "otf.tex" 1543985375 8992 c7f82b06fcef3629935bd508569721a9 ""
   (generated)
+  "otf.aux"
   "otf.log"
   "otf.pdf"
-  "otf.aux"
   "otfNotes.bib"
