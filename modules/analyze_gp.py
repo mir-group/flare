@@ -25,7 +25,7 @@ class MDAnalysis:
         forces = self.MD_data[snap+1]['forces']
         return forces
 
-    
+
 # return untrained gp model
 def get_gp_from_snaps(md_trajectory, training_snaps, cutoff, kernel,
                       bodies, algorithm='BFGS', cutoffs=None, nos=None):
@@ -100,8 +100,6 @@ def predict_forces_on_test_set(gp_model, md_trajectory, snaps, cutoff):
     all_forces = np.array(all_forces)
 
     return all_predictions, all_variances, all_forces
-
-
 
 
 if __name__ == '__main__':

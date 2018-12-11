@@ -22,7 +22,7 @@ from env import ChemicalEnvironment
 from kernels import n_body_sc, n_body_sc_grad, combo_kernel_sc,\
     combo_kernel_sc_grad, energy_force_sc, energy_sc, n_body_mc,\
     n_body_mc_grad, n_body_sc_norm_derv, many_body_sc, many_body_sc_grad,\
-    many_body_ncov, many_body_ncov_grad
+    many_body_ncov, many_body_ncov_grad, two_body_mc_grad, two_body_mc
 from struc import Structure
 
 
@@ -104,6 +104,18 @@ class GaussianProcess:
                 ['Noise Std']
             self.hyp_labels = hyp_labels
 
+            self.cutoffs = cutoffs
+
+        elif kernel == 'two_body_mc':
+            self.kernel_name = 'Two Body Multi Component'
+            self.kernel = two_body_mc
+            self.kernel_grad = two_body_mc_grad
+            no_ICM = int(nos*(nos+1)/2)
+            self.hyps = np.ones(no_ICM+2)
+            hyp_labels = ['Signal Std', 'Length Scale'] + \
+                ['ICM_'+str(n) for n in range(no_ICM)] + \
+                ['Noise Std']
+            self.hyp_labels = hyp_labels
             self.cutoffs = cutoffs
         else:
             raise ValueError('not a valid kernel')

@@ -9,6 +9,7 @@ from env import ChemicalEnvironment
 from qe_util import run_espresso, parse_qe_input, \
     qe_input_to_structure, parse_qe_forces
 import multiprocessing as mp
+import mpi4py
 
 
 class OTF(object):
@@ -38,13 +39,25 @@ class OTF(object):
         self.velocities = (self.structure.positions -
                            self.structure.prev_positions) / self.dt
 
+        self.noa = self.structure.positions.shape[0]
         self.curr_step = 0
         self.write_header()
 
-        # set parallelization parameters
+        # assign atoms to processors
         self.par = par
         if par is True:
-            self.pool = mp.Pool(processes=32)
+            self.comm = mpi4py.MPI.COMM_WORLD
+            self.nop = self.comm.Get_size()
+            self.rank = self.comm.Get_rank()
+            if self.rank == 0:
+                atom_assignments = []
+                atom_list = list(range(self.noa))
+                for n in range(self.nop):
+                    atom_assignments.append(atom_list[n::self.nop])
+            else:
+                atom_assignments = None
+            atom_assignments = self.comm.scatter(atom_assignments, root=0)
+            self.atom_assignments = atom_assignments
 
         # set parsimony parameters
         self.parsimony = parsimony
