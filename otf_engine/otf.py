@@ -9,7 +9,7 @@ from env import ChemicalEnvironment
 from qe_util import run_espresso, parse_qe_input, \
     qe_input_to_structure, parse_qe_forces
 import multiprocessing as mp
-import mpi4py
+import concurrent.futures
 
 
 class OTF(object):
@@ -40,24 +40,12 @@ class OTF(object):
                            self.structure.prev_positions) / self.dt
 
         self.noa = self.structure.positions.shape[0]
+        self.atom_list = list(range(self.noa))
         self.curr_step = 0
         self.write_header()
 
         # assign atoms to processors
         self.par = par
-        if par is True:
-            self.comm = mpi4py.MPI.COMM_WORLD
-            self.nop = self.comm.Get_size()
-            self.rank = self.comm.Get_rank()
-            if self.rank == 0:
-                atom_assignments = []
-                atom_list = list(range(self.noa))
-                for n in range(self.nop):
-                    atom_assignments.append(atom_list[n::self.nop])
-            else:
-                atom_assignments = None
-            atom_assignments = self.comm.scatter(atom_assignments, root=0)
-            self.atom_assignments = atom_assignments
 
         # set parsimony parameters
         self.parsimony = parsimony
@@ -74,7 +62,10 @@ class OTF(object):
 
             # otherwise, try predicting with GP model
             else:
-                self.predict_on_structure()
+                if self.par is False:
+                    self.predict_on_structure()
+                else:
+                    self.predict_on_structure_par()
 
                 std_in_bound, target_atom = self.is_std_in_bound()
                 if not std_in_bound:
@@ -86,18 +77,27 @@ class OTF(object):
 
         self.conclude_run()
 
-    def predict_on_structure(self):
-        for n in range(self.structure.nat):
-            chemenv = ChemicalEnvironment(self.structure, n)
-            for i in range(3):
-                force, var = self.gp.predict(chemenv, i + 1)
-                self.structure.forces[n][i] = float(force)
-                self.structure.stds[n][i] = np.sqrt(np.absolute(var))
+    def predict_on_atom(self, atom):
+        chemenv = ChemicalEnvironment(self.structure, atom)
+        comps = []
+        stds = []
+        for i in range(3):
+            force, var = self.gp.predict(chemenv, i+1)
+            comps.append(float(force))
+            stds.append(np.sqrt(np.absolute(var)))
+        return comps, stds
 
+    def predict_on_structure_par(self):
+        n = 0
+        with concurrent.futures.ProcessPoolExecutor() as executor:
+            for res in executor.map(self.predict_on_atom, self.atom_list):
+                for i in range(3):
+                    self.structure.forces[n][i] = res[0][i]
+                    self.structure.stds[n][i] = res[1][i]
+                n += 1
         self.structure.dft_forces = False
 
-    # TODO: parallelize prediction by atom
-    def predict_on_structure_par(self):
+    def predict_on_structure(self):
         for n in range(self.structure.nat):
             chemenv = ChemicalEnvironment(self.structure, n)
             for i in range(3):

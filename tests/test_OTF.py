@@ -152,7 +152,7 @@ def test_otf_1_1():
               bodies=2, kernel='n_body_sc',
               cutoff=4, pw_loc=pw_loc, std_tolerance_factor=-.1)
     otf.run()
-    cleanup_otf_run()
+    # cleanup_otf_run()
 
 
 def test_otf_1_2():
@@ -167,7 +167,7 @@ def test_otf_1_2():
               bodies=2, kernel='n_body_sc',
               cutoff=5, pw_loc=pw_loc, std_tolerance_factor=-.1)
     otf.run()
-    cleanup_otf_run()
+    # cleanup_otf_run()
 
 
 # def test_otf_1_3_punchout():

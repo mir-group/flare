@@ -1,4 +1,5 @@
 import os
+from subprocess import call
 import time
 
 import numpy as np
@@ -9,11 +10,13 @@ from typing import List
 
 def run_espresso(qe_input, structure, pw_loc):
     run_qe_path = qe_input
-    os.system(' '.join(['cp', qe_input, run_qe_path]))
+    # os.system(' '.join(['cp', qe_input, run_qe_path]))
+    call(' '.join(['cp', qe_input, run_qe_path]), shell=True)
     edit_qe_input_positions(run_qe_path, structure)
     qe_command = 'mpirun {0} < {1} > {2}'.format(pw_loc, run_qe_path,
                                                  'pwscf.out')
-    os.system(qe_command)
+    # os.system(qe_command)
+    call(qe_command, shell=True)
 
     return parse_qe_forces('pwscf.out')
 
