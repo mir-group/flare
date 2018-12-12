@@ -44,10 +44,7 @@ class OTF(object):
         self.curr_step = 0
         self.write_header()
 
-        # assign atoms to processors
         self.par = par
-
-        # set parsimony parameters
         self.parsimony = parsimony
 
     def run(self):
@@ -74,6 +71,47 @@ class OTF(object):
 
                 self.write_md_config()
                 self.update_positions()
+
+        self.conclude_run()
+
+    def run_and_profile(self):
+        self.start_time = time.time()
+
+        while self.curr_step < self.Nsteps:
+            # run DFT and train initial model if first step and DFT is on
+            if self.curr_step == 0 and self.std_tolerance != 0:
+                self.run_and_train()
+                self.write_md_config()
+                self.update_positions()
+
+            # otherwise, try predicting with GP model
+            else:
+                time0 = time.time()
+                if self.par is False:
+                    self.predict_on_structure()
+                else:
+                    self.predict_on_structure_par()
+                time1 = time.time()
+                pred_time = time1 - time0
+
+                std_in_bound, target_atom = self.is_std_in_bound()
+                if not std_in_bound:
+                    self.write_md_config()
+                    self.run_and_train(target_atom)
+
+                time2 = time.time()
+                std_time = time2 - time1
+
+                self.write_md_config()
+                time3 = time.time()
+                write_time = time3 - time2
+
+                self.update_positions()
+                time4 = time.time()
+                update_time = time4 - time3
+
+                self.write_time_info(pred_time, std_time, write_time,
+                                     update_time)
 
         self.conclude_run()
 
@@ -231,6 +269,14 @@ class OTF(object):
         string += 'temperature: %.2f K \n' % temperature
         string += 'wall time from start: %.2f s \n' % \
             (time.time() - self.start_time)
+
+        self.write_to_output(string)
+
+    def write_time_info(self, pred_time, std_time, write_time, update_time):
+        string = 'prediction time: %.3e s \n' % pred_time
+        string += 'std time: %.3e s \n' % std_time
+        string += 'write time: %.3e s \n' % write_time
+        string += 'update time: %.3e s \n' % update_time
 
         self.write_to_output(string)
 

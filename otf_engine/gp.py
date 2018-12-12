@@ -209,7 +209,7 @@ class GaussianProcess:
 
             res = minimize(self.get_likelihood_and_gradients, x_0, args,
                            method='L-BFGS-B', jac=True, bounds=custom_bounds,
-                           options={'disp': False, 'gtol': 1e-4, 
+                           options={'disp': False, 'gtol': 1e-4,
                                     'maxiter': 1000})
 
         elif self.algo == 'BFGS':
@@ -239,11 +239,17 @@ class GaussianProcess:
         # get predictive mean
         pred_mean = np.matmul(k_v, self.alpha)
 
-        # get predictive variance
-        v_vec = solve_triangular(self.l_mat, k_v, lower=True)
+        # get predictive variance without cholesky (possibly faster)
         self_kern = self.kernel(x_t, x_t, self.bodies, d, d, self.hyps,
                                 self.cutoffs)
-        pred_var = self_kern - np.matmul(v_vec, v_vec)
+        pred_var = self_kern - \
+            np.matmul(np.matmul(k_v, self.ky_mat_inv), k_v)
+
+        # # get predictive variance (possibly slow)
+        # v_vec = solve_triangular(self.l_mat, k_v, lower=True)
+        # self_kern = self.kernel(x_t, x_t, self.bodies, d, d, self.hyps,
+        #                         self.cutoffs)
+        # pred_var = self_kern - np.matmul(v_vec, v_vec)
 
         return pred_mean, pred_var
 
@@ -513,6 +519,7 @@ class GaussianProcess:
         self.k_mat = k_mat
         self.l_mat = l_mat
         self.alpha = alpha
+        self.ky_mat_inv = ky_mat_inv
 
     def augment_K(self, structure, forces, atoms):
         noa = len(atoms)
