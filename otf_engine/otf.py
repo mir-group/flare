@@ -265,7 +265,7 @@ class OTF(object):
             string += '\n'
 
         kb = 0.0000861733034
-        temperature = 2 * KE / (3 * len(self.structure.positions) * kb)
+        temperature = 2 * KE / (3 * (len(self.structure.positions)-1) * kb)
         string += 'temperature: %.2f K \n' % temperature
         string += 'wall time from start: %.2f s \n' % \
             (time.time() - self.start_time)
