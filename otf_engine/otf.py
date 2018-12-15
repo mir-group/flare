@@ -18,7 +18,8 @@ class OTF(object):
                  std_tolerance_factor: float = 1, opt_algo: str='BFGS',
                  prev_pos_init=None,
                  par=False,
-                 parsimony=False):
+                 parsimony=False,
+                 skip=0):
 
         self.qe_input = qe_input
         self.dt = dt
@@ -46,8 +47,10 @@ class OTF(object):
 
         self.par = par
         self.parsimony = parsimony
+        self.skip = skip
 
     def run(self):
+        counter = 0
         self.start_time = time.time()
 
         while self.curr_step < self.Nsteps:
@@ -68,8 +71,14 @@ class OTF(object):
                 if not std_in_bound:
                     self.write_md_config()
                     self.run_and_train(target_atom)
+                    self.write_md_config()
 
-                self.write_md_config()
+                # write gp forces only when counter equals skip
+                if counter == self.skip and self.structure.dft_forces is False:
+                    self.write_md_config()
+                    counter = -1
+                counter += 1
+
                 self.update_positions()
 
         self.conclude_run()
