@@ -299,7 +299,7 @@ class OTF(object):
                                  .format(i, label, self.gp.hyps[i]))
         time_curr = time.time() - self.start_time
         self.write_to_output('wall time from start: %.2f s \n' % time_curr)
-        self.write_to_output('number of DFT calls: %i' % self.dft_count)
+        self.write_to_output('number of DFT calls: %i \n' % self.dft_count)
 
     def conclude_run(self):
         footer = '▬' * 20 + '\n'
