@@ -48,6 +48,7 @@ class OTF(object):
         self.par = par
         self.parsimony = parsimony
         self.skip = skip
+        self.dft_count = 0
 
     def run(self):
         counter = 0
@@ -69,6 +70,7 @@ class OTF(object):
 
                 std_in_bound, target_atom = self.is_std_in_bound()
                 if not std_in_bound:
+                    self.dft_count += 1
                     self.write_md_config()
                     self.run_and_train(target_atom)
                     self.write_md_config()
@@ -297,6 +299,7 @@ class OTF(object):
                                  .format(i, label, self.gp.hyps[i]))
         time_curr = time.time() - self.start_time
         self.write_to_output('wall time from start: %.2f s \n' % time_curr)
+        self.write_to_output('number of DFT calls: %i' % self.dft_count)
 
     def conclude_run(self):
         footer = '▬' * 20 + '\n'
