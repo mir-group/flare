@@ -56,12 +56,15 @@ def parse_pos_otf(filename):
     n_steps = 0
 
     for index, line in enumerate(lines):
+        if line.startswith("Number of Atoms"):
+            at_line = line.split()
+            noa = int(at_line[3])
 
-        if line.startswith("- Frame "):
+        if line.startswith("- Frame"):
             n_steps += 1
             pos = []
 
-            for frame_line in lines[(index+2):(index+2+n_atoms)]:
+            for frame_line in lines[(index+2):(index+2+noa)]:
                 frame_line = frame_line.split()
                 curr_pos = np.zeros(shape=(3,))
                 curr_pos[0] = str(frame_line[1])
@@ -71,9 +74,6 @@ def parse_pos_otf(filename):
                 pos.append(curr_pos)
 
             traj.append(np.array(pos))
-
-        if n_steps >= n_comp:
-            return traj
 
     return traj
 

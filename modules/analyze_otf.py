@@ -1,11 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-""""
-OTF Parsing and Analysis Suite
-
-Steven Torrisi
-"""
 
 import numpy as np
 from typing import List
