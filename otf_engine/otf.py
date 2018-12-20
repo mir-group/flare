@@ -234,6 +234,9 @@ class OTF(object):
         headerstring += 'Number of Atoms: {}\n'.format(self.structure.nat)
         headerstring += 'System Species: {}\n'.format(set(
             self.structure.species))
+        headerstring += 'Bravais lattice: \n'
+        headerstring += str(self.structure.lattice)
+        headerstring += '\n'
 
         self.write_to_output(headerstring)
 
