@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.18 (TeX Live 2017) (preloaded format=pdflatex 2017.5.23)  30 NOV 2018 15:26
+This is pdfTeX, Version 3.14159265-2.6-1.40.18 (TeX Live 2017) (preloaded format=pdflatex 2017.5.23)  4 JAN 2019 11:28
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -70,9 +70,9 @@ Class revtex4-1 Info: RevTeX society APS selected on input line 31.
 Class revtex4-1 Warning: No journal specified, using default pra.
 
 Class revtex4-1 Info: APS journal PRA selected on input line 7545.
-(/usr/local/texlive/2017/texmf-dist/tex/latex/revtex/aps10pt4-1.rtx
-File: aps10pt4-1 2010/07/25/20:33:00 4.1r (http://publish.aps.org/revtex4/ for documentation)
-Class revtex4-1 Info: RevTeX pointsize 10pt selected on input line 30.
+(/usr/local/texlive/2017/texmf-dist/tex/latex/revtex/aps12pt4-1.rtx
+File: aps12pt4-1 2010/07/25/20:33:00 4.1r (http://publish.aps.org/revtex4/ for documentation)
+Class revtex4-1 Info: RevTeX pointsize 12pt selected on input line 30.
 ) (/usr/local/texlive/2017/texmf-dist/tex/latex/textcase/textcase.sty
 Package: textcase 2004/10/07 v0.07 Text only upper/lower case changing (DPC)
 ) (/usr/local/texlive/2017/texmf-dist/tex/latex/amsfonts/amssymb.sty
@@ -268,40 +268,40 @@ File: epstopdf-sys.cfg 2010/07/13 v1.3 Configuration of (r)epstopdf for TeX Live
 ))
 \openout3 = `otfNotes.bib'.
 
-Missing character: There is no ‚ in font cmr9!
-Missing character: There is no Ä in font cmr9!
-Missing character: There is no ú in font cmr9!
-Missing character: There is no ‚ in font cmr9!
-Missing character: There is no Ä in font cmr9!
-Missing character: There is no ù in font cmr9!
-LaTeX Font Info:    Try loading font information for U+msa on input line 83.
+Missing character: There is no ‚ in font cmr10!
+Missing character: There is no Ä in font cmr10!
+Missing character: There is no ú in font cmr10!
+Missing character: There is no ‚ in font cmr10!
+Missing character: There is no Ä in font cmr10!
+Missing character: There is no ù in font cmr10!
+LaTeX Font Info:    Try loading font information for U+msa on input line 104.
  (/usr/local/texlive/2017/texmf-dist/tex/latex/amsfonts/umsa.fd
 File: umsa.fd 2013/01/14 v3.01 AMS symbols A
 )
-LaTeX Font Info:    Try loading font information for U+msb on input line 83.
+LaTeX Font Info:    Try loading font information for U+msb on input line 104.
  (/usr/local/texlive/2017/texmf-dist/tex/latex/amsfonts/umsb.fd
 File: umsb.fd 2013/01/14 v3.01 AMS symbols B
-) (./otf.bbl
+) [1{/usr/local/texlive/2017/texmf-var/fonts/map/pdftex/updmap/pdftex.map}] (./otf.bbl
 LaTeX Font Info:    Try loading font information for OMS+cmr on input line 147.
  (/usr/local/texlive/2017/texmf-dist/tex/latex/base/omscmr.fd
 File: omscmr.fd 2014/09/29 v2.5h Standard LaTeX font definitions
 )
-LaTeX Font Info:    Font shape `OMS/cmr/m/n' in size <9> not available
+LaTeX Font Info:    Font shape `OMS/cmr/m/n' in size <10.95> not available
 (Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 147.
-) [1{/usr/local/texlive/2017/texmf-var/fonts/map/pdftex/updmap/pdftex.map}] (./otf.aux) ) 
+ [2]) [3] (./otf.aux) ) 
 Here is how much of TeX's memory you used:
- 4573 strings out of 492995
- 60853 string characters out of 6132704
- 143874 words of memory out of 5000000
- 8048 multiletter control sequences out of 15000+600000
- 14353 words of font info for 53 fonts, out of 8000000 for 9000
+ 4568 strings out of 492995
+ 60895 string characters out of 6132704
+ 136809 words of memory out of 5000000
+ 8049 multiletter control sequences out of 15000+600000
+ 15180 words of font info for 55 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 39i,6n,28p,705b,276s stack positions out of 5000i,500n,10000p,200000b,80000s
-</usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx9.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmbxti10.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi7.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmr6.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmr7.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmr9.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy9.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmti9.pfb>
-Output written on otf.pdf (1 page, 123185 bytes).
+ 39i,7n,28p,705b,321s stack positions out of 5000i,500n,10000p,200000b,80000s
+</usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmbxti10.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmr12.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmr8.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmti10.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmti12.pfb>
+Output written on otf.pdf (3 pages, 119038 bytes).
 PDF statistics:
- 48 PDF objects out of 1000 (max. 8388607)
- 34 compressed objects within 1 object stream
+ 50 PDF objects out of 1000 (max. 8388607)
+ 35 compressed objects within 1 object stream
  0 named destinations out of 1000 (max. 500000)
  1 words of extra memory for PDF output out of 10000 (max. 10000000)
 
