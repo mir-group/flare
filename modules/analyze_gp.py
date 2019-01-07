@@ -1,5 +1,7 @@
 import numpy as np
 import sys
+import crystals
+import copy
 sys.path.append('../../otf/otf_engine')
 import env, gp, struc, kernels, qe_parsers
 
@@ -24,6 +26,50 @@ class MDAnalysis:
     def get_forces_from_snap(self, snap):
         forces = self.MD_data[snap+1]['forces']
         return forces
+
+
+# given a gp model, predict vacancy diffusion activation profile
+def vac_diff_fcc(gp_model, gp_cell, fcc_cell, species, cutoff, nop):
+
+    # create 2x2x2 fcc supercell with atom 0 removed
+    alat = fcc_cell[0, 0]
+    fcc_unit = crystals.fcc_positions(alat)
+    fcc_super = crystals.get_supercell_positions(2, fcc_cell, fcc_unit)
+    vac_super = copy.deepcopy(fcc_super)
+    vac_super.pop(0)
+    vac_super = np.array(vac_super)
+
+    # create list of positions for the migrating atom
+    start_pos = vac_super[0]
+    end_pos = np.array([0, 0, 0])
+    diff_vec = end_pos - start_pos
+    test_list = []
+    step = diff_vec / (nop - 1)
+    for n in range(nop):
+        test_list.append(start_pos + n*step)
+
+    # predict force on migrating atom
+    vac_copy = copy.deepcopy(vac_super)
+    store_res = np.zeros((6, nop))
+
+    for count, pos_test in enumerate(test_list):
+        vac_copy[0] = pos_test
+
+        struc_curr = struc.Structure(gp_cell, species, vac_copy, cutoff)
+        env_curr = env.ChemicalEnvironment(struc_curr, 0)
+
+        fc_comp_x, vr_x = gp_model.predict(env_curr, 1)
+        fc_comp_y, vr_y = gp_model.predict(env_curr, 2)
+        fc_comp_z, vr_z = gp_model.predict(env_curr, 3)
+
+        store_res[0, count] = fc_comp_x
+        store_res[1, count] = fc_comp_y
+        store_res[2, count] = fc_comp_z
+        store_res[3, count] = vr_x
+        store_res[4, count] = vr_y
+        store_res[5, count] = vr_z
+
+    return store_res
 
 
 # return untrained gp model
