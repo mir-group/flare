@@ -141,6 +141,7 @@ The cutoff function smooths the model by eliminating sharp discontinuities assoc
 The local energy kernel described by Eq.\ (\ref{loc_kern}) induces a covariant matrix-valued force kernel $\frac{\partial^2 k_{\text{inv}}}{\partial \xi_i \partial \chi_j}$ suitable for the direct prediction of atomic forces, where $\xi_i$ and $\chi_i$ denote the $i^{\text{th}}$ Cartesian coordinate of the central atom of the first and second atomic environments, respectively. In the table below, we summarize all the terms needed to efficiently calculate the force kernel and its derivatives with respect to the model hyperparameters $\ell, \sigma,$ and $d$.
 
 \begin{center}
+    \begin{table}
     \begin{tabular}{ |c|c|c| } 
      \hline
      Energy Kernel & $k_{\text{inv}}(\rho_1, \rho_2; \ell, \sigma, d)$ & $\sigma^2 \sum_{i ,j} k(r_i, r_j) f_{\text{cut}}(r_i) f_{\text{cut}}(r_j)$ \\ 
@@ -182,6 +183,8 @@ The local energy kernel described by Eq.\ (\ref{loc_kern}) induces a covariant m
      $\sigma$ Derivative & $\frac{\partial^3 k_{\text{inv}}}{\partial \sigma \partial \xi_i \partial \chi_j}$ & $2 \sigma \sum_{i ,j} (k_0 + k_1 + k_2 + k_3)$ \\
      \hline
     \end{tabular}
+    \caption{Quantities used to calculate the smoothed two-body force kernel and its derivatives.}
+\end{table}
 \end{center}
 
 \section{On-the-fly learning}

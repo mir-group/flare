@@ -27,8 +27,11 @@ def two_body_smooth_grad(env1, env2, d1, d2, hyps, r_cut):
     ls = hyps[1]
     d = hyps[2]
 
-    return two_body_smooth_grad_jit(env1.bond_array, env2.bond_array,
-                                    d1, d2, sig, ls, r_cut, d)
+    kernel, ls_derv, sig_derv, d_derv = \
+        two_body_smooth_grad_jit(env1.bond_array, env2.bond_array,
+                                 d1, d2, sig, ls, r_cut, d)
+    kernel_grad = np.array([sig_derv, ls_derv, d_derv])
+    return kernel, kernel_grad
 
 
 @njit
@@ -111,6 +114,7 @@ def two_body_smooth_grad_jit(bond_array_1, bond_array_2, d1, d2, sig, ls,
                 kern2*(dterm12*fcut2+fderv1*dterm21) + \
                 kern1*(dterm11*fderv2+fcut1*dterm22) + \
                 kern0*(dterm12*fderv2+fderv1*dterm22)
+
     return kern, ls_derv, sig_derv, d_derv
 
 

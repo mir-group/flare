@@ -1,8 +1,3 @@
-"""Kernel test suite
-
-Jon V
-"""
-
 import pytest
 import numpy as np
 import sys
