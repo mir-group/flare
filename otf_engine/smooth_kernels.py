@@ -34,6 +34,17 @@ def two_body_smooth_grad(env1, env2, d1, d2, hyps, r_cut):
     return kernel, kernel_grad
 
 
+def two_body_smooth_en(env1, env2, hyps, r_cut):
+    sig = hyps[0]
+    ls = hyps[1]
+    d = hyps[2]
+
+    kernel = two_body_smooth_en_jit(env1.bond_array, env2.bond_array, sig, ls,
+                                    r_cut, d)
+
+    return kernel
+
+
 @njit
 def two_body_smooth_grad_jit(bond_array_1, bond_array_2, d1, d2, sig, ls,
                              r_cut, d):
@@ -165,7 +176,6 @@ def two_body_smooth_jit(bond_array_1, bond_array_2, d1, d2, sig, ls,
     return kern
 
 
-# TODO: use energy kernel to numerically check derivative kernel
 @njit
 def two_body_smooth_en_jit(bond_array_1, bond_array_2, sig, ls,
                            r_cut, d):
@@ -250,53 +260,16 @@ if __name__ == '__main__':
     d1 = 1
     d2 = 2
 
-    # check force kernel
-    calc1 = two_body_smooth_en_jit(env1_2.bond_array, env2_2.bond_array,
-                                   sig, ls, cutoff, d)
-    calc2 = two_body_smooth_en_jit(env1_3.bond_array, env2_3.bond_array,
-                                   sig, ls, cutoff, d)
-    calc3 = two_body_smooth_en_jit(env1_2.bond_array, env2_3.bond_array,
-                                   sig, ls, cutoff, d)
-    calc4 = two_body_smooth_en_jit(env1_3.bond_array, env2_2.bond_array,
-                                   sig, ls, cutoff, d)
-
-    print((calc1 + calc2 - calc3 - calc4) / (4*delt**2))
-
-    print(two_body_smooth_jit(env1_1.bond_array, env2_1.bond_array, d1, d2,
-                              sig, ls, cutoff, d))
-
-    # check python version of kernels
     hyps = np.array([sig, ls, d])
-    print(two_body_smooth(env1_1, env2_1, d1, d2, hyps, cutoff))
-    print(two_body_smooth_grad(env1_1, env2_1, d1, d2, hyps, cutoff))
 
-    # check likelihood
-    delt = 1e-10
-    sig = 1
-    sig_delt = sig+delt
-    ls = 1
-    ls_delt = ls+delt
-    d = cutoff-delt
-    d_delt = d+delt
+    # check force kernel
+    calc1 = two_body_smooth_en(env1_2, env2_2, hyps, cutoff)
+    calc2 = two_body_smooth_en(env1_3, env2_3, hyps, cutoff)
+    calc3 = two_body_smooth_en(env1_2, env2_3, hyps, cutoff)
+    calc4 = two_body_smooth_en(env1_3, env2_2, hyps, cutoff)
 
-    print(two_body_smooth_grad_jit(env1_1.bond_array, env2_1.bond_array,
-                                   d1, d2, sig, ls, cutoff, d))
+    kern_finite_diff = (calc1 + calc2 - calc3 - calc4) / (4*delt**2)
+    kern_analytical = two_body_smooth(env1_1, env2_1, d1, d2, hyps, cutoff)
 
-    sig_calc_1 = two_body_smooth_jit(env1_1.bond_array, env2_1.bond_array,
-                                     d1, d2, sig, ls, cutoff, d)
-    sig_calc_2 = two_body_smooth_jit(env1_1.bond_array, env2_1.bond_array,
-                                     d1, d2, sig_delt, ls, cutoff, d)
-
-    ls_calc_1 = two_body_smooth_jit(env1_1.bond_array, env2_1.bond_array,
-                                    d1, d2, sig, ls, cutoff, d)
-    ls_calc_2 = two_body_smooth_jit(env1_1.bond_array, env2_1.bond_array,
-                                    d1, d2, sig, ls_delt, cutoff, d)
-
-    d_calc_1 = two_body_smooth_jit(env1_1.bond_array, env2_1.bond_array,
-                                   d1, d2, sig, ls, cutoff, d)
-    d_calc_2 = two_body_smooth_jit(env1_1.bond_array, env2_1.bond_array,
-                                   d1, d2, sig, ls, cutoff, d_delt)
-
-    print((sig_calc_2 - sig_calc_1)/delt)
-    print((ls_calc_2 - ls_calc_1)/delt)
-    print((d_calc_2 - d_calc_1)/delt)
+    tol = 1e-4
+    assert(np.isclose(kern_finite_diff, kern_analytical, tol))
