@@ -187,6 +187,57 @@ The local energy kernel described by Eq.\ (\ref{loc_kern}) induces a covariant m
 \end{table}
 \end{center}
 
+\begin{center}
+    \begin{table}
+    \begin{tabular}{ |c|c|c| } 
+     \hline
+     Energy Kernel & $k_{\text{inv}}$ & $\sigma^2 \sum_{c, p} k f_{\text{cut}}(\vec{d}_c) f_{\text{cut}}(\vec{d}_p)$ \\ 
+     \hline
+     - & $k$ & $\exp\left( - \frac{||\vec{d}_c - \vec{d}_p ||^2}{2 \ell^2} \right)$\\
+     \hline
+     - & $\vec{d}^{(2)}$ & $(r_{i_1})$ \\
+     \hline
+     - & $\vec{d}^{(3)}$ & $(r_{i_1}, r_{i_2}, r_{i_1, i_2})$ \\
+     \hline
+    Force Kernel & $\frac{\partial^2 k_{\text{inv}}}{\partial \xi_i \partial \chi_j}$ & $\sigma^2 \sum_{c, p} (k_0 + k_1 + k_2 + k_3)$ \\ 
+     \hline
+     - & $k_0$ & $k \frac{\partial f_{\text{cut}}(\vec{d}_c)}{\partial \xi_i} \frac{\partial f_{\text{cut}}(\vec{d}_p)}{\partial \chi_j}$ \\ 
+     \hline
+     - & $k_1$ & $\frac{\partial k}{\partial \xi_i} f_{\text{cut}}(\vec{d}_c) \frac{\partial f_{\text{cut}}(\vec{d}_p)}{\partial \chi_j}$ \\ 
+     \hline
+     - & $k_2$ & $\frac{\partial k}{\partial \chi_j} \frac{\partial f_{\text{cut}}(\vec{d}_c)}{\partial \xi_i} f_{\text{cut}}(\vec{d}_p)$ \\ 
+     \hline
+     - & $k_3$ & $\frac{\partial^2 k}{\partial \xi_i \partial \chi_j} f_{\text{cut}}(\vec{d}_c) f_{\text{cut}}(\vec{d}_p)$ \\ 
+     \hline
+     - & $\frac{\partial k}{\partial \xi_i}$ & $\frac{k B_1}{\ell^2}$ \\ 
+     \hline
+     & $B_1$ & $\sum_{q=1}^{N-1} \frac{(r_{i_q} - r_{j_q})\xi_{i_q}}{r_{i_q}}$ \\
+     \hline
+     - & $\frac{\partial k}{\partial \chi_j}$ &  $-\frac{k B_2}{\ell^2}$ \\ 
+     \hline
+    - & $B_2$ & $\sum_{q=1}^{N-1} \frac{(r_{i_q} - r_{j_q})\chi_{j_q}}{r_{j_q}}$ \\
+     \hline
+     - & $\frac{\partial^2 k}{\partial \xi_i \chi_j}$ & $\frac{k}{\ell^4} \left(A \ell^2 -B_1 B_2 \right)$\\ 
+     \hline
+     - & $A$ & $\sum \frac{\xi_{i_q} \chi_{j_q}}{r_{i_q} r_{j_q}}$ \\
+     \hline
+     $\ell$ Derivative & $\frac{\partial^3 k_{\text{inv}}}{\partial \ell \partial \xi_i \partial \chi_j}$ & $\sigma^2 \sum_{c, p} \left(\frac{\partial k_0}{\partial \ell} + \frac{\partial k_1}{\partial \ell} + \frac{\partial k_2}{\partial \ell} + \frac{\partial k_3}{\partial \ell}\right)$ \\
+     \hline
+     - & $\frac{\partial k}{\partial \ell}$ & $\frac{k ||\vec{d}_c - \vec{d}_p||^2}{l^3}$ \\
+     \hline
+     - & $\frac{\partial^2 k}{\partial \ell \partial \xi_i}$ & $B_1 \left( \frac{1}{\ell^2} \frac{\partial k}{\partial \ell} - \frac{2 k}{\ell^3} \right)$ \\
+     \hline
+     - & $\frac{\partial^2 k}{\partial \ell \partial \chi_j}$ & $-B_2 \left( \frac{1}{\ell^2} \frac{\partial k}{\partial \ell} - \frac{2 k}{\ell^3} \right)$ \\
+     \hline
+     - & $\frac{\partial^3 k}{\partial \ell \partial \xi_i \partial \chi_j}$ & $\left( A \ell^2 - B_1 B_2 \right) \left( \frac{\partial k}{\partial \ell} \frac{1}{\ell^4} - \frac{4 k}{\ell^5} \right) + \frac{2 k A}{\ell^3}$ \\
+     \hline
+     $\sigma$ Derivative & $\frac{\partial^3 k_{\text{inv}}}{\partial \sigma \partial \xi_i \partial \chi_j}$ & $2 \sigma \sum_{c, p} (k_0 + k_1 + k_2 + k_3)$ \\
+     \hline
+    \end{tabular}
+    \caption{Quantities used to calculate the smoothed $N$-body force kernel and its derivatives.}
+\end{table}
+\end{center}
+
 \section{On-the-fly learning}
 
 \section{Computational details}

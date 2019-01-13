@@ -1,14 +1,14 @@
 # Fdb version 3
-["bibtex otf"] 1547160170 "otf.aux" "otf.bbl" "otf" 1547164349
+["bibtex otf"] 1547409575 "otf.aux" "otf.bbl" "otf" 1547409575
   "/usr/local/texlive/2017/texmf-dist/bibtex/bst/revtex/apsrev4-1.bst" 1480098436 71518 fec93f06df0c073f83d2330456bd19c2 ""
-  "otf.aux" 1547164348 2579 3e6d53403c8b882c7f7f0c0bcc945025 ""
+  "otf.aux" 1547409575 2742 b9731cd626f134281d7e98805c0da00e ""
   "otf.bib" 1536861927 3852 be09c73e4017c9555c56bd72c496e67b ""
-  "otfNotes.bib" 1547164348 103 48ad29797468f16e2853d8797278d7af ""
+  "otfNotes.bib" 1547409575 103 48ad29797468f16e2853d8797278d7af ""
   (generated)
-  "otf.bbl"
   "otf.blg"
-["pdflatex"] 1547164348 "/Users/jonpvandermause/Research/GP/otf/paper/Main/otf.tex" "otf.pdf" "otf" 1547164349
-  "/Users/jonpvandermause/Research/GP/otf/paper/Main/otf.tex" 1547164348 14793 dbc37f731d9b4a591d9246cead57bcd9 ""
+  "otf.bbl"
+["pdflatex"] 1547409575 "/Users/jonpvandermause/Research/GP/otf/paper/Main/otf.tex" "otf.pdf" "otf" 1547409575
+  "/Users/jonpvandermause/Research/GP/otf/paper/Main/otf.tex" 1547409574 17861 2b6cd30d3e2ecf086fa51edd1b6c4e85 ""
   "/usr/local/texlive/2017/texmf-dist/fonts/map/fontname/texfonts.map" 1480098670 3287 e6b82fe08f5336d4d5ebc73fb1152e87 ""
   "/usr/local/texlive/2017/texmf-dist/fonts/tfm/public/amsfonts/cmextra/cmbsy6.tfm" 1480098698 1124 14ccf5552bc7f77ca02a8a402bea8bfb ""
   "/usr/local/texlive/2017/texmf-dist/fonts/tfm/public/amsfonts/cmextra/cmbsy8.tfm" 1480098698 1120 200be8b775682cdf80acad4be5ef57e4 ""
@@ -102,11 +102,11 @@
   "/usr/local/texlive/2017/texmf-var/fonts/map/pdftex/updmap/pdftex.map" 1495593472 2350277 a699055bee05bf8a40b0504752487295 ""
   "/usr/local/texlive/2017/texmf-var/web2c/pdftex/pdflatex.fmt" 1495593487 4129592 0e6cfee100d68e6d96b92c0258f2ff73 ""
   "/usr/local/texlive/2017/texmf.cnf" 1495593465 577 2b71d4d888f9e5560b2e99985915a9fa ""
-  "otf.aux" 1547164348 2579 3e6d53403c8b882c7f7f0c0bcc945025 ""
-  "otf.bbl" 1547160171 9373 852704973f3c7f2c0212c9dcf452b523 "bibtex otf"
-  "otf.tex" 1547164348 14793 dbc37f731d9b4a591d9246cead57bcd9 ""
+  "otf.aux" 1547409575 2742 b9731cd626f134281d7e98805c0da00e ""
+  "otf.bbl" 1547409575 9373 852704973f3c7f2c0212c9dcf452b523 "bibtex otf"
+  "otf.tex" 1547409574 17861 2b6cd30d3e2ecf086fa51edd1b6c4e85 ""
   (generated)
-  "otf.log"
   "otf.pdf"
-  "otf.aux"
+  "otf.log"
   "otfNotes.bib"
+  "otf.aux"

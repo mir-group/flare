@@ -23,6 +23,8 @@ from kernels import n_body_sc, n_body_sc_grad, combo_kernel_sc,\
     combo_kernel_sc_grad, energy_force_sc, energy_sc, n_body_mc,\
     n_body_mc_grad, n_body_sc_norm_derv, many_body_sc, many_body_sc_grad,\
     many_body_ncov, many_body_ncov_grad, two_body_mc_grad, two_body_mc
+from smooth_kernels import two_body_smooth, two_body_smooth_grad,\
+    two_body_quad, two_body_quad_grad
 from struc import Structure
 
 
@@ -40,8 +42,24 @@ class GaussianProcess:
         # gp kernel and hyperparameters
         self.bodies = bodies
 
+        if kernel == 'two_body_smooth':
+            self.kernel_name = 'Smooth Two Body'
+            self.kernel = two_body_smooth
+            self.kernel_grad = two_body_smooth_grad
+            self.hyps = np.array([1, 1, 1, 1])
+            self.hyp_labels = ['Signal Std', 'Length Scale', 'd', 'Noise Std']
+            self.cutoffs = cutoffs
+
+        elif kernel == 'two_body_quad':
+            self.kernel_name = 'Quadratic Two Body'
+            self.kernel = two_body_quad
+            self.kernel_grad = two_body_quad_grad
+            self.hyps = np.array([1, 1, 1, 1])
+            self.hyp_labels = ['Signal Std', 'Length Scale', 'd', 'Noise Std']
+            self.cutoffs = cutoffs
+
         # TODO: implement kernel gradient
-        if kernel == 'n_body_sc_norm_derv':
+        elif kernel == 'n_body_sc_norm_derv':
             self.kernel_name = 'Normalized N-Body Single Component'
             self.kernel = n_body_sc_norm_derv
             # self.kernel_grad = n_body_sc_grad
