@@ -24,7 +24,8 @@ from kernels import n_body_sc, n_body_sc_grad, combo_kernel_sc,\
     n_body_mc_grad, n_body_sc_norm_derv, many_body_sc, many_body_sc_grad,\
     many_body_ncov, many_body_ncov_grad, two_body_mc_grad, two_body_mc
 from smooth_kernels import two_body_smooth, two_body_smooth_grad,\
-    two_body_quad, two_body_quad_grad
+    two_body_quad, two_body_quad_grad, three_body_quad, three_body_quad_grad,\
+    two_body_quad_mc, two_body_quad_mc_grad
 from struc import Structure
 
 
@@ -42,7 +43,22 @@ class GaussianProcess:
         # gp kernel and hyperparameters
         self.bodies = bodies
 
-        if kernel == 'two_body_smooth':
+        if kernel == 'two_body_quad_mc':
+            self.kernel_name = 'Multi-Component Quadratic Two Body'
+            self.kernel = two_body_quad_mc
+            self.kernel_grad = two_body_quad_mc_grad
+            self.hyps = np.ones(nos+2)
+            self.cutoffs = cutoffs
+
+        elif kernel == 'three_body_quad':
+            self.kernel_name = 'Quadratic Three Body'
+            self.kernel = three_body_quad
+            self.kernel_grad = three_body_quad_grad
+            self.hyps = np.array([1, 1, 1])
+            self.hyp_labels = ['Signal Std', 'Length Scale', 'Noise Std']
+            self.cutoffs = cutoffs
+
+        elif kernel == 'two_body_smooth':
             self.kernel_name = 'Smooth Two Body'
             self.kernel = two_body_smooth
             self.kernel_grad = two_body_smooth_grad
@@ -54,8 +70,8 @@ class GaussianProcess:
             self.kernel_name = 'Quadratic Two Body'
             self.kernel = two_body_quad
             self.kernel_grad = two_body_quad_grad
-            self.hyps = np.array([1, 1, 1, 1])
-            self.hyp_labels = ['Signal Std', 'Length Scale', 'd', 'Noise Std']
+            self.hyps = np.array([1, 1, 1])
+            self.hyp_labels = ['Signal Std', 'Length Scale', 'Noise Std']
             self.cutoffs = cutoffs
 
         # TODO: implement kernel gradient
