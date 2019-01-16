@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[     10420,        393]
-NotebookOptionsPosition[      8960,        334]
-NotebookOutlinePosition[      9314,        350]
-CellTagsIndexPosition[      9271,        347]
+NotebookDataLength[     11926,        447]
+NotebookOptionsPosition[     10282,        381]
+NotebookOutlinePosition[     10636,        397]
+CellTagsIndexPosition[     10593,        394]
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -330,10 +330,57 @@ Cell[BoxData[
   SuperscriptBox["l", "2"]]], "Output",
  CellChangeTimes->{3.7561319262988462`*^9}]
 }, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Large d limit", "Section",
+ CellChangeTimes->{{3.7562141813490343`*^9, 3.756214182658288*^9}}],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"Series", "[", " ", 
+  RowBox[{
+   FractionBox[
+    RowBox[{
+     RowBox[{"Cos", "[", 
+      RowBox[{"delta", "+", "\[Pi]"}], "]"}], "+", "1"}], "2"], ",", 
+   RowBox[{"{", 
+    RowBox[{"delta", ",", "0", ",", "10"}], "}"}]}], "]"}]], "Input",
+ CellChangeTimes->{{3.756214186794174*^9, 3.756214242931218*^9}}],
+
+Cell[BoxData[
+ InterpretationBox[
+  RowBox[{
+   FractionBox[
+    SuperscriptBox["delta", "2"], "4"], "-", 
+   FractionBox[
+    SuperscriptBox["delta", "4"], "48"], "+", 
+   FractionBox[
+    SuperscriptBox["delta", "6"], "1440"], "-", 
+   FractionBox[
+    SuperscriptBox["delta", "8"], "80640"], "+", 
+   FractionBox[
+    SuperscriptBox["delta", "10"], "7257600"], "+", 
+   InterpretationBox[
+    SuperscriptBox[
+     RowBox[{"O", "[", "delta", "]"}], "11"],
+    SeriesData[$CellContext`delta, 0, {}, 2, 11, 1],
+    Editable->False]}],
+  SeriesData[$CellContext`delta, 0, {
+    Rational[1, 4], 0, 
+    Rational[-1, 48], 0, 
+    Rational[1, 1440], 0, 
+    Rational[-1, 80640], 0, 
+    Rational[1, 7257600]}, 2, 11, 1],
+  Editable->False]], "Output",
+ CellChangeTimes->{{3.756214239924205*^9, 3.756214243455352*^9}}]
+}, Open  ]]
 }, Open  ]]
 },
 WindowSize->{820, 755},
-WindowMargins->{{63, Automatic}, {Automatic, 6}},
+WindowMargins->{{63, Automatic}, {Automatic, 0}},
 FrontEndVersion->"10.4 for Mac OS X x86 (32-bit, 64-bit Kernel) (April 11, \
 2016)",
 StyleDefinitions->"Default.nb"
@@ -394,10 +441,15 @@ Cell[CellGroupData[{
 Cell[8310, 309, 182, 4, 28, "Input"],
 Cell[8495, 315, 437, 15, 66, "Output"]
 }, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[8981, 336, 100, 1, 64, "Section"],
+Cell[CellGroupData[{
+Cell[9106, 341, 332, 9, 48, "Input"],
+Cell[9441, 352, 813, 25, 50, "Output"]
+}, Open  ]]
 }, Open  ]]
 }
 ]
 *)
-
-(* End of internal cache information *)
 
