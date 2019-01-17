@@ -24,7 +24,8 @@ class OTF(object):
         self.qe_input = qe_input
         self.dt = dt
         self.Nsteps = number_of_steps
-        self.gp = GaussianProcess(kernel, bodies, opt_algorithm=opt_algo)
+        self.gp = GaussianProcess(kernel, bodies, opt_algorithm=opt_algo,
+                                  cutoffs=cutoff)
         self.cutoff = cutoff
         self.std_tolerance = std_tolerance_factor
         self.pw_loc = pw_loc
