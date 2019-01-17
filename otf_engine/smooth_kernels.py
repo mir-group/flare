@@ -17,6 +17,10 @@ import time
 # -----------------------------------------------------------------------------
 
 
+def three_body_quad_mc(env1, env2, bodies, d1, d2, hyps, r_cut):
+    pass
+
+
 def two_body_quad_mc(env1, env2, bodies, d1, d2, hyps, r_cut):
     sigs = hyps[0:-1]
     ls = hyps[-1]
@@ -125,6 +129,82 @@ def two_body_smooth_en(env1, env2, hyps, r_cut):
 # -----------------------------------------------------------------------------
 #                             njit kernels and gradients
 # -----------------------------------------------------------------------------
+
+
+@njit
+def three_body_quad_mc_jit(bond_array_1, bond_array_2,
+                           environment_species_1, environment_species_2,
+                           cross_bond_dists_1, cross_bond_dists_2,
+                           d1, d2, sigs, ls, r_cut):
+    kern = 0
+
+    for m in range(bond_array_1.shape[0]):
+        ri1 = bond_array_1[m, 0]
+        ci1 = bond_array_1[m, d1]
+        fi1 = (r_cut-ri1)**2
+        fdi1 = 2*(r_cut-ri1)*ci1
+        ctyp1 = environment_species_1[m]
+
+        for n in range(m+1, bond_array_1.shape[0]):
+            ri2 = bond_array_1[n, 0]
+            ci2 = bond_array_1[n, d1]
+            fi2 = (r_cut-ri2)**2
+            fdi2 = 2*(r_cut-ri2)*ci2
+            ctyp2 = environment_species_1[n]
+            ri3 = cross_bond_dists_1[m, n]
+
+            fi = fi1*fi2
+            fdi = fdi1*fi2+fi1*fdi2
+
+            for p in range(bond_array_2.shape[0]):
+                ptyp1 = environment_species_2[p]
+                if ctyp1 != ptyp1:
+                    continue
+                rj1 = bond_array_2[p, 0]
+                cj1 = bond_array_2[p, d2]
+                fj1 = (r_cut-rj1)**2
+                fdj1 = 2*(r_cut-rj1)*cj1
+
+                for q in range(bond_array_2.shape[0]):
+                    if q == p:
+                        continue
+
+                    ptyp2 = environment_species_2[p]
+                    if ctyp2 != ptyp2:
+                        continue
+
+                    rj2 = bond_array_2[q, 0]
+                    cj2 = bond_array_2[q, d2]
+                    fj2 = (r_cut-rj2)**2
+                    fdj2 = 2*(r_cut-rj2)*cj2
+                    rj3 = cross_bond_dists_2[p, q]
+
+                    fj = fj1*fj2
+                    fdj = fdj1*fj2+fj1*fdj2
+
+                    r11 = ri1-rj1
+                    r22 = ri2-rj2
+                    r33 = ri3-rj3
+
+                    A = ci1*cj1+ci2*cj2
+                    B1 = r11*ci1+r22*ci2
+                    B2 = r11*cj1+r22*cj2
+                    C = r11*r11+r22*r22+r33*r33
+
+                    k = exp(-C/(2*ls*ls))
+                    dk_1 = k*B1/(ls*ls)
+                    dk_2 = -k*B2/(ls*ls)
+                    dk_dk = A*k/(ls*ls) - B1*B2*k/(ls**4)
+
+                    k0 = k*fdi*fdj
+                    k1 = dk_1*fi*fdj
+                    k2 = dk_2*fdi*fj
+                    k3 = dk_dk*fi*fj
+
+                    sig = sigs[ctyp1, ctyp2]
+                    kern += sig*sig*(k0+k1+k2+k3)
+
+    return kern
 
 
 @njit
