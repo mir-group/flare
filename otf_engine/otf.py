@@ -77,7 +77,7 @@ class OTF(object):
                     self.write_md_config()
 
                 # write gp forces only when counter equals skip
-                if counter == self.skip and self.structure.dft_forces is False:
+                if counter >= self.skip and self.structure.dft_forces is False:
                     self.write_md_config()
                     counter = -1
                 counter += 1
