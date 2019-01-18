@@ -10,6 +10,7 @@ class MDAnalysis:
         self.MD_output_file = MD_output_file
         self.cell = cell
         self.MD_data = self.get_data_from_file()
+        self.nat = len(self.MD_data[1]['positions'])
 
     def get_data_from_file(self):
         data = qe_parsers.parse_md_output(self.MD_output_file)
@@ -67,3 +68,30 @@ class MDAnalysis:
     def get_forces_from_snap(self, snap):
         forces = self.MD_data[snap+1]['forces']
         return forces
+
+    def calculate_rdf(self, snaps, cutoff, bins):
+        # collect interatomic distances
+        r_list = []
+        delta_r = cutoff / bins
+        atom_count = 0
+        for snap in snaps:
+            positions = self.MD_data[snap]['positions']
+            species = self.MD_data[snap]['elements']
+            structure = struc.Structure(self.cell, species, positions, cutoff)
+            for n in range(len(positions)):
+                env_curr = env.ChemicalEnvironment(structure, n)
+                atom_count += 1
+                for bond in env_curr.bond_array:
+                    r_list.append(bond[0])
+        r_list = np.array(r_list)
+        radial_hist, _ = \
+            np.histogram(r_list, bins=bins, range=(0, cutoff))
+
+        # weight the histogram
+        rs = np.linspace(delta_r/2, cutoff-delta_r/2, bins)
+        cell_vol = self.cell[0, 0]**3
+        rho = self.nat / cell_vol
+        weights = (4 * np.pi * rho / 3) * ((rs+delta_r)**3 - rs**3)
+        rad_dist = radial_hist / (atom_count * weights)
+
+        return rs, rad_dist, atom_count
