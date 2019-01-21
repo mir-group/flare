@@ -29,8 +29,8 @@ class OtfAnalysis:
         self.gp_cutoff_radius = gp_cutoff_radius
         self.gp_species_list = gp_species_list
 
-    def make_gp(self, cell, kernel, bodies, algo, call_no):
-        gp_model = gp.GaussianProcess(kernel, bodies, algo)
+    def make_gp(self, cell, kernel, bodies, algo, call_no, cutoffs=None):
+        gp_model = gp.GaussianProcess(kernel, bodies, algo, cutoffs=cutoffs)
         gp_hyps = self.gp_hyp_list[call_no-1]
         gp_model.hyps = gp_hyps
 
