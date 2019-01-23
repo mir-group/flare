@@ -25,7 +25,8 @@ from kernels import n_body_sc, n_body_sc_grad, combo_kernel_sc,\
     many_body_ncov, many_body_ncov_grad, two_body_mc_grad, two_body_mc
 from smooth_kernels import two_body_smooth, two_body_smooth_grad,\
     two_body_quad, two_body_quad_grad, three_body_quad, three_body_quad_grad,\
-    two_body_quad_mc, two_body_quad_mc_grad
+    two_body_quad_mc, two_body_quad_mc_grad, two_plus_three_quad, \
+    two_plus_three_quad_grad
 from struc import Structure
 
 
@@ -43,7 +44,17 @@ class GaussianProcess:
         # gp kernel and hyperparameters
         self.bodies = bodies
 
-        if kernel == 'two_body_quad_mc':
+        if kernel == 'two_plus_three_quad':
+            self.kernel_name = 'Two Plus Three Quadratic'
+            self.kernel = two_plus_three_quad
+            self.kernel_grad = two_plus_three_quad_grad
+            self.hyps = np.array([1, 1, 1, 1, 1])
+            self.hyp_labels = ['Signal Std', 'Length Scale',
+                               'Signal Std', 'Length Scale',
+                               'Noise Std']
+            self.cutoffs = cutoffs
+
+        elif kernel == 'two_body_quad_mc':
             self.kernel_name = 'Multi-Component Quadratic Two Body'
             self.kernel = two_body_quad_mc
             self.kernel_grad = two_body_quad_mc_grad

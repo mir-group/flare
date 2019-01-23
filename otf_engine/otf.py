@@ -19,13 +19,14 @@ class OTF(object):
                  prev_pos_init=None,
                  par=False,
                  parsimony=False,
+                 cutoffs=None,
                  skip=0):
 
         self.qe_input = qe_input
         self.dt = dt
         self.Nsteps = number_of_steps
         self.gp = GaussianProcess(kernel, bodies, opt_algorithm=opt_algo,
-                                  cutoffs=cutoff)
+                                  cutoffs=cutoffs)
         self.cutoff = cutoff
         self.std_tolerance = std_tolerance_factor
         self.pw_loc = pw_loc
@@ -163,8 +164,13 @@ class OTF(object):
         if target_atom is None and self.parsimony is False:
             self.write_to_output('Calling Quantum Espresso...')
         elif target_atom is None and self.parsimony is True:
-            train_atoms = [int(n) for n in
-                           np.round(np.linspace(0, self.structure.nat-1, 2))]
+            # start with all atoms
+            train_atoms = [int(n) for n in range(self.structure.nat)]
+
+            # # start with first and last atoms
+            # train_atoms = [int(n) for n in
+            #                np.round(np.linspace(0, self.structure.nat-1, 2))]
+
             self.write_to_output('Calling DFT with training atoms {}...'
                                  .format(train_atoms))
         else:
