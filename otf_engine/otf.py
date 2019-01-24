@@ -20,7 +20,8 @@ class OTF(object):
                  par=False,
                  parsimony=False,
                  cutoffs=None,
-                 skip=0):
+                 skip=0,
+                 hyps=None):
 
         self.qe_input = qe_input
         self.dt = dt
@@ -30,6 +31,13 @@ class OTF(object):
         self.cutoff = cutoff
         self.std_tolerance = std_tolerance_factor
         self.pw_loc = pw_loc
+
+        # allow hyperparameters to be set
+        if hyps is not None:
+            self.gp.hyps = hyps
+            self.freeze_hyps = True
+        else:
+            self.freeze_hyps = False
 
         # parse input file
         positions, species, cell, masses = parse_qe_input(self.qe_input)
@@ -197,7 +205,10 @@ class OTF(object):
         self.write_to_output('Updating database hyperparameters...\n')
         self.gp.update_db(self.structure, forces,
                           custom_range=train_atoms)
-        self.gp.train()
+        if self.freeze_hyps is False:
+            self.gp.train()
+        else:
+            self.gp.set_L_alpha()
         self.write_hyps()
 
     def update_positions(self):
