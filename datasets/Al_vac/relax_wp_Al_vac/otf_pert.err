@@ -1,9 +1,0 @@
-cp: `../Al_vac/Al_scf_pert.in' and `../Al_vac/Al_scf_pert.in' are the same file
-Traceback (most recent call last):
-  File "al_vac.py", line 150, in <module>
-    results = run_otf_md(input_file=input_file_name_scf_pert, output_file=output_file_name_otf)
-  File "al_vac.py", line 90, in run_otf_md
-    return parse_md_output(output_file)
-  File "../../modules/qe_parsers.py", line 8, in parse_md_output
-    with open(outfile, 'r') as outf:
-FileNotFoundError: [Errno 2] No such file or directory: '/home/sbatzner/otf/datasets/Al_vac/Al_OTF_pert.out'
