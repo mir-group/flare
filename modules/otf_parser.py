@@ -81,6 +81,11 @@ class OtfAnalysis:
                 at_line = line.split()
                 noa = int(at_line[3])
 
+            # number of hyperparameters
+            if line.startswith("# Hyperparameters"):
+                line_curr = line.split()
+                noh = int(line_curr[2])
+
             if line.startswith("-*"):
                 dft_line = line.split()
                 dft_frames.append(int(dft_line[1]))
@@ -93,7 +98,7 @@ class OtfAnalysis:
                 times.append(sim_time)
 
                 _, positions, forces, uncertainties, velocities = \
-                    parse_snapshot(lines, index, noa, False)
+                    parse_snapshot(lines, index, noa, False, noh)
 
                 position_list.append(positions)
                 force_list.append(forces)
@@ -152,10 +157,10 @@ class OtfAnalysis:
                 # TODO: generalize this to account for arbitrary starting list
                 append_atom_lists(species_list, position_list, force_list,
                                   uncertainty_list, velocity_list,
-                                  lines, index, noa, True)
+                                  lines, index, noa, True, noh)
                 append_atom_lists(species_list, position_list, force_list,
                                   uncertainty_list, velocity_list,
-                                  lines, index, noa, True)
+                                  lines, index, noa, True, noh)
 
                 atom_list.append(0)
                 atom_list.append(30)
@@ -175,7 +180,7 @@ class OtfAnalysis:
                 # list
                 append_atom_lists(species_list, position_list, force_list,
                                   uncertainty_list, velocity_list,
-                                  lines, index, noa, True)
+                                  lines, index, noa, True, noh)
                 atom_list.append(int(line_curr[5]))
 
         return position_list, force_list, uncertainty_list, velocity_list,\
@@ -189,12 +194,12 @@ def append_atom_lists(species_list: List[str],
                       uncertainty_list: List[np.ndarray],
                       velocity_list: List[np.ndarray],
                       lines: List[str], index: int, noa: int,
-                      dft_call: bool) -> None:
+                      dft_call: bool, noh: int) -> None:
 
     """Update lists containing atom information at each snapshot."""
 
     species, positions, forces, uncertainties, velocities = \
-        parse_snapshot(lines, index, noa, dft_call)
+        parse_snapshot(lines, index, noa, dft_call, noh)
 
     species_list.append(species)
     position_list.append(positions)
@@ -203,20 +208,8 @@ def append_atom_lists(species_list: List[str],
     velocity_list.append(velocities)
 
 
-def parse_snapshot(lines, index, noa, dft_call):
-    """Parses snapshot of otf output file.
-
-    :param lines: list of lines in output file
-    :type lines: list
-    :param index: index of snapshot
-    :type index: int
-    :param noa: number of atoms in simulation
-    :type noa: int
-    :param dft_call: whether or not dft was called for this snapshot
-    :type dft_call: bool
-    :return: species, positions, forces, uncertainties, and velocities
-    :rtype: list, np.arrays
-    """
+def parse_snapshot(lines, index, noa, dft_call, noh):
+    """Parses snapshot of otf output file."""
 
     # initialize values
     species = []
@@ -227,7 +220,7 @@ def parse_snapshot(lines, index, noa, dft_call):
 
     # number of lines to skip after frame line
     if dft_call is True:
-        skip = 12
+        skip = 9 + noh
     else:
         skip = 2
 
