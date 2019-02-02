@@ -15,7 +15,6 @@ from energy_conserving_kernels import three_body_cons_quad, \
 
 def test_three_body_derv():
     # create env 1
-    delt = 1e-5
     cell = np.eye(3)
     cutoff = 1
 
@@ -27,7 +26,6 @@ def test_three_body_derv():
     atom_1 = 0
     test_structure_1 = struc.Structure(cell, species_1, positions_1, cutoff)
     env1 = env.ChemicalEnvironment(test_structure_1, atom_1)
-
 
     # create env 2
     positions_1 = [np.array([0., 0., 0.]),
@@ -51,7 +49,6 @@ def test_three_body_derv():
                                           d1, d2, hyps, cutoff)
 
     delta = 1e-6
-    tol = 1e-5
     new_sig = sig + delta
     new_ls = ls + delta
 

@@ -5,28 +5,18 @@
 
 Implementation is based on Algorithm 2.1 (pg. 19) of
 "Gaussian Processes for Machine Learning" by Rasmussen and Williams
-
-Jon Vandermause, Simon Batzner
 """
 
 import math
-
 import numpy as np
-# from qe_util import timeit
 from scipy.linalg import solve_triangular
 from scipy.optimize import minimize
 from typing import List
 from copy import deepcopy
-
 from env import ChemicalEnvironment
-from kernels import n_body_sc, n_body_sc_grad, combo_kernel_sc,\
-    combo_kernel_sc_grad, energy_force_sc, energy_sc, n_body_mc,\
-    n_body_mc_grad, n_body_sc_norm_derv, many_body_sc, many_body_sc_grad,\
-    many_body_ncov, many_body_ncov_grad, two_body_mc_grad, two_body_mc
-from smooth_kernels import two_body_smooth, two_body_smooth_grad,\
-    two_body_quad, two_body_quad_grad, three_body_quad, three_body_quad_grad,\
-    two_body_quad_mc, two_body_quad_mc_grad, two_plus_three_quad, \
-    two_plus_three_quad_grad
+import kernels
+import smooth_kernels
+import energy_conserving_kernels
 from struc import Structure
 
 
@@ -46,8 +36,8 @@ class GaussianProcess:
 
         if kernel == 'two_plus_three_quad':
             self.kernel_name = 'Two Plus Three Quadratic'
-            self.kernel = two_plus_three_quad
-            self.kernel_grad = two_plus_three_quad_grad
+            self.kernel = smooth_kernels.two_plus_three_quad
+            self.kernel_grad = smooth_kernels.two_plus_three_quad_grad
             self.hyps = np.array([1, 1, 1, 1, 1])
             self.hyp_labels = ['Signal Std', 'Length Scale',
                                'Signal Std', 'Length Scale',
@@ -56,31 +46,31 @@ class GaussianProcess:
 
         elif kernel == 'two_body_quad_mc':
             self.kernel_name = 'Multi-Component Quadratic Two Body'
-            self.kernel = two_body_quad_mc
-            self.kernel_grad = two_body_quad_mc_grad
+            self.kernel = smooth_kernels.two_body_quad_mc
+            self.kernel_grad = smooth_kernels.two_body_quad_mc_grad
             self.hyps = np.ones(nos+2)
             self.cutoffs = cutoffs
 
         elif kernel == 'three_body_quad':
             self.kernel_name = 'Quadratic Three Body'
-            self.kernel = three_body_quad
-            self.kernel_grad = three_body_quad_grad
+            self.kernel = smooth_kernels.three_body_quad
+            self.kernel_grad = smooth_kernels.three_body_quad_grad
             self.hyps = np.array([1, 1, 1])
             self.hyp_labels = ['Signal Std', 'Length Scale', 'Noise Std']
             self.cutoffs = cutoffs
 
         elif kernel == 'two_body_smooth':
             self.kernel_name = 'Smooth Two Body'
-            self.kernel = two_body_smooth
-            self.kernel_grad = two_body_smooth_grad
+            self.kernel = smooth_kernels.two_body_smooth
+            self.kernel_grad = smooth_kernels.two_body_smooth_grad
             self.hyps = np.array([1, 1, 1, 1])
             self.hyp_labels = ['Signal Std', 'Length Scale', 'd', 'Noise Std']
             self.cutoffs = cutoffs
 
         elif kernel == 'two_body_quad':
             self.kernel_name = 'Quadratic Two Body'
-            self.kernel = two_body_quad
-            self.kernel_grad = two_body_quad_grad
+            self.kernel = smooth_kernels.two_body_quad
+            self.kernel_grad = smooth_kernels.two_body_quad_grad
             self.hyps = np.array([1, 1, 1])
             self.hyp_labels = ['Signal Std', 'Length Scale', 'Noise Std']
             self.cutoffs = cutoffs
@@ -88,7 +78,7 @@ class GaussianProcess:
         # TODO: implement kernel gradient
         elif kernel == 'n_body_sc_norm_derv':
             self.kernel_name = 'Normalized N-Body Single Component'
-            self.kernel = n_body_sc_norm_derv
+            self.kernel = kernels.n_body_sc_norm_derv
             # self.kernel_grad = n_body_sc_grad
             # self.energy_force_kernel = energy_force_sc
             # self.energy_kernel = energy_sc
@@ -98,18 +88,18 @@ class GaussianProcess:
 
         elif kernel == 'n_body_sc':
             self.kernel_name = 'N-Body Single Component'
-            self.kernel = n_body_sc
-            self.kernel_grad = n_body_sc_grad
-            self.energy_force_kernel = energy_force_sc
-            self.energy_kernel = energy_sc
+            self.kernel = kernels.n_body_sc
+            self.kernel_grad = kernels.n_body_sc_grad
+            self.energy_force_kernel = kernels.energy_force_sc
+            self.energy_kernel = kernels.energy_sc
             self.hyps = np.array([1, 1, 1.1])
             self.hyp_labels = ['Signal Std', 'Length Scale', 'Noise Std']
             self.cutoffs = None
 
         elif kernel == 'many_body_sc':
             self.kernel_name = 'Many Body Single Component'
-            self.kernel = many_body_sc
-            self.kernel_grad = many_body_sc_grad
+            self.kernel = kernels.many_body_sc
+            self.kernel_grad = kernels.many_body_sc_grad
             # self.energy_force_kernel = energy_force_sc
             # self.energy_kernel = energy_sc
             self.hyps = np.array([1, 1, 1])
@@ -118,8 +108,8 @@ class GaussianProcess:
 
         elif kernel == 'many_body_ncov':
             self.kernel_name = 'Many Body Non-Covariant'
-            self.kernel = many_body_ncov
-            self.kernel_grad = many_body_ncov_grad
+            self.kernel = kernels.many_body_ncov
+            self.kernel_grad = kernels.many_body_ncov_grad
             self.hyps = np.array([1, 1, 1])
             self.hyp_labels = ['Signal Std', 'Length Scale', 'Noise Std']
             self.cutoffs = None
@@ -127,8 +117,8 @@ class GaussianProcess:
         # TODO: make energy and energy/force kernels for combination kernel
         elif kernel == 'combo_kernel_sc':
             self.kernel_name = 'Combined N-Body Single Component'
-            self.kernel = combo_kernel_sc
-            self.kernel_grad = combo_kernel_sc_grad
+            self.kernel = kernels.combo_kernel_sc
+            self.kernel_grad = kernels.combo_kernel_sc_grad
             # self.energy_force_kernel = energy_force_sc
             # self.energy_kernel = energy_sc
             self.hyps = np.ones([2*len(bodies)+1])
@@ -139,8 +129,8 @@ class GaussianProcess:
         # TODO: make energy and energy/force kernels for ICM kernels
         elif kernel == 'n_body_mc':
             self.kernel_name = 'N-Body Multiple Component Force'
-            self.kernel = n_body_mc
-            self.kernel_grad = n_body_mc_grad
+            self.kernel = kernels.n_body_mc
+            self.kernel_grad = kernels.n_body_mc_grad
             no_ICM = int(nos*(nos-1)/2)
             self.hyps = np.ones(no_ICM+3)
 
@@ -153,8 +143,8 @@ class GaussianProcess:
 
         elif kernel == 'two_body_mc':
             self.kernel_name = 'Two Body Multi Component'
-            self.kernel = two_body_mc
-            self.kernel_grad = two_body_mc_grad
+            self.kernel = kernels.two_body_mc
+            self.kernel_grad = kernels.two_body_mc_grad
             no_ICM = int(nos*(nos+1)/2)
             self.hyps = np.ones(no_ICM+2)
             hyp_labels = ['Signal Std', 'Length Scale'] + \
