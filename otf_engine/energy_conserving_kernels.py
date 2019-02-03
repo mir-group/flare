@@ -38,6 +38,16 @@ def three_body_cons_quad(env1, env2, bodies, d1, d2, hyps, r_cut):
                                     d1, d2, sig, ls, r_cut)
 
 
+def three_body_cons_quad_force_en(env1, env2, bodies, d1, hyps, r_cut):
+    sig = hyps[0]
+    ls = hyps[1]
+
+    return three_body_cons_quad_force_en_jit(env1.bond_array, env2.bond_array,
+                                             env1.cross_bond_dists,
+                                             env2.cross_bond_dists,
+                                             d1, sig, ls, r_cut)
+
+
 def three_body_cons_quad_en(env1, env2, bodies, hyps, r_cut):
     sig = hyps[0]
     ls = hyps[1]
@@ -52,6 +62,30 @@ def three_body_cons_quad_en(env1, env2, bodies, hyps, r_cut):
 def three_body_cons_quad_grad_jit(bond_array_1, bond_array_2,
                                   cross_bond_dists_1, cross_bond_dists_2,
                                   d1, d2, sig, ls, r_cut):
+    """Kernel gradient for 3-body force comparisons.
+
+    :param bond_array_1: [description]
+    :type bond_array_1: [type]
+    :param bond_array_2: [description]
+    :type bond_array_2: [type]
+    :param cross_bond_dists_1: [description]
+    :type cross_bond_dists_1: [type]
+    :param cross_bond_dists_2: [description]
+    :type cross_bond_dists_2: [type]
+    :param d1: [description]
+    :type d1: [type]
+    :param d2: [description]
+    :type d2: [type]
+    :param sig: [description]
+    :type sig: [type]
+    :param ls: [description]
+    :type ls: [type]
+    :param r_cut: [description]
+    :type r_cut: [type]
+    :return: [description]
+    :rtype: [type]
+    """
+
     kern = 0
     sig_derv = 0
     ls_derv = 0
@@ -208,6 +242,30 @@ def three_body_cons_quad_grad_jit(bond_array_1, bond_array_2,
 def three_body_cons_quad_jit(bond_array_1, bond_array_2,
                              cross_bond_dists_1, cross_bond_dists_2,
                              d1, d2, sig, ls, r_cut):
+    """Kernel for 3-body force comparisons.
+
+    :param bond_array_1: [description]
+    :type bond_array_1: [type]
+    :param bond_array_2: [description]
+    :type bond_array_2: [type]
+    :param cross_bond_dists_1: [description]
+    :type cross_bond_dists_1: [type]
+    :param cross_bond_dists_2: [description]
+    :type cross_bond_dists_2: [type]
+    :param d1: [description]
+    :type d1: [type]
+    :param d2: [description]
+    :type d2: [type]
+    :param sig: [description]
+    :type sig: [type]
+    :param ls: [description]
+    :type ls: [type]
+    :param r_cut: [description]
+    :type r_cut: [type]
+    :return: [description]
+    :rtype: [type]
+    """
+
     kern = 0
 
     # pre-compute constants that appear in the inner loop
@@ -320,6 +378,120 @@ def three_body_cons_quad_jit(bond_array_1, bond_array_2,
 
 
 @njit
+def three_body_cons_quad_force_en_jit(bond_array_1, bond_array_2,
+                                      cross_bond_dists_1,
+                                      cross_bond_dists_2,
+                                      d1, sig, ls, r_cut):
+    """Kernel for 3-body force/energy comparisons.
+
+    :param bond_array_1: [description]
+    :type bond_array_1: [type]
+    :param bond_array_2: [description]
+    :type bond_array_2: [type]
+    :param cross_bond_dists_1: [description]
+    :type cross_bond_dists_1: [type]
+    :param cross_bond_dists_2: [description]
+    :type cross_bond_dists_2: [type]
+    :param d1: [description]
+    :type d1: [type]
+    :param sig: [description]
+    :type sig: [type]
+    :param ls: [description]
+    :type ls: [type]
+    :param r_cut: [description]
+    :type r_cut: [type]
+    :return: [description]
+    :rtype: [type]
+    """
+
+    kern = 0
+
+    # pre-compute constants that appear in the inner loop
+    sig2 = sig*sig
+    ls1 = 1 / (2*ls*ls)
+    ls2 = 1 / (ls*ls)
+
+    for m in range(bond_array_1.shape[0]):
+        ri1 = bond_array_1[m, 0]
+        rdi1 = r_cut-ri1
+        ci1 = bond_array_1[m, d1]
+        fi1 = rdi1*rdi1
+        fdi1 = 2*rdi1*ci1
+
+        for n in range(m+1, bond_array_1.shape[0]):
+            ri2 = bond_array_1[n, 0]
+            rdi2 = r_cut-ri2
+            ci2 = bond_array_1[n, d1]
+            fi2 = rdi2*rdi2
+            fdi2 = 2*rdi2*ci2
+            ri3 = cross_bond_dists_1[m, n]
+            if ri3 > r_cut:
+                continue
+            fi3 = (r_cut-ri3)**2
+            fi = fi1*fi2*fi3
+            fdi = fdi1*fi2*fi3+fi1*fdi2*fi3
+
+            for p in range(bond_array_2.shape[0]):
+                rj1 = bond_array_2[p, 0]
+                rdj1 = r_cut-rj1
+                fj1 = rdj1*rdj1
+
+                for q in range(bond_array_2.shape[0]):
+                    if p == q:
+                        continue
+
+                    rj2 = bond_array_2[q, 0]
+                    rdj2 = r_cut-rj2
+                    fj2 = rdj2*rdj2
+                    rj3 = cross_bond_dists_2[p, q]
+                    if rj3 > r_cut:
+                        continue
+                    fj3 = (r_cut-rj3)**2
+                    fj = fj1*fj2*fj3
+
+                    r11 = ri1-rj1
+                    r12 = ri1-rj2
+                    r13 = ri1-rj3
+                    r21 = ri2-rj1
+                    r22 = ri2-rj2
+                    r23 = ri2-rj3
+                    r31 = ri3-rj1
+                    r32 = ri3-rj2
+                    r33 = ri3-rj3
+
+                    # first cyclic term
+                    B1 = r11*ci1+r22*ci2
+                    D1 = r11*r11+r22*r22+r33*r33
+                    E1 = exp(-D1*ls1)
+                    F1 = E1*B1*ls2
+                    G1 = -F1*fi*fj
+                    H1 = -E1*fdi*fj
+                    I1 = sig2*(G1+H1)
+
+                    # second cyclic term
+                    B2 = r13*ci1+r21*ci2
+                    D2 = r13*r13+r21*r21+r32*r32
+                    E2 = exp(-D2*ls1)
+                    F2 = E2*B2*ls2
+                    G2 = -F2*fi*fj
+                    H2 = -E2*fdi*fj
+                    I2 = sig2*(G2+H2)
+
+                    # third cyclic term
+                    B3 = r12*ci1+r23*ci2
+                    D3 = r12*r12+r23*r23+r31*r31
+                    E3 = exp(-D3*ls1)
+                    F3 = E3*B3*ls2
+                    G3 = -F3*fi*fj
+                    H3 = -E3*fdi*fj
+                    I3 = sig2*(G3+H3)
+
+                    kern += I1+I2+I3
+
+    return kern
+
+
+@njit
 def three_body_cons_quad_en_jit(bond_array_1, bond_array_2,
                                 cross_bond_dists_1, cross_bond_dists_2,
                                 sig, ls, r_cut):
@@ -381,4 +553,48 @@ def three_body_cons_quad_en_jit(bond_array_1, bond_array_2,
     return kern
 
 if __name__ == '__main__':
-    pass
+    # create env 1
+    delt = 1e-5
+    cell = np.eye(3)
+    cutoff = 1
+
+    positions_1 = [np.array([0., 0., 0.]),
+                   np.array([random(), random(), random()]),
+                   np.array([random(), random(), random()])]
+    positions_2 = deepcopy(positions_1)
+    positions_2[0][0] = delt
+
+    species_1 = ['A', 'B', 'A']
+    atom_1 = 0
+    test_structure_1 = struc.Structure(cell, species_1, positions_1, cutoff)
+    test_structure_2 = struc.Structure(cell, species_1, positions_2, cutoff)
+
+    env1_1 = env.ChemicalEnvironment(test_structure_1, atom_1)
+    env1_2 = env.ChemicalEnvironment(test_structure_2, atom_1)
+
+    # create env 2
+    positions_1 = [np.array([0., 0., 0.]),
+                   np.array([random(), random(), random()]),
+                   np.array([random(), random(), random()])]
+
+    species_2 = ['A', 'A', 'B']
+    atom_2 = 0
+    test_structure_1 = struc.Structure(cell, species_2, positions_1, cutoff)
+    env2 = env.ChemicalEnvironment(test_structure_1, atom_2)
+
+    sig = random()
+    ls = random()
+    d1 = 1
+    bodies = None
+
+    hyps = np.array([sig, ls])
+
+    # check force kernel
+    calc1 = three_body_cons_quad_en(env1_2, env2, bodies, hyps, cutoff)
+    calc2 = three_body_cons_quad_en(env1_1, env2, bodies, hyps, cutoff)
+
+    kern_finite_diff = (calc1 - calc2) / delt
+    kern_analytical = three_body_cons_quad_force_en(env1_1, env2, bodies,
+                                                    d1, hyps, cutoff)
+
+    assert(np.isclose(-kern_finite_diff, kern_analytical))

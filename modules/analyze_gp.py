@@ -86,7 +86,7 @@ def get_gp_from_snaps(md_trajectory, training_snaps, cutoff, kernel,
 
 
 # return untrained gp model
-def custom_range_gp(md_trajectory, training_snaps, training_range, cutoff, 
+def custom_range_gp(md_trajectory, training_snaps, training_range, cutoff,
                     kernel, bodies, algorithm='BFGS', cutoffs=None, nos=None):
     gp_model = gp.GaussianProcess(kernel, bodies, algorithm, cutoffs, nos=nos)
 

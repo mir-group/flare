@@ -34,7 +34,18 @@ class GaussianProcess:
         # gp kernel and hyperparameters
         self.bodies = bodies
 
-        if kernel == 'two_plus_three_quad':
+        if kernel == 'three_body_cons_quad':
+            self.kernel_name = 'Energy Conserving 3-body Quadratic'
+            self.kernel = energy_conserving_kernels.three_body_cons_quad
+            self.kernel_grad = \
+                energy_conserving_kernels.three_body_cons_quad_grad
+            self.energy_kernel = \
+                energy_conserving_kernels.three_body_cons_quad_en
+            self.hyps = np.array([1, 1, 1])
+            self.hyp_labels = ['Signal Std', 'Length Scale', 'Noise Std']
+            self.cutoffs = cutoffs
+
+        elif kernel == 'two_plus_three_quad':
             self.kernel_name = 'Two Plus Three Quadratic'
             self.kernel = smooth_kernels.two_plus_three_quad
             self.kernel_grad = smooth_kernels.two_plus_three_quad_grad

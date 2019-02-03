@@ -202,7 +202,7 @@ class OTF(object):
         time_curr = time.time() - self.start_time
         self.write_to_output('wall time from start: %.2f s \n' % time_curr)
 
-        self.write_to_output('Updating database hyperparameters...\n')
+        self.write_to_output('Updating database...\n')
         self.gp.update_db(self.structure, forces,
                           custom_range=train_atoms)
         if self.freeze_hyps is False:
