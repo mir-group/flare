@@ -41,6 +41,8 @@ class GaussianProcess:
                 energy_conserving_kernels.three_body_cons_quad_grad
             self.energy_kernel = \
                 energy_conserving_kernels.three_body_cons_quad_en
+            self.energy_force_kernel = \
+                energy_conserving_kernels.three_body_cons_quad_force_en
             self.hyps = np.array([1, 1, 1])
             self.hyp_labels = ['Signal Std', 'Length Scale', 'Noise Std']
             self.cutoffs = cutoffs
@@ -299,7 +301,21 @@ class GaussianProcess:
 
         return pred_mean, pred_var
 
-    def predict_local_energy(self, x_t: ChemicalEnvironment) -> [float, float]:
+    def predict_local_energy(self, x_t: ChemicalEnvironment) -> float:
+        """Predict the sum of triplet energies that include the test atom.
+
+        :param x_t: chemical environment of test atom
+        :type x_t: ChemicalEnvironment
+        :return: local energy in eV (up to a constant)
+        :rtype: float
+        """
+
+        k_v = self.en_kern_vec(x_t)
+        pred_mean = np.matmul(k_v, self.alpha)
+
+        return pred_mean
+
+    def predict_local_energy_and_var(self, x_t: ChemicalEnvironment):
         # get kernel vector
         k_v = self.en_kern_vec(x_t)
 

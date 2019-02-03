@@ -51,6 +51,7 @@ class OTF(object):
                            self.structure.prev_positions) / self.dt
 
         self.noa = self.structure.positions.shape[0]
+        self.local_energies = np.zeros(self.noa)
         self.atom_list = list(range(self.noa))
         self.curr_step = 0
         self.write_header()
@@ -299,6 +300,7 @@ class OTF(object):
         kb = 0.0000861733034
         temperature = 2 * KE / (3 * (len(self.structure.positions)-1) * kb)
         string += 'temperature: %.2f K \n' % temperature
+        string += 'kinetic energy: %.2f eV \n' % KE
         string += 'wall time from start: %.2f s \n' % \
             (time.time() - self.start_time)
 
