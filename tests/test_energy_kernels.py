@@ -112,7 +112,7 @@ def test_three_body_force_en():
                                                        d1, hyps, cutoff)
 
     tol = 1e-4
-    assert(np.isclose(-kern_finite_diff, kern_analytical, tol))
+    assert(np.isclose(-kern_finite_diff/3, kern_analytical, tol))
 
 
 def test_three_body_cons():

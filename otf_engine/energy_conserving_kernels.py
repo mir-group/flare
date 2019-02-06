@@ -42,10 +42,11 @@ def three_body_cons_quad_force_en(env1, env2, bodies, d1, hyps, r_cut):
     sig = hyps[0]
     ls = hyps[1]
 
+    # divide by three to account for triple counting
     return three_body_cons_quad_force_en_jit(env1.bond_array, env2.bond_array,
                                              env1.cross_bond_dists,
                                              env2.cross_bond_dists,
-                                             d1, sig, ls, r_cut)
+                                             d1, sig, ls, r_cut)/3
 
 
 def three_body_cons_quad_en(env1, env2, bodies, hyps, r_cut):
