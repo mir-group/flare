@@ -1,11 +1,3 @@
-#!/usr/bin/env python3
-# pylint: disable=redefined-outer-name
-
-"""" OTF Parsing test suite based on py.test
-
-Steven Torrisi
-"""
-
 import os
 import sys
 import numpy as np
@@ -16,21 +8,21 @@ from analyze_otf import parse_md_information, parse_dft_information, \
 
 
 def test_parse_md_simple():
-    os.system('cp test_files/otf_output_1.out otf_run.out')
-    _, _, _, _ = parse_md_information('otf_run.out')
-    os.system('rm otf_run.out')
+    os.system('cp test_files/otf_output_1.out otf_run_1.out')
+    _, _, _, _ = parse_md_information('otf_run_1.out')
+    os.system('rm otf_run_1.out')
 
 
 def test_parse_dft_simple():
-    os.system('cp test_files/otf_output_1.out otf_run.out')
-    _, _, _, _ = parse_dft_information('otf_run.out')
-    os.system('rm otf_run.out')
+    os.system('cp test_files/otf_output_1.out otf_run_1.out')
+    _, _, _, _ = parse_dft_information('otf_run_1.out')
+    os.system('rm otf_run_1.out')
 
 
 def test_parse_header_2():
-    os.system('cp test_files/otf_output_2.out otf_run.out')
+    os.system('cp test_files/otf_output_2.out otf_run_1.out')
 
-    header_dict = parse_header_information('otf_run.out')
+    header_dict = parse_header_information('otf_run_1.out')
 
     assert header_dict['frames'] == 20
     assert header_dict['atoms'] == 2
@@ -38,13 +30,14 @@ def test_parse_header_2():
     assert header_dict['species'] == {'H'}
     assert header_dict['dt'] == .0001
 
-    os.system('rm otf_run.out')
+    os.system('rm otf_run_1.out')
 
 
 def test_parse_dft_2():
-    os.system('cp test_files/otf_output_2.out otf_run.out')
+    os.system('cp test_files/otf_output_2.out otf_run_1.out')
 
-    lattices, species, positions, forces = parse_dft_information('otf_run.out')
+    lattices, species, positions, forces = \
+        parse_dft_information('otf_run_1.out')
 
     assert np.equal(lattices, [5. * np.eye(3), 5. * np.eye(3)]).all()
     assert species == [['H', 'H'], ['H', 'H']]

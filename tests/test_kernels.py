@@ -331,7 +331,7 @@ def test_force_en(env1, env2, delt_env):
     force_diff = (en_force_test_2-en_force_test)/delta
 
     force_kern = kernels.n_body_sc(env1, env2, bodies, d1, d2, hyps)
-    assert(np.isclose(-force_diff, force_kern))
+    assert(np.isclose(-force_diff, force_kern/2))
 
 
 def test_en_kern(env1, env2, delt_env):
@@ -348,7 +348,7 @@ def test_en_kern(env1, env2, delt_env):
 
     en_force_test = kernels.energy_force_sc(env2, env1, bodies, d1, hyps)
 
-    assert(np.isclose(-en_diff, en_force_test))
+    assert(np.isclose(-en_diff/2, en_force_test))
 
 
 def test_mc_grad(mc_env_1, mc_env_2):

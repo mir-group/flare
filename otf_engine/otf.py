@@ -16,12 +16,55 @@ class OTF(object):
     def __init__(self, qe_input: str, dt: float, number_of_steps: int,
                  kernel: str, bodies: int, cutoff: float, pw_loc: str,
                  std_tolerance_factor: float = 1, opt_algo: str='BFGS',
-                 prev_pos_init=None,
-                 par=False,
-                 parsimony=False,
-                 cutoffs=None,
-                 skip=0,
-                 hyps=None):
+                 prev_pos_init: np.ndarray=None, par: bool=False,
+                 parsimony: bool=False, cutoffs: np.ndarray=None,
+                 skip: int=0, hyps: np.ndarray=None):
+        """Sets up and generates an on-the-fly molecular dynamics trajectory.
+
+        :param qe_input: location of quantum espresso input file
+        :type qe_input: str
+        :param dt: time step in ps
+        :type dt: float
+        :param number_of_steps: number of MD steps in otf run
+        :type number_of_steps: int
+        :param kernel: name of kernel. gp.py contains all implemented kernels.
+        :type kernel: str
+        :param bodies: number of bodies in the kernel. only needed for
+        certain kernels. usually set to None.
+        :type bodies: int
+        :param cutoff: cutoff radius. atoms outside this region are not
+        considered.
+        :type cutoff: float
+        :param pw_loc: location of quantum espresso pwscf executable.
+        :type pw_loc: str
+        :param std_tolerance_factor: negative tolerance is a hard user-defined
+            std cutoff. positive is a multiple of the noise std. 0 means no
+            failure condition (DFT is off). defaults to 1.
+        :param std_tolerance_factor: float, optional
+        :param opt_algo: optimization algorithm for setting hyperparameters.
+            defaults to 'BFGS'.
+        :param opt_algo: str, optional
+        :param prev_pos_init: array of previous positions. determines the
+            initial velocities of the atoms. defaults to None.
+        :param prev_pos_init: np.ndarray, optional
+        :param par: if True, force calculations are parallelized using
+            Python's concurrent.futures class. defaults to False.
+        :param par: bool, optional
+        :param parsimony: if True, only the highest uncertainty atom is added
+            to the training database after the first DFT call. defaults to
+            False.
+        :param parsimony: bool, optional
+        :param cutoffs: array of cutoffs. only used for combination
+            kernels, e.g. 2+3-body. defaults to None.
+        :param cutoffs: np.ndarray, optional
+        :param skip: number of frames skipped before printing to the
+            output file. defaults to 0.
+        :param skip: int, optional
+        :param hyps: array of hyperparameters. if None, the hyperparameters
+            are re-optimized after every DFT call. if not None, then the
+            hyperparameters are fixed throughout the run. defaults to None.
+        :param hyps: np.ndarray, optional
+        """
 
         self.qe_input = qe_input
         self.dt = dt
@@ -141,11 +184,15 @@ class OTF(object):
         chemenv = ChemicalEnvironment(self.structure, atom)
         comps = []
         stds = []
+        # predict force components and standard deviations
         for i in range(3):
             force, var = self.gp.predict(chemenv, i+1)
             comps.append(float(force))
             stds.append(np.sqrt(np.absolute(var)))
-        return comps, stds
+
+        # predict local energy
+        local_energy = self.gp.predict_local_energy(chemenv)
+        return comps, stds, local_energy
 
     def predict_on_structure_par(self):
         n = 0
@@ -154,6 +201,7 @@ class OTF(object):
                 for i in range(3):
                     self.structure.forces[n][i] = res[0][i]
                     self.structure.stds[n][i] = res[1][i]
+                self.local_energies[n] = res[2]
                 n += 1
         self.structure.dft_forces = False
 
@@ -164,6 +212,7 @@ class OTF(object):
                 force, var = self.gp.predict(chemenv, i + 1)
                 self.structure.forces[n][i] = float(force)
                 self.structure.stds[n][i] = np.sqrt(np.absolute(var))
+            self.local_energies[n] = self.gp.predict_local_energy(chemenv)
 
         self.structure.dft_forces = False
 
@@ -299,8 +348,13 @@ class OTF(object):
 
         kb = 0.0000861733034
         temperature = 2 * KE / (3 * (len(self.structure.positions)-1) * kb)
+        pot_en = np.sum(self.local_energies)
+        tot_en = KE + pot_en
+
         string += 'temperature: %.2f K \n' % temperature
-        string += 'kinetic energy: %.2f eV \n' % KE
+        string += 'kinetic energy: %.6f eV \n' % KE
+        string += 'potential energy (up to a constant): %.6f eV \n' % pot_en
+        string += 'total energy: %.6f eV \n' % tot_en
         string += 'wall time from start: %.2f s \n' % \
             (time.time() - self.start_time)
 

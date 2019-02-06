@@ -179,7 +179,7 @@ def energy_force_sc(env1, env2, bodies, d1, hyps, cutoffs=None):
 
     return energy_force_jit_sc(env1.bond_array, env1.cross_bond_dists, combs,
                                env2.bond_array, env2.cross_bond_dists, perms,
-                               d1, hyps)
+                               d1, hyps)/2
 
 
 def combo_kernel_sc(env1: ChemicalEnvironment, env2: ChemicalEnvironment,

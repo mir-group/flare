@@ -45,7 +45,7 @@ def test_three_body_derv():
     grad_test = en.three_body_cons_quad_grad(env1, env2, bodies,
                                              d1, d2, hyps, cutoff)
 
-    delta = 1e-6
+    delta = 1e-5
     new_sig = sig + delta
     new_ls = ls + delta
 
@@ -61,8 +61,9 @@ def test_three_body_derv():
                     en.three_body_cons_quad(env1, env2, bodies, d1, d2,
                                             hyps, cutoff)) / delta
 
-    assert(np.isclose(grad_test[1][0], sig_derv_brute))
-    assert(np.isclose(grad_test[1][1], l_derv_brute))
+    tol = 1e-4
+    assert(np.isclose(grad_test[1][0], sig_derv_brute, tol))
+    assert(np.isclose(grad_test[1][1], l_derv_brute, tol))
 
 
 def test_three_body_force_en():

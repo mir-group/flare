@@ -236,9 +236,3 @@ def test_otf_1_2():
 #     otf.run()
 #     assert otf.run_stats['dft_calls'] == 0
 #     cleanup_otf_run()
-
-
-
-
-
-
