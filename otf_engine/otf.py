@@ -18,7 +18,8 @@ class OTF(object):
                  std_tolerance_factor: float = 1, opt_algo: str='BFGS',
                  prev_pos_init: np.ndarray=None, par: bool=False,
                  parsimony: bool=False, cutoffs: np.ndarray=None,
-                 skip: int=0, hyps: np.ndarray=None):
+                 skip: int=0, hyps: np.ndarray=None,
+                 init_atoms: List[int]=None):
         """Sets up and generates an on-the-fly molecular dynamics trajectory.
 
         :param qe_input: location of quantum espresso input file
@@ -30,10 +31,10 @@ class OTF(object):
         :param kernel: name of kernel. gp.py contains all implemented kernels.
         :type kernel: str
         :param bodies: number of bodies in the kernel. only needed for
-        certain kernels. usually set to None.
+        N-body kernels. usually set to None.
         :type bodies: int
         :param cutoff: cutoff radius. atoms outside this region are not
-        considered.
+        considered in force calculations.
         :type cutoff: float
         :param pw_loc: location of quantum espresso pwscf executable.
         :type pw_loc: str
@@ -64,6 +65,10 @@ class OTF(object):
             are re-optimized after every DFT call. if not None, then the
             hyperparameters are fixed throughout the run. defaults to None.
         :param hyps: np.ndarray, optional
+        :param init_atoms: list of atoms to put in the training set after the
+            first DFT call. if None, all atoms are placed in the training set.
+            defaults to None.
+        :param init_atoms: List[int], optional.
         """
 
         self.qe_input = qe_input
@@ -98,6 +103,11 @@ class OTF(object):
         self.atom_list = list(range(self.noa))
         self.curr_step = 0
         self.write_header()
+
+        if init_atoms is None:
+            self.init_atoms = [int(n) for n in range(self.noa)]
+        else:
+            self.init_atoms = init_atoms
 
         self.par = par
         self.parsimony = parsimony
@@ -222,13 +232,7 @@ class OTF(object):
         if target_atom is None and self.parsimony is False:
             self.write_to_output('Calling Quantum Espresso...')
         elif target_atom is None and self.parsimony is True:
-            # start with all atoms
-            train_atoms = [int(n) for n in range(self.structure.nat)]
-
-            # # start with first and last atoms
-            # train_atoms = [int(n) for n in
-            #                np.round(np.linspace(0, self.structure.nat-1, 2))]
-
+            train_atoms = self.init_atoms
             self.write_to_output('Calling DFT with training atoms {}...'
                                  .format(train_atoms))
         else:
