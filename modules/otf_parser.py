@@ -37,7 +37,8 @@ class OtfAnalysis:
         self.gp_cutoff_radius = gp_cutoff_radius
         self.gp_species_list = gp_species_list
 
-    def make_gp(self, cell, kernel, bodies, algo, call_no, cutoffs=None):
+    def make_gp(self, cell, kernel, bodies, algo, call_no,
+                start_list, cutoffs=None):
         gp_model = gp.GaussianProcess(kernel, bodies, algo, cutoffs=cutoffs)
         gp_hyps = self.gp_hyp_list[call_no-1]
         gp_model.hyps = gp_hyps
@@ -46,10 +47,17 @@ class OtfAnalysis:
             enumerate(zip(self.gp_position_list, self.gp_force_list,
                           self.gp_atom_list, self.gp_hyp_list,
                           self.gp_species_list)):
-            if count < call_no:
-                struc_curr = struc.Structure(cell, species, positions,
-                                             self.gp_cutoff_radius)
 
+            struc_curr = struc.Structure(cell, species, positions,
+                                         self.gp_cutoff_radius)
+
+            # add atoms in start list
+            if count == 0:
+                gp_model.update_db(struc_curr, forces,
+                                   custom_range=start_list)
+
+            # add one atom
+            elif count < call_no:
                 gp_model.update_db(struc_curr, forces, custom_range=[atom])
 
         gp_model.set_L_alpha()
@@ -152,18 +160,13 @@ class OtfAnalysis:
                     hyps.append(float(frame_line[5]))
                 hyps = np.array(hyps)
                 hyp_list.append(hyps)
-                hyp_list.append(hyps)
 
                 # TODO: generalize this to account for arbitrary starting list
                 append_atom_lists(species_list, position_list, force_list,
                                   uncertainty_list, velocity_list,
                                   lines, index, noa, True, noh)
-                append_atom_lists(species_list, position_list, force_list,
-                                  uncertainty_list, velocity_list,
-                                  lines, index, noa, True, noh)
 
                 atom_list.append(0)
-                atom_list.append(30)
 
             if line.startswith("Calling DFT due to"):
                 line_curr = line.split()

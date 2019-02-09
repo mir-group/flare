@@ -62,8 +62,8 @@ def test_three_body_derv():
                                             hyps, cutoff)) / delta
 
     tol = 1e-4
-    assert(np.isclose(grad_test[1][0], sig_derv_brute, tol))
-    assert(np.isclose(grad_test[1][1], l_derv_brute, tol))
+    assert(np.isclose(grad_test[1][0], sig_derv_brute, atol=tol))
+    assert(np.isclose(grad_test[1][1], l_derv_brute, atol=tol))
 
 
 def test_three_body_force_en():
