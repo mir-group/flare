@@ -4,10 +4,54 @@ import sys
 from random import random, randint
 from copy import deepcopy
 sys.path.append('../otf_engine')
+import fast_env
 import env
 import gp
 import struc
 import energy_conserving_kernels as en
+
+
+def test_three_body_v2():
+    # create env 1
+    cell = np.eye(3)
+    cutoff = 1
+    cutoffs = np.array([1, 1])
+
+    positions_1 = [np.array([0., 0., 0.]),
+                   np.array([random(), random(), random()]),
+                   np.array([random(), random(), random()])]
+
+    species_1 = ['A', 'B', 'A']
+    atom_1 = 0
+    test_structure_1 = struc.Structure(cell, species_1, positions_1, cutoff)
+    env1 = env.ChemicalEnvironment(test_structure_1, atom_1)
+    env1_new = fast_env.AtomicEnvironment(test_structure_1, atom_1, cutoffs)
+
+    # create env 2
+    positions_1 = [np.array([0., 0., 0.]),
+                   np.array([random(), random(), random()]),
+                   np.array([random(), random(), random()])]
+
+    species_2 = ['A', 'A', 'B']
+    atom_2 = 0
+    test_structure_1 = struc.Structure(cell, species_2, positions_1, cutoff)
+    env2 = env.ChemicalEnvironment(test_structure_1, atom_2)
+    env2_new = fast_env.AtomicEnvironment(test_structure_1, atom_2, cutoffs)
+
+    sig = random()
+    ls = random()
+    d1 = randint(1, 3)
+    d2 = randint(1, 3)
+    bodies = None
+
+    hyps = np.array([sig, ls])
+
+    v1_kern = en.three_body_cons_quad(env1, env2, bodies, d1, d2,
+                                      hyps, cutoff)
+    v2_kern = en.three_body_cons_quad_v2(env1_new, env2_new, bodies, d1, d2,
+                                         hyps, cutoff)
+
+    assert(v1_kern == v2_kern)
 
 
 def test_three_body_derv():

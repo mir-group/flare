@@ -5,45 +5,32 @@ from struc import Structure
 
 
 class AtomicEnvironment:
-
-    def __init__(self, structure: Structure, atom: int, cutoff_2: float,
-                 cutoff_3: float):
+    def __init__(self, structure: Structure, atom: int, cutoffs: np.ndarray):
         self.positions = structure.positions
         self.cell = structure.cell
         self.atom = atom
-        self.cutoff_2 = cutoff_2
-        self.cutoff_3 = cutoff_3
+        self.cutoff_2 = cutoffs[0]
 
-        ba2, ba3, cbi, cbd, tcs = \
-            get_bond_array(self.positions, self.atom, self.cell, self.cutoff_2,
-                           self.cutoff_3)
+        # get 2-body arrays
+        bond_array_2, bond_positions_2 = \
+            get_2_body_arrays(self.positions, self.atom, self.cell,
+                              self.cutoff_2)
+        self.bond_array_2 = bond_array_2
 
-        self.bond_array_2 = ba2
-        self.bond_array_3 = ba3
-        self.cross_bond_inds = cbi
-        self.cross_bond_dists = cbd
-        self.triplet_counts = tcs
+        # if multiple cutoffs are given, create 3-body arrays
+        if len(cutoffs) > 0:
+            self.cutoff_3 = cutoffs[1]
+            bond_array_3, cross_bond_inds, cross_bond_dists, triplet_counts =\
+                get_3_body_arrays(bond_array_2, bond_positions_2, cutoffs[1])
+            self.bond_array_3 = bond_array_3
+            self.cross_bond_inds = cross_bond_inds
+            self.cross_bond_dists = cross_bond_dists
+            self.triplet_counts = triplet_counts
 
 
 @njit
-def get_bond_array(positions: np.ndarray, atom: int, cell: np.ndarray,
-                   cutoff_2: float, cutoff_3: float):
-    """[summary]
-
-    :param positions: [description]
-    :type positions: np.ndarray
-    :param atom: [description]
-    :type atom: int
-    :param cell: [description]
-    :type cell: np.ndarray
-    :param cutoff_2: [description]
-    :type cutoff_2: float
-    :param cutoff_3: [description]
-    :type cutoff_3: float
-    :return: [description]
-    :rtype: [type]
-    """
-
+def get_2_body_arrays(positions: np.ndarray, atom: int, cell: np.ndarray,
+                      cutoff_2: float):
     noa = len(positions)
     pos_atom = positions[atom]
     coords = np.zeros((noa, 3, 27))
@@ -89,13 +76,21 @@ def get_bond_array(positions: np.ndarray, atom: int, cell: np.ndarray,
     bond_array_2 = bond_array_2[sort_inds]
     bond_positions_2 = bond_positions_2[sort_inds]
 
+    return bond_array_2, bond_positions_2
+
+
+@njit
+def get_3_body_arrays(bond_array_2: np.ndarray,
+                      bond_positions_2: np.ndarray,
+                      cutoff_3: float):
     # get 3-body bond array
     ind_3 = -1
+    noa = bond_array_2.shape[0]
     for count, dist in enumerate(bond_array_2[:, 0]):
         if dist > cutoff_3:
             ind_3 = count
     if ind_3 == -1:
-        ind_3 = cutoff_count
+        ind_3 = noa
 
     bond_array_3 = bond_array_2[0:ind_3, :]
     bond_positions_3 = bond_positions_2[0:ind_3, :]
@@ -120,34 +115,8 @@ def get_bond_array(positions: np.ndarray, atom: int, cell: np.ndarray,
                 trips += 1
         triplet_counts[m] = trips
 
-    return bond_array_2, bond_array_3, cross_bond_inds, cross_bond_dists,\
-        triplet_counts
+    return bond_array_3, cross_bond_inds, cross_bond_dists, triplet_counts
 
 
 if __name__ == '__main__':
-    import struc
-    import env
-    from random import random
-
-    # create test structure
-    positions = [np.array([random(), random(), random()]),
-                 np.array([random(), random(), random()]),
-                 np.array([random(), random(), random()]),
-                 np.array([random(), random(), random()]),
-                 np.array([random(), random(), random()])]
-    species = ['B', 'A', 'B', 'A', 'B']
-    cell = np.eye(3)
-    cutoff_2 = 1
-    cutoff_3 = 1
-    test_structure = struc.Structure(cell, species, positions, cutoff_2)
-
-    # create environment
-    atom = 0
-    toy_env = env.ChemicalEnvironment(test_structure, atom)
-    print(toy_env.bond_array)
-
-    toy_env_2 = AtomicEnvironment(test_structure, atom)
-    print(toy_env_2.bond_array_2)
-
-    # test = get_bond_array(positions, atom, cell, cutoff_2, cutoff_3)
-    # print(test)
+    pass

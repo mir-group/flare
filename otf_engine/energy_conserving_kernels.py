@@ -78,29 +78,7 @@ def three_body_cons_quad_en(env1, env2, bodies, hyps, r_cut):
 def three_body_cons_quad_grad_jit(bond_array_1, bond_array_2,
                                   cross_bond_dists_1, cross_bond_dists_2,
                                   d1, d2, sig, ls, r_cut):
-    """Kernel gradient for 3-body force comparisons.
-
-    :param bond_array_1: [description]
-    :type bond_array_1: [type]
-    :param bond_array_2: [description]
-    :type bond_array_2: [type]
-    :param cross_bond_dists_1: [description]
-    :type cross_bond_dists_1: [type]
-    :param cross_bond_dists_2: [description]
-    :type cross_bond_dists_2: [type]
-    :param d1: [description]
-    :type d1: [type]
-    :param d2: [description]
-    :type d2: [type]
-    :param sig: [description]
-    :type sig: [type]
-    :param ls: [description]
-    :type ls: [type]
-    :param r_cut: [description]
-    :type r_cut: [type]
-    :return: [description]
-    :rtype: [type]
-    """
+    """Kernel gradient for 3-body force comparisons."""
 
     kern = 0
     sig_derv = 0
@@ -170,82 +148,25 @@ def three_body_cons_quad_grad_jit(bond_array_1, bond_array_2,
                     r33 = ri3-rj3
 
                     # first cyclic term
-                    A1 = ci1*cj1+ci2*cj2
-                    B1 = r11*ci1+r22*ci2
-                    C1 = r11*cj1+r22*cj2
-                    D1 = r11*r11+r22*r22+r33*r33
-                    E1 = exp(-D1*ls1)
-                    F1 = E1*B1*ls2
-                    G1 = -E1*C1*ls2
-                    H1 = A1*E1*ls2-B1*C1*E1*ls3
-                    I1 = E1*fdi*fdj
-                    J1 = F1*fi*fdj
-                    K1 = G1*fdi*fj
-                    L1 = H1*fi*fj
-                    M1 = I1+J1+K1+L1
-                    N1 = sig2*M1
-                    O1 = sig3*M1
-                    P1 = E1*D1*ls4
-                    Q1 = B1*(ls2*P1-2*E1*ls4)
-                    R1 = -C1*(ls2*P1-2*E1*ls4)
-                    S1 = (A1*ls5-B1*C1)*(P1*ls3-4*E1*ls6)+2*E1*A1*ls4
-                    T1 = P1*fdi*fdj
-                    U1 = Q1*fi*fdj
-                    V1 = R1*fdi*fj
-                    W1 = S1*fi*fj
-                    X1 = sig2*(T1+U1+V1+W1)
+                    N1, O1, X1 = \
+                        three_body_grad_helper_1(ci1, ci2, cj1, cj2, r11, r22,
+                                                 r33, fi, fj, fdi, fdj, ls1,
+                                                 ls2, ls3, ls4, ls5, ls6, sig2,
+                                                 sig3)
 
                     # second cyclic term
-                    A2 = ci2*cj1
-                    B2 = r13*ci1+r21*ci2
-                    C2 = r21*cj1+r32*cj2
-                    D2 = r13*r13+r21*r21+r32*r32
-                    E2 = exp(-D2*ls1)
-                    F2 = E2*B2*ls2
-                    G2 = -E2*C2*ls2
-                    H2 = A2*E2*ls2-B2*C2*E2*ls3
-                    I2 = E2*fdi*fdj
-                    J2 = F2*fi*fdj
-                    K2 = G2*fdi*fj
-                    L2 = H2*fi*fj
-                    M2 = I2+J2+K2+L2
-                    N2 = sig2*M2
-                    O2 = sig3*M2
-                    P2 = E2*D2*ls4
-                    Q2 = B2*(ls2*P2-2*E2*ls4)
-                    R2 = -C2*(ls2*P2-2*E2*ls4)
-                    S2 = (A2*ls5-B2*C2)*(P2*ls3-4*E2*ls6)+2*E2*A2*ls4
-                    T2 = P2*fdi*fdj
-                    U2 = Q2*fi*fdj
-                    V2 = R2*fdi*fj
-                    W2 = S2*fi*fj
-                    X2 = sig2*(T2+U2+V2+W2)
+                    N2, O2, X2 = \
+                        three_body_grad_helper_2(ci2, ci1, cj2, cj1, r21, r13,
+                                                 r32, fi, fj, fdi, fdj, ls1,
+                                                 ls2, ls3, ls4, ls5, ls6, sig2,
+                                                 sig3)
 
                     # third cyclic term
-                    A3 = ci1*cj2
-                    B3 = r12*ci1+r23*ci2
-                    C3 = r12*cj2+r31*cj1
-                    D3 = r12*r12+r23*r23+r31*r31
-                    E3 = exp(-D3*ls1)
-                    F3 = E3*B3*ls2
-                    G3 = -E3*C3*ls2
-                    H3 = A3*E3*ls2-B3*C3*E3*ls3
-                    I3 = E3*fdi*fdj
-                    J3 = F3*fi*fdj
-                    K3 = G3*fdi*fj
-                    L3 = H3*fi*fj
-                    M3 = I3+J3+K3+L3
-                    N3 = sig2*M3
-                    O3 = sig3*M3
-                    P3 = E3*D3*ls4
-                    Q3 = B3*(ls2*P3-2*E3*ls4)
-                    R3 = -C3*(ls2*P3-2*E3*ls4)
-                    S3 = (A3*ls5-B3*C3)*(P3*ls3-4*E3*ls6)+2*E3*A3*ls4
-                    T3 = P3*fdi*fdj
-                    U3 = Q3*fi*fdj
-                    V3 = R3*fdi*fj
-                    W3 = S3*fi*fj
-                    X3 = sig2*(T3+U3+V3+W3)
+                    N3, O3, X3 = \
+                        three_body_grad_helper_2(ci1, ci2, cj1, cj2, r12, r23,
+                                                 r31, fi, fj, fdi, fdj, ls1,
+                                                 ls2, ls3, ls4, ls5, ls6, sig2,
+                                                 sig3)
 
                     kern += N1+N2+N3
                     sig_derv += O1+O2+O3
@@ -258,29 +179,7 @@ def three_body_cons_quad_grad_jit(bond_array_1, bond_array_2,
 def three_body_cons_quad_jit(bond_array_1, bond_array_2,
                              cross_bond_dists_1, cross_bond_dists_2,
                              d1, d2, sig, ls, r_cut):
-    """Kernel for 3-body force comparisons.
-
-    :param bond_array_1: [description]
-    :type bond_array_1: [type]
-    :param bond_array_2: [description]
-    :type bond_array_2: [type]
-    :param cross_bond_dists_1: [description]
-    :type cross_bond_dists_1: [type]
-    :param cross_bond_dists_2: [description]
-    :type cross_bond_dists_2: [type]
-    :param d1: [description]
-    :type d1: [type]
-    :param d2: [description]
-    :type d2: [type]
-    :param sig: [description]
-    :type sig: [type]
-    :param ls: [description]
-    :type ls: [type]
-    :param r_cut: [description]
-    :type r_cut: [type]
-    :return: [description]
-    :rtype: [type]
-    """
+    """Kernel for 3-body force comparisons."""
 
     kern = 0
 
@@ -343,30 +242,6 @@ def three_body_cons_quad_jit_v2(bond_array_1, bond_array_2,
                                 cross_bond_dists_1, cross_bond_dists_2,
                                 triplets_1, triplets_2,
                                 d1, d2, sig, ls, r_cut):
-    """Kernel for 3-body force comparisons.
-
-    :param bond_array_1: [description]
-    :type bond_array_1: [type]
-    :param bond_array_2: [description]
-    :type bond_array_2: [type]
-    :param cross_bond_dists_1: [description]
-    :type cross_bond_dists_1: [type]
-    :param cross_bond_dists_2: [description]
-    :type cross_bond_dists_2: [type]
-    :param d1: [description]
-    :type d1: [type]
-    :param d2: [description]
-    :type d2: [type]
-    :param sig: [description]
-    :type sig: [type]
-    :param ls: [description]
-    :type ls: [type]
-    :param r_cut: [description]
-    :type r_cut: [type]
-    :return: [description]
-    :rtype: [type]
-    """
-
     kern = 0
 
     # pre-compute constants that appear in the inner loop
@@ -478,6 +353,38 @@ def three_body_helper_1(ci1, ci2, cj1, cj2, r11, r22, r33,
 
 
 @njit
+def three_body_grad_helper_1(ci1, ci2, cj1, cj2, r11, r22, r33,
+                             fi, fj, fdi, fdj,
+                             ls1, ls2, ls3, ls4, ls5, ls6, sig2, sig3):
+    A1 = ci1*cj1+ci2*cj2
+    B1 = r11*ci1+r22*ci2
+    C1 = r11*cj1+r22*cj2
+    D1 = r11*r11+r22*r22+r33*r33
+    E1 = exp(-D1*ls1)
+    F1 = E1*B1*ls2
+    G1 = -E1*C1*ls2
+    H1 = A1*E1*ls2-B1*C1*E1*ls3
+    I1 = E1*fdi*fdj
+    J1 = F1*fi*fdj
+    K1 = G1*fdi*fj
+    L1 = H1*fi*fj
+    M1 = I1+J1+K1+L1
+    N1 = sig2*M1
+    O1 = sig3*M1
+    P1 = E1*D1*ls4
+    Q1 = B1*(ls2*P1-2*E1*ls4)
+    R1 = -C1*(ls2*P1-2*E1*ls4)
+    S1 = (A1*ls5-B1*C1)*(P1*ls3-4*E1*ls6)+2*E1*A1*ls4
+    T1 = P1*fdi*fdj
+    U1 = Q1*fi*fdj
+    V1 = R1*fdi*fj
+    W1 = S1*fi*fj
+    X1 = sig2*(T1+U1+V1+W1)
+
+    return N1, O1, X1
+
+
+@njit
 def three_body_helper_2(ci1, ci2, cj1, cj2, r12, r23, r31,
                         fi, fj, fdi, fdj,
                         ls1, ls2, ls3, sig2):
@@ -496,6 +403,38 @@ def three_body_helper_2(ci1, ci2, cj1, cj2, r12, r23, r31,
     M3 = sig2*(I3+J3+K3+L3)
 
     return M3
+
+
+@njit
+def three_body_grad_helper_2(ci1, ci2, cj1, cj2, r12, r23, r31,
+                             fi, fj, fdi, fdj,
+                             ls1, ls2, ls3, ls4, ls5, ls6, sig2, sig3):
+    A3 = ci1*cj2
+    B3 = r12*ci1+r23*ci2
+    C3 = r12*cj2+r31*cj1
+    D3 = r12*r12+r23*r23+r31*r31
+    E3 = exp(-D3*ls1)
+    F3 = E3*B3*ls2
+    G3 = -E3*C3*ls2
+    H3 = A3*E3*ls2-B3*C3*E3*ls3
+    I3 = E3*fdi*fdj
+    J3 = F3*fi*fdj
+    K3 = G3*fdi*fj
+    L3 = H3*fi*fj
+    M3 = I3+J3+K3+L3
+    N3 = sig2*M3
+    O3 = sig3*M3
+    P3 = E3*D3*ls4
+    Q3 = B3*(ls2*P3-2*E3*ls4)
+    R3 = -C3*(ls2*P3-2*E3*ls4)
+    S3 = (A3*ls5-B3*C3)*(P3*ls3-4*E3*ls6)+2*E3*A3*ls4
+    T3 = P3*fdi*fdj
+    U3 = Q3*fi*fdj
+    V3 = R3*fdi*fj
+    W3 = S3*fi*fj
+    X3 = sig2*(T3+U3+V3+W3)
+
+    return N3, O3, X3
 
 
 @njit
@@ -674,48 +613,4 @@ def three_body_cons_quad_en_jit(bond_array_1, bond_array_2,
     return kern
 
 if __name__ == '__main__':
-    # create env 1
-    delt = 1e-5
-    cell = np.eye(3)
-    cutoff = 1
-
-    positions_1 = [np.array([0., 0., 0.]),
-                   np.array([random(), random(), random()]),
-                   np.array([random(), random(), random()])]
-    positions_2 = deepcopy(positions_1)
-    positions_2[0][0] = delt
-
-    species_1 = ['A', 'B', 'A']
-    atom_1 = 0
-    test_structure_1 = struc.Structure(cell, species_1, positions_1, cutoff)
-    test_structure_2 = struc.Structure(cell, species_1, positions_2, cutoff)
-
-    env1_1 = env.ChemicalEnvironment(test_structure_1, atom_1)
-    env1_2 = env.ChemicalEnvironment(test_structure_2, atom_1)
-
-    # create env 2
-    positions_1 = [np.array([0., 0., 0.]),
-                   np.array([random(), random(), random()]),
-                   np.array([random(), random(), random()])]
-
-    species_2 = ['A', 'A', 'B']
-    atom_2 = 0
-    test_structure_1 = struc.Structure(cell, species_2, positions_1, cutoff)
-    env2 = env.ChemicalEnvironment(test_structure_1, atom_2)
-
-    sig = random()
-    ls = random()
-    d1 = 1
-    bodies = None
-
-    hyps = np.array([sig, ls])
-
-    # check force kernel
-    calc1 = three_body_cons_quad_en(env1_2, env2, bodies, hyps, cutoff)
-    calc2 = three_body_cons_quad_en(env1_1, env2, bodies, hyps, cutoff)
-
-    kern_finite_diff = (calc1 - calc2) / delt
-    kern_analytical = three_body_cons_quad_force_en(env1_1, env2, bodies,
-                                                    d1, hyps, cutoff)
-
-    assert(np.isclose(-kern_finite_diff, kern_analytical))
+    pass
