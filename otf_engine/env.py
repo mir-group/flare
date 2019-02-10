@@ -1,6 +1,3 @@
-"""
-Jon V
-"""
 import numpy as np
 from math import exp
 from numba import njit

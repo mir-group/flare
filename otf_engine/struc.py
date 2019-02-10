@@ -1,9 +1,3 @@
-""""
-OTF engine
-
-Steven Torrisi, Jon Vandermause
-"""
-
 from numpy import zeros, ndarray, dot, isclose, mod, ones, equal, matmul, \
     copy, arccos, array, arange
 from numpy import abs as npabs
@@ -18,20 +12,20 @@ class Structure(object):
         Contains positions, species, cell, cutoff rad, previous positions,
         forces, and stds of forces, computes inv_cell and bond list
 
-        :param lattice: nparray, 3x3 Bravais Lattice
+        :param cell: nparray, 3x3 Bravais cell
         :param species: list[str], List of elements
         :param positions: list[nparray] list of positions
         :param cutoff: float, Cutoff radius for GP
 
     """
 
-    def __init__(self, lattice: ndarray, species: List[str],
+    def __init__(self, cell: ndarray, species: List[str],
                  positions: ndarray, cutoff: float,
                  mass_dict: dict = None, prev_positions: ndarray=None):
-        self.lattice = lattice
-        self.vec1 = lattice[0, :]
-        self.vec2 = lattice[1, :]
-        self.vec3 = lattice[2, :]
+        self.cell = cell
+        self.vec1 = cell[0, :]
+        self.vec2 = cell[1, :]
+        self.vec3 = cell[2, :]
 
         self.species = species
         self.nat = len(species)
@@ -45,7 +39,7 @@ class Structure(object):
         self.bond_list = self.calc_bond_list(self.unique_species)
         self.triplet_list = self.calc_triplet_list(self.unique_species)
 
-        self.inv_lattice = inv(lattice)
+        self.inv_cell = inv(cell)
 
         self.positions = array(positions)
 

@@ -90,7 +90,7 @@ class OTF(object):
         # parse input file
         positions, species, cell, masses = parse_qe_input(self.qe_input)
 
-        self.structure = Structure(lattice=cell, species=species,
+        self.structure = Structure(cell=cell, species=species,
                                    positions=positions, cutoff=cutoff,
                                    mass_dict=masses,
                                    prev_positions=prev_pos_init)
@@ -306,8 +306,8 @@ class OTF(object):
         headerstring += 'Number of Atoms: {}\n'.format(self.structure.nat)
         headerstring += 'System Species: {}\n'.format(set(
             self.structure.species))
-        headerstring += 'Bravais lattice: \n'
-        headerstring += str(self.structure.lattice)
+        headerstring += 'Periodic cell: \n'
+        headerstring += str(self.structure.cell)
         headerstring += '\n'
 
         self.write_to_output(headerstring)

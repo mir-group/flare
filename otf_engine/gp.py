@@ -1,12 +1,3 @@
-#!/usr/bin/env python3
-# pylint: disable=redefined-outer-name
-
-"""" Gaussian Process Regression model
-
-Implementation is based on Algorithm 2.1 (pg. 19) of
-"Gaussian Processes for Machine Learning" by Rasmussen and Williams
-"""
-
 import math
 import numpy as np
 from scipy.linalg import solve_triangular
@@ -21,7 +12,10 @@ from struc import Structure
 
 
 class GaussianProcess:
-    """ Gaussian Process Regression Model """
+    """ Gaussian Process Regression Model.
+
+    Implementation is based on Algorithm 2.1 (pg. 19) of
+    "Gaussian Processes for Machine Learning" by Rasmussen and Williams"""
 
     def __init__(self, kernel: str, bodies, opt_algorithm='L-BFGS-B',
                  cutoffs=None, nos=None):

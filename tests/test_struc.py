@@ -27,9 +27,10 @@ def test_random_structure_setup():
                                           cutoff=np.random.uniform(1, 10.),
                                           noa=2)
 
-    assert np.equal(struct.lattice, np.eye(3)).all()
+    assert np.equal(struct.cell, np.eye(3)).all()
     assert 'A' in struct.unique_species or 'B' in struct.unique_species
     assert len(struct.positions) == 2
+
 
 def test_prev_positions_arg():
 
@@ -43,19 +44,18 @@ def test_prev_positions_arg():
         prev_positions.append(np.random.uniform(-1, 1, 3))
 
     test_structure1 = Structure(cell, species, positions, cutoff=1)
-    test_structure2 = Structure(cell, species,positions,cutoff=1,
+    test_structure2 = Structure(cell, species, positions, cutoff=1,
                                 prev_positions=positions)
-    test_structure3 = Structure(cell, species,positions,cutoff=1,
+    test_structure3 = Structure(cell, species, positions, cutoff=1,
                                 prev_positions=prev_positions)
 
     assert np.equal(test_structure1.positions, test_structure2.positions).all()
     assert np.equal(test_structure1.prev_positions,
-           test_structure2.prev_positions).all()
+                    test_structure2.prev_positions).all()
     assert np.equal(test_structure2.positions,
                     test_structure2.prev_positions).all()
     assert not np.equal(test_structure3.positions,
                         test_structure3.prev_positions).all()
-
 
 
 def test_2_body_bond_order():
@@ -173,4 +173,3 @@ def test_perturb_structure(rand_struct):
     old_positions = np.copy(rand_struct.positions)
     rand_struct.perturb_positions()
     assert not np.isclose(rand_struct.positions, old_positions).all()
-

@@ -93,7 +93,7 @@ def qe_input_to_structure(qe_input: str, cutoff: float = 5) -> Structure:
     :return:
     """
     positions, species, cell, masses = parse_qe_input(qe_input)
-    return Structure(positions=positions, species=species, lattice=cell,
+    return Structure(positions=positions, species=species, cell=cell,
                      mass_dict=masses, cutoff=cutoff)
 
 

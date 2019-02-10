@@ -130,7 +130,7 @@ def test_espresso_calling(qe_input, qe_output):
     os.system(' '.join(['cp', qe_input, 'pwscf.in']))
     positions, species, cell, masses = parse_qe_input(qe_input)
 
-    struc = Structure(lattice=cell, species=species, positions=positions,
+    struc = Structure(cell=cell, species=species, positions=positions,
                       cutoff=1,
                       mass_dict=masses)
 
