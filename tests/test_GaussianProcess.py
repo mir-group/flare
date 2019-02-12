@@ -6,6 +6,7 @@ sys.path.append('../otf_engine')
 from gp import GaussianProcess
 from env import ChemicalEnvironment
 from struc import Structure
+import kernels as kern
 
 
 def get_random_structure(cell, unique_species, cutoff, noa):
@@ -49,7 +50,10 @@ def two_body_gp():
                                                   cutoff, noa)
 
     # test update_db
-    gaussian = GaussianProcess(kernel='n_body_sc', bodies=2)
+    gaussian = \
+        GaussianProcess(kernel_name='n_body_sc', kernel=kern.n_body_sc,
+                        kernel_grad=kern.n_body_sc_grad,
+                        hyps=np.array([1, 1, 1]))
     gaussian.update_db(test_structure, forces)
 
     # return gaussian
@@ -137,12 +141,3 @@ def test_predict(two_body_gp, test_point):
     assert (len(pred) == 2)
     assert (isinstance(pred[0], float))
     assert (isinstance(pred[1], float))
-
-# ------------------------------------------------------
-#        example of how to do parametrized testing
-# ------------------------------------------------------
-#
-# @pytest.mark.parametrize("sigma_f", "length_scale", "sigma_n",
-#                          [(1, 2, 3), (4, 5, 6)])
-# def test_dummy(sigma_f, length_scale, sigma_n):
-#     pass

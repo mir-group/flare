@@ -2,7 +2,7 @@ import math
 import numpy as np
 from scipy.linalg import solve_triangular
 from scipy.optimize import minimize
-from typing import List
+from typing import List, Callable
 from copy import deepcopy
 from env import ChemicalEnvironment
 import kernels
@@ -17,158 +17,26 @@ class GaussianProcess:
     Implementation is based on Algorithm 2.1 (pg. 19) of
     "Gaussian Processes for Machine Learning" by Rasmussen and Williams"""
 
-    def __init__(self, kernel: str, bodies, opt_algorithm='L-BFGS-B',
-                 cutoffs=None, nos=None):
-        """Initialize GP parameters and training data.
+    def __init__(self, kernel_name: str, kernel: Callable,
+                 kernel_grad: Callable,  hyps: np.ndarray,
+                 cutoffs: np.ndarray=None,
+                 hyp_labels: List=None,
+                 energy_force_kernel: Callable=None,
+                 energy_kernel: Callable=None,
+                 opt_algorithm: str='L-BFGS-B'):
+        """Initialize GP parameters and training data."""
 
-        :param kernel: covariance / kernel function to be used
-        :type kernel: str
-        """
-
-        # gp kernel and hyperparameters
-        self.bodies = bodies
-
-        if kernel == 'three_body_cons_quad':
-            self.kernel_name = 'Energy Conserving 3-body Quadratic'
-            self.kernel = energy_conserving_kernels.three_body_cons_quad
-            self.kernel_grad = \
-                energy_conserving_kernels.three_body_cons_quad_grad
-            self.energy_kernel = \
-                energy_conserving_kernels.three_body_cons_quad_en
-            self.energy_force_kernel = \
-                energy_conserving_kernels.three_body_cons_quad_force_en
-            self.hyps = np.array([1, 1, 1])
-            self.hyp_labels = ['Signal Std', 'Length Scale', 'Noise Std']
-            self.cutoffs = cutoffs
-
-        elif kernel == 'two_plus_three_quad':
-            self.kernel_name = 'Two Plus Three Quadratic'
-            self.kernel = smooth_kernels.two_plus_three_quad
-            self.kernel_grad = smooth_kernels.two_plus_three_quad_grad
-            self.hyps = np.array([1, 1, 1, 1, 1])
-            self.hyp_labels = ['Signal Std', 'Length Scale',
-                               'Signal Std', 'Length Scale',
-                               'Noise Std']
-            self.cutoffs = cutoffs
-
-        elif kernel == 'two_body_quad_mc':
-            self.kernel_name = 'Multi-Component Quadratic Two Body'
-            self.kernel = smooth_kernels.two_body_quad_mc
-            self.kernel_grad = smooth_kernels.two_body_quad_mc_grad
-            self.hyps = np.ones(nos+2)
-            self.cutoffs = cutoffs
-
-        elif kernel == 'three_body_quad':
-            self.kernel_name = 'Quadratic Three Body'
-            self.kernel = smooth_kernels.three_body_quad
-            self.kernel_grad = smooth_kernels.three_body_quad_grad
-            self.hyps = np.array([1, 1, 1])
-            self.hyp_labels = ['Signal Std', 'Length Scale', 'Noise Std']
-            self.cutoffs = cutoffs
-
-        elif kernel == 'two_body_smooth':
-            self.kernel_name = 'Smooth Two Body'
-            self.kernel = smooth_kernels.two_body_smooth
-            self.kernel_grad = smooth_kernels.two_body_smooth_grad
-            self.hyps = np.array([1, 1, 1, 1])
-            self.hyp_labels = ['Signal Std', 'Length Scale', 'd', 'Noise Std']
-            self.cutoffs = cutoffs
-
-        elif kernel == 'two_body_quad':
-            self.kernel_name = 'Quadratic Two Body'
-            self.kernel = smooth_kernels.two_body_quad
-            self.kernel_grad = smooth_kernels.two_body_quad_grad
-            self.hyps = np.array([1, 1, 1])
-            self.hyp_labels = ['Signal Std', 'Length Scale', 'Noise Std']
-            self.cutoffs = cutoffs
-
-        # TODO: implement kernel gradient
-        elif kernel == 'n_body_sc_norm_derv':
-            self.kernel_name = 'Normalized N-Body Single Component'
-            self.kernel = kernels.n_body_sc_norm_derv
-            # self.kernel_grad = n_body_sc_grad
-            # self.energy_force_kernel = energy_force_sc
-            # self.energy_kernel = energy_sc
-            self.hyps = np.array([1, 1, 1])
-            self.hyp_labels = ['Signal Std', 'Length Scale', 'Noise Std']
-            self.cutoffs = None
-
-        elif kernel == 'n_body_sc':
-            self.kernel_name = 'N-Body Single Component'
-            self.kernel = kernels.n_body_sc
-            self.kernel_grad = kernels.n_body_sc_grad
-            self.energy_force_kernel = kernels.energy_force_sc
-            self.energy_kernel = kernels.energy_sc
-            self.hyps = np.array([1, 1, 1.1])
-            self.hyp_labels = ['Signal Std', 'Length Scale', 'Noise Std']
-            self.cutoffs = None
-
-        elif kernel == 'many_body_sc':
-            self.kernel_name = 'Many Body Single Component'
-            self.kernel = kernels.many_body_sc
-            self.kernel_grad = kernels.many_body_sc_grad
-            # self.energy_force_kernel = energy_force_sc
-            # self.energy_kernel = energy_sc
-            self.hyps = np.array([1, 1, 1])
-            self.hyp_labels = ['Signal Std', 'Length Scale', 'Noise Std']
-            self.cutoffs = None
-
-        elif kernel == 'many_body_ncov':
-            self.kernel_name = 'Many Body Non-Covariant'
-            self.kernel = kernels.many_body_ncov
-            self.kernel_grad = kernels.many_body_ncov_grad
-            self.hyps = np.array([1, 1, 1])
-            self.hyp_labels = ['Signal Std', 'Length Scale', 'Noise Std']
-            self.cutoffs = None
-
-        # TODO: make energy and energy/force kernels for combination kernel
-        elif kernel == 'combo_kernel_sc':
-            self.kernel_name = 'Combined N-Body Single Component'
-            self.kernel = kernels.combo_kernel_sc
-            self.kernel_grad = kernels.combo_kernel_sc_grad
-            # self.energy_force_kernel = energy_force_sc
-            # self.energy_kernel = energy_sc
-            self.hyps = np.ones([2*len(bodies)+1])
-            self.hyp_labels = ['Signal Std', 'Length Scale']*len(bodies)
-            self.hyp_labels.append('Noise Std')
-            self.cutoffs = cutoffs
-
-        # TODO: make energy and energy/force kernels for ICM kernels
-        elif kernel == 'n_body_mc':
-            self.kernel_name = 'N-Body Multiple Component Force'
-            self.kernel = kernels.n_body_mc
-            self.kernel_grad = kernels.n_body_mc_grad
-            no_ICM = int(nos*(nos-1)/2)
-            self.hyps = np.ones(no_ICM+3)
-
-            hyp_labels = ['Signal Std', 'Length Scale'] + \
-                ['ICM_'+str(n) for n in range(no_ICM)] + \
-                ['Noise Std']
-            self.hyp_labels = hyp_labels
-
-            self.cutoffs = cutoffs
-
-        elif kernel == 'two_body_mc':
-            self.kernel_name = 'Two Body Multi Component'
-            self.kernel = kernels.two_body_mc
-            self.kernel_grad = kernels.two_body_mc_grad
-            no_ICM = int(nos*(nos+1)/2)
-            self.hyps = np.ones(no_ICM+2)
-            hyp_labels = ['Signal Std', 'Length Scale'] + \
-                ['ICM_'+str(n) for n in range(no_ICM)] + \
-                ['Noise Std']
-            self.hyp_labels = hyp_labels
-            self.cutoffs = cutoffs
-        else:
-            raise ValueError('not a valid kernel')
-
+        self.kernel_name = kernel_name
+        self.kernel = kernel
+        self.kernel_grad = kernel_grad
+        self.energy_kernel = energy_kernel
+        self.energy_force_kernel = energy_force_kernel
+        self.hyps = hyps
+        self.hyp_labels = hyp_labels
+        self.cutoffs = cutoffs
         self.algo = opt_algorithm
-
-        # quantities used in GPR algorithm
         self.l_mat = None
         self.alpha = None
-
-        # training set
         self.training_data = []
         self.training_labels = []
         self.training_labels_np = np.empty(0, )
@@ -228,7 +96,7 @@ class GaussianProcess:
 
         if self.algo == 'L-BFGS-B':
             args = (self.training_data, self.training_labels_np,
-                    self.kernel_grad, self.bodies, self.cutoffs, monitor)
+                    self.kernel_grad, self.cutoffs, monitor)
 
             # bound signal noise below to avoid overfitting
             bounds = np.array([(-np.inf, np.inf)] * len(x_0))
@@ -247,7 +115,7 @@ class GaussianProcess:
 
         if custom_bounds is not None:
             args = (self.training_data, self.training_labels_np,
-                    self.kernel_grad, self.bodies, self.cutoffs, monitor)
+                    self.kernel_grad, self.cutoffs, monitor)
 
             res = minimize(self.get_likelihood_and_gradients, x_0, args,
                            method='L-BFGS-B', jac=True, bounds=custom_bounds,
@@ -256,7 +124,7 @@ class GaussianProcess:
 
         elif self.algo == 'BFGS':
             args = (self.training_data, self.training_labels_np,
-                    self.kernel_grad, self.bodies, self.cutoffs, monitor)
+                    self.kernel_grad, self.cutoffs, monitor)
 
             res = minimize(self.get_likelihood_and_gradients, x_0, args,
                            method='BFGS', jac=True,
@@ -265,7 +133,7 @@ class GaussianProcess:
 
         elif self.algo == 'nelder-mead':
             args = (self.training_data, self.training_labels_np,
-                    self.kernel, self.bodies, self.cutoffs, monitor)
+                    self.kernel, self.cutoffs, monitor)
 
             res = minimize(self.get_likelihood, x_0, args,
                            method='nelder-mead',
@@ -282,7 +150,7 @@ class GaussianProcess:
         pred_mean = np.matmul(k_v, self.alpha)
 
         # get predictive variance without cholesky (possibly faster)
-        self_kern = self.kernel(x_t, x_t, self.bodies, d, d, self.hyps,
+        self_kern = self.kernel(x_t, x_t, d, d, self.hyps,
                                 self.cutoffs)
         pred_var = self_kern - \
             np.matmul(np.matmul(k_v, self.ky_mat_inv), k_v)
@@ -318,7 +186,7 @@ class GaussianProcess:
 
         # get predictive variance
         v_vec = solve_triangular(self.l_mat, k_v, lower=True)
-        self_kern = self.energy_kernel(x_t, x_t, self.bodies, self.hyps,
+        self_kern = self.energy_kernel(x_t, x_t, self.hyps,
                                        self.cutoffs)
         pred_var = self_kern - np.matmul(v_vec, v_vec)
 
@@ -343,7 +211,7 @@ class GaussianProcess:
         for m_index in range(size):
             x_2 = self.training_data[int(math.floor(m_index / 3))]
             d_2 = ds[m_index % 3]
-            k_v[m_index] = self.kernel(x, x_2, self.bodies, d_1, d_2,
+            k_v[m_index] = self.kernel(x, x_2, d_1, d_2,
                                        self.hyps, self.cutoffs)
 
         return k_v
@@ -356,7 +224,7 @@ class GaussianProcess:
         for m_index in range(size):
             x_2 = self.training_data[int(math.floor(m_index / 3))]
             d_2 = ds[m_index % 3]
-            k_v[m_index] = self.energy_force_kernel(x_2, x, self.bodies, d_2,
+            k_v[m_index] = self.energy_force_kernel(x_2, x, d_2,
                                                     self.hyps, self.cutoffs)
 
         return k_v
@@ -364,8 +232,7 @@ class GaussianProcess:
     @staticmethod
     def get_likelihood_and_gradients(hyps: np.ndarray, training_data: list,
                                      training_labels_np: np.ndarray,
-                                     kernel_grad, bodies: int,
-                                     cutoffs=None,
+                                     kernel_grad, cutoffs=None,
                                      monitor: bool = False):
 
         if monitor:
@@ -393,8 +260,7 @@ class GaussianProcess:
                 d_2 = ds[n_index % 3]
 
                 # calculate kernel and gradient
-                cov = kernel_grad(x_1, x_2, bodies, d_1, d_2, kern_hyps,
-                                  cutoffs)
+                cov = kernel_grad(x_1, x_2, d_1, d_2, kern_hyps, cutoffs)
 
                 # store kernel value
                 k_mat[m_index, n_index] = cov[0]
@@ -443,9 +309,7 @@ class GaussianProcess:
     @staticmethod
     def get_likelihood(hyps: np.ndarray, training_data: list,
                        training_labels_np: np.ndarray,
-                       kernel, bodies: int,
-                       cutoffs=None,
-                       monitor: bool = False):
+                       kernel, cutoffs=None, monitor: bool = False):
 
         if monitor:
             print('hyps: ' + str(hyps))
@@ -471,7 +335,7 @@ class GaussianProcess:
                 d_2 = ds[n_index % 3]
 
                 # calculate kernel and gradient
-                kern_curr = kernel(x_1, x_2, bodies, d_1, d_2, kern_hyps,
+                kern_curr = kernel(x_1, x_2, d_1, d_2, kern_hyps,
                                    cutoffs)
 
                 # store kernel value
@@ -503,8 +367,7 @@ class GaussianProcess:
     @staticmethod
     def get_ky_mat(hyps: np.ndarray, training_data: list,
                    training_labels_np: np.ndarray,
-                   kernel, bodies: int,
-                   cutoffs=None):
+                   kernel, cutoffs=None):
 
         # assume sigma_n is the final hyperparameter
         number_of_hyps = len(hyps)
@@ -527,7 +390,7 @@ class GaussianProcess:
                 d_2 = ds[n_index % 3]
 
                 # calculate kernel and gradient
-                kern_curr = kernel(x_1, x_2, bodies, d_1, d_2, kern_hyps,
+                kern_curr = kernel(x_1, x_2, d_1, d_2, kern_hyps,
                                    cutoffs)
 
                 # store kernel value
@@ -560,8 +423,7 @@ class GaussianProcess:
                 d_2 = ds[n_index % 3]
 
                 # calculate kernel and gradient
-                cov = self.kernel(x_1, x_2, self.bodies, d_1, d_2, kern_hyps,
-                                  self.cutoffs)
+                cov = self.kernel(x_1, x_2, d_1, d_2, kern_hyps, self.cutoffs)
 
                 # store kernel value
                 k_mat[m_index, n_index] = cov
@@ -576,39 +438,3 @@ class GaussianProcess:
         self.l_mat = l_mat
         self.alpha = alpha
         self.ky_mat_inv = ky_mat_inv
-
-    def augment_K(self, structure, forces, atoms):
-        noa = len(atoms)
-        k_dim = self.k_mat.shape
-        k_aug = np.zeros((k_dim[0], k_dim[0] + noa * 3))
-        k_aug[0:k_dim[0], 0:k_dim[1]] = self.k_mat
-        force_aug = np.zeros(k_dim[0] + noa * 3)
-        force_aug[0:k_dim[0]] = self.training_labels_np
-
-        count = 0
-        for atom in atoms:
-            env_curr = ChemicalEnvironment(structure, atom)
-            forces_curr = np.array(forces[atom])
-            for d in [1, 2, 3]:
-                kvec_curr = self.get_kernel_vector(env_curr, d)
-                k_aug[:, k_dim[0]+count] = kvec_curr
-                force_aug[k_dim[0]+count] = forces_curr[d-1]
-                count += 1
-        self.k_aug = k_aug
-        self.force_aug = force_aug
-
-        k_aug_squared = np.matmul(k_aug, np.transpose(k_aug))
-        sigma_n = self.hyps[-1]
-        inv_aug = np.linalg.inv(k_aug_squared + sigma_n**2 * self.k_mat)
-        k_aug_force = np.matmul(k_aug, force_aug)
-        alpha_aug = np.matmul(inv_aug, k_aug_force)
-        self.alpha_aug = alpha_aug
-
-    def sparsified_prediction(self, x_t, d):
-        # get kernel vector
-        k_v = self.get_kernel_vector(x_t, d)
-
-        # get predictive mean
-        pred_mean = np.matmul(k_v, self.alpha_aug)
-
-        return pred_mean

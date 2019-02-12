@@ -14,13 +14,12 @@ import concurrent.futures
 
 class OTF(object):
     def __init__(self, qe_input: str, dt: float, number_of_steps: int,
-                 kernel: str, bodies: int, cutoff: float, pw_loc: str,
+                 gp: GaussianProcess, cutoff: float, pw_loc: str,
                  std_tolerance_factor: float = 1, opt_algo: str='BFGS',
                  prev_pos_init: np.ndarray=None, par: bool=False,
-                 parsimony: bool=False, cutoffs: np.ndarray=None,
-                 skip: int=0, hyps: np.ndarray=None,
+                 parsimony: bool=False, skip: int=0, hyps: np.ndarray=None,
                  init_atoms: List[int]=None):
-        """Sets up and generates an on-the-fly molecular dynamics trajectory.
+        """Generates an on-the-fly molecular dynamics trajectory.
 
         :param qe_input: location of quantum espresso input file
         :type qe_input: str
@@ -74,8 +73,7 @@ class OTF(object):
         self.qe_input = qe_input
         self.dt = dt
         self.Nsteps = number_of_steps
-        self.gp = GaussianProcess(kernel, bodies, opt_algorithm=opt_algo,
-                                  cutoffs=cutoffs)
+        self.gp = gp
         self.cutoff = cutoff
         self.std_tolerance = std_tolerance_factor
         self.pw_loc = pw_loc
@@ -299,7 +297,7 @@ class OTF(object):
             self.gp.kernel_name)
         headerstring += '# Hyperparameters: {}\n'.format(
             len(self.gp.hyps))
-        headerstring += 'Initial Hyperparameter Optimization Algorithm: {}' \
+        headerstring += 'Hyperparameter Optimization Algorithm: {}' \
                         '\n'.format(self.gp.algo)
         headerstring += 'Timestep (ps): {}\n'.format(self.dt)
         headerstring += 'Number of Frames: {}\n'.format(self.Nsteps)

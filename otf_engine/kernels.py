@@ -173,7 +173,7 @@ def energy_sc(env1, env2, bodies, hyps, cutoffs=None):
 
 
 # get n body single component kernel between two environments
-def energy_force_sc(env1, env2, bodies, d1, hyps, cutoffs=None):
+def energy_force_sc(env1, env2, d1, hyps, cutoffs=None, bodies=2):
     combs = get_comb_array(env1.bond_array.shape[0], bodies-1)
     perms = get_perm_array(env2.bond_array.shape[0], bodies-1)
 
@@ -236,7 +236,7 @@ def n_body_sc_cutoff_grad(env1, env2, bodies, d1, d2, hyps, cutoff):
 
 
 # get n body single component kernel between two environments
-def n_body_sc(env1, env2, bodies, d1, d2, hyps, cutoffs=None):
+def n_body_sc(env1, env2, d1, d2, hyps, cutoffs=None, bodies=2):
     combs = get_comb_array(env1.bond_array.shape[0], bodies-1)
     perms = get_perm_array(env2.bond_array.shape[0], bodies-1)
 
@@ -245,7 +245,7 @@ def n_body_sc(env1, env2, bodies, d1, d2, hyps, cutoffs=None):
                          d1, d2, hyps)
 
 
-def n_body_sc_grad(env1, env2, bodies, d1, d2, hyps, cutoffs=None):
+def n_body_sc_grad(env1, env2, d1, d2, hyps, cutoffs=None, bodies=2):
     combs = get_comb_array(env1.bond_array.shape[0], bodies-1)
     perms = get_perm_array(env2.bond_array.shape[0], bodies-1)
 
