@@ -5,7 +5,6 @@ from random import random, randint
 from copy import deepcopy
 sys.path.append('../otf_engine')
 import fast_env
-import env
 import gp
 import struc
 import energy_conserving_kernels as en

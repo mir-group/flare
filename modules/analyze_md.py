@@ -76,7 +76,7 @@ class MDAnalysis:
         for snap in snaps:
             positions = self.MD_data[snap]['positions']
             species = self.MD_data[snap]['elements']
-            structure = struc.Structure(self.cell, species, positions, cutoff)
+            structure = struc.Structure(self.cell, species, positions)
             for n in range(len(positions)):
                 env_curr = env.ChemicalEnvironment(structure, n)
                 atom_count += 1

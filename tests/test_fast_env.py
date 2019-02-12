@@ -5,9 +5,9 @@ import time
 from random import random
 sys.path.append('../otf_engine')
 import fast_env
-import env
 import struc
 
+# TODO: make tests for fast env
 
 # def test_env_agreement():
 #     # create test structure

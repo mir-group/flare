@@ -6,10 +6,8 @@ from itertools import combinations
 from itertools import permutations
 from numba import njit
 from struc import Structure
-from env import ChemicalEnvironment
 import gp
 import struc
-import env
 import time
 
 # -----------------------------------------------------------------------------

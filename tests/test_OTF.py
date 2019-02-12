@@ -6,7 +6,6 @@ sys.path.append('../otf_engine')
 from otf import OTF
 from gp import GaussianProcess
 from struc import Structure
-import kernels as kern
 import energy_conserving_kernels as en
 from test_qe_util import cleanup_espresso_run
 

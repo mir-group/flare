@@ -1,17 +1,6 @@
 import numpy as np
-import math
 from math import exp
-from math import factorial
 from numba import njit
-from struc import Structure
-from env import ChemicalEnvironment
-import gp
-import struc
-import env
-import fast_env
-import time
-from random import random, randint
-from copy import deepcopy
 
 
 # -----------------------------------------------------------------------------
@@ -24,7 +13,7 @@ def two_body(env1, env2, d1, d2, hyps, cutoffs):
     r_cut = cutoffs[0]
 
     return two_body_jit(env1.bond_array_2, env2.bond_array_2,
-                             d1, d2, sig, ls, r_cut)
+                        d1, d2, sig, ls, r_cut)
 
 
 def two_body_grad(env1, env2, d1, d2, hyps, cutoffs):
@@ -70,12 +59,9 @@ def three_body_grad(env1, env2, d1, d2, hyps, cutoffs):
 
     kernel, sig_derv, ls_derv = \
         three_body_grad_jit(env1.bond_array_3, env2.bond_array_3,
-                            env1.cross_bond_inds,
-                            env2.cross_bond_inds,
-                            env1.cross_bond_dists,
-                            env2.cross_bond_dists,
-                            env1.triplet_counts,
-                            env2.triplet_counts,
+                            env1.cross_bond_inds, env2.cross_bond_inds,
+                            env1.cross_bond_dists, env2.cross_bond_dists,
+                            env1.triplet_counts, env2.triplet_counts,
                             d1, d2, sig, ls, r_cut)
 
     kernel_grad = np.array([sig_derv, ls_derv])
@@ -89,12 +75,9 @@ def three_body(env1, env2, d1, d2, hyps, cutoffs):
     r_cut = cutoffs[1]
 
     return three_body_jit(env1.bond_array_3, env2.bond_array_3,
-                          env1.cross_bond_inds,
-                          env2.cross_bond_inds,
-                          env1.cross_bond_dists,
-                          env2.cross_bond_dists,
-                          env1.triplet_counts,
-                          env2.triplet_counts,
+                          env1.cross_bond_inds, env2.cross_bond_inds,
+                          env1.cross_bond_dists, env2.cross_bond_dists,
+                          env1.triplet_counts, env2.triplet_counts,
                           d1, d2, sig, ls, r_cut)
 
 
@@ -104,14 +87,11 @@ def three_body_force_en(env1, env2, d1, hyps, cutoffs):
     r_cut = cutoffs[1]
 
     # divide by three to account for triple counting
-    return three_body_force_en_jit(env1.bond_array_3,
-                                   env2.bond_array_3,
-                                   env1.cross_bond_inds,
-                                   env2.cross_bond_inds,
+    return three_body_force_en_jit(env1.bond_array_3, env2.bond_array_3,
+                                   env1.cross_bond_inds, env2.cross_bond_inds,
                                    env1.cross_bond_dists,
                                    env2.cross_bond_dists,
-                                   env1.triplet_counts,
-                                   env2.triplet_counts,
+                                   env1.triplet_counts, env2.triplet_counts,
                                    d1, sig, ls, r_cut)/3
 
 
@@ -120,14 +100,10 @@ def three_body_en(env1, env2, hyps, cutoffs):
     ls = hyps[1]
     r_cut = cutoffs[1]
 
-    return three_body_en_jit(env1.bond_array_3,
-                             env2.bond_array_3,
-                             env1.cross_bond_inds,
-                             env2.cross_bond_inds,
-                             env1.cross_bond_dists,
-                             env2.cross_bond_dists,
-                             env1.triplet_counts,
-                             env2.triplet_counts,
+    return three_body_en_jit(env1.bond_array_3, env2.bond_array_3,
+                             env1.cross_bond_inds, env2.cross_bond_inds,
+                             env1.cross_bond_dists, env2.cross_bond_dists,
+                             env1.triplet_counts, env2.triplet_counts,
                              sig, ls, r_cut)
 
 
@@ -759,57 +735,4 @@ def triplet_force_en_kernel(ci1, ci2, ri1, ri2, ri3, rj1, rj2, rj3,
 
 
 if __name__ == '__main__':
-    # create env 1
-    cell = np.eye(3)
-    cutoff = 1
-    cutoffs = np.array([1, 1])
-
-    positions_1 = [np.array([0., 0., 0.]),
-                   np.array([random(), random(), random()]),
-                   np.array([random(), random(), random()])]
-
-    species_1 = ['A', 'B', 'A']
-    atom_1 = 0
-    test_structure_1 = struc.Structure(cell, species_1, positions_1)
-    env1 = fast_env.AtomicEnvironment(test_structure_1, atom_1, cutoffs)
-
-    # create env 2
-    positions_1 = [np.array([0., 0., 0.]),
-                   np.array([random(), random(), random()]),
-                   np.array([random(), random(), random()])]
-
-    species_2 = ['A', 'A', 'B']
-    atom_2 = 0
-    test_structure_1 = struc.Structure(cell, species_2, positions_1)
-    env2 = fast_env.AtomicEnvironment(test_structure_1, atom_2, cutoffs)
-
-    sig = random()
-    ls = random()
-    d1 = randint(1, 3)
-    d2 = randint(1, 3)
-
-    hyps = np.array([sig, ls])
-
-    grad_test = three_body_grad(env1, env2, d1, d2, hyps, cutoffs)
-
-    delta = 1e-5
-    new_sig = sig + delta
-    new_ls = ls + delta
-
-    sig_derv_brute = (three_body(env1, env2, d1, d2,
-                                    np.array([new_sig, ls]),
-                                    cutoffs) -
-                      three_body(env1, env2, d1, d2,
-                                    hyps, cutoffs)) / delta
-
-    l_derv_brute = (three_body(env1, env2, d1, d2,
-                                  np.array([sig, new_ls]),
-                                  cutoffs) -
-                    three_body(env1, env2, d1, d2,
-                                  hyps, cutoffs)) / delta
-
-    tol = 1e-4
-    
-    print(grad_test)
-    print(sig_derv_brute)
-    print(l_derv_brute)
+    pass

@@ -5,7 +5,6 @@ from scipy.optimize import minimize
 from typing import List, Callable
 from copy import deepcopy
 from fast_env import AtomicEnvironment
-import kernels
 import smooth_kernels
 import energy_conserving_kernels
 from struc import Structure

@@ -5,7 +5,6 @@ import time
 from typing import List
 from struc import Structure
 from gp import GaussianProcess
-from env import ChemicalEnvironment
 from fast_env import AtomicEnvironment
 from qe_util import run_espresso, parse_qe_input, \
     qe_input_to_structure, parse_qe_forces

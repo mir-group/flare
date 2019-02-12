@@ -1,13 +1,10 @@
 import pytest
-
 import numpy as np
 import sys
 sys.path.append('../otf_engine')
 from gp import GaussianProcess
-from env import ChemicalEnvironment
 from fast_env import AtomicEnvironment
 from struc import Structure
-import kernels as kern
 import energy_conserving_kernels as en
 
 
