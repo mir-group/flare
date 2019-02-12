@@ -27,15 +27,10 @@ class OTF(object):
         :type dt: float
         :param number_of_steps: number of MD steps in otf run
         :type number_of_steps: int
-        :param kernel: name of kernel. gp.py contains all implemented kernels.
-        :type kernel: str
-        :param bodies: number of bodies in the kernel. only needed for
-        N-body kernels. usually set to None.
-        :type bodies: int
         :param cutoff: cutoff radius. atoms outside this region are not
         considered in force calculations.
         :type cutoff: float
-        :param pw_loc: location of quantum espresso pwscf executable.
+        :param pw_loc: location of quantum espresso pw.x executable.
         :type pw_loc: str
         :param std_tolerance_factor: negative tolerance is a hard user-defined
             std cutoff. positive is a multiple of the noise std. 0 means no
