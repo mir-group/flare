@@ -20,8 +20,8 @@ class Structure(object):
     """
 
     def __init__(self, cell: ndarray, species: List[str],
-                 positions: ndarray, cutoff: float,
-                 mass_dict: dict = None, prev_positions: ndarray=None):
+                 positions: ndarray, mass_dict: dict = None,
+                 prev_positions: ndarray=None):
         self.cell = cell
         self.vec1 = cell[0, :]
         self.vec2 = cell[1, :]
@@ -54,90 +54,8 @@ class Structure(object):
 
         self.forces = zeros((3, len(positions)))
         self.stds = zeros((3, len(positions)))
-        self.cutoff = cutoff
         self.mass_dict = mass_dict
         self.dft_forces = False
-
-    def translate_positions(self, vector: ndarray = zeros(3)):
-        """
-        Translate all positions, and previous positions by vector
-        :param vector: vector to translate by
-        :return:
-        """
-        for pos in self.positions:
-            pos += vector
-
-        for prev_pos in self.prev_positions:
-            prev_pos += vector
-
-    def get_periodic_images(self, vec, super_check: int = 1):
-        """
-        Given vec, find the periodic images of it out to super_check
-        neighbors
-
-        :param vec:
-        :param super_check:
-        :return:
-        """
-
-        images = []
-        sweep = arange(-super_check, super_check+1, 1)
-        for m in sweep:
-            for n in sweep:
-                for p in sweep:
-                    curr_image = vec + self.vec1 * m + self.vec2 * n +\
-                        self.vec3 * p
-                    images.append(curr_image)
-
-        return images
-
-    def get_index_from_position(self, position):
-        """
-        Gets the index of an atom from a position, folding back into the
-        unit cell
-        :param position: Atom to get position of
-        :param fold: Attempt to find the index of the 'original' atom in a
-        unit cell corresponding to a periodic image of position
-        :return:
-        """
-
-        for i in range(self.nat):
-            if isclose(position, self.positions[i], atol=1e-6).all():
-                return i
-
-        raise Exception("Position does not correspond to atom in structure")
-
-    def get_species_count(self):
-        """
-        Returns dictionary with keys:values of species:count.
-        :return:
-        """
-
-        spec_dict = {}
-        for element in set(self.species):
-            spec_dict[element] = self.species.count(element)
-        return spec_dict
-
-    def perturb_positions(self, r_pert: float = .2, rscale: float = .1):
-        """
-        Perturbs all positions in structure by a gaussian with mean radius
-        r_pert and std dev rscale
-        :param r_pert:
-        :param rscale:
-        :return:
-        """
-        theta = uniform(-180, 180, size=self.nat)
-        X = uniform(0, 1,size=self.nat)
-        phi = array([arccos(2 * x - 1) for x in X])
-
-        r = npabs(normal(loc=r_pert, scale=rscale, size=self.nat))
-
-        for i, pos in enumerate(self.positions):
-            newpos = zeros(3)
-            newpos[0] = r[i] * sin(phi[i]) * cos(theta[i])
-            newpos[1] = r[i] * sin(phi[i]) * sin(theta[i])
-            newpos[2] = r[i] * cos(phi[i])
-            pos += newpos
 
     @staticmethod
     def get_unique_species(species):

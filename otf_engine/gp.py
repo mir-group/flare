@@ -17,13 +17,14 @@ class GaussianProcess:
     Implementation is based on Algorithm 2.1 (pg. 19) of
     "Gaussian Processes for Machine Learning" by Rasmussen and Williams"""
 
-    def __init__(self, kernel_name: str, kernel: Callable,
+    def __init__(self, kernel: Callable,
                  kernel_grad: Callable,  hyps: np.ndarray,
                  cutoffs: np.ndarray,
                  hyp_labels: List=None,
                  energy_force_kernel: Callable=None,
                  energy_kernel: Callable=None,
-                 opt_algorithm: str='L-BFGS-B'):
+                 opt_algorithm: str='L-BFGS-B',
+                 kernel_name: str=None):
         """Initialize GP parameters and training data."""
 
         self.kernel_name = kernel_name

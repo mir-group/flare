@@ -1,20 +1,7 @@
-#!/usr/bin/env python3
-# pylint: disable=redefined-outer-name
-
-"""" OTF Regression test suite based on py.test
-
-qe_input_1: H2 dimer
-
-qe_input_2: 2x1x1 Al Supercell
-
-Steven Torrisi, Simon Batzner
-"""
-
 import pytest
 import os
 import sys
 import numpy as np
-
 sys.path.append('../otf_engine')
 from struc import Structure
 from qe_util import parse_qe_input, parse_qe_forces, run_espresso, \
@@ -96,8 +83,7 @@ def test_cell_parsing(qe_input, mass_dict):
                          ]
                          )
 def test_input_to_structure(qe_input):
-    cutoff = np.random.uniform(1, 5)
-    assert isinstance(qe_input_to_structure(qe_input, cutoff), Structure)
+    assert isinstance(qe_input_to_structure(qe_input), Structure)
 
 
 @pytest.mark.parametrize('qe_output,exp_forces',
@@ -131,7 +117,6 @@ def test_espresso_calling(qe_input, qe_output):
     positions, species, cell, masses = parse_qe_input(qe_input)
 
     struc = Structure(cell=cell, species=species, positions=positions,
-                      cutoff=1,
                       mass_dict=masses)
 
     forces = run_espresso('pwscf.in',

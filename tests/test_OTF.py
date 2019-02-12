@@ -25,7 +25,6 @@ def test_otf_1_1():
     qe_input = './pwscf.in'
     dt = 0.0001
     number_of_steps = 2
-    cutoff = 4
     cutoffs = np.array([4])
     pw_loc = os.environ.get('PWSCF_COMMAND')
     std_tolerance_factor = -0.1
@@ -46,7 +45,7 @@ def test_otf_1_1():
                         hyp_labels=hyp_labels,
                         energy_force_kernel=energy_force_kernel)
 
-    otf = OTF(qe_input, dt, number_of_steps, gp, cutoff, pw_loc,
+    otf = OTF(qe_input, dt, number_of_steps, gp, pw_loc,
               std_tolerance_factor)
     otf.run()
 
@@ -61,7 +60,6 @@ def test_otf_1_2():
     qe_input = './pwscf.in'
     dt = 0.0001
     number_of_steps = 20
-    cutoff = 5
     cutoffs = np.array([5])
     pw_loc = os.environ.get('PWSCF_COMMAND')
     std_tolerance_factor = -0.1
@@ -82,7 +80,7 @@ def test_otf_1_2():
                         hyp_labels=hyp_labels,
                         energy_force_kernel=energy_force_kernel)
 
-    otf = OTF(qe_input, dt, number_of_steps, gp, cutoff, pw_loc,
+    otf = OTF(qe_input, dt, number_of_steps, gp, pw_loc,
               std_tolerance_factor)
 
     otf.run()

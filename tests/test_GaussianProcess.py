@@ -11,7 +11,7 @@ import kernels as kern
 import energy_conserving_kernels as en
 
 
-def get_random_structure(cell, unique_species, cutoff, noa):
+def get_random_structure(cell, unique_species, noa):
     """Create a random test structure """
     np.random.seed(0)
 
@@ -25,7 +25,7 @@ def get_random_structure(cell, unique_species, cutoff, noa):
         species.append(unique_species[np.random.randint(0,
                                                         len(unique_species))])
 
-    test_structure = Structure(cell, species, positions, cutoff)
+    test_structure = Structure(cell, species, positions)
 
     return test_structure, forces
 
@@ -50,13 +50,13 @@ def two_body_gp():
 
     # create test structure
     test_structure, forces = get_random_structure(cell, unique_species,
-                                                  cutoff, noa)
+                                                  noa)
 
     # test update_db
     gaussian = \
         GaussianProcess(kernel_name='three body constant quadratic',
-                        kernel=en.three_body_cons_quad_v2,
-                        kernel_grad=en.three_body_cons_quad_grad_v2,
+                        kernel=en.three_body,
+                        kernel_grad=en.three_body_grad,
                         hyps=np.array([1, 1, 1]),
                         cutoffs=cutoffs)
     gaussian.update_db(test_structure, forces)
@@ -91,7 +91,7 @@ def test_point():
     noa = 10
 
     test_structure_2, _ = get_random_structure(cell, unique_species,
-                                               cutoff, noa)
+                                               noa)
 
     test_pt = AtomicEnvironment(test_structure_2, 0,
                                 np.array([cutoff, cutoff]))
@@ -108,7 +108,6 @@ def test_update_db(two_body_gp, params):
     # params
     test_structure, forces = get_random_structure(params['cell'],
                                                   params['unique_species'],
-                                                  params['cutoff'],
                                                   params['noa'])
 
     # add structure and forces to db
@@ -129,7 +128,6 @@ def test_train(two_body_gp, params):
     # add struc and forces to db
     test_structure, forces = get_random_structure(params['cell'],
                                                   params['unique_species'],
-                                                  params['cutoff'],
                                                   params['noa'])
     two_body_gp.update_db(test_structure, forces)
 

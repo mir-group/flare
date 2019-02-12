@@ -58,11 +58,10 @@ class MDAnalysis:
             temps.append(self.MD_data[n+1]['temperature'])
         return times, temps
 
-    def get_structure_from_snap(self, snap, cutoff):
+    def get_structure_from_snap(self, snap):
         positions = self.MD_data[snap]['positions']
         species = self.MD_data[snap]['elements']
-        structure = struc.Structure(self.cell, species, positions,
-                                    cutoff)
+        structure = struc.Structure(self.cell, species, positions)
         return structure
 
     def get_forces_from_snap(self, snap):

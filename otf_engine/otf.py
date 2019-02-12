@@ -15,7 +15,7 @@ import concurrent.futures
 
 class OTF(object):
     def __init__(self, qe_input: str, dt: float, number_of_steps: int,
-                 gp: GaussianProcess, cutoff: float, pw_loc: str,
+                 gp: GaussianProcess, pw_loc: str,
                  std_tolerance_factor: float = 1, opt_algo: str='BFGS',
                  prev_pos_init: np.ndarray=None, par: bool=False,
                  parsimony: bool=False, skip: int=0, hyps: np.ndarray=None,
@@ -70,7 +70,6 @@ class OTF(object):
         self.dt = dt
         self.Nsteps = number_of_steps
         self.gp = gp
-        self.cutoff = cutoff
         self.std_tolerance = std_tolerance_factor
         self.pw_loc = pw_loc
 
@@ -85,7 +84,7 @@ class OTF(object):
         positions, species, cell, masses = parse_qe_input(self.qe_input)
 
         self.structure = Structure(cell=cell, species=species,
-                                   positions=positions, cutoff=cutoff,
+                                   positions=positions,
                                    mass_dict=masses,
                                    prev_positions=prev_pos_init)
 
@@ -287,8 +286,8 @@ class OTF(object):
             f.write(str(datetime.datetime.now()) + '\n')
 
         headerstring = ''
-        headerstring += 'Structure Cutoff Radius: {}\n'.format(
-            self.structure.cutoff)
+        headerstring += 'Cutoffs: {}\n'.format(
+            self.gp.cutoffs)
         headerstring += 'Kernel: {}\n'.format(
             self.gp.kernel_name)
         headerstring += '# Hyperparameters: {}\n'.format(

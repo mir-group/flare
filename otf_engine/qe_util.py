@@ -83,7 +83,7 @@ def parse_qe_input(qe_input: str):
     return positions, species, cell, masses
 
 
-def qe_input_to_structure(qe_input: str, cutoff: float = 5) -> Structure:
+def qe_input_to_structure(qe_input: str) -> Structure:
     """
     Parses a qe input and returns the atoms in the file as a Structure object
     :param qe_input: QE Input file to parse
@@ -92,7 +92,7 @@ def qe_input_to_structure(qe_input: str, cutoff: float = 5) -> Structure:
     """
     positions, species, cell, masses = parse_qe_input(qe_input)
     return Structure(positions=positions, species=species, cell=cell,
-                     mass_dict=masses, cutoff=cutoff)
+                     mass_dict=masses)
 
 
 def edit_qe_input_positions(qe_input: str, structure: Structure):
