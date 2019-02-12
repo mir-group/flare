@@ -6,6 +6,7 @@ from typing import List
 from struc import Structure
 from gp import GaussianProcess
 from env import ChemicalEnvironment
+from fast_env import AtomicEnvironment
 from qe_util import run_espresso, parse_qe_input, \
     qe_input_to_structure, parse_qe_forces
 import multiprocessing as mp
@@ -184,7 +185,7 @@ class OTF(object):
         self.conclude_run()
 
     def predict_on_atom(self, atom):
-        chemenv = ChemicalEnvironment(self.structure, atom)
+        chemenv = AtomicEnvironment(self.structure, atom, self.gp.cutoffs)
         comps = []
         stds = []
         # predict force components and standard deviations
@@ -210,7 +211,7 @@ class OTF(object):
 
     def predict_on_structure(self):
         for n in range(self.structure.nat):
-            chemenv = ChemicalEnvironment(self.structure, n)
+            chemenv = AtomicEnvironment(self.structure, n, self.gp.cutoffs)
             for i in range(3):
                 force, var = self.gp.predict(chemenv, i + 1)
                 self.structure.forces[n][i] = float(force)

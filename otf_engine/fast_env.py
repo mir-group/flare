@@ -18,7 +18,7 @@ class AtomicEnvironment:
         self.bond_array_2 = bond_array_2
 
         # if multiple cutoffs are given, create 3-body arrays
-        if len(cutoffs) > 0:
+        if len(cutoffs) > 1:
             self.cutoff_3 = cutoffs[1]
             bond_array_3, cross_bond_inds, cross_bond_dists, triplet_counts =\
                 get_3_body_arrays(bond_array_2, bond_positions_2, cutoffs[1])

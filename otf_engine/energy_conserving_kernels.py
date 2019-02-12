@@ -15,13 +15,58 @@ from copy import deepcopy
 
 
 # -----------------------------------------------------------------------------
-#               kernels and gradients acting on environment objects
+#                              two body kernels
+# -----------------------------------------------------------------------------
+
+def two_body(env1, env2, d1, d2, hyps, cutoffs):
+    sig = hyps[0]
+    ls = hyps[1]
+    r_cut = cutoffs[0]
+
+    return two_body_jit(env1.bond_array_2, env2.bond_array_2,
+                             d1, d2, sig, ls, r_cut)
+
+
+def two_body_grad(env1, env2, d1, d2, hyps, cutoffs):
+    sig = hyps[0]
+    ls = hyps[1]
+    r_cut = cutoffs[0]
+
+    kernel, ls_derv, sig_derv = \
+        two_body_grad_jit(env1.bond_array_2, env2.bond_array_2,
+                               d1, d2, sig, ls, r_cut)
+    kernel_grad = np.array([sig_derv, ls_derv])
+    return kernel, kernel_grad
+
+
+def two_body_force_en(env1, env2, d1, hyps, cutoffs):
+    sig = hyps[0]
+    ls = hyps[1]
+    r_cut = cutoffs[0]
+
+    # divide by three to account for triple counting
+    return two_body_force_en_jit(env1.bond_array_2, env2.bond_array_2,
+                                 d1, sig, ls, r_cut)/2
+
+
+def two_body_en(env1, env2, hyps, cutoffs):
+    sig = hyps[0]
+    ls = hyps[1]
+    r_cut = cutoffs[0]
+
+    return two_body_en_jit(env1.bond_array_2, env2.bond_array_2,
+                           sig, ls, r_cut)
+
+
+# -----------------------------------------------------------------------------
+#                              three body kernels
 # -----------------------------------------------------------------------------
 
 
-def three_body_cons_quad_grad(env1, env2, bodies, d1, d2, hyps, r_cut):
+def three_body_cons_quad_grad(env1, env2, d1, d2, hyps, cutoffs):
     sig = hyps[0]
     ls = hyps[1]
+    r_cut = cutoffs[1]
 
     kernel, sig_derv, ls_derv = \
         three_body_cons_quad_grad_jit(env1.bond_array, env2.bond_array,
@@ -34,9 +79,10 @@ def three_body_cons_quad_grad(env1, env2, bodies, d1, d2, hyps, r_cut):
     return kernel, kernel_grad
 
 
-def three_body_cons_quad_grad_v2(env1, env2, d1, d2, hyps, r_cut):
+def three_body_cons_quad_grad_v2(env1, env2, d1, d2, hyps, cutoffs):
     sig = hyps[0]
     ls = hyps[1]
+    r_cut = cutoffs[1]
 
     kernel, sig_derv, ls_derv = \
         three_body_cons_quad_grad_jit_v2(env1.bond_array_3, env2.bond_array_3,
@@ -53,9 +99,10 @@ def three_body_cons_quad_grad_v2(env1, env2, d1, d2, hyps, r_cut):
     return kernel, kernel_grad
 
 
-def three_body_cons_quad(env1, env2, bodies, d1, d2, hyps, r_cut):
+def three_body_cons_quad(env1, env2, d1, d2, hyps, cutoffs):
     sig = hyps[0]
     ls = hyps[1]
+    r_cut = cutoffs[1]
 
     return three_body_cons_quad_jit(env1.bond_array, env2.bond_array,
                                     env1.cross_bond_dists,
@@ -63,9 +110,10 @@ def three_body_cons_quad(env1, env2, bodies, d1, d2, hyps, r_cut):
                                     d1, d2, sig, ls, r_cut)
 
 
-def three_body_cons_quad_v2(env1, env2, d1, d2, hyps, r_cut):
+def three_body_cons_quad_v2(env1, env2, d1, d2, hyps, cutoffs):
     sig = hyps[0]
     ls = hyps[1]
+    r_cut = cutoffs[1]
 
     return three_body_cons_quad_jit_v2(env1.bond_array_3, env2.bond_array_3,
                                        env1.cross_bond_inds,
@@ -77,9 +125,10 @@ def three_body_cons_quad_v2(env1, env2, d1, d2, hyps, r_cut):
                                        d1, d2, sig, ls, r_cut)
 
 
-def three_body_cons_quad_force_en(env1, env2, bodies, d1, hyps, r_cut):
+def three_body_cons_quad_force_en(env1, env2, d1, hyps, cutoffs):
     sig = hyps[0]
     ls = hyps[1]
+    r_cut = cutoffs[1]
 
     # divide by three to account for triple counting
     return three_body_cons_quad_force_en_jit(env1.bond_array, env2.bond_array,
@@ -88,9 +137,10 @@ def three_body_cons_quad_force_en(env1, env2, bodies, d1, hyps, r_cut):
                                              d1, sig, ls, r_cut)/3
 
 
-def three_body_cons_quad_force_en_v2(env1, env2, d1, hyps, r_cut):
+def three_body_cons_quad_force_en_v2(env1, env2, d1, hyps, cutoffs):
     sig = hyps[0]
     ls = hyps[1]
+    r_cut = cutoffs[1]
 
     # divide by three to account for triple counting
     return three_body_cons_quad_force_en_jit_v2(env1.bond_array_3,
@@ -104,9 +154,10 @@ def three_body_cons_quad_force_en_v2(env1, env2, d1, hyps, r_cut):
                                                 d1, sig, ls, r_cut)/3
 
 
-def three_body_cons_quad_en(env1, env2, bodies, hyps, r_cut):
+def three_body_cons_quad_en(env1, env2, hyps, cutoffs):
     sig = hyps[0]
     ls = hyps[1]
+    r_cut = cutoffs[1]
 
     return three_body_cons_quad_en_jit(env1.bond_array, env2.bond_array,
                                        env1.cross_bond_dists,
@@ -115,7 +166,133 @@ def three_body_cons_quad_en(env1, env2, bodies, hyps, r_cut):
 
 
 # -----------------------------------------------------------------------------
-#               jit kernels and gradients acting on np arrays
+#                           two body numba functions
+# -----------------------------------------------------------------------------
+
+
+@njit
+def two_body_jit(bond_array_1, bond_array_2, d1, d2, sig, ls,
+                 r_cut):
+    kern = 0
+
+    ls1 = 1 / (2 * ls * ls)
+    ls2 = 1 / (ls * ls)
+    ls3 = ls2 * ls2
+    sig2 = sig*sig
+
+    for m in range(bond_array_1.shape[0]):
+        ri = bond_array_1[m, 0]
+        ci = bond_array_1[m, d1]
+        fi = (r_cut - ri)**2
+        fdi = 2 * (r_cut - ri) * ci
+
+        for n in range(bond_array_2.shape[0]):
+            rj = bond_array_2[n, 0]
+            cj = bond_array_2[n, d2]
+            fj = (r_cut - rj)**2
+            fdj = 2 * (r_cut - rj) * cj
+            r11 = ri - rj
+
+            A = ci * cj
+            B = r11 * ci
+            C = r11 * cj
+            D = r11 * r11
+
+            kern += force_helper(A, B, C, D, fi, fj, fdi, fdj, ls1, ls2,
+                                 ls3, sig2)
+
+    return kern
+
+
+@njit
+def two_body_grad_jit(bond_array_1, bond_array_2, d1, d2, sig, ls,
+                      r_cut):
+
+    kern = 0
+    sig_derv = 0
+    ls_derv = 0
+
+    sig2, sig3, ls1, ls2, ls3, ls4, ls5, ls6 = grad_constants(sig, ls)
+
+    for m in range(bond_array_1.shape[0]):
+        ri = bond_array_1[m, 0]
+        ci = bond_array_1[m, d1]
+        fi = (r_cut - ri)**2
+        fdi = 2 * (r_cut - ri) * ci
+
+        for n in range(bond_array_2.shape[0]):
+            rj = bond_array_2[n, 0]
+            cj = bond_array_2[n, d2]
+            fj = (r_cut - rj)**2
+            fdj = 2 * (r_cut - rj) * cj
+
+            r11 = ri - rj
+
+            A = ci * cj
+            B = r11 * ci
+            C = r11 * cj
+            D = r11 * r11
+
+            kern_term, sig_term, ls_term = \
+                grad_helper(A, B, C, D, fi, fj, fdi, fdj, ls1, ls2, ls3, ls4,
+                            ls5, ls6, sig2, sig3)
+
+            kern += kern_term
+            sig_derv += sig_term
+            ls_derv += ls_term
+
+    return kern, ls_derv, sig_derv
+
+
+@njit
+def two_body_force_en_jit(bond_array_1, bond_array_2, d1, sig, ls, r_cut):
+    kern = 0
+
+    ls1 = 1 / (2 * ls * ls)
+    ls2 = 1 / (ls * ls)
+    sig2 = sig*sig
+
+    for m in range(bond_array_1.shape[0]):
+        ri = bond_array_1[m, 0]
+        ci = bond_array_1[m, d1]
+        fi = (r_cut - ri)**2
+        fdi = 2 * (r_cut - ri) * ci
+
+        for n in range(bond_array_2.shape[0]):
+            rj = bond_array_2[n, 0]
+            fj = (r_cut - rj)**2
+
+            r11 = ri - rj
+            B = r11 * ci
+            D = r11 * r11
+            kern += force_energy_helper(B, D, fi, fj, fdi, ls1, ls2, sig2)
+
+    return kern
+
+
+@njit
+def two_body_en_jit(bond_array_1, bond_array_2, sig, ls, r_cut):
+    kern = 0
+
+    ls1 = 1 / (2 * ls * ls)
+    sig2 = sig * sig
+
+    for m in range(bond_array_1.shape[0]):
+        ri = bond_array_1[m, 0]
+        fi = (r_cut - ri)**2
+
+        for n in range(bond_array_2.shape[0]):
+            rj = bond_array_2[n, 0]
+            fj = (r_cut - rj)**2
+            r11 = ri - rj
+
+            kern += fi * fj * sig2 * exp(-r11 * r11 * ls1)
+
+    return kern
+
+
+# -----------------------------------------------------------------------------
+#                           three body numba functions
 # -----------------------------------------------------------------------------
 
 
@@ -600,14 +777,86 @@ def three_body_cons_quad_en_jit(bond_array_1, bond_array_2,
 
 
 # -----------------------------------------------------------------------------
-#                             kernel helper functions
+#                            general helper functions
+# -----------------------------------------------------------------------------
+
+
+@njit
+def grad_constants(sig, ls):
+    sig2 = sig * sig
+    sig3 = 2 * sig
+
+    ls1 = 1 / (2 * ls * ls)
+    ls2 = 1 / (ls * ls)
+    ls3 = ls2 * ls2
+    ls4 = 1 / (ls * ls * ls)
+    ls5 = ls * ls
+    ls6 = ls2 * ls4
+
+    return sig2, sig3, ls1, ls2, ls3, ls4, ls5, ls6
+
+
+@njit
+def force_helper(A, B, C, D, fi, fj, fdi, fdj, ls1, ls2, ls3, sig2):
+    E = exp(-D * ls1)
+    F = E * B * ls2
+    G = -E * C * ls2
+    H = A * E * ls2 - B * C * E * ls3
+    I = E * fdi * fdj
+    J = F * fi * fdj
+    K = G * fdi * fj
+    L = H * fi * fj
+    M = sig2 * (I + J + K + L)
+
+    return M
+
+
+@njit
+def grad_helper(A, B, C, D, fi, fj, fdi, fdj, ls1, ls2, ls3, ls4, ls5, ls6,
+                sig2, sig3):
+    E = exp(-D * ls1)
+    F = E * B * ls2
+    G = -E * C * ls2
+    H = A * E * ls2 - B * C * E * ls3
+    I = E * fdi * fdj
+    J = F * fi * fdj
+    K = G * fdi * fj
+    L = H * fi * fj
+    M = I + J + K + L
+    N = sig2 * M
+    O = sig3 * M
+    P = E * D * ls4
+    Q = B * (ls2 * P - 2 * E * ls4)
+    R = -C * (ls2 * P - 2 * E * ls4)
+    S = (A * ls5 - B * C) * (P * ls3 - 4 * E * ls6) + 2 * E * A * ls4
+    T = P * fdi * fdj
+    U = Q * fi * fdj
+    V = R * fdi * fj
+    W = S * fi * fj
+    X = sig2 * (T + U + V + W)
+
+    return N, O, X
+
+
+@njit
+def force_energy_helper(B, D, fi, fj, fdi, ls1, ls2, sig2):
+    E = exp(-D * ls1)
+    F = E * B * ls2
+    G = -F * fi * fj
+    H = -E * fdi * fj
+    I = sig2 * (G + H)
+
+    return I
+
+
+# -----------------------------------------------------------------------------
+#                        three body helper functions
 # -----------------------------------------------------------------------------
 
 
 @njit
 def triplet_kernel(ci1, ci2, cj1, cj2, ri1, ri2, ri3, rj1, rj2, rj3, fi, fj,
                    fdi, fdj, ls1, ls2, ls3, sig2):
-
     r11 = ri1-rj1
     r12 = ri1-rj2
     r13 = ri1-rj3
@@ -683,67 +932,64 @@ def triplet_kernel_grad(ci1, ci2, cj1, cj2, ri1, ri2, ri3, rj1, rj2, rj3, fi,
 def three_body_helper_1(ci1, ci2, cj1, cj2, r11, r22, r33,
                         fi, fj, fdi, fdj,
                         ls1, ls2, ls3, sig2):
-    A1 = ci1*cj1+ci2*cj2
-    B1 = r11*ci1+r22*ci2
-    C1 = r11*cj1+r22*cj2
-    D1 = r11*r11+r22*r22+r33*r33
-    E1 = exp(-D1*ls1)
-    F1 = E1*B1*ls2
-    G1 = -E1*C1*ls2
-    H1 = A1*E1*ls2-B1*C1*E1*ls3
-    I1 = E1*fdi*fdj
-    J1 = F1*fi*fdj
-    K1 = G1*fdi*fj
-    L1 = H1*fi*fj
-    M1 = sig2*(I1+J1+K1+L1)
+    A = ci1*cj1+ci2*cj2
+    B = r11*ci1+r22*ci2
+    C = r11*cj1+r22*cj2
+    D = r11*r11+r22*r22+r33*r33
 
-    return M1
+    M = force_helper(A, B, C, D, fi, fj, fdi, fdj, ls1, ls2, ls3, sig2)
+
+    return M
 
 
 @njit
-def three_body_grad_helper_1(ci1, ci2, cj1, cj2, r11, r22, r33,
-                             fi, fj, fdi, fdj,
-                             ls1, ls2, ls3, ls4, ls5, ls6, sig2, sig3):
-    A1 = ci1*cj1+ci2*cj2
-    B1 = r11*ci1+r22*ci2
-    C1 = r11*cj1+r22*cj2
-    D1 = r11*r11+r22*r22+r33*r33
-    E1 = exp(-D1*ls1)
-    F1 = E1*B1*ls2
-    G1 = -E1*C1*ls2
-    H1 = A1*E1*ls2-B1*C1*E1*ls3
-    I1 = E1*fdi*fdj
-    J1 = F1*fi*fdj
-    K1 = G1*fdi*fj
-    L1 = H1*fi*fj
-    M1 = I1+J1+K1+L1
-    N1 = sig2*M1
-    O1 = sig3*M1
-    P1 = E1*D1*ls4
-    Q1 = B1*(ls2*P1-2*E1*ls4)
-    R1 = -C1*(ls2*P1-2*E1*ls4)
-    S1 = (A1*ls5-B1*C1)*(P1*ls3-4*E1*ls6)+2*E1*A1*ls4
-    T1 = P1*fdi*fdj
-    U1 = Q1*fi*fdj
-    V1 = R1*fdi*fj
-    W1 = S1*fi*fj
-    X1 = sig2*(T1+U1+V1+W1)
+def three_body_helper_2(ci1, ci2, cj1, cj2, r12, r23, r31,
+                        fi, fj, fdi, fdj,
+                        ls1, ls2, ls3, sig2):
+    A = ci1*cj2
+    B = r12*ci1+r23*ci2
+    C = r12*cj2+r31*cj1
+    D = r12*r12+r23*r23+r31*r31
 
-    return N1, O1, X1
+    M = force_helper(A, B, C, D, fi, fj, fdi, fdj, ls1, ls2, ls3, sig2)
+
+    return M
+
+
+@njit
+def three_body_grad_helper_1(ci1, ci2, cj1, cj2, r11, r22, r33, fi, fj, fdi,
+                             fdj, ls1, ls2, ls3, ls4, ls5, ls6, sig2, sig3):
+    A = ci1*cj1+ci2*cj2
+    B = r11*ci1+r22*ci2
+    C = r11*cj1+r22*cj2
+    D = r11*r11+r22*r22+r33*r33
+
+    N, O, X = grad_helper(A, B, C, D, fi, fj, fdi, fdj, ls1, ls2, ls3, ls4,
+                          ls5, ls6, sig2, sig3)
+
+    return N, O, X
+
+
+@njit
+def three_body_grad_helper_2(ci1, ci2, cj1, cj2, r12, r23, r31, fi, fj, fdi,
+                             fdj, ls1, ls2, ls3, ls4, ls5, ls6, sig2, sig3):
+    A = ci1*cj2
+    B = r12*ci1+r23*ci2
+    C = r12*cj2+r31*cj1
+    D = r12*r12+r23*r23+r31*r31
+
+    N, O, X = grad_helper(A, B, C, D, fi, fj, fdi, fdj, ls1, ls2, ls3, ls4,
+                          ls5, ls6, sig2, sig3)
+
+    return N, O, X
 
 
 @njit
 def three_body_en_helper(ci1, ci2, r11, r22, r33, fi, fj, fdi, ls1, ls2, sig2):
-    # first cyclic term
-    B1 = r11*ci1+r22*ci2
-    D1 = r11*r11+r22*r22+r33*r33
-    E1 = exp(-D1*ls1)
-    F1 = E1*B1*ls2
-    G1 = -F1*fi*fj
-    H1 = -E1*fdi*fj
-    I1 = sig2*(G1+H1)
+    B = r11 * ci1 + r22 * ci2
+    D = r11 * r11 + r22 * r22 + r33 * r33
 
-    return I1
+    return force_energy_helper(B, D, fi, fj, fdi, ls1, ls2, sig2)
 
 
 @njit
@@ -774,58 +1020,6 @@ def triplet_force_en_kernel(ci1, ci2, ri1, ri2, ri3, rj1, rj2, rj3,
 
     return I1 + I2 + I3 + I4 + I5 + I6
 
-
-@njit
-def three_body_helper_2(ci1, ci2, cj1, cj2, r12, r23, r31,
-                        fi, fj, fdi, fdj,
-                        ls1, ls2, ls3, sig2):
-    A3 = ci1*cj2
-    B3 = r12*ci1+r23*ci2
-    C3 = r12*cj2+r31*cj1
-    D3 = r12*r12+r23*r23+r31*r31
-    E3 = exp(-D3*ls1)
-    F3 = E3*B3*ls2
-    G3 = -E3*C3*ls2
-    H3 = A3*E3*ls2-B3*C3*E3*ls3
-    I3 = E3*fdi*fdj
-    J3 = F3*fi*fdj
-    K3 = G3*fdi*fj
-    L3 = H3*fi*fj
-    M3 = sig2*(I3+J3+K3+L3)
-
-    return M3
-
-
-@njit
-def three_body_grad_helper_2(ci1, ci2, cj1, cj2, r12, r23, r31,
-                             fi, fj, fdi, fdj,
-                             ls1, ls2, ls3, ls4, ls5, ls6, sig2, sig3):
-    A3 = ci1*cj2
-    B3 = r12*ci1+r23*ci2
-    C3 = r12*cj2+r31*cj1
-    D3 = r12*r12+r23*r23+r31*r31
-    E3 = exp(-D3*ls1)
-    F3 = E3*B3*ls2
-    G3 = -E3*C3*ls2
-    H3 = A3*E3*ls2-B3*C3*E3*ls3
-    I3 = E3*fdi*fdj
-    J3 = F3*fi*fdj
-    K3 = G3*fdi*fj
-    L3 = H3*fi*fj
-    M3 = I3+J3+K3+L3
-    N3 = sig2*M3
-    O3 = sig3*M3
-    P3 = E3*D3*ls4
-    Q3 = B3*(ls2*P3-2*E3*ls4)
-    R3 = -C3*(ls2*P3-2*E3*ls4)
-    S3 = (A3*ls5-B3*C3)*(P3*ls3-4*E3*ls6)+2*E3*A3*ls4
-    T3 = P3*fdi*fdj
-    U3 = Q3*fi*fdj
-    V3 = R3*fdi*fj
-    W3 = S3*fi*fj
-    X3 = sig2*(T3+U3+V3+W3)
-
-    return N3, O3, X3
 
 if __name__ == '__main__':
     pass

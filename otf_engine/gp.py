@@ -4,7 +4,7 @@ from scipy.linalg import solve_triangular
 from scipy.optimize import minimize
 from typing import List, Callable
 from copy import deepcopy
-from env import ChemicalEnvironment
+from fast_env import AtomicEnvironment
 import kernels
 import smooth_kernels
 import energy_conserving_kernels
@@ -19,7 +19,7 @@ class GaussianProcess:
 
     def __init__(self, kernel_name: str, kernel: Callable,
                  kernel_grad: Callable,  hyps: np.ndarray,
-                 cutoffs: np.ndarray=None,
+                 cutoffs: np.ndarray,
                  hyp_labels: List=None,
                  energy_force_kernel: Callable=None,
                  energy_kernel: Callable=None,
@@ -59,7 +59,7 @@ class GaussianProcess:
         update_indices = custom_range or list(range(noa))
 
         for atom in update_indices:
-            env_curr = ChemicalEnvironment(struc, atom)
+            env_curr = AtomicEnvironment(struc, atom, self.cutoffs)
             forces_curr = np.array(forces[atom])
 
             self.training_data.append(env_curr)
@@ -142,7 +142,7 @@ class GaussianProcess:
         self.hyps = res.x
         self.set_L_alpha()
 
-    def predict(self, x_t: ChemicalEnvironment, d: int) -> [float, float]:
+    def predict(self, x_t: AtomicEnvironment, d: int) -> [float, float]:
         # get kernel vector
         k_v = self.get_kernel_vector(x_t, d)
 
@@ -163,11 +163,11 @@ class GaussianProcess:
 
         return pred_mean, pred_var
 
-    def predict_local_energy(self, x_t: ChemicalEnvironment) -> float:
+    def predict_local_energy(self, x_t: AtomicEnvironment) -> float:
         """Predict the sum of triplet energies that include the test atom.
 
-        :param x_t: chemical environment of test atom
-        :type x_t: ChemicalEnvironment
+        :param x_t: Atomic environment of test atom
+        :type x_t: AtomicEnvironment
         :return: local energy in eV (up to a constant)
         :rtype: float
         """
@@ -177,7 +177,7 @@ class GaussianProcess:
 
         return pred_mean
 
-    def predict_local_energy_and_var(self, x_t: ChemicalEnvironment):
+    def predict_local_energy_and_var(self, x_t: AtomicEnvironment):
         # get kernel vector
         k_v = self.en_kern_vec(x_t)
 
@@ -192,12 +192,12 @@ class GaussianProcess:
 
         return pred_mean, pred_var
 
-    def get_kernel_vector(self, x: ChemicalEnvironment,
+    def get_kernel_vector(self, x: AtomicEnvironment,
                           d_1: int) -> np.ndarray:
         """ Compute kernel vector.
 
         :param x: data point to compare against kernel matrix
-        :type x: ChemicalEnvironment
+        :type x: AtomicEnvironment
         :param d_1:
         n t:type d_1: int
         :return: kernel vector
@@ -216,7 +216,7 @@ class GaussianProcess:
 
         return k_v
 
-    def en_kern_vec(self, x: ChemicalEnvironment) -> np.ndarray:
+    def en_kern_vec(self, x: AtomicEnvironment) -> np.ndarray:
         ds = [1, 2, 3]
         size = len(self.training_data) * 3
         k_v = np.zeros(size, )

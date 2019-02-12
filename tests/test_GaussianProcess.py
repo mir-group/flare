@@ -5,8 +5,10 @@ import sys
 sys.path.append('../otf_engine')
 from gp import GaussianProcess
 from env import ChemicalEnvironment
+from fast_env import AtomicEnvironment
 from struc import Structure
 import kernels as kern
+import energy_conserving_kernels as en
 
 
 def get_random_structure(cell, unique_species, cutoff, noa):
@@ -43,6 +45,7 @@ def two_body_gp():
     cell = np.eye(3)
     unique_species = ['B', 'A']
     cutoff = 0.8
+    cutoffs = np.array([0.8, 0.8])
     noa = 5
 
     # create test structure
@@ -51,9 +54,11 @@ def two_body_gp():
 
     # test update_db
     gaussian = \
-        GaussianProcess(kernel_name='n_body_sc', kernel=kern.n_body_sc,
-                        kernel_grad=kern.n_body_sc_grad,
-                        hyps=np.array([1, 1, 1]))
+        GaussianProcess(kernel_name='three body constant quadratic',
+                        kernel=en.three_body_cons_quad_v2,
+                        kernel_grad=en.three_body_cons_quad_grad_v2,
+                        hyps=np.array([1, 1, 1]),
+                        cutoffs=cutoffs)
     gaussian.update_db(test_structure, forces)
 
     # return gaussian
@@ -88,7 +93,8 @@ def test_point():
     test_structure_2, _ = get_random_structure(cell, unique_species,
                                                cutoff, noa)
 
-    test_pt = ChemicalEnvironment(test_structure_2, 0)
+    test_pt = AtomicEnvironment(test_structure_2, 0,
+                                np.array([cutoff, cutoff]))
 
     yield test_pt
     del test_pt
