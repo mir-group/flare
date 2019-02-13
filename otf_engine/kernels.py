@@ -5,6 +5,79 @@ import cutoffs as cf
 
 
 # -----------------------------------------------------------------------------
+#                        two plus three body kernels
+# -----------------------------------------------------------------------------
+
+
+def two_plus_three_body(env1, env2, d1, d2, hyps, cutoffs,
+                        cutoff_func=cf.quadratic_cutoff):
+
+    two_term = two_body_jit(env1.bond_array_2, env2.bond_array_2,
+                            d1, d2, hyps[0], hyps[1], cutoffs[0], cutoff_func)
+
+    three_term = \
+        three_body_jit(env1.bond_array_3, env2.bond_array_3,
+                       env1.cross_bond_inds, env2.cross_bond_inds,
+                       env1.cross_bond_dists, env2.cross_bond_dists,
+                       env1.triplet_counts, env2.triplet_counts,
+                       d1, d2, hyps[2], hyps[3], cutoffs[1], cutoff_func)
+
+    return two_term + three_term
+
+
+def two_plus_three_body_grad(env1, env2, d1, d2, hyps, cutoffs,
+                             cutoff_func=cf.quadratic_cutoff):
+
+    kern2, ls2, sig2 = \
+        two_body_grad_jit(env1.bond_array_2, env2.bond_array_2,
+                          d1, d2, hyps[0], hyps[1], cutoffs[0], cutoff_func)
+
+    kern3, sig3, ls3 = \
+        three_body_grad_jit(env1.bond_array_3, env2.bond_array_3,
+                            env1.cross_bond_inds, env2.cross_bond_inds,
+                            env1.cross_bond_dists, env2.cross_bond_dists,
+                            env1.triplet_counts, env2.triplet_counts,
+                            d1, d2, hyps[2], hyps[3], cutoffs[1], cutoff_func)
+
+    return kern2 + kern3, np.array([sig2, ls2, sig3, ls3])
+
+
+def two_plus_three_force_en(env1, env2, d1, hyps, cutoffs,
+                            cutoff_func=cf.quadratic_cutoff):
+
+    two_term = two_body_force_en_jit(env1.bond_array_2, env2.bond_array_2,
+                                     d1, hyps[0], hyps[1], cutoffs[0],
+                                     cutoff_func)/2
+
+    three_term = \
+        three_body_force_en_jit(env1.bond_array_3, env2.bond_array_3,
+                                env1.cross_bond_inds, env2.cross_bond_inds,
+                                env1.cross_bond_dists,
+                                env2.cross_bond_dists,
+                                env1.triplet_counts, env2.triplet_counts,
+                                d1, hyps[2], hyps[3], cutoffs[1],
+                                cutoff_func)/3
+
+    return two_term + three_term
+
+
+def two_plus_three_en(env1, env2, hyps, cutoffs,
+                      cutoff_func=cf.quadratic_cutoff):
+
+    two_term = two_body_en_jit(env1.bond_array_2, env2.bond_array_2,
+                               hyps[0], hyps[1], cutoffs[0], cutoff_func)
+
+    three_term = \
+        three_body_en_jit(env1.bond_array_3, env2.bond_array_3,
+                          env1.cross_bond_inds, env2.cross_bond_inds,
+                          env1.cross_bond_dists, env2.cross_bond_dists,
+                          env1.triplet_counts, env2.triplet_counts,
+                          hyps[2], hyps[3], cutoffs[1], cutoff_func)
+
+    return two_term + three_term
+
+
+# -----------------------------------------------------------------------------
 #                              two body kernels
 # -----------------------------------------------------------------------------
 
