@@ -2,7 +2,7 @@ import numpy as np
 import qe_parsers
 import sys
 sys.path.append('../../otf/otf_engine')
-import env, gp, struc, kernels, qe_parsers
+import gp, struc, qe_parsers
 
 
 class MDAnalysis:

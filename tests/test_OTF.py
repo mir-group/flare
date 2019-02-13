@@ -29,7 +29,6 @@ def test_otf_1_1():
     std_tolerance_factor = -0.1
 
     # make gp model
-    kernel_name = 'two body'
     kernel = en.two_body
     kernel_grad = en.two_body_grad
     hyps = np.array([1, 1, 1])
@@ -37,7 +36,7 @@ def test_otf_1_1():
     energy_force_kernel = en.two_body_force_en
 
     gp = \
-        GaussianProcess(kernel_name=kernel_name, kernel=kernel,
+        GaussianProcess(kernel=kernel,
                         kernel_grad=kernel_grad,
                         hyps=hyps,
                         cutoffs=cutoffs,
@@ -64,7 +63,6 @@ def test_otf_1_2():
     std_tolerance_factor = -0.1
 
     # make gp model
-    kernel_name = 'two body'
     kernel = en.two_body
     kernel_grad = en.two_body_grad
     hyps = np.array([1, 1, 1])
@@ -72,7 +70,7 @@ def test_otf_1_2():
     energy_force_kernel = en.two_body_force_en
 
     gp = \
-        GaussianProcess(kernel_name=kernel_name, kernel=kernel,
+        GaussianProcess(kernel=kernel,
                         kernel_grad=kernel_grad,
                         hyps=hyps,
                         cutoffs=cutoffs,

@@ -51,8 +51,7 @@ def two_body_gp():
 
     # test update_db
     gaussian = \
-        GaussianProcess(kernel_name='three body constant quadratic',
-                        kernel=en.three_body,
+        GaussianProcess(kernel=en.three_body,
                         kernel_grad=en.three_body_grad,
                         hyps=np.array([1, 1, 1]),
                         cutoffs=cutoffs)

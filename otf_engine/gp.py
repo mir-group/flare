@@ -22,15 +22,14 @@ class GaussianProcess:
                  hyp_labels: List=None,
                  energy_force_kernel: Callable=None,
                  energy_kernel: Callable=None,
-                 opt_algorithm: str='L-BFGS-B',
-                 kernel_name: str=None):
+                 opt_algorithm: str='L-BFGS-B'):
         """Initialize GP parameters and training data."""
 
-        self.kernel_name = kernel_name
         self.kernel = kernel
         self.kernel_grad = kernel_grad
         self.energy_kernel = energy_kernel
         self.energy_force_kernel = energy_force_kernel
+        self.kernel_name = kernel.__name__
         self.hyps = hyps
         self.hyp_labels = hyp_labels
         self.cutoffs = cutoffs
