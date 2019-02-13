@@ -3,6 +3,11 @@ from numba import njit
 
 
 @njit
+def hard_cutoff(r_cut, ri, ci):
+    return 1, 0
+
+
+@njit
 def quadratic_cutoff(r_cut, ri, ci):
     rdiff = r_cut - ri
     fi = rdiff * rdiff
