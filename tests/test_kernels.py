@@ -4,10 +4,10 @@ import sys
 from random import random, randint
 from copy import deepcopy
 sys.path.append('../otf_engine')
-import fast_env
+import env
 import gp
 import struc
-import energy_conserving_kernels as en
+import kernels as en
 
 
 # -----------------------------------------------------------------------------
@@ -35,8 +35,8 @@ def test_two_body_force_en():
     test_structure_1 = struc.Structure(cell, species_1, positions_1)
     test_structure_2 = struc.Structure(cell, species_1, positions_2)
 
-    env1_1 = fast_env.AtomicEnvironment(test_structure_1, atom_1, cutoffs)
-    env1_2 = fast_env.AtomicEnvironment(test_structure_2, atom_1, cutoffs)
+    env1_1 = env.AtomicEnvironment(test_structure_1, atom_1, cutoffs)
+    env1_2 = env.AtomicEnvironment(test_structure_2, atom_1, cutoffs)
 
     # create env 2
     positions_1 = [np.array([0., 0., 0.]),
@@ -46,7 +46,7 @@ def test_two_body_force_en():
     species_2 = ['A', 'A', 'B']
     atom_2 = 0
     test_structure_1 = struc.Structure(cell, species_2, positions_1)
-    env2 = fast_env.AtomicEnvironment(test_structure_1, atom_2, cutoffs)
+    env2 = env.AtomicEnvironment(test_structure_1, atom_2, cutoffs)
 
     sig = random()
     ls = random()
@@ -90,9 +90,9 @@ def test_two_body_force():
     test_structure_2 = struc.Structure(cell, species_1, positions_2)
     test_structure_3 = struc.Structure(cell, species_1, positions_3)
 
-    env1_1 = fast_env.AtomicEnvironment(test_structure_1, atom_1, cutoffs)
-    env1_2 = fast_env.AtomicEnvironment(test_structure_2, atom_1, cutoffs)
-    env1_3 = fast_env.AtomicEnvironment(test_structure_3, atom_1, cutoffs)
+    env1_1 = env.AtomicEnvironment(test_structure_1, atom_1, cutoffs)
+    env1_2 = env.AtomicEnvironment(test_structure_2, atom_1, cutoffs)
+    env1_3 = env.AtomicEnvironment(test_structure_3, atom_1, cutoffs)
 
     # create env 2
     positions_1 = [np.array([0., 0., 0.]),
@@ -109,9 +109,9 @@ def test_two_body_force():
     test_structure_2 = struc.Structure(cell, species_2, positions_2)
     test_structure_3 = struc.Structure(cell, species_2, positions_3)
 
-    env2_1 = fast_env.AtomicEnvironment(test_structure_1, atom_2, cutoffs)
-    env2_2 = fast_env.AtomicEnvironment(test_structure_2, atom_2, cutoffs)
-    env2_3 = fast_env.AtomicEnvironment(test_structure_3, atom_2, cutoffs)
+    env2_1 = env.AtomicEnvironment(test_structure_1, atom_2, cutoffs)
+    env2_2 = env.AtomicEnvironment(test_structure_2, atom_2, cutoffs)
+    env2_3 = env.AtomicEnvironment(test_structure_3, atom_2, cutoffs)
 
     sig = 1
     ls = 0.1
@@ -147,7 +147,7 @@ def test_two_body_grad():
     species_1 = ['A', 'B', 'A']
     atom_1 = 0
     test_structure_1 = struc.Structure(cell, species_1, positions_1)
-    env1 = fast_env.AtomicEnvironment(test_structure_1, atom_1, cutoffs)
+    env1 = env.AtomicEnvironment(test_structure_1, atom_1, cutoffs)
 
     # create env 2
     positions_1 = [np.array([0., 0., 0.]),
@@ -157,7 +157,7 @@ def test_two_body_grad():
     species_2 = ['A', 'A', 'B']
     atom_2 = 0
     test_structure_1 = struc.Structure(cell, species_2, positions_1)
-    env2 = fast_env.AtomicEnvironment(test_structure_1, atom_2, cutoffs)
+    env2 = env.AtomicEnvironment(test_structure_1, atom_2, cutoffs)
 
     sig = random()
     ls = random()
@@ -214,8 +214,8 @@ def test_three_body_force_en():
     test_structure_1 = struc.Structure(cell, species_1, positions_1)
     test_structure_2 = struc.Structure(cell, species_1, positions_2)
 
-    env1_1 = fast_env.AtomicEnvironment(test_structure_1, atom_1, cutoffs)
-    env1_2 = fast_env.AtomicEnvironment(test_structure_2, atom_1, cutoffs)
+    env1_1 = env.AtomicEnvironment(test_structure_1, atom_1, cutoffs)
+    env1_2 = env.AtomicEnvironment(test_structure_2, atom_1, cutoffs)
 
     # create env 2
     positions_1 = [np.array([0., 0., 0.]),
@@ -225,7 +225,7 @@ def test_three_body_force_en():
     species_2 = ['A', 'A', 'B']
     atom_2 = 0
     test_structure_1 = struc.Structure(cell, species_2, positions_1)
-    env2 = fast_env.AtomicEnvironment(test_structure_1, atom_2, cutoffs)
+    env2 = env.AtomicEnvironment(test_structure_1, atom_2, cutoffs)
 
     sig = random()
     ls = random()
@@ -268,9 +268,9 @@ def test_three_body_force():
     test_structure_2 = struc.Structure(cell, species_1, positions_2)
     test_structure_3 = struc.Structure(cell, species_1, positions_3)
 
-    env1_1 = fast_env.AtomicEnvironment(test_structure_1, atom_1, cutoffs)
-    env1_2 = fast_env.AtomicEnvironment(test_structure_2, atom_1, cutoffs)
-    env1_3 = fast_env.AtomicEnvironment(test_structure_3, atom_1, cutoffs)
+    env1_1 = env.AtomicEnvironment(test_structure_1, atom_1, cutoffs)
+    env1_2 = env.AtomicEnvironment(test_structure_2, atom_1, cutoffs)
+    env1_3 = env.AtomicEnvironment(test_structure_3, atom_1, cutoffs)
 
     # create env 2
     positions_1 = [np.array([0., 0., 0.]),
@@ -287,9 +287,9 @@ def test_three_body_force():
     test_structure_2 = struc.Structure(cell, species_2, positions_2)
     test_structure_3 = struc.Structure(cell, species_2, positions_3)
 
-    env2_1 = fast_env.AtomicEnvironment(test_structure_1, atom_2, cutoffs)
-    env2_2 = fast_env.AtomicEnvironment(test_structure_2, atom_2, cutoffs)
-    env2_3 = fast_env.AtomicEnvironment(test_structure_3, atom_2, cutoffs)
+    env2_1 = env.AtomicEnvironment(test_structure_1, atom_2, cutoffs)
+    env2_2 = env.AtomicEnvironment(test_structure_2, atom_2, cutoffs)
+    env2_3 = env.AtomicEnvironment(test_structure_3, atom_2, cutoffs)
 
     sig = 1
     ls = 0.1
@@ -325,7 +325,7 @@ def test_three_body_grad():
     species_1 = ['A', 'B', 'A']
     atom_1 = 0
     test_structure_1 = struc.Structure(cell, species_1, positions_1)
-    env1 = fast_env.AtomicEnvironment(test_structure_1, atom_1, cutoffs)
+    env1 = env.AtomicEnvironment(test_structure_1, atom_1, cutoffs)
 
     # create env 2
     positions_1 = [np.array([0., 0., 0.]),
@@ -335,7 +335,7 @@ def test_three_body_grad():
     species_2 = ['A', 'A', 'B']
     atom_2 = 0
     test_structure_1 = struc.Structure(cell, species_2, positions_1)
-    env2 = fast_env.AtomicEnvironment(test_structure_1, atom_2, cutoffs)
+    env2 = env.AtomicEnvironment(test_structure_1, atom_2, cutoffs)
 
     sig = random()
     ls = random()

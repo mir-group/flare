@@ -58,7 +58,6 @@ def test_parse_dft_2():
     force1 = np.array([[1.90621314, 0.00000000, 0.00000000],
                        [-1.90621314, 0.00000000, 0.00000000]])
 
-
     forces = np.array(forces)
 
     assert np.isclose(forces[0], force1).all()

@@ -23,7 +23,7 @@ def two_body_grad(env1, env2, d1, d2, hyps, cutoffs):
 
     kernel, ls_derv, sig_derv = \
         two_body_grad_jit(env1.bond_array_2, env2.bond_array_2,
-                               d1, d2, sig, ls, r_cut)
+                          d1, d2, sig, ls, r_cut)
     kernel_grad = np.array([sig_derv, ls_derv])
     return kernel, kernel_grad
 

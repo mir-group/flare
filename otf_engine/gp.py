@@ -3,10 +3,7 @@ import numpy as np
 from scipy.linalg import solve_triangular
 from scipy.optimize import minimize
 from typing import List, Callable
-from copy import deepcopy
-from fast_env import AtomicEnvironment
-import smooth_kernels
-import energy_conserving_kernels
+from env import AtomicEnvironment
 from struc import Structure
 
 

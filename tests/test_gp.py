@@ -3,9 +3,9 @@ import numpy as np
 import sys
 sys.path.append('../otf_engine')
 from gp import GaussianProcess
-from fast_env import AtomicEnvironment
+from env import AtomicEnvironment
 from struc import Structure
-import energy_conserving_kernels as en
+import kernels as en
 
 
 def get_random_structure(cell, unique_species, noa):
