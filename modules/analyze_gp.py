@@ -3,7 +3,7 @@ import sys
 import crystals
 import copy
 sys.path.append('../../otf/otf_engine')
-import gp, struc, qe_parsers, fast_env
+import gp, struc, qe_parsers, env
 
 
 class MDAnalysis:
@@ -57,7 +57,7 @@ def vac_diff_fcc(gp_model, gp_cell, fcc_cell, species, cutoff, nop):
         vac_copy[0] = pos_test
 
         struc_curr = struc.Structure(gp_cell, species, vac_copy)
-        env_curr = fast_env.AtomicEnvironment(struc_curr, 0, cutoffs)
+        env_curr = env.AtomicEnvironment(struc_curr, 0, cutoffs)
 
         fc_comp_x, vr_x = gp_model.predict(env_curr, 1)
         fc_comp_y, vr_y = gp_model.predict(env_curr, 2)
@@ -112,7 +112,7 @@ def predict_forces_on_structure(gp_model, md_trajectory, snap, cutoffs):
     variances = np.zeros([noa, 3])
 
     for atom in range(noa):
-        env_curr = fast_env.AtomicEnvironment(structure, atom, cutoffs)
+        env_curr = env.AtomicEnvironment(structure, atom, cutoffs)
 
         for n in range(3):
             d = n+1

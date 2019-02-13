@@ -7,6 +7,28 @@ from numba import njit
 #                              two body kernels
 # -----------------------------------------------------------------------------
 
+
+def two_body_cutoff(env1, env2, d1, d2, hyps, cutoffs, cutoff_func):
+    sig = hyps[0]
+    ls = hyps[1]
+    r_cut = cutoffs[0]
+
+    return two_body_cutoff_jit(env1.bond_array_2, env2.bond_array_2,
+                               d1, d2, sig, ls, r_cut, cutoff_func)
+
+
+def three_body_cutoff(env1, env2, d1, d2, hyps, cutoffs, cutoff_func):
+    sig = hyps[0]
+    ls = hyps[1]
+    r_cut = cutoffs[0]
+
+    return three_body_cutoff_jit(env1.bond_array_3, env2.bond_array_3,
+                                 env1.cross_bond_inds, env2.cross_bond_inds,
+                                 env1.cross_bond_dists, env2.cross_bond_dists,
+                                 env1.triplet_counts, env2.triplet_counts,
+                                 d1, d2, sig, ls, r_cut, cutoff_func)
+
+
 def two_body(env1, env2, d1, d2, hyps, cutoffs):
     sig = hyps[0]
     ls = hyps[1]
@@ -110,6 +132,38 @@ def three_body_en(env1, env2, hyps, cutoffs):
 # -----------------------------------------------------------------------------
 #                           two body numba functions
 # -----------------------------------------------------------------------------
+
+
+@njit
+def two_body_cutoff_jit(bond_array_1, bond_array_2, d1, d2, sig, ls,
+                        r_cut, cutoff_func):
+    kern = 0
+
+    ls1 = 1 / (2 * ls * ls)
+    ls2 = 1 / (ls * ls)
+    ls3 = ls2 * ls2
+    sig2 = sig*sig
+
+    for m in range(bond_array_1.shape[0]):
+        ri = bond_array_1[m, 0]
+        ci = bond_array_1[m, d1]
+        fi, fdi = cutoff_func(r_cut, ri, ci)
+
+        for n in range(bond_array_2.shape[0]):
+            rj = bond_array_2[n, 0]
+            cj = bond_array_2[n, d2]
+            fj, fdj = cutoff_func(r_cut, rj, cj)
+            r11 = ri - rj
+
+            A = ci * cj
+            B = r11 * ci
+            C = r11 * cj
+            D = r11 * r11
+
+            kern += force_helper(A, B, C, D, fi, fj, fdi, fdj, ls1, ls2,
+                                 ls3, sig2)
+
+    return kern
 
 
 @njit
@@ -360,6 +414,57 @@ def three_body_jit(bond_array_1, bond_array_2,
                     fj2 = rdj2*rdj2
                     fdj2 = 2*rdj2*cj2
                     fj3 = (r_cut-rj3)**2
+                    fj = fj1*fj2*fj3
+                    fdj = fdj1*fj2*fj3+fj1*fdj2*fj3
+
+                    kern += triplet_kernel(ci1, ci2, cj1, cj2, ri1, ri2, ri3,
+                                           rj1, rj2, rj3, fi, fj, fdi, fdj,
+                                           ls1, ls2, ls3, sig2)
+
+    return kern
+
+
+@njit
+def three_body_cutoff_jit(bond_array_1, bond_array_2,
+                          cross_bond_inds_1, cross_bond_inds_2,
+                          cross_bond_dists_1, cross_bond_dists_2,
+                          triplets_1, triplets_2,
+                          d1, d2, sig, ls, r_cut, cutoff_func):
+    kern = 0
+
+    # pre-compute constants that appear in the inner loop
+    sig2 = sig*sig
+    ls1 = 1 / (2*ls*ls)
+    ls2 = 1 / (ls*ls)
+    ls3 = ls2*ls2
+
+    for m in range(bond_array_1.shape[0]):
+        ri1 = bond_array_1[m, 0]
+        ci1 = bond_array_1[m, d1]
+        fi1, fdi1 = cutoff_func(r_cut, ri1, ci1)
+
+        for n in range(triplets_1[m]):
+            ind1 = cross_bond_inds_1[m, m+n+1]
+            ri3 = cross_bond_dists_1[m, m+n+1]
+            ri2 = bond_array_1[ind1, 0]
+            ci2 = bond_array_1[ind1, d1]
+            fi2, fdi2 = cutoff_func(r_cut, ri2, ci2)
+            fi3, _ = cutoff_func(r_cut, ri3, 0)
+            fi = fi1*fi2*fi3
+            fdi = fdi1*fi2*fi3+fi1*fdi2*fi3
+
+            for p in range(bond_array_2.shape[0]):
+                rj1 = bond_array_2[p, 0]
+                cj1 = bond_array_2[p, d2]
+                fj1, fdj1 = cutoff_func(r_cut, rj1, cj1)
+
+                for q in range(triplets_2[p]):
+                    ind2 = cross_bond_inds_2[p, p+1+q]
+                    rj3 = cross_bond_dists_2[p, p+1+q]
+                    rj2 = bond_array_2[ind2, 0]
+                    cj2 = bond_array_2[ind2, d2]
+                    fj2, fdj2 = cutoff_func(r_cut, rj2, cj2)
+                    fj3, _ = cutoff_func(r_cut, rj3, 0)
                     fj = fj1*fj2*fj3
                     fdj = fdj1*fj2*fj3+fj1*fdj2*fj3
 
