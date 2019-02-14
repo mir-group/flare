@@ -141,3 +141,36 @@ def test_predict(two_body_gp, test_point):
     assert (len(pred) == 2)
     assert (isinstance(pred[0], float))
     assert (isinstance(pred[1], float))
+
+
+def test_set_L_alpha(two_body_gp, params):
+    # params
+    cell = np.eye(3)
+    unique_species = ['B', 'A']
+    cutoff = 0.8
+    cutoffs = np.array([0.8, 0.8])
+    noa = 2
+
+    # create test structure
+    test_structure, forces = get_random_structure(cell, unique_species,
+                                                  noa)
+
+    # set gp model
+    kernel = en.two_plus_three_body
+    kernel_grad = en.two_plus_three_body_grad
+    hyps = np.array([2.23751151e-01,  8.19990316e-01, 1.28421842e-04,
+                    1.07467158e+00, 5.50677932e-02])
+    cutoffs = np.array([5.4, 5.4])
+    hyp_labels = ['sig2', 'ls2', 'sig3', 'ls3', 'noise']
+    energy_force_kernel = en.two_plus_three_force_en
+    energy_kernel = en.two_plus_three_en
+    opt_algorithm = 'BFGS'
+
+    # test update_db
+    gaussian = \
+        GaussianProcess(kernel, kernel_grad, hyps, cutoffs, hyp_labels,
+                        energy_force_kernel, energy_kernel,
+                        opt_algorithm)
+    gaussian.update_db(test_structure, forces)
+
+    gaussian.set_L_alpha()

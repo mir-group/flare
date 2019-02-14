@@ -1,0 +1,13 @@
+2019-02-14 00:23:47.538781
+Cutoffs: [5.4 5.4]
+Kernel: two_plus_three_body
+# Hyperparameters: 5
+Hyperparameter Optimization Algorithm: BFGS
+Timestep (ps): 0.001
+Number of Frames: 5000000
+Number of Atoms: 31
+System Species: {'Al'}
+Periodic cell: 
+[[8.092 0.    0.   ]
+ [0.    8.092 0.   ]
+ [0.    0.    8.092]]
