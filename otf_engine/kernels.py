@@ -794,4 +794,79 @@ def triplet_force_en_kernel(ci1, ci2, ri1, ri2, ri3, rj1, rj2, rj3,
 
 
 if __name__ == '__main__':
-    pass
+    import pytest
+    import numpy as np
+    import sys
+    from random import random, randint
+    from copy import deepcopy
+    sys.path.append('../otf_engine')
+    import env
+    import gp
+    import struc
+    import kernels as en
+
+    """Check that the analytical force/en kernel matches finite difference of
+    energy kernel."""
+
+    # create env 1
+    delt = 1e-6
+    cell = np.eye(3)
+    cutoffs = np.array([1, 0.9])
+
+    positions_1 = [np.array([0., 0., 0.]),
+                   np.array([random(), random(), random()]),
+                   np.array([random(), random(), random()])]
+    positions_2 = deepcopy(positions_1)
+    positions_2[0][0] = delt
+
+    species_1 = ['A', 'B', 'A']
+    atom_1 = 0
+    test_structure_1 = struc.Structure(cell, species_1, positions_1)
+    test_structure_2 = struc.Structure(cell, species_1, positions_2)
+
+    env1_1 = env.AtomicEnvironment(test_structure_1, atom_1, cutoffs)
+    env1_2 = env.AtomicEnvironment(test_structure_2, atom_1, cutoffs)
+
+    # create env 2
+    positions_1 = [np.array([0., 0., 0.]),
+                   np.array([random(), random(), random()]),
+                   np.array([random(), random(), random()])]
+
+    species_2 = ['A', 'A', 'B']
+    atom_2 = 0
+    test_structure_1 = struc.Structure(cell, species_2, positions_1)
+    env2 = env.AtomicEnvironment(test_structure_1, atom_2, cutoffs)
+
+    # set hyperparameters
+    sig1 = random()
+    ls1 = random()
+    sig2 = random()
+    ls2 = random()
+    d1 = 1
+
+    hyps = np.array([sig1, ls1, sig2, ls2])
+
+    # check force kernel
+    calc1 = en.two_plus_three_en(env1_2, env2, hyps, cutoffs)
+    calc2 = en.two_plus_three_en(env1_1, env2, hyps, cutoffs)
+
+    kern_finite_diff = (calc1 - calc2) / delt
+    kern_analytical = \
+        en.two_plus_three_force_en(env1_1, env2, d1, hyps, cutoffs)
+
+    tol = 1e-4
+
+    print(kern_finite_diff / 2)
+    print(kern_analytical)
+
+    hyps2 = np.array([hyps[0], hyps[1]])
+    hyps3 = np.array([hyps[2], hyps[3]])
+
+    calc3 = two_body_en(env1_2, env2, hyps2, cutoffs)
+    calc4 = two_body_en(env1_1, env2, hyps2, cutoffs)
+    calc5 = three_body_en(env1_2, env2, hyps3, cutoffs)
+    calc6 = three_body_en(env1_1, env2, hyps3, cutoffs)
+
+    en2 = ((calc4 - calc3) / delt)
+    en3 = ((calc6 - calc5) / delt)
+    print(en2/2 + en3/3)

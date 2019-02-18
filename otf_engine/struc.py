@@ -36,8 +36,6 @@ class Structure(object):
         self.unique_species = unique_species
         self.coded_species = coded_species
         self.nos = len(unique_species)
-        self.bond_list = self.calc_bond_list(self.unique_species)
-        self.triplet_list = self.calc_triplet_list(self.unique_species)
 
         self.inv_cell = inv(cell)
 
@@ -69,37 +67,6 @@ class Structure(object):
                 unique_species.append(spec)
 
         return unique_species, coded_species
-
-    @staticmethod
-    def calc_bond_list(unique_species):
-        """Converts unique species to a list of bonds.
-
-        :param unique_species: unique species in the simulation
-        :type unique_species: list of strings
-        :return: all possible bonds
-        :rtype: list of lists of two strings
-        """
-
-        # create bond list
-        bond_list = []
-        for m in range(len(unique_species)):
-            species_1 = unique_species[m]
-
-            for n in range(m, len(unique_species)):
-                species_2 = unique_species[n]
-                bond_list.append([species_1, species_2])
-
-        return bond_list
-
-    @staticmethod
-    # given list of unique species, return list of possible triplets
-    def calc_triplet_list(unique_species):
-        triplet_list = []
-        for m in unique_species:
-            for n in unique_species:
-                for p in unique_species:
-                    triplet_list.append([m, n, p])
-        return triplet_list
 
 
 if __name__ == '__main__':

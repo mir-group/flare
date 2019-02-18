@@ -40,15 +40,3 @@ def test_prev_positions_arg():
                     test_structure2.prev_positions).all()
     assert not np.equal(test_structure3.positions,
                         test_structure3.prev_positions).all()
-
-
-def test_2_body_bond_order():
-    lattice = np.eye(3)
-    species = ['B', 'A']
-    positions = [np.array([0, 0, 0]), np.array([0.5, 0.5, 0.5])]
-    cutoff = np.linalg.norm(np.array([0.5, 0.5, 0.5])) + 0.001
-
-    test_structure = Structure(lattice, species, positions)
-
-    # test species_to_bond
-    assert (test_structure.bond_list == [['B', 'B'], ['B', 'A'], ['A', 'A']])

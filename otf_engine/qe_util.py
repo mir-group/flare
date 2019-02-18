@@ -55,7 +55,7 @@ def parse_qe_input(qe_input: str):
     cell = np.array(cell)
 
     # Check cell IO
-    assert cell != [], 'Cell failed to load'
+    assert len(cell) != 0, 'Cell failed to load'
     assert np.shape(cell) == (3, 3), 'Cell failed to load correctly'
 
     # Load positions
