@@ -14,6 +14,7 @@ import kernels as en
 #                        test two plus three body kernels
 # -----------------------------------------------------------------------------
 
+# TODO: fix this test to properly account for factors of 2 and 3
 def test_two_plus_three_body_force_en():
     """Check that the analytical force/en kernel matches finite difference of
     energy kernel."""

@@ -6,7 +6,7 @@ from struc import Structure
 
 class AtomicEnvironment:
     def __init__(self, structure: Structure, atom: int, cutoffs: np.ndarray):
-        self.positions = structure.positions
+        self.positions = structure.wrapped_positions
         self.cell = structure.cell
         self.atom = atom
         self.cutoff_2 = cutoffs[0]

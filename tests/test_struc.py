@@ -40,3 +40,41 @@ def test_prev_positions_arg():
                     test_structure2.prev_positions).all()
     assert not np.equal(test_structure3.positions,
                         test_structure3.prev_positions).all()
+
+
+def test_raw_to_relative():
+    """ Test that Cartesian and relative coordinates are equal. """
+
+    cell = np.random.rand(3, 3)
+    noa = 10
+    positions = np.random.rand(noa, 3)
+    species = ['Al'] * len(positions)
+
+    test_struc = Structure(cell, species, positions)
+    rel_vals = test_struc.raw_to_relative(test_struc.positions,
+                                          test_struc.cell_transpose,
+                                          test_struc.cell_dot_inverse)
+
+    ind = np.random.randint(0, noa)
+    assert(np.isclose(positions[ind], rel_vals[ind, 0] * test_struc.vec1 +
+           rel_vals[ind, 1] * test_struc.vec2 +
+           rel_vals[ind, 2] * test_struc.vec3).all())
+
+
+def test_wrapped_coordinates():
+    """ Check that wrapped coordinates are equivalent to Cartesian coordinates
+    up to lattice translations. """
+
+    cell = np.random.rand(3, 3)
+    positions = np.random.rand(10, 3)
+    species = ['Al'] * len(positions)
+
+    test_struc = Structure(cell, species, positions)
+
+    wrap_diff = test_struc.positions - test_struc.wrapped_positions
+    wrap_rel = test_struc.raw_to_relative(wrap_diff,
+                                          test_struc.cell_transpose,
+                                          test_struc.cell_dot_inverse)
+
+    assert(np.isclose(np.round(wrap_rel) - wrap_rel,
+           np.zeros(positions.shape)).all())

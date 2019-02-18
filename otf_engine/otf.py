@@ -271,6 +271,7 @@ class OTF(object):
 
             self.structure.prev_positions[i] = np.copy(temp_pos)
 
+        self.structure.wrap_positions()
         self.velocities = (self.structure.positions -
                            self.structure.prev_positions) / self.dt
         self.curr_step += 1
