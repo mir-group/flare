@@ -62,17 +62,17 @@ def test_cell_parsing(qe_input, exp_cell):
     assert np.all(exp_cell == cell)
 
 
-@pytest.mark.parametrize("qe_input,mass_dict",
-                         [
-                             ('./test_files/qe_input_1.in',
-                              {'H': 0.00010364269933008285}),
-                             ('./test_files/qe_input_2.in',
-                              {'Al': 0.00010364269933008285 * 26.9815385})
-                         ]
-                         )
-def test_cell_parsing(qe_input, mass_dict):
-    positions, species, cell, masses = parse_qe_input(qe_input)
-    assert masses == mass_dict
+# @pytest.mark.parametrize("qe_input,mass_dict",
+#                          [
+#                              ('./test_files/qe_input_1.in',
+#                               {'H': 0.00010364269933008285}),
+#                              ('./test_files/qe_input_2.in',
+#                               {'Al': 0.00010364269933008285 * 26.9815385})
+#                          ]
+#                          )
+# def test_cell_parsing(qe_input, mass_dict):
+#     positions, species, cell, masses = parse_qe_input(qe_input)
+#     assert masses == mass_dict
 
 
 @pytest.mark.parametrize("qe_input",
