@@ -157,7 +157,7 @@ class OtfAnalysis:
                 hyps = []
                 for frame_line in lines[(index+4):(index+4+noh)]:
                     frame_line = frame_line.split()
-                    hyps.append(float(frame_line[5]))
+                    hyps.append(float(frame_line[4]))
                 hyps = np.array(hyps)
                 hyp_list.append(hyps)
 

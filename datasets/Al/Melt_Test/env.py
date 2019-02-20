@@ -72,7 +72,6 @@ def get_2_body_arrays(positions: np.ndarray, atom: int, cell: np.ndarray,
                     bond_positions_2[bond_count, :] = coord
                     bond_count += 1
 
-    # sort by distance
     sort_inds = bond_array_2[:, 0].argsort()
     bond_array_2 = bond_array_2[sort_inds]
     bond_positions_2 = bond_positions_2[sort_inds]
@@ -90,7 +89,6 @@ def get_3_body_arrays(bond_array_2: np.ndarray,
     for count, dist in enumerate(bond_array_2[:, 0]):
         if dist > cutoff_3:
             ind_3 = count
-            break
     if ind_3 == -1:
         ind_3 = noa
 
