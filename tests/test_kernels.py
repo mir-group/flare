@@ -58,15 +58,18 @@ def test_two_plus_three_body_force_en():
     hyps = np.array([sig1, ls1, sig2, ls2])
 
     # check force kernel
-    calc1 = en.two_plus_three_en(env1_2, env2, hyps, cutoffs)
-    calc2 = en.two_plus_three_en(env1_1, env2, hyps, cutoffs)
+    calc1 = en.two_body_en(env1_2, env2, hyps, cutoffs)
+    calc2 = en.two_body_en(env1_1, env2, hyps, cutoffs)
+    calc3 = en.three_body_en(env1_2, env2, hyps, cutoffs)
+    calc4 = en.three_body_en(env1_1, env2, hyps, cutoffs)
 
-    kern_finite_diff = (calc1 - calc2) / delt
+    kern_finite_diff = (calc1 - calc2) / (2 * delt) + \
+        (calc3 - calc4) / (3 * delt)
     kern_analytical = \
         en.two_plus_three_force_en(env1_1, env2, d1, hyps, cutoffs)
 
     tol = 1e-4
-    assert(np.isclose(-kern_finite_diff/2, kern_analytical, atol=tol))
+    assert(np.isclose(-kern_finite_diff, kern_analytical, atol=tol))
 
 
 def test_two_plus_three_body_force():
