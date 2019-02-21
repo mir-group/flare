@@ -13,15 +13,14 @@ import initialize_velocities
 
 # slab parameters
 symbol = 'Ag'
-size = (3, 3, 4)
+size = (2, 2, 4)
 alat = 4.09
-vacuum = 10
-height = 2.045  # vertical distance of adatom from last layer
+vacuum = 5
+height = alat / 2  # vertical distance of adatom from last layer
 
 # make slab with ase
-silver_slab = fcc100(symbol, size, a=alat)
+silver_slab = fcc100(symbol, size, a=alat, vacuum=vacuum)
 add_adsorbate(silver_slab, 'Ag', height, 'bridge')
-silver_slab.center(vacuum=vacuum)
 
 positions = silver_slab.positions
 cell = silver_slab.cell
@@ -98,7 +97,7 @@ scf_inputs = dict(pseudo_dir=pseudo_dir,
 
 # make input file
 calc = qe_input.QEInput(input_file_name, output_file_name, pw_loc,
-                        calculation, scf_inputs)
+                        calculation, scf_inputs, metal=True)
 
 
 # -----------------------------------------------------------------------------
