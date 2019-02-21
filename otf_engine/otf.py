@@ -18,52 +18,9 @@ class OTF(object):
                  std_tolerance_factor: float = 1, opt_algo: str='BFGS',
                  prev_pos_init: np.ndarray=None, par: bool=False,
                  parsimony: bool=False, skip: int=0, hyps: np.ndarray=None,
-                 init_atoms: List[int]=None):
-        """Generates an on-the-fly molecular dynamics trajectory.
-
-        :param qe_input: location of quantum espresso input file
-        :type qe_input: str
-        :param dt: time step in ps
-        :type dt: float
-        :param number_of_steps: number of MD steps in otf run
-        :type number_of_steps: int
-        :param cutoff: cutoff radius. atoms outside this region are not
-        considered in force calculations.
-        :type cutoff: float
-        :param pw_loc: location of quantum espresso pw.x executable.
-        :type pw_loc: str
-        :param std_tolerance_factor: negative tolerance is a hard user-defined
-            std cutoff. positive is a multiple of the noise std. 0 means no
-            failure condition (DFT is off). defaults to 1.
-        :param std_tolerance_factor: float, optional
-        :param opt_algo: optimization algorithm for setting hyperparameters.
-            defaults to 'BFGS'.
-        :param opt_algo: str, optional
-        :param prev_pos_init: array of previous positions. determines the
-            initial velocities of the atoms. defaults to None.
-        :param prev_pos_init: np.ndarray, optional
-        :param par: if True, force calculations are parallelized using
-            Python's concurrent.futures class. defaults to False.
-        :param par: bool, optional
-        :param parsimony: if True, only the highest uncertainty atom is added
-            to the training database after the first DFT call. defaults to
-            False.
-        :param parsimony: bool, optional
-        :param cutoffs: array of cutoffs. only used for combination
-            kernels, e.g. 2+3-body. defaults to None.
-        :param cutoffs: np.ndarray, optional
-        :param skip: number of frames skipped before printing to the
-            output file. defaults to 0.
-        :param skip: int, optional
-        :param hyps: array of hyperparameters. if None, the hyperparameters
-            are re-optimized after every DFT call. if not None, then the
-            hyperparameters are fixed throughout the run. defaults to None.
-        :param hyps: np.ndarray, optional
-        :param init_atoms: list of atoms to put in the training set after the
-            first DFT call. if None, all atoms are placed in the training set.
-            defaults to None.
-        :param init_atoms: List[int], optional.
-        """
+                 init_atoms: List[int]=None,
+                 quench_step=None, quench_temperature=None):
+        """Generates an on-the-fly molecular dynamics trajectory."""
 
         self.qe_input = qe_input
         self.dt = dt
@@ -87,18 +44,25 @@ class OTF(object):
                                    mass_dict=masses,
                                    prev_positions=prev_pos_init)
 
-        self.velocities = (self.structure.positions -
-                           self.structure.prev_positions) / self.dt
-
         self.noa = self.structure.positions.shape[0]
         self.local_energies = np.zeros(self.noa)
         self.atom_list = list(range(self.noa))
         self.curr_step = 0
 
+        # set velocity and temperature information
+        self.velocities = (self.structure.positions -
+                           self.structure.prev_positions) / self.dt
+        self.calculate_temperature()
+
+        # set atom list for initial dft run
         if init_atoms is None:
             self.init_atoms = [int(n) for n in range(self.noa)]
         else:
             self.init_atoms = init_atoms
+
+        # quench information
+        self.quench_step = quench_step
+        self.quench_temperature = quench_temperature
 
         self.par = par
         self.parsimony = parsimony
@@ -138,47 +102,6 @@ class OTF(object):
                 counter += 1
 
                 self.update_positions()
-
-        self.conclude_run()
-
-    def run_and_profile(self):
-        self.start_time = time.time()
-
-        while self.curr_step < self.Nsteps:
-            # run DFT and train initial model if first step and DFT is on
-            if self.curr_step == 0 and self.std_tolerance != 0:
-                self.run_and_train()
-                self.write_md_config()
-                self.update_positions()
-
-            # otherwise, try predicting with GP model
-            else:
-                time0 = time.time()
-                if self.par is False:
-                    self.predict_on_structure()
-                else:
-                    self.predict_on_structure_par()
-                time1 = time.time()
-                pred_time = time1 - time0
-
-                std_in_bound, target_atom = self.is_std_in_bound()
-                if not std_in_bound:
-                    self.write_md_config()
-                    self.run_and_train(target_atom)
-
-                time2 = time.time()
-                std_time = time2 - time1
-
-                self.write_md_config()
-                time3 = time.time()
-                write_time = time3 - time2
-
-                self.update_positions()
-                time4 = time.time()
-                update_time = time4 - time3
-
-                self.write_time_info(pred_time, std_time, write_time,
-                                     update_time)
 
         self.conclude_run()
 
@@ -258,6 +181,16 @@ class OTF(object):
         self.write_hyps()
 
     def update_positions(self):
+        # if quench step reached, create fictitious previous positions to
+        # give the target temperature
+        if self.quench_step is not None:
+            if self.curr_step == self.quench_step:
+                temp_fac = self.quench_temperature / self.temperature
+                vel_fac = np.sqrt(temp_fac)
+                self.structure.prev_positions = \
+                    self.structure.positions - \
+                    self.velocities * self.dt * vel_fac
+
         dtdt = self.dt ** 2
 
         for i, pre_pos in enumerate(self.structure.prev_positions):
@@ -274,7 +207,26 @@ class OTF(object):
         self.structure.wrap_positions()
         self.velocities = (self.structure.positions -
                            self.structure.prev_positions) / self.dt
+        self.calculate_temperature()
         self.curr_step += 1
+
+    def calculate_temperature(self):
+        KE = 0
+        for i in range(len(self.structure.positions)):
+            for j in range(3):
+                KE += 0.5 * \
+                    self.structure.mass_dict[self.structure.species[i]] * \
+                    self.velocities[i][j] * self.velocities[i][j]
+
+        # see conversions.nb for derivation
+        kb = 0.0000861733034
+
+        # see e.g. p. 61 of "computer simulation of liquids"
+        # account for 3 constraints (vanishing momentum)
+        temperature = 2 * KE / (3 * (self.noa-1) * kb)
+
+        self.KE = KE
+        self.temperature = temperature
 
     @staticmethod
     def write_to_output(string: str, output_file: str = 'otf_run.out'):
@@ -324,7 +276,6 @@ class OTF(object):
         string += '\t\t\t\t\t\t Velocity (A/ps) \n'
 
         # Construct atom-by-atom description
-        KE = 0
         for i in range(len(self.structure.positions)):
             string += self.structure.species[i] + ' '
             for j in range(3):
@@ -338,23 +289,13 @@ class OTF(object):
             string += '\t'
             for j in range(3):
                 string += str("%.6e" % self.velocities[i][j]) + ' '
-                KE += 0.5 * \
-                    self.structure.mass_dict[self.structure.species[i]] * \
-                    self.velocities[i][j] * self.velocities[i][j]
             string += '\n'
 
-        # see conversions.nb for derivation
-        kb = 0.0000861733034
-
-        # see e.g. p. 61 of "computer simulation of liquids"
-        # account for 3 constraints (vanishing momentum)
-        temperature = 2 * KE / (3 * (len(self.structure.positions)-1) * kb)
-
         pot_en = np.sum(self.local_energies)
-        tot_en = KE + pot_en
+        tot_en = self.KE + pot_en
 
-        string += 'temperature: %.2f K \n' % temperature
-        string += 'kinetic energy: %.6f eV \n' % KE
+        string += 'temperature: %.2f K \n' % self.temperature
+        string += 'kinetic energy: %.6f eV \n' % self.KE
         string += 'potential energy (up to a constant): %.6f eV \n' % pot_en
         string += 'total energy: %.6f eV \n' % tot_en
         string += 'wall time from start: %.2f s \n' % \
@@ -406,3 +347,44 @@ class OTF(object):
             return False, target_atom
         else:
             return True, -1
+
+    def run_and_profile(self):
+        self.start_time = time.time()
+
+        while self.curr_step < self.Nsteps:
+            # run DFT and train initial model if first step and DFT is on
+            if self.curr_step == 0 and self.std_tolerance != 0:
+                self.run_and_train()
+                self.write_md_config()
+                self.update_positions()
+
+            # otherwise, try predicting with GP model
+            else:
+                time0 = time.time()
+                if self.par is False:
+                    self.predict_on_structure()
+                else:
+                    self.predict_on_structure_par()
+                time1 = time.time()
+                pred_time = time1 - time0
+
+                std_in_bound, target_atom = self.is_std_in_bound()
+                if not std_in_bound:
+                    self.write_md_config()
+                    self.run_and_train(target_atom)
+
+                time2 = time.time()
+                std_time = time2 - time1
+
+                self.write_md_config()
+                time3 = time.time()
+                write_time = time3 - time2
+
+                self.update_positions()
+                time4 = time.time()
+                update_time = time4 - time3
+
+                self.write_time_info(pred_time, std_time, write_time,
+                                     update_time)
+
+        self.conclude_run()
