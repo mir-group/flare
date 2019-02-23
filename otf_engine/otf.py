@@ -19,7 +19,8 @@ class OTF(object):
                  prev_pos_init: np.ndarray=None, par: bool=False,
                  parsimony: bool=False, skip: int=0, hyps: np.ndarray=None,
                  init_atoms: List[int]=None,
-                 quench_step=None, quench_temperature=None):
+                 quench_step=None, quench_temperature=None,
+                 calculate_energy=False):
         """Generates an on-the-fly molecular dynamics trajectory."""
 
         self.qe_input = qe_input
@@ -45,9 +46,13 @@ class OTF(object):
                                    prev_positions=prev_pos_init)
 
         self.noa = self.structure.positions.shape[0]
-        self.local_energies = np.zeros(self.noa)
         self.atom_list = list(range(self.noa))
         self.curr_step = 0
+
+        # initialize local energies
+        self.calculate_energy = calculate_energy
+        if self.calculate_energy:
+            self.local_energies = np.zeros(self.noa)
 
         # set velocity and temperature information
         self.velocities = (self.structure.positions -
@@ -83,10 +88,14 @@ class OTF(object):
 
             # otherwise, try predicting with GP model
             else:
-                if self.par is False:
+                if (self.par is False) and (self.calculate_energy is False):
                     self.predict_on_structure()
-                else:
+                elif (self.par is True) and (self.calculate_energy is False):
                     self.predict_on_structure_par()
+                elif (self.par is False) and (self.calculate_energy is True):
+                    self.predict_on_structure_en()
+                elif (self.par is True) and (self.calculate_energy is True):
+                    self.predict_on_structure_par_en()
 
                 std_in_bound, target_atom = self.is_std_in_bound()
                 if not std_in_bound:
@@ -115,6 +124,18 @@ class OTF(object):
             comps.append(float(force))
             stds.append(np.sqrt(np.absolute(var)))
 
+        return comps, stds
+
+    def predict_on_atom_en(self, atom):
+        chemenv = AtomicEnvironment(self.structure, atom, self.gp.cutoffs)
+        comps = []
+        stds = []
+        # predict force components and standard deviations
+        for i in range(3):
+            force, var = self.gp.predict(chemenv, i+1)
+            comps.append(float(force))
+            stds.append(np.sqrt(np.absolute(var)))
+
         # predict local energy
         local_energy = self.gp.predict_local_energy(chemenv)
         return comps, stds, local_energy
@@ -126,11 +147,31 @@ class OTF(object):
                 for i in range(3):
                     self.structure.forces[n][i] = res[0][i]
                     self.structure.stds[n][i] = res[1][i]
+                n += 1
+        self.structure.dft_forces = False
+
+    def predict_on_structure_par_en(self):
+        n = 0
+        with concurrent.futures.ProcessPoolExecutor() as executor:
+            for res in executor.map(self.predict_on_atom_en, self.atom_list):
+                for i in range(3):
+                    self.structure.forces[n][i] = res[0][i]
+                    self.structure.stds[n][i] = res[1][i]
                 self.local_energies[n] = res[2]
                 n += 1
         self.structure.dft_forces = False
 
     def predict_on_structure(self):
+        for n in range(self.structure.nat):
+            chemenv = AtomicEnvironment(self.structure, n, self.gp.cutoffs)
+            for i in range(3):
+                force, var = self.gp.predict(chemenv, i + 1)
+                self.structure.forces[n][i] = float(force)
+                self.structure.stds[n][i] = np.sqrt(np.absolute(var))
+
+        self.structure.dft_forces = False
+
+    def predict_on_structure_en(self):
         for n in range(self.structure.nat):
             chemenv = AtomicEnvironment(self.structure, n, self.gp.cutoffs)
             for i in range(3):
@@ -291,13 +332,17 @@ class OTF(object):
                 string += str("%.6e" % self.velocities[i][j]) + ' '
             string += '\n'
 
-        pot_en = np.sum(self.local_energies)
-        tot_en = self.KE + pot_en
-
         string += 'temperature: %.2f K \n' % self.temperature
         string += 'kinetic energy: %.6f eV \n' % self.KE
-        string += 'potential energy (up to a constant): %.6f eV \n' % pot_en
-        string += 'total energy: %.6f eV \n' % tot_en
+
+        # calculate potential and total energy
+        if self.calculate_energy:
+            pot_en = np.sum(self.local_energies)
+            tot_en = self.KE + pot_en
+            string += \
+                'potential energy (up to a constant): %.6f eV \n' % pot_en
+            string += 'total energy: %.6f eV \n' % tot_en
+
         string += 'wall time from start: %.2f s \n' % \
             (time.time() - self.start_time)
 

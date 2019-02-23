@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.18 (TeX Live 2017) (preloaded format=pdflatex 2017.5.23)  13 JAN 2019 14:59
+This is pdfTeX, Version 3.14159265-2.6-1.40.18 (TeX Live 2017) (preloaded format=pdflatex 2017.5.23)  23 FEB 2019 17:16
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -66,11 +66,9 @@ Class revtex4-1 Info: Selecting society aps on input line 7542.
 File: aps4-1 2010/07/25/20:33:00 4.1r (http://publish.aps.org/revtex4/ for documentation)
 Class revtex4-1 Info: RevTeX society APS selected on input line 31.
 )
-
-Class revtex4-1 Warning: No journal specified, using default pra.
-
-Class revtex4-1 Info: APS journal PRA selected on input line 7545.
-(/usr/local/texlive/2017/texmf-dist/tex/latex/revtex/aps12pt4-1.rtx
+Class revtex4-1 Info: Selecting journal prl on input line 7544.
+Class revtex4-1 Info: APS journal PRL selected on input line 7545.
+ (/usr/local/texlive/2017/texmf-dist/tex/latex/revtex/aps12pt4-1.rtx
 File: aps12pt4-1 2010/07/25/20:33:00 4.1r (http://publish.aps.org/revtex4/ for documentation)
 Class revtex4-1 Info: RevTeX pointsize 12pt selected on input line 30.
 ) (/usr/local/texlive/2017/texmf-dist/tex/latex/textcase/textcase.sty
@@ -197,26 +195,26 @@ Package: bm 2017/01/16 v1.2c Bold Symbol Support (DPC/FMi)
 LaTeX Font Info:    Redeclaring math alphabet \mathbf on input line 141.
 LaTeX Info: Redefining \bm on input line 207.
 )
-Class revtex4-1 Info: Unrecognized array package. Please update this document class! (Proceeding with fingers crossed.) on input line 59.
-Class revtex4-1 Info: Robustifying \LaTeX's \boldmath command on input line 59.
-Class revtex4-1 Info: cite was not loaded (OK!) on input line 59.
-Class revtex4-1 Info: mcite was not loaded (OK!) on input line 59.
-Class revtex4-1 Info: multicol was not loaded (OK!) on input line 59.
- (./otf.aux)
+Class revtex4-1 Info: Unrecognized array package. Please update this document class! (Proceeding with fingers crossed.) on input line 60.
+Class revtex4-1 Info: Robustifying \LaTeX's \boldmath command on input line 60.
+Class revtex4-1 Info: cite was not loaded (OK!) on input line 60.
+Class revtex4-1 Info: mcite was not loaded (OK!) on input line 60.
+Class revtex4-1 Info: multicol was not loaded (OK!) on input line 60.
+ (/Users/jonpvandermause/Research/GP/otf/paper/Main/otf.aux)
 \openout1 = `otf.aux'.
 
-LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 59.
-LaTeX Font Info:    ... okay on input line 59.
-LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 59.
-LaTeX Font Info:    ... okay on input line 59.
-LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 59.
-LaTeX Font Info:    ... okay on input line 59.
-LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 59.
-LaTeX Font Info:    ... okay on input line 59.
-LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 59.
-LaTeX Font Info:    ... okay on input line 59.
-LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 59.
-LaTeX Font Info:    ... okay on input line 59.
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 60.
+LaTeX Font Info:    ... okay on input line 60.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 60.
+LaTeX Font Info:    ... okay on input line 60.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 60.
+LaTeX Font Info:    ... okay on input line 60.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 60.
+LaTeX Font Info:    ... okay on input line 60.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 60.
+LaTeX Font Info:    ... okay on input line 60.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 60.
+LaTeX Font Info:    ... okay on input line 60.
  (/usr/local/texlive/2017/texmf-dist/tex/context/base/mkii/supp-pdf.mkii
 [Loading MPS to PDF converter (version 2006.09.02).]
 \scratchcounter=\count108
@@ -274,34 +272,49 @@ Missing character: There is no ú in font cmr10!
 Missing character: There is no ‚ in font cmr10!
 Missing character: There is no Ä in font cmr10!
 Missing character: There is no ù in font cmr10!
-LaTeX Font Info:    Try loading font information for U+msa on input line 105.
+LaTeX Font Info:    Try loading font information for U+msa on input line 100.
  (/usr/local/texlive/2017/texmf-dist/tex/latex/amsfonts/umsa.fd
 File: umsa.fd 2013/01/14 v3.01 AMS symbols A
 )
-LaTeX Font Info:    Try loading font information for U+msb on input line 105.
+LaTeX Font Info:    Try loading font information for U+msb on input line 100.
  (/usr/local/texlive/2017/texmf-dist/tex/latex/amsfonts/umsb.fd
 File: umsb.fd 2013/01/14 v3.01 AMS symbols B
-) [1{/usr/local/texlive/2017/texmf-var/fonts/map/pdftex/updmap/pdftex.map}] [2] (./otf.bbl [3] [4]
-LaTeX Font Info:    Try loading font information for OMS+cmr on input line 147.
- (/usr/local/texlive/2017/texmf-dist/tex/latex/base/omscmr.fd
-File: omscmr.fd 2014/09/29 v2.5h Standard LaTeX font definitions
-)
-LaTeX Font Info:    Font shape `OMS/cmr/m/n' in size <10.95> not available
-(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 147.
-) [5] (./otf.aux) ) 
+) [1{/usr/local/texlive/2017/texmf-var/fonts/map/pdftex/updmap/pdftex.map}] <melt_msd.pdf, id=12, 439.06659pt x 325.2584pt>
+File: melt_msd.pdf Graphic file (type pdf)
+ <use melt_msd.pdf>
+Package pdftex.def Info: melt_msd.pdf used on input line 105.
+(pdftex.def)             Requested size: 289.07999pt x 214.15009pt.
+ <rdf.pdf, id=13, 425.98647pt x 325.2584pt>
+File: rdf.pdf Graphic file (type pdf)
+ <use rdf.pdf>
+Package pdftex.def Info: rdf.pdf used on input line 111.
+(pdftex.def)             Requested size: 289.07999pt x 220.73106pt.
+ <uncertainty.pdf, id=14, 435.56915pt x 325.2584pt>
+File: uncertainty.pdf Graphic file (type pdf)
+ <use uncertainty.pdf>
+Package pdftex.def Info: uncertainty.pdf used on input line 117.
+(pdftex.def)             Requested size: 289.07999pt x 215.8673pt.
+ (/Users/jonpvandermause/Research/GP/otf/paper/Main/otf.bbl
+
+Package natbib Warning: Empty `thebibliography' environment on input line 53.
+
+) [2 </Users/jonpvandermause/Research/GP/otf/paper/Main/melt_msd.pdf> </Users/jonpvandermause/Research/GP/otf/paper/Main/rdf.pdf
+
+pdfTeX warning: pdflatex (file /Users/jonpvandermause/Research/GP/otf/paper/Main/rdf.pdf): PDF inclusion: multiple pdfs with page group included in a single page
+>] [3 </Users/jonpvandermause/Research/GP/otf/paper/Main/uncertainty.pdf>] (/Users/jonpvandermause/Research/GP/otf/paper/Main/otf.aux) ) 
 Here is how much of TeX's memory you used:
- 4570 strings out of 492995
- 60910 string characters out of 6132704
- 163809 words of memory out of 5000000
- 8051 multiletter control sequences out of 15000+600000
- 15180 words of font info for 55 fonts, out of 8000000 for 9000
+ 4500 strings out of 492995
+ 59715 string characters out of 6132704
+ 132292 words of memory out of 5000000
+ 7982 multiletter control sequences out of 15000+600000
+ 12652 words of font info for 46 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 39i,15n,28p,705b,304s stack positions out of 5000i,500n,10000p,200000b,80000s
-</usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmbxti10.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cmextra/cmex8.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi12.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi6.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi8.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmr12.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmr6.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmr8.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy6.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy8.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmti10.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmti12.pfb>
-Output written on otf.pdf (5 pages, 217161 bytes).
+ 39i,6n,28p,705b,256s stack positions out of 5000i,500n,10000p,200000b,80000s
+</usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmr12.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmr8.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmti10.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmti12.pfb>
+Output written on /Users/jonpvandermause/Research/GP/otf/paper/Main/otf.pdf (3 pages, 113586 bytes).
 PDF statistics:
- 92 PDF objects out of 1000 (max. 8388607)
- 66 compressed objects within 1 object stream
+ 145 PDF objects out of 1000 (max. 8388607)
+ 47 compressed objects within 1 object stream
  0 named destinations out of 1000 (max. 500000)
- 1 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 16 words of extra memory for PDF output out of 10000 (max. 10000000)
 

@@ -32,6 +32,7 @@ preprint,
 %bibnotes,
 amsmath,amssymb,
 aps,
+prl,
 %pra,
 % prb,
 %rmp,
@@ -58,8 +59,7 @@ aps,
 
 \begin{document}
 
-\title{Accelerating \textit{Ab Initio} Molecular Dynamics with On-the-Fly
-Machine Learning}
+\title{Molecular Dynamics Simulations of Multiple Phases and Rare Events with On-The-Fly Machine Learning}
 
 \author{Jonathan Vandermause}
 \affiliation{John A. Paulson School of Engineering and Applied
@@ -72,14 +72,9 @@ Sciences, Harvard University, Cambridge, MA 02138, USA}
 \author{Simon Batzner}
 \affiliation{Center for Computational Engineering, Massachusetts Institute of Technology, Cambridge, MA 02139, USA}
 
-\author{Alexie Kolpak}
-\affiliation{Department of Mechanical Engineering, Massachusetts Institute of Technology, Cambridge, MA 02139, USA}
-
 \author{Boris Kozinsky}
 \affiliation{John A. Paulson School of Engineering and Applied
 Sciences, Harvard University, Cambridge, MA 02138, USA}
-
-
 
 
 % \author{Jonathan Vandermause,$^{1,2}$ Steven B. Torrisi,$^{2}$
@@ -104,143 +99,162 @@ model of the interatomic force field that approaches the accuracy of \textit{ab 
 
 \maketitle
 
-\section{Literature}
-\begin{enumerate}
 
-\item On-the-fly force fields with GPs and KRR \cite{li2015molecular, botu2015adaptive, botu2015learning}
+\begin{figure}
+	\centering
+	\includegraphics[width=4in]{melt_msd.pdf}
+	\caption{Mean square displacement of aluminum quench.}
+\end{figure}
 
-\item Gaussian Approximation Potentials (GAP)
-\cite{bartok2010gaussian, bartok2015gaussian, deringer2017machine}
+\begin{figure}
+	\centering
+	\includegraphics[width=4in]{rdf.pdf}
+	\caption{RDF of Al quench.}
+\end{figure}
 
-\item The SOAP kernel \cite{bartok2013representing}
+\begin{figure}
+	\centering
+	\includegraphics[width=4in]{uncertainty.pdf}
+	\caption{Mean and max uncertainty.}
+\end{figure}
 
-\item Other covariant kernels (two- and three-body) \cite{deringer2017machine, bartok2015gaussian, glielmo2017accurate, glielmo2018efficient}
+% \section{Literature}
+% \begin{enumerate}
 
-\item Vector-valued GPs and ICM \cite{alvarez2012kernels}
+% \item On-the-fly force fields with GPs and KRR \cite{li2015molecular, botu2015adaptive, botu2015learning}
 
-\item DFT and Quantum Espresso \cite{kohn1999nobel, giannozzi2009quantum}
+% \item Gaussian Approximation Potentials (GAP)
+% \cite{bartok2010gaussian, bartok2015gaussian, deringer2017machine}
 
-\end{enumerate}
+% \item The SOAP kernel \cite{bartok2013representing}
 
-\section{Smooth two-body kernel}
-We find that a covariant two-body kernel gives good accuracy for bulk metals with a vacancy \cite{glielmo2018efficient, deringer2017machine}. The covariant kernel implemented here is derived from a rotationally invariant local energy kernel $k_{\text{inv}}$ that directly compares interatomic distances:
-\begin{equation}
-k_{\text{inv}} = \sigma^2 \sum_{i ,j} \exp\left( - \frac{(r_i - r_j)^2}{2 \ell^2} \right) f_{\text{cut}}(r_i) f_{\text{cut}}(r_j),
-\label{loc_kern}
-\end{equation}
-where the sum ranges over all atoms in the atomic environments. $f_{\text{cut}}$ is a cutoff function that ensures that the local energy and its derivative go smoothly to zero at finite radius $r_{\text{cut}}$ \cite{bartok2015gaussian}:
-\begin{equation}
-f_{\text{cut}} =  \begin{cases} 
-    1 & r\leq r_{\text{cut}}-d, \\
-    \frac{\cos(\pi \frac{r-r_{\text{cut}}+d}{d}) + 1}{2} & r_{\text{cut}} - d < r \le r_{\text{cut}}, \\
-    0 & r > r_{\text{cut}}.
- \end{cases}
-\end{equation}
-The cutoff function smooths the model by eliminating sharp discontinuities associated with atoms entering and leaving the cutoff sphere surrounding the central atom.
+% \item Other covariant kernels (two- and three-body) \cite{deringer2017machine, bartok2015gaussian, glielmo2017accurate, glielmo2018efficient}
 
-The local energy kernel described by Eq.\ (\ref{loc_kern}) induces a covariant matrix-valued force kernel $\frac{\partial^2 k_{\text{inv}}}{\partial \xi_i \partial \chi_j}$ suitable for the direct prediction of atomic forces, where $\xi_i$ and $\chi_i$ denote the $i^{\text{th}}$ Cartesian coordinate of the central atom of the first and second atomic environments, respectively. In the table below, we summarize all the terms needed to efficiently calculate the force kernel and its derivatives with respect to the model hyperparameters $\ell, \sigma,$ and $d$.
+% \item Vector-valued GPs and ICM \cite{alvarez2012kernels}
 
-\begin{center}
-    \begin{table}
-    \begin{tabular}{ |c|c|c| } 
-     \hline
-     Energy Kernel & $k_{\text{inv}}(\rho_1, \rho_2; \ell, \sigma, d)$ & $\sigma^2 \sum_{i ,j} k(r_i, r_j) f_{\text{cut}}(r_i) f_{\text{cut}}(r_j)$ \\ 
-     \hline
-     - & $k(r_i, r_j; \ell)$ & $\exp\left( - \frac{(r_i - r_j)^2}{2 \ell^2} \right)$\\
-     \hline
-     - & $f_{\text{cut}}(r; d)$ & $\frac{\cos(\pi \frac{r-r_{\text{cut}}+d}{d}) + 1}{2}, \text{ } r_{\text{cut}} - d < r \le r_{\text{cut}}$ \\
-     \hline
-    Force Kernel & $\frac{\partial^2 k_{\text{inv}}}{\partial \xi_i \partial \chi_j}$ & $\sigma^2 \sum_{i ,j} (k_0 + k_1 + k_2 + k_3)$ \\ 
-     \hline
-     - & $k_0(r_i, r_j; \ell, d)$ & $k \frac{\partial f_{\text{cut}}(r_i)}{\partial \xi_i} \frac{\partial f_{\text{cut}}(r_j)}{\partial \chi_j}$ \\ 
-     \hline
-     - & $k_1(r_i, r_j; \ell, d)$ & $\frac{\partial k}{\partial \xi_i} f_{\text{cut}}(r_i) \frac{\partial f_{\text{cut}}(r_j)}{\partial \chi_j}$ \\ 
-     \hline
-     - & $k_2(r_i, r_j; \ell, d)$ & $\frac{\partial k}{\partial \chi_j} \frac{\partial f_{\text{cut}}(r_i)}{\partial \xi_i} f_{\text{cut}}(r_j)$ \\ 
-     \hline
-     - & $k_3(r_i, r_j; \ell, d)$ & $\frac{\partial^2 k}{\partial \xi_i \partial \chi_j} f_{\text{cut}}(r_i) f_{\text{cut}}(r_j)$ \\ 
-     \hline
-     - & $\frac{\partial k}{\partial \xi_i}$ & $\frac{k (r_i-r_j) \xi_i}{\ell^2 r_i}$ \\ 
-     \hline
-     - & $\frac{\partial k}{\partial \chi_j}$ & $\frac{k (r_j-r_i) \chi_j}{\ell^2 r_j}$ \\ 
-     \hline
-     - & $\frac{\partial^2 k}{\partial \xi_i \chi_j}$ & $\frac{k \xi_i \chi_j (\ell^2 - (r_j-r_i)^2)}{\ell^4 r_i r_j}$ \\ 
-     \hline
-     - & $\frac{\partial f_\text{cut}(r_i)}{\partial \xi_i}$ & $ \frac{\pi \xi_i}{2d r_i} \sin(\pi \frac{r_{\text{cut}}-r_i}{d}), \text{ } r_{\text{cut}} - d < r \le r_{\text{cut}}$ \\ 
-     \hline
-     $\ell$ Derivative & $\frac{\partial^3 k_{\text{inv}}}{\partial \ell \partial \xi_i \partial \chi_j}$ & $\sigma^2 \sum_{i ,j} \left(\frac{\partial k_0}{\partial \ell} + \frac{\partial k_1}{\partial \ell} + \frac{\partial k_2}{\partial \ell} + \frac{\partial k_3}{\partial \ell}\right)$ \\
-     \hline
-     - & $\frac{\partial k}{\partial \ell}$ & $\frac{k (r_i-r_j)^2}{l^3}$ \\
-     \hline
-     - & $\frac{\partial^2 k}{\partial \ell \partial \xi_i}$ & $\frac{k \xi_i (-2 \ell^2 + (r_i-r_j)^2) (r_i-r_j)}{l^5 r_i}$ \\
-     \hline
-     - & $\frac{\partial^2 k}{\partial \ell \partial \xi_i \partial \chi_j}$ & $\frac{k \xi_i \chi_j \left(-2 \ell^4 + 5 \ell^2 (r_i-r_j)^2 - (r_i-r_j)^4 \right)}{l^7 r_i r_j}$ \\
-     \hline
-     $d$ Derivative & $\frac{\partial f_{\text{cut}}(r_i)}{\partial d}$ & $\frac{\pi (r-r_{\text{cut}})}{2 d^2} \sin\left( \frac{\pi (r_{\text{cut}} - r)}{d} \right)$ \\
-     \hline
-     - & $\frac{\partial^2 f_{\text{cut}}(r_i)}{\partial d \partial \xi_i}$ & $\frac{\pi \xi_i \left( \pi (r - r_{\text{cut}}) \cos \left( \frac{\pi (r - r_{\text{cut}})}{d} \right) + d \sin \left( \frac{\pi (r-r_{\text{cut}})}{d} \right) \right)}{2 d^3 r_i}$\\
-     \hline
-     $\sigma$ Derivative & $\frac{\partial^3 k_{\text{inv}}}{\partial \sigma \partial \xi_i \partial \chi_j}$ & $2 \sigma \sum_{i ,j} (k_0 + k_1 + k_2 + k_3)$ \\
-     \hline
-    \end{tabular}
-    \caption{Quantities used to calculate the smoothed two-body force kernel and its derivatives.}
-\end{table}
-\end{center}
+% \item DFT and Quantum Espresso \cite{kohn1999nobel, giannozzi2009quantum}
 
-\begin{center}
-    \begin{table}
-    \begin{tabular}{ |c|c|c| } 
-     \hline
-     Energy Kernel & $k_{\text{inv}}$ & $\sigma^2 \sum_{c, p} k f_{\text{cut}}(\vec{d}_c) f_{\text{cut}}(\vec{d}_p)$ \\ 
-     \hline
-     - & $k$ & $\exp\left( - \frac{||\vec{d}_c - \vec{d}_p ||^2}{2 \ell^2} \right)$\\
-     \hline
-     - & $\vec{d}^{(2)}$ & $(r_{i_1})$ \\
-     \hline
-     - & $\vec{d}^{(3)}$ & $(r_{i_1}, r_{i_2}, r_{i_1, i_2})$ \\
-     \hline
-    Force Kernel & $\frac{\partial^2 k_{\text{inv}}}{\partial \xi_i \partial \chi_j}$ & $\sigma^2 \sum_{c, p} (k_0 + k_1 + k_2 + k_3)$ \\ 
-     \hline
-     - & $k_0$ & $k \frac{\partial f_{\text{cut}}(\vec{d}_c)}{\partial \xi_i} \frac{\partial f_{\text{cut}}(\vec{d}_p)}{\partial \chi_j}$ \\ 
-     \hline
-     - & $k_1$ & $\frac{\partial k}{\partial \xi_i} f_{\text{cut}}(\vec{d}_c) \frac{\partial f_{\text{cut}}(\vec{d}_p)}{\partial \chi_j}$ \\ 
-     \hline
-     - & $k_2$ & $\frac{\partial k}{\partial \chi_j} \frac{\partial f_{\text{cut}}(\vec{d}_c)}{\partial \xi_i} f_{\text{cut}}(\vec{d}_p)$ \\ 
-     \hline
-     - & $k_3$ & $\frac{\partial^2 k}{\partial \xi_i \partial \chi_j} f_{\text{cut}}(\vec{d}_c) f_{\text{cut}}(\vec{d}_p)$ \\ 
-     \hline
-     - & $\frac{\partial k}{\partial \xi_i}$ & $\frac{k B_1}{\ell^2}$ \\ 
-     \hline
-     & $B_1$ & $\sum_{q=1}^{N-1} \frac{(r_{i_q} - r_{j_q})\xi_{i_q}}{r_{i_q}}$ \\
-     \hline
-     - & $\frac{\partial k}{\partial \chi_j}$ &  $-\frac{k B_2}{\ell^2}$ \\ 
-     \hline
-    - & $B_2$ & $\sum_{q=1}^{N-1} \frac{(r_{i_q} - r_{j_q})\chi_{j_q}}{r_{j_q}}$ \\
-     \hline
-     - & $\frac{\partial^2 k}{\partial \xi_i \chi_j}$ & $\frac{k}{\ell^4} \left(A \ell^2 -B_1 B_2 \right)$\\ 
-     \hline
-     - & $A$ & $\sum \frac{\xi_{i_q} \chi_{j_q}}{r_{i_q} r_{j_q}}$ \\
-     \hline
-     $\ell$ Derivative & $\frac{\partial^3 k_{\text{inv}}}{\partial \ell \partial \xi_i \partial \chi_j}$ & $\sigma^2 \sum_{c, p} \left(\frac{\partial k_0}{\partial \ell} + \frac{\partial k_1}{\partial \ell} + \frac{\partial k_2}{\partial \ell} + \frac{\partial k_3}{\partial \ell}\right)$ \\
-     \hline
-     - & $\frac{\partial k}{\partial \ell}$ & $\frac{k ||\vec{d}_c - \vec{d}_p||^2}{l^3}$ \\
-     \hline
-     - & $\frac{\partial^2 k}{\partial \ell \partial \xi_i}$ & $B_1 \left( \frac{1}{\ell^2} \frac{\partial k}{\partial \ell} - \frac{2 k}{\ell^3} \right)$ \\
-     \hline
-     - & $\frac{\partial^2 k}{\partial \ell \partial \chi_j}$ & $-B_2 \left( \frac{1}{\ell^2} \frac{\partial k}{\partial \ell} - \frac{2 k}{\ell^3} \right)$ \\
-     \hline
-     - & $\frac{\partial^3 k}{\partial \ell \partial \xi_i \partial \chi_j}$ & $\left( A \ell^2 - B_1 B_2 \right) \left( \frac{\partial k}{\partial \ell} \frac{1}{\ell^4} - \frac{4 k}{\ell^5} \right) + \frac{2 k A}{\ell^3}$ \\
-     \hline
-     $\sigma$ Derivative & $\frac{\partial^3 k_{\text{inv}}}{\partial \sigma \partial \xi_i \partial \chi_j}$ & $2 \sigma \sum_{c, p} (k_0 + k_1 + k_2 + k_3)$ \\
-     \hline
-    \end{tabular}
-    \caption{Quantities used to calculate the smoothed $N$-body force kernel and its derivatives.}
-\end{table}
-\end{center}
+% \end{enumerate}
 
-\section{On-the-fly learning}
+% \section{Smooth two-body kernel}
+% We find that a covariant two-body kernel gives good accuracy for bulk metals with a vacancy \cite{glielmo2018efficient, deringer2017machine}. The covariant kernel implemented here is derived from a rotationally invariant local energy kernel $k_{\text{inv}}$ that directly compares interatomic distances:
+% \begin{equation}
+% k_{\text{inv}} = \sigma^2 \sum_{i ,j} \exp\left( - \frac{(r_i - r_j)^2}{2 \ell^2} \right) f_{\text{cut}}(r_i) f_{\text{cut}}(r_j),
+% \label{loc_kern}
+% \end{equation}
+% where the sum ranges over all atoms in the atomic environments. $f_{\text{cut}}$ is a cutoff function that ensures that the local energy and its derivative go smoothly to zero at finite radius $r_{\text{cut}}$ \cite{bartok2015gaussian}:
+% \begin{equation}
+% f_{\text{cut}} =  \begin{cases} 
+%     1 & r\leq r_{\text{cut}}-d, \\
+%     \frac{\cos(\pi \frac{r-r_{\text{cut}}+d}{d}) + 1}{2} & r_{\text{cut}} - d < r \le r_{\text{cut}}, \\
+%     0 & r > r_{\text{cut}}.
+%  \end{cases}
+% \end{equation}
+% The cutoff function smooths the model by eliminating sharp discontinuities associated with atoms entering and leaving the cutoff sphere surrounding the central atom.
 
-\section{Computational details}
+% The local energy kernel described by Eq.\ (\ref{loc_kern}) induces a covariant matrix-valued force kernel $\frac{\partial^2 k_{\text{inv}}}{\partial \xi_i \partial \chi_j}$ suitable for the direct prediction of atomic forces, where $\xi_i$ and $\chi_i$ denote the $i^{\text{th}}$ Cartesian coordinate of the central atom of the first and second atomic environments, respectively. In the table below, we summarize all the terms needed to efficiently calculate the force kernel and its derivatives with respect to the model hyperparameters $\ell, \sigma,$ and $d$.
+
+% \begin{center}
+%     \begin{table}
+%     \begin{tabular}{ |c|c|c| } 
+%      \hline
+%      Energy Kernel & $k_{\text{inv}}(\rho_1, \rho_2; \ell, \sigma, d)$ & $\sigma^2 \sum_{i ,j} k(r_i, r_j) f_{\text{cut}}(r_i) f_{\text{cut}}(r_j)$ \\ 
+%      \hline
+%      - & $k(r_i, r_j; \ell)$ & $\exp\left( - \frac{(r_i - r_j)^2}{2 \ell^2} \right)$\\
+%      \hline
+%      - & $f_{\text{cut}}(r; d)$ & $\frac{\cos(\pi \frac{r-r_{\text{cut}}+d}{d}) + 1}{2}, \text{ } r_{\text{cut}} - d < r \le r_{\text{cut}}$ \\
+%      \hline
+%     Force Kernel & $\frac{\partial^2 k_{\text{inv}}}{\partial \xi_i \partial \chi_j}$ & $\sigma^2 \sum_{i ,j} (k_0 + k_1 + k_2 + k_3)$ \\ 
+%      \hline
+%      - & $k_0(r_i, r_j; \ell, d)$ & $k \frac{\partial f_{\text{cut}}(r_i)}{\partial \xi_i} \frac{\partial f_{\text{cut}}(r_j)}{\partial \chi_j}$ \\ 
+%      \hline
+%      - & $k_1(r_i, r_j; \ell, d)$ & $\frac{\partial k}{\partial \xi_i} f_{\text{cut}}(r_i) \frac{\partial f_{\text{cut}}(r_j)}{\partial \chi_j}$ \\ 
+%      \hline
+%      - & $k_2(r_i, r_j; \ell, d)$ & $\frac{\partial k}{\partial \chi_j} \frac{\partial f_{\text{cut}}(r_i)}{\partial \xi_i} f_{\text{cut}}(r_j)$ \\ 
+%      \hline
+%      - & $k_3(r_i, r_j; \ell, d)$ & $\frac{\partial^2 k}{\partial \xi_i \partial \chi_j} f_{\text{cut}}(r_i) f_{\text{cut}}(r_j)$ \\ 
+%      \hline
+%      - & $\frac{\partial k}{\partial \xi_i}$ & $\frac{k (r_i-r_j) \xi_i}{\ell^2 r_i}$ \\ 
+%      \hline
+%      - & $\frac{\partial k}{\partial \chi_j}$ & $\frac{k (r_j-r_i) \chi_j}{\ell^2 r_j}$ \\ 
+%      \hline
+%      - & $\frac{\partial^2 k}{\partial \xi_i \chi_j}$ & $\frac{k \xi_i \chi_j (\ell^2 - (r_j-r_i)^2)}{\ell^4 r_i r_j}$ \\ 
+%      \hline
+%      - & $\frac{\partial f_\text{cut}(r_i)}{\partial \xi_i}$ & $ \frac{\pi \xi_i}{2d r_i} \sin(\pi \frac{r_{\text{cut}}-r_i}{d}), \text{ } r_{\text{cut}} - d < r \le r_{\text{cut}}$ \\ 
+%      \hline
+%      $\ell$ Derivative & $\frac{\partial^3 k_{\text{inv}}}{\partial \ell \partial \xi_i \partial \chi_j}$ & $\sigma^2 \sum_{i ,j} \left(\frac{\partial k_0}{\partial \ell} + \frac{\partial k_1}{\partial \ell} + \frac{\partial k_2}{\partial \ell} + \frac{\partial k_3}{\partial \ell}\right)$ \\
+%      \hline
+%      - & $\frac{\partial k}{\partial \ell}$ & $\frac{k (r_i-r_j)^2}{l^3}$ \\
+%      \hline
+%      - & $\frac{\partial^2 k}{\partial \ell \partial \xi_i}$ & $\frac{k \xi_i (-2 \ell^2 + (r_i-r_j)^2) (r_i-r_j)}{l^5 r_i}$ \\
+%      \hline
+%      - & $\frac{\partial^2 k}{\partial \ell \partial \xi_i \partial \chi_j}$ & $\frac{k \xi_i \chi_j \left(-2 \ell^4 + 5 \ell^2 (r_i-r_j)^2 - (r_i-r_j)^4 \right)}{l^7 r_i r_j}$ \\
+%      \hline
+%      $d$ Derivative & $\frac{\partial f_{\text{cut}}(r_i)}{\partial d}$ & $\frac{\pi (r-r_{\text{cut}})}{2 d^2} \sin\left( \frac{\pi (r_{\text{cut}} - r)}{d} \right)$ \\
+%      \hline
+%      - & $\frac{\partial^2 f_{\text{cut}}(r_i)}{\partial d \partial \xi_i}$ & $\frac{\pi \xi_i \left( \pi (r - r_{\text{cut}}) \cos \left( \frac{\pi (r - r_{\text{cut}})}{d} \right) + d \sin \left( \frac{\pi (r-r_{\text{cut}})}{d} \right) \right)}{2 d^3 r_i}$\\
+%      \hline
+%      $\sigma$ Derivative & $\frac{\partial^3 k_{\text{inv}}}{\partial \sigma \partial \xi_i \partial \chi_j}$ & $2 \sigma \sum_{i ,j} (k_0 + k_1 + k_2 + k_3)$ \\
+%      \hline
+%     \end{tabular}
+%     \caption{Quantities used to calculate the smoothed two-body force kernel and its derivatives.}
+% \end{table}
+% \end{center}
+
+% \begin{center}
+%     \begin{table}
+%     \begin{tabular}{ |c|c|c| } 
+%      \hline
+%      Energy Kernel & $k_{\text{inv}}$ & $\sigma^2 \sum_{c, p} k f_{\text{cut}}(\vec{d}_c) f_{\text{cut}}(\vec{d}_p)$ \\ 
+%      \hline
+%      - & $k$ & $\exp\left( - \frac{||\vec{d}_c - \vec{d}_p ||^2}{2 \ell^2} \right)$\\
+%      \hline
+%      - & $\vec{d}^{(2)}$ & $(r_{i_1})$ \\
+%      \hline
+%      - & $\vec{d}^{(3)}$ & $(r_{i_1}, r_{i_2}, r_{i_1, i_2})$ \\
+%      \hline
+%     Force Kernel & $\frac{\partial^2 k_{\text{inv}}}{\partial \xi_i \partial \chi_j}$ & $\sigma^2 \sum_{c, p} (k_0 + k_1 + k_2 + k_3)$ \\ 
+%      \hline
+%      - & $k_0$ & $k \frac{\partial f_{\text{cut}}(\vec{d}_c)}{\partial \xi_i} \frac{\partial f_{\text{cut}}(\vec{d}_p)}{\partial \chi_j}$ \\ 
+%      \hline
+%      - & $k_1$ & $\frac{\partial k}{\partial \xi_i} f_{\text{cut}}(\vec{d}_c) \frac{\partial f_{\text{cut}}(\vec{d}_p)}{\partial \chi_j}$ \\ 
+%      \hline
+%      - & $k_2$ & $\frac{\partial k}{\partial \chi_j} \frac{\partial f_{\text{cut}}(\vec{d}_c)}{\partial \xi_i} f_{\text{cut}}(\vec{d}_p)$ \\ 
+%      \hline
+%      - & $k_3$ & $\frac{\partial^2 k}{\partial \xi_i \partial \chi_j} f_{\text{cut}}(\vec{d}_c) f_{\text{cut}}(\vec{d}_p)$ \\ 
+%      \hline
+%      - & $\frac{\partial k}{\partial \xi_i}$ & $\frac{k B_1}{\ell^2}$ \\ 
+%      \hline
+%      & $B_1$ & $\sum_{q=1}^{N-1} \frac{(r_{i_q} - r_{j_q})\xi_{i_q}}{r_{i_q}}$ \\
+%      \hline
+%      - & $\frac{\partial k}{\partial \chi_j}$ &  $-\frac{k B_2}{\ell^2}$ \\ 
+%      \hline
+%     - & $B_2$ & $\sum_{q=1}^{N-1} \frac{(r_{i_q} - r_{j_q})\chi_{j_q}}{r_{j_q}}$ \\
+%      \hline
+%      - & $\frac{\partial^2 k}{\partial \xi_i \chi_j}$ & $\frac{k}{\ell^4} \left(A \ell^2 -B_1 B_2 \right)$\\ 
+%      \hline
+%      - & $A$ & $\sum \frac{\xi_{i_q} \chi_{j_q}}{r_{i_q} r_{j_q}}$ \\
+%      \hline
+%      $\ell$ Derivative & $\frac{\partial^3 k_{\text{inv}}}{\partial \ell \partial \xi_i \partial \chi_j}$ & $\sigma^2 \sum_{c, p} \left(\frac{\partial k_0}{\partial \ell} + \frac{\partial k_1}{\partial \ell} + \frac{\partial k_2}{\partial \ell} + \frac{\partial k_3}{\partial \ell}\right)$ \\
+%      \hline
+%      - & $\frac{\partial k}{\partial \ell}$ & $\frac{k ||\vec{d}_c - \vec{d}_p||^2}{l^3}$ \\
+%      \hline
+%      - & $\frac{\partial^2 k}{\partial \ell \partial \xi_i}$ & $B_1 \left( \frac{1}{\ell^2} \frac{\partial k}{\partial \ell} - \frac{2 k}{\ell^3} \right)$ \\
+%      \hline
+%      - & $\frac{\partial^2 k}{\partial \ell \partial \chi_j}$ & $-B_2 \left( \frac{1}{\ell^2} \frac{\partial k}{\partial \ell} - \frac{2 k}{\ell^3} \right)$ \\
+%      \hline
+%      - & $\frac{\partial^3 k}{\partial \ell \partial \xi_i \partial \chi_j}$ & $\left( A \ell^2 - B_1 B_2 \right) \left( \frac{\partial k}{\partial \ell} \frac{1}{\ell^4} - \frac{4 k}{\ell^5} \right) + \frac{2 k A}{\ell^3}$ \\
+%      \hline
+%      $\sigma$ Derivative & $\frac{\partial^3 k_{\text{inv}}}{\partial \sigma \partial \xi_i \partial \chi_j}$ & $2 \sigma \sum_{c, p} (k_0 + k_1 + k_2 + k_3)$ \\
+%      \hline
+%     \end{tabular}
+%     \caption{Quantities used to calculate the smoothed $N$-body force kernel and its derivatives.}
+% \end{table}
+% \end{center}
+
+% \section{On-the-fly learning}
+
+% \section{Computational details}
 
 % \section{Covariant kernels}
 
