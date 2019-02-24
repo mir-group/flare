@@ -19,7 +19,8 @@ class GaussianProcess:
                  hyp_labels: List=None,
                  energy_force_kernel: Callable=None,
                  energy_kernel: Callable=None,
-                 opt_algorithm: str='L-BFGS-B'):
+                 opt_algorithm: str='L-BFGS-B',
+                 maxiter=10):
         """Initialize GP parameters and training data."""
 
         self.kernel = kernel
@@ -36,6 +37,7 @@ class GaussianProcess:
         self.training_data = []
         self.training_labels = []
         self.training_labels_np = np.empty(0, )
+        self.maxiter = maxiter
 
     # TODO unit test custom range
     def update_db(self, struc: Structure, forces: list,
@@ -103,7 +105,7 @@ class GaussianProcess:
                 res = minimize(self.get_likelihood_and_gradients, x_0, args,
                                method='L-BFGS-B', jac=True, bounds=bounds,
                                options={'disp': False, 'gtol': 1e-4,
-                                        'maxiter': 1000})
+                                        'maxiter': self.maxiter})
             except:
                 print("Warning! Algorithm for L-BFGS-B failed. Changing to "
                       "BFGS for remainder of run.")
@@ -116,7 +118,7 @@ class GaussianProcess:
             res = minimize(self.get_likelihood_and_gradients, x_0, args,
                            method='L-BFGS-B', jac=True, bounds=custom_bounds,
                            options={'disp': False, 'gtol': 1e-4,
-                                    'maxiter': 1000})
+                                    'maxiter': self.maxiter})
 
         elif self.algo == 'BFGS':
             args = (self.training_data, self.training_labels_np,
@@ -125,7 +127,7 @@ class GaussianProcess:
             res = minimize(self.get_likelihood_and_gradients, x_0, args,
                            method='BFGS', jac=True,
                            options={'disp': False, 'gtol': 1e-4,
-                                    'maxiter': 1000})
+                                    'maxiter': self.maxiter})
 
         elif self.algo == 'nelder-mead':
             args = (self.training_data, self.training_labels_np,
@@ -133,7 +135,9 @@ class GaussianProcess:
 
             res = minimize(self.get_likelihood, x_0, args,
                            method='nelder-mead',
-                           options={'disp': False, 'xtol': 1e-5})
+                           options={'disp': False,
+                                    'maxiter': self.maxiter,
+                                    'xtol': 1e-5})
 
         self.hyps = res.x
         self.set_L_alpha()

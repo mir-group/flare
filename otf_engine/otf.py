@@ -17,7 +17,7 @@ class OTF(object):
                  gp: GaussianProcess, pw_loc: str,
                  std_tolerance_factor: float = 1, opt_algo: str='BFGS',
                  prev_pos_init: np.ndarray=None, par: bool=False,
-                 parsimony: bool=False, skip: int=0, hyps: np.ndarray=None,
+                 parsimony: bool=False, skip: int=0, freeze_hyps=False,
                  init_atoms: List[int]=None,
                  quench_step=None, quench_temperature=None,
                  calculate_energy=False):
@@ -31,11 +31,7 @@ class OTF(object):
         self.pw_loc = pw_loc
 
         # allow hyperparameters to be set
-        if hyps is not None:
-            self.gp.hyps = hyps
-            self.freeze_hyps = True
-        else:
-            self.freeze_hyps = False
+        self.freeze_hyps = freeze_hyps
 
         # parse input file
         positions, species, cell, masses = parse_qe_input(self.qe_input)

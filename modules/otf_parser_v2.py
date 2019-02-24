@@ -7,8 +7,10 @@ import gp, env, struc, kernels, otf
 
 
 class OtfAnalysis:
-    def __init__(self, filename):
+    def __init__(self, filename, calculate_energy=False):
         self.filename = filename
+
+        self.calculate_energy = calculate_energy
 
         position_list, force_list, uncertainty_list, velocity_list,\
             dft_frames, temperatures, times, msds, dft_times, energies = \
@@ -23,7 +25,9 @@ class OtfAnalysis:
         self.times = times
         self.msds = msds
         self.dft_times = dft_times
-        self.energies = energies
+
+        if self.calculate_energy:
+            self.energies = energies
 
         gp_position_list, gp_force_list, gp_uncertainty_list,\
             gp_velocity_list, gp_atom_list, gp_hyp_list, \
@@ -116,8 +120,9 @@ class OtfAnalysis:
                 temp_line = lines[index+2+noa].split()
                 temperatures.append(float(temp_line[1]))
 
-                en_line = lines[index+5+noa].split()
-                energies.append(float(en_line[2]))
+                if self.calculate_energy:
+                    en_line = lines[index+5+noa].split()
+                    energies.append(float(en_line[2]))
 
                 msds.append(np.mean((positions - position_list[0])**2))
 
