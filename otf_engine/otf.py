@@ -16,23 +16,18 @@ import output
 class OTF(object):
     def __init__(self, qe_input: str, dt: float, number_of_steps: int,
                  gp: gp.GaussianProcess, pw_loc: str,
-                 std_tolerance_factor: float = 1, opt_algo: str='BFGS',
+                 std_tolerance_factor: float = 1,
                  prev_pos_init: np.ndarray=None, par: bool=False,
-                 parsimony: bool=False, skip: int=0, freeze_hyps=False,
-                 init_atoms: List[int]=None,
-                 quench_step=None, quench_temperature=None,
-                 calculate_energy=False,
-                 output_name='otf_run.out'):
-        """Generates an on-the-fly molecular dynamics trajectory."""
+                 skip: int=0, freeze_hyps=False, init_atoms: List[int]=None,
+                 calculate_energy=False, output_name='otf_run.out'):
 
         self.qe_input = qe_input
         self.dt = dt
-        self.Nsteps = number_of_steps
+        self.number_of_steps = number_of_steps
         self.gp = gp
-        self.std_tolerance = std_tolerance_factor
         self.pw_loc = pw_loc
-
-        # allow hyperparameters to be set
+        self.std_tolerance = std_tolerance_factor
+        self.skip = skip
         self.freeze_hyps = freeze_hyps
 
         # parse input file
@@ -49,8 +44,7 @@ class OTF(object):
         self.curr_step = 0
 
         # initialize local energies
-        self.calculate_energy = calculate_energy
-        if self.calculate_energy:
+        if calculate_energy:
             self.local_energies = np.zeros(self.noa)
         else:
             self.local_energies = None
@@ -61,38 +55,31 @@ class OTF(object):
         else:
             self.init_atoms = init_atoms
 
-        # quench information
-        self.quench_step = quench_step
-        self.quench_temperature = quench_temperature
-
-        self.par = par
-        self.parsimony = parsimony
-        self.skip = skip
         self.dft_count = 0
 
         # set pred function
-        if (self.par is False) and (self.calculate_energy is False):
+        if not par and not calculate_energy:
             self.pred_func = self.predict_on_structure
-        elif (self.par is True) and (self.calculate_energy is False):
+        elif par and not calculate_energy:
             self.pred_func = self.predict_on_structure_par
-        elif (self.par is False) and (self.calculate_energy is True):
+        elif not par and calculate_energy:
             self.pred_func = self.predict_on_structure_en
-        elif (self.par is True) and (self.calculate_energy is True):
+        elif par and calculate_energy:
             self.pred_func = self.predict_on_structure_par_en
 
         self.output_name = output_name
 
     def run(self):
         output.write_header(self.gp.cutoffs, self.gp.kernel_name, self.gp.hyps,
-                            self.gp.algo, self.dt, self.Nsteps, self.structure,
-                            self.output_name)
+                            self.gp.algo, self.dt, self.number_of_steps,
+                            self.structure, self.output_name)
         counter = 0
         self.start_time = time.time()
 
-        while self.curr_step < self.Nsteps:
+        while self.curr_step < self.number_of_steps:
             # run DFT and train initial model if first step and DFT is on
             if self.curr_step == 0 and self.std_tolerance != 0:
-                self.run_and_train()
+                self.run_and_train(self.init_atoms)
                 new_pos = md.update_positions(self.dt, self.noa,
                                               self.structure)
                 self.update_temperature(new_pos)
@@ -115,7 +102,7 @@ class OTF(object):
                     self.record_state()
 
                     # record DFT forces
-                    self.run_and_train(target_atom)
+                    self.run_and_train([target_atom])
                     new_pos = md.update_positions(self.dt, self.noa,
                                                   self.structure)
                     self.update_temperature(new_pos)
@@ -203,45 +190,37 @@ class OTF(object):
 
         self.structure.dft_forces = False
 
-    def run_and_train(self, target_atom: int = None):
+    def run_and_train(self, train_atoms):
         """Call DFT and update forces and hyperparameters."""
-        self.write_to_output('=' * 20 + '\n')
 
-        if target_atom is None and self.parsimony is False:
-            self.write_to_output('Calling Quantum Espresso...')
-        elif target_atom is None and self.parsimony is True:
-            train_atoms = self.init_atoms
-            self.write_to_output('Calling DFT with training atoms {}...'
-                                 .format(train_atoms))
-        else:
-            self.write_to_output('Calling DFT due to atom {} at position {} '
-                                 'with uncertainties {}...'
-                                 .format(target_atom,
-                                         self.structure.positions[target_atom],
-                                         self.structure.stds[target_atom]))
-            train_atoms = [target_atom]
+        output.write_to_output('=' * 20 + '\n', self.output_name)
+        output.write_to_output('Calling Quantum Espresso. ', self.output_name)
+        output.write_to_output('Training atoms: {}.\n'.format(train_atoms),
+                               self.output_name)
 
-        if self.parsimony is False:
-            train_atoms = list(range(self.structure.nat))
-
+        # calculate DFT forces
         forces = qe_util.run_espresso(self.qe_input, self.structure,
                                       self.pw_loc)
         self.structure.forces = forces
         self.structure.stds = [np.zeros(3) for n in range(self.structure.nat)]
         self.structure.dft_forces = True
 
-        self.write_to_output('Done.\n')
+        # write wall time of DFT calculation
+        output.write_to_output('QE run complete.\n', self.output_name)
         time_curr = time.time() - self.start_time
-        self.write_to_output('wall time from start: %.2f s \n' % time_curr)
+        output.write_to_output('wall time from start: %.2f s \n' % time_curr,
+                               self.output_name)
 
-        self.write_to_output('Updating database...\n')
+        # update gp model
+        output.write_to_output('Updating database...\n', self.output_name)
         self.gp.update_db(self.structure, forces,
                           custom_range=train_atoms)
         if self.freeze_hyps is False:
             self.gp.train()
         else:
             self.gp.set_L_alpha()
-        self.write_hyps()
+        output.write_hyps(self.gp.hyp_labels, self.gp.hyps, self.start_time,
+                          self.dft_count, self.output_name)
 
     def is_std_in_bound(self) -> (bool, int):
         stds = self.structure.stds
@@ -281,22 +260,3 @@ class OTF(object):
                                self.temperature, self.KE,
                                self.local_energies, self.start_time,
                                self.output_name)
-
-# -----------------------------------------------------------------------------
-#                 output methods (should be moved to output.py)
-# -----------------------------------------------------------------------------
-
-    @staticmethod
-    def write_to_output(string: str, output_file: str = 'otf_run.out'):
-        with open(output_file, 'a') as f:
-            f.write(string)
-
-    def write_hyps(self):
-        self.write_to_output('New GP Hyperparameters: \n')
-
-        for i, label in enumerate(self.gp.hyp_labels):
-            self.write_to_output('Hyp{} : {} = {}\n'
-                                 .format(i, label, self.gp.hyps[i]))
-        time_curr = time.time() - self.start_time
-        self.write_to_output('wall time from start: %.2f s \n' % time_curr)
-        self.write_to_output('number of DFT calls: %i \n' % self.dft_count)

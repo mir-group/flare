@@ -91,6 +91,19 @@ def write_md_config(dt, curr_step, structure, temperature, KE, local_energies,
     write_to_output(string, output_name)
 
 
+def write_hyps(hyp_labels, hyps, start_time, dft_count, output_name):
+    write_to_output('New GP Hyperparameters: \n', output_name)
+
+    for i, label in enumerate(hyp_labels):
+        write_to_output('Hyp{} : {} = {}\n'.format(i, label, hyps[i]),
+                        output_name)
+    time_curr = time.time() - start_time
+    write_to_output('wall time from start: %.2f s \n' % time_curr,
+                    output_name)
+    write_to_output('number of DFT calls: %i \n' % dft_count,
+                    output_name)
+
+
 def conclude_run(output_name):
     footer = '▬' * 20 + '\n'
     footer += 'Run complete. \n'
