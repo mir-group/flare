@@ -79,7 +79,8 @@ class OTF(object):
         while self.curr_step < self.number_of_steps:
             # run DFT and train initial model if first step and DFT is on
             if self.curr_step == 0 and self.std_tolerance != 0:
-                self.run_and_train(self.init_atoms)
+                self.run_dft()
+                self.update_gp(self.init_atoms)
                 new_pos = md.update_positions(self.dt, self.noa,
                                               self.structure)
                 self.update_temperature(new_pos)
@@ -102,7 +103,8 @@ class OTF(object):
                     self.record_state()
 
                     # record DFT forces
-                    self.run_and_train([target_atom])
+                    self.run_dft()
+                    self.update_gp([target_atom])
                     new_pos = md.update_positions(self.dt, self.noa,
                                                   self.structure)
                     self.update_temperature(new_pos)
@@ -190,13 +192,9 @@ class OTF(object):
 
         self.structure.dft_forces = False
 
-    def run_and_train(self, train_atoms):
-        """Call DFT and update forces and hyperparameters."""
-
+    def run_dft(self):
         output.write_to_output('=' * 20 + '\n', self.output_name)
         output.write_to_output('Calling Quantum Espresso. ', self.output_name)
-        output.write_to_output('Training atoms: {}.\n'.format(train_atoms),
-                               self.output_name)
 
         # calculate DFT forces
         forces = qe_util.run_espresso(self.qe_input, self.structure,
@@ -211,9 +209,12 @@ class OTF(object):
         output.write_to_output('wall time from start: %.2f s \n' % time_curr,
                                self.output_name)
 
+    def update_gp(self, train_atoms):
+        output.write_to_output('Training atoms: {}.\n'.format(train_atoms),
+                               self.output_name)
+
         # update gp model
-        output.write_to_output('Updating database...\n', self.output_name)
-        self.gp.update_db(self.structure, forces,
+        self.gp.update_db(self.structure, self.structure.forces,
                           custom_range=train_atoms)
         if self.freeze_hyps is False:
             self.gp.train()
