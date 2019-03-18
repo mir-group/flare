@@ -6,7 +6,7 @@
 %Control: page (0) single
 %Control: year (1) truncated
 %Control: production of eprint (0) enabled
-\begin{thebibliography}{0}%
+\begin{thebibliography}{1}%
 \makeatletter
 \providecommand \@ifxundefined [1]{%
  \@ifx{#1\undefined}
@@ -50,4 +50,12 @@
 \providecommand \BibitemShut  [1]{\csname bibitem#1\endcsname}%
 \let\auto@bib@innerbib\@empty
 %</preamble>
+\bibitem [{\citenamefont {Allen}\ and\ \citenamefont
+  {Tildesley}(2017)}]{allen2017computer}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {M.~P.}\ \bibnamefont
+  {Allen}}\ and\ \bibinfo {author} {\bibfnamefont {D.~J.}\ \bibnamefont
+  {Tildesley}},\ }\href@noop {} {\emph {\bibinfo {title} {Computer simulation
+  of liquids}}}\ (\bibinfo  {publisher} {Oxford university press},\ \bibinfo
+  {year} {2017})\BibitemShut {NoStop}%
 \end{thebibliography}%

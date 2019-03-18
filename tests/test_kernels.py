@@ -20,11 +20,17 @@ def test_two_plus_three_body_force_en():
     energy kernel."""
 
     # create env 1
-    delt = 1e-5
+    delt = 1e-8
     cell = np.eye(3)
-    cutoffs = np.array([1, 0.9])
+    cutoffs = np.array([1, 1])
 
     positions_1 = [np.array([0., 0., 0.]),
+                   np.array([random(), random(), random()]),
+                   np.array([random(), random(), random()]),
+                   np.array([random(), random(), random()]),
+                   np.array([random(), random(), random()]),
+                   np.array([random(), random(), random()]),
+                   np.array([random(), random(), random()]),
                    np.array([random(), random(), random()]),
                    np.array([random(), random(), random()])]
     positions_2 = deepcopy(positions_1)
@@ -40,6 +46,12 @@ def test_two_plus_three_body_force_en():
 
     # create env 2
     positions_1 = [np.array([0., 0., 0.]),
+                   np.array([random(), random(), random()]),
+                   np.array([random(), random(), random()]),
+                   np.array([random(), random(), random()]),
+                   np.array([random(), random(), random()]),
+                   np.array([random(), random(), random()]),
+                   np.array([random(), random(), random()]),
                    np.array([random(), random(), random()]),
                    np.array([random(), random(), random()])]
 
@@ -58,10 +70,10 @@ def test_two_plus_three_body_force_en():
     hyps = np.array([sig1, ls1, sig2, ls2])
 
     # check force kernel
-    calc1 = en.two_body_en(env1_2, env2, hyps, cutoffs)
-    calc2 = en.two_body_en(env1_1, env2, hyps, cutoffs)
-    calc3 = en.three_body_en(env1_2, env2, hyps, cutoffs)
-    calc4 = en.three_body_en(env1_1, env2, hyps, cutoffs)
+    calc1 = en.two_body_en(env1_2, env2, hyps[0:2], cutoffs)
+    calc2 = en.two_body_en(env1_1, env2, hyps[0:2], cutoffs)
+    calc3 = en.three_body_en(env1_2, env2, hyps[2:4], cutoffs)
+    calc4 = en.three_body_en(env1_1, env2, hyps[2:4], cutoffs)
 
     kern_finite_diff = (calc1 - calc2) / (2 * delt) + \
         (calc3 - calc4) / (3 * delt)
@@ -77,7 +89,7 @@ def test_two_plus_three_body_force():
     energy kernel."""
 
     # create env 1
-    delt = 1e-4
+    delt = 1e-5
     cell = np.eye(3)
     cutoffs = np.array([1, 0.9])
 
@@ -176,7 +188,7 @@ def test_two_plus_three_body_grad():
     d1 = randint(1, 3)
     d2 = randint(1, 3)
 
-    delta = 1e-5
+    delta = 1e-8
 
     hyps = np.array([sig1, ls1, sig2, ls2])
     hyps1 = np.array([sig1+delta, ls1, sig2, ls2])
@@ -221,7 +233,7 @@ def test_two_body_force_en():
     energy kernel."""
 
     # create env 1
-    delt = 1e-5
+    delt = 1e-8
     cell = np.eye(3)
     cutoffs = np.array([1])
 
@@ -271,9 +283,8 @@ def test_two_body_force():
     energy kernel."""
 
     # create env 1
-    delt = 1e-4
+    delt = 1e-5
     cell = np.eye(3)
-    cutoff = 1
     cutoffs = np.array([1, 1])
 
     positions_1 = [np.array([0., 0., 0.]),
@@ -338,7 +349,6 @@ def test_two_body_force():
 def test_two_body_grad():
     # create env 1
     cell = np.eye(3)
-    cutoff = 1
     cutoffs = np.array([1, 1])
 
     positions_1 = [np.array([0., 0., 0.]),
@@ -369,7 +379,7 @@ def test_two_body_grad():
 
     grad_test = en.two_body_grad(env1, env2, d1, d2, hyps, cutoffs)
 
-    delta = 1e-5
+    delta = 1e-8
     new_sig = sig + delta
     new_ls = ls + delta
 
@@ -400,7 +410,7 @@ def test_three_body_force_en():
     energy kernel."""
 
     # create env 1
-    delt = 1e-5
+    delt = 1e-8
     cell = np.eye(3)
     cutoffs = np.array([1, 1])
 
@@ -450,7 +460,7 @@ def test_three_body_force():
     energy kernel."""
 
     # create env 1
-    delt = 1e-4
+    delt = 1e-5
     cell = np.eye(3)
     cutoffs = np.array([1, 1])
 
@@ -516,7 +526,6 @@ def test_three_body_force():
 def test_three_body_grad():
     # create env 1
     cell = np.eye(3)
-    cutoff = 1
     cutoffs = np.array([1, 1])
 
     positions_1 = [np.array([0., 0., 0.]),
@@ -547,7 +556,7 @@ def test_three_body_grad():
 
     grad_test = en.three_body_grad(env1, env2, d1, d2, hyps, cutoffs)
 
-    delta = 1e-5
+    delta = 1e-8
     new_sig = sig + delta
     new_ls = ls + delta
 

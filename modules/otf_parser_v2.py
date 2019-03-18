@@ -1,8 +1,7 @@
 import sys
 import numpy as np
-import crystals
 from typing import List, Tuple
-sys.path.append('../otf_engine')
+sys.path.append('../../otf/otf_engine')
 import gp, env, struc, kernels, otf
 
 

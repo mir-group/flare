@@ -5,6 +5,36 @@ from typing import List
 import subprocess
 
 
+def write_cfgs_from_otf(otf_run, cell, species, start_frame, no_frames,
+                        folder_name, image_quality, scr_dest, trans_vec,
+                        skip=1):
+
+    # make folder for cfgs
+    subprocess.call('mkdir %s' % folder_name, shell=True)
+    subprocess.call('mkdir %s/Pic' % folder_name, shell=True)
+
+    scr_anim_text = '%s\n' % image_quality
+
+    # make cfgs
+    no_digits = int(np.ceil(math.log(no_frames, 10)))
+
+    for n in range(no_frames):
+        frame_no = n
+        frame_no_padded = str(frame_no).zfill(no_digits)
+        frame_string = frame_no_padded+'.cfg'
+        frame_dest = folder_name+'/'+frame_string
+
+        scr_anim_text += '%s %s/Pic/%s.jpg\n' % \
+            (frame_dest, folder_name, frame_no_padded)
+
+        positions = otf_run.position_list[start_frame + n * skip]
+
+        write_cfg_file(frame_dest, positions, species, cell)
+
+    # write animation directions for AtomEye
+    write_file(scr_dest, scr_anim_text)
+
+
 def write_cfgs_from_md(md_trajectory, start_frame, no_frames, folder_name,
                        image_quality, scr_dest, trans_vec, skip=1):
     # make folder for cfgs

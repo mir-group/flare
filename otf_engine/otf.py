@@ -3,24 +3,26 @@ import numpy as np
 import datetime
 import time
 from typing import List
-from struc import Structure
-from gp import GaussianProcess
-from env import AtomicEnvironment
-from qe_util import run_espresso, parse_qe_input, \
-    qe_input_to_structure, parse_qe_forces
+import struc
+import gp
+import env
+import qe_util
 import multiprocessing as mp
 import concurrent.futures
+import md
+import output
 
 
 class OTF(object):
     def __init__(self, qe_input: str, dt: float, number_of_steps: int,
-                 gp: GaussianProcess, pw_loc: str,
+                 gp: gp.GaussianProcess, pw_loc: str,
                  std_tolerance_factor: float = 1, opt_algo: str='BFGS',
                  prev_pos_init: np.ndarray=None, par: bool=False,
                  parsimony: bool=False, skip: int=0, freeze_hyps=False,
                  init_atoms: List[int]=None,
                  quench_step=None, quench_temperature=None,
-                 calculate_energy=False):
+                 calculate_energy=False,
+                 output_name='otf_run.out'):
         """Generates an on-the-fly molecular dynamics trajectory."""
 
         self.qe_input = qe_input
@@ -34,12 +36,13 @@ class OTF(object):
         self.freeze_hyps = freeze_hyps
 
         # parse input file
-        positions, species, cell, masses = parse_qe_input(self.qe_input)
+        positions, species, cell, masses = \
+            qe_util.parse_qe_input(self.qe_input)
 
-        self.structure = Structure(cell=cell, species=species,
-                                   positions=positions,
-                                   mass_dict=masses,
-                                   prev_positions=prev_pos_init)
+        self.structure = struc.Structure(cell=cell, species=species,
+                                         positions=positions,
+                                         mass_dict=masses,
+                                         prev_positions=prev_pos_init)
 
         self.noa = self.structure.positions.shape[0]
         self.atom_list = list(range(self.noa))
@@ -49,11 +52,8 @@ class OTF(object):
         self.calculate_energy = calculate_energy
         if self.calculate_energy:
             self.local_energies = np.zeros(self.noa)
-
-        # set velocity and temperature information
-        self.velocities = (self.structure.positions -
-                           self.structure.prev_positions) / self.dt
-        self.calculate_temperature()
+        else:
+            self.local_energies = None
 
         # set atom list for initial dft run
         if init_atoms is None:
@@ -70,8 +70,22 @@ class OTF(object):
         self.skip = skip
         self.dft_count = 0
 
+        # set pred function
+        if (self.par is False) and (self.calculate_energy is False):
+            self.pred_func = self.predict_on_structure
+        elif (self.par is True) and (self.calculate_energy is False):
+            self.pred_func = self.predict_on_structure_par
+        elif (self.par is False) and (self.calculate_energy is True):
+            self.pred_func = self.predict_on_structure_en
+        elif (self.par is True) and (self.calculate_energy is True):
+            self.pred_func = self.predict_on_structure_par_en
+
+        self.output_name = output_name
+
     def run(self):
-        self.write_header()
+        output.write_header(self.gp.cutoffs, self.gp.kernel_name, self.gp.hyps,
+                            self.gp.algo, self.dt, self.Nsteps, self.structure,
+                            self.output_name)
         counter = 0
         self.start_time = time.time()
 
@@ -79,39 +93,50 @@ class OTF(object):
             # run DFT and train initial model if first step and DFT is on
             if self.curr_step == 0 and self.std_tolerance != 0:
                 self.run_and_train()
-                self.write_md_config()
-                self.update_positions()
+                new_pos = md.update_positions(self.dt, self.noa,
+                                              self.structure)
+                self.update_temperature(new_pos)
+                self.record_state()
+                self.update_positions(new_pos)
 
             # otherwise, try predicting with GP model
             else:
-                if (self.par is False) and (self.calculate_energy is False):
-                    self.predict_on_structure()
-                elif (self.par is True) and (self.calculate_energy is False):
-                    self.predict_on_structure_par()
-                elif (self.par is False) and (self.calculate_energy is True):
-                    self.predict_on_structure_en()
-                elif (self.par is True) and (self.calculate_energy is True):
-                    self.predict_on_structure_par_en()
+                self.pred_func()
+                new_pos = md.update_positions(self.dt, self.noa,
+                                              self.structure)
 
+                # TODO: add option to repeat std check until below threshold
                 std_in_bound, target_atom = self.is_std_in_bound()
                 if not std_in_bound:
                     self.dft_count += 1
-                    self.write_md_config()
+
+                    # record GP forces
+                    self.update_temperature(new_pos)
+                    self.record_state()
+
+                    # record DFT forces
                     self.run_and_train(target_atom)
-                    self.write_md_config()
+                    new_pos = md.update_positions(self.dt, self.noa,
+                                                  self.structure)
+                    self.update_temperature(new_pos)
+                    self.record_state()
 
                 # write gp forces only when counter equals skip
                 if counter >= self.skip and self.structure.dft_forces is False:
-                    self.write_md_config()
+                    self.update_temperature(new_pos)
+                    self.record_state()
                     counter = 0
+
                 counter += 1
+                self.update_positions(new_pos)
 
-                self.update_positions()
+            # update step variable
+            self.curr_step += 1
 
-        self.conclude_run()
+        output.conclude_run(self.output_name)
 
     def predict_on_atom(self, atom):
-        chemenv = AtomicEnvironment(self.structure, atom, self.gp.cutoffs)
+        chemenv = env.AtomicEnvironment(self.structure, atom, self.gp.cutoffs)
         comps = []
         stds = []
         # predict force components and standard deviations
@@ -123,7 +148,7 @@ class OTF(object):
         return comps, stds
 
     def predict_on_atom_en(self, atom):
-        chemenv = AtomicEnvironment(self.structure, atom, self.gp.cutoffs)
+        chemenv = env.AtomicEnvironment(self.structure, atom, self.gp.cutoffs)
         comps = []
         stds = []
         # predict force components and standard deviations
@@ -159,7 +184,7 @@ class OTF(object):
 
     def predict_on_structure(self):
         for n in range(self.structure.nat):
-            chemenv = AtomicEnvironment(self.structure, n, self.gp.cutoffs)
+            chemenv = env.AtomicEnvironment(self.structure, n, self.gp.cutoffs)
             for i in range(3):
                 force, var = self.gp.predict(chemenv, i + 1)
                 self.structure.forces[n][i] = float(force)
@@ -169,7 +194,7 @@ class OTF(object):
 
     def predict_on_structure_en(self):
         for n in range(self.structure.nat):
-            chemenv = AtomicEnvironment(self.structure, n, self.gp.cutoffs)
+            chemenv = env.AtomicEnvironment(self.structure, n, self.gp.cutoffs)
             for i in range(3):
                 force, var = self.gp.predict(chemenv, i + 1)
                 self.structure.forces[n][i] = float(force)
@@ -179,6 +204,7 @@ class OTF(object):
         self.structure.dft_forces = False
 
     def run_and_train(self, target_atom: int = None):
+        """Call DFT and update forces and hyperparameters."""
         self.write_to_output('=' * 20 + '\n')
 
         if target_atom is None and self.parsimony is False:
@@ -198,8 +224,8 @@ class OTF(object):
         if self.parsimony is False:
             train_atoms = list(range(self.structure.nat))
 
-        forces = run_espresso(self.qe_input, self.structure,
-                              self.pw_loc)
+        forces = qe_util.run_espresso(self.qe_input, self.structure,
+                                      self.pw_loc)
         self.structure.forces = forces
         self.structure.stds = [np.zeros(3) for n in range(self.structure.nat)]
         self.structure.dft_forces = True
@@ -216,157 +242,6 @@ class OTF(object):
         else:
             self.gp.set_L_alpha()
         self.write_hyps()
-
-    def update_positions(self):
-        # if quench step reached, create fictitious previous positions to
-        # give the target temperature
-        if self.quench_step is not None:
-            if self.curr_step == self.quench_step:
-                temp_fac = self.quench_temperature / self.temperature
-                vel_fac = np.sqrt(temp_fac)
-                self.structure.prev_positions = \
-                    self.structure.positions - \
-                    self.velocities * self.dt * vel_fac
-
-        dtdt = self.dt ** 2
-
-        for i, pre_pos in enumerate(self.structure.prev_positions):
-            temp_pos = np.copy(self.structure.positions[i])
-            mass = self.structure.mass_dict[self.structure.species[i]]
-            pos = self.structure.positions[i]
-            forces = self.structure.forces[i]
-
-            self.structure.positions[i] = \
-                2 * pos - pre_pos + dtdt * forces / mass
-
-            self.structure.prev_positions[i] = np.copy(temp_pos)
-
-        self.structure.wrap_positions()
-        self.velocities = (self.structure.positions -
-                           self.structure.prev_positions) / self.dt
-        self.calculate_temperature()
-        self.curr_step += 1
-
-    def calculate_temperature(self):
-        KE = 0
-        for i in range(len(self.structure.positions)):
-            for j in range(3):
-                KE += 0.5 * \
-                    self.structure.mass_dict[self.structure.species[i]] * \
-                    self.velocities[i][j] * self.velocities[i][j]
-
-        # see conversions.nb for derivation
-        kb = 0.0000861733034
-
-        # see e.g. p. 61 of "computer simulation of liquids"
-        # account for 3 constraints (vanishing momentum)
-        temperature = 2 * KE / (3 * (self.noa-1) * kb)
-
-        self.KE = KE
-        self.temperature = temperature
-
-    @staticmethod
-    def write_to_output(string: str, output_file: str = 'otf_run.out'):
-        with open(output_file, 'a') as f:
-            f.write(string)
-
-    def write_header(self):
-        with open('otf_run.out', 'w') as f:
-            f.write(str(datetime.datetime.now()) + '\n')
-
-        headerstring = ''
-        headerstring += 'Cutoffs: {}\n'.format(
-            self.gp.cutoffs)
-        headerstring += 'Kernel: {}\n'.format(
-            self.gp.kernel_name)
-        headerstring += '# Hyperparameters: {}\n'.format(
-            len(self.gp.hyps))
-        headerstring += 'Hyperparameter Optimization Algorithm: {}' \
-                        '\n'.format(self.gp.algo)
-        headerstring += 'Timestep (ps): {}\n'.format(self.dt)
-        headerstring += 'Number of Frames: {}\n'.format(self.Nsteps)
-        headerstring += 'Number of Atoms: {}\n'.format(self.structure.nat)
-        headerstring += 'System Species: {}\n'.format(set(
-            self.structure.species))
-        headerstring += 'Periodic cell: \n'
-        headerstring += str(self.structure.cell)
-        headerstring += '\n'
-
-        self.write_to_output(headerstring)
-
-    def write_md_config(self):
-        string = "-------------------- \n"
-
-        # Mark if a frame had DFT forces with an asterisk
-        string += "-" + ('*' if self.structure.dft_forces else ' ') + \
-                  "Frame: " + str(self.curr_step)
-
-        string += ' Simulation Time: %.3f ps \n' % (self.dt * self.curr_step)
-
-        # Construct Header line
-        string += 'El \t\t\t  Position (A) \t\t\t\t\t '
-        if not self.structure.dft_forces:
-            string += 'GP Force (ev/A) '
-        else:
-            string += 'DFT Force (ev/A) '
-        string += '\t\t\t\t\t\t Std. Dev (ev/A)'
-        string += '\t\t\t\t\t\t Velocity (A/ps) \n'
-
-        # Construct atom-by-atom description
-        for i in range(len(self.structure.positions)):
-            string += self.structure.species[i] + ' '
-            for j in range(3):
-                string += str("%.8f" % self.structure.positions[i][j]) + ' '
-            string += '\t'
-            for j in range(3):
-                string += str("%.8f" % self.structure.forces[i][j]) + ' '
-            string += '\t'
-            for j in range(3):
-                string += str("%.6e" % self.structure.stds[i][j]) + ' '
-            string += '\t'
-            for j in range(3):
-                string += str("%.6e" % self.velocities[i][j]) + ' '
-            string += '\n'
-
-        string += 'temperature: %.2f K \n' % self.temperature
-        string += 'kinetic energy: %.6f eV \n' % self.KE
-
-        # calculate potential and total energy
-        if self.calculate_energy:
-            pot_en = np.sum(self.local_energies)
-            tot_en = self.KE + pot_en
-            string += \
-                'potential energy (up to a constant): %.6f eV \n' % pot_en
-            string += 'total energy: %.6f eV \n' % tot_en
-
-        string += 'wall time from start: %.2f s \n' % \
-            (time.time() - self.start_time)
-
-        self.write_to_output(string)
-
-    def write_time_info(self, pred_time, std_time, write_time, update_time):
-        string = 'prediction time: %.3e s \n' % pred_time
-        string += 'std time: %.3e s \n' % std_time
-        string += 'write time: %.3e s \n' % write_time
-        string += 'update time: %.3e s \n' % update_time
-
-        self.write_to_output(string)
-
-    def write_hyps(self):
-        self.write_to_output('New GP Hyperparameters: \n')
-
-        for i, label in enumerate(self.gp.hyp_labels):
-            self.write_to_output('Hyp{} : {} = {}\n'
-                                 .format(i, label, self.gp.hyps[i]))
-        time_curr = time.time() - self.start_time
-        self.write_to_output('wall time from start: %.2f s \n' % time_curr)
-        self.write_to_output('number of DFT calls: %i \n' % self.dft_count)
-
-    def conclude_run(self):
-        footer = '▬' * 20 + '\n'
-        footer += 'Run complete. \n'
-
-        self.write_to_output(footer)
 
     def is_std_in_bound(self) -> (bool, int):
         stds = self.structure.stds
@@ -389,43 +264,39 @@ class OTF(object):
         else:
             return True, -1
 
-    def run_and_profile(self):
-        self.start_time = time.time()
+    def update_positions(self, new_pos):
+        self.structure.prev_positions = self.structure.positions
+        self.structure.positions = new_pos
+        self.structure.wrap_positions()
 
-        while self.curr_step < self.Nsteps:
-            # run DFT and train initial model if first step and DFT is on
-            if self.curr_step == 0 and self.std_tolerance != 0:
-                self.run_and_train()
-                self.write_md_config()
-                self.update_positions()
+    def update_temperature(self, new_pos):
+        KE, temperature = \
+                md.calculate_temperature(new_pos, self.structure, self.dt,
+                                         self.noa)
+        self.KE = KE
+        self.temperature = temperature
 
-            # otherwise, try predicting with GP model
-            else:
-                time0 = time.time()
-                if self.par is False:
-                    self.predict_on_structure()
-                else:
-                    self.predict_on_structure_par()
-                time1 = time.time()
-                pred_time = time1 - time0
+    def record_state(self):
+        output.write_md_config(self.dt, self.curr_step, self.structure,
+                               self.temperature, self.KE,
+                               self.local_energies, self.start_time,
+                               self.output_name)
 
-                std_in_bound, target_atom = self.is_std_in_bound()
-                if not std_in_bound:
-                    self.write_md_config()
-                    self.run_and_train(target_atom)
+# -----------------------------------------------------------------------------
+#                 output methods (should be moved to output.py)
+# -----------------------------------------------------------------------------
 
-                time2 = time.time()
-                std_time = time2 - time1
+    @staticmethod
+    def write_to_output(string: str, output_file: str = 'otf_run.out'):
+        with open(output_file, 'a') as f:
+            f.write(string)
 
-                self.write_md_config()
-                time3 = time.time()
-                write_time = time3 - time2
+    def write_hyps(self):
+        self.write_to_output('New GP Hyperparameters: \n')
 
-                self.update_positions()
-                time4 = time.time()
-                update_time = time4 - time3
-
-                self.write_time_info(pred_time, std_time, write_time,
-                                     update_time)
-
-        self.conclude_run()
+        for i, label in enumerate(self.gp.hyp_labels):
+            self.write_to_output('Hyp{} : {} = {}\n'
+                                 .format(i, label, self.gp.hyps[i]))
+        time_curr = time.time() - self.start_time
+        self.write_to_output('wall time from start: %.2f s \n' % time_curr)
+        self.write_to_output('number of DFT calls: %i \n' % self.dft_count)

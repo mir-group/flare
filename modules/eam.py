@@ -106,9 +106,13 @@ Atoms
 0.0 %f  xlo xhi
 0.0 %f  ylo yhi
 0.0 %f  zlo zhi
+%f %f %f  xy xz yz
 """ % (self.struc.cell[0, 0],
             self.struc.cell[1, 1],
-            self.struc.cell[2, 2])
+            self.struc.cell[2, 2],
+            self.struc.cell[1, 0],
+            self.struc.cell[2, 0],
+            self.struc.cell[2, 1])
 
         return cell_text
 

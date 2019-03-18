@@ -19,13 +19,13 @@
 %  4)  latex apssamp.tex
 %
 \documentclass[%
-reprint,
+%reprint,
 superscriptaddress,
 %groupedaddress,
 %unsortedaddress,
 %runinaddress,
 %frontmatterverbose, 
-% preprint,
+preprint,
 %showpacs,preprintnumbers,
 %nofootinbib,
 %nobibnotes,
@@ -65,33 +65,23 @@ prl,
 
 \begin{document}
 
-\title{Active Learning of Atomistic Force Fields}
+\title{Learning Atomistic Force Fields with Bayesian Inference}
 
-\author{Jonathan Vandermause}
-\affiliation{Department of Physics, Harvard University, Cambridge, MA 02138, USA}
-\affiliation{John A. Paulson School of Engineering and Applied
-Sciences, Harvard University, Cambridge, MA 02138, USA}
+% \author{Jonathan Vandermause}
+% \affiliation{Department of Physics, Harvard University, Cambridge, MA 02138, USA}
+% \affiliation{John A. Paulson School of Engineering and Applied
+% Sciences, Harvard University, Cambridge, MA 02138, USA}
 
-\author{Steven B. Torrisi}
-\affiliation{Department of Physics, Harvard University, Cambridge, MA 02138, USA}
+% \author{Steven B. Torrisi}
+% \affiliation{Department of Physics, Harvard University, Cambridge, MA 02138, USA}
 
-\author{Simon Batzner}
-\affiliation{Center for Computational Engineering, Massachusetts Institute of Technology, Cambridge, MA 02139, USA}
+% \author{Simon Batzner}
+% \affiliation{Center for Computational Engineering, Massachusetts Institute of Technology, Cambridge, MA 02139, USA}
 
-\author{Boris Kozinsky}
-\affiliation{John A. Paulson School of Engineering and Applied
-Sciences, Harvard University, Cambridge, MA 02138, USA}
+% \author{Boris Kozinsky}
+% \affiliation{John A. Paulson School of Engineering and Applied
+% Sciences, Harvard University, Cambridge, MA 02138, USA}
 
-
-% \author{Jonathan Vandermause,$^{1,2}$ Steven B. Torrisi,$^{2}$
-%     Simon Batzner,$^{3}$ Alexie Kolpak,$^{4}$ and Boris Kozinsky$^{1}$}
-% \affiliation{$^{1}$John A. Paulson School of Engineering and Applied
-% Sciences, Harvard University, Cambridge, Massachusetts 02138, USA \\
-% $^{2}$Department of Physics, Harvard University, Cambridge, Massachusetts
-% 02138, USA \\
-% $^{3}$Center for Computational Engineering, Massachusetts Institute of
-% Technology, Cambridge, Massachusetts 02139, USA \\
-% $^{4}$ Department of Mechanical Engineering, Massachusetts Institute of Technology, Cambridge, Massachusetts 02139, USA}
 
 \date{\today}
 
@@ -105,17 +95,73 @@ model of the interatomic force field that approaches the accuracy of \textit{ab 
 
 \maketitle
 
+\section{Organization}
+
+\begin{itemize}
+
+\item Figure 1: Correlation between prediction error and out-of-sample variance. Train on a low temperature crystal and test at higher temperatures to systematically steer the model away from the training set. Establishing a correlation motivates the use of predictive variance for on-the-fly learning.
+
+\item Algorithm 1: On-the-fly algorithm, including GP, MD, and DFT updates.
+
+\item Figure 2: Number of DFT calls vs simulation time. A sharp increase should be observed when new phases are introduced.
+
+\item Table 1: Performance of FLARE compared with state-of-the art EAM and ML models. Models tested on independend \textit{ab initio} MD runs. MAEs and mean absolute force components reported in eV/A.
+
+\item Figure 3: Validation of the force field. Parity plots, radial distribution function, and activation profiles should agree with \textit{ab initio} calculations.
+
+\item Supplementary Figure 1: Numerical demonstration of energy conservation. Plot the RMS energy fluctuations against the time step squared and check that the resulting graph is linear \cite{allen2017computer}.
+
+\item Supplementary Figure 2: Justification of cutoff selection. Plot likelihood, noise parameter, and out-of-sample error vs. cutoffs.
+
+\item Supplementary Table 1: Table of formulas for calculating kernels.
+
+\item Supplementary Table 2: Justification of quadratic cutoff. Record log likelihood for different cutoffs (cosine, hard, quadratic).
+
+\end{itemize}
+
+\section{Covariant kernels for direct force prediction}
+The total energy $E$ of a system of atoms in a periodic cell is modelled as a sum over two- and three-body contributions,
+\begin{equation}
+E = \sum_{ij} \varepsilon_{ij} + \sum_{ijk} \varepsilon_{ijk},
+\end{equation}
+where the sums range over all unique pairs and triplets of atoms containing at least one atom from the unfolded primary cell. In practice, the sums are truncated by considering local atom-centered environments surrounding each atom in the primary cell and neglecting contributions from atoms beyond a chosen cutoff distance from the central atom. The energy may then be expressed as
+\begin{equation}
+  E = \sum_{i} \left( \frac{1}{2} \sum_{j \in \rho_i} \varepsilon_{ij} + \frac{1}{3} \sum_{j, k \in \rho_i} \varepsilon_{ijk} \right),
+\end{equation}
+where $\rho_i$ denotes the local environment of atom $i$ containing all atoms within the cutoff sphere and the fractional factors take care of multiple counting due to the repeated appearance of bonds and triplets in neighboring environments. This may be written more compactly as
+\begin{equation}
+E = \sum_i \varepsilon_i,
+\end{equation}
+where $\varepsilon_i \equiv \frac{1}{2} \sum_{j \in \rho_i} \varepsilon_{ij} + \frac{1}{3} \sum_{j, k \in \rho_i} \varepsilon_{ijk}$ may be viewed as the local energy of atom $i$.
+
+In Gaussian process models, the covariance between targets is set equal to a kernel or similarity measure between inputs. The covariance between total energy observations $E_l, E_m$ of two distinct structures $\sigma_l, \sigma_m$ may be written as
+\begin{equation}
+\left\langle E_l E_m \right\rangle = \sum_{i \in \sigma_l} \sum_{j \in \sigma_m} \langle \varepsilon_i \varepsilon_j \rangle,
+\end{equation}
+where the covariance between local energies is
+\begin{equation}
+\langle \varepsilon_i \varepsilon_j \rangle = \frac{1}{4} \sum_{n \in \rho_i} \sum_{p \in \rho_j} \langle \varepsilon_{i n} \varepsilon_{j p} \rangle + \frac{1}{9} \sum_{n, q \in \rho_i} \sum_{p, r \in \rho_j} \langle \varepsilon_{inq} \varepsilon_{jpr} \rangle.
+\end{equation}
+Letting $F_{i\xi} = - \frac{d E}{d \xi_i}$ denote the force on atom $i$ along Cartesian component $\xi$, the covariance between force observations may be written as
+\begin{equation}
+  \langle F_{i\xi} F_{j \chi} \rangle =  \sum_{n \in \rho_i} \sum_{p \in \rho_j} \frac{\partial^2}{\partial \xi_i \partial \chi_j} \langle \varepsilon_{i n} \varepsilon_{j p} \rangle +  \sum_{n, q \in \rho_i} \sum_{p, r \in \rho_j} \frac{\partial^2}{\partial \xi_i \partial \chi_j} \langle \varepsilon_{inq} \varepsilon_{jpr} \rangle,
+\end{equation}
+where here the fractional factors do not appear as the sums are restricted to the local environments of atoms $i$ and $j$. This is convenient in practice, as it allows local information about individual atoms to be used at test time without having to store the atomic environments of all the other atoms in the structure.
+
+In order to infer energies from force observations, it is necessary to consider the covariance between energies and forces.
+
+\newpage
 
 \begin{figure}
 	\centering
 	\includegraphics[width=3.4in]{melt_msd.pdf}
-	\caption{Mean square displacement of aluminum quench.}
+	\caption{Mean square displacement of aluminum melt.}
 \end{figure}
 
 \begin{figure}
 	\centering
 	\includegraphics[width=3.4in]{rdf.pdf}
-	\caption{RDF of Al quench.}
+	\caption{RDF of Al melt.}
 \end{figure}
 
 % https://en.wikibooks.org/wiki/LaTeX/Tables
@@ -130,6 +176,8 @@ model of the interatomic force field that approaches the accuracy of \textit{ab 
 	OTF & \bf{test} & & & \\
 	\hline
 	EAM & & & & \\
+  \hline
+	AGNI & & & & \\
 	\hline
 \end{tabular}
 \caption{On-the-fly force field error compared to a recent EAM potential.}

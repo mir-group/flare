@@ -60,7 +60,7 @@ def test_otf_1_2():
     number_of_steps = 20
     cutoffs = np.array([5])
     pw_loc = os.environ.get('PWSCF_COMMAND')
-    std_tolerance_factor = -0.1
+    std_tolerance_factor = -0.05
 
     # make gp model
     kernel = en.two_body
