@@ -21,7 +21,7 @@ class OTF(object):
                  prev_pos_init: np.ndarray=None, par: bool=False,
                  skip: int=0, init_atoms: List[int]=None,
                  calculate_energy=False, output_name='otf_run.out',
-                 max_atoms_added=None):
+                 max_atoms_added=None, freeze_hyps=False):
 
         self.qe_input = qe_input
         self.dt = dt
@@ -31,6 +31,7 @@ class OTF(object):
         self.std_tolerance = std_tolerance_factor
         self.skip = skip
         self.dft_step = True
+        self.freeze_hyps = freeze_hyps
 
         # parse input file
         positions, species, cell, masses = \
@@ -95,7 +96,9 @@ class OTF(object):
 
                 # make initial gp model
                 self.update_gp(self.init_atoms, dft_frcs)
-                self.train_gp()
+
+                if not self.freeze_hyps:
+                    self.train_gp()
 
                 # check if remaining atoms are above uncertainty threshold
                 self.pred_func()
@@ -126,21 +129,17 @@ class OTF(object):
                     self.update_temperature(new_pos)
                     self.record_state()
 
-            # if not std_in_bound:
-            #     self.update_gp([target_atom], dft_frcs)
-            #     self.train_gp()
-
             # add atoms to training set until max error is below threshold
             atom_count = 0
             while not std_in_bound and atom_count < self.max_atoms_added:
                 self.update_gp([target_atom], dft_frcs)
+                atom_list.append(target_atom)
                 self.pred_func()
                 std_in_bound, target_atom = self.is_std_in_bound(atom_list)
-                atom_list.append(target_atom)
                 atom_count += 1
 
             # if atoms were added, retrain the gp
-            if atom_count != 0:
+            if atom_count != 0 and not self.freeze_hyps:
                 self.train_gp()
 
             # write gp forces only when counter equals skip
@@ -242,8 +241,9 @@ class OTF(object):
                                self.output_name)
         output.write_to_output('Training atoms: {}.\n'.format(train_atoms),
                                self.output_name)
-        output.write_to_output('Uncertainty: {}.\n'.
-                               format(self.structure.stds[train_atoms[0]]))
+        output.write_to_output('Uncertainty: {}.\n'
+                               .format(self.structure.stds[train_atoms[0]]),
+                               self.output_name)
 
         # update gp model
         self.gp.update_db(self.structure, dft_frcs,
