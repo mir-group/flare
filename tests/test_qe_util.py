@@ -22,22 +22,6 @@ def cleanup_espresso_run(target: str = None):
 #                   test  otf helper functions
 # ------------------------------------------------------
 
-
-@pytest.mark.parametrize("qe_input,exp_pos",
-                         [
-                             ('./test_files/qe_input_1.in',
-                              [np.array([2.51857, 2.5, 2.5]),
-                               np.array([4.48143, 2.5, 2.5])])
-                         ]
-                         )
-def test_position_parsing(qe_input, exp_pos):
-    positions, species, cell, masses = parse_qe_input(qe_input)
-    assert len(positions) == len(exp_pos)
-
-    for i, pos in enumerate(positions):
-        assert np.all(pos == exp_pos[i])
-
-
 @pytest.mark.parametrize("qe_input,exp_spec",
                          [
                              ('./test_files/qe_input_1.in',
@@ -84,21 +68,6 @@ def test_cell_parsing(qe_input, exp_cell):
                          )
 def test_input_to_structure(qe_input):
     assert isinstance(qe_input_to_structure(qe_input), Structure)
-
-
-@pytest.mark.parametrize('qe_output,exp_forces',
-                         [
-                             ('./test_files/qe_output_1.out',
-                              [np.array([1.90627356, 0., 0.]),
-                               np.array([-1.90627356, 0., 0.])])
-                         ]
-                         )
-def test_force_parsing(qe_output, exp_forces):
-    forces = parse_qe_forces(qe_output)
-    assert len(forces) == len(exp_forces)
-
-    for i, force in enumerate(forces):
-        assert np.isclose(force, exp_forces[i]).all()
 
 
 @pytest.mark.parametrize('qe_input,qe_output',

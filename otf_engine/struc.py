@@ -52,7 +52,6 @@ class Structure(object):
         self.forces = np.zeros((len(positions), 3))
         self.stds = np.zeros((len(positions), 3))
         self.mass_dict = mass_dict
-        self.dft_forces = False
 
     @staticmethod
     def get_unique_species(species):

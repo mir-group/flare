@@ -29,6 +29,6 @@ CELL_PARAMETERS {angstrom}
 0.0 5.0 0.0
 0.0 0.0 5.0
 ATOMIC_POSITIONS {angstrom}
-H 2.51857 2.5 2.5
-H 4.48143 2.5 2.5
+H 2.3 2.5 2.5
+H 2.8 2.5 2.5
 K_POINTS {gamma}

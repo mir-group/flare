@@ -42,11 +42,11 @@ def write_header(cutoffs, kernel_name, hyps, algo, dt, Nsteps, structure,
 
 
 def write_md_config(dt, curr_step, structure, temperature, KE, local_energies,
-                    start_time, output_name):
+                    start_time, output_name, dft_step):
     string = "-------------------- \n"
 
     # Mark if a frame had DFT forces with an asterisk
-    if not structure.dft_forces:
+    if not dft_step:
         string += "-Frame: " + str(curr_step)
     else:
         string += "*-Frame: " + str(curr_step)
@@ -55,7 +55,7 @@ def write_md_config(dt, curr_step, structure, temperature, KE, local_energies,
 
     # Construct Header line
     string += 'El \t\t\t  Position (A) \t\t\t\t\t '
-    if not structure.dft_forces:
+    if not dft_step:
         string += 'GP Force (ev/A) '
     else:
         string += 'DFT Force (ev/A) '
@@ -91,7 +91,7 @@ def write_md_config(dt, curr_step, structure, temperature, KE, local_energies,
     write_to_output(string, output_name)
 
 
-def write_hyps(hyp_labels, hyps, start_time, dft_count, output_name):
+def write_hyps(hyp_labels, hyps, start_time, output_name):
     write_to_output('New GP Hyperparameters: \n', output_name)
 
     for i, label in enumerate(hyp_labels):
@@ -99,8 +99,6 @@ def write_hyps(hyp_labels, hyps, start_time, dft_count, output_name):
                         output_name)
     time_curr = time.time() - start_time
     write_to_output('wall time from start: %.2f s \n' % time_curr,
-                    output_name)
-    write_to_output('number of DFT calls: %i \n' % dft_count,
                     output_name)
 
 

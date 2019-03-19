@@ -1,5 +1,5 @@
 
-     Program PWSCF v.6.0 (svn rev. 13079) starts on 19Mar2019 at  9:13: 7 
+     Program PWSCF v.6.0 (svn rev. 13079) starts on 19Mar2019 at  9:12: 3 
 
      This program is part of the open-source Quantum ESPRESSO suite
      for quantum simulation of materials; please cite
@@ -247,7 +247,7 @@ Warning: card / ignored
      rdiaghg      :      0.00s CPU      0.00s WALL (      17 calls)
 
      Called by h_psi:
-     h_psi:pot    :      0.00s CPU      0.00s WALL (      18 calls)
+     h_psi:pot    :      0.00s CPU      0.01s WALL (      18 calls)
      h_psi:calbec :      0.00s CPU      0.00s WALL (      18 calls)
      vloc_psi     :      0.00s CPU      0.00s WALL (      18 calls)
      add_vuspsi   :      0.00s CPU      0.00s WALL (      18 calls)
@@ -261,10 +261,10 @@ Warning: card / ignored
      Parallel routines
      fft_scatter  :      0.01s CPU      0.01s WALL (     134 calls)
 
-     PWSCF        :     0.16s CPU         0.18s WALL
+     PWSCF        :     0.15s CPU         0.17s WALL
 
 
-   This run was terminated on:   9:13: 7  19Mar2019            
+   This run was terminated on:   9:12: 3  19Mar2019            
 
 =------------------------------------------------------------------------------=
    JOB DONE.
