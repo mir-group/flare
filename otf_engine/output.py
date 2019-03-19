@@ -28,7 +28,6 @@ def write_header(cutoffs, kernel_name, hyps, algo, dt, Nsteps, structure,
     headerstring += 'System Species: {}\n'.format(set(structure.species))
     headerstring += 'Periodic cell: \n'
     headerstring += str(structure.cell)
-    headerstring += '\n'
 
     # report previous positions
     headerstring += 'Previous Positions (A): \n'
@@ -37,19 +36,21 @@ def write_header(cutoffs, kernel_name, hyps, algo, dt, Nsteps, structure,
         for j in range(3):
             headerstring += str("%.8f" % structure.prev_positions[i][j]) + ' '
         headerstring += '\n'
+    headerstring += '-' * 80 + '\n'
 
     write_to_output(headerstring, output_name)
 
 
 def write_md_config(dt, curr_step, structure, temperature, KE, local_energies,
                     start_time, output_name, dft_step):
-    string = "-------------------- \n"
+    string = ''
 
     # Mark if a frame had DFT forces with an asterisk
     if not dft_step:
+        string += '-' * 80 + '\n'
         string += "-Frame: " + str(curr_step)
     else:
-        string += "*-Frame: " + str(curr_step)
+        string += "\n*-Frame: " + str(curr_step)
 
     string += ' Simulation Time: %.3f ps \n' % (dt * curr_step)
 
@@ -74,6 +75,7 @@ def write_md_config(dt, curr_step, structure, temperature, KE, local_energies,
             string += str("%.8e" % structure.stds[i][j]) + ' '
         string += '\n'
 
+    string += '\n'
     string += 'temperature: %.2f K \n' % temperature
     string += 'kinetic energy: %.6f eV \n' % KE
 

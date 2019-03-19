@@ -85,6 +85,6 @@ def test_otf_al():
     otf = OTF(qe_input, dt, number_of_steps, gp, pw_loc,
               std_tolerance_factor, init_atoms=[0],
               calculate_energy=True, output_name='al_otf.out',
-              freeze_hyps=True)
+              freeze_hyps=True, skip=5)
 
     otf.run()

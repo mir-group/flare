@@ -217,8 +217,7 @@ class OTF(object):
             self.local_energies[n] = self.gp.predict_local_energy(chemenv)
 
     def run_dft(self):
-        output.write_to_output('=' * 20 + '\n', self.output_name)
-        output.write_to_output('Calling Quantum Espresso...\n',
+        output.write_to_output('\nCalling Quantum Espresso...\n',
                                self.output_name)
 
         # calculate DFT forces
@@ -236,10 +235,8 @@ class OTF(object):
                                self.output_name)
 
     def update_gp(self, train_atoms, dft_frcs):
-        output.write_to_output('=' * 20 + '\n', self.output_name)
-        output.write_to_output('Updating GP model...\n',
-                               self.output_name)
-        output.write_to_output('Training atoms: {}.\n'.format(train_atoms),
+        output.write_to_output('\nAdding atom %i to the training set.\n'
+                               % train_atoms[0],
                                self.output_name)
         output.write_to_output('Uncertainty: {}.\n'
                                .format(self.structure.stds[train_atoms[0]]),
