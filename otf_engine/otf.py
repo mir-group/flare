@@ -80,7 +80,8 @@ class OTF(object):
     def run(self):
         output.write_header(self.gp.cutoffs, self.gp.kernel_name, self.gp.hyps,
                             self.gp.algo, self.dt, self.number_of_steps,
-                            self.structure, self.output_name)
+                            self.structure, self.output_name,
+                            self.std_tolerance)
         counter = 0
         self.start_time = time.time()
 

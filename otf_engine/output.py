@@ -1,6 +1,7 @@
 import time
 import datetime
 import numpy as np
+import multiprocessing
 
 
 def write_to_output(string: str, output_file: str = 'otf_run.out'):
@@ -9,28 +10,41 @@ def write_to_output(string: str, output_file: str = 'otf_run.out'):
 
 
 def write_header(cutoffs, kernel_name, hyps, algo, dt, Nsteps, structure,
-                 output_name):
+                 output_name, std_tolerance):
 
     with open(output_name, 'w') as f:
         f.write(str(datetime.datetime.now()) + '\n')
 
+    if std_tolerance < 0:
+        std_string = \
+            'uncertainty tolerance: {} eV/A\n'.format(np.abs(std_tolerance))
+    elif std_tolerance > 0:
+        std_string = \
+            'uncertainty tolerance: {} times noise \n'\
+            .format(np.abs(std_tolerance))
+    else:
+        std_string = ''
+
     headerstring = ''
-    headerstring += 'Cutoffs: {}\n'.format(cutoffs)
-    headerstring += 'Kernel: {}\n'.format(kernel_name)
-    headerstring += '# Hyperparameters: {}\n'.format(len(hyps))
-    headerstring += 'Hyperparameters: {}' \
+    headerstring += \
+        'number of cpu cores: {}\n'.format(multiprocessing.cpu_count())
+    headerstring += 'cutoffs: {}\n'.format(cutoffs)
+    headerstring += 'kernel: {}\n'.format(kernel_name)
+    headerstring += 'number of hyperparameters: {}\n'.format(len(hyps))
+    headerstring += 'hyperparameters: {}' \
                     '\n'.format(hyps)
-    headerstring += 'Hyperparameter Optimization Algorithm: {}' \
+    headerstring += 'hyperparameter optimization algorithm: {}' \
                     '\n'.format(algo)
-    headerstring += 'Timestep (ps): {}\n'.format(dt)
-    headerstring += 'Number of Frames: {}\n'.format(Nsteps)
-    headerstring += 'Number of Atoms: {}\n'.format(structure.nat)
-    headerstring += 'System Species: {}\n'.format(set(structure.species))
-    headerstring += 'Periodic cell: \n'
+    headerstring += std_string
+    headerstring += 'timestep (ps): {}\n'.format(dt)
+    headerstring += 'number of frames: {}\n'.format(Nsteps)
+    headerstring += 'number of atoms: {}\n'.format(structure.nat)
+    headerstring += 'system species: {}\n'.format(set(structure.species))
+    headerstring += 'periodic cell: \n'
     headerstring += str(structure.cell)
 
     # report previous positions
-    headerstring += 'Previous Positions (A): \n'
+    headerstring += '\nprevious positions (A):\n'
     for i in range(len(structure.positions)):
         headerstring += structure.species[i] + ' '
         for j in range(3):
@@ -52,7 +66,7 @@ def write_md_config(dt, curr_step, structure, temperature, KE, local_energies,
     else:
         string += "\n*-Frame: " + str(curr_step)
 
-    string += ' Simulation Time: %.3f ps \n' % (dt * curr_step)
+    string += '\nSimulation Time: %.3f ps \n' % (dt * curr_step)
 
     # Construct Header line
     string += 'El \t\t\t  Position (A) \t\t\t\t\t '
@@ -94,7 +108,7 @@ def write_md_config(dt, curr_step, structure, temperature, KE, local_energies,
 
 
 def write_hyps(hyp_labels, hyps, start_time, output_name):
-    write_to_output('New GP Hyperparameters: \n', output_name)
+    write_to_output('\nGP hyperparameters: \n', output_name)
 
     for i, label in enumerate(hyp_labels):
         write_to_output('Hyp{} : {} = {}\n'.format(i, label, hyps[i]),

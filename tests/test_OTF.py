@@ -65,6 +65,7 @@ def test_otf_al():
     cutoffs = np.array([3.9, 3.9])
     pw_loc = os.environ.get('PWSCF_COMMAND')
     std_tolerance_factor = -0.01
+    freeze_hyps = True
 
     # make gp model
     kernel = en.three_body
@@ -85,6 +86,6 @@ def test_otf_al():
     otf = OTF(qe_input, dt, number_of_steps, gp, pw_loc,
               std_tolerance_factor, init_atoms=[0],
               calculate_energy=True, output_name='al_otf.out',
-              freeze_hyps=True, skip=5)
+              freeze_hyps=freeze_hyps, skip=5)
 
     otf.run()

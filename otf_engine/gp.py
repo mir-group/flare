@@ -5,6 +5,7 @@ from scipy.optimize import minimize
 from typing import List, Callable
 from env import AtomicEnvironment
 from struc import Structure
+from gp_algebra import get_ky_mat, get_ky_and_hyp, get_like_from_ky_mat
 
 
 class GaussianProcess:
@@ -38,6 +39,8 @@ class GaussianProcess:
         self.training_labels = []
         self.training_labels_np = np.empty(0, )
         self.maxiter = maxiter
+        self.likelihood = None
+        self.likelihood_gradient = None
 
     # TODO unit test custom range
     def update_db(self, struc: Structure, forces: list,
@@ -139,6 +142,8 @@ class GaussianProcess:
 
         self.hyps = res.x
         self.set_L_alpha()
+        self.likelihood = -res.fun
+        self.likelihood_gradient = -res.jac
 
     def predict(self, x_t: AtomicEnvironment, d: int) -> [float, float]:
         # get kernel vector
@@ -236,44 +241,11 @@ class GaussianProcess:
         if monitor:
             print('hyps: ' + str(hyps))
 
-        # assume sigma_n is the final hyperparameter
         number_of_hyps = len(hyps)
-        sigma_n = hyps[number_of_hyps - 1]
-        kern_hyps = hyps[0:(number_of_hyps - 1)]
 
-        # initialize matrices
-        size = len(training_data) * 3
-        k_mat = np.zeros([size, size])
-        hyp_mat = np.zeros([size, size, number_of_hyps])
-
-        ds = [1, 2, 3]
-
-        # calculate elements
-        for m_index in range(size):
-            x_1 = training_data[int(math.floor(m_index / 3))]
-            d_1 = ds[m_index % 3]
-
-            for n_index in range(m_index, size):
-                x_2 = training_data[int(math.floor(n_index / 3))]
-                d_2 = ds[n_index % 3]
-
-                # calculate kernel and gradient
-                cov = kernel_grad(x_1, x_2, d_1, d_2, kern_hyps, cutoffs)
-
-                # store kernel value
-                k_mat[m_index, n_index] = cov[0]
-                k_mat[n_index, m_index] = cov[0]
-
-                # store gradients (excluding noise variance)
-                for p_index in range(number_of_hyps - 1):
-                    hyp_mat[m_index, n_index, p_index] = cov[1][p_index]
-                    hyp_mat[n_index, m_index, p_index] = cov[1][p_index]
-
-        # add gradient of noise variance
-        hyp_mat[:, :, number_of_hyps - 1] = np.eye(size) * 2 * sigma_n
-
-        # matrix manipulation
-        ky_mat = k_mat + sigma_n ** 2 * np.eye(size)
+        hyp_mat, ky_mat = \
+            get_ky_and_hyp(hyps, training_data, training_labels_np,
+                           kernel_grad, cutoffs)
 
         # catch linear algebra errors
         try:
@@ -290,7 +262,7 @@ class GaussianProcess:
         # calculate likelihood
         like = (-0.5 * np.matmul(training_labels_np, alpha) -
                 np.sum(np.log(np.diagonal(l_mat))) -
-                math.log(2 * np.pi) * k_mat.shape[1] / 2)
+                math.log(2 * np.pi) * ky_mat.shape[1] / 2)
 
         # calculate likelihood gradient
         like_grad = np.zeros(number_of_hyps)
@@ -312,127 +284,26 @@ class GaussianProcess:
         if monitor:
             print('hyps: ' + str(hyps))
 
-        # assume sigma_n is the final hyperparameter
-        number_of_hyps = len(hyps)
-        sigma_n = hyps[number_of_hyps - 1]
-        kern_hyps = hyps[0:(number_of_hyps - 1)]
+        ky_mat = get_ky_mat(hyps, training_data, training_labels_np,
+                            kernel, cutoffs)
 
-        # initialize matrices
-        size = len(training_data) * 3
-        k_mat = np.zeros([size, size])
-
-        ds = [1, 2, 3]
-
-        # calculate elements
-        for m_index in range(size):
-            x_1 = training_data[int(math.floor(m_index / 3))]
-            d_1 = ds[m_index % 3]
-
-            for n_index in range(m_index, size):
-                x_2 = training_data[int(math.floor(n_index / 3))]
-                d_2 = ds[n_index % 3]
-
-                # calculate kernel and gradient
-                kern_curr = kernel(x_1, x_2, d_1, d_2, kern_hyps,
-                                   cutoffs)
-
-                # store kernel value
-                k_mat[m_index, n_index] = kern_curr
-                k_mat[n_index, m_index] = kern_curr
-
-        # matrix manipulation
-        ky_mat = k_mat + sigma_n ** 2 * np.eye(size)
-
-        # catch linear algebra errors
-        try:
-            ky_mat_inv = np.linalg.inv(ky_mat)
-            l_mat = np.linalg.cholesky(ky_mat)
-        except:
-            return 1e8
-
-        alpha = np.matmul(ky_mat_inv, training_labels_np)
-
-        # calculate likelihood
-        like = (-0.5 * np.matmul(training_labels_np, alpha) -
-                np.sum(np.log(np.diagonal(l_mat))) -
-                math.log(2 * np.pi) * k_mat.shape[1] / 2)
+        like = get_like_from_ky_mat(ky_mat, training_labels_np)
 
         if monitor:
             print('like: ' + str(like))
             print('\n')
         return -like
 
-    @staticmethod
-    def get_ky_mat(hyps: np.ndarray, training_data: list,
-                   training_labels_np: np.ndarray,
-                   kernel, cutoffs=None):
-
-        # assume sigma_n is the final hyperparameter
-        number_of_hyps = len(hyps)
-        sigma_n = hyps[number_of_hyps - 1]
-        kern_hyps = hyps[0:(number_of_hyps - 1)]
-
-        # initialize matrices
-        size = len(training_data) * 3
-        k_mat = np.zeros([size, size])
-
-        ds = [1, 2, 3]
-
-        # calculate elements
-        for m_index in range(size):
-            x_1 = training_data[int(math.floor(m_index / 3))]
-            d_1 = ds[m_index % 3]
-
-            for n_index in range(m_index, size):
-                x_2 = training_data[int(math.floor(n_index / 3))]
-                d_2 = ds[n_index % 3]
-
-                # calculate kernel and gradient
-                kern_curr = kernel(x_1, x_2, d_1, d_2, kern_hyps,
-                                   cutoffs)
-
-                # store kernel value
-                k_mat[m_index, n_index] = kern_curr
-                k_mat[n_index, m_index] = kern_curr
-
-        # matrix manipulation
-        ky_mat = k_mat + sigma_n ** 2 * np.eye(size)
-
-        return ky_mat
-
     def set_L_alpha(self):
-        # assume sigma_n is the final hyperparameter
-        sigma_n = self.hyps[-1]
-        kern_hyps = self.hyps[0:-1]
 
-        # initialize matrices
-        size = len(self.training_data) * 3
-        k_mat = np.zeros([size, size])
+        ky_mat = get_ky_mat(self.hyps, self.training_data,
+                            self.training_labels_np, self.kernel,
+                            self.cutoffs)
 
-        ds = [1, 2, 3]
-
-        # calculate elements
-        for m_index in range(size):
-            x_1 = self.training_data[int(math.floor(m_index / 3))]
-            d_1 = ds[m_index % 3]
-
-            for n_index in range(m_index, size):
-                x_2 = self.training_data[int(math.floor(n_index / 3))]
-                d_2 = ds[n_index % 3]
-
-                # calculate kernel and gradient
-                cov = self.kernel(x_1, x_2, d_1, d_2, kern_hyps, self.cutoffs)
-
-                # store kernel value
-                k_mat[m_index, n_index] = cov
-                k_mat[n_index, m_index] = cov
-
-        # matrix manipulation
-        ky_mat = k_mat + sigma_n ** 2 * np.eye(size)
         l_mat = np.linalg.cholesky(ky_mat)
         ky_mat_inv = np.linalg.inv(ky_mat)
         alpha = np.matmul(ky_mat_inv, self.training_labels_np)
-        self.k_mat = k_mat
+        self.ky_mat = ky_mat
         self.l_mat = l_mat
         self.alpha = alpha
         self.ky_mat_inv = ky_mat_inv
