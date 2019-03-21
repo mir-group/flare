@@ -50,6 +50,7 @@ def test_otf_h2():
               output_name='h2_otf.out')
 
     otf.run()
+    cleanup_espresso_run()
 
 
 def test_otf_al():
@@ -89,3 +90,4 @@ def test_otf_al():
               freeze_hyps=freeze_hyps, skip=5)
 
     otf.run()
+    cleanup_espresso_run()

@@ -134,14 +134,12 @@ class OTF(object):
             atom_count = 0
             while not std_in_bound and atom_count < self.max_atoms_added:
                 self.update_gp([target_atom], dft_frcs)
+                if not self.freeze_hyps:
+                    self.train_gp()
                 atom_list.append(target_atom)
                 self.pred_func()
                 std_in_bound, target_atom = self.is_std_in_bound(atom_list)
                 atom_count += 1
-
-            # if atoms were added, retrain the gp
-            if atom_count != 0 and not self.freeze_hyps:
-                self.train_gp()
 
             # write gp forces only when counter equals skip
             if counter >= self.skip and not self.dft_step:

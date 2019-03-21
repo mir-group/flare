@@ -11,7 +11,7 @@ from qe_util import parse_qe_input, parse_qe_forces, run_espresso, \
 def cleanup_espresso_run(target: str = None):
     os.system('rm pwscf.out')
     os.system('rm pwscf.wfc')
-    os.system('rm pwscf.save')
+    os.system('rm -r pwscf.save')
     os.system('rm pwscf.in')
     os.system('rm pwscf.wfc1')
     if target:
