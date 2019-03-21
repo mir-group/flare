@@ -235,14 +235,20 @@ class GaussianProcess:
 
     def set_L_alpha(self):
 
-        ky_mat = get_ky_mat(self.hyps, self.training_data,
-                            self.training_labels_np, self.kernel,
-                            self.cutoffs)
+        hyp_mat, ky_mat = get_ky_and_hyp(self.hyps, self.training_data,
+                                         self.training_labels_np,
+                                         self.kernel_grad, self.cutoffs)
+
+        like, like_grad = \
+            get_like_grad_from_mats(ky_mat, hyp_mat, self.training_labels_np)
 
         l_mat = np.linalg.cholesky(ky_mat)
         ky_mat_inv = np.linalg.inv(ky_mat)
         alpha = np.matmul(ky_mat_inv, self.training_labels_np)
+
         self.ky_mat = ky_mat
         self.l_mat = l_mat
         self.alpha = alpha
         self.ky_mat_inv = ky_mat_inv
+        self.like = like
+        self.like_grad = like_grad
