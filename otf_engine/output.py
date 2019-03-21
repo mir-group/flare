@@ -107,12 +107,15 @@ def write_md_config(dt, curr_step, structure, temperature, KE, local_energies,
     write_to_output(string, output_name)
 
 
-def write_hyps(hyp_labels, hyps, start_time, output_name):
+def write_hyps(hyp_labels, hyps, start_time, output_name, like, like_grad):
     write_to_output('\nGP hyperparameters: \n', output_name)
 
     for i, label in enumerate(hyp_labels):
         write_to_output('Hyp{} : {} = {}\n'.format(i, label, hyps[i]),
                         output_name)
+
+    write_to_output('likelihood: '+str(like)+'\n', output_name)
+    write_to_output('likelihood gradient: '+str(like_grad)+'\n', output_name)
     time_curr = time.time() - start_time
     write_to_output('wall time from start: %.2f s \n' % time_curr,
                     output_name)
