@@ -5,7 +5,8 @@ from scipy.optimize import minimize
 from typing import List, Callable
 from env import AtomicEnvironment
 from struc import Structure
-from gp_algebra import get_ky_mat, get_ky_and_hyp, get_like_from_ky_mat
+from gp_algebra import get_ky_mat, get_ky_and_hyp, get_like_from_ky_mat,\
+    get_like_grad_from_mats, get_neg_likelihood, get_neg_like_grad
 
 
 class GaussianProcess:
@@ -103,7 +104,7 @@ class GaussianProcess:
 
             # Catch linear algebra errors and switch to BFGS if necessary
             try:
-                res = minimize(self.get_likelihood_and_gradients, x_0, args,
+                res = minimize(get_neg_like_grad, x_0, args,
                                method='L-BFGS-B', jac=True, bounds=bounds,
                                options={'disp': False, 'gtol': 1e-4,
                                         'maxiter': self.maxiter})
@@ -116,7 +117,7 @@ class GaussianProcess:
             args = (self.training_data, self.training_labels_np,
                     self.kernel_grad, self.cutoffs, monitor)
 
-            res = minimize(self.get_likelihood_and_gradients, x_0, args,
+            res = minimize(get_neg_like_grad, x_0, args,
                            method='L-BFGS-B', jac=True, bounds=custom_bounds,
                            options={'disp': False, 'gtol': 1e-4,
                                     'maxiter': self.maxiter})
@@ -125,7 +126,7 @@ class GaussianProcess:
             args = (self.training_data, self.training_labels_np,
                     self.kernel_grad, self.cutoffs, monitor)
 
-            res = minimize(self.get_likelihood_and_gradients, x_0, args,
+            res = minimize(get_neg_like_grad, x_0, args,
                            method='BFGS', jac=True,
                            options={'disp': False, 'gtol': 1e-4,
                                     'maxiter': self.maxiter})
@@ -134,7 +135,7 @@ class GaussianProcess:
             args = (self.training_data, self.training_labels_np,
                     self.kernel, self.cutoffs, monitor)
 
-            res = minimize(self.get_likelihood, x_0, args,
+            res = minimize(get_neg_likelihood, x_0, args,
                            method='nelder-mead',
                            options={'disp': False,
                                     'maxiter': self.maxiter,
@@ -231,68 +232,6 @@ class GaussianProcess:
                                                     self.hyps, self.cutoffs)
 
         return k_v
-
-    @staticmethod
-    def get_likelihood_and_gradients(hyps: np.ndarray, training_data: list,
-                                     training_labels_np: np.ndarray,
-                                     kernel_grad, cutoffs=None,
-                                     monitor: bool = False):
-
-        if monitor:
-            print('hyps: ' + str(hyps))
-
-        number_of_hyps = len(hyps)
-
-        hyp_mat, ky_mat = \
-            get_ky_and_hyp(hyps, training_data, training_labels_np,
-                           kernel_grad, cutoffs)
-
-        # catch linear algebra errors
-        try:
-            ky_mat_inv = np.linalg.inv(ky_mat)
-            l_mat = np.linalg.cholesky(ky_mat)
-        except:
-            return 1e8, np.zeros(number_of_hyps)
-
-        alpha = np.matmul(ky_mat_inv, training_labels_np)
-        alpha_mat = np.matmul(alpha.reshape(alpha.shape[0], 1),
-                              alpha.reshape(1, alpha.shape[0]))
-        like_mat = alpha_mat - ky_mat_inv
-
-        # calculate likelihood
-        like = (-0.5 * np.matmul(training_labels_np, alpha) -
-                np.sum(np.log(np.diagonal(l_mat))) -
-                math.log(2 * np.pi) * ky_mat.shape[1] / 2)
-
-        # calculate likelihood gradient
-        like_grad = np.zeros(number_of_hyps)
-        for n in range(number_of_hyps):
-            like_grad[n] = 0.5 * \
-                           np.trace(np.matmul(like_mat, hyp_mat[:, :, n]))
-
-        if monitor:
-            print('like grad: ' + str(like_grad))
-            print('like: ' + str(like))
-            print('\n')
-        return -like, -like_grad
-
-    @staticmethod
-    def get_likelihood(hyps: np.ndarray, training_data: list,
-                       training_labels_np: np.ndarray,
-                       kernel, cutoffs=None, monitor: bool = False):
-
-        if monitor:
-            print('hyps: ' + str(hyps))
-
-        ky_mat = get_ky_mat(hyps, training_data, training_labels_np,
-                            kernel, cutoffs)
-
-        like = get_like_from_ky_mat(ky_mat, training_labels_np)
-
-        if monitor:
-            print('like: ' + str(like))
-            print('\n')
-        return -like
 
     def set_L_alpha(self):
 
