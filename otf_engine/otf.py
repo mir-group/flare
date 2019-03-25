@@ -21,7 +21,8 @@ class OTF(object):
                  prev_pos_init: np.ndarray=None, par: bool=False,
                  skip: int=0, init_atoms: List[int]=None,
                  calculate_energy=False, output_name='otf_run.out',
-                 max_atoms_added=None, freeze_hyps=False):
+                 max_atoms_added=None, freeze_hyps=False,
+                 rescale_steps=[], rescale_temps=[]):
 
         self.qe_input = qe_input
         self.dt = dt
@@ -74,6 +75,10 @@ class OTF(object):
             self.pred_func = self.predict_on_structure_en
         elif par and calculate_energy:
             self.pred_func = self.predict_on_structure_par_en
+
+        # set rescale attributes
+        self.rescale_steps = rescale_steps
+        self.rescale_temps = rescale_temps
 
         self.output_name = output_name
 
@@ -278,19 +283,28 @@ class OTF(object):
             return True, -1
 
     def update_positions(self, new_pos):
-        self.structure.prev_positions = self.structure.positions
+        if self.curr_step in self.rescale_steps:
+            rescale_ind = self.rescale_steps.index(self.curr_step)
+            temp_fac = self.rescale_temps[rescale_ind] / self.temperature
+            vel_fac = np.sqrt(temp_fac)
+            self.structure.prev_positions = \
+                new_pos - self.velocities * self.dt * vel_fac
+        else:
+            self.structure.prev_positions = self.structure.positions
         self.structure.positions = new_pos
         self.structure.wrap_positions()
 
     def update_temperature(self, new_pos):
-        KE, temperature = \
+        KE, temperature, velocities = \
                 md.calculate_temperature(new_pos, self.structure, self.dt,
                                          self.noa)
         self.KE = KE
         self.temperature = temperature
+        self.velocities = velocities
 
     def record_state(self):
         output.write_md_config(self.dt, self.curr_step, self.structure,
                                self.temperature, self.KE,
                                self.local_energies, self.start_time,
-                               self.output_name, self.dft_step)
+                               self.output_name, self.dft_step,
+                               self.velocities)

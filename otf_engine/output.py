@@ -56,7 +56,7 @@ def write_header(cutoffs, kernel_name, hyps, algo, dt, Nsteps, structure,
 
 
 def write_md_config(dt, curr_step, structure, temperature, KE, local_energies,
-                    start_time, output_name, dft_step):
+                    start_time, output_name, dft_step, velocities):
     string = ''
 
     # Mark if a frame had DFT forces with an asterisk
@@ -74,7 +74,8 @@ def write_md_config(dt, curr_step, structure, temperature, KE, local_energies,
         string += 'GP Force (ev/A) '
     else:
         string += 'DFT Force (ev/A) '
-    string += '\t\t\t\t\t\t Std. Dev (ev/A) \n'
+    string += '\t\t\t\t\t\t Std. Dev (ev/A) \t'
+    string += '\t\t\t\t\t\t Velocities (A/ps) \n'
 
     # Construct atom-by-atom description
     for i in range(len(structure.positions)):
@@ -87,6 +88,9 @@ def write_md_config(dt, curr_step, structure, temperature, KE, local_energies,
         string += '\t'
         for j in range(3):
             string += str("%.8e" % structure.stds[i][j]) + ' '
+        string += '\t'
+        for j in range(3):
+            string += str("%.8e" % velocities[i][j]) + ' '
         string += '\n'
 
     string += '\n'

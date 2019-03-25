@@ -33,4 +33,4 @@ def calculate_temperature(new_pos, structure, dt, noa):
     # see p. 61 of "computer simulation of liquids"
     temperature = 2 * KE / (3 * noa * kb)
 
-    return KE, temperature
+    return KE, temperature, velocities
