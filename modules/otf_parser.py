@@ -1,17 +1,18 @@
 import sys
 import numpy as np
-import crystals
 from typing import List, Tuple
-sys.path.append('../otf_engine')
+sys.path.append('../../otf/otf_engine')
 import gp, env, struc, kernels, otf
 
 
 class OtfAnalysis:
-    def __init__(self, filename):
+    def __init__(self, filename, calculate_energy=False):
         self.filename = filename
 
+        self.calculate_energy = calculate_energy
+
         position_list, force_list, uncertainty_list, velocity_list,\
-            dft_frames, temperatures, times, msds, dft_times = \
+            dft_frames, temperatures, times, msds, dft_times, energies = \
             self.parse_pos_otf(filename)
 
         self.position_list = position_list
@@ -24,8 +25,11 @@ class OtfAnalysis:
         self.msds = msds
         self.dft_times = dft_times
 
+        if self.calculate_energy:
+            self.energies = energies
+
         gp_position_list, gp_force_list, gp_uncertainty_list,\
-            gp_velocity_list, gp_atom_list, gp_hyp_list, gp_cutoff_radius,\
+            gp_velocity_list, gp_atom_list, gp_hyp_list, \
             gp_species_list = self.extract_gp_info(filename)
 
         self.gp_position_list = gp_position_list
@@ -34,22 +38,20 @@ class OtfAnalysis:
         self.gp_velocity_list = gp_velocity_list
         self.gp_atom_list = gp_atom_list
         self.gp_hyp_list = gp_hyp_list
-        self.gp_cutoff_radius = gp_cutoff_radius
         self.gp_species_list = gp_species_list
 
-    def make_gp(self, cell, kernel, bodies, algo, call_no,
-                start_list, cutoffs=None):
-        gp_model = gp.GaussianProcess(kernel, bodies, algo, cutoffs=cutoffs)
+    def make_gp(self, cell, kernel, kernel_grad, algo, call_no,
+                start_list, cutoffs):
         gp_hyps = self.gp_hyp_list[call_no-1]
-        gp_model.hyps = gp_hyps
+        gp_model = gp.GaussianProcess(kernel, kernel_grad, gp_hyps,
+                                      cutoffs)
 
         for count, (positions, forces, atom, _, species) in \
             enumerate(zip(self.gp_position_list, self.gp_force_list,
                           self.gp_atom_list, self.gp_hyp_list,
                           self.gp_species_list)):
 
-            struc_curr = struc.Structure(cell, species, positions,
-                                         self.gp_cutoff_radius)
+            struc_curr = struc.Structure(cell, species, positions)
 
             # add atoms in start list
             if count == 0:
@@ -78,6 +80,7 @@ class OtfAnalysis:
         dft_times = []
         times = []
         msds = []
+        energies = []
 
         with open(filename, 'r') as f:
             lines = f.readlines()
@@ -116,10 +119,14 @@ class OtfAnalysis:
                 temp_line = lines[index+2+noa].split()
                 temperatures.append(float(temp_line[1]))
 
+                if self.calculate_energy:
+                    en_line = lines[index+5+noa].split()
+                    energies.append(float(en_line[2]))
+
                 msds.append(np.mean((positions - position_list[0])**2))
 
         return position_list, force_list, uncertainty_list, velocity_list,\
-            dft_frames, temperatures, times, msds, dft_times
+            dft_frames, temperatures, times, msds, dft_times, energies
 
     def extract_gp_info(self, filename):
         species_list = []
@@ -135,9 +142,9 @@ class OtfAnalysis:
 
         for index, line in enumerate(lines):
             # cutoff radius
-            if line.startswith("Structure Cutoff Radius:"):
-                line_curr = line.split()
-                cutoff_radius = float(line_curr[3])
+            # if line.startswith("Structure Cutoff Radius:"):
+            #     line_curr = line.split()
+            #     cutoff_radius = float(line_curr[3])
 
             # number of atoms
             if line.startswith("Number of Atoms"):
@@ -157,7 +164,7 @@ class OtfAnalysis:
                 hyps = []
                 for frame_line in lines[(index+4):(index+4+noh)]:
                     frame_line = frame_line.split()
-                    hyps.append(float(frame_line[5]))
+                    hyps.append(float(frame_line[4]))
                 hyps = np.array(hyps)
                 hyp_list.append(hyps)
 
@@ -175,7 +182,7 @@ class OtfAnalysis:
                 hyps = []
                 for frame_line in lines[(index+4):(index+4+noh)]:
                     frame_line = frame_line.split()
-                    hyps.append(float(frame_line[5]))
+                    hyps.append(float(frame_line[4]))
                 hyps = np.array(hyps)
                 hyp_list.append(hyps)
 
@@ -187,8 +194,7 @@ class OtfAnalysis:
                 atom_list.append(int(line_curr[5]))
 
         return position_list, force_list, uncertainty_list, velocity_list,\
-            atom_list, hyp_list, cutoff_radius,\
-            species_list
+            atom_list, hyp_list, species_list
 
 
 def append_atom_lists(species_list: List[str],
