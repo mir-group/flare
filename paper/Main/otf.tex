@@ -86,7 +86,7 @@ Sciences, Harvard University, Cambridge, MA 02138, USA}
 \date{\today}
 
 \begin{abstract}
-  Machine learning provides a path toward fast, accurate, and large-scale materials simulation, promising to combine the accuracy of \textit{ab initio} methods with the computational efficiency of classical interatomic potentials. However, training current state-of-the-art models often requires hundreds of CPU hours and databases containing thousands of structures. We present an on-the-fly Bayesian inference scheme for automating and accelerating the construction of interatomic force fields. Gaussian process regression is coupled to a first principles DFT code to learn two- and three-body force fields on-the-fly with minimal trianing data. The resulting force field is easily extended to structures outside the training set and compares favorably to state-of-the-art classical and machine learned potentials.
+  Machine learning provides a path toward fast, accurate, and large-scale materials simulation, promising to combine the accuracy of \textit{ab initio} methods with the computational efficiency of classical potentials. However, training current state-of-the-art models often requires hundreds of CPU hours and databases containing thousands of structures. We present an on-the-fly Bayesian inference scheme for automating and accelerating the construction of interatomic force fields. Gaussian process regression is coupled to a first principles DFT code to learn two- and three-body force fields on-the-fly with minimal trianing data. The resulting force field is easily extended to structures outside the training set and compares favorably to state-of-the-art classical and machine learned potentials.
 \end{abstract}
 
 \maketitle
@@ -94,9 +94,15 @@ Sciences, Harvard University, Cambridge, MA 02138, USA}
 \textit{Ab initio} molecular dynamics is a powerful tool for
 accurately probing the dynamics of molecules and solids, but it is fundamentally limited by the cubic scaling of the most commonly used density functional theory (DFT) codes \cite{kohn1999nobel}. A common solution to this problem involves bypassing a quantum mechanical treatment of the electrons and instead directly modelling the Born-Oppenheimer potential energy surface of the ions. This is the approach taken when constructing classical interatomic potentials, which trade the accuracy of DFT and other first principles approaches for the speed and scalability of a local and analytic model, making possible the fully atomistic simulation of many thousands of atoms over nanosecond timescales. Classical potentials, however, have limited accuracy, flexibility, and transferability, and are inadequate in many settings.
 
-A number of machine learning (ML) approaches for fitting interatomic potentials have recently been shown to approach the accuracy of first principles methods. However, most of these approaches provide only point estimates of the quantities of interest (typically energies, forces, and stesses) rather than a predictive distribution reflecting model uncertainty. Without knowledge of the highest uncertainty training points, a laborious fitting procedure is required, in which thousands of reference structures are selected \textit{ad hoc} from a database of first principles calculations. At test time, lack of predictive uncertainty makes it difficult to determine when the fitted model is out-of-sample, leading to unreliable results and making the model difficult to update in the presence of new data.
+A number of machine learning (ML) approaches for fitting interatomic potentials have recently been shown to approach first principles accuracy. However, most of these methods provide only point estimates of the quantities of interest (typically energies, forces, and stesses) rather than a predictive distribution reflecting model uncertainty. Without knowledge of the highest uncertainty training points, a laborious fitting procedure is required, in which thousands of reference structures are selected \textit{ad hoc} from a database of first principles calculations. At test time, lack of predictive uncertainty makes it difficult to determine when the fitted model is out-of-sample, leading to unreliable results and making the model difficult to update in the presence of new data.
 
-Here, we show that on-the-fly Bayesian inference can be used to both accelerate the training of a high-quality machine learned force field and flexibly adapt the model to out-of-sample atomic environments. By coupling Gaussian process regression and density functional theory in a single molecular dynamics trajectory, it is shown that the number of DFT runs needed to train a high quality potential can be dramatically reduced from several thousand to a few dozen. By dramatically reducing the computational cost of both training and updating a high quality potential, our technique promises to extend fast and accurate ML modelling to a much wider class of systems than would otherwise be feasible.
+Here, we show that on-the-fly Bayesian inference can be used to both accelerate the training of a high-quality machine learned force field and flexibly adapt the model to out-of-sample structures. By coupling Gaussian process regression and density functional theory in a single molecular dynamics engine, it is shown that the number of DFT runs needed to train a high quality potential can be dramatically reduced from several thousand to a few dozen. By reducing the computational cost of both training and updating a high quality potential, our approach promises to extend ML modelling to a wide class of materials.
+
+In order to learn efficiently, we express the total energy of the system as a sum over two- and three-body terms,
+\begin{equation}
+E = \sum_{ij} \varepsilon_{ij} + \sum_{ijk} \varepsilon_{ijk},
+\end{equation}
+where the sums range over all unique pairs and triplets of atoms containing at least one atom from the unfolded primary cell. In practice, the sums are truncated by considering local atom-centered environments surrounding each atom in the primary cell and neglecting contributions from atoms beyond a chosen cutoff distance from the central atom.
 
 
 % \section{Organization}
@@ -123,166 +129,166 @@ Here, we show that on-the-fly Bayesian inference can be used to both accelerate 
 
 % \end{itemize}
 
-\section{Supplementary Information}
+% \section{Supplementary Information}
 
-\subsection{Covariant kernels for direct force prediction}
-The total energy $E$ of a system of atoms in a periodic cell is modelled as a sum over two- and three-body contributions,
-\begin{equation}
-E = \sum_{ij} \varepsilon_{ij} + \sum_{ijk} \varepsilon_{ijk},
-\end{equation}
-where the sums range over all unique pairs and triplets of atoms containing at least one atom from the unfolded primary cell. In practice, the sums are truncated by considering local atom-centered environments surrounding each atom in the primary cell and neglecting contributions from atoms beyond a chosen cutoff distance from the central atom. The energy may then be expressed as
-\begin{equation}
-  E = \sum_{i} \left( \frac{1}{2} \sum_{j \in \rho_i} \varepsilon_{ij} + \frac{1}{3} \sum_{j, k \in \rho_i} \varepsilon_{ijk} \right),
-\end{equation}
-where $\rho_i$ denotes the local environment of atom $i$ containing all atoms within the cutoff sphere and the fractional factors take care of multiple counting due to the repeated appearance of bonds and triplets in neighboring environments. This may be written more compactly as
-\begin{equation}
-E = \sum_i \varepsilon_i,
-\end{equation}
-where $\varepsilon_i \equiv \frac{1}{2} \sum_{j \in \rho_i} \varepsilon_{ij} + \frac{1}{3} \sum_{j, k \in \rho_i} \varepsilon_{ijk}$ may be viewed as the local energy of atom $i$.
+% \subsection{Covariant kernels for direct force prediction}
+% The total energy $E$ of a system of atoms in a periodic cell is modelled as a sum over two- and three-body contributions,
+% \begin{equation}
+% E = \sum_{ij} \varepsilon_{ij} + \sum_{ijk} \varepsilon_{ijk},
+% \end{equation}
+% where the sums range over all unique pairs and triplets of atoms containing at least one atom from the unfolded primary cell. In practice, the sums are truncated by considering local atom-centered environments surrounding each atom in the primary cell and neglecting contributions from atoms beyond a chosen cutoff distance from the central atom. The energy may then be expressed as
+% \begin{equation}
+%   E = \sum_{i} \left( \frac{1}{2} \sum_{j \in \rho_i} \varepsilon_{ij} + \frac{1}{3} \sum_{j, k \in \rho_i} \varepsilon_{ijk} \right),
+% \end{equation}
+% where $\rho_i$ denotes the local environment of atom $i$ containing all atoms within the cutoff sphere and the fractional factors take care of multiple counting due to the repeated appearance of bonds and triplets in neighboring environments. This may be written more compactly as
+% \begin{equation}
+% E = \sum_i \varepsilon_i,
+% \end{equation}
+% where $\varepsilon_i \equiv \frac{1}{2} \sum_{j \in \rho_i} \varepsilon_{ij} + \frac{1}{3} \sum_{j, k \in \rho_i} \varepsilon_{ijk}$ may be viewed as the local energy of atom $i$.
 
-In Gaussian process models, the covariance between targets is set equal to a kernel or similarity measure between inputs. The covariance between total energy observations $E_l, E_m$ of two distinct structures $\sigma_l, \sigma_m$ may be written as
-\begin{equation}
-\left\langle E_l E_m \right\rangle = \sum_{i \in \sigma_l} \sum_{j \in \sigma_m} \langle \varepsilon_i \varepsilon_j \rangle,
-\end{equation}
-where the covariance between local energies is
-\begin{equation}
-\langle \varepsilon_i \varepsilon_j \rangle = \frac{1}{4} \sum_{n \in \rho_i} \sum_{p \in \rho_j} \langle \varepsilon_{i n} \varepsilon_{j p} \rangle + \frac{1}{9} \sum_{n, q \in \rho_i} \sum_{p, r \in \rho_j} \langle \varepsilon_{inq} \varepsilon_{jpr} \rangle.
-\end{equation}
-Letting $F_{i\xi} = - \frac{d E}{d \xi_i}$ denote the force on atom $i$ along Cartesian component $\xi$, the covariance between force observations may be written as
-\begin{equation}
-  \langle F_{i\xi} F_{j \chi} \rangle =  \sum_{n \in \rho_i} \sum_{p \in \rho_j} \frac{\partial^2}{\partial \xi_i \partial \chi_j} \langle \varepsilon_{i n} \varepsilon_{j p} \rangle +  \sum_{n, q \in \rho_i} \sum_{p, r \in \rho_j} \frac{\partial^2}{\partial \xi_i \partial \chi_j} \langle \varepsilon_{inq} \varepsilon_{jpr} \rangle,
-\end{equation}
-where here the fractional factors do not appear as the sums are restricted to the local environments of atoms $i$ and $j$. This is convenient in practice, as it allows local information about individual atoms to be used at test time without having to store the atomic environments of all the other atoms in the structure.
+% In Gaussian process models, the covariance between targets is set equal to a kernel or similarity measure between inputs. The covariance between total energy observations $E_l, E_m$ of two distinct structures $\sigma_l, \sigma_m$ may be written as
+% \begin{equation}
+% \left\langle E_l E_m \right\rangle = \sum_{i \in \sigma_l} \sum_{j \in \sigma_m} \langle \varepsilon_i \varepsilon_j \rangle,
+% \end{equation}
+% where the covariance between local energies is
+% \begin{equation}
+% \langle \varepsilon_i \varepsilon_j \rangle = \frac{1}{4} \sum_{n \in \rho_i} \sum_{p \in \rho_j} \langle \varepsilon_{i n} \varepsilon_{j p} \rangle + \frac{1}{9} \sum_{n, q \in \rho_i} \sum_{p, r \in \rho_j} \langle \varepsilon_{inq} \varepsilon_{jpr} \rangle.
+% \end{equation}
+% Letting $F_{i\xi} = - \frac{d E}{d \xi_i}$ denote the force on atom $i$ along Cartesian component $\xi$, the covariance between force observations may be written as
+% \begin{equation}
+%   \langle F_{i\xi} F_{j \chi} \rangle =  \sum_{n \in \rho_i} \sum_{p \in \rho_j} \frac{\partial^2}{\partial \xi_i \partial \chi_j} \langle \varepsilon_{i n} \varepsilon_{j p} \rangle +  \sum_{n, q \in \rho_i} \sum_{p, r \in \rho_j} \frac{\partial^2}{\partial \xi_i \partial \chi_j} \langle \varepsilon_{inq} \varepsilon_{jpr} \rangle,
+% \end{equation}
+% where here the fractional factors do not appear as the sums are restricted to the local environments of atoms $i$ and $j$. This is convenient in practice, as it allows local information about individual atoms to be used at test time without having to store the atomic environments of all the other atoms in the structure.
 
-In order to infer energies from force observations, it is necessary to consider the covariance between energies and forces.
+% In order to infer energies from force observations, it is necessary to consider the covariance between energies and forces.
 
-\newpage
+% \newpage
 
-\begin{figure}
-	\centering
-	\includegraphics[width=3.4in]{melt_msd_3.pdf}
-	\caption{On-the-fly learning of an aluminum force field at multiple temperatures.}
-\end{figure}
+% \begin{figure}
+% 	\centering
+% 	\includegraphics[width=3.4in]{melt_msd_3.pdf}
+% 	\caption{On-the-fly learning of an aluminum force field at multiple temperatures.}
+% \end{figure}
 
-\begin{figure}
-	\centering
-	\includegraphics[width=3.4in]{parity_liquid.pdf}
-	\caption{Mean square displacement of aluminum melt.}
-\end{figure}
+% \begin{figure}
+% 	\centering
+% 	\includegraphics[width=3.4in]{parity_liquid.pdf}
+% 	\caption{Mean square displacement of aluminum melt.}
+% \end{figure}
 
-\begin{figure}
-	\centering
-	\includegraphics[width=3.4in]{vacancy_act.pdf}
-	\caption{Mean square displacement of aluminum melt.}
-\end{figure}
+% \begin{figure}
+% 	\centering
+% 	\includegraphics[width=3.4in]{vacancy_act.pdf}
+% 	\caption{Mean square displacement of aluminum melt.}
+% \end{figure}
 
-\begin{figure}
-	\centering
-	\includegraphics[width=3.4in]{vacancy_msd.pdf}
-	\caption{Mean square displacement of aluminum melt.}
-\end{figure}
+% \begin{figure}
+% 	\centering
+% 	\includegraphics[width=3.4in]{vacancy_msd.pdf}
+% 	\caption{Mean square displacement of aluminum melt.}
+% \end{figure}
 
-\begin{figure}
-	\centering
-	\includegraphics[width=3.4in]{rdf.pdf}
-	\caption{RDF of Al melt.}
-\end{figure}
+% \begin{figure}
+% 	\centering
+% 	\includegraphics[width=3.4in]{rdf.pdf}
+% 	\caption{RDF of Al melt.}
+% \end{figure}
 
-% https://en.wikibooks.org/wiki/LaTeX/Tables
-\begin{table}
-\begin{tabular}
-{ |p{1.4cm}|| >{\centering} p{1.4cm}| >{\centering} p{1.4cm}| >{\centering} p{1.4cm}| p{1.4cm} <{\centering}|  }
-	% \hline
-	% \multicolumn{4}{|c|}{Model Error} \\
-	\hline
-	 & Solid & Liquid & Slab & Vacancy \\
-	\hline
-	OTF & & & & \\
-	\hline
-	EAM & & & & \\
-  \hline
-	AGNI & & & & \\
-	\hline
-\end{tabular}
-\caption{On-the-fly force field error compared to a recent EAM potential.}
-\end{table}
+% % https://en.wikibooks.org/wiki/LaTeX/Tables
+% \begin{table}
+% \begin{tabular}
+% { |p{1.4cm}|| >{\centering} p{1.4cm}| >{\centering} p{1.4cm}| >{\centering} p{1.4cm}| p{1.4cm} <{\centering}|  }
+% 	% \hline
+% 	% \multicolumn{4}{|c|}{Model Error} \\
+% 	\hline
+% 	 & Solid & Liquid & Slab & Vacancy \\
+% 	\hline
+% 	OTF & & & & \\
+% 	\hline
+% 	EAM & & & & \\
+%   \hline
+% 	AGNI & & & & \\
+% 	\hline
+% \end{tabular}
+% \caption{On-the-fly force field error compared to a recent EAM potential.}
+% \end{table}
 
-% https://en.wikibooks.org/wiki/LaTeX/Algorithms#Typesetting_using_the_algorithmic_package
-\begin{algorithm}[H]
-  \caption{Active Learning of Atomistic Force Fields}
-  \label{EPSA}
-   \begin{algorithmic}[1]
-   \Require initial structure (positions, velocities, periodic cell)
-   \Require initial GP model (kernel and hyperparameters)
-   \Require $\Delta t$: molecular dynamics time step
-   \Require $T$: total simulation time
-   \Require $\mathcal{U}$: initial uncertainty threshold
-   \State Initialize time: t = 0
-   \While {$t < T$}
-   \State predict forces and uncertainties with GP model
-   \If {uncertainty above threshold}
-   \State compute forces with DFT
-   \State add highest uncertainty atom to training set
-   \State update GP hyperparameters
-   \State update structure with DFT forces
-   \Else
-   \State update structure with GP forces
-   \EndIf
-   \State update time: $t = t + \Delta t$
-   \EndWhile
-   \end{algorithmic}
-\end{algorithm}
+% % https://en.wikibooks.org/wiki/LaTeX/Algorithms#Typesetting_using_the_algorithmic_package
+% \begin{algorithm}[H]
+%   \caption{Active Learning of Atomistic Force Fields}
+%   \label{EPSA}
+%    \begin{algorithmic}[1]
+%    \Require initial structure (positions, velocities, periodic cell)
+%    \Require initial GP model (kernel and hyperparameters)
+%    \Require $\Delta t$: molecular dynamics time step
+%    \Require $T$: total simulation time
+%    \Require $\mathcal{U}$: initial uncertainty threshold
+%    \State Initialize time: t = 0
+%    \While {$t < T$}
+%    \State predict forces and uncertainties with GP model
+%    \If {uncertainty above threshold}
+%    \State compute forces with DFT
+%    \State add highest uncertainty atom to training set
+%    \State update GP hyperparameters
+%    \State update structure with DFT forces
+%    \Else
+%    \State update structure with GP forces
+%    \EndIf
+%    \State update time: $t = t + \Delta t$
+%    \EndWhile
+%    \end{algorithmic}
+% \end{algorithm}
 
-\begin{center}
-    \begin{table}
-    \begin{tabular}{ |c|c|c| } 
-     \hline
-     Energy Kernel & $k_{\text{inv}}$ & $\sigma^2 \sum_{c, p} k f_{\text{cut}}(\vec{d}_c) f_{\text{cut}}(\vec{d}_p)$ \\ 
-     \hline
-     - & $k$ & $\exp\left( - \frac{||\vec{d}_c - \vec{d}_p ||^2}{2 \ell^2} \right)$\\
-     \hline
-     - & $\vec{d}^{(2)}$ & $(r_{i_1})$ \\
-     \hline
-     - & $\vec{d}^{(3)}$ & $(r_{i_1}, r_{i_2}, r_{i_1, i_2})$ \\
-     \hline
-    Force Kernel & $\frac{\partial^2 k_{\text{inv}}}{\partial \xi_i \partial \chi_j}$ & $\sigma^2 \sum_{c, p} (k_0 + k_1 + k_2 + k_3)$ \\ 
-     \hline
-     - & $k_0$ & $k \frac{\partial f_{\text{cut}}(\vec{d}_c)}{\partial \xi_i} \frac{\partial f_{\text{cut}}(\vec{d}_p)}{\partial \chi_j}$ \\ 
-     \hline
-     - & $k_1$ & $\frac{\partial k}{\partial \xi_i} f_{\text{cut}}(\vec{d}_c) \frac{\partial f_{\text{cut}}(\vec{d}_p)}{\partial \chi_j}$ \\ 
-     \hline
-     - & $k_2$ & $\frac{\partial k}{\partial \chi_j} \frac{\partial f_{\text{cut}}(\vec{d}_c)}{\partial \xi_i} f_{\text{cut}}(\vec{d}_p)$ \\ 
-     \hline
-     - & $k_3$ & $\frac{\partial^2 k}{\partial \xi_i \partial \chi_j} f_{\text{cut}}(\vec{d}_c) f_{\text{cut}}(\vec{d}_p)$ \\ 
-     \hline
-     - & $\frac{\partial k}{\partial \xi_i}$ & $\frac{k B_1}{\ell^2}$ \\ 
-     \hline
-     & $B_1$ & $\sum_{q=1}^{N-1} \frac{(r_{i_q} - r_{j_q})\xi_{i_q}}{r_{i_q}}$ \\
-     \hline
-     - & $\frac{\partial k}{\partial \chi_j}$ &  $-\frac{k B_2}{\ell^2}$ \\ 
-     \hline
-    - & $B_2$ & $\sum_{q=1}^{N-1} \frac{(r_{i_q} - r_{j_q})\chi_{j_q}}{r_{j_q}}$ \\
-     \hline
-     - & $\frac{\partial^2 k}{\partial \xi_i \chi_j}$ & $\frac{k}{\ell^4} \left(A \ell^2 -B_1 B_2 \right)$\\ 
-     \hline
-     - & $A$ & $\sum \frac{\xi_{i_q} \chi_{j_q}}{r_{i_q} r_{j_q}}$ \\
-     \hline
-     $\ell$ Derivative & $\frac{\partial^3 k_{\text{inv}}}{\partial \ell \partial \xi_i \partial \chi_j}$ & $\sigma^2 \sum_{c, p} \left(\frac{\partial k_0}{\partial \ell} + \frac{\partial k_1}{\partial \ell} + \frac{\partial k_2}{\partial \ell} + \frac{\partial k_3}{\partial \ell}\right)$ \\
-     \hline
-     - & $\frac{\partial k}{\partial \ell}$ & $\frac{k ||\vec{d}_c - \vec{d}_p||^2}{l^3}$ \\
-     \hline
-     - & $\frac{\partial^2 k}{\partial \ell \partial \xi_i}$ & $B_1 \left( \frac{1}{\ell^2} \frac{\partial k}{\partial \ell} - \frac{2 k}{\ell^3} \right)$ \\
-     \hline
-     - & $\frac{\partial^2 k}{\partial \ell \partial \chi_j}$ & $-B_2 \left( \frac{1}{\ell^2} \frac{\partial k}{\partial \ell} - \frac{2 k}{\ell^3} \right)$ \\
-     \hline
-     - & $\frac{\partial^3 k}{\partial \ell \partial \xi_i \partial \chi_j}$ & $\left( A \ell^2 - B_1 B_2 \right) \left( \frac{\partial k}{\partial \ell} \frac{1}{\ell^4} - \frac{4 k}{\ell^5} \right) + \frac{2 k A}{\ell^3}$ \\
-     \hline
-     $\sigma$ Derivative & $\frac{\partial^3 k_{\text{inv}}}{\partial \sigma \partial \xi_i \partial \chi_j}$ & $2 \sigma \sum_{c, p} (k_0 + k_1 + k_2 + k_3)$ \\
-     \hline
-    \end{tabular}
-    \caption{Quantities used to calculate the smoothed $N$-body force kernel and its derivatives.}
-\end{table}
-\end{center}
+% \begin{center}
+%     \begin{table}
+%     \begin{tabular}{ |c|c|c| } 
+%      \hline
+%      Energy Kernel & $k_{\text{inv}}$ & $\sigma^2 \sum_{c, p} k f_{\text{cut}}(\vec{d}_c) f_{\text{cut}}(\vec{d}_p)$ \\ 
+%      \hline
+%      - & $k$ & $\exp\left( - \frac{||\vec{d}_c - \vec{d}_p ||^2}{2 \ell^2} \right)$\\
+%      \hline
+%      - & $\vec{d}^{(2)}$ & $(r_{i_1})$ \\
+%      \hline
+%      - & $\vec{d}^{(3)}$ & $(r_{i_1}, r_{i_2}, r_{i_1, i_2})$ \\
+%      \hline
+%     Force Kernel & $\frac{\partial^2 k_{\text{inv}}}{\partial \xi_i \partial \chi_j}$ & $\sigma^2 \sum_{c, p} (k_0 + k_1 + k_2 + k_3)$ \\ 
+%      \hline
+%      - & $k_0$ & $k \frac{\partial f_{\text{cut}}(\vec{d}_c)}{\partial \xi_i} \frac{\partial f_{\text{cut}}(\vec{d}_p)}{\partial \chi_j}$ \\ 
+%      \hline
+%      - & $k_1$ & $\frac{\partial k}{\partial \xi_i} f_{\text{cut}}(\vec{d}_c) \frac{\partial f_{\text{cut}}(\vec{d}_p)}{\partial \chi_j}$ \\ 
+%      \hline
+%      - & $k_2$ & $\frac{\partial k}{\partial \chi_j} \frac{\partial f_{\text{cut}}(\vec{d}_c)}{\partial \xi_i} f_{\text{cut}}(\vec{d}_p)$ \\ 
+%      \hline
+%      - & $k_3$ & $\frac{\partial^2 k}{\partial \xi_i \partial \chi_j} f_{\text{cut}}(\vec{d}_c) f_{\text{cut}}(\vec{d}_p)$ \\ 
+%      \hline
+%      - & $\frac{\partial k}{\partial \xi_i}$ & $\frac{k B_1}{\ell^2}$ \\ 
+%      \hline
+%      & $B_1$ & $\sum_{q=1}^{N-1} \frac{(r_{i_q} - r_{j_q})\xi_{i_q}}{r_{i_q}}$ \\
+%      \hline
+%      - & $\frac{\partial k}{\partial \chi_j}$ &  $-\frac{k B_2}{\ell^2}$ \\ 
+%      \hline
+%     - & $B_2$ & $\sum_{q=1}^{N-1} \frac{(r_{i_q} - r_{j_q})\chi_{j_q}}{r_{j_q}}$ \\
+%      \hline
+%      - & $\frac{\partial^2 k}{\partial \xi_i \chi_j}$ & $\frac{k}{\ell^4} \left(A \ell^2 -B_1 B_2 \right)$\\ 
+%      \hline
+%      - & $A$ & $\sum \frac{\xi_{i_q} \chi_{j_q}}{r_{i_q} r_{j_q}}$ \\
+%      \hline
+%      $\ell$ Derivative & $\frac{\partial^3 k_{\text{inv}}}{\partial \ell \partial \xi_i \partial \chi_j}$ & $\sigma^2 \sum_{c, p} \left(\frac{\partial k_0}{\partial \ell} + \frac{\partial k_1}{\partial \ell} + \frac{\partial k_2}{\partial \ell} + \frac{\partial k_3}{\partial \ell}\right)$ \\
+%      \hline
+%      - & $\frac{\partial k}{\partial \ell}$ & $\frac{k ||\vec{d}_c - \vec{d}_p||^2}{l^3}$ \\
+%      \hline
+%      - & $\frac{\partial^2 k}{\partial \ell \partial \xi_i}$ & $B_1 \left( \frac{1}{\ell^2} \frac{\partial k}{\partial \ell} - \frac{2 k}{\ell^3} \right)$ \\
+%      \hline
+%      - & $\frac{\partial^2 k}{\partial \ell \partial \chi_j}$ & $-B_2 \left( \frac{1}{\ell^2} \frac{\partial k}{\partial \ell} - \frac{2 k}{\ell^3} \right)$ \\
+%      \hline
+%      - & $\frac{\partial^3 k}{\partial \ell \partial \xi_i \partial \chi_j}$ & $\left( A \ell^2 - B_1 B_2 \right) \left( \frac{\partial k}{\partial \ell} \frac{1}{\ell^4} - \frac{4 k}{\ell^5} \right) + \frac{2 k A}{\ell^3}$ \\
+%      \hline
+%      $\sigma$ Derivative & $\frac{\partial^3 k_{\text{inv}}}{\partial \sigma \partial \xi_i \partial \chi_j}$ & $2 \sigma \sum_{c, p} (k_0 + k_1 + k_2 + k_3)$ \\
+%      \hline
+%     \end{tabular}
+%     \caption{Quantities used to calculate the smoothed $N$-body force kernel and its derivatives.}
+% \end{table}
+% \end{center}
 
 
 \bibliography{otf.bib}
