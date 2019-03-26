@@ -50,12 +50,10 @@
 \providecommand \BibitemShut  [1]{\csname bibitem#1\endcsname}%
 \let\auto@bib@innerbib\@empty
 %</preamble>
-\bibitem [{\citenamefont {Allen}\ and\ \citenamefont
-  {Tildesley}(2017)}]{allen2017computer}%
+\bibitem [{\citenamefont {Kohn}(1999)}]{kohn1999nobel}%
   \BibitemOpen
-  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {M.~P.}\ \bibnamefont
-  {Allen}}\ and\ \bibinfo {author} {\bibfnamefont {D.~J.}\ \bibnamefont
-  {Tildesley}},\ }\href@noop {} {\emph {\bibinfo {title} {Computer simulation
-  of liquids}}}\ (\bibinfo  {publisher} {Oxford university press},\ \bibinfo
-  {year} {2017})\BibitemShut {NoStop}%
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {W.}~\bibnamefont
+  {Kohn}},\ }\href@noop {} {\bibfield  {journal} {\bibinfo  {journal} {Reviews
+  of Modern Physics}\ }\textbf {\bibinfo {volume} {71}},\ \bibinfo {pages}
+  {1253} (\bibinfo {year} {1999})}\BibitemShut {NoStop}%
 \end{thebibliography}%

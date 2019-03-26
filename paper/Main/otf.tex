@@ -86,38 +86,42 @@ Sciences, Harvard University, Cambridge, MA 02138, USA}
 \date{\today}
 
 \begin{abstract}
-\textit{Ab initio} molecular dynamics is a powerful tool for
-accurately probing the dynamics of molecules and solids, but it is limited
-to system sizes on the order of 1000 atoms and time scales on the order of
-10 ps. We present a scheme for rapidly training a machine learning 
-model of the interatomic force field that approaches the accuracy of \textit{ab initio} force calculations but can be applied to larger systems over longer time scales. Gaussian process models are trained “on-the-fly”, with density-functional theory calculations of the atomic forces performed whenever the model encounters chemical configurations outside of the training set. We demonstrate the flexibility of our approach by testing it on vacancy diffusion in bulk metals.
+  Machine learning provides a path toward fast, accurate, and large-scale materials simulation, promising to combine the accuracy of \textit{ab initio} methods with the computational efficiency of classical interatomic potentials. However, training current state-of-the-art models often requires hundreds of CPU hours and databases containing thousands of structures. We present an on-the-fly Bayesian inference scheme for automating and accelerating the construction of interatomic force fields. Gaussian process regression is coupled to a first principles DFT code to learn two- and three-body force fields on-the-fly with minimal trianing data. The resulting force field is easily extended to structures outside the training set and compares favorably to state-of-the-art classical and machine learned potentials.
 \end{abstract}
 
 \maketitle
 
-\section{Organization}
+\textit{Ab initio} molecular dynamics is a powerful tool for
+accurately probing the dynamics of molecules and solids, but it is fundamentally limited by the cubic scaling of the most commonly used density functional theory (DFT) codes \cite{kohn1999nobel}. A common solution to this problem involves bypassing a quantum mechanical treatment of the electrons and instead directly modelling the Born-Oppenheimer potential energy surface of the ions. This is the approach taken when constructing classical interatomic potentials, which trade the accuracy of DFT and other first principles approaches for the speed and scalability of a local and analytic model, making possible the fully atomistic simulation of many thousands of atoms over nanosecond timescales. Classical potentials, however, have limited accuracy, flexibility, and transferability, and are inadequate in many settings.
 
-\begin{itemize}
+A number of machine learning (ML) approaches for fitting interatomic potentials have recently been shown to approach the accuracy of first principles methods. However, most of these approaches provide only point estimates of the quantities of interest (typically energies, forces, and stesses) rather than a predictive distribution reflecting model uncertainty. Without knowledge of the highest uncertainty training points, a laborious fitting procedure is required, in which thousands of reference structures are selected \textit{ad hoc} from a database of first principles calculations. At test time, lack of predictive uncertainty makes it difficult to determine when the fitted model is out-of-sample, leading to unreliable results and making the model difficult to update in the presence of new data.
 
-\item Figure 1: Correlation between prediction error and out-of-sample variance. Train on a low temperature crystal and test at higher temperatures to systematically steer the model away from the training set. Establishing a correlation motivates the use of predictive variance for on-the-fly learning.
+Here, we show that on-the-fly Bayesian inference can be used to both accelerate the training of a high-quality machine learned force field and flexibly adapt the model to out-of-sample atomic environments. By coupling Gaussian process regression and density functional theory in a single molecular dynamics trajectory, it is shown that the number of DFT runs needed to train a high quality potential can be dramatically reduced from several thousand to a few dozen. By dramatically reducing the computational cost of both training and updating a high quality potential, our technique promises to extend fast and accurate ML modelling to a much wider class of systems than would otherwise be feasible.
 
-\item Algorithm 1: On-the-fly algorithm, including GP, MD, and DFT updates.
 
-\item Figure 2: Number of DFT calls vs simulation time. A sharp increase should be observed when new phases are introduced.
+% \section{Organization}
 
-\item Table 1: Performance of FLARE compared with state-of-the art EAM and ML models. Models tested on independent \textit{ab initio} MD runs. MAEs and mean absolute force components reported in eV/A.
+% \begin{itemize}
 
-\item Figure 3: Validation of the force field. Parity plots, radial distribution function, and activation profiles should agree with \textit{ab initio} calculations.
+% \item Figure 1: Correlation between prediction error and out-of-sample variance. Train on a low temperature crystal and test at higher temperatures to systematically steer the model away from the training set. Establishing a correlation motivates the use of predictive variance for on-the-fly learning.
 
-\item Supplementary Figure 1: Numerical demonstration of energy conservation. Plot the RMS energy fluctuations against the time step squared and check that the resulting graph is linear \cite{allen2017computer}.
+% \item Algorithm 1: On-the-fly algorithm, including GP, MD, and DFT updates.
 
-\item Supplementary Figure 2: Justification of cutoff selection. Plot likelihood, noise parameter, and out-of-sample error vs. cutoffs.
+% \item Figure 2: Number of DFT calls vs simulation time. A sharp increase should be observed when new phases are introduced.
 
-\item Supplementary Table 1: Table of formulas for calculating kernels.
+% \item Table 1: Performance of FLARE compared with state-of-the art EAM and ML models. Models tested on independent \textit{ab initio} MD runs. MAEs and mean absolute force components reported in eV/A.
 
-\item Supplementary Table 2: Justification of quadratic cutoff. Record log likelihood for different cutoffs (cosine, hard, quadratic).
+% \item Figure 3: Validation of the force field. Parity plots, radial distribution function, and activation profiles should agree with \textit{ab initio} calculations.
 
-\end{itemize}
+% \item Supplementary Figure 1: Numerical demonstration of energy conservation. Plot the RMS energy fluctuations against the time step squared and check that the resulting graph is linear \cite{allen2017computer}.
+
+% \item Supplementary Figure 2: Justification of cutoff selection. Plot likelihood, noise parameter, and out-of-sample error vs. cutoffs.
+
+% \item Supplementary Table 1: Table of formulas for calculating kernels.
+
+% \item Supplementary Table 2: Justification of quadratic cutoff. Record log likelihood for different cutoffs (cosine, hard, quadratic).
+
+% \end{itemize}
 
 \section{Supplementary Information}
 

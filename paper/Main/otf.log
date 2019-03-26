@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.18 (TeX Live 2017) (preloaded format=pdflatex 2017.5.23)  25 MAR 2019 18:55
+This is pdfTeX, Version 3.14159265-2.6-1.40.18 (TeX Live 2017) (preloaded format=pdflatex 2017.5.23)  25 MAR 2019 22:00
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -302,62 +302,49 @@ File: epstopdf-sys.cfg 2010/07/13 v1.3 Configuration of (r)epstopdf for TeX Live
 ))
 \openout3 = `otfNotes.bib'.
 
-Missing character: There is no ‚ in font cmr9!
-Missing character: There is no Ä in font cmr9!
-Missing character: There is no ú in font cmr9!
-Missing character: There is no ‚ in font cmr9!
-Missing character: There is no Ä in font cmr9!
-Missing character: There is no ù in font cmr9!
-LaTeX Font Info:    Try loading font information for U+msa on input line 96.
+LaTeX Font Info:    Try loading font information for U+msa on input line 92.
  (/usr/local/texlive/2017/texmf-dist/tex/latex/amsfonts/umsa.fd
 File: umsa.fd 2013/01/14 v3.01 AMS symbols A
 )
-LaTeX Font Info:    Try loading font information for U+msb on input line 96.
+LaTeX Font Info:    Try loading font information for U+msb on input line 92.
  (/usr/local/texlive/2017/texmf-dist/tex/latex/amsfonts/umsb.fd
 File: umsb.fd 2013/01/14 v3.01 AMS symbols B
-)
-LaTeX Font Info:    Try loading font information for OMS+cmr on input line 102.
- (/usr/local/texlive/2017/texmf-dist/tex/latex/base/omscmr.fd
-File: omscmr.fd 2014/09/29 v2.5h Standard LaTeX font definitions
-)
-LaTeX Font Info:    Font shape `OMS/cmr/m/n' in size <10> not available
-(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 102.
- [1{/usr/local/texlive/2017/texmf-var/fonts/map/pdftex/updmap/pdftex.map}]
-Overfull \hbox (44.1739pt too wide) detected at line 150
+) [1{/usr/local/texlive/2017/texmf-var/fonts/map/pdftex/updmap/pdftex.map}]
+Overfull \hbox (44.1739pt too wide) detected at line 154
 \OMS/cmsy/m/n/10 h\OML/cmm/m/it/10 F[]F[]\OMS/cmsy/m/n/10 i \OT1/cmr/m/n/10 = [] [] []\OMS/cmsy/m/n/10 h\OML/cmm/m/it/10 "[]"[]\OMS/cmsy/m/n/10 i \OT1/cmr/m/n/10 + [] [] []\OMS/cmsy/m/n/10 h\OML/cmm/m/it/10 "[]"[]\OMS/cmsy/m/n/10 i\OML/cmm/m/it/10 ;
  []
 
-<melt_msd_3.pdf, id=20, 416.85861pt x 319.45547pt>
+<melt_msd_3.pdf, id=19, 416.85861pt x 319.45547pt>
 File: melt_msd_3.pdf Graphic file (type pdf)
  <use melt_msd_3.pdf>
-Package pdftex.def Info: melt_msd_3.pdf used on input line 159.
+Package pdftex.def Info: melt_msd_3.pdf used on input line 163.
 (pdftex.def)             Requested size: 245.71754pt x 188.30647pt.
- <parity_liquid.pdf, id=21, 436.07101pt x 319.45547pt>
+ <parity_liquid.pdf, id=20, 436.07101pt x 319.45547pt>
 File: parity_liquid.pdf Graphic file (type pdf)
  <use parity_liquid.pdf>
-Package pdftex.def Info: parity_liquid.pdf used on input line 165.
+Package pdftex.def Info: parity_liquid.pdf used on input line 169.
 (pdftex.def)             Requested size: 245.71754pt x 180.00522pt.
- <vacancy_act.pdf, id=22, 436.07101pt x 319.45547pt>
+ <vacancy_act.pdf, id=21, 436.07101pt x 319.45547pt>
 File: vacancy_act.pdf Graphic file (type pdf)
  <use vacancy_act.pdf>
-Package pdftex.def Info: vacancy_act.pdf used on input line 171.
+Package pdftex.def Info: vacancy_act.pdf used on input line 175.
 (pdftex.def)             Requested size: 245.71754pt x 180.00522pt.
- <vacancy_msd.pdf, id=23, 428.35469pt x 319.45547pt>
+ <vacancy_msd.pdf, id=22, 428.35469pt x 319.45547pt>
 File: vacancy_msd.pdf Graphic file (type pdf)
  <use vacancy_msd.pdf>
-Package pdftex.def Info: vacancy_msd.pdf used on input line 177.
+Package pdftex.def Info: vacancy_msd.pdf used on input line 181.
 (pdftex.def)             Requested size: 245.71754pt x 183.25163pt.
- <rdf.pdf, id=24, 421.20297pt x 325.2584pt>
+ <rdf.pdf, id=23, 421.20297pt x 325.2584pt>
 File: rdf.pdf Graphic file (type pdf)
  <use rdf.pdf>
-Package pdftex.def Info: rdf.pdf used on input line 183.
+Package pdftex.def Info: rdf.pdf used on input line 187.
 (pdftex.def)             Requested size: 245.71754pt x 189.75179pt.
  [2 </Users/jonpvandermause/Research/GP/otf/paper/Main/melt_msd_3.pdf> </Users/jonpvandermause/Research/GP/otf/paper/Main/parity_liquid.pdf
 
 pdfTeX warning: pdflatex (file /Users/jonpvandermause/Research/GP/otf/paper/Main/parity_liquid.pdf): PDF inclusion: multiple pdfs with page group included in a single page
 >]
 
-LaTeX Warning: A float is stuck (cannot be placed); try class option [floatfix] on input line 231.
+LaTeX Warning: A float is stuck (cannot be placed); try class option [floatfix] on input line 235.
 
 (/Users/jonpvandermause/Research/GP/otf/paper/Main/otf.bbl) [3 </Users/jonpvandermause/Research/GP/otf/paper/Main/vacancy_act.pdf> </Users/jonpvandermause/Research/GP/otf/paper/Main/vacancy_msd.pdf
 
@@ -367,15 +354,15 @@ pdfTeX warning: pdflatex (file /Users/jonpvandermause/Research/GP/otf/paper/Main
 pdfTeX warning: pdflatex (file /Users/jonpvandermause/Research/GP/otf/paper/Main/rdf.pdf): PDF inclusion: multiple pdfs with page group included in a single page
 >] (/Users/jonpvandermause/Research/GP/otf/paper/Main/otf.aux) ) 
 Here is how much of TeX's memory you used:
- 5173 strings out of 492995
- 69465 string characters out of 6132704
- 192076 words of memory out of 5000000
- 8623 multiletter control sequences out of 15000+600000
+ 5156 strings out of 492995
+ 69150 string characters out of 6132704
+ 191061 words of memory out of 5000000
+ 8609 multiletter control sequences out of 15000+600000
  14639 words of font info for 54 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 39i,12n,28p,553b,318s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 39i,12n,28p,899b,318s stack positions out of 5000i,500n,10000p,200000b,80000s
 </usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx9.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cmextra/cmex9.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi5.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi6.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi7.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi9.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmr5.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmr6.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmr7.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmr8.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmr9.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy6.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy9.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmti10.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmti9.pfb>
-Output written on /Users/jonpvandermause/Research/GP/otf/paper/Main/otf.pdf (3 pages, 796184 bytes).
+Output written on /Users/jonpvandermause/Research/GP/otf/paper/Main/otf.pdf (3 pages, 798245 bytes).
 PDF statistics:
  308 PDF objects out of 1000 (max. 8388607)
  109 compressed objects within 2 object streams
