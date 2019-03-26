@@ -3,12 +3,12 @@ import sys
 import numpy as np
 
 sys.path.append('../modules')
-from analyze_otf import parse_md_information, parse_dft_information, \
-    parse_header_information
+#from analyze_otf import parse_md_information, parse_dft_information, \
+#    parse_header_information
 
 from otf_parser import OtfAnalysis
 
-
+"""
 def test_parse_md_simple():
     _, _, _, _, _ = parse_md_information('h2_otf.out')
 
@@ -68,19 +68,20 @@ def test_parse_dft():
     forces = np.array(forces)
 
     assert np.isclose(forces[0], force1).all()
+"""
 
-
-def test_otf_gp_parser_h2():
+def test_otf_gp_parser_h2_gp():
     """
-    Short-term unit test to ensure that things are parsing correctly
+    Test the capability of otf parser to read GP/DFT info
     :return:
     """
 
     parsed = OtfAnalysis('h2_otf.out')
-    assert(parsed.gp_species_list == [['H','H']]*11)
+    assert (parsed.gp_species_list == [['H', 'H']] * 11)
 
-    positions = parsed.gp_position_list
-    assert len(positions) == 11
+    gp_positions = parsed.gp_position_list
+    assert len(gp_positions) == 11
+
 
     pos1 = np.array([np.array([2.3, 2.50000000, 2.50000000]),
                      np.array([2.8, 2.50000000, 2.50000000])])
@@ -88,8 +89,8 @@ def test_otf_gp_parser_h2():
     pos2 = np.array([np.array([2.29784856, 2.50000000, 2.50000000]),
                      np.array([2.80215144, 2.50000000, 2.50000000])])
 
-    assert np.isclose(positions[0], pos1).all()
-    assert np.isclose(positions[1], pos2).all()
+    assert np.isclose(gp_positions[0], pos1).all()
+    assert np.isclose(gp_positions[1], pos2).all()
 
     force1 = np.array([[-22.29815461, 0.00000000, 0.00000000],
                        [22.29815461, 0.00000000, 0.00000000]])
@@ -97,6 +98,24 @@ def test_otf_gp_parser_h2():
     forces = parsed.gp_force_list
 
     assert np.isclose(forces[0], force1).all()
+
+
+def test_otf_parser_h2_md():
+    """
+    Test the capability of otf parser to read MD info
+    :return:
+    """
+
+    #TODO: Expand
+    parsed = OtfAnalysis('h2_otf.out')
+
+    pos_frame_1 = np.array([np.array([2.29784856, 2.50000000, 2.50000000]),
+                    np.array([2.80215144, 2.50000000, 2.50000000])])
+
+    positions = parsed.position_list
+    assert len(positions) == 19
+    assert np.isclose(positions[0], pos_frame_1).all()
+
 
 
 

@@ -71,6 +71,11 @@ class OtfAnalysis:
         pass
 
     def parse_pos_otf(self, filename):
+        """
+        Exclusively parses MD run information
+        :param filename:
+        :return:
+        """
         position_list = []
         force_list = []
         uncertainty_list = []
@@ -99,9 +104,10 @@ class OtfAnalysis:
 
             # DFT frame
             if line.startswith("-*Frame"):
-                dft_line = line.split()
-                dft_frames.append(int(dft_line[1]))
-                dft_times.append(float(dft_line[4]))
+                dft_frame_line = line.split()
+                dft_frames.append(int(dft_frame_line[1]))
+                dft_time_line = lines[index+1].split()
+                dft_times.append(float(dft_time_line[-2]))
 
             # MD frame
             if line.startswith("-Frame"):
@@ -118,8 +124,8 @@ class OtfAnalysis:
                 uncertainty_list.append(uncertainties)
                 velocity_list.append(velocities)
 
-                temp_line = lines[index+2+noa].split()
-                temperatures.append(float(temp_line[1]))
+                temp_line = lines[index+4+noa].split()
+                temperatures.append(float(temp_line[-2]))
 
                 if self.calculate_energy:
                     en_line = lines[index+5+noa].split()
@@ -131,6 +137,11 @@ class OtfAnalysis:
             dft_frames, temperatures, times, msds, dft_times, energies
 
     def extract_gp_info(self, filename):
+        """
+        Exclusively parses DFT run information
+        :param filename:
+        :return:
+        """
         species_list = []
         position_list = []
         force_list = []
@@ -173,23 +184,6 @@ class OtfAnalysis:
 
                 atom_list.append(0)
 
-            if line.startswith("Calling DFT due to"):
-                line_curr = line.split()
-
-                # TODO: write function for updating hyps list
-                hyps = []
-                for frame_line in lines[(index+4):(index+4+noh)]:
-                    frame_line = frame_line.split()
-                    hyps.append(float(frame_line[4]))
-                hyps = np.array(hyps)
-                hyp_list.append(hyps)
-
-                # TODO: generalize atom list update to account for arbitrary
-                # list
-                append_atom_lists(species_list, position_list, force_list,
-                                  uncertainty_list, velocity_list,
-                                  lines, index, noa, True, noh)
-                atom_list.append(int(line_curr[5]))
 
         return position_list, force_list, uncertainty_list, velocity_list,\
             atom_list, hyp_list, species_list
