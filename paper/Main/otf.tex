@@ -76,6 +76,8 @@ Sciences, Harvard University, Cambridge, MA 02138, USA}
 \affiliation{Department of Physics, Harvard University, Cambridge, MA 02138, USA}
 
 \author{Simon Batzner}
+\affiliation{John A. Paulson School of Engineering and Applied
+Sciences, Harvard University, Cambridge, MA 02138, USA}
 \affiliation{Center for Computational Engineering, Massachusetts Institute of Technology, Cambridge, MA 02139, USA}
 
 \author{Boris Kozinsky}
@@ -86,7 +88,7 @@ Sciences, Harvard University, Cambridge, MA 02138, USA}
 \date{\today}
 
 \begin{abstract}
-  Machine learning provides a path toward fast, accurate, and large-scale materials simulation, promising to combine the accuracy of \textit{ab initio} methods with the computational efficiency of classical potentials. However, training current state-of-the-art models often requires hundreds of CPU hours and databases containing thousands of structures. We present an on-the-fly Bayesian inference scheme for automating and accelerating the construction of interatomic force fields. Gaussian process regression is coupled to a first principles DFT code to learn two- and three-body force fields on-the-fly with minimal trianing data. The resulting force field is easily extended to structures outside the training set and compares favorably to state-of-the-art classical and machine learned potentials.
+  Machine learning provides a path toward fast, accurate, and large-scale materials simulation, promising to combine the accuracy of \textit{ab initio} methods with the computational efficiency of classical potentials. However, training current state-of-the-art models often requires databases of first principles calculations containing thousands of structures. We present an on-the-fly Bayesian inference scheme for automating and accelerating the construction of interatomic force fields in a single molecular dynamics simulation. Gaussian process regression is coupled to a first principles DFT code to learn two- and three-body force fields on-the-fly with minimal training data. The resulting force field is easily extended to structures outside the training set and compares favorably to state-of-the-art classical and machine learned potentials.
 \end{abstract}
 
 \maketitle
@@ -102,7 +104,7 @@ To reason about model uncertainty, we construct a Gaussian process model trained
 \begin{equation}
 E = \sum_{ij} \varepsilon_{ij} + \sum_{ijk} \varepsilon_{ijk},
 \end{equation}
-where the sums range over all unique pairs and triplets of atoms containing at least one atom from the unfolded primary cell. In practice, the sums are truncated by considering local atom-centered environments surrounding each atom in the primary cell and neglecting contributions from atoms beyond a chosen cutoff distance from the central atom. The covariance between bond and triplet energies is set equal to a kernel defined directly over interatomic distances, from which a fully covariant and energy conserving force kernel follows immediately \cite{glielmo2017accurate, glielmo2018efficient}
+where the sums range over all unique pairs and triplets of atoms containing at least one atom from the unfolded primary cell. In practice, the sums are truncated by considering local atom-centered environments surrounding each atom in the primary cell and neglecting contributions from atoms beyond a chosen cutoff distance from the central atom. The covariance between bond and triplet energies is set equal to a kernel defined directly over interatomic distances, from which a fully covariant and energy conserving force kernel follows immediately \cite{glielmo2017accurate, glielmo2018efficient}. 
 
 
 % \section{Organization}
