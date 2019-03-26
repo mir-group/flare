@@ -1,15 +1,15 @@
 # Fdb version 3
-["bibtex otf"] 1553567682 "otf.aux" "otf.bbl" "otf" 1553568455
+["bibtex otf"] 1553567682 "otf.aux" "otf.bbl" "otf" 1553568875
   "/usr/local/texlive/2017/texmf-dist/bibtex/bst/revtex/apsrev4-1.bst" 1480098436 71518 fec93f06df0c073f83d2330456bd19c2 ""
-  "otf.aux" 1553568455 788 a552888b52b5651fea7f0021484e550b ""
+  "otf.aux" 1553568875 788 a552888b52b5651fea7f0021484e550b ""
   "otf.bib" 1552344171 4029 8fddfcab89ccd7840a2738a20e7175a1 ""
-  "otfNotes.bib" 1553568455 103 48ad29797468f16e2853d8797278d7af ""
+  "otfNotes.bib" 1553568875 103 48ad29797468f16e2853d8797278d7af ""
   (generated)
   "otf.bbl"
   "otf.blg"
-["pdflatex"] 1553568455 "/Users/jonpvandermause/Research/GP/otf/paper/Main/otf.tex" "/Users/jonpvandermause/Research/GP/otf/paper/Main/otf.pdf" "otf" 1553568455
-  "/Users/jonpvandermause/Research/GP/otf/paper/Main/otf.aux" 1553568455 788 a552888b52b5651fea7f0021484e550b ""
-  "/Users/jonpvandermause/Research/GP/otf/paper/Main/otf.tex" 1553568454 16907 4c9385a2800cd2af2aac39b8b362295d ""
+["pdflatex"] 1553568874 "/Users/jonpvandermause/Research/GP/otf/paper/Main/otf.tex" "/Users/jonpvandermause/Research/GP/otf/paper/Main/otf.pdf" "otf" 1553568875
+  "/Users/jonpvandermause/Research/GP/otf/paper/Main/otf.aux" 1553568875 788 a552888b52b5651fea7f0021484e550b ""
+  "/Users/jonpvandermause/Research/GP/otf/paper/Main/otf.tex" 1553568874 16963 f5fda5eb65f32c1f69b7508076cd3a2c ""
   "/usr/local/texlive/2017/texmf-dist/fonts/map/fontname/texfonts.map" 1480098670 3287 e6b82fe08f5336d4d5ebc73fb1152e87 ""
   "/usr/local/texlive/2017/texmf-dist/fonts/tfm/public/amsfonts/cmextra/cmbsy5.tfm" 1480098698 1120 1e8878807317373affa7f7bba4cf2f6a ""
   "/usr/local/texlive/2017/texmf-dist/fonts/tfm/public/amsfonts/cmextra/cmbsy6.tfm" 1480098698 1124 14ccf5552bc7f77ca02a8a402bea8bfb ""
@@ -102,13 +102,13 @@
   "/usr/local/texlive/2017/texmf-var/fonts/map/pdftex/updmap/pdftex.map" 1495593472 2350277 a699055bee05bf8a40b0504752487295 ""
   "/usr/local/texlive/2017/texmf-var/web2c/pdftex/pdflatex.fmt" 1495593487 4129592 0e6cfee100d68e6d96b92c0258f2ff73 ""
   "/usr/local/texlive/2017/texmf.cnf" 1495593465 577 2b71d4d888f9e5560b2e99985915a9fa ""
-  "otf.aux" 1553568455 788 a552888b52b5651fea7f0021484e550b ""
+  "otf.aux" 1553568875 788 a552888b52b5651fea7f0021484e550b ""
   "otf.bbl" 1553567682 3530 bcefa67bb67a8e06b91b8425de77b125 "bibtex otf"
-  "otf.tex" 1553568454 16907 4c9385a2800cd2af2aac39b8b362295d ""
+  "otf.tex" 1553568874 16963 f5fda5eb65f32c1f69b7508076cd3a2c ""
   (generated)
-  "otf.aux"
+  "otf.log"
+  "/Users/jonpvandermause/Research/GP/otf/paper/Main/otf.pdf"
   "otf.pdf"
+  "otf.aux"
   "otfNotes.bib"
   "/Users/jonpvandermause/Research/GP/otf/paper/Main/otf.log"
-  "/Users/jonpvandermause/Research/GP/otf/paper/Main/otf.pdf"
-  "otf.log"
