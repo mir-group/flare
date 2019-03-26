@@ -76,7 +76,7 @@ def test_otf_gp_parser_h2_gp():
     :return:
     """
 
-    parsed = OtfAnalysis('h2_otf.out')
+    parsed = OtfAnalysis('sample_h2_otf.out')
     assert (parsed.gp_species_list == [['H', 'H']] * 11)
 
     gp_positions = parsed.gp_position_list
@@ -107,7 +107,7 @@ def test_otf_parser_h2_md():
     """
 
     #TODO: Expand
-    parsed = OtfAnalysis('h2_otf.out')
+    parsed = OtfAnalysis('sample_h2_otf.out')
 
     pos_frame_1 = np.array([np.array([2.29784856, 2.50000000, 2.50000000]),
                     np.array([2.80215144, 2.50000000, 2.50000000])])
