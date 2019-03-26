@@ -8,55 +8,60 @@ from analyze_otf import parse_md_information, parse_dft_information, \
 
 
 def test_parse_md_simple():
-    os.system('cp test_files/otf_output_1.out otf_run_1.out')
-    _, _, _, _ = parse_md_information('otf_run_1.out')
-    os.system('rm otf_run_1.out')
+    _, _, _, _, _ = parse_md_information('h2_otf.out')
 
 
 def test_parse_dft_simple():
-    os.system('cp test_files/otf_output_1.out otf_run_1.out')
-    _, _, _, _ = parse_dft_information('otf_run_1.out')
-    os.system('rm otf_run_1.out')
+    _, _, _, _, _ = parse_dft_information('h2_otf.out')
 
 
-def test_parse_header_2():
-    os.system('cp test_files/otf_output_2.out otf_run_1.out')
+def test_parse_header():
 
-    header_dict = parse_header_information('otf_run_1.out')
+    header_dict = parse_header_information('h2_otf.out')
 
     assert header_dict['frames'] == 20
     assert header_dict['atoms'] == 2
-    assert header_dict['cutoff'] == 5
     assert header_dict['species'] == {'H'}
     assert header_dict['dt'] == .0001
+    assert header_dict['kernel'] == 'two_body'
+    assert header_dict['n_hyps'] == 3
+    assert header_dict['algo'] == 'L-BFGS-B'
 
-    os.system('rm otf_run_1.out')
+    header_dict = parse_header_informaiton('al_otf.out')
+
+    assert header_dict['frames'] == 100
+    assert header_dict['atoms'] == 4
+    assert header_dict['species'] == {'Al'}
+    assert header_dict['dt'] == .001
+    assert header_dict['kernel'] == 'three_body'
+    assert header_dict['n_hyps'] == 3
+    assert header_dict['algo'] == 'L-BFGS-B'
 
 
-def test_parse_dft_2():
-    os.system('cp test_files/otf_output_2.out otf_run_1.out')
 
-    lattices, species, positions, forces = \
-        parse_dft_information('otf_run_1.out')
 
-    assert np.equal(lattices, [5. * np.eye(3), 5. * np.eye(3)]).all()
-    assert species == [['H', 'H'], ['H', 'H']]
+def test_parse_dft():
 
-    assert len(positions) == 2
+    species, positions, forces, velocities = \
+        parse_dft_information('h2_otf.out')
 
-    pos1 = np.array([np.array([2.51857000, 2.50000000, 2.50000000]),
-                     np.array([4.48143000, 2.50000000, 2.50000000])])
+    assert species == [['H', 'H']]*10
 
-    pos2 = np.array([np.array([2.55027962, 2.50000000, 2.50000000]),
-                     np.array([4.44972038, 2.50000000, 2.50000000])])
+    assert len(positions) == 10
+
+    pos1 = np.array([np.array([2.3, 2.50000000, 2.50000000]),
+                     np.array([2.8, 2.50000000, 2.50000000])])
+
+    pos2 = np.array([np.array([2.29784856, 2.50000000, 2.50000000]),
+                     np.array([2.80215144, 2.50000000, 2.50000000])])
 
     positions = np.array(positions)
 
     assert np.isclose(positions[0], pos1).all()
     assert np.isclose(positions[1], pos2).all()
 
-    force1 = np.array([[1.90621314, 0.00000000, 0.00000000],
-                       [-1.90621314, 0.00000000, 0.00000000]])
+    force1 = np.array([[-22.29815461, 0.00000000, 0.00000000],
+                       [22.29815461, 0.00000000, 0.00000000]])
 
     forces = np.array(forces)
 
