@@ -12,7 +12,7 @@ def test_parse_md_simple():
 
 
 def test_parse_dft_simple():
-    _, _, _, _, _ = parse_dft_information('h2_otf.out')
+    _, _, _, _ = parse_dft_information('h2_otf.out')
 
 
 def test_parse_header():
@@ -27,7 +27,7 @@ def test_parse_header():
     assert header_dict['n_hyps'] == 3
     assert header_dict['algo'] == 'L-BFGS-B'
 
-    header_dict = parse_header_informaiton('al_otf.out')
+    header_dict = parse_header_information('al_otf.out')
 
     assert header_dict['frames'] == 100
     assert header_dict['atoms'] == 4
@@ -45,9 +45,9 @@ def test_parse_dft():
     species, positions, forces, velocities = \
         parse_dft_information('h2_otf.out')
 
-    assert species == [['H', 'H']]*10
+    assert species == [['H', 'H']]*11
 
-    assert len(positions) == 10
+    assert len(positions) == 11
 
     pos1 = np.array([np.array([2.3, 2.50000000, 2.50000000]),
                      np.array([2.8, 2.50000000, 2.50000000])])
