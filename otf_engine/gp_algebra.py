@@ -20,6 +20,24 @@ def get_cov_row(x_1, d_1, m_index, size, training_data, kernel,
     return covs
 
 
+def get_cov_row_derv(x_1, d_1, m_index, size, training_data, kernel_grad,
+                     kern_hyps, cutoffs):
+    covs = []
+    hyps = []
+    ds = [1, 2, 3]
+    for n_index in range(m_index, size):
+        x_2 = training_data[int(math.floor(n_index / 3))]
+        d_2 = ds[n_index % 3]
+
+        # calculate kernel and gradient
+        kern_curr = kernel_grad(x_1, x_2, d_1, d_2, kern_hyps,
+                                cutoffs)
+        covs.append(kern_curr[0])
+        hyps.append(kern_curr[1])
+
+    return covs, hyps
+
+
 def get_ky_mat_par(hyps: np.ndarray, training_data: list,
                    training_labels_np: np.ndarray,
                    kernel, cutoffs=None):
@@ -61,6 +79,55 @@ def get_ky_mat_par(hyps: np.ndarray, training_data: list,
     pool.close()
 
     return ky_mat
+
+
+def get_ky_and_hyp_par(hyps: np.ndarray, training_data: list,
+                       training_labels_np: np.ndarray,
+                       kernel_grad, cutoffs=None):
+
+    pool = mp.Pool(processes=32)
+
+    # assume sigma_n is the final hyperparameter
+    number_of_hyps = len(hyps)
+    sigma_n = hyps[number_of_hyps - 1]
+    kern_hyps = hyps[0:(number_of_hyps - 1)]
+
+    # initialize matrices
+    size = len(training_data) * 3
+    k_mat = np.zeros([size, size])
+    hyp_mat = np.zeros([size, size, number_of_hyps])
+
+    ds = [1, 2, 3]
+
+    # calculate elements
+    results = []
+    for m_index in range(size):
+        x_1 = training_data[int(math.floor(m_index / 3))]
+        d_1 = ds[m_index % 3]
+
+        results.append(pool.apply_async(get_cov_row_derv,
+                                        args=(x_1, d_1, m_index, size,
+                                              training_data, kernel_grad,
+                                              kern_hyps, cutoffs)))
+
+    # construct covariance matrix
+    for m in range(size):
+        res_cur = results[m].get()
+        for n in range(m, size):
+            k_mat[m, n] = res_cur[0][n-m]
+            k_mat[n, m] = res_cur[0][n-m]
+            hyp_mat[m, n, :-1] = res_cur[1][n-m]
+            hyp_mat[n, m, :-1] = res_cur[1][n-m]
+
+    # add gradient of noise variance
+    hyp_mat[:, :, number_of_hyps - 1] = np.eye(size) * 2 * sigma_n
+
+    # matrix manipulation
+    ky_mat = k_mat + sigma_n ** 2 * np.eye(size)
+
+    pool.close()
+
+    return hyp_mat, ky_mat
 
 
 def get_ky_mat(hyps: np.ndarray, training_data: list,
