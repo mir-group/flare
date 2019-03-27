@@ -117,6 +117,14 @@ def test_otf_parser_h2_md():
     assert np.isclose(positions[0], pos_frame_1).all()
 
 
+def test_gp_from_otf_run():
+
+    parsed = OtfAnalysis('sample_h2_otf.out')
+
+    positions = parsed.position_list
+    forces = parsed.force_list
+    uncertainties = parsed.uncertainty_list
+
 
 
 
