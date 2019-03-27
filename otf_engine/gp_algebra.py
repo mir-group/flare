@@ -42,7 +42,7 @@ def get_ky_mat_par(hyps: np.ndarray, training_data: list,
                    training_labels_np: np.ndarray,
                    kernel, cutoffs=None):
 
-    pool = mp.Pool(processes=32)
+    pool = mp.Pool(processes=mp.cpu_count())
 
     # assume sigma_n is the final hyperparameter
     number_of_hyps = len(hyps)
@@ -85,7 +85,8 @@ def get_ky_and_hyp_par(hyps: np.ndarray, training_data: list,
                        training_labels_np: np.ndarray,
                        kernel_grad, cutoffs=None):
 
-    pool = mp.Pool(processes=32)
+    pool = mp.Pool(processes=mp.cpu_count())
+    print(mp.cpu_count())
 
     # assume sigma_n is the final hyperparameter
     number_of_hyps = len(hyps)
@@ -263,13 +264,14 @@ def get_like_grad_from_mats(ky_mat, hyp_mat, training_labels_np):
 
 def get_neg_likelihood(hyps: np.ndarray, training_data: list,
                        training_labels_np: np.ndarray,
-                       kernel, cutoffs=None, monitor: bool = False):
+                       kernel, cutoffs=None, monitor: bool = False,
+                       par=False):
 
     if monitor:
         print('hyps: ' + str(hyps))
 
-    ky_mat = get_ky_mat(hyps, training_data, training_labels_np,
-                        kernel, cutoffs)
+    ky_mat = get_ky_mat_par(hyps, training_data, training_labels_np,
+                            kernel, cutoffs)
 
     like = get_like_from_ky_mat(ky_mat, training_labels_np)
 
@@ -283,14 +285,19 @@ def get_neg_likelihood(hyps: np.ndarray, training_data: list,
 def get_neg_like_grad(hyps: np.ndarray, training_data: list,
                       training_labels_np: np.ndarray,
                       kernel_grad, cutoffs=None,
-                      monitor: bool = False):
+                      monitor: bool = False, par=False):
 
     if monitor:
         print('hyps: ' + str(hyps))
 
-    hyp_mat, ky_mat = \
-        get_ky_and_hyp(hyps, training_data, training_labels_np,
-                       kernel_grad, cutoffs)
+    if par:
+        hyp_mat, ky_mat = \
+            get_ky_and_hyp_par(hyps, training_data, training_labels_np,
+                               kernel_grad, cutoffs)
+    else:
+        hyp_mat, ky_mat = \
+            get_ky_and_hyp(hyps, training_data, training_labels_np,
+                           kernel_grad, cutoffs)
 
     like, like_grad = \
         get_like_grad_from_mats(ky_mat, hyp_mat, training_labels_np)

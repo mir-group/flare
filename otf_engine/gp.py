@@ -22,7 +22,7 @@ class GaussianProcess:
                  energy_force_kernel: Callable=None,
                  energy_kernel: Callable=None,
                  opt_algorithm: str='L-BFGS-B',
-                 maxiter=10):
+                 maxiter=10, par=False):
         """Initialize GP parameters and training data."""
 
         self.kernel = kernel
@@ -42,6 +42,7 @@ class GaussianProcess:
         self.maxiter = maxiter
         self.likelihood = None
         self.likelihood_gradient = None
+        self.par = par
 
     # TODO unit test custom range
     def update_db(self, struc: Structure, forces: list,
@@ -94,9 +95,11 @@ class GaussianProcess:
 
         x_0 = self.hyps
 
+        args = (self.training_data, self.training_labels_np,
+                self.kernel_grad, self.cutoffs, monitor,
+                self.par)
+
         if self.algo == 'L-BFGS-B':
-            args = (self.training_data, self.training_labels_np,
-                    self.kernel_grad, self.cutoffs, monitor)
 
             # bound signal noise below to avoid overfitting
             bounds = np.array([(-np.inf, np.inf)] * len(x_0))
@@ -114,27 +117,18 @@ class GaussianProcess:
                 self.algo = 'BFGS'
 
         if custom_bounds is not None:
-            args = (self.training_data, self.training_labels_np,
-                    self.kernel_grad, self.cutoffs, monitor)
-
             res = minimize(get_neg_like_grad, x_0, args,
                            method='L-BFGS-B', jac=True, bounds=custom_bounds,
                            options={'disp': False, 'gtol': 1e-4,
                                     'maxiter': self.maxiter})
 
         elif self.algo == 'BFGS':
-            args = (self.training_data, self.training_labels_np,
-                    self.kernel_grad, self.cutoffs, monitor)
-
             res = minimize(get_neg_like_grad, x_0, args,
                            method='BFGS', jac=True,
                            options={'disp': False, 'gtol': 1e-4,
                                     'maxiter': self.maxiter})
 
         elif self.algo == 'nelder-mead':
-            args = (self.training_data, self.training_labels_np,
-                    self.kernel, self.cutoffs, monitor)
-
             res = minimize(get_neg_likelihood, x_0, args,
                            method='nelder-mead',
                            options={'disp': False,
