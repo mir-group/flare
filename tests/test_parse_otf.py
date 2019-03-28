@@ -115,7 +115,7 @@ def test_otf_parser_h2_md():
     Test the capability of otf parser to read MD info
     :return:
     """
-
+    os.system('cp test_files/sample_h2_otf.out .')
     #TODO: Expand
     parsed = OtfAnalysis('sample_h2_otf.out')
 
@@ -176,11 +176,6 @@ def test_replicate_gp():
 
     positions = parsed.position_list
     forces = parsed.force_list
-    uncertainties = parsed.uncertainty_list
-    lattice = parsed.header['cell']
-
-    kernel = two_plus_three_body
-    kernel_grad = two_plus_three_body_grad
 
     gp_model = parsed.make_gp(kernel=two_plus_three_body,
                               kernel_grad=two_plus_three_body_grad)
