@@ -106,9 +106,6 @@ def test_otf_gp_parser_h2_gp():
 
     forces = parsed.gp_force_list
 
-
-
-
     assert np.isclose(forces[0], force1).all()
 
 
@@ -195,6 +192,12 @@ def test_replicate_gp():
 
     assert np.isclose(final_structure.forces,pred_for).all()
     assert np.isclose(final_structure.stds,pred_stds).all()
+
+    set_of_structures = structures[-3:-1]
+    for structure in set_of_structures:
+        pred_for,pred_stds = predict_on_structure(structure,gp_model)
+        assert np.isclose(structure.forces,pred_for,atol=1e-6).all()
+        assert np.isclose(structure.stds,pred_stds,atol=1e-6).all()
 
 
 
