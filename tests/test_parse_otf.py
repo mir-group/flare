@@ -23,6 +23,8 @@ def test_parse_dft_simple():
 """
 def test_parse_header():
 
+    os.system('cp test_files/sample_h2_otf.out .')
+
     header_dict = OtfAnalysis('sample_h2_otf.out').header
 
     assert header_dict['frames'] == 20
@@ -80,7 +82,7 @@ def test_otf_gp_parser_h2_gp():
     Test the capability of otf parser to read GP/DFT info
     :return:
     """
-
+    os.system('cp test_files/sample_h2_otf.out .')
     parsed = OtfAnalysis('sample_h2_otf.out')
     assert (parsed.gp_species_list == [['H', 'H']] * 11)
 
