@@ -270,6 +270,15 @@ def get_neg_likelihood(hyps: np.ndarray, training_data: list,
     if monitor:
         print('hyps: ' + str(hyps))
 
+    if par:
+        ky_mat = \
+            get_ky_mat_par(hyps, training_data, training_labels_np,
+                           kernel, cutoffs)
+    else:
+        ky_mat = \
+            get_ky_mat(hyps, training_data, training_labels_np,
+                       kernel, cutoffs)
+
     ky_mat = get_ky_mat_par(hyps, training_data, training_labels_np,
                             kernel, cutoffs)
 

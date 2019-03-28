@@ -65,7 +65,7 @@ prl,
 
 \begin{document}
 
-\title{Learning Atomistic Force Fields with On-the-Fly Bayesian Inference}
+\title{Interpretable Force Fields for On-the-Fly Machine Learning}
 
 \author{Jonathan Vandermause}
 \affiliation{Department of Physics, Harvard University, Cambridge, MA 02138, USA}
@@ -93,43 +93,37 @@ Sciences, Harvard University, Cambridge, MA 02138, USA}
 
 \maketitle
 
-\textit{Ab initio} molecular dynamics is a powerful tool for
-accurately probing the dynamics of molecules and solids, but it is fundamentally limited by the computational cost of the most commonly used density functional theory (DFT) codes, which scale with the cube of the number of electrons in the system \cite{kohn1999nobel}. A common solution to this problem bypasses the electrons by directly modelling the Born-Oppenheimer potential energy surface of the ions. This is the approach taken when constructing classical interatomic potentials, which trade the accuracy of DFT and other first principles approaches for the speed and scalability of a local and analytic model, making possible the fully atomistic simulation of many thousands of atoms over nanosecond timescales. However, classical potentials have limited accuracy, flexibility, and transferability, and are inadequate in many settings.
+% \textit{Ab initio} molecular dynamics is a powerful tool for
+% accurately probing the dynamics of molecules and solids, but it is fundamentally limited by the computational cost of the most commonly used density functional theory (DFT) codes, which scale with the cube of the number of electrons in the system \cite{kohn1999nobel}. A common solution to this problem bypasses the electrons by directly modelling the Born-Oppenheimer potential energy surface of the ions. This is the approach taken when constructing classical interatomic potentials, which trade the accuracy of DFT and other first principles approaches for the speed and scalability of a local and analytic model, making possible the fully atomistic simulation of many thousands of atoms over nanosecond timescales. However, classical potentials have limited accuracy, flexibility, and transferability, and are inadequate in many settings.
 
-Recent machine learning (ML) approaches to fitting interatomic potentials have been shown to approach first principles accuracy. However, most of these methods return only point estimates of the quantities of interest (typically energies, forces, and stress) rather than a predictive distribution that reflects model uncertainty. Without knowledge of the highest uncertainty training points, a laborious fitting procedure is required, in which thousands of reference structures are selected \textit{ad hoc} from a database of first principles calculations. At test time, lack of predictive uncertainty makes it difficult to determine when the fitted model is out-of-sample, leading to unreliable results and making the model difficult to update in the presence of new data.
+Recent machine learning (ML) approaches to modelling the Born-Oppenheimer potential energy surface have been shown to approach first principles accuracy in several molecular and extended systems. However, most of these methods return only point estimates of the quantities of interest (typically energies, forces, and stress) rather than a predictive distribution that reflects model uncertainty. Without knowledge of the highest uncertainty training points, a laborious fitting procedure is required, in which thousands of reference structures are selected \textit{ad hoc} from a database of first principles calculations. At test time, lack of predictive uncertainty makes it difficult to determine when the fitted model is out-of-sample, leading to unreliable results and making the model difficult to update in the presence of new data.
 
-Here, we show that on-the-fly Bayesian inference can be used to both accelerate the training of a high-quality machine learned force field and flexibly adapt the model to out-of-sample structures. By coupling Gaussian process regression and density functional theory in a single molecular dynamics engine, it is shown that a high quality potential can be obtained with only a few dozen first principle calculations. Such a reduction in the computational cost of training a high-quality potential promises to extend ML modelling to a wide class of materials.
+Here, we show that on-the-fly Bayesian inference can be used to both accelerate the training of a high-quality machine learned force field and flexibly adapt the model to out-of-sample structures. By coupling Gaussian process regression and density functional theory in a single molecular dynamics engine, it is shown that a high quality potential can be obtained with only a few dozen first principle calculations. Such a reduction in the computational cost of training a high-quality potential promises to extend ML modelling to a wider class of materials than has been possible to date.
 
-To reason about model uncertainty, we construct a Gaussian process model trained directly on \textit{ab initio} forces. The training database of the Gaussian process is populated with individual atomic environments rather than entire structures by expressing the total energy of the system as a sum over two- and three-body terms,
+To reason about model uncertainty, we construct a Gaussian process model trained directly on \textit{ab initio} forces. The training database of the Gaussian process is populated with individual atomic environments by expressing the total energy of the system as a sum over two- and three-body terms,
 \begin{equation}
 E = \sum_{ij} \varepsilon_{ij} + \sum_{ijk} \varepsilon_{ijk},
 \end{equation}
 where the sums range over all unique pairs and triplets of atoms containing at least one atom from the unfolded primary cell. In practice, the sums are truncated by considering local atom-centered environments surrounding each atom in the primary cell and neglecting contributions from atoms beyond a chosen cutoff distance from the central atom. The covariance between bond and triplet energies is defined by a kernel that directly compares interatomic distances, from which a fully covariant and energy conserving force kernel follows immediately \cite{glielmo2017accurate, glielmo2018efficient}. 
 
+\begin{figure}
+	\centering
+	\includegraphics[width=3.4in]{melt_msd_3.pdf}
+	\caption{On-the-fly learning of an aluminum force field at multiple temperatures.}
+\end{figure}
 
-% \section{Organization}
+\begin{figure}
+	\centering
+	\includegraphics[width=3.4in]{vacancy_act.pdf}
+	\caption{On-the-fly learning of an aluminum force field at multiple temperatures.}
+\end{figure}
 
-% \begin{itemize}
+\begin{figure}
+	\centering
+	\includegraphics[width=3.4in]{vacancy_msd.pdf}
+	\caption{On-the-fly learning of an aluminum force field at multiple temperatures.}
+\end{figure}
 
-% \item Figure 1: Correlation between prediction error and out-of-sample variance. Train on a low temperature crystal and test at higher temperatures to systematically steer the model away from the training set. Establishing a correlation motivates the use of predictive variance for on-the-fly learning.
-
-% \item Algorithm 1: On-the-fly algorithm, including GP, MD, and DFT updates.
-
-% \item Figure 2: Number of DFT calls vs simulation time. A sharp increase should be observed when new phases are introduced.
-
-% \item Table 1: Performance of FLARE compared with state-of-the art EAM and ML models. Models tested on independent \textit{ab initio} MD runs. MAEs and mean absolute force components reported in eV/A.
-
-% \item Figure 3: Validation of the force field. Parity plots, radial distribution function, and activation profiles should agree with \textit{ab initio} calculations.
-
-% \item Supplementary Figure 1: Numerical demonstration of energy conservation. Plot the RMS energy fluctuations against the time step squared and check that the resulting graph is linear \cite{allen2017computer}.
-
-% \item Supplementary Figure 2: Justification of cutoff selection. Plot likelihood, noise parameter, and out-of-sample error vs. cutoffs.
-
-% \item Supplementary Table 1: Table of formulas for calculating kernels.
-
-% \item Supplementary Table 2: Justification of quadratic cutoff. Record log likelihood for different cutoffs (cosine, hard, quadratic).
-
-% \end{itemize}
 
 % \section{Supplementary Information}
 
@@ -196,24 +190,6 @@ where the sums range over all unique pairs and triplets of atoms containing at l
 % 	\caption{RDF of Al melt.}
 % \end{figure}
 
-% % https://en.wikibooks.org/wiki/LaTeX/Tables
-% \begin{table}
-% \begin{tabular}
-% { |p{1.4cm}|| >{\centering} p{1.4cm}| >{\centering} p{1.4cm}| >{\centering} p{1.4cm}| p{1.4cm} <{\centering}|  }
-% 	% \hline
-% 	% \multicolumn{4}{|c|}{Model Error} \\
-% 	\hline
-% 	 & Solid & Liquid & Slab & Vacancy \\
-% 	\hline
-% 	OTF & & & & \\
-% 	\hline
-% 	EAM & & & & \\
-%   \hline
-% 	AGNI & & & & \\
-% 	\hline
-% \end{tabular}
-% \caption{On-the-fly force field error compared to a recent EAM potential.}
-% \end{table}
 
 % % https://en.wikibooks.org/wiki/LaTeX/Algorithms#Typesetting_using_the_algorithmic_package
 % \begin{algorithm}[H]

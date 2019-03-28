@@ -1,7 +1,8 @@
 import sys
 import numpy as np
+import crystals
 from typing import List, Tuple
-sys.path.append('../../otf/otf_engine')
+sys.path.append('../otf_engine')
 import gp, env, struc, kernels, otf
 
 
@@ -30,7 +31,7 @@ class OtfAnalysis:
 
         gp_position_list, gp_force_list, gp_uncertainty_list,\
             gp_velocity_list, gp_atom_list, gp_hyp_list, \
-            gp_species_list, gp_atom_count = self.extract_gp_info(filename)
+            gp_species_list = self.extract_gp_info(filename)
 
         self.gp_position_list = gp_position_list
         self.gp_force_list = gp_force_list
@@ -39,26 +40,28 @@ class OtfAnalysis:
         self.gp_atom_list = gp_atom_list
         self.gp_hyp_list = gp_hyp_list
         self.gp_species_list = gp_species_list
-        self.gp_atom_count = gp_atom_count
 
-    def make_gp(self, cell, kernel, kernel_grad, algo, call_no, cutoffs,
-                hyps=None):
-        if hyps is not None:
-            gp_hyps = hyps
-        else:
-            gp_hyps = self.gp_hyp_list[call_no-1][-1]
+    def make_gp(self, cell, kernel, kernel_grad, algo, call_no,
+                start_list, cutoffs):
+        gp_hyps = self.gp_hyp_list[call_no-1]
         gp_model = gp.GaussianProcess(kernel, kernel_grad, gp_hyps,
-                                      cutoffs, opt_algorithm=algo)
+                                      cutoffs)
 
-        for (positions, forces, atoms, _, species) in \
-            zip(self.gp_position_list[0:call_no],
-                self.gp_force_list[0:call_no],
-                self.gp_atom_list[0:call_no], self.gp_hyp_list[0:call_no],
-                self.gp_species_list[0:call_no]):
+        for count, (positions, forces, atom, _, species) in \
+            enumerate(zip(self.gp_position_list, self.gp_force_list,
+                          self.gp_atom_list, self.gp_hyp_list,
+                          self.gp_species_list)):
 
             struc_curr = struc.Structure(cell, species, positions)
 
-            gp_model.update_db(struc_curr, forces, custom_range=atoms)
+            # add atoms in start list
+            if count == 0:
+                gp_model.update_db(struc_curr, forces,
+                                   custom_range=start_list)
+
+            # add one atom
+            elif count < call_no:
+                gp_model.update_db(struc_curr, forces, custom_range=[atom])
 
         gp_model.set_L_alpha()
 
@@ -69,11 +72,6 @@ class OtfAnalysis:
         pass
 
     def parse_pos_otf(self, filename):
-        """
-        Exclusively parses MD run information
-        :param filename:
-        :return:
-        """
         position_list = []
         force_list = []
         uncertainty_list = []
@@ -91,27 +89,24 @@ class OtfAnalysis:
         n_steps = 0
 
         for index, line in enumerate(lines):
-            if line.startswith("number of atoms"):
+            if line.startswith("Number of Atoms"):
                 at_line = line.split()
                 noa = int(at_line[3])
 
             # number of hyperparameters
-            if line.startswith("number of hyperparameters"):
-                line_curr = line.split(':')
-                noh = int(line_curr[-1])
+            if line.startswith("# Hyperparameters"):
+                line_curr = line.split()
+                noh = int(line_curr[2])
 
-            # DFT frame
-            if line.startswith("*-Frame"):
-                dft_frame_line = line.split()
-                dft_frames.append(int(dft_frame_line[1]))
-                dft_time_line = lines[index+1].split()
-                dft_times.append(float(dft_time_line[-2]))
+            if line.startswith("-*"):
+                dft_line = line.split()
+                dft_frames.append(int(dft_line[1]))
+                dft_times.append(float(dft_line[4]))
 
-            # MD frame
-            if line.startswith("-Frame"):
+            if line.startswith("- Frame"):
                 n_steps += 1
-                time_line = lines[index+1].split()
-                sim_time = float(time_line[2])
+                frame_line = line.split()
+                sim_time = float(frame_line[5])
                 times.append(sim_time)
 
                 _, positions, forces, uncertainties, velocities = \
@@ -122,8 +117,8 @@ class OtfAnalysis:
                 uncertainty_list.append(uncertainties)
                 velocity_list.append(velocities)
 
-                temp_line = lines[index+4+noa].split()
-                temperatures.append(float(temp_line[-2]))
+                temp_line = lines[index+2+noa].split()
+                temperatures.append(float(temp_line[1]))
 
                 if self.calculate_energy:
                     en_line = lines[index+5+noa].split()
@@ -135,73 +130,72 @@ class OtfAnalysis:
             dft_frames, temperatures, times, msds, dft_times, energies
 
     def extract_gp_info(self, filename):
-        """
-        Exclusively parses DFT run information
-        :param filename:
-        :return:
-        """
         species_list = []
         position_list = []
         force_list = []
         uncertainty_list = []
         velocity_list = []
         atom_list = []
-        atom_count = []
         hyp_list = []
 
         with open(filename, 'r') as f:
             lines = f.readlines()
 
         for index, line in enumerate(lines):
+            # cutoff radius
+            # if line.startswith("Structure Cutoff Radius:"):
+            #     line_curr = line.split()
+            #     cutoff_radius = float(line_curr[3])
 
             # number of atoms
-            if line.startswith("number of atoms"):
+            if line.startswith("Number of Atoms"):
                 line_curr = line.split()
                 noa = int(line_curr[3])
 
             # number of hyperparameters
-            if line.startswith("number of hyperparameters"):
+            if line.startswith("# Hyperparameters"):
                 line_curr = line.split()
-                noh = int(line_curr[3])
+                noh = int(line_curr[2])
 
-            if line.startswith("*-"):
-                # keep track of atoms added to training set
-                ind_count = index+1
-                line_check = lines[ind_count]
-                atoms_added = []
-                hyps_added = []
-                while not line_check.startswith("-"):
-                    # keep track of atom number
-                    if line_check.startswith("Adding atom"):
-                        line_split = line_check.split()
-                        atoms_added.append(int(line_split[2]))
-
-                    # keep track of hyperparameters
-                    if line_check.startswith("GP hyperparameters:"):
-                        hyps = []
-                        for hyp_line in lines[(ind_count+1):(ind_count+1+noh)]:
-                            hyp_line = hyp_line.split()
-                            hyps.append(float(hyp_line[-1]))
-                        hyps = np.array(hyps)
-                        hyps_added.append(hyps)
-
-                    ind_count += 1
-                    line_check = lines[ind_count]
-
-                hyp_list.append(hyps_added)
-                atom_list.append(atoms_added)
-                atom_count.append(len(atoms_added))
-
-                # add DFT positions and forces
+            # TODO: change otf program so that this if statement is unnecessary
+            if line.startswith("Calling DFT with training atoms"):
                 line_curr = line.split()
+
+                # TODO: write function for updating hyps list
+                hyps = []
+                for frame_line in lines[(index+4):(index+4+noh)]:
+                    frame_line = frame_line.split()
+                    hyps.append(float(frame_line[4]))
+                hyps = np.array(hyps)
+                hyp_list.append(hyps)
 
                 # TODO: generalize this to account for arbitrary starting list
                 append_atom_lists(species_list, position_list, force_list,
                                   uncertainty_list, velocity_list,
                                   lines, index, noa, True, noh)
 
+                atom_list.append(0)
+
+            if line.startswith("Calling DFT due to"):
+                line_curr = line.split()
+
+                # TODO: write function for updating hyps list
+                hyps = []
+                for frame_line in lines[(index+4):(index+4+noh)]:
+                    frame_line = frame_line.split()
+                    hyps.append(float(frame_line[4]))
+                hyps = np.array(hyps)
+                hyp_list.append(hyps)
+
+                # TODO: generalize atom list update to account for arbitrary
+                # list
+                append_atom_lists(species_list, position_list, force_list,
+                                  uncertainty_list, velocity_list,
+                                  lines, index, noa, True, noh)
+                atom_list.append(int(line_curr[5]))
+
         return position_list, force_list, uncertainty_list, velocity_list,\
-            atom_list, hyp_list, species_list, atom_count
+            atom_list, hyp_list, species_list
 
 
 def append_atom_lists(species_list: List[str],
@@ -234,8 +228,11 @@ def parse_snapshot(lines, index, noa, dft_call, noh):
     uncertainties = np.zeros((noa, 3))
     velocities = np.zeros((noa, 3))
 
-    # Current setting for # of lines to skip after Frame marker
-    skip = 3
+    # number of lines to skip after frame line
+    if dft_call is True:
+        skip = 9 + noh
+    else:
+        skip = 2
 
     for count, frame_line in enumerate(lines[(index+skip):(index+skip+noa)]):
         # parse frame line
@@ -254,7 +251,6 @@ def parse_snapshot(lines, index, noa, dft_call, noh):
 
 def parse_frame_line(frame_line):
     """parse a line in otf output.
-
     :param frame_line: frame line to be parsed
     :type frame_line: string
     :return: species, position, force, uncertainty, and velocity of atom
