@@ -17,6 +17,18 @@ def run_espresso(qe_input, structure, pw_loc):
     return parse_qe_forces('pwscf.out')
 
 
+def run_espresso_npool(qe_input, qe_output, structure, pw_loc, npool):
+    run_qe_path = qe_input
+    edit_qe_input_positions(run_qe_path, structure)
+    qe_command = \
+        'mpirun {0} -npool {1} < {2} > {3}'.format(pw_loc, run_qe_path,
+                                                   qe_output)
+    # os.system(qe_command)
+    call(qe_command, shell=True)
+
+    return parse_qe_forces(qe_output)
+
+
 def parse_qe_input(qe_input: str):
     positions = []
     species = []
