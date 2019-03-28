@@ -38,7 +38,7 @@ def test_parse_header():
 
     os.system('cp test_files/sample_al_otf.out .')
 
-    header_dict = OtfAnalysis('al_otf.out').header
+    header_dict = OtfAnalysis('sample_al_otf.out').header
 
     assert header_dict['frames'] == 100
     assert header_dict['atoms'] == 4
