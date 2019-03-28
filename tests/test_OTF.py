@@ -8,7 +8,7 @@ from gp import GaussianProcess
 from struc import Structure
 import kernels as en
 from test_qe_util import cleanup_espresso_run
-
+import shutil
 
 # ------------------------------------------------------
 #                   test  otf runs
@@ -50,6 +50,7 @@ def test_otf_h2():
               output_name='h2_otf.out')
 
     otf.run()
+    shutil.move('h2_otf.out','test_outputs/h2_otf.out')
     cleanup_espresso_run()
 
 

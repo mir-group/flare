@@ -11,6 +11,8 @@ class OtfAnalysis:
 
         self.calculate_energy = calculate_energy
 
+        self.header = parse_header_information(filename)
+
         position_list, force_list, uncertainty_list, velocity_list,\
             dft_frames, temperatures, times, msds, dft_times, energies = \
             self.parse_pos_otf(filename)
@@ -41,12 +43,33 @@ class OtfAnalysis:
         self.gp_species_list = gp_species_list
         self.gp_atom_count = gp_atom_count
 
+<<<<<<< HEAD
     def make_gp(self, cell, kernel, kernel_grad, algo, call_no, cutoffs,
                 hyps=None):
         if hyps is not None:
             gp_hyps = hyps
         else:
             gp_hyps = self.gp_hyp_list[call_no-1][-1]
+=======
+    def make_gp(self, cell=None, kernel=None, kernel_grad=None, algo=None,
+                call_no=0, cutoffs=None):
+
+        # Use run's values as extracted from header
+        #TODO Allow for kernel gradient in header
+        if cell is None:
+            cell = self.header['cell']
+        if kernel is None:
+            kernel = self.header['kernel']
+        if kernel_grad is None:
+            raise Exception('Kernel gradient not supplied')
+        if algo is None:
+            algo = self.header['algo']
+        if cutoffs is None:
+            cutoffs = self.header['cutoffs']
+
+
+        gp_hyps = self.gp_hyp_list[call_no-1][-1]
+>>>>>>> f802e2df8370c75ef01f89d6729d0e413064a8b5
         gp_model = gp.GaussianProcess(kernel, kernel_grad, gp_hyps,
                                       cutoffs, opt_algorithm=algo)
 
@@ -171,6 +194,7 @@ class OtfAnalysis:
                 atoms_added = []
                 hyps_added = []
                 while not line_check.startswith("-"):
+
                     # keep track of atom number
                     if line_check.startswith("Adding atom"):
                         line_split = line_check.split()
@@ -185,8 +209,12 @@ class OtfAnalysis:
                         hyps = np.array(hyps)
                         hyps_added.append(hyps)
 
+
                     ind_count += 1
                     line_check = lines[ind_count]
+                    # catch case where final frame is a DFT call
+                    if line_check.startswith('Run complete'):
+                        break
 
                 hyp_list.append(hyps_added)
                 atom_list.append(atoms_added)
@@ -195,6 +223,7 @@ class OtfAnalysis:
                 # add DFT positions and forces
                 line_curr = line.split()
 
+
                 # TODO: generalize this to account for arbitrary starting list
                 append_atom_lists(species_list, position_list, force_list,
                                   uncertainty_list, velocity_list,
@@ -202,6 +231,31 @@ class OtfAnalysis:
 
         return position_list, force_list, uncertainty_list, velocity_list,\
             atom_list, hyp_list, species_list, atom_count
+
+
+
+    def output_md_structures(self):
+        """
+        Returns structure objects corresponding to the MD frames of an OTF run.
+        :param filename:
+        :return:
+        """
+
+        positions = self.position_list
+        structures = []
+        cell = self.header['cell']
+        species = self.header['species']
+        forces = self.force_list
+        stds = self.uncertainty_list
+        for i in range(len(positions)):
+            cur_struc = struc.Structure(cell=cell, species=species,
+                              positions=positions[i])
+            cur_struc.forces = forces[i]
+            cur_struc.stds = stds[i]
+            structures.append(cur_struc)
+        return structures
+
+
 
 
 def append_atom_lists(species_list: List[str],
@@ -252,6 +306,92 @@ def parse_snapshot(lines, index, noa, dft_call, noh):
     return species, positions, forces, uncertainties, velocities
 
 
+
+def strip_and_split(line):
+    """
+    Helper function which saves a few lines of code elsewhere
+    :param line:
+    :return:
+    """
+
+    line = line.strip().split()
+    stripped_line = [subline.strip() for subline in line]
+
+    return stripped_line
+
+
+def parse_header_information(outfile: str = 'otf_run.out') -> dict:
+    """
+    Get information about the run from the header of the file
+    :param outfile:
+    :return:
+    """
+    with open(outfile, 'r') as f:
+        lines = f.readlines()
+
+    header_info = {}
+
+    stopreading = None
+
+    for line in lines:
+        if '---' in line or '=' in line:
+            stopreading = lines.index(line)
+            break
+
+    if stopreading is None:
+        raise Exception("OTF File is malformed")
+
+    for i, line in enumerate(lines[:stopreading]):
+        # TODO Update this in full
+        if 'cutoffs' in line:
+            line = line.split(':')[1].strip()
+            line = line.strip('[').strip(']')
+            line = line.split()
+            cutoffs = []
+            for val in line:
+                cutoffs.append(float(val))
+            header_info['cutoffs'] = cutoffs
+        if 'frames' in line:
+            header_info['frames'] = int(line.split(':')[1])
+        if 'kernel' in line:
+            header_info['kernel'] = line.split(':')[1].strip()
+        if 'number of hyperparameters:' in line:
+            header_info['n_hyps'] = int(line.split(':')[1])
+        if 'optimization algorithm' in line:
+            header_info['algo'] = line.split(':')[1].strip()
+        if 'number of atoms' in line:
+            header_info['atoms'] = int(line.split(':')[1])
+        if 'timestep' in line:
+            header_info['dt'] = float(line.split(':')[1])
+        if 'system species' in line:
+            line = line.split(':')[1]
+            line = line.split("'")
+
+            species = [item for item in line if item.isalpha()]
+
+            header_info['species_set'] = set(species)
+        if 'periodic cell' in line:
+            vectors = []
+            for cell_line in lines[i+1:i+4]:
+                cell_line = cell_line.strip().replace('[','').replace(']','')
+                vec = cell_line.split()
+                vector = [float(vec[0]), float(vec[1]), float(vec[2])]
+                vectors.append(vector)
+            header_info['cell'] = np.array(vectors)
+        if 'previous positions' in line:
+            struc_spec = []
+            prev_positions = []
+            for pos_line in lines[i+1:i+1+header_info.get('atoms',0)]:
+                pos = pos_line.split()
+                struc_spec.append(pos[0])
+                prev_positions.append((float(pos[1]),float(pos[2]),
+                                       float(pos[3])))
+            header_info['species'] = struc_spec
+            header_info['prev_positions'] = np.array(prev_positions)
+
+    return header_info
+
+
 def parse_frame_line(frame_line):
     """parse a line in otf output.
 
@@ -270,3 +410,5 @@ def parse_frame_line(frame_line):
     velocity = np.array([float(n) for n in frame_line[10:13]])
 
     return spec, position, force, uncertainty, velocity
+
+

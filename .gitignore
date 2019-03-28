@@ -3,3 +3,4 @@ pwscf.save/
 .cache/
 .pytest_cache/
 tests/otf_run.out
+tests/test_outputs/*
