@@ -36,6 +36,8 @@ def test_parse_header():
     assert header_dict['algo'] == 'L-BFGS-B'
     assert np.equal(header_dict['cell'],5*np.eye(3)).all()
 
+    os.system('cp test_files/sample_al_otf.out .')
+
     header_dict = OtfAnalysis('al_otf.out').header
 
     assert header_dict['frames'] == 100

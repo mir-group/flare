@@ -44,7 +44,7 @@ class OtfAnalysis:
         self.gp_atom_count = gp_atom_count
 
     def make_gp(self, cell=None, kernel=None, kernel_grad=None, algo=None,
-                call_no=0, cutoffs=None):
+                call_no=None, cutoffs=None):
 
         # Use run's values as extracted from header
         #TODO Allow for kernel gradient in header
@@ -58,6 +58,8 @@ class OtfAnalysis:
             algo = self.header['algo']
         if cutoffs is None:
             cutoffs = self.header['cutoffs']
+        if call_no is None:
+            call_no = len(self.gp_position_list)
 
 
         gp_hyps = self.gp_hyp_list[call_no-1][-1]
@@ -65,10 +67,10 @@ class OtfAnalysis:
                                       cutoffs, opt_algorithm=algo)
 
         for (positions, forces, atoms, _, species) in \
-            zip(self.gp_position_list[0:call_no],
-                self.gp_force_list[0:call_no],
-                self.gp_atom_list[0:call_no], self.gp_hyp_list[0:call_no],
-                self.gp_species_list[0:call_no]):
+            zip(self.gp_position_list[:call_no],
+                self.gp_force_list[:call_no],
+                self.gp_atom_list[:call_no], self.gp_hyp_list[:call_no],
+                self.gp_species_list[:call_no]):
 
             struc_curr = struc.Structure(cell, species, positions)
 

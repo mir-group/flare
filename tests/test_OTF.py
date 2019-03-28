@@ -50,7 +50,8 @@ def test_otf_h2():
               output_name='h2_otf.out')
 
     otf.run()
-    shutil.move('h2_otf.out','test_outputs/h2_otf.out')
+    os.system('mkdir test_outputs')
+    os.system('mv ./test_files/h2_otf.out test_outputs')
     cleanup_espresso_run()
 
 
@@ -91,4 +92,7 @@ def test_otf_al():
               freeze_hyps=freeze_hyps, skip=5)
 
     otf.run()
+    os.system('mkdir test_outputs')
+    os.system('mv ./test_files/al_otf.out test_outputs')
+
     cleanup_espresso_run()
