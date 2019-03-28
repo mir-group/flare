@@ -43,14 +43,6 @@ class OtfAnalysis:
         self.gp_species_list = gp_species_list
         self.gp_atom_count = gp_atom_count
 
-<<<<<<< HEAD
-    def make_gp(self, cell, kernel, kernel_grad, algo, call_no, cutoffs,
-                hyps=None):
-        if hyps is not None:
-            gp_hyps = hyps
-        else:
-            gp_hyps = self.gp_hyp_list[call_no-1][-1]
-=======
     def make_gp(self, cell=None, kernel=None, kernel_grad=None, algo=None,
                 call_no=0, cutoffs=None):
 
@@ -69,7 +61,6 @@ class OtfAnalysis:
 
 
         gp_hyps = self.gp_hyp_list[call_no-1][-1]
->>>>>>> f802e2df8370c75ef01f89d6729d0e413064a8b5
         gp_model = gp.GaussianProcess(kernel, kernel_grad, gp_hyps,
                                       cutoffs, opt_algorithm=algo)
 
@@ -410,5 +401,3 @@ def parse_frame_line(frame_line):
     velocity = np.array([float(n) for n in frame_line[10:13]])
 
     return spec, position, force, uncertainty, velocity
-
-
