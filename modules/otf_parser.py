@@ -43,7 +43,23 @@ class OtfAnalysis:
         self.gp_species_list = gp_species_list
         self.gp_atom_count = gp_atom_count
 
-    def make_gp(self, cell, kernel, kernel_grad, algo, call_no, cutoffs):
+    def make_gp(self, cell=None, kernel=None, kernel_grad=None, algo=None,
+                call_no=0, cutoffs=None):
+
+        # Use run's values as extracted from header
+        #TODO Allow for kernel gradient in header
+        if cell is None:
+            cell = self.header['cell']
+        if kernel is None:
+            kernel = self.header['kernel']
+        if kernel_grad is None:
+            raise Exception('Kernel gradient not supplied')
+        if algo is None:
+            algo = self.header['algo']
+        if cutoffs is None:
+            cutoffs = self.header['cutoffs']
+
+
         gp_hyps = self.gp_hyp_list[call_no-1][-1]
         gp_model = gp.GaussianProcess(kernel, kernel_grad, gp_hyps,
                                       cutoffs, opt_algorithm=algo)
@@ -167,8 +183,8 @@ class OtfAnalysis:
                 line_check = lines[ind_count]
                 atoms_added = []
                 hyps_added = []
-                while not line_check.startswith("-") or \
-                        line_check.startswith('Run'):
+                while not line_check.startswith("-"):
+
                     # keep track of atom number
                     if line_check.startswith("Adding atom"):
                         line_split = line_check.split()
@@ -182,10 +198,13 @@ class OtfAnalysis:
                             hyps.append(float(hyp_line[-1]))
                         hyps = np.array(hyps)
                         hyps_added.append(hyps)
-                        break
+
 
                     ind_count += 1
                     line_check = lines[ind_count]
+                    # catch case where final frame is a DFT call
+                    if line_check.startswith('Run complete'):
+                        break
 
                 hyp_list.append(hyps_added)
                 atom_list.append(atoms_added)
@@ -193,6 +212,7 @@ class OtfAnalysis:
 
                 # add DFT positions and forces
                 line_curr = line.split()
+
 
                 # TODO: generalize this to account for arbitrary starting list
                 append_atom_lists(species_list, position_list, force_list,
@@ -213,17 +233,17 @@ class OtfAnalysis:
 
         positions = self.position_list
         structures = []
-        cell = self.header['lattice']
+        cell = self.header['cell']
         species = self.header['species']
+        forces = self.force_list
+        stds = self.uncertainty_list
         for i in range(len(positions)):
-            cur_struc = Structure()
-            structures.append()
-
-
-
-
-
-
+            cur_struc = struc.Structure(cell=cell, species=species,
+                              positions=positions[i])
+            cur_struc.forces = forces[i]
+            cur_struc.stds = stds[i]
+            structures.append(cur_struc)
+        return structures
 
 
 
@@ -313,6 +333,14 @@ def parse_header_information(outfile: str = 'otf_run.out') -> dict:
 
     for i, line in enumerate(lines[:stopreading]):
         # TODO Update this in full
+        if 'cutoffs' in line:
+            line = line.split(':')[1].strip()
+            line = line.strip('[').strip(']')
+            line = line.split()
+            cutoffs = []
+            for val in line:
+                cutoffs.append(float(val))
+            header_info['cutoffs'] = cutoffs
         if 'frames' in line:
             header_info['frames'] = int(line.split(':')[1])
         if 'kernel' in line:
@@ -339,8 +367,8 @@ def parse_header_information(outfile: str = 'otf_run.out') -> dict:
                 vec = cell_line.split()
                 vector = [float(vec[0]), float(vec[1]), float(vec[2])]
                 vectors.append(vector)
-            header_info['lattice'] = np.array(vectors)
-        if 'previous_positions' in line:
+            header_info['cell'] = np.array(vectors)
+        if 'previous positions' in line:
             struc_spec = []
             prev_positions = []
             for pos_line in lines[i+1:i+1+header_info.get('atoms',0)]:
