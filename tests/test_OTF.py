@@ -51,7 +51,7 @@ def test_otf_h2():
 
     otf.run()
     os.system('mkdir test_outputs')
-    os.system('mv ./test_files/h2_otf.out test_outputs')
+    os.system('mv h2_otf.out test_outputs')
     cleanup_espresso_run()
 
 
@@ -93,6 +93,6 @@ def test_otf_al():
 
     otf.run()
     os.system('mkdir test_outputs')
-    os.system('mv ./test_files/al_otf.out test_outputs')
+    os.system('mv al_otf.out test_outputs')
 
     cleanup_espresso_run()
