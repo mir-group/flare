@@ -86,7 +86,6 @@ def get_ky_and_hyp_par(hyps: np.ndarray, training_data: list,
                        kernel_grad, cutoffs=None):
 
     pool = mp.Pool(processes=mp.cpu_count())
-    print(mp.cpu_count())
 
     # assume sigma_n is the final hyperparameter
     number_of_hyps = len(hyps)

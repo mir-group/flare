@@ -6,7 +6,7 @@
 %Control: page (0) single
 %Control: year (1) truncated
 %Control: production of eprint (0) enabled
-\begin{thebibliography}{2}%
+\begin{thebibliography}{16}%
 \makeatletter
 \providecommand \@ifxundefined [1]{%
  \@ifx{#1\undefined}
@@ -50,16 +50,108 @@
 \providecommand \BibitemShut  [1]{\csname bibitem#1\endcsname}%
 \let\auto@bib@innerbib\@empty
 %</preamble>
-\bibitem [{\citenamefont {Glielmo}\ \emph {et~al.}(2017)\citenamefont
-  {Glielmo}, \citenamefont {Sollich},\ and\ \citenamefont
-  {De~Vita}}]{glielmo2017accurate}%
+\bibitem [{\citenamefont {Behler}(2011{\natexlab{a}})}]{behler2011neural}%
   \BibitemOpen
-  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {A.}~\bibnamefont
-  {Glielmo}}, \bibinfo {author} {\bibfnamefont {P.}~\bibnamefont {Sollich}}, \
-  and\ \bibinfo {author} {\bibfnamefont {A.}~\bibnamefont {De~Vita}},\
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {J.}~\bibnamefont
+  {Behler}},\ }\href@noop {} {\bibfield  {journal} {\bibinfo  {journal}
+  {Physical Chemistry Chemical Physics}\ }\textbf {\bibinfo {volume} {13}},\
+  \bibinfo {pages} {17930} (\bibinfo {year} {2011}{\natexlab{a}})}\BibitemShut
+  {NoStop}%
+\bibitem [{\citenamefont {Deringer}\ and\ \citenamefont
+  {Cs{\'a}nyi}(2017)}]{deringer2017machine}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {V.~L.}\ \bibnamefont
+  {Deringer}}\ and\ \bibinfo {author} {\bibfnamefont {G.}~\bibnamefont
+  {Cs{\'a}nyi}},\ }\href@noop {} {\bibfield  {journal} {\bibinfo  {journal}
+  {Physical Review B}\ }\textbf {\bibinfo {volume} {95}},\ \bibinfo {pages}
+  {094203} (\bibinfo {year} {2017})}\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Chmiela}\ \emph {et~al.}(2017)\citenamefont
+  {Chmiela}, \citenamefont {Tkatchenko}, \citenamefont {Sauceda}, \citenamefont
+  {Poltavsky}, \citenamefont {Sch{\"u}tt},\ and\ \citenamefont
+  {M{\"u}ller}}]{chmiela2017machine}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {S.}~\bibnamefont
+  {Chmiela}}, \bibinfo {author} {\bibfnamefont {A.}~\bibnamefont {Tkatchenko}},
+  \bibinfo {author} {\bibfnamefont {H.~E.}\ \bibnamefont {Sauceda}}, \bibinfo
+  {author} {\bibfnamefont {I.}~\bibnamefont {Poltavsky}}, \bibinfo {author}
+  {\bibfnamefont {K.~T.}\ \bibnamefont {Sch{\"u}tt}}, \ and\ \bibinfo {author}
+  {\bibfnamefont {K.-R.}\ \bibnamefont {M{\"u}ller}},\ }\href@noop {}
+  {\bibfield  {journal} {\bibinfo  {journal} {Science advances}\ }\textbf
+  {\bibinfo {volume} {3}},\ \bibinfo {pages} {e1603015} (\bibinfo {year}
+  {2017})}\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Sch{\"u}tt}\ \emph {et~al.}(2017)\citenamefont
+  {Sch{\"u}tt}, \citenamefont {Kindermans}, \citenamefont {Felix},
+  \citenamefont {Chmiela}, \citenamefont {Tkatchenko},\ and\ \citenamefont
+  {M{\"u}ller}}]{schutt2017schnet}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {K.}~\bibnamefont
+  {Sch{\"u}tt}}, \bibinfo {author} {\bibfnamefont {P.-J.}\ \bibnamefont
+  {Kindermans}}, \bibinfo {author} {\bibfnamefont {H.~E.~S.}\ \bibnamefont
+  {Felix}}, \bibinfo {author} {\bibfnamefont {S.}~\bibnamefont {Chmiela}},
+  \bibinfo {author} {\bibfnamefont {A.}~\bibnamefont {Tkatchenko}}, \ and\
+  \bibinfo {author} {\bibfnamefont {K.-R.}\ \bibnamefont {M{\"u}ller}},\ }in\
+  \href@noop {} {\emph {\bibinfo {booktitle} {Advances in Neural Information
+  Processing Systems}}}\ (\bibinfo {year} {2017})\ pp.\ \bibinfo {pages}
+  {991--1001}\BibitemShut {NoStop}%
+\bibitem [{fla()}]{flare}%
+  \BibitemOpen
+  \href@noop {} {}\bibinfo {howpublished}
+  {\url{https://github.com/mir-group/otf}}\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Behler}(2011{\natexlab{b}})}]{behler2011atom}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {J.}~\bibnamefont
+  {Behler}},\ }\href@noop {} {\bibfield  {journal} {\bibinfo  {journal} {The
+  Journal of chemical physics}\ }\textbf {\bibinfo {volume} {134}},\ \bibinfo
+  {pages} {074106} (\bibinfo {year} {2011}{\natexlab{b}})}\BibitemShut
+  {NoStop}%
+\bibitem [{\citenamefont {Bart{\'o}k}\ \emph {et~al.}(2013)\citenamefont
+  {Bart{\'o}k}, \citenamefont {Kondor},\ and\ \citenamefont
+  {Cs{\'a}nyi}}]{bartok2013representing}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {A.~P.}\ \bibnamefont
+  {Bart{\'o}k}}, \bibinfo {author} {\bibfnamefont {R.}~\bibnamefont {Kondor}},
+  \ and\ \bibinfo {author} {\bibfnamefont {G.}~\bibnamefont {Cs{\'a}nyi}},\
   }\href@noop {} {\bibfield  {journal} {\bibinfo  {journal} {Physical Review
-  B}\ }\textbf {\bibinfo {volume} {95}},\ \bibinfo {pages} {214302} (\bibinfo
-  {year} {2017})}\BibitemShut {NoStop}%
+  B}\ }\textbf {\bibinfo {volume} {87}},\ \bibinfo {pages} {184115} (\bibinfo
+  {year} {2013})}\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Zhang}\ \emph {et~al.}(2018)\citenamefont {Zhang},
+  \citenamefont {Han}, \citenamefont {Wang}, \citenamefont {Saidi},
+  \citenamefont {Car},\ and\ \citenamefont {Weinan}}]{zhang2018end}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {L.}~\bibnamefont
+  {Zhang}}, \bibinfo {author} {\bibfnamefont {J.}~\bibnamefont {Han}}, \bibinfo
+  {author} {\bibfnamefont {H.}~\bibnamefont {Wang}}, \bibinfo {author}
+  {\bibfnamefont {W.}~\bibnamefont {Saidi}}, \bibinfo {author} {\bibfnamefont
+  {R.}~\bibnamefont {Car}}, \ and\ \bibinfo {author} {\bibfnamefont
+  {E.}~\bibnamefont {Weinan}},\ }in\ \href@noop {} {\emph {\bibinfo {booktitle}
+  {Advances in Neural Information Processing Systems}}}\ (\bibinfo {year}
+  {2018})\ pp.\ \bibinfo {pages} {4441--4451}\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Bart{\'o}k}\ \emph {et~al.}(2010)\citenamefont
+  {Bart{\'o}k}, \citenamefont {Payne}, \citenamefont {Kondor},\ and\
+  \citenamefont {Cs{\'a}nyi}}]{bartok2010gaussian}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {A.~P.}\ \bibnamefont
+  {Bart{\'o}k}}, \bibinfo {author} {\bibfnamefont {M.~C.}\ \bibnamefont
+  {Payne}}, \bibinfo {author} {\bibfnamefont {R.}~\bibnamefont {Kondor}}, \
+  and\ \bibinfo {author} {\bibfnamefont {G.}~\bibnamefont {Cs{\'a}nyi}},\
+  }\href@noop {} {\bibfield  {journal} {\bibinfo  {journal} {Physical review
+  letters}\ }\textbf {\bibinfo {volume} {104}},\ \bibinfo {pages} {136403}
+  (\bibinfo {year} {2010})}\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Bart{\'o}k}\ and\ \citenamefont
+  {Cs{\'a}nyi}(2015)}]{bartok2015gaussian}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {A.~P.}\ \bibnamefont
+  {Bart{\'o}k}}\ and\ \bibinfo {author} {\bibfnamefont {G.}~\bibnamefont
+  {Cs{\'a}nyi}},\ }\href@noop {} {\bibfield  {journal} {\bibinfo  {journal}
+  {International Journal of Quantum Chemistry}\ }\textbf {\bibinfo {volume}
+  {115}},\ \bibinfo {pages} {1051} (\bibinfo {year} {2015})}\BibitemShut
+  {NoStop}%
+\bibitem [{\citenamefont {Rasmussen}(2003)}]{rasmussen2003gaussian}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {C.~E.}\ \bibnamefont
+  {Rasmussen}},\ }in\ \href@noop {} {\emph {\bibinfo {booktitle} {Summer School
+  on Machine Learning}}}\ (\bibinfo {organization} {Springer},\ \bibinfo {year}
+  {2003})\ pp.\ \bibinfo {pages} {63--71}\BibitemShut {NoStop}%
 \bibitem [{\citenamefont {Glielmo}\ \emph {et~al.}(2018)\citenamefont
   {Glielmo}, \citenamefont {Zeni},\ and\ \citenamefont
   {De~Vita}}]{glielmo2018efficient}%
@@ -70,4 +162,55 @@
   }\href@noop {} {\bibfield  {journal} {\bibinfo  {journal} {Physical Review
   B}\ }\textbf {\bibinfo {volume} {97}},\ \bibinfo {pages} {184307} (\bibinfo
   {year} {2018})}\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Glielmo}\ \emph {et~al.}(2017)\citenamefont
+  {Glielmo}, \citenamefont {Sollich},\ and\ \citenamefont
+  {De~Vita}}]{glielmo2017accurate}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {A.}~\bibnamefont
+  {Glielmo}}, \bibinfo {author} {\bibfnamefont {P.}~\bibnamefont {Sollich}}, \
+  and\ \bibinfo {author} {\bibfnamefont {A.}~\bibnamefont {De~Vita}},\
+  }\href@noop {} {\bibfield  {journal} {\bibinfo  {journal} {Physical Review
+  B}\ }\textbf {\bibinfo {volume} {95}},\ \bibinfo {pages} {214302} (\bibinfo
+  {year} {2017})}\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Giannozzi}\ \emph {et~al.}(2009)\citenamefont
+  {Giannozzi}, \citenamefont {Baroni}, \citenamefont {Bonini}, \citenamefont
+  {Calandra}, \citenamefont {Car}, \citenamefont {Cavazzoni}, \citenamefont
+  {Ceresoli}, \citenamefont {Chiarotti}, \citenamefont {Cococcioni},
+  \citenamefont {Dabo} \emph {et~al.}}]{giannozzi2009quantum}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {P.}~\bibnamefont
+  {Giannozzi}}, \bibinfo {author} {\bibfnamefont {S.}~\bibnamefont {Baroni}},
+  \bibinfo {author} {\bibfnamefont {N.}~\bibnamefont {Bonini}}, \bibinfo
+  {author} {\bibfnamefont {M.}~\bibnamefont {Calandra}}, \bibinfo {author}
+  {\bibfnamefont {R.}~\bibnamefont {Car}}, \bibinfo {author} {\bibfnamefont
+  {C.}~\bibnamefont {Cavazzoni}}, \bibinfo {author} {\bibfnamefont
+  {D.}~\bibnamefont {Ceresoli}}, \bibinfo {author} {\bibfnamefont {G.~L.}\
+  \bibnamefont {Chiarotti}}, \bibinfo {author} {\bibfnamefont {M.}~\bibnamefont
+  {Cococcioni}}, \bibinfo {author} {\bibfnamefont {I.}~\bibnamefont {Dabo}},
+  \emph {et~al.},\ }\href@noop {} {\bibfield  {journal} {\bibinfo  {journal}
+  {Journal of physics: Condensed matter}\ }\textbf {\bibinfo {volume} {21}},\
+  \bibinfo {pages} {395502} (\bibinfo {year} {2009})}\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Botu}\ \emph {et~al.}(2016)\citenamefont {Botu},
+  \citenamefont {Batra}, \citenamefont {Chapman},\ and\ \citenamefont
+  {Ramprasad}}]{botu2016machine}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {V.}~\bibnamefont
+  {Botu}}, \bibinfo {author} {\bibfnamefont {R.}~\bibnamefont {Batra}},
+  \bibinfo {author} {\bibfnamefont {J.}~\bibnamefont {Chapman}}, \ and\
+  \bibinfo {author} {\bibfnamefont {R.}~\bibnamefont {Ramprasad}},\ }\href@noop
+  {} {\bibfield  {journal} {\bibinfo  {journal} {The Journal of Physical
+  Chemistry C}\ }\textbf {\bibinfo {volume} {121}},\ \bibinfo {pages} {511}
+  (\bibinfo {year} {2016})}\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Sheng}\ \emph {et~al.}(2011)\citenamefont {Sheng},
+  \citenamefont {Kramer}, \citenamefont {Cadien}, \citenamefont {Fujita},\ and\
+  \citenamefont {Chen}}]{sheng2011highly}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {H.}~\bibnamefont
+  {Sheng}}, \bibinfo {author} {\bibfnamefont {M.}~\bibnamefont {Kramer}},
+  \bibinfo {author} {\bibfnamefont {A.}~\bibnamefont {Cadien}}, \bibinfo
+  {author} {\bibfnamefont {T.}~\bibnamefont {Fujita}}, \ and\ \bibinfo {author}
+  {\bibfnamefont {M.}~\bibnamefont {Chen}},\ }\href@noop {} {\bibfield
+  {journal} {\bibinfo  {journal} {Physical Review B}\ }\textbf {\bibinfo
+  {volume} {83}},\ \bibinfo {pages} {134118} (\bibinfo {year}
+  {2011})}\BibitemShut {NoStop}%
 \end{thebibliography}%

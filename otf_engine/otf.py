@@ -22,7 +22,7 @@ class OTF(object):
                  skip: int=0, init_atoms: List[int]=None,
                  calculate_energy=False, output_name='otf_run.out',
                  max_atoms_added=None, freeze_hyps=False,
-                 rescale_steps=[], rescale_temps=[]):
+                 rescale_steps=[], rescale_temps=[], add_all=False):
 
         self.qe_input = qe_input
         self.dt = dt
@@ -81,6 +81,7 @@ class OTF(object):
         self.rescale_temps = rescale_temps
 
         self.output_name = output_name
+        self.add_all = add_all
 
     def run(self):
         output.write_header(self.gp.cutoffs, self.gp.kernel_name, self.gp.hyps,
@@ -107,9 +108,12 @@ class OTF(object):
                     self.train_gp()
 
                 # check if remaining atoms are above uncertainty threshold
-                self.pred_func()
-                atom_list = self.init_atoms
-                std_in_bound, target_atom = self.is_std_in_bound(atom_list)
+                if self.add_all:
+                    std_in_bound = True
+                else:
+                    self.pred_func()
+                    atom_list = self.init_atoms
+                    std_in_bound, target_atom = self.is_std_in_bound(atom_list)
 
             # otherwise, try predicting with GP model
             else:
@@ -136,15 +140,22 @@ class OTF(object):
                     self.record_state()
 
             # add atoms to training set until max error is below threshold
-            atom_count = 0
-            while not std_in_bound and atom_count < self.max_atoms_added:
-                self.update_gp([target_atom], dft_frcs)
-                if not self.freeze_hyps:
-                    self.train_gp()
-                atom_list.append(target_atom)
-                self.pred_func()
-                std_in_bound, target_atom = self.is_std_in_bound(atom_list)
-                atom_count += 1
+            if self.add_all:
+                if not std_in_bound:
+                    self.update_gp(self.atom_list, dft_frcs)
+                    if not self.freeze_hyps:
+                        self.train_gp()
+                    self.pred_func()
+            else:
+                atom_count = 0
+                while not std_in_bound and atom_count < self.max_atoms_added:
+                    self.update_gp([target_atom], dft_frcs)
+                    if not self.freeze_hyps:
+                        self.train_gp()
+                    atom_list.append(target_atom)
+                    self.pred_func()
+                    std_in_bound, target_atom = self.is_std_in_bound(atom_list)
+                    atom_count += 1
 
             # write gp forces only when counter equals skip
             if counter >= self.skip and not self.dft_step:
@@ -239,8 +250,8 @@ class OTF(object):
                                self.output_name)
 
     def update_gp(self, train_atoms, dft_frcs):
-        output.write_to_output('\nAdding atom %i to the training set.\n'
-                               % train_atoms[0],
+        output.write_to_output('\nAdding atom {} to the training set.\n'
+                               .format(train_atoms),
                                self.output_name)
         output.write_to_output('Uncertainty: {}.\n'
                                .format(self.structure.stds[train_atoms[0]]),

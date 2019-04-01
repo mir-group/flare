@@ -67,6 +67,34 @@ def write_cfgs_from_md(md_trajectory, start_frame, no_frames, folder_name,
     write_file(scr_dest, scr_anim_text)
 
 
+def write_cfgs_from_pos(pos_list, cell, folder_name, image_quality, scr_dest,
+                        species):
+    # make folder for cfgs
+    subprocess.call('mkdir %s' % folder_name, shell=True)
+    subprocess.call('mkdir %s/Pic' % folder_name, shell=True)
+
+    scr_anim_text = '%s\n' % image_quality
+
+    # make cfgs
+    no_frames = len(pos_list)
+    no_digits = int(np.ceil(math.log(no_frames, 10)))
+
+    for n, pos_file in enumerate(pos_list):
+        pos = np.load(pos_file)
+        frame_no = n
+        frame_no_padded = str(frame_no).zfill(no_digits)
+        frame_string = frame_no_padded+'.cfg'
+        frame_dest = folder_name+'/'+frame_string
+
+        scr_anim_text += '%s %s/Pic/%s.png\n' % \
+            (frame_dest, folder_name, frame_no_padded)
+
+        write_cfg_file(frame_dest, pos, species, cell)
+
+    # write animation directions for AtomEye
+    write_file(scr_dest, scr_anim_text)
+
+
 def write_cfg_file(file_name: str, positions: np.ndarray, species: List[str],
                    cell: np.ndarray) -> None:
     """write cfg file that can be interpreted by AtomEye.
