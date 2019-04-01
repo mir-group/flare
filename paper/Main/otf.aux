@@ -1,4 +1,7 @@
 \relax 
+\newlabel{FirstPage}{{}{1}{}{}{}}
+\@writefile{toc}{\contentsline {title}{Fast Learning of Atomistic Rare Events: An On-the-Fly Method for Constructing Interpretable Force Fields with Gaussian Processes}{1}{}}
+\@writefile{toc}{\contentsline {abstract}{Abstract}{1}{}}
 \citation{behler2011neural,deringer2017machine,chmiela2017machine,schutt2017schnet}
 \citation{flare}
 \citation{behler2011atom,bartok2013representing}
@@ -7,33 +10,30 @@
 \citation{rasmussen2003gaussian}
 \citation{rasmussen2003gaussian}
 \citation{glielmo2018efficient}
-\newlabel{FirstPage}{{}{1}{}{}{}}
-\@writefile{toc}{\contentsline {title}{Fast Learning of Atomistic Rare Events: An On-the-Fly Method for Constructing Interpretable Force Fields with Gaussian Processes}{1}{}}
-\@writefile{toc}{\contentsline {abstract}{Abstract}{1}{}}
-\newlabel{en_mod}{{1}{1}{}{}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Correlation of Gaussian process noise $\sigma _n$ and predictive variance $\mathcal  {V}$ with the root mean square error on independent test structures. (a) The optimized noise parameter $\sigma _n$ (solid) and root mean squared error (dotted) as a function of the cutoff radius $r_{\text  {cut}}$ of the atomic environment. (b) Combined model error $\sqrt  {\sigma _n^2 + \mathaccentV {bar}016{\mathcal  {V}}}$ as a function of the number of training atoms. (c) Mean predictive variance $\mathaccentV {bar}016{V}$ (solid) and RMSE (dotted) on test structures with atomic coordinates perturbed from $\delta = 1\%$ to $9\%$ of the lattice parameter.}}{3}{}}
+\newlabel{en_mod}{{1}{3}{}{}{}}
 \citation{glielmo2017accurate,glielmo2018efficient,chmiela2017machine}
 \citation{rasmussen2003gaussian}
-\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Correlation of Gaussian process noise $\sigma _n$ and predictive variance $\mathcal  {V}$ with the root mean square error on independent test structures. (a) The optimized noise parameter $\sigma _n$ (solid) and root mean squared error (dotted) as a function of the cutoff radius $r_{\text  {cut}}$ of the atomic environment. (b) Combined model error $\sqrt  {\sigma _n^2 + \mathaccentV {bar}016{\mathcal  {V}}}$ as a function of the number of training atoms. (c) Mean predictive variance $\mathaccentV {bar}016{V}$ (solid) and RMSE (dotted) on test structures with atomic coordinates perturbed from $\delta = 1\%$ to $9\%$ of the lattice parameter.}}{2}{}}
 \citation{giannozzi2009quantum}
 \citation{flare}
-\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces On-the-fly learning of a multi-phase aluminum force field. (a) Instantaneous temperature during a $10 \text  { ps}$ on-the-fly MD trajectory. The simulation begins in the FCC phase at low temperature and is melted at $5 \text  { ps}$. When the prediction error on a given force component rises above the current noise parameter $\sigma _n$ of the model, DFT is called (black dots). (b) The number of atoms in the training set throughout the simulation. A sharp increase is observed when the crystal is melted, illustrating the model's ability to adapt to the liquid phase. (c) The optimized noise parameter $\sigma _n$ and all other hyperparameters of the kernel are re-optimized whenever an atom is added to the training set. The noise level increases sharply during the melt.}}{3}{}}
 \citation{botu2016machine}
 \citation{sheng2011highly}
 \citation{sheng2011highly}
 \citation{botu2016machine}
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces On-the-fly learning of a multi-phase aluminum force field. (a) Instantaneous temperature during a $10 \text  { ps}$ on-the-fly MD trajectory. The simulation begins in the FCC phase at low temperature and is melted at $5 \text  { ps}$. When the prediction error on a given force component rises above the current noise parameter $\sigma _n$ of the model, DFT is called (black dots). (b) The number of atoms in the training set throughout the simulation. A sharp increase is observed when the crystal is melted, illustrating the model's ability to adapt to the liquid phase. (c) The optimized noise parameter $\sigma _n$ and all other hyperparameters of the kernel are re-optimized whenever an atom is added to the training set. The noise level increases sharply during the melt.}}{7}{}}
 \citation{glielmo2018efficient}
 \bibdata{otfNotes,otf.bib}
+\@writefile{lot}{\contentsline {table}{\numberline {I}{\ignorespaces Error of FLARE models on test structures drawn from \textit  {ab initio} molecular dynamics trajectories of a 2x2x2 supercell of bulk aluminum in the solid and liquid phases. Errors are reported in $\text  {meV/\r A}$.}}{8}{}}
 \bibcite{behler2011neural}{{1}{2011{}}{{Behler}}{{}}}
 \bibcite{deringer2017machine}{{2}{2017}{{Deringer\ and\ Cs{\'a}nyi}}{{}}}
 \bibcite{chmiela2017machine}{{3}{2017}{{Chmiela\ \emph  {et~al.}}}{{Chmiela, Tkatchenko, Sauceda, Poltavsky, Sch{\"u}tt,\ and\ M{\"u}ller}}}
 \bibcite{schutt2017schnet}{{4}{2017}{{Sch{\"u}tt\ \emph  {et~al.}}}{{Sch{\"u}tt, Kindermans, Felix, Chmiela, Tkatchenko,\ and\ M{\"u}ller}}}
-\@writefile{lot}{\contentsline {table}{\numberline {I}{\ignorespaces Error of FLARE models on test structures drawn from \textit  {ab initio} molecular dynamics trajectories of a 2x2x2 supercell of bulk aluminum in the solid and liquid phases. Errors are reported in $\text  {meV/\r A}$.}}{4}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces On-the-fly learning of vacancy diffusion in bulk aluminum. Left: Mean squared displacement during an OTF run of duration $1 \text  { ns}$. The majority of DFT calls occur at the beginning of the run, with no additional calls required after the first $400 \text  { ps}$. Right: the energy model of the resulting FLARE potential is tested on a high symmetry transition path, in close agreement with the \textit  {ab initio} barrier.}}{4}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {}References}{4}{}}
 \bibcite{flare}{{5}{}{{fla}}{{}}}
 \bibcite{behler2011atom}{{6}{2011{}}{{Behler}}{{}}}
 \bibcite{bartok2013representing}{{7}{2013}{{Bart{\'o}k\ \emph  {et~al.}}}{{Bart{\'o}k, Kondor,\ and\ Cs{\'a}nyi}}}
 \bibcite{zhang2018end}{{8}{2018}{{Zhang\ \emph  {et~al.}}}{{Zhang, Han, Wang, Saidi, Car,\ and\ Weinan}}}
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces On-the-fly learning of vacancy diffusion in bulk aluminum. Left: Mean squared displacement during an OTF run of duration $1 \text  { ns}$. The majority of DFT calls occur at the beginning of the run, with no additional calls required after the first $400 \text  { ps}$. Right: the energy model of the resulting FLARE potential is tested on a high symmetry transition path, in close agreement with the \textit  {ab initio} barrier.}}{9}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {}References}{9}{}}
 \bibcite{bartok2010gaussian}{{9}{2010}{{Bart{\'o}k\ \emph  {et~al.}}}{{Bart{\'o}k, Payne, Kondor,\ and\ Cs{\'a}nyi}}}
 \bibcite{bartok2015gaussian}{{10}{2015}{{Bart{\'o}k\ and\ Cs{\'a}nyi}}{{}}}
 \bibcite{rasmussen2003gaussian}{{11}{2003}{{Rasmussen}}{{}}}
@@ -45,5 +45,5 @@
 \bibstyle{apsrev4-1}
 \citation{REVTEX41Control}
 \citation{apsrev41Control}
-\newlabel{LastBibItem}{{16}{5}{}{}{}}
-\newlabel{LastPage}{{}{5}{}{}{}}
+\newlabel{LastBibItem}{{16}{10}{}{}{}}
+\newlabel{LastPage}{{}{10}{}{}{}}

@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.18 (TeX Live 2017) (preloaded format=pdflatex 2017.5.23)  1 APR 2019 15:56
+This is pdfTeX, Version 3.14159265-2.6-1.40.18 (TeX Live 2017) (preloaded format=pdflatex 2017.5.23)  1 APR 2019 16:01
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -68,9 +68,9 @@ Class revtex4-1 Info: RevTeX society APS selected on input line 31.
 )
 Class revtex4-1 Info: Selecting journal prl on input line 7544.
 Class revtex4-1 Info: APS journal PRL selected on input line 7545.
- (/usr/local/texlive/2017/texmf-dist/tex/latex/revtex/aps10pt4-1.rtx
-File: aps10pt4-1 2010/07/25/20:33:00 4.1r (http://publish.aps.org/revtex4/ for documentation)
-Class revtex4-1 Info: RevTeX pointsize 10pt selected on input line 30.
+ (/usr/local/texlive/2017/texmf-dist/tex/latex/revtex/aps12pt4-1.rtx
+File: aps12pt4-1 2010/07/25/20:33:00 4.1r (http://publish.aps.org/revtex4/ for documentation)
+Class revtex4-1 Info: RevTeX pointsize 12pt selected on input line 30.
 ) (/usr/local/texlive/2017/texmf-dist/tex/latex/textcase/textcase.sty
 Package: textcase 2004/10/07 v0.07 Text only upper/lower case changing (DPC)
 ) (/usr/local/texlive/2017/texmf-dist/tex/latex/amsfonts/amssymb.sty
@@ -227,30 +227,30 @@ Document Style algorithmicx 1.2 - a greatly improved `algorithmic' style
 )
 Document Style - pseudocode environments for use with the `algorithmicx' style
 )
-Class revtex4-1 Info: Unrecognized array package. Please update this document class! (Proceeding with fingers crossed.) on input line 66.
+Class revtex4-1 Info: Unrecognized array package. Please update this document class! (Proceeding with fingers crossed.) on input line 67.
 
 
 Class revtex4-1 Warning: Repair the float package.
 
-Class revtex4-1 Info: Robustifying \LaTeX's \boldmath command on input line 66.
-Class revtex4-1 Info: cite was not loaded (OK!) on input line 66.
-Class revtex4-1 Info: mcite was not loaded (OK!) on input line 66.
-Class revtex4-1 Info: multicol was not loaded (OK!) on input line 66.
+Class revtex4-1 Info: Robustifying \LaTeX's \boldmath command on input line 67.
+Class revtex4-1 Info: cite was not loaded (OK!) on input line 67.
+Class revtex4-1 Info: mcite was not loaded (OK!) on input line 67.
+Class revtex4-1 Info: multicol was not loaded (OK!) on input line 67.
 (/Users/jonpvandermause/Research/GP/otf/paper/Main/otf.aux)
 \openout1 = `otf.aux'.
 
-LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 66.
-LaTeX Font Info:    ... okay on input line 66.
-LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 66.
-LaTeX Font Info:    ... okay on input line 66.
-LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 66.
-LaTeX Font Info:    ... okay on input line 66.
-LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 66.
-LaTeX Font Info:    ... okay on input line 66.
-LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 66.
-LaTeX Font Info:    ... okay on input line 66.
-LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 66.
-LaTeX Font Info:    ... okay on input line 66.
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 67.
+LaTeX Font Info:    ... okay on input line 67.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 67.
+LaTeX Font Info:    ... okay on input line 67.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 67.
+LaTeX Font Info:    ... okay on input line 67.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 67.
+LaTeX Font Info:    ... okay on input line 67.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 67.
+LaTeX Font Info:    ... okay on input line 67.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 67.
+LaTeX Font Info:    ... okay on input line 67.
  (/usr/local/texlive/2017/texmf-dist/tex/context/base/mkii/supp-pdf.mkii
 [Loading MPS to PDF converter (version 2006.09.02).]
 \scratchcounter=\count117
@@ -302,42 +302,65 @@ File: epstopdf-sys.cfg 2010/07/13 v1.3 Configuration of (r)epstopdf for TeX Live
 ))
 \openout3 = `otfNotes.bib'.
 
-LaTeX Font Info:    Try loading font information for U+msa on input line 94.
+ (/usr/local/texlive/2017/texmf-dist/tex/latex/lineno/lineno.sty
+Package: lineno 2005/11/02 line numbers on paragraphs v4.41
+\linenopenalty=\count123
+\output=\toks29
+\linenoprevgraf=\count124
+\linenumbersep=\dimen117
+\linenumberwidth=\dimen118
+\c@linenumber=\count125
+\c@pagewiselinenumber=\count126
+\c@LN@truepage=\count127
+\c@internallinenumber=\count128
+\c@internallinenumbers=\count129
+\quotelinenumbersep=\dimen119
+\bframerule=\dimen120
+\bframesep=\dimen121
+\bframebox=\box46
+LaTeX Info: Redefining \\ on input line 3056.
+)
+LaTeX Font Info:    Try loading font information for U+msa on input line 95.
  (/usr/local/texlive/2017/texmf-dist/tex/latex/amsfonts/umsa.fd
 File: umsa.fd 2013/01/14 v3.01 AMS symbols A
 )
-LaTeX Font Info:    Try loading font information for U+msb on input line 94.
+LaTeX Font Info:    Try loading font information for U+msb on input line 95.
  (/usr/local/texlive/2017/texmf-dist/tex/latex/amsfonts/umsb.fd
 File: umsb.fd 2013/01/14 v3.01 AMS symbols B
-) <calibrate.pdf, id=1, 437.32133pt x 146.99117pt>
+) [1{/usr/local/texlive/2017/texmf-var/fonts/map/pdftex/updmap/pdftex.map}] [2] <calibrate.pdf, id=16, 437.32133pt x 146.99117pt>
 File: calibrate.pdf Graphic file (type pdf)
  <use calibrate.pdf>
-Package pdftex.def Info: calibrate.pdf used on input line 103.
+Package pdftex.def Info: calibrate.pdf used on input line 104.
 (pdftex.def)             Requested size: 505.89pt x 170.04109pt.
- [1{/usr/local/texlive/2017/texmf-var/fonts/map/pdftex/updmap/pdftex.map}] [2 </Users/jonpvandermause/Research/GP/otf/paper/Main/calibrate.pdf>] <melt.pdf, id=76, 220.15375pt x 313.37076pt>
+
+Overfull \hbox (37.89pt too wide) in paragraph at lines 104--105
+ [][] 
+ []
+
+[3 </Users/jonpvandermause/Research/GP/otf/paper/Main/calibrate.pdf>] [4] [5] <melt.pdf, id=82, 220.15375pt x 313.37076pt>
 File: melt.pdf Graphic file (type pdf)
  <use melt.pdf>
-Package pdftex.def Info: melt.pdf used on input line 143.
+Package pdftex.def Info: melt.pdf used on input line 144.
 (pdftex.def)             Requested size: 216.81pt x 308.62659pt.
- [3 </Users/jonpvandermause/Research/GP/otf/paper/Main/melt.pdf>] <vac.pdf, id=126, 236.03307pt x 114.2112pt>
+ [6] [7 </Users/jonpvandermause/Research/GP/otf/paper/Main/melt.pdf>] <vac.pdf, id=136, 236.03307pt x 114.2112pt>
 File: vac.pdf Graphic file (type pdf)
  <use vac.pdf>
-Package pdftex.def Info: vac.pdf used on input line 173.
+Package pdftex.def Info: vac.pdf used on input line 174.
 (pdftex.def)             Requested size: 246.44096pt x 119.24736pt.
- (/Users/jonpvandermause/Research/GP/otf/paper/Main/otf.bbl [4 </Users/jonpvandermause/Research/GP/otf/paper/Main/vac.pdf>]) [5] (/Users/jonpvandermause/Research/GP/otf/paper/Main/otf.aux) ) 
+ (/Users/jonpvandermause/Research/GP/otf/paper/Main/otf.bbl [8] [9 </Users/jonpvandermause/Research/GP/otf/paper/Main/vac.pdf>]) [10] (/Users/jonpvandermause/Research/GP/otf/paper/Main/otf.aux) ) 
 Here is how much of TeX's memory you used:
- 5193 strings out of 492995
- 70157 string characters out of 6132704
- 154059 words of memory out of 5000000
- 8647 multiletter control sequences out of 15000+600000
- 15205 words of font info for 56 fonts, out of 8000000 for 9000
+ 5375 strings out of 492995
+ 73033 string characters out of 6132704
+ 157081 words of memory out of 5000000
+ 8830 multiletter control sequences out of 15000+600000
+ 15990 words of font info for 58 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 39i,16n,28p,1976b,331s stack positions out of 5000i,500n,10000p,200000b,80000s
-</usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx9.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cmextra/cmex9.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi6.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi7.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi9.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmr5.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmr6.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmr7.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmr9.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy9.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmti10.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmti9.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt9.pfb>
-Output written on /Users/jonpvandermause/Research/GP/otf/paper/Main/otf.pdf (5 pages, 301865 bytes).
+ 39i,16n,28p,1976b,343s stack positions out of 5000i,500n,10000p,200000b,80000s
+</usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi12.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi8.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmr12.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmr6.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmr8.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmss8.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy8.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmti10.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmti12.pfb></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt10.pfb>
+Output written on /Users/jonpvandermause/Research/GP/otf/paper/Main/otf.pdf (10 pages, 288641 bytes).
 PDF statistics:
- 242 PDF objects out of 1000 (max. 8388607)
- 99 compressed objects within 1 object stream
+ 248 PDF objects out of 1000 (max. 8388607)
+ 102 compressed objects within 2 object streams
  0 named destinations out of 1000 (max. 500000)
  16 words of extra memory for PDF output out of 10000 (max. 10000000)
 
