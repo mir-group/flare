@@ -14,6 +14,3 @@ PRE-REQUISITES:
 UNIT TESTS:
 We recommend running unit tests to validate that you can run FLARE on your machine. We have implemented our tests using the pytest suite. 
 You can call 'pytest' from the command line in the tests directory to validate that you can call Quantum ESPRESSO and that your Numba installation is being correctly used by FLARE.
-
-EXAMPLES:
-Example calculations are provided in the examples directory for you to experiment with.
