@@ -139,23 +139,25 @@ class OTF(object):
                     self.update_temperature(new_pos)
                     self.record_state()
 
-            # add atoms to training set until max error is below threshold
-            if self.add_all:
-                if not std_in_bound:
-                    self.update_gp(self.atom_list, dft_frcs)
-                    if not self.freeze_hyps:
-                        self.train_gp()
-                    self.pred_func()
-            else:
-                atom_count = 0
-                while not std_in_bound and atom_count < self.max_atoms_added:
-                    self.update_gp([target_atom], dft_frcs)
-                    if not self.freeze_hyps:
-                        self.train_gp()
-                    atom_list.append(target_atom)
-                    self.pred_func()
-                    std_in_bound, target_atom = self.is_std_in_bound(atom_list)
-                    atom_count += 1
+                # add atoms to training set until max error is below threshold
+                if self.add_all:
+                    if not std_in_bound:
+                        self.update_gp(self.atom_list, dft_frcs)
+                        if not self.freeze_hyps:
+                            self.train_gp()
+                        self.pred_func()
+                else:
+                    atom_count = 0
+                    while (not std_in_bound and atom_count <
+                           self.max_atoms_added):
+                        self.update_gp([target_atom], dft_frcs)
+                        if not self.freeze_hyps:
+                            self.train_gp()
+                        atom_list.append(target_atom)
+                        self.pred_func()
+                        std_in_bound, target_atom = \
+                            self.is_std_in_bound(atom_list)
+                        atom_count += 1
 
             # write gp forces only when counter equals skip
             if counter >= self.skip and not self.dft_step:
