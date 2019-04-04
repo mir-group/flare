@@ -199,6 +199,7 @@ class OtfAnalysis:
                     # keep track of atom number
                     if line_check.startswith("Adding atom"):
                         line_split = line_check.split()
+                        print(line_split)
                         atoms_added.append(int(line_split[2]))
 
                     # keep track of hyperparameters
@@ -209,7 +210,6 @@ class OtfAnalysis:
                             hyps.append(float(hyp_line[-1]))
                         hyps = np.array(hyps)
                         hyps_added.append(hyps)
-
 
                     ind_count += 1
                     line_check = lines[ind_count]

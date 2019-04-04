@@ -240,7 +240,7 @@ def get_like_grad_from_mats(ky_mat, hyp_mat, training_labels_np):
             ky_mat_inv = np.linalg.inv(ky_mat)
             l_mat = np.linalg.cholesky(ky_mat)
         except:
-            return 1e8, np.zeros(number_of_hyps)
+            return -1e8, np.zeros(number_of_hyps)
 
         alpha = np.matmul(ky_mat_inv, training_labels_np)
         alpha_mat = np.matmul(alpha.reshape(alpha.shape[0], 1),
