@@ -106,8 +106,4 @@ class Structure(object):
         self.wrapped_positions = pos_wrap
 
 if __name__ == '__main__':
-    cell = np.eye(3)
-    species = ['A', 'B', 'C']
-    positions = np.array([[0, 0, 0], [0.5, 0.5, 0.5], [0.1, 0.1, 0.1]])
-    struc_test = Structure(cell, species, positions)
-    print(struc_test.coded_species)
+    pass

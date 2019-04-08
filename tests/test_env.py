@@ -1,33 +1,18 @@
-# import pytest
-# import numpy as np
-# import sys
-# import time
-# from random import random
-# sys.path.append('../otf_engine')
-# import fast_env
-# import struc
+import pytest
+import numpy as np
+import sys
+import time
+from random import random
+sys.path.append('../otf_engine')
+import env
+import struc
 
-# TODO: make tests for fast env
 
-# def test_env_agreement():
-#     # create test structure
-#     positions = [np.array([random(), random(), random()]),
-#                  np.array([random(), random(), random()]),
-#                  np.array([random(), random(), random()]),
-#                  np.array([random(), random(), random()]),
-#                  np.array([random(), random(), random()])]
-#     species = ['B', 'A', 'B', 'A', 'B']
-#     cell = np.eye(3)
-
-#     cutoff_2 = 1
-#     cutoff_3 = 1
-#     cutoffs = np.array([cutoff_2, cutoff_3])
-
-#     test_structure = struc.Structure(cell, species, positions)
-
-#     # create environment
-#     atom = 0
-#     toy_env = env.ChemicalEnvironment(test_structure, atom)
-#     toy_env_2 = fast_env.AtomicEnvironment(test_structure, atom, cutoffs)
-
-#     assert(np.array_equal(toy_env.bond_array, toy_env_2.bond_array_2))
+def test_species_count():
+    cell = np.eye(3)
+    species = ['A', 'B', 'C']
+    positions = np.array([[0, 0, 0], [0.5, 0.5, 0.5], [0.1, 0.1, 0.1]])
+    struc_test = struc.Structure(cell, species, positions)
+    env_test = env.AtomicEnvironment(struc_test, 0, np.array([1, 1]))
+    assert(len(env_test.bond_array_2) == len(env_test.etypes))
+    assert(isinstance(env_test.etypes[0], np.int8))

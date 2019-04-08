@@ -63,7 +63,7 @@ def get_2_body_arrays(positions: np.ndarray, atom: int, cell: np.ndarray,
     # create 2-body bond array
     bond_array_2 = np.zeros((cutoff_count, 4))
     bond_positions_2 = np.zeros((cutoff_count, 3))
-    etypes = np.zeros(cutoff_count)
+    etypes = np.zeros(cutoff_count, dtype=np.int8)
     bond_count = 0
 
     for m in range(noa):
