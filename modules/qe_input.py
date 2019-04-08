@@ -109,7 +109,7 @@ class QEInput:
         postxt = ''
         postxt += 'ATOMIC_POSITIONS {angstrom}'
         for spec, pos in zip(self.species, self.positions):
-            postxt += '\n {} {:1.5f} {:1.5f} {:1.5f}'.format(spec, *pos)
+            postxt += '\n {} {:1.8f} {:1.8f} {:1.8f}'.format(spec, *pos)
 
         return postxt
 
