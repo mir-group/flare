@@ -10,12 +10,15 @@ class AtomicEnvironment:
         self.cell = structure.cell
         self.atom = atom
         self.cutoff_2 = cutoffs[0]
+        self.species = structure.coded_species
+        self.ctype = structure.coded_species[atom]
 
         # get 2-body arrays
-        bond_array_2, bond_positions_2 = \
+        bond_array_2, bond_positions_2, etypes = \
             get_2_body_arrays(self.positions, self.atom, self.cell,
-                              self.cutoff_2)
+                              self.cutoff_2, self.species)
         self.bond_array_2 = bond_array_2
+        self.etypes = etypes
 
         # if multiple cutoffs are given, create 3-body arrays
         if len(cutoffs) > 1:
@@ -30,7 +33,7 @@ class AtomicEnvironment:
 
 @njit
 def get_2_body_arrays(positions: np.ndarray, atom: int, cell: np.ndarray,
-                      cutoff_2: float):
+                      cutoff_2: float, species: np.ndarray):
     noa = len(positions)
     pos_atom = positions[atom]
     coords = np.zeros((noa, 3, 27))
@@ -60,24 +63,28 @@ def get_2_body_arrays(positions: np.ndarray, atom: int, cell: np.ndarray,
     # create 2-body bond array
     bond_array_2 = np.zeros((cutoff_count, 4))
     bond_positions_2 = np.zeros((cutoff_count, 3))
+    etypes = np.zeros(cutoff_count)
     bond_count = 0
 
     for m in range(noa):
-            for n in range(27):
-                dist_curr = dists[m, n]
-                if (dist_curr < cutoff_2) and (dist_curr != 0):
-                    coord = coords[m, :, n]
-                    bond_array_2[bond_count, 0] = dist_curr
-                    bond_array_2[bond_count, 1:4] = coord / dist_curr
-                    bond_positions_2[bond_count, :] = coord
-                    bond_count += 1
+        spec_curr = species[m]
+        for n in range(27):
+            dist_curr = dists[m, n]
+            if (dist_curr < cutoff_2) and (dist_curr != 0):
+                coord = coords[m, :, n]
+                bond_array_2[bond_count, 0] = dist_curr
+                bond_array_2[bond_count, 1:4] = coord / dist_curr
+                bond_positions_2[bond_count, :] = coord
+                etypes[bond_count] = spec_curr
+                bond_count += 1
 
     # sort by distance
     sort_inds = bond_array_2[:, 0].argsort()
     bond_array_2 = bond_array_2[sort_inds]
     bond_positions_2 = bond_positions_2[sort_inds]
+    etypes = etypes[sort_inds]
 
-    return bond_array_2, bond_positions_2
+    return bond_array_2, bond_positions_2, etypes
 
 
 @njit
