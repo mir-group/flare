@@ -14,6 +14,7 @@ def cleanup_espresso_run(target: str = None):
     os.system('rm -r pwscf.save')
     os.system('rm pwscf.in')
     os.system('rm pwscf.wfc1')
+    os.system('rm pwscf.wfc2')
     if target:
         os.system('rm ' + target)
 

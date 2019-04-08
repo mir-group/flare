@@ -63,6 +63,7 @@ class Structure(object):
             else:
                 coded_species.append(len(unique_species))
                 unique_species.append(spec)
+        coded_species = np.array(coded_species)
 
         return unique_species, coded_species
 
@@ -105,4 +106,8 @@ class Structure(object):
         self.wrapped_positions = pos_wrap
 
 if __name__ == '__main__':
-    pass
+    cell = np.eye(3)
+    species = ['A', 'B', 'C']
+    positions = np.array([[0, 0, 0], [0.5, 0.5, 0.5], [0.1, 0.1, 0.1]])
+    struc_test = Structure(cell, species, positions)
+    print(struc_test.coded_species)

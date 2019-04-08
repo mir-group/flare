@@ -7,8 +7,18 @@ from otf import OTF
 from gp import GaussianProcess
 from struc import Structure
 import kernels as en
-from test_qe_util import cleanup_espresso_run
-import shutil
+
+
+def cleanup_espresso_run(target: str = None):
+    os.system('rm pwscf.out')
+    os.system('rm pwscf.wfc')
+    os.system('rm -r pwscf.save')
+    os.system('rm pwscf.in')
+    os.system('rm pwscf.wfc1')
+    os.system('rm pwscf.wfc2')
+    if target:
+        os.system('rm ' + target)
+
 
 # ------------------------------------------------------
 #                   test  otf runs
