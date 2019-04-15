@@ -69,13 +69,13 @@ def write_md_config(dt, curr_step, structure, temperature, KE, local_energies,
     string += '\nSimulation Time: %.3f ps \n' % (dt * curr_step)
 
     # Construct Header line
-    string += 'El \t\t\t  Position (A) \t\t\t\t\t '
+    string += 'El  Position (A) \t\t\t\t '
     if not dft_step:
         string += 'GP Force (ev/A) '
     else:
         string += 'DFT Force (ev/A) '
-    string += '\t\t\t\t\t\t Std. Dev (ev/A) \t'
-    string += '\t\t\t\t\t\t Velocities (A/ps) \n'
+    string += '\t\t\t\t Std. Dev (ev/A) \t'
+    string += '\t\t\t\t Velocities (A/ps) \n'
 
     # Construct atom-by-atom description
     for i in range(len(structure.positions)):
