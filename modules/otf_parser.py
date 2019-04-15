@@ -44,7 +44,8 @@ class OtfAnalysis:
         self.gp_atom_count = gp_atom_count
 
     def make_gp(self, cell=None, kernel=None, kernel_grad=None, algo=None,
-                call_no=None, cutoffs=None, hyps=None, init_gp=None):
+                call_no=None, cutoffs=None, hyps=None, init_gp=None,
+                energy_force_kernel=None):
 
         if init_gp is None:
             # Use run's values as extracted from header
@@ -66,8 +67,10 @@ class OtfAnalysis:
             else:
                 gp_hyps = hyps
 
-            gp_model = gp.GaussianProcess(kernel, kernel_grad, gp_hyps,
-                                          cutoffs, opt_algorithm=algo)
+            gp_model = \
+                gp.GaussianProcess(kernel, kernel_grad, gp_hyps,
+                                   cutoffs, opt_algorithm=algo,
+                                   energy_force_kernel=energy_force_kernel)
         else:
             gp_model = init_gp
             call_no = len(self.gp_position_list)
