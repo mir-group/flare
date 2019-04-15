@@ -48,7 +48,7 @@ class OtfAnalysis:
 
         if init_gp is None:
             # Use run's values as extracted from header
-            #TODO Allow for kernel gradient in header
+            # TODO Allow for kernel gradient in header
             if cell is None:
                 cell = self.header['cell']
             if kernel is None:
@@ -224,7 +224,6 @@ class OtfAnalysis:
                 # add DFT positions and forces
                 line_curr = line.split()
 
-
                 # TODO: generalize this to account for arbitrary starting list
                 append_atom_lists(species_list, position_list, force_list,
                                   uncertainty_list, velocity_list,
@@ -232,8 +231,6 @@ class OtfAnalysis:
 
         return position_list, force_list, uncertainty_list, velocity_list,\
             atom_list, hyp_list, species_list, atom_count
-
-
 
     def output_md_structures(self):
         """
@@ -250,13 +247,11 @@ class OtfAnalysis:
         stds = self.uncertainty_list
         for i in range(len(positions)):
             cur_struc = struc.Structure(cell=cell, species=species,
-                              positions=positions[i])
+                                        positions=positions[i])
             cur_struc.forces = forces[i]
             cur_struc.stds = stds[i]
             structures.append(cur_struc)
         return structures
-
-
 
 
 def append_atom_lists(species_list: List[str],
@@ -305,7 +300,6 @@ def parse_snapshot(lines, index, noa, dft_call, noh):
         velocities[count] = velocity
 
     return species, positions, forces, uncertainties, velocities
-
 
 
 def strip_and_split(line):
@@ -374,7 +368,8 @@ def parse_header_information(outfile: str = 'otf_run.out') -> dict:
         if 'periodic cell' in line:
             vectors = []
             for cell_line in lines[i+1:i+4]:
-                cell_line = cell_line.strip().replace('[','').replace(']','')
+                cell_line = \
+                    cell_line.strip().replace('[', '').replace(']', '')
                 vec = cell_line.split()
                 vector = [float(vec[0]), float(vec[1]), float(vec[2])]
                 vectors.append(vector)
@@ -382,10 +377,10 @@ def parse_header_information(outfile: str = 'otf_run.out') -> dict:
         if 'previous positions' in line:
             struc_spec = []
             prev_positions = []
-            for pos_line in lines[i+1:i+1+header_info.get('atoms',0)]:
+            for pos_line in lines[i+1:i+1+header_info.get('atoms', 0)]:
                 pos = pos_line.split()
                 struc_spec.append(pos[0])
-                prev_positions.append((float(pos[1]),float(pos[2]),
+                prev_positions.append((float(pos[1]), float(pos[2]),
                                        float(pos[3])))
             header_info['species'] = struc_spec
             header_info['prev_positions'] = np.array(prev_positions)
