@@ -1,7 +1,7 @@
 import sys
 import numpy as np
 from typing import List, Tuple
-sys.path.append('../../otf/otf_engine')
+sys.path.append('../../flare/otf_engine')
 import gp, env, struc, kernels, otf
 
 
@@ -199,8 +199,12 @@ class OtfAnalysis:
                     # keep track of atom number
                     if line_check.startswith("Adding atom"):
                         line_split = line_check.split()
-                        print(line_split)
-                        atoms_added.append(int(line_split[2]))
+                        atom_strings = line_split[2 : -4]
+                        for n, atom_string in enumerate(atom_strings):
+                            if n == 0:
+                                atoms_added.append(int(atom_string[1:-1]))
+                            else:
+                                atoms_added.append(int(atom_string[0:-1]))
 
                     # keep track of hyperparameters
                     if line_check.startswith("GP hyperparameters:"):
