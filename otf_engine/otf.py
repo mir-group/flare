@@ -22,7 +22,8 @@ class OTF(object):
                  skip: int=0, init_atoms: List[int]=None,
                  calculate_energy=False, output_name='otf_run.out',
                  max_atoms_added=None, freeze_hyps=False,
-                 rescale_steps=[], rescale_temps=[], add_all=False):
+                 rescale_steps=[], rescale_temps=[], add_all=False,
+                 no_cpus=1):
 
         self.qe_input = qe_input
         self.dt = dt
@@ -82,6 +83,9 @@ class OTF(object):
 
         self.output_name = output_name
         self.add_all = add_all
+
+        # set number of cpus for qe runs
+        self.no_cpus = no_cpus
 
     def run(self):
         output.write_header(self.gp.cutoffs, self.gp.kernel_name, self.gp.hyps,
@@ -238,8 +242,8 @@ class OTF(object):
                                self.output_name)
 
         # calculate DFT forces
-        forces = qe_util.run_espresso(self.qe_input, self.structure,
-                                      self.pw_loc)
+        forces = qe_util.run_espresso_par(self.qe_input, self.structure,
+                                          self.pw_loc, self.no_cpus)
         self.structure.forces = forces
 
         # write wall time of DFT calculation
