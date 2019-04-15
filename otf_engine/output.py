@@ -126,7 +126,7 @@ def write_hyps(hyp_labels, hyps, start_time, output_name, like, like_grad):
 
 
 def conclude_run(output_name):
-    footer = '▬' * 20 + '\n'
+    footer = '-' * 20 + '\n'
     footer += 'Run complete. \n'
 
     write_to_output(footer, output_name)
