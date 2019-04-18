@@ -1,8 +1,6 @@
 import numpy as np
-import qe_parsers
-import sys
-sys.path.append('../../otf/otf_engine')
-import gp, struc, qe_parsers
+from flare.modules import qe_parsers
+from flare import gp, struc, env
 
 
 class MDAnalysis:

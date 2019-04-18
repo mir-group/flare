@@ -3,11 +3,8 @@ import numpy as np
 import sys
 from random import random, randint
 from copy import deepcopy
-sys.path.append('../otf_engine')
-import env
-import gp
-import struc
-import kernels as en
+from flare import env, gp, struc
+import flare.kernels as en
 
 
 # -----------------------------------------------------------------------------

@@ -1,8 +1,7 @@
 import sys
 import numpy as np
 from typing import List, Tuple
-sys.path.append('../../flare/otf_engine')
-import gp, env, struc, kernels, otf
+from flare import gp, env, struc, kernels, otf
 
 
 class OtfAnalysis:

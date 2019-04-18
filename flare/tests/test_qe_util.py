@@ -2,9 +2,8 @@ import pytest
 import os
 import sys
 import numpy as np
-sys.path.append('../otf_engine')
-from struc import Structure
-from qe_util import parse_qe_input, parse_qe_forces, run_espresso, \
+from flare.struc import Structure
+from flare.qe_util import parse_qe_input, parse_qe_forces, run_espresso, \
     edit_qe_input_positions, qe_input_to_structure
 
 

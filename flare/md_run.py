@@ -1,12 +1,12 @@
-from gp import GaussianProcess
-from struc import Structure
-from env import AtomicEnvironment
+from flare.gp import GaussianProcess
+from flare.struc import Structure
+from flare.env import AtomicEnvironment
 import numpy as np
 import time
 import datetime
 import concurrent.futures
-import md
-import output
+import flare.md
+import flare.output
 
 
 class MD:

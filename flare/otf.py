@@ -3,15 +3,10 @@ import numpy as np
 import datetime
 import time
 from typing import List
-import struc
-import gp
-import env
-import qe_util
+import copy
 import multiprocessing as mp
 import concurrent.futures
-import md
-import output
-import copy
+from flare import struc, gp, env, qe_util, md, output
 
 
 class OTF(object):

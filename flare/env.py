@@ -1,7 +1,7 @@
 import numpy as np
 from math import sqrt
 from numba import njit
-from struc import Structure
+from flare.struc import Structure
 
 
 class AtomicEnvironment:

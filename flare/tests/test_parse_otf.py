@@ -1,11 +1,9 @@
 import os
 import sys
 import numpy as np
-sys.path.append('../modules')
-from otf_parser import OtfAnalysis
-sys.path.append('../otf_engine')
-from kernels import two_plus_three_body, two_plus_three_body_grad
-from env import AtomicEnvironment
+from flare.modules.otf_parser import OtfAnalysis
+from flare.kernels import two_plus_three_body, two_plus_three_body_grad
+from flare.env import AtomicEnvironment
 
 
 def test_parse_header():
@@ -83,8 +81,8 @@ def predict_on_structure(structure, gp):
     :param structure:
     :return:
     """
-    forces = np.zeros(shape=(structure.nat,3))
-    stds = np.zeros(shape=(structure.nat,3))
+    forces = np.zeros(shape=(structure.nat, 3))
+    stds = np.zeros(shape=(structure.nat, 3))
     for n in range(structure.nat):
         chemenv = AtomicEnvironment(structure, n, gp.cutoffs)
         for i in range(3):

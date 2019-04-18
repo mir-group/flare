@@ -3,9 +3,9 @@ import numpy as np
 from scipy.linalg import solve_triangular
 from scipy.optimize import minimize
 from typing import List, Callable
-from env import AtomicEnvironment
-from struc import Structure
-from gp_algebra import get_ky_mat, get_ky_and_hyp, get_like_from_ky_mat,\
+from flare.env import AtomicEnvironment
+from flare.struc import Structure
+from flare.gp_algebra import get_ky_mat, get_ky_and_hyp, get_like_from_ky_mat,\
     get_like_grad_from_mats, get_neg_likelihood, get_neg_like_grad
 
 

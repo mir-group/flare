@@ -1,11 +1,10 @@
 import pytest
 import numpy as np
 import sys
-sys.path.append('../otf_engine')
-from gp import GaussianProcess
-from env import AtomicEnvironment
-from struc import Structure
-import kernels as en
+from flare.gp import GaussianProcess
+from flare.env import AtomicEnvironment
+from flare.struc import Structure
+import flare.kernels as en
 
 
 def get_random_structure(cell, unique_species, noa):

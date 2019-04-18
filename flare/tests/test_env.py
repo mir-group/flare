@@ -3,9 +3,7 @@ import numpy as np
 import sys
 import time
 from random import random
-sys.path.append('../otf_engine')
-import env
-import struc
+from flare import env, struc
 
 
 def test_species_count():

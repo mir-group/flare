@@ -2,11 +2,10 @@ import pytest
 import os
 import sys
 import numpy as np
-sys.path.append('../otf_engine')
-from otf import OTF
-from gp import GaussianProcess
-from struc import Structure
-import kernels as en
+from flare.otf import OTF
+from flare.gp import GaussianProcess
+from flare.struc import Structure
+import flare.kernels as en
 
 
 def cleanup_espresso_run(target: str = None):

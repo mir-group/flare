@@ -1,7 +1,7 @@
 import numpy as np
 from math import exp
 from numba import njit
-import cutoffs as cf
+import flare.cutoffs as cf
 
 
 # -----------------------------------------------------------------------------

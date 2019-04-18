@@ -10,6 +10,7 @@ PRE-REQUISITES:
 3. In order for unit testing to work,
    a. set an environment variable called "PWSCF_COMMAND" to point to your pw.x Quantum ESPRESSO binary.
    b. ensure you have the pytest python package installed.
+4. Add the flare directory to your Python path.
 
 UNIT TESTS:
 We recommend running unit tests to validate that you can run FLARE on your machine. We have implemented our tests using the pytest suite. 

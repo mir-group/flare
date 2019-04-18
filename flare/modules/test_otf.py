@@ -1,9 +1,6 @@
 import numpy as np
-import otf_parser_v2
-import analyze_md
-import kernels
-import otf
-import env
+from flare.modules import otf_parser, analyze_md
+from flare import kernels, otf, env
 import concurrent.futures
 import time
 
@@ -15,7 +12,7 @@ class TestOTF:
         self.struc = None  # populate later
 
         # make gp and aimd run
-        otf_run = otf_parser_v2.OtfAnalysis(otf_file)
+        otf_run = otf_parser.OtfAnalysis(otf_file)
         call_no = len(otf_run.gp_position_list)
         self.gp_model = otf_run.make_gp(gp_cell, kernel, kernel_grad, 'BFGS',
                                         call_no, start_list, cutoffs)

@@ -1,9 +1,8 @@
 import pytest
 import numpy as np
 import sys
-from test_gp import get_random_structure
-sys.path.append('../otf_engine')
-from struc import Structure
+from flare.tests.test_gp import get_random_structure
+from flare.struc import Structure
 
 
 def test_random_structure_setup():
