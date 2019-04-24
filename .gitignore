@@ -2,5 +2,5 @@ __pycache__/
 pwscf.save/
 .cache/
 .pytest_cache/
-tests/otf_run.out
-tests/test_outputs/*
+flare/tests/otf_run.out
+flare/tests/test_outputs/*

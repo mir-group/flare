@@ -12,6 +12,7 @@ class AtomicEnvironment:
         self.cutoff_2 = cutoffs[0]
         self.species = structure.coded_species
         self.ctype = structure.coded_species[atom]
+        self.nos = structure.nos
 
         # get 2-body arrays
         bond_array_2, bond_positions_2, etypes = \
