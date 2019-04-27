@@ -47,7 +47,6 @@ def get_ky_mat_par(hyps: np.ndarray, training_data: list,
     # assume sigma_n is the final hyperparameter
     number_of_hyps = len(hyps)
     sigma_n = hyps[number_of_hyps - 1]
-    kern_hyps = hyps[0:(number_of_hyps - 1)]
 
     # initialize matrices
     size = len(training_data) * 3
@@ -64,7 +63,7 @@ def get_ky_mat_par(hyps: np.ndarray, training_data: list,
         results.append(pool.apply_async(get_cov_row,
                                         args=(x_1, d_1, m_index, size,
                                               training_data, kernel,
-                                              kern_hyps, cutoffs)))
+                                              hyps, cutoffs)))
 
     # construct covariance matrix
     for m in range(size):
@@ -90,7 +89,6 @@ def get_ky_and_hyp_par(hyps: np.ndarray, training_data: list,
     # assume sigma_n is the final hyperparameter
     number_of_hyps = len(hyps)
     sigma_n = hyps[number_of_hyps - 1]
-    kern_hyps = hyps[0:(number_of_hyps - 1)]
 
     # initialize matrices
     size = len(training_data) * 3
@@ -108,7 +106,7 @@ def get_ky_and_hyp_par(hyps: np.ndarray, training_data: list,
         results.append(pool.apply_async(get_cov_row_derv,
                                         args=(x_1, d_1, m_index, size,
                                               training_data, kernel_grad,
-                                              kern_hyps, cutoffs)))
+                                              hyps, cutoffs)))
 
     # construct covariance matrix
     for m in range(size):
@@ -137,7 +135,6 @@ def get_ky_mat(hyps: np.ndarray, training_data: list,
     # assume sigma_n is the final hyperparameter
     number_of_hyps = len(hyps)
     sigma_n = hyps[number_of_hyps - 1]
-    kern_hyps = hyps[0:(number_of_hyps - 1)]
 
     # initialize matrices
     size = len(training_data) * 3
@@ -155,7 +152,7 @@ def get_ky_mat(hyps: np.ndarray, training_data: list,
             d_2 = ds[n_index % 3]
 
             # calculate kernel and gradient
-            kern_curr = kernel(x_1, x_2, d_1, d_2, kern_hyps,
+            kern_curr = kernel(x_1, x_2, d_1, d_2, hyps,
                                cutoffs)
 
             # store kernel value
@@ -174,7 +171,6 @@ def get_ky_and_hyp(hyps: np.ndarray, training_data: list,
     # assume sigma_n is the final hyperparameter
     number_of_hyps = len(hyps)
     sigma_n = hyps[number_of_hyps - 1]
-    kern_hyps = hyps[0:(number_of_hyps - 1)]
 
     # initialize matrices
     size = len(training_data) * 3
@@ -193,7 +189,7 @@ def get_ky_and_hyp(hyps: np.ndarray, training_data: list,
             d_2 = ds[n_index % 3]
 
             # calculate kernel and gradient
-            cov = kernel_grad(x_1, x_2, d_1, d_2, kern_hyps, cutoffs)
+            cov = kernel_grad(x_1, x_2, d_1, d_2, hyps, cutoffs)
 
             # store kernel value
             k_mat[m_index, n_index] = cov[0]
