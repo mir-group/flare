@@ -5,8 +5,8 @@ import numpy as np
 import time
 import datetime
 import concurrent.futures
-import flare.md
-import flare.output
+from flare import md
+from flare import output
 
 
 class MD:
