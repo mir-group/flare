@@ -1,9 +1,8 @@
 import numpy as np
 import sys
-import crystals
+from flare.modules import crystals, qe_parsers
 import copy
-sys.path.append('../../otf/otf_engine')
-import gp, struc, qe_parsers, env
+from flare import gp, struc, env
 
 
 class MDAnalysis:
@@ -75,10 +74,12 @@ def vac_diff_fcc(gp_model, gp_cell, fcc_cell, species, cutoff, nop):
 
 # return untrained gp model
 def get_gp_from_snaps(md_trajectory, training_snaps, kernel,
-                      kernel_grad, hyps, cutoffs, algorithm='BFGS'):
+                      kernel_grad, hyps, cutoffs, algorithm='BFGS',
+                      maxiter=1000):
 
     gp_model = gp.GaussianProcess(kernel, kernel_grad, hyps,
-                                  cutoffs, opt_algorithm=algorithm)
+                                  cutoffs, opt_algorithm=algorithm,
+                                  maxiter=maxiter)
 
     for snap in training_snaps:
         structure = md_trajectory.get_structure_from_snap(snap)
@@ -90,10 +91,12 @@ def get_gp_from_snaps(md_trajectory, training_snaps, kernel,
 
 # return untrained gp model
 def custom_range_gp(md_trajectory, training_snaps, training_range, kernel,
-                    kernel_grad, hyps, cutoffs, algorithm='BFGS'):
+                    kernel_grad, hyps, cutoffs, algorithm='BFGS',
+                    maxiter=1000):
 
     gp_model = gp.GaussianProcess(kernel, kernel_grad, hyps,
-                                  cutoffs, opt_algorithm=algorithm)
+                                  cutoffs, opt_algorithm=algorithm,
+                                  maxiter=maxiter)
 
     for snap_count, snap in enumerate(training_snaps):
         structure = md_trajectory.get_structure_from_snap(snap)
