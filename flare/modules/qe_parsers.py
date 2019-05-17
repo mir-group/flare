@@ -1,8 +1,9 @@
 import numpy as np
 
-
+# unit conversion from http://greif.geo.berkeley.edu/~driver/conversions.html
 en_conv = 13.6056925330  # bohr to eV
 force_conv = 25.71104309541616  # bohr/Ry to eV/A
+stress_conv = 25.71104309541616 / (0.529177208**2)
 
 
 # get energy from scf run
@@ -81,6 +82,10 @@ def parse_md_output(outfile):
         atoms_start_index = current_chunk.index(atoms_start_line)+1
         atoms_end_index = current_chunk.index(atoms_end_line)-3
 
+        stress_start_line = [line for line in current_chunk if
+                             'Computing stress' in line][0]
+        stress_start_index = current_chunk.index(stress_start_line) + 3
+
         temperature_line = [line for line in current_chunk if
                             'temperature' in line][0]
         dyn_line = [line for line in current_chunk if
@@ -94,8 +99,18 @@ def parse_md_output(outfile):
             forces.append(force_conv * np.array([float(forceline[0]),
                                                  float(forceline[1]),
                                                  float(forceline[2])]))
+        forces = np.array(forces)
         total_force = float(force_end_line.split('=')[1].strip().split()[0])
         SCF_corr = float(force_end_line.split('=')[2].strip()[0])
+
+        stress = []
+        for line in current_chunk[stress_start_index:stress_start_index+3]:
+            stress_line = line.split()
+            stress.append(np.array([float(stress_line[0]),
+                                    float(stress_line[1]),
+                                    float(stress_line[2])]))
+        stress = np.array(stress)
+        stress = stress * stress_conv  # convert to eV/A^3
 
         positions = []
         elements = []
@@ -104,8 +119,10 @@ def parse_md_output(outfile):
             elements.append(atomline[0])
             positions.append(np.array([float(atomline[1]), float(atomline[2]),
                              float(atomline[3])]))
+        positions = np.array(positions)
 
-        toten = float(current_chunk[0].split('=')[-1].strip().split()[0])
+        toten = \
+            float(current_chunk[0].split('=')[-1].strip().split()[0]) * en_conv
         temperature_line = temperature_line.split('=')[-1]
         temperature = float(temperature_line.split()[0])
         iteration = int(dyn_line.split('=')[-1])
@@ -115,6 +132,7 @@ def parse_md_output(outfile):
 
         steps[iteration] = {'iteration': iteration,
                             'forces': forces,
+                            'stress': stress,
                             'positions': positions,
                             'elements': elements,
                             'temperature': temperature,

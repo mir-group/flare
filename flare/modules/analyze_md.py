@@ -58,8 +58,14 @@ class MDAnalysis:
 
     def get_structure_from_snap(self, snap):
         positions = self.MD_data[snap]['positions']
+        energy = self.MD_data[snap+1]['energy']
+        stress = self.MD_data[snap+1]['stress']
+        forces = self.MD_data[snap+1]['forces']
         species = self.MD_data[snap]['elements']
         structure = struc.Structure(self.cell, species, positions)
+        structure.energy = energy
+        structure.stress = stress
+        structure.forces = forces
         return structure
 
     def get_forces_from_snap(self, snap):
