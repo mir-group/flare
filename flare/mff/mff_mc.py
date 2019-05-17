@@ -11,6 +11,7 @@ import flare.gp as gp
 import flare.env as env
 from flare.kernels import two_body, three_body, two_plus_three_body, two_body_jit
 import flare.struc as struc
+from flare.mc_simple import two_body_mc, three_body_mc, two_plus_three_body_mc
 
 import flare.mff.utils as utils
 from flare.mff.splines_methods import PCASplines, SplinesInterpolation
@@ -33,17 +34,18 @@ class MappedForceField:
         self.bounds_3 = grid_params['bounds_3']
         self.svd_rank = grid_params['svd_rank']
         
-        bond_struc = self.build_bond_struc(struc_params)
+        bond_struc, spcs = self.build_bond_struc(struc_params)
+        self.spcs = spcs
         self.maps_2 = []
         self.maps_3 = []
         if self.bodies in ['2', '2+3']:
             for b_struc in bond_struc[0]:
-                map_2 = Map2body(self.grid_num_2, self.bounds_2, self.GP, bond_struc[0],
+                map_2 = Map2body(self.grid_num_2, self.bounds_2, self.GP, b_struc,
                          self.bodies, grid_params['load_grid'], self.svd_rank)
                 self.maps_2.append(map_2)
         if self.bodies in ['3', '2+3']:
             for b_struc in bond_struc[1]:
-                map_3 = Map3body(self.grid_num_3, self.bounds_3, self.GP, bond_struc[1], 
+                map_3 = Map3body(self.grid_num_3, self.bounds_3, self.GP, b_struc, 
                          self.bodies, grid_params['load_grid'],
                          grid_params['load_svd'], self.svd_rank)
                 self.maps_3.append(map_3)
@@ -61,38 +63,80 @@ class MappedForceField:
         N_spc = len(species_list)
         bodies = 2
         bond_struc_2 = []
+        spc_2 = []
         for spc1_ind, spc1 in enumerate(species_list):
             for spc2 in species_list[spc1_ind:]:
                 species = [spc1, spc2]
+                spc_2.append(species)
                 positions = [[(i+1)/(bodies+1)*cutoff, 0, 0] \
                             for i in range(bodies)]
-                bond_struc_2.append(struc.Structure(cell, species, positions, mass_dict))
+                spc_struc = struc.Structure(cell, species, positions, mass_dict)
+                spc_struc.coded_species = np.array(species)
+                bond_struc_2.append(spc_struc)
         bodies = 3
         bond_struc_3 = []
-        for spc1_ind in range(N_spc):
-            spc1 = species_list[spc1_ind]
-            for spc2_ind in range(spc1_ind, N_spc):
-                spc2 = species_list[spc2_ind]
-                for spc3_ind in range(spc2_ind, N_spc):
-                    spc3 = species_list[spc3_ind]
-                    species = [spc1, spc2, spc3]
-                    positions = [[(i+1)/(bodies+1)*cutoff, 0, 0] \
-                                for i in range(bodies)]
-                    bond_struc_3.append(struc.Structure(cell, species, positions, mass_dict))
+        spc_3 = []
+#        for spc1_ind in range(N_spc):
+#            spc1 = species_list[spc1_ind]
+#            for spc2_ind in range(spc1_ind, N_spc):
+#                spc2 = species_list[spc2_ind]
+#                for spc3_ind in range(spc2_ind, N_spc):
+#                    spc3 = species_list[spc3_ind]
+#                    species = [spc1, spc2, spc3]
+#                    spc_3.append(species)
+#                    positions = [[(i+1)/(bodies+1)*cutoff, 0, 0] \
+#                                for i in range(bodies)]
+#                    bond_struc_3.append(struc.Structure(cell, species, positions, mass_dict))
+#                    if spc2_ind != spc3_ind: # for non-equivalent atoms, no permutation symmetry
+#                        species_flip = [spc1, spc3, spc2]
+#                        spc_3.append(species_flip)
+#                        bond_struc_3.append(struc.Structure(cell, species_flip, positions, mass_dict))
 
         bond_struc = [bond_struc_2, bond_struc_3]
-        return bond_struc
+        spcs = [spc_2, spc_3]
+        return bond_struc, spcs
 
     def predict(self, atom_env, mean_only=False):
-        if self.bodies == '2':
-            f, v = self.map.predict(atom_env, self.GP, mean_only)
-        elif self.bodies == '3':
-            f, v = self.map.predict(atom_env, self.GP, mean_only)
-        elif self.bodies == '2+3':
-            f2, kern2, v2 = self.map_2.predict(atom_env, self.GP, mean_only)
-            f3, kern3, v3 = self.map_3.predict(atom_env, self.GP, mean_only)
-            f = f2 + f3
-            v = kern2 + kern3 - np.sum((v2 + v3)**2, axis=0)
+        f2_spcs = 0
+        kern2_spcs = 0
+        v2_spcs = 0
+        f3_spcs = 0
+        kern3_spcs = 0
+        v3_spcs = 0
+        ctype = atom_env.ctype
+        etypes = atom_env.etypes 
+        if self.bodies in ['2', '2+3']:
+            bond_array_2 = atom_env.bond_array_2
+            spc_2, spc_bonds_2 = get_bonds(bond_array_2, etypes)
+            for i, spc in enumerate(spc_2):
+                ce_bonds = np.array(spc_bonds_2[i])
+                ce_spc = [ctype, spc]
+                ce_spc.sort()
+                map_ind = self.spcs[0].index(ce_spc)
+                f2, kern2, v2 = self.maps_2[map_ind].predict(ce_bonds, self.GP, mean_only)
+                f2_spcs += f2
+                kern2_spcs += kern2
+                v2_spcs += v2
+
+        elif self.bodies in ['3', '2+3']:
+            bond_array_3 = atom_env.bond_array_3
+            spc_3, tris, tris_dir = get_triplets(bond_array_3, cross_bond_inds, 
+                cross_bond_dists, triplets, coded_species)
+            for i, spc in enumerate(spc_3):
+                tr1 = tris1[i]
+                tr2 = tris2[i]
+                tr_d1 = tri_dir1[i]
+                tr_d2 = tri_dir2[i]
+                ce_spc = [ctype]+spc
+                ce_spc = ce_spc.sort()
+                map_ind = self.spcs[1].index(ce_spc)
+                f3, kern3, v3 = self.maps_3[map_ind].predict(tr1, tr2, tr_d1, tr_d2, self.GP, mean_only)
+                f3_spcs += f3
+                kern3_spcs += kern3
+                v3_spcs += v3
+
+        f = f2_spcs + f3_spcs
+        v = kern2_spcs + kern3_spcs - np.sum((v2_spcs + v3_spcs)**2, axis=0)
         return f, v
               
 class Map2body:
@@ -111,10 +155,7 @@ class Map2body:
         self.svd_rank = svd_rank
         self.species = bond_struc.species
         
-        if self.bodies == '2':
-            y_mean, y_var = self.GenGrid(GP, bond_struc)
-        elif self.bodies == '2+3':
-            y_mean, y_var = self.GenGrid_svd(GP, bond_struc)
+        y_mean, y_var = self.GenGrid(GP, bond_struc)
 
         self.build_map(y_mean, y_var)
 
@@ -122,71 +163,12 @@ class Map2body:
     
         '''
         generate grid data of mean prediction and L^{-1}k* for each triplet
-        default implemented in a parallelized style
-        '''
-        processes = mp.cpu_count()
-        nop = self.grid_num
-        bond_lengths = np.linspace(self.l_bound, self.u_bound, nop)
-        bond_means = np.zeros([nop])
-        bond_vars = np.zeros([nop, nop])
-
-        env1 = env.AtomicEnvironment(bond_struc, 0, self.cutoffs)
-        env2 = env.AtomicEnvironment(bond_struc, 0, self.cutoffs)
-
-        pool_list = [(i, bond_lengths[i], bond_lengths, GP, env1, env2) for i in range(nop)]
-        pool = mp.Pool(processes=processes)
-        A_list = pool.starmap(self._GenGrid_inner, pool_list)
-        pool.close()
-        pool.join()
-
-        A_list.sort(key=lambda x: x[0])
-        for b1 in range(nop):            
-            bond_means[b1] = A_list[b1][1]
-            bond_vars[b1, :] = A_list[b1][2]
-        
-        return bond_means, bond_vars
-
-
-    def _GenGrid_inner(self, b1, r1, bond_lengths, GP, env1, env2):
-    
-        '''
-        generate grid for each angle, used to parallelize grid generation
-        '''
-        
-        nop = self.grid_num
-        bond_vars = np.zeros(nop)
-        
-        bond1 = np.array([r1, 1.0, 0.0, 0.0])
-        env1.bond_array_2 = np.array([bond1])
-#        env1.cross_bond_dists = np.array([[0]])
-        
-        k1_v = GP.get_kernel_vector(env1, 1)
-        v1_vec = solve_triangular(GP.l_mat, k1_v, lower=True)
-        mean_diff = np.matmul(k1_v, GP.alpha)
-        bond_means = mean_diff
-        
-        for b2, r2 in enumerate(bond_lengths):
-            bond2 = np.array([r2, 1.0, 0.0, 0.0])
-            env2.bond_array_2 = np.array([bond2])
-#            env2.cross_bond_dists = np.array([[0]])
-            
-            k2_v = GP.get_kernel_vector(env2, 1)
-            v2_vec = solve_triangular(GP.l_mat, k2_v, lower=True)
-            self_kern = GP.kernel(env1, env2, 1, 1, GP.hyps, GP.cutoffs)
-            var_diff = self_kern - np.matmul(v1_vec, v2_vec)
-            bond_vars[b2] = var_diff   
-                      
-        return b1, bond_means, bond_vars
-
-    def GenGrid_svd(self, GP, bond_struc, processes=mp.cpu_count()):
-    
-        '''
-        generate grid data of mean prediction and L^{-1}k* for each triplet
          implemented in a parallelized style
         '''
 
         # ------ change GP kernel to 2 body ------
-        GP.kernel = two_body
+        original_kernel = GP.kernel
+        GP.kernel = two_body_mc
         original_cutoffs = np.copy(GP.cutoffs)
         GP.cutoffs = [GP.cutoffs[0]]
         original_hyps = np.copy(GP.hyps)
@@ -202,7 +184,7 @@ class Map2body:
         pool_list = [(i, bond_lengths, GP, env12)\
                      for i in range(nop)]
         pool = mp.Pool(processes=processes)
-        A_list = pool.map(self._GenGrid_svd_inner, pool_list)
+        A_list = pool.map(self._GenGrid_inner, pool_list)
         for p in range(nop):
             bond_means[p] = A_list[p][0]
             bond_vars[p, :] = A_list[p][1]
@@ -212,11 +194,11 @@ class Map2body:
         # ------ change back original GP ------
         GP.cutoffs = original_cutoffs
         GP.hyps = original_hyps
-        GP.kernel = two_plus_three_body
+        GP.kernel = original_kernel
        
         return bond_means, bond_vars
 
-    def _GenGrid_svd_inner(self, params):
+    def _GenGrid_inner(self, params):
     
         '''
         generate grid for each angle, used to parallelize grid generation
@@ -233,73 +215,52 @@ class Map2body:
                       
         return bond_means, bond_vars
 
-
     def build_map(self, y_mean, y_var):
+    
         '''
         build 1-d spline function for mean, 2-d for var
         '''
+        
         self.mean = SplinesInterpolation(y_mean, 
                     u_bounds=np.array(self.u_bound), 
                     l_bounds=np.array(self.l_bound), 
                     orders=np.array([self.grid_num]))
-        if self.bodies == '2':
-            self.var = SplinesInterpolation(y_var, 
-                        u_bounds=np.array([self.u_bound, self.u_bound]), 
-                        l_bounds=np.array([self.l_bound, self.l_bound]), 
-                        orders=np.array([self.grid_num, self.grid_num]))
-        elif self.bodies == '2+3':
-            self.var = PCASplines(y_var, u_bounds=np.array(self.u_bound), 
+
+        self.var = PCASplines(y_var, u_bounds=np.array(self.u_bound), 
                        l_bounds=np.array(self.l_bound), 
                        orders=np.array([self.grid_num]), 
                        svd_rank=self.svd_rank, load_svd=None)
 
-
-    def predict(self, atom_env, GP, mean_only):
+    def predict(self, bond_array_2, GP, mean_only):
     
         '''
         predict for an atom environment
         param: atom_env: ChemicalEnvironment
         return force on an atom with its variance
         '''
-        
-        bond_lengths = atom_env.bond_array_2[:,0]
-        bond_dirs = atom_env.bond_array_2[:,1:]
+        # ----------- prepare bonds for prediction ---------------
+        bond_lengths = np.expand_dims(bond_array_2[:,0], axis=1)
+        bond_dirs = bond_array_2[:,1:]
         bond_num = len(bond_lengths)
        
-        bond_lengths = np.expand_dims(bond_lengths, axis=1)
+        # ----------- predict mean/force ------------------
         mean_diffs = self.mean(bond_lengths)
         bond_forces = [mean_diffs*bond_dirs[:,i] for i in range(3)]
         atom_mean = np.sum(bond_forces, axis=1)
         
-        atom_var = np.zeros(3)
+        # ----------- predict variance --------------------
+        self_kern = np.zeros(3)
+        v = np.zeros(3)
         if not mean_only:
-            if self.bodies == '2':
-                ind_1, ind_2 = np.meshgrid(np.arange(bond_num), np.arange(bond_num))
-                ind_1 = np.reshape(ind_1, (ind_1.shape[0]*ind_1.shape[1], 1)) 
-                ind_2 = np.reshape(ind_2, (ind_2.shape[0]*ind_2.shape[1], 1)) 
-                bond_1, bond_2 = (bond_lengths[ind_1], bond_lengths[ind_2])        
-                bond_xyz1 = bond_dirs[ind_1,:] 
-                bond_xyz2 = bond_dirs[ind_2,:] 
-                bond_concat = np.concatenate([bond_1, bond_2], axis=1)  
-                var_diffs = self.var(bond_concat)
-                var_diffs = np.repeat(np.expand_dims(var_diffs, axis=1), 3, axis=1)
-                atom_var = np.sum(var_diffs*bond_xyz1[:,0,:]*bond_xyz2[:,0,:], axis=0) 
-                return atom_mean, atom_var    
-            elif self.bodies == '2+3':
-                sig_2, ls_2, sig_3, ls_3, noise = GP.hyps
-                LambdaU = self.var(bond_lengths)
-                VLambdaU = self.var.V @ LambdaU
-                v = VLambdaU @ bond_dirs
-                self_kern = np.zeros(3)
-                for d in range(3):
-                    self_kern[d] = self_two_body_jit(atom_env.bond_array_2, d+1, 
-                           sig_2, ls_2, GP.cutoffs[0], quadratic_cutoff)
-                return atom_mean, self_kern, v
-        else:
-            if self.bodies == '2':
-                return atom_mean, atom_var
-            elif self.bodies == '2+3':
-                return atom_mean, 0, 0
+            sig_2 = GP.hyps[0]
+            ls_2 = GP.hyps[1]
+            LambdaU = self.var(bond_lengths)
+            VLambdaU = self.var.V @ LambdaU
+            v = VLambdaU @ bond_dirs
+            for d in range(3):
+                self_kern[d] = self_two_body_jit(bond_array_2, d+1, 
+                       sig_2, ls_2, GP.cutoffs[0], quadratic_cutoff)
+        return atom_mean, self_kern, v
 
 
 
@@ -334,7 +295,7 @@ class Map3body:
         original_hyps = np.copy(GP.hyps)
         if self.bodies == '2+3':
             # ------ change GP kernel to 3 body ------
-            GP.kernel = three_body
+            GP.kernel = three_body_mc
             GP.hyps = [GP.hyps[2], GP.hyps[3], GP.hyps[-1]]
 
         # ------ construct grids ------
@@ -481,34 +442,57 @@ class Map3body:
 
 @njit
 def get_bonds(bond_array, coded_species): # get bonds list for specified species
-    pass
+    exist_species = []
+    species_bonds = []
+    for i in range(len(bond_array)):
+        bond = bond_array[i]
+        spec = coded_species[i]
+        if spec in exist_species:
+            ind = exist_species.index(spec)
+            species_bonds[ind].append(bond)
+        else:
+            exist_species.append(spec)
+            species_bonds.append([bond])
+    return exist_species, species_bonds
 
 @njit
 def get_triplets(bond_array, cross_bond_inds, 
-                 cross_bond_dists, triplets):
-    num = np.sum(triplets)
-    tris1 = np.zeros((num,3))
-    tris2 = np.zeros((num,3))
-    tri_dir1 = np.zeros((num,3))
-    tri_dir2 = np.zeros((num,3))
+                 cross_bond_dists, triplets, coded_species):
+    exist_species = []
+    tris1 = []
+    tris2 = []
+    tri_dir1 = []
+    tri_dir2 = []
 
-    k = 0
     for m in range(bond_array.shape[0]):
         r1 = bond_array[m, 0]
         c1 = bond_array[m, 1:]
+        spc1 = coded_species[m]
 
         for n in range(triplets[m]):
             ind1 = cross_bond_inds[m, m+n+1]
             r2 = bond_array[ind1, 0]
             c2 = bond_array[ind1, 1:]
             a12 = np.arccos(np.sum(c1*c2))
+            spc2 = coded_species[ind1]
+            
+            spcs = [spc1, spc2]
+            sort_ind = np.argsort(spcs.sort())
+            spcs = spcs[sort_ind]
+            if spec in exist_species:
+                k = exist_species.index(spcs)
+                tris1[k].append((r1, r2, a12))
+                tris2[k].append((r2, r1, a12))
+                tri_dir1[k].append(c1)
+                tri_dir2[k].append(c2)
+            else:
+                exist_species.append(spcs)
+                tris1.append([(r1, r2, a12)])
+                tris2.append([(r2, r1, a12)])
+                tri_dir1.append([c1])
+                tri_dir2.append([c2])
 
-            tris1[k] = np.array((r1, r2, a12))
-            tris2[k] = np.array((r2, r1, a12))
-            tri_dir1[k] = c1
-            tri_dir2[k] = c2
-            k += 1
-    return tris1, tris2, tri_dir1, tri_dir2 
+    return exist_species, tris1, tris2, tri_dir1, tri_dir2 
 
 
 @njit

@@ -1,9 +1,9 @@
 import numpy as np
 import numpy
 import sys
-sys.append('../../flare')
+sys.path.append('../../flare')
 import flare.mff.utils as utils
-from cubic_splines_numba import *
+from flare.mff.cubic_splines_numba import *
 
 class PCASplines:
     '''

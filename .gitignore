@@ -4,3 +4,4 @@ pwscf.save/
 .pytest_cache/
 /flare/tests/otf_run.out
 /flare/tests/test_outputs/*
+/tests/test_mff/Al_md.out
