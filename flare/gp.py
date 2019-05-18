@@ -272,7 +272,8 @@ class GaussianProcess:
                         V_mat[3*j+d2, 3*i+d1] = V_mat[3*i+d1, 3*j+d2]
         ky_mat[:n, n:] = k_v
         ky_mat[n:, :n] = k_v.T
-        ky_mat[n:, n:] = V_mat
+        sigma_n = self.hyps[-1]
+        ky_mat[n:, n:] = V_mat + sigma_n**2 * np.eye(3*m)
 
         l_mat = np.linalg.cholesky(ky_mat)
         l_mat_inv = np.linalg.inv(l_mat)
@@ -295,6 +296,7 @@ class GaussianProcess:
         '''
         n = self.l_mat_inv.shape[0]
         m =len(self.training_data) - n//3 # number of data added
+        sigma_n = self.hyps[-1]
 
         ##### update l_mat_inv => k_mat_inv
         k_v = np.array([[] for i in range(n)])
@@ -314,7 +316,7 @@ class GaussianProcess:
                                 self.hyps, self.cutoffs)
                         V_mat[3*j+d2, 3*i+d1] = V_mat[3*i+d1, 3*j+d2]
         v = self.l_mat_inv @ k_v # n x 3m
-        V_mat -= v.T @ v
+        V_mat += sigma_n**2 * np.eye(3*m) - v.T @ v
         r_n1 = np.linalg.inv(np.linalg.cholesky(V_mat)) # 3m x 3m
         r = - self.l_mat_inv.T @ v @ r_n1.T # n x 3m
         new_line1 = np.hstack([self.l_mat_inv, np.zeros((n, 3*m))])

@@ -1,7 +1,9 @@
 import numpy as np
 import sys
 sys.path.append('../../')
-from flare import gp, env, struc, kernels
+sys.path.append('../../flare/')
+from flare import gp, env, struc
+import kernels
 import flare.mff as mff
 from flare.modules import qe_parsers, analyze_gp
 import time
@@ -83,7 +85,6 @@ struc_params = param_dict['struc_params']
 data_file = 'Al_md.out' #param_dict['data_file']
 
 struc_params['cube_lat'] *= np.eye(3)
-print(GP_params, grid_params, struc_params)
 
 cutoffs = GP_params['cutoffs']
 kernel = GP_params['kernel']
@@ -120,11 +121,11 @@ def test(train_size, gn, mean_only):
     structure = md_trajectory.get_structure_from_snap(snap)
     forces = md_trajectory.get_forces_from_snap(snap)
     GP_new.update_db(structure, forces, custom_range)
-    GP_new.update_L_alpha()
+    GP_new.update_L_alpha_v1()
     new_ky_mat_inv = GP_new.ky_mat_inv
     new_alpha = GP_new.alpha
-    print(np.all(np.absolute(new_ky_mat_inv - ky_mat_inv)<1e-3))
-    print(np.all(np.absolute(new_alpha - alpha)<1e-3))
+    print(np.all(np.absolute(new_ky_mat_inv - ky_mat_inv)<1e-6))
+    print(np.all(np.absolute(new_alpha - alpha)<1e-6))
 
     raise('err')
     # test     
