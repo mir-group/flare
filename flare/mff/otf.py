@@ -33,24 +33,25 @@ class MFFOTF(OTF):
                  rescale_steps=[], rescale_temps=[], add_all=False,
                  no_cpus=1, use_mapping=True,
                  grid_params: dict={}, struc_params: dict={}):
-                     
+
         super().__init__(qe_input, dt, number_of_steps,
-                         gp_model, pw_loc, 
-                         std_tolerance_factor, 
+                         gp_model, pw_loc,
+                         std_tolerance_factor,
                          prev_pos_init, par,
-                         skip, init_atoms, 
-                         calculate_energy, output_name, 
+                         skip, init_atoms,
+                         calculate_energy, output_name,
                          max_atoms_added, freeze_hyps,
                          rescale_steps, rescale_temps, add_all,
                          no_cpus, use_mapping)
-        
+
         self.grid_params = grid_params
         self.struc_params = struc_params
         if par:
             self.pool = mp.Pool(processes=no_cpus)
 
     def predict_on_structure_par_mff(self):
-        args_list = [(atom, self.structure, self.gp.cutoffs, self.mff) for atom in self.atom_list]
+        args_list = [(atom, self.structure, self.gp.cutoffs, self.mff) for atom
+                     in self.atom_list]
         results = self.pool.starmap(predict_on_atom_mff, args_list)
         for atom in self.atom_list:
             res = results[atom]
@@ -59,8 +60,7 @@ class MFFOTF(OTF):
             self.local_energies[atom] = res[2]
         self.structure.dft_forces = False
 
-
-    def predict_on_structure_mff(self): # changed
+    def predict_on_structure_mff(self):  # changed
         """
         Assign forces to self.structure based on self.gp
         """
@@ -75,7 +75,8 @@ class MFFOTF(OTF):
     def train_mff(self):
         if self.grid_params['svd_rank'] <= 1000:
             self.grid_params['svd_rank'] += 3
-        self.mff = MappedForceField(self.gp, self.grid_params, self.struc_params)                                   
+        self.mff = MappedForceField(self.gp, self.grid_params,
+                                    self.struc_params)
 
 
 def predict_on_atom_mff(atom, structure, cutoffs, mff):
@@ -89,5 +90,3 @@ def predict_on_atom_mff(atom, structure, cutoffs, mff):
 #     local_energy = self.gp.predict_local_energy(chemenv)
     local_energy = 0
     return comps, stds, local_energy
-
-

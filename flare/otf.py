@@ -16,7 +16,7 @@ class OTF(object):
                  prev_pos_init: np.ndarray=None, par: bool=False,
                  skip: int=0, init_atoms: List[int]=None,
                  calculate_energy=False, output_name='otf_run.out',
-                 max_atoms_added=None, freeze_hyps=False, 
+                 max_atoms_added=None, freeze_hyps=False,
                  rescale_steps=[], rescale_temps=[], add_all=False,
                  no_cpus=1, use_mapping: bool=False):
 
@@ -72,7 +72,7 @@ class OTF(object):
             self.pred_func = self.predict_on_structure_en
         elif par and calculate_energy:
             self.pred_func = self.predict_on_structure_par_en
-        if use_mapping:
+        if self.use_mapping:
             self.pred_func = self.predict_on_structure_mff
             self.pred_func_gp = self.predict_on_structure
 
@@ -161,7 +161,7 @@ class OTF(object):
                            self.max_atoms_added):
                         self.update_gp([target_atom], dft_frcs)
                         atom_list.append(target_atom)
-                        if use_mapping:
+                        if self.use_mapping:
                             self.pred_func_gp() # if use_mapping, then just use GP to predict here
                         else:
                             self.pred_func()
@@ -278,7 +278,7 @@ class OTF(object):
         # update gp model
         self.gp.update_db(self.structure, dft_frcs,
                           custom_range=train_atoms)
-        
+
         if self.curr_step == 0:
             self.gp.set_L_alpha()
         else:
