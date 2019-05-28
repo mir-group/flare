@@ -1,13 +1,15 @@
 import numpy as np
 import sys
-import gp, env, struc, kernels, analyze_gp, qe_parsers
+from flare import gp, env, struc, kernels
+from flare.modules import analyze_gp, qe_parsers
+from mc_kernels import mc_simple
 from scipy.optimize import minimize
 import time
 import datetime
 
 
 def sweep(txt_name, data_file, cell, training_snaps, cutoffs, kernel,
-          bodies, nos):
+          kernel_grad, initial_hyps, par):
 
     # set up text file
     txt = update_init()
@@ -17,13 +19,13 @@ def sweep(txt_name, data_file, cell, training_snaps, cutoffs, kernel,
     md_trajectory = analyze_gp.MDAnalysis(data_file, cell)
 
     # set up training run
-    hyps = np.array([1, 1, 1])
+    hyps = initial_hyps
 
     for cutoff in cutoffs:
         gp_test = \
-            analyze_gp.get_gp_from_snaps(md_trajectory, training_snaps, cutoff,
-                                         kernel, bodies, nos=nos)
-
+            analyze_gp.get_gp_from_snaps(md_trajectory, training_snaps,
+                                         kernel, kernel_grad, hyps, cutoff,
+                                         par=par)
         gp_test.algo = 'BFGS'
         gp_test.hyps = hyps
 
@@ -33,10 +35,7 @@ def sweep(txt_name, data_file, cell, training_snaps, cutoffs, kernel,
         time1 = time.time()
         training_time = time1 - time0
 
-        likelihood = -gp_test.get_likelihood(gp_test.hyps,
-                                             gp_test.training_data,
-                                             gp_test.training_labels_np,
-                                             gp_test.kernel, gp_test.bodies)
+        likelihood = gp_test.like
 
         hyps = gp_test.hyps
 
@@ -53,7 +52,7 @@ def sweep(txt_name, data_file, cell, training_snaps, cutoffs, kernel,
 
 
 def sweep_and_test(txt_name, data_file, cell, training_snaps, cutoffs, kernel,
-                   bodies, nos, test_snaps):
+                   kernel_grad, initial_hyps, par, test_snaps):
         # set up text file
     txt = update_init()
     write_file(txt_name, txt)
@@ -62,12 +61,13 @@ def sweep_and_test(txt_name, data_file, cell, training_snaps, cutoffs, kernel,
     md_trajectory = analyze_gp.MDAnalysis(data_file, cell)
 
     # set up training run
-    hyps = np.array([1, 1, 1])
+    hyps = initial_hyps
 
     for cutoff in cutoffs:
         gp_test = \
-            analyze_gp.get_gp_from_snaps(md_trajectory, training_snaps, cutoff,
-                                         kernel, bodies, nos=nos)
+            analyze_gp.get_gp_from_snaps(md_trajectory, training_snaps,
+                                         kernel, kernel_grad, hyps, cutoff,
+                                         par=par)
 
         gp_test.algo = 'BFGS'
         gp_test.hyps = hyps
@@ -78,10 +78,7 @@ def sweep_and_test(txt_name, data_file, cell, training_snaps, cutoffs, kernel,
         time1 = time.time()
         training_time = time1 - time0
 
-        likelihood = -gp_test.get_likelihood(gp_test.hyps,
-                                             gp_test.training_data,
-                                             gp_test.training_labels_np,
-                                             gp_test.kernel, gp_test.bodies)
+        likelihood = gp_test.like
 
         hyps = gp_test.hyps
 
@@ -129,7 +126,7 @@ def write_file(fname, text):
 
 
 def update_init():
-    init_text = """Two body cutoff test.
+    init_text = """Cutoff test.
 Date and time: %s.
 Author: Jonathan Vandermause.
 """ % str(datetime.datetime.now())
