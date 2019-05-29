@@ -84,6 +84,24 @@ def get_bonds(ctype, etypes, bond_array):
     return exist_species, bond_lengths, bond_dirs
 
 #@njit
+def add_triplets(spcs_list, exist_species, tris, tri_dir, 
+        r1, r2, a12, c1, c2):
+    for i in range(2):
+        spcs = spcs_list[i]
+        if spcs not in exist_species:
+            exist_species.append(spcs)
+            tris.append([])
+            tri_dir.append([])
+    
+        k = exist_species.index(spcs)
+        triplet = (r2, r1, a12) if i else (r1, r2, a12)
+        coord = c2 if i else c1
+        tris[k].append(triplet)
+        tri_dir[k].append(coord)
+    return exist_species, tris, tri_dir
+
+
+@njit
 def get_triplets(ctype, etypes, bond_array, cross_bond_inds,  
                  cross_bond_dists, triplets):
     exist_species = []
@@ -101,37 +119,31 @@ def get_triplets(ctype, etypes, bond_array, cross_bond_inds,
             c2 = bond_array[ind1, 1:]
             a12 = np.arccos(np.sum(c1*c2))
             spc2 = etypes[ind1]
-            
-            if spc1 == spc2:
-                spcs_list = [[ctype, spc1, spc2], [ctype, spc1, spc2]]
-            elif ctype == spc1: # spc1 != spc2
-                spcs_list = [[ctype, spc1, spc2], [spc2, ctype, spc1]]
-            elif ctype == spc2: # spc1 != spc2
-                spcs_list = [[spc1, spc2, ctype], [spc2, ctype, spc1]]
-            else: # all different
-                spcs_list = [[ctype, spc1, spc2], [ctype, spc2, spc1]]
-    
-            exist_species, tris, tri_dir = add_triplets(spcs_list, 
-                    exist_species, tris, tri_dir, r1, r2, a12, c1, c2)
+
+#            if spc1 == spc2:
+#                spcs_list = [[ctype, spc1, spc2], [ctype, spc1, spc2]]
+#            elif ctype == spc1: # spc1 != spc2
+#                spcs_list = [[ctype, spc1, spc2], [spc2, ctype, spc1]]
+#            elif ctype == spc2: # spc1 != spc2
+#                spcs_list = [[spc1, spc2, ctype], [spc2, ctype, spc1]]
+#            else: # all different
+#                spcs_list = [[ctype, spc1, spc2], [ctype, spc2, spc1]]
+                
+            spcs_list = [[ctype, spc1, spc2], [ctype, spc2, spc1]]
+            for i in range(2):
+                spcs = spcs_list[i]
+                triplet = array([r2, r1, a12]) if i else array([r1, r2, a12]) 
+                coord = c2 if i else c1
+                if spcs not in exist_species:
+                    exist_species.append(spcs)
+                    tris.append([triplet])
+                    tri_dir.append([coord])
+                else:
+                    k = exist_species.index(spcs)
+                    tris[k].append(triplet)
+                    tri_dir[k].append(coord)
 
     return exist_species, tris, tri_dir 
-
-#@njit
-def add_triplets(spcs_list, exist_species, tris, tri_dir, 
-        r1, r2, a12, c1, c2):
-    for i in range(2):
-        spcs = spcs_list[i]
-        if spcs not in exist_species:
-            exist_species.append(spcs)
-            tris.append([])
-            tri_dir.append([])
-    
-        k = exist_species.index(spcs)
-        triplet = (r2, r1, a12) if i else (r1, r2, a12)
-        coord = c2 if i else c1
-        tris[k].append(triplet)
-        tri_dir[k].append(coord)
-    return exist_species, tris, tri_dir
 
 @njit
 def self_two_body_mc_jit(bond_array, c, etypes,
@@ -180,9 +192,8 @@ def self_two_body_mc_jit(bond_array, c, etypes,
 
 
 @njit
-def self_three_body_mc_jit(bond_array, c, etypes,
-                      cross_bond_inds, cross_bond_dists,
-                      triplets, d, sig, ls, r_cut, cutoff_func):
+def self_three_body_mc_jit(bond_array, cross_bond_inds, cross_bond_dists,
+                 triplets, c, etypes, d, sig, ls, r_cut, cutoff_func):
     kern = 0
 
     # pre-compute constants that appear in the inner loop
@@ -200,7 +211,7 @@ def self_three_body_mc_jit(bond_array, c, etypes,
         for n in range(triplets[m]):
             ind1 = cross_bond_inds[m, m+n+1]
             ri2 = bond_array[ind1, 0]
-            ci2 = bond_array[ind1, d1]
+            ci2 = bond_array[ind1, d]
             fi2, fdi2 = cutoff_func(r_cut, ri2, ci2)
             ei2 = etypes[ind1]
 
@@ -212,14 +223,14 @@ def self_three_body_mc_jit(bond_array, c, etypes,
 
             for p in range(m, bond_array.shape[0]):
                 rj1 = bond_array[p, 0]
-                cj1 = bond_array[p, d2]
+                cj1 = bond_array[p, d]
                 fj1, fdj1 = cutoff_func(r_cut, rj1, cj1)
                 ej1 = etypes[p]
 
                 for q in range(triplets[p]):
                     ind2 = cross_bond_inds[p, p+1+q]
                     rj2 = bond_array[ind2, 0]
-                    cj2 = bond_array[ind2, d2]
+                    cj2 = bond_array[ind2, d]
                     fj2, fdj2 = cutoff_func(r_cut, rj2, cj2)
                     ej2 = etypes[ind2]
 

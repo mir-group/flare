@@ -81,9 +81,9 @@ class MappedForceField:
         spc_3 = []
         for spc1_ind in range(N_spc):
             spc1 = species_list[spc1_ind]
-            for spc2_ind in range(spc1_ind, N_spc):
+            for spc2_ind in range(N_spc): #(spc1_ind, N_spc):
                 spc2 = species_list[spc2_ind]
-                for spc3_ind in range(spc2_ind, N_spc):
+                for spc3_ind in range(N_spc): #(spc2_ind, N_spc):
                     spc3 = species_list[spc3_ind]
                     species = [spc1, spc2, spc3]
                     spc_3.append(species)
@@ -92,22 +92,22 @@ class MappedForceField:
                     spc_struc = struc.Structure(cell, species, positions, mass_dict)
                     spc_struc.coded_species = np.array(species)
                     bond_struc_3.append(spc_struc)
-                    if spc1 != spc2:
-                        species = [spc2, spc3, spc1]
-                        spc_3.append(species)
-                        positions = [[(i+1)/(bodies+1)*cutoff, 0, 0] \
-                                    for i in range(bodies)]
-                        spc_struc = struc.Structure(cell, species, positions, mass_dict)
-                        spc_struc.coded_species = np.array(species)
-                        bond_struc_3.append(spc_struc)
-                    if spc2 != spc3:
-                        species = [spc3, spc1, spc2]
-                        spc_3.append(species)
-                        positions = [[(i+1)/(bodies+1)*cutoff, 0, 0] \
-                                    for i in range(bodies)]
-                        spc_struc = struc.Structure(cell, species, positions, mass_dict)
-                        spc_struc.coded_species = np.array(species)
-                        bond_struc_3.append(spc_struc)
+#                    if spc1 != spc2:
+#                        species = [spc2, spc3, spc1]
+#                        spc_3.append(species)
+#                        positions = [[(i+1)/(bodies+1)*cutoff, 0, 0] \
+#                                    for i in range(bodies)]
+#                        spc_struc = struc.Structure(cell, species, positions, mass_dict)
+#                        spc_struc.coded_species = np.array(species)
+#                        bond_struc_3.append(spc_struc)
+#                    if spc2 != spc3:
+#                        species = [spc3, spc1, spc2]
+#                        spc_3.append(species)
+#                        positions = [[(i+1)/(bodies+1)*cutoff, 0, 0] \
+#                                    for i in range(bodies)]
+#                        spc_struc = struc.Structure(cell, species, positions, mass_dict)
+#                        spc_struc.coded_species = np.array(species)
+#                        bond_struc_3.append(spc_struc)
                      
         bond_struc = [bond_struc_2, bond_struc_3]
         spcs = [spc_2, spc_3]
@@ -121,7 +121,7 @@ class MappedForceField:
             r_cut2 = self.GP.cutoffs[0]
 
             f2, kern2, v2 = self.predict_multicomponent(atom_env, sig2, ls2, r_cut2,
-                    self.get_2body_comp, self.maps_2, mean_only)
+                    self.get_2body_comp, self.spcs[0], self.maps_2, mean_only)
 
         # ---------------- predict for three body -------------------
         f3 = kern3 = v3 = 0
@@ -130,7 +130,7 @@ class MappedForceField:
             r_cut3 = self.GP.cutoffs[1]
 
             f3, kern3, v3 = self.predict_multicomponent(atom_env, sig3, ls3, r_cut3,
-                    self.get_3body_comp, self.maps_3, mean_only)
+                    self.get_3body_comp, self.spcs[1], self.maps_3, mean_only)
 
         f = f2 + f3
         v = kern2 + kern3 - np.sum((v2 + v3)**2, axis=0)
@@ -157,18 +157,23 @@ class MappedForceField:
         ctype = atom_env.ctype
         etypes = atom_env.etypes
 
-        kern3 = np.zeros(3)
+#        kern3 = np.zeros(3)
+#        for d in range(3):
+#            kern3[d] = self_three_body_mc_jit(bond_array_3, cross_bond_inds, 
+#                    cross_bond_dists, triplets, ctype, etypes, d+1, sig, ls,
+#                    r_cut, quadratic_cutoff)
+
+        kern3_gp = np.zeros(3)
         for d in range(3):
-            kern3[d] = self_three_body_mc_jit(bond_array_3, cross_bond_inds, 
-                    cross_bond_dists, triplets, ctype, etypes, d+1, sig, ls,
-                    r_cut, quadratic_cutoff)
+            kern3_gp[d] = three_body_mc(atom_env, atom_env, d+1, d+1, self.GP.hyps[-3:], self.GP.cutoffs)
+        #print(kern3, kern3_gp)
 
         spcs, comp_r, comp_xyz = get_triplets(ctype, etypes, bond_array_3, 
                     cross_bond_inds, cross_bond_dists, triplets)
-        return kern3, spcs, comp_r, comp_xyz
+        return kern3_gp, spcs, comp_r, comp_xyz
 
     def predict_multicomponent(self, atom_env, sig, ls, r_cut, get_comp,
-            mappings, mean_only):
+            spcs_list, mappings, mean_only):
         f_spcs = 0
         v_spcs = 0
 
@@ -178,9 +183,9 @@ class MappedForceField:
         for i, spc in enumerate(spcs):
             lengths = np.array(comp_r[i])
             xyzs = np.array(comp_xyz[i])
-            map_ind = self.spcs[0].index(spc)
+            map_ind = spcs_list.index(spc)
             f, v = self.predict_component(lengths, xyzs, 
-                    self.maps_2[map_ind], mean_only)
+                    mappings[map_ind], mean_only)
             f_spcs += f
             v_spcs += v
 
@@ -330,9 +335,10 @@ class Map3body:
         generate grid data of mean prediction and L^{-1}k* for each triplet
          implemented in a parallelized style
         '''
-        original_hyps = np.copy(GP.hyps)
-        if self.bodies == '2+3':
+        if 2 in self.bodies:
             # ------ change GP kernel to 3 body ------
+            original_kernel = GP.kernel
+            original_hyps = np.copy(GP.hyps)
             GP.kernel = three_body_mc
             GP.hyps = [GP.hyps[2], GP.hyps[3], GP.hyps[-1]]
 
@@ -356,9 +362,9 @@ class Map3body:
         pool.join()
 
         # ------ change back to original GP ------
-        if 2 in self.bodies and 3 in self.bodies:
+        if 2 in self.bodies:
             GP.hyps = original_hyps
-            GP.kernel = two_plus_three_body
+            GP.kernel = original_kernel
        
         return bond_means, bond_vars
 
