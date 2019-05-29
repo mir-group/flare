@@ -48,7 +48,8 @@ class OtfAnalysis:
 
         if init_gp is None:
             # Use run's values as extracted from header
-            # TODO Allow for kernel gradient in header
+            # TODO: 1. Allow for kernel gradient in header
+            #       2. self.header['kernel'] is a str
             if cell is None:
                 cell = self.header['cell']
             if kernel is None:
@@ -76,17 +77,44 @@ class OtfAnalysis:
             gp_hyps = self.gp_hyp_list[call_no-1][-1]
             gp_model.hyps = gp_hyps
 
-        for (positions, forces, atoms, _, species) in \
-            zip(self.gp_position_list[:call_no],
-                self.gp_force_list[:call_no],
-                self.gp_atom_list[:call_no], self.gp_hyp_list[:call_no],
-                self.gp_species_list[:call_no]):
+        # build database
+        positions = self.gp_position_list[0]
+        forces = self.gp_force_list[0]
+        atoms = self.gp_atom_list[0]
+        species = self.gp_species_list[0]
+        struc_curr = struc.Structure(cell, species, positions)
+        gp_model.update_db(struc_curr, forces, custom_range=atoms)
+        gp_model.set_L_alpha()
+        print('gp db initialized. begin updating')
+       
+        # build gp in an update style
+        for ind, (positions, forces, atoms, _, species) in \
+            enumerate(zip(self.gp_position_list[1:call_no], 
+                self.gp_force_list[1:call_no],
+                self.gp_atom_list[1:call_no], self.gp_hyp_list[1:call_no],
+                self.gp_species_list[1:call_no])):
 
             struc_curr = struc.Structure(cell, species, positions)
+            for atom in atoms:
+                env_curr = env.AtomicEnvironment(struc_curr, atom, gp_model.cutoffs)
+                pred_f = np.zeros(3)
+                pred_v = np.zeros(3)
+                for d in range(3):
+                    pred_f[d], pred_v[d] = gp_model.predict(env_curr, d+1)
+                pred_std = np.sqrt(pred_v)
 
-            gp_model.update_db(struc_curr, forces, custom_range=atoms)
+                # discard those training point with low uncertainty
+                if np.all(pred_std < gp_model.hyps[-1]*np.ones(3)):
+                    continue
 
-        gp_model.set_L_alpha()
+                # update database
+                forces_curr = np.array(forces[atom])
+                gp_model.training_data.append(env_curr)
+                gp_model.training_labels.append(forces_curr)
+                gp_model.training_labels_np = gp_model.force_list_to_np(gp_model.training_labels)
+                gp_model.update_L_alpha() 
+
+        #gp_model.set_L_alpha()
 
         return gp_model
 
@@ -345,6 +373,7 @@ def parse_header_information(outfile: str = 'otf_run.out') -> dict:
     for i, line in enumerate(lines[:stopreading]):
         # TODO Update this in full
         if 'cutoffs' in line:
+            line = line.replace(',', ' ')
             line = line.split(':')[1].strip()
             line = line.strip('[').strip(']')
             line = line.split()
