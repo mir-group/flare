@@ -1,4 +1,5 @@
 import numpy as np
+from numpy import array
 from numba import njit
 import io
 import sys
@@ -65,98 +66,134 @@ def svd_grid(matr, rank=55, prefix=None):
     return u[:,:rank], s[:rank], vh[:rank, :]
 
 @njit
-def get_bonds(bond_array, coded_species): # get bonds list for specified species
+def get_bonds(ctype, etypes, bond_array): 
     exist_species = []
-    species_bonds = []
+    bond_lengths = []
+    bond_dirs = []
     for i in range(len(bond_array)):
         bond = bond_array[i]
-        spec = coded_species[i]
-        if spec in exist_species:
-            ind = exist_species.index(spec)
-            species_bonds[ind].append(bond)
+        spc = sorted([ctype, etypes[i]])
+        if spc in exist_species:
+            ind = exist_species.index(spc)
+            bond_lengths[ind].append([bond[0]])
+            bond_dirs[ind].append(bond[1:])
         else:
-            exist_species.append(spec)
-            species_bonds.append([bond])
-    return exist_species, species_bonds
+            exist_species.append(spc)
+            bond_lengths.append([[bond[0]]])
+            bond_dirs.append([bond[1:]])
+    return exist_species, bond_lengths, bond_dirs
+
+#@njit
+def add_triplets(spcs_list, exist_species, tris, tri_dir, 
+        r1, r2, a12, c1, c2):
+    for i in range(2):
+        spcs = spcs_list[i]
+        if spcs not in exist_species:
+            exist_species.append(spcs)
+            tris.append([])
+            tri_dir.append([])
+    
+        k = exist_species.index(spcs)
+        triplet = (r2, r1, a12) if i else (r1, r2, a12)
+        coord = c2 if i else c1
+        tris[k].append(triplet)
+        tri_dir[k].append(coord)
+    return exist_species, tris, tri_dir
+
 
 @njit
-def get_triplets(bond_array, cross_bond_inds, 
-                 cross_bond_dists, triplets, coded_species):
+def get_triplets(ctype, etypes, bond_array, cross_bond_inds,  
+                 cross_bond_dists, triplets):
     exist_species = []
-    tris1 = []
-    tris2 = []
-    tri_dir1 = []
-    tri_dir2 = []
+    tris = []
+    tri_dir = []
 
     for m in range(bond_array.shape[0]):
         r1 = bond_array[m, 0]
         c1 = bond_array[m, 1:]
-        spc1 = coded_species[m]
+        spc1 = etypes[m]
 
         for n in range(triplets[m]):
             ind1 = cross_bond_inds[m, m+n+1]
             r2 = bond_array[ind1, 0]
             c2 = bond_array[ind1, 1:]
             a12 = np.arccos(np.sum(c1*c2))
-            spc2 = coded_species[ind1]
-            
-            spcs = [spc1, spc2]
-            sort_ind = np.argsort(spcs.sort())
-            spcs = spcs[sort_ind]
-            if spec in exist_species:
-                k = exist_species.index(spcs)
-                tris1[k].append((r1, r2, a12))
-                tris2[k].append((r2, r1, a12))
-                tri_dir1[k].append(c1)
-                tri_dir2[k].append(c2)
-            else:
-                exist_species.append(spcs)
-                tris1.append([(r1, r2, a12)])
-                tris2.append([(r2, r1, a12)])
-                tri_dir1.append([c1])
-                tri_dir2.append([c2])
+            spc2 = etypes[ind1]
 
-    return exist_species, tris1, tris2, tri_dir1, tri_dir2 
+#            if spc1 == spc2:
+#                spcs_list = [[ctype, spc1, spc2], [ctype, spc1, spc2]]
+#            elif ctype == spc1: # spc1 != spc2
+#                spcs_list = [[ctype, spc1, spc2], [spc2, ctype, spc1]]
+#            elif ctype == spc2: # spc1 != spc2
+#                spcs_list = [[spc1, spc2, ctype], [spc2, ctype, spc1]]
+#            else: # all different
+#                spcs_list = [[ctype, spc1, spc2], [ctype, spc2, spc1]]
+                
+            spcs_list = [[ctype, spc1, spc2], [ctype, spc2, spc1]]
+            for i in range(2):
+                spcs = spcs_list[i]
+                triplet = array([r2, r1, a12]) if i else array([r1, r2, a12]) 
+                coord = c2 if i else c1
+                if spcs not in exist_species:
+                    exist_species.append(spcs)
+                    tris.append([triplet])
+                    tri_dir.append([coord])
+                else:
+                    k = exist_species.index(spcs)
+                    tris[k].append(triplet)
+                    tri_dir[k].append(coord)
+
+    return exist_species, tris, tri_dir 
 
 @njit
-def self_two_body_jit(bond_array, d, sig, ls,
-                      r_cut, cutoff_func):
+def self_two_body_mc_jit(bond_array, c, etypes,
+                    d, sig, ls, r_cut, cutoff_func):
+
+    """Multicomponent two-body force/force kernel accelerated with Numba's
+    njit decorator.
+
+    Loops over bonds in two environments and adds to the kernel if bonds are
+    of the same type.
+    """
+
     kern = 0
 
     ls1 = 1 / (2 * ls * ls)
     ls2 = 1 / (ls * ls)
     ls3 = ls2 * ls2
-    sig2 = sig*sig
+    sig2 = sig * sig
 
     for m in range(bond_array.shape[0]):
         ri = bond_array[m, 0]
         ci = bond_array[m, d]
         fi, fdi = cutoff_func(r_cut, ri, ci)
+        e1 = etypes[m]
 
         for n in range(m, bond_array.shape[0]):
-            rj = bond_array[n, 0]
-            cj = bond_array[n, d]
-            fj, fdj = cutoff_func(r_cut, rj, cj)
-            r11 = ri - rj
+            e2 = etypes[n]
 
-            A = ci * cj
-            B = r11 * ci
-            C = r11 * cj
-            D = r11 * r11
+            # check if bonds agree
+            if (c == c and e1 == e2) or (c == e2 and c == e1):
+                rj = bond_array[n, 0]
+                cj = bond_array[n, d]
+                fj, fdj = cutoff_func(r_cut, rj, cj)
+                r11 = ri - rj
 
-            if m == n:
-                kern += force_helper(A, B, C, D, fi, fj, fdi, fdj, ls1, ls2,
-                                 ls3, sig2)
-            else:
-                kern += 2*force_helper(A, B, C, D, fi, fj, fdi, fdj, ls1, ls2,
-                                 ls3, sig2)
+                A = ci * cj
+                B = r11 * ci
+                C = r11 * cj
+                D = r11 * r11
+
+                kern0 = force_helper(A, B, C, D, fi, fj, fdi, fdj,
+                                     ls1, ls2, ls3, sig2)
+                kern += kern0 if m == n else 2 * kern0
+
     return kern
 
 
 @njit
-def self_three_body_jit(bond_array, cross_bond_inds, 
-                   cross_bond_dists, triplets,
-                   d, sig, ls, r_cut, cutoff_func):
+def self_three_body_mc_jit(bond_array, cross_bond_inds, cross_bond_dists,
+                 triplets, c, etypes, d, sig, ls, r_cut, cutoff_func):
     kern = 0
 
     # pre-compute constants that appear in the inner loop
@@ -164,17 +201,19 @@ def self_three_body_jit(bond_array, cross_bond_inds,
     ls1 = 1 / (2*ls*ls)
     ls2 = 1 / (ls*ls)
     ls3 = ls2*ls2
-    
+
     for m in range(bond_array.shape[0]):
         ri1 = bond_array[m, 0]
         ci1 = bond_array[m, d]
         fi1, fdi1 = cutoff_func(r_cut, ri1, ci1)
+        ei1 = etypes[m]
 
         for n in range(triplets[m]):
             ind1 = cross_bond_inds[m, m+n+1]
             ri2 = bond_array[ind1, 0]
             ci2 = bond_array[ind1, d]
             fi2, fdi2 = cutoff_func(r_cut, ri2, ci2)
+            ei2 = etypes[ind1]
 
             ri3 = cross_bond_dists[m, m+n+1]
             fi3, _ = cutoff_func(r_cut, ri3, 0)
@@ -186,12 +225,14 @@ def self_three_body_jit(bond_array, cross_bond_inds,
                 rj1 = bond_array[p, 0]
                 cj1 = bond_array[p, d]
                 fj1, fdj1 = cutoff_func(r_cut, rj1, cj1)
+                ej1 = etypes[p]
 
                 for q in range(triplets[p]):
                     ind2 = cross_bond_inds[p, p+1+q]
                     rj2 = bond_array[ind2, 0]
                     cj2 = bond_array[ind2, d]
                     fj2, fdj2 = cutoff_func(r_cut, rj2, cj2)
+                    ej2 = etypes[ind2]
 
                     rj3 = cross_bond_dists[p, p+1+q]
                     fj3, _ = cutoff_func(r_cut, rj3, 0)
@@ -199,13 +240,50 @@ def self_three_body_jit(bond_array, cross_bond_inds,
                     fj = fj1*fj2*fj3
                     fdj = fdj1*fj2*fj3+fj1*fdj2*fj3
 
-                    tri_kern = triplet_kernel(ci1, ci2, cj1, cj2, ri1, ri2, ri3,
-                                           rj1, rj2, rj3, fi, fj, fdi, fdj,
-                                           ls1, ls2, ls3, sig2)
-                    if p == m:
-                        kern += tri_kern
-                    else:
-                        kern += 2 * tri_kern
+                    r11 = ri1-rj1
+                    r12 = ri1-rj2
+                    r13 = ri1-rj3
+                    r21 = ri2-rj1
+                    r22 = ri2-rj2
+                    r23 = ri2-rj3
+                    r31 = ri3-rj1
+                    r32 = ri3-rj2
+                    r33 = ri3-rj3
+
+                    if (c == c):
+                        if (ei1 == ej1) and (ei2 == ej2):
+                            kern0 = \
+                                three_body_helper_1(ci1, ci2, cj1, cj2, r11,
+                                                    r22, r33, fi, fj, fdi, fdj,
+                                                    ls1, ls2, ls3, sig2)
+                        if (ei1 == ej2) and (ei2 == ej1):
+                            kern0 = \
+                                three_body_helper_1(ci1, ci2, cj2, cj1, r12,
+                                                    r21, r33, fi, fj, fdi, fdj,
+                                                    ls1, ls2, ls3, sig2)
+                    if (c == ej1):
+                        if (ei1 == ej2) and (ei2 == c):
+                            kern0 = \
+                                three_body_helper_2(ci2, ci1, cj2, cj1, r21,
+                                                    r13, r32, fi, fj, fdi,
+                                                    fdj, ls1, ls2, ls3, sig2)
+                        if (ei1 == c) and (ei2 == ej2):
+                            kern0 = \
+                                three_body_helper_2(ci1, ci2, cj2, cj1, r11,
+                                                    r23, r32, fi, fj, fdi,
+                                                    fdj, ls1, ls2, ls3, sig2)
+                    if (c == ej2):
+                        if (ei1 == ej1) and (ei2 == c):
+                            kern0 = \
+                                three_body_helper_2(ci2, ci1, cj1, cj2, r22,
+                                                    r13, r31, fi, fj, fdi,
+                                                    fdj, ls1, ls2, ls3, sig2)
+                        if (ei1 == c) and (ei2 == ej1):
+                            kern0 = \
+                                three_body_helper_2(ci1, ci2, cj1, cj2, r12,
+                                                    r23, r31, fi, fj, fdi,
+                                                    fdj, ls1, ls2, ls3, sig2)
+                    kern += kern0 if m == p else 2 * kern0
 
     return kern
 

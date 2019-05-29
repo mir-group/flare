@@ -6,15 +6,13 @@ import multiprocessing as mp
 import sys
 sys.path.append('../../flare/')
 
-import flare.gp as gp
-import flare.env as env
+from flare import gp, env, struc, kernels
 from flare.kernels import two_body, three_body, two_plus_three_body, two_body_jit
-import flare.struc as struc
 from flare.cutoffs import quadratic_cutoff
 from flare.mc_simple import two_body_mc, three_body_mc, two_plus_three_body_mc
 
 import flare.mff.utils as utils
-from flare.mff.utils import get_bonds, get_triplets, self_two_body_jit, self_three_body_jit 
+from flare.mff.utils import get_bonds, get_triplets, self_two_body_mc_jit, self_three_body_mc_jit 
 from flare.mff.splines_methods import PCASplines, SplinesInterpolation
 
 class MappedForceField:
@@ -28,7 +26,7 @@ class MappedForceField:
                             'load_svd': None}
         '''
         self.GP = GP
-        self.bodies = str(grid_params['bodies'])
+        self.bodies = grid_params['bodies']
         self.grid_num_2 = grid_params['grid_num_2']
         self.bounds_2 = grid_params['bounds_2']
         self.grid_num_3 = grid_params['grid_num_3']
@@ -83,67 +81,142 @@ class MappedForceField:
         spc_3 = []
         for spc1_ind in range(N_spc):
             spc1 = species_list[spc1_ind]
-            for spc2_ind in range(N_spc):
+            for spc2_ind in range(N_spc): #(spc1_ind, N_spc):
                 spc2 = species_list[spc2_ind]
-                for spc3_ind in range(N_spc):
+                for spc3_ind in range(N_spc): #(spc2_ind, N_spc):
                     spc3 = species_list[spc3_ind]
                     species = [spc1, spc2, spc3]
                     spc_3.append(species)
                     positions = [[(i+1)/(bodies+1)*cutoff, 0, 0] \
                                 for i in range(bodies)]
-                    bond_struc_3.append(struc.Structure(cell, species, positions, mass_dict))
-
+                    spc_struc = struc.Structure(cell, species, positions, mass_dict)
+                    spc_struc.coded_species = np.array(species)
+                    bond_struc_3.append(spc_struc)
+#                    if spc1 != spc2:
+#                        species = [spc2, spc3, spc1]
+#                        spc_3.append(species)
+#                        positions = [[(i+1)/(bodies+1)*cutoff, 0, 0] \
+#                                    for i in range(bodies)]
+#                        spc_struc = struc.Structure(cell, species, positions, mass_dict)
+#                        spc_struc.coded_species = np.array(species)
+#                        bond_struc_3.append(spc_struc)
+#                    if spc2 != spc3:
+#                        species = [spc3, spc1, spc2]
+#                        spc_3.append(species)
+#                        positions = [[(i+1)/(bodies+1)*cutoff, 0, 0] \
+#                                    for i in range(bodies)]
+#                        spc_struc = struc.Structure(cell, species, positions, mass_dict)
+#                        spc_struc.coded_species = np.array(species)
+#                        bond_struc_3.append(spc_struc)
+                     
         bond_struc = [bond_struc_2, bond_struc_3]
         spcs = [spc_2, spc_3]
         return bond_struc, spcs
 
     def predict(self, atom_env, mean_only=False):
-        ctype = atom_env.ctype
-        etypes = atom_env.etypes 
-
-        f2_spcs = 0
-        kern2_spcs = 0
-        v2_spcs = 0
+        # ---------------- predict for two body -------------------
+        f2 = kern2 = v2 = 0
         if 2 in self.bodies:
-            bond_array_2 = atom_env.bond_array_2
-            spc_2, spc_bonds_2 = get_bonds(bond_array_2, etypes)
-            for i, spc in enumerate(spc_2):
-                ce_bonds = np.array(spc_bonds_2[i])
-                ce_spc = [ctype, spc]
-                ce_spc.sort()
-                map_ind = self.spcs[0].index(ce_spc)
-                f2, kern2, v2 = self.maps_2[map_ind].predict(ce_bonds, self.GP, mean_only)
-                f2_spcs += f2
-                kern2_spcs += kern2
-                v2_spcs += v2
+            sig2, ls2 = self.GP.hyps[:2]
+            r_cut2 = self.GP.cutoffs[0]
 
-        f3_spcs = 0
-        kern3_spcs = 0
-        v3_spcs = 0
+            f2, kern2, v2 = self.predict_multicomponent(atom_env, sig2, ls2, r_cut2,
+                    self.get_2body_comp, self.spcs[0], self.maps_2, mean_only)
+
+        # ---------------- predict for three body -------------------
+        f3 = kern3 = v3 = 0
         if 3 in self.bodies:
-            bond_array_3 = atom_env.bond_array_3
-            spc_3, tris, tris_dir = get_triplets(bond_array_3, cross_bond_inds, 
-                cross_bond_dists, triplets, coded_species)
-            for i, spc in enumerate(spc_3):
-                tr1 = tris1[i]
-                tr2 = tris2[i]
-                tr_d1 = tri_dir1[i]
-                tr_d2 = tri_dir2[i]
-                ce_spc = [ctype]+spc
-                ce_spc = ce_spc.sort()
-                map_ind = self.spcs[1].index(ce_spc)
-                f3, kern3, v3 = self.maps_3[map_ind].predict(tr1, tr2, tr_d1, tr_d2, self.GP, mean_only)
-                f3_spcs += f3
-                kern3_spcs += kern3
-                v3_spcs += v3
+            sig3, ls3, noise = self.GP.hyps[-3:]
+            r_cut3 = self.GP.cutoffs[1]
 
-        f = f2_spcs + f3_spcs
-        v = kern2_spcs + kern3_spcs - np.sum((v2_spcs + v3_spcs)**2, axis=0)
+            f3, kern3, v3 = self.predict_multicomponent(atom_env, sig3, ls3, r_cut3,
+                    self.get_3body_comp, self.spcs[1], self.maps_3, mean_only)
+
+        f = f2 + f3
+        v = kern2 + kern3 - np.sum((v2 + v3)**2, axis=0)
         return f, v
-              
+
+    def get_2body_comp(self, atom_env, sig, ls, r_cut):
+        bond_array_2 = atom_env.bond_array_2
+        ctype = atom_env.ctype
+        etypes = atom_env.etypes
+
+        kern2 = np.zeros(3)
+        for d in range(3):
+            kern2[d] = self_two_body_mc_jit(bond_array_2, ctype, etypes, 
+                    d+1, sig, ls, r_cut, quadratic_cutoff)
+
+        spcs, comp_r, comp_xyz = get_bonds(ctype, etypes, bond_array_2)
+        return kern2, spcs, comp_r, comp_xyz
+
+    def get_3body_comp(self, atom_env, sig, ls, r_cut):
+        bond_array_3 = atom_env.bond_array_3
+        cross_bond_inds = atom_env.cross_bond_inds
+        cross_bond_dists = atom_env.cross_bond_dists
+        triplets = atom_env.triplet_counts
+        ctype = atom_env.ctype
+        etypes = atom_env.etypes
+
+#        kern3 = np.zeros(3)
+#        for d in range(3):
+#            kern3[d] = self_three_body_mc_jit(bond_array_3, cross_bond_inds, 
+#                    cross_bond_dists, triplets, ctype, etypes, d+1, sig, ls,
+#                    r_cut, quadratic_cutoff)
+
+        kern3_gp = np.zeros(3)
+        for d in range(3):
+            kern3_gp[d] = three_body_mc(atom_env, atom_env, d+1, d+1, self.GP.hyps[-3:], self.GP.cutoffs)
+        #print(kern3, kern3_gp)
+
+        spcs, comp_r, comp_xyz = get_triplets(ctype, etypes, bond_array_3, 
+                    cross_bond_inds, cross_bond_dists, triplets)
+        return kern3_gp, spcs, comp_r, comp_xyz
+
+    def predict_multicomponent(self, atom_env, sig, ls, r_cut, get_comp,
+            spcs_list, mappings, mean_only):
+        f_spcs = 0
+        v_spcs = 0
+
+        kern, spcs, comp_r, comp_xyz = get_comp(atom_env, sig, ls, r_cut) 
+
+        # predict for each species
+        for i, spc in enumerate(spcs):
+            lengths = np.array(comp_r[i])
+            xyzs = np.array(comp_xyz[i])
+            map_ind = spcs_list.index(spc)
+            f, v = self.predict_component(lengths, xyzs, 
+                    mappings[map_ind], mean_only)
+            f_spcs += f
+            v_spcs += v
+
+        return f_spcs, kern, v_spcs
+
+    def predict_component(self, lengths, xyzs, mapping, mean_only):
+        '''
+        predict for an atom environment
+        param: atom_env: ChemicalEnvironment
+        return force on an atom with its variance
+        '''
+        lengths = np.array(lengths)
+        xyzs = np.array(xyzs)
+
+        # predict mean
+        f_0 = mapping.mean(lengths)
+        f_d = np.diag(f_0) @ xyzs
+        f = np.sum(f_d, axis=0)
+
+        # predict var        
+        v = np.zeros(3)
+        if not mean_only:
+            v_0 = mapping.var(lengths)
+            v_d = v_0 @ xyzs
+            v = mapping.var.V @ v_d
+        return f, v
+             
 class Map2body:
    
-    def __init__(self, grid_num, bounds, GP, bond_struc, bodies='2', load_prefix=None, svd_rank=0): 
+    def __init__(self, grid_num, bounds, GP, bond_struc, bodies='2', 
+            load_prefix=None, svd_rank=0): 
     
         '''
         param grids: the 1st element is the number of grids for mean prediction, 
@@ -233,38 +306,6 @@ class Map2body:
                        orders=np.array([self.grid_num]), 
                        svd_rank=self.svd_rank, load_svd=None)
 
-    def predict(self, bond_array_2, GP, mean_only):
-    
-        '''
-        predict for an atom environment
-        param: atom_env: ChemicalEnvironment
-        return force on an atom with its variance
-        '''
-        # ----------- prepare bonds for prediction ---------------
-        bond_lengths = np.expand_dims(bond_array_2[:,0], axis=1)
-        bond_dirs = bond_array_2[:,1:]
-        bond_num = len(bond_lengths)
-       
-        # ----------- predict mean/force ------------------
-        mean_diffs = self.mean(bond_lengths)
-        bond_forces = [mean_diffs*bond_dirs[:,i] for i in range(3)]
-        atom_mean = np.sum(bond_forces, axis=1)
-        
-        # ----------- predict variance --------------------
-        self_kern = np.zeros(3)
-        v = np.zeros(3)
-        if not mean_only:
-            sig_2 = GP.hyps[0]
-            ls_2 = GP.hyps[1]
-            LambdaU = self.var(bond_lengths)
-            VLambdaU = self.var.V @ LambdaU
-            v = VLambdaU @ bond_dirs
-            for d in range(3):
-                self_kern[d] = self_two_body_jit(bond_array_2, d+1, 
-                       sig_2, ls_2, GP.cutoffs[0], quadratic_cutoff)
-        return atom_mean, self_kern, v
-
-
 
 class Map3body:
    
@@ -294,9 +335,10 @@ class Map3body:
         generate grid data of mean prediction and L^{-1}k* for each triplet
          implemented in a parallelized style
         '''
-        original_hyps = np.copy(GP.hyps)
-        if self.bodies == '2+3':
+        if 2 in self.bodies:
             # ------ change GP kernel to 3 body ------
+            original_kernel = GP.kernel
+            original_hyps = np.copy(GP.hyps)
             GP.kernel = three_body_mc
             GP.hyps = [GP.hyps[2], GP.hyps[3], GP.hyps[-1]]
 
@@ -320,9 +362,9 @@ class Map3body:
         pool.join()
 
         # ------ change back to original GP ------
-        if self.bodies == '2+3':
+        if 2 in self.bodies:
             GP.hyps = original_hyps
-            GP.kernel = two_plus_three_body
+            GP.kernel = original_kernel
        
         return bond_means, bond_vars
 
@@ -376,58 +418,4 @@ class Map3body:
         self.selfkern = TruncatedSVD(n_components=100, n_iter=7, random_state=42)
         self.selfkern.fit(grid_kern)
        
-    def predict(self, atom_env, GP, mean_only):
-
-        '''
-        predict for an atom environment
-        param: atom_env: ChemicalEnvironment
-        return force on an atom with its variance
-        '''
-        t0 = time.time()
-        bond_array = atom_env.bond_array_3
-        cross_bond_inds = atom_env.cross_bond_inds
-        cross_bond_dists = atom_env.cross_bond_dists
-        triplets = atom_env.triplet_counts
-        tri_12, tri_21, xyz_1s, xyz_2s = get_triplets(bond_array, 
-            cross_bond_inds, cross_bond_dists, triplets)
-        tri_12 = np.array(tri_12)
-        tri_21 = np.array(tri_21)
-        xyz_1s = np.array(xyz_1s)
-        xyz_2s = np.array(xyz_2s)
-        #print('\nget triplets', time.time()-t0)       
-
-        # predict mean
-        t0 = time.time()
-        f0_12 = self.mean(tri_12)
-        f0_21 = self.mean(tri_21)
-        f12 = np.diag(f0_12) @ xyz_1s
-        f21 = np.diag(f0_21) @ xyz_2s
-        mff_f = np.sum(f12 + f21, axis=0)
-        #print('mean', time.time()-t0)
-
-        # predict var        
-        mff_v = np.zeros(3)
-        self_kern = np.zeros(3)
-        v = np.zeros(3)
-        if not mean_only:
-            t0 = time.time()
-            self_kern = np.zeros(3)
-            if 2 in self.bodies: # 2+3 body
-                sig2, ls2, sig, ls, noise = GP.hyps
-            else: # only 3 body
-                sig, ls, noise = GP.hyps
-            r_cut = GP.cutoffs[1]
-            for d in range(3):
-                self_kern[d] = self_three_body_jit(bond_array, cross_bond_inds,
-                       cross_bond_dists, triplets, d+1, sig, ls, r_cut, 
-                       quadratic_cutoff)
-         #   print('self kern', time.time()-t0, ',value:', self_kern)
-
-            t0 = time.time()
-            v0_12 = self.var(tri_12)
-            v0_21 = self.var(tri_21)
-            v12 = v0_12 @ xyz_1s
-            v21 = v0_21 @ xyz_2s
-            v = self.var.V @ (v12 + v21)
-        return mff_f, self_kern, v
 

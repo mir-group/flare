@@ -2,6 +2,8 @@ import numpy as np
 import numpy
 import sys
 sys.path.append('../../flare')
+from memory_profiler import profile
+
 import flare.mff.utils as utils
 from flare.mff.cubic_splines_numba import *
 
@@ -27,6 +29,7 @@ class PCASplines:
             models.append(spline_u)
         return models  
         
+#    @profile
     def build_pca_cubic(self, y, u_bounds, l_bounds, orders, load_svd):               
         dim_0 = 1
         for d in range(len(y.shape)-1):

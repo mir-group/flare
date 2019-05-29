@@ -1,6 +1,5 @@
 import numpy as np
 
-
 def get_random_velocities(noa: int, temperature: float, mass: float):
     """Draw velocities from Maxwell-Boltzmann distribution. Assumes mass
     is given in amu."""

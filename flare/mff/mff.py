@@ -6,6 +6,7 @@ from scipy.linalg import solve_triangular
 import multiprocessing as mp
 import sys
 sys.path.append('../../flare/')
+from memory_profiler import profile
 
 import flare.gp as gp
 import flare.env as env
@@ -31,22 +32,23 @@ class MappedForceField:
         self.bounds_2 = grid_params['bounds_2']
         self.grid_num_3 = grid_params['grid_num_3']
         self.bounds_3 = grid_params['bounds_3']
-        self.svd_rank = grid_params['svd_rank']
+        self.svd_rank_2 = grid_params['svd_rank_2']
+        self.svd_rank_3 = grid_params['svd_rank_3']
         
         bond_struc = self.build_bond_struc(struc_params)
         if self.bodies == '2':
             self.map = Map2body(self.grid_num_2, self.bounds_2, self.GP, bond_struc,  
-                       self.bodies, grid_params['load_grid'], self.svd_rank)
+                       self.bodies, grid_params['load_grid'], self.svd_rank_2)
         elif self.bodies == '3':
             self.map = Map3body(self.grid_num_3, self.bounds_3, self.GP, bond_struc, 
                        self.bodies, grid_params['load_grid'], 
-                       grid_params['load_svd'], self.svd_rank)
+                       grid_params['load_svd'], self.svd_rank_3)
         elif self.bodies == '2+3':
             self.map_2 = Map2body(self.grid_num_2, self.bounds_2, self.GP, bond_struc[0],
-                         self.bodies, grid_params['load_grid'], self.svd_rank)
+                         self.bodies, grid_params['load_grid'], self.svd_rank_2)
             self.map_3 = Map3body(self.grid_num_3, self.bounds_3, self.GP,
                          bond_struc[1], self.bodies, grid_params['load_grid'],
-                         grid_params['load_svd'], self.svd_rank)
+                         grid_params['load_svd'], self.svd_rank_3)
 
     def build_bond_struc(self, struc_params):
     
@@ -165,6 +167,7 @@ class Map2body:
                       
         return b1, bond_means, bond_vars
 
+    @profile
     def GenGrid_svd(self, GP, bond_struc, processes=mp.cpu_count()):
     
         '''
@@ -312,6 +315,7 @@ class Map3body:
             y_mean, y_var = utils.merge(load_grid, noa, nop)
         self.build_map(y_mean, y_var, svd_rank=svd_rank, load_svd=load_svd) 
 
+    @profile
     def GenGrid(self, GP, bond_struc, processes=mp.cpu_count()):
     
         '''
