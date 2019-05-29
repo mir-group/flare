@@ -1,0 +1,630 @@
+2019-05-23 17:56:36.842128
+number of cpu cores: 4
+cutoffs: [5]
+kernel: two_body
+number of hyperparameters: 3
+hyperparameters: [1 1 1]
+hyperparameter optimization algorithm: L-BFGS-B
+uncertainty tolerance: 0.1 eV/A
+timestep (ps): 0.0001
+number of frames: 20
+number of atoms: 2
+system species: {'H'}
+periodic cell: 
+[[5. 0. 0.]
+ [0. 5. 0.]
+ [0. 0. 5.]]
+previous positions (A):
+H 2.30000000 2.50000000 2.50000000 
+H 2.80000000 2.50000000 2.50000000 
+--------------------------------------------------------------------------------
+
+Calling Quantum Espresso...
+QE run complete.
+number of DFT calls: 1 
+wall time from start: 0.62 s 
+
+*-Frame: 0
+Simulation Time: 0.000 ps 
+El  Position (A) 				 DFT Force (ev/A) 				 Std. Dev (ev/A) 					 Velocities (A/ps) 
+H 2.30000000 2.50000000 2.50000000 	-22.29826208 0.00000000 0.00000000 	0.00000000e+00 0.00000000e+00 0.00000000e+00 	-1.07572762e+01 0.00000000e+00 0.00000000e+00 
+H 2.80000000 2.50000000 2.50000000 	22.29826208 0.00000000 0.00000000 	0.00000000e+00 0.00000000e+00 0.00000000e+00 	1.07572762e+01 0.00000000e+00 0.00000000e+00 
+
+temperature: 92.79 K 
+kinetic energy: 0.011993 eV 
+potential energy: 0.000000 eV 
+total energy: 0.011993 eV 
+wall time from start: 0.62 s 
+
+Adding atom [0] to the training set.
+Uncertainty: [0. 0. 0.].
+
+GP hyperparameters: 
+Hyp0 : Signal Std = 1.0030486268247016
+Hyp1 : Length Scale = 0.9975360032150485
+Hyp2 : Noise Std = 1e-06
+likelihood: 21.269696772075278
+likelihood gradient: [-9.93466919e-05  8.31870627e-05 -2.00000000e+06]
+wall time from start: 3.26 s 
+--------------------------------------------------------------------------------
+-Frame: 1
+Simulation Time: 0.000 ps 
+El  Position (A) 				 GP Force (ev/A) 				 Std. Dev (ev/A) 					 Velocities (A/ps) 
+H 2.29784854 2.50000000 2.50000000 	-22.25916591 0.00000000 0.00000000 	1.62348629e-01 0.00000000e+00 0.00000000e+00 	-3.22529676e+01 0.00000000e+00 0.00000000e+00 
+H 2.80215146 2.50000000 2.50000000 	22.25916591 0.00000000 0.00000000 	1.62348629e-01 0.00000000e+00 0.00000000e+00 	3.22529676e+01 0.00000000e+00 0.00000000e+00 
+
+temperature: 834.09 K 
+kinetic energy: 0.107815 eV 
+potential energy: 8.114377 eV 
+total energy: 8.222192 eV 
+wall time from start: 3.71 s 
+
+Calling Quantum Espresso...
+QE run complete.
+number of DFT calls: 2 
+wall time from start: 4.09 s 
+
+*-Frame: 1
+Simulation Time: 0.000 ps 
+El  Position (A) 				 DFT Force (ev/A) 				 Std. Dev (ev/A) 					 Velocities (A/ps) 
+H 2.29784854 2.50000000 2.50000000 	-21.50874177 0.00000000 0.00000000 	1.62348629e-01 0.00000000e+00 0.00000000e+00 	-3.18909429e+01 0.00000000e+00 0.00000000e+00 
+H 2.80215146 2.50000000 2.50000000 	21.50874177 0.00000000 0.00000000 	1.62348629e-01 0.00000000e+00 0.00000000e+00 	3.18909429e+01 0.00000000e+00 0.00000000e+00 
+
+temperature: 815.47 K 
+kinetic energy: 0.105408 eV 
+potential energy: 8.114377 eV 
+total energy: 8.219785 eV 
+wall time from start: 4.09 s 
+
+Adding atom [0] to the training set.
+Uncertainty: [0.16234863 0.         0.        ].
+
+GP hyperparameters: 
+Hyp0 : Signal Std = 0.23466796413595045
+Hyp1 : Length Scale = 0.21782341119121323
+Hyp2 : Noise Std = 1e-06
+likelihood: 45.952270014461746
+likelihood gradient: [ 1.29142579e-04 -3.15310700e-04 -4.00000000e+06]
+wall time from start: 4.11 s 
+
+GP hyperparameters: 
+Hyp0 : Signal Std = 0.2346684402916745
+Hyp1 : Length Scale = 0.21782224862348418
+Hyp2 : Noise Std = 1e-06
+likelihood: 45.95227001467561
+likelihood gradient: [-4.11687997e-05 -1.68611255e-05 -4.00000000e+06]
+wall time from start: 4.11 s 
+--------------------------------------------------------------------------------
+-Frame: 2
+Simulation Time: 0.000 ps 
+El  Position (A) 				 GP Force (ev/A) 				 Std. Dev (ev/A) 					 Velocities (A/ps) 
+H 2.29362181 2.50000000 2.50000000 	-19.89550114 0.00000000 0.00000000 	6.06100936e-02 0.00000000e+00 0.00000000e+00 	-5.18654537e+01 0.00000000e+00 0.00000000e+00 
+H 2.80637819 2.50000000 2.50000000 	19.89550114 0.00000000 0.00000000 	6.06100936e-02 0.00000000e+00 0.00000000e+00 	5.18654537e+01 0.00000000e+00 0.00000000e+00 
+
+temperature: 2156.91 K 
+kinetic energy: 0.278801 eV 
+potential energy: -2.508838 eV 
+total energy: -2.230036 eV 
+wall time from start: 4.11 s 
+--------------------------------------------------------------------------------
+-Frame: 3
+Simulation Time: 0.000 ps 
+El  Position (A) 				 GP Force (ev/A) 				 Std. Dev (ev/A) 					 Velocities (A/ps) 
+H 2.28747545 2.50000000 2.50000000 	-17.42483370 0.00000000 0.00000000 	2.89110457e-01 0.00000000e+00 0.00000000e+00 	-6.98697784e+01 0.00000000e+00 0.00000000e+00 
+H 2.81252455 2.50000000 2.50000000 	17.42483370 0.00000000 0.00000000 	2.89110457e-01 0.00000000e+00 0.00000000e+00 	6.98697784e+01 0.00000000e+00 0.00000000e+00 
+
+temperature: 3914.29 K 
+kinetic energy: 0.505961 eV 
+potential energy: -2.738333 eV 
+total energy: -2.232371 eV 
+wall time from start: 4.11 s 
+
+Calling Quantum Espresso...
+QE run complete.
+number of DFT calls: 3 
+wall time from start: 4.48 s 
+
+*-Frame: 3
+Simulation Time: 0.000 ps 
+El  Position (A) 				 DFT Force (ev/A) 				 Std. Dev (ev/A) 					 Velocities (A/ps) 
+H 2.28747545 2.50000000 2.50000000 	-18.03240537 0.00000000 0.00000000 	2.89110457e-01 0.00000000e+00 0.00000000e+00 	-7.01628872e+01 0.00000000e+00 0.00000000e+00 
+H 2.81252455 2.50000000 2.50000000 	18.03240537 0.00000000 0.00000000 	2.89110457e-01 0.00000000e+00 0.00000000e+00 	7.01628872e+01 0.00000000e+00 0.00000000e+00 
+
+temperature: 3947.20 K 
+kinetic energy: 0.510215 eV 
+potential energy: -2.738333 eV 
+total energy: -2.228117 eV 
+wall time from start: 4.48 s 
+
+Adding atom [0] to the training set.
+Uncertainty: [0.28911046 0.         0.        ].
+
+GP hyperparameters: 
+Hyp0 : Signal Std = 0.5024446853438207
+Hyp1 : Length Scale = 0.2665016268705895
+Hyp2 : Noise Std = 1e-06
+likelihood: 70.48519587538208
+likelihood gradient: [ 1.77753391e-05 -8.33855011e-05 -6.00000000e+06]
+wall time from start: 4.50 s 
+
+GP hyperparameters: 
+Hyp0 : Signal Std = 0.5024446853438207
+Hyp1 : Length Scale = 0.2665016268705895
+Hyp2 : Noise Std = 1e-06
+likelihood: 70.48519587538208
+likelihood gradient: [ 1.77753391e-05 -8.33855011e-05 -6.00000000e+06]
+wall time from start: 4.51 s 
+--------------------------------------------------------------------------------
+-Frame: 4
+Simulation Time: 0.000 ps 
+El  Position (A) 				 GP Force (ev/A) 				 Std. Dev (ev/A) 					 Velocities (A/ps) 
+H 2.27958923 2.50000000 2.50000000 	-15.78764295 0.00000000 0.00000000 	4.24234165e-02 0.00000000e+00 0.00000000e+00 	-8.64785803e+01 0.00000000e+00 0.00000000e+00 
+H 2.82041077 2.50000000 2.50000000 	15.78764295 0.00000000 0.00000000 	4.24234165e-02 0.00000000e+00 0.00000000e+00 	8.64785803e+01 0.00000000e+00 0.00000000e+00 
+
+temperature: 5996.42 K 
+kinetic energy: 0.775097 eV 
+potential energy: -2.367621 eV 
+total energy: -1.592525 eV 
+wall time from start: 4.51 s 
+--------------------------------------------------------------------------------
+-Frame: 5
+Simulation Time: 0.001 ps 
+El  Position (A) 				 GP Force (ev/A) 				 Std. Dev (ev/A) 					 Velocities (A/ps) 
+H 2.27017974 2.50000000 2.50000000 	-13.58671933 0.00000000 0.00000000 	2.01771578e-01 0.00000000e+00 0.00000000e+00 	-1.00649556e+02 0.00000000e+00 0.00000000e+00 
+H 2.82982026 2.50000000 2.50000000 	13.58671933 0.00000000 0.00000000 	2.01771578e-01 0.00000000e+00 0.00000000e+00 	1.00649556e+02 0.00000000e+00 0.00000000e+00 
+
+temperature: 8122.66 K 
+kinetic energy: 1.049935 eV 
+potential energy: -2.643197 eV 
+total energy: -1.593262 eV 
+wall time from start: 4.51 s 
+
+Calling Quantum Espresso...
+QE run complete.
+number of DFT calls: 4 
+wall time from start: 4.87 s 
+
+*-Frame: 5
+Simulation Time: 0.001 ps 
+El  Position (A) 				 DFT Force (ev/A) 				 Std. Dev (ev/A) 					 Velocities (A/ps) 
+H 2.27017974 2.50000000 2.50000000 	-13.26086180 0.00000000 0.00000000 	2.01771578e-01 0.00000000e+00 0.00000000e+00 	-1.00492354e+02 0.00000000e+00 0.00000000e+00 
+H 2.82982026 2.50000000 2.50000000 	13.26086180 0.00000000 0.00000000 	2.01771578e-01 0.00000000e+00 0.00000000e+00 	1.00492354e+02 0.00000000e+00 0.00000000e+00 
+
+temperature: 8097.31 K 
+kinetic energy: 1.046658 eV 
+potential energy: -2.643197 eV 
+total energy: -1.596539 eV 
+wall time from start: 4.87 s 
+
+Adding atom [0] to the training set.
+Uncertainty: [0.20177158 0.         0.        ].
+
+GP hyperparameters: 
+Hyp0 : Signal Std = 0.5917368255977665
+Hyp1 : Length Scale = 0.265922567036776
+Hyp2 : Noise Std = 1e-06
+likelihood: 95.78417524675075
+likelihood gradient: [ 1.31133711e-05 -3.21539119e-06 -7.99999998e+06]
+wall time from start: 4.90 s 
+
+GP hyperparameters: 
+Hyp0 : Signal Std = 0.5917368255977665
+Hyp1 : Length Scale = 0.265922567036776
+Hyp2 : Noise Std = 1e-06
+likelihood: 95.78417524675075
+likelihood gradient: [ 1.31133711e-05 -3.21539119e-06 -7.99999998e+06]
+wall time from start: 4.91 s 
+--------------------------------------------------------------------------------
+-Frame: 6
+Simulation Time: 0.001 ps 
+El  Position (A) 				 GP Force (ev/A) 				 Std. Dev (ev/A) 					 Velocities (A/ps) 
+H 2.25949076 2.50000000 2.50000000 	-10.75428744 0.00000000 0.00000000 	2.89523713e-02 0.00000000e+00 0.00000000e+00 	-1.12077902e+02 0.00000000e+00 0.00000000e+00 
+H 2.84050924 2.50000000 2.50000000 	10.75428744 0.00000000 0.00000000 	2.89523713e-02 0.00000000e+00 0.00000000e+00 	1.12077902e+02 0.00000000e+00 0.00000000e+00 
+
+temperature: 10071.98 K 
+kinetic energy: 1.301903 eV 
+potential energy: -8.955725 eV 
+total energy: -7.653822 eV 
+wall time from start: 4.91 s 
+--------------------------------------------------------------------------------
+-Frame: 7
+Simulation Time: 0.001 ps 
+El  Position (A) 				 GP Force (ev/A) 				 Std. Dev (ev/A) 					 Velocities (A/ps) 
+H 2.24776416 2.50000000 2.50000000 	-8.18884380 0.00000000 0.00000000 	1.40082115e-01 0.00000000e+00 0.00000000e+00 	-1.21216573e+02 0.00000000e+00 0.00000000e+00 
+H 2.85223584 2.50000000 2.50000000 	8.18884380 0.00000000 0.00000000 	1.40082115e-01 0.00000000e+00 0.00000000e+00 	1.21216573e+02 0.00000000e+00 0.00000000e+00 
+
+temperature: 11781.45 K 
+kinetic energy: 1.522870 eV 
+potential energy: -9.177662 eV 
+total energy: -7.654792 eV 
+wall time from start: 4.91 s 
+
+Calling Quantum Espresso...
+QE run complete.
+number of DFT calls: 5 
+wall time from start: 5.29 s 
+
+*-Frame: 7
+Simulation Time: 0.001 ps 
+El  Position (A) 				 DFT Force (ev/A) 				 Std. Dev (ev/A) 					 Velocities (A/ps) 
+H 2.24776416 2.50000000 2.50000000 	-8.55570260 0.00000000 0.00000000 	1.40082115e-01 0.00000000e+00 0.00000000e+00 	-1.21393556e+02 0.00000000e+00 0.00000000e+00 
+H 2.85223584 2.50000000 2.50000000 	8.55570260 0.00000000 0.00000000 	1.40082115e-01 0.00000000e+00 0.00000000e+00 	1.21393556e+02 0.00000000e+00 0.00000000e+00 
+
+temperature: 11815.88 K 
+kinetic energy: 1.527320 eV 
+potential energy: -9.177662 eV 
+total energy: -7.650342 eV 
+wall time from start: 5.29 s 
+
+Adding atom [0] to the training set.
+Uncertainty: [0.14008212 0.         0.        ].
+
+GP hyperparameters: 
+Hyp0 : Signal Std = 0.7359759460953813
+Hyp1 : Length Scale = 0.2513751553972013
+Hyp2 : Noise Std = 1e-06
+likelihood: 120.20184764901767
+likelihood gradient: [-4.15209479e-06  2.57338897e-05 -9.99999960e+06]
+wall time from start: 5.33 s 
+
+GP hyperparameters: 
+Hyp0 : Signal Std = 0.7359759460953813
+Hyp1 : Length Scale = 0.2513751553972013
+Hyp2 : Noise Std = 1e-06
+likelihood: 120.20184764901767
+likelihood gradient: [-4.15209479e-06  2.57338897e-05 -9.99999960e+06]
+wall time from start: 5.34 s 
+--------------------------------------------------------------------------------
+-Frame: 8
+Simulation Time: 0.001 ps 
+El  Position (A) 				 GP Force (ev/A) 				 Std. Dev (ev/A) 					 Velocities (A/ps) 
+H 2.23521205 2.50000000 2.50000000 	-6.57209598 0.00000000 0.00000000 	3.86868734e-02 0.00000000e+00 0.00000000e+00 	-1.28691609e+02 0.00000000e+00 0.00000000e+00 
+H 2.86478795 2.50000000 2.50000000 	6.57209598 0.00000000 0.00000000 	3.86868734e-02 0.00000000e+00 0.00000000e+00 	1.28691609e+02 0.00000000e+00 0.00000000e+00 
+
+temperature: 13279.30 K 
+kinetic energy: 1.716482 eV 
+potential energy: -5.031641 eV 
+total energy: -3.315159 eV 
+wall time from start: 5.34 s 
+--------------------------------------------------------------------------------
+-Frame: 9
+Simulation Time: 0.001 ps 
+El  Position (A) 				 GP Force (ev/A) 				 Std. Dev (ev/A) 					 Velocities (A/ps) 
+H 2.22202584 2.50000000 2.50000000 	-5.03340341 0.00000000 0.00000000 	1.82427585e-01 0.00000000e+00 0.00000000e+00 	-1.34290412e+02 0.00000000e+00 0.00000000e+00 
+H 2.87797416 2.50000000 2.50000000 	5.03340341 0.00000000 0.00000000 	1.82427585e-01 0.00000000e+00 0.00000000e+00 	1.34290412e+02 0.00000000e+00 0.00000000e+00 
+
+temperature: 14459.88 K 
+kinetic energy: 1.869084 eV 
+potential energy: -5.183371 eV 
+total energy: -3.314287 eV 
+wall time from start: 5.34 s 
+
+Calling Quantum Espresso...
+QE run complete.
+number of DFT calls: 6 
+wall time from start: 5.71 s 
+
+*-Frame: 9
+Simulation Time: 0.001 ps 
+El  Position (A) 				 DFT Force (ev/A) 				 Std. Dev (ev/A) 					 Velocities (A/ps) 
+H 2.22202584 2.50000000 2.50000000 	-4.65827897 0.00000000 0.00000000 	1.82427585e-01 0.00000000e+00 0.00000000e+00 	-1.34109442e+02 0.00000000e+00 0.00000000e+00 
+H 2.87797416 2.50000000 2.50000000 	4.65827897 0.00000000 0.00000000 	1.82427585e-01 0.00000000e+00 0.00000000e+00 	1.34109442e+02 0.00000000e+00 0.00000000e+00 
+
+temperature: 14420.93 K 
+kinetic energy: 1.864049 eV 
+potential energy: -5.183371 eV 
+total energy: -3.319321 eV 
+wall time from start: 5.71 s 
+
+Adding atom [0] to the training set.
+Uncertainty: [0.18242759 0.         0.        ].
+
+GP hyperparameters: 
+Hyp0 : Signal Std = 0.6625144374633248
+Hyp1 : Length Scale = 0.22975236052933998
+Hyp2 : Noise Std = 1e-06
+likelihood: 145.0650058571977
+likelihood gradient: [ 1.69769792e-05 -1.56542170e-04 -1.19999981e+07]
+wall time from start: 5.77 s 
+
+GP hyperparameters: 
+Hyp0 : Signal Std = 0.6625144431351433
+Hyp1 : Length Scale = 0.22975230823035594
+Hyp2 : Noise Std = 1e-06
+likelihood: 145.06500613599144
+likelihood gradient: [ 2.81725625e-06  2.74865743e-05 -1.19999981e+07]
+wall time from start: 5.78 s 
+--------------------------------------------------------------------------------
+-Frame: 10
+Simulation Time: 0.001 ps 
+El  Position (A) 				 GP Force (ev/A) 				 Std. Dev (ev/A) 					 Velocities (A/ps) 
+H 2.20839016 2.50000000 2.50000000 	-2.94881144 0.00000000 0.00000000 	4.32868989e-02 0.00000000e+00 0.00000000e+00 	-1.37779305e+02 0.00000000e+00 0.00000000e+00 
+H 2.89160984 2.50000000 2.50000000 	2.94881144 0.00000000 0.00000000 	4.32868989e-02 0.00000000e+00 0.00000000e+00 	1.37779305e+02 0.00000000e+00 0.00000000e+00 
+
+temperature: 15220.98 K 
+kinetic energy: 1.967463 eV 
+potential energy: -10.552956 eV 
+total energy: -8.585492 eV 
+wall time from start: 5.78 s 
+--------------------------------------------------------------------------------
+-Frame: 11
+Simulation Time: 0.001 ps 
+El  Position (A) 				 GP Force (ev/A) 				 Std. Dev (ev/A) 					 Velocities (A/ps) 
+H 2.19446997 2.50000000 2.50000000 	-1.16508517 0.00000000 0.00000000 	2.05239221e-01 0.00000000e+00 0.00000000e+00 	-1.39763958e+02 0.00000000e+00 0.00000000e+00 
+H 2.90553003 2.50000000 2.50000000 	1.16508517 0.00000000 0.00000000 	2.05239221e-01 0.00000000e+00 0.00000000e+00 	1.39763958e+02 0.00000000e+00 0.00000000e+00 
+
+temperature: 15662.64 K 
+kinetic energy: 2.024553 eV 
+potential energy: -10.610629 eV 
+total energy: -8.586077 eV 
+wall time from start: 5.78 s 
+
+Calling Quantum Espresso...
+QE run complete.
+number of DFT calls: 7 
+wall time from start: 6.12 s 
+
+*-Frame: 11
+Simulation Time: 0.001 ps 
+El  Position (A) 				 DFT Force (ev/A) 				 Std. Dev (ev/A) 					 Velocities (A/ps) 
+H 2.19446997 2.50000000 2.50000000 	-1.72789728 0.00000000 0.00000000 	2.05239221e-01 0.00000000e+00 0.00000000e+00 	-1.40035474e+02 0.00000000e+00 0.00000000e+00 
+H 2.90553003 2.50000000 2.50000000 	1.72789728 0.00000000 0.00000000 	2.05239221e-01 0.00000000e+00 0.00000000e+00 	1.40035474e+02 0.00000000e+00 0.00000000e+00 
+
+temperature: 15723.56 K 
+kinetic energy: 2.032426 eV 
+potential energy: -10.610629 eV 
+total energy: -8.578203 eV 
+wall time from start: 6.12 s 
+
+Adding atom [0] to the training set.
+Uncertainty: [0.20523922 0.         0.        ].
+
+GP hyperparameters: 
+Hyp0 : Signal Std = 0.6331432426526006
+Hyp1 : Length Scale = 0.20948248234384073
+Hyp2 : Noise Std = 1e-06
+likelihood: 168.8560985793197
+likelihood gradient: [-8.37746637e-04  4.78957022e-02 -1.39999933e+07]
+wall time from start: 6.21 s 
+
+GP hyperparameters: 
+Hyp0 : Signal Std = 0.6331432426526006
+Hyp1 : Length Scale = 0.2094824823438422
+Hyp2 : Noise Std = 1e-06
+likelihood: 168.85610052882274
+likelihood gradient: [-8.34870869e-04  4.80142537e-02 -1.39999933e+07]
+wall time from start: 6.35 s 
+--------------------------------------------------------------------------------
+-Frame: 12
+Simulation Time: 0.001 ps 
+El  Position (A) 				 GP Force (ev/A) 				 Std. Dev (ev/A) 					 Velocities (A/ps) 
+H 2.18038307 2.50000000 2.50000000 	-0.72744167 0.00000000 0.00000000 	6.68225159e-02 0.00000000e+00 0.00000000e+00 	-1.41219995e+02 0.00000000e+00 0.00000000e+00 
+H 2.91961693 2.50000000 2.50000000 	0.72744167 0.00000000 0.00000000 	6.68225159e-02 0.00000000e+00 0.00000000e+00 	1.41219995e+02 0.00000000e+00 0.00000000e+00 
+
+temperature: 15990.69 K 
+kinetic energy: 2.066955 eV 
+potential energy: -5.186735 eV 
+total energy: -3.119780 eV 
+wall time from start: 6.35 s 
+--------------------------------------------------------------------------------
+-Frame: 13
+Simulation Time: 0.001 ps 
+El  Position (A) 				 GP Force (ev/A) 				 Std. Dev (ev/A) 					 Velocities (A/ps) 
+H 2.16622598 2.50000000 2.50000000 	-0.21895902 0.00000000 0.00000000 	3.11862488e-01 0.00000000e+00 0.00000000e+00 	-1.41676564e+02 0.00000000e+00 0.00000000e+00 
+H 2.93377402 2.50000000 2.50000000 	0.21895902 0.00000000 0.00000000 	3.11862488e-01 0.00000000e+00 0.00000000e+00 	1.41676564e+02 0.00000000e+00 0.00000000e+00 
+
+temperature: 16094.25 K 
+kinetic energy: 2.080342 eV 
+potential energy: -5.198744 eV 
+total energy: -3.118402 eV 
+wall time from start: 6.36 s 
+
+Calling Quantum Espresso...
+QE run complete.
+number of DFT calls: 8 
+wall time from start: 6.73 s 
+
+*-Frame: 13
+Simulation Time: 0.001 ps 
+El  Position (A) 				 DFT Force (ev/A) 				 Std. Dev (ev/A) 					 Velocities (A/ps) 
+H 2.16622598 2.50000000 2.50000000 	0.35901975 0.00000000 0.00000000 	3.11862488e-01 0.00000000e+00 0.00000000e+00 	-1.41397731e+02 0.00000000e+00 0.00000000e+00 
+H 2.93377402 2.50000000 2.50000000 	-0.35901975 0.00000000 0.00000000 	3.11862488e-01 0.00000000e+00 0.00000000e+00 	1.41397731e+02 0.00000000e+00 0.00000000e+00 
+
+temperature: 16030.96 K 
+kinetic energy: 2.072161 eV 
+potential energy: -5.198744 eV 
+total energy: -3.126583 eV 
+wall time from start: 6.73 s 
+
+Adding atom [0] to the training set.
+Uncertainty: [0.31186249 0.         0.        ].
+
+GP hyperparameters: 
+Hyp0 : Signal Std = 0.5709635493605546
+Hyp1 : Length Scale = 0.19853849436425416
+Hyp2 : Noise Std = 1e-06
+likelihood: 193.40452630502588
+likelihood gradient: [-5.64388611e-05  1.13878018e-03 -1.59999846e+07]
+wall time from start: 7.10 s 
+
+GP hyperparameters: 
+Hyp0 : Signal Std = 0.5709635493605546
+Hyp1 : Length Scale = 0.19853849436425416
+Hyp2 : Noise Std = 1e-06
+likelihood: 193.40452630502588
+likelihood gradient: [-5.64388611e-05  1.13878018e-03 -1.59999846e+07]
+wall time from start: 7.21 s 
+--------------------------------------------------------------------------------
+-Frame: 14
+Simulation Time: 0.001 ps 
+El  Position (A) 				 GP Force (ev/A) 				 Std. Dev (ev/A) 					 Velocities (A/ps) 
+H 2.15210352 2.50000000 2.50000000 	1.31930813 0.00000000 0.00000000 	6.83421102e-02 0.00000000e+00 0.00000000e+00 	-1.40588061e+02 0.00000000e+00 0.00000000e+00 
+H 2.94789648 2.50000000 2.50000000 	-1.31930813 0.00000000 0.00000000 	6.83421102e-02 0.00000000e+00 0.00000000e+00 	1.40588061e+02 0.00000000e+00 0.00000000e+00 
+
+temperature: 15847.89 K 
+kinetic energy: 2.048498 eV 
+potential energy: -8.741532 eV 
+total energy: -6.693034 eV 
+wall time from start: 7.21 s 
+--------------------------------------------------------------------------------
+-Frame: 15
+Simulation Time: 0.002 ps 
+El  Position (A) 				 GP Force (ev/A) 				 Std. Dev (ev/A) 					 Velocities (A/ps) 
+H 2.13810836 2.50000000 2.50000000 	2.53152788 0.00000000 0.00000000 	3.16207459e-01 0.00000000e+00 0.00000000e+00 	-1.38730315e+02 0.00000000e+00 0.00000000e+00 
+H 2.96189164 2.50000000 2.50000000 	-2.53152788 0.00000000 0.00000000 	3.16207459e-01 0.00000000e+00 0.00000000e+00 	1.38730315e+02 0.00000000e+00 0.00000000e+00 
+
+temperature: 15431.83 K 
+kinetic energy: 1.994718 eV 
+potential energy: -8.688617 eV 
+total energy: -6.693900 eV 
+wall time from start: 7.22 s 
+
+Calling Quantum Espresso...
+QE run complete.
+number of DFT calls: 9 
+wall time from start: 7.58 s 
+
+*-Frame: 15
+Simulation Time: 0.002 ps 
+El  Position (A) 				 DFT Force (ev/A) 				 Std. Dev (ev/A) 					 Velocities (A/ps) 
+H 2.13810836 2.50000000 2.50000000 	1.80005738 0.00000000 0.00000000 	3.16207459e-01 0.00000000e+00 0.00000000e+00 	-1.39083196e+02 0.00000000e+00 0.00000000e+00 
+H 2.96189164 2.50000000 2.50000000 	-1.80005738 0.00000000 0.00000000 	3.16207459e-01 0.00000000e+00 0.00000000e+00 	1.39083196e+02 0.00000000e+00 0.00000000e+00 
+
+temperature: 15510.44 K 
+kinetic energy: 2.004878 eV 
+potential energy: -8.688617 eV 
+total energy: -6.683739 eV 
+wall time from start: 7.58 s 
+
+Adding atom [0] to the training set.
+Uncertainty: [0.31620746 0.         0.        ].
+
+GP hyperparameters: 
+Hyp0 : Signal Std = 0.5571730185856717
+Hyp1 : Length Scale = 0.18961307283366025
+Hyp2 : Noise Std = 1e-06
+likelihood: 217.2410705419812
+likelihood gradient: [ 4.74972643e-04  2.49520063e-02 -1.79999663e+07]
+wall time from start: 7.98 s 
+--------------------------------------------------------------------------------
+-Frame: 16
+Simulation Time: 0.002 ps 
+El  Position (A) 				 GP Force (ev/A) 				 Std. Dev (ev/A) 					 Velocities (A/ps) 
+H 2.12428688 2.50000000 2.50000000 	2.20168758 0.00000000 0.00000000 	1.01592148e-01 0.00000000e+00 0.00000000e+00 	-1.37152648e+02 0.00000000e+00 0.00000000e+00 
+H 2.97571312 2.50000000 2.50000000 	-2.20168758 0.00000000 0.00000000 	1.01592148e-01 0.00000000e+00 0.00000000e+00 	1.37152648e+02 0.00000000e+00 0.00000000e+00 
+
+temperature: 15082.84 K 
+kinetic energy: 1.949607 eV 
+potential energy: -4.791862 eV 
+total energy: -2.842255 eV 
+wall time from start: 7.98 s 
+
+Calling Quantum Espresso...
+QE run complete.
+number of DFT calls: 10 
+wall time from start: 8.36 s 
+
+*-Frame: 16
+Simulation Time: 0.002 ps 
+El  Position (A) 				 DFT Force (ev/A) 				 Std. Dev (ev/A) 					 Velocities (A/ps) 
+H 2.12428688 2.50000000 2.50000000 	2.33676384 0.00000000 0.00000000 	1.01592148e-01 0.00000000e+00 0.00000000e+00 	-1.37087483e+02 0.00000000e+00 0.00000000e+00 
+H 2.97571312 2.50000000 2.50000000 	-2.33676384 0.00000000 0.00000000 	1.01592148e-01 0.00000000e+00 0.00000000e+00 	1.37087483e+02 0.00000000e+00 0.00000000e+00 
+
+temperature: 15068.51 K 
+kinetic energy: 1.947755 eV 
+potential energy: -4.791862 eV 
+total energy: -2.844107 eV 
+wall time from start: 8.37 s 
+
+Adding atom [0] to the training set.
+Uncertainty: [0.10159215 0.         0.        ].
+
+GP hyperparameters: 
+Hyp0 : Signal Std = 0.5573456167330382
+Hyp1 : Length Scale = 0.1864360009496779
+Hyp2 : Noise Std = 1e-06
+likelihood: 243.3109171343207
+likelihood gradient: [-5.96334853e-02  2.30169743e-02 -1.99999275e+07]
+wall time from start: 8.80 s 
+
+GP hyperparameters: 
+Hyp0 : Signal Std = 0.5573456167330382
+Hyp1 : Length Scale = 0.1864360009496779
+Hyp2 : Noise Std = 1e-06
+likelihood: 243.3109171343207
+likelihood gradient: [-5.96334853e-02  2.30169743e-02 -1.99999275e+07]
+wall time from start: 8.97 s 
+--------------------------------------------------------------------------------
+-Frame: 17
+Simulation Time: 0.002 ps 
+El  Position (A) 				 GP Force (ev/A) 				 Std. Dev (ev/A) 					 Velocities (A/ps) 
+H 2.11069087 2.50000000 2.50000000 	2.82608353 0.00000000 0.00000000 	1.53489014e-02 0.00000000e+00 0.00000000e+00 	-1.34596788e+02 0.00000000e+00 0.00000000e+00 
+H 2.98930913 2.50000000 2.50000000 	-2.82608353 0.00000000 0.00000000 	1.53489014e-02 0.00000000e+00 0.00000000e+00 	1.34596788e+02 0.00000000e+00 0.00000000e+00 
+
+temperature: 14525.93 K 
+kinetic energy: 1.877622 eV 
+potential energy: -7.761458 eV 
+total energy: -5.883837 eV 
+wall time from start: 8.97 s 
+--------------------------------------------------------------------------------
+-Frame: 18
+Simulation Time: 0.002 ps 
+El  Position (A) 				 GP Force (ev/A) 				 Std. Dev (ev/A) 					 Velocities (A/ps) 
+H 2.09736753 2.50000000 2.50000000 	3.40035162 0.00000000 0.00000000 	1.15278861e-01 0.00000000e+00 0.00000000e+00 	-1.31592990e+02 0.00000000e+00 0.00000000e+00 
+H 3.00263247 2.50000000 2.50000000 	-3.40035162 0.00000000 0.00000000 	1.15278861e-01 0.00000000e+00 0.00000000e+00 	1.31592990e+02 0.00000000e+00 0.00000000e+00 
+
+temperature: 13884.82 K 
+kinetic energy: 1.794751 eV 
+potential energy: -7.678917 eV 
+total energy: -5.884166 eV 
+wall time from start: 8.98 s 
+
+Calling Quantum Espresso...
+QE run complete.
+number of DFT calls: 11 
+wall time from start: 9.38 s 
+
+*-Frame: 18
+Simulation Time: 0.002 ps 
+El  Position (A) 				 DFT Force (ev/A) 				 Std. Dev (ev/A) 					 Velocities (A/ps) 
+H 2.09736753 2.50000000 2.50000000 	3.12527139 0.00000000 0.00000000 	1.15278861e-01 0.00000000e+00 0.00000000e+00 	-1.31725696e+02 0.00000000e+00 0.00000000e+00 
+H 3.00263247 2.50000000 2.50000000 	-3.12527139 0.00000000 0.00000000 	1.15278861e-01 0.00000000e+00 0.00000000e+00 	1.31725696e+02 0.00000000e+00 0.00000000e+00 
+
+temperature: 13912.84 K 
+kinetic energy: 1.798373 eV 
+potential energy: -7.678917 eV 
+total energy: -5.880544 eV 
+wall time from start: 9.38 s 
+
+Adding atom [0] to the training set.
+Uncertainty: [0.11527886 0.         0.        ].
+
+GP hyperparameters: 
+Hyp0 : Signal Std = 0.5575921226589573
+Hyp1 : Length Scale = 0.1818753129197873
+Hyp2 : Noise Std = 1e-06
+likelihood: 268.21218766255043
+likelihood gradient: [ 1.69605383e-01 -1.54265355e+00 -2.19998540e+07]
+wall time from start: 9.79 s 
+
+GP hyperparameters: 
+Hyp0 : Signal Std = 0.5575921226589573
+Hyp1 : Length Scale = 0.1818753129197873
+Hyp2 : Noise Std = 1e-06
+likelihood: 268.21218766255043
+likelihood gradient: [ 1.69605383e-01 -1.54265355e+00 -2.19998540e+07]
+wall time from start: 9.98 s 
+--------------------------------------------------------------------------------
+-Frame: 19
+Simulation Time: 0.002 ps 
+El  Position (A) 				 GP Force (ev/A) 				 Std. Dev (ev/A) 					 Velocities (A/ps) 
+H 2.08434573 2.50000000 2.50000000 	3.34641364 0.00000000 0.00000000 	2.89317697e-02 0.00000000e+00 0.00000000e+00 	-1.28603582e+02 0.00000000e+00 0.00000000e+00 
+H 3.01565427 2.50000000 2.50000000 	-3.34641364 0.00000000 0.00000000 	2.89317697e-02 0.00000000e+00 0.00000000e+00 	1.28603582e+02 0.00000000e+00 0.00000000e+00 
+
+temperature: 13261.14 K 
+kinetic energy: 1.714134 eV 
+potential energy: -4.543331 eV 
+total energy: -2.829196 eV 
+wall time from start: 9.98 s 
+--------------------
+Run complete. 

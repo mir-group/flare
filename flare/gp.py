@@ -251,7 +251,7 @@ class GaussianProcess:
     def update_L_alpha(self):
         n = self.l_mat_inv.shape[0]
         N = len(self.training_data)
-        m = N - n//3 # number of data added
+        m = N - n//3  # number of data added
         ky_mat = np.zeros((3*N, 3*N))
         ky_mat[:n, :n] = self.ky_mat
         k_v = np.array([[] for i in range(n)])
@@ -260,15 +260,16 @@ class GaussianProcess:
         for i in range(m):
             x_t = self.training_data[-1-i]
             k_vi = np.array([self.get_kernel_vector(x_t, d+1)
-                for d in range(3)]).T # (n+3m) x 3
+                             for d in range(3)]).T  # (n+3m) x 3
             k_vi = k_vi[:n, :]
-            k_v = np.hstack([k_v, k_vi]) # n x 3m
+            k_v = np.hstack([k_v, k_vi])  # n x 3m
             for d1 in range(3):
                 for j in range(i, m):
                     y_t = self.training_data[-1-j]
                     for d2 in range(3):
-                        V_mat[3*i+d1, 3*j+d2] = self.kernel(x_t, y_t, d1+1, d2+1, 
-                                self.hyps, self.cutoffs)
+                        V_mat[3*i+d1, 3*j+d2] = \
+                            self.kernel(x_t, y_t, d1+1, d2+1,
+                                        self.hyps, self.cutoffs)
                         V_mat[3*j+d2, 3*i+d1] = V_mat[3*i+d1, 3*j+d2]
         ky_mat[:n, n:] = k_v
         ky_mat[n:, :n] = k_v.T
@@ -289,42 +290,42 @@ class GaussianProcess:
     def update_L_alpha_v1(self):
         '''
         1. This function is used right after "update_db".
-        2. It can update the l_mat_inv, k_mat_inv and alpha 
+        2. It can update the l_mat_inv, k_mat_inv and alpha
         without computing the whole kernel matrix.
         3. The condition is the hyps should be frozen.
         4. See notes for derivation and calculation details
         '''
         n = self.l_mat_inv.shape[0]
-        m =len(self.training_data) - n//3 # number of data added
+        m = len(self.training_data) - n//3  # number of data added
         sigma_n = self.hyps[-1]
 
-        ##### update l_mat_inv => k_mat_inv
+        # update l_mat_inv => k_mat_inv
         k_v = np.array([[] for i in range(n)])
         V_mat = np.zeros((3*m, 3*m))
+
         # calculate kernels for all added data
         for i in range(m):
             x_t = self.training_data[-1-i]
             k_vi = np.array([self.get_kernel_vector(x_t, d+1)
-                for d in range(3)]).T # (n+3m) x 3
+                             for d in range(3)]).T  # (n+3m) x 3
             k_vi = k_vi[:n, :]
-            k_v = np.hstack([k_v, k_vi]) # n x 3m
+            k_v = np.hstack([k_v, k_vi])  # n x 3m
             for d1 in range(3):
                 for j in range(i, m):
                     y_t = self.training_data[-1-j]
                     for d2 in range(3):
-                        V_mat[3*i+d1, 3*j+d2] = self.kernel(x_t, y_t, d1+1, d2+1, 
-                                self.hyps, self.cutoffs)
+                        V_mat[3*i+d1, 3*j+d2] = \
+                            self.kernel(x_t, y_t, d1+1, d2+1,
+                                        self.hyps, self.cutoffs)
                         V_mat[3*j+d2, 3*i+d1] = V_mat[3*i+d1, 3*j+d2]
-        v = self.l_mat_inv @ k_v # n x 3m
+        v = self.l_mat_inv @ k_v  # n x 3m
         V_mat += sigma_n**2 * np.eye(3*m) - v.T @ v
-        r_n1 = np.linalg.inv(np.linalg.cholesky(V_mat)) # 3m x 3m
-        r = - self.l_mat_inv.T @ v @ r_n1.T # n x 3m
+        r_n1 = np.linalg.inv(np.linalg.cholesky(V_mat))  # 3m x 3m
+        r = - self.l_mat_inv.T @ v @ r_n1.T  # n x 3m
         new_line1 = np.hstack([self.l_mat_inv, np.zeros((n, 3*m))])
         new_line2 = np.hstack([r.T, r_n1])
         self.l_mat_inv = np.vstack([new_line1, new_line2])
         self.ky_mat_inv = self.l_mat_inv.T @ self.l_mat_inv
 
-        ##### update alpha
+        # update alpha
         self.alpha = self.ky_mat_inv @ self.training_labels_np
-        
-       

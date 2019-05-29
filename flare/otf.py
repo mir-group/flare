@@ -16,7 +16,7 @@ class OTF(object):
                  prev_pos_init: np.ndarray=None, par: bool=False,
                  skip: int=0, init_atoms: List[int]=None,
                  calculate_energy=False, output_name='otf_run.out',
-                 max_atoms_added=None, freeze_hyps=False, 
+                 max_atoms_added=None, freeze_hyps=False,
                  rescale_steps=[], rescale_temps=[], add_all=False,
                  no_cpus=1, use_mapping: bool=False, non_mapping_steps: list=[]):
 
@@ -192,7 +192,7 @@ class OTF(object):
     
                         if self.use_mapping:
                             self.train_mff()
-    
+          
             # write gp forces only when counter equals skip
             if counter >= self.skip and not self.dft_step:
                 self.update_temperature(new_pos)
@@ -296,7 +296,7 @@ class OTF(object):
         # update gp model
         self.gp.update_db(self.structure, dft_frcs,
                           custom_range=train_atoms)
-        
+
         if self.curr_step == 0:
             self.gp.set_L_alpha()
         else:
