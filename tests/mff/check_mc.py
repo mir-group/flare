@@ -1,9 +1,8 @@
 import numpy as np
 import sys
-sys.path.append('../../../../flare/')
-sys.path.append('../../..')
+# sys.path.append('../../../../flare/')
+# sys.path.append('../../..')
 import time
-
 from flare import struc, gp, env
 from flare.mff.mff_mc import MappedForceField
 from mc_kernels import mc_simple, mc
@@ -66,10 +65,10 @@ print('gp built:', time.time() - t0)
 # --------------- set mff params
 t0 = time.time()
 unit = 0.00010364269933008285
-struc_params = {'species': [0, 1], 
+struc_params = {'species': [0, 1],
                 'cube_lat': cell,
                 'mass_dict': {'0': 27 * unit, '1': 16 * unit}}
- 
+
 grid_params = {'bounds_2': [[1.2], [3.5]],
                'bounds_3': [[1.2, 1.2, 0], [3.5, 3.5, np.pi]],
                'grid_num_2': 64,
@@ -77,7 +76,7 @@ grid_params = {'bounds_2': [[1.2], [3.5]],
                'svd_rank': 16,
                'bodies': [2, 3],
                'load_grid': None,
-               'load_svd': None} 
+               'load_svd': None}
 
 mff_model = MappedForceField(gp_model, grid_params, struc_params)
 print('mff model built:', time.time() - t0)
