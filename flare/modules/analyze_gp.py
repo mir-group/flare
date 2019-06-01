@@ -75,11 +75,11 @@ def vac_diff_fcc(gp_model, gp_cell, fcc_cell, species, cutoff, nop):
 # return untrained gp model
 def get_gp_from_snaps(md_trajectory, training_snaps, kernel,
                       kernel_grad, hyps, cutoffs, algorithm='BFGS',
-                      maxiter=1000):
+                      maxiter=1000, par=False):
 
     gp_model = gp.GaussianProcess(kernel, kernel_grad, hyps,
                                   cutoffs, opt_algorithm=algorithm,
-                                  maxiter=maxiter)
+                                  maxiter=maxiter, par=par)
 
     for snap in training_snaps:
         structure = md_trajectory.get_structure_from_snap(snap)

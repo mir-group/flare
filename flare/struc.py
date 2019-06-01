@@ -49,6 +49,8 @@ class Structure(object):
                                             'positions are not same length'
             self.prev_positions = prev_positions
 
+        self.energy = None
+        self.stress = None
         self.forces = np.zeros((len(positions), 3))
         self.stds = np.zeros((len(positions), 3))
         self.mass_dict = mass_dict
