@@ -97,48 +97,48 @@ class MFFOTF(OTF):
         output.write_to_output('building mapping time: {}'.format(time.time()-t0),
                                 self.output_name)
 
-    def run_dft(self):
-        output.write_to_output('\nCalling Lammps...\n',
-                               self.output_name)
-
-        # build ASE unitcell
-        species = self.structure.species[0]
-        positions = self.structure.positions
-        nat = len(positions)
-        cell = self.structure.cell
-        symbols = species + str(nat)
-        a = 2.46
-        c = cell[2][2]
-        unit_cell = Graphene(species, latticeconstant={'a':a,'c':c})
-        multiplier = np.array([[7,0,0],[0,7,0],[0,0,1]])
-        super_cell = make_supercell(unit_cell, multiplier)
-        super_cell.positions = positions
-        super_cell.cell = cell
-
-        # calculate Lammps forces
-        pot_path = '/n/home08/xiey/lammps-16Mar18/potentials/' 
-        parameters = {'pair_style': 'airebo 5.0',
-                      'pair_coeff': ['* * '+pot_path+'CH.airebo C'],
-                      'mass': ['* 12.0107']}
-        files = [pot_path+'CH.airebo']
-        
-#        calc = LAMMPS(keep_tmp_files=True, tmp_dir='lmp_tmp/', parameters=parameters, files=files)
-        calc = LAMMPS(parameters=parameters, files=files)
-        super_cell.set_calculator(calc)
-
-        # calculate LAMMPS forces
-        forces = super_cell.get_forces()
-        self.structure.forces = forces
-
-        # write wall time of DFT calculation
-        self.dft_count += 1
-        output.write_to_output('QE run complete.\n', self.output_name)
-        time_curr = time.time() - self.start_time
-        output.write_to_output('number of DFT calls: %i \n' % self.dft_count,
-                               self.output_name)
-        output.write_to_output('wall time from start: %.2f s \n' % time_curr,
-                               self.output_name)
-
+#    def run_dft(self):
+#        output.write_to_output('\nCalling Lammps...\n',
+#                               self.output_name)
+#
+#        # build ASE unitcell
+#        species = self.structure.species[0]
+#        positions = self.structure.positions
+#        nat = len(positions)
+#        cell = self.structure.cell
+#        symbols = species + str(nat)
+#        a = 2.46
+#        c = cell[2][2]
+#        unit_cell = Graphene(species, latticeconstant={'a':a,'c':c})
+#        multiplier = np.array([[6,0,0],[0,6,0],[0,0,1]])
+#        super_cell = make_supercell(unit_cell, multiplier)
+#        super_cell.positions = positions
+#        super_cell.cell = cell
+#
+#        # calculate Lammps forces
+#        pot_path = '/n/home08/xiey/lammps-16Mar18/potentials/' 
+#        parameters = {'pair_style': 'airebo 5.0',
+#                      'pair_coeff': ['* * '+pot_path+'CH.airebo C'],
+#                      'mass': ['* 12.0107']}
+#        files = [pot_path+'CH.airebo']
+#        
+##        calc = LAMMPS(keep_tmp_files=True, tmp_dir='lmp_tmp/', parameters=parameters, files=files)
+#        calc = LAMMPS(parameters=parameters, files=files)
+#        super_cell.set_calculator(calc)
+#
+#        # calculate LAMMPS forces
+#        forces = super_cell.get_forces()
+#        self.structure.forces = forces
+#
+#        # write wall time of DFT calculation
+#        self.dft_count += 1
+#        output.write_to_output('QE run complete.\n', self.output_name)
+#        time_curr = time.time() - self.start_time
+#        output.write_to_output('number of DFT calls: %i \n' % self.dft_count,
+#                               self.output_name)
+#        output.write_to_output('wall time from start: %.2f s \n' % time_curr,
+#                               self.output_name)
+#
 
 def predict_on_atom_mff(atom, structure, cutoffs, mff):
     chemenv = AtomicEnvironment(structure, atom, cutoffs)
