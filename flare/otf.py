@@ -103,6 +103,10 @@ class OTF(object):
         counter = 0
         self.start_time = time.time()
 
+        # relaunch mode
+        if self.curr_step > 0 and self.use_mapping:
+            self.train_mff()
+
         while self.curr_step < self.number_of_steps:
             # run DFT and train initial model if first step and DFT is on
             if self.curr_step == 0 and self.std_tolerance != 0:
@@ -133,7 +137,6 @@ class OTF(object):
 
             # otherwise, try predicting with GP model
             else:
-
                 if self.use_mapping:
                     if (self.curr_step-1) not in self.non_mapping_steps:
                         self.pred_func = self.predict_on_structure_mff
@@ -149,6 +152,7 @@ class OTF(object):
                                               self.structure)
 
                 std_in_bound, target_atom = self.is_std_in_bound([])
+
                 if not std_in_bound:
                     atom_list = [target_atom]
 

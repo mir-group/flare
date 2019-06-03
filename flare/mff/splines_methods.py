@@ -2,6 +2,7 @@ import numpy as np
 import numpy
 import sys
 sys.path.append('../../flare')
+import time
 from memory_profiler import profile
 
 import flare.mff.utils as utils

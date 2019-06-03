@@ -7,3 +7,6 @@ pwscf.save/
 /tests/test_mff/Al_md.out
 /tests/test_mff/lmp_tmp/
 /datasets/
+/tests/test_lammps/*.npy
+/tests/test_lammps/*.txt
+
