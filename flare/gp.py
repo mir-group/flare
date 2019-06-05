@@ -6,7 +6,8 @@ from typing import List, Callable
 from flare.env import AtomicEnvironment
 from flare.struc import Structure
 from flare.gp_algebra import get_ky_mat, get_ky_and_hyp, get_like_from_ky_mat,\
-    get_like_grad_from_mats, get_neg_likelihood, get_neg_like_grad
+    get_like_grad_from_mats, get_neg_likelihood, get_neg_like_grad, \
+    get_ky_and_hyp_par
 
 
 class GaussianProcess:
@@ -228,10 +229,17 @@ class GaussianProcess:
         return k_v
 
     def set_L_alpha(self):
+        if self.par:
+            hyp_mat, ky_mat = \
+                get_ky_and_hyp_par(self.hyps, self.training_data,
+                                   self.training_labels_np,
+                                   self.kernel_grad, self.cutoffs)
+        else:
+            hyp_mat, ky_mat = \
+                get_ky_and_hyp(self.hyps, self.training_data,
+                               self.training_labels_np,
+                               self.kernel_grad, self.cutoffs)
 
-        hyp_mat, ky_mat = get_ky_and_hyp(self.hyps, self.training_data,
-                                         self.training_labels_np,
-                                         self.kernel_grad, self.cutoffs)
         like, like_grad = \
             get_like_grad_from_mats(ky_mat, hyp_mat, self.training_labels_np)
         l_mat = np.linalg.cholesky(ky_mat)

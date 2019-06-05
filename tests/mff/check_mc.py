@@ -1,12 +1,17 @@
 import numpy as np
 import sys
-# sys.path.append('../../../../flare/')
-# sys.path.append('../../..')
+sys.path.append('../..')
 import time
+
 from flare import struc, gp, env
 from flare.mff.mff_mc import MappedForceField
 from mc_kernels import mc_simple, mc
 import matplotlib.pyplot as plt
+
+# ----------------------------------------
+# This is adapted from flare_test.py
+# ----------------------------------------
+
 
 # ------------- load lj
 t0 = time.time()
@@ -65,20 +70,21 @@ print('gp built:', time.time() - t0)
 # --------------- set mff params
 t0 = time.time()
 unit = 0.00010364269933008285
-struc_params = {'species': [0, 1],
+struc_params = {'species': [0, 1], 
                 'cube_lat': cell,
                 'mass_dict': {'0': 27 * unit, '1': 16 * unit}}
-
-grid_params = {'bounds_2': [[1.2], [3.5]],
+ 
+grid_params = {'bounds_2': [[1.2], [3.5]], # build 2body mapping in interval [1.2, 3.5] with 64 grid points
                'bounds_3': [[1.2, 1.2, 0], [3.5, 3.5, np.pi]],
                'grid_num_2': 64,
                'grid_num_3': [16, 16, 16],
-               'svd_rank': 16,
+               'svd_rank_2': 64,
+               'svd_rank_3': 100,
                'bodies': [2, 3],
                'load_grid': None,
-               'load_svd': None}
+               'load_svd': None} 
 
-mff_model = MappedForceField(gp_model, grid_params, struc_params)
+mff_model = MappedForceField(gp_model, grid_params, struc_params, mean_only=False)
 print('mff model built:', time.time() - t0)
 
 # --------------- test gp model and mff model
@@ -105,6 +111,7 @@ for n, snap in enumerate(test_snaps):
             predictions[atom, m] = comp_pred
             variances[atom, m] = comp_var
 
+        # make prediction with mff
         mff_f, mff_v = mff_model.predict(env_curr, mean_only=False)
         mff_pred[atom, :] = mff_f
         mff_var[atom, :] = mff_v
@@ -131,6 +138,18 @@ print('gp err:', gp_err)
 print('mff err:', mff_err)
 print('mff - gp:', mff_gp)
 print('var err:', var_err)
+
+# ----------------- save coeffs of mff ---------------------
+if 2 in grid_params['bodies']:
+    for ind, spc in enumerate(mff_model.spcs[0]):
+        save_name = '{}{}_{}'.format(spc[0],spc[1],2)
+        np.save(save_name, mff_model.maps_2[ind].mean.model.__coeffs__)
+
+if 3 in grid_params['bodies']:
+    for ind, spc in enumerate(mff_model.spcs[1]):
+        save_name = '{}{}{}_{}'.format(spc[0],spc[1],spc[2],3)
+        np.save(save_name, mff_model.maps_3[ind].mean.model.__coeffs__)
+
 
 ## ----------------- reconstruct lj profiles
 #cell = np.eye(3) * 10

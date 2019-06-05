@@ -6,7 +6,8 @@ import multiprocessing as mp
 import sys
 from flare import gp, env, struc, kernels
 from flare.gp import GaussianProcess
-from flare.kernels import two_body, three_body, two_plus_three_body, two_body_jit
+from flare.kernels import two_body, three_body, two_plus_three_body,\
+    two_body_jit
 from flare.cutoffs import quadratic_cutoff
 from flare.mc_simple import two_body_mc, three_body_mc, two_plus_three_body_mc
 import flare.mff.utils as utils
@@ -16,9 +17,9 @@ from flare.mff.splines_methods import PCASplines, SplinesInterpolation
 
 
 class MappedForceField:
-    def __init__(self, GP: GaussianProcess, grid_params: dict, 
-            struc_params: dict, mean_only=False):
-    
+    def __init__(self, GP: GaussianProcess, grid_params: dict,
+                 struc_params: dict, mean_only=False):
+
         '''
         param: GP : gp model
         param: struc_params : {'species': [0, 1], 
@@ -344,9 +345,9 @@ class Map2body:
 
 
 class Map3body:
-   
-    def __init__(self, grid_num, bounds, GP, bond_struc, bodies='3', 
-                load_grid=None, load_svd=None, svd_rank=0, mean_only=False):
+
+    def __init__(self, grid_num, bounds, GP, bond_struc, bodies='3',
+                 load_grid=None, load_svd=None, svd_rank=0, mean_only=False):
         '''
         param grids: the 1st element is the number of grids for mean
         prediction, the 2nd is for var
