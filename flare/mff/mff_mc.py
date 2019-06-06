@@ -22,19 +22,21 @@ class MappedForceField:
 
         '''
         param: GP : gp model
-        param: struc_params : {'species': [0, 1], 
+        param: struc_params : {'species': [0, 1],
                 'cube_lat': cell, # should input the cell matrix
-                'mass_dict': {'0': 27 * unit, '1': 16 * unit}}  # unit = 
-        param: grid_params : {'bounds_2': [[1.2], [3.5]], # [[lower_bound], [upper]]
-               'bounds_3': [[1.2, 1.2, 0], [3.5, 3.5, np.pi]], #[[lower,lower,0],[upper,upper,np.pi]]
-               'grid_num_2': 64, 
+                'mass_dict': {'0': 27 * unit, '1': 16 * unit}}
+        param: grid_params : {'bounds_2': [[1.2], [3.5]], # [[lower_bound],
+                                                            [upper]]
+               'bounds_3': [[1.2, 1.2, 0], [3.5, 3.5, np.pi]],
+                    #[[lower,lower,0],[upper,upper,np.pi]]
+               'grid_num_2': 64,
                'grid_num_3': [16, 16, 16],
                'svd_rank_2': 64,
                'svd_rank_3': 16**3,
                'bodies': [2, 3],
                'load_grid': None,
-               'load_svd': None} 
-        param: mean_only : if True: only build mapping for mean (force) 
+               'load_svd': None}
+        param: mean_only : if True: only build mapping for mean (force)
 
         '''
         self.GP = GP
@@ -54,16 +56,18 @@ class MappedForceField:
         self.maps_3 = []
         if 2 in self.bodies:
             for b_struc in bond_struc[0]:
-                map_2 = Map2body(self.grid_num_2, self.bounds_2, self.GP, 
-                        b_struc, self.bodies, grid_params['load_grid'], 
-                        self.svd_rank_2, self.mean_only)
+                map_2 = Map2body(self.grid_num_2, self.bounds_2, self.GP,
+                                 b_struc, self.bodies,
+                                 grid_params['load_grid'],
+                                 self.svd_rank_2, self.mean_only)
                 self.maps_2.append(map_2)
         if 3 in self.bodies:
             for b_struc in bond_struc[1]:
-                map_3 = Map3body(self.grid_num_3, self.bounds_3, self.GP, 
-                        b_struc, self.bodies, grid_params['load_grid'],
-                        grid_params['load_svd'], self.svd_rank_3,
-                        self.mean_only)
+                map_3 = Map3body(self.grid_num_3, self.bounds_3, self.GP,
+                                 b_struc, self.bodies,
+                                 grid_params['load_grid'],
+                                 grid_params['load_svd'], self.svd_rank_3,
+                                 self.mean_only)
 
                 self.maps_3.append(map_3)
 
@@ -136,7 +140,7 @@ class MappedForceField:
         return bond_struc, spcs
 
     def predict(self, atom_env, mean_only=False):
-        if self.mean_only: # if not build mapping for var
+        if self.mean_only:  # if not build mapping for var
             mean_only = True
 
         # ---------------- predict for two body -------------------
@@ -153,7 +157,7 @@ class MappedForceField:
         # ---------------- predict for three body -------------------
         f3 = kern3 = v3 = 0
         if 3 in self.bodies:
-            sig3, ls3, noise = self.GP.hyps[-3:]
+            sig3, ls3, _ = self.GP.hyps[-3:]
             r_cut3 = self.GP.cutoffs[1]
 
             f3, kern3, v3 = \
@@ -189,7 +193,7 @@ class MappedForceField:
 
 #        kern3 = np.zeros(3)
 #        for d in range(3):
-#            kern3[d] = self_three_body_mc_jit(bond_array_3, cross_bond_inds, 
+#            kern3[d] = self_three_body_mc_jit(bond_array_3, cross_bond_inds,
 #                    cross_bond_dists, triplets, ctype, etypes, d+1, sig, ls,
 #                    r_cut, quadratic_cutoff)
 
@@ -197,7 +201,7 @@ class MappedForceField:
         for d in range(3):
             kern3_gp[d] = three_body_mc(atom_env, atom_env, d+1, d+1,
                                         self.GP.hyps[-3:], self.GP.cutoffs)
-        #print(kern3, kern3_gp)
+        # print(kern3, kern3_gp)
 
         spcs, comp_r, comp_xyz = \
             get_triplets(ctype, etypes, bond_array_3,
@@ -247,12 +251,12 @@ class MappedForceField:
 
 
 class Map2body:
-    def __init__(self, grid_num, bounds, GP, bond_struc, bodies='2', 
-            load_prefix=None, svd_rank=0, mean_only=False): 
+    def __init__(self, grid_num, bounds, GP, bond_struc, bodies='2',
+                 load_prefix=None, svd_rank=0, mean_only=False):
         '''
         param grids: the 1st element is the number of grids for mean
         prediction, the 2nd is for var
-        '''       
+        '''
 
         self.grid_num = grid_num
         self.l_bound, self.u_bound = bounds
@@ -288,7 +292,7 @@ class Map2body:
         bond_vars = np.zeros([nop, len(GP.alpha)])
         env12 = env.AtomicEnvironment(bond_struc, 0, self.cutoffs)
 
-        pool_list = [(i, bond_lengths, GP, env12)\
+        pool_list = [(i, bond_lengths, GP, env12)
                      for i in range(nop)]
         pool = mp.Pool(processes=processes)
         A_list = pool.map(self._GenGrid_inner, pool_list)
@@ -302,7 +306,7 @@ class Map2body:
         GP.cutoffs = original_cutoffs
         GP.hyps = original_hyps
         GP.kernel = original_kernel
-    
+
         return bond_means, bond_vars
 
     def _GenGrid_inner(self, params):
@@ -311,11 +315,11 @@ class Map2body:
         generate grid for each angle, used to parallelize grid generation
         '''
         b, bond_lengths, GP, env12 = params
-        nop = self.grid_num
+        # nop = self.grid_num
         r = bond_lengths[b]
         env12.bond_array_2 = np.array([[r, 1, 0, 0]])
 
-        k12_v = GP.get_kernel_vector(env12, 1)   
+        k12_v = GP.get_kernel_vector(env12, 1)
         mean_diff = np.matmul(k12_v, GP.alpha)
         bond_means = mean_diff
         bond_vars = np.zeros(k12_v.shape)
@@ -332,16 +336,17 @@ class Map2body:
         build 1-d spline function for mean, 2-d for var
         '''
 
-        self.mean = SplinesInterpolation(y_mean, 
-                    u_bounds=np.array(self.u_bound), 
-                    l_bounds=np.array(self.l_bound), 
-                    orders=np.array([self.grid_num]))
-    
+        self.mean = \
+            SplinesInterpolation(y_mean, u_bounds=np.array(self.u_bound),
+                                 l_bounds=np.array(self.l_bound),
+                                 orders=np.array([self.grid_num]))
+
         if not self.mean_only:
-            self.var = PCASplines(y_var, u_bounds=np.array(self.u_bound), 
-                       l_bounds=np.array(self.l_bound), 
-                       orders=np.array([self.grid_num]), 
-                       svd_rank=self.svd_rank, load_svd=None)
+            self.var = \
+                PCASplines(y_var, u_bounds=np.array(self.u_bound),
+                           l_bounds=np.array(self.l_bound),
+                           orders=np.array([self.grid_num]),
+                           svd_rank=self.svd_rank, load_svd=None)
 
 
 class Map3body:
@@ -387,7 +392,7 @@ class Map3body:
         bond_vars = np.zeros([nop, nop, noa, len(GP.alpha)])
         env12 = env.AtomicEnvironment(bond_struc, 0, self.cutoffs)
 
-        pool_list = [(i, angles[i], bond_lengths, GP, env12)\
+        pool_list = [(i, angles[i], bond_lengths, GP, env12)
                      for i in range(noa)]
         pool = mp.Pool(processes=processes)
         A_list = pool.map(self._GenGrid_inner, pool_list)
@@ -400,7 +405,7 @@ class Map3body:
         # ------ change back to original GP ------
         GP.hyps = original_hyps
         GP.kernel = original_kernel
-       
+
         return bond_means, bond_vars
 
     def _GenGrid_inner(self, params):
@@ -408,9 +413,9 @@ class Map3body:
         '''
         generate grid for each angle, used to parallelize grid generation
         '''
-        a12, angle12, bond_lengths, GP, env12 = params
+        _, angle12, bond_lengths, GP, env12 = params
         nop = self.grid_num[0]
-        noa = self.grid_num[2]
+        # noa = self.grid_num[2]
         angle12 = angle12
         bond_means = np.zeros([nop, nop])
         bond_vars = np.zeros([nop, nop, len(GP.alpha)])
@@ -424,13 +429,13 @@ class Map3body:
 
                 env12.bond_array_3 = np.array([[r1, 1, 0, 0], [r2, 0, 0, 0]])
                 env12.cross_bond_dists = np.array([[0, r12], [r12, 0]])
-                k12_v = GP.get_kernel_vector(env12, 1)   
+                k12_v = GP.get_kernel_vector(env12, 1)
                 mean_diff = np.matmul(k12_v, GP.alpha)
                 bond_means[b1, b2] = mean_diff
 
                 if not self.mean_only:
                     v12_vec = solve_triangular(GP.l_mat, k12_v, lower=True)
-                    bond_vars[b1, b2, :] = v12_vec  
+                    bond_vars[b1, b2, :] = v12_vec
 
         return bond_means, bond_vars
 
@@ -448,9 +453,11 @@ class Map3body:
                                  orders=np.array([nop, nop, noa]))
 
         if not self.mean_only:
-            self.var = PCASplines(y_var, u_bounds=self.u_bound, 
-                       l_bounds=self.l_bound, orders=np.array([nop, nop, noa]), 
-                       svd_rank=svd_rank, load_svd=load_svd)
+            self.var = \
+                PCASplines(y_var, u_bounds=self.u_bound,
+                           l_bounds=self.l_bound,
+                           orders=np.array([nop, nop, noa]),
+                           svd_rank=svd_rank, load_svd=load_svd)
 
     def build_selfkern(self, grid_kern):
         self.selfkern = TruncatedSVD(n_components=100, n_iter=7,
