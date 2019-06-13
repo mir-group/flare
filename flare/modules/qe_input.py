@@ -48,7 +48,7 @@ class QEInput:
     def __init__(self, input_file_name: str, output_file_name: str,
                  pw_loc: str, calculation: str,
                  scf_inputs: dict, md_inputs: dict = None,
-                 press_conv_thr=None,
+                 press_conv_thr='0.5',
                  electron_maxstep=100,
                  metal=False):
 
