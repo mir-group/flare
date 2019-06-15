@@ -192,7 +192,12 @@ class OTF(object):
                             std_in_bound, target_atom = \
                                 self.is_std_in_bound(atom_list)
                             atom_count += 1
+                            output.write_to_output('atom count {}'
+                                                   .format(atom_count),
+                                                   self.output_name)
 
+                        output.write_to_output('beginning training...\n',
+                                               self.output_name)
                         if not self.freeze_hyps:
                             self.train_gp()
 
@@ -309,7 +314,7 @@ class OTF(object):
             self.gp.update_L_alpha()
 
     def train_gp(self):
-        self.gp.train()
+        self.gp.train(True)
         output.write_hyps(self.gp.hyp_labels, self.gp.hyps,
                           self.start_time, self.output_name,
                           self.gp.like, self.gp.like_grad)
