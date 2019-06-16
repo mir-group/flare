@@ -169,7 +169,7 @@ class QEInput:
         input_text += """
  /
  &electrons
-    conv_thr =  1.0d-10
+    conv_thr =  1.0d-6
     mixing_beta = 0.7
     electron_maxstep = {}""".format(self.electron_maxstep)
 
