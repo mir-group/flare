@@ -9,4 +9,4 @@ pwscf.save/
 /datasets/
 /tests/test_lammps/*.npy
 /tests/test_lammps/*.txt
-
+/tests/test_outputs/*
