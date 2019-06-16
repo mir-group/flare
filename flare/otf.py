@@ -16,8 +16,8 @@ class OTF(object):
                  prev_pos_init: np.ndarray=None, par: bool=False,
                  skip: int=0, init_atoms: List[int]=None,
                  calculate_energy=False, output_name='otf_run.out',
-                 max_atoms_added=None, freeze_hyps=False,
-                 rescale_steps=[], rescale_temps=[], add_all=False,
+                 max_atoms_added=1, freeze_hyps=10,
+                 rescale_steps=[], rescale_temps=[],
                  no_cpus=1, use_mapping: bool=False,
                  non_mapping_steps: list=[]):
 
@@ -48,10 +48,7 @@ class OTF(object):
         self.atom_list = list(range(self.noa))
         self.curr_step = 0
 
-        if max_atoms_added is None:
-            self.max_atoms_added = self.noa
-        else:
-            self.max_atoms_added = max_atoms_added
+        self.max_atoms_added = max_atoms_added
 
         # initialize local energies
         if calculate_energy:
@@ -90,7 +87,6 @@ class OTF(object):
         self.rescale_temps = rescale_temps
 
         self.output_name = output_name
-        self.add_all = add_all
 
         # set number of cpus for qe runs
         self.no_cpus = no_cpus
@@ -103,13 +99,10 @@ class OTF(object):
         counter = 0
         self.start_time = time.time()
 
-        # relaunch mode
-        if self.curr_step > 0 and self.use_mapping:
-            self.train_mff()
-
         while self.curr_step < self.number_of_steps:
             # run DFT and train initial model if first step and DFT is on
             if self.curr_step == 0 and self.std_tolerance != 0:
+                # call dft and update positions
                 self.run_dft()
                 dft_frcs = copy.deepcopy(self.structure.forces)
                 new_pos = md.update_positions(self.dt, self.noa,
@@ -117,50 +110,28 @@ class OTF(object):
                 self.update_temperature(new_pos)
                 self.record_state()
 
-                # make initial gp model
+                # make initial gp model and predict forces
                 self.update_gp(self.init_atoms, dft_frcs)
-
-                if not self.freeze_hyps:
+                if (self.dft_count-1) < self.freeze_hyps:
                     self.train_gp()
+                self.pred_func()
 
-                # build mapped force field
-                if self.use_mapping:
-                    self.train_mff()
-
-                # check if remaining atoms are above uncertainty threshold
-                if self.add_all:
-                    std_in_bound = True
-                else:
-                    self.pred_func()
-                    atom_list = self.init_atoms
-                    std_in_bound, target_atom = self.is_std_in_bound(atom_list)
-
-            # otherwise, try predicting with GP model
+            # after step 1, try predicting with GP model
             else:
-                if self.use_mapping:
-                    if (self.curr_step-1) not in self.non_mapping_steps:
-                        self.pred_func = self.predict_on_structure_mff
-                    else:
-                        if self.par:
-                            self.pred_func = self.predict_on_structure
-                        else:
-                            self.pred_func = self.predict_on_structure
-
                 self.pred_func()
                 self.dft_step = False
                 new_pos = md.update_positions(self.dt, self.noa,
                                               self.structure)
 
-                std_in_bound, target_atom = self.is_std_in_bound([])
+                # get max uncertainty atoms
+                std_in_bound, target_atoms = self.is_std_in_bound()
 
                 if not std_in_bound:
-                    atom_list = [target_atom]
-
                     # record GP forces
                     self.update_temperature(new_pos)
                     self.record_state()
 
-                    # record DFT forces
+                    # run DFT and record forces
                     self.dft_step = True
                     self.run_dft()
                     dft_frcs = copy.deepcopy(self.structure.forces)
@@ -169,42 +140,13 @@ class OTF(object):
                     self.update_temperature(new_pos)
                     self.record_state()
 
-                    # add atoms to training set until max error is below
-                    # threshold
-                    if self.add_all:
-                        if not std_in_bound:
-                            self.update_gp(self.atom_list, dft_frcs)
-                            if not self.freeze_hyps:
-                                self.train_gp()
-                            if self.use_mapping:
-                                self.train_mff()
-                            self.pred_func()
-                    else:
-                        atom_count = 0
-                        while (not std_in_bound and atom_count <
-                               self.max_atoms_added):
-                            self.update_gp([target_atom], dft_frcs)
-                            atom_list.append(target_atom)
-                            if self.use_mapping:
-                                self.pred_func_gp() # if use_mapping, then just use GP to predict here
-                            else:
-                                self.pred_func()
-                            std_in_bound, target_atom = \
-                                self.is_std_in_bound(atom_list)
-                            atom_count += 1
-                            output.write_to_output('atom count {}'
-                                                   .format(atom_count),
-                                                   self.output_name)
+                    # add max uncertainty atoms to training set
+                    self.update_gp(target_atoms, dft_frcs)
+                    if (self.dft_count-1) < self.freeze_hyps:
+                        self.train_gp()
+                    self.pred_func()
 
-                        output.write_to_output('beginning training...\n',
-                                               self.output_name)
-                        if not self.freeze_hyps:
-                            self.train_gp()
-
-                        if self.use_mapping:
-                            self.train_mff()
-
-            # write gp forces only when counter equals skip
+            # write gp forces
             if counter >= self.skip and not self.dft_step:
                 self.update_temperature(new_pos)
                 self.record_state()
@@ -308,10 +250,12 @@ class OTF(object):
         self.gp.update_db(self.structure, dft_frcs,
                           custom_range=train_atoms)
 
-        if self.curr_step == 0:
-            self.gp.set_L_alpha()
-        else:
-            self.gp.update_L_alpha()
+        self.gp.set_L_alpha()
+
+        # if self.curr_step == 0:
+        #     self.gp.set_L_alpha()
+        # else:
+        #     self.gp.update_L_alpha()
 
     def train_gp(self):
         self.gp.train(True)
@@ -319,7 +263,7 @@ class OTF(object):
                           self.start_time, self.output_name,
                           self.gp.like, self.gp.like_grad)
 
-    def is_std_in_bound(self, atom_list):
+    def is_std_in_bound(self):
         # set uncertainty threshold
         if self.std_tolerance == 0:
             return True, -1
@@ -328,20 +272,18 @@ class OTF(object):
         else:
             threshold = np.abs(self.std_tolerance)
 
-        # find max std
-        max_std = 0
+        # sort max stds
+        max_stds = np.zeros((self.noa))
         for atom, std in enumerate(self.structure.stds):
-            std_curr = np.max(std)
-
-            if std_curr > max_std and atom not in atom_list:
-                max_std = std_curr
-                target_atom = atom
+            max_stds[atom] = np.max(std)
+        stds_sorted = np.argsort(max_stds)
+        target_atoms = list(stds_sorted[-self.max_atoms_added:])
 
         # if above threshold, return atom
-        if max_std > threshold:
-            return False, target_atom
+        if max_stds[stds_sorted[-1]] > threshold:
+            return False, target_atoms
         else:
-            return True, -1
+            return True, [-1]
 
     def update_positions(self, new_pos):
         if self.curr_step in self.rescale_steps:
