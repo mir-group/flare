@@ -50,7 +50,8 @@ class QEInput:
                  scf_inputs: dict, md_inputs: dict = None,
                  press_conv_thr='0.5',
                  electron_maxstep=100,
-                 metal=False):
+                 metal=False,
+                 mixing_beta=0.7):
 
         self.input_file_name = input_file_name
         self.output_file_name = output_file_name
@@ -72,6 +73,7 @@ class QEInput:
         self.ion_pseudo = scf_inputs['ion_pseudo']
         self.electron_maxstep = electron_maxstep
         self.metal = metal
+        self.mixing_beta = mixing_beta
 
         # get text blocks
         self.species_txt = self.get_species_txt()
@@ -158,7 +160,7 @@ class QEInput:
             input_text += """
     occupations = 'smearing'
     smearing = 'mp'
-    degauss = 0.01"""
+    degauss = 0.02"""
 
         # if MD or relax, don't reduce number of k points based on symmetry,
         # since the symmetry might change throughout the calculation
@@ -170,8 +172,8 @@ class QEInput:
  /
  &electrons
     conv_thr =  1.0d-6
-    mixing_beta = 0.7
-    electron_maxstep = {}""".format(self.electron_maxstep)
+    mixing_beta = {}
+    electron_maxstep = {}""".format(self.mixing_beta, self.electron_maxstep)
 
         # if MD or relax, need to add an &IONS block
         if (self.calculation == 'md') or (self.calculation == 'relax') or \
