@@ -3,8 +3,7 @@ import multiprocessing as mp
 import concurrent.futures
 import copy
 import sys
-sys.path.append('../../flare/otf_engine')
-import gp, env, struc, kernels, otf
+from flare import gp, env, struc, kernels, otf
 
 
 class GPCalculator:
