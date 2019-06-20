@@ -39,5 +39,21 @@ class GPCalculator:
 
         return forces
 
+    def get_uncertainties(self, atoms):
+        nat = len(atoms)
+        struc_curr = struc.Structure(atoms.cell, ['A']*nat,
+                                     atoms.positions)
+
+        uncertainties = np.zeros((nat, 3))
+
+        for n in range(nat):
+            chemenv = env.AtomicEnvironment(struc_curr, n,
+                                            self.gp_model.cutoffs)
+            for i in range(3):
+                _, uncertainty = self.gp_model.predict(chemenv, i + 1)
+                uncertainties[n][i] = float(uncertainty)
+
+        return uncertainties
+
     def calculation_required(self, atoms, quantities):
         return True
