@@ -9,7 +9,7 @@ import concurrent.futures
 from flare import struc, gp, env, qe_util, md, output
 
 
-class OTF(object):
+class Validate:
     def __init__(self, qe_input: str, dt: float, number_of_steps: int,
                  dft_steps, gp: gp.GaussianProcess, pw_loc: str,
                  prev_pos_init: np.ndarray=None, par: bool=False, skip: int=0,
