@@ -350,7 +350,10 @@ def parse_header_information(outfile: str = 'otf_run.out') -> dict:
             line = line.split()
             cutoffs = []
             for val in line:
-                cutoffs.append(float(val))
+                try:
+                    cutoffs.append(float(val))
+                except:
+                    cutoffs.append(float(val[:-1]))
             header_info['cutoffs'] = cutoffs
         if 'frames' in line:
             header_info['frames'] = int(line.split(':')[1])
