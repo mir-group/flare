@@ -5,9 +5,10 @@ import time
 from typing import List
 import copy
 import multiprocessing as mp
+import subprocess
 import concurrent.futures
 from flare import struc, gp, env, qe_util, md, output
-
+from flare.mff.utils import get_l_bound
 
 class OTF(object):
     def __init__(self, qe_input: str, dt: float, number_of_steps: int,
@@ -16,9 +17,13 @@ class OTF(object):
                  prev_pos_init: np.ndarray=None, par: bool=False,
                  skip: int=0, init_atoms: List[int]=None,
                  calculate_energy=False, output_name='otf_run.out',
+                 backup_name='otf_run_backup.out',
                  max_atoms_added=None, freeze_hyps=False,
                  rescale_steps=[], rescale_temps=[], add_all=False,
-                 no_cpus=1, use_mapping: bool=False, non_mapping_steps: list=[]):
+                 no_cpus=1, 
+                 use_mapping: bool=False, # below are added for mff
+                 non_mapping_steps: list=[], 
+                 l_bound: float=None, two_d: bool=False):
 
         self.qe_input = qe_input
         self.dt = dt
@@ -29,10 +34,6 @@ class OTF(object):
         self.skip = skip
         self.dft_step = True
         self.freeze_hyps = freeze_hyps
-
-        # whether and when to begin using mapped force field
-        self.use_mapping = use_mapping
-        self.non_mapping_steps = non_mapping_steps
 
         # parse input file
         positions, species, cell, masses = \
@@ -46,6 +47,19 @@ class OTF(object):
         self.noa = self.structure.positions.shape[0]
         self.atom_list = list(range(self.noa))
         self.curr_step = 0
+
+        # --------- params for mapped force field --------------
+        # whether and when to begin using mapped force field
+        self.use_mapping = use_mapping
+        self.non_mapping_steps = non_mapping_steps
+        self.two_d = two_d
+        struc_l_bound = get_l_bound(100, self.structure, self.two_d)
+        if l_bound:
+            self.l_bound = np.min((l_bound, struc_l_bound))
+        else:
+            self.l_bound = struc_l_bound
+        self.is_mff_built = False
+        # -------------------------------------------------------
 
         if max_atoms_added is None:
             self.max_atoms_added = self.noa
@@ -76,6 +90,7 @@ class OTF(object):
         elif par and calculate_energy:
             self.pred_func = self.predict_on_structure_par_en
         if self.use_mapping:
+            self.mff = None
             if par:
                 self.pred_func = self.predict_on_structure
                 self.pred_func_gp = self.predict_on_structure
@@ -89,10 +104,13 @@ class OTF(object):
         self.rescale_temps = rescale_temps
 
         self.output_name = output_name
+        self.backup_name = backup_name
+        self.last_backup_time = time.time()
         self.add_all = add_all
 
         # set number of cpus for qe runs
         self.no_cpus = no_cpus
+        print('otf initialized, use mapping:', self.use_mapping)
 
     def run(self):
         output.write_header(self.gp.cutoffs, self.gp.kernel_name, self.gp.hyps,
@@ -103,10 +121,11 @@ class OTF(object):
         self.start_time = time.time()
 
         # relaunch mode
-        if self.curr_step > 0 and self.use_mapping:
-            self.train_mff()
+#        if self.curr_step > 0 and self.use_mapping:
+#            self.train_mff(skip=False)
 
         while self.curr_step < self.number_of_steps:
+            print('curr_step:', self.curr_step)
             # run DFT and train initial model if first step and DFT is on
             if self.curr_step == 0 and self.std_tolerance != 0:
                 self.run_dft()
@@ -123,8 +142,8 @@ class OTF(object):
                     self.train_gp()
 
                 # build mapped force field
-                if self.use_mapping:
-                    self.train_mff()
+                if self.use_mapping and (not self.is_mff_built):
+                    self.train_mff(skip=False)
 
                 # check if remaining atoms are above uncertainty threshold
                 if self.add_all:
@@ -137,6 +156,8 @@ class OTF(object):
             # otherwise, try predicting with GP model
             else:
                 if self.use_mapping:
+                    if not self.mff: # self.mff == None
+                        self.train_mff(skip=False)
                     if (self.curr_step-1) not in self.non_mapping_steps:
                         self.pred_func = self.predict_on_structure_mff
                     else:
@@ -152,7 +173,21 @@ class OTF(object):
 
                 std_in_bound, target_atom = self.is_std_in_bound([])
 
-                if not std_in_bound:
+                if std_in_bound: 
+                    # check if the lower bound changes and mff needs re-build
+                    if self.use_mapping:
+                        if self.l_bound < self.mff.bounds_2[0,0]:
+                            self.train_mff()
+                        std_curr = np.max(self.structure.stds)
+                        std_threshold = self.std_tolerance * np.abs(self.gp.hyps[-1])
+                        if std_curr <= 0.8 * std_threshold:
+                            if (not self.is_mff_built) and \
+                                    (self.curr_step not in self.non_mapping_steps):
+                                self.train_mff(skip=False)
+                        else:
+                            if not self.is_mff_built:
+                                self.non_mapping_steps.append(self.curr_step)
+                else:
                     atom_list = [target_atom]
 
                     # record GP forces
@@ -174,8 +209,10 @@ class OTF(object):
                             self.update_gp(self.atom_list, dft_frcs)
                             if not self.freeze_hyps:
                                 self.train_gp()
-                            if self.use_mapping:
-                                self.train_mff()
+ 
+                            self.is_mff_built = False
+#                            if self.use_mapping:
+#                                self.train_mff()
                             self.pred_func()
                     else:
                         atom_count = 0
@@ -193,9 +230,11 @@ class OTF(object):
     
                         if not self.freeze_hyps:
                             self.train_gp()
-    
-                        if self.use_mapping:
-                            self.train_mff()
+ 
+                        self.is_mff_built = False
+                        self.non_mapping_steps.append(self.curr_step)
+#                        if self.use_mapping:
+#                            self.train_mff()
           
             # write gp forces only when counter equals skip
             if counter >= self.skip and not self.dft_step:
@@ -206,6 +245,11 @@ class OTF(object):
             counter += 1
             self.update_positions(new_pos)
             self.curr_step += 1
+
+            # back up output every 1 hour
+            if time.time() - self.last_backup_time >= 3600:
+                subprocess.run(["cp", self.output_name, self.backup_name])
+                self.last_backup_time = time.time()
 
         output.conclude_run(self.output_name)
 
@@ -347,6 +391,9 @@ class OTF(object):
             self.structure.prev_positions = self.structure.positions
         self.structure.positions = new_pos
         self.structure.wrap_positions()
+        
+        # update mff lower bound
+        self.l_bound = get_l_bound(self.l_bound, self.structure, self.two_d)
 
     def update_temperature(self, new_pos):
         KE, temperature, velocities = \

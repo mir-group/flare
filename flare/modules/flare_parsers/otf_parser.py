@@ -2,7 +2,7 @@ import sys
 import numpy as np
 from typing import List, Tuple
 from flare import gp, env, struc, kernels, otf
-
+from flare.mff.utils import get_l_bound
 
 class OtfAnalysis:
     def __init__(self, filename, calculate_energy=False):
@@ -86,6 +86,8 @@ class OtfAnalysis:
         gp_model.update_db(struc_curr, forces, custom_range=atoms)
         gp_model.set_L_alpha()
         print('gp db initialized. begin updating')
+
+        gp_model.l_bound = get_l_bound(10, struc_curr, True)
        
         # build gp in an update style
         for ind, (positions, forces, atoms, _, species) in \
@@ -95,17 +97,18 @@ class OtfAnalysis:
                 self.gp_species_list[1:call_no])):
 
             struc_curr = struc.Structure(cell, species, positions)
+            gp_model.l_bound = get_l_bound(gp_model.l_bound, struc_curr, True)
             for atom in atoms:
                 env_curr = env.AtomicEnvironment(struc_curr, atom, gp_model.cutoffs)
-                pred_f = np.zeros(3)
-                pred_v = np.zeros(3)
-                for d in range(3):
-                    pred_f[d], pred_v[d] = gp_model.predict(env_curr, d+1)
-                pred_std = np.sqrt(pred_v)
-
-                # discard those training point with low uncertainty
-                if np.all(pred_std < gp_model.hyps[-1]*np.ones(3)):
-                    continue
+#                pred_f = np.zeros(3)
+#                pred_v = np.zeros(3)
+#                for d in range(3):
+#                    pred_f[d], pred_v[d] = gp_model.predict(env_curr, d+1)
+#                pred_std = np.sqrt(pred_v)
+#
+#                # discard those training point with low uncertainty
+#                if np.all(pred_std < gp_model.hyps[-1]*np.ones(3)):
+#                    continue
 
                 # update database
                 forces_curr = np.array(forces[atom])

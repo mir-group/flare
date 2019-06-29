@@ -9,7 +9,7 @@ from typing import List
 def run_espresso(qe_input, structure, pw_loc):
     run_qe_path = qe_input
     edit_qe_input_positions(run_qe_path, structure)
-    qe_command = 'mpirun {0} < {1} > {2}'.format(pw_loc, run_qe_path,
+    qe_command = 'srun {0} < {1} > {2}'.format(pw_loc, run_qe_path,
                                                  'pwscf.out')
     # os.system(qe_command)
     call(qe_command, shell=True)
@@ -21,7 +21,7 @@ def run_espresso_par(qe_input, structure, pw_loc, no_cpus):
     run_qe_path = qe_input
     edit_qe_input_positions(run_qe_path, structure)
     qe_command = \
-        'mpirun -np {0} {1} < {2} > {3}'.format(no_cpus, pw_loc, run_qe_path,
+        'srun -n {0} --mpi=pmi2 {1} < {2} > {3}'.format(no_cpus, pw_loc, run_qe_path,
                                                 'pwscf.out')
     # os.system(qe_command)
     call(qe_command, shell=True)
