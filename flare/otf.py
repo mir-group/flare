@@ -20,10 +20,15 @@ class OTF(object):
                  backup_name='otf_run_backup.out',
                  max_atoms_added=None, freeze_hyps=False,
                  rescale_steps=[], rescale_temps=[], add_all=False,
+<<<<<<< HEAD
                  no_cpus=1, 
                  use_mapping: bool=False, # below are added for mff
                  non_mapping_steps: list=[], 
                  l_bound: float=None, two_d: bool=False):
+=======
+                 no_cpus=1, use_mapping: bool=False,
+                 non_mapping_steps: list=[]):
+>>>>>>> 452572f4ea4cf4e0442f3f9d24bfb0ce81a0c4c1
 
         self.qe_input = qe_input
         self.dt = dt
@@ -161,7 +166,7 @@ class OTF(object):
                     if (self.curr_step-1) not in self.non_mapping_steps:
                         self.pred_func = self.predict_on_structure_mff
                     else:
-                        if self.par: 
+                        if self.par:
                             self.pred_func = self.predict_on_structure
                         else:
                             self.pred_func = self.predict_on_structure
@@ -203,7 +208,8 @@ class OTF(object):
                     self.update_temperature(new_pos)
                     self.record_state()
 
-                    # add atoms to training set until max error is below threshold
+                    # add atoms to training set until max error is below
+                    # threshold
                     if self.add_all:
                         if not std_in_bound:
                             self.update_gp(self.atom_list, dft_frcs)
@@ -227,15 +233,22 @@ class OTF(object):
                             std_in_bound, target_atom = \
                                 self.is_std_in_bound(atom_list)
                             atom_count += 1
-    
+
                         if not self.freeze_hyps:
                             self.train_gp()
+<<<<<<< HEAD
  
                         self.is_mff_built = False
                         self.non_mapping_steps.append(self.curr_step)
 #                        if self.use_mapping:
 #                            self.train_mff()
           
+=======
+
+                        if self.use_mapping:
+                            self.train_mff()
+
+>>>>>>> 452572f4ea4cf4e0442f3f9d24bfb0ce81a0c4c1
             # write gp forces only when counter equals skip
             if counter >= self.skip and not self.dft_step:
                 self.update_temperature(new_pos)
