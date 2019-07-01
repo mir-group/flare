@@ -80,14 +80,14 @@ def write_cfgs_from_pos(pos_list, cell, folder_name, image_quality, scr_dest,
     no_frames = len(pos_list)
     no_digits = int(np.ceil(math.log(no_frames, 10)))
 
-    for n, pos_file in enumerate(pos_list):
-        pos = np.load(pos_file)
+    for n, pos in enumerate(pos_list):
+        # pos = np.load(pos_file)
         frame_no = n
         frame_no_padded = str(frame_no).zfill(no_digits)
         frame_string = frame_no_padded+'.cfg'
         frame_dest = folder_name+'/'+frame_string
 
-        scr_anim_text += '%s %s/Pic/%s.png\n' % \
+        scr_anim_text += '%s %s/Pic/%s.jpg\n' % \
             (frame_dest, folder_name, frame_no_padded)
 
         write_cfg_file(frame_dest, pos, species, cell)
