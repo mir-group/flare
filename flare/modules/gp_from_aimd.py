@@ -280,6 +280,7 @@ def write_header(cutoffs, kernel_name, hyps, algo, dt, Nsteps, structure,
     headerstring += 'periodic cell: \n'
     headerstring += str(structure.cell)
 
+    headerstring += '\n'
     headerstring += '-' * 80 + '\n'
 
     write_to_output(headerstring, output_name)
