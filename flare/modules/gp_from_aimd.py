@@ -80,8 +80,7 @@ class ActiveGp:
 
         self.start_time = time.time()
 
-        for positions, forces in enumerate(self.position_list,
-                                           self.force_list):
+        for positions, forces in zip(self.position_list, self.force_list):
 
             # run DFT and train initial model if first step and DFT is on
             if self.curr_step == 0 and self.std_tolerance != 0:
