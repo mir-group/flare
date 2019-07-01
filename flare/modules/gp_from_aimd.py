@@ -26,12 +26,6 @@ class ActiveGp:
         self.dft_step = True
         self.freeze_hyps = freeze_hyps
 
-        self.dt = 'N/A'
-        self.number_of_steps = 'N/A'
-        self.temperature = 'N/A'
-        self.KE = 'N/A'
-        self.velocities = 'N/A'
-
         positions = position_list[0]
         self.structure = struc.Structure(cell=cell, species=species,
                                          positions=positions)
@@ -39,6 +33,12 @@ class ActiveGp:
         self.noa = self.structure.positions.shape[0]
         self.atom_list = list(range(self.noa))
         self.curr_step = 0
+
+        self.dt = 1.0
+        self.number_of_steps = 100
+        self.temperature = 1.0
+        self.KE = 1.0
+        self.velocities = np.zeros((self.noa, 3))
 
         self.max_atoms_added = max_atoms_added
 
