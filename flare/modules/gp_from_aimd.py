@@ -15,7 +15,8 @@ class ActiveGp:
                  std_tolerance_factor: float = 1, par: bool=False,
                  init_atoms: List[int]=None,
                  calculate_energy=False, output_name='otf_run.out',
-                 max_atoms_added=1, freeze_hyps=10, no_cpus=1):
+                 max_atoms_added=1, freeze_hyps=10, no_cpus=1,
+                 zeroed_atoms=False, no_zeroed=0):
 
         self.position_list = position_list
         self.force_list = force_list
@@ -25,6 +26,9 @@ class ActiveGp:
         self.std_tolerance = std_tolerance_factor
         self.dft_step = True
         self.freeze_hyps = freeze_hyps
+
+        self.zeroed_atoms = zeroed_atoms
+        self.no_zeroed = no_zeroed
 
         positions = position_list[0]
         self.structure = struc.Structure(cell=cell, species=species,
@@ -110,14 +114,20 @@ class ActiveGp:
                 self.pred_func()
 
                 # get max uncertainty atoms
-                std_in_bound, target_atoms = self.is_std_in_bound()
+                if self.zeroed_atoms:
+                    std_in_bound, target_atoms = self.is_std_in_bound_zeroed()
+                    mae = np.mean(np.abs(self.structure.forces
+                                         [0:-self.zeroed_atoms]))
+                    mac = np.mean(np.abs(forces[0:-self.zeroed_atoms]))
+                else:
+                    std_in_bound, target_atoms = self.is_std_in_bound()
+                    mae = np.mean(np.abs(self.structure.forces - forces))
+                    mac = np.mean(np.abs(forces))
 
                 # record GP forces
                 self.dft_step = False
                 self.record_state()
 
-                mae = np.mean(np.abs(self.structure.forces - forces))
-                mac = np.mean(np.abs(forces))
                 write_to_output('\nmae: %.4f \n' % mae, self.output_name)
                 write_to_output('\nmac: %.4f \n' % mac, self.output_name)
 
@@ -226,6 +236,29 @@ class ActiveGp:
         # sort max stds
         max_stds = np.zeros((self.noa))
         for atom, std in enumerate(self.structure.stds):
+            max_stds[atom] = np.max(std)
+        stds_sorted = np.argsort(max_stds)
+        target_atoms = list(stds_sorted[-self.max_atoms_added:])
+
+        # if above threshold, return atom
+        if max_stds[stds_sorted[-1]] > threshold:
+            return False, target_atoms
+        else:
+            return True, [-1]
+
+    # zeroed atoms must appear last
+    def is_std_in_bound_zeroed(self):
+        # set uncertainty threshold
+        if self.std_tolerance == 0:
+            return True, -1
+        elif self.std_tolerance > 0:
+            threshold = self.std_tolerance * np.abs(self.gp.hyps[-1])
+        else:
+            threshold = np.abs(self.std_tolerance)
+
+        # sort max stds
+        max_stds = np.zeros((self.noa - self.no_zeroed))
+        for atom, std in enumerate(self.structure.stds[0:-self.no_zeroed]):
             max_stds[atom] = np.max(std)
         stds_sorted = np.argsort(max_stds)
         target_atoms = list(stds_sorted[-self.max_atoms_added:])
