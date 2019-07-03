@@ -117,7 +117,8 @@ class ActiveGp:
                 if self.zeroed_atoms:
                     std_in_bound, target_atoms = self.is_std_in_bound_zeroed()
                     mae = np.mean(np.abs(self.structure.forces
-                                         [0:-self.zeroed_atoms]))
+                                         [0:-self.zeroed_atoms] -
+                                         forces[0:-self.zeroed_atoms]))
                     mac = np.mean(np.abs(forces[0:-self.zeroed_atoms]))
                 else:
                     std_in_bound, target_atoms = self.is_std_in_bound()
