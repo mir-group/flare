@@ -1,3 +1,4 @@
+import os
 import sys
 sys.path.append('..')
 from flare.struc import Structure
@@ -13,8 +14,25 @@ class UQ_NPT(NPT):
             externalstress, ttime, pfactor, mask=None, 
             trajectory=None, logfile=None, loginterval=1,
             # on-the-fly parameters
-            std_tolerance_factor=None, max_atoms_added=1,
-            freeze_hyps=False, dft_input={}, init_atoms=[0]):
+            pw_loc=None, dft_input={}, 
+            std_tolerance_factor: float=1, 
+            prev_pos_init: np.ndarray=None, par:bool=False,
+            skip: int=0, init_atoms: List[int]=None, 
+            calculate_energy=False,
+            max_atoms_added=1, freeze_hyps=False, 
+            rescale_steps=[], rescale_temps=[], add_all=False,
+            no_cpus=1,
+            # mff parameters
+            use_mapping: bool=False,
+            non_mapping_steps: list=[],
+            l_bound: float=None, two_d: bool=False):
+
+        '''
+        output_name => logfile
+        prev_pos_init: relaunch mode not implemented
+        par: consider merging into gp_calculator instead of here
+        calculate_energy: not implemented
+        '''
 
         super().__init__(atoms, timestep, temperature, 
                 externalstress, ttime, pfactor, mask=None, 
@@ -24,6 +42,11 @@ class UQ_NPT(NPT):
         self.max_atoms_added = max_atoms_added
         self.freeze_hyps = freeze_hyps
         self.dft_input = dft_input
+
+        # set up pw.x command
+        pwi_file = self.dft_input['label'] + '.pwi'
+        pwo_file = self.dft_input['label'] + '.pwo'
+        os.environ['ASE_ESPRESSO_COMMAND'] = pw_loc + ' -in ' + pwi_file + ' > ' + pwo_file
 
         # initialize gp by a dft calculation
         self.std_in_bound = False
