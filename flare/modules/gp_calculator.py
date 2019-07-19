@@ -39,7 +39,7 @@ class GPCalculator(Calculator):
             for i in range(3):
                 force, std = self.gp_model.predict(chemenv, i + 1)
                 forces[n][i] = float(force)
-                stds[n][i] = float(std)
+                stds[n][i] = np.sqrt(np.absolute(std))
 
         self.results['stds'] = stds
         atoms.get_uncertainties = self.get_uncertainties
