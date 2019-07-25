@@ -114,7 +114,6 @@ class OTF(object):
                 self.update_gp(self.init_atoms, dft_frcs)
                 if (self.dft_count-1) < self.freeze_hyps:
                     self.train_gp()
-                self.pred_func()
 
             # after step 1, try predicting with GP model
             else:
@@ -130,6 +129,7 @@ class OTF(object):
                     # record GP forces
                     self.update_temperature(new_pos)
                     self.record_state()
+                    gp_frcs = copy.deepcopy(self.structure.forces)
 
                     # run DFT and record forces
                     self.dft_step = True
@@ -140,11 +140,21 @@ class OTF(object):
                     self.update_temperature(new_pos)
                     self.record_state()
 
+                    # compute mae and write to output
+                    mae = np.mean(np.abs(gp_frcs - dft_frcs))
+                    mac = np.mean(np.abs(dft_frcs))
+
+                    output.write_to_output('\nmean absolute error:'
+                                           ' %.4f eV/A \n'
+                                           % mae, self.output_name)
+                    output.write_to_output('mean absolute dft component:'
+                                           ' %.4f eV/A \n' % mac,
+                                           self.output_name)
+
                     # add max uncertainty atoms to training set
                     self.update_gp(target_atoms, dft_frcs)
                     if (self.dft_count-1) < self.freeze_hyps:
                         self.train_gp()
-                    self.pred_func()
 
             # write gp forces
             if counter >= self.skip and not self.dft_step:
