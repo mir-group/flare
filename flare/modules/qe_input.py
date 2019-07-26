@@ -48,10 +48,9 @@ class QEInput:
     def __init__(self, input_file_name: str, output_file_name: str,
                  pw_loc: str, calculation: str,
                  scf_inputs: dict, md_inputs: dict = None,
-                 press_conv_thr='0.5',
-                 electron_maxstep=100,
-                 metal=False,
-                 mixing_beta=0.7):
+                 press_conv_thr='0.5', electron_maxstep=100,
+                 metal=False, mixing_beta=0.7, smearing='mp',
+                 degauss=0.02):
 
         self.input_file_name = input_file_name
         self.output_file_name = output_file_name
@@ -74,6 +73,8 @@ class QEInput:
         self.electron_maxstep = electron_maxstep
         self.metal = metal
         self.mixing_beta = mixing_beta
+        self.smearing = smearing
+        self.degauss = degauss
 
         # get text blocks
         self.species_txt = self.get_species_txt()
@@ -159,8 +160,8 @@ class QEInput:
         if self.metal is True:
             input_text += """
     occupations = 'smearing'
-    smearing = 'mp'
-    degauss = 0.02"""
+    smearing = '{}'
+    degauss = {}""".format(self.smearing, self.degauss)
 
         # if MD or relax, don't reduce number of k points based on symmetry,
         # since the symmetry might change throughout the calculation
