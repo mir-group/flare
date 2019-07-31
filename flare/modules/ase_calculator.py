@@ -6,10 +6,12 @@ import sys
 sys.path.append('..')
 from flare.env import AtomicEnvironment
 from flare.struc import Structure
+from flare.mff.mff_new import MappedForceField
 from ase.calculators.calculator import Calculator
 
 class FLARE_Calculator(Calculator):
     def __init__(self, gp_model, mff_model, use_mapping=False):
+        super().__init__() # all set to default values,TODO: change
         self.mff_model = mff_model
         self.gp_model = gp_model
         self.use_mapping = use_mapping

@@ -211,7 +211,6 @@ class GaussianProcess:
             d_2 = ds[m_index % 3]
             k_v[m_index] = self.kernel(x, x_2, d_1, d_2,
                                        self.hyps, self.cutoffs)
-
         return k_v
 
     def en_kern_vec(self, x: AtomicEnvironment) -> np.ndarray:

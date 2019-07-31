@@ -1,11 +1,11 @@
 import os
 import sys
 sys.path.append('..')
+from copy import deepcopy
+
 from flare.struc import Structure
 
 import numpy as np
-from ase.calculators.espresso import Espresso
-from ase.calculators.eam import EAM
 from ase.md.md import MolecularDynamics
 from ase import units
 
@@ -14,14 +14,14 @@ class OTF(MolecularDynamics):
     def __init__(self, atoms, timestep,  
             trajectory=None, 
             # on-the-fly parameters
-            pw_loc=None, dft_input={}, 
+            dft_calc=None, dft_count=None,
             std_tolerance_factor: float=1, 
             prev_pos_init: np.ndarray=None, par:bool=False,
             skip: int=0, init_atoms: list=[], 
             calculate_energy=False,
             max_atoms_added=1, freeze_hyps=1, 
             rescale_steps=[], rescale_temps=[], add_all=False,
-            no_cpus=1, npool=1, 
+            no_cpus=1,  
             # mff parameters
             use_mapping: bool=False,
             non_mapping_steps: list=[],
@@ -36,9 +36,11 @@ class OTF(MolecularDynamics):
         calculate_energy: not implemented
         l_bound: mff update l_bound, not implemented
 
+        dft calculator is set outside of the otf module, and input as dft_calc, 
+        so that different calculators can be used
+
         TODO:
         1. replace Structure with the ase internal Atoms
-        2. mff_calculator: self.gp_model
         '''
 
         MolecularDynamics.__init__(self, atoms, timestep, trajectory)
@@ -47,12 +49,11 @@ class OTF(MolecularDynamics):
         self.noa = len(atoms.positions)
         self.max_atoms_added = max_atoms_added
         self.freeze_hyps = freeze_hyps
-        self.dft_input = dft_input
-
-        # set up pw.x command
-        pwi_file = self.dft_input['label'] + '.pwi'
-        pwo_file = self.dft_input['label'] + '.pwo'
-        os.environ['ASE_ESPRESSO_COMMAND'] = 'srun -n {0} --mpi=pmi2 {1} -npool {2} < {3} > {4}'.format(no_cpus, pw_loc, npool, pwi_file, pwo_file)
+        self.dft_calc = dft_calc
+        if dft_count is None:
+            self.dft_count = 0
+        else:
+            self.dft_count = dft_count
 
         # params for mapped force field
         self.use_mapping = use_mapping
@@ -118,12 +119,12 @@ class OTF(MolecularDynamics):
             atom_struc = Structure(self.atoms.cell, 
                     ['A']*len(self.atoms.positions), 
                     self.atoms.positions)
-            gp_model = self.atoms.calc.gp_model
-            gp_model.update_db(atom_struc, dft_forces,
+            self.atoms.calc.gp_model.update_db(atom_struc, dft_forces,
                            custom_range=self.init_atoms)
 
             # train calculator
             self.train()
+            print(self.atoms.calc.mff_model)
 
         if not self.initialized:
             self.initialize()
@@ -154,14 +155,7 @@ class OTF(MolecularDynamics):
     
     def call_DFT(self):
         prev_calc = self.atoms.calc
-        pseudopotentials = self.dft_input['pseudopotentials']
-#        label = self.dft_input['label']
-#        input_data = self.dft_input['input_data']
-#        kpts = self.dft_input['kpts']
-#        calc = Espresso(pseudopotentials=pseudopotentials, label=label, 
-#                        tstress=True, tprnfor=True, nosym=True, 
-#                        input_data=input_data, kpts=kpts) 
-        calc = EAM(potential=pseudopotentials)        
+        calc = deepcopy(self.dft_calc)
         self.atoms.set_calculator(calc)
         forces = self.atoms.get_forces()
         self.call_observers()
@@ -212,7 +206,7 @@ class OTF(MolecularDynamics):
                             calc.gp_model.like_grad)
         else:
             calc.gp_model.set_L_alpha()
-    
+
         # build mapped force field
         if self.use_mapping:
             calc.build_mff(skip)

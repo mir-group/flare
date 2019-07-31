@@ -12,3 +12,5 @@ pwscf.save/
 /tests/test_lammps/*.npy
 /tests/test_lammps/*.txt
 /tests/ase_otf/*.alloy
+/tests/ase_otf/kv3/
+/tests/ase_otf/grid3*
