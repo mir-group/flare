@@ -48,6 +48,19 @@ def cubic_diamond_positions(cube_lat):
     return positions
 
 
+def cubic_rocksalt_positions(cube_lat):
+    positions = np.array([[0, 0, 0],
+                          [cube_lat/2, 0, 0],
+                          [cube_lat/2, cube_lat/2, 0],
+                          [cube_lat, cube_lat/2, 0],
+                          [cube_lat/2, 0, cube_lat/2],
+                          [cube_lat, 0, cube_lat/2],
+                          [0, cube_lat/2, cube_lat/2],
+                          [cube_lat/2, cube_lat/2, cube_lat/2]])
+
+    return positions
+
+
 def primitive_diamond_positions(prim_lat):
     positions = [np.array([0, 0, 0]),
                  np.array([prim_lat/2, prim_lat/2, prim_lat/2])]

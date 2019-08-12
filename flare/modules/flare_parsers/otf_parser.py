@@ -44,7 +44,10 @@ class OtfAnalysis:
 
     def make_gp(self, cell=None, kernel=None, kernel_grad=None, algo=None,
                 call_no=None, cutoffs=None, hyps=None, init_gp=None,
-                energy_force_kernel=None):
+                energy_force_kernel=None, hyp_no=None):
+
+        if hyp_no is None:
+            hyp_no = call_no
 
         if init_gp is None:
             # Use run's values as extracted from header
@@ -62,7 +65,7 @@ class OtfAnalysis:
             if call_no is None:
                 call_no = len(self.gp_position_list)
             if hyps is None:
-                gp_hyps = self.gp_hyp_list[call_no-1][-1]
+                gp_hyps = self.gp_hyp_list[hyp_no-1][-1]
             else:
                 gp_hyps = hyps
 
@@ -73,7 +76,7 @@ class OtfAnalysis:
         else:
             gp_model = init_gp
             call_no = len(self.gp_position_list)
-            gp_hyps = self.gp_hyp_list[call_no-1][-1]
+            gp_hyps = self.gp_hyp_list[hyp_no-1][-1]
             gp_model.hyps = gp_hyps
 
         for (positions, forces, atoms, _, species) in \

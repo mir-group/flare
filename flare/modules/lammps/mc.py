@@ -5,7 +5,8 @@ import os
 
 class EAM_Force_Calculator:
     def __init__(self, struc, style_string, coeff_string, lammps_folder,
-                 lammps_executable, atom_types, atom_masses, species):
+                 lammps_executable, atom_types, atom_masses, species,
+                 charges=None):
         self.struc = struc
         self.style_string = style_string
         self.coeff_string = coeff_string
@@ -14,6 +15,7 @@ class EAM_Force_Calculator:
         self.atom_types = atom_types
         self.atom_masses = atom_masses
         self.species = species
+        self.charges = charges
 
         self.input_file = lammps_folder + '/tmp.in'
         self.output_file = lammps_folder + '/tmp.out'
@@ -67,6 +69,7 @@ units metal
 atom_style atomic
 dimension  3
 boundary   p p p
+newton off
 read_data %s
 
 pair_style %s
@@ -103,6 +106,30 @@ Atoms
 
         return dat_text
 
+    def lammps_dat_charged(self):
+        dat_text = """Header of the LAMMPS data file
+
+%i atoms
+%i atom types
+""" % (self.struc.nat, len(self.atom_types))
+
+        dat_text += self.lammps_cell_text()
+        dat_text += """
+Masses
+
+"""
+        mass_text = ''
+        for atom_type, atom_mass in zip(self.atom_types,
+                                        self.atom_masses):
+            mass_text += '%i %i\n' % (atom_type, atom_mass)
+        dat_text += mass_text
+        dat_text += """
+Atoms
+"""
+        dat_text += self.lammps_pos_text_charged()
+
+        return dat_text
+
     def lammps_cell_text(self):
         """ Write cell from structure object. Assumes orthorombic periodic
         cell."""
@@ -127,6 +154,15 @@ Atoms
                                                 self.species)):
             pos_text += '%i %i %f %f %f \n' % \
                 (count+1, spec, pos[0], pos[1], pos[2])
+        return pos_text
+
+    def lammps_pos_text_charged(self):
+        pos_text = '\n'
+        for count, (pos, chrg, spec) in enumerate(zip(self.struc.positions,
+                                                      self.charges,
+                                                      self.species)):
+            pos_text += '%i %i %f %f %f %f \n' % \
+                (count+1, spec, chrg, pos[0], pos[1], pos[2])
         return pos_text
 
     @staticmethod

@@ -101,13 +101,20 @@ Atoms
         return dat_text
 
     def lammps_cell_text(self):
+        """ Write cell from structure object. Assumes orthorombic periodic
+        cell."""
+
         cell_text = """
 0.0 %f  xlo xhi
 0.0 %f  ylo yhi
 0.0 %f  zlo zhi
-""" % (self.struc.lattice[0, 0],
-            self.struc.lattice[1, 1],
-            self.struc.lattice[2, 2])
+%f %f %f  xy xz yz
+""" % (self.struc.cell[0, 0],
+            self.struc.cell[1, 1],
+            self.struc.cell[2, 2],
+            self.struc.cell[1, 0],
+            self.struc.cell[2, 0],
+            self.struc.cell[2, 1])
 
         return cell_text
 
