@@ -46,9 +46,6 @@ class OtfAnalysis:
                 call_no=None, cutoffs=None, hyps=None, init_gp=None,
                 energy_force_kernel=None, hyp_no=None):
 
-        if hyp_no is None:
-            hyp_no = call_no
-
         if init_gp is None:
             # Use run's values as extracted from header
             # TODO Allow for kernel gradient in header
@@ -64,6 +61,8 @@ class OtfAnalysis:
                 cutoffs = self.header['cutoffs']
             if call_no is None:
                 call_no = len(self.gp_position_list)
+            if hyp_no is None:
+                hyp_no = call_no
             if hyps is None:
                 gp_hyps = self.gp_hyp_list[hyp_no-1][-1]
             else:
