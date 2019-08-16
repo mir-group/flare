@@ -3,7 +3,13 @@ import sys
 from flare import struc, env
 
 
-def calculate_rdf(position_list, cell, species, snaps, cutoff, bins):
+def calculate_rdf(position_list, cell, species, snaps, cutoff, bins,
+                  cell_vol=None):
+
+    # assume cubic cell by default
+    if cell_vol is None:
+        cell_vol = cell[0, 0] ** 3
+
     # collect interatomic distances
     r_list = []
     delta_r = cutoff / bins
@@ -25,7 +31,6 @@ def calculate_rdf(position_list, cell, species, snaps, cutoff, bins):
 
     # weight the histogram
     rs = np.linspace(delta_r/2, cutoff-delta_r/2, bins)
-    cell_vol = cell[0, 0]**3
     rho = nat / cell_vol
     weights = (4 * np.pi * rho / 3) * ((rs+delta_r)**3 - rs**3)
     rad_dist = radial_hist / (atom_count * weights)
@@ -34,7 +39,11 @@ def calculate_rdf(position_list, cell, species, snaps, cutoff, bins):
 
 
 def calculate_species_rdf(position_list, spec1, spec2, cell, species, snaps,
-                          cutoff, bins):
+                          cutoff, bins, cell_vol=None):
+
+    # assume cubic cell by default
+    if cell_vol is None:
+        cell_vol = cell[0, 0] ** 3
 
     # collect interatomic distances
     r_list = []
@@ -73,7 +82,6 @@ def calculate_species_rdf(position_list, spec1, spec2, cell, species, snaps,
 
     # weight the histogram
     rs = np.linspace(delta_r/2, cutoff-delta_r/2, bins)
-    cell_vol = cell[0, 0]**3
     rho = (nat * spec2_conc) / cell_vol
     weights = (4 * np.pi * rho / 3) * ((rs+delta_r)**3 - rs**3)
     rad_dist = radial_hist / (atom_count * weights)
