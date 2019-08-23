@@ -12,7 +12,7 @@ class GPCalculator:
 
     def get_potential_energy(self, atoms=None, force_consistent=False):
         nat = len(atoms)
-        struc_curr = struc.Structure(atoms.cell, ['A']*nat,
+        struc_curr = struc.Structure(atoms.cell[:], ['A']*nat,
                                      atoms.positions)
         local_energies = np.zeros(nat)
 
@@ -25,7 +25,7 @@ class GPCalculator:
 
     def get_forces(self, atoms):
         nat = len(atoms)
-        struc_curr = struc.Structure(atoms.cell, ['A']*nat,
+        struc_curr = struc.Structure(atoms.cell[:], ['A']*nat,
                                      atoms.positions)
 
         forces = np.zeros((nat, 3))
@@ -41,7 +41,7 @@ class GPCalculator:
 
     def get_uncertainties(self, atoms):
         nat = len(atoms)
-        struc_curr = struc.Structure(atoms.cell, ['A']*nat,
+        struc_curr = struc.Structure(atoms.cell[:], ['A']*nat,
                                      atoms.positions)
 
         uncertainties = np.zeros((nat, 3))
