@@ -14,9 +14,9 @@ class Structure(object):
 
     """
 
-    def __init__(self, cell: np.ndarray, species: List[str],
+    def __init__(self, cell: np.ndarray, species: List[int],
                  positions: np.ndarray, mass_dict: dict = None,
-                 prev_positions: np.ndarray=None):
+                 prev_positions: np.ndarray=None, species_labels=None):
         self.cell = cell
         self.vec1 = cell[0, :]
         self.vec2 = cell[1, :]
@@ -33,12 +33,13 @@ class Structure(object):
         self.wrap_positions()
 
         # get unique species
-        self.species = species
+        # self.species = species
+        self.coded_species = np.array(species)
+        self.species_labels = species_labels
         self.nat = len(species)
-        unique_species, coded_species = self.get_unique_species(species)
-        self.unique_species = unique_species
-        self.coded_species = coded_species
-        self.nos = len(unique_species)
+        # unique_species, coded_species = self.get_unique_species(species)
+        # self.unique_species = unique_species
+        # self.coded_species = coded_species
 
         # Default: atoms have no velocity
         if prev_positions is None:
@@ -54,20 +55,6 @@ class Structure(object):
         self.forces = np.zeros((len(positions), 3))
         self.stds = np.zeros((len(positions), 3))
         self.mass_dict = mass_dict
-
-    @staticmethod
-    def get_unique_species(species):
-        unique_species = []
-        coded_species = []
-        for spec in species:
-            if spec in unique_species:
-                coded_species.append(unique_species.index(spec))
-            else:
-                coded_species.append(len(unique_species))
-                unique_species.append(spec)
-        coded_species = np.array(coded_species)
-
-        return unique_species, coded_species
 
     def get_cell_dot(self):
         cell_dot = np.zeros((3, 3))
@@ -106,6 +93,20 @@ class Structure(object):
                                         self.cell_dot)
 
         self.wrapped_positions = pos_wrap
+
+
+def get_unique_species(species):
+    unique_species = []
+    coded_species = []
+    for spec in species:
+        if spec in unique_species:
+            coded_species.append(unique_species.index(spec))
+        else:
+            coded_species.append(len(unique_species))
+            unique_species.append(spec)
+    coded_species = np.array(coded_species)
+
+    return unique_species, coded_species
 
 if __name__ == '__main__':
     pass

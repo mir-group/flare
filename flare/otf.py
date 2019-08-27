@@ -39,10 +39,13 @@ class OTF(object):
         positions, species, cell, masses = \
             qe_util.parse_qe_input(self.qe_input)
 
-        self.structure = struc.Structure(cell=cell, species=species,
+        _, coded_species = struc.get_unique_species(species)
+
+        self.structure = struc.Structure(cell=cell, species=coded_species,
                                          positions=positions,
                                          mass_dict=masses,
-                                         prev_positions=prev_pos_init)
+                                         prev_positions=prev_pos_init,
+                                         species_labels=species)
 
         self.noa = self.structure.positions.shape[0]
         self.atom_list = list(range(self.noa))

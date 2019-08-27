@@ -7,11 +7,10 @@ from flare.struc import Structure
 
 def test_random_structure_setup():
     struct, forces = get_random_structure(cell=np.eye(3),
-                                          unique_species=["A", "B", ],
+                                          unique_species=[1, 2],
                                           noa=2)
 
     assert np.equal(struct.cell, np.eye(3)).all()
-    assert 'A' in struct.unique_species or 'B' in struct.unique_species
     assert len(struct.positions) == 2
 
 
@@ -20,7 +19,7 @@ def test_prev_positions_arg():
     np.random.seed(0)
     positions = []
     prev_positions = []
-    species = ['A']*5
+    species = [1]*5
     cell = np.eye(3)
     for n in range(5):
         positions.append(np.random.uniform(-1, 1, 3))

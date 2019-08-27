@@ -39,14 +39,15 @@ def write_header(cutoffs, kernel_name, hyps, algo, dt, Nsteps, structure,
     headerstring += 'timestep (ps): {}\n'.format(dt)
     headerstring += 'number of frames: {}\n'.format(Nsteps)
     headerstring += 'number of atoms: {}\n'.format(structure.nat)
-    headerstring += 'system species: {}\n'.format(set(structure.species))
+    headerstring += \
+        'system species: {}\n'.format(set(structure.species_labels))
     headerstring += 'periodic cell: \n'
     headerstring += str(structure.cell)
 
     # report previous positions
     headerstring += '\nprevious positions (A):\n'
     for i in range(len(structure.positions)):
-        headerstring += structure.species[i] + ' '
+        headerstring += str(structure.species_labels[i]) + ' '
         for j in range(3):
             headerstring += str("%.8f" % structure.prev_positions[i][j]) + ' '
         headerstring += '\n'
@@ -79,7 +80,7 @@ def write_md_config(dt, curr_step, structure, temperature, KE, local_energies,
 
     # Construct atom-by-atom description
     for i in range(len(structure.positions)):
-        string += structure.species[i] + ' '
+        string += str(structure.species_labels[i]) + ' '
         for j in range(3):
             string += str("%.8f" % structure.positions[i][j]) + ' '
         string += '\t'
