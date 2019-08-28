@@ -8,7 +8,7 @@ class Structure(object):
         forces, and stds of forces, computes inv_cell and bond list
 
         :param cell: nparray, 3x3 Bravais cell
-        :param species: list[str], List of elements
+        :param species: list[int], List of integers corresponding to elements
         :param positions: list[nparray] list of positions
         :param cutoff: float, Cutoff radius for GP
 
