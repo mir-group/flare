@@ -197,8 +197,8 @@ class GaussianProcess:
 
         :param x: data point to compare against kernel matrix
         :type x: AtomicEnvironment
-        :param d_1:
-        n t:type d_1: int
+        :param d_1: Cartesian component of force vector to get (1=x,2=y,3=z)
+        :type d_1: int
         :return: kernel vector
         :rtype: np.ndarray
         """
@@ -296,13 +296,13 @@ class GaussianProcess:
         self.l_mat_inv = l_mat_inv
 
     def update_L_alpha_v1(self):
-        '''
+        """
         1. This function is used right after "update_db".
         2. It can update the l_mat_inv, k_mat_inv and alpha
         without computing the whole kernel matrix.
         3. The condition is the hyps should be frozen.
         4. See notes for derivation and calculation details
-        '''
+        """
         n = self.l_mat_inv.shape[0]
         m = len(self.training_data) - n//3  # number of data added
         sigma_n = self.hyps[-1]
