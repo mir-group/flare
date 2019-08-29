@@ -85,9 +85,8 @@ def test_espresso_calling(qe_input, qe_output):
     pw_loc = os.environ.get('PWSCF_COMMAND')
     os.system(' '.join(['cp', qe_input, 'pwscf.in']))
     positions, species, cell, masses = parse_qe_input(qe_input)
-    coded_species = struc.get_unique_species(species)
 
-    structure = Structure(cell=cell, species=coded_species,
+    structure = Structure(cell=cell, species=species,
                           positions=positions,
                           mass_dict=masses, species_labels=species)
 

@@ -1,5 +1,6 @@
 import numpy as np
 from typing import List
+from flare.util import element_to_Z
 
 
 class Structure(object):
@@ -8,7 +9,7 @@ class Structure(object):
         forces, and stds of forces, computes inv_cell and bond list
 
         :param cell: nparray, 3x3 Bravais cell
-        :param species: list[str], List of elements
+        :param species: list[int], List of integers corresponding to elements
         :param positions: list[nparray] list of positions
         :param cutoff: float, Cutoff radius for GP
 
@@ -16,7 +17,7 @@ class Structure(object):
 
     def __init__(self, cell: np.ndarray, species: List[int],
                  positions: np.ndarray, mass_dict: dict = None,
-                 prev_positions: np.ndarray=None, species_labels=None):
+                 prev_positions: np.ndarray = None, species_labels=None):
         self.cell = cell
         self.vec1 = cell[0, :]
         self.vec2 = cell[1, :]
@@ -34,6 +35,10 @@ class Structure(object):
 
         # get unique species
         # self.species = species
+
+        # If species are strings, convert species to integers by atomic number
+        species = [element_to_Z(spec) for spec in species]
+
         self.coded_species = np.array(species)
         self.species_labels = species_labels
         self.nat = len(species)
@@ -47,7 +52,7 @@ class Structure(object):
         else:
             assert len(positions) == len(prev_positions), 'Previous ' \
                                                           'positions and ' \
-                                            'positions are not same length'
+                                                          'positions are not same length'
             self.prev_positions = prev_positions
 
         self.energy = None
@@ -107,6 +112,7 @@ def get_unique_species(species):
     coded_species = np.array(coded_species)
 
     return unique_species, coded_species
+
 
 if __name__ == '__main__':
     pass
