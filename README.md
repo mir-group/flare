@@ -6,8 +6,8 @@ FLARE is an open-source Python package for creating fast and accurate atomistic 
 ## Prerequisites
 1. To train a potential on the fly, you'll need to have a working installation of Quantum ESPRESSO on your machine. The instructions for installation can be found here: https://www.quantum-espresso.org/
 2. Our kernels and environment objects require the Python package numba. If you're using Anaconda, you can get it with the command "conda install numba".
-3. In order for unit testing to work,
-   a. set an environment variable called "PWSCF_COMMAND" to point to your pw.x Quantum ESPRESSO binary.
+3. In order for unit testing to work:<br/>
+   a. set an environment variable called "PWSCF_COMMAND" to point to your pw.x Quantum ESPRESSO binary.<br/>
    b. ensure you have the pytest python package installed.
 4. Add the flare directory to your Python path.
 
