@@ -25,6 +25,11 @@ class OtfAnalysis:
         self.atom_list = atom_list
         self.hyp_list = hyp_list
 
+        # assumption: species list is the same across AIMD simulation
+        self.species_labels = species_list[0]
+        _, coded_species = struc.get_unique_species(self.species_labels)
+        self.species = coded_species
+
         if self.calculate_energy:
             self.energies = energies
 
@@ -64,8 +69,9 @@ class OtfAnalysis:
 
         for n, frame in enumerate(self.update_frames):
             positions = self.position_list[frame]
-            species = self.species_list[frame]
-            struc_curr = struc.Structure(cell, species, positions)
+            struc_curr = \
+                struc.Structure(cell, self.species, positions,
+                                species_labels=self.species_labels)
             atoms = self.atom_list[n]
             forces = self.dft_force_list[frame]
             gp_model.update_db(struc_curr, forces, custom_range=atoms)
