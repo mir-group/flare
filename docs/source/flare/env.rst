@@ -1,5 +1,5 @@
 env
 ===
 
-.. autoclass:: flare.env.AtomicEnvironment
+.. automodule:: flare.env
     :members:
