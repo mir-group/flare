@@ -1,29 +1,11 @@
 FLARE: Fast Learning of Atomistic Rare Events
 =============================================
 
-Another simple header
-=====================
 
-Here is some text::
-
-    print 'hello'
-    >>hello
-
-
-Guide
-^^^^^
+Contents
+^^^^^^^^
 
 .. toctree::
    :maxdepth: 3
 
-   license
    flare/flare
-   help
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
