@@ -21,9 +21,8 @@ class Structure(object):
     :type species_labels: List[str]
     """
 
-    def __init__(self, cell: np.ndarray, species: List[int],
-                 positions: np.ndarray, mass_dict: dict = None,
-                 prev_positions: np.ndarray = None, species_labels=None):
+    def __init__(self, cell, species, positions, mass_dict=None,
+                 prev_positions=None, species_labels=None):
         self.cell = cell
         self.vec1 = cell[0, :]
         self.vec2 = cell[1, :]
