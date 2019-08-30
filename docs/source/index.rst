@@ -8,5 +8,5 @@ Contents
 .. toctree::
    :maxdepth: 3
    install
-   tutorials
+   tutorials/tutorials
    flare/flare
