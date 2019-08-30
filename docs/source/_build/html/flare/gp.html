@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>gp &mdash; flare 0.0.1 documentation</title>
+  <title>Gaussian Process Force Fields &mdash; flare 0.0.1 documentation</title>
   
 
   
@@ -35,8 +35,8 @@
   <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="env" href="env.html" />
-    <link rel="prev" title="flare" href="flare.html" /> 
+    <link rel="next" title="Atomic Environments" href="env.html" />
+    <link rel="prev" title="Modules" href="flare.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
@@ -81,15 +81,15 @@
             
             
               <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="../license.html">License</a></li>
-<li class="toctree-l1 current"><a class="reference internal" href="flare.html">flare</a><ul class="current">
-<li class="toctree-l2 current"><a class="current reference internal" href="#">gp</a></li>
-<li class="toctree-l2"><a class="reference internal" href="env.html">env</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struc.html">struc</a></li>
-<li class="toctree-l2"><a class="reference internal" href="kernels.html">kernels</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/tutorials.html">Tutorials</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="flare.html">Modules</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Gaussian Process Force Fields</a></li>
+<li class="toctree-l2"><a class="reference internal" href="env.html">Atomic Environments</a></li>
+<li class="toctree-l2"><a class="reference internal" href="struc.html">Structures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="kernels.html">Covariant Kernels</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="../help.html">Help</a></li>
 </ul>
 
             
@@ -135,9 +135,9 @@
     
       <li><a href="../index.html">Docs</a> &raquo;</li>
         
-          <li><a href="flare.html">flare</a> &raquo;</li>
+          <li><a href="flare.html">Modules</a> &raquo;</li>
         
-      <li>gp</li>
+      <li>Gaussian Process Force Fields</li>
     
     
       <li class="wy-breadcrumbs-aside">
@@ -156,17 +156,17 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="gp">
-<h1>gp<a class="headerlink" href="#gp" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="module-flare.gp">
+<span id="gaussian-process-force-fields"></span><h1>Gaussian Process Force Fields<a class="headerlink" href="#module-flare.gp" title="Permalink to this headline">¶</a></h1>
 <dl class="class">
 <dt id="flare.gp.GaussianProcess">
-<em class="property">class </em><code class="descclassname">flare.gp.</code><code class="descname">GaussianProcess</code><span class="sig-paren">(</span><em>kernel: Callable</em>, <em>kernel_grad: Callable</em>, <em>hyps: numpy.ndarray</em>, <em>cutoffs: numpy.ndarray</em>, <em>hyp_labels: List = None</em>, <em>energy_force_kernel: Callable = None</em>, <em>energy_kernel: Callable = None</em>, <em>opt_algorithm: str = 'L-BFGS-B'</em>, <em>maxiter=10</em>, <em>par=False</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.gp.GaussianProcess" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">flare.gp.</code><code class="descname">GaussianProcess</code><span class="sig-paren">(</span><em>kernel: Callable</em>, <em>kernel_grad: Callable</em>, <em>hyps: &lt;sphinx.ext.autodoc.importer._MockObject object at 0x10a781f60&gt;</em>, <em>cutoffs: &lt;sphinx.ext.autodoc.importer._MockObject object at 0x10a781ba8&gt;</em>, <em>hyp_labels: List = None</em>, <em>energy_force_kernel: Callable = None</em>, <em>energy_kernel: Callable = None</em>, <em>opt_algorithm: str = 'L-BFGS-B'</em>, <em>maxiter=10</em>, <em>par=False</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.gp.GaussianProcess" title="Permalink to this definition">¶</a></dt>
 <dd><p>Gaussian Process Regression Model.</p>
 <p>Implementation is based on Algorithm 2.1 (pg. 19) of
 “Gaussian Processes for Machine Learning” by Rasmussen and Williams</p>
 <dl class="staticmethod">
 <dt id="flare.gp.GaussianProcess.force_list_to_np">
-<em class="property">static </em><code class="descname">force_list_to_np</code><span class="sig-paren">(</span><em>forces: list</em><span class="sig-paren">)</span> &#x2192; numpy.ndarray<a class="headerlink" href="#flare.gp.GaussianProcess.force_list_to_np" title="Permalink to this definition">¶</a></dt>
+<em class="property">static </em><code class="descname">force_list_to_np</code><span class="sig-paren">(</span><em>forces: list</em><span class="sig-paren">)</span> &#x2192; &lt;sphinx.ext.autodoc.importer._MockObject object at 0x10a6f3fd0&gt;<a class="headerlink" href="#flare.gp.GaussianProcess.force_list_to_np" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convert list of forces to numpy array of forces.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -184,7 +184,7 @@
 
 <dl class="method">
 <dt id="flare.gp.GaussianProcess.get_kernel_vector">
-<code class="descname">get_kernel_vector</code><span class="sig-paren">(</span><em>x: flare.env.AtomicEnvironment</em>, <em>d_1: int</em><span class="sig-paren">)</span> &#x2192; numpy.ndarray<a class="headerlink" href="#flare.gp.GaussianProcess.get_kernel_vector" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_kernel_vector</code><span class="sig-paren">(</span><em>x: flare.env.AtomicEnvironment</em>, <em>d_1: int</em><span class="sig-paren">)</span> &#x2192; &lt;sphinx.ext.autodoc.importer._MockObject object at 0x10a7d2c18&gt;<a class="headerlink" href="#flare.gp.GaussianProcess.get_kernel_vector" title="Permalink to this definition">¶</a></dt>
 <dd><p>Compute kernel vector.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -209,14 +209,14 @@
 <dl class="method">
 <dt id="flare.gp.GaussianProcess.predict_local_energy">
 <code class="descname">predict_local_energy</code><span class="sig-paren">(</span><em>x_t: flare.env.AtomicEnvironment</em><span class="sig-paren">)</span> &#x2192; float<a class="headerlink" href="#flare.gp.GaussianProcess.predict_local_energy" title="Permalink to this definition">¶</a></dt>
-<dd><p>Predict the sum of triplet energies that include the test atom.</p>
+<dd><p>Predict the local energy of an atomic environment.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>x_t</strong> (<em>AtomicEnvironment</em>) – Atomic environment of test atom</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>x_t</strong> (<em>AtomicEnvironment</em>) – Atomic environment of test atom.</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">local energy in eV (up to a constant)</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">local energy in eV (up to a constant).</td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">float</td>
 </tr>
@@ -234,12 +234,8 @@
 <dt id="flare.gp.GaussianProcess.update_L_alpha_v1">
 <code class="descname">update_L_alpha_v1</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#flare.gp.GaussianProcess.update_L_alpha_v1" title="Permalink to this definition">¶</a></dt>
 <dd><ol class="arabic simple">
-<li>This function is used right after “update_db”.</li>
+<li>This function is used right after “update_db”. It can update the l_mat_inv, k_mat_inv and alpha without computing the whole kernel matrix. The condition is the hyps should be frozen. See notes for derivation and calculation details.</li>
 </ol>
-<p>2. It can update the l_mat_inv, k_mat_inv and alpha
-without computing the whole kernel matrix.
-3. The condition is the hyps should be frozen.
-4. See notes for derivation and calculation details</p>
 </dd></dl>
 
 <dl class="method">
@@ -251,7 +247,7 @@ without computing the whole kernel matrix.
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>struc</strong> (<em>Structure</em>) – structure to add to db</li>
+<li><strong>struc</strong> (<a class="reference internal" href="struc.html#flare.struc.Structure" title="flare.struc.Structure"><em>Structure</em></a>) – structure to add to db</li>
 <li><strong>forces</strong> (<em>list&lt;float&gt;</em>) – list of corresponding forces to add to db</li>
 <li><strong>custom_range</strong> (<em>List</em><em>[</em><em>int</em><em>]</em>) – Indices to use in lieu of the whole structure</li>
 </ul>
@@ -273,10 +269,10 @@ without computing the whole kernel matrix.
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="env.html" class="btn btn-neutral float-right" title="env" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="env.html" class="btn btn-neutral float-right" title="Atomic Environments" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="flare.html" class="btn btn-neutral float-left" title="flare" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="flare.html" class="btn btn-neutral float-left" title="Modules" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   

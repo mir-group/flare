@@ -1,7 +1,5 @@
-flare
-=====
-
-List of modules:
+Modules
+=======
 
 .. toctree::
    :maxdepth: 2

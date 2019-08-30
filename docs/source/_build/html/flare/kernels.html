@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>kernels &mdash; flare 0.0.1 documentation</title>
+  <title>Covariant Kernels &mdash; flare 0.0.1 documentation</title>
   
 
   
@@ -35,8 +35,7 @@
   <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Help" href="../help.html" />
-    <link rel="prev" title="struc" href="struc.html" /> 
+    <link rel="prev" title="Structures" href="struc.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
@@ -81,15 +80,15 @@
             
             
               <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="../license.html">License</a></li>
-<li class="toctree-l1 current"><a class="reference internal" href="flare.html">flare</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="gp.html">gp</a></li>
-<li class="toctree-l2"><a class="reference internal" href="env.html">env</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struc.html">struc</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="#">kernels</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/tutorials.html">Tutorials</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="flare.html">Modules</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="gp.html">Gaussian Process Force Fields</a></li>
+<li class="toctree-l2"><a class="reference internal" href="env.html">Atomic Environments</a></li>
+<li class="toctree-l2"><a class="reference internal" href="struc.html">Structures</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Covariant Kernels</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="../help.html">Help</a></li>
 </ul>
 
             
@@ -135,9 +134,9 @@
     
       <li><a href="../index.html">Docs</a> &raquo;</li>
         
-          <li><a href="flare.html">flare</a> &raquo;</li>
+          <li><a href="flare.html">Modules</a> &raquo;</li>
         
-      <li>kernels</li>
+      <li>Covariant Kernels</li>
     
     
       <li class="wy-breadcrumbs-aside">
@@ -156,8 +155,20 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="kernels">
-<h1>kernels<a class="headerlink" href="#kernels" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="module-flare.kernels">
+<span id="covariant-kernels"></span><h1>Covariant Kernels<a class="headerlink" href="#module-flare.kernels" title="Permalink to this headline">¶</a></h1>
+<dl class="function">
+<dt id="flare.kernels.three_body_force_en_jit">
+<code class="descclassname">flare.kernels.</code><code class="descname">three_body_force_en_jit</code><span class="sig-paren">(</span><em>bond_array_1</em>, <em>bond_array_2</em>, <em>cross_bond_inds_1</em>, <em>cross_bond_inds_2</em>, <em>cross_bond_dists_1</em>, <em>cross_bond_dists_2</em>, <em>triplets_1</em>, <em>triplets_2</em>, <em>d1</em>, <em>sig</em>, <em>ls</em>, <em>r_cut</em>, <em>cutoff_func</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.three_body_force_en_jit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Kernel for 3-body force/energy comparisons.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="flare.kernels.three_body_grad_jit">
+<code class="descclassname">flare.kernels.</code><code class="descname">three_body_grad_jit</code><span class="sig-paren">(</span><em>bond_array_1</em>, <em>bond_array_2</em>, <em>cross_bond_inds_1</em>, <em>cross_bond_inds_2</em>, <em>cross_bond_dists_1</em>, <em>cross_bond_dists_2</em>, <em>triplets_1</em>, <em>triplets_2</em>, <em>d1</em>, <em>d2</em>, <em>sig</em>, <em>ls</em>, <em>r_cut</em>, <em>cutoff_func</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.three_body_grad_jit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Kernel gradient for 3-body force comparisons.</p>
+</dd></dl>
+
 </div>
 
 
@@ -168,10 +179,8 @@
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="../help.html" class="btn btn-neutral float-right" title="Help" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
-      
-        <a href="struc.html" class="btn btn-neutral float-left" title="struc" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="struc.html" class="btn btn-neutral float-left" title="Structures" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   

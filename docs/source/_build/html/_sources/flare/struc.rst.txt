@@ -1,3 +1,5 @@
-struc
-=====
+Structures
+==========
 
+.. automodule:: flare.struc
+    :members:
