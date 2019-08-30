@@ -4,7 +4,7 @@ Modules
 .. toctree::
    :maxdepth: 2
 
-   gp
-   env
    struc
+   env
    kernels
+   gp
