@@ -14,7 +14,7 @@
 #
 import os
 import sys
-# sys.path.append('/Users/jonpvandermause/Research/GP/flare/')
+sys.path.append('../../flare')
 import sphinx_rtd_theme
 
 # -- Project information -----------------------------------------------------
