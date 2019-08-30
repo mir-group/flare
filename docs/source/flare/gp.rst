@@ -1,5 +1,5 @@
 gp
 ==
 
-.. autoclass:: flare.gp.GaussianProcess
+.. automodule:: flare.gp
     :members:
