@@ -1,15 +1,24 @@
-.. flare documentation master file, created by
-   sphinx-quickstart on Thu Aug 29 19:06:43 2019.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+FLARE: Fast Learning of Atomistic Rare Events
+=============================================
 
-Welcome to flare's documentation!
-=================================
+Another simple header
+=====================
+
+Here is some text::
+
+    print 'hello'
+    >>hello
+
+
+Guide
+^^^^^
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Contents:
+   :maxdepth: 3
 
+   license
+   flare/flare
+   help
 
 
 Indices and tables

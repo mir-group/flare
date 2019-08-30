@@ -163,11 +163,11 @@ class GaussianProcess:
         return pred_mean, pred_var
 
     def predict_local_energy(self, x_t: AtomicEnvironment) -> float:
-        """Predict the sum of triplet energies that include the test atom.
+        """Predict the local energy of an atomic environment.
 
-        :param x_t: Atomic environment of test atom
+        :param x_t: Atomic environment of test atom.
         :type x_t: AtomicEnvironment
-        :return: local energy in eV (up to a constant)
+        :return: local energy in eV (up to a constant).
         :rtype: float
         """
 
@@ -296,13 +296,8 @@ class GaussianProcess:
         self.l_mat_inv = l_mat_inv
 
     def update_L_alpha_v1(self):
-        """
-        1. This function is used right after "update_db".
-        2. It can update the l_mat_inv, k_mat_inv and alpha
-        without computing the whole kernel matrix.
-        3. The condition is the hyps should be frozen.
-        4. See notes for derivation and calculation details
-        """
+        """1. This function is used right after "update_db". It can update the l_mat_inv, k_mat_inv and alpha without computing the whole kernel matrix. The condition is the hyps should be frozen. See notes for derivation and calculation details."""
+
         n = self.l_mat_inv.shape[0]
         m = len(self.training_data) - n//3  # number of data added
         sigma_n = self.hyps[-1]
