@@ -5,14 +5,12 @@ from flare.util import element_to_Z
 
 class Structure(object):
     """
-        Contains positions, species, cell, cutoff rad, previous positions,
-        forces, and stds of forces, computes inv_cell and bond list
-
-        :param cell: nparray, 3x3 Bravais cell
-        :param species: list[int], List of integers corresponding to elements
-        :param positions: list[nparray] list of positions
-        :param cutoff: float, Cutoff radius for GP
-
+    Contains information about a structure of atoms, including the periodic cell boundaries and atomic species and coordinates.
+    
+    :param cell: 3x3 array whose rows are the Bravais lattice vectors of the cell.
+    :type cell: np.ndarray
+    :param species: List of atomic species, which are represented either as integers or chemical symbols.
+    :type species: List
     """
 
     def __init__(self, cell: np.ndarray, species: List[int],
