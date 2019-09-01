@@ -57,7 +57,8 @@ class Structure(object):
         else:
             assert len(positions) == len(prev_positions), 'Previous ' \
                                                           'positions and ' \
-                                                          'positions are not same length'
+                                                          'positions are not'\
+                                                          'same length'
             self.prev_positions = prev_positions
 
         self.energy = None
@@ -67,6 +68,13 @@ class Structure(object):
         self.mass_dict = mass_dict
 
     def get_cell_dot(self):
+        """
+        Compute 3x3 array of dot products of cell vectors used to fold atoms back to the unit cell.
+
+        :return: 3x3 array of cell vector dot products.
+        :rtype: np.ndarray
+        """
+
         cell_dot = np.zeros((3, 3))
 
         for m in range(3):
@@ -77,6 +85,18 @@ class Structure(object):
 
     @staticmethod
     def raw_to_relative(positions, cell_transpose, cell_dot_inverse):
+        """Convert Cartesian coordinates to relative coordinates expressed in terms of the cell vectors.
+        
+        :param positions: Cartesian coordinates.
+        :type positions: np.ndarray
+        :param cell_transpose: Transpose of the cell array.
+        :type cell_transpose: np.ndarray
+        :param cell_dot_inverse: Inverse of the array of dot products of cell vectors.
+        :type cell_dot_inverse: np.ndarray
+        :return: Relative positions.
+        :rtype: np.ndarray
+        """
+
         relative_positions = \
             np.matmul(np.matmul(positions, cell_transpose),
                       cell_dot_inverse)
