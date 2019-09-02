@@ -257,6 +257,8 @@ class GaussianProcess:
         self.like_grad = like_grad
 
     def update_L_alpha(self):
+        """Update the GP's L matrix and alpha vector.
+        """
         n = self.l_mat_inv.shape[0]
         N = len(self.training_data)
         m = N - n//3  # number of data added
