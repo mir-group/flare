@@ -11,3 +11,4 @@ Contents
    install
    tutorials/tutorials
    flare/flare
+   contribute/contribute

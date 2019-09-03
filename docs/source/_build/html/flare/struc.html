@@ -196,6 +196,31 @@
 </table>
 </dd></dl>
 
+<dl class="staticmethod">
+<dt id="flare.struc.Structure.raw_to_relative">
+<em class="property">static </em><code class="descname">raw_to_relative</code><span class="sig-paren">(</span><em>positions</em>, <em>cell_transpose</em>, <em>cell_dot_inverse</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.struc.Structure.raw_to_relative" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert Cartesian coordinates to relative coordinates expressed in terms of the cell vectors.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>positions</strong> (<em>np.ndarray</em>) – Cartesian coordinates.</li>
+<li><strong>cell_transpose</strong> (<em>np.ndarray</em>) – Transpose of the cell array.</li>
+<li><strong>cell_dot_inverse</strong> (<em>np.ndarray</em>) – Inverse of the array of dot products of cell vectors.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Relative positions.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">np.ndarray</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
 </dd></dl>
 
 </div>
