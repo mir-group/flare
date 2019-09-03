@@ -15,3 +15,4 @@ pwscf.save/
 /tests/ase_otf/kv3/
 /tests/ase_otf/grid3*
 /tests/test_outputs/*
+/docs/source/_build/html
