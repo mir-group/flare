@@ -5,7 +5,7 @@ from flare.struc import Structure
 
 
 class AtomicEnvironment:
-    def __init__(self, structure: Structure, atom: int, cutoffs: np.ndarray):
+    def __init__(self, structure: Structure, atom: int, cutoffs):
         """
         Class defining atomic environment to serve as argument to GP kernel.
 
@@ -21,7 +21,6 @@ class AtomicEnvironment:
         self.cutoff_2 = cutoffs[0]
         self.species = structure.coded_species
         self.ctype = structure.coded_species[atom]
-        # self.nos = structure.nos
 
         # get 2-body arrays
         bond_array_2, bond_positions_2, etypes = \

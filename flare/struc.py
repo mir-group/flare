@@ -5,19 +5,24 @@ from flare.util import element_to_Z
 
 class Structure(object):
     """
-        Contains positions, species, cell, cutoff rad, previous positions,
-        forces, and stds of forces, computes inv_cell and bond list
-
-        :param cell: nparray, 3x3 Bravais cell
-        :param species: list[int], List of integers corresponding to elements
-        :param positions: list[nparray] list of positions
-        :param cutoff: float, Cutoff radius for GP
-
+    Contains information about a structure of atoms, including the periodic cell boundaries and atomic species and coordinates.
+    
+    :param cell: 3x3 array whose rows are the Bravais lattice vectors of the cell.
+    :type cell: np.ndarray
+    :param species: List of atomic species, which are represented either as integers or chemical symbols.
+    :type species: List
+    :param positions: Nx3 array of atomic coordinates.
+    :type positions: np.ndarray
+    :param mass_dict: Dictionary of atomic masses used in MD simulations.
+    :type mass_dict: dict
+    :param prev_positions: Nx3 array of previous atomic coordinates used in MD simulations.
+    :type prev_positions: np.ndarray
+    :param species_labels: List of chemical symbols. Used in the output file of on-the-fly runs.
+    :type species_labels: List[str]
     """
 
-    def __init__(self, cell: np.ndarray, species: List[int],
-                 positions: np.ndarray, mass_dict: dict = None,
-                 prev_positions: np.ndarray = None, species_labels=None):
+    def __init__(self, cell, species, positions, mass_dict=None,
+                 prev_positions=None, species_labels=None):
         self.cell = cell
         self.vec1 = cell[0, :]
         self.vec2 = cell[1, :]
@@ -34,9 +39,9 @@ class Structure(object):
         self.wrap_positions()
 
         # If species are strings, convert species to integers by atomic number
+        species = [element_to_Z(spec) for spec in species]
 
-        self.species = species
-        self.coded_species = np.array([element_to_Z(spec) for spec in species])
+        self.coded_species = np.array(species)
         self.species_labels = species_labels
         self.nat = len(species)
 
@@ -46,7 +51,7 @@ class Structure(object):
         else:
             assert len(positions) == len(prev_positions), 'Previous ' \
                                                           'positions and ' \
-                                                          'positions are not ' \
+                                                          'positions are not'\
                                                           'same length'
             self.prev_positions = prev_positions
 
@@ -57,6 +62,13 @@ class Structure(object):
         self.mass_dict = mass_dict
 
     def get_cell_dot(self):
+        """
+        Compute 3x3 array of dot products of cell vectors used to fold atoms back to the unit cell.
+
+        :return: 3x3 array of cell vector dot products.
+        :rtype: np.ndarray
+        """
+
         cell_dot = np.zeros((3, 3))
 
         for m in range(3):
@@ -67,6 +79,18 @@ class Structure(object):
 
     @staticmethod
     def raw_to_relative(positions, cell_transpose, cell_dot_inverse):
+        """Convert Cartesian coordinates to relative coordinates expressed in terms of the cell vectors.
+        
+        :param positions: Cartesian coordinates.
+        :type positions: np.ndarray
+        :param cell_transpose: Transpose of the cell array.
+        :type cell_transpose: np.ndarray
+        :param cell_dot_inverse: Inverse of the array of dot products of cell vectors.
+        :type cell_dot_inverse: np.ndarray
+        :return: Relative positions.
+        :rtype: np.ndarray
+        """
+
         relative_positions = \
             np.matmul(np.matmul(positions, cell_transpose),
                       cell_dot_inverse)

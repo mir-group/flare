@@ -23,6 +23,7 @@ def run_espresso_par(qe_input, structure, pw_loc, no_cpus):
     qe_command = \
         'mpirun -np {0} {1} < {2} > {3}'.format(no_cpus, pw_loc, run_qe_path,
                                                 'pwscf.out')
+
     # os.system(qe_command)
     call(qe_command, shell=True)
 

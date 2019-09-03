@@ -27,6 +27,8 @@ class MappedForceField:
                             'load_svd': None}
         '''
         self.GP = GP
+        self.grid_params = grid_params
+        self.struc_params = struc_params
         self.bodies = str(grid_params['bodies'])
         self.grid_num_2 = grid_params['grid_num_2']
         self.bounds_2 = grid_params['bounds_2']
@@ -36,19 +38,21 @@ class MappedForceField:
         self.svd_rank_3 = grid_params['svd_rank_3']
         
         bond_struc = self.build_bond_struc(struc_params)
-        if self.bodies == '2':
-            self.map = Map2body(self.grid_num_2, self.bounds_2, self.GP, bond_struc,  
-                       self.bodies, grid_params['load_grid'], self.svd_rank_2)
-        elif self.bodies == '3':
-            self.map = Map3body(self.grid_num_3, self.bounds_3, self.GP, bond_struc, 
-                       self.bodies, grid_params['load_grid'], 
-                       grid_params['load_svd'], self.svd_rank_3)
-        elif self.bodies == '2+3':
-            self.map_2 = Map2body(self.grid_num_2, self.bounds_2, self.GP, bond_struc[0],
-                         self.bodies, grid_params['load_grid'], self.svd_rank_2)
-            self.map_3 = Map3body(self.grid_num_3, self.bounds_3, self.GP,
-                         bond_struc[1], self.bodies, grid_params['load_grid'],
-                         grid_params['load_svd'], self.svd_rank_3)
+
+        if len(GP.training_data) > 0:
+            if self.bodies == '2':
+                self.map = Map2body(self.grid_num_2, self.bounds_2, self.GP, bond_struc,  
+                           self.bodies, grid_params['load_grid'], self.svd_rank_2)
+            elif self.bodies == '3':
+                self.map = Map3body(self.grid_num_3, self.bounds_3, self.GP, bond_struc, 
+                           self.bodies, grid_params['load_grid'], 
+                           grid_params['load_svd'], self.svd_rank_3)
+            elif self.bodies == '2+3':
+                self.map_2 = Map2body(self.grid_num_2, self.bounds_2, self.GP, bond_struc[0],
+                             self.bodies, grid_params['load_grid'], self.svd_rank_2)
+                self.map_3 = Map3body(self.grid_num_3, self.bounds_3, self.GP,
+                             bond_struc[1], self.bodies, grid_params['load_grid'],
+                             grid_params['load_svd'], self.svd_rank_3)
 
     def build_bond_struc(self, struc_params):
     
