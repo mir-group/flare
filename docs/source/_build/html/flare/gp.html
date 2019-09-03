@@ -35,6 +35,7 @@
   <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="How To Contribute" href="../contribute/contribute.html" />
     <link rel="prev" title="Covariant Kernels" href="kernels.html" /> 
 </head>
 
@@ -82,13 +83,14 @@
               <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../install.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/tutorials.html">Tutorials</a></li>
-<li class="toctree-l1 current"><a class="reference internal" href="flare.html">Modules</a><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="flare.html">Code Documentation</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="struc.html">Structures</a></li>
 <li class="toctree-l2"><a class="reference internal" href="env.html">Atomic Environments</a></li>
 <li class="toctree-l2"><a class="reference internal" href="kernels.html">Covariant Kernels</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Gaussian Process Force Fields</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="../contribute/contribute.html">How To Contribute</a></li>
 </ul>
 
             
@@ -134,7 +136,7 @@
     
       <li><a href="../index.html">Docs</a> &raquo;</li>
         
-          <li><a href="flare.html">Modules</a> &raquo;</li>
+          <li><a href="flare.html">Code Documentation</a> &raquo;</li>
         
       <li>Gaussian Process Force Fields</li>
     
@@ -159,13 +161,13 @@
 <span id="gaussian-process-force-fields"></span><h1>Gaussian Process Force Fields<a class="headerlink" href="#module-flare.gp" title="Permalink to this headline">¶</a></h1>
 <dl class="class">
 <dt id="flare.gp.GaussianProcess">
-<em class="property">class </em><code class="descclassname">flare.gp.</code><code class="descname">GaussianProcess</code><span class="sig-paren">(</span><em>kernel: Callable</em>, <em>kernel_grad: Callable</em>, <em>hyps: &lt;sphinx.ext.autodoc.importer._MockObject object at 0x105e0d6a0&gt;</em>, <em>cutoffs: &lt;sphinx.ext.autodoc.importer._MockObject object at 0x105e0d710&gt;</em>, <em>hyp_labels: List = None</em>, <em>energy_force_kernel: Callable = None</em>, <em>energy_kernel: Callable = None</em>, <em>opt_algorithm: str = 'L-BFGS-B'</em>, <em>maxiter=10</em>, <em>par=False</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.gp.GaussianProcess" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">flare.gp.</code><code class="descname">GaussianProcess</code><span class="sig-paren">(</span><em>kernel: Callable</em>, <em>kernel_grad: Callable</em>, <em>hyps: &lt;sphinx.ext.autodoc.importer._MockObject object at 0x10fe0a4e0&gt;</em>, <em>cutoffs: &lt;sphinx.ext.autodoc.importer._MockObject object at 0x10fe0aa90&gt;</em>, <em>hyp_labels: List = None</em>, <em>energy_force_kernel: Callable = None</em>, <em>energy_kernel: Callable = None</em>, <em>opt_algorithm: str = 'L-BFGS-B'</em>, <em>maxiter=10</em>, <em>par=False</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.gp.GaussianProcess" title="Permalink to this definition">¶</a></dt>
 <dd><p>Gaussian Process Regression Model.</p>
 <p>Implementation is based on Algorithm 2.1 (pg. 19) of
 “Gaussian Processes for Machine Learning” by Rasmussen and Williams</p>
 <dl class="staticmethod">
 <dt id="flare.gp.GaussianProcess.force_list_to_np">
-<em class="property">static </em><code class="descname">force_list_to_np</code><span class="sig-paren">(</span><em>forces: list</em><span class="sig-paren">)</span> &#x2192; &lt;sphinx.ext.autodoc.importer._MockObject object at 0x105e0deb8&gt;<a class="headerlink" href="#flare.gp.GaussianProcess.force_list_to_np" title="Permalink to this definition">¶</a></dt>
+<em class="property">static </em><code class="descname">force_list_to_np</code><span class="sig-paren">(</span><em>forces: list</em><span class="sig-paren">)</span> &#x2192; &lt;sphinx.ext.autodoc.importer._MockObject object at 0x10fdf2eb8&gt;<a class="headerlink" href="#flare.gp.GaussianProcess.force_list_to_np" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convert list of forces to numpy array of forces.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -183,7 +185,7 @@
 
 <dl class="method">
 <dt id="flare.gp.GaussianProcess.get_kernel_vector">
-<code class="descname">get_kernel_vector</code><span class="sig-paren">(</span><em>x: flare.env.AtomicEnvironment</em>, <em>d_1: int</em><span class="sig-paren">)</span> &#x2192; &lt;sphinx.ext.autodoc.importer._MockObject object at 0x105e0dda0&gt;<a class="headerlink" href="#flare.gp.GaussianProcess.get_kernel_vector" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_kernel_vector</code><span class="sig-paren">(</span><em>x: flare.env.AtomicEnvironment</em>, <em>d_1: int</em><span class="sig-paren">)</span> &#x2192; &lt;sphinx.ext.autodoc.importer._MockObject object at 0x10fe02cc0&gt;<a class="headerlink" href="#flare.gp.GaussianProcess.get_kernel_vector" title="Permalink to this definition">¶</a></dt>
 <dd><p>Compute kernel vector.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -230,11 +232,15 @@
 </dd></dl>
 
 <dl class="method">
+<dt id="flare.gp.GaussianProcess.update_L_alpha">
+<code class="descname">update_L_alpha</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#flare.gp.GaussianProcess.update_L_alpha" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update the GP’s L matrix and alpha vector.</p>
+</dd></dl>
+
+<dl class="method">
 <dt id="flare.gp.GaussianProcess.update_L_alpha_v1">
 <code class="descname">update_L_alpha_v1</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#flare.gp.GaussianProcess.update_L_alpha_v1" title="Permalink to this definition">¶</a></dt>
-<dd><ol class="arabic simple">
-<li>This function is used right after “update_db”. It can update the l_mat_inv, k_mat_inv and alpha without computing the whole kernel matrix. The condition is the hyps should be frozen. See notes for derivation and calculation details.</li>
-</ol>
+<dd><p>This function is used right after “update_db”. It can update the l_mat_inv, k_mat_inv and alpha without computing the whole kernel matrix. The condition is the hyps should be frozen. See notes for derivation and calculation details.</p>
 </dd></dl>
 
 <dl class="method">
@@ -267,6 +273,8 @@
           <footer>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="../contribute/contribute.html" class="btn btn-neutral float-right" title="How To Contribute" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
         <a href="kernels.html" class="btn btn-neutral float-left" title="Covariant Kernels" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>

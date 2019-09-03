@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>On-the-fly aluminum potential &mdash; flare 0.0.1 documentation</title>
+  <title>Git Workflow &mdash; flare 0.0.1 documentation</title>
   
 
   
@@ -35,8 +35,8 @@
   <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Modules" href="../flare/flare.html" />
-    <link rel="prev" title="Tutorials" href="tutorials.html" /> 
+    <link rel="next" title="Code Standards" href="standards.html" />
+    <link rel="prev" title="How To Contribute" href="contribute.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
@@ -82,11 +82,13 @@
             
               <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../install.html">Installation</a></li>
-<li class="toctree-l1 current"><a class="reference internal" href="tutorials.html">Tutorials</a><ul class="current">
-<li class="toctree-l2 current"><a class="current reference internal" href="#">On-the-fly aluminum potential</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/tutorials.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../flare/flare.html">Code Documentation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="contribute.html">How To Contribute</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Git Workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="standards.html">Code Standards</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="../flare/flare.html">Modules</a></li>
 </ul>
 
             
@@ -132,15 +134,15 @@
     
       <li><a href="../index.html">Docs</a> &raquo;</li>
         
-          <li><a href="tutorials.html">Tutorials</a> &raquo;</li>
+          <li><a href="contribute.html">How To Contribute</a> &raquo;</li>
         
-      <li>On-the-fly aluminum potential</li>
+      <li>Git Workflow</li>
     
     
       <li class="wy-breadcrumbs-aside">
         
             
-            <a href="../_sources/tutorials/al.rst.txt" rel="nofollow"> View page source</a>
+            <a href="../_sources/contribute/workflow.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -153,8 +155,33 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="on-the-fly-aluminum-potential">
-<h1>On-the-fly aluminum potential<a class="headerlink" href="#on-the-fly-aluminum-potential" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="git-workflow">
+<h1>Git Workflow<a class="headerlink" href="#git-workflow" title="Permalink to this headline">¶</a></h1>
+<p>To contribute to the FLARE source code, please follow these steps:</p>
+<ol class="arabic">
+<li><p class="first">Fork the <a class="reference external" href="https://github.com/mir-group/flare">FLARE repository</a>.</p>
+</li>
+<li><p class="first">Set FLARE as an upstream remote:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ git remote add upstream https://github.com/mir-group/flare
+</pre></div>
+</div>
+<p>Before branching off, make sure that your forked copy of the master branch is up to date:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ git fetch upstream
+$ git merge upstream/master
+</pre></div>
+</div>
+</li>
+<li><p class="first">Create a new branch with a name that describes the specific feature you want to work on:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ git checkout -b &lt;branch name&gt;
+</pre></div>
+</div>
+</li>
+<li><p class="first">When you’re done working, push up the branch:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ git push &lt;branch name&gt; upstream/master
+</pre></div>
+</div>
+</li>
+</ol>
 </div>
 
 
@@ -165,10 +192,10 @@
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="../flare/flare.html" class="btn btn-neutral float-right" title="Modules" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="standards.html" class="btn btn-neutral float-right" title="Code Standards" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="tutorials.html" class="btn btn-neutral float-left" title="Tutorials" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="contribute.html" class="btn btn-neutral float-left" title="How To Contribute" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
