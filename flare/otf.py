@@ -8,7 +8,7 @@ import multiprocessing as mp
 import subprocess
 import concurrent.futures
 from flare import struc, gp, env, qe_util, md, output
-from flare.mff.utils import get_l_bound
+
 
 class OTF(object):
     def __init__(self, qe_input: str, dt: float, number_of_steps: int,
@@ -19,8 +19,7 @@ class OTF(object):
                  calculate_energy=False, output_name='otf_run.out',
                  max_atoms_added=1, freeze_hyps=10,
                  rescale_steps=[], rescale_temps=[],
-                 no_cpus=1, use_mapping: bool=False,
-                 non_mapping_steps: list=[]):
+                 no_cpus=1):
 
         self.qe_input = qe_input
         self.dt = dt
@@ -73,14 +72,6 @@ class OTF(object):
             self.pred_func = self.predict_on_structure_en
         elif par and calculate_energy:
             self.pred_func = self.predict_on_structure_par_en
-        if self.use_mapping:
-            self.mff = None
-            if par:
-                self.pred_func = self.predict_on_structure
-                self.pred_func_gp = self.predict_on_structure
-            else:
-                self.pred_func = self.predict_on_structure
-                self.pred_func_gp = self.predict_on_structure
         self.par = par
 
         # set rescale attributes
@@ -91,7 +82,6 @@ class OTF(object):
 
         # set number of cpus for qe runs
         self.no_cpus = no_cpus
-        print('otf initialized, use mapping:', self.use_mapping)
 
     def run(self):
         output.write_header(self.gp.cutoffs, self.gp.kernel_name, self.gp.hyps,
@@ -168,11 +158,6 @@ class OTF(object):
             counter += 1
             self.update_positions(new_pos)
             self.curr_step += 1
-
-            # back up output every 1 hour
-            if time.time() - self.last_backup_time >= 3600:
-                subprocess.run(["cp", self.output_name, self.backup_name])
-                self.last_backup_time = time.time()
 
         output.conclude_run(self.output_name)
 
@@ -314,9 +299,6 @@ class OTF(object):
             self.structure.prev_positions = self.structure.positions
         self.structure.positions = new_pos
         self.structure.wrap_positions()
-        
-        # update mff lower bound
-        self.l_bound = get_l_bound(self.l_bound, self.structure, self.two_d)
 
     def update_temperature(self, new_pos):
         KE, temperature, velocities = \
