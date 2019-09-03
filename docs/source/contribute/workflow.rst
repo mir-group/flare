@@ -3,10 +3,31 @@ Git Workflow
 
 To contribute to the FLARE source code, please follow the guidelines in this section.
 
-Pushing changes from the MIR repo
----------------------------------
+Master, development, and topic branches
+---------------------------------------
 
-If you have write access to the MIR version of FLARE, you can make edits directly to the source code.
+The FLARE repository has a three-tiered structure: there is the master branch, which is only for battle-tested code that is both documented and unit tested; the development branch, which is used to push new features; and topic branches, which focus on specific issues and are deleted once the issue is addressed.
+
+You can create local copies of branches from the remote repository as follows::
+
+   $ git checkout -b <local branch name> origin/<remote branch name>
+
+
+Pushing changes to the MIR repo directly
+----------------------------------------
+
+If you have write access to the MIR version of FLARE, you can make edits directly to the source code. Here are the steps you should follow:
+
+1. Go into the development branch.
+2. Create a new topic branch with a name describing what you're up to::
+
+    $ git checkout -b <branch name>
+
+3. Commit your changes periodically, and when you're done working, push up the branch::
+
+    $ git push origin <branch name>
+
+4. Create a Pull Request that gives a helpful description of what you've done. You can now merge and delete the branch.
 
 Pushing changes from a forked repo
 ----------------------------------
@@ -29,9 +50,9 @@ Pushing changes from a forked repo
 
     $ git checkout -b <branch name>
 
-4. When you're done working, push up the branch::
+4. While you're working, commit your changes periodically, and when you're done, commit a final time and then push up the branch::
 
-    $ git push <branch name> upstream/master
+    $ git push origin <branch name>
 
 5. When you go to Github, you'll now see an option to open a Pull Request for the topic branch you just pushed. Write a helpful description of the changes you made, and then create the Pull Request.
 
