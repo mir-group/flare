@@ -3,7 +3,6 @@ import multiprocessing as mp
 import concurrent.futures
 import copy
 import sys
-sys.path.append('..')
 from flare import gp, env, struc, kernels, otf
 from ase.calculators.calculator import Calculator
 
@@ -15,7 +14,9 @@ class GPCalculator(Calculator):
     def get_potential_energy(self, atoms=None, force_consistent=False):
         return 0
         nat = len(atoms)
-        struc_curr = struc.Structure(atoms.cell, ['A']*nat,
+        species = atoms.get_chemical_symbols()
+
+        struc_curr = struc.Structure(atoms.cell[:], species,
                                      atoms.positions)
         local_energies = np.zeros(nat)
 
@@ -28,7 +29,9 @@ class GPCalculator(Calculator):
 
     def get_forces(self, atoms):
         nat = len(atoms)
-        struc_curr = struc.Structure(atoms.cell, ['A']*nat,
+        species = atoms.get_chemical_symbols()
+
+        struc_curr = struc.Structure(atoms.cell[:], species,
                                      atoms.positions)
 
         forces = np.zeros((nat, 3))

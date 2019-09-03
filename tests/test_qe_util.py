@@ -2,6 +2,7 @@ import pytest
 import os
 import sys
 import numpy as np
+from flare import struc
 from flare.struc import Structure
 from flare.qe_util import parse_qe_input, parse_qe_forces, run_espresso, \
     edit_qe_input_positions, qe_input_to_structure
@@ -85,17 +86,18 @@ def test_espresso_calling(qe_input, qe_output):
     os.system(' '.join(['cp', qe_input, 'pwscf.in']))
     positions, species, cell, masses = parse_qe_input(qe_input)
 
-    struc = Structure(cell=cell, species=species, positions=positions,
-                      mass_dict=masses)
+    structure = Structure(cell=cell, species=species,
+                          positions=positions,
+                          mass_dict=masses, species_labels=species)
 
     forces = run_espresso('pwscf.in',
-                          struc, pw_loc)
+                          structure, pw_loc)
 
     ref_forces = parse_qe_forces(qe_output)
 
     assert len(forces) == len(ref_forces)
 
-    for i in range(struc.nat):
+    for i in range(structure.nat):
         assert np.isclose(forces[i], ref_forces[i]).all()
 
     cleanup_espresso_run()
@@ -109,16 +111,18 @@ def test_espresso_input_edit():
     """
     os.system('cp test_files/qe_input_1.in .')
     positions, species, cell, masses = parse_qe_input('./qe_input_1.in')
-    struc = Structure(cell, species, positions, masses)
+    _, coded_species = struc.get_unique_species(species)
+    structure = Structure(cell, coded_species, positions, masses,
+                          species_labels=species)
 
-    struc.vec1 += np.random.randn(3)
-    struc.positions[0] += np.random.randn(3)
+    structure.vec1 += np.random.randn(3)
+    structure.positions[0] += np.random.randn(3)
 
-    edit_qe_input_positions('./qe_input_1.in', structure=struc)
+    edit_qe_input_positions('./qe_input_1.in', structure=structure)
 
     positions, species, cell, masses = parse_qe_input('./qe_input_1.in')
 
-    assert np.equal(positions[0], struc.positions[0]).all()
-    assert np.equal(struc.vec1, cell[0, :]).all()
+    assert np.equal(positions[0], structure.positions[0]).all()
+    assert np.equal(structure.vec1, cell[0, :]).all()
 
     os.system('rm ./qe_input_1.in')

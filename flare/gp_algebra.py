@@ -76,6 +76,7 @@ def get_ky_mat_par(hyps: np.ndarray, training_data: list,
     ky_mat = k_mat + sigma_n ** 2 * np.eye(size)
 
     pool.close()
+    pool.join()
 
     return ky_mat
 
@@ -124,6 +125,7 @@ def get_ky_and_hyp_par(hyps: np.ndarray, training_data: list,
     ky_mat = k_mat + sigma_n ** 2 * np.eye(size)
 
     pool.close()
+    pool.join()
 
     return hyp_mat, ky_mat
 
@@ -273,9 +275,6 @@ def get_neg_likelihood(hyps: np.ndarray, training_data: list,
         ky_mat = \
             get_ky_mat(hyps, training_data, training_labels_np,
                        kernel, cutoffs)
-
-    ky_mat = get_ky_mat_par(hyps, training_data, training_labels_np,
-                            kernel, cutoffs)
 
     like = get_like_from_ky_mat(ky_mat, training_labels_np)
 

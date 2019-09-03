@@ -5,14 +5,22 @@ from flare.struc import Structure
 
 
 class AtomicEnvironment:
-    def __init__(self, structure: Structure, atom: int, cutoffs: np.ndarray):
+    def __init__(self, structure: Structure, atom: int, cutoffs):
+        """
+        Class defining atomic environment to serve as argument to GP kernel.
+
+        :param structure: structure object to take atomic environment in
+        :param atom: index of atom in structure to find environment around
+        :param cutoffs: list of radii for 2-, 3- body kernel cutoffs.
+                        2-body only if one cutoff is given, 2+3 body if
+                        multiple are passed
+        """
         self.positions = structure.wrapped_positions
         self.cell = structure.cell
         self.atom = atom
         self.cutoff_2 = cutoffs[0]
         self.species = structure.coded_species
         self.ctype = structure.coded_species[atom]
-        self.nos = structure.nos
 
         # get 2-body arrays
         bond_array_2, bond_positions_2, etypes = \

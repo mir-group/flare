@@ -2,7 +2,7 @@ import os
 from subprocess import call
 import time
 import numpy as np
-from flare.struc import Structure
+from flare import struc
 from typing import List
 
 
@@ -128,7 +128,7 @@ def parse_qe_input(qe_input: str):
     return positions, species, cell, masses
 
 
-def qe_input_to_structure(qe_input: str) -> Structure:
+def qe_input_to_structure(qe_input: str):
     """
     Parses a qe input and returns the atoms in the file as a Structure object
     :param qe_input: QE Input file to parse
@@ -136,11 +136,12 @@ def qe_input_to_structure(qe_input: str) -> Structure:
     :return:
     """
     positions, species, cell, masses = parse_qe_input(qe_input)
-    return Structure(positions=positions, species=species, cell=cell,
-                     mass_dict=masses)
+    _, coded_species = struc.get_unique_species(species)
+    return struc.Structure(positions=positions, species=coded_species,
+                           cell=cell, mass_dict=masses, species_labels=species)
 
 
-def edit_qe_input_positions(qe_input: str, structure: Structure):
+def edit_qe_input_positions(qe_input: str, structure):
     """
     Write the current configuration of the OTF structure to the
     qe input file
@@ -172,7 +173,7 @@ def edit_qe_input_positions(qe_input: str, structure: Structure):
 
     for pos_index, line_index in enumerate(
             range(file_pos_index, file_pos_index + structure.nat)):
-        pos_string = ' '.join([structure.species[pos_index],
+        pos_string = ' '.join([structure.species_labels[pos_index],
                                str(structure.positions[pos_index][
                                        0]),
                                str(structure.positions[pos_index][

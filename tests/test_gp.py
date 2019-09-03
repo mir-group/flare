@@ -39,7 +39,7 @@ def two_body_gp():
 
     # params
     cell = np.eye(3)
-    unique_species = ['B', 'A']
+    unique_species = [2, 1]
     cutoff = 0.8
     cutoffs = np.array([0.8, 0.8])
     noa = 5
@@ -67,7 +67,7 @@ def two_body_gp():
 
 @pytest.fixture(scope='module')
 def params():
-    parameters = {'unique_species': ['B', 'A'],
+    parameters = {'unique_species': [2, 1],
                   'cutoff': 0.8,
                   'noa': 5,
                   'cell': np.eye(3),
@@ -81,7 +81,7 @@ def test_point():
     """Create test point for kernel to compare against"""
     # params
     cell = np.eye(3)
-    unique_species = ['B', 'A']
+    unique_species = [2, 1]
     cutoff = 0.8
     noa = 10
 
@@ -145,7 +145,7 @@ def test_predict(two_body_gp, test_point):
 def test_set_L_alpha(two_body_gp, params):
     # params
     cell = np.eye(3)
-    unique_species = ['B', 'A']
+    unique_species = [2, 1]
     cutoff = 0.8
     cutoffs = np.array([0.8, 0.8])
     noa = 2

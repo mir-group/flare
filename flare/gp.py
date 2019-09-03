@@ -6,7 +6,8 @@ from typing import List, Callable
 from flare.env import AtomicEnvironment
 from flare.struc import Structure
 from flare.gp_algebra import get_ky_mat, get_ky_and_hyp, get_like_from_ky_mat,\
-    get_like_grad_from_mats, get_neg_likelihood, get_neg_like_grad
+    get_like_grad_from_mats, get_neg_likelihood, get_neg_like_grad, \
+    get_ky_and_hyp_par
 
 
 class GaussianProcess:
@@ -162,11 +163,11 @@ class GaussianProcess:
         return pred_mean, pred_var
 
     def predict_local_energy(self, x_t: AtomicEnvironment) -> float:
-        """Predict the sum of triplet energies that include the test atom.
+        """Predict the local energy of an atomic environment.
 
-        :param x_t: Atomic environment of test atom
+        :param x_t: Atomic environment of test atom.
         :type x_t: AtomicEnvironment
-        :return: local energy in eV (up to a constant)
+        :return: local energy in eV (up to a constant).
         :rtype: float
         """
 
@@ -196,8 +197,8 @@ class GaussianProcess:
 
         :param x: data point to compare against kernel matrix
         :type x: AtomicEnvironment
-        :param d_1:
-        n t:type d_1: int
+        :param d_1: Cartesian component of force vector to get (1=x,2=y,3=z)
+        :type d_1: int
         :return: kernel vector
         :rtype: np.ndarray
         """
@@ -227,10 +228,17 @@ class GaussianProcess:
         return k_v
 
     def set_L_alpha(self):
+        if self.par:
+            hyp_mat, ky_mat = \
+                get_ky_and_hyp_par(self.hyps, self.training_data,
+                                   self.training_labels_np,
+                                   self.kernel_grad, self.cutoffs)
+        else:
+            hyp_mat, ky_mat = \
+                get_ky_and_hyp(self.hyps, self.training_data,
+                               self.training_labels_np,
+                               self.kernel_grad, self.cutoffs)
 
-        hyp_mat, ky_mat = get_ky_and_hyp(self.hyps, self.training_data,
-                                         self.training_labels_np,
-                                         self.kernel_grad, self.cutoffs)
         like, like_grad = \
             get_like_grad_from_mats(ky_mat, hyp_mat, self.training_labels_np)
         l_mat = np.linalg.cholesky(ky_mat)
@@ -276,13 +284,8 @@ class GaussianProcess:
         self.l_mat_inv = l_mat_inv
 
     def update_L_alpha_v1(self):
-        '''
-        1. This function is used right after "update_db".
-        2. It can update the l_mat_inv, k_mat_inv and alpha
-        without computing the whole kernel matrix.
-        3. The condition is the hyps should be frozen.
-        4. See notes for derivation and calculation details
-        '''
+        """This function is used right after "update_db". It can update the l_mat_inv, k_mat_inv and alpha without computing the whole kernel matrix. The condition is the hyps should be frozen. See notes for derivation and calculation details."""
+
         n = self.l_mat_inv.shape[0]
         m = len(self.training_data) - n//3  # number of data added
         sigma_n = self.hyps[-1]

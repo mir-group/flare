@@ -8,7 +8,7 @@ from flare import env, struc
 
 def test_species_count():
     cell = np.eye(3)
-    species = ['A', 'B', 'C']
+    species = [1, 2, 3]
     positions = np.array([[0, 0, 0], [0.5, 0.5, 0.5], [0.1, 0.1, 0.1]])
     struc_test = struc.Structure(cell, species, positions)
     env_test = env.AtomicEnvironment(struc_test, 0, np.array([1, 1]))

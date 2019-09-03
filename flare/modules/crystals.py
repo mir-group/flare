@@ -20,6 +20,22 @@ def get_supercell_positions(sc_size, cell, positions):
     return sc_positions
 
 
+def supercell_custom(cell, positions, size1, size2, size3):
+    sc_positions = []
+    for m in range(size1):
+        vec1 = m * cell[0]
+        for n in range(size2):
+            vec2 = n * cell[1]
+            for p in range(size3):
+                vec3 = p * cell[2]
+
+                # append translated positions
+                for pos in positions:
+                    sc_positions.append(pos+vec1+vec2+vec3)
+
+    return np.array(sc_positions)
+
+
 # -----------------------------------------------------------------------------
 #                          fcc helper functions
 # -----------------------------------------------------------------------------
@@ -45,6 +61,19 @@ def cubic_diamond_positions(cube_lat):
                  np.array([3*cube_lat/4, 3*cube_lat/4, cube_lat/4]),
                  np.array([cube_lat/4, 3*cube_lat/4, 3*cube_lat/4]),
                  np.array([3*cube_lat/4, cube_lat/4, 3*cube_lat/4])]
+    return positions
+
+
+def cubic_rocksalt_positions(cube_lat):
+    positions = np.array([[0, 0, 0],
+                          [cube_lat/2, 0, 0],
+                          [cube_lat/2, cube_lat/2, 0],
+                          [cube_lat, cube_lat/2, 0],
+                          [cube_lat/2, 0, cube_lat/2],
+                          [cube_lat, 0, cube_lat/2],
+                          [0, cube_lat/2, cube_lat/2],
+                          [cube_lat/2, cube_lat/2, cube_lat/2]])
+
     return positions
 
 

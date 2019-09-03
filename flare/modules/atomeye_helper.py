@@ -3,6 +3,7 @@ import math
 from copy import copy
 from typing import List
 import subprocess
+from flare import struc
 
 
 def write_cfgs_from_otf(otf_run, cell, species, start_frame, no_frames,
@@ -79,14 +80,14 @@ def write_cfgs_from_pos(pos_list, cell, folder_name, image_quality, scr_dest,
     no_frames = len(pos_list)
     no_digits = int(np.ceil(math.log(no_frames, 10)))
 
-    for n, pos_file in enumerate(pos_list):
-        pos = np.load(pos_file)
+    for n, pos in enumerate(pos_list):
+        # pos = np.load(pos_file)
         frame_no = n
         frame_no_padded = str(frame_no).zfill(no_digits)
         frame_string = frame_no_padded+'.cfg'
         frame_dest = folder_name+'/'+frame_string
 
-        scr_anim_text += '%s %s/Pic/%s.png\n' % \
+        scr_anim_text += '%s %s/Pic/%s.jpg\n' % \
             (frame_dest, folder_name, frame_no_padded)
 
         write_cfg_file(frame_dest, pos, species, cell)
@@ -154,17 +155,17 @@ A = 1.0 Angstrom (basic length-scale)
 # (optional) basic length-scale: default A = 1.0 [Angstrom]
 
 H0(1,1) = %f A
-H0(1,2) = 0 A
-H0(1,3) = 0 A
+H0(1,2) = %f A
+H0(1,3) = %f A
 # (required) this is the supercell's 1st edge, in A
 
-H0(2,1) = 0 A
+H0(2,1) = %f A
 H0(2,2) = %f A
-H0(2,3) = 0 A
+H0(2,3) = %f A
 # (required) this is the supercell's 2nd edge, in A
 
-H0(3,1) = 0 A
-H0(3,2) = 0 A
+H0(3,1) = %f A
+H0(3,2) = %f A
 H0(3,3) = %f A
 # (required) this is the supercell's 3rd edge, in A
 
@@ -204,7 +205,10 @@ eta(3,3) = 0
 # 8th entry is d(s3)/dt in basic rate-scale R
 R = 1.0 [ns^-1]
 # (optional) basic rate-scale: default R = 1.0 [ns^-1]
-""" % (number_of_particles, cell[0, 0], cell[1, 1], cell[2, 2])
+""" % (number_of_particles,
+       cell[0, 0], cell[0, 1], cell[0, 2],
+       cell[1, 0], cell[1, 1], cell[1, 2],
+       cell[2, 0], cell[2, 1], cell[2, 2])
 
     return cfg_text
 
@@ -222,16 +226,26 @@ def calculate_reduced_coordinates(positions: np.ndarray,
     :rtype: np.ndarray
     """
 
-    reduced_coordinates = np.zeros((positions.shape[0], 3))
-    for m in range(positions.shape[0]):
-        for n in range(3):
-            trial_coord = positions[m, n] / cell[n, n]
+    species = ['Co'] * len(positions)
 
-            # reduced coordinates must be between 0 and 1
-            trans = np.floor(trial_coord)
-            reduced_coordinates[m, n] = trial_coord - trans
+    structure = struc.Structure(cell, species, positions)
+    rel_pos = \
+        structure.raw_to_relative(structure.positions,
+                                  structure.cell_transpose,
+                                  structure.cell_dot_inverse)
 
-    return reduced_coordinates
+    rel_wrap = rel_pos - np.floor(rel_pos)
+
+    # reduced_coordinates = np.zeros((positions.shape[0], 3))
+    # for m in range(positions.shape[0]):
+    #     for n in range(3):
+    #         trial_coord = positions[m, n] / cell[n, n]
+
+    #         # reduced coordinates must be between 0 and 1
+    #         trans = np.floor(trial_coord)
+    #         reduced_coordinates[m, n] = trial_coord - trans
+
+    return rel_wrap
 
 
 def get_reduced_coordinate_text(reduced_coordinates: np.ndarray,

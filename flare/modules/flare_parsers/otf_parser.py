@@ -44,12 +44,11 @@ class OtfAnalysis:
 
     def make_gp(self, cell=None, kernel=None, kernel_grad=None, algo=None,
                 call_no=None, cutoffs=None, hyps=None, init_gp=None,
-                energy_force_kernel=None):
+                energy_force_kernel=None, hyp_no=None):
 
         if init_gp is None:
             # Use run's values as extracted from header
-            # TODO: 1. Allow for kernel gradient in header
-            #       2. self.header['kernel'] is a str
+            # TODO Allow for kernel gradient in header
             if cell is None:
                 cell = self.header['cell']
             if kernel is None:
@@ -62,8 +61,10 @@ class OtfAnalysis:
                 cutoffs = self.header['cutoffs']
             if call_no is None:
                 call_no = len(self.gp_position_list)
+            if hyp_no is None:
+                hyp_no = call_no
             if hyps is None:
-                gp_hyps = self.gp_hyp_list[call_no-1][-1]
+                gp_hyps = self.gp_hyp_list[hyp_no-1][-1]
             else:
                 gp_hyps = hyps
 
@@ -74,50 +75,20 @@ class OtfAnalysis:
         else:
             gp_model = init_gp
             call_no = len(self.gp_position_list)
-            gp_hyps = self.gp_hyp_list[call_no-1][-1]
+            gp_hyps = self.gp_hyp_list[hyp_no-1][-1]
             gp_model.hyps = gp_hyps
 
-        # build database
-        positions = self.gp_position_list[0]
-        forces = self.gp_force_list[0]
-        atoms = self.gp_atom_list[0]
-        species = self.gp_species_list[0]
-        struc_curr = struc.Structure(cell, species, positions)
-        gp_model.update_db(struc_curr, forces, custom_range=atoms)
-        gp_model.set_L_alpha()
-        print('gp db initialized. begin updating')
-
-        gp_model.l_bound = get_l_bound(10, struc_curr, True)
-       
-        # build gp in an update style
-        for ind, (positions, forces, atoms, _, species) in \
-            enumerate(zip(self.gp_position_list[1:call_no], 
-                self.gp_force_list[1:call_no],
-                self.gp_atom_list[1:call_no], self.gp_hyp_list[1:call_no],
-                self.gp_species_list[1:call_no])):
+        for (positions, forces, atoms, _, species) in \
+            zip(self.gp_position_list[:call_no],
+                self.gp_force_list[:call_no],
+                self.gp_atom_list[:call_no], self.gp_hyp_list[:call_no],
+                self.gp_species_list[:call_no]):
 
             struc_curr = struc.Structure(cell, species, positions)
-            gp_model.l_bound = get_l_bound(gp_model.l_bound, struc_curr, True)
-            for atom in atoms:
-                env_curr = env.AtomicEnvironment(struc_curr, atom, gp_model.cutoffs)
-#                pred_f = np.zeros(3)
-#                pred_v = np.zeros(3)
-#                for d in range(3):
-#                    pred_f[d], pred_v[d] = gp_model.predict(env_curr, d+1)
-#                pred_std = np.sqrt(pred_v)
-#
-#                # discard those training point with low uncertainty
-#                if np.all(pred_std < gp_model.hyps[-1]*np.ones(3)):
-#                    continue
 
-                # update database
-                forces_curr = np.array(forces[atom])
-                gp_model.training_data.append(env_curr)
-                gp_model.training_labels.append(forces_curr)
-                gp_model.training_labels_np = gp_model.force_list_to_np(gp_model.training_labels)
-                gp_model.update_L_alpha() 
+            gp_model.update_db(struc_curr, forces, custom_range=atoms)
 
-        #gp_model.set_L_alpha()
+        gp_model.set_L_alpha()
 
         return gp_model
 
@@ -232,7 +203,7 @@ class OtfAnalysis:
                     # keep track of atom number
                     if line_check.startswith("Adding atom"):
                         line_split = line_check.split()
-                        atom_strings = line_split[2 : -4]
+                        atom_strings = line_split[2:-4]
                         for n, atom_string in enumerate(atom_strings):
                             if n == 0:
                                 atoms_added.append(int(atom_string[1:-1]))
@@ -376,13 +347,15 @@ def parse_header_information(outfile: str = 'otf_run.out') -> dict:
     for i, line in enumerate(lines[:stopreading]):
         # TODO Update this in full
         if 'cutoffs' in line:
-            line = line.replace(',', ' ')
             line = line.split(':')[1].strip()
             line = line.strip('[').strip(']')
             line = line.split()
             cutoffs = []
             for val in line:
-                cutoffs.append(float(val))
+                try:
+                    cutoffs.append(float(val))
+                except:
+                    cutoffs.append(float(val[:-1]))
             header_info['cutoffs'] = cutoffs
         if 'frames' in line:
             header_info['frames'] = int(line.split(':')[1])
@@ -428,7 +401,6 @@ def parse_header_information(outfile: str = 'otf_run.out') -> dict:
 
 def parse_frame_line(frame_line):
     """parse a line in otf output.
-
     :param frame_line: frame line to be parsed
     :type frame_line: string
     :return: species, position, force, uncertainty, and velocity of atom
