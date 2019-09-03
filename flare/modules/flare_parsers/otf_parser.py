@@ -2,7 +2,7 @@ import sys
 import numpy as np
 from typing import List, Tuple
 from flare import gp, env, struc, kernels, otf
-
+from flare.mff.utils import get_l_bound
 
 class OtfAnalysis:
     def __init__(self, filename, calculate_energy=False):

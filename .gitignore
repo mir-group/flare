@@ -6,7 +6,12 @@ pwscf.save/
 /flare/tests/test_outputs/*
 /tests/test_mff/Al_md.out
 /tests/test_mff/lmp_tmp/
+/test/test_mff/
+/test/mff/
 /datasets/
 /tests/test_lammps/*.npy
 /tests/test_lammps/*.txt
+/tests/ase_otf/*.alloy
+/tests/ase_otf/kv3/
+/tests/ase_otf/grid3*
 /tests/test_outputs/*

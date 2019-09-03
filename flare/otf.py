@@ -5,6 +5,7 @@ import time
 from typing import List
 import copy
 import multiprocessing as mp
+import subprocess
 import concurrent.futures
 from flare import struc, gp, env, qe_util, md, output
 
@@ -18,8 +19,7 @@ class OTF(object):
                  calculate_energy=False, output_name='otf_run.out',
                  max_atoms_added=1, freeze_hyps=10,
                  rescale_steps=[], rescale_temps=[],
-                 no_cpus=1, use_mapping: bool=False,
-                 non_mapping_steps: list=[]):
+                 no_cpus=1):
 
         self.qe_input = qe_input
         self.dt = dt
@@ -30,10 +30,6 @@ class OTF(object):
         self.skip = skip
         self.dft_step = True
         self.freeze_hyps = freeze_hyps
-
-        # whether and when to begin using mapped force field
-        self.use_mapping = use_mapping
-        self.non_mapping_steps = non_mapping_steps
 
         # parse input file
         positions, species, cell, masses = \
@@ -76,13 +72,6 @@ class OTF(object):
             self.pred_func = self.predict_on_structure_en
         elif par and calculate_energy:
             self.pred_func = self.predict_on_structure_par_en
-        if self.use_mapping:
-            if par:
-                self.pred_func = self.predict_on_structure
-                self.pred_func_gp = self.predict_on_structure
-            else:
-                self.pred_func = self.predict_on_structure
-                self.pred_func_gp = self.predict_on_structure
         self.par = par
 
         # set rescale attributes
@@ -103,6 +92,7 @@ class OTF(object):
         self.start_time = time.time()
 
         while self.curr_step < self.number_of_steps:
+            print('curr_step:', self.curr_step)
             # run DFT and train initial model if first step and DFT is on
             if self.curr_step == 0 and self.std_tolerance != 0:
                 # call dft and update positions

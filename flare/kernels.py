@@ -21,7 +21,6 @@ def two_plus_three_body(env1, env2, d1, d2, hyps, cutoffs,
                        env1.cross_bond_dists, env2.cross_bond_dists,
                        env1.triplet_counts, env2.triplet_counts,
                        d1, d2, hyps[2], hyps[3], cutoffs[1], cutoff_func)
-
     return two_term + three_term
 
 
@@ -363,11 +362,10 @@ def three_body_jit(bond_array_1, bond_array_2,
 
                     fj = fj1*fj2*fj3
                     fdj = fdj1*fj2*fj3+fj1*fdj2*fj3
-
+                    
                     kern += triplet_kernel(ci1, ci2, cj1, cj2, ri1, ri2, ri3,
                                            rj1, rj2, rj3, fi, fj, fdi, fdj,
                                            ls1, ls2, ls3, sig2)
-
     return kern
 
 
