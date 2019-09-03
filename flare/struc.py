@@ -38,18 +38,12 @@ class Structure(object):
         self.positions = np.array(positions)
         self.wrap_positions()
 
-        # get unique species
-        # self.species = species
-
         # If species are strings, convert species to integers by atomic number
         species = [element_to_Z(spec) for spec in species]
 
         self.coded_species = np.array(species)
         self.species_labels = species_labels
         self.nat = len(species)
-        # unique_species, coded_species = self.get_unique_species(species)
-        # self.unique_species = unique_species
-        # self.coded_species = coded_species
 
         # Default: atoms have no velocity
         if prev_positions is None:

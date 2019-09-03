@@ -287,7 +287,6 @@ class GaussianProcess:
 
     def update_L_alpha_v1(self):
         """This function is used right after "update_db". It can update the l_mat_inv, k_mat_inv and alpha without computing the whole kernel matrix. The condition is the hyps should be frozen. See notes for derivation and calculation details."""
-
         n = self.l_mat_inv.shape[0]
         m = len(self.training_data) - n//3  # number of data added
         sigma_n = self.hyps[-1]
