@@ -1,5 +1,6 @@
 import numpy as np
 from typing import List
+from flare.util import element_to_Z
 
 
 class Structure(object):
@@ -16,7 +17,7 @@ class Structure(object):
 
     def __init__(self, cell: np.ndarray, species: List[int],
                  positions: np.ndarray, mass_dict: dict = None,
-                 prev_positions: np.ndarray=None, species_labels=None):
+                 prev_positions: np.ndarray = None, species_labels=None):
         self.cell = cell
         self.vec1 = cell[0, :]
         self.vec2 = cell[1, :]
@@ -32,14 +33,12 @@ class Structure(object):
         self.positions = np.array(positions)
         self.wrap_positions()
 
-        # get unique species
-        # self.species = species
-        self.coded_species = np.array(species)
+        # If species are strings, convert species to integers by atomic number
+
+        self.species = species
+        self.coded_species = np.array([element_to_Z(spec) for spec in species])
         self.species_labels = species_labels
         self.nat = len(species)
-        # unique_species, coded_species = self.get_unique_species(species)
-        # self.unique_species = unique_species
-        # self.coded_species = coded_species
 
         # Default: atoms have no velocity
         if prev_positions is None:
@@ -47,7 +46,8 @@ class Structure(object):
         else:
             assert len(positions) == len(prev_positions), 'Previous ' \
                                                           'positions and ' \
-                                            'positions are not same length'
+                                                          'positions are not ' \
+                                                          'same length'
             self.prev_positions = prev_positions
 
         self.energy = None
@@ -107,6 +107,7 @@ def get_unique_species(species):
     coded_species = np.array(coded_species)
 
     return unique_species, coded_species
+
 
 if __name__ == '__main__':
     pass

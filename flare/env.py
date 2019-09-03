@@ -6,6 +6,15 @@ from flare.struc import Structure
 
 class AtomicEnvironment:
     def __init__(self, structure: Structure, atom: int, cutoffs: np.ndarray):
+        """
+        Class defining atomic environment to serve as argument to GP kernel.
+
+        :param structure: structure object to take atomic environment in
+        :param atom: index of atom in structure to find environment around
+        :param cutoffs: list of radii for 2-, 3- body kernel cutoffs.
+                        2-body only if one cutoff is given, 2+3 body if
+                        multiple are passed
+        """
         self.positions = structure.wrapped_positions
         self.cell = structure.cell
         self.atom = atom
@@ -30,6 +39,51 @@ class AtomicEnvironment:
             self.cross_bond_inds = cross_bond_inds
             self.cross_bond_dists = cross_bond_dists
             self.triplet_counts = triplet_counts
+
+    def to_dict(self):
+        """
+        Returns Atomic Environment object as a dictionary for serialization
+        purposes.
+        :return:
+        """
+        dictionary = vars(self)
+        dictionary['object'] = 'AtomicEnvironment'
+        return dictionary
+
+    @staticmethod
+    def from_dict(dictionary):
+        """
+        Loads in atomic environment object from a dictionary which was
+        serialized by the to_dict method.
+        :param dictionary: Dictionary describing atomic environment
+        :return:
+        """
+        # TODO Instead of re-computing 2 and 3 body environment,
+        # directly load in
+
+        struc = Structure(cell=dictionary['cell'],
+                          positions=dictionary['positions'],
+                          species=dictionary['species'])
+        index = dictionary['atom']
+
+        cutoffs = []
+        if dictionary.get('cutoff_2', False):
+            cutoffs.append(dictionary.get('cutoff_2'))
+        if dictionary.get('cutoff_3', False):
+            cutoffs.append(dictionary.get('cutoff_3'))
+        cutoffs = np.array(cutoffs)
+
+        return AtomicEnvironment(struc, index, cutoffs)
+
+    def __str__(self):
+        atom_type = self.ctype
+        neighbor_types = self.etypes
+        n_neighbors = len(self.bond_array_2)
+        string = 'Atomic Env. of Type {} surrounded by {} atoms of Types {}' \
+                 ''.format(atom_type, n_neighbors,
+                    sorted(list(set(neighbor_types))))
+
+        return string
 
 
 @njit
