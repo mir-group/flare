@@ -3,48 +3,49 @@ from numpy import array
 from numba import njit
 import io
 import sys
-sys.path.append('../flare')
 import os
-
 import flare.gp as gp
 import flare.env as env
 import flare.struc as struc
 import flare.kernels as kernels
-import flare.modules.qe_parsers as qe_parsers
-import flare.modules.analyze_gp as analyze_gp
 from flare.env import AtomicEnvironment
-from flare.kernels import triplet_kernel, three_body_helper_1, three_body_helper_2, force_helper
+from flare.kernels import triplet_kernel, three_body_helper_1, \
+    three_body_helper_2, force_helper
 from flare.cutoffs import quadratic_cutoff
-
 import time
 import random
 import logging
 import multiprocessing as mp
 import concurrent.futures
 import cProfile
-       
+
+
 def save_GP(GP, prefix):
     np.save(prefix+'alpha', GP.alpha)
     np.save(prefix+'hyps', GP.hyps)
     np.save(prefix+'l_mat', GP.l_mat)
-    
+
+
 def load_GP(GP, prefix):
     GP.alpha = np.load(prefix+'alpha.npy')
     GP.hyps = np.load(prefix+'hyps.npy')
     GP.l_mat = np.load(prefix+'l_mat.npy')
     l_mat_inv = np.linalg.inv(GP.l_mat)
     GP.ky_mat_inv = l_mat_inv.T @ l_mat_inv
-    
+
+
 def save_grid(bond_lens, bond_ens_diff, bond_vars_diff, prefix):
     np.save(prefix+'-bond_lens', bond_lens)
     np.save(prefix+'-bond_ens_diff', bond_ens_diff)
     np.save(prefix+'-bond_vars_diff', bond_vars_diff) 
-  
+
+
 def load_grid(prefix):
     bond_lens = np.load(prefix+'bond_lens.npy')
     bond_ens_diff = np.load(prefix+'bond_ens_diff.npy')
     bond_vars_diff = np.load(prefix+'bond_vars_diff.npy')  
     return bond_lens, bond_ens_diff, bond_vars_diff
+
 
 def merge(prefix, a_num, g_num):
     grid_means = np.zeros((g_num, g_num, a_num))
@@ -54,7 +55,8 @@ def merge(prefix, a_num, g_num):
         for a34 in range(a_num):
             grid_vars[:,:,a12,:,:,a34] = np.load(prefix+str((a12, a34))+'-bond_vars.npy')
     return grid_means, grid_vars
-    
+
+
 def svd_grid(matr, rank=55, prefix=None):
     if not prefix:
         u, s, vh = np.linalg.svd(matr, full_matrices=False)
@@ -64,6 +66,7 @@ def svd_grid(matr, rank=55, prefix=None):
         u = np.load(prefix+'SVD_U.npy')
         s = np.load(prefix+'SVD_S.npy')
     return u[:,:rank], s[:rank], vh[:rank, :]
+
 
 def get_l_bound(curr_l_bound, structure, two_d=False):
     positions = structure.positions
@@ -93,7 +96,7 @@ def get_l_bound(curr_l_bound, structure, two_d=False):
 
 
 @njit
-def get_bonds(ctype, etypes, bond_array): 
+def get_bonds(ctype, etypes, bond_array):
     exist_species = []
     bond_lengths = []
     bond_dirs = []
@@ -110,6 +113,7 @@ def get_bonds(ctype, etypes, bond_array):
             bond_dirs.append([bond[1:]])
     return exist_species, bond_lengths, bond_dirs
 
+
 #@njit
 def add_triplets(spcs_list, exist_species, tris, tri_dir, 
         r1, r2, a12, c1, c2):
@@ -119,7 +123,7 @@ def add_triplets(spcs_list, exist_species, tris, tri_dir,
             exist_species.append(spcs)
             tris.append([])
             tri_dir.append([])
-    
+
         k = exist_species.index(spcs)
         triplet = (r2, r1, a12) if i else (r1, r2, a12)
         coord = c2 if i else c1
@@ -155,7 +159,7 @@ def get_triplets(ctype, etypes, bond_array, cross_bond_inds,
 #                spcs_list = [[spc1, spc2, ctype], [spc2, ctype, spc1]]
 #            else: # all different
 #                spcs_list = [[ctype, spc1, spc2], [ctype, spc2, spc1]]
-                
+   
             spcs_list = [[ctype, spc1, spc2], [ctype, spc2, spc1]]
             for i in range(2):
                 spcs = spcs_list[i]
@@ -171,6 +175,7 @@ def get_triplets(ctype, etypes, bond_array, cross_bond_inds,
                     tri_dir[k].append(coord)
 
     return exist_species, tris, tri_dir 
+
 
 @njit
 def self_two_body_mc_jit(bond_array, c, etypes,
@@ -313,6 +318,3 @@ def self_three_body_mc_jit(bond_array, cross_bond_inds, cross_bond_dists,
                     kern += kern0 if m == p else 2 * kern0
 
     return kern
-
-
-
