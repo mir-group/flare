@@ -9,6 +9,8 @@ import pickle
 import os
 
 
+# ASSUMPTION: You have a Lammps executable with the mff pair style with $lmp
+# as the corresponding environment variable.
 def test_parse_header():
     # -------------------------------------------------------------------------
     #                  reconstruct gp model from otf snippet
@@ -104,7 +106,7 @@ def test_parse_header():
     style_string = 'mff'
     coeff_string = '* * {} 47 53 yes yes'.format(lammps_location)
     lammps_folder = '.'
-    lammps_executable = '/Users/jonpvandermause/lammps/src/lmp_mpi'
+    lammps_executable = '$lmp'
 
     atom_types = [1, 2]
     atom_masses = [108, 127]
