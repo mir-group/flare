@@ -249,6 +249,81 @@ class MappedForceField:
             v = mapping.var.V @ v_d
         return f, v
 
+    def write_two_plus_three(self, lammps_name):
+        # write header
+        f = open(lammps_name, 'w')
+
+        header_comment = '''# #2bodyarray #3bodyarray
+        # elem1 elem2 a b order
+        '''
+        f.write(header_comment)
+
+        twobodyarray = len(self.spcs[0])
+        threebodyarray = len(self.spcs[1])
+        lower_cut = self.bounds_2[0][0]
+        two_cut = self.bounds_2[1][0]
+        three_cut = self.bounds_3[1][0]
+        grid_num_2 = self.grid_num_2
+        grid_num_3 = self.grid_num_3[0]
+        angle_lower = self.bounds_3[0][2]
+        angle_upper = self.bounds_3[1][2]
+
+        header = '\n{} {}\n'.format(twobodyarray, threebodyarray)
+        f.write(header)
+
+        a = lower_cut
+        b = two_cut
+        order = grid_num_2
+
+        # write two body
+        for ind, spc in enumerate(self.spcs[0]):
+            coefs_2 = self.maps_2[ind].mean.model.__coeffs__
+
+            elem1 = spc[0]
+            elem2 = spc[1]
+            header_2 = '{elem1} {elem2} {a} {b} {order}\n'\
+                .format(elem1=elem1, elem2=elem2, a=a, b=b, order=order)
+            f.write(header_2)
+
+            for c, coef in enumerate(coefs_2):
+                f.write('{:.10e} '.format(coef))
+                if c % 5 == 4 and c != len(coefs_2)-1:
+                    f.write('\n')
+
+            f.write('\n')
+
+        # write three body
+        a = [lower_cut, lower_cut, angle_lower]
+        b = [three_cut, three_cut, angle_upper]
+        order = [grid_num_3, grid_num_3, grid_num_3]
+
+        for ind, spc in enumerate(self.spcs[1]):
+            coefs_3 = self.maps_3[ind].mean.model.__coeffs__
+
+            elem1 = spc[0]
+            elem2 = spc[1]
+            elem3 = spc[2]
+
+            header_3 = '{elem1} {elem2} {elem3} {a1} {a2} {a3} {b1}'\
+                       ' {b2} {b3:.10e} {order1} {order2} {order3}\n'\
+                .format(elem1=elem1, elem2=elem2, elem3=elem3,
+                        a1=a[0], a2=a[1], a3=a[2],
+                        b1=b[0], b2=b[1], b3=b[2],
+                        order1=order[0], order2=order[1], order3=order[2])
+            f.write(header_3)
+
+            n = 0
+            for i in range(coefs_3.shape[0]):
+                for j in range(coefs_3.shape[1]):
+                    for k in range(coefs_3.shape[2]):
+                        coef = coefs_3[i, j, k]
+                        f.write('{:.10e} '.format(coef))
+                        if n % 5 == 4:
+                            f.write('\n')
+                        n += 1
+
+            f.write('\n')
+
 
 class Map2body:
     def __init__(self, grid_num, bounds, GP, bond_struc, bodies='2',
@@ -263,7 +338,7 @@ class Map2body:
         self.cutoffs = GP.cutoffs
         self.bodies = bodies
         self.svd_rank = svd_rank
-        self.species = bond_struc.species
+        self.species = bond_struc.coded_species
         self.mean_only = mean_only
 
         y_mean, y_var = self.GenGrid(GP, bond_struc)
@@ -362,7 +437,7 @@ class Map3body:
         self.l_bound, self.u_bound = bounds
         self.cutoffs = GP.cutoffs
         self.bodies = bodies
-        self.species = bond_struc.species
+        self.species = bond_struc.coded_species
         self.mean_only = mean_only
 
         if not load_grid:
