@@ -72,6 +72,18 @@ class GaussianProcess:
         # create numpy array of training labels
         self.training_labels_np = self.force_list_to_np(self.training_labels)
 
+    def add_one(self, env, forces):
+        """
+        Tool to add a single environment / force pair into the training set
+        :param env:
+        :param forces:
+        :return:
+        """
+        self.training_data.append(env)
+        self.training_labels.append(forces)
+        self.training_labels_np = self.force_list_to_np(self.training_labels)
+
+
     @staticmethod
     def force_list_to_np(forces: list) -> np.ndarray:
         """ Convert list of forces to numpy array of forces.
@@ -92,7 +104,12 @@ class GaussianProcess:
         return forces_np
 
     def train(self, monitor=False, custom_bounds=None):
-        """ Train Gaussian Process model on training data. """
+        """
+        Train Gaussian Process model on training data.
+        Tunes the hyperparameters to maximize the Bayesian likelihood,
+        then computes L and alpha (related to the covariance matrix of the
+        training set).
+        """
 
         x_0 = self.hyps
 
@@ -228,6 +245,13 @@ class GaussianProcess:
         return k_v
 
     def set_L_alpha(self):
+        """
+        Invert the covariance matrix, setting L (a lower triangular
+        matrix s.t. L L^T = (K + sig_n^2 I) ) and alpha, an inversion of the
+        vector of training labels.
+        The forces and variances are later obtained using alpha.
+        :return:
+        """
         if self.par:
             hyp_mat, ky_mat = \
                 get_ky_and_hyp_par(self.hyps, self.training_data,
@@ -256,11 +280,18 @@ class GaussianProcess:
         self.like_grad = like_grad
         
     def update_L_alpha(self):
-        """Update the GP's L matrix and alpha vector.
         """
+        Update the GP's L matrix and alpha vector.
+        """
+
+        # Set L matrix and alpha if set_L_alpha has not been called yet
+        if self.l_mat is None:
+            self.set_L_alpha()
+            return
+
         n = self.l_mat_inv.shape[0]
         N = len(self.training_data)
-        m = N - n//3  # number of data added
+        m = N - n//3  # number of new data added
         ky_mat = np.zeros((3*N, 3*N))
         ky_mat[:n, :n] = self.ky_mat
         # calculate kernels for all added data
