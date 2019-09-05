@@ -10,7 +10,7 @@ Development should follow this pattern:
 
 1. Create an issue on Github describing what you want to contribute.
 2. Create a topic branch addressing the issue. (See the sections below on how to push branches directly or from a forked repository.)
-3. Merge with the development branch when finished.
+3. Merge with the development branch when finished and close the issue.
 
 Master, development, and topic branches
 ---------------------------------------
