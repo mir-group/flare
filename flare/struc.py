@@ -39,10 +39,11 @@ class Structure(object):
         self.wrap_positions()
 
         # If species are strings, convert species to integers by atomic number
-        species = [element_to_Z(spec) for spec in species]
-
-        self.coded_species = np.array(species)
-        self.species_labels = species_labels
+        if species_labels is None:
+            self.species_labels = species
+        else:
+            self.species_labels = species_labels
+        self.coded_species = np.array([element_to_Z(spec) for spec in species])
         self.nat = len(species)
 
         # Default: atoms have no velocity
@@ -118,6 +119,15 @@ class Structure(object):
 
         self.wrapped_positions = pos_wrap
 
+    def indices_of_specie(self, specie: int):
+        """
+        Return the indicies of atoms in  the structure which are atoms
+        corresponding to a given specie
+        :param specie:
+        :return:
+        """
+        return [i for i, spec in enumerate(self.coded_species)
+                if spec == specie]
 
 def get_unique_species(species):
     unique_species = []
