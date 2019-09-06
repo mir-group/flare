@@ -26,7 +26,7 @@ def test_env_methods():
     assert str(env_test) == 'Atomic Env. of Type 1 surrounded by 12 atoms' \
                             ' of Types [2, 3]'
 
-    the_dict = env_test.to_dict()
+    the_dict = env_test.as_dict()
     assert isinstance(the_dict, dict)
     for key in ['positions','cell','atom','cutoff_2','cutoff_3','species']:
         assert key in the_dict.keys()
