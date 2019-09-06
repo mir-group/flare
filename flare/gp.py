@@ -23,7 +23,8 @@ class GaussianProcess:
                  energy_force_kernel: Callable=None,
                  energy_kernel: Callable=None,
                  opt_algorithm: str='L-BFGS-B',
-                 maxiter=10, par=False):
+                 maxiter=10, par=False,
+                 monitor = False):
         """Initialize GP parameters and training data."""
 
         self.kernel = kernel
@@ -44,6 +45,7 @@ class GaussianProcess:
         self.likelihood = None
         self.likelihood_gradient = None
         self.par = par
+        self.monitor = monitor
 
     # TODO unit test custom range
     def update_db(self, struc: Structure, forces: list,
@@ -72,17 +74,26 @@ class GaussianProcess:
         # create numpy array of training labels
         self.training_labels_np = self.force_list_to_np(self.training_labels)
 
-    def add_one(self, env, forces):
+        if self.l_mat is None:
+            self.set_L_alpha()
+        else:
+            self.update_L_alpha()
+
+    def add_one_env(self, env: AtomicEnvironment,
+                force: np.array, train: bool = False, **kwargs):
         """
         Tool to add a single environment / force pair into the training set
         :param env:
-        :param forces:
+        :param forces: (x,y,z) component associated with environment
+        :param train:
         :return:
         """
         self.training_data.append(env)
-        self.training_labels.append(forces)
+        self.training_labels.append(force)
         self.training_labels_np = self.force_list_to_np(self.training_labels)
 
+        if train:
+            self.train(**kwargs)
 
     @staticmethod
     def force_list_to_np(forces: list) -> np.ndarray:
@@ -103,7 +114,10 @@ class GaussianProcess:
 
         return forces_np
 
-    def train(self, monitor=False, custom_bounds=None):
+    def train(self, monitor=False, custom_bounds=None,
+              grad_tol: float = 1e-4,
+              x_tol: float = 1e-5,
+              line_steps : int = 20):
         """
         Train Gaussian Process model on training data.
         Tunes the hyperparameters to maximize the Bayesian likelihood,
@@ -120,14 +134,15 @@ class GaussianProcess:
         if self.algo == 'L-BFGS-B':
 
             # bound signal noise below to avoid overfitting
-            bounds = np.array([(-np.inf, np.inf)] * len(x_0))
-            bounds[-1] = (1e-6, np.inf)
-
+            bounds = np.array([(1e-6, np.inf)] * len(x_0))
+            #bounds = np.array([(1e-6, np.inf)] * len(x_0))
+            #bounds[-1] = [1e-6,np.inf]
             # Catch linear algebra errors and switch to BFGS if necessary
             try:
                 res = minimize(get_neg_like_grad, x_0, args,
                                method='L-BFGS-B', jac=True, bounds=bounds,
-                               options={'disp': False, 'gtol': 1e-4,
+                               options={'disp': False, 'gtol': grad_tol,
+                                        'maxls' :line_steps,
                                         'maxiter': self.maxiter})
             except:
                 print("Warning! Algorithm for L-BFGS-B failed. Changing to "
@@ -137,13 +152,14 @@ class GaussianProcess:
         if custom_bounds is not None:
             res = minimize(get_neg_like_grad, x_0, args,
                            method='L-BFGS-B', jac=True, bounds=custom_bounds,
-                           options={'disp': False, 'gtol': 1e-4,
+                           options={'disp': False, 'gtol': grad_tol,
+                                    'maxls' : line_steps,
                                     'maxiter': self.maxiter})
 
         elif self.algo == 'BFGS':
             res = minimize(get_neg_like_grad, x_0, args,
                            method='BFGS', jac=True,
-                           options={'disp': False, 'gtol': 1e-4,
+                           options={'disp': False, 'gtol': grad_tol,
                                     'maxiter': self.maxiter})
 
         elif self.algo == 'nelder-mead':
@@ -151,7 +167,7 @@ class GaussianProcess:
                            method='nelder-mead',
                            options={'disp': False,
                                     'maxiter': self.maxiter,
-                                    'xtol': 1e-5})
+                                    'xtol': x_tol})
 
         self.hyps = res.x
         self.set_L_alpha()
