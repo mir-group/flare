@@ -15,12 +15,16 @@ class AtomicEnvironment:
                         2-body only if one cutoff is given, 2+3 body if
                         multiple are passed
         """
+        self.structure = structure
         self.positions = structure.wrapped_positions
         self.cell = structure.cell
-        self.atom = atom
-        self.cutoff_2 = cutoffs[0]
         self.species = structure.coded_species
+
+        self.atom = atom
         self.ctype = structure.coded_species[atom]
+
+        self.cutoff_2 = cutoffs[0]
+
 
         # get 2-body arrays
         bond_array_2, bond_positions_2, etypes = \
@@ -39,14 +43,24 @@ class AtomicEnvironment:
             self.cross_bond_dists = cross_bond_dists
             self.triplet_counts = triplet_counts
 
-    def to_dict(self):
+    def as_dict(self):
         """
         Returns Atomic Environment object as a dictionary for serialization
-        purposes.
+        purposes. Does not include the structure to avoid redundant
+        information.
+        :param forces: [x,y,z] components of forces associated with environment
         :return:
         """
-        dictionary = vars(self)
+        # TODO write serialization method for structure
+        # so that the removal of the structure is not messed up
+        # by JSON serialization
+        dictionary = dict(vars(self))
         dictionary['object'] = 'AtomicEnvironment'
+        dictionary['forces'] = self.structure.forces
+        dictionary['energy'] = self.structure.energy
+        dictionary['stress'] = self.structure.stress
+        del dictionary['structure']
+
         return dictionary
 
     @staticmethod
@@ -58,9 +72,9 @@ class AtomicEnvironment:
         :return:
         """
         # TODO Instead of re-computing 2 and 3 body environment,
-        # directly load in
+        # directly load in, this would be much more efficient
 
-        struc = Structure(cell=dictionary['cell'],
+        struc = Structure(cell=np.array(dictionary['cell']),
                           positions=dictionary['positions'],
                           species=dictionary['species'])
         index = dictionary['atom']
@@ -68,9 +82,12 @@ class AtomicEnvironment:
         cutoffs = []
         if dictionary.get('cutoff_2', False):
             cutoffs.append(dictionary.get('cutoff_2'))
+
         if dictionary.get('cutoff_3', False):
             cutoffs.append(dictionary.get('cutoff_3'))
         cutoffs = np.array(cutoffs)
+
+
 
         return AtomicEnvironment(struc, index, cutoffs)
 
