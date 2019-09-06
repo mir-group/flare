@@ -1,7 +1,7 @@
 import numpy as np
 from typing import List
-from flare.util import element_to_Z
-
+from flare.util import element_to_Z, NumpyEncoder
+from json import dumps
 
 class Structure(object):
     """
@@ -128,6 +128,38 @@ class Structure(object):
         """
         return [i for i, spec in enumerate(self.coded_species)
                 if spec == specie]
+
+
+    #TODO make more descriptive
+    def __str__(self):
+        return 'Structure with {} atoms of types {}'.format(self.nat,
+                                                  set(self.species_labels))
+
+    def as_dict(self):
+        """
+        Returns structure as a dictionary for serialization
+        purposes.
+        :return:
+        """
+        return dict(vars(self))
+
+    def as_str(self):
+        return dumps(self.as_dict(),cls=NumpyEncoder)
+
+    @staticmethod
+    def from_dict(dictionary):
+        struc = Structure(cell=np.array(dictionary['cell']),
+                          positions=np.array(dictionary['positions']),
+                          species=dictionary['coded_species'])
+
+        struc.forces = np.array(dictionary['forces'])
+        struc.stress = dictionary['stress']
+        struc.stds = np.array(dictionary['stds'])
+        struc.mass_dict = dictionary['mass_dict']
+        struc.species_labels = dictionary['species_labels']
+
+        return struc
+
 
 def get_unique_species(species):
     unique_species = []
