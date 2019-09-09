@@ -5,19 +5,24 @@ from json import dumps
 
 class Structure(object):
     """
-    Contains information about a structure of atoms, including the periodic cell boundaries and atomic species and coordinates.
+    Contains information about a structure of atoms, including the periodic
+    cell boundaries and atomic species and coordinates.
     
-    :param cell: 3x3 array whose rows are the Bravais lattice vectors of the cell.
+    :param cell: 3x3 array whose rows are the Bravais lattice vectors of the
+    cell.
     :type cell: np.ndarray
-    :param species: List of atomic species, which are represented either as integers or chemical symbols.
+    :param species: List of atomic species, which are represented either as
+    integers or chemical symbols.
     :type species: List
     :param positions: Nx3 array of atomic coordinates.
     :type positions: np.ndarray
     :param mass_dict: Dictionary of atomic masses used in MD simulations.
     :type mass_dict: dict
-    :param prev_positions: Nx3 array of previous atomic coordinates used in MD simulations.
+    :param prev_positions: Nx3 array of previous atomic coordinates used in
+    MD simulations.
     :type prev_positions: np.ndarray
-    :param species_labels: List of chemical symbols. Used in the output file of on-the-fly runs.
+    :param species_labels: List of chemical symbols. Used in the output file
+    of on-the-fly runs.
     :type species_labels: List[str]
     """
 
@@ -64,7 +69,8 @@ class Structure(object):
 
     def get_cell_dot(self):
         """
-        Compute 3x3 array of dot products of cell vectors used to fold atoms back to the unit cell.
+        Compute 3x3 array of dot products of cell vectors used to fold atoms
+        back to the unit cell.
 
         :return: 3x3 array of cell vector dot products.
         :rtype: np.ndarray
@@ -80,13 +86,15 @@ class Structure(object):
 
     @staticmethod
     def raw_to_relative(positions, cell_transpose, cell_dot_inverse):
-        """Convert Cartesian coordinates to relative coordinates expressed in terms of the cell vectors.
+        """Convert Cartesian coordinates to relative coordinates expressed in
+        terms of the cell vectors.
         
         :param positions: Cartesian coordinates.
         :type positions: np.ndarray
         :param cell_transpose: Transpose of the cell array.
         :type cell_transpose: np.ndarray
-        :param cell_dot_inverse: Inverse of the array of dot products of cell vectors.
+        :param cell_dot_inverse: Inverse of the array of dot products of cell
+        vectors.
         :type cell_dot_inverse: np.ndarray
         :return: Relative positions.
         :rtype: np.ndarray
@@ -130,7 +138,7 @@ class Structure(object):
                 if spec == specie]
 
 
-    #TODO make more descriptive
+    # TODO make more descriptive
     def __str__(self):
         return 'Structure with {} atoms of types {}'.format(self.nat,
                                                   set(self.species_labels))

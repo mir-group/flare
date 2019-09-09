@@ -25,7 +25,6 @@ class AtomicEnvironment:
 
         self.cutoff_2 = cutoffs[0]
 
-
         # get 2-body arrays
         bond_array_2, bond_positions_2, etypes = \
             get_2_body_arrays(self.positions, self.atom, self.cell,
@@ -36,7 +35,7 @@ class AtomicEnvironment:
         # if multiple cutoffs are given, create 3-body arrays
         if len(cutoffs) > 1:
             self.cutoff_3 = cutoffs[1]
-            bond_array_3, cross_bond_inds, cross_bond_dists, triplet_counts =\
+            bond_array_3, cross_bond_inds, cross_bond_dists, triplet_counts = \
                 get_3_body_arrays(bond_array_2, bond_positions_2, cutoffs[1])
             self.bond_array_3 = bond_array_3
             self.cross_bond_inds = cross_bond_inds
@@ -48,7 +47,6 @@ class AtomicEnvironment:
         Returns Atomic Environment object as a dictionary for serialization
         purposes. Does not include the structure to avoid redundant
         information.
-        :param forces: [x,y,z] components of forces associated with environment
         :return:
         """
         # TODO write serialization method for structure
@@ -87,8 +85,6 @@ class AtomicEnvironment:
             cutoffs.append(dictionary.get('cutoff_3'))
         cutoffs = np.array(cutoffs)
 
-
-
         return AtomicEnvironment(struc, index, cutoffs)
 
     def __str__(self):
@@ -97,7 +93,7 @@ class AtomicEnvironment:
         n_neighbors = len(self.bond_array_2)
         string = 'Atomic Env. of Type {} surrounded by {} atoms of Types {}' \
                  ''.format(atom_type, n_neighbors,
-                    sorted(list(set(neighbor_types))))
+                           sorted(list(set(neighbor_types))))
 
         return string
 
@@ -123,8 +119,8 @@ def get_2_body_arrays(positions: np.ndarray, atom: int, cell: np.ndarray,
         for s1 in super_sweep:
             for s2 in super_sweep:
                 for s3 in super_sweep:
-                    im = diff_curr + s1*vec1 + s2*vec2 + s3*vec3
-                    dist = sqrt(im[0]*im[0]+im[1]*im[1]+im[2]*im[2])
+                    im = diff_curr + s1 * vec1 + s2 * vec2 + s3 * vec3
+                    dist = sqrt(im[0] * im[0] + im[1] * im[1] + im[2] * im[2])
                     if (dist < cutoff_2) and (dist != 0):
                         dists[n, im_count] = dist
                         coords[n, :, im_count] = im
@@ -176,17 +172,18 @@ def get_3_body_arrays(bond_array_2: np.ndarray,
     bond_positions_3 = bond_positions_2[0:ind_3, :]
 
     # get cross bond array
-    cross_bond_inds = np.zeros((ind_3, ind_3), dtype=np.int8)-1
+    cross_bond_inds = np.zeros((ind_3, ind_3), dtype=np.int8) - 1
     cross_bond_dists = np.zeros((ind_3, ind_3))
     triplet_counts = np.zeros(ind_3, dtype=np.int8)
     for m in range(ind_3):
         pos1 = bond_positions_3[m]
-        count = m+1
+        count = m + 1
         trips = 0
-        for n in range(m+1, ind_3):
+        for n in range(m + 1, ind_3):
             pos2 = bond_positions_3[n]
             diff = pos2 - pos1
-            dist_curr = sqrt(diff[0]*diff[0]+diff[1]*diff[1]+diff[2]*diff[2])
+            dist_curr = sqrt(
+                diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2])
 
             if dist_curr < cutoff_3:
                 cross_bond_inds[m, count] = n

@@ -243,7 +243,6 @@ class OtfAnalysis:
     def output_md_structures(self):
         """
         Returns structure objects corresponding to the MD frames of an OTF run.
-        :param filename:
         :return:
         """
 

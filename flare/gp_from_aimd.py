@@ -134,13 +134,14 @@ class TrajectoryTrainer(object):
         # Loop through trajectory
         for i, cur_frame in enumerate(self.frames):
 
-            if self.verbose >= 2: print("=====NOW ON FRAME {}=====".format(i))
+            if self.verbose >= 2:
+                print("=====NOW ON FRAME {}=====".format(i))
             dft_forces = deepcopy(cur_frame.forces)
             self.pred_func(cur_frame, self.gp)
 
             # Convert to meV/A
-            mae = np.mean(np.abs(cur_frame.forces - dft_forces))*1000
-            mac = np.mean(np.abs(dft_forces))*1000
+            mae = np.mean(np.abs(cur_frame.forces - dft_forces)) * 1000
+            mac = np.mean(np.abs(dft_forces)) * 1000
 
             output.write_gp_dft_comparison(
                 curr_step=i, frame=cur_frame,
@@ -158,7 +159,6 @@ class TrajectoryTrainer(object):
 
                 if self.train_count < self.max_trains:
                     self.train_gp()
-
 
         output.conclude_run(self.output_name)
 
@@ -199,20 +199,20 @@ class TrajectoryTrainer(object):
     def is_std_in_bound(self, frame):
 
         # This indicates test mode, as the GP is not being modified in any way
-        if self.rel_std_tolerance == 0 and self.abs_std_tolerance ==0:
-            return True,[-1]
+        if self.rel_std_tolerance == 0 and self.abs_std_tolerance == 0:
+            return True, [-1]
 
         # set uncertainty threshold
         if self.rel_std_tolerance == 0:
             threshold = self.abs_std_tolerance
-        elif self.abs_std_tolerance == 0 :
+        elif self.abs_std_tolerance == 0:
             threshold = self.rel_std_tolerance * np.abs(self.gp.hyps[-1])
         else:
             threshold = min(self.rel_std_tolerance * np.abs(self.gp.hyps[-1]),
-                        self.abs_std_tolerance)
+                            self.abs_std_tolerance)
 
         # sort max stds
-        max_stds = np.zeros((frame.nat))
+        max_stds = np.zeros(frame.nat)
         for atom_idx, std in enumerate(frame.stds):
             max_stds[atom_idx] = np.max(std)
         stds_sorted = np.argsort(max_stds)

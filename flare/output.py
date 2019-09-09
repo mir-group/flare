@@ -12,22 +12,21 @@ def write_to_output(string: str, output_file: str = 'otf_run.out'):
 def write_header(cutoffs, kernel_name, hyps, algo, dt, Nsteps, structure,
                  output_name, std_tolerance,
                  optional: dict = None):
-
     with open(output_name, 'w') as f:
         f.write(str(datetime.datetime.now()) + '\n')
 
-    if isinstance(std_tolerance,tuple):
+    if isinstance(std_tolerance, tuple):
         std_string = "relative uncertainty tolerance: {} eV/A\n".format(
             std_tolerance[0])
-        std_string+= 'absolute uncertainty tolerance: {} eV/A\n'.format(
+        std_string += 'absolute uncertainty tolerance: {} eV/A\n'.format(
             std_tolerance[1])
     elif std_tolerance < 0:
         std_string = \
             'uncertainty tolerance: {} eV/A\n'.format(np.abs(std_tolerance))
     elif std_tolerance > 0:
         std_string = \
-            'uncertainty tolerance: {} times noise \n'\
-            .format(np.abs(std_tolerance))
+            'uncertainty tolerance: {} times noise \n' \
+                .format(np.abs(std_tolerance))
     else:
         std_string = ''
 
@@ -64,7 +63,6 @@ def write_header(cutoffs, kernel_name, hyps, algo, dt, Nsteps, structure,
     headerstring += '-' * 80 + '\n'
 
     write_to_output(headerstring, output_name)
-
 
 
 def write_md_config(dt, curr_step, structure, temperature, KE, local_energies,
@@ -118,7 +116,7 @@ def write_md_config(dt, curr_step, structure, temperature, KE, local_energies,
         string += 'total energy: %.6f eV \n' % tot_en
 
     string += 'wall time from start: %.2f s \n' % \
-        (time.time() - start_time)
+              (time.time() - start_time)
 
     write_to_output(string, output_name)
 
@@ -130,8 +128,9 @@ def write_hyps(hyp_labels, hyps, start_time, output_name, like, like_grad):
         write_to_output('Hyp{} : {} = {}\n'.format(i, label, hyps[i]),
                         output_name)
 
-    write_to_output('likelihood: '+str(like)+'\n', output_name)
-    write_to_output('likelihood gradient: '+str(like_grad)+'\n', output_name)
+    write_to_output('likelihood: ' + str(like) + '\n', output_name)
+    write_to_output('likelihood gradient: ' + str(like_grad) + '\n',
+                    output_name)
     time_curr = time.time() - start_time
     write_to_output('wall time from start: %.2f s \n' % time_curr,
                     output_name)
@@ -145,17 +144,19 @@ def conclude_run(output_name):
 
 
 def write_gp_dft_comparison(curr_step, frame,
-                     start_time, dft_forces,
-                    mae, mac,  local_energies = None,KE = None,
-                            output_name =''):
+                            start_time, dft_forces,
+                            mae, mac, local_energies=None, KE=None,
+                            output_name=''):
     """
+    :param dft_forces:
+    :param mae:
+    :param mac:
+    :param KE:
     :param curr_step:
     :param frame:
     :param local_energies:
     :param start_time:
     :param output_name:
-    :param dft_step:
-    :param velocities:
     :return:
     """
     string = ''
@@ -187,8 +188,8 @@ def write_gp_dft_comparison(curr_step, frame,
 
     string += '\n'
 
-    string += 'mean absolute error: %.2f meV/A \n' %mae
-    string += 'mean absolute dft component: %.2f meV/A \n' %mac
+    string += 'mean absolute error: %.2f meV/A \n' % mae
+    string += 'mean absolute dft component: %.2f meV/A \n' % mac
 
     # calculate potential and total energy
     if local_energies is not None:
@@ -199,8 +200,6 @@ def write_gp_dft_comparison(curr_step, frame,
         string += 'total energy: %.6f eV \n' % tot_en
 
     string += 'wall time from start: %.2f s \n' % \
-        (time.time() - start_time)
-
-
+              (time.time() - start_time)
 
     write_to_output(string, output_name)

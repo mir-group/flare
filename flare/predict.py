@@ -24,7 +24,7 @@ def predict_on_atom(structure: Structure, atom: int, gp: GaussianProcess):
     stds = []
     # predict force components and standard deviations
     for i in range(3):
-        force, var = gp.predict(chemenv, i+ 1)
+        force, var = gp.predict(chemenv, i + 1)
         components.append(float(force))
         stds.append(np.sqrt(np.abs(var)))
 
@@ -32,7 +32,6 @@ def predict_on_atom(structure: Structure, atom: int, gp: GaussianProcess):
 
 
 def predict_on_atom_en(structure: Structure, atom: int, gp: GaussianProcess):
-
     chemenv = AtomicEnvironment(structure, atom, gp.cutoffs)
     comps = []
     stds = []
@@ -104,4 +103,3 @@ def predict_on_structure_en(structure: Structure, gp: GaussianProcess):
     forces = np.array(structure.forces)
     stds = np.array(structure.stds)
     return forces, stds, local_energies
-

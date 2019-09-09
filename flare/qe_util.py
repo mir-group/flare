@@ -132,7 +132,6 @@ def qe_input_to_structure(qe_input: str):
     """
     Parses a qe input and returns the atoms in the file as a Structure object
     :param qe_input: QE Input file to parse
-    :param cutoff: Cutoff radius for structure
     :return:
     """
     positions, species, cell, masses = parse_qe_input(qe_input)

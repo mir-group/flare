@@ -5,7 +5,7 @@ from scipy.optimize import minimize
 from typing import List, Callable
 from flare.env import AtomicEnvironment
 from flare.struc import Structure
-from flare.gp_algebra import get_ky_mat, get_ky_and_hyp, get_like_from_ky_mat,\
+from flare.gp_algebra import get_ky_mat, get_ky_and_hyp, get_like_from_ky_mat, \
     get_like_grad_from_mats, get_neg_likelihood, get_neg_like_grad, \
     get_ky_and_hyp_par
 
@@ -17,14 +17,14 @@ class GaussianProcess:
     "Gaussian Processes for Machine Learning" by Rasmussen and Williams"""
 
     def __init__(self, kernel: Callable,
-                 kernel_grad: Callable,  hyps: np.ndarray,
+                 kernel_grad: Callable, hyps: np.ndarray,
                  cutoffs: np.ndarray,
-                 hyp_labels: List=None,
-                 energy_force_kernel: Callable=None,
-                 energy_kernel: Callable=None,
-                 opt_algorithm: str='L-BFGS-B',
+                 hyp_labels: List = None,
+                 energy_force_kernel: Callable = None,
+                 energy_kernel: Callable = None,
+                 opt_algorithm: str = 'L-BFGS-B',
                  maxiter=10, par=False,
-                 monitor = False):
+                 monitor=False):
         """Initialize GP parameters and training data."""
 
         self.kernel = kernel
@@ -80,9 +80,10 @@ class GaussianProcess:
             self.update_L_alpha()
 
     def add_one_env(self, env: AtomicEnvironment,
-                force: np.array, train: bool = False, **kwargs):
+                    force: np.array, train: bool = False, **kwargs):
         """
         Tool to add a single environment / force pair into the training set
+        :param force:
         :param env:
         :param forces: (x,y,z) component associated with environment
         :param train:
@@ -117,7 +118,7 @@ class GaussianProcess:
     def train(self, monitor=False, custom_bounds=None,
               grad_tol: float = 1e-4,
               x_tol: float = 1e-5,
-              line_steps : int = 20):
+              line_steps: int = 20):
         """
         Train Gaussian Process model on training data.
         Tunes the hyperparameters to maximize the Bayesian likelihood,
@@ -135,14 +136,14 @@ class GaussianProcess:
 
             # bound signal noise below to avoid overfitting
             bounds = np.array([(1e-6, np.inf)] * len(x_0))
-            #bounds = np.array([(1e-6, np.inf)] * len(x_0))
-            #bounds[-1] = [1e-6,np.inf]
+            # bounds = np.array([(1e-6, np.inf)] * len(x_0))
+            # bounds[-1] = [1e-6,np.inf]
             # Catch linear algebra errors and switch to BFGS if necessary
             try:
                 res = minimize(get_neg_like_grad, x_0, args,
                                method='L-BFGS-B', jac=True, bounds=bounds,
                                options={'disp': False, 'gtol': grad_tol,
-                                        'maxls' :line_steps,
+                                        'maxls': line_steps,
                                         'maxiter': self.maxiter})
             except:
                 print("Warning! Algorithm for L-BFGS-B failed. Changing to "
@@ -153,7 +154,7 @@ class GaussianProcess:
             res = minimize(get_neg_like_grad, x_0, args,
                            method='L-BFGS-B', jac=True, bounds=custom_bounds,
                            options={'disp': False, 'gtol': grad_tol,
-                                    'maxls' : line_steps,
+                                    'maxls': line_steps,
                                     'maxiter': self.maxiter})
 
         elif self.algo == 'BFGS':
@@ -185,7 +186,7 @@ class GaussianProcess:
         self_kern = self.kernel(x_t, x_t, d, d, self.hyps,
                                 self.cutoffs)
         pred_var = self_kern - \
-            np.matmul(np.matmul(k_v, self.ky_mat_inv), k_v)
+                   np.matmul(np.matmul(k_v, self.ky_mat_inv), k_v)
 
         # # get predictive variance (possibly slow)
         # v_vec = solve_triangular(self.l_mat, k_v, lower=True)
@@ -294,7 +295,7 @@ class GaussianProcess:
 
         self.like = like
         self.like_grad = like_grad
-        
+
     def update_L_alpha(self):
         """
         Update the GP's L matrix and alpha vector.
@@ -307,19 +308,19 @@ class GaussianProcess:
 
         n = self.l_mat_inv.shape[0]
         N = len(self.training_data)
-        m = N - n//3  # number of new data added
-        ky_mat = np.zeros((3*N, 3*N))
+        m = N - n // 3  # number of new data added
+        ky_mat = np.zeros((3 * N, 3 * N))
         ky_mat[:n, :n] = self.ky_mat
         # calculate kernels for all added data
         for i in range(m):
-            ind = n//3 + i
+            ind = n // 3 + i
             x_t = self.training_data[ind]
-            k_vi = np.array([self.get_kernel_vector(x_t, d+1)
+            k_vi = np.array([self.get_kernel_vector(x_t, d + 1)
                              for d in range(3)]).T  # (n+3m) x 3
-            ky_mat[:,  3*ind:3*ind+3] = k_vi
-            ky_mat[3*ind:3*ind+3, :n] = k_vi[:n, :].T
+            ky_mat[:, 3 * ind:3 * ind + 3] = k_vi
+            ky_mat[3 * ind:3 * ind + 3, :n] = k_vi[:n, :].T
         sigma_n = self.hyps[-1]
-        ky_mat[n:, n:] += sigma_n**2 * np.eye(3*m)
+        ky_mat[n:, n:] += sigma_n ** 2 * np.eye(3 * m)
 
         l_mat = np.linalg.cholesky(ky_mat)
         l_mat_inv = np.linalg.inv(l_mat)
@@ -335,33 +336,34 @@ class GaussianProcess:
     def update_L_alpha_v1(self):
         """This function is used right after "update_db". It can update the l_mat_inv, k_mat_inv and alpha without computing the whole kernel matrix. The condition is the hyps should be frozen. See notes for derivation and calculation details."""
         n = self.l_mat_inv.shape[0]
-        m = len(self.training_data) - n//3  # number of data added
+        m = len(self.training_data) - n // 3  # number of data added
         sigma_n = self.hyps[-1]
 
         # update l_mat_inv => k_mat_inv
         k_v = np.array([[] for i in range(n)])
-        V_mat = np.zeros((3*m, 3*m))
+        V_mat = np.zeros((3 * m, 3 * m))
 
         # calculate kernels for all added data
         for i in range(m):
-            x_t = self.training_data[-1-i]
-            k_vi = np.array([self.get_kernel_vector(x_t, d+1)
+            x_t = self.training_data[-1 - i]
+            k_vi = np.array([self.get_kernel_vector(x_t, d + 1)
                              for d in range(3)]).T  # (n+3m) x 3
             k_vi = k_vi[:n, :]
             k_v = np.hstack([k_v, k_vi])  # n x 3m
             for d1 in range(3):
                 for j in range(i, m):
-                    y_t = self.training_data[-1-j]
+                    y_t = self.training_data[-1 - j]
                     for d2 in range(3):
-                        V_mat[3*i+d1, 3*j+d2] = \
-                            self.kernel(x_t, y_t, d1+1, d2+1,
+                        V_mat[3 * i + d1, 3 * j + d2] = \
+                            self.kernel(x_t, y_t, d1 + 1, d2 + 1,
                                         self.hyps, self.cutoffs)
-                        V_mat[3*j+d2, 3*i+d1] = V_mat[3*i+d1, 3*j+d2]
+                        V_mat[3 * j + d2, 3 * i + d1] = V_mat[
+                            3 * i + d1, 3 * j + d2]
         v = self.l_mat_inv @ k_v  # n x 3m
-        V_mat += sigma_n**2 * np.eye(3*m) - v.T @ v
+        V_mat += sigma_n ** 2 * np.eye(3 * m) - v.T @ v
         r_n1 = np.linalg.inv(np.linalg.cholesky(V_mat))  # 3m x 3m
         r = - self.l_mat_inv.T @ v @ r_n1.T  # n x 3m
-        new_line1 = np.hstack([self.l_mat_inv, np.zeros((n, 3*m))])
+        new_line1 = np.hstack([self.l_mat_inv, np.zeros((n, 3 * m))])
         new_line2 = np.hstack([r.T, r_n1])
         self.l_mat_inv = np.vstack([new_line1, new_line2])
         self.ky_mat_inv = self.l_mat_inv.T @ self.l_mat_inv
