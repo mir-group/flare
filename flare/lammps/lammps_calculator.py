@@ -50,6 +50,10 @@ quantities to get dumped.
     return np.array(forces)
 
 
+# -----------------------------------------------------------------------------
+#                           data functions
+# -----------------------------------------------------------------------------
+
 def lammps_dat(structure, atom_types, atom_masses, species):
     """Create LAMMPS data file for an uncharged material.
 
@@ -171,11 +175,15 @@ def write_text(file, text):
     with open(file, 'w') as fin:
         fin.write(text)
 
+# -----------------------------------------------------------------------------
+#                           input functions
+# -----------------------------------------------------------------------------
+
 
 def generic_lammps_input(dat_file, style_string, coeff_string, dump_file):
     """Create text for generic LAMMPS input file."""
 
-    input_text = """# generic lammps input file.
+    input_text = """# generic lammps input file
 units metal
 atom_style atomic
 dimension  3
@@ -191,5 +199,28 @@ dump 1 all custom 1 %s id type x y z fx fy fz
 dump_modify 1 sort id
 run 0
 """ % (dat_file, style_string, coeff_string, dump_file)
+
+    return input_text
+
+
+def ewald_input(dat_file, short_cut, kspace_accuracy, dump_file):
+    """Create text for Ewald input file."""
+
+    input_text = """# Ewald input file
+units metal
+atom_style charge
+dimension  3
+boundary   p p p
+read_data %s
+
+pair_style coul/long %f
+pair_coeff * *
+kspace_style ewald %f
+
+thermo_style one
+dump 1 all custom 1 %s id type x y z fx fy fz
+dump_modify 1 sort id
+run 0
+""" % (dat_file, short_cut, kspace_accuracy, dump_file)
 
     return input_text
