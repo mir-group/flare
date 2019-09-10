@@ -2,6 +2,8 @@ import numpy as np
 import subprocess
 import os
 
+# TODO: split LAMMPS input and data files into separate classes
+
 
 def run_lammps(lammps_executable, input_file, output_file):
     """Runs a single point LAMMPS calculation.
@@ -47,14 +49,26 @@ quantities to get dumped.
     return np.array(forces)
 
 
-def lammps_dat(struc, atom_types, atom_masses):
+def lammps_dat(structure, atom_types, atom_masses, species):
+    """Create LAMMPS data file for an uncharged material.
+
+    :param structure: Structure object containing coordinates and cell.
+    :type structure: struc.Structure
+    :param atom_types: Atom types ranging from 1 to N.
+    :type atom_types: List[int]
+    :param atom_masses: Atomic masses of the atom types.
+    :type atom_masses: List[int]
+    :param species: Type of each atom.
+    :type species: List[int]
+    """
+
     dat_text = """Header of the LAMMPS data file
 
 %i atoms
 %i atom types
-""" % (struc.nat, len(atom_types))
+""" % (structure.nat, len(atom_types))
 
-    dat_text += lammps_cell_text(struc)
+    dat_text += lammps_cell_text(structure)
     dat_text += """
 Masses
 
@@ -66,19 +80,34 @@ Masses
     dat_text += """
 Atoms
 """
-    dat_text += lammps_pos_text(struc, atom_types)
+    dat_text += lammps_pos_text(structure, species)
 
     return dat_text
 
 
-def lammps_dat_charged(struc, atom_types, atom_charges, atom_masses):
+def lammps_dat_charged(structure, atom_types, atom_charges, atom_masses,
+                       species):
+    """Create LAMMPS data file for a charged material.
+
+    :param structure: Structure object containing coordinates and cell.
+    :type structure: struc.Structure
+    :param atom_types: List of atom types.
+    :type atom_types: List[int]
+    :param atom_charges: Charge of each atom.
+    :type atom_charges: List[float]
+    :param atom_masses: Mass of each atom type.
+    :type atom_masses: List[float]
+    :param species: Type of each atom.
+    :type species: List[int]
+    """
+
     dat_text = """Header of the LAMMPS data file
 
 %i atoms
 %i atom types
-""" % (struc.nat, len(atom_types))
+""" % (structure.nat, len(atom_types))
 
-    dat_text += lammps_cell_text(struc)
+    dat_text += lammps_cell_text(structure)
     dat_text += """
 Masses
 
@@ -91,49 +120,47 @@ Masses
     dat_text += """
 Atoms
 """
-    dat_text += lammps_pos_text_charged(struc, atom_charges, atom_types)
+    dat_text += lammps_pos_text_charged(structure, atom_charges, species)
 
     return dat_text
 
 
-def lammps_cell_text(struc):
-    """ Write cell from structure object. Assumes orthorombic periodic
-    cell."""
+def lammps_cell_text(structure):
+    """ Write cell from structure object."""
 
     cell_text = """
 0.0 %f  xlo xhi
 0.0 %f  ylo yhi
 0.0 %f  zlo zhi
 %f %f %f  xy xz yz
-""" % (struc.cell[0, 0],
-       struc.cell[1, 1],
-       struc.cell[2, 2],
-       struc.cell[1, 0],
-       struc.cell[2, 0],
-       struc.cell[2, 1])
+""" % (structure.cell[0, 0],
+       structure.cell[1, 1],
+       structure.cell[2, 2],
+       structure.cell[1, 0],
+       structure.cell[2, 0],
+       structure.cell[2, 1])
 
     return cell_text
 
 
-def lammps_pos_text(struc, species):
+def lammps_pos_text(structure, species):
     pos_text = '\n'
-    for count, (pos, spec) in enumerate(zip(struc.positions,
-                                            species)):
+    for count, (pos, spec) in enumerate(zip(structure.positions, species)):
         pos_text += '%i %i %f %f %f \n' % \
             (count+1, spec, pos[0], pos[1], pos[2])
     return pos_text
 
 
-def lammps_pos_text_charged(struc, charges, species):
+def lammps_pos_text_charged(structure, charges, species):
     pos_text = '\n'
-    for count, (pos, chrg, spec) in enumerate(zip(struc.positions, charges,
+    for count, (pos, chrg, spec) in enumerate(zip(structure.positions, charges,
                                                   species)):
         pos_text += '%i %i %f %f %f %f \n' % \
             (count+1, spec, chrg, pos[0], pos[1], pos[2])
     return pos_text
 
 
-def write_input(file, text):
+def write_text(file, text):
     with open(file, 'w') as fin:
         fin.write(text)
 
