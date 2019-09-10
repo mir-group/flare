@@ -1,6 +1,7 @@
-import numpy as np
-import subprocess
+"""LAMMPS calculator for preparing and parsing single-point LAMMPS \
+calculations."""
 import os
+import numpy as np
 
 # TODO: split LAMMPS input and data files into separate classes
 
@@ -144,6 +145,8 @@ def lammps_cell_text(structure):
 
 
 def lammps_pos_text(structure, species):
+    """Create LAMMPS position text for a system of uncharged particles."""
+
     pos_text = '\n'
     for count, (pos, spec) in enumerate(zip(structure.positions, species)):
         pos_text += '%i %i %f %f %f \n' % \
@@ -152,6 +155,8 @@ def lammps_pos_text(structure, species):
 
 
 def lammps_pos_text_charged(structure, charges, species):
+    """Create LAMMPS position text for a system of charged particles."""
+
     pos_text = '\n'
     for count, (pos, chrg, spec) in enumerate(zip(structure.positions, charges,
                                                   species)):
@@ -161,11 +166,15 @@ def lammps_pos_text_charged(structure, charges, species):
 
 
 def write_text(file, text):
+    """Write text to file."""
+
     with open(file, 'w') as fin:
         fin.write(text)
 
 
 def generic_lammps_input(dat_file, style_string, coeff_string, dump_file):
+    """Create text for generic LAMMPS input file."""
+
     input_text = """# generic lammps input file.
 units metal
 atom_style atomic
