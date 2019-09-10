@@ -213,9 +213,9 @@ dimension  3
 boundary   p p p
 read_data %s
 
-pair_style coul/long %f
+pair_style coul/long %s
 pair_coeff * *
-kspace_style ewald %f
+kspace_style ewald %s
 
 thermo_style one
 dump 1 all custom 1 %s id type x y z fx fy fz
