@@ -3,6 +3,50 @@ import subprocess
 import os
 
 
+def run_lammps(lammps_executable, input_file, output_file):
+    """Runs a single point LAMMPS calculation.
+
+    :param lammps_executable: LAMMPS executable file.
+    :type lammps_executable: str
+    :param input_file: LAMMPS input file.
+    :type input_file: str
+    :param output_file: Desired LAMMPS output file.
+    :type output_file: str
+    """
+    # run lammps
+    lammps_command = '%s < %s > %s' % (lammps_executable,
+                                       input_file,
+                                       output_file)
+    os.system(lammps_command)
+
+
+def lammps_parser(dump_file):
+    """Parses LAMMPS dump file. Assumes the forces are the final \
+quantities to get dumped.
+
+    :param dump_file: Dump file to be parsed.
+    :type dump_file: str
+    :return: Numpy array of forces on atoms.
+    :rtype: np.ndarray
+    """
+    forces = []
+
+    with open(dump_file, 'r') as outf:
+        lines = outf.readlines()
+
+    for count, line in enumerate(lines):
+        if line.startswith('ITEM: ATOMS'):
+            force_start = count
+
+    for line in lines[force_start+1:]:
+        fline = line.split()
+        forces.append([float(fline[-3]),
+                       float(fline[-2]),
+                       float(fline[-1])])
+
+    return np.array(forces)
+
+
 class Lammps_Calculator:
     def __init__(self, struc, style_string, coeff_string, lammps_folder,
                  lammps_executable, atom_types, atom_masses, species,
@@ -44,24 +88,6 @@ class Lammps_Calculator:
     def lammps_generator(self):
         self.write_file(self.input_file, self.input_text)
         self.write_file(self.dat_file, self.dat_text)
-
-    def lammps_parser(self):
-        forces = []
-
-        with open(self.dump_file, 'r') as outf:
-            lines = outf.readlines()
-
-        for count, line in enumerate(lines):
-            if line.startswith('ITEM: ATOMS'):
-                force_start = count
-
-        for line in lines[force_start+1:]:
-            fline = line.split()
-            forces.append([float(fline[-3]),
-                          float(fline[-2]),
-                          float(fline[-1])])
-
-        return np.array(forces)
 
     def lammps_input(self):
         input_text = """# lammps input file created with eam.py.
