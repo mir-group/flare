@@ -158,6 +158,7 @@ class NumpyEncoder(JSONEncoder):
     """
     Special json encoder for numpy types for serialization
     use as  json.loads(... cls = NumpyEncoder)
+    or json.dumps(... cls = NumpyEncoder)
     Thanks to StackOverflow users karlB and fnunnari
     https://stackoverflow.com/a/47626762
     """
@@ -170,6 +171,6 @@ class NumpyEncoder(JSONEncoder):
         elif isinstance(obj, (np.float_, np.float16, np.float32,
                               np.float64)):
             return float(obj)
-        elif isinstance(obj, (np.ndarray,)):  #### This is the fix
+        elif isinstance(obj, (np.ndarray,)):
             return obj.tolist()
         return JSONEncoder.default(self, obj)

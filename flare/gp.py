@@ -85,7 +85,7 @@ class GaussianProcess:
         Tool to add a single environment / force pair into the training set
         :param force:
         :param env:
-        :param forces: (x,y,z) component associated with environment
+        :param force: (x,y,z) component associated with environment
         :param train:
         :return:
         """

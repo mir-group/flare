@@ -10,14 +10,17 @@ from flare.gp_from_aimd import TrajectoryTrainer
 from flare.mc_simple import two_plus_three_body_mc, two_plus_three_body_mc_grad
 from json import loads
 import os
+
+
 @pytest.fixture
 def methanol_gp():
     the_gp = GaussianProcess(kernel=two_plus_three_body_mc,
                              kernel_grad=two_plus_three_body_mc_grad,
                              hyps=np.array([3.75996759e-06, 1.53990678e-02,
-                                 2.50624782e-05, 5.07884426e-01,
-                                 1.70172923e-03]), cutoffs=np.array([7,7]),
-                             hyp_labels=['l2','s2','l3','s3','n0'],
+                                            2.50624782e-05, 5.07884426e-01,
+                                            1.70172923e-03]),
+                             cutoffs=np.array([7, 7]),
+                             hyp_labels=['l2', 's2', 'l3', 's3', 'n0'],
                              maxiter=1,
                              opt_algorithm='L-BFGS-B')
     with open('./test_files/methanol_envs.json') as f:
@@ -32,15 +35,16 @@ def methanol_gp():
 
     return the_gp
 
+
 @pytest.fixture
 def fake_gp():
     return GaussianProcess(kernel=two_plus_three_body,
-                              kernel_grad=two_plus_three_body_grad,
-                              hyps=np.array([1]),
-                              cutoffs=np.array([]))
+                           kernel_grad=two_plus_three_body_grad,
+                           hyps=np.array([1]),
+                           cutoffs=np.array([]))
+
 
 def test_instantiation_of_trajectory_trainer(fake_gp):
-
     a = TrajectoryTrainer(frames=[], gp=fake_gp)
 
     assert isinstance(a, TrajectoryTrainer)
@@ -52,7 +56,6 @@ def test_instantiation_of_trajectory_trainer(fake_gp):
 
 
 def test_load_trained_gp_and_run(methanol_gp):
-
     with open('./test_files/methanol_frames.json', 'r') as f:
         frames = [Structure.from_dict(loads(s)) for s in f.readlines()]
 
@@ -67,13 +70,13 @@ def test_load_trained_gp_and_run(methanol_gp):
 
 
 def test_load_one_frame_and_run():
-
     the_gp = GaussianProcess(kernel=two_plus_three_body_mc,
                              kernel_grad=two_plus_three_body_mc_grad,
                              hyps=np.array([3.75996759e-06, 1.53990678e-02,
-                                 2.50624782e-05, 5.07884426e-01,
-                                 1.70172923e-03]), cutoffs=np.array([7,7]),
-                             hyp_labels=['l2','s2','l3','s3','n0'],
+                                            2.50624782e-05, 5.07884426e-01,
+                                            1.70172923e-03]),
+                             cutoffs=np.array([7, 7]),
+                             hyp_labels=['l2', 's2', 'l3', 's3', 'n0'],
                              maxiter=1,
                              opt_algorithm='L-BFGS-B')
 
@@ -89,10 +92,10 @@ def test_load_one_frame_and_run():
     tt.run()
     os.system('rm ./gp_from_aimd.out')
 
-def test_uncertainty_threshold(fake_gp):
 
-    tt = TrajectoryTrainer([], fake_gp,rel_std_tolerance=.5,
-                          abs_std_tolerance=.01)
+def test_uncertainty_threshold(fake_gp):
+    tt = TrajectoryTrainer([], fake_gp, rel_std_tolerance=.5,
+                           abs_std_tolerance=.01)
 
     fake_structure = Structure(cell=np.eye(3), species=["H"],
                                positions=np.array([[0, 0, 0]]))
@@ -142,9 +145,3 @@ def test_uncertainty_threshold(fake_gp):
     res1, res2 = tt.is_std_in_bound(fake_structure)
     assert res1 is True
     assert res2 == [-1]
-
-
-
-
-
-
