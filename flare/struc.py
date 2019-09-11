@@ -143,6 +143,9 @@ class Structure(object):
         return 'Structure with {} atoms of types {}'.format(self.nat,
                                                   set(self.species_labels))
 
+    def __len__(self):
+        return self.nat
+
     def as_dict(self):
         """
         Returns structure as a dictionary for serialization
