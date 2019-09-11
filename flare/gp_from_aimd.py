@@ -27,20 +27,23 @@ class TrajectoryTrainer(object):
                  skip: int = 0,
                  calculate_energy: bool = False,
                  output_name: str = 'gp_from_aimd.out',
-                 max_atoms_added: int = 0, max_trains: int = 10,
+                 max_atoms_from_frame: int = 0, max_trains: int = 10,
+                 min_atoms_added: int = 1,
                  n_cpus: int = 1, shuffle_frames: bool = False,
-                 verbose: int = 0, model_write: str = 'gp_model.pickle'):
+                 verbose: int = 0, model_write: str = ''):
         """
         Class which trains a GP off of an AIMD trajectory, and generates
         error statistics between the DFT and GP calls.
 
         :param gp:
-        :param std_tolerance_factor:
+        :param rel_std_tolerance:
+        :param abs_std_tolerance:
         :param parallel:
         :param skip:
         :param calculate_energy:
         :param output_name:
-        :param max_atoms_added:
+        :param max_atoms_from_frame: Largest # of atoms added from one frame
+        :param min_atoms_added: Only train when this many atoms have been added
         :param freeze_hyps:
         :param rescale_steps:
         :param rescale_temps:
@@ -54,10 +57,10 @@ class TrajectoryTrainer(object):
         self.rel_std_tolerance = rel_std_tolerance
         self.abs_std_tolerance = abs_std_tolerance
         self.skip = skip
-        self.dft_step = True
         self.max_trains = max_trains
         self.curr_step = 0
-        self.max_atoms_added = max_atoms_added
+        self.max_atoms_from_frame = max_atoms_from_frame
+        self.min_atoms_added = min_atoms_added
         self.verbose = verbose
         self.train_count = 0
 
@@ -162,6 +165,10 @@ class TrajectoryTrainer(object):
 
         output.conclude_run(self.output_name)
 
+        if self.pickle_name:
+            with open(self.pickle_name,'wb') as f:
+                pickle.dump(self.gp, f)
+
     def update_gp_and_print(self, frame, train_atoms: List[int], train=True):
         """
         Update the internal GP model training set with a list of training
@@ -216,14 +223,10 @@ class TrajectoryTrainer(object):
         for atom_idx, std in enumerate(frame.stds):
             max_stds[atom_idx] = np.max(std)
         stds_sorted = np.argsort(max_stds)
-        target_atoms = list(stds_sorted[-self.max_atoms_added:])
+        target_atoms = list(stds_sorted[-self.max_atoms_from_frame:])
 
         # if above threshold, return atom
         if max_stds[stds_sorted[-1]] > threshold:
             return False, target_atoms
         else:
             return True, [-1]
-
-    def write_model(self):
-        pickle.dump(self.gp, self.model_write)
-        # TODO serialize better
