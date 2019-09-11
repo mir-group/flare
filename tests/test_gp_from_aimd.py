@@ -81,7 +81,7 @@ def test_load_one_frame_and_run():
         frames = [Structure.from_dict(loads(s)) for s in f.readlines()]
 
     tt = TrajectoryTrainer(frames,
-                           gp=the_gp,
+                           gp=the_gp, shuffle_frames=True,
                            rel_std_tolerance=1,
                            abs_std_tolerance=.01,
                            skip=15)
@@ -94,19 +94,18 @@ def test_uncertainty_threshold(fake_gp):
     tt = TrajectoryTrainer([], fake_gp,rel_std_tolerance=.5,
                           abs_std_tolerance=.01)
 
-
-    fake_structure = Structure(cell=np.eye(3),species=["H"],
-                               positions=np.array([[0,0,0]]))
+    fake_structure = Structure(cell=np.eye(3), species=["H"],
+                               positions=np.array([[0, 0, 0]]))
 
     # Test a structure with no variance passes
-    fake_structure.stds = np.array([[0,0,0]])
+    fake_structure.stds = np.array([[0, 0, 0]])
 
     res1, res2 = tt.is_std_in_bound(fake_structure)
     assert res1 is True
     assert res2 == [-1]
 
     # Test that the absolute criteria trips the threshold
-    fake_structure.stds = np.array([[.02,0,0]])
+    fake_structure.stds = np.array([[.02, 0, 0]])
 
     res1, res2 = tt.is_std_in_bound(fake_structure)
     assert res1 is False
@@ -115,7 +114,7 @@ def test_uncertainty_threshold(fake_gp):
     tt.abs_std_tolerance = 100
 
     # Test that the relative criteria trips the threshold
-    fake_structure.stds = np.array([[.6,0,0]])
+    fake_structure.stds = np.array([[.6, 0, 0]])
 
     res1, res2 = tt.is_std_in_bound(fake_structure)
     assert res1 is False
@@ -124,6 +123,21 @@ def test_uncertainty_threshold(fake_gp):
     # Test that 'test mode' works, where no GP modification occurs
     tt.abs_std_tolerance = 0
     tt.rel_std_tolerance = 0
+
+    res1, res2 = tt.is_std_in_bound(fake_structure)
+    assert res1 is True
+    assert res2 == [-1]
+
+    # Test permutations of one / another being off
+    tt.abs_std_tolerance = 1
+    tt.rel_std_tolerance = 0
+
+    res1, res2 = tt.is_std_in_bound(fake_structure)
+    assert res1 is True
+    assert res2 == [-1]
+
+    tt.abs_std_tolerance = 0
+    tt.rel_std_tolerance = 1
 
     res1, res2 = tt.is_std_in_bound(fake_structure)
     assert res1 is True
