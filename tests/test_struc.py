@@ -110,3 +110,12 @@ def test_to_from_methods(varied_test_struc):
         assert np.equal(varied_test_struc.positions, new_struc.positions).all()
         assert np.equal(varied_test_struc.cell, new_struc.cell).all()
         assert np.equal(varied_test_struc.forces, new_struc.forces).all()
+
+def test_rep_methods(varied_test_struc):
+
+    assert len(varied_test_struc) == 10
+    assert isinstance(str(varied_test_struc),str)
+
+    thestr = str(varied_test_struc)
+    assert 'Structure with 10 atoms of types' in thestr
+
