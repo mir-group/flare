@@ -176,7 +176,7 @@ class GaussianProcess:
         self.likelihood_gradient = -res.jac
 
     def predict(self, x_t: AtomicEnvironment, d: int) -> [float, float]:
-        # get kernel vector
+        # Kernel vector allows for evaluation of At. Env.
         k_v = self.get_kernel_vector(x_t, d)
 
         # get predictive mean
@@ -227,7 +227,9 @@ class GaussianProcess:
 
     def get_kernel_vector(self, x: AtomicEnvironment,
                           d_1: int) -> np.ndarray:
-        """ Compute kernel vector.
+        """
+        Compute kernel vector, comparing input environment to all environments
+        in the GP's training set.
 
         :param x: data point to compare against kernel matrix
         :type x: AtomicEnvironment
