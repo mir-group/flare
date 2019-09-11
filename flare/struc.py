@@ -3,6 +3,7 @@ from typing import List
 from flare.util import element_to_Z, NumpyEncoder
 from json import dumps
 
+
 class Structure(object):
     """
     Contains information about a structure of atoms, including the periodic
@@ -57,7 +58,7 @@ class Structure(object):
         else:
             assert len(positions) == len(prev_positions), 'Previous ' \
                                                           'positions and ' \
-                                                          'positions are not'\
+                                                          'positions are not' \
                                                           'same length'
             self.prev_positions = prev_positions
 
@@ -137,11 +138,10 @@ class Structure(object):
         return [i for i, spec in enumerate(self.coded_species)
                 if spec == specie]
 
-
     # TODO make more descriptive
     def __str__(self):
         return 'Structure with {} atoms of types {}'.format(self.nat,
-                                                  set(self.species_labels))
+                                                     set(self.species_labels))
 
     def __len__(self):
         return self.nat
@@ -155,7 +155,7 @@ class Structure(object):
         return dict(vars(self))
 
     def as_str(self):
-        return dumps(self.as_dict(),cls=NumpyEncoder)
+        return dumps(self.as_dict(), cls=NumpyEncoder)
 
     @staticmethod
     def from_dict(dictionary):

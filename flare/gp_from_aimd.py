@@ -166,7 +166,7 @@ class TrajectoryTrainer(object):
         output.conclude_run(self.output_name)
 
         if self.pickle_name:
-            with open(self.pickle_name,'wb') as f:
+            with open(self.pickle_name, 'wb') as f:
                 pickle.dump(self.gp, f)
 
     def update_gp_and_print(self, frame, train_atoms: List[int], train=True):

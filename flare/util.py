@@ -154,8 +154,6 @@ def element_to_Z(element):
     return _element_to_Z.get(element, 0)
 
 
-
-
 class NumpyEncoder(JSONEncoder):
     """
     Special json encoder for numpy types for serialization
