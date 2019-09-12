@@ -125,8 +125,9 @@ _element_to_Z = {'H': 1,
                  'Ts': 117,
                  'Og': 118}
 
+_Z_to_element = {z: elt for elt, z in _element_to_Z.items()}
 
-def element_to_Z(element):
+def element_to_Z(element:str)->int:
     """
     Returns the atomic number Z associated with an elements 1-2 letter name.
     Returns the same integer if an integer is passed in.
@@ -151,3 +152,13 @@ def element_to_Z(element):
              'of your choosing instead. Setting element {} to integer '
              '0'.format(element))
     return _element_to_Z.get(element, 0)
+
+def Z_to_element(Z: int)-> str:
+
+    if isinstance(Z,str):
+        if Z.isnumeric():
+            Z = int(Z)
+        else:
+            raise ValueError("Input Z is not a number. It should be an "
+                             "integer")
+    return _Z_to_element[Z]
