@@ -74,10 +74,7 @@ class GaussianProcess:
         # create numpy array of training labels
         self.training_labels_np = self.force_list_to_np(self.training_labels)
 
-        if self.l_mat is None:
-            self.set_L_alpha()
-        else:
-            self.update_L_alpha()
+        self.set_L_alpha()
 
     def add_one_env(self, env: AtomicEnvironment,
                     force: np.array, train: bool = False, **kwargs):
@@ -266,8 +263,8 @@ class GaussianProcess:
     def set_L_alpha(self):
         """
         Invert the covariance matrix, setting L (a lower triangular
-        matrix s.t. L L^T = (K + sig_n^2 I) ) and alpha, an inversion of the
-        vector of training labels.
+        matrix s.t. L L^T = (K + sig_n^2 I) ) and alpha, the inverse
+        covariance matrix multiplied by the vector of training labels.
         The forces and variances are later obtained using alpha.
         :return:
         """
