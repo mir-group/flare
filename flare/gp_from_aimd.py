@@ -8,9 +8,10 @@ import time
 from flare.predict import predict_on_structure, \
     predict_on_structure_par, predict_on_structure_en, \
     predict_on_structure_par_en
-from typing import List
-from flare.struc import Structure
+from typing import List, Tuple
+from flare.struc import Structure, get_unique_species
 from flare.gp import GaussianProcess
+from flare.env import AtomicEnvironment
 import numpy as np
 from copy import deepcopy
 import pickle
@@ -27,10 +28,15 @@ class TrajectoryTrainer(object):
                  skip: int = 0,
                  calculate_energy: bool = False,
                  output_name: str = 'gp_from_aimd.out',
-                 max_atoms_from_frame: int = 0, max_trains: int = 10,
+                 max_atoms_from_frame: int = np.inf, max_trains: int = np.inf,
                  min_atoms_added: int = 1,
                  n_cpus: int = 1, shuffle_frames: bool = False,
-                 verbose: int = 0, model_write: str = ''):
+                 verbose: int = 0, model_write: str = '',
+                 pre_train_on_skips: bool = False,
+                 pre_train_seed_frames: List[Structure] = None,
+                 pre_train_seed_envs: List[Tuple[AtomicEnvironment,
+                                                 np.array]]= None,
+                 pre_train_atoms_per_element: dict = None):
         """
         Class which trains a GP off of an AIMD trajectory, and generates
         error statistics between the DFT and GP calls.
@@ -48,6 +54,8 @@ class TrajectoryTrainer(object):
         :param rescale_steps:
         :param rescale_temps:
         :param n_cpus:
+        :param pre_train_env_per_specie: Max # of environments to add from
+        each species in the pre-training step
         """
 
         self.frames = frames
@@ -86,10 +94,22 @@ class TrajectoryTrainer(object):
         self.start_time = None
         self.pickle_name = model_write
 
+        self.pre_train_on_skips = pre_train_on_skips
+        self.seed_envs = [] if pre_train_seed_envs is None else \
+            pre_train_seed_envs
+        self.seed_frames = [] if pre_train_seed_frames is None \
+            else pre_train_seed_frames
+        self.pre_train_env_per_species = {} if pre_train_atoms_per_element \
+                                    is None else pre_train_atoms_per_element
+
     def pre_run(self):
         """
         Various tasks to set up the AIMD training before commencing
-        the run through the AIMD trajectory
+        the run through the AIMD trajectory.
+        1. Print the output.
+        2. Pre-train the GP with the seed frames and
+        environments. If no seed frames or environments and the GP has no
+        training set, then seed with at least one atom from each
         :return:
         """
 
@@ -106,6 +126,46 @@ class TrajectoryTrainer(object):
 
         self.start_time = time.time()
 
+        # If seed environments were passed in, add them to the GP.
+        for point in self.seed_envs:
+            self.gp.add_one_env(point[0], point[1], train=False)
+
+        # No training set ("blank slate" run) and no seeds specified:
+        # Take one of each atom species in the first frame
+        # so all atomic species are represented in the first step.
+        # Otherwise use the seed frames passed in by user.
+        if len(self.gp.training_data) == 0 and self.seed_frames is None:
+            self.seed_frames = [self.frames[0]]
+
+        for frame in self.seed_frames:
+            train_atoms = []
+            for species_i in set(frame.coded_species):
+                # Get a randomized set of atoms of species i from the frame
+                # So that it is not always the lowest-indexed atoms chosen
+                atoms_of_specie = frame.indices_of_specie(species_i)
+                np.random.shuffle(atoms_of_specie)
+                n_at = len(atoms_of_specie)
+                # Determine how many to add based on user defined cutoffs
+                n_to_add = min(n_at, self.pre_train_env_per_species.get(
+                    species_i, np.inf), self.max_atoms_from_frame)
+
+                for atom in atoms_of_specie[:n_to_add]:
+                    train_atoms.append(atom)
+
+            self.update_gp_and_print(frame, train_atoms, train=False)
+
+        # These conditions correspond to if either the GP was never trained
+        # or if data was added to it during the pre-run.
+
+        if (self.gp.l_mat is None) \
+                or (self.seed_frames is not None
+                     or self.seed_envs is not None):
+            self.gp.train(monitor=self.verbose)
+
+
+
+
+
     def run(self):
         """
         Loop through frames and record the error between
@@ -115,24 +175,6 @@ class TrajectoryTrainer(object):
         """
 
         self.pre_run()
-
-        cur_frame = self.frames[0]
-        train_atoms = []
-
-        # First frame and no training set ("blank slate" run):
-        # Take one of each atom species in the first frame
-        # so all atomic species are represented.
-
-        if len(self.gp.training_data) == 0:
-
-            for unique_spec in set(cur_frame.coded_species):
-                atoms_of_specie = cur_frame.indices_of_specie(unique_spec)
-                train_atoms.append(atoms_of_specie[0])
-
-            self.update_gp_and_print(cur_frame, train_atoms, train=True)
-
-        if len(self.gp.training_data) > 0 and self.gp.l_mat is None:
-            self.gp.train(monitor=self.verbose)
 
         # Loop through trajectory
         for i, cur_frame in enumerate(self.frames):
@@ -223,7 +265,14 @@ class TrajectoryTrainer(object):
         for atom_idx, std in enumerate(frame.stds):
             max_stds[atom_idx] = np.max(std)
         stds_sorted = np.argsort(max_stds)
-        target_atoms = list(stds_sorted[-self.max_atoms_from_frame:])
+
+        # Handle case where unlimited atoms are added
+        # or if max # of atoms exceeds size of frame
+        if self.max_atoms_from_frame == np.inf or \
+                self.max_atoms_from_frame > len(frame):
+            target_atoms = list(stds_sorted)
+        else:
+            target_atoms = list(stds_sorted[-self.max_atoms_from_frame:])
 
         # if above threshold, return atom
         if max_stds[stds_sorted[-1]] > threshold:
