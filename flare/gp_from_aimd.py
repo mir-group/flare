@@ -208,6 +208,7 @@ class TrajectoryTrainer(object):
                     self.train_gp()
 
         output.conclude_run(self.output_name)
+        output.close_files()
 
         if self.pickle_name:
             with open(self.pickle_name, 'wb') as f:

@@ -3,17 +3,32 @@ import datetime
 import numpy as np
 import multiprocessing
 
+outfiles = {}
+
+def close_files():
+    for (k, v) in outfiles.items():
+        v.close()
+
+def find_files(output_name: str = 'otf_run.out'):
+    if (output_name in outfiles.keys()):
+        f = outfiles[output_name]
+    else:
+        outfiles[output_name] = open(output_name, 'w', 1)
+        f = outfiles[output_name]
+    return f
+
 
 def write_to_output(string: str, output_file: str = 'otf_run.out'):
-    with open(output_file, 'a') as f:
-        f.write(string)
+    f = find_files(output_file)
+    f.write(string)
 
 
 def write_header(cutoffs, kernel_name, hyps, algo, dt, Nsteps, structure,
                  output_name, std_tolerance,
                  optional: dict = None):
-    with open(output_name, 'w') as f:
-        f.write(str(datetime.datetime.now()) + '\n')
+
+    f = find_files(output_name)
+    f.write(str(datetime.datetime.now()) + '\n')
 
     if isinstance(std_tolerance, tuple):
         std_string = "relative uncertainty tolerance: {} eV/A\n".format(
@@ -26,7 +41,7 @@ def write_header(cutoffs, kernel_name, hyps, algo, dt, Nsteps, structure,
     elif std_tolerance > 0:
         std_string = \
             'uncertainty tolerance: {} times noise \n' \
-                .format(np.abs(std_tolerance))
+            .format(np.abs(std_tolerance))
     else:
         std_string = ''
 
@@ -116,9 +131,47 @@ def write_md_config(dt, curr_step, structure, temperature, KE, local_energies,
         string += 'total energy: %.6f eV \n' % tot_en
 
     string += 'wall time from start: %.2f s \n' % \
-              (time.time() - start_time)
+        (time.time() - start_time)
 
     write_to_output(string, output_name)
+
+
+def write_xyz_config(curr_step, structure, dft_step, output_name):
+
+    natom = len(structure.positions)
+    string = '{}\n'.format(natom)
+
+    # comment line
+    # Mark if a frame had DFT forces with an asterisk
+    if not dft_step:
+        string += "Frame: {}\n".format(curr_step)
+    else:
+        string += "*Frame: {}\n".format(curr_step)
+
+    # Construct atom-by-atom description
+    for i in range(natom):
+        pos = structure.positions[i]
+        string += '{} {} {} {}\n'.format(
+            structure.species[i], pos[0], pos[1], pos[2])
+
+    write_to_output(string, output_name+".xyz")
+
+    string = '{}\n'.format(natom)
+
+    # comment line
+    # Mark if a frame had DFT forces with an asterisk
+    if not dft_step:
+        string += "Frame: {}\n".format(curr_step)
+    else:
+        string += "*Frame: {}\n".format(curr_step)
+
+    # Construct atom-by-atom description
+    for i in range(natom):
+        pos = structure.forces[i]
+        string += '{} {} {} {}\n'.format(
+            structure.species[i], pos[0], pos[1], pos[2])
+
+    write_to_output(string, output_name+"_forces.xyz")
 
 
 def write_hyps(hyp_labels, hyps, start_time, output_name, like, like_grad):

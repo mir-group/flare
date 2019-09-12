@@ -160,6 +160,7 @@ class OTF(object):
             self.curr_step += 1
 
         output.conclude_run(self.output_name)
+        output.close_files()
 
     def predict_on_atom(self, atom):
         chemenv = env.AtomicEnvironment(self.structure, atom, self.gp.cutoffs)
@@ -314,3 +315,5 @@ class OTF(object):
                                self.local_energies, self.start_time,
                                self.output_name, self.dft_step,
                                self.velocities)
+        output.write_xyz_config(self.curr_step, self.structure,
+                                self.dft_step, self.output_name):
