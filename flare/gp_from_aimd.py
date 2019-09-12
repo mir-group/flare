@@ -35,27 +35,33 @@ class TrajectoryTrainer(object):
                  pre_train_on_skips: bool = False,
                  pre_train_seed_frames: List[Structure] = None,
                  pre_train_seed_envs: List[Tuple[AtomicEnvironment,
-                                                 np.array]]= None,
+                                                 np.array]] = None,
                  pre_train_atoms_per_element: dict = None):
         """
         Class which trains a GP off of an AIMD trajectory, and generates
         error statistics between the DFT and GP calls.
 
-        :param gp:
-        :param rel_std_tolerance:
-        :param abs_std_tolerance:
-        :param parallel:
-        :param skip:
-        :param calculate_energy:
-        :param output_name:
+        :param frames: List of structures to evaluate / train GP on
+        :param gp: Gaussian Process object
+        :param rel_std_tolerance: Train if uncertainty is above this *
+        noise variance hyperparameter
+        :param abs_std_tolerance: Train if uncertainty is above this
+        :param parallel: Use parallel functions or not
+        :param skip: Skip through frames
+        :param calculate_energy: Use local energy kernel or not
+        :param output_name: Write output of training to this file
         :param max_atoms_from_frame: Largest # of atoms added from one frame
         :param min_atoms_added: Only train when this many atoms have been added
-        :param freeze_hyps:
-        :param rescale_steps:
-        :param rescale_temps:
-        :param n_cpus:
-        :param pre_train_env_per_specie: Max # of environments to add from
-        each species in the pre-training step
+        :param max_trains: Stop training GP after this many calls to train
+        :param n_cpus: Number of CPUs to parallelize over
+        :param shuffle_frames: Randomize order of frames for better training
+        :param verbose: 0: Silent, 1: Minimal, 2: Lots of information
+        :param model_write: Write output model here
+        :param pre_train_on_skips: Train model on every n frames before running
+        :param pre_train_seed_frames: Frames to train on before running
+        :param pre_train_seed_envs: Environments to train on before running
+        :param pre_train_atoms_per_element: Max # of environments to add from
+        each species in the seed pre-training steps
         """
 
         self.frames = frames
@@ -73,6 +79,7 @@ class TrajectoryTrainer(object):
         self.train_count = 0
 
         self.parallel = parallel
+
         # set pred function
         if parallel:
             if calculate_energy:
@@ -100,7 +107,7 @@ class TrajectoryTrainer(object):
         self.seed_frames = [] if pre_train_seed_frames is None \
             else pre_train_seed_frames
         self.pre_train_env_per_species = {} if pre_train_atoms_per_element \
-                                    is None else pre_train_atoms_per_element
+                                               is None else pre_train_atoms_per_element
 
     def pre_run(self):
         """
@@ -110,7 +117,6 @@ class TrajectoryTrainer(object):
         2. Pre-train the GP with the seed frames and
         environments. If no seed frames or environments and the GP has no
         training set, then seed with at least one atom from each
-        :return:
         """
 
         output.write_header(self.gp.cutoffs,
@@ -159,12 +165,8 @@ class TrajectoryTrainer(object):
 
         if (self.gp.l_mat is None) \
                 or (self.seed_frames is not None
-                     or self.seed_envs is not None):
+                    or self.seed_envs is not None):
             self.gp.train(monitor=self.verbose)
-
-
-
-
 
     def run(self):
         """
@@ -211,14 +213,15 @@ class TrajectoryTrainer(object):
             with open(self.pickle_name, 'wb') as f:
                 pickle.dump(self.gp, f)
 
-    def update_gp_and_print(self, frame, train_atoms: List[int], train=True):
+    def update_gp_and_print(self, frame: Structure, train_atoms: List[int],
+                            train: bool=True):
         """
         Update the internal GP model training set with a list of training
         atoms indexing atoms within the frame. If train is True, re-train
         the GP by optimizing hyperparameters.
-        :param frame:
-        :param train_atoms:
-        :param train:
+        :param frame: Structure to train on
+        :param train_atoms: Index atoms to train on
+        :param train: Train or not
         :return:
         """
 
@@ -233,11 +236,14 @@ class TrajectoryTrainer(object):
         # update gp model
         self.gp.update_db(frame, frame.forces, custom_range=train_atoms)
         self.gp.set_L_alpha()
-        # TODO double check that these are being called at the right time.
+
         if train:
             self.train_gp()
 
     def train_gp(self):
+        """
+        Train the Gaussian process and write the results to the output file.
+        """
         self.gp.train(monitor=True if self.verbose >= 2 else False)
 
         output.write_hyps(self.gp.hyp_labels, self.gp.hyps,
@@ -245,7 +251,13 @@ class TrajectoryTrainer(object):
                           self.gp.like, self.gp.like_grad)
         self.train_count += 1
 
-    def is_std_in_bound(self, frame):
+    def is_std_in_bound(self, frame: Structure)->(bool, List[int]):
+        """
+        If the predicted variance is too high, returns a list of atoms
+        with the highest uncertainty
+        :param frame: Structure
+        :return:
+        """
 
         # This indicates test mode, as the GP is not being modified in any way
         if self.rel_std_tolerance == 0 and self.abs_std_tolerance == 0:
