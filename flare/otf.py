@@ -316,4 +316,4 @@ class OTF(object):
                                self.output_name, self.dft_step,
                                self.velocities)
         output.write_xyz_config(self.curr_step, self.structure,
-                                self.dft_step, self.output_name):
+                                self.dft_step, self.output_name)

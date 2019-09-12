@@ -8,6 +8,7 @@ outfiles = {}
 def close_files():
     for (k, v) in outfiles.items():
         v.close()
+        del outfiles[k]
 
 def find_files(output_name: str = 'otf_run.out'):
     if (output_name in outfiles.keys()):
@@ -152,7 +153,7 @@ def write_xyz_config(curr_step, structure, dft_step, output_name):
     for i in range(natom):
         pos = structure.positions[i]
         string += '{} {} {} {}\n'.format(
-            structure.species[i], pos[0], pos[1], pos[2])
+            structure.species_labels[i], pos[0], pos[1], pos[2])
 
     write_to_output(string, output_name+".xyz")
 
@@ -169,7 +170,7 @@ def write_xyz_config(curr_step, structure, dft_step, output_name):
     for i in range(natom):
         pos = structure.forces[i]
         string += '{} {} {} {}\n'.format(
-            structure.species[i], pos[0], pos[1], pos[2])
+            structure.species_labels[i], pos[0], pos[1], pos[2])
 
     write_to_output(string, output_name+"_forces.xyz")
 
