@@ -93,6 +93,42 @@ def test_load_one_frame_and_run():
     os.system('rm ./gp_from_aimd.out')
 
 
+def test_seed_and_run():
+        the_gp = GaussianProcess(kernel=two_plus_three_body_mc,
+                                 kernel_grad=two_plus_three_body_mc_grad,
+                                 hyps=np.array([3.75996759e-06, 1.53990678e-02,
+                                                2.50624782e-05, 5.07884426e-01,
+                                                1.70172923e-03]),
+                                 cutoffs=np.array([7, 7]),
+                                 hyp_labels=['l2', 's2', 'l3', 's3', 'n0'],
+                                 maxiter=1,
+                                 opt_algorithm='L-BFGS-B')
+
+        with open('./test_files/methanol_frames.json', 'r') as f:
+            frames = [Structure.from_dict(loads(s)) for s in f.readlines()]
+
+        with open('./test_files/methanol_envs.json', 'r') as f:
+            data_dicts = [loads(s) for s in f.readlines()[:6]]
+            envs = [AtomicEnvironment.from_dict(d) for d in data_dicts]
+            forces = [np.array(d['forces']) for d in data_dicts]
+            seeds = list(zip(envs, forces))
+
+        tt = TrajectoryTrainer(frames,
+                               gp=the_gp, shuffle_frames=True,
+                               rel_std_tolerance=0,
+                               abs_std_tolerance=0,
+                               skip=15,
+                               pre_train_seed_envs=seeds,
+                               pre_train_seed_frames=[frames[-1]],
+                               model_write='test_methanol_gp.pickle',
+                               max_atoms_from_frame=4)
+
+        tt.run()
+
+        os.system('rm ./gp_from_aimd.out')
+        os.system('rm ./test_methanol_gp.pickle')
+
+
 def test_uncertainty_threshold(fake_gp):
     tt = TrajectoryTrainer([], fake_gp, rel_std_tolerance=.5,
                            abs_std_tolerance=.01)
