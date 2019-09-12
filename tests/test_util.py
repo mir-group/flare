@@ -4,6 +4,7 @@ import numpy as np
 
 from pytest import raises
 
+
 def test_element_to_Z():
     for i in range(120):
         assert element_to_Z(i) == i
@@ -12,7 +13,6 @@ def test_element_to_Z():
     assert element_to_Z(np.int(1.0)) == 1
 
     for pair in zip(['H', 'C', 'O', 'Og'], [1, 6, 8, 118]):
-
         assert element_to_Z(pair[0]) == pair[1]
 
 

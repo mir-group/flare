@@ -10,18 +10,23 @@ def write_to_output(string: str, output_file: str = 'otf_run.out'):
 
 
 def write_header(cutoffs, kernel_name, hyps, algo, dt, Nsteps, structure,
-                 output_name, std_tolerance):
-
+                 output_name, std_tolerance,
+                 optional: dict = None):
     with open(output_name, 'w') as f:
         f.write(str(datetime.datetime.now()) + '\n')
 
-    if std_tolerance < 0:
+    if isinstance(std_tolerance, tuple):
+        std_string = "relative uncertainty tolerance: {} eV/A\n".format(
+            std_tolerance[0])
+        std_string += 'absolute uncertainty tolerance: {} eV/A\n'.format(
+            std_tolerance[1])
+    elif std_tolerance < 0:
         std_string = \
             'uncertainty tolerance: {} eV/A\n'.format(np.abs(std_tolerance))
     elif std_tolerance > 0:
         std_string = \
-            'uncertainty tolerance: {} times noise \n'\
-            .format(np.abs(std_tolerance))
+            'uncertainty tolerance: {} times noise \n' \
+                .format(np.abs(std_tolerance))
     else:
         std_string = ''
 
@@ -43,6 +48,10 @@ def write_header(cutoffs, kernel_name, hyps, algo, dt, Nsteps, structure,
         'system species: {}\n'.format(set(structure.species_labels))
     headerstring += 'periodic cell: \n'
     headerstring += str(structure.cell)
+
+    if optional:
+        for key, value in optional.items():
+            headerstring += "{}: {} \n".format(key, value)
 
     # report previous positions
     headerstring += '\nprevious positions (A):\n'
@@ -107,7 +116,7 @@ def write_md_config(dt, curr_step, structure, temperature, KE, local_energies,
         string += 'total energy: %.6f eV \n' % tot_en
 
     string += 'wall time from start: %.2f s \n' % \
-        (time.time() - start_time)
+              (time.time() - start_time)
 
     write_to_output(string, output_name)
 
@@ -119,8 +128,9 @@ def write_hyps(hyp_labels, hyps, start_time, output_name, like, like_grad):
         write_to_output('Hyp{} : {} = {}\n'.format(i, label, hyps[i]),
                         output_name)
 
-    write_to_output('likelihood: '+str(like)+'\n', output_name)
-    write_to_output('likelihood gradient: '+str(like_grad)+'\n', output_name)
+    write_to_output('likelihood: ' + str(like) + '\n', output_name)
+    write_to_output('likelihood gradient: ' + str(like_grad) + '\n',
+                    output_name)
     time_curr = time.time() - start_time
     write_to_output('wall time from start: %.2f s \n' % time_curr,
                     output_name)
@@ -131,3 +141,65 @@ def conclude_run(output_name):
     footer += 'Run complete. \n'
 
     write_to_output(footer, output_name)
+
+
+def write_gp_dft_comparison(curr_step, frame,
+                            start_time, dft_forces,
+                            mae, mac, local_energies=None, KE=None,
+                            output_name=''):
+    """
+    :param dft_forces:
+    :param mae:
+    :param mac:
+    :param KE:
+    :param curr_step:
+    :param frame:
+    :param local_energies:
+    :param start_time:
+    :param output_name:
+    :return:
+    """
+    string = ''
+
+    # Mark if a frame had DFT forces with an asterisk
+    string += "\n*-Frame: " + str(curr_step)
+
+    # Construct Header line
+    string += '\nEl  Position (A) \t\t\t\t '
+    string += 'GP Force (ev/A)  \t\t\t\t'
+    string += 'Std. Dev (ev/A) \t\t\t\t'
+    string += 'DFT Force (ev/A)  \t\t\t\t \n'
+
+    # Construct atom-by-atom description
+    for i in range(len(frame.positions)):
+        string += str(frame.species_labels[i]) + ' '
+        for j in range(3):
+            string += str("%.8f" % frame.positions[i][j]) + ' '
+        string += '\t'
+        for j in range(3):
+            string += str("%.8f" % frame.forces[i][j]) + ' '
+        string += '\t'
+        for j in range(3):
+            string += str("%.8e" % frame.stds[i][j]) + ' '
+        string += '\t'
+        for j in range(3):
+            string += str("%.8f" % dft_forces[i][j]) + ' '
+        string += '\n'
+
+    string += '\n'
+
+    string += 'mean absolute error: %.2f meV/A \n' % mae
+    string += 'mean absolute dft component: %.2f meV/A \n' % mac
+
+    # calculate potential and total energy
+    if local_energies is not None:
+        pot_en = np.sum(local_energies)
+        tot_en = KE + pot_en
+        string += \
+            'potential energy: %.6f eV \n' % pot_en
+        string += 'total energy: %.6f eV \n' % tot_en
+
+    string += 'wall time from start: %.2f s \n' % \
+              (time.time() - start_time)
+
+    write_to_output(string, output_name)

@@ -5,6 +5,7 @@ Utility functions for various tasks
 """
 from warnings import warn
 import numpy as np
+from json import JSONEncoder
 
 _element_to_Z = {'H': 1,
                  'He': 2,
@@ -152,6 +153,28 @@ def element_to_Z(element:str)->int:
              'of your choosing instead. Setting element {} to integer '
              '0'.format(element))
     return _element_to_Z.get(element, 0)
+
+
+class NumpyEncoder(JSONEncoder):
+    """
+    Special json encoder for numpy types for serialization
+    use as  json.loads(... cls = NumpyEncoder)
+    or json.dumps(... cls = NumpyEncoder)
+    Thanks to StackOverflow users karlB and fnunnari
+    https://stackoverflow.com/a/47626762
+    """
+
+    def default(self, obj):
+        if isinstance(obj, (np.int_, np.intc, np.intp, np.int8,
+                            np.int16, np.int32, np.int64, np.uint8,
+                            np.uint16, np.uint32, np.uint64)):
+            return int(obj)
+        elif isinstance(obj, (np.float_, np.float16, np.float32,
+                              np.float64)):
+            return float(obj)
+        elif isinstance(obj, (np.ndarray,)):
+            return obj.tolist()
+        return JSONEncoder.default(self, obj)
 
 def Z_to_element(Z: int)-> str:
 

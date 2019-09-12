@@ -15,12 +15,15 @@ class AtomicEnvironment:
                         2-body only if one cutoff is given, 2+3 body if
                         multiple are passed
         """
+        self.structure = structure
         self.positions = structure.wrapped_positions
         self.cell = structure.cell
-        self.atom = atom
-        self.cutoff_2 = cutoffs[0]
         self.species = structure.coded_species
+
+        self.atom = atom
         self.ctype = structure.coded_species[atom]
+
+        self.cutoff_2 = cutoffs[0]
 
         # get 2-body arrays
         bond_array_2, bond_positions_2, etypes = \
@@ -32,21 +35,30 @@ class AtomicEnvironment:
         # if multiple cutoffs are given, create 3-body arrays
         if len(cutoffs) > 1:
             self.cutoff_3 = cutoffs[1]
-            bond_array_3, cross_bond_inds, cross_bond_dists, triplet_counts =\
+            bond_array_3, cross_bond_inds, cross_bond_dists, triplet_counts = \
                 get_3_body_arrays(bond_array_2, bond_positions_2, cutoffs[1])
             self.bond_array_3 = bond_array_3
             self.cross_bond_inds = cross_bond_inds
             self.cross_bond_dists = cross_bond_dists
             self.triplet_counts = triplet_counts
 
-    def to_dict(self):
+    def as_dict(self):
         """
         Returns Atomic Environment object as a dictionary for serialization
-        purposes.
+        purposes. Does not include the structure to avoid redundant
+        information.
         :return:
         """
-        dictionary = vars(self)
+        # TODO write serialization method for structure
+        # so that the removal of the structure is not messed up
+        # by JSON serialization
+        dictionary = dict(vars(self))
         dictionary['object'] = 'AtomicEnvironment'
+        dictionary['forces'] = self.structure.forces
+        dictionary['energy'] = self.structure.energy
+        dictionary['stress'] = self.structure.stress
+        del dictionary['structure']
+
         return dictionary
 
     @staticmethod
@@ -58,9 +70,9 @@ class AtomicEnvironment:
         :return:
         """
         # TODO Instead of re-computing 2 and 3 body environment,
-        # directly load in
+        # directly load in, this would be much more efficient
 
-        struc = Structure(cell=dictionary['cell'],
+        struc = Structure(cell=np.array(dictionary['cell']),
                           positions=dictionary['positions'],
                           species=dictionary['species'])
         index = dictionary['atom']
@@ -68,6 +80,7 @@ class AtomicEnvironment:
         cutoffs = []
         if dictionary.get('cutoff_2', False):
             cutoffs.append(dictionary.get('cutoff_2'))
+
         if dictionary.get('cutoff_3', False):
             cutoffs.append(dictionary.get('cutoff_3'))
         cutoffs = np.array(cutoffs)
@@ -80,7 +93,7 @@ class AtomicEnvironment:
         n_neighbors = len(self.bond_array_2)
         string = 'Atomic Env. of Type {} surrounded by {} atoms of Types {}' \
                  ''.format(atom_type, n_neighbors,
-                    sorted(list(set(neighbor_types))))
+                           sorted(list(set(neighbor_types))))
 
         return string
 
@@ -106,8 +119,8 @@ def get_2_body_arrays(positions: np.ndarray, atom: int, cell: np.ndarray,
         for s1 in super_sweep:
             for s2 in super_sweep:
                 for s3 in super_sweep:
-                    im = diff_curr + s1*vec1 + s2*vec2 + s3*vec3
-                    dist = sqrt(im[0]*im[0]+im[1]*im[1]+im[2]*im[2])
+                    im = diff_curr + s1 * vec1 + s2 * vec2 + s3 * vec3
+                    dist = sqrt(im[0] * im[0] + im[1] * im[1] + im[2] * im[2])
                     if (dist < cutoff_2) and (dist != 0):
                         dists[n, im_count] = dist
                         coords[n, :, im_count] = im
@@ -159,17 +172,18 @@ def get_3_body_arrays(bond_array_2: np.ndarray,
     bond_positions_3 = bond_positions_2[0:ind_3, :]
 
     # get cross bond array
-    cross_bond_inds = np.zeros((ind_3, ind_3), dtype=np.int8)-1
+    cross_bond_inds = np.zeros((ind_3, ind_3), dtype=np.int8) - 1
     cross_bond_dists = np.zeros((ind_3, ind_3))
     triplet_counts = np.zeros(ind_3, dtype=np.int8)
     for m in range(ind_3):
         pos1 = bond_positions_3[m]
-        count = m+1
+        count = m + 1
         trips = 0
-        for n in range(m+1, ind_3):
+        for n in range(m + 1, ind_3):
             pos2 = bond_positions_3[n]
             diff = pos2 - pos1
-            dist_curr = sqrt(diff[0]*diff[0]+diff[1]*diff[1]+diff[2]*diff[2])
+            dist_curr = sqrt(
+                diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2])
 
             if dist_curr < cutoff_3:
                 cross_bond_inds[m, count] = n
