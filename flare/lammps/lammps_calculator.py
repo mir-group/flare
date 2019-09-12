@@ -24,8 +24,8 @@ def run_lammps(lammps_executable, input_file, output_file):
 
 
 def lammps_parser(dump_file):
-    """Parses LAMMPS dump file. Assumes the forces are the final \
-quantities to get dumped.
+    """Parses LAMMPS dump file. Assumes the forces are the final quantities \
+to get dumped.
 
     :param dump_file: Dump file to be parsed.
     :type dump_file: str
