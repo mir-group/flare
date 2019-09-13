@@ -68,7 +68,6 @@ def test_load_trained_gp_and_run(methanol_gp):
     tt.run()
     os.system('rm ./gp_from_aimd.out')
 
-
 def test_load_one_frame_and_run():
     the_gp = GaussianProcess(kernel=two_plus_three_body_mc,
                              kernel_grad=two_plus_three_body_mc_grad,
@@ -85,8 +84,8 @@ def test_load_one_frame_and_run():
 
     tt = TrajectoryTrainer(frames,
                            gp=the_gp, shuffle_frames=True,
-                           rel_std_tolerance=1,
-                           abs_std_tolerance=.01,
+                           rel_std_tolerance=0,
+                           abs_std_tolerance=1,
                            skip=15)
 
     tt.run()
