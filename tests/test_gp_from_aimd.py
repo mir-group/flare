@@ -85,7 +85,7 @@ def test_load_one_frame_and_run():
     tt = TrajectoryTrainer(frames,
                            gp=the_gp, shuffle_frames=True,
                            rel_std_tolerance=0,
-                           abs_std_tolerance=1,
+                           abs_std_tolerance=0,
                            skip=15)
 
     tt.run()
