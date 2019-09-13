@@ -67,6 +67,8 @@ def test_load_trained_gp_and_run(methanol_gp):
 
     tt.run()
     os.system('rm ./gp_from_aimd.out')
+    os.system('rm ./gp_from_aimd.xyz')
+    os.system('rm ./gp_from_aimd-f.xyz')
 
 def test_load_one_frame_and_run():
     the_gp = GaussianProcess(kernel=two_plus_three_body_mc,
@@ -90,6 +92,8 @@ def test_load_one_frame_and_run():
 
     tt.run()
     os.system('rm ./gp_from_aimd.out')
+    os.system('rm ./gp_from_aimd.xyz')
+    os.system('rm ./gp_from_aimd-f.xyz')
 
 
 def test_seed_and_run():
@@ -125,6 +129,8 @@ def test_seed_and_run():
         tt.run()
 
         os.system('rm ./gp_from_aimd.out')
+        os.system('rm ./gp_from_aimd.xyz')
+        os.system('rm ./gp_from_aimd-f.xyz')
         os.system('rm ./test_methanol_gp.pickle')
 
 

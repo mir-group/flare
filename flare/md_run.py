@@ -6,7 +6,7 @@ import time
 import datetime
 import concurrent.futures
 from flare import md
-from flare import output
+from flare.output import Output
 
 
 class MD:
@@ -42,12 +42,11 @@ class MD:
         self.pes = []
         self.kes = []
 
-        self.output_name = output_name
+        self.output = Output(output_name)
 
     def run(self):
-        output.write_header(self.gp.cutoffs, self.gp.kernel_name, self.gp.hyps,
-                            self.gp.algo, self.dt, self.Nsteps, self.structure,
-                            self.output_name)
+        self.output.write_header(self.gp.cutoffs, self.gp.kernel_name, self.gp.hyps,
+                                 self.gp.algo, self.dt, self.Nsteps, self.structure)
         self.start_time = time.time()
 
         while self.curr_step < self.Nsteps:
@@ -59,7 +58,7 @@ class MD:
             self.update_positions(new_pos)
             self.curr_step += 1
 
-        output.conclude_run(self.output_name)
+        self.output.conclude_run()
 
     def predict_on_structure_en(self):
         for n in range(self.structure.nat):
@@ -110,6 +109,8 @@ class MD:
     def record_state(self):
         self.pes.append(np.sum(self.local_energies))
         self.kes.append(self.KE)
-        output.write_md_config(self.dt, self.curr_step, self.structure,
-                               self.temperature, self.KE, self.local_energies,
-                               self.start_time, self.output_name)
+        self.output.write_md_config(self.dt, self.curr_step, self.structure,
+                                    self.temperature, self.KE, self.local_energies,
+                                    self.start_time)
+        self.output.write_xyz_config(self.curr_step, self.structure,
+                                     self.dft_step)
