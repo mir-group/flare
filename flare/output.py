@@ -42,7 +42,11 @@ class Output():
         if os.path.isfile(filename):
             shutil.copy(filename, filename+"-bak")
 
-        self.outfiles[filetype] = open(filename, "w+")
+        if filetype in self.outfiles.keys():
+            if self.outfiles[filetype].closed:
+                self.outfiles[filetype] = open(filename, "w+")
+        else:
+            self.outfiles[filetype] = open(filename, "w+")
 
     def write_to_log(self, logstring, name="log"):
         """
