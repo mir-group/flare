@@ -12,7 +12,7 @@ class Output():
     :param basename
     """
 
-    def __init__(self, basename: str='otf_run'):
+    def __init__(self, basename: str = 'otf_run'):
         """
         open files with the basename and different suffices.
         """
@@ -48,7 +48,7 @@ class Output():
         else:
             self.outfiles[filetype] = open(filename, "w+")
 
-    def write_to_log(self, logstring: str, name: str="log"):
+    def write_to_log(self, logstring: str, name: str = "log"):
         """
         Write any string to logfile
         """
