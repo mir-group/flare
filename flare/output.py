@@ -189,11 +189,9 @@ class Output():
     def write_xyz_config(self, curr_step, structure, dft_step):
         """
         write atomic configuration in xyz file
-        :param hyp_labels:
-        :param hyps:
-        :param start_time:
-        :param like:
-        :param like_grad:
+        :param curr_step: Int, number of frames to note in the comment line
+        :param structure: Structure, contain positions and forces
+        :param dft_step:  Boolean, whether this is a DFT call.
         :return:
         """
 
