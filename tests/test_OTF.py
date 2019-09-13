@@ -56,7 +56,7 @@ def test_otf_h2():
     otf = OTF(qe_input, dt, number_of_steps, gp, pw_loc,
               std_tolerance_factor, init_atoms=[0],
               calculate_energy=True, max_atoms_added=1,
-              output_name='h2_otf.out')
+              output_name='h2_otf')
 
     otf.run()
     os.system('mkdir test_outputs')
@@ -98,7 +98,7 @@ def test_otf_al():
 
     otf = OTF(qe_input, dt, number_of_steps, gp, pw_loc,
               std_tolerance_factor, init_atoms=[0],
-              calculate_energy=True, output_name='al_otf.out',
+              calculate_energy=True, output_name='al_otf',
               freeze_hyps=freeze_hyps, skip=5,
               max_atoms_added=max_atoms_added)
 
