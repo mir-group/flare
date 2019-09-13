@@ -2,7 +2,9 @@ import time
 import datetime
 import numpy as np
 import multiprocessing
-import os, shutil
+import os
+import shutil
+
 
 class Output():
     """
@@ -16,11 +18,10 @@ class Output():
         """
         self.basename = "{}".format(basename)
         self.outfiles = {}
-        filesuffix = {'log':'.out', 'xyz':'.xyz', 'fxyz':'-f.xyz'}
+        filesuffix = {'log': '.out', 'xyz': '.xyz', 'fxyz': '-f.xyz'}
 
         for filetype in ['log', 'xyz', 'fxyz']:
             self.open_new_log(filetype, filesuffix[filetype])
-
 
     def conclude_run(self):
         """
@@ -42,7 +43,6 @@ class Output():
             shutil.copy(filename, filename+"-bak")
 
         self.outfiles[filetype] = open(filename, "w+")
-
 
     def write_to_log(self, logstring, name="log"):
         """
@@ -77,7 +77,8 @@ class Output():
                 std_tolerance[1])
         elif std_tolerance < 0:
             std_string = \
-                'uncertainty tolerance: {} eV/A\n'.format(np.abs(std_tolerance))
+                'uncertainty tolerance: {} eV/A\n'.format(
+                    np.abs(std_tolerance))
         elif std_tolerance > 0:
             std_string = \
                 'uncertainty tolerance: {} times noise \n' \
@@ -113,12 +114,12 @@ class Output():
         for i in range(len(structure.positions)):
             headerstring += str(structure.species_labels[i]) + ' '
             for j in range(3):
-                headerstring += str("%.8f" % structure.prev_positions[i][j]) + ' '
+                headerstring += str("%.8f" %
+                                    structure.prev_positions[i][j]) + ' '
             headerstring += '\n'
         headerstring += '-' * 80 + '\n'
 
         f.write(headerstring)
-
 
     def write_md_config(self, dt, curr_step, structure,
                         temperature, KE, local_energies,
@@ -190,7 +191,6 @@ class Output():
 
         self.outfiles['log'].write(string)
 
-
     def write_xyz_config(self, curr_step, structure, dft_step):
         """
         write atomic configuration in xyz file
@@ -259,7 +259,6 @@ class Output():
     def write_gp_dft_comparison(self, curr_step, frame,
                                 start_time, dft_forces,
                                 mae, mac, local_energies=None, KE=None):
-
         """
         write the comparison to logfile
         :param dft_forces:
