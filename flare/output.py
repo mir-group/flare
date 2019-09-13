@@ -8,15 +8,14 @@ outfiles = {}
 def close_files():
     for (k, v) in outfiles.items():
         v.close()
-        del outfiles[k]
 
 def find_files(output_name: str = 'otf_run.out'):
     if (output_name in outfiles.keys()):
-        f = outfiles[output_name]
+        if outfiles[output_name].closed:
+           outfiles[output_name] = open(output_name, 'w', 1)
     else:
         outfiles[output_name] = open(output_name, 'w', 1)
-        f = outfiles[output_name]
-    return f
+    return outfiles[output_name]
 
 
 def write_to_output(string: str, output_file: str = 'otf_run.out'):
