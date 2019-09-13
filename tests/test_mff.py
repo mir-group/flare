@@ -3,7 +3,7 @@ import time
 from flare import struc, env
 from flare import otf_parser
 from flare.mff.mff_mc import MappedForceField
-from mc_kernels import mc_simple
+from flare import mc_simple
 from flare.lammps import lammps_calculator
 import pickle
 import os
