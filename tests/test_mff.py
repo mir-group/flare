@@ -1,5 +1,6 @@
 import numpy as np
 import time
+import pytest
 from flare import struc, env
 from flare import otf_parser
 from flare.mff.mff_mc import MappedForceField
