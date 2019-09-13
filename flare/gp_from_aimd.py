@@ -165,7 +165,7 @@ class TrajectoryTrainer(object):
         if (self.gp.l_mat is None) \
                 or (self.seed_frames is not None
                     or self.seed_envs is not None):
-            self.gp.train(monitor=self.verbose)
+            self.gp.train(output=self.output if self.verbose > 0 else None)
 
     def run(self):
         """
@@ -241,7 +241,7 @@ class TrajectoryTrainer(object):
         """
         Train the Gaussian process and write the results to the output file.
         """
-        self.gp.train(monitor=True if self.verbose >= 2 else False)
+        self.gp.train(output=self.output if self.verbose >= 2 else None)
 
         self.output.write_hyps(self.gp.hyp_labels, self.gp.hyps,
                                self.start_time,

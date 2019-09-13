@@ -18,9 +18,9 @@ class Output():
         """
         self.basename = "{}".format(basename)
         self.outfiles = {}
-        filesuffix = {'log': '.out', 'xyz': '.xyz', 'fxyz': '-f.xyz'}
+        filesuffix = {'log': '.out', 'xyz': '.xyz', 'fxyz': '-f.xyz', 'hyps':"-hyps.dat"}
 
-        for filetype in ['log', 'xyz', 'fxyz']:
+        for filetype in filesuffix.keys():
             self.open_new_log(filetype, filesuffix[filetype])
 
     def conclude_run(self):

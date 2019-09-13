@@ -256,7 +256,7 @@ class OTF(object):
         #     self.gp.update_L_alpha()
 
     def train_gp(self):
-        self.gp.train(True)
+        self.gp.train(self.output)
         self.output.write_hyps(self.gp.hyp_labels, self.gp.hyps,
                                self.start_time,
                                self.gp.like, self.gp.like_grad)
