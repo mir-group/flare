@@ -18,7 +18,8 @@ pwscf.save/
 /tests/*.xyz
 /docs/source/_build/html
 /tests/*-bak
-/tests/*otf*out
+/tests/*.out
+/tests/*dat
 /tests/alog
 /tests/gp_from_aimd.out
 /tests/h2_otf.out-f.xyz-bak
