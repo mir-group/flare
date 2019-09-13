@@ -131,8 +131,6 @@ class Output():
         :param velocities:
         :return:
         """
-        :return:
-        """
 
         string = ''
 
