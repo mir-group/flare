@@ -2,257 +2,290 @@ import time
 import datetime
 import numpy as np
 import multiprocessing
+import os, shutil
 
-outfiles = {}
+class Output():
+    """
+    Output class host the logfile, xyz config file and force xyz file.
+    :param basename
+    """
 
-def close_files():
-    for (k, v) in outfiles.items():
-        v.close()
+    def __init__(self, basename='otf_run'):
+        """
+        open files with the basename and different suffices.
+        """
+        self.basename = "{}".format(basename)
+        self.outfiles = {}
+        filesuffix = {'log':'.out', 'xyz':'.xyz', 'fxyz':'-f.xyz'}
 
-def find_files(output_name: str = 'otf_run.out'):
-    if (output_name in outfiles.keys()):
-        if outfiles[output_name].closed:
-           outfiles[output_name] = open(output_name, 'w', 1)
-    else:
-        outfiles[output_name] = open(output_name, 'w', 1)
-    return outfiles[output_name]
+        for filetype in ['log', 'xyz', 'fxyz']:
+
+            filename = self.basename+filesuffix[filetype]
+
+            # if the file exists, back up
+            if os.path.isfile(filename):
+                shutil.copy(filename, filename+"-bak")
+
+            self.outfiles[filetype] = open(filename, "w+")
+
+    def conclude_run(self):
+        """
+        destruction function that close all files
+        """
+        print('-'*20, file=self.outfiles['log'])
+        print('Run complete.', file=self.outfiles['log'])
+        for (k, v) in self.outfiles.items():
+            v.close()
+        del self.outfiles
+        self.outfiles = {}
+
+    def write_to_log(self, logstring):
+        self.outfiles['log'].write(logstring)
+
+    def write_header(self, cutoffs, kernel_name,
+                     hyps, algo, dt, Nsteps, structure,
+                     std_tolerance,
+                     optional: dict = None):
+        """
+        write header to the log function
+        :param cutoffs
+        """
+
+        f = self.outfiles['log']
+        f.write(str(datetime.datetime.now()) + '\n')
+
+        if isinstance(std_tolerance, tuple):
+            std_string = "relative uncertainty tolerance: {} eV/A\n".format(
+                std_tolerance[0])
+            std_string += 'absolute uncertainty tolerance: {} eV/A\n'.format(
+                std_tolerance[1])
+        elif std_tolerance < 0:
+            std_string = \
+                'uncertainty tolerance: {} eV/A\n'.format(np.abs(std_tolerance))
+        elif std_tolerance > 0:
+            std_string = \
+                'uncertainty tolerance: {} times noise \n' \
+                .format(np.abs(std_tolerance))
+        else:
+            std_string = ''
+
+        headerstring = ''
+        headerstring += \
+            'number of cpu cores: {}\n'.format(multiprocessing.cpu_count())
+        headerstring += 'cutoffs: {}\n'.format(cutoffs)
+        headerstring += 'kernel: {}\n'.format(kernel_name)
+        headerstring += 'number of hyperparameters: {}\n'.format(len(hyps))
+        headerstring += 'hyperparameters: {}' \
+                        '\n'.format(hyps)
+        headerstring += 'hyperparameter optimization algorithm: {}' \
+                        '\n'.format(algo)
+        headerstring += std_string
+        headerstring += 'timestep (ps): {}\n'.format(dt)
+        headerstring += 'number of frames: {}\n'.format(Nsteps)
+        headerstring += 'number of atoms: {}\n'.format(structure.nat)
+        headerstring += \
+            'system species: {}\n'.format(set(structure.species_labels))
+        headerstring += 'periodic cell: \n'
+        headerstring += str(structure.cell)
+
+        if optional:
+            for key, value in optional.items():
+                headerstring += "{}: {} \n".format(key, value)
+
+        # report previous positions
+        headerstring += '\nprevious positions (A):\n'
+        for i in range(len(structure.positions)):
+            headerstring += str(structure.species_labels[i]) + ' '
+            for j in range(3):
+                headerstring += str("%.8f" % structure.prev_positions[i][j]) + ' '
+            headerstring += '\n'
+        headerstring += '-' * 80 + '\n'
+
+        f.write(headerstring)
 
 
-def write_to_output(string: str, output_file: str = 'otf_run.out'):
-    f = find_files(output_file)
-    f.write(string)
+    def write_md_config(self, dt, curr_step, structure,
+                        temperature, KE, local_energies,
+                        start_time, dft_step, velocities):
+
+        string = ''
+
+        # Mark if a frame had DFT forces with an asterisk
+        if not dft_step:
+            string += '-' * 80 + '\n'
+            string += "-Frame: " + str(curr_step)
+        else:
+            string += "\n*-Frame: " + str(curr_step)
+
+        string += '\nSimulation Time: %.3f ps \n' % (dt * curr_step)
+
+        # Construct Header line
+        string += 'El  Position (A) \t\t\t\t '
+        if not dft_step:
+            string += 'GP Force (ev/A) '
+        else:
+            string += 'DFT Force (ev/A) '
+        string += '\t\t\t\t Std. Dev (ev/A) \t'
+        string += '\t\t\t\t Velocities (A/ps) \n'
+
+        # Construct atom-by-atom description
+        for i in range(len(structure.positions)):
+            string += str(structure.species_labels[i]) + ' '
+            for j in range(3):
+                string += str("%.8f" % structure.positions[i][j]) + ' '
+            string += '\t'
+            for j in range(3):
+                string += str("%.8f" % structure.forces[i][j]) + ' '
+            string += '\t'
+            for j in range(3):
+                string += str("%.8e" % structure.stds[i][j]) + ' '
+            string += '\t'
+            for j in range(3):
+                string += str("%.8e" % velocities[i][j]) + ' '
+            string += '\n'
+
+        string += '\n'
+        string += 'temperature: %.2f K \n' % temperature
+        string += 'kinetic energy: %.6f eV \n' % KE
+
+        # calculate potential and total energy
+        if local_energies is not None:
+            pot_en = np.sum(local_energies)
+            tot_en = KE + pot_en
+            string += \
+                'potential energy: %.6f eV \n' % pot_en
+            string += 'total energy: %.6f eV \n' % tot_en
+
+        string += 'wall time from start: %.2f s \n' % \
+            (time.time() - start_time)
+
+        self.outfiles['log'].write(string)
 
 
-def write_header(cutoffs, kernel_name, hyps, algo, dt, Nsteps, structure,
-                 output_name, std_tolerance,
-                 optional: dict = None):
+    def write_xyz_config(self, curr_step, structure, dft_step):
+        """
+        write atomic configuration in xyz file
+        :param hyp_labels:
+        :param hyps:
+        :param start_time:
+        :param like:
+        :param like_grad:
+        :return:
+        """
 
-    f = find_files(output_name)
-    f.write(str(datetime.datetime.now()) + '\n')
+        natom = len(structure.positions)
+        string = '{}\n'.format(natom)
 
-    if isinstance(std_tolerance, tuple):
-        std_string = "relative uncertainty tolerance: {} eV/A\n".format(
-            std_tolerance[0])
-        std_string += 'absolute uncertainty tolerance: {} eV/A\n'.format(
-            std_tolerance[1])
-    elif std_tolerance < 0:
-        std_string = \
-            'uncertainty tolerance: {} eV/A\n'.format(np.abs(std_tolerance))
-    elif std_tolerance > 0:
-        std_string = \
-            'uncertainty tolerance: {} times noise \n' \
-            .format(np.abs(std_tolerance))
-    else:
-        std_string = ''
+        # comment line
+        # Mark if a frame had DFT forces with an asterisk
+        if not dft_step:
+            string += "Frame: {}\n".format(curr_step)
+        else:
+            string += "*Frame: {}\n".format(curr_step)
 
-    headerstring = ''
-    headerstring += \
-        'number of cpu cores: {}\n'.format(multiprocessing.cpu_count())
-    headerstring += 'cutoffs: {}\n'.format(cutoffs)
-    headerstring += 'kernel: {}\n'.format(kernel_name)
-    headerstring += 'number of hyperparameters: {}\n'.format(len(hyps))
-    headerstring += 'hyperparameters: {}' \
-                    '\n'.format(hyps)
-    headerstring += 'hyperparameter optimization algorithm: {}' \
-                    '\n'.format(algo)
-    headerstring += std_string
-    headerstring += 'timestep (ps): {}\n'.format(dt)
-    headerstring += 'number of frames: {}\n'.format(Nsteps)
-    headerstring += 'number of atoms: {}\n'.format(structure.nat)
-    headerstring += \
-        'system species: {}\n'.format(set(structure.species_labels))
-    headerstring += 'periodic cell: \n'
-    headerstring += str(structure.cell)
+        # Construct atom-by-atom description
+        for i in range(natom):
+            pos = structure.positions[i]
+            string += '{} {} {} {}\n'.format(
+                structure.species_labels[i], pos[0], pos[1], pos[2])
 
-    if optional:
-        for key, value in optional.items():
-            headerstring += "{}: {} \n".format(key, value)
+        self.outfiles['xyz'].write(string)
 
-    # report previous positions
-    headerstring += '\nprevious positions (A):\n'
-    for i in range(len(structure.positions)):
-        headerstring += str(structure.species_labels[i]) + ' '
-        for j in range(3):
-            headerstring += str("%.8f" % structure.prev_positions[i][j]) + ' '
-        headerstring += '\n'
-    headerstring += '-' * 80 + '\n'
+        string = '{}\n'.format(natom)
 
-    write_to_output(headerstring, output_name)
+        # comment line
+        # Mark if a frame had DFT forces with an asterisk
+        if not dft_step:
+            string += "Frame: {}\n".format(curr_step)
+        else:
+            string += "*Frame: {}\n".format(curr_step)
 
+        # Construct atom-by-atom description
+        for i in range(natom):
+            pos = structure.forces[i]
+            string += '{} {} {} {}\n'.format(
+                structure.species_labels[i], pos[0], pos[1], pos[2])
 
-def write_md_config(dt, curr_step, structure, temperature, KE, local_energies,
-                    start_time, output_name, dft_step, velocities):
-    string = ''
+        self.outfiles['fxyz'].write(string)
 
-    # Mark if a frame had DFT forces with an asterisk
-    if not dft_step:
-        string += '-' * 80 + '\n'
-        string += "-Frame: " + str(curr_step)
-    else:
+    def write_hyps(self, hyp_labels, hyps, start_time, like, like_grad):
+        """
+        write hyperparameters to logfile
+        :param hyp_labels:
+        :param hyps:
+        :param start_time:
+        :param like:
+        :param like_grad:
+        :return:
+        """
+        f = self.outfiles['log']
+        f.write('\nGP hyperparameters: \n')
+
+        for i, label in enumerate(hyp_labels):
+            f.write('Hyp{} : {} = {}\n'.format(i, label, hyps[i]))
+
+        f.write('likelihood: ' + str(like) + '\n')
+        f.write('likelihood gradient: ' + str(like_grad) + '\n')
+        time_curr = time.time() - start_time
+        f.write('wall time from start: %.2f s \n' % time_curr)
+
+    def write_gp_dft_comparison(self, curr_step, frame,
+                                start_time, dft_forces,
+                                mae, mac, local_energies=None, KE=None):
+
+        """
+        write the comparison to logfile
+        :param dft_forces:
+        :param mae:
+        :param mac:
+        :param KE:
+        :param curr_step:
+        :param frame:
+        :param local_energies:
+        :param start_time:
+        :return:
+        """
+        string = ''
+
+        # Mark if a frame had DFT forces with an asterisk
         string += "\n*-Frame: " + str(curr_step)
 
-    string += '\nSimulation Time: %.3f ps \n' % (dt * curr_step)
+        # Construct Header line
+        string += '\nEl  Position (A) \t\t\t\t '
+        string += 'GP Force (ev/A)  \t\t\t\t'
+        string += 'Std. Dev (ev/A) \t\t\t\t'
+        string += 'DFT Force (ev/A)  \t\t\t\t \n'
 
-    # Construct Header line
-    string += 'El  Position (A) \t\t\t\t '
-    if not dft_step:
-        string += 'GP Force (ev/A) '
-    else:
-        string += 'DFT Force (ev/A) '
-    string += '\t\t\t\t Std. Dev (ev/A) \t'
-    string += '\t\t\t\t Velocities (A/ps) \n'
+        # Construct atom-by-atom description
+        for i in range(len(frame.positions)):
+            string += str(frame.species_labels[i]) + ' '
+            for j in range(3):
+                string += str("%.8f" % frame.positions[i][j]) + ' '
+            string += '\t'
+            for j in range(3):
+                string += str("%.8f" % frame.forces[i][j]) + ' '
+            string += '\t'
+            for j in range(3):
+                string += str("%.8e" % frame.stds[i][j]) + ' '
+            string += '\t'
+            for j in range(3):
+                string += str("%.8f" % dft_forces[i][j]) + ' '
+            string += '\n'
 
-    # Construct atom-by-atom description
-    for i in range(len(structure.positions)):
-        string += str(structure.species_labels[i]) + ' '
-        for j in range(3):
-            string += str("%.8f" % structure.positions[i][j]) + ' '
-        string += '\t'
-        for j in range(3):
-            string += str("%.8f" % structure.forces[i][j]) + ' '
-        string += '\t'
-        for j in range(3):
-            string += str("%.8e" % structure.stds[i][j]) + ' '
-        string += '\t'
-        for j in range(3):
-            string += str("%.8e" % velocities[i][j]) + ' '
         string += '\n'
 
-    string += '\n'
-    string += 'temperature: %.2f K \n' % temperature
-    string += 'kinetic energy: %.6f eV \n' % KE
+        string += 'mean absolute error: %.2f meV/A \n' % mae
+        string += 'mean absolute dft component: %.2f meV/A \n' % mac
 
-    # calculate potential and total energy
-    if local_energies is not None:
-        pot_en = np.sum(local_energies)
-        tot_en = KE + pot_en
-        string += \
-            'potential energy: %.6f eV \n' % pot_en
-        string += 'total energy: %.6f eV \n' % tot_en
+        # calculate potential and total energy
+        if local_energies is not None:
+            pot_en = np.sum(local_energies)
+            tot_en = KE + pot_en
+            string += \
+                'potential energy: %.6f eV \n' % pot_en
+            string += 'total energy: %.6f eV \n' % tot_en
 
-    string += 'wall time from start: %.2f s \n' % \
-        (time.time() - start_time)
+        string += 'wall time from start: %.2f s \n' % \
+                  (time.time() - start_time)
 
-    write_to_output(string, output_name)
-
-
-def write_xyz_config(curr_step, structure, dft_step, output_name):
-
-    natom = len(structure.positions)
-    string = '{}\n'.format(natom)
-
-    # comment line
-    # Mark if a frame had DFT forces with an asterisk
-    if not dft_step:
-        string += "Frame: {}\n".format(curr_step)
-    else:
-        string += "*Frame: {}\n".format(curr_step)
-
-    # Construct atom-by-atom description
-    for i in range(natom):
-        pos = structure.positions[i]
-        string += '{} {} {} {}\n'.format(
-            structure.species_labels[i], pos[0], pos[1], pos[2])
-
-    write_to_output(string, output_name+".xyz")
-
-    string = '{}\n'.format(natom)
-
-    # comment line
-    # Mark if a frame had DFT forces with an asterisk
-    if not dft_step:
-        string += "Frame: {}\n".format(curr_step)
-    else:
-        string += "*Frame: {}\n".format(curr_step)
-
-    # Construct atom-by-atom description
-    for i in range(natom):
-        pos = structure.forces[i]
-        string += '{} {} {} {}\n'.format(
-            structure.species_labels[i], pos[0], pos[1], pos[2])
-
-    write_to_output(string, output_name+"_forces.xyz")
-
-
-def write_hyps(hyp_labels, hyps, start_time, output_name, like, like_grad):
-    write_to_output('\nGP hyperparameters: \n', output_name)
-
-    for i, label in enumerate(hyp_labels):
-        write_to_output('Hyp{} : {} = {}\n'.format(i, label, hyps[i]),
-                        output_name)
-
-    write_to_output('likelihood: ' + str(like) + '\n', output_name)
-    write_to_output('likelihood gradient: ' + str(like_grad) + '\n',
-                    output_name)
-    time_curr = time.time() - start_time
-    write_to_output('wall time from start: %.2f s \n' % time_curr,
-                    output_name)
-
-
-def conclude_run(output_name):
-    footer = '-' * 20 + '\n'
-    footer += 'Run complete. \n'
-
-    write_to_output(footer, output_name)
-
-
-def write_gp_dft_comparison(curr_step, frame,
-                            start_time, dft_forces,
-                            mae, mac, local_energies=None, KE=None,
-                            output_name=''):
-    """
-    :param dft_forces:
-    :param mae:
-    :param mac:
-    :param KE:
-    :param curr_step:
-    :param frame:
-    :param local_energies:
-    :param start_time:
-    :param output_name:
-    :return:
-    """
-    string = ''
-
-    # Mark if a frame had DFT forces with an asterisk
-    string += "\n*-Frame: " + str(curr_step)
-
-    # Construct Header line
-    string += '\nEl  Position (A) \t\t\t\t '
-    string += 'GP Force (ev/A)  \t\t\t\t'
-    string += 'Std. Dev (ev/A) \t\t\t\t'
-    string += 'DFT Force (ev/A)  \t\t\t\t \n'
-
-    # Construct atom-by-atom description
-    for i in range(len(frame.positions)):
-        string += str(frame.species_labels[i]) + ' '
-        for j in range(3):
-            string += str("%.8f" % frame.positions[i][j]) + ' '
-        string += '\t'
-        for j in range(3):
-            string += str("%.8f" % frame.forces[i][j]) + ' '
-        string += '\t'
-        for j in range(3):
-            string += str("%.8e" % frame.stds[i][j]) + ' '
-        string += '\t'
-        for j in range(3):
-            string += str("%.8f" % dft_forces[i][j]) + ' '
-        string += '\n'
-
-    string += '\n'
-
-    string += 'mean absolute error: %.2f meV/A \n' % mae
-    string += 'mean absolute dft component: %.2f meV/A \n' % mac
-
-    # calculate potential and total energy
-    if local_energies is not None:
-        pot_en = np.sum(local_energies)
-        tot_en = KE + pot_en
-        string += \
-            'potential energy: %.6f eV \n' % pot_en
-        string += 'total energy: %.6f eV \n' % tot_en
-
-    string += 'wall time from start: %.2f s \n' % \
-              (time.time() - start_time)
-
-    write_to_output(string, output_name)
+        self.outfiles['log'].write(string)
