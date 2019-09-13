@@ -19,14 +19,8 @@ class Output():
         filesuffix = {'log':'.out', 'xyz':'.xyz', 'fxyz':'-f.xyz'}
 
         for filetype in ['log', 'xyz', 'fxyz']:
+            self.open_new_log(filetype, filesuffix[filetype])
 
-            filename = self.basename+filesuffix[filetype]
-
-            # if the file exists, back up
-            if os.path.isfile(filename):
-                shutil.copy(filename, filename+"-bak")
-
-            self.outfiles[filetype] = open(filename, "w+")
 
     def conclude_run(self):
         """
@@ -39,11 +33,22 @@ class Output():
         del self.outfiles
         self.outfiles = {}
 
-    def write_to_log(self, logstring):
+    def open_new_log(self, filetype, suffix):
+
+        filename = self.basename+suffix
+
+        # if the file exists, back up
+        if os.path.isfile(filename):
+            shutil.copy(filename, filename+"-bak")
+
+        self.outfiles[filetype] = open(filename, "w+")
+
+
+    def write_to_log(self, logstring, name="log"):
         """
         write any string to logfile
         """
-        self.outfiles['log'].write(logstring)
+        self.outfiles[name].write(logstring)
 
     def write_header(self, cutoffs, kernel_name,
                      hyps, algo, dt, Nsteps, structure,
