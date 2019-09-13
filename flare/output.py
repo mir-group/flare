@@ -40,6 +40,9 @@ class Output():
         self.outfiles = {}
 
     def write_to_log(self, logstring):
+        """
+        write any string to logfile
+        """
         self.outfiles['log'].write(logstring)
 
     def write_header(self, cutoffs, kernel_name,
@@ -48,7 +51,15 @@ class Output():
                      optional: dict = None):
         """
         write header to the log function
-        :param cutoffs
+        :param cutoffs:
+        :param kernel_name:
+        :param hyps:
+        :param algo:
+        :param dt:
+        :param Nsteps:
+        :param structure:
+        :param std_tolerance:
+        :param optional:
         """
 
         f = self.outfiles['log']
@@ -107,6 +118,21 @@ class Output():
     def write_md_config(self, dt, curr_step, structure,
                         temperature, KE, local_energies,
                         start_time, dft_step, velocities):
+        """
+        write md configuration in log file
+        :param dt:
+        :param curr_step:
+        :param structure:
+        :param temperature:
+        :param KE:
+        :param local_energies:
+        :param start_time:
+        :param dft_step:
+        :param velocities:
+        :return:
+        """
+        :return:
+        """
 
         string = ''
 
