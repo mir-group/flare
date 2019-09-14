@@ -81,7 +81,7 @@ def test_parse_header():
                    'svd_rank_3': 90,
                    'bodies': [2, 3],
                    'load_grid': None,
-                   'update': False}
+                   'update': True}
 
     mgp_model = MappedGaussianProcess(gp_model, grid_params, struc_params,
                                  mean_only=True)
