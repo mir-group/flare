@@ -1,10 +1,10 @@
 import time
-from math import exp
+import math
 import numpy as np
 from scipy.linalg import solve_triangular
 import multiprocessing as mp
-import sys
-sys.path.append('../../flare/')
+import subprocess
+import os
 
 from flare import gp, env, struc, kernels
 from flare.gp import GaussianProcess
@@ -478,7 +478,7 @@ class Map3body:
                      for i in range(noa)]
         pool = mp.Pool(processes=processes)
 
-        if not update:
+        if update:
             subprocess.run(['rm', '-r', 'kv3'])
             subprocess.run(['mkdir', 'kv3'])
        
@@ -504,7 +504,7 @@ class Map3body:
         '''
         generate grid for each angle, used to parallelize grid generation
         '''
-        _, angle12, bond_lengths, GP, env12, update = params
+        a12, angle12, bond_lengths, GP, env12, update = params
         nop = self.grid_num[0]
         angle12 = angle12
         bond_means = np.zeros([nop, nop])
@@ -516,9 +516,12 @@ class Map3body:
             size = len(GP.training_data) * 3
             new_kv_file = np.zeros((nop**2+1, size))
             new_kv_file[0,0] = size
-            old_kv_file = np.load(kv_filename+'.npy') 
-            last_size = int(old_kv_file[0,0])
-            new_kv_file[:, :last_size] = old_kv_file
+            if str(a12)+'.npy' in os.listdir('kv3'):
+                old_kv_file = np.load(kv_filename+'.npy') 
+                last_size = int(old_kv_file[0,0])
+                new_kv_file[:, :last_size] = old_kv_file
+            else:
+                last_size = 0
             ds = [1, 2, 3]
 
         for b1, r1 in enumerate(bond_lengths):
