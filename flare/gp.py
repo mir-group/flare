@@ -24,7 +24,7 @@ class GaussianProcess:
                  energy_kernel: Callable = None,
                  opt_algorithm: str = 'L-BFGS-B',
                  maxiter=10, par=False,
-                 monitor=False):
+                 output=None):
         """Initialize GP parameters and training data."""
 
         self.kernel = kernel
@@ -45,7 +45,7 @@ class GaussianProcess:
         self.likelihood = None
         self.likelihood_gradient = None
         self.par = par
-        self.monitor = monitor
+        self.output = output
 
     # TODO unit test custom range
     def update_db(self, struc: Structure, forces: list,
@@ -112,7 +112,7 @@ class GaussianProcess:
 
         return forces_np
 
-    def train(self, monitor=False, custom_bounds=None,
+    def train(self, output=None, custom_bounds=None,
               grad_tol: float = 1e-4,
               x_tol: float = 1e-5,
               line_steps: int = 20):
@@ -126,7 +126,7 @@ class GaussianProcess:
         x_0 = self.hyps
 
         args = (self.training_data, self.training_labels_np,
-                self.kernel_grad, self.cutoffs, monitor,
+                self.kernel_grad, self.cutoffs, output,
                 self.par)
 
         if self.algo == 'L-BFGS-B':

@@ -15,7 +15,7 @@ from flare.env import AtomicEnvironment
 import numpy as np
 from copy import deepcopy
 import pickle
-import flare.output as output
+from flare.output import Output
 
 
 class TrajectoryTrainer(object):
@@ -27,7 +27,7 @@ class TrajectoryTrainer(object):
                  parallel: bool = False,
                  skip: int = 0,
                  calculate_energy: bool = False,
-                 output_name: str = 'gp_from_aimd.out',
+                 output_name: str = 'gp_from_aimd',
                  max_atoms_from_frame: int = np.inf, max_trains: int = np.inf,
                  min_atoms_added: int = 1,
                  n_cpus: int = 1, shuffle_frames: bool = False,
@@ -92,7 +92,7 @@ class TrajectoryTrainer(object):
             else:
                 self.pred_func = predict_on_structure
 
-        self.output_name = output_name
+        self.output = Output(output_name)
 
         # set number of cpus for parallelization
         self.n_cpus = n_cpus
@@ -119,16 +119,15 @@ class TrajectoryTrainer(object):
         training set, then seed with at least one atom from each
         """
 
-        output.write_header(self.gp.cutoffs,
-                            self.gp.kernel_name,
-                            self.gp.hyps,
-                            self.gp.algo,
-                            dt=0,
-                            Nsteps=len(self.frames),
-                            structure=self.frames[0],
-                            std_tolerance=(self.rel_std_tolerance,
-                                           self.abs_std_tolerance),
-                            output_name=self.output_name)
+        self.output.write_header(self.gp.cutoffs,
+                                 self.gp.kernel_name,
+                                 self.gp.hyps,
+                                 self.gp.algo,
+                                 dt=0,
+                                 Nsteps=len(self.frames),
+                                 structure=self.frames[0],
+                                 std_tolerance=(self.rel_std_tolerance,
+                                                self.abs_std_tolerance))
 
         self.start_time = time.time()
 
@@ -166,7 +165,7 @@ class TrajectoryTrainer(object):
         if (self.gp.l_mat is None) \
                 or (self.seed_frames is not None
                     or self.seed_envs is not None):
-            self.gp.train(monitor=self.verbose)
+            self.gp.train(output=self.output if self.verbose > 0 else None)
 
     def run(self):
         """
@@ -190,9 +189,9 @@ class TrajectoryTrainer(object):
             mae = np.mean(np.abs(cur_frame.forces - dft_forces)) * 1000
             mac = np.mean(np.abs(dft_forces)) * 1000
 
-            output.write_gp_dft_comparison(
+            self.output.write_gp_dft_comparison(
                 curr_step=i, frame=cur_frame,
-                start_time=time.time(), output_name=self.output_name,
+                start_time=time.time(),
                 dft_forces=dft_forces,
                 mae=mae, mac=mac, local_energies=None)
 
@@ -207,7 +206,7 @@ class TrajectoryTrainer(object):
                 if self.train_count < self.max_trains:
                     self.train_gp()
 
-        output.conclude_run(self.output_name)
+        self.output.conclude_run()
 
         if self.pickle_name:
             with open(self.pickle_name, 'wb') as f:
@@ -225,13 +224,11 @@ class TrajectoryTrainer(object):
         :return:
         """
 
-        output.write_to_output('\nAdding atom(s) {} to the '
-                               'training set.\n'
-                               .format(train_atoms, ),
-                               self.output_name)
-        output.write_to_output('Uncertainties: {}.\n'
-                               .format(frame.stds[train_atoms]),
-                               self.output_name)
+        self.output.write_to_log('\nAdding atom(s) {} to the '
+                                 'training set.\n'
+                                 .format(train_atoms, ))
+        self.output.write_to_log('Uncertainties: {}.\n'
+                                 .format(frame.stds[train_atoms]))
 
         # update gp model
         self.gp.update_db(frame, frame.forces, custom_range=train_atoms)
@@ -244,11 +241,11 @@ class TrajectoryTrainer(object):
         """
         Train the Gaussian process and write the results to the output file.
         """
-        self.gp.train(monitor=True if self.verbose >= 2 else False)
+        self.gp.train(output=self.output if self.verbose >= 2 else None)
 
-        output.write_hyps(self.gp.hyp_labels, self.gp.hyps,
-                          self.start_time, self.output_name,
-                          self.gp.like, self.gp.like_grad)
+        self.output.write_hyps(self.gp.hyp_labels, self.gp.hyps,
+                               self.start_time,
+                               self.gp.like, self.gp.like_grad)
         self.train_count += 1
 
     def is_std_in_bound(self, frame: Structure)->(bool, List[int]):

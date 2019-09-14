@@ -22,7 +22,11 @@ def cleanup_espresso_run(target: str = None):
 # ------------------------------------------------------
 #                   test  otf runs
 # ------------------------------------------------------
-
+@pytest.mark.skipif(not os.environ.get('PWSCF_COMMAND',
+                          False), reason='PWSCF_COMMAND not found '
+                                  'in environment: Please install Quantum '
+                                  'ESPRESSO and set the PWSCF_COMMAND env. '
+                                  'variable to point to pw.x.')
 def test_otf_h2():
     """
     Test that an otf run can survive going for more steps
@@ -56,14 +60,18 @@ def test_otf_h2():
     otf = OTF(qe_input, dt, number_of_steps, gp, pw_loc,
               std_tolerance_factor, init_atoms=[0],
               calculate_energy=True, max_atoms_added=1,
-              output_name='h2_otf.out')
+              output_name='h2_otf')
 
     otf.run()
     os.system('mkdir test_outputs')
     os.system('mv h2_otf.out test_outputs')
     cleanup_espresso_run()
 
-
+@pytest.mark.skipif(not os.environ.get('PWSCF_COMMAND',
+                          False), reason='PWSCF_COMMAND not found '
+                                  'in environment: Please install Quantum '
+                                  'ESPRESSO and set the PWSCF_COMMAND env. '
+                                  'variable to point to pw.x.')
 def test_otf_al():
     """
     Test that an otf run can survive going for more steps
@@ -98,7 +106,7 @@ def test_otf_al():
 
     otf = OTF(qe_input, dt, number_of_steps, gp, pw_loc,
               std_tolerance_factor, init_atoms=[0],
-              calculate_energy=True, output_name='al_otf.out',
+              calculate_energy=True, output_name='al_otf',
               freeze_hyps=freeze_hyps, skip=5,
               max_atoms_added=max_atoms_added)
 

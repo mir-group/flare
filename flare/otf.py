@@ -7,7 +7,8 @@ import copy
 import multiprocessing as mp
 import subprocess
 import concurrent.futures
-from flare import struc, gp, env, qe_util, md, output
+from flare import struc, gp, env, qe_util, md
+from flare.output import Output
 
 
 class OTF(object):
@@ -16,7 +17,7 @@ class OTF(object):
                  std_tolerance_factor: float = 1,
                  prev_pos_init: np.ndarray=None, par: bool=False,
                  skip: int=0, init_atoms: List[int]=None,
-                 calculate_energy=False, output_name='otf_run.out',
+                 calculate_energy=False, output_name='otf_run',
                  max_atoms_added=1, freeze_hyps=10,
                  rescale_steps=[], rescale_temps=[],
                  no_cpus=1):
@@ -78,16 +79,17 @@ class OTF(object):
         self.rescale_steps = rescale_steps
         self.rescale_temps = rescale_temps
 
-        self.output_name = output_name
+        self.output = Output(output_name)
 
         # set number of cpus for qe runs
         self.no_cpus = no_cpus
 
     def run(self):
-        output.write_header(self.gp.cutoffs, self.gp.kernel_name, self.gp.hyps,
-                            self.gp.algo, self.dt, self.number_of_steps,
-                            self.structure, self.output_name,
-                            self.std_tolerance)
+        self.output.write_header(self.gp.cutoffs, self.gp.kernel_name,
+                                 self.gp.hyps, self.gp.algo,
+                                 self.dt, self.number_of_steps,
+                                 self.structure,
+                                 self.std_tolerance)
         counter = 0
         self.start_time = time.time()
 
@@ -137,12 +139,10 @@ class OTF(object):
                     mae = np.mean(np.abs(gp_frcs - dft_frcs))
                     mac = np.mean(np.abs(dft_frcs))
 
-                    output.write_to_output('\nmean absolute error:'
-                                           ' %.4f eV/A \n'
-                                           % mae, self.output_name)
-                    output.write_to_output('mean absolute dft component:'
-                                           ' %.4f eV/A \n' % mac,
-                                           self.output_name)
+                    self.output.write_to_log('\nmean absolute error:'
+                                             ' %.4f eV/A \n' % mae)
+                    self.output.write_to_log('mean absolute dft component:'
+                                           ' %.4f eV/A \n' % mac)
 
                     # add max uncertainty atoms to training set
                     self.update_gp(target_atoms, dft_frcs)
@@ -159,7 +159,7 @@ class OTF(object):
             self.update_positions(new_pos)
             self.curr_step += 1
 
-        output.conclude_run(self.output_name)
+        self.output.conclude_run()
 
     def predict_on_atom(self, atom):
         chemenv = env.AtomicEnvironment(self.structure, atom, self.gp.cutoffs)
@@ -224,8 +224,7 @@ class OTF(object):
             self.local_energies[n] = self.gp.predict_local_energy(chemenv)
 
     def run_dft(self):
-        output.write_to_output('\nCalling Quantum Espresso...\n',
-                               self.output_name)
+        self.output.write_to_log('\nCalling Quantum Espresso...\n')
 
         # calculate DFT forces
         forces = qe_util.run_espresso_par(self.qe_input, self.structure,
@@ -234,20 +233,16 @@ class OTF(object):
 
         # write wall time of DFT calculation
         self.dft_count += 1
-        output.write_to_output('QE run complete.\n', self.output_name)
+        self.output.write_to_log('QE run complete.\n')
         time_curr = time.time() - self.start_time
-        output.write_to_output('number of DFT calls: %i \n' % self.dft_count,
-                               self.output_name)
-        output.write_to_output('wall time from start: %.2f s \n' % time_curr,
-                               self.output_name)
+        self.output.write_to_log('number of DFT calls: %i \n' % self.dft_count)
+        self.output.write_to_log('wall time from start: %.2f s \n' % time_curr)
 
     def update_gp(self, train_atoms, dft_frcs):
-        output.write_to_output('\nAdding atom {} to the training set.\n'
-                               .format(train_atoms),
-                               self.output_name)
-        output.write_to_output('Uncertainty: {}.\n'
-                               .format(self.structure.stds[train_atoms[0]]),
-                               self.output_name)
+        self.output.write_to_log('\nAdding atom {} to the training set.\n'
+                                 .format(train_atoms))
+        self.output.write_to_log('Uncertainty: {}.\n'
+                                 .format(self.structure.stds[train_atoms[0]]))
 
         # update gp model
         self.gp.update_db(self.structure, dft_frcs,
@@ -261,10 +256,10 @@ class OTF(object):
         #     self.gp.update_L_alpha()
 
     def train_gp(self):
-        self.gp.train(True)
-        output.write_hyps(self.gp.hyp_labels, self.gp.hyps,
-                          self.start_time, self.output_name,
-                          self.gp.like, self.gp.like_grad)
+        self.gp.train(self.output)
+        self.output.write_hyps(self.gp.hyp_labels, self.gp.hyps,
+                               self.start_time,
+                               self.gp.like, self.gp.like_grad)
 
     def is_std_in_bound(self):
         # set uncertainty threshold
@@ -309,8 +304,10 @@ class OTF(object):
         self.velocities = velocities
 
     def record_state(self):
-        output.write_md_config(self.dt, self.curr_step, self.structure,
-                               self.temperature, self.KE,
-                               self.local_energies, self.start_time,
-                               self.output_name, self.dft_step,
-                               self.velocities)
+        self.output.write_md_config(self.dt, self.curr_step, self.structure,
+                                    self.temperature, self.KE,
+                                    self.local_energies, self.start_time,
+                                    self.dft_step,
+                                    self.velocities)
+        self.output.write_xyz_config(self.curr_step, self.structure,
+                                     self.dft_step)
