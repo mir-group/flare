@@ -2,8 +2,7 @@ import pytest
 import os
 import sys
 import numpy as np
-from flare import struc
-from flare.struc import Structure
+from flare.struc import Structure, get_unique_species
 from flare.qe_util import parse_qe_input, parse_qe_forces, run_espresso, \
     edit_qe_input_positions, qe_input_to_structure
 
@@ -77,10 +76,12 @@ def test_input_to_structure(qe_input):
                               './test_files/qe_output_1.out')
                          ]
                          )
+@pytest.mark.skipif(not os.environ.get('PWSCF_COMMAND',
+                          False), reason='PWSCF_COMMAND not found '
+                                  'in environment: Please install Quantum '
+                                  'ESPRESSO and set the PWSCF_COMMAND env. '
+                                  'variable to point to pw.x.')
 def test_espresso_calling(qe_input, qe_output):
-    assert os.environ.get('PWSCF_COMMAND',
-                          False), 'PWSCF_COMMAND not found ' \
-                                  'in environment'
 
     pw_loc = os.environ.get('PWSCF_COMMAND')
     os.system(' '.join(['cp', qe_input, 'pwscf.in']))
@@ -111,7 +112,7 @@ def test_espresso_input_edit():
     """
     os.system('cp test_files/qe_input_1.in .')
     positions, species, cell, masses = parse_qe_input('./qe_input_1.in')
-    _, coded_species = struc.get_unique_species(species)
+    _, coded_species = get_unique_species(species)
     structure = Structure(cell, coded_species, positions, masses,
                           species_labels=species)
 
