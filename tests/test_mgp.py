@@ -10,7 +10,7 @@ import pickle
 import os
 
 
-# ASSUMPTION: You have a Lammps executable with the mff pair style with $lmp
+# ASSUMPTION: You have a Lammps executable with the mgp pair style with $lmp
 # as the corresponding environment variable.
 @pytest.mark.skipif(not os.environ.get('lmp',
                           False), reason='lmp not found '
@@ -81,9 +81,9 @@ def test_parse_header():
                    'svd_rank_3': 90,
                    'bodies': [2, 3],
                    'load_grid': None,
-                   'load_svd': None}
+                   'update': False}
 
-    mff_model = MappedForceField(gp_model, grid_params, struc_params,
+    mgp_model = MappedGaussianProcess(gp_model, grid_params, struc_params,
                                  mean_only=True)
 
     # -------------------------------------------------------------------------
@@ -91,16 +91,16 @@ def test_parse_header():
     # -------------------------------------------------------------------------
 
     gp_pred_x = gp_model.predict(environ, 1)
-    mff_pred = mff_model.predict(environ, mean_only=True)
+    mgp_pred = mgp_model.predict(environ, mean_only=True)
 
-    # check mff is within 1 meV/A of the gp
-    assert(np.abs(mff_pred[0][0] - gp_pred_x[0]) < 1e-3)
+    # check mgp is within 1 meV/A of the gp
+    assert(np.abs(mgp_pred[0][0] - gp_pred_x[0]) < 1e-3)
 
     # -------------------------------------------------------------------------
     #                           check lammps potential
     # -------------------------------------------------------------------------
 
-    mff_model.write_two_plus_three(lammps_location)
+    mgp_model.write_two_plus_three(lammps_location)
 
     # create test structure
     species = otf_object.gp_species_list[-1]
@@ -119,7 +119,7 @@ def test_parse_header():
     lammps_calculator.write_text(data_file_name, data_text)
 
     # create lammps input
-    style_string = 'mff'
+    style_string = 'mgp'
     coeff_string = '* * {} 47 53 yes yes'.format(lammps_location)
     lammps_executable = '$lmp'
     dump_file_name = 'tmp.dump'
