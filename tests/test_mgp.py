@@ -119,7 +119,7 @@ def test_parse_header():
     lammps_calculator.write_text(data_file_name, data_text)
 
     # create lammps input
-    style_string = 'mgp'
+    style_string = 'mff' #TODO: change the name of lammps
     coeff_string = '* * {} 47 53 yes yes'.format(lammps_location)
     lammps_executable = '$lmp'
     dump_file_name = 'tmp.dump'
@@ -140,3 +140,6 @@ def test_parse_header():
 
     os.system('rm tmp.in tmp.out tmp.dump tmp.data AgI_Molten_15.txt'
               ' log.lammps')
+    os.system('rm grid3*.npy')
+    os.system('rm -r kv3')
+
