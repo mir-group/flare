@@ -57,14 +57,8 @@ def merge(prefix, a_num, g_num):
     return grid_means, grid_vars
 
 
-def svd_grid(matr, rank=55, prefix=None):
-    if not prefix:
-        u, s, vh = np.linalg.svd(matr, full_matrices=False)
-#        np.save('../params/SVD_U', u)
-#        np.save('../params/SVD_S', s)
-    else:
-        u = np.load(prefix+'SVD_U.npy')
-        s = np.load(prefix+'SVD_S.npy')
+def svd_grid(matr, rank):
+    u, s, vh = np.linalg.svd(matr, full_matrices=False)
     return u[:,:rank], s[:rank], vh[:rank, :]
 
 

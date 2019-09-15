@@ -1,31 +1,33 @@
 import time
-from math import exp
+import math
 import numpy as np
 from scipy.linalg import solve_triangular
 import multiprocessing as mp
-import sys
+import subprocess
+import os
+
 from flare import gp, env, struc, kernels
 from flare.gp import GaussianProcess
 from flare.kernels import two_body, three_body, two_plus_three_body,\
     two_body_jit
 from flare.cutoffs import quadratic_cutoff
 from flare.mc_simple import two_body_mc, three_body_mc, two_plus_three_body_mc
-import flare.mff.utils as utils
-from flare.mff.utils import get_bonds, get_triplets, self_two_body_mc_jit, \
+import flare.mgp.utils as utils
+from flare.mgp.utils import get_bonds, get_triplets, self_two_body_mc_jit, \
     self_three_body_mc_jit
-from flare.mff.splines_methods import PCASplines, SplinesInterpolation
+from flare.mgp.splines_methods import PCASplines, SplinesInterpolation
 
 
-class MappedForceField:
+class MappedGaussianProcess:
     def __init__(self, GP: GaussianProcess, grid_params: dict,
                  struc_params: dict, mean_only=False):
 
         '''
-        param: GP : gp model
-        param: struc_params : {'species': [0, 1],
+        :param: GP : gp model
+        :param: struc_params : {'species': [0, 1],
                 'cube_lat': cell, # should input the cell matrix
                 'mass_dict': {'0': 27 * unit, '1': 16 * unit}}
-        param: grid_params : {'bounds_2': [[1.2], [3.5]], # [[lower_bound],
+        :param: grid_params : {'bounds_2': [[1.2], [3.5]], # [[lower_bound],
                                                             [upper]]
                'bounds_3': [[1.2, 1.2, 0], [3.5, 3.5, np.pi]],
                     #[[lower,lower,0],[upper,upper,np.pi]]
@@ -34,12 +36,14 @@ class MappedForceField:
                'svd_rank_2': 64,
                'svd_rank_3': 16**3,
                'bodies': [2, 3],
-               'load_grid': None,
-               'load_svd': None}
-        param: mean_only : if True: only build mapping for mean (force)
+               'update': True,
+               'load_grid': None}
+        :param: mean_only : if True: only build mapping for mean (force)
 
         '''
         self.GP = GP
+        self.grid_params = grid_params
+        self.struc_params = struc_params
         self.bodies = grid_params['bodies']
         self.grid_num_2 = grid_params['grid_num_2']
         self.bounds_2 = grid_params['bounds_2']
@@ -48,6 +52,7 @@ class MappedForceField:
 
         self.svd_rank_2 = grid_params['svd_rank_2']
         self.svd_rank_3 = grid_params['svd_rank_3']
+        self.update = grid_params['update']
         self.mean_only = mean_only
 
         bond_struc, spcs = self.build_bond_struc(struc_params)
@@ -66,8 +71,8 @@ class MappedForceField:
                 map_3 = Map3body(self.grid_num_3, self.bounds_3, self.GP,
                                  b_struc, self.bodies,
                                  grid_params['load_grid'],
-                                 grid_params['load_svd'], self.svd_rank_3,
-                                 self.mean_only)
+                                 self.svd_rank_3,
+                                 self.mean_only, self.update)
 
                 self.maps_3.append(map_3)
 
@@ -421,13 +426,13 @@ class Map2body:
                 PCASplines(y_var, u_bounds=np.array(self.u_bound),
                            l_bounds=np.array(self.l_bound),
                            orders=np.array([self.grid_num]),
-                           svd_rank=self.svd_rank, load_svd=None)
+                           svd_rank=self.svd_rank)
 
 
 class Map3body:
 
     def __init__(self, grid_num, bounds, GP, bond_struc, bodies='3',
-                 load_grid=None, load_svd=None, svd_rank=0, mean_only=False):
+                 load_grid=None, svd_rank=0, mean_only=False, update=True):
         '''
         param grids: the 1st element is the number of grids for mean
         prediction, the 2nd is for var
@@ -441,12 +446,14 @@ class Map3body:
         self.mean_only = mean_only
 
         if not load_grid:
-            y_mean, y_var = self.GenGrid(GP, bond_struc)
+            y_mean, y_var = self.GenGrid(GP, bond_struc, update)
         else:
-            y_mean, y_var = utils.merge(load_grid, noa, nop)
-        self.build_map(y_mean, y_var, svd_rank=svd_rank, load_svd=load_svd) 
+            y_mean = np.load('grid3_mean.npy')
+            y_var = np.load('grid3_var.npy')
 
-    def GenGrid(self, GP, bond_struc, processes=mp.cpu_count()):
+        self.build_map(y_mean, y_var, svd_rank=svd_rank) 
+
+    def GenGrid(self, GP, bond_struc, update, processes=mp.cpu_count()):
 
         '''
         generate grid data of mean prediction and L^{-1}k* for each triplet
@@ -467,9 +474,14 @@ class Map3body:
         bond_vars = np.zeros([nop, nop, noa, len(GP.alpha)])
         env12 = env.AtomicEnvironment(bond_struc, 0, self.cutoffs)
 
-        pool_list = [(i, angles[i], bond_lengths, GP, env12)
+        pool_list = [(i, angles[i], bond_lengths, GP, env12, update)\
                      for i in range(noa)]
         pool = mp.Pool(processes=processes)
+
+        if update:
+            subprocess.run(['rm', '-r', 'kv3'])
+            subprocess.run(['mkdir', 'kv3'])
+       
         A_list = pool.map(self._GenGrid_inner, pool_list)
         for a12 in range(noa):
             bond_means[:, :, a12] = A_list[a12][0]
@@ -480,6 +492,10 @@ class Map3body:
         # ------ change back to original GP ------
         GP.hyps = original_hyps
         GP.kernel = original_kernel
+      
+        # ------ save mean and var to file -------
+        np.save('grid3_mean', bond_means)
+        np.save('grid3_var', bond_vars)
 
         return bond_means, bond_vars
 
@@ -488,12 +504,25 @@ class Map3body:
         '''
         generate grid for each angle, used to parallelize grid generation
         '''
-        _, angle12, bond_lengths, GP, env12 = params
+        a12, angle12, bond_lengths, GP, env12, update = params
         nop = self.grid_num[0]
-        # noa = self.grid_num[2]
         angle12 = angle12
         bond_means = np.zeros([nop, nop])
         bond_vars = np.zeros([nop, nop, len(GP.alpha)])
+
+        # open saved k vector file, and write to new file
+        if update:
+            kv_filename = 'kv3/'+str(a12)
+            size = len(GP.training_data) * 3
+            new_kv_file = np.zeros((nop**2+1, size))
+            new_kv_file[0,0] = size
+            if str(a12)+'.npy' in os.listdir('kv3'):
+                old_kv_file = np.load(kv_filename+'.npy') 
+                last_size = int(old_kv_file[0,0])
+                new_kv_file[:, :last_size] = old_kv_file
+            else:
+                last_size = 0
+            ds = [1, 2, 3]
 
         for b1, r1 in enumerate(bond_lengths):
             r1 = bond_lengths[b1]
@@ -504,7 +533,21 @@ class Map3body:
 
                 env12.bond_array_3 = np.array([[r1, 1, 0, 0], [r2, 0, 0, 0]])
                 env12.cross_bond_dists = np.array([[0, r12], [r12, 0]])
-                k12_v = GP.get_kernel_vector(env12, 1)
+
+                # calculate kernel functions of those newly added training data
+                if update:
+                    k12_v = new_kv_file[1+b1*nop+b2, :]
+                    for m_index in range(last_size, size):
+                        x_2 = GP.training_data[int(math.floor(m_index / 3))]
+                        d_2 = ds[m_index % 3]
+                        k12_v[m_index] = GP.kernel(env12, x_2, 1, d_2,
+                                               GP.hyps, GP.cutoffs)
+                else:
+                    k12_v = GP.get_kernel_vector(env12, 1)   
+
+                new_kv_file[1+b1*nop+b2, :] = k12_v
+
+                # calculate mean and var value for the mapping
                 mean_diff = np.matmul(k12_v, GP.alpha)
                 bond_means[b1, b2] = mean_diff
 
@@ -512,9 +555,13 @@ class Map3body:
                     v12_vec = solve_triangular(GP.l_mat, k12_v, lower=True)
                     bond_vars[b1, b2, :] = v12_vec
 
+        # replace the old file with the new file
+        if update:
+            np.save(kv_filename, new_kv_file)
+
         return bond_means, bond_vars
 
-    def build_map(self, y_mean, y_var, svd_rank, load_svd):
+    def build_map(self, y_mean, y_var, svd_rank):
 
         '''
         build 3-d spline function for mean,
@@ -532,9 +579,5 @@ class Map3body:
                 PCASplines(y_var, u_bounds=self.u_bound,
                            l_bounds=self.l_bound,
                            orders=np.array([nop, nop, noa]),
-                           svd_rank=svd_rank, load_svd=load_svd)
+                           svd_rank=svd_rank)
 
-    def build_selfkern(self, grid_kern):
-        self.selfkern = TruncatedSVD(n_components=100, n_iter=7,
-                                     random_state=42)
-        self.selfkern.fit(grid_kern)

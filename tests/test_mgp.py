@@ -3,14 +3,14 @@ import time
 import pytest
 from flare import struc, env
 from flare import otf_parser
-from flare.mff.mff_mc import MappedForceField
+from flare.mgp.mgp import MappedGaussianProcess
 from flare import mc_simple
 from flare.lammps import lammps_calculator
 import pickle
 import os
 
 
-# ASSUMPTION: You have a Lammps executable with the mff pair style with $lmp
+# ASSUMPTION: You have a Lammps executable with the mgp pair style with $lmp
 # as the corresponding environment variable.
 @pytest.mark.skipif(not os.environ.get('lmp',
                           False), reason='lmp not found '
@@ -81,9 +81,9 @@ def test_parse_header():
                    'svd_rank_3': 90,
                    'bodies': [2, 3],
                    'load_grid': None,
-                   'load_svd': None}
+                   'update': True}
 
-    mff_model = MappedForceField(gp_model, grid_params, struc_params,
+    mgp_model = MappedGaussianProcess(gp_model, grid_params, struc_params,
                                  mean_only=True)
 
     # -------------------------------------------------------------------------
@@ -91,16 +91,16 @@ def test_parse_header():
     # -------------------------------------------------------------------------
 
     gp_pred_x = gp_model.predict(environ, 1)
-    mff_pred = mff_model.predict(environ, mean_only=True)
+    mgp_pred = mgp_model.predict(environ, mean_only=True)
 
-    # check mff is within 1 meV/A of the gp
-    assert(np.abs(mff_pred[0][0] - gp_pred_x[0]) < 1e-3)
+    # check mgp is within 1 meV/A of the gp
+    assert(np.abs(mgp_pred[0][0] - gp_pred_x[0]) < 1e-3)
 
     # -------------------------------------------------------------------------
     #                           check lammps potential
     # -------------------------------------------------------------------------
 
-    mff_model.write_two_plus_three(lammps_location)
+    mgp_model.write_two_plus_three(lammps_location)
 
     # create test structure
     species = otf_object.gp_species_list[-1]
@@ -119,7 +119,7 @@ def test_parse_header():
     lammps_calculator.write_text(data_file_name, data_text)
 
     # create lammps input
-    style_string = 'mff'
+    style_string = 'mff' #TODO: change the name of lammps
     coeff_string = '* * {} 47 53 yes yes'.format(lammps_location)
     lammps_executable = '$lmp'
     dump_file_name = 'tmp.dump'
@@ -140,3 +140,6 @@ def test_parse_header():
 
     os.system('rm tmp.in tmp.out tmp.dump tmp.data AgI_Molten_15.txt'
               ' log.lammps')
+    os.system('rm grid3*.npy')
+    os.system('rm -r kv3')
+

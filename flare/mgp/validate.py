@@ -7,20 +7,20 @@ import copy
 import multiprocessing as mp
 import concurrent.futures
 from flare import struc, gp, env, qe_util, md, output
-from flare.mff.mff import MappedForceField
+from flare.mgp.mgp import MappedGaussianProcess
 
 
 class Validate:
     def __init__(self, qe_input: str, dt: float, number_of_steps: int,
-                 dft_steps, mff_model: MappedForceField, pw_loc: str,
+                 dft_steps, mgp_model: MappedGaussianProcess, pw_loc: str,
                  prev_pos_init: np.ndarray=None, par: bool=False, skip: int=0,
                  calculate_energy=False, output_name='validate.out', no_cpus=1):
 
         self.qe_input = qe_input
         self.dt = dt
         self.number_of_steps = number_of_steps
-        self.mff_model = mff_model
-        self.gp = mff_model.GP
+        self.mgp_model = mgp_model
+        self.gp = mgp_model.GP
         self.pw_loc = pw_loc
         self.skip = skip
         self.dft_step = True
@@ -49,7 +49,7 @@ class Validate:
 
         # set pred function
         if not par and not calculate_energy:
-            self.pred_func = self.predict_on_structure_mff
+            self.pred_func = self.predict_on_structure_mgp
         elif par and not calculate_energy:
             self.pred_func = self.predict_on_structure_par
         elif not par and calculate_energy:
@@ -63,17 +63,17 @@ class Validate:
         # set number of cpus for qe runs
         self.no_cpus = no_cpus
 
-    def write_mff_header(self):
-        output.write_to_output('bounds 2:'+str(self.mff_model.bounds_2), self.output_name)
-        output.write_to_output('bounds 3:'+str(self.mff_model.bounds_2), self.output_name)
-        output.write_to_output('grid num 2:'+str(self.mff_model.grid_num_2), self.output_name)
-        output.write_to_output('grid num 3:'+str(self.mff_model.grid_num_3), self.output_name)
+    def write_mgp_header(self):
+        output.write_to_output('bounds 2:'+str(self.mgp_model.bounds_2), self.output_name)
+        output.write_to_output('bounds 3:'+str(self.mgp_model.bounds_2), self.output_name)
+        output.write_to_output('grid num 2:'+str(self.mgp_model.grid_num_2), self.output_name)
+        output.write_to_output('grid num 3:'+str(self.mgp_model.grid_num_3), self.output_name)
 
     def run(self):
         output.write_header(self.gp.cutoffs, self.gp.kernel_name, self.gp.hyps,
                             self.gp.algo, self.dt, self.number_of_steps,
                             self.structure, self.output_name, 1.)
-        self.write_mff_header()
+        self.write_mgp_header()
 
         counter = 0
         self.start_time = time.time()
@@ -109,7 +109,7 @@ class Validate:
 
         output.conclude_run(self.output_name)
 
-    def predict_on_structure_mff(self): # changed
+    def predict_on_structure_mgp(self): # changed
         """
         Assign forces to self.structure based on self.gp
         """
@@ -117,7 +117,7 @@ class Validate:
         output.write_to_output('\npredict with mapping:\n', self.output_name)
         for n in range(self.structure.nat):
             chemenv = env.AtomicEnvironment(self.structure, n, self.gp.cutoffs)
-            force, var = self.mff_model.predict(chemenv)
+            force, var = self.mgp_model.predict(chemenv)
             self.structure.forces[n][:] = force
             self.structure.stds[n][:] = np.sqrt(np.absolute(var))
         self.structure.dft_forces = False

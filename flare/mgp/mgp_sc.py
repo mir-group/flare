@@ -1,4 +1,5 @@
 import time
+import math
 from math import exp
 import numpy as np
 from numba import njit
@@ -7,16 +8,18 @@ import multiprocessing as mp
 import sys
 sys.path.append('../../flare/')
 from memory_profiler import profile
+import subprocess
+import struct
 
 import flare.gp as gp
 import flare.env as env
 from flare.kernels import two_body, three_body, two_plus_three_body, two_body_jit
 import flare.struc as struc
 
-import flare.mff.utils as utils
-from flare.mff.splines_methods import PCASplines, SplinesInterpolation
+import flare.mgp.utils as utils
+from flare.mgp.splines_methods import PCASplines, SplinesInterpolation
 
-class MappedForceField:
+class MappedGaussianProcess:
     
     def __init__(self, GP, grid_params, struc_params):
     
@@ -36,23 +39,23 @@ class MappedForceField:
         self.bounds_3 = grid_params['bounds_3']
         self.svd_rank_2 = grid_params['svd_rank_2']
         self.svd_rank_3 = grid_params['svd_rank_3']
+        self.update = grid_params['update']
         
         bond_struc = self.build_bond_struc(struc_params)
-
         if len(GP.training_data) > 0:
             if self.bodies == '2':
                 self.map = Map2body(self.grid_num_2, self.bounds_2, self.GP, bond_struc,  
-                           self.bodies, grid_params['load_grid'], self.svd_rank_2)
+                       self.bodies, grid_params['load_grid'], self.svd_rank_2)
             elif self.bodies == '3':
                 self.map = Map3body(self.grid_num_3, self.bounds_3, self.GP, bond_struc, 
-                           self.bodies, grid_params['load_grid'], 
-                           grid_params['load_svd'], self.svd_rank_3)
+                       self.bodies, grid_params['load_grid'], 
+                       grid_params['load_svd'], self.svd_rank_3, self.update)
             elif self.bodies == '2+3':
                 self.map_2 = Map2body(self.grid_num_2, self.bounds_2, self.GP, bond_struc[0],
-                             self.bodies, grid_params['load_grid'], self.svd_rank_2)
+                         self.bodies, grid_params['load_grid'], self.svd_rank_2)
                 self.map_3 = Map3body(self.grid_num_3, self.bounds_3, self.GP,
-                             bond_struc[1], self.bodies, grid_params['load_grid'],
-                             grid_params['load_svd'], self.svd_rank_3)
+                         bond_struc[1], self.bodies, grid_params['load_grid'],
+                         grid_params['load_svd'], self.svd_rank_3, self.update)
 
     def build_bond_struc(self, struc_params):
     
@@ -171,7 +174,7 @@ class Map2body:
                       
         return b1, bond_means, bond_vars
 
-    @profile
+    #@profile
     def GenGrid_svd(self, GP, bond_struc, processes=mp.cpu_count()):
     
         '''
@@ -302,7 +305,7 @@ class Map2body:
 class Map3body:
    
     def __init__(self, grid_num, bounds, GP, bond_struc, bodies='3', 
-                load_grid=None, load_svd=None, svd_rank=0): 
+                load_grid=False, load_svd=None, svd_rank=0, update=True): 
     
         '''
         param grids: the 1st element is the number of grids for mean prediction, 
@@ -314,23 +317,26 @@ class Map3body:
         self.cutoffs = GP.cutoffs
         self.bodies = bodies
         if not load_grid:
-            y_mean, y_var = self.GenGrid(GP, bond_struc)    
+            y_mean, y_var = self.GenGrid(GP, bond_struc, update)
         else:
-            y_mean, y_var = utils.merge(load_grid, noa, nop)
+            y_mean = np.load('grid3_mean.npy')
+            y_var = np.load('grid3_var.npy')
+#            y_mean, y_var = utils.merge(load_grid, noa, nop)
         self.build_map(y_mean, y_var, svd_rank=svd_rank, load_svd=load_svd) 
 
-    @profile
-    def GenGrid(self, GP, bond_struc, processes=mp.cpu_count()):
+
+    #@profile
+    def GenGrid(self, GP, bond_struc, update, processes=1):#, processes=mp.cpu_count()):
     
         '''
         generate grid data of mean prediction and L^{-1}k* for each triplet
          implemented in a parallelized style
         '''
+        # ------ change GP kernel to 3 body ------
+        original_kernel = GP.kernel
         original_hyps = np.copy(GP.hyps)
-        if self.bodies == '2+3':
-            # ------ change GP kernel to 3 body ------
-            GP.kernel = three_body
-            GP.hyps = [GP.hyps[2], GP.hyps[3], GP.hyps[-1]]
+        GP.kernel = three_body
+        GP.hyps = [GP.hyps[-3], GP.hyps[-2], GP.hyps[-1]]
 
         # ------ construct grids ------
         nop = self.grid_num[0]
@@ -340,11 +346,15 @@ class Map3body:
         bond_means = np.zeros([nop, nop, noa])
         bond_vars = np.zeros([nop, nop, noa, len(GP.alpha)])
         env12 = env.AtomicEnvironment(bond_struc, 0, self.cutoffs)
-        
-        pool_list = [(i, angles[i], bond_lengths, GP, env12)\
+
+        pool_list = [(i, angles[i], bond_lengths, GP, env12, update)\
                      for i in range(noa)]
         pool = mp.Pool(processes=processes)
+        if not update:
+            subprocess.run(['rm', '-r', 'kv3'])
+            subprocess.run(['mkdir', 'kv3'])
         A_list = pool.map(self._GenGrid_inner, pool_list)
+
         for a12 in range(noa):
             bond_means[:, :, a12] = A_list[a12][0]
             bond_vars[:, :, a12, :] = A_list[a12][1]
@@ -352,25 +362,38 @@ class Map3body:
         pool.join()
 
         # ------ change back to original GP ------
-        if self.bodies == '2+3':
-            GP.hyps = original_hyps
-            GP.kernel = two_plus_three_body
-       
+        GP.hyps = original_hyps
+        GP.kernel = original_kernel
+      
+        # ------ save mean and var to file -------
+        np.save('grid3_mean', bond_means)
+        np.save('grid3_var', bond_vars)
         return bond_means, bond_vars
-
 
     def _GenGrid_inner(self, params):
     
         '''
         generate grid for each angle, used to parallelize grid generation
         '''
-        a12, angle12, bond_lengths, GP, env12 = params
+        a12, angle12, bond_lengths, GP, env12, update = params
         nop = self.grid_num[0]
         noa = self.grid_num[2]
         angle12 = angle12
         bond_means = np.zeros([nop, nop])
         bond_vars = np.zeros([nop, nop, len(GP.alpha)])
-        
+
+        # open saved k vector file, and write to new file
+        kv_filename = 'kv3/'+str(a12)
+        size = len(GP.training_data) * 3
+        new_kv_file = np.zeros((nop**2+1, size))
+        new_kv_file[0,0] = size
+
+        if update:
+            old_kv_file = np.load(kv_filename+'.npy') 
+            last_size = int(old_kv_file[0,0])
+            new_kv_file[:, :last_size] = old_kv_file
+            ds = [1, 2, 3]
+
         for b1, r1 in enumerate(bond_lengths):
             r1 = bond_lengths[b1]
             for b2, r2 in enumerate(bond_lengths):
@@ -380,12 +403,29 @@ class Map3body:
 
                 env12.bond_array_3 = np.array([[r1, 1, 0, 0], [r2, 0, 0, 0]])
                 env12.cross_bond_dists = np.array([[0, r12], [r12, 0]])
-                k12_v = GP.get_kernel_vector(env12, 1)   
+
+                if update:
+                    # calculate kernel functions of those newly added training data
+                    k12_v = new_kv_file[1+b1*nop+b2, :]
+                    for m_index in range(last_size, size):
+                        x_2 = GP.training_data[int(math.floor(m_index / 3))]
+                        d_2 = ds[m_index % 3]
+                        k12_v[m_index] = GP.kernel(env12, x_2, 1, d_2,
+                                               GP.hyps, GP.cutoffs)
+                else:
+                    k12_v = GP.get_kernel_vector(env12, 1)   
+
+                new_kv_file[1+b1*nop+b2, :] = k12_v
+
+                # calculate mean and var value for the mapping
                 v12_vec = solve_triangular(GP.l_mat, k12_v, lower=True)
                 mean_diff = np.matmul(k12_v, GP.alpha)
                 bond_means[b1, b2] = mean_diff
                 bond_vars[b1, b2, :] = v12_vec  
                       
+        # replace the old file with the new file
+        np.save(kv_filename, new_kv_file)
+
         return bond_means, bond_vars
 
 
@@ -434,11 +474,11 @@ class Map3body:
         f0_21 = self.mean(tri_21)
         f12 = np.diag(f0_12) @ xyz_1s
         f21 = np.diag(f0_21) @ xyz_2s
-        mff_f = np.sum(f12 + f21, axis=0)
+        mgp_f = np.sum(f12 + f21, axis=0)
         #print('mean', time.time()-t0)
 
         # predict var        
-        mff_v = np.zeros(3)
+        mgp_v = np.zeros(3)
         if not mean_only:
             t0 = time.time()
             self_kern = np.zeros(3)
@@ -462,17 +502,17 @@ class Map3body:
             v21 = v0_21 @ xyz_2s
             v = v12 + v21
             if self.bodies == '3':
-                mff_v = - np.sum(v ** 2, axis=0) + self_kern
-                return mff_f, mff_v
+                mgp_v = - np.sum(v ** 2, axis=0) + self_kern
+                return mgp_f, mgp_v
             elif self.bodies == '2+3':
                 v = self.var.V @ v
-                return mff_f, self_kern, v
-          #  print('var', time.time()-t0, ',value:', mff_v)        
+                return mgp_f, self_kern, v
+          #  print('var', time.time()-t0, ',value:', mgp_v)        
         else: 
             if self.bodies == '3':
-                return mff_f, mff_v
+                return mgp_f, mgp_v
             elif self.bodies == '2+3':
-                return mff_f, 0, 0
+                return mgp_f, 0, 0
 
 @njit
 def get_triplets(bond_array, cross_bond_inds, 

@@ -5,19 +5,18 @@ sys.path.append('../../flare')
 import time
 from memory_profiler import profile
 
-import flare.mff.utils as utils
-from flare.mff.cubic_splines_numba import *
+import flare.mgp.utils as utils
+from flare.mgp.cubic_splines_numba import *
 
 class PCASplines:
     '''
     build splines for PCA decomposition, mainly used for the mapping of the variance
     '''
-    def __init__(self, y, u_bounds, l_bounds, orders, svd_rank, load_svd=None):
+    def __init__(self, y, u_bounds, l_bounds, orders, svd_rank):
         self.svd_rank = svd_rank
-        self.model = self.build_pca_cubic(y, u_bounds, l_bounds, orders, load_svd)
-        #    self.model = self.build_cubic(y, u_bounds, l_bounds, orders, load_svd)
+        self.model = self.build_pca_cubic(y, u_bounds, l_bounds, orders)
 
-    def build_cubic(self, y, u_bounds, l_bounds, orders, load_svd):
+    def build_cubic(self, y, u_bounds, l_bounds, orders):
         dim_0 = 1
         for d in range(len(y.shape)-1):
             dim_0 *= y.shape[d]
@@ -30,15 +29,14 @@ class PCASplines:
             models.append(spline_u)
         return models  
         
-#    @profile
-    def build_pca_cubic(self, y, u_bounds, l_bounds, orders, load_svd):               
+    def build_pca_cubic(self, y, u_bounds, l_bounds, orders):
         dim_0 = 1
         for d in range(len(y.shape)-1):
             dim_0 *= y.shape[d]
         dim_1 = y.shape[-1]
        
         var_matr = np.reshape(y, (dim_0, dim_1))
-        U, S, Vh = utils.svd_grid(var_matr, rank=self.svd_rank, prefix=load_svd)
+        U, S, Vh = utils.svd_grid(var_matr, rank=self.svd_rank)
         self.V = Vh.T
         models = []
         for r in range(self.svd_rank):

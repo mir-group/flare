@@ -5,6 +5,8 @@ from flare.gp import GaussianProcess
 from flare.env import AtomicEnvironment
 from flare.struc import Structure
 import flare.kernels as en
+from flare import mc_simple
+from flare.otf_parser import OtfAnalysis
 
 
 def get_random_structure(cell, unique_species, noa):
@@ -173,3 +175,40 @@ def test_set_L_alpha(two_body_gp, params):
     gaussian.update_db(test_structure, forces)
 
     gaussian.set_L_alpha()
+
+
+def test_update_L_alpha():
+    # set up gp model
+    kernel = mc_simple.two_plus_three_body_mc
+    kernel_grad = mc_simple.two_plus_three_body_mc_grad
+    cutoffs = [6.0, 5.0]
+    hyps = np.array([0.001770, 0.183868, -0.001415, 0.372588, 0.026315])
+    
+    # get an otf traj from file for training data
+    old_otf = OtfAnalysis('test_files/AgI_snippet.out')
+    call_no = 1 
+    cell = old_otf.header['cell']
+    gp_model = old_otf.make_gp(kernel=kernel,
+                               kernel_grad=kernel_grad,
+                               call_no=call_no, 
+                               cutoffs=cutoffs, 
+                               hyps=hyps)
+    
+    # update database & use update_L_alpha to get ky_mat
+    for n in range(call_no, call_no+1): 
+        positions = old_otf.gp_position_list[n]
+        species = old_otf.gp_species_list[n]
+        atoms = old_otf.gp_atom_list[n]
+        forces = old_otf.gp_force_list[n]
+
+        struc_curr = Structure(cell, species, positions)
+        gp_model.update_db(struc_curr, forces, custom_range=atoms)
+        gp_model.update_L_alpha()
+
+    ky_mat_from_update = np.copy(gp_model.ky_mat)
+
+    # use set_L_alpha to get ky_mat
+    gp_model.set_L_alpha()
+    ky_mat_from_set = np.copy(gp_model.ky_mat)
+    
+    assert (np.all(np.absolute(ky_mat_from_update-ky_mat_from_set)) < 1e-6)
