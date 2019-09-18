@@ -1,9 +1,11 @@
 import numpy as np
 from numpy import array
 from numba import njit
-import io
-import sys
-import os
+import io, os, sys, time, random, logging
+import multiprocessing as mp
+import concurrent.futures
+import cProfile
+
 import flare.gp as gp
 import flare.env as env
 import flare.struc as struc
@@ -12,12 +14,6 @@ from flare.env import AtomicEnvironment
 from flare.kernels import triplet_kernel, three_body_helper_1, \
     three_body_helper_2, force_helper
 from flare.cutoffs import quadratic_cutoff
-import time
-import random
-import logging
-import multiprocessing as mp
-import concurrent.futures
-import cProfile
 
 
 def save_GP(GP, prefix):
