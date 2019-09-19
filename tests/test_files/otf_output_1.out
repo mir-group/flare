@@ -1,0 +1,36 @@
+2018-11-07 23:35:05.537138
+Structure Cutoff Radius: 4
+Timestep (ps): 0.0001
+# Hyperparameters: 3
+Number of Frames: 2
+Number of Atoms: 2
+System Species: {'H'}
+====================
+Calling initial bootstrap DFT run...Done.
+~ DFT Call : 1   DFT Time: 0.915 s
+Lattice: [[5. 0. 0.], [0. 5. 0.], [0. 0. 5.]]
+ El 			  Position (A) 					 DFT Force (ev/A)
+H: 2.51857000  2.50000000  2.50000000  	 1.90621314  0.00000000  0.00000000
+H: 4.48143000  2.50000000  2.50000000  	 -1.90621314  0.00000000  0.00000000
+====================
+Updating database hyperparameters...
+New GP Hyperparameters for DFT call 1:
+Hyp0 : Signal Std = 1.1041008754244082
+Hyp1 : Length Scale = 0.9002923226482836
+Hyp2 : Noise Std = 1e-05
+ --------------------
+-*Frame: 0 Simulation Time: 0.0
+El 			  Position (A) 					 DFT Force (ev/A) 						 Std. Dev (ev/A)
+H 2.51857000 2.50000000 2.50000000 	1.90621314 0.00000000 0.00000000 	0.000000e+00 0.000000e+00 0.000000e+00
+H 4.48143000 2.50000000 2.50000000 	-1.90621314 0.00000000 0.00000000 	0.000000e+00 0.000000e+00 0.000000e+00
+ --------------------
+- Frame: 1 Simulation Time: 0.0001
+El 			  Position (A) 					 GP Force (ev/A) 						 Std. Dev (ev/A)
+H 2.51875392 2.50000000 2.50000000 	1.90680932 0.00000000 0.00000000 	5.353213e-04 0.000000e+00 0.000000e+00
+H 4.48124608 2.50000000 2.50000000 	-1.90680932 0.00000000 0.00000000 	5.353213e-04 0.000000e+00 0.000000e+00
+▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
+Run complete.
+Total DFT Time: 0.915 s
+Total Train Time: 1.266 s
+Total Prediction Time: 0.008 s
+Total Time: 0 m 2.204 s

@@ -1,0 +1,27 @@
+2019-09-18 17:46:28.942642
+number of cpu cores: 4
+cutoffs: [3.9 3.9]
+kernel: three_body
+number of hyperparameters: 3
+hyperparameters: [0.1  1.   0.01]
+hyperparameter optimization algorithm: L-BFGS-B
+uncertainty tolerance: 1 times noise 
+timestep (ps): 0.001
+number of frames: 100
+number of atoms: 4
+system species: {'Al'}
+periodic cell: 
+[[3.9 0.  0. ]
+ [0.  3.9 0. ]
+ [0.  0.  3.9]]
+previous positions (A):
+Al 0.20000000 0.00000000 0.10000000 
+Al 0.00000000 1.90000000 1.80000000 
+Al 1.70000000 0.00000000 1.80000000 
+Al 1.90000000 1.70000000 0.00000000 
+--------------------------------------------------------------------------------
+
+Calling Quantum Espresso...
+QE run complete.
+number of DFT calls: 1 
+wall time from start: 2.11 s 
