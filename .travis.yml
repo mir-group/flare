@@ -1,0 +1,14 @@
+sudo: false
+
+language: python
+
+python: 3.7
+
+install:
+  - pip install codecov pytest pytest-cov numba memory_profiler
+
+script:
+  - cd tests && pytest --cov=../ && coverage xml && cp coverage.xml ..
+
+after_success:
+  - codecov
