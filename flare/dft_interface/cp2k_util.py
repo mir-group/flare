@@ -8,10 +8,12 @@ from typing import List
 
 name="CP2K"
 
-def run_dft(dft_input, structure, dft_loc, dft_out="dft.out"):
+def run_dft_par(dft_input, structure, dft_loc, no_cpus, dft_out="dft.out"):
     newfilename = edit_dft_input_positions(dft_input, structure)
-    dft_command = '{0} -i {1} > {2}'.format(dft_loc, newfilename,
-                                                 dft_out)
+    dft_command = \
+        '{1} -i {2} > {3}'.format(dft_loc, newfilename, dft_out)
+    if (no_cpus > 1):
+        dft_command = 'mpirun -np {} {}'.format(no_cpus, dft_command)
     # output.write_to_output(dft_command+'\n')
     # os.system(dft_command)
     call(dft_command, shell=True)
@@ -20,25 +22,13 @@ def run_dft(dft_input, structure, dft_loc, dft_out="dft.out"):
     return parse_dft_forces(dft_out)
 
 
-def run_dft_par(dft_input, structure, dft_loc, no_cpus, dft_nk, dft_out="dft.out"):
-    newfilename = edit_dft_input_positions(dft_input, structure, dft_nk)
+def run_dft_en_par(dft_input, structure, dft_loc, no_cpus, dft_out="dft.out"):
+
+    newfilename = edit_dft_input_positions(dft_input, structure)
     dft_command = \
-        'mpirun -np {0} {1} -i {2} > {3}'.format(
-                no_cpus, dft_loc, newfilename, dft_out)
-    # output.write_to_output(dft_command+'\n')
-    # os.system(dft_command)
-    call(dft_command, shell=True)
-    os.remove(newfilename)
-
-    return parse_dft_forces(dft_out)
-
-
-def run_dft_en_par(dft_input, structure, dft_loc, no_cpus, dft_nk, dft_out="dft.out"):
-
-    newfilename = edit_dft_input_positions(dft_input, structure, dft_nk)
-    dft_command = \
-        'mpirun -np {0} {1} -i {2} > {3}'.format(no_cpus, dft_loc, newfilename,
-                                                dft_out)
+        '{1} -i {2} > {3}'.format(dft_loc, newfilename, dft_out)
+    if (no_cpus > 1):
+        dft_command = 'mpirun -np {} {}'.format(no_cpus, dft_command)
     # output.write_to_output(dft_command+'\n')
     os.system(dft_command)
     call(dft_command, shell=True)
@@ -51,10 +41,10 @@ def run_dft_en_par(dft_input, structure, dft_loc, no_cpus, dft_nk, dft_out="dft.
 
 def run_dft_command(dft_input, dft_output, dft_loc, npool):
     dft_command = \
-        'mpirun -np {0} -i {1} > {2}'.format(dft_loc, dft_input,
-                                                   dft_output)
+        '{1} -i {2} > {3}'.format(dft_loc, dft_input, dft_out)
+    if (no_cpus > 1):
+        dft_command = 'mpirun -np {} {}'.format(no_cpus, dft_command)
     # output.write_to_output(dft_command+'\n')
-    # os.system(dft_command)
     call(dft_command, shell=True)
 
     return parse_dft_forces(dft_output)
@@ -157,7 +147,7 @@ def dft_input_to_structure(dft_input: str):
     return struc.Structure(positions=positions, species=coded_species,
                            cell=cell, mass_dict=masses, species_labels=species)
 
-def edit_dft_input_positions(dft_input: str, structure, dft_nk=1):
+def edit_dft_input_positions(dft_input: str, structure):
     """
     Write the current configuration of the OTF structure to the
     qe input file
