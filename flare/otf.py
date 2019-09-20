@@ -35,7 +35,7 @@ class OTF(object):
 
         # parse input file
         positions, species, cell, masses = \
-            qe_util.parse_qe_input(self.qe_input)
+            qe_util.parse_dft_input(self.qe_input)
 
         _, coded_species = struc.get_unique_species(species)
 

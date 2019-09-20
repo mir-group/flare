@@ -3,8 +3,8 @@ import os
 import sys
 import numpy as np
 from flare.struc import Structure, get_unique_species
-from flare.qe_util import parse_qe_input, parse_qe_forces, run_espresso, \
-    edit_qe_input_positions, qe_input_to_structure
+from flare.dft_interface.qe_util import parse_dft_input, parse_dft_forces, run_dft, \
+    edit_dft_input_positions, dft_input_to_structure
 
 
 def cleanup_espresso_run(target: str = None):
@@ -29,7 +29,7 @@ def cleanup_espresso_run(target: str = None):
                          ]
                          )
 def test_species_parsing(qe_input, exp_spec):
-    positions, species, cell, masses = parse_qe_input(qe_input)
+    positions, species, cell, masses = parse_dft_input(qe_input)
     assert len(species) == len(exp_spec)
     for i, spec in enumerate(species):
         assert spec == exp_spec[i]
@@ -42,7 +42,7 @@ def test_species_parsing(qe_input, exp_spec):
                          ]
                          )
 def test_cell_parsing(qe_input, exp_cell):
-    positions, species, cell, masses = parse_qe_input(qe_input)
+    positions, species, cell, masses = parse_dft_input(qe_input)
     assert np.all(exp_cell == cell)
 
 
@@ -55,7 +55,7 @@ def test_cell_parsing(qe_input, exp_cell):
 #                          ]
 #                          )
 # def test_cell_parsing(qe_input, mass_dict):
-#     positions, species, cell, masses = parse_qe_input(qe_input)
+#     positions, species, cell, masses = parse_dft_input(qe_input)
 #     assert masses == mass_dict
 
 
@@ -67,7 +67,7 @@ def test_cell_parsing(qe_input, exp_cell):
                          ]
                          )
 def test_input_to_structure(qe_input):
-    assert isinstance(qe_input_to_structure(qe_input), Structure)
+    assert isinstance(dft_input_to_structure(qe_input), Structure)
 
 
 @pytest.mark.parametrize('qe_input,qe_output',
@@ -85,16 +85,16 @@ def test_espresso_calling(qe_input, qe_output):
 
     pw_loc = os.environ.get('PWSCF_COMMAND')
     os.system(' '.join(['cp', qe_input, 'pwscf.in']))
-    positions, species, cell, masses = parse_qe_input(qe_input)
+    positions, species, cell, masses = parse_dft_input(qe_input)
 
     structure = Structure(cell=cell, species=species,
                           positions=positions,
                           mass_dict=masses, species_labels=species)
 
-    forces = run_espresso('pwscf.in',
+    forces = run_dft('pwscf.in',
                           structure, pw_loc)
 
-    ref_forces = parse_qe_forces(qe_output)
+    ref_forces = parse_dft_forces(qe_output)
 
     assert len(forces) == len(ref_forces)
 
@@ -111,7 +111,7 @@ def test_espresso_input_edit():
     :return:
     """
     os.system('cp test_files/qe_input_1.in .')
-    positions, species, cell, masses = parse_qe_input('./qe_input_1.in')
+    positions, species, cell, masses = parse_dft_input('./qe_input_1.in')
     _, coded_species = get_unique_species(species)
     structure = Structure(cell, coded_species, positions, masses,
                           species_labels=species)
@@ -119,9 +119,9 @@ def test_espresso_input_edit():
     structure.vec1 += np.random.randn(3)
     structure.positions[0] += np.random.randn(3)
 
-    edit_qe_input_positions('./qe_input_1.in', structure=structure)
+    edit_dft_input_positions('./qe_input_1.in', structure=structure)
 
-    positions, species, cell, masses = parse_qe_input('./qe_input_1.in')
+    positions, species, cell, masses = parse_dft_input('./qe_input_1.in')
 
     assert np.equal(positions[0], structure.positions[0]).all()
     assert np.equal(structure.vec1, cell[0, :]).all()
