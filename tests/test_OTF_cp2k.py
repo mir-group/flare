@@ -1,6 +1,7 @@
 import pytest
 import os
 import sys
+from subprocess import call
 import numpy as np
 from flare.otf import OTF
 from flare.gp import GaussianProcess
@@ -29,7 +30,7 @@ def test_otf_h2():
     Test that an otf run can survive going for more steps
     :return:
     """
-    os.system('cp ./test_files/cp2k_input_1.in ./cp2k.in')
+    call('cp ./test_files/cp2k_input_1.in ./cp2k.in')
 
     cp2k_input = './cp2k.in'
     dt = 0.0001
@@ -61,8 +62,8 @@ def test_otf_h2():
               output_name='h2_otf_cp2k')
 
     otf.run()
-    os.system('mkdir test_outputs')
-    os.system('mv h2_otf_cp2k.* test_outputs')
+    call('mkdir test_outputs')
+    call('mv h2_otf_cp2k*.* test_outputs')
     cleanup()
 
 @pytest.mark.skipif(not os.environ.get('CP2K_COMMAND',
@@ -75,7 +76,7 @@ def test_otf_al():
     Test that an otf run can survive going for more steps
     :return:
     """
-    os.system('cp ./test_files/cp2k_input_2.in ./cp2k.in')
+    call('cp ./test_files/cp2k_input_2.in ./cp2k.in')
 
     cp2k_input = './cp2k.in'
     dt = 0.001
@@ -110,7 +111,7 @@ def test_otf_al():
               max_atoms_added=max_atoms_added)
 
     otf.run()
-    os.system('mkdir test_outputs')
-    os.system('mv al_otf_cp2k.* test_outputs')
+    call('mkdir test_outputs')
+    call('mv al_otf_cp2k*.* test_outputs')
 
     cleanup()

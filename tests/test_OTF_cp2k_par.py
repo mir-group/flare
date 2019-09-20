@@ -63,5 +63,5 @@ def test_otf_h2_par():
 
     otf.run()
     call('mkdir test_outputs')
-    call('mv h2_otf_cp2k_par.out test_outputs')
+    call('mv h2_otf_cp2k_par* test_outputs')
     cleanup()

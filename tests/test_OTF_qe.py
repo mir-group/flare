@@ -64,7 +64,7 @@ def test_otf_h2():
 
     otf.run()
     os.system('mkdir test_outputs')
-    os.system('mv h2_otf_qe.* test_outputs')
+    os.system('mv h2_otf_qe* test_outputs')
     cleanup_espresso_run()
 
 @pytest.mark.skipif(not os.environ.get('PWSCF_COMMAND',
@@ -112,6 +112,6 @@ def test_otf_al():
 
     otf.run()
     os.system('mkdir test_outputs')
-    os.system('mv al_otf_qe.*t test_outputs')
+    os.system('mv al_otf_qe* test_outputs')
 
     cleanup_espresso_run()
