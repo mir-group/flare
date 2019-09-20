@@ -1,4 +1,4 @@
-[![codecov](https://codecov.io/gh/anjohan/flare/branch/master/graph/badge.svg)](https://codecov.io/gh/anjohan/flare)
+[![Build Status](https://travis-ci.org/anjohan/flare.svg?branch=master)](https://travis-ci.org/anjohan/flare) [![codecov](https://codecov.io/gh/anjohan/flare/branch/master/graph/badge.svg)](https://codecov.io/gh/anjohan/flare)
 
 # FLARE: Fast Learning of Atomistic Rare Events
 

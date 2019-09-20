@@ -8,6 +8,7 @@ cache:
     - pip
 
 before_install:
+    - sudo apt update
     - sudo apt install -y quantum-espresso
 
 install:
