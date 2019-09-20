@@ -62,9 +62,9 @@ def test_otf_h2():
               std_tolerance_factor, init_atoms=[0],
               calculate_energy=True, max_atoms_added=1,
               no_cpus=2, par=True,
-              output_name='h2_otf')
+              output_name='h2_otf_qe_par')
 
     otf.run()
     os.system('mkdir test_outputs')
-    os.system('mv h2_otf.out test_outputs')
+    os.system('mv h2_otf_qe_par* test_outputs')
     cleanup_espresso_run()

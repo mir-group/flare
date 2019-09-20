@@ -58,9 +58,9 @@ def test_otf_h2_par():
               dft_softwarename="cp2k",
               no_cpus=2,
               par=True,
-              output_name='h2_otf')
+              output_name='h2_otf_cp2k_par')
 
     otf.run()
     os.system('mkdir test_outputs')
-    os.system('mv h2_otf.out test_outputs')
+    os.system('mv h2_otf_cp2k_par.out test_outputs')
     cleanup()

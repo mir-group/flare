@@ -10,6 +10,7 @@ import concurrent.futures
 from flare import struc, gp, env, md
 from flare.dft_interface import dft_software
 from flare.output import Output
+import flare.predict as predict
 
 
 class OTF(object):
@@ -69,13 +70,13 @@ class OTF(object):
 
         # set pred function
         if not par and not calculate_energy:
-            self.pred_func = self.predict_on_structure
+            self.pred_func = predict.predict_on_structure
         elif par and not calculate_energy:
-            self.pred_func = self.predict_on_structure_par
+            self.pred_func = predict.predict_on_structure_par
         elif not par and calculate_energy:
-            self.pred_func = self.predict_on_structure_en
+            self.pred_func = predict.predict_on_structure_en
         elif par and calculate_energy:
-            self.pred_func = self.predict_on_structure_par_en
+            self.pred_func = predict.predict_on_structure_par_en
         self.par = par
 
         # set rescale attributes
@@ -115,7 +116,7 @@ class OTF(object):
 
             # after step 1, try predicting with GP model
             else:
-                self.pred_func()
+                self.pred_func(self.structure, self.gp)
                 self.dft_step = False
                 new_pos = md.update_positions(self.dt, self.noa,
                                               self.structure)
@@ -164,67 +165,67 @@ class OTF(object):
 
         self.output.conclude_run()
 
-    def predict_on_atom(self, atom):
-        chemenv = env.AtomicEnvironment(self.structure, atom, self.gp.cutoffs)
-        comps = []
-        stds = []
-        # predict force components and standard deviations
-        for i in range(3):
-            force, var = self.gp.predict(chemenv, i+1)
-            comps.append(float(force))
-            stds.append(np.sqrt(np.abs(var)))
+    # def predict_on_atom(self, atom):
+    #     chemenv = env.AtomicEnvironment(self.structure, atom, self.gp.cutoffs)
+    #     comps = []
+    #     stds = []
+    #     # predict force components and standard deviations
+    #     for i in range(3):
+    #         force, var = self.gp.predict(chemenv, i+1)
+    #         comps.append(float(force))
+    #         stds.append(np.sqrt(np.abs(var)))
 
-        return comps, stds
+    #     return comps, stds
 
-    def predict_on_atom_en(self, atom):
-        chemenv = env.AtomicEnvironment(self.structure, atom, self.gp.cutoffs)
-        comps = []
-        stds = []
-        # predict force components and standard deviations
-        for i in range(3):
-            force, var = self.gp.predict(chemenv, i+1)
-            comps.append(float(force))
-            stds.append(np.sqrt(np.abs(var)))
+    # def predict_on_atom_en(self, atom):
+    #     chemenv = env.AtomicEnvironment(self.structure, atom, self.gp.cutoffs)
+    #     comps = []
+    #     stds = []
+    #     # predict force components and standard deviations
+    #     for i in range(3):
+    #         force, var = self.gp.predict(chemenv, i+1)
+    #         comps.append(float(force))
+    #         stds.append(np.sqrt(np.abs(var)))
 
-        # predict local energy
-        local_energy = self.gp.predict_local_energy(chemenv)
-        return comps, stds, local_energy
+    #     # predict local energy
+    #     local_energy = self.gp.predict_local_energy(chemenv)
+    #     return comps, stds, local_energy
 
-    def predict_on_structure_par(self):
-        n = 0
-        with concurrent.futures.ProcessPoolExecutor() as executor:
-            for res in executor.map(self.predict_on_atom, self.atom_list):
-                for i in range(3):
-                    self.structure.forces[n][i] = res[0][i]
-                    self.structure.stds[n][i] = res[1][i]
-                n += 1
+    # def predict_on_structure_par(self):
+    #     n = 0
+    #     with concurrent.futures.ProcessPoolExecutor() as executor:
+    #         for res in executor.map(self.predict_on_atom, self.atom_list):
+    #             for i in range(3):
+    #                 self.structure.forces[n][i] = res[0][i]
+    #                 self.structure.stds[n][i] = res[1][i]
+    #             n += 1
 
-    def predict_on_structure_par_en(self):
-        n = 0
-        with concurrent.futures.ProcessPoolExecutor() as executor:
-            for res in executor.map(self.predict_on_atom_en, self.atom_list):
-                for i in range(3):
-                    self.structure.forces[n][i] = res[0][i]
-                    self.structure.stds[n][i] = res[1][i]
-                self.local_energies[n] = res[2]
-                n += 1
+    # def predict_on_structure_par_en(self):
+    #     n = 0
+    #     with concurrent.futures.ProcessPoolExecutor() as executor:
+    #         for res in executor.map(self.predict_on_atom_en, self.atom_list):
+    #             for i in range(3):
+    #                 self.structure.forces[n][i] = res[0][i]
+    #                 self.structure.stds[n][i] = res[1][i]
+    #             self.local_energies[n] = res[2]
+    #             n += 1
 
-    def predict_on_structure(self):
-        for n in range(self.structure.nat):
-            chemenv = env.AtomicEnvironment(self.structure, n, self.gp.cutoffs)
-            for i in range(3):
-                force, var = self.gp.predict(chemenv, i + 1)
-                self.structure.forces[n][i] = float(force)
-                self.structure.stds[n][i] = np.sqrt(np.abs(var))
+    # def predict_on_structure(self):
+    #     for n in range(self.structure.nat):
+    #         chemenv = env.AtomicEnvironment(self.structure, n, self.gp.cutoffs)
+    #         for i in range(3):
+    #             force, var = self.gp.predict(chemenv, i + 1)
+    #             self.structure.forces[n][i] = float(force)
+    #             self.structure.stds[n][i] = np.sqrt(np.abs(var))
 
-    def predict_on_structure_en(self):
-        for n in range(self.structure.nat):
-            chemenv = env.AtomicEnvironment(self.structure, n, self.gp.cutoffs)
-            for i in range(3):
-                force, var = self.gp.predict(chemenv, i + 1)
-                self.structure.forces[n][i] = float(force)
-                self.structure.stds[n][i] = np.sqrt(np.abs(var))
-            self.local_energies[n] = self.gp.predict_local_energy(chemenv)
+    # def predict_on_structure_en(self):
+    #     for n in range(self.structure.nat):
+    #         chemenv = env.AtomicEnvironment(self.structure, n, self.gp.cutoffs)
+    #         for i in range(3):
+    #             force, var = self.gp.predict(chemenv, i + 1)
+    #             self.structure.forces[n][i] = float(force)
+    #             self.structure.stds[n][i] = np.sqrt(np.abs(var))
+    #         self.local_energies[n] = self.gp.predict_local_energy(chemenv)
 
     def run_dft(self):
         self.output.write_to_log('\nCalling DFT...\n')

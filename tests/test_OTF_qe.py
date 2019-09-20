@@ -60,11 +60,11 @@ def test_otf_h2():
     otf = OTF(qe_input, dt, number_of_steps, gp, dft_loc,
               std_tolerance_factor, init_atoms=[0],
               calculate_energy=True, max_atoms_added=1,
-              output_name='h2_otf')
+              output_name='h2_otf_qe')
 
     otf.run()
     os.system('mkdir test_outputs')
-    os.system('mv h2_otf.out test_outputs')
+    os.system('mv h2_otf_qe.out test_outputs')
     cleanup_espresso_run()
 
 @pytest.mark.skipif(not os.environ.get('PWSCF_COMMAND',
