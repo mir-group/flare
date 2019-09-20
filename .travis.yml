@@ -4,11 +4,14 @@ language: python
 
 python: 3.7
 
+cache:
+    - pip
+
 install:
-  - pip install codecov pytest pytest-cov numba memory_profiler numpy scipy
+    - pip install codecov pytest pytest-cov numba memory_profiler numpy scipy
 
 script:
-  - cd tests && pytest --cov=../ && coverage xml && cp coverage.xml ..
+    - cd tests && pytest --cov=../ && coverage xml && cp coverage.xml ..
 
 after_success:
-  - codecov
+    - codecov
