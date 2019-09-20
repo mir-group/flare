@@ -64,7 +64,7 @@ def test_otf_h2():
 
     otf.run()
     os.system('mkdir test_outputs')
-    os.system('mv h2_otf_qe.out test_outputs')
+    os.system('mv h2_otf_qe.* test_outputs')
     cleanup_espresso_run()
 
 @pytest.mark.skipif(not os.environ.get('PWSCF_COMMAND',
@@ -106,12 +106,12 @@ def test_otf_al():
 
     otf = OTF(qe_input, dt, number_of_steps, gp, dft_loc,
               std_tolerance_factor, init_atoms=[0],
-              calculate_energy=True, output_name='al_otf',
+              calculate_energy=True, output_name='al_otf_qe',
               freeze_hyps=freeze_hyps, skip=5,
               max_atoms_added=max_atoms_added)
 
     otf.run()
     os.system('mkdir test_outputs')
-    os.system('mv al_otf.out test_outputs')
+    os.system('mv al_otf_qe.*t test_outputs')
 
     cleanup_espresso_run()

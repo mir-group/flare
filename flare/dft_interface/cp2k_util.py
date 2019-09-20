@@ -8,14 +8,14 @@ from typing import List
 
 name="CP2K"
 
-def run_dft_par(dft_input, structure, dft_loc, no_cpus, dft_out="dft.out"):
+
+def run_dft_par(dft_input, structure, dft_loc, no_cpus=1, dft_out="dft.out"):
     newfilename = edit_dft_input_positions(dft_input, structure)
     dft_command = \
         '{} -i {} > {}'.format(dft_loc, newfilename, dft_out)
     if (no_cpus > 1):
         dft_command = 'mpirun -np {} {}'.format(no_cpus, dft_command)
     # output.write_to_output(dft_command+'\n')
-    # os.system(dft_command)
     call(dft_command, shell=True)
     os.remove(newfilename)
 
@@ -30,7 +30,6 @@ def run_dft_en_par(dft_input, structure, dft_loc, no_cpus, dft_out="dft.out"):
     if (no_cpus > 1):
         dft_command = 'mpirun -np {} {}'.format(no_cpus, dft_command)
     # output.write_to_output(dft_command+'\n')
-    os.system(dft_command)
     call(dft_command, shell=True)
     os.remove(newfilename)
 
@@ -39,15 +38,6 @@ def run_dft_en_par(dft_input, structure, dft_loc, no_cpus, dft_out="dft.out"):
     return forces, energy
 
 
-def run_dft_command(dft_input, dft_output, dft_loc, npool):
-    dft_command = \
-        '{1} -i {2} > {3}'.format(dft_loc, dft_input, dft_out)
-    if (no_cpus > 1):
-        dft_command = 'mpirun -np {} {}'.format(no_cpus, dft_command)
-    # output.write_to_output(dft_command+'\n')
-    call(dft_command, shell=True)
-
-    return parse_dft_forces(dft_output)
 
 
 def parse_dft_input(dft_input: str):

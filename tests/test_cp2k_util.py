@@ -3,14 +3,17 @@ import os
 import sys
 import numpy as np
 from flare.struc import Structure, get_unique_species
-from flare.dft_interface.cp2k_util import parse_dft_input, parse_dft_forces, run_dft, \
+from flare.dft_interface.cp2k_util import parse_dft_input, parse_dft_forces, run_dft_par, \
     edit_dft_input_positions, dft_input_to_structure
 
 def cleanup(target: str = None):
-    os.remove('cp2k-RESTART.wfn')
+    for i in ['cp2k-RESTART.wfn', 'dft.out', 'cp2k.in']:
+        try:
+            os.remove(i)
+        except:
+            pass
     if (target is not None):
         os.remove(target)
-
 
 @pytest.mark.parametrize("cp2k_input,exp_spec",
                          [
@@ -81,7 +84,7 @@ def test_cp2k_calling(cp2k_input, cp2k_output):
                           positions=positions,
                           mass_dict=masses, species_labels=species)
 
-    forces = run_dft('cp2k.in',
+    forces = run_dft_par('cp2k.in',
                           structure, dft_loc)
 
     ref_forces = parse_dft_forces(cp2k_output)
@@ -114,4 +117,5 @@ def test_cp2k_input_edit():
     assert np.equal(positions[0], structure.positions[0]).all()
     assert np.equal(structure.vec1, cell[0, :]).all()
 
-    os.system('rm '+newfilename)
+    os.remove(newfilename)
+    cleanup()
