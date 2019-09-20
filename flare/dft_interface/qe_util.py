@@ -11,7 +11,6 @@ def run_dft(qe_input, structure, dft_loc):
     edit_dft_input_positions(run_qe_path, structure)
     qe_command = '{0} < {1} > {2}'.format(dft_loc, run_qe_path,
                                                  'pwscf.out')
-    # os.system(qe_command)
     call(qe_command, shell=True)
 
     return parse_dft_forces('pwscf.out')
@@ -24,9 +23,6 @@ def run_dft_par(qe_input, structure, dft_loc, no_cpus):
         'mpirun -np {0} {1} < {2} > {3}'.format(no_cpus, dft_loc, run_qe_path,
                                                 'pwscf.out')
 
-    with open("alog", "a+") as fout:
-        print(qe_command, file=fout)
-    # os.system(qe_command)
     call(qe_command, shell=True)
 
     return parse_dft_forces('pwscf.out')
@@ -38,7 +34,6 @@ def run_dft_en_par(qe_input, structure, dft_loc, no_cpus):
     qe_command = \
         'mpirun -np {0} {1} < {2} > {3}'.format(no_cpus, dft_loc, run_qe_path,
                                                 'pwscf.out')
-    # os.system(qe_command)
     call(qe_command, shell=True)
 
     forces, energy = parse_dft_forces_and_energy('pwscf.out')
@@ -52,7 +47,6 @@ def run_dft_npool(qe_input, qe_output, structure, dft_loc, npool):
     qe_command = \
         'mpirun {0} -npool {1} < {2} > {3}'.format(dft_loc, npool, run_qe_path,
                                                    qe_output)
-    # os.system(qe_command)
     call(qe_command, shell=True)
 
     return parse_dft_forces(qe_output)
@@ -62,7 +56,6 @@ def run_dft_command(qe_input, qe_output, dft_loc, npool):
     qe_command = \
         'mpirun {0} -npool {1} < {2} > {3}'.format(dft_loc, npool, qe_input,
                                                    qe_output)
-    # os.system(qe_command)
     call(qe_command, shell=True)
 
     return parse_dft_forces(qe_output)
