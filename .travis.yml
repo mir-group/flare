@@ -20,6 +20,8 @@ before_install:
       --header 'Accept: application/vnd.github.v3.raw' --remote-name \
       --location https://api.github.com/repos/mir-group/mff_lammps/\
       contents/lammps_plugin/pair_mgp.h"
+    - cat pair_mgp.h
+    - cat pair_mgp.cpp
     - git clone --depth=1 https://github.com/lammps/lammps.git
     - cp pair_mgp.* lammps/src/
     - mkdir lammps/build
