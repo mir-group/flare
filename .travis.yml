@@ -8,10 +8,9 @@ cache:
     - pip
 
 before_install:
+    - sudo add-apt-repository ppa:ubuntu-toolchain-r/test
     - sudo apt update
-    - sudo apt install -y quantum-espresso
-
-install:
+    - sudo apt install -y quantum-espresso g++-9
     - pip install codecov pytest pytest-cov numba memory_profiler numpy scipy
     - "curl --header 'Authorization: token ${GITHUB_TOKEN}' \
       --header 'Accept: application/vnd.github.v3.raw' --remote-name \
@@ -23,7 +22,10 @@ install:
       contents/lammps_plugin/pair_mgp.h"
     - git clone --depth=1 https://github.com/lammps/lammps.git
     - cp pair_mgp.* lammps/src/
-    - mkdir lammps/build && cd lammps/build && cmake ../cmake && make -j$(nproc)
+    - mkdir lammps/build
+    - cd lammps/build
+    - CC=gcc-9 CXX=g++-9 cmake ../cmake
+    - make -j$(nproc)
 
 script:
     - cd tests
