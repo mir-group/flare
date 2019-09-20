@@ -13,9 +13,14 @@ before_install:
 
 install:
     - pip install codecov pytest pytest-cov numba memory_profiler numpy scipy
+    - curl --header 'Authorization: token ${GITHUB_TOKEN}' --header 'Accept: application/vnd.github.v3.raw' --remote-name --location https://api.github.com/repos/mir-group/mff_lammps/contents/lammps_plugin/pair_mgp.cpp
+    - curl --header 'Authorization: token ${GITHUB_TOKEN}' --header 'Accept: application/vnd.github.v3.raw' --remote-name --location https://api.github.com/repos/mir-group/mff_lammps/contents/lammps_plugin/pair_mgp.h
+    - git clone --depth=1 https://github.com/lammps/lammps.git
+    - cp pair_mgp.* lammps/src/
+    - mkdir lammps/build && cd lammps/build && cmake ../cmake && make -j$(nproc)
 
 script:
-    - cd tests && PWSCF_COMMAND=pw.x pytest --cov=../ && coverage xml
+    - cd tests && PWSCF_COMMAND=pw.x lmp=$HOME/lammps/build/lmp pytest --cov=../ && coverage xml
 
 after_success:
     - codecov
