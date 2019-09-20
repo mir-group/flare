@@ -3,55 +3,55 @@ from subprocess import call
 import time
 import numpy as np
 from flare import output
-from flare.struc import Structure
+from flare import struc
 from typing import List
 
 name="CP2K"
 
-def run_dft(dft_input, structure, dft_loc):
-    run_dft_path = dft_input
-    edit_dft_input_positions(run_dft_path, structure)
-    dft_command = 'mpirun {0} -i run_{1} > {2}'.format(dft_loc, run_dft_path,
-                                                 'dft.out')
+def run_dft(dft_input, structure, dft_loc, dft_out="dft.out"):
+    newfilename = edit_dft_input_positions(dft_input, structure)
+    dft_command = '{0} -i {1} > {2}'.format(dft_loc, newfilename,
+                                                 dft_out)
     # output.write_to_output(dft_command+'\n')
     # os.system(dft_command)
     call(dft_command, shell=True)
+    os.remove(newfilename)
 
-    return parse_dft_forces('dft.out')
+    return parse_dft_forces(dft_out)
 
 
-def run_dft_par(dft_input, structure, dft_loc, no_cpus, dft_nk):
-    run_dft_path = dft_input
-    edit_dft_input_positions(run_dft_path, structure, dft_nk)
+def run_dft_par(dft_input, structure, dft_loc, no_cpus, dft_nk, dft_out="dft.out"):
+    newfilename = edit_dft_input_positions(dft_input, structure, dft_nk)
     dft_command = \
-        'mpirun -np {0} {1} -i run_{2} > {3}'.format(
-                no_cpus, dft_loc, run_dft_path, 'dft.out')
+        'mpirun -np {0} {1} -i {2} > {3}'.format(
+                no_cpus, dft_loc, newfilename, dft_out)
     # output.write_to_output(dft_command+'\n')
     # os.system(dft_command)
     call(dft_command, shell=True)
+    os.remove(newfilename)
 
-    return parse_dft_forces('dft.out')
+    return parse_dft_forces(dft_out)
 
 
-def run_dft_en_par(dft_input, structure, dft_loc, no_cpus, dft_nk):
-    run_dft_path = dft_input
-    edit_dft_input_positions(run_dft_path, structure, dft_nk)
+def run_dft_en_par(dft_input, structure, dft_loc, no_cpus, dft_nk, dft_out="dft.out"):
+
+    newfilename = edit_dft_input_positions(dft_input, structure, dft_nk)
     dft_command = \
-        'mpirun -np {0} {1} -i run_{2} > {3}'.format(no_cpus, dft_loc, run_dft_path,
-                                                'dft.out')
+        'mpirun -np {0} {1} -i {2} > {3}'.format(no_cpus, dft_loc, newfilename,
+                                                dft_out)
     # output.write_to_output(dft_command+'\n')
-    # os.system(dft_command)
+    os.system(dft_command)
     call(dft_command, shell=True)
+    os.remove(newfilename)
 
-    forces, energy = parse_dft_forces_and_energy('dft.out')
+    forces, energy = parse_dft_forces_and_energy(dft_out)
 
     return forces, energy
 
 
-
 def run_dft_command(dft_input, dft_output, dft_loc, npool):
     dft_command = \
-        'mpirun -np {0} -i run_{1} > {2}'.format(dft_loc, dft_input,
+        'mpirun -np {0} -i {1} > {2}'.format(dft_loc, dft_input,
                                                    dft_output)
     # output.write_to_output(dft_command+'\n')
     # os.system(dft_command)
@@ -145,7 +145,7 @@ def parse_dft_input(dft_input: str):
     return positions, species, cell, masses
 
 
-def dft_input_to_structure(dft_input: str) -> Structure:
+def dft_input_to_structure(dft_input: str):
     """
     Parses a qe input and returns the atoms in the file as a Structure object
     :param dft_input: QE Input file to parse
@@ -153,11 +153,11 @@ def dft_input_to_structure(dft_input: str) -> Structure:
     :return:
     """
     positions, species, cell, masses = parse_dft_input(dft_input)
-    return Structure(positions=positions, species=species, cell=cell,
-                     mass_dict=masses)
+    _, coded_species = struc.get_unique_species(species)
+    return struc.Structure(positions=positions, species=coded_species,
+                           cell=cell, mass_dict=masses, species_labels=species)
 
-
-def edit_dft_input_positions(dft_input: str, structure: Structure, dft_nk=1):
+def edit_dft_input_positions(dft_input: str, structure, dft_nk=1):
     """
     Write the current configuration of the OTF structure to the
     qe input file
@@ -189,7 +189,7 @@ def edit_dft_input_positions(dft_input: str, structure: Structure, dft_nk=1):
 
     for pos_index, line_index in enumerate(
             range(file_pos_index, file_pos_index + structure.nat)):
-        pos_string = ' '.join([structure.species[pos_index],
+        pos_string = ' '.join([structure.species_labels[pos_index],
                                str(structure.positions[pos_index][
                                        0]),
                                str(structure.positions[pos_index][
@@ -215,9 +215,13 @@ def edit_dft_input_positions(dft_input: str, structure: Structure, dft_nk=1):
     lines[cell_index + 2] = 'C '+' '.join([str(x) for x in structure.vec3]) \
                             + '\n'
 
-    with open('run_'+dft_input, 'w') as f:
+    newfilename = dft_input+"_run"
+
+    with open(newfilename, 'w') as f:
         for line in lines:
             f.write(line)
+
+    return newfilename
 
 
 def parse_dft_forces_and_energy(outfile: str):
