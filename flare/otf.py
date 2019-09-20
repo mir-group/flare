@@ -14,7 +14,7 @@ from flare.output import Output
 
 class OTF(object):
     def __init__(self, dft_input: str, dt: float, number_of_steps: int,
-                 gp: gp.GaussianProcess, pw_loc: str,
+                 gp: gp.GaussianProcess, dft_loc: str,
                  std_tolerance_factor: float = 1,
                  prev_pos_init: np.ndarray=None, par: bool=False,
                  skip: int=0, init_atoms: List[int]=None,
@@ -28,12 +28,11 @@ class OTF(object):
         self.dt = dt
         self.number_of_steps = number_of_steps
         self.gp = gp
-        self.pw_loc = pw_loc
+        self.dft_loc = dft_loc
         self.std_tolerance = std_tolerance_factor
         self.skip = skip
         self.dft_step = True
         self.freeze_hyps = freeze_hyps
-        print(list(dft_software.keys()), dft_softwarename)
         self.dft_module = dft_software[dft_softwarename]
 
         # parse input file
@@ -232,7 +231,7 @@ class OTF(object):
 
         # calculate DFT forces
         forces = self.dft_module.run_dft_par(self.dft_input, self.structure,
-                                          self.pw_loc, self.no_cpus)
+                                          self.dft_loc, self.no_cpus)
         self.structure.forces = forces
 
         # write wall time of DFT calculation

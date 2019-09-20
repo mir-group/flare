@@ -6,7 +6,6 @@ from flare.struc import Structure, get_unique_species
 from flare.dft_interface.qe_util import parse_dft_input, parse_dft_forces, run_dft, \
     edit_dft_input_positions, dft_input_to_structure
 
-
 def cleanup_espresso_run(target: str = None):
     os.system('rm pwscf.out')
     os.system('rm pwscf.wfc')
@@ -83,7 +82,7 @@ def test_input_to_structure(qe_input):
                                   'variable to point to pw.x.')
 def test_espresso_calling(qe_input, qe_output):
 
-    pw_loc = os.environ.get('PWSCF_COMMAND')
+    dft_loc = os.environ.get('PWSCF_COMMAND')
     os.system(' '.join(['cp', qe_input, 'pwscf.in']))
     positions, species, cell, masses = parse_dft_input(qe_input)
 
@@ -92,7 +91,7 @@ def test_espresso_calling(qe_input, qe_output):
                           mass_dict=masses, species_labels=species)
 
     forces = run_dft('pwscf.in',
-                          structure, pw_loc)
+                          structure, dft_loc)
 
     ref_forces = parse_dft_forces(qe_output)
 
