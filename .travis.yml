@@ -10,8 +10,8 @@ cache:
 before_install:
     - sudo apt update
     - sudo apt install -y quantum-espresso
-    - sudo apt install -y cp2k-data=6.1-2
     - pip install codecov pytest pytest-cov
+    - gcc --version
     - wget http://folk.uio.no/anjohan/lmp
     - chmod u+x lmp
     - pip install -r requirements.txt
