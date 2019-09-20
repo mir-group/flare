@@ -13,8 +13,6 @@ before_install:
     - pip install codecov pytest pytest-cov
     - gcc --version
     - sudo apt-get install libblas-dev liblapack-dev
-    - locate liblapack.a
-    - locate libblas.a
     - wget http://folk.uio.no/anjohan/lmp
     - chmod u+x lmp
     - pip install -r requirements.txt
