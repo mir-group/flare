@@ -10,7 +10,7 @@ cache:
 before_install:
     - sudo apt update
     - sudo apt install -y quantum-espresso
-    - sudo apt install -y cp2k
+    - sudo apt install -y cp2k-data=6.1-2
     - pip install codecov pytest pytest-cov
     - wget http://folk.uio.no/anjohan/lmp
     - chmod u+x lmp
@@ -18,7 +18,7 @@ before_install:
 
 script:
     - cd tests
-    - PWSCF_COMMAND=pw.x lmp=../lmp pytest --cov=../
+    - PWSCF_COMMAND=pw.x lmp=../lmp pytest CP2K_COMMAND=cp2k.popt --cov=../
     - coverage xml
 
 after_success:
