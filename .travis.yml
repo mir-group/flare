@@ -8,10 +8,8 @@ cache:
     - pip
 
 before_install:
-    - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
     - sudo apt update
-    - sudo apt install -y quantum-espresso g++-9
-    - pip install codecov pytest pytest-cov numba memory_profiler numpy scipy
+    - sudo apt install -y quantum-espresso
     - wget http://folk.uio.no/anjohan/lmp
     - chmod u+x lmp
 
