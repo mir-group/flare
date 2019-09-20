@@ -8,12 +8,12 @@ import multiprocessing as mp
 import subprocess
 import concurrent.futures
 from flare import struc, gp, env, md
-from flare.dft_interface import qe_util
+from flare.dft_interface import dft_software
 from flare.output import Output
 
 
 class OTF(object):
-    def __init__(self, qe_input: str, dt: float, number_of_steps: int,
+    def __init__(self, dft_input: str, dt: float, number_of_steps: int,
                  gp: gp.GaussianProcess, pw_loc: str,
                  std_tolerance_factor: float = 1,
                  prev_pos_init: np.ndarray=None, par: bool=False,
@@ -21,9 +21,10 @@ class OTF(object):
                  calculate_energy=False, output_name='otf_run',
                  max_atoms_added=1, freeze_hyps=10,
                  rescale_steps=[], rescale_temps=[],
+                 dft_softwarename="qe",
                  no_cpus=1):
 
-        self.qe_input = qe_input
+        self.dft_input = dft_input
         self.dt = dt
         self.number_of_steps = number_of_steps
         self.gp = gp
@@ -32,10 +33,12 @@ class OTF(object):
         self.skip = skip
         self.dft_step = True
         self.freeze_hyps = freeze_hyps
+        print(list(dft_software.keys()), dft_softwarename)
+        self.dft_module = dft_software[dft_softwarename]
 
         # parse input file
         positions, species, cell, masses = \
-            qe_util.parse_dft_input(self.qe_input)
+            self.dft_module.parse_dft_input(self.dft_input)
 
         _, coded_species = struc.get_unique_species(species)
 
@@ -228,7 +231,7 @@ class OTF(object):
         self.output.write_to_log('\nCalling DFT...\n')
 
         # calculate DFT forces
-        forces = qe_util.run_dft_par(self.qe_input, self.structure,
+        forces = self.dft_module.run_dft_par(self.dft_input, self.structure,
                                           self.pw_loc, self.no_cpus)
         self.structure.forces = forces
 
