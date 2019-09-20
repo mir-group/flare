@@ -1,4 +1,4 @@
-sudo: false
+sudo: true
 
 language: python
 
@@ -7,11 +7,14 @@ python: 3.7
 cache:
     - pip
 
+before_install:
+    - sudo apt install -y quantum-espresso
+
 install:
     - pip install codecov pytest pytest-cov numba memory_profiler numpy scipy
 
 script:
-    - cd tests && pytest --cov=../ && coverage xml
+    - cd tests && PWSCF_COMMAND=pw.x pytest --cov=../ && coverage xml
 
 after_success:
     - codecov
