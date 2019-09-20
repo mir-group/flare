@@ -120,7 +120,7 @@ def test_parse_header():
     lammps_calculator.write_text(data_file_name, data_text)
 
     # create lammps input
-    style_string = 'mff' #TODO: change the name of lammps
+    style_string = 'mgp' #TODO: change the name of lammps
     coeff_string = '* * {} 47 53 yes yes'.format(lammps_location)
     lammps_executable = '$lmp'
     dump_file_name = 'tmp.dump'
