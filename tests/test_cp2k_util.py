@@ -8,8 +8,8 @@ from flare.dft_interface.cp2k_util import parse_dft_input, parse_dft_forces, run
 
 def cleanup(target: str = None):
     os.remove('cp2k-RESTART.wfn')
-    if target:
-        os.system('rm ' + target)
+    if (target is not None):
+        os.remove(target)
 
 
 @pytest.mark.parametrize("cp2k_input,exp_spec",
