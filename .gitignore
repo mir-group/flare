@@ -24,5 +24,7 @@ pwscf.save/
 /tests/gp_from_aimd.out
 /tests/h2_otf.out-f.xyz-bak
 /tests/pwscf.xml
-/test/*wfn
-/test/*-bak
+/tests/*-RESTART.kp*
+/tests/*.wfn*
+/tests/*-bak
+/tests/cp2k.in*
