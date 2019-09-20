@@ -11,7 +11,7 @@ name="CP2K"
 def run_dft_par(dft_input, structure, dft_loc, no_cpus, dft_out="dft.out"):
     newfilename = edit_dft_input_positions(dft_input, structure)
     dft_command = \
-        '{1} -i {2} > {3}'.format(dft_loc, newfilename, dft_out)
+        '{} -i {} > {}'.format(dft_loc, newfilename, dft_out)
     if (no_cpus > 1):
         dft_command = 'mpirun -np {} {}'.format(no_cpus, dft_command)
     # output.write_to_output(dft_command+'\n')
@@ -26,7 +26,7 @@ def run_dft_en_par(dft_input, structure, dft_loc, no_cpus, dft_out="dft.out"):
 
     newfilename = edit_dft_input_positions(dft_input, structure)
     dft_command = \
-        '{1} -i {2} > {3}'.format(dft_loc, newfilename, dft_out)
+        '{} -i {} > {}'.format(dft_loc, newfilename, dft_out)
     if (no_cpus > 1):
         dft_command = 'mpirun -np {} {}'.format(no_cpus, dft_command)
     # output.write_to_output(dft_command+'\n')

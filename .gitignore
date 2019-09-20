@@ -23,6 +23,8 @@ pwscf.save/
 /tests/alog
 /tests/gp_from_aimd.out
 /tests/h2_otf.out-f.xyz-bak
+/tests/pwscf.wfc*
+/tests/pwscf.in
 /tests/pwscf.xml
 /tests/*-RESTART.kp*
 /tests/*.wfn*
