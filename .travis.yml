@@ -15,9 +15,12 @@ before_install:
     - wget http://folk.uio.no/anjohan/lmp
     - chmod u+x lmp
 
+install:
+    - pip install -r requirements.txt
+
 script:
     - cd tests
-    - PWSCF_COMMAND=pw.x lmp=$HOME/lmp pytest --cov=../
+    - PWSCF_COMMAND=pw.x lmp=../lmp pytest --cov=../
     - coverage xml
 
 after_success:
