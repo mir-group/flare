@@ -7,7 +7,8 @@ import copy
 import multiprocessing as mp
 import subprocess
 import concurrent.futures
-from flare import struc, gp, env, qe_util, md
+from flare import struc, gp, env, md
+from flare.dft_interface import qe_util
 from flare.output import Output
 
 
@@ -224,10 +225,10 @@ class OTF(object):
             self.local_energies[n] = self.gp.predict_local_energy(chemenv)
 
     def run_dft(self):
-        self.output.write_to_log('\nCalling Quantum Espresso...\n')
+        self.output.write_to_log('\nCalling DFT...\n')
 
         # calculate DFT forces
-        forces = qe_util.run_espresso_par(self.qe_input, self.structure,
+        forces = qe_util.run_dft_par(self.qe_input, self.structure,
                                           self.pw_loc, self.no_cpus)
         self.structure.forces = forces
 

@@ -6,7 +6,7 @@ from flare import struc
 from typing import List
 
 
-def run_espresso(qe_input, structure, pw_loc):
+def run_dft(qe_input, structure, pw_loc):
     run_qe_path = qe_input
     edit_qe_input_positions(run_qe_path, structure)
     qe_command = '{0} < {1} > {2}'.format(pw_loc, run_qe_path,
@@ -17,7 +17,7 @@ def run_espresso(qe_input, structure, pw_loc):
     return parse_qe_forces('pwscf.out')
 
 
-def run_espresso_par(qe_input, structure, pw_loc, no_cpus):
+def run_dft_par(qe_input, structure, pw_loc, no_cpus):
     run_qe_path = qe_input
     edit_qe_input_positions(run_qe_path, structure)
     qe_command = \
@@ -32,7 +32,7 @@ def run_espresso_par(qe_input, structure, pw_loc, no_cpus):
     return parse_qe_forces('pwscf.out')
 
 
-def run_espresso_en_par(qe_input, structure, pw_loc, no_cpus):
+def run_dft_en_par(qe_input, structure, pw_loc, no_cpus):
     run_qe_path = qe_input
     edit_qe_input_positions(run_qe_path, structure)
     qe_command = \
@@ -46,7 +46,7 @@ def run_espresso_en_par(qe_input, structure, pw_loc, no_cpus):
     return forces, energy
 
 
-def run_espresso_npool(qe_input, qe_output, structure, pw_loc, npool):
+def run_dft_npool(qe_input, qe_output, structure, pw_loc, npool):
     run_qe_path = qe_input
     edit_qe_input_positions(run_qe_path, structure)
     qe_command = \
@@ -58,7 +58,7 @@ def run_espresso_npool(qe_input, qe_output, structure, pw_loc, npool):
     return parse_qe_forces(qe_output)
 
 
-def run_espresso_command(qe_input, qe_output, pw_loc, npool):
+def run_dft_command(qe_input, qe_output, pw_loc, npool):
     qe_command = \
         'mpirun {0} -npool {1} < {2} > {3}'.format(pw_loc, npool, qe_input,
                                                    qe_output)
