@@ -27,7 +27,7 @@ def test_otf_h2_par():
     Test that an otf run can survive going for more steps
     :return:
     """
-    call('cp ./test_files/cp2k_input_1.in ./cp2k.in')
+    call('cp ./test_files/cp2k_input_1.in ./cp2k.in'.split())
 
     cp2k_input = './cp2k.in'
     dt = 0.0001
@@ -62,6 +62,6 @@ def test_otf_h2_par():
               output_name='h2_otf_cp2k_par')
 
     otf.run()
-    call('mkdir test_outputs')
-    call('mv h2_otf_cp2k_par* test_outputs')
+    call('mkdir test_outputs'.split())
+    call('mv h2_otf_cp2k_par* test_outputs'.split())
     cleanup()
