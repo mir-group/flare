@@ -1,7 +1,6 @@
-"""The Structure object is a collection of atoms in a periodic box. The \
-mandatory inputs are the cell vectors of the box and the chemical species \
-and Cartesian coordinates of the atoms. The atoms are automatically folded \
-back into the primary cell, so the input coordinates don't need to lie \
+"""The :class:`Structure` object is a collection of atoms in a periodic \
+box. The mandatory inputs are the cell vectors of the box and the chemical species and Cartesian coordinates of the atoms. The atoms are automatically \
+folded back into the primary cell, so the input coordinates don't need to lie \
 inside the box. Energy, force, and stress information can be provided \
 for training machine learned force fields."""
 import numpy as np
