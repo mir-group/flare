@@ -70,8 +70,8 @@ of on-the-fly runs.
 
     def get_cell_dot(self):
         """
-        Compute 3x3 array of dot products of cell vectors used to fold atoms
-        back to the unit cell.
+        Compute 3x3 array of dot products of cell vectors used to fold atoms \
+back to the unit cell.
 
         :return: 3x3 array of cell vector dot products.
         :rtype: np.ndarray
@@ -87,15 +87,15 @@ of on-the-fly runs.
 
     @staticmethod
     def raw_to_relative(positions, cell_transpose, cell_dot_inverse):
-        """Convert Cartesian coordinates to relative coordinates expressed in
-        terms of the cell vectors.
-        
+        """Convert Cartesian coordinates to relative coordinates expressed \
+in terms of the cell vectors.
+
         :param positions: Cartesian coordinates.
         :type positions: np.ndarray
         :param cell_transpose: Transpose of the cell array.
         :type cell_transpose: np.ndarray
-        :param cell_dot_inverse: Inverse of the array of dot products of cell
-        vectors.
+        :param cell_dot_inverse: Inverse of the array of dot products of \
+cell vectors.
         :type cell_dot_inverse: np.ndarray
         :return: Relative positions.
         :rtype: np.ndarray
@@ -130,8 +130,8 @@ of on-the-fly runs.
 
     def indices_of_specie(self, specie: int):
         """
-        Return the indicies of atoms in  the structure which are atoms
-        corresponding to a given specie
+        Return the indicies of a given species.
+
         :param specie:
         :return:
         """
@@ -148,8 +148,8 @@ of on-the-fly runs.
 
     def as_dict(self):
         """
-        Returns structure as a dictionary for serialization
-        purposes.
+        Returns structure as a dictionary for serialization purposes.
+
         :return:
         """
         return dict(vars(self))
