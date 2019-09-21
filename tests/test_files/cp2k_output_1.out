@@ -11,10 +11,10 @@
  DBCSR| Communication thread load                                             87
 
 
-  **** **** ******  **  PROGRAM STARTED AT               2019-09-20 14:43:54.610
+  **** **** ******  **  PROGRAM STARTED AT               2019-09-20 20:18:51.918
  ***** ** ***  *** **   PROGRAM STARTED ON        holy2b17301.rc.fas.harvard.edu
  **    ****   ******    PROGRAM STARTED BY                               leleslx
- ***** **    ** ** **   PROGRAM PROCESS ID                                 73814
+ ***** **    ** ** **   PROGRAM PROCESS ID                                155402
   **** **  *******  **  PROGRAM STARTED IN /n/home06/leleslx/software/flare-inte
                                            rnal-dev/tests
 
@@ -27,7 +27,7 @@
  CP2K| Program compiled on                        holy7b01301.rc.fas.harvard.edu
  CP2K| Program compiled for                                                local
  CP2K| Data directory path    /n/holylfs/LABS/kozinsky_lab/Software/CP2K/src-6.1
- CP2K| Input file name                                               run_cp2k.in
+ CP2K| Input file name                                test_files/cp2k_input_1.in
 
  GLOBAL| Force Environment number                                              1
  GLOBAL| Basis set file name                                       test_files/BR
@@ -35,7 +35,7 @@
  GLOBAL| MM Potential file name                                     MM_POTENTIAL
  GLOBAL| Coordinate file name                                      __STD_INPUT__
  GLOBAL| Method name                                                        CP2K
- GLOBAL| Project name                                                         H2
+ GLOBAL| Project name                                                       cp2k
  GLOBAL| Preferred FFT library                                             FFTW3
  GLOBAL| Preferred diagonalization lib.                                       SL
  GLOBAL| Run type                                                   ENERGY_FORCE
@@ -50,12 +50,12 @@
  MEMORY| system memory details [Kb]
  MEMORY|                        rank 0           min           max       average
  MEMORY| MemTotal            196503704     196503704     196503704     196503704
- MEMORY| MemFree             185596616     185596616     185596616     185596616
+ MEMORY| MemFree             185503988     185503988     185503988     185503988
  MEMORY| Buffers                  3392          3392          3392          3392
- MEMORY| Cached                5642052       5642052       5642052       5642052
- MEMORY| Slab                  1476708       1476708       1476708       1476708
- MEMORY| SReclaimable           571372        571372        571372        571372
- MEMORY| MemLikelyFree       191813432     191813432     191813432     191813432
+ MEMORY| Cached                5687232       5687232       5687232       5687232
+ MEMORY| Slab                  1480960       1480960       1480960       1480960
+ MEMORY| SReclaimable           575188        575188        575188        575188
+ MEMORY| MemLikelyFree       191769800     191769800     191769800     191769800
 
 
  GENERATE|  Preliminary Number of Bonds generated:                             0
@@ -137,18 +137,18 @@
 
   Step     Update method      Time    Convergence         Total energy    Change
   ------------------------------------------------------------------------------
-     1 NoMix/Diag. 0.40E+00    0.4     0.52273065        -0.8585228740 -8.59E-01
-     2 Broy./Diag. 0.40E+00    0.7     0.01800548        -0.5756064081  2.83E-01
-     3 Broy./Diag. 0.40E+00    0.7     0.02878929        -0.9970289882 -4.21E-01
-     4 Broy./Diag. 0.40E+00    0.7     0.00198352        -1.0833775506 -8.63E-02
-     5 Broy./Diag. 0.40E+00    0.7     0.00216899        -1.0862128399 -2.84E-03
-     6 Broy./Diag. 0.40E+00    0.7     0.00021878        -1.0915951870 -5.38E-03
-     7 Broy./Diag. 0.40E+00    0.7     0.00013034        -1.0918419314 -2.47E-04
-     8 Broy./Diag. 0.40E+00    0.7     0.00001340        -1.0920924938 -2.51E-04
-     9 Broy./Diag. 0.40E+00    0.7     0.00000708        -1.0920389407  5.36E-05
-    10 Broy./Diag. 0.40E+00    0.8     0.00000058        -1.0920540642 -1.51E-05
-    11 Broy./Diag. 0.40E+00    0.7     0.00000023        -1.0920526088  1.46E-06
-    12 Broy./Diag. 0.40E+00    0.7     8.5025E-09        -1.0920531563 -5.47E-07
+     1 NoMix/Diag. 0.40E+00    0.4     0.52273065        -0.8584428329 -8.58E-01
+     2 Broy./Diag. 0.40E+00    0.7     0.01800548        -0.5755263671  2.83E-01
+     3 Broy./Diag. 0.40E+00    0.7     0.02878929        -0.9969489471 -4.21E-01
+     4 Broy./Diag. 0.40E+00    0.7     0.00198352        -1.0832975096 -8.63E-02
+     5 Broy./Diag. 0.40E+00    0.7     0.00216899        -1.0861327988 -2.84E-03
+     6 Broy./Diag. 0.40E+00    0.7     0.00021878        -1.0915151459 -5.38E-03
+     7 Broy./Diag. 0.40E+00    0.7     0.00013034        -1.0917618903 -2.47E-04
+     8 Broy./Diag. 0.40E+00    0.7     0.00001340        -1.0920124528 -2.51E-04
+     9 Broy./Diag. 0.40E+00    0.7     0.00000708        -1.0919588997  5.36E-05
+    10 Broy./Diag. 0.40E+00    0.7     0.00000058        -1.0919740231 -1.51E-05
+    11 Broy./Diag. 0.40E+00    0.7     0.00000023        -1.0919725678  1.46E-06
+    12 Broy./Diag. 0.40E+00    0.7     8.5025E-09        -1.0919731152 -5.47E-07
 
   *** SCF run converged in    12 steps ***
 
@@ -163,20 +163,19 @@
   Core Hamiltonian energy:                                      1.20081565211180
   Hartree energy:                                               1.30824132174120
   Exchange-correlation energy:                                 -0.78096694454962
-  Dispersion energy:                                           -0.00008004106216
   Electronic entropic energy:                                  -0.00000000000000
   Fermi energy:                                                 0.14407163925527
 
-  Total energy:                                                -1.09205315630044
+  Total energy:                                                -1.09197311523827
 
- ENERGY| Total FORCE_EVAL ( QS ) energy (a.u.):               -1.092053085595198
+ ENERGY| Total FORCE_EVAL ( QS ) energy (a.u.):               -1.091973044533034
 
 
  ATOMIC FORCES in [a.u.]
 
  # Atom   Kind   Element          X              Y              Z
-      1      1      H          -0.43643866    -0.00000000    -0.00000000
-      2      1      H           0.43643848     0.00000000     0.00000000
+      1      1      H          -0.43643419    -0.00000000    -0.00000000
+      2      1      H           0.43643401     0.00000000     0.00000000
  SUM OF ATOMIC FORCES          -0.00000019    -0.00000000    -0.00000000     0.00000019
 
  -------------------------------------------------------------------------------
@@ -196,7 +195,7 @@
  marketing flops                     2.600000E+03
  -------------------------------------------------------------------------------
  # multiplications                             13
- max memory usage/rank             318.062592E+06
+ max memory usage/rank             313.237504E+06
  # max total images/rank                        1
  # max 3D layers                                1
  # MPI messages exchanged                       0
@@ -215,7 +214,7 @@
   16777216 < size                               0                        0
  -------------------------------------------------------------------------------
 
- MEMORY| Estimated peak process memory [MiB]                                 304
+ MEMORY| Estimated peak process memory [MiB]                                 299
 
  -------------------------------------------------------------------------------
  -                                                                             -
@@ -225,8 +224,8 @@
 
  ROUTINE             CALLS      AVE VOLUME [Bytes]
  MP_Group               18
- MP_Bcast               17                  76205.
- MP_Allreduce          225                     25.
+ MP_Bcast               14                      5.
+ MP_Allreduce          223                     26.
  MP_Sync                 4
  MP_Alltoall           364                    496.
  MP_Wait               312
@@ -262,19 +261,6 @@
  WILEY INTERDISCIPLINARY REVIEWS-COMPUTATIONAL MOLECULAR SCIENCE, 4 (1), 15-25 (2014). 
  CP2K: atomistic simulations of condensed matter systems.
  http://dx.doi.org/10.1002/wcms.1159
-
-
- Grimme, S; Ehrlich, S; Goerigk, L. 
- JOURNAL OF COMPUTATIONAL CHEMISTRY, 32, 1456 (2011). 
- Effect of the damping function in dispersion corrected density functional theory.
- http://dx.doi.org/10.1002/jcc.21759
-
-
- Grimme, S; Antony, J; Ehrlich, S; Krieg, H. 
- JOURNAL OF CHEMICAL PHYSICS, 132 (15), 154104 (2010). 
- A consistent and accurate ab initio parametrization of density
- functional dispersion correction (DFT-D) for the 94 elements H-Pu.
- http://dx.doi.org/10.1063/1.3382344
 
 
  VandeVondele, J; Hutter, J. 
@@ -335,42 +321,42 @@
  -------------------------------------------------------------------------------
  SUBROUTINE                       CALLS  ASD         SELF TIME        TOTAL TIME
                                 MAXIMUM       AVERAGE  MAXIMUM  AVERAGE  MAXIMUM
- CP2K                                 1  1.0    0.006    0.006    9.838    9.838
- qs_forces                            1  2.0    0.000    0.000    9.672    9.672
- qs_energies                          1  3.0    0.000    0.000    9.183    9.183
- scf_env_do_scf                       1  4.0    0.000    0.000    8.670    8.670
- scf_env_do_scf_inner_loop           12  5.0    0.001    0.001    8.670    8.670
- rebuild_ks_matrix                   13  6.8    0.000    0.000    5.325    5.325
- qs_ks_build_kohn_sham_matrix        13  7.8    0.001    0.001    5.325    5.325
- qs_ks_update_qs_env                 12  6.0    0.000    0.000    4.865    4.865
- qs_rho_update_rho                   13  6.0    0.000    0.000    3.594    3.594
- calculate_rho_elec                  13  7.0    3.272    3.272    3.594    3.594
- sum_up_and_integrate                13  8.8    0.006    0.006    2.593    2.593
- integrate_v_rspace                  13  9.8    2.425    2.425    2.587    2.587
- qs_vxc_create                       13  8.8    0.000    0.000    2.506    2.506
- xc_vxc_pw_create                    13  9.8    0.029    0.029    2.506    2.506
- xc_rho_set_and_dset_create          13 10.8    0.013    0.013    1.903    1.903
- pw_transfer                        259 10.3    0.008    0.008    1.543    1.543
- fft_wrap_pw1pw2                    233 11.4    0.001    0.001    1.513    1.513
- fft_wrap_pw1pw2_260                155 12.3    0.088    0.088    1.461    1.461
- xc_functional_eval                  13 11.8    0.000    0.000    1.449    1.449
- pbe_lda_eval                        13 12.8    1.449    1.449    1.449    1.449
- fft3d_s                            234 13.3    1.034    1.034    1.039    1.039
- qs_ks_update_qs_env_forces           1  3.0    0.000    0.000    0.460    0.460
- gspace_mixing                       11  6.0    0.005    0.005    0.456    0.456
- broyden_mixing                      11  7.0    0.346    0.346    0.346    0.346
- init_scf_run                         1  4.0    0.000    0.000    0.343    0.343
- scf_env_initial_rho_setup            1  5.0    0.000    0.000    0.342    0.342
- density_rs2pw                       13  8.0    0.000    0.000    0.315    0.315
- pw_scatter_s                       128 13.7    0.214    0.214    0.214    0.214
+ CP2K                                 1  1.0    0.005    0.005    9.702    9.702
+ qs_forces                            1  2.0    0.000    0.000    9.584    9.584
+ qs_energies                          1  3.0    0.000    0.000    9.106    9.106
+ scf_env_do_scf                       1  4.0    0.000    0.000    8.714    8.714
+ scf_env_do_scf_inner_loop           12  5.0    0.001    0.001    8.714    8.714
+ rebuild_ks_matrix                   13  6.8    0.000    0.000    5.349    5.349
+ qs_ks_build_kohn_sham_matrix        13  7.8    0.001    0.001    5.349    5.349
+ qs_ks_update_qs_env                 12  6.0    0.000    0.000    4.900    4.900
+ qs_rho_update_rho                   13  6.0    0.000    0.000    3.614    3.614
+ calculate_rho_elec                  13  7.0    3.288    3.288    3.614    3.614
+ sum_up_and_integrate                13  8.8    0.006    0.006    2.590    2.590
+ integrate_v_rspace                  13  9.8    2.422    2.422    2.584    2.584
+ qs_vxc_create                       13  8.8    0.000    0.000    2.524    2.524
+ xc_vxc_pw_create                    13  9.8    0.029    0.029    2.524    2.524
+ xc_rho_set_and_dset_create          13 10.8    0.013    0.013    1.920    1.920
+ pw_transfer                        259 10.3    0.008    0.008    1.565    1.565
+ fft_wrap_pw1pw2                    233 11.4    0.001    0.001    1.534    1.534
+ fft_wrap_pw1pw2_260                155 12.3    0.091    0.091    1.482    1.482
+ xc_functional_eval                  13 11.8    0.000    0.000    1.459    1.459
+ pbe_lda_eval                        13 12.8    1.459    1.459    1.459    1.459
+ fft3d_s                            234 13.3    1.045    1.045    1.051    1.051
+ gspace_mixing                       11  6.0    0.005    0.005    0.465    0.465
+ qs_ks_update_qs_env_forces           1  3.0    0.000    0.000    0.449    0.449
+ init_scf_run                         1  4.0    0.000    0.000    0.352    0.352
+ scf_env_initial_rho_setup            1  5.0    0.000    0.000    0.351    0.351
+ broyden_mixing                      11  7.0    0.350    0.350    0.351    0.351
+ density_rs2pw                       13  8.0    0.000    0.000    0.320    0.320
+ pw_scatter_s                       128 13.7    0.219    0.219    0.219    0.219
  -------------------------------------------------------------------------------
 
  The number of warnings for this run is : 1
  
  -------------------------------------------------------------------------------
-  **** **** ******  **  PROGRAM ENDED AT                 2019-09-20 14:44:04.732
+  **** **** ******  **  PROGRAM ENDED AT                 2019-09-20 20:19:01.878
  ***** ** ***  *** **   PROGRAM RAN ON            holy2b17301.rc.fas.harvard.edu
  **    ****   ******    PROGRAM RAN BY                                   leleslx
- ***** **    ** ** **   PROGRAM PROCESS ID                                 73814
+ ***** **    ** ** **   PROGRAM PROCESS ID                                155402
   **** **  *******  **  PROGRAM STOPPED IN /n/home06/leleslx/software/flare-inte
                                            rnal-dev/tests
