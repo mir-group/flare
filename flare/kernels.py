@@ -869,34 +869,3 @@ if __name__ == '__main__':
     print(kern_finite_diff)
     print(kern_analytical)
     assert(np.isclose(kern_finite_diff, kern_analytical, atol=tol))
-
-_str_to_kernel = {'two_body': two_body,
-                  'two_body_en': two_body_en,
-                  'two_body_force_en': two_body_force_en,
-                  'three_body': three_body,
-                  'three_body_en': three_body_en,
-                  'three_body_force_en': three_body_force_en,
-                  'two_plus_three_body': two_plus_three_body,
-                  'two_plus_three_en': two_plus_three_en,
-                  'two_plus_three_force_en': two_plus_three_force_en
-                  }
-
-
-def str_to_kernel(string: str, include_grad: bool=False):
-
-    if string not in _str_to_kernel.keys():
-        raise ValueError("Kernel {} not found in list of available "
-                         "kernels{}:".format(string,_str_to_kernel.keys()))
-
-    if not include_grad:
-        return _str_to_kernel[string]
-    else:
-        if 'two' in string and 'three' in string:
-            return _str_to_kernel[string], two_plus_three_body_grad
-        elif 'two' in string and 'three' not in string:
-            return _str_to_kernel[string], two_body_grad
-        elif 'two' not in string and 'three' in string:
-            return _str_to_kernel[string], three_body_grad
-        else:
-            raise ValueError("Gradient callable for {} not found".format(
-                string))
