@@ -35,7 +35,7 @@ def get_random_structure(cell, unique_species, noa):
 
 # set the scope to module so it will only be setup once
 @pytest.fixture(scope='module')
-def two_body_gp():
+def two_body_gp()->GaussianProcess:
     """Returns a GP instance with a two-body numba-based kernel"""
     print("\nSetting up...\n")
 
@@ -55,6 +55,7 @@ def two_body_gp():
         GaussianProcess(kernel=en.three_body,
                         kernel_grad=en.three_body_grad,
                         hyps=np.array([1, 1, 1]),
+                        hyp_labels=['Length', 'Signal Var.', 'Noise Var.'],
                         cutoffs=cutoffs)
     gaussian.update_db(test_structure, forces)
 
@@ -79,7 +80,7 @@ def params():
 
 
 @pytest.fixture(scope='module')
-def test_point():
+def test_point()->AtomicEnvironment:
     """Create test point for kernel to compare against"""
     # params
     cell = np.eye(3)
@@ -212,3 +213,50 @@ def test_update_L_alpha():
     ky_mat_from_set = np.copy(gp_model.ky_mat)
     
     assert (np.all(np.absolute(ky_mat_from_update-ky_mat_from_set)) < 1e-6)
+
+def test_representation_method(two_body_gp):
+
+    the_str = str(two_body_gp)
+    assert 'GaussianProcess Object' in the_str
+    assert 'Kernel: three_body' in the_str
+    assert 'Cutoffs: [0.8 0.8]' in the_str
+    assert 'Model Likelihood: ' in the_str
+    assert 'Length: 1' in the_str
+    assert 'Signal Var.: 1' in the_str
+    assert "Noise Var.: 1" in the_str
+
+
+def test_serialization_method(two_body_gp,test_point):
+    """
+    Serialize and then un-serialize a GP and ensure that no info was lost.
+    Compare one calculation to ensure predictions work correctly.
+    :param two_body_gp:
+    :return:
+    """
+    old_gp_dict = two_body_gp.as_dict()
+    new_gp = GaussianProcess.from_dict(old_gp_dict)
+    new_gp_dict = new_gp.as_dict()
+
+    assert len(new_gp_dict) == len(old_gp_dict)
+
+    for k1, k2 in zip(sorted(new_gp_dict.keys()), sorted(old_gp_dict.keys())):
+
+        x = new_gp_dict[k1]
+        y = new_gp_dict[k2]
+
+        if isinstance(x, np.ndarray):
+            assert np.equal(x, y).all()
+        elif hasattr(x, '__len__'):
+
+            if isinstance(x[0], np.ndarray):
+                assert np.equal(x, y).all()
+
+            else:
+                for xx, yy in zip(x, y):
+                    assert xx == yy
+        else:
+            assert x == y
+
+    for d in [0, 1, 2]:
+        assert np.all(two_body_gp.predict(x_t=test_point, d=d) ==
+                      new_gp.predict(x_t=test_point, d=d))
