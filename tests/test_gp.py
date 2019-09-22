@@ -221,9 +221,9 @@ def test_representation_method(two_body_gp):
     assert 'Kernel: three_body' in the_str
     assert 'Cutoffs: [0.8 0.8]' in the_str
     assert 'Model Likelihood: ' in the_str
-    assert 'Length: 1' in the_str
-    assert 'Signal Var.: 1' in the_str
-    assert "Noise Var.: 1" in the_str
+    assert 'Length: ' in the_str
+    assert 'Signal Var.: ' in the_str
+    assert "Noise Var.: " in the_str
 
 
 def test_serialization_method(two_body_gp,test_point):
