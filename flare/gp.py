@@ -9,7 +9,8 @@ from flare.gp_algebra import get_ky_mat, get_ky_and_hyp, \
     get_like_from_ky_mat, get_like_grad_from_mats, get_neg_likelihood, \
     get_neg_like_grad, get_ky_and_hyp_par
 from flare.kernels import str_to_kernel
-
+import json as json
+from flare.util import NumpyEncoder
 
 class GaussianProcess:
     """ Gaussian Process Regression Model.
@@ -37,22 +38,16 @@ class GaussianProcess:
         self.hyp_labels = hyp_labels
         self.cutoffs = cutoffs
         self.algo = opt_algorithm
-
+        self.l_mat = None
+        self.alpha = None
         self.training_data = []
         self.training_labels = []
         self.training_labels_np = np.empty(0, )
         self.maxiter = maxiter
-        self.par = par
-        self.output = output
-
-        # Parameters set during training
-        self.ky_mat = None
-        self.l_mat = None
-        self.alpha = None
-        self.ky_mat_inv = None
-        self.l_mat_inv = None
         self.likelihood = None
         self.likelihood_gradient = None
+        self.par = par
+        self.output = output
 
     # TODO unit test custom range
     def update_db(self, struc: Structure, forces: list,
@@ -135,7 +130,6 @@ class GaussianProcess:
         args = (self.training_data, self.training_labels_np,
                 self.kernel_grad, self.cutoffs, output,
                 self.par)
-        res = None
 
         if self.algo == 'L-BFGS-B':
 
@@ -174,8 +168,7 @@ class GaussianProcess:
                            options={'disp': False,
                                     'maxiter': self.maxiter,
                                     'xtol': x_tol})
-        if res is None:
-            raise RuntimeError("Optimization failed for some reason.")
+
         self.hyps = res.x
         self.set_L_alpha()
         self.likelihood = -res.fun
@@ -347,7 +340,7 @@ class GaussianProcess:
         if self.hyp_labels is None:
             # Put unlabeled hyperparameters on one line
             thestr = thestr[:-1]
-            thestr += str(self.hyps) + '\n'
+            thestr += str(self.hyps)+'\n'
         else:
             for hyp, label in zip(self.hyps, self.hyp_labels):
                 thestr += "{}: {}\n".format(label, hyp)
@@ -359,7 +352,7 @@ class GaussianProcess:
         out_dict = dict(vars(self))
 
         out_dict['training_data'] = [env.as_dict() for env in
-                                     self.training_data]
+                                    self.training_data]
         # Remove the callables
         del out_dict['kernel']
         del out_dict['kernel_grad']
@@ -370,7 +363,7 @@ class GaussianProcess:
     def from_dict(dictionary):
 
         force_kernel, grad = str_to_kernel(dictionary['kernel_name'],
-                                           include_grad=True)
+                                     include_grad=True)
 
         if dictionary['energy_kernel'] is not None:
             energy_kernel = str_to_kernel(dictionary['energy_kernel'])
@@ -379,7 +372,7 @@ class GaussianProcess:
 
         if dictionary['energy_force_kernel'] is not None:
             energy_force_kernel = str_to_kernel(dictionary[
-                                                    'energy_force_kernel'])
+                                                  'energy_force_kernel'])
         else:
             energy_force_kernel = None
 
@@ -402,7 +395,7 @@ class GaussianProcess:
         new_gp.ky_mat_inv = np.array(dictionary.get('ky_mat_inv', None))
 
         new_gp.training_data = [AtomicEnvironment.from_dict(env) for env in
-                                dictionary['training_data']]
+                    dictionary['training_data']]
         new_gp.training_labels = dictionary['training_labels']
 
         new_gp.likelihood = dictionary['likelihood']
