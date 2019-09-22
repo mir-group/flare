@@ -128,7 +128,8 @@ _element_to_Z = {'H': 1,
 
 _Z_to_element = {z: elt for elt, z in _element_to_Z.items()}
 
-def element_to_Z(element:str)->int:
+
+def element_to_Z(element: str)->int:
     """
     Returns the atomic number Z associated with an elements 1-2 letter name.
     Returns the same integer if an integer is passed in.

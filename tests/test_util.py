@@ -23,7 +23,7 @@ def test_elt_warning():
 
 def test_Z_to_element():
     for i in range(1,118):
-        assert isinstance(Z_to_element(i),str)
+        assert isinstance(Z_to_element(i), str)
 
     for pair in zip([1, 6, '8', '118'], ['H', 'C', 'O', 'Og']):
         assert Z_to_element(pair[0]) == pair[1]
