@@ -8,9 +8,7 @@ from flare.struc import Structure
 from flare.gp_algebra import get_ky_mat, get_ky_and_hyp, \
     get_like_from_ky_mat, get_like_grad_from_mats, get_neg_likelihood, \
     get_neg_like_grad, get_ky_and_hyp_par
-from flare.kernels import str_to_kernel
-import json as json
-from flare.util import NumpyEncoder
+
 
 class GaussianProcess:
     """ Gaussian Process Regression Model.
@@ -187,6 +185,12 @@ class GaussianProcess:
         pred_var = self_kern - \
                    np.matmul(np.matmul(k_v, self.ky_mat_inv), k_v)
 
+        # # get predictive variance (possibly slow)
+        # v_vec = solve_triangular(self.l_mat, k_v, lower=True)
+        # self_kern = self.kernel(x_t, x_t, self.bodies, d, d, self.hyps,
+        #                         self.cutoffs)
+        # pred_var = self_kern - np.matmul(v_vec, v_vec)
+
         return pred_mean, pred_var
 
     def predict_local_energy(self, x_t: AtomicEnvironment) -> float:
@@ -288,8 +292,8 @@ class GaussianProcess:
         self.ky_mat_inv = ky_mat_inv
         self.l_mat_inv = l_mat_inv
 
-        self.likelihood = like
-        self.likelihood_gradient = like_grad
+        self.like = like
+        self.like_grad = like_grad
 
     def update_L_alpha(self):
         """
@@ -327,78 +331,3 @@ class GaussianProcess:
         self.alpha = alpha
         self.ky_mat_inv = ky_mat_inv
         self.l_mat_inv = l_mat_inv
-
-    def __str__(self):
-
-        thestr = "GaussianProcess Object\n"
-        thestr += 'Kernel: {}\n'.format(self.kernel_name)
-        thestr += "Training points: {}\n".format(len(self.training_data))
-        thestr += 'Cutoffs: {}\n'.format(self.cutoffs)
-        thestr += 'Model Likelihood: {}\n'.format(self.likelihood)
-
-        thestr += 'Hyperparameters: \n'
-        if self.hyp_labels is None:
-            # Put unlabeled hyperparameters on one line
-            thestr = thestr[:-1]
-            thestr += str(self.hyps)+'\n'
-        else:
-            for hyp, label in zip(self.hyps, self.hyp_labels):
-                thestr += "{}: {}\n".format(label, hyp)
-
-        return thestr
-
-    def as_dict(self):
-
-        out_dict = dict(vars(self))
-
-        out_dict['training_data'] = [env.as_dict() for env in
-                                    self.training_data]
-        # Remove the callables
-        del out_dict['kernel']
-        del out_dict['kernel_grad']
-
-        return out_dict
-
-    @staticmethod
-    def from_dict(dictionary):
-
-        force_kernel, grad = str_to_kernel(dictionary['kernel_name'],
-                                     include_grad=True)
-
-        if dictionary['energy_kernel'] is not None:
-            energy_kernel = str_to_kernel(dictionary['energy_kernel'])
-        else:
-            energy_kernel = None
-
-        if dictionary['energy_force_kernel'] is not None:
-            energy_force_kernel = str_to_kernel(dictionary[
-                                                  'energy_force_kernel'])
-        else:
-            energy_force_kernel = None
-
-        new_gp = GaussianProcess(kernel=force_kernel,
-                                 kernel_grad=grad,
-                                 energy_kernel=energy_kernel,
-                                 energy_force_kernel=energy_force_kernel,
-                                 cutoffs=np.array(dictionary['cutoffs']),
-                                 hyps=np.array(dictionary['hyps']),
-                                 hyp_labels=dictionary['hyp_labels'],
-                                 par=dictionary['par'],
-                                 maxiter=dictionary['maxiter'],
-                                 opt_algorithm=dictionary['algo'])
-
-        # Save time by attempting to load in computed attributes
-        new_gp.l_mat = np.array(dictionary.get('l_mat', None))
-        new_gp.l_mat_inv = np.array(dictionary.get('l_mat_inv', None))
-        new_gp.alpha = np.array(dictionary.get('alpha', None))
-        new_gp.ky_mat = np.array(dictionary.get('ky_mat', None))
-        new_gp.ky_mat_inv = np.array(dictionary.get('ky_mat_inv', None))
-
-        new_gp.training_data = [AtomicEnvironment.from_dict(env) for env in
-                    dictionary['training_data']]
-        new_gp.training_labels = dictionary['training_labels']
-
-        new_gp.likelihood = dictionary['likelihood']
-        new_gp.likelihood_gradient = dictionary['likelihood_gradient']
-
-        return new_gp
