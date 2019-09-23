@@ -60,7 +60,7 @@ def test_otf():
                            std_tolerance_factor=std_tolerance_factor, 
                            max_atoms_added=max_atoms_added,
                            freeze_hyps=freeze_hyps, 
-                           # mff parameters
+                           # mgp parameters
                            use_mapping=super_cell.calc.use_mapping)
     
     # set up logger

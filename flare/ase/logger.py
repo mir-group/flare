@@ -57,7 +57,7 @@ class OTFLogger(MDLogger):
         positions = self.atoms.get_positions()
         forces = self.atoms.get_forces()
         velocities = self.atoms.get_velocities()
-        if type(self.atoms.calc) == FLARE_Calculator: # TODO: make it compatible with mff
+        if type(self.atoms.calc) == FLARE_Calculator: # TODO: make it compatible with mgp
             stds = self.atoms.get_uncertainties()
             force_str = 'GP  Forces'
         else:
@@ -96,11 +96,11 @@ class OTFLogger(MDLogger):
     def add_atom_info(self, target_atom, uncertainty):
         self.logfile.write('\nAdding atom '+str(target_atom)+' to the training set with uncertainty: '+str(uncertainty))
 
-    def write_mff_train(self, mff_model, train_time):
-        train_size = len(mff_model.GP.training_data)
+    def write_mgp_train(self, mgp_model, train_time):
+        train_size = len(mgp_model.GP.training_data)
         self.logfile.write('\ntraining set size: {}\n'.format(train_size))
-        self.logfile.write('lower bound: {}\n'.format(mff_model.l_bound))
-        self.logfile.write('mff l_bound: {}\n'.format(mff_model.grid_params['bounds_2'][0,0]))
+        self.logfile.write('lower bound: {}\n'.format(mgp_model.l_bound))
+        self.logfile.write('mgp l_bound: {}\n'.format(mgp_model.grid_params['bounds_2'][0,0]))
         self.logfile.write('building mapping time: {}'.format(train_time))
 
     def run_complete(self):

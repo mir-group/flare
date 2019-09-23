@@ -21,7 +21,7 @@ class OTF(MolecularDynamics):
             max_atoms_added=1, freeze_hyps=1, 
             rescale_steps=[], rescale_temps=[], add_all=False,
             no_cpus=1,  
-            # mff parameters
+            # mgp parameters
             use_mapping: bool=False,
             non_mapping_steps: list=[],
             l_bound: float=None, two_d: bool=False):
@@ -33,7 +33,7 @@ class OTF(MolecularDynamics):
         par: consider merging into gp_calculator instead of here
         skip: not implemented
         calculate_energy: not implemented
-        l_bound: mff update l_bound, not implemented
+        l_bound: mgp update l_bound, not implemented
 
         dft calculator is set outside of the otf module, and input as dft_calc, 
         so that different calculators can be used
@@ -124,7 +124,7 @@ class OTF(MolecularDynamics):
 
             # train calculator
             self.train()
-            print(self.atoms.calc.mff_model)
+            print(self.atoms.calc.mgp_model)
 
         if not self.initialized:
             self.initialize()
@@ -212,5 +212,5 @@ class OTF(MolecularDynamics):
 
         # build mapped force field
         if self.use_mapping:
-            calc.build_mff(skip)
+            calc.build_mgp(skip)
 
