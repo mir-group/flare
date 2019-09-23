@@ -1,29 +1,34 @@
+"""The :class:`Structure` object is a collection of atoms in a periodic \
+box. The mandatory inputs are the cell vectors of the box and the chemical species and Cartesian coordinates of the atoms. The atoms are automatically \
+folded back into the primary cell, so the input coordinates don't need to lie \
+inside the box. Energy, force, and stress information can be provided \
+for training machine learned force fields."""
 import numpy as np
 from typing import List
 from flare.util import element_to_Z, NumpyEncoder
 from json import dumps
 
 
-class Structure(object):
+class Structure:
     """
     Contains information about a structure of atoms, including the periodic
     cell boundaries and atomic species and coordinates.
-    
-    :param cell: 3x3 array whose rows are the Bravais lattice vectors of the
-    cell.
+
+    :param cell: 3x3 array whose rows are the Bravais lattice vectors of the \
+cell.
     :type cell: np.ndarray
-    :param species: List of atomic species, which are represented either as
-    integers or chemical symbols.
+    :param species: List of atomic species, which are represented either as \
+integers or chemical symbols.
     :type species: List
     :param positions: Nx3 array of atomic coordinates.
     :type positions: np.ndarray
     :param mass_dict: Dictionary of atomic masses used in MD simulations.
     :type mass_dict: dict
-    :param prev_positions: Nx3 array of previous atomic coordinates used in
-    MD simulations.
+    :param prev_positions: Nx3 array of previous atomic coordinates used in \
+MD simulations.
     :type prev_positions: np.ndarray
-    :param species_labels: List of chemical symbols. Used in the output file
-    of on-the-fly runs.
+    :param species_labels: List of chemical symbols. Used in the output file \
+of on-the-fly runs.
     :type species_labels: List[str]
     """
 
@@ -70,8 +75,8 @@ class Structure(object):
 
     def get_cell_dot(self):
         """
-        Compute 3x3 array of dot products of cell vectors used to fold atoms
-        back to the unit cell.
+        Compute 3x3 array of dot products of cell vectors used to fold atoms \
+back to the unit cell.
 
         :return: 3x3 array of cell vector dot products.
         :rtype: np.ndarray
@@ -87,15 +92,15 @@ class Structure(object):
 
     @staticmethod
     def raw_to_relative(positions, cell_transpose, cell_dot_inverse):
-        """Convert Cartesian coordinates to relative coordinates expressed in
-        terms of the cell vectors.
-        
+        """Convert Cartesian coordinates to relative coordinates expressed \
+in terms of the cell vectors.
+
         :param positions: Cartesian coordinates.
         :type positions: np.ndarray
         :param cell_transpose: Transpose of the cell array.
         :type cell_transpose: np.ndarray
-        :param cell_dot_inverse: Inverse of the array of dot products of cell
-        vectors.
+        :param cell_dot_inverse: Inverse of the array of dot products of \
+cell vectors.
         :type cell_dot_inverse: np.ndarray
         :return: Relative positions.
         :rtype: np.ndarray
@@ -130,8 +135,8 @@ class Structure(object):
 
     def indices_of_specie(self, specie: int):
         """
-        Return the indicies of atoms in  the structure which are atoms
-        corresponding to a given specie
+        Return the indicies of a given species.
+
         :param specie:
         :return:
         """
@@ -148,8 +153,8 @@ class Structure(object):
 
     def as_dict(self):
         """
-        Returns structure as a dictionary for serialization
-        purposes.
+        Returns structure as a dictionary for serialization purposes.
+
         :return:
         """
         return dict(vars(self))
