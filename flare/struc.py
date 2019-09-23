@@ -176,6 +176,18 @@ cell vectors.
 
         return struc
 
+    @staticmethod
+    def from_ase_atoms(atoms):
+        struc = Structure(cell=np.array(atoms.cell),
+                          positions=atoms.positions,
+                          species=atoms.get_chemical_symbols())
+        return struc
+
+    def to_ase_atoms(self):
+        from ase import Atoms
+        return Atoms(self.species_labels,
+                     positions=self.positions,
+                     cell=self.cell)
 
 def get_unique_species(species):
     unique_species = []
