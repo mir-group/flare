@@ -3,10 +3,6 @@ import os
 import pytest
 import numpy as np
 
-from ase import units
-from ase.md.velocitydistribution import (MaxwellBoltzmannDistribution,
-                                         Stationary, ZeroRotation)
-
 from flare.ase.otf_md import OTF_NPT, OTF_VelocityVerlet
 from flare.ase.logger import OTFLogger
 
@@ -17,7 +13,9 @@ from flare.ase.logger import OTFLogger
                                   'ESPRESSO and set the PWSCF_COMMAND env. '
                                   'variable to point to pw.x.')
 def test_otf():
-
+    from ase import units
+    from ase.md.velocitydistribution import (MaxwellBoltzmannDistribution,
+                                             Stationary, ZeroRotation)
     import atom_setup, flare_setup, qe_setup
     np.random.seed(12345)
     
