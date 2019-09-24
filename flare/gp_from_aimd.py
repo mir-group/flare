@@ -164,8 +164,8 @@ class TrajectoryTrainer(object):
                   "non-empty training set)")
 
         if (self.gp.l_mat is None) \
-                or (self.seed_frames is not None
-                    or self.seed_envs is not None):
+                or (self.seed_frames is not []
+                    or self.seed_envs is not []):
             self.gp.train(output=self.output if self.verbose > 0 else None)
 
     def run(self):
