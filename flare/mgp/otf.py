@@ -33,6 +33,15 @@ class MFFOTF(OTF):
                  l_bound=None, two_d=False,
                  grid_params: dict={}, struc_params: dict={}):
                      
+        '''
+        On-the-fly training with MGP inserted, added parameters:
+        :param non_mapping_steps: steps that not to use MGP
+        :param l_bound: initial minimal interatomic distance
+        :param two_d: if the system is a 2-D system
+        :param grid_params: see class `MappedGaussianProcess`
+        :param struc_params: see class `MappedGaussianProcess`
+        '''
+
         super().__init__(qe_input, dt, number_of_steps,
                          gp_model, pw_loc, 
                          std_tolerance_factor, 

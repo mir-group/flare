@@ -6,7 +6,8 @@ import multiprocessing as mp
 import subprocess
 import os
 
-from flare import gp, env, struc, kernels
+from flare import gp, struc, kernels
+from flare.env import AtomicEnvironment
 from flare.gp import GaussianProcess
 from flare.kernels import two_body, three_body, two_plus_three_body,\
     two_body_jit
@@ -20,26 +21,33 @@ from flare.mgp.splines_methods import PCASplines, SplinesInterpolation
 
 class MappedGaussianProcess:
     def __init__(self, GP: GaussianProcess, grid_params: dict,
-                 struc_params: dict, mean_only=False):
+                 struc_params: dict, mean_only=False, lmp_file_name='lmp.mgp'):
 
         '''
-        :param: GP : gp model
-        :param: struc_params : {'species': [0, 1],
-                'cube_lat': cell, # should input the cell matrix
-                'mass_dict': {'0': 27 * unit, '1': 16 * unit}}
-        :param: grid_params : {'bounds_2': [[1.2], [3.5]], # [[lower_bound],
-                                                            [upper]]
-               'bounds_3': [[1.2, 1.2, 0], [3.5, 3.5, np.pi]],
-                    #[[lower,lower,0],[upper,upper,np.pi]]
-               'grid_num_2': 64,
-               'grid_num_3': [16, 16, 16],
-               'svd_rank_2': 64,
-               'svd_rank_3': 16**3,
-               'bodies': [2, 3],
-               'update': True,
-               'load_grid': None}
+        Build MGP
+        :param: GP : trained GP model
+        :param: struc_params : information of training data
+        :param: grid_params : setting of grids for mapping
         :param: mean_only : if True: only build mapping for mean (force)
-
+        :param: lmp_file_name : lammps coefficient file name
+        Examples:
+        
+        >>> struc_params = {'species': [0, 1],
+                            'cube_lat': cell, # should input the cell matrix
+                            'mass_dict': {'0': 27 * unit, '1': 16 * unit}}
+        >>> grid_params =  {'bounds_2': [[1.2], [3.5]], 
+                                        # [[lower_bound], [upper_bound]]
+                            'bounds_3': [[1.2, 1.2, 0], [3.5, 3.5, np.pi]],
+                                        # [[lower,lower,0],[upper,upper,np.pi]]
+                            'grid_num_2': 64,
+                            'grid_num_3': [16, 16, 16],
+                            'svd_rank_2': 64,
+                            'svd_rank_3': 16**3,
+                            'bodies': [2, 3],
+                            'update': True, # if True: accelerating grids 
+                                            # generating by saving intermediate 
+                                            # coeff when generating grids
+                            'load_grid': None}
         '''
         self.GP = GP
         self.grid_params = grid_params
@@ -62,19 +70,19 @@ class MappedGaussianProcess:
         if 2 in self.bodies:
             for b_struc in bond_struc[0]:
                 map_2 = Map2body(self.grid_num_2, self.bounds_2, self.GP,
-                                 b_struc, self.bodies,
-                                 grid_params['load_grid'],
-                                 self.svd_rank_2, self.mean_only)
+                                 b_struc, self.bodies, self.svd_rank_2, 
+                                 self.mean_only)
                 self.maps_2.append(map_2)
         if 3 in self.bodies:
             for b_struc in bond_struc[1]:
                 map_3 = Map3body(self.grid_num_3, self.bounds_3, self.GP,
-                                 b_struc, self.bodies,
-                                 grid_params['load_grid'],
-                                 self.svd_rank_3,
-                                 self.mean_only, self.update)
+                                 b_struc, self.bodies, self.svd_rank_3,
+                                 self.mean_only, grid_params['load_grid'],
+                                 self.update)
 
                 self.maps_3.append(map_3)
+
+        self.write_lmp_file(lmp_file_name)
 
     def build_bond_struc(self, struc_params):
 
@@ -144,7 +152,12 @@ class MappedGaussianProcess:
         spcs = [spc_2, spc_3]
         return bond_struc, spcs
 
-    def predict(self, atom_env, mean_only=False):
+    def predict(self, atom_env: AtomicEnvironment, mean_only: bool=False):
+        '''
+        predict force and variance for given atomic environment
+        :param atom_env: atomic environment (with a center atom and its neighbors)
+        :param mean_only: if True: only predict force (variance is always 0)
+        '''
         if self.mean_only:  # if not build mapping for var
             mean_only = True
 
@@ -175,6 +188,9 @@ class MappedGaussianProcess:
         return f, v
 
     def get_2body_comp(self, atom_env, sig, ls, r_cut):
+        '''
+        get bonds grouped by species
+        '''
         bond_array_2 = atom_env.bond_array_2
         ctype = atom_env.ctype
         etypes = atom_env.etypes
@@ -189,6 +205,9 @@ class MappedGaussianProcess:
         return kern2, spcs, comp_r, comp_xyz
 
     def get_3body_comp(self, atom_env, sig, ls, r_cut):
+        '''
+        get triplets and grouped by species 
+        '''
         bond_array_3 = atom_env.bond_array_3
         cross_bond_inds = atom_env.cross_bond_inds
         cross_bond_dists = atom_env.cross_bond_dists
@@ -206,7 +225,6 @@ class MappedGaussianProcess:
         for d in range(3):
             kern3_gp[d] = three_body_mc(atom_env, atom_env, d+1, d+1,
                                         self.GP.hyps[-3:], self.GP.cutoffs)
-        # print(kern3, kern3_gp)
 
         spcs, comp_r, comp_xyz = \
             get_triplets(ctype, etypes, bond_array_3,
@@ -215,6 +233,10 @@ class MappedGaussianProcess:
 
     def predict_multicomponent(self, atom_env, sig, ls, r_cut, get_comp,
                                spcs_list, mappings, mean_only):
+        '''
+        Add up results from `predict_component` to get the total contribution 
+        of all species
+        '''
         f_spcs = 0
         v_spcs = 0
 
@@ -234,9 +256,7 @@ class MappedGaussianProcess:
 
     def predict_component(self, lengths, xyzs, mapping, mean_only):
         '''
-        predict for an atom environment
-        param: atom_env: ChemicalEnvironment
-        return force on an atom with its variance
+        predict force and variance contribution of one component
         '''
         lengths = np.array(lengths)
         xyzs = np.array(xyzs)
@@ -254,33 +274,11 @@ class MappedGaussianProcess:
             v = mapping.var.V @ v_d
         return f, v
 
-    def write_two_plus_three(self, lammps_name):
-        # write header
-        f = open(lammps_name, 'w')
+    def write_two_body(self, f):
+        a = self.bounds_2[0][0]
+        b = self.bounds_2[1][0]
+        order = self.grid_num_2
 
-        header_comment = '''# #2bodyarray #3bodyarray
-        # elem1 elem2 a b order
-        '''
-        f.write(header_comment)
-
-        twobodyarray = len(self.spcs[0])
-        threebodyarray = len(self.spcs[1])
-        lower_cut = self.bounds_2[0][0]
-        two_cut = self.bounds_2[1][0]
-        three_cut = self.bounds_3[1][0]
-        grid_num_2 = self.grid_num_2
-        grid_num_3 = self.grid_num_3[0]
-        angle_lower = self.bounds_3[0][2]
-        angle_upper = self.bounds_3[1][2]
-
-        header = '\n{} {}\n'.format(twobodyarray, threebodyarray)
-        f.write(header)
-
-        a = lower_cut
-        b = two_cut
-        order = grid_num_2
-
-        # write two body
         for ind, spc in enumerate(self.spcs[0]):
             coefs_2 = self.maps_2[ind].mean.model.__coeffs__
 
@@ -297,10 +295,10 @@ class MappedGaussianProcess:
 
             f.write('\n')
 
-        # write three body
-        a = [lower_cut, lower_cut, angle_lower]
-        b = [three_cut, three_cut, angle_upper]
-        order = [grid_num_3, grid_num_3, grid_num_3]
+    def write_three_body(self, f):
+        a = self.bounds_3[0]
+        b = self.bounds_3[1] 
+        order = self.grid_num_3 
 
         for ind, spc in enumerate(self.spcs[1]):
             coefs_3 = self.maps_3[ind].mean.model.__coeffs__
@@ -330,12 +328,40 @@ class MappedGaussianProcess:
             f.write('\n')
 
 
+    def write_lmp_file(self, lammps_name):
+        '''
+        write the coefficients to a file that can be used by lammps pair style
+        '''
+
+        # write header
+        f = open(lammps_name, 'w')
+
+        header_comment = '''# #2bodyarray #3bodyarray
+        # elem1 elem2 a b order
+        '''
+        f.write(header_comment)
+
+        twobodyarray = len(self.spcs[0])
+        threebodyarray = len(self.spcs[1])
+        header = '\n{} {}\n'.format(twobodyarray, threebodyarray)
+        f.write(header)
+
+        # write two body
+        if twobodyarray > 0:
+            self.write_two_body(f)
+
+        # write three body
+        if threebodyarray > 0:
+            self.write_three_body(f)
+
+        f.close()
+
+
 class Map2body:
     def __init__(self, grid_num, bounds, GP, bond_struc, bodies='2',
-                 load_prefix=None, svd_rank=0, mean_only=False):
+                 svd_rank=0, mean_only=False):
         '''
-        param grids: the 1st element is the number of grids for mean
-        prediction, the 2nd is for var
+        Build 2-body MGP
         '''
 
         self.grid_num = grid_num
@@ -370,7 +396,7 @@ class Map2body:
         bond_lengths = np.linspace(self.l_bound[0], self.u_bound[0], nop)
         bond_means = np.zeros([nop])
         bond_vars = np.zeros([nop, len(GP.alpha)])
-        env12 = env.AtomicEnvironment(bond_struc, 0, self.cutoffs)
+        env12 = AtomicEnvironment(bond_struc, 0, self.cutoffs)
 
         pool_list = [(i, bond_lengths, GP, env12)
                      for i in range(nop)]
@@ -432,10 +458,9 @@ class Map2body:
 class Map3body:
 
     def __init__(self, grid_num, bounds, GP, bond_struc, bodies='3',
-                 load_grid=None, svd_rank=0, mean_only=False, update=True):
+                 svd_rank=0, mean_only=False, load_grid=None, update=True):
         '''
-        param grids: the 1st element is the number of grids for mean
-        prediction, the 2nd is for var
+        Build 3-body MGP
         '''
 
         self.grid_num = grid_num
@@ -472,7 +497,7 @@ class Map3body:
         angles = np.linspace(self.l_bound[2], self.u_bound[2], noa)
         bond_means = np.zeros([nop, nop, noa])
         bond_vars = np.zeros([nop, nop, noa, len(GP.alpha)])
-        env12 = env.AtomicEnvironment(bond_struc, 0, self.cutoffs)
+        env12 = AtomicEnvironment(bond_struc, 0, self.cutoffs)
 
         pool_list = [(i, angles[i], bond_lengths, GP, env12, update)\
                      for i in range(noa)]

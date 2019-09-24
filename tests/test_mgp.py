@@ -84,7 +84,7 @@ def test_parse_header():
                    'update': True}
 
     mgp_model = MappedGaussianProcess(gp_model, grid_params, struc_params,
-                                 mean_only=True)
+                                 mean_only=True, lmp_file_name=lammps_location)
 
     # -------------------------------------------------------------------------
     #                          test the mapped potential
@@ -100,7 +100,8 @@ def test_parse_header():
     #                           check lammps potential
     # -------------------------------------------------------------------------
 
-    mgp_model.write_two_plus_three(lammps_location)
+    # mgp_model.write_lmp_file(lammps_location)
+    # lmp file is automatically written now every time MGP is constructed
 
     # create test structure
     species = otf_object.gp_species_list[-1]
@@ -119,7 +120,7 @@ def test_parse_header():
     lammps_calculator.write_text(data_file_name, data_text)
 
     # create lammps input
-    style_string = 'mff' #TODO: change the name of lammps
+    style_string = 'mgp' #TODO: change the name of lammps
     coeff_string = '* * {} 47 53 yes yes'.format(lammps_location)
     lammps_executable = '$lmp'
     dump_file_name = 'tmp.dump'
