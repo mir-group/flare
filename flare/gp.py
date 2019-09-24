@@ -9,6 +9,7 @@ from flare.gp_algebra import get_ky_mat, get_ky_and_hyp, \
     get_like_from_ky_mat, get_like_grad_from_mats, get_neg_likelihood, \
     get_neg_like_grad, get_ky_and_hyp_par
 from flare.kernels import str_to_kernel
+from flare.mc_simple import str_to_mc_kernel
 
 
 class GaussianProcess:
@@ -369,8 +370,12 @@ class GaussianProcess:
     @staticmethod
     def from_dict(dictionary):
 
-        force_kernel, grad = str_to_kernel(dictionary['kernel_name'],
-                                           include_grad=True)
+        if 'mc' in dictionary['kernel_name']:
+            force_kernel, grad = str_to_mc_kernel(dictionary['kernel_name'],
+                                               include_grad=True)
+        else:
+            force_kernel, grad = str_to_kernel(dictionary['kernel_name'],
+                                               include_grad=True)
 
         if dictionary['energy_kernel'] is not None:
             energy_kernel = str_to_kernel(dictionary['energy_kernel'])
