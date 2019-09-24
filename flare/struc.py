@@ -204,7 +204,8 @@ cell vectors.
     @staticmethod
     def from_pmg_structure(structure):
         """
-
+        Returns Pymatgen structure as FLARE structure.
+        
         :param structure: Pymatgen structure
         :return: FLARE Structure
         """
@@ -225,7 +226,6 @@ cell vectors.
         if 'std' in site_props.keys():
             stds = site_props['std']
             new_struc.stds = [np.array(std) for std in stds]
-
 
         return new_struc
 
