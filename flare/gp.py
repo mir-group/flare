@@ -74,8 +74,6 @@ class GaussianProcess:
         # create numpy array of training labels
         self.training_labels_np = self.force_list_to_np(self.training_labels)
 
-        self.set_L_alpha()
-
     def add_one_env(self, env: AtomicEnvironment,
                     force: np.array, train: bool = False, **kwargs):
         """
