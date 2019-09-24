@@ -346,4 +346,4 @@ class Output():
         self.outfiles['log'].write(string)
 
         if self.always_flush:
-            self.outfiles['xyz'].flush()
+            self.outfiles['log'].flush()
