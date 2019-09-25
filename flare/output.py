@@ -12,16 +12,24 @@ class Output():
     :param basename
     """
 
-    def __init__(self, basename: str = 'otf_run'):
+    def __init__(self, basename: str = 'otf_run',
+                 always_flush: bool = False):
         """
-        open files with the basename and different suffices.
+        Ppen files with the basename and different suffixes corresponding
+        to different kinds of output data.
+
+        :param basename: Base output file name, suffixes will be added
+        :param always_flush: Always write to file instantly
         """
         self.basename = "{}".format(basename)
         self.outfiles = {}
-        filesuffix = {'log': '.out', 'xyz': '.xyz', 'fxyz': '-f.xyz', 'hyps':"-hyps.dat"}
+        filesuffix = {'log': '.out', 'xyz': '.xyz',
+                      'fxyz': '-f.xyz', 'hyps': "-hyps.dat"}
 
         for filetype in filesuffix.keys():
             self.open_new_log(filetype, filesuffix[filetype])
+
+        self.always_flush = always_flush
 
     def conclude_run(self):
         """
@@ -48,11 +56,15 @@ class Output():
         else:
             self.outfiles[filetype] = open(filename, "w+")
 
-    def write_to_log(self, logstring: str, name: str = "log"):
+    def write_to_log(self, logstring: str, name: str = "log",
+                     flush: bool = False):
         """
         Write any string to logfile
         """
         self.outfiles[name].write(logstring)
+
+        if flush or self.always_flush:
+            self.outfiles[name].flush()
 
     def write_header(self, cutoffs, kernel_name,
                      hyps, algo, dt, Nsteps, structure,
@@ -125,6 +137,9 @@ class Output():
 
         f.write(headerstring)
 
+        if self.always_flush:
+            f.flush()
+
     def write_md_config(self, dt, curr_step, structure,
                         temperature, KE, local_energies,
                         start_time, dft_step, velocities):
@@ -195,6 +210,9 @@ class Output():
 
         self.outfiles['log'].write(string)
 
+        if self.always_flush:
+            self.outfiles['log'].flush()
+
     def write_xyz_config(self, curr_step, structure, dft_step):
         """
         write atomic configuration in xyz file
@@ -239,6 +257,10 @@ class Output():
 
         self.outfiles['fxyz'].write(string)
 
+        if self.always_flush:
+            self.outfiles['xyz'].flush()
+            self.outfiles['fxyz'].flush()
+
     def write_hyps(self, hyp_labels, hyps, start_time, like, like_grad):
         """
         write hyperparameters to logfile
@@ -259,6 +281,9 @@ class Output():
         f.write('likelihood gradient: ' + str(like_grad) + '\n')
         time_curr = time.time() - start_time
         f.write('wall time from start: %.2f s \n' % time_curr)
+
+        if self.always_flush:
+            f.flush()
 
     def write_gp_dft_comparison(self, curr_step, frame,
                                 start_time, dft_forces,
@@ -319,3 +344,6 @@ class Output():
                   (time.time() - start_time)
 
         self.outfiles['log'].write(string)
+
+        if self.always_flush:
+            self.outfiles['log'].flush()

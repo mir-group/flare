@@ -91,7 +91,7 @@ class TrajectoryTrainer(object):
             else:
                 self.pred_func = predict_on_structure
 
-        self.output = Output(output_name)
+        self.output = Output(output_name, always_flush=True)
 
 
         # To later be filled in using the time library
@@ -233,7 +233,8 @@ class TrajectoryTrainer(object):
                                  'training set.\n'
                                  .format(train_atoms, ))
         self.output.write_to_log('Uncertainties: {}.\n'
-                                 .format(frame.stds[train_atoms]))
+                                 .format(frame.stds[train_atoms]),
+                                 flush=True)
 
         # update gp model
         self.gp.update_db(frame, frame.forces, custom_range=train_atoms)
