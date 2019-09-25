@@ -22,4 +22,4 @@ gp_model = gp.GaussianProcess(kernel, kernel_grad, hyps, cutoffs,
 # ...
 
 # create ASE's flare calculator
-flare_calc = FLARE_Calculator(gp_model, mgp_model=None, par=True, use_mapping=False)
+flare_calc = FLARE_Calculator(gp_model, mgp_model=None, par=False, use_mapping=False)

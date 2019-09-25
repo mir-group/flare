@@ -6,7 +6,7 @@ from ase.calculators.espresso import Espresso
 label = 'AgI'
 input_file_name = label+'.pwi'
 output_file_name = label+'.pwo'
-no_cpus = 32
+no_cpus = 1
 npool = 1
 pw_loc = os.environ['PWSCF_COMMAND']
 #pw_loc = '/n/home08/xiey/q-e/bin/pw.x'
@@ -16,7 +16,7 @@ os.environ['ASE_ESPRESSO_COMMAND'] = '{0} < {1} > {2}'.format(pw_loc, input_file
 
 # set up input parameters
 input_data = {'control':   {'prefix': label, 
-                            'pseudo_dir': '/n/home08/xiey/q-e/pseudo/',
+                            'pseudo_dir': '../test_files/pseudos/',
                             'outdir': './out',
                             #'verbosity': 'high',
                             'calculation': 'scf'},
