@@ -74,8 +74,6 @@ class GaussianProcess:
         # create numpy array of training labels
         self.training_labels_np = self.force_list_to_np(self.training_labels)
 
-        self.set_L_alpha()
-
     def add_one_env(self, env: AtomicEnvironment,
                     force: np.array, train: bool = False, **kwargs):
         """
@@ -175,6 +173,11 @@ class GaussianProcess:
     def predict(self, x_t: AtomicEnvironment, d: int) -> [float, float]:
         # Kernel vector allows for evaluation of At. Env.
         k_v = self.get_kernel_vector(x_t, d)
+
+        # Guarantee that alpha is up to date with training set
+        if self.alpha is None or 3 * len(self.training_data) != len(
+                self.alpha):
+            self.set_L_alpha()
 
         # get predictive mean
         pred_mean = np.matmul(k_v, self.alpha)

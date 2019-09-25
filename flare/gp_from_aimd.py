@@ -156,6 +156,7 @@ class TrajectoryTrainer(object):
                     train_atoms.append(atom)
 
             self.update_gp_and_print(frame, train_atoms, train=False)
+        self.gp.set_L_alpha()
 
         # These conditions correspond to if either the GP was never trained
         # or if data was added to it during the pre-run.
@@ -207,6 +208,8 @@ class TrajectoryTrainer(object):
 
                 if self.train_count < self.max_trains:
                     self.train_gp()
+                else:
+                    self.gp.set_L_alpha()
 
         self.output.conclude_run()
 
@@ -234,7 +237,6 @@ class TrajectoryTrainer(object):
 
         # update gp model
         self.gp.update_db(frame, frame.forces, custom_range=train_atoms)
-        self.gp.set_L_alpha()
 
         if train:
             self.train_gp()
