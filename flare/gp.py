@@ -174,6 +174,11 @@ class GaussianProcess:
         # Kernel vector allows for evaluation of At. Env.
         k_v = self.get_kernel_vector(x_t, d)
 
+        # Guarantee that alpha is up to date with training set
+        if self.alpha is None or 3 * len(self.training_data) != len(
+                self.alpha):
+            self.set_L_alpha()
+
         # get predictive mean
         pred_mean = np.matmul(k_v, self.alpha)
 
