@@ -38,10 +38,10 @@ Stationary(super_cell)  # zero linear momentum
 ZeroRotation(super_cell)  # zero angular momentum
 
 # otf parameters
-std_tolerance_factor = 2
-init_atoms = [0, 5, 10, 15]
+std_tolerance_factor = 0.2
+init_atoms = [0, 2, 4, 6]
 no_cpus = 32
-max_atoms_added = 10
+max_atoms_added = 8
 freeze_hyps = 10
 
 # set up OTF MD engine

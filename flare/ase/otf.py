@@ -37,9 +37,6 @@ class OTF(MolecularDynamics):
 
         dft calculator is set outside of the otf module, and input as dft_calc, 
         so that different calculators can be used
-
-        TODO:
-        1. replace Structure with the ase internal Atoms
         '''
 
         MolecularDynamics.__init__(self, atoms, timestep, trajectory)

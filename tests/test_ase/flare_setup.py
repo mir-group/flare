@@ -10,7 +10,7 @@ import flare.mc_simple as mc_simple
 kernel = mc_simple.two_plus_three_body_mc
 kernel_grad = mc_simple.two_plus_three_body_mc_grad
 hyps = np.array([0.1, 1., 0.001, 1, 0.06])
-cutoffs = np.array([5., 5.])
+cutoffs = np.array([7., 6.])
 hyp_labels = ['sig2', 'ls2', 'sig3', 'ls3', 'noise']
 opt_algorithm = 'BFGS'
 

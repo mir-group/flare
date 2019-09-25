@@ -10,7 +10,7 @@ alpha = 60
 unit_cell = crystal(['Ag', 'I'], # Ag, I 
               [(0, 0, 0), (0.25, 0.25, 0.25)],
               cellpar=[a, a, a, alpha, alpha, alpha])
-multiplier = np.array([[2,0,0], [0,2,0], [0,0,2]])
+multiplier = np.array([[2,0,0], [0,2,0], [0,0,1]])
 super_cell = make_supercell(unit_cell, multiplier)
 
 # jitter positions to give nonzero force on first frame
