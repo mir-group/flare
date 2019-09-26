@@ -201,7 +201,7 @@ class OTF(object):
         self.gp.train(self.output)
         self.output.write_hyps(self.gp.hyp_labels, self.gp.hyps,
                                self.start_time,
-                               self.gp.like, self.gp.like_grad)
+                               self.gp.likelihood, self.gp.likelihood_gradient)
 
     def is_std_in_bound(self):
         # set uncertainty threshold

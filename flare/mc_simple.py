@@ -822,3 +822,35 @@ def two_body_mc_en_jit(bond_array_1, c1, etypes1,
                 kern += fi * fj * sig2 * exp(-r11 * r11 * ls1)
 
     return kern
+
+
+_str_to_kernel = {'two_body_mc': two_body_mc,
+                  'two_body_en_mc': two_body_mc_en,
+                  'two_body_mc_force_en': two_body_mc_force_en,
+                  'three_body_mc': three_body_mc,
+                  'three_body_mc_en': three_body_mc_en,
+                  'three_body_mc_force_en': three_body_mc_force_en,
+                  'two_plus_three_body_mc': two_plus_three_body_mc,
+                  'two_plus_three_mc_en': two_plus_three_mc_en,
+                  'two_plus_three_mc_force_en': two_plus_three_mc_force_en
+                  }
+
+
+def str_to_mc_kernel(string: str, include_grad: bool=False):
+
+    if string not in _str_to_kernel.keys():
+        raise ValueError("Kernel {} not found in list of available "
+                         "kernels{}:".format(string, _str_to_kernel.keys()))
+
+    if not include_grad:
+        return _str_to_kernel[string]
+    else:
+        if 'two' in string and 'three' in string:
+            return _str_to_kernel[string], two_plus_three_body_mc_grad
+        elif 'two' in string and 'three' not in string:
+            return _str_to_kernel[string], two_body_mc_grad
+        elif 'two' not in string and 'three' in string:
+            return _str_to_kernel[string], three_body_mc_grad
+        else:
+            raise ValueError("Gradient callable for {} not found".format(
+                string))

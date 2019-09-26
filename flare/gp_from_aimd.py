@@ -250,7 +250,7 @@ class TrajectoryTrainer(object):
 
         self.output.write_hyps(self.gp.hyp_labels, self.gp.hyps,
                                self.start_time,
-                               self.gp.like, self.gp.like_grad)
+                               self.gp.likelihood, self.gp.likelihood_gradient)
         self.train_count += 1
 
     def is_std_in_bound(self, frame: Structure)->(bool, List[int]):

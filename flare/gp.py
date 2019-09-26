@@ -1,13 +1,15 @@
+"""Gaussian process model of the Born Oppenheimer potential energy surface."""
 import math
+from typing import List, Callable
 import numpy as np
 from scipy.linalg import solve_triangular
 from scipy.optimize import minimize
-from typing import List, Callable
 from flare.env import AtomicEnvironment
 from flare.struc import Structure
-from flare.gp_algebra import get_ky_mat, get_ky_and_hyp, \
-    get_like_from_ky_mat, get_like_grad_from_mats, get_neg_likelihood, \
-    get_neg_like_grad, get_ky_and_hyp_par
+from flare.gp_algebra import get_ky_and_hyp, get_like_grad_from_mats, \
+    get_neg_likelihood, get_neg_like_grad, get_ky_and_hyp_par
+from flare.kernels import str_to_kernel
+from flare.mc_simple import str_to_mc_kernel
 
 
 class GaussianProcess:
@@ -36,16 +38,22 @@ class GaussianProcess:
         self.hyp_labels = hyp_labels
         self.cutoffs = cutoffs
         self.algo = opt_algorithm
-        self.l_mat = None
-        self.alpha = None
+
         self.training_data = []
         self.training_labels = []
         self.training_labels_np = np.empty(0, )
         self.maxiter = maxiter
-        self.likelihood = None
-        self.likelihood_gradient = None
         self.par = par
         self.output = output
+
+        # Parameters set during training
+        self.ky_mat = None
+        self.l_mat = None
+        self.alpha = None
+        self.ky_mat_inv = None
+        self.l_mat_inv = None
+        self.likelihood = None
+        self.likelihood_gradient = None
 
     # TODO unit test custom range
     def update_db(self, struc: Structure, forces: list,
@@ -102,9 +110,9 @@ class GaussianProcess:
         """
         forces_np = []
 
-        for m in range(len(forces)):
-            for n in range(3):
-                forces_np.append(forces[m][n])
+        for force in forces:
+            for force_comp in force:
+                forces_np.append(force_comp)
 
         forces_np = np.array(forces_np)
 
@@ -114,18 +122,16 @@ class GaussianProcess:
               grad_tol: float = 1e-4,
               x_tol: float = 1e-5,
               line_steps: int = 20):
-        """
-        Train Gaussian Process model on training data.
-        Tunes the hyperparameters to maximize the Bayesian likelihood,
-        then computes L and alpha (related to the covariance matrix of the
-        training set).
-        """
+        """Train Gaussian Process model on training data. Tunes the \
+hyperparameters to maximize the likelihood, then computes L and alpha \
+(related to the covariance matrix of the training set)."""
 
         x_0 = self.hyps
 
         args = (self.training_data, self.training_labels_np,
                 self.kernel_grad, self.cutoffs, output,
                 self.par)
+        res = None
 
         if self.algo == 'L-BFGS-B':
 
@@ -164,13 +170,17 @@ class GaussianProcess:
                            options={'disp': False,
                                     'maxiter': self.maxiter,
                                     'xtol': x_tol})
-
+        if res is None:
+            raise RuntimeError("Optimization failed for some reason.")
         self.hyps = res.x
         self.set_L_alpha()
         self.likelihood = -res.fun
         self.likelihood_gradient = -res.jac
 
     def predict(self, x_t: AtomicEnvironment, d: int) -> [float, float]:
+        """Predict force component of an atomic environment and its \
+uncertainty."""
+
         # Kernel vector allows for evaluation of At. Env.
         k_v = self.get_kernel_vector(x_t, d)
 
@@ -186,13 +196,7 @@ class GaussianProcess:
         self_kern = self.kernel(x_t, x_t, d, d, self.hyps,
                                 self.cutoffs)
         pred_var = self_kern - \
-                   np.matmul(np.matmul(k_v, self.ky_mat_inv), k_v)
-
-        # # get predictive variance (possibly slow)
-        # v_vec = solve_triangular(self.l_mat, k_v, lower=True)
-        # self_kern = self.kernel(x_t, x_t, self.bodies, d, d, self.hyps,
-        #                         self.cutoffs)
-        # pred_var = self_kern - np.matmul(v_vec, v_vec)
+            np.matmul(np.matmul(k_v, self.ky_mat_inv), k_v)
 
         return pred_mean, pred_var
 
@@ -211,6 +215,9 @@ class GaussianProcess:
         return pred_mean
 
     def predict_local_energy_and_var(self, x_t: AtomicEnvironment):
+        """Predict the local energy of an atomic environment and its \
+uncertainty."""
+
         # get kernel vector
         k_v = self.en_kern_vec(x_t)
 
@@ -251,6 +258,9 @@ class GaussianProcess:
         return k_v
 
     def en_kern_vec(self, x: AtomicEnvironment) -> np.ndarray:
+        """Compute the vector of energy/force kernels between an atomic \
+environment and the environments in the training set."""
+
         ds = [1, 2, 3]
         size = len(self.training_data) * 3
         k_v = np.zeros(size, )
@@ -295,8 +305,8 @@ class GaussianProcess:
         self.ky_mat_inv = ky_mat_inv
         self.l_mat_inv = l_mat_inv
 
-        self.like = like
-        self.like_grad = like_grad
+        self.likelihood = like
+        self.likelihood_gradient = like_grad
 
     def update_L_alpha(self):
         """
@@ -334,3 +344,85 @@ class GaussianProcess:
         self.alpha = alpha
         self.ky_mat_inv = ky_mat_inv
         self.l_mat_inv = l_mat_inv
+
+    def __str__(self):
+        """String representation of the GP model."""
+
+        thestr = "GaussianProcess Object\n"
+        thestr += 'Kernel: {}\n'.format(self.kernel_name)
+        thestr += "Training points: {}\n".format(len(self.training_data))
+        thestr += 'Cutoffs: {}\n'.format(self.cutoffs)
+        thestr += 'Model Likelihood: {}\n'.format(self.likelihood)
+
+        thestr += 'Hyperparameters: \n'
+        if self.hyp_labels is None:
+            # Put unlabeled hyperparameters on one line
+            thestr = thestr[:-1]
+            thestr += str(self.hyps) + '\n'
+        else:
+            for hyp, label in zip(self.hyps, self.hyp_labels):
+                thestr += "{}: {}\n".format(label, hyp)
+
+        return thestr
+
+    def as_dict(self):
+        """Dictionary representation of the GP model."""
+
+        out_dict = dict(vars(self))
+
+        out_dict['training_data'] = [env.as_dict() for env in
+                                     self.training_data]
+        # Remove the callables
+        del out_dict['kernel']
+        del out_dict['kernel_grad']
+
+        return out_dict
+
+    @staticmethod
+    def from_dict(dictionary):
+        """Create GP object from dictionary representation."""
+
+        if 'mc' in dictionary['kernel_name']:
+            force_kernel, grad = \
+                str_to_mc_kernel(dictionary['kernel_name'], include_grad=True)
+        else:
+            force_kernel, grad = str_to_kernel(dictionary['kernel_name'],
+                                               include_grad=True)
+
+        if dictionary['energy_kernel'] is not None:
+            energy_kernel = str_to_kernel(dictionary['energy_kernel'])
+        else:
+            energy_kernel = None
+
+        if dictionary['energy_force_kernel'] is not None:
+            energy_force_kernel = \
+                str_to_kernel(dictionary['energy_force_kernel'])
+        else:
+            energy_force_kernel = None
+
+        new_gp = GaussianProcess(kernel=force_kernel,
+                                 kernel_grad=grad,
+                                 energy_kernel=energy_kernel,
+                                 energy_force_kernel=energy_force_kernel,
+                                 cutoffs=np.array(dictionary['cutoffs']),
+                                 hyps=np.array(dictionary['hyps']),
+                                 hyp_labels=dictionary['hyp_labels'],
+                                 par=dictionary['par'],
+                                 maxiter=dictionary['maxiter'],
+                                 opt_algorithm=dictionary['algo'])
+
+        # Save time by attempting to load in computed attributes
+        new_gp.l_mat = np.array(dictionary.get('l_mat', None))
+        new_gp.l_mat_inv = np.array(dictionary.get('l_mat_inv', None))
+        new_gp.alpha = np.array(dictionary.get('alpha', None))
+        new_gp.ky_mat = np.array(dictionary.get('ky_mat', None))
+        new_gp.ky_mat_inv = np.array(dictionary.get('ky_mat_inv', None))
+
+        new_gp.training_data = [AtomicEnvironment.from_dict(env) for env in
+                                dictionary['training_data']]
+        new_gp.training_labels = dictionary['training_labels']
+
+        new_gp.likelihood = dictionary['likelihood']
+        new_gp.likelihood_gradient = dictionary['likelihood_gradient']
+
+        return new_gp
