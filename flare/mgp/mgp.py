@@ -67,22 +67,24 @@ class MappedGaussianProcess:
         self.spcs = spcs
         self.maps_2 = []
         self.maps_3 = []
-        if 2 in self.bodies:
-            for b_struc in bond_struc[0]:
-                map_2 = Map2body(self.grid_num_2, self.bounds_2, self.GP,
-                                 b_struc, self.bodies, self.svd_rank_2, 
-                                 self.mean_only)
-                self.maps_2.append(map_2)
-        if 3 in self.bodies:
-            for b_struc in bond_struc[1]:
-                map_3 = Map3body(self.grid_num_3, self.bounds_3, self.GP,
-                                 b_struc, self.bodies, self.svd_rank_3,
-                                 self.mean_only, grid_params['load_grid'],
-                                 self.update)
 
-                self.maps_3.append(map_3)
-
-        self.write_lmp_file(lmp_file_name)
+        if len(self.GP.training_data) > 0:
+            if 2 in self.bodies:
+                for b_struc in bond_struc[0]:
+                    map_2 = Map2body(self.grid_num_2, self.bounds_2, self.GP,
+                                     b_struc, self.bodies, self.svd_rank_2, 
+                                     self.mean_only)
+                    self.maps_2.append(map_2)
+            if 3 in self.bodies:
+                for b_struc in bond_struc[1]:
+                    map_3 = Map3body(self.grid_num_3, self.bounds_3, self.GP,
+                                     b_struc, self.bodies, self.svd_rank_3,
+                                     self.mean_only, grid_params['load_grid'],
+                                     self.update)
+    
+                    self.maps_3.append(map_3)
+    
+            self.write_lmp_file(lmp_file_name)
 
     def build_bond_struc(self, struc_params):
 
@@ -504,7 +506,8 @@ class Map3body:
         pool = mp.Pool(processes=processes)
 
         if update:
-            subprocess.run(['rm', '-r', 'kv3'])
+            if 'kv3' in os.listdir():
+                subprocess.run(['rm', '-r', 'kv3'])
             subprocess.run(['mkdir', 'kv3'])
        
         A_list = pool.map(self._GenGrid_inner, pool_list)

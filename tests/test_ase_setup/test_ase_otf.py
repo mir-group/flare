@@ -41,9 +41,9 @@ def test_otf_md():
                      'mask': None, 'temperature': 500, 'taut': 1, 'taup': 1,
                      'pressure': 0, 'compressibility': 0, 'fixcm': 1}
         otf_params = {'dft_calc': dft_calc, 
-                      'init_atoms': [0, 2, 4, 6],
+                      'init_atoms': [0, 1, 2, 3],
                       'std_tolerance_factor': 1, 
-                      'max_atoms_added' :8,
+                      'max_atoms_added' : len(super_cell.positions),
                       'freeze_hyps': 10, 
                       'use_mapping': super_cell.calc.use_mapping}
        
@@ -68,3 +68,6 @@ def test_otf_md():
     os.system('rm AgI.pw*')
     os.system('rm -r out')
     os.system('rm -r __pycache__')
+    os.system('rm grid3*')
+    os.system('rm -r kv3')
+    os.system('rm lmp.mgp')

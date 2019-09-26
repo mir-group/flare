@@ -28,7 +28,7 @@ input_data = {'control':   {'prefix': label,
                             'occupations': 'smearing'},
               'electrons': {'conv_thr': 1.0e-05,
                             #'startingwfc': 'file',
-                            'electron_maxstep': 200,
+                            'electron_maxstep': 100,
                             'mixing_beta': 0.5}}
 
 # pseudo-potentials              
