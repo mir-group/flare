@@ -13,6 +13,7 @@ def cleanup_espresso_run(target: str = None):
     os.system('rm pwscf.in')
     os.system('rm pwscf.wfc1')
     os.system('rm pwscf.wfc2')
+    os.system('rm pwscf.xml')
     if target:
         os.system('rm ' + target)
 
@@ -98,7 +99,7 @@ def test_espresso_calling(qe_input, qe_output):
     assert len(forces) == len(ref_forces)
 
     for i in range(structure.nat):
-        assert np.isclose(forces[i], ref_forces[i]).all()
+        assert np.allclose(forces[i], ref_forces[i])
 
     cleanup_espresso_run()
 
