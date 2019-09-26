@@ -6,10 +6,11 @@ from flare import output
 from flare import struc
 from typing import List
 
-name="CP2K"
+name = "CP2K"
 
 
-def run_dft_par(dft_input, structure, dft_loc, no_cpus=1, dft_out="dft.out"):
+def run_dft_par(dft_input, structure, dft_loc, no_cpus=1, dft_out="dft.out",
+                npool=None):
     newfilename = edit_dft_input_positions(dft_input, structure)
     dft_command = \
         '{} -i {} > {}'.format(dft_loc, newfilename, dft_out)
