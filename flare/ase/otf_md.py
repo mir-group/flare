@@ -13,7 +13,6 @@ from ase.md.verlet import VelocityVerlet
 from ase.md.md import MolecularDynamics
 from ase import units
 
-
 class OTF_VelocityVerlet(VelocityVerlet, OTF):
     def __init__(self, atoms, timestep=None, trajectory=None, dt=None, 
                  **kwargs):
@@ -22,11 +21,8 @@ class OTF_VelocityVerlet(VelocityVerlet, OTF):
                                 dt=dt)
 
         OTF.__init__(self, atoms, timestep, trajectory, **kwargs)
-
-        self.initialized = True
-
-    def have_the_atoms_been_changed(self):
-        return False
+        
+        self.md_engine = 'VelocityVerlet'
 
 class OTF_NVTBerendsen(NVTBerendsen, OTF):
     def __init__(self, atoms, timestep, temperature, taut, fixcm=True,
@@ -37,6 +33,7 @@ class OTF_NVTBerendsen(NVTBerendsen, OTF):
  
         OTF.__init__(self, atoms, timestep, trajectory, **kwargs)
 
+        self.md_engine = 'NVTBerendsen'
 
 class OTF_NPTBerendsen(NPTBerendsen, OTF):
     def __init__(self, atoms, timestep, temperature, taut=0.5e3 *
@@ -50,6 +47,7 @@ class OTF_NPTBerendsen(NPTBerendsen, OTF):
 
         OTF.__init__(self, atoms, timestep, trajectory, **kwargs)
 
+        self.md_engine = 'NPTBerendsen'
 
 class OTF_NPT(NPT, OTF):
     def __init__(self, atoms, timestep, temperature, externalstress, 
@@ -61,4 +59,31 @@ class OTF_NPT(NPT, OTF):
 
         OTF.__init__(self, atoms, timestep, trajectory, **kwargs)
 
+        self.md_engine = 'NPT'
 
+def otf_md(md_engine: str, atoms, md_params: dict, otf_params: dict):
+
+    md = md_params
+    timestep = md['timestep']
+    trajectory = md['trajectory']
+
+    if md_engine == 'VelocityVerlet':
+        return OTF_VelocityVerlet(atoms, timestep, trajectory, dt=md['dt'],
+                **otf_params)
+       
+    elif md_engine == 'NVTBerendsen':
+        return OTF_NVTBerendsen(atoms, timestep, md['temperature'], 
+                md['taut'], md['fixcm'], trajectory, **otf_params)
+    
+    elif md_engine == 'NPTBerendsen':
+        return OTF_NPTBerendsen(atoms, timestep, md['temperature'], 
+                md['taut'], md['pressure'], md['taup'], 
+                md['compressibility'], md['fixcm'], trajectory, **otf_params)
+
+    elif md_engine == 'NPT':
+        return OTF_NPT(atoms, timestep, md['temperature'],
+                md['externalstress'], md['ttime'], md['pfactor'], 
+                md['mask'], trajectory, **otf_params)
+
+    else:
+        raise NotImplementedError(md_engine+' is not implemented')

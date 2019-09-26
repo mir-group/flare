@@ -8,7 +8,7 @@ input_file_name = label+'.pwi'
 output_file_name = label+'.pwo'
 no_cpus = 1
 npool = 1
-pw_loc = os.environ['PWSCF_COMMAND']
+pw_loc = os.environ.get('PWSCF_COMMAND')
 #pw_loc = '/n/home08/xiey/q-e/bin/pw.x'
 #os.environ['ASE_ESPRESSO_COMMAND'] = 'srun -n {0} --mpi=pmi2 {1} -npool {2} < {3} > {4}'.format(no_cpus, 
 #                            pw_loc, npool, input_file_name, output_file_name)

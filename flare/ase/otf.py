@@ -121,18 +121,22 @@ class OTF(MolecularDynamics):
 
             # train calculator
             self.train()
-            print(self.atoms.calc.mgp_model)
+            print('mgp model:', self.atoms.calc.mgp_model)
 
-        if not self.initialized:
-            self.initialize()
-        else:
-            if self.have_the_atoms_been_changed():
-                raise NotImplementedError(
-                    "You have modified the atoms since the last timestep.")
+        if self.md_engine == 'NPT':
+            if not self.initialized:
+                self.initialize()
+            else:
+                if self.have_the_atoms_been_changed():
+                    raise NotImplementedError(
+                        "You have modified the atoms since the last timestep.")
 
         for i in range(steps):
             print('step:', i)
-            f = self.step(f)
+            if self.md_engine == 'NPT':
+                self.step()
+            else:
+                f = self.step(f)
             self.nsteps += 1
             self.stds = self.atoms.get_uncertainties()
 
