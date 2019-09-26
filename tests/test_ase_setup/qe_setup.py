@@ -16,7 +16,7 @@ os.environ['ASE_ESPRESSO_COMMAND'] = '{0} < {1} > {2}'.format(pw_loc, input_file
 
 # set up input parameters
 input_data = {'control':   {'prefix': label, 
-                            'pseudo_dir': '../test_files/pseudos/',
+                            'pseudo_dir': 'test_files/pseudos/',
                             'outdir': './out',
                             #'verbosity': 'high',
                             'calculation': 'scf'},
@@ -26,7 +26,7 @@ input_data = {'control':   {'prefix': label,
                             'smearing': 'gauss',
                             'degauss': 0.02,
                             'occupations': 'smearing'},
-              'electrons': {'conv_thr': 1.0e-05,
+              'electrons': {'conv_thr': 1.0e-03,
                             #'startingwfc': 'file',
                             'electron_maxstep': 100,
                             'mixing_beta': 0.5}}

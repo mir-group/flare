@@ -35,7 +35,7 @@ for md_engine in md_engines:
                  'pressure': 0, 'compressibility': 0, 'fixcm': 1}
     otf_params = {'dft_calc': dft_calc, 
                   'init_atoms': [0, 2, 4, 6],
-                  'std_tolerance_factor': 1, 
+                  'std_tolerance_factor': 2, 
                   'max_atoms_added' :8,
                   'freeze_hyps': 10, 
                   'use_mapping': super_cell.calc.use_mapping}
