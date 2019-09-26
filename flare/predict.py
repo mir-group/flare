@@ -10,15 +10,14 @@ import numpy as np
 import concurrent.futures
 
 
-def predict_on_atom(structure: Structure, atom: int, gp: GaussianProcess):
+def predict_on_atom(param):
     """
     Return the forces/std. dev. uncertainty associated with an atom in a
     structure
-    :param structure:
-    :param atom:
-    :param gp:
+    :param param: tuple of structure, atom, and gp
     :return:
     """
+    structure, atom, gp = param
     chemenv = AtomicEnvironment(structure, atom, gp.cutoffs)
     components = []
     stds = []
@@ -30,8 +29,13 @@ def predict_on_atom(structure: Structure, atom: int, gp: GaussianProcess):
 
     return np.array(components), np.array(stds)
 
-
-def predict_on_atom_en(structure: Structure, atom: int, gp: GaussianProcess):
+def predict_on_atom_en(param):
+    """
+    Return ...
+    :param param: tuple of structure, atom, and gp
+    :return:
+    """
+    structure, atom, gp = param
     chemenv = AtomicEnvironment(structure, atom, gp.cutoffs)
     comps = []
     stds = []
