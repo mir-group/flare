@@ -3,3 +3,4 @@ scipy
 memory_profiler
 numba
 ase
+pymatgen

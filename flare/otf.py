@@ -7,34 +7,38 @@ import copy
 import multiprocessing as mp
 import subprocess
 import concurrent.futures
-from flare import struc, gp, env, qe_util, md
+from flare import struc, gp, env, md
+from flare.dft_interface import dft_software
 from flare.output import Output
+import flare.predict as predict
 
 
 class OTF(object):
-    def __init__(self, qe_input: str, dt: float, number_of_steps: int,
-                 gp: gp.GaussianProcess, pw_loc: str,
+    def __init__(self, dft_input: str, dt: float, number_of_steps: int,
+                 gp: gp.GaussianProcess, dft_loc: str,
                  std_tolerance_factor: float = 1,
                  prev_pos_init: np.ndarray=None, par: bool=False,
                  skip: int=0, init_atoms: List[int]=None,
                  calculate_energy=False, output_name='otf_run',
                  max_atoms_added=1, freeze_hyps=10,
                  rescale_steps=[], rescale_temps=[],
+                 dft_softwarename="qe",
                  no_cpus=1):
 
-        self.qe_input = qe_input
+        self.dft_input = dft_input
         self.dt = dt
         self.number_of_steps = number_of_steps
         self.gp = gp
-        self.pw_loc = pw_loc
+        self.dft_loc = dft_loc
         self.std_tolerance = std_tolerance_factor
         self.skip = skip
         self.dft_step = True
         self.freeze_hyps = freeze_hyps
+        self.dft_module = dft_software[dft_softwarename]
 
         # parse input file
         positions, species, cell, masses = \
-            qe_util.parse_qe_input(self.qe_input)
+            self.dft_module.parse_dft_input(self.dft_input)
 
         _, coded_species = struc.get_unique_species(species)
 
@@ -66,20 +70,20 @@ class OTF(object):
 
         # set pred function
         if not par and not calculate_energy:
-            self.pred_func = self.predict_on_structure
+            self.pred_func = predict.predict_on_structure
         elif par and not calculate_energy:
-            self.pred_func = self.predict_on_structure_par
+            self.pred_func = predict.predict_on_structure_par
         elif not par and calculate_energy:
-            self.pred_func = self.predict_on_structure_en
+            self.pred_func = predict.predict_on_structure_en
         elif par and calculate_energy:
-            self.pred_func = self.predict_on_structure_par_en
+            self.pred_func = predict.predict_on_structure_par_en
         self.par = par
 
         # set rescale attributes
         self.rescale_steps = rescale_steps
         self.rescale_temps = rescale_temps
 
-        self.output = Output(output_name)
+        self.output = Output(output_name, always_flush=True)
 
         # set number of cpus for qe runs
         self.no_cpus = no_cpus
@@ -112,7 +116,7 @@ class OTF(object):
 
             # after step 1, try predicting with GP model
             else:
-                self.pred_func()
+                self.pred_func(self.structure, self.gp)
                 self.dft_step = False
                 new_pos = md.update_positions(self.dt, self.noa,
                                               self.structure)
@@ -142,7 +146,7 @@ class OTF(object):
                     self.output.write_to_log('\nmean absolute error:'
                                              ' %.4f eV/A \n' % mae)
                     self.output.write_to_log('mean absolute dft component:'
-                                           ' %.4f eV/A \n' % mac)
+                                             ' %.4f eV/A \n' % mac)
 
                     # add max uncertainty atoms to training set
                     self.update_gp(target_atoms, dft_frcs)
@@ -161,74 +165,12 @@ class OTF(object):
 
         self.output.conclude_run()
 
-    def predict_on_atom(self, atom):
-        chemenv = env.AtomicEnvironment(self.structure, atom, self.gp.cutoffs)
-        comps = []
-        stds = []
-        # predict force components and standard deviations
-        for i in range(3):
-            force, var = self.gp.predict(chemenv, i+1)
-            comps.append(float(force))
-            stds.append(np.sqrt(np.abs(var)))
-
-        return comps, stds
-
-    def predict_on_atom_en(self, atom):
-        chemenv = env.AtomicEnvironment(self.structure, atom, self.gp.cutoffs)
-        comps = []
-        stds = []
-        # predict force components and standard deviations
-        for i in range(3):
-            force, var = self.gp.predict(chemenv, i+1)
-            comps.append(float(force))
-            stds.append(np.sqrt(np.abs(var)))
-
-        # predict local energy
-        local_energy = self.gp.predict_local_energy(chemenv)
-        return comps, stds, local_energy
-
-    def predict_on_structure_par(self):
-        n = 0
-        with concurrent.futures.ProcessPoolExecutor() as executor:
-            for res in executor.map(self.predict_on_atom, self.atom_list):
-                for i in range(3):
-                    self.structure.forces[n][i] = res[0][i]
-                    self.structure.stds[n][i] = res[1][i]
-                n += 1
-
-    def predict_on_structure_par_en(self):
-        n = 0
-        with concurrent.futures.ProcessPoolExecutor() as executor:
-            for res in executor.map(self.predict_on_atom_en, self.atom_list):
-                for i in range(3):
-                    self.structure.forces[n][i] = res[0][i]
-                    self.structure.stds[n][i] = res[1][i]
-                self.local_energies[n] = res[2]
-                n += 1
-
-    def predict_on_structure(self):
-        for n in range(self.structure.nat):
-            chemenv = env.AtomicEnvironment(self.structure, n, self.gp.cutoffs)
-            for i in range(3):
-                force, var = self.gp.predict(chemenv, i + 1)
-                self.structure.forces[n][i] = float(force)
-                self.structure.stds[n][i] = np.sqrt(np.abs(var))
-
-    def predict_on_structure_en(self):
-        for n in range(self.structure.nat):
-            chemenv = env.AtomicEnvironment(self.structure, n, self.gp.cutoffs)
-            for i in range(3):
-                force, var = self.gp.predict(chemenv, i + 1)
-                self.structure.forces[n][i] = float(force)
-                self.structure.stds[n][i] = np.sqrt(np.abs(var))
-            self.local_energies[n] = self.gp.predict_local_energy(chemenv)
-
     def run_dft(self):
-        self.output.write_to_log('\nCalling Quantum Espresso...\n')
+        self.output.write_to_log('\nCalling DFT...\n')
 
         # calculate DFT forces
-        forces = qe_util.run_espresso_par(self.qe_input, self.structure,
-                                          self.pw_loc, self.no_cpus)
+        forces = self.dft_module.run_dft_par(self.dft_input, self.structure,
+                                             self.dft_loc, self.no_cpus)
         self.structure.forces = forces
 
         # write wall time of DFT calculation
@@ -259,7 +201,7 @@ class OTF(object):
         self.gp.train(self.output)
         self.output.write_hyps(self.gp.hyp_labels, self.gp.hyps,
                                self.start_time,
-                               self.gp.like, self.gp.like_grad)
+                               self.gp.likelihood, self.gp.likelihood_gradient)
 
     def is_std_in_bound(self):
         # set uncertainty threshold

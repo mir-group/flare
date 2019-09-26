@@ -1,13 +1,15 @@
-"""The :class:`Structure` object is a collection of atoms in a periodic \
-box. The mandatory inputs are the cell vectors of the box and the chemical species and Cartesian coordinates of the atoms. The atoms are automatically \
-folded back into the primary cell, so the input coordinates don't need to lie \
-inside the box. Energy, force, and stress information can be provided \
-for training machine learned force fields."""
+"""The :class:`Structure` object is a collection of atoms in a periodic box. The mandatory inputs are the cell vectors of the box and the chemical species and Cartesian coordinates of the atoms. The atoms are automatically folded back into the primary cell, so the input coordinates don't need to lie inside the box. Energy, force, and stress information can be provided for training machine learned force fields."""
 import numpy as np
 from typing import List
 from flare.util import element_to_Z, NumpyEncoder
 from json import dumps
 
+try:
+    # Used for to_pmg_structure method
+    import pymatgen.core.structure as pmgstruc
+    _pmg_present = True
+except ImportError:
+    _pmg_present = False
 
 class Structure:
     """
@@ -188,6 +190,53 @@ cell vectors.
         return Atoms(self.species_labels,
                      positions=self.positions,
                      cell=self.cell)
+
+    def to_pmg_structure(self):
+        """
+        Returns FLARE structure as a pymatgen structure.
+        :return: Pymatgen structure corresponding to current FLARE structure
+        """
+
+        if not _pmg_present:
+            raise ModuleNotFoundError("Pymatgen is not present. Please "
+                                      "install Pymatgen and try again")
+
+        site_properties = {'force:': self.forces, 'std': self.stds}
+
+        return pmgstruc.Structure(lattice=self.cell,
+                                  species=self.species_labels,
+                                  coords=self.positions,
+                                  coords_are_cartesian=True,
+                                  site_properties=site_properties
+                                  )
+
+    @staticmethod
+    def from_pmg_structure(structure):
+        """
+        Returns Pymatgen structure as FLARE structure.
+        
+        :param structure: Pymatgen structure
+        :return: FLARE Structure
+        """
+
+        cell = structure.lattice.matrix
+        species = [str(spec) for spec in structure.species]
+        positions = structure.cart_coords
+
+        new_struc = Structure(cell=cell,species=species,
+                              positions=positions)
+
+        site_props = structure.site_properties
+
+        if 'force' in site_props.keys():
+            forces = site_props['force']
+            new_struc.forces = [np.array(force) for force in forces]
+
+        if 'std' in site_props.keys():
+            stds = site_props['std']
+            new_struc.stds = [np.array(std) for std in stds]
+
+        return new_struc
 
 def get_unique_species(species):
     unique_species = []

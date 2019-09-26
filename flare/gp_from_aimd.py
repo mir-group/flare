@@ -29,8 +29,7 @@ class TrajectoryTrainer(object):
                  calculate_energy: bool = False,
                  output_name: str = 'gp_from_aimd',
                  max_atoms_from_frame: int = np.inf, max_trains: int = np.inf,
-                 min_atoms_added: int = 1,
-                 n_cpus: int = 1, shuffle_frames: bool = False,
+                 min_atoms_added: int = 1, shuffle_frames: bool = False,
                  verbose: int = 0, model_write: str = '',
                  pre_train_on_skips: bool = False,
                  pre_train_seed_frames: List[Structure] = None,
@@ -92,10 +91,8 @@ class TrajectoryTrainer(object):
             else:
                 self.pred_func = predict_on_structure
 
-        self.output = Output(output_name)
+        self.output = Output(output_name, always_flush=True)
 
-        # set number of cpus for parallelization
-        self.n_cpus = n_cpus
 
         # To later be filled in using the time library
         self.start_time = None
@@ -130,7 +127,8 @@ class TrajectoryTrainer(object):
                                                 self.abs_std_tolerance))
 
         self.start_time = time.time()
-
+        if self.verbose >= 3:
+            print("Now beginning pre-run training.")
         # If seed environments were passed in, add them to the GP.
         for point in self.seed_envs:
             self.gp.add_one_env(point[0], point[1], train=False)
@@ -139,7 +137,7 @@ class TrajectoryTrainer(object):
         # Take one of each atom species in the first frame
         # so all atomic species are represented in the first step.
         # Otherwise use the seed frames passed in by user.
-        if len(self.gp.training_data) == 0 and self.seed_frames is None:
+        if len(self.gp.training_data) == 0 and self.seed_frames is []:
             self.seed_frames = [self.frames[0]]
 
         for frame in self.seed_frames:
@@ -158,13 +156,17 @@ class TrajectoryTrainer(object):
                     train_atoms.append(atom)
 
             self.update_gp_and_print(frame, train_atoms, train=False)
+        self.gp.set_L_alpha()
 
         # These conditions correspond to if either the GP was never trained
         # or if data was added to it during the pre-run.
+        if self.verbose >= 3:
+            print("Now commencing initial training of GP (which has "
+                  "non-empty training set)")
 
         if (self.gp.l_mat is None) \
-                or (self.seed_frames is not None
-                    or self.seed_envs is not None):
+                or (self.seed_frames is not []
+                    or self.seed_envs is not []):
             self.gp.train(output=self.output if self.verbose > 0 else None)
 
     def run(self):
@@ -174,7 +176,8 @@ class TrajectoryTrainer(object):
         the training set upon the triggering of the uncertainty threshold.
         :return:
         """
-
+        if self.verbose >= 3:
+            print("Commencing run with pre-run...")
         self.pre_run()
 
         # Loop through trajectory
@@ -205,6 +208,8 @@ class TrajectoryTrainer(object):
 
                 if self.train_count < self.max_trains:
                     self.train_gp()
+                else:
+                    self.gp.set_L_alpha()
 
         self.output.conclude_run()
 
@@ -228,11 +233,11 @@ class TrajectoryTrainer(object):
                                  'training set.\n'
                                  .format(train_atoms, ))
         self.output.write_to_log('Uncertainties: {}.\n'
-                                 .format(frame.stds[train_atoms]))
+                                 .format(frame.stds[train_atoms]),
+                                 flush=True)
 
         # update gp model
         self.gp.update_db(frame, frame.forces, custom_range=train_atoms)
-        self.gp.set_L_alpha()
 
         if train:
             self.train_gp()
@@ -245,7 +250,7 @@ class TrajectoryTrainer(object):
 
         self.output.write_hyps(self.gp.hyp_labels, self.gp.hyps,
                                self.start_time,
-                               self.gp.like, self.gp.like_grad)
+                               self.gp.likelihood, self.gp.likelihood_gradient)
         self.train_count += 1
 
     def is_std_in_bound(self, frame: Structure)->(bool, List[int]):

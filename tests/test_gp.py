@@ -1,6 +1,5 @@
 import pytest
 import numpy as np
-import sys
 from flare.gp import GaussianProcess
 from flare.env import AtomicEnvironment
 from flare.struc import Structure
@@ -35,14 +34,13 @@ def get_random_structure(cell, unique_species, noa):
 
 # set the scope to module so it will only be setup once
 @pytest.fixture(scope='module')
-def two_body_gp():
+def two_body_gp() -> GaussianProcess:
     """Returns a GP instance with a two-body numba-based kernel"""
     print("\nSetting up...\n")
 
     # params
     cell = np.eye(3)
     unique_species = [2, 1]
-    cutoff = 0.8
     cutoffs = np.array([0.8, 0.8])
     noa = 5
 
@@ -55,6 +53,7 @@ def two_body_gp():
         GaussianProcess(kernel=en.three_body,
                         kernel_grad=en.three_body_grad,
                         hyps=np.array([1, 1, 1]),
+                        hyp_labels=['Length', 'Signal Var.', 'Noise Var.'],
                         cutoffs=cutoffs)
     gaussian.update_db(test_structure, forces)
 
@@ -79,7 +78,7 @@ def params():
 
 
 @pytest.fixture(scope='module')
-def test_point():
+def test_point() -> AtomicEnvironment:
     """Create test point for kernel to compare against"""
     # params
     cell = np.eye(3)
@@ -148,8 +147,6 @@ def test_set_L_alpha(two_body_gp, params):
     # params
     cell = np.eye(3)
     unique_species = [2, 1]
-    cutoff = 0.8
-    cutoffs = np.array([0.8, 0.8])
     noa = 2
 
     # create test structure
@@ -159,8 +156,8 @@ def test_set_L_alpha(two_body_gp, params):
     # set gp model
     kernel = en.two_plus_three_body
     kernel_grad = en.two_plus_three_body_grad
-    hyps = np.array([2.23751151e-01,  8.19990316e-01, 1.28421842e-04,
-                    1.07467158e+00, 5.50677932e-02])
+    hyps = np.array([2.23751151e-01, 8.19990316e-01, 1.28421842e-04,
+                     1.07467158e+00, 5.50677932e-02])
     cutoffs = np.array([5.4, 5.4])
     hyp_labels = ['sig2', 'ls2', 'sig3', 'ls3', 'noise']
     energy_force_kernel = en.two_plus_three_force_en
@@ -183,19 +180,19 @@ def test_update_L_alpha():
     kernel_grad = mc_simple.two_plus_three_body_mc_grad
     cutoffs = [6.0, 5.0]
     hyps = np.array([0.001770, 0.183868, -0.001415, 0.372588, 0.026315])
-    
+
     # get an otf traj from file for training data
     old_otf = OtfAnalysis('test_files/AgI_snippet.out')
-    call_no = 1 
+    call_no = 1
     cell = old_otf.header['cell']
     gp_model = old_otf.make_gp(kernel=kernel,
                                kernel_grad=kernel_grad,
-                               call_no=call_no, 
-                               cutoffs=cutoffs, 
+                               call_no=call_no,
+                               cutoffs=cutoffs,
                                hyps=hyps)
-    
+
     # update database & use update_L_alpha to get ky_mat
-    for n in range(call_no, call_no+1): 
+    for n in range(call_no, call_no + 1):
         positions = old_otf.gp_position_list[n]
         species = old_otf.gp_species_list[n]
         atoms = old_otf.gp_atom_list[n]
@@ -210,5 +207,52 @@ def test_update_L_alpha():
     # use set_L_alpha to get ky_mat
     gp_model.set_L_alpha()
     ky_mat_from_set = np.copy(gp_model.ky_mat)
-    
-    assert (np.all(np.absolute(ky_mat_from_update-ky_mat_from_set)) < 1e-6)
+
+    assert (np.all(np.absolute(ky_mat_from_update - ky_mat_from_set)) < 1e-6)
+
+
+def test_representation_method(two_body_gp):
+    the_str = str(two_body_gp)
+    assert 'GaussianProcess Object' in the_str
+    assert 'Kernel: three_body' in the_str
+    assert 'Cutoffs: [0.8 0.8]' in the_str
+    assert 'Model Likelihood: ' in the_str
+    assert 'Length: ' in the_str
+    assert 'Signal Var.: ' in the_str
+    assert "Noise Var.: " in the_str
+
+
+def test_serialization_method(two_body_gp, test_point):
+    """
+    Serialize and then un-serialize a GP and ensure that no info was lost.
+    Compare one calculation to ensure predictions work correctly.
+    :param two_body_gp:
+    :return:
+    """
+    old_gp_dict = two_body_gp.as_dict()
+    new_gp = GaussianProcess.from_dict(old_gp_dict)
+    new_gp_dict = new_gp.as_dict()
+
+    assert len(new_gp_dict) == len(old_gp_dict)
+
+    for k1, k2 in zip(sorted(new_gp_dict.keys()), sorted(old_gp_dict.keys())):
+
+        x = new_gp_dict[k1]
+        y = new_gp_dict[k2]
+
+        if isinstance(x, np.ndarray):
+            assert np.equal(x, y).all()
+        elif hasattr(x, '__len__'):
+
+            if isinstance(x[0], np.ndarray):
+                assert np.equal(x, y).all()
+
+            else:
+                for xx, yy in zip(x, y):
+                    assert xx == yy
+        else:
+            assert x == y
+
+    for d in [0, 1, 2]:
+        assert np.all(two_body_gp.predict(x_t=test_point, d=d) ==
+                      new_gp.predict(x_t=test_point, d=d))
