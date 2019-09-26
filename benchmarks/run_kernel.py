@@ -30,6 +30,12 @@ def run_two_body(args):
 
     file.close()
 
+    print(bond_array_1.shape)
+    print(bond_array_1[0, 0])
+    print(bond_array_1[0, 1])
+    print(bond_array_1[1, 0])
+    print(d1, sig, ls, r_cut)
+
     start = time.time()
     en.two_body_force_en_jit(bond_array_1, bond_array_2, d1, sig, ls, r_cut,
                              cutoff_func)
@@ -37,10 +43,11 @@ def run_two_body(args):
     print("First two body runtime", end - start)
 
     start = time.time()
-    en.two_body_force_en_jit(bond_array_1, bond_array_2, d1, sig, ls, r_cut,
+    kern = en.two_body_force_en_jit(bond_array_1, bond_array_2, d1, sig, ls, r_cut,
                              cutoff_func)
     end = time.time()
     print("Second two body runtime", end - start)
+    print(kern)
 
 
 def read_environment(file, name, dataset):

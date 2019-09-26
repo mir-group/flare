@@ -17,7 +17,7 @@ def generate_two_body(args):
     """Check that the analytical force/en kernel matches finite difference of
     energy kernel."""
 
-    num_atoms = 100
+    num_atoms = 1000
 
     # create env 1
     cell = np.eye(3)
@@ -25,7 +25,6 @@ def generate_two_body(args):
 
     positions_1 = np.random.random((num_atoms, 3))
     positions_1[0, :] = np.zeros(3)
-
 
     species_1 = [1, 2, 1]
     atom_1 = 0
@@ -47,7 +46,6 @@ def generate_two_body(args):
     ls1 = np.random.random()
     d1 = 1
 
-
     filename = os.path.join(args.location, "kernel_data.hdf5")
     file = h5py.File(filename, 'w')
 
@@ -61,6 +59,7 @@ def generate_two_body(args):
 def add_environment(file, name, environment):
     h5_env1 = file.create_group(name)
     h5_env1.create_dataset("bond_array_2", data=environment.bond_array_2)
+    h5_env1.create_dataset("bond_array_2_T", data=environment.bond_array_2.T)
 
 
 def add_parameters(file, d1, sig, ls, r_cut):
