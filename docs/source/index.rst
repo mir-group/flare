@@ -6,9 +6,10 @@ Contents
 ^^^^^^^^
 
 .. toctree::
-   :maxdepth: 3
+   :maxdepth: 4
 
    install
    tutorials/tutorials
    flare/flare
+   flare/ase/ase
    contribute/contribute

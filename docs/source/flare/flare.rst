@@ -2,9 +2,11 @@ Code Documentation
 ==================
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
 
    struc
    env
    kernels
    gp
+   mgp
+   ase/ase
