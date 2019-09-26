@@ -79,7 +79,7 @@ class OTF(object):
         self.rescale_steps = rescale_steps
         self.rescale_temps = rescale_temps
 
-        self.output = Output(output_name)
+        self.output = Output(output_name, always_flush=True)
 
         # set number of cpus for qe runs
         self.no_cpus = no_cpus
