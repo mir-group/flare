@@ -146,7 +146,7 @@ class OTF(object):
                     self.output.write_to_log('\nmean absolute error:'
                                              ' %.4f eV/A \n' % mae)
                     self.output.write_to_log('mean absolute dft component:'
-                                           ' %.4f eV/A \n' % mac)
+                                             ' %.4f eV/A \n' % mac)
 
                     # add max uncertainty atoms to training set
                     self.update_gp(target_atoms, dft_frcs)
@@ -165,74 +165,12 @@ class OTF(object):
 
         self.output.conclude_run()
 
-    # def predict_on_atom(self, atom):
-    #     chemenv = env.AtomicEnvironment(self.structure, atom, self.gp.cutoffs)
-    #     comps = []
-    #     stds = []
-    #     # predict force components and standard deviations
-    #     for i in range(3):
-    #         force, var = self.gp.predict(chemenv, i+1)
-    #         comps.append(float(force))
-    #         stds.append(np.sqrt(np.abs(var)))
-
-    #     return comps, stds
-
-    # def predict_on_atom_en(self, atom):
-    #     chemenv = env.AtomicEnvironment(self.structure, atom, self.gp.cutoffs)
-    #     comps = []
-    #     stds = []
-    #     # predict force components and standard deviations
-    #     for i in range(3):
-    #         force, var = self.gp.predict(chemenv, i+1)
-    #         comps.append(float(force))
-    #         stds.append(np.sqrt(np.abs(var)))
-
-    #     # predict local energy
-    #     local_energy = self.gp.predict_local_energy(chemenv)
-    #     return comps, stds, local_energy
-
-    # def predict_on_structure_par(self):
-    #     n = 0
-    #     with concurrent.futures.ProcessPoolExecutor() as executor:
-    #         for res in executor.map(self.predict_on_atom, self.atom_list):
-    #             for i in range(3):
-    #                 self.structure.forces[n][i] = res[0][i]
-    #                 self.structure.stds[n][i] = res[1][i]
-    #             n += 1
-
-    # def predict_on_structure_par_en(self):
-    #     n = 0
-    #     with concurrent.futures.ProcessPoolExecutor() as executor:
-    #         for res in executor.map(self.predict_on_atom_en, self.atom_list):
-    #             for i in range(3):
-    #                 self.structure.forces[n][i] = res[0][i]
-    #                 self.structure.stds[n][i] = res[1][i]
-    #             self.local_energies[n] = res[2]
-    #             n += 1
-
-    # def predict_on_structure(self):
-    #     for n in range(self.structure.nat):
-    #         chemenv = env.AtomicEnvironment(self.structure, n, self.gp.cutoffs)
-    #         for i in range(3):
-    #             force, var = self.gp.predict(chemenv, i + 1)
-    #             self.structure.forces[n][i] = float(force)
-    #             self.structure.stds[n][i] = np.sqrt(np.abs(var))
-
-    # def predict_on_structure_en(self):
-    #     for n in range(self.structure.nat):
-    #         chemenv = env.AtomicEnvironment(self.structure, n, self.gp.cutoffs)
-    #         for i in range(3):
-    #             force, var = self.gp.predict(chemenv, i + 1)
-    #             self.structure.forces[n][i] = float(force)
-    #             self.structure.stds[n][i] = np.sqrt(np.abs(var))
-    #         self.local_energies[n] = self.gp.predict_local_energy(chemenv)
-
     def run_dft(self):
         self.output.write_to_log('\nCalling DFT...\n')
 
         # calculate DFT forces
         forces = self.dft_module.run_dft_par(self.dft_input, self.structure,
-                                          self.dft_loc, self.no_cpus)
+                                             self.dft_loc, self.no_cpus)
         self.structure.forces = forces
 
         # write wall time of DFT calculation
