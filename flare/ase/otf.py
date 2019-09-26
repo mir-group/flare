@@ -206,8 +206,8 @@ class OTF(MolecularDynamics):
             #TODO: add other args to train()
             calc.gp_model.train(output=output)
             self.observers[0][0].write_hyps(calc.gp_model.hyp_labels, 
-                            calc.gp_model.hyps, calc.gp_model.like, 
-                            calc.gp_model.like_grad)
+                            calc.gp_model.hyps, calc.gp_model.likelihood, 
+                            calc.gp_model.likelihood_gradient)
         else:
             calc.gp_model.set_L_alpha()
 
