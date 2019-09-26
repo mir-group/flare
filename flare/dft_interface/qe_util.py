@@ -16,12 +16,20 @@ def run_dft(qe_input, structure, dft_loc):
     return parse_dft_forces('pwscf.out')
 
 
-def run_dft_par(qe_input, structure, dft_loc, no_cpus):
-    run_qe_path = qe_input
-    edit_dft_input_positions(run_qe_path, structure)
-    qe_command = \
-        'mpirun -np {0} {1} < {2} > {3}'.format(no_cpus, dft_loc, run_qe_path,
-                                                'pwscf.out')
+def run_dft_par(qe_input, structure, dft_loc, no_cpus, dft_out='pwscf.out',
+                npool=None):
+    newfilename = edit_dft_input_positions(qe_input, structure)
+
+    if npool is None:
+        dft_command = \
+            '{} -i {} > {}'.format(dft_loc, newfilename, dft_out)
+    else:
+        dft_command = \
+            '{} -npool {} -i {} > {}'.format(dft_loc, npool, newfilename,
+                                             dft_out)
+
+    if (no_cpus > 1):
+        dft_command = 'mpirun -np {} {}'.format(no_cpus, dft_command)
 
     call(qe_command, shell=True)
 
