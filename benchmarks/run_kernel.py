@@ -23,31 +23,33 @@ def run_two_body(args):
 
     filename = os.path.join(args.location, "kernel_data.hdf5")
     file = h5py.File(filename, 'r')
+    sig, ls, r_cut = read_parameters(file)
+    num_envs = read_metadata(file)
 
-    bond_array_1 = read_environment(file, "env1", "bond_array_2")
-    bond_array_2 = read_environment(file, "env2", "bond_array_2")
-    d1, sig, ls, r_cut = read_parameters(file)
+    bond_arrays = []
+    for i in range(num_envs):
+        bond_arrays.append(read_environment(file, f"env{i}", "bond_array_2"))
 
     file.close()
 
-    print(bond_array_1.shape)
-    print(bond_array_1[0, 0])
-    print(bond_array_1[0, 1])
-    print(bond_array_1[1, 0])
-    print(d1, sig, ls, r_cut)
-
     start = time.time()
-    en.two_body_force_en_jit(bond_array_1, bond_array_2, d1, sig, ls, r_cut,
+    en.two_body_force_en_jit(bond_arrays[0], bond_arrays[1], 1, sig, ls, r_cut,
                              cutoff_func)
     end = time.time()
-    print("First two body runtime", end - start)
+    print("Compile and first two body runtime", end - start)
 
+    kern = 0
     start = time.time()
-    kern = en.two_body_force_en_jit(bond_array_1, bond_array_2, d1, sig, ls, r_cut,
-                             cutoff_func)
+    for i in range(num_envs):
+        for j in range(i+1, num_envs):
+            for dim in range(1, 4):
+                kern += en.two_body_force_en_jit(bond_arrays[i],
+                                                 bond_arrays[j], dim, sig, ls,
+                                                 r_cut, cutoff_func)
+
     end = time.time()
-    print("Second two body runtime", end - start)
-    print(kern)
+    print("Total two body runtime", end - start)
+    print("Total kernel value", kern)
 
 
 def read_environment(file, name, dataset):
@@ -58,9 +60,14 @@ def read_environment(file, name, dataset):
 
 
 def read_parameters(file):
-    d1 = file["parameters"]['d1'][()]
     sig = file["parameters"]['sig'][()]
     ls = file["parameters"]['ls'][()]
     r_cut = file["parameters"]['r_cut'][()]
 
-    return d1, sig, ls, r_cut
+    return sig, ls, r_cut
+
+
+def read_metadata(file):
+    num_envs = file['metadata']['num_envs'][()]
+
+    return num_envs
