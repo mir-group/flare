@@ -29,7 +29,8 @@ def run_dft_par(qe_input, structure, dft_loc, no_cpus=1, dft_out='pwscf.out',
                                              dft_out)
 
     if (no_cpus > 1):
-        dft_command = 'mpirun -np {} {}'.format(no_cpus, dft_command)
+        # dft_command = 'mpirun -np {} {}'.format(no_cpus, dft_command)
+        dft_command = 'srun -n {} --mpi=pmi2 {}'.format(no_cpus, dft_command)
 
     call(qe_command, shell=True)
 
