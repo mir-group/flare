@@ -17,34 +17,37 @@ class EnergyGP(GaussianProcess):
         self.training_atoms = []
         self.training_envs = []
 
-    def update_db(self, struc, force_range=[]):
+    def update_db(self, structure, force_range=[]):
         """Add a structure to the training set."""
 
-        self.training_data.append(struc)
+        # add structure and environments to training set
+        self.training_strucs.append(structure)
+
+        env_list = []
+        for atom in structure.nat:
+            env_curr = \
+                AtomicEnvironment(structure, atom, self.cutoffs)
+            env_list.append(env_curr)
+        self.training_envs.append(env_list)
 
         # add energy to training labels if available
-        if struc.energy is not None:
+        if structure.energy is not None:
             self.training_labels_np = \
                 np.append(self.training_labels_np,
-                          struc.energy)
+                          structure.energy)
 
         # add forces to training set if available
-        env_list = []
         update_indices = []
-        if struc.forces is not None:
-            noa = len(struc.positions)
+        if structure.forces is not None:
+            noa = len(structure.positions)
             update_indices = force_range or list(range(noa))
 
             for atom in update_indices:
-                env_curr = \
-                    AtomicEnvironment(struc, atom, self.cutoffs)
-                env_list.append(env_curr)
                 self.training_labels_np = \
                     np.append(self.training_labels_np,
-                              struc.forces[atom])
+                              structure.forces[atom])
 
         self.training_atoms.append(update_indices)
-        self.training_envs.append(env_list)
 
     def train(self, output=None, grad_tol=1e-4):
         """Train GP model."""
@@ -61,6 +64,21 @@ class EnergyGP(GaussianProcess):
     def get_kernel_vector(self, x: AtomicEnvironment, d_1: int):
         """Get kernel vector between a force component and the training set."""
         pass
+
+        # for structure in self.training_strucs:
+        #     if structure.energy is not None:
+
+                
+        # ds = [1, 2, 3]
+        # size = len(self.training_data) * 3
+        # k_v = np.zeros(size, )
+
+        # for m_index in range(size):
+        #     x_2 = self.training_data[int(math.floor(m_index / 3))]
+        #     d_2 = ds[m_index % 3]
+        #     k_v[m_index] = self.kernel(x, x_2, d_1, d_2,
+        #                                self.hyps, self.cutoffs)
+        # return k_v
 
     def en_kern_vec(self, x: AtomicEnvironment):
         """Get kernel vector between a local energy and the training set."""
