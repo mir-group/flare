@@ -1,3 +1,6 @@
+dist/
+flare.egg-info/
+build/
 tags
 __pycache__/
 pwscf.save/
