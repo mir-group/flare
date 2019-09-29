@@ -1,7 +1,8 @@
 import sys
 import numpy as np
 
-from flare import gp, otf, kernels
+from flare import otf, kernels
+from flare.gp import GaussianProcess
 from flare.mgp.mgp import MappedGaussianProcess
 from flare.ase.calculator import FLARE_Calculator
 import flare.mc_simple as mc_simple
@@ -9,6 +10,9 @@ import flare.mc_simple as mc_simple
 # ---------- create gaussian process model -------------------
 kernel = mc_simple.two_plus_three_body_mc
 kernel_grad = mc_simple.two_plus_three_body_mc_grad
+energy_force_kernel = mc_simple.two_plus_three_mc_force_en
+energy_kernel = mc_simple.two_plus_three_mc_en
+
 hyps = np.array([0.1, 1., 0.001, 1, 0.06])
 two_cut = 5.0
 three_cut = 5.0
@@ -16,9 +20,11 @@ cutoffs = np.array([two_cut, three_cut])
 hyp_labels = ['sig2', 'ls2', 'sig3', 'ls3', 'noise']
 opt_algorithm = 'BFGS'
 
-gp_model = gp.GaussianProcess(kernel, kernel_grad, hyps, cutoffs,
-                              hyp_labels=hyp_labels,
-                              opt_algorithm=opt_algorithm, par=False)
+gp_model = GaussianProcess(kernel, kernel_grad, hyps, cutoffs,
+                           energy_kernel=energy_kernel,
+                           energy_force_kernel=energy_force_kernel,
+                           hyp_labels=hyp_labels,
+                           opt_algorithm=opt_algorithm, par=False)
 
 # ----------- create mapped gaussian process ------------------
 struc_params = {'species': [47, 53],
