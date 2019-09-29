@@ -6,6 +6,7 @@ import sys
 from flare.env import AtomicEnvironment
 from flare.struc import Structure
 from flare.mgp.mgp import MappedGaussianProcess
+from flare.predict import predict_on_structure_par_en, predict_on_structure_en
 from ase.calculators.calculator import Calculator
 
 class FLARE_Calculator(Calculator):
@@ -18,21 +19,10 @@ class FLARE_Calculator(Calculator):
         self.results = {}
 
     def get_potential_energy(self, atoms=None, force_consistent=False):
-        # TODO: to be implemented
-        return 1
-
-        nat = len(atoms)
-        struc_curr = Structure(np.array(atoms.cell), 
-                               atoms.get_atomic_numbers(),
-                               atoms.positions)
-        local_energies = np.zeros(nat)
-
-        for n in range(nat):
-            chemenv = AtomicEnvironment(struc_curr, n,
-                                        self.gp_model.cutoffs)
-            local_energies[n] = self.gp_model.predict_local_energy(chemenv)
-
-        return np.sum(local_energies)
+        if self.use_mapping:
+            print('MGP energy mapping not implemented, give GP prediction')
+        forces = self.get_forces_gp(atoms)
+        return self.results['energy']
 
     def get_forces(self, atoms):
         if self.use_mapping:
@@ -47,17 +37,15 @@ class FLARE_Calculator(Calculator):
                                atoms.positions)
 
         if self.par:
-            res = predict_on_structure_par(struc_curr, self.gp_model)
+            forces, stds, local_energies = \
+                    predict_on_structure_par_en(struc_curr, self.gp_model)
         else:
-            res = predict_on_structure(struc_curr, self.gp_model)
-
-        forces = np.zeros((nat, 3))
-        stds = np.zeros((nat, 3))
-        for n in range(nat):
-            forces[n] = res[n][0]
-            stds[n] = res[n][1]
+            forces, stds, local_energies = \
+                    predict_on_structure_en(struc_curr, self.gp_model)
 
         self.results['stds'] = stds
+        self.results['local_energies'] = local_energies
+        self.results['energy'] = np.sum(local_energies)
         atoms.get_uncertainties = self.get_uncertainties
 
         return forces
@@ -111,56 +99,3 @@ class FLARE_Calculator(Calculator):
        
         self.mgp_model = MappedGaussianProcess(self.gp_model, grid_params, struc_params)
 
-def predict_on_atom(params):
-    structure, atom, gp_model = params
-    chemenv = AtomicEnvironment(structure, atom, gp_model.cutoffs)
-    comps = np.zeros(3)
-    stds = np.zeros(3)
-    # predict force components and standard deviations
-    for i in range(3):
-        force, var = gp_model.predict(chemenv, i+1)
-        comps[i] = float(force)
-        stds[i] = np.sqrt(np.abs(var))
-
-    return comps, stds
-
-def predict_on_atom_en(params):
-    structure, atom, gp_model = params
-    chemenv = AtomicEnvironment(structure, atom, gp_model.cutoffs)
-    comps = np.zeros(3)
-    stds = np.zeros(3)
-    # predict force components and standard deviations
-    for i in range(3):
-        force, var = gp_model.predict(chemenv, i+1)
-        comps[i] = float(force)
-        stds[i] = np.sqrt(np.abs(var))
-
-    # predict local energy
-    local_energy = gp_model.predict_local_energy(chemenv)
-    return comps, stds, local_energy
-
-def predict_on_structure_par(structure, gp_model):
-    atom_list = [(structure, atom, gp_model) for atom in range(structure.nat)]
-    with concurrent.futures.ProcessPoolExecutor() as executor:
-        res = list(executor.map(predict_on_atom, atom_list))
-        return res
-
-def predict_on_structure_par_en(self):
-    atom_list = [(structure, atom, gp_model) for atom in range(structure.nat)]
-    with concurrent.futures.ProcessPoolExecutor() as executor:
-        res = list(executor.map(predict_on_atom_en, atom_list))
-        return res
-
-def predict_on_structure(structure, gp_model):
-    res = []
-    for atom in range(structure.nat):
-        chemenv = AtomicEnvironment(structure, atom, gp_model.cutoffs)
-        res.append(predict_on_atom((structure, atom, gp_model)))
-    return res
-
-def predict_on_structure_en(strucutre, gp_model):
-    res = []
-    for atom in range(structure.nat):
-        chemenv = AtomicEnvironment(structure, atom, gp_model.cutoffs)
-        res.append(predict_on_atom_en((structure, atom, gp_model)))        
-    return res

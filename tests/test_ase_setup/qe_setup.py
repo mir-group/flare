@@ -1,5 +1,4 @@
 import os
-import pytest
 from ase.calculators.espresso import Espresso
 
 # set up executable
@@ -39,6 +38,3 @@ ion_pseudo = {'Ag': 'Ag.pbe-n-kjpaw_psl.1.0.0.UPF',
 dft_calc = Espresso(pseudopotentials=ion_pseudo, label=label, 
                     tstress=True, tprnfor=True, nosym=True, #noinv=True,
                     input_data=input_data, kpts=(1,1,1)) 
-
-#from ase.calculators.eam import EAM
-#dft_calc = EAM(potential="PdAgH_HybridPd3Ag.eam.alloy")

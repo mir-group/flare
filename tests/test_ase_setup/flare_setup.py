@@ -1,4 +1,3 @@
-import sys
 import numpy as np
 
 from flare import otf, kernels
