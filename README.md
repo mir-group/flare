@@ -24,7 +24,7 @@ FLARE can be installed in two different ways.
 
 
 ## Tests
-We recommend running unit tests to confirm that FLARE is running properly on your machine. We have implemented our tests using the pytest suite. You can call `pytest` from the command line in the tests directory to validate that you can call Quantum ESPRESSO and that your Numba installation is being correctly used by FLARE.
+We recommend running unit tests to confirm that FLARE is running properly on your machine. We have implemented our tests using the pytest suite. You can call `pytest` from the command line in the tests directory to validate that Quantum ESPRESSO or CP2K are working correctly with FLARE.
 
 Instructions (either DFT package will suffice):
 ```
