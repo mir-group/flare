@@ -10,16 +10,16 @@ FLARE is an open-source Python package for creating fast and accurate atomistic 
 2. FLARE requires Python 3 with the packages specified in `requirements.txt`. This is taken care of by `pip`.
 
 ## Installation
-Install FLARE in two ways:
+FLARE can be installed in two different ways.
 1. Download and install automatically:
     ```
-        pip install git+https://github.com/mir-group/flare.git
+    pip install git+https://github.com/mir-group/flare.git
     ```
 2. Download this repository and install (required for unit tests):
     ```
-        git clone https://github.com/mir-group/flare
-        cd flare
-        pip install .
+    git clone https://github.com/mir-group/flare
+    cd flare
+    pip install .
     ```
 
 
