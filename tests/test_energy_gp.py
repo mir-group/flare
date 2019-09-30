@@ -20,8 +20,9 @@ energy2 = 2
 forces1 = np.array([[-1, -2, -3], [2, 5, 3], [0, 1, 2]])
 forces2 = np.array([[3, 1, 4], [5, 2, 6]])
 
-struc1 = struc.Structure(cell, species1, pos1, energy=energy1, forces=forces1)
-struc2 = struc.Structure(cell, species2, pos2, energy=energy2, forces=forces2)
+struc1 = struc.Structure(cell, species1, pos1, forces=forces1)
+struc2 = struc.Structure(cell, species2, pos2, energy=energy2)
+
 
 # test gp construction
 en_gp = energy_gp.EnergyGP(kernel, energy_force_kernel, energy_kernel,

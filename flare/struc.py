@@ -73,10 +73,7 @@ of on-the-fly runs.
         # assign structure labels
         self.energy = energy
         self.stress = stress
-        if forces is None:
-            self.forces = np.zeros((len(positions), 3))
-        else:
-            self.forces = forces
+        self.forces = forces
         self.labels = self.get_labels()
 
         self.stds = np.zeros((len(positions), 3))

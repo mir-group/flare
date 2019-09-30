@@ -50,8 +50,8 @@ def get_ky_block(hyps, struc1, envs1, atoms1, struc2, envs2, atoms2,
                         kernel_ef(envs1, force_env, d+1, energy_force_kernel,
                                   hyps, cutoffs)
                     index2 += 1
+        index1 += 1
 
-    index1 += 1
     if struc1.forces is not None:
         for atom in atoms1:
             env1 = envs1[atom]
