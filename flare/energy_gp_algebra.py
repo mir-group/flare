@@ -27,7 +27,7 @@ def kernel_ef(envs1, env2, component, energy_force_kernel, hyps,
 
 def get_ky_block(hyps, struc1, envs1, atoms1, struc2, envs2, atoms2,
                  kernel, energy_force_kernel, energy_kernel, cutoffs):
-    """Get the covariance block of a structure comparison."""
+    """Get the covariance matrix between two structures."""
 
     block = np.zeros((len(struc1.labels), len(struc2.labels)))
     index1 = 0
