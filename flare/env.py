@@ -6,7 +6,7 @@ from flare.struc import Structure
 
 
 class AtomicEnvironment:
-    def __init__(self, structure: Structure, atom: int, cutoffs):
+    def __init__(self, structure: Structure, atom: int, cutoffs, sweep=1):
         """
         Class defining atomic environment to serve as argument to GP kernel.
 
@@ -20,6 +20,7 @@ class AtomicEnvironment:
         self.positions = structure.wrapped_positions
         self.cell = structure.cell
         self.species = structure.coded_species
+        self.sweep = sweep
 
         self.atom = atom
         self.ctype = structure.coded_species[atom]
@@ -29,7 +30,7 @@ class AtomicEnvironment:
         # get 2-body arrays
         bond_array_2, bond_positions_2, etypes = \
             get_2_body_arrays(self.positions, self.atom, self.cell,
-                              self.cutoff_2, self.species)
+                              self.cutoff_2, self.species, sweep=self.sweep)
         self.bond_array_2 = bond_array_2
         self.etypes = etypes
 
