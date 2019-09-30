@@ -90,9 +90,33 @@ def get_ky_mat(hyps: np.ndarray, training_strucs, training_envs,
     # initialize matrices
     size = len(training_labels_np)
     k_mat = np.zeros([size, size])
-    no_strucs = len(training_strucs)
 
     # covariance matrix has a block structure, where each comparison of
     # two structures gets its own block
+    index1 = 0
+    for m in range(len(training_strucs)):
+        struc1 = training_strucs[m]
+        size1 = len(struc1.labels)
+        envs1 = training_envs[m]
+        atoms1 = training_atoms[m]
+        index2 = 0
 
-    pass
+        for n in range(m, len(training_strucs)):
+            struc2 = training_strucs[n]
+            size2 = len(struc2.labels)
+            envs2 = training_envs[n]
+            atoms2 = training_atoms[n]
+
+            ky_block = \
+                get_ky_block(hyps, struc1, envs1, atoms1, struc2, envs2,
+                             atoms2, kernel, force_energy_kernel,
+                             energy_kernel, cutoffs)
+
+            k_mat[index1:index1 + size1, index2:index2 + size2] = ky_block
+            k_mat[index2:index2 + size2, index1:index1 + size1] = \
+                ky_block.transpose()
+
+            index2 += size2
+        index1 += size1
+
+    return k_mat
