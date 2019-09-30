@@ -261,7 +261,7 @@ def get_like_grad_from_mats(ky_mat, hyp_mat, training_labels_np):
 
 def get_neg_likelihood(hyps: np.ndarray, training_data: list,
                        training_labels_np: np.ndarray,
-                       kernel, cutoffs=None, output = None,
+                       kernel, cutoffs=None, output=None,
                        par=False):
 
     if output is not None:
@@ -287,7 +287,7 @@ def get_neg_likelihood(hyps: np.ndarray, training_data: list,
 def get_neg_like_grad(hyps: np.ndarray, training_data: list,
                       training_labels_np: np.ndarray,
                       kernel_grad, cutoffs=None,
-                      output = None, par=False):
+                      output=None, par=False):
 
     if output is not None:
         output.write_to_log('hyps: ' + str(hyps)+'\n', name="hyps")

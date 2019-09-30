@@ -72,6 +72,8 @@ of on-the-fly runs.
         self.energy = None
         self.stress = None
         self.forces = np.zeros((len(positions), 3))
+        self.labels = self.get_labels()
+
         self.stds = np.zeros((len(positions), 3))
         self.mass_dict = mass_dict
 
@@ -134,6 +136,23 @@ cell vectors.
                                         self.cell_dot)
 
         self.wrapped_positions = pos_wrap
+
+    def get_labels(self):
+        labels = []
+        if self.energy is not None:
+            labels.append(self.energy)
+        if self.forces is not None:
+            unrolled_forces = self.forces.reshape(-1)
+            for force_comp in unrolled_forces:
+                labels.append(force_comp)
+        if self.stress is not None:
+            labels.extend([self.stress[0, 0], self.stress[0, 1],
+                           self.stress[0, 2], self.stress[1, 1],
+                           self.stress[1, 2], self.stress[2, 2]])
+
+        labels = np.array(labels)
+
+        return labels
 
     def indices_of_specie(self, specie: int):
         """
