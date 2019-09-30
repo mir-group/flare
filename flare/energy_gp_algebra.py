@@ -113,7 +113,7 @@ def get_ky_mat(hyps: np.ndarray, training_strucs, training_envs,
         size1 = len(struc1.labels)
         envs1 = training_envs[m]
         atoms1 = training_atoms[m]
-        index2 = 0
+        index2 = index1
 
         for n in range(m, len(training_strucs)):
             struc2 = training_strucs[n]
@@ -129,6 +129,13 @@ def get_ky_mat(hyps: np.ndarray, training_strucs, training_envs,
             k_mat[index1:index1 + size1, index2:index2 + size2] = ky_block
             k_mat[index2:index2 + size2, index1:index1 + size1] = \
                 ky_block.transpose()
+            
+            print('printing block...')
+            print(index1)
+            print(index1+size1)
+            print(index2)
+            print(index2+size2)
+            print(ky_block)
 
             index2 += size2
         index1 += size1

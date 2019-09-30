@@ -1,6 +1,6 @@
 import numpy as np
 from flare import struc, energy_gp_algebra, mc_simple, energy_gp
-from flare.energy_gp_algebra import get_ky_block
+from flare.energy_gp_algebra import get_ky_block, get_ky_mat
 
 cell = np.eye(3) * 10
 pos1 = np.array([[0, 0, 0], [0.1, 0.2, 0.3], [-0.1, -0.14, 0.5]])
@@ -13,7 +13,7 @@ energy_kernel = mc_simple.two_plus_three_mc_en
 force_energy_kernel = mc_simple.two_plus_three_mc_force_en
 kernel_grad = None
 cutoffs = np.array([4., 3.])
-hyps = np.array([1, 1, 1, 1, 1])
+hyps = np.array([0.1, 1, 0.01, 1, 0.01, 0.001])
 
 energy1 = 5
 energy2 = 2
@@ -39,5 +39,9 @@ block = get_ky_block(hyps, en_gp.training_strucs[0], en_gp.training_envs[0],
                      en_gp.training_envs[1], en_gp.training_atoms[1],
                      kernel, force_energy_kernel, energy_kernel, cutoffs)
 
-print(block)
-print(block.shape)
+# test covariance matrix
+k_test = get_ky_mat(hyps, en_gp.training_strucs, en_gp.training_envs,
+                    en_gp.training_atoms, en_gp.training_labels_np,
+                    kernel, force_energy_kernel, energy_kernel, cutoffs)
+
+assert(np.isclose(k_test, k_test.transpose()).all())
