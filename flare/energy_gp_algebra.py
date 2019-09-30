@@ -13,14 +13,13 @@ def kernel_ee(envs1, envs2, energy_kernel, hyps, cutoffs):
     return kern
 
 
-def kernel_ef(envs1, env2, component, force_energy_kernel, hyps,
-              cutoffs):
+def kernel_fe(env1, envs2, component, force_energy_kernel, hyps, cutoffs):
     """Compute energy/force kernel between a structure and an environment."""
 
     kern = 0
-    for env1 in envs1:
+    for env2 in envs2:
         kern += \
-            force_energy_kernel(env2, env1, component, hyps, cutoffs)
+            force_energy_kernel(env1, env2, component, hyps, cutoffs)
 
     return kern
 
@@ -47,7 +46,7 @@ def get_ky_block(hyps, struc1, envs1, atoms1, struc2, envs2, atoms2,
                 force_env = envs2[atom]
                 for d in range(3):
                     block[index1, index2] = \
-                        kernel_ef(envs1, force_env, d+1, force_energy_kernel,
+                        kernel_fe(force_env, envs1, d+1, force_energy_kernel,
                                   hyps, cutoffs)
                     index2 += 1
         index1 += 1
@@ -61,7 +60,7 @@ def get_ky_block(hyps, struc1, envs1, atoms1, struc2, envs2, atoms2,
                 # force/energy
                 if struc2.energy:
                     block[index1, index2] = \
-                        kernel_ef(envs2, env1, d_1+1, force_energy_kernel,
+                        kernel_fe(env1, envs2, d_1+1, force_energy_kernel,
                                   hyps, cutoffs)
                     index2 += 1
 
