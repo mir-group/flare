@@ -185,7 +185,7 @@ uncertainty."""
         k_v = self.get_kernel_vector(x_t, d)
 
         # Guarantee that alpha is up to date with training set
-        if self.alpha is None or 3 * len(self.training_data) != len(
+        if self.alpha is None or len(self.training_labels_np) != len(
                 self.alpha):
             self.set_L_alpha()
 

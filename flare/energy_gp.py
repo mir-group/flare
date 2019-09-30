@@ -55,14 +55,6 @@ class EnergyGP(GaussianProcess):
         """Train GP model."""
         pass
 
-    def predict(self, x_t: AtomicEnvironment, d: int):
-        """Predict force on atomic environment."""
-        pass
-
-    def predict_local_energy(self, x_t: AtomicEnvironment):
-        """Predict local energy of atomic environment."""
-        pass
-
     def get_kernel_vector(self, test_env: AtomicEnvironment, d_1: int):
         """Get kernel vector between a force component and the training set."""
 
@@ -140,3 +132,6 @@ class EnergyGP(GaussianProcess):
         self.ky_mat_inv = ky_mat_inv
         self.l_mat_inv = l_mat_inv
         self.likelihood = like
+
+if __name__ == '__main__':
+    pass

@@ -101,13 +101,13 @@ class AtomicEnvironment:
 
 @njit
 def get_2_body_arrays(positions: np.ndarray, atom: int, cell: np.ndarray,
-                      cutoff_2: float, species: np.ndarray):
+                      cutoff_2: float, species: np.ndarray, sweep=1):
     noa = len(positions)
     pos_atom = positions[atom]
     coords = np.zeros((noa, 3, 27))
     dists = np.zeros((noa, 27))
     cutoff_count = 0
-    super_sweep = np.array([-1, 0, 1])
+    super_sweep = np.array([n - sweep for n in range(2 * sweep + 1)])
 
     vec1 = cell[0]
     vec2 = cell[1]
