@@ -170,6 +170,7 @@ cell vectors.
                           positions=np.array(dictionary['positions']),
                           species=dictionary['coded_species'])
 
+        struc.energy = dictionary['energy']
         struc.forces = np.array(dictionary['forces'])
         struc.stress = dictionary['stress']
         struc.stds = np.array(dictionary['stds'])
