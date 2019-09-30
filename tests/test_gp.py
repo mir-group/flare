@@ -160,14 +160,14 @@ def test_set_L_alpha(two_body_gp, params):
                      1.07467158e+00, 5.50677932e-02])
     cutoffs = np.array([5.4, 5.4])
     hyp_labels = ['sig2', 'ls2', 'sig3', 'ls3', 'noise']
-    energy_force_kernel = en.two_plus_three_force_en
+    force_energy_kernel = en.two_plus_three_force_en
     energy_kernel = en.two_plus_three_en
     opt_algorithm = 'BFGS'
 
     # test update_db
     gaussian = \
         GaussianProcess(kernel, kernel_grad, hyps, cutoffs, hyp_labels,
-                        energy_force_kernel, energy_kernel,
+                        force_energy_kernel, energy_kernel,
                         opt_algorithm)
     gaussian.update_db(test_structure, forces)
 

@@ -41,7 +41,7 @@ def test_otf_h2_par():
     kernel_grad = en.two_body_grad
     hyps = np.array([1, 1, 1])
     hyp_labels = ['Signal Std', 'Length Scale', 'Noise Std']
-    energy_force_kernel = en.two_body_force_en
+    force_energy_kernel = en.two_body_force_en
 
     gp = \
         GaussianProcess(kernel=kernel,
@@ -49,7 +49,7 @@ def test_otf_h2_par():
                         hyps=hyps,
                         cutoffs=cutoffs,
                         hyp_labels=hyp_labels,
-                        energy_force_kernel=energy_force_kernel,
+                        force_energy_kernel=force_energy_kernel,
                         par=True,
                         maxiter=50)
 

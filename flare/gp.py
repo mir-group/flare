@@ -22,7 +22,7 @@ class GaussianProcess:
                  kernel_grad: Callable, hyps: np.ndarray,
                  cutoffs: np.ndarray,
                  hyp_labels: List = None,
-                 energy_force_kernel: Callable = None,
+                 force_energy_kernel: Callable = None,
                  energy_kernel: Callable = None,
                  opt_algorithm: str = 'L-BFGS-B',
                  maxiter=10, par=False,
@@ -32,7 +32,7 @@ class GaussianProcess:
         self.kernel = kernel
         self.kernel_grad = kernel_grad
         self.energy_kernel = energy_kernel
-        self.energy_force_kernel = energy_force_kernel
+        self.force_energy_kernel = force_energy_kernel
         self.kernel_name = kernel.__name__
         self.hyps = hyps
         self.hyp_labels = hyp_labels
@@ -268,7 +268,7 @@ environment and the environments in the training set."""
         for m_index in range(size):
             x_2 = self.training_data[int(math.floor(m_index / 3))]
             d_2 = ds[m_index % 3]
-            k_v[m_index] = self.energy_force_kernel(x_2, x, d_2,
+            k_v[m_index] = self.force_energy_kernel(x_2, x, d_2,
                                                     self.hyps, self.cutoffs)
 
         return k_v
@@ -394,16 +394,16 @@ environment and the environments in the training set."""
         else:
             energy_kernel = None
 
-        if dictionary['energy_force_kernel'] is not None:
-            energy_force_kernel = \
-                str_to_kernel(dictionary['energy_force_kernel'])
+        if dictionary['force_energy_kernel'] is not None:
+            force_energy_kernel = \
+                str_to_kernel(dictionary['force_energy_kernel'])
         else:
-            energy_force_kernel = None
+            force_energy_kernel = None
 
         new_gp = GaussianProcess(kernel=force_kernel,
                                  kernel_grad=grad,
                                  energy_kernel=energy_kernel,
-                                 energy_force_kernel=energy_force_kernel,
+                                 force_energy_kernel=force_energy_kernel,
                                  cutoffs=np.array(dictionary['cutoffs']),
                                  hyps=np.array(dictionary['hyps']),
                                  hyp_labels=dictionary['hyp_labels'],

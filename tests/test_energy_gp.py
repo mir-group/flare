@@ -10,7 +10,7 @@ species2 = [1, 2]
 
 kernel = mc_simple.two_plus_three_body_mc
 energy_kernel = mc_simple.two_plus_three_mc_en
-energy_force_kernel = mc_simple.two_plus_three_mc_force_en
+force_energy_kernel = mc_simple.two_plus_three_mc_force_en
 kernel_grad = None
 cutoffs = np.array([4., 3.])
 hyps = np.array([1, 1, 1, 1, 1])
@@ -25,7 +25,7 @@ struc2 = struc.Structure(cell, species2, pos2, energy=energy2)
 
 
 # test gp construction
-en_gp = energy_gp.EnergyGP(kernel, energy_force_kernel, energy_kernel,
+en_gp = energy_gp.EnergyGP(kernel, force_energy_kernel, energy_kernel,
                            kernel_grad, hyps, cutoffs)
 
 
@@ -37,7 +37,7 @@ en_gp.update_db(struc2)
 block = get_ky_block(hyps, en_gp.training_strucs[0], en_gp.training_envs[0],
                      en_gp.training_atoms[0], en_gp.training_strucs[1],
                      en_gp.training_envs[1], en_gp.training_atoms[1],
-                     kernel, energy_force_kernel, energy_kernel, cutoffs)
+                     kernel, force_energy_kernel, energy_kernel, cutoffs)
 
 print(block)
 print(block.shape)
