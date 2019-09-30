@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/mir-group/flare.svg?branch=master)](https://travis-ci.org/mir-group/flare) [![codecov](https://codecov.io/gh/mir-group/flare/branch/master/graph/badge.svg)](https://codecov.io/gh/mir-group/flare)
+[![Build Status](https://travis-ci.org/mir-group/flare.svg?branch=master)](https://travis-ci.org/mir-group/flare) [![documentation](https://readthedocs.org/projects/flare/badge/?version=latest)](https://readthedocs.org/projects/flare) [![codecov](https://codecov.io/gh/mir-group/flare/branch/master/graph/badge.svg)](https://codecov.io/gh/mir-group/flare)
 
 # FLARE: Fast Learning of Atomistic Rare Events
 
@@ -6,15 +6,32 @@ FLARE is an open-source Python package for creating fast and accurate atomistic 
 
 
 ## Prerequisites
-1. To train a potential on the fly, you'll need to have a working installation of Quantum ESPRESSO on your machine. The instructions for installation can be found here: https://www.quantum-espresso.org/
-2. Our kernels and environment objects require the Python package numba. If you're using Anaconda, you can get it with the command `conda install numba`.
-3. In order for unit testing to work:<br/>
-   a. set an environment variable called "PWSCF_COMMAND" to point to your pw.x Quantum ESPRESSO binary.<br/>
-   b. ensure you have the pytest python package installed.
-4. Add the flare directory to your Python path.
+1. To train a potential on the fly, you need a working installation of [Quantum ESPRESSO](https://www.quantum-espresso.org) or [CP2K](https://www.cp2k.org).
+2. FLARE requires Python 3 with the packages specified in `requirements.txt`. This is taken care of by `pip`.
+
+## Installation
+FLARE can be installed in two different ways.
+1. Download and install automatically:
+    ```
+    pip install git+https://github.com/mir-group/flare.git
+    ```
+2. Download this repository and install (required for unit tests):
+    ```
+    git clone https://github.com/mir-group/flare
+    cd flare
+    pip install .
+    ```
+
 
 ## Tests
-We recommend running unit tests to confirm that FLARE is running properly on your machine. We have implemented our tests using the pytest suite. You can call 'pytest' from the command line in the tests directory to validate that you can call Quantum ESPRESSO and that your Numba installation is being correctly used by FLARE.
+We recommend running unit tests to confirm that FLARE is running properly on your machine. We have implemented our tests using the pytest suite. You can call `pytest` from the command line in the tests directory to validate that Quantum ESPRESSO or CP2K are working correctly with FLARE.
+
+Instructions (either DFT package will suffice):
+```
+pip install pytest
+cd tests
+PWSCF_COMMAND=/path/to/pw.x CP2K_COMMAND=/path/to/cp2k pytest
+```
 
 ## References
 [1] Jonathan Vandermause, Steven B. Torrisi, Simon Batzner, Alexie M. Kolpak, and Boris Kozinsky. *On-the-fly Bayesian active learning of interpretable force fields for atomistic rare events.* https://arxiv.org/abs/1904.02042
