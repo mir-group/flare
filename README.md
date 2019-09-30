@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/mir-group/flare.svg?branch=master)](https://travis-ci.org/mir-group/flare) [![documentation](https://readthedocs.org/projects/flare/badge/?version=latest)](https://readthedocs.org/projects/flare) [![codecov](https://codecov.io/gh/mir-group/flare/branch/master/graph/badge.svg)](https://codecov.io/gh/mir-group/flare)
+[![Build Status](https://travis-ci.org/mir-group/flare.svg?branch=master)](https://travis-ci.org/mir-group/flare) [![documentation](https://readthedocs.org/projects/flare/badge/?version=latest)](https://readthedocs.org/projects/flare) [![pypi](https://img.shields.io/pypi/v/mir-flare)](https://pypi.org/project/mir-flare/) [![activity](https://img.shields.io/github/commit-activity/m/mir-group/flare)](https://github.com/mir-group/flare/commits/master) [![codecov](https://codecov.io/gh/mir-group/flare/branch/master/graph/badge.svg)](https://codecov.io/gh/mir-group/flare)
 
 # FLARE: Fast Learning of Atomistic Rare Events
 
@@ -13,7 +13,7 @@ FLARE is an open-source Python package for creating fast and accurate atomistic 
 FLARE can be installed in two different ways.
 1. Download and install automatically:
     ```
-    pip install git+https://github.com/mir-group/flare.git
+    pip install mir-flare
     ```
 2. Download this repository and install (required for unit tests):
     ```

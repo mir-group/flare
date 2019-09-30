@@ -1,4 +1,5 @@
 dist/
+mir_flare.egg-info/
 flare.egg-info/
 build/
 tags
