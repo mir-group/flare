@@ -21,7 +21,8 @@ class AtomicEnvironment:
         self.cell = structure.cell
         self.species = structure.coded_species
         self.sweep_array = np.arange(-sweep, sweep+1, 1)
-        # self.sweep_array = np.array([n - sweep for n in range(2 * sweep + 1)])
+        # self.sweep_array = np.array([n - sweep for n in range(2 * sweep + 1)],
+        #                             dtype=np.int8)
         self.sweep_len = (2 * sweep) + 1
 
         self.atom = atom
@@ -30,10 +31,13 @@ class AtomicEnvironment:
         self.cutoff_2 = cutoffs[0]
 
         # get 2-body arrays
+        print(type(self.sweep_len))
+        print(type(self.sweep_array[0]))
         bond_array_2, bond_positions_2, etypes = \
             get_2_body_arrays(self.positions, self.atom, self.cell,
                               self.cutoff_2, self.species, self.sweep_array,
                               self.sweep_len)
+        print('complete')
         self.bond_array_2 = bond_array_2
         self.etypes = etypes
 
@@ -109,8 +113,9 @@ def get_2_body_arrays(positions: np.ndarray, atom: int, cell: np.ndarray,
                       sweep_len: int):
     noa = len(positions)
     pos_atom = positions[atom]
-    coords = np.zeros((noa, 3, 27))
-    dists = np.zeros((noa, 27))
+    super_count = sweep.shape[0]**3
+    coords = np.zeros((noa, 3, super_count))
+    dists = np.zeros((noa, super_count))
     cutoff_count = 0
 
     vec1 = cell[0]
@@ -121,11 +126,11 @@ def get_2_body_arrays(positions: np.ndarray, atom: int, cell: np.ndarray,
     for n in range(noa):
         diff_curr = positions[n] - pos_atom
         im_count = 0
-        for sw1 in range(sweep_len):
+        for sw1 in range(sweep.shape[0]):
             s1 = sweep[sw1]
-            for sw2 in range(sweep_len):
+            for sw2 in range(sweep.shape[0]):
                 s2 = sweep[sw2]
-                for sw3 in range(sweep_len):
+                for sw3 in range(sweep.shape[0]):
                     s3 = sweep[sw3]
                     im = diff_curr + s1 * vec1 + s2 * vec2 + s3 * vec3
                     dist = sqrt(im[0] * im[0] + im[1] * im[1] + im[2] * im[2])
@@ -143,7 +148,7 @@ def get_2_body_arrays(positions: np.ndarray, atom: int, cell: np.ndarray,
 
     for m in range(noa):
         spec_curr = species[m]
-        for n in range(27):
+        for n in range(super_count):
             dist_curr = dists[m, n]
             if (dist_curr < cutoff_2) and (dist_curr != 0):
                 coord = coords[m, :, n]
