@@ -87,11 +87,11 @@ def noise_matrix(hyps, strucs, atoms, k_size):
     # assume energy noise is final hyperparameter
     for struc, atom_list in zip(strucs, atoms):
         if struc.energy:
-            noise_vec[index] = hyps[-1]
+            noise_vec[index] = hyps[-1]**2
             index += 1
         if struc.forces is not None:
             no_comps = 3 * len(atom_list)
-            noise_vec[index:index+no_comps] = hyps[-2]
+            noise_vec[index:index+no_comps] = hyps[-2]**2
             index += no_comps
 
     return np.diag(noise_vec)
@@ -132,5 +132,9 @@ def get_ky_mat(hyps: np.ndarray, training_strucs, training_envs,
 
             index2 += size2
         index1 += size1
+
+    # add noise
+    noise_mat = noise_matrix(hyps, training_strucs, training_atoms, size)
+    k_mat = k_mat + noise_mat
 
     return k_mat
