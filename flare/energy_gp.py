@@ -72,26 +72,48 @@ class EnergyGP(GaussianProcess):
                 en_kern = 0
                 for train_env in self.training_envs[struc_no]:
                     en_kern += \
-                        self.energy_force_kernel(train_env, test_env, d_1,
+                        self.energy_force_kernel(test_env, train_env, d_1,
                                                  self.hyps, self.cutoffs)
                 kernel_vector[index] = en_kern
                 index += 1
 
             if structure.forces is not None:
-                # TODO: compute force/force kernel
                 for atom in self.training_atoms[struc_no]:
                     train_env = self.training_envs[struc_no][atom]
                     for d_2 in range(3):
                         kernel_vector[index] = \
-                            self.kernel(test_env, train_env, d_1, d_2+1,
+                            self.kernel(test_env, train_env, d_1, d_2 + 1,
                                         self.hyps, self.cutoffs)
                         index += 1
 
         return kernel_vector
 
-    def en_kern_vec(self, x: AtomicEnvironment):
+    def en_kern_vec(self, test_env: AtomicEnvironment):
         """Get kernel vector between a local energy and the training set."""
-        pass
+        kernel_vector = np.zeros(len(self.training_labels_np))
+        index = 0
+
+        for struc_no, structure in enumerate(self.training_strucs):
+            if structure.energy is not None:
+                en_kern = 0
+                for train_env in self.training_envs[struc_no]:
+                    en_kern += \
+                        self.energy_kernel(test_env, train_env, self.hyps,
+                                           self.cutoffs)
+                kernel_vector[index] = en_kern
+                index += 1
+
+            if structure.forces is not None:
+                for atom in self.training_atoms[struc_no]:
+                    train_env = self.training_envs[struc_no][atom]
+                    for d_2 in range(3):
+                        kernel_vector[index] = \
+                            self.energy_force_kernel(train_env, test_env,
+                                                     d_2 + 1, self.hyps,
+                                                     self.cutoffs)
+                        index += 1
+
+        return kernel_vector
 
     def set_L_alpha(self):
         """Set L matrix and alpha vector based on the current training set."""
