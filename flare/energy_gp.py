@@ -19,7 +19,7 @@ class EnergyGP(GaussianProcess):
         self.training_atoms = []
         self.training_envs = []
 
-    def update_db(self, structure, force_range=[]):
+    def update_db(self, structure, force_range=[], sweep=1):
         """Add a structure to the training set."""
 
         # add structure and environments to training set
@@ -28,7 +28,7 @@ class EnergyGP(GaussianProcess):
         env_list = []
         for atom in range(structure.nat):
             env_curr = \
-                AtomicEnvironment(structure, atom, self.cutoffs)
+                AtomicEnvironment(structure, atom, self.cutoffs, sweep=sweep)
             env_list.append(env_curr)
         self.training_envs.append(env_list)
 

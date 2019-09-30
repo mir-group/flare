@@ -254,5 +254,5 @@ def test_serialization_method(two_body_gp, test_point):
             assert x == y
 
     for d in [0, 1, 2]:
-        assert np.all(two_body_gp.predict(x_t=test_point, d=d) ==
-                      new_gp.predict(x_t=test_point, d=d))
+        assert np.isclose(two_body_gp.predict(x_t=test_point, d=d),
+                          new_gp.predict(x_t=test_point, d=d)).all()
