@@ -61,24 +61,33 @@ class EnergyGP(GaussianProcess):
         """Predict local energy of atomic environment."""
         pass
 
-    def get_kernel_vector(self, x: AtomicEnvironment, d_1: int):
+    def get_kernel_vector(self, test_env: AtomicEnvironment, d_1: int):
         """Get kernel vector between a force component and the training set."""
-        pass
 
-        # for structure in self.training_strucs:
-        #     if structure.energy is not None:
+        kernel_vector = np.zeros(len(self.training_labels_np))
+        index = 0
 
-                
-        # ds = [1, 2, 3]
-        # size = len(self.training_data) * 3
-        # k_v = np.zeros(size, )
+        for struc_no, structure in enumerate(self.training_strucs):
+            if structure.energy is not None:
+                en_kern = 0
+                for train_env in self.training_envs[struc_no]:
+                    en_kern += \
+                        self.energy_force_kernel(train_env, test_env, d_1,
+                                                 self.hyps, self.cutoffs)
+                kernel_vector[index] = en_kern
+                index += 1
 
-        # for m_index in range(size):
-        #     x_2 = self.training_data[int(math.floor(m_index / 3))]
-        #     d_2 = ds[m_index % 3]
-        #     k_v[m_index] = self.kernel(x, x_2, d_1, d_2,
-        #                                self.hyps, self.cutoffs)
-        # return k_v
+            if structure.forces is not None:
+                # TODO: compute force/force kernel
+                for atom in self.training_atoms[struc_no]:
+                    train_env = self.training_envs[struc_no][atom]
+                    for d_2 in range(3):
+                        kernel_vector[index] = \
+                            self.kernel(test_env, train_env, d_1, d_2+1,
+                                        self.hyps, self.cutoffs)
+                        index += 1
+
+        return kernel_vector
 
     def en_kern_vec(self, x: AtomicEnvironment):
         """Get kernel vector between a local energy and the training set."""
