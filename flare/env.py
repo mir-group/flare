@@ -20,7 +20,9 @@ class AtomicEnvironment:
         self.positions = structure.wrapped_positions
         self.cell = structure.cell
         self.species = structure.coded_species
-        self.sweep = sweep
+        self.sweep_array = np.arange(-sweep, sweep+1, 1)
+        # self.sweep_array = np.array([n - sweep for n in range(2 * sweep + 1)])
+        self.sweep_len = (2 * sweep) + 1
 
         self.atom = atom
         self.ctype = structure.coded_species[atom]
@@ -30,7 +32,8 @@ class AtomicEnvironment:
         # get 2-body arrays
         bond_array_2, bond_positions_2, etypes = \
             get_2_body_arrays(self.positions, self.atom, self.cell,
-                              self.cutoff_2, self.species, sweep=self.sweep)
+                              self.cutoff_2, self.species, self.sweep_array,
+                              self.sweep_len)
         self.bond_array_2 = bond_array_2
         self.etypes = etypes
 
@@ -102,13 +105,13 @@ class AtomicEnvironment:
 
 @njit
 def get_2_body_arrays(positions: np.ndarray, atom: int, cell: np.ndarray,
-                      cutoff_2: float, species: np.ndarray, sweep=1):
+                      cutoff_2: float, species: np.ndarray, sweep: np.ndarray,
+                      sweep_len: int):
     noa = len(positions)
     pos_atom = positions[atom]
     coords = np.zeros((noa, 3, 27))
     dists = np.zeros((noa, 27))
     cutoff_count = 0
-    super_sweep = np.array([n - sweep for n in range(2 * sweep + 1)])
 
     vec1 = cell[0]
     vec2 = cell[1]
@@ -118,9 +121,12 @@ def get_2_body_arrays(positions: np.ndarray, atom: int, cell: np.ndarray,
     for n in range(noa):
         diff_curr = positions[n] - pos_atom
         im_count = 0
-        for s1 in super_sweep:
-            for s2 in super_sweep:
-                for s3 in super_sweep:
+        for sw1 in range(sweep_len):
+            s1 = sweep[sw1]
+            for sw2 in range(sweep_len):
+                s2 = sweep[sw2]
+                for sw3 in range(sweep_len):
+                    s3 = sweep[sw3]
                     im = diff_curr + s1 * vec1 + s2 * vec2 + s3 * vec3
                     dist = sqrt(im[0] * im[0] + im[1] * im[1] + im[2] * im[2])
                     if (dist < cutoff_2) and (dist != 0):

@@ -6,9 +6,9 @@ from flare.env import AtomicEnvironment
 
 
 class EnergyGP(GaussianProcess):
-    def __init__(self, kernel, force_energy_kernel, energy_kernel, kernel_grad,
+    def __init__(self, kernel, force_energy_kernel, energy_kernel,
                  hyps, cutoffs, hyp_labels=None, opt_algorithm='L-BFGS-B',
-                 maxiter=10, par=False, output=None):
+                 maxiter=10, par=False, output=None, kernel_grad=None):
 
         GaussianProcess.__init__(self, kernel, kernel_grad, hyps, cutoffs,
                                  hyp_labels, force_energy_kernel,
@@ -28,7 +28,7 @@ class EnergyGP(GaussianProcess):
         env_list = []
         for atom in range(structure.nat):
             env_curr = \
-                AtomicEnvironment(structure, atom, self.cutoffs, sweep=sweep)
+                AtomicEnvironment(structure, atom, self.cutoffs, sweep)
             env_list.append(env_curr)
         self.training_envs.append(env_list)
 
