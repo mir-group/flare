@@ -1,6 +1,7 @@
 import numpy as np
 from flare import struc, energy_gp_algebra, mc_simple, energy_gp
-from flare.energy_gp_algebra import get_ky_block, get_ky_mat
+from flare.energy_gp_algebra import get_ky_block, get_ky_mat, kernel_ee, \
+    kernel_fe
 import pytest
 
 
@@ -19,10 +20,8 @@ def en_gp():
     cutoffs = np.array([4., 3.])
     hyps = np.array([0.1, 1, 0.01, 1, 0.01, 0.001])
 
-    # energy1 = 5
-    energy2 = 2
     forces1 = np.array([[-1, -2, -3], [2, 5, 3], [0, 1, 2]])
-    # forces2 = np.array([[3, 1, 4], [5, 2, 6]])
+    energy2 = 2
 
     struc1 = struc.Structure(cell, species1, pos1, forces=forces1)
     struc2 = struc.Structure(cell, species2, pos2, energy=energy2)
@@ -61,3 +60,17 @@ def test_get_ky_mat(en_gp):
     d2 = 3
     kern = kernel(env1, env2, d1, d2, hyps, cutoffs)
     assert(np.isclose(kern, k_test[6, 2]))
+
+    # check force self kernel
+    kern = kernel(env1, env1, d1, d1, hyps, cutoffs) + hyps[-2]**2
+    assert(np.isclose(kern, k_test[6, 6]))
+
+    # check energy self kernel
+    envs1 = en_gp.training_envs[1]
+    kern = kernel_ee(envs1, envs1, energy_kernel, hyps, cutoffs) + hyps[-1]**2
+    assert(np.isclose(kern, k_test[9, 9]))
+
+    # check force energy kernel
+    kern = \
+        kernel_fe(env1, envs1, 1, force_energy_kernel, hyps, cutoffs)
+    assert(np.isclose(kern, k_test[6, 9]))
