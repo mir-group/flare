@@ -421,6 +421,7 @@ environment and the environments in the training set."""
         new_gp.training_data = [AtomicEnvironment.from_dict(env) for env in
                                 dictionary['training_data']]
         new_gp.training_labels = dictionary['training_labels']
+        new_gp.training_labels_np = dictionary['training_labels_np']
 
         new_gp.likelihood = dictionary['likelihood']
         new_gp.likelihood_gradient = dictionary['likelihood_gradient']
