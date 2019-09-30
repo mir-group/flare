@@ -83,7 +83,7 @@ class GaussianProcess:
         self.training_labels_np = self.force_list_to_np(self.training_labels)
 
     def add_one_env(self, env: AtomicEnvironment,
-                    force: np.array, train: bool = False, **kwargs):
+                    force, train: bool = False, **kwargs):
         """
         Tool to add a single environment / force pair into the training set.
 
