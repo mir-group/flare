@@ -11,6 +11,7 @@ try:
 except ImportError:
     _pmg_present = False
 
+
 class Structure:
     """
     Contains information about a structure of atoms, including the periodic
@@ -181,6 +182,7 @@ cell vectors.
     def to_pmg_structure(self):
         """
         Returns FLARE structure as a pymatgen structure.
+
         :return: Pymatgen structure corresponding to current FLARE structure
         """
 
@@ -201,7 +203,7 @@ cell vectors.
     def from_pmg_structure(structure):
         """
         Returns Pymatgen structure as FLARE structure.
-        
+
         :param structure: Pymatgen structure
         :return: FLARE Structure
         """
