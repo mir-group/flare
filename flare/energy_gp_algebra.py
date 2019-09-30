@@ -33,9 +33,9 @@ def get_ky_block(hyps, struc1, envs1, atoms1, struc2, envs2, atoms2,
     index1 = 0
     index2 = 0
 
-    if struc1.energy:
+    if struc1.energy is not None:
         # energy/energy
-        if struc2.energy:
+        if struc2.energy is not None:
             block[index1, index2] = \
                 kernel_ee(envs1, envs2, energy_kernel, hyps,
                           cutoffs)
@@ -59,7 +59,7 @@ def get_ky_block(hyps, struc1, envs1, atoms1, struc2, envs2, atoms2,
                 index2 = 0
 
                 # force/energy
-                if struc2.energy:
+                if struc2.energy is not None:
                     block[index1, index2] = \
                         kernel_fe(env1, envs2, d_1+1, force_energy_kernel,
                                   hyps, cutoffs)
@@ -86,7 +86,7 @@ def noise_matrix(hyps, strucs, atoms, k_size):
 
     # assume energy noise is final hyperparameter
     for struc, atom_list in zip(strucs, atoms):
-        if struc.energy:
+        if struc.energy is not None:
             noise_vec[index] = hyps[-1]**2
             index += 1
         if struc.forces is not None:
@@ -125,6 +125,8 @@ def get_ky_mat(hyps: np.ndarray, training_strucs, training_envs,
                 get_ky_block(hyps, struc1, envs1, atoms1, struc2, envs2,
                              atoms2, kernel, force_energy_kernel,
                              energy_kernel, cutoffs)
+
+            print(ky_block)
 
             k_mat[index1:index1 + size1, index2:index2 + size2] = ky_block
             k_mat[index2:index2 + size2, index1:index1 + size1] = \
