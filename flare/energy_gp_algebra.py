@@ -15,7 +15,7 @@ def kernel_ee(envs1, envs2, energy_kernel, hyps, cutoffs):
 
 
 def kernel_fe(env1, envs2, component, force_energy_kernel, hyps, cutoffs):
-    """Compute energy/force kernel between a structure and an environment."""
+    """Compute force/energy kernel between a structure and an environment."""
 
     kern = 0
     for env2 in envs2:

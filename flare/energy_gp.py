@@ -1,15 +1,17 @@
 import numpy as np
+from flare.energy_gp_algebra import get_ky_mat
+from flare.gp_algebra import get_like_from_ky_mat
 from flare.gp import GaussianProcess
 from flare.env import AtomicEnvironment
 
 
 class EnergyGP(GaussianProcess):
-    def __init__(self, kernel, energy_force_kernel, energy_kernel, kernel_grad,
+    def __init__(self, kernel, force_energy_kernel, energy_kernel, kernel_grad,
                  hyps, cutoffs, hyp_labels=None, opt_algorithm='L-BFGS-B',
                  maxiter=10, par=False, output=None):
 
         GaussianProcess.__init__(self, kernel, kernel_grad, hyps, cutoffs,
-                                 hyp_labels, energy_force_kernel,
+                                 hyp_labels, force_energy_kernel,
                                  energy_kernel, opt_algorithm, maxiter,
                                  par, output)
 
@@ -72,7 +74,7 @@ class EnergyGP(GaussianProcess):
                 en_kern = 0
                 for train_env in self.training_envs[struc_no]:
                     en_kern += \
-                        self.energy_force_kernel(test_env, train_env, d_1,
+                        self.force_energy_kernel(test_env, train_env, d_1,
                                                  self.hyps, self.cutoffs)
                 kernel_vector[index] = en_kern
                 index += 1
@@ -108,7 +110,7 @@ class EnergyGP(GaussianProcess):
                     train_env = self.training_envs[struc_no][atom]
                     for d_2 in range(3):
                         kernel_vector[index] = \
-                            self.energy_force_kernel(train_env, test_env,
+                            self.force_energy_kernel(train_env, test_env,
                                                      d_2 + 1, self.hyps,
                                                      self.cutoffs)
                         index += 1
@@ -117,4 +119,24 @@ class EnergyGP(GaussianProcess):
 
     def set_L_alpha(self):
         """Set L matrix and alpha vector based on the current training set."""
-        pass
+
+        ky_mat = \
+            get_ky_mat(self.hyps, self.training_strucs, self.training_envs,
+                       self.training_atoms, self.training_labels_np,
+                       self.kernel, self.force_energy_kernel,
+                       self.energy_kernel, self.cutoffs)
+
+        like = \
+            get_like_from_ky_mat(ky_mat, self.training_labels_np)
+
+        l_mat = np.linalg.cholesky(ky_mat)
+        l_mat_inv = np.linalg.inv(l_mat)
+        ky_mat_inv = l_mat_inv.T @ l_mat_inv
+        alpha = np.matmul(ky_mat_inv, self.training_labels_np)
+
+        self.ky_mat = ky_mat
+        self.l_mat = l_mat
+        self.alpha = alpha
+        self.ky_mat_inv = ky_mat_inv
+        self.l_mat_inv = l_mat_inv
+        self.likelihood = like
