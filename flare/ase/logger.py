@@ -7,28 +7,30 @@ from ase import units
 
 from flare.ase.calculator import FLARE_Calculator
 
+
 class OTFLogger(MDLogger):
 
     def __init__(self, dyn, atoms, logfile, header=False, stress=False,
-            peratom=False, mode="w"):
+                 peratom=False, mode="w"):
 
         super().__init__(dyn, atoms, logfile, header, stress,
-                peratom, mode)
+                         peratom, mode)
 
         self.write_header_info()
         self.start_time = time.time()
 
-
     def write_header_info(self):
         gp_model = self.atoms.calc.gp_model
         self.logfile.write(str(datetime.datetime.now()))
-        self.logfile.write('\nnumber of cpu cores: ') # TODO
+        self.logfile.write('\nnumber of cpu cores: ')  # TODO
         self.logfile.write('\ncutoffs: '+str(gp_model.cutoffs))
         self.logfile.write('\nkernel: '+gp_model.kernel.__name__)
         self.logfile.write('\nnumber of parameters: '+str(len(gp_model.hyps)))
         self.logfile.write('\nhyperparameters: '+str(gp_model.hyps))
-        self.logfile.write('\nhyperparameter optimization algorithm: '+gp_model.algo)
-        self.logfile.write('\nuncertainty tolerance: '+str(self.dyn.std_tolerance))
+        self.logfile.write('\nhyperparameter optimization algorithm: ' +
+                           gp_model.algo)
+        self.logfile.write('\nuncertainty tolerance: ' +
+                           str(self.dyn.std_tolerance))
         self.logfile.write('\nperiodic cell:\n'+str(self.atoms.cell))
         self.logfile.write('\n')
 
@@ -39,14 +41,15 @@ class OTFLogger(MDLogger):
 
         self.logfile.write('likelihood: '+str(like)+'\n')
         self.logfile.write('likelihood gradient: '+str(like_grad)+'\n')
-        self.logfile.write('wall time from start: %.2f s \n' % (time.time()-self.start_time))
-    
+        self.logfile.write('wall time from start: %.2f s \n'
+                           % (time.time()-self.start_time))
+
     def __call__(self):
         self.logfile.write('\n'+50*'-')
         if self.dyn is not None:
             steps = self.dyn.get_time()
             t = steps / (1000*units.fs)
-            if type(self.atoms.calc) != FLARE_Calculator: # TODO
+            if type(self.atoms.calc) != FLARE_Calculator:  # TODO
                 self.logfile.write('\n-*Frame: '+str(steps))
             else:
                 self.logfile.write('\n-Frame: '+str(steps))
@@ -57,24 +60,28 @@ class OTFLogger(MDLogger):
         positions = self.atoms.get_positions()
         forces = self.atoms.get_forces()
         velocities = self.atoms.get_velocities()
-        if type(self.atoms.calc) == FLARE_Calculator: # TODO: make it compatible with mgp
+        # TODO: make it compatible with mgp
+        if type(self.atoms.calc) == FLARE_Calculator:
             stds = self.atoms.get_uncertainties()
             force_str = 'GP  Forces'
         else:
             stds = np.zeros(positions.shape)
             force_str = 'DFT Forces'
-        self.logfile.write((10*' ')+'Positions'+(11*' '+'|'+10*' ')+
-                                    force_str+(11*' '+'|'+11*' ')+
-                                    'Velocities'+(10*' '+'|'+11*' ')+
+        self.logfile.write((10*' ')+'Positions'+(11*' '+'|'+10*' ') +
+                                    force_str+(11*' '+'|'+11*' ') +
+                                    'Velocities'+(10*' '+'|'+11*' ') +
                                     'Uncertainties\n')
 
-        template = '{:9f} {:9f} {:9f} | {:9f} {:9f} {:9f} | {:9f} {:9f} {:9f} | {:9f} {:9f} {:9f}'
+        template = '{:9f} {:9f} {:9f} | {:9f} {:9f} {:9f} | '\
+                   '{:9f} {:9f} {:9f} | {:9f} {:9f} {:9f}'
         for atom in range(len(positions)):
-            dat = template.format(\
-                    positions[atom][0], positions[atom][1], positions[atom][2],
-                    forces[atom][0],    forces[atom][1],    forces[atom][2],
-                    velocities[atom][0],velocities[atom][1],velocities[atom][2],
-                    stds[atom][0],      stds[atom][1],      stds[atom][2])
+            dat = \
+                template.format(positions[atom][0], positions[atom][1],
+                                positions[atom][2], forces[atom][0],
+                                forces[atom][1], forces[atom][2],
+                                velocities[atom][0], velocities[atom][1],
+                                velocities[atom][2], stds[atom][0],
+                                stds[atom][1], stds[atom][2])
             self.logfile.write(dat+'\n')
 
         # write energy, temperature info
@@ -87,20 +94,22 @@ class OTFLogger(MDLogger):
         self.logfile.write('\ntotal energy: '+str(epot+ekin))
         self.logfile.write('\nkinetic energy: '+str(ekin))
         self.logfile.write('\ntemperature: '+str(temp))
-        self.logfile.write('\nwall time from start: '+str(time.time()-self.start_time))
+        self.logfile.write('\nwall time from start: ' +
+                           str(time.time()-self.start_time))
 
         self.logfile.write('\n')
         self.logfile.flush()
-        
 
     def add_atom_info(self, target_atom, uncertainty):
-        self.logfile.write('\nAdding atom '+str(target_atom)+' to the training set with uncertainty: '+str(uncertainty))
+        self.logfile.write('\nAdding atom {} to the training set with'
+                           'uncertainty: '.format(uncertainty))
 
     def write_mgp_train(self, mgp_model, train_time):
         train_size = len(mgp_model.GP.training_data)
         self.logfile.write('\ntraining set size: {}\n'.format(train_size))
         self.logfile.write('lower bound: {}\n'.format(mgp_model.l_bound))
-        self.logfile.write('mgp l_bound: {}\n'.format(mgp_model.grid_params['bounds_2'][0,0]))
+        self.logfile.write('mgp l_bound: {}\n'.format(mgp_model.grid_params
+                                                      ['bounds_2'][0, 0]))
         self.logfile.write('building mapping time: {}'.format(train_time))
 
     def run_complete(self):
