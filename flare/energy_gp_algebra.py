@@ -1,3 +1,4 @@
+"""Matrix algebra for GP models trained on energy and force data."""
 import numpy as np
 
 
@@ -77,18 +78,32 @@ def get_ky_block(hyps, struc1, envs1, atoms1, struc2, envs2, atoms2,
     return block
 
 
+def noise_matrix(hyps, strucs, atoms, k_size):
+    """Compute diagonal noise matrix."""
+
+    noise_vec = np.zeros(k_size)
+    index = 0
+
+    # assume energy noise is final hyperparameter
+    for struc, atom_list in zip(strucs, atoms):
+        if struc.energy:
+            noise_vec[index] = hyps[-1]
+            index += 1
+        if struc.forces is not None:
+            no_comps = 3 * len(atom_list)
+            noise_vec[index:index+no_comps] = hyps[-2]
+            index += no_comps
+
+    return np.diag(noise_vec)
+
+
 def get_ky_mat(hyps: np.ndarray, training_strucs, training_envs,
                training_atoms, training_labels_np: np.ndarray,
                kernel, force_energy_kernel, energy_kernel, cutoffs=None):
 
-    # assume sigma_n is the final hyperparameter
-    number_of_hyps = len(hyps)
-    sigma_en = hyps[-1]
-    sigma_frc = hyps[-2]
-
     # initialize matrices
     size = len(training_labels_np)
-    k_mat = np.zeros([size, size])
+    k_mat = np.zeros((size, size))
 
     # covariance matrix has a block structure, where each comparison of
     # two structures gets its own block
