@@ -126,8 +126,6 @@ def get_ky_mat(hyps: np.ndarray, training_strucs, training_envs,
                              atoms2, kernel, force_energy_kernel,
                              energy_kernel, cutoffs)
 
-            print(ky_block)
-
             k_mat[index1:index1 + size1, index2:index2 + size2] = ky_block
             k_mat[index2:index2 + size2, index1:index1 + size1] = \
                 ky_block.transpose()
