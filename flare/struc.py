@@ -35,7 +35,8 @@ of on-the-fly runs.
     """
 
     def __init__(self, cell, species, positions, mass_dict=None,
-                 prev_positions=None, species_labels=None):
+                 prev_positions=None, species_labels=None, energy=None,
+                 forces=None, stress=None):
         self.cell = cell
         self.vec1 = cell[0, :]
         self.vec2 = cell[1, :]
@@ -69,9 +70,13 @@ of on-the-fly runs.
                                                           'same length'
             self.prev_positions = prev_positions
 
-        self.energy = None
-        self.stress = None
-        self.forces = np.zeros((len(positions), 3))
+        # assign structure labels
+        self.energy = energy
+        self.stress = stress
+        if forces is None:
+            self.forces = np.zeros((len(positions), 3))
+        else:
+            self.forces = forces
         self.labels = self.get_labels()
 
         self.stds = np.zeros((len(positions), 3))

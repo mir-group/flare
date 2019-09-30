@@ -52,11 +52,12 @@ def get_ky_block(hyps, struc1, envs1, atoms1, struc2, envs2, atoms2,
                     index2 += 1
 
     index1 += 1
-    index2 = 0
     if struc1.forces is not None:
         for atom in atoms1:
             env1 = envs1[atom]
             for d_1 in range(3):
+                index2 = 0
+
                 # force/energy
                 if struc2.energy:
                     block[index1, index2] = \
