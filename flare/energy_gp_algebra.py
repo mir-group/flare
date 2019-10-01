@@ -29,7 +29,21 @@ def get_ky_block(hyps, struc1, envs1, atoms1, struc2, envs2, atoms2,
                  kernel, force_energy_kernel, energy_kernel, cutoffs):
     """Get the covariance matrix between two structures."""
 
-    block = np.zeros((len(struc1.labels), len(struc2.labels)))
+    # compute block size
+    struc1_len = 0
+    struc2_len = 0
+
+    if struc1.energy is not None:
+        struc1_len += 1
+    if struc1.forces is not None:
+        struc1_len += len(atoms1) * 3
+    if struc2.energy is not None:
+        struc2_len += 1
+    if struc2.forces is not None:
+        struc2_len += len(atoms2) * 3
+
+    block = np.zeros((struc1_len, struc2_len))
+
     index1 = 0
     index2 = 0
 
@@ -67,7 +81,8 @@ def get_ky_block(hyps, struc1, envs1, atoms1, struc2, envs2, atoms2,
 
                 # force/force
                 if struc2.forces is not None:
-                    for env2 in envs2:
+                    for atom2 in atoms2:
+                        env2 = envs2[atom2]
                         for d_2 in range(3):
                             block[index1, index2] = \
                                 kernel(env1, env2, d_1+1, d_2+1, hyps, cutoffs)
@@ -75,7 +90,7 @@ def get_ky_block(hyps, struc1, envs1, atoms1, struc2, envs2, atoms2,
 
                 index1 += 1
 
-    return block
+    return block, struc1_len, struc2_len
 
 
 def noise_matrix(hyps, strucs, atoms, k_size):
@@ -110,18 +125,16 @@ def get_ky_mat(hyps: np.ndarray, training_strucs, training_envs,
     index1 = 0
     for m in range(len(training_strucs)):
         struc1 = training_strucs[m]
-        size1 = len(struc1.labels)
         envs1 = training_envs[m]
         atoms1 = training_atoms[m]
         index2 = index1
 
         for n in range(m, len(training_strucs)):
             struc2 = training_strucs[n]
-            size2 = len(struc2.labels)
             envs2 = training_envs[n]
             atoms2 = training_atoms[n]
 
-            ky_block = \
+            ky_block, size1, size2 = \
                 get_ky_block(hyps, struc1, envs1, atoms1, struc2, envs2,
                              atoms2, kernel, force_energy_kernel,
                              energy_kernel, cutoffs)
