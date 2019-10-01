@@ -15,7 +15,7 @@ def run_dft_command(calc_dir: str, dft_loc: str,
 		edit_dft_input_configurations("POSCAR", structure)
 	try:
 		os.chdir(calc_dir)
-	except Exception, e:
+	except Exception as e:
 		os.chdir(currdir)
 		call(vasp_cmd, shell=True)
 		raise e
