@@ -71,3 +71,4 @@ def test_otf_md():
     os.system('rm grid3*')
     os.system('rm -r kv3')
     os.system('rm lmp.mgp')
+    os.system('rm -r otf_data')
