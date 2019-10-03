@@ -32,9 +32,10 @@ def run_dft_par(qe_input, structure, dft_loc, no_cpus=1, dft_out='pwscf.out',
         else:
             dft_command = f'srun -n {no_cpus} --mpi=pmi2 {dft_command}'
 
-    call(qe_command, shell=True)
+    call(dft_command, shell=True)
+    os.remove(newfilename)
 
-    return parse_dft_forces('pwscf.out')
+    return parse_dft_forces(dft_out)
 
 
 def run_dft_en_par(qe_input, structure, dft_loc, no_cpus):
@@ -201,9 +202,13 @@ def edit_dft_input_positions(qe_input: str, structure):
     lines[cell_index + 2] = ' '.join([str(x) for x in structure.vec3]) \
                             + '\n'
 
-    with open(qe_input, 'w') as f:
+    newfilename = qe_input + "_run"
+
+    with open(newfilename, 'w') as f:
         for line in lines:
             f.write(line)
+
+    return newfilename
 
 
 def parse_dft_forces(outfile: str):
