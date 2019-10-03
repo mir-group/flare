@@ -9,28 +9,28 @@ from typing import List
 def run_dft(qe_input, structure, dft_loc):
     run_qe_path = qe_input
     edit_dft_input_positions(run_qe_path, structure)
-    qe_command = '{0} < {1} > {2}'.format(dft_loc, run_qe_path,
-                                                 'pwscf.out')
+    qe_command = f'{dft_loc} < {run_qe_path} > pwscf.out'
     call(qe_command, shell=True)
 
     return parse_dft_forces('pwscf.out')
 
 
 def run_dft_par(qe_input, structure, dft_loc, no_cpus=1, dft_out='pwscf.out',
-                npool=None):
+                npool=None, mpi="mpi"):
     newfilename = edit_dft_input_positions(qe_input, structure)
 
     if npool is None:
         dft_command = \
-            '{} -i {} > {}'.format(dft_loc, newfilename, dft_out)
+            f'{dft_loc} -i {newfilename} > {dft_out}'
     else:
         dft_command = \
-            '{} -npool {} -i {} > {}'.format(dft_loc, npool, newfilename,
-                                             dft_out)
+            f'{dft_loc} -nk {npool} -i {newfilename} > {dft_out}'
 
     if (no_cpus > 1):
-        # dft_command = 'mpirun -np {} {}'.format(no_cpus, dft_command)
-        dft_command = 'srun -n {} --mpi=pmi2 {}'.format(no_cpus, dft_command)
+        if (mpi == "mpi"):
+            dft_command = f'mpirun -np {no_cpus} {dft_command}'
+        else:
+            dft_command = f'srun -n {no_cpus} --mpi=pmi2 {dft_command}'
 
     call(qe_command, shell=True)
 
@@ -41,8 +41,7 @@ def run_dft_en_par(qe_input, structure, dft_loc, no_cpus):
     run_qe_path = qe_input
     edit_dft_input_positions(run_qe_path, structure)
     qe_command = \
-        'mpirun -np {0} {1} < {2} > {3}'.format(no_cpus, dft_loc, run_qe_path,
-                                                'pwscf.out')
+        'mpirun -np {no_cpus} {dft_loc} < {run_qe_path} > pwscf.out'
     call(qe_command, shell=True)
 
     forces, energy = parse_dft_forces_and_energy('pwscf.out')
