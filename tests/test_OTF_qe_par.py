@@ -62,6 +62,7 @@ def test_otf_h2():
               std_tolerance_factor, init_atoms=[0],
               calculate_energy=True, max_atoms_added=1,
               no_cpus=2, par=True,
+              mpi="mpi",
               output_name='h2_otf_qe_par')
 
     otf.run()
@@ -109,6 +110,7 @@ def test_otf_Al_npool():
               std_tolerance_factor, init_atoms=[0],
               calculate_energy=True, max_atoms_added=1,
               no_cpus=2, par=True, npool=2,
+              mpi="mpi",
               output_name='h2_otf_qe_par')
 
     otf.run()
