@@ -23,7 +23,7 @@ class OTF(object):
                  max_atoms_added=1, freeze_hyps=10,
                  rescale_steps=[], rescale_temps=[],
                  dft_softwarename="qe",
-                 no_cpus=1):
+                 no_cpus=1, npool=None, mpi="srun"):
 
         self.dft_input = dft_input
         self.dt = dt
@@ -85,8 +85,10 @@ class OTF(object):
 
         self.output = Output(output_name, always_flush=True)
 
-        # set number of cpus for qe runs
+        # set number of cpus and npool for qe runs
         self.no_cpus = no_cpus
+        self.npool = npool
+        self.mpi = mpi
 
     def run(self):
         self.output.write_header(self.gp.cutoffs, self.gp.kernel_name,
@@ -170,7 +172,10 @@ class OTF(object):
 
         # calculate DFT forces
         forces = self.dft_module.run_dft_par(self.dft_input, self.structure,
-                                             self.dft_loc, self.no_cpus)
+                                             self.dft_loc,
+                                             no_cpus=self.no_cpus,
+                                             npool=self.npool,
+                                             mpi=self.mpi)
         self.structure.forces = forces
 
         # write wall time of DFT calculation
@@ -191,11 +196,6 @@ class OTF(object):
                           custom_range=train_atoms)
 
         self.gp.set_L_alpha()
-
-        # if self.curr_step == 0:
-        #     self.gp.set_L_alpha()
-        # else:
-        #     self.gp.update_L_alpha()
 
     def train_gp(self):
         self.gp.train(self.output)
