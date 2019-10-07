@@ -7,7 +7,7 @@ from scipy.optimize import minimize
 from flare.env import AtomicEnvironment
 from flare.struc import Structure
 from flare.gp_algebra import get_ky_and_hyp, get_like_grad_from_mats, \
-    get_neg_likelihood, get_neg_like_grad, get_ky_and_hyp_par
+    get_neg_likelihood, get_neg_like_grad, get_ky_and_hyp_par, get_ky_mat_update
 from flare.kernels import str_to_kernel
 from flare.mc_simple import str_to_mc_kernel
 
@@ -319,21 +319,8 @@ environment and the environments in the training set."""
             self.set_L_alpha()
             return
 
-        n = self.l_mat_inv.shape[0]
-        N = len(self.training_data)
-        m = N - n // 3  # number of new data added
-        ky_mat = np.zeros((3 * N, 3 * N))
-        ky_mat[:n, :n] = self.ky_mat
-        # calculate kernels for all added data
-        for i in range(m):
-            ind = n // 3 + i
-            x_t = self.training_data[ind]
-            k_vi = np.array([self.get_kernel_vector(x_t, d + 1)
-                             for d in range(3)]).T  # (n+3m) x 3
-            ky_mat[:, 3 * ind:3 * ind + 3] = k_vi
-            ky_mat[3 * ind:3 * ind + 3, :n] = k_vi[:n, :].T
-        sigma_n = self.hyps[-1]
-        ky_mat[n:, n:] += sigma_n ** 2 * np.eye(3 * m)
+        ky_mat = get_ky_mat_update(np.copy(self.ky_mat), self.training_data, 
+                self.get_kernel_vector, self.hyps, self.par)
 
         l_mat = np.linalg.cholesky(ky_mat)
         l_mat_inv = np.linalg.inv(l_mat)

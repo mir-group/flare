@@ -210,6 +210,51 @@ def get_ky_and_hyp(hyps: np.ndarray, training_data: list,
 
     return hyp_mat, ky_mat
 
+def get_ky_mat_update_row(params):
+    '''
+    used for update_L_alpha, especially for parallelization
+    '''
+    ind, x_t, get_kernel_vector = params
+    k_vi = np.array([get_kernel_vector(x_t, d + 1)
+                     for d in range(3)]).T  # (n+3m) x 3
+    return k_vi
+
+def get_ky_mat_update(ky_mat_old, training_data, get_kernel_vector, hyps, par):
+    '''
+    used for update_L_alpha, especially for parallelization
+    parallelized for added atoms, for example, if add 10 atoms to the training
+    set, the K matrix will add 10x3 columns and 10x3 rows, and the task will
+    be distributed to 30 processors
+    '''
+    n = ky_mat_old.shape[0]
+    N = len(training_data)
+    m = N - n // 3  # number of new data added
+    ky_mat = np.zeros((3 * N, 3 * N))
+    ky_mat[:n, :n] = ky_mat_old
+
+    # calculate kernels for all added data
+    params_list = [(n//3+i, training_data[n//3+i], get_kernel_vector)\
+                   for i in range(m)]
+    if par:
+        pool = mp.Pool(processes=mp.cpu_count())
+        k_vi_list = pool.map(get_ky_mat_update_row, params_list)
+        pool.close()
+        pool.join()
+
+    for i in range(m):
+        params = params_list[i]
+        ind = params[0]
+        if par:
+            k_vi = k_vi_list[i]
+        else:
+            k_vi = get_ky_mat_update_row(params)
+        ky_mat[:, 3 * ind:3 * ind + 3] = k_vi
+        ky_mat[3 * ind:3 * ind + 3, :n] = k_vi[:n, :].T
+       
+    sigma_n = hyps[-1]
+    ky_mat[n:, n:] += sigma_n ** 2 * np.eye(3 * m)
+    return ky_mat
+
 
 def get_like_from_ky_mat(ky_mat, training_labels_np):
         # catch linear algebra errors
