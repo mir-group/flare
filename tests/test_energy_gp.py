@@ -16,9 +16,9 @@ def en_gp():
     kernel = mc_simple.two_plus_three_body_mc
     energy_kernel = mc_simple.two_plus_three_mc_en
     force_energy_kernel = mc_simple.two_plus_three_mc_force_en
-    kernel_grad = None
     cutoffs = np.array([4., 3.])
-    hyps = np.array([0.1, 1, 0.01, 1, 0.01, 0.001])
+    hyps = np.array([0.1, 1, 0.01, 1, 0.01])
+    energy_hyp = 0.001
 
     forces1 = np.array([[-1, -2, -3], [2, 5, 3], [0, 1, 2]])
     energy2 = 2
@@ -28,7 +28,7 @@ def en_gp():
 
     # test gp construction
     en_gp = energy_gp.EnergyGP(kernel, force_energy_kernel, energy_kernel,
-                               kernel_grad, hyps, cutoffs)
+                               hyps, energy_hyp, cutoffs)
 
     # test database update
     en_gp.update_db(struc1)
@@ -44,11 +44,13 @@ def test_get_ky_mat(en_gp):
     energy_kernel = mc_simple.two_plus_three_mc_en
     force_energy_kernel = mc_simple.two_plus_three_mc_force_en
     cutoffs = np.array([4., 3.])
-    hyps = np.array([0.1, 1, 0.01, 1, 0.01, 0.001])
+    hyps = np.array([0.1, 1, 0.01, 1, 0.01])
+    energy_hyp = 0.001
 
-    k_test = get_ky_mat(hyps, en_gp.training_strucs, en_gp.training_envs,
-                        en_gp.training_atoms, en_gp.training_labels_np,
-                        kernel, force_energy_kernel, energy_kernel, cutoffs)
+    k_test = get_ky_mat(hyps, energy_hyp, en_gp.training_strucs,
+                        en_gp.training_envs, en_gp.training_atoms,
+                        en_gp.training_labels_np, kernel, force_energy_kernel,
+                        energy_kernel, cutoffs)
 
     # check that the covariance matrix is symmetric
     assert(np.isclose(k_test, k_test.transpose()).all())
@@ -62,12 +64,13 @@ def test_get_ky_mat(en_gp):
     assert(np.isclose(kern, k_test[6, 2]))
 
     # check force self kernel
-    kern = kernel(env1, env1, d1, d1, hyps, cutoffs) + hyps[-2]**2
+    kern = kernel(env1, env1, d1, d1, hyps, cutoffs) + hyps[-1]**2
     assert(np.isclose(kern, k_test[6, 6]))
 
     # check energy self kernel
     envs1 = en_gp.training_envs[1]
-    kern = kernel_ee(envs1, envs1, energy_kernel, hyps, cutoffs) + hyps[-1]**2
+    kern = \
+        kernel_ee(envs1, envs1, energy_kernel, hyps, cutoffs) + energy_hyp**2
     assert(np.isclose(kern, k_test[9, 9]))
 
     # check force energy kernel
