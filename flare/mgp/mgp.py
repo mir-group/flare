@@ -568,15 +568,16 @@ class Map3body:
                 env12.cross_bond_dists = np.array([[0, r12], [r12, 0]])
 
                 # calculate kernel functions of those newly added training data
-                if update:
-                    k12_v = new_kv_file[1+b1*nop+b2, :]
-                    for m_index in range(last_size, size):
-                        x_2 = GP.training_data[int(math.floor(m_index / 3))]
-                        d_2 = ds[m_index % 3]
-                        k12_v[m_index] = GP.kernel(env12, x_2, 1, d_2,
-                                               GP.hyps, GP.cutoffs)
-                else:
-                    k12_v = GP.get_kernel_vector(env12, 1)   
+                # if update:
+                #     k12_v = new_kv_file[1+b1*nop+b2, :]
+                #     for m_index in range(last_size, size):
+                #         x_2 = GP.training_data[int(math.floor(m_index / 3))]
+                #         d_2 = ds[m_index % 3]
+                #         k12_v[m_index] = GP.kernel(env12, x_2, 1, d_2,
+                #                                GP.hyps, GP.cutoffs)
+                # else:
+
+                k12_v = GP.get_kernel_vector(env12, 1)   
 
                 new_kv_file[1+b1*nop+b2, :] = k12_v
 
