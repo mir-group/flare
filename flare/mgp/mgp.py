@@ -546,7 +546,7 @@ class Map3body:
         # open saved k vector file, and write to new file
         if update:
             kv_filename = 'kv3/'+str(a12)
-            size = len(GP.training_data) * 3
+            size = len(GP.training_labels_np)
             new_kv_file = np.zeros((nop**2+1, size))
             new_kv_file[0,0] = size
             if str(a12)+'.npy' in os.listdir('kv3'):
