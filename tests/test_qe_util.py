@@ -119,9 +119,9 @@ def test_espresso_input_edit():
     structure.vec1 += np.random.randn(3)
     structure.positions[0] += np.random.randn(3)
 
-    edit_dft_input_positions('./qe_input_1.in', structure=structure)
+    new_file = edit_dft_input_positions('./qe_input_1.in', structure=structure)
 
-    positions, species, cell, masses = parse_dft_input('./qe_input_1.in')
+    positions, species, cell, masses = parse_dft_input(new_file)
 
     assert np.equal(positions[0], structure.positions[0]).all()
     assert np.equal(structure.vec1, cell[0, :]).all()
