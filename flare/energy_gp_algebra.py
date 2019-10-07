@@ -93,7 +93,7 @@ def get_ky_block(hyps, struc1, envs1, atoms1, struc2, envs2, atoms2,
     return block, struc1_len, struc2_len
 
 
-def noise_matrix(hyps, strucs, atoms, k_size):
+def noise_matrix(hyps, energy_noise, strucs, atoms, k_size):
     """Compute diagonal noise matrix."""
 
     noise_vec = np.zeros(k_size)
@@ -102,17 +102,17 @@ def noise_matrix(hyps, strucs, atoms, k_size):
     # assume energy noise is final hyperparameter
     for struc, atom_list in zip(strucs, atoms):
         if struc.energy is not None:
-            noise_vec[index] = hyps[-1]**2
+            noise_vec[index] = energy_noise**2
             index += 1
         if struc.forces is not None:
             no_comps = 3 * len(atom_list)
-            noise_vec[index:index+no_comps] = hyps[-2]**2
+            noise_vec[index:index+no_comps] = hyps[-1]**2
             index += no_comps
 
     return np.diag(noise_vec)
 
 
-def get_ky_mat(hyps: np.ndarray, training_strucs, training_envs,
+def get_ky_mat(hyps: np.ndarray, energy_noise, training_strucs, training_envs,
                training_atoms, training_labels_np: np.ndarray,
                kernel, force_energy_kernel, energy_kernel, cutoffs=None):
 
@@ -147,7 +147,8 @@ def get_ky_mat(hyps: np.ndarray, training_strucs, training_envs,
         index1 += size1
 
     # add noise
-    noise_mat = noise_matrix(hyps, training_strucs, training_atoms, size)
+    noise_mat = noise_matrix(hyps, energy_noise, training_strucs,
+                             training_atoms, size)
     k_mat = k_mat + noise_mat
 
     return k_mat

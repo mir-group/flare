@@ -7,8 +7,9 @@ from flare.env import AtomicEnvironment
 
 class EnergyGP(GaussianProcess):
     def __init__(self, kernel, force_energy_kernel, energy_kernel,
-                 hyps, cutoffs, hyp_labels=None, opt_algorithm='L-BFGS-B',
-                 maxiter=10, par=False, output=None, kernel_grad=None):
+                 hyps, energy_noise, cutoffs, hyp_labels=None,
+                 opt_algorithm='L-BFGS-B', maxiter=10, par=False, output=None,
+                 kernel_grad=None):
 
         GaussianProcess.__init__(self, kernel, kernel_grad, hyps, cutoffs,
                                  hyp_labels, force_energy_kernel,
@@ -18,6 +19,7 @@ class EnergyGP(GaussianProcess):
         self.training_strucs = []
         self.training_atoms = []
         self.training_envs = []
+        self.energy_noise = energy_noise
 
     def update_db(self, structure, force_range=[], sweep=1):
         """Add a structure to the training set."""
@@ -113,10 +115,11 @@ class EnergyGP(GaussianProcess):
         """Set L matrix and alpha vector based on the current training set."""
 
         ky_mat = \
-            get_ky_mat(self.hyps, self.training_strucs, self.training_envs,
-                       self.training_atoms, self.training_labels_np,
-                       self.kernel, self.force_energy_kernel,
-                       self.energy_kernel, self.cutoffs)
+            get_ky_mat(self.hyps, self.energy_noise, self.training_strucs,
+                       self.training_envs, self.training_atoms,
+                       self.training_labels_np, self.kernel,
+                       self.force_energy_kernel, self.energy_kernel,
+                       self.cutoffs)
 
         like = \
             get_like_from_ky_mat(ky_mat, self.training_labels_np)
