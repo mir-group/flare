@@ -494,7 +494,7 @@ class Map3body:
         original_force_en = GP.force_energy_kernel
         original_hyps = np.copy(GP.hyps)
         GP.kernel = three_body_mc
-        GP.force_enery_kernel = three_body_mc_force_en
+        GP.force_energy_kernel = three_body_mc_force_en
         GP.hyps = GP.hyps[-3:]
 
         # ------ construct grids ------
