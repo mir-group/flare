@@ -33,7 +33,7 @@ def test_two_plus_three_body_force_en():
     positions_2 = deepcopy(positions_1)
     positions_2[0][0] = delt
 
-    species_1 = [1, 2, 1]
+    species_1 = [1, 2, 1, 1, 2, 3, 4, 2, 1]
     atom_1 = 0
     test_structure_1 = struc.Structure(cell, species_1, positions_1)
     test_structure_2 = struc.Structure(cell, species_1, positions_2)
@@ -52,7 +52,7 @@ def test_two_plus_three_body_force_en():
                    np.array([random(), random(), random()]),
                    np.array([random(), random(), random()])]
 
-    species_2 = [1, 1, 2]
+    species_2 = [1, 1, 2, 1, 2, 3, 4, 2, 1 ]
     atom_2 = 0
     test_structure_1 = struc.Structure(cell, species_2, positions_1)
     env2 = env.AtomicEnvironment(test_structure_1, atom_2, cutoffs)
