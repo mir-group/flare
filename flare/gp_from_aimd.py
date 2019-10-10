@@ -4,18 +4,20 @@ trajectory. Contains methods to transfer the model to an OTF run /
 MD engine run.
 """
 import time
-
-from flare.predict import predict_on_structure, \
-    predict_on_structure_par, predict_on_structure_en, \
-    predict_on_structure_par_en
 from typing import List, Tuple
+from copy import deepcopy
+
+import pickle
+import numpy as np
+
+from flare.output import Output
 from flare.struc import Structure, get_unique_species
 from flare.gp import GaussianProcess
 from flare.env import AtomicEnvironment
-import numpy as np
-from copy import deepcopy
-import pickle
-from flare.output import Output
+from flare.util import Z_to_element
+from flare.predict import predict_on_structure, \
+    predict_on_structure_par, predict_on_structure_en, \
+    predict_on_structure_par_en
 
 
 class TrajectoryTrainer(object):
@@ -197,12 +199,17 @@ class TrajectoryTrainer(object):
             mae = np.mean(error) * 1000
             mae_perspecies = {}
             count_perspecies = {}
-            for atom in range(frame.nat):
-                Z = frame.coded_species[atom]
+            species = [Z_to_element(Z) for Z in set(cur_frame.coded_species)]
+            for ele in species:
+                mae_perspecies[ele] = 0
+                count_perspecies[ele] = 0
+            print(list(mae_perspecies.keys()))
+            for atom in range(cur_frame.nat):
+                Z = cur_frame.coded_species[atom]
                 ele = Z_to_element(Z)
                 mae_perspecies[ele] += np.sum(error[atom, :])
                 count_perspecies[ele] += 1
-            for ele in set(frame.coded_species):
+            for ele in species:
                 mae_perspecies[ele] /= (count_perspecies[ele]*3+1e-25)
 
             mac = np.mean(np.abs(dft_forces)) * 1000
@@ -222,7 +229,7 @@ class TrajectoryTrainer(object):
                 self.update_gp_and_print(cur_frame, train_atoms, train=False)
                 nsample += len(train_atoms)
 
-                if nsample > self.min_atoms_added:
+                if nsample >= self.min_atoms_added:
                     if self.train_count < self.max_trains:
                         self.train_gp()
                     else:
