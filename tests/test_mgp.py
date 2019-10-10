@@ -83,8 +83,9 @@ def test_parse_header():
                    'load_grid': None,
                    'update': True}
 
-    mgp_model = MappedGaussianProcess(gp_model, grid_params, struc_params,
-                                 mean_only=True, lmp_file_name=lammps_location)
+    mgp_model = MappedGaussianProcess(gp_model.hyps, gp_model.cutoffs,
+            grid_params, struc_params, mean_only=True,
+            build_from_GP=gp_model, lmp_file_name=lammps_location)
 
     # -------------------------------------------------------------------------
     #                          test the mapped potential

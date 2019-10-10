@@ -191,6 +191,7 @@ def test_update_L_alpha():
                                cutoffs=cutoffs,
                                hyps=hyps)
 
+    gp_model.par = True
     # update database & use update_L_alpha to get ky_mat
     for n in range(call_no, call_no + 1):
         positions = old_otf.gp_position_list[n]

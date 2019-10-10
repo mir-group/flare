@@ -1,8 +1,6 @@
 import numpy as np
-import multiprocessing as mp
-import concurrent.futures
-import copy
-import sys
+from mpi4py import MPI
+
 from flare.env import AtomicEnvironment
 from flare.struc import Structure
 from flare.mgp.mgp import MappedGaussianProcess
@@ -26,7 +24,10 @@ class FLARE_Calculator(Calculator):
 
     def get_forces(self, atoms):
         if self.use_mapping:
-            return self.get_forces_mgp(atoms)
+            if self.par:
+                return self.get_forces_mgp_par(atoms)
+            else:
+                return self.get_forces_mgp_serial(atoms)
         else:
             return self.get_forces_gp(atoms)
 
@@ -50,7 +51,7 @@ class FLARE_Calculator(Calculator):
 
         return forces
 
-    def get_forces_mgp(self, atoms):
+    def get_forces_mgp_serial(self, atoms):
         nat = len(atoms)
         struc_curr = Structure(np.array(atoms.cell), 
                                atoms.get_atomic_numbers(),
@@ -60,10 +61,54 @@ class FLARE_Calculator(Calculator):
         stds = np.zeros((nat, 3))
         for n in range(nat):
             chemenv = AtomicEnvironment(struc_curr, n,
-                                        self.mgp_model.GP.cutoffs)
+                                        self.mgp_model.cutoffs)
             f, v = self.mgp_model.predict(chemenv, mean_only=False)
             forces[n] = f
             stds[n] = np.sqrt(np.absolute(v))
+
+        self.results['stds'] = stds
+        atoms.get_uncertainties = self.get_uncertainties
+        return forces
+
+    def get_forces_mgp_par(self, atoms):
+        comm = MPI.COMM_WORLD
+        size = comm.Get_size()
+        rank = comm.Get_rank()
+
+        nat = len(atoms)
+        struc_curr = Structure(np.array(atoms.cell), 
+                               atoms.get_atomic_numbers(),
+                               atoms.positions)
+        
+        NumPerRank = nat // size
+        NumRemainder = nat % size
+        forces = None
+        stds = None
+        if rank < nat:
+            if rank <= NumRemainder:
+                N = NumPerRank
+                intercept = 0
+            else:
+                N = NumPerRank - 1
+                intercept = NumRemainder
+
+            forces_sub = np.zeros((N, 3))
+            stds_sub = np.zeros((N, 3))
+            for i in range(N):
+                n = intercept + rank * N + i
+                chemenv = AtomicEnvironment(struc_curr, n,
+                                self.mgp_model.cutoffs)
+                f, v = self.mgp_model.predict(chemenv, mean_only=False)
+                forces_sub[i, :] = f
+                stds_sub[i, :] = np.sqrt(np.absolute(v))
+            print('rank:', rank, ', forces_sub:', N)
+
+        if rank == 0:
+            forces = np.empty((nat, 3))
+            stds = np.empty((nat, 3))
+
+        comm.Gather(forces_sub, forces, root=0)
+        comm.Gather(stds_sub, stds, root=0)
 
         self.results['stds'] = stds
         atoms.get_uncertainties = self.get_uncertainties
@@ -84,7 +129,7 @@ class FLARE_Calculator(Calculator):
     def build_mgp(self, skip=True):
         # l_bound not implemented
 
-        if skip and (self.curr_step in self.non_mapping_steps):
+        if skip:
             return 1
 
         # set svd rank based on the training set, grid number and threshold 1000
@@ -97,5 +142,19 @@ class FLARE_Calculator(Calculator):
         grid_params['svd_rank_2'] = rank_2
         grid_params['svd_rank_3'] = rank_3
        
-        self.mgp_model = MappedGaussianProcess(self.gp_model, grid_params, struc_params)
+        hyps = self.gp_model.hyps
+        cutoffs = self.gp_model.cutoffs
+        self.mgp_model = MappedGaussianProcess(hyps, cutoffs,
+                        grid_params, struc_params, mean_only=True,
+                        build_from_GP=self.gp_model, lmp_file_name='lmp.mgp')
 
+
+
+from ase import io
+from ase.calculators.espresso import Espresso
+def read_results(self):
+    output = io.read(self.label + '.pwo', parallel=False)
+    self.calc = output.calc
+    self.results = output.calc.results
+
+Espresso.read_results = read_results

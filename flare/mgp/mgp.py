@@ -20,15 +20,17 @@ from flare.mgp.splines_methods import PCASplines, SplinesInterpolation
 
 
 class MappedGaussianProcess:
-    def __init__(self, GP: GaussianProcess, grid_params: dict,
-                 struc_params: dict, mean_only=False, lmp_file_name='lmp.mgp'):
+    def __init__(self, hyps, cutoffs, grid_params: dict, struc_params: dict, 
+                 mean_only=False, build_from_GP=None, lmp_file_name='lmp.mgp'):
 
         '''
         Build MGP
-        :param: GP : trained GP model
+        :param: hyps: GP hyps
+        :param: cutoffs: GP cutoffs
         :param: struc_params : information of training data
         :param: grid_params : setting of grids for mapping
         :param: mean_only : if True: only build mapping for mean (force)
+        :param: build_from_GP: None or a GaussianProcess object. If input a GP, then build mapping when creating MappedGaussianProcess object
         :param: lmp_file_name : lammps coefficient file name
         Examples:
         
@@ -49,7 +51,8 @@ class MappedGaussianProcess:
                                             # coeff when generating grids
                             'load_grid': None}
         '''
-        self.GP = GP
+        self.hyps = hyps
+        self.cutoffs = cutoffs
         self.grid_params = grid_params
         self.struc_params = struc_params
         self.bodies = grid_params['bodies']
@@ -62,29 +65,34 @@ class MappedGaussianProcess:
         self.svd_rank_3 = grid_params['svd_rank_3']
         self.update = grid_params['update']
         self.mean_only = mean_only
+        self.lmp_file_name = lmp_file_name
 
-        bond_struc, spcs = self.build_bond_struc(struc_params)
-        self.spcs = spcs
+        self.build_bond_struc(struc_params)
         self.maps_2 = []
         self.maps_3 = []
 
-        if len(self.GP.training_data) > 0:
+        if build_from_GP is not None:
+            self.build_map(build_from_GP)
+
+    def build_map(self, GP):
+        if len(GP.training_data) > 0:
             if 2 in self.bodies:
-                for b_struc in bond_struc[0]:
-                    map_2 = Map2body(self.grid_num_2, self.bounds_2, self.GP,
+                for b_struc in self.bond_struc[0]:
+                    map_2 = Map2body(self.grid_num_2, self.bounds_2, GP,
                                      b_struc, self.bodies, self.svd_rank_2, 
                                      self.mean_only)
                     self.maps_2.append(map_2)
             if 3 in self.bodies:
-                for b_struc in bond_struc[1]:
-                    map_3 = Map3body(self.grid_num_3, self.bounds_3, self.GP,
+                for b_struc in self.bond_struc[1]:
+                    map_3 = Map3body(self.grid_num_3, self.bounds_3, GP,
                                      b_struc, self.bodies, self.svd_rank_3,
-                                     self.mean_only, grid_params['load_grid'],
+                                     self.mean_only, 
+                                     self.grid_params['load_grid'],
                                      self.update)
-    
                     self.maps_3.append(map_3)
     
-            self.write_lmp_file(lmp_file_name)
+            # write to lammps pair style coefficient file
+            self.write_lmp_file(self.lmp_file_name)
 
     def build_bond_struc(self, struc_params):
 
@@ -92,7 +100,7 @@ class MappedGaussianProcess:
         build a bond structure, used in grid generating
         '''
 
-        cutoff = np.min(self.GP.cutoffs)
+        cutoff = np.min(self.cutoffs)
         cell = struc_params['cube_lat']
         mass_dict = struc_params['mass_dict']
         species_list = struc_params['species']
@@ -150,9 +158,8 @@ class MappedGaussianProcess:
 #                        spc_struc.coded_species = np.array(species)
 #                        bond_struc_3.append(spc_struc)
 
-        bond_struc = [bond_struc_2, bond_struc_3]
-        spcs = [spc_2, spc_3]
-        return bond_struc, spcs
+        self.bond_struc = [bond_struc_2, bond_struc_3]
+        self.spcs = [spc_2, spc_3]
 
     def predict(self, atom_env: AtomicEnvironment, mean_only: bool=False):
         '''
@@ -166,8 +173,8 @@ class MappedGaussianProcess:
         # ---------------- predict for two body -------------------
         f2 = kern2 = v2 = 0
         if 2 in self.bodies:
-            sig2, ls2 = self.GP.hyps[:2]
-            r_cut2 = self.GP.cutoffs[0]
+            sig2, ls2 = self.hyps[:2]
+            r_cut2 = self.cutoffs[0]
 
             f2, kern2, v2 = \
                 self.predict_multicomponent(atom_env, sig2, ls2, r_cut2,
@@ -177,8 +184,8 @@ class MappedGaussianProcess:
         # ---------------- predict for three body -------------------
         f3 = kern3 = v3 = 0
         if 3 in self.bodies:
-            sig3, ls3, _ = self.GP.hyps[-3:]
-            r_cut3 = self.GP.cutoffs[1]
+            sig3, ls3, _ = self.hyps[-3:]
+            r_cut3 = self.cutoffs[1]
 
             f3, kern3, v3 = \
                 self.predict_multicomponent(atom_env, sig3, ls3, r_cut3,
@@ -226,7 +233,7 @@ class MappedGaussianProcess:
         kern3_gp = np.zeros(3)
         for d in range(3):
             kern3_gp[d] = three_body_mc(atom_env, atom_env, d+1, d+1,
-                                        self.GP.hyps[-3:], self.GP.cutoffs)
+                                        self.hyps[-3:], self.cutoffs)
 
         spcs, comp_r, comp_xyz = \
             get_triplets(ctype, etypes, bond_array_3,
