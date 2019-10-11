@@ -4,7 +4,7 @@ from subprocess import call
 import numpy as np
 from typing import List, Union
 from json import dump, load
-from flare.struc import struc
+from flare import struc
 from flare.util import NumpyEncoder
 
 def run_dft_command(calc_dir: str, dft_loc: str,
