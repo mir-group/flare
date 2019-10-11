@@ -8,5 +8,6 @@ Code Documentation
    env
    kernels
    gp
-   mgp
+   dft_interface
+   mgp/mgp
    ase/ase

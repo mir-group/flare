@@ -3,7 +3,6 @@ import sys
 from copy import deepcopy
 
 from flare.struc import Structure
-from flare.otf import OTF
 from flare.util import is_std_in_bound
 
 import numpy as np
@@ -12,6 +11,15 @@ from ase import units
 
 
 class OTF(MolecularDynamics):
+    """output_name => logfile
+    npool: added
+    prev_pos_init: relaunch mode not implemented
+    skip: not implemented
+    l_bound: mgp update l_bound, not implemented
+
+    dft calculator is set outside of the otf module, and input as dft_calc, 
+    so that different calculators can be used"""
+
     def __init__(self, atoms, timestep, trajectory=None, 
             # on-the-fly parameters
             dft_calc=None, dft_count=None, std_tolerance_factor: float=1, 
@@ -21,17 +29,6 @@ class OTF(MolecularDynamics):
             # mgp parameters
             use_mapping: bool=False, non_mapping_steps: list=[],
             l_bound: float=None, two_d: bool=False):
-
-        '''
-        output_name => logfile
-        npool: added
-        prev_pos_init: relaunch mode not implemented
-        skip: not implemented
-        l_bound: mgp update l_bound, not implemented
-
-        dft calculator is set outside of the otf module, and input as dft_calc, 
-        so that different calculators can be used
-        '''
 
         MolecularDynamics.__init__(self, atoms, timestep, trajectory)
                                    

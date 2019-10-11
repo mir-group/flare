@@ -20,41 +20,42 @@ from flare.mgp.splines_methods import PCASplines, SplinesInterpolation
 
 
 class MappedGaussianProcess:
+    """Build Mapped Gaussian Process (MGP) and automatically save coefficients for LAMMPS pair style.
+
+    :param GP: trained GP model
+    :type GP: GaussianProcess
+    :param struc_params: information of training data
+    :type struc_params: dict
+    :param grid_params: setting of grids for mapping
+    :type grid_params: dict
+    :param mean_only: if True: only build mapping for mean (force)
+    :type mean_only: Bool
+    :param lmp_file_name: lammps coefficient file name
+    :type lmp_file_name: str
+
+    Examples:
+    
+    >>> struc_params = {'species': [0, 1],
+                        'cube_lat': cell, # should input the cell matrix
+                        'mass_dict': {'0': 27 * unit, '1': 16 * unit}}
+    >>> grid_params =  {'bounds_2': [[1.2], [3.5]], 
+                                    # [[lower_bound], [upper_bound]]
+                        'bounds_3': [[1.2, 1.2, 0], [3.5, 3.5, np.pi]],
+                                    # [[lower,lower,0],[upper,upper,np.pi]]
+                        'grid_num_2': 64,
+                        'grid_num_3': [16, 16, 16],
+                        'svd_rank_2': 64,
+                        'svd_rank_3': 16**3,
+                        'bodies': [2, 3],
+                        'update': True, # if True: accelerating grids 
+                                        # generating by saving intermediate 
+                                        # coeff when generating grids
+                        'load_grid': None}
+    """
+
     def __init__(self, GP: GaussianProcess, grid_params: dict,
                  struc_params: dict, mean_only=False, lmp_file_name='lmp.mgp'):
 
-        '''
-        Build Mapped Gaussian Process (MGP) and automatically save coefficients
-        for LAMMPS pair style
-        :param: GP: trained GP model
-        :type GP: GaussianProcess
-        :param: struc_params: information of training data
-        :type struc_params: dict
-        :param: grid_params: setting of grids for mapping
-        :type grid_params: dict
-        :param: mean_only: if True: only build mapping for mean (force)
-        :type mean_only: Bool
-        :param: lmp_file_name: lammps coefficient file name
-        :type lmp_file_name: str
-        Examples:
-        
-        >>> struc_params = {'species': [0, 1],
-                            'cube_lat': cell, # should input the cell matrix
-                            'mass_dict': {'0': 27 * unit, '1': 16 * unit}}
-        >>> grid_params =  {'bounds_2': [[1.2], [3.5]], 
-                                        # [[lower_bound], [upper_bound]]
-                            'bounds_3': [[1.2, 1.2, 0], [3.5, 3.5, np.pi]],
-                                        # [[lower,lower,0],[upper,upper,np.pi]]
-                            'grid_num_2': 64,
-                            'grid_num_3': [16, 16, 16],
-                            'svd_rank_2': 64,
-                            'svd_rank_3': 16**3,
-                            'bodies': [2, 3],
-                            'update': True, # if True: accelerating grids 
-                                            # generating by saving intermediate 
-                                            # coeff when generating grids
-                            'load_grid': None}
-        '''
         self.GP = GP
         self.grid_params = grid_params
         self.struc_params = struc_params

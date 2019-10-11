@@ -11,18 +11,19 @@ from flare.predict import predict_on_structure_par_en, predict_on_structure_en
 from ase.calculators.calculator import Calculator
 
 class FLARE_Calculator(Calculator):
+    """Build FLARE as an ASE Calculator, which is compatible with ASE Atoms and Molecular Dynamics.
+
+    :param gp_model: FLARE's Gaussian process object
+    :type gp_model: GaussianProcess
+    :param mgp_model: FLARE's Mapped Gaussian Process object. `None` by default. MGP will only be used if `use_mapping` is set to True
+    :type mgp_model: MappedGaussianProcess
+    :param par: set to `True` if parallelize the prediction. `False` by default. 
+    :type par: Bool
+    :param use_mapping: set to `True` if use MGP for prediction. `False` by default.
+    :type use_mapping: Bool
+    """
+
     def __init__(self, gp_model, mgp_model=None, par=False, use_mapping=False):
-        '''
-        Build FLARE as an ASE Calculator, which is compatible with ASE Atoms and Molecular Dynamics. 
-        :param gp_model: FLARE's Gaussian process object
-        :type gp_model: GaussianProcess
-        :param mgp_model: FLARE's Mapped Gaussian Process object. `None` by default. MGP will only be used if `use_mapping` is set to True
-        :type mgp_model: MappedGaussianProcess
-        :param par: set to `True` if parallelize the prediction. `False` by default. 
-        :type par: Bool
-        :param use_mapping: set to `True` if use MGP for prediction. `False` by default.
-        :type use_mapping: Bool
-        '''
         super().__init__() # all set to default values, TODO: change
         self.mgp_model = mgp_model
         self.gp_model = gp_model

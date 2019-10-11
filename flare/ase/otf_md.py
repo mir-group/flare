@@ -14,6 +14,16 @@ from ase.md.md import MolecularDynamics
 from ase import units
 
 class OTF_VelocityVerlet(VelocityVerlet, OTF):
+    """On-the-fly training with ASE's VelocityVerlet molecular dynamics engine. 
+    Inherit from ASE `VelocityVerlet <https://wiki.fysik.dtu.dk/ase/ase/md.html#ase.md.verlet.VelocityVerlet>`_ class and our ASE-coupled on-the-fly training engine `flare.ase.OTF`
+
+    :param atoms: ASE Atoms object
+    :param timestep: time step in units of pico-second
+    :param trajectory: the trajectory file dumped to (we usually don't set this because we have our own logger)
+    :param dt: usually not set, to be degraded
+    :param **kwargs: same parameters as `flare.ase.OTF`
+    """
+
     def __init__(self, atoms, timestep=None, trajectory=None, dt=None, 
                  **kwargs):
 
