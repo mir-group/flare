@@ -2,10 +2,10 @@ from pymatgen.io.vasp.inputs import Poscar
 from pymatgen.io.vasp.outputs import Vasprun
 from subprocess import call
 import numpy as np
-from flare import struc
 from typing import List, Union
 from json import dump, load
-
+from flare.struc import struc
+from flare.util import NumpyEncoder
 
 def run_dft_command(calc_dir: str, dft_loc: str,
 	structure: struc.Structure=None, en: bool=False):
@@ -76,7 +76,7 @@ def md_trajectory_from_vasprun(vasprun: Union[str, Vasprun]):
 
 def md_trajectory_to_file(filename, structures: List[struc.Structure]):
 	f = open(filename, 'w')
-	dump([s.as_dict() for s in structures], f)
+	dump([s.as_dict() for s in structures], f, cls=NumpyEncoder)
 	f.close()
 
 
