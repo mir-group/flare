@@ -333,8 +333,8 @@ class Output():
         string += f'mean absolute dft component: {mac:10.2} meV/A \n'
 
         string += "mae per species\n"
-        for ele in pmae.keys():
-            string+=f"type {ele} mae: {pmae[ele]:10.4}\n"
+        for ele in mae_ps.keys():
+            string+=f"type {ele} mae: {mae_ps[ele]:10.4}\n"
 
         # calculate potential and total energy
         if local_energies is not None:
