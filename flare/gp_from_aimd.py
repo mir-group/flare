@@ -219,21 +219,22 @@ class TrajectoryTrainer(object):
                 dft_forces=dft_forces,
                 mae=mae, mae_ps=mae_perspecies, mac=mac, local_energies=None)
 
-            # get max uncertainty atoms
+            # Get max uncertainty atoms
             std_in_bound, train_atoms = self.is_std_in_bound(cur_frame)
             if not std_in_bound:
 
-                # compute mae and write to output
-                # add max uncertainty atoms to training set
+                # Compute mae and write to output;
+                # Add max uncertainty atoms to training set
                 self.update_gp_and_print(cur_frame, train_atoms, train=False)
                 nsample += len(train_atoms)
-
+                # Re-train if number of sampled atoms is high enough
                 if nsample >= self.min_atoms_added:
                     if self.train_count < self.max_trains:
                         self.train_gp()
                     else:
                         self.gp.set_L_alpha()
                     nsample = 0
+        # If new atoms were added re-train the GP before concluding run
         if (nsample != 0):
             if self.train_count < self.max_trains:
                 self.train_gp()
