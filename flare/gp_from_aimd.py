@@ -203,7 +203,6 @@ class TrajectoryTrainer(object):
             for ele in species:
                 mae_perspecies[ele] = 0
                 count_perspecies[ele] = 0
-            print(list(mae_perspecies.keys()))
             for atom in range(cur_frame.nat):
                 Z = cur_frame.coded_species[atom]
                 ele = Z_to_element(Z)
@@ -218,7 +217,7 @@ class TrajectoryTrainer(object):
                 curr_step=i, frame=cur_frame,
                 start_time=time.time(),
                 dft_forces=dft_forces,
-                mae=mae, pmae=mae_perspecies, mac=mac, local_energies=None)
+                mae=mae, mae_ps=mae_perspecies, mac=mac, local_energies=None)
 
             # get max uncertainty atoms
             std_in_bound, train_atoms = self.is_std_in_bound(cur_frame)

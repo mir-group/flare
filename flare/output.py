@@ -286,7 +286,7 @@ class Output():
 
     def write_gp_dft_comparison(self, curr_step, frame,
                                 start_time, dft_forces,
-                                mae, pmae, mac, local_energies=None, KE=None):
+                                mae, mae_ps, mac, local_energies=None, KE=None):
         """
         write the comparison to logfile
         :param dft_forces:
