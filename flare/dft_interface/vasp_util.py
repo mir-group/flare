@@ -3,7 +3,7 @@ from pymatgen.io.vasp.outputs import Vasprun
 from subprocess import call
 import numpy as np
 from flare import struc
-from typing import List
+from typing import List, Union
 from json import dump, load
 
 
