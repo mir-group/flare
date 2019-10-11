@@ -38,7 +38,7 @@ def dft_input_to_structure(poscar: str):
     return Structure.from_pmg_structure(Poscar.from_file(poscar).structure)
 
 
-def edit_dft_input_configurations(poscar: str, structure: Structure):
+def edit_dft_input_positions(poscar: str, structure: Structure):
     """
     WARNING: Destructively replaces the file with the name specified by POSCAR
     """
