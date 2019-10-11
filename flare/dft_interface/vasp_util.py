@@ -3,9 +3,9 @@ from pymatgen.io.vasp.outputs import Vasprun
 from subprocess import call
 import numpy as np
 from flare.struc import Structure
-from typing import List
+from typing import List, Union
 from json import dump, load
-
+from flare.util import NumpyEncoder
 
 def run_dft(calc_dir: str, dft_loc: str,
     structure: Structure=None, en: bool=False, vasp_cmd="{}"):
