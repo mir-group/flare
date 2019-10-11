@@ -6,29 +6,6 @@ from numpy import zeros, array
 from math import floor
 from numpy import empty
 
-def global_constants():
-    global Ad
-    Ad = array([
-    #      t^3       t^2        t        1
-       [-1.0/6.0,  3.0/6.0, -3.0/6.0, 1.0/6.0],
-       [ 3.0/6.0, -6.0/6.0,  0.0/6.0, 4.0/6.0],
-       [-3.0/6.0,  3.0/6.0,  3.0/6.0, 1.0/6.0],
-       [ 1.0/6.0,  0.0/6.0,  0.0/6.0, 0.0/6.0]
-    ])
-    
-    global dAd
-    dAd = zeros((4,4))
-    for i in range(1,4):
-        Ad_i = Ad[:, i-1]
-        dAd[:,i] = (4-i) * Ad_i
-    
-    global d2Ad
-    d2Ad = zeros((4,4))
-    for i in range(1,4):
-        dAd_i = dAd[:, i-1]
-        d2Ad[:,i] = (4-i) * dAd_i
-
-global_constants()
 
 @njit(cache=True)
 def eval_cubic_spline_1(a, b, orders, coefs, point):
@@ -886,6 +863,27 @@ def filter_coeffs_4d(dinv, data):
 
 
 def filter_coeffs(smin, smax, orders, data):
+    global Ad
+    Ad = array([
+    #      t^3       t^2        t        1
+       [-1.0/6.0,  3.0/6.0, -3.0/6.0, 1.0/6.0],
+       [ 3.0/6.0, -6.0/6.0,  0.0/6.0, 4.0/6.0],
+       [-3.0/6.0,  3.0/6.0,  3.0/6.0, 1.0/6.0],
+       [ 1.0/6.0,  0.0/6.0,  0.0/6.0, 0.0/6.0]
+    ])
+    
+    global dAd
+    dAd = zeros((4,4))
+    for i in range(1,4):
+        Ad_i = Ad[:, i-1]
+        dAd[:,i] = (4-i) * Ad_i
+    
+    global d2Ad
+    d2Ad = zeros((4,4))
+    for i in range(1,4):
+        dAd_i = dAd[:, i-1]
+        d2Ad[:,i] = (4-i) * dAd_i
+
     smin = np.array(smin, dtype=float)
     smax = np.array(smax, dtype=float)
     dinv = (smax - smin) / orders
