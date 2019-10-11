@@ -1,5 +1,4 @@
 import numpy as np
-from mpi4py import MPI
 
 from flare.env import AtomicEnvironment
 from flare.struc import Structure
