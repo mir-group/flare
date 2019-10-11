@@ -19,8 +19,8 @@ class GaussianProcess:
     "Gaussian Processes for Machine Learning" by Rasmussen and Williams"""
 
     def __init__(self, kernel: Callable,
-                 kernel_grad: Callable, hyps: np.ndarray,
-                 cutoffs: np.ndarray,
+                 kernel_grad: Callable, hyps,
+                 cutoffs,
                  hyp_labels: List = None,
                  energy_force_kernel: Callable = None,
                  energy_kernel: Callable = None,
@@ -83,9 +83,10 @@ class GaussianProcess:
         self.training_labels_np = self.force_list_to_np(self.training_labels)
 
     def add_one_env(self, env: AtomicEnvironment,
-                    force: np.array, train: bool = False, **kwargs):
+                    force, train: bool = False, **kwargs):
         """
-        Tool to add a single environment / force pair into the training set
+        Tool to add a single environment / force pair into the training set.
+
         :param force:
         :param env:
         :param force: (x,y,z) component associated with environment
@@ -100,7 +101,7 @@ class GaussianProcess:
             self.train(**kwargs)
 
     @staticmethod
-    def force_list_to_np(forces: list) -> np.ndarray:
+    def force_list_to_np(forces: list):
         """ Convert list of forces to numpy array of forces.
 
         :param forces: list of forces to convert
@@ -233,7 +234,7 @@ uncertainty."""
         return pred_mean, pred_var
 
     def get_kernel_vector(self, x: AtomicEnvironment,
-                          d_1: int) -> np.ndarray:
+                          d_1: int):
         """
         Compute kernel vector, comparing input environment to all environments
         in the GP's training set.
@@ -257,7 +258,7 @@ uncertainty."""
                                        self.hyps, self.cutoffs)
         return k_v
 
-    def en_kern_vec(self, x: AtomicEnvironment) -> np.ndarray:
+    def en_kern_vec(self, x: AtomicEnvironment):
         """Compute the vector of energy/force kernels between an atomic \
 environment and the environments in the training set."""
 

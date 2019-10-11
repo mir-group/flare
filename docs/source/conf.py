@@ -15,7 +15,7 @@
 import os
 import sys
 sys.path.append('../..')
-autodoc_mock_imports = ["numpy", "scipy", "numba"]
+autodoc_mock_imports = ["numpy", "scipy", "numba", "pymatgen"]
 
 import sphinx_rtd_theme
 
