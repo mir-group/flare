@@ -268,7 +268,7 @@ class Output():
         f = self.outfiles[name]
         f.write('\nGP hyperparameters: \n')
 
-        if (hyp_labels):
+        if (hyp_labels is not None):
             for i, label in enumerate(hyp_labels):
                 f.write(f'Hyp{i} : {label} = {hyps[i]}\n')
         else:

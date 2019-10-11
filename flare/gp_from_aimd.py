@@ -234,6 +234,7 @@ class TrajectoryTrainer(object):
                     else:
                         self.gp.set_L_alpha()
                     nsample = 0
+
         # If new atoms were added re-train the GP before concluding run
         if (nsample != 0):
             if self.train_count < self.max_trains:
