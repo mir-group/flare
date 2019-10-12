@@ -124,6 +124,27 @@ def test_rep_methods(varied_test_struc):
     thestr = str(varied_test_struc)
     assert 'Structure with 10 atoms of types {' in thestr
 
+def test_struc_from_ase():
+    from ase import Atoms
+    uc = Atoms(['Pd' for i in range(10)]+['Ag' for i in range(10)],
+               positions=np.random.rand(20, 3),
+               cell=np.random.rand(3, 3))
+    new_struc = Structure.from_ase_atoms(uc)
+    assert np.all(new_struc.species_labels == uc.get_chemical_symbols())
+    assert np.all(new_struc.positions == uc.get_positions())
+    assert np.all(new_struc.cell == uc.get_cell())
+
+def test_struc_to_ase():
+    from ase import Atoms
+    uc = Structure(species=['Pd' for i in range(10)]+['Ag' for i in range(10)],
+                   positions=np.random.rand(20, 3),
+                   cell=np.random.rand(3, 3))
+    new_atoms = Structure.to_ase_atoms(uc)
+    assert np.all(uc.species_labels == new_atoms.get_chemical_symbols())
+    assert np.all(uc.positions == new_atoms.get_positions())
+    assert np.all(uc.cell == new_atoms.get_cell())
+
+   
 @pytest.mark.skipif(not _test_pmg,reason='Pymatgen not present in available '
                                         'packages.')
 def test_from_pmg_structure():
