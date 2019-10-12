@@ -29,3 +29,4 @@ pwscf.save/
 /tests/*.wfn*
 /tests/*-bak
 /tests/cp2k.in*
+/tests/*.in_run
