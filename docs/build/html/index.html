@@ -24,7 +24,6 @@
         <script type="text/javascript" src="_static/jquery.js"></script>
         <script type="text/javascript" src="_static/underscore.js"></script>
         <script type="text/javascript" src="_static/doctools.js"></script>
-        <script type="text/javascript" src="_static/language_data.js"></script>
     
     <script type="text/javascript" src="_static/js/theme.js"></script>
 
@@ -82,7 +81,8 @@
               <ul>
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tutorials/tutorials.html">Tutorials</a></li>
-<li class="toctree-l1"><a class="reference internal" href="flare/flare.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="flare/flare.html">Code Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contribute/contribute.html">How To Contribute</a></li>
 </ul>
 
             
@@ -156,13 +156,47 @@
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tutorials/tutorials.html">Tutorials</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="tutorials/al.html">On-the-fly aluminum potential</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/ase.html">On-the-fly training using ASE</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="tutorials/ase.html#setup-supercell-with-ase">Setup supercell with ASE</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tutorials/ase.html#setup-flare-calculator">Setup FLARE calculator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tutorials/ase.html#setup-dft-calculator">Setup DFT calculator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tutorials/ase.html#setup-on-the-fly-md-engine">Setup On-The-Fly MD engine</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="flare/flare.html">Modules</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="flare/gp.html">Gaussian Process Force Fields</a></li>
-<li class="toctree-l2"><a class="reference internal" href="flare/env.html">Atomic Environments</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="flare/flare.html">Code Documentation</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="flare/struc.html">Structures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="flare/env.html">Atomic Environments</a></li>
 <li class="toctree-l2"><a class="reference internal" href="flare/kernels.html">Covariant Kernels</a></li>
+<li class="toctree-l2"><a class="reference internal" href="flare/gp.html">Gaussian Process Force Fields</a></li>
+<li class="toctree-l2"><a class="reference internal" href="flare/dft_interface.html">DFT Interface</a></li>
+<li class="toctree-l2"><a class="reference internal" href="flare/mgp/mgp.html">Mapped Gaussian Process</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="flare/mgp/splines_methods.html">Splines Methods</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="flare/ase/ase.html">ASE Interface</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="flare/ase/calculator.html">FLARE ASE Calculator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="flare/ase/otf.html">On-the-fly training</a></li>
+<li class="toctree-l3"><a class="reference internal" href="flare/ase/otf_md.html">ASE MD engines</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="contribute/contribute.html">How To Contribute</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="contribute/workflow.html">Git Workflow</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="contribute/workflow.html#general-workflow">General workflow</a></li>
+<li class="toctree-l3"><a class="reference internal" href="contribute/workflow.html#master-development-and-topic-branches">Master, development, and topic branches</a></li>
+<li class="toctree-l3"><a class="reference internal" href="contribute/workflow.html#pushing-changes-to-the-mir-repo-directly">Pushing changes to the MIR repo directly</a></li>
+<li class="toctree-l3"><a class="reference internal" href="contribute/workflow.html#pushing-changes-from-a-forked-repo">Pushing changes from a forked repo</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="contribute/standards.html">Code Standards</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="contribute/standards.html#pep-8">PEP 8</a></li>
+<li class="toctree-l3"><a class="reference internal" href="contribute/standards.html#docstrings">Docstrings</a></li>
+<li class="toctree-l3"><a class="reference internal" href="contribute/standards.html#tests">Tests</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>

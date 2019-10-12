@@ -11,7 +11,7 @@ from flare import struc, gp, env, md
 from flare.dft_interface import dft_software
 from flare.output import Output
 import flare.predict as predict
-
+from flare.util import is_std_in_bound
 
 class OTF(object):
     def __init__(self, dft_input: str, dt: float, number_of_steps: int,
@@ -125,7 +125,8 @@ class OTF(object):
                                               self.structure)
 
                 # get max uncertainty atoms
-                std_in_bound, target_atoms = self.is_std_in_bound()
+                std_in_bound, target_atoms = is_std_in_bound(self.std_tolerance, 
+                        self.gp.hyps[-1], self.structure, self.max_atoms_added)
 
                 if not std_in_bound:
                     # record GP forces
@@ -203,28 +204,6 @@ class OTF(object):
         self.output.write_hyps(self.gp.hyp_labels, self.gp.hyps,
                                self.start_time,
                                self.gp.likelihood, self.gp.likelihood_gradient)
-
-    def is_std_in_bound(self):
-        # set uncertainty threshold
-        if self.std_tolerance == 0:
-            return True, -1
-        elif self.std_tolerance > 0:
-            threshold = self.std_tolerance * np.abs(self.gp.hyps[-1])
-        else:
-            threshold = np.abs(self.std_tolerance)
-
-        # sort max stds
-        max_stds = np.zeros((self.noa))
-        for atom, std in enumerate(self.structure.stds):
-            max_stds[atom] = np.max(std)
-        stds_sorted = np.argsort(max_stds)
-        target_atoms = list(stds_sorted[-self.max_atoms_added:])
-
-        # if above threshold, return atom
-        if max_stds[stds_sorted[-1]] > threshold:
-            return False, target_atoms
-        else:
-            return True, [-1]
 
     def update_positions(self, new_pos):
         if self.curr_step in self.rescale_steps:
