@@ -186,3 +186,28 @@ def Z_to_element(Z: int)-> str:
             raise ValueError("Input Z is not a number. It should be an "
                              "integer")
     return _Z_to_element[Z]
+
+
+def is_std_in_bound(std_tolerance, noise, structure, max_atoms_added):
+
+    # set uncertainty threshold
+    if std_tolerance == 0:
+        return True, -1
+    elif std_tolerance > 0:
+        threshold = std_tolerance * np.abs(noise)
+    else:
+        threshold = np.abs(std_tolerance)
+
+    # sort max stds
+    nat = structure.nat
+    max_stds = np.zeros((nat))
+    for atom, std in enumerate(structure.stds):
+        max_stds[atom] = np.max(std)
+    stds_sorted = np.argsort(max_stds)
+    target_atoms = list(stds_sorted[-max_atoms_added:])
+
+    # if above threshold, return atom
+    if max_stds[stds_sorted[-1]] > threshold:
+        return False, target_atoms
+    else:
+        return True, [-1]
