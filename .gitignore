@@ -1,3 +1,5 @@
+.DS_Store
+.vs_code/
 dist/
 mir_flare.egg-info/
 flare.egg-info/
