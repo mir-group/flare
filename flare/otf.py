@@ -118,6 +118,7 @@ class OTF(object):
 
             # after step 1, try predicting with GP model
             else:
+                self.gp.check_L_alpha()
                 self.pred_func(self.structure, self.gp)
                 self.dft_step = False
                 new_pos = md.update_positions(self.dt, self.noa,
