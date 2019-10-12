@@ -178,6 +178,12 @@ hyperparameters to maximize the likelihood, then computes L and alpha \
         self.likelihood = -res.fun
         self.likelihood_gradient = -res.jac
 
+    def check_L_alpha(self):
+        # check that alpha is up to date with training set
+        if self.alpha is None or 3 * len(self.training_data) != len(
+                self.alpha):
+            self.set_L_alpha()
+
     def predict(self, x_t: AtomicEnvironment, d: int) -> [float, float]:
         """Predict force component of an atomic environment and its \
 uncertainty."""
@@ -186,9 +192,7 @@ uncertainty."""
         k_v = self.get_kernel_vector(x_t, d)
 
         # Guarantee that alpha is up to date with training set
-        if self.alpha is None or 3 * len(self.training_data) != len(
-                self.alpha):
-            self.set_L_alpha()
+        assert ((self.alpha is not None) and (3 * len(self.training_data) == len(self.alpha)))
 
         # get predictive mean
         pred_mean = np.matmul(k_v, self.alpha)
