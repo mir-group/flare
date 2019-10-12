@@ -186,6 +186,8 @@ class TrajectoryTrainer(object):
             if self.verbose >= 2:
                 print("=====NOW ON FRAME {}=====".format(i))
             dft_forces = deepcopy(cur_frame.forces)
+
+            self.gp.check_L_alpha()
             self.pred_func(cur_frame, self.gp)
 
             # Convert to meV/A
