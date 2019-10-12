@@ -51,6 +51,7 @@ class MD:
 
         while self.curr_step < self.Nsteps:
             # verlet algorithm follows Frenkel p. 70
+            self.gp.check_L_alpha()
             self.pred_func()
             new_pos = md.update_positions(self.dt, self.noa, self.structure)
             self.update_temperature(new_pos)
