@@ -6,7 +6,7 @@ from pymatgen.io.vasp.inputs import Poscar
 from pymatgen.io.vasp.outputs import Vasprun
 from flare.struc import Structure, get_unique_species
 from flare.dft_interface.vasp_util import parse_dft_forces, run_dft, \
-    edit_dft_input_positions, dft_input_to_structure
+    edit_dft_input_positions, dft_input_to_structure, md_trajectory_from_vasprun
 
 def cleanup_vasp_run(target: str = None):
     os.system('rm POSCAR')
@@ -79,3 +79,14 @@ def test_vasp_input_edit():
 
     os.system('rm ./POSCAR')
     os.system('rm ./POSCAR.bak')
+
+def test_md_trajectory():
+    structures = md_trajectory_from_vasprun('test_files/test_vasprun.xml')
+    assert len(structures) == 2
+    for struct in structures:
+        assert struct.forces.shape == (6,3)
+        assert struct.energy is not None
+        assert struct.stress.shape == (3,3)
+    structures = md_trajectory_from_vasprun('test_files/test_vasprun.xml', ionic_step_skips=2)
+    assert len(structures) == 1
+
