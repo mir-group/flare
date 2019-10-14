@@ -63,6 +63,8 @@ def predict_on_structure_par(structure: Structure, gp: GaussianProcess, no_cpus=
     for atom in range(structure.nat):
         results.append(pool.apply_async(predict_on_atom,
             args=[(structure, atom, gp)]))
+    pool.close()
+    pool.join()
 
     for i in range(structure.nat):
         r = results[i].get()
@@ -90,6 +92,8 @@ def predict_on_structure_par_en(structure: Structure, gp: GaussianProcess, no_cp
     for atom in range(structure.nat):
         results.append(pool.apply_async(predict_on_atom_en,
             args=[(structure, atom, gp)]))
+    pool.close()
+    pool.join()
 
     for i in range(structure.nat):
         r = results[i].get()
