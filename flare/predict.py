@@ -51,6 +51,9 @@ def predict_on_atom_en(param):
 
 def predict_on_structure_par(structure: Structure, gp: GaussianProcess, no_cpus=None):
 
+    if (no_cpus is 1):
+        predict_on_structure(structure, gp)
+
     if (no_cpus is None):
         pool = mp.Pool(processes=mp.cpu_count())
     else:
@@ -73,6 +76,9 @@ def predict_on_structure_par(structure: Structure, gp: GaussianProcess, no_cpus=
 
 def predict_on_structure_par_en(structure: Structure, gp: GaussianProcess, no_cpus=None):
 
+    if (no_cpus is 1):
+        predict_on_structure_en(structure, gp)
+
     atom_list = [(structure, atom, gp) for atom in range(structure.nat)]
     local_energies = [0 for n in range(structure.nat)]
 
@@ -89,7 +95,7 @@ def predict_on_structure_par_en(structure: Structure, gp: GaussianProcess, no_cp
         r = results[i].get()
         structure.forces[i] = r[0]
         structure.stds[i] = r[1]
-        local_energies[i] = r[3]
+        local_energies[i] = r[2]
 
     forces = np.array(structure.forces)
     stds = np.array(structure.stds)
