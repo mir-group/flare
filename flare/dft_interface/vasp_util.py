@@ -103,7 +103,7 @@ def parse_dft_forces_and_energy(vasprun: Union[str, Vasprun]):
     """
     vasprun = check_vasprun(vasprun)
     istep = vasprun.ionic_steps[-1]
-    return np.array(istep.forces), istep["electronic_steps"][-1]["e_0_energy"]
+    return np.array(istep['forces']), istep["electronic_steps"][-1]["e_0_energy"]
 
 
 def md_trajectory_from_vasprun(vasprun: Union[str, Vasprun], ionic_step_skips=1):

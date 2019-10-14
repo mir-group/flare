@@ -6,7 +6,8 @@ from pymatgen.io.vasp.inputs import Poscar
 from pymatgen.io.vasp.outputs import Vasprun
 from flare.struc import Structure, get_unique_species
 from flare.dft_interface.vasp_util import parse_dft_forces, run_dft, \
-    edit_dft_input_positions, dft_input_to_structure, md_trajectory_from_vasprun
+    edit_dft_input_positions, dft_input_to_structure,\
+    parse_dft_forces_and_energy, md_trajectory_from_vasprun
 
 def cleanup_vasp_run(target: str = None):
     os.system('rm POSCAR')
@@ -28,6 +29,7 @@ def test_structure_parsing(poscar):
     assert (structure.cell == pmg_struct.lattice.matrix).all()
     for i, spec in enumerate(structure.species_labels):
         assert spec == pmg_struct[i].specie.symbol
+    assert np.isclose(structure.positions, pmg_struct.cart_coords).all()
 
 @pytest.mark.parametrize("poscar",
                          [
@@ -49,16 +51,27 @@ def test_vasp_calling(cmd, poscar):
 
     structure = dft_input_to_structure(poscar)
 
-    forces = run_dft('.', cmd, structure=structure, en=False)
-    forces2 = parse_dft_forces('./test_files/test_vasprun.xml')
+    forces1 = run_dft('.', cmd, structure=structure, en=False)
+    forces2, energy2 = run_dft('.', cmd, structure=structure, en=True)
+    forces3 = parse_dft_forces('./test_files/test_vasprun.xml')
+    forces4, energy4 = parse_dft_forces_and_energy('./test_files/test_vasprun.xml')
 
-    ref_forces = Vasprun('./test_files/test_vasprun.xml').ionic_steps[-1]['forces']
+    vr_step = Vasprun('./test_files/test_vasprun.xml').ionic_steps[-1]
+    ref_forces = vr_step['forces']
+    ref_energy = vr_step['electronic_steps'][-1]['e_0_energy']
 
-    assert len(forces) == len(ref_forces)
+    assert len(forces1) == len(ref_forces)
+    assert len(forces2) == len(ref_forces)
+    assert len(forces3) == len(ref_forces)
+    assert len(forces4) == len(ref_forces)
 
     for i in range(structure.nat):
-        assert np.isclose(forces[i], ref_forces[i]).all()
+        assert np.isclose(forces1[i], ref_forces[i]).all()
         assert np.isclose(forces2[i], ref_forces[i]).all()
+        assert np.isclose(forces3[i], ref_forces[i]).all()
+        assert np.isclose(forces4[i], ref_forces[i]).all()
+        assert energy2 == ref_energy
+        assert energy4 == ref_energy
 
     cleanup_vasp_run()
 
