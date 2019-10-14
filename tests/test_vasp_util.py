@@ -10,6 +10,9 @@ from flare.dft_interface.vasp_util import parse_dft_forces, run_dft, \
     parse_dft_forces_and_energy, md_trajectory_from_vasprun,\
     check_vasprun
 
+pytestmark = pytest.mark.filterwarnings("ignore::UserWarning",\
+    "ignore::pymatgen.io.vasp.outputs.UnconvergedVASPWarning")
+
 def cleanup_vasp_run(target: str = None):
     os.system('rm POSCAR')
     os.system('rm vasprun.xml')

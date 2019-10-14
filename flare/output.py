@@ -275,11 +275,11 @@ class Output():
             for i, hyp in enumerate(hyps):
                 f.write(f'Hyp{i} : {hyp}\n')
 
-        f.write('likelihood: {like}\n')
-        f.write('likelihood gradient: {like_grad}\n')
+        f.write(f'likelihood: {like}\n')
+        f.write(f'likelihood gradient: {like_grad}\n')
         if (start_time):
             time_curr = time.time() - start_time
-            f.write('wall time from start: {time_curr:.2} s \n')
+            f.write(f'wall time from start: {time_curr:.2} s \n')
 
         if self.always_flush:
             f.flush()
