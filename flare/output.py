@@ -279,7 +279,7 @@ class Output():
         f.write(f'likelihood gradient: {like_grad}\n')
         if (start_time):
             time_curr = time.time() - start_time
-            f.write('wall time from start: {time_curr:.2} s \n')
+            f.write(f'wall time from start: {time_curr:.2} s \n')
 
         if self.always_flush:
             f.flush()
