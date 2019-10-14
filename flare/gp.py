@@ -25,7 +25,8 @@ class GaussianProcess:
                  energy_force_kernel: Callable = None,
                  energy_kernel: Callable = None,
                  opt_algorithm: str = 'L-BFGS-B',
-                 maxiter=10, par=False,
+                 opt_params: dict = None,
+                 maxiter=10, par: bool=False,
                  output=None):
         """Initialize GP parameters and training data."""
 
@@ -38,6 +39,7 @@ class GaussianProcess:
         self.hyp_labels = hyp_labels
         self.cutoffs = cutoffs
         self.algo = opt_algorithm
+        self.opt_params = opt_params if opt_params is not None else {}
 
         self.training_data = []
         self.training_labels = []
@@ -119,10 +121,7 @@ class GaussianProcess:
 
         return forces_np
 
-    def train(self, output=None, custom_bounds=None,
-              grad_tol: float = 1e-4,
-              x_tol: float = 1e-5,
-              line_steps: int = 20):
+    def train(self, output=None, opt_param_override: dict = None):
         """Train Gaussian Process model on training data. Tunes the \
 hyperparameters to maximize the likelihood, then computes L and alpha \
 (related to the covariance matrix of the training set)."""
@@ -134,7 +133,21 @@ hyperparameters to maximize the likelihood, then computes L and alpha \
                 self.par)
         res = None
 
-        if self.algo == 'L-BFGS-B':
+        # Make local copy of opt params so as to not overwrite with override
+        opt_param_temp = dict(self.opt_params)
+        if opt_param_override is not None:
+            for key, value in opt_param_override.items():
+                opt_param_temp[key] = value
+
+        grad_tol = opt_param_temp.get('grad_tol', 1e-4)
+        x_tol = opt_param_temp.get('x_tol', 1e-5)
+        line_steps = opt_param_temp.get('maxls', 20)
+        max_iter = opt_param_temp.get('maxiter', self.maxiter)
+        algo = opt_param_temp.get('algorithm', self.algo)
+        disp = opt_param_temp.get('disp', False)
+
+
+        if algo == 'L-BFGS-B':
 
             # bound signal noise below to avoid overfitting
             bounds = np.array([(1e-6, np.inf)] * len(x_0))
@@ -144,35 +157,37 @@ hyperparameters to maximize the likelihood, then computes L and alpha \
             try:
                 res = minimize(get_neg_like_grad, x_0, args,
                                method='L-BFGS-B', jac=True, bounds=bounds,
-                               options={'disp': False, 'gtol': grad_tol,
+                               options={'disp': disp, 'gtol': grad_tol,
                                         'maxls': line_steps,
-                                        'maxiter': self.maxiter})
+                                        'maxiter': max_iter})
             except:
                 print("Warning! Algorithm for L-BFGS-B failed. Changing to "
                       "BFGS for remainder of run.")
-                self.algo = 'BFGS'
+                self.opt_params['algorithm'] = 'BFGS'
+                algo = 'BFGS'
 
-        if custom_bounds is not None:
+        if opt_param_temp.get('custom_bounds', None) is not None:
             res = minimize(get_neg_like_grad, x_0, args,
-                           method='L-BFGS-B', jac=True, bounds=custom_bounds,
-                           options={'disp': False, 'gtol': grad_tol,
+                           method='L-BFGS-B', jac=True,
+                           bounds=opt_param_temp.get('custom_bonuds'),
+                           options={'disp': disp, 'gtol': grad_tol,
                                     'maxls': line_steps,
-                                    'maxiter': self.maxiter})
+                                    'maxiter': max_iter})
 
-        elif self.algo == 'BFGS':
+        elif algo == 'BFGS':
             res = minimize(get_neg_like_grad, x_0, args,
                            method='BFGS', jac=True,
-                           options={'disp': False, 'gtol': grad_tol,
-                                    'maxiter': self.maxiter})
+                           options={'disp': disp, 'gtol': grad_tol,
+                                    'maxiter': max_iter})
 
-        elif self.algo == 'nelder-mead':
+        elif algo == 'nelder-mead':
             res = minimize(get_neg_likelihood, x_0, args,
                            method='nelder-mead',
-                           options={'disp': False,
-                                    'maxiter': self.maxiter,
+                           options={'disp': disp,
+                                    'maxiter': max_iter,
                                     'xtol': x_tol})
         if res is None:
-            raise RuntimeError("Optimization failed for some reason.")
+            raise RuntimeError("Optimization failed for unknown reason.")
         self.hyps = res.x
         self.set_L_alpha()
         self.likelihood = -res.fun
@@ -410,6 +425,7 @@ environment and the environments in the training set."""
                                  hyp_labels=dictionary['hyp_labels'],
                                  par=dictionary['par'],
                                  maxiter=dictionary['maxiter'],
+                                 opt_params=dictionary['opt_params'],
                                  opt_algorithm=dictionary['algo'])
 
         # Save time by attempting to load in computed attributes

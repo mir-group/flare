@@ -242,6 +242,16 @@ def test_serialization_method(two_body_gp, test_point):
 
         if isinstance(x, np.ndarray):
             assert np.equal(x, y).all()
+
+        elif isinstance(x, dict):
+            xkeys = set(x.keys())
+            ykeys = set(y.keys())
+            assert xkeys == ykeys
+
+            # Once keys are same determine if all values are equal
+            for xk in sorted(list(xkeys)):
+                assert x[xk] == y[xk]
+
         elif hasattr(x, '__len__'):
 
             if isinstance(x[0], np.ndarray):
