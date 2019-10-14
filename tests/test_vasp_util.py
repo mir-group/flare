@@ -3,12 +3,15 @@ import os
 import sys
 import numpy as np
 from pymatgen.io.vasp.inputs import Poscar
-from pymatgen.io.vasp.outputs import Vasprun
+from pymatgen.io.vasp.outputs import Vasprun, UnconvergedVASPWarning
 from flare.struc import Structure, get_unique_species
 from flare.dft_interface.vasp_util import parse_dft_forces, run_dft, \
     edit_dft_input_positions, dft_input_to_structure,\
     parse_dft_forces_and_energy, md_trajectory_from_vasprun,\
     check_vasprun
+
+pytestmark = pytest.mark.filterwarnings("ignore::UserWarning",\
+    "ignore::pymatgen.io.vasp.outputs.UnconvergedVASPWarning")
 
 def cleanup_vasp_run(target: str = None):
     os.system('rm POSCAR')
