@@ -76,6 +76,24 @@ def test_vasp_calling(cmd, poscar):
     cleanup_vasp_run()
 
 
+@pytest.mark.parametrize('cmd, poscar',
+                         [
+                            ('python ./test_files/dummy_vasp.py test_fail',
+                            './test_files/test_POSCAR')
+                         ]
+                         )
+def test_vasp_calling_fail(cmd, poscar):
+
+    structure = dft_input_to_structure(poscar)
+
+    caught_error = False
+    try:
+        forces = run_dft('.', cmd, structure=structure, en=False)
+    except FileNotFoundError:
+        caught_error = True
+    assert caught_error
+
+
 def test_vasp_input_edit():
     os.system('cp test_files/test_POSCAR ./POSCAR')
     structure = dft_input_to_structure('./test_files/test_POSCAR')

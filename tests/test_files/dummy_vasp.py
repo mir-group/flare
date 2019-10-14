@@ -1,4 +1,7 @@
-import os, shutil
+import os, shutil, sys
+
+if "test_fail" in sys.argv:
+	exit(0)
 
 curr_path = os.path.dirname(os.path.abspath(__file__))
 vasprun_name = os.path.join(curr_path, 'test_vasprun.xml')
