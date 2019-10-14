@@ -7,11 +7,26 @@ from pymatgen.io.vasp.outputs import Vasprun
 from flare.struc import Structure, get_unique_species
 from flare.dft_interface.vasp_util import parse_dft_forces, run_dft, \
     edit_dft_input_positions, dft_input_to_structure,\
-    parse_dft_forces_and_energy, md_trajectory_from_vasprun
+    parse_dft_forces_and_energy, md_trajectory_from_vasprun,\
+    check_vasprun
 
 def cleanup_vasp_run(target: str = None):
     os.system('rm POSCAR')
     os.system('rm vasprun.xml')
+
+
+def test_check_vasprun():
+    fname = './test_files/test_vasprun.xml'
+    vr = Vasprun(fname)
+    assert type(check_vasprun(fname)) == Vasprun
+    assert type(check_vasprun(vr)) == Vasprun
+    caught_error = False
+    try:
+        check_vasprun(0)
+    except ValueError:
+        caught_error = True
+    assert caught_error
+
 
 # ------------------------------------------------------
 #                   test  otf helper functions
@@ -110,6 +125,10 @@ def test_vasp_input_edit():
 
     os.system('rm ./POSCAR')
     os.system('rm ./POSCAR.bak')
+
+# ------------------------------------------------------
+#                   test static helper functions
+# ------------------------------------------------------
 
 def test_md_trajectory():
     structures = md_trajectory_from_vasprun('test_files/test_vasprun.xml')
