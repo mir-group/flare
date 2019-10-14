@@ -4,18 +4,20 @@ trajectory. Contains methods to transfer the model to an OTF run /
 MD engine run.
 """
 import time
-
-from flare.predict import predict_on_structure, \
-    predict_on_structure_par, predict_on_structure_en, \
-    predict_on_structure_par_en
 from typing import List, Tuple
+from copy import deepcopy
+
+import pickle
+import numpy as np
+
+from flare.output import Output
 from flare.struc import Structure, get_unique_species
 from flare.gp import GaussianProcess
 from flare.env import AtomicEnvironment
-import numpy as np
-from copy import deepcopy
-import pickle
-from flare.output import Output
+from flare.util import Z_to_element
+from flare.predict import predict_on_structure, \
+    predict_on_structure_par, predict_on_structure_en, \
+    predict_on_structure_par_en
 
 
 class TrajectoryTrainer(object):
@@ -93,7 +95,6 @@ class TrajectoryTrainer(object):
 
         self.output = Output(output_name, always_flush=True)
 
-
         # To later be filled in using the time library
         self.start_time = None
         self.pickle_name = model_write
@@ -140,6 +141,7 @@ class TrajectoryTrainer(object):
         if len(self.gp.training_data) == 0 and self.seed_frames is []:
             self.seed_frames = [self.frames[0]]
 
+        atom_count = 0
         for frame in self.seed_frames:
             train_atoms = []
             for species_i in set(frame.coded_species):
@@ -154,8 +156,11 @@ class TrajectoryTrainer(object):
 
                 for atom in atoms_of_specie[:n_to_add]:
                     train_atoms.append(atom)
+                    atom_count += 1
 
             self.update_gp_and_print(frame, train_atoms, train=False)
+        if self.verbose >= 3:
+            print(f"Added {atom_count} atoms to pretrain")
         self.gp.set_L_alpha()
 
         # These conditions correspond to if either the GP was never trained
@@ -181,6 +186,7 @@ class TrajectoryTrainer(object):
         self.pre_run()
 
         # Loop through trajectory
+        nsample = 0
         for i, cur_frame in enumerate(self.frames):
 
             if self.verbose >= 2:
@@ -189,27 +195,52 @@ class TrajectoryTrainer(object):
             self.pred_func(cur_frame, self.gp)
 
             # Convert to meV/A
-            mae = np.mean(np.abs(cur_frame.forces - dft_forces)) * 1000
+            error = np.abs(cur_frame.forces - dft_forces)
+            mae = np.mean(error) * 1000
+            mae_perspecies = {}
+            count_perspecies = {}
+            species = [Z_to_element(Z) for Z in set(cur_frame.coded_species)]
+            for ele in species:
+                mae_perspecies[ele] = 0
+                count_perspecies[ele] = 0
+            for atom in range(cur_frame.nat):
+                Z = cur_frame.coded_species[atom]
+                ele = Z_to_element(Z)
+                mae_perspecies[ele] += np.sum(error[atom, :])
+                count_perspecies[ele] += 1
+            for ele in species:
+                mae_perspecies[ele] /= (count_perspecies[ele]*3+1e-25)
+
             mac = np.mean(np.abs(dft_forces)) * 1000
 
             self.output.write_gp_dft_comparison(
                 curr_step=i, frame=cur_frame,
                 start_time=time.time(),
                 dft_forces=dft_forces,
-                mae=mae, mac=mac, local_energies=None)
+                mae=mae, mae_ps=mae_perspecies, mac=mac, local_energies=None)
 
-            # get max uncertainty atoms
+            # Get max uncertainty atoms
             std_in_bound, train_atoms = self.is_std_in_bound(cur_frame)
             if not std_in_bound:
 
-                # compute mae and write to output
-                # add max uncertainty atoms to training set
+                # Compute mae and write to output;
+                # Add max uncertainty atoms to training set
                 self.update_gp_and_print(cur_frame, train_atoms, train=False)
+                nsample += len(train_atoms)
+                # Re-train if number of sampled atoms is high enough
+                if nsample >= self.min_atoms_added:
+                    if self.train_count < self.max_trains:
+                        self.train_gp()
+                    else:
+                        self.gp.set_L_alpha()
+                    nsample = 0
 
-                if self.train_count < self.max_trains:
-                    self.train_gp()
-                else:
-                    self.gp.set_L_alpha()
+        # If new atoms were added re-train the GP before concluding run
+        if (nsample != 0):
+            if self.train_count < self.max_trains:
+                self.train_gp()
+            else:
+                self.gp.set_L_alpha()
 
         self.output.conclude_run()
 
