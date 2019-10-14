@@ -2,13 +2,12 @@
 Helper functions which obtain forces and energies
 corresponding to atoms in structures
 """
+import numpy as np
+import multiprocessing as mp
+
 from flare.env import AtomicEnvironment
 from flare.gp import GaussianProcess
 from flare.struc import Structure
-
-import numpy as np
-import concurrent.futures
-
 
 def predict_on_atom(param):
     """
@@ -50,38 +49,54 @@ def predict_on_atom_en(param):
     return comps, stds, local_energy
 
 
-def predict_on_structure_par(structure: Structure, gp: GaussianProcess):
-    n = 0
-    atom_list = [(structure, atom, gp) for atom in range(structure.nat)]
-    with concurrent.futures.ProcessPoolExecutor() as executor:
-        for res in executor.map(predict_on_atom, atom_list):
-            for i in range(3):
-                structure.forces[n][i] = res[0][i]
-                structure.stds[n][i] = res[1][i]
-            n += 1
+def predict_on_structure_par(structure: Structure, gp: GaussianProcess, no_cpus=None):
+
+    if (no_cpus is None):
+        pool = mp.Pool(processes=mp.cpu_count())
+    else:
+        pool = mp.Pool(processes=no_cpus)
+    results = []
+
+    for atom in range(structure.nat):
+        results.append(pool.apply_async(predict_on_atom,
+            args=[(structure, atom, gp)]))
+
+    for i in range(structure.nat):
+        r = results[i].get()
+        structure.forces[i] = r[0]
+        structure.stds[i] = r[1]
+
     forces = np.array(structure.forces)
     stds = np.array(structure.stds)
     return forces, stds
 
 
-def predict_on_structure_par_en(structure: Structure, gp: GaussianProcess):
-    n = 0
+def predict_on_structure_par_en(structure: Structure, gp: GaussianProcess, no_cpus=None):
+
     atom_list = [(structure, atom, gp) for atom in range(structure.nat)]
     local_energies = [0 for n in range(structure.nat)]
 
-    with concurrent.futures.ProcessPoolExecutor() as executor:
-        for res in executor.map(predict_on_atom_en, atom_list):
-            for i in range(3):
-                structure.forces[n][i] = res[0][i]
-                structure.stds[n][i] = res[1][i]
-            local_energies[n] = res[2]
-            n += 1
+    results = []
+    if (no_cpus is None):
+        pool = mp.Pool(processes=mp.cpu_count())
+    else:
+        pool = mp.Pool(processes=no_cpus)
+    for atom in range(structure.nat):
+        results.append(pool.apply_async(predict_on_atom_en,
+            args=[(structure, atom, gp)]))
+
+    for i in range(structure.nat):
+        r = results[i].get()
+        structure.forces[i] = r[0]
+        structure.stds[i] = r[1]
+        local_energies[i] = r[3]
+
     forces = np.array(structure.forces)
     stds = np.array(structure.stds)
     return forces, stds, local_energies
 
 
-def predict_on_structure(structure: Structure, gp: GaussianProcess):
+def predict_on_structure(structure: Structure, gp: GaussianProcess, no_cpus=None):
     for n in range(structure.nat):
         chemenv = AtomicEnvironment(structure, n, gp.cutoffs)
         for i in range(3):
@@ -93,7 +108,7 @@ def predict_on_structure(structure: Structure, gp: GaussianProcess):
     return forces, stds
 
 
-def predict_on_structure_en(structure: Structure, gp: GaussianProcess):
+def predict_on_structure_en(structure: Structure, gp: GaussianProcess, no_cpus=None):
     local_energies = [0 for _ in range(structure.nat)]
 
     for n in range(structure.nat):
