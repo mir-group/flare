@@ -1,4 +1,5 @@
 import pytest
+import os
 import numpy as np
 from pymatgen.io.vasp.outputs import Vasprun
 from flare.struc import Structure, get_unique_species
@@ -14,3 +15,4 @@ def test_read_write_trajectory():
 		assert np.isclose(s.forces, f.forces).all()
 		assert np.isclose(s.energy, f.energy).all()
 		assert np.isclose(s.positions, f.positions).all()
+	os.system('rm tst_traj.json')
