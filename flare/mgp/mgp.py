@@ -482,8 +482,8 @@ class Map3body:
         if not load_grid:
             y_mean, y_var = self.GenGrid(GP, bond_struc, update)
         else:
-            y_mean = np.load('grid3_mean.npy')
-            y_var = np.load('grid3_var.npy')
+            y_mean = np.load(load_grid+'grid3_mean.npy')
+            y_var = np.load(load_grid+'grid3_var.npy')
 
         self.build_map(y_mean, y_var, svd_rank=svd_rank) 
 
@@ -580,7 +580,8 @@ class Map3body:
                 else:
                     k12_v = GP.get_kernel_vector(env12, 1)   
 
-                new_kv_file[1+b1*nop+b2, :] = k12_v
+                if update:
+                    new_kv_file[1+b1*nop+b2, :] = k12_v
 
                 # calculate mean and var value for the mapping
                 mean_diff = np.matmul(k12_v, GP.alpha)
