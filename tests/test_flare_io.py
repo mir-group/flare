@@ -1,0 +1,18 @@
+import pytest
+import os
+import numpy as np
+from pymatgen.io.vasp.outputs import Vasprun
+from flare.struc import Structure, get_unique_species
+from flare.dft_interface.vasp_util import md_trajectory_from_vasprun
+from flare.flare_io import md_trajectory_to_file, md_trajectory_from_file
+
+def test_read_write_trajectory():
+    structures = md_trajectory_from_vasprun('test_files/test_vasprun.xml')
+    fname = 'tst_traj.json'
+    md_trajectory_to_file(fname, structures)
+    fstructures = md_trajectory_from_file(fname)
+    for s, f in zip(structures, fstructures):
+        assert np.isclose(s.forces, f.forces).all()
+        assert np.isclose(s.energy, f.energy).all()
+        assert np.isclose(s.positions, f.positions).all()
+    os.system('rm tst_traj.json')
