@@ -119,13 +119,13 @@ class OTF(object):
             # after step 1, try predicting with GP model
             else:
                 self.gp.check_L_alpha()
-                self.pred_func(self.structure, self.gp)
+                self.pred_func(self.structure, self.gp, self.no_cpus)
                 self.dft_step = False
                 new_pos = md.update_positions(self.dt, self.noa,
                                               self.structure)
 
                 # get max uncertainty atoms
-                std_in_bound, target_atoms = is_std_in_bound(self.std_tolerance, 
+                std_in_bound, target_atoms = is_std_in_bound(self.std_tolerance,
                         self.gp.hyps[-1], self.structure, self.max_atoms_added)
 
                 if not std_in_bound:

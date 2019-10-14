@@ -25,6 +25,7 @@ class TrajectoryTrainer(object):
                  rel_std_tolerance: float = 1,
                  abs_std_tolerance: float = 1,
                  parallel: bool = False,
+                 no_cpus: int = None,
                  skip: int = 0,
                  calculate_energy: bool = False,
                  output_name: str = 'gp_from_aimd',
@@ -46,6 +47,7 @@ class TrajectoryTrainer(object):
         noise variance hyperparameter
         :param abs_std_tolerance: Train if uncertainty is above this
         :param parallel: Use parallel functions or not
+        :param no_cpus: number of cpus to run with multithreading
         :param skip: Skip through frames
         :param calculate_energy: Use local energy kernel or not
         :param output_name: Write output of training to this file
@@ -78,6 +80,7 @@ class TrajectoryTrainer(object):
         self.train_count = 0
 
         self.parallel = parallel
+        self.no_cpus = no_cpus
 
         # set pred function
         if parallel:
@@ -188,7 +191,7 @@ class TrajectoryTrainer(object):
             dft_forces = deepcopy(cur_frame.forces)
 
             self.gp.check_L_alpha()
-            self.pred_func(cur_frame, self.gp)
+            self.pred_func(cur_frame, self.gp, self.no_cpus)
 
             # Convert to meV/A
             mae = np.mean(np.abs(cur_frame.forces - dft_forces)) * 1000

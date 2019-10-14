@@ -25,7 +25,7 @@ class GaussianProcess:
                  energy_force_kernel: Callable = None,
                  energy_kernel: Callable = None,
                  opt_algorithm: str = 'L-BFGS-B',
-                 maxiter=10, par=False,
+                 maxiter=10, par=False, no_cpus=None,
                  output=None):
         """Initialize GP parameters and training data."""
 
@@ -44,6 +44,7 @@ class GaussianProcess:
         self.training_labels_np = np.empty(0, )
         self.maxiter = maxiter
         self.par = par
+        self.no_cpus = no_cpus
         self.output = output
 
         # Parameters set during training
@@ -131,7 +132,7 @@ hyperparameters to maximize the likelihood, then computes L and alpha \
 
         args = (self.training_data, self.training_labels_np,
                 self.kernel_grad, self.cutoffs, output,
-                self.par)
+                self.par, self.no_cpus)
         res = None
 
         if self.algo == 'L-BFGS-B':
@@ -290,7 +291,7 @@ environment and the environments in the training set."""
             hyp_mat, ky_mat = \
                 get_ky_and_hyp_par(self.hyps, self.training_data,
                                    self.training_labels_np,
-                                   self.kernel_grad, self.cutoffs)
+                                   self.kernel_grad, self.cutoffs, self.no_cpus)
         else:
             hyp_mat, ky_mat = \
                 get_ky_and_hyp(self.hyps, self.training_data,
@@ -413,6 +414,7 @@ environment and the environments in the training set."""
                                  hyps=np.array(dictionary['hyps']),
                                  hyp_labels=dictionary['hyp_labels'],
                                  par=dictionary['par'],
+                                 no_cpus=dictionary['no_cpus'],
                                  maxiter=dictionary['maxiter'],
                                  opt_algorithm=dictionary['algo'])
 
