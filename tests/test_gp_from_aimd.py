@@ -127,7 +127,8 @@ def test_seed_and_run():
                            max_atoms_from_frame=4,
                            model_write='meth_test.pickle',
                            model_format='pickle',
-                           checkpoint_interval=1)
+                           checkpoint_interval=1,
+                           pre_train_atoms_per_element={'H': 1})
 
     tt.run()
 
