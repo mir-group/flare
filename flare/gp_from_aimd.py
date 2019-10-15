@@ -113,7 +113,8 @@ class TrajectoryTrainer(object):
 
         # Convert to Coded Species
         if self.pre_train_env_per_species:
-            for key in self.pre_train_env_per_species.keys():
+            pre_train_species = list(self.pre_train_env_per_species.keys())
+            for key in pre_train_species:
                 self.pre_train_env_per_species[element_to_Z(key)] = \
                     self.pre_train_env_per_species[key]
 
