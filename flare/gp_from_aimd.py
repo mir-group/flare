@@ -4,17 +4,18 @@ trajectory. Contains methods to transfer the model to an OTF run /
 MD engine run.
 """
 import time
-from typing import List, Tuple
-from copy import deepcopy
-
+import json
 import pickle
 import numpy as np
+
+from typing import List, Tuple
+from copy import deepcopy
 
 from flare.output import Output
 from flare.struc import Structure, get_unique_species
 from flare.gp import GaussianProcess
 from flare.env import AtomicEnvironment
-from flare.util import Z_to_element
+from flare.util import Z_to_element, NumpyEncoder
 from flare.predict import predict_on_structure, \
     predict_on_structure_par, predict_on_structure_en, \
     predict_on_structure_par_en
@@ -37,7 +38,9 @@ class TrajectoryTrainer(object):
                  pre_train_seed_frames: List[Structure] = None,
                  pre_train_seed_envs: List[Tuple[AtomicEnvironment,
                                                  np.array]] = None,
-                 pre_train_atoms_per_element: dict = None):
+                 pre_train_atoms_per_element: dict = None,
+                 checkpoint_interval: int = None,
+                 model_format: str = 'json'):
         """
         Class which trains a GP off of an AIMD trajectory, and generates
         error statistics between the DFT and GP calls.
@@ -57,12 +60,14 @@ class TrajectoryTrainer(object):
         :param n_cpus: Number of CPUs to parallelize over
         :param shuffle_frames: Randomize order of frames for better training
         :param verbose: 0: Silent, 1: Minimal, 2: Lots of information
-        :param model_write: Write output model here
+        :param model_write: Where to write output model
         :param pre_train_on_skips: Train model on every n frames before running
         :param pre_train_seed_frames: Frames to train on before running
         :param pre_train_seed_envs: Environments to train on before running
         :param pre_train_atoms_per_element: Max # of environments to add from
         each species in the seed pre-training steps
+        :param checkpoint_interval: How often to write model after trainings
+        :param model_format: Format to write GP model to
         """
 
         self.frames = frames
@@ -97,7 +102,6 @@ class TrajectoryTrainer(object):
 
         # To later be filled in using the time library
         self.start_time = None
-        self.pickle_name = model_write
 
         self.pre_train_on_skips = pre_train_on_skips
         self.seed_envs = [] if pre_train_seed_envs is None else \
@@ -105,7 +109,12 @@ class TrajectoryTrainer(object):
         self.seed_frames = [] if pre_train_seed_frames is None \
             else pre_train_seed_frames
         self.pre_train_env_per_species = {} if pre_train_atoms_per_element \
-                                               is None else pre_train_atoms_per_element
+                                     is None else pre_train_atoms_per_element
+
+        # Output parameters
+        self.checkpoint_interval = checkpoint_interval
+        self.model_write = model_write
+        self.model_format = model_format
 
     def pre_run(self):
         """
@@ -244,9 +253,8 @@ class TrajectoryTrainer(object):
 
         self.output.conclude_run()
 
-        if self.pickle_name:
-            with open(self.pickle_name, 'wb') as f:
-                pickle.dump(self.gp, f)
+        if self.model_write:
+            self.gp.write_model(self.model_write, self.model_format)
 
     def update_gp_and_print(self, frame: Structure, train_atoms: List[int],
                             train: bool=True):
@@ -283,6 +291,10 @@ class TrajectoryTrainer(object):
                                self.start_time,
                                self.gp.likelihood, self.gp.likelihood_gradient)
         self.train_count += 1
+
+        if self.train_count % self.checkpoint_interval == 0 and \
+                self.model_write:
+            self.gp.write_model(self.model_write, self.model_format)
 
     def is_std_in_bound(self, frame: Structure)->(bool, List[int]):
         """
@@ -324,3 +336,6 @@ class TrajectoryTrainer(object):
             return False, target_atoms
         else:
             return True, [-1]
+
+
+

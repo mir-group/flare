@@ -1,15 +1,20 @@
 """Gaussian process model of the Born Oppenheimer potential energy surface."""
 import math
-from typing import List, Callable
+import json
+import pickle
 import numpy as np
+
+from typing import List, Callable
 from scipy.linalg import solve_triangular
 from scipy.optimize import minimize
+
 from flare.env import AtomicEnvironment
 from flare.struc import Structure
 from flare.gp_algebra import get_ky_and_hyp, get_like_grad_from_mats, \
     get_neg_likelihood, get_neg_like_grad, get_ky_and_hyp_par
 from flare.kernels import str_to_kernel
 from flare.mc_simple import str_to_mc_kernel
+from flare.util import NumpyEncoder
 
 
 class GaussianProcess:
@@ -448,3 +453,27 @@ environment and the environments in the training set."""
         new_gp.likelihood_gradient = dictionary['likelihood_gradient']
 
         return new_gp
+
+    def write_model(self, name: str, format: str = 'json'):
+        """
+        Write model in a variety of formats to a file for later re-use.
+
+        :param name: Output name
+        :param format:
+        :return:
+        """
+
+        supported_formats = ['json', 'pickle', 'binary']
+
+        if format.lower() == 'json':
+            with open(name, 'w') as f:
+                json.dump(self.as_dict(),f,cls=NumpyEncoder)
+
+        elif format.lower() == 'pickle' or format.lower() == 'binary':
+            with open(name, 'wb') as f:
+                pickle.dump(self, f)
+
+        else:
+            raise ValueError("Output format not supported: try from "
+                             "{}".format(supported_formats))
+
