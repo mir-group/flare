@@ -15,7 +15,7 @@ from flare.gp_algebra import get_ky_and_hyp, get_like_grad_from_mats, \
     get_neg_likelihood, get_neg_like_grad, get_ky_and_hyp_par
 from flare.kernels import str_to_kernel
 from flare.mc_simple import str_to_mc_kernel
-
+from flare.util import NumpyEncoder
 
 class GaussianProcess:
     """ Gaussian Process Regression Model.
