@@ -1,25 +1,19 @@
 """Gaussian process model of the Born Oppenheimer potential energy surface."""
 import math
-import json
-import pickle
-import numpy as np
-
 from typing import List, Callable
+import numpy as np
 from scipy.linalg import solve_triangular
 from scipy.optimize import minimize
-
 from flare.env import AtomicEnvironment
 from flare.struc import Structure
 from flare.gp_algebra import get_ky_and_hyp, get_like_grad_from_mats, \
     get_neg_likelihood, get_neg_like_grad, get_ky_and_hyp_par
 from flare.kernels import str_to_kernel
 from flare.mc_simple import str_to_mc_kernel
-from flare.util import NumpyEncoder
 
 
 class GaussianProcess:
     """ Gaussian Process Regression Model.
-
     Implementation is based on Algorithm 2.1 (pg. 19) of
     "Gaussian Processes for Machine Learning" by Rasmussen and Williams"""
 
@@ -30,8 +24,7 @@ class GaussianProcess:
                  energy_force_kernel: Callable = None,
                  energy_kernel: Callable = None,
                  opt_algorithm: str = 'L-BFGS-B',
-                 opt_params: dict = None,
-                 maxiter=10, par: bool=False,
+                 maxiter=10, par=False,
                  output=None):
         """Initialize GP parameters and training data."""
 
@@ -44,7 +37,6 @@ class GaussianProcess:
         self.hyp_labels = hyp_labels
         self.cutoffs = cutoffs
         self.algo = opt_algorithm
-        self.opt_params = opt_params if opt_params is not None else {}
 
         self.training_data = []
         self.training_labels = []
@@ -66,7 +58,6 @@ class GaussianProcess:
     def update_db(self, struc: Structure, forces: list,
                   custom_range: List[int] = ()):
         """Given structure and forces, add to training set.
-
         :param struc: structure to add to db
         :type struc: Structure
         :param forces: list of corresponding forces to add to db
@@ -93,7 +84,6 @@ class GaussianProcess:
                     force, train: bool = False, **kwargs):
         """
         Tool to add a single environment / force pair into the training set.
-
         :param force:
         :param env:
         :param force: (x,y,z) component associated with environment
@@ -110,7 +100,6 @@ class GaussianProcess:
     @staticmethod
     def force_list_to_np(forces: list):
         """ Convert list of forces to numpy array of forces.
-
         :param forces: list of forces to convert
         :type forces: list<float>
         :return: numpy array forces
@@ -126,17 +115,14 @@ class GaussianProcess:
 
         return forces_np
 
-    def train(self, output=None, opt_param_override: dict = None):
-        """
-        Train Gaussian Process model on training data. Tunes the \
+    def train(self, output=None, custom_bounds=None,
+              grad_tol: float = 1e-4,
+              x_tol: float = 1e-5,
+              line_steps: int = 20):
+        """Train Gaussian Process model on training data. Tunes the \
 hyperparameters to maximize the likelihood, then computes L and alpha \
-(related to the covariance matrix of the training set).
+(related to the covariance matrix of the training set)."""
 
-        :param output: Output to write to
-        :param opt_param_override: Dictionary of parameters to override
-        instace's optimzation parameters.
-        :return:
-        """
         x_0 = self.hyps
 
         args = (self.training_data, self.training_labels_np,
@@ -144,21 +130,7 @@ hyperparameters to maximize the likelihood, then computes L and alpha \
                 self.par)
         res = None
 
-        # Make local copy of opt params so as to not overwrite with override
-        opt_param_temp = dict(self.opt_params)
-        if opt_param_override is not None:
-            for key, value in opt_param_override.items():
-                opt_param_temp[key] = value
-
-        grad_tol = opt_param_temp.get('grad_tol', 1e-4)
-        x_tol = opt_param_temp.get('x_tol', 1e-5)
-        line_steps = opt_param_temp.get('max_ls', 20)
-        max_iter = opt_param_temp.get('max_iter', self.maxiter)
-        algo = opt_param_temp.get('algorithm', self.algo)
-        disp = opt_param_temp.get('disp', False)
-
-
-        if algo == 'L-BFGS-B':
+        if self.algo == 'L-BFGS-B':
 
             # bound signal noise below to avoid overfitting
             bounds = np.array([(1e-6, np.inf)] * len(x_0))
@@ -168,36 +140,35 @@ hyperparameters to maximize the likelihood, then computes L and alpha \
             try:
                 res = minimize(get_neg_like_grad, x_0, args,
                                method='L-BFGS-B', jac=True, bounds=bounds,
-                               options={'disp': disp, 'gtol': grad_tol,
+                               options={'disp': False, 'gtol': grad_tol,
                                         'maxls': line_steps,
-                                        'maxiter': max_iter})
+                                        'maxiter': self.maxiter})
             except:
                 print("Warning! Algorithm for L-BFGS-B failed. Changing to "
                       "BFGS for remainder of run.")
-                self.opt_params['algorithm'] = 'BFGS'
+                self.algo = 'BFGS'
 
-        if opt_param_temp.get('custom_bounds', None) is not None:
+        if custom_bounds is not None:
             res = minimize(get_neg_like_grad, x_0, args,
-                           method='L-BFGS-B', jac=True,
-                           bounds=opt_param_temp.get('custom_bonuds'),
-                           options={'disp': disp, 'gtol': grad_tol,
+                           method='L-BFGS-B', jac=True, bounds=custom_bounds,
+                           options={'disp': False, 'gtol': grad_tol,
                                     'maxls': line_steps,
-                                    'maxiter': max_iter})
+                                    'maxiter': self.maxiter})
 
-        elif algo == 'BFGS':
+        elif self.algo == 'BFGS':
             res = minimize(get_neg_like_grad, x_0, args,
                            method='BFGS', jac=True,
-                           options={'disp': disp, 'gtol': grad_tol,
-                                    'maxiter': max_iter})
+                           options={'disp': False, 'gtol': grad_tol,
+                                    'maxiter': self.maxiter})
 
-        elif algo == 'nelder-mead':
+        elif self.algo == 'nelder-mead':
             res = minimize(get_neg_likelihood, x_0, args,
                            method='nelder-mead',
-                           options={'disp': disp,
-                                    'maxiter': max_iter,
+                           options={'disp': False,
+                                    'maxiter': self.maxiter,
                                     'xtol': x_tol})
         if res is None:
-            raise RuntimeError("Optimization failed for unknown reason.")
+            raise RuntimeError("Optimization failed for some reason.")
         self.hyps = res.x
         self.set_L_alpha()
         self.likelihood = -res.fun
@@ -228,7 +199,6 @@ uncertainty."""
 
     def predict_local_energy(self, x_t: AtomicEnvironment) -> float:
         """Predict the local energy of an atomic environment.
-
         :param x_t: Atomic environment of test atom.
         :type x_t: AtomicEnvironment
         :return: local energy in eV (up to a constant).
@@ -263,7 +233,6 @@ uncertainty."""
         """
         Compute kernel vector, comparing input environment to all environments
         in the GP's training set.
-
         :param x: data point to compare against kernel matrix
         :type x: AtomicEnvironment
         :param d_1: Cartesian component of force vector to get (1=x,2=y,3=z)
@@ -435,7 +404,6 @@ environment and the environments in the training set."""
                                  hyp_labels=dictionary['hyp_labels'],
                                  par=dictionary['par'],
                                  maxiter=dictionary['maxiter'],
-                                 opt_params=dictionary['opt_params'],
                                  opt_algorithm=dictionary['algo'])
 
         # Save time by attempting to load in computed attributes

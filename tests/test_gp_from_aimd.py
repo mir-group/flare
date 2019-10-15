@@ -21,7 +21,8 @@ def methanol_gp():
                                             1.70172923e-03]),
                              cutoffs=np.array([7, 7]),
                              hyp_labels=['l2', 's2', 'l3', 's3', 'n0'],
-                             maxiter=1)
+                             maxiter=1,
+                             opt_algorithm='L-BFGS-B')
     with open('./test_files/methanol_envs.json') as f:
         dicts = [loads(s) for s in f.readlines()]
 
