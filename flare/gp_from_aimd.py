@@ -12,10 +12,10 @@ from typing import List, Tuple
 from copy import deepcopy
 
 from flare.output import Output
-from flare.struc import Structure, get_unique_species
+from flare.struc import Structure
 from flare.gp import GaussianProcess
 from flare.env import AtomicEnvironment
-from flare.util import Z_to_element, NumpyEncoder
+from flare.util import Z_to_element, element_to_Z
 from flare.predict import predict_on_structure, \
     predict_on_structure_par, predict_on_structure_en, \
     predict_on_structure_par_en
@@ -110,6 +110,12 @@ class TrajectoryTrainer(object):
             else pre_train_seed_frames
         self.pre_train_env_per_species = {} if pre_train_atoms_per_element \
                                      is None else pre_train_atoms_per_element
+
+        # Convert to Coded Species
+        if self.pre_train_env_per_species:
+            for key in self.pre_train_env_per_species.keys():
+                self.pre_train_env_per_species[element_to_Z(key)] = \
+                    self.pre_train_env_per_species[key]
 
         # Output parameters
         self.checkpoint_interval = checkpoint_interval
