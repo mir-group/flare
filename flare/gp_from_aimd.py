@@ -292,8 +292,9 @@ class TrajectoryTrainer(object):
                                self.gp.likelihood, self.gp.likelihood_gradient)
         self.train_count += 1
 
-        if self.train_count % self.checkpoint_interval == 0 and \
-                self.model_write:
+        if self.checkpoint_interval \
+                and self.train_count % self.checkpoint_interval == 0 \
+                and self.model_write:
             self.gp.write_model(self.model_write, self.model_format)
 
     def is_std_in_bound(self, frame: Structure)->(bool, List[int]):
