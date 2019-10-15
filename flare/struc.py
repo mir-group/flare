@@ -171,6 +171,7 @@ cell vectors.
                           positions=np.array(dictionary['positions']),
                           species=dictionary['coded_species'])
 
+        struc.energy = dictionary['energy']
         struc.forces = np.array(dictionary['forces'])
         struc.stress = dictionary['stress']
         struc.stds = np.array(dictionary['stds'])
@@ -178,6 +179,19 @@ cell vectors.
         struc.species_labels = dictionary['species_labels']
 
         return struc
+
+    @staticmethod
+    def from_ase_atoms(atoms):
+        struc = Structure(cell=np.array(atoms.cell),
+                          positions=atoms.positions,
+                          species=atoms.get_chemical_symbols())
+        return struc
+
+    def to_ase_atoms(self):
+        from ase import Atoms
+        return Atoms(self.species_labels,
+                     positions=self.positions,
+                     cell=self.cell)
 
     def to_pmg_structure(self):
         """
@@ -208,9 +222,9 @@ cell vectors.
         :return: FLARE Structure
         """
 
-        cell = structure.lattice.matrix
+        cell = structure.lattice.matrix.copy()
         species = [str(spec) for spec in structure.species]
-        positions = structure.cart_coords
+        positions = structure.cart_coords.copy()
 
         new_struc = Structure(cell=cell,species=species,
                               positions=positions)
