@@ -440,7 +440,7 @@ environment and the environments in the training set."""
 
         if format.lower() == 'json':
             with open(name, 'w') as f:
-                json.dump(self.as_dict(),f,cls=NumpyEncoder)
+                json.dump(self.as_dict(), f, cls=NumpyEncoder)
 
         elif format.lower() == 'pickle' or format.lower() == 'binary':
             with open(name, 'wb') as f:
