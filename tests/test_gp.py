@@ -1,5 +1,11 @@
 import pytest
+import pickle
+import os
+import json
 import numpy as np
+
+from pytest import raises
+
 from flare.gp import GaussianProcess
 from flare.env import AtomicEnvironment
 from flare.struc import Structure
@@ -242,16 +248,6 @@ def test_serialization_method(two_body_gp, test_point):
 
         if isinstance(x, np.ndarray):
             assert np.equal(x, y).all()
-
-        elif isinstance(x, dict):
-            xkeys = set(x.keys())
-            ykeys = set(y.keys())
-            assert xkeys == ykeys
-
-            # Once keys are same determine if all values are equal
-            for xk in sorted(list(xkeys)):
-                assert x[xk] == y[xk]
-
         elif hasattr(x, '__len__'):
 
             if isinstance(x[0], np.ndarray):
@@ -266,3 +262,29 @@ def test_serialization_method(two_body_gp, test_point):
     for d in [0, 1, 2]:
         assert np.all(two_body_gp.predict(x_t=test_point, d=d) ==
                       new_gp.predict(x_t=test_point, d=d))
+
+
+def test_load_and_reload(two_body_gp, test_point):
+
+    two_body_gp.write_model('two_body.pickle', 'pickle')
+
+    with open('two_body.pickle', 'rb') as f:
+        new_gp = pickle.load(f)
+
+    for d in [0, 1, 2]:
+        assert np.all(two_body_gp.predict(x_t=test_point, d=d) ==
+                      new_gp.predict(x_t=test_point, d=d))
+    os.remove('two_body.pickle')
+
+    two_body_gp.write_model('two_body.json')
+    with open('two_body.json', 'r') as f:
+        new_gp = GaussianProcess.from_dict(json.loads(f.readline()))
+    for d in [0, 1, 2]:
+        assert np.all(two_body_gp.predict(x_t=test_point, d=d) ==
+                      new_gp.predict(x_t=test_point, d=d))
+    os.remove('two_body.json')
+
+    with raises(ValueError):
+        two_body_gp.write_model('two_body.pickle', 'cucumber')
+
+

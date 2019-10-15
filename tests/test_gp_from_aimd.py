@@ -1,7 +1,7 @@
 import pytest
 import numpy as np
-import sys
-from flare.gp import GaussianProcess
+import pickle
+
 from flare.env import AtomicEnvironment
 from flare.struc import Structure
 from flare.kernels import two_plus_three_body, two_plus_three_body_grad
@@ -21,7 +21,8 @@ def methanol_gp():
                                             1.70172923e-03]),
                              cutoffs=np.array([7, 7]),
                              hyp_labels=['l2', 's2', 'l3', 's3', 'n0'],
-                             maxiter=1)
+                             maxiter=1,
+                             opt_algorithm='L-BFGS-B')
     with open('./test_files/methanol_envs.json') as f:
         dicts = [loads(s) for s in f.readlines()]
 
@@ -68,6 +69,7 @@ def test_load_trained_gp_and_run(methanol_gp):
     os.system('rm ./gp_from_aimd.out')
     os.system('rm ./gp_from_aimd.xyz')
     os.system('rm ./gp_from_aimd-f.xyz')
+
 
 def test_load_one_frame_and_run():
     the_gp = GaussianProcess(kernel=two_plus_three_body_mc,
@@ -122,15 +124,27 @@ def test_seed_and_run():
                            skip=15,
                            pre_train_seed_envs=seeds,
                            pre_train_seed_frames=[frames[-1]],
-                           model_write='test_methanol_gp.pickle',
-                           max_atoms_from_frame=4)
+                           max_atoms_from_frame=4,
+                           model_write='meth_test.pickle',
+                           model_format='pickle',
+                           checkpoint_interval=1,
+                           pre_train_atoms_per_element={'H': 1})
 
     tt.run()
+
+    with open('meth_test.pickle', 'rb') as f:
+        new_gp = pickle.load(f)
+
+    test_env = envs[0]
+
+    for d in [0, 1, 2]:
+        assert np.all(the_gp.predict(x_t=test_env, d=d) ==
+                      new_gp.predict(x_t=test_env, d=d))
 
     os.system('rm ./gp_from_aimd.out')
     os.system('rm ./gp_from_aimd.xyz')
     os.system('rm ./gp_from_aimd-f.xyz')
-    os.system('rm ./test_methanol_gp.pickle')
+    os.system('rm ./meth_test.pickle')
 
 
 def test_uncertainty_threshold(fake_gp):
