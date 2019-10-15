@@ -1,6 +1,7 @@
 """Gaussian process model of the Born Oppenheimer potential energy surface."""
 import math
 import pickle
+import json
 
 import numpy as np
 
