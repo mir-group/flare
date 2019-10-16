@@ -230,7 +230,7 @@ def is_std_in_bound_per_species(rel_std_tolerance, abs_std_tolerance, noise, str
     elif abs_std_tolerance is None:
         threshold = rel_std_tolerance * np.abs(noise)
     else:
-        threshold = min(rel_std_tolerance * np.abs(noise)
+        threshold = min(rel_std_tolerance * np.abs(noise),
                         abs_std_tolerance)
 
     # sort max stds

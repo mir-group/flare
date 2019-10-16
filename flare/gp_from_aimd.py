@@ -208,7 +208,7 @@ class TrajectoryTrainer(object):
         self.pre_run()
 
         if self.validate_ratio > 0:
-           train_frame = int(len(self.frames)*(1-self.valida
+           train_frame = int(len(self.frames)*(1-self.validate_ratio))
         else:
            train_frame = len(self.frames)
 

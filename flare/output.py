@@ -1,9 +1,12 @@
-import time
 import datetime
-import numpy as np
-import multiprocessing
 import os
 import shutil
+import time
+
+import multiprocessing
+import numpy as np
+
+from flare.util import Z_to_element
 
 
 class Output():
@@ -286,7 +289,7 @@ class Output():
 
     def write_gp_dft_comparison(self, curr_step, frame,
                                 start_time, dft_forces,
-                                mae, mae_ps, mac, local_energies=None, KE=None):
+                                error, local_energies=None, KE=None):
         """
         write the comparison to logfile
         :param dft_forces:
@@ -329,12 +332,28 @@ class Output():
 
         string += '\n'
 
+        mae = np.mean(error) * 1000
+        mac = np.mean(np.abs(dft_forces)) * 1000
         string += f'mean absolute error: {mae:10.2} meV/A \n'
         string += f'mean absolute dft component: {mac:10.2} meV/A \n'
 
+        mae_ps = {}
+        count_ps = {}
+        species = [Z_to_element(Z) for Z in set(frame.coded_species)]
+        for ele in species:
+            mae_ps[ele] = 0
+            count_ps[ele] = 0
+        for atom in range(frame.nat):
+            Z = frame.coded_species[atom]
+            ele = Z_to_element(Z)
+            mae_ps[ele] += np.sum(error[atom, :])
+            count_ps[ele] += 1
+
         string += "mae per species\n"
-        for ele in mae_ps.keys():
-            string+=f"type {ele} mae: {mae_ps[ele]:10.4}\n"
+        for ele in species:
+            if (count_ps[ele]>0):
+                mae_ps[ele] /= (count_ps[ele]*3)
+                string+=f"type {ele} mae: {mae_ps[ele]:10.4}\n"
 
         # calculate potential and total energy
         if local_energies is not None:
