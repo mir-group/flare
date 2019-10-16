@@ -28,13 +28,14 @@ class TrajectoryTrainer(object):
                  abs_std_tolerance: float = 1,
                  parallel: bool = False,
                  no_cpus: int = None,
-                 skip: int = 0,
+                 skip: int = 1,
+                 validate_ratio: float = 0.1,
                  calculate_energy: bool = False,
                  output_name: str = 'gp_from_aimd',
                  max_atoms_from_frame: int = np.inf, max_trains: int = np.inf,
                  min_atoms_added: int = 1, shuffle_frames: bool = False,
                  verbose: int = 0, model_write: str = '',
-                 pre_train_on_skips: bool = False,
+                 pre_train_on_skips: int = -1,
                  pre_train_seed_frames: List[Structure] = None,
                  pre_train_seed_envs: List[Tuple[AtomicEnvironment,
                                                  np.array]] = None,
@@ -141,7 +142,16 @@ class TrajectoryTrainer(object):
         # Take one of each atom species in the first frame
         # so all atomic species are represented in the first step.
         # Otherwise use the seed frames passed in by user.
-        if len(self.gp.training_data) == 0 and self.seed_frames is []:
+        if (self.pre_train_on_skips >0):
+            self.seed_frames = []
+            newframes = []
+            for i in range(len(self.frames)):
+                if (i%self.pre_train_on_skips==0):
+                    self.seed_frames += [self.frames[i]]
+                else:
+                    newframes += [self.frames[i]]
+            self.frames = newframes
+        elif len(self.gp.training_data) == 0 and self.seed_frames is []:
             self.seed_frames = [self.frames[0]]
 
         atom_count = 0
@@ -162,9 +172,11 @@ class TrajectoryTrainer(object):
                     atom_count += 1
 
             self.update_gp_and_print(frame, train_atoms, train=False)
+
         if self.verbose >= 3:
             print(f"Added {atom_count} atoms to pretrain")
-        self.gp.set_L_alpha()
+
+        self.train_gp()
 
         # These conditions correspond to if either the GP was never trained
         # or if data was added to it during the pre-run.
