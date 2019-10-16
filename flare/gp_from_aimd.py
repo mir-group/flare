@@ -102,6 +102,10 @@ class TrajectoryTrainer(object):
         # To later be filled in using the time library
         self.start_time = None
         self.pickle_name = model_write
+        if (model_write is not ''):
+            self.pickle_name = model_write
+        else:
+            self.pickle_name = output_name+".gp"
 
         self.pre_train_on_skips = pre_train_on_skips
         self.seed_envs = [] if pre_train_seed_envs is None else \
