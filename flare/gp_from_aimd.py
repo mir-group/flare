@@ -75,6 +75,8 @@ class TrajectoryTrainer(object):
         self.rel_std_tolerance = rel_std_tolerance
         self.abs_std_tolerance = abs_std_tolerance
         self.skip = skip
+        assert (skip>=1), "skip needs to be an interger that is equal or larger than 1"
+        self.validate_ratio = validate_ratio
         self.max_trains = max_trains
         self.curr_step = 0
         self.max_atoms_from_frame = max_atoms_from_frame
@@ -157,6 +159,7 @@ class TrajectoryTrainer(object):
             self.frames = newframes
         elif len(self.gp.training_data) == 0 and self.seed_frames is []:
             self.seed_frames = [self.frames[0]]
+            self.frames = self.frames[1:]
 
         atom_count = 0
         for frame in self.seed_frames:
@@ -204,67 +207,52 @@ class TrajectoryTrainer(object):
             print("Commencing run with pre-run...")
         self.pre_run()
 
+        if self.validate_ratio > 0:
+           train_frame = int(len(self.frames)*(1-self.valida
+        else:
+           train_frame = len(self.frames)
+
         # Loop through trajectory
         nsample = 0
-        for i, cur_frame in enumerate(self.frames):
+        for i, cur_frame in enumerate(self.frames[::self.skip]):
 
             if self.verbose >= 2:
                 print("=====NOW ON FRAME {}=====".format(i))
             dft_forces = deepcopy(cur_frame.forces)
 
-            self.gp.check_L_alpha()
             self.pred_func(cur_frame, self.gp, self.no_cpus)
 
             # Convert to meV/A
             error = np.abs(cur_frame.forces - dft_forces)
-            mae = np.mean(error) * 1000
-            mae_perspecies = {}
-            count_perspecies = {}
-            species = [Z_to_element(Z) for Z in set(cur_frame.coded_species)]
-            for ele in species:
-                mae_perspecies[ele] = 0
-                count_perspecies[ele] = 0
-            for atom in range(cur_frame.nat):
-                Z = cur_frame.coded_species[atom]
-                ele = Z_to_element(Z)
-                mae_perspecies[ele] += np.sum(error[atom, :])
-                count_perspecies[ele] += 1
-            for ele in species:
-                mae_perspecies[ele] /= (count_perspecies[ele]*3+1e-25)
-
-            mac = np.mean(np.abs(dft_forces)) * 1000
 
             self.output.write_gp_dft_comparison(
                 curr_step=i, frame=cur_frame,
                 start_time=time.time(),
                 dft_forces=dft_forces,
-                mae=mae, mae_ps=mae_perspecies, mac=mac, local_energies=None)
+                error=error,
+                local_energies=None)
 
-            # Get max uncertainty atoms
-            std_in_bound, train_atoms = is_std_in_bound_per_species(
-                    self.rel_std_tolerance, self.abs_std_tolerance,
-                    self.gp.hyps[-1], cur_frame,
-                    self.max_atoms_from_frame)
-            if not std_in_bound:
+            if (i<train_frame):
+                # Get max uncertainty atoms
+                std_in_bound, train_atoms = is_std_in_bound_per_species(
+                        self.rel_std_tolerance, self.abs_std_tolerance,
+                        self.gp.hyps[-1], cur_frame,
+                        self.max_atoms_from_frame)
+                if not std_in_bound:
 
-                # Compute mae and write to output;
-                # Add max uncertainty atoms to training set
-                self.update_gp_and_print(cur_frame, train_atoms, train=False)
-                nsample += len(train_atoms)
-                # Re-train if number of sampled atoms is high enough
-                if nsample >= self.min_atoms_added:
-                    if self.train_count < self.max_trains:
-                        self.train_gp()
-                    else:
-                        self.gp.set_L_alpha()
-                    nsample = 0
-
-        # If new atoms were added re-train the GP before concluding run
-        if (nsample != 0):
-            if self.train_count < self.max_trains:
-                self.train_gp()
+                    # Compute mae and write to output;
+                    # Add max uncertainty atoms to training set
+                    self.update_gp_and_print(cur_frame, train_atoms, train=False)
+                    nsample += len(train_atoms)
+                    # Re-train if number of sampled atoms is high enough
+                    if nsample >= self.min_atoms_added or (i+1)==train_frame:
+                        if self.train_count < self.max_trains:
+                            self.train_gp()
+                        else:
+                            self.gp.update_L_alpha()
+                        nsample = 0
             else:
-                self.gp.set_L_alpha()
+                self.gp.check_L_alpha()
 
         self.output.conclude_run()
 
