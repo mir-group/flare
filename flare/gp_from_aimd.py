@@ -289,6 +289,9 @@ class TrajectoryTrainer(object):
         """
         Train the Gaussian process and write the results to the output file.
         """
+        if self.verbose >= 1:
+            self.output.write_to_log('Train GP\n')
+
         self.gp.train(output=self.output if self.verbose >= 2 else None)
 
         self.output.write_hyps(self.gp.hyp_labels, self.gp.hyps,
