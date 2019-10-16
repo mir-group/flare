@@ -138,10 +138,10 @@ def element_to_Z(element: str)->int:
     """
 
     # If already integer, do nothing
-    if isinstance(element, int):
+    if isinstance(element, (int, np.integer)):
         return element
 
-    if type(element).__module__ == 'numpy' and np.issubdtype(element,
+    if type(element).__module__ == 'numpy' and np.issubdtype(type(element),
                                                              np.integer):
         return element
 
