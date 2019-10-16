@@ -211,3 +211,61 @@ def is_std_in_bound(std_tolerance, noise, structure, max_atoms_added):
         return False, target_atoms
     else:
         return True, [-1]
+
+def is_std_in_bound_per_species(rel_std_tolerance, abs_std_tolerance, noise, structure, max_atoms_added):
+    """
+    If the predicted variance is too high, returns a list of atoms
+    with the highest uncertainty
+    :param frame: Structure
+    :return:
+    """
+
+    # This indicates test mode, as the GP is not being modified in any way
+    if rel_std_tolerance == 0 and abs_std_tolerance == 0:
+        return True, [-1]
+
+    # set uncertainty threshold
+    if rel_std_tolerance is None:
+        threshold = abs_std_tolerance
+    elif abs_std_tolerance is None:
+        threshold = rel_std_tolerance * np.abs(noise)
+    else:
+        threshold = min(rel_std_tolerance * np.abs(noise)
+                        abs_std_tolerance)
+
+    # sort max stds
+    max_stds = np.zeros(structure.nat)
+    for atom_idx, std in enumerate(structure.stds):
+        max_stds[atom_idx] = np.max(std)
+
+    std_sorted = {}
+    id_sorted = {}
+    species_set = set(structure.coded_species)
+    for species_i in species_set:
+        std_sorted[species_i] = []
+        id_sorted[species_i] = []
+    for i, spec in enumerate(structure.coded_species):
+        if max_stds[i] > threshold:
+            std_sorted[spec] += [max_stds[i]]
+            id_sorted[spec] += [i]
+
+    target_atoms = []
+    ntarget = 0
+    for species_i in species_set:
+        natom_i = len(std_sorted[species_i])
+        if (natom_i>0):
+            std_sorted[species_i] = np.argsort(np.array(std_sorted[species_i]))
+            if (max_atoms_added == np.inf or \
+                    max_atoms_added > natom_i):
+                target_atoms += id_sorted[species_i]
+                ntarget += natom_i
+            else:
+                for i in range(max_atoms_added):
+                    tempid = std_sorted[species_i][i]
+                    target_atoms += [id_sorted[species_i][tempid]]
+                ntarget += max_atoms_added
+    if (ntarget > 0):
+        target_atoms = list(np.hstack(target_atoms))
+        return False, target_atoms
+    else:
+        return True, [-1]
