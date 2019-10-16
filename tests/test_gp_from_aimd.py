@@ -67,6 +67,7 @@ def test_load_trained_gp_and_run(methanol_gp):
                            skip=15)
 
     tt.run()
+    os.system('rm ./gp_from_aimd.gp')
     os.system('rm ./gp_from_aimd.out')
     os.system('rm ./gp_from_aimd.xyz')
     os.system('rm ./gp_from_aimd-f.xyz')
@@ -92,6 +93,7 @@ def test_load_one_frame_and_run():
                            skip=15)
 
     tt.run()
+    os.system('rm ./gp_from_aimd.gp')
     os.system('rm ./gp_from_aimd.out')
     os.system('rm ./gp_from_aimd.xyz')
     os.system('rm ./gp_from_aimd-f.xyz')
@@ -132,8 +134,8 @@ def test_seed_and_run():
     os.system('rm ./gp_from_aimd.out')
     os.system('rm ./gp_from_aimd.xyz')
     os.system('rm ./gp_from_aimd-f.xyz')
+    os.system('rm ./gp_from_aimd.gp')
     os.system('rm ./test_methanol_gp.pickle')
-
 
 # def test_uncertainty_threshold(fake_gp):
 #
@@ -195,4 +197,3 @@ def test_seed_and_run():
 #     os.system('rm gp_from_aimd.out*')
 #     os.system('rm gp_from_aimd-f.xyz*')
 #     os.system('rm gp_from_aimd-hyps.dat*')
-
