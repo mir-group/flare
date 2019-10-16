@@ -5,7 +5,6 @@ import time
 from typing import List
 import copy
 import multiprocessing as mp
-import concurrent.futures
 from flare import struc, gp, env, qe_util, md, output
 from flare.mgp.mgp import MappedGaussianProcess
 

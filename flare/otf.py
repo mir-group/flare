@@ -6,7 +6,6 @@ from typing import List
 import copy
 import multiprocessing as mp
 import subprocess
-import concurrent.futures
 from flare import struc, gp, env, md
 from flare.dft_interface import dft_software
 from flare.output import Output
