@@ -52,6 +52,18 @@ def run_dft_npool(qe_input, qe_output, structure, dft_loc, npool):
     return parse_dft_forces(qe_output)
 
 
+def run_dft_en_npool(qe_input, structure, dft_loc, npool):
+    run_qe_path = qe_input
+    edit_dft_input_positions(run_qe_path, structure)
+    qe_command = \
+        'mpirun {0} -npool {1} < {2} > {3}'.format(dft_loc, npool, run_qe_path,
+                                                   'pwscf.out')
+    call(qe_command, shell=True)
+    forces, energy = parse_dft_forces_and_energy('pwscf.out')
+
+    return forces, energy
+
+
 def run_dft_command(qe_input, qe_output, dft_loc, npool):
     qe_command = \
         'mpirun {0} -npool {1} < {2} > {3}'.format(dft_loc, npool, qe_input,

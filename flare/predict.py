@@ -29,6 +29,7 @@ def predict_on_atom(param):
 
     return np.array(components), np.array(stds)
 
+
 def predict_on_atom_en(param):
     """
     Return ...
@@ -48,6 +49,19 @@ def predict_on_atom_en(param):
     # predict local energy
     local_energy = gp.predict_local_energy(chemenv)
     return comps, stds, local_energy
+
+
+def predict_on_atom_en_std(param):
+    """Predict local energy and predictive std of a chemical environment."""
+
+    structure, atom, gp = param
+    chemenv = AtomicEnvironment(structure, atom, gp.cutoffs)
+
+    # predict local energy
+    loc_en, loc_en_var = gp.predict_local_energy_and_var(chemenv)
+    loc_en_std = np.sqrt(np.abs(loc_en_var))
+
+    return loc_en, loc_en_std
 
 
 def predict_on_structure_par(structure: Structure, gp: GaussianProcess):
@@ -79,6 +93,22 @@ def predict_on_structure_par_en(structure: Structure, gp: GaussianProcess):
     forces = np.array(structure.forces)
     stds = np.array(structure.stds)
     return forces, stds, local_energies
+
+
+def predict_on_structure_par_en_stds(structure: Structure,
+                                     gp: GaussianProcess):
+    n = 0
+    atom_list = [(structure, atom, gp) for atom in range(structure.nat)]
+    local_energies = np.zeros(structure.nat)
+    local_energy_stds = np.zeros(structure.nat)
+
+    with concurrent.futures.ProcessPoolExecutor() as executor:
+        for res in executor.map(predict_on_atom_en_std, atom_list):
+            local_energies[n] = res[0]
+            local_energy_stds[n] = res[1]
+            n += 1
+
+    return local_energies, local_energy_stds
 
 
 def predict_on_structure(structure: Structure, gp: GaussianProcess):
