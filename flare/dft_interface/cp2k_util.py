@@ -6,15 +6,19 @@ from flare import output
 from flare import struc
 from typing import List
 
-name="CP2K"
+name = "CP2K"
 
 
-def run_dft_par(dft_input, structure, dft_loc, no_cpus=1, dft_out="dft.out"):
+def run_dft_par(dft_input, structure, dft_loc, no_cpus=1, dft_out="dft.out",
+                npool=None, mpi="mpi"):
     newfilename = edit_dft_input_positions(dft_input, structure)
     dft_command = \
-        '{} -i {} > {}'.format(dft_loc, newfilename, dft_out)
+        f'{dft_loc} -i {newfilename} > {dft_out}'
     if (no_cpus > 1):
-        dft_command = 'mpirun -np {} {}'.format(no_cpus, dft_command)
+        if (mpi == "mpi"):
+            dft_command = f'mpirun -np {no_cpus} {dft_command}'
+        else:
+            dft_command = f'srun -n {no_cpus} {dft_command}'
     # output.write_to_output(dft_command+'\n')
     call(dft_command, shell=True)
     os.remove(newfilename)
@@ -22,13 +26,14 @@ def run_dft_par(dft_input, structure, dft_loc, no_cpus=1, dft_out="dft.out"):
     return parse_dft_forces(dft_out)
 
 
-def run_dft_en_par(dft_input, structure, dft_loc, no_cpus, dft_out="dft.out"):
+def run_dft_en_par(dft_input, structure, dft_loc, no_cpus, dft_out="dft.out",
+        npool=None, mpi="mpi"):
 
     newfilename = edit_dft_input_positions(dft_input, structure)
     dft_command = \
-        '{} -i {} > {}'.format(dft_loc, newfilename, dft_out)
+        f'{dft_loc} -i {newfilename} > {dft_out}'
     if (no_cpus > 1):
-        dft_command = 'mpirun -np {} {}'.format(no_cpus, dft_command)
+        dft_command = f'mpirun -np {no_cpus} {dft_command}'
     # output.write_to_output(dft_command+'\n')
     call(dft_command, shell=True)
     os.remove(newfilename)

@@ -166,6 +166,23 @@ def test_from_pmg_structure():
     assert new_struc.species_labels[0] == 'H'
     assert np.equal(new_struc.forces, np.array([1., 1., 1.])).all()
 
+    pmg_struc = pmgstruc.Structure(lattice= np.diag([1.2,0.8,1.5]),
+                                   species=['H'],
+                                   coords=[[.25, .5, 0]],
+                                   site_properties={
+                                       'force': [np.array((1., 1.,  1.))],
+                                        'std':[np.array((1., 1., 1.))]},
+                                   coords_are_cartesian=True)
+
+    new_struc = Structure.from_pmg_structure(pmg_struc)
+
+    assert len(new_struc) == 1
+
+    assert np.equal(new_struc.positions, np.array([.25, .5, 0])).all()
+    assert new_struc.coded_species == [1]
+    assert new_struc.species_labels[0] == 'H'
+    assert np.equal(new_struc.forces, np.array([1., 1., 1.])).all()
+
 @pytest.mark.skipif(not _test_pmg,reason='Pymatgen not present in available '
                                         'packages.')
 def test_to_pmg_structure(varied_test_struc):
