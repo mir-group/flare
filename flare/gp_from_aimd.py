@@ -14,7 +14,7 @@ from flare.output import Output
 from flare.struc import Structure, get_unique_species
 from flare.gp import GaussianProcess
 from flare.env import AtomicEnvironment
-from flare.util import Z_to_element
+from flare.util import Z_to_element, is_std_in_bound_per_species
 from flare.predict import predict_on_structure, \
     predict_on_structure_par, predict_on_structure_en, \
     predict_on_structure_par_en
@@ -225,7 +225,10 @@ class TrajectoryTrainer(object):
                 mae=mae, mae_ps=mae_perspecies, mac=mac, local_energies=None)
 
             # Get max uncertainty atoms
-            std_in_bound, train_atoms = self.is_std_in_bound(cur_frame)
+            std_in_bound, train_atoms = is_std_in_bound_per_species(
+                    self.rel_std_tolerance, self.abs_std_tolerance,
+                    self.gp.hyps[-1], cur_frame,
+                    self.max_atoms_from_frame)
             if not std_in_bound:
 
                 # Compute mae and write to output;
@@ -288,44 +291,3 @@ class TrajectoryTrainer(object):
                                self.start_time,
                                self.gp.likelihood, self.gp.likelihood_gradient)
         self.train_count += 1
-
-    def is_std_in_bound(self, frame: Structure)->(bool, List[int]):
-        """
-        If the predicted variance is too high, returns a list of atoms
-        with the highest uncertainty
-        :param frame: Structure
-        :return:
-        """
-
-        # This indicates test mode, as the GP is not being modified in any way
-        if self.rel_std_tolerance == 0 and self.abs_std_tolerance == 0:
-            return True, [-1]
-
-        # set uncertainty threshold
-        if self.rel_std_tolerance == 0:
-            threshold = self.abs_std_tolerance
-        elif self.abs_std_tolerance == 0:
-            threshold = self.rel_std_tolerance * np.abs(self.gp.hyps[-1])
-        else:
-            threshold = min(self.rel_std_tolerance * np.abs(self.gp.hyps[-1]),
-                            self.abs_std_tolerance)
-
-        # sort max stds
-        max_stds = np.zeros(frame.nat)
-        for atom_idx, std in enumerate(frame.stds):
-            max_stds[atom_idx] = np.max(std)
-        stds_sorted = np.argsort(max_stds)
-
-        # Handle case where unlimited atoms are added
-        # or if max # of atoms exceeds size of frame
-        if self.max_atoms_from_frame == np.inf or \
-                self.max_atoms_from_frame > len(frame):
-            target_atoms = list(stds_sorted)
-        else:
-            target_atoms = list(stds_sorted[-self.max_atoms_from_frame:])
-
-        # if above threshold, return atom
-        if max_stds[stds_sorted[-1]] > threshold:
-            return False, target_atoms
-        else:
-            return True, [-1]
