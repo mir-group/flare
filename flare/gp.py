@@ -431,5 +431,6 @@ environment and the environments in the training set."""
 
         new_gp.likelihood = dictionary['likelihood']
         new_gp.likelihood_gradient = dictionary['likelihood_gradient']
-
+        new_gp.training_labels_np = new_gp.force_list_to_np(
+            new_gp.training_labels)
         return new_gp
