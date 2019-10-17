@@ -29,7 +29,7 @@ class GaussianProcess:
                  energy_force_kernel: Callable = None,
                  energy_kernel: Callable = None,
                  opt_algorithm: str = 'L-BFGS-B',
-                 maxiter=10, par=False,
+                 maxiter=10, par=False, no_cpus=None,
                  output=None):
         """Initialize GP parameters and training data."""
 
@@ -48,6 +48,7 @@ class GaussianProcess:
         self.training_labels_np = np.empty(0, )
         self.maxiter = maxiter
         self.par = par
+        self.no_cpus = no_cpus
         self.output = output
 
         # Parameters set during training
@@ -132,7 +133,7 @@ hyperparameters to maximize the likelihood, then computes L and alpha \
 
         args = (self.training_data, self.training_labels_np,
                 self.kernel_grad, self.cutoffs, output,
-                self.par)
+                self.par, self.no_cpus)
         res = None
 
         if self.algo == 'L-BFGS-B':
@@ -179,6 +180,12 @@ hyperparameters to maximize the likelihood, then computes L and alpha \
         self.likelihood = -res.fun
         self.likelihood_gradient = -res.jac
 
+    def check_L_alpha(self):
+        # check that alpha is up to date with training set
+        if self.alpha is None or 3 * len(self.training_data) != len(
+                self.alpha):
+            self.set_L_alpha()
+
     def predict(self, x_t: AtomicEnvironment, d: int) -> [float, float]:
         """Predict force component of an atomic environment and its \
 uncertainty."""
@@ -187,9 +194,7 @@ uncertainty."""
         k_v = self.get_kernel_vector(x_t, d)
 
         # Guarantee that alpha is up to date with training set
-        if self.alpha is None or 3 * len(self.training_data) != len(
-                self.alpha):
-            self.set_L_alpha()
+        assert ((self.alpha is not None) and (3 * len(self.training_data) == len(self.alpha)))
 
         # get predictive mean
         pred_mean = np.matmul(k_v, self.alpha)
@@ -285,7 +290,7 @@ environment and the environments in the training set."""
             hyp_mat, ky_mat = \
                 get_ky_and_hyp_par(self.hyps, self.training_data,
                                    self.training_labels_np,
-                                   self.kernel_grad, self.cutoffs)
+                                   self.kernel_grad, self.cutoffs, self.no_cpus)
         else:
             hyp_mat, ky_mat = \
                 get_ky_and_hyp(self.hyps, self.training_data,
@@ -408,6 +413,7 @@ environment and the environments in the training set."""
                                  hyps=np.array(dictionary['hyps']),
                                  hyp_labels=dictionary['hyp_labels'],
                                  par=dictionary['par'],
+                                 no_cpus=dictionary['no_cpus'],
                                  maxiter=dictionary['maxiter'],
                                  opt_algorithm=dictionary['algo'])
 
