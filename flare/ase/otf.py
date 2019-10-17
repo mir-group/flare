@@ -66,7 +66,7 @@ class OTF(MolecularDynamics):
             self.dft_count = 0
             self.std_in_bound = False
             self.target_atom = 0
-            self.stds = []
+            self.stds = np.zeros((self.noa, 3))
             dft_forces = self.call_DFT()
             f = dft_forces
    
@@ -78,9 +78,10 @@ class OTF(MolecularDynamics):
                            custom_range=self.init_atoms)
 
             # train calculator
+            for atom in self.init_atoms:
+                self.observers[0][0].add_atom_info(atom, self.stds[atom])
             self.train()
-            print('mgp model:', self.atoms.calc.mgp_model)
-
+  
         if self.md_engine == 'NPT':
             if not self.initialized:
                 self.initialize()
