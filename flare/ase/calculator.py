@@ -1,7 +1,6 @@
 """:class:`FLARE_Calculator` is a calculator compatible with `ASE`. You can build up `ASE Atoms` for your atomic structure, and use `get_forces`, `get_potential_energy` as general `ASE Calculators`, and use it in `ASE Molecular Dynamics` and our `ASE OTF` training module."""
 import numpy as np
 import multiprocessing as mp
-import concurrent.futures
 import copy
 import sys
 from flare.env import AtomicEnvironment
