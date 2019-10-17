@@ -4,20 +4,20 @@ from copy import deepcopy
 import pytest
 import numpy as np
 
-from flare.ase.otf_md import otf_md
-from flare.ase.logger import OTFLogger
-
-from ase import units
-from ase.md.velocitydistribution import (MaxwellBoltzmannDistribution,
-                                         Stationary, ZeroRotation)
-import atom_setup, flare_setup, qe_setup
-
 @pytest.mark.skipif(not os.environ.get('PWSCF_COMMAND',
                           False), reason='PWSCF_COMMAND not found '
                                   'in environment: Please install Quantum '
                                   'ESPRESSO and set the PWSCF_COMMAND env. '
                                   'variable to point to pw.x.')
 def test_otf_md():
+    from flare.ase.otf_md import otf_md
+    from flare.ase.logger import OTFLogger
+    
+    from ase import units
+    from ase.md.velocitydistribution import (MaxwellBoltzmannDistribution,
+                                             Stationary, ZeroRotation)
+
+    import atom_setup, flare_setup, qe_setup
     np.random.seed(12345)
     
     md_engines = ['VelocityVerlet', 'NVTBerendsen', 'NPTBerendsen', 
@@ -59,7 +59,8 @@ def test_otf_md():
     
         # set up logger
         test_otf.attach(OTFLogger(test_otf, super_cell, 
-            logfile=md_engine+'.log', mode="w"), interval=1)
+            logfile=md_engine+'.log', mode="w", data_in_logfile=True), 
+            interval=1)
         
         # run otf
         number_of_steps = 3
@@ -74,3 +75,5 @@ def test_otf_md():
     os.system('rm -r kv3')
     os.system('rm lmp.mgp')
     os.system('rm -r otf_data')
+
+
