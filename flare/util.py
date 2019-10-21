@@ -212,7 +212,7 @@ def is_std_in_bound(std_tolerance, noise, structure, max_atoms_added):
     else:
         return True, [-1]
 
-def is_std_in_bound_per_species(rel_std_tolerance, abs_std_tolerance, noise, structure, max_atoms_added):
+def is_std_in_bound_per_species(rel_std_tolerance, abs_std_tolerance, noise, structure, max_atoms_added, std_per_species):
     """
     If the predicted variance is too high, returns a list of atoms
     with the highest uncertainty
@@ -232,6 +232,10 @@ def is_std_in_bound_per_species(rel_std_tolerance, abs_std_tolerance, noise, str
     else:
         threshold = min(rel_std_tolerance * np.abs(noise),
                         abs_std_tolerance)
+
+    if (std_per_species is False):
+        return is_std_in_bound(-threadshold, noise,
+                structure, max_atoms_added):
 
     # sort max stds
     max_stds = np.zeros(structure.nat)

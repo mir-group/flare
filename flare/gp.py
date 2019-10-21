@@ -1,20 +1,24 @@
 """Gaussian process model of the Born Oppenheimer potential energy surface."""
 import math
-from typing import List, Callable
+import pickle
+import json
+
 import numpy as np
+
+from typing import List, Callable
 from scipy.linalg import solve_triangular
 from scipy.optimize import minimize
+
 from flare.env import AtomicEnvironment
 from flare.struc import Structure
 from flare.gp_algebra import get_ky_and_hyp, get_like_grad_from_mats, \
     get_neg_likelihood, get_neg_like_grad, get_ky_and_hyp_par
 from flare.kernels import str_to_kernel
 from flare.mc_simple import str_to_mc_kernel
-
+from flare.util import NumpyEncoder
 
 class GaussianProcess:
     """ Gaussian Process Regression Model.
-
     Implementation is based on Algorithm 2.1 (pg. 19) of
     "Gaussian Processes for Machine Learning" by Rasmussen and Williams"""
 
@@ -60,7 +64,6 @@ class GaussianProcess:
     def update_db(self, struc: Structure, forces: list,
                   custom_range: List[int] = ()):
         """Given structure and forces, add to training set.
-
         :param struc: structure to add to db
         :type struc: Structure
         :param forces: list of corresponding forces to add to db
@@ -87,7 +90,6 @@ class GaussianProcess:
                     force, train: bool = False, **kwargs):
         """
         Tool to add a single environment / force pair into the training set.
-
         :param force:
         :param env:
         :param force: (x,y,z) component associated with environment
@@ -104,7 +106,6 @@ class GaussianProcess:
     @staticmethod
     def force_list_to_np(forces: list):
         """ Convert list of forces to numpy array of forces.
-
         :param forces: list of forces to convert
         :type forces: list<float>
         :return: numpy array forces
@@ -208,7 +209,6 @@ uncertainty."""
 
     def predict_local_energy(self, x_t: AtomicEnvironment) -> float:
         """Predict the local energy of an atomic environment.
-
         :param x_t: Atomic environment of test atom.
         :type x_t: AtomicEnvironment
         :return: local energy in eV (up to a constant).
@@ -243,7 +243,6 @@ uncertainty."""
         """
         Compute kernel vector, comparing input environment to all environments
         in the GP's training set.
-
         :param x: data point to compare against kernel matrix
         :type x: AtomicEnvironment
         :param d_1: Cartesian component of force vector to get (1=x,2=y,3=z)
@@ -431,5 +430,30 @@ environment and the environments in the training set."""
 
         new_gp.likelihood = dictionary['likelihood']
         new_gp.likelihood_gradient = dictionary['likelihood_gradient']
-
+        new_gp.training_labels_np = new_gp.force_list_to_np(
+            new_gp.training_labels)
         return new_gp
+
+    def write_model(self, name: str, format: str = 'json'):
+        """
+        Write model in a variety of formats to a file for later re-use.
+
+        :param name: Output name
+        :param format:
+        :return:
+        """
+
+        supported_formats = ['json', 'pickle', 'binary']
+
+        if format.lower() == 'json':
+            with open(name, 'w') as f:
+                json.dump(self.as_dict(), f, cls=NumpyEncoder)
+
+        elif format.lower() == 'pickle' or format.lower() == 'binary':
+            with open(name, 'wb') as f:
+                pickle.dump(self, f)
+
+        else:
+            raise ValueError("Output format not supported: try from "
+                             "{}".format(supported_formats))
+
