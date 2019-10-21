@@ -15,7 +15,7 @@ from flare.output import Output
 from flare.struc import Structure
 from flare.gp import GaussianProcess
 from flare.env import AtomicEnvironment
-from flare.util import Z_to_element, element_to_Z \
+from flare.util import Z_to_element, element_to_Z, \
         is_std_in_bound_per_species
 from flare.predict import predict_on_structure, \
     predict_on_structure_par, predict_on_structure_en, \

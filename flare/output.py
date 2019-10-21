@@ -218,16 +218,18 @@ class Output():
         if self.always_flush:
             self.outfiles['log'].flush()
 
-    def write_xyz(self, curr_step, matrix, species, filename, header=""):
+    def write_xyz(self, curr_step, pos, species, filename, header=""):
         """
         write atomic configuration in xyz file
         :param curr_step: Int, number of frames to note in the comment line
-        :param structure: Structure, contain positions and forces
-        :param dft_step:  Boolean, whether this is a DFT call.
+        :param pos:       nx3 matrix of forces, positions, or nything
+        :param species:   n element list of symbols
+        :param filename:  file to print
+        :param header:    header printed in comments
         :return:
         """
 
-        natom = matrix.shape[0]
+        natom = pos.shape[0]
         string = f'{natom}\n'
 
         # comment line
@@ -236,9 +238,8 @@ class Output():
 
         # Construct atom-by-atom description
         for i in range(natom):
-            pos = structure.positions[i]
             string += f'{species[i]} '
-            string += f'{pos[0]} {pos[1]} {pos[2]}\n'
+            string += f'{pos[i, 0]} {pos[i, 1]} {pos[i, 2]}\n'
 
         self.outfiles[filename].write(string)
 
@@ -339,9 +340,9 @@ class Output():
 
         string += '\n'
 
-        self.write_xyz_config(curr_step, structure, dft_step)
-        self.write_xyz(curr_step, structure.stds, structure.species_labels,
-                "std", header)
+        self.write_xyz_config(curr_step, frame, True)
+        self.write_xyz(curr_step, frame.stds, frame.species_labels,
+                "std", "* ")
 
         mae = np.mean(error) * 1000
         mac = np.mean(np.abs(dft_forces)) * 1000

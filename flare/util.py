@@ -192,7 +192,7 @@ def is_std_in_bound(std_tolerance, noise, structure, max_atoms_added):
 
     # set uncertainty threshold
     if std_tolerance == 0:
-        return True, -1
+        return True, [-1]
     elif std_tolerance > 0:
         threshold = std_tolerance * np.abs(noise)
     else:
@@ -234,8 +234,8 @@ def is_std_in_bound_per_species(rel_std_tolerance, abs_std_tolerance, noise, str
                         abs_std_tolerance)
 
     if (std_per_species is False):
-        return is_std_in_bound(-threadshold, noise,
-                structure, max_atoms_added):
+        return is_std_in_bound(-threshold, noise,
+                structure, max_atoms_added)
 
     # sort max stds
     max_stds = np.zeros(structure.nat)
