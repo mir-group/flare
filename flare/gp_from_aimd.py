@@ -164,7 +164,6 @@ class TrajectoryTrainer(object):
 
         atom_count = 0
         for frame in self.seed_frames:
-            print("FRAME")
             train_atoms = []
             for species_i in set(frame.coded_species):
                 # Get a randomized set of atoms of species i from the frame
