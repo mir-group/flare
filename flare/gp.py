@@ -1,20 +1,24 @@
 """Gaussian process model of the Born Oppenheimer potential energy surface."""
 import math
-from typing import List, Callable
+import pickle
+import json
+
 import numpy as np
+
+from typing import List, Callable
 from scipy.linalg import solve_triangular
 from scipy.optimize import minimize
+
 from flare.env import AtomicEnvironment
 from flare.struc import Structure
 from flare.gp_algebra import get_ky_and_hyp, get_like_grad_from_mats, \
     get_neg_likelihood, get_neg_like_grad, get_ky_and_hyp_par
 from flare.kernels import str_to_kernel
 from flare.mc_simple import str_to_mc_kernel
-
+from flare.util import NumpyEncoder
 
 class GaussianProcess:
     """ Gaussian Process Regression Model.
-
     Implementation is based on Algorithm 2.1 (pg. 19) of
     "Gaussian Processes for Machine Learning" by Rasmussen and Williams"""
 
@@ -25,7 +29,7 @@ class GaussianProcess:
                  energy_force_kernel: Callable = None,
                  energy_kernel: Callable = None,
                  opt_algorithm: str = 'L-BFGS-B',
-                 maxiter=10, par=False,
+                 maxiter=10, par=False, no_cpus=None,
                  output=None):
         """Initialize GP parameters and training data."""
 
@@ -44,6 +48,7 @@ class GaussianProcess:
         self.training_labels_np = np.empty(0, )
         self.maxiter = maxiter
         self.par = par
+        self.no_cpus = no_cpus
         self.output = output
 
         # Parameters set during training
@@ -59,7 +64,6 @@ class GaussianProcess:
     def update_db(self, struc: Structure, forces: list,
                   custom_range: List[int] = ()):
         """Given structure and forces, add to training set.
-
         :param struc: structure to add to db
         :type struc: Structure
         :param forces: list of corresponding forces to add to db
@@ -86,7 +90,6 @@ class GaussianProcess:
                     force, train: bool = False, **kwargs):
         """
         Tool to add a single environment / force pair into the training set.
-
         :param force:
         :param env:
         :param force: (x,y,z) component associated with environment
@@ -103,7 +106,6 @@ class GaussianProcess:
     @staticmethod
     def force_list_to_np(forces: list):
         """ Convert list of forces to numpy array of forces.
-
         :param forces: list of forces to convert
         :type forces: list<float>
         :return: numpy array forces
@@ -131,7 +133,7 @@ hyperparameters to maximize the likelihood, then computes L and alpha \
 
         args = (self.training_data, self.training_labels_np,
                 self.kernel_grad, self.cutoffs, output,
-                self.par)
+                self.par, self.no_cpus)
         res = None
 
         if self.algo == 'L-BFGS-B':
@@ -178,6 +180,12 @@ hyperparameters to maximize the likelihood, then computes L and alpha \
         self.likelihood = -res.fun
         self.likelihood_gradient = -res.jac
 
+    def check_L_alpha(self):
+        # check that alpha is up to date with training set
+        if self.alpha is None or 3 * len(self.training_data) != len(
+                self.alpha):
+            self.set_L_alpha()
+
     def predict(self, x_t: AtomicEnvironment, d: int) -> [float, float]:
         """Predict force component of an atomic environment and its \
 uncertainty."""
@@ -186,9 +194,7 @@ uncertainty."""
         k_v = self.get_kernel_vector(x_t, d)
 
         # Guarantee that alpha is up to date with training set
-        if self.alpha is None or 3 * len(self.training_data) != len(
-                self.alpha):
-            self.set_L_alpha()
+        assert ((self.alpha is not None) and (3 * len(self.training_data) == len(self.alpha)))
 
         # get predictive mean
         pred_mean = np.matmul(k_v, self.alpha)
@@ -203,7 +209,6 @@ uncertainty."""
 
     def predict_local_energy(self, x_t: AtomicEnvironment) -> float:
         """Predict the local energy of an atomic environment.
-
         :param x_t: Atomic environment of test atom.
         :type x_t: AtomicEnvironment
         :return: local energy in eV (up to a constant).
@@ -238,7 +243,6 @@ uncertainty."""
         """
         Compute kernel vector, comparing input environment to all environments
         in the GP's training set.
-
         :param x: data point to compare against kernel matrix
         :type x: AtomicEnvironment
         :param d_1: Cartesian component of force vector to get (1=x,2=y,3=z)
@@ -286,7 +290,7 @@ environment and the environments in the training set."""
             hyp_mat, ky_mat = \
                 get_ky_and_hyp_par(self.hyps, self.training_data,
                                    self.training_labels_np,
-                                   self.kernel_grad, self.cutoffs)
+                                   self.kernel_grad, self.cutoffs, self.no_cpus)
         else:
             hyp_mat, ky_mat = \
                 get_ky_and_hyp(self.hyps, self.training_data,
@@ -409,6 +413,7 @@ environment and the environments in the training set."""
                                  hyps=np.array(dictionary['hyps']),
                                  hyp_labels=dictionary['hyp_labels'],
                                  par=dictionary['par'],
+                                 no_cpus=dictionary['no_cpus'],
                                  maxiter=dictionary['maxiter'],
                                  opt_algorithm=dictionary['algo'])
 
@@ -425,5 +430,30 @@ environment and the environments in the training set."""
 
         new_gp.likelihood = dictionary['likelihood']
         new_gp.likelihood_gradient = dictionary['likelihood_gradient']
-
+        new_gp.training_labels_np = new_gp.force_list_to_np(
+            new_gp.training_labels)
         return new_gp
+
+    def write_model(self, name: str, format: str = 'json'):
+        """
+        Write model in a variety of formats to a file for later re-use.
+
+        :param name: Output name
+        :param format:
+        :return:
+        """
+
+        supported_formats = ['json', 'pickle', 'binary']
+
+        if format.lower() == 'json':
+            with open(name, 'w') as f:
+                json.dump(self.as_dict(), f, cls=NumpyEncoder)
+
+        elif format.lower() == 'pickle' or format.lower() == 'binary':
+            with open(name, 'wb') as f:
+                pickle.dump(self, f)
+
+        else:
+            raise ValueError("Output format not supported: try from "
+                             "{}".format(supported_formats))
+

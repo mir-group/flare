@@ -3,7 +3,6 @@ from numpy import array
 from numba import njit
 import io, os, sys, time, random, logging
 import multiprocessing as mp
-import concurrent.futures
 import cProfile
 
 import flare.gp as gp
