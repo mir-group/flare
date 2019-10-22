@@ -39,7 +39,7 @@ class Output():
         """
         destruction function that close all files
         """
-        print('-'*20, file=self.outfiles['log'])
+        print('-' * 20, file=self.outfiles['log'])
         print('Run complete.', file=self.outfiles['log'])
         for (k, v) in self.outfiles.items():
             v.close()
@@ -48,11 +48,11 @@ class Output():
 
     def open_new_log(self, filetype, suffix):
 
-        filename = self.basename+suffix
+        filename = self.basename + suffix
 
         # if the file exists, back up
         if os.path.isfile(filename):
-            shutil.copy(filename, filename+"-bak")
+            shutil.copy(filename, filename + "-bak")
 
         if filetype in self.outfiles.keys():
             if self.outfiles[filetype].closed:
@@ -91,10 +91,10 @@ class Output():
         f.write(str(datetime.datetime.now()) + '\n')
 
         if isinstance(std_tolerance, tuple):
-            std_string = 'relative uncertainty tolerance: '\
-                    f'{std_tolerance[0]} eV/A\n'
-            std_string += 'absolute uncertainty tolerance: '\
-                    f'{std_tolerance[1]} eV/A\n'
+            std_string = 'relative uncertainty tolerance: ' \
+                         f'{std_tolerance[0]} eV/A\n'
+            std_string += 'absolute uncertainty tolerance: ' \
+                          f'{std_tolerance[1]} eV/A\n'
         elif std_tolerance < 0:
             std_string = \
                 f'uncertainty tolerance: {np.abs(std_tolerance)} eV/A\n'
@@ -196,7 +196,7 @@ class Output():
 
         self.write_xyz_config(curr_step, structure, dft_step)
         self.write_xyz(curr_step, structure.stds, structure.species_labels,
-                "std", header)
+                       "std", header)
 
         string += '\n'
         string += 'temperature: %.2f K \n' % temperature
@@ -211,7 +211,7 @@ class Output():
             string += 'total energy: %.6f eV \n' % tot_en
 
         string += 'wall time from start: %.2f s \n' % \
-            (time.time() - start_time)
+                  (time.time() - start_time)
 
         self.outfiles['log'].write(string)
 
@@ -262,11 +262,12 @@ class Output():
         else:
             header = "*"
         self.write_xyz(curr_step, structure.positions,
-                structure.species_labels, 'xyz', header)
+                       structure.species_labels, 'xyz', header)
         self.write_xyz(curr_step, structure.forces,
-                structure.species_labels, 'fxyz', header)
+                       structure.species_labels, 'fxyz', header)
 
-    def write_hyps(self, hyp_labels, hyps, start_time, like, like_grad, name='log'):
+    def write_hyps(self, hyp_labels, hyps, start_time, like, like_grad,
+                   name='log'):
         """
         write hyperparameters to logfile
         :param hyp_labels:
@@ -328,7 +329,7 @@ class Output():
             for j in range(3):
                 string += f"{frame.positions[i][j]:10.3} "
             string += '\t'
-            for j in range(3)                            :
+            for j in range(3):
                 string += f"{frame.forces[i][j]:10.3} "
             string += '\t'
             for j in range(3):
@@ -342,14 +343,13 @@ class Output():
 
         self.write_xyz_config(curr_step, frame, True)
         self.write_xyz(curr_step, frame.stds, frame.species_labels,
-                "std", "* ")
+                       "std", "* ")
 
         mae = np.mean(error) * 1000
         mac = np.mean(np.abs(dft_forces)) * 1000
-        string += f'mean absolute error: {mae:10.2} meV/A \n'
-        string += f'mean absolute dft component: {mac:10.2} meV/A \n'
-        stat = f'{curr_step} {mae:10.2} {mac:10.2}'
-
+        string += f'mean absolute error: {mae:.2f} meV/A\n'
+        string += f'mean absolute dft component: {mac:.2f} meV/A\n'
+        stat = f'{curr_step} {mae:.2} {mac:.2}'
 
         mae_ps = {}
         count_ps = {}
@@ -365,10 +365,11 @@ class Output():
 
         string += "mae per species\n"
         for ele in species:
-            if (count_ps[ele]>0):
-                mae_ps[ele] /= (count_ps[ele]*3)
-                string+=f"type {ele} mae: {mae_ps[ele]:10.4}\n"
-            stat += f' {mae_ps[ele]:10.4}'
+            if (count_ps[ele] > 0):
+                mae_ps[ele] /= (count_ps[ele] * 3)
+                mae_ps[ele] *= 1000  # Put in meV/A
+                string += f"type {ele} mae: {mae_ps[ele]:.2f} meV/A\n"
+            stat += f' {mae_ps[ele]:.2f}'
 
         # calculate potential and total energy
         if local_energies is not None:

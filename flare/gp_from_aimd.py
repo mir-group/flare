@@ -4,22 +4,20 @@ trajectory. Contains methods to transfer the model to an OTF run /
 MD engine run.
 """
 import time
-import json
-import pickle
+from copy import deepcopy
+from typing import List, Tuple
+
 import numpy as np
 
-from typing import List, Tuple
-from copy import deepcopy
-
-from flare.output import Output
-from flare.struc import Structure
-from flare.gp import GaussianProcess
 from flare.env import AtomicEnvironment
-from flare.util import Z_to_element, element_to_Z, \
-        is_std_in_bound_per_species
+from flare.gp import GaussianProcess
+from flare.output import Output
 from flare.predict import predict_on_structure, \
     predict_on_structure_par, predict_on_structure_en, \
     predict_on_structure_par_en
+from flare.struc import Structure
+from flare.util import element_to_Z, \
+    is_std_in_bound_per_species
 
 
 class TrajectoryTrainer(object):
@@ -82,8 +80,7 @@ class TrajectoryTrainer(object):
         self.rel_std_tolerance = rel_std_tolerance
         self.abs_std_tolerance = abs_std_tolerance
         self.skip = skip
-        assert (
-            skip >= 1), "skip needs to be an interger that is equal or larger than 1"
+        assert (skip >= 1), "skip needs to be an integer >= 1"
         self.validate_ratio = validate_ratio
         self.max_trains = max_trains
         self.curr_step = 0
@@ -119,7 +116,7 @@ class TrajectoryTrainer(object):
         self.seed_frames = [] if pre_train_seed_frames is None \
             else pre_train_seed_frames
         self.pre_train_env_per_species = {} if pre_train_atoms_per_element \
-                                     is None else pre_train_atoms_per_element
+                                               is None else pre_train_atoms_per_element
 
         # Convert to Coded Species
         if self.pre_train_env_per_species:
@@ -155,8 +152,9 @@ class TrajectoryTrainer(object):
 
         self.start_time = time.time()
         if self.verbose >= 3:
-            print("Now beginning pre-run training.")
+            print("Now beginning pre-run activity.")
         # If seed environments were passed in, add them to the GP.
+
         for point in self.seed_envs:
             self.gp.add_one_env(point[0], point[1], train=False)
 
@@ -164,16 +162,17 @@ class TrajectoryTrainer(object):
         # Take one of each atom species in the first frame
         # so all atomic species are represented in the first step.
         # Otherwise use the seed frames passed in by user.
-        if (self.pre_train_on_skips > 0):
+
+        if self.pre_train_on_skips > 0:
             self.seed_frames = []
             newframes = []
             for i in range(len(self.frames)):
-                if ((i % self.pre_train_on_skips) == 0):
+                if (i % self.pre_train_on_skips) == 0:
                     self.seed_frames += [self.frames[i]]
                 else:
                     newframes += [self.frames[i]]
             self.frames = newframes
-        elif (len(self.gp.training_data) == 0) and (len(self.seed_frames) == 0):
+        elif len(self.gp.training_data) == 0 and len(self.seed_frames) == 0:
             self.seed_frames = [self.frames[0]]
             self.frames = self.frames[1:]
 
@@ -196,16 +195,14 @@ class TrajectoryTrainer(object):
 
             self.update_gp_and_print(frame, train_atoms, train=False)
 
-        if self.verbose >= 3:
+        if self.verbose >= 3 and atom_count > 0:
             print(f"Added {atom_count} atoms to pretrain")
 
-        self.train_gp()
-
-        # These conditions correspond to if either the GP was never trained
-        # or if data was added to it during the pre-run.
-        if self.verbose >= 3:
-            print("Now commencing initial training of GP (which has "
-                  "non-empty training set)")
+        if self.seed_envs or atom_count or self.seed_frames:
+            if self.verbose >= 3:
+                print("Now commencing pre-run training of GP (which has "
+                      "non-empty training set)")
+            self.train_gp()
 
     def run(self):
         """
@@ -219,7 +216,7 @@ class TrajectoryTrainer(object):
         self.pre_run()
 
         if self.validate_ratio > 0:
-            train_frame = int(len(self.frames)*(1-self.validate_ratio))
+            train_frame = int(len(self.frames) * (1 - self.validate_ratio))
         else:
             train_frame = len(self.frames)
 
@@ -243,7 +240,7 @@ class TrajectoryTrainer(object):
                 error=error,
                 local_energies=None)
 
-            if (i < train_frame):
+            if i < train_frame:
                 # Get max uncertainty atoms
                 std_in_bound, train_atoms = is_std_in_bound_per_species(
                     self.rel_std_tolerance, self.abs_std_tolerance,
@@ -258,7 +255,8 @@ class TrajectoryTrainer(object):
                         cur_frame, train_atoms, train=False)
                     nsample += len(train_atoms)
                     # Re-train if number of sampled atoms is high enough
-                    if nsample >= self.min_atoms_added or (i+1) == train_frame:
+                    if nsample >= self.min_atoms_added or (
+                            i + 1) == train_frame:
                         if self.train_count < self.max_trains:
                             self.train_gp()
                         else:
@@ -267,7 +265,7 @@ class TrajectoryTrainer(object):
                     else:
                         self.gp.update_L_alpha()
 
-                if ((i+1) == train_frame):
+                if (i + 1) == train_frame:
                     self.gp.check_L_alpha()
 
         self.output.conclude_run()
