@@ -68,7 +68,10 @@ def get_ky_mat_par(hyps: np.ndarray, training_data: list,
                                         args=(x_1, d_1, m_index, size,
                                               training_data, kernel,
                                               hyps, cutoffs)))
-
+    
+    pool.close()
+    pool.join()
+    
     # construct covariance matrix
     for m in range(size):
         res_cur = results[m].get()
@@ -79,8 +82,6 @@ def get_ky_mat_par(hyps: np.ndarray, training_data: list,
     # matrix manipulation
     ky_mat = k_mat + sigma_n ** 2 * np.eye(size)
 
-    pool.close()
-    pool.join()
 
     return ky_mat
 
@@ -116,6 +117,9 @@ def get_ky_and_hyp_par(hyps: np.ndarray, training_data: list,
                                               training_data, kernel_grad,
                                               hyps, cutoffs)))
 
+    pool.close()
+    pool.join()
+    
     # construct covariance matrix
     for m in range(size):
         res_cur = results[m].get()
@@ -130,9 +134,6 @@ def get_ky_and_hyp_par(hyps: np.ndarray, training_data: list,
 
     # matrix manipulation
     ky_mat = k_mat + sigma_n ** 2 * np.eye(size)
-
-    pool.close()
-    pool.join()
 
     return hyp_mat, ky_mat
 
