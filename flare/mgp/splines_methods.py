@@ -10,9 +10,13 @@ class PCASplines:
     '''
     build splines for PCA decomposition, mainly used for the mapping of the variance
     '''
-    def __init__(self, y, u_bounds, l_bounds, orders, svd_rank):
+    def __init__(self, l_bounds, u_bounds, orders, svd_rank):
         self.svd_rank = svd_rank
-        self.model = self.build_pca_cubic(y, u_bounds, l_bounds, orders)
+        self.models = []
+        for r in range(svd_rank):
+            spline_u = CubicSpline(l_bounds, u_bounds, 
+                    self.orders)
+            self.models.append(spline_u)
 
     def build_cubic(self, y, u_bounds, l_bounds, orders):
         dim_0 = 1
@@ -27,7 +31,7 @@ class PCASplines:
             models.append(spline_u)
         return models  
         
-    def build_pca_cubic(self, y, u_bounds, l_bounds, orders):
+    def set_values(self, y):
         dim_0 = 1
         for d in range(len(y.shape)-1):
             dim_0 *= y.shape[d]
@@ -36,31 +40,14 @@ class PCASplines:
         var_matr = np.reshape(y, (dim_0, dim_1))
         U, S, Vh = utils.svd_grid(var_matr, rank=self.svd_rank)
         self.V = Vh.T
-        models = []
         for r in range(self.svd_rank):
-            spline_u = CubicSpline(l_bounds, u_bounds, orders, S[r]*U[:, r])
-            models.append(spline_u)
-        return models      
+            self.models[r].set_values(S[r]*U[:, r])
         
     def __call__(self, x):
         y_pred = []
         for r in range(self.svd_rank):
             y_pred.append(self.model[r](x))
         return np.array(y_pred)
-
-
-
-class SplinesInterpolation:
-    
-    def __init__(self, y, u_bounds, l_bounds, orders):
-        self.model = self.build_cubic(y, u_bounds, l_bounds, orders)
- 
-    def build_cubic(self, y, u_bounds, l_bounds, orders):
-        spline = CubicSpline(l_bounds, u_bounds, orders, y)
-        return spline        
-
-    def __call__(self, x):
-        return self.model(x)
 
 
 
