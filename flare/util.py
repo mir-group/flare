@@ -242,9 +242,9 @@ def is_std_in_bound_per_species(rel_std_tolerance: float,
         return True, [-1]
 
     # set uncertainty threshold
-    if rel_std_tolerance is None:
+    if rel_std_tolerance is None or rel_std_tolerance == 0 :
         threshold = abs_std_tolerance
-    elif abs_std_tolerance is None:
+    elif abs_std_tolerance is None or abs_std_tolerance == 0:
         threshold = rel_std_tolerance * np.abs(noise)
     else:
         threshold = min(rel_std_tolerance * np.abs(noise),

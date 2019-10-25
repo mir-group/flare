@@ -1,6 +1,8 @@
-from flare.util import element_to_Z, Z_to_element
+from flare.util import element_to_Z, Z_to_element, is_std_in_bound_per_species
 import pytest
 import numpy as np
+
+from tests.test_gp import get_random_structure
 
 from pytest import raises
 
@@ -30,3 +32,80 @@ def test_Z_to_element():
 
     with raises(ValueError):
         Z_to_element('a')
+
+
+def test_std_in_bound_per_species():
+
+    test_structure, _ = get_random_structure(np.eye(3),['H','O'],3)
+    test_structure.species_labels = ['H', 'H', 'O']
+    test_structure.stds = np.array([[1, 0, 0], [2, 0, 0], [3, 0, 0]])
+
+    result, target_atoms = \
+        is_std_in_bound_per_species(rel_std_tolerance=0, abs_std_tolerance=0,
+                             noise=0, structure = test_structure)
+    assert result is True and target_atoms == [-1]
+
+    result, target_atoms = \
+        is_std_in_bound_per_species(rel_std_tolerance=0, abs_std_tolerance=4,
+                             noise=0, structure = test_structure)
+    assert result is True and target_atoms == [-1]
+
+    result, target_atoms = \
+        is_std_in_bound_per_species(rel_std_tolerance=0, abs_std_tolerance=2.9,
+                             noise=0, structure = test_structure)
+    assert result is False and target_atoms == [2]
+
+    result, target_atoms = \
+        is_std_in_bound_per_species(rel_std_tolerance=1, abs_std_tolerance=0,
+                             noise=4, structure = test_structure)
+    assert result is True and target_atoms == [-1]
+
+    result, target_atoms = \
+        is_std_in_bound_per_species(rel_std_tolerance=1, abs_std_tolerance=0,
+                             noise=2.9, structure = test_structure)
+    assert result is False and target_atoms == [2]
+
+    result, target_atoms = \
+        is_std_in_bound_per_species(rel_std_tolerance=1, abs_std_tolerance=.1,
+                             noise=2.9, structure = test_structure)
+    assert result is False and target_atoms == [2, 1, 0]
+
+    result, target_atoms = \
+        is_std_in_bound_per_species(rel_std_tolerance=1, abs_std_tolerance=.1,
+                             noise=2.9, structure = test_structure,
+                                    max_atoms_added=2)
+    assert result is False and target_atoms == [2, 1]
+
+    result, target_atoms = \
+        is_std_in_bound_per_species(rel_std_tolerance=1, abs_std_tolerance=.1,
+                             noise=2.9, structure = test_structure,
+                                    max_atoms_added=1)
+    assert result is False and target_atoms == [2]
+
+    result, target_atoms = \
+        is_std_in_bound_per_species(rel_std_tolerance=1, abs_std_tolerance=.1,
+                             noise=2.9, structure = test_structure,
+                                    max_atoms_added=1,max_by_species={'H':1,
+                                                                      'O':0})
+    assert result is False and target_atoms == [1]
+
+    result, target_atoms = \
+        is_std_in_bound_per_species(rel_std_tolerance=1, abs_std_tolerance=.1,
+                             noise=2.9, structure = test_structure,
+                                    max_atoms_added=1,max_by_species={'H':0,
+                                                                      'O':1})
+    assert result is False and target_atoms == [2]
+
+    result, target_atoms = \
+        is_std_in_bound_per_species(rel_std_tolerance=1, abs_std_tolerance=.1,
+                             noise=2.9, structure = test_structure,
+                                    max_atoms_added=1,max_by_species={'H':2,
+                                                                      'O':0})
+    assert result is False and target_atoms == [1]
+
+    result, target_atoms = \
+        is_std_in_bound_per_species(rel_std_tolerance=1, abs_std_tolerance=.1,
+                             noise=2.9, structure = test_structure,
+                                    max_atoms_added=3,max_by_species={'H':2,
+                                                                      'O':0})
+    assert result is False and target_atoms == [1,0]
