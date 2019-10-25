@@ -88,7 +88,7 @@ class Output():
         """
 
         f = self.outfiles['log']
-        f.write(str(datetime.datetime.now()) + '\n')
+        f.write(f'{datetime.datetime.now()} \n')
 
         if isinstance(std_tolerance, tuple):
             std_string = 'relative uncertainty tolerance: ' \
@@ -161,13 +161,13 @@ class Output():
         # Mark if a frame had DFT forces with an asterisk
         if not dft_step:
             string += '-' * 80 + '\n'
-            string += "-Frame: " + str(curr_step)
+            string += f"-Frame: {curr_step} "
             header = "-"
         else:
-            string += "\n*-Frame: " + str(curr_step)
+            string += f"\n*-Frame: {curr_step} "
             header = "*-"
 
-        string += '\nSimulation Time: %.3f ps \n' % (dt * curr_step)
+        string += f'\nSimulation Time: {(dt * curr_step):.3} ps \n'
 
         # Construct Header line
         string += 'El  Position (A) \t\t\t\t '
@@ -180,18 +180,18 @@ class Output():
 
         # Construct atom-by-atom description
         for i in range(len(structure.positions)):
-            string += str(structure.species_labels[i]) + ' '
+            string += f'{structure.species_labels[i]} '
             for j in range(3):
-                string += str("%.8f" % structure.positions[i][j]) + ' '
+                string += f"{structure.positions[i][j]:.8}"
             string += '\t'
             for j in range(3):
-                string += str("%.8f" % structure.forces[i][j]) + ' '
+                string += f"{structure.forces[i][j]:8.3} "
             string += '\t'
             for j in range(3):
-                string += str("%.8e" % structure.stds[i][j]) + ' '
+                string += f'{structure.stds[i][j]:.8e}'
             string += '\t'
             for j in range(3):
-                string += str("%.8e" % velocities[i][j]) + ' '
+                string += f'{velocities[i][j]:.8e}'
             string += '\n'
 
         self.write_xyz_config(curr_step, structure, dft_step)
@@ -199,19 +199,19 @@ class Output():
                        "std", header)
 
         string += '\n'
-        string += 'temperature: %.2f K \n' % temperature
-        string += 'kinetic energy: %.6f eV \n' % KE
+        string += f'temperature: {temperature:.2f} K \n'
+        string += f'kinetic energy: {KE:.6f} eV \n'
 
         # calculate potential and total energy
         if local_energies is not None:
             pot_en = np.sum(local_energies)
             tot_en = KE + pot_en
             string += \
-                'potential energy: %.6f eV \n' % pot_en
-            string += 'total energy: %.6f eV \n' % tot_en
+                f'potential energy: {pot_en:.6f} eV \n'
+            string += f'total energy: {tot_en:.6f} eV \n'
 
-        string += 'wall time from start: %.2f s \n' % \
-                  (time.time() - start_time)
+        string += 'wall time from start: '
+        string += f'{(time.time() - start_time):.2f} s \n'
 
         self.outfiles['log'].write(string)
 

@@ -212,64 +212,71 @@ def is_std_in_bound(std_tolerance, noise, structure, max_atoms_added):
     else:
         return True, [-1]
 
-def is_std_in_bound_per_species(rel_std_tolerance, abs_std_tolerance, noise, structure, max_atoms_added, std_per_species):
+def is_std_in_bound_per_species(rel_std_tolerance: float,
+                                abs_std_tolerance: float, noise: float,
+                                structure, max_atoms_added: int =
+                                np.inf, max_by_species: dict = {}):
     """
-    If the predicted variance is too high, returns a list of atoms
-    with the highest uncertainty
-    :param frame: Structure
+    Checks the stds of GP prediction assigned to the structure, returns a
+    list of atoms which either meet an absolute threshold or a relative
+    threshold defined by rel_std_tolerance * noise. Can limit the
+    total number of target atoms via max_atoms_added, and limit per species
+    by max_by_species.
+
+    The max_atoms_added argument will 'overrule' the
+    max by species; e.g. if max_atoms_added is 2 and max_by_species is {"H":3},
+    then at most two atoms total will be added.
+
+    :param rel_std_tolerance:
+    :param abs_std_tolerance:
+    :param noise:
+    :param structure:
+    :param max_atoms_added:
+    :param max_by_species:
     :return:
     """
+
 
     # This indicates test mode, as the GP is not being modified in any way
     if rel_std_tolerance == 0 and abs_std_tolerance == 0:
         return True, [-1]
 
     # set uncertainty threshold
-    if rel_std_tolerance is None:
+    if rel_std_tolerance is None or rel_std_tolerance == 0 :
         threshold = abs_std_tolerance
-    elif abs_std_tolerance is None:
+    elif abs_std_tolerance is None or abs_std_tolerance == 0:
         threshold = rel_std_tolerance * np.abs(noise)
     else:
         threshold = min(rel_std_tolerance * np.abs(noise),
                         abs_std_tolerance)
 
-    if (std_per_species is False):
-        return is_std_in_bound(-threshold, noise,
-                structure, max_atoms_added)
-
-    # sort max stds
-    max_stds = np.zeros(structure.nat)
-    for atom_idx, std in enumerate(structure.stds):
-        max_stds[atom_idx] = np.max(std)
-
-    std_sorted = {}
-    id_sorted = {}
-    species_set = set(structure.coded_species)
-    for species_i in species_set:
-        std_sorted[species_i] = []
-        id_sorted[species_i] = []
-    for i, spec in enumerate(structure.coded_species):
-        if max_stds[i] > threshold:
-            std_sorted[spec] += [max_stds[i]]
-            id_sorted[spec] += [i]
+    # Determine if any std component will trigger the threshold
+    max_std_components = [np.max(std) for std in structure.stds]
+    if max(max_std_components) < threshold:
+        return True, [-1]
 
     target_atoms = []
-    ntarget = 0
-    for species_i in species_set:
-        natom_i = len(std_sorted[species_i])
-        if (natom_i>0):
-            std_sorted[species_i] = np.argsort(np.array(std_sorted[species_i]))
-            if (max_atoms_added == np.inf or \
-                    max_atoms_added > natom_i):
-                target_atoms += id_sorted[species_i]
-                ntarget += natom_i
-            else:
-                for i in range(max_atoms_added):
-                    tempid = std_sorted[species_i][i]
-                    target_atoms += [id_sorted[species_i][tempid]]
-                ntarget += max_atoms_added
-    if (ntarget > 0):
-        target_atoms = list(np.hstack(target_atoms))
-        return False, target_atoms
-    else:
-        return True, [-1]
+
+    # Sort from greatest to smallest max. std component
+    std_arg_sorted = np.flip(np.argsort(max_std_components))
+
+    present_species = {spec: 0 for spec in set(structure.species_labels)}
+
+    # Only add atoms up to the bound
+    for i in std_arg_sorted:
+
+        # If max atoms added reached or stds are now below threshold, done
+        if len(target_atoms) == max_atoms_added or \
+                max_std_components[i] < threshold:
+            break
+
+        cur_spec = structure.species_labels[i]
+
+        # Only add up to species allowance, if it exists
+        if present_species[cur_spec] < \
+            max_by_species.get(cur_spec, np.inf):
+
+            target_atoms.append(i)
+            present_species[cur_spec] += 1
+
+    return False, target_atoms

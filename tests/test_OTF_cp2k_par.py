@@ -8,11 +8,12 @@ from flare.gp import GaussianProcess
 from flare.struc import Structure
 import flare.kernels as en
 
-def cleanup(target: str = None):
+def cleanup(target: list = None):
     os.remove('cp2k.in')
     os.remove('cp2k-RESTART.wfn')
     if (target is not None):
-        os.remove(target)
+        for i in target:
+            os.remove(i)
 
 # ------------------------------------------------------
 #                   test  otf runs
