@@ -54,6 +54,7 @@ class TrajectoryTrainer(object):
         noise variance hyperparameter
         :param abs_std_tolerance: Train if uncertainty is above this
         :param parallel: Use parallel functions or not
+        :param validate_ratio: Fraction of frames used for validation
         :param no_cpus: number of cpus to run with multithreading
         :param skip: Skip through frames
         :param calculate_energy: Use local energy kernel or not
@@ -168,6 +169,7 @@ class TrajectoryTrainer(object):
         # so all atomic species are represented in the first step.
         # Otherwise use the seed frames passed in by user.
 
+        # Remove frames used as seed from later part of training
         if self.pre_train_on_skips > 0:
             self.seed_frames = []
             newframes = []
@@ -177,6 +179,7 @@ class TrajectoryTrainer(object):
                 else:
                     newframes += [self.frames[i]]
             self.frames = newframes
+
         elif len(self.gp.training_data) == 0 and len(self.seed_frames) == 0:
             self.seed_frames = [self.frames[0]]
             self.frames = self.frames[1:]
