@@ -70,48 +70,49 @@ class FLARE_Calculator(Calculator):
         return forces
 
     def get_forces_mgp_par(self, atoms):
-        comm = MPI.COMM_WORLD
-        size = comm.Get_size()
-        rank = comm.Get_rank()
-
-        nat = len(atoms)
-        struc_curr = Structure(np.array(atoms.cell), 
-                               atoms.get_atomic_numbers(),
-                               atoms.positions)
-        
-        NumPerRank = nat // size
-        NumRemainder = nat % size
-        forces = None
-        stds = None
-        if rank < nat:
-            if rank <= NumRemainder:
-                N = NumPerRank
-                intercept = 0
-            else:
-                N = NumPerRank - 1
-                intercept = NumRemainder
-
-            forces_sub = np.zeros((N, 3))
-            stds_sub = np.zeros((N, 3))
-            for i in range(N):
-                n = intercept + rank * N + i
-                chemenv = AtomicEnvironment(struc_curr, n,
-                                self.mgp_model.cutoffs)
-                f, v = self.mgp_model.predict(chemenv, mean_only=False)
-                forces_sub[i, :] = f
-                stds_sub[i, :] = np.sqrt(np.absolute(v))
-            print('rank:', rank, ', forces_sub:', N)
-
-        if rank == 0:
-            forces = np.empty((nat, 3))
-            stds = np.empty((nat, 3))
-
-        comm.Gather(forces_sub, forces, root=0)
-        comm.Gather(stds_sub, stds, root=0)
-
-        self.results['stds'] = stds
-        atoms.get_uncertainties = self.get_uncertainties
-        return forces
+        return self.get_forces_mgp_serial(atoms)
+#        comm = MPI.COMM_WORLD
+#        size = comm.Get_size()
+#        rank = comm.Get_rank()
+#
+#        nat = len(atoms)
+#        struc_curr = Structure(np.array(atoms.cell), 
+#                               atoms.get_atomic_numbers(),
+#                               atoms.positions)
+#        
+#        NumPerRank = nat // size
+#        NumRemainder = nat % size
+#        forces = None
+#        stds = None
+#        if rank < nat:
+#            if rank <= NumRemainder:
+#                N = NumPerRank
+#                intercept = 0
+#            else:
+#                N = NumPerRank - 1
+#                intercept = NumRemainder
+#
+#            forces_sub = np.zeros((N, 3))
+#            stds_sub = np.zeros((N, 3))
+#            for i in range(N):
+#                n = intercept + rank * N + i
+#                chemenv = AtomicEnvironment(struc_curr, n,
+#                                self.mgp_model.cutoffs)
+#                f, v = self.mgp_model.predict(chemenv, mean_only=False)
+#                forces_sub[i, :] = f
+#                stds_sub[i, :] = np.sqrt(np.absolute(v))
+#            print('rank:', rank, ', forces_sub:', N)
+#
+#        if rank == 0:
+#            forces = np.empty((nat, 3))
+#            stds = np.empty((nat, 3))
+#
+#        comm.Gather(forces_sub, forces, root=0)
+#        comm.Gather(stds_sub, stds, root=0)
+#
+#        self.results['stds'] = stds
+#        atoms.get_uncertainties = self.get_uncertainties
+#        return forces
 
     def get_stress(self, atoms):
         return np.eye(3)
@@ -134,6 +135,9 @@ class FLARE_Calculator(Calculator):
         # set svd rank based on the training set, grid number and threshold 1000
         grid_params = self.mgp_model.grid_params
         struc_params = self.mgp_model.struc_params
+        lmp_file_name = self.mgp_model.lmp_file_name
+        mean_only = self.mgp_model.mean_only
+        container_only = False
 
         train_size = len(self.gp_model.training_data)
         rank_2 = np.min([1000, grid_params['grid_num_2'], train_size*3])
@@ -144,16 +148,16 @@ class FLARE_Calculator(Calculator):
         hyps = self.gp_model.hyps
         cutoffs = self.gp_model.cutoffs
         self.mgp_model = MappedGaussianProcess(hyps, cutoffs,
-                        grid_params, struc_params, mean_only=True,
-                        build_from_GP=self.gp_model, lmp_file_name='lmp.mgp')
+                        grid_params, struc_params, mean_only,
+                        container_only, self.gp_model, lmp_file_name)
 
 
 
-from ase import io
-from ase.calculators.espresso import Espresso
-def read_results(self):
-    output = io.read(self.label + '.pwo', parallel=False)
-    self.calc = output.calc
-    self.results = output.calc.results
-
-Espresso.read_results = read_results
+#from ase import io
+#from ase.calculators.espresso import Espresso
+#def read_results(self):
+#    output = io.read(self.label + '.pwo', parallel=False)
+#    self.calc = output.calc
+#    self.results = output.calc.results
+#
+#Espresso.read_results = read_results

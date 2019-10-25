@@ -14,8 +14,7 @@ class PCASplines:
         self.svd_rank = svd_rank
         self.models = []
         for r in range(svd_rank):
-            spline_u = CubicSpline(l_bounds, u_bounds, 
-                    self.orders)
+            spline_u = CubicSpline(l_bounds, u_bounds, orders)
             self.models.append(spline_u)
 
     def build_cubic(self, y, u_bounds, l_bounds, orders):
@@ -46,7 +45,7 @@ class PCASplines:
     def __call__(self, x):
         y_pred = []
         for r in range(self.svd_rank):
-            y_pred.append(self.model[r](x))
+            y_pred.append(self.models[r](x))
         return np.array(y_pred)
 
 
