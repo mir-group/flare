@@ -1,7 +1,3 @@
-from __future__ import division
-
-from numba import double, int64
-
 from numba import jit, njit
 import time
 import numpy as np
@@ -11,28 +7,8 @@ from math import floor
 from numpy import empty
 
 
-Ad = array([
-#      t^3       t^2        t        1
-   [-1.0/6.0,  3.0/6.0, -3.0/6.0, 1.0/6.0],
-   [ 3.0/6.0, -6.0/6.0,  0.0/6.0, 4.0/6.0],
-   [-3.0/6.0,  3.0/6.0,  3.0/6.0, 1.0/6.0],
-   [ 1.0/6.0,  0.0/6.0,  0.0/6.0, 0.0/6.0]
-])
-
-dAd = zeros((4,4))
-for i in range(1,4):
-    dAd[:,i] = Ad[:,i-1]*(4-i)
-
-
-d2Ad = zeros((4,4))
-for i in range(1,4):
-    d2Ad[:,i] = dAd[:,i-1]*(4-i)
-
-
-
 @njit(cache=True)
 def eval_cubic_spline_1(a, b, orders, coefs, point):
-
     M0 = orders[0]
     start0 = a[0]
     dinv0 = (orders[0]-1.0)/(b[0]-a[0])
@@ -781,7 +757,6 @@ def find_coefs_1d(delta_inv, M, data, coefs):
 
 @njit(cache=True)
 def filter_coeffs_1d(dinv, data):
-
     M = data.shape[0]
     N = M + 2
 
@@ -888,6 +863,27 @@ def filter_coeffs_4d(dinv, data):
 
 
 def filter_coeffs(smin, smax, orders, data):
+    global Ad
+    Ad = array([
+    #      t^3       t^2        t        1
+       [-1.0/6.0,  3.0/6.0, -3.0/6.0, 1.0/6.0],
+       [ 3.0/6.0, -6.0/6.0,  0.0/6.0, 4.0/6.0],
+       [-3.0/6.0,  3.0/6.0,  3.0/6.0, 1.0/6.0],
+       [ 1.0/6.0,  0.0/6.0,  0.0/6.0, 0.0/6.0]
+    ])
+    
+    global dAd
+    dAd = zeros((4,4))
+    for i in range(1,4):
+        Ad_i = Ad[:, i-1]
+        dAd[:,i] = (4-i) * Ad_i
+    
+    global d2Ad
+    d2Ad = zeros((4,4))
+    for i in range(1,4):
+        dAd_i = dAd[:, i-1]
+        d2Ad[:,i] = (4-i) * dAd_i
+
     smin = np.array(smin, dtype=float)
     smax = np.array(smax, dtype=float)
     dinv = (smax - smin) / orders

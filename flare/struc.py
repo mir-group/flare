@@ -171,6 +171,7 @@ cell vectors.
                           positions=np.array(dictionary['positions']),
                           species=dictionary['coded_species'])
 
+        struc.energy = dictionary['energy']
         struc.forces = np.array(dictionary['forces'])
         struc.stress = dictionary['stress']
         struc.stds = np.array(dictionary['stds'])
@@ -221,9 +222,9 @@ cell vectors.
         :return: FLARE Structure
         """
 
-        cell = structure.lattice.matrix
+        cell = structure.lattice.matrix.copy()
         species = [str(spec) for spec in structure.species]
-        positions = structure.cart_coords
+        positions = structure.cart_coords.copy()
 
         new_struc = Structure(cell=cell,species=species,
                               positions=positions)

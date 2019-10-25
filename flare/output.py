@@ -21,7 +21,7 @@ class Output():
         :param basename: Base output file name, suffixes will be added
         :param always_flush: Always write to file instantly
         """
-        self.basename = "{}".format(basename)
+        self.basename = f"{basename}"
         self.outfiles = {}
         filesuffix = {'log': '.out', 'xyz': '.xyz',
                       'fxyz': '-f.xyz', 'hyps': "-hyps.dat"}
@@ -87,51 +87,45 @@ class Output():
         f.write(str(datetime.datetime.now()) + '\n')
 
         if isinstance(std_tolerance, tuple):
-            std_string = "relative uncertainty tolerance: {} eV/A\n".format(
-                std_tolerance[0])
-            std_string += 'absolute uncertainty tolerance: {} eV/A\n'.format(
-                std_tolerance[1])
+            std_string = 'relative uncertainty tolerance: '\
+                    f'{std_tolerance[0]} eV/A\n'
+            std_string += 'absolute uncertainty tolerance: '\
+                    f'{std_tolerance[1]} eV/A\n'
         elif std_tolerance < 0:
             std_string = \
-                'uncertainty tolerance: {} eV/A\n'.format(
-                    np.abs(std_tolerance))
+                f'uncertainty tolerance: {np.abs(std_tolerance)} eV/A\n'
         elif std_tolerance > 0:
             std_string = \
-                'uncertainty tolerance: {} times noise \n' \
-                .format(np.abs(std_tolerance))
+                f'uncertainty tolerance: {np.abs(std_tolerance)} times noise \n'
         else:
             std_string = ''
 
         headerstring = ''
         headerstring += \
-            'number of cpu cores: {}\n'.format(multiprocessing.cpu_count())
-        headerstring += 'cutoffs: {}\n'.format(cutoffs)
-        headerstring += 'kernel: {}\n'.format(kernel_name)
-        headerstring += 'number of hyperparameters: {}\n'.format(len(hyps))
-        headerstring += 'hyperparameters: {}' \
-                        '\n'.format(hyps)
-        headerstring += 'hyperparameter optimization algorithm: {}' \
-                        '\n'.format(algo)
+            f'number of cpu cores: {multiprocessing.cpu_count()}\n'
+        headerstring += f'cutoffs: {cutoffs}\n'
+        headerstring += f'kernel: {kernel_name}\n'
+        headerstring += f'number of hyperparameters: {len(hyps)}\n'
+        headerstring += f'hyperparameters: {hyps}\n'
+        headerstring += f'hyperparameter optimization algorithm: {algo}\n'
         headerstring += std_string
-        headerstring += 'timestep (ps): {}\n'.format(dt)
-        headerstring += 'number of frames: {}\n'.format(Nsteps)
-        headerstring += 'number of atoms: {}\n'.format(structure.nat)
-        headerstring += \
-            'system species: {}\n'.format(set(structure.species_labels))
+        headerstring += f'timestep (ps): {dt}\n'
+        headerstring += f'number of frames: {Nsteps}\n'
+        headerstring += f'number of atoms: {structure.nat}\n'
+        headerstring += f'system species: {set(structure.species_labels)}\n'
         headerstring += 'periodic cell: \n'
         headerstring += str(structure.cell)
 
         if optional:
             for key, value in optional.items():
-                headerstring += "{}: {} \n".format(key, value)
+                headerstring += f"{key}: {value} \n"
 
         # report previous positions
         headerstring += '\nprevious positions (A):\n'
         for i in range(len(structure.positions)):
-            headerstring += str(structure.species_labels[i]) + ' '
+            headerstring += f'{structure.species_labels[i]} '
             for j in range(3):
-                headerstring += str("%.8f" %
-                                    structure.prev_positions[i][j]) + ' '
+                headerstring += f'{structure.prev_positions[i][j]:10.4} '
             headerstring += '\n'
         headerstring += '-' * 80 + '\n'
 
@@ -223,37 +217,37 @@ class Output():
         """
 
         natom = len(structure.positions)
-        string = '{}\n'.format(natom)
+        string = f'{natom}\n'
 
         # comment line
         # Mark if a frame had DFT forces with an asterisk
         if not dft_step:
-            string += "Frame: {}\n".format(curr_step)
+            string += f"Frame: {curr_step}\n"
         else:
-            string += "*Frame: {}\n".format(curr_step)
+            string += f"*Frame: {curr_step}\n"
 
         # Construct atom-by-atom description
         for i in range(natom):
             pos = structure.positions[i]
-            string += '{} {} {} {}\n'.format(
-                structure.species_labels[i], pos[0], pos[1], pos[2])
+            string += f'{structure.species_labels[i]} '
+            string += f'{pos[0]} {pos[1]} {pos[2]}\n'
 
         self.outfiles['xyz'].write(string)
 
-        string = '{}\n'.format(natom)
+        string = f'{natom}\n'
 
         # comment line
         # Mark if a frame had DFT forces with an asterisk
         if not dft_step:
-            string += "Frame: {}\n".format(curr_step)
+            string += f"Frame: {curr_step}\n"
         else:
-            string += "*Frame: {}\n".format(curr_step)
+            string += f"*Frame: {curr_step}\n"
 
         # Construct atom-by-atom description
         for i in range(natom):
             pos = structure.forces[i]
-            string += '{} {} {} {}\n'.format(
-                structure.species_labels[i], pos[0], pos[1], pos[2])
+            string += f'{structure.species_labels[i]} '
+            string += f'{pos[0]} {pos[1]} {pos[2]}\n'
 
         self.outfiles['fxyz'].write(string)
 
@@ -261,7 +255,7 @@ class Output():
             self.outfiles['xyz'].flush()
             self.outfiles['fxyz'].flush()
 
-    def write_hyps(self, hyp_labels, hyps, start_time, like, like_grad):
+    def write_hyps(self, hyp_labels, hyps, start_time, like, like_grad, name='log'):
         """
         write hyperparameters to logfile
         :param hyp_labels:
@@ -271,27 +265,33 @@ class Output():
         :param like_grad:
         :return:
         """
-        f = self.outfiles['log']
+        f = self.outfiles[name]
         f.write('\nGP hyperparameters: \n')
 
-        for i, label in enumerate(hyp_labels):
-            f.write('Hyp{} : {} = {}\n'.format(i, label, hyps[i]))
+        if (hyp_labels is not None):
+            for i, label in enumerate(hyp_labels):
+                f.write(f'Hyp{i} : {label} = {hyps[i]}\n')
+        else:
+            for i, hyp in enumerate(hyps):
+                f.write(f'Hyp{i} : {hyp}\n')
 
-        f.write('likelihood: ' + str(like) + '\n')
-        f.write('likelihood gradient: ' + str(like_grad) + '\n')
-        time_curr = time.time() - start_time
-        f.write('wall time from start: %.2f s \n' % time_curr)
+        f.write(f'likelihood: {like}\n')
+        f.write(f'likelihood gradient: {like_grad}\n')
+        if (start_time):
+            time_curr = time.time() - start_time
+            f.write(f'wall time from start: {time_curr:.2} s \n')
 
         if self.always_flush:
             f.flush()
 
     def write_gp_dft_comparison(self, curr_step, frame,
                                 start_time, dft_forces,
-                                mae, mac, local_energies=None, KE=None):
+                                mae, mae_ps, mac, local_energies=None, KE=None):
         """
         write the comparison to logfile
         :param dft_forces:
         :param mae:
+        :param pmae: dictionary of per species mae
         :param mac:
         :param KE:
         :param curr_step:
@@ -303,7 +303,7 @@ class Output():
         string = ''
 
         # Mark if a frame had DFT forces with an asterisk
-        string += "\n*-Frame: " + str(curr_step)
+        string += f"\n*-Frame: {curr_step}"
 
         # Construct Header line
         string += '\nEl  Position (A) \t\t\t\t '
@@ -313,35 +313,37 @@ class Output():
 
         # Construct atom-by-atom description
         for i in range(len(frame.positions)):
-            string += str(frame.species_labels[i]) + ' '
+            string += f"{frame.species_labels[i]} "
             for j in range(3):
-                string += str("%.8f" % frame.positions[i][j]) + ' '
+                string += f"{frame.positions[i][j]:10.3} "
+            string += '\t'
+            for j in range(3)                            :
+                string += f"{frame.forces[i][j]:10.3} "
             string += '\t'
             for j in range(3):
-                string += str("%.8f" % frame.forces[i][j]) + ' '
+                string += f"{frame.stds[i][j]:10.3} "
             string += '\t'
             for j in range(3):
-                string += str("%.8e" % frame.stds[i][j]) + ' '
-            string += '\t'
-            for j in range(3):
-                string += str("%.8f" % dft_forces[i][j]) + ' '
+                string += f"{dft_forces[i][j]:10.3} "
             string += '\n'
 
         string += '\n'
 
-        string += 'mean absolute error: %.2f meV/A \n' % mae
-        string += 'mean absolute dft component: %.2f meV/A \n' % mac
+        string += f'mean absolute error: {mae:10.2} meV/A \n'
+        string += f'mean absolute dft component: {mac:10.2} meV/A \n'
+
+        string += "mae per species\n"
+        for ele in mae_ps.keys():
+            string+=f"type {ele} mae: {mae_ps[ele]:10.4}\n"
 
         # calculate potential and total energy
         if local_energies is not None:
             pot_en = np.sum(local_energies)
             tot_en = KE + pot_en
-            string += \
-                'potential energy: %.6f eV \n' % pot_en
-            string += 'total energy: %.6f eV \n' % tot_en
+            string += f'potential energy: {pot_en:10.6} eV\n'
+            string += f'total energy: {tot_en:10.6} eV \n'
 
-        string += 'wall time from start: %.2f s \n' % \
-                  (time.time() - start_time)
+        string += f'wall time from start: {time.time() - start_time:10.2}\n'
 
         self.outfiles['log'].write(string)
 

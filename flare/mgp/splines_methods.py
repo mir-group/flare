@@ -50,18 +50,11 @@ class PCASplines:
 
 
 
-"""High-level API for cubic splines"""
-
 class CubicSpline:
 
-    """Class representing a cubic spline interpolator on a regular cartesian grid.."""
+    """Forked from Github repository: https://github.com/EconForge/interpolation.py. High-level API for cubic splines. Class representing a cubic spline interpolator on a regular cartesian grid.
 
-    __grid__ = None
-    __values__ = None
-    __coeffs__ = None
-
-    def __init__(self, a, b, orders, values=None):
-        """Creates a cubic spline interpolator on a regular cartesian grid.
+        Creates a cubic spline interpolator on a regular cartesian grid.
 
         Parameters:
         -----------
@@ -81,6 +74,12 @@ class CubicSpline:
             `spline(y)`
         """
 
+
+    __grid__ = None
+    __values__ = None
+    __coeffs__ = None
+
+    def __init__(self, a, b, orders, values=None):
 
         self.d = len(a)
         assert(len(b) == self.d)

@@ -21,7 +21,7 @@ from flare.mgp.splines_methods import PCASplines, CubicSpline
 
 class MappedGaussianProcess:
     '''
-    Build MGP
+    Build Mapped Gaussian Process (MGP) and automatically save coefficients for LAMMPS pair style.
     :param: hyps: GP hyps
     :param: cutoffs: GP cutoffs
     :param: struc_params : information of training data

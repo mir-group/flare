@@ -40,9 +40,13 @@ def get_cov_row_derv(x_1, d_1, m_index, size, training_data, kernel_grad,
 
 def get_ky_mat_par(hyps: np.ndarray, training_data: list,
                    training_labels_np: np.ndarray,
-                   kernel, cutoffs=None):
+                   kernel, cutoffs=None, no_cpus=None):
 
-    pool = mp.Pool(processes=mp.cpu_count())
+    if (no_cpus is None):
+        pool = mp.Pool(processes=mp.cpu_count())
+    else:
+        pool = mp.Pool(processes=no_cpus)
+
 
     # assume sigma_n is the final hyperparameter
     number_of_hyps = len(hyps)
@@ -83,9 +87,12 @@ def get_ky_mat_par(hyps: np.ndarray, training_data: list,
 
 def get_ky_and_hyp_par(hyps: np.ndarray, training_data: list,
                        training_labels_np: np.ndarray,
-                       kernel_grad, cutoffs=None):
+                       kernel_grad, cutoffs=None, no_cpus=None):
 
-    pool = mp.Pool(processes=mp.cpu_count())
+    if (no_cpus is None):
+        pool = mp.Pool(processes=mp.cpu_count())
+    else:
+        pool = mp.Pool(processes=no_cpus)
 
     # assume sigma_n is the final hyperparameter
     number_of_hyps = len(hyps)
@@ -306,15 +313,12 @@ def get_like_grad_from_mats(ky_mat, hyp_mat, training_labels_np):
 def get_neg_likelihood(hyps: np.ndarray, training_data: list,
                        training_labels_np: np.ndarray,
                        kernel, cutoffs=None, output = None,
-                       par=False):
-
-    if output is not None:
-        output.write_to_log('hyps: ' + str(hyps), name="hyps")
+                       par=False, no_cpus=None):
 
     if par:
         ky_mat = \
             get_ky_mat_par(hyps, training_data, training_labels_np,
-                           kernel, cutoffs)
+                           kernel, cutoffs, no_cpus)
     else:
         ky_mat = \
             get_ky_mat(hyps, training_data, training_labels_np,
@@ -323,7 +327,7 @@ def get_neg_likelihood(hyps: np.ndarray, training_data: list,
     like = get_like_from_ky_mat(ky_mat, training_labels_np)
 
     if output is not None:
-        output.write_to_log('like: ' + str(like)+'\n', name="hyps")
+        output.write_hyps(None, hyps, None, like, "NA", name="hyps")
 
     return -like
 
@@ -331,15 +335,12 @@ def get_neg_likelihood(hyps: np.ndarray, training_data: list,
 def get_neg_like_grad(hyps: np.ndarray, training_data: list,
                       training_labels_np: np.ndarray,
                       kernel_grad, cutoffs=None,
-                      output = None, par=False):
-
-    if output is not None:
-        output.write_to_log('hyps: ' + str(hyps)+'\n', name="hyps")
+                      output = None, par=False, no_cpus=None):
 
     if par:
         hyp_mat, ky_mat = \
             get_ky_and_hyp_par(hyps, training_data, training_labels_np,
-                               kernel_grad, cutoffs)
+                               kernel_grad, cutoffs, no_cpus)
     else:
         hyp_mat, ky_mat = \
             get_ky_and_hyp(hyps, training_data, training_labels_np,
@@ -349,7 +350,6 @@ def get_neg_like_grad(hyps: np.ndarray, training_data: list,
         get_like_grad_from_mats(ky_mat, hyp_mat, training_labels_np)
 
     if output is not None:
-        output.write_to_log('like grad: ' + str(like_grad)+'\n', name="hyps")
-        output.write_to_log('like: ' + str(like)+'\n', name="hyps")
+        output.write_hyps(None, hyps, None, like, like_grad, name="hyps")
 
     return -like, -like_grad
