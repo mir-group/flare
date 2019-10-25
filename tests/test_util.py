@@ -39,49 +39,49 @@ def test_std_in_bound_per_species():
     test_structure, _ = get_random_structure(np.eye(3),['H','O'],3)
     test_structure.species_labels = ['H', 'H', 'O']
     test_structure.stds = np.array([[1, 0, 0], [2, 0, 0], [3, 0, 0]])
-
+    # Test that 'test mode' works
     result, target_atoms = \
         is_std_in_bound_per_species(rel_std_tolerance=0, abs_std_tolerance=0,
                              noise=0, structure = test_structure)
     assert result is True and target_atoms == [-1]
-
+    # Test that high abs tolerance works
     result, target_atoms = \
         is_std_in_bound_per_species(rel_std_tolerance=0, abs_std_tolerance=4,
                              noise=0, structure = test_structure)
     assert result is True and target_atoms == [-1]
-
+    # Test that low abs tolerance works
     result, target_atoms = \
         is_std_in_bound_per_species(rel_std_tolerance=0, abs_std_tolerance=2.9,
                              noise=0, structure = test_structure)
     assert result is False and target_atoms == [2]
-
+    # Test that high rel tolerance works
     result, target_atoms = \
         is_std_in_bound_per_species(rel_std_tolerance=1, abs_std_tolerance=0,
                              noise=4, structure = test_structure)
     assert result is True and target_atoms == [-1]
-
+    # Test that low rel tolerance works
     result, target_atoms = \
         is_std_in_bound_per_species(rel_std_tolerance=1, abs_std_tolerance=0,
                              noise=2.9, structure = test_structure)
     assert result is False and target_atoms == [2]
-
+    # Test that both work
     result, target_atoms = \
         is_std_in_bound_per_species(rel_std_tolerance=1, abs_std_tolerance=.1,
                              noise=2.9, structure = test_structure)
     assert result is False and target_atoms == [2, 1, 0]
-
+    # Test that the max atoms added works
     result, target_atoms = \
         is_std_in_bound_per_species(rel_std_tolerance=1, abs_std_tolerance=.1,
                              noise=2.9, structure = test_structure,
                                     max_atoms_added=2)
     assert result is False and target_atoms == [2, 1]
-
     result, target_atoms = \
         is_std_in_bound_per_species(rel_std_tolerance=1, abs_std_tolerance=.1,
                              noise=2.9, structure = test_structure,
                                     max_atoms_added=1)
     assert result is False and target_atoms == [2]
 
+    # Test that max by species works
     result, target_atoms = \
         is_std_in_bound_per_species(rel_std_tolerance=1, abs_std_tolerance=.1,
                              noise=2.9, structure = test_structure,
