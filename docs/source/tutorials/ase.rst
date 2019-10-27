@@ -1,7 +1,20 @@
 On-the-fly training using ASE
 =============================
 
-This is a quick introduction of how to set up our ASE-OTF interface to train a force field. We will calculate a bulk `AgI <https://materialsproject.org/materials/mp-22915/>`_
+.. toctree::
+   :maxdepth: 2
+
+This is a quick introduction of how to set up our ASE-OTF interface to train a force field. We will train a force field model for bulk `AgI <https://materialsproject.org/materials/mp-22915/>`_. To run the on-the-fly training, we will need to 
+
+    1. Create a supercell with ASE Atoms object
+
+    2. Set up FLARE ASE calculator, including the kernel functions, hyperparameters, cutoffs for Gaussian process, and mapping parameters (if Mapped Gaussian Process is used)
+
+    3. Set up DFT ASE calculator. Here we will give an example of Quantum Espresso
+           
+    4. Set up on-the-fly training with ASE MD engine
+
+To increase the flexibility and make it easier for testing, we suggest creating four ".py" files for the 4 steps above. And please make sure you are using the LATEST FLARE code in our master branch. 
 
 Setup supercell with ASE
 ------------------------

@@ -180,5 +180,8 @@ class OTF(MolecularDynamics):
 
         # build mgp
         if self.use_mapping:
+            if self.get_time() in self.non_mapping_steps:
+                skip = True
+
             calc.build_mgp(skip)
 
