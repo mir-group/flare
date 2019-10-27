@@ -64,8 +64,6 @@ class OTF(MolecularDynamics):
         # initialize gp by a dft calculation
         if not self.atoms.calc.gp_model.training_data:
             self.dft_count = 0
-            self.std_in_bound = False
-            self.target_atom = 0
             self.stds = np.zeros((self.noa, 3))
             dft_forces = self.call_DFT()
             f = dft_forces
@@ -136,31 +134,33 @@ class OTF(MolecularDynamics):
         atom_count = 0
         atom_list = []
         gp_model = self.atoms.calc.gp_model
+
+        # build gp structure from atoms
+        atom_struc = Structure.from_ase_atoms(self.atoms)
+
         while (not self.std_in_bound and atom_count <
-               self.max_atoms_added):
-            # build gp structure from atoms
-            atom_struc = Structure(np.array(self.atoms.cell), 
-                    self.atoms.get_atomic_numbers(), 
-                    self.atoms.positions)
+               np.min([self.max_atoms_added, len(self.target_atoms)])):
+
+            target_atom = self.target_atoms[atom_count]
 
             # update gp model
             gp_model.update_db(atom_struc, dft_forces,
-                           custom_range=[self.target_atom])
+                               custom_range=[target_atom])
     
             if gp_model.alpha is None:
                 gp_model.set_L_alpha()
             else:
                 gp_model.update_L_alpha()
 
-            atom_list.append(self.target_atom)
-            # force calculation needed before get_uncertainties
-            forces = self.atoms.calc.get_forces_gp(self.atoms) 
-            self.stds = self.atoms.get_uncertainties()
+            # atom_list.append(target_atom)
+            ## force calculation needed before get_uncertainties
+            # forces = self.atoms.calc.get_forces_gp(self.atoms) 
+            # self.stds = self.atoms.get_uncertainties()
 
             # write added atom to the log file, 
             # refer to ase.optimize.optimize.Dynamics
-            self.observers[0][0].add_atom_info(self.target_atom,
-                    self.stds[self.target_atom])
+            self.observers[0][0].add_atom_info(target_atom, 
+                                               self.stds[target_atom])
            
             #self.is_std_in_bound(atom_list)
             atom_count += 1
