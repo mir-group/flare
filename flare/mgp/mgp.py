@@ -273,7 +273,6 @@ class MappedGaussianProcess:
             map_ind = spcs_list.index(spc)
             f, v = self.predict_component(lengths, xyzs, mappings[map_ind],
                                           mean_only)
-            print(spc, f)
             f_spcs += f
             v_spcs += v
 
