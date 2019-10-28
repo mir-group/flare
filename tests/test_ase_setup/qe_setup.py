@@ -5,7 +5,7 @@ from ase.calculators.espresso import Espresso
 label = 'AgI'
 input_file_name = label+'.pwi'
 output_file_name = label+'.pwo'
-no_cpus = 1
+no_cpus = 2
 npool = 1
 pw_loc = os.environ.get('PWSCF_COMMAND')
 #pw_loc = '/n/home08/xiey/q-e/bin/pw.x'
@@ -38,3 +38,4 @@ ion_pseudo = {'Ag': 'Ag.pbe-n-kjpaw_psl.1.0.0.UPF',
 dft_calc = Espresso(pseudopotentials=ion_pseudo, label=label, 
                     tstress=True, tprnfor=True, nosym=True, #noinv=True,
                     input_data=input_data, kpts=(1,1,1)) 
+dft_calc.parameters['parallel'] = False
