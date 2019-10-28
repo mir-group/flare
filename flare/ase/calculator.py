@@ -70,65 +70,28 @@ class FLARE_Calculator(Calculator):
                                atoms.positions)
 
         forces = np.zeros((nat, 3))
+        stress = np.zeros((nat, 6))
         stds = np.zeros((nat, 3))
         for n in range(nat):
             chemenv = AtomicEnvironment(struc_curr, n,
                                         self.mgp_model.cutoffs)
-            f, v = self.mgp_model.predict(chemenv, mean_only=False)
+            f, vir, v = self.mgp_model.predict(chemenv, mean_only=False)
             forces[n] = f
+            stress[n] = vir
             stds[n] = np.sqrt(np.absolute(v))
 
+        self.results['stress'] = np.sum(stress, axis=0)
         self.results['stds'] = stds
         atoms.get_uncertainties = self.get_uncertainties
         return forces
 
     def get_forces_mgp_par(self, atoms):
         return self.get_forces_mgp_serial(atoms)
-#        comm = MPI.COMM_WORLD
-#        size = comm.Get_size()
-#        rank = comm.Get_rank()
-#
-#        nat = len(atoms)
-#        struc_curr = Structure(np.array(atoms.cell), 
-#                               atoms.get_atomic_numbers(),
-#                               atoms.positions)
-#        
-#        NumPerRank = nat // size
-#        NumRemainder = nat % size
-#        forces = None
-#        stds = None
-#        if rank < nat:
-#            if rank <= NumRemainder:
-#                N = NumPerRank
-#                intercept = 0
-#            else:
-#                N = NumPerRank - 1
-#                intercept = NumRemainder
-#
-#            forces_sub = np.zeros((N, 3))
-#            stds_sub = np.zeros((N, 3))
-#            for i in range(N):
-#                n = intercept + rank * N + i
-#                chemenv = AtomicEnvironment(struc_curr, n,
-#                                self.mgp_model.cutoffs)
-#                f, v = self.mgp_model.predict(chemenv, mean_only=False)
-#                forces_sub[i, :] = f
-#                stds_sub[i, :] = np.sqrt(np.absolute(v))
-#            print('rank:', rank, ', forces_sub:', N)
-#
-#        if rank == 0:
-#            forces = np.empty((nat, 3))
-#            stds = np.empty((nat, 3))
-#
-#        comm.Gather(forces_sub, forces, root=0)
-#        comm.Gather(stds_sub, stds, root=0)
-#
-#        self.results['stds'] = stds
-#        atoms.get_uncertainties = self.get_uncertainties
-#        return forces
 
     def get_stress(self, atoms):
-        return np.eye(3)
+        if not self.use_mapping:
+            raise NotImplementedError("Stress is only supported in MGP")
+        return self.results['stress']
 
     def calculation_required(self, atoms, quantities):
         return True
