@@ -18,11 +18,20 @@ def cleanup(target: list = None):
 # ------------------------------------------------------
 #                   test  otf runs
 # ------------------------------------------------------
-@pytest.mark.skipif(not os.environ.get('CP2K_COMMAND',
-                          False), reason='CP2K_COMMAND not found '
-                                  'in environment: Please install CP2K '
-                                  'and set the CP2K_COMMAND env. '
-                                  'variable to point to cp2k.popt')
+try:
+    cp2k = os.environ.get('CP2K_COMMAND', False)
+    if ("popt" in cp2k):
+        par = True
+    else:
+        par = False
+except:
+    par = False
+
+@pytest.mark.skipif(not os.environ.get('CP2K_COMMAND', False) or not par,
+                    reason='parallel CP2K_COMMAND not found '
+                           'in environment: Please install CP2K '
+                           'and set the CP2K_COMMAND env. '
+                           'variable to point to cp2k.popt')
 def test_otf_h2_par():
     """
     Test that an otf run can survive going for more steps
