@@ -164,31 +164,19 @@
 <p>Gaussian process model of the Born Oppenheimer potential energy surface.</p>
 <dl class="class">
 <dt id="flare.gp.GaussianProcess">
-<em class="property">class </em><code class="descclassname">flare.gp.</code><code class="descname">GaussianProcess</code><span class="sig-paren">(</span><em>kernel: Callable</em>, <em>kernel_grad: Callable</em>, <em>hyps</em>, <em>cutoffs</em>, <em>hyp_labels: List[T] = None</em>, <em>energy_force_kernel: Callable = None</em>, <em>energy_kernel: Callable = None</em>, <em>opt_algorithm: str = 'L-BFGS-B'</em>, <em>maxiter=10</em>, <em>par=False</em>, <em>output=None</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.gp.GaussianProcess" title="Permalink to this definition">¶</a></dt>
-<dd><p>Gaussian Process Regression Model.</p>
-<p>Implementation is based on Algorithm 2.1 (pg. 19) of
+<em class="property">class </em><code class="descclassname">flare.gp.</code><code class="descname">GaussianProcess</code><span class="sig-paren">(</span><em>kernel: Callable</em>, <em>kernel_grad: Callable</em>, <em>hyps</em>, <em>cutoffs</em>, <em>hyp_labels: List[T] = None</em>, <em>energy_force_kernel: Callable = None</em>, <em>energy_kernel: Callable = None</em>, <em>opt_algorithm: str = 'L-BFGS-B'</em>, <em>maxiter=10</em>, <em>par=False</em>, <em>no_cpus=None</em>, <em>output=None</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.gp.GaussianProcess" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gaussian Process Regression Model.
+Implementation is based on Algorithm 2.1 (pg. 19) of
 “Gaussian Processes for Machine Learning” by Rasmussen and Williams</p>
 <dl class="method">
 <dt id="flare.gp.GaussianProcess.add_one_env">
 <code class="descname">add_one_env</code><span class="sig-paren">(</span><em>env: flare.env.AtomicEnvironment</em>, <em>force</em>, <em>train: bool = False</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.gp.GaussianProcess.add_one_env" title="Permalink to this definition">¶</a></dt>
-<dd><p>Tool to add a single environment / force pair into the training set.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>force</strong> – </li>
-<li><strong>env</strong> – </li>
-<li><strong>force</strong> – (x,y,z) component associated with environment</li>
-<li><strong>train</strong> – </li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"></p>
-</td>
-</tr>
-</tbody>
-</table>
+<dd><p>Tool to add a single environment / force pair into the training set.
+:param force:
+:param env:
+:param force: (x,y,z) component associated with environment
+:param train:
+:return:</p>
 </dd></dl>
 
 <dl class="method">
@@ -206,19 +194,11 @@
 <dl class="staticmethod">
 <dt id="flare.gp.GaussianProcess.force_list_to_np">
 <em class="property">static </em><code class="descname">force_list_to_np</code><span class="sig-paren">(</span><em>forces: list</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.gp.GaussianProcess.force_list_to_np" title="Permalink to this definition">¶</a></dt>
-<dd><p>Convert list of forces to numpy array of forces.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>forces</strong> (<em>list&lt;float&gt;</em>) – list of forces to convert</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">numpy array forces</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">np.ndarray</td>
-</tr>
-</tbody>
-</table>
+<dd><p>Convert list of forces to numpy array of forces.
+:param forces: list of forces to convert
+:type forces: list&lt;float&gt;
+:return: numpy array forces
+:rtype: np.ndarray</p>
 </dd></dl>
 
 <dl class="staticmethod">
@@ -231,25 +211,13 @@
 <dt id="flare.gp.GaussianProcess.get_kernel_vector">
 <code class="descname">get_kernel_vector</code><span class="sig-paren">(</span><em>x: flare.env.AtomicEnvironment</em>, <em>d_1: int</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.gp.GaussianProcess.get_kernel_vector" title="Permalink to this definition">¶</a></dt>
 <dd><p>Compute kernel vector, comparing input environment to all environments
-in the GP’s training set.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>x</strong> (<em>AtomicEnvironment</em>) – data point to compare against kernel matrix</li>
-<li><strong>d_1</strong> (<em>int</em>) – Cartesian component of force vector to get (1=x,2=y,3=z)</li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">kernel vector</p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">np.ndarray</p>
-</td>
-</tr>
-</tbody>
-</table>
+in the GP’s training set.
+:param x: data point to compare against kernel matrix
+:type x: AtomicEnvironment
+:param d_1: Cartesian component of force vector to get (1=x,2=y,3=z)
+:type d_1: int
+:return: kernel vector
+:rtype: np.ndarray</p>
 </dd></dl>
 
 <dl class="method">
@@ -261,19 +229,11 @@ in the GP’s training set.</p>
 <dl class="method">
 <dt id="flare.gp.GaussianProcess.predict_local_energy">
 <code class="descname">predict_local_energy</code><span class="sig-paren">(</span><em>x_t: flare.env.AtomicEnvironment</em><span class="sig-paren">)</span> &#x2192; float<a class="headerlink" href="#flare.gp.GaussianProcess.predict_local_energy" title="Permalink to this definition">¶</a></dt>
-<dd><p>Predict the local energy of an atomic environment.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>x_t</strong> (<em>AtomicEnvironment</em>) – Atomic environment of test atom.</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">local energy in eV (up to a constant).</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">float</td>
-</tr>
-</tbody>
-</table>
+<dd><p>Predict the local energy of an atomic environment.
+:param x_t: Atomic environment of test atom.
+:type x_t: AtomicEnvironment
+:return: local energy in eV (up to a constant).
+:rtype: float</p>
 </dd></dl>
 
 <dl class="method">
@@ -307,16 +267,30 @@ The forces and variances are later obtained using alpha.
 <dl class="method">
 <dt id="flare.gp.GaussianProcess.update_db">
 <code class="descname">update_db</code><span class="sig-paren">(</span><em>struc: flare.struc.Structure</em>, <em>forces: list</em>, <em>custom_range: List[int] = ()</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.gp.GaussianProcess.update_db" title="Permalink to this definition">¶</a></dt>
-<dd><p>Given structure and forces, add to training set.</p>
+<dd><p>Given structure and forces, add to training set.
+:param struc: structure to add to db
+:type struc: Structure
+:param forces: list of corresponding forces to add to db
+:type forces: list&lt;float&gt;
+:param custom_range: Indices to use in lieu of the whole structure
+:type custom_range: List[int]</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="flare.gp.GaussianProcess.write_model">
+<code class="descname">write_model</code><span class="sig-paren">(</span><em>name: str</em>, <em>format: str = 'json'</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.gp.GaussianProcess.write_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write model in a variety of formats to a file for later re-use.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>struc</strong> (<a class="reference internal" href="struc.html#flare.struc.Structure" title="flare.struc.Structure"><em>Structure</em></a>) – structure to add to db</li>
-<li><strong>forces</strong> (<em>list&lt;float&gt;</em>) – list of corresponding forces to add to db</li>
-<li><strong>custom_range</strong> (<em>List</em><em>[</em><em>int</em><em>]</em>) – Indices to use in lieu of the whole structure</li>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>name</strong> – Output name</li>
+<li><strong>format</strong> – </li>
 </ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"></p>
 </td>
 </tr>
 </tbody>
