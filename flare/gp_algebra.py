@@ -225,7 +225,7 @@ def get_ky_mat_update_row(params):
                      for d in range(3)]).T  # (n+3m) x 3
     return k_vi
 
-def get_ky_mat_update(ky_mat_old, training_data, get_kernel_vector, hyps, par):
+def get_ky_mat_update(ky_mat_old, training_data, get_kernel_vector, hyps, par, no_cpus=None):
     '''
     used for update_L_alpha, especially for parallelization
     parallelized for added atoms, for example, if add 10 atoms to the training
@@ -242,7 +242,10 @@ def get_ky_mat_update(ky_mat_old, training_data, get_kernel_vector, hyps, par):
     params_list = [(n//3+i, training_data[n//3+i], get_kernel_vector)\
                    for i in range(m)]
     if par:
-        pool = mp.Pool(processes=mp.cpu_count())
+        if (no_cpus is None):
+            pool = mp.Pool(processes=mp.cpu_count())
+        else:
+            pool = mp.Pool(processes=no_cpus)
         k_vi_list = pool.map(get_ky_mat_update_row, params_list)
         pool.close()
         pool.join()
