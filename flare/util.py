@@ -129,7 +129,7 @@ _element_to_Z = {'H': 1,
 _Z_to_element = {z: elt for elt, z in _element_to_Z.items()}
 
 
-def element_to_Z(element: str)->int:
+def element_to_Z(element: str) -> int:
     """
     Returns the atomic number Z associated with an elements 1-2 letter name.
     Returns the same integer if an integer is passed in.
@@ -177,9 +177,9 @@ class NumpyEncoder(JSONEncoder):
             return obj.tolist()
         return JSONEncoder.default(self, obj)
 
-def Z_to_element(Z: int)-> str:
 
-    if isinstance(Z,str):
+def Z_to_element(Z: int) -> str:
+    if isinstance(Z, str):
         if Z.isnumeric():
             Z = int(Z)
         else:
@@ -189,7 +189,6 @@ def Z_to_element(Z: int)-> str:
 
 
 def is_std_in_bound(std_tolerance, noise, structure, max_atoms_added):
-
     # set uncertainty threshold
     if std_tolerance == 0:
         return True, [-1]
@@ -211,6 +210,7 @@ def is_std_in_bound(std_tolerance, noise, structure, max_atoms_added):
         return False, target_atoms
     else:
         return True, [-1]
+
 
 def is_std_in_bound_per_species(rel_std_tolerance: float,
                                 abs_std_tolerance: float, noise: float,
@@ -236,13 +236,12 @@ def is_std_in_bound_per_species(rel_std_tolerance: float,
     :return:
     """
 
-
     # This indicates test mode, as the GP is not being modified in any way
     if rel_std_tolerance == 0 and abs_std_tolerance == 0:
         return True, [-1]
 
     # set uncertainty threshold
-    if rel_std_tolerance is None or rel_std_tolerance == 0 :
+    if rel_std_tolerance is None or rel_std_tolerance == 0:
         threshold = abs_std_tolerance
     elif abs_std_tolerance is None or abs_std_tolerance == 0:
         threshold = rel_std_tolerance * np.abs(noise)
@@ -274,20 +273,20 @@ def is_std_in_bound_per_species(rel_std_tolerance: float,
 
         # Only add up to species allowance, if it exists
         if present_species[cur_spec] < \
-            max_by_species.get(cur_spec, np.inf):
-
+                max_by_species.get(cur_spec, np.inf):
             target_atoms.append(i)
             present_species[cur_spec] += 1
 
     return False, target_atoms
 
 
-
 def is_force_in_bound_per_species(abs_force_tolerance: float,
-                      predicted_forces: np.array, label_forces: np.array,
-                      structure,
-                      max_atoms_added: int = np.inf, max_by_species: dict =
-                      {}):
+                                  predicted_forces: np.array,
+                                  label_forces: np.array,
+                                  structure,
+                                  max_atoms_added: int = np.inf,
+                                  max_by_species: dict =
+                                  {}):
     """
     Checks the forces of GP prediction assigned to the structure, returns a
     list of atoms which  meet an absolute threshold abs_force_tolerance. Can 
@@ -313,7 +312,7 @@ def is_force_in_bound_per_species(abs_force_tolerance: float,
 
     errors = np.abs(predicted_forces - label_forces)
     # Determine if any std component will trigger the threshold
-    max_error_components= np.amax(errors, axis=1)
+    max_error_components = np.amax(errors, axis=1)
 
     if np.max(max_error_components) < abs_force_tolerance:
         return True, [-1]
@@ -337,8 +336,7 @@ def is_force_in_bound_per_species(abs_force_tolerance: float,
 
         # Only add up to species allowance, if it exists
         if present_species[cur_spec] < \
-            max_by_species.get(cur_spec, np.inf):
-
+                max_by_species.get(cur_spec, np.inf):
             target_atoms.append(i)
             present_species[cur_spec] += 1
 

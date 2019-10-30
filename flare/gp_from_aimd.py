@@ -122,9 +122,9 @@ class TrajectoryTrainer(object):
         self.seed_frames = [] if pre_train_seed_frames is None \
             else pre_train_seed_frames
         self.pre_train_env_per_species = {} if pre_train_atoms_per_element \
-                                       is None else pre_train_atoms_per_element
+                                    is None else pre_train_atoms_per_element
         self.train_env_per_species = {} if train_atoms_per_element \
-                                       is None else train_atoms_per_element
+                                        is None else train_atoms_per_element
 
         # Convert to Coded Species
         if self.pre_train_env_per_species:
@@ -212,7 +212,7 @@ class TrajectoryTrainer(object):
             if self.verbose >= 3:
                 print("Now commencing pre-run training of GP (which has "
                       "non-empty training set)")
-            self.train_gp(max_iter = self.pre_train_max_iter)
+            self.train_gp(max_iter=self.pre_train_max_iter)
 
     def run(self):
         """
@@ -262,12 +262,12 @@ class TrajectoryTrainer(object):
                 # Get max force error atoms
                 force_in_bound, force_train_atoms = \
                     is_force_in_bound_per_species(
-                    abs_force_tolerance=self.abs_force_tolerance,
-                    predicted_forces=cur_frame.forces,
-                    label_forces=dft_forces,
-                    structure=cur_frame,
-                    max_atoms_added=self.max_atoms_from_frame,
-                    max_by_species=self.train_env_per_species)
+                        abs_force_tolerance=self.abs_force_tolerance,
+                        predicted_forces=cur_frame.forces,
+                        label_forces=dft_forces,
+                        structure=cur_frame,
+                        max_atoms_added=self.max_atoms_from_frame,
+                        max_by_species=self.train_env_per_species)
 
                 if (not std_in_bound) or (not force_in_bound):
 
