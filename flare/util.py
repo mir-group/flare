@@ -192,7 +192,7 @@ def is_std_in_bound(std_tolerance, noise, structure, max_atoms_added):
 
     # set uncertainty threshold
     if std_tolerance == 0:
-        return True, -1
+        return True, [-1]
     elif std_tolerance > 0:
         threshold = std_tolerance * np.abs(noise)
     else:
@@ -211,3 +211,72 @@ def is_std_in_bound(std_tolerance, noise, structure, max_atoms_added):
         return False, target_atoms
     else:
         return True, [-1]
+
+def is_std_in_bound_per_species(rel_std_tolerance: float,
+                                abs_std_tolerance: float, noise: float,
+                                structure, max_atoms_added: int =
+                                np.inf, max_by_species: dict = {}):
+    """
+    Checks the stds of GP prediction assigned to the structure, returns a
+    list of atoms which either meet an absolute threshold or a relative
+    threshold defined by rel_std_tolerance * noise. Can limit the
+    total number of target atoms via max_atoms_added, and limit per species
+    by max_by_species.
+
+    The max_atoms_added argument will 'overrule' the
+    max by species; e.g. if max_atoms_added is 2 and max_by_species is {"H":3},
+    then at most two atoms total will be added.
+
+    :param rel_std_tolerance:
+    :param abs_std_tolerance:
+    :param noise:
+    :param structure:
+    :param max_atoms_added:
+    :param max_by_species:
+    :return:
+    """
+
+
+    # This indicates test mode, as the GP is not being modified in any way
+    if rel_std_tolerance == 0 and abs_std_tolerance == 0:
+        return True, [-1]
+
+    # set uncertainty threshold
+    if rel_std_tolerance is None or rel_std_tolerance == 0 :
+        threshold = abs_std_tolerance
+    elif abs_std_tolerance is None or abs_std_tolerance == 0:
+        threshold = rel_std_tolerance * np.abs(noise)
+    else:
+        threshold = min(rel_std_tolerance * np.abs(noise),
+                        abs_std_tolerance)
+
+    # Determine if any std component will trigger the threshold
+    max_std_components = [np.max(std) for std in structure.stds]
+    if max(max_std_components) < threshold:
+        return True, [-1]
+
+    target_atoms = []
+
+    # Sort from greatest to smallest max. std component
+    std_arg_sorted = np.flip(np.argsort(max_std_components))
+
+    present_species = {spec: 0 for spec in set(structure.species_labels)}
+
+    # Only add atoms up to the bound
+    for i in std_arg_sorted:
+
+        # If max atoms added reached or stds are now below threshold, done
+        if len(target_atoms) == max_atoms_added or \
+                max_std_components[i] < threshold:
+            break
+
+        cur_spec = structure.species_labels[i]
+
+        # Only add up to species allowance, if it exists
+        if present_species[cur_spec] < \
+            max_by_species.get(cur_spec, np.inf):
+
+            target_atoms.append(i)
+            present_species[cur_spec] += 1
+
+    return False, target_atoms
