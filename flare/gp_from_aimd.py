@@ -318,12 +318,14 @@ class TrajectoryTrainer(object):
         # TODO: Improve flexibility in GP training to make this next step
         # unnecessary, so maxiter can be passed as an argument
 
-        if max_iter is not None:
+        # Don't train if maxiter == 0
+        if max_iter == 0:
+            self.gp.check_L_alpha()
+        elif max_iter is not None:
             temp_maxiter = self.gp.maxiter
             self.gp.maxiter = max_iter
             self.gp.train(output=self.output if self.verbose >= 2 else None)
             self.gp.maxiter = temp_maxiter
-
         else:
             self.gp.train(output=self.output if self.verbose >= 2 else None)
 
