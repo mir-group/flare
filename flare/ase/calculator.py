@@ -31,19 +31,43 @@ class FLARE_Calculator(Calculator):
     def get_potential_energy(self, atoms=None, force_consistent=False):
         if self.use_mapping:
             print('MGP energy mapping not implemented, give GP prediction')
-        forces = self.get_forces_gp(atoms)
+            self.calculate_gp(atoms)
+
+        if 'energy' not in self.results.keys():
+            self.calculate(atoms)
         return self.results['energy']
 
+
     def get_forces(self, atoms):
+        if 'forces' not in self.results.keys():
+            self.calculate(atoms)
+        return self.results['forces']
+
+
+    def get_stress(self, atoms):
+        if not self.use_mapping:
+            raise NotImplementedError("Stress is only supported in MGP")
+
+        if 'stress' not in self.results.keys():
+            self.calculate(atoms)
+        return self.results['stress']
+
+
+    def get_uncertainties(self):
+        return self.results['stds']
+
+
+    def calculate(self, atoms):
         if self.use_mapping:
             if self.par:
-                return self.get_forces_mgp_par(atoms)
+                self.calculate_mgp_par(atoms)
             else:
-                return self.get_forces_mgp_serial(atoms)
+                self.calculate_mgp_serial(atoms)
         else:
-            return self.get_forces_gp(atoms)
+            self.calculate_gp(atoms)
 
-    def get_forces_gp(self, atoms):
+
+    def calculate_gp(self, atoms):
         nat = len(atoms)
         struc_curr = Structure(np.array(atoms.cell), 
                                atoms.get_atomic_numbers(),
@@ -56,6 +80,7 @@ class FLARE_Calculator(Calculator):
             forces, stds, local_energies = \
                     predict_on_structure_en(struc_curr, self.gp_model)
 
+        self.results['forces'] = forces
         self.results['stds'] = stds
         self.results['local_energies'] = local_energies
         self.results['energy'] = np.sum(local_energies)
@@ -63,7 +88,8 @@ class FLARE_Calculator(Calculator):
 
         return forces
 
-    def get_forces_mgp_serial(self, atoms):
+
+    def calculate_mgp_serial(self, atoms):
         nat = len(atoms)
         struc_curr = Structure(np.array(atoms.cell), 
                                atoms.get_atomic_numbers(),
@@ -80,27 +106,24 @@ class FLARE_Calculator(Calculator):
             stress[n] = vir
             stds[n] = np.sqrt(np.absolute(v))
 
-        self.results['stress'] = np.sum(stress, axis=0)
+        self.results['forces'] = forces
         self.results['stds'] = stds
+        self.results['stress'] = np.sum(stress, axis=0)
         atoms.get_uncertainties = self.get_uncertainties
         return forces
 
-    def get_forces_mgp_par(self, atoms):
-        return self.get_forces_mgp_serial(atoms)
 
-    def get_stress(self, atoms):
-        if not self.use_mapping:
-            raise NotImplementedError("Stress is only supported in MGP")
-        return self.results['stress']
+    def calculate_mgp_par(self, atoms):
+        return self.calculate_mgp_serial(atoms)
+
 
     def calculation_required(self, atoms, quantities):
         return True
 
-    def get_uncertainties(self):
-        return self.results['stds']
 
     def train_gp(self, monitor=True):
         self.gp_model.train(monitor)
+
 
     def build_mgp(self, skip=True):
         # l_bound not implemented
@@ -127,13 +150,3 @@ class FLARE_Calculator(Calculator):
                         grid_params, struc_params, mean_only,
                         container_only, self.gp_model, lmp_file_name)
 
-
-
-#from ase import io
-#from ase.calculators.espresso import Espresso
-#def read_results(self):
-#    output = io.read(self.label + '.pwo', parallel=False)
-#    self.calc = output.calc
-#    self.results = output.calc.results
-#
-#Espresso.read_results = read_results

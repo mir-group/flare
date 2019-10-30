@@ -12,7 +12,8 @@ import atom_setup, flare_setup, qe_setup
 
 np.random.seed(12345)
 
-md_engines = ['VelocityVerlet'] #, 'NVTBerendsen', 'NPTBerendsen', 'NPT']
+#md_engines = ['VelocityVerlet'] #, 'NVTBerendsen', 'NPTBerendsen', 'NPT']
+md_engines = ['NPT']
 for md_engine in md_engines:
     print(md_engine)
 

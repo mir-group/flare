@@ -90,6 +90,7 @@ class OTF(MolecularDynamics):
 
         for i in range(steps):
             print('step:', i)
+            self.atoms.calc.results = {} # clear the calculation from last step
             if self.md_engine == 'NPT':
                 self.step()
             else:
