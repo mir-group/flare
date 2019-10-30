@@ -259,17 +259,20 @@ class TrajectoryTrainer(object):
                     max_atoms_added=self.max_atoms_from_frame,
                     max_by_species=self.train_env_per_species)
 
+                # Get max force error atoms
                 force_in_bound, force_train_atoms = \
                     is_force_in_bound_per_species(
-                    self.abs_force_tolerance, cur_frame.forces, dft_forces,
+                    abs_force_tolerance=self.abs_force_tolerance,
+                    predicted_forces=cur_frame.forces,
+                    label_forces=dft_forces,
                     structure=cur_frame,
                     max_atoms_added=self.max_atoms_from_frame,
                     max_by_species=self.train_env_per_species)
 
-                if not std_in_bound:
+                if (not std_in_bound) or (not force_in_bound):
 
-                    train_atoms = set(std_train_atoms).union(
-                        force_train_atoms) - {-1}
+                    train_atoms = list(set(std_train_atoms).union(
+                        force_train_atoms) - {-1})
 
                     # Compute mae and write to output;
                     # Add max uncertainty atoms to training set
