@@ -17,7 +17,7 @@ from flare.predict import predict_on_structure, \
     predict_on_structure_par_en
 from flare.struc import Structure
 from flare.util import element_to_Z, \
-    is_std_in_bound_per_species
+    is_std_in_bound_per_species, is_force_in_bound_per_species
 
 
 class TrajectoryTrainer(object):
@@ -26,6 +26,7 @@ class TrajectoryTrainer(object):
                  gp: GaussianProcess,
                  rel_std_tolerance: float = 1,
                  abs_std_tolerance: float = 1,
+                 abs_force_tolerance: float = 0,
                  parallel: bool = False,
                  no_cpus: int = None,
                  skip: int = 1,
@@ -83,6 +84,7 @@ class TrajectoryTrainer(object):
         self.gp = gp
         self.rel_std_tolerance = rel_std_tolerance
         self.abs_std_tolerance = abs_std_tolerance
+        self.abs_force_tolerance = abs_force_tolerance
         self.skip = skip
         assert (skip >= 1), "skip needs to be an integer >= 1"
         self.validate_ratio = validate_ratio
@@ -250,14 +252,24 @@ class TrajectoryTrainer(object):
 
             if i < train_frame:
                 # Get max uncertainty atoms
-                std_in_bound, train_atoms = is_std_in_bound_per_species(
+                std_in_bound, std_train_atoms = is_std_in_bound_per_species(
                     rel_std_tolerance=self.rel_std_tolerance,
                     abs_std_tolerance=self.abs_std_tolerance,
                     noise=self.gp.hyps[-1], structure=cur_frame,
                     max_atoms_added=self.max_atoms_from_frame,
                     max_by_species=self.train_env_per_species)
 
+                force_in_bound, force_train_atoms = \
+                    is_force_in_bound_per_species(
+                    self.abs_force_tolerance, cur_frame.forces, dft_forces,
+                    structure=cur_frame,
+                    max_atoms_added=self.max_atoms_from_frame,
+                    max_by_species=self.train_env_per_species)
+
                 if not std_in_bound:
+
+                    train_atoms = set(std_train_atoms).union(
+                        force_train_atoms) - {-1}
 
                     # Compute mae and write to output;
                     # Add max uncertainty atoms to training set
