@@ -134,7 +134,7 @@ def three_body(env1, env2, d1, d2, hyps, cutoffs,
                cutoff_func=cf.quadratic_cutoff):
     sig = hyps[0]
     ls = hyps[1]
-    r_cut = cutoffs[1]
+    r_cut = cutoffs[0]
 
     return three_body_jit(env1.bond_array_3, env2.bond_array_3,
                           env1.cross_bond_inds, env2.cross_bond_inds,
@@ -147,7 +147,7 @@ def three_body_grad(env1, env2, d1, d2, hyps, cutoffs,
                     cutoff_func=cf.quadratic_cutoff):
     sig = hyps[0]
     ls = hyps[1]
-    r_cut = cutoffs[1]
+    r_cut = cutoffs[0]
 
     kernel, sig_derv, ls_derv = \
         three_body_grad_jit(env1.bond_array_3, env2.bond_array_3,
@@ -165,7 +165,7 @@ def three_body_force_en(env1, env2, d1, hyps, cutoffs,
                         cutoff_func=cf.quadratic_cutoff):
     sig = hyps[0]
     ls = hyps[1]
-    r_cut = cutoffs[1]
+    r_cut = cutoffs[0]
 
     # divide by three to account for triple counting
     return three_body_force_en_jit(env1.bond_array_3, env2.bond_array_3,
@@ -180,7 +180,7 @@ def three_body_en(env1, env2, hyps, cutoffs,
                   cutoff_func=cf.quadratic_cutoff):
     sig = hyps[0]
     ls = hyps[1]
-    r_cut = cutoffs[1]
+    r_cut = cutoffs[0]
 
     return three_body_en_jit(env1.bond_array_3, env2.bond_array_3,
                              env1.cross_bond_inds, env2.cross_bond_inds,
@@ -362,7 +362,7 @@ def three_body_jit(bond_array_1, bond_array_2,
 
                     fj = fj1*fj2*fj3
                     fdj = fdj1*fj2*fj3+fj1*fdj2*fj3
-                    
+
                     kern += triplet_kernel(ci1, ci2, cj1, cj2, ri1, ri2, ri3,
                                            rj1, rj2, rj3, fi, fj, fdi, fdj,
                                            ls1, ls2, ls3, sig2)
