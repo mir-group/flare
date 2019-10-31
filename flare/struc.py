@@ -1,12 +1,15 @@
-"""The :class:`Structure` object is a collection of atoms in a periodic \
-box. The mandatory inputs are the cell vectors of the box and the chemical species and Cartesian coordinates of the atoms. The atoms are automatically \
-folded back into the primary cell, so the input coordinates don't need to lie \
-inside the box. Energy, force, and stress information can be provided \
-for training machine learned force fields."""
+"""The :class:`Structure` object is a collection of atoms in a periodic box. The mandatory inputs are the cell vectors of the box and the chemical species and Cartesian coordinates of the atoms. The atoms are automatically folded back into the primary cell, so the input coordinates don't need to lie inside the box. Energy, force, and stress information can be provided for training machine learned force fields."""
 import numpy as np
 from typing import List
 from flare.util import element_to_Z, NumpyEncoder
 from json import dumps
+
+try:
+    # Used for to_pmg_structure method
+    import pymatgen.core.structure as pmgstruc
+    _pmg_present = True
+except ImportError:
+    _pmg_present = False
 
 
 class Structure:
@@ -33,7 +36,7 @@ of on-the-fly runs.
     """
 
     def __init__(self, cell, species, positions, mass_dict=None,
-                 prev_positions=None, species_labels=None):
+                 prev_positions=None, species_labels=None, forces=None):
         self.cell = cell
         self.vec1 = cell[0, :]
         self.vec2 = cell[1, :]
@@ -69,7 +72,10 @@ of on-the-fly runs.
 
         self.energy = None
         self.stress = None
-        self.forces = np.zeros((len(positions), 3))
+        if (forces is not None):
+            self.forces = forces
+        else:
+            self.forces = np.zeros((len(positions), 3))
         self.stds = np.zeros((len(positions), 3))
         self.mass_dict = mass_dict
 
@@ -168,6 +174,7 @@ cell vectors.
                           positions=np.array(dictionary['positions']),
                           species=dictionary['coded_species'])
 
+        struc.energy = dictionary['energy']
         struc.forces = np.array(dictionary['forces'])
         struc.stress = dictionary['stress']
         struc.stds = np.array(dictionary['stds'])
@@ -176,6 +183,66 @@ cell vectors.
 
         return struc
 
+    @staticmethod
+    def from_ase_atoms(atoms):
+        struc = Structure(cell=np.array(atoms.cell),
+                          positions=atoms.positions,
+                          species=atoms.get_chemical_symbols())
+        return struc
+
+    def to_ase_atoms(self):
+        from ase import Atoms
+        return Atoms(self.species_labels,
+                     positions=self.positions,
+                     cell=self.cell)
+
+    def to_pmg_structure(self):
+        """
+        Returns FLARE structure as a pymatgen structure.
+
+        :return: Pymatgen structure corresponding to current FLARE structure
+        """
+
+        if not _pmg_present:
+            raise ModuleNotFoundError("Pymatgen is not present. Please "
+                                      "install Pymatgen and try again")
+
+        site_properties = {'force:': self.forces, 'std': self.stds}
+
+        return pmgstruc.Structure(lattice=self.cell,
+                                  species=self.species_labels,
+                                  coords=self.positions,
+                                  coords_are_cartesian=True,
+                                  site_properties=site_properties
+                                  )
+
+    @staticmethod
+    def from_pmg_structure(structure):
+        """
+        Returns Pymatgen structure as FLARE structure.
+
+        :param structure: Pymatgen structure
+        :return: FLARE Structure
+        """
+
+        cell = structure.lattice.matrix.copy()
+        species = [str(spec) for spec in structure.species]
+        positions = structure.cart_coords.copy()
+
+        new_struc = Structure(cell=cell,species=species,
+                              positions=positions)
+
+        site_props = structure.site_properties
+
+        if 'force' in site_props.keys():
+            forces = site_props['force']
+            new_struc.forces = [np.array(force) for force in forces]
+
+        if 'std' in site_props.keys():
+            stds = site_props['std']
+            new_struc.stds = [np.array(std) for std in stds]
+
+        return new_struc
 
 def get_unique_species(species):
     unique_species = []

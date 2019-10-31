@@ -5,6 +5,12 @@ from tests.test_gp import get_random_structure
 from flare.struc import Structure
 from json import loads
 
+try:
+    import pymatgen.core.structure as pmgstruc
+    _test_pmg = True
+except ImportError:
+    _test_pmg = False
+
 
 def test_random_structure_setup():
     struct, forces = get_random_structure(cell=np.eye(3),
@@ -117,3 +123,71 @@ def test_rep_methods(varied_test_struc):
 
     thestr = str(varied_test_struc)
     assert 'Structure with 10 atoms of types {' in thestr
+
+def test_struc_from_ase():
+    from ase import Atoms
+    uc = Atoms(['Pd' for i in range(10)]+['Ag' for i in range(10)],
+               positions=np.random.rand(20, 3),
+               cell=np.random.rand(3, 3))
+    new_struc = Structure.from_ase_atoms(uc)
+    assert np.all(new_struc.species_labels == uc.get_chemical_symbols())
+    assert np.all(new_struc.positions == uc.get_positions())
+    assert np.all(new_struc.cell == uc.get_cell())
+
+def test_struc_to_ase():
+    from ase import Atoms
+    uc = Structure(species=['Pd' for i in range(10)]+['Ag' for i in range(10)],
+                   positions=np.random.rand(20, 3),
+                   cell=np.random.rand(3, 3))
+    new_atoms = Structure.to_ase_atoms(uc)
+    assert np.all(uc.species_labels == new_atoms.get_chemical_symbols())
+    assert np.all(uc.positions == new_atoms.get_positions())
+    assert np.all(uc.cell == new_atoms.get_cell())
+
+   
+@pytest.mark.skipif(not _test_pmg,reason='Pymatgen not present in available '
+                                        'packages.')
+def test_from_pmg_structure():
+
+    pmg_struc = pmgstruc.Structure(lattice= np.eye(3),
+                                   species=['H'],
+                                   coords=[[.25, .5, 0]],
+                                   site_properties={
+                                       'force': [np.array((1., 1.,  1.))],
+                                        'std':[np.array((1., 1., 1.))]},
+                                   coords_are_cartesian=True)
+
+    new_struc = Structure.from_pmg_structure(pmg_struc)
+
+    assert len(new_struc) == 1
+
+    assert np.equal(new_struc.positions, np.array([.25, .5, 0])).all()
+    assert new_struc.coded_species == [1]
+    assert new_struc.species_labels[0] == 'H'
+    assert np.equal(new_struc.forces, np.array([1., 1., 1.])).all()
+
+    pmg_struc = pmgstruc.Structure(lattice= np.diag([1.2,0.8,1.5]),
+                                   species=['H'],
+                                   coords=[[.25, .5, 0]],
+                                   site_properties={
+                                       'force': [np.array((1., 1.,  1.))],
+                                        'std':[np.array((1., 1., 1.))]},
+                                   coords_are_cartesian=True)
+
+    new_struc = Structure.from_pmg_structure(pmg_struc)
+
+    assert len(new_struc) == 1
+
+    assert np.equal(new_struc.positions, np.array([.25, .5, 0])).all()
+    assert new_struc.coded_species == [1]
+    assert new_struc.species_labels[0] == 'H'
+    assert np.equal(new_struc.forces, np.array([1., 1., 1.])).all()
+
+@pytest.mark.skipif(not _test_pmg,reason='Pymatgen not present in available '
+                                        'packages.')
+def test_to_pmg_structure(varied_test_struc):
+
+    new_struc = Structure.to_pmg_structure(varied_test_struc)
+    assert len(varied_test_struc) == len(varied_test_struc)
+    assert np.equal(new_struc.cart_coords, varied_test_struc.positions).all()
+    assert (new_struc.atomic_numbers == varied_test_struc.coded_species).all()

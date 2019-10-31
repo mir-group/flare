@@ -83,8 +83,9 @@ def test_parse_header():
                    'load_grid': None,
                    'update': True}
 
-    mgp_model = MappedGaussianProcess(gp_model, grid_params, struc_params,
-                                 mean_only=True, lmp_file_name=lammps_location)
+    mgp_model = MappedGaussianProcess(gp_model.hyps, gp_model.cutoffs,
+            grid_params, struc_params, mean_only=True, container_only=False,
+            GP=gp_model, lmp_file_name=lammps_location)
 
     # -------------------------------------------------------------------------
     #                          test the mapped potential
@@ -120,7 +121,7 @@ def test_parse_header():
     lammps_calculator.write_text(data_file_name, data_text)
 
     # create lammps input
-    style_string = 'mgp' #TODO: change the name of lammps
+    style_string = 'mgp' 
     coeff_string = '* * {} 47 53 yes yes'.format(lammps_location)
     lammps_executable = '$lmp'
     dump_file_name = 'tmp.dump'
@@ -139,8 +140,9 @@ def test_parse_header():
     # check that lammps agrees with gp to within 1 meV/A
     assert(np.abs(lammps_forces[0, 1] - forces[0, 1]) < 1e-3)
 
-    os.system('rm tmp.in tmp.out tmp.dump tmp.data AgI_Molten_15.txt'
+    os.system('rm tmp.in tmp.out tmp.dump tmp.data'
               ' log.lammps')
+    os.system('rm '+lammps_location)
     os.system('rm grid3*.npy')
     os.system('rm -r kv3')
 

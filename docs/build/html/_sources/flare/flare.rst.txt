@@ -1,10 +1,13 @@
-Modules
-=======
+Code Documentation
+==================
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
 
-   gp
-   env
    struc
+   env
    kernels
+   gp
+   dft_interface
+   mgp/mgp
+   ase/ase

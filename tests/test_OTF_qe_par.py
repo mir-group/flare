@@ -36,9 +36,9 @@ def test_otf_h2():
 
     qe_input = './pwscf.in'
     dt = 0.0001
-    number_of_steps = 20
+    number_of_steps = 4
     cutoffs = np.array([5])
-    pw_loc = os.environ.get('PWSCF_COMMAND')
+    dft_loc = os.environ.get('PWSCF_COMMAND')
     std_tolerance_factor = -0.1
 
     # make gp model
@@ -54,17 +54,20 @@ def test_otf_h2():
                         hyps=hyps,
                         cutoffs=cutoffs,
                         hyp_labels=hyp_labels,
+                        par=True,
                         energy_force_kernel=energy_force_kernel,
                         maxiter=50)
 
-    otf = OTF(qe_input, dt, number_of_steps, gp, pw_loc,
+    otf = OTF(qe_input, dt, number_of_steps, gp, dft_loc,
               std_tolerance_factor, init_atoms=[0],
               calculate_energy=True, max_atoms_added=1,
-              output_name='h2_otf')
+              no_cpus=2, par=True,
+              mpi="mpi",
+              output_name='h2_otf_qe_par')
 
     otf.run()
     os.system('mkdir test_outputs')
-    os.system('mv h2_otf.out test_outputs')
+    os.system('mv h2_otf_qe_par* test_outputs')
     cleanup_espresso_run()
 
 @pytest.mark.skipif(not os.environ.get('PWSCF_COMMAND',
@@ -72,7 +75,7 @@ def test_otf_h2():
                                   'in environment: Please install Quantum '
                                   'ESPRESSO and set the PWSCF_COMMAND env. '
                                   'variable to point to pw.x.')
-def test_otf_al():
+def test_otf_Al_npool():
     """
     Test that an otf run can survive going for more steps
     :return:
@@ -80,20 +83,18 @@ def test_otf_al():
     os.system('cp ./test_files/qe_input_2.in ./pwscf.in')
 
     qe_input = './pwscf.in'
-    dt = 0.001
-    number_of_steps = 100
-    cutoffs = np.array([3.9, 3.9])
-    pw_loc = os.environ.get('PWSCF_COMMAND')
-    std_tolerance_factor = 1
-    max_atoms_added = 2
-    freeze_hyps = 3
+    dt = 0.0001
+    number_of_steps = 4
+    cutoffs = np.array([5])
+    dft_loc = os.environ.get('PWSCF_COMMAND')
+    std_tolerance_factor = -0.1
 
     # make gp model
-    kernel = en.three_body
-    kernel_grad = en.three_body_grad
-    hyps = np.array([0.1, 1, 0.01])
+    kernel = en.two_body
+    kernel_grad = en.two_body_grad
+    hyps = np.array([1, 1, 1])
     hyp_labels = ['Signal Std', 'Length Scale', 'Noise Std']
-    energy_force_kernel = en.three_body_force_en
+    energy_force_kernel = en.two_body_force_en
 
     gp = \
         GaussianProcess(kernel=kernel,
@@ -101,17 +102,18 @@ def test_otf_al():
                         hyps=hyps,
                         cutoffs=cutoffs,
                         hyp_labels=hyp_labels,
+                        par=True,
                         energy_force_kernel=energy_force_kernel,
                         maxiter=50)
 
-    otf = OTF(qe_input, dt, number_of_steps, gp, pw_loc,
+    otf = OTF(qe_input, dt, number_of_steps, gp, dft_loc,
               std_tolerance_factor, init_atoms=[0],
-              calculate_energy=True, output_name='al_otf',
-              freeze_hyps=freeze_hyps, skip=5,
-              max_atoms_added=max_atoms_added)
+              calculate_energy=True, max_atoms_added=1,
+              no_cpus=2, par=True, npool=2,
+              mpi="mpi",
+              output_name='h2_otf_qe_par')
 
     otf.run()
     os.system('mkdir test_outputs')
-    os.system('mv al_otf.out test_outputs')
-
+    os.system('mv h2_otf_qe_par* test_outputs')
     cleanup_espresso_run()

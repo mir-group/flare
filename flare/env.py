@@ -1,3 +1,4 @@
+"""The :class:`AtomicEnvironment` object stores information about an atom's environment."""
 import numpy as np
 from math import sqrt
 from numba import njit
