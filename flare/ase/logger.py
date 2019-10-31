@@ -93,7 +93,7 @@ class OTFLogger(MDLogger):
         forces = self.atoms.get_forces()
         if type(self.atoms.calc) == FLARE_Calculator: 
             velocities = self.atoms.get_velocities()
-            stds = self.atoms.get_uncertainties()
+            stds = self.atoms.get_uncertainties(self.atoms)
             data_files = self.traj_files
             data = [positions, velocities, forces, stds]
         else:
@@ -101,8 +101,8 @@ class OTFLogger(MDLogger):
             data = [positions, forces]
          
         template = '{} {:9f} {:9f} {:9f}'
-        steps = self.dyn.get_time()
-        t = steps / (1000*units.fs)
+        steps = int(self.dyn.get_time() / units.fs)
+        t = steps / 1000
 
         for ind, f in enumerate(data_files):
             f.write(str(self.natoms))
@@ -119,7 +119,7 @@ class OTFLogger(MDLogger):
     def write_logfile(self):
         self.logfile.write(50*'-')
         if self.dyn is not None:
-            steps = self.dyn.get_time()
+            steps = int(self.dyn.get_time() / units.fs)
             t = steps / 1000
             if type(self.atoms.calc) != FLARE_Calculator: 
                 self.logfile.write('\n*-Frame: '+str(steps))
@@ -154,7 +154,7 @@ class OTFLogger(MDLogger):
         forces = self.atoms.get_forces()
         velocities = self.atoms.get_velocities()
         if type(self.atoms.calc) == FLARE_Calculator: 
-            stds = self.atoms.get_uncertainties()
+            stds = self.atoms.get_uncertainties(self.atoms)
             force_str = 'GP  Forces'
         else:
             stds = np.zeros(positions.shape)

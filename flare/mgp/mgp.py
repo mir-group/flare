@@ -647,8 +647,8 @@ class Map3body:
         if not self.load_grid:
             y_mean, y_var = self.GenGrid(GP)
         else:
-            y_mean = np.load('grid3_mean.npy')
-            y_var = np.load('grid3_var.npy')
+            y_mean = np.load(self.load_grid+'/grid3_mean.npy')
+            y_var = np.load(self.load_grid+'/grid3_var.npy')
 
         self.mean.set_values(y_mean)
         if not self.mean_only:

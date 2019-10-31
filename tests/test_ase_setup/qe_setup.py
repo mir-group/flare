@@ -5,7 +5,7 @@ from ase.calculators.espresso import Espresso
 label = 'AgI'
 input_file_name = label+'.pwi'
 output_file_name = label+'.pwo'
-no_cpus = 2
+no_cpus = 1
 npool = 1
 pw_loc = os.environ.get('PWSCF_COMMAND')
 #pw_loc = '/n/home08/xiey/q-e/bin/pw.x'

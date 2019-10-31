@@ -28,33 +28,30 @@ class FLARE_Calculator(Calculator):
         self.par = par
         self.results = {}
 
+    def get_property(self, atoms, property_name):
+        if property_name not in self.results.keys():
+            self.calculate(atoms)
+        return self.results[property_name]
+
+
     def get_potential_energy(self, atoms=None, force_consistent=False):
         if self.use_mapping:
-            print('MGP energy mapping not implemented, give GP prediction')
-            self.calculate_gp(atoms)
-
-        if 'energy' not in self.results.keys():
-            self.calculate(atoms)
-        return self.results['energy']
+            print('MGP energy mapping not implemented, temporarily set to 0')
+        return self.get_property(atoms, 'energy')
 
 
     def get_forces(self, atoms):
-        if 'forces' not in self.results.keys():
-            self.calculate(atoms)
-        return self.results['forces']
+        return self.get_property(atoms, 'forces')
 
 
     def get_stress(self, atoms):
         if not self.use_mapping:
             raise NotImplementedError("Stress is only supported in MGP")
-
-        if 'stress' not in self.results.keys():
-            self.calculate(atoms)
-        return self.results['stress']
+        return self.get_property(atoms, 'stress')
 
 
-    def get_uncertainties(self):
-        return self.results['stds']
+    def get_uncertainties(self, atoms):
+        return self.get_property(atoms, 'stds')
 
 
     def calculate(self, atoms):
@@ -85,7 +82,6 @@ class FLARE_Calculator(Calculator):
         self.results['local_energies'] = local_energies
         self.results['energy'] = np.sum(local_energies)
         atoms.get_uncertainties = self.get_uncertainties
-
         return forces
 
 
@@ -110,6 +106,11 @@ class FLARE_Calculator(Calculator):
         self.results['stds'] = stds
         self.results['stresses'] = stress
         self.results['stress'] = np.sum(stress, axis=0)
+
+        # TODO: implement energy mapping
+        self.results['local_energies'] = np.zeros(forces.shape)
+        self.results['energy'] = 0
+
         atoms.get_uncertainties = self.get_uncertainties
         return forces
 

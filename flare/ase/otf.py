@@ -4,6 +4,7 @@ from copy import deepcopy
 
 from flare.struc import Structure
 from flare.util import is_std_in_bound
+from flare.mgp.utils import get_l_bound
 
 import numpy as np
 from ase.md.md import MolecularDynamics
@@ -69,10 +70,11 @@ class OTF(MolecularDynamics):
             f = dft_forces
    
             # update gp model
-            atom_struc = Structure(np.array(self.atoms.cell), 
-                                   self.atoms.get_atomic_numbers(), 
-                                   self.atoms.positions)
-            self.atoms.calc.gp_model.update_db(atom_struc, dft_forces,
+            curr_struc = Structure.from_ase_atoms(self.atoms)
+            self.l_bound = get_l_bound(100, curr_struc, two_d=False)
+            print('l_bound:', self.l_bound)
+
+            self.atoms.calc.gp_model.update_db(curr_struc, dft_forces,
                            custom_range=self.init_atoms)
 
             # train calculator
@@ -91,17 +93,20 @@ class OTF(MolecularDynamics):
         for i in range(steps):
             print('step:', i)
             self.atoms.calc.results = {} # clear the calculation from last step
+            self.stds = np.zeros((self.noa, 3))
             if self.md_engine == 'NPT':
                 self.step()
             else:
                 f = self.step(f)
             self.nsteps += 1
-            self.stds = self.atoms.get_uncertainties()
+            self.stds = self.atoms.get_uncertainties(self.atoms)
 
             # figure out if std above the threshold
             self.call_observers() 
             curr_struc = Structure.from_ase_atoms(self.atoms)
-            curr_struc.stds = self.stds
+            self.l_bound = get_l_bound(self.l_bound, curr_struc, two_d=False)
+            print('l_bound:', self.l_bound)
+            curr_struc.stds = np.copy(self.stds)
             noise = self.atoms.calc.gp_model.hyps[-1]
             self.std_in_bound, self.target_atoms = is_std_in_bound(\
                     noise, self.std_tolerance, curr_struc, self.max_atoms_added)
@@ -177,6 +182,7 @@ class OTF(MolecularDynamics):
                             calc.gp_model.hyps, calc.gp_model.likelihood, 
                             calc.gp_model.likelihood_gradient)
         else:
+            #TODO: change to update_L_alpha()
             calc.gp_model.set_L_alpha()
 
         # build mgp
