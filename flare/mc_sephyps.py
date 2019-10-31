@@ -36,11 +36,11 @@ def from_mask_to_hyps(hyps, hyps_mask):
     elif (n2b==0) and (n3b!=0):
         sig = ori_hyps[:n3b]
         ls = ori_hyps[n3b:n3b*2]
-        return n3b, sig, ls
+        return 0, n3b, None, None, sig, ls
     elif (n2b!=0) and (n3b==0):
         sig = ori_hyps[:n2b]
         ls = ori_hyps[n2b:n2b*2]
-        return n2b, sig, ls
+        return n2b, 0, sig, ls, None, None
     elif (n2b==0) and (n3b==0):
         raise NameError("hello??, wrong hyps_mask")
 
@@ -191,8 +191,8 @@ def three_body_mc(env1, env2, d1, d2, hyps, cutoffs,
                   hyps_mask=None):
 
 
-    n3b, sig, ls = \
-           from_mask_to_hyps(hyps, hyps_mask)
+    n2b, n3b, sig2, ls2, sig, ls = \
+            from_mask_to_hyps(hyps, hyps_mask)
 
     r_cut = cutoffs[0]
 
@@ -209,7 +209,7 @@ def three_body_mc(env1, env2, d1, d2, hyps, cutoffs,
 def three_body_mc_grad(env1, env2, d1, d2, hyps, cutoffs,
                        cutoff_func=cf.quadratic_cutoff, hyps_mask=None):
 
-    n3b, sig, ls = \
+    n2b, n3b, sig2, ls2, sig, ls = \
             from_mask_to_hyps(hyps, hyps_mask)
     r_cut = cutoffs[0]
 
@@ -229,7 +229,7 @@ def three_body_mc_force_en(env1, env2, d1, hyps, cutoffs,
                            cutoff_func=cf.quadratic_cutoff,
                            hyps_mask=None):
 
-    n3b, sig, ls = \
+    n2b, n3b, sig2, ls2, sig, ls = \
             from_mask_to_hyps(hyps, hyps_mask)
     r_cut = cutoffs[0]
 
@@ -254,7 +254,7 @@ def three_body_mc_en(env1, env2, hyps, cutoffs,
                      cutoff_func=cf.quadratic_cutoff,
                      hyps_mask=None):
 
-    n3b, sig, ls = \
+    n2b, n3b, sig2, ls2, sig, ls = \
             from_mask_to_hyps(hyps, hyps_mask)
     r_cut = cutoffs[0]
 
@@ -275,7 +275,7 @@ def three_body_mc_en(env1, env2, hyps, cutoffs,
 def two_body_mc(env1, env2, d1, d2, hyps, cutoffs,
                 cutoff_func=cf.quadratic_cutoff, hyps_mask=None):
 
-    n2b, sig, ls = \
+    n2b, n3b, sig, ls, sig3, ls3 = \
             from_mask_to_hyps(hyps, hyps_mask)
     r_cut = cutoffs[0]
 
@@ -290,7 +290,7 @@ def two_body_mc_grad(env1, env2, d1, d2, hyps, cutoffs,
                      cutoff_func=cf.quadratic_cutoff,
                      hyps_mask=None):
 
-    n2b, sig, ls = \
+    n2b, n3b, sig, ls, sig3, ls3 = \
             from_mask_to_hyps(hyps, hyps_mask)
     r_cut = cutoffs[0]
 
@@ -306,7 +306,7 @@ def two_body_mc_force_en(env1, env2, d1, hyps, cutoffs,
                          cutoff_func=cf.quadratic_cutoff,
                          hyps_mask=None):
 
-    n2b, sig, ls = \
+    n2b, n3b, sig, ls, sig3, ls3 = \
             from_mask_to_hyps(hyps, hyps_mask)
     r_cut = cutoffs[0]
 
@@ -322,7 +322,7 @@ def two_body_mc_en(env1, env2, hyps, cutoffs,
                    cutoff_func=cf.quadratic_cutoff,
                    hyps_mask=None):
 
-    n2b, sig, ls = \
+    n2b, n3b, sig, ls, sig3, ls3 = \
             from_mask_to_hyps(hyps, hyps_mask)
 
     r_cut = cutoffs[0]
