@@ -81,6 +81,7 @@ class OTF(MolecularDynamics):
             for atom in self.init_atoms:
                 self.observers[0][0].add_atom_info(atom, self.stds[atom])
             self.train()
+            self.observers[0][0].write_wall_time()
   
         if self.md_engine == 'NPT':
             if not self.initialized:
@@ -172,6 +173,7 @@ class OTF(MolecularDynamics):
             atom_count += 1
 
         self.train()
+        self.observers[0][0].write_wall_time()
 
     def train(self, output=None, skip=False):
         calc = self.atoms.calc

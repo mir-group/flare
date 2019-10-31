@@ -66,8 +66,10 @@ class OTFLogger(MDLogger):
             self.logfile.write('Hyp{} : {} = {}\n'.format(i, label, hyps[i]))
 
         self.logfile.write('likelihood: '+str(like)+'\n')
-        self.logfile.write('likelihood gradient: '+str(like_grad)+'\n')
-        self.logfile.write('wall time from start: %.2f s \n'
+        self.logfile.write('likelihood gradient: '+str(like_grad))
+
+    def write_wall_time(self):
+        self.logfile.write('\nwall time from start: %.2f s \n'
                            % (time.time()-self.start_time))
 
     def write_prev_positions(self):
@@ -141,10 +143,8 @@ class OTFLogger(MDLogger):
 #        self.logfile.write('\ntotal energy: '+str(epot+ekin))
         self.logfile.write('\ntemperature: '+str(temp)+' K')
         self.logfile.write('\nkinetic energy: '+str(ekin)+' eV')
-        self.logfile.write('\nwall time from start: '+\
-                str(time.time()-self.start_time)+' s')
+        self.write_wall_time()
 
-        self.logfile.write('\n')
         self.logfile.flush()
  
     def write_data_to_logfile(self):
