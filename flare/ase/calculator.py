@@ -108,6 +108,7 @@ class FLARE_Calculator(Calculator):
 
         self.results['forces'] = forces
         self.results['stds'] = stds
+        self.results['stresses'] = stress
         self.results['stress'] = np.sum(stress, axis=0)
         atoms.get_uncertainties = self.get_uncertainties
         return forces

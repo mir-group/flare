@@ -297,9 +297,10 @@ class MappedGaussianProcess:
         vir = np.zeros(6)
         vir_order = ((0,0), (1,1), (2,2), (0,1), (0,2), (1,2))
         for i in range(6):
-            vir_i = f_d[:,vir_order[i][0]] * xyzs[:,vir_order[i][1]]
+            vir_i = f_d[:,vir_order[i][0]]\
+                    * xyzs[:,vir_order[i][1]] * lengths[:,0]
             vir[i] = np.sum(vir_i)
-        vir *= -0.5
+        vir *= 0.5
 
         # predict var
         v = np.zeros(3)
