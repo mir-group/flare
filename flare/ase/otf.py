@@ -181,6 +181,7 @@ class OTF(MolecularDynamics):
             atom_count += 1
 
         self.train()
+        self.observers[0][0].added_atoms_dat.write('\n')
         self.observers[0][0].write_wall_time()
 
     def train(self, output=None, skip=False):

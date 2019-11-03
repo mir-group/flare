@@ -31,6 +31,7 @@ class OTFLogger(MDLogger):
         self.dft_positions_xyz = open(data_folder+'/dft_positions.xyz', 
                                       mode=mode)
         self.dft_forces_dat = open(data_folder+'/dft_forces.dat', mode=mode)
+        self.added_atoms_dat = open(data_folder+'/added_atoms.dat', mode=mode)
 
         self.traj_files = [self.positions_xyz, self.velocities_dat,
                 self.forces_dat, self.uncertainties_dat]
@@ -101,6 +102,7 @@ class OTFLogger(MDLogger):
         else:
             data_files = self.dft_data_files
             data = [positions, forces]
+            self.added_atoms_dat.write('Frame '+str(steps)+'\n')
          
         template = '{} {:9f} {:9f} {:9f}'
         steps = int(self.dyn.get_time() / units.fs)
@@ -181,6 +183,7 @@ class OTFLogger(MDLogger):
             target_atom = [target_atom]
         self.logfile.write('\nAdding atom {} to the training set.\
                             \nUncertainty: {}.'.format(target_atom, uncertainty))
+        self.added_atoms_dat.write(str(target_atom)+' ')
 
     def write_mgp_train(self, mgp_model, train_time):
         train_size = len(mgp_model.GP.training_data)
