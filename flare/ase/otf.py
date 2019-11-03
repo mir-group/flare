@@ -65,6 +65,13 @@ class OTF(MolecularDynamics):
 
     def otf_run(self, steps):
         """Perform a number of time steps."""
+
+        # restart from previous OTF training
+        step_0 = 0
+        if self.restart_from is not None:
+            step_0 = self.restart()
+            f = self.atoms.calc.results['forces']
+
         # initialize gp by a dft calculation
         if not self.atoms.calc.gp_model.training_data:
             self.dft_count = 0
@@ -93,11 +100,6 @@ class OTF(MolecularDynamics):
                 if self.have_the_atoms_been_changed():
                     raise NotImplementedError(
                         "You have modified the atoms since the last timestep.")
-
-        # restart from previous OTF training
-        step_0 = 0
-        if self.restart_from is not None:
-            step_0 = self.restart()
 
         for i in range(step_0, steps):
             print('step:', i)
@@ -208,32 +210,37 @@ class OTF(MolecularDynamics):
 
     def restart(self):
         # Recover atomic configuration: positions, velocities, forces
-        self.atoms.set_positions(read_frame('positions.xyz'), -1)
-        self.atoms.set_velocities(read_frame('velocities.dat'), -1)
-        self.atoms.calc.results['forces'] = read_frame('forces.dat'), -1)
+        positions, steps = self.read_frame('positions.xyz', -1)
+        self.atoms.set_positions(positions)
+        self.atoms.set_velocities(self.read_frame('velocities.dat', -1)[0])
+        self.atoms.calc.results['forces'] = self.read_frame('forces.dat', -1)[0]
+        print('Last frame recovered')
 
         # Recover training data set
         gp_model = self.atoms.calc.gp_model
         atoms = deepcopy(self.atoms)
         nat = len(self.atoms.positions)
         dft_positions = self.read_all_frames('dft_positions.xyz', nat)
-        dft_forces = self.read_all_frames('dft_forces.xyz', nat)
-        added_atoms = self.read_all_frames('added_atoms.dat', nat, 1, 'int')
+        dft_forces = self.read_all_frames('dft_forces.dat', nat)
+        added_atoms = self.read_all_frames('added_atoms.dat', 1, 1, 'int')
         for i, frame in enumerate(dft_positions):
             atoms.set_positions(frame)
             curr_struc = Structure.from_ase_atoms(atoms)
             gp_model.update_db(curr_struc, dft_forces[i], added_atoms[i])
         gp_model.set_L_alpha()
+        print('GP training set ready')
 
         # Recover FLARE calculator
         gp_model.ky_mat_inv = np.load(self.restart_from+'/ky_mat_inv.npy')
         gp_model.alpha = np.load(self.restart_from+'/alpha.npy')
         if self.atoms.calc.use_mapping:
-            mgp_model = self.atoms.calc.mgp_model
-            for map_3 in mgp_model.maps_3:
+            for map_3 in self.atoms.calc.mgp_model.maps_3:
                 map_3.load_grid = self.restart_from + '/'
-            mgp_model.build_map(gp_model)
+            self.atoms.calc.build_mgp(skip=False)
+        print('GP and MGP ready')
 
+        self.l_bound = 10
+        return steps
 
     def read_all_frames(self, filename, nat, header=2, elem_type='xyz'):
         frames = []
@@ -250,7 +257,7 @@ class OTF(MolecularDynamics):
                         xyz = [float(l) for l in line[1:]]
                         properties.append(xyz)
                     elif elem_type == 'int':
-                        properties.append([int(l) for l in line])
+                        properties = [int(l) for l in line]
                 frames.append(properties)
         return np.array(frames)
 
@@ -258,17 +265,19 @@ class OTF(MolecularDynamics):
     def read_frame(self, filename, frame_num):
         nat = len(self.atoms.positions)
         with open(self.restart_from+'/'+filename) as f:
+            lines = f.readlines()
             if frame_num == -1: # read the last frame
                 start_line = - (nat+2)
-                frame = f.readlines()[start_line:]
+                frame = lines[start_line:]
             else:
                 start_line = frame_num * (nat+2)
                 end_line = (frame_num+1) * (nat+2)
-                frame = f.readlines()[start_line:end_line]
+                frame = f.lines[start_line:end_line]
 
             properties = []
             for line in frame[2:]:
+                line = line.split()
                 properties.append([float(d) for d in line[1:]])
-        return np.array(properties)
+        return np.array(properties), len(lines)//(nat+2)
 
 

@@ -91,6 +91,10 @@ class OTFLogger(MDLogger):
         self.write_datafiles()
 
     def write_datafiles(self):
+        template = '{} {:9f} {:9f} {:9f}'
+        steps = int(self.dyn.get_time() / units.fs)
+        t = steps / 1000
+
         species = self.atoms.get_chemical_symbols()
         positions = self.atoms.get_positions()
         forces = self.atoms.get_forces()
@@ -104,10 +108,6 @@ class OTFLogger(MDLogger):
             data = [positions, forces]
             self.added_atoms_dat.write('Frame '+str(steps)+'\n')
          
-        template = '{} {:9f} {:9f} {:9f}'
-        steps = int(self.dyn.get_time() / units.fs)
-        t = steps / 1000
-
         for ind, f in enumerate(data_files):
             f.write(str(self.natoms))
             f.write('\nFrame '+str(steps)+'\n')
