@@ -26,7 +26,7 @@ class OTF(MolecularDynamics):
             dft_calc=None, dft_count=None, std_tolerance_factor: float=1, 
             prev_pos_init: np.ndarray=None, par:bool=False, skip: int=0, 
             init_atoms: list=[], calculate_energy=False, max_atoms_added=1, 
-            freeze_hyps=1, no_cpus=1, restart_from=None, 
+            freeze_hyps=1, no_cpus=1, restart_from=None,
             # mgp parameters
             use_mapping: bool=False, non_mapping_steps: list=[],
             l_bound: float=None, two_d: bool=False):
@@ -63,13 +63,12 @@ class OTF(MolecularDynamics):
         # restart mode
         self.restart_from = restart_from
 
-    def otf_run(self, steps):
+    def otf_run(self, steps, rescale_temp=[], rescale_steps=[]):
         """Perform a number of time steps."""
 
         # restart from previous OTF training
-        step_0 = 0
         if self.restart_from is not None:
-            step_0 = self.restart()
+            self.restart()
             f = self.atoms.calc.results['forces']
 
         # initialize gp by a dft calculation
@@ -101,10 +100,20 @@ class OTF(MolecularDynamics):
                     raise NotImplementedError(
                         "You have modified the atoms since the last timestep.")
 
+        step_0 = self.nsteps
         for i in range(step_0, steps):
             print('step:', i)
             self.atoms.calc.results = {} # clear the calculation from last step
             self.stds = np.zeros((self.noa, 3))
+
+            # temperature rescaling
+            if self.nsteps in rescale_steps:
+                temp = rescale_temp[rescale_steps.index(self.nsteps)]
+                curr_velocities = self.atoms.get_velocities()
+                curr_temp = self.atoms.get_temperature()
+                self.atoms.set_velocities(curr_velocities *\
+                                          np.sqrt(temp/curr_temp))
+
             if self.md_engine == 'NPT':
                 self.step()
             else:
@@ -210,7 +219,7 @@ class OTF(MolecularDynamics):
 
     def restart(self):
         # Recover atomic configuration: positions, velocities, forces
-        positions, steps = self.read_frame('positions.xyz', -1)
+        positions, self.nsteps = self.read_frame('positions.xyz', -1)
         self.atoms.set_positions(positions)
         self.atoms.set_velocities(self.read_frame('velocities.dat', -1)[0])
         self.atoms.calc.results['forces'] = self.read_frame('forces.dat', -1)[0]
@@ -240,7 +249,6 @@ class OTF(MolecularDynamics):
         print('GP and MGP ready')
 
         self.l_bound = 10
-        return steps
 
     def read_all_frames(self, filename, nat, header=2, elem_type='xyz'):
         frames = []

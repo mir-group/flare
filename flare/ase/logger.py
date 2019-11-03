@@ -92,7 +92,7 @@ class OTFLogger(MDLogger):
 
     def write_datafiles(self):
         template = '{} {:9f} {:9f} {:9f}'
-        steps = int(self.dyn.get_time() / units.fs)
+        steps = self.dyn.nsteps
         t = steps / 1000
 
         species = self.atoms.get_chemical_symbols()
@@ -123,7 +123,7 @@ class OTFLogger(MDLogger):
     def write_logfile(self):
         self.logfile.write(50*'-')
         if self.dyn is not None:
-            steps = int(self.dyn.get_time() / units.fs)
+            steps = self.dyn.nsteps
             t = steps / 1000
             if type(self.atoms.calc) != FLARE_Calculator: 
                 self.logfile.write('\n*-Frame: '+str(steps))
