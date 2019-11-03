@@ -372,8 +372,7 @@ class MappedGaussianProcess:
         # write header
         f = open(lammps_name, 'w')
 
-        header_comment = '''# #2bodyarray #3bodyarray
-        # elem1 elem2 a b order
+        header_comment = '''# #2bodyarray #3bodyarray\n# elem1 elem2 a b order
         '''
         f.write(header_comment)
 
