@@ -4,6 +4,7 @@ import numpy as np
 from flare.otf_parser import OtfAnalysis
 from flare.kernels import two_plus_three_body, two_plus_three_body_grad
 from flare.env import AtomicEnvironment
+from flare.predict import predict_on_structure
 
 
 def test_parse_header():
@@ -79,23 +80,6 @@ def test_output_md_structures():
     assert np.isclose(structures[-1].forces, forces[-1]).all()
 
     os.system('rm sample_slab_otf.out')
-
-def predict_on_structure(structure, gp):
-    """
-    Helper function for test_replicate_gp
-    :param structure:
-    :return:
-    """
-    forces = np.zeros(shape=(structure.nat, 3))
-    stds = np.zeros(shape=(structure.nat, 3))
-    for n in range(structure.nat):
-        chemenv = AtomicEnvironment(structure, n, gp.cutoffs)
-        for i in range(3):
-            force, var = gp.predict(chemenv, i + 1)
-            forces[n][i] = float(force)
-            stds[n][i] = np.sqrt(np.abs(var))
-
-    return forces, stds
 
 
 def test_replicate_gp():

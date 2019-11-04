@@ -297,9 +297,10 @@ class MappedGaussianProcess:
         vir = np.zeros(6)
         vir_order = ((0,0), (1,1), (2,2), (0,1), (0,2), (1,2))
         for i in range(6):
-            vir_i = f_d[:,vir_order[i][0]] * xyzs[:,vir_order[i][1]]
+            vir_i = f_d[:,vir_order[i][0]]\
+                    * xyzs[:,vir_order[i][1]] * lengths[:,0]
             vir[i] = np.sum(vir_i)
-        vir *= -0.5
+        vir *= 0.5
 
         # predict var
         v = np.zeros(3)
@@ -371,8 +372,7 @@ class MappedGaussianProcess:
         # write header
         f = open(lammps_name, 'w')
 
-        header_comment = '''# #2bodyarray #3bodyarray
-        # elem1 elem2 a b order
+        header_comment = '''# #2bodyarray #3bodyarray\n# elem1 elem2 a b order
         '''
         f.write(header_comment)
 
@@ -646,8 +646,8 @@ class Map3body:
         if not self.load_grid:
             y_mean, y_var = self.GenGrid(GP)
         else:
-            y_mean = np.load('grid3_mean.npy')
-            y_var = np.load('grid3_var.npy')
+            y_mean = np.load(self.load_grid+'/grid3_mean.npy')
+            y_var = np.load(self.load_grid+'/grid3_var.npy')
 
         self.mean.set_values(y_mean)
         if not self.mean_only:

@@ -4,6 +4,7 @@ from copy import deepcopy
 
 from flare.struc import Structure
 from flare.util import is_std_in_bound
+from flare.mgp.utils import get_l_bound
 
 import numpy as np
 from ase.md.md import MolecularDynamics
@@ -25,7 +26,7 @@ class OTF(MolecularDynamics):
             dft_calc=None, dft_count=None, std_tolerance_factor: float=1, 
             prev_pos_init: np.ndarray=None, par:bool=False, skip: int=0, 
             init_atoms: list=[], calculate_energy=False, max_atoms_added=1, 
-            freeze_hyps=1, no_cpus=1,  
+            freeze_hyps=1, no_cpus=1, restart_from=None,
             # mgp parameters
             use_mapping: bool=False, non_mapping_steps: list=[],
             l_bound: float=None, two_d: bool=False):
@@ -59,8 +60,17 @@ class OTF(MolecularDynamics):
         else:
             self.init_atoms = init_atoms
 
-    def otf_run(self, steps):
+        # restart mode
+        self.restart_from = restart_from
+
+    def otf_run(self, steps, rescale_temp=[], rescale_steps=[]):
         """Perform a number of time steps."""
+
+        # restart from previous OTF training
+        if self.restart_from is not None:
+            self.restart()
+            f = self.atoms.calc.results['forces']
+
         # initialize gp by a dft calculation
         if not self.atoms.calc.gp_model.training_data:
             self.dft_count = 0
@@ -69,16 +79,18 @@ class OTF(MolecularDynamics):
             f = dft_forces
    
             # update gp model
-            atom_struc = Structure(np.array(self.atoms.cell), 
-                                   self.atoms.get_atomic_numbers(), 
-                                   self.atoms.positions)
-            self.atoms.calc.gp_model.update_db(atom_struc, dft_forces,
+            curr_struc = Structure.from_ase_atoms(self.atoms)
+            self.l_bound = get_l_bound(100, curr_struc, two_d=False)
+            print('l_bound:', self.l_bound)
+
+            self.atoms.calc.gp_model.update_db(curr_struc, dft_forces,
                            custom_range=self.init_atoms)
 
             # train calculator
             for atom in self.init_atoms:
                 self.observers[0][0].add_atom_info(atom, self.stds[atom])
             self.train()
+            self.observers[0][0].write_wall_time()
   
         if self.md_engine == 'NPT':
             if not self.initialized:
@@ -88,19 +100,33 @@ class OTF(MolecularDynamics):
                     raise NotImplementedError(
                         "You have modified the atoms since the last timestep.")
 
-        for i in range(steps):
+        step_0 = self.nsteps
+        for i in range(step_0, steps):
             print('step:', i)
+            self.atoms.calc.results = {} # clear the calculation from last step
+            self.stds = np.zeros((self.noa, 3))
+
+            # temperature rescaling
+            if self.nsteps in rescale_steps:
+                temp = rescale_temp[rescale_steps.index(self.nsteps)]
+                curr_velocities = self.atoms.get_velocities()
+                curr_temp = self.atoms.get_temperature()
+                self.atoms.set_velocities(curr_velocities *\
+                                          np.sqrt(temp/curr_temp))
+
             if self.md_engine == 'NPT':
                 self.step()
             else:
                 f = self.step(f)
             self.nsteps += 1
-            self.stds = self.atoms.get_uncertainties()
+            self.stds = self.atoms.get_uncertainties(self.atoms)
 
             # figure out if std above the threshold
             self.call_observers() 
             curr_struc = Structure.from_ase_atoms(self.atoms)
-            curr_struc.stds = self.stds
+            self.l_bound = get_l_bound(self.l_bound, curr_struc, two_d=False)
+            print('l_bound:', self.l_bound)
+            curr_struc.stds = np.copy(self.stds)
             noise = self.atoms.calc.gp_model.hyps[-1]
             self.std_in_bound, self.target_atoms = is_std_in_bound(\
                     noise, self.std_tolerance, curr_struc, self.max_atoms_added)
@@ -166,6 +192,8 @@ class OTF(MolecularDynamics):
             atom_count += 1
 
         self.train()
+        self.observers[0][0].added_atoms_dat.write('\n')
+        self.observers[0][0].write_wall_time()
 
     def train(self, output=None, skip=False):
         calc = self.atoms.calc
@@ -176,6 +204,7 @@ class OTF(MolecularDynamics):
                             calc.gp_model.hyps, calc.gp_model.likelihood, 
                             calc.gp_model.likelihood_gradient)
         else:
+            #TODO: change to update_L_alpha()
             calc.gp_model.set_L_alpha()
 
         # build mgp
@@ -184,4 +213,79 @@ class OTF(MolecularDynamics):
                 skip = True
 
             calc.build_mgp(skip)
+
+        np.save('ky_mat_inv', calc.gp_model.ky_mat_inv)
+        np.save('alpha', calc.gp_model.alpha)
+
+    def restart(self):
+        # Recover atomic configuration: positions, velocities, forces
+        positions, self.nsteps = self.read_frame('positions.xyz', -1)
+        self.atoms.set_positions(positions)
+        self.atoms.set_velocities(self.read_frame('velocities.dat', -1)[0])
+        self.atoms.calc.results['forces'] = self.read_frame('forces.dat', -1)[0]
+        print('Last frame recovered')
+
+        # Recover training data set
+        gp_model = self.atoms.calc.gp_model
+        atoms = deepcopy(self.atoms)
+        nat = len(self.atoms.positions)
+        dft_positions = self.read_all_frames('dft_positions.xyz', nat)
+        dft_forces = self.read_all_frames('dft_forces.dat', nat)
+        added_atoms = self.read_all_frames('added_atoms.dat', 1, 1, 'int')
+        for i, frame in enumerate(dft_positions):
+            atoms.set_positions(frame)
+            curr_struc = Structure.from_ase_atoms(atoms)
+            gp_model.update_db(curr_struc, dft_forces[i], added_atoms[i])
+        gp_model.set_L_alpha()
+        print('GP training set ready')
+
+        # Recover FLARE calculator
+        gp_model.ky_mat_inv = np.load(self.restart_from+'/ky_mat_inv.npy')
+        gp_model.alpha = np.load(self.restart_from+'/alpha.npy')
+        if self.atoms.calc.use_mapping:
+            for map_3 in self.atoms.calc.mgp_model.maps_3:
+                map_3.load_grid = self.restart_from + '/'
+            self.atoms.calc.build_mgp(skip=False)
+        print('GP and MGP ready')
+
+        self.l_bound = 10
+
+    def read_all_frames(self, filename, nat, header=2, elem_type='xyz'):
+        frames = []
+        with open(self.restart_from+'/'+filename) as f:
+            lines = f.readlines()
+            frame_num = len(lines) // (nat+header)
+            for i in range(frame_num):
+                start = (nat+header) * i + header
+                curr_frame = lines[start:start+nat]
+                properties = []
+                for line in curr_frame:
+                    line = line.split()
+                    if elem_type == 'xyz':
+                        xyz = [float(l) for l in line[1:]]
+                        properties.append(xyz)
+                    elif elem_type == 'int':
+                        properties = [int(l) for l in line]
+                frames.append(properties)
+        return np.array(frames)
+
+
+    def read_frame(self, filename, frame_num):
+        nat = len(self.atoms.positions)
+        with open(self.restart_from+'/'+filename) as f:
+            lines = f.readlines()
+            if frame_num == -1: # read the last frame
+                start_line = - (nat+2)
+                frame = lines[start_line:]
+            else:
+                start_line = frame_num * (nat+2)
+                end_line = (frame_num+1) * (nat+2)
+                frame = f.lines[start_line:end_line]
+
+            properties = []
+            for line in frame[2:]:
+                line = line.split()
+                properties.append([float(d) for d in line[1:]])
+        return np.array(properties), len(lines)//(nat+2)
+
 
