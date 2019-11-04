@@ -12,7 +12,6 @@ from ase.md.velocitydistribution import (MaxwellBoltzmannDistribution,
                                          Stationary, ZeroRotation)
 
 
-@pytest.fixture()
 def otf_md_test(md_engine):
     import atom_setup, flare_setup, qe_setup
     np.random.seed(12345)
