@@ -179,3 +179,18 @@ def test_force_in_bound_per_species():
                                       max_atoms_added=1,
                                       max_by_species={'H': 0, 'O': 1})
     assert result is False and target_atoms == [2]
+
+    # Test max force error feature
+    result, target_atoms = is_force_in_bound_per_species(
+        abs_force_tolerance=.9, max_force_error=.00000000001,
+                                      predicted_forces=test_structure.forces,
+                                      label_forces=true_forces,
+                                      structure=test_structure,)
+    assert result is True and target_atoms == [-1]
+
+    result, target_atoms = is_force_in_bound_per_species(
+        abs_force_tolerance=.9, max_force_error=1.5,
+                                      predicted_forces=test_structure.forces,
+                                      label_forces=true_forces,
+                                      structure=test_structure,)
+    assert result is False and target_atoms == [1]

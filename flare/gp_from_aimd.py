@@ -27,6 +27,7 @@ class TrajectoryTrainer(object):
                  rel_std_tolerance: float = 1,
                  abs_std_tolerance: float = 1,
                  abs_force_tolerance: float = 0,
+                 max_force_error: float = np.inf,
                  parallel: bool = False,
                  no_cpus: int = None,
                  skip: int = 1,
@@ -54,6 +55,8 @@ class TrajectoryTrainer(object):
         :param rel_std_tolerance: Train if uncertainty is above this *
         noise variance hyperparameter
         :param abs_std_tolerance: Train if uncertainty is above this
+        :param abs_force_tolerance: Add atom force error exceeds this
+        :param max_force_error: Don't add atom if force error exceeds this
         :param parallel: Use parallel functions or not
         :param validate_ratio: Fraction of frames used for validation
         :param no_cpus: number of cpus to run with multithreading
@@ -85,6 +88,8 @@ class TrajectoryTrainer(object):
         self.rel_std_tolerance = rel_std_tolerance
         self.abs_std_tolerance = abs_std_tolerance
         self.abs_force_tolerance = abs_force_tolerance
+        self.max_force_error = abs_force_tolerance
+
         self.skip = skip
         assert (skip >= 1), "skip needs to be an integer >= 1"
         self.validate_ratio = validate_ratio
@@ -267,7 +272,8 @@ class TrajectoryTrainer(object):
                         label_forces=dft_forces,
                         structure=cur_frame,
                         max_atoms_added=self.max_atoms_from_frame,
-                        max_by_species=self.train_env_per_species)
+                        max_by_species=self.train_env_per_species,
+                        max_force_error=self.max_force_error)
 
                 if (not std_in_bound) or (not force_in_bound):
 

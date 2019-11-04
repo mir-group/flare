@@ -286,7 +286,7 @@ def is_force_in_bound_per_species(abs_force_tolerance: float,
                                   structure,
                                   max_atoms_added: int = np.inf,
                                   max_by_species: dict =
-                                  {}):
+                                  {}, max_force_error: float = np.inf):
     """
     Checks the forces of GP prediction assigned to the structure, returns a
     list of atoms which  meet an absolute threshold abs_force_tolerance. Can 
@@ -303,6 +303,8 @@ def is_force_in_bound_per_species(abs_force_tolerance: float,
     :param structure:
     :param max_atoms_added:
     :param max_by_species:
+    :param max_force_error: In order to avoid counting in highly unlikely
+    configurations, if the error exceeds this, do not add atom
     :return:
     """
 
@@ -336,8 +338,14 @@ def is_force_in_bound_per_species(abs_force_tolerance: float,
 
         # Only add up to species allowance, if it exists
         if present_species[cur_spec] < \
-                max_by_species.get(cur_spec, np.inf):
+                max_by_species.get(cur_spec, np.inf) \
+                and max_error_components[i] < max_force_error:
             target_atoms.append(i)
             present_species[cur_spec] += 1
 
-    return False, target_atoms
+    # Handle the case that nothing was added
+    if len(target_atoms):
+        return False, target_atoms
+    else:
+        return True, [-1]
+
