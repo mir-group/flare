@@ -42,6 +42,32 @@ Finally, our OTF is compatible with 4 MD engines that ASE supports: VelocityVerl
 
 .. literalinclude:: ../../../tests/ase_otf/otf_setup.py
 
+When the OTF training is finished, there will be data files saved including:
+
+1. A log file `otf_run.log` of the information in training. If `data_in_logfile=True`, then the data in `otf_data` folder (described below) will also be written in this log file. 
+
+2. A folder `otf_data` containing:
+
+    * positions.xyz: the trajectory of the on-the-fly MD run
+    * velocities.dat: the velocities of the frames in the trajectory
+    * forces.dat: the forces of the frames in trajectory predicted by FLARE
+    * uncertainties.dat: the uncertainties of the frames in trajectory predicted by FLARE 
+    * dft_positions.xyz: the DFT calculated frames
+    * dft_forces.dat: the DFT forces correspond to frames in dft_positions.xyz
+    * added_atoms.dat: the list of atoms added to the training set of FLARE in each DFT calculated frame
+
+3. Kernel matrix and alpha vector used in GP: `ky_mat_inv.npy` and `alpha.npy`
+
+4. If MGP is used, i.e. `use_mapping=True`, and 3-body kernel is used and mapped, then there will be two files saving grid values: `grid3_mean.npy` and `grid3_var.npy`.
+
 Restart from previous training
 ------------------------------
 We have an option for continuing from a finished training.
+
+1. Move all the saved files mentioned above to one folder, e.g. `restart_data`. (All the `.xyz`, `.dat`, `.npy` files should be in one folder)
+
+2. Set `otf_params['restart_from'] = 'restart_data'`
+
+3. Run as mentioned in above sections
+
+
