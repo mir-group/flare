@@ -88,7 +88,7 @@ class TrajectoryTrainer(object):
         self.rel_std_tolerance = rel_std_tolerance
         self.abs_std_tolerance = abs_std_tolerance
         self.abs_force_tolerance = abs_force_tolerance
-        self.max_force_error = abs_force_tolerance
+        self.max_force_error = max_force_error
 
         self.skip = skip
         assert (skip >= 1), "skip needs to be an integer >= 1"
