@@ -3,7 +3,7 @@ import time
 import pytest
 from flare import struc, env
 from flare import otf_parser
-from flare.mgp.mgp import MappedGaussianProcess
+from flare.mgp.mgp_en import MappedGaussianProcess
 from flare import mc_simple
 from flare.lammps import lammps_calculator
 import pickle
@@ -32,7 +32,11 @@ def test_parse_header():
     # reconstruct gp model
     kernel = mc_simple.two_plus_three_body_mc
     kernel_grad = mc_simple.two_plus_three_body_mc_grad
-    gp_model = otf_object.make_gp(kernel=kernel, kernel_grad=kernel_grad,
+    energy_force_kernel = mc_simple.two_plus_three_mc_force_en
+    energy_kernel = mc_simple.two_plus_three_mc_en
+    gp_model = otf_object.make_gp(kernel=kernel, 
+                                  kernel_grad=kernel_grad,
+                                  energy_force_kernel=energy_force_kernel,
                                   hyp_no=hyp_no)
     gp_model.par = True
     gp_model.hyp_labels = ['sig2', 'ls2', 'sig3', 'ls3', 'noise']
