@@ -14,8 +14,8 @@ from flare.kernels import two_body, three_body, two_plus_three_body,\
 from flare.cutoffs import quadratic_cutoff
 import flare.mc_simple as mc
 import flare.mgp.utils as utils
-from flare.mgp.utils import get_bonds, get_triplets, self_two_body_mc_jit, \
-    self_three_body_mc_jit
+from flare.mgp.utils import get_bonds, get_triplets, get_triplets_en,\
+        self_two_body_mc_jit, self_three_body_mc_jit
 from flare.mgp.splines_methods import PCASplines, CubicSpline
 
 
@@ -186,30 +186,31 @@ class MappedGaussianProcess:
             mean_only = True
 
         # ---------------- predict for two body -------------------
-        f2 = kern2 = v2 = 0
+        f2 = kern2 = v2 = e2 = 0
         if 2 in self.bodies:
             sig2, ls2 = self.hyps[:2]
             r_cut2 = self.cutoffs[0]
 
-            f2, kern2, v2 = \
+            f2, kern2, v2, e2 = \
                 self.predict_multicomponent(atom_env, sig2, ls2, r_cut2,
                                             self.get_2body_comp, self.spcs[0],
                                             self.maps_2, mean_only)
 
         # ---------------- predict for three body -------------------
-        f3 = kern3 = v3 = 0
+        f3 = kern3 = v3 = e3 = 0
         if 3 in self.bodies:
             sig3, ls3, _ = self.hyps[-3:]
             r_cut3 = self.cutoffs[1]
 
-            f3, kern3, v3 = \
+            f3, kern3, v3, e3 = \
                 self.predict_multicomponent(atom_env, sig3, ls3, r_cut3,
                                             self.get_3body_comp, self.spcs[1],
                                             self.maps_3, mean_only)
 
         f = f2 + f3
         v = kern2 + kern3 - np.sum((v2 + v3)**2, axis=0)
-        return f, v
+        e = e2 + e3
+        return f, v, e
 
     def get_2body_comp(self, atom_env, sig, ls, r_cut):
         '''
@@ -251,8 +252,8 @@ class MappedGaussianProcess:
                                         self.hyps[-3:], self.cutoffs)
 
         spcs, comp_r, comp_xyz = \
-            get_triplets(ctype, etypes, bond_array_3,
-                         cross_bond_inds, cross_bond_dists, triplets)
+            get_triplets_en(ctype, etypes, bond_array_3,
+                            cross_bond_inds, cross_bond_dists, triplets)
         return kern3_gp, spcs, comp_r, comp_xyz
 
     def predict_multicomponent(self, atom_env, sig, ls, r_cut, get_comp,
@@ -263,6 +264,7 @@ class MappedGaussianProcess:
         '''
         f_spcs = 0
         v_spcs = 0
+        e_spcs = 0
 
         kern, spcs, comp_r, comp_xyz = get_comp(atom_env, sig, ls, r_cut)
 
@@ -271,13 +273,14 @@ class MappedGaussianProcess:
             lengths = np.array(comp_r[i])
             xyzs = np.array(comp_xyz[i])
             map_ind = spcs_list.index(spc)
-            f, v = self.predict_component(lengths, xyzs, mappings[map_ind],
+            f, v, e = self.predict_component(lengths, xyzs, mappings[map_ind],
                                           mean_only)
             print(spc, f)
             f_spcs += f
             v_spcs += v
+            e_spcs += e
 
-        return f_spcs, kern, v_spcs
+        return f_spcs, kern, v_spcs, e_spcs
 
     def predict_component(self, lengths, xyzs, mapping, mean_only):
         '''
@@ -285,13 +288,30 @@ class MappedGaussianProcess:
         '''
         lengths = np.array(lengths)
         xyzs = np.array(xyzs)
+        print('xyzs', xyzs.shape)
 
         # predict mean
         e_0, f_0 = mapping.mean(lengths, with_derivatives=True)
-        print(e_0.shape, f_0.shape)
         e = np.sum(e_0) # energy
-        f_d = np.diag(f_0[:,0]) @ xyzs
-        f = np.sum(f_d, axis=0) # force
+
+        print('f-0 shape:', f_0.shape)
+        if lengths.shape[-1] == 1:
+            f_d = np.diag(f_0[:,0,0]) @ xyzs
+            f = 2 * np.sum(f_d, axis=0) # force: need to check prefactor 2
+
+        if lengths.shape[-1] == 3:
+            f_d1 = np.diag(f_0[:,0,0]) @ xyzs[:,0,:]
+            f_d2 = np.diag(f_0[:,1,0]) @ xyzs[:,1,:]
+
+            factor1 = 1/lengths[:,1] - 1/lengths[:,0] * lengths[:,2]
+            factor2 = 1/lengths[:,0] - 1/lengths[:,1] * lengths[:,2]
+            f_dtheta1 = np.diag(factor1) @ xyzs[:,0,:]
+            f_dtheta2 = np.diag(factor2) @ xyzs[:,1,:]
+            f_dtheta = np.diag(f_0[:,2,0]) @ (f_dtheta1 + f_dtheta2)
+            f_d = f_d1 + f_d2 + f_dtheta
+
+            f = 3 * np.sum(f_d, axis=0) # force: need to check prefactor 2
+
 
         # predict var
         v = np.zeros(3)
@@ -299,7 +319,7 @@ class MappedGaussianProcess:
             v_0 = mapping.var(lengths)
             v_d = v_0 @ xyzs
             v = mapping.var.V @ v_d
-        return f, v
+        return f, v, e
 
     def write_two_body(self, f):
         a = self.bounds_2[0][0]
@@ -529,12 +549,12 @@ class Map3body:
         nop = self.grid_num[0]
         noa = self.grid_num[2]
         bond_lengths = np.linspace(self.l_bounds[0], self.u_bounds[0], nop)
-        angles = np.linspace(self.l_bounds[2], self.u_bounds[2], noa)
+        cos_angles = np.linspace(self.l_bounds[2], self.u_bounds[2], noa)
         bond_means = np.zeros([nop, nop, noa])
         bond_vars = np.zeros([nop, nop, noa, len(GP.alpha)])
         env12 = AtomicEnvironment(self.bond_struc, 0, self.cutoffs)
 
-        pool_list = [(i, angles[i], bond_lengths, GP, env12, self.update)\
+        pool_list = [(i, cos_angles[i], bond_lengths, GP, env12, self.update)\
                      for i in range(noa)]
         pool = mp.Pool(processes=processes)
 
@@ -566,9 +586,8 @@ class Map3body:
         '''
         generate grid for each angle, used to parallelize grid generation
         '''
-        a12, angle12, bond_lengths, GP, env12, update = params
+        a12, cos_12, bond_lengths, GP, env12, update = params
         nop = self.grid_num[0]
-        angle12 = angle12
         bond_means = np.zeros([nop, nop])
         bond_vars = np.zeros([nop, nop, len(GP.alpha)])
 
@@ -590,8 +609,8 @@ class Map3body:
         for b1, r1 in enumerate(bond_lengths):
             r1 = bond_lengths[b1]
             for b2, r2 in enumerate(bond_lengths):
-                x2 = r2 * np.cos(angle12)
-                y2 = r2 * np.sin(angle12)
+                x2 = r2 * cos_12
+                y2 = r2 * np.sqrt(1 - cos_12**2)
                 r12 = np.linalg.norm(np.array([x2-r1, y2, 0]))
 
                 env12.bond_array_3 = np.array([[r1, 1, 0, 0], [r2, 0, 0, 0]])

@@ -319,7 +319,8 @@ def vec_eval_cubic_splines_G(a, b, orders, mcoefs, points,
 
     d = a.shape[0]
     N = points.shape[0]
-    n_sp = mcoefs.shape[-1]
+    #n_sp = mcoefs.shape[-1]
+    n_sp = 1
 
     if values is None:
         values = numpy.empty((N, n_sp))

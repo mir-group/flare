@@ -718,7 +718,7 @@ def vec_eval_cubic_splines_G_1(a, b, orders, coefs, points, vals, dvals):
         dvals[n, 0, 0] = dPhi0_0*(coefs[i0+0]) + dPhi0_1*(coefs[i0+1]) + dPhi0_2*(coefs[i0+2]) + dPhi0_3*(coefs[i0+3])
 
     vals = vals[:, 0]
-    dvals = dvals[:, 0, 0]
+    dvals = dvals[:, :, 0]
 
 @njit(cache=True)
 def vec_eval_cubic_splines_G_3(a, b, orders, coefs, points, vals, dvals):

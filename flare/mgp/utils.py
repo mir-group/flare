@@ -165,6 +165,54 @@ def get_triplets(ctype, etypes, bond_array, cross_bond_inds,
 
     return exist_species, tris, tri_dir 
 
+@njit
+def get_triplets_en(ctype, etypes, bond_array, cross_bond_inds,  
+                    cross_bond_dists, triplets):
+    exist_species = []
+    tris = []
+    tri_dir = []
+
+    for m in range(bond_array.shape[0]):
+        r1 = bond_array[m, 0]
+        c1 = bond_array[m, 1:]
+        spc1 = etypes[m]
+
+        for n in range(triplets[m]):
+            ind1 = cross_bond_inds[m, m+n+1]
+            r2 = bond_array[ind1, 0]
+            c2 = bond_array[ind1, 1:]
+            a12 = np.sum(c1*c2)
+            spc2 = etypes[ind1]
+
+#            if spc1 == spc2:
+#                spcs_list = [[ctype, spc1, spc2], [ctype, spc1, spc2]]
+#            elif ctype == spc1: # spc1 != spc2
+#                spcs_list = [[ctype, spc1, spc2], [spc2, ctype, spc1]]
+#            elif ctype == spc2: # spc1 != spc2
+#                spcs_list = [[spc1, spc2, ctype], [spc2, ctype, spc1]]
+#            else: # all different
+#                spcs_list = [[ctype, spc1, spc2], [ctype, spc2, spc1]]
+   
+            if spc1 <= spc2:
+                spcs = [ctype, spc1, spc2]
+                triplet = array([r1, r2, a12]) 
+                coord = [c1, c2]
+            else:
+                spcs = [ctype, spc2, spc1]
+                triplet = array([r2, r1, a12])
+                coord = [c2, c1]
+
+            if spcs not in exist_species:
+                exist_species.append(spcs)
+                tris.append([triplet])
+                tri_dir.append([coord])
+            else:
+                k = exist_species.index(spcs)
+                tris[k].append(triplet)
+                tri_dir[k].append(coord)
+
+    return exist_species, tris, tri_dir 
+
 
 @njit
 def self_two_body_mc_jit(bond_array, c, etypes,
