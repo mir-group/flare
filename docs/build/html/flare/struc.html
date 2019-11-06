@@ -164,7 +164,7 @@
 <span class="target" id="module-flare.struc"></span><p>The <a class="reference internal" href="#flare.struc.Structure" title="flare.struc.Structure"><code class="xref py py-class docutils literal notranslate"><span class="pre">Structure</span></code></a> object is a collection of atoms in a periodic box. The mandatory inputs are the cell vectors of the box and the chemical species and Cartesian coordinates of the atoms. The atoms are automatically folded back into the primary cell, so the input coordinates don’t need to lie inside the box. Energy, force, and stress information can be provided for training machine learned force fields.</p>
 <dl class="class">
 <dt id="flare.struc.Structure">
-<em class="property">class </em><code class="descclassname">flare.struc.</code><code class="descname">Structure</code><span class="sig-paren">(</span><em>cell</em>, <em>species</em>, <em>positions</em>, <em>mass_dict=None</em>, <em>prev_positions=None</em>, <em>species_labels=None</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.struc.Structure" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">flare.struc.</code><code class="descname">Structure</code><span class="sig-paren">(</span><em>cell</em>, <em>species</em>, <em>positions</em>, <em>mass_dict=None</em>, <em>prev_positions=None</em>, <em>species_labels=None</em>, <em>forces=None</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.struc.Structure" title="Permalink to this definition">¶</a></dt>
 <dd><p>Contains information about a structure of atoms, including the periodic
 cell boundaries and atomic species and coordinates.</p>
 <table class="docutils field-list" frame="void" rules="none">

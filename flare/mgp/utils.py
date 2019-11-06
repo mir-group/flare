@@ -137,7 +137,12 @@ def get_triplets(ctype, etypes, bond_array, cross_bond_inds,
             ind1 = cross_bond_inds[m, m+n+1]
             r2 = bond_array[ind1, 0]
             c2 = bond_array[ind1, 1:]
-            a12 = np.arccos(np.sum(c1*c2))
+            c12 = np.sum(c1*c2)
+            if c12 > 1: # to prevent numerical error
+                c12 = 1
+            elif c12 < -1:
+                c12 = -1
+            a12 = np.arccos(c12)
             spc2 = etypes[ind1]
 
 #            if spc1 == spc2:

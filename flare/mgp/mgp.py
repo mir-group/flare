@@ -186,30 +186,31 @@ class MappedGaussianProcess:
             mean_only = True
 
         # ---------------- predict for two body -------------------
-        f2 = kern2 = v2 = 0
+        f2 = vir2 = kern2 = v2 = 0
         if 2 in self.bodies:
             sig2, ls2 = self.hyps[:2]
             r_cut2 = self.cutoffs[0]
 
-            f2, kern2, v2 = \
+            f2, vir2, kern2, v2 = \
                 self.predict_multicomponent(atom_env, sig2, ls2, r_cut2,
                                             self.get_2body_comp, self.spcs[0],
                                             self.maps_2, mean_only)
 
         # ---------------- predict for three body -------------------
-        f3 = kern3 = v3 = 0
+        f3 = vir3 = kern3 = v3 = 0
         if 3 in self.bodies:
             sig3, ls3, _ = self.hyps[-3:]
             r_cut3 = self.cutoffs[1]
 
-            f3, kern3, v3 = \
+            f3, vir3, kern3, v3 = \
                 self.predict_multicomponent(atom_env, sig3, ls3, r_cut3,
                                             self.get_3body_comp, self.spcs[1],
                                             self.maps_3, mean_only)
 
         f = f2 + f3
+        vir = vir2 + vir3
         v = kern2 + kern3 - np.sum((v2 + v3)**2, axis=0)
-        return f, v
+        return f, v, vir
 
     def get_2body_comp(self, atom_env, sig, ls, r_cut):
         '''
@@ -262,6 +263,7 @@ class MappedGaussianProcess:
         of all species
         '''
         f_spcs = 0
+        vir_spcs = 0
         v_spcs = 0
 
         kern, spcs, comp_r, comp_xyz = get_comp(atom_env, sig, ls, r_cut)
@@ -271,13 +273,13 @@ class MappedGaussianProcess:
             lengths = np.array(comp_r[i])
             xyzs = np.array(comp_xyz[i])
             map_ind = spcs_list.index(spc)
-            f, v = self.predict_component(lengths, xyzs, mappings[map_ind],
-                                          mean_only)
-            print(spc, f)
+            f, vir, v = self.predict_component(lengths, xyzs, 
+                                mappings[map_ind], mean_only)
             f_spcs += f
+            vir_spcs += vir
             v_spcs += v
 
-        return f_spcs, kern, v_spcs
+        return f_spcs, vir_spcs, kern, v_spcs
 
     def predict_component(self, lengths, xyzs, mapping, mean_only):
         '''
@@ -291,13 +293,22 @@ class MappedGaussianProcess:
         f_d = np.diag(f_0) @ xyzs
         f = np.sum(f_d, axis=0)
 
+        # predict stress from force components
+        vir = np.zeros(6)
+        vir_order = ((0,0), (1,1), (2,2), (0,1), (0,2), (1,2))
+        for i in range(6):
+            vir_i = f_d[:,vir_order[i][0]]\
+                    * xyzs[:,vir_order[i][1]] * lengths[:,0]
+            vir[i] = np.sum(vir_i)
+        vir *= 0.5
+
         # predict var
         v = np.zeros(3)
         if not mean_only:
             v_0 = mapping.var(lengths)
             v_d = v_0 @ xyzs
             v = mapping.var.V @ v_d
-        return f, v
+        return f, vir, v
 
     def write_two_body(self, f):
         a = self.bounds_2[0][0]
@@ -361,8 +372,7 @@ class MappedGaussianProcess:
         # write header
         f = open(lammps_name, 'w')
 
-        header_comment = '''# #2bodyarray #3bodyarray
-        # elem1 elem2 a b order
+        header_comment = '''# #2bodyarray #3bodyarray\n# elem1 elem2 a b order
         '''
         f.write(header_comment)
 
@@ -636,8 +646,8 @@ class Map3body:
         if not self.load_grid:
             y_mean, y_var = self.GenGrid(GP)
         else:
-            y_mean = np.load('grid3_mean.npy')
-            y_var = np.load('grid3_var.npy')
+            y_mean = np.load(self.load_grid+'/grid3_mean.npy')
+            y_var = np.load(self.load_grid+'/grid3_var.npy')
 
         self.mean.set_values(y_mean)
         if not self.mean_only:
