@@ -129,7 +129,7 @@ _element_to_Z = {'H': 1,
 _Z_to_element = {z: elt for elt, z in _element_to_Z.items()}
 
 
-def element_to_Z(element: str)->int:
+def element_to_Z(element: str) -> int:
     """
     Returns the atomic number Z associated with an elements 1-2 letter name.
     Returns the same integer if an integer is passed in.
@@ -177,9 +177,9 @@ class NumpyEncoder(JSONEncoder):
             return obj.tolist()
         return JSONEncoder.default(self, obj)
 
-def Z_to_element(Z: int)-> str:
 
-    if isinstance(Z,str):
+def Z_to_element(Z: int) -> str:
+    if isinstance(Z, str):
         if Z.isnumeric():
             Z = int(Z)
         else:
@@ -189,7 +189,6 @@ def Z_to_element(Z: int)-> str:
 
 
 def is_std_in_bound(std_tolerance, noise, structure, max_atoms_added):
-
     # set uncertainty threshold
     if std_tolerance == 0:
         return True, [-1]
@@ -211,6 +210,7 @@ def is_std_in_bound(std_tolerance, noise, structure, max_atoms_added):
         return False, target_atoms
     else:
         return True, [-1]
+
 
 def is_std_in_bound_per_species(rel_std_tolerance: float,
                                 abs_std_tolerance: float, noise: float,
@@ -236,13 +236,12 @@ def is_std_in_bound_per_species(rel_std_tolerance: float,
     :return:
     """
 
-
     # This indicates test mode, as the GP is not being modified in any way
     if rel_std_tolerance == 0 and abs_std_tolerance == 0:
         return True, [-1]
 
     # set uncertainty threshold
-    if rel_std_tolerance is None or rel_std_tolerance == 0 :
+    if rel_std_tolerance is None or rel_std_tolerance == 0:
         threshold = abs_std_tolerance
     elif abs_std_tolerance is None or abs_std_tolerance == 0:
         threshold = rel_std_tolerance * np.abs(noise)
@@ -274,9 +273,79 @@ def is_std_in_bound_per_species(rel_std_tolerance: float,
 
         # Only add up to species allowance, if it exists
         if present_species[cur_spec] < \
-            max_by_species.get(cur_spec, np.inf):
-
+                max_by_species.get(cur_spec, np.inf):
             target_atoms.append(i)
             present_species[cur_spec] += 1
 
     return False, target_atoms
+
+
+def is_force_in_bound_per_species(abs_force_tolerance: float,
+                                  predicted_forces: np.array,
+                                  label_forces: np.array,
+                                  structure,
+                                  max_atoms_added: int = np.inf,
+                                  max_by_species: dict =
+                                  {}, max_force_error: float = np.inf):
+    """
+    Checks the forces of GP prediction assigned to the structure, returns a
+    list of atoms which  meet an absolute threshold abs_force_tolerance. Can 
+    limit the total number of target atoms via max_atoms_added, and limit 
+    per species by max_by_species.
+
+    The max_atoms_added argument will 'overrule' the
+    max by species; e.g. if max_atoms_added is 2 and max_by_species is {"H":3},
+    then at most two atoms total will be added.
+
+    :param abs_force_tolerance:
+    :param guesses:
+    :param labels:
+    :param structure:
+    :param max_atoms_added:
+    :param max_by_species:
+    :param max_force_error: In order to avoid counting in highly unlikely
+    configurations, if the error exceeds this, do not add atom
+    :return:
+    """
+
+    # This indicates test mode, as the GP is not being modified in any way
+    if abs_force_tolerance == 0:
+        return True, [-1]
+
+    errors = np.abs(predicted_forces - label_forces)
+    # Determine if any std component will trigger the threshold
+    max_error_components = np.amax(errors, axis=1)
+
+    if np.max(max_error_components) < abs_force_tolerance:
+        return True, [-1]
+
+    target_atoms = []
+
+    # Sort from greatest to smallest max. std component
+    force_arg_sorted = np.flip(np.argsort(max_error_components))
+
+    present_species = {spec: 0 for spec in set(structure.species_labels)}
+
+    # Only add atoms up to the bound
+    for i in force_arg_sorted:
+
+        # If max atoms added reached or forces are now below threshold, done
+        if len(target_atoms) == max_atoms_added or \
+                max_error_components[i] < abs_force_tolerance:
+            break
+
+        cur_spec = structure.species_labels[i]
+
+        # Only add up to species allowance, if it exists
+        if present_species[cur_spec] < \
+                max_by_species.get(cur_spec, np.inf) \
+                and max_error_components[i] < max_force_error:
+            target_atoms.append(i)
+            present_species[cur_spec] += 1
+
+    # Handle the case that nothing was added
+    if len(target_atoms):
+        return False, target_atoms
+    else:
+        return True, [-1]
+

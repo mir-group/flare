@@ -17,7 +17,7 @@ from flare.predict import predict_on_structure, \
     predict_on_structure_par_en
 from flare.struc import Structure
 from flare.util import element_to_Z, \
-    is_std_in_bound_per_species
+    is_std_in_bound_per_species, is_force_in_bound_per_species
 
 
 class TrajectoryTrainer(object):
@@ -26,6 +26,8 @@ class TrajectoryTrainer(object):
                  gp: GaussianProcess,
                  rel_std_tolerance: float = 1,
                  abs_std_tolerance: float = 1,
+                 abs_force_tolerance: float = 0,
+                 max_force_error: float = np.inf,
                  parallel: bool = False,
                  no_cpus: int = None,
                  skip: int = 1,
@@ -53,6 +55,8 @@ class TrajectoryTrainer(object):
         :param rel_std_tolerance: Train if uncertainty is above this *
         noise variance hyperparameter
         :param abs_std_tolerance: Train if uncertainty is above this
+        :param abs_force_tolerance: Add atom force error exceeds this
+        :param max_force_error: Don't add atom if force error exceeds this
         :param parallel: Use parallel functions or not
         :param validate_ratio: Fraction of frames used for validation
         :param no_cpus: number of cpus to run with multithreading
@@ -83,6 +87,9 @@ class TrajectoryTrainer(object):
         self.gp = gp
         self.rel_std_tolerance = rel_std_tolerance
         self.abs_std_tolerance = abs_std_tolerance
+        self.abs_force_tolerance = abs_force_tolerance
+        self.max_force_error = max_force_error
+
         self.skip = skip
         assert (skip >= 1), "skip needs to be an integer >= 1"
         self.validate_ratio = validate_ratio
@@ -120,9 +127,9 @@ class TrajectoryTrainer(object):
         self.seed_frames = [] if pre_train_seed_frames is None \
             else pre_train_seed_frames
         self.pre_train_env_per_species = {} if pre_train_atoms_per_element \
-                                       is None else pre_train_atoms_per_element
+                                    is None else pre_train_atoms_per_element
         self.train_env_per_species = {} if train_atoms_per_element \
-                                       is None else train_atoms_per_element
+                                        is None else train_atoms_per_element
 
         # Convert to Coded Species
         if self.pre_train_env_per_species:
@@ -210,7 +217,7 @@ class TrajectoryTrainer(object):
             if self.verbose >= 3:
                 print("Now commencing pre-run training of GP (which has "
                       "non-empty training set)")
-            self.train_gp(max_iter = self.pre_train_max_iter)
+            self.train_gp(max_iter=self.pre_train_max_iter)
 
     def run(self):
         """
@@ -250,14 +257,28 @@ class TrajectoryTrainer(object):
 
             if i < train_frame:
                 # Get max uncertainty atoms
-                std_in_bound, train_atoms = is_std_in_bound_per_species(
+                std_in_bound, std_train_atoms = is_std_in_bound_per_species(
                     rel_std_tolerance=self.rel_std_tolerance,
                     abs_std_tolerance=self.abs_std_tolerance,
                     noise=self.gp.hyps[-1], structure=cur_frame,
                     max_atoms_added=self.max_atoms_from_frame,
                     max_by_species=self.train_env_per_species)
 
-                if not std_in_bound:
+                # Get max force error atoms
+                force_in_bound, force_train_atoms = \
+                    is_force_in_bound_per_species(
+                        abs_force_tolerance=self.abs_force_tolerance,
+                        predicted_forces=cur_frame.forces,
+                        label_forces=dft_forces,
+                        structure=cur_frame,
+                        max_atoms_added=self.max_atoms_from_frame,
+                        max_by_species=self.train_env_per_species,
+                        max_force_error=self.max_force_error)
+
+                if (not std_in_bound) or (not force_in_bound):
+
+                    train_atoms = list(set(std_train_atoms).union(
+                        force_train_atoms) - {-1})
 
                     # Compute mae and write to output;
                     # Add max uncertainty atoms to training set
@@ -318,12 +339,14 @@ class TrajectoryTrainer(object):
         # TODO: Improve flexibility in GP training to make this next step
         # unnecessary, so maxiter can be passed as an argument
 
-        if max_iter is not None:
+        # Don't train if maxiter == 0
+        if max_iter == 0:
+            self.gp.check_L_alpha()
+        elif max_iter is not None:
             temp_maxiter = self.gp.maxiter
             self.gp.maxiter = max_iter
             self.gp.train(output=self.output if self.verbose >= 2 else None)
             self.gp.maxiter = temp_maxiter
-
         else:
             self.gp.train(output=self.output if self.verbose >= 2 else None)
 
