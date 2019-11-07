@@ -62,7 +62,7 @@ def get_2bkernel(GP):
     else:
         hyps = [GP.hyps[0], GP.hyps[1], GP.hyps[-1]]
         hyps_mask = None
-    return kernel, cutoffs, hyps, hyps_mask
+    return (kernel, cutoffs, hyps, hyps_mask)
 
 def get_3bkernel(GP):
     if 'mc' in GP.kernel_name:
@@ -95,7 +95,7 @@ def get_3bkernel(GP):
     else:
         hyps = [GP.hyps[2], GP.hyps[3], GP.hyps[-1]]
         hyps_mask = None
-    return kernel, cutoffs, hyps, hyps_mask
+    return (kernel, cutoffs, hyps, hyps_mask)
 
 
 

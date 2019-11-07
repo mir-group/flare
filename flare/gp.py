@@ -74,6 +74,7 @@ class GaussianProcess:
         self.likelihood = None
         self.likelihood_gradient = None
 
+        self.hyps_mask = None
         if (isinstance(hyps_mask, dict) and multihyps is True):
             self.multihyps = True
 
