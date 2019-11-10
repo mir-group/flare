@@ -37,7 +37,7 @@ class MappedGaussianProcess:
                         'mass_dict': {'0': 27 * unit, '1': 16 * unit}}
     >>> grid_params =  {'bounds_2': [[1.2], [3.5]], 
                                     # [[lower_bound], [upper_bound]]
-                        'bounds_3': [[1.2, 1.2, 0], [3.5, 3.5, np.pi]],
+                        'bounds_3': [[1.2, 1.2, -1], [3.5, 3.5, 1]],
                                     # [[lower,lower,0],[upper,upper,np.pi]]
                         'grid_num_2': 64,
                         'grid_num_3': [16, 16, 16],
@@ -210,7 +210,7 @@ class MappedGaussianProcess:
         f = f2 + f3
         vir = vir2 + vir3
         v = kern2 + kern3 - np.sum((v2 + v3)**2, axis=0)
-        return f, v, vir
+        return f, v, vir, 0
 
     def get_2body_comp(self, atom_env, sig, ls, r_cut):
         '''
@@ -275,6 +275,7 @@ class MappedGaussianProcess:
             map_ind = spcs_list.index(spc)
             f, vir, v = self.predict_component(lengths, xyzs, 
                                 mappings[map_ind], mean_only)
+            print(spc, vir)
             f_spcs += f
             vir_spcs += vir
             v_spcs += v
@@ -291,6 +292,8 @@ class MappedGaussianProcess:
         # predict mean
         f_0 = mapping.mean(lengths)
         f_d = np.diag(f_0) @ xyzs
+        if lengths.shape[1] == 3:
+            print(f_d)
         f = np.sum(f_d, axis=0)
 
         # predict stress from force components
@@ -529,12 +532,12 @@ class Map3body:
         nop = self.grid_num[0]
         noa = self.grid_num[2]
         bond_lengths = np.linspace(self.l_bounds[0], self.u_bounds[0], nop)
-        angles = np.linspace(self.l_bounds[2], self.u_bounds[2], noa)
+        cos_angles = np.linspace(self.l_bounds[2], self.u_bounds[2], noa)
         bond_means = np.zeros([nop, nop, noa])
         bond_vars = np.zeros([nop, nop, noa, len(GP.alpha)])
         env12 = AtomicEnvironment(self.bond_struc, 0, self.cutoffs)
 
-        pool_list = [(i, angles[i], bond_lengths, GP, env12, self.update)\
+        pool_list = [(i, cos_angles[i], bond_lengths, GP, env12, self.update)\
                      for i in range(noa)]
         pool = mp.Pool(processes=processes)
 
@@ -565,9 +568,8 @@ class Map3body:
         '''
         generate grid for each angle, used to parallelize grid generation
         '''
-        a12, angle12, bond_lengths, GP, env12, update = params
+        a12, cos_12, bond_lengths, GP, env12, update = params
         nop = self.grid_num[0]
-        angle12 = angle12
         bond_means = np.zeros([nop, nop])
         bond_vars = np.zeros([nop, nop, len(GP.alpha)])
 
@@ -588,8 +590,8 @@ class Map3body:
         for b1, r1 in enumerate(bond_lengths):
             r1 = bond_lengths[b1]
             for b2, r2 in enumerate(bond_lengths):
-                x2 = r2 * np.cos(angle12)
-                y2 = r2 * np.sin(angle12)
+                x2 = r2 * cos_12
+                y2 = r2 * np.sqrt(1 - cos_12**2)
                 r12 = np.linalg.norm(np.array([x2-r1, y2, 0]))
 
                 env12.bond_array_3 = np.array([[r1, 1, 0, 0], [r2, 0, 0, 0]])

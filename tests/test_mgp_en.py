@@ -101,7 +101,7 @@ def test_parse_header():
     mgp_pred = mgp_model.predict(environ, mean_only=True)
 
     # check mgp is within 1 meV/A of the gp
-    assert(np.abs(mgp_pred[2] - gp_pred_en) < 1e-3)
+    assert(np.abs(mgp_pred[3] - gp_pred_en) < 1e-3)
     # check mgp is within 1 meV/A of the gp
     assert(np.abs(mgp_pred[0][0] - gp_pred_x[0]) < 1e-3)
 

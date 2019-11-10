@@ -3,12 +3,12 @@ import sys
 import numpy as np
 from flare.otf_parser import OtfAnalysis
 from flare.kernels import two_plus_three_body, two_plus_three_body_grad
-from flare.mgp.mgp import MappedGaussianProcess
-from flare.ase.calculator import FLARE_Calculator
-from flare.mc_simple import two_plus_three_body_mc, two_plus_three_body_mc_grad
+import flare.mc_simple as mc
 from flare.env import AtomicEnvironment
 from flare.predict import predict_on_structure
 
+from flare.ase.calculator import FLARE_Calculator
+from flare.mgp.mgp_en import MappedGaussianProcess
 from ase.spacegroup import crystal
 
 def test_stress_with_lammps():
@@ -25,8 +25,11 @@ def test_stress_with_lammps():
     positions = parsed.position_list
     forces = parsed.force_list
 
-    gp_model = parsed.make_gp(kernel=two_plus_three_body_mc,
-                              kernel_grad=two_plus_three_body_mc_grad)
+    gp_model = parsed.make_gp(kernel=mc.two_plus_three_body_mc,
+                              kernel_grad=mc.two_plus_three_body_mc_grad)
+
+    gp_model.energy_force_kernel = mc.two_plus_three_mc_force_en
+    gp_model.energy_kernel = mc.two_plus_three_mc_en
 
     # build up MGP from GP
     struc_params = {'species': [47, 53],
@@ -34,14 +37,14 @@ def test_stress_with_lammps():
                     'mass_dict': {'0': 27, '1': 16}}
     
     # grid parameters
-    lower_cut = 3
+    lower_cut = 2
     grid_num_2 = 64
-    grid_num_3 = 64
+    grid_num_3 = 32
     two_cut = 5.0
     three_cut = 5.0
     grid_params = {'bounds_2': [[lower_cut], [two_cut]],
-                   'bounds_3': [[lower_cut, lower_cut, 0],
-                                [three_cut, three_cut, np.pi]],
+                   'bounds_3': [[lower_cut, lower_cut, -1],
+                                [three_cut, three_cut, 1]],
                    'grid_num_2': grid_num_2,
                    'grid_num_3': [grid_num_3, grid_num_3, grid_num_3],
                    'svd_rank_2': 0,
@@ -55,7 +58,7 @@ def test_stress_with_lammps():
                 GP=gp_model, lmp_file_name='lmp.mgp')
 
     # ------------ create ASE's flare calculator -----------------------
-    flare_calc = FLARE_Calculator(gp_model, mgp_model, par=True, use_mapping=True)
+    flare_calc = FLARE_Calculator(gp_model, mgp_model, par=False, use_mapping=True)
 
     a = 3.855
     alpha = 90 
@@ -65,8 +68,15 @@ def test_stress_with_lammps():
                  cellpar=[a, a, a, alpha, alpha, alpha])
     super_cell.positions = positions[-1]
     super_cell.set_calculator(flare_calc)
-    super_cell.get_forces()
-    stresses = super_cell.calc.results['stresses']
+    super_cell.calc.calculate_gp(super_cell)
+    print('gp_forces', super_cell.calc.results['forces'])
+    print('gp_energies', super_cell.calc.results['local_energies'])
+    super_cell.calc.calculate_mgp_serial(super_cell)
+    print('mgp_forces', super_cell.calc.results['forces'])
+    print('mgp_energies', super_cell.calc.results['local_energies'])
+
+
+    stresses = super_cell.calc.results['stresses'] 
 
     # parse lammps stress 
     lmp_file = open('test_files/stress.lammps')

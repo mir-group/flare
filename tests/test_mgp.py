@@ -74,8 +74,8 @@ def test_parse_header():
     # grid parameters
     train_size = len(gp_model.training_data)
     grid_params = {'bounds_2': [[lower_cut], [two_cut]],
-                   'bounds_3': [[lower_cut, lower_cut, 0],
-                                [three_cut, three_cut, np.pi]],
+                   'bounds_3': [[lower_cut, lower_cut, -1],
+                                [three_cut, three_cut, 1]],
                    'grid_num_2': grid_num_2,
                    'grid_num_3': [grid_num_3, grid_num_3, grid_num_3],
                    'svd_rank_2': np.min((grid_num_2, 3*train_size)),
