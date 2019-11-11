@@ -10,7 +10,7 @@ with open("requirements.txt", "r") as fh:
 setuptools.setup(
     name="mir-flare",
     packages=setuptools.find_packages(exclude=["tests"]),
-    version="0.0.3",
+    version="0.0.4",
     author="Materials Intelligence Research",
     author_email="mir@g.harvard.edu",
     description="Fast Learning of Atomistic Rare Events",
