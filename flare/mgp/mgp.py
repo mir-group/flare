@@ -275,7 +275,7 @@ class MappedGaussianProcess:
             map_ind = spcs_list.index(spc)
             f, vir, v = self.predict_component(lengths, xyzs, 
                                 mappings[map_ind], mean_only)
-            print(spc, vir)
+            print(spc, f)
             f_spcs += f
             vir_spcs += vir
             v_spcs += v
@@ -292,8 +292,6 @@ class MappedGaussianProcess:
         # predict mean
         f_0 = mapping.mean(lengths)
         f_d = np.diag(f_0) @ xyzs
-        if lengths.shape[1] == 3:
-            print(f_d)
         f = np.sum(f_d, axis=0)
 
         # predict stress from force components
@@ -304,6 +302,7 @@ class MappedGaussianProcess:
                     * xyzs[:,vir_order[i][1]] * lengths[:,0]
             vir[i] = np.sum(vir_i)
         vir *= 0.5
+        print(vir)
 
         # predict var
         v = np.zeros(3)

@@ -8,7 +8,7 @@ from flare.env import AtomicEnvironment
 from flare.predict import predict_on_structure
 
 from flare.ase.calculator import FLARE_Calculator
-from flare.mgp.mgp_en import MappedGaussianProcess
+from flare.mgp.mgp import MappedGaussianProcess
 from ase.spacegroup import crystal
 
 def test_stress_with_lammps():
@@ -37,7 +37,7 @@ def test_stress_with_lammps():
                     'mass_dict': {'0': 27, '1': 16}}
     
     # grid parameters
-    lower_cut = 2
+    lower_cut = 2.5
     grid_num_2 = 64
     grid_num_3 = 32
     two_cut = 5.0
@@ -51,7 +51,7 @@ def test_stress_with_lammps():
                    'svd_rank_3': 0,
                    'bodies': [2, 3],
                    'load_grid': None,
-                   'update': True}
+                   'update': False}
     
     mgp_model = MappedGaussianProcess(gp_model.hyps, gp_model.cutoffs,
                 grid_params, struc_params, mean_only=True, container_only=False,

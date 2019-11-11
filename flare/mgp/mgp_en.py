@@ -328,6 +328,7 @@ class MappedGaussianProcess:
                 vir_i2 = f_d2[:,vir_order[i][0]]\
                        * xyzs[:,1,vir_order[i][1]] * lengths[:,1]
                 vir[i] = np.sum(vir_i1 + vir_i2)
+            vir *= 2.0 
 
 
         # predict var

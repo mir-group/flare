@@ -12,11 +12,11 @@ import os
 
 # ASSUMPTION: You have a Lammps executable with the mgp pair style with $lmp
 # as the corresponding environment variable.
-@pytest.mark.skipif(not os.environ.get('lmp',
-                          False), reason='lmp not found '
-                                  'in environment: Please install LAMMPS '
-                                  'and set the $lmp env. '
-                                  'variable to point to the executatble.')
+#@pytest.mark.skipif(not os.environ.get('lmp',
+#                          False), reason='lmp not found '
+#                                  'in environment: Please install LAMMPS '
+#                                  'and set the $lmp env. '
+#                                  'variable to point to the executatble.')
 def test_parse_header():
     # -------------------------------------------------------------------------
     #                  reconstruct gp model from otf snippet
