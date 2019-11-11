@@ -279,7 +279,7 @@ class MappedGaussianProcess:
             map_ind = spcs_list.index(spc)
             f, vir, v, e = self.predict_component(lengths, xyzs, 
                     mappings[map_ind],  mean_only)
-            print(spc, f)
+            print(spc, vir)
             f_spcs += f
             vir_spcs += vir
             v_spcs += v
@@ -328,7 +328,7 @@ class MappedGaussianProcess:
                 vir_i2 = f_d2[:,vir_order[i][0]]\
                        * xyzs[:,1,vir_order[i][1]] * lengths[:,1]
                 vir[i] = np.sum(vir_i1 + vir_i2)
-            vir *= 2.0 
+            vir *= 1.5 
 
 
         # predict var

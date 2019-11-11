@@ -89,7 +89,7 @@ def test_stress_with_lammps():
     os.system('rm -r __pycache__')
     os.system('rm grid3*')
     os.system('rm -r kv3')
-    os.system('rm lmp.mgp')
+#    os.system('rm lmp.mgp')
 
 
 
