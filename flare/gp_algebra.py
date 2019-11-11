@@ -43,9 +43,9 @@ def get_ky_mat_par(hyps: np.ndarray, training_data: list,
                    kernel, cutoffs=None, no_cpus=None):
 
     if (no_cpus is None):
-        pool = mp.Pool(processes=mp.cpu_count())
+        ncpus = mp.cpu_count()
     else:
-        pool = mp.Pool(processes=no_cpus)
+        ncpus = no_cpus
 
 
     # assume sigma_n is the final hyperparameter
@@ -60,14 +60,17 @@ def get_ky_mat_par(hyps: np.ndarray, training_data: list,
 
     # calculate elements
     results = []
-    for m_index in range(size):
-        x_1 = training_data[int(math.floor(m_index / 3))]
-        d_1 = ds[m_index % 3]
+    with mp.Pool(processes=ncpus) as pool:
+        for m_index in range(size):
+            x_1 = training_data[int(math.floor(m_index / 3))]
+            d_1 = ds[m_index % 3]
 
-        results.append(pool.apply_async(get_cov_row,
-                                        args=(x_1, d_1, m_index, size,
-                                              training_data, kernel,
-                                              hyps, cutoffs)))
+            results.append(pool.apply_async(get_cov_row,
+                                            args=(x_1, d_1, m_index, size,
+                                                  training_data, kernel,
+                                                  hyps, cutoffs)))
+        pool.close()
+        pool.join()
 
     # construct covariance matrix
     for m in range(size):
@@ -79,9 +82,6 @@ def get_ky_mat_par(hyps: np.ndarray, training_data: list,
     # matrix manipulation
     ky_mat = k_mat + sigma_n ** 2 * np.eye(size)
 
-    pool.close()
-    pool.join()
-
     return ky_mat
 
 
@@ -90,9 +90,10 @@ def get_ky_and_hyp_par(hyps: np.ndarray, training_data: list,
                        kernel_grad, cutoffs=None, no_cpus=None):
 
     if (no_cpus is None):
-        pool = mp.Pool(processes=mp.cpu_count())
+        ncpus = mp.cpu_count()
     else:
-        pool = mp.Pool(processes=no_cpus)
+        ncpus = no_cpus
+
 
     # assume sigma_n is the final hyperparameter
     number_of_hyps = len(hyps)
@@ -107,14 +108,17 @@ def get_ky_and_hyp_par(hyps: np.ndarray, training_data: list,
 
     # calculate elements
     results = []
-    for m_index in range(size):
-        x_1 = training_data[int(math.floor(m_index / 3))]
-        d_1 = ds[m_index % 3]
+    with mp.Pool(processes=ncpus) as pool:
+        for m_index in range(size):
+            x_1 = training_data[int(math.floor(m_index / 3))]
+            d_1 = ds[m_index % 3]
 
-        results.append(pool.apply_async(get_cov_row_derv,
-                                        args=(x_1, d_1, m_index, size,
-                                              training_data, kernel_grad,
-                                              hyps, cutoffs)))
+            results.append(pool.apply_async(get_cov_row_derv,
+                                            args=(x_1, d_1, m_index, size,
+                                                  training_data, kernel_grad,
+                                                  hyps, cutoffs)))
+        pool.close()
+        pool.join()
 
     # construct covariance matrix
     for m in range(size):
@@ -131,8 +135,6 @@ def get_ky_and_hyp_par(hyps: np.ndarray, training_data: list,
     # matrix manipulation
     ky_mat = k_mat + sigma_n ** 2 * np.eye(size)
 
-    pool.close()
-    pool.join()
 
     return hyp_mat, ky_mat
 
