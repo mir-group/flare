@@ -279,7 +279,6 @@ class MappedGaussianProcess:
             map_ind = spcs_list.index(spc)
             f, vir, v, e = self.predict_component(lengths, xyzs, 
                     mappings[map_ind],  mean_only)
-            print(spc, vir)
             f_spcs += f
             vir_spcs += vir
             v_spcs += v
@@ -318,7 +317,6 @@ class MappedGaussianProcess:
             factor2 = 1/lengths[:,0] - 1/lengths[:,1] * lengths[:,2]
             f_d1 = np.diag(f_0[:,0,0]+f_0[:,2,0]*factor1) @ xyzs[:,0,:]
             f_d2 = np.diag(f_0[:,1,0]+f_0[:,2,0]*factor2) @ xyzs[:,1,:]
-            #print(f_d1, f_d2, f_d1+f_d2, np.sum(f_d1+f_d2))
             f_d = f_d1 + f_d2
             f = 3 * np.sum(f_d, axis=0) # force: need to check prefactor 3
 
