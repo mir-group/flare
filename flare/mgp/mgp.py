@@ -59,7 +59,7 @@ class MappedGaussianProcess:
                  mean_only=False, container_only=True,
                  bond_struc=None, spcs=None,
                  GP=None,
-                 lmp_file_name='lmp.mgp', verbose=1, ncpus=None):
+                 lmp_file_name='lmp.mgp', verbose=1, ncpus=None, nsample=100):
 
         self.hyps = hyps
         self.cutoffs = cutoffs
@@ -99,6 +99,7 @@ class MappedGaussianProcess:
 
         self.verbose = verbose
         self.ncpus = ncpus
+        self.nsample = nsample
 
         if (bond_struc is None or spcs is None):
             self.build_bond_struc()
@@ -142,7 +143,7 @@ class MappedGaussianProcess:
                map_2 = Map2body(self.grid_num_2, self.bounds_2,
                                 self.cutoffs,
                                 b_struc, self.bodies, self.svd_rank_2,
-                                self.mean_only, self.ncpus)
+                                self.mean_only, self.ncpus, self.nsample)
                self.maps_2.append(map_2)
         if 3 in self.bodies:
             for b_struc in self.bond_struc[1]:
@@ -150,7 +151,7 @@ class MappedGaussianProcess:
                                  b_struc, self.bodies, self.svd_rank_3,
                                  self.mean_only,
                                  self.grid_params['load_grid'],
-                                 self.update, self.ncpus)
+                                 self.update, self.ncpus, self.nsample)
                 self.maps_3.append(map_3)
 
     def build_map(self, GP):
@@ -460,7 +461,7 @@ class MappedGaussianProcess:
 
 class Map2body:
     def __init__(self, grid_num, bounds, cutoffs, bond_struc, bodies='2',
-                 svd_rank=0, mean_only=False, ncpus=None):
+                 svd_rank=0, mean_only=False, ncpus=None, nsample=100):
         '''
         Build 2-body MGP
         '''
@@ -474,7 +475,7 @@ class Map2body:
         self.svd_rank = svd_rank
         self.mean_only = mean_only
         self.ncpus = ncpus
-        self.nsample = 100
+        self.nsample = nsample
 
         self.build_map_container()
 
@@ -573,7 +574,7 @@ class Map3body:
 
     def __init__(self, grid_num, bounds, cutoffs, bond_struc, bodies='3',
             svd_rank=0, mean_only=False, load_grid=None, update=True,
-            ncpus=None):
+            ncpus=None, nsample=100):
         '''
         Build 3-body MGP
         '''
@@ -589,7 +590,7 @@ class Map3body:
         self.load_grid = load_grid
         self.update = update
         self.ncpus = ncpus
-        self.nsample = 200
+        self.nsample = nsample
 
         self.build_map_container()
 
@@ -669,9 +670,9 @@ class Map3body:
                         bond_vars[b1, b2, a12, :] = solve_triangular(GP.l_mat, k12_v, lower=True)
 
 
-        # ------ save mean and var to file -------
-        np.save('grid3_mean', bond_means)
-        np.save('grid3_var', bond_vars)
+        # # ------ save mean and var to file -------
+        # np.save('grid3_mean', bond_means)
+        # np.save('grid3_var', bond_vars)
 
         return bond_means, bond_vars
 
