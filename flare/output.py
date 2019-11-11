@@ -220,7 +220,8 @@ class Output():
         if self.always_flush:
             self.outfiles['log'].flush()
 
-    def write_xyz(self, curr_step, pos, species, filename, header=""):
+    def write_xyz(self, curr_step, pos, species, filename, header="",
+                  forces=None, stds=None, true_fs=None):
         """
         write atomic configuration in xyz file
         :param curr_step: Int, number of frames to note in the comment line
@@ -228,6 +229,9 @@ class Output():
         :param species:   n element list of symbols
         :param filename:  file to print
         :param header:    header printed in comments
+        :param forces: list of forces on atoms predicted by GP
+        :param stds: uncertainties predicted by GP
+        :param true_fs: true forces from ab initio source
         :return:
         """
 
@@ -241,8 +245,19 @@ class Output():
         # Construct atom-by-atom description
         for i in range(natom):
             string += f'{species[i]} '
-            string += f'{pos[i, 0]} {pos[i, 1]} {pos[i, 2]}\n'
+            string += f'{pos[i, 0]:10.3} {pos[i, 1]:10.3} {pos[i, 2]:10.3}'
 
+            if forces and stds and true_fs:
+
+                string += f' {forces[i, 0]:10.3} {forces[i, 1]:10.3} ' \
+                          f'{forces[i, 2]:10.3}'
+                string += f' {stds[i, 0]:10.3} {stds[i, 1]:10.3} ' \
+                          f'{stds[i, 2]:10.3}'
+                string += f' {true_fs[i, 0]:10.3} {true_fs[i,1]:10.3} ' \
+                          f'{true_fs[i, 2]:10.3}\n'
+
+            else:
+                string += '\n'
         self.outfiles[filename].write(string)
 
         if self.always_flush:
