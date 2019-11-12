@@ -357,4 +357,4 @@ class TrajectoryTrainer(object):
         if self.checkpoint_interval \
                 and self.train_count % self.checkpoint_interval == 0 \
                 and self.model_format:
-            self.gp.write_model(self.model_output+'_model', self.model_format)
+            self.gp.write_model(self.output_name+'_model', self.model_format)
