@@ -279,7 +279,7 @@ def get_ky_mat_par(hyps: np.ndarray, training_data: list,
                 slice_count += 1
                 k_mat[s1*3:e1*3, s2*3:e2*3] = k_mat_block
                 if (ibatch1 != ibatch2):
-                    k_mat[s2*3:e2*3, s1*3:e1*3] = k_mat_block
+                    k_mat[s2*3:e2*3, s1*3:e1*3] = k_mat_block.T
         pool.close()
         pool.join()
 
@@ -354,8 +354,8 @@ def get_ky_and_hyp_par(hyps: np.ndarray, hyps_mask, training_data: list,
                 k_mat[s1*3:e1*3, s2*3:e2*3] = k_mat_block
                 hyp_mat0[:, s1*3:e1*3, s2*3:e2*3] = h_mat_block
                 if (ibatch1 != ibatch2):
-                    k_mat[s2*3:e2*3, s1*3:e1*3] = k_mat_block
-                    hyp_mat0[:, s2*3:e2*3, s1*3:e1*3] = h_mat_block
+                    k_mat[s2*3:e2*3, s1*3:e1*3] = k_mat_block.T
+                    hyp_mat0[:, s2*3:e2*3, s1*3:e1*3] = h_mat_block.T
         pool.close()
         pool.join()
 

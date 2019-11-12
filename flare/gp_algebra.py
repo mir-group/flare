@@ -4,43 +4,9 @@ import multiprocessing as mp
 import time
 
 
-def get_cov_row(x_1, d_1, m_index, size, training_data, kernel,
-                kern_hyps, cutoffs):
-    covs = []
-    ds = [1, 2, 3]
-    for n_index in range(m_index, size):
-        x_2 = training_data[int(math.floor(n_index / 3))]
-        d_2 = ds[n_index % 3]
-
-        # calculate kernel and gradient
-        kern_curr = kernel(x_1, x_2, d_1, d_2, kern_hyps,
-                           cutoffs)
-        covs.append(kern_curr)
-
-    return covs
-
-
-def get_cov_row_derv(x_1, d_1, m_index, size, training_data, kernel_grad,
-                     kern_hyps, cutoffs):
-    covs = []
-    hyps = []
-    ds = [1, 2, 3]
-    for n_index in range(m_index, size):
-        x_2 = training_data[int(math.floor(n_index / 3))]
-        d_2 = ds[n_index % 3]
-
-        # calculate kernel and gradient
-        kern_curr = kernel_grad(x_1, x_2, d_1, d_2, kern_hyps,
-                                cutoffs)
-        covs.append(kern_curr[0])
-        hyps.append(kern_curr[1])
-
-    return covs, hyps
-
-
 def get_ky_mat_par(hyps: np.ndarray, training_data: list,
                    training_labels_np: np.ndarray,
-                   kernel, cutoffs=None, no_cpus=None):
+                   kernel, cutoffs=None, no_cpus=None, nsample=100):
 
     if (no_cpus is None):
         ncpus = mp.cpu_count()
@@ -53,7 +19,6 @@ def get_ky_mat_par(hyps: np.ndarray, training_data: list,
     sigma_n = hyps[number_of_hyps - 1]
 
     # initialize matrices
-    nsample = 100
     size = len(training_data)
     size3 = 3*len(training_data)
     ns = int(math.ceil(size/nsample))
@@ -68,16 +33,12 @@ def get_ky_mat_par(hyps: np.ndarray, training_data: list,
                 s2 = nsample*ibatch2
                 e2 = np.min([s2 + nsample, size])
                 t2 = training_data[s2:e2]
-                if (ibatch1 == ibatch2):
-                    same = True
-                else:
-                    same = False
                 k_mat_slice += [pool.apply_async(
                                           get_ky_mat_pack,
                                           args=(hyps,
-                                            t1, t2, same, kernel,
-                                            cutoffs))]
-        print(len(k_mat_slice))
+                                            t1, t2,
+                                            bool(ibatch1==ibatch2),
+                                            kernel, cutoffs))]
         slice_count=0
         for ibatch1 in range(ns):
             s1 = nsample*ibatch1
@@ -85,12 +46,11 @@ def get_ky_mat_par(hyps: np.ndarray, training_data: list,
             for ibatch2 in range(ibatch1, ns):
                 s2 = nsample*ibatch2
                 e2 = np.min([s2 + nsample, size])
-                print(slice_count, s1, e1, s2, e2, k_mat_slice[slice_count])
                 k_mat_block = k_mat_slice[slice_count].get()
                 slice_count += 1
                 k_mat[s1*3:e1*3, s2*3:e2*3] = k_mat_block
                 if (ibatch1 != ibatch2):
-                    k_mat[s2*3:e2*3, s1*3:e1*3] = k_mat_block
+                    k_mat[s2*3:e2*3, s1*3:e1*3] = k_mat_block.T
         pool.close()
         pool.join()
 
@@ -136,7 +96,7 @@ def get_ky_mat_pack(hyps: np.ndarray, training_data1: list,
 
 def get_ky_and_hyp_par(hyps: np.ndarray, training_data: list,
                        training_labels_np: np.ndarray,
-                       kernel_grad, cutoffs=None, no_cpus=None):
+                       kernel_grad, cutoffs=None, no_cpus=None, nsample=100):
 
     if (no_cpus is None):
         ncpus = mp.cpu_count()
@@ -155,7 +115,6 @@ def get_ky_and_hyp_par(hyps: np.ndarray, training_data: list,
     hyp_mat = np.zeros([number_of_hyps, size3, size3])
 
     with mp.Pool(processes=ncpus) as pool:
-        nsample = 100
         ns = int(math.ceil(size/nsample))
         mat_slice = []
         for ibatch1 in range(ns):
@@ -187,8 +146,8 @@ def get_ky_and_hyp_par(hyps: np.ndarray, training_data: list,
                 k_mat[s1*3:e1*3, s2*3:e2*3] = k_mat_block
                 hyp_mat[:-1, s1*3:e1*3, s2*3:e2*3] = h_mat_block
                 if (ibatch1 != ibatch2):
-                    k_mat[s2*3:e2*3, s1*3:e1*3] = k_mat_block
-                    hyp_mat[:-1, s2*3:e2*3, s1*3:e1*3] = h_mat_block
+                    k_mat[s2*3:e2*3, s1*3:e1*3] = k_mat_block.T
+                    hyp_mat[:-1, s2*3:e2*3, s1*3:e1*3] = h_mat_block.T
         pool.close()
 
 
