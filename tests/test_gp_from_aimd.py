@@ -135,7 +135,7 @@ def test_seed_and_run():
 
     tt.run()
 
-    with open('meth_test.pickle', 'rb') as f:
+    with open('meth_test_model.pickle', 'rb') as f:
         new_gp = pickle.load(f)
 
     test_env = envs[0]
