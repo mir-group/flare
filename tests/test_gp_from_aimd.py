@@ -128,7 +128,7 @@ def test_seed_and_run():
                            pre_train_seed_envs=seeds,
                            pre_train_seed_frames=[frames[-1]],
                            max_atoms_from_frame=4,
-                           model_write='meth_test.pickle',
+                           output_name='meth_test',
                            model_format='pickle',
                            checkpoint_interval=1,
                            pre_train_atoms_per_element={'H': 1})
