@@ -140,6 +140,7 @@ class TrajectoryTrainer(object):
         # Output parameters
         self.checkpoint_interval = checkpoint_interval
         self.model_format = model_format
+        self.output_name = output_name
 
     def pre_run(self):
         """
