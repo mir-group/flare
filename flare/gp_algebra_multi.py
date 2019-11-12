@@ -227,7 +227,8 @@ def get_ky_and_hyp_pack(hyps: np.ndarray, hyps_mask, training_data1: list,
 
 def get_ky_mat_par(hyps: np.ndarray, training_data: list,
                    training_labels_np: np.ndarray,
-                   kernel, cutoffs=None, hyps_mask=None, no_cpus=None):
+                   kernel, cutoffs=None, hyps_mask=None,
+                   no_cpus=None, nsample=100):
 
     if (no_cpus is None):
         ncpus =mp.cpu_count()
@@ -244,7 +245,6 @@ def get_ky_mat_par(hyps: np.ndarray, training_data: list,
 
     # initialize matrices
 
-    nsample = 100
     size = len(training_data)
     size3 = 3*len(training_data)
     ns = int(math.ceil(size/nsample))
@@ -294,7 +294,8 @@ def hello(s1, e1, s2, e2):
 
 def get_ky_and_hyp_par(hyps: np.ndarray, hyps_mask, training_data: list,
                        training_labels_np: np.ndarray,
-                       kernel_grad, cutoffs=None, no_cpus=None):
+                       kernel_grad, cutoffs=None,
+                       no_cpus=None, nsample=100):
 
 
     if (no_cpus is None):
@@ -322,7 +323,6 @@ def get_ky_and_hyp_par(hyps: np.ndarray, hyps_mask, training_data: list,
 
     with mp.Pool(processes=cpu) as pool:
         mat_slice = []
-        nsample = 100
         ns = int(math.ceil(size/nsample))
         for ibatch1 in range(ns):
             s1 = nsample*ibatch1
