@@ -84,6 +84,9 @@ class GaussianProcess:
             self.training_labels.append(forces_curr)
 
         # create numpy array of training labels
+
+        self.training_labels_np = np.array(self.training_labels).flatten()
+
         self.training_labels_np = self.force_list_to_np(self.training_labels)
 
     def add_one_env(self, env: AtomicEnvironment,
