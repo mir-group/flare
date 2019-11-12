@@ -434,7 +434,7 @@ environment and the environments in the training set."""
 
         write_name = str(name)
         
-        if name.split('.')[-1] not in supported_formats:
+        if name.split('.')[-1] in supported_formats:
             write_name += '.'+format
             
         if format.lower() == 'json':
