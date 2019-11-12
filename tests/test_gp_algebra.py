@@ -24,15 +24,16 @@ def get_random_training_set(nenv):
     np.random.seed(0)
 
     cutoffs = np.array([0.8, 0.8])
-    hyps = np.array([1, 1, 1, 1, 1])
+    hyps = np.array([1, 1, 1, 1, 1, 1, 1, 1, 1])
     kernel = (two_plus_three_body_mc, two_plus_three_body_mc_grad)
     kernel_m = (two_plus_three_body_mc_multi, two_plus_three_body_mc_grad_multi)
-    hyps_mask = {'nspec': 1,
+    hyps_mask = {'nspec': 2,
                  'spec_mask': np.zeros(118, dtype=int),
-                 'nbond': 1,
-                 'bond_mask': np.array([0]),
-                 'ntriplet': 1,
-                 'triplet_mask': np.array([0])}
+                 'nbond': 2,
+                 'bond_mask': np.array([0, 1]),
+                 'ntriplet': 2,
+                 'triplet_mask': np.array([0, 1])}
+    hyps_mask['spec_mask'][2] = 1
 
     # create test data
     cell = np.eye(3)
