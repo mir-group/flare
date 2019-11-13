@@ -220,8 +220,11 @@ class Output():
         if self.always_flush:
             self.outfiles['log'].flush()
 
-    def write_xyz(self, curr_step, pos, species, filename, header="",
-                  forces=None, stds=None, true_fs=None):
+    def write_xyz(self, curr_step: int, pos: np.array, species: list,
+                  filename: str,
+                  header="",
+                  forces: np.array=None, stds: np.array=None,
+                  forces_2: np.array=None):
         """
         write atomic configuration in xyz file
         :param curr_step: Int, number of frames to note in the comment line
@@ -231,7 +234,7 @@ class Output():
         :param header:    header printed in comments
         :param forces: list of forces on atoms predicted by GP
         :param stds: uncertainties predicted by GP
-        :param true_fs: true forces from ab initio source
+        :param forces_2: true forces from ab initio source
         :return:
         """
 
@@ -247,14 +250,15 @@ class Output():
             string += f'{species[i]} '
             string += f'{pos[i, 0]:10.3} {pos[i, 1]:10.3} {pos[i, 2]:10.3}'
 
-            if forces and stds and true_fs:
+            if forces is not None and stds is not None and forces_2 is not \
+                    None:
 
                 string += f' {forces[i, 0]:10.3} {forces[i, 1]:10.3} ' \
                           f'{forces[i, 2]:10.3}'
                 string += f' {stds[i, 0]:10.3} {stds[i, 1]:10.3} ' \
                           f'{stds[i, 2]:10.3}'
-                string += f' {true_fs[i, 0]:10.3} {true_fs[i,1]:10.3} ' \
-                          f'{true_fs[i, 2]:10.3}\n'
+                string += f' {forces_2[i, 0]:10.3} {forces_2[i,1]:10.3} ' \
+                          f'{forces_2[i, 2]:10.3}\n'
 
             else:
                 string += '\n'
@@ -263,12 +267,17 @@ class Output():
         if self.always_flush:
             self.outfiles[filename].flush()
 
-    def write_xyz_config(self, curr_step, structure, dft_step):
+    def write_xyz_config(self, curr_step, structure, dft_step,
+                         forces: np.array = None, stds : np.array = None,
+                         forces_2: np.array = None):
         """
         write atomic configuration in xyz file
         :param curr_step: Int, number of frames to note in the comment line
         :param structure: Structure, contain positions and forces
         :param dft_step:  Boolean, whether this is a DFT call.
+        :param forces: Optional list of forces to print in xyz file
+        :param stds: Optional list of uncertanties to print in xyz file
+        :param forces_2: Optional second list of forces (e.g. DFT forces)
         :return:
         """
 
@@ -278,10 +287,10 @@ class Output():
             header = ""
         else:
             header = "*"
-        self.write_xyz(curr_step, structure.positions,
-                       structure.species_labels, 'xyz', header)
-        self.write_xyz(curr_step, structure.forces,
-                       structure.species_labels, 'fxyz', header)
+        self.write_xyz(curr_step=curr_step, pos=structure.positions,
+                       species=structure.species_labels, filename='xyz',
+                       header=header,
+                       forces=forces, stds = stds, forces_2=forces_2)
 
     def write_hyps(self, hyp_labels, hyps, start_time, like, like_grad,
                    name='log'):
@@ -358,9 +367,9 @@ class Output():
 
         string += '\n'
 
-        self.write_xyz_config(curr_step, frame, True)
-        self.write_xyz(curr_step, frame.stds, frame.species_labels,
-                       "std", "* ")
+        self.write_xyz_config(curr_step, frame, forces = frame.forces,
+                              stds = frame.stds, forces_2 = dft_forces,
+                              dft_step=True)
 
         mae = np.mean(error) * 1000
         mac = np.mean(np.abs(dft_forces)) * 1000
