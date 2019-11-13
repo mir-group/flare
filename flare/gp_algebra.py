@@ -129,6 +129,8 @@ def get_ky_and_hyp_par(hyps: np.ndarray, training_data: list,
                     same=True
                 else:
                     same = False
+                get_ky_and_hyp_pack( hyps, t1, t2,
+                    same, kernel_grad, cutoffs)
                 mat_slice += [pool.apply_async(
                                         get_ky_and_hyp_pack,
                                         args=(
@@ -147,7 +149,8 @@ def get_ky_and_hyp_par(hyps: np.ndarray, training_data: list,
                 hyp_mat[:-1, s1*3:e1*3, s2*3:e2*3] = h_mat_block
                 if (ibatch1 != ibatch2):
                     k_mat[s2*3:e2*3, s1*3:e1*3] = k_mat_block.T
-                    hyp_mat[:-1, s2*3:e2*3, s1*3:e1*3] = h_mat_block.T
+                    for idx in range(hyp_mat.shape[0]-1):
+                        hyp_mat[idx, s2*3:e2*3, s1*3:e1*3] = h_mat_block[idx].T
         pool.close()
 
 
@@ -415,9 +418,6 @@ def get_neg_like_grad(hyps: np.ndarray, training_data: list,
 
     like, like_grad = \
         get_like_grad_from_mats(ky_mat, hyp_mat, training_labels_np)
-
-    print("like", like, like_grad)
-    print("hyps", hyps)
 
     if output is not None:
         output.write_hyps(None, hyps, None, like, like_grad, name="hyps")

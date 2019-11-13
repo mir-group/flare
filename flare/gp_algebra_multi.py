@@ -45,9 +45,12 @@ def get_ky_and_hyp(hyps: np.ndarray, hyps_mask, training_data: list,
     # add gradient of noise variance
     size3 = 3*len(training_data)
     if (train_noise):
-        sigma_mat = np.zeros([1, size3, size3])
-        sigma_mat[0, :, :] = np.eye(size3) * 2 * sigma_n
-        hyp_mat = np.vstack([sigma_mat, hyp_mat0])
+        sigma_mat = np.eye(size3) * 2 * sigma_n
+        hyp_mat = np.zeros([hyp_mat0.shape[0]+1,
+                            hyp_mat0.shape[1],
+                            hyp_mat0.shape[2]])
+        hyp_mat[-1, :, :] = sigma_mat
+        hyp_mat[:-1, :, :] = hyp_mat0
     else:
         hyp_mat = hyp_mat0
 
@@ -355,7 +358,8 @@ def get_ky_and_hyp_par(hyps: np.ndarray, hyps_mask, training_data: list,
                 hyp_mat0[:, s1*3:e1*3, s2*3:e2*3] = h_mat_block
                 if (ibatch1 != ibatch2):
                     k_mat[s2*3:e2*3, s1*3:e1*3] = k_mat_block.T
-                    hyp_mat0[:, s2*3:e2*3, s1*3:e1*3] = h_mat_block.T
+                    for idx in range(hyp_mat0.shape[0]):
+                        hyp_mat0[idx, s2*3:e2*3, s1*3:e1*3] = h_mat_block[idx].T
         pool.close()
         pool.join()
 
