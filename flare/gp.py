@@ -53,7 +53,6 @@ class GaussianProcess:
 
         # Parameters set during training
         self.ky_mat = None
-        self.l_mat = None
         self.alpha = None
         self.ky_mat_inv = None
         self.l_mat_inv = None
@@ -305,7 +304,6 @@ environment and the environments in the training set."""
         alpha = np.matmul(ky_mat_inv, self.training_labels_np)
 
         self.ky_mat = ky_mat
-        self.l_mat = l_mat
         self.alpha = alpha
         self.ky_mat_inv = ky_mat_inv
         self.l_mat_inv = l_mat_inv
@@ -319,7 +317,7 @@ environment and the environments in the training set."""
         """
 
         # Set L matrix and alpha if set_L_alpha has not been called yet
-        if self.l_mat is None:
+        if self.ky_mat is None:
             self.set_L_alpha()
             return
 
@@ -332,7 +330,6 @@ environment and the environments in the training set."""
         alpha = np.matmul(ky_mat_inv, self.training_labels_np)
 
         self.ky_mat = ky_mat
-        self.l_mat = l_mat
         self.alpha = alpha
         self.ky_mat_inv = ky_mat_inv
         self.l_mat_inv = l_mat_inv
