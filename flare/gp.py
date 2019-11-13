@@ -1,4 +1,5 @@
 """Gaussian process model of the Born Oppenheimer potential energy surface."""
+import time
 import math
 from copy import deepcopy
 import pickle
@@ -16,7 +17,7 @@ from flare.struc import Structure
 from flare.gp_algebra import get_ky_and_hyp, get_ky_and_hyp_par, \
                              get_neg_likelihood, get_neg_like_grad, \
                              get_like_grad_from_mats, \
-                             get_ky_mat_update
+                             get_ky_mat_update, get_kernel_vector_par
 from flare.gp_algebra_multi import get_ky_and_hyp as get_ky_and_multihyp
 from flare.gp_algebra_multi import get_ky_and_hyp_par as \
         get_ky_and_multihyp_par
@@ -57,6 +58,7 @@ class GaussianProcess:
         self.bounds = None
 
         self.training_data = []
+        # self.data_store = []
         self.training_labels = []
         self.training_labels_np = np.empty(0, )
         self.maxiter = maxiter
@@ -141,7 +143,10 @@ class GaussianProcess:
         for atom in update_indices:
             env_curr = AtomicEnvironment(struc, atom, self.cutoffs)
             forces_curr = np.array(forces[atom])
+            # env_store = AtomicEnvironment(struc, atom, self.cutoffs)
+            # del env_curr.structure
 
+            # self.data_store.append(env_store)
             self.training_data.append(env_curr)
             self.training_labels.append(forces_curr)
 
@@ -158,6 +163,10 @@ class GaussianProcess:
         :param train:
         :return:
         """
+        # self.data_store.append(env)
+        # light_env = deepcopy(env)
+        # del light_env.structure
+        # self.training_data.append(light_env)
         self.training_data.append(env)
         self.training_labels.append(force)
         self.training_labels_np = self.force_list_to_np(self.training_labels)
@@ -252,6 +261,7 @@ hyperparameters to maximize the likelihood, then computes L and alpha \
         self.set_L_alpha()
         self.likelihood = -res.fun
         self.likelihood_gradient = -res.jac
+        return res
 
     def check_L_alpha(self):
         # Guarantee that alpha is up to date with training set
@@ -265,7 +275,9 @@ uncertainty."""
 
         # Kernel vector allows for evaluation of At. Env.
         if (self.par and not self.per_atom_par):
-            k_v = self.get_kernel_vector_par(x_t, d)
+            k_v = get_kernel_vector_par(self.training_data, x_t, d,
+                    self.hyps, self.cutoffs, sel.hyps_mask,
+                    nsample=100, no_cpus=self.no_cpus)
         else:
             k_v = self.get_kernel_vector(x_t, d)
 
@@ -321,52 +333,6 @@ uncertainty."""
         pred_var = self_kern - np.matmul(v_vec, v_vec)
 
         return pred_mean, pred_var
-
-    def get_kernel_vector_par(self, x: AtomicEnvironment,
-                          d_1: int):
-        """
-        Compute kernel vector, comparing input environment to all environments
-        in the GP's training set.
-
-        :param x: data point to compare against kernel matrix
-        :type x: AtomicEnvironment
-        :param d_1: Cartesian component of force vector to get (1=x,2=y,3=z)
-        :type d_1: int
-        :return: kernel vector
-        :rtype: np.ndarray
-        """
-
-        if (self.no_cpus is None):
-            ncpus = mp.cpu_count()
-        else:
-            ncpus = self.no_cpus
-
-        ds = [1, 2, 3]
-        size = len(self.training_data) * 3
-
-        results = []
-        with mp.Pool(processes=ncpus) as pool:
-            for m_index in range(size):
-                x_2 = self.training_data[int(math.floor(m_index / 3))]
-                d_2 = ds[m_index % 3]
-                if (self.multihyps):
-                    results.append(pool.apply_async(self.kernel,
-                                                    args=(x, x_2, d_1, d_2,
-                                               self.hyps, self.cutoffs,
-                                               cf.quadratic_cutoff,
-                                               self.hyps_mask)))
-                else:
-                    results.append(pool.apply_async(self.kernel,
-                                                    args=(x, x_2, d_1, d_2,
-                                               self.hyps, self.cutoffs)))
-            pool.close()
-            pool.join()
-
-        k_v = np.zeros(size, )
-        for m_index in range(size):
-            k_v[m_index] = results[m_index].get()
-
-        return k_v
 
     def get_kernel_vector(self, x: AtomicEnvironment,
                           d_1: int):
@@ -634,4 +600,5 @@ environment and the environments in the training set."""
         else:
             raise ValueError("Output format not supported: try from "
                              "{}".format(supported_formats))
+
 
