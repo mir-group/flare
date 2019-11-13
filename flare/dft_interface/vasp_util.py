@@ -8,14 +8,14 @@ from json import dump, load
 from flare.util import NumpyEncoder
 import os, shutil
 
-def check_vasprun(vasprun: Union[str, Vasprun]) -> Vasprun:
+def check_vasprun(vasprun: Union[str, Vasprun], vasprun_kwargs: dict={}) -> Vasprun:
     """
     Helper utility to take a vasprun file name or Vasprun object
     and return a vasprun object.
     :param vasprun: vasprun filename or object
     """
     if type(vasprun) == str:
-        return Vasprun(vasprun)
+        return Vasprun(vasprun, **vasprun_kwargs)
     elif type(vasprun) == Vasprun:
         return vasprun
     else:
@@ -106,23 +106,25 @@ def parse_dft_forces_and_energy(vasprun: Union[str, Vasprun]):
     return np.array(istep['forces']), istep["electronic_steps"][-1]["e_0_energy"]
 
 
-def md_trajectory_from_vasprun(vasprun: Union[str, Vasprun], ionic_step_skips=1):
+def md_trajectory_from_vasprun(vasprun: Union[str, Vasprun], ionic_step_skips=1, 
+                              vasprun_kwargs : dict = {}):
     """
     Returns a list of flare Structure objects decorated with forces, stress,
     and total energy from a MD trajectory performed in VASP.
     :param vasprun: pymatgen Vasprun object or vasprun filename
     :param ionic_step_skips: if True, only samples the configuration every
         ionic_skip_steps steps.
+    :param vasprun_kwargs: Keyword arguments to pass to Vasprun parser
     """
-    vasprun = check_vasprun(vasprun)
+    vasprun = check_vasprun(vasprun,vasprun_kwargs)
 
     struc_lst = []
     for step in vasprun.ionic_steps[::ionic_step_skips]:
         structure = Structure.from_pmg_structure(step["structure"])
         structure.energy = step["electronic_steps"][-1]["e_0_energy"]
         #TODO should choose e_wo_entrp or e_fr_energy?
-        structure.forces = np.array(step["forces"])
-        structure.stress = np.array(step["stress"])
+        structure.forces = np.array(step.get("forces"))
+        structure.stress = np.array(step.get("stress"))
         struc_lst.append(structure)
 
     return struc_lst
