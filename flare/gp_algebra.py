@@ -54,6 +54,7 @@ def get_ky_mat_par(hyps: np.ndarray, training_data: list,
         pool.close()
         pool.join()
 
+    del k_mat_slice
 
     # matrix manipulation
     ky_mat = k_mat + sigma_n ** 2 * np.eye(size3)
@@ -155,6 +156,7 @@ def get_ky_and_hyp_par(hyps: np.ndarray, training_data: list,
 
 
     # add gradient of noise variance
+    del mat_slice
     hyp_mat[-1, :, :] = np.eye(size3) * 2 * sigma_n
 
     # matrix manipulation
