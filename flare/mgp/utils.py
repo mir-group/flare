@@ -65,6 +65,7 @@ def get_2bkernel(GP):
     return (kernel, cutoffs, hyps, hyps_mask)
 
 def get_3bkernel(GP):
+
     if 'mc' in GP.kernel_name:
         if (GP.multihyps is False):
             kernel = str_to_mc_kernel('three_body_mc')
@@ -72,6 +73,11 @@ def get_3bkernel(GP):
             kernel = str_to_mc_sephyps_kernel('three_body_mc')
     else:
         kernel = str_to_kernel('three_body')
+
+    if 'two' in GP.kernel_name:
+        base = 2
+    else:
+        base = 0
 
     cutoffs = [GP.cutoffs[1]]
 
@@ -93,8 +99,9 @@ def get_3bkernel(GP):
                 'spec_mask':o_hyps_mask['spec_mask'],
                 'triplet_mask': o_hyps_mask['triplet_mask']}
     else:
-        hyps = [GP.hyps[2], GP.hyps[3], GP.hyps[-1]]
+        hyps = [GP.hyps[0+base], GP.hyps[1+base], GP.hyps[-1]]
         hyps_mask = None
+
     return (kernel, cutoffs, hyps, hyps_mask)
 
 
