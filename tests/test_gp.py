@@ -134,11 +134,12 @@ def test_train(two_body_gp, params):
     two_body_gp.update_db(test_structure, forces)
 
     # train gp
-    two_body_gp.train()
+    res = two_body_gp.train()
 
     hyp_post = list(two_body_gp.hyps)
 
     # check if hyperparams have been updated
+    print(res)
     assert (hyp != hyp_post)
 
 
