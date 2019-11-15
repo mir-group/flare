@@ -13,7 +13,6 @@ def get_ky_mat_par(hyps: np.ndarray, training_data: list,
     else:
         ncpus = no_cpus
 
-
     # assume sigma_n is the final hyperparameter
     number_of_hyps = len(hyps)
     sigma_n = hyps[number_of_hyps - 1]
@@ -21,40 +20,66 @@ def get_ky_mat_par(hyps: np.ndarray, training_data: list,
     # initialize matrices
     size = len(training_data)
     size3 = 3*len(training_data)
-    ns = int(math.ceil(size/nsample))
-    k_mat_slice = []
     k_mat = np.zeros([size3, size3])
     with mp.Pool(processes=ncpus) as pool:
+        ns = int(math.ceil(size/nsample))
+        nproc = ns*(ns+1)//2
+        if (nproc < ncpus):
+            nsample = int(size/int(np.sqrt(ncpus*2)))
+            ns = int(math.ceil(size/nsample))
+
+        block_id = []
+        nbatch = 0
         for ibatch1 in range(ns):
-            s1 = nsample*ibatch1
-            e1 = np.min([s1 + nsample, size])
+            s1 = int(nsample*ibatch1)
+            e1 = int(np.min([s1 + nsample, size]))
+            for ibatch2 in range(ibatch1, ns):
+                s2 = int(nsample*ibatch2)
+                e2 = int(np.min([s2 + nsample, size]))
+                block_id += [(s1, e1, s2, e2)]
+                nbatch += 1
+
+        k_mat_slice = []
+        count = 0
+        base = 0
+        time0 = time.time()
+        for ibatch in range(nbatch):
+            s1, e1, s2, e2 = block_id[ibatch]
             t1 = training_data[s1:e1]
-            for ibatch2 in range(ibatch1, ns):
-                s2 = nsample*ibatch2
-                e2 = np.min([s2 + nsample, size])
-                t2 = training_data[s2:e2]
-                k_mat_slice += [pool.apply_async(
-                                          get_ky_mat_pack,
-                                          args=(hyps,
-                                            t1, t2,
-                                            bool(ibatch1==ibatch2),
-                                            kernel, cutoffs))]
-        slice_count=0
-        for ibatch1 in range(ns):
-            s1 = nsample*ibatch1
-            e1 = np.min([s1 + nsample, size])
-            for ibatch2 in range(ibatch1, ns):
-                s2 = nsample*ibatch2
-                e2 = np.min([s2 + nsample, size])
-                k_mat_block = k_mat_slice[slice_count].get()
-                slice_count += 1
+            t2 = training_data[s2:e2]
+            k_mat_slice += [pool.apply_async(
+                                      get_ky_mat_pack,
+                                      args=(hyps,
+                                        t1, t2,
+                                        bool(s1==s2),
+                                        kernel, cutoffs))]
+            count += 1
+            if (count >= ncpus*3):
+                for iget in range(base, count+base):
+                    s1, e1, s2, e2 = block_id[iget]
+                    k_mat_block = k_mat_slice[iget-base].get()
+                    k_mat[s1*3:e1*3, s2*3:e2*3] = k_mat_block
+                    if (s1 != s2):
+                        k_mat[s2*3:e2*3, s1*3:e1*3] = k_mat_block.T
+                if (size>5000):
+                    print("computed block", base, base+count, nbatch, time.time()-time0)
+                    time0 = time.time()
+                k_mat_slice = []
+                base = ibatch+1
+                count = 0
+        if (count>0):
+            if (size>5000):
+                print("computed block", base, base+count, nbatch, time.time()-time0)
+                time0 = time.time()
+            for iget in range(base, nbatch):
+                s1, e1, s2, e2 = block_id[iget]
+                k_mat_block = k_mat_slice[iget-base].get()
                 k_mat[s1*3:e1*3, s2*3:e2*3] = k_mat_block
-                if (ibatch1 != ibatch2):
+                if (s1 != s2):
                     k_mat[s2*3:e2*3, s1*3:e1*3] = k_mat_block.T
+            del k_mat_slice
         pool.close()
         pool.join()
-
-    del k_mat_slice
 
     # matrix manipulation
     ky_mat = k_mat + sigma_n ** 2 * np.eye(size3)
