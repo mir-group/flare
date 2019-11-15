@@ -430,3 +430,128 @@ def get_ky_and_hyp_par(hyps: np.ndarray, hyps_mask, training_data: list,
     ky_mat = k_mat + sigma_n ** 2 * np.eye(size3)
 
     return hyp_mat, ky_mat
+def get_ky_mat_update_par(hyps: np.ndarray, training_data: list,
+                      kernel, cutoffs=None, ncpus=None, hyps_mask=hyps_mask):
+    '''
+    used for update_L_alpha, especially for parallelization
+    parallelized for added atoms, for example, if add 10 atoms to the training
+    set, the K matrix will add 10x3 columns and 10x3 rows, and the task will
+    be distributed to 30 processors
+    '''
+
+    if (no_cpus is None):
+        ncpus = mp.cpu_count()
+    else:
+        ncpus = no_cpus
+
+    # assume sigma_n is the final hyperparameter
+    sigma_n = hyps[-1]
+
+    # initialize matrices
+    n = ky_mat_old.shape[0]
+    size = len(training_data)
+    size3 = 3*len(training_data)
+    ky_mat = np.zeros([size3, size3])
+    ky_mat[:n, :n] = ky_mat_old
+    with mp.Pool(processes=ncpus) as pool:
+        ns = int(math.ceil(size/nsample))
+        nproc = (size3-n)*(ns+n)//2
+        if (nproc < ncpus):
+            nsample = int(size/int(np.sqrt(ncpus*2)))
+            ns = int(math.ceil(size/nsample))
+
+        block_id = []
+        nbatch = 0
+        for ibatch1 in range(ns):
+            s1 = int(nsample*ibatch1)
+            e1 = int(np.min([s1 + nsample, size]))
+            for ibatch2 in range(ibatch1, ns):
+                s2 = int(nsample*ibatch2)
+                e2 = int(np.min([s2 + nsample, size]))
+                if (e2>=n):
+                    s2 = int(np.max([s2, n]))
+                    block_id += [(s1, e1, s2, e2)]
+                    nbatch += 1
+
+        k_mat_slice = []
+        count = 0
+        base = 0
+        time0 = time.time()
+        for ibatch in range(nbatch):
+            s1, e1, s2, e2 = block_id[ibatch]
+            t1 = training_data[s1:e1]
+            t2 = training_data[s2:e2]
+            k_mat_slice += [pool.apply_async(
+                                      get_ky_mat_pack,
+                                      args=(hyps,
+                                        t1, t2,
+                                        bool(s1==s2),
+                                        kernel, cutoffs, hyps_mask))]
+            count += 1
+            if (count >= ncpus*3):
+                for iget in range(base, count+base):
+                    s1, e1, s2, e2 = block_id[iget]
+                    k_mat_block = k_mat_slice[iget-base].get()
+                    ky_mat[s1*3:e1*3, s2*3:e2*3] = k_mat_block
+                    if (s1 != s2):
+                        ky_mat[s2*3:e2*3, s1*3:e1*3] = k_mat_block.T
+                if (size>5000):
+                    print("computed block", base, base+count, nbatch, time.time()-time0)
+                    time0 = time.time()
+                k_mat_slice = []
+                base = ibatch+1
+                count = 0
+        if (count>0):
+            if (size>5000):
+                print("computed block", base, base+count, nbatch, time.time()-time0)
+                time0 = time.time()
+            for iget in range(base, nbatch):
+                s1, e1, s2, e2 = block_id[iget]
+                k_mat_block = k_mat_slice[iget-base].get()
+                ky_mat[s1*3:e1*3, s2*3:e2*3] = k_mat_block
+                if (s1 != s2):
+                    ky_mat[s2*3:e2*3, s1*3:e1*3] = k_mat_block.T
+            del k_mat_slice
+        pool.close()
+        pool.join()
+
+    # matrix manipulation
+    ky_mat[n:, n:] += sigma_n ** 2 * np.eye(size3-n)
+
+    return ky_mat
+
+def get_ky_mat_update(hyps: np.ndarray, training_data: list,
+                      kernel, cutoffs=None, hyps_mask):
+    '''
+    used for update_L_alpha, especially for parallelization
+    parallelized for added atoms, for example, if add 10 atoms to the training
+    set, the K matrix will add 10x3 columns and 10x3 rows, and the task will
+    be distributed to 30 processors
+    '''
+    n = ky_mat_old.shape[0]
+    size = len(training_data)
+    size3 = size*3
+    m = size - n // 3  # number of new data added
+    ky_mat = np.zeros((size3, size3))
+    ky_mat[:n, :n] = ky_mat_old
+
+    # calculate elements
+    for m_index in range(size3):
+        x_1 = training_data[int(math.floor(m_index / 3))]
+        d_1 = ds[m_index % 3]
+        low = int(np.max(m_index, n))
+        for n_index in range(low, size3):
+            x_2 = training_data[int(math.floor(n_index / 3))]
+            d_2 = ds[n_index % 3]
+
+            # calculate kernel and gradient
+            kern_curr = kernel(x_1, x_2, d_1, d_2, hyps,
+                               cutoffs, hyps_mask=hyps_mask)
+            # store kernel value
+            ky_mat[m_index, n_index] = kern_curr
+            ky_mat[n_index, m_index] = kern_curr
+
+    # matrix manipulation
+    sigma_n = self.hyps[-1]
+    ky_mat[n:, n:] += sigma_n ** 2 * np.eye(size3-n)
+    return ky_mat
