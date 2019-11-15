@@ -3,6 +3,7 @@ import math
 import multiprocessing as mp
 import time
 from flare.gp_algebra import get_like_from_ky_mat, get_like_grad_from_mats
+from tqdm import tqdm
 
 def get_ky_mat(hyps: np.ndarray, training_data: list,
                training_labels_np: np.ndarray,
@@ -250,39 +251,62 @@ def get_ky_mat_par(hyps: np.ndarray, training_data: list,
 
     size = len(training_data)
     size3 = 3*len(training_data)
-    ns = int(math.ceil(size/nsample))
     k_mat_slice = []
     k_mat = np.zeros([size3, size3])
     with mp.Pool(processes=ncpus) as pool:
+
+        ns = int(math.ceil(size/nsample))
+        nproc = ns*(ns+1)//2
+        if (nproc < ncpus):
+            nsample = int(size/int(np.sqrt(ncpus*2)))
+            ns = int(math.ceil(size/nsample))
+
+        block_id = []
+        nbatch = 0
         for ibatch1 in range(ns):
-            s1 = nsample*ibatch1
-            e1 = np.min([s1 + nsample, size])
+            s1 = int(nsample*ibatch1)
+            e1 = int(np.min([s1 + nsample, size]))
+            for ibatch2 in range(ibatch1, ns):
+                s2 = int(nsample*ibatch2)
+                e2 = int(np.min([s2 + nsample, size]))
+                block_id += [(s1, e1, s2, e2)]
+                nbatch += 1
+
+        k_mat_slice = []
+        count = 0
+        base = 0
+        for ibatch in tqdm(range(nbatch)):
+            s1, e1, s2, e2 = block_id[ibatch]
+            print("sending", s1, e1, s2, e2)
             t1 = training_data[s1:e1]
-            for ibatch2 in range(ibatch1, ns):
-                s2 = nsample*ibatch2
-                e2 = np.min([s2 + nsample, size])
-                t2 = training_data[s2:e2]
-                if (ibatch1 == ibatch2):
-                    same = True
-                else:
-                    same = False
-                k_mat_slice.append(pool.apply_async(
-                                          get_ky_mat_pack,
-                                          args=(hyps,
-                                            t1, t2, same, kernel,
-                                            cutoffs, hyps_mask)))
-        slice_count=0
-        for ibatch1 in range(ns):
-            s1 = nsample*ibatch1
-            e1 = np.min([s1 + nsample, size])
-            for ibatch2 in range(ibatch1, ns):
-                s2 = nsample*ibatch2
-                e2 = np.min([s2 + nsample, size])
-                k_mat_block = k_mat_slice[slice_count].get()
-                slice_count += 1
+            t2 = training_data[s2:e2]
+            k_mat_slice.append(pool.apply_async(
+                                      get_ky_mat_pack,
+                                      args=(hyps,
+                                        t1, t2, bool(s1==s2),
+                                        kernel, cutoffs,
+                                        hyps_mask)))
+            count += 1
+            if (count >= ncpus*3):
+                for iget in range(base, count+base):
+                    s1, e1, s2, e2 = block_id[iget]
+                    k_mat_block = k_mat_slice[iget-base].get()
+                    k_mat[s1*3:e1*3, s2*3:e2*3] = k_mat_block
+                    if (s1 != s2):
+                        k_mat[s2*3:e2*3, s1*3:e1*3] = k_mat_block.T
+                if (size>5000):
+                    print("computed block", base, base+count)
+                k_mat_slice = []
+                base = ibatch+1
+                count = 0
+        if (count>0):
+            for iget in range(base, nbatch):
+                s1, e1, s2, e2 = block_id[iget]
+                k_mat_block = k_mat_slice[iget-base].get()
                 k_mat[s1*3:e1*3, s2*3:e2*3] = k_mat_block
-                if (ibatch1 != ibatch2):
+                if (s1 != s2):
                     k_mat[s2*3:e2*3, s1*3:e1*3] = k_mat_block.T
+            del k_mat_slice
         pool.close()
         pool.join()
 
@@ -292,9 +316,6 @@ def get_ky_mat_par(hyps: np.ndarray, training_data: list,
     ky_mat += sigma_n ** 2 * np.eye(size3)
 
     return ky_mat
-
-def hello(s1, e1, s2, e2):
-    return [s1, e1, s2, e2]
 
 
 def get_ky_and_hyp_par(hyps: np.ndarray, hyps_mask, training_data: list,
@@ -327,45 +348,64 @@ def get_ky_and_hyp_par(hyps: np.ndarray, hyps_mask, training_data: list,
     hyp_mat0 = np.zeros([non_noise_hyps, size3, size3])
 
     with mp.Pool(processes=cpu) as pool:
-        mat_slice = []
+
         ns = int(math.ceil(size/nsample))
+        nproc = ns*(ns+1)//2
+        if (nproc < cpu):
+            nsample = size/int(np.sqrt(cpu*2))
+            ns = int(math.ceil(size/nsample))
+
+        block_id = []
+        nbatch = 0
         for ibatch1 in range(ns):
-            s1 = nsample*ibatch1
-            e1 = np.min([s1 + nsample, size])
+            s1 = int(nsample*ibatch1)
+            e1 = int(np.min([s1 + nsample, size]))
+            for ibatch2 in range(ibatch1, ns):
+                s2 = int(nsample*ibatch2)
+                e2 = int(np.min([s2 + nsample, size]))
+                block_id += [(s1, e1, s2, e2)]
+                nbatch += 1
+
+        count = 0
+        base = 0
+        mat_slice = []
+        for ibatch in tqdm(range(nbatch)):
+            s1, e1, s2, e2 = block_id[ibatch]
             t1 = training_data[s1:e1]
-            for ibatch2 in range(ibatch1, ns):
-                s2 = nsample*ibatch2
-                e2 = np.min([s2 + nsample, size])
-                t2 = training_data[s2:e2]
-                if (ibatch1 == ibatch2):
-                    same=True
-                else:
-                    same = False
-                mat_slice.append(pool.apply_async(
-                                        get_ky_and_hyp_pack,
-                                        args=(
-                                            hyps, hyps_mask,
-                                            t1, t2, same,
-                                            kernel_grad, cutoffs)))
-        slice_count=0
-        for ibatch1 in range(ns):
-            s1 = nsample*ibatch1
-            e1 = np.min([s1 + nsample, size])
-            for ibatch2 in range(ibatch1, ns):
-                s2 = nsample*ibatch2
-                e2 = np.min([s2 + nsample, size])
-                h_mat_block, k_mat_block = mat_slice[slice_count].get()
-                slice_count += 1
+            t2 = training_data[s2:e2]
+            mat_slice.append(pool.apply_async(
+                                    get_ky_and_hyp_pack,
+                                    args=(
+                                        hyps, hyps_mask,
+                                        t1, t2, bool(s1==s2),
+                                        kernel_grad, cutoffs)))
+            count += 1
+            if (count > cpu*3):
+                for iget in range(base, count+base):
+                    s1, e1, s2, e2 = block_id[iget]
+                    h_mat_block, k_mat_block = mat_slice[iget+base].get()
+                    k_mat[s1*3:e1*3, s2*3:e2*3] = k_mat_block
+                    hyp_mat0[:, s1*3:e1*3, s2*3:e2*3] = h_mat_block
+                    if (s1 != s2):
+                        k_mat[s2*3:e2*3, s1*3:e1*3] = k_mat_block.T
+                for idx in range(hyp_mat0.shape[0]):
+                    hyp_mat0[idx, s2*3:e2*3, s1*3:e1*3] = h_mat_block[idx].T
+                if (size>5000):
+                    print("computed block", base, base+count)
+                mat_slice = []
+                base = ibatch+1
+                count = 0
+        if (count>0):
+            for iget in range(base, nbatch):
+                s1, e1, s2, e2 = block_id[iget]
+                h_mat_block, k_mat_block = mat_slice[iget+base].get()
                 k_mat[s1*3:e1*3, s2*3:e2*3] = k_mat_block
                 hyp_mat0[:, s1*3:e1*3, s2*3:e2*3] = h_mat_block
-                if (ibatch1 != ibatch2):
+                if (s1 != s2):
                     k_mat[s2*3:e2*3, s1*3:e1*3] = k_mat_block.T
-                    for idx in range(hyp_mat0.shape[0]):
-                        hyp_mat0[idx, s2*3:e2*3, s1*3:e1*3] = h_mat_block[idx].T
+            del mat_slice
         pool.close()
         pool.join()
-
-    del mat_slice
 
     # obtain noise parameter
     train_noise = True
