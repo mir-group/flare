@@ -3,7 +3,6 @@ import math
 import multiprocessing as mp
 import time
 from flare.gp_algebra import get_like_from_ky_mat, get_like_grad_from_mats
-from tqdm import tqdm
 
 def get_ky_mat(hyps: np.ndarray, training_data: list,
                training_labels_np: np.ndarray,
@@ -275,9 +274,9 @@ def get_ky_mat_par(hyps: np.ndarray, training_data: list,
         k_mat_slice = []
         count = 0
         base = 0
-        for ibatch in tqdm(range(nbatch)):
+        time0 = time.time()
+        for ibatch in range(nbatch):
             s1, e1, s2, e2 = block_id[ibatch]
-            print("sending", s1, e1, s2, e2)
             t1 = training_data[s1:e1]
             t2 = training_data[s2:e2]
             k_mat_slice.append(pool.apply_async(
@@ -295,11 +294,15 @@ def get_ky_mat_par(hyps: np.ndarray, training_data: list,
                     if (s1 != s2):
                         k_mat[s2*3:e2*3, s1*3:e1*3] = k_mat_block.T
                 if (size>5000):
-                    print("computed block", base, base+count)
+                    print("computed block", base, base+count, nbatch, time.time()-time0)
+                    time0 = time.time()
                 k_mat_slice = []
                 base = ibatch+1
                 count = 0
         if (count>0):
+            if (size>5000):
+                print("computed block", base, base+count, nbatch, time.time()-time0)
+                time0 = time.time()
             for iget in range(base, nbatch):
                 s1, e1, s2, e2 = block_id[iget]
                 k_mat_block = k_mat_slice[iget-base].get()
@@ -369,8 +372,9 @@ def get_ky_and_hyp_par(hyps: np.ndarray, hyps_mask, training_data: list,
         count = 0
         base = 0
         mat_slice = []
-        for ibatch in tqdm(range(nbatch)):
+        for ibatch in range(nbatch):
             s1, e1, s2, e2 = block_id[ibatch]
+            print("sending", s1, e1, s2, e2)
             t1 = training_data[s1:e1]
             t2 = training_data[s2:e2]
             mat_slice.append(pool.apply_async(
