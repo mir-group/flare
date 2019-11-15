@@ -15,12 +15,17 @@ from scipy.optimize import minimize
 from flare.env import AtomicEnvironment
 from flare.struc import Structure
 from flare.gp_algebra import get_ky_and_hyp, get_ky_and_hyp_par, \
+                             get_ky_mat, get_ky_mat_par, \
                              get_neg_likelihood, get_neg_like_grad, \
+                             get_like_from_ky_mat, \
                              get_like_grad_from_mats, \
                              get_ky_mat_update, get_kernel_vector_par
 from flare.gp_algebra_multi import get_ky_and_hyp as get_ky_and_multihyp
 from flare.gp_algebra_multi import get_ky_and_hyp_par as \
         get_ky_and_multihyp_par
+from flare.gp_algebra_multi import get_ky_mat as get_ky_mat_multihyp
+from flare.gp_algebra_multi import get_ky_mat_par as \
+        get_ky_mat_multihyp_par
 from flare.gp_algebra_multi import get_neg_like_grad as \
         get_neg_like_grad_mask
 from flare.kernels import str_to_kernel
@@ -402,31 +407,34 @@ environment and the environments in the training set."""
         """
         if (self.multihyps):
             if self.par:
-                hyp_mat, ky_mat = \
-                    get_ky_and_multihyp_par(self.hyps, self.hyps_mask,
+                ky_mat = \
+                    get_ky_mat_multihyp_par(self.hyps,
                                        self.training_data,
                                        self.training_labels_np,
-                                       self.kernel_grad, self.cutoffs)
+                                       self.kernel, self.cutoffs,
+                                       self.hyps_mask, self.no_cpus,
+                                       nsample=100)
             else:
-                hyp_mat, ky_mat = \
-                    get_ky_and_multihyp(self.hyps, self.hyps_mask,
-                                        self.training_data,
-                                        self.training_labels_np,
-                                        self.kernel_grad, self.cutoffs)
+                ky_mat = \
+                    get_ky_mat_multihyp(self.hyps,
+                                       self.training_data,
+                                       self.training_labels_np,
+                                       self.kernel, self.cutoffs,
+                                       self.hyps_mask)
         else:
             if self.par:
-                hyp_mat, ky_mat = \
-                    get_ky_and_hyp_par(self.hyps, self.training_data,
+                ky_mat = \
+                    get_ky_mat_par(self.hyps, self.training_data,
                                        self.training_labels_np,
                                        self.kernel_grad, self.cutoffs)
             else:
-                hyp_mat, ky_mat = \
-                    get_ky_and_hyp(self.hyps, self.training_data,
+                ky_mat = \
+                    get_ky_mat(self.hyps, self.training_data,
                                    self.training_labels_np,
                                    self.kernel_grad, self.cutoffs)
 
-        like, like_grad = \
-            get_like_grad_from_mats(ky_mat, hyp_mat, self.training_labels_np)
+        # like, like_grad = \
+        #     get_like_grad_from_mats(ky_mat, hyp_mat, self.training_labels_np)
         l_mat = np.linalg.cholesky(ky_mat)
         l_mat_inv = np.linalg.inv(l_mat)
         ky_mat_inv = l_mat_inv.T @ l_mat_inv
@@ -438,8 +446,8 @@ environment and the environments in the training set."""
         self.ky_mat_inv = ky_mat_inv
         self.l_mat_inv = l_mat_inv
 
-        self.likelihood = like
-        self.likelihood_gradient = like_grad
+        self.likelihood = get_like_from_ky_mat(self.ky_mat, self.training_labels_np)
+        # self.likelihood_gradient = like_grad
 
     def update_L_alpha(self):
         """
@@ -465,8 +473,6 @@ environment and the environments in the training set."""
         self.ky_mat_inv = ky_mat_inv
         self.l_mat_inv = l_mat_inv
 
-        # self.likelihood = -res.fun
-        # self.likelihood_gradient = -res.jac
 
     def __str__(self):
         """String representation of the GP model."""
