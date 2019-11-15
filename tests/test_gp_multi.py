@@ -41,14 +41,14 @@ def generate_hm(nbond, ntriplet):
     nspecs = 2
 
     if (nbond==2):
-        sig1 = random(nbond)
-        ls1 = random(nbond)
+        sig1 = [1, 1]
+        ls1 = [1, 1]
         bond_mask = np.ones(nspecs**2, dtype=int)
         bond_mask[0] = 0
         bond_name = ["sig2"]*2+["ls2"]*2
     elif (nbond==1):
-        sig1 = [random()]
-        ls1 = [random()]
+        sig1 = [1]
+        ls1 = [1]
         bond_mask = np.zeros(nspecs**2, dtype=int)
         bond_name = ["sig2"]+["ls2"]
     else:
@@ -56,14 +56,14 @@ def generate_hm(nbond, ntriplet):
         bond_name = []
 
     if (ntriplet==2):
-        sig2 = random(ntriplet)
-        ls2 = random(ntriplet)
+        sig2 = [1, 1]
+        ls2 = [1, 1]
         triplet_mask = np.ones(nspecs**3, dtype=int)
         triplet_mask[0] = 0
         triplet_name = ["sig3"]*2+["ls3"]*2
     elif (ntriplet==1):
-        sig2 = [random()]
-        ls2 = [random()]
+        sig2 = [1]
+        ls2 = [1]
         triplet_mask = np.zeros(nspecs**3, dtype=int)
         triplet_name = ["sig3"]+["ls3"]
     else:
@@ -71,13 +71,13 @@ def generate_hm(nbond, ntriplet):
         triplet_name = []
 
     if (nbond>0 and ntriplet>0):
-        hyps = np.hstack([sig1, ls1, sig2, ls2, [random()]])
+        hyps = np.hstack([sig1, ls1, sig2, ls2, [1]])
         hyps_label = np.hstack([bond_name, triplet_name, ['noise']])
     elif (nbond>0):
-        hyps = np.hstack([sig1, ls1, [random()]])
+        hyps = np.hstack([sig1, ls1, [1]])
         hyps_label = np.hstack([bond_name, ['noise']])
     else:
-        hyps = np.hstack([sig2, ls2, [random()]])
+        hyps = np.hstack([sig2, ls2, [1]])
         hyps_label = np.hstack([triplet_name, ['noise']])
 
     hyps_mask = {'nspec': nspecs,
@@ -278,9 +278,10 @@ def test_train(two_body_gp, params):
     two_body_gp.update_db(test_structure, forces)
 
     # train gp
-    two_body_gp.train()
+    res = two_body_gp.train()
 
     hyp_post = list(two_body_gp.hyps)
+    print(res)
 
     # check if hyperparams have been updated
     assert (hyp != hyp_post)
