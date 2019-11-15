@@ -6,12 +6,14 @@ import time
 
 def get_ky_mat_par(hyps: np.ndarray, training_data: list,
                    training_labels_np: np.ndarray,
-                   kernel, cutoffs=None, no_cpus=None, nsample=100):
+                   kernel, cutoffs=None, ncpus=None, nsample=100):
 
-    if (no_cpus is None):
+    if (ncpus is None):
         ncpus = mp.cpu_count()
-    else:
-        ncpus = no_cpus
+    if (ncpus == 1):
+        return get_ky_mat(hyps, training_data,
+                          training_labels_np,
+                          kernel, cutoffs)
 
     # assume sigma_n is the final hyperparameter
     number_of_hyps = len(hyps)
@@ -122,12 +124,13 @@ def get_ky_mat_pack(hyps: np.ndarray, training_data1: list,
 
 def get_ky_and_hyp_par(hyps: np.ndarray, training_data: list,
                        training_labels_np: np.ndarray,
-                       kernel_grad, cutoffs=None, no_cpus=None, nsample=100):
+                       kernel_grad, cutoffs=None, ncpus=None, nsample=100):
 
-    if (no_cpus is None):
+    if (ncpus is None):
         ncpus = mp.cpu_count()
-    else:
-        ncpus = no_cpus
+    if (ncpus == 1):
+        return get_ky_and_hyp(hyps, training_data, training_labels_np,
+                              kernel_grad, cutoffs)
 
     # assume sigma_n is the final hyperparameter
     number_of_hyps = len(hyps)
@@ -336,8 +339,8 @@ def get_ky_and_hyp(hyps: np.ndarray, training_data: list,
 
     return hyp_mat, ky_mat
 
-def get_ky_mat_update_par(hyps: np.ndarray, training_data: list,
-                      kernel, cutoffs=None, ncpus=None):
+def get_ky_mat_update_par(ky_mat_old, hyps: np.ndarray, training_data: list,
+                      kernel, cutoffs=None, ncpus=None, nsample=100):
     '''
     used for update_L_alpha, especially for parallelization
     parallelized for added atoms, for example, if add 10 atoms to the training
@@ -345,10 +348,11 @@ def get_ky_mat_update_par(hyps: np.ndarray, training_data: list,
     be distributed to 30 processors
     '''
 
-    if (no_cpus is None):
+    if (ncpus is None):
         ncpus = mp.cpu_count()
-    else:
-        ncpus = no_cpus
+    if (ncpus == 1):
+        return get_ky_mat_update(ky_mat_old, hyps, training_data,
+                                 kernel, cutoffs)
 
     # assume sigma_n is the final hyperparameter
     sigma_n = hyps[-1]
@@ -426,7 +430,7 @@ def get_ky_mat_update_par(hyps: np.ndarray, training_data: list,
 
     return ky_mat
 
-def get_ky_mat_update(hyps: np.ndarray, training_data: list,
+def get_ky_mat_update(ky_mat_old, hyps: np.ndarray, training_data: list,
                       kernel, cutoffs=None):
     '''
     used for update_L_alpha, especially for parallelization
@@ -513,17 +517,13 @@ def get_like_grad_from_mats(ky_mat, hyp_mat, training_labels_np):
 
 def get_neg_likelihood(hyps: np.ndarray, training_data: list,
                        training_labels_np: np.ndarray,
-                       kernel, cutoffs=None, output = None,
-                       par=False, no_cpus=None):
+                       kernel, output = None,
+                       cutoffs=None,
+                       ncpus=None, nsample=100):
 
-    if par:
-        ky_mat = \
-            get_ky_mat_par(hyps, training_data, training_labels_np,
-                           kernel, cutoffs, no_cpus)
-    else:
-        ky_mat = \
-            get_ky_mat(hyps, training_data, training_labels_np,
-                       kernel, cutoffs)
+    ky_mat = get_ky_mat_par(hyps, training_data,
+                            training_labels_np,
+                            kernel, cutoffs, ncpus, nsample)
 
     like = get_like_from_ky_mat(ky_mat, training_labels_np)
 
@@ -536,16 +536,11 @@ def get_neg_likelihood(hyps: np.ndarray, training_data: list,
 def get_neg_like_grad(hyps: np.ndarray, training_data: list,
                       training_labels_np: np.ndarray,
                       kernel_grad, cutoffs=None,
-                      output = None, par=False, no_cpus=None):
+                      output = None, ncpus=None, nsample=100):
 
-    if par:
-        hyp_mat, ky_mat = \
-            get_ky_and_hyp_par(hyps, training_data, training_labels_np,
-                               kernel_grad, cutoffs, no_cpus)
-    else:
-        hyp_mat, ky_mat = \
-            get_ky_and_hyp(hyps, training_data, training_labels_np,
-                           kernel_grad, cutoffs)
+    hyp_mat, ky_mat = \
+        get_ky_and_hyp_par(hyps, training_data, training_labels_np,
+                           kernel_grad, cutoffs, ncpus, nsample)
 
     like, like_grad = \
         get_like_grad_from_mats(ky_mat, hyp_mat, training_labels_np)
@@ -556,32 +551,23 @@ def get_neg_like_grad(hyps: np.ndarray, training_data: list,
     return -like, -like_grad
 
 def get_kernel_vector_unit(training_data, x,
-                      d_1, kernel, hyps, cutoffs,
-                      hyps_mask):
+                      d_1, kernel, hyps, cutoffs):
 
     ds = [1, 2, 3]
     size = len(training_data) * 3
     k_v = np.zeros(size, )
 
-    if (hyps_mask is not None):
-        for m_index in range(size):
-            x_2 = training_data[int(math.floor(m_index / 3))]
-            d_2 = ds[m_index % 3]
-            k_v[m_index] = kernel(x, x_2, d_1, d_2,
-                                  hyps, cutoffs,
-                                  hyps_mask=hyps_mask)
-    else:
-        for m_index in range(size):
-            x_2 = training_data[int(math.floor(m_index / 3))]
-            d_2 = ds[m_index % 3]
-            k_v[m_index] = kernel(x, x_2, d_1, d_2,
-                                  hyps, cutoffs)
+    for m_index in range(size):
+        x_2 = training_data[int(math.floor(m_index / 3))]
+        d_2 = ds[m_index % 3]
+        k_v[m_index] = kernel(x, x_2, d_1, d_2,
+                              hyps, cutoffs)
     return k_v
 
 def get_kernel_vector_par(training_data, x,
                           d_1, hyps, cutoffs,
-                          hyps_mask, nsample=100,
-                          no_cpus=None):
+                          nsample=100,
+                          ncpus=None, nsample=100):
     """
     Compute kernel vector, comparing input environment to all             environments
     in the GP's training set.
@@ -594,10 +580,10 @@ def get_kernel_vector_par(training_data, x,
     :rtype: np.ndarray
     """
 
-    if (no_cpus is None):
+    if (ncpus is None):
         ncpus = mp.cpu_count()
-    else:
-        ncpus = no_cpus
+    if (ncpus == 1):
+        return get_kernel_vector(training_data, x, d_1, hyps, cutoffs)
 
     with mp.Pool(processes=processes) as pool:
         size = len(training_data)
@@ -613,8 +599,7 @@ def get_kernel_vector_par(training_data, x,
             k12_slice.append(pool.apply_async(get_kernel_vector_unit,
                                               args=(training_data[s: e],
                                                     x, d_1, hyps,
-                                                    cutoffs,
-                                                    hyps_mask)))
+                                                    cutoffs)))
         size3 = size*3
         nsample3 = nsample*3
         k12_v = np.zeros(size3)
@@ -628,9 +613,8 @@ def get_kernel_vector_par(training_data, x,
     return k_v
 
 def get_kernel_vector(training_data, kernel,
-                      x: AtomicEnvironment, d_1: int,
-                      hyps, cutoff,
-                      hyps_mask=None):
+                      x, d_1: int,
+                      hyps, cutoff):
     """
     Compute kernel vector, comparing input environment to all environments
     in the GP's training set.
@@ -646,18 +630,10 @@ def get_kernel_vector(training_data, kernel,
     size = len(training_data) * 3
     k_v = np.zeros(size, )
 
-    if (hyps_mask is not None):
-        for m_index in range(size):
-            x_2 = training_data[int(math.floor(m_index / 3))]
-            d_2 = ds[m_index % 3]
-            k_v[m_index] = kernel(x, x_2, d_1, d_2,
-                                  hyps, cutoffs,
-                                  hyps_mask=hyps_mask)
+    for m_index in range(size):
+        x_2 = training_data[int(math.floor(m_index / 3))]
+        d_2 = ds[m_index % 3]
+        k_v[m_index] = kernel(x, x_2, d_1, d_2,
+                              hyps, cutoffs)
 
-    else:
-        for m_index in range(size):
-            x_2 = training_data[int(math.floor(m_index / 3))]
-            d_2 = ds[m_index % 3]
-            k_v[m_index] = kernel(x, x_2, d_1, d_2,
-                                  hyps, cutoffs)
     return k_v
