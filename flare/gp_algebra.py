@@ -142,46 +142,72 @@ def get_ky_and_hyp_par(hyps: np.ndarray, training_data: list,
 
     with mp.Pool(processes=ncpus) as pool:
         ns = int(math.ceil(size/nsample))
+        nproc = ns*(ns+1)//2
+        if (nproc < ncpus):
+            nsample = int(size/int(np.sqrt(ncpus*2)))
+            ns = int(math.ceil(size/nsample))
+
+        block_id = []
+        nbatch = 0
+        for ibatch1 in range(ns):
+            s1 = int(nsample*ibatch1)
+            e1 = int(np.min([s1 + nsample, size]))
+            for ibatch2 in range(ibatch1, ns):
+                s2 = int(nsample*ibatch2)
+                e2 = int(np.min([s2 + nsample, size]))
+                block_id += [(s1, e1, s2, e2)]
+                nbatch += 1
+
         mat_slice = []
-        for ibatch1 in range(ns):
-            s1 = nsample*ibatch1
-            e1 = np.min([s1 + nsample, size])
+        count = 0
+        base = 0
+        time0 = time.time()
+        for ibatch in range(nbatch):
+            s1, e1, s2, e2 = block_id[ibatch]
             t1 = training_data[s1:e1]
-            for ibatch2 in range(ibatch1, ns):
-                s2 = nsample*ibatch2
-                e2 = np.min([s2 + nsample, size])
-                t2 = training_data[s2:e2]
-                if (ibatch1 == ibatch2):
-                    same=True
-                else:
-                    same = False
-                get_ky_and_hyp_pack( hyps, t1, t2,
-                    same, kernel_grad, cutoffs)
-                mat_slice += [pool.apply_async(
-                                        get_ky_and_hyp_pack,
-                                        args=(
-                                            hyps, t1, t2,
-                                            same, kernel_grad, cutoffs))]
-        slice_count=0
-        for ibatch1 in range(ns):
-            s1 = nsample*ibatch1
-            e1 = np.min([s1 + nsample, size])
-            for ibatch2 in range(ibatch1, ns):
-                s2 = nsample*ibatch2
-                e2 = np.min([s2 + nsample, size])
-                h_mat_block, k_mat_block = mat_slice[slice_count].get()
-                slice_count += 1
+            t2 = training_data[s2:e2]
+            mat_slice += [pool.apply_async(
+                                    get_ky_and_hyp_pack,
+                                    args=(
+                                        hyps, t1, t2,
+                                        bool(s1==s2), kernel_grad, cutoffs))]
+            count += 1
+            if (count >= ncpus*3):
+                for iget in range(base, count+base):
+                    s1, e1, s2, e2 = block_id[iget]
+                    h_mat_block, k_mat_block = mat_slice[iget-base].get()
+                    k_mat[s1*3:e1*3, s2*3:e2*3] = k_mat_block
+                    hyp_mat[:-1, s1*3:e1*3, s2*3:e2*3] = h_mat_block
+                    if (s1 != s2):
+                        k_mat[s2*3:e2*3, s1*3:e1*3] = k_mat_block.T
+                        for idx in range(hyp_mat.shape[0]-1):
+                            hyp_mat[idx, s2*3:e2*3, s1*3:e1*3] = h_mat_block[idx].T
+                if (size>5000):
+                    print("computed block", base, base+count, nbatch, time.time()-time0)
+                    time0 = time.time()
+                del mat_slice
+                mat_slice = []
+                base = ibatch+1
+                count = 0
+        if (count>0):
+            if (size>5000):
+                print("computed block", base, base+count, nbatch, time.time()-time0)
+                time0 = time.time()
+            for iget in range(base, nbatch):
+                s1, e1, s2, e2 = block_id[iget]
+                s1, e1, s2, e2 = block_id[iget]
+                h_mat_block, k_mat_block = mat_slice[iget-base].get()
                 k_mat[s1*3:e1*3, s2*3:e2*3] = k_mat_block
                 hyp_mat[:-1, s1*3:e1*3, s2*3:e2*3] = h_mat_block
-                if (ibatch1 != ibatch2):
+                if (s1 != s2):
                     k_mat[s2*3:e2*3, s1*3:e1*3] = k_mat_block.T
                     for idx in range(hyp_mat.shape[0]-1):
                         hyp_mat[idx, s2*3:e2*3, s1*3:e1*3] = h_mat_block[idx].T
+            del mat_slice
         pool.close()
-
+        pool.join()
 
     # add gradient of noise variance
-    del mat_slice
     hyp_mat[-1, :, :] = np.eye(size3) * 2 * sigma_n
 
     # matrix manipulation
