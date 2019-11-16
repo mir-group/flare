@@ -14,20 +14,12 @@ from scipy.optimize import minimize
 
 from flare.env import AtomicEnvironment
 from flare.struc import Structure
-from flare.gp_algebra import get_ky_and_hyp, get_ky_and_hyp_par, \
-                             get_ky_mat, get_ky_mat_par, \
-                             get_neg_likelihood, get_neg_like_grad, \
-                             get_like_from_ky_mat, \
-                             get_like_grad_from_mats, \
-                             get_ky_mat_update, get_kernel_vector_par
-from flare.gp_algebra_multi import get_ky_and_hyp as get_ky_and_multihyp
-from flare.gp_algebra_multi import get_ky_and_hyp_par as \
-        get_ky_and_multihyp_par
-from flare.gp_algebra_multi import get_ky_mat as get_ky_mat_multihyp
-from flare.gp_algebra_multi import get_ky_mat_par as \
-        get_ky_mat_multihyp_par
-from flare.gp_algebra_multi import get_neg_like_grad as \
-        get_neg_like_grad_mask
+from flare.gp_algebra import get_neg_likelihood, \
+                             get_like_from_ky_mat
+from flare.gp_algebra_multi import get_kernel_vector_par
+from flare.gp_algebra_multi import get_ky_mat_par
+from flare.gp_algebra_multi import get_ky_mat_update_par
+from flare.gp_algebra_multi import get_neg_like_grad
 from flare.kernels import str_to_kernel
 from flare.mc_simple import str_to_mc_kernel
 from flare.mc_sephyps import str_to_mc_kernel as str_to_mc_sephyps_kernel
@@ -46,7 +38,8 @@ class GaussianProcess:
                  energy_force_kernel: Callable = None,
                  energy_kernel: Callable = None,
                  opt_algorithm: str = 'L-BFGS-B',
-                 maxiter=10, par=False, no_cpus=None, per_atom_par=True,
+                 maxiter=10, par=False, per_atom_par=True,
+                 ncpus=None, nsample=100,
                  output=None,
                  multihyps=False, hyps_mask=None):
         """Initialize GP parameters and training data."""
@@ -69,7 +62,8 @@ class GaussianProcess:
         self.maxiter = maxiter
         self.par = par
         self.per_atom_par = per_atom_par
-        self.no_cpus = no_cpus
+        self.ncpus = ncpus
+        self.nsample = 100
         self.output = output
 
         # Parameters set during training
@@ -77,7 +71,7 @@ class GaussianProcess:
         self.l_mat = None
         self.alpha = None
         self.ky_mat_inv = None
-        self.l_mat_inv = None
+        # self.l_mat_inv = None
         self.likelihood = None
         self.likelihood_gradient = None
 
@@ -207,17 +201,11 @@ hyperparameters to maximize the likelihood, then computes L and alpha \
 
         x_0 = self.hyps
 
-        if (self.multihyps):
-             args = (self.training_data, self.training_labels_np,
-                     self.kernel_grad, self.cutoffs, output,
-                     self.par, self.no_cpus,
-                     self.hyps_mask)
-             objective_func = get_neg_like_grad_mask
-        else:
-             args = (self.training_data, self.training_labels_np,
-                     self.kernel_grad, self.cutoffs, output,
-                     self.par, self.no_cpus)
-             objective_func = get_neg_like_grad
+        args = (self.training_data, self.training_labels_np,
+                self.kernel_grad, output,
+                self.cutoffs, self.hyps_mask,
+                self.ncpus, self.nsample)
+        objective_func = get_neg_like_grad
         res = None
 
         if self.algo == 'L-BFGS-B':
@@ -280,11 +268,17 @@ uncertainty."""
 
         # Kernel vector allows for evaluation of At. Env.
         if (self.par and not self.per_atom_par):
-            k_v = get_kernel_vector_par(self.training_data, x_t, d,
-                    self.hyps, self.cutoffs, sel.hyps_mask,
-                    nsample=100, no_cpus=self.no_cpus)
+            ncpus = self.ncpus
         else:
-            k_v = self.get_kernel_vector(x_t, d)
+            ncpus = 1
+
+        k_v = get_kernel_vector_par(self.training_data, self.kernel,
+                                    x_t, d,
+                                    self.hyps,
+                                    cutoffs=self.cutoffs,
+                                    hyps_mask=self.hyps_mask,
+                                    ncpus=self.ncpus,
+                                    nsample=self.nsample)
 
         # Guarantee that alpha is up to date with training set
         assert ((self.alpha is not None) and (3 * len(self.training_data) == len(self.alpha)))
@@ -405,36 +399,15 @@ environment and the environments in the training set."""
         The forces and variances are later obtained using alpha.
         :return:
         """
-        if (self.multihyps):
-            if self.par:
-                ky_mat = \
-                    get_ky_mat_multihyp_par(self.hyps,
-                                       self.training_data,
-                                       self.training_labels_np,
-                                       self.kernel, self.cutoffs,
-                                       self.hyps_mask, self.no_cpus,
-                                       nsample=100)
-            else:
-                ky_mat = \
-                    get_ky_mat_multihyp(self.hyps,
-                                       self.training_data,
-                                       self.training_labels_np,
-                                       self.kernel, self.cutoffs,
-                                       self.hyps_mask)
-        else:
-            if self.par:
-                ky_mat = \
-                    get_ky_mat_par(self.hyps, self.training_data,
-                                       self.training_labels_np,
-                                       self.kernel_grad, self.cutoffs)
-            else:
-                ky_mat = \
-                    get_ky_mat(self.hyps, self.training_data,
-                                   self.training_labels_np,
-                                   self.kernel_grad, self.cutoffs)
+        ky_mat = get_ky_mat_par(self.hyps,
+                                self.training_data,
+                                self.kernel,
+                                cutoffs=self.cutoffs,
+                                hyps_mask=self.hyps_mask,
+                                ncpus=self.ncpus,
+                                nsample=self.nsample)
 
-        # like, like_grad = \
-        #     get_like_grad_from_mats(ky_mat, hyp_mat, self.training_labels_np)
+
         l_mat = np.linalg.cholesky(ky_mat)
         l_mat_inv = np.linalg.inv(l_mat)
         ky_mat_inv = l_mat_inv.T @ l_mat_inv
@@ -444,7 +417,7 @@ environment and the environments in the training set."""
         self.l_mat = l_mat
         self.alpha = alpha
         self.ky_mat_inv = ky_mat_inv
-        self.l_mat_inv = l_mat_inv
+        # self.l_mat_inv = l_mat_inv
 
         self.likelihood = get_like_from_ky_mat(self.ky_mat, self.training_labels_np)
         # self.likelihood_gradient = like_grad
@@ -459,8 +432,17 @@ environment and the environments in the training set."""
             self.set_L_alpha()
             return
 
-        ky_mat = get_ky_mat_update(np.copy(self.ky_mat), self.training_data,
-                self.get_kernel_vector, self.hyps, self.par, self.no_cpus)
+        if (self.par and not self.per_atom_par):
+            ncpus=self.ncpus
+        else:
+            ncpus=1
+        ky_mat = get_ky_mat_update_par(self.ky_mat, self.hyps,
+                                       self.training_data,
+                                       self.kernel,
+                                       cutoffs=self.cutoffs,
+                                       hyps_mask=self.hyps_mask,
+                                       ncpus=ncpus,
+                                       nsample=self.nsample)
 
         l_mat = np.linalg.cholesky(ky_mat)
         l_mat_inv = np.linalg.inv(l_mat)
@@ -471,7 +453,7 @@ environment and the environments in the training set."""
         self.l_mat = l_mat
         self.alpha = alpha
         self.ky_mat_inv = ky_mat_inv
-        self.l_mat_inv = l_mat_inv
+        # self.l_mat_inv = l_mat_inv
 
 
     def __str__(self):
@@ -560,7 +542,7 @@ environment and the environments in the training set."""
                                  hyps=np.array(dictionary['hyps']),
                                  hyp_labels=dictionary['hyp_labels'],
                                  par=dictionary['par'],
-                                 no_cpus=dictionary['no_cpus'],
+                                 ncpus=dictionary['ncpus'],
                                  maxiter=dictionary['maxiter'],
                                  opt_algorithm=dictionary['algo'],
                                  multihyps=dictionary['multihyps'],
@@ -568,7 +550,7 @@ environment and the environments in the training set."""
 
         # Save time by attempting to load in computed attributes
         new_gp.l_mat = np.array(dictionary.get('l_mat', None))
-        new_gp.l_mat_inv = np.array(dictionary.get('l_mat_inv', None))
+        # new_gp.l_mat_inv = np.array(dictionary.get('l_mat_inv', None))
         new_gp.alpha = np.array(dictionary.get('alpha', None))
         new_gp.ky_mat = np.array(dictionary.get('ky_mat', None))
         new_gp.ky_mat_inv = np.array(dictionary.get('ky_mat_inv', None))

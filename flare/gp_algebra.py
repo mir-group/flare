@@ -5,14 +5,12 @@ import time
 
 
 def get_ky_mat_par(hyps: np.ndarray, training_data: list,
-                   training_labels_np: np.ndarray,
                    kernel, cutoffs=None, ncpus=None, nsample=100):
 
     if (ncpus is None):
         ncpus = mp.cpu_count()
     if (ncpus == 1):
         return get_ky_mat(hyps, training_data,
-                          training_labels_np,
                           kernel, cutoffs)
 
     # assume sigma_n is the final hyperparameter
@@ -123,13 +121,12 @@ def get_ky_mat_pack(hyps: np.ndarray, training_data1: list,
 
 
 def get_ky_and_hyp_par(hyps: np.ndarray, training_data: list,
-                       training_labels_np: np.ndarray,
                        kernel_grad, cutoffs=None, ncpus=None, nsample=100):
 
     if (ncpus is None):
         ncpus = mp.cpu_count()
     if (ncpus == 1):
-        return get_ky_and_hyp(hyps, training_data, training_labels_np,
+        return get_ky_and_hyp(hyps, training_data,
                               kernel_grad, cutoffs)
 
     # assume sigma_n is the final hyperparameter
@@ -261,7 +258,6 @@ def get_ky_and_hyp_pack(hyps: np.ndarray, training_data1: list,
 
 
 def get_ky_mat(hyps: np.ndarray, training_data: list,
-               training_labels_np: np.ndarray,
                kernel, cutoffs=None):
 
     # assume sigma_n is the final hyperparameter
@@ -298,7 +294,6 @@ def get_ky_mat(hyps: np.ndarray, training_data: list,
 
 
 def get_ky_and_hyp(hyps: np.ndarray, training_data: list,
-                   training_labels_np: np.ndarray,
                    kernel_grad, cutoffs=None):
     # assume sigma_n is the final hyperparameter
     number_of_hyps = len(hyps)
@@ -358,30 +353,42 @@ def get_ky_mat_update_par(ky_mat_old, hyps: np.ndarray, training_data: list,
     sigma_n = hyps[-1]
 
     # initialize matrices
-    n = ky_mat_old.shape[0]
+    old_size = ky_mat_old.shape[0]//3
+    old_size3 = ky_mat_old.shape[0]
     size = len(training_data)
     size3 = 3*len(training_data)
     ky_mat = np.zeros([size3, size3])
-    ky_mat[:n, :n] = ky_mat_old
+    ky_mat[:old_size3, :old_size3] = ky_mat_old
     with mp.Pool(processes=ncpus) as pool:
+
         ns = int(math.ceil(size/nsample))
-        nproc = (size3-n)*(ns+n)//2
+        nproc = (size3-old_size3)*(ns+old_size3)//2
         if (nproc < ncpus):
             nsample = int(size/int(np.sqrt(ncpus*2)))
             ns = int(math.ceil(size/nsample))
 
+        ns_new = int(math.ceil((size-old_size)/nsample))
+        old_ns = int(math.ceil(old_size/nsample))
+
         block_id = []
         nbatch = 0
-        for ibatch1 in range(ns):
+        for ibatch1 in range(old_ns):
             s1 = int(nsample*ibatch1)
-            e1 = int(np.min([s1 + nsample, size]))
-            for ibatch2 in range(ibatch1, ns):
-                s2 = int(nsample*ibatch2)
+            e1 = int(np.min([s1 + nsample, old_size]))
+            for ibatch2 in range(ns_new):
+                s2 = int(nsample*ibatch2)+old_size
                 e2 = int(np.min([s2 + nsample, size]))
-                if (e2>=n):
-                    s2 = int(np.max([s2, n]))
-                    block_id += [(s1, e1, s2, e2)]
-                    nbatch += 1
+                block_id += [(s1, e1, s2, e2)]
+                nbatch += 1
+
+        for ibatch1 in range(ns_new):
+            s1 = int(nsample*ibatch1)+old_size
+            e1 = int(np.min([s1 + nsample, size]))
+            for ibatch2 in range(ns_new):
+                s2 = int(nsample*ibatch2)+old_size
+                e2 = int(np.min([s2 + nsample, size]))
+                block_id += [(s1, e1, s2, e2)]
+                nbatch += 1
 
         k_mat_slice = []
         count = 0
@@ -426,7 +433,7 @@ def get_ky_mat_update_par(ky_mat_old, hyps: np.ndarray, training_data: list,
         pool.join()
 
     # matrix manipulation
-    ky_mat[n:, n:] += sigma_n ** 2 * np.eye(size3-n)
+    ky_mat[old_size3:, old_size3:] += sigma_n ** 2 * np.eye(size3-old_size3)
 
     return ky_mat
 
@@ -445,11 +452,13 @@ def get_ky_mat_update(ky_mat_old, hyps: np.ndarray, training_data: list,
     ky_mat = np.zeros((size3, size3))
     ky_mat[:n, :n] = ky_mat_old
 
+    ds = [1, 2, 3]
+
     # calculate elements
     for m_index in range(size3):
         x_1 = training_data[int(math.floor(m_index / 3))]
         d_1 = ds[m_index % 3]
-        low = int(np.max(m_index, n))
+        low = int(np.max([m_index, n]))
         for n_index in range(low, size3):
             x_2 = training_data[int(math.floor(n_index / 3))]
             d_2 = ds[n_index % 3]
@@ -462,7 +471,7 @@ def get_ky_mat_update(ky_mat_old, hyps: np.ndarray, training_data: list,
             ky_mat[n_index, m_index] = kern_curr
 
     # matrix manipulation
-    sigma_n = self.hyps[-1]
+    sigma_n = hyps[-1]
     ky_mat[n:, n:] += sigma_n ** 2 * np.eye(size3-n)
     return ky_mat
 
@@ -522,7 +531,6 @@ def get_neg_likelihood(hyps: np.ndarray, training_data: list,
                        ncpus=None, nsample=100):
 
     ky_mat = get_ky_mat_par(hyps, training_data,
-                            training_labels_np,
                             kernel, cutoffs, ncpus, nsample)
 
     like = get_like_from_ky_mat(ky_mat, training_labels_np)
@@ -539,7 +547,7 @@ def get_neg_like_grad(hyps: np.ndarray, training_data: list,
                       output = None, ncpus=None, nsample=100):
 
     hyp_mat, ky_mat = \
-        get_ky_and_hyp_par(hyps, training_data, training_labels_np,
+        get_ky_and_hyp_par(hyps, training_data,
                            kernel_grad, cutoffs, ncpus, nsample)
 
     like, like_grad = \
@@ -566,7 +574,6 @@ def get_kernel_vector_unit(training_data, x,
 
 def get_kernel_vector_par(training_data, x,
                           d_1, hyps, cutoffs,
-                          nsample=100,
                           ncpus=None, nsample=100):
     """
     Compute kernel vector, comparing input environment to all             environments
