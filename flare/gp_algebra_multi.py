@@ -638,8 +638,8 @@ def get_ky_mat_update(ky_mat_old, hyps: np.ndarray, training_data: list,
     return ky_mat
 
 
-def get_kernel_vector_unit(training_data, x,
-                      d_1, kernel, hyps,
+def get_kernel_vector_unit(training_data, kernel, x,
+                      d_1, hyps,
                       cutoffs=None, hyps_mask=None):
 
     ds = [1, 2, 3]
@@ -695,7 +695,7 @@ def get_kernel_vector_par(training_data, kernel,
             e = np.min([s + nsample, size])
             k12_slice.append(pool.apply_async(get_kernel_vector_unit,
                                               args=(training_data[s: e],
-                                                    x, d_1, kernel, hyps,
+                                                    kernel, x, d_1, hyps,
                                                     cutoffs, hyps_mask)))
 
         size3 = size*3

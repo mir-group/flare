@@ -558,8 +558,8 @@ def get_neg_like_grad(hyps: np.ndarray, training_data: list,
 
     return -like, -like_grad
 
-def get_kernel_vector_unit(training_data, x,
-                      d_1, kernel, hyps, cutoffs):
+def get_kernel_vector_unit(training_data, kernel, x,
+                      d_1, hyps, cutoffs):
 
     ds = [1, 2, 3]
     size = len(training_data) * 3
@@ -572,7 +572,7 @@ def get_kernel_vector_unit(training_data, x,
                               hyps, cutoffs)
     return k_v
 
-def get_kernel_vector_par(training_data, x,
+def get_kernel_vector_par(training_data, kernel, x,
                           d_1, hyps, cutoffs,
                           ncpus=None, nsample=100):
     """
@@ -590,7 +590,8 @@ def get_kernel_vector_par(training_data, x,
     if (ncpus is None):
         ncpus = mp.cpu_count()
     if (ncpus == 1):
-        return get_kernel_vector(training_data, x, d_1, hyps, cutoffs)
+        return get_kernel_vector(training_data, kernel,
+                                 x, d_1, hyps, cutoffs)
 
     with mp.Pool(processes=processes) as pool:
         size = len(training_data)
@@ -605,7 +606,7 @@ def get_kernel_vector_par(training_data, x,
             e = np.min([s + nsample, size])
             k12_slice.append(pool.apply_async(get_kernel_vector_unit,
                                               args=(training_data[s: e],
-                                                    x, d_1, hyps,
+                                                    kernel, x, d_1, hyps,
                                                     cutoffs)))
         size3 = size*3
         nsample3 = nsample*3
