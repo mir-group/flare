@@ -60,7 +60,7 @@ def two_body_gp() -> GaussianProcess:
                         kernel_grad=en.three_body_grad,
                         hyps=np.array([1, 1, 1]),
                         hyp_labels=['Length', 'Signal Var.', 'Noise Var.'],
-                        cutoffs=cutoffs)
+                        cutoffs=cutoffs, par=False, ncpus=1)
     gaussian.update_db(test_structure, forces)
 
     # return gaussian

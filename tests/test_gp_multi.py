@@ -122,7 +122,8 @@ def two_body_gp() -> GaussianProcess:
                         kernel_grad=en.two_body_mc_grad,
                         hyps=hyps,
                         hyp_labels=hm['hyps_label'],
-                        cutoffs=cutoffs, multihyps=True, hyps_mask=hm)
+                        cutoffs=cutoffs, multihyps=True, hyps_mask=hm,
+                        par=False, ncpus=1)
     gaussian.update_db(test_structure, forces)
 
     # return gaussian

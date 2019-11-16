@@ -63,13 +63,13 @@ def test_ky_mat():
     # get the reference
     # timer0 = time.time()
     ky_mat0 = func[0](hyps, training_data,
-                       training_labels, kernel[0], cutoffs)
+                      kernel[0], cutoffs)
     # print("linear", time.time()-timer0)
 
     # parallel version
     ky_mat = func[1](hyps, training_data,
-                     training_labels, kernel[0], cutoffs,
-                     no_cpus=2, nsample=20)
+                     kernel[0], cutoffs,
+                     ncpus=2, nsample=20)
     diff = (np.max(np.abs(ky_mat-ky_mat0)))
     assert (diff==0), "parallel implementation is wrong"
 
@@ -77,8 +77,8 @@ def test_ky_mat():
     # for n in [10, 50, 100]:
     #     timer0 = time.time()
     #     ky_mat = func[1](hyps, training_data,
-    #                      training_labels, kernel[0], cutoffs,
-    #                      no_cpus=8, nsample=n)
+    #                      kernel[0], cutoffs,
+    #                      ncpus=8, nsample=n)
     #     diff = (np.max(np.abs(ky_mat-ky_mat0)))
     #     print("parallel", n, time.time()-timer0, diff)
     #     assert (diff==0), "parallel implementation is wrong"
@@ -86,22 +86,72 @@ def test_ky_mat():
     hyps = np.ones(9, dtype=float)
     # check multi hyps implementation
     ky_mat = func[2](hyps, training_data,
-                      training_labels, kernel_m[0], cutoffs, hyps_mask)
+                      kernel_m[0], cutoffs, hyps_mask)
     diff = (np.max(np.abs(ky_mat-ky_mat0)))
     assert (diff==0), "multi hyps parameter implementation is wrong"
 
     # check multi hyps parallel implementation
     ky_mat = func[3](hyps, training_data,
-                     training_labels, kernel_m[0], cutoffs,
-                     hyps_mask, no_cpus=2, nsample=20)
+                     kernel_m[0],
+                     cutoffs, hyps_mask, ncpus=2, nsample=20)
     diff = (np.max(np.abs(ky_mat-ky_mat0)))
     assert (diff==0), "multi hyps parameter parallel "\
+            "implementation is wrong"
+
+def test_ky_mat_update():
+
+    hyps, training_data, training_labels, kernel, cutoffs, \
+            kernel_m, hyps_mask = \
+            get_random_training_set(50)
+
+
+    func = [gp_algebra.get_ky_mat,
+            gp_algebra.get_ky_mat_update,
+            gp_algebra.get_ky_mat_update_par,
+            gp_algebra_multi.get_ky_mat_update,
+            gp_algebra_multi.get_ky_mat_update_par]
+
+    # get the reference
+    # timer0 = time.time()
+    ky_mat0 = func[0](hyps, training_data,
+                       kernel[0], cutoffs)
+    n = 20
+    ky_mat_old = func[0](hyps, training_data[:n],
+                       kernel[0], cutoffs)
+    # print("linear", time.time()-timer0)
+
+    # parallel version
+    ky_mat = func[1](ky_mat_old, hyps, training_data,
+                     kernel[0], cutoffs)
+    diff = (np.max(np.abs(ky_mat-ky_mat0)))
+    assert (diff<1e-12), "update function is wrong"
+
+    ky_mat = func[2](ky_mat_old, hyps, training_data,
+                     kernel[0], cutoffs,
+                     ncpus=2, nsample=20)
+    diff = (np.max(np.abs(ky_mat-ky_mat0)))
+    assert (diff<1e-12), "parallel implementation is wrong"
+
+    hyps = np.ones(9, dtype=float)
+    # check multi hyps implementation
+    ky_mat = func[3](ky_mat_old, hyps, training_data,
+                     kernel_m[0], cutoffs, hyps_mask)
+    diff = (np.max(np.abs(ky_mat-ky_mat0)))
+    assert (diff<1e-12), "multi hyps parameter implementation is wrong"
+
+    # check multi hyps parallel implementation
+    ky_mat = func[4](ky_mat_old, hyps, training_data,
+                     kernel_m[0], cutoffs,
+                     hyps_mask, ncpus=2, nsample=20)
+    diff = (np.max(np.abs(ky_mat-ky_mat0)))
+    assert (diff<1e-12), "multi hyps parameter parallel "\
             "implementation is wrong"
 
 
 def test_ky_and_hyp():
 
-    hyps, training_data, training_labels, kernel, cutoffs, \
+    hyps, training_data, training_labels, \
+            kernel, cutoffs, \
             kernel_m, hyps_mask = \
             get_random_training_set(10)
 
@@ -111,24 +161,24 @@ def test_ky_and_hyp():
             gp_algebra_multi.get_ky_and_hyp_par]
 
     hypmat_0, ky_mat0 = func[0](hyps, training_data,
-                       training_labels, kernel[1], cutoffs)
+                       kernel[1], cutoffs)
     # parallel version
     hypmat, ky_mat = func[1](hyps, training_data,
-                     training_labels, kernel[1], cutoffs, no_cpus=2)
+                     kernel[1], cutoffs, ncpus=2)
     diff = (np.max(np.abs(ky_mat-ky_mat0)))
     assert (diff==0), "parallel implementation is wrong"
 
     hyps = np.ones(9, dtype=float)
     # check multi hyps implementation
-    hypmat, ky_mat = func[2](hyps, hyps_mask, training_data,
-                      training_labels, kernel_m[1], cutoffs)
+    hypmat, ky_mat = func[2](hyps, training_data,
+                      kernel_m[1], cutoffs, hyps_mask)
     diff = (np.max(np.abs(ky_mat-ky_mat0)))
     assert (diff==0), "multi hyps parameter implementation is wrong"
 
     # check multi hyps parallel implementation
-    hypmat, ky_mat = func[3](hyps, hyps_mask, training_data,
-                     training_labels, kernel_m[1], cutoffs,
-                     no_cpus=2)
+    hypmat, ky_mat = func[3](hyps, training_data,
+                     kernel_m[1], cutoffs, hyps_mask,
+                     ncpus=2)
     diff = (np.max(np.abs(ky_mat-ky_mat0)))
     assert (diff==0), "multi hyps parameter parallel "\
             "implementation is wrong"
