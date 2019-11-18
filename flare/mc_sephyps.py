@@ -194,7 +194,7 @@ def three_body_mc(env1, env2, d1, d2, hyps, cutoffs,
     n2b, n3b, sig2, ls2, sig, ls = \
             from_mask_to_hyps(hyps, hyps_mask)
 
-    r_cut = cutoffs[0]
+    r_cut = cutoffs[1]
 
     return three_body_mc_jit(env1.bond_array_3, env1.ctype, env1.etypes,
                              env2.bond_array_3, env2.ctype, env2.etypes,
@@ -231,7 +231,7 @@ def three_body_mc_force_en(env1, env2, d1, hyps, cutoffs,
 
     n2b, n3b, sig2, ls2, sig, ls = \
             from_mask_to_hyps(hyps, hyps_mask)
-    r_cut = cutoffs[0]
+    r_cut = cutoffs[1]
 
     return three_body_mc_force_en_jit(env1.bond_array_3, env1.ctype,
                                       env1.etypes,
@@ -256,7 +256,7 @@ def three_body_mc_en(env1, env2, hyps, cutoffs,
 
     n2b, n3b, sig2, ls2, sig, ls = \
             from_mask_to_hyps(hyps, hyps_mask)
-    r_cut = cutoffs[0]
+    r_cut = cutoffs[1]
 
     return three_body_mc_en_jit(env1.bond_array_3, env1.ctype, env1.etypes,
                                 env2.bond_array_3, env2.ctype, env2.etypes,

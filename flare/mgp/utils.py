@@ -79,7 +79,7 @@ def get_3bkernel(GP):
     else:
         base = 0
 
-    cutoffs = [GP.cutoffs[1]]
+    cutoffs = np.copy(GP.cutoffs)
 
     original_hyps = np.copy(GP.hyps)
     if (GP.multihyps is True):

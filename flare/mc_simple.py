@@ -129,7 +129,7 @@ def three_body_mc(env1, env2, d1, d2, hyps, cutoffs,
                   cutoff_func=cf.quadratic_cutoff):
     sig = hyps[0]
     ls = hyps[1]
-    r_cut = cutoffs[0]
+    r_cut = cutoffs[1]
 
     return three_body_mc_jit(env1.bond_array_3, env1.ctype, env1.etypes,
                              env2.bond_array_3, env2.ctype, env2.etypes,
@@ -143,7 +143,7 @@ def three_body_mc_grad(env1, env2, d1, d2, hyps, cutoffs,
                        cutoff_func=cf.quadratic_cutoff):
     sig = hyps[0]
     ls = hyps[1]
-    r_cut = cutoffs[0]
+    r_cut = cutoffs[1]
 
     return three_body_mc_grad_jit(env1.bond_array_3, env1.ctype, env1.etypes,
                                   env2.bond_array_3, env2.ctype, env2.etypes,
@@ -157,7 +157,7 @@ def three_body_mc_force_en(env1, env2, d1, hyps, cutoffs,
                            cutoff_func=cf.quadratic_cutoff):
     sig = hyps[0]
     ls = hyps[1]
-    r_cut = cutoffs[0]
+    r_cut = cutoffs[1]
 
     return three_body_mc_force_en_jit(env1.bond_array_3, env1.ctype,
                                       env1.etypes,
@@ -175,7 +175,7 @@ def three_body_mc_en(env1, env2, hyps, cutoffs,
                      cutoff_func=cf.quadratic_cutoff):
     sig = hyps[0]
     ls = hyps[1]
-    r_cut = cutoffs[0]
+    r_cut = cutoffs[1]
 
     return three_body_mc_en_jit(env1.bond_array_3, env1.ctype, env1.etypes,
                                 env2.bond_array_3, env2.ctype, env2.etypes,
