@@ -97,11 +97,17 @@ def run_dft(calc_dir: str, dft_loc: str,
         raise e
 
 def run_dft_par(dft_input: str, structure: Structure,
-                dft_command, n_cpus=1,
+                dft_command: str= None, n_cpus=1,
                 dft_out="vasprun.xml",
                 mpi="mpi"):
     # TODO Incorporate Custodian.
     edit_dft_input_positions(dft_input, structure)
+
+    if dft_command is None and not os.environ.get('VASP_COMMAND', False):
+        raise FileNotFoundError("Warning: No VASP Command passed, "
+                                "or stored in environment as VASP_COMMAND. ")
+    else:
+        dft_command = os.environ.get('VASP_COMMAND')
 
     if n_cpus > 1:
         if mpi == "mpi":
