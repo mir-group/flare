@@ -330,7 +330,7 @@ class MappedGaussianProcess:
                                           hyps_mask=self.hyps_mask)
             else:
                 kern3[d] = self.kernel_3b(atom_env, atom_env, d+1, d+1,
-                        self.hyps[-3:], self.cutoffs)
+                                          self.hyps[-3:-1], self.cutoffs)
 
         spcs, comp_r, comp_xyz = \
             get_triplets(ctype, etypes, bond_array_3,
