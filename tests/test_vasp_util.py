@@ -8,7 +8,7 @@ from flare.struc import Structure, get_unique_species
 from flare.dft_interface.vasp_util import parse_dft_forces, run_dft, \
     edit_dft_input_positions, dft_input_to_structure, \
     parse_dft_forces_and_energy, md_trajectory_from_vasprun, \
-    check_vasprun
+    check_vasprun, run_dft_par
 from pytest import raises
 
 pytestmark = pytest.mark.filterwarnings("ignore::UserWarning", \
@@ -123,6 +123,28 @@ def test_vasp_input_edit():
 
     os.system('rm ./POSCAR')
     os.system('rm ./POSCAR.bak')
+
+
+def test_run_dft_par():
+    os.system('cp test_files/test_POSCAR ./POSCAR')
+    test_structure = dft_input_to_structure('./POSCAR')
+
+    for dft_command in [None]:
+        with raises(FileNotFoundError):
+            run_dft_par('POSCAR',test_structure,dft_command=dft_command,
+                        n_cpus=2)
+
+    call_string = "echo 'testing_call' > TEST_CALL_OUT"
+
+    forces = run_dft_par('POSCAR', test_structure, dft_command=call_string,
+                n_cpus=1, serial_prefix=' ',
+                         dft_out='test_files/test_vasprun.xml')
+
+    with open("TEST_CALL_OUT", 'r') as f:
+        assert 'testing_call' in f.readline()
+    os.system('rm ./TEST_CALL_OUT')
+
+    assert isinstance(forces, np.ndarray)
 
 
 # ------------------------------------------------------

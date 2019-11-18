@@ -96,24 +96,25 @@ def run_dft(calc_dir: str, dft_loc: str,
         os.chdir(currdir)
         raise e
 
+
 def run_dft_par(dft_input: str, structure: Structure,
-                dft_command: str= None, n_cpus=1,
+                dft_command:str= None, n_cpus=1,
                 dft_out="vasprun.xml",
-                mpi="mpi"):
+                parallel_prefix="mpi",
+                serial_prefix='srun'):
     # TODO Incorporate Custodian.
     edit_dft_input_positions(dft_input, structure)
 
-    if dft_command is None and not os.environ.get('VASP_COMMAND', False):
-        raise FileNotFoundError("Warning: No VASP Command passed, "
-                                "or stored in environment as VASP_COMMAND. ")
-    else:
-        dft_command = os.environ.get('VASP_COMMAND')
+    if dft_command is None and not os.environ.get('VASP_COMMAND'):
+        raise FileNotFoundError\
+            ("Warning: No VASP Command passed, or stored in "
+            "environment as VASP_COMMAND. ")
 
     if n_cpus > 1:
-        if mpi == "mpi":
+        if parallel_prefix == "mpi":
             dft_command = f'mpirun -np {n_cpus} {dft_command}'
     else:
-        dft_command = f'srun -n {n_cpus} {dft_command}'
+        dft_command = f'{serial_prefix} {dft_command}'
 
     call(dft_command, shell=True)
 
