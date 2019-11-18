@@ -4,6 +4,7 @@ import os, shutil
 from pymatgen.io.vasp.inputs import Poscar
 from pymatgen.io.vasp.outputs import Vasprun
 from pymatgen.io.vasp.sets import VaspInputSet
+from pymatgen.core.periodic_table import Element
 
 from subprocess import call
 from flare.struc import Structure
@@ -28,6 +29,31 @@ def check_vasprun(vasprun: Union[str, Vasprun], vasprun_kwargs: dict = {}) -> \
         raise ValueError('Vasprun argument is not a string or '
                          'Vasprun instance!')
 
+
+def parse_dft_input(input: str):
+    """
+    Returns the positions, species, and cell of a POSCAR file.
+    Outputs are specced for OTF module.
+
+    :param input: POSCAR file input
+    :return:
+    """
+
+    pmg_structure = Poscar.from_file(input).structure
+    flare_structure = Structure.from_pmg_structure(pmg_structure)
+
+    positions = flare_structure.positions
+    species = flare_structure.species_labels
+    cell = flare_structure.cell
+    #TODO Allow for custom masses in POSCAR
+
+    elements = set(species)
+
+    # conversion from amu to md units
+    mass_dict = {elt: Element(elt).atomic_mass * 0.000103642695727 for
+                 elt in elements}
+
+    return positions, species, cell, mass_dict
 
 def run_dft(calc_dir: str, dft_loc: str,
             structure: Structure = None, en: bool = False, vasp_cmd="{}"):
@@ -71,16 +97,17 @@ def run_dft(calc_dir: str, dft_loc: str,
         raise e
 
 def run_dft_par(dft_input: str, structure: Structure,
-                dft_loc, n_cpus=1,
+                dft_command, n_cpus=1,
                 dft_out="vasprun.xml",
-                npool=None, mpi="mpi"):
+                mpi="mpi"):
     # TODO Incorporate Custodian.
     edit_dft_input_positions(dft_input, structure)
-    if (n_cpus > 1):
-        if (mpi == "mpi"):
-            dft_command = f'mpirun -np {no_cpus} {dft_command}'
+
+    if n_cpus > 1:
+        if mpi == "mpi":
+            dft_command = f'mpirun -np {n_cpus} {dft_command}'
     else:
-        dft_command = f'srun -n {no_cpus} {dft_command}'
+        dft_command = f'srun -n {n_cpus} {dft_command}'
 
     call(dft_command, shell=True)
 
@@ -111,7 +138,7 @@ def edit_dft_input_positions(output_name: str, structure: Structure):
 
 def parse_dft_forces(vasprun: Union[str, Vasprun]):
     """
-    Parses the DFT forces from a VASP vasprun.xml file
+    Parses the DFT forces from the last ionic step of a VASP vasprun.xml file
     :param vasprun: pymatgen Vasprun object or vasprun filename
     """
     vasprun = check_vasprun(vasprun)

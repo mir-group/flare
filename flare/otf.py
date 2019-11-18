@@ -23,6 +23,30 @@ class OTF(object):
                  rescale_steps=[], rescale_temps=[],
                  dft_softwarename="qe",
                  no_cpus=1, npool=None, mpi="srun"):
+        """
+        On-The-Fly molecular dynamics + Gaussian Process training class.
+
+        :param dft_input:
+        :param dt:
+        :param number_of_steps:
+        :param gp:
+        :param dft_loc:
+        :param std_tolerance_factor:
+        :param prev_pos_init:
+        :param par:
+        :param skip:
+        :param init_atoms:
+        :param calculate_energy:
+        :param output_name:
+        :param max_atoms_added:
+        :param freeze_hyps:
+        :param rescale_steps:
+        :param rescale_temps:
+        :param dft_softwarename:
+        :param no_cpus:
+        :param npool:
+        :param mpi:
+        """
 
         self.dft_input = dft_input
         self.dt = dt
