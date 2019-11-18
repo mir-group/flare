@@ -330,7 +330,7 @@ class MappedGaussianProcess:
                                           hyps_mask=self.hyps_mask)
             else:
                 kern3[d] = self.kernel_3b(atom_env, atom_env, d+1, d+1,
-                                          self.hyps[2:-1], self.cutoffs)
+                                          self.hyps[-3:-1], self.cutoffs)
 
         spcs, comp_r, comp_xyz = \
             get_triplets(ctype, etypes, bond_array_3,
@@ -661,7 +661,7 @@ class Map3body:
 
             size3 = size*3
             nsample3 = self.nsample*3
-            k12_v_all = np.zeros([len(angles), len(bond_lengths), len(bond_lengths), size3])
+            k12_v_all = np.zeros([len(bond_lengths), len(bond_lengths), len(angles), size3])
             for ibatch in range(ns):
                 s = nsample3*ibatch
                 e = np.min([s + nsample3, size3])
@@ -703,7 +703,7 @@ class Map3body:
                     env12.bond_array_3 = np.array([[r1, 1, 0, 0], [r2, 0, 0, 0]])
                     env12.cross_bond_dists = np.array([[0, r12], [r12, 0]])
 
-                    k12_v[a12, b1, b2, :] = get_kernel_vector(training_data,
+                    k12_v[b1, b2, a12, :] = get_kernel_vector(training_data,
                                                               env12, 1,
                                                               kernel, hyps,
                                                               cutoffs, hyps_mask)
