@@ -31,7 +31,7 @@ def construct_gp(bodies, params):
         kernel_grad = mc_simple.three_body_mc_grad # plus_three_body_mc_grad
 
     gp_model = gp.GaussianProcess(kernel, kernel_grad, hyps,
-                           cutoffs, par=True, no_cpus=2)
+                           cutoffs, par=True, ncpus=2)
     gp_model.hyp_labels = ['sig2', 'ls2', 'noise']
 
     # create training_set

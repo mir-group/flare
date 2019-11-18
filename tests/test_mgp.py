@@ -144,5 +144,5 @@ def test_parse_header():
               ' log.lammps')
     os.system('rm '+lammps_location)
     os.system('rm grid3*.npy')
-    os.system('rm -r kv3')
+    os.system('rm -r kv3*')
 
