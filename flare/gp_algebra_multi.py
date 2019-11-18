@@ -424,7 +424,8 @@ def get_ky_and_hyp_par(hyps: np.ndarray, training_data: list,
         mat_slice = []
         for ibatch in range(nbatch):
             s1, e1, s2, e2 = block_id[ibatch]
-            print("sending", s1, e1, s2, e2)
+            if (size>5000):
+                print("sending", s1, e1, s2, e2)
             t1 = training_data[s1:e1]
             t2 = training_data[s2:e2]
             mat_slice.append(pool.apply_async(
@@ -472,9 +473,11 @@ def get_ky_and_hyp_par(hyps: np.ndarray, training_data: list,
                 train_noise = False
     # add gradient of noise variance
     if (train_noise):
-        sigma_mat = np.zeros([1, size3, size3])
-        sigma_mat[0, :, :] = np.eye(size3) * 2 * sigma_n
-        hyp_mat = np.vstack([sigma_mat, hyp_mat0])
+        hyp_mat = np.zeros([hyp_mat0.shape[0]+1,
+                            hyp_mat0.shape[1],
+                            hyp_mat0.shape[2]])
+        hyp_mat[:-1, :, :] = hyp_mat0
+        hyp_mat[-1, :, :] = np.eye(size3) * 2 * sigma_n
     else:
         hyp_mat = hyp_mat0
 

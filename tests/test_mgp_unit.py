@@ -31,7 +31,7 @@ def construct_gp(bodies, params):
         kernel_grad = mc_simple.three_body_mc_grad # plus_three_body_mc_grad
 
     gp_model = gp.GaussianProcess(kernel, kernel_grad, hyps,
-                           cutoffs, par=True, no_cpus=2)
+                           cutoffs, par=True, ncpus=2)
     gp_model.hyp_labels = ['sig2', 'ls2', 'noise']
 
     # create training_set
@@ -54,7 +54,7 @@ def construct_gp(bodies, params):
 def test_parse_header(bodies):
 
     unique_species = [2, 1]
-    hyps = [1, 1, 0.01]
+    hyps = [1, 1, 1, 1, 0.01]
     cutoffs = [0.8, 0.8]
     noa = 5
     nenv=10
@@ -101,7 +101,7 @@ def test_parse_header(bodies):
     mgp_pred = mgp_model.predict(test_envi, mean_only=True)
 
     # check mgp is within 1 meV/A of the gp
-    assert(np.abs(mgp_pred[0][0] - gp_pred_x[0]) < 1e-3)
+    assert(np.abs(mgp_pred[0][0] - gp_pred_x[0]) < 1e-3), f"{bodies} body mapping is wrong"
     # -------------------------------------------------------------------------
     #                           check lammps potential
     # -------------------------------------------------------------------------

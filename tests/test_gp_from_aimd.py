@@ -135,7 +135,7 @@ def test_seed_and_run():
 
     tt.run()
 
-    with open('meth_test.pickle', 'rb') as f:
+    with open('final_meth_test.pickle', 'rb') as f:
         new_gp = pickle.load(f)
 
     test_env = envs[0]
@@ -147,4 +147,4 @@ def test_seed_and_run():
     os.system('rm ./gp_from_aimd.out')
     os.system('rm ./gp_from_aimd.xyz')
     os.system('rm ./gp_from_aimd-f.xyz')
-    os.system('rm ./meth_test.pickle')
+    os.system('rm ./final_meth_test.pickle')
