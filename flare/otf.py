@@ -22,11 +22,13 @@ class OTF(object):
                  max_atoms_added=1, freeze_hyps=10,
                  rescale_steps=[], rescale_temps=[],
                  dft_softwarename="qe",
-                 no_cpus=1, npool=None, mpi="srun"):
+                 no_cpus=1, npool=None, mpi="srun",
+                 dft_kwargs = None):
         """
         On-The-Fly molecular dynamics + Gaussian Process training class.
 
-        :param dft_input:
+        :param dft_input: Input file to be modified in the course of training
+         (Can correspond to e.g. pwscf.in for QE or a VASP POSCAR file)
         :param dt:
         :param number_of_steps:
         :param gp:
@@ -108,10 +110,12 @@ class OTF(object):
 
         self.output = Output(output_name, always_flush=True)
 
-        # set number of cpus and npool for qe runs
+        # set number of cpus and npool for DFT runs
         self.no_cpus = no_cpus
         self.npool = npool
         self.mpi = mpi
+
+        self.dft_kwargs = dft_kwargs
 
     def run(self):
         self.output.write_header(self.gp.cutoffs, self.gp.kernel_name,
@@ -200,12 +204,13 @@ class OTF(object):
                                              self.dft_loc,
                                              no_cpus=self.no_cpus,
                                              npool=self.npool,
-                                             mpi=self.mpi)
+                                             mpi=self.mpi,
+                                             dft_kwargs=self.dft_kwargs)
         self.structure.forces = forces
 
         # write wall time of DFT calculation
         self.dft_count += 1
-        self.output.write_to_log('QE run complete.\n')
+        self.output.write_to_log('DFT run complete.\n')
         time_curr = time.time() - self.start_time
         self.output.write_to_log('number of DFT calls: %i \n' % self.dft_count)
         self.output.write_to_log('wall time from start: %.2f s \n' % time_curr)
