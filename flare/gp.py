@@ -1,9 +1,12 @@
 """Gaussian process model of the Born Oppenheimer potential energy surface."""
+import time
 import math
+from copy import deepcopy
 import pickle
 import json
 
 import numpy as np
+import multiprocessing as mp
 
 from typing import List, Callable
 from scipy.linalg import solve_triangular
@@ -11,10 +14,16 @@ from scipy.optimize import minimize
 
 from flare.env import AtomicEnvironment
 from flare.struc import Structure
-from flare.gp_algebra import get_ky_and_hyp, get_like_grad_from_mats, \
-    get_neg_likelihood, get_neg_like_grad, get_ky_and_hyp_par, get_ky_mat_update
+from flare.gp_algebra import get_neg_likelihood, \
+                             get_like_from_ky_mat
+from flare.gp_algebra_multi import get_kernel_vector_par
+from flare.gp_algebra_multi import get_ky_mat_par
+from flare.gp_algebra_multi import get_ky_mat_update_par
+from flare.gp_algebra_multi import get_neg_like_grad
 from flare.kernels import str_to_kernel
 from flare.mc_simple import str_to_mc_kernel
+from flare.mc_sephyps import str_to_mc_kernel as str_to_mc_sephyps_kernel
+import flare.cutoffs as cf
 from flare.util import NumpyEncoder
 
 class GaussianProcess:
@@ -29,8 +38,10 @@ class GaussianProcess:
                  energy_force_kernel: Callable = None,
                  energy_kernel: Callable = None,
                  opt_algorithm: str = 'L-BFGS-B',
-                 maxiter=10, par=False, no_cpus=None,
-                 output=None):
+                 maxiter=10, par=False, per_atom_par=True,
+                 ncpus=None, nsample=100,
+                 output=None,
+                 multihyps=False, hyps_mask=None):
         """Initialize GP parameters and training data."""
 
         self.kernel = kernel
@@ -42,13 +53,17 @@ class GaussianProcess:
         self.hyp_labels = hyp_labels
         self.cutoffs = cutoffs
         self.algo = opt_algorithm
+        self.bounds = None
 
         self.training_data = []
+        # self.data_store = []
         self.training_labels = []
         self.training_labels_np = np.empty(0, )
         self.maxiter = maxiter
         self.par = par
-        self.no_cpus = no_cpus
+        self.per_atom_par = per_atom_par
+        self.ncpus = ncpus
+        self.nsample = 100
         self.output = output
 
         # Parameters set during training
@@ -56,9 +71,57 @@ class GaussianProcess:
         self.l_mat = None
         self.alpha = None
         self.ky_mat_inv = None
-        self.l_mat_inv = None
+        # self.l_mat_inv = None
         self.likelihood = None
         self.likelihood_gradient = None
+
+        self.hyps_mask = None
+        if (isinstance(hyps_mask, dict) and multihyps is True):
+            self.multihyps = True
+
+            assert ('nspec' in hyps_mask.keys()), "nspec key is needed in hyps_mask"
+            assert ('spec_mask' in hyps_mask.keys()), "spec_mask key is needed in hyps_mask"
+
+            self.hyps_mask = deepcopy(hyps_mask)
+
+            nspec = hyps_mask['nspec']
+
+            if ('nbond' in hyps_mask.keys()):
+                n2b = self.hyps_mask['nbond']
+                if (n2b>0):
+                    assert (np.max(hyps_mask['bond_mask']) < n2b)
+                    assert len(hyps_mask['bond_mask']) == nspec**2, \
+                            f"wrong dimension of bond_mask {len(hyps_mask['bond_mask']) != {nspec**2}}"
+            else:
+                n2b = 0
+
+            if ('ntriplet' in hyps_mask.keys()):
+                n3b = self.hyps_mask['ntriplet']
+                if (n3b>0):
+                    assert (np.max(hyps_mask['triplet_mask']) < n3b)
+                    assert len(hyps_mask['triplet_mask']) == nspec**3, \
+                            f"wrong dimension of triplet_mask" \
+                            f"{len(hyps_mask['triplet_mask']) != {nspec**3}}"
+            else:
+                n3b = 0
+
+            assert ((n2b+n3b)>0)
+
+            if ('map' in hyps_mask.keys()):
+                assert ('original' in hyps_mask.keys()), \
+                        "original hyper parameters has to be defined"
+                assert (n2b*2+n3b*2+1) == len(hyps_mask['original']) , \
+                        "the hyperparmeter length is inconsistent with the mask"
+                assert len(hyps_mask['map']) == len(hyps), \
+                        "the hyperparmeter length is inconsistent with the mask"
+            else:
+                assert (n2b*2+n3b*2+1) == len(hyps), \
+                        "the hyperparmeter length is inconsistent with the mask"
+            if ('bounds' in hyps_mask.keys()):
+                self.bounds = deepcopy(hyps_mask['bounds'])
+        else:
+            self.multihyps = False
+            self.hyps_mask = None
 
     # TODO unit test custom range
     def update_db(self, struc: Structure, forces: list,
@@ -79,7 +142,10 @@ class GaussianProcess:
         for atom in update_indices:
             env_curr = AtomicEnvironment(struc, atom, self.cutoffs)
             forces_curr = np.array(forces[atom])
+            # env_store = AtomicEnvironment(struc, atom, self.cutoffs)
+            # del env_curr.structure
 
+            # self.data_store.append(env_store)
             self.training_data.append(env_curr)
             self.training_labels.append(forces_curr)
 
@@ -96,6 +162,10 @@ class GaussianProcess:
         :param train:
         :return:
         """
+        # self.data_store.append(env)
+        # light_env = deepcopy(env)
+        # del light_env.structure
+        # self.training_data.append(light_env)
         self.training_data.append(env)
         self.training_labels.append(force)
         self.training_labels_np = self.force_list_to_np(self.training_labels)
@@ -132,19 +202,24 @@ hyperparameters to maximize the likelihood, then computes L and alpha \
         x_0 = self.hyps
 
         args = (self.training_data, self.training_labels_np,
-                self.kernel_grad, self.cutoffs, output,
-                self.par, self.no_cpus)
+                self.kernel_grad, output,
+                self.cutoffs, self.hyps_mask,
+                self.ncpus, self.nsample)
+        objective_func = get_neg_like_grad
         res = None
 
         if self.algo == 'L-BFGS-B':
 
             # bound signal noise below to avoid overfitting
-            bounds = np.array([(1e-6, np.inf)] * len(x_0))
+            if (self.bounds is None):
+                bounds = np.array([(1e-6, np.inf)] * len(x_0))
+            else:
+                bounds = self.bounds
             # bounds = np.array([(1e-6, np.inf)] * len(x_0))
             # bounds[-1] = [1e-6,np.inf]
             # Catch linear algebra errors and switch to BFGS if necessary
             try:
-                res = minimize(get_neg_like_grad, x_0, args,
+                res = minimize(objective_func, x_0, args,
                                method='L-BFGS-B', jac=True, bounds=bounds,
                                options={'disp': False, 'gtol': grad_tol,
                                         'maxls': line_steps,
@@ -155,20 +230,20 @@ hyperparameters to maximize the likelihood, then computes L and alpha \
                 self.algo = 'BFGS'
 
         if custom_bounds is not None:
-            res = minimize(get_neg_like_grad, x_0, args,
+            res = minimize(objective_func, x_0, args,
                            method='L-BFGS-B', jac=True, bounds=custom_bounds,
                            options={'disp': False, 'gtol': grad_tol,
                                     'maxls': line_steps,
                                     'maxiter': self.maxiter})
 
         elif self.algo == 'BFGS':
-            res = minimize(get_neg_like_grad, x_0, args,
+            res = minimize(objective_func, x_0, args,
                            method='BFGS', jac=True,
                            options={'disp': False, 'gtol': grad_tol,
                                     'maxiter': self.maxiter})
 
         elif self.algo == 'nelder-mead':
-            res = minimize(get_neg_likelihood, x_0, args,
+            res = minimize(objective_func, x_0, args,
                            method='nelder-mead',
                            options={'disp': False,
                                     'maxiter': self.maxiter,
@@ -179,9 +254,10 @@ hyperparameters to maximize the likelihood, then computes L and alpha \
         self.set_L_alpha()
         self.likelihood = -res.fun
         self.likelihood_gradient = -res.jac
+        return res
 
     def check_L_alpha(self):
-        # check that alpha is up to date with training set
+        # Guarantee that alpha is up to date with training set
         if self.alpha is None or 3 * len(self.training_data) != len(
                 self.alpha):
             self.update_L_alpha()
@@ -191,7 +267,18 @@ hyperparameters to maximize the likelihood, then computes L and alpha \
 uncertainty."""
 
         # Kernel vector allows for evaluation of At. Env.
-        k_v = self.get_kernel_vector(x_t, d)
+        if (self.par and not self.per_atom_par):
+            ncpus = self.ncpus
+        else:
+            ncpus = 1
+
+        k_v = get_kernel_vector_par(self.training_data, self.kernel,
+                                    x_t, d,
+                                    self.hyps,
+                                    cutoffs=self.cutoffs,
+                                    hyps_mask=self.hyps_mask,
+                                    ncpus=self.ncpus,
+                                    nsample=self.nsample)
 
         # Guarantee that alpha is up to date with training set
         assert ((self.alpha is not None) and (3 * len(self.training_data) == len(self.alpha)))
@@ -200,8 +287,12 @@ uncertainty."""
         pred_mean = np.matmul(k_v, self.alpha)
 
         # get predictive variance without cholesky (possibly faster)
-        self_kern = self.kernel(x_t, x_t, d, d, self.hyps,
-                                self.cutoffs)
+        if (self.multihyps):
+             self_kern = self.kernel(x_t, x_t, d, d, self.hyps,
+                                     self.cutoffs, hyps_mask=self.hyps_mask)
+        else:
+             self_kern = self.kernel(x_t, x_t, d, d, self.hyps,
+                                     self.cutoffs)
         pred_var = self_kern - \
             np.matmul(np.matmul(k_v, self.ky_mat_inv), k_v)
 
@@ -232,8 +323,12 @@ uncertainty."""
 
         # get predictive variance
         v_vec = solve_triangular(self.l_mat, k_v, lower=True)
-        self_kern = self.energy_kernel(x_t, x_t, self.hyps,
-                                       self.cutoffs)
+        if (self.multihyps):
+             self_kern = self.energy_kernel(x_t, x_t, self.hyps,
+                                            self.cutoffs, hyps_mask=self.hyps_mask)
+        else:
+             self_kern = self.energy_kernel(x_t, x_t, self.hyps,
+                                            self.cutoffs)
         pred_var = self_kern - np.matmul(v_vec, v_vec)
 
         return pred_mean, pred_var
@@ -255,11 +350,21 @@ uncertainty."""
         size = len(self.training_data) * 3
         k_v = np.zeros(size, )
 
-        for m_index in range(size):
-            x_2 = self.training_data[int(math.floor(m_index / 3))]
-            d_2 = ds[m_index % 3]
-            k_v[m_index] = self.kernel(x, x_2, d_1, d_2,
-                                       self.hyps, self.cutoffs)
+        if (self.multihyps):
+
+            for m_index in range(size):
+                x_2 = self.training_data[int(math.floor(m_index / 3))]
+                d_2 = ds[m_index % 3]
+                k_v[m_index] = self.kernel(x, x_2, d_1, d_2,
+                                           self.hyps, self.cutoffs,
+                                           hyps_mask=self.hyps_mask)
+
+        else:
+            for m_index in range(size):
+                x_2 = self.training_data[int(math.floor(m_index / 3))]
+                d_2 = ds[m_index % 3]
+                k_v[m_index] = self.kernel(x, x_2, d_1, d_2,
+                                           self.hyps, self.cutoffs)
         return k_v
 
     def en_kern_vec(self, x: AtomicEnvironment):
@@ -270,11 +375,19 @@ environment and the environments in the training set."""
         size = len(self.training_data) * 3
         k_v = np.zeros(size, )
 
-        for m_index in range(size):
-            x_2 = self.training_data[int(math.floor(m_index / 3))]
-            d_2 = ds[m_index % 3]
-            k_v[m_index] = self.energy_force_kernel(x_2, x, d_2,
-                                                    self.hyps, self.cutoffs)
+        if (self.multihyps):
+            for m_index in range(size):
+                x_2 = self.training_data[int(math.floor(m_index / 3))]
+                d_2 = ds[m_index % 3]
+                k_v[m_index] = self.energy_force_kernel(x_2, x, d_2,
+                                                        self.hyps, self.cutoffs,
+                                                        hyps_mask=self.hyps_mask)
+        else:
+            for m_index in range(size):
+                x_2 = self.training_data[int(math.floor(m_index / 3))]
+                d_2 = ds[m_index % 3]
+                k_v[m_index] = self.energy_force_kernel(x_2, x, d_2,
+                                                        self.hyps, self.cutoffs)
 
         return k_v
 
@@ -286,19 +399,15 @@ environment and the environments in the training set."""
         The forces and variances are later obtained using alpha.
         :return:
         """
-        if self.par:
-            hyp_mat, ky_mat = \
-                get_ky_and_hyp_par(self.hyps, self.training_data,
-                                   self.training_labels_np,
-                                   self.kernel_grad, self.cutoffs, self.no_cpus)
-        else:
-            hyp_mat, ky_mat = \
-                get_ky_and_hyp(self.hyps, self.training_data,
-                               self.training_labels_np,
-                               self.kernel_grad, self.cutoffs)
+        ky_mat = get_ky_mat_par(self.hyps,
+                                self.training_data,
+                                self.kernel,
+                                cutoffs=self.cutoffs,
+                                hyps_mask=self.hyps_mask,
+                                ncpus=self.ncpus,
+                                nsample=self.nsample)
 
-        like, like_grad = \
-            get_like_grad_from_mats(ky_mat, hyp_mat, self.training_labels_np)
+
         l_mat = np.linalg.cholesky(ky_mat)
         l_mat_inv = np.linalg.inv(l_mat)
         ky_mat_inv = l_mat_inv.T @ l_mat_inv
@@ -308,10 +417,10 @@ environment and the environments in the training set."""
         self.l_mat = l_mat
         self.alpha = alpha
         self.ky_mat_inv = ky_mat_inv
-        self.l_mat_inv = l_mat_inv
+        # self.l_mat_inv = l_mat_inv
 
-        self.likelihood = like
-        self.likelihood_gradient = like_grad
+        self.likelihood = get_like_from_ky_mat(self.ky_mat, self.training_labels_np)
+        # self.likelihood_gradient = like_grad
 
     def update_L_alpha(self):
         """
@@ -323,8 +432,17 @@ environment and the environments in the training set."""
             self.set_L_alpha()
             return
 
-        ky_mat = get_ky_mat_update(np.copy(self.ky_mat), self.training_data, 
-                self.get_kernel_vector, self.hyps, self.par)
+        if (self.par and not self.per_atom_par):
+            ncpus=self.ncpus
+        else:
+            ncpus=1
+        ky_mat = get_ky_mat_update_par(self.ky_mat, self.hyps,
+                                       self.training_data,
+                                       self.kernel,
+                                       cutoffs=self.cutoffs,
+                                       hyps_mask=self.hyps_mask,
+                                       ncpus=ncpus,
+                                       nsample=self.nsample)
 
         l_mat = np.linalg.cholesky(ky_mat)
         l_mat_inv = np.linalg.inv(l_mat)
@@ -335,17 +453,19 @@ environment and the environments in the training set."""
         self.l_mat = l_mat
         self.alpha = alpha
         self.ky_mat_inv = ky_mat_inv
-        self.l_mat_inv = l_mat_inv
+        # self.l_mat_inv = l_mat_inv
+
 
     def __str__(self):
         """String representation of the GP model."""
 
         thestr = "GaussianProcess Object\n"
-        thestr += 'Kernel: {}\n'.format(self.kernel_name)
-        thestr += "Training points: {}\n".format(len(self.training_data))
-        thestr += 'Cutoffs: {}\n'.format(self.cutoffs)
-        thestr += 'Model Likelihood: {}\n'.format(self.likelihood)
+        thestr += f'Kernel: {self.kernel_name}\n'
+        thestr += f"Training points: {len(self.training_data)}\n"
+        thestr += f'Cutoffs: {self.cutoffs}\n'
+        thestr += f'Model Likelihood: {self.likelihood}\n'
 
+        thestr += f'MultiHyps: {self.multihyps}\n'
         thestr += 'Hyperparameters: \n'
         if self.hyp_labels is None:
             # Put unlabeled hyperparameters on one line
@@ -353,14 +473,31 @@ environment and the environments in the training set."""
             thestr += str(self.hyps) + '\n'
         else:
             for hyp, label in zip(self.hyps, self.hyp_labels):
-                thestr += "{}: {}\n".format(label, hyp)
+                thestr += f"{label}: {hyp}\n"
+        if (self.multihyps):
+            nspec = self.hyps_mask['nspec']
+            thestr +=f'nspec: {nspec}\n'
+            thestr +=f'spec_mask: \n'
+            thestr += str(self.hyps_mask['spec_mask']) + '\n'
+
+            nbond = self.hyps_mask['nbond']
+            thestr +=f'nbond: {nbond}\n'
+            if (nbond>0):
+                thestr +=f'bond_mask: \n'
+                thestr += str(self.hyps_mask['bond_mask']) + '\n'
+
+            ntriplet = self.hyps_mask['ntriplet']
+            thestr +=f'ntriplet: {ntriplet}\n'
+            if (ntriplet>0):
+                thestr +=f'triplet_mask: \n'
+                thestr += str(self.hyps_mask['triplet_mask']) + '\n'
 
         return thestr
 
     def as_dict(self):
         """Dictionary representation of the GP model."""
 
-        out_dict = dict(vars(self))
+        out_dict = deepcopy(dict(vars(self)))
 
         out_dict['training_data'] = [env.as_dict() for env in
                                      self.training_data]
@@ -375,8 +512,13 @@ environment and the environments in the training set."""
         """Create GP object from dictionary representation."""
 
         if 'mc' in dictionary['kernel_name']:
-            force_kernel, grad = \
-                str_to_mc_kernel(dictionary['kernel_name'], include_grad=True)
+            if (dictionary['multihyps'] is False):
+                force_kernel, grad = \
+                    str_to_mc_kernel(dictionary['kernel_name'], include_grad=True)
+            else:
+                force_kernel, grad = \
+                    str_to_mc_sephyps_kernel(dictionary['kernel_name'],
+                            include_grad=True)
         else:
             force_kernel, grad = str_to_kernel(dictionary['kernel_name'],
                                                include_grad=True)
@@ -400,20 +542,23 @@ environment and the environments in the training set."""
                                  hyps=np.array(dictionary['hyps']),
                                  hyp_labels=dictionary['hyp_labels'],
                                  par=dictionary['par'],
-                                 no_cpus=dictionary['no_cpus'],
+                                 ncpus=dictionary['ncpus'],
                                  maxiter=dictionary['maxiter'],
-                                 opt_algorithm=dictionary['algo'])
+                                 opt_algorithm=dictionary['algo'],
+                                 multihyps=dictionary['multihyps'],
+                                 hyps_mask=dictionary['hyps_mask'])
 
         # Save time by attempting to load in computed attributes
         new_gp.l_mat = np.array(dictionary.get('l_mat', None))
-        new_gp.l_mat_inv = np.array(dictionary.get('l_mat_inv', None))
+        # new_gp.l_mat_inv = np.array(dictionary.get('l_mat_inv', None))
         new_gp.alpha = np.array(dictionary.get('alpha', None))
         new_gp.ky_mat = np.array(dictionary.get('ky_mat', None))
         new_gp.ky_mat_inv = np.array(dictionary.get('ky_mat_inv', None))
 
         new_gp.training_data = [AtomicEnvironment.from_dict(env) for env in
                                 dictionary['training_data']]
-        new_gp.training_labels = dictionary['training_labels']
+        new_gp.training_labels = deepcopy(dictionary['training_labels'])
+        new_gp.training_labels_np = deepcopy(dictionary['training_labels_np'])
 
         new_gp.likelihood = dictionary['likelihood']
         new_gp.likelihood_gradient = dictionary['likelihood_gradient']
@@ -432,20 +577,14 @@ environment and the environments in the training set."""
 
         supported_formats = ['json', 'pickle', 'binary']
 
-        write_name = str(name)
-        
-        if name.split('.')[-1] not in supported_formats:
-            write_name += '.'+format
-            
         if format.lower() == 'json':
-            with open(write_name, 'w') as f:
+            with open(name, 'w') as f:
                 json.dump(self.as_dict(), f, cls=NumpyEncoder)
 
         elif format.lower() == 'pickle' or format.lower() == 'binary':
-            with open(write_name, 'wb') as f:
+            with open(name, 'wb') as f:
                 pickle.dump(self, f)
 
         else:
             raise ValueError("Output format not supported: try from "
                              "{}".format(supported_formats))
-
