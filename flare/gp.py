@@ -588,5 +588,3 @@ environment and the environments in the training set."""
         else:
             raise ValueError("Output format not supported: try from "
                              "{}".format(supported_formats))
-
-
