@@ -182,16 +182,16 @@ class Output():
         for i in range(len(structure.positions)):
             string += f'{structure.species_labels[i]} '
             for j in range(3):
-                string += f"{structure.positions[i][j]:.8}"
+                string += f"{structure.positions[i][j]:8.3} "
             string += '\t'
             for j in range(3):
                 string += f"{structure.forces[i][j]:8.3} "
             string += '\t'
             for j in range(3):
-                string += f'{structure.stds[i][j]:.8e}'
+                string += f'{structure.stds[i][j]:8.3} '
             string += '\t'
             for j in range(3):
-                string += f'{velocities[i][j]:.8e}'
+                string += f'{velocities[i][j]:8.3} '
             string += '\n'
 
         print(curr_step)
