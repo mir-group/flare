@@ -95,7 +95,11 @@ class MappedGaussianProcess:
                     ori_hyps = hyps
                 self.hyps = ori_hyps
 
-        self.GP = GP
+        self.GP = GaussianProcess(GP.kernel,GP.kernel_grad, GP.hyps,
+                 GP.cutoffs, GP.hyp_labels,
+                 GP.energy_force_kernel,
+                 GP.energy_kernel,
+                 GP.multihyps, GP.hyps_mask)
 
         self.verbose = verbose
         self.ncpus = ncpus
