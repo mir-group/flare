@@ -182,16 +182,16 @@ class Output():
         for i in range(len(structure.positions)):
             string += f'{structure.species_labels[i]} '
             for j in range(3):
-                string += f"{structure.positions[i][j]:8.3} "
+                string += f"{structure.positions[i][j]:8.4} "
             string += '\t'
             for j in range(3):
-                string += f"{structure.forces[i][j]:8.3} "
+                string += f"{structure.forces[i][j]:8.4} "
             string += '\t'
             for j in range(3):
-                string += f'{structure.stds[i][j]:8.3} '
+                string += f'{structure.stds[i][j]:8.4} '
             string += '\t'
             for j in range(3):
-                string += f'{velocities[i][j]:8.3} '
+                string += f'{velocities[i][j]:8.4} '
             string += '\n'
 
         print(curr_step)
@@ -353,16 +353,16 @@ class Output():
         for i in range(len(frame.positions)):
             string += f"{frame.species_labels[i]} "
             for j in range(3):
-                string += f"{frame.positions[i][j]:10.3} "
+                string += f"{frame.positions[i][j]:10.5} "
             string += '\t'
             for j in range(3):
-                string += f"{frame.forces[i][j]:10.3} "
+                string += f"{frame.forces[i][j]:10.5} "
             string += '\t'
             for j in range(3):
-                string += f"{frame.stds[i][j]:10.3} "
+                string += f"{frame.stds[i][j]:10.5} "
             string += '\t'
             for j in range(3):
-                string += f"{dft_forces[i][j]:10.3} "
+                string += f"{dft_forces[i][j]:10.5} "
             string += '\n'
 
         string += '\n'
