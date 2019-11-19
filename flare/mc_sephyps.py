@@ -15,31 +15,33 @@ for different elements, and different groupings of elements.
 
 hyps_mask is a dictionary with the following keys and values:
 
-spec_mask: 118-long integer array descirbing which elements belong to 
-    like groups for determining which bond hyperparameters to use. For 
-    instance, [0,1,1,0 ...] assigns H to group 0, He and Li to group 1, 
+spec_mask: 118-long integer array descirbing which elements belong to
+    like groups for determining which bond hyperparameters to use. For
+    instance, [0,1,1,0 ...] assigns H to group 0, He and Li to group 1,
     and Be to group 0.
 
-nspec: Integer, number of different species groups (equal to number of 
+nspec: Integer, number of different species groups (equal to number of
     unique values in spec_mask).
 
-nbond: Integer, number of different hyperparameter sets to associate with 
+nbond: Integer, number of different hyperparameter sets to associate with
     different 2-body pairings of atoms in groups defined in spec_mask.
 
-bond_mask: Array of length nspec^2, which describes the hyperparameter sets to 
-    associate with different pairings of species types. For example, if there 
-    are atoms of type 0 and 1, then bond_mask defines which hyperparameters 
-    to use for parings [0-0, 0-1, 1-1]: if we wanted hyperparameter set 0 for 
-    0-0 parings and set 1 for 0-1 and 1-1 pairings, then we would make 
-    bond_mask [0, 1, 1].
+bond_mask: Array of length nspec^2, which describes the hyperparameter sets to
+    associate with different pairings of species types. For example, if there
+    are atoms of type 0 and 1, then bond_mask defines which hyperparameters
+    to use for parings [0-0, 0-1, 1-0, 1-1]: if we wanted hyperparameter set 0 for
+    0-0 parings and set 1 for 0-1 and 1-1 pairings, then we would make
+    bond_mask [0, 1, 1, 1].
 
-ntriplet = Integer, number of different hyperparameter sets to associate 
+ntriplet = Integer, number of different hyperparameter sets to associate
     with different 3-body pariings of atoms in groups defined in spec_mask.
 
-triplet_mask: Similar to bond mask: Triplet pairings of type 0 and 1 atoms 
-    would go {0-0-0, 0-0-1, 0-1-1, 1-1-1}, and if we wanted hyp. set 0 for 
-    triplets with only atoms of type 0 and hyp. set 1 for atoms of type 1, 
-    then the triplet_mask array would read [0,1,1,1].
+triplet_mask: Similar to bond mask: Triplet pairings of type 0 and 1 atoms
+    would go {0-0-0, 0-0-1, 0-1-0, 0-1-1, 1-0-0, 1-0-1, 1-1-0, 1-1-1},
+    and if we wanted hyp. set 0 for triplets with only atoms of type 0
+    and hyp. set 1 for all the rest, then the triplet_mask array would
+    read [0,1,1,1,1,1,1,1]. The user should make sure that the mask has
+    a permutational symmetry.
 
 """
 
