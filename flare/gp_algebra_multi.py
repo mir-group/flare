@@ -67,6 +67,12 @@ def get_ky_and_hyp_pack(hyps: np.ndarray, training_data1: list,
 
     # assume sigma_n is the final hyperparameter
     non_noise_hyps = len(hyps)-1
+    train_noise = True
+    if (hyps_mask is not None):
+        if ('train_noise' in hyps_mask.keys()):
+            if (hyps_mask['train_noise'] is False):
+                train_noise = False
+                non_noise_hyps = len(hyps)
 
     # initialize matrices
     size1 = len(training_data1) * 3
@@ -464,13 +470,6 @@ def get_ky_and_hyp_par(hyps: np.ndarray, training_data: list,
         pool.close()
         pool.join()
 
-    # obtain noise parameter
-    train_noise = True
-    sigma_n = hyps[-1]
-    if (hyps_mask is not None):
-        if ('train_noise' in hyps_mask.keys()):
-            if (hyps_mask['train_noise'] is False):
-                train_noise = False
     # add gradient of noise variance
     if (train_noise):
         hyp_mat = np.zeros([hyp_mat0.shape[0]+1,
