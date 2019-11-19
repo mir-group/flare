@@ -43,6 +43,23 @@ triplet_mask: Similar to bond mask: Triplet pairings of type 0 and 1 atoms
     read [0,1,1,1,1,1,1,1]. The user should make sure that the mask has
     a permutational symmetry.
 
+For selective optimization. one can define 'map', 'train_noise' and 'original'
+to identify which element to be optimized. All three have to be defined.
+
+Example, the full set of hyper parmeters include [ls21, ls22, sig21, sig22, ls3
+sg3, noise] and only the set 21 is optimized. Then
+
+hyps = [ls21, sig21]
+hyps_mask = { ..., 'train_noise': False, 'map':[0, 2],
+                   'original': [ls21, ls22, sig21, sig22, ls3, sg3, noise]}
+
+the hyps argument should only contain the values that need to be optimized.
+
+train_noise = Bool (True/False), whether the noise parameter can be optimized
+original: np.array. Full set of hyperparmeters
+map: np.array, array to map the hyper parameter back to the full set.
+               map[i]=j means the i-th element in hyps should be
+               the j-th element in hyps_mask['original']
 """
 
 
