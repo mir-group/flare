@@ -1,11 +1,5 @@
 import pytest
-import pickle
-import os
-import json
 import numpy as np
-
-from pytest import raises
-
 from flare.gp import GaussianProcess
 from flare.env import AtomicEnvironment
 from flare.struc import Structure
@@ -60,6 +54,7 @@ def two_body_gp() -> GaussianProcess:
                         kernel_grad=en.three_body_grad,
                         hyps=np.array([1, 1, 1]),
                         hyp_labels=['Length', 'Signal Var.', 'Noise Var.'],
+                        par=True, no_cpus=2,
                         cutoffs=cutoffs)
     gaussian.update_db(test_structure, forces)
 
@@ -174,7 +169,8 @@ def test_set_L_alpha(two_body_gp, params):
     gaussian = \
         GaussianProcess(kernel, kernel_grad, hyps, cutoffs, hyp_labels,
                         energy_force_kernel, energy_kernel,
-                        opt_algorithm)
+                        opt_algorithm,
+                        par=True, no_cpus=2)
     gaussian.update_db(test_structure, forces)
 
     gaussian.set_L_alpha()
@@ -197,7 +193,6 @@ def test_update_L_alpha():
                                cutoffs=cutoffs,
                                hyps=hyps)
 
-    gp_model.par = True
     # update database & use update_L_alpha to get ky_mat
     for n in range(call_no, call_no + 1):
         positions = old_otf.gp_position_list[n]
@@ -263,29 +258,3 @@ def test_serialization_method(two_body_gp, test_point):
     for d in [0, 1, 2]:
         assert np.all(two_body_gp.predict(x_t=test_point, d=d) ==
                       new_gp.predict(x_t=test_point, d=d))
-
-
-def test_load_and_reload(two_body_gp, test_point):
-
-    two_body_gp.write_model('two_body.pickle', 'pickle')
-
-    with open('two_body.pickle', 'rb') as f:
-        new_gp = pickle.load(f)
-
-    for d in [0, 1, 2]:
-        assert np.all(two_body_gp.predict(x_t=test_point, d=d) ==
-                      new_gp.predict(x_t=test_point, d=d))
-    os.remove('two_body.pickle')
-
-    two_body_gp.write_model('two_body.json')
-    with open('two_body.json', 'r') as f:
-        new_gp = GaussianProcess.from_dict(json.loads(f.readline()))
-    for d in [0, 1, 2]:
-        assert np.all(two_body_gp.predict(x_t=test_point, d=d) ==
-                      new_gp.predict(x_t=test_point, d=d))
-    os.remove('two_body.json')
-
-    with raises(ValueError):
-        two_body_gp.write_model('two_body.pickle', 'cucumber')
-
-

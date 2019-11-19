@@ -92,8 +92,6 @@ class TrajectoryTrainer(object):
         self.skip = skip
         assert (skip >= 1), "skip needs to be an integer >= 1"
         self.validate_ratio = validate_ratio
-        assert (validate_ratio>=0 and validate_ratio<=1), \
-                "validate_ratio needs to be [0,1]"
         self.max_trains = max_trains
         self.curr_step = 0
         self.max_atoms_from_frame = max_atoms_from_frame
@@ -214,19 +212,11 @@ class TrajectoryTrainer(object):
         if self.verbose >= 3 and atom_count > 0:
             print(f"Added {atom_count} atoms to pretrain")
 
-        if (self.seed_envs or atom_count or self.seed_frames) and self.max_trains>0:
+        if self.seed_envs or atom_count or self.seed_frames:
             if self.verbose >= 3:
                 print("Now commencing pre-run training of GP (which has "
                       "non-empty training set)")
             self.train_gp(max_iter=self.pre_train_max_iter)
-        else:
-            if self.verbose >= 3:
-                print("Now commencing pre-run set up of GP (which has "
-                      "non-empty training set)")
-            self.gp.set_L_alpha()
-
-        if self.model_write:
-            self.gp.write_model(self.model_write, self.model_format)
 
     def run(self):
         """
@@ -239,7 +229,10 @@ class TrajectoryTrainer(object):
             print("Commencing run with pre-run...")
         self.pre_run()
 
-        train_frame = int(len(self.frames) * (1 - self.validate_ratio))
+        if self.validate_ratio > 0:
+            train_frame = int(len(self.frames) * (1 - self.validate_ratio))
+        else:
+            train_frame = len(self.frames)
 
         # Loop through trajectory
         nsample = 0
@@ -299,10 +292,6 @@ class TrajectoryTrainer(object):
                         else:
                             self.gp.update_L_alpha()
                         nsample = 0
-                        if self.checkpoint_interval \
-                                and self.train_count % self.checkpoint_interval == 0 \
-                                and self.model_write:
-                            self.gp.write_model(self.model_write, self.model_format)
                     else:
                         self.gp.update_L_alpha()
 

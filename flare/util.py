@@ -148,7 +148,6 @@ def element_to_Z(element: str) -> int:
     if isinstance(element, str) and element.isnumeric():
         return int(element)
 
-    # TO DO this does not work for b string
     if _element_to_Z.get(element, None) is None:
         warn('Element as specified not found in list of element-Z mappings. '
              'If you would like to specify a custom element, use an integer '
