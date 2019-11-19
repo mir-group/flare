@@ -16,7 +16,7 @@ def run_dft(qe_input, structure, dft_loc):
 
 
 def run_dft_par(qe_input, structure, dft_loc, no_cpus=1, dft_out='pwscf.out',
-                npool=None, mpi="mpi"):
+                npool=None, mpi="mpi", **dft_kwargs):
     newfilename = edit_dft_input_positions(qe_input, structure)
 
     if npool is None:
