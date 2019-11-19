@@ -60,7 +60,7 @@ def two_body_gp() -> GaussianProcess:
                         kernel_grad=en.three_body_grad,
                         hyps=np.array([1, 1, 1]),
                         hyp_labels=['Length', 'Signal Var.', 'Noise Var.'],
-                        cutoffs=cutoffs)
+                        cutoffs=cutoffs, par=False, ncpus=1)
     gaussian.update_db(test_structure, forces)
 
     # return gaussian
@@ -134,11 +134,12 @@ def test_train(two_body_gp, params):
     two_body_gp.update_db(test_structure, forces)
 
     # train gp
-    two_body_gp.train()
+    res = two_body_gp.train()
 
     hyp_post = list(two_body_gp.hyps)
 
     # check if hyperparams have been updated
+    print(res)
     assert (hyp != hyp_post)
 
 
