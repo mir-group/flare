@@ -363,6 +363,7 @@ class MappedGaussianProcess:
             map_ind = spcs_list.index(spc)
             f, v = self.predict_component(lengths, xyzs, mappings[map_ind],
                                           mean_only)
+            print("test", spc, f)
             f_spcs += f
             v_spcs += v
 
@@ -518,17 +519,20 @@ class Map2body:
             # A_list = pool.map(self._GenGrid_inner_most, pool_list)
             # break it into pieces
             size = len(GP.training_data)
-            ns = int(math.ceil(size/self.nsample))
+            nsample = self.nsample
+            ns = int(math.ceil(size/nsample))
             if (ns < processes):
                 nsample = int(math.ceil(size/processes))
                 ns = int(math.ceil(size/nsample))
 
+            print("prepare the package for parallelization")
             block_id = []
             nbatch = 0
             for ibatch in range(ns):
                 s1 = int(nsample*ibatch)
                 e1 = int(np.min([s1 + nsample, size]))
                 block_id += [(s1, e1)]
+                print("block", ibatch, s1, e1)
                 nbatch += 1
 
             k12_slice = []
@@ -538,12 +542,10 @@ class Map2body:
                                                   args=(GP.training_data[s:e],
                                                         bond_lengths,
                                                         env12, kernel_info)))
-            size3 = size*3
-            nsample3 = self.nsample*3
-            k12_v_all = np.zeros([len(bond_lengths), size3])
+            k12_v_all = np.zeros([len(bond_lengths), size*3])
             for ibatch in range(nbatch):
                 s, e = block_id[ibatch]
-                k12_v_all[:, 3*s:3*e] = k12_slice[ibatch].get()
+                k12_v_all[:, s*3:e*3] = k12_slice[ibatch].get()
             pool.close()
             pool.join()
 
@@ -563,8 +565,8 @@ class Map2body:
         '''
 
         kernel, cutoffs, hyps, hyps_mask = kernel_info
-        size = len(training_data)*3
-        k12_v = np.zeros([len(bond_lengths), size])
+        size = len(training_data)
+        k12_v = np.zeros([len(bond_lengths), size*3])
         for b, r in enumerate(bond_lengths):
             env12.bond_array_2 = np.array([[r, 1, 0, 0]])
             k12_v[b, :] = get_kernel_vector(training_data,
@@ -622,7 +624,6 @@ class Map3body:
 
 
     def GenGrid(self, GP):
-
         '''
         generate grid data of mean prediction and L^{-1}k* for each triplet
          implemented in a parallelized style
@@ -632,9 +633,84 @@ class Map3body:
             processes = mp.cpu_count()
         else:
             processes = self.ncpus
+        if processes == 1:
+            self.GenGrid_serial(GP)
 
         # ------ get 3body kernel info ------
         kernel_info = get_3bkernel(GP)
+
+        # ------ construct grids ------
+        nop = self.grid_num[0]
+        noa = self.grid_num[2]
+        bond_lengths = np.linspace(self.l_bounds[0], self.u_bounds[0], nop)
+        angles = np.linspace(self.l_bounds[2], self.u_bounds[2], noa)
+
+        bond_means = np.zeros([nop, nop, noa])
+        bond_vars = np.zeros([nop, nop, noa, len(GP.alpha)])
+        env12 = AtomicEnvironment(self.bond_struc, 0, self.cutoffs)
+
+        with mp.Pool(processes=processes) as pool:
+            if self.update:
+                if self.kv3name in os.listdir():
+                    subprocess.run(['rm', '-rf', self.kv3name])
+                subprocess.run(['mkdir', self.kv3name])
+
+            print("prepare the package for parallelization")
+            size = len(GP.training_data)
+            nsample = self.nsample
+            ns = int(math.ceil(size/nsample))
+            if (ns < processes):
+                nsample = int(math.ceil(size/processes))
+                ns = int(math.ceil(size/nsample))
+
+            k12_slice = []
+            print('before for', ns, nsample, time.time())
+            for ibatch in range(ns):
+                s = nsample*ibatch
+                e = np.min([s + nsample, size])
+                k12_slice.append(pool.apply_async(self._GenGrid_inner_most,
+                                                  args=(GP.training_data[s:e],
+                                                        angles, bond_lengths,
+                                                        env12, kernel_info)))
+                print('send', ibatch, ns, time.time())
+            pool.close()
+            pool.join()
+
+            size3 = size*3
+            nsample3 = nsample*3
+            k12_v_all = np.zeros([len(bond_lengths), len(bond_lengths), len(angles), size3])
+            for ibatch in range(ns):
+                s = nsample3*ibatch
+                e = np.min([s + nsample3, size3])
+                k12_v_all[:, :, :, s:e] = k12_slice[ibatch].get()
+                print('get', ibatch, ns, time.time())
+
+
+        for a12, angle in enumerate(angles):
+            for b1, r1 in enumerate(bond_lengths):
+                for b2, r2 in enumerate(bond_lengths):
+                    k12_v = k12_v_all[b1, b2, a12, :]
+                    bond_means[b1, b2, a12] = np.matmul(k12_v, GP.alpha)
+                    if not self.mean_only:
+                        bond_vars[b1, b2, a12, :] = solve_triangular(GP.l_mat, k12_v, lower=True)
+
+
+        # # ------ save mean and var to file -------
+        # np.save('grid3_mean', bond_means)
+        # np.save('grid3_var', bond_vars)
+
+        return bond_means, bond_vars
+
+    def GenGrid_serial(self, GP):
+        '''
+        generate grid data of mean prediction and L^{-1}k* for each triplet
+         implemented in a parallelized style
+        '''
+        print("running serial version")
+
+        # ------ get 3body kernel info ------
+        kernel_info = get_3bkernel(GP)
+        kernel, cutoffs, hyps, hyps_mask = kernel_info
 
         # ------ construct grids ------
         nop = self.grid_num[0]
@@ -645,60 +721,47 @@ class Map3body:
         bond_vars = np.zeros([nop, nop, noa, len(GP.alpha)])
         env12 = AtomicEnvironment(self.bond_struc, 0, self.cutoffs)
 
-        # pool_list = []
-        # for a12 in range(noa):
-        #     for b1, r1 in enumerate(bond_lengths):
-        #         for b2, r2 in enumerate(bond_lengths):
-        #             pool_list += [(a12, r1, r2, env12, self.update)]
+        if self.update:
+            if self.kv3name in os.listdir():
+                subprocess.run(['rm', '-rf', self.kv3name])
+            subprocess.run(['mkdir', self.kv3name])
 
-        with mp.Pool(processes=processes) as pool:
-            if self.update:
-                if self.kv3name in os.listdir():
-                    subprocess.run(['rm', '-rf', self.kv3name])
-                subprocess.run(['mkdir', self.kv3name])
+        size = len(GP.training_data)
+        ds = [1, 2, 3]
+        k_v = np.zeros(3)
+        k12_v_all = np.zeros([len(bond_lengths), len(bond_lengths), len(angles), size*3])
+        for b1, r1 in enumerate(bond_lengths):
+            for b2, r2 in enumerate(bond_lengths):
+                for a12, angle12 in enumerate(angles):
 
-            # A_list = pool.map(self._GenGrid_inner_most, pool_list)
-            # break it into pieces
-            size = len(GP.training_data)
-            ns = int(math.ceil(size/self.nsample))
-            if (ns < processes):
-                nsample = int(math.ceil(size/processes))
-                ns = int(math.ceil(size/self.nsample))
-            k12_slice = []
-            print('before for', ns, nsample, time.time())
-            for ibatch in range(ns):
-                s = self.nsample*ibatch
-                e = np.min([s + self.nsample, size])
-                print(ibatch, ns, time.time())
-                k12_slice.append(pool.apply_async(self._GenGrid_inner_most,
-                                                  args=(GP.training_data[s:e],
-                                                        angles, bond_lengths,
-                                                        env12, kernel_info)))
-             #         results.append(pool.apply_async(GP.kernel,
-             #                                         args=(env12, x_2, 1, d_2,
-             #                                    GP.hyps, GP.cutoffs,
-             #                                    cf.quadratic_cutoff,
-             #                                    GP.hyps_mask)))
-            pool.close()
-            pool.join()
+                    x2 = r2 * np.cos(angle12)
+                    y2 = r2 * np.sin(angle12)
+                    r12 = np.linalg.norm(np.array([x2-r1, y2, 0]))
 
-            size3 = size*3
-            nsample3 = self.nsample*3
-            k12_v_all = np.zeros([len(bond_lengths), len(bond_lengths), len(angles), size3])
-            for ibatch in range(ns):
-                s = nsample3*ibatch
-                e = np.min([s + nsample3, size3])
-                print('get', ibatch, ns, time.time())
-                k12_v_all[:, :, :, s:e] = k12_slice[ibatch].get()
+                    env12.bond_array_3 = np.array([[r1, 1, 0, 0], [r2, 0, 0, 0]])
+                    env12.cross_bond_dists = np.array([[0, r12], [r12, 0]])
 
-        for a12, angle in enumerate(angles):
-            for b1, r1 in enumerate(bond_lengths):
-                for b2, r2 in enumerate(bond_lengths):
+                    for isample, sample in enumerate(GP.training_data):
+                        if (hyps_mask is not None):
+                            for d in ds:
+                                k_v[d-1] = kernel(env12, sample, 1, d,
+                                                  hyps, cutoffs,
+                                                  hyps_mask=hyps_mask)
+
+                        else:
+                            for d in ds:
+                                k_v[d-1] = kernel(env12, sample, 1, d,
+                                                  hyps, cutoffs)
+
+                        k12_v_all[b1, b2, a12, isample*3:isample*3+3] = k_v
+
+        for b1, r1 in enumerate(bond_lengths):
+            for b2, r2 in enumerate(bond_lengths):
+                for a12, angle in enumerate(angles):
                     k12_v = k12_v_all[b1, b2, a12, :]
                     bond_means[b1, b2, a12] = np.matmul(k12_v, GP.alpha)
                     if not self.mean_only:
                         bond_vars[b1, b2, a12, :] = solve_triangular(GP.l_mat, k12_v, lower=True)
-
 
         # # ------ save mean and var to file -------
         # np.save('grid3_mean', bond_means)
@@ -731,6 +794,7 @@ class Map3body:
                                                               env12, 1,
                                                               kernel, hyps,
                                                               cutoffs, hyps_mask)
+
         return k12_v
 
 
