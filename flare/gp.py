@@ -90,7 +90,7 @@ class GaussianProcess:
             assert 'nspec' in hyps_mask.keys(), "nspec key missing in " \
                                                 "hyps_mask dictionary"
             assert 'spec_mask' in hyps_mask.keys(), "spec_mask key missing " \
-                                                    "in hyps_mask dictionary"
+                                                    "in hyps_mask dicticnary"
 
             self.hyps_mask = deepcopy(hyps_mask)
 

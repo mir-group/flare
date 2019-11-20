@@ -179,6 +179,7 @@ def get_neg_like_grad(hyps: np.ndarray, training_data: list,
 
     print("like", like, like_grad)
     print("hyps", hyps)
+    print("\n")
 
     if output is not None:
         output.write_to_log(f"get_like_grad_from_mats {time.time()-time0}\n", name="hyps")

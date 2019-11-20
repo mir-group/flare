@@ -69,6 +69,7 @@ class MappedGaussianProcess:
         self.bounds_2 = grid_params['bounds_2']
         self.grid_num_3 = grid_params['grid_num_3']
         self.bounds_3 = grid_params['bounds_3']
+        self.bodies = grid_params['bodies']
 
         self.svd_rank_2 = grid_params['svd_rank_2']
         self.svd_rank_3 = grid_params['svd_rank_3']
@@ -542,7 +543,7 @@ class Map2body:
             k12_v_all = np.zeros([len(bond_lengths), size3])
             for ibatch in range(nbatch):
                 s, e = block_id[ibatch]
-                k12_v_all[:, s:e] = k12_slice[ibatch].get()
+                k12_v_all[:, 3*s:3*e] = k12_slice[ibatch].get()
             pool.close()
             pool.join()
 
@@ -664,6 +665,7 @@ class Map3body:
                 nsample = int(math.ceil(size/processes))
                 ns = int(math.ceil(size/self.nsample))
             k12_slice = []
+            print('before for', ns, nsample, time.time())
             for ibatch in range(ns):
                 s = self.nsample*ibatch
                 e = np.min([s + self.nsample, size])
