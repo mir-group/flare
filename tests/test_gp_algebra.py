@@ -78,8 +78,8 @@ def get_random_training_set(nenv):
         training_data += [AtomicEnvironment(struc, 1, cutoffs)]
         training_labels += [np.random.uniform(-1, 1, 3)]
     training_labels = np.hstack(training_labels)
-    hyps_list = [hyps1, hyps2, hyps3, hyps4]
-    hyps_mask_list = [hyps_mask1, hyps_mask2, hyps_mask3, hyps_mask4]
+    hyps_list = [hyps1, hyps2, hyps3, hyps4, hyps]
+    hyps_mask_list = [hyps_mask1, hyps_mask2, hyps_mask3, hyps_mask4, None]
 
     return hyps, training_data, training_labels, kernel, cutoffs, \
            kernel_m, hyps_list, hyps_mask_list
@@ -89,7 +89,7 @@ def test_ky_mat():
 
     hyps, training_data, training_labels, kernel, cutoffs, \
             kernel_m, hyps_list, hyps_mask_list = \
-            get_random_training_set(50)
+            get_random_training_set(10)
 
 
     func = [gp_algebra_origin.get_ky_mat,
@@ -123,15 +123,18 @@ def test_ky_mat():
     #     assert (diff==0), "parallel implementation is wrong"
 
     # check multi hyps implementation
-    for i in range(3):
+    # for all cases
+    for i in range(len(hyps_list)):
         hyps = hyps_list[i]
         hyps_mask = hyps_mask_list[i]
+
+        # serial implementation
         ky_mat = func[2](hyps, training_data,
                           kernel_m[0], cutoffs, hyps_mask)
         diff = (np.max(np.abs(ky_mat-ky_mat0)))
         assert (diff==0), "multi hyps parameter implementation is wrong"
 
-        # check multi hyps parallel implementation
+        # parallel implementation
         ky_mat = func[3](hyps, training_data,
                          kernel_m[0],
                          cutoffs, hyps_mask, ncpus=2, nsample=20)
@@ -143,7 +146,7 @@ def test_ky_mat_update():
 
     hyps, training_data, training_labels, kernel, cutoffs, \
             kernel_m, hyps_list, hyps_mask_list = \
-            get_random_training_set(50)
+            get_random_training_set(10)
 
 
     func = [gp_algebra.get_ky_mat,
@@ -156,7 +159,7 @@ def test_ky_mat_update():
     # timer0 = time.time()
     ky_mat0 = func[0](hyps, training_data,
                        kernel[0], cutoffs)
-    n = 20
+    n = 5
     ky_mat_old = func[0](hyps, training_data[:n],
                        kernel[0], cutoffs)
     # print("linear", time.time()-timer0)
@@ -173,16 +176,20 @@ def test_ky_mat_update():
     diff = (np.max(np.abs(ky_mat-ky_mat0)))
     assert (diff<1e-12), "parallel implementation is wrong"
 
-    for i in range(3):
+    # check multi hyps implementation
+    # for all cases
+    for i in range(len(hyps_list)):
+
         hyps = hyps_list[i]
         hyps_mask = hyps_mask_list[i]
-        # check multi hyps implementation
+
+        # serial implementation
         ky_mat = func[3](ky_mat_old, hyps, training_data,
                          kernel_m[0], cutoffs, hyps_mask)
         diff = (np.max(np.abs(ky_mat-ky_mat0)))
         assert (diff<1e-12), "multi hyps parameter implementation is wrong"
 
-        # check multi hyps parallel implementation
+        # parallel implementation
         ky_mat = func[4](ky_mat_old, hyps, training_data,
                          kernel_m[0], cutoffs,
                          hyps_mask, ncpus=2, nsample=20)
@@ -194,7 +201,7 @@ def test_ky_and_hyp():
 
     hyps, training_data, training_labels, kernel, cutoffs, \
             kernel_m, hyps_list, hyps_mask_list = \
-            get_random_training_set(50)
+            get_random_training_set(10)
 
     func = [gp_algebra_origin.get_ky_and_hyp,
             gp_algebra.get_ky_and_hyp_par,
@@ -211,36 +218,53 @@ def test_ky_and_hyp():
     diff = (np.max(np.abs(ky_mat-ky_mat0)))
     assert (diff==0), "parallel implementation is wrong"
 
-    for i in range(3):
+    hypmat_list = [[]]
+    # check all cases
+    for i in range(len(hyps_list)):
         hyps = hyps_list[i]
         hyps_mask = hyps_mask_list[i]
-        # check multi hyps implementation
+
+        # serial implementation
         hypmat, ky_mat = func[2](hyps, training_data,
                           kernel_m[1], cutoffs, hyps_mask)
+        hypmat_list += [hypmat]
         diff = (np.max(np.abs(ky_mat-ky_mat0)))
         assert (diff==0), "multi hyps parameter implementation is wrong"
 
+        # 9 5 4 4
         if (i==1):
             diff = (np.max(np.abs(hypmat-hypmat_0)))
             assert (diff==0), "multi hyps parameter implementation is wrong"
+        elif (i==2):
+            diff = (np.max(np.abs(hypmat-hypmat_0[:-1, :, :])))
+            assert (diff==0), "multi hyps parameter implementation is wrong"
+        elif (i==3):
+            diff = (np.max(np.abs(hypmat-hypmat_0[:-1, :, :])))
+            assert (diff==0), "multi hyps parameter implementation is wrong"
 
-        # check multi hyps parallel implementation
-        hypmat, ky_mat = func[3](hyps, training_data,
+        # parallel implementation
+        hypmat_par, ky_mat = func[3](hyps, training_data,
                          kernel_m[1], cutoffs, hyps_mask,
                          ncpus=2)
         diff = (np.max(np.abs(ky_mat-ky_mat0)))
-        assert (diff==0), "multi hyps parameter parallel "\
-                "implementation is wrong"
+        assert (diff==0), f"multi hyps parameter parallel "\
+                f"implementation is wrong in case {i}"
+
+        diff = (np.max(np.abs(hypmat_par-hypmat)))
+        assert (diff==0), f"multi hyps parameter implementation is wrong"\
+                f" in case{i}"
+
         if (i==1):
-            diff = (np.max(np.abs(hypmat-hysmat_0)))
-            assert (diff==0), "multi hyps parameter implementation is wrong"
+            diff = (np.max(np.abs(hypmat-hypmat_0)))
+            assert (diff==0), f"multi hyps parameter implementation is wrong"\
+                    f" in case{i}"
 
 def test_grad():
 
 
     hyps, training_data, training_labels, kernel, cutoffs, \
             kernel_m, hyps_list, hyps_mask_list = \
-            get_random_training_set(50)
+            get_random_training_set(10)
 
     func = gp_algebra.get_ky_and_hyp
 
@@ -280,7 +304,7 @@ def test_ky_hyp_grad():
 
     hyps, training_data, training_labels, kernel, cutoffs, \
             kernel_m, hyps_list, hyps_mask_list = \
-            get_random_training_set(50)
+            get_random_training_set(10)
 
     func = gp_algebra.get_ky_and_hyp
 
