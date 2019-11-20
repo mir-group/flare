@@ -659,7 +659,7 @@ class Map3body:
             size = len(GP.training_data)
             ns = int(math.ceil(size/self.nsample))
             if (ns < processes):
-                nsample = int(math.cel(size/processes))
+                nsample = int(math.ceil(size/processes))
                 ns = int(math.ceil(size/self.nsample))
             k12_slice = []
             for ibatch in range(ns):
