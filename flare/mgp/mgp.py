@@ -518,10 +518,21 @@ class Map2body:
             # break it into pieces
             size = len(GP.training_data)
             ns = int(math.ceil(size/self.nsample))
-            k12_slice = []
+            if (ns < processes):
+                nsample = int(math.ceil(size/processes))
+                ns = int(math.ceil(size/nsample))
+
+            block_id = []
+            nbatch = 0
             for ibatch in range(ns):
-                s = self.nsample*ibatch
-                e = np.min([s + self.nsample, size])
+                s1 = int(nsample*ibatch)
+                e1 = int(np.min([s1 + nsample, size]))
+                block_id += [(s1, e1)]
+                nbatch += 1
+
+            k12_slice = []
+            for ibatch in range(nbatch):
+                s, e = block_id[ibatch]
                 k12_slice.append(pool.apply_async(self._GenGrid_inner,
                                                   args=(GP.training_data[s:e],
                                                         bond_lengths,
@@ -529,9 +540,8 @@ class Map2body:
             size3 = size*3
             nsample3 = self.nsample*3
             k12_v_all = np.zeros([len(bond_lengths), size3])
-            for ibatch in range(ns):
-                s = nsample3*ibatch
-                e = np.min([s + nsample3, size3])
+            for ibatch in range(nbatch):
+                s, e = block_id[ibatch]
                 k12_v_all[:, s:e] = k12_slice[ibatch].get()
             pool.close()
             pool.join()
