@@ -561,8 +561,8 @@ class Map2body:
         '''
 
         kernel, cutoffs, hyps, hyps_mask = kernel_info
-        size = len(training_data)*3
-        k12_v = np.zeros([len(bond_lengths), size])
+        size = len(training_data)
+        k12_v = np.zeros([len(bond_lengths), size*3])
         for b, r in enumerate(bond_lengths):
             env12.bond_array_2 = np.array([[r, 1, 0, 0]])
             k12_v[b, :] = get_kernel_vector(training_data,
@@ -629,6 +629,8 @@ class Map3body:
             processes = mp.cpu_count()
         else:
             processes = self.ncpus
+        if processes == 1:
+            self.GenGrid_serial(GP)
 
         # ------ get 3body kernel info ------
         kernel_info = get_3bkernel(GP)
@@ -641,12 +643,6 @@ class Map3body:
         bond_means = np.zeros([nop, nop, noa])
         bond_vars = np.zeros([nop, nop, noa, len(GP.alpha)])
         env12 = AtomicEnvironment(self.bond_struc, 0, self.cutoffs)
-
-        # pool_list = []
-        # for a12 in range(noa):
-        #     for b1, r1 in enumerate(bond_lengths):
-        #         for b2, r2 in enumerate(bond_lengths):
-        #             pool_list += [(a12, r1, r2, env12, self.update)]
 
         with mp.Pool(processes=processes) as pool:
             if self.update:
@@ -682,25 +678,19 @@ class Map3body:
                                                   args=(GP.training_data[s:e],
                                                         angles, bond_lengths,
                                                         env12, kernel_info)))
-             #         results.append(pool.apply_async(GP.kernel,
-             #                                         args=(env12, x_2, 1, d_2,
-             #                                    GP.hyps, GP.cutoffs,
-             #                                    cf.quadratic_cutoff,
-             #                                    GP.hyps_mask)))
             pool.close()
             pool.join()
 
-            nsample3 = self.nsample*3
-            k12_v_all = np.zeros([len(bond_lengths), len(bond_lengths), len(angles), size*3])
+            k12_v_all = np.zeros([size*3, len(bond_lengths), len(bond_lengths), len(angles)])
             for ibatch in range(ibatch):
                 s, e = block_id[ibatch]
                 print('get', ibatch, ns, time.time())
-                k12_v_all[:, :, :, s*3:e*3] = k12_slice[ibatch].get()
+                k12_v_all[s*3:e*3, :, :, :] = k12_slice[ibatch].get()
 
         for a12, angle in enumerate(angles):
             for b1, r1 in enumerate(bond_lengths):
                 for b2, r2 in enumerate(bond_lengths):
-                    k12_v = k12_v_all[b1, b2, a12, :]
+                    k12_v = k12_v_all[:, b1, b2, a12]
                     bond_means[b1, b2, a12] = np.matmul(k12_v, GP.alpha)
                     if not self.mean_only:
                         bond_vars[b1, b2, a12, :] = solve_triangular(GP.l_mat, k12_v, lower=True)
@@ -735,9 +725,10 @@ class Map3body:
                 subprocess.run(['rm', '-rf', self.kv3name])
             subprocess.run(['mkdir', self.kv3name])
 
+        size = len(GP.training_data)
         k12_v_all = np.zeros([len(bond_lengths), len(bond_lengths), len(angles), size*3])
-        for isample in GP.training_data:
-            k12_v_all[:, :, :, isample*3:isample*3+3] = \
+        for isample, sample in enumerate(GP.training_data):
+            k12_v_all[isample*3:isample*3+3, :, :, :] = \
                     self._GenGrid_inner_most([sample], angles, bond_lengths,
                                              env12, kernel_info)
 
@@ -745,7 +736,7 @@ class Map3body:
         for a12, angle in enumerate(angles):
             for b1, r1 in enumerate(bond_lengths):
                 for b2, r2 in enumerate(bond_lengths):
-                    k12_v = k12_v_all[b1, b2, a12, :]
+                    k12_v = k12_v_all[:, b1, b2, a12]
                     bond_means[b1, b2, a12] = np.matmul(k12_v, GP.alpha)
                     if not self.mean_only:
                         bond_vars[b1, b2, a12, :] = solve_triangular(GP.l_mat, k12_v, lower=True)
