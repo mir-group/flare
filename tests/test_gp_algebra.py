@@ -2,7 +2,7 @@ import time
 import pytest
 import numpy as np
 
-from flare import gp, gp_algebra, gp_algebra_multi, gp_algebra_origin
+from flare import gp, gp_algebra, gp_algebra_multi
 from flare.env import AtomicEnvironment
 from flare.struc import Structure
 from flare.mc_simple import two_plus_three_body_mc, \
@@ -101,7 +101,7 @@ def test_ky_mat():
             kernel_m, hyps_list, hyps_mask_list = \
             get_random_training_set(10)
 
-    func = [gp_algebra_origin.get_ky_mat,
+    func = [gp_algebra.get_ky_mat,
             gp_algebra.get_ky_mat_par,
             gp_algebra_multi.get_ky_mat,
             gp_algebra_multi.get_ky_mat_par]
@@ -109,7 +109,6 @@ def test_ky_mat():
     # get the reference
     # timer0 = time.time()
     ky_mat0 = func[0](hyps, training_data,
-                      training_labels,
                       kernel[0], cutoffs)
 
     # print("linear", time.time()-timer0)
@@ -167,7 +166,7 @@ def test_ky_mat_update():
             get_random_training_set(10)
 
 
-    func = [gp_algebra_origin.get_ky_mat,
+    func = [gp_algebra.get_ky_mat,
             gp_algebra.get_ky_mat_update,
             gp_algebra.get_ky_mat_update_par,
             gp_algebra_multi.get_ky_mat_update,
@@ -175,11 +174,9 @@ def test_ky_mat_update():
 
     # get the reference
     ky_mat0 = func[0](hyps, training_data,
-                      training_labels,
                       kernel[0], cutoffs)
     n = 5
     ky_mat_old = func[0](hyps, training_data[:n],
-                         training_labels,
                          kernel[0], cutoffs)
 
     # parallel version
@@ -225,13 +222,12 @@ def test_ky_and_hyp():
             kernel_m, hyps_list, hyps_mask_list = \
             get_random_training_set(10)
 
-    func = [gp_algebra_origin.get_ky_and_hyp,
+    func = [gp_algebra.get_ky_and_hyp,
             gp_algebra.get_ky_and_hyp_par,
             gp_algebra_multi.get_ky_and_hyp,
             gp_algebra_multi.get_ky_and_hyp_par]
 
     hypmat_0, ky_mat0 = func[0](hyps, training_data,
-                       training_labels,
                        kernel[1], cutoffs)
 
     # parallel version
@@ -295,9 +291,8 @@ def test_grad():
             get_random_training_set(10)
 
     # obtain reference
-    func = gp_algebra_origin.get_ky_and_hyp
+    func = gp_algebra.get_ky_and_hyp
     hyp_mat, ky_mat = func(hyps, training_data,
-                       training_labels,
                        kernel[1], cutoffs)
     like0, like_grad0 = \
                      get_like_grad_from_mats(ky_mat, hyp_mat, training_labels)
