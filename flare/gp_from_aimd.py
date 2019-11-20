@@ -227,7 +227,7 @@ class TrajectoryTrainer(object):
             self.gp.set_L_alpha()
 
         if self.model_write:
-            self.gp.write_model(self.model_write, self.model_format)
+            self.gp.write_model(f'prerun_{self.model_write}', self.model_format)
 
     def run(self):
         """
@@ -303,7 +303,8 @@ class TrajectoryTrainer(object):
                         if self.checkpoint_interval \
                                 and self.train_count % self.checkpoint_interval == 0 \
                                 and self.model_write:
-                            self.gp.write_model(self.model_write, self.model_format)
+                            self.gp.write_model(f'{selfl.train_count}{self.model_write}',
+                                    self.model_format)
                     else:
                         self.gp.update_L_alpha()
 
@@ -313,7 +314,7 @@ class TrajectoryTrainer(object):
         self.output.conclude_run()
 
         if self.model_write:
-            self.gp.write_model(self.model_write, self.model_format)
+            self.gp.write_model(f'final_{self.model_write}', self.model_format)
 
     def update_gp_and_print(self, frame: Structure, train_atoms: List[int],
                             train: bool = True):
