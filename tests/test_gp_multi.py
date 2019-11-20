@@ -28,6 +28,17 @@ def get_random_structure(cell, unique_species, noa):
 
     return test_structure, forces
 
+#####
+specs_mask = np.zeros(118, dtype=int)
+nspecs = 1
+        sig1 = [1]
+                ls1 = [1]
+                        bond_mask = np.zeros(nspecs**2, dtype=int)
+                                bond_name = ["sig2"]+["ls2"]
+
+#######
+
+
 def generate_hm(nbond, ntriplet):
 
     specs_mask = np.zeros(118, dtype=int)

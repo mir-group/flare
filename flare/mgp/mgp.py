@@ -329,7 +329,7 @@ class MappedGaussianProcess:
         kern3 = np.zeros(3)
         for d in range(3):
             if (self.multihyps is True):
-                kern3[d] = self.kernel_b(atom_env, atom_env, d+1, d+1,
+                kern3[d] = self.kernel_3b(atom_env, atom_env, d+1, d+1,
                                           self.hyps, self.cutoffs,
                                           hyps_mask=self.hyps_mask)
             else:
@@ -657,10 +657,14 @@ class Map3body:
             # break it into pieces
             size = len(GP.training_data)
             ns = int(math.ceil(size/self.nsample))
+            if (ns < processes):
+                nsample = int(math.cel(size/processes))
+                ns = int(math.ceil(size/self.nsample))
             k12_slice = []
             for ibatch in range(ns):
                 s = self.nsample*ibatch
                 e = np.min([s + self.nsample, size])
+                print(ibatch, ns, time.time())
                 k12_slice.append(pool.apply_async(self._GenGrid_inner_most,
                                                   args=(GP.training_data[s:e],
                                                         angles, bond_lengths,
@@ -679,6 +683,7 @@ class Map3body:
             for ibatch in range(ns):
                 s = nsample3*ibatch
                 e = np.min([s + nsample3, size3])
+                print('get', ibatch, ns, time.time())
                 k12_v_all[:, :, :, s:e] = k12_slice[ibatch].get()
 
         for a12, angle in enumerate(angles):

@@ -446,7 +446,7 @@ def get_ky_and_hyp_par(hyps: np.ndarray, training_data: list,
             if (count > ncpus*3):
                 for iget in range(base, count+base):
                     s1, e1, s2, e2 = block_id[iget]
-                    h_mat_block, k_mat_block = mat_slice[iget+base].get()
+                    h_mat_block, k_mat_block = mat_slice[iget-base].get()
                     k_mat[s1*3:e1*3, s2*3:e2*3] = k_mat_block
                     hyp_mat0[:, s1*3:e1*3, s2*3:e2*3] = h_mat_block
                     if (s1 != s2):
@@ -461,7 +461,7 @@ def get_ky_and_hyp_par(hyps: np.ndarray, training_data: list,
         if (count>0):
             for iget in range(base, nbatch):
                 s1, e1, s2, e2 = block_id[iget]
-                h_mat_block, k_mat_block = mat_slice[iget+base].get()
+                h_mat_block, k_mat_block = mat_slice[iget-base].get()
                 k_mat[s1*3:e1*3, s2*3:e2*3] = k_mat_block
                 hyp_mat0[:, s1*3:e1*3, s2*3:e2*3] = h_mat_block
                 if (s1 != s2):
