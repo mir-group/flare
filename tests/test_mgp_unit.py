@@ -34,6 +34,8 @@ def construct_gp(bodies, params):
                            cutoffs, par=True, ncpus=2)
     gp_model.hyp_labels = ['sig2', 'ls2', 'noise']
 
+    np.random.seed(0)
+
     # create training_set
     gp_model.training_data = []
     gp_model.training_labels_np = []
@@ -91,7 +93,7 @@ def test_parse_header(bodies):
 
     mgp_model = MappedGaussianProcess(gp_model.hyps, gp_model.cutoffs,
             grid_params, struc_params, mean_only=True, container_only=False,
-            GP=gp_model, lmp_file_name=lammps_location)
+            GP=gp_model, lmp_file_name=lammps_location, ncpus=4)
 
     # -------------------------------------------------------------------------
     #                          test the mapped potential
