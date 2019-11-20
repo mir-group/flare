@@ -670,6 +670,7 @@ class Map3body:
                                                   args=(GP.training_data[s:e],
                                                         angles, bond_lengths,
                                                         env12, kernel_info)))
+                print('send', ibatch, ns, time.time())
             pool.close()
             pool.join()
 
