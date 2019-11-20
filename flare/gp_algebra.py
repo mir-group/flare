@@ -4,8 +4,26 @@ import multiprocessing as mp
 import time
 
 
-def get_cov_row(x_1, d_1, m_index, size, training_data, kernel,
-                kern_hyps, cutoffs):
+#######################################
+##### COVARIANCE MATRIX FUNCTIONS
+#######################################
+
+def get_cov_row(x_1, d_1, m_index: int, size: int, training_data: list,
+                kernel: callable, kern_hyps: np.array,
+                cutoffs: np.array)-> list:
+    """
+    Compute an individual row of a covariance matrix.
+
+    :param x_1: Atomic environment to compare to At. Envs. in training data
+    :param d_1: Index of force component (x,y,z), indexed as (1,2,3)
+    :param m_index:
+    :param size:
+    :param training_data: Set of atomic environments to compare against
+    :param kernel: Kernel function to compare x_1 against training data with
+    :param kern_hyps: Hyperparameters which parameterize kernel function
+    :param cutoffs: The cutoff values used for the atomic environments
+    :return: covs, list of covariance matrix row elements
+    """
     covs = []
     ds = [1, 2, 3]
     for n_index in range(m_index, size):
@@ -37,6 +55,9 @@ def get_cov_row_derv(x_1, d_1, m_index, size, training_data, kernel_grad,
 
     return covs, hyps
 
+#######################################
+##### KY MATRIX FUNCTIONS
+#######################################
 
 def get_ky_mat_par(hyps: np.ndarray, training_data: list,
                    training_labels_np: np.ndarray,
@@ -263,6 +284,9 @@ def get_ky_mat_update(ky_mat_old, training_data, get_kernel_vector, hyps, par):
     ky_mat[n:, n:] += sigma_n ** 2 * np.eye(3 * m)
     return ky_mat
 
+#######################################
+##### LIKELIHOOD + LIKELIHOOD GRADIENT
+#######################################
 
 def get_like_from_ky_mat(ky_mat, training_labels_np):
         # catch linear algebra errors
@@ -280,6 +304,7 @@ def get_like_from_ky_mat(ky_mat, training_labels_np):
                 math.log(2 * np.pi) * ky_mat.shape[1] / 2)
 
         return like
+
 
 
 def get_like_grad_from_mats(ky_mat, hyp_mat, training_labels_np):
