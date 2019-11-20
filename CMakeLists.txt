@@ -1,0 +1,22 @@
+# set minimum required version of cmake
+cmake_minimum_required(VERSION 3.1...3.15)
+
+if(${CMAKE_VERSION} VERSION_LESS 3.12)
+    cmake_policy(VERSION ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION})
+endif()
+
+# set the project name
+project(ACE_Tests VERSION 1.0
+	    DESCRIPTION "High performance implementation of the atomic cluster expansion."
+	    LANGUAGES CXX)
+
+# set(ACE_ROOT_DIR /Users/jonpvandermause/Research/ACE_NN)
+set(ACE_ROOT_DIR $ENV{ACE})
+
+# specify the C++ standard
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED True)
+
+# add subdirectories
+add_subdirectory(src)
+add_subdirectory(test)
