@@ -681,16 +681,16 @@ class Map3body:
             pool.close()
             pool.join()
 
-            k12_v_all = np.zeros([size*3, len(bond_lengths), len(bond_lengths), len(angles)])
+            k12_v_all = np.zeros([len(bond_lengths), len(bond_lengths), len(angles), size*3])
             for ibatch in range(ibatch):
                 s, e = block_id[ibatch]
                 print('get', ibatch, ns, time.time())
-                k12_v_all[s*3:e*3, :, :, :] = k12_slice[ibatch].get()
+                k12_v_all[:, :, :, s*3:e*3] = k12_slice[ibatch].get()
 
         for a12, angle in enumerate(angles):
             for b1, r1 in enumerate(bond_lengths):
                 for b2, r2 in enumerate(bond_lengths):
-                    k12_v = k12_v_all[:, b1, b2, a12]
+                    k12_v = k12_v_all[b1, b2, a12, :]
                     bond_means[b1, b2, a12] = np.matmul(k12_v, GP.alpha)
                     if not self.mean_only:
                         bond_vars[b1, b2, a12, :] = solve_triangular(GP.l_mat, k12_v, lower=True)
@@ -728,7 +728,7 @@ class Map3body:
         size = len(GP.training_data)
         k12_v_all = np.zeros([len(bond_lengths), len(bond_lengths), len(angles), size*3])
         for isample, sample in enumerate(GP.training_data):
-            k12_v_all[isample*3:isample*3+3, :, :, :] = \
+            k12_v_all[:, :, :, isample*3:isample*3+3] = \
                     self._GenGrid_inner_most([sample], angles, bond_lengths,
                                              env12, kernel_info)
 
@@ -736,7 +736,7 @@ class Map3body:
         for a12, angle in enumerate(angles):
             for b1, r1 in enumerate(bond_lengths):
                 for b2, r2 in enumerate(bond_lengths):
-                    k12_v = k12_v_all[:, b1, b2, a12]
+                    k12_v = k12_v_all[b1, b2, a12, :]
                     bond_means[b1, b2, a12] = np.matmul(k12_v, GP.alpha)
                     if not self.mean_only:
                         bond_vars[b1, b2, a12, :] = solve_triangular(GP.l_mat, k12_v, lower=True)
