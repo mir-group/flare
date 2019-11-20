@@ -85,7 +85,7 @@ def test_parse_header():
 
     mgp_model = MappedGaussianProcess(gp_model.hyps, gp_model.cutoffs,
             grid_params, struc_params, mean_only=True, container_only=False,
-            GP=gp_model, lmp_file_name=lammps_location)
+            GP=gp_model, lmp_file_name=lammps_location, ncpus=2)
 
     # -------------------------------------------------------------------------
     #                          test the mapped potential
@@ -121,7 +121,7 @@ def test_parse_header():
     lammps_calculator.write_text(data_file_name, data_text)
 
     # create lammps input
-    style_string = 'mgp' 
+    style_string = 'mgp'
     coeff_string = '* * {} 47 53 yes yes'.format(lammps_location)
     lammps_executable = '$lmp'
     dump_file_name = 'tmp.dump'

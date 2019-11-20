@@ -127,8 +127,8 @@ class MappedGaussianProcess:
                 self.kernel_2b = str_to_mc_kernel('two_body_mc')
                 self.kernel_3b = str_to_mc_kernel('three_body_mc')
         else:
-            self.kernel_2b = str_to_mc_sephyps_kernel('two_body')
-            self.kernel_3b = str_to_mc_sephyps_kernel('three_body')
+            self.kernel_2b = str_to_kernel('two_body')
+            self.kernel_3b = str_to_kernel('three_body')
 
     def build_map_container(self):
         '''
@@ -672,7 +672,7 @@ class Map3body:
                                                   args=(GP.training_data[s:e],
                                                         angles, bond_lengths,
                                                         env12, kernel_info)))
-                print('send', ibatch, ns, time.time())
+                print('send', ibatch, ns, s, e, time.time())
             pool.close()
             pool.join()
 
