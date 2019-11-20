@@ -4,6 +4,7 @@ import os
 import json
 import numpy as np
 
+from typing import List
 from pytest import raises
 
 from flare.gp import GaussianProcess
@@ -100,6 +101,7 @@ def test_point() -> AtomicEnvironment:
 
     yield test_pt
     del test_pt
+
 
 
 # ------------------------------------------------------

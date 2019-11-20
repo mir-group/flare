@@ -85,7 +85,7 @@ final hyperparameter value in hyps.
 #                        two plus three body kernels
 # -----------------------------------------------------------------------------
 
-def from_mask_to_hyps(hyps, hyps_mask):
+def from_mask_to_hyps(hyps, hyps_mask: dict = {}):
     """
 
     :param hyps:
@@ -93,9 +93,8 @@ def from_mask_to_hyps(hyps, hyps_mask):
     :return:
     """
 
-    n2b = hyps_mask['nbond']
-    n3b = hyps_mask['ntriplet']
-
+    n2b = hyps_mask.get('nbond', 0)
+    n3b = hyps_mask.get('ntriplet', 0)
     if ('map' in hyps_mask.keys()):
         orig_hyps = hyps_mask['original']
         hm = hyps_mask['map']
@@ -122,12 +121,14 @@ def from_mask_to_hyps(hyps, hyps_mask):
         return n2b, 0, sig, ls, None, None
 
     elif (n2b == 0) and (n3b == 0):
-        raise NameError("hello??, wrong hyps_mask")
+        raise NameError("Hyperparameter mask missing nbond and/or"
+                        "ntriplet key")
 
 
 def from_grad_to_mask(grad, hyps_mask):
     """
-    Return version of gradient with
+    Return gradient which only includes hyperparameters
+    which are meant to vary
 
     :param grad:
     :param hyps_mask:
@@ -136,14 +137,12 @@ def from_grad_to_mask(grad, hyps_mask):
     if 'map' not in hyps_mask.keys():
         return grad
 
-    n2b = hyps_mask['nbond']
-    n3b = hyps_mask['ntriplet']
-
     # if the last element is not sigma_noise
     if (hyps_mask['map'][-1] == len(grad)):
         hm = hyps_mask['map'][:-1]
     else:
         hm = hyps_mask['map']
+
     newgrad = np.zeros(len(hm))
     for i, mapid in enumerate(hm):
         newgrad[i] = grad[mapid]
