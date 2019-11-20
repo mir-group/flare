@@ -75,12 +75,22 @@ class GaussianProcess:
         self.likelihood = None
         self.likelihood_gradient = None
 
+        if multihyps is True and hyps_mask is None:
+            raise ValueError("Warning! Multihyperparameter mode enabled,"
+                             "but no configuration hyperparameter mask was "
+                             "passed. Did you mean to set multihyps to False?")
+        elif multihyps is False and hyps_mask is not None:
+            raise ValueError("Warning! Multihyperparameter mode disabled,"
+                             "but a configuration hyperparameter mask was "
+                             "passed. Did you mean to set multihyps to True?")
         self.hyps_mask = None
         if (isinstance(hyps_mask, dict) and multihyps is True):
             self.multihyps = True
 
-            assert ('nspec' in hyps_mask.keys()), "nspec key is needed in hyps_mask"
-            assert ('spec_mask' in hyps_mask.keys()), "spec_mask key is needed in hyps_mask"
+            assert 'nspec' in hyps_mask.keys(), "nspec key missing in " \
+                                                "hyps_mask dictionary"
+            assert 'spec_mask' in hyps_mask.keys(), "spec_mask key missing " \
+                                                    "in hyps_mask dictionary"
 
             self.hyps_mask = deepcopy(hyps_mask)
 
@@ -91,7 +101,8 @@ class GaussianProcess:
                 if (n2b>0):
                     assert (np.max(hyps_mask['bond_mask']) < n2b)
                     assert len(hyps_mask['bond_mask']) == nspec**2, \
-                            f"wrong dimension of bond_mask {len(hyps_mask['bond_mask']) != {nspec**2}}"
+                            f"wrong dimension of bond_mask: " \
+                            f" {len(hyps_mask['bond_mask']) != {nspec**2}}"
             else:
                 n2b = 0
 
@@ -109,7 +120,10 @@ class GaussianProcess:
 
             if ('map' in hyps_mask.keys()):
                 assert ('original' in hyps_mask.keys()), \
-                        "original hyper parameters has to be defined"
+                        "original hyper parameters have to be defined"
+                # Ensure typed correctly as numpy array
+                self.hyps_mask['original'] = np.array(hyps_mask['original'])
+
                 assert (n2b*2+n3b*2+1) == len(hyps_mask['original']) , \
                         "the hyperparmeter length is inconsistent with the mask"
                 assert len(hyps_mask['map']) == len(hyps), \

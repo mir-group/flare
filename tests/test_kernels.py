@@ -6,6 +6,7 @@ from copy import deepcopy
 from flare import env, gp, struc
 import flare.kernels as en
 
+from flare.mc_sephyps import from_mask_to_hyps, from_grad_to_mask
 
 # -----------------------------------------------------------------------------
 #                        test two plus three body kernels
@@ -572,3 +573,75 @@ def test_three_body_grad():
     tol = 1e-4
     assert(np.isclose(grad_test[1][0], sig_derv_brute, atol=tol))
     assert(np.isclose(grad_test[1][1], l_derv_brute, atol=tol))
+
+
+def test_masked_hyperparameter_function():
+    """
+    Test simple input permutations for the from_mask_to_hyps function
+    :return:
+    """
+
+    # Standard sig2, ls2, sig3, ls3, noise hyp array
+    with pytest.raises(NameError):
+        from_mask_to_hyps(hyps=[], hyps_mask={})
+    # -----------------------
+    # Test simple input cases
+    # -----------------------
+    hyps_mask = {'nbond': 1}
+    hyps = [1,2,5]
+    assert (from_mask_to_hyps(hyps, hyps_mask) == (1, 0, [1], [2], None,
+                                                   None))
+
+    hyps = [3,4,5]
+    hyps_mask = {'ntriplet': 1}
+    assert (from_mask_to_hyps(hyps, hyps_mask) == (0, 1, None, None, [3],
+                                                   [4]))
+    hyps = [1, 2, 3, 4, 5]
+    hyps_mask = {'nbond': 1, 'ntriplet':1 }
+    assert (from_mask_to_hyps(hyps, hyps_mask) == (1, 1, [1], [2], [3],
+                                                   [4]))
+
+    hyps = [1, 2, 3, 4, 5]
+    hyps_mask['map']=[0, 1, 2, 3, 4]
+    hyps_mask['original'] = [1, 2, 3, 4, 5, 6]
+    assert (from_mask_to_hyps(hyps, hyps_mask) == (1, 1, [1], [2], [3],
+                                                   [4]))
+    # -----------------------
+    # Test simple 2+3 body input case
+    # -----------------------
+
+    # Hyps : sig21, sig22, ls21, ls22, sig31, sig32, ls31, ls32, noise
+    hyps = [1.1,1.2, 2.1, 2.2, 3.1, 3.2, 4.1, 4.2, 5]
+    hyps_mask = {'nbond': 2, 'ntriplet': 2}
+
+    assert (from_mask_to_hyps(hyps,hyps_mask) == (2, 2, [1.1, 1.2], [2.1,2.2],
+                                                  [3.1, 3.2], [4.1, 4.2]))
+
+
+
+def test_grad_mask_function():
+    """
+    Test simple permutations for the from_grad_to_mask function
+    :return:
+    """
+
+    grad = 'A'
+
+    assert from_grad_to_mask(grad,hyps_mask={}) == 'A'
+
+    # Test map for a standard slate of hyperparameters
+    grad = [1, 2, 3, 4, 5]
+    hyps_mask = {'map': [0, 3]}
+    assert (from_grad_to_mask(grad, hyps_mask) == [1, 4]).all()
+
+
+    # Test map when noise variance is included
+    grad = [1, 2, 3, 4, 5]
+    hyps_mask = {'map': [0, 3, 4]}
+    assert (from_grad_to_mask(grad, hyps_mask) == [1, 4, 5]).all()
+
+    # Test map if the last parameter is not  sigma_noise
+    grad = [1, 2, 3, 4, 5]
+    hyps_mask = {'map': [0, 3, 5]}
+    assert (from_grad_to_mask(grad, hyps_mask) == [1, 4]).all()
+

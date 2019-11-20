@@ -9,7 +9,6 @@ from flare import mc_simple
 from flare.otf_parser import OtfAnalysis
 import flare.mc_sephyps as en
 
-
 def get_random_structure(cell, unique_species, noa):
     """Create a random test structure """
     np.random.seed(0)
@@ -398,3 +397,63 @@ def dumpcompare(obj1, obj2):
         assert obj1==obj2
 
     return True
+
+def test_constrained_optimization_simple():
+    """
+    Test constrained optimization with a standard
+    number of hyperparameters (3 for a 3-body)
+    :return:
+    """
+
+    # params
+    cell = np.eye(3)
+    species = [1,1,2,2,2]
+    positions = np.random.uniform(0,1,(5,3))
+    forces = np.random.uniform(0,1,(5,3))
+
+    two_species_structure = Structure(cell=cell,species=species,
+                               positions=positions,
+                               forces=forces)
+
+
+    hyp_labels=['2-Body_sig2,',
+                '2-Body_l2',
+                '3-Body_sig2',
+                '3-Body_l2',
+                'noise']
+    hyps = np.array([1.2, 2.2, 3.2, 4.2, 12.])
+    cutoffs = np.array((.8, .8))
+
+    # Define hyp masks
+
+    spec_mask = np.zeros(118, dtype=int)
+    spec_mask[1] = 1
+
+    hyps_mask = {'nspec': 2,
+                 'spec_mask': spec_mask,
+                 'nbond': 2,
+                 'bond_mask': [0, 1, 1, 1],
+                 'ntriplet': 2,
+                 'triplet_mask': [0, 1, 1, 1, 1, 1, 1, 1],
+                 'original': np.array([1.1, 1.2, 2.1, 2.2, 3.1, 3.2, 4.1, 4.2,
+                                    12.]),
+                 'map': [1, 3, 5, 7, 8]}
+
+    gp = GaussianProcess(kernel=en.two_plus_three_body_mc,
+                        kernel_grad=en.two_plus_three_body_mc_grad,
+                        hyps=hyps,
+                        hyp_labels=hyp_labels,
+                        cutoffs=cutoffs, par=False, ncpus=1,
+                        hyps_mask=hyps_mask,
+                        maxiter=1,multihyps=True)
+
+
+    gp.update_db(two_species_structure,
+                 two_species_structure.forces)
+
+    # Check that the hyperparameters were updated
+    results = gp.train()
+    assert not np.equal(results.x, hyps).all()
+
+    #TODO check that the predictions match up with a 2+3 body
+    # kernel without hyperparameter masking
