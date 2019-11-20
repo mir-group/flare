@@ -46,8 +46,28 @@ triplet_mask: Similar to bond mask: Triplet pairings of type 0 and 1 atoms
 For selective optimization. one can define 'map', 'train_noise' and 'original'
 to identify which element to be optimized. All three have to be defined.
 
-Example, the full set of hyper parmeters include [ls21, ls22, sig21, sig22, ls3
-sg3, noise] and only the set 21 is optimized. Then
+train_noise = Bool (True/False), whether the noise parameter can be optimized
+original: np.array. Full set of initial values for hyperparmeters
+map: np.array, array to map the hyper parameter back to the full set.
+               map[i]=j means the i-th element in hyps should be
+               the j-th element in hyps_mask['original']
+               
+               
+For example, the full set of hyper parmeters 
+may include [ls21, ls22, sig21, sig22, ls3
+sg3, noise] but suppose you wanted only the set 21 optimized. 
+
+The full set of hyperparameters is defined in 'original'; include all those
+you want to leave static, and set initial guesses for those you want to vary.
+
+Have the 'map' list contain the indices of the hyperparameters in 'original'
+that correspond to the hyperparameters you want to vary.
+
+Have a hyps list which contain those which you want to vary. Below, 
+ls21, ls22 etc... represent floating-point variables which correspond
+to the initial guesses / static values.
+
+You would then pass in:
 
 hyps = [ls21, sig21]
 hyps_mask = { ..., 'train_noise': False, 'map':[0, 2],
@@ -55,11 +75,9 @@ hyps_mask = { ..., 'train_noise': False, 'map':[0, 2],
 
 the hyps argument should only contain the values that need to be optimized.
 
-train_noise = Bool (True/False), whether the noise parameter can be optimized
-original: np.array. Full set of hyperparmeters
-map: np.array, array to map the hyper parameter back to the full set.
-               map[i]=j means the i-th element in hyps should be
-               the j-th element in hyps_mask['original']
+If you want noise to be trained as well include noise as the
+final hyperparameter value in hyps.
+
 """
 
 

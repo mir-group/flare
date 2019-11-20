@@ -10,7 +10,7 @@ name = "CP2K"
 
 
 def run_dft_par(dft_input, structure, dft_loc, no_cpus=1, dft_out="dft.out",
-                npool=None, mpi="mpi"):
+                npool=None, mpi="mpi", **dft_kwargs):
     newfilename = edit_dft_input_positions(dft_input, structure)
     dft_command = \
         f'{dft_loc} -i {newfilename} > {dft_out}'
@@ -27,7 +27,7 @@ def run_dft_par(dft_input, structure, dft_loc, no_cpus=1, dft_out="dft.out",
 
 
 def run_dft_en_par(dft_input, structure, dft_loc, no_cpus, dft_out="dft.out",
-        npool=None, mpi="mpi"):
+        npool=None, mpi="mpi", **dft_kwargs):
 
     newfilename = edit_dft_input_positions(dft_input, structure)
     dft_command = \
