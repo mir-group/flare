@@ -157,7 +157,10 @@ class MappedGaussianProcess:
         '''
         for map_2 in self.maps_2:
             map_2.build_map(GP)
+        print('map 2 built')
+
         for map_3 in self.maps_3:
+            print('map 3:', map_3, 'built')
             map_3.build_map(GP)
 
         # write to lammps pair style coefficient file
@@ -648,7 +651,7 @@ class Map3body:
             size = len(GP.training_data)
             ns = int(math.ceil(size/self.nsample))
             if (ns < processes):
-                nsample = int(math.cel(size/processes))
+                nsample = int(math.ceil(size/processes))
                 ns = int(math.ceil(size/self.nsample))
             k12_slice = []
             for ibatch in range(ns):
