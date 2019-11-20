@@ -11,6 +11,7 @@ from flare.mc_sephyps import two_plus_three_body_mc \
         as two_plus_three_body_mc_multi
 from flare.mc_sephyps import two_plus_three_body_mc_grad \
         as two_plus_three_body_mc_grad_multi
+from flare.gp_algebra import get_like_grad_from_mats
 
 
 def get_random_training_set(nenv):
@@ -43,6 +44,7 @@ def get_random_training_set(nenv):
         struc = Structure(cell, species, positions)
         training_data += [AtomicEnvironment(struc, 1, cutoffs)]
         training_labels += [np.random.uniform(-1, 1, 3)]
+    training_labels = np.hstack(training_labels)
 
     return hyps, training_data, training_labels, kernel, cutoffs, \
            kernel_m, hyps_mask
@@ -162,6 +164,7 @@ def test_ky_and_hyp():
 
     hypmat_0, ky_mat0 = func[0](hyps, training_data,
                        kernel[1], cutoffs)
+
     # parallel version
     hypmat, ky_mat = func[1](hyps, training_data,
                      kernel[1], cutoffs, ncpus=2)
@@ -182,3 +185,37 @@ def test_ky_and_hyp():
     diff = (np.max(np.abs(ky_mat-ky_mat0)))
     assert (diff==0), "multi hyps parameter parallel "\
             "implementation is wrong"
+
+def test_ky_hyp_grad():
+
+
+    hyps, training_data, training_labels, \
+            kernel, cutoffs, \
+            kernel_m, hyps_mask = \
+            get_random_training_set(10)
+
+    func = gp_algebra.get_ky_and_hyp
+
+    hyp_mat, ky_mat = func(hyps, training_data,
+                       kernel[1], cutoffs)
+
+    print(hyp_mat.shape, ky_mat.shape, len(training_labels), training_labels[0])
+
+    like, like_grad = \
+                     get_like_grad_from_mats(ky_mat, hyp_mat, training_labels)
+    delta = 0.001
+    for i in range(len(hyps)):
+        newhyps = np.copy(hyps)
+        newhyps[i] += delta
+        hyp_mat_p, ky_mat_p = func(newhyps, training_data,
+                           kernel[1], cutoffs)
+        like_p, like_grad_p = \
+                         get_like_grad_from_mats(ky_mat_p, hyp_mat_p, training_labels)
+        newhyps[i] -= 2*delta
+        hyp_mat_m, ky_mat_m = func(newhyps, training_data,
+                           kernel[1], cutoffs)
+        like_m, like_grad_m = \
+                         get_like_grad_from_mats(ky_mat_m, hyp_mat_m, training_labels)
+        diff = np.abs(like_grad[i]-(like_p-like_m)/2./delta)
+        assert (diff < 1e-3), "wrong calculation of hyp_mat"
+
