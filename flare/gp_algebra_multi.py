@@ -451,10 +451,10 @@ def get_ky_and_hyp_par(hyps: np.ndarray, training_data: list,
                     hyp_mat0[:, s1*3:e1*3, s2*3:e2*3] = h_mat_block
                     if (s1 != s2):
                         k_mat[s2*3:e2*3, s1*3:e1*3] = k_mat_block.T
-                for idx in range(hyp_mat0.shape[0]):
-                    hyp_mat0[idx, s2*3:e2*3, s1*3:e1*3] = h_mat_block[idx].T
-                if (size>5000):
-                    print("computed block", base, base+count)
+                        for idx in range(hyp_mat0.shape[0]):
+                            hyp_mat0[idx, s2*3:e2*3, s1*3:e1*3] = h_mat_block[idx].T
+                    if (size>5000):
+                        print("computed block", base, base+count)
                 mat_slice = []
                 base = ibatch+1
                 count = 0
@@ -466,6 +466,8 @@ def get_ky_and_hyp_par(hyps: np.ndarray, training_data: list,
                 hyp_mat0[:, s1*3:e1*3, s2*3:e2*3] = h_mat_block
                 if (s1 != s2):
                     k_mat[s2*3:e2*3, s1*3:e1*3] = k_mat_block.T
+                    for idx in range(hyp_mat0.shape[0]):
+                        hyp_mat0[idx, s2*3:e2*3, s1*3:e1*3] = h_mat_block[idx].T
             del mat_slice
         pool.close()
         pool.join()
