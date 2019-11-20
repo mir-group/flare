@@ -150,7 +150,7 @@ class GaussianProcess:
             self.training_labels.append(forces_curr)
 
         # create numpy array of training labels
-        self.training_labels_np = self.force_list_to_np(self.training_labels)
+        self.training_labels_np = np.hstack(self.training_labels)
 
     def add_one_env(self, env: AtomicEnvironment,
                     force, train: bool = False, **kwargs):
@@ -168,28 +168,10 @@ class GaussianProcess:
         # self.training_data.append(light_env)
         self.training_data.append(env)
         self.training_labels.append(force)
-        self.training_labels_np = self.force_list_to_np(self.training_labels)
+        self.training_labels_np = np.hstack(self.training_labels)
 
         if train:
             self.train(**kwargs)
-
-    @staticmethod
-    def force_list_to_np(forces: list):
-        """ Convert list of forces to numpy array of forces.
-        :param forces: list of forces to convert
-        :type forces: list<float>
-        :return: numpy array forces
-        :rtype: np.ndarray
-        """
-        forces_np = []
-
-        for force in forces:
-            for force_comp in force:
-                forces_np.append(force_comp)
-
-        forces_np = np.array(forces_np)
-
-        return forces_np
 
     def train(self, output=None, custom_bounds=None,
               grad_tol: float = 1e-4,
@@ -562,8 +544,7 @@ environment and the environments in the training set."""
 
         new_gp.likelihood = dictionary['likelihood']
         new_gp.likelihood_gradient = dictionary['likelihood_gradient']
-        new_gp.training_labels_np = new_gp.force_list_to_np(
-            new_gp.training_labels)
+        new_gp.training_labels_np = np.hstack(new_gp.training_labels)
         return new_gp
 
     def write_model(self, name: str, format: str = 'json'):
@@ -588,5 +569,3 @@ environment and the environments in the training set."""
         else:
             raise ValueError("Output format not supported: try from "
                              "{}".format(supported_formats))
-
-

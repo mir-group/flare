@@ -37,7 +37,7 @@ class TrajectoryTrainer(object):
                  pre_train_max_iter: int = 50,
                  max_atoms_from_frame: int = np.inf, max_trains: int = np.inf,
                  min_atoms_added: int = 1, shuffle_frames: bool = False,
-                 verbose: int = 0, model_write: str = '',
+                 verbose: int = 0,
                  pre_train_on_skips: int = -1,
                  pre_train_seed_frames: List[Structure] = None,
                  pre_train_seed_envs: List[Tuple[AtomicEnvironment,
@@ -69,7 +69,6 @@ class TrajectoryTrainer(object):
         :param n_cpus: Number of CPUs to parallelize over
         :param shuffle_frames: Randomize order of frames for better training
         :param verbose: 0: Silent, 1: Minimal, 2: Lots of information
-        :param model_write: Where to write output model
         :param pre_train_on_skips: Train model on every n frames before running
         :param pre_train_seed_frames: Frames to train on before running
         :param pre_train_seed_envs: Environments to train on before running
@@ -142,8 +141,8 @@ class TrajectoryTrainer(object):
 
         # Output parameters
         self.checkpoint_interval = checkpoint_interval
-        self.model_write = model_write
         self.model_format = model_format
+        self.output_name = output_name
 
     def pre_run(self):
         """
@@ -226,8 +225,9 @@ class TrajectoryTrainer(object):
                       "non-empty training set)")
             self.gp.set_L_alpha()
 
-        if self.model_write:
-            self.gp.write_model(self.model_write, self.model_format)
+        if self.model_format:
+            self.gp.write_model(f'{self.output_name}_prerun.{self.model_format}',
+                    self.model_format)
 
     def run(self):
         """
@@ -300,20 +300,23 @@ class TrajectoryTrainer(object):
                         else:
                             self.gp.update_L_alpha()
                         nsample = 0
-                        if self.checkpoint_interval \
-                                and self.train_count % self.checkpoint_interval == 0 \
-                                and self.model_write:
-                            self.gp.write_model(self.model_write, self.model_format)
                     else:
                         self.gp.update_L_alpha()
 
-                if (i + 1) == train_frame:
+                    if self.checkpoint_interval \
+                            and self.train_count % self.checkpoint_interval == 0 \
+                            and self.model_format:
+                        self.gp.write_model(f'{self.output_name}_ckpt.{self.model_format}',
+                                self.model_format)
+
+                if (i + 1) >= train_frame:
                     self.gp.check_L_alpha()
 
         self.output.conclude_run()
 
-        if self.model_write:
-            self.gp.write_model(self.model_write, self.model_format)
+        if self.model_format:
+            self.gp.write_model(f'{self.output_name}_model.{self.model_format}',
+                    self.model_format)
 
     def update_gp_and_print(self, frame: Structure, train_atoms: List[int],
                             train: bool = True):

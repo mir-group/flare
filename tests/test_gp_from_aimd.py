@@ -8,7 +8,6 @@ from flare.kernels import two_plus_three_body, two_plus_three_body_grad
 from flare.gp import GaussianProcess
 from flare.gp_from_aimd import TrajectoryTrainer
 from flare.mc_simple import two_plus_three_body_mc, two_plus_three_body_mc_grad
-from flare.util import is_std_in_bound_per_species
 from json import loads
 import os
 
@@ -67,10 +66,7 @@ def test_load_trained_gp_and_run(methanol_gp):
                            skip=15)
 
     tt.run()
-    os.system('rm ./gp_from_aimd.gp')
-    os.system('rm ./gp_from_aimd.out')
-    os.system('rm ./gp_from_aimd.xyz')
-    os.system('rm ./gp_from_aimd-f.xyz')
+    os.system('rm ./gp_from_aimd*')
 
 
 def test_load_one_frame_and_run():
@@ -94,10 +90,7 @@ def test_load_one_frame_and_run():
                            skip=15)
 
     tt.run()
-    os.system('rm ./gp_from_aimd.gp')
-    os.system('rm ./gp_from_aimd.out')
-    os.system('rm ./gp_from_aimd.xyz')
-    os.system('rm ./gp_from_aimd-f.xyz')
+    os.system('rm ./gp_from_aimd*')
 
 
 def test_seed_and_run():
@@ -124,18 +117,18 @@ def test_seed_and_run():
                            gp=the_gp, shuffle_frames=True,
                            rel_std_tolerance=0,
                            abs_std_tolerance=0,
-                           skip=15,
+                           skip=10,
                            pre_train_seed_envs=seeds,
                            pre_train_seed_frames=[frames[-1]],
                            max_atoms_from_frame=4,
-                           model_write='meth_test.pickle',
+                           output_name='meth_test',
                            model_format='pickle',
                            checkpoint_interval=1,
                            pre_train_atoms_per_element={'H': 1})
 
     tt.run()
 
-    with open('meth_test.pickle', 'rb') as f:
+    with open('meth_test_model.pickle', 'rb') as f:
         new_gp = pickle.load(f)
 
     test_env = envs[0]
@@ -144,7 +137,4 @@ def test_seed_and_run():
         assert np.all(the_gp.predict(x_t=test_env, d=d) ==
                       new_gp.predict(x_t=test_env, d=d))
 
-    os.system('rm ./gp_from_aimd.out')
-    os.system('rm ./gp_from_aimd.xyz')
-    os.system('rm ./gp_from_aimd-f.xyz')
-    os.system('rm ./meth_test.pickle')
+    os.system('rm ./meth_test*')
