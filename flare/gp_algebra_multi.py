@@ -66,6 +66,7 @@ def get_ky_and_hyp_pack(hyps: np.ndarray, training_data1: list,
                    kernel_grad, cutoffs=None, hyps_mask=None):
 
     # assume sigma_n is the final hyperparameter
+    number_of_hyps = len(hyps)
     non_noise_hyps = len(hyps)-1
     train_noise = True
     if (hyps_mask is not None):
@@ -104,11 +105,11 @@ def get_ky_and_hyp_pack(hyps: np.ndarray, training_data1: list,
 
             # store kernel value
             k_mat[m_index, n_index] = cov[0]
-            hyp_mat[:, m_index, n_index] = cov[1]
+            hyp_mat[:number_of_hyps-1, m_index, n_index] = cov[1]
 
             if (same):
                 k_mat[n_index, m_index] = cov[0]
-                hyp_mat[:, n_index, m_index] = cov[1]
+                hyp_mat[:number_of_hyps-1, n_index, m_index] = cov[1]
 
     return hyp_mat, k_mat
 
