@@ -1,8 +1,19 @@
-"""The :class:`Structure` object is a collection of atoms in a periodic box. The mandatory inputs are the cell vectors of the box and the chemical species and Cartesian coordinates of the atoms. The atoms are automatically folded back into the primary cell, so the input coordinates don't need to lie inside the box. Energy, force, and stress information can be provided for training machine learned force fields."""
+"""
+The :class:`Structure` object is a collection of atoms in a periodic box.
+The mandatory inputs are the cell vectors of the box and the chemical species
+and Cartesian coordinates of the atoms.
+The atoms are automatically folded back into the primary cell, so the
+input coordinates don't need to lie inside the box.
+Energy, force, and stress information can be included which can then be
+used to train ML models.
+"""
 import numpy as np
 from typing import List
 from flare.util import element_to_Z, NumpyEncoder
 from json import dumps
+
+from typing import List, Union
+
 
 try:
     # Used for to_pmg_structure method
@@ -14,33 +25,44 @@ except ImportError:
 
 class Structure:
     """
-    Contains information about a structure of atoms, including the periodic
-    cell boundaries and atomic species and coordinates.
+    Contains information about a periodic structure of atoms, including the
+    periodic cell boundaries, atomic species, and coordinates.
 
-    :param cell: 3x3 array whose rows are the Bravais lattice vectors of the \
-cell.
+    Note that input positions are assumed to be Cartesian.
+
+    :param cell: 3x3 array whose rows are the Bravais lattice vectors of the
+    cell.
     :type cell: np.ndarray
-    :param species: List of atomic species, which are represented either as \
-integers or chemical symbols.
+    :param species: List of atomic species, which are represented either as
+    integers or chemical symbols.
     :type species: List
     :param positions: Nx3 array of atomic coordinates.
     :type positions: np.ndarray
     :param mass_dict: Dictionary of atomic masses used in MD simulations.
     :type mass_dict: dict
-    :param prev_positions: Nx3 array of previous atomic coordinates used in \
-MD simulations.
+    :param prev_positions: Nx3 array of previous atomic coordinates used in
+    MD simulations.
     :type prev_positions: np.ndarray
-    :param species_labels: List of chemical symbols. Used in the output file \
-of on-the-fly runs.
+    :param species_labels: List of chemical symbols. Used in the output file
+    of on-the-fly runs.
     :type species_labels: List[str]
+    :param stds: Uncertainty associated with forces
+    :type stds: np.ndarray
     """
 
-    def __init__(self, cell, species, positions, mass_dict=None,
-                 prev_positions=None, species_labels=None, forces=None):
-        self.cell = cell
-        self.vec1 = cell[0, :]
-        self.vec2 = cell[1, :]
-        self.vec3 = cell[2, :]
+    def __init__(self, cell: np.ndarray, species: Union[List[str], List[int]],
+                 positions: np.ndarray,
+                 mass_dict: dict=None,
+                 prev_positions: np.ndarray=None,
+                 species_labels: List[str]=None,
+                 forces: np.ndarray=None,
+                 stds: np.ndarray=None):
+
+        # Set up individual Bravais lattice vectors
+        self.cell = np.array(cell)
+        self.vec1 = self.cell[0, :]
+        self.vec2 = self.cell[1, :]
+        self.vec3 = self.cell[2, :]
 
         # get cell matrices for wrapping coordinates
         self.cell_transpose = self.cell.transpose()
@@ -72,17 +94,23 @@ of on-the-fly runs.
 
         self.energy = None
         self.stress = None
-        if (forces is not None):
+
+        if forces is not None:
             self.forces = forces
         else:
             self.forces = np.zeros((len(positions), 3))
-        self.stds = np.zeros((len(positions), 3))
+
+        if stds is not None:
+            self.stds = stds
+        else:
+            self.stds = np.zeros((len(positions), 3))
+
         self.mass_dict = mass_dict
 
-    def get_cell_dot(self):
+    def get_cell_dot(self)-> np.ndarray:
         """
-        Compute 3x3 array of dot products of cell vectors used to fold atoms \
-back to the unit cell.
+        Compute 3x3 array of dot products of cell vectors used to
+        fold atoms back to the unit cell.
 
         :return: 3x3 array of cell vector dot products.
         :rtype: np.ndarray
@@ -97,16 +125,17 @@ back to the unit cell.
         return cell_dot
 
     @staticmethod
-    def raw_to_relative(positions, cell_transpose, cell_dot_inverse):
-        """Convert Cartesian coordinates to relative coordinates expressed \
-in terms of the cell vectors.
+    def raw_to_relative(positions: np.ndarray, cell_transpose: np.ndarray,
+                        cell_dot_inverse: np.ndarray)->np.ndarray:
+        """Convert Cartesian coordinates to relative (fractional) coordinates,
+        expressed in terms of the cell vectors set in self.cell.
 
         :param positions: Cartesian coordinates.
         :type positions: np.ndarray
         :param cell_transpose: Transpose of the cell array.
         :type cell_transpose: np.ndarray
-        :param cell_dot_inverse: Inverse of the array of dot products of \
-cell vectors.
+        :param cell_dot_inverse: Inverse of the array of dot products of
+        cell vectors.
         :type cell_dot_inverse: np.ndarray
         :return: Relative positions.
         :rtype: np.ndarray
@@ -119,15 +148,19 @@ cell vectors.
         return relative_positions
 
     @staticmethod
-    def relative_to_raw(relative_positions, cell_transpose_inverse,
-                        cell_dot):
-        positions = \
-            np.matmul(np.matmul(relative_positions, cell_dot),
+    def relative_to_raw(relative_positions: np.ndarray,
+                        cell_transpose_inverse: np.ndarray,
+                        cell_dot: np.ndarray)-> np.ndarray:
+
+        return np.matmul(np.matmul(relative_positions, cell_dot),
                       cell_transpose_inverse)
 
-        return positions
-
     def wrap_positions(self):
+        """
+        Convenience function which modifies structure positions in place,
+        folding atoms outside of the unit cell back into the unit cell.
+        :return:
+        """
         rel_pos = \
             self.raw_to_relative(self.positions, self.cell_transpose,
                                  self.cell_dot_inverse)
@@ -139,52 +172,75 @@ cell vectors.
 
         self.wrapped_positions = pos_wrap
 
-    def indices_of_specie(self, specie: int):
+    def indices_of_specie(self, specie: Union[int,str])->List[int]:
         """
-        Return the indicies of a given species.
+        Return the indices of a given species within atoms of the structure.
 
         :param specie:
         :return:
         """
-        return [i for i, spec in enumerate(self.coded_species)
-                if spec == specie]
+        if isinstance(specie, int):
+            return [i for i, spec in enumerate(self.coded_species)
+                    if spec == specie]
+        if isinstance(specie, str):
+            return [i for i, spec in enumerate(self.species_labels)
+                    if spec == specie]
+
 
     # TODO make more descriptive
-    def __str__(self):
+    def __str__(self)->str:
         return 'Structure with {} atoms of types {}'.format(self.nat,
-                                                     set(self.species_labels))
+            set(self.species_labels))
 
-    def __len__(self):
+    def __len__(self)->int:
+        """
+        :return: number of atoms in structure.
+        """
         return self.nat
 
-    def as_dict(self):
+    def as_dict(self)->dict:
         """
-        Returns structure as a dictionary for serialization purposes.
+        Returns structure as a dictionary; useful for serialization purposes.
 
         :return:
         """
         return dict(vars(self))
 
-    def as_str(self):
+    def as_str(self)->str:
+        """
+        Returns string dictionary serialization cast as string.
+        :return:
+        """
         return dumps(self.as_dict(), cls=NumpyEncoder)
 
     @staticmethod
-    def from_dict(dictionary):
+    def from_dict(dictionary: dict):
+        """
+        Assembles a Structure object from a dictionary parameterizing one.
+        :param dictionary: dict describing structure parameters.
+        :return: FLARE structure assembled from dictionary
+        """
         struc = Structure(cell=np.array(dictionary['cell']),
                           positions=np.array(dictionary['positions']),
-                          species=dictionary['coded_species'])
+                          species=dictionary['coded_species'],
+                          forces=dictionary.get('forces'),
+                          mass_dict=dictionary.get('mass_dict'),
+                          species_labels=dictionary.get('species_labels'))
 
-        struc.energy = dictionary['energy']
-        struc.forces = np.array(dictionary['forces'])
-        struc.stress = dictionary['stress']
-        struc.stds = np.array(dictionary['stds'])
-        struc.mass_dict = dictionary['mass_dict']
-        struc.species_labels = dictionary['species_labels']
+        struc.energy = dictionary.get('energy')
+        struc.stress = dictionary.get('stress')
+        struc.stds = np.array(dictionary.get('stds'))
 
         return struc
 
     @staticmethod
     def from_ase_atoms(atoms):
+        """
+        From an ASE Atoms object, return a FLARE structure
+        :param atoms: ASE Atoms object
+        :type atoms: ASE Atoms object
+        :return: A FLARE structure from an ASE atoms object
+        """
         struc = Structure(cell=np.array(atoms.cell),
                           positions=atoms.positions,
                           species=atoms.get_chemical_symbols())
@@ -221,7 +277,8 @@ cell vectors.
         """
         Returns Pymatgen structure as FLARE structure.
 
-        :param structure: Pymatgen structure
+        :param structure: Pymatgen Structure
+        :type structure: Pymatgen Structure
         :return: FLARE Structure
         """
 
@@ -245,6 +302,11 @@ cell vectors.
         return new_struc
 
 def get_unique_species(species):
+    """
+
+    :param species:
+    :return:
+    """
     unique_species = []
     coded_species = []
     for spec in species:
@@ -256,7 +318,3 @@ def get_unique_species(species):
     coded_species = np.array(coded_species)
 
     return unique_species, coded_species
-
-
-if __name__ == '__main__':
-    pass
