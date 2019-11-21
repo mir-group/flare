@@ -8,7 +8,6 @@ Energy, force, and stress information can be included which can then be
 used to train ML models.
 """
 import numpy as np
-from typing import List
 from flare.util import element_to_Z, NumpyEncoder
 from json import dumps
 
@@ -155,7 +154,7 @@ class Structure:
         return np.matmul(np.matmul(relative_positions, cell_dot),
                          cell_transpose_inverse)
 
-    def wrap_positions(self, in_place: bool=True)-> np.ndarray:
+    def wrap_positions(self, in_place: bool = True) -> np.ndarray:
         """
         Convenience function which folds atoms outside of the unit cell back
         into the unit cell. in_place flag controls if the wrapped positions
@@ -186,12 +185,13 @@ class Structure:
         :return:
         """
         return [i for i, spec in enumerate(self.coded_species)
-                    if spec == specie]
+                if spec == specie]
 
     # TODO make more descriptive
     def __str__(self) -> str:
         return 'Structure with {} atoms of types {}'.format(self.nat,
-                                        set(self.species_labels))
+                                                            set(
+                                                                self.species_labels))
 
     def __len__(self) -> int:
         """
