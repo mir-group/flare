@@ -14,10 +14,10 @@ from json import dumps
 
 from typing import List, Union
 
-
 try:
     # Used for to_pmg_structure method
     import pymatgen.core.structure as pmgstruc
+
     _pmg_present = True
 except ImportError:
     _pmg_present = False
@@ -52,11 +52,11 @@ class Structure:
 
     def __init__(self, cell: np.ndarray, species: Union[List[str], List[int]],
                  positions: np.ndarray,
-                 mass_dict: dict=None,
-                 prev_positions: np.ndarray=None,
-                 species_labels: List[str]=None,
-                 forces: np.ndarray=None,
-                 stds: np.ndarray=None):
+                 mass_dict: dict = None,
+                 prev_positions: np.ndarray = None,
+                 species_labels: List[str] = None,
+                 forces: np.ndarray = None,
+                 stds: np.ndarray = None):
 
         # Set up individual Bravais lattice vectors
         self.cell = np.array(cell)
@@ -72,7 +72,7 @@ class Structure:
 
         # set positions
         self.positions = np.array(positions)
-        self.wrap_positions()
+        self.wrapped_positions = self.wrap_positions(in_place=False)
 
         # If species are strings, convert species to integers by atomic number
         if species_labels is None:
@@ -96,18 +96,18 @@ class Structure:
         self.stress = None
 
         if forces is not None:
-            self.forces = forces
+            self.forces = np.array(forces)
         else:
             self.forces = np.zeros((len(positions), 3))
 
         if stds is not None:
-            self.stds = stds
+            self.stds = np.array(stds)
         else:
             self.stds = np.zeros((len(positions), 3))
 
         self.mass_dict = mass_dict
 
-    def get_cell_dot(self)-> np.ndarray:
+    def get_cell_dot(self) -> np.ndarray:
         """
         Compute 3x3 array of dot products of cell vectors used to
         fold atoms back to the unit cell.
@@ -126,7 +126,7 @@ class Structure:
 
     @staticmethod
     def raw_to_relative(positions: np.ndarray, cell_transpose: np.ndarray,
-                        cell_dot_inverse: np.ndarray)->np.ndarray:
+                        cell_dot_inverse: np.ndarray) -> np.ndarray:
         """Convert Cartesian coordinates to relative (fractional) coordinates,
         expressed in terms of the cell vectors set in self.cell.
 
@@ -150,16 +150,19 @@ class Structure:
     @staticmethod
     def relative_to_raw(relative_positions: np.ndarray,
                         cell_transpose_inverse: np.ndarray,
-                        cell_dot: np.ndarray)-> np.ndarray:
+                        cell_dot: np.ndarray) -> np.ndarray:
 
         return np.matmul(np.matmul(relative_positions, cell_dot),
-                      cell_transpose_inverse)
+                         cell_transpose_inverse)
 
-    def wrap_positions(self):
+    def wrap_positions(self, in_place: bool=True)-> np.ndarray:
         """
-        Convenience function which modifies structure positions in place,
-        folding atoms outside of the unit cell back into the unit cell.
-        :return:
+        Convenience function which folds atoms outside of the unit cell back
+        into the unit cell. in_place flag controls if the wrapped positions
+        are set in the class.
+
+        :param in_place:
+        :return: Cartesian coordinates of positions all in unit cell
         """
         rel_pos = \
             self.raw_to_relative(self.positions, self.cell_transpose,
@@ -170,35 +173,33 @@ class Structure:
         pos_wrap = self.relative_to_raw(rel_wrap, self.cell_transpose_inverse,
                                         self.cell_dot)
 
-        self.wrapped_positions = pos_wrap
+        if in_place:
+            self.wrapped_positions = pos_wrap
 
-    def indices_of_specie(self, specie: Union[int,str])->List[int]:
+        return pos_wrap
+
+    def indices_of_specie(self, specie: Union[int, str]) -> List[int]:
         """
         Return the indices of a given species within atoms of the structure.
 
         :param specie:
         :return:
         """
-        if isinstance(specie, int):
-            return [i for i, spec in enumerate(self.coded_species)
+        return [i for i, spec in enumerate(self.coded_species)
                     if spec == specie]
-        if isinstance(specie, str):
-            return [i for i, spec in enumerate(self.species_labels)
-                    if spec == specie]
-
 
     # TODO make more descriptive
-    def __str__(self)->str:
+    def __str__(self) -> str:
         return 'Structure with {} atoms of types {}'.format(self.nat,
-            set(self.species_labels))
+                                        set(self.species_labels))
 
-    def __len__(self)->int:
+    def __len__(self) -> int:
         """
         :return: number of atoms in structure.
         """
         return self.nat
 
-    def as_dict(self)->dict:
+    def as_dict(self) -> dict:
         """
         Returns structure as a dictionary; useful for serialization purposes.
 
@@ -206,7 +207,7 @@ class Structure:
         """
         return dict(vars(self))
 
-    def as_str(self)->str:
+    def as_str(self) -> str:
         """
         Returns string dictionary serialization cast as string.
         :return:
@@ -286,7 +287,7 @@ class Structure:
         species = [str(spec) for spec in structure.species]
         positions = structure.cart_coords.copy()
 
-        new_struc = Structure(cell=cell,species=species,
+        new_struc = Structure(cell=cell, species=species,
                               positions=positions)
 
         site_props = structure.site_properties
@@ -300,6 +301,7 @@ class Structure:
             new_struc.stds = [np.array(std) for std in stds]
 
         return new_struc
+
 
 def get_unique_species(species):
     """
