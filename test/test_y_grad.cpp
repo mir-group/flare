@@ -7,37 +7,69 @@ using namespace std;
 
 // Create a test fixture containing spherical harmonics up to l = 10 for an arbitrary vector (x, y, z).
 class YGradTest : public ::testing::Test {
-    protected:
+    public:
 
-    //  Define an arbitrary vector (x, y, z).
-    double x = 2.16;
-    double y = 7.12;
-    double z = -3.14;
+    int l, sz;
 
-    // Define a slightly perturbed vector, which will be used to calculate the gradient with finite difference.
-    double delta = 1e-8;
-    double x_delt = x + delta;
-    double y_delt = y + delta;
-    double z_delt = z + delta;
+    double x, y, z, delta, x_delt, y_delt, z_delt;
 
-    // Set the size of the array containing the spherical harmonics.
-    int l = 10;
-    int sz = (l+1)*(l+1);
+    double * Y1;
+    double * Y2;
+    double * Y3;
+    double * Y4;
 
-    // Allocate arrays for Y and its derivatives.
-    double * Y1 = new double[sz];
-    double * Y2 = new double[sz];
-    double * Y3 = new double[sz];
-    double * Y4 = new double[sz];
+    double * Y5;
+    double * Y6;
+    double * Y7;
+    double * Y8;
 
-    double * Y5 = new double[sz];
-    double * Y6 = new double[sz];
-    double * Y7 = new double[sz];
-    double * Y8 = new double[sz];
+    double * Y9;
+    double * Y10;
+
+    YGradTest(){
+    
+        //  Define an arbitrary vector (x, y, z).
+        x = 2.16;
+        y = 7.12;
+        z = -3.14;
+
+        // Define a slightly perturbed vector, which will be used to calculate the gradient with finite difference.
+        delta = 1e-8;
+        x_delt = x + delta;
+        y_delt = y + delta;
+        z_delt = z + delta;
+
+        // Set the size of the array containing the spherical harmonics.
+
+        // Set the size of the array containing the spherical harmonics.
+        l = 10;
+        sz = (l+1)*(l+1);
+
+        // Allocate arrays for Y and its derivatives.
+        Y1 = new double[sz];
+        Y2 = new double[sz];
+        Y3 = new double[sz];
+        Y4 = new double[sz];
+
+        Y5 = new double[sz];
+        Y6 = new double[sz];
+        Y7 = new double[sz];
+        Y8 = new double[sz];
+
+        Y9 = new double[sz];
+        Y10 = new double[sz];
+
+    }
+
+    ~YGradTest(){
+        delete [] Y1; delete [] Y2; delete [] Y3; delete [] Y4;
+        delete [] Y5; delete [] Y6; delete [] Y7; delete [] Y8;
+        delete [] Y9; delete [] Y10;
+    }
 };
 
-// Test spherical harmonic gradients.
 TEST_F(YGradTest, Grad){
+    // Check that the spherical harmonic gradients are correctly computed.
 
     // Get spherical harmonics and their gradients.
     get_Y(Y1, Y2, Y3, Y4, x, y, z, l);
@@ -84,11 +116,12 @@ TEST_F(YGradTest, Grad){
 }
 
 TEST_F(YGradTest, AdditionTest){
+    // Check that the spherical harmonics satisfy the addition theorem, i.e. that when the m's are summed over, the result is invariant to 3D rotations.
+
     // Define rotation matrices.
-    int rot_size = 9;
-    double * rot_x = new double[rot_size];
-    double * rot_y = new double[rot_size];
-    double * rot_z = new double[rot_size];
+    double rot_x[9];
+    double rot_y[9];
+    double rot_z[9];
 
     double theta_x = 1.15346;
     double theta_y = -6.125;
@@ -134,9 +167,6 @@ TEST_F(YGradTest, AdditionTest){
     // Calculate spherical harmonics.
     get_Y(Y1, Y2, Y3, Y4, vec[0], vec[1], vec[2], l);
     get_Y(Y5, Y6, Y7, Y8, vec2[0], vec2[1], vec2[2], l);
-
-    double * Y9 = new double[sz];
-    double * Y10 = new double[sz];
 
     get_Y(Y9, Y2, Y3, Y4, vec_rot2[0], vec_rot2[1], vec_rot2[2], l);
     get_Y(Y10, Y6, Y7, Y8, vec2_rot2[0], vec2_rot2[1], vec2_rot2[2], l);
