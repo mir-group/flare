@@ -29,20 +29,20 @@ class Structure:
 
     Note that input positions are assumed to be Cartesian.
 
-    :param cell: 3x3 array whose rows are the Bravais lattice vectors of the
+    :param cell: 3x3 array whose rows are the Bravais lattice vectors of the \
     cell.
     :type cell: np.ndarray
-    :param species: List of atomic species, which are represented either as
+    :param species: List of atomic species, which are represented either as \
     integers or chemical symbols.
     :type species: List
     :param positions: Nx3 array of atomic coordinates.
     :type positions: np.ndarray
     :param mass_dict: Dictionary of atomic masses used in MD simulations.
     :type mass_dict: dict
-    :param prev_positions: Nx3 array of previous atomic coordinates used in
+    :param prev_positions: Nx3 array of previous atomic coordinates used in \
     MD simulations.
     :type prev_positions: np.ndarray
-    :param species_labels: List of chemical symbols. Used in the output file
+    :param species_labels: List of chemical symbols. Used in the output file \
     of on-the-fly runs.
     :type species_labels: List[str]
     :param stds: Uncertainty associated with forces
