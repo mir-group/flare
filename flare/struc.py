@@ -11,6 +11,7 @@ import numpy as np
 from flare.util import element_to_Z, NumpyEncoder
 from json import dumps
 
+from numpy import ndarray
 from typing import List, Union
 
 try:
@@ -29,28 +30,28 @@ class Structure:
 
     Note that input positions are assumed to be Cartesian.
 
-    :param cell: 3x3 array whose rows are the Bravais lattice vectors of the \
-    cell.
+    :param cell: 3x3 array whose rows are the Bravais lattice vectors of the
+        cell.
     :type cell: np.ndarray
-    :param species: List of atomic species, which are represented either as \
-    integers or chemical symbols.
+    :param species: List of atomic species, which are represented either as
+        integers or chemical symbols.
     :type species: List
     :param positions: Nx3 array of atomic coordinates.
     :type positions: np.ndarray
     :param mass_dict: Dictionary of atomic masses used in MD simulations.
     :type mass_dict: dict
-    :param prev_positions: Nx3 array of previous atomic coordinates used in \
-    MD simulations.
+    :param prev_positions: Nx3 array of previous atomic coordinates used in
+        MD simulations.
     :type prev_positions: np.ndarray
-    :param species_labels: List of chemical symbols. Used in the output file \
-    of on-the-fly runs.
+    :param species_labels: List of chemical symbols. Used in the output file
+        of on-the-fly runs.
     :type species_labels: List[str]
     :param stds: Uncertainty associated with forces
     :type stds: np.ndarray
     """
 
-    def __init__(self, cell: np.ndarray, species: Union[List[str], List[int]],
-                 positions: np.ndarray,
+    def __init__(self, cell: ndarray, species: Union[List[str], List[int]],
+                 positions: ndarray,
                  mass_dict: dict = None,
                  prev_positions: np.ndarray = None,
                  species_labels: List[str] = None,
@@ -203,7 +204,7 @@ class Structure:
         """
         Returns structure as a dictionary; useful for serialization purposes.
 
-        :return:
+        :return: Dictionary version of current structure
         """
         return dict(vars(self))
 
