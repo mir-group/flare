@@ -128,9 +128,13 @@ class GaussianProcess:
                         "the hyperparmeter length is inconsistent with the mask"
                 assert len(hyps_mask['map']) == len(hyps), \
                         "the hyperparmeter length is inconsistent with the mask"
+                if ((len(hyps_mask['original'])-1) not in hyps_mask['map']):
+                    assert hyps_mask['train_noise'] is False, \
+                            "train_noise should be False when noise is not in hyps"
             else:
                 assert (n2b*2+n3b*2+1) == len(hyps), \
                         "the hyperparmeter length is inconsistent with the mask"
+
             if ('bounds' in hyps_mask.keys()):
                 self.bounds = deepcopy(hyps_mask['bounds'])
         else:
