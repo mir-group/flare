@@ -49,7 +49,7 @@ class Structure:
     :type stds: np.ndarray
     """
 
-    def __init__(self, cell: np.ndarray, species: Union[List[str], List[int]],
+    def __init__(self, cell: np.array, species: Union[List[str], List[int]],
                  positions: np.ndarray,
                  mass_dict: dict = None,
                  prev_positions: np.ndarray = None,
