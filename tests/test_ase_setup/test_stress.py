@@ -74,7 +74,7 @@ def test_stress_with_lammps():
     for ind, line in enumerate(lines):
         line = line.split()
         strs = np.array([float(l) for l in line[1:]]) / 1.60217662e6
-        assert np.isclose(stresses[ind], strs).all()
+        assert np.isclose(stresses[ind], strs, rtol=1e-4).all()
 
     os.system('rm -r __pycache__')
     os.system('rm grid3*')
