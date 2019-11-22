@@ -219,17 +219,13 @@ def edit_dft_input_positions(dft_input: str, structure):
 
     for pos_index, line_index in enumerate(
             range(file_pos_index, file_pos_index + structure.nat)):
-        pos_string = ' '.join([structure.species_labels[pos_index],
-                               str(structure.positions[pos_index][
-                                       0]),
-                               str(structure.positions[pos_index][
-                                       1]),
-                               str(structure.positions[pos_index][
-                                       2])])
+        pos =  structure.positions[pos_index]
+        specs = structure.species_labels[pos_index]
+        pos_string = f'{specs} {pos[0]} {pos[1]} {pos[2]}\n'
         if line_index < len(lines):
-            lines[line_index] = str(pos_string + '\n')
+            lines[line_index] = pos_string
         else:
-            lines.append(str(pos_string + '\n'))
+            lines.append(pos_string)
 
     # # TODO current assumption: if there is a new structure, then the new
     # # structure has fewer atoms than the  previous one. If we are always
@@ -285,7 +281,7 @@ def parse_dft_forces_and_energy(outfile: str):
 
 
     assert total_energy != np.nan, "dft parser failed to read " \
-                                   "the file {}. Run failed.".format(outfile)
+                                   f"the file {}. Run failed. {outfile}"
 
     # Convert from ry/au to ev/angstrom
     conversion_factor = 25.71104309541616*2.0
