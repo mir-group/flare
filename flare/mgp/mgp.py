@@ -520,10 +520,8 @@ class Map2body:
             # break it into pieces
             size = len(GP.training_data)
             nsample = self.nsample
-            ns = int(math.ceil(size/nsample))
-            if (ns < processes):
-                nsample = int(math.ceil(size/processes))
-                ns = int(math.ceil(size/nsample))
+            ns = int(math.ceil(size/nsample/processes))*processes
+            nsample = int(math.ceil(size/ns))
 
             print("prepare the package for parallelization")
             block_id = []
@@ -646,7 +644,8 @@ class Map3body:
         angles = np.linspace(self.l_bounds[2], self.u_bounds[2], noa)
 
         bond_means = np.zeros([nop, nop, noa])
-        bond_vars = np.zeros([nop, nop, noa, len(GP.alpha)])
+        if not self.mean_only:
+            bond_vars = np.zeros([nop, nop, noa, len(GP.alpha)])
         env12 = AtomicEnvironment(self.bond_struc, 0, self.cutoffs)
 
         with mp.Pool(processes=processes) as pool:
@@ -658,10 +657,8 @@ class Map3body:
             print("prepare the package for parallelization")
             size = len(GP.training_data)
             nsample = self.nsample
-            ns = int(math.ceil(size/nsample))
-            if (ns < processes):
-                nsample = int(math.ceil(size/processes))
-                ns = int(math.ceil(size/nsample))
+            ns = int(math.ceil(size/nsample/processes))*processes
+            nsample = int(math.ceil(size/ns))
 
             k12_slice = []
             print('before for', ns, nsample, time.time())

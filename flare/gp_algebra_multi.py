@@ -690,10 +690,9 @@ def get_kernel_vector_par(training_data, kernel,
 
         # sort of partition
         size = len(training_data)
+        ns = int(math.ceil(size/nsample/ncpus)*ncpus)
+        nsample = int(math.ceil(size/ns))
         ns = int(math.ceil(size/nsample))
-        if (ns < ncpus):
-            nsample = int(math.ceil(size/int(ncpus)))
-            ns = int(math.ceil(size/nsample))
 
         k12_slice = []
         for ibatch in range(ns):
