@@ -12,6 +12,7 @@ from typing import List, Union
 from json import dump, load
 from flare.util import NumpyEncoder
 
+name="VASP"
 
 def check_vasprun(vasprun: Union[str, Vasprun], vasprun_kwargs: dict = {}) -> \
         Vasprun:
@@ -85,7 +86,7 @@ def run_dft(calc_dir: str, dft_loc: str,
         try:
             forces = parse_func("vasprun.xml")
         except FileNotFoundError:
-            raise FileNotFoundError("""Could not load vasprun.xml. 
+            raise FileNotFoundError("""Could not load vasprun.xml.
             The calculation may not have finished.
             Current directory is %s""" % os.getcwd())
 
