@@ -432,12 +432,17 @@ environment and the environments in the training set."""
 
         supported_formats = ['json', 'pickle', 'binary']
 
+        write_name = str(name)
+        
+        if name.split('.')[-1] not in supported_formats:
+            write_name += '.'+format
+            
         if format.lower() == 'json':
-            with open(name, 'w') as f:
+            with open(write_name, 'w') as f:
                 json.dump(self.as_dict(), f, cls=NumpyEncoder)
 
         elif format.lower() == 'pickle' or format.lower() == 'binary':
-            with open(name, 'wb') as f:
+            with open(write_name, 'wb') as f:
                 pickle.dump(self, f)
 
         else:
