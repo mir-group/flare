@@ -202,7 +202,7 @@ class OTF(object):
         # calculate DFT forces
         forces = self.dft_module.run_dft_par(self.dft_input, self.structure,
                                              self.dft_loc,
-                                             no_cpus=self.no_cpus,
+                                             ncpus=self.no_cpus,
                                              npool=self.npool,
                                              mpi=self.mpi,
                                              dft_kwargs=self.dft_kwargs)
