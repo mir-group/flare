@@ -12,8 +12,7 @@ from typing import List
 def get_cov_row(x_1, d_1, m_index: int, size: int, training_data: list,
                 kernel: callable, kern_hyps: np.array,
                 cutoffs: np.array)-> list:
-    """
-    Compute an individual row of a covariance matrix.
+    """ Compute an individual row of a covariance matrix.
 
     :param x_1: Atomic environment to compare to At. Envs. in training data
     :param d_1: Index of force component (x,y,z), indexed as (1,2,3)
@@ -44,7 +43,7 @@ def get_cov_row_derv(x_1, d_1: int, m_index: int, size: int,
                      training_data: list,
                      kernel_grad: callable,
                      kern_hyps: np.array, cutoffs: np.array)-> (list, list):
-    """
+    """ Compute a single row of covariance matrix and hyperparameter gradient matrix
 
     :param x_1: Atomic Environment to compare to At. Envs. in training data
     :param d_1: Index of force
@@ -79,8 +78,7 @@ def get_cov_row_derv(x_1, d_1: int, m_index: int, size: int,
 
 def get_ky_mat(hyps: np.array, training_data: list,
                kernel: callable, cutoffs=None):
-    """
-    Compute covariance matrix K by comparing training data with itself
+    """ Compute covariance matrix K by comparing training data with itself
 
     :param hyps:
     :param training_data:
@@ -125,6 +123,15 @@ def get_ky_mat(hyps: np.array, training_data: list,
 def get_ky_and_hyp(hyps: np.ndarray, training_data: list,
                    training_labels_np: np.ndarray,
                    kernel_grad, cutoffs=None):
+    """ Compute covariance matrix K and matrix to estimate likelihood gradient
+
+    :param hyps: list of hyper-parameters
+    :param training_data: list of atomic envirionments
+    :param training_labels_np: numpy array of forces
+    :param kernel_grad: function object of the kernel gradient
+    :param cutoffs: list of 2 float numbers for 2b and 3b cutoff
+    :return: hyp_mat, ky_mat
+    """
     # assume sigma_n is the final hyperparameter
     number_of_hyps = len(hyps)
     sigma_n = hyps[number_of_hyps - 1]
@@ -168,12 +175,15 @@ def get_ky_mat_par(hyps: np.ndarray, training_data: list,
                    kernel, cutoffs=None, no_cpus=None):
     """
     Parallelized version of function which computes ky matrix
-    :param hyps:
-    :param training_data:
-    :param kernel:
-    :param cutoffs:
-    :param no_cpus:
-    :return:
+    If the cpu set up is None, it uses as much as posible cpus
+
+    :param hyps: list of hyper-parameters
+    :param training_data: list of atomic envirionments
+    :param training_labels_np: numpy array of forces
+    :param kernel_grad: function object of the kernel gradient
+    :param cutoffs: list of 2 float numbers for 2b and 3b cutoff
+    :param no_cpus: number of cpus to use.
+    :return: hyp_mat, ky_mat
     """
 
     if (no_cpus is None):
@@ -181,6 +191,9 @@ def get_ky_mat_par(hyps: np.ndarray, training_data: list,
     else:
         ncpus = no_cpus
 
+    if (ncpus == 1):
+        return get_ky_mat(hyps, training_data,
+                          kernel, cutoffs)
 
     # assume sigma_n is the final hyperparameter
     number_of_hyps = len(hyps)
@@ -222,12 +235,29 @@ def get_ky_mat_par(hyps: np.ndarray, training_data: list,
 def get_ky_and_hyp_par(hyps: np.ndarray, training_data: list,
                        training_labels_np: np.ndarray,
                        kernel_grad, cutoffs=None, no_cpus=None):
+    """
+    Parallelized version of function which computes ky matrix
+    and its derivative to hyper-parameter
+    If the cpu set up is None, it uses as much as posible cpus
+
+    :param hyps: list of hyper-parameters
+    :param training_data: list of atomic envirionments
+    :param training_labels_np: numpy array of forces
+    :param kernel_grad: function object of the kernel gradient
+    :param cutoffs: list of 2 float numbers for 2b and 3b cutoff
+    :param no_cpus: number of cpus to use.
+    :return: hyp_mat, ky_mat
+    """
 
     if (no_cpus is None):
         ncpus = mp.cpu_count()
     else:
         ncpus = no_cpus
 
+    if (ncpus == 1):
+        return get_ky_and_hyp(hyps, training_data,
+                              training_labels_np,
+                              kernel_grad, cutoffs)
 
     # assume sigma_n is the final hyperparameter
     number_of_hyps = len(hyps)
@@ -269,7 +299,6 @@ def get_ky_and_hyp_par(hyps: np.ndarray, training_data: list,
     # matrix manipulation
     ky_mat = k_mat + sigma_n ** 2 * np.eye(size)
 
-
     return hyp_mat, ky_mat
 
 
@@ -277,19 +306,34 @@ def get_ky_and_hyp_par(hyps: np.ndarray, training_data: list,
 def get_ky_mat_update_row(params):
     '''
     used for update_L_alpha, especially for parallelization
+
+    :param: tuple of index, atomic environment,
+            funciton object of get_kernel_vector
     '''
     ind, x_t, get_kernel_vector = params
     k_vi = np.array([get_kernel_vector(x_t, d + 1)
                      for d in range(3)]).T  # (n+3m) x 3
     return k_vi
 
-def get_ky_mat_update(ky_mat_old, training_data, get_kernel_vector, hyps, par):
+def get_ky_mat_update(ky_mat_old, training_data, get_kernel_vector, hyps, no_cpus=None):
     '''
     used for update_L_alpha, especially for parallelization
     parallelized for added atoms, for example, if add 10 atoms to the training
     set, the K matrix will add 10x3 columns and 10x3 rows, and the task will
     be distributed to 30 processors
+
+    :param ky_mat_old:
+    :param training_data:
+    :param get_kernel_vector:
+    :param hyps:
+    :param par:
     '''
+
+    if (no_cpus is None):
+        ncpus = mp.cpu_count()
+    else:
+        ncpus = no_cpus
+
     n = ky_mat_old.shape[0]
     N = len(training_data)
     m = N - n // 3  # number of new data added
@@ -299,8 +343,8 @@ def get_ky_mat_update(ky_mat_old, training_data, get_kernel_vector, hyps, par):
     # calculate kernels for all added data
     params_list = [(n//3+i, training_data[n//3+i], get_kernel_vector)\
                    for i in range(m)]
-    if par:
-        pool = mp.Pool(processes=mp.cpu_count())
+    if ncpus>1:
+        pool = mp.Pool(processes=ncpus)
         k_vi_list = pool.map(get_ky_mat_update_row, params_list)
         pool.close()
         pool.join()
