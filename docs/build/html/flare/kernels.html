@@ -24,6 +24,7 @@
         <script type="text/javascript" src="../_static/jquery.js"></script>
         <script type="text/javascript" src="../_static/underscore.js"></script>
         <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
     
     <script type="text/javascript" src="../_static/js/theme.js"></script>
 
@@ -163,13 +164,13 @@
 <span id="covariant-kernels"></span><h1>Covariant Kernels<a class="headerlink" href="#module-flare.kernels" title="Permalink to this headline">¶</a></h1>
 <dl class="function">
 <dt id="flare.kernels.three_body_force_en_jit">
-<code class="descclassname">flare.kernels.</code><code class="descname">three_body_force_en_jit</code><span class="sig-paren">(</span><em>bond_array_1</em>, <em>bond_array_2</em>, <em>cross_bond_inds_1</em>, <em>cross_bond_inds_2</em>, <em>cross_bond_dists_1</em>, <em>cross_bond_dists_2</em>, <em>triplets_1</em>, <em>triplets_2</em>, <em>d1</em>, <em>sig</em>, <em>ls</em>, <em>r_cut</em>, <em>cutoff_func</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.three_body_force_en_jit" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">flare.kernels.</code><code class="sig-name descname">three_body_force_en_jit</code><span class="sig-paren">(</span><em class="sig-param">bond_array_1</em>, <em class="sig-param">bond_array_2</em>, <em class="sig-param">cross_bond_inds_1</em>, <em class="sig-param">cross_bond_inds_2</em>, <em class="sig-param">cross_bond_dists_1</em>, <em class="sig-param">cross_bond_dists_2</em>, <em class="sig-param">triplets_1</em>, <em class="sig-param">triplets_2</em>, <em class="sig-param">d1</em>, <em class="sig-param">sig</em>, <em class="sig-param">ls</em>, <em class="sig-param">r_cut</em>, <em class="sig-param">cutoff_func</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.three_body_force_en_jit" title="Permalink to this definition">¶</a></dt>
 <dd><p>Kernel for 3-body force/energy comparisons.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="flare.kernels.three_body_grad_jit">
-<code class="descclassname">flare.kernels.</code><code class="descname">three_body_grad_jit</code><span class="sig-paren">(</span><em>bond_array_1</em>, <em>bond_array_2</em>, <em>cross_bond_inds_1</em>, <em>cross_bond_inds_2</em>, <em>cross_bond_dists_1</em>, <em>cross_bond_dists_2</em>, <em>triplets_1</em>, <em>triplets_2</em>, <em>d1</em>, <em>d2</em>, <em>sig</em>, <em>ls</em>, <em>r_cut</em>, <em>cutoff_func</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.three_body_grad_jit" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">flare.kernels.</code><code class="sig-name descname">three_body_grad_jit</code><span class="sig-paren">(</span><em class="sig-param">bond_array_1</em>, <em class="sig-param">bond_array_2</em>, <em class="sig-param">cross_bond_inds_1</em>, <em class="sig-param">cross_bond_inds_2</em>, <em class="sig-param">cross_bond_dists_1</em>, <em class="sig-param">cross_bond_dists_2</em>, <em class="sig-param">triplets_1</em>, <em class="sig-param">triplets_2</em>, <em class="sig-param">d1</em>, <em class="sig-param">d2</em>, <em class="sig-param">sig</em>, <em class="sig-param">ls</em>, <em class="sig-param">r_cut</em>, <em class="sig-param">cutoff_func</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.kernels.three_body_grad_jit" title="Permalink to this definition">¶</a></dt>
 <dd><p>Kernel gradient for 3-body force comparisons.</p>
 </dd></dl>
 

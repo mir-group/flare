@@ -15,7 +15,8 @@ from ase.md.langevin import Langevin
 from ase import units
 
 class OTF_VelocityVerlet(VelocityVerlet, OTF):
-    """On-the-fly training with ASE's VelocityVerlet molecular dynamics engine. 
+    """
+    On-the-fly training with ASE's VelocityVerlet molecular dynamics engine. 
     Inherit from ASE `VelocityVerlet <https://wiki.fysik.dtu.dk/ase/ase/md.html#ase.md.verlet.VelocityVerlet>`_ class and our ASE-coupled on-the-fly training engine `flare.ase.OTF`
 
     :param atoms: ASE Atoms object
@@ -36,6 +37,18 @@ class OTF_VelocityVerlet(VelocityVerlet, OTF):
         self.md_engine = 'VelocityVerlet'
 
 class OTF_NVTBerendsen(NVTBerendsen, OTF):
+    """
+    On-the-fly training with ASE's Langevin molecular dynamics engine. 
+    Inherit from ASE `Langevin <https://wiki.fysik.dtu.dk/ase/ase/md.html#ase.md.langevin.Langevin>`_ class and our ASE-coupled on-the-fly training engine `flare.ase.OTF`
+
+    :param atoms: ASE Atoms object
+    :param timestep: time step in units of pico-second
+    :param temperature: temperature
+    :param friction: Typical values for the friction are 0.01-0.02 atomic units.
+    :param **kwargs: same parameters as `flare.ase.OTF`
+    """
+
+
     def __init__(self, atoms, timestep, temperature, taut, fixcm=True,
                  trajectory=None, **kwargs):
 
@@ -47,8 +60,20 @@ class OTF_NVTBerendsen(NVTBerendsen, OTF):
         self.md_engine = 'NVTBerendsen'
 
 class OTF_NPTBerendsen(NPTBerendsen, OTF):
-    def __init__(self, atoms, timestep, temperature, taut=0.5e3 *
-                 units.fs, pressure=1.01325, taup=1e3 * units.fs,
+    """
+    On-the-fly training with ASE's Langevin molecular dynamics engine. 
+    Inherit from ASE `Langevin <https://wiki.fysik.dtu.dk/ase/ase/md.html#ase.md.langevin.Langevin>`_ class and our ASE-coupled on-the-fly training engine `flare.ase.OTF`
+
+    :param atoms: ASE Atoms object
+    :param timestep: time step in units of pico-second
+    :param temperature: temperature
+    :param friction: Typical values for the friction are 0.01-0.02 atomic units.
+    :param **kwargs: same parameters as `flare.ase.OTF`
+    """
+
+
+    def __init__(self, atoms, timestep, temperature, taut=0.5e3,
+                 pressure=1.01325, taup=1e3,
                  compressibility=4.57e-5, fixcm=True, trajectory=None,
                  **kwargs):
 
@@ -61,6 +86,18 @@ class OTF_NPTBerendsen(NPTBerendsen, OTF):
         self.md_engine = 'NPTBerendsen'
 
 class OTF_NPT(NPT, OTF):
+    """
+    On-the-fly training with ASE's Langevin molecular dynamics engine. 
+    Inherit from ASE `Langevin <https://wiki.fysik.dtu.dk/ase/ase/md.html#ase.md.langevin.Langevin>`_ class and our ASE-coupled on-the-fly training engine `flare.ase.OTF`
+
+    :param atoms: ASE Atoms object
+    :param timestep: time step in units of pico-second
+    :param temperature: temperature
+    :param friction: Typical values for the friction are 0.01-0.02 atomic units.
+    :param **kwargs: same parameters as `flare.ase.OTF`
+    """
+
+
     def __init__(self, atoms, timestep, temperature, externalstress, 
             ttime, pfactor, mask=None, trajectory=None, **kwargs):
 
@@ -73,7 +110,8 @@ class OTF_NPT(NPT, OTF):
         self.md_engine = 'NPT'
 
 class OTF_Langevin(Langevin, OTF):
-    """On-the-fly training with ASE's Langevin molecular dynamics engine. 
+    """
+    On-the-fly training with ASE's Langevin molecular dynamics engine. 
     Inherit from ASE `Langevin <https://wiki.fysik.dtu.dk/ase/ase/md.html#ase.md.langevin.Langevin>`_ class and our ASE-coupled on-the-fly training engine `flare.ase.OTF`
 
     :param atoms: ASE Atoms object

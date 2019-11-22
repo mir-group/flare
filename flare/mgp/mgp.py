@@ -13,6 +13,8 @@ from flare.kernels import two_body, three_body, two_plus_three_body,\
     two_body_jit
 from flare.cutoffs import quadratic_cutoff
 from flare.mc_simple import two_body_mc, three_body_mc, two_plus_three_body_mc
+from flare.util import Z_to_element
+
 import flare.mgp.utils as utils
 from flare.mgp.utils import get_bonds, get_triplets, self_two_body_mc_jit, \
     self_three_body_mc_jit
@@ -22,14 +24,16 @@ from flare.mgp.splines_methods import PCASplines, CubicSpline
 class MappedGaussianProcess:
     '''
     Build Mapped Gaussian Process (MGP) and automatically save coefficients for LAMMPS pair style.
-    :param: hyps: GP hyps
-    :param: cutoffs: GP cutoffs
-    :param: struc_params : information of training data
-    :param: grid_params : setting of grids for mapping
-    :param: mean_only : if True: only build mapping for mean (force)
-    :param: container_only : if True: only build splines container (with no coefficients)
-    :param: GP: None or a GaussianProcess object. If input a GP, then build mapping when creating MappedGaussianProcess object
-    :param: lmp_file_name : lammps coefficient file name
+
+    :param hyps: GP hyps
+    :param cutoffs: GP cutoffs
+    :param struc_params : information of training data
+    :param grid_params : setting of grids for mapping
+    :param mean_only : if True: only build mapping for mean (force)
+    :param container_only : if True: only build splines container (with no coefficients)
+    :param GP: None or a GaussianProcess object. If input a GP, then build mapping when creating MappedGaussianProcess object
+    :param lmp_file_name : lammps coefficient file name
+
     Examples:
     
     >>> struc_params = {'species': [0, 1],
@@ -179,6 +183,7 @@ class MappedGaussianProcess:
     def predict(self, atom_env: AtomicEnvironment, mean_only: bool=False):
         '''
         predict force and variance for given atomic environment
+
         :param atom_env: atomic environment (with a center atom and its neighbors)
         :param mean_only: if True: only predict force (variance is always 0)
         '''
@@ -318,8 +323,8 @@ class MappedGaussianProcess:
         for ind, spc in enumerate(self.spcs[0]):
             coefs_2 = self.maps_2[ind].mean.__coeffs__
 
-            elem1 = spc[0]
-            elem2 = spc[1]
+            elem1 = Z_to_element(spc[0])
+            elem2 = Z_to_element(spc[1])
             header_2 = '{elem1} {elem2} {a} {b} {order}\n'\
                 .format(elem1=elem1, elem2=elem2, a=a, b=b, order=order)
             f.write(header_2)
@@ -339,9 +344,9 @@ class MappedGaussianProcess:
         for ind, spc in enumerate(self.spcs[1]):
             coefs_3 = self.maps_3[ind].mean.__coeffs__
 
-            elem1 = spc[0]
-            elem2 = spc[1]
-            elem3 = spc[2]
+            elem1 = Z_to_element(spc[0])
+            elem2 = Z_to_element(spc[1])
+            elem3 = Z_to_element(spc[2])
 
             header_3 = '{elem1} {elem2} {elem3} {a1} {a2} {a3} {b1}'\
                        ' {b2} {b3:.10e} {order1} {order2} {order3}\n'\
@@ -471,10 +476,6 @@ class Map2body:
         return bond_means, bond_vars
 
     def build_map_container(self):
-
-        '''
-        build 1-d spline function for mean, 2-d for var
-        '''
         self.mean = CubicSpline(self.l_bounds, self.u_bounds, 
                                 orders=[self.grid_num])
 
@@ -484,6 +485,9 @@ class Map2body:
                                   svd_rank=self.svd_rank)
         
     def build_map(self, GP):
+        '''
+        build 1-d spline function for mean, 2-d for var
+        '''
         y_mean, y_var = self.GenGrid(GP)
         self.mean.set_values(y_mean)
         if not self.mean_only:
@@ -624,12 +628,6 @@ class Map3body:
         return bond_means, bond_vars
 
     def build_map_container(self):
-
-        '''
-        build 3-d spline function for mean,
-        3-d for the low rank approximation of L^{-1}k*
-        '''
-
        # create spline interpolation class object
         nop = self.grid_num[0]
         noa = self.grid_num[2]
@@ -642,6 +640,12 @@ class Map3body:
                                   svd_rank=self.svd_rank)
 
     def build_map(self, GP):
+
+        '''
+        build 3-d spline function for mean,
+        3-d for the low rank approximation of L^{-1}k*
+        '''
+
         # Load grid or generate grid values
         if not self.load_grid:
             y_mean, y_var = self.GenGrid(GP)

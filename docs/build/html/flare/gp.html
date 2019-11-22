@@ -24,6 +24,7 @@
         <script type="text/javascript" src="../_static/jquery.js"></script>
         <script type="text/javascript" src="../_static/underscore.js"></script>
         <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
     
     <script type="text/javascript" src="../_static/js/theme.js"></script>
 
@@ -164,13 +165,13 @@
 <p>Gaussian process model of the Born Oppenheimer potential energy surface.</p>
 <dl class="class">
 <dt id="flare.gp.GaussianProcess">
-<em class="property">class </em><code class="descclassname">flare.gp.</code><code class="descname">GaussianProcess</code><span class="sig-paren">(</span><em>kernel: Callable</em>, <em>kernel_grad: Callable</em>, <em>hyps</em>, <em>cutoffs</em>, <em>hyp_labels: List[T] = None</em>, <em>energy_force_kernel: Callable = None</em>, <em>energy_kernel: Callable = None</em>, <em>opt_algorithm: str = 'L-BFGS-B'</em>, <em>maxiter=10</em>, <em>par=False</em>, <em>no_cpus=None</em>, <em>output=None</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.gp.GaussianProcess" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">flare.gp.</code><code class="sig-name descname">GaussianProcess</code><span class="sig-paren">(</span><em class="sig-param">kernel: Callable</em>, <em class="sig-param">kernel_grad: Callable</em>, <em class="sig-param">hyps</em>, <em class="sig-param">cutoffs</em>, <em class="sig-param">hyp_labels: List = None</em>, <em class="sig-param">energy_force_kernel: Callable = None</em>, <em class="sig-param">energy_kernel: Callable = None</em>, <em class="sig-param">opt_algorithm: str = 'L-BFGS-B'</em>, <em class="sig-param">maxiter=10</em>, <em class="sig-param">par=False</em>, <em class="sig-param">no_cpus=None</em>, <em class="sig-param">output=None</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.gp.GaussianProcess" title="Permalink to this definition">¶</a></dt>
 <dd><p>Gaussian Process Regression Model.
 Implementation is based on Algorithm 2.1 (pg. 19) of
 “Gaussian Processes for Machine Learning” by Rasmussen and Williams</p>
 <dl class="method">
 <dt id="flare.gp.GaussianProcess.add_one_env">
-<code class="descname">add_one_env</code><span class="sig-paren">(</span><em>env: flare.env.AtomicEnvironment</em>, <em>force</em>, <em>train: bool = False</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.gp.GaussianProcess.add_one_env" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">add_one_env</code><span class="sig-paren">(</span><em class="sig-param">env: flare.env.AtomicEnvironment</em>, <em class="sig-param">force</em>, <em class="sig-param">train: bool = False</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.gp.GaussianProcess.add_one_env" title="Permalink to this definition">¶</a></dt>
 <dd><p>Tool to add a single environment / force pair into the training set.
 :param force:
 :param env:
@@ -181,19 +182,19 @@ Implementation is based on Algorithm 2.1 (pg. 19) of
 
 <dl class="method">
 <dt id="flare.gp.GaussianProcess.as_dict">
-<code class="descname">as_dict</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#flare.gp.GaussianProcess.as_dict" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">as_dict</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#flare.gp.GaussianProcess.as_dict" title="Permalink to this definition">¶</a></dt>
 <dd><p>Dictionary representation of the GP model.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="flare.gp.GaussianProcess.en_kern_vec">
-<code class="descname">en_kern_vec</code><span class="sig-paren">(</span><em>x: flare.env.AtomicEnvironment</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.gp.GaussianProcess.en_kern_vec" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">en_kern_vec</code><span class="sig-paren">(</span><em class="sig-param">x: flare.env.AtomicEnvironment</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.gp.GaussianProcess.en_kern_vec" title="Permalink to this definition">¶</a></dt>
 <dd><p>Compute the vector of energy/force kernels between an atomic environment and the environments in the training set.</p>
 </dd></dl>
 
-<dl class="staticmethod">
+<dl class="method">
 <dt id="flare.gp.GaussianProcess.force_list_to_np">
-<em class="property">static </em><code class="descname">force_list_to_np</code><span class="sig-paren">(</span><em>forces: list</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.gp.GaussianProcess.force_list_to_np" title="Permalink to this definition">¶</a></dt>
+<em class="property">static </em><code class="sig-name descname">force_list_to_np</code><span class="sig-paren">(</span><em class="sig-param">forces: list</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.gp.GaussianProcess.force_list_to_np" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convert list of forces to numpy array of forces.
 :param forces: list of forces to convert
 :type forces: list&lt;float&gt;
@@ -201,15 +202,15 @@ Implementation is based on Algorithm 2.1 (pg. 19) of
 :rtype: np.ndarray</p>
 </dd></dl>
 
-<dl class="staticmethod">
+<dl class="method">
 <dt id="flare.gp.GaussianProcess.from_dict">
-<em class="property">static </em><code class="descname">from_dict</code><span class="sig-paren">(</span><em>dictionary</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.gp.GaussianProcess.from_dict" title="Permalink to this definition">¶</a></dt>
+<em class="property">static </em><code class="sig-name descname">from_dict</code><span class="sig-paren">(</span><em class="sig-param">dictionary</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.gp.GaussianProcess.from_dict" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create GP object from dictionary representation.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="flare.gp.GaussianProcess.get_kernel_vector">
-<code class="descname">get_kernel_vector</code><span class="sig-paren">(</span><em>x: flare.env.AtomicEnvironment</em>, <em>d_1: int</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.gp.GaussianProcess.get_kernel_vector" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">get_kernel_vector</code><span class="sig-paren">(</span><em class="sig-param">x: flare.env.AtomicEnvironment</em>, <em class="sig-param">d_1: int</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.gp.GaussianProcess.get_kernel_vector" title="Permalink to this definition">¶</a></dt>
 <dd><p>Compute kernel vector, comparing input environment to all environments
 in the GP’s training set.
 :param x: data point to compare against kernel matrix
@@ -222,13 +223,13 @@ in the GP’s training set.
 
 <dl class="method">
 <dt id="flare.gp.GaussianProcess.predict">
-<code class="descname">predict</code><span class="sig-paren">(</span><em>x_t: flare.env.AtomicEnvironment</em>, <em>d: int</em><span class="sig-paren">)</span> &#x2192; [&lt;class 'float'&gt;, &lt;class 'float'&gt;]<a class="headerlink" href="#flare.gp.GaussianProcess.predict" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">predict</code><span class="sig-paren">(</span><em class="sig-param">x_t: flare.env.AtomicEnvironment</em>, <em class="sig-param">d: int</em><span class="sig-paren">)</span> &#x2192; [&lt;class 'float'&gt;, &lt;class 'float'&gt;]<a class="headerlink" href="#flare.gp.GaussianProcess.predict" title="Permalink to this definition">¶</a></dt>
 <dd><p>Predict force component of an atomic environment and its uncertainty.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="flare.gp.GaussianProcess.predict_local_energy">
-<code class="descname">predict_local_energy</code><span class="sig-paren">(</span><em>x_t: flare.env.AtomicEnvironment</em><span class="sig-paren">)</span> &#x2192; float<a class="headerlink" href="#flare.gp.GaussianProcess.predict_local_energy" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">predict_local_energy</code><span class="sig-paren">(</span><em class="sig-param">x_t: flare.env.AtomicEnvironment</em><span class="sig-paren">)</span> &#x2192; float<a class="headerlink" href="#flare.gp.GaussianProcess.predict_local_energy" title="Permalink to this definition">¶</a></dt>
 <dd><p>Predict the local energy of an atomic environment.
 :param x_t: Atomic environment of test atom.
 :type x_t: AtomicEnvironment
@@ -238,13 +239,13 @@ in the GP’s training set.
 
 <dl class="method">
 <dt id="flare.gp.GaussianProcess.predict_local_energy_and_var">
-<code class="descname">predict_local_energy_and_var</code><span class="sig-paren">(</span><em>x_t: flare.env.AtomicEnvironment</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.gp.GaussianProcess.predict_local_energy_and_var" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">predict_local_energy_and_var</code><span class="sig-paren">(</span><em class="sig-param">x_t: flare.env.AtomicEnvironment</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.gp.GaussianProcess.predict_local_energy_and_var" title="Permalink to this definition">¶</a></dt>
 <dd><p>Predict the local energy of an atomic environment and its uncertainty.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="flare.gp.GaussianProcess.set_L_alpha">
-<code class="descname">set_L_alpha</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#flare.gp.GaussianProcess.set_L_alpha" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">set_L_alpha</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#flare.gp.GaussianProcess.set_L_alpha" title="Permalink to this definition">¶</a></dt>
 <dd><p>Invert the covariance matrix, setting L (a lower triangular
 matrix s.t. L L^T = (K + sig_n^2 I) ) and alpha, the inverse
 covariance matrix multiplied by the vector of training labels.
@@ -254,19 +255,19 @@ The forces and variances are later obtained using alpha.
 
 <dl class="method">
 <dt id="flare.gp.GaussianProcess.train">
-<code class="descname">train</code><span class="sig-paren">(</span><em>output=None</em>, <em>custom_bounds=None</em>, <em>grad_tol: float = 0.0001</em>, <em>x_tol: float = 1e-05</em>, <em>line_steps: int = 20</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.gp.GaussianProcess.train" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">train</code><span class="sig-paren">(</span><em class="sig-param">output=None</em>, <em class="sig-param">custom_bounds=None</em>, <em class="sig-param">grad_tol: float = 0.0001</em>, <em class="sig-param">x_tol: float = 1e-05</em>, <em class="sig-param">line_steps: int = 20</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.gp.GaussianProcess.train" title="Permalink to this definition">¶</a></dt>
 <dd><p>Train Gaussian Process model on training data. Tunes the hyperparameters to maximize the likelihood, then computes L and alpha (related to the covariance matrix of the training set).</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="flare.gp.GaussianProcess.update_L_alpha">
-<code class="descname">update_L_alpha</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#flare.gp.GaussianProcess.update_L_alpha" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">update_L_alpha</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#flare.gp.GaussianProcess.update_L_alpha" title="Permalink to this definition">¶</a></dt>
 <dd><p>Update the GP’s L matrix and alpha vector.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="flare.gp.GaussianProcess.update_db">
-<code class="descname">update_db</code><span class="sig-paren">(</span><em>struc: flare.struc.Structure</em>, <em>forces: list</em>, <em>custom_range: List[int] = ()</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.gp.GaussianProcess.update_db" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">update_db</code><span class="sig-paren">(</span><em class="sig-param">struc: flare.struc.Structure</em>, <em class="sig-param">forces: list</em>, <em class="sig-param">custom_range: List[int] = ()</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.gp.GaussianProcess.update_db" title="Permalink to this definition">¶</a></dt>
 <dd><p>Given structure and forces, add to training set.
 :param struc: structure to add to db
 :type struc: Structure
@@ -278,23 +279,19 @@ The forces and variances are later obtained using alpha.
 
 <dl class="method">
 <dt id="flare.gp.GaussianProcess.write_model">
-<code class="descname">write_model</code><span class="sig-paren">(</span><em>name: str</em>, <em>format: str = 'json'</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.gp.GaussianProcess.write_model" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">write_model</code><span class="sig-paren">(</span><em class="sig-param">name: str</em>, <em class="sig-param">format: str = 'json'</em><span class="sig-paren">)</span><a class="headerlink" href="#flare.gp.GaussianProcess.write_model" title="Permalink to this definition">¶</a></dt>
 <dd><p>Write model in a variety of formats to a file for later re-use.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>name</strong> – Output name</li>
-<li><strong>format</strong> – </li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> – Output name</p></li>
+<li><p><strong>format</strong> – </p></li>
 </ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"></p>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+</dl>
 </dd></dl>
 
 </dd></dl>
