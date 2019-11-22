@@ -1,3 +1,9 @@
+''':class:`MappedGaussianProcess` uses splines to build up interpolation\
+    function of the low-dimensional decomposition of Gaussian Process, \
+    with little loss of accuracy. Refer to \
+    `Vandermause et al. <https://arxiv.org/abs/1904.02042>`_, \
+    `Glielmo et al. <https://journals.aps.org/prb/abstract/10.1103/PhysRevB.97.184307>`_
+'''
 import time
 import math
 import numpy as np
@@ -23,35 +29,37 @@ from flare.mgp.splines_methods import PCASplines, CubicSpline
 
 class MappedGaussianProcess:
     '''
-    Build Mapped Gaussian Process (MGP) and automatically save coefficients for LAMMPS pair style.
+    Build Mapped Gaussian Process (MGP) and automatically save coefficients for\
+    LAMMPS pair style.
 
-    :param hyps: GP hyps.
-    :param cutoffs: GP cutoffs.
-    :param struc_params: information of training data.
-    :param grid_params: setting of grids for mapping.
-    :param mean_only: if True: only build mapping for mean (force).
-    :param container_only: if True: only build splines container (with no coefficients).
-    :param GP: None or a GaussianProcess object. If input a GP, then build mapping when creating MappedGaussianProcess object.
-    :param lmp_file_name: lammps coefficient file name.
+    Args:
+        hyps (numpy array): GP hyps.
+        cutoffs (numpy array): GP cutoffs.
+        struc_params (dict): information of training data.
+        grid_params (dict): setting of grids for mapping.
+        mean_only (Bool): if True: only build mapping for mean (force).
+        container_only (Bool): if True: only build splines container\
+            (with no coefficients).
+        GP (GaussianProcess): None or a GaussianProcess object. If input a GP,\
+            then build mapping when creating MappedGaussianProcess object.
+        lmp_file_name (str): lammps coefficient file name.
 
-    Examples:
-    
-    >>> struc_params = {'species': [0, 1],
-                        'cube_lat': cell, # should input the cell matrix
-                        'mass_dict': {'0': 27 * unit, '1': 16 * unit}}
-    >>> grid_params =  {'bounds_2': [[1.2], [3.5]], 
-                                    # [[lower_bound], [upper_bound]]
-                        'bounds_3': [[1.2, 1.2, -1], [3.5, 3.5, 1]],
-                                    # [[lower,lower,cos(pi)],[upper,upper,cos(0)]]
-                        'grid_num_2': 64,
-                        'grid_num_3': [16, 16, 16],
-                        'svd_rank_2': 64,
-                        'svd_rank_3': 16**3,
-                        'bodies': [2, 3],
-                        'update': True, # if True: accelerating grids 
-                                        # generating by saving intermediate 
-                                        # coeff when generating grids
-                        'load_grid': None}
+    Example:
+        >>> struc_params = {'species': [0, 1],
+                            'cube_lat': cell} # input the cell matrix
+        >>> grid_params =  {'bounds_2': [[1.2], [3.5]], 
+                                        # [[lower_bound], [upper_bound]]
+                            'bounds_3': [[1.2, 1.2, -1], [3.5, 3.5, 1]],
+                                        # [[lower,lower,cos(pi)],[upper,upper,cos(0)]]
+                            'grid_num_2': 64,
+                            'grid_num_3': [16, 16, 16],
+                            'svd_rank_2': 64,
+                            'svd_rank_3': 16**3,
+                            'bodies': [2, 3],
+                            'update': True, # if True: accelerating grids 
+                                            # generating by saving intermediate 
+                                            # coeff when generating grids
+                            'load_grid': None}
     '''
 
     def __init__(self, hyps, cutoffs, grid_params: dict, struc_params: dict, 
@@ -121,7 +129,6 @@ class MappedGaussianProcess:
 
         cutoff = np.min(self.cutoffs)
         cell = struc_params['cube_lat']
-        mass_dict = struc_params['mass_dict']
         species_list = struc_params['species']
         N_spc = len(species_list)
 
@@ -136,7 +143,7 @@ class MappedGaussianProcess:
                 positions = [[(i+1)/(bodies+1)*cutoff, 0, 0]
                              for i in range(bodies)]
                 spc_struc = \
-                    struc.Structure(cell, species, positions, mass_dict)
+                    struc.Structure(cell, species, positions)
                 spc_struc.coded_species = np.array(species)
                 bond_struc_2.append(spc_struc)
 
@@ -154,8 +161,7 @@ class MappedGaussianProcess:
                     spc_3.append(species)
                     positions = [[(i+1)/(bodies+1)*cutoff, 0, 0]
                                  for i in range(bodies)]
-                    spc_struc = struc.Structure(cell, species, positions,
-                                                mass_dict)
+                    spc_struc = struc.Structure(cell, species, positions)
                     spc_struc.coded_species = np.array(species)
                     bond_struc_3.append(spc_struc)
 #                    if spc1 != spc2:
@@ -163,8 +169,7 @@ class MappedGaussianProcess:
 #                        spc_3.append(species)
 #                        positions = [[(i+1)/(bodies+1)*cutoff, 0, 0] \
 #                                    for i in range(bodies)]
-#                        spc_struc = struc.Structure(cell, species, positions,
-#                                                    mass_dict)
+#                        spc_struc = struc.Structure(cell, species, positions)
 #                        spc_struc.coded_species = np.array(species)
 #                        bond_struc_3.append(spc_struc)
 #                    if spc2 != spc3:
@@ -172,8 +177,7 @@ class MappedGaussianProcess:
 #                        spc_3.append(species)
 #                        positions = [[(i+1)/(bodies+1)*cutoff, 0, 0] \
 #                                    for i in range(bodies)]
-#                        spc_struc = struc.Structure(cell, species, positions,
-#                                                    mass_dict)
+#                        spc_struc = struc.Structure(cell, species, positions)
 #                        spc_struc.coded_species = np.array(species)
 #                        bond_struc_3.append(spc_struc)
 
