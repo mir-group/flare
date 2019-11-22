@@ -12,6 +12,6 @@ dft_software = { "qe": qe_util,
 try:
     import pymatgen
     from flare.dft_interface import vasp_util
-    dft_software["vasp"]=vasp_util,
+    dft_software["vasp"]=vasp_util
 except ImportError:
     pass
