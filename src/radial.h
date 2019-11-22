@@ -1,3 +1,2 @@
-void get_gns(double * g, double * gx, double * gy, double * gz,
-             double x, double y, double z, double r, double sigma,
-             double rcut, int N);
+void equispaced_gaussians(double * basis_vals, double * basis_derivs,
+                          double r, int N, double * radial_hyps);

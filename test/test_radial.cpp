@@ -9,7 +9,7 @@ using namespace std;
 // Create test inputs for radial functions.
 class RadialTest : public ::testing::Test{
     protected:
-    double x = 2.1;
+    double x = 2.19;
     double y = 1.23;
     double z = -0.24;
     double r = sqrt(x * x + y * y + z * z);
@@ -53,49 +53,78 @@ TEST_F(RadialTest, CutoffGrad){
 TEST_F(RadialTest, GnDerv){
     // Test that the Gaussian gradients are correctly computed.
     double sigma = 1;
+    double first_gauss = 1;
+    double final_gauss = 6;
     int N = 10;
+    double hyps[3] = {sigma, first_gauss, final_gauss};
 
     double * g = new double[N];
-    double * gx = new double[N];
-    double * gy = new double[N];
-    double * gz = new double[N];
+    double * gderv = new double[N];
+    double * g_rdelt = new double[N];
+    double * gderv_rdelt = new double[N];
 
-    double * g_xdelt = new double[N];
-    double * g_ydelt = new double[N];
-    double * g_zdelt = new double[N];
+    equispaced_gaussians(g, gderv, r, N, hyps);
+    equispaced_gaussians(g_rdelt, gderv_rdelt, r_delt, N, hyps);
 
-    double * gx_delt = new double[N];
-    double * gy_delt = new double[N];
-    double * gz_delt = new double[N];
-
-    get_gns(g, gx, gy, gz, x, y, z, r, sigma, rcut, N);
-    get_gns(g_xdelt, gx_delt, gy_delt, gz_delt, x_delt, y, z, r_x, sigma,
-            rcut, N);
-    get_gns(g_ydelt, gx_delt, gy_delt, gz_delt, x, y_delt, z, r_y, sigma,
-            rcut, N);
-    get_gns(g_zdelt, gx_delt, gy_delt, gz_delt, x, y, z_delt, r_z, sigma,
-            rcut, N);
-
-    double x_finite_diff, y_finite_diff, z_finite_diff, x_diff, y_diff, z_diff;
+    double r_finite_diff, r_diff;
     double tolerance = 1e-6;
+
     for (int n = 0; n < N; n++){
-        // Check x derivative
-        x_finite_diff = (g_xdelt[n] - g[n]) / delta;
-        x_diff = abs(x_finite_diff - gx[n]);
-        EXPECT_LE(x_diff, tolerance);
-
-        // Check y derivative
-        y_finite_diff = (g_ydelt[n] - g[n]) / delta;
-        y_diff = abs(y_finite_diff - gy[n]);
-        EXPECT_LE(y_diff, tolerance);
-
-        // Check z derivative
-        z_finite_diff = (g_zdelt[n] - g[n]) / delta;
-        z_diff = abs(z_finite_diff - gz[n]);
-        EXPECT_LE(z_diff, tolerance);
+        // Check r derivative
+        r_finite_diff = (g_rdelt[n] - g[n]) / delta;
+        r_diff = abs(r_finite_diff - gderv[n]);
+        EXPECT_LE(r_diff, tolerance);
     }
 
-    delete[] g; delete[] gx; delete[] gy; delete[] gz;
-    delete[] g_xdelt; delete[] g_ydelt; delete[] g_zdelt;
-    delete[] gx_delt; delete[] gy_delt; delete[] gz_delt;
+    delete[] g; delete[] gderv; delete[] g_rdelt; delete[] gderv_rdelt;
 }
+
+// TEST_F(RadialTest, GnDerv){
+//     // Test that the Gaussian gradients are correctly computed.
+//     double sigma = 1;
+//     int N = 10;
+
+//     double * g = new double[N];
+//     double * gx = new double[N];
+//     double * gy = new double[N];
+//     double * gz = new double[N];
+
+//     double * g_xdelt = new double[N];
+//     double * g_ydelt = new double[N];
+//     double * g_zdelt = new double[N];
+
+//     double * gx_delt = new double[N];
+//     double * gy_delt = new double[N];
+//     double * gz_delt = new double[N];
+
+//     get_gns(g, gx, gy, gz, x, y, z, r, sigma, rcut, N);
+//     get_gns(g_xdelt, gx_delt, gy_delt, gz_delt, x_delt, y, z, r_x, sigma,
+//             rcut, N);
+//     get_gns(g_ydelt, gx_delt, gy_delt, gz_delt, x, y_delt, z, r_y, sigma,
+//             rcut, N);
+//     get_gns(g_zdelt, gx_delt, gy_delt, gz_delt, x, y, z_delt, r_z, sigma,
+//             rcut, N);
+
+//     double x_finite_diff, y_finite_diff, z_finite_diff, x_diff, y_diff, z_diff;
+//     double tolerance = 1e-6;
+//     for (int n = 0; n < N; n++){
+//         // Check x derivative
+//         x_finite_diff = (g_xdelt[n] - g[n]) / delta;
+//         x_diff = abs(x_finite_diff - gx[n]);
+//         EXPECT_LE(x_diff, tolerance);
+
+//         // Check y derivative
+//         y_finite_diff = (g_ydelt[n] - g[n]) / delta;
+//         y_diff = abs(y_finite_diff - gy[n]);
+//         EXPECT_LE(y_diff, tolerance);
+
+//         // Check z derivative
+//         z_finite_diff = (g_zdelt[n] - g[n]) / delta;
+//         z_diff = abs(z_finite_diff - gz[n]);
+//         EXPECT_LE(z_diff, tolerance);
+//     }
+
+//     delete[] g; delete[] gx; delete[] gy; delete[] gz;
+//     delete[] g_xdelt; delete[] g_ydelt; delete[] g_zdelt;
+//     delete[] gx_delt; delete[] gy_delt; delete[] gz_delt;
+// }
