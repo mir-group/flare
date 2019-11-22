@@ -1,5 +1,4 @@
 #include <cmath>
-#include "cutoffs.h"
 #define Pi 3.14159265358979323846
 
 void equispaced_gaussians(double * basis_vals, double * basis_derivs,
@@ -31,3 +30,7 @@ void equispaced_gaussians(double * basis_vals, double * basis_derivs,
         basis_derivs[n] = -sig2 * gn_val * mean_diff;
     }
 }
+
+void calculate_radial(
+    void (*basis_function)(double *, double *, double, int, double *),
+    void (*cutoff_function)(double *, double, double)){}

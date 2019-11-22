@@ -1,6 +1,5 @@
 #include "gtest/gtest.h"
-#include "radial.h"
-#include "cutoffs.h"
+#include "ace.h"
 #include <iostream>
 #include <cmath>
 
@@ -29,7 +28,8 @@ TEST_F(RadialTest, LongR){
     // Test that the cutoff value and its gradient are zero when r > rcut.
     double rcut = 0.001;
     double cutoff_vals[2] = {};
-    cos_cutoff(cutoff_vals, r, rcut);
+    double * cutoff_hyps;
+    cos_cutoff(cutoff_vals, r, rcut, cutoff_hyps);
 
     EXPECT_EQ(cutoff_vals[0], 0);
     EXPECT_EQ(cutoff_vals[1], 0);
@@ -39,15 +39,32 @@ TEST_F(RadialTest, CutoffGrad){
     // Test that the derivative of the cosine cutoff function is correctly computed when r < rcut.
     double cutoff_vals[2] = {};
     double cutoff_vals_rdelt[2] = {};
+    double * cutoff_hyps;
 
-    cos_cutoff(cutoff_vals, r, rcut);
-    cos_cutoff(cutoff_vals_rdelt, r_delt, rcut);
+    cos_cutoff(cutoff_vals, r, rcut, cutoff_hyps);
+    cos_cutoff(cutoff_vals_rdelt, r_delt, rcut, cutoff_hyps);
 
     double r_fin_diff = (cutoff_vals_rdelt[0] - cutoff_vals[0]) / delta;
     double r_diff = abs(r_fin_diff - cutoff_vals[1]);
 
     double tolerance = 1e-6;
     EXPECT_LE(r_diff, tolerance);
+}
+
+TEST_F(RadialTest, HardCutoff){
+    // Test that the hard cutoff returns 1 and 0 when rcut > r.
+    double cutoff_vals[2] = {};
+    double * cutoff_hyps;
+    hard_cutoff(cutoff_vals, r, rcut, cutoff_hyps);
+    EXPECT_EQ(cutoff_vals[0], 1);
+    EXPECT_EQ(cutoff_vals[1], 0);
+
+    // Test that it returns 0 and 0 when r > rcut.
+    double rcut = 0.01;
+    hard_cutoff(cutoff_vals, r, rcut, cutoff_hyps);
+    EXPECT_EQ(cutoff_vals[0], 0);
+    EXPECT_EQ(cutoff_vals[1], 0);
+
 }
 
 TEST_F(RadialTest, GnDerv){
