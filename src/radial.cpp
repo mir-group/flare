@@ -21,8 +21,12 @@ void cos_cutoff(double * rcut_vals, double x, double y, double z, double r,
 void get_gns(double * g, double * gx, double * gy, double * gz,
              double x, double y, double z, double r, double sigma,
              double rcut, int N){
-    // Calculate equispaced Gaussians and their gradients.
 
+    // Calculate cutoff function and its gradient.
+    double rcut_vals[4];
+    cos_cutoff(rcut_vals, x, y, z, r, rcut);
+
+    // Calculate equispaced Gaussians and their gradients.
     double norm_factor = 1 / (sigma * sqrt(2 * Pi));
     double sig2 = 1 / (sigma * sigma);
     double half_sig2 = sig2 / 2;
@@ -40,11 +44,9 @@ void get_gns(double * g, double * gx, double * gy, double * gz,
         gn_val = norm_factor * exp(exp_arg);
         gn_derv = -sig2 * gn_val * mean_diff;
 
-        g[n] = gn_val;
-        gx[n] = gn_derv * x / r;
-        gy[n] = gn_derv * y / r;
-        gz[n] = gn_derv * z / r;
+        g[n] = gn_val * rcut_vals[0];
+        gx[n] = gn_derv * (x / r) * rcut_vals[0] + gn_val * rcut_vals[1];
+        gy[n] = gn_derv * (y / r) * rcut_vals[0] + gn_val * rcut_vals[2];
+        gz[n] = gn_derv * (z / r) * rcut_vals[0] + gn_val * rcut_vals[3];
     }
 }
-
-// TODO: multiply Gaussians by smooth cutoff
