@@ -116,6 +116,13 @@ class TrajectoryTrainer(object):
             else:
                 self.pred_func = predict_on_structure
 
+        if (parallel is True):
+            assert self.gp.per_atom_par is True, "the otf par flag has to be
+            consistent with the gp per_atom_par flag."
+        else:
+            assert self.gp.per_atom_par is False, "the otf par flag has to be
+            consistent with the gp per_atom_par flag."
+
         self.output = Output(output_name, always_flush=True)
 
         # To later be filled in using the time library
@@ -226,7 +233,7 @@ class TrajectoryTrainer(object):
             self.gp.set_L_alpha()
 
         if self.model_format:
-            self.gp.write_model(f'{self.output_name}_prerun.{self.model_format}',
+            self.gp.write_model(f'{self.output_name}_prerun',
                     self.model_format)
 
     def run(self):
@@ -306,7 +313,7 @@ class TrajectoryTrainer(object):
                     if self.checkpoint_interval \
                             and self.train_count % self.checkpoint_interval == 0 \
                             and self.model_format:
-                        self.gp.write_model(f'{self.output_name}_ckpt.{self.model_format}',
+                        self.gp.write_model(f'{self.output_name}_ckpt',
                                 self.model_format)
 
                 if (i + 1) >= train_frame:
@@ -315,7 +322,7 @@ class TrajectoryTrainer(object):
         self.output.conclude_run()
 
         if self.model_format:
-            self.gp.write_model(f'{self.output_name}_model.{self.model_format}',
+            self.gp.write_model(f'{self.output_name}_model',
                     self.model_format)
 
     def update_gp_and_print(self, frame: Structure, train_atoms: List[int],
