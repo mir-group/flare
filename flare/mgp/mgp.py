@@ -185,7 +185,12 @@ class MappedGaussianProcess:
         predict force and variance for given atomic environment
 
         :param atom_env: atomic environment (with a center atom and its neighbors)
+        :type  atom_env: :class:`AtomicEnvironment`
         :param mean_only: if True: only predict force (variance is always 0)
+        :type  mean_only: Bool
+        :return f: force on this atom
+        :return v: variance corresponding to the force
+        :return vir: stress on this atom
         '''
         if self.mean_only:  # if not build mapping for var
             mean_only = True
@@ -533,12 +538,12 @@ class Map3body:
         nop = self.grid_num[0]
         noa = self.grid_num[2]
         bond_lengths = np.linspace(self.l_bounds[0], self.u_bounds[0], nop)
-        angles = np.linspace(self.l_bounds[2], self.u_bounds[2], noa)
+        cos_angles = np.linspace(self.l_bounds[2], self.u_bounds[2], noa)
         bond_means = np.zeros([nop, nop, noa])
         bond_vars = np.zeros([nop, nop, noa, len(GP.alpha)])
         env12 = AtomicEnvironment(self.bond_struc, 0, self.cutoffs)
 
-        pool_list = [(i, angles[i], bond_lengths, GP, env12, self.update)\
+        pool_list = [(i, cos_angles[i], bond_lengths, GP, env12, self.update)\
                      for i in range(noa)]
         pool = mp.Pool(processes=processes)
 
@@ -569,9 +574,8 @@ class Map3body:
         '''
         generate grid for each angle, used to parallelize grid generation
         '''
-        a12, angle12, bond_lengths, GP, env12, update = params
+        a12, cos_angle12, bond_lengths, GP, env12, update = params
         nop = self.grid_num[0]
-        angle12 = angle12
         bond_means = np.zeros([nop, nop])
         bond_vars = np.zeros([nop, nop, len(GP.alpha)])
 
@@ -592,8 +596,8 @@ class Map3body:
         for b1, r1 in enumerate(bond_lengths):
             r1 = bond_lengths[b1]
             for b2, r2 in enumerate(bond_lengths):
-                x2 = r2 * np.cos(angle12)
-                y2 = r2 * np.sin(angle12)
+                x2 = r2 * cos_angle12
+                y2 = np.sqrt(r2**2 - x2**2)
                 r12 = np.linalg.norm(np.array([x2-r1, y2, 0]))
 
                 env12.bond_array_3 = np.array([[r1, 1, 0, 0], [r2, 0, 0, 0]])
