@@ -29,7 +29,7 @@ class GaussianProcess:
                  energy_force_kernel: Callable = None,
                  energy_kernel: Callable = None,
                  opt_algorithm: str = 'L-BFGS-B',
-                 maxiter=10, par=False, no_cpus=None,
+                 maxiter=10, par=False, no_cpus=1,
                  output=None):
         """Initialize GP parameters and training data."""
 
@@ -50,6 +50,9 @@ class GaussianProcess:
         self.par = par
         self.no_cpus = no_cpus
         self.output = output
+
+        if (self.par is False):
+            self.no_cpus = 1
 
         # Parameters set during training
         self.ky_mat = None
@@ -331,8 +334,8 @@ environment and the environments in the training set."""
             self.set_L_alpha()
             return
 
-        ky_mat = get_ky_mat_update(np.copy(self.ky_mat), self.training_data, 
-                self.get_kernel_vector, self.hyps, self.par)
+        ky_mat = get_ky_mat_update(np.copy(self.ky_mat), self.training_data,
+                self.get_kernel_vector, self.hyps, self.no_cpus)
 
         l_mat = np.linalg.cholesky(ky_mat)
         l_mat_inv = np.linalg.inv(l_mat)
@@ -441,10 +444,10 @@ environment and the environments in the training set."""
         supported_formats = ['json', 'pickle', 'binary']
 
         write_name = str(name)
-        
+
         if name.split('.')[-1] not in supported_formats:
             write_name += '.'+format
-            
+
         if format.lower() == 'json':
             with open(write_name, 'w') as f:
                 json.dump(self.as_dict(), f, cls=NumpyEncoder)
