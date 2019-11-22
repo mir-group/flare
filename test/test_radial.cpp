@@ -1,5 +1,6 @@
 #include "gtest/gtest.h"
 #include "radial.h"
+#include "cutoffs.h"
 #include <iostream>
 #include <cmath>
 
@@ -18,6 +19,7 @@ class RadialTest : public ::testing::Test{
     double x_delt = x + delta;
     double y_delt = y + delta;
     double z_delt = z + delta;
+    double r_delt = r + delta;
     double r_x = sqrt(x_delt * x_delt + y * y + z * z);
     double r_y = sqrt(x * x + y_delt * y_delt + z * z);
     double r_z = sqrt(x * x + y * y + z_delt * z_delt);
@@ -26,40 +28,26 @@ class RadialTest : public ::testing::Test{
 TEST_F(RadialTest, LongR){
     // Test that the cutoff value and its gradient are zero when r > rcut.
     double rcut = 0.001;
-    double cutoff_vals[4] = {};
-    cos_cutoff(cutoff_vals, x, y, z, r, rcut);
+    double cutoff_vals[2] = {};
+    cos_cutoff(cutoff_vals, r, rcut);
 
     EXPECT_EQ(cutoff_vals[0], 0);
     EXPECT_EQ(cutoff_vals[1], 0);
-    EXPECT_EQ(cutoff_vals[2], 0);
-    EXPECT_EQ(cutoff_vals[3], 0);
-
 }
 
 TEST_F(RadialTest, CutoffGrad){
-    // Test that the gradient of the cosine cutoff function is correctly computed when r < rcut.
-    double cutoff_vals[4] = {};
-    double cutoff_vals_xdelt[4] = {};
-    double cutoff_vals_ydelt[4] = {};
-    double cutoff_vals_zdelt[4] = {};
+    // Test that the derivative of the cosine cutoff function is correctly computed when r < rcut.
+    double cutoff_vals[2] = {};
+    double cutoff_vals_rdelt[2] = {};
 
-    cos_cutoff(cutoff_vals, x, y, z, r, rcut);
-    cos_cutoff(cutoff_vals_xdelt, x_delt, y, z, r_x, rcut);
-    cos_cutoff(cutoff_vals_ydelt, x, y_delt, z, r_y, rcut);
-    cos_cutoff(cutoff_vals_zdelt, x, y, z_delt, r_z, rcut);
+    cos_cutoff(cutoff_vals, r, rcut);
+    cos_cutoff(cutoff_vals_rdelt, r_delt, rcut);
 
-    double x_fin_diff = (cutoff_vals_xdelt[0] - cutoff_vals[0]) / delta;
-    double y_fin_diff = (cutoff_vals_ydelt[0] - cutoff_vals[0]) / delta;
-    double z_fin_diff = (cutoff_vals_zdelt[0] - cutoff_vals[0]) / delta;
-
-    double x_diff = abs(x_fin_diff - cutoff_vals[1]);
-    double y_diff = abs(y_fin_diff - cutoff_vals[2]);
-    double z_diff = abs(z_fin_diff - cutoff_vals[3]);
+    double r_fin_diff = (cutoff_vals_rdelt[0] - cutoff_vals[0]) / delta;
+    double r_diff = abs(r_fin_diff - cutoff_vals[1]);
 
     double tolerance = 1e-6;
-    EXPECT_LE(x_diff, tolerance);
-    EXPECT_LE(y_diff, tolerance);
-    EXPECT_LE(z_diff, tolerance);
+    EXPECT_LE(r_diff, tolerance);
 }
 
 TEST_F(RadialTest, GnDerv){
