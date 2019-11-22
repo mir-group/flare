@@ -11,18 +11,23 @@ from flare.util import Z_to_element
 
 class Output():
     """
-    Output class host the logfile, xyz config file and force xyz file.
-    :param basename
+    This is an I/O class that host the log files for OTF and Trajectories
+    class. It is also used in get_neg_like_grad and get_neg_likelihood in
+    gp_algebra.
+    to print intermediate results.
+
+    It opens and prints files with the basename prefix and different
+    suffixes corresponding to different kinds of output data.
+
+    :param basename: Base output file name, suffixes will be added
+    :type basename: str, optional
+    :param always_flush: Always write to file instantly
+    :type always_flus: bool, optional
     """
 
     def __init__(self, basename: str = 'otf_run',
                  always_flush: bool = False):
-        """
-        Ppen files with the basename and different suffixes corresponding
-        to different kinds of output data.
-
-        :param basename: Base output file name, suffixes will be added
-        :param always_flush: Always write to file instantly
+        """ Construction. Open files.
         """
         self.basename = f"{basename}"
         self.outfiles = {}
@@ -36,9 +41,9 @@ class Output():
         self.always_flush = always_flush
 
     def conclude_run(self):
+        """ destruction function that closes all files
         """
-        destruction function that close all files
-        """
+
         print('-' * 20, file=self.outfiles['log'])
         print('Run complete.', file=self.outfiles['log'])
         for (k, v) in self.outfiles.items():
@@ -46,7 +51,13 @@ class Output():
         del self.outfiles
         self.outfiles = {}
 
-    def open_new_log(self, filetype, suffix):
+    def open_new_log(self, filetype:str, suffix:str):
+        """ Open files.  If files with the same
+        name are existed, they are back-uped with a suffix "-bak".
+
+        :param filetype: the key name in self.outfiles
+        :param suffix: the suffix of the file to be opened
+        """
 
         filename = self.basename + suffix
 
@@ -62,29 +73,33 @@ class Output():
 
     def write_to_log(self, logstring: str, name: str = "log",
                      flush: bool = False):
-        """
-        Write any string to logfile
+        """ Write any string to logfile
+
+        :param logstring: the string to write
+        :param name: the key name of the file to print
+        :param flush: whether it should be flushed
         """
         self.outfiles[name].write(logstring)
 
         if flush or self.always_flush:
             self.outfiles[name].flush()
 
-    def write_header(self, cutoffs, kernel_name,
-                     hyps, algo, dt, Nsteps, structure,
+    def write_header(self, cutoffs, kernel_name:str,
+                     hyps, algo:str, dt:float,
+                     Nsteps:int, structure,
                      std_tolerance,
                      optional: dict = None):
-        """
-        write header to the log function
-        :param cutoffs:
-        :param kernel_name:
-        :param hyps:
-        :param algo:
-        :param dt:
-        :param Nsteps:
-        :param structure:
-        :param std_tolerance:
-        :param optional:
+        """ Write header to the log function
+
+        :param cutoffs: GP cutoffs
+        :param kernel_name: Kernel names
+        :param hyps: list of hyper-parameters
+        :param algo: algorithm for hyper parameter optimization
+        :param dt: timestep for OTF MD
+        :param Nsteps: total number of steps for OTF MD
+        :param structure: the atomic structure
+        :param std_tolerance: tolarence for active learning
+        :param optional: a dictionary of all the other parameters
         """
 
         f = self.outfiles['log']
@@ -142,14 +157,13 @@ class Output():
     def write_md_config(self, dt, curr_step, structure,
                         temperature, KE, local_energies,
                         start_time, dft_step, velocities):
-        """
-        write md configuration in log file
-        :param dt:
-        :param curr_step:
-        :param structure:
-        :param temperature:
-        :param KE:
-        :param local_energies:
+        """ write md configuration in log file
+        :param dt: timestemp of OTF MD
+        :param curr_step: current timestep of OTF MD
+        :param structure: atomic structure
+        :param temperature: current temperature
+        :param KE: current total kinetic energy
+        :param local_energies: local energy
         :param start_time:
         :param dft_step:
         :param velocities:
@@ -235,7 +249,6 @@ class Output():
         :param forces: list of forces on atoms predicted by GP
         :param stds: uncertainties predicted by GP
         :param forces_2: true forces from ab initio source
-        :return:
         """
 
         natom = len(species)
@@ -270,8 +283,7 @@ class Output():
     def write_xyz_config(self, curr_step, structure, dft_step,
                          forces: np.array = None, stds : np.array = None,
                          forces_2: np.array = None):
-        """
-        write atomic configuration in xyz file
+        """ write atomic configuration in xyz file
         :param curr_step: Int, number of frames to note in the comment line
         :param structure: Structure, contain positions and forces
         :param dft_step:  Boolean, whether this is a DFT call.
@@ -281,7 +293,6 @@ class Output():
         :return:
         """
 
-        # comment line
         # Mark if a frame had DFT forces with an asterisk
         if not dft_step:
             header = ""
@@ -294,8 +305,7 @@ class Output():
 
     def write_hyps(self, hyp_labels, hyps, start_time, like, like_grad,
                    name='log'):
-        """
-        write hyperparameters to logfile
+        """ write hyperparameters to logfile
         :param hyp_labels:
         :param hyps:
         :param start_time:
@@ -325,8 +335,7 @@ class Output():
     def write_gp_dft_comparison(self, curr_step, frame,
                                 start_time, dft_forces,
                                 error, local_energies=None, KE=None):
-        """
-        write the comparison to logfile
+        """ write the comparison to logfile
         :param dft_forces:
         :param mae:
         :param pmae: dictionary of per species mae
