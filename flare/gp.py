@@ -548,13 +548,6 @@ environment and the environments in the training set."""
                                  multihyps=dictionary['multihyps'],
                                  hyps_mask=dictionary['hyps_mask'])
 
-        # Save time by attempting to load in computed attributes
-        new_gp.l_mat = np.array(dictionary.get('l_mat', None))
-        # new_gp.l_mat_inv = np.array(dictionary.get('l_mat_inv', None))
-        new_gp.alpha = np.array(dictionary.get('alpha', None))
-        new_gp.ky_mat = np.array(dictionary.get('ky_mat', None))
-        new_gp.ky_mat_inv = np.array(dictionary.get('ky_mat_inv', None))
-
         new_gp.training_data = [AtomicEnvironment.from_dict(env) for env in
                                 dictionary['training_data']]
         new_gp.training_labels = deepcopy(dictionary['training_labels'])
@@ -563,7 +556,32 @@ environment and the environments in the training set."""
         new_gp.likelihood = dictionary['likelihood']
         new_gp.likelihood_gradient = dictionary['likelihood_gradient']
         new_gp.training_labels_np = np.hstack(new_gp.training_labels)
+
+        # Save time by attempting to load in computed attributes
+        if (len(new_gp.training_data)>5000):
+            new_gp.ky_mat = np.load(dictionary['ky_mat_file'])
+            new_gp.compute_matrices()
+        else:
+            new_gp.ky_mat_inv = np.array(dictionary.get('ky_mat_inv', None))
+            new_gp.ky_mat = np.array(dictionary.get('ky_mat', None))
+            new_gp.l_mat = np.array(dictionary.get('l_mat', None))
+            new_gp.alpha = np.array(dictionary.get('alpha', None))
+
+
         return new_gp
+
+    def compute_matrices(self):
+
+        ky_mat = self.ky_mat
+        l_mat = np.linalg.cholesky(ky_mat)
+        l_mat_inv = np.linalg.inv(l_mat)
+        ky_mat_inv = l_mat_inv.T @ l_mat_inv
+        alpha = np.matmul(ky_mat_inv, self.training_labels_np)
+
+        self.l_mat = l_mat
+        self.alpha = alpha
+        self.ky_mat_inv = ky_mat_inv
+
 
     def write_model(self, name: str, format: str = 'json'):
         """
@@ -574,16 +592,28 @@ environment and the environments in the training set."""
         :return:
         """
 
+        if (len(self.training_data)>500):
+            np.save(f"{name}_ky_mat.npy", self.ky_mat)
+            self.ky_mat_file = f"{name}_ky_mat.npy"
+            del self.ky_mat
+            del self.l_mat
+            del self.alpha
+            del self.ky_mat_inv
+
         supported_formats = ['json', 'pickle', 'binary']
 
         if format.lower() == 'json':
-            with open(name, 'w') as f:
+            with open(f'{name}.json', 'w') as f:
                 json.dump(self.as_dict(), f, cls=NumpyEncoder)
 
         elif format.lower() == 'pickle' or format.lower() == 'binary':
-            with open(name, 'wb') as f:
+            with open(f'{name}.pickle', 'wb') as f:
                 pickle.dump(self, f)
 
         else:
             raise ValueError("Output format not supported: try from "
                              "{}".format(supported_formats))
+
+        if (len(self.training_data)>500):
+            self.ky_mat = np.load(f"{name}_ky_mat.npy")
+            self.compute_matrices()
