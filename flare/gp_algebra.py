@@ -419,16 +419,11 @@ def get_like_grad_from_mats(ky_mat, hyp_mat, training_labels_np):
 def get_neg_likelihood(hyps: np.ndarray, training_data: list,
                        training_labels_np: np.ndarray,
                        kernel, cutoffs=None, output = None,
-                       par=False, no_cpus=None):
+                       no_cpus=1):
 
-    if par:
-        ky_mat = \
-            get_ky_mat_par(hyps, training_data, training_labels_np,
-                           kernel, cutoffs, no_cpus)
-    else:
-        ky_mat = \
-            get_ky_mat(hyps, training_data, training_labels_np,
-                       kernel, cutoffs)
+    ky_mat = \
+        get_ky_mat_par(hyps, training_data, training_labels_np,
+                       kernel, cutoffs, no_cpus)
 
     like = get_like_from_ky_mat(ky_mat, training_labels_np)
 
@@ -441,16 +436,11 @@ def get_neg_likelihood(hyps: np.ndarray, training_data: list,
 def get_neg_like_grad(hyps: np.ndarray, training_data: list,
                       training_labels_np: np.ndarray,
                       kernel_grad, cutoffs=None,
-                      output = None, par=False, no_cpus=None):
+                      output = None, no_cpus=1):
 
-    if par:
-        hyp_mat, ky_mat = \
-            get_ky_and_hyp_par(hyps, training_data, training_labels_np,
-                               kernel_grad, cutoffs, no_cpus)
-    else:
-        hyp_mat, ky_mat = \
-            get_ky_and_hyp(hyps, training_data, training_labels_np,
-                           kernel_grad, cutoffs)
+    hyp_mat, ky_mat = \
+        get_ky_and_hyp_par(hyps, training_data, training_labels_np,
+                           kernel_grad, cutoffs, no_cpus)
 
     like, like_grad = \
         get_like_grad_from_mats(ky_mat, hyp_mat, training_labels_np)

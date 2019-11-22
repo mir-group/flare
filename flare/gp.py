@@ -136,7 +136,7 @@ hyperparameters to maximize the likelihood, then computes L and alpha \
 
         args = (self.training_data, self.training_labels_np,
                 self.kernel_grad, self.cutoffs, output,
-                self.par, self.no_cpus)
+                self.no_cpus)
         res = None
 
         if self.algo == 'L-BFGS-B':
@@ -297,16 +297,10 @@ environment and the environments in the training set."""
         The forces and variances are later obtained using alpha.
         :return:
         """
-        if self.par:
-            hyp_mat, ky_mat = \
-                get_ky_and_hyp_par(self.hyps, self.training_data,
-                                   self.training_labels_np,
-                                   self.kernel_grad, self.cutoffs, self.no_cpus)
-        else:
-            hyp_mat, ky_mat = \
-                get_ky_and_hyp(self.hyps, self.training_data,
+        hyp_mat, ky_mat = \
+            get_ky_and_hyp_par(self.hyps, self.training_data,
                                self.training_labels_np,
-                               self.kernel_grad, self.cutoffs)
+                               self.kernel_grad, self.cutoffs, self.no_cpus)
 
         like, like_grad = \
             get_like_grad_from_mats(ky_mat, hyp_mat, self.training_labels_np)
