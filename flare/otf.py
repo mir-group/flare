@@ -23,7 +23,8 @@ class OTF(object):
                  rescale_steps=[], rescale_temps=[],
                  dft_softwarename="qe",
                  no_cpus=1, npool=None, mpi="srun",
-                 dft_kwargs = None):
+                 dft_kwargs = None,
+                 std_tolerance_cutoff: float = None):
         """
         On-The-Fly molecular dynamics + Gaussian Process training class.
 
@@ -48,6 +49,8 @@ class OTF(object):
         :param no_cpus:
         :param npool:
         :param mpi:
+        :param std_tolerance_cutoff: If uncertainty crosses this threshold,
+            then call DFT regardless of the noise parameter.
         """
 
         self.dft_input = dft_input
