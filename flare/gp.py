@@ -181,14 +181,22 @@ hyperparameters to maximize the likelihood, then computes L and alpha \
         self.likelihood_gradient = -res.jac
 
     def check_L_alpha(self):
+        """
+        Check that the alpha vector is up-to-date with the training set;
+        runs in constant time if it is.
+
+        :return:
+        """
         # check that alpha is up to date with training set
         if self.alpha is None or 3 * len(self.training_data) != len(
                 self.alpha):
             self.update_L_alpha()
 
     def predict(self, x_t: AtomicEnvironment, d: int) -> [float, float]:
-        """Predict force component of an atomic environment and its \
-uncertainty."""
+        """
+        Predict force component of an atomic environment and its
+        uncertainty.
+        """
 
         # Kernel vector allows for evaluation of At. Env.
         k_v = self.get_kernel_vector(x_t, d)
