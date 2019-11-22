@@ -281,7 +281,7 @@ def parse_dft_forces_and_energy(outfile: str):
 
 
     assert total_energy != np.nan, "dft parser failed to read " \
-                                   f"the file {}. Run failed. {outfile}"
+                                   "the file {}. Run failed."+outfile
 
     # Convert from ry/au to ev/angstrom
     conversion_factor = 25.71104309541616*2.0

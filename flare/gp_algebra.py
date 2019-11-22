@@ -82,7 +82,6 @@ def get_ky_mat(hyps: np.array, training_data: list,
 
     :param hyps:
     :param training_data:
-    :param training_labels_np:
     :param kernel:
     :param cutoffs:
     :return:
@@ -121,13 +120,11 @@ def get_ky_mat(hyps: np.array, training_data: list,
 
 
 def get_ky_and_hyp(hyps: np.ndarray, training_data: list,
-                   training_labels_np: np.ndarray,
                    kernel_grad, cutoffs=None):
     """ Compute covariance matrix K and matrix to estimate likelihood gradient
 
     :param hyps: list of hyper-parameters
     :param training_data: list of atomic envirionments
-    :param training_labels_np: numpy array of forces
     :param kernel_grad: function object of the kernel gradient
     :param cutoffs: list of 2 float numbers for 2b and 3b cutoff
     :return: hyp_mat, ky_mat
@@ -172,24 +169,21 @@ def get_ky_and_hyp(hyps: np.ndarray, training_data: list,
     return hyp_mat, ky_mat
 
 def get_ky_mat_par(hyps: np.ndarray, training_data: list,
-                   kernel, cutoffs=None, no_cpus=None):
+                   kernel, cutoffs=None, ncpus=None):
     """
     Parallelized version of function which computes ky matrix
     If the cpu set up is None, it uses as much as posible cpus
 
     :param hyps: list of hyper-parameters
     :param training_data: list of atomic envirionments
-    :param training_labels_np: numpy array of forces
     :param kernel_grad: function object of the kernel gradient
     :param cutoffs: list of 2 float numbers for 2b and 3b cutoff
-    :param no_cpus: number of cpus to use.
+    :param ncpus: number of cpus to use.
     :return: hyp_mat, ky_mat
     """
 
-    if (no_cpus is None):
+    if (ncpus is None):
         ncpus = mp.cpu_count()
-    else:
-        ncpus = no_cpus
 
     if (ncpus == 1):
         return get_ky_mat(hyps, training_data,
@@ -233,8 +227,7 @@ def get_ky_mat_par(hyps: np.ndarray, training_data: list,
 
 
 def get_ky_and_hyp_par(hyps: np.ndarray, training_data: list,
-                       training_labels_np: np.ndarray,
-                       kernel_grad, cutoffs=None, no_cpus=None):
+                       kernel_grad, cutoffs=None, ncpus=None):
     """
     Parallelized version of function which computes ky matrix
     and its derivative to hyper-parameter
@@ -242,21 +235,17 @@ def get_ky_and_hyp_par(hyps: np.ndarray, training_data: list,
 
     :param hyps: list of hyper-parameters
     :param training_data: list of atomic envirionments
-    :param training_labels_np: numpy array of forces
     :param kernel_grad: function object of the kernel gradient
     :param cutoffs: list of 2 float numbers for 2b and 3b cutoff
-    :param no_cpus: number of cpus to use.
+    :param ncpus: number of cpus to use.
     :return: hyp_mat, ky_mat
     """
 
-    if (no_cpus is None):
+    if (ncpus is None):
         ncpus = mp.cpu_count()
-    else:
-        ncpus = no_cpus
 
     if (ncpus == 1):
         return get_ky_and_hyp(hyps, training_data,
-                              training_labels_np,
                               kernel_grad, cutoffs)
 
     # assume sigma_n is the final hyperparameter
@@ -315,7 +304,7 @@ def get_ky_mat_update_row(params):
                      for d in range(3)]).T  # (n+3m) x 3
     return k_vi
 
-def get_ky_mat_update(ky_mat_old, training_data, get_kernel_vector, hyps, no_cpus=None):
+def get_ky_mat_update(ky_mat_old, training_data, get_kernel_vector, hyps, ncpus=None):
     '''
     used for update_L_alpha, especially for parallelization
     parallelized for added atoms, for example, if add 10 atoms to the training
@@ -326,13 +315,11 @@ def get_ky_mat_update(ky_mat_old, training_data, get_kernel_vector, hyps, no_cpu
     :param training_data:
     :param get_kernel_vector:
     :param hyps:
-    :param par:
+    :param ncpus:
     '''
 
-    if (no_cpus is None):
+    if (ncpus is None):
         ncpus = mp.cpu_count()
-    else:
-        ncpus = no_cpus
 
     n = ky_mat_old.shape[0]
     N = len(training_data)
@@ -344,15 +331,15 @@ def get_ky_mat_update(ky_mat_old, training_data, get_kernel_vector, hyps, no_cpu
     params_list = [(n//3+i, training_data[n//3+i], get_kernel_vector)\
                    for i in range(m)]
     if ncpus>1:
-        pool = mp.Pool(processes=ncpus)
-        k_vi_list = pool.map(get_ky_mat_update_row, params_list)
-        pool.close()
-        pool.join()
+        with mp.Pool(processes=ncpus) as pool:
+            k_vi_list = pool.map(get_ky_mat_update_row, params_list)
+            pool.close()
+            pool.join()
 
     for i in range(m):
         params = params_list[i]
         ind = params[0]
-        if par:
+        if ncpus>1:
             k_vi = k_vi_list[i]
         else:
             k_vi = get_ky_mat_update_row(params)
@@ -419,11 +406,11 @@ def get_like_grad_from_mats(ky_mat, hyp_mat, training_labels_np):
 def get_neg_likelihood(hyps: np.ndarray, training_data: list,
                        training_labels_np: np.ndarray,
                        kernel, cutoffs=None, output = None,
-                       no_cpus=1):
+                       ncpus=1):
 
     ky_mat = \
-        get_ky_mat_par(hyps, training_data, training_labels_np,
-                       kernel, cutoffs, no_cpus)
+        get_ky_mat_par(hyps, training_data,
+                       kernel, cutoffs, ncpus)
 
     like = get_like_from_ky_mat(ky_mat, training_labels_np)
 
@@ -436,11 +423,11 @@ def get_neg_likelihood(hyps: np.ndarray, training_data: list,
 def get_neg_like_grad(hyps: np.ndarray, training_data: list,
                       training_labels_np: np.ndarray,
                       kernel_grad, cutoffs=None,
-                      output = None, no_cpus=1):
+                      output = None, ncpus=1):
 
     hyp_mat, ky_mat = \
-        get_ky_and_hyp_par(hyps, training_data, training_labels_np,
-                           kernel_grad, cutoffs, no_cpus)
+        get_ky_and_hyp_par(hyps, training_data,
+                           kernel_grad, cutoffs, ncpus)
 
     like, like_grad = \
         get_like_grad_from_mats(ky_mat, hyp_mat, training_labels_np)
