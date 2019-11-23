@@ -1,6 +1,6 @@
 """
 The cutoffs module gives a few different options for smoothly sending the GP
-kernel to 0 near the boundary of the cutoff sphere.
+kernel to zero near the boundary of the cutoff sphere.
 """
 from math import cos, sin, pi
 from numba import njit
@@ -65,7 +65,7 @@ def cubic_cutoff(r_cut, ri, ci):
 
 @njit
 def cosine_cutoff(r_cut, ri, ci, d=1):
-    """A cosine cutoff that returns 1 up to r_cut - d, and assigns a cosine envelope to values of r between (r_cut - d) and r_cut.
+    """A cosine cutoff that returns 1 up to $r_{cut} - d$, and assigns a cosine envelope to values of r between (r_cut - d) and r_cut.
 
     :param r_cut: Cutoff value (in angstrom).
     :type r_cut: float
