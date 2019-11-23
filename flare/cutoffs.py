@@ -65,10 +65,8 @@ def cubic_cutoff(r_cut, ri, ci):
 
 @njit
 def cosine_cutoff(r_cut, ri, ci, d=1):
-    """A cosine cutoff that returns 1 up to
-    .. .. math::
-    ..    r_{cut} - d,
-    and assigns a cosine envelope to values of r between (r_cut - d) and r_cut.
+    """A cosine cutoff that returns 1 up to r_{cut} - d, and assigns a cosine
+    envelope to values of r between (r_cut - d) and r_cut.
 
     :param r_cut: Cutoff value (in angstrom).
     :type r_cut: float

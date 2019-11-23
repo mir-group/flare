@@ -6,16 +6,16 @@ from flare.struc import Structure
 
 
 class AtomicEnvironment:
-    def __init__(self, structure: Structure, atom: int, cutoffs):
-        """
-        Class defining atomic environment to serve as argument to GP kernel.
+    """
+    Class defining atomic environment to serve as argument to GP kernel.
 
-        :param structure: structure object to take atomic environment in
-        :param atom: index of atom in structure to find environment around
-        :param cutoffs: list of radii for 2-, 3- body kernel cutoffs.
-                        2-body only if one cutoff is given, 2+3 body if
-                        multiple are passed
-        """
+    :param structure: structure object to take atomic environment in
+    :param atom: index of atom in structure to find environment around
+    :param cutoffs: list of radii for 2-, 3- body kernel cutoffs.
+                    2-body only if one cutoff is given, 2+3 body if
+                    multiple are passed.
+    """
+    def __init__(self, structure: Structure, atom: int, cutoffs):
         self.structure = structure
         self.positions = structure.wrapped_positions
         self.cell = structure.cell
