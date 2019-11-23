@@ -1,4 +1,6 @@
-"""The :class:`AtomicEnvironment` object stores information about an atom's environment."""
+"""The :class:`AtomicEnvironment` object stores information about the local
+environment of an atom. :class:`AtomicEnvironment` objects are inputs to the
+2-, 3-, and 2+3-body kernels."""
 import numpy as np
 from math import sqrt
 from numba import njit
@@ -11,9 +13,10 @@ class AtomicEnvironment:
     arrays of pair and triplet distances and the chemical species of atoms
     in the environment.
 
-    :param structure: structure object to take atomic environment in
-    :param atom: index of atom in structure to find environment around
-    :param cutoffs: list of radii for 2-, 3- body kernel cutoffs.
+    :param structure: Structure of atoms.
+    :type structure: struc.Structure
+    :param atom: Index of the atom in the structure .
+    :param cutoffs: 2- and 3-body cutoff radii.
                     2-body only if one cutoff is given, 2+3 body if
                     multiple are passed.
     """
