@@ -22,6 +22,7 @@ def get_cov_row(x_1, d_1, m_index: int, size: int, training_data: list,
     :param kernel: Kernel function to compare x_1 against training data with
     :param kern_hyps: Hyperparameters which parameterize kernel function
     :param cutoffs: The cutoff values used for the atomic environments
+
     :return: covs, list of covariance matrix row elements
     """
 
@@ -54,6 +55,7 @@ def get_cov_row_derv(x_1, d_1: int, m_index: int, size: int,
     :param kernel_grad: Callable for gradient of kernel
     :param kern_hyps: Hyperparameters which parameterize kernel function
     :param cutoffs: The cutoff values used for the atomic environments
+
     :return: covs, hyps
     """
     covs = []
@@ -80,11 +82,13 @@ def get_ky_mat(hyps: np.array, training_data: list,
                kernel: callable, cutoffs=None):
     """ Compute covariance matrix K by comparing training data with itself
 
-    :param hyps:
-    :param training_data:
-    :param kernel:
-    :param cutoffs:
-    :return:
+    :param hyps: list of hyper-parameters
+    :param training_data: list of atomic envirionments
+    :param kernel: function object of the kernel
+    :param cutoffs: The cutoff values used for the atomic environments
+    :type cutoffs: list of 2 float numbers
+
+    :return: covariance matrix
     """
 
     # assume sigma_n is the final hyperparameter
@@ -126,8 +130,10 @@ def get_ky_and_hyp(hyps: np.ndarray, training_data: list,
     :param hyps: list of hyper-parameters
     :param training_data: list of atomic envirionments
     :param kernel_grad: function object of the kernel gradient
-    :param cutoffs: list of 2 float numbers for 2b and 3b cutoff
-    :return: hyp_mat, ky_mat
+    :param cutoffs: The cutoff values used for the atomic environments
+    :type cutoffs: list of 2 float numbers
+
+    :return: matrix gradient, and itself
     """
     # assume sigma_n is the final hyperparameter
     number_of_hyps = len(hyps)
@@ -169,7 +175,7 @@ def get_ky_and_hyp(hyps: np.ndarray, training_data: list,
     return hyp_mat, ky_mat
 
 def get_ky_mat_par(hyps: np.ndarray, training_data: list,
-                   kernel, cutoffs=None, ncpus=None):
+                   kernel, cutoffs=None, ncpus:int =None):
     """
     Parallelized version of function which computes ky matrix
     If the cpu set up is None, it uses as much as posible cpus
@@ -177,8 +183,10 @@ def get_ky_mat_par(hyps: np.ndarray, training_data: list,
     :param hyps: list of hyper-parameters
     :param training_data: list of atomic envirionments
     :param kernel_grad: function object of the kernel gradient
-    :param cutoffs: list of 2 float numbers for 2b and 3b cutoff
+    :param cutoffs: The cutoff values used for the atomic environments
+    :type cutoffs: list of 2 float numbers
     :param ncpus: number of cpus to use.
+
     :return: hyp_mat, ky_mat
     """
 
@@ -236,8 +244,10 @@ def get_ky_and_hyp_par(hyps: np.ndarray, training_data: list,
     :param hyps: list of hyper-parameters
     :param training_data: list of atomic envirionments
     :param kernel_grad: function object of the kernel gradient
-    :param cutoffs: list of 2 float numbers for 2b and 3b cutoff
+    :param cutoffs: The cutoff values used for the atomic environments
+    :type cutoffs: list of 2 float numbers
     :param ncpus: number of cpus to use.
+
     :return: hyp_mat, ky_mat
     """
 
@@ -296,8 +306,10 @@ def get_ky_mat_update_row(params):
     '''
     used for update_L_alpha, especially for parallelization
 
-    :param: tuple of index, atomic environment,
-            funciton object of get_kernel_vector
+    :param params: tuple of index, atomic environment,
+                   funciton object of get_kernel_vector
+
+    :return: a row of the covariance matrix
     '''
     ind, x_t, get_kernel_vector = params
     k_vi = np.array([get_kernel_vector(x_t, d + 1)
@@ -312,10 +324,12 @@ def get_ky_mat_update(ky_mat_old, training_data, get_kernel_vector, hyps, ncpus=
     be distributed to 30 processors
 
     :param ky_mat_old:
-    :param training_data:
+    :param training_data: Set of atomic environments to compare against
     :param get_kernel_vector:
-    :param hyps:
-    :param ncpus:
+    :param hyps: list of hyper-parameters
+    :param ncpus: number of cpus to use.
+
+    :return: updated covariance matrix
     '''
 
     if (ncpus is None):
@@ -355,6 +369,14 @@ def get_ky_mat_update(ky_mat_old, training_data, get_kernel_vector, hyps, ncpus=
 #######################################
 
 def get_like_from_ky_mat(ky_mat, training_labels_np):
+    """ compute the likelihood from the covariance matrix
+
+    :param ky_mat: the covariance matrix
+    :param training_labels_np: the numpy array of forces
+    :type training_labels_np: np.array
+
+    :return: float, likelihood
+    """
         # catch linear algebra errors
         try:
             ky_mat_inv = np.linalg.inv(ky_mat)
@@ -374,6 +396,18 @@ def get_like_from_ky_mat(ky_mat, training_labels_np):
 
 
 def get_like_grad_from_mats(ky_mat, hyp_mat, training_labels_np):
+    """compute the gradient of likelihood to hyper-parameters
+    from covariance matrix and its gradient
+
+    :param ky_mat: covariance matrix
+    :type ky_mat: np.array
+    :param hyp_mat: dky/d(hyper parameter) matrix
+    :type hyp_mat: np.array
+    :param training_labels_np: forces
+    :type training_labels_np: np.array
+
+    :return: float, list. the likelihood and its gradients
+    """
 
         number_of_hyps = hyp_mat.shape[0]
 
@@ -403,10 +437,28 @@ def get_like_grad_from_mats(ky_mat, hyp_mat, training_labels_np):
         return like, like_grad
 
 
-def get_neg_likelihood(hyps: np.ndarray, training_data: list,
-                       training_labels_np: np.ndarray,
+def get_neg_likelihood(hyps, training_data: list,
+                       training_labels_np,
                        kernel, cutoffs=None, output = None,
                        ncpus=1):
+    """compute the negative log likelihood
+
+    :param hyps: list of hyper-parameters
+    :type hyps: np.ndarray
+    :param training_data: Set of atomic environments to compare against
+    :type training_data: list of AtomicEnvironment objects
+    :param training_labels_np: forces
+    :type training_labels_np: np.array
+    :param kernel: function object of the kernel
+    :param cutoffs: The cutoff values used for the atomic environments
+    :type cutoffs: list of 2 float numbers
+    :param output: Output object for dumping every hyper-parameter
+                   sets computed
+    :type output: class Output
+    :param ncpus: number of cpus to use.
+
+    :return: float
+    """
 
     ky_mat = \
         get_ky_mat_par(hyps, training_data,
@@ -420,10 +472,28 @@ def get_neg_likelihood(hyps: np.ndarray, training_data: list,
     return -like
 
 
-def get_neg_like_grad(hyps: np.ndarray, training_data: list,
+def get_neg_like_grad(hyps, training_data: list,
                       training_labels_np: np.ndarray,
                       kernel_grad, cutoffs=None,
                       output = None, ncpus=1):
+    """compute the log likelihood and its gradients
+
+    :param hyps: list of hyper-parameters
+    :type hyps: np.ndarray
+    :param training_data: Set of atomic environments to compare against
+    :type training_data: list of AtomicEnvironment objects
+    :param training_labels_np: forces
+    :type training_labels_np: np.array
+    :param kernel_grad: function object of the kernel gradient
+    :param cutoffs: The cutoff values used for the atomic environments
+    :type cutoffs: list of 2 float numbers
+    :param output: Output object for dumping every hyper-parameter
+                   sets computed
+    :type output: class Output
+    :param ncpus: number of cpus to use.
+
+    :return: float, np.array
+    """
 
     hyp_mat, ky_mat = \
         get_ky_and_hyp_par(hyps, training_data,
