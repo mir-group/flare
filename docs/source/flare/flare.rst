@@ -8,6 +8,8 @@ Code Documentation
    env
    kernels
    gp
+   output
+   cutoffs
    dft_interface
    mgp/mgp
    ase/ase
