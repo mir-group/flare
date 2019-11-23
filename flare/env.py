@@ -7,7 +7,9 @@ from flare.struc import Structure
 
 class AtomicEnvironment:
     """
-    Class defining atomic environment to serve as argument to GP kernel.
+    Contains information about the local environment of an atom, including
+    arrays of pair and triplet distances and the chemical species of atoms
+    in the environment.
 
     :param structure: structure object to take atomic environment in
     :param atom: index of atom in structure to find environment around

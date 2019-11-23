@@ -7,9 +7,9 @@ from numba import njit
 
 
 @njit
-def hard_cutoff(r_cut, ri, ci):
+def hard_cutoff(r_cut: float, ri: float, ci: float):
     """A hard cutoff that assigns a value of 1 to all interatomic distances.
-    
+
     :param r_cut: Cutoff value (in angstrom).
     :type r_cut: float
     :param ri: Interatomic distance.
@@ -23,7 +23,7 @@ def hard_cutoff(r_cut, ri, ci):
 
 
 @njit
-def quadratic_cutoff(r_cut, ri, ci):
+def quadratic_cutoff(r_cut: float, ri: float, ci: float):
     """A quadratic cutoff that goes to zero smoothly at the cutoff boundary.
 
     :param r_cut: Cutoff value (in angstrom).
@@ -43,7 +43,7 @@ def quadratic_cutoff(r_cut, ri, ci):
 
 
 @njit
-def cubic_cutoff(r_cut, ri, ci):
+def cubic_cutoff(r_cut: float, ri: float, ci: float):
     """A cubic cutoff that goes to zero smoothly at the cutoff boundary.
 
     :param r_cut: Cutoff value (in angstrom).
@@ -64,7 +64,7 @@ def cubic_cutoff(r_cut, ri, ci):
 
 
 @njit
-def cosine_cutoff(r_cut, ri, ci, d=1):
+def cosine_cutoff(r_cut: float, ri: float, ci: float, d: float = 1):
     """A cosine cutoff that returns 1 up to r_{cut} - d, and assigns a cosine
     envelope to values of r between (r_cut - d) and r_cut.
 
