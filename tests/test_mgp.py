@@ -59,8 +59,8 @@ def test_parse_header():
 
     file_name = 'AgI.gp'
     grid_num_2 = 64
-    grid_num_3 = 15
-    lower_cut = 2.
+    grid_num_3 = 20
+    lower_cut = 2.5
     two_cut = 7.
     three_cut = 5.
     lammps_location = 'AgI_Molten_15.txt'
@@ -73,8 +73,8 @@ def test_parse_header():
 
     # grid parameters
     grid_params = {'bounds_2': [[lower_cut], [two_cut]],
-                   'bounds_3': [[lower_cut, lower_cut, 0],
-                                [three_cut, three_cut, np.pi]],
+                   'bounds_3': [[lower_cut, lower_cut, -1],
+                                [three_cut, three_cut,  1]],
                    'grid_num_2': grid_num_2,
                    'grid_num_3': [grid_num_3, grid_num_3, grid_num_3],
                    'svd_rank_2': 64,
@@ -122,7 +122,7 @@ def test_parse_header():
 
     # create lammps input
     style_string = 'mgp' 
-    coeff_string = '* * {} 47 53 yes yes'.format(lammps_location)
+    coeff_string = '* * {} Ag I yes yes'.format(lammps_location)
     lammps_executable = '$lmp'
     dump_file_name = 'tmp.dump'
     input_file_name = 'tmp.in'

@@ -55,6 +55,12 @@ class FLARE_Calculator(Calculator):
 
 
     def calculate(self, atoms):
+        '''
+        calculate properties including: energy, local energies, forces, stress, uncertainties
+
+        :param atoms: ASE Atoms object
+        :type atoms: Atoms
+        '''
         if self.use_mapping:
             if self.par:
                 self.calculate_mgp_par(atoms)
@@ -123,11 +129,19 @@ class FLARE_Calculator(Calculator):
         return True
 
 
-    def train_gp(self, monitor=True):
-        self.gp_model.train(monitor)
+    def train_gp(self, **kwargs):
+        """
+        The same function of training GP hyperparameters as `train()` in :class:`GaussianProcess`
+        """
+        self.gp_model.train(**kwargs)
 
 
     def build_mgp(self, skip=True):
+        """
+        Construct :class:`MappedGaussianProcess` based on the current GP
+        :param skip: if `True`, then it will not construct MGP
+        :type skip: Bool
+        """
         # l_bound not implemented
 
         if skip:

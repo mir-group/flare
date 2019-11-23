@@ -24,6 +24,7 @@
         <script type="text/javascript" src="../_static/jquery.js"></script>
         <script type="text/javascript" src="../_static/underscore.js"></script>
         <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
     
     <script type="text/javascript" src="../_static/js/theme.js"></script>
 
@@ -159,11 +160,11 @@
 <p>Here we give an example of running OTF (on-the-fly) training with QE (Quantum Espresso) and NVE ensemble. We use our unit test file as illustration (<cite>test_OTF_qe.py</cite>)</p>
 <p>First, let’s set up a GP model with three-body kernel function.</p>
 <ul class="simple">
-<li><cite>kernel_grad</cite>: set to be the gradient of kernel function used for hyperparameter training.</li>
-<li><cite>hyps</cite>: the array of hyperparameters, whose names are shown in <cite>hyp_labels</cite>.</li>
-<li><cite>cutoffs</cite>: consists of two values. The 1st is the cutoff of two-body and the 2nd is for three-body kernel. Usually we will set a larger one for two-body.</li>
-<li><cite>energy_force_kernel</cite>: set to calculate local energy for each atom based on the integral of forces.</li>
-<li><cite>maxiter</cite>: set to constrain the number of steps in training hyperparameters.</li>
+<li><p><cite>kernel_grad</cite>: set to be the gradient of kernel function used for hyperparameter training.</p></li>
+<li><p><cite>hyps</cite>: the array of hyperparameters, whose names are shown in <cite>hyp_labels</cite>.</p></li>
+<li><p><cite>cutoffs</cite>: consists of two values. The 1st is the cutoff of two-body and the 2nd is for three-body kernel. Usually we will set a larger one for two-body.</p></li>
+<li><p><cite>energy_force_kernel</cite>: set to calculate local energy for each atom based on the integral of forces.</p></li>
+<li><p><cite>maxiter</cite>: set to constrain the number of steps in training hyperparameters.</p></li>
 </ul>
 <p><strong>Note:</strong> If you are trying multi-component system, please use kernel functions in <cite>mc_simple.py</cite> instead of <cite>kernels.py</cite></p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># make gp model</span>
@@ -192,15 +193,15 @@
 </div>
 <p>Then we can set up our OTF MD engine.</p>
 <ul class="simple">
-<li><cite>dt</cite>: the time step in unit of <em>ps</em></li>
-<li><cite>number_of_steps</cite>: the number of steps that the MD is run</li>
-<li><cite>std_tolerance_factor</cite>: the uncertainty threshold = std_tolerance_factor x hyps[-1]. In OTF training, when GP predicts uncertainty above the uncertainty threshold, it will call DFT</li>
-<li><cite>max_atoms_added</cite>: constrain the number of atoms added to the training set after each DFT call</li>
-<li><cite>freeze_hyps</cite>: stop training hyperparameters and fix them from the <cite>freeze_hyps</cite> th step. Usually set to a small number, because for large dataset the training will take long.</li>
-<li><cite>init_atoms</cite>: list of atoms to be added in the first DFT call. Because there’s no uncertainty predicted in the initial DFT call, so there’s no selection rule to pick up “maximully uncertain” atoms into the training set, we have to specify which atoms to pick up by this variable.</li>
-<li><cite>calculate_energy</cite>: if <cite>True</cite>, the local energy on each atom will be calculated</li>
-<li><cite>output_name</cite>: the name of the logfile</li>
-<li><cite>skip</cite>: record/dump the information every <cite>skip</cite> steps.</li>
+<li><p><cite>dt</cite>: the time step in unit of <em>ps</em></p></li>
+<li><p><cite>number_of_steps</cite>: the number of steps that the MD is run</p></li>
+<li><p><cite>std_tolerance_factor</cite>: the uncertainty threshold = std_tolerance_factor x hyps[-1]. In OTF training, when GP predicts uncertainty above the uncertainty threshold, it will call DFT</p></li>
+<li><p><cite>max_atoms_added</cite>: constrain the number of atoms added to the training set after each DFT call</p></li>
+<li><p><cite>freeze_hyps</cite>: stop training hyperparameters and fix them from the <cite>freeze_hyps</cite> th step. Usually set to a small number, because for large dataset the training will take long.</p></li>
+<li><p><cite>init_atoms</cite>: list of atoms to be added in the first DFT call. Because there’s no uncertainty predicted in the initial DFT call, so there’s no selection rule to pick up “maximully uncertain” atoms into the training set, we have to specify which atoms to pick up by this variable.</p></li>
+<li><p><cite>calculate_energy</cite>: if <cite>True</cite>, the local energy on each atom will be calculated</p></li>
+<li><p><cite>output_name</cite>: the name of the logfile</p></li>
+<li><p><cite>skip</cite>: record/dump the information every <cite>skip</cite> steps.</p></li>
 </ul>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># set up OTF parameters</span>
     <span class="n">dt</span> <span class="o">=</span> <span class="mf">0.001</span>                  <span class="c1"># timestep (ps)</span>

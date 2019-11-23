@@ -40,8 +40,8 @@ def test_stress_with_lammps():
     two_cut = 5.0
     three_cut = 5.0
     grid_params = {'bounds_2': [[lower_cut], [two_cut]],
-                   'bounds_3': [[lower_cut, lower_cut, 0],
-                                [three_cut, three_cut, np.pi]],
+                   'bounds_3': [[lower_cut, lower_cut, -1],
+                                [three_cut, three_cut,  1]],
                    'grid_num_2': grid_num_2,
                    'grid_num_3': [grid_num_3, grid_num_3, grid_num_3],
                    'svd_rank_2': 0,
@@ -74,7 +74,7 @@ def test_stress_with_lammps():
     for ind, line in enumerate(lines):
         line = line.split()
         strs = np.array([float(l) for l in line[1:]]) / 1.60217662e6
-        assert np.isclose(stresses[ind], strs).all()
+        assert np.isclose(stresses[ind], strs, rtol=1e-4).all()
 
     os.system('rm -r __pycache__')
     os.system('rm grid3*')

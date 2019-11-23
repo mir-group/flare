@@ -1,3 +1,9 @@
+''':class:`MappedGaussianProcess` uses splines to build up interpolation\
+    function of the low-dimensional decomposition of Gaussian Process, \
+    with little loss of accuracy. Refer to \
+    `Vandermause et al. <https://arxiv.org/abs/1904.02042>`_, \
+    `Glielmo et al. <https://journals.aps.org/prb/abstract/10.1103/PhysRevB.97.184307>`_
+'''
 import time
 import math
 import numpy as np
@@ -13,6 +19,8 @@ from flare.kernels import two_body, three_body, two_plus_three_body,\
     two_body_jit
 from flare.cutoffs import quadratic_cutoff
 from flare.mc_simple import two_body_mc, three_body_mc, two_plus_three_body_mc
+from flare.util import Z_to_element
+
 import flare.mgp.utils as utils
 from flare.mgp.utils import get_bonds, get_triplets, self_two_body_mc_jit, \
     self_three_body_mc_jit
@@ -21,33 +29,37 @@ from flare.mgp.splines_methods import PCASplines, CubicSpline
 
 class MappedGaussianProcess:
     '''
-    Build Mapped Gaussian Process (MGP) and automatically save coefficients for LAMMPS pair style.
-    :param: hyps: GP hyps
-    :param: cutoffs: GP cutoffs
-    :param: struc_params : information of training data
-    :param: grid_params : setting of grids for mapping
-    :param: mean_only : if True: only build mapping for mean (force)
-    :param: container_only : if True: only build splines container (with no coefficients)
-    :param: GP: None or a GaussianProcess object. If input a GP, then build mapping when creating MappedGaussianProcess object
-    :param: lmp_file_name : lammps coefficient file name
-    Examples:
-    
-    >>> struc_params = {'species': [0, 1],
-                        'cube_lat': cell, # should input the cell matrix
-                        'mass_dict': {'0': 27 * unit, '1': 16 * unit}}
-    >>> grid_params =  {'bounds_2': [[1.2], [3.5]], 
-                                    # [[lower_bound], [upper_bound]]
-                        'bounds_3': [[1.2, 1.2, 0], [3.5, 3.5, np.pi]],
-                                    # [[lower,lower,0],[upper,upper,np.pi]]
-                        'grid_num_2': 64,
-                        'grid_num_3': [16, 16, 16],
-                        'svd_rank_2': 64,
-                        'svd_rank_3': 16**3,
-                        'bodies': [2, 3],
-                        'update': True, # if True: accelerating grids 
-                                        # generating by saving intermediate 
-                                        # coeff when generating grids
-                        'load_grid': None}
+    Build Mapped Gaussian Process (MGP) and automatically save coefficients for\
+    LAMMPS pair style.
+
+    Args:
+        hyps (numpy array): GP hyps.
+        cutoffs (numpy array): GP cutoffs.
+        struc_params (dict): information of training data.
+        grid_params (dict): setting of grids for mapping.
+        mean_only (Bool): if True: only build mapping for mean (force).
+        container_only (Bool): if True: only build splines container\
+            (with no coefficients).
+        GP (GaussianProcess): None or a GaussianProcess object. If input a GP,\
+            then build mapping when creating MappedGaussianProcess object.
+        lmp_file_name (str): lammps coefficient file name.
+
+    Example:
+        >>> struc_params = {'species': [0, 1],
+                            'cube_lat': cell} # input the cell matrix
+        >>> grid_params =  {'bounds_2': [[1.2], [3.5]], 
+                                        # [[lower_bound], [upper_bound]]
+                            'bounds_3': [[1.2, 1.2, -1], [3.5, 3.5, 1]],
+                                        # [[lower,lower,cos(pi)],[upper,upper,cos(0)]]
+                            'grid_num_2': 64,
+                            'grid_num_3': [16, 16, 16],
+                            'svd_rank_2': 64,
+                            'svd_rank_3': 16**3,
+                            'bodies': [2, 3],
+                            'update': True, # if True: accelerating grids 
+                                            # generating by saving intermediate 
+                                            # coeff when generating grids
+                            'load_grid': None}
     '''
 
     def __init__(self, hyps, cutoffs, grid_params: dict, struc_params: dict, 
@@ -117,7 +129,6 @@ class MappedGaussianProcess:
 
         cutoff = np.min(self.cutoffs)
         cell = struc_params['cube_lat']
-        mass_dict = struc_params['mass_dict']
         species_list = struc_params['species']
         N_spc = len(species_list)
 
@@ -133,7 +144,7 @@ class MappedGaussianProcess:
                     positions = [[(i+1)/(bodies+1)*cutoff, 0, 0]
                                  for i in range(bodies)]
                     spc_struc = \
-                        struc.Structure(cell, species, positions, mass_dict)
+                        struc.Structure(cell, species, positions)
                     spc_struc.coded_species = np.array(species)
                     bond_struc_2.append(spc_struc)
 
@@ -152,17 +163,16 @@ class MappedGaussianProcess:
                         spc_3.append(species)
                         positions = [[(i+1)/(bodies+1)*cutoff, 0, 0]
                                      for i in range(bodies)]
-                        spc_struc = struc.Structure(cell, species, positions,
-                                                    mass_dict)
+                        spc_struc = struc.Structure(cell, species, positions)
                         spc_struc.coded_species = np.array(species)
                         bond_struc_3.append(spc_struc)
+
 #                    if spc1 != spc2:
 #                        species = [spc2, spc3, spc1]
 #                        spc_3.append(species)
 #                        positions = [[(i+1)/(bodies+1)*cutoff, 0, 0] \
 #                                    for i in range(bodies)]
-#                        spc_struc = struc.Structure(cell, species, positions,
-#                                                    mass_dict)
+#                        spc_struc = struc.Structure(cell, species, positions)
 #                        spc_struc.coded_species = np.array(species)
 #                        bond_struc_3.append(spc_struc)
 #                    if spc2 != spc3:
@@ -170,8 +180,7 @@ class MappedGaussianProcess:
 #                        spc_3.append(species)
 #                        positions = [[(i+1)/(bodies+1)*cutoff, 0, 0] \
 #                                    for i in range(bodies)]
-#                        spc_struc = struc.Structure(cell, species, positions,
-#                                                    mass_dict)
+#                        spc_struc = struc.Structure(cell, species, positions)
 #                        spc_struc.coded_species = np.array(species)
 #                        bond_struc_3.append(spc_struc)
 
@@ -181,8 +190,14 @@ class MappedGaussianProcess:
     def predict(self, atom_env: AtomicEnvironment, mean_only: bool=False):
         '''
         predict force and variance for given atomic environment
+
         :param atom_env: atomic environment (with a center atom and its neighbors)
+        :type  atom_env: :class:`AtomicEnvironment`
         :param mean_only: if True: only predict force (variance is always 0)
+        :type  mean_only: Bool
+        :return f: force on this atom
+        :return v: variance corresponding to the force
+        :return vir: stress on this atom
         '''
         if self.mean_only:  # if not build mapping for var
             mean_only = True
@@ -320,8 +335,8 @@ class MappedGaussianProcess:
         for ind, spc in enumerate(self.spcs[0]):
             coefs_2 = self.maps_2[ind].mean.__coeffs__
 
-            elem1 = spc[0]
-            elem2 = spc[1]
+            elem1 = Z_to_element(spc[0])
+            elem2 = Z_to_element(spc[1])
             header_2 = '{elem1} {elem2} {a} {b} {order}\n'\
                 .format(elem1=elem1, elem2=elem2, a=a, b=b, order=order)
             f.write(header_2)
@@ -341,9 +356,9 @@ class MappedGaussianProcess:
         for ind, spc in enumerate(self.spcs[1]):
             coefs_3 = self.maps_3[ind].mean.__coeffs__
 
-            elem1 = spc[0]
-            elem2 = spc[1]
-            elem3 = spc[2]
+            elem1 = Z_to_element(spc[0])
+            elem2 = Z_to_element(spc[1])
+            elem3 = Z_to_element(spc[2])
 
             header_3 = '{elem1} {elem2} {elem3} {a1} {a2} {a3} {b1}'\
                        ' {b2} {b3:.10e} {order1} {order2} {order3}\n'\
@@ -473,10 +488,6 @@ class Map2body:
         return bond_means, bond_vars
 
     def build_map_container(self):
-
-        '''
-        build 1-d spline function for mean, 2-d for var
-        '''
         self.mean = CubicSpline(self.l_bounds, self.u_bounds, 
                                 orders=[self.grid_num])
 
@@ -486,6 +497,9 @@ class Map2body:
                                   svd_rank=self.svd_rank)
         
     def build_map(self, GP):
+        '''
+        build 1-d spline function for mean, 2-d for var
+        '''
         y_mean, y_var = self.GenGrid(GP)
         self.mean.set_values(y_mean)
         if not self.mean_only:
@@ -531,12 +545,12 @@ class Map3body:
         nop = self.grid_num[0]
         noa = self.grid_num[2]
         bond_lengths = np.linspace(self.l_bounds[0], self.u_bounds[0], nop)
-        angles = np.linspace(self.l_bounds[2], self.u_bounds[2], noa)
+        cos_angles = np.linspace(self.l_bounds[2], self.u_bounds[2], noa)
         bond_means = np.zeros([nop, nop, noa])
         bond_vars = np.zeros([nop, nop, noa, len(GP.alpha)])
         env12 = AtomicEnvironment(self.bond_struc, 0, self.cutoffs)
 
-        pool_list = [(i, angles[i], bond_lengths, GP, env12, self.update)\
+        pool_list = [(i, cos_angles[i], bond_lengths, GP, env12, self.update)\
                      for i in range(noa)]
         pool = mp.Pool(processes=processes)
 
@@ -567,9 +581,8 @@ class Map3body:
         '''
         generate grid for each angle, used to parallelize grid generation
         '''
-        a12, angle12, bond_lengths, GP, env12, update = params
+        a12, cos_angle12, bond_lengths, GP, env12, update = params
         nop = self.grid_num[0]
-        angle12 = angle12
         bond_means = np.zeros([nop, nop])
         bond_vars = np.zeros([nop, nop, len(GP.alpha)])
 
@@ -590,8 +603,8 @@ class Map3body:
         for b1, r1 in enumerate(bond_lengths):
             r1 = bond_lengths[b1]
             for b2, r2 in enumerate(bond_lengths):
-                x2 = r2 * np.cos(angle12)
-                y2 = r2 * np.sin(angle12)
+                x2 = r2 * cos_angle12
+                y2 = np.sqrt(r2**2 - x2**2)
                 r12 = np.linalg.norm(np.array([x2-r1, y2, 0]))
 
                 env12.bond_array_3 = np.array([[r1, 1, 0, 0], [r2, 0, 0, 0]])
@@ -626,12 +639,6 @@ class Map3body:
         return bond_means, bond_vars
 
     def build_map_container(self):
-
-        '''
-        build 3-d spline function for mean,
-        3-d for the low rank approximation of L^{-1}k*
-        '''
-
        # create spline interpolation class object
         nop = self.grid_num[0]
         noa = self.grid_num[2]
@@ -644,6 +651,12 @@ class Map3body:
                                   svd_rank=self.svd_rank)
 
     def build_map(self, GP):
+
+        '''
+        build 3-d spline function for mean,
+        3-d for the low rank approximation of L^{-1}k*
+        '''
+
         # Load grid or generate grid values
         if not self.load_grid:
             y_mean, y_var = self.GenGrid(GP)

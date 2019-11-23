@@ -25,6 +25,7 @@
         <script type="text/javascript" src="_static/jquery.js"></script>
         <script type="text/javascript" src="_static/underscore.js"></script>
         <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
     
     <script type="text/javascript" src="_static/js/theme.js"></script>
 
@@ -172,14 +173,16 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="flare/gp.html#flare.gp.GaussianProcess.add_one_env">add_one_env() (flare.gp.GaussianProcess method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="flare/gp.html#flare.gp.GaussianProcess.as_dict">as_dict() (flare.gp.GaussianProcess method)</a>
 
       <ul>
         <li><a href="flare/struc.html#flare.struc.Structure.as_dict">(flare.struc.Structure method)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="flare/struc.html#flare.struc.Structure.as_str">as_str() (flare.struc.Structure method)</a>
+</li>
   </ul></td>
 </tr></table>
 
@@ -188,11 +191,13 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="flare/mgp/mgp.html#flare.mgp.mgp.MappedGaussianProcess.build_bond_struc">build_bond_struc() (flare.mgp.mgp.MappedGaussianProcess method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="flare/mgp/mgp.html#flare.mgp.mgp.MappedGaussianProcess.build_map">build_map() (flare.mgp.mgp.MappedGaussianProcess method)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="flare/mgp/mgp.html#flare.mgp.mgp.MappedGaussianProcess.build_map_container">build_map_container() (flare.mgp.mgp.MappedGaussianProcess method)</a>
+</li>
+      <li><a href="flare/ase/calculator.html#flare.ase.calculator.FLARE_Calculator.build_mgp">build_mgp() (flare.ase.calculator.FLARE_Calculator method)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -200,10 +205,12 @@
 <h2 id="C">C</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="flare/mgp/splines_methods.html#flare.mgp.splines_methods.cartesian">cartesian() (in module flare.mgp.splines_methods)</a>
+      <li><a href="flare/ase/calculator.html#flare.ase.calculator.FLARE_Calculator.calculate">calculate() (flare.ase.calculator.FLARE_Calculator method)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="flare/mgp/splines_methods.html#flare.mgp.splines_methods.cartesian">cartesian() (in module flare.mgp.splines_methods)</a>
+</li>
       <li><a href="flare/mgp/splines_methods.html#flare.mgp.splines_methods.CubicSpline">CubicSpline (class in flare.mgp.splines_methods)</a>
 </li>
   </ul></td>
@@ -228,6 +235,8 @@
 </li>
       <li><a href="flare/ase/otf.html#module-flare.ase.otf">flare.ase.otf (module)</a>
 </li>
+      <li><a href="flare/ase/otf_md.html#module-flare.ase.otf_md">flare.ase.otf_md (module)</a>
+</li>
       <li><a href="flare/dft_interface.html#module-flare.dft_interface">flare.dft_interface (module)</a>
 </li>
       <li><a href="flare/env.html#module-flare.env">flare.env (module)</a>
@@ -236,10 +245,10 @@
 </li>
       <li><a href="flare/kernels.html#module-flare.kernels">flare.kernels (module)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="flare/mgp/mgp.html#module-flare.mgp.mgp">flare.mgp.mgp (module)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="flare/mgp/splines_methods.html#module-flare.mgp.splines_methods">flare.mgp.splines_methods (module)</a>
 </li>
       <li><a href="flare/struc.html#module-flare.struc">flare.struc (module)</a>
@@ -248,8 +257,14 @@
 </li>
       <li><a href="flare/gp.html#flare.gp.GaussianProcess.force_list_to_np">force_list_to_np() (flare.gp.GaussianProcess static method)</a>
 </li>
-      <li><a href="flare/gp.html#flare.gp.GaussianProcess.from_dict">from_dict() (flare.gp.GaussianProcess static method)</a>
+      <li><a href="flare/struc.html#flare.struc.Structure.from_ase_atoms">from_ase_atoms() (flare.struc.Structure static method)</a>
 </li>
+      <li><a href="flare/gp.html#flare.gp.GaussianProcess.from_dict">from_dict() (flare.gp.GaussianProcess static method)</a>
+
+      <ul>
+        <li><a href="flare/struc.html#flare.struc.Structure.from_dict">(flare.struc.Structure static method)</a>
+</li>
+      </ul></li>
       <li><a href="flare/struc.html#flare.struc.Structure.from_pmg_structure">from_pmg_structure() (flare.struc.Structure static method)</a>
 </li>
   </ul></td>
@@ -270,7 +285,9 @@
 </li>
       <li><a href="flare/gp.html#flare.gp.GaussianProcess.get_kernel_vector">get_kernel_vector() (flare.gp.GaussianProcess method)</a>
 </li>
-      <li><a href="flare/mgp/splines_methods.html#flare.mgp.splines_methods.CubicSpline.grid">grid (flare.mgp.splines_methods.CubicSpline attribute)</a>
+      <li><a href="flare/struc.html#flare.struc.get_unique_species">get_unique_species() (in module flare.struc)</a>
+</li>
+      <li><a href="flare/mgp/splines_methods.html#flare.mgp.splines_methods.CubicSpline.grid">grid() (flare.mgp.splines_methods.CubicSpline property)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -300,9 +317,21 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="flare/ase/otf.html#flare.ase.otf.OTF">OTF (class in flare.ase.otf)</a>
 </li>
+      <li><a href="flare/ase/otf_md.html#flare.ase.otf_md.OTF_Langevin">OTF_Langevin (class in flare.ase.otf_md)</a>
+</li>
+      <li><a href="flare/ase/otf_md.html#flare.ase.otf_md.otf_md">otf_md() (in module flare.ase.otf_md)</a>
+</li>
+      <li><a href="flare/ase/otf_md.html#flare.ase.otf_md.OTF_NPT">OTF_NPT (class in flare.ase.otf_md)</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="flare/ase/otf_md.html#flare.ase.otf_md.OTF_NPTBerendsen">OTF_NPTBerendsen (class in flare.ase.otf_md)</a>
+</li>
+      <li><a href="flare/ase/otf_md.html#flare.ase.otf_md.OTF_NVTBerendsen">OTF_NVTBerendsen (class in flare.ase.otf_md)</a>
+</li>
       <li><a href="flare/ase/otf.html#flare.ase.otf.OTF.otf_run">otf_run() (flare.ase.otf.OTF method)</a>
+</li>
+      <li><a href="flare/ase/otf_md.html#flare.ase.otf_md.OTF_VelocityVerlet">OTF_VelocityVerlet (class in flare.ase.otf_md)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -366,6 +395,8 @@
 </li>
       <li><a href="flare/gp.html#flare.gp.GaussianProcess.train">train() (flare.gp.GaussianProcess method)</a>
 </li>
+      <li><a href="flare/ase/calculator.html#flare.ase.calculator.FLARE_Calculator.train_gp">train_gp() (flare.ase.calculator.FLARE_Calculator method)</a>
+</li>
   </ul></td>
 </tr></table>
 
@@ -392,10 +423,12 @@
 <h2 id="W">W</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="flare/mgp/mgp.html#flare.mgp.mgp.MappedGaussianProcess.write_lmp_file">write_lmp_file() (flare.mgp.mgp.MappedGaussianProcess method)</a>
+      <li><a href="flare/struc.html#flare.struc.Structure.wrap_positions">wrap_positions() (flare.struc.Structure method)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="flare/mgp/mgp.html#flare.mgp.mgp.MappedGaussianProcess.write_lmp_file">write_lmp_file() (flare.mgp.mgp.MappedGaussianProcess method)</a>
+</li>
       <li><a href="flare/gp.html#flare.gp.GaussianProcess.write_model">write_model() (flare.gp.GaussianProcess method)</a>
 </li>
   </ul></td>
