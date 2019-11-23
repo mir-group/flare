@@ -122,38 +122,40 @@ class MappedGaussianProcess:
         N_spc = len(species_list)
 
         # ------------------- 2 body (2 atoms (1 bond) config) ---------------
-        bodies = 2
         bond_struc_2 = []
         spc_2 = []
-        for spc1_ind, spc1 in enumerate(species_list):
-            for spc2 in species_list[spc1_ind:]:
-                species = [spc1, spc2]
-                spc_2.append(species)
-                positions = [[(i+1)/(bodies+1)*cutoff, 0, 0]
-                             for i in range(bodies)]
-                spc_struc = \
-                    struc.Structure(cell, species, positions, mass_dict)
-                spc_struc.coded_species = np.array(species)
-                bond_struc_2.append(spc_struc)
-
-        # ------------------- 3 body (3 atoms (1 triplet) config) -------------
-        bodies = 3
-        bond_struc_3 = []
-        spc_3 = []
-        for spc1_ind in range(N_spc):
-            spc1 = species_list[spc1_ind]
-            for spc2_ind in range(N_spc):  # (spc1_ind, N_spc):
-                spc2 = species_list[spc2_ind]
-                for spc3_ind in range(N_spc):  # (spc2_ind, N_spc):
-                    spc3 = species_list[spc3_ind]
-                    species = [spc1, spc2, spc3]
-                    spc_3.append(species)
+        if 2 in self.bodies:
+            bodies = 2
+            for spc1_ind, spc1 in enumerate(species_list):
+                for spc2 in species_list[spc1_ind:]:
+                    species = [spc1, spc2]
+                    spc_2.append(species)
                     positions = [[(i+1)/(bodies+1)*cutoff, 0, 0]
                                  for i in range(bodies)]
-                    spc_struc = struc.Structure(cell, species, positions,
-                                                mass_dict)
+                    spc_struc = \
+                        struc.Structure(cell, species, positions, mass_dict)
                     spc_struc.coded_species = np.array(species)
-                    bond_struc_3.append(spc_struc)
+                    bond_struc_2.append(spc_struc)
+
+        # ------------------- 3 body (3 atoms (1 triplet) config) -------------
+        bond_struc_3 = []
+        spc_3 = []
+        if 3 in self.bodies:
+            bodies = 3
+            for spc1_ind in range(N_spc):
+                spc1 = species_list[spc1_ind]
+                for spc2_ind in range(N_spc):  # (spc1_ind, N_spc):
+                    spc2 = species_list[spc2_ind]
+                    for spc3_ind in range(N_spc):  # (spc2_ind, N_spc):
+                        spc3 = species_list[spc3_ind]
+                        species = [spc1, spc2, spc3]
+                        spc_3.append(species)
+                        positions = [[(i+1)/(bodies+1)*cutoff, 0, 0]
+                                     for i in range(bodies)]
+                        spc_struc = struc.Structure(cell, species, positions,
+                                                    mass_dict)
+                        spc_struc.coded_species = np.array(species)
+                        bond_struc_3.append(spc_struc)
 #                    if spc1 != spc2:
 #                        species = [spc2, spc3, spc1]
 #                        spc_3.append(species)
