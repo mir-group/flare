@@ -1,4 +1,4 @@
-"""Gaussian process model of the Born Oppenheimer potential energy surface."""
+"""Gaussian process force fields."""
 import math
 import pickle
 import json
@@ -12,15 +12,17 @@ from scipy.optimize import minimize
 from flare.env import AtomicEnvironment
 from flare.struc import Structure
 from flare.gp_algebra import get_ky_and_hyp, get_like_grad_from_mats, \
-    get_neg_likelihood, get_neg_like_grad, get_ky_and_hyp_par, get_ky_mat_update
+    get_neg_likelihood, get_neg_like_grad, get_ky_and_hyp_par, \
+    get_ky_mat_update
 from flare.kernels import str_to_kernel
 from flare.mc_simple import str_to_mc_kernel
 from flare.util import NumpyEncoder
 
+
 class GaussianProcess:
-    """ Gaussian Process Regression Model.
-    Implementation is based on Algorithm 2.1 (pg. 19) of
-    "Gaussian Processes for Machine Learning" by Rasmussen and Williams"""
+    """ Gaussian Process Regression Model. Implementation is based on
+    Algorithm 2.1 (pg. 19) of "Gaussian Processes for Machine Learning" by
+    Rasmussen and Williams"""
 
     def __init__(self, kernel: Callable,
                  kernel_grad: Callable, hyps,
@@ -31,7 +33,7 @@ class GaussianProcess:
                  opt_algorithm: str = 'L-BFGS-B',
                  maxiter=10, par=False, no_cpus=None,
                  output=None):
-        """Initialize GP parameters and training data."""
+
 
         self.kernel = kernel
         self.kernel_grad = kernel_grad
@@ -61,15 +63,19 @@ class GaussianProcess:
         self.likelihood_gradient = None
 
     # TODO unit test custom range
-    def update_db(self, struc: Structure, forces: list,
+    def update_db(self, struc: Structure, forces,
                   custom_range: List[int] = ()):
-        """Given structure and forces, add to training set.
-        :param struc: structure to add to db
-        :type struc: Structure
-        :param forces: list of corresponding forces to add to db
-        :type forces: list<float>
-        :param custom_range: Indices to use in lieu of the whole structure
-        :type custom_range: List[int]
+        """Given a structure and forces, add local environments from the
+        structure to the training set of the GP.
+
+        Args:
+            struc (Structure): Input structure. Local environments of atoms in
+            this structure will be added to the training set of the GP.
+
+            forces (np.ndarray): Forces on atoms in the structure.
+    
+            custom_range (List[int]): Indices of atoms whose local
+            environments will be added to the training set of the GP.
         """
 
         # By default, use all atoms in the structure
