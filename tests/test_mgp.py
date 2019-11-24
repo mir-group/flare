@@ -59,8 +59,8 @@ def test_parse_header():
 
     file_name = 'AgI.gp'
     grid_num_2 = 64
-    grid_num_3 = 15
-    lower_cut = 2.
+    grid_num_3 = 20
+    lower_cut = 2.5
     two_cut = 7.
     three_cut = 5.
     lammps_location = 'AgI_Molten_15.txt'
@@ -122,7 +122,7 @@ def test_parse_header():
 
     # create lammps input
     style_string = 'mgp' 
-    coeff_string = '* * {} 47 53 yes yes'.format(lammps_location)
+    coeff_string = '* * {} Ag I yes yes'.format(lammps_location)
     lammps_executable = '$lmp'
     dump_file_name = 'tmp.dump'
     input_file_name = 'tmp.in'
