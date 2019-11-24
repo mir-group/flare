@@ -107,7 +107,7 @@ class AtomicEnvironment:
 
 @njit
 def get_2_body_arrays(positions, atom: int, cell, cutoff_2: float, species):
-    """Returns an array of distances and coordinates of atoms in the 2-body
+    """Returns distances, coordinates, and species of atoms in the 2-body
     local environment. This method is implemented outside the AtomicEnvironment
     class to allow for njit acceleration with Numba.
 
@@ -122,7 +122,10 @@ def get_2_body_arrays(positions, atom: int, cell, cutoff_2: float, species):
     :type cutoff_2: float
     :param species: Numpy array of species represented by their atomic numbers.
     :type species: np.ndarray
-    :return: bond_array_2: Array containing the distances and relative
+    :return: Tuple of arrays describing pairs of atoms in the 2-body local
+     environment.
+    
+     bond_array_2: Array containing the distances and relative
      coordinates of atoms in the 2-body local environment. First column
      contains distances, remaining columns contain Cartesian coordinates
      divided by the distance (with the origin defined as the position of the
@@ -189,17 +192,37 @@ def get_2_body_arrays(positions, atom: int, cell, cutoff_2: float, species):
 
 @njit
 def get_3_body_arrays(bond_array_2, bond_positions_2, cutoff_3: float):
-    """Returns arrays containing information about triplets of atoms in the
+    """Returns distances and coordinates of triplets of atoms in the
     3-body local environment.
-    
+
     :param bond_array_2: 2-body bond array.
     :type bond_array_2: np.ndarray
-    :param bond_positions_2: 
+    :param bond_positions_2: Coordinates of atoms in the 2-body local
+     environment.
     :type bond_positions_2: np.ndarray
-    :param cutoff_3: [description]
+    :param cutoff_3: 3-body cutoff radius.
     :type cutoff_3: float
-    :return: [description]
-    :rtype: [type]
+    :return: Tuple of 4 arrays describing triplets of atoms in the 3-body local
+     environment.
+
+     bond_array_3: Array containing the distances and relative
+     coordinates of atoms in the 3-body local environment. First column
+     contains distances, remaining columns contain Cartesian coordinates
+     divided by the distance (with the origin defined as the position of the
+     central atom). The rows are sorted by distance from the central atom.
+
+     cross_bond_inds: Two dimensional array whose row m contains the indices
+     of atoms n > m that are within a distance cutoff_3 of both atom n and the
+     central atom.
+
+     cross_bond_dists: Two dimensional array whose row m contains the 
+     distances from atom m of atoms n > m that are within a distance cutoff_3
+     of both atom n and the central atom.
+
+     triplet_counts: One dimensional array of integers whose entry m is the
+     number of atoms that are within a distance cutoff_3 of atom m.
+
+    :rtype: (np.ndarray, np.ndarray, np.ndarray, np.ndarray)
     """
 
     # get 3-body bond array
