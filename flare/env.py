@@ -112,7 +112,7 @@ def get_2_body_arrays(positions, atom: int, cell, cutoff_2: float, species):
 
     :param positions: Positions of atoms in the structure.
     :type positions: np.ndarray
-    :param atom: Index of the central atom of the local environment. 
+    :param atom: Index of the central atom of the local environment.
     :type atom: int
     :param cell: 3x3 array whose rows are the Bravais lattice vectors of the
         cell.
@@ -121,11 +121,17 @@ def get_2_body_arrays(positions, atom: int, cell, cutoff_2: float, species):
     :type cutoff_2: float
     :param species: Numpy array of species represented by their atomic numbers.
     :type species: np.ndarray
-    :return: Array containing the distances and coordinates of atoms in the
-        2-body local environment. First column contains distances, remaining
-        column contains Cartesian coordinates divided by the distance (with
-        the origin defined as the position of the central atom).
-    :rtype: np.ndarray
+    :return: bond_array_2: Array containing the distances and relative
+     coordinates of atoms in the 2-body local environment. First column
+     contains distances, remaining columns contain Cartesian coordinates
+     divided by the distance (with the origin defined as the position of the
+     central atom). The rows are sorted by distance from the central atom.
+
+     bond_positions_2: Coordinates of atoms in the 2-body local environment.
+
+     etypes: Species of atoms in the 2-body local environment represented by
+     their atomic number.
+    :rtype: np.ndarray, np.ndarray, np.ndarray
     """
     noa = len(positions)
     pos_atom = positions[atom]
@@ -184,6 +190,19 @@ def get_2_body_arrays(positions, atom: int, cell, cutoff_2: float, species):
 def get_3_body_arrays(bond_array_2: np.ndarray,
                       bond_positions_2: np.ndarray,
                       cutoff_3: float):
+    """Returns arrays containing information about triplets of atoms in the
+    3-body local environment.
+    
+    :param bond_array_2: 2-body bond array.
+    :type bond_array_2: np.ndarray
+    :param bond_positions_2: 
+    :type bond_positions_2: np.ndarray
+    :param cutoff_3: [description]
+    :type cutoff_3: float
+    :return: [description]
+    :rtype: [type]
+    """
+
     # get 3-body bond array
     ind_3 = -1
     noa = bond_array_2.shape[0]
