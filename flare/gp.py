@@ -69,13 +69,13 @@ class GaussianProcess:
         structure to the training set of the GP.
 
         Args:
-            struc (Structure): Input structure. Local environments of atoms in
-            this structure will be added to the training set of the GP.
+            struc (Structure): Input structure. Local environments of atoms \
+            in this structure will be added to the training set of the GP.
 
             forces (np.ndarray): Forces on atoms in the structure.
     
             custom_range (List[int]): Indices of atoms whose local
-            environments will be added to the training set of the GP.
+                environments will be added to the training set of the GP.
         """
 
         # By default, use all atoms in the structure
