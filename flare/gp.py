@@ -22,7 +22,7 @@ from flare.util import NumpyEncoder
 class GaussianProcess:
     """ Gaussian Process Regression Model. Implementation is based on
     Algorithm 2.1 (pg. 19) of "Gaussian Processes for Machine Learning" by
-    Rasmussen and Williams"""
+    Rasmussen and Williams."""
 
     def __init__(self, kernel: Callable,
                  kernel_grad: Callable, hyps,
@@ -33,7 +33,6 @@ class GaussianProcess:
                  opt_algorithm: str = 'L-BFGS-B',
                  maxiter=10, par=False, no_cpus=None,
                  output=None):
-
 
         self.kernel = kernel
         self.kernel_grad = kernel_grad
@@ -102,7 +101,7 @@ class GaussianProcess:
             force (np.ndarray): Force on the central atom of the local
                 environment in the form of a 3-component Numpy array
                 containing the x, y, and z components.
-            train (bool): If True, the GP is trained afterr the local
+            train (bool): If True, the GP is trained after the local
                 environment is added.
         """
 
@@ -115,11 +114,13 @@ class GaussianProcess:
 
     @staticmethod
     def force_list_to_np(forces: list):
-        """ Convert list of forces to numpy array of forces.
-        :param forces: list of forces to convert
-        :type forces: list<float>
-        :return: numpy array forces
-        :rtype: np.ndarray
+        """Convert a list of forces to a Numpy array of forces.
+
+        Args:
+            forces(list): List of forces to convert.
+        
+        Return:
+            forces_np(np.ndarray): Numpy array of forces.
         """
         forces_np = []
 
