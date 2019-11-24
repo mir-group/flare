@@ -50,13 +50,13 @@ class Structure:
     :type stds: np.ndarray
     """
 
-    def __init__(self, cell: ndarray, species: Union[List[str], List[int]],
-                 positions: ndarray,
+    def __init__(self, cell, species: Union[List[str], List[int]],
+                 positions,
                  mass_dict: dict = None,
-                 prev_positions: np.ndarray = None,
+                 prev_positions=None,
                  species_labels: List[str] = None,
-                 forces: np.ndarray = None,
-                 stds: np.ndarray = None):
+                 forces=None,
+                 stds=None):
 
         # Set up individual Bravais lattice vectors
         self.cell = np.array(cell)
@@ -107,7 +107,7 @@ class Structure:
 
         self.mass_dict = mass_dict
 
-    def get_cell_dot(self) -> np.ndarray:
+    def get_cell_dot(self):
         """
         Compute 3x3 array of dot products of cell vectors used to
         fold atoms back to the unit cell.
@@ -125,8 +125,8 @@ class Structure:
         return cell_dot
 
     @staticmethod
-    def raw_to_relative(positions: np.ndarray, cell_transpose: np.ndarray,
-                        cell_dot_inverse: np.ndarray) -> np.ndarray:
+    def raw_to_relative(positions, cell_transpose,
+                        cell_dot_inverse):
         """Convert Cartesian coordinates to relative (fractional) coordinates,
         expressed in terms of the cell vectors set in self.cell.
 
@@ -148,14 +148,12 @@ class Structure:
         return relative_positions
 
     @staticmethod
-    def relative_to_raw(relative_positions: np.ndarray,
-                        cell_transpose_inverse: np.ndarray,
-                        cell_dot: np.ndarray) -> np.ndarray:
+    def relative_to_raw(relative_positions, cell_transpose_inverse, cell_dot):
 
         return np.matmul(np.matmul(relative_positions, cell_dot),
                          cell_transpose_inverse)
 
-    def wrap_positions(self, in_place: bool = True) -> np.ndarray:
+    def wrap_positions(self, in_place: bool = True):
         """
         Convenience function which folds atoms outside of the unit cell back
         into the unit cell. in_place flag controls if the wrapped positions
@@ -190,9 +188,8 @@ class Structure:
 
     # TODO make more descriptive
     def __str__(self) -> str:
-        return 'Structure with {} atoms of types {}'.format(self.nat,
-                                                            set(
-                                                                self.species_labels))
+        return 'Structure with {} atoms of types {}'\
+            .format(self.nat, set(self.species_labels))
 
     def __len__(self) -> int:
         """
