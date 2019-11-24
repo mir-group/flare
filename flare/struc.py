@@ -53,10 +53,10 @@ class Structure:
     def __init__(self, cell, species: Union[List[str], List[int]],
                  positions,
                  mass_dict: dict = None,
-                 prev_positions = None,
+                 prev_positions=None,
                  species_labels: List[str] = None,
-                 forces = None,
-                 stds = None):
+                 forces=None,
+                 stds=None):
 
         # Set up individual Bravais lattice vectors
         self.cell = np.array(cell)
@@ -107,7 +107,7 @@ class Structure:
 
         self.mass_dict = mass_dict
 
-    def get_cell_dot(self) -> np.ndarray:
+    def get_cell_dot(self):
         """
         Compute 3x3 array of dot products of cell vectors used to
         fold atoms back to the unit cell.

@@ -15,10 +15,11 @@ class AtomicEnvironment:
 
     :param structure: Structure of atoms.
     :type structure: struc.Structure
-    :param atom: Index of the atom in the structure .
-    :param cutoffs: 2- and 3-body cutoff radii.
-                    2-body only if one cutoff is given, 2+3 body if
-                    multiple are passed.
+    :param atom: Index of the atom in the structure.
+    :type atom: int
+    :param cutoffs: 2- and 3-body cutoff radii. 2-body if one cutoff is
+     given, 2+3-body if two are passed.
+    :type cutoffs: np.ndarray
     """
     def __init__(self, structure: Structure, atom: int, cutoffs):
         self.structure = structure
@@ -72,8 +73,8 @@ class AtomicEnvironment:
         """
         Loads in atomic environment object from a dictionary which was
         serialized by the to_dict method.
-        :param dictionary: Dictionary describing atomic environment
-        :return:
+
+        :param dictionary: Dictionary describing atomic environment.
         """
         # TODO Instead of re-computing 2 and 3 body environment,
         # directly load in, this would be much more efficient
@@ -105,8 +106,27 @@ class AtomicEnvironment:
 
 
 @njit
-def get_2_body_arrays(positions: np.ndarray, atom: int, cell: np.ndarray,
-                      cutoff_2: float, species: np.ndarray):
+def get_2_body_arrays(positions, atom: int, cell, cutoff_2: float, species):
+    """Returns an array of distances and coordinates of atoms in the 2-body
+    local environment.
+
+    :param positions: Positions of atoms in the structure.
+    :type positions: np.ndarray
+    :param atom: Index of the central atom of the local environment. 
+    :type atom: int
+    :param cell: 3x3 array whose rows are the Bravais lattice vectors of the
+        cell.
+    :type cell: np.ndarray
+    :param cutoff_2: 2-body cutoff radius.
+    :type cutoff_2: float
+    :param species: Numpy array of species represented by their atomic numbers.
+    :type species: np.ndarray
+    :return: Array containing the distances and coordinates of atoms in the
+        2-body local environment. First column contains distances, remaining
+        column contains Cartesian coordinates divided by the distance (with
+        the origin defined as the position of the central atom).
+    :rtype: np.ndarray
+    """
     noa = len(positions)
     pos_atom = positions[atom]
     coords = np.zeros((noa, 3, 27))
