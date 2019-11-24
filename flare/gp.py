@@ -69,11 +69,11 @@ class GaussianProcess:
         structure to the training set of the GP.
 
         Args:
-            struc (Structure): Input structure. Local environments of atoms \
-            in this structure will be added to the training set of the GP.
+            struc (Structure): Input structure. Local environments of atoms
+                in this structure will be added to the training set of the GP.
 
             forces (np.ndarray): Forces on atoms in the structure.
-    
+
             custom_range (List[int]): Indices of atoms whose local
                 environments will be added to the training set of the GP.
         """
@@ -94,14 +94,18 @@ class GaussianProcess:
 
     def add_one_env(self, env: AtomicEnvironment,
                     force, train: bool = False, **kwargs):
+        """Add a single local environment to the training set of the GP.
+
+        Args:
+            env (AtomicEnvironment): Local environment to be added to the
+                training set of the GP.
+            force (np.ndarray): Force on the central atom of the local
+                environment in the form of a 3-component Numpy array
+                containing the x, y, and z components.
+            train (bool): If True, the GP is trained afterr the local
+                environment is added.
         """
-        Tool to add a single environment / force pair into the training set.
-        :param force:
-        :param env:
-        :param force: (x,y,z) component associated with environment
-        :param train:
-        :return:
-        """
+
         self.training_data.append(env)
         self.training_labels.append(force)
         self.training_labels_np = self.force_list_to_np(self.training_labels)
