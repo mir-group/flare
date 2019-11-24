@@ -108,7 +108,8 @@ class AtomicEnvironment:
 @njit
 def get_2_body_arrays(positions, atom: int, cell, cutoff_2: float, species):
     """Returns an array of distances and coordinates of atoms in the 2-body
-    local environment.
+    local environment. This method is implemented outside the AtomicEnvironment
+    class to allow for njit acceleration with Numba.
 
     :param positions: Positions of atoms in the structure.
     :type positions: np.ndarray
@@ -187,9 +188,7 @@ def get_2_body_arrays(positions, atom: int, cell, cutoff_2: float, species):
 
 
 @njit
-def get_3_body_arrays(bond_array_2: np.ndarray,
-                      bond_positions_2: np.ndarray,
-                      cutoff_3: float):
+def get_3_body_arrays(bond_array_2, bond_positions_2, cutoff_3: float):
     """Returns arrays containing information about triplets of atoms in the
     3-body local environment.
     
