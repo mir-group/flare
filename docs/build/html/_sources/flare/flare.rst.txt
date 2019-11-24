@@ -11,3 +11,6 @@ Code Documentation
    dft_interface
    mgp/mgp
    ase/ase
+   predict
+   gp_from_aimd
+   util
