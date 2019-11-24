@@ -47,7 +47,7 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.imgmath',
     'sphinx_rtd_theme',
-    'sphinxcontrib.napoleon'
+    'sphinx.ext.napoleon'
 ]
 napoleon_use_param = False
 # Add any paths that contain templates here, relative to this directory.

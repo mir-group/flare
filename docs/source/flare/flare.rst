@@ -11,7 +11,7 @@ Code Documentation
    output
    cutoffs
    predict
-   dft_interface
+   dft_interface/dft_interface
    mgp/mgp
    ase/ase
    util
