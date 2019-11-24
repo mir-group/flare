@@ -20,7 +20,7 @@ from flare.util import NumpyEncoder
 
 
 class GaussianProcess:
-    """ Gaussian Process Regression Model. Implementation is based on
+    """Gaussian Process Regression Model. Implementation is based on
     Algorithm 2.1 (pg. 19) of "Gaussian Processes for Machine Learning" by
     Rasmussen and Williams."""
 
@@ -117,10 +117,10 @@ class GaussianProcess:
         """Convert a list of forces to a Numpy array of forces.
 
         Args:
-            forces(list): List of forces to convert.
+            forces (list): List of forces to convert.
         
         Return:
-            forces_np(np.ndarray): Numpy array of forces.
+            np.ndarray: Numpy array of forces.
         """
         forces_np = []
 
@@ -136,9 +136,21 @@ class GaussianProcess:
               grad_tol: float = 1e-4,
               x_tol: float = 1e-5,
               line_steps: int = 20):
-        """Train Gaussian Process model on training data. Tunes the \
-hyperparameters to maximize the likelihood, then computes L and alpha \
-(related to the covariance matrix of the training set)."""
+        """Train Gaussian Process model on training data. Tunes the
+        hyperparameters to maximize the likelihood, then computes L and alpha
+        (related to the covariance matrix of the training set).
+        
+        Args:
+            output (Output): Output object specifying where to write the
+                progress of the optimization.
+            custom_bounds (np.ndarray): Custom bounds on the hyperparameters.
+            grad_tol (float): Tolerance of the hyperparameter gradient that
+                determines when hyperparameter optimization is terminated.
+            x_tol (float): Tolerance on the x values used to decide when
+                Nelder-Mead hyperparameter optimization is terminated.
+            line_steps (int): Maximum number of line steps for L-BFGS
+                hyperparameter ptimization.
+        """
 
         x_0 = self.hyps
 
@@ -193,11 +205,10 @@ hyperparameters to maximize the likelihood, then computes L and alpha \
 
     def check_L_alpha(self):
         """
-        Check that the alpha vector is up-to-date with the training set;
-        runs in constant time if it is.
-
-        :return:
+        Check that the alpha vector is up-to-date with the training set. If
+        not, update_L_alpha is called.
         """
+
         # check that alpha is up to date with training set
         if self.alpha is None or 3 * len(self.training_data) != len(
                 self.alpha):
@@ -205,15 +216,23 @@ hyperparameters to maximize the likelihood, then computes L and alpha \
 
     def predict(self, x_t: AtomicEnvironment, d: int) -> [float, float]:
         """
-        Predict force component of an atomic environment and its
-        uncertainty.
+        Predict a force component of the central atom of a local environment.
+
+        Args:
+            x_t (AtomicEnvironment): Input local environment.
+            d (int): Force component to be predicted (1 is x, 2 is y, and
+                3 is z).
+
+        Return:
+            (float, float): Mean and epistemic uncertainty of the GP.
         """
 
         # Kernel vector allows for evaluation of At. Env.
         k_v = self.get_kernel_vector(x_t, d)
 
         # Guarantee that alpha is up to date with training set
-        assert ((self.alpha is not None) and (3 * len(self.training_data) == len(self.alpha)))
+        assert ((self.alpha is not None) and
+                (3 * len(self.training_data) == len(self.alpha)))
 
         # get predictive mean
         pred_mean = np.matmul(k_v, self.alpha)
@@ -309,7 +328,8 @@ environment and the environments in the training set."""
             hyp_mat, ky_mat = \
                 get_ky_and_hyp_par(self.hyps, self.training_data,
                                    self.training_labels_np,
-                                   self.kernel_grad, self.cutoffs, self.no_cpus)
+                                   self.kernel_grad, self.cutoffs,
+                                   self.no_cpus)
         else:
             hyp_mat, ky_mat = \
                 get_ky_and_hyp(self.hyps, self.training_data,
