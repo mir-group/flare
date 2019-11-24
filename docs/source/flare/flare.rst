@@ -10,6 +10,9 @@ Code Documentation
    gp
    output
    cutoffs
+   predict
    dft_interface
    mgp/mgp
    ase/ase
+   util
+   gp_from_aimd
