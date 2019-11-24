@@ -5,7 +5,7 @@ from ase.calculators.espresso import Espresso
 label = 'AgI'
 input_file_name = label+'.pwi'
 output_file_name = label+'.pwo'
-no_cpus = 2
+no_cpus = 1
 npool = 1
 pw_loc = os.environ.get('PWSCF_COMMAND')
 #pw_loc = '/n/home08/xiey/q-e/bin/pw.x'
@@ -25,10 +25,10 @@ input_data = {'control':   {'prefix': label,
                             'smearing': 'gauss',
                             'degauss': 0.02,
                             'occupations': 'smearing'},
-              'electrons': {'conv_thr': 1.0e-03,
+              'electrons': {'conv_thr': 1.0e-02,
                             #'startingwfc': 'file',
                             'electron_maxstep': 100,
-                            'mixing_beta': 0.5}}
+                            'mixing_beta': 0.7}}
 
 # pseudo-potentials              
 ion_pseudo = {'Ag': 'Ag.pbe-n-kjpaw_psl.1.0.0.UPF', 
@@ -38,4 +38,3 @@ ion_pseudo = {'Ag': 'Ag.pbe-n-kjpaw_psl.1.0.0.UPF',
 dft_calc = Espresso(pseudopotentials=ion_pseudo, label=label, 
                     tstress=True, tprnfor=True, nosym=True, #noinv=True,
                     input_data=input_data, kpts=(1,1,1)) 
-dft_calc.parameters['parallel'] = False

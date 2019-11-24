@@ -137,7 +137,11 @@ def get_triplets(ctype, etypes, bond_array, cross_bond_inds,
             ind1 = cross_bond_inds[m, m+n+1]
             r2 = bond_array[ind1, 0]
             c2 = bond_array[ind1, 1:]
-            a12 = np.arccos(np.sum(c1*c2))
+            c12 = np.sum(c1*c2)
+            if c12 > 1: # to prevent numerical error
+                c12 = 1
+            elif c12 < -1:
+                c12 = -1
             spc2 = etypes[ind1]
 
 #            if spc1 == spc2:
@@ -152,7 +156,7 @@ def get_triplets(ctype, etypes, bond_array, cross_bond_inds,
             spcs_list = [[ctype, spc1, spc2], [ctype, spc2, spc1]]
             for i in range(2):
                 spcs = spcs_list[i]
-                triplet = array([r2, r1, a12]) if i else array([r1, r2, a12]) 
+                triplet = array([r2, r1, c12]) if i else array([r1, r2, c12]) 
                 coord = c2 if i else c1
                 if spcs not in exist_species:
                     exist_species.append(spcs)
