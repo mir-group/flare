@@ -17,6 +17,22 @@ from flare.kernels import force_helper, grad_constants, grad_helper, \
 
 def two_plus_three_body_mc(env1, env2, d1, d2, hyps, cutoffs,
                            cutoff_func=cf.quadratic_cutoff):
+    """2+3-body multi-element kernel between two force components.
+
+    Args:
+        env1 (AtomicEnvironment): First local environment.
+        env2 (AtomicEnvironment): Second local environment.
+        d1 (int): Force component of the first environment.
+        d2 (int): Force component of the second environment.
+        hyps (np.ndarray): Hyperparameters of the kernel function (sig1, ls1,
+            sig2, ls2, sig_n).
+        cutoffs (np.ndarray): Two-element array containing the 2- and 3-body
+            cutoffs.
+        cutoff_func (Callable): Cutoff function of the kernel.
+
+    Return:
+        float: Value of the 2+3-body kernel.
+    """
 
     sig2 = hyps[0]
     ls2 = hyps[1]
@@ -42,6 +58,24 @@ def two_plus_three_body_mc(env1, env2, d1, d2, hyps, cutoffs,
 
 def two_plus_three_body_mc_grad(env1, env2, d1, d2, hyps, cutoffs,
                                 cutoff_func=cf.quadratic_cutoff):
+    """2+3-body multi-element kernel between two force components and its
+    gradient with respect to the hyperparameters.
+
+    Args:
+        env1 (AtomicEnvironment): First local environment.
+        env2 (AtomicEnvironment): Second local environment.
+        d1 (int): Force component of the first environment.
+        d2 (int): Force component of the second environment.
+        hyps (np.ndarray): Hyperparameters of the kernel function (sig1, ls1,
+            sig2, ls2, sig_n).
+        cutoffs (np.ndarray): Two-element array containing the 2- and 3-body
+            cutoffs.
+        cutoff_func (Callable): Cutoff function of the kernel.
+
+    Return:
+        (float, np.ndarray): Value of the 2+3-body kernel and its gradient
+            with respect to the hyperparameters.
+    """
 
     sig2 = hyps[0]
     ls2 = hyps[1]
@@ -69,6 +103,24 @@ def two_plus_three_body_mc_grad(env1, env2, d1, d2, hyps, cutoffs,
 
 def two_plus_three_mc_force_en(env1, env2, d1, hyps, cutoffs,
                                cutoff_func=cf.quadratic_cutoff):
+    """2+3-body multi-element kernel between a force component and a local
+    energy.
+
+    Args:
+        env1 (AtomicEnvironment): Local environment associated with the
+            force component.
+        env2 (AtomicEnvironment): Local environment associated with the
+            local energy.
+        d1 (int): Force component of the first environment.
+        hyps (np.ndarray): Hyperparameters of the kernel function (sig1, ls1,
+            sig2, ls2).
+        cutoffs (np.ndarray): Two-element array containing the 2- and 3-body
+            cutoffs.
+        cutoff_func (Callable): Cutoff function of the kernel.
+
+    Return:
+        float: Value of the 2+3-body force/energy kernel.
+    """
 
     sig2 = hyps[0]
     ls2 = hyps[1]
@@ -96,6 +148,20 @@ def two_plus_three_mc_force_en(env1, env2, d1, hyps, cutoffs,
 
 def two_plus_three_mc_en(env1, env2, hyps, cutoffs,
                          cutoff_func=cf.quadratic_cutoff):
+    """2+3-body multi-element kernel between two local energies.
+
+    Args:
+        env1 (AtomicEnvironment): First local environment.
+        env2 (AtomicEnvironment): Second local environment.
+        hyps (np.ndarray): Hyperparameters of the kernel function (sig1, ls1,
+            sig2, ls2).
+        cutoffs (np.ndarray): Two-element array containing the 2- and 3-body
+            cutoffs.
+        cutoff_func (Callable): Cutoff function of the kernel.
+
+    Return:
+        float: Value of the 2+3-body force/energy kernel.
+    """
 
     sig2 = hyps[0]
     ls2 = hyps[1]
@@ -126,6 +192,21 @@ def two_plus_three_mc_en(env1, env2, hyps, cutoffs,
 
 def three_body_mc(env1, env2, d1, d2, hyps, cutoffs,
                   cutoff_func=cf.quadratic_cutoff):
+    """3-body multi-element kernel between two force components.
+
+    Args:
+        env1 (AtomicEnvironment): First local environment.
+        env2 (AtomicEnvironment): Second local environment.
+        d1 (int): Force component of the first environment.
+        d2 (int): Force component of the second environment.
+        hyps (np.ndarray): Hyperparameters of the kernel function (sig, ls).
+        cutoffs (np.ndarray): Two-element array containing the 2- and 3-body
+            cutoffs.
+        cutoff_func (Callable): Cutoff function of the kernel.
+
+    Return:
+        float: Value of the 3-body kernel.
+    """
     sig = hyps[0]
     ls = hyps[1]
     r_cut = cutoffs[1]
@@ -140,6 +221,23 @@ def three_body_mc(env1, env2, d1, d2, hyps, cutoffs,
 
 def three_body_mc_grad(env1, env2, d1, d2, hyps, cutoffs,
                        cutoff_func=cf.quadratic_cutoff):
+    """3-body multi-element kernel between two force components and its
+    gradient with respect to the hyperparameters.
+
+    Args:
+        env1 (AtomicEnvironment): First local environment.
+        env2 (AtomicEnvironment): Second local environment.
+        d1 (int): Force component of the first environment.
+        d2 (int): Force component of the second environment.
+        hyps (np.ndarray): Hyperparameters of the kernel function (sig, ls).
+        cutoffs (np.ndarray): Two-element array containing the 2- and 3-body
+            cutoffs.
+        cutoff_func (Callable): Cutoff function of the kernel.
+
+    Return:
+        (float, np.ndarray): Value of the 3-body kernel and its gradient
+            with respect to the hyperparameters.
+    """
     sig = hyps[0]
     ls = hyps[1]
     r_cut = cutoffs[1]
@@ -154,6 +252,23 @@ def three_body_mc_grad(env1, env2, d1, d2, hyps, cutoffs,
 
 def three_body_mc_force_en(env1, env2, d1, hyps, cutoffs,
                            cutoff_func=cf.quadratic_cutoff):
+    """3-body multi-element kernel between a force component and a local
+    energy.
+
+    Args:
+        env1 (AtomicEnvironment): Local environment associated with the
+            force component.
+        env2 (AtomicEnvironment): Local environment associated with the
+            local energy.
+        d1 (int): Force component of the first environment.
+        hyps (np.ndarray): Hyperparameters of the kernel function (sig, ls).
+        cutoffs (np.ndarray): Two-element array containing the 2- and 3-body
+            cutoffs.
+        cutoff_func (Callable): Cutoff function of the kernel.
+
+    Return:
+        float: Value of the 3-body force/energy kernel.
+    """
     sig = hyps[0]
     ls = hyps[1]
     r_cut = cutoffs[1]
@@ -172,6 +287,19 @@ def three_body_mc_force_en(env1, env2, d1, hyps, cutoffs,
 
 def three_body_mc_en(env1, env2, hyps, cutoffs,
                      cutoff_func=cf.quadratic_cutoff):
+    """3-body multi-element kernel between two local energies.
+
+    Args:
+        env1 (AtomicEnvironment): First local environment.
+        env2 (AtomicEnvironment): Second local environment.
+        hyps (np.ndarray): Hyperparameters of the kernel function (sig, ls).
+        cutoffs (np.ndarray): Two-element array containing the 2- and 3-body
+            cutoffs.
+        cutoff_func (Callable): Cutoff function of the kernel.
+
+    Return:
+        float: Value of the 3-body force/energy kernel.
+    """
     sig = hyps[0]
     ls = hyps[1]
     r_cut = cutoffs[1]
@@ -190,6 +318,21 @@ def three_body_mc_en(env1, env2, hyps, cutoffs,
 
 def two_body_mc(env1, env2, d1, d2, hyps, cutoffs,
                 cutoff_func=cf.quadratic_cutoff):
+    """2-body multi-element kernel between two force components.
+
+    Args:
+        env1 (AtomicEnvironment): First local environment.
+        env2 (AtomicEnvironment): Second local environment.
+        d1 (int): Force component of the first environment.
+        d2 (int): Force component of the second environment.
+        hyps (np.ndarray): Hyperparameters of the kernel function (sig, ls).
+        cutoffs (np.ndarray): One-element array containing the 2-body
+            cutoff.
+        cutoff_func (Callable): Cutoff function of the kernel.
+
+    Return:
+        float: Value of the 2-body kernel.
+    """
     sig = hyps[0]
     ls = hyps[1]
     r_cut = cutoffs[0]
@@ -201,6 +344,23 @@ def two_body_mc(env1, env2, d1, d2, hyps, cutoffs,
 
 def two_body_mc_grad(env1, env2, d1, d2, hyps, cutoffs,
                      cutoff_func=cf.quadratic_cutoff):
+    """2-body multi-element kernel between two force components and its
+    gradient with respect to the hyperparameters.
+
+    Args:
+        env1 (AtomicEnvironment): First local environment.
+        env2 (AtomicEnvironment): Second local environment.
+        d1 (int): Force component of the first environment.
+        d2 (int): Force component of the second environment.
+        hyps (np.ndarray): Hyperparameters of the kernel function (sig, ls).
+        cutoffs (np.ndarray): One-element array containing the 2-body
+            cutoff.
+        cutoff_func (Callable): Cutoff function of the kernel.
+
+    Return:
+        (float, np.ndarray): Value of the 2-body kernel and its gradient
+            with respect to the hyperparameters.
+    """
     sig = hyps[0]
     ls = hyps[1]
     r_cut = cutoffs[0]
@@ -212,6 +372,23 @@ def two_body_mc_grad(env1, env2, d1, d2, hyps, cutoffs,
 
 def two_body_mc_force_en(env1, env2, d1, hyps, cutoffs,
                          cutoff_func=cf.quadratic_cutoff):
+    """2-body multi-element kernel between a force component and a local
+    energy.
+
+    Args:
+        env1 (AtomicEnvironment): Local environment associated with the
+            force component.
+        env2 (AtomicEnvironment): Local environment associated with the
+            local energy.
+        d1 (int): Force component of the first environment.
+        hyps (np.ndarray): Hyperparameters of the kernel function (sig, ls).
+        cutoffs (np.ndarray): One-element array containing the 2-body
+            cutoff.
+        cutoff_func (Callable): Cutoff function of the kernel.
+
+    Return:
+        float: Value of the 2-body force/energy kernel.
+    """
     sig = hyps[0]
     ls = hyps[1]
     r_cut = cutoffs[0]
@@ -223,6 +400,19 @@ def two_body_mc_force_en(env1, env2, d1, hyps, cutoffs,
 
 def two_body_mc_en(env1, env2, hyps, cutoffs,
                    cutoff_func=cf.quadratic_cutoff):
+    """2-body multi-element kernel between two local energies.
+
+    Args:
+        env1 (AtomicEnvironment): First local environment.
+        env2 (AtomicEnvironment): Second local environment.
+        hyps (np.ndarray): Hyperparameters of the kernel function (sig, ls).
+        cutoffs (np.ndarray): One-element array containing the 2-body
+            cutoff.
+        cutoff_func (Callable): Cutoff function of the kernel.
+
+    Return:
+        float: Value of the 2-body force/energy kernel.
+    """
     sig = hyps[0]
     ls = hyps[1]
     r_cut = cutoffs[0]

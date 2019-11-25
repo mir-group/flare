@@ -1,4 +1,4 @@
-Multi-element kernels
+Multi-element Kernels
 =====================
 
 .. automodule:: flare.mc_simple
