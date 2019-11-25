@@ -16,7 +16,7 @@ from flare.struc import Structure
 
 
 def predict_on_atom(param: Tuple[Structure, int, GaussianProcess])->(
-        Array, np.ndarray):
+        Array[float, ..., 3], 'np.ndarray'):
     """
     Return the forces/std. dev. uncertainty associated with an individual atom
     in a structure, without necessarily having cast it to a chemical
