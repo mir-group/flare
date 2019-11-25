@@ -150,9 +150,18 @@ class Structure:
     @staticmethod
     def relative_to_raw(relative_positions: 'np.ndarray',
                         cell_transpose_inverse: 'np.ndarray',
-                        cell_dot: 'np.ndarray')-> ('np.ndarray',
-                                                   'np.ndarray',
-                                                   'np.ndarray'):
+                        cell_dot: 'np.ndarray')-> ('np.ndarray'):
+        """Convert fractional coordinates to raw (Cartesian) coordinates.
+
+        :param relative_positions: fractional coordinates.
+        :type relative_positions: np.ndarray
+        :param cell_transpose_inverse: Transpose of the cell array.
+        :type cell_transpose_inverse: np.ndarray
+        :param cell_dot: Dot products of cell vectors
+        :type cell_dot: np.ndarray
+        :return: Cartesian positions.
+        :rtype: np.ndarray
+        """
 
         return np.matmul(np.matmul(relative_positions, cell_dot),
                          cell_transpose_inverse)
@@ -192,6 +201,12 @@ class Structure:
 
     # TODO make more descriptive
     def __str__(self) -> str:
+        """
+        Simple descriptive string of structure
+        :return: One-line descriptor of number of atoms and species present.
+        :rtype: str
+        """
+
         return 'Structure with {} atoms of types {}'\
             .format(self.nat, set(self.species_labels))
 
@@ -212,7 +227,9 @@ class Structure:
     def as_str(self) -> str:
         """
         Returns string dictionary serialization cast as string.
-        :return:
+
+        :return: output of as_dict method cast as string
+        :rtype: str
         """
         return dumps(self.as_dict(), cls=NumpyEncoder)
 
