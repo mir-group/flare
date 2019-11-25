@@ -28,10 +28,9 @@ class OTF_VelocityVerlet(VelocityVerlet, OTF):
     def __init__(self, atoms, timestep=None, trajectory=None, dt=None, 
                  **kwargs):
 
-        VelocityVerlet.__init__(self, atoms, timestep, trajectory,
-                                dt=dt)
+        VelocityVerlet.__init__(self, atoms, timestep, trajectory, dt=dt)
 
-        OTF.__init__(self, atoms, timestep, trajectory, **kwargs)
+        OTF.__init__(self, **kwargs)
         
         self.md_engine = 'VelocityVerlet'
 
@@ -53,7 +52,7 @@ class OTF_NVTBerendsen(NVTBerendsen, OTF):
         NVTBerendsen.__init__(self, atoms, timestep, temperature, taut, 
                               fixcm, trajectory)
  
-        OTF.__init__(self, atoms, timestep, trajectory, **kwargs)
+        OTF.__init__(self, **kwargs)
 
         self.md_engine = 'NVTBerendsen'
 
@@ -78,7 +77,7 @@ class OTF_NPTBerendsen(NPTBerendsen, OTF):
                               pressure, taup,
                               compressibility, fixcm, trajectory)
 
-        OTF.__init__(self, atoms, timestep, trajectory, **kwargs)
+        OTF.__init__(self, **kwargs)
 
         self.md_engine = 'NPTBerendsen'
 
@@ -101,7 +100,7 @@ class OTF_NPT(NPT, OTF):
                      externalstress, ttime, pfactor, mask,
                      trajectory)
 
-        OTF.__init__(self, atoms, timestep, trajectory, **kwargs)
+        OTF.__init__(self, **kwargs)
 
         self.md_engine = 'NPT'
 
@@ -121,7 +120,7 @@ class OTF_Langevin(Langevin, OTF):
 
         Langevin.__init__(self, atoms, timestep, temperature, friction)
 
-        OTF.__init__(self, atoms, timestep, trajectory, **kwargs)
+        OTF.__init__(self, **kwargs)
         
         self.md_engine = 'Langevin'
 
