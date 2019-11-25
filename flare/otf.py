@@ -105,11 +105,11 @@ class OTF(object):
         self.par = par
 
         if (self.par is True):
-            assert self.gp.per_atom_par is True, "the otf par flag has to be
-            consistent with the gp per_atom_par flag."
+            assert self.gp.per_atom_par is True, "the otf par flag has to be" \
+                "consistent with the gp per_atom_par flag."
         else:
-            assert self.gp.per_atom_par is False, "the otf par flag has to be
-            consistent with the gp per_atom_par flag."
+            assert self.gp.per_atom_par is False, "the otf par flag has to be" \
+                "consistent with the gp per_atom_par flag."
 
         # set rescale attributes
         self.rescale_steps = rescale_steps
