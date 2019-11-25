@@ -14,6 +14,7 @@
 #
 import os
 import sys
+import nptying
 sys.path.append('../..')
 #sys.path.append('../../flare')
 #sys.path.append('../../flare/mgp')
