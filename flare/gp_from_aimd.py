@@ -261,6 +261,7 @@ class TrajectoryTrainer:
         the GP predictions and the ground-truth forces. Train the GP and update
         the training set upon the triggering of the uncertainty or force error
         threshold.
+
         :return: None
         """
         if self.verbose >= 3:
@@ -373,6 +374,7 @@ class TrajectoryTrainer:
 
         :param max_iter: Maximum iterations associated with this training run,
             overriding the Gaussian Process's internally set maxiter.
+        :type max_iter: int
         """
 
         if self.verbose >= 1:

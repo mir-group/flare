@@ -1,7 +1,7 @@
 """
 The :class:`Structure` object is a collection of atoms in a periodic box.
 The mandatory inputs are the cell vectors of the box and the chemical species
-and Cartesian coordinates of the atoms.
+and *Cartesian coordinates* of the atoms.
 The atoms are automatically folded back into the primary cell, so the
 input coordinates don't need to lie inside the box.
 Energy, force, and stress information can be included which can then be
@@ -28,7 +28,7 @@ class Structure:
     Contains information about a periodic structure of atoms, including the
     periodic cell boundaries, atomic species, and coordinates.
 
-    Note that input positions are assumed to be Cartesian.
+    *Note that input positions are assumed to be Cartesian.*
 
     :param cell: 3x3 array whose rows are the Bravais lattice vectors of the
         cell.
