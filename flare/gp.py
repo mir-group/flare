@@ -31,7 +31,7 @@ class GaussianProcess:
                  energy_force_kernel: Callable = None,
                  energy_kernel: Callable = None,
                  opt_algorithm: str = 'L-BFGS-B',
-                 maxiter=10, par=False, no_cpus=None,
+                 maxiter=10, par=False, no_cpus=1,
                  output=None):
 
         self.kernel = kernel
@@ -51,6 +51,9 @@ class GaussianProcess:
         self.par = par
         self.no_cpus = no_cpus
         self.output = output
+
+        if (self.par is False):
+            self.no_cpus = 1
 
         # Parameters set during training
         self.ky_mat = None
@@ -89,7 +92,7 @@ class GaussianProcess:
             self.training_labels.append(forces_curr)
 
         # create numpy array of training labels
-        self.training_labels_np = self.force_list_to_np(self.training_labels)
+        self.training_labels_np = np.hstack(self.training_labels)
 
     def add_one_env(self, env: AtomicEnvironment,
                     force, train: bool = False, **kwargs):
@@ -107,30 +110,11 @@ class GaussianProcess:
 
         self.training_data.append(env)
         self.training_labels.append(force)
-        self.training_labels_np = self.force_list_to_np(self.training_labels)
+        self.training_labels_np = np.hstack(self.training_labels)
 
         if train:
             self.train(**kwargs)
 
-    @staticmethod
-    def force_list_to_np(forces: list):
-        """Convert a list of forces to a Numpy array of forces.
-
-        Args:
-            forces (list): List of forces to convert.
-        
-        Return:
-            np.ndarray: Numpy array of forces.
-        """
-        forces_np = []
-
-        for force in forces:
-            for force_comp in force:
-                forces_np.append(force_comp)
-
-        forces_np = np.array(forces_np)
-
-        return forces_np
 
     def train(self, output=None, custom_bounds=None,
               grad_tol: float = 1e-4,
@@ -156,7 +140,7 @@ class GaussianProcess:
 
         args = (self.training_data, self.training_labels_np,
                 self.kernel_grad, self.cutoffs, output,
-                self.par, self.no_cpus)
+                self.no_cpus)
         res = None
 
         if self.algo == 'L-BFGS-B':
@@ -250,7 +234,7 @@ class GaussianProcess:
 
         Args:
             x_t (AtomicEnvironment): Input local environment.
-        
+
         Return:
             float: Local energy predicted by the GP.
         """
@@ -266,7 +250,7 @@ class GaussianProcess:
 
         Args:
             x_t (AtomicEnvironment): Input local environment.
-    
+
         Return:
             (float, float): Mean and predictive variance predicted by the GP.
         """
@@ -295,7 +279,7 @@ class GaussianProcess:
             x (AtomicEnvironment): Local environment to compare against
                 the training environments.
             d_1 (int): Cartesian component of the kernel (1=x, 2=y, 3=z).
-        
+
         Return:
             np.ndarray: Kernel vector.
         """
@@ -312,13 +296,13 @@ class GaussianProcess:
         return k_v
 
     def en_kern_vec(self, x: AtomicEnvironment):
-        """Compute the vector of energy/force kernels between an atomic 
+        """Compute the vector of energy/force kernels between an atomic
         environment and the environments in the training set.
-        
+
         Args:
             x (AtomicEnvironment): Local environment to compare against
                 the training environments.
-        
+
         Return:
             np.ndarray: Kernel vector.
         """
@@ -343,17 +327,9 @@ class GaussianProcess:
         The forces and variances are later obtained using alpha.
         """
 
-        if self.par:
-            hyp_mat, ky_mat = \
-                get_ky_and_hyp_par(self.hyps, self.training_data,
-                                   self.training_labels_np,
-                                   self.kernel_grad, self.cutoffs,
-                                   self.no_cpus)
-        else:
-            hyp_mat, ky_mat = \
-                get_ky_and_hyp(self.hyps, self.training_data,
-                               self.training_labels_np,
-                               self.kernel_grad, self.cutoffs)
+        hyp_mat, ky_mat = \
+            get_ky_and_hyp_par(self.hyps, self.training_data,
+                               self.kernel_grad, self.cutoffs, self.no_cpus)
 
         like, like_grad = \
             get_like_grad_from_mats(ky_mat, hyp_mat, self.training_labels_np)
@@ -382,8 +358,8 @@ class GaussianProcess:
             self.set_L_alpha()
             return
 
-        ky_mat = get_ky_mat_update(np.copy(self.ky_mat), self.training_data, 
-                self.get_kernel_vector, self.hyps, self.par)
+        ky_mat = get_ky_mat_update(np.copy(self.ky_mat), self.training_data,
+                self.get_kernel_vector, self.hyps, self.no_cpus)
 
         l_mat = np.linalg.cholesky(ky_mat)
         l_mat_inv = np.linalg.inv(l_mat)
@@ -476,8 +452,7 @@ class GaussianProcess:
 
         new_gp.likelihood = dictionary['likelihood']
         new_gp.likelihood_gradient = dictionary['likelihood_gradient']
-        new_gp.training_labels_np = new_gp.force_list_to_np(
-            new_gp.training_labels)
+        new_gp.training_labels_np = np.hstack(new_gp.training_labels)
         return new_gp
 
     def write_model(self, name: str, format: str = 'json'):
