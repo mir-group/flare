@@ -14,12 +14,11 @@
 #
 import os
 import sys
-import nptying
 sys.path.append('../..')
 #sys.path.append('../../flare')
 #sys.path.append('../../flare/mgp')
 #sys.path.append('../../flare/ase')
-autodoc_mock_imports = ["numpy", "scipy", "numba", "pymatgen", "ase"]
+autodoc_mock_imports = ["numpy", "scipy", "numba", "pymatgen", "ase","nptyping"]
 
 import sphinx_rtd_theme
 
@@ -48,8 +47,7 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.imgmath',
     'sphinx_rtd_theme',
-    'sphinx.ext.napoleon',
-    'nptyping'
+    'sphinx.ext.napoleon'
 ]
 # napoleon_use_param = False
 # Add any paths that contain templates here, relative to this directory.
