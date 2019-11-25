@@ -11,7 +11,7 @@ from ase.md.md import MolecularDynamics
 from ase import units
 
 
-class OTF(MolecularDynamics):
+class OTF:
     """output_name => logfile
     npool: added
     prev_pos_init: relaunch mode not implemented
