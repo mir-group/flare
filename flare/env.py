@@ -215,7 +215,7 @@ def get_3_body_arrays(bond_array_2, bond_positions_2, cutoff_3: float):
      of atoms n > m that are within a distance cutoff_3 of both atom n and the
      central atom.
 
-     cross_bond_dists: Two dimensional array whose row m contains the 
+     cross_bond_dists: Two dimensional array whose row m contains the
      distances from atom m of atoms n > m that are within a distance cutoff_3
      of both atom n and the central atom.
 

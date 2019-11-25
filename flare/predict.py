@@ -42,7 +42,7 @@ def predict_on_atom(param: Tuple[Structure, int, GaussianProcess])->(
 
 
 def predict_on_atom_en(param: Tuple[Structure, int, GaussianProcess])->(
-        np.array,np.array,float):
+        np.array, np.array, float):
     """
     Return the forces/std. dev. uncertainty / energy associated with an
     individual atom in a structure, without necessarily having cast it to a

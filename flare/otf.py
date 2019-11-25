@@ -155,8 +155,10 @@ class OTF(object):
                                               self.structure)
 
                 # get max uncertainty atoms
-                std_in_bound, target_atoms = is_std_in_bound(self.std_tolerance,
-                        self.gp.hyps[-1], self.structure, self.max_atoms_added)
+                std_in_bound, target_atoms = \
+                    is_std_in_bound(self.std_tolerance,
+                                    self.gp.hyps[-1], self.structure,
+                                    self.max_atoms_added)
 
                 if not std_in_bound:
                     # record GP forces
