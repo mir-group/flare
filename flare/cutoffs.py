@@ -10,14 +10,13 @@ from numba import njit
 def hard_cutoff(r_cut: float, ri: float, ci: float):
     """A hard cutoff that assigns a value of 1 to all interatomic distances.
 
-    :param r_cut: Cutoff value (in angstrom).
-    :type r_cut: float
-    :param ri: Interatomic distance.
-    :type ri: float
-    :param ci: Cartesian coordinate divided by the distance.
-    :type ci: float
-    :return: Cutoff value and its derivative.
-    :rtype: float, float
+    Args:
+        r_cut (float): Cutoff value (in angstrom).
+        ri (float): Interatomic distance.
+        ci (float): Cartesian coordinate divided by the distance.
+
+    Returns:
+        (float, float): Cutoff value and its derivative.
     """
     return 1, 0
 
