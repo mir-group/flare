@@ -19,3 +19,11 @@ void calculate_radial(
     void (*cutoff_function)(double *, double, double, double *),
     double x, double y, double z, double r, double rcut, int N,
     double * radial_hyps, double * cutoff_hyps);
+
+// Single bond basis functions.
+void single_bond_update(
+double * single_bond_vals, double * environment_dervs, double * central_dervs,
+void (*basis_function)(double *, double *, double, int, double *),
+void (*cutoff_function)(double *, double, double, double *),
+double x, double y, double z, double r, double rcut, int N, int lmax,
+double * radial_hyps, double * cutoff_hyps);
