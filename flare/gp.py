@@ -139,7 +139,7 @@ class GaussianProcess:
         """Train Gaussian Process model on training data. Tunes the
         hyperparameters to maximize the likelihood, then computes L and alpha
         (related to the covariance matrix of the training set).
-        
+
         Args:
             output (Output): Output object specifying where to write the
                 progress of the optimization.
@@ -149,7 +149,7 @@ class GaussianProcess:
             x_tol (float): Tolerance on the x values used to decide when
                 Nelder-Mead hyperparameter optimization is terminated.
             line_steps (int): Maximum number of line steps for L-BFGS
-                hyperparameter ptimization.
+                hyperparameter optimization.
         """
 
         x_0 = self.hyps
@@ -205,7 +205,7 @@ class GaussianProcess:
 
     def check_L_alpha(self):
         """
-        Check that the alpha vector is up-to-date with the training set. If
+        Check that the alpha vector is up to date with the training set. If
         not, update_L_alpha is called.
         """
 
