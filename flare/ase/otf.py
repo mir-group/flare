@@ -21,26 +21,35 @@ class OTF:
     Args:
         dft_calc (ASE Calculator): the ASE DFT calculator (see ASE documentaion)
         dft_count (int): initial number of DFT calls
-        std_tolerance_factor (float): the threshold of calling DFT = noise * std_tolerance_factor
+        std_tolerance_factor (float): the threshold of calling DFT = noise * 
+            std_tolerance_factor
         init_atoms (list): the list of atoms in the first DFT call to add to
             the training set, since there's no uncertainty prediction initially
         calculate_energy (bool): if True, the energy will be calculated;
             otherwise, only forces will be predicted
-        max_atoms_added (int): 
-        freeze_hyps (int or None):
-        restart_from (str or None):
-        use_mapping (bool): 
-        non_mapping_steps (list):
-        l_bound (float):
-        two_d (bool):
+        max_atoms_added (int): the maximal number of atoms to add to the 
+            training set after each DFT calculation
+        freeze_hyps (int or None): the hyperparameters will only be trained for
+            the first `freeze_hyps` DFT calls, and will be fixed after that
+        restart_from (str or None): the path of the directory that stores the
+            training data from last OTF run, and this OTF will restart from it
+
+    Other Parameters:
+        use_mapping (bool): if True, the MGP will be used
+        non_mapping_steps (list): a list of steps that MGP will not be 
+            constructed and used
+        l_bound (float): the lower bound of the interatomic distance, used for 
+            MGP construction
+        two_d (bool): if 2-D material is considered, set to True, then the 
+            atomic environment construction will only search the x & y periodic
+            boundaries to save time
     """
 
     def __init__(self, 
             # on-the-fly parameters
             dft_calc=None, dft_count=None, std_tolerance_factor: float=1, 
-            skip: int=0,
-            init_atoms: list=[], calculate_energy=False, max_atoms_added=1, 
-            freeze_hyps=1, restart_from=None,
+            skip: int=0, init_atoms: list=[], calculate_energy=False, 
+            max_atoms_added=1, freeze_hyps=1, restart_from=None,
             # mgp parameters
             use_mapping: bool=False, non_mapping_steps: list=[],
             l_bound: float=None, two_d: bool=False):
