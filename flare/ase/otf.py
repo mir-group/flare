@@ -60,19 +60,20 @@ class OTF:
             use_mapping: bool=False, non_mapping_steps: list=[],
             l_bound: float=None, two_d: bool=False):
 
-        self.std_tolerance = std_tolerance_factor
-        self.noa = len(atoms.positions)
-        self.max_atoms_added = max_atoms_added
-        self.freeze_hyps = freeze_hyps
         self.dft_calc = dft_calc
         if dft_count is None:
             self.dft_count = 0
         else:
             self.dft_count = dft_count
+        self.std_tolerance = std_tolerance_factor
+        self.noa = len(self.atoms.positions)
+        self.max_atoms_added = max_atoms_added
+        self.freeze_hyps = freeze_hyps
 
         # params for mapped force field
         self.use_mapping = use_mapping
         self.non_mapping_steps = non_mapping_steps
+        self.l_bound = l_bound
         self.two_d = two_d
 
         # initialize local energies
