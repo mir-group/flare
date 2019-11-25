@@ -50,7 +50,43 @@ from flare.util import element_to_Z, \
 
 
 class TrajectoryTrainer:
+    """
+    Class which trains a GP off of an AIMD trajectory, and generates
+    error statistics between the DFT and GP calls.
 
+    There are a variety of options which can give you a finer control
+    over the training process.
+
+    :param frames: List of structures to evaluate / train GP on
+    :param gp: Gaussian Process object
+    :param rel_std_tolerance: Train if uncertainty is above this *
+        noise variance hyperparameter
+    :param abs_std_tolerance: Train if uncertainty is above this
+    :param abs_force_tolerance: Add atom force error exceeds this
+    :param max_force_error: Don't add atom if force error exceeds this
+    :param parallel: Use parallel functions or not
+    :param validate_ratio: Fraction of frames used for validation
+    :param no_cpus: number of cpus to run with multithreading
+    :param skip: Skip through frames
+    :param calculate_energy: Use local energy kernel or not
+    :param output_name: Write output of training to this file
+    :param max_atoms_from_frame: Largest # of atoms added from one frame
+    :param min_atoms_per_train: Only train when this many atoms have been
+        added
+    :param max_trains: Stop training GP after this many calls to train
+    :param n_cpus: Number of CPUs to parallelize over
+    :param shuffle_frames: Randomize order of frames for better training
+    :param verbose: 0: Silent, 1: Minimal, 2: Lots of information
+    :param pre_train_on_skips: Train model on every n frames before running
+    :param pre_train_seed_frames: Frames to train on before running
+    :param pre_train_seed_envs: Environments to train on before running
+    :param pre_train_atoms_per_element: Max # of environments to add from
+        each species in the seed pre-training steps
+    :param train_atoms_per_element: Max # of environments to add from
+        each species in the training steps
+    :param checkpoint_interval: How often to write model after trainings
+    :param model_format: Format to write GP model to
+    """
     def __init__(self, frames: List[Structure],
                  gp: GaussianProcess,
                  rel_std_tolerance: float = 4,
@@ -75,43 +111,6 @@ class TrajectoryTrainer:
                  train_atoms_per_element: dict = None,
                  checkpoint_interval: int = None,
                  model_format: str = 'json'):
-        """
-        Class which trains a GP off of an AIMD trajectory, and generates
-        error statistics between the DFT and GP calls.
-
-        There are a variety of options which can give you a finer control
-        over the training process.
-
-        :param frames: List of structures to evaluate / train GP on
-        :param gp: Gaussian Process object
-        :param rel_std_tolerance: Train if uncertainty is above this *
-            noise variance hyperparameter
-        :param abs_std_tolerance: Train if uncertainty is above this
-        :param abs_force_tolerance: Add atom force error exceeds this
-        :param max_force_error: Don't add atom if force error exceeds this
-        :param parallel: Use parallel functions or not
-        :param validate_ratio: Fraction of frames used for validation
-        :param no_cpus: number of cpus to run with multithreading
-        :param skip: Skip through frames
-        :param calculate_energy: Use local energy kernel or not
-        :param output_name: Write output of training to this file
-        :param max_atoms_from_frame: Largest # of atoms added from one frame
-        :param min_atoms_per_train: Only train when this many atoms have been
-            added
-        :param max_trains: Stop training GP after this many calls to train
-        :param n_cpus: Number of CPUs to parallelize over
-        :param shuffle_frames: Randomize order of frames for better training
-        :param verbose: 0: Silent, 1: Minimal, 2: Lots of information
-        :param pre_train_on_skips: Train model on every n frames before running
-        :param pre_train_seed_frames: Frames to train on before running
-        :param pre_train_seed_envs: Environments to train on before running
-        :param pre_train_atoms_per_element: Max # of environments to add from
-            each species in the seed pre-training steps
-        :param train_atoms_per_element: Max # of environments to add from
-            each species in the training steps
-        :param checkpoint_interval: How often to write model after trainings
-        :param model_format: Format to write GP model to
-        """
 
         # Set up parameters
         self.frames = frames

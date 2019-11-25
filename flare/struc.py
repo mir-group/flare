@@ -50,10 +50,11 @@ class Structure:
     :type stds: np.ndarray
     """
 
-    def __init__(self, cell, species: Union[List[str], List[int]],
-                 positions,
+    def __init__(self, cell: 'np.ndarray', species: Union[List[str],
+                                                          List[int]],
+                 positions: 'np.ndarray',
                  mass_dict: dict = None,
-                 prev_positions=None,
+                 prev_positions: 'np.ndarray' =None,
                  species_labels: List[str] = None,
                  forces=None,
                  stds=None):
@@ -125,8 +126,8 @@ class Structure:
         return cell_dot
 
     @staticmethod
-    def raw_to_relative(positions, cell_transpose,
-                        cell_dot_inverse):
+    def raw_to_relative(positions: 'np.ndarray', cell_transpose: 'np.ndarray',
+                        cell_dot_inverse: 'np.ndarray')-> 'np.ndarray':
         """Convert Cartesian coordinates to relative (fractional) coordinates,
         expressed in terms of the cell vectors set in self.cell.
 
@@ -135,7 +136,7 @@ class Structure:
         :param cell_transpose: Transpose of the cell array.
         :type cell_transpose: np.ndarray
         :param cell_dot_inverse: Inverse of the array of dot products of
-        cell vectors.
+            cell vectors.
         :type cell_dot_inverse: np.ndarray
         :return: Relative positions.
         :rtype: np.ndarray
@@ -148,7 +149,11 @@ class Structure:
         return relative_positions
 
     @staticmethod
-    def relative_to_raw(relative_positions, cell_transpose_inverse, cell_dot):
+    def relative_to_raw(relative_positions: 'np.ndarray',
+                        cell_transpose_inverse: 'np.ndarray',
+                        cell_dot: 'np.ndarray')-> ('np.ndarray',
+                                                   'np.ndarray',
+                                                   'np.ndarray'):
 
         return np.matmul(np.matmul(relative_positions, cell_dot),
                          cell_transpose_inverse)
@@ -213,7 +218,7 @@ class Structure:
         return dumps(self.as_dict(), cls=NumpyEncoder)
 
     @staticmethod
-    def from_dict(dictionary: dict):
+    def from_dict(dictionary: dict)-> 'flare.struc.Structure':
         """
         Assembles a Structure object from a dictionary parameterizing one.
         :param dictionary: dict describing structure parameters.
@@ -233,7 +238,7 @@ class Structure:
         return struc
 
     @staticmethod
-    def from_ase_atoms(atoms):
+    def from_ase_atoms(atoms)-> 'flare.struc.Structure':
         """
         From an ASE Atoms object, return a FLARE structure
         :param atoms: ASE Atoms object
@@ -245,11 +250,12 @@ class Structure:
                           species=atoms.get_chemical_symbols())
         return struc
 
-    def to_ase_atoms(self):
+    def to_ase_atoms(self)-> 'ase.Atoms':
         from ase import Atoms
         return Atoms(self.species_labels,
                      positions=self.positions,
                      cell=self.cell)
+
 
     def to_pmg_structure(self):
         """
@@ -272,7 +278,8 @@ class Structure:
                                   )
 
     @staticmethod
-    def from_pmg_structure(structure):
+    def from_pmg_structure(structure: 'pymatgen.core.Structure')-> \
+            'flare.struc.Structure':
         """
         Returns Pymatgen structure as FLARE structure.
 
@@ -301,8 +308,10 @@ class Structure:
         return new_struc
 
 
-def get_unique_species(species):
+def get_unique_species(species: List)-> (List, List[int]):
     """
+    Returns a list of the unique species passed in, and a list of
+    integers indexing them.
 
     :param species:
     :return:
