@@ -77,7 +77,8 @@ def two_plus_three_body_mc_grad(env1: AtomicEnvironment,
         cutoff_func (Callable): Cutoff function of the kernel.
 
     Return:
-        (float, np.ndarray): Value of the 2+3-body kernel and its gradient
+        (float, np.ndarray):
+            Value of the 2+3-body kernel and its gradient
             with respect to the hyperparameters.
     """
 
@@ -242,8 +243,9 @@ def three_body_mc_grad(env1, env2, d1, d2, hyps, cutoffs,
         cutoff_func (Callable): Cutoff function of the kernel.
 
     Return:
-        (float, np.ndarray): Value of the 3-body kernel and its gradient
-            with respect to the hyperparameters.
+        (float, np.ndarray):
+            Value of the 3-body kernel and its gradient with respect to the
+            hyperparameters.
     """
     sig = hyps[0]
     ls = hyps[1]
@@ -365,8 +367,9 @@ def two_body_mc_grad(env1, env2, d1, d2, hyps, cutoffs,
         cutoff_func (Callable): Cutoff function of the kernel.
 
     Return:
-        (float, np.ndarray): Value of the 2-body kernel and its gradient
-            with respect to the hyperparameters.
+        (float, np.ndarray):
+            Value of the 2-body kernel and its gradient with respect to the
+            hyperparameters.
     """
     sig = hyps[0]
     ls = hyps[1]
@@ -636,8 +639,9 @@ def three_body_mc_grad_jit(bond_array_1, c1, etypes1,
         cutoff_func (Callable): Cutoff function.
 
     Returns:
-        (float, float): Value of the 3-body kernel and its gradient with
-            respect to the hyperparameters.
+        (float, float):
+            Value of the 3-body kernel and its gradient with respect to the
+            hyperparameters.
     """
     kern = 0
     sig_derv = 0
