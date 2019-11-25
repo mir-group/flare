@@ -53,7 +53,7 @@ class Structure:
                                                           List[int]],
                  positions: 'np.ndarray',
                  mass_dict: dict = None,
-                 prev_positions: 'np.ndarray' =None,
+                 prev_positions: 'ndarray' =None,
                  species_labels: List[str] = None,
                  forces=None,
                  stds=None):
