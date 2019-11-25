@@ -6,7 +6,7 @@ Contains methods to transfer the model to an OTF run or MD engine run.
 
 SEED FRAMES
 ----------
-The various parameters in the TrajectoryTrainer class related to
+The various parameters in the :class:`TrajectoryTrainer` class related to
 "Seed frames" are to help you  train a model which does not yet have a
 training set. Uncertainty- and force-error driven training will go better with
 a somewhat populated training set, as force and uncertainty estimates
@@ -370,7 +370,6 @@ class TrajectoryTrainer:
     def train_gp(self, max_iter: int = None):
         """
         Train the Gaussian process and write the results to the output file.
-        The max_iter fl
 
         :param max_iter: Maximum iterations associated with this training run,
             overriding the Gaussian Process's internally set maxiter.
