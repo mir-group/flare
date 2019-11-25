@@ -49,7 +49,7 @@ class Structure:
     :type stds: np.ndarray
     """
 
-    def __init__(self, cell: 'np.ndarray', species: Union[List[str],
+    def __init__(self, cell: 'ndarray', species: Union[List[str],
                                                           List[int]],
                  positions: 'np.ndarray',
                  mass_dict: dict = None,
@@ -237,7 +237,7 @@ class Structure:
         return struc
 
     @staticmethod
-    def from_ase_atoms(atoms)-> 'flare.struc.Structure':
+    def from_ase_atoms(atoms: 'ase.Atoms')-> 'flare.struc.Structure':
         """
         From an ASE Atoms object, return a FLARE structure
         :param atoms: ASE Atoms object
