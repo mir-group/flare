@@ -343,7 +343,7 @@ def is_std_in_bound_per_species(rel_std_tolerance: float,
 
 def is_force_in_bound_per_species(abs_force_tolerance: float,
                                   predicted_forces: 'np.ndarray',
-                                  label_forces: 'np.ndarray',
+                                  label_forces: "np.ndarray",
                                   structure,
                                   max_atoms_added: int = inf,
                                   max_by_species: dict ={},
