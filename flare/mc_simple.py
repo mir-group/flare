@@ -450,30 +450,30 @@ def three_body_mc_jit(bond_array_1, c1, etypes1,
             environment.
         cross_bond_inds_1 (np.ndarray): Two dimensional array whose row m
             contains the indices of atoms n > m in the first local
-            environment that are within a distance cutoff_3 of both atom n and
+            environment that are within a distance r_cut of both atom n and
             the central atom.
         cross_bond_inds_2 (np.ndarray): Two dimensional array whose row m
             contains the indices of atoms n > m in the second local
-            environment that are within a distance cutoff_3 of both atom n and
+            environment that are within a distance r_cut of both atom n and
             the central atom.
         cross_bond_dists_1 (np.ndarray): Two dimensional array whose row m
             contains the distances from atom m of atoms n > m in the first
-            local environment that are within a distance cutoff_3 of both atom
+            local environment that are within a distance r_cut of both atom
             n and the central atom.
         cross_bond_dists_2 (np.ndarray): Two dimensional array whose row m
             contains the distances from atom m of atoms n > m in the second
-            local environment that are within a distance cutoff_3 of both atom
+            local environment that are within a distance r_cut of both atom
             n and the central atom.
         triplets_1 (np.ndarray): One dimensional array of integers whose entry
             m is the number of atoms in the first local environment that are
-            within a distance cutoff_3 of atom m.
+            within a distance r_cut of atom m.
         triplets_2 (np.ndarray): One dimensional array of integers whose entry
             m is the number of atoms in the second local environment that are
-            within a distance cutoff_3 of atom m.
+            within a distance r_cut of atom m.
         d1 (int): Force component of the first environment.
         d2 (int): Force component of the second environment.
-        sig (float): Signal variance hyperparameter.
-        ls (float): Length scale hyperparameter.
+        sig (float): 3-body signal variance hyperparameter.
+        ls (float): 3-body length scale hyperparameter.
         r_cut (float): 3-body cutoff radius.
         cutoff_func (Callable): Cutoff function.
 
@@ -488,12 +488,14 @@ def three_body_mc_jit(bond_array_1, c1, etypes1,
     ls2 = 1 / (ls*ls)
     ls3 = ls2*ls2
 
+    # first loop over the first 3-body environment
     for m in range(bond_array_1.shape[0]):
         ri1 = bond_array_1[m, 0]
         ci1 = bond_array_1[m, d1]
         fi1, fdi1 = cutoff_func(r_cut, ri1, ci1)
         ei1 = etypes1[m]
 
+        # second loop over the first 3-body environment
         for n in range(triplets_1[m]):
             ind1 = cross_bond_inds_1[m, m+n+1]
             ri2 = bond_array_1[ind1, 0]
@@ -507,12 +509,14 @@ def three_body_mc_jit(bond_array_1, c1, etypes1,
             fi = fi1*fi2*fi3
             fdi = fdi1*fi2*fi3+fi1*fdi2*fi3
 
+            # first loop over the second 3-body environment
             for p in range(bond_array_2.shape[0]):
                 rj1 = bond_array_2[p, 0]
                 cj1 = bond_array_2[p, d2]
                 fj1, fdj1 = cutoff_func(r_cut, rj1, cj1)
                 ej1 = etypes2[p]
 
+                # second loop over the second 3-body environment
                 for q in range(triplets_2[p]):
                     ind2 = cross_bond_inds_2[p, p+1+q]
                     rj2 = bond_array_2[ind2, 0]
@@ -536,6 +540,7 @@ def three_body_mc_jit(bond_array_1, c1, etypes1,
                     r32 = ri3-rj2
                     r33 = ri3-rj3
 
+                    # consider six permutations
                     if (c1 == c2):
                         if (ei1 == ej1) and (ei2 == ej2):
                             kern += \
