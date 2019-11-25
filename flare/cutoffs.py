@@ -64,7 +64,10 @@ def cubic_cutoff(r_cut: float, ri: float, ci: float):
 @njit
 def cosine_cutoff(r_cut: float, ri: float, ci: float, d: float = 1):
     """A cosine cutoff that returns 1 up to r_cut - d, and assigns a cosine
-    envelope to values of r between r_cut - d and r_cut.
+    envelope to values of r between r_cut - d and r_cut. Based on Eq. 24 of
+    Albert P. Bartók and Gábor Csányi. "Gaussian approximation potentials: A
+    brief tutorial introduction." International Journal of Quantum Chemistry
+    115.16 (2015): 1051-1057.
 
     Args:
         r_cut (float): Cutoff value (in angstrom).
