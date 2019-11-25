@@ -37,6 +37,7 @@ from copy import deepcopy
 from typing import List, Tuple
 
 import numpy as np
+from math import inf
 
 from flare.env import AtomicEnvironment
 from flare.gp import GaussianProcess
@@ -92,7 +93,7 @@ class TrajectoryTrainer:
                  rel_std_tolerance: float = 4,
                  abs_std_tolerance: float = 1,
                  abs_force_tolerance: float = 0,
-                 max_force_error: float = np.inf,
+                 max_force_error: float = inf,
                  parallel: bool = False,
                  n_cpus: int = None,
                  skip: int = 1,
@@ -100,7 +101,7 @@ class TrajectoryTrainer:
                  calculate_energy: bool = False,
                  output_name: str = 'gp_from_aimd',
                  pre_train_max_iter: int = 50,
-                 max_atoms_from_frame: int = np.inf, max_trains: int = np.inf,
+                 max_atoms_from_frame: int = inf, max_trains: int = inf,
                  min_atoms_per_train: int = 1, shuffle_frames: bool = False,
                  verbose: int = 0,
                  pre_train_on_skips: int = -1,
@@ -237,7 +238,7 @@ class TrajectoryTrainer:
                 n_at = len(atoms_of_specie)
                 # Determine how many to add based on user defined cutoffs
                 n_to_add = min(n_at, self.pre_train_env_per_species.get(
-                    species_i, np.inf), self.max_atoms_from_frame)
+                    species_i, inf), self.max_atoms_from_frame)
 
                 for atom in atoms_of_specie[:n_to_add]:
                     train_atoms.append(atom)

@@ -2,9 +2,11 @@
 Utility functions for various tasks.
 """
 from warnings import warn
-import numpy as np
 from json import JSONEncoder
 from typing import List
+from math import inf
+
+import numpy as np
 
 # Dictionary mapping elements to their atomic number (Z)
 _element_to_Z = {'H': 1,
@@ -208,7 +210,7 @@ def Z_to_element(Z: int) -> str:
 
 def is_std_in_bound(std_tolerance: float, noise: float,
                     structure: 'flare.struc.Structure',
-                    max_atoms_added: int = np.inf)-> (bool, List[int]):
+                    max_atoms_added: int = inf)-> (bool, List[int]):
     """
     Given an uncertainty tolerance and a structure decorated with atoms,
     species, and associated uncertainties, return those which are above a
@@ -257,7 +259,7 @@ def is_std_in_bound(std_tolerance: float, noise: float,
 def is_std_in_bound_per_species(rel_std_tolerance: float,
                                 abs_std_tolerance: float, noise: float,
                                 structure,
-                                max_atoms_added: int = np.inf,
+                                max_atoms_added: int = inf,
                                 max_by_species: dict = {})-> (bool, List[int]):
     """
     Checks the stds of GP prediction assigned to the structure, returns a
@@ -328,7 +330,7 @@ def is_std_in_bound_per_species(rel_std_tolerance: float,
         # Only add up to species allowance, if it exists
         cur_spec = structure.species_labels[i]
         if present_species[cur_spec] < \
-                max_by_species.get(cur_spec, np.inf):
+                max_by_species.get(cur_spec, inf):
             target_atoms.append(i)
             present_species[cur_spec] += 1
 
@@ -343,10 +345,10 @@ def is_force_in_bound_per_species(abs_force_tolerance: float,
                                   predicted_forces: 'np.ndarray',
                                   label_forces: 'np.ndarray',
                                   structure,
-                                  max_atoms_added: int = np.inf,
+                                  max_atoms_added: int = inf,
                                   max_by_species: dict ={},
                                   max_force_error: float
-                                  = np.inf)-> (bool, List[int]):
+                                  = inf)-> (bool, List[int]):
     """
     Checks the forces of GP prediction assigned to the structure against a
     DFT calculation, and return a list of atoms which meet an absolute
@@ -409,7 +411,7 @@ def is_force_in_bound_per_species(abs_force_tolerance: float,
 
         # Only add up to species allowance, if it exists
         if present_species[cur_spec] < \
-                max_by_species.get(cur_spec, np.inf) \
+                max_by_species.get(cur_spec, inf) \
                 and max_error_components[i] < max_force_error:
             target_atoms.append(i)
             present_species[cur_spec] += 1
