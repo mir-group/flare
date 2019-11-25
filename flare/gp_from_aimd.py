@@ -49,7 +49,7 @@ from flare.util import element_to_Z, \
     is_std_in_bound_per_species, is_force_in_bound_per_species
 
 
-class TrajectoryTrainer():
+class TrajectoryTrainer:
 
     def __init__(self, frames: List[Structure],
                  gp: GaussianProcess,
@@ -58,7 +58,7 @@ class TrajectoryTrainer():
                  abs_force_tolerance: float = 0,
                  max_force_error: float = np.inf,
                  parallel: bool = False,
-                 no_cpus: int = None,
+                 n_cpus: int = None,
                  skip: int = 1,
                  validate_ratio: float = 0.0,
                  calculate_energy: bool = False,
@@ -81,8 +81,6 @@ class TrajectoryTrainer():
 
         There are a variety of options which can give you a finer control
         over the training process.
-
-
 
         :param frames: List of structures to evaluate / train GP on
         :param gp: Gaussian Process object
@@ -128,7 +126,7 @@ class TrajectoryTrainer():
         self.max_force_error = max_force_error
         self.max_trains = max_trains
         self.parallel = parallel
-        self.no_cpus = no_cpus
+        self.no_cpus = n_cpus
 
         # Set prediction function based on if forces or energies are
         # desired, and parallelization accordingly

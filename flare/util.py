@@ -175,7 +175,7 @@ class NumpyEncoder(JSONEncoder):
 
     def default(self, obj):
         """
-	"""
+        """
         if isinstance(obj, (np.int_, np.intc, np.intp, np.int8,
                             np.int16, np.int32, np.int64, np.uint8,
                             np.uint16, np.uint32, np.uint64)):
@@ -207,8 +207,8 @@ def Z_to_element(Z: int) -> str:
 
 
 def is_std_in_bound(std_tolerance: float, noise: float,
-                    structure,
-                    max_atoms_added: int)-> (bool, List[int]):
+                    structure: 'flare.struc.Structure',
+                    max_atoms_added: int = np.inf)-> (bool, List[int]):
     """
     Given an uncertainty tolerance and a structure decorated with atoms,
     species, and associated uncertainties, return those which are above a
@@ -222,12 +222,14 @@ def is_std_in_bound(std_tolerance: float, noise: float,
 
     If std_tolerance is 0, then do not check.
 
-    :param std_tolerance: If positive, set
-    :param noise:
-    :param structure:
+    :param std_tolerance: If positive, multiply by noise to get cutoff. If
+        negative, use absolute value of std_tolerance as cutoff.
+    :param noise: Noise variance parameter
+    :param structure: Input structure
     :type structure: FLARE Structure
-    :param max_atoms_added:
-    :return:
+    :param max_atoms_added: Maximum # of atoms to add
+    :return: (True,[-1]) if no atoms are above cutoff, (False,[...]) of the
+            top `max_atoms_added` uncertainties
     """
     # set uncertainty threshold
     if std_tolerance == 0:
@@ -338,8 +340,8 @@ def is_std_in_bound_per_species(rel_std_tolerance: float,
 
 
 def is_force_in_bound_per_species(abs_force_tolerance: float,
-                                  predicted_forces: np.array,
-                                  label_forces: np.array,
+                                  predicted_forces: 'np.ndarray',
+                                  label_forces: 'np.ndarray',
                                   structure,
                                   max_atoms_added: int = np.inf,
                                   max_by_species: dict ={},
@@ -371,8 +373,8 @@ def is_force_in_bound_per_species(abs_force_tolerance: float,
     :param max_force_error: In order to avoid counting in highly unlikely
         configurations, if the error exceeds this, do not add atom
     :return: Bool indicating if any atoms exceeded the error
-    threshold, and a list of indices of atoms which did sorted by their
-    error.
+        threshold, and a list of indices of atoms which did sorted by their
+        error.
     """
 
     # Always returns true; use this when you want to test model performance
@@ -418,4 +420,3 @@ def is_force_in_bound_per_species(abs_force_tolerance: float,
         return False, target_atoms
     else:
         return True, [-1]
-
