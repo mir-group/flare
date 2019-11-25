@@ -1035,12 +1035,15 @@ def two_body_mc_en_jit(bond_array_1, c1, etypes1,
 
 
 _str_to_kernel = {'two_body_mc': two_body_mc,
-                  'two_body_en_mc': two_body_mc_en,
+                  'two_body_mc_en': two_body_mc_en,
+                  'two_body_mc_grad': two_body_mc_grad,
                   'two_body_mc_force_en': two_body_mc_force_en,
                   'three_body_mc': three_body_mc,
+                  'three_body_mc_grad': three_body_mc_grad,
                   'three_body_mc_en': three_body_mc_en,
                   'three_body_mc_force_en': three_body_mc_force_en,
                   'two_plus_three_body_mc': two_plus_three_body_mc,
+                  'two_plus_three_body_mc_grad': two_plus_three_body_mc_grad,
                   'two_plus_three_mc_en': two_plus_three_mc_en,
                   'two_plus_three_mc_force_en': two_plus_three_mc_force_en
                   }

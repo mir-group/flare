@@ -158,15 +158,17 @@ class Output():
                         temperature, KE, local_energies,
                         start_time, dft_step, velocities):
         """ write md configuration in log file
+
         :param dt: timestemp of OTF MD
         :param curr_step: current timestep of OTF MD
         :param structure: atomic structure
         :param temperature: current temperature
         :param KE: current total kinetic energy
         :param local_energies: local energy
-        :param start_time:
-        :param dft_step:
-        :param velocities:
+        :param start_time: starting time for time profiling
+        :param dft_step: # of DFT calls
+        :param velocities: list of velocities
+
         :return:
         """
 
@@ -239,8 +241,8 @@ class Output():
                   header="",
                   forces: np.array=None, stds: np.array=None,
                   forces_2: np.array=None):
-        """
-        write atomic configuration in xyz file
+        """ write atomic configuration in xyz file
+
         :param curr_step: Int, number of frames to note in the comment line
         :param pos:       nx3 matrix of forces, positions, or nything
         :param species:   n element list of symbols
@@ -284,12 +286,14 @@ class Output():
                          forces: np.array = None, stds : np.array = None,
                          forces_2: np.array = None):
         """ write atomic configuration in xyz file
+
         :param curr_step: Int, number of frames to note in the comment line
         :param structure: Structure, contain positions and forces
         :param dft_step:  Boolean, whether this is a DFT call.
         :param forces: Optional list of forces to print in xyz file
         :param stds: Optional list of uncertanties to print in xyz file
         :param forces_2: Optional second list of forces (e.g. DFT forces)
+
         :return:
         """
 
@@ -306,11 +310,13 @@ class Output():
     def write_hyps(self, hyp_labels, hyps, start_time, like, like_grad,
                    name='log'):
         """ write hyperparameters to logfile
-        :param hyp_labels:
-        :param hyps:
-        :param start_time:
-        :param like:
-        :param like_grad:
+
+        :param hyp_labels: labels for hyper-parameters. can be None
+        :param hyps: list of hyper-parameters
+        :param start_time: start time for time profiling
+        :param like: likelihood
+        :param like_grad: gradient of likelihood
+
         :return:
         """
         f = self.outfiles[name]
@@ -336,17 +342,18 @@ class Output():
                                 start_time, dft_forces,
                                 error, local_energies=None, KE=None):
         """ write the comparison to logfile
-        :param dft_forces:
-        :param mae:
-        :param pmae: dictionary of per species mae
-        :param mac:
-        :param KE:
-        :param curr_step:
-        :param frame:
-        :param local_energies:
-        :param start_time:
+
+        :param curr_step: current timestep
+        :param frame: Structure object that contain the current GP calculation results
+        :param start_time: start time for time profiling
+        :param dft_forces: list of forces computed by DFT
+        :param error: list of force differences between DFT and GP prediction
+        :param local_energies: local atomic energy
+        :param KE: total kinetic energy
+
         :return:
         """
+
         string = ''
 
         # Mark if a frame had DFT forces with an asterisk
