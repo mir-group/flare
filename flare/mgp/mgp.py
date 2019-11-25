@@ -512,7 +512,10 @@ class Map2body:
         nop = self.grid_num
         bond_lengths = np.linspace(self.l_bounds[0], self.u_bounds[0], nop)
         bond_means = np.zeros([nop])
-        bond_vars = np.zeros([nop, len(GP.alpha)])
+        if not self.mean_only:
+            bond_vars = np.zeros([nop, len(GP.alpha)])
+        else:
+            bond_vars = None
         env12 = AtomicEnvironment(self.bond_struc, 0, self.cutoffs)
 
         with mp.Pool(processes=processes) as pool:
@@ -534,16 +537,29 @@ class Map2body:
                 nbatch += 1
 
             k12_slice = []
+            k12_v_all = np.zeros([len(bond_lengths), size*3])
+            count = 0
+            base = 0
             for ibatch in range(nbatch):
                 s, e = block_id[ibatch]
                 k12_slice.append(pool.apply_async(self._GenGrid_inner,
                                                   args=(GP.training_data[s:e],
                                                         bond_lengths,
                                                         env12, kernel_info)))
-            k12_v_all = np.zeros([len(bond_lengths), size*3])
-            for ibatch in range(nbatch):
-                s, e = block_id[ibatch]
-                k12_v_all[:, s*3:e*3] = k12_slice[ibatch].get()
+                count += 1
+                if (count > processes*2):
+                    for ibase in range(count):
+                        s, e = block_id[ibase+base]
+                        k12_v_all[:, s*3:e*3] = k12_slice[ibase].get()
+                    del k12_slice
+                    k12_slice = []
+                    count = 0
+                    base = ibatch+1
+            if (count > 0):
+               for ibase in range(count):
+                   s, e = block_id[ibase+base]
+                   k12_v_all[:, s*3:e*3] = k12_slice[ibase].get()
+               del k12_slice
             pool.close()
             pool.join()
 
@@ -646,6 +662,8 @@ class Map3body:
         bond_means = np.zeros([nop, nop, noa])
         if not self.mean_only:
             bond_vars = np.zeros([nop, nop, noa, len(GP.alpha)])
+        else:
+            bond_vars = None
         env12 = AtomicEnvironment(self.bond_struc, 0, self.cutoffs)
 
         with mp.Pool(processes=processes) as pool:
@@ -660,28 +678,44 @@ class Map3body:
             ns = int(math.ceil(size/nsample/processes))*processes
             nsample = int(math.ceil(size/ns))
 
+            block_id = []
+            nbatch = 0
+            for ibatch in range(ns):
+                s1 = int(nsample*ibatch)
+                e1 = int(np.min([s1 + nsample, size]))
+                block_id += [(s1, e1)]
+                print("block", ibatch, s1, e1)
+                nbatch += 1
+
             k12_slice = []
             print('before for', ns, nsample, time.time())
-            for ibatch in range(ns):
-                s = nsample*ibatch
-                e = np.min([s + nsample, size])
+            count = 0
+            base = 0
+            k12_v_all = np.zeros([len(bond_lengths), len(bond_lengths), len(angles), size*3])
+            for ibatch in range(nbatch):
+                s, e = block_id[ibatch]
                 k12_slice.append(pool.apply_async(self._GenGrid_inner_most,
                                                   args=(GP.training_data[s:e],
                                                         angles, bond_lengths,
                                                         env12, kernel_info)))
                 print('send', ibatch, ns, s, e, time.time())
+                count += 1
+                if (count > processes*2):
+                    for ibase in range(count):
+                        s, e = block_id[ibase+base]
+                        k12_v_all[:, :, :, s*3:e*3] = k12_slice[ibase].get()
+                    del k12_slice
+                    k12_slice = []
+                    count = 0
+                    base = ibatch+1
+            if (count > 0):
+               for ibase in range(count):
+                   s, e = block_id[ibase+base]
+                   k12_v_all[:, :, :, s*3:e*3] = k12_slice[ibase].get()
+               del k12_slice
+
             pool.close()
             pool.join()
-
-            size3 = size*3
-            nsample3 = nsample*3
-            k12_v_all = np.zeros([len(bond_lengths), len(bond_lengths), len(angles), size3])
-            for ibatch in range(ns):
-                s = nsample3*ibatch
-                e = np.min([s + nsample3, size3])
-                k12_v_all[:, :, :, s:e] = k12_slice[ibatch].get()
-                print('get', ibatch, ns, time.time())
-
 
         for a12, angle in enumerate(angles):
             for b1, r1 in enumerate(bond_lengths):
