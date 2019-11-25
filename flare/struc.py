@@ -11,7 +11,6 @@ import numpy as np
 from flare.util import element_to_Z, NumpyEncoder
 from json import dumps
 
-from numpy import ndarray
 from typing import List, Union
 
 try:
