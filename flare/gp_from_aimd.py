@@ -107,7 +107,7 @@ class TrajectoryTrainer:
                  pre_train_on_skips: int = -1,
                  pre_train_seed_frames: List[Structure] = None,
                  pre_train_seed_envs: List[Tuple[AtomicEnvironment,
-                                                 np.array]] = None,
+                                                 'np.array']] = None,
                  pre_train_atoms_per_element: dict = None,
                  train_atoms_per_element: dict = None,
                  checkpoint_interval: int = None,
