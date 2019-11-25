@@ -534,9 +534,6 @@ def three_body_mc_grad_jit(bond_array_1, c1, etypes1,
                            cross_bond_dists_1, cross_bond_dists_2,
                            triplets_1, triplets_2,
                            d1, d2, sig, ls, r_cut, cutoff_func):
-
-    """Kernel gradient for 3-body force comparisons."""
-
     kern = 0
     sig_derv = 0
     ls_derv = 0
@@ -676,8 +673,6 @@ def three_body_mc_force_en_jit(bond_array_1, c1, etypes1,
                                cross_bond_dists_1, cross_bond_dists_2,
                                triplets_1, triplets_2,
                                d1, sig, ls, r_cut, cutoff_func):
-    """Kernel for 3-body force/energy comparisons."""
-
     kern = 0
 
     # pre-compute constants that appear in the inner loop
@@ -846,14 +841,6 @@ def three_body_mc_en_jit(bond_array_1, c1, etypes1,
 def two_body_mc_jit(bond_array_1, c1, etypes1,
                     bond_array_2, c2, etypes2,
                     d1, d2, sig, ls, r_cut, cutoff_func):
-
-    """Multicomponent two-body force/force kernel accelerated with Numba's
-    njit decorator.
-
-    Loops over bonds in two environments and adds to the kernel if bonds are
-    of the same type.
-    """
-
     kern = 0
 
     ls1 = 1 / (2 * ls * ls)
@@ -892,10 +879,6 @@ def two_body_mc_jit(bond_array_1, c1, etypes1,
 def two_body_mc_grad_jit(bond_array_1, c1, etypes1,
                          bond_array_2, c2, etypes2,
                          d1, d2, sig, ls, r_cut, cutoff_func):
-
-    """Multicomponent two-body force/force kernel gradient accelerated with
-    Numba's njit decorator."""
-
     kern = 0
     sig_derv = 0
     ls_derv = 0
@@ -951,10 +934,6 @@ def two_body_mc_grad_jit(bond_array_1, c1, etypes1,
 def two_body_mc_force_en_jit(bond_array_1, c1, etypes1,
                              bond_array_2, c2, etypes2,
                              d1, sig, ls, r_cut, cutoff_func):
-
-    """Multicomponent two-body force/energy kernel accelerated with
-    Numba's njit decorator."""
-
     kern = 0
 
     ls1 = 1 / (2 * ls * ls)
@@ -987,10 +966,6 @@ def two_body_mc_force_en_jit(bond_array_1, c1, etypes1,
 def two_body_mc_en_jit(bond_array_1, c1, etypes1,
                        bond_array_2, c2, etypes2,
                        sig, ls, r_cut, cutoff_func):
-
-    """Multicomponent two-body energy/energy kernel accelerated with
-    Numba's njit decorator."""
-
     kern = 0
 
     ls1 = 1 / (2 * ls * ls)
