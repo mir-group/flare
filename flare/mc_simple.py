@@ -227,7 +227,7 @@ def three_body_mc(env1: AtomicEnvironment, env2: AtomicEnvironment,
 
 
 def three_body_mc_grad(env1, env2, d1, d2, hyps, cutoffs,
-                       cutoff_func=cf.quadratic_cutoff) -> (float, float):
+                       cutoff_func=cf.quadratic_cutoff) -> Tuple[float, float]:
     """3-body multi-element kernel between two force components and its
     gradient with respect to the hyperparameters.
 
