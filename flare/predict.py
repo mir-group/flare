@@ -7,13 +7,16 @@ import numpy as np
 import multiprocessing as mp
 
 from typing import Tuple
+from nptyping import Array
 from flare.env import AtomicEnvironment
 from flare.gp import GaussianProcess
 from flare.struc import Structure
 
 
+
+
 def predict_on_atom(param: Tuple[Structure, int, GaussianProcess])->(
-        np.ndarray, np.ndarray):
+        Array, np.ndarray):
     """
     Return the forces/std. dev. uncertainty associated with an individual atom
     in a structure, without necessarily having cast it to a chemical

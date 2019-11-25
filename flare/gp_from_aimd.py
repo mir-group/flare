@@ -5,7 +5,7 @@ Contains methods to transfer the model to an OTF run or MD engine run.
 
 
 SEED FRAMES
-
+----------
 The various parameters in the TrajectoryTrainer class related to
 "Seed frames" are to help you  train a model which does not yet have a
 training set. Uncertainty- and force-error driven training will go better with
@@ -32,7 +32,6 @@ atoms of a given species which are added in. You can also limit the number
 of atoms which are added from a given seed frame.
 
 """
-
 import time
 from copy import deepcopy
 from typing import List, Tuple
@@ -50,7 +49,7 @@ from flare.util import element_to_Z, \
     is_std_in_bound_per_species, is_force_in_bound_per_species
 
 
-class TrajectoryTrainer(object):
+class TrajectoryTrainer():
 
     def __init__(self, frames: List[Structure],
                  gp: GaussianProcess,

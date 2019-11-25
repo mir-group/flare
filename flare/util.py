@@ -1,7 +1,5 @@
 """
 Utility functions for various tasks.
-
-2019
 """
 from warnings import warn
 import numpy as np
@@ -164,14 +162,20 @@ class NumpyEncoder(JSONEncoder):
     """
     Special json encoder for numpy types for serialization
     use as
+
     json.loads(... cls = NumpyEncoder)
+
     or:
+
     json.dumps(... cls = NumpyEncoder)
-    Thanks to StackOverflow users karlB and fnunnari!
-    https://stackoverflow.com/a/47626762
+
+    Thanks to StackOverflow users karlB and fnunnari, who contribuetd this from:
+    `https://stackoverflow.com/a/47626762`
     """
 
     def default(self, obj):
+        """
+	"""
         if isinstance(obj, (np.int_, np.intc, np.intp, np.int8,
                             np.int16, np.int32, np.int64, np.uint8,
                             np.uint16, np.uint32, np.uint64)):
@@ -187,6 +191,7 @@ class NumpyEncoder(JSONEncoder):
 def Z_to_element(Z: int) -> str:
     """
     Maps atomic numbers Z to element name
+
     :param Z: Atomic number corresponding to element
     :return: String of element
     """
@@ -264,20 +269,20 @@ def is_std_in_bound_per_species(rel_std_tolerance: float,
     then at most two atoms will be added.
 
     :param rel_std_tolerance: Multiplied by noise to get a lower
-    bound for the uncertainty threshold defined relative to the model.
+        bound for the uncertainty threshold defined relative to the model.
     :param abs_std_tolerance: Used as an absolute lower bound for the
-    uncertainty threshold.
+        uncertainty threshold.
     :param noise: Noise hyperparameter for model, used to define relative
-    uncertainty cutoff.
+        uncertainty cutoff.
     :param structure: FLARE structure decorated with
-    uncertainties in structure.stds.
+        uncertainties in structure.stds.
     :param max_atoms_added: Maximum number of atoms to return from structure.
     :param max_by_species: Dictionary describing maximum number of atoms to
-    return by species (e.g. {'H':1,'He':2} will return at most 1 H and 2 He
-    atoms.)
+        return by species (e.g. {'H':1,'He':2} will return at most 1 H and 2 He
+        atoms.)
     :return: Bool indicating if any atoms exceeded the uncertainty
-    threshold, and a list of indices of atoms which did, sorted by their
-    uncertainty.
+        threshold, and a list of indices of atoms which did, sorted by their
+        uncertainty.
     """
 
     # Always returns true; use this when you want to test model performance
@@ -357,14 +362,14 @@ def is_force_in_bound_per_species(abs_force_tolerance: float,
     desirable, a maximum force error can be passed in; atoms with
 
     :param abs_force_tolerance: If error exceeds this value, then return
-    atom index
+        atom index
     :param predicted_forces: Force predictions made by GP model
     :param label_forces: "True" forces computed by DFT
     :param structure: FLARE Structure
     :param max_atoms_added: Maximum atoms to return
     :param max_by_species: Limit to a maximum number of atoms by species
     :param max_force_error: In order to avoid counting in highly unlikely
-    configurations, if the error exceeds this, do not add atom
+        configurations, if the error exceeds this, do not add atom
     :return: Bool indicating if any atoms exceeded the error
     threshold, and a list of indices of atoms which did sorted by their
     error.
