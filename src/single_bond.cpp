@@ -20,12 +20,12 @@ double * radial_hyps, double * cutoff_hyps){
     // Calculate spherical harmonics.
     int number_of_harmonics = (lmax + 1) * (lmax + 1);
 
-    double * y = new double[number_of_harmonics];
-    double * yx = new double[number_of_harmonics];
-    double * yy = new double[number_of_harmonics];
-    double * yz = new double[number_of_harmonics];
+    double * h = new double[number_of_harmonics];
+    double * hx = new double[number_of_harmonics];
+    double * hy = new double[number_of_harmonics];
+    double * hz = new double[number_of_harmonics];
 
-    get_Y(y, yx, yy, yz, x, y, z, lmax);
+    get_Y(h, hx, hy, hz, x, y, z, lmax);
 
     // Store the products and their derivatives.
     int single_bond_counter = 0;
@@ -37,15 +37,15 @@ double * radial_hyps, double * cutoff_hyps){
         for (int angular_counter = 0; angular_counter < number_of_harmonics;
              angular_counter ++){
 
-            bond = g[radial_counter] * y[angular_counter];
+            bond = g[radial_counter] * h[angular_counter];
 
             // calculate derivatives with the product rule
-            bond_x = gx[radial_counter] * y[angular_counter] +
-                     g[radial_counter] * yx[angular_counter];
-            bond_y = gy[radial_counter] * y[angular_counter] +
-                     g[radial_counter] * yy[angular_counter];
-            bond_y = gz[radial_counter] * y[angular_counter] +
-                     g[radial_counter] * yz[angular_counter];
+            bond_x = gx[radial_counter] * h[angular_counter] +
+                     g[radial_counter] * hx[angular_counter];
+            bond_y = gy[radial_counter] * h[angular_counter] +
+                     g[radial_counter] * hy[angular_counter];
+            bond_y = gz[radial_counter] * h[angular_counter] +
+                     g[radial_counter] * hz[angular_counter];
             
             // update single bond basis arrays
             y_ind = single_bond_counter + no_bond_vals;
@@ -60,10 +60,12 @@ double * radial_hyps, double * cutoff_hyps){
             central_dervs[single_bond_counter] -= bond_x;
             central_dervs[y_ind] -= bond_y;
             central_dervs[z_ind] -= bond_z;
+
+            single_bond_counter ++;
              }
     }
 
     // Deallocate memory.
     delete [] g; delete [] gx; delete [] gy; delete [] gz;
-    delete [] y; delete [] yx; delete [] yy; delete [] yz;
+    delete [] h; delete [] hx; delete [] hy; delete [] hz;
 }
