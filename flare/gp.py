@@ -224,7 +224,7 @@ class GaussianProcess:
                 3 is z).
 
         Return:
-            (float, float): Mean and epistemic uncertainty of the GP.
+            (float, float): Mean and epistemic variance of the prediction.
         """
 
         # Kernel vector allows for evaluation of At. Env.
@@ -246,11 +246,13 @@ class GaussianProcess:
         return pred_mean, pred_var
 
     def predict_local_energy(self, x_t: AtomicEnvironment) -> float:
-        """Predict the local energy of an atomic environment.
-        :param x_t: Atomic environment of test atom.
-        :type x_t: AtomicEnvironment
-        :return: local energy in eV (up to a constant).
-        :rtype: float
+        """Predict the local energy of a local environment.
+
+        Args:
+            x_t (AtomicEnvironment): Input local environment.
+        
+        Return:
+            float: Local energy predicted by the GP.
         """
 
         k_v = self.en_kern_vec(x_t)
@@ -259,8 +261,15 @@ class GaussianProcess:
         return pred_mean
 
     def predict_local_energy_and_var(self, x_t: AtomicEnvironment):
-        """Predict the local energy of an atomic environment and its \
-uncertainty."""
+        """Predict the local energy of an atomic environment and its
+        uncertainty.
+
+        Args:
+            x_t (AtomicEnvironment): Input local environment.
+    
+        Return:
+            (float, float): Mean and predictive variance predicted by the GP.
+        """
 
         # get kernel vector
         k_v = self.en_kern_vec(x_t)
@@ -281,12 +290,14 @@ uncertainty."""
         """
         Compute kernel vector, comparing input environment to all environments
         in the GP's training set.
-        :param x: data point to compare against kernel matrix
-        :type x: AtomicEnvironment
-        :param d_1: Cartesian component of force vector to get (1=x,2=y,3=z)
-        :type d_1: int
-        :return: kernel vector
-        :rtype: np.ndarray
+
+        Args:
+            x (AtomicEnvironment): Local environment to compare against
+                the training environments.
+            d_1 (int): Cartesian component of the kernel (1=x, 2=y, 3=z).
+        
+        Return:
+            np.ndarray: Kernel vector.
         """
 
         ds = [1, 2, 3]
@@ -301,8 +312,16 @@ uncertainty."""
         return k_v
 
     def en_kern_vec(self, x: AtomicEnvironment):
-        """Compute the vector of energy/force kernels between an atomic \
-environment and the environments in the training set."""
+        """Compute the vector of energy/force kernels between an atomic 
+        environment and the environments in the training set.
+        
+        Args:
+            x (AtomicEnvironment): Local environment to compare against
+                the training environments.
+        
+        Return:
+            np.ndarray: Kernel vector.
+        """
 
         ds = [1, 2, 3]
         size = len(self.training_data) * 3
@@ -319,11 +338,11 @@ environment and the environments in the training set."""
     def set_L_alpha(self):
         """
         Invert the covariance matrix, setting L (a lower triangular
-        matrix s.t. L L^T = (K + sig_n^2 I) ) and alpha, the inverse
+        matrix s.t. L L^T = (K + sig_n^2 I)) and alpha, the inverse
         covariance matrix multiplied by the vector of training labels.
         The forces and variances are later obtained using alpha.
-        :return:
         """
+
         if self.par:
             hyp_mat, ky_mat = \
                 get_ky_and_hyp_par(self.hyps, self.training_data,
@@ -354,7 +373,8 @@ environment and the environments in the training set."""
 
     def update_L_alpha(self):
         """
-        Update the GP's L matrix and alpha vector.
+        Update the GP's L matrix and alpha vector without recalculating
+        the entire covariance matrix K.
         """
 
         # Set L matrix and alpha if set_L_alpha has not been called yet
@@ -464,18 +484,18 @@ environment and the environments in the training set."""
         """
         Write model in a variety of formats to a file for later re-use.
 
-        :param name: Output name
-        :param format:
-        :return:
+        Args:
+            name (str): Output name.
+            format (str): Output format.
         """
 
         supported_formats = ['json', 'pickle', 'binary']
 
         write_name = str(name)
-        
+
         if name.split('.')[-1] not in supported_formats:
             write_name += '.'+format
-            
+
         if format.lower() == 'json':
             with open(write_name, 'w') as f:
                 json.dump(self.as_dict(), f, cls=NumpyEncoder)
@@ -487,4 +507,3 @@ environment and the environments in the training set."""
         else:
             raise ValueError("Output format not supported: try from "
                              "{}".format(supported_formats))
-
