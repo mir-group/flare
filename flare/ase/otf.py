@@ -12,14 +12,18 @@ from ase import units
 
 
 class OTF:
-    """output_name => logfile
-    npool: added
-    prev_pos_init: relaunch mode not implemented
-    skip: not implemented
-    l_bound: mgp update l_bound, not implemented
+    """
+    OTF (on-the-fly) training with the ASE interface. 
+    
+    Note: Dft calculator is set outside of the otf module, and input as 
+        dft_calc, so that different calculators can be used
 
-    dft calculator is set outside of the otf module, and input as dft_calc, 
-    so that different calculators can be used"""
+    Args:
+        atoms (ASE Atoms): ASE atoms, the supercell to run MD with
+        timestep (float * ASE units): the timestep for MD, e.g. 1*units.fs
+        trajectory (ASE Trajectory): ASE trajectory, here we don't use it
+
+    """
 
     def __init__(self, atoms, timestep, trajectory=None, 
             # on-the-fly parameters
@@ -31,8 +35,6 @@ class OTF:
             use_mapping: bool=False, non_mapping_steps: list=[],
             l_bound: float=None, two_d: bool=False):
 
-        MolecularDynamics.__init__(self, atoms, timestep, trajectory)
-                                   
         self.std_tolerance = std_tolerance_factor
         self.noa = len(atoms.positions)
         self.max_atoms_added = max_atoms_added
