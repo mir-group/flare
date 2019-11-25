@@ -1,3 +1,5 @@
+'''Cubic spline functions used for interpolation. 
+'''
 import numpy as np
 import numpy
 import time
@@ -8,7 +10,21 @@ from flare.mgp.cubic_splines_numba import *
 
 class PCASplines:
     '''
-    build splines for PCA decomposition, mainly used for the mapping of the variance
+    Build splines for PCA decomposition, mainly used for the mapping of the variance
+
+    :param l_bounds: lower bound for the interpolation. \
+        E.g. 1-d for two-body, 3-d for three-body.
+    :type l_bounds: numpy array
+    :param u_bounds: upper bound for the interpolation.
+    :type u_bounds: numpy array
+    :param orders: grid numbers in each dimension. E.g, 1-d for two-body, \
+        3-d for three-body, should be positive integers.
+    :type orders: numpy array
+    :param svd_rank: rank for decomposition of variance matrix,\
+        also equal to the number of mappings constructed for mapping variance.\
+        For two-body `svd_rank<=min(grid_num, train_size*3)`, \
+        for three-body `svd_rank<=min(grid_num_in_cube, train_size*3)`
+    :type svd_rank: int
     '''
     def __init__(self, l_bounds, u_bounds, orders, svd_rank):
         self.svd_rank = svd_rank
@@ -52,27 +68,23 @@ class PCASplines:
 
 class CubicSpline:
 
-    """Forked from Github repository: https://github.com/EconForge/interpolation.py. High-level API for cubic splines. Class representing a cubic spline interpolator on a regular cartesian grid.
+    """
+    Forked from Github repository: https://github.com/EconForge/interpolation.py.\
+    High-level API for cubic splines. \
+    Class representing a cubic spline interpolator on a regular cartesian grid.
 
-        Creates a cubic spline interpolator on a regular cartesian grid.
+    Creates a cubic spline interpolator on a regular cartesian grid.
 
-        Parameters:
-        -----------
-        a : array of size d (float)
-            Lower bounds of the cartesian grid.
-        b : array of size d (float)
-            Upper bounds of the cartesian grid.
-        orders : array of size d (int)
-            Number of nodes along each dimension (=(n1,...,nd) )
-        values : (optional, (n1 x ... x nd) array)
+    Args:
+        a (numpy array of size d (float)): Lower bounds of the cartesian grid.
+        b (numpy array of size d (float)): Upper bounds of the cartesian grid.
+        orders (numpy array of size d (int)): Number of nodes along each \
+            dimension (=(n1,...,nd) )
+
+    Other Parameters:
+        values (numpy array (float)): (optional, (n1 x ... x nd) array). \
             Values on the nodes of the function to interpolate.
-
-        Returns
-        -------
-        spline : CubicSpline
-            Cubic spline interpolator. Can be evaluated at point(s) `y` with
-            `spline(y)`
-        """
+    """
 
 
     __grid__ = None
@@ -115,16 +127,12 @@ class CubicSpline:
 
 
     def interpolate(self, points, values=None, with_derivatives=False):
-        '''Interpolate spline at a list of points.
+        '''
+        Interpolate spline at a list of points.
 
-        Parameters
-        ----------
-        points : (array-like) list of point where the spline is evaluated.
-        values : (optional) container for inplace computation
-
-        Returns
-        -------
-        values : (array-like) list of point where the spline is evaluated.
+        :param points: (array-like) list of point where the spline is evaluated.
+        :param values: (optional) container for inplace computation.
+        :return values: (array-like) list of point where the spline is evaluated.
         '''
 
         if not np.all( np.isfinite(points)):
@@ -166,20 +174,15 @@ class CubicSpline:
 
 def cartesian(arrays, out=None):
     """
+    Forked from Github repository: https://github.com/EconForge/interpolation.py.\
     Generate a cartesian product of input arrays.
 
-    Parameters
-    ----------
-    arrays : list of array-like
-        1-D arrays to form the cartesian product of.
-    out : ndarray
-        Array to place the cartesian product in.
+    :param arrays: 1-D arrays to form the cartesian product of.
+    :type  arrays: list of array-like 
+    :param out: Array to place the cartesian product in.
+    :type  out: ndarray
 
-    Returns
-    -------
-    out : ndarray
-        2-D array of shape (M, len(arrays)) containing cartesian products
-        formed of input arrays.
+    :return out :2-D array of shape (M, len(arrays)) containing cartesian products formed of input arrays.
 
     """
 
@@ -216,25 +219,23 @@ def mlinspace(a,b,orders,out=None):
 
 
 def eval_cubic_spline(a, b, orders, coefs, point):
-    """Evaluates a cubic spline at one point
+    """
+    Forked from Github repository: https://github.com/EconForge/interpolation.py.\
+    Evaluates a cubic spline at one point
 
-    Parameters:
-    -----------
-    a : array of size d (float)
-        Lower bounds of the cartesian grid.
-    b : array of size d (float)
-        Upper bounds of the cartesian grid.
-    orders : array of size d (int)
-        Number of nodes along each dimension (=(n1,...,nd) )
-    coefs : array of dimension d, and size (n1+2, ..., nd+2)
-        Filtered coefficients.
-    point : array of size d
-        Coordinate of the point where the splines must be interpolated.
+    :param a: Lower bounds of the cartesian grid.
+    :type  a: numpy array of size d (float)
+    :param b: Upper bounds of the cartesian grid.
+    :type  b: numpy array of size d (float)
+    :param orders: Number of nodes along each dimension (=(n1,...,nd) )
+    :type  orders: numpy array of size d (int)
+    :param coefs: Filtered coefficients.
+    :type  coefs: array of dimension d, and size (n1+2, ..., nd+2)
+    :param point: Coordinate of the point where the splines must be interpolated.
+    :type  point: array of size d
 
-    Returns
-    -------
-    value : float
-        Interpolated value.
+    :return value: Interpolated value.
+    :type   value: float
     """
 
     a = numpy.array(a, dtype=float)
@@ -259,27 +260,25 @@ def eval_cubic_spline(a, b, orders, coefs, point):
 
 
 def vec_eval_cubic_spline(a, b, orders, coefs, points, values=None):
-    """Evaluates a cubic spline at many points
+    """
+    Forked from Github repository: https://github.com/EconForge/interpolation.py.\
+    Evaluates a cubic spline at many points
 
-    Parameters:
-    -----------
-    a : array of size d (float)
-        Lower bounds of the cartesian grid.
-    b : array of size d (float)
-        Upper bounds of the cartesian grid.
-    orders : array of size d (int)
-        Number of nodes along each dimension. (=(n1,...,nd))
-    coefs : array of dimension d, and size (n1+2, ..., nd+2)
-        Filtered coefficients.
-    points : array of size N x d
-        List of points where the splines must be interpolated.
-    values (optional) :  array of size (N)
-        If not None, contains the result.
+    :param a: Lower bounds of the cartesian grid.
+    :type  a: numpy array of size d (float)
+    :param b: Upper bounds of the cartesian grid.
+    :type  b: numpy array of size d (float)
+    :param orders: Number of nodes along each dimension (=(n1,...,nd) )
+    :type  orders: numpy array of size d (int)
+    :param coefs: Filtered coefficients.
+    :type  coefs: array of dimension d, and size (n1+2, ..., nd+2)
+    :param point: List of points where the splines must be interpolated.
+    :type  point: array of size N x d
+    :param values: (optional) If not None, contains the result.
+    :type  values: array of size N
 
-    Returns
-    -------
-    values : array of size (N)
-        Interpolated values. values[i] contains spline evaluated at point points[i,:].
+    :return value: Interpolated values. values[i] contains spline evaluated at point points[i,:].
+    :type   value: array of size N
     """
 
     a = numpy.array(a, dtype=float)

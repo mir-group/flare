@@ -12,8 +12,8 @@ from flare.gp import GaussianProcess
 from flare.struc import Structure
 
 
-def predict_on_atom(param: Tuple[Structure, int, GaussianProcess])->(np.array,
-                                                                  np.array):
+def predict_on_atom(param: Tuple[Structure, int, GaussianProcess])->(
+        np.ndarray, np.ndarray):
     """
     Return the forces/std. dev. uncertainty associated with an individual atom
     in a structure, without necessarily having cast it to a chemical
@@ -24,6 +24,7 @@ def predict_on_atom(param: Tuple[Structure, int, GaussianProcess])->(np.array,
         object
     :type param: Tuple(Structure, integer, GaussianProcess)
     :return: 3-element force array and associated uncertainties
+    :rtype: (np.ndarray, np.ndarray)
     """
     # Unpack the input tuple, convert a chemical environment
     structure, atom, gp = param
@@ -39,8 +40,9 @@ def predict_on_atom(param: Tuple[Structure, int, GaussianProcess])->(np.array,
 
     return np.array(components), np.array(stds)
 
+
 def predict_on_atom_en(param: Tuple[Structure, int, GaussianProcess])->(
-        np.array,np.array,float):
+        np.array, np.array, float):
     """
     Return the forces/std. dev. uncertainty / energy associated with an
     individual atom in a structure, without necessarily having cast it to a
@@ -51,6 +53,7 @@ def predict_on_atom_en(param: Tuple[Structure, int, GaussianProcess])->(
         object
     :type param: Tuple(Structure, integer, GaussianProcess)
     :return: 3-element force array, associated uncertainties, and local energy
+    :rtype: (np.ndarray, np.ndarray, float)
     """
     # Unpack the input tuple, convert a chemical environment
     structure, atom, gp = param
@@ -69,7 +72,6 @@ def predict_on_atom_en(param: Tuple[Structure, int, GaussianProcess])->(
     return np.array(comps), np.array(stds), local_energy
 
 
-
 def predict_on_structure(structure: Structure, gp: GaussianProcess,
                          no_cpus = None)->(
         np.array,np.array):
@@ -81,6 +83,7 @@ def predict_on_structure(structure: Structure, gp: GaussianProcess,
     :param structure: FLARE structure to obtain forces for, with N atoms
     :param gp: Gaussian Process model
     :return: N x 3 numpy array of foces, Nx3 numpy array of uncertainties
+    :rtype: (np.ndarray, np.ndarray)
     """
     # Loop through individual atoms, cast to atomic environments,
     # make predictions
@@ -109,7 +112,8 @@ def predict_on_structure_par(structure: Structure,
     :param structure: FLARE structure to obtain forces for, with N atoms
     :param gp: Gaussian Process model
     :param no_cpus: Number of cores to parallelize over
-    :return:
+    :return: N x 3 array of forces, N x 3 array of uncertainties
+    :rtype: (np.ndarray, np.ndarray)
     """
     # Just work in serial in the number of cpus is 1
     if (no_cpus is 1):
@@ -153,6 +157,7 @@ def predict_on_structure_en(structure: Structure, gp: GaussianProcess,
         flexibility when the callable may or may not be parallelized
     :return: N x 3 array of forces, N x 3 array of uncertainties,
         N-length array of energies
+    :rtype: (np.ndarray, np.ndarray, np.ndarray)
     """
     # Set up local energy array
     local_energies = np.array([0 for _ in range(structure.nat)])
@@ -183,6 +188,7 @@ def predict_on_structure_par_en(structure: Structure, gp: GaussianProcess,
     :param no_cpus: Number of cores to parallelize over
     :return: N x 3 array of forces, N x 3 array of uncertainties,
         N-length array of energies
+    :rtype: (np.ndarray, np.ndarray, np.ndarray)
     """
     # Work in serial if the number of cpus is 1
     if no_cpus is 1:
