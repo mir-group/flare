@@ -19,18 +19,28 @@ class OTF:
         dft_calc, so that different calculators can be used
 
     Args:
-        atoms (ASE Atoms): ASE atoms, the supercell to run MD with
-        timestep (float * ASE units): the timestep for MD, e.g. 1*units.fs
-        trajectory (ASE Trajectory): ASE trajectory, here we don't use it
-
+        dft_calc (ASE Calculator): the ASE DFT calculator (see ASE documentaion)
+        dft_count (int): initial number of DFT calls
+        std_tolerance_factor (float): the threshold of calling DFT = noise * std_tolerance_factor
+        init_atoms (list): the list of atoms in the first DFT call to add to
+            the training set, since there's no uncertainty prediction initially
+        calculate_energy (bool): if True, the energy will be calculated;
+            otherwise, only forces will be predicted
+        max_atoms_added (int): 
+        freeze_hyps (int or None):
+        restart_from (str or None):
+        use_mapping (bool): 
+        non_mapping_steps (list):
+        l_bound (float):
+        two_d (bool):
     """
 
-    def __init__(self, atoms, timestep, trajectory=None, 
+    def __init__(self, 
             # on-the-fly parameters
             dft_calc=None, dft_count=None, std_tolerance_factor: float=1, 
-            prev_pos_init: np.ndarray=None, par:bool=False, skip: int=0, 
+            skip: int=0,
             init_atoms: list=[], calculate_energy=False, max_atoms_added=1, 
-            freeze_hyps=1, no_cpus=1, restart_from=None,
+            freeze_hyps=1, restart_from=None,
             # mgp parameters
             use_mapping: bool=False, non_mapping_steps: list=[],
             l_bound: float=None, two_d: bool=False):
