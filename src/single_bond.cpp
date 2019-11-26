@@ -44,7 +44,7 @@ double * radial_hyps, double * cutoff_hyps){
                      g[radial_counter] * hx[angular_counter];
             bond_y = gy[radial_counter] * h[angular_counter] +
                      g[radial_counter] * hy[angular_counter];
-            bond_y = gz[radial_counter] * h[angular_counter] +
+            bond_z = gz[radial_counter] * h[angular_counter] +
                      g[radial_counter] * hz[angular_counter];
             
             // update single bond basis arrays

@@ -48,26 +48,87 @@ class SingleBondTest : public ::testing::Test{
     double * environment_dervs;
     double * central_dervs;
 
+    double * single_bond_delt_x;
+    double * single_bond_delt_y;
+    double * single_bond_delt_z;
+
+    double * env_dervs_delt_x;
+    double * env_dervs_delt_y;
+    double * env_dervs_delt_z;
+
+    double * cent_dervs_delt_x;
+    double * cent_dervs_delt_y;
+    double * cent_dervs_delt_z;
+
     SingleBondTest(){
-        single_bond_vals = new double[N * number_of_harmonics];
-        environment_dervs = new double[N * number_of_harmonics * 3];
-        central_dervs = new double[N * number_of_harmonics * 3];
+        single_bond_vals = new double[N * number_of_harmonics]();
+        environment_dervs = new double[N * number_of_harmonics * 3]();
+        central_dervs = new double[N * number_of_harmonics * 3]();
+
+        single_bond_delt_x = new double[N * number_of_harmonics]();
+        single_bond_delt_y = new double[N * number_of_harmonics]();
+        single_bond_delt_z = new double[N * number_of_harmonics]();
+
+        env_dervs_delt_x = new double[N * number_of_harmonics * 3]();
+        env_dervs_delt_y = new double[N * number_of_harmonics * 3]();
+        env_dervs_delt_z = new double[N * number_of_harmonics * 3]();
+
+        cent_dervs_delt_x = new double[N * number_of_harmonics * 3]();
+        cent_dervs_delt_y = new double[N * number_of_harmonics * 3]();
+        cent_dervs_delt_z = new double[N * number_of_harmonics * 3]();
     }
 
     ~SingleBondTest(){
         delete [] single_bond_vals; delete[] environment_dervs;
-        delete [] central_dervs;
+        delete [] central_dervs; delete [] single_bond_delt_x;
+        delete [] single_bond_delt_y; delete [] single_bond_delt_z;
+        delete [] env_dervs_delt_x; delete [] env_dervs_delt_y;
+        delete [] env_dervs_delt_z; delete [] cent_dervs_delt_x;
+        delete [] cent_dervs_delt_y;  delete [] cent_dervs_delt_z;
     }
 };
 
-TEST_F(SingleBondTest, Dummy){
+TEST_F(SingleBondTest, EnvironmentDervs){
 
     single_bond_update(single_bond_vals, environment_dervs, central_dervs,
                        basis_function, cutoff_function,
                        x, y, z, r, rcut, N, lmax,
                        radial_hyps, cutoff_hyps);
     
-    cout << single_bond_vals[0] << '\n';
-    cout << environment_dervs[N * number_of_harmonics - 1] << '\n';
+    single_bond_update(single_bond_delt_x, env_dervs_delt_x, cent_dervs_delt_x,
+                       basis_function, cutoff_function,
+                       x_delt, y, z, r_x, rcut, N, lmax,
+                       radial_hyps, cutoff_hyps);
+    
+    single_bond_update(single_bond_delt_y, env_dervs_delt_y, cent_dervs_delt_y,
+                       basis_function, cutoff_function,
+                       x, y_delt, z, r_y, rcut, N, lmax,
+                       radial_hyps, cutoff_hyps);
 
+    single_bond_update(single_bond_delt_z, env_dervs_delt_z, cent_dervs_delt_z,
+                       basis_function, cutoff_function,
+                       x, y, z_delt, r_z, rcut, N, lmax,
+                       radial_hyps, cutoff_hyps);
+    
+    double x_finite_diff, y_finite_diff, z_finite_diff, x_diff, y_diff, z_diff;
+    int y_ind, z_ind;
+    double tolerance = 1e-6;
+    for (int n = 0; n < (number_of_harmonics * N); n++){
+        // Check x derivative
+        x_finite_diff = (single_bond_delt_x[n] - single_bond_vals[n]) / delta;
+        x_diff = abs(x_finite_diff - environment_dervs[n]);
+        EXPECT_LE(x_diff, tolerance);
+
+        // Check y derivative
+        y_ind = n + (N * number_of_harmonics);
+        y_finite_diff = (single_bond_delt_y[n] - single_bond_vals[n]) / delta;
+        y_diff = abs(y_finite_diff - environment_dervs[y_ind]);
+        EXPECT_LE(y_diff, tolerance);
+
+        // Check z derivative
+        z_ind = n + (2 * N * number_of_harmonics);
+        z_finite_diff = (single_bond_delt_z[n] - single_bond_vals[n]) / delta;
+        z_diff = abs(z_finite_diff - environment_dervs[z_ind]);
+        EXPECT_LE(z_diff, tolerance);
+    }
 }
