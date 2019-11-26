@@ -41,7 +41,7 @@ For non-admin users
 
   $ pip install --upgrade --user mir-flare
     
-.. _PyPI: https://pypi.org/project/ase
+.. _PyPI: https://pypi.org/project/mir-flare/
 
 ****************************
 Manual Installation with Git
