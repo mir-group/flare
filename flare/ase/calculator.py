@@ -28,22 +28,49 @@ class FLARE_Calculator(Calculator):
         self.par = par
         self.results = {}
 
+    def get_property(self, atoms, property_name):
+        if property_name not in self.results.keys():
+            self.calculate(atoms)
+        return self.results[property_name]
+
+
     def get_potential_energy(self, atoms=None, force_consistent=False):
         if self.use_mapping:
-            print('MGP energy mapping not implemented, give GP prediction')
-        forces = self.get_forces_gp(atoms)
-        return self.results['energy']
+            print('MGP energy mapping not implemented, temporarily set to 0')
+        return self.get_property(atoms, 'energy')
+
 
     def get_forces(self, atoms):
+        return self.get_property(atoms, 'forces')
+
+
+    def get_stress(self, atoms):
+        if not self.use_mapping:
+            raise NotImplementedError("Stress is only supported in MGP")
+        return self.get_property(atoms, 'stress')
+
+
+    def get_uncertainties(self, atoms):
+        return self.get_property(atoms, 'stds')
+
+
+    def calculate(self, atoms):
+        '''
+        calculate properties including: energy, local energies, forces, stress, uncertainties
+
+        :param atoms: ASE Atoms object
+        :type atoms: Atoms
+        '''
         if self.use_mapping:
             if self.par:
-                return self.get_forces_mgp_par(atoms)
+                self.calculate_mgp_par(atoms)
             else:
-                return self.get_forces_mgp_serial(atoms)
+                self.calculate_mgp_serial(atoms)
         else:
-            return self.get_forces_gp(atoms)
+            self.calculate_gp(atoms)
 
-    def get_forces_gp(self, atoms):
+
+    def calculate_gp(self, atoms):
         nat = len(atoms)
         struc_curr = Structure(np.array(atoms.cell), 
                                atoms.get_atomic_numbers(),
@@ -56,90 +83,65 @@ class FLARE_Calculator(Calculator):
             forces, stds, local_energies = \
                     predict_on_structure_en(struc_curr, self.gp_model)
 
+        self.results['forces'] = forces
         self.results['stds'] = stds
         self.results['local_energies'] = local_energies
         self.results['energy'] = np.sum(local_energies)
         atoms.get_uncertainties = self.get_uncertainties
-
         return forces
 
-    def get_forces_mgp_serial(self, atoms):
+
+    def calculate_mgp_serial(self, atoms):
         nat = len(atoms)
         struc_curr = Structure(np.array(atoms.cell), 
                                atoms.get_atomic_numbers(),
                                atoms.positions)
 
         forces = np.zeros((nat, 3))
+        stress = np.zeros((nat, 6))
         stds = np.zeros((nat, 3))
         for n in range(nat):
             chemenv = AtomicEnvironment(struc_curr, n,
                                         self.mgp_model.cutoffs)
-            f, v = self.mgp_model.predict(chemenv, mean_only=False)
+            f, v, vir = self.mgp_model.predict(chemenv, mean_only=False)
             forces[n] = f
+            stress[n] = vir
             stds[n] = np.sqrt(np.absolute(v))
 
+        self.results['forces'] = forces
         self.results['stds'] = stds
+        self.results['stresses'] = stress
+        self.results['stress'] = np.sum(stress, axis=0)
+
+        # TODO: implement energy mapping
+        self.results['local_energies'] = np.zeros(forces.shape)
+        self.results['energy'] = 0
+
         atoms.get_uncertainties = self.get_uncertainties
         return forces
 
-    def get_forces_mgp_par(self, atoms):
-        return self.get_forces_mgp_serial(atoms)
-#        comm = MPI.COMM_WORLD
-#        size = comm.Get_size()
-#        rank = comm.Get_rank()
-#
-#        nat = len(atoms)
-#        struc_curr = Structure(np.array(atoms.cell), 
-#                               atoms.get_atomic_numbers(),
-#                               atoms.positions)
-#        
-#        NumPerRank = nat // size
-#        NumRemainder = nat % size
-#        forces = None
-#        stds = None
-#        if rank < nat:
-#            if rank <= NumRemainder:
-#                N = NumPerRank
-#                intercept = 0
-#            else:
-#                N = NumPerRank - 1
-#                intercept = NumRemainder
-#
-#            forces_sub = np.zeros((N, 3))
-#            stds_sub = np.zeros((N, 3))
-#            for i in range(N):
-#                n = intercept + rank * N + i
-#                chemenv = AtomicEnvironment(struc_curr, n,
-#                                self.mgp_model.cutoffs)
-#                f, v = self.mgp_model.predict(chemenv, mean_only=False)
-#                forces_sub[i, :] = f
-#                stds_sub[i, :] = np.sqrt(np.absolute(v))
-#            print('rank:', rank, ', forces_sub:', N)
-#
-#        if rank == 0:
-#            forces = np.empty((nat, 3))
-#            stds = np.empty((nat, 3))
-#
-#        comm.Gather(forces_sub, forces, root=0)
-#        comm.Gather(stds_sub, stds, root=0)
-#
-#        self.results['stds'] = stds
-#        atoms.get_uncertainties = self.get_uncertainties
-#        return forces
 
-    def get_stress(self, atoms):
-        return np.eye(3)
+    def calculate_mgp_par(self, atoms):
+        return self.calculate_mgp_serial(atoms)
+
 
     def calculation_required(self, atoms, quantities):
         return True
 
-    def get_uncertainties(self):
-        return self.results['stds']
 
-    def train_gp(self, monitor=True):
-        self.gp_model.train(monitor)
+    def train_gp(self, **kwargs):
+        """
+        The same function of training GP hyperparameters as `train()` in :class:`GaussianProcess`
+        """
+        self.gp_model.train(**kwargs)
+
 
     def build_mgp(self, skip=True):
+        """
+        Construct :class:`MappedGaussianProcess` based on the current GP
+        :param skip: if `True`, then it will not construct MGP
+        :type skip: Bool
+        """
         # l_bound not implemented
 
         if skip:
@@ -164,13 +166,3 @@ class FLARE_Calculator(Calculator):
                         grid_params, struc_params, mean_only,
                         container_only, self.gp_model, lmp_file_name)
 
-
-
-#from ase import io
-#from ase.calculators.espresso import Espresso
-#def read_results(self):
-#    output = io.read(self.label + '.pwo', parallel=False)
-#    self.calc = output.calc
-#    self.results = output.calc.results
-#
-#Espresso.read_results = read_results

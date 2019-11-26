@@ -34,4 +34,6 @@ PWSCF_COMMAND=/path/to/pw.x CP2K_COMMAND=/path/to/cp2k pytest
 ```
 
 ## References
-[1] Jonathan Vandermause, Steven B. Torrisi, Simon Batzner, Alexie M. Kolpak, and Boris Kozinsky. *On-the-fly Bayesian active learning of interpretable force fields for atomistic rare events.* https://arxiv.org/abs/1904.02042
+If you use FLARE in your research, or any part of this repo (such as the GP implementation), please cite the following paper:
+
+[1] Jonathan Vandermause, Steven B. Torrisi, Simon Batzner, Yu Xie, Lixin Sun, Alexie M. Kolpak, and Boris Kozinsky. *On-the-fly active learning of interpretable Bayesian force fields for atomistic rare events.* https://arxiv.org/abs/1904.02042

@@ -10,11 +10,13 @@ mir_flare.egg-info/
 tags
 pwscf.save/
 /docs/source/_build/html
+/docs/build/
 /datasets/
 /tests/test_ase/out/
 /tests/test_ase/Al/
 /tests/test_ase/__pycache__/
 /tests/test_outputs/*
+test_files/qe_output_*.out
 /tests/*.xyz
 /tests/*.gp
 /tests/*-bak

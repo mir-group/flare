@@ -1,3 +1,8 @@
+"""
+Class which contains various methods to print the output of different
+ways of using FLARE, such as training a GP from an AIMD run,
+or running an MD simulation updated on-the-fly.
+"""
 import datetime
 import os
 import shutil
@@ -9,20 +14,25 @@ import numpy as np
 from flare.util import Z_to_element
 
 
-class Output():
+class Output:
     """
-    Output class host the logfile, xyz config file and force xyz file.
-    :param basename
+    This is an I/O class that hosts the log files for OTF and Trajectories
+    class. It is also used in get_neg_like_grad and get_neg_likelihood in
+    gp_algebra to print intermediate results.
+
+    It opens and prints files with the basename prefix and different
+    suffixes corresponding to different kinds of output data.
+
+    :param basename: Base output file name, suffixes will be added
+    :type basename: str, optional
+    :param always_flush: Always write to file instantly
+    :type always_flus: bool, optional
     """
 
     def __init__(self, basename: str = 'otf_run',
                  always_flush: bool = False):
         """
-        Ppen files with the basename and different suffixes corresponding
-        to different kinds of output data.
-
-        :param basename: Base output file name, suffixes will be added
-        :param always_flush: Always write to file instantly
+        Construction. Open files.
         """
         self.basename = f"{basename}"
         self.outfiles = {}
@@ -37,8 +47,9 @@ class Output():
 
     def conclude_run(self):
         """
-        destruction function that close all files
+        destruction function that closes all files
         """
+
         print('-' * 20, file=self.outfiles['log'])
         print('Run complete.', file=self.outfiles['log'])
         for (k, v) in self.outfiles.items():
@@ -46,7 +57,14 @@ class Output():
         del self.outfiles
         self.outfiles = {}
 
-    def open_new_log(self, filetype, suffix):
+    def open_new_log(self, filetype: str, suffix: str):
+        """
+        Open files.  If files with the same
+        name are exist, they are backed up with a suffix "-bak".
+
+        :param filetype: the key name in self.outfiles
+        :param suffix: the suffix of the file to be opened
+        """
 
         filename = self.basename + suffix
 
@@ -64,27 +82,33 @@ class Output():
                      flush: bool = False):
         """
         Write any string to logfile
+
+        :param logstring: the string to write
+        :param name: the key name of the file to print
+        :param flush: whether it should be flushed
         """
         self.outfiles[name].write(logstring)
 
         if flush or self.always_flush:
             self.outfiles[name].flush()
 
-    def write_header(self, cutoffs, kernel_name,
-                     hyps, algo, dt, Nsteps, structure,
+    def write_header(self, cutoffs, kernel_name: str,
+                     hyps, algo: str, dt: float,
+                     Nsteps: int, structure,
                      std_tolerance,
                      optional: dict = None):
         """
-        write header to the log function
-        :param cutoffs:
-        :param kernel_name:
-        :param hyps:
-        :param algo:
-        :param dt:
-        :param Nsteps:
-        :param structure:
-        :param std_tolerance:
-        :param optional:
+        Write header to the log function
+
+        :param cutoffs: GP cutoffs
+        :param kernel_name: Kernel names
+        :param hyps: list of hyper-parameters
+        :param algo: algorithm for hyper parameter optimization
+        :param dt: timestep for OTF MD
+        :param Nsteps: total number of steps for OTF MD
+        :param structure: the atomic structure
+        :param std_tolerance: tolarence for active learning
+        :param optional: a dictionary of all the other parameters
         """
 
         f = self.outfiles['log']
@@ -142,17 +166,18 @@ class Output():
     def write_md_config(self, dt, curr_step, structure,
                         temperature, KE, local_energies,
                         start_time, dft_step, velocities):
-        """
-        write md configuration in log file
-        :param dt:
-        :param curr_step:
-        :param structure:
-        :param temperature:
-        :param KE:
-        :param local_energies:
-        :param start_time:
-        :param dft_step:
-        :param velocities:
+        """ write md configuration in log file
+
+        :param dt: timestemp of OTF MD
+        :param curr_step: current timestep of OTF MD
+        :param structure: atomic structure
+        :param temperature: current temperature
+        :param KE: current total kinetic energy
+        :param local_energies: local energy
+        :param start_time: starting time for time profiling
+        :param dft_step: # of DFT calls
+        :param velocities: list of velocities
+
         :return:
         """
 
@@ -223,10 +248,10 @@ class Output():
     def write_xyz(self, curr_step: int, pos: np.array, species: list,
                   filename: str,
                   header="",
-                  forces: np.array=None, stds: np.array=None,
-                  forces_2: np.array=None):
-        """
-        write atomic configuration in xyz file
+                  forces: np.array = None, stds: np.array = None,
+                  forces_2: np.array = None):
+        """ write atomic configuration in xyz file
+
         :param curr_step: Int, number of frames to note in the comment line
         :param pos:       nx3 matrix of forces, positions, or nything
         :param species:   n element list of symbols
@@ -235,7 +260,6 @@ class Output():
         :param forces: list of forces on atoms predicted by GP
         :param stds: uncertainties predicted by GP
         :param forces_2: true forces from ab initio source
-        :return:
         """
 
         natom = len(species)
@@ -268,20 +292,20 @@ class Output():
             self.outfiles[filename].flush()
 
     def write_xyz_config(self, curr_step, structure, dft_step,
-                         forces: np.array = None, stds : np.array = None,
+                         forces: np.array = None, stds: np.array = None,
                          forces_2: np.array = None):
-        """
-        write atomic configuration in xyz file
+        """ write atomic configuration in xyz file
+
         :param curr_step: Int, number of frames to note in the comment line
         :param structure: Structure, contain positions and forces
         :param dft_step:  Boolean, whether this is a DFT call.
         :param forces: Optional list of forces to print in xyz file
         :param stds: Optional list of uncertanties to print in xyz file
         :param forces_2: Optional second list of forces (e.g. DFT forces)
+
         :return:
         """
 
-        # comment line
         # Mark if a frame had DFT forces with an asterisk
         if not dft_step:
             header = ""
@@ -290,23 +314,25 @@ class Output():
         self.write_xyz(curr_step=curr_step, pos=structure.positions,
                        species=structure.species_labels, filename='xyz',
                        header=header,
-                       forces=forces, stds = stds, forces_2=forces_2)
+                       forces=forces, stds=stds, forces_2=forces_2)
 
     def write_hyps(self, hyp_labels, hyps, start_time, like, like_grad,
                    name='log'):
-        """
-        write hyperparameters to logfile
-        :param hyp_labels:
-        :param hyps:
-        :param start_time:
-        :param like:
-        :param like_grad:
+        """ write hyperparameters to logfile
+
+        :param name:
+        :param hyp_labels: labels for hyper-parameters. can be None
+        :param hyps: list of hyper-parameters
+        :param start_time: start time for time profiling
+        :param like: likelihood
+        :param like_grad: gradient of likelihood
+
         :return:
         """
         f = self.outfiles[name]
         f.write('\nGP hyperparameters: \n')
 
-        if (hyp_labels is not None):
+        if hyp_labels is not None:
             for i, label in enumerate(hyp_labels):
                 f.write(f'Hyp{i} : {label} = {hyps[i]}\n')
         else:
@@ -315,7 +341,7 @@ class Output():
 
         f.write(f'likelihood: {like}\n')
         f.write(f'likelihood gradient: {like_grad}\n')
-        if (start_time):
+        if start_time:
             time_curr = time.time() - start_time
             f.write(f'wall time from start: {time_curr:.2} s \n')
 
@@ -325,19 +351,19 @@ class Output():
     def write_gp_dft_comparison(self, curr_step, frame,
                                 start_time, dft_forces,
                                 error, local_energies=None, KE=None):
-        """
-        write the comparison to logfile
-        :param dft_forces:
-        :param mae:
-        :param pmae: dictionary of per species mae
-        :param mac:
-        :param KE:
-        :param curr_step:
-        :param frame:
-        :param local_energies:
-        :param start_time:
+        """ write the comparison to logfile
+
+        :param curr_step: current timestep
+        :param frame: Structure object that contain the current GP calculation results
+        :param start_time: start time for time profiling
+        :param dft_forces: list of forces computed by DFT
+        :param error: list of force differences between DFT and GP prediction
+        :param local_energies: local atomic energy
+        :param KE: total kinetic energy
+
         :return:
         """
+
         string = ''
 
         # Mark if a frame had DFT forces with an asterisk
@@ -367,8 +393,8 @@ class Output():
 
         string += '\n'
 
-        self.write_xyz_config(curr_step, frame, forces = frame.forces,
-                              stds = frame.stds, forces_2 = dft_forces,
+        self.write_xyz_config(curr_step, frame, forces=frame.forces,
+                              stds=frame.stds, forces_2=dft_forces,
                               dft_step=True)
 
         mae = np.mean(error) * 1000
@@ -391,7 +417,7 @@ class Output():
 
         string += "mae per species\n"
         for ele in species:
-            if (count_ps[ele] > 0):
+            if count_ps[ele] > 0:
                 mae_ps[ele] /= (count_ps[ele] * 3)
                 mae_ps[ele] *= 1000  # Put in meV/A
                 string += f"type {ele} mae: {mae_ps[ele]:.2f} meV/A\n"

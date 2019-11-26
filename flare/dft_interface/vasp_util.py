@@ -12,6 +12,7 @@ from typing import List, Union
 from json import dump, load
 from flare.util import NumpyEncoder
 
+name="VASP"
 
 def check_vasprun(vasprun: Union[str, Vasprun], vasprun_kwargs: dict = {}) -> \
         Vasprun:
@@ -85,7 +86,7 @@ def run_dft(calc_dir: str, dft_loc: str,
         try:
             forces = parse_func("vasprun.xml")
         except FileNotFoundError:
-            raise FileNotFoundError("""Could not load vasprun.xml. 
+            raise FileNotFoundError("""Could not load vasprun.xml.
             The calculation may not have finished.
             Current directory is %s""" % os.getcwd())
 
@@ -98,7 +99,7 @@ def run_dft(calc_dir: str, dft_loc: str,
 
 
 def run_dft_par(dft_input: str, structure: Structure,
-                dft_command:str= None, no_cpus=1,
+                dft_command:str= None, ncpus=1,
                 dft_out="vasprun.xml",
                 parallel_prefix="mpi",
                 mpi = None, npool = None,
@@ -111,9 +112,9 @@ def run_dft_par(dft_input: str, structure: Structure,
             ("Warning: No VASP Command passed, or stored in "
             "environment as VASP_COMMAND. ")
 
-    if no_cpus > 1:
+    if ncpus > 1:
         if parallel_prefix == "mpi":
-            dft_command = f'mpirun -np {no_cpus} {dft_command}'
+            dft_command = f'mpirun -np {ncpus} {dft_command}'
     else:
         serial_prefix = dft_kwargs.get('serial_prefix', '')
         dft_command = f'{serial_prefix} {dft_command}'
