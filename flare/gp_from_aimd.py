@@ -5,8 +5,8 @@ Contains methods to transfer the model to an OTF run or MD engine run.
 
 
 SEED FRAMES
-
-The various parameters in the TrajectoryTrainer class related to
+----------
+The various parameters in the :class:`TrajectoryTrainer` class related to
 "Seed frames" are to help you  train a model which does not yet have a
 training set. Uncertainty- and force-error driven training will go better with
 a somewhat populated training set, as force and uncertainty estimates
@@ -32,12 +32,12 @@ atoms of a given species which are added in. You can also limit the number
 of atoms which are added from a given seed frame.
 
 """
-
 import time
 from copy import deepcopy
 from typing import List, Tuple
 
 import numpy as np
+from math import inf
 
 from flare.env import AtomicEnvironment
 from flare.gp import GaussianProcess
@@ -50,71 +50,68 @@ from flare.util import element_to_Z, \
     is_std_in_bound_per_species, is_force_in_bound_per_species
 
 
-class TrajectoryTrainer(object):
+class TrajectoryTrainer:
+    """
+    Class which trains a GP off of an AIMD trajectory, and generates
+    error statistics between the DFT and GP calls.
 
+    There are a variety of options which can give you a finer control
+    over the training process.
+
+    :param frames: List of structures to evaluate / train GP on
+    :param gp: Gaussian Process object
+    :param rel_std_tolerance: Train if uncertainty is above this *
+        noise variance hyperparameter
+    :param abs_std_tolerance: Train if uncertainty is above this
+    :param abs_force_tolerance: Add atom force error exceeds this
+    :param max_force_error: Don't add atom if force error exceeds this
+    :param parallel: Use parallel functions or not
+    :param validate_ratio: Fraction of frames used for validation
+    :param no_cpus: number of cpus to run with multithreading
+    :param skip: Skip through frames
+    :param calculate_energy: Use local energy kernel or not
+    :param output_name: Write output of training to this file
+    :param max_atoms_from_frame: Largest # of atoms added from one frame
+    :param min_atoms_per_train: Only train when this many atoms have been
+        added
+    :param max_trains: Stop training GP after this many calls to train
+    :param n_cpus: Number of CPUs to parallelize over
+    :param shuffle_frames: Randomize order of frames for better training
+    :param verbose: 0: Silent, 1: Minimal, 2: Lots of information
+    :param pre_train_on_skips: Train model on every n frames before running
+    :param pre_train_seed_frames: Frames to train on before running
+    :param pre_train_seed_envs: Environments to train on before running
+    :param pre_train_atoms_per_element: Max # of environments to add from
+        each species in the seed pre-training steps
+    :param train_atoms_per_element: Max # of environments to add from
+        each species in the training steps
+    :param checkpoint_interval: How often to write model after trainings
+    :param model_format: Format to write GP model to
+    """
     def __init__(self, frames: List[Structure],
                  gp: GaussianProcess,
                  rel_std_tolerance: float = 4,
                  abs_std_tolerance: float = 1,
                  abs_force_tolerance: float = 0,
-                 max_force_error: float = np.inf,
+                 max_force_error: float = inf,
                  parallel: bool = False,
-                 no_cpus: int = None,
+                 n_cpus: int = None,
                  skip: int = 1,
                  validate_ratio: float = 0.0,
                  calculate_energy: bool = False,
                  output_name: str = 'gp_from_aimd',
                  pre_train_max_iter: int = 50,
-                 max_atoms_from_frame: int = np.inf, max_trains: int = np.inf,
+                 max_atoms_from_frame: int = inf, max_trains: int = inf,
                  min_atoms_per_train: int = 1, shuffle_frames: bool = False,
                  verbose: int = 0,
                  pre_train_on_skips: int = -1,
                  pre_train_seed_frames: List[Structure] = None,
                  pre_train_seed_envs: List[Tuple[AtomicEnvironment,
-                                                 np.array]] = None,
+                                                 'np.array']] = None,
                  pre_train_atoms_per_element: dict = None,
                  train_atoms_per_element: dict = None,
                  checkpoint_interval: int = None,
                  model_format: str = 'json'):
-        """
-        Class which trains a GP off of an AIMD trajectory, and generates
-        error statistics between the DFT and GP calls.
-
-        There are a variety of options which can give you a finer control
-        over the training process.
-
-
-
-        :param frames: List of structures to evaluate / train GP on
-        :param gp: Gaussian Process object
-        :param rel_std_tolerance: Train if uncertainty is above this *
-            noise variance hyperparameter
-        :param abs_std_tolerance: Train if uncertainty is above this
-        :param abs_force_tolerance: Add atom force error exceeds this
-        :param max_force_error: Don't add atom if force error exceeds this
-        :param parallel: Use parallel functions or not
-        :param validate_ratio: Fraction of frames used for validation
-        :param no_cpus: number of cpus to run with multithreading
-        :param skip: Skip through frames
-        :param calculate_energy: Use local energy kernel or not
-        :param output_name: Write output of training to this file
-        :param max_atoms_from_frame: Largest # of atoms added from one frame
-        :param min_atoms_per_train: Only train when this many atoms have been
-            added
-        :param max_trains: Stop training GP after this many calls to train
-        :param n_cpus: Number of CPUs to parallelize over
-        :param shuffle_frames: Randomize order of frames for better training
-        :param verbose: 0: Silent, 1: Minimal, 2: Lots of information
-        :param pre_train_on_skips: Train model on every n frames before running
-        :param pre_train_seed_frames: Frames to train on before running
-        :param pre_train_seed_envs: Environments to train on before running
-        :param pre_train_atoms_per_element: Max # of environments to add from
-            each species in the seed pre-training steps
-        :param train_atoms_per_element: Max # of environments to add from
-            each species in the training steps
-        :param checkpoint_interval: How often to write model after trainings
-        :param model_format: Format to write GP model to
-        """
 
         # Set up parameters
         self.frames = frames
@@ -129,7 +126,7 @@ class TrajectoryTrainer(object):
         self.max_force_error = max_force_error
         self.max_trains = max_trains
         self.parallel = parallel
-        self.no_cpus = no_cpus
+        self.no_cpus = n_cpus
 
         # Set prediction function based on if forces or energies are
         # desired, and parallelization accordingly
@@ -241,7 +238,7 @@ class TrajectoryTrainer(object):
                 n_at = len(atoms_of_specie)
                 # Determine how many to add based on user defined cutoffs
                 n_to_add = min(n_at, self.pre_train_env_per_species.get(
-                    species_i, np.inf), self.max_atoms_from_frame)
+                    species_i, inf), self.max_atoms_from_frame)
 
                 for atom in atoms_of_specie[:n_to_add]:
                     train_atoms.append(atom)
@@ -264,6 +261,7 @@ class TrajectoryTrainer(object):
         the GP predictions and the ground-truth forces. Train the GP and update
         the training set upon the triggering of the uncertainty or force error
         threshold.
+
         :return: None
         """
         if self.verbose >= 3:
@@ -372,10 +370,10 @@ class TrajectoryTrainer(object):
     def train_gp(self, max_iter: int = None):
         """
         Train the Gaussian process and write the results to the output file.
-        The max_iter fl
 
         :param max_iter: Maximum iterations associated with this training run,
             overriding the Gaussian Process's internally set maxiter.
+        :type max_iter: int
         """
 
         if self.verbose >= 1:
