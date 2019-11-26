@@ -6,7 +6,6 @@ void get_Y(double * Y, double * Yx, double * Yy, double * Yz,
 
 int l_counter = 0;
 int counter = 0;
-double Pi = 3.14159265358979323846;
 
 double r2 = x*x + y*y + z*z;
 double r2s = sqrt(r2);
@@ -33,13 +32,16 @@ double x2py2 = pow(x2 + y2, 2);
 double xy = x * y;
 double xy2 = x * y2;
 
+double Pi = 3.14159265358979323846;
 double two_pi = 2. * Pi;
-
 double c1 = sqrt(3/Pi);
 double c2 = sqrt(15/Pi);
 double c3 = sqrt(35/two_pi);
 double c4 = sqrt(5/Pi);
-
+double c5 = sqrt(105/Pi);
+double c6 = sqrt(21/two_pi);
+double c7 = sqrt(7/Pi);
+double c8 = sqrt(5/two_pi);
 
 while (l_counter < l+1){
 if (l_counter == 0){
@@ -156,53 +158,53 @@ Yz[counter] = (3*c3*y*(-3*x2 + y2)*z)/(4.*r5);
 
 counter++;
 
-Y[counter] = (sqrt(105/Pi)*x*y*z)/(2.*r3);
+Y[counter] = (c5*x*y*z)/(2.*r3);
 
-Yx[counter] = (sqrt(105/Pi)*y*z*(-2*x2 + y2 + z2))/(2.*r5);
+Yx[counter] = (c5*y*z*(-2*x2 + y2 + z2))/(2.*r5);
 
-Yy[counter] = (sqrt(105/Pi)*x*z*(x2 - 2*y2 + z2))/(2.*r5);
+Yy[counter] = (c5*x*z*(x2 - 2*y2 + z2))/(2.*r5);
 
-Yz[counter] = (sqrt(105/Pi)*x*y*(x2 + y2 - 2*z2))/(2.*r5);
-
-counter++;
-
-Y[counter] = -(sqrt(21/two_pi)*y*(x2 + y2 - 4*z2))/(4.*r3);
-
-Yx[counter] = (sqrt(21/two_pi)*x*y*(x2 + y2 - 14*z2))/(4.*r5);
-
-Yy[counter] = -(sqrt(21/two_pi)*(x4 + 11*y2*z2 - 4*z4 + x2*(y2 - 3*z2)))/(4.*r5);
-
-Yz[counter] = (sqrt(21/two_pi)*y*z*(11*(x2 + y2) - 4*z2))/(4.*r5);
+Yz[counter] = (c5*x*y*(x2 + y2 - 2*z2))/(2.*r5);
 
 counter++;
 
-Y[counter] = (sqrt(7/Pi)*z*(-3*(x2 + y2) + 2*z2))/(4.*r3);
+Y[counter] = -(c6*y*(x2 + y2 - 4*z2))/(4.*r3);
 
-Yx[counter] = (3*sqrt(7/Pi)*x*z*(x2 + y2 - 4*z2))/(4.*r5);
+Yx[counter] = (c6*x*y*(x2 + y2 - 14*z2))/(4.*r5);
 
-Yy[counter] = (3*sqrt(7/Pi)*y*z*(x2 + y2 - 4*z2))/(4.*r5);
+Yy[counter] = -(c6*(x4 + 11*y2*z2 - 4*z4 + x2*(y2 - 3*z2)))/(4.*r5);
 
-Yz[counter] = (-3*sqrt(7/Pi)*(x2 + y2)*(x2 + y2 - 4*z2))/(4.*r5);
-
-counter++;
-
-Y[counter] = -(sqrt(21/two_pi)*x*(x2 + y2 - 4*z2))/(4.*r3);
-
-Yx[counter] = -(sqrt(21/two_pi)*(y4 - 3*y2*z2 - 4*z4 + x2*(y2 + 11*z2)))/(4.*r5);
-
-Yy[counter] = (sqrt(21/two_pi)*x*y*(x2 + y2 - 14*z2))/(4.*r5);
-
-Yz[counter] = (sqrt(21/two_pi)*x*z*(11*(x2 + y2) - 4*z2))/(4.*r5);
+Yz[counter] = (c6*y*z*(11*(x2 + y2) - 4*z2))/(4.*r5);
 
 counter++;
 
-Y[counter] = (sqrt(105/Pi)*(x - y)*(x + y)*z)/(4.*r3);
+Y[counter] = (c7*z*(-3*(x2 + y2) + 2*z2))/(4.*r3);
 
-Yx[counter] = -(sqrt(105/Pi)*x*z*(x2 - 5*y2 - 2*z2))/(4.*r5);
+Yx[counter] = (3*c7*x*z*(x2 + y2 - 4*z2))/(4.*r5);
 
-Yy[counter] = (sqrt(105/Pi)*y*z*(-5*x2 + y2 - 2*z2))/(4.*r5);
+Yy[counter] = (3*c7*y*z*(x2 + y2 - 4*z2))/(4.*r5);
 
-Yz[counter] = (sqrt(105/Pi)*(x - y)*(x + y)*(x2 + y2 - 2*z2))/(4.*r5);
+Yz[counter] = (-3*c7*(x2 + y2)*(x2 + y2 - 4*z2))/(4.*r5);
+
+counter++;
+
+Y[counter] = -(c6*x*(x2 + y2 - 4*z2))/(4.*r3);
+
+Yx[counter] = -(c6*(y4 - 3*y2*z2 - 4*z4 + x2*(y2 + 11*z2)))/(4.*r5);
+
+Yy[counter] = (c6*x*y*(x2 + y2 - 14*z2))/(4.*r5);
+
+Yz[counter] = (c6*x*z*(11*(x2 + y2) - 4*z2))/(4.*r5);
+
+counter++;
+
+Y[counter] = (c5*(x - y)*(x + y)*z)/(4.*r3);
+
+Yx[counter] = -(c5*x*z*(x2 - 5*y2 - 2*z2))/(4.*r5);
+
+Yy[counter] = (c5*y*z*(-5*x2 + y2 - 2*z2))/(4.*r5);
+
+Yz[counter] = (c5*(x - y)*(x + y)*(x2 + y2 - 2*z2))/(4.*r5);
 
 counter++;
 
@@ -250,13 +252,13 @@ Yz[counter] = (3*c4*x*y*z*(4*(x2 + y2) - 3*z2))/r6;
 
 counter++;
 
-Y[counter] = (-3*sqrt(5/two_pi)*y*z*(3*(x2 + y2) - 4*z2))/(4.*r4);
+Y[counter] = (-3*c8*y*z*(3*(x2 + y2) - 4*z2))/(4.*r4);
 
-Yx[counter] = (3*sqrt(5/two_pi)*x*y*z*(3*(x2 + y2) - 11*z2))/(2.*r6);
+Yx[counter] = (3*c8*x*y*z*(3*(x2 + y2) - 11*z2))/(2.*r6);
 
-Yy[counter] = (3*sqrt(5/two_pi)*z*(-3*x4 + 3*y4 + (x2 - 21*y2)*z2 + 4*z4))/(4.*r6);
+Yy[counter] = (3*c8*z*(-3*x4 + 3*y4 + (x2 - 21*y2)*z2 + 4*z4))/(4.*r6);
 
-Yz[counter] = (-3*sqrt(5/two_pi)*y*(3*x2py2 - 21*(x2 + y2)*z2 + 4*z4))/(4.*r6);
+Yz[counter] = (-3*c8*y*(3*x2py2 - 21*(x2 + y2)*z2 + 4*z4))/(4.*r6);
 
 counter++;
 
@@ -270,13 +272,13 @@ Yz[counter] = (15*(x2 + y2)*z*(-3*(x2 + y2) + 4*z2))/(4.*sqrt(Pi)*r6);
 
 counter++;
 
-Y[counter] = (-3*sqrt(5/two_pi)*x*z*(3*(x2 + y2) - 4*z2))/(4.*r4);
+Y[counter] = (-3*c8*x*z*(3*(x2 + y2) - 4*z2))/(4.*r4);
 
-Yx[counter] = (3*sqrt(5/two_pi)*z*(3*x4 - 3*y4 - 21*x2*z2 + y2*z2 + 4*z4))/(4.*r6);
+Yx[counter] = (3*c8*z*(3*x4 - 3*y4 - 21*x2*z2 + y2*z2 + 4*z4))/(4.*r6);
 
-Yy[counter] = (3*sqrt(5/two_pi)*x*y*z*(3*(x2 + y2) - 11*z2))/(2.*r6);
+Yy[counter] = (3*c8*x*y*z*(3*(x2 + y2) - 11*z2))/(2.*r6);
 
-Yz[counter] = (-3*sqrt(5/two_pi)*x*(3*x2py2 - 21*(x2 + y2)*z2 + 4*z4))/(4.*r6);
+Yz[counter] = (-3*c8*x*(3*x2py2 - 21*(x2 + y2)*z2 + 4*z4))/(4.*r6);
 
 counter++;
 
@@ -622,13 +624,13 @@ Yz[counter] = (3*c3*x*y*(15*pow(x2 + y2,3) - 330*x2py2*z2 + 560*(x2 + y2)*z4 - 9
 
 counter++;
 
-Y[counter] = -(sqrt(105/Pi)*y*(5*pow(x2 + y2,3) - 120*x2py2*z2 + 240*(x2 + y2)*z4 - 64*z6))/(64.*r7);
+Y[counter] = -(c5*y*(5*pow(x2 + y2,3) - 120*x2py2*z2 + 240*(x2 + y2)*z4 - 64*z6))/(64.*r7);
 
-Yx[counter] = (sqrt(105/Pi)*x*y*(5*pow(x2 + y2,3) - 390*x2py2*z2 + 1680*(x2 + y2)*z4 - 928*z6))/(64.*pow(r2,4.5));
+Yx[counter] = (c5*x*y*(5*pow(x2 + y2,3) - 390*x2py2*z2 + 1680*(x2 + y2)*z4 - 928*z6))/(64.*pow(r2,4.5));
 
-Yy[counter] = (sqrt(105/Pi)*(-5*x2*pow(x2 + y2,3) + 5*(23*x2 - 55*y2)*x2py2*z2 - 120*(x2 - 13*y2)*(x2 + y2)*z4 - 16*(11*x2 + 69*y2)*z6 + 64*pow(z,8)))/(64.*pow(r2,4.5));
+Yy[counter] = (c5*(-5*x2*pow(x2 + y2,3) + 5*(23*x2 - 55*y2)*x2py2*z2 - 120*(x2 - 13*y2)*(x2 + y2)*z4 - 16*(11*x2 + 69*y2)*z6 + 64*pow(z,8)))/(64.*pow(r2,4.5));
 
-Yz[counter] = (sqrt(105/Pi)*y*z*(275*pow(x2 + y2,3) - 1560*x2py2*z2 + 1104*(x2 + y2)*z4 - 64*z6))/(64.*pow(r2,4.5));
+Yz[counter] = (c5*y*z*(275*pow(x2 + y2,3) - 1560*x2py2*z2 + 1104*(x2 + y2)*z4 - 64*z6))/(64.*pow(r2,4.5));
 
 counter++;
 
@@ -642,13 +644,13 @@ Yz[counter] = (-7*c2*(x2 + y2)*(5*pow(x2 + y2,3) - 120*x2py2*z2 + 240*(x2 + y2)*
 
 counter++;
 
-Y[counter] = -(sqrt(105/Pi)*x*(5*pow(x2 + y2,3) - 120*x2py2*z2 + 240*(x2 + y2)*z4 - 64*z6))/(64.*r7);
+Y[counter] = -(c5*x*(5*pow(x2 + y2,3) - 120*x2py2*z2 + 240*(x2 + y2)*z4 - 64*z6))/(64.*r7);
 
-Yx[counter] = -(sqrt(105/Pi)*(5*y2*pow(x2 + y2,3) + 5*(55*x2 - 23*y2)*x2py2*z2 + 120*(-13*x2 + y2)*(x2 + y2)*z4 + 16*(69*x2 + 11*y2)*z6 - 64*pow(z,8)))/(64.*pow(r2,4.5));
+Yx[counter] = -(c5*(5*y2*pow(x2 + y2,3) + 5*(55*x2 - 23*y2)*x2py2*z2 + 120*(-13*x2 + y2)*(x2 + y2)*z4 + 16*(69*x2 + 11*y2)*z6 - 64*pow(z,8)))/(64.*pow(r2,4.5));
 
-Yy[counter] = (sqrt(105/Pi)*x*y*(5*pow(x2 + y2,3) - 390*x2py2*z2 + 1680*(x2 + y2)*z4 - 928*z6))/(64.*pow(r2,4.5));
+Yy[counter] = (c5*x*y*(5*pow(x2 + y2,3) - 390*x2py2*z2 + 1680*(x2 + y2)*z4 - 928*z6))/(64.*pow(r2,4.5));
 
-Yz[counter] = (sqrt(105/Pi)*x*z*(275*pow(x2 + y2,3) - 1560*x2py2*z2 + 1104*(x2 + y2)*z4 - 64*z6))/(64.*pow(r2,4.5));
+Yz[counter] = (c5*x*z*(275*pow(x2 + y2,3) - 1560*x2py2*z2 + 1104*(x2 + y2)*z4 - 64*z6))/(64.*pow(r2,4.5));
 
 counter++;
 

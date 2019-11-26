@@ -27,7 +27,7 @@ int main(){
     void (*cutoff_function)(double *, double, double, double *) = cos_cutoff;
 
     // Prepare spherical harmonics.
-    int lmax = 10;
+    int lmax = 6;
     int number_of_harmonics = (lmax + 1) * (lmax + 1);
 
     // Prepare radial basis set.

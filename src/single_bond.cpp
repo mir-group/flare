@@ -43,10 +43,10 @@ double * radial_hyps, double * cutoff_hyps){
         for (int angular_counter = 0; angular_counter < number_of_harmonics;
              angular_counter ++){
 
-            bond = g_val * h[angular_counter];
+            h_val = h[angular_counter];
+            bond = g_val * h_val;
 
             // calculate derivatives with the product rule
-            h_val = h[angular_counter];
             bond_x = gx_val * h_val +
                      g_val * hx[angular_counter];
             bond_y = gy_val * h_val +
