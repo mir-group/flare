@@ -20,3 +20,4 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 # add subdirectories
 add_subdirectory(src)
 add_subdirectory(test)
+add_subdirectory(timing)
