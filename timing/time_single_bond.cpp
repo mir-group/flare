@@ -39,43 +39,68 @@ int main(){
     void (*basis_function)(double *, double *, double, int, double *) =
         equispaced_gaussians;
 
-    // Initialize arrays.
-    double * single_bond_vals;
-    double * environment_dervs;
-    double * central_dervs;
-
-    double * single_bond_delt_x;
-    double * single_bond_delt_y;
-    double * single_bond_delt_z;
-
-    double * env_dervs_delt_x;
-    double * env_dervs_delt_y;
-    double * env_dervs_delt_z;
-
-    double * cent_dervs_delt_x;
-    double * cent_dervs_delt_y;
-    double * cent_dervs_delt_z;
-
-    single_bond_vals = new double[N * number_of_harmonics]();
-    environment_dervs = new double[N * number_of_harmonics * 3]();
-    central_dervs = new double[N * number_of_harmonics * 3]();
+    // Time radial basis.
+    double * g = new double[N];
+    double * gx = new double[N];
+    double * gy = new double[N];
+    double * gz = new double[N];
 
     auto t1 = std::chrono::high_resolution_clock::now();
 
     int reps = 10000;
-
     for (int n = 0; n < reps; n++){
-    single_bond_update(single_bond_vals, environment_dervs, central_dervs,
-                      basis_function, cutoff_function,
-                      x, y, z, r, rcut, N, lmax,
-                      radial_hyps, cutoff_hyps);
+    calculate_radial(g, gx, gy, gz, basis_function, cutoff_function, 
+                     x, y, z, r, rcut, N, radial_hyps, cutoff_hyps);
     }
 
     auto t2 = std::chrono::high_resolution_clock::now();
     auto tot_time = 
         std::chrono::duration_cast<std::chrono::microseconds>(t2-t1).count();
     auto mean_time = tot_time / reps;
-    std::cout << "the program took took " << mean_time << " microseconds\n";
+    std::cout << "calculating the radial basis took "
+              << mean_time << " microseconds\n";
+
+    delete [] g; delete [] gx; delete [] gy; delete [] gz;
+
+    // Time spherical harmonics.
+    double * h = new double[number_of_harmonics];
+    double * hx = new double[number_of_harmonics];
+    double * hy = new double[number_of_harmonics];
+    double * hz = new double[number_of_harmonics];
+
+    t1 = std::chrono::high_resolution_clock::now();
+    for (int n = 0; n < reps; n++){
+    get_Y(h, hx, hy, hz, x, y, z, lmax);
+    }
+    t2 = std::chrono::high_resolution_clock::now();
+
+    tot_time = 
+        std::chrono::duration_cast<std::chrono::microseconds>(t2-t1).count();
+    mean_time = tot_time / reps;
+    std::cout << "calculating the spherical harmonics took "
+              << mean_time << " microseconds\n";
+
+    delete [] h; delete [] hx; delete [] hy; delete [] hz;
+
+    // Time single bond update.
+    double * single_bond_vals = new double[N * number_of_harmonics]();
+    double * environment_dervs = new double[N * number_of_harmonics * 3]();
+    double * central_dervs = new double[N * number_of_harmonics * 3]();
+
+    t1 = std::chrono::high_resolution_clock::now();
+    for (int n = 0; n < reps; n++){
+    single_bond_update(single_bond_vals, environment_dervs, central_dervs,
+                      basis_function, cutoff_function,
+                      x, y, z, r, rcut, N, lmax,
+                      radial_hyps, cutoff_hyps);
+    }
+    t2 = std::chrono::high_resolution_clock::now();
+
+    tot_time = 
+        std::chrono::duration_cast<std::chrono::microseconds>(t2-t1).count();
+    mean_time = tot_time / reps;
+    std::cout << "calculating the single bond basis took "
+              << mean_time << " microseconds\n";
     
     delete [] single_bond_vals; delete[] environment_dervs;
     delete [] central_dervs; 

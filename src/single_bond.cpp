@@ -31,22 +31,29 @@ double * radial_hyps, double * cutoff_hyps){
     int single_bond_counter = 0;
     int no_bond_vals = N * number_of_harmonics;
     int y_ind, z_ind;
-    double bond, bond_x, bond_y, bond_z;
+    double bond, bond_x, bond_y, bond_z, g_val, gx_val, gy_val, gz_val, h_val;
 
     for (int radial_counter = 0; radial_counter < N; radial_counter ++){
+        // Retrieve radial values.
+        g_val = g[radial_counter];
+        gx_val = gx[radial_counter];
+        gy_val = gy[radial_counter];
+        gz_val = gz[radial_counter];
+
         for (int angular_counter = 0; angular_counter < number_of_harmonics;
              angular_counter ++){
 
-            bond = g[radial_counter] * h[angular_counter];
+            bond = g_val * h[angular_counter];
 
             // calculate derivatives with the product rule
-            bond_x = gx[radial_counter] * h[angular_counter] +
-                     g[radial_counter] * hx[angular_counter];
-            bond_y = gy[radial_counter] * h[angular_counter] +
-                     g[radial_counter] * hy[angular_counter];
-            bond_z = gz[radial_counter] * h[angular_counter] +
-                     g[radial_counter] * hz[angular_counter];
-            
+            h_val = h[angular_counter];
+            bond_x = gx_val * h_val +
+                     g_val * hx[angular_counter];
+            bond_y = gy_val * h_val +
+                     g_val * hy[angular_counter];
+            bond_z = gz_val * h_val +
+                     g_val * hz[angular_counter];
+
             // update single bond basis arrays
             y_ind = single_bond_counter + no_bond_vals;
             z_ind = y_ind + no_bond_vals;
@@ -62,7 +69,7 @@ double * radial_hyps, double * cutoff_hyps){
             central_dervs[z_ind] -= bond_z;
 
             single_bond_counter ++;
-             }
+            }
     }
 
     // Deallocate memory.
