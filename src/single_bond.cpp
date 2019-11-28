@@ -82,10 +82,11 @@ double * single_bond_vals, double * environment_dervs, double * central_dervs,
 void (*basis_function)(double *, double *, double, int, double *),
 void (*cutoff_function)(double *, double, double, double *),
 double * xs, double * ys, double * zs, double * rs, int * species,
-int nos, int noa, double rcut, int N, int lmax,
+int noa, double rcut, int N, int lmax,
 double * radial_hyps, double * cutoff_hyps){
 
     int no_basis_vals = N * (lmax + 1) * (lmax + 1);
+    int no_derv_vals = 3 * no_basis_vals;
 
     // Loop over atoms.
     int atom_index, s;
@@ -100,8 +101,8 @@ double * radial_hyps, double * cutoff_hyps){
         s = species[atom_index];
 
         bond_ind = & single_bond_vals[s * no_basis_vals];
-        env_ind = & environment_dervs[s * no_basis_vals * 3 * atom_index];
-        cent_ind = & central_dervs[s * no_basis_vals * 3];
+        env_ind = & environment_dervs[no_derv_vals * (s * noa + atom_index)];
+        cent_ind = & central_dervs[s * no_derv_vals];
 
         single_bond_update(bond_ind, env_ind, cent_ind,
                            basis_function, cutoff_function, x, y, z, r, rcut,
