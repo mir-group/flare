@@ -76,3 +76,35 @@ double * radial_hyps, double * cutoff_hyps){
     delete [] g; delete [] gx; delete [] gy; delete [] gz;
     delete [] h; delete [] hx; delete [] hy; delete [] hz;
 }
+
+void single_bond_sum(
+double * single_bond_vals, double * environment_dervs, double * central_dervs,
+void (*basis_function)(double *, double *, double, int, double *),
+void (*cutoff_function)(double *, double, double, double *),
+double * xs, double * ys, double * zs, double * rs, int * species,
+int nos, int noa, double rcut, int N, int lmax,
+double * radial_hyps, double * cutoff_hyps){
+
+    int no_basis_vals = N * (lmax + 1) * (lmax + 1);
+
+    // Loop over atoms.
+    int atom_index, s;
+    double x, y, z, r;
+    double * bond_ind, * env_ind, * cent_ind;
+
+    for (atom_index = 0; atom_index < noa; atom_index ++){
+        x = xs[atom_index];
+        y = ys[atom_index];
+        z = zs[atom_index];
+        r = rs[atom_index];
+        s = species[atom_index];
+
+        bond_ind = & single_bond_vals[s * no_basis_vals];
+        env_ind = & environment_dervs[s * no_basis_vals * 3 * atom_index];
+        cent_ind = & central_dervs[s * no_basis_vals * 3];
+
+        single_bond_update(bond_ind, env_ind, cent_ind,
+                           basis_function, cutoff_function, x, y, z, r, rcut,
+                           N, lmax, radial_hyps, cutoff_hyps);
+    }
+}

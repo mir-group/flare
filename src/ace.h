@@ -27,3 +27,11 @@ void (*basis_function)(double *, double *, double, int, double *),
 void (*cutoff_function)(double *, double, double, double *),
 double x, double y, double z, double r, double rcut, int N, int lmax,
 double * radial_hyps, double * cutoff_hyps);
+
+void single_bond_sum(
+double * single_bond_vals, double * environment_dervs, double * central_dervs,
+void (*basis_function)(double *, double *, double, int, double *),
+void (*cutoff_function)(double *, double, double, double *),
+double * xs, double * ys, double * zs, double * rs, int * species,
+int nos, int noa, double rcut, int N, int lmax,
+double * radial_hyps, double * cutoff_hyps);
