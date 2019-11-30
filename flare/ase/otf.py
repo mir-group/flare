@@ -11,7 +11,7 @@ from ase.md.md import MolecularDynamics
 from ase import units
 
 
-class OTF(MolecularDynamics):
+class OTF: #(MolecularDynamics):
     """output_name => logfile
     npool: added
     prev_pos_init: relaunch mode not implemented
@@ -31,7 +31,7 @@ class OTF(MolecularDynamics):
             use_mapping: bool=False, non_mapping_steps: list=[],
             l_bound: float=None, two_d: bool=False):
 
-        MolecularDynamics.__init__(self, atoms, timestep, trajectory)
+#        MolecularDynamics.__init__(self, atoms, timestep, trajectory)
                                    
         self.std_tolerance = std_tolerance_factor
         self.noa = len(atoms.positions)
