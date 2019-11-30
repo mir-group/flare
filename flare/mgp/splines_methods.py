@@ -1,3 +1,5 @@
+'''Cubic spline functions used for interpolation. 
+'''
 import numpy as np
 import numpy
 import time
@@ -73,14 +75,15 @@ class CubicSpline:
 
     Creates a cubic spline interpolator on a regular cartesian grid.
 
-    :param a: Lower bounds of the cartesian grid.
-    :type  a: numpy array of size d (float)
-    :param b: Upper bounds of the cartesian grid.
-    :type  b: numpy array of size d (float)
-    :param orders: Number of nodes along each dimension (=(n1,...,nd) )
-    :type  orders: numpy array of size d (int)
-    :param values: (optional, (n1 x ... x nd) array). Values on the nodes of the function to interpolate.
-    :type  values: numpy array (float)
+    Args:
+        a (numpy array of size d (float)): Lower bounds of the cartesian grid.
+        b (numpy array of size d (float)): Upper bounds of the cartesian grid.
+        orders (numpy array of size d (int)): Number of nodes along each \
+            dimension (=(n1,...,nd) )
+
+    Other Parameters:
+        values (numpy array (float)): (optional, (n1 x ... x nd) array). \
+            Values on the nodes of the function to interpolate.
     """
 
 

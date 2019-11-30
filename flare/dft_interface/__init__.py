@@ -9,3 +9,10 @@ from flare.dft_interface import qe_util, cp2k_util#, vasp_util
 dft_software = { "qe": qe_util,
                  #"vasp": vasp_util,
                  "cp2k": cp2k_util}
+
+try:
+    import pymatgen
+    from flare.dft_interface import vasp_util
+    dft_software["vasp"]=vasp_util
+except ImportError:
+    pass
