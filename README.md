@@ -18,7 +18,7 @@ FLARE is an open-source Python package for creating fast and accurate atomistic 
 
 * On-the-Fly Training
   * Coupling to ASE MD engines
-  * Interfaces to Quantum Espresso, CP2K, and VASP
+  * Coupling to Quantum Espresso, CP2K, and VASP DFT engines
 
 
 ## Prerequisites

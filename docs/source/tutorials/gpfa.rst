@@ -8,7 +8,7 @@ Molecular  Dynamics (AIMD) trajectory can be used to train a Gaussian Process mo
 We can use a very short trajectory for a very simple molecule which is already 
 included in the test files in order to demonstrate how to set up and run the code.
 The trajectory this tutorial focuses on  involves a few frames of the 
-molecule Methanol vibrating about it's equilibrium configuration, ran in VASP. 
+molecule Methanol vibrating about it's equilibrium configuration ran in VASP. 
 
 
 
@@ -18,7 +18,7 @@ Step 1: Setting up a Gaussian Process Object
 Our goal is to train a GP, which first must be instantiated with a set of parameters.
 
 For the sake of this example, which is a molecule, we will use a two-plus-three body kernel. 
-We must provide the kernel and the kernel gradient as callables to the GP. 
+We must provide the kernel and the kernel gradient as ``callable`` s to the GP. 
 Our initial guesses for the hyperparameters are not important. 
 The hyperparameter labels are included below for later output.
 The system contains a small number of atoms, so we choose a relatively 
@@ -46,11 +46,11 @@ We will then set up the ``GaussianProcess`` object.
 * | The two cutoff values correspond to the functions which set up 
   | the two- and three-body Atomic Environments. Since Methanol is a small 
   | molecule, 7 Angstrom each will be sufficent.
-* The kernels which facilitate these comparisons must be imported as Python  ``callable``s. 
+* | The kernels which facilitate these comparisons must be imported as Python  ``callable`` s. 
 * | Here, we will use the ``two_plus_three_body_mc`` kernel, which 
   | uses two-body and three-body comparisons. ``mc`` means multi-component, 
   | indicating that it can handle multiple atomic species being present.
-* |  We must also import the gradient of the kernel, which is
+* | We must also import the gradient of the kernel, which is
   | ``two_plus_three_body_mc_grad``.
  
 
@@ -69,7 +69,7 @@ Step 2 (Optional): Extracting the Frames from a previous AIMD Run
 FLARE offers a variety of modules for converting DFT outputs into 
 FLARE structures, which are then usable for model training and prediction tasks.
 For this example, we highlight the vasp_util module, which has a function 
-called ``md_trajectory_from_vasprun``, which can convert a vasprun.xml file into 
+called ``md_trajectory_from_vasprun``, which can convert a ``vasprun.xml`` file into 
 a list of FLARE ``Structure`` objects, using internal methods which call 
 ``pymatgen``'s IO functionality.
 
@@ -98,7 +98,7 @@ Our trajectory is a list of FLARE structures, each of which is decorated with
 forces.
 
 Once you have your trajectory and your ``GaussianProcess`` which has not seen 
-any data yet, you are ready to begin your training.
+any data yet, you are ready to begin your training!
 
 We will next import the dedicated ``TrajectoryTrainer`` class, which has a 
 variety of useful tools to help train your ``GaussianProcess``.
@@ -136,8 +136,8 @@ Input arguments for training include:
   | Here, we will set it to 0. If both are defined, the lower of the two will be
   | used.
  
-Pre-Training arguments
-----------------------
+** Pre-Training arguments **
+
 When the training set contains a low diversity of 
 atomic configurations relative to what you expect to see at test time, the 
 hyperparameters may not be representative; furthermore, the training process
@@ -176,10 +176,11 @@ After this, all you need to do is call the run method!
 
 .. codeblock:: python
 	TT.run()
-
+	print("Done!")
+	
 The results, by default, will be stored in ``gp_from_aimd.out``, as well as a 
 variety of other output files. The resultant model will be stored in a 
-``.json`` file format.
+``.json`` file format which can be later loaded using the ``GaussianProcess.from_dict()`` method.
 
 Each frame will output the mae per species, which can be helpful for 
 diagnosing if an individual species will be problematic (for example, you 
