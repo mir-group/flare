@@ -1242,6 +1242,29 @@ def two_body_mc_force_en_jit(bond_array_1, c1, etypes1,
 def two_body_mc_en_jit(bond_array_1, c1, etypes1,
                        bond_array_2, c2, etypes2,
                        sig, ls, r_cut, cutoff_func):
+    """2-body multi-element kernel between two local energies accelerated
+    with Numba.
+
+    Args:
+        bond_array_1 (np.ndarray): 2-body bond array of the first local
+            environment.
+        c1 (int): Species of the central atom of the first local environment.
+        etypes1 (np.ndarray): Species of atoms in the first local
+            environment.
+        bond_array_2 (np.ndarray): 2-body bond array of the second local
+            environment.
+        c2 (int): Species of the central atom of the second local environment.
+        etypes2 (np.ndarray): Species of atoms in the second local
+            environment.
+        sig (float): 2-body signal variance hyperparameter.
+        ls (float): 2-body length scale hyperparameter.
+        r_cut (float): 2-body cutoff radius.
+        cutoff_func (Callable): Cutoff function.
+
+    Returns:
+        float:
+            Value of the 2-body local energy kernel.
+    """
     kern = 0
 
     ls1 = 1 / (2 * ls * ls)
