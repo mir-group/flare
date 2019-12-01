@@ -33,25 +33,25 @@ At the header of a file, include the following imports:
 
 We will then set up the ``GaussianProcess`` object.
 
-* The ``GaussianProcess`` object class contains the methods which, from an 
-``AtomicEnvironment`` object, predict the corresponding forces and 
-uncertainties by comparing the atomic environment to each environment in the
-training set. The kernel we will use has 5 hyperparameters and requires two cutoffs. 
-* The first four hyperparameters correspond to the signal variance and length 
-scale which parameterize the two- and three-body comparison 
-functions. These hyperparameters will be optimized later once data has 
-been fed into the ``GaussianProcess`` via likelihood maximization. The 
-fifth and final hyperparameter is the noise variance. We provide simple 
-initial guesses for each hyperparameter.
-* The two cutoff values correspond to the functions which set up 
-the two- and three-body Atomic Environments. Since Methanol is a small 
-molecule, 7 Angstrom each will be sufficent.
+* | The ``GaussianProcess`` object class contains the methods which, from an 
+  | ``AtomicEnvironment`` object, predict the corresponding forces and 
+  | uncertainties by comparing the atomic environment to each environment in the
+  | training set. The kernel we will use has 5 hyperparameters and requires two cutoffs. 
+* | The first four hyperparameters correspond to the signal variance and length 
+  | scale which parameterize the two- and three-body comparison 
+  | functions. These hyperparameters will be optimized later once data has 
+  | been fed into the ``GaussianProcess`` via likelihood maximization. The 
+  | fifth and final hyperparameter is the noise variance. We provide simple 
+  | initial guesses for each hyperparameter.
+* | The two cutoff values correspond to the functions which set up 
+  | the two- and three-body Atomic Environments. Since Methanol is a small 
+  | molecule, 7 Angstrom each will be sufficent.
 * The kernels which facilitate these comparisons must be imported as Python  ``callable``s. 
-* Here, we will use the ``two_plus_three_body_mc`` kernel, which 
-uses two-body and three-body comparisons. ``mc`` means multi-component, 
-indicating that it can handle multiple atomic species being present.
-* We must also import the gradient of the kernel, which is
-``two_plus_three_body_mc_grad``.
+* | Here, we will use the ``two_plus_three_body_mc`` kernel, which 
+  | uses two-body and three-body comparisons. ``mc`` means multi-component, 
+  | indicating that it can handle multiple atomic species being present.
+* |  We must also import the gradient of the kernel, which is
+  | ``two_plus_three_body_mc_grad``.
  
 
 .. codeblock:: python
@@ -107,34 +107,34 @@ The Trajectory Trainer has a large number of arguments which can be passed
 to it in order to give you a fine degree of control over how your model is 
 trained. Here, we will pass in the following:
 
-* ``frames``: A list of FLARE ``structure``s decorated with forces. Ultimately, 
-	these structures will be iterated over and will be used to train the model.
-* ``gp``: Our ``GaussianProcess`` object. The process of training will involve 
-	populating the training set with representative atomic environments and 
-	optimizing the hyperparameters via likelihood maximization to best explain 
-	the data.
+* | ``frames``: A list of FLARE ``structure``s decorated with forces. Ultimately, 
+  | these structures will be iterated over and will be used to train the model.
+* | ``gp``: Our ``GaussianProcess`` object. The process of training will involve 
+  | populating the training set with representative atomic environments and 
+  | optimizing the hyperparameters via likelihood maximization to best explain 
+  | the data.
 
 Input arguments for training include:
 
-* ``rel_std_tolerance``: The noise variance heuristically describes the amount
-of variance in force predictions which cannot be explained by the model.  
-Once optimized, it provides a natural length scale for the degree of 
-uncertainty expected in force predictions. A high uncertainty on a force 
-prediction indicates that the ``AtomicEnvironment`` used is 
-significantly different from all of the ``AtomicEnvironment``s in the training 
-set. The  criteria for adding atoms to the training set therefore be 
-defined with respect to the noise variance: if we denote the noise variance 
-of the model as sig_n, stored at gp.hyps[-1] by convention, then the
-the cutoff value used will be 
-``rel_std_tolerance * sig_n``. Here, we will set it to 3.
+* | ``rel_std_tolerance``: The noise variance heuristically describes the amount
+  | of variance in force predictions which cannot be explained by the model.  
+  | Once optimized, it provides a natural length scale for the degree of 
+  | uncertainty expected in force predictions. A high uncertainty on a force 
+  | prediction indicates that the ``AtomicEnvironment`` used is 
+  | significantly different from all of the ``AtomicEnvironment``s in the training 
+  | set. The  criteria for adding atoms to the training set therefore be 
+  | defined with respect to the noise variance: if we denote the noise variance 
+  | of the model as sig_n, stored at gp.hyps[-1] by convention, then the
+  | the cutoff value used will be 
+  | ``rel_std_tolerance * sig_n``. Here, we will set it to 3.
 	
-* ``abs_std_tolerance``: The above value describes a cutoff uncertainty which 
-is defined with respect to the data set. In some cases it may be desirable 
-to have a stringent cutoff which is invariant to the hyperparameters, in 
-which case, if the uncertainty on any force prediction rises above 
-``abs_std_tolerance`` the associated atom will be added to the training set. 
-Here, we will set it to 0. If both are defined, the lower of the two will be
-used.
+* | ``abs_std_tolerance``: The above value describes a cutoff uncertainty which 
+  | is defined with respect to the data set. In some cases it may be desirable 
+  | to have a stringent cutoff which is invariant to the hyperparameters, in 
+  | which case, if the uncertainty on any force prediction rises above 
+  | ``abs_std_tolerance`` the associated atom will be added to the training set. 
+  | Here, we will set it to 0. If both are defined, the lower of the two will be
+  | used.
  
 Pre-Training arguments
 ----------------------
@@ -153,10 +153,10 @@ to use a more selective subset of atoms for large unit cells.
  
 For now, we will only show one argument to seed frames for simplicity.
 
-*``pre_train_on_skips``: Slice the input frames via 
-	``frames[::pre_train_on_skips]``; use those frames as seed frames. For 
-	instance, if we used ``pre_train_on_skips=5`` then we would use every fifth 
-	frame in the trajectory as a seed frame.
+* | ``pre_train_on_skips``: Slice the input frames via 
+  | ``frames[::pre_train_on_skips]``; use those frames as seed frames. For 
+  | instance, if we used ``pre_train_on_skips=5`` then we would use every fifth 
+  | frame in the trajectory as a seed frame.
 
 
 .. codeblock:: python
