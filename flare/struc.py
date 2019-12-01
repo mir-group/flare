@@ -11,7 +11,7 @@ import numpy as np
 from flare.util import element_to_Z, NumpyEncoder
 from json import dumps
 
-from typing import List, Union
+from typing import List, Union, Any
 
 try:
     # Used for to_pmg_structure method
@@ -329,7 +329,7 @@ class Structure:
         return new_struc
 
 
-def get_unique_species(species: List)-> (List, List[int]):
+def get_unique_species(species: List[Any])-> (List, List[int]):
     """
     Returns a list of the unique species passed in, and a list of
     integers indexing them.
