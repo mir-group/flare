@@ -5,7 +5,7 @@ Steven Torrisi (torrisi@g.harvard.edu), December 2019
 
 
 In this tutorial, we'll demonstrate how a previously existing Ab-Initio 
-Molecular  Dynamics trajectory can be used to train a Gaussian Process model.
+Molecular  Dynamics (AIMD) trajectory can be used to train a Gaussian Process model.
 
 We can use a very short trajectory for a very simple molecule which is already 
 included in the test files in order to demonstrate how to set up and run the code.
@@ -14,7 +14,7 @@ molecule Methanol vibrating about it's equilibrium configuration, ran in VASP.
 
 
  Step 1: Setting up a Gaussian Process Object
- =======================================================
+------------------------
  Our goal is to train a GP, which first must be instantiated with a set of parameters.
 
 For the sake of this example, which is a molecule, we will use a two-plus-three body kernel. 
@@ -64,7 +64,7 @@ indicating that it can handle multiple atomic species being present.
 			)
 
 Step 2 (Optional): Extracting the Frames from a previous AIMD Run
-=======================================================
+------------------------
 
 FLARE offers a variety of modules for converting DFT outputs into 
 FLARE structures, which are then usable for model training and prediction tasks.
@@ -82,7 +82,7 @@ You can run it simply by calling the function on a file like so:
 
 
 Step 3: Training your Gaussian Process
-=======================================================
+------------------------
 If you don't have a previously existing Vasprun, you can also use the one 
 available in the test_files directory, which is `methanol_frames.json`.
 You can open it via the command
@@ -135,7 +135,7 @@ Here, we will set it to 0. If both are defined, the lower of the two will be
  used.
  
 Pre-Training arguments
-=======================================================
+------------------------
 When the training set contains a low diversity of 
 atomic configurations relative to what you expect to see at test time, the 
 hyperparameters may not be representative; furthermore, the training process
