@@ -66,7 +66,7 @@ def two_plus_three_body_mc_grad(env1: AtomicEnvironment,
                                 d1: int, d2: int, hyps: 'ndarray',
                                 cutoffs: 'ndarray',
                                 cutoff_func: Callable = cf.quadratic_cutoff) \
-                                -> (float, 'ndarray'):
+                                -> ('float', 'ndarray'):
     """2+3-body multi-element kernel between two force components and its
     gradient with respect to the hyperparameters.
 
@@ -114,7 +114,8 @@ def two_plus_three_body_mc_grad(env1: AtomicEnvironment,
 def two_plus_three_mc_force_en(env1: AtomicEnvironment,
                                env2: AtomicEnvironment,
                                d1: int, hyps: 'ndarray', cutoffs: 'ndarray',
-                               cutoff_func: Callable = cf.quadratic_cutoff):
+                               cutoff_func: Callable = cf.quadratic_cutoff) \
+                               -> float:
     """2+3-body multi-element kernel between a force component and a local
     energy.
 
@@ -160,7 +161,8 @@ def two_plus_three_mc_force_en(env1: AtomicEnvironment,
 
 def two_plus_three_mc_en(env1: AtomicEnvironment, env2: AtomicEnvironment,
                          hyps: 'ndarray', cutoffs: 'ndarray',
-                         cutoff_func: Callable = cf.quadratic_cutoff):
+                         cutoff_func: Callable = cf.quadratic_cutoff) \
+                         -> float:
     """2+3-body multi-element kernel between two local energies.
 
     Args:
@@ -233,8 +235,10 @@ def three_body_mc(env1: AtomicEnvironment, env2: AtomicEnvironment,
                              d1, d2, sig, ls, r_cut, cutoff_func)
 
 
-def three_body_mc_grad(env1, env2, d1, d2, hyps, cutoffs,
-                       cutoff_func=cf.quadratic_cutoff):
+def three_body_mc_grad(env1: AtomicEnvironment, env2: AtomicEnvironment,
+                       d1: int, d2: int, hyps: 'ndarray', cutoffs: 'ndarray',
+                       cutoff_func: Callable = cf.quadratic_cutoff) \
+                       -> ('float', 'ndarray'):
     """3-body multi-element kernel between two force components and its
     gradient with respect to the hyperparameters.
 
@@ -265,8 +269,10 @@ def three_body_mc_grad(env1, env2, d1, d2, hyps, cutoffs,
                                   d1, d2, sig, ls, r_cut, cutoff_func)
 
 
-def three_body_mc_force_en(env1, env2, d1, hyps, cutoffs,
-                           cutoff_func=cf.quadratic_cutoff):
+def three_body_mc_force_en(env1: AtomicEnvironment, env2: AtomicEnvironment,
+                           d1: int, hyps: 'ndarray', cutoffs: 'ndarray',
+                           cutoff_func: Callable = cf.quadratic_cutoff) \
+                           -> float:
     """3-body multi-element kernel between a force component and a local
     energy.
 
@@ -300,8 +306,10 @@ def three_body_mc_force_en(env1, env2, d1, hyps, cutoffs,
                                       d1, sig, ls, r_cut, cutoff_func)/3
 
 
-def three_body_mc_en(env1, env2, hyps, cutoffs,
-                     cutoff_func=cf.quadratic_cutoff):
+def three_body_mc_en(env1: AtomicEnvironment, env2: AtomicEnvironment,
+                     hyps: 'ndarray', cutoffs: 'ndarray',
+                     cutoff_func: Callable = cf.quadratic_cutoff) \
+                     -> float:
     """3-body multi-element kernel between two local energies.
 
     Args:
@@ -331,8 +339,9 @@ def three_body_mc_en(env1, env2, hyps, cutoffs,
 # -----------------------------------------------------------------------------
 
 
-def two_body_mc(env1, env2, d1, d2, hyps, cutoffs,
-                cutoff_func=cf.quadratic_cutoff):
+def two_body_mc(env1: AtomicEnvironment, env2: AtomicEnvironment,
+                d1: float, d2: float, hyps: 'ndarray', cutoffs: 'ndarray',
+                cutoff_func: Callable = cf.quadratic_cutoff) -> float:
     """2-body multi-element kernel between two force components.
 
     Args:
@@ -357,8 +366,10 @@ def two_body_mc(env1, env2, d1, d2, hyps, cutoffs,
                            d1, d2, sig, ls, r_cut, cutoff_func)
 
 
-def two_body_mc_grad(env1, env2, d1, d2, hyps, cutoffs,
-                     cutoff_func=cf.quadratic_cutoff):
+def two_body_mc_grad(env1: AtomicEnvironment, env2: AtomicEnvironment,
+                     d1: int, d2: int, hyps: 'ndarray', cutoffs: 'ndarray',
+                     cutoff_func: Callable = cf.quadratic_cutoff) \
+                     -> (float, 'ndarray'):
     """2-body multi-element kernel between two force components and its
     gradient with respect to the hyperparameters.
 
@@ -386,8 +397,10 @@ def two_body_mc_grad(env1, env2, d1, d2, hyps, cutoffs,
                                 d1, d2, sig, ls, r_cut, cutoff_func)
 
 
-def two_body_mc_force_en(env1, env2, d1, hyps, cutoffs,
-                         cutoff_func=cf.quadratic_cutoff):
+def two_body_mc_force_en(env1: AtomicEnvironment, env2: AtomicEnvironment,
+                         d1: int, hyps: 'ndarray', cutoffs: 'ndarray',
+                         cutoff_func: Callable = cf.quadratic_cutoff) \
+                         -> float:
     """2-body multi-element kernel between a force component and a local
     energy.
 
@@ -414,8 +427,10 @@ def two_body_mc_force_en(env1, env2, d1, hyps, cutoffs,
                                     d1, sig, ls, r_cut, cutoff_func)/2
 
 
-def two_body_mc_en(env1, env2, hyps, cutoffs,
-                   cutoff_func=cf.quadratic_cutoff):
+def two_body_mc_en(env1: AtomicEnvironment, env2: AtomicEnvironment,
+                   hyps: 'ndarray', cutoffs: 'ndarray',
+                   cutoff_func: Callable = cf.quadratic_cutoff) \
+                   -> float:
     """2-body multi-element kernel between two local energies.
 
     Args:
