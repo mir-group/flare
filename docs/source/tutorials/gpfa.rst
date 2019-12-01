@@ -126,14 +126,15 @@ set. The  criteria for adding atoms to the training set therefore be
 defined with respect to the noise variance: if we denote the noise variance 
 of the model as sig_n, stored at gp.hyps[-1] by convention, then the
 the cutoff value used will be 
-	``rel_std_tolerance * sig_n``. Here, we will set it to 3.
+``rel_std_tolerance * sig_n``. Here, we will set it to 3.
+	
 * ``abs_std_tolerance``: The above value describes a cutoff uncertainty which 
-	is defined with respect to the data set. In some cases it may be desirable 
-	to have a stringent cutoff which is invariant to the hyperparameters, in 
-	which case, if the uncertainty on any force prediction rises above 
-	``abs_std_tolerance`` the associated atom will be added to the training set. 
-	Here, we will set it to 0. If both are defined, the lower of the two will be
-	used.
+is defined with respect to the data set. In some cases it may be desirable 
+to have a stringent cutoff which is invariant to the hyperparameters, in 
+which case, if the uncertainty on any force prediction rises above 
+``abs_std_tolerance`` the associated atom will be added to the training set. 
+Here, we will set it to 0. If both are defined, the lower of the two will be
+used.
  
 Pre-Training arguments
 ----------------------
