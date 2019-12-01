@@ -172,7 +172,7 @@ class NumpyEncoder(JSONEncoder):
 
     json.dumps(... cls = NumpyEncoder)
 
-    Thanks to StackOverflow users karlB and fnunnari, who contribuetd this from:
+    Thanks to StackOverflow users karlB and fnunnari, who contributed this from:
     `https://stackoverflow.com/a/47626762`
     """
 
@@ -193,10 +193,10 @@ class NumpyEncoder(JSONEncoder):
 
 def Z_to_element(Z: int) -> str:
     """
-    Maps atomic numbers Z to element name
+    Maps atomic numbers Z to element name, e.g. 1->"H".
 
-    :param Z: Atomic number corresponding to element
-    :return: String of element
+    :param Z: Atomic number corresponding to element.
+    :return: One or two-letter name of element.
     """
 
     # Check proper formatting

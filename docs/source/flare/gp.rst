@@ -2,7 +2,8 @@ Gaussian Process Force Fields
 =============================
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
+
    kernels
    mc_simple
    cutoffs

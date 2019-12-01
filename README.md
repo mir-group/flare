@@ -1,8 +1,24 @@
+<p align="center">
+  <img width="659" height="267" src="https://github.com/mir-group/flare/blob/master/docs/images/Flare_logo.png?raw=true">
+</p>
+
 [![Build Status](https://travis-ci.org/mir-group/flare.svg?branch=master)](https://travis-ci.org/mir-group/flare) [![documentation](https://readthedocs.org/projects/flare/badge/?version=latest)](https://readthedocs.org/projects/flare) [![pypi](https://img.shields.io/pypi/v/mir-flare)](https://pypi.org/project/mir-flare/) [![activity](https://img.shields.io/github/commit-activity/m/mir-group/flare)](https://github.com/mir-group/flare/commits/master) [![codecov](https://codecov.io/gh/mir-group/flare/branch/master/graph/badge.svg)](https://codecov.io/gh/mir-group/flare)
 
 # FLARE: Fast Learning of Atomistic Rare Events
 
 FLARE is an open-source Python package for creating fast and accurate atomistic potentials. Documentation of the code is in progress, and can be accessed here: https://flare.readthedocs.io/
+
+## Major Features
+
+* Gaussian Process Force Fields
+  * 2- and 3-body multi-element kernels
+  * Maximum likelihood hyperparameter optimization
+  * Mapping to efficient cubic spline models
+  * Module for training GPs from AIMD trajectories
+
+* On-the-Fly Training
+  * Coupling to ASE MD engines
+  * Coupling to Quantum Espresso, CP2K, and VASP DFT engines
 
 
 ## Prerequisites

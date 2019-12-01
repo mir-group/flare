@@ -13,3 +13,4 @@ Contents
    flare/flare
    contribute/contribute
    FAQs/FAQs
+   citing
