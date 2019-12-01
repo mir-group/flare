@@ -16,8 +16,9 @@ The trajectory this tutorial focuses on  involves a few frames of the
 molecule Methanol vibrating about it's equilibrium configuration, ran in VASP. 
 
 
-# Step 1: Setting up a Gaussian Process Object
-Our goal is to train a GP, which first must be instantiated with a set of parameters.
+ Step 1: Setting up a Gaussian Process Object
+ ---------------------------------------------
+ Our goal is to train a GP, which first must be instantiated with a set of parameters.
 
 For the sake of this example, which is a molecule, we will use a two-plus-three body kernel. 
 We must provide the kernel and the kernel gradient as callables to the GP. 
@@ -67,8 +68,8 @@ gp = GaussianProcess(kernel=two_plus_three_body_mc, kernel_grad=two_plus_three_b
 		)
 ```
 
-## Step 2 (Optional): Extracting the Frames from a previous AIMD Run
-
+Step 2 (Optional): Extracting the Frames from a previous AIMD Run
+---------------------------
 
 FLARE offers a variety of modules for converting DFT outputs into 
 FLARE structures, which are then usable for model training and prediction tasks.
@@ -85,18 +86,18 @@ trajectory = md_trajectory_from_vasprun('path-to-vasprun')
 ```
 
 
-# Step 3: Training your Gaussian Process
-
+Step 3: Training your Gaussian Process
+--------------------------------------------
 If you don't have a previously existing Vasprun, you can also use the one 
 available in the test_files directory, which is `methanol_frames.json`.
 You can open it via the command
-```
-from json import loads
-from flare.struc import Structure
-with open('path-to-methanol-frames','r') as f:
-    loaded_dicts = [loads(line) for line in f.readlines()]
-trajectory = [Structure.from_dict(d) for d in loaded_dicts]
-```
+.. codeblock:: python
+	from json import loads
+	from flare.struc import Structure
+	with open('path-to-methanol-frames','r') as f:
+	    loaded_dicts = [loads(line) for line in f.readlines()]
+	trajectory = [Structure.from_dict(d) for d in loaded_dicts]
+
 Our trajectory is a list of FLARE structures, each of which is decorated with 
 forces.
 
@@ -116,7 +117,9 @@ these structures will be iterated over and will be used to train the model.
 populating the training set with representative atomic environments and 
 optimizing the hyperparameters via likelihood maximization to best explain 
 the data.
-### Input arguments for training 
+
+Input arguments for training 
+
 * `rel_std_tolerance`: The noise variance heuristically describes the amount
 of variance in force predictions which cannot be explained by the model.  
 Once optimized, it provides a natural length scale for the degree of 
@@ -136,7 +139,8 @@ which case, if the uncertainty on any force prediction rises above
 Here, we will set it to 0. If both are defined, the lower of the two will be
  used.
  
- ### Pre-Training arguments
+Pre-Training arguments
+-------------------------------
 When the training set contains a low diversity of 
 atomic configurations relative to what you expect to see at test time, the 
 hyperparameters may not be representative; furthermore, the training process
@@ -158,18 +162,18 @@ instance, if we used `pre_train_on_skips=5` then we would use every fifth
 frame in the trajectory as a seed frame.
 
 
-```
-from flare.gp_from_aimd import TrajectoryTrainer
+.. codeblock:: python
+	from flare.gp_from_aimd import TrajectoryTrainer
 
 
-TT = TrajectoryTrainer(frames=trajectory,
-                    gp = gp,
-                    rel_std_tolerance = 3,
-                    abs_std_tolerance=0,
-                    pre_train_on_skips=5)
+	TT = TrajectoryTrainer(frames=trajectory,
+			    gp = gp,
+			    rel_std_tolerance = 3,
+			    abs_std_tolerance=0,
+                    	    pre_train_on_skips=5)
 
 
-```
+
 
 After this, all you need to do is call the run method!
 
