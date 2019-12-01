@@ -1057,9 +1057,9 @@ def two_body_mc_jit(bond_array_1, c1, etypes1,
             environment.
         d1 (int): Force component of the first environment (1=x, 2=y, 3=z).
         d2 (int): Force component of the second environment (1=x, 2=y, 3=z).
-        sig (float): 3-body signal variance hyperparameter.
-        ls (float): 3-body length scale hyperparameter.
-        r_cut (float): 3-body cutoff radius.
+        sig (float): 2-body signal variance hyperparameter.
+        ls (float): 2-body length scale hyperparameter.
+        r_cut (float): 2-body cutoff radius.
         cutoff_func (Callable): Cutoff function.
 
     Return:
@@ -1119,9 +1119,9 @@ def two_body_mc_grad_jit(bond_array_1, c1, etypes1,
             environment.
         d1 (int): Force component of the first environment (1=x, 2=y, 3=z).
         d2 (int): Force component of the second environment (1=x, 2=y, 3=z).
-        sig (float): 3-body signal variance hyperparameter.
-        ls (float): 3-body length scale hyperparameter.
-        r_cut (float): 3-body cutoff radius.
+        sig (float): 2-body signal variance hyperparameter.
+        ls (float): 2-body length scale hyperparameter.
+        r_cut (float): 2-body cutoff radius.
         cutoff_func (Callable): Cutoff function.
 
     Returns:
@@ -1185,6 +1185,31 @@ def two_body_mc_grad_jit(bond_array_1, c1, etypes1,
 def two_body_mc_force_en_jit(bond_array_1, c1, etypes1,
                              bond_array_2, c2, etypes2,
                              d1, sig, ls, r_cut, cutoff_func):
+    """2-body multi-element kernel between a force component and a local
+    energy accelerated with Numba.
+
+    Args:
+        bond_array_1 (np.ndarray): 2-body bond array of the first local
+            environment.
+        c1 (int): Species of the central atom of the first local environment.
+        etypes1 (np.ndarray): Species of atoms in the first local
+            environment.
+        bond_array_2 (np.ndarray): 2-body bond array of the second local
+            environment.
+        c2 (int): Species of the central atom of the second local environment.
+        etypes2 (np.ndarray): Species of atoms in the second local
+            environment.
+        d1 (int): Force component of the first environment (1=x, 2=y, 3=z).
+        sig (float): 2-body signal variance hyperparameter.
+        ls (float): 2-body length scale hyperparameter.
+        r_cut (float): 2-body cutoff radius.
+        cutoff_func (Callable): Cutoff function.
+
+    Returns:
+        float:
+            Value of the 2-body force/energy kernel.
+    """
+
     kern = 0
 
     ls1 = 1 / (2 * ls * ls)
