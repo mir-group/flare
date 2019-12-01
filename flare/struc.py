@@ -125,8 +125,8 @@ class Structure:
         return cell_dot
 
     @staticmethod
-    def raw_to_relative(positions: 'np.ndarray', cell_transpose: 'np.ndarray',
-                        cell_dot_inverse: 'np.ndarray')-> 'np.ndarray':
+    def raw_to_relative(positions: 'ndarray', cell_transpose: 'ndarray',
+                        cell_dot_inverse: 'ndarray')-> 'ndarray':
         """Convert Cartesian coordinates to relative (fractional) coordinates,
         expressed in terms of the cell vectors set in self.cell.
 
@@ -148,9 +148,9 @@ class Structure:
         return relative_positions
 
     @staticmethod
-    def relative_to_raw(relative_positions: 'np.ndarray',
-                        cell_transpose_inverse: 'np.ndarray',
-                        cell_dot: 'np.ndarray')-> ('np.ndarray'):
+    def relative_to_raw(relative_positions: 'ndarray',
+                        cell_transpose_inverse: 'ndarray',
+                        cell_dot: 'ndarray')-> ('ndarray'):
         """Convert fractional coordinates to raw (Cartesian) coordinates.
 
         :param relative_positions: fractional coordinates.
