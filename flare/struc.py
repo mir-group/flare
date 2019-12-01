@@ -150,7 +150,7 @@ class Structure:
     @staticmethod
     def relative_to_raw(relative_positions: 'ndarray',
                         cell_transpose_inverse: 'ndarray',
-                        cell_dot: 'ndarray')-> ('ndarray'):
+                        cell_dot: 'ndarray')-> 'ndarray':
         """Convert fractional coordinates to raw (Cartesian) coordinates.
 
         :param relative_positions: fractional coordinates.
@@ -166,7 +166,7 @@ class Structure:
         return np.matmul(np.matmul(relative_positions, cell_dot),
                          cell_transpose_inverse)
 
-    def wrap_positions(self, in_place: bool = True):
+    def wrap_positions(self, in_place: bool = True)-> 'ndarray':
         """
         Convenience function which folds atoms outside of the unit cell back
         into the unit cell. in_place flag controls if the wrapped positions
@@ -193,8 +193,9 @@ class Structure:
         """
         Return the indices of a given species within atoms of the structure.
 
-        :param specie:
-        :return:
+        :param specie: Element to target, can be string or integer
+        :return: The indices in the structure at which this element occurs
+        :rtype: List[str]
         """
         return [i for i, spec in enumerate(self.coded_species)
                 if spec == specie]
@@ -216,6 +217,7 @@ class Structure:
         Returns number of atoms in structure.
 
         :return: number of atoms in structure.
+        :rtype: int
         """
         return self.nat
 
@@ -224,6 +226,7 @@ class Structure:
         Returns structure as a dictionary; useful for serialization purposes.
 
         :return: Dictionary version of current structure
+        :rtype: dict
         """
         return dict(vars(self))
 
@@ -334,8 +337,8 @@ def get_unique_species(species: List[Any])-> (List, List[int]):
     Returns a list of the unique species passed in, and a list of
     integers indexing them.
 
-    :param species:
-    :return:
+    :param species: Species to index uniquely
+    :return: List of the unique species, and integer indexes
     """
     unique_species = []
     coded_species = []
