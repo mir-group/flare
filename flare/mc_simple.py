@@ -1302,7 +1302,17 @@ _str_to_kernel = {'two_body_mc': two_body_mc,
                   }
 
 
-def str_to_mc_kernel(string: str, include_grad: bool=False):
+def str_to_mc_kernel(string: str, include_grad: bool = False):
+    """Converts a kernel label to the corresponding kernel function.
+    
+    Args:
+        string (str): Name of the kernel function, e.g. "two_body_mc".
+        include_grad (bool, optional): If True, returns the kernel gradient
+            in addition to the kernel function. Defaults to False.
+    
+    Returns:
+        Callable: Kernel function (and its gradient if include_grad = True).
+    """
 
     if string not in _str_to_kernel.keys():
         raise ValueError("Kernel {} not found in list of available "
