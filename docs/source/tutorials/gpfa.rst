@@ -1,7 +1,5 @@
 Training a Gaussian Process from an AIMD Run 
 =======================================================
-.. toctree::
-   :maxdepth: 2
 
 Steven Torrisi (torrisi@g.harvard.edu), December 2019
 
@@ -10,14 +8,13 @@ In this tutorial, we'll demonstrate how a previously existing Ab-Initio
 Molecular  Dynamics trajectory can be used to train a Gaussian Process model.
 
 We can use a very short trajectory for a very simple molecule which is already 
-included in the test files in order to demonstrate how to set up and run the
- code.
+included in the test files in order to demonstrate how to set up and run the code.
 The trajectory this tutorial focuses on  involves a few frames of the 
 molecule Methanol vibrating about it's equilibrium configuration, ran in VASP. 
 
 
  Step 1: Setting up a Gaussian Process Object
- ---------------------------------------------
+ =======================================================
  Our goal is to train a GP, which first must be instantiated with a set of parameters.
 
 For the sake of this example, which is a molecule, we will use a two-plus-three body kernel. 
@@ -29,11 +26,10 @@ smaller 2-body cutoff (7 A) and a relatively large 3-body cutoff (7 A), both of 
 
 At the header of a file, include the following imports:
 
-```
-from flare.gp import GaussianProcess
-from flare.mc_simple import two_plus_three_body_mc, two_plus_three_body_mc_grad
+.. codeblock:: python
+	from flare.gp import GaussianProcess
+	from flare.mc_simple import two_plus_three_body_mc, two_plus_three_body_mc_grad
 
-```
 We will then set up the `GaussianProcess` object.
 
 * The `GaussianProcess` object class contains the methods which, from an 
@@ -41,13 +37,13 @@ We will then set up the `GaussianProcess` object.
 uncertainties by comparing the atomic environment to each environment in the
 training set. 
 The kernel we will use has 5 hyperparameters and requires two cutoffs. 
-   * The first four hyperparameters correspond to the signal variance and length 
-   scale which parameterize the two- and three-body comparison 
+* The first four hyperparameters correspond to the signal variance and length 
+scale which parameterize the two- and three-body comparison 
    functions. These hyperparameters will be optimized later once data has 
    been fed into the `GaussianProcess` *via* likelihood maximization. The 
    fifth and final hyperparameter is the noise variance. We provide simple 
    initial guesses for each hyperparameter.
-   * The two cutoff values correspond to the functions which set up 
+* The two cutoff values correspond to the functions which set up 
    the two- and three-body Atomic Environments. Since Methanol is a small 
    molecule, 7 Angstrom each will be sufficent.
 * The kernels which facilitate these comparisons must be imported as Python 
@@ -59,17 +55,16 @@ indicating that it can handle multiple atomic species being present.
  `two_plus_three_body_mc_grad`.
  
 
-```
-gp = GaussianProcess(kernel=two_plus_three_body_mc, kernel_grad=two_plus_three_body_mc_grad,
-		hyps=[0.01, 0.01, 0.01, 0.01, 0.01],
-		cutoffs = (7,7),
-		hyp_labels=['Two-Body Signal Variance','Two-Body Length Scale','Three-Body Signal Variance',
-				'Three-Body Length Scale', 'Noise Variance']
-		)
-```
+.. codeblock:: python
+	gp = GaussianProcess(kernel=two_plus_three_body_mc, kernel_grad=two_plus_three_body_mc_grad,
+			hyps=[0.01, 0.01, 0.01, 0.01, 0.01],
+			cutoffs = (7,7),
+			hyp_labels=['Two-Body Signal Variance','Two-Body Length Scale','Three-Body Signal Variance',
+					'Three-Body Length Scale', 'Noise Variance']
+			)
 
 Step 2 (Optional): Extracting the Frames from a previous AIMD Run
----------------------------
+=======================================================
 
 FLARE offers a variety of modules for converting DFT outputs into 
 FLARE structures, which are then usable for model training and prediction tasks.
@@ -80,14 +75,14 @@ a list of FLARE `Structure` objects, using internal methods which call
 
 You can run it simply by calling the function on a file like so:
 
-```
-from flare.dft_interface.vasp_util import md_trajectory_from_vasprun
-trajectory = md_trajectory_from_vasprun('path-to-vasprun')
-```
+.. codeblock:: python
+	from flare.dft_interface.vasp_util import md_trajectory_from_vasprun
+	trajectory = md_trajectory_from_vasprun('path-to-vasprun')
+
 
 
 Step 3: Training your Gaussian Process
---------------------------------------------
+=======================================================
 If you don't have a previously existing Vasprun, you can also use the one 
 available in the test_files directory, which is `methanol_frames.json`.
 You can open it via the command
@@ -140,7 +135,7 @@ Here, we will set it to 0. If both are defined, the lower of the two will be
  used.
  
 Pre-Training arguments
--------------------------------
+=======================================================
 When the training set contains a low diversity of 
 atomic configurations relative to what you expect to see at test time, the 
 hyperparameters may not be representative; furthermore, the training process
@@ -177,9 +172,8 @@ frame in the trajectory as a seed frame.
 
 After this, all you need to do is call the run method!
 
-```
-TT.run()
-```
+.. codeblock:: python
+	TT.run()
 
 The results, by default, will be stored in `gp_from_aimd.out`, as well as a 
 variety of other output files. The resultant model will be stored in a `
