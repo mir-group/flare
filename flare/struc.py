@@ -27,7 +27,7 @@ class Structure:
     Contains information about a periodic structure of atoms, including the
     periodic cell boundaries, atomic species, and coordinates.
 
-    *Note that input positions are assumed to be Cartesian.*
+    *Note that input positions are assumed to be Cgit puartesian.*
 
     :param cell: 3x3 array whose rows are the Bravais lattice vectors of the
         cell.
@@ -172,8 +172,10 @@ class Structure:
         into the unit cell. in_place flag controls if the wrapped positions
         are set in the class.
 
-        :param in_place:
+        :param in_place: If true, set the current structure 
+		positions to be the wrapped positions.
         :return: Cartesian coordinates of positions all in unit cell
+	:rtype: np.ndarray
         """
         rel_pos = \
             self.raw_to_relative(self.positions, self.cell_transpose,
