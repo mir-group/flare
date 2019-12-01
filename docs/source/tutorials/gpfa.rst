@@ -1,5 +1,10 @@
-#Training a Gaussian Process from an AIMD Run
-## Steven Torrisi (torrisi@g.harvard.edu), December 2019
+Training a Gaussian Process from an AIMD Run 
+=======================================================
+.. toctree::
+   :maxdepth: 2
+
+Steven Torrisi (torrisi@g.harvard.edu), December 2019
+
 
 In this tutorial, we'll demonstrate how a previously existing Ab-Initio 
 Molecular  Dynamics trajectory can be used to train a Gaussian Process model.
