@@ -14,8 +14,8 @@ Gaussian Processes and OTF
 1. I'm confused about how Gaussian Processes work.
         Gaussian Processes enjoy a long history of study and there are many excellent resources out there we can recommend.
         One such resource (that some of the authors consult quite frequently!) is the textbook
-        `Gaussian Processes for Machine Learning, by Rasmussen and Williams`_ , with Chapter 2 in particular being a great help.
-        _Gaussian Processes for Machine Learning, by Rasmussen and Williams: http://www.gaussianprocess.org/gpml/chapters/RW.pdf
+        `Gaussian Processes for Machine Learning, by Rasmussen and Williams <http://www.gaussianprocess.org/gpml/chapters/RW.pdf>`_ 
+	, with Chapter 2 in particular being a great help.
 
 
 

@@ -8,6 +8,18 @@
 
 FLARE is an open-source Python package for creating fast and accurate atomistic potentials. Documentation of the code is in progress, and can be accessed here: https://flare.readthedocs.io/
 
+## Major Features
+
+* Gaussian Process Force Fields
+  * 2- and 3-body multi-element kernels
+  * Maximum likelihood hyperparameter optimization
+  * Mapping to efficient cubic spline models
+  * Module for training GPs from AIMD trajectories
+
+* On-the-Fly Training
+  * Coupling to ASE MD engines
+  * Interfaces to Quantum Espresso, CP2K, and VASP
+
 
 ## Prerequisites
 1. To train a potential on the fly, you need a working installation of [Quantum ESPRESSO](https://www.quantum-espresso.org) or [CP2K](https://www.cp2k.org).
