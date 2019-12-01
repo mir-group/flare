@@ -49,9 +49,9 @@ class Structure:
     :type stds: np.ndarray
     """
 
-    def __init__(self, cell: 'np.ndarray', species: Union[List[str],
+    def __init__(self, cell: 'ndarray', species: Union[List[str],
                                                           List[int]],
-                 positions: 'np.ndarray',
+                 positions: 'ndarray',
                  mass_dict: dict = None,
                  prev_positions: 'ndarray' =None,
                  species_labels: List[str] = None,
@@ -202,7 +202,8 @@ class Structure:
     # TODO make more descriptive
     def __str__(self) -> str:
         """
-        Simple descriptive string of structure
+        Simple descriptive string of structure.
+
         :return: One-line descriptor of number of atoms and species present.
         :rtype: str
         """
@@ -212,6 +213,8 @@ class Structure:
 
     def __len__(self) -> int:
         """
+        Returns number of atoms in structure.
+
         :return: number of atoms in structure.
         """
         return self.nat
@@ -237,6 +240,7 @@ class Structure:
     def from_dict(dictionary: dict)-> 'flare.struc.Structure':
         """
         Assembles a Structure object from a dictionary parameterizing one.
+
         :param dictionary: dict describing structure parameters.
         :return: FLARE structure assembled from dictionary
         """
@@ -257,6 +261,7 @@ class Structure:
     def from_ase_atoms(atoms: 'ase.Atoms')-> 'flare.struc.Structure':
         """
         From an ASE Atoms object, return a FLARE structure
+
         :param atoms: ASE Atoms object
         :type atoms: ASE Atoms object
         :return: A FLARE structure from an ASE atoms object
@@ -294,8 +299,8 @@ class Structure:
                                   )
 
     @staticmethod
-    def from_pmg_structure(structure: 'pymatgen.core.Structure')-> \
-            'flare.struc.Structure':
+    def from_pmg_structure(structure: 'pymatgen Structure')-> \
+            'flare Structure':
         """
         Returns Pymatgen structure as FLARE structure.
 

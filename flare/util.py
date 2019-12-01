@@ -136,6 +136,7 @@ def element_to_Z(element: str) -> int:
     """
     Returns the atomic number Z associated with an elements 1-2 letter name.
     Returns the same integer if an integer is passed in.
+
     :param element:
     :return:
     """
@@ -258,7 +259,7 @@ def is_std_in_bound(std_tolerance: float, noise: float,
 
 def is_std_in_bound_per_species(rel_std_tolerance: float,
                                 abs_std_tolerance: float, noise: float,
-                                structure,
+                                structure: 'flare.struc.Structure',
                                 max_atoms_added: int = inf,
                                 max_by_species: dict = {})-> (bool, List[int]):
     """
@@ -342,8 +343,8 @@ def is_std_in_bound_per_species(rel_std_tolerance: float,
 
 
 def is_force_in_bound_per_species(abs_force_tolerance: float,
-                                  predicted_forces: 'np.ndarray',
-                                  label_forces: "np.ndarray",
+                                  predicted_forces: 'ndarray',
+                                  label_forces: 'ndarray',
                                   structure,
                                   max_atoms_added: int = inf,
                                   max_by_species: dict ={},
