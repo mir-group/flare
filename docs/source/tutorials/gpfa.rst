@@ -34,24 +34,24 @@ At the header of a file, include the following imports:
 We will then set up the ``GaussianProcess`` object.
 
 * The ``GaussianProcess`` object class contains the methods which, from an 
-	``AtomicEnvironment`` object, predict the corresponding forces and 
-	uncertainties by comparing the atomic environment to each environment in the
-	training set. The kernel we will use has 5 hyperparameters and requires two cutoffs. 
+``AtomicEnvironment`` object, predict the corresponding forces and 
+uncertainties by comparing the atomic environment to each environment in the
+training set. The kernel we will use has 5 hyperparameters and requires two cutoffs. 
 * The first four hyperparameters correspond to the signal variance and length 
-	scale which parameterize the two- and three-body comparison 
-	functions. These hyperparameters will be optimized later once data has 
-	been fed into the ``GaussianProcess`` via likelihood maximization. The 
-	fifth and final hyperparameter is the noise variance. We provide simple 
-	initial guesses for each hyperparameter.
+scale which parameterize the two- and three-body comparison 
+functions. These hyperparameters will be optimized later once data has 
+been fed into the ``GaussianProcess`` via likelihood maximization. The 
+fifth and final hyperparameter is the noise variance. We provide simple 
+initial guesses for each hyperparameter.
 * The two cutoff values correspond to the functions which set up 
-	the two- and three-body Atomic Environments. Since Methanol is a small 
-	molecule, 7 Angstrom each will be sufficent.
+the two- and three-body Atomic Environments. Since Methanol is a small 
+molecule, 7 Angstrom each will be sufficent.
 * The kernels which facilitate these comparisons must be imported as Python  ``callable``s. 
 * Here, we will use the ``two_plus_three_body_mc`` kernel, which 
-	uses two-body and three-body comparisons. ``mc`` means multi-component, 
-	indicating that it can handle multiple atomic species being present.
+uses two-body and three-body comparisons. ``mc`` means multi-component, 
+indicating that it can handle multiple atomic species being present.
 * We must also import the gradient of the kernel, which is
-	``two_plus_three_body_mc_grad``.
+``two_plus_three_body_mc_grad``.
  
 
 .. codeblock:: python
