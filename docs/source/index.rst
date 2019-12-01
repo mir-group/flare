@@ -12,3 +12,4 @@ Contents
    tutorials/tutorials
    flare/flare
    contribute/contribute
+   FAQs/FAQs

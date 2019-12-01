@@ -49,9 +49,9 @@ class Structure:
     :type stds: np.ndarray
     """
 
-    def __init__(self, cell: 'np.ndarray', species: Union[List[str],
+    def __init__(self, cell: 'ndarray', species: Union[List[str],
                                                           List[int]],
-                 positions: 'np.ndarray',
+                 positions: 'ndarray',
                  mass_dict: dict = None,
                  prev_positions: 'ndarray' =None,
                  species_labels: List[str] = None,
@@ -237,6 +237,7 @@ class Structure:
     def from_dict(dictionary: dict)-> 'flare.struc.Structure':
         """
         Assembles a Structure object from a dictionary parameterizing one.
+
         :param dictionary: dict describing structure parameters.
         :return: FLARE structure assembled from dictionary
         """
