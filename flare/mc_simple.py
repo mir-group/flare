@@ -10,6 +10,7 @@ import flare.cutoffs as cf
 from flare.kernels import force_helper, grad_constants, grad_helper, \
     force_energy_helper, three_body_en_helper, three_body_helper_1, \
     three_body_helper_2, three_body_grad_helper_1, three_body_grad_helper_2
+from typing import Callable
 
 # -----------------------------------------------------------------------------
 #                        two plus three body kernels
@@ -17,8 +18,10 @@ from flare.kernels import force_helper, grad_constants, grad_helper, \
 
 
 def two_plus_three_body_mc(env1: AtomicEnvironment, env2: AtomicEnvironment,
-                           d1: int, d2: int, hyps, cutoffs,
-                           cutoff_func=cf.quadratic_cutoff):
+                           d1: int, d2: int, hyps: 'ndarray',
+                           cutoffs: 'ndarray',
+                           cutoff_func: Callable = cf.quadratic_cutoff) \
+                           -> float:
     """2+3-body multi-element kernel between two force components.
 
     Args:
@@ -60,8 +63,10 @@ def two_plus_three_body_mc(env1: AtomicEnvironment, env2: AtomicEnvironment,
 
 def two_plus_three_body_mc_grad(env1: AtomicEnvironment,
                                 env2: AtomicEnvironment,
-                                d1: int, d2: int, hyps, cutoffs,
-                                cutoff_func=cf.quadratic_cutoff):
+                                d1: int, d2: int, hyps: 'ndarray',
+                                cutoffs: 'ndarray',
+                                cutoff_func: Callable = cf.quadratic_cutoff) \
+                                -> (float, 'ndarray'):
     """2+3-body multi-element kernel between two force components and its
     gradient with respect to the hyperparameters.
 
@@ -108,8 +113,8 @@ def two_plus_three_body_mc_grad(env1: AtomicEnvironment,
 
 def two_plus_three_mc_force_en(env1: AtomicEnvironment,
                                env2: AtomicEnvironment,
-                               d1: int, hyps, cutoffs,
-                               cutoff_func=cf.quadratic_cutoff):
+                               d1: int, hyps: 'ndarray', cutoffs: 'ndarray',
+                               cutoff_func: Callable = cf.quadratic_cutoff):
     """2+3-body multi-element kernel between a force component and a local
     energy.
 
@@ -154,7 +159,8 @@ def two_plus_three_mc_force_en(env1: AtomicEnvironment,
 
 
 def two_plus_three_mc_en(env1: AtomicEnvironment, env2: AtomicEnvironment,
-                         hyps, cutoffs, cutoff_func=cf.quadratic_cutoff):
+                         hyps: 'ndarray', cutoffs: 'ndarray',
+                         cutoff_func: Callable = cf.quadratic_cutoff):
     """2+3-body multi-element kernel between two local energies.
 
     Args:
@@ -198,8 +204,8 @@ def two_plus_three_mc_en(env1: AtomicEnvironment, env2: AtomicEnvironment,
 
 
 def three_body_mc(env1: AtomicEnvironment, env2: AtomicEnvironment,
-                  d1: int, d2: int, hyps, cutoffs,
-                  cutoff_func=cf.quadratic_cutoff) -> float:
+                  d1: int, d2: int, hyps: 'ndarray', cutoffs: 'ndarray',
+                  cutoff_func: Callable = cf.quadratic_cutoff) -> float:
     """3-body multi-element kernel between two force components.
 
     Args:
@@ -1304,12 +1310,12 @@ _str_to_kernel = {'two_body_mc': two_body_mc,
 
 def str_to_mc_kernel(string: str, include_grad: bool = False):
     """Converts a kernel label to the corresponding kernel function.
-    
+
     Args:
         string (str): Name of the kernel function, e.g. "two_body_mc".
         include_grad (bool, optional): If True, returns the kernel gradient
             in addition to the kernel function. Defaults to False.
-    
+
     Returns:
         Callable: Kernel function (and its gradient if include_grad = True).
     """
