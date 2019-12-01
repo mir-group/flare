@@ -37,16 +37,16 @@ The kernel we will use has 5 hyperparameters and requires two cutoffs.
 * The first four hyperparameters correspond to the signal variance and length 
 scale which parameterize the two- and three-body comparison 
 functions. These hyperparameters will be optimized later once data has 
-been fed into the `GaussianProcess` *via* likelihood maximization. The 
+been fed into the ``GaussianProcess`` via likelihood maximization. The 
 fifth and final hyperparameter is the noise variance. We provide simple 
 initial guesses for each hyperparameter.
 * The two cutoff values correspond to the functions which set up 
-   the two- and three-body Atomic Environments. Since Methanol is a small 
-   molecule, 7 Angstrom each will be sufficent.
+the two- and three-body Atomic Environments. Since Methanol is a small 
+molecule, 7 Angstrom each will be sufficent.
 * The kernels which facilitate these comparisons must be imported as Python 
 ``callable``s. 
-* Here, we will use the `two_plus_three_body_mc` kernel, which 
-uses two-body and three-body comparisons. `mc` means multi-component, 
+* Here, we will use the ``two_plus_three_body_mc`` kernel, which 
+uses two-body and three-body comparisons. ``mc`` means multi-component, 
 indicating that it can handle multiple atomic species being present.
 * We must also import the gradient of the kernel, which is
  ``two_plus_three_body_mc_grad``.
@@ -83,6 +83,7 @@ Step 3: Training your Gaussian Process
 If you don't have a previously existing Vasprun, you can also use the one 
 available in the test_files directory, which is ``methanol_frames.json``.
 You can open it via the command
+
 .. codeblock:: python
 	from json import loads
 	from flare.struc import Structure
@@ -93,17 +94,17 @@ You can open it via the command
 Our trajectory is a list of FLARE structures, each of which is decorated with 
 forces.
 
-Once you have your trajectory and your `GaussianProcess` which has not seen 
+Once you have your trajectory and your ``GaussianProcess`` which has not seen 
 any data yet, you are ready to begin your training.
 
-We will next import the dedicated `TrajectoryTrainer` class, which has a 
-variety of useful tools to help train your `GaussianProcess`.
+We will next import the dedicated ``TrajectoryTrainer`` class, which has a 
+variety of useful tools to help train your ``GaussianProcess``.
 
 The Trajectory Trainer has a large number of arguments which can be passed 
 to it in order to give you a fine degree of control over how your model is 
 trained. Here, we will pass in the following:
 
-* ``frames``: A list of FLARE `structure`s decorated with forces. Ultimately, 
+* ``frames``: A list of FLARE ``structure``s decorated with forces. Ultimately, 
 these structures will be iterated over and will be used to train the model.
 * ``gp``: Our ``GaussianProcess`` object. The process of training will involve 
 populating the training set with representative atomic environments and 
@@ -121,7 +122,7 @@ significantly different from all of the ``AtomicEnvironment``s in the training
 set. The  criteria for adding atoms to the training set therefore be 
 defined with respect to the noise variance: if we denote the noise variance 
 of the model as sig_n, stored at gp.hyps[-1] by convention, then the
-the cutoff value used wil be 
+the cutoff value used will be 
 ``rel_std_tolerance * sig_n``. Here, we will set it to 3.
 * ``abs_std_tolerance``: The above value describes a cutoff uncertainty which 
 is defined with respect to the data set. In some cases it may be desirable 
@@ -142,7 +143,7 @@ desirable to have a training set with a baseline number of
 
 Therefore, we provide a variety of arguments to 'seed' the training set 
 before commencing the full iteration over all of the frames passed into the 
-function. By default, *all* of the atoms in the seed frames will be added to
+function. By default, all of the atoms in the seed frames will be added to
 the training set. This is acceptable for small molecules, but you may want 
 to use a more selective subset of atoms for large unit cells.
  
