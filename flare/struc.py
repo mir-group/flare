@@ -202,7 +202,8 @@ class Structure:
     # TODO make more descriptive
     def __str__(self) -> str:
         """
-        Simple descriptive string of structure
+        Simple descriptive string of structure.
+
         :return: One-line descriptor of number of atoms and species present.
         :rtype: str
         """
@@ -212,6 +213,8 @@ class Structure:
 
     def __len__(self) -> int:
         """
+        Returns number of atoms in structure.
+
         :return: number of atoms in structure.
         """
         return self.nat
@@ -258,6 +261,7 @@ class Structure:
     def from_ase_atoms(atoms: 'ase.Atoms')-> 'flare.struc.Structure':
         """
         From an ASE Atoms object, return a FLARE structure
+
         :param atoms: ASE Atoms object
         :type atoms: ASE Atoms object
         :return: A FLARE structure from an ASE atoms object
@@ -295,8 +299,8 @@ class Structure:
                                   )
 
     @staticmethod
-    def from_pmg_structure(structure: 'pymatgen.core.Structure')-> \
-            'flare.struc.Structure':
+    def from_pmg_structure(structure: 'pymatgen Structure')-> \
+            'flare Structure':
         """
         Returns Pymatgen structure as FLARE structure.
 
