@@ -24,9 +24,20 @@ Here we create a 2x1x1 supercell with lattice constant 3.855, and randomly pertu
 
 Setup FLARE calculator
 ----------------------
-Now let's set up our Gaussian process model and Mapped Gaussian Process in the same way as introduced before
+Now let's set up our Gaussian process model in the same way as introduced before
 
 .. literalinclude:: ../../../tests/ase_otf/flare_setup.py
+   :lines: 1-27
+
+**Optional:** if you want to use the LAMMPS interface with the trained force field, you need to construct Mapped Gaussian Process (MGP). Accelerated on-the-fly training with MGP is also enabled, but not thoroughly tested. You can set up MGP in FLARE calculator as below:
+
+.. literalinclude:: ../../../tests/ase_otf/flare_setup.py
+   :lines: 28-51
+
+Create a `Calculator` object
+.. literalinclude:: ../../../tests/ase_otf/flare_setup.py
+   :lines: 52-53
+
 
 Setup DFT calculator
 --------------------
