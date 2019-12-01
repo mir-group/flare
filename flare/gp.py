@@ -1,4 +1,4 @@
-"""Gaussian process model of the Born Oppenheimer potential energy surface."""
+"""Gaussian process force fields."""
 import math
 import pickle
 import json
@@ -12,15 +12,17 @@ from scipy.optimize import minimize
 from flare.env import AtomicEnvironment
 from flare.struc import Structure
 from flare.gp_algebra import get_ky_and_hyp, get_like_grad_from_mats, \
-    get_neg_likelihood, get_neg_like_grad, get_ky_and_hyp_par, get_ky_mat_update
+    get_neg_likelihood, get_neg_like_grad, get_ky_and_hyp_par, \
+    get_ky_mat_update
 from flare.kernels import str_to_kernel
 from flare.mc_simple import str_to_mc_kernel
 from flare.util import NumpyEncoder
 
+
 class GaussianProcess:
-    """ Gaussian Process Regression Model.
-    Implementation is based on Algorithm 2.1 (pg. 19) of
-    "Gaussian Processes for Machine Learning" by Rasmussen and Williams"""
+    """Gaussian Process Regression Model. Implementation is based on
+    Algorithm 2.1 (pg. 19) of "Gaussian Processes for Machine Learning" by
+    Rasmussen and Williams."""
 
     def __init__(self, kernel: Callable,
                  kernel_grad: Callable, hyps,
@@ -29,9 +31,8 @@ class GaussianProcess:
                  energy_force_kernel: Callable = None,
                  energy_kernel: Callable = None,
                  opt_algorithm: str = 'L-BFGS-B',
-                 maxiter=10, par=False, no_cpus=None,
+                 maxiter=10, par=False, no_cpus=1,
                  output=None):
-        """Initialize GP parameters and training data."""
 
         self.kernel = kernel
         self.kernel_grad = kernel_grad
@@ -51,6 +52,9 @@ class GaussianProcess:
         self.no_cpus = no_cpus
         self.output = output
 
+        if (self.par is False):
+            self.no_cpus = 1
+
         # Parameters set during training
         self.ky_mat = None
         self.l_mat = None
@@ -61,15 +65,19 @@ class GaussianProcess:
         self.likelihood_gradient = None
 
     # TODO unit test custom range
-    def update_db(self, struc: Structure, forces: list,
+    def update_db(self, struc: Structure, forces,
                   custom_range: List[int] = ()):
-        """Given structure and forces, add to training set.
-        :param struc: structure to add to db
-        :type struc: Structure
-        :param forces: list of corresponding forces to add to db
-        :type forces: list<float>
-        :param custom_range: Indices to use in lieu of the whole structure
-        :type custom_range: List[int]
+        """Given a structure and forces, add local environments from the
+        structure to the training set of the GP.
+
+        Args:
+            struc (Structure): Input structure. Local environments of atoms
+                in this structure will be added to the training set of the GP.
+
+            forces (np.ndarray): Forces on atoms in the structure.
+
+            custom_range (List[int]): Indices of atoms whose local
+                environments will be added to the training set of the GP.
         """
 
         # By default, use all atoms in the structure
@@ -84,56 +92,55 @@ class GaussianProcess:
             self.training_labels.append(forces_curr)
 
         # create numpy array of training labels
-        self.training_labels_np = self.force_list_to_np(self.training_labels)
+        self.training_labels_np = np.hstack(self.training_labels)
 
     def add_one_env(self, env: AtomicEnvironment,
                     force, train: bool = False, **kwargs):
+        """Add a single local environment to the training set of the GP.
+
+        Args:
+            env (AtomicEnvironment): Local environment to be added to the
+                training set of the GP.
+            force (np.ndarray): Force on the central atom of the local
+                environment in the form of a 3-component Numpy array
+                containing the x, y, and z components.
+            train (bool): If True, the GP is trained after the local
+                environment is added.
         """
-        Tool to add a single environment / force pair into the training set.
-        :param force:
-        :param env:
-        :param force: (x,y,z) component associated with environment
-        :param train:
-        :return:
-        """
+
         self.training_data.append(env)
         self.training_labels.append(force)
-        self.training_labels_np = self.force_list_to_np(self.training_labels)
+        self.training_labels_np = np.hstack(self.training_labels)
 
         if train:
             self.train(**kwargs)
 
-    @staticmethod
-    def force_list_to_np(forces: list):
-        """ Convert list of forces to numpy array of forces.
-        :param forces: list of forces to convert
-        :type forces: list<float>
-        :return: numpy array forces
-        :rtype: np.ndarray
-        """
-        forces_np = []
-
-        for force in forces:
-            for force_comp in force:
-                forces_np.append(force_comp)
-
-        forces_np = np.array(forces_np)
-
-        return forces_np
 
     def train(self, output=None, custom_bounds=None,
               grad_tol: float = 1e-4,
               x_tol: float = 1e-5,
               line_steps: int = 20):
-        """Train Gaussian Process model on training data. Tunes the \
-hyperparameters to maximize the likelihood, then computes L and alpha \
-(related to the covariance matrix of the training set)."""
+        """Train Gaussian Process model on training data. Tunes the
+        hyperparameters to maximize the likelihood, then computes L and alpha
+        (related to the covariance matrix of the training set).
+
+        Args:
+            output (Output): Output object specifying where to write the
+                progress of the optimization.
+            custom_bounds (np.ndarray): Custom bounds on the hyperparameters.
+            grad_tol (float): Tolerance of the hyperparameter gradient that
+                determines when hyperparameter optimization is terminated.
+            x_tol (float): Tolerance on the x values used to decide when
+                Nelder-Mead hyperparameter optimization is terminated.
+            line_steps (int): Maximum number of line steps for L-BFGS
+                hyperparameter optimization.
+        """
 
         x_0 = self.hyps
 
         args = (self.training_data, self.training_labels_np,
                 self.kernel_grad, self.cutoffs, output,
-                self.par, self.no_cpus)
+                self.no_cpus)
         res = None
 
         if self.algo == 'L-BFGS-B':
@@ -182,11 +189,10 @@ hyperparameters to maximize the likelihood, then computes L and alpha \
 
     def check_L_alpha(self):
         """
-        Check that the alpha vector is up-to-date with the training set;
-        runs in constant time if it is.
-
-        :return:
+        Check that the alpha vector is up to date with the training set. If
+        not, update_L_alpha is called.
         """
+
         # check that alpha is up to date with training set
         if self.alpha is None or 3 * len(self.training_data) != len(
                 self.alpha):
@@ -194,15 +200,23 @@ hyperparameters to maximize the likelihood, then computes L and alpha \
 
     def predict(self, x_t: AtomicEnvironment, d: int) -> [float, float]:
         """
-        Predict force component of an atomic environment and its
-        uncertainty.
+        Predict a force component of the central atom of a local environment.
+
+        Args:
+            x_t (AtomicEnvironment): Input local environment.
+            d (int): Force component to be predicted (1 is x, 2 is y, and
+                3 is z).
+
+        Return:
+            (float, float): Mean and epistemic variance of the prediction.
         """
 
         # Kernel vector allows for evaluation of At. Env.
         k_v = self.get_kernel_vector(x_t, d)
 
         # Guarantee that alpha is up to date with training set
-        assert ((self.alpha is not None) and (3 * len(self.training_data) == len(self.alpha)))
+        assert ((self.alpha is not None) and
+                (3 * len(self.training_data) == len(self.alpha)))
 
         # get predictive mean
         pred_mean = np.matmul(k_v, self.alpha)
@@ -216,11 +230,13 @@ hyperparameters to maximize the likelihood, then computes L and alpha \
         return pred_mean, pred_var
 
     def predict_local_energy(self, x_t: AtomicEnvironment) -> float:
-        """Predict the local energy of an atomic environment.
-        :param x_t: Atomic environment of test atom.
-        :type x_t: AtomicEnvironment
-        :return: local energy in eV (up to a constant).
-        :rtype: float
+        """Predict the local energy of a local environment.
+
+        Args:
+            x_t (AtomicEnvironment): Input local environment.
+
+        Return:
+            float: Local energy predicted by the GP.
         """
 
         k_v = self.en_kern_vec(x_t)
@@ -229,8 +245,15 @@ hyperparameters to maximize the likelihood, then computes L and alpha \
         return pred_mean
 
     def predict_local_energy_and_var(self, x_t: AtomicEnvironment):
-        """Predict the local energy of an atomic environment and its \
-uncertainty."""
+        """Predict the local energy of an atomic environment and its
+        uncertainty.
+
+        Args:
+            x_t (AtomicEnvironment): Input local environment.
+
+        Return:
+            (float, float): Mean and predictive variance predicted by the GP.
+        """
 
         # get kernel vector
         k_v = self.en_kern_vec(x_t)
@@ -251,12 +274,14 @@ uncertainty."""
         """
         Compute kernel vector, comparing input environment to all environments
         in the GP's training set.
-        :param x: data point to compare against kernel matrix
-        :type x: AtomicEnvironment
-        :param d_1: Cartesian component of force vector to get (1=x,2=y,3=z)
-        :type d_1: int
-        :return: kernel vector
-        :rtype: np.ndarray
+
+        Args:
+            x (AtomicEnvironment): Local environment to compare against
+                the training environments.
+            d_1 (int): Cartesian component of the kernel (1=x, 2=y, 3=z).
+
+        Return:
+            np.ndarray: Kernel vector.
         """
 
         ds = [1, 2, 3]
@@ -271,8 +296,16 @@ uncertainty."""
         return k_v
 
     def en_kern_vec(self, x: AtomicEnvironment):
-        """Compute the vector of energy/force kernels between an atomic \
-environment and the environments in the training set."""
+        """Compute the vector of energy/force kernels between an atomic
+        environment and the environments in the training set.
+
+        Args:
+            x (AtomicEnvironment): Local environment to compare against
+                the training environments.
+
+        Return:
+            np.ndarray: Kernel vector.
+        """
 
         ds = [1, 2, 3]
         size = len(self.training_data) * 3
@@ -289,21 +322,14 @@ environment and the environments in the training set."""
     def set_L_alpha(self):
         """
         Invert the covariance matrix, setting L (a lower triangular
-        matrix s.t. L L^T = (K + sig_n^2 I) ) and alpha, the inverse
+        matrix s.t. L L^T = (K + sig_n^2 I)) and alpha, the inverse
         covariance matrix multiplied by the vector of training labels.
         The forces and variances are later obtained using alpha.
-        :return:
         """
-        if self.par:
-            hyp_mat, ky_mat = \
-                get_ky_and_hyp_par(self.hyps, self.training_data,
-                                   self.training_labels_np,
-                                   self.kernel_grad, self.cutoffs, self.no_cpus)
-        else:
-            hyp_mat, ky_mat = \
-                get_ky_and_hyp(self.hyps, self.training_data,
-                               self.training_labels_np,
-                               self.kernel_grad, self.cutoffs)
+
+        hyp_mat, ky_mat = \
+            get_ky_and_hyp_par(self.hyps, self.training_data,
+                               self.kernel_grad, self.cutoffs, self.no_cpus)
 
         like, like_grad = \
             get_like_grad_from_mats(ky_mat, hyp_mat, self.training_labels_np)
@@ -323,7 +349,8 @@ environment and the environments in the training set."""
 
     def update_L_alpha(self):
         """
-        Update the GP's L matrix and alpha vector.
+        Update the GP's L matrix and alpha vector without recalculating
+        the entire covariance matrix K.
         """
 
         # Set L matrix and alpha if set_L_alpha has not been called yet
@@ -331,8 +358,8 @@ environment and the environments in the training set."""
             self.set_L_alpha()
             return
 
-        ky_mat = get_ky_mat_update(np.copy(self.ky_mat), self.training_data, 
-                self.get_kernel_vector, self.hyps, self.par)
+        ky_mat = get_ky_mat_update(np.copy(self.ky_mat), self.training_data,
+                self.get_kernel_vector, self.hyps, self.no_cpus)
 
         l_mat = np.linalg.cholesky(ky_mat)
         l_mat_inv = np.linalg.inv(l_mat)
@@ -425,26 +452,25 @@ environment and the environments in the training set."""
 
         new_gp.likelihood = dictionary['likelihood']
         new_gp.likelihood_gradient = dictionary['likelihood_gradient']
-        new_gp.training_labels_np = new_gp.force_list_to_np(
-            new_gp.training_labels)
+        new_gp.training_labels_np = np.hstack(new_gp.training_labels)
         return new_gp
 
     def write_model(self, name: str, format: str = 'json'):
         """
         Write model in a variety of formats to a file for later re-use.
 
-        :param name: Output name
-        :param format:
-        :return:
+        Args:
+            name (str): Output name.
+            format (str): Output format.
         """
 
         supported_formats = ['json', 'pickle', 'binary']
 
         write_name = str(name)
-        
+
         if name.split('.')[-1] not in supported_formats:
             write_name += '.'+format
-            
+
         if format.lower() == 'json':
             with open(write_name, 'w') as f:
                 json.dump(self.as_dict(), f, cls=NumpyEncoder)
@@ -456,4 +482,3 @@ environment and the environments in the training set."""
         else:
             raise ValueError("Output format not supported: try from "
                              "{}".format(supported_formats))
-

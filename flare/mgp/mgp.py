@@ -1,8 +1,9 @@
-''':class:`MappedGaussianProcess` uses splines to build up interpolation\
-    function of the low-dimensional decomposition of Gaussian Process, \
-    with little loss of accuracy. Refer to \
-    `Vandermause et al. <https://arxiv.org/abs/1904.02042>`_, \
-    `Glielmo et al. <https://journals.aps.org/prb/abstract/10.1103/PhysRevB.97.184307>`_
+'''
+:class:`MappedGaussianProcess` uses splines to build up interpolation\
+function of the low-dimensional decomposition of Gaussian Process, \
+with little loss of accuracy. Refer to \
+`Vandermause et al. <https://arxiv.org/abs/1904.02042>`_, \
+`Glielmo et al. <https://journals.aps.org/prb/abstract/10.1103/PhysRevB.97.184307>`_
 '''
 import time
 import math

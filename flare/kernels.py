@@ -1,5 +1,7 @@
+"""Single element 2-, 3-, and 2+3-body kernels."""
 import numpy as np
 from math import exp
+from flare.env import AtomicEnvironment
 from numba import njit
 import flare.cutoffs as cf
 
@@ -9,8 +11,25 @@ import flare.cutoffs as cf
 # -----------------------------------------------------------------------------
 
 
-def two_plus_three_body(env1, env2, d1, d2, hyps, cutoffs,
+def two_plus_three_body(env1: AtomicEnvironment, env2: AtomicEnvironment,
+                        d1: int, d2: int, hyps, cutoffs,
                         cutoff_func=cf.quadratic_cutoff):
+    """2+3-body single-element kernel between two force components.
+
+    Args:
+        env1 (AtomicEnvironment): First local environment.
+        env2 (AtomicEnvironment): Second local environment.
+        d1 (int): Force component of the first environment.
+        d2 (int): Force component of the second environment.
+        hyps (np.ndarray): Hyperparameters of the kernel function (sig1, ls1,
+            sig2, ls2, sig_n).
+        cutoffs (np.ndarray): Two-element array containing the 2- and 3-body
+            cutoffs.
+        cutoff_func (Callable): Cutoff function of the kernel.
+
+    Return:
+        float: Value of the 2+3-body kernel.
+    """
 
     two_term = two_body_jit(env1.bond_array_2, env2.bond_array_2,
                             d1, d2, hyps[0], hyps[1], cutoffs[0], cutoff_func)
@@ -26,6 +45,24 @@ def two_plus_three_body(env1, env2, d1, d2, hyps, cutoffs,
 
 def two_plus_three_body_grad(env1, env2, d1, d2, hyps, cutoffs,
                              cutoff_func=cf.quadratic_cutoff):
+    """2+3-body single-element kernel between two force components and its
+    gradient with respect to the hyperparameters.
+
+    Args:
+        env1 (AtomicEnvironment): First local environment.
+        env2 (AtomicEnvironment): Second local environment.
+        d1 (int): Force component of the first environment.
+        d2 (int): Force component of the second environment.
+        hyps (np.ndarray): Hyperparameters of the kernel function (sig1, ls1,
+            sig2, ls2, sig_n).
+        cutoffs (np.ndarray): Two-element array containing the 2- and 3-body
+            cutoffs.
+        cutoff_func (Callable): Cutoff function of the kernel.
+
+    Return:
+        (float, np.ndarray): Value of the 2+3-body kernel and its gradient
+            with respect to the hyperparameters.
+    """
 
     kern2, ls2, sig2 = \
         two_body_grad_jit(env1.bond_array_2, env2.bond_array_2,
@@ -43,6 +80,24 @@ def two_plus_three_body_grad(env1, env2, d1, d2, hyps, cutoffs,
 
 def two_plus_three_force_en(env1, env2, d1, hyps, cutoffs,
                             cutoff_func=cf.quadratic_cutoff):
+    """2+3-body single-element kernel between a force component and a local
+    energy.
+
+    Args:
+        env1 (AtomicEnvironment): Local environment associated with the
+            force component.
+        env2 (AtomicEnvironment): Local environment associated with the
+            local energy.
+        d1 (int): Force component of the first environment.
+        hyps (np.ndarray): Hyperparameters of the kernel function (sig1, ls1,
+            sig2, ls2).
+        cutoffs (np.ndarray): Two-element array containing the 2- and 3-body
+            cutoffs.
+        cutoff_func (Callable): Cutoff function of the kernel.
+
+    Return:
+        float: Value of the 2+3-body force/energy kernel.
+    """
 
     two_term = two_body_force_en_jit(env1.bond_array_2, env2.bond_array_2,
                                      d1, hyps[0], hyps[1], cutoffs[0],
@@ -62,6 +117,20 @@ def two_plus_three_force_en(env1, env2, d1, hyps, cutoffs,
 
 def two_plus_three_en(env1, env2, hyps, cutoffs,
                       cutoff_func=cf.quadratic_cutoff):
+    """2+3-body single-element kernel between two local energies.
+
+    Args:
+        env1 (AtomicEnvironment): First local environment.
+        env2 (AtomicEnvironment): Second local environment.
+        hyps (np.ndarray): Hyperparameters of the kernel function (sig1, ls1,
+            sig2, ls2).
+        cutoffs (np.ndarray): Two-element array containing the 2- and 3-body
+            cutoffs.
+        cutoff_func (Callable): Cutoff function of the kernel.
+
+    Return:
+        float: Value of the 2+3-body force/energy kernel.
+    """
 
     two_term = two_body_en_jit(env1.bond_array_2, env2.bond_array_2,
                                hyps[0], hyps[1], cutoffs[0], cutoff_func)
@@ -83,6 +152,22 @@ def two_plus_three_en(env1, env2, hyps, cutoffs,
 
 def two_body(env1, env2, d1, d2, hyps, cutoffs,
              cutoff_func=cf.quadratic_cutoff):
+    """2-body single-element kernel between two force components.
+
+    Args:
+        env1 (AtomicEnvironment): First local environment.
+        env2 (AtomicEnvironment): Second local environment.
+        d1 (int): Force component of the first environment.
+        d2 (int): Force component of the second environment.
+        hyps (np.ndarray): Hyperparameters of the kernel function (sig, ls).
+        cutoffs (np.ndarray): One-element array containing the 2-body
+            cutoff.
+        cutoff_func (Callable): Cutoff function of the kernel.
+
+    Return:
+        float: Value of the 2-body kernel.
+    """
+
     sig = hyps[0]
     ls = hyps[1]
     r_cut = cutoffs[0]
@@ -93,6 +178,24 @@ def two_body(env1, env2, d1, d2, hyps, cutoffs,
 
 def two_body_grad(env1, env2, d1, d2, hyps, cutoffs,
                   cutoff_func=cf.quadratic_cutoff):
+    """2-body single-element kernel between two force components and its
+    gradient with respect to the hyperparameters.
+
+    Args:
+        env1 (AtomicEnvironment): First local environment.
+        env2 (AtomicEnvironment): Second local environment.
+        d1 (int): Force component of the first environment.
+        d2 (int): Force component of the second environment.
+        hyps (np.ndarray): Hyperparameters of the kernel function (sig, ls).
+        cutoffs (np.ndarray): One-element array containing the 2-body
+            cutoff.
+        cutoff_func (Callable): Cutoff function of the kernel.
+
+    Return:
+        (float, np.ndarray): Value of the 2-body kernel and its gradient
+            with respect to the hyperparameters.
+    """
+
     sig = hyps[0]
     ls = hyps[1]
     r_cut = cutoffs[0]
@@ -106,6 +209,24 @@ def two_body_grad(env1, env2, d1, d2, hyps, cutoffs,
 
 def two_body_force_en(env1, env2, d1, hyps, cutoffs,
                       cutoff_func=cf.quadratic_cutoff):
+    """2-body single-element kernel between a force component and a local
+    energy.
+
+    Args:
+        env1 (AtomicEnvironment): Local environment associated with the
+            force component.
+        env2 (AtomicEnvironment): Local environment associated with the
+            local energy.
+        d1 (int): Force component of the first environment.
+        hyps (np.ndarray): Hyperparameters of the kernel function (sig, ls).
+        cutoffs (np.ndarray): One-element array containing the 2-body
+            cutoff.
+        cutoff_func (Callable): Cutoff function of the kernel.
+
+    Return:
+        float: Value of the 2-body force/energy kernel.
+    """
+
     sig = hyps[0]
     ls = hyps[1]
     r_cut = cutoffs[0]
@@ -117,6 +238,19 @@ def two_body_force_en(env1, env2, d1, hyps, cutoffs,
 
 def two_body_en(env1, env2, hyps, cutoffs,
                 cutoff_func=cf.quadratic_cutoff):
+    """2-body single-element kernel between two local energies.
+
+    Args:
+        env1 (AtomicEnvironment): First local environment.
+        env2 (AtomicEnvironment): Second local environment.
+        hyps (np.ndarray): Hyperparameters of the kernel function (sig, ls).
+        cutoffs (np.ndarray): One-element array containing the 2-body
+            cutoff.
+        cutoff_func (Callable): Cutoff function of the kernel.
+
+    Return:
+        float: Value of the 2-body force/energy kernel.
+    """
     sig = hyps[0]
     ls = hyps[1]
     r_cut = cutoffs[0]
@@ -132,6 +266,22 @@ def two_body_en(env1, env2, hyps, cutoffs,
 
 def three_body(env1, env2, d1, d2, hyps, cutoffs,
                cutoff_func=cf.quadratic_cutoff):
+    """3-body single-element kernel between two force components.
+
+    Args:
+        env1 (AtomicEnvironment): First local environment.
+        env2 (AtomicEnvironment): Second local environment.
+        d1 (int): Force component of the first environment.
+        d2 (int): Force component of the second environment.
+        hyps (np.ndarray): Hyperparameters of the kernel function (sig, ls).
+        cutoffs (np.ndarray): Two-element array containing the 2- and 3-body
+            cutoffs.
+        cutoff_func (Callable): Cutoff function of the kernel.
+
+    Return:
+        float: Value of the 3-body kernel.
+    """
+
     sig = hyps[0]
     ls = hyps[1]
     r_cut = cutoffs[1]
@@ -145,6 +295,23 @@ def three_body(env1, env2, d1, d2, hyps, cutoffs,
 
 def three_body_grad(env1, env2, d1, d2, hyps, cutoffs,
                     cutoff_func=cf.quadratic_cutoff):
+    """3-body single-element kernel between two force components and its
+    gradient with respect to the hyperparameters.
+
+    Args:
+        env1 (AtomicEnvironment): First local environment.
+        env2 (AtomicEnvironment): Second local environment.
+        d1 (int): Force component of the first environment.
+        d2 (int): Force component of the second environment.
+        hyps (np.ndarray): Hyperparameters of the kernel function (sig, ls).
+        cutoffs (np.ndarray): Two-element array containing the 2- and 3-body
+            cutoffs.
+        cutoff_func (Callable): Cutoff function of the kernel.
+
+    Return:
+        (float, np.ndarray): Value of the 3-body kernel and its gradient
+            with respect to the hyperparameters.
+    """
     sig = hyps[0]
     ls = hyps[1]
     r_cut = cutoffs[1]
@@ -163,6 +330,23 @@ def three_body_grad(env1, env2, d1, d2, hyps, cutoffs,
 
 def three_body_force_en(env1, env2, d1, hyps, cutoffs,
                         cutoff_func=cf.quadratic_cutoff):
+    """3-body single-element kernel between a force component and a local
+    energy.
+
+    Args:
+        env1 (AtomicEnvironment): Local environment associated with the
+            force component.
+        env2 (AtomicEnvironment): Local environment associated with the
+            local energy.
+        d1 (int): Force component of the first environment.
+        hyps (np.ndarray): Hyperparameters of the kernel function (sig, ls).
+        cutoffs (np.ndarray): Two-element array containing the 2- and 3-body
+            cutoffs.
+        cutoff_func (Callable): Cutoff function of the kernel.
+
+    Return:
+        float: Value of the 3-body force/energy kernel.
+    """
     sig = hyps[0]
     ls = hyps[1]
     r_cut = cutoffs[1]
@@ -178,6 +362,19 @@ def three_body_force_en(env1, env2, d1, hyps, cutoffs,
 
 def three_body_en(env1, env2, hyps, cutoffs,
                   cutoff_func=cf.quadratic_cutoff):
+    """3-body single-element kernel between two local energies.
+
+    Args:
+        env1 (AtomicEnvironment): First local environment.
+        env2 (AtomicEnvironment): Second local environment.
+        hyps (np.ndarray): Hyperparameters of the kernel function (sig, ls).
+        cutoffs (np.ndarray): Two-element array containing the 2- and 3-body
+            cutoffs.
+        cutoff_func (Callable): Cutoff function of the kernel.
+
+    Return:
+        float: Value of the 3-body force/energy kernel.
+    """
     sig = hyps[0]
     ls = hyps[1]
     r_cut = cutoffs[1]
@@ -375,7 +572,6 @@ def three_body_grad_jit(bond_array_1, bond_array_2,
                         cross_bond_dists_1, cross_bond_dists_2,
                         triplets_1, triplets_2,
                         d1, d2, sig, ls, r_cut, cutoff_func):
-    """Kernel gradient for 3-body force comparisons."""
 
     kern = 0
     sig_derv = 0
@@ -439,7 +635,6 @@ def three_body_force_en_jit(bond_array_1, bond_array_2,
                             cross_bond_dists_2,
                             triplets_1, triplets_2,
                             d1, sig, ls, r_cut, cutoff_func):
-    """Kernel for 3-body force/energy comparisons."""
 
     kern = 0
 
@@ -791,85 +986,6 @@ def triplet_force_en_kernel(ci1, ci2, ri1, ri2, ri3, rj1, rj2, rj3,
     return I1 + I2 + I3 + I4 + I5 + I6
 
 
-if __name__ == '__main__':
-    import pytest
-    import numpy as np
-    import sys
-    from random import random, randint
-    from copy import deepcopy
-    sys.path.append('../otf_engine')
-    import env
-    import gp
-    import struc
-    import kernels as en
-
-    # create env 1
-    delt = 1e-5
-    cell = np.eye(3)
-    cutoff = 1
-    cutoffs = np.array([1, 1])
-
-    positions_1 = [np.array([0., 0., 0.]),
-                   np.array([random(), random(), random()]),
-                   np.array([random(), random(), random()])]
-    positions_2 = deepcopy(positions_1)
-    positions_2[0][0] = delt
-
-    positions_3 = deepcopy(positions_1)
-    positions_3[0][0] = -delt
-
-    species_1 = ['A', 'B', 'A']
-    atom_1 = 0
-    test_structure_1 = struc.Structure(cell, species_1, positions_1)
-    test_structure_2 = struc.Structure(cell, species_1, positions_2)
-    test_structure_3 = struc.Structure(cell, species_1, positions_3)
-
-    env1_1 = env.AtomicEnvironment(test_structure_1, atom_1, cutoffs)
-    env1_2 = env.AtomicEnvironment(test_structure_2, atom_1, cutoffs)
-    env1_3 = env.AtomicEnvironment(test_structure_3, atom_1, cutoffs)
-
-    # create env 2
-    positions_1 = [np.array([0., 0., 0.]),
-                   np.array([random(), random(), random()]),
-                   np.array([random(), random(), random()])]
-    positions_2 = deepcopy(positions_1)
-    positions_2[0][1] = delt
-    positions_3 = deepcopy(positions_1)
-    positions_3[0][1] = -delt
-
-    species_2 = ['A', 'A', 'B']
-    atom_2 = 0
-    test_structure_1 = struc.Structure(cell, species_2, positions_1)
-    test_structure_2 = struc.Structure(cell, species_2, positions_2)
-    test_structure_3 = struc.Structure(cell, species_2, positions_3)
-
-    env2_1 = env.AtomicEnvironment(test_structure_1, atom_2, cutoffs)
-    env2_2 = env.AtomicEnvironment(test_structure_2, atom_2, cutoffs)
-    env2_3 = env.AtomicEnvironment(test_structure_3, atom_2, cutoffs)
-
-    sig = 1
-    ls = 0.1
-    d1 = 1
-    d2 = 2
-
-    hyps = np.array([sig, ls])
-
-    # check force kernel
-    calc1 = en.two_body_en(env1_2, env2_2, hyps, cutoffs)
-    calc2 = en.two_body_en(env1_3, env2_3, hyps, cutoffs)
-    calc3 = en.two_body_en(env1_2, env2_3, hyps, cutoffs)
-    calc4 = en.two_body_en(env1_3, env2_2, hyps, cutoffs)
-
-    kern_finite_diff = (calc1 + calc2 - calc3 - calc4) / (4*delt**2)
-    kern_analytical = en.two_body(env1_1, env2_1,
-                                  d1, d2, hyps, cutoffs)
-
-    tol = 1e-4
-
-    print(kern_finite_diff)
-    print(kern_analytical)
-    assert(np.isclose(kern_finite_diff, kern_analytical, atol=tol))
-
 _str_to_kernel = {'two_body': two_body,
                   'two_body_en': two_body_en,
                   'two_body_force_en': two_body_force_en,
@@ -882,11 +998,11 @@ _str_to_kernel = {'two_body': two_body,
                   }
 
 
-def str_to_kernel(string: str, include_grad: bool=False):
+def str_to_kernel(string: str, include_grad: bool = False):
 
     if string not in _str_to_kernel.keys():
         raise ValueError("Kernel {} not found in list of available "
-                         "kernels{}:".format(string,_str_to_kernel.keys()))
+                         "kernels{}:".format(string, _str_to_kernel.keys()))
 
     if not include_grad:
         return _str_to_kernel[string]

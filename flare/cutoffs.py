@@ -10,14 +10,13 @@ from numba import njit
 def hard_cutoff(r_cut: float, ri: float, ci: float):
     """A hard cutoff that assigns a value of 1 to all interatomic distances.
 
-    :param r_cut: Cutoff value (in angstrom).
-    :type r_cut: float
-    :param ri: Interatomic distance.
-    :type ri: float
-    :param ci: Cartesian coordinate divided by the distance.
-    :type ci: float
-    :return: Cutoff value and its derivative.
-    :rtype: float, float
+    Args:
+        r_cut (float): Cutoff value (in angstrom).
+        ri (float): Interatomic distance.
+        ci (float): Cartesian coordinate divided by the distance.
+
+    Returns:
+        (float, float): Cutoff value and its derivative.
     """
     return 1, 0
 
@@ -26,15 +25,15 @@ def hard_cutoff(r_cut: float, ri: float, ci: float):
 def quadratic_cutoff(r_cut: float, ri: float, ci: float):
     """A quadratic cutoff that goes to zero smoothly at the cutoff boundary.
 
-    :param r_cut: Cutoff value (in angstrom).
-    :type r_cut: float
-    :param ri: Interatomic distance.
-    :type ri: float
-    :param ci: Cartesian coordinate divided by the distance.
-    :type ci: float
-    :return: Cutoff value and its derivative.
-    :rtype: float, float
+    Args:
+        r_cut (float): Cutoff value (in angstrom).
+        ri (float): Interatomic distance.
+        ci (float): Cartesian coordinate divided by the distance.
+
+    Returns:
+        (float, float): Cutoff value and its derivative.
     """
+
     rdiff = r_cut - ri
     fi = rdiff * rdiff
     fdi = 2 * rdiff * ci
@@ -46,14 +45,13 @@ def quadratic_cutoff(r_cut: float, ri: float, ci: float):
 def cubic_cutoff(r_cut: float, ri: float, ci: float):
     """A cubic cutoff that goes to zero smoothly at the cutoff boundary.
 
-    :param r_cut: Cutoff value (in angstrom).
-    :type r_cut: float
-    :param ri: Interatomic distance.
-    :type ri: float
-    :param ci: Cartesian coordinate divided by the distance.
-    :type ci: float
-    :return: Cutoff value and its derivative.
-    :rtype: float, float
+    Args:
+        r_cut (float): Cutoff value (in angstrom).
+        ri (float): Interatomic distance.
+        ci (float): Cartesian coordinate divided by the distance.
+
+    Returns:
+        (float, float): Cutoff value and its derivative.
     """
 
     rdiff = r_cut - ri
@@ -66,16 +64,18 @@ def cubic_cutoff(r_cut: float, ri: float, ci: float):
 @njit
 def cosine_cutoff(r_cut: float, ri: float, ci: float, d: float = 1):
     """A cosine cutoff that returns 1 up to r_cut - d, and assigns a cosine
-    envelope to values of r between r_cut - d and r_cut.
+    envelope to values of r between r_cut - d and r_cut. Based on Eq. 24 of
+    Albert P. Bartók and Gábor Csányi. "Gaussian approximation potentials: A
+    brief tutorial introduction." International Journal of Quantum Chemistry
+    115.16 (2015): 1051-1057.
 
-    :param r_cut: Cutoff value (in angstrom).
-    :type r_cut: float
-    :param ri: Interatomic distance.
-    :type ri: float
-    :param ci: Cartesian coordinate divided by the distance.
-    :type ci: float
-    :return: Cutoff value and its derivative.
-    :rtype: float, float
+    Args:
+        r_cut (float): Cutoff value (in angstrom).
+        ri (float): Interatomic distance.
+        ci (float): Cartesian coordinate divided by the distance.
+
+    Returns:
+        (float, float): Cutoff value and its derivative.
     """
 
     if ri > r_cut - d:
