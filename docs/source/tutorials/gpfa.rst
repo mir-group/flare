@@ -26,6 +26,7 @@ smaller 2-body cutoff (7 A) and a relatively large 3-body cutoff (7 A), both of 
 
 
 At the header of a file, include the following imports:
+
 .. codeblock:: python
  from flare.gp import GaussianProcess
  from flare.mc_simple import two_plus_three_body_mc, two_plus_three_body_mc_grad
@@ -116,15 +117,15 @@ trained. Here, we will pass in the following:
 Input arguments for training include:
 
 * ``rel_std_tolerance``: The noise variance heuristically describes the amount
-	of variance in force predictions which cannot be explained by the model.  
-	Once optimized, it provides a natural length scale for the degree of 
-	uncertainty expected in force predictions. A high uncertainty on a force 
-	prediction indicates that the ``AtomicEnvironment`` used is 
-	significantly different from all of the ``AtomicEnvironment``s in the training 
-	set. The  criteria for adding atoms to the training set therefore be 
-	defined with respect to the noise variance: if we denote the noise variance 
-	of the model as sig_n, stored at gp.hyps[-1] by convention, then the
-	the cutoff value used will be 
+of variance in force predictions which cannot be explained by the model.  
+Once optimized, it provides a natural length scale for the degree of 
+uncertainty expected in force predictions. A high uncertainty on a force 
+prediction indicates that the ``AtomicEnvironment`` used is 
+significantly different from all of the ``AtomicEnvironment``s in the training 
+set. The  criteria for adding atoms to the training set therefore be 
+defined with respect to the noise variance: if we denote the noise variance 
+of the model as sig_n, stored at gp.hyps[-1] by convention, then the
+the cutoff value used will be 
 	``rel_std_tolerance * sig_n``. Here, we will set it to 3.
 * ``abs_std_tolerance``: The above value describes a cutoff uncertainty which 
 	is defined with respect to the data set. In some cases it may be desirable 
