@@ -13,12 +13,18 @@ FLARE is an open-source Python package for creating fast and accurate atomistic 
 * Gaussian Process Force Fields
   * 2- and 3-body multi-element kernels
   * Maximum likelihood hyperparameter optimization
-  * Mapping to efficient cubic spline models
-  * Module for training GPs from AIMD trajectories
 
 * On-the-Fly Training
-  * Coupling to ASE MD engines
   * Coupling to Quantum Espresso, CP2K, and VASP DFT engines
+
+* Mapped Gaussian Processes
+  * Mapping to efficient cubic spline models
+
+* ASE Interface
+  * ASE calculator for GP models
+  * On-the-fly training with ASE MD engines
+
+* Module for training GPs from AIMD trajectories
 
 
 ## Prerequisites
