@@ -15,7 +15,6 @@ Optional:
 
 * ASE_
 * Pymatgen_
-* Nptyping
 
 .. _Python: https://www.python.org/
 .. _NumPy: https://docs.scipy.org/doc/numpy/reference/
