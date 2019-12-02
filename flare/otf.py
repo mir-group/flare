@@ -14,6 +14,54 @@ from flare.util import is_std_in_bound
 
 
 class OTF:
+    """Trains a Gaussian process force field on the fly.
+
+    Args:
+        dft_input (str): Input file.
+        dt (float): MD timestep.
+        number_of_steps (int): Number of timesteps in the training
+            simulation.
+        gp (gp.GaussianProcess): Initial GP model.
+        dft_loc (str): Location of DFT executable.
+        std_tolerance_factor (float, optional): Threshold that determines
+            when DFT is called. Specifies a multiple of the current noise
+            hyperparameter. If the epistemic uncertainty on a force
+            component exceeds this value, DFT is called. Defaults to 1.
+        prev_pos_init ([type], optional): Previous positions. Defaults
+            to None.
+        par (bool, optional): If True, force predictions are made in
+            parallel. Defaults to False.
+        skip (int, optional): Number of frames that are skipped when
+            dumping to the output file. Defaults to 0.
+        init_atoms (List[int], optional): List of atoms from the input
+            structure whose local environments and force components are
+            used to train the initial GP model. If None is specified, all
+            atoms are used to train the initial GP. Defaults to None.
+        calculate_energy (bool, optional): If True, the energy of each
+            frame is calculated with the GP. Defaults to False.
+        output_name (str, optional): Name of the output file. Defaults to
+            'otf_run'.
+        max_atoms_added (int, optional): Number of atoms added each time
+            DFT is called. Defaults to 1.
+        freeze_hyps (int, optional): Specifies the number of times the
+            hyperparameters of the GP are optimized. After this many
+            updates to the GP, the hyperparameters are frozen.
+            Defaults to 10.
+        rescale_steps (List[int], optional): List of frames for which the
+            velocities of the atoms are rescaled. Defaults to [].
+        rescale_temps (List[int], optional): List of rescaled temperatures.
+            Defaults to [].
+        dft_softwarename (str, optional): DFT code used to calculate
+            ab initio forces during training. Defaults to "qe".
+        no_cpus (int, optional): Number of cpus used during training.
+            Defaults to 1.
+        npool (int, optional): Number of k-point pools for DFT
+            calculations. Defaults to None.
+        mpi (str, optional): Determines how mpi is called. Defaults to
+            "srun".
+        dft_kwargs ([type], optional): Additional DFT arguments. Defaults
+            to None.
+    """
     def __init__(self, dft_input: str, dt: float, number_of_steps: int,
                  gp: gp.GaussianProcess, dft_loc: str,
                  std_tolerance_factor: float = 1,
@@ -25,54 +73,6 @@ class OTF:
                  dft_softwarename: str = "qe",
                  no_cpus: int = 1, npool: int = None, mpi: str = "srun",
                  dft_kwargs=None):
-        """Trains a Gaussian process force field on the fly.
-
-        Args:
-            dft_input (str): Input file.
-            dt (float): MD timestep.
-            number_of_steps (int): Number of timesteps in the training
-                simulation.
-            gp (gp.GaussianProcess): Initial GP model.
-            dft_loc (str): Location of DFT executable.
-            std_tolerance_factor (float, optional): Threshold that determines
-                when DFT is called. Specifies a multiple of the current noise
-                hyperparameter. If the epistemic uncertainty on a force
-                component exceeds this value, DFT is called. Defaults to 1.
-            prev_pos_init ([type], optional): Previous positions. Defaults
-                to None.
-            par (bool, optional): If True, force predictions are made in
-                parallel. Defaults to False.
-            skip (int, optional): Number of frames that are skipped when
-                dumping to the output file. Defaults to 0.
-            init_atoms (List[int], optional): List of atoms whose local
-                environments and force components are used to train the
-                initial GP model. If None is specified, all atoms are used
-                to train the initial GP. Defaults to None.
-            calculate_energy (bool, optional): If True, the energy of each
-                frame is calculated with the GP. Defaults to False.
-            output_name (str, optional): Name of the output file. Defaults to
-                'otf_run'.
-            max_atoms_added (int, optional): Number of atoms added each time
-                DFT is called. Defaults to 1.
-            freeze_hyps (int, optional): Specifies the number of times the
-                hyperparameters of the GP are optimized. After this many
-                updates to the GP, the hyperparameters are frozen.
-                Defaults to 10.
-            rescale_steps (List[int], optional): List of frames for which the
-                velocities of the atoms are rescaled. Defaults to [].
-            rescale_temps (List[int], optional): List of rescaled temperatures.
-                Defaults to [].
-            dft_softwarename (str, optional): DFT code used to calculate
-                ab initio forces during training. Defaults to "qe".
-            no_cpus (int, optional): Number of cpus used during training.
-                Defaults to 1.
-            npool (int, optional): Number of k-point pools for DFT
-                calculations. Defaults to None.
-            mpi (str, optional): Determines how mpi is called. Defaults to
-                "srun".
-            dft_kwargs ([type], optional): Additional DFT arguments. Defaults
-                to None.
-        """
 
         self.dft_input = dft_input
         self.dt = dt
@@ -142,6 +142,8 @@ class OTF:
         self.dft_kwargs = dft_kwargs
 
     def run(self):
+        """Performs an on-the-fly training run."""
+
         self.output.write_header(self.gp.cutoffs, self.gp.kernel_name,
                                  self.gp.hyps, self.gp.algo,
                                  self.dt, self.number_of_steps,
@@ -223,6 +225,8 @@ class OTF:
         self.output.conclude_run()
 
     def run_dft(self):
+        """Calculates DFT forces on atoms in the current structure."""
+
         self.output.write_to_log('\nCalling DFT...\n')
 
         # calculate DFT forces
@@ -241,7 +245,14 @@ class OTF:
         self.output.write_to_log('number of DFT calls: %i \n' % self.dft_count)
         self.output.write_to_log('wall time from start: %.2f s \n' % time_curr)
 
-    def update_gp(self, train_atoms, dft_frcs):
+    def update_gp(self, train_atoms: List[int], dft_frcs: 'ndarray'):
+        """Updates the current GP model.
+
+        Args:
+            train_atoms (List[int]): List of atoms whose local environments
+                will be added to the training set.
+            dft_frcs (np.ndarray): DFT forces on all atoms in the structure.
+        """
         self.output.write_to_log('\nAdding atom {} to the training set.\n'
                                  .format(train_atoms))
         self.output.write_to_log('Uncertainty: {}.\n'
@@ -254,12 +265,19 @@ class OTF:
         self.gp.set_L_alpha()
 
     def train_gp(self):
+        """Optimizes the hyperparameters of the current GP model."""
+
         self.gp.train(self.output)
         self.output.write_hyps(self.gp.hyp_labels, self.gp.hyps,
                                self.start_time,
                                self.gp.likelihood, self.gp.likelihood_gradient)
 
-    def update_positions(self, new_pos):
+    def update_positions(self, new_pos: 'ndarray'):
+        """Performs a Verlet update of the atomic positions.
+
+        Args:
+            new_pos (np.ndarray): Positions of atoms in the next MD frame.
+        """
         if self.curr_step in self.rescale_steps:
             rescale_ind = self.rescale_steps.index(self.curr_step)
             temp_fac = self.rescale_temps[rescale_ind] / self.temperature
@@ -271,7 +289,12 @@ class OTF:
         self.structure.positions = new_pos
         self.structure.wrap_positions()
 
-    def update_temperature(self, new_pos):
+    def update_temperature(self, new_pos: 'ndarray'):
+        """Updates the instantaneous temperatures of the system.
+
+        Args:
+            new_pos (np.ndarray): Positions of atoms in the next MD frame.
+        """
         KE, temperature, velocities = \
                 md.calculate_temperature(new_pos, self.structure, self.dt,
                                          self.noa)

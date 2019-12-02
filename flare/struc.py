@@ -27,7 +27,7 @@ class Structure:
     Contains information about a periodic structure of atoms, including the
     periodic cell boundaries, atomic species, and coordinates.
 
-    *Note that input positions are assumed to be Cgit puartesian.*
+    *Note that input positions are assumed to be Cartesian.*
 
     :param cell: 3x3 array whose rows are the Bravais lattice vectors of the
         cell.
