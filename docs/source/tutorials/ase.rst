@@ -35,6 +35,7 @@ Now let's set up our Gaussian process model in the same way as introduced before
    :lines: 28-51
 
 Create a `Calculator` object
+
 .. literalinclude:: ../../../tests/ase_otf/flare_setup.py
    :lines: 52-53
 
