@@ -1,4 +1,3 @@
-"""Gaussian process force fields."""
 import math
 import pickle
 import json
@@ -20,7 +19,7 @@ from flare.util import NumpyEncoder
 
 
 class GaussianProcess:
-    """Gaussian Process Regression Model. Implementation is based on
+    """Gaussian process force field. Implementation is based on
     Algorithm 2.1 (pg. 19) of "Gaussian Processes for Machine Learning" by
     Rasmussen and Williams."""
 
