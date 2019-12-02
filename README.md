@@ -1,10 +1,10 @@
-<p align="center">
-  <img width="659" height="303" src="https://github.com/mir-group/flare/blob/master/docs/images/Flare_logo.png?raw=true">
-</p>
-
 [![Build Status](https://travis-ci.org/mir-group/flare.svg?branch=master)](https://travis-ci.org/mir-group/flare) [![documentation](https://readthedocs.org/projects/flare/badge/?version=latest)](https://readthedocs.org/projects/flare) [![pypi](https://img.shields.io/pypi/v/mir-flare)](https://pypi.org/project/mir-flare/) [![activity](https://img.shields.io/github/commit-activity/m/mir-group/flare)](https://github.com/mir-group/flare/commits/master) [![codecov](https://codecov.io/gh/mir-group/flare/branch/master/graph/badge.svg)](https://codecov.io/gh/mir-group/flare)
 
 # FLARE: Fast Learning of Atomistic Rare Events
+
+<p align="center">
+  <img width=50% src="https://github.com/mir-group/flare/blob/master/docs/images/FLARE_logo.svg">
+</p>
 
 FLARE is an open-source Python package for creating fast and accurate atomistic potentials. Documentation of the code is in progress, and can be accessed here: https://flare.readthedocs.io/
 
