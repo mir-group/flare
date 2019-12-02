@@ -115,7 +115,6 @@ class GaussianProcess:
         if train:
             self.train(**kwargs)
 
-
     def train(self, output=None, custom_bounds=None,
               grad_tol: float = 1e-4,
               x_tol: float = 1e-5,
@@ -245,7 +244,7 @@ class GaussianProcess:
         return pred_mean
 
     def predict_local_energy_and_var(self, x_t: AtomicEnvironment):
-        """Predict the local energy of an atomic environment and its
+        """Predict the local energy of a local environment and its
         uncertainty.
 
         Args:
