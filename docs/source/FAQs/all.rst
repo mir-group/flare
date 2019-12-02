@@ -4,10 +4,10 @@ Frequently Asked Questions
 Installation and Packages
 -------------------------
 1. What numba version will I need?
+        0.43.1 or greater.
 
 2. Can I accelerate my calculation using parallelization?
-
-See the section in the `Installation <https://flare.readthedocs.io/en/latest/install.html#acceleration-with-multiprocessing-and-mkl>`_ section.
+        See the section in the `Installation <https://flare.readthedocs.io/en/latest/install.html#acceleration-with-multiprocessing-and-mkl>`_ section.
 
 Gaussian Processes and OTF
 --------------------------
@@ -20,10 +20,11 @@ Gaussian Processes and OTF
 	, with Chapter 2 in particular being a great help.
 
 
-
 2. How should I choose my cutoffs?
+        The right cutoff depends on the system you're studying: ionic systems often do better with a larger 2-body cutoff, while dense systems like diamond reqeuire smaller 2- and 3-body cutoffs. We recommend you try a range of cutoff values and examine the model error, optimized noise parameter, and model likelihood as a function of the cutoff.
 
 3. What is a good strategy for hyperparameter optimization?	
+        Start with a plausible guess (e.g. set the length scale hyperparameters to 1 A and the noise hyperparameter to 0.1 eV/A). If the likelihood gradient is ill-behaved, add more data to the GP and re-train.
 
 GPFA 
 ----
