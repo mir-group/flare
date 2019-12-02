@@ -3,7 +3,7 @@
 # FLARE: Fast Learning of Atomistic Rare Events
 
 <p align="center">
-  <img width=50% src="https://github.com/mir-group/flare/blob/master/docs/images/Flare_logo.svg?raw=true">
+  <img width=50% src="https://github.com/mir-group/flare/blob/master/docs/images/FLARE_logo.svg?raw=true">
 </p>
 
 FLARE is an open-source Python package for creating fast and accurate atomistic potentials. Documentation of the code is in progress, and can be accessed here: https://flare.readthedocs.io/
