@@ -12,45 +12,66 @@ from flare.output import Output
 import flare.predict as predict
 from flare.util import is_std_in_bound
 
-class OTF(object):
+
+class OTF:
     def __init__(self, dft_input: str, dt: float, number_of_steps: int,
                  gp: gp.GaussianProcess, dft_loc: str,
                  std_tolerance_factor: float = 1,
-                 prev_pos_init: np.ndarray=None, par: bool=False,
-                 skip: int=0, init_atoms: List[int]=None,
-                 calculate_energy=False, output_name='otf_run',
-                 max_atoms_added=1, freeze_hyps=10,
-                 rescale_steps=[], rescale_temps=[],
-                 dft_softwarename="qe",
-                 no_cpus=1, npool=None, mpi="srun",
-                 dft_kwargs = None,
-                 std_tolerance_cutoff: float = None):
-        """
-        On-The-Fly molecular dynamics + Gaussian Process training class.
+                 prev_pos_init: 'ndarray' = None, par: bool = False,
+                 skip: int = 0, init_atoms: List[int] = None,
+                 calculate_energy: bool = False, output_name: str = 'otf_run',
+                 max_atoms_added: int = 1, freeze_hyps: int = 10,
+                 rescale_steps: List[int] = [], rescale_temps: List[int] = [],
+                 dft_softwarename: str = "qe",
+                 no_cpus: int = 1, npool: int = None, mpi: str = "srun",
+                 dft_kwargs=None):
+        """Trains a Gaussian process force field on the fly.
 
-        :param dft_input: Input file to be modified in the course of training
-         (Can correspond to e.g. pwscf.in for QE or a VASP POSCAR file)
-        :param dt:
-        :param number_of_steps:
-        :param gp:
-        :param dft_loc:
-        :param std_tolerance_factor:
-        :param prev_pos_init:
-        :param par:
-        :param skip:
-        :param init_atoms:
-        :param calculate_energy:
-        :param output_name:
-        :param max_atoms_added:
-        :param freeze_hyps:
-        :param rescale_steps:
-        :param rescale_temps:
-        :param dft_softwarename:
-        :param no_cpus:
-        :param npool:
-        :param mpi:
-        :param std_tolerance_cutoff: If uncertainty crosses this threshold,
-            then call DFT regardless of the noise parameter.
+        Args:
+            dft_input (str): Input file.
+            dt (float): MD timestep.
+            number_of_steps (int): Number of timesteps in the training
+                simulation.
+            gp (gp.GaussianProcess): Initial GP model.
+            dft_loc (str): Location of DFT executable.
+            std_tolerance_factor (float, optional): Threshold that determines
+                when DFT is called. Specifies a multiple of the current noise
+                hyperparameter. If the epistemic uncertainty on a force
+                component exceeds this value, DFT is called. Defaults to 1.
+            prev_pos_init ([type], optional): Previous positions. Defaults
+                to None.
+            par (bool, optional): If True, force predictions are made in
+                parallel. Defaults to False.
+            skip (int, optional): Number of frames that are skipped when
+                dumping to the output file. Defaults to 0.
+            init_atoms (List[int], optional): List of atoms whose local
+                environments and force components are used to train the
+                initial GP model. If None is specified, all atoms are used
+                to train the initial GP. Defaults to None.
+            calculate_energy (bool, optional): If True, the energy of each
+                frame is calculated with the GP. Defaults to False.
+            output_name (str, optional): Name of the output file. Defaults to
+                'otf_run'.
+            max_atoms_added (int, optional): Number of atoms added each time
+                DFT is called. Defaults to 1.
+            freeze_hyps (int, optional): Specifies the number of times the
+                hyperparameters of the GP are optimized. After this many
+                updates to the GP, the hyperparameters are frozen.
+                Defaults to 10.
+            rescale_steps (List[int], optional): List of frames for which the
+                velocities of the atoms are rescaled. Defaults to [].
+            rescale_temps (List[int], optional): List of rescaled temperatures.
+                Defaults to [].
+            dft_softwarename (str, optional): DFT code used to calculate
+                ab initio forces during training. Defaults to "qe".
+            no_cpus (int, optional): Number of cpus used during training.
+                Defaults to 1.
+            npool (int, optional): Number of k-point pools for DFT
+                calculations. Defaults to None.
+            mpi (str, optional): Determines how mpi is called. Defaults to
+                "srun".
+            dft_kwargs ([type], optional): Additional DFT arguments. Defaults
+                to None.
         """
 
         self.dft_input = dft_input
