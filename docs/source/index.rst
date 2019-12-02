@@ -14,7 +14,7 @@ Contents
    install
    tutorials/tutorials
    flare/flare
-   contribute/contribute
    FAQs/FAQs
    related
+   contribute/contribute
    citing
