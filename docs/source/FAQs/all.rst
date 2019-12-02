@@ -5,7 +5,9 @@ Installation and Packages
 -------------------------
 1. What numba version will I need?
 
-2. Can I accelerate my numpy installation using parallelization?
+2. Can I accelerate my calculation using parallelization?
+
+See the section in Installation: Acceleration with multiprocessing and MKL. <../install.rst#acceleration-with-multiprocessing-and-mkl> 
 
 Gaussian Processes and OTF
 --------------------------
