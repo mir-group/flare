@@ -4,8 +4,8 @@ trajectory with many customizable options for fine control of training.
 Contains methods to transfer the model to an OTF run or MD engine run.
 
 
-SEED FRAMES
-----------
+Seed frames
+-----------
 The various parameters in the :class:`TrajectoryTrainer` class related to
 "Seed frames" are to help you  train a model which does not yet have a
 training set. Uncertainty- and force-error driven training will go better with
