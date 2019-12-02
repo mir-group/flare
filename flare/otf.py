@@ -44,10 +44,10 @@ class OTF:
                 parallel. Defaults to False.
             skip (int, optional): Number of frames that are skipped when
                 dumping to the output file. Defaults to 0.
-            init_atoms (List[int], optional): List of atoms whose local
-                environments and force components are used to train the
-                initial GP model. If None is specified, all atoms are used
-                to train the initial GP. Defaults to None.
+            init_atoms (List[int], optional): List of atoms from the input
+                structure whose local environments and force components are
+                used to train the initial GP model. If None is specified, all
+                atoms are used to train the initial GP. Defaults to None.
             calculate_energy (bool, optional): If True, the energy of each
                 frame is calculated with the GP. Defaults to False.
             output_name (str, optional): Name of the output file. Defaults to
@@ -142,6 +142,8 @@ class OTF:
         self.dft_kwargs = dft_kwargs
 
     def run(self):
+        """Performs an on-the-fly training run."""
+
         self.output.write_header(self.gp.cutoffs, self.gp.kernel_name,
                                  self.gp.hyps, self.gp.algo,
                                  self.dt, self.number_of_steps,
@@ -223,6 +225,8 @@ class OTF:
         self.output.conclude_run()
 
     def run_dft(self):
+        """Calculates DFT forces on atoms in the current structure."""
+
         self.output.write_to_log('\nCalling DFT...\n')
 
         # calculate DFT forces
@@ -241,7 +245,14 @@ class OTF:
         self.output.write_to_log('number of DFT calls: %i \n' % self.dft_count)
         self.output.write_to_log('wall time from start: %.2f s \n' % time_curr)
 
-    def update_gp(self, train_atoms, dft_frcs):
+    def update_gp(self, train_atoms: List[int], dft_frcs: 'ndarray'):
+        """Updates the current GP model.
+
+        Args:
+            train_atoms (List[int]): List of atoms whose local environments
+                will be added to the training set.
+            dft_frcs (np.ndarray): DFT forces on all atoms in the structure.
+        """
         self.output.write_to_log('\nAdding atom {} to the training set.\n'
                                  .format(train_atoms))
         self.output.write_to_log('Uncertainty: {}.\n'
@@ -254,12 +265,19 @@ class OTF:
         self.gp.set_L_alpha()
 
     def train_gp(self):
+        """Optimizes the hyperparameters of the current GP model."""
+
         self.gp.train(self.output)
         self.output.write_hyps(self.gp.hyp_labels, self.gp.hyps,
                                self.start_time,
                                self.gp.likelihood, self.gp.likelihood_gradient)
 
-    def update_positions(self, new_pos):
+    def update_positions(self, new_pos: 'ndarray'):
+        """Performs a Verlet update of the atomic positions.
+        
+        Args:
+            new_pos (np.ndarray): Positions of atoms in the next MD frame.
+        """
         if self.curr_step in self.rescale_steps:
             rescale_ind = self.rescale_steps.index(self.curr_step)
             temp_fac = self.rescale_temps[rescale_ind] / self.temperature
@@ -271,7 +289,12 @@ class OTF:
         self.structure.positions = new_pos
         self.structure.wrap_positions()
 
-    def update_temperature(self, new_pos):
+    def update_temperature(self, new_pos: 'ndarray'):
+        """Updates the instantaneous temperatures of the system.
+        
+        Args:
+            new_pos (np.ndarray): Positions of atoms in the next MD frame.
+        """
         KE, temperature, velocities = \
                 md.calculate_temperature(new_pos, self.structure, self.dt,
                                          self.noa)
