@@ -9,6 +9,7 @@ Gaussian Process Force Fields
    cutoffs
    predict
    gp_algebra
+   output
 
 .. automodule:: flare.gp
     :members:

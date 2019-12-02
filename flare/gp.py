@@ -1,13 +1,10 @@
 import math
 import pickle
 import json
-
 import numpy as np
-
 from typing import List, Callable
 from scipy.linalg import solve_triangular
 from scipy.optimize import minimize
-
 from flare.env import AtomicEnvironment
 from flare.struc import Structure
 from flare.gp_algebra import get_ky_and_hyp, get_like_grad_from_mats, \
@@ -16,23 +13,48 @@ from flare.gp_algebra import get_ky_and_hyp, get_like_grad_from_mats, \
 from flare.kernels import str_to_kernel
 from flare.mc_simple import str_to_mc_kernel
 from flare.util import NumpyEncoder
+from flare.output import Output
 
 
 class GaussianProcess:
-    """Gaussian process force field. Implementation is based on
-    Algorithm 2.1 (pg. 19) of "Gaussian Processes for Machine Learning" by
-    Rasmussen and Williams."""
+    """Gaussian process force field. Implementation is based on Algorithm 2.1
+    (pg. 19) of "Gaussian Processes for Machine Learning" by Rasmussen and
+    Williams.
+
+    Args:
+        kernel (Callable): Force/force kernel of the GP used to make force
+            predictions.
+        kernel_grad (Callable): Function that returns the gradient of the GP
+            kernel with respect to the hyperparameters.
+        hyps (np.ndarray): Hyperparameters of the GP.
+        cutoffs (np.ndarray): Cutoffs of the GP kernel.
+        hyp_labels (List, optional): List of hyperparameter labels. Defaults
+            to None.
+        energy_force_kernel (Callable, optional): Energy/force kernel of the
+            GP used to make energy predictions. Defaults to None.
+        energy_kernel (Callable, optional): Energy/energy kernel of the GP.
+            Defaults to None.
+        opt_algorithm (str, optional): Hyperparameter optimization algorithm.
+            Defaults to 'L-BFGS-B'.
+        maxiter (int, optional): Maximum number of iterations of the
+            hyperparameter optimization algorithm. Defaults to 10.
+        par (bool, optional): If True, the covariance matrix K of the GP is
+            computed in parallel. Defaults to False.
+        no_cpus (int, optional): Number of cpus used for parallel
+            calculations. Defaults to 1.
+        output (Output, optional): Output object used to dump hyperparameters
+            during optimization. Defaults to None.
+    """
 
     def __init__(self, kernel: Callable,
-                 kernel_grad: Callable, hyps,
-                 cutoffs,
+                 kernel_grad: Callable, hyps: 'ndarray',
+                 cutoffs: 'ndarray',
                  hyp_labels: List = None,
                  energy_force_kernel: Callable = None,
                  energy_kernel: Callable = None,
                  opt_algorithm: str = 'L-BFGS-B',
-                 maxiter=10, par=False, no_cpus=1,
-                 output=None):
-
+                 maxiter: int = 10, par: bool = False, no_cpus: int = 1,
+                 output: Output = None):
         self.kernel = kernel
         self.kernel_grad = kernel_grad
         self.energy_kernel = energy_kernel
