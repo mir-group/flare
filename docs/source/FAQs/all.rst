@@ -4,7 +4,14 @@ Frequently Asked Questions
 Installation and Packages
 -------------------------
 1. What numba version will I need?
+<<<<<<< HEAD
         0.43.1 or greater.
+=======
+        >= 0.43.0
+
+**Note:** If you get errors with `numba` or get `C/C++`-type errors, 
+very possibly it's the problem of the `numba` version.
+>>>>>>> refs/remotes/origin/master
 
 2. Can I accelerate my calculation using parallelization?
         See the section in the `Installation <https://flare.readthedocs.io/en/latest/install.html#acceleration-with-multiprocessing-and-mkl>`_ section.
@@ -24,8 +31,30 @@ Gaussian Processes and OTF
         The right cutoff depends on the system you're studying: ionic systems often do better with a larger 2-body cutoff, while dense systems like diamond reqeuire smaller 2- and 3-body cutoffs. We recommend you try a range of cutoff values and examine the model error, optimized noise parameter, and model likelihood as a function of the cutoff.
 
 3. What is a good strategy for hyperparameter optimization?	
+<<<<<<< HEAD
         Start with a plausible guess (e.g. set the length scale hyperparameters to 1 A and the noise hyperparameter to 0.1 eV/A). If the likelihood gradient is ill-behaved, add more data to the GP and re-train.
+=======
+        The hyperparameter optimization is important for obtaining a good model. 
+        However, the optimization of hyperparameters will get slower when more training data are collected.
+        There are a few parameters to notice:
+        
+        In `GaussianProcess`,
 
+        * `maxiter`: maximal number of iterations, usually set to ~10 to prevent training for too long.
+
+        * `par`: if `True`, then parallelization is used in optimization. 
+          The serial version could be very slow.
+
+        * `output` (in `train` function): set up an output file for monitoring optimization iterations.
+
+        * `grad_tol`, `x_tol`, `line_steps` (in `train` function): can be changed for iterations.
+            
+        In `OTF`,
+>>>>>>> refs/remotes/origin/master
+
+        * `freeze_hyps`: the hyperparameter will only be optimized for `freeze_hyps` times. 
+          Can be set to a small number if optimization is too expensive with a large data set.
+        
 GPFA 
 ----
 
@@ -42,3 +71,9 @@ GPFA
 MGP
 ---
 1. How does the grid number affect my mapping?
+        * The lower cutoff is better set to be a bit smaller than the minimal interatomic distance.
+        * The upper cutoff should be consistent with GP's cutoff. 
+        * For three-body, the grid is 3-D, with lower cutoffs `[a, a, cos(pi)]` and upper cutoffs `[b, b, cos(0)]`.
+        * You can try different grid numbers and compare the force prediction of MGP and GP 
+          on the same testing structure. Choose the grid number of satisfying efficiency and accuracy.
+          A reference is `grid_num=64` should be safe for `a=2.5`, `b=5`.
