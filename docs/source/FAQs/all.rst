@@ -7,7 +7,7 @@ Installation and Packages
 
 2. Can I accelerate my calculation using parallelization?
 
-See the section in Installation: Acceleration with multiprocessing and MKL. <../install.rst#acceleration-with-multiprocessing-and-mkl> 
+See the section in the `Installation<../install.rst#acceleration-with-multiprocessing-and-mkl>`__ section.
 
 Gaussian Processes and OTF
 --------------------------
