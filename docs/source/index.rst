@@ -1,7 +1,7 @@
 FLARE: Fast Learning of Atomistic Rare Events
 =============================================
 
-.. figure:: ../images/FLARE_logo.svg
+.. figure:: ../images/Flare_logo.png
     :figwidth: 50 %
     :align: center
 

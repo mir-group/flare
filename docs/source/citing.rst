@@ -1,5 +1,5 @@
-How to FLARE
-==============
+How to Cite
+============
 
 If you use FLARE in your research, please cite the following paper:
 
