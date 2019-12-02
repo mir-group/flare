@@ -1,5 +1,5 @@
-Ralated Work Using FLARE
+Applications of FLARE
 ========================
 
-If you use FLARE in your projects/papers, please let us know. 
-We will list the tasks done by FLARE here.
+If you use FLARE in your research, please let us know. 
+We will list the applications of FLARE here.
