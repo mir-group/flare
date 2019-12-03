@@ -46,7 +46,7 @@ For non-admin users
 Manual Installation with Git
 ****************************
 
-First, copy the source code from https://github.com/mir-group/flarelike
+First, copy the source code from https://github.com/mir-group/flare
 
 .. code-block:: bash
 
