@@ -28,8 +28,9 @@ smaller 2-body cutoff (7 A) and a relatively large 3-body cutoff (7 A), both of 
 At the header of a file, include the following imports:
 
 .. codeblock:: python
- from flare.gp import GaussianProcess
- from flare.mc_simple import two_plus_three_body_mc, two_plus_three_body_mc_grad
+
+	from flare.gp import GaussianProcess
+	from flare.mc_simple import two_plus_three_body_mc, two_plus_three_body_mc_grad
 
 We will then set up the ``GaussianProcess`` object.
 
@@ -55,11 +56,12 @@ We will then set up the ``GaussianProcess`` object.
  
 
 .. codeblock:: python
- gp = GaussianProcess(kernel=two_plus_three_body_mc, kernel_grad=two_plus_three_body_mc_grad,
-   hyps=[0.01, 0.01, 0.01, 0.01, 0.01],
-   cutoffs = (7,7),
-   hyp_labels=['Two-Body Signal Variance','Two-Body Length Scale','Three-Body Signal Variance',
-     'Three-Body Length Scale', 'Noise Variance']
+
+	gp = GaussianProcess(kernel=two_plus_three_body_mc, kernel_grad=two_plus_three_body_mc_grad,
+	hyps=[0.01, 0.01, 0.01, 0.01, 0.01],
+	cutoffs = (7,7),
+	hyp_labels=['Two-Body Signal Variance','Two-Body Length Scale','Three-Body Signal Variance',
+	'Three-Body Length Scale', 'Noise Variance']
 			)
 
 
@@ -76,6 +78,7 @@ a list of FLARE ``Structure`` objects, using internal methods which call
 You can run it simply by calling the function on a file like so:
 
 .. codeblock:: python
+
 	from flare.dft_interface.vasp_util import md_trajectory_from_vasprun
 	trajectory = md_trajectory_from_vasprun('path-to-vasprun')
 
@@ -88,11 +91,12 @@ available in the test_files directory, which is ``methanol_frames.json``.
 You can open it via the command
 
 .. codeblock:: python
- from json import loads
- from flare.struc import Structure
- with open('path-to-methanol-frames','r') as f:
-     loaded_dicts = [loads(line) for line in f.readlines()]
- trajectory = [Structure.from_dict(d) for d in loaded_dicts]
+
+	from json import loads
+	from flare.struc import Structure
+	with open('path-to-methanol-frames','r') as f:
+	loaded_dicts = [loads(line) for line in f.readlines()]
+	trajectory = [Structure.from_dict(d) for d in loaded_dicts]
 
 Our trajectory is a list of FLARE structures, each of which is decorated with 
 forces.
@@ -160,14 +164,13 @@ For now, we will only show one argument to seed frames for simplicity.
 
 
 .. codeblock:: python
+
 	from flare.gp_from_aimd import TrajectoryTrainer
-
-
 	TT = TrajectoryTrainer(frames=trajectory,
 			    gp = gp,
 			    rel_std_tolerance = 3,
 			    abs_std_tolerance=0,
-       pre_train_on_skips=5)
+      			    pre_train_on_skips=5)
 
 
 
@@ -175,6 +178,7 @@ For now, we will only show one argument to seed frames for simplicity.
 After this, all you need to do is call the run method!
 
 .. codeblock:: python
+
 	TT.run()
 	print("Done!")
 	
