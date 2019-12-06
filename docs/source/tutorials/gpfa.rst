@@ -27,7 +27,7 @@ smaller 2-body cutoff (7 A) and a relatively large 3-body cutoff (7 A), both of 
 
 At the header of a file, include the following imports:
 
-.. codeblock:: python
+.. code-block:: python
 
 	from flare.gp import GaussianProcess
 	from flare.mc_simple import two_plus_three_body_mc, two_plus_three_body_mc_grad
@@ -55,7 +55,7 @@ We will then set up the ``GaussianProcess`` object.
   | ``two_plus_three_body_mc_grad``.
  
 
-.. codeblock:: python
+.. code-block:: python
 
 	gp = GaussianProcess(kernel=two_plus_three_body_mc, kernel_grad=two_plus_three_body_mc_grad,
 	hyps=[0.01, 0.01, 0.01, 0.01, 0.01],
@@ -77,7 +77,8 @@ a list of FLARE ``Structure`` objects, using internal methods which call
 
 You can run it simply by calling the function on a file like so:
 
-.. codeblock:: python
+
+.. code-block:: python
 
 	from flare.dft_interface.vasp_util import md_trajectory_from_vasprun
 	trajectory = md_trajectory_from_vasprun('path-to-vasprun')
@@ -90,7 +91,7 @@ If you don't have a previously existing Vasprun, you can also use the one
 available in the test_files directory, which is ``methanol_frames.json``.
 You can open it via the command
 
-.. codeblock:: python
+.. code-block:: python
 
 	from json import loads
 	from flare.struc import Structure
@@ -140,8 +141,8 @@ Input arguments for training include:
   | Here, we will set it to 0. If both are defined, the lower of the two will be
   | used.
  
-** Pre-Training arguments **
-
+Pre-Training arguments
+----------------------
 When the training set contains a low diversity of 
 atomic configurations relative to what you expect to see at test time, the 
 hyperparameters may not be representative; furthermore, the training process
@@ -163,7 +164,7 @@ For now, we will only show one argument to seed frames for simplicity.
   | frame in the trajectory as a seed frame.
 
 
-.. codeblock:: python
+.. code-block:: python
 
 	from flare.gp_from_aimd import TrajectoryTrainer
 	TT = TrajectoryTrainer(frames=trajectory,
@@ -177,7 +178,7 @@ For now, we will only show one argument to seed frames for simplicity.
 
 After this, all you need to do is call the run method!
 
-.. codeblock:: python
+.. code-block:: python
 
 	TT.run()
 	print("Done!")
