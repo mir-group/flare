@@ -52,7 +52,7 @@ With the above coefficient file, we can run LAMMPS simulation with the mgp pair 
 with the executable provided in our repository. 
 When creating the input file, please note to set
 
-.. code-block::
+.. code-block:: C
 
     newton off
     pair_style mgp
@@ -61,7 +61,7 @@ When creating the input file, please note to set
 An example is using coefficient file `AgI_Molten_15.txt` for AgI system, 
 with two-body (the 1st `yes`) together with three-body (the 2nd `yes`).
 
-.. code-block::
+.. code-block:: C
 
     pair_coeff * * AgI_Molten_15.txt Ag I yes yes
 
