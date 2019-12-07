@@ -35,3 +35,12 @@ void (*cutoff_function)(double *, double, double, double *),
 double * xs, double * ys, double * zs, double * rs, int * species,
 int noa, double rcut, int N, int lmax,
 double * radial_hyps, double * cutoff_hyps);
+
+// Rotationally invariant descriptors.
+void B2_descriptor(
+double * descriptor_vals, double * environment_dervs, double * central_dervs,
+void (*basis_function)(double *, double *, double, int, double *),
+void (*cutoff_function)(double *, double, double, double *),
+double * xs, double * ys, double * zs, double * rs, int * species,
+int nos, int noa, double rcut, int N, int lmax,
+double * radial_hyps, double * cutoff_hyps);
