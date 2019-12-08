@@ -22,3 +22,6 @@ add_subdirectory(src)
 add_subdirectory(test)
 add_subdirectory(timing)
 add_subdirectory(pybind11)
+
+# make python bindings
+pybind11_add_module(ace src/ace_binding.cpp src/y_grad.cpp)

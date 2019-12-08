@@ -13,18 +13,18 @@ class YGradTest : public ::testing::Test {
 
     double x, y, z, delta, x_delt, y_delt, z_delt;
 
-    double * Y1;
-    double * Y2;
-    double * Y3;
-    double * Y4;
+    vector<double> Y1;
+    vector<double> Y2;
+    vector<double> Y3;
+    vector<double> Y4;
 
-    double * Y5;
-    double * Y6;
-    double * Y7;
-    double * Y8;
+    vector<double> Y5;
+    vector<double> Y6;
+    vector<double> Y7;
+    vector<double> Y8;
 
-    double * Y9;
-    double * Y10;
+    vector<double> Y9;
+    vector<double> Y10;
 
     YGradTest(){
     
@@ -46,25 +46,19 @@ class YGradTest : public ::testing::Test {
         sz = (l+1)*(l+1);
 
         // Allocate arrays for Y and its derivatives.
-        Y1 = new double[sz];
-        Y2 = new double[sz];
-        Y3 = new double[sz];
-        Y4 = new double[sz];
+        Y1 = vector<double>(sz, 0);
+        Y2 = vector<double>(sz, 0);
+        Y3 = vector<double>(sz, 0);
+        Y4 = vector<double>(sz, 0);
 
-        Y5 = new double[sz];
-        Y6 = new double[sz];
-        Y7 = new double[sz];
-        Y8 = new double[sz];
+        Y5 = vector<double>(sz, 0);
+        Y6 = vector<double>(sz, 0);
+        Y7 = vector<double>(sz, 0);
+        Y8 = vector<double>(sz, 0);
 
-        Y9 = new double[sz];
-        Y10 = new double[sz];
+        Y9 = vector<double>(sz, 0);
+        Y10 = vector<double>(sz, 0);
 
-    }
-
-    ~YGradTest(){
-        delete [] Y1; delete [] Y2; delete [] Y3; delete [] Y4;
-        delete [] Y5; delete [] Y6; delete [] Y7; delete [] Y8;
-        delete [] Y9; delete [] Y10;
     }
 };
 

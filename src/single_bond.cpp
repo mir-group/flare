@@ -1,5 +1,6 @@
 #include <cmath>
 #include "ace.h"
+using namespace std;
 
 void single_bond_update(
 double * single_bond_vals, double * environment_dervs, double * central_dervs,
@@ -20,10 +21,10 @@ double * radial_hyps, double * cutoff_hyps){
     // Calculate spherical harmonics.
     int number_of_harmonics = (lmax + 1) * (lmax + 1);
 
-    double * h = new double[number_of_harmonics];
-    double * hx = new double[number_of_harmonics];
-    double * hy = new double[number_of_harmonics];
-    double * hz = new double[number_of_harmonics];
+    vector<double> h = vector<double>(number_of_harmonics, 0);
+    vector<double> hx = vector<double>(number_of_harmonics, 0);
+    vector<double> hy = vector<double>(number_of_harmonics, 0);
+    vector<double> hz = vector<double>(number_of_harmonics, 0);
 
     get_Y(h, hx, hy, hz, x, y, z, lmax);
 
@@ -74,7 +75,6 @@ double * radial_hyps, double * cutoff_hyps){
 
     // Deallocate memory.
     delete [] g; delete [] gx; delete [] gy; delete [] gz;
-    delete [] h; delete [] hx; delete [] hy; delete [] hz;
 }
 
 void single_bond_sum(

@@ -1,8 +1,9 @@
 #include "ace.h"
 #include <cmath>
+using namespace std;
 
-void get_Y(double * Y, double * Yx, double * Yy, double * Yz,
-           double x, double y, double z, int l){
+void get_Y(vector<double> & Y, vector<double> & Yx, vector<double> & Yy,
+           vector<double> & Yz, double x, double y, double z, int l){
 
 int l_counter = 0;
 int counter = 0;

@@ -63,10 +63,10 @@ int main(){
     delete [] g; delete [] gx; delete [] gy; delete [] gz;
 
     // Time spherical harmonics.
-    double * h = new double[number_of_harmonics];
-    double * hx = new double[number_of_harmonics];
-    double * hy = new double[number_of_harmonics];
-    double * hz = new double[number_of_harmonics];
+    vector<double> h = vector<double>(number_of_harmonics, 0);
+    vector<double> hx = vector<double>(number_of_harmonics, 0);
+    vector<double> hy = vector<double>(number_of_harmonics, 0);
+    vector<double> hz = vector<double>(number_of_harmonics, 0);
 
     t1 = std::chrono::high_resolution_clock::now();
     for (int n = 0; n < reps; n++){
@@ -79,8 +79,6 @@ int main(){
     mean_time = tot_time / reps;
     std::cout << "calculating the spherical harmonics took "
               << mean_time << " microseconds\n";
-
-    delete [] h; delete [] hx; delete [] hy; delete [] hz;
 
     // Time single bond update.
     double * single_bond_vals = new double[N * number_of_harmonics]();
