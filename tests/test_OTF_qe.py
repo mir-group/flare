@@ -60,12 +60,13 @@ def test_otf_h2():
     otf = OTF(qe_input, dt, number_of_steps, gp, dft_loc,
               std_tolerance_factor, init_atoms=[0],
               calculate_energy=True, max_atoms_added=1,
-              output_name='h2_otf_qe')
+              output_name='h2_otf_qe',
+              store_dft_output=(['pwscf.out', 'pwscf.in'], '.'))
 
     otf.run()
     os.system('mkdir test_outputs')
     os.system('mv h2_otf_qe* test_outputs')
-    cleanup_espresso_run()
+    cleanup_espresso_run("{*pwscf.out,*pwscf.in}")
 
 @pytest.mark.skipif(not os.environ.get('PWSCF_COMMAND',
                           False), reason='PWSCF_COMMAND not found '
