@@ -1,20 +1,23 @@
 import sys
 import numpy as np
-import datetime
 import time
-from typing import List
 import copy
 import multiprocessing as mp
 import subprocess
+from shutil import copyfile
+from typing import List, Tuple, Union
+from datetime import datetime
+
+import flare.predict as predict
 from flare import struc, gp, env, md
 from flare.dft_interface import dft_software
 from flare.output import Output
-import flare.predict as predict
 from flare.util import is_std_in_bound
 
 
 class OTF:
-    """Trains a Gaussian process force field on the fly.
+    """Trains a Gaussian process force field on the fly during
+        molecular dynamics.
 
     Args:
         dft_input (str): Input file.
@@ -59,8 +62,18 @@ class OTF:
             calculations. Defaults to None.
         mpi (str, optional): Determines how mpi is called. Defaults to
             "srun".
-        dft_kwargs ([type], optional): Additional DFT arguments. Defaults
-            to None.
+        dft_kwargs ([type], optional): Additional arguments which are
+            passed when DFT is called; keyword arguments vary based on the
+            program (e.g. ESPRESSO vs. VASP). Defaults to None.
+        store_dft_output (Tuple[Union[str,List[str]],str], optional):
+            After DFT calculations are called, copy the file or files
+            specified in the first element of the tuple to a directory
+            specified as the second element of the tuple.
+            Useful when DFT calculations are expensive and want to be kept
+            for later use. The first element of the tuple can either be a
+            single file name, or a list of several. Copied files will be
+            prepended with the date and time with the format
+            'Year.Month.Day:Hour:Minute:Second:'.
     """
     def __init__(self, dft_input: str, dt: float, number_of_steps: int,
                  gp: gp.GaussianProcess, dft_loc: str,
@@ -72,7 +85,8 @@ class OTF:
                  rescale_steps: List[int] = [], rescale_temps: List[int] = [],
                  dft_softwarename: str = "qe",
                  no_cpus: int = 1, npool: int = None, mpi: str = "srun",
-                 dft_kwargs=None):
+                 dft_kwargs=None,
+                 store_dft_output: Tuple[Union[str,List[str]],str] = None):
 
         self.dft_input = dft_input
         self.dt = dt
@@ -140,9 +154,16 @@ class OTF:
         self.mpi = mpi
 
         self.dft_kwargs = dft_kwargs
+        self.store_dft_output = store_dft_output
 
     def run(self):
-        """Performs an on-the-fly training run."""
+        """
+        Performs an on-the-fly training run.
+
+        If OTF has store_dft_output set, then the specified DFT files will
+        be copied with the current date and time prepended in the format
+        'Year.Month.Day:Hour:Minute:Second:'.
+        """
 
         self.output.write_header(self.gp.cutoffs, self.gp.kernel_name,
                                  self.gp.hyps, self.gp.algo,
@@ -211,6 +232,20 @@ class OTF:
                     self.update_gp(target_atoms, dft_frcs)
                     if (self.dft_count-1) < self.freeze_hyps:
                         self.train_gp()
+
+                    # Store DFT outputs in another folder if desired
+                    # specified in self.store_dft_output
+                    if self.store_dft_output is not None:
+                        dest = self.store_dft_output[1]
+                        target_files = self.store_dft_output[0]
+                        now = datetime.now()
+                        dt_string = now.strftime("%Y.%m.%d:%H:%M:%S:")
+                        if isinstance(target_files, str):
+                            to_copy = [target_files]
+                        else:
+                            to_copy = target_files
+                        for file in to_copy:
+                            copyfile(file, dest+'/'+dt_string+file)
 
             # write gp forces
             if counter >= self.skip and not self.dft_step:

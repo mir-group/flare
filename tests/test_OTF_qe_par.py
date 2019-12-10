@@ -63,12 +63,13 @@ def test_otf_h2():
               calculate_energy=True, max_atoms_added=1,
               no_cpus=2, par=True,
               mpi="mpi",
-              output_name='h2_otf_qe_par')
+              output_name='h2_otf_qe_par',
+              store_dft_output=('pwscf.out', '.'))
 
     otf.run()
     os.system('mkdir test_outputs')
     os.system('mv h2_otf_qe_par* test_outputs')
-    cleanup_espresso_run()
+    cleanup_espresso_run("*pwscf.out")
 
 @pytest.mark.skipif(not os.environ.get('PWSCF_COMMAND',
                           False), reason='PWSCF_COMMAND not found '
