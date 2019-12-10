@@ -1,5 +1,20 @@
 #include <vector>
 
+// Structure class.
+class Structure{
+    public:
+        std::vector<double> xs, ys, zs, vec1, vec2, vec3;
+        std::vector<int> species;
+
+        Structure(const std::vector<double> & xs,
+                  const std::vector<double> & ys,
+                  const std::vector<double> & zs,
+                  const std::vector<double> & vec1,
+                  const std::vector<double> & vec2,
+                  const std::vector<double> & vec3,
+                  const std::vector<int> & species);
+};
+
 // Spherical harmonics.
 void get_Y(std::vector<double> & Y, std::vector<double> & Yx,
            std::vector<double> & Yy, std::vector<double> & Yz, double x,

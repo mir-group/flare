@@ -18,11 +18,12 @@ SphericalHarmonics :: SphericalHarmonics(double x, double y, double z,
                                          int lmax){
     int number_of_harmonics = (lmax + 1) * (lmax + 1);
 
-    x = x;
-    y = y;
-    z = z;
-    lmax = lmax;
+    this->x = x;
+    this->y = y;
+    this->z = z;
+    this->lmax = lmax;
 
+    // Initialize spherical harmonic vectors.
     Y = vector<double>(number_of_harmonics, 0);
     Yx = vector<double>(number_of_harmonics, 0);
     Yy = vector<double>(number_of_harmonics, 0);
