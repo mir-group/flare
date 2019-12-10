@@ -64,7 +64,7 @@ def test_otf_h2():
               no_cpus=2, par=True,
               mpi="mpi",
               output_name='h2_otf_qe_par',
-              store_dft_output=('pwscf.out','.'))
+              store_dft_output=('pwscf.out', '.'))
 
     otf.run()
     os.system('mkdir test_outputs')
