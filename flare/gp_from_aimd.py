@@ -67,7 +67,7 @@ class TrajectoryTrainer:
     :param max_force_error: Don't add atom if force error exceeds this
     :param parallel: Use parallel functions or not
     :param validate_ratio: Fraction of frames used for validation
-    :param no_cpus: number of cpus to run with multithreading
+    :param n_cpus: number of cpus to run with multithreading
     :param skip: Skip through frames
     :param calculate_energy: Use local energy kernel or not
     :param output_name: Write output of training to this file
@@ -126,7 +126,7 @@ class TrajectoryTrainer:
         self.max_force_error = max_force_error
         self.max_trains = max_trains
         self.parallel = parallel
-        self.no_cpus = n_cpus
+        self.n_cpus = n_cpus
 
         # Set prediction function based on if forces or energies are
         # desired, and parallelization accordingly
@@ -281,7 +281,7 @@ class TrajectoryTrainer:
                 print("=====NOW ON FRAME {}=====".format(i))
             dft_forces = deepcopy(cur_frame.forces)
 
-            self.pred_func(cur_frame, self.gp, self.no_cpus)
+            self.pred_func(cur_frame, self.gp, self.n_cpus)
 
             # Convert to meV/A
             error = np.abs(cur_frame.forces - dft_forces)
