@@ -1,18 +1,16 @@
 #include <vector>
+#include <Eigen/Dense>
 
 // Structure class.
 class Structure{
     public:
-        std::vector<double> xs, ys, zs, vec1, vec2, vec3;
+        Eigen::MatrixXd cell, cell_transpose, cell_transpose_inverse,
+                        cell_dot, cell_dot_inverse, positions;
         std::vector<int> species;
 
-        Structure(const std::vector<double> & xs,
-                  const std::vector<double> & ys,
-                  const std::vector<double> & zs,
-                  const std::vector<double> & vec1,
-                  const std::vector<double> & vec2,
-                  const std::vector<double> & vec3,
-                  const std::vector<int> & species);
+        Structure(const Eigen::MatrixXd & cell,
+                  const std::vector<int> & species,
+                  const Eigen::MatrixXd & positions);
 };
 
 // Spherical harmonics.

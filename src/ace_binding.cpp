@@ -1,6 +1,7 @@
 #include "ace.h"
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
+#include <pybind11/eigen.h>
 namespace py = pybind11;
 
 // Define spherical harmonics class.
@@ -47,18 +48,11 @@ PYBIND11_MODULE(ace, m){
     
     // Bind the structure class.
     py::class_<Structure>(m, "Structure")
-        .def(py::init<const std::vector<double> &,
-                      const std::vector<double> &,
-                      const std::vector<double> &,
-                      const std::vector<double> &,
-                      const std::vector<double> &,
-                      const std::vector<double> &,
-                      const std::vector<int> &>())
-        .def_readwrite("xs", &Structure::xs)
-        .def_readwrite("ys", &Structure::ys)
-        .def_readwrite("zs", &Structure::zs)
-        .def_readwrite("vec1", &Structure::vec1)
-        .def_readwrite("vec2", &Structure::vec2)
-        .def_readwrite("vec3", &Structure::vec3)
-        .def_readwrite("species", &Structure::species);
+        .def(py::init<const Eigen::MatrixXd &,
+                      const std::vector<int> &,
+                      const Eigen::MatrixXd &>())
+        .def_readwrite("cell", &Structure::cell)
+        .def_readwrite("species", &Structure::species)          
+        .def_readwrite("positions", &Structure::positions)
+        .def_readwrite("cell_transpose", &Structure::cell_transpose);
 }

@@ -1,16 +1,14 @@
 #include "ace.h"
-using namespace std;
 
-Structure :: Structure(const vector<double> & xs, const vector<double> & ys,
-                       const vector<double> & zs, const vector<double> & vec1,
-                       const vector<double> & vec2,
-                       const vector<double> & vec3,
-                       const vector<int> & species){
-    this->xs = xs;
-    this->ys = ys;
-    this->zs = zs;
-    this->vec1 = vec1;
-    this->vec2 = vec2;
-    this->vec3 = vec3;
+Structure :: Structure(const Eigen::MatrixXd & cell,
+                       const std::vector<int> & species,
+                       const Eigen::MatrixXd & positions){
+    this->cell = cell;
     this->species = species;
+    this->positions = positions;
+
+    cell_transpose = cell.transpose();
+    cell_transpose_inverse = cell_transpose.inverse();
+    cell_dot = cell * cell_transpose;
+    cell_dot_inverse = cell_dot.inverse();
 }
