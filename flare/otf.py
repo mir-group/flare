@@ -159,10 +159,6 @@ class OTF:
     def run(self):
         """
         Performs an on-the-fly training run.
-
-        If OTF has store_dft_output set, then the specified DFT files will
-        be copied with the current date and time prepended in the format
-        'Year.Month.Day:Hour:Minute:Second:'.
         """
 
         self.output.write_header(self.gp.cutoffs, self.gp.kernel_name,
@@ -233,19 +229,6 @@ class OTF:
                     if (self.dft_count-1) < self.freeze_hyps:
                         self.train_gp()
 
-                    # Store DFT outputs in another folder if desired
-                    # specified in self.store_dft_output
-                    if self.store_dft_output is not None:
-                        dest = self.store_dft_output[1]
-                        target_files = self.store_dft_output[0]
-                        now = datetime.now()
-                        dt_string = now.strftime("%Y.%m.%d:%H:%M:%S:")
-                        if isinstance(target_files, str):
-                            to_copy = [target_files]
-                        else:
-                            to_copy = target_files
-                        for file in to_copy:
-                            copyfile(file, dest+'/'+dt_string+file)
 
             # write gp forces
             if counter >= self.skip and not self.dft_step:
@@ -260,7 +243,12 @@ class OTF:
         self.output.conclude_run()
 
     def run_dft(self):
-        """Calculates DFT forces on atoms in the current structure."""
+        """Calculates DFT forces on atoms in the current structure.
+        
+        If OTF has store_dft_output set, then the specified DFT files will
+        be copied with the current date and time prepended in the format
+        'Year.Month.Day:Hour:Minute:Second:'.
+        """
 
         self.output.write_to_log('\nCalling DFT...\n')
 
@@ -279,6 +267,20 @@ class OTF:
         time_curr = time.time() - self.start_time
         self.output.write_to_log('number of DFT calls: %i \n' % self.dft_count)
         self.output.write_to_log('wall time from start: %.2f s \n' % time_curr)
+        
+        # Store DFT outputs in another folder if desired
+        # specified in self.store_dft_output
+        if self.store_dft_output is not None:
+            dest = self.store_dft_output[1]
+            target_files = self.store_dft_output[0]
+            now = datetime.now()
+            dt_string = now.strftime("%Y.%m.%d:%H:%M:%S:")
+            if isinstance(target_files, str):
+                to_copy = [target_files]
+            else:
+                to_copy = target_files
+            for file in to_copy:
+                copyfile(file, dest+'/'+dt_string+file)
 
     def update_gp(self, train_atoms: List[int], dft_frcs: 'ndarray'):
         """Updates the current GP model.
