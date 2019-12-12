@@ -5,12 +5,15 @@
 class Structure{
     public:
         Eigen::MatrixXd cell, cell_transpose, cell_transpose_inverse,
-                        cell_dot, cell_dot_inverse, positions;
+                        cell_dot, cell_dot_inverse, positions,
+                        wrapped_positions;
         std::vector<int> species;
 
         Structure(const Eigen::MatrixXd & cell,
                   const std::vector<int> & species,
                   const Eigen::MatrixXd & positions);
+
+        Eigen::MatrixXd wrap_positions();
 };
 
 // Spherical harmonics.

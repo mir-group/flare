@@ -54,5 +54,7 @@ PYBIND11_MODULE(ace, m){
         .def_readwrite("cell", &Structure::cell)
         .def_readwrite("species", &Structure::species)          
         .def_readwrite("positions", &Structure::positions)
-        .def_readwrite("cell_transpose", &Structure::cell_transpose);
+        .def_readwrite("cell_transpose", &Structure::cell_transpose)
+        .def_readwrite("wrapped_positions", &Structure::wrapped_positions)
+        .def("wrap_positions", &Structure::wrap_positions);
 }
