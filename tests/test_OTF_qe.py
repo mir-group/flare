@@ -68,11 +68,12 @@ def test_otf_h2():
     os.system('mv h2_otf_qe* test_outputs')
     cleanup_espresso_run("{*pwscf.out,*pwscf.in}")
 
-@pytest.mark.skipif(not os.environ.get('PWSCF_COMMAND',
-                          False), reason='PWSCF_COMMAND not found '
-                                  'in environment: Please install Quantum '
-                                  'ESPRESSO and set the PWSCF_COMMAND env. '
-                                  'variable to point to pw.x.')
+
+@pytest.mark.skipif(not os.environ.get('PWSCF_COMMAND', False),
+                    reason='PWSCF_COMMAND not found '
+                           'in environment: Please install Quantum '
+                           'ESPRESSO and set the PWSCF_COMMAND env. '
+                           'variable to point to pw.x.')
 def test_otf_al():
     """
     Test that an otf run can survive going for more steps
