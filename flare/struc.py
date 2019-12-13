@@ -304,7 +304,11 @@ class Structure:
             raise ModuleNotFoundError("Pymatgen is not present. Please "
                                       "install Pymatgen and try again")
 
-        site_properties = {'force:': self.forces, 'std': self.stds}
+        if self.forces is None:
+            forces_temp = np.zeros((len(self.positions), 3))
+            site_properties = {'force:': forces_temp, 'std': self.stds}
+        else:
+            site_properties = {'force:': self.forces, 'std': self.stds}
 
         return pmgstruc.Structure(lattice=self.cell,
                                   species=self.species_labels,
