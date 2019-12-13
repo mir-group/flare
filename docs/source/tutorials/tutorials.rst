@@ -5,3 +5,6 @@ Tutorials
    :maxdepth: 3
 
    al
+   ase
+   gpfa
+   after_training

@@ -1,7 +1,6 @@
 from copy import deepcopy
 import os
 import sys
-sys.path.append('../flare')
 import datetime
 import time
 import multiprocessing as mp
@@ -18,7 +17,7 @@ from flare.qe_util import run_espresso, parse_qe_input, \
     qe_input_to_structure, parse_qe_forces
 from flare import output
 
-class MFFOTF(OTF):
+class MGPOTF(OTF):
 
     def __init__(self, qe_input: str, dt: float, number_of_steps: int,
                  gp_model: gp.GaussianProcess, pw_loc: str,

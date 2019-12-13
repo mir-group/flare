@@ -15,7 +15,10 @@
 import os
 import sys
 sys.path.append('../..')
-autodoc_mock_imports = ["numpy", "scipy", "numba"]
+#sys.path.append('../../flare')
+#sys.path.append('../../flare/mgp')
+#sys.path.append('../../flare/ase')
+autodoc_mock_imports = ["numpy", "scipy", "numba", "pymatgen", "ase"]
 
 import sphinx_rtd_theme
 
@@ -44,8 +47,9 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.imgmath',
     'sphinx_rtd_theme',
+    'sphinx.ext.napoleon'
 ]
-
+napoleon_use_param = False
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['ntemplates']
 
@@ -72,7 +76,6 @@ exclude_patterns = []
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = None
-
 
 # -- Options for HTML output -------------------------------------------------
 

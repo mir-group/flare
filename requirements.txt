@@ -2,4 +2,6 @@ numpy
 scipy
 memory_profiler
 numba
+ase
 pymatgen
+nptyping

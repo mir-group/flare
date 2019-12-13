@@ -8,20 +8,30 @@ from flare.gp import GaussianProcess
 from flare.struc import Structure
 import flare.kernels as en
 
-def cleanup(target: str = None):
+def cleanup(target: list = None):
     os.remove('cp2k.in')
     os.remove('cp2k-RESTART.wfn')
     if (target is not None):
-        os.remove(target)
+        for i in target:
+            os.remove(i)
 
 # ------------------------------------------------------
 #                   test  otf runs
 # ------------------------------------------------------
-@pytest.mark.skipif(not os.environ.get('CP2K_COMMAND',
-                          False), reason='CP2K_COMMAND not found '
-                                  'in environment: Please install CP2K '
-                                  'and set the CP2K_COMMAND env. '
-                                  'variable to point to cp2k.popt')
+try:
+    cp2k = os.environ.get('CP2K_COMMAND', False)
+    if ("popt" in cp2k):
+        par = True
+    else:
+        par = False
+except:
+    par = False
+
+@pytest.mark.skipif(not os.environ.get('CP2K_COMMAND', False) or not par,
+                    reason='parallel CP2K_COMMAND not found '
+                           'in environment: Please install CP2K '
+                           'and set the CP2K_COMMAND env. '
+                           'variable to point to cp2k.popt')
 def test_otf_h2_par():
     """
     Test that an otf run can survive going for more steps
@@ -58,7 +68,7 @@ def test_otf_h2_par():
               calculate_energy=True, max_atoms_added=1,
               dft_softwarename="cp2k",
               no_cpus=2,
-              par=True,
+              par=True, mpi="mpi",
               output_name='h2_otf_cp2k_par')
 
     otf.run()

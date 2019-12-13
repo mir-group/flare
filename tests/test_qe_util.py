@@ -3,18 +3,19 @@ import os
 import sys
 import numpy as np
 from flare.struc import Structure, get_unique_species
-from flare.dft_interface.qe_util import parse_dft_input, parse_dft_forces, run_dft, \
+from flare.dft_interface.qe_util import parse_dft_input, parse_dft_forces, run_dft_par, \
     edit_dft_input_positions, dft_input_to_structure
 
-def cleanup_espresso_run(target: str = None):
-    os.system('rm pwscf.out')
-    os.system('rm pwscf.wfc')
-    os.system('rm -r pwscf.save')
-    os.system('rm pwscf.in')
-    os.system('rm pwscf.wfc1')
-    os.system('rm pwscf.wfc2')
+def cleanup_espresso_run(basename: str, target: str = None):
+    os.system(f'rm {basename}.out')
+    os.system(f'rm {basename}.wfc')
+    os.system(f'rm -r {basename}.save')
+    os.system(f'rm {basename}.in')
+    os.system(f'rm {basename}.wfc1')
+    os.system(f'rm {basename}.wfc2')
+    os.system(f'rm {basename}.xml')
     if target:
-        os.system('rm ' + target)
+        os.system(f'rm {target}')
 
 
 # ------------------------------------------------------
@@ -90,17 +91,16 @@ def test_espresso_calling(qe_input, qe_output):
                           positions=positions,
                           mass_dict=masses, species_labels=species)
 
-    forces = run_dft('pwscf.in',
-                          structure, dft_loc)
+    forces = run_dft_par('pwscf.in', structure, dft_loc, dft_out='pwscf.out')
 
-    ref_forces = parse_dft_forces(qe_output)
+    ref_forces = parse_dft_forces('pwscf.out')
 
     assert len(forces) == len(ref_forces)
 
     for i in range(structure.nat):
-        assert np.isclose(forces[i], ref_forces[i]).all()
+        assert np.allclose(forces[i], ref_forces[i])
 
-    cleanup_espresso_run()
+    cleanup_espresso_run('pwscf')
 
 
 def test_espresso_input_edit():
@@ -118,9 +118,9 @@ def test_espresso_input_edit():
     structure.vec1 += np.random.randn(3)
     structure.positions[0] += np.random.randn(3)
 
-    edit_dft_input_positions('./qe_input_1.in', structure=structure)
+    new_file = edit_dft_input_positions('./qe_input_1.in', structure=structure)
 
-    positions, species, cell, masses = parse_dft_input('./qe_input_1.in')
+    positions, species, cell, masses = parse_dft_input(new_file)
 
     assert np.equal(positions[0], structure.positions[0]).all()
     assert np.equal(structure.vec1, cell[0, :]).all()

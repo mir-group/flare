@@ -1,3 +1,14 @@
+"""
+This module is used to call Quantum Espresso simulation and parse its output
+The user need to supply a complete input script with single-point scf
+calculation, CELL_PARAMETERS, ATOMIC_POSITIONS, nat, ATOMIC_SPECIES
+arguments.  It is case sensitive. and the nat line should be the first
+argument of the line it appears. The user can also opt to the ASE interface instead.
+
+This module will copy the input template to a new file with "_run" suffix,
+edit the atomic coordination in the ATOMIC_POSITIONS block and run the similation with the parallel set up given.
+"""
+
 import os
 from subprocess import call
 import time
@@ -5,51 +16,71 @@ import numpy as np
 from flare import struc
 from typing import List
 
+name = "QE"
 
-def run_dft(qe_input, structure, dft_loc):
-    run_qe_path = qe_input
-    edit_dft_input_positions(run_qe_path, structure)
-    qe_command = '{0} < {1} > {2}'.format(dft_loc, run_qe_path,
-                                                 'pwscf.out')
-    call(qe_command, shell=True)
+def run_dft_par(dft_input, structure, dft_loc, ncpus=1, dft_out='pwscf.out',
+                npool=None, mpi="mpi", **dft_kwargs):
+    """run DFT calculation with given input template
+    and atomic configurations. if ncpus == 1, it executes serial run.
 
-    return parse_dft_forces('pwscf.out')
+    :param dft_input: input template file name
+    :param structure: atomic configuration
+    :param dft_loc:   relative/absolute executable of the DFT code
+    :param ncpus:   # of CPU for mpi
+    :param dft_out:   output file name
+    :param npool:     not used
+    :param mpi:       not used
+    :param **dft_wargs: not used
+    :return: forces
+    """
+
+    newfilename = edit_dft_input_positions(dft_input, structure)
+
+    if npool is None:
+        dft_command = \
+            f'{dft_loc} -i {newfilename} > {dft_out}'
+    else:
+        dft_command = \
+            f'{dft_loc} -nk {npool} -i {newfilename} > {dft_out}'
+
+    if (ncpus > 1):
+        if (mpi == "mpi"):
+            dft_command = f'mpirun -np {ncpus} {dft_command}'
+        else:
+            dft_command = f'srun -n {ncpus} --mpi=pmi2 {dft_command}'
+
+    call(dft_command, shell=True)
+    os.remove(newfilename)
+
+    return parse_dft_forces(dft_out)
 
 
-def run_dft_par(qe_input, structure, dft_loc, no_cpus):
-    run_qe_path = qe_input
+def run_dft_en_par(dft_input, structure, dft_loc, ncpus):
+    """run DFT calculation with given input template
+    and atomic configurations. This function is not used atm
+
+    if ncpus == 1, it executes serial run.
+
+    :param dft_input: input template file name
+    :param structure: atomic configuration
+    :param dft_loc:   relative/absolute executable of the DFT code
+    :param ncpus:   # of CPU for mpi
+    :param dft_out:   output file name
+    :param npool:     not used
+    :param mpi:       not used
+    :param **dft_wargs: not used
+    :return: forces, energy
+    """
+
+    run_qe_path = dft_input
     edit_dft_input_positions(run_qe_path, structure)
     qe_command = \
-        'mpirun -np {0} {1} < {2} > {3}'.format(no_cpus, dft_loc, run_qe_path,
-                                                'pwscf.out')
-
-    call(qe_command, shell=True)
-
-    return parse_dft_forces('pwscf.out')
-
-
-def run_dft_en_par(qe_input, structure, dft_loc, no_cpus):
-    run_qe_path = qe_input
-    edit_dft_input_positions(run_qe_path, structure)
-    qe_command = \
-        'mpirun -np {0} {1} < {2} > {3}'.format(no_cpus, dft_loc, run_qe_path,
-                                                'pwscf.out')
+        'mpirun -np {ncpus} {dft_loc} < {run_qe_path} > pwscf.out'
     call(qe_command, shell=True)
 
     forces, energy = parse_dft_forces_and_energy('pwscf.out')
 
     return forces, energy
-
-
-def run_dft_npool(qe_input, qe_output, structure, dft_loc, npool):
-    run_qe_path = qe_input
-    edit_dft_input_positions(run_qe_path, structure)
-    qe_command = \
-        'mpirun {0} -npool {1} < {2} > {3}'.format(dft_loc, npool, run_qe_path,
-                                                   qe_output)
-    call(qe_command, shell=True)
-
-    return parse_dft_forces(qe_output)
 
 
 def run_dft_en_npool(qe_input, structure, dft_loc, npool):
@@ -64,21 +95,18 @@ def run_dft_en_npool(qe_input, structure, dft_loc, npool):
     return forces, energy
 
 
-def run_dft_command(qe_input, qe_output, dft_loc, npool):
-    qe_command = \
-        'mpirun {0} -npool {1} < {2} > {3}'.format(dft_loc, npool, qe_input,
-                                                   qe_output)
-    call(qe_command, shell=True)
+def parse_dft_input(dft_input: str):
+    """ parse the input to get information of atomic configuration
 
-    return parse_dft_forces(qe_output)
+    :param dft_input: input file name
+    :return: positions, species, cell, masses
+    """
 
-
-def parse_dft_input(qe_input: str):
     positions = []
     species = []
     cell = []
 
-    with open(qe_input) as f:
+    with open(dft_input) as f:
         lines = f.readlines()
 
     # Find the cell and positions in the output file
@@ -135,25 +163,30 @@ def parse_dft_input(qe_input: str):
     return positions, species, cell, masses
 
 
-def dft_input_to_structure(qe_input: str):
+def dft_input_to_structure(dft_input: str):
+    """ Parses a qe input and returns the atoms in the
+    file as a Structure object
+
+    :param dft_input: QE Input file to parse
+    :return: class Structure
     """
-    Parses a qe input and returns the atoms in the file as a Structure object
-    :param qe_input: QE Input file to parse
-    :return:
-    """
-    positions, species, cell, masses = parse_dft_input(qe_input)
+    positions, species, cell, masses = parse_dft_input(dft_input)
     _, coded_species = struc.get_unique_species(species)
     return struc.Structure(positions=positions, species=coded_species,
                            cell=cell, mass_dict=masses, species_labels=species)
 
 
-def edit_dft_input_positions(qe_input: str, structure):
+def edit_dft_input_positions(dft_input: str, structure):
     """
     Write the current configuration of the OTF structure to the
     qe input file
+
+    :param dft_input: dft input file name
+    :param structure: atomic structure to compute
+    :return: the name of the edited file
     """
 
-    with open(qe_input, 'r') as f:
+    with open(dft_input, 'r') as f:
         lines = f.readlines()
 
     file_pos_index = None
@@ -205,9 +238,13 @@ def edit_dft_input_positions(qe_input: str, structure):
     lines[cell_index + 2] = ' '.join([str(x) for x in structure.vec3]) \
                             + '\n'
 
-    with open(qe_input, 'w') as f:
+    newfilename = dft_input + "_run"
+
+    with open(newfilename, 'w') as f:
         for line in lines:
             f.write(line)
+
+    return newfilename
 
 
 def parse_dft_forces(outfile: str):

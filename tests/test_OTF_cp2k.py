@@ -8,12 +8,16 @@ from flare.gp import GaussianProcess
 from flare.struc import Structure
 import flare.kernels as en
 
-def cleanup(target: str = None):
+def cleanup(casename: str = None):
     try:
         os.remove('cp2k.in')
         os.remove('cp2k-RESTART.wfn')
-        if (target is not None):
-            os.remove(target)
+        if (casename is not None):
+            for suffix in ["-f.xyz", "-hyps.dat", ".out",
+                    "_par-f.xyz", "_par-hyps.dat", "_par.out",
+                    "_par-stat.dat", "_par-std.xyz", "_par.xyz",
+                    "-stat.dat", "-std.xyz", ".xyz"]:
+                os.remove(casename+suffix)
     except:
         pass
 
@@ -64,7 +68,7 @@ def test_otf_h2():
     otf.run()
     call('mkdir test_outputs'.split())
     call('mv h2_otf_cp2k*.* test_outputs'.split())
-    cleanup()
+    cleanup("h2_otf_cp2k")
 
 @pytest.mark.skipif(not os.environ.get('CP2K_COMMAND',
                           False), reason='CP2K_COMMAND not found '
@@ -114,4 +118,4 @@ def test_otf_al():
     call('mkdir test_outputs'.split())
     call('mv al_otf_cp2k*.* test_outputs'.split())
 
-    cleanup()
+    cleanup("al_otf_cp2k")

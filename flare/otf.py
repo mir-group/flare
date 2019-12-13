@@ -1,29 +1,92 @@
 import sys
 import numpy as np
-import datetime
 import time
-from typing import List
 import copy
 import multiprocessing as mp
 import subprocess
-import concurrent.futures
+from shutil import copyfile
+from typing import List, Tuple, Union
+from datetime import datetime
+
+import flare.predict as predict
 from flare import struc, gp, env, md
 from flare.dft_interface import dft_software
 from flare.output import Output
-import flare.predict as predict
+from flare.util import is_std_in_bound
 
 
-class OTF(object):
+class OTF:
+    """Trains a Gaussian process force field on the fly during
+        molecular dynamics.
+
+    Args:
+        dft_input (str): Input file.
+        dt (float): MD timestep.
+        number_of_steps (int): Number of timesteps in the training
+            simulation.
+        gp (gp.GaussianProcess): Initial GP model.
+        dft_loc (str): Location of DFT executable.
+        std_tolerance_factor (float, optional): Threshold that determines
+            when DFT is called. Specifies a multiple of the current noise
+            hyperparameter. If the epistemic uncertainty on a force
+            component exceeds this value, DFT is called. Defaults to 1.
+        prev_pos_init ([type], optional): Previous positions. Defaults
+            to None.
+        par (bool, optional): If True, force predictions are made in
+            parallel. Defaults to False.
+        skip (int, optional): Number of frames that are skipped when
+            dumping to the output file. Defaults to 0.
+        init_atoms (List[int], optional): List of atoms from the input
+            structure whose local environments and force components are
+            used to train the initial GP model. If None is specified, all
+            atoms are used to train the initial GP. Defaults to None.
+        calculate_energy (bool, optional): If True, the energy of each
+            frame is calculated with the GP. Defaults to False.
+        output_name (str, optional): Name of the output file. Defaults to
+            'otf_run'.
+        max_atoms_added (int, optional): Number of atoms added each time
+            DFT is called. Defaults to 1.
+        freeze_hyps (int, optional): Specifies the number of times the
+            hyperparameters of the GP are optimized. After this many
+            updates to the GP, the hyperparameters are frozen.
+            Defaults to 10.
+        rescale_steps (List[int], optional): List of frames for which the
+            velocities of the atoms are rescaled. Defaults to [].
+        rescale_temps (List[int], optional): List of rescaled temperatures.
+            Defaults to [].
+        dft_softwarename (str, optional): DFT code used to calculate
+            ab initio forces during training. Defaults to "qe".
+        no_cpus (int, optional): Number of cpus used during training.
+            Defaults to 1.
+        npool (int, optional): Number of k-point pools for DFT
+            calculations. Defaults to None.
+        mpi (str, optional): Determines how mpi is called. Defaults to
+            "srun".
+        dft_kwargs ([type], optional): Additional arguments which are
+            passed when DFT is called; keyword arguments vary based on the
+            program (e.g. ESPRESSO vs. VASP). Defaults to None.
+        store_dft_output (Tuple[Union[str,List[str]],str], optional):
+            After DFT calculations are called, copy the file or files
+            specified in the first element of the tuple to a directory
+            specified as the second element of the tuple.
+            Useful when DFT calculations are expensive and want to be kept
+            for later use. The first element of the tuple can either be a
+            single file name, or a list of several. Copied files will be
+            prepended with the date and time with the format
+            'Year.Month.Day:Hour:Minute:Second:'.
+    """
     def __init__(self, dft_input: str, dt: float, number_of_steps: int,
                  gp: gp.GaussianProcess, dft_loc: str,
                  std_tolerance_factor: float = 1,
-                 prev_pos_init: np.ndarray=None, par: bool=False,
-                 skip: int=0, init_atoms: List[int]=None,
-                 calculate_energy=False, output_name='otf_run',
-                 max_atoms_added=1, freeze_hyps=10,
-                 rescale_steps=[], rescale_temps=[],
-                 dft_softwarename="qe",
-                 no_cpus=1):
+                 prev_pos_init: 'ndarray' = None, par: bool = False,
+                 skip: int = 0, init_atoms: List[int] = None,
+                 calculate_energy: bool = False, output_name: str = 'otf_run',
+                 max_atoms_added: int = 1, freeze_hyps: int = 10,
+                 rescale_steps: List[int] = [], rescale_temps: List[int] = [],
+                 dft_softwarename: str = "qe",
+                 no_cpus: int = 1, npool: int = None, mpi: str = "srun",
+                 dft_kwargs=None,
+                 store_dft_output: Tuple[Union[str,List[str]],str] = None):
 
         self.dft_input = dft_input
         self.dt = dt
@@ -85,10 +148,19 @@ class OTF(object):
 
         self.output = Output(output_name, always_flush=True)
 
-        # set number of cpus for qe runs
+        # set number of cpus and npool for DFT runs
         self.no_cpus = no_cpus
+        self.npool = npool
+        self.mpi = mpi
+
+        self.dft_kwargs = dft_kwargs
+        self.store_dft_output = store_dft_output
 
     def run(self):
+        """
+        Performs an on-the-fly training run.
+        """
+
         self.output.write_header(self.gp.cutoffs, self.gp.kernel_name,
                                  self.gp.hyps, self.gp.algo,
                                  self.dt, self.number_of_steps,
@@ -116,13 +188,17 @@ class OTF(object):
 
             # after step 1, try predicting with GP model
             else:
-                self.pred_func(self.structure, self.gp)
+                self.gp.check_L_alpha()
+                self.pred_func(self.structure, self.gp, self.no_cpus)
                 self.dft_step = False
                 new_pos = md.update_positions(self.dt, self.noa,
                                               self.structure)
 
                 # get max uncertainty atoms
-                std_in_bound, target_atoms = self.is_std_in_bound()
+                std_in_bound, target_atoms = \
+                    is_std_in_bound(self.std_tolerance,
+                                    self.gp.hyps[-1], self.structure,
+                                    self.max_atoms_added)
 
                 if not std_in_bound:
                     # record GP forces
@@ -153,6 +229,7 @@ class OTF(object):
                     if (self.dft_count-1) < self.freeze_hyps:
                         self.train_gp()
 
+
             # write gp forces
             if counter >= self.skip and not self.dft_step:
                 self.update_temperature(new_pos)
@@ -166,21 +243,53 @@ class OTF(object):
         self.output.conclude_run()
 
     def run_dft(self):
+        """Calculates DFT forces on atoms in the current structure.
+        
+        If OTF has store_dft_output set, then the specified DFT files will
+        be copied with the current date and time prepended in the format
+        'Year.Month.Day:Hour:Minute:Second:'.
+        """
+
         self.output.write_to_log('\nCalling DFT...\n')
 
         # calculate DFT forces
         forces = self.dft_module.run_dft_par(self.dft_input, self.structure,
-                                             self.dft_loc, self.no_cpus)
+                                             self.dft_loc,
+                                             ncpus=self.no_cpus,
+                                             npool=self.npool,
+                                             mpi=self.mpi,
+                                             dft_kwargs=self.dft_kwargs)
         self.structure.forces = forces
 
         # write wall time of DFT calculation
         self.dft_count += 1
-        self.output.write_to_log('QE run complete.\n')
+        self.output.write_to_log('DFT run complete.\n')
         time_curr = time.time() - self.start_time
         self.output.write_to_log('number of DFT calls: %i \n' % self.dft_count)
         self.output.write_to_log('wall time from start: %.2f s \n' % time_curr)
+        
+        # Store DFT outputs in another folder if desired
+        # specified in self.store_dft_output
+        if self.store_dft_output is not None:
+            dest = self.store_dft_output[1]
+            target_files = self.store_dft_output[0]
+            now = datetime.now()
+            dt_string = now.strftime("%Y.%m.%d:%H:%M:%S:")
+            if isinstance(target_files, str):
+                to_copy = [target_files]
+            else:
+                to_copy = target_files
+            for file in to_copy:
+                copyfile(file, dest+'/'+dt_string+file)
 
-    def update_gp(self, train_atoms, dft_frcs):
+    def update_gp(self, train_atoms: List[int], dft_frcs: 'ndarray'):
+        """Updates the current GP model.
+
+        Args:
+            train_atoms (List[int]): List of atoms whose local environments
+                will be added to the training set.
+            dft_frcs (np.ndarray): DFT forces on all atoms in the structure.
+        """
         self.output.write_to_log('\nAdding atom {} to the training set.\n'
                                  .format(train_atoms))
         self.output.write_to_log('Uncertainty: {}.\n'
@@ -192,40 +301,20 @@ class OTF(object):
 
         self.gp.set_L_alpha()
 
-        # if self.curr_step == 0:
-        #     self.gp.set_L_alpha()
-        # else:
-        #     self.gp.update_L_alpha()
-
     def train_gp(self):
+        """Optimizes the hyperparameters of the current GP model."""
+
         self.gp.train(self.output)
         self.output.write_hyps(self.gp.hyp_labels, self.gp.hyps,
                                self.start_time,
                                self.gp.likelihood, self.gp.likelihood_gradient)
 
-    def is_std_in_bound(self):
-        # set uncertainty threshold
-        if self.std_tolerance == 0:
-            return True, -1
-        elif self.std_tolerance > 0:
-            threshold = self.std_tolerance * np.abs(self.gp.hyps[-1])
-        else:
-            threshold = np.abs(self.std_tolerance)
+    def update_positions(self, new_pos: 'ndarray'):
+        """Performs a Verlet update of the atomic positions.
 
-        # sort max stds
-        max_stds = np.zeros((self.noa))
-        for atom, std in enumerate(self.structure.stds):
-            max_stds[atom] = np.max(std)
-        stds_sorted = np.argsort(max_stds)
-        target_atoms = list(stds_sorted[-self.max_atoms_added:])
-
-        # if above threshold, return atom
-        if max_stds[stds_sorted[-1]] > threshold:
-            return False, target_atoms
-        else:
-            return True, [-1]
-
-    def update_positions(self, new_pos):
+        Args:
+            new_pos (np.ndarray): Positions of atoms in the next MD frame.
+        """
         if self.curr_step in self.rescale_steps:
             rescale_ind = self.rescale_steps.index(self.curr_step)
             temp_fac = self.rescale_temps[rescale_ind] / self.temperature
@@ -237,7 +326,12 @@ class OTF(object):
         self.structure.positions = new_pos
         self.structure.wrap_positions()
 
-    def update_temperature(self, new_pos):
+    def update_temperature(self, new_pos: 'ndarray'):
+        """Updates the instantaneous temperatures of the system.
+
+        Args:
+            new_pos (np.ndarray): Positions of atoms in the next MD frame.
+        """
         KE, temperature, velocities = \
                 md.calculate_temperature(new_pos, self.structure, self.dt,
                                          self.noa)
