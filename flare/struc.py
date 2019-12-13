@@ -263,7 +263,7 @@ class Structure:
         struc = Structure(cell=np.array(dictionary['cell']),
                           positions=np.array(dictionary['positions']),
                           species=dictionary['coded_species'],
-                          forces=dictionary.get('forces'),
+                          forces=np.array(dictionary.get('forces')),
                           mass_dict=dictionary.get('mass_dict'),
                           species_labels=dictionary.get('species_labels'))
 
