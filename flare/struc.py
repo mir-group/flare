@@ -56,9 +56,9 @@ class Structure:
                  forces=None, stress=None, stds=None):
         # Set up individual Bravais lattice vectors
         self.cell = np.array(cell)
-        self.vec1 = cell[0, :]
-        self.vec2 = cell[1, :]
-        self.vec3 = cell[2, :]
+        self.vec1 = self.cell[0, :]
+        self.vec2 = self.cell[1, :]
+        self.vec3 = self.cell[2, :]
 
         # get cell matrices for wrapping coordinates
         self.cell_transpose = self.cell.transpose()
