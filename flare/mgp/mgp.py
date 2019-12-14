@@ -438,9 +438,9 @@ class Map2body:
 
         # ------ change GP kernel to 2 body ------
         original_kernel = GP.kernel
-        original_force_en = GP.force_energy_kernel
+        original_force_en = GP.energy_force_kernel
         GP.kernel = two_body_mc
-        GP.force_energy_kernel = two_body_mc_force_en
+        GP.energy_force_kernel = two_body_mc_force_en
         original_cutoffs = np.copy(GP.cutoffs)
         GP.cutoffs = [GP.cutoffs[0]]
         original_hyps = np.copy(GP.hyps)
@@ -467,7 +467,7 @@ class Map2body:
         GP.cutoffs = original_cutoffs
         GP.hyps = original_hyps
         GP.kernel = original_kernel
-        GP.force_energy_kernel = original_force_en
+        GP.energy_force_kernel = original_force_en
 
         return bond_means, bond_vars
 
@@ -542,10 +542,10 @@ class Map3body:
         '''
         # ------ change GP kernel to 3 body ------
         original_kernel = GP.kernel
-        original_force_en = GP.force_energy_kernel
+        original_force_en = GP.energy_force_kernel
         original_hyps = np.copy(GP.hyps)
         GP.kernel = three_body_mc
-        GP.force_energy_kernel = three_body_mc_force_en
+        GP.energy_force_kernel = three_body_mc_force_en
         GP.hyps = GP.hyps[-3:]
 
         # ------ construct grids ------
@@ -576,7 +576,7 @@ class Map3body:
         # ------ change back to original GP ------
         GP.hyps = original_hyps
         GP.kernel = original_kernel
-        GP.force_energy_kernel = original_force_en
+        GP.energy_force_kernel = original_force_en
       
         # ------ save mean and var to file -------
         np.save('grid3_mean', bond_means)

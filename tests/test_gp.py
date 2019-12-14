@@ -261,8 +261,8 @@ def test_serialization_method(two_body_gp, test_point):
             assert x == y
 
     for d in [0, 1, 2]:
-        assert np.all(two_body_gp.predict(x_t=test_point, d=d) ==
-                      new_gp.predict(x_t=test_point, d=d))
+        assert np.isclose(two_body_gp.predict(x_t=test_point, d=d),
+                      new_gp.predict(x_t=test_point, d=d)).all()
 
 
 def test_load_and_reload(two_body_gp, test_point):
@@ -273,16 +273,16 @@ def test_load_and_reload(two_body_gp, test_point):
         new_gp = pickle.load(f)
 
     for d in [0, 1, 2]:
-        assert np.all(two_body_gp.predict(x_t=test_point, d=d) ==
-                      new_gp.predict(x_t=test_point, d=d))
+        assert np.isclose(two_body_gp.predict(x_t=test_point, d=d),
+                      new_gp.predict(x_t=test_point, d=d)).all()
     os.remove('two_body.pickle')
 
     two_body_gp.write_model('two_body.json')
     with open('two_body.json', 'r') as f:
         new_gp = GaussianProcess.from_dict(json.loads(f.readline()))
     for d in [0, 1, 2]:
-        assert np.all(two_body_gp.predict(x_t=test_point, d=d) ==
-                      new_gp.predict(x_t=test_point, d=d))
+        assert np.isclose(two_body_gp.predict(x_t=test_point, d=d),
+                      new_gp.predict(x_t=test_point, d=d)).all()
     os.remove('two_body.json')
 
     with raises(ValueError):
