@@ -99,18 +99,16 @@ def predict_on_structure(structure: Structure, gp: GaussianProcess,
     :return: N x 3 numpy array of foces, Nx3 numpy array of uncertainties
     :rtype: (np.ndarray, np.ndarray)
     """
-    # Loop through individual atoms, cast to atomic environments,
-    # make predictions
+
+    forces = np.zeros((structure.nat, 3))
+    stds = np.zeros((structure.nat, 3))
 
     for n in range(structure.nat):
         chemenv = AtomicEnvironment(structure, n, gp.cutoffs)
         for i in range(3):
             force, var = gp.predict(chemenv, i + 1)
-            structure.forces[n][i] = float(force)
-            structure.stds[n][i] = np.sqrt(np.abs(var))
-
-    forces = np.array(structure.forces)
-    stds = np.array(structure.stds)
+            forces[n][i] = float(force)
+            stds[n][i] = np.sqrt(np.abs(var))
 
     return forces, stds
 
@@ -140,6 +138,9 @@ def predict_on_structure_par(structure: Structure,
     else:
         pool = mp.Pool(processes=n_cpus)
 
+    forces = np.zeros((structure.nat, 3))
+    stds = np.zeros((structure.nat, 3))
+
     # Parallelize over atoms in structure
     results = []
     for atom in range(structure.nat):
@@ -150,11 +151,9 @@ def predict_on_structure_par(structure: Structure,
 
     for i in range(structure.nat):
         r = results[i].get()
-        structure.forces[i] = r[0]
-        structure.stds[i] = r[1]
+        forces[i] = r[0]
+        stds[i] = r[1]
 
-    forces = np.array(structure.forces)
-    stds = np.array(structure.stds)
     return forces, stds
 
 
@@ -175,7 +174,9 @@ def predict_on_structure_en(structure: Structure, gp: GaussianProcess,
     :rtype: (np.ndarray, np.ndarray, np.ndarray)
     """
     # Set up local energy array
-    local_energies = np.array([0 for _ in range(structure.nat)])
+    forces = np.zeros((structure.nat, 3))
+    stds = np.zeros((structure.nat, 3))
+    local_energies = np.zeros(structure.nat)
 
     # Loop through atoms in structure and predict forces, uncertainties,
     # and energies
@@ -183,12 +184,10 @@ def predict_on_structure_en(structure: Structure, gp: GaussianProcess,
         chemenv = AtomicEnvironment(structure, n, gp.cutoffs)
         for i in range(3):
             force, var = gp.predict(chemenv, i + 1)
-            structure.forces[n][i] = float(force)
-            structure.stds[n][i] = np.sqrt(np.abs(var))
+            forces[n][i] = float(force)
+            stds[n][i] = np.sqrt(np.abs(var))
         local_energies[n] = gp.predict_local_energy(chemenv)
 
-    forces = np.array(structure.forces)
-    stds = np.array(structure.stds)
     return forces, stds, local_energies
 
 
