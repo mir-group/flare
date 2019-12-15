@@ -11,7 +11,6 @@ import flare.kernels as en
 #                        test two plus three body kernels
 # -----------------------------------------------------------------------------
 
-# TODO: fix this test to properly account for factors of 2 and 3
 def test_two_plus_three_body_force_en():
     """Check that the analytical force/en kernel matches finite difference of
     energy kernel."""
@@ -67,13 +66,13 @@ def test_two_plus_three_body_force_en():
     hyps = np.array([sig1, ls1, sig2, ls2])
 
     # check force kernel
-    calc1 = en.two_body_en(env1_2, env2, hyps[0:2], cutoffs)
-    calc2 = en.two_body_en(env1_1, env2, hyps[0:2], cutoffs)
-    calc3 = en.three_body_en(env1_2, env2, hyps[2:4], cutoffs)
-    calc4 = en.three_body_en(env1_1, env2, hyps[2:4], cutoffs)
+    calc1 = en.two_body_en(env1_2, env2, hyps[0:2], cutoffs) * 2
+    calc2 = en.two_body_en(env1_1, env2, hyps[0:2], cutoffs) * 2
+    calc3 = en.three_body_en(env1_2, env2, hyps[2:4], cutoffs) * 3
+    calc4 = en.three_body_en(env1_1, env2, hyps[2:4], cutoffs) * 3
 
-    kern_finite_diff = (calc1 - calc2) / (2 * delt) + \
-        (calc3 - calc4) / (3 * delt)
+    kern_finite_diff = (calc1 - calc2) / delt + \
+        (calc3 - calc4) / delt
     kern_analytical = \
         en.two_plus_three_force_en(env1_1, env2, d1, hyps, cutoffs)
 
@@ -139,14 +138,20 @@ def test_two_plus_three_body_force():
     hyps = np.array([sig1, ls1, sig2, ls2])
 
     # check force kernel
-    calc1 = en.two_plus_three_en(env1_2, env2_2, hyps, cutoffs)
-    calc2 = en.two_plus_three_en(env1_3, env2_3, hyps, cutoffs)
-    calc3 = en.two_plus_three_en(env1_2, env2_3, hyps, cutoffs)
-    calc4 = en.two_plus_three_en(env1_3, env2_2, hyps, cutoffs)
-
+    calc1 = en.two_body_en(env1_2, env2_2, hyps[0:2], cutoffs) * 4
+    calc2 = en.two_body_en(env1_3, env2_3, hyps[0:2], cutoffs) * 4
+    calc3 = en.two_body_en(env1_2, env2_3, hyps[0:2], cutoffs) * 4
+    calc4 = en.two_body_en(env1_3, env2_2, hyps[0:2], cutoffs) * 4
     kern_finite_diff = (calc1 + calc2 - calc3 - calc4) / (4*delt**2)
-    kern_analytical = en.two_plus_three_body(env1_1, env2_1,
-                                             d1, d2, hyps, cutoffs)
+
+    calc1 = en.three_body_en(env1_2, env2_2, hyps[2:], cutoffs) * 9
+    calc2 = en.three_body_en(env1_3, env2_3, hyps[2:], cutoffs) * 9
+    calc3 = en.three_body_en(env1_2, env2_3, hyps[2:], cutoffs) * 9
+    calc4 = en.three_body_en(env1_3, env2_2, hyps[2:], cutoffs) * 9
+    kern_finite_diff += (calc1 + calc2 - calc3 - calc4) / (4*delt**2)
+
+    kern_analytical = \
+        en.two_plus_three_body(env1_1, env2_1, d1, d2, hyps, cutoffs)
 
     tol = 1e-4
     assert(np.isclose(kern_finite_diff, kern_analytical, atol=tol))
@@ -265,14 +270,14 @@ def test_two_body_force_en():
     hyps = np.array([sig, ls])
 
     # check force kernel
-    calc1 = en.two_body_en(env1_2, env2, hyps, cutoffs)
-    calc2 = en.two_body_en(env1_1, env2, hyps, cutoffs)
+    calc1 = en.two_body_en(env1_2, env2, hyps, cutoffs) * 2
+    calc2 = en.two_body_en(env1_1, env2, hyps, cutoffs) * 2
 
     kern_finite_diff = (calc1 - calc2) / delt
     kern_analytical = en.two_body_force_en(env1_1, env2, d1, hyps, cutoffs)
 
     tol = 1e-4
-    assert(np.isclose(-kern_finite_diff/2, kern_analytical, atol=tol))
+    assert(np.isclose(-kern_finite_diff, kern_analytical, atol=tol))
 
 
 def test_two_body_force():
@@ -330,10 +335,10 @@ def test_two_body_force():
     hyps = np.array([sig, ls])
 
     # check force kernel
-    calc1 = en.two_body_en(env1_2, env2_2, hyps, cutoffs)
-    calc2 = en.two_body_en(env1_3, env2_3, hyps, cutoffs)
-    calc3 = en.two_body_en(env1_2, env2_3, hyps, cutoffs)
-    calc4 = en.two_body_en(env1_3, env2_2, hyps, cutoffs)
+    calc1 = en.two_body_en(env1_2, env2_2, hyps, cutoffs) * 4
+    calc2 = en.two_body_en(env1_3, env2_3, hyps, cutoffs) * 4
+    calc3 = en.two_body_en(env1_2, env2_3, hyps, cutoffs) * 4
+    calc4 = en.two_body_en(env1_3, env2_2, hyps, cutoffs) * 4
 
     kern_finite_diff = (calc1 + calc2 - calc3 - calc4) / (4*delt**2)
     kern_analytical = en.two_body(env1_1, env2_1,
@@ -442,14 +447,14 @@ def test_three_body_force_en():
     hyps = np.array([sig, ls])
 
     # check force kernel
-    calc1 = en.three_body_en(env1_2, env2, hyps, cutoffs)
-    calc2 = en.three_body_en(env1_1, env2, hyps, cutoffs)
+    calc1 = en.three_body_en(env1_2, env2, hyps, cutoffs) * 3
+    calc2 = en.three_body_en(env1_1, env2, hyps, cutoffs) * 3
 
     kern_finite_diff = (calc1 - calc2) / delt
     kern_analytical = en.three_body_force_en(env1_1, env2, d1, hyps, cutoffs)
 
     tol = 1e-4
-    assert(np.isclose(-kern_finite_diff/3, kern_analytical, atol=tol))
+    assert(np.isclose(-kern_finite_diff, kern_analytical, atol=tol))
 
 
 def test_three_body_force():
@@ -507,14 +512,14 @@ def test_three_body_force():
     hyps = np.array([sig, ls])
 
     # check force kernel
-    calc1 = en.three_body_en(env1_2, env2_2, hyps, cutoffs)
-    calc2 = en.three_body_en(env1_3, env2_3, hyps, cutoffs)
-    calc3 = en.three_body_en(env1_2, env2_3, hyps, cutoffs)
-    calc4 = en.three_body_en(env1_3, env2_2, hyps, cutoffs)
+    calc1 = en.three_body_en(env1_2, env2_2, hyps, cutoffs) * 9
+    calc2 = en.three_body_en(env1_3, env2_3, hyps, cutoffs) * 9
+    calc3 = en.three_body_en(env1_2, env2_3, hyps, cutoffs) * 9
+    calc4 = en.three_body_en(env1_3, env2_2, hyps, cutoffs) * 9
 
     kern_finite_diff = (calc1 + calc2 - calc3 - calc4) / (4*delt**2)
-    kern_analytical = en.three_body(env1_1, env2_1,
-                                    d1, d2, hyps, cutoffs)
+    kern_analytical = \
+        en.three_body(env1_1, env2_1, d1, d2, hyps, cutoffs)
 
     tol = 1e-4
     assert(np.isclose(kern_finite_diff, kern_analytical, atol=tol))

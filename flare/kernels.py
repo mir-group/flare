@@ -133,14 +133,14 @@ def two_plus_three_en(env1, env2, hyps, cutoffs,
     """
 
     two_term = two_body_en_jit(env1.bond_array_2, env2.bond_array_2,
-                               hyps[0], hyps[1], cutoffs[0], cutoff_func)
+                               hyps[0], hyps[1], cutoffs[0], cutoff_func)/4
 
     three_term = \
         three_body_en_jit(env1.bond_array_3, env2.bond_array_3,
                           env1.cross_bond_inds, env2.cross_bond_inds,
                           env1.cross_bond_dists, env2.cross_bond_dists,
                           env1.triplet_counts, env2.triplet_counts,
-                          hyps[2], hyps[3], cutoffs[1], cutoff_func)
+                          hyps[2], hyps[3], cutoffs[1], cutoff_func)/9
 
     return two_term + three_term
 
@@ -256,7 +256,7 @@ def two_body_en(env1, env2, hyps, cutoffs,
     r_cut = cutoffs[0]
 
     return two_body_en_jit(env1.bond_array_2, env2.bond_array_2,
-                           sig, ls, r_cut, cutoff_func)
+                           sig, ls, r_cut, cutoff_func)/4
 
 
 # -----------------------------------------------------------------------------
@@ -383,7 +383,7 @@ def three_body_en(env1, env2, hyps, cutoffs,
                              env1.cross_bond_inds, env2.cross_bond_inds,
                              env1.cross_bond_dists, env2.cross_bond_dists,
                              env1.triplet_counts, env2.triplet_counts,
-                             sig, ls, r_cut, cutoff_func)
+                             sig, ls, r_cut, cutoff_func)/9
 
 
 # -----------------------------------------------------------------------------
