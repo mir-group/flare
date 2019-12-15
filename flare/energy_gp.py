@@ -8,13 +8,13 @@ from scipy.linalg import solve_triangular
 
 
 class EnergyGP(GaussianProcess):
-    def __init__(self, kernel, force_energy_kernel, energy_kernel,
+    def __init__(self, kernel, energy_force_kernel, energy_kernel,
                  hyps, energy_noise, cutoffs, hyp_labels=None,
                  opt_algorithm='L-BFGS-B', maxiter=10, par=False, output=None,
                  kernel_grad=None):
 
         GaussianProcess.__init__(self, kernel, kernel_grad, hyps, cutoffs,
-                                 hyp_labels, force_energy_kernel,
+                                 hyp_labels, energy_force_kernel,
                                  energy_kernel, opt_algorithm, maxiter,
                                  par, output)
 
@@ -70,7 +70,7 @@ class EnergyGP(GaussianProcess):
                 en_kern = 0
                 for train_env in self.training_envs[struc_no]:
                     en_kern += \
-                        self.force_energy_kernel(test_env, train_env, d_1,
+                        self.energy_force_kernel(test_env, train_env, d_1,
                                                  self.hyps, self.cutoffs)
                 kernel_vector[index] = en_kern
                 index += 1
@@ -106,7 +106,7 @@ class EnergyGP(GaussianProcess):
                     train_env = self.training_envs[struc_no][atom]
                     for d_2 in range(3):
                         kernel_vector[index] = \
-                            self.force_energy_kernel(train_env, test_env,
+                            self.energy_force_kernel(train_env, test_env,
                                                      d_2 + 1, self.hyps,
                                                      self.cutoffs)
                         index += 1
@@ -137,7 +137,7 @@ class EnergyGP(GaussianProcess):
                         train_env = self.training_envs[struc_no][atom]
                         for d_2 in range(3):
                             kernel_vector[index] += \
-                                self.force_energy_kernel(train_env, test_env,
+                                self.energy_force_kernel(train_env, test_env,
                                                          d_2 + 1, self.hyps,
                                                          self.cutoffs)
                             index += 1
@@ -174,7 +174,7 @@ class EnergyGP(GaussianProcess):
             get_ky_mat(self.hyps, self.energy_noise, self.training_strucs,
                        self.training_envs, self.training_atoms,
                        self.training_labels_np, self.kernel,
-                       self.force_energy_kernel, self.energy_kernel,
+                       self.energy_force_kernel, self.energy_kernel,
                        self.cutoffs)
 
         like = \
