@@ -89,7 +89,7 @@ class MappedGaussianProcess:
         self.maps_3 = []
         self.build_map_container()
 
-        if (not container_only) and (GP is not None) > 0):
+        if (not container_only) and (GP is not None):
             self.build_map(GP)
 
     def build_map_container(self):
