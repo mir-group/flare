@@ -211,7 +211,9 @@ def predict_on_structure_par_en(structure: Structure, gp: GaussianProcess,
     if n_cpus is 1:
         predict_on_structure_en(structure, gp)
 
-    local_energies = np.array([0.0 for _ in range(structure.nat)])
+    forces = np.zeros((structure.nat, 3))
+    stds = np.zeros((structure.nat, 3))
+    local_energies = np.zeros(structure.nat)
 
     if n_cpus is None:
         pool = mp.Pool(processes=mp.cpu_count())
@@ -229,10 +231,8 @@ def predict_on_structure_par_en(structure: Structure, gp: GaussianProcess,
     # Compile results
     for i in range(structure.nat):
         r = results[i].get()
-        structure.forces[i] = r[0]
-        structure.stds[i] = r[1]
+        forces[i] = r[0]
+        stds[i] = r[1]
         local_energies[i] = r[2]
 
-    forces = np.array(structure.forces)
-    stds = np.array(structure.stds)
     return forces, stds, local_energies
