@@ -89,7 +89,7 @@ class MappedGaussianProcess:
         self.maps_3 = []
         self.build_map_container()
 
-        if (not container_only) and (GP is not None):
+        if ((not container_only) and (GP is not None) and (len(GP.training_labels_np) > 0)):
             self.build_map(GP)
 
     def build_map_container(self):
@@ -628,7 +628,7 @@ class Map3body:
                 #                                GP.hyps, GP.cutoffs)
                 # else:
 
-                k12_v = GP.get_kernel_vector(env12, 1)   
+                k12_v = GP.get_kernel_vector(env12, 1)
 
                 if update:
                     new_kv_file[1+b1*nop+b2, :] = k12_v
