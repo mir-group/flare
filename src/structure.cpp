@@ -14,7 +14,7 @@ Structure :: Structure(const Eigen::MatrixXd & cell,
     cell_dot_inverse = cell_dot.inverse();
 
     // Store wrapped positions.
-    this->wrapped_positions = this->wrap_positions();
+    this->wrapped_positions = wrap_positions();
 
 }
 

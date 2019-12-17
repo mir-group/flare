@@ -16,6 +16,25 @@ class Structure{
         Eigen::MatrixXd wrap_positions();
 };
 
+// Local environment class.
+class LocalEnvironment{
+    public:
+        std::vector<int> environment_indices, environment_species;
+        int central_index, central_species;
+        std::vector<double> rs, xs, ys, zs;
+        double cutoff;
+
+        LocalEnvironment(const Structure & structure, int atom,
+                         double cutoff);
+
+        void compute_environment(std::vector<int> & environment_indices,
+                                 std::vector<int> & environment_species,
+                                 std::vector<double> & rs,
+                                 std::vector<double> & xs,
+                                 std::vector<double> & ys,
+                                 std::vector<double> & zs);
+};
+
 // Spherical harmonics.
 void get_Y(std::vector<double> & Y, std::vector<double> & Yx,
            std::vector<double> & Yy, std::vector<double> & Yz, double x,
