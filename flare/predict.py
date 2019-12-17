@@ -110,6 +110,9 @@ def predict_on_structure(structure: Structure, gp: GaussianProcess,
             forces[n][i] = float(force)
             stds[n][i] = np.sqrt(np.abs(var))
 
+    structure.forces = forces
+    structure.stds = stds
+
     return forces, stds
 
 
@@ -154,6 +157,9 @@ def predict_on_structure_par(structure: Structure,
         forces[i] = r[0]
         stds[i] = r[1]
 
+    structure.forces = forces
+    structure.stds = stds
+
     return forces, stds
 
 
@@ -187,6 +193,9 @@ def predict_on_structure_en(structure: Structure, gp: GaussianProcess,
             forces[n][i] = float(force)
             stds[n][i] = np.sqrt(np.abs(var))
         local_energies[n] = gp.predict_local_energy(chemenv)
+
+    structure.forces = forces
+    structure.stds = stds
 
     return forces, stds, local_energies
 
@@ -233,5 +242,8 @@ def predict_on_structure_par_en(structure: Structure, gp: GaussianProcess,
         forces[i] = r[0]
         stds[i] = r[1]
         local_energies[i] = r[2]
+
+    structure.forces = forces
+    structure.stds = stds
 
     return forces, stds, local_energies

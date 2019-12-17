@@ -162,7 +162,6 @@ class Output:
         if self.always_flush:
             f.flush()
 
-    # TO DO: this module should be removed in the future
     def write_md_config(self, dt, curr_step, structure,
                         temperature, KE, local_energies,
                         start_time, dft_step, velocities):
@@ -182,48 +181,41 @@ class Output:
         """
 
         string = ''
+        tab = ' ' * 4
 
         # Mark if a frame had DFT forces with an asterisk
         if not dft_step:
             string += '-' * 80 + '\n'
             string += f"-Frame: {curr_step} "
-            header = "-"
         else:
             string += f"\n*-Frame: {curr_step} "
-            header = "*-"
 
         string += f'\nSimulation Time: {(dt * curr_step):.3} ps \n'
 
         # Construct Header line
-        string += 'El  Position (A) \t\t\t\t '
+        string += 'El  Position (A)' + ' ' * 26
         if not dft_step:
-            string += 'GP Force (ev/A) '
+            string += 'GP Force (ev/A)'
         else:
-            string += 'DFT Force (ev/A) '
-        string += '\t\t\t\t Std. Dev (ev/A) \t'
-        string += '\t\t\t\t Velocities (A/ps) \n'
+            string += 'DFT Force (ev/A)'
+        string += ' ' * 26 + 'Std. Dev (ev/A)'
+        string += ' ' * 26 + 'Velocities (A/ps) \n'
 
         # Construct atom-by-atom description
         for i in range(len(structure.positions)):
             string += f'{structure.species_labels[i]} '
             for j in range(3):
-                string += f"{structure.positions[i][j]:8.4} "
-            string += '\t'
+                string += f'{structure.positions[i][j]:10.6f} '
+            string += tab
             for j in range(3):
-                string += f"{structure.forces[i][j]:8.4} "
-            string += '\t'
+                string += f'{structure.forces[i][j]:10.6f} '
+            string += tab
             for j in range(3):
-                string += f'{structure.stds[i][j]:8.4} '
-            string += '\t'
+                string += f'{structure.stds[i][j]:10.6f} '
+            string += tab
             for j in range(3):
-                string += f'{velocities[i][j]:8.4} '
+                string += f'{velocities[i][j]:10.6f} '
             string += '\n'
-
-        print(curr_step)
-        print(structure.species_labels)
-        self.write_xyz_config(curr_step, structure, dft_step)
-        self.write_xyz(curr_step, structure.stds, structure.species_labels,
-                       "std", header)
 
         string += '\n'
         string += f'temperature: {temperature:.2f} K \n'
