@@ -217,6 +217,10 @@ class Output:
                 string += f'{velocities[i][j]:10.6f} '
             string += '\n'
 
+        self.write_xyz_config(curr_step, structure, dft_step)
+        self.write_xyz(curr_step, structure.stds, structure.species_labels,
+                       "std", header)
+
         string += '\n'
         string += f'temperature: {temperature:.2f} K \n'
         string += f'kinetic energy: {KE:.6f} eV \n'
