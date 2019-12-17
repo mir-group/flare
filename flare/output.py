@@ -196,10 +196,8 @@ class Output:
         string += 'El  Position (A)' + ' ' * 26
         if not dft_step:
             string += 'GP Force (ev/A)'
-            header = "-"
         else:
             string += 'DFT Force (ev/A)'
-            header = "*-"
 
         string += ' ' * 26 + 'Std. Dev (ev/A)'
         string += ' ' * 26 + 'Velocities (A/ps) \n'
@@ -219,12 +217,6 @@ class Output:
             for j in range(3):
                 string += f'{velocities[i][j]:10.6f} '
             string += '\n'
-
-        print(curr_step)
-        print(structure.species_labels)
-        self.write_xyz_config(curr_step, structure, dft_step)
-        self.write_xyz(curr_step, structure.stds, structure.species_labels,
-                       "std", header)
 
         string += '\n'
         string += f'temperature: {temperature:.2f} K \n'

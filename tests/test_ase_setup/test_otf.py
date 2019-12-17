@@ -59,14 +59,14 @@ def otf_md_test(md_engine):
     number_of_steps = 3
     test_otf.otf_run(number_of_steps)
 
-    os.system('rm {}.log'.format(md_engine)) 
-    os.system('rm AgI.pw*')
-    os.system('rm -r out')
-    os.system('rm -r __pycache__')
-    os.system('rm -r kv3')
-    os.system('rm lmp.mgp')
-    os.system('rm -r otf_data')
-    os.system('rm *.npy')
+    # os.system('rm {}.log'.format(md_engine)) 
+    # os.system('rm AgI.pw*')
+    # os.system('rm -r out')
+    # os.system('rm -r __pycache__')
+    # os.system('rm -r kv3')
+    # os.system('rm lmp.mgp')
+    # os.system('rm -r otf_data')
+    # os.system('rm *.npy')
 
 
 @pytest.mark.skipif(not os.environ.get('PWSCF_COMMAND',
