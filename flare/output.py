@@ -220,6 +220,8 @@ class Output:
                 string += f'{velocities[i][j]:10.6f} '
             string += '\n'
 
+        print(curr_step)
+        print(structure.species_labels)
         self.write_xyz_config(curr_step, structure, dft_step)
         self.write_xyz(curr_step, structure.stds, structure.species_labels,
                        "std", header)
