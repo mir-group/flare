@@ -196,8 +196,11 @@ class Output:
         string += 'El  Position (A)' + ' ' * 26
         if not dft_step:
             string += 'GP Force (ev/A)'
+            header = "-"
         else:
             string += 'DFT Force (ev/A)'
+            header = "*-"
+
         string += ' ' * 26 + 'Std. Dev (ev/A)'
         string += ' ' * 26 + 'Velocities (A/ps) \n'
 
