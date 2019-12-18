@@ -14,8 +14,9 @@ LocalEnvironment :: LocalEnvironment(Structure & structure, int atom,
     std::vector<int> environment_indices, environment_species;
     std::vector<double> rs, xs, ys, zs;
 
-    compute_environment(structure, environment_indices, environment_species,
-                        rs, xs, ys, zs, sweep_val);
+    compute_environment(structure, atom, cutoff, sweep_val, 
+                        environment_indices, environment_species,
+                        rs, xs, ys, zs);
 
     this->environment_indices = environment_indices;
     this->environment_species = environment_species;
@@ -27,15 +28,14 @@ LocalEnvironment :: LocalEnvironment(Structure & structure, int atom,
 }
 
 void LocalEnvironment :: compute_environment(
-    Structure & structure,
+    Structure & structure, int atom, double cutoff, int sweep_val,
     std::vector<int> & environment_indices,
     std::vector<int> & environment_species,
     std::vector<double> & rs, std::vector<double> & xs,
-    std::vector<double> & ys, std::vector<double> & zs,
-    int sweep_val){
+    std::vector<double> & ys, std::vector<double> & zs){
 
     int noa = structure.wrapped_positions.rows();
-    Eigen::MatrixXd pos_atom = structure.wrapped_positions.row(central_index);
+    Eigen::MatrixXd pos_atom = structure.wrapped_positions.row(atom);
 
     Eigen::MatrixXd vec1 = structure.cell.row(0);
     Eigen::MatrixXd vec2 = structure.cell.row(1);
@@ -55,7 +55,7 @@ void LocalEnvironment :: compute_environment(
     Eigen::MatrixXd diff_curr, im;
     double dist;
 
-    // Record distances and positions of images.
+    // Record the distance and position of every image in the cutoff sphere.
     for (int n = 0; n < noa; n++){
         diff_curr = structure.wrapped_positions.row(n);
         for (int s1 = -sweep_val; s1 < sweep_val + 1; s1++){
@@ -99,7 +99,7 @@ void LocalEnvironment :: compute_environment(
                 xs[bond_count] = xvals[counter];
                 ys[bond_count] = yvals[counter];
                 zs[bond_count] = zvals[counter];
-                bond_count += 1;
+                bond_count ++;
             }
             counter ++;
         }

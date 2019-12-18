@@ -31,14 +31,14 @@ class LocalEnvironment{
         LocalEnvironment(Structure & structure, int atom,
                          double cutoff);
 
-        void compute_environment(Structure & structure,
+        static void compute_environment(Structure & structure, int atom,
+                                 double cutoff, int sweep_val,
                                  std::vector<int> & environment_indices,
                                  std::vector<int> & environment_species,
                                  std::vector<double> & rs,
                                  std::vector<double> & xs,
                                  std::vector<double> & ys,
-                                 std::vector<double> & zs,
-                                 int sweep_val);
+                                 std::vector<double> & zs);
 };
 
 // Spherical harmonics.
