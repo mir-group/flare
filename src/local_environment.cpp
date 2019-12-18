@@ -3,17 +3,19 @@
 #include  <iostream>
 
 LocalEnvironment :: LocalEnvironment(Structure & structure, int atom,
-                                     double cutoff, int sweep){
+                                     double cutoff){
     this->cutoff = cutoff;
     central_index = atom;
     central_species = structure.species[atom];
-    this -> sweep = sweep;
+
+    int sweep_val = ceil(cutoff / structure.max_cutoff);
+    this -> sweep = sweep_val;
 
     std::vector<int> environment_indices, environment_species;
     std::vector<double> rs, xs, ys, zs;
 
     compute_environment(structure, environment_indices, environment_species,
-                        rs, xs, ys, zs);
+                        rs, xs, ys, zs, sweep_val);
 
     this->environment_indices = environment_indices;
     this->environment_species = environment_species;
@@ -29,7 +31,8 @@ void LocalEnvironment :: compute_environment(
     std::vector<int> & environment_indices,
     std::vector<int> & environment_species,
     std::vector<double> & rs, std::vector<double> & xs,
-    std::vector<double> & ys, std::vector<double> & zs){
+    std::vector<double> & ys, std::vector<double> & zs,
+    int sweep_val){
 
     int noa = structure.wrapped_positions.rows();
     Eigen::MatrixXd pos_atom = structure.wrapped_positions.row(central_index);
@@ -38,7 +41,8 @@ void LocalEnvironment :: compute_environment(
     Eigen::MatrixXd vec2 = structure.cell.row(1);
     Eigen::MatrixXd vec3 = structure.cell.row(2);
 
-    int sweep_no = (2 * sweep + 1) * (2 * sweep + 1) * (2 * sweep + 1);
+    int sweep_no = (2 * sweep_val + 1) * (2 * sweep_val + 1) *
+        (2 * sweep_val + 1);
 
     double * dists = new double[noa * sweep_no]();
     double * xvals = new double[noa * sweep_no]();
@@ -54,9 +58,9 @@ void LocalEnvironment :: compute_environment(
     // Record distances and positions of images.
     for (int n = 0; n < noa; n++){
         diff_curr = structure.wrapped_positions.row(n);
-        for (int s1 = -sweep; s1 < sweep + 1; s1++){
-            for (int s2 = -sweep; s2 < sweep + 1; s2++){
-                for (int s3 = -sweep; s3 < sweep + 1; s3++){
+        for (int s1 = -sweep_val; s1 < sweep_val + 1; s1++){
+            for (int s2 = -sweep_val; s2 < sweep_val + 1; s2++){
+                for (int s3 = -sweep_val; s3 < sweep_val + 1; s3++){
                     im = diff_curr + s1 * vec1 + s2 * vec2 + s3 * vec3;
                     dist = sqrt(im(0) * im(0) + im(1) * im(1) + im(2) * im(2));
                     if ((dist < cutoff) && (dist != 0)){

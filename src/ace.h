@@ -8,6 +8,7 @@ class Structure{
                         cell_dot, cell_dot_inverse, positions,
                         wrapped_positions;
         std::vector<int> species;
+        double max_cutoff;
 
         Structure(const Eigen::MatrixXd & cell,
                   const std::vector<int> & species,
@@ -28,7 +29,7 @@ class LocalEnvironment{
         int sweep;
 
         LocalEnvironment(Structure & structure, int atom,
-                         double cutoff, int sweep);
+                         double cutoff);
 
         void compute_environment(Structure & structure,
                                  std::vector<int> & environment_indices,
@@ -36,7 +37,8 @@ class LocalEnvironment{
                                  std::vector<double> & rs,
                                  std::vector<double> & xs,
                                  std::vector<double> & ys,
-                                 std::vector<double> & zs);
+                                 std::vector<double> & zs,
+                                 int sweep_val);
 };
 
 // Spherical harmonics.

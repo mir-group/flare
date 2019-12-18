@@ -9,35 +9,22 @@ TEST(EnvironmentTest, EnvironmentTest){
     Eigen::MatrixXd positions(2, 3);
 
     // Create arbitrary structure.
-    double alat = 1;
+    double alat = 10;
     double root = sqrt(2)/2;
     cell << alat, 0, 0,
             root * alat, root * alat, 0,
             0, 0, alat;
-
     std::vector<int> species {0, 1};
-
-    double cutoff = alat * root;
-
     positions << 0, 0, 0,
                  2 * alat * root, alat * root - 0.0001, 0;
-
     Structure test_struc = 
         Structure(cell, species, positions);
-
-    double max_cutoff = test_struc.get_max_cutoff();
-    std::cout << max_cutoff << std::endl;
     
+    // Create local environment.
     int atom = 0;
-    int sweep = 5;
+    double cutoff = alat * 3;
     LocalEnvironment test_env =
-        LocalEnvironment(test_struc, atom, cutoff, sweep);
+        LocalEnvironment(test_struc, atom, cutoff);
 
-    std::cout << test_env.environment_species.size() << std::endl;
-    // std::cout << test_env.xs[0] << std::endl;
-    // std::cout << test_env.ys[0] << std::endl;
-    // std::cout << test_env.zs[0] << std::endl;
-    // std::cout << test_env.xs[1] << std::endl;
-    // std::cout << test_env.ys[1] << std::endl;
-    // std::cout << test_env.zs[1] << std::endl;
+    EXPECT_EQ(ceil(cutoff / test_struc.max_cutoff), test_env.sweep);
 }

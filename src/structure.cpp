@@ -9,6 +9,7 @@ Structure :: Structure(const Eigen::MatrixXd & cell,
     this->cell = cell;
     this->species = species;
     this->positions = positions;
+    max_cutoff = get_max_cutoff();
 
     cell_transpose = cell.transpose();
     cell_transpose_inverse = cell_transpose.inverse();
@@ -60,7 +61,6 @@ double Structure :: get_max_cutoff(){
 
     double max_cutoff = max_candidates[0];
     for (int i = 0; i < 6; i ++){
-        std::cout << max_candidates[i] << std::endl;
         if (max_candidates[i] < max_cutoff){
             max_cutoff = max_candidates[i];
         }
