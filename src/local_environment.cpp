@@ -1,20 +1,22 @@
 #include "ace.h"
+#include <cmath>
+#include  <iostream>
 
-LocalEnvironment :: LocalEnvironment(const Structure & structure, int atom,
-                         double cutoff){
+LocalEnvironment :: LocalEnvironment(Structure & structure, int atom,
+                                     double cutoff, int sweep){
     this->cutoff = cutoff;
     central_index = atom;
     central_species = structure.species[atom];
+    this -> sweep = sweep;
 
     std::vector<int> environment_indices, environment_species;
     std::vector<double> rs, xs, ys, zs;
 
-    compute_environment(environment_indices, environment_species,
+    compute_environment(structure, environment_indices, environment_species,
                         rs, xs, ys, zs);
 
     this->environment_indices = environment_indices;
     this->environment_species = environment_species;
-    
     this->rs = rs;
     this->xs = xs;
     this->ys = ys;
@@ -23,12 +25,81 @@ LocalEnvironment :: LocalEnvironment(const Structure & structure, int atom,
 }
 
 void LocalEnvironment :: compute_environment(
+    Structure & structure,
     std::vector<int> & environment_indices,
     std::vector<int> & environment_species,
     std::vector<double> & rs, std::vector<double> & xs,
     std::vector<double> & ys, std::vector<double> & zs){
 
-    rs.push_back(3.14);
-    xs.push_back(6.28);
+    int noa = structure.wrapped_positions.rows();
+    Eigen::MatrixXd pos_atom = structure.wrapped_positions.row(central_index);
 
+    Eigen::MatrixXd vec1 = structure.cell.row(0);
+    Eigen::MatrixXd vec2 = structure.cell.row(1);
+    Eigen::MatrixXd vec3 = structure.cell.row(2);
+
+    int sweep_no = (2 * sweep + 1) * (2 * sweep + 1) * (2 * sweep + 1);
+
+    double * dists = new double[noa * sweep_no]();
+    double * xvals = new double[noa * sweep_no]();
+    double * yvals = new double[noa * sweep_no]();
+    double * zvals = new double[noa * sweep_no]();
+
+    int cutoff_count = 0;
+    int counter = 0;
+
+    Eigen::MatrixXd diff_curr, im;
+    double dist;
+
+    // Record distances and positions of images.
+    for (int n = 0; n < noa; n++){
+        diff_curr = structure.wrapped_positions.row(n);
+        for (int s1 = -sweep; s1 < sweep + 1; s1++){
+            for (int s2 = -sweep; s2 < sweep + 1; s2++){
+                for (int s3 = -sweep; s3 < sweep + 1; s3++){
+                    im = diff_curr + s1 * vec1 + s2 * vec2 + s3 * vec3;
+                    dist = sqrt(im(0) * im(0) + im(1) * im(1) + im(2) * im(2));
+                    if ((dist < cutoff) && (dist != 0)){
+                        dists[counter] = dist;
+                        xvals[counter] = im(0);
+                        yvals[counter] = im(1);
+                        zvals[counter] = im(2);
+                        cutoff_count ++;
+                    }
+                    counter ++;
+                }
+            }
+        }
+    }
+
+    // Store information about atoms in the cutoff sphere.
+    environment_indices.resize(cutoff_count);
+    environment_species.resize(cutoff_count);
+    rs.resize(cutoff_count);
+    xs.resize(cutoff_count);
+    ys.resize(cutoff_count);
+    zs.resize(cutoff_count);
+    int spec_curr;
+    double dist_curr;
+    int bond_count = 0;
+    counter = 0;
+
+    for (int m = 0; m < noa; m++){
+        spec_curr = structure.species[m];
+        for (int n = 0; n < sweep_no; n++){
+            dist_curr = dists[counter];
+            if ((dist_curr < cutoff) && (dist_curr != 0)){
+                environment_indices[bond_count] = m;
+                environment_species[bond_count] = spec_curr;
+                rs[bond_count] = dists[counter];
+                xs[bond_count] = xvals[counter];
+                ys[bond_count] = yvals[counter];
+                zs[bond_count] = zvals[counter];
+                bond_count += 1;
+            }
+            counter ++;
+        }
+    }
+
+    delete [] dists; delete [] xvals; delete [] yvals; delete [] zvals;
 }

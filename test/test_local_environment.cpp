@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 #include "ace.h"
 #include <iostream>
+#include <Eigen/Dense>
 
 TEST(EnvironmentTest, EnvironmentTest){
     Eigen::MatrixXd cell(3, 3);
@@ -23,9 +24,7 @@ TEST(EnvironmentTest, EnvironmentTest){
         Structure(cell, species, positions);
     
     LocalEnvironment test_env =
-        LocalEnvironment(test_struc, 1, 4.2);
+        LocalEnvironment(test_struc, 1, 4.2, 2);
 
-    std::vector<int> test_int;
-
-    std::cout << test_int.size();
+    std::cout << test_env.environment_species[200];
 }

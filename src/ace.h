@@ -23,11 +23,13 @@ class LocalEnvironment{
         int central_index, central_species;
         std::vector<double> rs, xs, ys, zs;
         double cutoff;
+        int sweep;
 
-        LocalEnvironment(const Structure & structure, int atom,
-                         double cutoff);
+        LocalEnvironment(Structure & structure, int atom,
+                         double cutoff, int sweep);
 
-        void compute_environment(std::vector<int> & environment_indices,
+        void compute_environment(Structure & structure,
+                                 std::vector<int> & environment_indices,
                                  std::vector<int> & environment_species,
                                  std::vector<double> & rs,
                                  std::vector<double> & xs,
