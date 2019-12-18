@@ -2,14 +2,14 @@
 #include <cmath>
 #include  <iostream>
 
-LocalEnvironment :: LocalEnvironment(Structure & structure, int atom,
+LocalEnvironment :: LocalEnvironment(const Structure & structure, int atom,
                                      double cutoff){
     this->cutoff = cutoff;
     central_index = atom;
     central_species = structure.species[atom];
 
     int sweep_val = ceil(cutoff / structure.max_cutoff);
-    this -> sweep = sweep_val;
+    this->sweep = sweep_val;
 
     std::vector<int> environment_indices, environment_species;
     std::vector<double> rs, xs, ys, zs;
@@ -28,7 +28,7 @@ LocalEnvironment :: LocalEnvironment(Structure & structure, int atom,
 }
 
 void LocalEnvironment :: compute_environment(
-    Structure & structure, int atom, double cutoff, int sweep_val,
+    const Structure & structure, int atom, double cutoff, int sweep_val,
     std::vector<int> & environment_indices,
     std::vector<int> & environment_species,
     std::vector<double> & rs, std::vector<double> & xs,
@@ -57,7 +57,7 @@ void LocalEnvironment :: compute_environment(
 
     // Record the distance and position of every image in the cutoff sphere.
     for (int n = 0; n < noa; n++){
-        diff_curr = structure.wrapped_positions.row(n);
+        diff_curr = structure.wrapped_positions.row(n) - pos_atom;
         for (int s1 = -sweep_val; s1 < sweep_val + 1; s1++){
             for (int s2 = -sweep_val; s2 < sweep_val + 1; s2++){
                 for (int s3 = -sweep_val; s3 < sweep_val + 1; s3++){

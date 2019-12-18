@@ -57,4 +57,16 @@ PYBIND11_MODULE(ace, m){
         .def_readwrite("cell_transpose", &Structure::cell_transpose)
         .def_readwrite("wrapped_positions", &Structure::wrapped_positions)
         .def("wrap_positions", &Structure::wrap_positions);
+    
+    py::class_<LocalEnvironment>(m, "LocalEnvironment")
+        .def(py::init<const Structure &, int, double>())
+        .def_readwrite("sweep", &LocalEnvironment::sweep)
+        .def_readwrite("environment_indices",
+            &LocalEnvironment::environment_indices)
+        .def_readwrite("environment_species",
+            &LocalEnvironment::environment_species)
+        .def_readwrite("rs", &LocalEnvironment::rs)
+        .def_readwrite("xs", &LocalEnvironment::xs)
+        .def_readwrite("ys", &LocalEnvironment::ys)
+        .def_readwrite("zs", &LocalEnvironment::zs);
 }

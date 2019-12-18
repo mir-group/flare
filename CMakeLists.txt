@@ -10,6 +10,12 @@ project(ACE_Tests VERSION 1.0
 	    DESCRIPTION "High performance implementation of the atomic cluster expansion."
 	    LANGUAGES CXX)
 
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE Release)
+endif()
+
+# set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+
 # set(ACE_ROOT_DIR /Users/jonpvandermause/Research/ACE_NN)
 set(ACE_ROOT_DIR $ENV{ACE})
 
@@ -24,4 +30,5 @@ add_subdirectory(timing)
 add_subdirectory(pybind11)
 
 # make python bindings
-pybind11_add_module(ace src/ace_binding.cpp src/y_grad.cpp src/structure.cpp)
+pybind11_add_module(ace src/ace_binding.cpp src/y_grad.cpp src/structure.cpp
+		    src/local_environment.cpp)

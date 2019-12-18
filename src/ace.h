@@ -28,10 +28,10 @@ class LocalEnvironment{
         double cutoff;
         int sweep;
 
-        LocalEnvironment(Structure & structure, int atom,
+        LocalEnvironment(const Structure & structure, int atom,
                          double cutoff);
 
-        static void compute_environment(Structure & structure, int atom,
+        static void compute_environment(const Structure & structure, int atom,
                                  double cutoff, int sweep_val,
                                  std::vector<int> & environment_indices,
                                  std::vector<int> & environment_species,
