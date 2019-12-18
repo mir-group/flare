@@ -14,6 +14,8 @@ class Structure{
                   const Eigen::MatrixXd & positions);
 
         Eigen::MatrixXd wrap_positions();
+
+        double get_max_cutoff();
 };
 
 // Local environment class.

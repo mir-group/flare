@@ -1,4 +1,6 @@
 #include "ace.h"
+#include <cmath>
+#include <iostream>
 
 Structure :: Structure(const Eigen::MatrixXd & cell,
                        const std::vector<int> & species,
@@ -32,4 +34,37 @@ Eigen::MatrixXd Structure :: wrap_positions(){
         (relative_wrapped * this->cell_dot) * this->cell_transpose_inverse;
 
     return wrapped_positions;
+}
+
+double Structure :: get_max_cutoff(){
+    Eigen::MatrixXd vec1 = cell.row(0);
+    Eigen::MatrixXd vec2 = cell.row(1);
+    Eigen::MatrixXd vec3 = cell.row(2);
+
+    double max_candidates [6];
+
+    double a_dot_b = vec1(0) * vec2(0) + vec1(1) * vec2(1) + vec1(2) * vec2(2);
+    double a_dot_c = vec1(0) * vec3(0) + vec1(1) * vec3(1) + vec1(2) * vec3(2);
+    double b_dot_c = vec2(0) * vec3(0) + vec2(1) * vec3(1) + vec2(2) * vec3(2);
+
+    double a = sqrt(vec1(0) * vec1(0) + vec1(1) * vec1(1) + vec1(2) * vec1(2));
+    double b = sqrt(vec2(0) * vec2(0) + vec2(1) * vec2(1) + vec2(2) * vec2(2));
+    double c = sqrt(vec3(0) * vec3(0) + vec3(1) * vec3(1) + vec3(2) * vec3(2));
+
+    max_candidates[0] = a * sqrt(1 - pow(a_dot_b / (a * b), 2));
+    max_candidates[1] = b * sqrt(1 - pow(a_dot_b / (a * b), 2));
+    max_candidates[2] = a * sqrt(1 - pow(a_dot_c / (a * c), 2));
+    max_candidates[3] = c * sqrt(1 - pow(a_dot_c / (a * c), 2));
+    max_candidates[4] = b * sqrt(1 - pow(b_dot_c / (b * c), 2));
+    max_candidates[5] = c * sqrt(1 - pow(b_dot_c / (b * c), 2));
+
+    double max_cutoff = max_candidates[0];
+    for (int i = 0; i < 6; i ++){
+        std::cout << max_candidates[i] << std::endl;
+        if (max_candidates[i] < max_cutoff){
+            max_cutoff = max_candidates[i];
+        }
+    }
+
+    return max_cutoff;
 }
