@@ -72,8 +72,10 @@ void single_bond_update_env(
     void (*basis_function)(double *, double *, double, int,
                            std::vector<double>),
     void (*cutoff_function)(double *, double, double, std::vector<double>),
-    double x, double y, double z, double r, double rcut, int N, int lmax,
-    std::vector<double> radial_hyps, std::vector<double> cutoff_hyps);
+    double x, double y, double z, double r,  int s,
+    int environment_index, int central_index,
+    double rcut, int N, int lmax,
+    std::vector<double> & radial_hyps, std::vector<double> & cutoff_hyps);
 
 void single_bond_update(
 double * single_bond_vals, double * environment_dervs, double * central_dervs,
