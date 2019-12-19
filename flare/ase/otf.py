@@ -1,3 +1,9 @@
+'''
+:class:`OTF` is the on-the-fly training module for ASE, WITHOUT molecular dynamics engine. 
+It needs to be used adjointly with ASE MD engine. Please refer to our 
+`OTF MD module <https://flare.readthedocs.io/en/latest/flare/ase/otf_md.html>`_ for the
+complete training module with OTF and MD.
+'''
 import os
 import sys
 from copy import deepcopy
@@ -21,26 +27,35 @@ class OTF:
     Args:
         dft_calc (ASE Calculator): the ASE DFT calculator (see ASE documentaion)
         dft_count (int): initial number of DFT calls
-        std_tolerance_factor (float): the threshold of calling DFT = noise * std_tolerance_factor
+        std_tolerance_factor (float): the threshold of calling DFT = noise * 
+            std_tolerance_factor
         init_atoms (list): the list of atoms in the first DFT call to add to
             the training set, since there's no uncertainty prediction initially
         calculate_energy (bool): if True, the energy will be calculated;
             otherwise, only forces will be predicted
-        max_atoms_added (int): 
-        freeze_hyps (int or None):
-        restart_from (str or None):
-        use_mapping (bool): 
-        non_mapping_steps (list):
-        l_bound (float):
-        two_d (bool):
+        max_atoms_added (int): the maximal number of atoms to add to the 
+            training set after each DFT calculation
+        freeze_hyps (int or None): the hyperparameters will only be trained for
+            the first `freeze_hyps` DFT calls, and will be fixed after that
+        restart_from (str or None): the path of the directory that stores the
+            training data from last OTF run, and this OTF will restart from it
+
+    Other Parameters:
+        use_mapping (bool): if True, the MGP will be used
+        non_mapping_steps (list): a list of steps that MGP will not be 
+            constructed and used
+        l_bound (float): the lower bound of the interatomic distance, used for 
+            MGP construction
+        two_d (bool): used in the calculation of l_bound. If 2-D material is 
+            considered, set to True, then the atomic environment construction 
+            will only search the x & y periodic boundaries to save time
     """
 
     def __init__(self, 
             # on-the-fly parameters
             dft_calc=None, dft_count=None, std_tolerance_factor: float=1, 
-            skip: int=0,
-            init_atoms: list=[], calculate_energy=False, max_atoms_added=1, 
-            freeze_hyps=1, restart_from=None,
+            skip: int=0, init_atoms: list=[], calculate_energy=False, 
+            max_atoms_added=1, freeze_hyps=1, restart_from=None,
             # mgp parameters
             use_mapping: bool=False, non_mapping_steps: list=[],
             l_bound: float=None, two_d: bool=False):
@@ -77,7 +92,22 @@ class OTF:
         self.restart_from = restart_from
 
     def otf_run(self, steps, rescale_temp=[], rescale_steps=[]):
-        """Perform a number of time steps."""
+        """
+        Use `otf_run` intead of `run` to perform a number of time steps.
+
+        Args:
+            steps (int): the number of time steps
+
+        Other Parameters:
+            rescale_temp (list): a list of temepratures that rescale the system
+            rescale_steps (list): a list of step numbers that the temperature
+                rescaling in `rescale_temp` is done
+
+        Example:
+            # rescale temperature to 500K and 1000K at the 100th and 200th step
+            rescale_temp = [500, 1000]
+            rescale_steps = [100, 200]
+        """
 
         # restart from previous OTF training
         if self.restart_from is not None:
@@ -93,7 +123,7 @@ class OTF:
    
             # update gp model
             curr_struc = Structure.from_ase_atoms(self.atoms)
-            self.l_bound = get_l_bound(100, curr_struc, two_d=False)
+            self.l_bound = get_l_bound(100, curr_struc, self.two_d)
             print('l_bound:', self.l_bound)
 
             self.atoms.calc.gp_model.update_db(curr_struc, dft_forces,
@@ -101,6 +131,7 @@ class OTF:
 
             # train calculator
             for atom in self.init_atoms:
+                # the observers[0][0] is the logger
                 self.observers[0][0].add_atom_info(atom, self.stds[atom])
             self.train()
             self.observers[0][0].write_wall_time()
@@ -137,7 +168,7 @@ class OTF:
             # figure out if std above the threshold
             self.call_observers() 
             curr_struc = Structure.from_ase_atoms(self.atoms)
-            self.l_bound = get_l_bound(self.l_bound, curr_struc, two_d=False)
+            self.l_bound = get_l_bound(self.l_bound, curr_struc, self.two_d)
             print('l_bound:', self.l_bound)
             curr_struc.stds = np.copy(self.stds)
             noise = self.atoms.calc.gp_model.hyps[-1]

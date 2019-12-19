@@ -11,7 +11,7 @@ import numpy as np
 from flare.util import element_to_Z, NumpyEncoder
 from json import dumps
 
-from typing import List, Union
+from typing import List, Union, Any
 
 try:
     # Used for to_pmg_structure method
@@ -49,9 +49,9 @@ class Structure:
     :type stds: np.ndarray
     """
 
-    def __init__(self, cell: 'np.ndarray', species: Union[List[str],
+    def __init__(self, cell: 'ndarray', species: Union[List[str],
                                                           List[int]],
-                 positions: 'np.ndarray',
+                 positions: 'ndarray',
                  mass_dict: dict = None,
                  prev_positions: 'ndarray' =None,
                  species_labels: List[str] = None,
@@ -125,8 +125,8 @@ class Structure:
         return cell_dot
 
     @staticmethod
-    def raw_to_relative(positions: 'np.ndarray', cell_transpose: 'np.ndarray',
-                        cell_dot_inverse: 'np.ndarray')-> 'np.ndarray':
+    def raw_to_relative(positions: 'ndarray', cell_transpose: 'ndarray',
+                        cell_dot_inverse: 'ndarray')-> 'ndarray':
         """Convert Cartesian coordinates to relative (fractional) coordinates,
         expressed in terms of the cell vectors set in self.cell.
 
@@ -148,9 +148,9 @@ class Structure:
         return relative_positions
 
     @staticmethod
-    def relative_to_raw(relative_positions: 'np.ndarray',
-                        cell_transpose_inverse: 'np.ndarray',
-                        cell_dot: 'np.ndarray')-> ('np.ndarray'):
+    def relative_to_raw(relative_positions: 'ndarray',
+                        cell_transpose_inverse: 'ndarray',
+                        cell_dot: 'ndarray')-> 'ndarray':
         """Convert fractional coordinates to raw (Cartesian) coordinates.
 
         :param relative_positions: fractional coordinates.
@@ -166,14 +166,16 @@ class Structure:
         return np.matmul(np.matmul(relative_positions, cell_dot),
                          cell_transpose_inverse)
 
-    def wrap_positions(self, in_place: bool = True):
+    def wrap_positions(self, in_place: bool = True)-> 'ndarray':
         """
         Convenience function which folds atoms outside of the unit cell back
         into the unit cell. in_place flag controls if the wrapped positions
         are set in the class.
 
-        :param in_place:
+        :param in_place: If true, set the current structure 
+		positions to be the wrapped positions.
         :return: Cartesian coordinates of positions all in unit cell
+	:rtype: np.ndarray
         """
         rel_pos = \
             self.raw_to_relative(self.positions, self.cell_transpose,
@@ -193,8 +195,9 @@ class Structure:
         """
         Return the indices of a given species within atoms of the structure.
 
-        :param specie:
-        :return:
+        :param specie: Element to target, can be string or integer
+        :return: The indices in the structure at which this element occurs
+        :rtype: List[str]
         """
         return [i for i, spec in enumerate(self.coded_species)
                 if spec == specie]
@@ -202,7 +205,8 @@ class Structure:
     # TODO make more descriptive
     def __str__(self) -> str:
         """
-        Simple descriptive string of structure
+        Simple descriptive string of structure.
+
         :return: One-line descriptor of number of atoms and species present.
         :rtype: str
         """
@@ -212,7 +216,10 @@ class Structure:
 
     def __len__(self) -> int:
         """
+        Returns number of atoms in structure.
+
         :return: number of atoms in structure.
+        :rtype: int
         """
         return self.nat
 
@@ -221,6 +228,7 @@ class Structure:
         Returns structure as a dictionary; useful for serialization purposes.
 
         :return: Dictionary version of current structure
+        :rtype: dict
         """
         return dict(vars(self))
 
@@ -237,6 +245,7 @@ class Structure:
     def from_dict(dictionary: dict)-> 'flare.struc.Structure':
         """
         Assembles a Structure object from a dictionary parameterizing one.
+
         :param dictionary: dict describing structure parameters.
         :return: FLARE structure assembled from dictionary
         """
@@ -257,6 +266,7 @@ class Structure:
     def from_ase_atoms(atoms: 'ase.Atoms')-> 'flare.struc.Structure':
         """
         From an ASE Atoms object, return a FLARE structure
+
         :param atoms: ASE Atoms object
         :type atoms: ASE Atoms object
         :return: A FLARE structure from an ASE atoms object
@@ -294,8 +304,8 @@ class Structure:
                                   )
 
     @staticmethod
-    def from_pmg_structure(structure: 'pymatgen.core.Structure')-> \
-            'flare.struc.Structure':
+    def from_pmg_structure(structure: 'pymatgen Structure')-> \
+            'flare Structure':
         """
         Returns Pymatgen structure as FLARE structure.
 
@@ -324,13 +334,13 @@ class Structure:
         return new_struc
 
 
-def get_unique_species(species: List)-> (List, List[int]):
+def get_unique_species(species: List[Any])-> (List, List[int]):
     """
     Returns a list of the unique species passed in, and a list of
     integers indexing them.
 
-    :param species:
-    :return:
+    :param species: Species to index uniquely
+    :return: List of the unique species, and integer indexes
     """
     unique_species = []
     coded_species = []

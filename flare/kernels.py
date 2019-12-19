@@ -394,6 +394,24 @@ def three_body_en(env1, env2, hyps, cutoffs,
 @njit
 def two_body_jit(bond_array_1, bond_array_2, d1, d2, sig, ls,
                  r_cut, cutoff_func):
+    """2-body single-element kernel between two force components accelerated
+    with Numba.
+
+    Args:
+        bond_array_1 (np.ndarray): 2-body bond array of the first local
+            environment.
+        bond_array_2 (np.ndarray): 2-body bond array of the second local
+            environment.
+        d1 (int): Force component of the first environment (1=x, 2=y, 3=z).
+        d2 (int): Force component of the second environment (1=x, 2=y, 3=z).
+        sig (float): 2-body signal variance hyperparameter.
+        ls (float): 2-body length scale hyperparameter.
+        r_cut (float): 2-body cutoff radius.
+        cutoff_func (Callable): Cutoff function.
+
+    Return:
+        float: Value of the 2-body kernel.
+    """
     kern = 0
 
     ls1 = 1 / (2 * ls * ls)
@@ -426,6 +444,26 @@ def two_body_jit(bond_array_1, bond_array_2, d1, d2, sig, ls,
 @njit
 def two_body_grad_jit(bond_array_1, bond_array_2, d1, d2, sig, ls,
                       r_cut, cutoff_func):
+    """2-body single-element kernel between two force components and its
+    gradient with respect to the hyperparameters.
+
+    Args:
+        bond_array_1 (np.ndarray): 2-body bond array of the first local
+            environment.
+        bond_array_2 (np.ndarray): 2-body bond array of the second local
+            environment.
+        d1 (int): Force component of the first environment (1=x, 2=y, 3=z).
+        d2 (int): Force component of the second environment (1=x, 2=y, 3=z).
+        sig (float): 2-body signal variance hyperparameter.
+        ls (float): 2-body length scale hyperparameter.
+        r_cut (float): 2-body cutoff radius.
+        cutoff_func (Callable): Cutoff function.
+
+    Returns:
+        (float, float):
+            Value of the 2-body kernel and its gradient with respect to the
+            hyperparameters.
+    """
 
     kern = 0
     sig_derv = 0
@@ -464,6 +502,24 @@ def two_body_grad_jit(bond_array_1, bond_array_2, d1, d2, sig, ls,
 @njit
 def two_body_force_en_jit(bond_array_1, bond_array_2, d1, sig, ls, r_cut,
                           cutoff_func):
+    """2-body single-element kernel between a force component and a local
+    energy accelerated with Numba.
+
+    Args:
+        bond_array_1 (np.ndarray): 2-body bond array of the first local
+            environment.
+        bond_array_2 (np.ndarray): 2-body bond array of the second local
+            environment.
+        d1 (int): Force component of the first environment (1=x, 2=y, 3=z).
+        sig (float): 2-body signal variance hyperparameter.
+        ls (float): 2-body length scale hyperparameter.
+        r_cut (float): 2-body cutoff radius.
+        cutoff_func (Callable): Cutoff function.
+
+    Returns:
+        float:
+            Value of the 2-body force/energy kernel.
+    """
     kern = 0
 
     ls1 = 1 / (2 * ls * ls)
@@ -489,6 +545,23 @@ def two_body_force_en_jit(bond_array_1, bond_array_2, d1, sig, ls, r_cut,
 
 @njit
 def two_body_en_jit(bond_array_1, bond_array_2, sig, ls, r_cut, cutoff_func):
+    """2-body single-element kernel between two local energies accelerated
+    with Numba.
+
+    Args:
+        bond_array_1 (np.ndarray): 2-body bond array of the first local
+            environment.
+        bond_array_2 (np.ndarray): 2-body bond array of the second local
+            environment.
+        sig (float): 2-body signal variance hyperparameter.
+        ls (float): 2-body length scale hyperparameter.
+        r_cut (float): 2-body cutoff radius.
+        cutoff_func (Callable): Cutoff function.
+
+    Returns:
+        float:
+            Value of the 2-body local energy kernel.
+    """
     kern = 0
 
     ls1 = 1 / (2 * ls * ls)
@@ -518,6 +591,46 @@ def three_body_jit(bond_array_1, bond_array_2,
                    cross_bond_dists_1, cross_bond_dists_2,
                    triplets_1, triplets_2,
                    d1, d2, sig, ls, r_cut, cutoff_func):
+    """3-body single-element kernel between two force components accelerated
+    with Numba.
+
+    Args:
+        bond_array_1 (np.ndarray): 3-body bond array of the first local
+            environment.
+        bond_array_2 (np.ndarray): 3-body bond array of the second local
+            environment.
+        cross_bond_inds_1 (np.ndarray): Two dimensional array whose row m
+            contains the indices of atoms n > m in the first local
+            environment that are within a distance r_cut of both atom n and
+            the central atom.
+        cross_bond_inds_2 (np.ndarray): Two dimensional array whose row m
+            contains the indices of atoms n > m in the second local
+            environment that are within a distance r_cut of both atom n and
+            the central atom.
+        cross_bond_dists_1 (np.ndarray): Two dimensional array whose row m
+            contains the distances from atom m of atoms n > m in the first
+            local environment that are within a distance r_cut of both atom
+            n and the central atom.
+        cross_bond_dists_2 (np.ndarray): Two dimensional array whose row m
+            contains the distances from atom m of atoms n > m in the second
+            local environment that are within a distance r_cut of both atom
+            n and the central atom.
+        triplets_1 (np.ndarray): One dimensional array of integers whose entry
+            m is the number of atoms in the first local environment that are
+            within a distance r_cut of atom m.
+        triplets_2 (np.ndarray): One dimensional array of integers whose entry
+            m is the number of atoms in the second local environment that are
+            within a distance r_cut of atom m.
+        d1 (int): Force component of the first environment.
+        d2 (int): Force component of the second environment.
+        sig (float): 3-body signal variance hyperparameter.
+        ls (float): 3-body length scale hyperparameter.
+        r_cut (float): 3-body cutoff radius.
+        cutoff_func (Callable): Cutoff function.
+
+    Return:
+        float: Value of the 3-body kernel.
+    """
     kern = 0
 
     # pre-compute constants that appear in the inner loop
@@ -559,7 +672,7 @@ def three_body_jit(bond_array_1, bond_array_2,
 
                     fj = fj1*fj2*fj3
                     fdj = fdj1*fj2*fj3+fj1*fdj2*fj3
-                    
+
                     kern += triplet_kernel(ci1, ci2, cj1, cj2, ri1, ri2, ri3,
                                            rj1, rj2, rj3, fi, fj, fdi, fdj,
                                            ls1, ls2, ls3, sig2)
@@ -572,6 +685,48 @@ def three_body_grad_jit(bond_array_1, bond_array_2,
                         cross_bond_dists_1, cross_bond_dists_2,
                         triplets_1, triplets_2,
                         d1, d2, sig, ls, r_cut, cutoff_func):
+    """3-body single-element kernel between two force components and its
+    gradient with respect to the hyperparameters.
+
+    Args:
+        bond_array_1 (np.ndarray): 3-body bond array of the first local
+            environment.
+        bond_array_2 (np.ndarray): 3-body bond array of the second local
+            environment.
+        cross_bond_inds_1 (np.ndarray): Two dimensional array whose row m
+            contains the indices of atoms n > m in the first local
+            environment that are within a distance r_cut of both atom n and
+            the central atom.
+        cross_bond_inds_2 (np.ndarray): Two dimensional array whose row m
+            contains the indices of atoms n > m in the second local
+            environment that are within a distance r_cut of both atom n and
+            the central atom.
+        cross_bond_dists_1 (np.ndarray): Two dimensional array whose row m
+            contains the distances from atom m of atoms n > m in the first
+            local environment that are within a distance r_cut of both atom
+            n and the central atom.
+        cross_bond_dists_2 (np.ndarray): Two dimensional array whose row m
+            contains the distances from atom m of atoms n > m in the second
+            local environment that are within a distance r_cut of both atom
+            n and the central atom.
+        triplets_1 (np.ndarray): One dimensional array of integers whose entry
+            m is the number of atoms in the first local environment that are
+            within a distance r_cut of atom m.
+        triplets_2 (np.ndarray): One dimensional array of integers whose entry
+            m is the number of atoms in the second local environment that are
+            within a distance r_cut of atom m.
+        d1 (int): Force component of the first environment.
+        d2 (int): Force component of the second environment.
+        sig (float): 3-body signal variance hyperparameter.
+        ls (float): 3-body length scale hyperparameter.
+        r_cut (float): 3-body cutoff radius.
+        cutoff_func (Callable): Cutoff function.
+
+    Returns:
+        (float, float):
+            Value of the 3-body kernel and its gradient with respect to the
+            hyperparameters.
+    """
 
     kern = 0
     sig_derv = 0
@@ -635,6 +790,46 @@ def three_body_force_en_jit(bond_array_1, bond_array_2,
                             cross_bond_dists_2,
                             triplets_1, triplets_2,
                             d1, sig, ls, r_cut, cutoff_func):
+    """3-body single-element kernel between a force component and a local
+    energy accelerated with Numba.
+
+    Args:
+        bond_array_1 (np.ndarray): 3-body bond array of the first local
+            environment.
+        bond_array_2 (np.ndarray): 3-body bond array of the second local
+            environment.
+        cross_bond_inds_1 (np.ndarray): Two dimensional array whose row m
+            contains the indices of atoms n > m in the first local
+            environment that are within a distance r_cut of both atom n and
+            the central atom.
+        cross_bond_inds_2 (np.ndarray): Two dimensional array whose row m
+            contains the indices of atoms n > m in the second local
+            environment that are within a distance r_cut of both atom n and
+            the central atom.
+        cross_bond_dists_1 (np.ndarray): Two dimensional array whose row m
+            contains the distances from atom m of atoms n > m in the first
+            local environment that are within a distance r_cut of both atom
+            n and the central atom.
+        cross_bond_dists_2 (np.ndarray): Two dimensional array whose row m
+            contains the distances from atom m of atoms n > m in the second
+            local environment that are within a distance r_cut of both atom
+            n and the central atom.
+        triplets_1 (np.ndarray): One dimensional array of integers whose entry
+            m is the number of atoms in the first local environment that are
+            within a distance r_cut of atom m.
+        triplets_2 (np.ndarray): One dimensional array of integers whose entry
+            m is the number of atoms in the second local environment that are
+            within a distance r_cut of atom m.
+        d1 (int): Force component of the first environment (1=x, 2=y, 3=z).
+        sig (float): 3-body signal variance hyperparameter.
+        ls (float): 3-body length scale hyperparameter.
+        r_cut (float): 3-body cutoff radius.
+        cutoff_func (Callable): Cutoff function.
+
+    Returns:
+        float:
+            Value of the 3-body force/energy kernel.
+    """
 
     kern = 0
 
@@ -685,6 +880,45 @@ def three_body_en_jit(bond_array_1, bond_array_2,
                       cross_bond_dists_2,
                       triplets_1, triplets_2,
                       sig, ls, r_cut, cutoff_func):
+    """3-body single-element kernel between two local energies accelerated
+    with Numba.
+
+    Args:
+        bond_array_1 (np.ndarray): 3-body bond array of the first local
+            environment.
+        bond_array_2 (np.ndarray): 3-body bond array of the second local
+            environment.
+        cross_bond_inds_1 (np.ndarray): Two dimensional array whose row m
+            contains the indices of atoms n > m in the first local
+            environment that are within a distance r_cut of both atom n and
+            the central atom.
+        cross_bond_inds_2 (np.ndarray): Two dimensional array whose row m
+            contains the indices of atoms n > m in the second local
+            environment that are within a distance r_cut of both atom n and
+            the central atom.
+        cross_bond_dists_1 (np.ndarray): Two dimensional array whose row m
+            contains the distances from atom m of atoms n > m in the first
+            local environment that are within a distance r_cut of both atom
+            n and the central atom.
+        cross_bond_dists_2 (np.ndarray): Two dimensional array whose row m
+            contains the distances from atom m of atoms n > m in the second
+            local environment that are within a distance r_cut of both atom
+            n and the central atom.
+        triplets_1 (np.ndarray): One dimensional array of integers whose entry
+            m is the number of atoms in the first local environment that are
+            within a distance r_cut of atom m.
+        triplets_2 (np.ndarray): One dimensional array of integers whose entry
+            m is the number of atoms in the second local environment that are
+            within a distance r_cut of atom m.
+        sig (float): 3-body signal variance hyperparameter.
+        ls (float): 3-body length scale hyperparameter.
+        r_cut (float): 3-body cutoff radius.
+        cutoff_func (Callable): Cutoff function.
+
+    Returns:
+        float:
+            Value of the 3-body local energy kernel.
+    """
     kern = 0
 
     sig2 = sig*sig
@@ -763,6 +997,16 @@ def grad_constants(sig, ls):
 
 @njit
 def force_helper(A, B, C, D, fi, fj, fdi, fdj, ls1, ls2, ls3, sig2):
+    """Helper function for computing the force/force kernel between two
+    pairs or triplets of atoms of the same type.
+
+    See Table IV of the SI of the FLARE paper for definitions of intermediate
+    quantities.
+
+    Returns:
+        float: Force/force kernel between two pairs or triplets of atoms of
+            the same type.
+    """
     E = exp(-D * ls1)
     F = E * B * ls2
     G = -E * C * ls2

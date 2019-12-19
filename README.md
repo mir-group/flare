@@ -2,7 +2,29 @@
 
 # FLARE: Fast Learning of Atomistic Rare Events
 
-FLARE is an open-source Python package for creating fast and accurate atomistic potentials. Documentation of the code is in progress, and can be accessed here: https://flare.readthedocs.io/
+<p align="center">
+  <img width="659" height="303" src="https://github.com/mir-group/flare/blob/master/docs/images/Flare_logo.png?raw=true">
+</p>
+
+FLARE is an open-source Python package for creating fast and accurate atomistic potentials. Documentation of the code can be accessed here: https://flare.readthedocs.io/
+
+## Major Features
+
+* Gaussian Process Force Fields
+  * 2- and 3-body multi-element kernels
+  * Maximum likelihood hyperparameter optimization
+
+* On-the-Fly Training
+  * Coupling to Quantum Espresso, CP2K, and VASP DFT engines
+
+* Mapped Gaussian Processes
+  * Mapping to efficient cubic spline models
+
+* ASE Interface
+  * ASE calculator for GP models
+  * On-the-fly training with ASE MD engines
+
+* Module for training GPs from AIMD trajectories
 
 
 ## Prerequisites

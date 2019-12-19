@@ -6,3 +6,5 @@ Tutorials
 
    al
    ase
+   gpfa
+   after_training
