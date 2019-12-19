@@ -3,7 +3,7 @@
 #define Pi 3.14159265358979323846
 
 void equispaced_gaussians(double * basis_vals, double * basis_derivs,
-                          double r, int N, double * radial_hyps){
+                          double r, int N, std::vector<double> radial_hyps){
 
     // Define Gaussian hyperparameters (width and locations of first and final gaussians)
     double sigma = radial_hyps[0];
@@ -34,10 +34,11 @@ void equispaced_gaussians(double * basis_vals, double * basis_derivs,
 
 void calculate_radial(
     double * comb_vals, double * comb_x, double * comb_y, double * comb_z,
-    void (*basis_function)(double *, double *, double, int, double *),
-    void (*cutoff_function)(double *, double, double, double *),
+    void (*basis_function)(double *, double *, double, int,
+                           std::vector<double>),
+    void (*cutoff_function)(double *, double, double, std::vector<double>),
     double x, double y, double z, double r, double rcut, int N,
-    double * radial_hyps, double * cutoff_hyps){
+    std::vector<double> radial_hyps, std::vector<double> cutoff_hyps){
 
     // Calculate cutoff values.
     double rcut_vals[2];

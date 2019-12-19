@@ -24,8 +24,9 @@ class BondSum : public ::testing::Test{
  
     // Prepare cutoff.
     double rcut = 7;
-    double * cutoff_hyps;
-    void (*cutoff_function)(double *, double, double, double *) = cos_cutoff;
+    std::vector<double> cutoff_hyps;
+    void (*cutoff_function)(double *, double, double, std::vector<double>) =
+        cos_cutoff;
 
     // Prepare spherical harmonics.
     int lmax = 10;
@@ -36,9 +37,9 @@ class BondSum : public ::testing::Test{
     double first_gauss = 1;
     double final_gauss = 6;
     int N = 10;
-    double radial_hyps[3] = {sigma, first_gauss, final_gauss};
-    void (*basis_function)(double *, double *, double, int, double *) =
-        equispaced_gaussians;
+    std::vector<double> radial_hyps = {sigma, first_gauss, final_gauss};
+    void (*basis_function)(double *, double *, double, int,
+                           std::vector<double>) = equispaced_gaussians;
 
     // Initialize arrays.
     int nos = 3;

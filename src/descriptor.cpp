@@ -7,7 +7,9 @@ void (*basis_function)(double *, double *, double, int, double *),
 void (*cutoff_function)(double *, double, double, double *),
 double * xs, double * ys, double * zs, double * rs, int * species,
 int nos, int noa, double rcut, int N,
-double * radial_hyps, double * cutoff_hyps){
+std::vector<double> radial_hyps, std::vector<double> cutoff_hyps){
+
+// TODO: implement this!
 
 }
 
@@ -17,7 +19,7 @@ void (*basis_function)(double *, double *, double, int, double *),
 void (*cutoff_function)(double *, double, double, double *),
 double * xs, double * ys, double * zs, double * rs, int * species,
 int nos, int noa, double rcut, int N, int lmax,
-double * radial_hyps, double * cutoff_hyps){
+std::vector<double> radial_hyps, std::vector<double> cutoff_hyps){
 
 // Calculate atomic base.
 int number_of_harmonics = (lmax + 1) * (lmax + 1);

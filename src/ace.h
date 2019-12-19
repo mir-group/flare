@@ -48,43 +48,53 @@ void get_Y(std::vector<double> & Y, std::vector<double> & Yx,
 
 // Radial basis sets.
 void equispaced_gaussians(double * basis_vals, double * basis_derivs,
-                          double r, int N, double * radial_hyps);
+                          double r, int N, std::vector<double> radial_hyps);
 
 // Radial cutoff functions.
 void cos_cutoff(double * rcut_vals, double r, double rcut,
-                double * cutoff_hyps);
+                std::vector<double> cutoff_hyps);
 
 void hard_cutoff(double * rcut_vals, double r, double rcut,
-                 double * cutoff_hyps);
+                 std::vector<double> cutoff_hyps);
 
 void calculate_radial(
     double * comb_vals, double * comb_x, double * comb_y, double * comb_z,
-    void (*basis_function)(double *, double *, double, int, double *),
-    void (*cutoff_function)(double *, double, double, double *),
+    void (*basis_function)(double *, double *, double, int,
+                           std::vector<double>),
+    void (*cutoff_function)(double *, double, double, std::vector<double>),
     double x, double y, double z, double r, double rcut, int N,
-    double * radial_hyps, double * cutoff_hyps);
+    std::vector<double> radial_hyps, std::vector<double> cutoff_hyps);
 
 // Single bond basis functions.
+void single_bond_update_env(
+    std::vector<double> & single_bond_vals,
+    Eigen::MatrixXd & force_dervs, Eigen::MatrixXd & stress_dervs,
+    void (*basis_function)(double *, double *, double, int,
+                           std::vector<double>),
+    void (*cutoff_function)(double *, double, double, std::vector<double>),
+    double x, double y, double z, double r, double rcut, int N, int lmax,
+    std::vector<double> radial_hyps, std::vector<double> cutoff_hyps);
+
 void single_bond_update(
 double * single_bond_vals, double * environment_dervs, double * central_dervs,
-void (*basis_function)(double *, double *, double, int, double *),
-void (*cutoff_function)(double *, double, double, double *),
+void (*basis_function)(double *, double *, double, int, std::vector<double>),
+void (*cutoff_function)(double *, double, double, std::vector<double>),
 double x, double y, double z, double r, double rcut, int N, int lmax,
-double * radial_hyps, double * cutoff_hyps);
+std::vector<double> radial_hyps, std::vector<double> cutoff_hyps);
 
 void single_bond_sum(
 double * single_bond_vals, double * environment_dervs, double * central_dervs,
-void (*basis_function)(double *, double *, double, int, double *),
-void (*cutoff_function)(double *, double, double, double *),
+void (*basis_function)(double *, double *, double, int, std::vector<double>),
+void (*cutoff_function)(double *, double, double, std::vector<double>),
 double * xs, double * ys, double * zs, double * rs, int * species,
 int noa, double rcut, int N, int lmax,
-double * radial_hyps, double * cutoff_hyps);
+std::vector<double> radial_hyps, std::vector<double> cutoff_hyps);
 
 // Rotationally invariant descriptors.
 void B2_descriptor(
 double * descriptor_vals, double * environment_dervs, double * central_dervs,
-void (*basis_function)(double *, double *, double, int, double *),
-void (*cutoff_function)(double *, double, double, double *),
+void (*basis_function)(double *, double *, double, int, std::vector<double>),
+void (*cutoff_function)(double *, double, double, std::vector<double>),
 double * xs, double * ys, double * zs, double * rs, int * species,
 int nos, int noa, double rcut, int N, int lmax,
-double * radial_hyps, double * cutoff_hyps);
+std::vector<double> radial_hyps, std::vector<double> cutoff_hyps);

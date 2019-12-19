@@ -28,7 +28,7 @@ TEST_F(RadialTest, LongR){
     // Test that the cutoff value and its gradient are zero when r > rcut.
     double rcut = 0.001;
     double cutoff_vals[2] = {};
-    double * cutoff_hyps;
+    std::vector<double> cutoff_hyps;
     cos_cutoff(cutoff_vals, r, rcut, cutoff_hyps);
 
     EXPECT_EQ(cutoff_vals[0], 0);
@@ -39,7 +39,7 @@ TEST_F(RadialTest, CutoffGrad){
     // Test that the derivative of the cosine cutoff function is correctly computed when r < rcut.
     double cutoff_vals[2] = {};
     double cutoff_vals_rdelt[2] = {};
-    double * cutoff_hyps;
+    std::vector<double> cutoff_hyps;
 
     cos_cutoff(cutoff_vals, r, rcut, cutoff_hyps);
     cos_cutoff(cutoff_vals_rdelt, r_delt, rcut, cutoff_hyps);
@@ -54,7 +54,7 @@ TEST_F(RadialTest, CutoffGrad){
 TEST_F(RadialTest, HardCutoff){
     // Test that the hard cutoff returns 1 and 0 when rcut > r.
     double cutoff_vals[2] = {};
-    double * cutoff_hyps;
+    std::vector<double> cutoff_hyps;
     hard_cutoff(cutoff_vals, r, rcut, cutoff_hyps);
     EXPECT_EQ(cutoff_vals[0], 1);
     EXPECT_EQ(cutoff_vals[1], 0);
@@ -73,7 +73,7 @@ TEST_F(RadialTest, GnDerv){
     double first_gauss = 1;
     double final_gauss = 6;
     int N = 10;
-    double hyps[3] = {sigma, first_gauss, final_gauss};
+    std::vector<double> hyps = {sigma, first_gauss, final_gauss};
 
     double * g = new double[N];
     double * gderv = new double[N];
@@ -102,8 +102,8 @@ TEST_F(RadialTest, CombDerv){
     double first_gauss = 1;
     double final_gauss = 6;
     int N = 10;
-    double radial_hyps[3] = {sigma, first_gauss, final_gauss};
-    double * cutoff_hyps;
+    std::vector<double> radial_hyps = {sigma, first_gauss, final_gauss};
+    std::vector<double> cutoff_hyps;
 
     // Initialize arrays.
     double * g = new double[N];
@@ -120,9 +120,11 @@ TEST_F(RadialTest, CombDerv){
     double * gz_delt = new double[N];
 
     // Set the basis and cutoff function.
-    void (*basis_function)(double *, double *, double, int, double *) =
+    void (*basis_function)(double *, double *, double, int,
+                           std::vector<double>) =
         equispaced_gaussians;
-    void (*cutoff_function)(double *, double, double, double *) = cos_cutoff;
+    void (*cutoff_function)(double *, double, double, std::vector<double>) =
+        cos_cutoff;
 
     calculate_radial(g, gx, gy, gz, basis_function, cutoff_function, 
                      x, y, z, r, rcut, N, radial_hyps, cutoff_hyps);
