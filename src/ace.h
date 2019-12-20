@@ -75,7 +75,18 @@ void single_bond_update_env(
     double x, double y, double z, double r,  int s,
     int environment_index, int central_index,
     double rcut, int N, int lmax,
-    std::vector<double> & radial_hyps, std::vector<double> & cutoff_hyps);
+    const std::vector<double> & radial_hyps,
+    const std::vector<double> & cutoff_hyps);
+
+void single_bond_sum_env(
+    std::vector<double> & single_bond_vals,
+    Eigen::MatrixXd & force_dervs, Eigen::MatrixXd & stress_dervs,
+    void (*basis_function)(double *, double *, double, int,
+                           std::vector<double>),
+    void (*cutoff_function)(double *, double, double, std::vector<double>),
+    const LocalEnvironment & env, double rcut, int N, int lmax,
+    const std::vector<double> & radial_hyps,
+    const std::vector<double> & cutoff_hyps);
 
 void single_bond_update(
 double * single_bond_vals, double * environment_dervs, double * central_dervs,

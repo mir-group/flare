@@ -10,7 +10,7 @@ void single_bond_update_env(
     double x, double y, double z, double r, int s,
     int environoment_index, int central_index,
     double rcut, int N, int lmax,
-    vector<double> & radial_hyps, vector<double> & cutoff_hyps){
+    const vector<double> & radial_hyps, const vector<double> & cutoff_hyps){
 
     // Calculate radial basis values.
     double * g = new double[N];
@@ -161,13 +161,41 @@ vector<double> radial_hyps, vector<double> cutoff_hyps){
     delete [] g; delete [] gx; delete [] gy; delete [] gz;
 }
 
+void single_bond_sum_env(
+    vector<double> & single_bond_vals,
+    Eigen::MatrixXd & force_dervs, Eigen::MatrixXd & stress_dervs,
+    void (*basis_function)(double *, double *, double, int, vector<double>),
+    void (*cutoff_function)(double *, double, double, vector<double>),
+    const LocalEnvironment & env, double rcut, int N, int lmax,
+    const vector<double> & radial_hyps, const vector<double> & cutoff_hyps){
+
+    int noa = env.rs.size();
+    int cent_ind = env.central_index;
+    double x, y, z, r;
+    int s, env_ind;
+
+    for (int atom_index = 0; atom_index < noa; atom_index ++){
+        x = env.xs[atom_index];
+        y = env.ys[atom_index];
+        z = env.zs[atom_index];
+        r = env.rs[atom_index];
+        s = env.environment_species[atom_index];
+        env_ind = env.environment_indices[atom_index];
+
+        single_bond_update_env(single_bond_vals, force_dervs, stress_dervs,
+                    basis_function, cutoff_function, x, y, z, r, s,
+                    env_ind, cent_ind, rcut, N, lmax, radial_hyps,
+                    cutoff_hyps);
+    }
+}
+
 void single_bond_sum(
 double * single_bond_vals, double * environment_dervs, double * central_dervs,
-void (*basis_function)(double *, double *, double, int, std::vector<double>),
-void (*cutoff_function)(double *, double, double, std::vector<double>),
+void (*basis_function)(double *, double *, double, int, vector<double>),
+void (*cutoff_function)(double *, double, double, vector<double>),
 double * xs, double * ys, double * zs, double * rs, int * species,
 int noa, double rcut, int N, int lmax,
-std::vector<double> radial_hyps, std::vector<double> cutoff_hyps){
+vector<double> radial_hyps, vector<double> cutoff_hyps){
 
     int no_basis_vals = N * (lmax + 1) * (lmax + 1);
     int no_derv_vals = 3 * no_basis_vals;
