@@ -2,6 +2,8 @@
 #include <cmath>
 #include <iostream>
 
+Structure :: Structure(){}
+
 Structure :: Structure(const Eigen::MatrixXd & cell,
                        const std::vector<int> & species,
                        const Eigen::MatrixXd & positions){

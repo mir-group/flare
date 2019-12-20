@@ -2,6 +2,8 @@
 #include <cmath>
 #include  <iostream>
 
+LocalEnvironment :: LocalEnvironment(){}
+
 LocalEnvironment :: LocalEnvironment(const Structure & structure, int atom,
                                      double cutoff){
     this->cutoff = cutoff;

@@ -10,6 +10,8 @@ class Structure{
         std::vector<int> species;
         double max_cutoff;
 
+        Structure();
+
         Structure(const Eigen::MatrixXd & cell,
                   const std::vector<int> & species,
                   const Eigen::MatrixXd & positions);
@@ -27,6 +29,8 @@ class LocalEnvironment{
         std::vector<double> rs, xs, ys, zs;
         double cutoff;
         int sweep;
+
+        LocalEnvironment();
 
         LocalEnvironment(const Structure & structure, int atom,
                          double cutoff);
