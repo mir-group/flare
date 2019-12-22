@@ -13,11 +13,10 @@ class BondEnv : public ::testing::Test{
 
     Eigen::MatrixXd cell {3, 3}, cell_2 {3, 3};
     std::vector<int> species {0, 2, 1, 3, 4};
-    Eigen::MatrixXd positions_1 {noa, 3}, positions_2 {noa, 3},
-                    positions_3 {noa, 3}, positions_4 {noa, 3};
+    Eigen::MatrixXd positions_1 {noa, 3}, positions_2 {noa, 3};
 
-    Structure struc1, struc2, struc3, struc4;
-    LocalEnvironment env1, env2, env3, env4;
+    Structure struc1, struc2;
+    LocalEnvironment env1, env2;
 
     double rcut = 3;
  
@@ -41,11 +40,9 @@ class BondEnv : public ::testing::Test{
 
     // Initialize matrices.
     int no_descriptors = nos * N * number_of_harmonics;
-    std::vector<double> single_bond_vals, single_bond_vals_2,
-        single_bond_vals_3, single_bond_vals_4;
+    std::vector<double> single_bond_vals, single_bond_vals_2;
 
-    Eigen::MatrixXd force_dervs, force_dervs_2, force_dervs_3, force_dervs_4,
-        stress_dervs, stress_dervs_2, stress_dervs_3, stress_dervs_4;
+    Eigen::MatrixXd force_dervs, force_dervs_2, stress_dervs, stress_dervs_2;
 
     BondEnv(){
         // Create arbitrary structure.
@@ -60,66 +57,84 @@ class BondEnv : public ::testing::Test{
                      3.2, 1.1, 3.3;
 
         struc1 = Structure(cell, species, positions_1);
-
-            // Perturb the x coordinate of the first atom.
-        positions_2 = positions_1;
-        positions_2(0, 0) += delta;
-        struc2 =  Structure(cell, species, positions_2);
-
-        // Perturb the z coordinate of the fifth atom.
-        positions_3 = positions_1;
-        positions_3(4, 2) += delta;
-        struc3 = Structure(cell, species, positions_3);
-
-        // Create local environments.
         env1 = LocalEnvironment(struc1, 0, rcut);
-        env2 = LocalEnvironment(struc2, 0, rcut);
-        env3 = LocalEnvironment(struc3, 0, rcut);
 
-        // Initialize matrices.
-        single_bond_vals = single_bond_vals_2 = single_bond_vals_3 = 
-            std::vector<double> (no_descriptors, 0);
-
-        force_dervs = force_dervs_2 = force_dervs_3 = 
-            Eigen::MatrixXd::Zero(noa * 3, no_descriptors);
-        stress_dervs = stress_dervs_2 = stress_dervs_3 =
-            Eigen::MatrixXd::Zero(6, no_descriptors);
-
+        single_bond_vals = std::vector<double> (no_descriptors, 0);
+        force_dervs = Eigen::MatrixXd::Zero(noa * 3, no_descriptors);
+        stress_dervs = Eigen::MatrixXd::Zero(6, no_descriptors);
     }
 
 };
 
-TEST_F(BondEnv, ForceTest){
+TEST_F(BondEnv, CentTest){
     single_bond_sum_env(single_bond_vals, force_dervs, stress_dervs,
         basis_function, cutoff_function, env1, rcut, N, lmax,
         radial_hyps, cutoff_hyps);
 
-    single_bond_sum_env(single_bond_vals_2, force_dervs_2, stress_dervs_2,
-        basis_function, cutoff_function, env2, rcut, N, lmax,
-        radial_hyps, cutoff_hyps);
+    // Perturb the coordinates of the central atom.
+    for (int m = 0; m < 3; m ++){
+        positions_2 = positions_1;
+        positions_2(0, m) += delta;
+        struc2 =  Structure(cell, species, positions_2);
+        env2 = LocalEnvironment(struc2, 0, rcut);
 
-    single_bond_sum_env(single_bond_vals_3, force_dervs_3, stress_dervs_3,
-        basis_function, cutoff_function, env3, rcut, N, lmax,
+        // Initialize matrices.
+        single_bond_vals_2 = std::vector<double> (no_descriptors, 0);
+        force_dervs_2 = Eigen::MatrixXd::Zero(noa * 3, no_descriptors);
+        stress_dervs_2 = Eigen::MatrixXd::Zero(6, no_descriptors);
+
+        single_bond_sum_env(single_bond_vals_2, force_dervs_2, stress_dervs_2,
+            basis_function, cutoff_function, env2, rcut, N, lmax,
+            radial_hyps, cutoff_hyps);
+
+        double finite_diff, exact, diff;
+        double tolerance = 1e-6;
+
+        // Check derivatives.
+        for (int n = 0; n < single_bond_vals.size(); n ++){
+            finite_diff = 
+                (single_bond_vals_2[n] - single_bond_vals[n]) / delta;
+            exact = force_dervs(m, n);
+            diff = abs(finite_diff - exact);
+            EXPECT_LE(diff, tolerance);
+        }
+    }
+}
+
+TEST_F(BondEnv, EnvTest){
+    single_bond_sum_env(single_bond_vals, force_dervs, stress_dervs,
+        basis_function, cutoff_function, env1, rcut, N, lmax,
         radial_hyps, cutoff_hyps);
 
     double finite_diff, exact, diff;
-    double tolerance = 1e-6;
-    
-    for (int n = 0; n < single_bond_vals.size(); n ++){
-        // Check central derivative.
-        finite_diff = 
-            (single_bond_vals_2[n] - single_bond_vals[n]) / delta;
-        exact = force_dervs(0, n);
-        diff = abs(finite_diff - exact);
-        EXPECT_LE(diff, tolerance);
+    double tolerance = 1e-5;
 
-        // Check environment derivative.
-        finite_diff = 
-            (single_bond_vals_3[n] - single_bond_vals[n]) / delta;
-        exact = force_dervs(14, n);
-        diff = abs(finite_diff - exact);
-        EXPECT_LE(diff, tolerance);
+    // Perturb the coordinates of the environment atoms.
+    for (int p = 1; p < noa; p ++){
+        for (int m = 0; m < 3; m ++){
+            positions_2 = positions_1;
+            positions_2(p, m) += delta;
+            struc2 =  Structure(cell, species, positions_2);
+            env2 = LocalEnvironment(struc2, 0, rcut);
 
+            // Initialize matrices.
+            single_bond_vals_2 = std::vector<double> (no_descriptors, 0);
+            force_dervs_2 = Eigen::MatrixXd::Zero(noa * 3, no_descriptors);
+            stress_dervs_2 = Eigen::MatrixXd::Zero(6, no_descriptors);
+
+            single_bond_sum_env(single_bond_vals_2, force_dervs_2,
+                stress_dervs_2, basis_function, cutoff_function, env2, rcut,
+                N, lmax, radial_hyps, cutoff_hyps);
+
+            // Check derivatives.
+            for (int n = 0; n < single_bond_vals.size(); n ++){
+                finite_diff = 
+                    (single_bond_vals_2[n] - single_bond_vals[n]) / delta;
+                exact = force_dervs(p * 3 + m, n);
+                diff = abs(finite_diff - exact);
+                EXPECT_LE(diff, tolerance);
+            }
+        }
     }
 }
 
@@ -136,32 +151,32 @@ TEST_F(BondEnv, StressTest){
     for (int m = 0; m < 3; m ++){
         for (int n = m; n < 3; n ++){
             cell_2 = cell;
-            positions_4 = positions_1;
+            positions_2 = positions_1;
 
             // Perform strain.
             cell_2(0, m) += cell(0, n) * delta;
             cell_2(1, m) += cell(1, n) * delta;
             cell_2(2, m) += cell(2, n) * delta;
             for (int k = 0; k < noa; k ++){
-                positions_4(k, m) += positions_1(k, n) * delta;
+                positions_2(k, m) += positions_1(k, n) * delta;
             }
 
-            struc4 = Structure(cell_2, species, positions_4);
-            env4 = LocalEnvironment(struc4, 0, rcut);
+            struc2 = Structure(cell_2, species, positions_2);
+            env2 = LocalEnvironment(struc2, 0, rcut);
 
-            single_bond_vals_4 = std::vector<double> (no_descriptors, 0);
-            force_dervs_4 = Eigen::MatrixXd::Zero(noa * 3, no_descriptors);
-            stress_dervs_4 = Eigen::MatrixXd::Zero(6, no_descriptors);
+            single_bond_vals_2 = std::vector<double> (no_descriptors, 0);
+            force_dervs_2 = Eigen::MatrixXd::Zero(noa * 3, no_descriptors);
+            stress_dervs_2 = Eigen::MatrixXd::Zero(6, no_descriptors);
 
             // Calculate descriptors.
-            single_bond_sum_env(single_bond_vals_4, force_dervs_4,
-                stress_dervs_4, basis_function, cutoff_function, env4, rcut,
+            single_bond_sum_env(single_bond_vals_2, force_dervs_2,
+                stress_dervs_2, basis_function, cutoff_function, env2, rcut,
                 N, lmax, radial_hyps, cutoff_hyps);
 
             // Check stress derivatives.
             for (int p = 0; p < single_bond_vals.size(); p ++){
                 finite_diff = 
-                    (single_bond_vals_4[p] - single_bond_vals[p]) / delta;
+                    (single_bond_vals_2[p] - single_bond_vals[p]) / delta;
                 exact = stress_dervs(stress_ind, p);
                 diff = abs(finite_diff - exact);
                 EXPECT_LE(diff, tolerance);
