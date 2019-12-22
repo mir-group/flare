@@ -73,11 +73,11 @@ void single_bond_update_env(
             force_dervs(central_index * 3 + 2, descriptor_counter) -= bond_z;
 
             stress_dervs(0, descriptor_counter) += bond_x * x;
-            stress_dervs(1, descriptor_counter) += bond_y * y;
-            stress_dervs(2, descriptor_counter) += bond_z * z;
-            stress_dervs(3, descriptor_counter) += bond_x * y;
-            stress_dervs(4, descriptor_counter) += bond_x * z;
-            stress_dervs(5, descriptor_counter) += bond_y * z;
+            stress_dervs(1, descriptor_counter) += bond_x * y;
+            stress_dervs(2, descriptor_counter) += bond_x * z;
+            stress_dervs(3, descriptor_counter) += bond_y * y;
+            stress_dervs(4, descriptor_counter) += bond_y * z;
+            stress_dervs(5, descriptor_counter) += bond_z * z;
 
             descriptor_counter ++;
             }
