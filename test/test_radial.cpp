@@ -51,6 +51,21 @@ TEST_F(RadialTest, CutoffGrad){
     EXPECT_LE(r_diff, tolerance);
 }
 
+TEST_F(RadialTest, QuadGrad){
+    double cutoff_vals[2] = {};
+    double cutoff_vals_rdelt[2] = {};
+    std::vector<double> cutoff_hyps;
+
+    quadratic_cutoff(cutoff_vals, r, rcut, cutoff_hyps);
+    quadratic_cutoff(cutoff_vals_rdelt, r_delt, rcut, cutoff_hyps);
+
+    double r_fin_diff = (cutoff_vals_rdelt[0] - cutoff_vals[0]) / delta;
+    double r_diff = abs(r_fin_diff - cutoff_vals[1]);
+
+    double tolerance = 1e-6;
+    EXPECT_LE(r_diff, tolerance);
+}
+
 TEST_F(RadialTest, HardCutoff){
     // Test that the hard cutoff returns 1 and 0 when rcut > r.
     double cutoff_vals[2] = {};
@@ -64,6 +79,68 @@ TEST_F(RadialTest, HardCutoff){
     hard_cutoff(cutoff_vals, r, rcut, cutoff_hyps);
     EXPECT_EQ(cutoff_vals[0], 0);
     EXPECT_EQ(cutoff_vals[1], 0);
+
+}
+
+TEST(ChebyTest, ChebySupport){
+    double r1 = 2;
+    double r2 = 4;
+    double r = 1;
+    int N = 10;
+    std::vector<double> hyps = {r1, r2};
+
+    double * g = new double[N]();
+    double * gderv = new double[N]();
+
+    chebyshev(g, gderv, r, N, hyps);
+    for (int n = 0; n < N; n ++){
+        EXPECT_EQ(g[n], 0);
+    }
+
+    r = 10;
+    chebyshev(g, gderv, r, N, hyps);
+    for (int n = 0; n < N; n ++){
+        EXPECT_EQ(g[n], 0);
+    }
+
+    delete [] g; delete []gderv;
+}
+
+TEST(ChebyTest, ChebyDerv){
+    double r1 = 2;
+    double r2 = 4;
+    double r = 2.5;
+    int N = 10;
+    double delta = 1e-8;
+    double rdelt = r + delta;
+    double rdelt_2 = r - delta;
+    double r_finite_diff, r_diff;
+    double tolerance = 1e-4;
+    std::vector<double> hyps = {r1, r2};
+
+    double * g, * gderv, * g_rdelt, * gderv_rdelt, * g_rdelt_2,
+        * gderv_rdelt_2;
+    
+    g = new double [N]();
+    gderv = new double [N]();
+    g_rdelt = new double [N]();
+    gderv_rdelt = new double [N]();
+    g_rdelt_2 = new double [N]();
+    gderv_rdelt_2 = new double [N]();
+
+    chebyshev(g, gderv, r, N, hyps);
+    chebyshev(g_rdelt, gderv_rdelt, rdelt, N, hyps);
+    chebyshev(g_rdelt_2, gderv_rdelt_2, rdelt_2, N, hyps);
+
+    for (int n = 0; n < N; n ++){
+        r_finite_diff = (g_rdelt[n] - g_rdelt_2[n]) / (2 * delta);
+
+        r_diff = abs(r_finite_diff - gderv[n]);
+        EXPECT_LE(r_diff, tolerance);
+    }
+
+    delete [] g; delete [] g_rdelt; delete [] gderv; delete [] g_rdelt_2;
+    delete [] gderv_rdelt_2;
 
 }
 

@@ -54,7 +54,13 @@ void get_Y(std::vector<double> & Y, std::vector<double> & Yx,
 void equispaced_gaussians(double * basis_vals, double * basis_derivs,
                           double r, int N, std::vector<double> radial_hyps);
 
+void chebyshev(double * basis_vals, double * basis_derivs,
+               double r, int N, std::vector<double> radial_hyps);
+
 // Radial cutoff functions.
+void quadratic_cutoff(double * rcut_vals, double r, double rcut,
+                      std::vector<double> cutoff_hyps);
+
 void cos_cutoff(double * rcut_vals, double r, double rcut,
                 std::vector<double> cutoff_hyps);
 

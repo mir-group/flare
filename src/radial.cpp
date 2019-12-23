@@ -2,6 +2,38 @@
 #include "ace.h"
 #define Pi 3.14159265358979323846
 
+void chebyshev(double * basis_vals, double * basis_derivs,
+               double r, int N, std::vector<double> radial_hyps){
+
+    double r1 = radial_hyps[0];
+    double r2 = radial_hyps[1];
+
+    // If r is ouside the support of the radial basis set, return.
+    if ((r < r1) || (r > r2)){
+        return;
+    }
+
+    double c = 1 / (r2 - r1);
+    double x = r * c;
+
+    for (int n = 0; n < N; n ++){
+        if (n == 0){
+            basis_vals[n] = 1;
+            basis_derivs[n] = 0;
+        }
+        else if (n == 1){
+            basis_vals[n] = x;
+            basis_derivs[n] = c;
+        }
+        // TODO: Check if using Chebyshev polynomials of the second kind improves the derivative.
+        else{
+            basis_vals[n] = 2 * x * basis_vals[n - 1] - basis_vals[n - 2];
+            basis_derivs[n] = 2 * basis_vals[n - 1] * c +
+                2 * x * basis_derivs[n - 1] - basis_derivs[n - 2];
+        }
+    }
+}
+
 void equispaced_gaussians(double * basis_vals, double * basis_derivs,
                           double r, int N, std::vector<double> radial_hyps){
 
