@@ -114,6 +114,17 @@ int noa, double rcut, int N, int lmax,
 std::vector<double> radial_hyps, std::vector<double> cutoff_hyps);
 
 // Rotationally invariant descriptors.
+void B1_descriptor(
+std::vector<double> & B1_vals, std::vector<double> & B1_force_dervs,
+std::vector<double> & B1_stress_dervs,
+const std::vector<double> & single_bond_vals,
+const Eigen::MatrixXd & single_bond_force_dervs,
+const Eigen::MatrixXd & single_bond_stress_dervs,
+void (*basis_function)(double *, double *, double, int, double *),
+void (*cutoff_function)(double *, double, double, double *),
+const LocalEnvironment & env, double rcut, int N, int lmax,
+std::vector<double> radial_hyps, std::vector<double> cutoff_hyps);
+
 void B2_descriptor(
 double * descriptor_vals, double * environment_dervs, double * central_dervs,
 void (*basis_function)(double *, double *, double, int, std::vector<double>),
