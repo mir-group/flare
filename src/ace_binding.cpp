@@ -69,4 +69,21 @@ PYBIND11_MODULE(ace, m){
         .def_readwrite("xs", &LocalEnvironment::xs)
         .def_readwrite("ys", &LocalEnvironment::ys)
         .def_readwrite("zs", &LocalEnvironment::zs);
+    
+    py::class_<DescriptorCalculator>(m, "DescriptorCalculator")
+        .def(py::init<const std::string &, const std::string &,
+             const std::vector<double> &, const std::vector<double> &,
+             int, int, int>())
+        .def_readwrite("radial_basis", &DescriptorCalculator::radial_basis)
+        .def_readwrite("cutoff_function", 
+            &DescriptorCalculator::cutoff_function)
+        .def_readwrite("single_bond_vals",
+            &DescriptorCalculator::single_bond_vals)
+        .def_readwrite("single_bond_force_vals",
+            &DescriptorCalculator::single_bond_force_dervs)
+        .def_readwrite("single_bond_stress_vals",
+            &DescriptorCalculator::single_bond_stress_dervs)
+        .def_readwrite("nos", &DescriptorCalculator::nos)
+        .def_readwrite("N", &DescriptorCalculator::N)
+        .def_readwrite("lmax", &DescriptorCalculator::lmax);
 }

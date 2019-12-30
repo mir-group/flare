@@ -47,6 +47,27 @@ class LocalEnvironment{
                                  std::vector<double> & zs);
 };
 
+// Descriptor calculator.
+class DescriptorCalculator{
+    private:
+        void (*radial_pointer)(double *, double *, double, int,
+                               std::vector<double>);
+        void (*cutoff_pointer)(double *, double, double, std::vector<double>);
+    public:
+        std::vector<double> single_bond_vals;
+        Eigen::MatrixXd single_bond_force_dervs, single_bond_stress_dervs;
+        std::string radial_basis, cutoff_function;
+        std::vector<double> radial_hyps, cutoff_hyps;
+        int nos, N, lmax;
+
+    DescriptorCalculator(
+        const std::string & radial_basis, const std::string & cutoff_function,
+        const std::vector<double> & radial_hyps,
+        const std::vector<double> & cutoff_hyps,
+        int nos, int N, int lmax);
+
+};
+
 // Spherical harmonics.
 void get_Y(std::vector<double> & Y, std::vector<double> & Yx,
            std::vector<double> & Yy, std::vector<double> & Yz, double x,

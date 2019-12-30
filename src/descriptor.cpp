@@ -1,6 +1,31 @@
 #include <cmath>
 #include "ace.h"
 
+DescriptorCalculator::DescriptorCalculator(
+        const std::string & radial_basis, const std::string & cutoff_function,
+        const std::vector<double> & radial_hyps,
+        const std::vector<double> & cutoff_hyps,
+        int nos, int N, int lmax){
+
+    this->radial_basis = radial_basis;
+    this->cutoff_function = cutoff_function;
+    this->radial_hyps = radial_hyps;
+    this->cutoff_hyps = cutoff_hyps;
+
+    this->nos = nos;
+    this->N = N;
+    this->lmax = lmax;
+
+    if (radial_basis == "chebyshev"){
+        this->radial_pointer = chebyshev;
+    }
+
+    if (cutoff_function == "quadratic"){
+        this->cutoff_pointer = quadratic_cutoff;
+    }
+
+}
+
 void B1_descriptor(
 std::vector<double> & B1_vals,
 Eigen::MatrixXd & B1_force_dervs,
