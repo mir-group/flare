@@ -24,7 +24,8 @@ class Structure{
 // Local environment class.
 class LocalEnvironment{
     public:
-        std::vector<int> environment_indices, environment_species;
+        std::vector<int> environment_indices, environment_species,
+            neighbor_list;
         int central_index, central_species;
         std::vector<double> rs, xs, ys, zs;
         double cutoff;
@@ -39,6 +40,7 @@ class LocalEnvironment{
                                  double cutoff, int sweep_val,
                                  std::vector<int> & environment_indices,
                                  std::vector<int> & environment_species,
+                                 std::vector<int> & neighbor_list,
                                  std::vector<double> & rs,
                                  std::vector<double> & xs,
                                  std::vector<double> & ys,
@@ -115,15 +117,13 @@ std::vector<double> radial_hyps, std::vector<double> cutoff_hyps);
 
 // Rotationally invariant descriptors.
 void B1_descriptor(
-std::vector<double> & B1_vals, std::vector<double> & B1_force_dervs,
-std::vector<double> & B1_stress_dervs,
+std::vector<double> & B1_vals,
+Eigen::MatrixXd & B1_force_dervs,
+Eigen::MatrixXd & B1_stress_dervs,
 const std::vector<double> & single_bond_vals,
 const Eigen::MatrixXd & single_bond_force_dervs,
 const Eigen::MatrixXd & single_bond_stress_dervs,
-void (*basis_function)(double *, double *, double, int, double *),
-void (*cutoff_function)(double *, double, double, double *),
-const LocalEnvironment & env, double rcut, int N, int lmax,
-std::vector<double> radial_hyps, std::vector<double> cutoff_hyps);
+const LocalEnvironment & env, int nos, int N, int lmax);
 
 void B2_descriptor(
 double * descriptor_vals, double * environment_dervs, double * central_dervs,

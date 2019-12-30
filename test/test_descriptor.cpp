@@ -15,5 +15,5 @@ TEST(DummyTest, DummyTest){
     test[0].push_back({1});
     // test.push_back(vector<double> {1, 2, 3});
 
-    cout << test[1].size() << endl;
+    // cout << test[1].size() << endl;
 }

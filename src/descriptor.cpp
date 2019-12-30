@@ -2,24 +2,66 @@
 #include "ace.h"
 
 void B1_descriptor(
-std::vector<double> & B1_vals, std::vector<double> & B1_force_dervs,
-std::vector<double> & B1_stress_dervs,
+std::vector<double> & B1_vals,
+Eigen::MatrixXd & B1_force_dervs,
+Eigen::MatrixXd & B1_stress_dervs,
 const std::vector<double> & single_bond_vals,
 const Eigen::MatrixXd & single_bond_force_dervs,
 const Eigen::MatrixXd & single_bond_stress_dervs,
-void (*basis_function)(double *, double *, double, int, double *),
-void (*cutoff_function)(double *, double, double, double *),
-const LocalEnvironment & env, double rcut, int N, int lmax,
-std::vector<double> radial_hyps, std::vector<double> cutoff_hyps){
+const LocalEnvironment & env, int nos, int N, int lmax){
 
-// TODO: implement this!
+int neigh_size = env.neighbor_list.size();
+int no_elements = nos * N;
+int no_harmonics = (lmax + 1) * (lmax + 1);
+int s, n, s_ind, n_ind, ind_curr, env_ind;
+int cent_ind = env.central_index;
+int counter = 0;
 
+for (s = 0; s < nos; s ++){
+    s_ind = s * N * no_harmonics;
+
+    for (n = 0; n < N; n ++){
+        n_ind = n * no_harmonics;
+        ind_curr = s_ind + n_ind;
+
+        // Store B1 value.
+        B1_vals[counter] = single_bond_vals[ind_curr];
+
+        // Store force derivatives.
+        for (int atom_index = 0; atom_index < neigh_size; atom_index ++){
+            env_ind = env.neighbor_list[atom_index];
+            B1_force_dervs(env_ind * 3, counter) =
+                single_bond_force_dervs(env_ind * 3, ind_curr);
+            B1_force_dervs(env_ind * 3 + 1, counter) =
+                single_bond_force_dervs(env_ind * 3 + 1, ind_curr);
+            B1_force_dervs(env_ind * 3 + 2, counter) =
+                single_bond_force_dervs(env_ind * 3 + 2, ind_curr);
+
+        }
+
+        // Store central atom force derivatives.
+        B1_force_dervs(cent_ind * 3, counter) =
+            single_bond_force_dervs(cent_ind * 3, ind_curr);
+        B1_force_dervs(cent_ind * 3 + 1, counter) =
+            single_bond_force_dervs(cent_ind * 3 + 1, ind_curr);
+        B1_force_dervs(cent_ind * 3 + 2, counter) =
+            single_bond_force_dervs(cent_ind * 3 + 2, ind_curr);
+
+        // Store stress derivatives.
+        for (int p = 0; p < 6; p ++){
+            B1_stress_dervs(p, counter) =
+                single_bond_stress_dervs(p, ind_curr);
+        }
+
+        counter ++;
+    }
+}
 }
 
 void B2_descriptor(
 double * descriptor_vals, double * environment_dervs, double * central_dervs,
-void (*basis_function)(double *, double *, double, int, double *),
-void (*cutoff_function)(double *, double, double, double *),
+void (*basis_function)(double *, double *, double, int, std::vector<double>),
+void (*cutoff_function)(double *, double, double, std::vector<double>),
 double * xs, double * ys, double * zs, double * rs, int * species,
 int nos, int noa, double rcut, int N, int lmax,
 std::vector<double> radial_hyps, std::vector<double> cutoff_hyps){

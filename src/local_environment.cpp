@@ -13,15 +13,18 @@ LocalEnvironment :: LocalEnvironment(const Structure & structure, int atom,
     int sweep_val = ceil(cutoff / structure.max_cutoff);
     this->sweep = sweep_val;
 
-    std::vector<int> environment_indices, environment_species;
+    std::vector<int> environment_indices, environment_species,
+        neighbor_list;
     std::vector<double> rs, xs, ys, zs;
 
     compute_environment(structure, atom, cutoff, sweep_val, 
                         environment_indices, environment_species,
+                        neighbor_list,
                         rs, xs, ys, zs);
 
     this->environment_indices = environment_indices;
     this->environment_species = environment_species;
+    this->neighbor_list = neighbor_list;
     this->rs = rs;
     this->xs = xs;
     this->ys = ys;
@@ -33,6 +36,7 @@ void LocalEnvironment :: compute_environment(
     const Structure & structure, int atom, double cutoff, int sweep_val,
     std::vector<int> & environment_indices,
     std::vector<int> & environment_species,
+    std::vector<int> & neighbor_list,
     std::vector<double> & rs, std::vector<double> & xs,
     std::vector<double> & ys, std::vector<double> & zs){
 
@@ -85,13 +89,14 @@ void LocalEnvironment :: compute_environment(
     xs.resize(cutoff_count);
     ys.resize(cutoff_count);
     zs.resize(cutoff_count);
-    int spec_curr;
+    int spec_curr, unique_check;
     double dist_curr;
     int bond_count = 0;
     counter = 0;
 
     for (int m = 0; m < noa; m++){
         spec_curr = structure.species[m];
+        unique_check = 0;
         for (int n = 0; n < sweep_no; n++){
             dist_curr = dists[counter];
             if ((dist_curr < cutoff) && (dist_curr != 0)){
@@ -102,6 +107,12 @@ void LocalEnvironment :: compute_environment(
                 ys[bond_count] = yvals[counter];
                 zs[bond_count] = zvals[counter];
                 bond_count ++;
+
+                // Update neighbor list.
+                if (unique_check == 0){
+                    neighbor_list.push_back(m);
+                    unique_check = 1;
+                }
             }
             counter ++;
         }

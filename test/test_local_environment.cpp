@@ -32,12 +32,14 @@ TEST(EnvironmentTest, SweepTest){
     EXPECT_EQ(ceil(cutoff / test_struc.max_cutoff), test_env.sweep);
 
     // Check that the number of atoms in the local environment is correct.
-    std::vector<int> env_ind, env_spec;
+    std::vector<int> env_ind, env_spec, unique_ind;
     std::vector<double> rs, xs, ys, zs;
     int sweep_val = test_env.sweep + 3;
     LocalEnvironment :: compute_environment(
-        test_struc, atom, cutoff, sweep_val, env_ind, env_spec,
+        test_struc, atom, cutoff, sweep_val, env_ind, env_spec, unique_ind,
         rs, xs, ys, zs);
     int expanded_count = rs.size();
     EXPECT_EQ(test_env.rs.size(), expanded_count);
+
+    EXPECT_EQ(test_env.neighbor_list.size(), 5);
 }
