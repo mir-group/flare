@@ -36,8 +36,8 @@ TEST(EnvironmentTest, SweepTest){
     std::vector<double> rs, xs, ys, zs;
     int sweep_val = test_env.sweep + 3;
     LocalEnvironment :: compute_environment(
-        test_struc, atom, cutoff, sweep_val, env_ind, env_spec, unique_ind,
-        rs, xs, ys, zs);
+        test_struc, test_env.noa, atom, cutoff, sweep_val, env_ind, env_spec,
+        unique_ind, rs, xs, ys, zs);
     int expanded_count = rs.size();
     EXPECT_EQ(test_env.rs.size(), expanded_count);
 

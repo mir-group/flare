@@ -26,6 +26,40 @@ DescriptorCalculator::DescriptorCalculator(
 
 }
 
+void DescriptorCalculator::compute_B1(const LocalEnvironment & env){
+
+    // Initialize single bond vectors.
+    int number_of_harmonics = (lmax + 1) * (lmax + 1);
+    int no_single_bond_descriptors = nos * N * number_of_harmonics;
+
+    single_bond_vals = std::vector<double> (no_single_bond_descriptors, 0);
+    single_bond_force_dervs =
+        Eigen::MatrixXd::Zero(env.noa * 3, no_single_bond_descriptors);
+    single_bond_stress_dervs =
+        Eigen::MatrixXd::Zero(6, no_single_bond_descriptors);
+
+    // Compute single bond vector.
+    single_bond_sum_env(single_bond_vals, single_bond_force_dervs,
+                        single_bond_stress_dervs, radial_pointer,
+                        cutoff_pointer, env, env.cutoff, N,
+                        lmax, radial_hyps, cutoff_hyps);
+
+    // Initialize B1 vectors.
+    int no_descriptors = nos * N;
+    descriptor_vals = std::vector<double> (no_descriptors, 0);
+    descriptor_force_dervs =
+        Eigen::MatrixXd::Zero(env.noa * 3, no_descriptors);
+    descriptor_stress_dervs =
+        Eigen::MatrixXd::Zero(env.noa * 3, no_descriptors);
+
+    // Compute B1 descriptors.
+    B1_descriptor(descriptor_vals, descriptor_force_dervs,
+        descriptor_stress_dervs, single_bond_vals,
+        single_bond_force_dervs, single_bond_stress_dervs,
+        env, nos, N, lmax);
+
+}
+
 void B1_descriptor(
 std::vector<double> & B1_vals,
 Eigen::MatrixXd & B1_force_dervs,

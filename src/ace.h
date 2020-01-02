@@ -26,17 +26,17 @@ class LocalEnvironment{
     public:
         std::vector<int> environment_indices, environment_species,
             neighbor_list;
-        int central_index, central_species;
+        int central_index, central_species, noa, sweep;
         std::vector<double> rs, xs, ys, zs;
         double cutoff;
-        int sweep;
 
         LocalEnvironment();
 
         LocalEnvironment(const Structure & structure, int atom,
                          double cutoff);
 
-        static void compute_environment(const Structure & structure, int atom,
+        static void compute_environment(const Structure & structure,
+                                 int noa, int atom,
                                  double cutoff, int sweep_val,
                                  std::vector<int> & environment_indices,
                                  std::vector<int> & environment_species,
@@ -54,8 +54,9 @@ class DescriptorCalculator{
                                std::vector<double>);
         void (*cutoff_pointer)(double *, double, double, std::vector<double>);
     public:
-        std::vector<double> single_bond_vals;
-        Eigen::MatrixXd single_bond_force_dervs, single_bond_stress_dervs;
+        std::vector<double> single_bond_vals, descriptor_vals;
+        Eigen::MatrixXd single_bond_force_dervs, single_bond_stress_dervs,
+            descriptor_force_dervs, descriptor_stress_dervs;
         std::string radial_basis, cutoff_function;
         std::vector<double> radial_hyps, cutoff_hyps;
         int nos, N, lmax;
@@ -65,6 +66,9 @@ class DescriptorCalculator{
         const std::vector<double> & radial_hyps,
         const std::vector<double> & cutoff_hyps,
         int nos, int N, int lmax);
+    
+    // TODO: implement B1 calculator
+    void compute_B1(const LocalEnvironment & env);
 
 };
 

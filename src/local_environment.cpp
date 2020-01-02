@@ -9,6 +9,7 @@ LocalEnvironment :: LocalEnvironment(const Structure & structure, int atom,
     this->cutoff = cutoff;
     central_index = atom;
     central_species = structure.species[atom];
+    noa = structure.wrapped_positions.rows();
 
     int sweep_val = ceil(cutoff / structure.max_cutoff);
     this->sweep = sweep_val;
@@ -17,7 +18,7 @@ LocalEnvironment :: LocalEnvironment(const Structure & structure, int atom,
         neighbor_list;
     std::vector<double> rs, xs, ys, zs;
 
-    compute_environment(structure, atom, cutoff, sweep_val, 
+    compute_environment(structure, noa, atom, cutoff, sweep_val, 
                         environment_indices, environment_species,
                         neighbor_list,
                         rs, xs, ys, zs);
@@ -33,14 +34,14 @@ LocalEnvironment :: LocalEnvironment(const Structure & structure, int atom,
 }
 
 void LocalEnvironment :: compute_environment(
-    const Structure & structure, int atom, double cutoff, int sweep_val,
+    const Structure & structure,
+    int noa, int atom, double cutoff, int sweep_val,
     std::vector<int> & environment_indices,
     std::vector<int> & environment_species,
     std::vector<int> & neighbor_list,
     std::vector<double> & rs, std::vector<double> & xs,
     std::vector<double> & ys, std::vector<double> & zs){
 
-    int noa = structure.wrapped_positions.rows();
     Eigen::MatrixXd pos_atom = structure.wrapped_positions.row(atom);
 
     Eigen::MatrixXd vec1 = structure.cell.row(0);
