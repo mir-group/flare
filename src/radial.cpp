@@ -77,8 +77,8 @@ void calculate_radial(
     (*cutoff_function)(rcut_vals, r, rcut, cutoff_hyps);
 
     // Calculate radial basis values.
-    double * basis_vals = new double[N];
-    double * basis_derivs = new double[N];
+    double * basis_vals = new double[N]();
+    double * basis_derivs = new double[N]();
     (*basis_function)(basis_vals, basis_derivs, r, N, radial_hyps);
 
     // Store the product.
