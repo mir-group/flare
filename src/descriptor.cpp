@@ -1,6 +1,8 @@
 #include <cmath>
 #include "ace.h"
 
+DescriptorCalculator::DescriptorCalculator(){}
+
 DescriptorCalculator::DescriptorCalculator(
         const std::string & radial_basis, const std::string & cutoff_function,
         const std::vector<double> & radial_hyps,
@@ -57,7 +59,6 @@ void DescriptorCalculator::compute_B1(const LocalEnvironment & env){
         descriptor_stress_dervs, single_bond_vals,
         single_bond_force_dervs, single_bond_stress_dervs,
         env, nos, N, lmax);
-
 }
 
 void B1_descriptor(

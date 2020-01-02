@@ -32,4 +32,4 @@ add_subdirectory(pybind11)
 # make python bindings
 pybind11_add_module(ace src/ace_binding.cpp src/y_grad.cpp src/structure.cpp
 		    src/local_environment.cpp src/descriptor.cpp
-		    src/radial.cpp src/cutoffs.cpp)
+		    src/radial.cpp src/cutoffs.cpp src/single_bond.cpp)

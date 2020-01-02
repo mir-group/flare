@@ -45,7 +45,7 @@ PYBIND11_MODULE(ace, m){
         .def_readwrite("Yx", &SphericalHarmonics::Yx)
         .def_readwrite("Yy", &SphericalHarmonics::Yy)
         .def_readwrite("Yz", &SphericalHarmonics::Yz);
-    
+
     // Bind the structure class.
     py::class_<Structure>(m, "Structure")
         .def(py::init<const Eigen::MatrixXd &,
@@ -68,7 +68,8 @@ PYBIND11_MODULE(ace, m){
         .def_readwrite("rs", &LocalEnvironment::rs)
         .def_readwrite("xs", &LocalEnvironment::xs)
         .def_readwrite("ys", &LocalEnvironment::ys)
-        .def_readwrite("zs", &LocalEnvironment::zs);
+        .def_readwrite("zs", &LocalEnvironment::zs)
+        .def_readwrite("cutoff", &LocalEnvironment::cutoff);
     
     py::class_<DescriptorCalculator>(m, "DescriptorCalculator")
         .def(py::init<const std::string &, const std::string &,
@@ -79,11 +80,18 @@ PYBIND11_MODULE(ace, m){
             &DescriptorCalculator::cutoff_function)
         .def_readwrite("single_bond_vals",
             &DescriptorCalculator::single_bond_vals)
-        .def_readwrite("single_bond_force_vals",
+        .def_readwrite("single_bond_force_dervs",
             &DescriptorCalculator::single_bond_force_dervs)
-        .def_readwrite("single_bond_stress_vals",
+        .def_readwrite("single_bond_stress_dervs",
             &DescriptorCalculator::single_bond_stress_dervs)
+        .def_readwrite("descriptor_vals",
+            &DescriptorCalculator::descriptor_vals)
+        .def_readwrite("descriptor_force_dervs",
+            &DescriptorCalculator::descriptor_force_dervs)
+        .def_readwrite("descriptor_stress_dervs",
+            &DescriptorCalculator::descriptor_stress_dervs)
         .def_readwrite("nos", &DescriptorCalculator::nos)
         .def_readwrite("N", &DescriptorCalculator::N)
-        .def_readwrite("lmax", &DescriptorCalculator::lmax);
+        .def_readwrite("lmax", &DescriptorCalculator::lmax)
+        .def("compute_B1", &DescriptorCalculator::compute_B1);
 }

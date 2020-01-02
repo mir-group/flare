@@ -61,6 +61,8 @@ class DescriptorCalculator{
         std::vector<double> radial_hyps, cutoff_hyps;
         int nos, N, lmax;
 
+    DescriptorCalculator();
+
     DescriptorCalculator(
         const std::string & radial_basis, const std::string & cutoff_function,
         const std::vector<double> & radial_hyps,
