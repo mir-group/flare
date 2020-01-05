@@ -73,8 +73,7 @@ PYBIND11_MODULE(ace, m){
     
     py::class_<DescriptorCalculator>(m, "DescriptorCalculator")
         .def(py::init<const std::string &, const std::string &,
-             const std::vector<double> &, const std::vector<double> &,
-             int, int, int>())
+             const std::vector<double> &, const std::vector<double> &>())
         .def_readwrite("radial_basis", &DescriptorCalculator::radial_basis)
         .def_readwrite("cutoff_function", 
             &DescriptorCalculator::cutoff_function)
@@ -90,8 +89,5 @@ PYBIND11_MODULE(ace, m){
             &DescriptorCalculator::descriptor_force_dervs)
         .def_readwrite("descriptor_stress_dervs",
             &DescriptorCalculator::descriptor_stress_dervs)
-        .def_readwrite("nos", &DescriptorCalculator::nos)
-        .def_readwrite("N", &DescriptorCalculator::N)
-        .def_readwrite("lmax", &DescriptorCalculator::lmax)
         .def("compute_B1", &DescriptorCalculator::compute_B1);
 }

@@ -59,18 +59,17 @@ class DescriptorCalculator{
             descriptor_force_dervs, descriptor_stress_dervs;
         std::string radial_basis, cutoff_function;
         std::vector<double> radial_hyps, cutoff_hyps;
-        int nos, N, lmax;
 
     DescriptorCalculator();
 
     DescriptorCalculator(
         const std::string & radial_basis, const std::string & cutoff_function,
         const std::vector<double> & radial_hyps,
-        const std::vector<double> & cutoff_hyps,
-        int nos, int N, int lmax);
+        const std::vector<double> & cutoff_hyps);
     
-    // TODO: implement B1 calculator
-    void compute_B1(const LocalEnvironment & env);
+    void compute_B1(const LocalEnvironment & env, int nos, int N);
+
+    void compute_B2(const LocalEnvironment & env, int nos, int N, int lmax);
 
 };
 
@@ -153,6 +152,15 @@ const Eigen::MatrixXd & single_bond_stress_dervs,
 const LocalEnvironment & env, int nos, int N, int lmax);
 
 void B2_descriptor(
+std::vector<double> & B2_vals,
+Eigen::MatrixXd & B2_force_dervs,
+Eigen::MatrixXd & B2_stress_dervs,
+const std::vector<double> & single_bond_vals,
+const Eigen::MatrixXd & single_bond_force_dervs,
+const Eigen::MatrixXd & single_bond_stress_dervs,
+const LocalEnvironment & env, int nos, int N, int lmax);
+
+void B2_descriptor_old(
 double * descriptor_vals, double * environment_dervs, double * central_dervs,
 void (*basis_function)(double *, double *, double, int, std::vector<double>),
 void (*cutoff_function)(double *, double, double, std::vector<double>),

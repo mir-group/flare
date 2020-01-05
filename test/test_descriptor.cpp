@@ -95,11 +95,11 @@ class DescriptorTest : public ::testing::Test{
 
         // Create descriptor calculator.
         desc1 = DescriptorCalculator(radial_string, cutoff_string,
-            radial_hyps, cutoff_hyps, nos, N, lmax);
+            radial_hyps, cutoff_hyps);
         desc2 = desc3 = desc1;
         
-        desc1.compute_B1(env1);
-        desc2.compute_B1(env2);
+        desc1.compute_B1(env1, nos, N);
+        desc2.compute_B1(env2, nos, N);
     }
 
 };
@@ -123,7 +123,7 @@ TEST_F(DescriptorTest, SingleBond){
     double tol = 1e-10;
     for (int n = 0; n < no_desc; n ++){
         d1 = desc1.descriptor_vals[n];
-        d2 = desc1.single_bond_vals[n * number_of_harmonics];
+        d2 = desc1.single_bond_vals[n];
         diff = d1 - d2;
         EXPECT_LE(abs(diff), tol);
     }
@@ -140,7 +140,7 @@ TEST_F(DescriptorTest, CentTest){
         positions_3(0, m) += delta;
         struc3 = Structure(cell, species, positions_3);
         env3 = LocalEnvironment(struc3, 0, rcut);
-        desc3.compute_B1(env3);
+        desc3.compute_B1(env3, nos, N);
 
         // Check derivatives.
         for (int n = 0; n < no_desc; n ++){
@@ -164,7 +164,7 @@ TEST_F(DescriptorTest, EnvTest){
             positions_3(p, m) += delta;
             struc3 =  Structure(cell, species, positions_3);
             env3 = LocalEnvironment(struc3, 0, rcut);
-            desc3.compute_B1(env3);
+            desc3.compute_B1(env3, nos, N);
 
             // Check derivatives.
             for (int n = 0; n < no_desc; n ++){
@@ -200,7 +200,7 @@ TEST_F(DescriptorTest, StressTest){
 
             struc2 = Structure(cell_2, species, positions_2);
             env2 = LocalEnvironment(struc2, 0, rcut);
-            desc2.compute_B1(env2);
+            desc2.compute_B1(env2, nos, N);
 
             // Check stress derivatives.
             for (int p = 0; p < no_desc; p ++){
