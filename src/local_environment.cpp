@@ -97,7 +97,14 @@ void LocalEnvironment :: compute_environment(
 
     for (int m = 0; m < noa; m++){
         spec_curr = structure.species[m];
+
+        // Add central atom to the neighbor list.
         unique_check = 0;
+        if (m == atom){
+            neighbor_list.push_back(m);
+            unique_check = 1;
+        }
+
         for (int n = 0; n < sweep_no; n++){
             dist_curr = dists[counter];
             if ((dist_curr < cutoff) && (dist_curr != 0)){

@@ -122,14 +122,6 @@ for (s = 0; s < nos; s ++){
 
         }
 
-        // Store central atom force derivatives.
-        B1_force_dervs(cent_ind * 3, counter) =
-            single_bond_force_dervs(cent_ind * 3, ind_curr);
-        B1_force_dervs(cent_ind * 3 + 1, counter) =
-            single_bond_force_dervs(cent_ind * 3 + 1, ind_curr);
-        B1_force_dervs(cent_ind * 3 + 2, counter) =
-            single_bond_force_dervs(cent_ind * 3 + 2, ind_curr);
-
         // Store stress derivatives.
         for (int p = 0; p < 6; p ++){
             B1_stress_dervs(p, counter) =
@@ -185,21 +177,12 @@ for (int n1 = 0; n1 < no_radial; n1 ++){
                     }
                  }
 
-                // Store central atom force derivatives.
-                for (int comp = 0; comp < 3; comp ++){
-                    B2_force_dervs(cent_ind * 3 + comp, counter) +=
-                        single_bond_vals[n1_l] *
-                        single_bond_force_dervs(cent_ind * 3 + comp, n2_l)+
-                        single_bond_force_dervs(cent_ind * 3 + comp, n1_l)*
-                        single_bond_vals[n2_l];
-                }
-
                 // Store stress derivatives.
                 for (int p = 0; p < 6; p ++){
                     B2_stress_dervs(p, counter) +=
                         single_bond_vals[n1_l] *
                         single_bond_stress_dervs(p, n2_l) +
-                        single_bond_force_dervs(p, n1_l) *
+                        single_bond_stress_dervs(p, n1_l) *
                         single_bond_vals[n2_l];
                 }
                 l_ind ++;

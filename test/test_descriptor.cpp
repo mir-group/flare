@@ -71,9 +71,9 @@ class DescriptorTest : public ::testing::Test{
         R = Rx * Ry * Rz;
 
         // Create arbitrary structure and a rotated version of it.
-        cell << 1.3, 0.5, 0.8,
-               -1.2, 1, 0.73,
-               -0.8, 0.1, 0.9;
+        cell << 10, 0.52, 0.12,
+               -0.93, 10, 0.32,
+               0.1, -0.2, 10;
         cell_2 = cell * R.transpose();
 
         positions_1 << 1.2, 0.7, 2.3,
@@ -97,9 +97,6 @@ class DescriptorTest : public ::testing::Test{
         desc1 = DescriptorCalculator(radial_string, cutoff_string,
             radial_hyps, cutoff_hyps);
         desc2 = desc3 = desc1;
-        
-        desc1.compute_B1(env1, nos, N);
-        desc2.compute_B1(env2, nos, N);
     }
 
 };
@@ -108,30 +105,28 @@ TEST_F(DescriptorTest, RotationTest){
     // Check that B1 is rotationally invariant.
     double d1, d2, diff;
     double tol = 1e-10;
+            
+    desc1.compute_B1(env1, nos, N);
+    desc2.compute_B1(env2, nos, N);
+
     for (int n = 0; n < no_desc; n ++){
         d1 = desc1.descriptor_vals[n];
         d2 = desc2.descriptor_vals[n];
         diff = d1 - d2;
         EXPECT_LE(abs(diff), tol);
     }
-}
 
-TEST_F(DescriptorTest, B2_Rotation_Test){
     int lmax = 8;
     desc1.compute_B2(env1, nos, N, lmax);
     desc2.compute_B2(env2, nos, N, lmax);
     no_desc = desc1.descriptor_vals.size();
-    
-    double d1, d2, diff;
-    double tol = 1e-10;
+
     for (int n = 0; n < no_desc; n ++){
         d1 = desc1.descriptor_vals[n];
         d2 = desc2.descriptor_vals[n];
         diff = d1 - d2;
         EXPECT_LE(abs(diff), tol);
     }
-
-    std::cout << desc1.descriptor_vals[10] << std::endl;
 }
 
 TEST_F(DescriptorTest, SingleBond){
@@ -139,18 +134,24 @@ TEST_F(DescriptorTest, SingleBond){
     // single bond vector.
     double d1, d2, diff;
     double tol = 1e-10;
+  
+    desc1.compute_B1(env1, nos, N);
+    desc2.compute_B1(env2, nos, N);
+
     for (int n = 0; n < no_desc; n ++){
         d1 = desc1.descriptor_vals[n];
         d2 = desc1.single_bond_vals[n];
         diff = d1 - d2;
         EXPECT_LE(abs(diff), tol);
     }
-
 }
 
 TEST_F(DescriptorTest, CentTest){
     double finite_diff, exact, diff;
     double tolerance = 1e-5;
+        
+    desc1.compute_B1(env1, nos, N);
+    desc2.compute_B1(env2, nos, N);
 
     // Perturb the coordinates of the central atom.
     for (int m = 0; m < 3; m ++){
@@ -169,11 +170,37 @@ TEST_F(DescriptorTest, CentTest){
             EXPECT_LE(diff, tolerance);
         }
     }
+
+    int lmax = 8;
+    desc1.compute_B2(env1, nos, N, lmax);
+    desc2.compute_B2(env2, nos, N, lmax);
+    no_desc = desc1.descriptor_vals.size();
+
+    // Perturb the coordinates of the central atom.
+    for (int m = 0; m < 3; m ++){
+        positions_3 = positions_1;
+        positions_3(0, m) += delta;
+        struc3 = Structure(cell, species, positions_3);
+        env3 = LocalEnvironment(struc3, 0, rcut);
+        desc3.compute_B2(env3, nos, N, lmax);
+
+        // Check derivatives.
+        for (int n = 0; n < no_desc; n ++){
+            finite_diff = 
+                (desc3.descriptor_vals[n] - desc1.descriptor_vals[n]) / delta;
+            exact = desc1.descriptor_force_dervs(m, n);
+            diff = abs(finite_diff - exact);
+            EXPECT_LE(diff, tolerance);
+        }
+    }
 }
 
 TEST_F(DescriptorTest, EnvTest){
     double finite_diff, exact, diff;
     double tolerance = 1e-5;
+        
+    desc1.compute_B1(env1, nos, N);
+    desc2.compute_B1(env2, nos, N);
 
     // Perturb the coordinates of the environment atoms.
     for (int p = 1; p < noa; p ++){
@@ -195,12 +222,41 @@ TEST_F(DescriptorTest, EnvTest){
             }
         }
     }
+
+    int lmax = 8;
+    desc1.compute_B2(env1, nos, N, lmax);
+    desc2.compute_B2(env2, nos, N, lmax);
+    no_desc = desc1.descriptor_vals.size();
+
+    // Perturb the coordinates of the environment atoms.
+    for (int p = 1; p < noa; p ++){
+        for (int m = 0; m < 3; m ++){
+            positions_3 = positions_1;
+            positions_3(p, m) += delta;
+            struc3 =  Structure(cell, species, positions_3);
+            env3 = LocalEnvironment(struc3, 0, rcut);
+            desc3.compute_B2(env3, nos, N, lmax);
+
+            // Check derivatives.
+            for (int n = 0; n < no_desc; n ++){
+                finite_diff = 
+                    (desc3.descriptor_vals[n] -
+                     desc1.descriptor_vals[n]) / delta;
+                exact = desc1.descriptor_force_dervs(p * 3 + m, n);
+                diff = abs(finite_diff - exact);
+                EXPECT_LE(diff, tolerance);
+            }
+        }
+    }
 }
 
 TEST_F(DescriptorTest, StressTest){
     int stress_ind = 0;
     double finite_diff, exact, diff;
     double tolerance = 1e-5;
+        
+    desc1.compute_B1(env1, nos, N);
+    desc2.compute_B1(env2, nos, N);
 
     // Test all 6 independent strains (xx, xy, xz, yy, yz, zz).
     for (int m = 0; m < 3; m ++){
@@ -219,6 +275,44 @@ TEST_F(DescriptorTest, StressTest){
             struc2 = Structure(cell_2, species, positions_2);
             env2 = LocalEnvironment(struc2, 0, rcut);
             desc2.compute_B1(env2, nos, N);
+
+            // Check stress derivatives.
+            for (int p = 0; p < no_desc; p ++){
+                finite_diff = 
+                    (desc2.descriptor_vals[p] -
+                     desc1.descriptor_vals[p]) / delta;
+                exact = desc1.descriptor_stress_dervs(stress_ind, p);
+                diff = abs(finite_diff - exact);
+                EXPECT_LE(diff, tolerance);
+            }
+
+            stress_ind ++;
+        }
+    }
+
+    int lmax = 8;
+    desc1.compute_B2(env1, nos, N, lmax);
+    desc2.compute_B2(env2, nos, N, lmax);
+    no_desc = desc1.descriptor_vals.size();
+    stress_ind = 0;
+
+    // Test all 6 independent strains (xx, xy, xz, yy, yz, zz).
+    for (int m = 0; m < 3; m ++){
+        for (int n = m; n < 3; n ++){
+            cell_2 = cell;
+            positions_2 = positions_1;
+
+            // Perform strain.
+            cell_2(0, m) += cell(0, n) * delta;
+            cell_2(1, m) += cell(1, n) * delta;
+            cell_2(2, m) += cell(2, n) * delta;
+            for (int k = 0; k < noa; k ++){
+                positions_2(k, m) += positions_1(k, n) * delta;
+            }
+
+            struc2 = Structure(cell_2, species, positions_2);
+            env2 = LocalEnvironment(struc2, 0, rcut);
+            desc2.compute_B2(env2, nos, N, lmax);
 
             // Check stress derivatives.
             for (int p = 0; p < no_desc; p ++){
