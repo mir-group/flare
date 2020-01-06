@@ -89,5 +89,6 @@ PYBIND11_MODULE(ace, m){
             &DescriptorCalculator::descriptor_force_dervs)
         .def_readwrite("descriptor_stress_dervs",
             &DescriptorCalculator::descriptor_stress_dervs)
-        .def("compute_B1", &DescriptorCalculator::compute_B1);
+        .def("compute_B1", &DescriptorCalculator::compute_B1)
+        .def("compute_B2", &DescriptorCalculator::compute_B2);
 }

@@ -116,6 +116,24 @@ TEST_F(DescriptorTest, RotationTest){
     }
 }
 
+TEST_F(DescriptorTest, B2_Rotation_Test){
+    int lmax = 8;
+    desc1.compute_B2(env1, nos, N, lmax);
+    desc2.compute_B2(env2, nos, N, lmax);
+    no_desc = desc1.descriptor_vals.size();
+    
+    double d1, d2, diff;
+    double tol = 1e-10;
+    for (int n = 0; n < no_desc; n ++){
+        d1 = desc1.descriptor_vals[n];
+        d2 = desc2.descriptor_vals[n];
+        diff = d1 - d2;
+        EXPECT_LE(abs(diff), tol);
+    }
+
+    std::cout << desc1.descriptor_vals[10] << std::endl;
+}
+
 TEST_F(DescriptorTest, SingleBond){
     // Check that B1 descriptors match the corresponding elements of the
     // single bond vector.

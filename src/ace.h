@@ -159,11 +159,3 @@ const std::vector<double> & single_bond_vals,
 const Eigen::MatrixXd & single_bond_force_dervs,
 const Eigen::MatrixXd & single_bond_stress_dervs,
 const LocalEnvironment & env, int nos, int N, int lmax);
-
-void B2_descriptor_old(
-double * descriptor_vals, double * environment_dervs, double * central_dervs,
-void (*basis_function)(double *, double *, double, int, std::vector<double>),
-void (*cutoff_function)(double *, double, double, std::vector<double>),
-double * xs, double * ys, double * zs, double * rs, int * species,
-int nos, int noa, double rcut, int N, int lmax,
-std::vector<double> radial_hyps, std::vector<double> cutoff_hyps);
