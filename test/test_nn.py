@@ -41,7 +41,6 @@ test_struc = ace.Structure(cell, coded_species, positions)
 
 cutoff = 7
 test_env = ace.LocalEnvironment(test_struc, 0, cutoff)
-print(test_env.environment_species)
 
 radial_basis = "chebyshev"
 cutoff_function = "cosine"
@@ -53,9 +52,6 @@ descriptor = \
                              cutoff_hyps, descriptor_settings)
 
 descriptor.compute_B2(test_env)
-print(descriptor.descriptor_vals)
-print(len(descriptor.descriptor_vals))
-print(descriptor.descriptor_force_dervs.shape)
 
 # Construct species NNP.
 input_size = 6
@@ -66,15 +62,17 @@ spec_test = nnp.SpeciesNet(layers, input_size, activation)
 
 # Test forward pass.
 input_tensor = torch.tensor(descriptor.descriptor_vals, requires_grad=True)
-out = spec_test.forward(input_tensor)
+out = spec_test.forward(input_tensor.double())
 out.backward()
-
-print(spec_test)
 
 # Construct NNP object.
 nnp_test = nnp.NNP(3, layers, input_size, activation, descriptor,
                    descriptor_method, cutoff)
-print(nnp_test)
-
 test_E = nnp_test.predict_E(test_struc)
-print(test_E)
+test_E.backward()
+
+# Try local EF function.
+test1 = nnp_test.predict_local_EF(test_env)
+print(test1.shape)
+print(test1)
+

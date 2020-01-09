@@ -14,6 +14,32 @@ class NNP(torch.nn.Module):
         for n in range(nos):
             setattr(self, "spec" + str(n),
                     SpeciesNet(layers, input_size, activation))
+    
+    def predict_local_EF(self, local_environment):
+        # Initialize energy/force tensor.
+        ef_tens = torch.zeros(1 + 3 * local_environment.noa)
+
+        # Calculate descriptor.
+        getattr(self.descriptor_calculator,
+                self.descriptor_method)(local_environment)
+        descriptor = \
+            torch.tensor(self.descriptor_calculator.descriptor_vals).double()
+        descriptor.requires_grad = True
+        desc_grad_torch = torch.from_numpy(self.descriptor_calculator
+                                           .descriptor_force_dervs)
+
+        # Forward pass.
+        spec = local_environment.central_index
+        local_energy = getattr(self, "spec" + str(spec)).forward(descriptor)
+
+        # Compute partial forces.
+        local_energy.backward()
+
+        # Store energy and partial forces.
+        ef_tens[0] = local_energy
+        ef_tens[1:] = torch.mv(desc_grad_torch, descriptor.grad)
+
+        return ef_tens
 
     def predict_E(self, structure):
         energy = 0
@@ -23,7 +49,8 @@ class NNP(torch.nn.Module):
             getattr(self.descriptor_calculator, self.descriptor_method)\
                 (environment)
             descriptor = \
-                torch.tensor(self.descriptor_calculator.descriptor_vals)
+                torch.tensor(self.descriptor_calculator
+                             .descriptor_vals).double()
 
             # Pass descriptor through the corresponding species network.
             energy += getattr(self, "spec" + str(spec)).forward(descriptor)
@@ -46,16 +73,16 @@ class SpeciesNet(torch.nn.Module):
         # Store linear layers of the network.
         self.layer_count = len(layers) + 1
 
-        setattr(self, "lin0", torch.nn.Linear(input_size, layers[0]))
+        setattr(self, "lin0", torch.nn.Linear(input_size, layers[0]).double())
 
         for n in range(1, len(layers)):
             # Connect previous hidden layer to current hidden layer.
             setattr(self, "lin"+str(n),
-                    torch.nn.Linear(layers[n-1], layers[n]))
+                    torch.nn.Linear(layers[n-1], layers[n]).double())
 
         # Connect final hidden layer to the output.
         setattr(self, "lin"+str(len(layers)),
-                torch.nn.Linear(layers[-1], 1))
+                torch.nn.Linear(layers[-1], 1).double())
 
         # Set the activation function.
         self.activation = activation

@@ -61,6 +61,8 @@ PYBIND11_MODULE(ace, m){
     py::class_<LocalEnvironment>(m, "LocalEnvironment")
         .def(py::init<const Structure &, int, double>())
         .def_readwrite("sweep", &LocalEnvironment::sweep)
+        .def_readwrite("central_index", &LocalEnvironment::central_index)
+        .def_readwrite("noa", &LocalEnvironment::noa)
         .def_readwrite("environment_indices",
             &LocalEnvironment::environment_indices)
         .def_readwrite("environment_species",
