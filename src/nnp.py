@@ -33,11 +33,12 @@ class NNP(torch.nn.Module):
         local_energy = getattr(self, "spec" + str(spec)).forward(descriptor)
 
         # Compute partial forces.
-        local_energy.backward()
+        net_grad = \
+            torch.autograd.grad(local_energy, descriptor, create_graph=True)[0]
 
         # Store energy and partial forces.
         ef_tens[0] = local_energy
-        ef_tens[1:] = torch.mv(desc_grad_torch, descriptor.grad)
+        ef_tens[1:] = torch.mv(desc_grad_torch, net_grad)
 
         return ef_tens
 

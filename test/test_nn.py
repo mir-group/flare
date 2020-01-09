@@ -73,6 +73,18 @@ test_E.backward()
 
 # Try local EF function.
 test1 = nnp_test.predict_local_EF(test_env)
-print(test1.shape)
 print(test1)
+test1[1].backward()
 
+# Torch tests.
+x = torch.tensor([1., 2., 3.], requires_grad = True)
+y = torch.sum(x * x)
+z = torch.autograd.grad(y, x, create_graph=True)
+z[0].sum().backward()
+print(x.grad)
+
+
+# y.backward()
+# test = x.grad
+# test2 = test[0]
+# test2.backward()
