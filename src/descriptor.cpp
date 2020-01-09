@@ -6,12 +6,14 @@ DescriptorCalculator::DescriptorCalculator(){}
 DescriptorCalculator::DescriptorCalculator(
         const std::string & radial_basis, const std::string & cutoff_function,
         const std::vector<double> & radial_hyps,
-        const std::vector<double> & cutoff_hyps){
+        const std::vector<double> & cutoff_hyps,
+        const std::vector<int> & descriptor_settings){
 
     this->radial_basis = radial_basis;
     this->cutoff_function = cutoff_function;
     this->radial_hyps = radial_hyps;
     this->cutoff_hyps = cutoff_hyps;
+    this->descriptor_settings = descriptor_settings;
 
     if (radial_basis == "chebyshev"){
         this->radial_pointer = chebyshev;
@@ -20,13 +22,20 @@ DescriptorCalculator::DescriptorCalculator(
     if (cutoff_function == "quadratic"){
         this->cutoff_pointer = quadratic_cutoff;
     }
+    else if (cutoff_function == "hard"){
+        this->cutoff_pointer = hard_cutoff;
+    }
+    else if (cutoff_function == "cosine"){
+        this->cutoff_pointer = cos_cutoff;
+    }
 
 }
 
-void DescriptorCalculator::compute_B1(const LocalEnvironment & env,
-                                      int nos, int N){
+void DescriptorCalculator::compute_B1(const LocalEnvironment & env){
 
     // Initialize single bond vectors.
+    int nos = descriptor_settings[0];
+    int N = descriptor_settings[1];
     int lmax = 0;
     int no_descriptors = nos * N;
 
@@ -48,11 +57,14 @@ void DescriptorCalculator::compute_B1(const LocalEnvironment & env,
     descriptor_stress_dervs = single_bond_stress_dervs;
 }
 
-void DescriptorCalculator::compute_B2(const LocalEnvironment & env,
-                                      int nos, int N, int lmax){
+void DescriptorCalculator::compute_B2(const LocalEnvironment & env){
 
     // Initialize single bond vectors.
+    int nos = descriptor_settings[0];
+    int N = descriptor_settings[1];
+    int lmax = descriptor_settings[2];
     int no_radial = nos * N;
+
     int no_harmonics = (lmax + 1) * (lmax + 1);
     int no_bond = nos * N * no_harmonics; 
     int no_descriptors = no_radial * (no_radial + 1) * (lmax + 1) / 2;

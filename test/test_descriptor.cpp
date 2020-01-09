@@ -21,6 +21,8 @@ class DescriptorTest : public ::testing::Test{
     LocalEnvironment env1, env2, env3;
     DescriptorCalculator desc1, desc2, desc3;
 
+    std::vector<int> descriptor_settings {5, 10, 10};
+
     double rcut = 3;
     
     // Choose arbitrary rotation angles.
@@ -95,7 +97,7 @@ class DescriptorTest : public ::testing::Test{
 
         // Create descriptor calculator.
         desc1 = DescriptorCalculator(radial_string, cutoff_string,
-            radial_hyps, cutoff_hyps);
+            radial_hyps, cutoff_hyps, descriptor_settings);
         desc2 = desc3 = desc1;
     }
 
@@ -106,8 +108,8 @@ TEST_F(DescriptorTest, RotationTest){
     double d1, d2, diff;
     double tol = 1e-10;
             
-    desc1.compute_B1(env1, nos, N);
-    desc2.compute_B1(env2, nos, N);
+    desc1.compute_B1(env1);
+    desc2.compute_B1(env2);
 
     for (int n = 0; n < no_desc; n ++){
         d1 = desc1.descriptor_vals[n];
@@ -117,8 +119,8 @@ TEST_F(DescriptorTest, RotationTest){
     }
 
     int lmax = 8;
-    desc1.compute_B2(env1, nos, N, lmax);
-    desc2.compute_B2(env2, nos, N, lmax);
+    desc1.compute_B2(env1);
+    desc2.compute_B2(env2);
     no_desc = desc1.descriptor_vals.size();
 
     for (int n = 0; n < no_desc; n ++){
@@ -135,8 +137,8 @@ TEST_F(DescriptorTest, SingleBond){
     double d1, d2, diff;
     double tol = 1e-10;
   
-    desc1.compute_B1(env1, nos, N);
-    desc2.compute_B1(env2, nos, N);
+    desc1.compute_B1(env1);
+    desc2.compute_B1(env2);
 
     for (int n = 0; n < no_desc; n ++){
         d1 = desc1.descriptor_vals[n];
@@ -150,8 +152,8 @@ TEST_F(DescriptorTest, CentTest){
     double finite_diff, exact, diff;
     double tolerance = 1e-5;
         
-    desc1.compute_B1(env1, nos, N);
-    desc2.compute_B1(env2, nos, N);
+    desc1.compute_B1(env1);
+    desc2.compute_B1(env2);
 
     // Perturb the coordinates of the central atom.
     for (int m = 0; m < 3; m ++){
@@ -159,7 +161,7 @@ TEST_F(DescriptorTest, CentTest){
         positions_3(0, m) += delta;
         struc3 = Structure(cell, species, positions_3);
         env3 = LocalEnvironment(struc3, 0, rcut);
-        desc3.compute_B1(env3, nos, N);
+        desc3.compute_B1(env3);
 
         // Check derivatives.
         for (int n = 0; n < no_desc; n ++){
@@ -172,8 +174,8 @@ TEST_F(DescriptorTest, CentTest){
     }
 
     int lmax = 8;
-    desc1.compute_B2(env1, nos, N, lmax);
-    desc2.compute_B2(env2, nos, N, lmax);
+    desc1.compute_B2(env1);
+    desc2.compute_B2(env2);
     no_desc = desc1.descriptor_vals.size();
 
     // Perturb the coordinates of the central atom.
@@ -182,7 +184,7 @@ TEST_F(DescriptorTest, CentTest){
         positions_3(0, m) += delta;
         struc3 = Structure(cell, species, positions_3);
         env3 = LocalEnvironment(struc3, 0, rcut);
-        desc3.compute_B2(env3, nos, N, lmax);
+        desc3.compute_B2(env3);
 
         // Check derivatives.
         for (int n = 0; n < no_desc; n ++){
@@ -199,8 +201,8 @@ TEST_F(DescriptorTest, EnvTest){
     double finite_diff, exact, diff;
     double tolerance = 1e-5;
         
-    desc1.compute_B1(env1, nos, N);
-    desc2.compute_B1(env2, nos, N);
+    desc1.compute_B1(env1);
+    desc2.compute_B1(env2);
 
     // Perturb the coordinates of the environment atoms.
     for (int p = 1; p < noa; p ++){
@@ -209,7 +211,7 @@ TEST_F(DescriptorTest, EnvTest){
             positions_3(p, m) += delta;
             struc3 =  Structure(cell, species, positions_3);
             env3 = LocalEnvironment(struc3, 0, rcut);
-            desc3.compute_B1(env3, nos, N);
+            desc3.compute_B1(env3);
 
             // Check derivatives.
             for (int n = 0; n < no_desc; n ++){
@@ -224,8 +226,8 @@ TEST_F(DescriptorTest, EnvTest){
     }
 
     int lmax = 8;
-    desc1.compute_B2(env1, nos, N, lmax);
-    desc2.compute_B2(env2, nos, N, lmax);
+    desc1.compute_B2(env1);
+    desc2.compute_B2(env2);
     no_desc = desc1.descriptor_vals.size();
 
     // Perturb the coordinates of the environment atoms.
@@ -235,7 +237,7 @@ TEST_F(DescriptorTest, EnvTest){
             positions_3(p, m) += delta;
             struc3 =  Structure(cell, species, positions_3);
             env3 = LocalEnvironment(struc3, 0, rcut);
-            desc3.compute_B2(env3, nos, N, lmax);
+            desc3.compute_B2(env3);
 
             // Check derivatives.
             for (int n = 0; n < no_desc; n ++){
@@ -255,8 +257,8 @@ TEST_F(DescriptorTest, StressTest){
     double finite_diff, exact, diff;
     double tolerance = 1e-5;
         
-    desc1.compute_B1(env1, nos, N);
-    desc2.compute_B1(env2, nos, N);
+    desc1.compute_B1(env1);
+    desc2.compute_B1(env2);
 
     // Test all 6 independent strains (xx, xy, xz, yy, yz, zz).
     for (int m = 0; m < 3; m ++){
@@ -274,7 +276,7 @@ TEST_F(DescriptorTest, StressTest){
 
             struc2 = Structure(cell_2, species, positions_2);
             env2 = LocalEnvironment(struc2, 0, rcut);
-            desc2.compute_B1(env2, nos, N);
+            desc2.compute_B1(env2);
 
             // Check stress derivatives.
             for (int p = 0; p < no_desc; p ++){
@@ -291,8 +293,8 @@ TEST_F(DescriptorTest, StressTest){
     }
 
     int lmax = 8;
-    desc1.compute_B2(env1, nos, N, lmax);
-    desc2.compute_B2(env2, nos, N, lmax);
+    desc1.compute_B2(env1);
+    desc2.compute_B2(env2);
     no_desc = desc1.descriptor_vals.size();
     stress_ind = 0;
 
@@ -312,7 +314,7 @@ TEST_F(DescriptorTest, StressTest){
 
             struc2 = Structure(cell_2, species, positions_2);
             env2 = LocalEnvironment(struc2, 0, rcut);
-            desc2.compute_B2(env2, nos, N, lmax);
+            desc2.compute_B2(env2);
 
             // Check stress derivatives.
             for (int p = 0; p < no_desc; p ++){

@@ -59,17 +59,19 @@ class DescriptorCalculator{
             descriptor_force_dervs, descriptor_stress_dervs;
         std::string radial_basis, cutoff_function;
         std::vector<double> radial_hyps, cutoff_hyps;
+        std::vector<int> descriptor_settings;
 
     DescriptorCalculator();
 
     DescriptorCalculator(
         const std::string & radial_basis, const std::string & cutoff_function,
         const std::vector<double> & radial_hyps,
-        const std::vector<double> & cutoff_hyps);
-    
-    void compute_B1(const LocalEnvironment & env, int nos, int N);
+        const std::vector<double> & cutoff_hyps,
+        const std::vector<int> & descriptor_settings);
 
-    void compute_B2(const LocalEnvironment & env, int nos, int N, int lmax);
+    void compute_B1(const LocalEnvironment & env);
+
+    void compute_B2(const LocalEnvironment & env);
 
 };
 

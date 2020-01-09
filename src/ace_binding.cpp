@@ -73,7 +73,8 @@ PYBIND11_MODULE(ace, m){
     
     py::class_<DescriptorCalculator>(m, "DescriptorCalculator")
         .def(py::init<const std::string &, const std::string &,
-             const std::vector<double> &, const std::vector<double> &>())
+             const std::vector<double> &, const std::vector<double> &,
+             const std::vector<int> &>())
         .def_readwrite("radial_basis", &DescriptorCalculator::radial_basis)
         .def_readwrite("cutoff_function", 
             &DescriptorCalculator::cutoff_function)
