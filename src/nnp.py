@@ -4,7 +4,9 @@ import torch
 
 class NNP(torch.nn.Module):
     def __init__(self, nos, layers, input_size, activation,
-                 descriptor_calculator, descriptor_method, cutoff):
+                 descriptor_calculator, descriptor_method, cutoff,
+                 optimizer=torch.optim.SGD, optimizer_kwargs={"lr" : 0.01},
+                 criterion=torch.nn.MSELoss()):
         super(NNP, self).__init__()
 
         self.descriptor_calculator = descriptor_calculator
@@ -14,6 +16,9 @@ class NNP(torch.nn.Module):
         for n in range(nos):
             setattr(self, "spec" + str(n),
                     SpeciesNet(layers, input_size, activation))
+
+        self.optimizer = optimizer(self.parameters(), **optimizer_kwargs)
+        self.criterion = criterion
 
     def get_torch_descriptor(self, local_environment):
         # Calculate descriptor.
@@ -107,7 +112,7 @@ class NNP(torch.nn.Module):
         for count in range(noa):
             environment = ace.LocalEnvironment(structure, count, self.cutoff)
             ef_tens += self.predict_local_EF(environment)
-        
+
         return ef_tens
 
     def predict_EFS(self, structure):
@@ -120,8 +125,25 @@ class NNP(torch.nn.Module):
         
         return efs_tens
 
-    def update(self, structure, labels):
-        pass
+    def update_weights(self, structure, target):
+        # Zero the gradients.
+        self.optimizer.zero_grad()
+
+        # Check target type.
+        noa = len(structure.species)
+        if len(target) == 1:
+            pred = self.predict_E(structure)
+        elif len(target)== 1 + 3 * noa:
+            pred = self.predict_EF(structure)
+        elif len(target) == 1 + 3 * noa + 6:
+            pred = self.predict_EFS(structure)
+        else:
+            raise Exception('Target tensor has the wrong length.')
+
+        # Compute loss and udpate weights.
+        loss = self.criterion(pred, target)
+        loss.backward()
+        self.optimizer.step()
 
 class SpeciesNet(torch.nn.Module):
     def __init__(self, layers, input_size, activation):
