@@ -9,14 +9,17 @@ class NNP(torch.nn.Module):
                  criterion=torch.nn.MSELoss()):
         super(NNP, self).__init__()
 
+        # Set descriptor values.
         self.descriptor_calculator = descriptor_calculator
         self.descriptor_method = descriptor_method
         self.cutoff = cutoff
 
+        # Create species nets.
         for n in range(nos):
             setattr(self, "spec" + str(n),
                     SpeciesNet(layers, input_size, activation))
 
+        # Set optimizer and loss function.
         self.optimizer = optimizer(self.parameters(), **optimizer_kwargs)
         self.criterion = criterion
 
@@ -144,6 +147,8 @@ class NNP(torch.nn.Module):
         loss = self.criterion(pred, target)
         loss.backward()
         self.optimizer.step()
+
+        return loss.item()
 
 class SpeciesNet(torch.nn.Module):
     def __init__(self, layers, input_size, activation):
