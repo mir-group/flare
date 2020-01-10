@@ -56,7 +56,7 @@ PYBIND11_MODULE(ace, m){
         .def_readwrite("positions", &Structure::positions)
         .def_readwrite("cell_transpose", &Structure::cell_transpose)
         .def_readwrite("wrapped_positions", &Structure::wrapped_positions)
-        .def_readwrite("voume", &Structure::volume)
+        .def_readwrite("volume", &Structure::volume)
         .def("wrap_positions", &Structure::wrap_positions);
 
     py::class_<LocalEnvironment>(m, "LocalEnvironment")
