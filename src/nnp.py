@@ -41,7 +41,7 @@ class NNP(torch.nn.Module):
 
     def predict_local_EF(self, local_environment):
         # Initialize energy/force tensor.
-        ef_tens = torch.zeros(1 + 3 * local_environment.noa)
+        ef_tens = torch.zeros(1 + 3 * local_environment.noa).double()
 
         # Calculate descriptor.
         descriptor, desc_grad_torch, _ = \
@@ -64,7 +64,7 @@ class NNP(torch.nn.Module):
     def predict_local_EFS(self, local_environment):
         # Initialize energy/force/stress tensor.
         no_force_comps = 3 * local_environment.noa
-        efs_tens = torch.zeros(1 + no_force_comps + 6)
+        efs_tens = torch.zeros(1 + no_force_comps + 6).double()
 
         # Calculate descriptor.
         descriptor, coordinate_gradient, strain_gradient = \
@@ -100,10 +100,25 @@ class NNP(torch.nn.Module):
         return energy
 
     def predict_EF(self, structure):
-        pass
+        # Initialize energy/force tensor.
+        noa = len(structure.species)
+        ef_tens = torch.zeros(1 + 3 * noa).double()
+
+        for count in range(noa):
+            environment = ace.LocalEnvironment(structure, count, self.cutoff)
+            ef_tens += self.predict_local_EF(environment)
+        
+        return ef_tens
 
     def predict_EFS(self, structure):
-        pass
+        noa = len(structure.species)
+        efs_tens = torch.zeros(1 + 3 * noa + 6).double()
+
+        for count in range(noa):
+            environment = ace.LocalEnvironment(structure, count, self.cutoff)
+            efs_tens += self.predict_local_EFS(environment)
+        
+        return efs_tens
 
     def update(self, structure, labels):
         pass
