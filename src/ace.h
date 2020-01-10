@@ -77,8 +77,8 @@ class DescriptorCalculator{
 
 // Spherical harmonics.
 void get_Y(std::vector<double> & Y, std::vector<double> & Yx,
-           std::vector<double> & Yy, std::vector<double> & Yz, double x,
-           double y, double z, int l);
+           std::vector<double> & Yy, std::vector<double> & Yz, const double x,
+           const double y, const double z, const int l);
 
 // Radial basis sets.
 void equispaced_gaussians(double * basis_vals, double * basis_derivs,
