@@ -12,6 +12,7 @@ Structure :: Structure(const Eigen::MatrixXd & cell,
     this->species = species;
     this->positions = positions;
     max_cutoff = get_max_cutoff();
+    volume = abs(cell.determinant());
 
     cell_transpose = cell.transpose();
     cell_transpose_inverse = cell_transpose.inverse();

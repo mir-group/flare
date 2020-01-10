@@ -8,7 +8,7 @@ class Structure{
                         cell_dot, cell_dot_inverse, positions,
                         wrapped_positions;
         std::vector<int> species;
-        double max_cutoff;
+        double max_cutoff, volume;
 
         Structure();
 
