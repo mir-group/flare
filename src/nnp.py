@@ -15,6 +15,19 @@ class NNP(torch.nn.Module):
             setattr(self, "spec" + str(n),
                     SpeciesNet(layers, input_size, activation))
     
+    def predict_local_E(self, local_environment):
+        # Calculate descriptor.
+        getattr(self.descriptor_calculator,
+                self.descriptor_method)(local_environment)
+        descriptor = \
+            torch.tensor(self.descriptor_calculator.descriptor_vals).double()
+
+        # Forward pass.
+        spec = local_environment.central_species
+        local_energy = getattr(self, "spec" + str(spec)).forward(descriptor)
+
+        return local_energy
+    
     def predict_local_EF(self, local_environment):
         # Initialize energy/force tensor.
         ef_tens = torch.zeros(1 + 3 * local_environment.noa)
@@ -29,7 +42,7 @@ class NNP(torch.nn.Module):
                                            .descriptor_force_dervs)
 
         # Forward pass.
-        spec = local_environment.central_index
+        spec = local_environment.central_species
         local_energy = getattr(self, "spec" + str(spec)).forward(descriptor)
 
         # Compute partial forces.
@@ -43,18 +56,11 @@ class NNP(torch.nn.Module):
         return ef_tens
 
     def predict_E(self, structure):
-        energy = 0
-        for count, spec in enumerate(structure.species):
-            # Compute environment and its descriptor.
-            environment = ace.LocalEnvironment(structure, count, self.cutoff)
-            getattr(self.descriptor_calculator, self.descriptor_method)\
-                (environment)
-            descriptor = \
-                torch.tensor(self.descriptor_calculator
-                             .descriptor_vals).double()
+        energy = torch.zeros(1).double()
 
-            # Pass descriptor through the corresponding species network.
-            energy += getattr(self, "spec" + str(spec)).forward(descriptor)
+        for count in range(len(structure.species)):
+            environment = ace.LocalEnvironment(structure, count, self.cutoff)
+            energy += self.predict_local_E(environment)
 
         return energy
 

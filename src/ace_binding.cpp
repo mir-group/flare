@@ -62,6 +62,7 @@ PYBIND11_MODULE(ace, m){
         .def(py::init<const Structure &, int, double>())
         .def_readwrite("sweep", &LocalEnvironment::sweep)
         .def_readwrite("central_index", &LocalEnvironment::central_index)
+        .def_readwrite("central_species", &LocalEnvironment::central_species)
         .def_readwrite("noa", &LocalEnvironment::noa)
         .def_readwrite("environment_indices",
             &LocalEnvironment::environment_indices)
