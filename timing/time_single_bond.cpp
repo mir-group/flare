@@ -80,27 +80,4 @@ int main(){
     mean_time = tot_time / reps;
     std::cout << "calculating the spherical harmonics took "
               << mean_time << " microseconds\n";
-
-    // Time single bond update.
-    double * single_bond_vals = new double[N * number_of_harmonics]();
-    double * environment_dervs = new double[N * number_of_harmonics * 3]();
-    double * central_dervs = new double[N * number_of_harmonics * 3]();
-
-    t1 = std::chrono::high_resolution_clock::now();
-    for (int n = 0; n < reps; n++){
-    single_bond_update(single_bond_vals, environment_dervs, central_dervs,
-                      basis_function, cutoff_function,
-                      x, y, z, r, rcut, N, lmax,
-                      radial_hyps, cutoff_hyps);
-    }
-    t2 = std::chrono::high_resolution_clock::now();
-
-    tot_time = 
-        std::chrono::duration_cast<std::chrono::microseconds>(t2-t1).count();
-    mean_time = tot_time / reps;
-    std::cout << "calculating the single bond basis took "
-              << mean_time << " microseconds\n";
-    
-    delete [] single_bond_vals; delete[] environment_dervs;
-    delete [] central_dervs; 
 }
