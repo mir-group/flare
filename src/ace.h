@@ -28,7 +28,7 @@ class LocalEnvironment{
             neighbor_list;
         int central_index, central_species, noa, sweep;
         std::vector<double> rs, xs, ys, zs;
-        double cutoff;
+        double cutoff, structure_volume;
 
         LocalEnvironment();
 

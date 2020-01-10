@@ -62,6 +62,7 @@ PYBIND11_MODULE(ace, m){
     py::class_<LocalEnvironment>(m, "LocalEnvironment")
         .def(py::init<const Structure &, int, double>())
         .def_readwrite("sweep", &LocalEnvironment::sweep)
+        .def_readwrite("structure_volume", &LocalEnvironment::structure_volume)
         .def_readwrite("central_index", &LocalEnvironment::central_index)
         .def_readwrite("central_species", &LocalEnvironment::central_species)
         .def_readwrite("noa", &LocalEnvironment::noa)
@@ -74,7 +75,7 @@ PYBIND11_MODULE(ace, m){
         .def_readwrite("ys", &LocalEnvironment::ys)
         .def_readwrite("zs", &LocalEnvironment::zs)
         .def_readwrite("cutoff", &LocalEnvironment::cutoff);
-    
+
     py::class_<DescriptorCalculator>(m, "DescriptorCalculator")
         .def(py::init<const std::string &, const std::string &,
              const std::vector<double> &, const std::vector<double> &,

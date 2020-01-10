@@ -73,7 +73,7 @@ test_E.backward()
 
 # Try local EF function.
 test1 = nnp_test.predict_local_EF(test_env)
-test2 = nnp_test.predict_local_EFS(test_env, test_struc.volume)
+test2 = nnp_test.predict_local_EFS(test_env)
 print(test1)
 print(test2)
 print(test_struc.volume)

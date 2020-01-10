@@ -61,7 +61,7 @@ class NNP(torch.nn.Module):
 
         return ef_tens
     
-    def predict_local_EFS(self, local_environment, structure_volume):
+    def predict_local_EFS(self, local_environment):
         # Initialize energy/force/stress tensor.
         no_force_comps = 3 * local_environment.noa
         efs_tens = torch.zeros(1 + no_force_comps + 6)
@@ -80,7 +80,8 @@ class NNP(torch.nn.Module):
         frcs = torch.mv(coordinate_gradient, net_grad)
 
         # Compute partial stress.
-        stress = -torch.mv(strain_gradient, net_grad) / structure_volume
+        struc_vol = local_environment.structure_volume
+        stress = -torch.mv(strain_gradient, net_grad) / struc_vol
 
         # Store energy, partial forces, and partial stress.
         efs_tens[0] = local_energy

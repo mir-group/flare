@@ -10,6 +10,7 @@ LocalEnvironment :: LocalEnvironment(const Structure & structure, int atom,
     central_index = atom;
     central_species = structure.species[atom];
     noa = structure.wrapped_positions.rows();
+    structure_volume = structure.volume;
 
     int sweep_val = ceil(cutoff / structure.max_cutoff);
     this->sweep = sweep_val;
