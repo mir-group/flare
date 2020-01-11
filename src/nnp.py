@@ -46,6 +46,18 @@ class NNP(torch.nn.Module):
         local_energy = getattr(self, "spec" + str(spec)).forward(descriptor)
 
         return local_energy
+    
+    def predict_local_F(self, local_environment):
+        f_tens = torch.zeros(3 * local_environment.noa).double()
+        descriptor, desc_grad_torch, _ = \
+            self.get_torch_descriptor(local_environment)
+        spec = local_environment.central_species
+        local_energy = getattr(self, "spec" + str(spec)).forward(descriptor)
+        net_grad = \
+            torch.autograd.grad(local_energy, descriptor, create_graph=True)[0]
+        f_tens = torch.mv(desc_grad_torch, net_grad)
+
+        return f_tens
 
     def predict_local_EF(self, local_environment):
         # Initialize energy/force tensor.
@@ -107,6 +119,16 @@ class NNP(torch.nn.Module):
 
         return energy
 
+    def predict_F(self, structure):
+        noa = len(structure.species)
+        f_tens = torch.zeros(3 * noa).double()
+
+        for count in range(noa):
+            environment = ace.LocalEnvironment(structure, count, self.cutoff)
+            f_tens += self.predict_local_F(environment)
+        
+        return f_tens
+
     def predict_EF(self, structure):
         # Initialize energy/force tensor.
         noa = len(structure.species)
@@ -136,7 +158,9 @@ class NNP(torch.nn.Module):
         noa = len(structure.species)
         if len(target) == 1:
             pred = self.predict_E(structure)
-        elif len(target)== 1 + 3 * noa:
+        elif len(target) == 3 * noa:
+            pred = self.predict_F(structure)
+        elif len(target) == 1 + 3 * noa:
             pred = self.predict_EF(structure)
         elif len(target) == 1 + 3 * noa + 6:
             pred = self.predict_EFS(structure)

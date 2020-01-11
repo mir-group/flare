@@ -37,6 +37,7 @@ positions = np.array([[ 2.12837244, -1.02214338, -0.28104315],
                       [-3.84709602,  1.91009051, -0.95156392],
                       [-3.87331649,  0.10910619, -0.56318171]])
 
+noa = len(positions)
 test_struc = ace.Structure(cell, coded_species, positions)
 
 cutoff = 7
@@ -80,14 +81,8 @@ test2 = nnp_test.predict_local_EFS(test_env)
 test1[1].backward()
 test2[1].backward()
 
-# Torch tests.
-x = torch.tensor([1., 2., 3.], requires_grad = True)
-y = torch.sum(x * x)
-z = torch.autograd.grad(y, x, create_graph=True)
-z[0].sum().backward()
-
-
-# y.backward()
-# test = x.grad
-# test2 = test[0]
-# test2.backward()
+# # Torch tests.
+# x = torch.tensor([1., 2., 3.], requires_grad = True)
+# y = torch.sum(x * x)
+# z = torch.autograd.grad(y, x, create_graph=True)
+# z[0].sum().backward()
