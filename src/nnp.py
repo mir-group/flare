@@ -55,7 +55,7 @@ class NNP(torch.nn.Module):
         local_energy = getattr(self, "spec" + str(spec)).forward(descriptor)
         net_grad = \
             torch.autograd.grad(local_energy, descriptor, create_graph=True)[0]
-        f_tens = torch.mv(desc_grad_torch, net_grad)
+        f_tens = -torch.mv(desc_grad_torch, net_grad)
 
         return f_tens
 
@@ -77,7 +77,7 @@ class NNP(torch.nn.Module):
 
         # Store energy and partial forces.
         ef_tens[0] = local_energy
-        ef_tens[1:] = torch.mv(desc_grad_torch, net_grad)
+        ef_tens[1:] = -torch.mv(desc_grad_torch, net_grad)
 
         return ef_tens
     
@@ -97,7 +97,7 @@ class NNP(torch.nn.Module):
         # Compute partial forces.
         net_grad = \
             torch.autograd.grad(local_energy, descriptor, create_graph=True)[0]
-        frcs = torch.mv(coordinate_gradient, net_grad)
+        frcs = -torch.mv(coordinate_gradient, net_grad)
 
         # Compute partial stress.
         struc_vol = local_environment.structure_volume
