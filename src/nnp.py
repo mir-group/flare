@@ -174,7 +174,7 @@ class NNP(torch.nn.Module):
 
         return loss.item()
 
-class BPNNP(torch.nn.module):
+class BPNNP(torch.nn.Module):
     def __init__(self, nos, layers, input_size, activation,
                  descriptor_calculator, descriptor_method, cutoff,
                  optimizer=torch.optim.SGD, optimizer_kwargs={"lr" : 0.01},
