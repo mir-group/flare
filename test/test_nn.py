@@ -45,7 +45,7 @@ cutoff = 7
 test_env = ace.LocalEnvironment(test_struc, 0, cutoff)
 
 radial_basis = "chebyshev"
-cutoff_function = "cosine"
+cutoff_function = "hard"
 radial_hyps = [0, cutoff]
 cutoff_hyps = []
 descriptor_settings = [3, 1, 0]
@@ -86,13 +86,13 @@ test2[1].backward()
 #  Test NN force
 # ------------------------
 
-cell = np.eye(3) * 10
+cell = np.eye(3) * 100
 species = [0, 0, 1, 2]
 positions = np.array([[0, 0, 0],
                       [1, 0.2, -0.1],
                       [0.4, -0.3, 0.2],
                       [0.1, 0.1, -0.3]])
-delt = 1e-2
+delt = 1e-3
 atom = 1
 comp = 1
 pos_delt = copy.copy(positions)
@@ -117,24 +117,74 @@ print(force_an)
 print(force_delt)
 print(force_delt - force_an)
 
-# Check parameter gradients.
-param_list = list(nnp_test.parameters())
+# ----------------------------------------------------------
+# Test parameter gradients when backpropping an energy loss.
+# ----------------------------------------------------------
+
+# Choose a weight in the network.
+weight = nnp_test.state_dict()['spec0.lin0.weight'][0, 0]
+
+# Initialize gradients to zero.
 nnp_test.zero_grad()
-# print(param_list[0].grad)
-# test_F = nnp_test.predict_F(test_struc)
+
+# Compute dummy loss. 
+test_E = nnp_test.predict_E(test_struc)
+random_target = torch.randn(1).double()
+dummy_loss =  nnp_test.criterion(random_target, test_E)
+
+# Backprop through the network.
+dummy_loss.backward()
+grad_val = list(nnp_test.parameters())[0].grad[0][0].item()
+
+# Change the value of the weight.
+delta = 1e-4
+weight += delta
+
+# Recompute the loss.
+test_E = nnp_test.predict_E(test_struc)
+dummy_loss_2 = nnp_test.criterion(random_target, test_E)
+
+print(grad_val)
+print(((dummy_loss_2 - dummy_loss) / delta).item())
+
+diff = grad_val - ((dummy_loss_2 - dummy_loss) / delta).item()
+print(diff)
+
+# --------------------------------------------------------
+# Test parameter gradients when backpropping a force loss.
+# --------------------------------------------------------
+
+# Choose a weight in the network.
+weight = nnp_test.state_dict()['spec0.lin0.weight'][0, 0]
+
+# Initialize gradients to zero.
+nnp_test.zero_grad()
+
+# Compute dummy loss. 
+test_F = nnp_test.predict_F(test_struc)
 random_target = torch.randn(len(positions) * 3).double()
-nnp_test.update_weights(test_struc, random_target)
-# print(param_list)
+dummy_loss =  nnp_test.criterion(random_target, test_F)
 
-# print('\nspec0 parameters\n')
-# print(list(nnp_test.spec0.parameters())[0])
+# print(dummy_loss.item())
+# print((((random_target - test_F)**2).sum() / len(random_target)).item())
 
-# # Test autograd function.
-# x = torch.tensor([1., 2., 3.], requires_grad=True)
-# y = (x * x * x).sum()
-# z = torch.autograd.grad(y, x, create_graph=True)[0]
-# z.sum().backward()
-# print(x.grad)
+# Backprop through the network.
+dummy_loss.backward()
+grad_val = list(nnp_test.parameters())[0].grad[0][0].item()
+
+# Change the value of the weight.
+weight += delta
+
+# Recompute the loss.
+test_F = nnp_test.predict_F(test_struc)
+dummy_loss_2 = nnp_test.criterion(random_target, test_F)
+
+print(grad_val)
+print(((dummy_loss_2 - dummy_loss) / delta).item())
+
+diff = grad_val - ((dummy_loss_2 - dummy_loss) / delta).item()
+print(diff)
+
 
 x = torch.zeros(2)
 y = torch.tensor([1., 2.], requires_grad=True)
@@ -143,7 +193,7 @@ x += y * z
 x += y * z * y * z
 s = x.sum()
 s.backward()
-print(z.grad)
+# print(z.grad)
 
 # print(nnp_test.spec0.forward(torch.randn(10, 6).double()))
 

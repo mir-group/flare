@@ -73,7 +73,8 @@ class NNP(torch.nn.Module):
 
         # Compute partial forces.
         net_grad = \
-            torch.autograd.grad(local_energy, descriptor, create_graph=True)[0]
+            torch.autograd.grad(local_energy, descriptor, create_graph=True,
+                                retain_graph=True)[0]
 
         # Store energy and partial forces.
         ef_tens[0] = local_energy

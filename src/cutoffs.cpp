@@ -38,6 +38,7 @@ void hard_cutoff(double * rcut_vals, double r, double rcut,
     if (r > rcut){
         rcut_vals[0] = 0;
         rcut_vals[1] = 0;
+        return;
     }
     else{
         rcut_vals[0] = 1;
