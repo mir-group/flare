@@ -40,8 +40,8 @@ void hard_cutoff(double * rcut_vals, double r, double rcut,
         rcut_vals[1] = 0;
         return;
     }
-    else{
-        rcut_vals[0] = 1;
-        rcut_vals[1] = 0;
-    }
+
+    rcut_vals[0] = 1;
+    rcut_vals[1] = 0;
+
 }
