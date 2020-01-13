@@ -206,7 +206,22 @@ class BPNNP(torch.nn.Module):
         # Set optimizer and loss function.
         self.optimizer = optimizer(self.parameters(), **optimizer_kwargs)
         self.criterion = criterion
-    
+
+    def get_torch_descriptor(self, local_environment):
+        # Calculate descriptor.
+        getattr(self.descriptor_calculator,
+                self.descriptor_method)(local_environment)
+        descriptor = \
+            torch.tensor(self.descriptor_calculator.descriptor_vals).double()
+        descriptor.requires_grad = True
+        coordinate_gradient = \
+            torch.from_numpy(self.descriptor_calculator.descriptor_force_dervs)
+        strain_gradient = \
+            torch.from_numpy(self.descriptor_calculator
+                             .descriptor_stress_dervs)
+
+        return descriptor, coordinate_gradient, strain_gradient
+
     def get_local_energy(self, descriptor):
         x = descriptor
         for n in range(self.layer_count - 1):
