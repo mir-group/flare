@@ -43,11 +43,16 @@ class BPNNP(torch.nn.Module):
         descriptor = \
             torch.tensor(self.descriptor_calculator.descriptor_vals).double()
         descriptor.requires_grad = True
-        coordinate_gradient = \
-            torch.from_numpy(self.descriptor_calculator.descriptor_force_dervs)
+
+        # Copy coordinate and strain gradients into tensors.
+        coordinate_grad_np = \
+            copy.copy(self.descriptor_calculator.descriptor_force_dervs)
+        strain_grad_np = \
+            copy.copy(self.descriptor_calculator.descriptor_stress_dervs)
+
+        coordinate_gradient = torch.from_numpy(coordinate_grad_np)
         strain_gradient = \
-            torch.from_numpy(self.descriptor_calculator
-                             .descriptor_stress_dervs)
+            torch.from_numpy(strain_grad_np)
 
         return descriptor, coordinate_gradient, strain_gradient
 
