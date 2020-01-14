@@ -41,14 +41,17 @@ positions = np.array([[ 2.12837244, -1.02214338, -0.28104315],
 noa = len(positions)
 test_struc = ace.Structure(cell, coded_species, positions)
 
-cutoff = 7
+cutoff = 7.
 test_env = ace.LocalEnvironment(test_struc, 0, cutoff)
 
 radial_basis = "chebyshev"
-cutoff_function = "hard"
+cutoff_function = "cosine"
 radial_hyps = [0, cutoff]
 cutoff_hyps = []
-descriptor_settings = [3, 1, 0]
+nos = 3
+N = 2
+lmax = 1
+descriptor_settings = [nos, N, lmax]
 descriptor = \
     ace.DescriptorCalculator(radial_basis, cutoff_function, radial_hyps,
                              cutoff_hyps, descriptor_settings)
@@ -56,7 +59,7 @@ descriptor = \
 descriptor.compute_B2(test_env)
 
 # Construct species NNP.
-input_size = 6
+input_size = int(nos * N * (nos * N + 1) * (lmax + 1) / 2)
 layers = [10]
 activation = torch.tanh
 descriptor_method = "compute_B2"
@@ -91,10 +94,10 @@ species = [0, 0, 1, 2]
 positions = np.array([[0, 0, 0],
                       [1, 0.2, -0.1],
                       [0.4, -0.3, 0.2],
-                      [0.1, 0.1, -0.3]])
+                      [0.1, 0.1, -0.3]], dtype=np.double)
 delt = 1e-3
-atom = 1
-comp = 1
+atom = 0
+comp = 0
 pos_delt = copy.copy(positions)
 pos_delt[atom, comp] += delt
 
@@ -104,6 +107,9 @@ pos_delt_2[atom, comp] -= delt
 test_struc = ace.Structure(cell, species, positions)
 struc_delt = ace.Structure(cell, species, pos_delt)
 struc_delt_2 = ace.Structure(cell, species, pos_delt_2)
+
+test_env = ace.LocalEnvironment(test_struc, 3, cutoff)
+descriptor.compute_B2(test_env)
 
 test_F = nnp_test.predict_F(test_struc)
 test_E = nnp_test.predict_E(test_struc)
@@ -116,6 +122,41 @@ force_delt = -((E_delt - E_delt_2) / (2 * delt))[0].item()
 print(force_an)
 print(force_delt)
 print(force_delt - force_an)
+
+# --------------------------------------------------------
+# Test parameter gradients when backpropping a force loss.
+# --------------------------------------------------------
+
+delta = 1e-6
+
+# Choose a weight in the network.
+weight = nnp_test.state_dict()['spec0.lin0.weight'][0, 0]
+
+# Initialize gradients to zero.
+nnp_test.zero_grad()
+
+# Compute dummy loss. 
+test_F = nnp_test.predict_F(test_struc)
+random_target = torch.randn(len(positions) * 3).double()
+dummy_loss = nnp_test.criterion(random_target, test_F)
+
+# Backprop through the network.
+dummy_loss.backward()
+grad_val = list(nnp_test.parameters())[0].grad[0][0].item()
+
+# Change the value of the weight.
+weight += delta
+
+# Recompute the loss.
+test_F = nnp_test.predict_F(test_struc)
+dummy_loss_2 = nnp_test.criterion(random_target, test_F)
+
+print('force test:')
+print(grad_val)
+print(((dummy_loss_2 - dummy_loss) / delta).item())
+
+diff = grad_val - ((dummy_loss_2 - dummy_loss) / delta).item()
+print(diff)
 
 # ----------------------------------------------------------
 # Test parameter gradients when backpropping an energy loss.
@@ -137,22 +178,23 @@ dummy_loss.backward()
 grad_val = list(nnp_test.parameters())[0].grad[0][0].item()
 
 # Change the value of the weight.
-delta = 1e-4
+delta = 1e-5
 weight += delta
 
 # Recompute the loss.
 test_E = nnp_test.predict_E(test_struc)
 dummy_loss_2 = nnp_test.criterion(random_target, test_E)
 
+print('energy test:')
 print(grad_val)
 print(((dummy_loss_2 - dummy_loss) / delta).item())
 
 diff = grad_val - ((dummy_loss_2 - dummy_loss) / delta).item()
 print(diff)
 
-# --------------------------------------------------------
-# Test parameter gradients when backpropping a force loss.
-# --------------------------------------------------------
+# ----------------------------------------------------------------
+# Test parameter gradients when backpropping a partial force loss.
+# ----------------------------------------------------------------
 
 # Choose a weight in the network.
 weight = nnp_test.state_dict()['spec0.lin0.weight'][0, 0]
@@ -161,50 +203,26 @@ weight = nnp_test.state_dict()['spec0.lin0.weight'][0, 0]
 nnp_test.zero_grad()
 
 # Compute dummy loss. 
-test_F = nnp_test.predict_F(test_struc)
+test_env = ace.LocalEnvironment(test_struc, 0, cutoff)
+test_F = nnp_test.predict_local_F(test_env)
 random_target = torch.randn(len(positions) * 3).double()
-dummy_loss =  nnp_test.criterion(random_target, test_F)
-
-# print(dummy_loss.item())
-# print((((random_target - test_F)**2).sum() / len(random_target)).item())
+dummy_loss = nnp_test.criterion(random_target, test_F)
 
 # Backprop through the network.
 dummy_loss.backward()
 grad_val = list(nnp_test.parameters())[0].grad[0][0].item()
 
 # Change the value of the weight.
+delta = 1e-8
 weight += delta
 
 # Recompute the loss.
-test_F = nnp_test.predict_F(test_struc)
+test_F = nnp_test.predict_local_F(test_env)
 dummy_loss_2 = nnp_test.criterion(random_target, test_F)
 
+print('partial force test:')
 print(grad_val)
 print(((dummy_loss_2 - dummy_loss) / delta).item())
 
 diff = grad_val - ((dummy_loss_2 - dummy_loss) / delta).item()
 print(diff)
-
-
-x = torch.zeros(2)
-y = torch.tensor([1., 2.], requires_grad=True)
-z = torch.tensor([4., 5.], requires_grad=True)
-x += y * z
-x += y * z * y * z
-s = x.sum()
-s.backward()
-# print(z.grad)
-
-# print(nnp_test.spec0.forward(torch.randn(10, 6).double()))
-
-# # Test NN gradients
-# print(list(nnp_test.parameters())[0])
-# print(list(nnp_test.parameters())[0].grad)
-
-# x = torch.tensor([5.], requires_grad=True)
-# y = x * x * x
-# y2 = x * x
-# z = torch.autograd.grad(y, x, create_graph=True)[0]
-# z2 = torch.autograd.grad(y2, x, create_graph=True)[0]
-# (z + z2).backward()
-# print(x.grad)

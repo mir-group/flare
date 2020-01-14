@@ -1,6 +1,7 @@
 import numpy as np
 import ace
 import torch
+import copy
 
 class NNP(torch.nn.Module):
     def __init__(self, nos, layers, input_size, activation,
@@ -30,8 +31,9 @@ class NNP(torch.nn.Module):
         descriptor = \
             torch.tensor(self.descriptor_calculator.descriptor_vals).double()
         descriptor.requires_grad = True
-        coordinate_gradient = \
-            torch.from_numpy(self.descriptor_calculator.descriptor_force_dervs)
+        coordinate_grad_np = \
+            copy.copy(self.descriptor_calculator.descriptor_force_dervs)
+        coordinate_gradient = torch.from_numpy(coordinate_grad_np)
         strain_gradient = \
             torch.from_numpy(self.descriptor_calculator
                              .descriptor_stress_dervs)
@@ -48,7 +50,6 @@ class NNP(torch.nn.Module):
         return local_energy
 
     def predict_local_F(self, local_environment):
-        f_tens = torch.zeros(3 * local_environment.noa).double()
         descriptor, desc_grad_torch, _ = \
             self.get_torch_descriptor(local_environment)
         spec = local_environment.central_species
@@ -126,8 +127,9 @@ class NNP(torch.nn.Module):
 
         for count in range(noa):
             environment = ace.LocalEnvironment(structure, count, self.cutoff)
-            f_tens += self.predict_local_F(environment)
-        
+            partial_f = self.predict_local_F(environment)
+            f_tens = f_tens + self.predict_local_F(environment)
+
         return f_tens
 
     def predict_EF(self, structure):
