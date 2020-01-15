@@ -142,6 +142,13 @@ class OTF:
             self.pred_func = predict.predict_on_structure_par_en
         self.par = par
 
+        if (self.par is True):
+            assert self.gp.per_atom_par is True, "the otf par flag has to be" \
+                "consistent with the gp per_atom_par flag."
+        else:
+            assert self.gp.per_atom_par is False, "the otf par flag has to be" \
+                "consistent with the gp per_atom_par flag."
+
         # set rescale attributes
         self.rescale_steps = rescale_steps
         self.rescale_temps = rescale_temps
