@@ -32,7 +32,7 @@ def check_local_threshold(structure: pmg.core.Structure, site,
     if verbose:
         print(f'Now checking error on {len(to_check_sites)} sites:')
     to_check_idxs = [site.index for site in to_check_sites]
-
+    print(to_check_idxs)
     stds = [predict_on_atom((Structure.from_pmg_structure(structure), i,
                              gp))[1] for i in
             to_check_idxs]
