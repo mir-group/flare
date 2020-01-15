@@ -270,7 +270,7 @@ def test_serialization_method(two_body_gp, test_point):
 
 def test_load_and_reload(two_body_gp, test_point):
 
-    two_body_gp.write_model('two_body.pickle', 'pickle')
+    two_body_gp.write_model('two_body', 'pickle')
 
     with open('two_body.pickle', 'rb') as f:
         new_gp = pickle.load(f)

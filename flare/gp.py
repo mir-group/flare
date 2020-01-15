@@ -514,7 +514,7 @@ environment and the environments in the training set."""
         """Create GP object from dictionary representation."""
 
         if 'mc' in dictionary['kernel_name']:
-            if (dictionary['multihyps'] is False):
+            if (dictionary.get('multihyps',False) is False):
                 force_kernel, grad = \
                     str_to_mc_kernel(dictionary['kernel_name'], include_grad=True)
             else:
@@ -544,7 +544,7 @@ environment and the environments in the training set."""
                                  hyps=np.array(dictionary['hyps']),
                                  hyp_labels=dictionary['hyp_labels'],
                                  par=dictionary['par'],
-                                 ncpus=dictionary['ncpus'],
+                                 ncpus=dictionary.get('ncpus') or dictionary.get('no_cpus'),
                                  maxiter=dictionary['maxiter'],
                                  opt_algorithm=dictionary['algo'],
                                  multihyps=dictionary['multihyps'],
