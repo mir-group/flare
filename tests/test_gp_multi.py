@@ -4,7 +4,7 @@ from numpy.random import random, randint, permutation
 
 import flare.gp
 import flare.gp_algebra
-import flare.gp_algrebra_multi
+import flare.gp_algebra_multi
 from flare.gp import GaussianProcess
 from flare.env import AtomicEnvironment
 from flare.struc import Structure
