@@ -11,7 +11,7 @@ def get_ky_mat(hyps: np.ndarray, training_data: list,
     number_of_hyps = len(hyps)
     sigma_n = hyps[number_of_hyps - 1]
     if (hyps_mask is not None):
-        if ('train_noise' in hyps_mask.keys()):
+        if ('train_noise' in hyps_mask):
             if (hyps_mask['train_noise'] is False):
                 sigma_n = hyps_mask['original'][-1]
 
@@ -40,9 +40,10 @@ def get_ky_and_hyp(hyps: np.ndarray, training_data: list,
     train_noise = True
     sigma_n = hyps[-1]
     if (hyps_mask is not None):
-        if ('train_noise' in hyps_mask.keys()):
+        if ('train_noise' in hyps_mask):
             if (hyps_mask['train_noise'] is False):
                 train_noise = False
+                sigma_n = hyps_mask['original'][-1]
     # add gradient of noise variance
     size3 = 3*len(training_data)
     if (train_noise):

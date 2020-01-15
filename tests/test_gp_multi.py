@@ -2,6 +2,9 @@ import pytest
 import numpy as np
 from numpy.random import random, randint, permutation
 
+import flare.gp
+import flare.gp_algebra
+import flare.gp_algrebra_multi
 from flare.gp import GaussianProcess
 from flare.env import AtomicEnvironment
 from flare.struc import Structure
@@ -86,7 +89,8 @@ def generate_hm(nbond, ntriplet):
                  'bond_mask': bond_mask,
                  'ntriplet': ntriplet,
                  'triplet_mask': triplet_mask,
-                 'hyps_label': hyps_label}
+                 'hyps_label': hyps_label,
+                 'train_noise': True}
 
     return hyps, hyps_mask
 
@@ -427,6 +431,7 @@ def test_constrained_optimization_simple():
                  'triplet_mask': [0, 1, 1, 1, 1, 1, 1, 1],
                  'original': np.array([1.1, 1.2, 2.1, 2.2, 3.1, 3.2, 4.1, 4.2,
                                     12.]),
+                 'train_noise': True,
                  'map': [1, 3, 5, 7, 8]}
 
     gp = GaussianProcess(kernel=en.two_plus_three_body_mc,

@@ -159,8 +159,8 @@ class GaussianProcess:
                     assert hyps_mask['train_noise'] is False, \
                             "train_noise should be False when noise is not in hyps"
             else:
-                assert hyps_mask['train_noise'] is False, \
-                       "train_noise should be False when map is not used"
+                assert hyps_mask['train_noise'] is True, \
+                       "train_noise should be True when map is not used"
                 assert (n2b*2+n3b*2+1) == len(hyps), \
                         "the hyperparmeter length is inconsistent with the mask"
 
