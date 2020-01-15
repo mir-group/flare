@@ -4,6 +4,7 @@ import os
 import json
 import numpy as np
 
+from typing import List
 from pytest import raises
 
 from flare.gp import GaussianProcess
@@ -100,6 +101,7 @@ def test_point() -> AtomicEnvironment:
 
     yield test_pt
     del test_pt
+
 
 
 # ------------------------------------------------------
@@ -267,7 +269,7 @@ def test_serialization_method(two_body_gp, test_point):
 
 def test_load_and_reload(two_body_gp, test_point):
 
-    two_body_gp.write_model('two_body.pickle', 'pickle')
+    two_body_gp.write_model('two_body', 'pickle')
 
     with open('two_body.pickle', 'rb') as f:
         new_gp = pickle.load(f)
