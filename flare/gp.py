@@ -547,8 +547,8 @@ environment and the environments in the training set."""
                                  ncpus=dictionary.get('ncpus') or dictionary.get('no_cpus'),
                                  maxiter=dictionary['maxiter'],
                                  opt_algorithm=dictionary['algo'],
-                                 multihyps=dictionary['multihyps'],
-                                 hyps_mask=dictionary['hyps_mask'])
+                                 multihyps=dictionary.get('multihyps',False),
+                                 hyps_mask=dictionary.get('hyps_mask',None))
 
         new_gp.training_data = [AtomicEnvironment.from_dict(env) for env in
                                 dictionary['training_data']]
