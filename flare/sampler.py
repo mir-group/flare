@@ -8,6 +8,8 @@ from flare.gp import GaussianProcess
 from typing import List, Tuple, Union, Callable
 from flare.struc import Structure
 
+import time
+
 from pymatgen.analysis.defects.utils import StructureMotifInterstitial
 
 # TODO: ALLOW FOR A FEW RELAXATION FRAMES TO PROBE ANY INTERESTING ADJACENT
@@ -27,20 +29,25 @@ def check_local_threshold(structure: pmg.core.Structure, site,
     :param threshold:
     :return:
     """
-
-    to_check_sites = structure.get_neighbors(site, cutoff)
+    
+    if verbose:
+        print("Now checking around neighbors of site {} in a ball of radius {}".format(site,cutoff))
+        now = time.time()
+    to_check_sites = structure.get_sites_in_sphere(site.coords,r=cutoff,include_index=True,include_image=True)
     if verbose:
         print(f'Now checking error on {len(to_check_sites)} sites:')
-    to_check_idxs = [site.index for site in to_check_sites]
-    print(to_check_idxs)
-    stds = [predict_on_atom((Structure.from_pmg_structure(structure), i,
-                             gp))[1] for i in
-            to_check_idxs]
-
-    if np.max(stds) > threshold:
-        return False
-    else:
-        return True
+    to_check_idxs = [site[2] for site in to_check_sites]
+    flare_struc = Structure.from_pmg_structure(structure)
+    
+    # Loop over atoms and break if one is high uncertainty
+    for i in to_check_idxs:
+        if np.max(predict_on_atom((flare_struc,i,gp))[1])>threshold:
+            if verbose:
+                print("Condition triggered: Took {} seconds".format(time.time()-now))
+            return False
+    if verbose:
+        print("No high uncertainty configurations found: Took {} seconds".format(time.time()-now))
+    return True
 
 
 class Sampler(object):
@@ -99,15 +106,18 @@ class Sampler(object):
             new_structure = self.base_structure.to_pmg_structure()
 
             new_structure.append(species=new_atom,
-                                 coords=new_site)
+                                 coords=new_site,coords_are_cartesian=True)
 
             target_site = new_structure.sites[-1]
 
             # Check if too-high uncertainty
+            pre = time.time()
             if not check_local_threshold(new_structure, target_site,
-                                         self.cutoff, self.threshold,self.gp):
-                high_uncertainty_configs.append(target_site)
-
+                                         self.cutoff, self.threshold,self.gp,verbose=verbose):
+                high_uncertainty_configs.append(new_structure)
+            post = time.time()
+            if verbose>2:
+                 print("Time to check configuration: {}".format(post-pre))
             if len(high_uncertainty_configs) >= halt_number:
                 break
 
