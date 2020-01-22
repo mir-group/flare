@@ -544,11 +544,13 @@ environment and the environments in the training set."""
                                  hyps=np.array(dictionary['hyps']),
                                  hyp_labels=dictionary['hyp_labels'],
                                  par=dictionary['par'],
+                                 per_atom_par=dictionary.get('per_atom_par',True),
                                  ncpus=dictionary.get('ncpus') or dictionary.get('no_cpus'),
                                  maxiter=dictionary['maxiter'],
                                  opt_algorithm=dictionary['algo'],
                                  multihyps=dictionary.get('multihyps',False),
-                                 hyps_mask=dictionary.get('hyps_mask',None))
+                                 hyps_mask=dictionary.get('hyps_mask',None)
+                                 )
 
         new_gp.training_data = [AtomicEnvironment.from_dict(env) for env in
                                 dictionary['training_data']]
@@ -571,6 +573,12 @@ environment and the environments in the training set."""
 
 
         return new_gp
+    
+    @staticmethod
+    def from_file(filename):
+        if '.json' in filename:
+            with open(filename,'r') as f:
+                return GaussianProcess.from_dict(json.loads(f.readline()))
 
     def compute_matrices(self):
 
