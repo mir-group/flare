@@ -14,9 +14,11 @@ if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
 endif()
 
-set(CMAKE_CXX_FLAGS_RELEASE "-Ofast")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
-# set(ACE_ROOT_DIR /Users/jonpvandermause/Research/ACE_NN)
+find_package(Eigen3)
+INCLUDE_DIRECTORIES ("${EIGEN3_INCLUDE_DIR}")
+
 set(ACE_ROOT_DIR $ENV{ACE})
 
 # specify the C++ standard
