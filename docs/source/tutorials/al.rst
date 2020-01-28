@@ -6,18 +6,20 @@ We use our unit test file as illustration (``test_OTF_qe.py``)
 
 First, let's set up a GP model with three-body kernel function.
 
-* ``kernel``: set to be the kernel function from ``kernels.py`` (single-component system)
-  or ``mc_simple.py`` (multi-component system). 
-  Currently we have the choices of two-body, three-body and two-plus-three-body kernel functions.
-  Two-plus-three-body kernel function is simply the summation of two-body and three-body kernels,
-  and is tested to have best performance.
+* ``kernel``: set to be the kernel function  
+
+    * import from ``kernels.py`` (single-component system) or ``mc_simple.py`` (multi-component system). 
+    * Currently we have the choices of two-body, three-body and two-plus-three-body kernel functions.
+    * Two-plus-three-body kernel function is simply the summation of two-body and three-body kernels,
+      and is tested to have best performance.
 
 * ``kernel_grad``: set to be the gradient of kernel function used for hyperparameter training. 
 
 * ``hyps``: the array of hyperparameters, whose names are shown in ``hyp_labels``.
-  For two-body kernel function, an array of length 3 is needed, ``hyps=[sigma_2, ls_2, sigma_n]``;
-  for three-body, ``hyps=[sigma_3, ls_3, sigma_n]``;
-  for two-plus-three-body, ``hyps=[sigma_2, ls_2, sigma_3, ls_3, sigma_n]``.
+
+    * For two-body kernel function, an array of length 3 is needed, ``hyps=[sigma_2, ls_2, sigma_n]``;
+    * For three-body, ``hyps=[sigma_3, ls_3, sigma_n]``;
+    * For two-plus-three-body, ``hyps=[sigma_2, ls_2, sigma_3, ls_3, sigma_n]``.
 
 * ``cutoffs``: consists of two values. The 1st is the cutoff of two-body and the 2nd is for three-body kernel. 
   Usually we will set a larger one for two-body.
