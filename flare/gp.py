@@ -502,3 +502,27 @@ class GaussianProcess:
         else:
             raise ValueError("Output format not supported: try from "
                              "{}".format(supported_formats))
+
+    @staticmethod
+    def from_file(filename: str, format: str=''):
+        """
+        One-line convenience method to load a GP from a file stored using
+        write_file
+
+        Args:
+            filename (str): path to GP model
+            format (str): json or pickle if format is not in filename
+        :return:
+        """
+
+        if '.json' in filename or 'json' in format:
+            with open(filename, 'r') as f:
+                return GaussianProcess.from_dict(json.loads(f.readline()))
+
+        elif '.pickle' in filename or 'pickle' in format:
+            with open(filename, 'rb') as f:
+                return pickle.load(f)
+
+        else:
+            raise ValueError("Warning: Format unspecified or file is not "
+                             ".json or .pickle format.")
