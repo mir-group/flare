@@ -103,9 +103,8 @@ class OTF:
         positions, species, cell, masses = \
             self.dft_module.parse_dft_input(self.dft_input)
 
-        _, coded_species = struc.get_unique_species(species)
 
-        self.structure = struc.Structure(cell=cell, species=coded_species,
+        self.structure = struc.Structure(cell=cell, species=species,
                                          positions=positions,
                                          mass_dict=masses,
                                          prev_positions=prev_pos_init,
