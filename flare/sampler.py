@@ -53,7 +53,7 @@ def check_local_threshold(structure: pmg.core.Structure,
 
 
     to_check_sites = structure.get_sites_in_sphere(site.coords,
-                                r=cutoff,include_index=True,include_image=True)
+                                r=np.max(gp.cutoffs),include_index=True,include_image=True)
     if verbose:
         print(f'Now checking error on {len(to_check_sites)} sites:')
 
@@ -244,13 +244,12 @@ class Sampler(object):
         """
 
         high_uncertainty_configs = []
+        new_points = np.array(new_points); print('New pts: ',new_points[:].shape)
 
-        new_points.reshape((len(new_points), 3))
-
-        for pt1, in new_points[:]:
+        for pt1 in new_points[:]:
             for pt2 in new_points[:]:
 
-                if np.equal(pt1, pt2):
+                if np.allclose(pt1, pt2):
                     continue
                 joint_struc = self.base_structure.to_pmg_structure()
 

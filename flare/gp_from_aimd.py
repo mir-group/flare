@@ -97,7 +97,7 @@ class TrajectoryTrainer(object):
         self.max_trains = max_trains
         self.curr_step = 0
         self.max_atoms_from_frame = max_atoms_from_frame
-        self.min_atoms_added = min_atoms_added
+        self.min_atoms_per_train = min_atoms_per_train
         self.verbose = verbose
         self.train_count = 0
 
@@ -116,12 +116,6 @@ class TrajectoryTrainer(object):
             else:
                 self.pred_func = predict_on_structure
 
-        if (parallel is True):
-            assert self.gp.per_atom_par is True, "the otf par flag has to be
-            consistent with the gp per_atom_par flag."
-        else:
-            assert self.gp.per_atom_par is False, "the otf par flag has to be
-            consistent with the gp per_atom_par flag."
 
         self.output = Output(output_name, always_flush=True)
 
