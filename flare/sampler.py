@@ -246,9 +246,10 @@ class Sampler(object):
 
         high_uncertainty_configs = []
 
-        new_points.reshape((len(new_points), 3))
 
-        for pt1, in new_points[:]:
+        new_points = np.array(new_points)
+
+        for pt1 in new_points[:]:
             for pt2 in new_points[:]:
 
                 if np.equal(pt1, pt2):
