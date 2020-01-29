@@ -29,7 +29,7 @@ class TrajectoryTrainer(object):
                  abs_force_tolerance: float = 0,
                  max_force_error: float = np.inf,
                  parallel: bool = False,
-                 no_cpus: int = None,
+                 n_cpus: int = None,
                  skip: int = 1,
                  validate_ratio: float = 0.1,
                  calculate_energy: bool = False,
@@ -102,7 +102,7 @@ class TrajectoryTrainer(object):
         self.train_count = 0
 
         self.parallel = parallel
-        self.no_cpus = no_cpus
+        self.no_cpus = n_cpus
 
         # set pred function
         if parallel:
