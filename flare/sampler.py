@@ -8,6 +8,9 @@ from flare.gp import GaussianProcess
 from typing import List, Tuple, Union, Callable
 from flare.struc import Structure
 
+from pymatgen import Molecule
+from pymatgen.io.ase import AseAtomsAdaptor
+
 import time
 
 from pymatgen.analysis.defects.utils import StructureMotifInterstitial
@@ -16,8 +19,21 @@ from pymatgen.analysis.defects.utils import StructureMotifInterstitial
 # CONFIGURATIONS
 
 
-def check_local_threshold(structure: pmg.core.Structure, site,
-                          cutoff:float,
+def get_rand_vec(distance,min_distance=0):
+    # Implementation borrowed from Pymatgen structure object's
+    # perturb method.
+    vector = np.random.randn(3)
+    vnorm = np.linalg.norm(vector)
+    dist = distance
+    if isinstance(min_distance, (float, int)):
+        dist = np.random.uniform(min_distance, dist)
+    return vector / vnorm * dist if vnorm != 0 else get_rand_vec(distance,
+                                                                 min_distance)
+
+
+
+def check_local_threshold(structure: pmg.core.Structure,
+                          site,
                           threshold:float,
                           gp: GaussianProcess,
                           verbose: int = 0)->bool:
@@ -31,11 +47,18 @@ def check_local_threshold(structure: pmg.core.Structure, site,
     """
     
     if verbose:
-        print("Now checking around neighbors of site {} in a ball of radius {}".format(site,cutoff))
+        print("Now checking around neighbors of "
+              "site {} in a ball of radius {}".format(site, cutoff))
         now = time.time()
-    to_check_sites = structure.get_sites_in_sphere(site.coords,r=cutoff,include_index=True,include_image=True)
+
+
+    to_check_sites = structure.get_sites_in_sphere(site.coords,
+                                r=cutoff,include_index=True,include_image=True)
     if verbose:
         print(f'Now checking error on {len(to_check_sites)} sites:')
+
+    cutoff = np.max(gp.cutoffs)
+
     to_check_idxs = [site[2] for site in to_check_sites]
     flare_struc = Structure.from_pmg_structure(structure)
     
@@ -48,6 +71,50 @@ def check_local_threshold(structure: pmg.core.Structure, site,
     if verbose:
         print("No high uncertainty configurations found: Took {} seconds".format(time.time()-now))
     return True
+
+
+def check_new_site_threshold(base_structure,
+                         position: 'np.ndarray',
+                         new_atom_type: Union[str, Molecule],
+                         gp: GaussianProcess,
+                         threshold: float,
+                         verbose: int = 0 ):
+    """
+    Given a base structure, a new position, and an atom type,
+    add the atom and test if it triggers the uncertainty
+
+    :param base_structure:
+    :param site:
+    :param new_atom:
+    :param gp:
+    :param threshold:
+    :param verbose:
+    :return:
+    """
+
+
+    # Convert to pymatgen structure to inspect atoms around radius
+    new_structure = base_structure.to_pmg_structure()
+
+    if isinstance(new_atom_type, str):
+        new_structure.append(species=new_atom_type,
+                             coords=position, coords_are_cartesian=True)
+    else:
+        raise NotImplementedError
+    target_site = new_structure.sites[-1]
+
+    # Check if too-high uncertainty
+    pre = time.time()
+    triggers_threshold = check_local_threshold(structure = new_structure,
+                                             site=target_site,
+                                             threshold=threshold, gp=gp,
+                                             verbose=verbose)
+    post = time.time()
+    if verbose > 2:
+        print("Time to check configuration: {}".format(post - pre))
+
+    return triggers_threshold, new_structure
+
 
 
 class Sampler(object):
@@ -83,9 +150,11 @@ class Sampler(object):
             self.threshold = min(rel_threshold * gp.hyps[-1], abs_threshold)
 
     def permutation_site_sampler(self, site_positions: np.array, new_atom:
-        'str',depth = 1, halt_number: int = np.inf,
+        'str',depth: int = 1,cur_depth = 0, halt_number: int = np.inf,
                                  veto_function: Callable = None,
-                                 verbose:int = 0)->List[
+                                 verbose:int = 0,
+                                 relax = False,
+                                 kick: float =.05)->List[
         pmg.core.Structure]:
         """
         :param site_positions: List of positions within the unit cell with 
@@ -102,25 +171,129 @@ class Sampler(object):
 
         high_uncertainty_configs = []
 
-        for new_site in site_positions:
-            new_structure = self.base_structure.to_pmg_structure()
+        for new_atom_coord in site_positions:
 
-            new_structure.append(species=new_atom,
-                                 coords=new_site,coords_are_cartesian=True)
+            within_thresh, new_struc = check_new_site_threshold(
+                self.base_structure, new_atom_coord,
+                new_atom_type=new_atom, gp = self.gp,
+                threshold=self.threshold)
 
-            target_site = new_structure.sites[-1]
+            if not within_thresh:
+                high_uncertainty_configs.append(new_struc)
 
-            # Check if too-high uncertainty
-            pre = time.time()
-            if not check_local_threshold(new_structure, target_site,
-                                         self.cutoff, self.threshold,self.gp,verbose=verbose):
-                high_uncertainty_configs.append(new_structure)
-            post = time.time()
-            if verbose>2:
-                 print("Time to check configuration: {}".format(post-pre))
             if len(high_uncertainty_configs) >= halt_number:
                 break
 
+        return high_uncertainty_configs
+
+
+    def neb_idpp_site_sampler(self,point_1: np.array, point_2:
+    np.array,
+                              new_atom:'str',depth: int = 1,
+                              cur_depth = 0, halt_number: int = np.inf,
+                                 veto_function: Callable = None,
+                                 verbose:int = 0,
+                                 relax = False,
+                                 kick: float =.05)->List[
+        pmg.core.Structure]:
+        """
+        :param site_positions: List of positions within the unit cell with 
+        which to gauge new sites. 
+        :param new_atom: Element of new atom to include. Will later be 
+        extended to molecules.
+        :param depth: Number of simultaneous sites to consider (depth) Not yet 
+        implemented.
+        :param halt_number: When this many structures have been sampled, 
+        stop (can help to produce a managable set of configurations to run)
+        :param verbose: Will increase output based on setting
+        :return: 
+        """
+
+
+        high_uncertainty_configs = []
+
+        aaa = AseAtomsAdaptor()
+
+        new_struc_1 = self.base_structure.to_pmg_structure()
+        new_struc_1.append(new_atom,point_1, coords_are_cartesian=True)
+        new_struc_2 = self.base_structure.to_pmg_structure()
+        new_struc_2.append(new_atom,point_2, coords_are_cartesian=True)
+
+        ase_struc_1 = aaa.get_atoms(new_struc_1)
+        ase_struc_2 = aaa.get_atoms(new_struc_2)
+
+        return high_uncertainty_configs
+
+    def cheap_interp_site_sampler(self, new_points: np.ndarray,
+                               new_atom: 'str',
+                                  halt_number: int = np.inf,
+                                  search_hump = False)->List[
+        pmg.core.Structure]:
+        """
+        :param site_positions: List of positions within the unit cell with
+        which to gauge new sites.
+        :param new_atom: Element of new atom to include. Will later be
+        extended to molecules.
+        :param depth: Number of simultaneous sites to consider (depth) Not yet
+        implemented.
+        :param halt_number: When this many structures have been sampled,
+        stop (can help to produce a managable set of configurations to run)
+        :param verbose: Will increase output based on setting
+        :param search_hump: Will try above and below the midpoint
+        :return:
+        """
+
+        high_uncertainty_configs = []
+
+        new_points.reshape((len(new_points), 3))
+
+        for pt1, in new_points[:]:
+            for pt2 in new_points[:]:
+
+                if np.equal(pt1, pt2):
+                    continue
+                joint_struc = self.base_structure.to_pmg_structure()
+
+                joint_struc.append(new_atom, pt1, coords_are_cartesian=True)
+                joint_struc.append(new_atom, pt2, coords_are_cartesian=True)
+
+                if joint_struc.get_distance(-2, -1) > 3:
+                    continue
+
+                new_struc_1 = self.base_structure.to_pmg_structure()
+                new_struc_2 = self.base_structure.to_pmg_structure()
+
+                new_struc_1.append(new_atom, pt1, coords_are_cartesian=True)
+                new_struc_2.append(new_atom, pt2, coords_are_cartesian=True)
+
+                mid_struc = new_struc_1.interpolate(new_struc_2, nimages=3)[1]
+
+                print(mid_struc)
+                within_thresh = check_local_threshold(
+                    mid_struc, mid_struc.sites[-1], gp=self.gp,
+                    threshold=self.threshold)
+
+                if not within_thresh and mid_struc.is_valid(.5):
+                    high_uncertainty_configs.append(mid_struc)
+
+                if search_hump:
+                    mid_struc.translate_sites([-1],np.array([0,0,-.3]))
+                    if mid_struc.is_valid(.5) and not check_local_threshold(
+                        mid_struc, mid_struc.sites[-1], gp=self.gp,
+                        threshold=self.threshold):
+                        high_uncertainty_configs.append(mid_struc)
+
+                    mid_struc.translate_sites([-1], np.array([0, 0, .45]))
+                    within_thresh = check_local_threshold(
+                        mid_struc, mid_struc.sites[-1], gp=self.gp,
+                        threshold=self.threshold)
+                    if not within_thresh:
+                        high_uncertainty_configs.append(mid_struc)
+
+                if len(high_uncertainty_configs) >= halt_number:
+                    break
+            if len(high_uncertainty_configs) >= halt_number:
+                break
 
         return high_uncertainty_configs
 
@@ -156,9 +329,8 @@ class Sampler(object):
             new_structure.sites[site].species = new_species
 
             if not check_local_threshold(new_structure, site,
-                                         self.cutoff, self.threshold,self.gp):
+                                         self.cutoff, self.threshold, self.gp):
                 high_uncertainty_configs.append(new_structure)
-
 
             if len(high_uncertainty_configs) >= halt:
                 break
