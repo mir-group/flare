@@ -294,7 +294,7 @@ class TrajectoryTrainer(object):
                         cur_frame, train_atoms, train=False)
                     nsample += len(train_atoms)
                     # Re-train if number of sampled atoms is high enough
-                    if nsample >= self.min_atoms_added or (
+                    if nsample >= self.min_atoms_per_train or (
                             i + 1) == train_frame:
                         if self.train_count < self.max_trains:
                             self.train_gp()
