@@ -36,7 +36,7 @@ class TrajectoryTrainer(object):
                  output_name: str = 'gp_from_aimd',
                  pre_train_max_iter: int = 50,
                  max_atoms_from_frame: int = np.inf, max_trains: int = np.inf,
-                 min_atoms_added: int = 1, shuffle_frames: bool = False,
+                 min_atoms_per_train: int = 1, shuffle_frames: bool = False,
                  verbose: int = 0,
                  pre_train_on_skips: int = -1,
                  pre_train_seed_frames: List[Structure] = None,
