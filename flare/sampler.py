@@ -48,12 +48,13 @@ def check_local_threshold(structure: pmg.core.Structure,
     
     if verbose:
         print("Now checking around neighbors of "
-              "site {} in a ball of radius {}".format(site, cutoff))
+              "site {} in a ball of radius {}".format(site, np.max(gp.cutoffs)))
         now = time.time()
 
 
     to_check_sites = structure.get_sites_in_sphere(site.coords,
-                                r=cutoff,include_index=True,include_image=True)
+                                r=np.max(gp.cutoffs),include_index=True,
+                                                   include_image=True)
     if verbose:
         print(f'Now checking error on {len(to_check_sites)} sites:')
 
@@ -266,9 +267,11 @@ class Sampler(object):
                 new_struc_1.append(new_atom, pt1, coords_are_cartesian=True)
                 new_struc_2.append(new_atom, pt2, coords_are_cartesian=True)
 
-                mid_struc = new_struc_1.interpolate(new_struc_2, nimages=3)[1]
+                interp_strucs =  new_struc_1.interpolate(new_struc_2,
+                                                         nimages=3)[1]
+                assert len(interp_strucs) == 3
+                mid_struc = interp_strucs[1]
 
-                print(mid_struc)
                 within_thresh = check_local_threshold(
                     mid_struc, mid_struc.sites[-1], gp=self.gp,
                     threshold=self.threshold)
