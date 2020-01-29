@@ -1,5 +1,38 @@
 """Multi-element 2-, 3-, and 2+3-body kernels that restrict all signal
-variance hyperparameters to a single value."""
+variance hyperparameters to a single value.
+
+The kernel functions to choose:
+
+* Two body:
+
+    * two_body_mc: force kernel
+    * two_body_mc_en: energy kernel
+    * two_body_mc_grad: gradient of kernel function
+    * two_body_mc_force_en: energy force kernel
+
+* Three body:
+
+    * three_body_mc,
+    * three_body_mc_grad,
+    * three_body_mc_en,
+    * three_body_mc_force_en,
+    
+* Two plus three body:
+
+    * two_plus_three_body_mc,
+    * two_plus_three_body_mc_grad,
+    * two_plus_three_mc_en,
+    * two_plus_three_mc_force_en
+
+**Example:**
+
+>>> gp_model = GaussianProcess(kernel=two_body_mc,
+                               kernel_grad=two_body_mc_grad,
+                               energy_force_kernel=two_body_mc_force_en,
+                               energy_kernel=two_body_mc_en,
+                               <other arguments>)
+"""
+
 import numpy as np
 from numba import njit
 from math import exp
