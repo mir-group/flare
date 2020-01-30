@@ -85,13 +85,12 @@ def test_parse_header():
                    'grid_num_3': [grid_num_3, grid_num_3, grid_num_3],
                    'svd_rank_2': np.min((grid_num_2, 3*train_size)),
                    'svd_rank_3': np.min((grid_num_3**3, 3*train_size)),
-                   'bodies': [2, 3],
                    'load_grid': None,
                    'update': False}
 
-    mgp_model = MappedGaussianProcess(gp_model.hyps, gp_model.cutoffs,
-            grid_params, struc_params, mean_only=True, container_only=False,
-            GP=gp_model, lmp_file_name=lammps_location)
+    mgp_model = MappedGaussianProcess(grid_params, struc_params, GP=gp_model,
+                                      mean_only=True, container_only=False,
+                                      lmp_file_name=lammps_location)
 
     # -------------------------------------------------------------------------
     #                          test the mapped potential

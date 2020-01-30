@@ -43,22 +43,31 @@ class MappedGaussianProcess:
                         'grid_num_3': [16, 16, 16],
                         'svd_rank_2': 64,
                         'svd_rank_3': 16**3,
-                        'bodies': [2, 3],
                         'update': True, # if True: accelerating grids 
                                         # generating by saving intermediate 
                                         # coeff when generating grids
                         'load_grid': None}
     '''
 
-    def __init__(self, hyps, cutoffs, grid_params: dict, struc_params: dict, 
-                 mean_only=False, container_only=True, GP=None, 
+    def __init__(self, 
+                 grid_params: dict, 
+                 struc_params: dict, 
+                 GP=None,
+                 mean_only=False, 
+                 container_only=True, 
                  lmp_file_name='lmp.mgp'):
 
-        self.hyps = hyps
-        self.cutoffs = cutoffs
+
+        self.hyps = GP.hyps
+        self.cutoffs = GP.cutoffs
+        self.bodies = []
+        if "two" in GP.kernel_name:
+            self.bodies.append(2)
+        if "three" in GP.kernel_name:
+            self.bodies.append(3)
+
         self.grid_params = grid_params
         self.struc_params = struc_params
-        self.bodies = grid_params['bodies']
         self.grid_num_2 = grid_params['grid_num_2']
         self.bounds_2 = grid_params['bounds_2']
         self.grid_num_3 = grid_params['grid_num_3']
@@ -84,14 +93,14 @@ class MappedGaussianProcess:
         '''
         if 2 in self.bodies:
             for b_struc in self.bond_struc[0]:
-                map_2 = Map2body(self.grid_num_2, self.bounds_2, self.cutoffs,
-                                 b_struc, self.bodies, self.svd_rank_2, 
+                map_2 = Map2body(self.grid_num_2, self.bounds_2, 
+                                 b_struc, self.svd_rank_2, 
                                  self.mean_only)
                 self.maps_2.append(map_2)
         if 3 in self.bodies:
             for b_struc in self.bond_struc[1]:
-                map_3 = Map3body(self.grid_num_3, self.bounds_3, self.cutoffs,
-                                 b_struc, self.bodies, self.svd_rank_3,
+                map_3 = Map3body(self.grid_num_3, self.bounds_3, 
+                                 b_struc, self.svd_rank_3,
                                  self.mean_only, 
                                  self.grid_params['load_grid'],
                                  self.update)
@@ -420,7 +429,7 @@ class MappedGaussianProcess:
 
 
 class Map2body:
-    def __init__(self, grid_num, bounds, cutoffs, bond_struc, bodies='2',
+    def __init__(self, grid_num, bounds, bond_struc,
                  svd_rank=0, mean_only=False):
         '''
         Build 2-body MGP
@@ -428,10 +437,8 @@ class Map2body:
 
         self.grid_num = grid_num
         self.l_bounds, self.u_bounds = bounds
-        self.cutoffs = cutoffs
         self.bond_struc = bond_struc
         self.species = bond_struc.coded_species
-        self.bodies = bodies
         self.svd_rank = svd_rank
         self.mean_only = mean_only
 
@@ -459,7 +466,7 @@ class Map2body:
         bond_lengths = np.linspace(self.l_bounds[0], self.u_bounds[0], nop)
         bond_means = np.zeros([nop])
         bond_vars = np.zeros([nop, len(GP.alpha)])
-        env12 = AtomicEnvironment(self.bond_struc, 0, self.cutoffs)
+        env12 = AtomicEnvironment(self.bond_struc, 0, original_cutoffs)
 
         pool_list = [(i, bond_lengths, GP, env12)
                      for i in range(nop)]
@@ -524,7 +531,7 @@ class Map2body:
 
 class Map3body:
 
-    def __init__(self, grid_num, bounds, cutoffs, bond_struc, bodies='3',
+    def __init__(self, grid_num, bounds, bond_struc, 
             svd_rank=0, mean_only=False, load_grid=None, update=True):
         '''
         Build 3-body MGP
@@ -532,14 +539,12 @@ class Map3body:
 
         self.grid_num = grid_num
         self.l_bounds, self.u_bounds = bounds
-        self.cutoffs = cutoffs
         self.bond_struc = bond_struc
         self.species = bond_struc.coded_species
         self.species_code = str(self.species[0])\
                           + str(self.species[1])\
                           + str(self.species[2])
 
-        self.bodies = bodies
         self.svd_rank = svd_rank
         self.mean_only = mean_only
         self.load_grid = load_grid
@@ -567,7 +572,7 @@ class Map3body:
         cos_angles = np.linspace(self.l_bounds[2], self.u_bounds[2], noa)
         bond_means = np.zeros([nop, nop, noa])
         bond_vars = np.zeros([nop, nop, noa, len(GP.alpha)])
-        env12 = AtomicEnvironment(self.bond_struc, 0, self.cutoffs)
+        env12 = AtomicEnvironment(self.bond_struc, 0, GP.cutoffs)
 
         pool_list = [(i, cos_angles[i], bond_lengths, GP, env12, self.update)\
                      for i in range(noa)]
