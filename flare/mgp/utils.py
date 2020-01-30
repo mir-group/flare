@@ -13,6 +13,10 @@ from flare.env import AtomicEnvironment
 from flare.kernels import triplet_kernel, three_body_helper_1, \
     three_body_helper_2, force_helper
 from flare.cutoffs import quadratic_cutoff
+from flare.kernels import str_to_kernel
+from flare.mc_simple import str_to_mc_kernel
+from flare.mc_sephyps import str_to_mc_kernel as str_to_mc_sephyps_kernel
+
 
 
 def save_GP(GP, prefix):
@@ -27,6 +31,81 @@ def load_GP(GP, prefix):
     GP.l_mat = np.load(prefix+'l_mat.npy')
     l_mat_inv = np.linalg.inv(GP.l_mat)
     GP.ky_mat_inv = l_mat_inv.T @ l_mat_inv
+
+
+def get_2bkernel(GP):
+    if 'mc' in GP.kernel_name:
+        if (GP.multihyps is False):
+            kernel = str_to_mc_kernel('two_body_mc')
+        else:
+            kernel = str_to_mc_sephyps_kernel('two_body_mc')
+    else:
+        kernel = str_to_kernel('two_body')
+
+    cutoffs = [GP.cutoffs[0]]
+
+    original_hyps = np.copy(GP.hyps)
+    if (GP.multihyps is True):
+        o_hyps_mask = GP.hyps_mask
+        if ('map' in o_hyps_mask.keys()):
+            ori_hyps = o_hyps_mask['original']
+            hm = o_hyps_mask['map']
+            for i, h in enumerate(original_hyps):
+                ori_hyps[hm[i]]=h
+        else:
+            ori_hyps = original_hyps
+        n2b = o_hyps_mask['nbond']
+        hyps = np.hstack([ori_hyps[:n2b*2], ori_hyps[-1]])
+        hyps_mask = {'nbond':n2b, 'ntriplet':0,
+              'nspec':o_hyps_mask['nspec'],
+              'spec_mask':o_hyps_mask['spec_mask'],
+              'bond_mask': o_hyps_mask['bond_mask']}
+    else:
+        hyps = [GP.hyps[0], GP.hyps[1], GP.hyps[-1]]
+        hyps_mask = None
+    return (kernel, cutoffs, hyps, hyps_mask)
+
+
+def get_3bkernel(GP):
+
+    if 'mc' in GP.kernel_name:
+        if (GP.multihyps is False):
+            kernel = str_to_mc_kernel('three_body_mc')
+        else:
+            kernel = str_to_mc_sephyps_kernel('three_body_mc')
+    else:
+        kernel = str_to_kernel('three_body')
+
+    if 'two' in GP.kernel_name:
+        base = 2
+    else:
+        base = 0
+
+    cutoffs = np.copy(GP.cutoffs)
+
+    original_hyps = np.copy(GP.hyps)
+    if (GP.multihyps is True):
+        o_hyps_mask = GP.hyps_mask
+        if ('map' in o_hyps_mask.keys()):
+            ori_hyps = o_hyps_mask['original']
+            hm = o_hyps_mask['map']
+            for i, h in enumerate(original_hyps):
+                ori_hyps[hm[i]]=h
+        else:
+            ori_hyps = original_hyps
+        n2b = o_hyps_mask['nbond']
+        n3b = o_hyps_mask['ntriplet']
+        hyps = ori_hyps[n2b*2:]
+        hyps_mask = {'ntriplet':n3b,'nbond':0,
+                'nspec':o_hyps_mask['nspec'],
+                'spec_mask':o_hyps_mask['spec_mask'],
+                'triplet_mask': o_hyps_mask['triplet_mask']}
+    else:
+        hyps = [GP.hyps[0+base], GP.hyps[1+base], GP.hyps[-1]]
+        hyps_mask = None
+
+    return (kernel, cutoffs, hyps, hyps_mask)
+
 
 
 def save_grid(bond_lens, bond_ens_diff, bond_vars_diff, prefix):
