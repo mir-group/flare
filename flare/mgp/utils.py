@@ -1,7 +1,7 @@
 import numpy as np
 from numpy import array
 from numba import njit
-import io, os, sys, time, random, logging
+import io, os, sys, time, random, math
 import multiprocessing as mp
 import cProfile
 
@@ -9,13 +9,14 @@ import flare.gp as gp
 import flare.env as env
 import flare.struc as struc
 import flare.kernels as kernels
+import flare.mc_simple as mc_simple
 from flare.env import AtomicEnvironment
 from flare.kernels import triplet_kernel, three_body_helper_1, \
     three_body_helper_2, force_helper
 from flare.cutoffs import quadratic_cutoff
 from flare.kernels import str_to_kernel
 from flare.mc_simple import str_to_mc_kernel
-from flare.mc_sephyps import str_to_mc_kernel as str_to_mc_sephyps_kernel
+#from flare.mc_sephyps import str_to_mc_kernel as str_to_mc_sephyps_kernel
 
 
 
@@ -37,8 +38,9 @@ def get_2bkernel(GP):
     if 'mc' in GP.kernel_name:
         if (GP.multihyps is False):
             kernel = str_to_mc_kernel('two_body_mc')
-        else:
-            kernel = str_to_mc_sephyps_kernel('two_body_mc')
+            energy_force_kernel = mc_simple.two_body_mc_force_en
+#        else:
+#            kernel = str_to_mc_sephyps_kernel('two_body_mc')
     else:
         kernel = str_to_kernel('two_body')
 
@@ -63,7 +65,7 @@ def get_2bkernel(GP):
     else:
         hyps = [GP.hyps[0], GP.hyps[1], GP.hyps[-1]]
         hyps_mask = None
-    return (kernel, cutoffs, hyps, hyps_mask)
+    return (kernel, energy_force_kernel, cutoffs, hyps, hyps_mask)
 
 
 def get_3bkernel(GP):
@@ -71,8 +73,9 @@ def get_3bkernel(GP):
     if 'mc' in GP.kernel_name:
         if (GP.multihyps is False):
             kernel = str_to_mc_kernel('three_body_mc')
-        else:
-            kernel = str_to_mc_sephyps_kernel('three_body_mc')
+            energy_force_kernel = mc_simple.three_body_mc_force_en
+#        else:
+#            kernel = str_to_mc_sephyps_kernel('three_body_mc')
     else:
         kernel = str_to_kernel('three_body')
 
@@ -104,8 +107,49 @@ def get_3bkernel(GP):
         hyps = [GP.hyps[0+base], GP.hyps[1+base], GP.hyps[-1]]
         hyps_mask = None
 
-    return (kernel, cutoffs, hyps, hyps_mask)
+    return (kernel, energy_force_kernel, cutoffs, hyps, hyps_mask)
 
+def get_kernel_vector(training_data, x: AtomicEnvironment,
+                      d_1: int, kernel, hyps, cutoffs,
+                      hyps_mask=None):
+
+    ds = [1, 2, 3]
+    size = len(training_data) * 3
+    k_v = np.zeros(size, )
+
+    if (hyps_mask is not None):
+        for m_index in range(size):
+            x_2 = training_data[int(math.floor(m_index / 3))]
+            d_2 = ds[m_index % 3]
+            k_v[m_index] = kernel(x, x_2, d_1, d_2,
+                                  hyps, cutoffs,
+                                  hyps_mask=hyps_mask)
+
+    else:
+        for m_index in range(size):
+            x_2 = training_data[int(math.floor(m_index / 3))]
+            d_2 = ds[m_index % 3]
+            k_v[m_index] = kernel(x, x_2, d_1, d_2,
+                                  hyps, cutoffs)
+    return k_v
+
+
+def en_kern_vec(training_data, x: AtomicEnvironment,
+                energy_force_kernel, hyps, cutoffs):
+    """Compute the vector of energy/force kernels between an atomic \
+ronment and the environments in the training set."""
+
+    ds = [1, 2, 3]
+    size = len(training_data) * 3
+    k_v = np.zeros(size, )
+
+    for m_index in range(size):
+        x_2 = training_data[int(math.floor(m_index / 3))]
+        d_2 = ds[m_index % 3]
+        k_v[m_index] = energy_force_kernel(x_2, x, d_2,
+                                           hyps, cutoffs)
+
+    return k_v
 
 
 def save_grid(bond_lens, bond_ens_diff, bond_vars_diff, prefix):

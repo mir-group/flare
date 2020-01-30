@@ -1,10 +1,7 @@
-import time
-import math
+import time, os, subprocess, math, inspect
 import numpy as np
 from scipy.linalg import solve_triangular
 import multiprocessing as mp
-import subprocess
-import os
 
 from flare import gp, struc, kernels
 from flare.env import AtomicEnvironment
@@ -15,8 +12,7 @@ from flare.cutoffs import quadratic_cutoff
 import flare.mc_simple as mc
 import flare.mgp.utils as utils
 from flare.mgp.utils import get_bonds, get_triplets, get_triplets_en,\
-    self_two_body_mc_jit, self_three_body_mc_jit,\
-    get_2bkernel, get_3bkernel
+    self_two_body_mc_jit, self_three_body_mc_jit
 from flare.mgp.splines_methods import PCASplines, CubicSpline
 
 
@@ -56,7 +52,9 @@ class MappedGaussianProcess:
                  GP=None,
                  mean_only=False, 
                  container_only=True, 
-                 lmp_file_name='lmp.mgp'):
+                 lmp_file_name='lmp.mgp',
+                 ncpus=None,
+                 nsample=100):
 
         # get all arguments as attributes 
         arg_dict = inspect.getargvalues(inspect.currentframe())[3]
@@ -89,7 +87,7 @@ class MappedGaussianProcess:
             for b_struc in self.bond_struc[0]:
                 map_2 = Map2body(self.grid_num_2, self.bounds_2, 
                                  b_struc, self.svd_rank_2, 
-                                 self.mean_only)
+                                 self.mean_only, self.ncpus, self.nsample)
                 self.maps_2.append(map_2)
         if 3 in self.bodies:
             for b_struc in self.bond_struc[1]:
@@ -424,12 +422,11 @@ class MappedGaussianProcess:
 
 class Map2body:
     def __init__(self, grid_num, bounds, bond_struc,
-                 svd_rank=0, mean_only=False):
+                 svd_rank=0, mean_only=False, ncpus=None, nsample=100):
         '''
         Build 2-body MGP
         '''
 
-        # get all arguments as attributes 
         arg_dict = inspect.getargvalues(inspect.currentframe())[3]
         del arg_dict['self']
         self.__dict__.update(arg_dict)
@@ -437,69 +434,101 @@ class Map2body:
         self.build_map_container()
 
 
-    def GenGrid(self, GP, processes=mp.cpu_count()):
+    def GenGrid(self, GP):
 
         '''
         generate grid data of mean prediction and L^{-1}k* for each triplet
          implemented in a parallelized style
         '''
 
-        # ------ change GP kernel to 2 body ------
-        original_kernel = GP.energy_force_kernel
-        GP.energy_force_kernel = mc.two_body_mc_force_en
-        
-        original_cutoffs = np.copy(GP.cutoffs)
-        GP.cutoffs = [GP.cutoffs[0]]
-       
-        original_hyps = np.copy(GP.hyps)
-        GP.hyps = [GP.hyps[0], GP.hyps[1], GP.hyps[-1]]
+        kernel_info = utils.get_2bkernel(GP)
+
+        if (self.ncpus is None):
+            processes = mp.cpu_count()
+        else:
+            processes = self.ncpus
 
         # ------ construct grids ------
         nop = self.grid_num
         bond_lengths = np.linspace(self.bounds[0][0], self.bounds[1][0], nop)
         bond_means = np.zeros([nop])
-        bond_vars = np.zeros([nop, len(GP.alpha)])
-        env12 = AtomicEnvironment(self.bond_struc, 0, original_cutoffs)
+        if not self.mean_only:
+            bond_vars = np.zeros([nop, len(GP.alpha)])
+        else:
+            bond_vars = None
+        env12 = AtomicEnvironment(self.bond_struc, 0, GP.cutoffs)
 
-        pool_list = [(i, bond_lengths, GP, env12)
-                     for i in range(nop)]
-        pool = mp.Pool(processes=processes)
-        A_list = pool.map(self._GenGrid_inner, pool_list)
-        for p in range(nop):
-            bond_means[p] = A_list[p][0]
-            bond_vars[p, :] = A_list[p][1]
-        pool.close()
-        pool.join()
+        with mp.Pool(processes=processes) as pool:
+            # A_list = pool.map(self._GenGrid_inner_most, pool_list)
+            # break it into pieces
+            size = len(GP.training_data)
+            nsample = self.nsample
+            ns = int(math.ceil(size/nsample/processes))*processes
+            nsample = int(math.ceil(size/ns))
 
-        # ------ change back original GP ------
-        GP.cutoffs = original_cutoffs
-        GP.hyps = original_hyps
-        GP.energy_force_kernel = original_kernel
+            print("prepare the package for parallelization")
+            block_id = []
+            nbatch = 0
+            for ibatch in range(ns):
+                s1 = int(nsample*ibatch)
+                e1 = int(np.min([s1 + nsample, size]))
+                block_id += [(s1, e1)]
+                print("block", ibatch, s1, e1)
+                nbatch += 1
+
+            k12_slice = []
+            k12_v_all = np.zeros([len(bond_lengths), size*3])
+            count = 0
+            base = 0
+            for ibatch in range(nbatch):
+                s, e = block_id[ibatch]
+                k12_slice.append(pool.apply_async(self._GenGrid_inner,
+                                                  args=(GP.training_data[s:e],
+                                                        bond_lengths,
+                                                        env12, kernel_info)))
+                count += 1
+                if (count > processes*2):
+                    for ibase in range(count):
+                        s, e = block_id[ibase+base]
+                        k12_v_all[:, s*3:e*3] = k12_slice[ibase].get()
+                    del k12_slice
+                    k12_slice = []
+                    count = 0
+                    base = ibatch+1
+            if (count > 0):
+               for ibase in range(count):
+                   s, e = block_id[ibase+base]
+                   k12_v_all[:, s*3:e*3] = k12_slice[ibase].get()
+               del k12_slice
+            pool.close()
+            pool.join()
+
+        for b, r in enumerate(bond_lengths):
+            k12_v = k12_v_all[b, :]
+            bond_means[b] = np.matmul(k12_v, GP.alpha)
+            if not self.mean_only:
+                bond_vars[b, :] = solve_triangular(GP.l_mat, k12_v, lower=True)
 
         return bond_means, bond_vars
 
-    def _GenGrid_inner(self, params):
+
+    def _GenGrid_inner(self, training_data, bond_lengths,
+            env12, kernel_info):
 
         '''
         generate grid for each angle, used to parallelize grid generation
         '''
-        b, bond_lengths, GP, env12 = params
-        r = bond_lengths[b]
-        env12.bond_array_2 = np.array([[r, 1, 0, 0]])
 
-        # get kernel vector
-        k_v = GP.en_kern_vec(env12)
+        kernel, en_force_kernel, cutoffs, hyps, hyps_mask = kernel_info
+        size = len(training_data)
+        k12_v = np.zeros([len(bond_lengths), size*3])
+        for b, r in enumerate(bond_lengths):
+            env12.bond_array_2 = np.array([[r, 1, 0, 0]])
+            k12_v[b, :] = utils.en_kern_vec(training_data,
+                                            env12, en_force_kernel,
+                                            hyps, cutoffs)
+        return k12_v
 
-        # get predictive mean
-        bond_means = np.matmul(k_v, GP.alpha)
-
-        # get var vector
-        bond_vars = np.zeros(k_v.shape)
-        if not self.mean_only:
-            v_vec = solve_triangular(GP.l_mat, k_v, lower=True)
-            bond_vars = v_vec
-
-        return bond_means, bond_vars
 
     def build_map_container(self):
 
@@ -556,8 +585,8 @@ class Map3body:
         # ------ construct grids ------
         nop = self.grid_num[0]
         noa = self.grid_num[2]
-        bond_lengths = np.linspace(self.l_bounds[0], self.u_bounds[0], nop)
-        cos_angles = np.linspace(self.l_bounds[2], self.u_bounds[2], noa)
+        bond_lengths = np.linspace(self.bounds[0][0], self.bounds[1][0], nop)
+        cos_angles = np.linspace(self.bounds[0][2], self.bounds[1][2], noa)
         bond_means = np.zeros([nop, nop, noa])
         bond_vars = np.zeros([nop, nop, noa, len(GP.alpha)])
         env12 = AtomicEnvironment(self.bond_struc, 0, GP.cutoffs)
@@ -661,11 +690,11 @@ class Map3body:
        # create spline interpolation class object
         nop = self.grid_num[0]
         noa = self.grid_num[2]
-        self.mean = CubicSpline(self.l_bounds, self.u_bounds, 
+        self.mean = CubicSpline(self.bounds[0], self.bounds[1], 
                                 orders=[nop, nop, noa])
 
         if not self.mean_only:
-            self.var = PCASplines(self.l_bounds, self.u_bounds,
+            self.var = PCASplines(self.bounds[0], self.bounds[1],
                                   orders=[nop, nop, noa],
                                   svd_rank=self.svd_rank)
 
