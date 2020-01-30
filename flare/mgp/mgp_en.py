@@ -15,7 +15,8 @@ from flare.cutoffs import quadratic_cutoff
 import flare.mc_simple as mc
 import flare.mgp.utils as utils
 from flare.mgp.utils import get_bonds, get_triplets, get_triplets_en,\
-        self_two_body_mc_jit, self_three_body_mc_jit
+    self_two_body_mc_jit, self_three_body_mc_jit,\
+    get_2bkernel, get_3bkernel
 from flare.mgp.splines_methods import PCASplines, CubicSpline
 
 
@@ -57,27 +58,20 @@ class MappedGaussianProcess:
                  container_only=True, 
                  lmp_file_name='lmp.mgp'):
 
-
+        # get all arguments as attributes 
+        arg_dict = inspect.getargvalues(inspect.currentframe())[3]
+        del arg_dict['self'], arg_dict['GP']
+        self.__dict__.update(arg_dict)
+        self.__dict__.update(grid_params) 
+ 
         self.hyps = GP.hyps
         self.cutoffs = GP.cutoffs
+        self.kernel_name = GP.kernel_name
         self.bodies = []
         if "two" in GP.kernel_name:
             self.bodies.append(2)
         if "three" in GP.kernel_name:
             self.bodies.append(3)
-
-        self.grid_params = grid_params
-        self.struc_params = struc_params
-        self.grid_num_2 = grid_params['grid_num_2']
-        self.bounds_2 = grid_params['bounds_2']
-        self.grid_num_3 = grid_params['grid_num_3']
-        self.bounds_3 = grid_params['bounds_3']
-
-        self.svd_rank_2 = grid_params['svd_rank_2']
-        self.svd_rank_3 = grid_params['svd_rank_3']
-        self.update = grid_params['update']
-        self.mean_only = mean_only
-        self.lmp_file_name = lmp_file_name
 
         self.build_bond_struc(struc_params)
         self.maps_2 = []
@@ -435,14 +429,13 @@ class Map2body:
         Build 2-body MGP
         '''
 
-        self.grid_num = grid_num
-        self.l_bounds, self.u_bounds = bounds
-        self.bond_struc = bond_struc
-        self.species = bond_struc.coded_species
-        self.svd_rank = svd_rank
-        self.mean_only = mean_only
-
+        # get all arguments as attributes 
+        arg_dict = inspect.getargvalues(inspect.currentframe())[3]
+        del arg_dict['self']
+        self.__dict__.update(arg_dict)
+                
         self.build_map_container()
+
 
     def GenGrid(self, GP, processes=mp.cpu_count()):
 
@@ -463,7 +456,7 @@ class Map2body:
 
         # ------ construct grids ------
         nop = self.grid_num
-        bond_lengths = np.linspace(self.l_bounds[0], self.u_bounds[0], nop)
+        bond_lengths = np.linspace(self.bounds[0][0], self.bounds[1][0], nop)
         bond_means = np.zeros([nop])
         bond_vars = np.zeros([nop, len(GP.alpha)])
         env12 = AtomicEnvironment(self.bond_struc, 0, original_cutoffs)
@@ -513,11 +506,11 @@ class Map2body:
         '''
         build 1-d spline function for mean, 2-d for var
         '''
-        self.mean = CubicSpline(self.l_bounds, self.u_bounds, 
+        self.mean = CubicSpline(self.bounds[0], self.bounds[1], 
                                 orders=[self.grid_num])
 
         if not self.mean_only:
-            self.var = PCASplines(self.l_bounds, self.u_bounds,
+            self.var = PCASplines(self.bounds[0], self.bounds[1],
                                   orders=[self.grid_num],
                                   svd_rank=self.svd_rank)
         
@@ -537,18 +530,13 @@ class Map3body:
         Build 3-body MGP
         '''
 
-        self.grid_num = grid_num
-        self.l_bounds, self.u_bounds = bounds
-        self.bond_struc = bond_struc
-        self.species = bond_struc.coded_species
-        self.species_code = str(self.species[0])\
-                          + str(self.species[1])\
-                          + str(self.species[2])
-
-        self.svd_rank = svd_rank
-        self.mean_only = mean_only
-        self.load_grid = load_grid
-        self.update = update
+        # get all arguments as attributes 
+        arg_dict = inspect.getargvalues(inspect.currentframe())[3]
+        del arg_dict['self']
+        self.__dict__.update(arg_dict)
+ 
+        spc = bond_struc.coded_species
+        self.species_code = str(spc[0]) + str(spc[1]) + str(spc[2])
 
         self.build_map_container()
 

@@ -30,26 +30,20 @@ class GaussianProcess:
                  energy_kernel: Callable = None,
                  opt_algorithm: str = 'L-BFGS-B',
                  maxiter=10, par=False, no_cpus=None,
-                 output=None):
+                 output=None,
+                 multihyps=False, hyps_mask=None):
         """Initialize GP parameters and training data."""
 
-        self.kernel = kernel
-        self.kernel_grad = kernel_grad
-        self.energy_kernel = energy_kernel
-        self.energy_force_kernel = energy_force_kernel
+        # get all arguments as attributes 
+        arg_dict = inspect.getargvalues(inspect.currentframe())[3]
+        del arg_dict['self']
+        self.__dict__.update(arg_dict)
+
         self.kernel_name = kernel.__name__
-        self.hyps = hyps
-        self.hyp_labels = hyp_labels
-        self.cutoffs = cutoffs
-        self.algo = opt_algorithm
 
         self.training_data = []
         self.training_labels = []
         self.training_labels_np = np.empty(0, )
-        self.maxiter = maxiter
-        self.par = par
-        self.no_cpus = no_cpus
-        self.output = output
 
         # Parameters set during training
         self.ky_mat = None
@@ -136,7 +130,7 @@ hyperparameters to maximize the likelihood, then computes L and alpha \
                 self.par, self.no_cpus)
         res = None
 
-        if self.algo == 'L-BFGS-B':
+        if self.opt_algorithm == 'L-BFGS-B':
 
             # bound signal noise below to avoid overfitting
             bounds = np.array([(1e-6, np.inf)] * len(x_0))
@@ -152,7 +146,7 @@ hyperparameters to maximize the likelihood, then computes L and alpha \
             except:
                 print("Warning! Algorithm for L-BFGS-B failed. Changing to "
                       "BFGS for remainder of run.")
-                self.algo = 'BFGS'
+                self.opt_algorithm = 'BFGS'
 
         if custom_bounds is not None:
             res = minimize(get_neg_like_grad, x_0, args,
@@ -161,13 +155,13 @@ hyperparameters to maximize the likelihood, then computes L and alpha \
                                     'maxls': line_steps,
                                     'maxiter': self.maxiter})
 
-        elif self.algo == 'BFGS':
+        elif self.opt_algorithm == 'BFGS':
             res = minimize(get_neg_like_grad, x_0, args,
                            method='BFGS', jac=True,
                            options={'disp': False, 'gtol': grad_tol,
                                     'maxiter': self.maxiter})
 
-        elif self.algo == 'nelder-mead':
+        elif self.opt_algorithm == 'nelder-mead':
             res = minimize(get_neg_likelihood, x_0, args,
                            method='nelder-mead',
                            options={'disp': False,
