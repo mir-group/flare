@@ -61,6 +61,7 @@ def test_otf_h2_par():
                         hyp_labels=hyp_labels,
                         energy_force_kernel=energy_force_kernel,
                         par=True,
+                        per_atom_par=False,
                         maxiter=50)
 
     otf = OTF(cp2k_input, dt, number_of_steps, gp, dft_loc,
