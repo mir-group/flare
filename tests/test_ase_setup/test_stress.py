@@ -53,9 +53,9 @@ def test_stress_with_lammps():
                    'load_grid': None,
                    'update': False}
     
-    mgp_model = MappedGaussianProcess(gp_model.hyps, gp_model.cutoffs,
-                grid_params, struc_params, mean_only=True, container_only=False,
-                GP=gp_model, lmp_file_name='lmp.mgp')
+    mgp_model = MappedGaussianProcess(grid_params, struc_params, GP=gp_model,
+                                      mean_only=True, container_only=False,
+                                      lmp_file_name='lmp.mgp')
 
     # ------------ create ASE's flare calculator -----------------------
     flare_calc = FLARE_Calculator(gp_model, mgp_model, par=False, use_mapping=True)
