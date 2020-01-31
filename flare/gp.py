@@ -397,7 +397,7 @@ environment and the environments in the training set."""
                                  par=dictionary['par'],
                                  no_cpus=dictionary['no_cpus'],
                                  maxiter=dictionary['maxiter'],
-                                 opt_algorithm=dictionary['algo'])
+                                 opt_algorithm=dictionary['opt_algorithm'])
 
         # Save time by attempting to load in computed attributes
         new_gp.l_mat = np.array(dictionary.get('l_mat', None))
