@@ -59,7 +59,7 @@ def test_parse_header():
 
     file_name = 'AgI.gp'
     grid_num_2 = 64
-    grid_num_3 = 15
+    grid_num_3 = 20
     lower_cut = 2.
     two_cut = 7.
     three_cut = 5.
