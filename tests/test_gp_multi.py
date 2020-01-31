@@ -2,15 +2,17 @@ import pytest
 import numpy as np
 from numpy.random import random, randint, permutation
 
-import flare.gp
 import flare.gp_algebra
 import flare.gp_algebra_multi
+import flare.mc_sephyps as en
+
+from flare import env, struc, gp
 from flare.gp import GaussianProcess
 from flare.env import AtomicEnvironment
 from flare.struc import Structure
 from flare import mc_simple
 from flare.otf_parser import OtfAnalysis
-import flare.mc_sephyps as en
+from flare.mc_sephyps import _str_to_kernel as stk
 
 def get_random_structure(cell, unique_species, noa):
     """Create a random test structure """

@@ -16,65 +16,7 @@ from flare.util import is_std_in_bound
 
 
 class OTF:
-    """Trains a Gaussian process force field on the fly during
-        molecular dynamics.
 
-    Args:
-        dft_input (str): Input file.
-        dt (float): MD timestep.
-        number_of_steps (int): Number of timesteps in the training
-            simulation.
-        gp (gp.GaussianProcess): Initial GP model.
-        dft_loc (str): Location of DFT executable.
-        std_tolerance_factor (float, optional): Threshold that determines
-            when DFT is called. Specifies a multiple of the current noise
-            hyperparameter. If the epistemic uncertainty on a force
-            component exceeds this value, DFT is called. Defaults to 1.
-        prev_pos_init ([type], optional): Previous positions. Defaults
-            to None.
-        par (bool, optional): If True, force predictions are made in
-            parallel. Defaults to False.
-        skip (int, optional): Number of frames that are skipped when
-            dumping to the output file. Defaults to 0.
-        init_atoms (List[int], optional): List of atoms from the input
-            structure whose local environments and force components are
-            used to train the initial GP model. If None is specified, all
-            atoms are used to train the initial GP. Defaults to None.
-        calculate_energy (bool, optional): If True, the energy of each
-            frame is calculated with the GP. Defaults to False.
-        output_name (str, optional): Name of the output file. Defaults to
-            'otf_run'.
-        max_atoms_added (int, optional): Number of atoms added each time
-            DFT is called. Defaults to 1.
-        freeze_hyps (int, optional): Specifies the number of times the
-            hyperparameters of the GP are optimized. After this many
-            updates to the GP, the hyperparameters are frozen.
-            Defaults to 10.
-        rescale_steps (List[int], optional): List of frames for which the
-            velocities of the atoms are rescaled. Defaults to [].
-        rescale_temps (List[int], optional): List of rescaled temperatures.
-            Defaults to [].
-        dft_softwarename (str, optional): DFT code used to calculate
-            ab initio forces during training. Defaults to "qe".
-        no_cpus (int, optional): Number of cpus used during training.
-            Defaults to 1.
-        npool (int, optional): Number of k-point pools for DFT
-            calculations. Defaults to None.
-        mpi (str, optional): Determines how mpi is called. Defaults to
-            "srun".
-        dft_kwargs ([type], optional): Additional arguments which are
-            passed when DFT is called; keyword arguments vary based on the
-            program (e.g. ESPRESSO vs. VASP). Defaults to None.
-        store_dft_output (Tuple[Union[str,List[str]],str], optional):
-            After DFT calculations are called, copy the file or files
-            specified in the first element of the tuple to a directory
-            specified as the second element of the tuple.
-            Useful when DFT calculations are expensive and want to be kept
-            for later use. The first element of the tuple can either be a
-            single file name, or a list of several. Copied files will be
-            prepended with the date and time with the format
-            'Year.Month.Day:Hour:Minute:Second:'.
-    """
     def __init__(self, dft_input: str, dt: float, number_of_steps: int,
                  gp: gp.GaussianProcess, dft_loc: str,
                  std_tolerance_factor: float = 1,
@@ -87,6 +29,65 @@ class OTF:
                  no_cpus: int = 1, npool: int = None, mpi: str = "srun",
                  dft_kwargs=None,
                  store_dft_output: Tuple[Union[str,List[str]],str] = None):
+        """Trains a Gaussian process force field on the fly during
+            molecular dynamics.
+
+        Args:
+            dft_input (str): Input file.
+            dt (float): MD timestep.
+            number_of_steps (int): Number of timesteps in the training
+                simulation.
+            gp (gp.GaussianProcess): Initial GP model.
+            dft_loc (str): Location of DFT executable.
+            std_tolerance_factor (float, optional): Threshold that determines
+                when DFT is called. Specifies a multiple of the current noise
+                hyperparameter. If the epistemic uncertainty on a force
+                component exceeds this value, DFT is called. Defaults to 1.
+            prev_pos_init ([type], optional): Previous positions. Defaults
+                to None.
+            par (bool, optional): If True, force predictions are made in
+                parallel. Defaults to False.
+            skip (int, optional): Number of frames that are skipped when
+                dumping to the output file. Defaults to 0.
+            init_atoms (List[int], optional): List of atoms from the input
+                structure whose local environments and force components are
+                used to train the initial GP model. If None is specified, all
+                atoms are used to train the initial GP. Defaults to None.
+            calculate_energy (bool, optional): If True, the energy of each
+                frame is calculated with the GP. Defaults to False.
+            output_name (str, optional): Name of the output file. Defaults to
+                'otf_run'.
+            max_atoms_added (int, optional): Number of atoms added each time
+                DFT is called. Defaults to 1.
+            freeze_hyps (int, optional): Specifies the number of times the
+                hyperparameters of the GP are optimized. After this many
+                updates to the GP, the hyperparameters are frozen.
+                Defaults to 10.
+            rescale_steps (List[int], optional): List of frames for which the
+                velocities of the atoms are rescaled. Defaults to [].
+            rescale_temps (List[int], optional): List of rescaled temperatures.
+                Defaults to [].
+            dft_softwarename (str, optional): DFT code used to calculate
+                ab initio forces during training. Defaults to "qe".
+            no_cpus (int, optional): Number of cpus used during training.
+                Defaults to 1.
+            npool (int, optional): Number of k-point pools for DFT
+                calculations. Defaults to None.
+            mpi (str, optional): Determines how mpi is called. Defaults to
+                "srun".
+            dft_kwargs ([type], optional): Additional arguments which are
+                passed when DFT is called; keyword arguments vary based on the
+                program (e.g. ESPRESSO vs. VASP). Defaults to None.
+            store_dft_output (Tuple[Union[str,List[str]],str], optional):
+                After DFT calculations are called, copy the file or files
+                specified in the first element of the tuple to a directory
+                specified as the second element of the tuple.
+                Useful when DFT calculations are expensive and want to be kept
+                for later use. The first element of the tuple can either be a
+                single file name, or a list of several. Copied files will be
+                prepended with the date and time with the format
+                'Year.Month.Day:Hour:Minute:Second:'.
+        """
 
         self.dft_input = dft_input
         self.dt = dt
@@ -132,22 +133,15 @@ class OTF:
         self.dft_count = 0
 
         # set pred function
-        if not par and not calculate_energy:
-            self.pred_func = predict.predict_on_structure
-        elif par and not calculate_energy:
+        if (par and gp.per_atom_par and gp.par) and not calculate_energy:
             self.pred_func = predict.predict_on_structure_par
-        elif not par and calculate_energy:
-            self.pred_func = predict.predict_on_structure_en
-        elif par and calculate_energy:
+        elif not calculate_energy:
+            self.pred_func = predict.predict_on_structure
+        elif (par and gp.per_atom_par and gp.par):
             self.pred_func = predict.predict_on_structure_par_en
-        self.par = par
-
-        if (self.par is True):
-            assert self.gp.per_atom_par is True, "the otf par flag has to be" \
-                "consistent with the gp per_atom_par flag."
         else:
-            assert self.gp.per_atom_par is False, "the otf par flag has to be" \
-                "consistent with the gp per_atom_par flag."
+            self.pred_func = predict.predict_on_structure_en
+        self.par = par
 
         # set rescale attributes
         self.rescale_steps = rescale_steps

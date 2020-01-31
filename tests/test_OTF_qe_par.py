@@ -55,6 +55,7 @@ def test_otf_h2():
                         cutoffs=cutoffs,
                         hyp_labels=hyp_labels,
                         par=True,
+                        per_atom_par=False,
                         energy_force_kernel=energy_force_kernel,
                         maxiter=50)
 
@@ -104,6 +105,7 @@ def test_otf_Al_npool():
                         cutoffs=cutoffs,
                         hyp_labels=hyp_labels,
                         par=True,
+                        per_atom_par=False,
                         energy_force_kernel=energy_force_kernel,
                         maxiter=50)
 

@@ -49,8 +49,11 @@ def test_instantiation_of_trajectory_trainer(fake_gp):
 
     assert isinstance(a, TrajectoryTrainer)
 
+    fake_gp.par = True
     _ = TrajectoryTrainer([], fake_gp, parallel=True, calculate_energy=True)
     _ = TrajectoryTrainer([], fake_gp, parallel=True, calculate_energy=False)
+
+    fake_gp.par = False
     _ = TrajectoryTrainer([], fake_gp, parallel=False, calculate_energy=True)
     _ = TrajectoryTrainer([], fake_gp, parallel=False, calculate_energy=False)
 

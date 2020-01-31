@@ -3,14 +3,14 @@ import math
 import multiprocessing as mp
 import time
 
-from typing import List
+from typing import List, Callable
 
 #######################################
 ##### KY MATRIX FUNCTIONS
 #######################################
 
 def get_ky_mat_par(hyps: np.ndarray, training_data: list,
-                   kernel: callable, cutoffs=None, ncpus=None, nsample=100):
+                   kernel: Callable, cutoffs=None, ncpus=None, nsample=100):
     """
     Parallelized version of function which computes ky matrix
 
@@ -104,7 +104,7 @@ def get_ky_mat_par(hyps: np.ndarray, training_data: list,
 
 def get_ky_mat_pack(hyps: np.ndarray, training_data1: list,
                training_data2:list, same: bool,
-               kernel: callable, cutoffs):
+               kernel: Callable, cutoffs):
     """ Compute covariance matrix K by comparing training data with itself
 
     :param hyps: list of hyper-parameters
@@ -147,7 +147,7 @@ def get_ky_mat_pack(hyps: np.ndarray, training_data1: list,
 
 
 def get_ky_and_hyp_par(hyps: np.ndarray, training_data: list,
-                       kernel_grad: callable, cutoffs=None, ncpus=None, nsample=100):
+                       kernel_grad: Callable, cutoffs=None, ncpus=None, nsample=100):
     """
     Parallelized version of function which computes ky matrix
     and its derivative to hyper-parameter
@@ -257,7 +257,7 @@ def get_ky_and_hyp_par(hyps: np.ndarray, training_data: list,
 
 def get_ky_and_hyp_pack(hyps: np.ndarray, training_data1: list,
                    training_data2: list, same: bool,
-                   kernel_grad: callable, cutoffs=None):
+                   kernel_grad: Callable, cutoffs=None):
     """ Compute covariance matrix K and matrix to estimate likelihood gradient
     :param hyps: list of hyper-parameters
     :param training_data: list of atomic envirionments
@@ -308,7 +308,7 @@ def get_ky_and_hyp_pack(hyps: np.ndarray, training_data1: list,
 
 
 def get_ky_mat(hyps: np.ndarray, training_data: list,
-               kernel: callable, cutoffs=None):
+               kernel: Callable, cutoffs=None):
     """ Compute covariance matrix K by comparing training data with itself
     :param hyps: list of hyper-parameters
     :param training_data: list of atomic envirionments
@@ -353,7 +353,7 @@ def get_ky_mat(hyps: np.ndarray, training_data: list,
 
 
 def get_ky_and_hyp(hyps: np.ndarray, training_data: list,
-                   kernel_grad: callable, cutoffs=None):
+                   kernel_grad: Callable, cutoffs=None):
     """ Compute covariance matrix K and matrix to estimate likelihood gradient
     :param hyps: list of hyper-parameters
     :param training_data: list of atomic envirionments
@@ -402,7 +402,7 @@ def get_ky_and_hyp(hyps: np.ndarray, training_data: list,
     return hyp_mat, ky_mat
 
 def get_ky_mat_update_par(ky_mat_old, hyps: np.ndarray, training_data: list,
-                      kernel: callable, cutoffs=None, ncpus=None, nsample=100):
+                      kernel: Callable, cutoffs=None, ncpus=None, nsample=100):
     '''
     used for update_L_alpha, especially for parallelization
     parallelized for added atoms, for example, if add 10 atoms to the training
@@ -511,7 +511,7 @@ def get_ky_mat_update_par(ky_mat_old, hyps: np.ndarray, training_data: list,
     return ky_mat
 
 def get_ky_mat_update(ky_mat_old, hyps: np.ndarray, training_data: list,
-                      kernel: callable, cutoffs=None):
+                      kernel: Callable, cutoffs=None):
     '''
     used for update_L_alpha, especially for parallelization
     parallelized for added atoms, for example, if add 10 atoms to the training
@@ -628,7 +628,7 @@ def get_like_grad_from_mats(ky_mat, hyp_mat, training_labels_np):
 
 def get_neg_likelihood(hyps: np.ndarray, training_data: list,
                        training_labels_np: np.ndarray,
-                       kernel: callable, output = None,
+                       kernel: Callable, output = None,
                        cutoffs=None,
                        ncpus=None, nsample=100):
     """compute the negative log likelihood
@@ -663,7 +663,7 @@ def get_neg_likelihood(hyps: np.ndarray, training_data: list,
 
 def get_neg_like_grad(hyps: np.ndarray, training_data: list,
                       training_labels_np: np.ndarray,
-                      kernel_grad: callable, cutoffs=None,
+                      kernel_grad: Callable, cutoffs=None,
                       output = None, ncpus=None, nsample=100):
     """compute the log likelihood and its gradients
 

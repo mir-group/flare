@@ -51,7 +51,7 @@ class GaussianProcess:
             hyperparameter optimization algorithm. Defaults to 10.
         par (bool, optional): If True, the covariance matrix K of the GP is
             computed in parallel. Defaults to False.
-        no_cpus (int, optional): Number of cpus used for parallel
+        ncpus (int, optional): Number of cpus used for parallel
             calculations. Defaults to 1.
         output (Output, optional): Output object used to dump hyperparameters
             during optimization. Defaults to None.
@@ -171,7 +171,7 @@ class GaussianProcess:
             self.hyps_mask = None
 
     # TODO unit test custom range
-    def update_db(self, struc: Structure, forces: list,
+    def update_db(self, struc: Structure, forces: List,
                   custom_range: List[int] = ()):
         """Given a structure and forces, add local environments from the
         structure to the training set of the GP.
