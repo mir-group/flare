@@ -439,8 +439,16 @@ class Map2body:
     def GenGrid(self, GP):
 
         '''
-        generate grid data of mean prediction and L^{-1}k* for each triplet
-         implemented in a parallelized style
+        To use GP to predict value on each grid point, we need to generate the 
+        kernel vector kv whose length is the same as the training set size. 
+
+        1. We divide the training set into several batches, corresponding to 
+           different segments of kv
+        2. Distribute each batch to a processor, i.e. each processor calculate
+           the kv segment of one batch for all grids
+        3. Collect kv segments and form a complete kv vector for each grid,
+           and calculate the grid value by multiplying the complete kv vector
+           with GP.alpha
         '''
 
         kernel_info = utils.get_2bkernel(GP)
@@ -518,7 +526,7 @@ class Map2body:
             env12, kernel_info):
 
         '''
-        generate grid for each angle, used to parallelize grid generation
+        Calculate kv segments of the given batch of training data for all grids
         '''
 
         kernel, en_force_kernel, cutoffs, hyps, hyps_mask = kernel_info
@@ -576,8 +584,16 @@ class Map3body:
     def GenGrid(self, GP, processes=mp.cpu_count()):
 
         '''
-        generate grid data of mean prediction and L^{-1}k* for each triplet
-         implemented in a parallelized style
+        To use GP to predict value on each grid point, we need to generate the 
+        kernel vector kv whose length is the same as the training set size. 
+
+        1. We divide the training set into several batches, corresponding to 
+           different segments of kv
+        2. Distribute each batch to a processor, i.e. each processor calculate
+           the kv segment of one batch for all grids
+        3. Collect kv segments and form a complete kv vector for each grid,
+           and calculate the grid value by multiplying the complete kv vector
+           with GP.alpha
         '''
 
         if (self.ncpus is None):
@@ -591,15 +607,17 @@ class Map3body:
         kernel_info = utils.get_3bkernel(GP)
 
         # ------ construct grids ------
-        nop = self.grid_num[0]
-        noa = self.grid_num[2]
-        bond_lengths = np.linspace(self.bounds[0][0], self.bounds[1][0], nop)
-        cos_angles = np.linspace(self.bounds[0][2], self.bounds[1][2], noa)
-        bond_means = np.zeros([nop, nop, noa])
+        n1, n2, n12 = self.grid_num
+        bonds1  = np.linspace(self.bounds[0][0], self.bounds[1][0], n1)
+        bonds2  = np.linspace(self.bounds[0][0], self.bounds[1][0], n2)
+        bonds12 = np.linspace(self.bounds[0][2], self.bounds[1][2], n12)
+        grid_means = np.zeros([n1, n2, n12])
+
         if not self.mean_only:
-            bond_vars = np.zeros([nop, nop, noa, len(GP.alpha)])
+            grid_vars = np.zeros([n1, n2, n12, len(GP.alpha)])
         else:
-            bond_vars = None
+            grid_vars = None
+
         env12 = AtomicEnvironment(self.bond_struc, 0, GP.cutoffs)
 
         with mp.Pool(processes=processes) as pool:
@@ -627,13 +645,13 @@ class Map3body:
             #print('before for', ns, nsample, time.time())
             count = 0
             base = 0
-            k12_v_all = np.zeros([len(bond_lengths), len(bond_lengths), 
-                                  len(cos_angles),   size * 3])
+            k12_v_all = np.zeros([len(bonds1), len(bonds2), len(bonds12), 
+                                  size * 3])
             for ibatch in range(nbatch):
                 s, e = block_id[ibatch]
                 k12_slice.append(pool.apply_async(self._GenGrid_inner,
                                                   args=(GP.training_data[s:e],
-                                                        cos_angles, bond_lengths,
+                                                        bonds1, bonds2, bonds12,
                                                         env12, kernel_info)))
                 #print('send', ibatch, ns, s, e, time.time())
                 count += 1
@@ -654,34 +672,34 @@ class Map3body:
             pool.close()
             pool.join()
 
-        for a12 in range(len(cos_angles)):
-            for b1 in range(len(bond_lengths)):
-                for b2 in range(len(bond_lengths)):
-                    k12_v = k12_v_all[b1, b2, a12, :]
-                    bond_means[b1, b2, a12] = np.matmul(k12_v, GP.alpha)
+        for b12 in range(len(bonds12)):
+            for b1 in range(len(bonds1)):
+                for b2 in range(len(bonds2)):
+                    k12_v = k12_v_all[b1, b2, b12, :]
+                    grid_means[b1, b2, b12] = np.matmul(k12_v, GP.alpha)
                     if not self.mean_only:
-                        bond_vars[b1, b2, a12, :] = solve_triangular(GP.l_mat, 
+                        grid_vars[b1, b2, b12, :] = solve_triangular(GP.l_mat, 
                             k12_v, lower=True)
      
         # ------ save mean and var to file -------
-        np.save('grid3_mean_'+self.species_code, bond_means)
-        np.save('grid3_var_'+self.species_code, bond_vars)
+        np.save('grid3_mean_'+self.species_code, grid_means)
+        np.save('grid3_var_'+self.species_code, grid_vars)
 
-        return bond_means, bond_vars
+        return grid_means, grid_vars
 
-    def _GenGrid_inner(self, training_data, cos_angles, bond_lengths, env12, kernel_info):
+    def _GenGrid_inner(self, training_data, bonds1, bonds2, bonds12, env12, kernel_info):
 
         '''
-        generate grid for each angle, used to parallelize grid generation
+        Calculate kv segments of the given batch of training data for all grids
         '''
 
         kernel, en_force_kernel, cutoffs, hyps, hyps_mask = kernel_info
         # open saved k vector file, and write to new file
         size = len(training_data)*3
-        k12_v = np.zeros([len(bond_lengths), len(bond_lengths), len(cos_angles), size])
-        for b12, r12 in enumerate(cos_angles):
-            for b1, r1 in enumerate(bond_lengths):
-                for b2, r2 in enumerate(bond_lengths):
+        k12_v = np.zeros([len(bonds1), len(bonds2), len(bonds12), size])
+        for b12, r12 in enumerate(bonds12):
+            for b1, r1 in enumerate(bonds1):
+                for b2, r2 in enumerate(bonds2):
 
                     #r12 = np.sqrt(r1**2 + r2**2 - 2*r1*r2*c12)
                     #if (r1>r12+r2) or (r2>r12+r1) or (r12>r1+r2): # not a triangle
@@ -705,14 +723,12 @@ class Map3body:
         '''
 
        # create spline interpolation class object
-        nop = self.grid_num[0]
-        noa = self.grid_num[2]
         self.mean = CubicSpline(self.bounds[0], self.bounds[1], 
-                                orders=[nop, nop, noa])
+                                orders=self.grid_num)
 
         if not self.mean_only:
             self.var = PCASplines(self.bounds[0], self.bounds[1],
-                                  orders=[nop, nop, noa],
+                                  orders=self.grid_num,
                                   svd_rank=self.svd_rank)
 
     def build_map(self, GP):
