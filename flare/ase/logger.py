@@ -18,6 +18,7 @@ class OTFLogger(MDLogger):
         super().__init__(dyn, atoms, logfile, header, stress,
                          peratom, mode)
 
+        self.natoms = self.atoms.get_number_of_atoms()
         self.write_header_info()
         self.start_time = time.time()
         if data_folder not in os.listdir():
