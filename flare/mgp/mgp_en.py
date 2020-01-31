@@ -554,7 +554,8 @@ class Map2body:
 class Map3body:
 
     def __init__(self, grid_num, bounds, bond_struc, 
-            svd_rank=0, mean_only=False, load_grid=None, update=True):
+            svd_rank=0, mean_only=False, load_grid=None, update=True,
+            ncpus=None, nsample=100):
         '''
         Build 3-body MGP
         '''
@@ -576,11 +577,16 @@ class Map3body:
         generate grid data of mean prediction and L^{-1}k* for each triplet
          implemented in a parallelized style
         '''
-        # ------ change GP kernel to 3 body ------
-        original_kernel = GP.energy_force_kernel
-        original_hyps = np.copy(GP.hyps)
-        GP.energy_force_kernel = mc.three_body_mc_force_en
-        GP.hyps = GP.hyps[-3:]
+
+        if (self.ncpus is None):
+            processes = mp.cpu_count()
+        else:
+            processes = self.ncpus
+        if processes == 1:
+            self.GenGrid_serial(GP)
+
+        # ------ get 3body kernel info ------
+        kernel_info = utils.get_3bkernel(GP)
 
         # ------ construct grids ------
         nop = self.grid_num[0]
@@ -588,97 +594,102 @@ class Map3body:
         bond_lengths = np.linspace(self.bounds[0][0], self.bounds[1][0], nop)
         cos_angles = np.linspace(self.bounds[0][2], self.bounds[1][2], noa)
         bond_means = np.zeros([nop, nop, noa])
-        bond_vars = np.zeros([nop, nop, noa, len(GP.alpha)])
+        if not self.mean_only:
+            bond_vars = np.zeros([nop, nop, noa, len(GP.alpha)])
+        else:
+            bond_vars = None
         env12 = AtomicEnvironment(self.bond_struc, 0, GP.cutoffs)
 
-        pool_list = [(i, cos_angles[i], bond_lengths, GP, env12, self.update)\
-                     for i in range(noa)]
-        pool = mp.Pool(processes=processes)
+        with mp.Pool(processes=processes) as pool:
+            if self.update:
+                if self.kv3name in os.listdir():
+                    subprocess.run(['rm', '-rf', self.kv3name])
+                subprocess.run(['mkdir', self.kv3name])
 
-        if self.update: # save kv vectors
-            folder = 'kv3_' + self.species_code
-            if folder in os.listdir():
-                subprocess.run(['rm', '-r', folder])
-            subprocess.run(['mkdir', folder])
-       
-        A_list = pool.map(self._GenGrid_inner, pool_list)
-        for a12 in range(noa):
-            bond_means[:, :, a12] = A_list[a12][0]
-            bond_vars[:, :, a12, :] = A_list[a12][1]
-        pool.close()
-        pool.join()
+            print("prepare the package for parallelization")
+            size = len(GP.training_data)
+            nsample = self.nsample
+            ns = int(math.ceil(size/nsample/processes))*processes
+            nsample = int(math.ceil(size/ns))
 
-        # ------ change back to original GP ------
-        GP.hyps = original_hyps
-        GP.energy_force_kernel = original_kernel
-      
+            block_id = []
+            nbatch = 0
+            for ibatch in range(ns):
+                s1 = int(nsample*ibatch)
+                e1 = int(np.min([s1 + nsample, size]))
+                block_id += [(s1, e1)]
+                print("block", ibatch, s1, e1)
+                nbatch += 1
+
+            k12_slice = []
+            print('before for', ns, nsample, time.time())
+            count = 0
+            base = 0
+            k12_v_all = np.zeros([len(bond_lengths), len(bond_lengths), 
+                                  len(cos_angles),   size * 3])
+            for ibatch in range(nbatch):
+                s, e = block_id[ibatch]
+                k12_slice.append(pool.apply_async(self._GenGrid_inner,
+                                                  args=(GP.training_data[s:e],
+                                                        cos_angles, bond_lengths,
+                                                        env12, kernel_info)))
+                print('send', ibatch, ns, s, e, time.time())
+                count += 1
+                if (count > processes*2):
+                    for ibase in range(count):
+                        s, e = block_id[ibase+base]
+                        k12_v_all[:, :, :, s*3:e*3] = k12_slice[ibase].get()
+                    del k12_slice
+                    k12_slice = []
+                    count = 0
+                    base = ibatch+1
+            if (count > 0):
+               for ibase in range(count):
+                   s, e = block_id[ibase+base]
+                   k12_v_all[:, :, :, s*3:e*3] = k12_slice[ibase].get()
+               del k12_slice
+
+            pool.close()
+            pool.join()
+
+        for a12 in range(len(cos_angles)):
+            for b1 in range(len(bond_lengths)):
+                for b2 in range(len(bond_lengths)):
+                    k12_v = k12_v_all[b1, b2, a12, :]
+                    bond_means[b1, b2, a12] = np.matmul(k12_v, GP.alpha)
+                    if not self.mean_only:
+                        bond_vars[b1, b2, a12, :] = solve_triangular(GP.l_mat, 
+                            k12_v, lower=True)
+     
         # ------ save mean and var to file -------
         np.save('grid3_mean_'+self.species_code, bond_means)
         np.save('grid3_var_'+self.species_code, bond_vars)
 
         return bond_means, bond_vars
 
-    def _GenGrid_inner(self, params):
+    def _GenGrid_inner(self, training_data, cos_angles, bond_lengths, env12, kernel_info):
 
         '''
         generate grid for each angle, used to parallelize grid generation
         '''
-        a12, cos_12, bond_lengths, GP, env12, update = params
-        nop = self.grid_num[0]
-        bond_means = np.zeros([nop, nop])
-        bond_vars = np.zeros([nop, nop, len(GP.alpha)])
 
+        kernel, en_force_kernel, cutoffs, hyps, hyps_mask = kernel_info
         # open saved k vector file, and write to new file
-        if update:
-            folder = 'kv3_' + self.species_code
-            kv_filename = folder + '/' + str(a12)
-            size = len(GP.training_data) * 3
-            new_kv_file = np.zeros((nop**2+1, size))
-            new_kv_file[0,0] = size
-            if str(a12)+'.npy' in os.listdir(folder):
-                old_kv_file = np.load(kv_filename+'.npy') 
-                last_size = int(old_kv_file[0,0])
-                new_kv_file[:, :last_size] = old_kv_file
-            else:
-                last_size = 0
-            ds = [1, 2, 3]
+        size = len(training_data)*3
+        k12_v = np.zeros([len(cos_angles), len(bond_lengths), len(bond_lengths), size])
+        for a12, c12 in enumerate(cos_angles):
+            for b1, r1 in enumerate(bond_lengths):
+                for b2, r2 in enumerate(bond_lengths):
 
-        for b1, r1 in enumerate(bond_lengths):
-            r1 = bond_lengths[b1]
-            for b2, r2 in enumerate(bond_lengths):
-                x2 = r2 * cos_12
-                y2 = r2 * np.sqrt(1 - cos_12**2)
-                r12 = np.linalg.norm(np.array([x2-r1, y2, 0]))
+                    r12 = np.sqrt(r1**2 + r2**2 - 2*r1*r2*c12)
+                    env12.bond_array_3 = np.array([[r1, 1, 0, 0], [r2, 0, 0, 0]])
+                    env12.cross_bond_dists = np.array([[0, r12], [r12, 0]])
+                    k12_v[b1, b2, a12, :] = utils.en_kern_vec(training_data,
+                                                              env12, en_force_kernel,
+                                                              hyps, cutoffs)
+        
+        return k12_v
 
-                env12.bond_array_3 = np.array([[r1, 1, 0, 0], [r2, 0, 0, 0]])
-                env12.cross_bond_dists = np.array([[0, r12], [r12, 0]])
-
-                # calculate kernel functions of those newly added training data
-                if update:
-                    k_v = new_kv_file[1+b1*nop+b2, :]
-                    for m_index in range(last_size, size):
-                        x_2 = GP.training_data[int(math.floor(m_index / 3))]
-                        d_2 = ds[m_index % 3]
-                        k_v[m_index] = GP.energy_force_kernel(env12, x_2, d_2,
-                                                           GP.hyps, GP.cutoffs)
-                else:
-                    k_v = GP.en_kern_vec(env12)
-
-                if update:
-                    new_kv_file[1+b1*nop+b2, :] = k_v
-
-                # calculate mean and var value for the mapping
-                bond_means[b1, b2] = np.matmul(k_v, GP.alpha)
-
-                if not self.mean_only:
-                    v_vec = solve_triangular(GP.l_mat, k_v, lower=True)
-                    bond_vars[b1, b2, :] = v_vec
-
-        # replace the old file with the new file
-        if update:
-            np.save(kv_filename, new_kv_file)
-
-        return bond_means, bond_vars
 
     def build_map_container(self):
 
