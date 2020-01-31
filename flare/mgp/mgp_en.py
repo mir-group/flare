@@ -314,10 +314,12 @@ class MappedGaussianProcess:
 
         # three-body
         if lengths.shape[-1] == 3:
-            factor1 = 1/lengths[:,1] - 1/lengths[:,0] * lengths[:,2]
-            factor2 = 1/lengths[:,0] - 1/lengths[:,1] * lengths[:,2]
-            f_d1 = np.diag(f_0[:,0,0]+f_0[:,2,0]*factor1) @ xyzs[:,0,:]
-            f_d2 = np.diag(f_0[:,1,0]+f_0[:,2,0]*factor2) @ xyzs[:,1,:]
+#            factor1 = 1/lengths[:,1] - 1/lengths[:,0] * lengths[:,2]
+#            factor2 = 1/lengths[:,0] - 1/lengths[:,1] * lengths[:,2]
+#            f_d1 = np.diag(f_0[:,0,0]+f_0[:,2,0]*factor1) @ xyzs[:,0,:]
+#            f_d2 = np.diag(f_0[:,1,0]+f_0[:,2,0]*factor2) @ xyzs[:,1,:]
+            f_d1 = np.diag(f_0[:,0,0]) @ xyzs[:,0,:]
+            f_d2 = np.diag(f_0[:,1,0]) @ xyzs[:,1,:]
             f_d = f_d1 + f_d2
             f = 3 * np.sum(f_d, axis=0) # force: need to check prefactor 3
 
@@ -466,14 +468,14 @@ class Map2body:
             ns = int(math.ceil(size/nsample/processes))*processes
             nsample = int(math.ceil(size/ns))
 
-            print("prepare the package for parallelization")
+            #print("prepare the package for parallelization")
             block_id = []
             nbatch = 0
             for ibatch in range(ns):
                 s1 = int(nsample*ibatch)
                 e1 = int(np.min([s1 + nsample, size]))
                 block_id += [(s1, e1)]
-                print("block", ibatch, s1, e1)
+                #print("block", ibatch, s1, e1)
                 nbatch += 1
 
             k12_slice = []
@@ -606,7 +608,7 @@ class Map3body:
                     subprocess.run(['rm', '-rf', self.kv3name])
                 subprocess.run(['mkdir', self.kv3name])
 
-            print("prepare the package for parallelization")
+            #print("prepare the package for parallelization")
             size = len(GP.training_data)
             nsample = self.nsample
             ns = int(math.ceil(size/nsample/processes))*processes
@@ -618,11 +620,11 @@ class Map3body:
                 s1 = int(nsample*ibatch)
                 e1 = int(np.min([s1 + nsample, size]))
                 block_id += [(s1, e1)]
-                print("block", ibatch, s1, e1)
+                #print("block", ibatch, s1, e1)
                 nbatch += 1
 
             k12_slice = []
-            print('before for', ns, nsample, time.time())
+            #print('before for', ns, nsample, time.time())
             count = 0
             base = 0
             k12_v_all = np.zeros([len(bond_lengths), len(bond_lengths), 
@@ -633,7 +635,7 @@ class Map3body:
                                                   args=(GP.training_data[s:e],
                                                         cos_angles, bond_lengths,
                                                         env12, kernel_info)))
-                print('send', ibatch, ns, s, e, time.time())
+                #print('send', ibatch, ns, s, e, time.time())
                 count += 1
                 if (count > processes*2):
                     for ibase in range(count):
@@ -676,15 +678,19 @@ class Map3body:
         kernel, en_force_kernel, cutoffs, hyps, hyps_mask = kernel_info
         # open saved k vector file, and write to new file
         size = len(training_data)*3
-        k12_v = np.zeros([len(cos_angles), len(bond_lengths), len(bond_lengths), size])
-        for a12, c12 in enumerate(cos_angles):
+        k12_v = np.zeros([len(bond_lengths), len(bond_lengths), len(cos_angles), size])
+        for b12, r12 in enumerate(cos_angles):
             for b1, r1 in enumerate(bond_lengths):
                 for b2, r2 in enumerate(bond_lengths):
 
-                    r12 = np.sqrt(r1**2 + r2**2 - 2*r1*r2*c12)
+                    #r12 = np.sqrt(r1**2 + r2**2 - 2*r1*r2*c12)
+                    #if (r1>r12+r2) or (r2>r12+r1) or (r12>r1+r2): # not a triangle
+                    #    k12_v[b1, b2, b12, :] = np.zeros(size)
+                    #    continue
+
                     env12.bond_array_3 = np.array([[r1, 1, 0, 0], [r2, 0, 0, 0]])
                     env12.cross_bond_dists = np.array([[0, r12], [r12, 0]])
-                    k12_v[b1, b2, a12, :] = utils.en_kern_vec(training_data,
+                    k12_v[b1, b2, b12, :] = utils.en_kern_vec(training_data,
                                                               env12, en_force_kernel,
                                                               hyps, cutoffs)
         
