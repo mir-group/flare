@@ -71,3 +71,30 @@ double Structure :: get_max_cutoff(){
 
     return max_cutoff;
 }
+
+StructureDescriptor :: StructureDescriptor(const Eigen::MatrixXd & cell,
+                        const std::vector<int> & species,
+                        const Eigen::MatrixXd & positions,
+                        DescriptorCalculator & descriptor_calculator,
+                        double cutoff) :
+Structure(cell, species, positions){
+
+    this->descriptor_calculator = descriptor_calculator;
+    this->cutoff = cutoff;
+    (*this).compute_descriptors();
+}
+
+void StructureDescriptor :: compute_descriptors(){
+    int noa = species.size();
+    LocalEnvironment env;
+
+    for (int i = 0; i < noa; i ++){
+        env = LocalEnvironment(*this, i, cutoff);
+        descriptor_calculator.compute_B2(env);
+        descriptor_vals.push_back(descriptor_calculator.descriptor_vals);
+        descriptor_force_dervs
+            .push_back(descriptor_calculator.descriptor_force_dervs);
+        descriptor_stress_dervs
+            .push_back(descriptor_calculator.descriptor_stress_dervs);
+    }
+}
