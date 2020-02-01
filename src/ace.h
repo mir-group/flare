@@ -75,6 +75,20 @@ class DescriptorCalculator{
 
 };
 
+// Local environment descriptor.
+class LocalEnvironmentDescriptor : public LocalEnvironment{
+    public:
+        DescriptorCalculator descriptor_calculator;
+        std::vector<double> descriptor_vals;
+        Eigen::MatrixXd descriptor_force_dervs;
+        Eigen::MatrixXd descriptor_stress_dervs;
+
+        LocalEnvironmentDescriptor(const Structure & structure, int atom,
+            double cutoff, DescriptorCalculator & descriptor_calculator);
+        
+        void compute_descriptor();
+};
+
 // Structure descriptor. Computes descriptors of atomic environments in a
 // structure.
 class StructureDescriptor : public Structure{
@@ -97,11 +111,17 @@ class StructureDescriptor : public Structure{
 // Structure dataset. Stores energy, force, and stress labels.
 class StructureDataset : public StructureDescriptor{
     public:
-        double energy;
-        std::vector<double> force_components;
-        std::vector<double> stress_components;
+        int label_type;
+        std::vector<double> labels;
 
-}
+        StructureDataset(const Eigen::MatrixXd & cell,
+                         const std::vector<int> & species,
+                         const Eigen::MatrixXd & positions,
+                         DescriptorCalculator & descriptor_calculator,
+                         double cutoff, int label_type,
+                         std::vector<double> labels);
+
+};
 
 // Spherical harmonics.
 void get_Y(std::vector<double> & Y, std::vector<double> & Yx,

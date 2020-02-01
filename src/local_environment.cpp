@@ -129,3 +129,19 @@ void LocalEnvironment :: compute_environment(
 
     delete [] dists; delete [] xvals; delete [] yvals; delete [] zvals;
 }
+
+LocalEnvironmentDescriptor :: LocalEnvironmentDescriptor(
+        const Structure & structure, int atom, double cutoff,
+        DescriptorCalculator & descriptor_calculator)
+    : LocalEnvironment(structure, atom, cutoff){
+
+this->descriptor_calculator = descriptor_calculator;
+this->compute_descriptor();
+}
+
+void LocalEnvironmentDescriptor :: compute_descriptor(){
+    descriptor_calculator.compute_B2(*this);
+    descriptor_vals = descriptor_calculator.descriptor_vals;
+    descriptor_force_dervs = descriptor_calculator.descriptor_force_dervs;
+    descriptor_stress_dervs = descriptor_calculator.descriptor_stress_dervs;
+}

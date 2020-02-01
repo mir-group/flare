@@ -76,12 +76,12 @@ StructureDescriptor :: StructureDescriptor(const Eigen::MatrixXd & cell,
                         const std::vector<int> & species,
                         const Eigen::MatrixXd & positions,
                         DescriptorCalculator & descriptor_calculator,
-                        double cutoff) :
-Structure(cell, species, positions){
+                        double cutoff)
+                    : Structure(cell, species, positions){
 
     this->descriptor_calculator = descriptor_calculator;
     this->cutoff = cutoff;
-    (*this).compute_descriptors();
+    this->compute_descriptors();
 }
 
 void StructureDescriptor :: compute_descriptors(){
@@ -97,4 +97,17 @@ void StructureDescriptor :: compute_descriptors(){
         descriptor_stress_dervs
             .push_back(descriptor_calculator.descriptor_stress_dervs);
     }
+}
+
+StructureDataset :: StructureDataset(const Eigen::MatrixXd & cell,
+                         const std::vector<int> & species,
+                         const Eigen::MatrixXd & positions,
+                         DescriptorCalculator & descriptor_calculator,
+                         double cutoff, int label_type,
+                         std::vector<double> labels)
+                  : StructureDescriptor(cell, species, positions,
+                                        descriptor_calculator, cutoff){
+
+    this->label_type = label_type;
+    this->labels = labels;
 }
