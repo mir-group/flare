@@ -4,28 +4,41 @@
 #include <cmath>
 #include <Eigen/Dense>
 
-TEST(StructureTest, TestWrapped){
+class StructureTest : public ::testing::Test{
+    public:
+        Eigen::MatrixXd cell{3, 3};
+        std::vector<int> species {0, 1, 2, 3, 4};
+        Eigen::MatrixXd positions{5, 3};
+        DescriptorCalculator desc1;
+        StructureDataset test_struc;
+
+        std::string radial_string = "chebyshev";
+        std::string cutoff_string = "cosine";
+        std::vector<double> radial_hyps {0, 5};
+        std::vector<double> cutoff_hyps;
+        std::vector<int> descriptor_settings {5, 10, 10};
+        double cutoff = 3;
+
+    StructureTest(){
+        cell << 1.3, 0.5, 0.8,
+               -1.2, 1, 0.73,
+               -0.8, 0.1, 0.9;
+    
+        positions << 1.2, 0.7, 2.3,
+                     3.1, 2.5, 8.9,
+                    -1.8, -5.8, 3.0,
+                     0.2, 1.1, 2.1,
+                     3.2, 1.1, 3.3;
+
+        desc1 = DescriptorCalculator(radial_string, cutoff_string,
+            radial_hyps, cutoff_hyps, descriptor_settings);
+        test_struc = StructureDataset(cell, species, positions, desc1, cutoff);
+    }
+};
+
+TEST_F(StructureTest, TestWrapped){
     // Check that the wrapped coordinates are equivalent to Cartesian coordinates up to lattice translations.
 
-    Eigen::MatrixXd cell(3, 3);
-    Eigen::MatrixXd positions(5, 3);
-
-    // Create arbitrary structure.
-    cell << 1.3, 0.5, 0.8,
-            -1.2, 1, 0.73,
-            -0.8, 0.1, 0.9;
-
-    std::vector<int> species {1, 2, 3, 4, 5};
-
-    positions << 1.2, 0.7, 2.3,
-                 3.1, 2.5, 8.9,
-                 -1.8, -5.8, 3.0,
-                 0.2, 1.1, 2.1,
-                 3.2, 1.1, 3.3;
-
-    Structure test_struc = 
-        Structure(cell, species, positions);
-    
     // Take positions minus wrapped positions.
     Eigen::MatrixXd wrap_diff =
         test_struc.positions - test_struc.wrapped_positions;
@@ -45,37 +58,7 @@ TEST(StructureTest, TestWrapped){
     }
 }
 
-TEST(StructureTest, StructureDescriptor){
-    Eigen::MatrixXd cell(3, 3);
-    Eigen::MatrixXd positions(5, 3);
-
-    // Create arbitrary structure.
-    cell << 10, 0, 0,
-            0, 10, 0,
-            0, 0, 10;
-
-    std::vector<int> species {0, 0, 0, 1, 1};
-
-    positions << 1.2, 0.7, 2.3,
-                 3.1, 2.5, 8.9,
-                 -1.8, -5.8, 3.0,
-                 0.2, 1.1, 2.1,
-                 3.2, 1.1, 3.3;
-
-    std::string radial_string = "chebyshev";
-    std::string cutoff_string = "quadratic";
-    std::vector<double> radial_hyps = {0, 5};
-    std::vector<double> cutoff_hyps;
-    std::vector<int> descriptor_settings {2, 10, 10};
-
-    DescriptorCalculator desc1 = 
-        DescriptorCalculator(radial_string, cutoff_string,
-            radial_hyps, cutoff_hyps, descriptor_settings);
-    double cutoff = 5;
-
-    StructureDescriptor test_struc = 
-        StructureDescriptor(cell, species, positions, desc1, cutoff);
-    
+TEST_F(StructureTest, StructureDescriptor){
     // Check that structure descriptors match environment descriptors.
     LocalEnvironment env;
     for (int i = 0; i < test_struc.species.size(); i ++){

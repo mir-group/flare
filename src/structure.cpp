@@ -72,6 +72,8 @@ double Structure :: get_max_cutoff(){
     return max_cutoff;
 }
 
+StructureDescriptor :: StructureDescriptor(){}
+
 StructureDescriptor :: StructureDescriptor(const Eigen::MatrixXd & cell,
                         const std::vector<int> & species,
                         const Eigen::MatrixXd & positions,
@@ -99,15 +101,19 @@ void StructureDescriptor :: compute_descriptors(){
     }
 }
 
+StructureDataset :: StructureDataset(){}
+
 StructureDataset :: StructureDataset(const Eigen::MatrixXd & cell,
                          const std::vector<int> & species,
                          const Eigen::MatrixXd & positions,
                          DescriptorCalculator & descriptor_calculator,
-                         double cutoff, int label_type,
-                         std::vector<double> labels)
+                         double cutoff, std::vector<double> energy,
+                         std::vector<double> force_components,
+                         std::vector<double> stress_components)
                   : StructureDescriptor(cell, species, positions,
                                         descriptor_calculator, cutoff){
 
-    this->label_type = label_type;
-    this->labels = labels;
+    this->energy = energy;
+    this->force_components = force_components;
+    this->stress_components = stress_components;
 }

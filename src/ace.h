@@ -99,6 +99,8 @@ class StructureDescriptor : public Structure{
         std::vector<Eigen::MatrixXd> descriptor_stress_dervs;
         double cutoff;
 
+        StructureDescriptor();
+
         StructureDescriptor(const Eigen::MatrixXd & cell,
                             const std::vector<int> & species,
                             const Eigen::MatrixXd & positions,
@@ -111,15 +113,22 @@ class StructureDescriptor : public Structure{
 // Structure dataset. Stores energy, force, and stress labels.
 class StructureDataset : public StructureDescriptor{
     public:
-        int label_type;
-        std::vector<double> labels;
+        std::vector<double> energy;
+        std::vector<double> force_components;
+        std::vector<double> stress_components;
+
+        StructureDataset();
 
         StructureDataset(const Eigen::MatrixXd & cell,
                          const std::vector<int> & species,
                          const Eigen::MatrixXd & positions,
                          DescriptorCalculator & descriptor_calculator,
-                         double cutoff, int label_type,
-                         std::vector<double> labels);
+                         double cutoff,
+                         std::vector<double> energy = std::vector<double>{},
+                         std::vector<double> force_components =
+                            std::vector<double>{},
+                         std::vector<double> stress_components =
+                            std::vector<double>{});
 
 };
 
