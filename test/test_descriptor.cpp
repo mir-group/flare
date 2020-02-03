@@ -51,7 +51,7 @@ class DescriptorTest : public ::testing::Test{
 
     // Initialize matrices.
     int no_descriptors = nos * N * number_of_harmonics;
-    std::vector<double> single_bond_vals, single_bond_vals_2;
+    Eigen::VectorXd single_bond_vals, single_bond_vals_2;
 
     Eigen::MatrixXd force_dervs, force_dervs_2, stress_dervs, stress_dervs_2;
 
@@ -91,7 +91,7 @@ class DescriptorTest : public ::testing::Test{
         env1 = LocalEnvironment(struc1, 0, rcut);
         env2 = LocalEnvironment(struc2, 0, rcut);
 
-        single_bond_vals = std::vector<double> (no_descriptors, 0);
+        single_bond_vals = Eigen::VectorXd::Zero(no_descriptors);
         force_dervs = Eigen::MatrixXd::Zero(noa * 3, no_descriptors);
         stress_dervs = Eigen::MatrixXd::Zero(6, no_descriptors);
 
@@ -112,8 +112,8 @@ TEST_F(DescriptorTest, RotationTest){
     desc2.compute_B1(env2);
 
     for (int n = 0; n < no_desc; n ++){
-        d1 = desc1.descriptor_vals[n];
-        d2 = desc2.descriptor_vals[n];
+        d1 = desc1.descriptor_vals(n);
+        d2 = desc2.descriptor_vals(n);
         diff = d1 - d2;
         EXPECT_LE(abs(diff), tol);
     }
@@ -121,11 +121,11 @@ TEST_F(DescriptorTest, RotationTest){
     int lmax = 8;
     desc1.compute_B2(env1);
     desc2.compute_B2(env2);
-    no_desc = desc1.descriptor_vals.size();
+    no_desc = desc1.descriptor_vals.rows();
 
     for (int n = 0; n < no_desc; n ++){
-        d1 = desc1.descriptor_vals[n];
-        d2 = desc2.descriptor_vals[n];
+        d1 = desc1.descriptor_vals(n);
+        d2 = desc2.descriptor_vals(n);
         diff = d1 - d2;
         EXPECT_LE(abs(diff), tol);
     }
@@ -141,8 +141,8 @@ TEST_F(DescriptorTest, SingleBond){
     desc2.compute_B1(env2);
 
     for (int n = 0; n < no_desc; n ++){
-        d1 = desc1.descriptor_vals[n];
-        d2 = desc1.single_bond_vals[n];
+        d1 = desc1.descriptor_vals(n);
+        d2 = desc1.single_bond_vals(n);
         diff = d1 - d2;
         EXPECT_LE(abs(diff), tol);
     }
@@ -166,7 +166,7 @@ TEST_F(DescriptorTest, CentTest){
         // Check derivatives.
         for (int n = 0; n < no_desc; n ++){
             finite_diff = 
-                (desc3.descriptor_vals[n] - desc1.descriptor_vals[n]) / delta;
+                (desc3.descriptor_vals(n) - desc1.descriptor_vals(n)) / delta;
             exact = desc1.descriptor_force_dervs(m, n);
             diff = abs(finite_diff - exact);
             EXPECT_LE(diff, tolerance);
@@ -176,7 +176,7 @@ TEST_F(DescriptorTest, CentTest){
     int lmax = 8;
     desc1.compute_B2(env1);
     desc2.compute_B2(env2);
-    no_desc = desc1.descriptor_vals.size();
+    no_desc = desc1.descriptor_vals.rows();
 
     // Perturb the coordinates of the central atom.
     for (int m = 0; m < 3; m ++){
@@ -189,7 +189,7 @@ TEST_F(DescriptorTest, CentTest){
         // Check derivatives.
         for (int n = 0; n < no_desc; n ++){
             finite_diff = 
-                (desc3.descriptor_vals[n] - desc1.descriptor_vals[n]) / delta;
+                (desc3.descriptor_vals(n) - desc1.descriptor_vals(n)) / delta;
             exact = desc1.descriptor_force_dervs(m, n);
             diff = abs(finite_diff - exact);
             EXPECT_LE(diff, tolerance);
@@ -216,8 +216,8 @@ TEST_F(DescriptorTest, EnvTest){
             // Check derivatives.
             for (int n = 0; n < no_desc; n ++){
                 finite_diff = 
-                    (desc3.descriptor_vals[n] -
-                     desc1.descriptor_vals[n]) / delta;
+                    (desc3.descriptor_vals(n) -
+                     desc1.descriptor_vals(n)) / delta;
                 exact = desc1.descriptor_force_dervs(p * 3 + m, n);
                 diff = abs(finite_diff - exact);
                 EXPECT_LE(diff, tolerance);
@@ -228,7 +228,7 @@ TEST_F(DescriptorTest, EnvTest){
     int lmax = 8;
     desc1.compute_B2(env1);
     desc2.compute_B2(env2);
-    no_desc = desc1.descriptor_vals.size();
+    no_desc = desc1.descriptor_vals.rows();
 
     // Perturb the coordinates of the environment atoms.
     for (int p = 1; p < noa; p ++){
@@ -242,8 +242,8 @@ TEST_F(DescriptorTest, EnvTest){
             // Check derivatives.
             for (int n = 0; n < no_desc; n ++){
                 finite_diff = 
-                    (desc3.descriptor_vals[n] -
-                     desc1.descriptor_vals[n]) / delta;
+                    (desc3.descriptor_vals(n) -
+                     desc1.descriptor_vals(n)) / delta;
                 exact = desc1.descriptor_force_dervs(p * 3 + m, n);
                 diff = abs(finite_diff - exact);
                 EXPECT_LE(diff, tolerance);
@@ -281,8 +281,8 @@ TEST_F(DescriptorTest, StressTest){
             // Check stress derivatives.
             for (int p = 0; p < no_desc; p ++){
                 finite_diff = 
-                    (desc2.descriptor_vals[p] -
-                     desc1.descriptor_vals[p]) / delta;
+                    (desc2.descriptor_vals(p) -
+                     desc1.descriptor_vals(p)) / delta;
                 exact = desc1.descriptor_stress_dervs(stress_ind, p);
                 diff = abs(finite_diff - exact);
                 EXPECT_LE(diff, tolerance);
@@ -295,7 +295,7 @@ TEST_F(DescriptorTest, StressTest){
     int lmax = 8;
     desc1.compute_B2(env1);
     desc2.compute_B2(env2);
-    no_desc = desc1.descriptor_vals.size();
+    no_desc = desc1.descriptor_vals.rows();
     stress_ind = 0;
 
     // Test all 6 independent strains (xx, xy, xz, yy, yz, zz).
@@ -319,8 +319,8 @@ TEST_F(DescriptorTest, StressTest){
             // Check stress derivatives.
             for (int p = 0; p < no_desc; p ++){
                 finite_diff = 
-                    (desc2.descriptor_vals[p] -
-                     desc1.descriptor_vals[p]) / delta;
+                    (desc2.descriptor_vals(p) -
+                     desc1.descriptor_vals(p)) / delta;
                 exact = desc1.descriptor_stress_dervs(stress_ind, p);
                 diff = abs(finite_diff - exact);
                 EXPECT_LE(diff, tolerance);

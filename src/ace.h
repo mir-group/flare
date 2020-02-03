@@ -54,7 +54,7 @@ class DescriptorCalculator{
                                std::vector<double>);
         void (*cutoff_pointer)(double *, double, double, std::vector<double>);
     public:
-        std::vector<double> single_bond_vals, descriptor_vals;
+        Eigen::VectorXd single_bond_vals, descriptor_vals;
         Eigen::MatrixXd single_bond_force_dervs, single_bond_stress_dervs,
             descriptor_force_dervs, descriptor_stress_dervs;
         std::string radial_basis, cutoff_function;
@@ -79,9 +79,12 @@ class DescriptorCalculator{
 class LocalEnvironmentDescriptor : public LocalEnvironment{
     public:
         DescriptorCalculator descriptor_calculator;
-        std::vector<double> descriptor_vals;
+        Eigen::VectorXd descriptor_vals;
         Eigen::MatrixXd descriptor_force_dervs;
         Eigen::MatrixXd descriptor_stress_dervs;
+
+        double descriptor_norm;
+        Eigen::MatrixXd force_dot, stress_dot;
 
         LocalEnvironmentDescriptor(const Structure & structure, int atom,
             double cutoff, DescriptorCalculator & descriptor_calculator);
@@ -94,7 +97,7 @@ class LocalEnvironmentDescriptor : public LocalEnvironment{
 class StructureDescriptor : public Structure{
     public:
         DescriptorCalculator descriptor_calculator;
-        std::vector<std::vector<double>> descriptor_vals;
+        std::vector<Eigen::VectorXd> descriptor_vals;
         std::vector<Eigen::MatrixXd> descriptor_force_dervs;
         std::vector<Eigen::MatrixXd> descriptor_stress_dervs;
         double cutoff;
@@ -164,7 +167,7 @@ void calculate_radial(
 
 // Single bond basis functions.
 void single_bond_update_env(
-    std::vector<double> & single_bond_vals,
+    Eigen::VectorXd & single_bond_vals,
     Eigen::MatrixXd & force_dervs, Eigen::MatrixXd & stress_dervs,
     void (*basis_function)(double *, double *, double, int,
                            std::vector<double>),
@@ -176,7 +179,7 @@ void single_bond_update_env(
     const std::vector<double> & cutoff_hyps);
 
 void single_bond_sum_env(
-    std::vector<double> & single_bond_vals,
+    Eigen::VectorXd & single_bond_vals,
     Eigen::MatrixXd & force_dervs, Eigen::MatrixXd & stress_dervs,
     void (*basis_function)(double *, double *, double, int,
                            std::vector<double>),
@@ -187,19 +190,19 @@ void single_bond_sum_env(
 
 // Rotationally invariant descriptors.
 void B1_descriptor(
-std::vector<double> & B1_vals,
+Eigen::VectorXd & B1_vals,
 Eigen::MatrixXd & B1_force_dervs,
 Eigen::MatrixXd & B1_stress_dervs,
-const std::vector<double> & single_bond_vals,
+const Eigen::VectorXd & single_bond_vals,
 const Eigen::MatrixXd & single_bond_force_dervs,
 const Eigen::MatrixXd & single_bond_stress_dervs,
 const LocalEnvironment & env, int nos, int N, int lmax);
 
 void B2_descriptor(
-std::vector<double> & B2_vals,
+Eigen::VectorXd & B2_vals,
 Eigen::MatrixXd & B2_force_dervs,
 Eigen::MatrixXd & B2_stress_dervs,
-const std::vector<double> & single_bond_vals,
+const Eigen::VectorXd & single_bond_vals,
 const Eigen::MatrixXd & single_bond_force_dervs,
 const Eigen::MatrixXd & single_bond_stress_dervs,
 const LocalEnvironment & env, int nos, int N, int lmax);

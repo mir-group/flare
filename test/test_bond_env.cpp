@@ -40,7 +40,7 @@ class BondEnv : public ::testing::Test{
 
     // Initialize matrices.
     int no_descriptors = nos * N * number_of_harmonics;
-    std::vector<double> single_bond_vals, single_bond_vals_2;
+    Eigen::VectorXd single_bond_vals, single_bond_vals_2;
 
     Eigen::MatrixXd force_dervs, force_dervs_2, stress_dervs, stress_dervs_2;
 
@@ -59,7 +59,7 @@ class BondEnv : public ::testing::Test{
         struc1 = Structure(cell, species, positions_1);
         env1 = LocalEnvironment(struc1, 0, rcut);
 
-        single_bond_vals = std::vector<double> (no_descriptors, 0);
+        single_bond_vals =Eigen::VectorXd::Zero(no_descriptors);
         force_dervs = Eigen::MatrixXd::Zero(noa * 3, no_descriptors);
         stress_dervs = Eigen::MatrixXd::Zero(6, no_descriptors);
     }
@@ -79,7 +79,7 @@ TEST_F(BondEnv, CentTest){
         env2 = LocalEnvironment(struc2, 0, rcut);
 
         // Initialize matrices.
-        single_bond_vals_2 = std::vector<double> (no_descriptors, 0);
+        single_bond_vals_2 = Eigen::VectorXd::Zero(no_descriptors);
         force_dervs_2 = Eigen::MatrixXd::Zero(noa * 3, no_descriptors);
         stress_dervs_2 = Eigen::MatrixXd::Zero(6, no_descriptors);
 
@@ -91,7 +91,7 @@ TEST_F(BondEnv, CentTest){
         double tolerance = 1e-6;
 
         // Check derivatives.
-        for (int n = 0; n < single_bond_vals.size(); n ++){
+        for (int n = 0; n < single_bond_vals.rows(); n ++){
             finite_diff = 
                 (single_bond_vals_2[n] - single_bond_vals[n]) / delta;
             exact = force_dervs(m, n);
@@ -118,7 +118,7 @@ TEST_F(BondEnv, EnvTest){
             env2 = LocalEnvironment(struc2, 0, rcut);
 
             // Initialize matrices.
-            single_bond_vals_2 = std::vector<double> (no_descriptors, 0);
+            single_bond_vals_2 = Eigen::VectorXd::Zero(no_descriptors);
             force_dervs_2 = Eigen::MatrixXd::Zero(noa * 3, no_descriptors);
             stress_dervs_2 = Eigen::MatrixXd::Zero(6, no_descriptors);
 
@@ -127,7 +127,7 @@ TEST_F(BondEnv, EnvTest){
                 N, lmax, radial_hyps, cutoff_hyps);
 
             // Check derivatives.
-            for (int n = 0; n < single_bond_vals.size(); n ++){
+            for (int n = 0; n < single_bond_vals.rows(); n ++){
                 finite_diff = 
                     (single_bond_vals_2[n] - single_bond_vals[n]) / delta;
                 exact = force_dervs(p * 3 + m, n);
@@ -164,7 +164,7 @@ TEST_F(BondEnv, StressTest){
             struc2 = Structure(cell_2, species, positions_2);
             env2 = LocalEnvironment(struc2, 0, rcut);
 
-            single_bond_vals_2 = std::vector<double> (no_descriptors, 0);
+            single_bond_vals_2 = Eigen::VectorXd::Zero(no_descriptors);
             force_dervs_2 = Eigen::MatrixXd::Zero(noa * 3, no_descriptors);
             stress_dervs_2 = Eigen::MatrixXd::Zero(6, no_descriptors);
 
@@ -174,7 +174,7 @@ TEST_F(BondEnv, StressTest){
                 N, lmax, radial_hyps, cutoff_hyps);
 
             // Check stress derivatives.
-            for (int p = 0; p < single_bond_vals.size(); p ++){
+            for (int p = 0; p < single_bond_vals.rows(); p ++){
                 finite_diff = 
                     (single_bond_vals_2[p] - single_bond_vals[p]) / delta;
                 exact = stress_dervs(stress_ind, p);

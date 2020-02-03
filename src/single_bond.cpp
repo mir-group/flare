@@ -4,7 +4,7 @@
 using namespace std;
 
 void single_bond_update_env(
-    vector<double> & single_bond_vals,
+    Eigen::VectorXd & single_bond_vals,
     Eigen::MatrixXd & force_dervs, Eigen::MatrixXd & stress_dervs,
     void (*basis_function)(double *, double *, double, int, vector<double>),
     void (*cutoff_function)(double *, double, double, vector<double>),
@@ -59,7 +59,7 @@ void single_bond_update_env(
                      g_val * hz[angular_counter];
 
             // Update single bond basis arrays.
-            single_bond_vals[descriptor_counter] += bond;
+            single_bond_vals(descriptor_counter) += bond;
 
             force_dervs(environoment_index * 3, descriptor_counter) +=
                 bond_x;
@@ -88,7 +88,7 @@ void single_bond_update_env(
 }
 
 void single_bond_sum_env(
-    vector<double> & single_bond_vals,
+    Eigen::VectorXd & single_bond_vals,
     Eigen::MatrixXd & force_dervs, Eigen::MatrixXd & stress_dervs,
     void (*basis_function)(double *, double *, double, int, vector<double>),
     void (*cutoff_function)(double *, double, double, vector<double>),

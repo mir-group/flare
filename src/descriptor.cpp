@@ -39,7 +39,7 @@ void DescriptorCalculator::compute_B1(const LocalEnvironment & env){
     int lmax = 0;
     int no_descriptors = nos * N;
 
-    single_bond_vals = std::vector<double> (no_descriptors, 0);
+    single_bond_vals = Eigen::VectorXd::Zero(no_descriptors);
     single_bond_force_dervs =
         Eigen::MatrixXd::Zero(env.noa * 3, no_descriptors);
     single_bond_stress_dervs =
@@ -69,7 +69,7 @@ void DescriptorCalculator::compute_B2(const LocalEnvironment & env){
     int no_bond = nos * N * no_harmonics; 
     int no_descriptors = no_radial * (no_radial + 1) * (lmax + 1) / 2;
 
-    single_bond_vals = std::vector<double> (no_bond, 0);
+    single_bond_vals = Eigen::VectorXd::Zero(no_bond);
     single_bond_force_dervs =
         Eigen::MatrixXd::Zero(env.noa * 3, no_bond);
     single_bond_stress_dervs =
@@ -82,7 +82,7 @@ void DescriptorCalculator::compute_B2(const LocalEnvironment & env){
                         lmax, radial_hyps, cutoff_hyps);
 
     // Initialize B2 vectors.
-    descriptor_vals = std::vector<double> (no_descriptors, 0);
+    descriptor_vals = Eigen::VectorXd::Zero(no_descriptors);
     descriptor_force_dervs =
         Eigen::MatrixXd::Zero(env.noa * 3, no_descriptors);
     descriptor_stress_dervs =
@@ -97,10 +97,10 @@ void DescriptorCalculator::compute_B2(const LocalEnvironment & env){
 }
 
 void B1_descriptor(
-std::vector<double> & B1_vals,
+Eigen::VectorXd & B1_vals,
 Eigen::MatrixXd & B1_force_dervs,
 Eigen::MatrixXd & B1_stress_dervs,
-const std::vector<double> & single_bond_vals,
+const Eigen::VectorXd & single_bond_vals,
 const Eigen::MatrixXd & single_bond_force_dervs,
 const Eigen::MatrixXd & single_bond_stress_dervs,
 const LocalEnvironment & env, int nos, int N, int lmax){
@@ -120,7 +120,7 @@ for (s = 0; s < nos; s ++){
         ind_curr = s_ind + n_ind;
 
         // Store B1 value.
-        B1_vals[counter] = single_bond_vals[ind_curr];
+        B1_vals(counter) = single_bond_vals(ind_curr);
 
         // Store force derivatives.
         for (int atom_index = 0; atom_index < neigh_size; atom_index ++){
@@ -146,10 +146,10 @@ for (s = 0; s < nos; s ++){
 }
 
 void B2_descriptor(
-std::vector<double> & B2_vals,
+Eigen::VectorXd & B2_vals,
 Eigen::MatrixXd & B2_force_dervs,
 Eigen::MatrixXd & B2_stress_dervs,
-const std::vector<double> & single_bond_vals,
+const Eigen::VectorXd & single_bond_vals,
 const Eigen::MatrixXd & single_bond_force_dervs,
 const Eigen::MatrixXd & single_bond_stress_dervs,
 const LocalEnvironment & env, int nos, int N, int lmax){
@@ -172,9 +172,9 @@ for (int n1 = 0; n1 < no_radial; n1 ++){
                 n2_l = n2_ind + l_ind;
 
                 // Store B2 value.
-                B2_vals[counter] +=
-                    single_bond_vals[n1_l] *
-                    single_bond_vals[n2_l];
+                B2_vals(counter) +=
+                    single_bond_vals(n1_l) *
+                    single_bond_vals(n2_l);
 
                 // Store force derivatives.
                 for (int atom_index = 0; atom_index < neigh_size;
@@ -182,20 +182,20 @@ for (int n1 = 0; n1 < no_radial; n1 ++){
                     env_ind = env.neighbor_list[atom_index];
                     for (int comp = 0; comp < 3; comp ++){
                         B2_force_dervs(env_ind * 3 + comp, counter) +=
-                            single_bond_vals[n1_l] *
+                            single_bond_vals(n1_l) *
                             single_bond_force_dervs(env_ind * 3 + comp, n2_l)+
                             single_bond_force_dervs(env_ind * 3 + comp, n1_l)*
-                            single_bond_vals[n2_l];
+                            single_bond_vals(n2_l);
                     }
                  }
 
                 // Store stress derivatives.
                 for (int p = 0; p < 6; p ++){
                     B2_stress_dervs(p, counter) +=
-                        single_bond_vals[n1_l] *
+                        single_bond_vals(n1_l) *
                         single_bond_stress_dervs(p, n2_l) +
                         single_bond_stress_dervs(p, n1_l) *
-                        single_bond_vals[n2_l];
+                        single_bond_vals(n2_l);
                 }
                 l_ind ++;
             }

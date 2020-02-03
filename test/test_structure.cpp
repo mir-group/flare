@@ -65,12 +65,40 @@ TEST_F(StructureTest, StructureDescriptor){
         env = LocalEnvironment(test_struc, i, cutoff);
         desc1.compute_B2(env);
         for (int j = 0; j < desc1.descriptor_vals.size(); j ++){
-            EXPECT_EQ(desc1.descriptor_vals[j],
-                      test_struc.descriptor_vals[i][j]);
+            EXPECT_EQ(desc1.descriptor_vals(j),
+                      test_struc.descriptor_vals[i](j));
             for (int k = 0; k < test_struc.species.size(); k ++){
                 EXPECT_EQ(desc1.descriptor_force_dervs(k, j),
                           test_struc.descriptor_force_dervs[i](k, j));
             }
         }
+    }
+}
+
+TEST_F(StructureTest, StructureDataset){
+    // Check that label vectors are empty by default.
+    EXPECT_EQ(test_struc.energy.size(), 0);
+    EXPECT_EQ(test_struc.force_components.size(), 0);
+    EXPECT_EQ(test_struc.stress_components.size(), 0);
+
+    // Check that EFS labels are set correctly.
+    std::vector<double> energy {2.0};
+    std::vector<double> force_components {1, 2, 3};
+    std::vector<double> stress_components {4, 5, 6};
+
+    test_struc = StructureDataset(cell, species, positions, desc1, cutoff,
+                                  energy, force_components,
+                                  stress_components);
+    
+    for (int i = 0; i < energy.size(); i ++){
+        EXPECT_EQ(energy[i], test_struc.energy[i]);
+    }
+
+    for (int i = 0; i < force_components.size(); i ++){
+        EXPECT_EQ(force_components[i], test_struc.force_components[i]);
+    }
+
+    for (int i = 0; i < stress_components.size(); i ++){
+        EXPECT_EQ(stress_components[i], test_struc.stress_components[i]);
     }
 }
