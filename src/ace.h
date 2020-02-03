@@ -9,6 +9,7 @@ class Structure{
                         wrapped_positions;
         std::vector<int> species;
         double max_cutoff, volume;
+        int noa;
 
         Structure();
 
@@ -132,6 +133,22 @@ class StructureDataset : public StructureDescriptor{
                             std::vector<double>{},
                          std::vector<double> stress_components =
                             std::vector<double>{});
+
+};
+
+class DotProductKernel{
+    public:
+        double signal_variance, power, sig2;
+
+        DotProductKernel();
+
+        DotProductKernel(double signal_variance, double power);
+
+        double env_env(const LocalEnvironmentDescriptor & env1,
+                       const LocalEnvironmentDescriptor & env2);
+
+        Eigen::VectorXd env_struc(const LocalEnvironmentDescriptor & env1,
+                                  const StructureDescriptor & struc1);
 
 };
 

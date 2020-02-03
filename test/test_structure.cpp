@@ -20,9 +20,9 @@ class StructureTest : public ::testing::Test{
         double cutoff = 3;
 
     StructureTest(){
-        cell << 1.3, 0.5, 0.8,
-               -1.2, 1, 0.73,
-               -0.8, 0.1, 0.9;
+        cell << 4.0, 0.5, 0.8,
+               -1.2, 3.9, 0.73,
+               -0.8, 0.1, 4.1;
     
         positions << 1.2, 0.7, 2.3,
                      3.1, 2.5, 8.9,
