@@ -502,4 +502,3 @@ class GaussianProcess:
         else:
             raise ValueError("Output format not supported: try from "
                              "{}".format(supported_formats))
->>>>>>> 7afbd4bc8e5c2067189a2a714dd63f6fd29c0260
