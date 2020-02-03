@@ -4,6 +4,8 @@
 #include <Eigen/Dense>
 #include <cmath>
 
+#define THRESHOLD 1e-8
+
 class EnvironmentTest : public :: testing :: Test{
     public:
         Eigen::MatrixXd cell{3, 3};
@@ -11,6 +13,8 @@ class EnvironmentTest : public :: testing :: Test{
         Eigen::MatrixXd positions{5, 3};
         DescriptorCalculator desc1;
         StructureDataset test_struc;
+        int atom;
+        LocalEnvironmentDescriptor test_env;
 
         std::string radial_string = "chebyshev";
         std::string cutoff_string = "cosine";
@@ -33,17 +37,15 @@ class EnvironmentTest : public :: testing :: Test{
         desc1 = DescriptorCalculator(radial_string, cutoff_string,
             radial_hyps, cutoff_hyps, descriptor_settings);
         test_struc = StructureDataset(cell, species, positions, desc1, cutoff);
+
+        atom = 0;
+        test_env = LocalEnvironmentDescriptor(test_struc, atom, cutoff, desc1);
     }
 };
 
 TEST_F(EnvironmentTest, SweepTest){
        Eigen::MatrixXd cell(3, 3);
        Eigen::MatrixXd positions(5, 3);
-    
-    // Create local environment.
-    int atom = 0;
-    LocalEnvironment test_env =
-        LocalEnvironment(test_struc, atom, cutoff);
 
     EXPECT_EQ(ceil(cutoff / test_struc.max_cutoff), test_env.sweep);
 
@@ -58,4 +60,18 @@ TEST_F(EnvironmentTest, SweepTest){
     EXPECT_EQ(test_env.rs.size(), expanded_count);
 
     EXPECT_EQ(test_env.neighbor_list.size(), 5);
+}
+
+TEST_F(EnvironmentTest, DotTest){
+    // Calculate the descriptor norm the old fashioned way.
+    double norm_val = 0;
+    double val_curr;
+    int no_desc = test_env.descriptor_vals.rows();
+
+    for (int i = 0; i < no_desc; i++){
+        val_curr = test_env.descriptor_vals(i);
+        norm_val += val_curr * val_curr;
+    }
+    norm_val = sqrt(norm_val);
+    EXPECT_NEAR(norm_val, test_env.descriptor_norm, THRESHOLD);
 }

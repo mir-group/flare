@@ -86,6 +86,8 @@ class LocalEnvironmentDescriptor : public LocalEnvironment{
         double descriptor_norm;
         Eigen::MatrixXd force_dot, stress_dot;
 
+        LocalEnvironmentDescriptor();
+
         LocalEnvironmentDescriptor(const Structure & structure, int atom,
             double cutoff, DescriptorCalculator & descriptor_calculator);
         

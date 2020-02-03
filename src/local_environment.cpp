@@ -130,6 +130,8 @@ void LocalEnvironment :: compute_environment(
     delete [] dists; delete [] xvals; delete [] yvals; delete [] zvals;
 }
 
+LocalEnvironmentDescriptor :: LocalEnvironmentDescriptor(){}
+
 LocalEnvironmentDescriptor :: LocalEnvironmentDescriptor(
         const Structure & structure, int atom, double cutoff,
         DescriptorCalculator & descriptor_calculator)
@@ -144,4 +146,6 @@ void LocalEnvironmentDescriptor :: compute_descriptor(){
     descriptor_vals = descriptor_calculator.descriptor_vals;
     descriptor_force_dervs = descriptor_calculator.descriptor_force_dervs;
     descriptor_stress_dervs = descriptor_calculator.descriptor_stress_dervs;
+
+    descriptor_norm = sqrt(descriptor_vals.dot(descriptor_vals));
 }
