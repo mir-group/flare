@@ -25,10 +25,10 @@ input_data = {'control':   {'prefix': label,
                             'smearing': 'gauss',
                             'degauss': 0.02,
                             'occupations': 'smearing'},
-              'electrons': {'conv_thr': 1.0e-03,
+              'electrons': {'conv_thr': 1.0e-02,
                             #'startingwfc': 'file',
                             'electron_maxstep': 100,
-                            'mixing_beta': 0.5}}
+                            'mixing_beta': 0.7}}
 
 # pseudo-potentials              
 ion_pseudo = {'Ag': 'Ag.pbe-n-kjpaw_psl.1.0.0.UPF', 
@@ -38,4 +38,3 @@ ion_pseudo = {'Ag': 'Ag.pbe-n-kjpaw_psl.1.0.0.UPF',
 dft_calc = Espresso(pseudopotentials=ion_pseudo, label=label, 
                     tstress=True, tprnfor=True, nosym=True, #noinv=True,
                     input_data=input_data, kpts=(1,1,1)) 
-dft_calc.parameters['parallel'] = False

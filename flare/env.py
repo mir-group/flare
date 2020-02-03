@@ -1,4 +1,6 @@
-"""The :class:`AtomicEnvironment` object stores information about an atom's environment."""
+"""The :class:`AtomicEnvironment` object stores information about the local
+environment of an atom. :class:`AtomicEnvironment` objects are inputs to the
+2-, 3-, and 2+3-body kernels."""
 import numpy as np
 from math import sqrt
 from numba import njit
@@ -6,16 +8,20 @@ from flare.struc import Structure
 
 
 class AtomicEnvironment:
-    def __init__(self, structure: Structure, atom: int, cutoffs):
-        """
-        Class defining atomic environment to serve as argument to GP kernel.
+    """
+    Contains information about the local environment of an atom, including
+    arrays of pair and triplet distances and the chemical species of atoms
+    in the environment.
 
-        :param structure: structure object to take atomic environment in
-        :param atom: index of atom in structure to find environment around
-        :param cutoffs: list of radii for 2-, 3- body kernel cutoffs.
-                        2-body only if one cutoff is given, 2+3 body if
-                        multiple are passed
-        """
+    :param structure: Structure of atoms.
+    :type structure: struc.Structure
+    :param atom: Index of the atom in the structure.
+    :type atom: int
+    :param cutoffs: 2- and 3-body cutoff radii. 2-body if one cutoff is
+     given, 2+3-body if two are passed.
+    :type cutoffs: np.ndarray
+    """
+    def __init__(self, structure: Structure, atom: int, cutoffs):
         self.structure = structure
         self.positions = structure.wrapped_positions
         self.cell = structure.cell
@@ -67,8 +73,8 @@ class AtomicEnvironment:
         """
         Loads in atomic environment object from a dictionary which was
         serialized by the to_dict method.
-        :param dictionary: Dictionary describing atomic environment
-        :return:
+
+        :param dictionary: Dictionary describing atomic environment.
         """
         # TODO Instead of re-computing 2 and 3 body environment,
         # directly load in, this would be much more efficient
@@ -100,8 +106,37 @@ class AtomicEnvironment:
 
 
 @njit
-def get_2_body_arrays(positions: np.ndarray, atom: int, cell: np.ndarray,
-                      cutoff_2: float, species: np.ndarray):
+def get_2_body_arrays(positions, atom: int, cell, cutoff_2: float, species):
+    """Returns distances, coordinates, and species of atoms in the 2-body
+    local environment. This method is implemented outside the AtomicEnvironment
+    class to allow for njit acceleration with Numba.
+
+    :param positions: Positions of atoms in the structure.
+    :type positions: np.ndarray
+    :param atom: Index of the central atom of the local environment.
+    :type atom: int
+    :param cell: 3x3 array whose rows are the Bravais lattice vectors of the
+        cell.
+    :type cell: np.ndarray
+    :param cutoff_2: 2-body cutoff radius.
+    :type cutoff_2: float
+    :param species: Numpy array of species represented by their atomic numbers.
+    :type species: np.ndarray
+    :return: Tuple of arrays describing pairs of atoms in the 2-body local
+     environment.
+    
+     bond_array_2: Array containing the distances and relative
+     coordinates of atoms in the 2-body local environment. First column
+     contains distances, remaining columns contain Cartesian coordinates
+     divided by the distance (with the origin defined as the position of the
+     central atom). The rows are sorted by distance from the central atom.
+
+     bond_positions_2: Coordinates of atoms in the 2-body local environment.
+
+     etypes: Species of atoms in the 2-body local environment represented by
+     their atomic number.
+    :rtype: np.ndarray, np.ndarray, np.ndarray
+    """
     noa = len(positions)
     pos_atom = positions[atom]
     coords = np.zeros((noa, 3, 27))
@@ -156,9 +191,40 @@ def get_2_body_arrays(positions: np.ndarray, atom: int, cell: np.ndarray,
 
 
 @njit
-def get_3_body_arrays(bond_array_2: np.ndarray,
-                      bond_positions_2: np.ndarray,
-                      cutoff_3: float):
+def get_3_body_arrays(bond_array_2, bond_positions_2, cutoff_3: float):
+    """Returns distances and coordinates of triplets of atoms in the
+    3-body local environment.
+
+    :param bond_array_2: 2-body bond array.
+    :type bond_array_2: np.ndarray
+    :param bond_positions_2: Coordinates of atoms in the 2-body local
+     environment.
+    :type bond_positions_2: np.ndarray
+    :param cutoff_3: 3-body cutoff radius.
+    :type cutoff_3: float
+    :return: Tuple of 4 arrays describing triplets of atoms in the 3-body local
+     environment.
+
+     bond_array_3: Array containing the distances and relative
+     coordinates of atoms in the 3-body local environment. First column
+     contains distances, remaining columns contain Cartesian coordinates
+     divided by the distance (with the origin defined as the position of the
+     central atom). The rows are sorted by distance from the central atom.
+
+     cross_bond_inds: Two dimensional array whose row m contains the indices
+     of atoms n > m that are within a distance cutoff_3 of both atom n and the
+     central atom.
+
+     cross_bond_dists: Two dimensional array whose row m contains the
+     distances from atom m of atoms n > m that are within a distance cutoff_3
+     of both atom n and the central atom.
+
+     triplet_counts: One dimensional array of integers whose entry m is the
+     number of atoms that are within a distance cutoff_3 of atom m.
+
+    :rtype: (np.ndarray, np.ndarray, np.ndarray, np.ndarray)
+    """
+
     # get 3-body bond array
     ind_3 = -1
     noa = bond_array_2.shape[0]

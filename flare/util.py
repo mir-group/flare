@@ -1,12 +1,14 @@
 """
-Utility functions for various tasks
-
-2019
+Utility functions for various tasks.
 """
 from warnings import warn
-import numpy as np
 from json import JSONEncoder
+from typing import List
+from math import inf
 
+import numpy as np
+
+# Dictionary mapping elements to their atomic number (Z)
 _element_to_Z = {'H': 1,
                  'He': 2,
                  'Li': 3,
@@ -126,6 +128,7 @@ _element_to_Z = {'H': 1,
                  'Ts': 117,
                  'Og': 118}
 
+# Define inverse mapping
 _Z_to_element = {z: elt for elt, z in _element_to_Z.items()}
 
 
@@ -133,6 +136,7 @@ def element_to_Z(element: str) -> int:
     """
     Returns the atomic number Z associated with an elements 1-2 letter name.
     Returns the same integer if an integer is passed in.
+
     :param element:
     :return:
     """
@@ -140,14 +144,15 @@ def element_to_Z(element: str) -> int:
     # If already integer, do nothing
     if isinstance(element, (int, np.integer)):
         return element
-
     if type(element).__module__ == 'numpy' and np.issubdtype(type(element),
                                                              np.integer):
         return element
 
+    # If a string-casted integer, do nothing
     if isinstance(element, str) and element.isnumeric():
         return int(element)
 
+    # Check that a valid element was passed in then return
     if _element_to_Z.get(element, None) is None:
         warn('Element as specified not found in list of element-Z mappings. '
              'If you would like to specify a custom element, use an integer '
@@ -159,13 +164,21 @@ def element_to_Z(element: str) -> int:
 class NumpyEncoder(JSONEncoder):
     """
     Special json encoder for numpy types for serialization
-    use as  json.loads(... cls = NumpyEncoder)
-    or json.dumps(... cls = NumpyEncoder)
-    Thanks to StackOverflow users karlB and fnunnari
-    https://stackoverflow.com/a/47626762
+    use as
+
+    json.loads(... cls = NumpyEncoder)
+
+    or:
+
+    json.dumps(... cls = NumpyEncoder)
+
+    Thanks to StackOverflow users karlB and fnunnari, who contributed this from:
+    `https://stackoverflow.com/a/47626762`
     """
 
     def default(self, obj):
+        """
+        """
         if isinstance(obj, (np.int_, np.intc, np.intp, np.int8,
                             np.int16, np.int32, np.int64, np.uint8,
                             np.uint16, np.uint32, np.uint64)):
@@ -179,6 +192,14 @@ class NumpyEncoder(JSONEncoder):
 
 
 def Z_to_element(Z: int) -> str:
+    """
+    Maps atomic numbers Z to element name, e.g. 1->"H".
+
+    :param Z: Atomic number corresponding to element.
+    :return: One or two-letter name of element.
+    """
+
+    # Check proper formatting
     if isinstance(Z, str):
         if Z.isnumeric():
             Z = int(Z)
@@ -188,7 +209,31 @@ def Z_to_element(Z: int) -> str:
     return _Z_to_element[Z]
 
 
-def is_std_in_bound(std_tolerance, noise, structure, max_atoms_added):
+def is_std_in_bound(std_tolerance: float, noise: float,
+                    structure: 'flare.struc.Structure',
+                    max_atoms_added: int = inf)-> (bool, List[int]):
+    """
+    Given an uncertainty tolerance and a structure decorated with atoms,
+    species, and associated uncertainties, return those which are above a
+    given threshold, agnostic to species.
+
+    If std_tolerance is negative, then the threshold used is the absolute
+    value of std_tolerance.
+
+    If std_tolerance is positive, then the threshold used is
+    std_tolerance * noise.
+
+    If std_tolerance is 0, then do not check.
+
+    :param std_tolerance: If positive, multiply by noise to get cutoff. If
+        negative, use absolute value of std_tolerance as cutoff.
+    :param noise: Noise variance parameter
+    :param structure: Input structure
+    :type structure: FLARE Structure
+    :param max_atoms_added: Maximum # of atoms to add
+    :return: (True,[-1]) if no atoms are above cutoff, (False,[...]) of the
+            top `max_atoms_added` uncertainties
+    """
     # set uncertainty threshold
     if std_tolerance == 0:
         return True, [-1]
@@ -198,7 +243,7 @@ def is_std_in_bound(std_tolerance, noise, structure, max_atoms_added):
         threshold = np.abs(std_tolerance)
 
     # sort max stds
-    nat = structure.nat
+    nat = len(structure)
     max_stds = np.zeros((nat))
     for atom, std in enumerate(structure.stds):
         max_stds[atom] = np.max(std)
@@ -214,8 +259,9 @@ def is_std_in_bound(std_tolerance, noise, structure, max_atoms_added):
 
 def is_std_in_bound_per_species(rel_std_tolerance: float,
                                 abs_std_tolerance: float, noise: float,
-                                structure, max_atoms_added: int =
-                                np.inf, max_by_species: dict = {}):
+                                structure: 'flare.struc.Structure',
+                                max_atoms_added: int = inf,
+                                max_by_species: dict = {})-> (bool, List[int]):
     """
     Checks the stds of GP prediction assigned to the structure, returns a
     list of atoms which either meet an absolute threshold or a relative
@@ -225,22 +271,33 @@ def is_std_in_bound_per_species(rel_std_tolerance: float,
 
     The max_atoms_added argument will 'overrule' the
     max by species; e.g. if max_atoms_added is 2 and max_by_species is {"H":3},
-    then at most two atoms total will be added.
+    then at most two atoms will be added.
 
-    :param rel_std_tolerance:
-    :param abs_std_tolerance:
-    :param noise:
-    :param structure:
-    :param max_atoms_added:
-    :param max_by_species:
-    :return:
+    :param rel_std_tolerance: Multiplied by noise to get a lower
+        bound for the uncertainty threshold defined relative to the model.
+    :param abs_std_tolerance: Used as an absolute lower bound for the
+        uncertainty threshold.
+    :param noise: Noise hyperparameter for model, used to define relative
+        uncertainty cutoff.
+    :param structure: FLARE structure decorated with
+        uncertainties in structure.stds.
+    :param max_atoms_added: Maximum number of atoms to return from structure.
+    :param max_by_species: Dictionary describing maximum number of atoms to
+        return by species (e.g. {'H':1,'He':2} will return at most 1 H and 2 He
+        atoms.)
+    :return: Bool indicating if any atoms exceeded the uncertainty
+        threshold, and a list of indices of atoms which did, sorted by their
+        uncertainty.
     """
 
-    # This indicates test mode, as the GP is not being modified in any way
+    # Always returns true; use this when you want to test model performance
+    # without updating the training set.
     if rel_std_tolerance == 0 and abs_std_tolerance == 0:
         return True, [-1]
 
-    # set uncertainty threshold
+    # set uncertainty threshold based on if only one or the other is passed in,
+    # and use the lower of the two.
+
     if rel_std_tolerance is None or rel_std_tolerance == 0:
         threshold = abs_std_tolerance
     elif abs_std_tolerance is None or abs_std_tolerance == 0:
@@ -250,6 +307,7 @@ def is_std_in_bound_per_species(rel_std_tolerance: float,
                         abs_std_tolerance)
 
     # Determine if any std component will trigger the threshold
+    # before looking through individual species.
     max_std_components = [np.max(std) for std in structure.stds]
     if max(max_std_components) < threshold:
         return True, [-1]
@@ -261,67 +319,82 @@ def is_std_in_bound_per_species(rel_std_tolerance: float,
 
     present_species = {spec: 0 for spec in set(structure.species_labels)}
 
-    # Only add atoms up to the bound
+    # Loop through atoms and add until cutoffs are met.
     for i in std_arg_sorted:
 
-        # If max atoms added reached or stds are now below threshold, done
+        # If max atoms added reached or stds of atoms considered are now below
+        # threshold, conclude
         if len(target_atoms) == max_atoms_added or \
                 max_std_components[i] < threshold:
             break
 
-        cur_spec = structure.species_labels[i]
-
         # Only add up to species allowance, if it exists
+        cur_spec = structure.species_labels[i]
         if present_species[cur_spec] < \
-                max_by_species.get(cur_spec, np.inf):
+                max_by_species.get(cur_spec, inf):
             target_atoms.append(i)
             present_species[cur_spec] += 1
 
-    return False, target_atoms
+    # Check in case that nothing was added, e.g. due to species limitations
+    if len(target_atoms):
+        return False, target_atoms
+
+    return True, [-1]
 
 
 def is_force_in_bound_per_species(abs_force_tolerance: float,
-                                  predicted_forces: np.array,
-                                  label_forces: np.array,
+                                  predicted_forces: 'ndarray',
+                                  label_forces: 'ndarray',
                                   structure,
-                                  max_atoms_added: int = np.inf,
-                                  max_by_species: dict =
-                                  {}, max_force_error: float = np.inf):
+                                  max_atoms_added: int = inf,
+                                  max_by_species: dict ={},
+                                  max_force_error: float
+                                  = inf)-> (bool, List[int]):
     """
-    Checks the forces of GP prediction assigned to the structure, returns a
-    list of atoms which  meet an absolute threshold abs_force_tolerance. Can 
-    limit the total number of target atoms via max_atoms_added, and limit 
+    Checks the forces of GP prediction assigned to the structure against a
+    DFT calculation, and return a list of atoms which meet an absolute
+    threshold abs_force_tolerance.
+
+    Can limit the total number of target atoms via max_atoms_added, and limit
     per species by max_by_species.
 
     The max_atoms_added argument will 'overrule' the
     max by species; e.g. if max_atoms_added is 2 and max_by_species is {"H":3},
     then at most two atoms total will be added.
 
-    :param abs_force_tolerance:
-    :param guesses:
-    :param labels:
-    :param structure:
-    :param max_atoms_added:
-    :param max_by_species:
+    Because adding atoms which are in configurations which are far outside
+    of the potential energy surface may not always be
+    desirable, a maximum force error can be passed in; atoms with
+
+    :param abs_force_tolerance: If error exceeds this value, then return
+        atom index
+    :param predicted_forces: Force predictions made by GP model
+    :param label_forces: "True" forces computed by DFT
+    :param structure: FLARE Structure
+    :param max_atoms_added: Maximum atoms to return
+    :param max_by_species: Limit to a maximum number of atoms by species
     :param max_force_error: In order to avoid counting in highly unlikely
-    configurations, if the error exceeds this, do not add atom
-    :return:
+        configurations, if the error exceeds this, do not add atom
+    :return: Bool indicating if any atoms exceeded the error
+        threshold, and a list of indices of atoms which did sorted by their
+        error.
     """
 
-    # This indicates test mode, as the GP is not being modified in any way
+    # Always returns true; use this when you want to test model performance
+    # without updating the training set.
     if abs_force_tolerance == 0:
         return True, [-1]
 
     errors = np.abs(predicted_forces - label_forces)
-    # Determine if any std component will trigger the threshold
-    max_error_components = np.amax(errors, axis=1)
 
+    # Determine if any force component will trigger the threshold
+    max_error_components = np.amax(errors, axis=1)
     if np.max(max_error_components) < abs_force_tolerance:
         return True, [-1]
 
     target_atoms = []
 
-    # Sort from greatest to smallest max. std component
+    # Sort from greatest to smallest error
     force_arg_sorted = np.flip(np.argsort(max_error_components))
 
     present_species = {spec: 0 for spec in set(structure.species_labels)}
@@ -329,7 +402,8 @@ def is_force_in_bound_per_species(abs_force_tolerance: float,
     # Only add atoms up to the bound
     for i in force_arg_sorted:
 
-        # If max atoms added reached or forces are now below threshold, done
+        # If max atoms added reached or force errors are now below threshold,
+        # conclude
         if len(target_atoms) == max_atoms_added or \
                 max_error_components[i] < abs_force_tolerance:
             break
@@ -338,14 +412,14 @@ def is_force_in_bound_per_species(abs_force_tolerance: float,
 
         # Only add up to species allowance, if it exists
         if present_species[cur_spec] < \
-                max_by_species.get(cur_spec, np.inf) \
+                max_by_species.get(cur_spec, inf) \
                 and max_error_components[i] < max_force_error:
             target_atoms.append(i)
             present_species[cur_spec] += 1
 
-    # Handle the case that nothing was added
+    # Check in case that nothing was added e.g. due to species or error
+    # limitations
     if len(target_atoms):
         return False, target_atoms
     else:
         return True, [-1]
-

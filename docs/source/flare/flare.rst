@@ -4,10 +4,8 @@ Code Documentation
 .. toctree::
    :maxdepth: 3
 
-   struc
-   env
-   kernels
    gp
-   dft_interface
+   otf
    mgp/mgp
    ase/ase
+   gp_from_aimd

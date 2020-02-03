@@ -1,3 +1,14 @@
+"""
+This module is used to call CP2K simulation and parse its output
+The user need to supply a complete input script with ENERGY_FORCE or ENERGY runtype, and CELL, COORD blocks. Example scripts can be found in tests/test_files/cp2k_input...
+
+The module will copy the input template to a new file with "_run" suffix,
+edit the atomic coordination in the COORD blocks and run the similation with
+the parallel set up given.
+
+We note that, if the CP2K executable is only for serial run, using it along with MPI setting can lead to repeating output in the output file, wrong number of forces and error in the other modules.
+"""
+
 import os
 from subprocess import call
 import time
@@ -8,17 +19,30 @@ from typing import List
 
 name = "CP2K"
 
+def run_dft_par(dft_input, structure, dft_loc, ncpus=1, dft_out="dft.out",
+                npool=None, mpi="mpi", **dft_kwargs):
+    """run DFT calculation with given input template
+    and atomic configurations. if ncpus == 1, it executes serial run.
 
-def run_dft_par(dft_input, structure, dft_loc, no_cpus=1, dft_out="dft.out",
-                npool=None, mpi="mpi"):
+    :param dft_input: input template file name
+    :param structure: atomic configuration
+    :param dft_loc:   relative/absolute executable of the DFT code
+    :param ncpus:   # of CPU for mpi
+    :param dft_out:   output file name
+    :param npool:     not used
+    :param mpi:       not used
+    :param **dft_wargs: not used
+    :return: forces
+    """
+
     newfilename = edit_dft_input_positions(dft_input, structure)
     dft_command = \
         f'{dft_loc} -i {newfilename} > {dft_out}'
-    if (no_cpus > 1):
+    if (ncpus > 1):
         if (mpi == "mpi"):
-            dft_command = f'mpirun -np {no_cpus} {dft_command}'
+            dft_command = f'mpirun -np {ncpus} {dft_command}'
         else:
-            dft_command = f'srun -n {no_cpus} {dft_command}'
+            dft_command = f'srun -n {ncpus} {dft_command}'
     # output.write_to_output(dft_command+'\n')
     call(dft_command, shell=True)
     os.remove(newfilename)
@@ -26,14 +50,28 @@ def run_dft_par(dft_input, structure, dft_loc, no_cpus=1, dft_out="dft.out",
     return parse_dft_forces(dft_out)
 
 
-def run_dft_en_par(dft_input, structure, dft_loc, no_cpus, dft_out="dft.out",
-        npool=None, mpi="mpi"):
+def run_dft_en_par(dft_input:str, structure,
+        dft_loc:str, ncpus:int, dft_out:str ="dft.out",
+        npool:int =None, mpi:str ="mpi", **dft_kwargs):
+    """run DFT calculation with given input template
+    and atomic configurations. This function is not used atm.
+
+    :param dft_input: input template file name
+    :param structure: atomic configuration
+    :param dft_loc:   relative/absolute executable of the DFT code
+    :param ncpus:   # of CPU for mpi
+    :param dft_out:   output file name
+    :param npool:     not used
+    :param mpi:       not used
+    :param **dft_wargs: not used
+    :return: forces, energy
+    """
 
     newfilename = edit_dft_input_positions(dft_input, structure)
     dft_command = \
         f'{dft_loc} -i {newfilename} > {dft_out}'
-    if (no_cpus > 1):
-        dft_command = f'mpirun -np {no_cpus} {dft_command}'
+    if (ncpus > 1):
+        dft_command = f'mpirun -np {ncpus} {dft_command}'
     # output.write_to_output(dft_command+'\n')
     call(dft_command, shell=True)
     os.remove(newfilename)
@@ -43,9 +81,15 @@ def run_dft_en_par(dft_input, structure, dft_loc, no_cpus, dft_out="dft.out",
     return forces, energy
 
 
-
-
 def parse_dft_input(dft_input: str):
+    """ Parse CP2K input file prepared by the user
+    the parser is very limited. The user have to define things
+    in a good format.
+    It requires the "CELL", "COORD" blocks
+
+    :param dft_input: file name
+    :return: positions, species, cell, masses
+    """
     positions = []
     species = []
     cell = []
@@ -72,7 +116,6 @@ def parse_dft_input(dft_input: str):
     assert cell_index is not None, 'Failed to find cell in input'
     assert positions_index is not None, 'Failed to find positions in input'
     assert nat is not None, 'Failed to find number of atoms in input'
-    # assert species_index is not None, 'Failed to find atomic species in input'
 
     # Load cell
     # TO DO: allow to mess up the order of A, B, and C
@@ -133,19 +176,24 @@ def parse_dft_input(dft_input: str):
 def dft_input_to_structure(dft_input: str):
     """
     Parses a qe input and returns the atoms in the file as a Structure object
-    :param dft_input: QE Input file to parse
-    :param cutoff: Cutoff radius for structure
-    :return:
+    :param dft_input: input file to parse
+    :return: atomic structure
     """
     positions, species, cell, masses = parse_dft_input(dft_input)
     _, coded_species = struc.get_unique_species(species)
     return struc.Structure(positions=positions, species=coded_species,
                            cell=cell, mass_dict=masses, species_labels=species)
 
+
 def edit_dft_input_positions(dft_input: str, structure):
-    """
-    Write the current configuration of the OTF structure to the
+    """ Write the current configuration of the OTF structure to the
     qe input file
+
+    :param dft_input: intput file name
+    :param structure: structure to print
+    :type structure: class Structure
+    :return newfilename: the name of the edited intput file.
+                         with "_run" suffix
     """
 
     with open(dft_input, 'r') as f:
@@ -169,22 +217,15 @@ def edit_dft_input_positions(dft_input: str, structure):
     assert cell_index is not None, 'Failed to find cell in input'
     assert nat is not None, 'Failed to find nat in input'
 
-    # TODO Catch case where the punchout structure has more atoms than the
-    # original structure
-
     for pos_index, line_index in enumerate(
             range(file_pos_index, file_pos_index + structure.nat)):
-        pos_string = ' '.join([structure.species_labels[pos_index],
-                               str(structure.positions[pos_index][
-                                       0]),
-                               str(structure.positions[pos_index][
-                                       1]),
-                               str(structure.positions[pos_index][
-                                       2])])
+        pos =  structure.positions[pos_index]
+        specs = structure.species_labels[pos_index]
+        pos_string = f'{specs} {pos[0]} {pos[1]} {pos[2]}\n'
         if line_index < len(lines):
-            lines[line_index] = str(pos_string + '\n')
+            lines[line_index] = pos_string
         else:
-            lines.append(str(pos_string + '\n'))
+            lines.append(pos_string)
 
     # # TODO current assumption: if there is a new structure, then the new
     # # structure has fewer atoms than the  previous one. If we are always
@@ -210,11 +251,12 @@ def edit_dft_input_positions(dft_input: str, structure):
 
 
 def parse_dft_forces_and_energy(outfile: str):
-    """
-    Get forces from a pwscf file in eV/A
+    """ Get forces from a pwscf file in eV/A
+    the input run type to be ENERGY_FORCE
 
     :param outfile: str, Path to dft.output file
     :return: list[nparray] , List of forces acting on atoms
+    :return: float, total potential energy
     """
     forces = []
     total_energy = np.nan
@@ -239,7 +281,7 @@ def parse_dft_forces_and_energy(outfile: str):
 
 
     assert total_energy != np.nan, "dft parser failed to read " \
-                                   "the file {}. Run failed.".format(outfile)
+                                   "the file {}. Run failed."+outfile
 
     # Convert from ry/au to ev/angstrom
     conversion_factor = 25.71104309541616*2.0
@@ -250,10 +292,8 @@ def parse_dft_forces_and_energy(outfile: str):
     return forces, total_energy
 
 
-
 def parse_dft_forces(outfile: str):
-    """
-    Get forces from a pwscf file in eV/A
+    """ Get forces from a pwscf file in eV/A
 
     :param outfile: str, Path to dft.output file
     :return: list[nparray] , List of forces acting on atoms

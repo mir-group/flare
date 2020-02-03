@@ -39,7 +39,7 @@ def test_stress_with_lammps():
     # grid parameters
     lower_cut = 2.5
     grid_num_2 = 64
-    grid_num_3 = 64
+    grid_num_3 = 32
     two_cut = 5.0
     three_cut = 5.0
     grid_params = {'bounds_2': [[lower_cut], [two_cut]],

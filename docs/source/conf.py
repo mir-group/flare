@@ -47,8 +47,9 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.imgmath',
     'sphinx_rtd_theme',
+    'sphinx.ext.napoleon'
 ]
-
+napoleon_use_param = False
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['ntemplates']
 
@@ -75,7 +76,6 @@ exclude_patterns = []
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = None
-
 
 # -- Options for HTML output -------------------------------------------------
 
