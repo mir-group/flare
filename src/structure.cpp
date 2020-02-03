@@ -88,16 +88,12 @@ StructureDescriptor :: StructureDescriptor(const Eigen::MatrixXd & cell,
 
 void StructureDescriptor :: compute_descriptors(){
     int noa = species.size();
-    LocalEnvironment env;
+    LocalEnvironmentDescriptor env;
 
     for (int i = 0; i < noa; i ++){
-        env = LocalEnvironment(*this, i, cutoff);
-        descriptor_calculator.compute_B2(env);
-        descriptor_vals.push_back(descriptor_calculator.descriptor_vals);
-        descriptor_force_dervs
-            .push_back(descriptor_calculator.descriptor_force_dervs);
-        descriptor_stress_dervs
-            .push_back(descriptor_calculator.descriptor_stress_dervs);
+        env = LocalEnvironmentDescriptor(*this, i, cutoff,
+                                         descriptor_calculator);
+        environment_descriptors.push_back(env);
     }
 }
 

@@ -99,9 +99,7 @@ class LocalEnvironmentDescriptor : public LocalEnvironment{
 class StructureDescriptor : public Structure{
     public:
         DescriptorCalculator descriptor_calculator;
-        std::vector<Eigen::VectorXd> descriptor_vals;
-        std::vector<Eigen::MatrixXd> descriptor_force_dervs;
-        std::vector<Eigen::MatrixXd> descriptor_stress_dervs;
+        std::vector<LocalEnvironmentDescriptor> environment_descriptors;
         double cutoff;
 
         StructureDescriptor();

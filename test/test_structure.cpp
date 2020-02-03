@@ -66,10 +66,12 @@ TEST_F(StructureTest, StructureDescriptor){
         desc1.compute_B2(env);
         for (int j = 0; j < desc1.descriptor_vals.size(); j ++){
             EXPECT_EQ(desc1.descriptor_vals(j),
-                      test_struc.descriptor_vals[i](j));
+                      test_struc.environment_descriptors[i]
+                        .descriptor_vals(j));
             for (int k = 0; k < test_struc.species.size(); k ++){
                 EXPECT_EQ(desc1.descriptor_force_dervs(k, j),
-                          test_struc.descriptor_force_dervs[i](k, j));
+                          test_struc.environment_descriptors[i]
+                            .descriptor_force_dervs(k, j));
             }
         }
     }
