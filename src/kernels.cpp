@@ -38,9 +38,8 @@ Eigen::VectorXd DotProductKernel
     Eigen::VectorXd stress_kern = Eigen::VectorXd::Zero(6);
 
     Eigen::VectorXd force_dot, stress_dot, f1, s1;
-    double d1_cubed = d1 * d1 * d1;
     const double vol_inv = 1 / struc1.volume;
-    double dot_val, d2, norm_dot, dval;
+    double dot_val, d2, norm_dot, dval, d2_cubed;
     LocalEnvironmentDescriptor env_curr;
 
     for (int i = 0; i < struc1.noa; i ++){
@@ -52,6 +51,7 @@ Eigen::VectorXd DotProductKernel
         // Check that d2 is nonzero.
         d2 = env_curr.descriptor_norm;
         if (d2 < empty_thresh) continue;
+        d2_cubed = d2 * d2 * d2;
 
         // Energy kernel
         dot_val = env1.descriptor_vals.dot(env_curr.descriptor_vals);
@@ -61,14 +61,14 @@ Eigen::VectorXd DotProductKernel
         // Force kernel
         force_dot = env_curr.descriptor_force_dervs * env1.descriptor_vals;
         f1 = (force_dot / (d1 * d2)) -
-            (dot_val * env_curr.force_dot / (d1_cubed * d2));
+            (dot_val * env_curr.force_dot / (d2_cubed * d1));
         dval = power * pow(norm_dot, power - 1);
         force_kern += dval * f1;
 
         // Stress kernel
         stress_dot = env_curr.descriptor_stress_dervs * env1.descriptor_vals;
         s1 = (stress_dot / (d1 * d2)) -
-            (dot_val * env_curr.stress_dot /(d1_cubed * d2));
+            (dot_val * env_curr.stress_dot /(d2_cubed * d1));
         stress_kern += dval * s1;
     }
 
