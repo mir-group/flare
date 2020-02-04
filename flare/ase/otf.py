@@ -6,6 +6,7 @@ complete training module with OTF and MD.
 '''
 import os
 import sys
+import inspect
 from copy import deepcopy
 
 from flare.struc import Structure
@@ -60,21 +61,14 @@ class OTF:
             use_mapping: bool=False, non_mapping_steps: list=[],
             l_bound: float=None, two_d: bool=False):
 
-        self.dft_calc = dft_calc
+        # get all arguments as attributes 
+        arg_dict = inspect.getargvalues(inspect.currentframe())[3]
+        del arg_dict['self']
+        self.__dict__.update(arg_dict)
+
         if dft_count is None:
             self.dft_count = 0
-        else:
-            self.dft_count = dft_count
-        self.std_tolerance = std_tolerance_factor
         self.noa = len(self.atoms.positions)
-        self.max_atoms_added = max_atoms_added
-        self.freeze_hyps = freeze_hyps
-
-        # params for mapped force field
-        self.use_mapping = use_mapping
-        self.non_mapping_steps = non_mapping_steps
-        self.l_bound = l_bound
-        self.two_d = two_d
 
         # initialize local energies
         if calculate_energy:
@@ -85,11 +79,12 @@ class OTF:
         # initialize otf
         if init_atoms is None:
             self.init_atoms = [int(n) for n in range(self.noa)]
-        else:
-            self.init_atoms = init_atoms
 
-        # restart mode
-        self.restart_from = restart_from
+        # observers
+        for i, obs in enumerate(self.observers):
+            if obs[0].__class__.__name__ == "OTFLogger":
+                self.logger_ind = i
+                break
 
     def otf_run(self, steps, rescale_temp=[], rescale_steps=[]):
         """
@@ -132,9 +127,10 @@ class OTF:
             # train calculator
             for atom in self.init_atoms:
                 # the observers[0][0] is the logger
-                self.observers[0][0].add_atom_info(atom, self.stds[atom])
+                self.observers[self.logger_ind][0].add_atom_info(atom, 
+                    self.stds[atom])
             self.train()
-            self.observers[0][0].write_wall_time()
+            self.observers[self.logger_ind][0].write_wall_time()
   
         if self.md_engine == 'NPT':
             if not self.initialized:
@@ -187,7 +183,7 @@ class OTF:
                 print('updating gp')
                 self.update_GP(dft_forces)
 
-        self.observers[0][0].run_complete()
+        self.observers[self.logger_ind][0].run_complete()
 
     
     def call_DFT(self):
@@ -229,22 +225,22 @@ class OTF:
 
             # write added atom to the log file, 
             # refer to ase.optimize.optimize.Dynamics
-            self.observers[0][0].add_atom_info(target_atom, 
+            self.observers[self.logger_ind][0].add_atom_info(target_atom, 
                                                self.stds[target_atom])
            
             #self.is_std_in_bound(atom_list)
             atom_count += 1
 
         self.train()
-        self.observers[0][0].added_atoms_dat.write('\n')
-        self.observers[0][0].write_wall_time()
+        self.observers[self.logger_ind][0].added_atoms_dat.write('\n')
+        self.observers[self.logger_ind][0].write_wall_time()
 
     def train(self, output=None, skip=False):
         calc = self.atoms.calc
         if (self.dft_count-1) < self.freeze_hyps:
             #TODO: add other args to train()
             calc.gp_model.train(output=output)
-            self.observers[0][0].write_hyps(calc.gp_model.hyp_labels, 
+            self.observers[self.logger_ind][0].write_hyps(calc.gp_model.hyp_labels, 
                             calc.gp_model.hyps, calc.gp_model.likelihood, 
                             calc.gp_model.likelihood_gradient)
         else:
