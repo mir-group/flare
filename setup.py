@@ -18,6 +18,7 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/mir-group/flare",
     python_requires=">=3.6",
+    setup_requires="setuptools_scm",
     install_requires=dependencies,
     license="MIT",
     classifiers=[
