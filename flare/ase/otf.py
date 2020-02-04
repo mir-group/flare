@@ -169,7 +169,7 @@ class OTF:
             curr_struc.stds = np.copy(self.stds)
             noise = self.atoms.calc.gp_model.hyps[-1]
             self.std_in_bound, self.target_atoms = is_std_in_bound(\
-                    noise, self.std_tolerance, curr_struc, self.max_atoms_added)
+                    noise, self.std_tolerance_factor, curr_struc, self.max_atoms_added)
 
             print('std in bound:', self.std_in_bound, self.target_atoms)
             #self.is_std_in_bound([])
