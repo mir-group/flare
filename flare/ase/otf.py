@@ -80,12 +80,6 @@ class OTF:
         if init_atoms is None:
             self.init_atoms = [int(n) for n in range(self.noa)]
 
-        # observers
-        for i, obs in enumerate(self.observers):
-            if obs[0].__class__.__name__ == "OTFLogger":
-                self.logger_ind = i
-                break
-
     def otf_run(self, steps, rescale_temp=[], rescale_steps=[]):
         """
         Use `otf_run` intead of `run` to perform a number of time steps.
@@ -103,6 +97,12 @@ class OTF:
             rescale_temp = [500, 1000]
             rescale_steps = [100, 200]
         """
+
+        # observers
+        for i, obs in enumerate(self.observers):
+            if obs[0].__class__.__name__ == "OTFLogger":
+                self.logger_ind = i
+                break
 
         # restart from previous OTF training
         if self.restart_from is not None:
