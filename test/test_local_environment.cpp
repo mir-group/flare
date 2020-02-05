@@ -75,3 +75,9 @@ TEST_F(EnvironmentTest, DotTest){
     norm_val = sqrt(norm_val);
     EXPECT_NEAR(norm_val, test_env.descriptor_norm, THRESHOLD);
 }
+
+// TEST_F(EnvironmentTest, NestedTest){
+//     NestedEnvironment nest =  NestedEnvironment(test_struc, 0, cutoff, 3, 2, 1);
+//     std::cout << nest.three_body_indices.size() << std::endl;
+//     std::cout << nest.cross_bond_dists.size() << std::endl;
+// }

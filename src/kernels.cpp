@@ -2,6 +2,39 @@
 #include <cmath>
 #include <iostream>
 
+TwoBodyKernel :: TwoBodyKernel() {};
+
+TwoBodyKernel :: TwoBodyKernel(double ls, const std::string & cutoff_function){
+    this->ls = ls;
+
+    if (cutoff_function == "quadratic"){
+        this->cutoff_pointer = quadratic_cutoff;
+    }
+    else if (cutoff_function == "hard"){
+        this->cutoff_pointer = hard_cutoff;
+    }
+    else if (cutoff_function == "cosine"){
+        this->cutoff_pointer = cos_cutoff;
+    }
+}
+
+// TODO: finish implementing two body kernel
+double TwoBodyKernel :: env_env(const LocalEnvironment & env1,
+                                const LocalEnvironment & env2){
+    double kern = 0;
+    double ri, rj;
+
+    for (int m = 0; m < env1.rs.size(); m ++){
+        ri = env1.rs[m];
+        for (int n = 0; n < env2.rs.size(); n ++){
+            rj = env2.rs[n];
+
+        }
+    }
+
+    return 0;
+}
+
 DotProductKernel :: DotProductKernel() {};
 
 DotProductKernel :: DotProductKernel(double signal_variance, double power){
@@ -19,7 +52,7 @@ double DotProductKernel :: env_env(const LocalEnvironmentDescriptor & env1,
     double d1 = env1.descriptor_norm;
     double d2 = env2.descriptor_norm;
 
-    return sig2 * pow(dot / (d1 * d2), power);
+    return pow(dot / (d1 * d2), power);
 }
 
 Eigen::VectorXd DotProductKernel
@@ -72,8 +105,8 @@ Eigen::VectorXd DotProductKernel
         stress_kern += dval * s1;
     }
 
-    kern_vec(0) = sig2 * en_kern;
-    kern_vec.segment(1, struc1.noa * 3) = -sig2 * force_kern;
-    kern_vec.tail(6) = -sig2 * stress_kern * vol_inv;
+    kern_vec(0) = en_kern;
+    kern_vec.segment(1, struc1.noa * 3) = -force_kern;
+    kern_vec.tail(6) = -stress_kern * vol_inv;
     return kern_vec;
 }

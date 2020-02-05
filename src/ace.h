@@ -183,10 +183,11 @@ class DotProductKernel{
 class TwoBodyKernel{
     public:
         double ls;
+        void (*cutoff_pointer)(double *, double, double, std::vector<double>);
 
         TwoBodyKernel();
 
-        TwoBodyKernel(double ls);
+        TwoBodyKernel(double ls, const std::string & cutoff_function);
 
         double env_env(const LocalEnvironment & env1,
                        const LocalEnvironment & env2);
