@@ -30,6 +30,8 @@ class FLARE_Calculator(Calculator):
 
     def get_property(self, name, atoms=None, allow_calculation=True):
         if name not in self.results.keys():
+            if not allow_calculation:
+                return None
             self.calculate(atoms)
         return self.results[name]
 
