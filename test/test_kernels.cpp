@@ -27,7 +27,7 @@ class KernelTest : public ::testing::Test{
         DescriptorCalculator desc1;
 
         // kernel
-        double signal_variance = 1;
+        double signal_variance = 2;
         double power = 2;
         DotProductKernel kernel;
         Eigen::VectorXd kern_vec;
@@ -68,7 +68,7 @@ TEST_F(KernelTest, NormTest){
     LocalEnvironmentDescriptor env1 = test_struc.environment_descriptors[0];
     LocalEnvironmentDescriptor env2 = test_struc.environment_descriptors[1];
     double kern_val = kernel.env_env(env1, env1);
-    EXPECT_NEAR(kern_val, 1, THRESHOLD);
+    EXPECT_NEAR(kern_val, signal_variance * signal_variance, THRESHOLD);
 }
 
 TEST_F(KernelTest, ForceTest){

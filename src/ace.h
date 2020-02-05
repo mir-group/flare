@@ -1,5 +1,6 @@
 #include <vector>
 #include <Eigen/Dense>
+#include "local_environment.h"
 
 // Structure class.
 class Structure{
@@ -48,6 +49,23 @@ class LocalEnvironment{
                                  std::vector<double> & zs);
 };
 
+// Nested environments store 2-, 3-, and many-body indices.
+class NestedEnvironment : public LocalEnvironment{
+    public:
+        std::vector<int> two_body_indices, many_body_indices;
+        std::vector<std::vector<int>> three_body_indices;
+        std::vector<double> cross_bond_dists;
+        double two_body_cutoff, three_body_cutoff, many_body_cutoff;
+
+    NestedEnvironment();
+
+    NestedEnvironment(const Structure & structure, int atom, double cutoff,
+                      double two_body_cutoff = 0, double three_body_cutoff = 0,
+                      double many_body_cutoff = 0);
+    
+    void compute_nested_environment();
+};
+
 // Descriptor calculator.
 class DescriptorCalculator{
     private:
@@ -90,13 +108,15 @@ class LocalEnvironmentDescriptor : public LocalEnvironment{
         LocalEnvironmentDescriptor();
 
         LocalEnvironmentDescriptor(const Structure & structure, int atom,
+            double cutoff);
+
+        LocalEnvironmentDescriptor(const Structure & structure, int atom,
             double cutoff, DescriptorCalculator & descriptor_calculator);
-        
+
         void compute_descriptor();
 };
 
-// Structure descriptor. Computes descriptors of atomic environments in a
-// structure.
+// Structure descriptor. Stores the atomic environments in a structure.
 class StructureDescriptor : public Structure{
     public:
         DescriptorCalculator descriptor_calculator;
@@ -105,12 +125,20 @@ class StructureDescriptor : public Structure{
 
         StructureDescriptor();
 
+        // If a descriptor calculator isn't given, store the environments
+        // only (without descriptor vectors).
+        StructureDescriptor(const Eigen::MatrixXd & cell,
+                            const std::vector<int> & species,
+                            const Eigen::MatrixXd & positions,
+                            double cutoff);
+
         StructureDescriptor(const Eigen::MatrixXd & cell,
                             const std::vector<int> & species,
                             const Eigen::MatrixXd & positions,
                             DescriptorCalculator & descriptor_calculator,
                             double cutoff);
 
+        void compute_environments();
         void compute_descriptors();
 };
 
@@ -150,6 +178,21 @@ class DotProductKernel{
         Eigen::VectorXd env_struc(const LocalEnvironmentDescriptor & env1,
                                   const StructureDescriptor & struc1);
 
+};
+
+class TwoBodyKernel{
+    public:
+        double ls;
+
+        TwoBodyKernel();
+
+        TwoBodyKernel(double ls);
+
+        double env_env(const LocalEnvironment & env1,
+                       const LocalEnvironment & env2);
+        
+        Eigen::VectorXd env_struc(const LocalEnvironment & env1,
+                                  const StructureDescriptor & struc1);
 };
 
 // Spherical harmonics.
