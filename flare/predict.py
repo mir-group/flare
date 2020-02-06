@@ -161,7 +161,7 @@ def predict_on_structure_en(structure: Structure, gp: GaussianProcess,
     :rtype: (np.ndarray, np.ndarray, np.ndarray)
     """
     # Set up local energy array
-    local_energies = np.array([0 for _ in range(structure.nat)])
+    local_energies = np.array([0.0 for _ in range(structure.nat)])
 
     # Loop through atoms in structure and predict forces, uncertainties,
     # and energies
