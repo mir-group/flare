@@ -117,6 +117,7 @@ class FLARE_Calculator(Calculator):
 
 
     def calculate_mgp_par(self, atoms):
+        # TODO: to be done
         self.calculate_mgp_serial(atoms)
 
 
