@@ -9,6 +9,7 @@ TwoBodyKernel :: TwoBodyKernel(double ls, const std::string & cutoff_function,
 
     this->ls = ls;
     ls1 = 1 / (2 * ls * ls);
+    ls2 = 1 / (ls * ls);
     this->cutoff_hyps = cutoff_hyps;
 
     if (cutoff_function == "quadratic"){
@@ -51,14 +52,18 @@ double TwoBodyKernel :: env_env(const LocalEnvironment & env1,
 Eigen::VectorXd TwoBodyKernel :: env_struc(const LocalEnvironment & env1,
     const StructureDescriptor & struc1){
     
+    int no_elements = 1 + 3 * struc1.noa + 6;
     Eigen::VectorXd kernel_vector =
-        Eigen::VectorXd::Zero(1 + 3 * struc1.noa + 6);
-    double ri, rj, fi, fj, fdj, rdiff;
+        Eigen::VectorXd::Zero(no_elements);
+    double ri, rj, fi, fj, fdj, rdiff, c1, c2, c3, c4, c5, c6, c7, c8, fx,
+        fy, fz, xval, yval, zval, xrel, yrel, zrel, en_kern;
 
     double cut1 = env1.cutoff;
     double cut2 = struc1.cutoff;
     double rcut_vals_1[2];
     double rcut_vals_2[2];
+
+    double vol_inv = 1 / struc1.volume;
 
     LocalEnvironment env_curr;
     for (int i = 0; i < struc1.noa; i ++){
@@ -70,11 +75,46 @@ Eigen::VectorXd TwoBodyKernel :: env_struc(const LocalEnvironment & env1,
            fi = rcut_vals_1[0];
 
            for (int n = 0; n < env_curr.rs.size(); n ++){
-               rj = env_curr.rs[n];
-               (*cutoff_pointer)(rcut_vals_2, rj, cut2, cutoff_hyps);
-               fj = rcut_vals_2[0];
-               fdj = rcut_vals_2[1];
+                rj = env_curr.rs[n];
+                rdiff = ri - rj;
 
+                xval = env_curr.xs[n];
+                yval = env_curr.ys[n];
+                zval = env_curr.zs[n];
+                xrel = env_curr.xrel[n];
+                yrel = env_curr.yrel[n];
+                zrel = env_curr.zrel[n];
+
+                (*cutoff_pointer)(rcut_vals_2, rj, cut2, cutoff_hyps);
+                fj = rcut_vals_2[0];
+                fdj = rcut_vals_2[1];
+
+                // energy kernel
+                c1 = rdiff * rdiff;
+                c2 = exp(-c1 * ls1);
+                kernel_vector(0) += fi * fj * c2;
+
+                // helper constants
+                c6 = c2 * ls2 * fi * fj * rdiff;
+                c7 = c2 * fi * fdj;
+
+                // fx + exx, exy, exz stress components
+                fx = -xrel * c6 - c7 * xrel;
+                kernel_vector(1 + 3 * i) += fx;
+                kernel_vector(no_elements - 6) += fx * xval * vol_inv;
+                kernel_vector(no_elements - 5) += fx * yval * vol_inv;
+                kernel_vector(no_elements - 4) += fx * zval * vol_inv;
+                
+                // fy + eyy, eyz stress components
+                fy = -yrel * c6 - c7 * yrel;
+                kernel_vector(2 + 3 * i) += fy;
+                kernel_vector(no_elements - 3) += fy * yval * vol_inv;
+                kernel_vector(no_elements - 2) += fy * zval * vol_inv;
+
+                // fz + ezz stress component
+                fz = -zrel * c6 - c7 * zrel;
+                kernel_vector(3 + 3 * i) += fz;
+                kernel_vector(no_elements - 1) += fz * zval * vol_inv;
            }
        } 
     }

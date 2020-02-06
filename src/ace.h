@@ -185,7 +185,7 @@ class DotProductKernel{
 
 class TwoBodyKernel{
     public:
-        double ls, ls1;
+        double ls, ls1, ls2;
         void (*cutoff_pointer)(double *, double, double, std::vector<double>);
         std::vector<double> cutoff_hyps;
 
