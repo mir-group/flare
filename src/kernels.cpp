@@ -4,8 +4,12 @@
 
 TwoBodyKernel :: TwoBodyKernel() {};
 
-TwoBodyKernel :: TwoBodyKernel(double ls, const std::string & cutoff_function){
+TwoBodyKernel :: TwoBodyKernel(double ls, const std::string & cutoff_function,
+    std::vector<double> cutoff_hyps){
+
     this->ls = ls;
+    ls1 = 1 / (2 * ls * ls);
+    this->cutoff_hyps = cutoff_hyps;
 
     if (cutoff_function == "quadratic"){
         this->cutoff_pointer = quadratic_cutoff;
@@ -22,17 +26,60 @@ TwoBodyKernel :: TwoBodyKernel(double ls, const std::string & cutoff_function){
 double TwoBodyKernel :: env_env(const LocalEnvironment & env1,
                                 const LocalEnvironment & env2){
     double kern = 0;
-    double ri, rj;
+    double ri, rj, fi, fj, rdiff;
+
+    double cut1 = env1.cutoff;
+    double cut2 = env2.cutoff;
+    double rcut_vals_1[2];
+    double rcut_vals_2[2];
 
     for (int m = 0; m < env1.rs.size(); m ++){
         ri = env1.rs[m];
+        (*cutoff_pointer)(rcut_vals_1, ri, cut1, cutoff_hyps);
+        fi = rcut_vals_1[0];
         for (int n = 0; n < env2.rs.size(); n ++){
             rj = env2.rs[n];
-
+            (*cutoff_pointer)(rcut_vals_2, rj, cut2, cutoff_hyps);
+            fj = rcut_vals_2[0];
+            rdiff = ri - rj;
+            kern += fi * fj * exp(-rdiff * rdiff * ls1);
         }
     }
+    return kern;
+}
 
-    return 0;
+Eigen::VectorXd TwoBodyKernel :: env_struc(const LocalEnvironment & env1,
+    const StructureDescriptor & struc1){
+    
+    Eigen::VectorXd kernel_vector =
+        Eigen::VectorXd::Zero(1 + 3 * struc1.noa + 6);
+    double ri, rj, fi, fj, fdj, rdiff;
+
+    double cut1 = env1.cutoff;
+    double cut2 = struc1.cutoff;
+    double rcut_vals_1[2];
+    double rcut_vals_2[2];
+
+    LocalEnvironment env_curr;
+    for (int i = 0; i < struc1.noa; i ++){
+       env_curr = struc1.environment_descriptors[i];
+
+       for (int m = 0; m < env1.rs.size(); m ++){
+           ri = env1.rs[i];
+           (*cutoff_pointer)(rcut_vals_1, ri, cut1, cutoff_hyps);
+           fi = rcut_vals_1[0];
+
+           for (int n = 0; n < env_curr.rs.size(); n ++){
+               rj = env_curr.rs[n];
+               (*cutoff_pointer)(rcut_vals_2, rj, cut2, cutoff_hyps);
+               fj = rcut_vals_2[0];
+               fdj = rcut_vals_2[1];
+
+           }
+       } 
+    }
+
+    return kernel_vector;
 }
 
 DotProductKernel :: DotProductKernel() {};

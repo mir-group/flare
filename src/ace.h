@@ -29,7 +29,7 @@ class LocalEnvironment{
         std::vector<int> environment_indices, environment_species,
             neighbor_list;
         int central_index, central_species, noa, sweep;
-        std::vector<double> rs, xs, ys, zs;
+        std::vector<double> rs, xs, ys, zs, xrel, yrel, zrel;
         double cutoff, structure_volume;
 
         LocalEnvironment();
@@ -46,7 +46,10 @@ class LocalEnvironment{
                                  std::vector<double> & rs,
                                  std::vector<double> & xs,
                                  std::vector<double> & ys,
-                                 std::vector<double> & zs);
+                                 std::vector<double> & zs,
+                                 std::vector<double> & xrel,
+                                 std::vector<double> & yrel,
+                                 std::vector<double> & zrel);
 };
 
 // Nested environments store 2-, 3-, and many-body indices.
@@ -62,7 +65,7 @@ class NestedEnvironment : public LocalEnvironment{
     NestedEnvironment(const Structure & structure, int atom, double cutoff,
                       double two_body_cutoff = 0, double three_body_cutoff = 0,
                       double many_body_cutoff = 0);
-    
+
     void compute_nested_environment();
 };
 
@@ -182,12 +185,14 @@ class DotProductKernel{
 
 class TwoBodyKernel{
     public:
-        double ls;
+        double ls, ls1;
         void (*cutoff_pointer)(double *, double, double, std::vector<double>);
+        std::vector<double> cutoff_hyps;
 
         TwoBodyKernel();
 
-        TwoBodyKernel(double ls, const std::string & cutoff_function);
+        TwoBodyKernel(double ls, const std::string & cutoff_function,
+                      std::vector<double> cutoff_hyps);
 
         double env_env(const LocalEnvironment & env1,
                        const LocalEnvironment & env2);

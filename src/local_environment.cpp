@@ -17,12 +17,12 @@ LocalEnvironment :: LocalEnvironment(const Structure & structure, int atom,
 
     std::vector<int> environment_indices, environment_species,
         neighbor_list;
-    std::vector<double> rs, xs, ys, zs;
+    std::vector<double> rs, xs, ys, zs, xrel, yrel, zrel;
 
     compute_environment(structure, noa, atom, cutoff, sweep_val, 
                         environment_indices, environment_species,
                         neighbor_list,
-                        rs, xs, ys, zs);
+                        rs, xs, ys, zs, xrel, yrel, zrel);
 
     this->environment_indices = environment_indices;
     this->environment_species = environment_species;
@@ -31,7 +31,9 @@ LocalEnvironment :: LocalEnvironment(const Structure & structure, int atom,
     this->xs = xs;
     this->ys = ys;
     this->zs = zs;
-
+    this->xrel = xrel;
+    this->yrel = yrel;
+    this->zrel = zrel;
 }
 
 void LocalEnvironment :: compute_environment(
@@ -41,7 +43,9 @@ void LocalEnvironment :: compute_environment(
     std::vector<int> & environment_species,
     std::vector<int> & neighbor_list,
     std::vector<double> & rs, std::vector<double> & xs,
-    std::vector<double> & ys, std::vector<double> & zs){
+    std::vector<double> & ys, std::vector<double> & zs,
+    std::vector<double> & xrel, std::vector<double> & yrel,
+    std::vector<double> & zrel){
 
     Eigen::MatrixXd pos_atom = structure.wrapped_positions.row(atom);
 
@@ -91,8 +95,11 @@ void LocalEnvironment :: compute_environment(
     xs.resize(cutoff_count);
     ys.resize(cutoff_count);
     zs.resize(cutoff_count);
+    xrel.resize(cutoff_count);
+    yrel.resize(cutoff_count);
+    zrel.resize(cutoff_count);
     int spec_curr, unique_check;
-    double dist_curr;
+    double dist_curr, xcurr, ycurr, zcurr;
     int bond_count = 0;
     counter = 0;
 
@@ -111,10 +118,19 @@ void LocalEnvironment :: compute_environment(
             if ((dist_curr < cutoff) && (dist_curr != 0)){
                 environment_indices[bond_count] = m;
                 environment_species[bond_count] = spec_curr;
-                rs[bond_count] = dists[counter];
-                xs[bond_count] = xvals[counter];
-                ys[bond_count] = yvals[counter];
-                zs[bond_count] = zvals[counter];
+
+                xcurr = xvals[counter];
+                ycurr = yvals[counter];
+                zcurr = zvals[counter];
+
+                rs[bond_count] = dist_curr;
+                xs[bond_count] = xcurr;
+                ys[bond_count] = ycurr;
+                zs[bond_count] = zcurr;
+                xrel[bond_count] = xcurr / dist_curr;
+                yrel[bond_count] = ycurr / dist_curr;
+                zrel[bond_count] = zcurr / dist_curr;
+
                 bond_count ++;
 
                 // Update neighbor list.
