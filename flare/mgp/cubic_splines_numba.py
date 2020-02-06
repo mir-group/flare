@@ -492,7 +492,7 @@ def vec_eval_cubic_splines_G_1(a, b, orders, coefs, points, vals, dvals):
     vals = vals[:, 0]
     dvals = dvals[:, :, 0]
 
-#@njit(cache=True)
+@njit(cache=True)
 def vec_eval_cubic_splines_G_3(a, b, orders, coefs, points, vals, dvals):
 
     coefs = np.expand_dims(coefs, 3)
@@ -598,10 +598,6 @@ def vec_eval_cubic_splines_G_3(a, b, orders, coefs, points, vals, dvals):
         dPhi2_1 = (dAd[1,0]*tp2_0 + dAd[1,1]*tp2_1 + dAd[1,2]*tp2_2 + dAd[1,3]*tp2_3)*dinv2
         dPhi2_2 = (dAd[2,0]*tp2_0 + dAd[2,1]*tp2_1 + dAd[2,2]*tp2_2 + dAd[2,3]*tp2_3)*dinv2
         dPhi2_3 = (dAd[3,0]*tp2_0 + dAd[3,1]*tp2_1 + dAd[3,2]*tp2_2 + dAd[3,3]*tp2_3)*dinv2
-
-        print(dPhi0_0, dPhi0_1, dPhi0_2, dPhi0_3, 
-              dPhi1_0, dPhi1_1, dPhi1_2, dPhi1_3,
-              dPhi2_0, dPhi2_1, dPhi2_2, dPhi2_3)
 
         for k in range(n_vals):
             vals[n,k] = Phi0_0*(Phi1_0*(Phi2_0*(coefs[i0+0,i1+0,i2+0,k]) + \
