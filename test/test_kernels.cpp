@@ -22,15 +22,17 @@ class KernelTest : public ::testing::Test{
         std::string cutoff_string = "cosine";
         std::vector<double> radial_hyps {0, 5};
         std::vector<double> cutoff_hyps;
-        std::vector<int> descriptor_settings {2, 10, 10};
+        std::vector<int> descriptor_settings {2, 5, 5};
         double cutoff = 5;
         DescriptorCalculator desc1;
 
         // kernel
         double signal_variance = 2;
+        double length_scale = 1;
         double power = 2;
         DotProductKernel kernel;
-        Eigen::VectorXd kern_vec;
+        TwoBodyKernel two_body_kernel;
+        Eigen::VectorXd kern_vec, kern_vec_2;
 
     KernelTest(){
         cell << 10, 0, 0,
@@ -59,8 +61,11 @@ class KernelTest : public ::testing::Test{
         test_env = test_struc_2.environment_descriptors[0];
 
         kernel = DotProductKernel(signal_variance, power);
+        two_body_kernel = TwoBodyKernel(length_scale, cutoff_string,
+            cutoff_hyps);
 
         kern_vec = kernel.env_struc(test_env, test_struc);
+        kern_vec_2 = two_body_kernel.env_struc(test_env, test_struc);
     }
 };
 
@@ -94,6 +99,28 @@ TEST_F(KernelTest, ForceTest){
     }
 }
 
+TEST_F(KernelTest, TwoBodyForceTest){
+    // Perturb the coordinates of the environment atoms.
+    double thresh = 1e-5;
+    int noa = 5;
+    double delta = 1e-8;
+    Eigen::VectorXd kern_pert;
+    double fin_val, exact_val, abs_diff;
+    for (int p = 0; p < noa; p ++){
+        for (int m = 0; m < 3; m ++){
+            positions_3 = positions;
+            positions_3(p, m) += delta;
+            test_struc_3 =  StructureDescriptor(cell, species, positions_3,
+                                                desc1, cutoff);
+            kern_pert = two_body_kernel.env_struc(test_env, test_struc_3);
+            fin_val = -(kern_pert(0) - kern_vec_2(0)) / delta;
+            exact_val = kern_vec_2(1 + 3 * p + m);
+            abs_diff = abs(fin_val - exact_val); 
+            EXPECT_NEAR(abs_diff, 0, thresh);
+        }
+    }
+}
+
 TEST_F(KernelTest, StressTest){
     double thresh = 1e-6;
     int noa = 5;
@@ -121,6 +148,43 @@ TEST_F(KernelTest, StressTest){
             kern_pert = kernel.env_struc(test_env, test_struc_3);
             fin_val = -(kern_pert(0) - kern_vec(0)) / delta;
             exact_val = kern_vec(1 + 3 * noa + stress_count)
+                * test_struc.volume;
+            abs_diff = abs(fin_val - exact_val); 
+
+            EXPECT_NEAR(abs_diff, 0, thresh);
+
+            stress_count ++;
+        }
+    }
+}
+
+TEST_F(KernelTest, TwoBodyStressTest){
+    double thresh = 1e-5;
+    int noa = 5;
+    double delta = 1e-8;
+    Eigen::VectorXd kern_pert;
+    double fin_val, exact_val, abs_diff;
+    int stress_count = 0;
+    // Test all 6 independent strains (xx, xy, xz, yy, yz, zz).
+    for (int m = 0; m < 3; m ++){
+        for (int n = m; n < 3; n ++){
+            cell_2 = cell;
+            positions_3 = positions;
+
+            // Perform strain.
+            cell_2(0, m) += cell(0, n) * delta;
+            cell_2(1, m) += cell(1, n) * delta;
+            cell_2(2, m) += cell(2, n) * delta;
+            for (int k = 0; k < noa; k ++){
+                positions_3(k, m) += positions(k, n) * delta;
+            }
+
+            test_struc_3 = StructureDescriptor(cell_2, species, positions_3,
+                                               desc1, cutoff);
+
+            kern_pert = two_body_kernel.env_struc(test_env, test_struc_3);
+            fin_val = -(kern_pert(0) - kern_vec_2(0)) / delta;
+            exact_val = kern_vec_2(1 + 3 * noa + stress_count)
                 * test_struc.volume;
             abs_diff = abs(fin_val - exact_val); 
 

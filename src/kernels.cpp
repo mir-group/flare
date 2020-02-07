@@ -70,7 +70,7 @@ Eigen::VectorXd TwoBodyKernel :: env_struc(const LocalEnvironment & env1,
        env_curr = struc1.environment_descriptors[i];
 
        for (int m = 0; m < env1.rs.size(); m ++){
-           ri = env1.rs[i];
+           ri = env1.rs[m];
            (*cutoff_pointer)(rcut_vals_1, ri, cut1, cutoff_hyps);
            fi = rcut_vals_1[0];
 
@@ -92,29 +92,29 @@ Eigen::VectorXd TwoBodyKernel :: env_struc(const LocalEnvironment & env1,
                 // energy kernel
                 c1 = rdiff * rdiff;
                 c2 = exp(-c1 * ls1);
-                kernel_vector(0) += fi * fj * c2;
+                kernel_vector(0) += fi * fj * c2 / 2;
 
                 // helper constants
                 c6 = c2 * ls2 * fi * fj * rdiff;
                 c7 = c2 * fi * fdj;
 
                 // fx + exx, exy, exz stress components
-                fx = -xrel * c6 - c7 * xrel;
+                fx = xrel * c6 + c7 * xrel;
                 kernel_vector(1 + 3 * i) += fx;
-                kernel_vector(no_elements - 6) += fx * xval * vol_inv;
-                kernel_vector(no_elements - 5) += fx * yval * vol_inv;
-                kernel_vector(no_elements - 4) += fx * zval * vol_inv;
+                kernel_vector(no_elements - 6) -= fx * xval * vol_inv / 2;
+                kernel_vector(no_elements - 5) -= fx * yval * vol_inv / 2;
+                kernel_vector(no_elements - 4) -= fx * zval * vol_inv / 2;
                 
                 // fy + eyy, eyz stress components
-                fy = -yrel * c6 - c7 * yrel;
+                fy = yrel * c6 + c7 * yrel;
                 kernel_vector(2 + 3 * i) += fy;
-                kernel_vector(no_elements - 3) += fy * yval * vol_inv;
-                kernel_vector(no_elements - 2) += fy * zval * vol_inv;
+                kernel_vector(no_elements - 3) -= fy * yval * vol_inv / 2;
+                kernel_vector(no_elements - 2) -= fy * zval * vol_inv / 2;
 
                 // fz + ezz stress component
-                fz = -zrel * c6 - c7 * zrel;
+                fz = zrel * c6 + c7 * zrel;
                 kernel_vector(3 + 3 * i) += fz;
-                kernel_vector(no_elements - 1) += fz * zval * vol_inv;
+                kernel_vector(no_elements - 1) -= fz * zval * vol_inv / 2;
            }
        } 
     }

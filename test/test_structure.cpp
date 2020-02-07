@@ -16,7 +16,7 @@ class StructureTest : public ::testing::Test{
         std::string cutoff_string = "cosine";
         std::vector<double> radial_hyps {0, 5};
         std::vector<double> cutoff_hyps;
-        std::vector<int> descriptor_settings {5, 10, 10};
+        std::vector<int> descriptor_settings {5, 5, 5};
         double cutoff = 3;
 
     StructureTest(){
