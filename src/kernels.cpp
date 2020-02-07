@@ -28,22 +28,31 @@ double TwoBodyKernel :: env_env(const LocalEnvironment & env1,
                                 const LocalEnvironment & env2){
     double kern = 0;
     double ri, rj, fi, fj, rdiff;
+    int e1, e2;
 
     double cut1 = env1.cutoff;
     double cut2 = env2.cutoff;
     double rcut_vals_1[2];
     double rcut_vals_2[2];
+    int c1 = env1.central_species;
+    int c2 = env2.central_species;
 
     for (int m = 0; m < env1.rs.size(); m ++){
         ri = env1.rs[m];
+        e1 = env1.environment_species[m];
         (*cutoff_pointer)(rcut_vals_1, ri, cut1, cutoff_hyps);
         fi = rcut_vals_1[0];
         for (int n = 0; n < env2.rs.size(); n ++){
-            rj = env2.rs[n];
-            (*cutoff_pointer)(rcut_vals_2, rj, cut2, cutoff_hyps);
-            fj = rcut_vals_2[0];
-            rdiff = ri - rj;
-            kern += fi * fj * exp(-rdiff * rdiff * ls1);
+            e2 = env2.environment_species[n];
+
+            // Proceed only if the pairs match.
+            if ((c1 == c2 && e1 == e2) || (c1 == e2 && c2 == e1)){
+                rj = env2.rs[n];
+                (*cutoff_pointer)(rcut_vals_2, rj, cut2, cutoff_hyps);
+                fj = rcut_vals_2[0];
+                rdiff = ri - rj;
+                kern += fi * fj * exp(-rdiff * rdiff * ls1);
+            }
         }
     }
     return kern;
@@ -55,8 +64,11 @@ Eigen::VectorXd TwoBodyKernel :: env_struc(const LocalEnvironment & env1,
     int no_elements = 1 + 3 * struc1.noa + 6;
     Eigen::VectorXd kernel_vector =
         Eigen::VectorXd::Zero(no_elements);
-    double ri, rj, fi, fj, fdj, rdiff, c1, c2, c3, c4, c5, c6, c7, c8, fx,
-        fy, fz, xval, yval, zval, xrel, yrel, zrel, en_kern;
+    double ri, rj, fi, fj, fdj, rdiff, c1, c2, c3, c4, fx, fy, fz, xval, yval,
+        zval, xrel, yrel, zrel, en_kern;
+
+    int e1, e2, cent2;
+    int cent1 = env1.central_species;
 
     double cut1 = env1.cutoff;
     double cut2 = struc1.cutoff;
@@ -68,55 +80,63 @@ Eigen::VectorXd TwoBodyKernel :: env_struc(const LocalEnvironment & env1,
     LocalEnvironment env_curr;
     for (int i = 0; i < struc1.noa; i ++){
        env_curr = struc1.environment_descriptors[i];
+       cent2 = env_curr.central_species;
 
-       for (int m = 0; m < env1.rs.size(); m ++){
-           ri = env1.rs[m];
-           (*cutoff_pointer)(rcut_vals_1, ri, cut1, cutoff_hyps);
-           fi = rcut_vals_1[0];
+        for (int m = 0; m < env1.rs.size(); m ++){
+            ri = env1.rs[m];
+            (*cutoff_pointer)(rcut_vals_1, ri, cut1, cutoff_hyps);
+            fi = rcut_vals_1[0];
+            e1 = env1.environment_species[m];
 
-           for (int n = 0; n < env_curr.rs.size(); n ++){
-                rj = env_curr.rs[n];
-                rdiff = ri - rj;
+            for (int n = 0; n < env_curr.rs.size(); n ++){
+                e2 = env_curr.environment_species[n];
 
-                xval = env_curr.xs[n];
-                yval = env_curr.ys[n];
-                zval = env_curr.zs[n];
-                xrel = env_curr.xrel[n];
-                yrel = env_curr.yrel[n];
-                zrel = env_curr.zrel[n];
+                // Proceed only if the pairs match.
+                if ((cent1 == cent2 && e1 == e2) || (cent1 == e2 && 
+                 cent2 == e1)){
+                    rj = env_curr.rs[n];
+                    rdiff = ri - rj;
 
-                (*cutoff_pointer)(rcut_vals_2, rj, cut2, cutoff_hyps);
-                fj = rcut_vals_2[0];
-                fdj = rcut_vals_2[1];
+                    xval = env_curr.xs[n];
+                    yval = env_curr.ys[n];
+                    zval = env_curr.zs[n];
+                    xrel = env_curr.xrel[n];
+                    yrel = env_curr.yrel[n];
+                    zrel = env_curr.zrel[n];
 
-                // energy kernel
-                c1 = rdiff * rdiff;
-                c2 = exp(-c1 * ls1);
-                kernel_vector(0) += fi * fj * c2 / 2;
+                    (*cutoff_pointer)(rcut_vals_2, rj, cut2, cutoff_hyps);
+                    fj = rcut_vals_2[0];
+                    fdj = rcut_vals_2[1];
 
-                // helper constants
-                c6 = c2 * ls2 * fi * fj * rdiff;
-                c7 = c2 * fi * fdj;
+                    // energy kernel
+                    c1 = rdiff * rdiff;
+                    c2 = exp(-c1 * ls1);
+                    kernel_vector(0) += fi * fj * c2 / 2;
 
-                // fx + exx, exy, exz stress components
-                fx = xrel * c6 + c7 * xrel;
-                kernel_vector(1 + 3 * i) += fx;
-                kernel_vector(no_elements - 6) -= fx * xval * vol_inv / 2;
-                kernel_vector(no_elements - 5) -= fx * yval * vol_inv / 2;
-                kernel_vector(no_elements - 4) -= fx * zval * vol_inv / 2;
-                
-                // fy + eyy, eyz stress components
-                fy = yrel * c6 + c7 * yrel;
-                kernel_vector(2 + 3 * i) += fy;
-                kernel_vector(no_elements - 3) -= fy * yval * vol_inv / 2;
-                kernel_vector(no_elements - 2) -= fy * zval * vol_inv / 2;
+                    // helper constants
+                    c3 = c2 * ls2 * fi * fj * rdiff;
+                    c4 = c2 * fi * fdj;
 
-                // fz + ezz stress component
-                fz = zrel * c6 + c7 * zrel;
-                kernel_vector(3 + 3 * i) += fz;
-                kernel_vector(no_elements - 1) -= fz * zval * vol_inv / 2;
-           }
-       } 
+                    // fx + exx, exy, exz stress components
+                    fx = xrel * c3 + c4 * xrel;
+                    kernel_vector(1 + 3 * i) += fx;
+                    kernel_vector(no_elements - 6) -= fx * xval * vol_inv / 2;
+                    kernel_vector(no_elements - 5) -= fx * yval * vol_inv / 2;
+                    kernel_vector(no_elements - 4) -= fx * zval * vol_inv / 2;
+                    
+                    // fy + eyy, eyz stress components
+                    fy = yrel * c3 + c4 * yrel;
+                    kernel_vector(2 + 3 * i) += fy;
+                    kernel_vector(no_elements - 3) -= fy * yval * vol_inv / 2;
+                    kernel_vector(no_elements - 2) -= fy * zval * vol_inv / 2;
+
+                    // fz + ezz stress component
+                    fz = zrel * c3 + c4 * zrel;
+                    kernel_vector(3 + 3 * i) += fz;
+                    kernel_vector(no_elements - 1) -= fz * zval * vol_inv / 2;
+                }
+            }
+        } 
     }
 
     return kernel_vector;
