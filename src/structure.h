@@ -32,7 +32,7 @@ class LocalEnvironmentDescriptor;
 
 class StructureDescriptor : public Structure{
     public:
-        DescriptorCalculator descriptor_calculator;
+        DescriptorCalculator * descriptor_calculator;
         std::vector<LocalEnvironmentDescriptor> environment_descriptors;
         double cutoff;
 

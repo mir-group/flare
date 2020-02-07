@@ -11,7 +11,7 @@ class StructureTest : public ::testing::Test{
         Eigen::MatrixXd cell{3, 3};
         std::vector<int> species {0, 1, 2, 3, 4};
         Eigen::MatrixXd positions{5, 3};
-        DescriptorCalculator desc1;
+        B2_Calculator desc1;
         StructureDataset test_struc;
 
         std::string radial_string = "chebyshev";
@@ -32,7 +32,7 @@ class StructureTest : public ::testing::Test{
                      0.2, 1.1, 2.1,
                      3.2, 1.1, 3.3;
 
-        desc1 = DescriptorCalculator(radial_string, cutoff_string,
+        desc1 = B2_Calculator(radial_string, cutoff_string,
             radial_hyps, cutoff_hyps, descriptor_settings);
         test_struc = StructureDataset(cell, species, positions, desc1, cutoff);
     }
@@ -65,7 +65,8 @@ TEST_F(StructureTest, StructureDescriptor){
     LocalEnvironment env;
     for (int i = 0; i < test_struc.species.size(); i ++){
         env = LocalEnvironment(test_struc, i, cutoff);
-        desc1.compute_B2(env);
+        desc1.compute(env);
+
         for (int j = 0; j < desc1.descriptor_vals.size(); j ++){
             EXPECT_EQ(desc1.descriptor_vals(j),
                       test_struc.environment_descriptors[i]

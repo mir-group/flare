@@ -15,6 +15,13 @@ class LocalEnvironment{
             nested_cutoffs, cross_bond_dists;
         double cutoff, structure_volume;
 
+        DescriptorCalculator * descriptor_calculator;
+        Eigen::VectorXd descriptor_vals;
+        Eigen::MatrixXd descriptor_force_dervs;
+        Eigen::MatrixXd descriptor_stress_dervs;
+        double descriptor_norm;
+        Eigen::MatrixXd force_dot, stress_dot;
+
         LocalEnvironment();
 
         LocalEnvironment(const Structure & structure, int atom,
@@ -68,7 +75,7 @@ class NestedEnvironment : public LocalEnvironment{
 // Local environment descriptor.
 class LocalEnvironmentDescriptor : public LocalEnvironment{
     public:
-        DescriptorCalculator descriptor_calculator;
+        DescriptorCalculator * descriptor_calculator;
         Eigen::VectorXd descriptor_vals;
         Eigen::MatrixXd descriptor_force_dervs;
         Eigen::MatrixXd descriptor_stress_dervs;
@@ -82,7 +89,7 @@ class LocalEnvironmentDescriptor : public LocalEnvironment{
             double cutoff);
 
         LocalEnvironmentDescriptor(const Structure & structure, int atom,
-            double cutoff, DescriptorCalculator & descriptor_calculator);
+            double cutoff, DescriptorCalculator * descriptor_calculator);
 
         void compute_descriptor();
 };

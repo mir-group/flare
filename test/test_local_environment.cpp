@@ -12,7 +12,7 @@ class EnvironmentTest : public :: testing :: Test{
         Eigen::MatrixXd cell{3, 3};
         std::vector<int> species {0, 1, 2, 3, 4};
         Eigen::MatrixXd positions{5, 3};
-        DescriptorCalculator desc1;
+        B2_Calculator desc1;
         StructureDataset test_struc;
         int atom;
         LocalEnvironmentDescriptor test_env;
@@ -35,12 +35,12 @@ class EnvironmentTest : public :: testing :: Test{
                      0.2, 1.1, 2.1,
                      3.2, 1.1, 3.3;
 
-        desc1 = DescriptorCalculator(radial_string, cutoff_string,
+        desc1 = B2_Calculator(radial_string, cutoff_string,
             radial_hyps, cutoff_hyps, descriptor_settings);
         test_struc = StructureDataset(cell, species, positions, desc1, cutoff);
 
         atom = 0;
-        test_env = LocalEnvironmentDescriptor(test_struc, atom, cutoff, desc1);
+        test_env = LocalEnvironmentDescriptor(test_struc, atom, cutoff, &desc1);
     }
 };
 

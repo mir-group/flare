@@ -85,9 +85,6 @@ StructureDescriptor :: StructureDescriptor(const Eigen::MatrixXd & cell,
     this->compute_environments();
 }
 
-
-
-
 StructureDescriptor :: StructureDescriptor(const Eigen::MatrixXd & cell,
                         const std::vector<int> & species,
                         const Eigen::MatrixXd & positions,
@@ -95,7 +92,7 @@ StructureDescriptor :: StructureDescriptor(const Eigen::MatrixXd & cell,
                         double cutoff)
                     : Structure(cell, species, positions){
 
-    this->descriptor_calculator = descriptor_calculator;
+    this->descriptor_calculator = &descriptor_calculator;
     this->cutoff = cutoff;
     this->compute_descriptors();
 }

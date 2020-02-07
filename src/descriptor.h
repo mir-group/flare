@@ -8,7 +8,7 @@
 class LocalEnvironment;
 
 class DescriptorCalculator{
-    private:
+    protected:
         void (*radial_pointer)(double *, double *, double, int,
                                std::vector<double>);
         void (*cutoff_pointer)(double *, double, double, std::vector<double>);
@@ -28,21 +28,8 @@ class DescriptorCalculator{
         const std::vector<double> & cutoff_hyps,
         const std::vector<int> & descriptor_settings);
 
-    void compute_B1(const LocalEnvironment & env);
-
-    void compute_B2(const LocalEnvironment & env);
-
+    virtual void compute(const LocalEnvironment & env) = 0;
 };
-
-// Rotationally invariant descriptors.
-void B1_descriptor(
-Eigen::VectorXd & B1_vals,
-Eigen::MatrixXd & B1_force_dervs,
-Eigen::MatrixXd & B1_stress_dervs,
-const Eigen::VectorXd & single_bond_vals,
-const Eigen::MatrixXd & single_bond_force_dervs,
-const Eigen::MatrixXd & single_bond_stress_dervs,
-const LocalEnvironment & env, int nos, int N, int lmax);
 
 void B2_descriptor(
 Eigen::VectorXd & B2_vals,
@@ -52,5 +39,33 @@ const Eigen::VectorXd & single_bond_vals,
 const Eigen::MatrixXd & single_bond_force_dervs,
 const Eigen::MatrixXd & single_bond_stress_dervs,
 const LocalEnvironment & env, int nos, int N, int lmax);
+
+class B1_Calculator : public DescriptorCalculator{
+    public:
+        B1_Calculator();
+
+        B1_Calculator(
+            const std::string & radial_basis,
+            const std::string & cutoff_function,
+            const std::vector<double> & radial_hyps,
+            const std::vector<double> & cutoff_hyps,
+            const std::vector<int> & descriptor_settings);
+
+        void compute(const LocalEnvironment & env);
+};
+
+class B2_Calculator : public DescriptorCalculator{
+    public:
+        B2_Calculator();
+
+        B2_Calculator(
+            const std::string & radial_basis,
+            const std::string & cutoff_function,
+            const std::vector<double> & radial_hyps,
+            const std::vector<double> & cutoff_hyps,
+            const std::vector<int> & descriptor_settings);
+
+        void compute(const LocalEnvironment & env);
+};
 
 #endif

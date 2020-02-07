@@ -28,7 +28,7 @@ class KernelTest : public ::testing::Test{
         std::vector<double> cutoff_hyps;
         std::vector<int> descriptor_settings {2, 5, 5};
         double cutoff = 5;
-        DescriptorCalculator desc1;
+        B2_Calculator desc1;
 
         // kernel
         double signal_variance = 2;
@@ -55,7 +55,7 @@ class KernelTest : public ::testing::Test{
                        0.08793497, -0.70567732, -0.3811633,
                        0.35585787, -0.87190223, 0.06770428;
 
-        desc1 = DescriptorCalculator(radial_string, cutoff_string,
+        desc1 = B2_Calculator(radial_string, cutoff_string,
             radial_hyps, cutoff_hyps, descriptor_settings);
         test_struc = StructureDescriptor(cell, species, positions, desc1,
                                          cutoff);
@@ -199,7 +199,7 @@ TEST_F(KernelTest, TwoBodyStressTest){
     }
 }
 
-TEST(StdTest, StdTest){
-    std::vector<double> test;
-    std::cout << test.size() << std::endl;
-}
+// TEST(StdTest, StdTest){
+//     std::vector<double> test;
+//     std::cout << test.size() << std::endl;
+// }

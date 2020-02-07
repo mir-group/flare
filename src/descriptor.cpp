@@ -4,6 +4,7 @@
 #include "local_environment.h"
 #include "single_bond.h"
 #include <cmath>
+#include <iostream>
 
 DescriptorCalculator::DescriptorCalculator(){}
 
@@ -35,118 +36,8 @@ DescriptorCalculator::DescriptorCalculator(
 
 }
 
-void DescriptorCalculator::compute_B1(const LocalEnvironment & env){
-
-    // Initialize single bond vectors.
-    int nos = descriptor_settings[0];
-    int N = descriptor_settings[1];
-    int lmax = 0;
-    int no_descriptors = nos * N;
-
-    single_bond_vals = Eigen::VectorXd::Zero(no_descriptors);
-    single_bond_force_dervs =
-        Eigen::MatrixXd::Zero(env.noa * 3, no_descriptors);
-    single_bond_stress_dervs =
-        Eigen::MatrixXd::Zero(6, no_descriptors);
-
-    // Compute single bond vector.
-    single_bond_sum_env(single_bond_vals, single_bond_force_dervs,
-                        single_bond_stress_dervs, radial_pointer,
-                        cutoff_pointer, env, env.cutoff, N,
-                        lmax, radial_hyps, cutoff_hyps);
-
-    // Set B1 values.
-    descriptor_vals = single_bond_vals;
-    descriptor_force_dervs = single_bond_force_dervs;
-    descriptor_stress_dervs = single_bond_stress_dervs;
-}
-
-void DescriptorCalculator::compute_B2(const LocalEnvironment & env){
-
-    // Initialize single bond vectors.
-    int nos = descriptor_settings[0];
-    int N = descriptor_settings[1];
-    int lmax = descriptor_settings[2];
-    int no_radial = nos * N;
-
-    int no_harmonics = (lmax + 1) * (lmax + 1);
-    int no_bond = nos * N * no_harmonics; 
-    int no_descriptors = no_radial * (no_radial + 1) * (lmax + 1) / 2;
-
-    single_bond_vals = Eigen::VectorXd::Zero(no_bond);
-    single_bond_force_dervs =
-        Eigen::MatrixXd::Zero(env.noa * 3, no_bond);
-    single_bond_stress_dervs =
-        Eigen::MatrixXd::Zero(6, no_bond);
-
-    // Compute single bond vector.
-    single_bond_sum_env(single_bond_vals, single_bond_force_dervs,
-                        single_bond_stress_dervs, radial_pointer,
-                        cutoff_pointer, env, env.cutoff, N,
-                        lmax, radial_hyps, cutoff_hyps);
-
-    // Initialize B2 vectors.
-    descriptor_vals = Eigen::VectorXd::Zero(no_descriptors);
-    descriptor_force_dervs =
-        Eigen::MatrixXd::Zero(env.noa * 3, no_descriptors);
-    descriptor_stress_dervs =
-        Eigen::MatrixXd::Zero(6, no_descriptors);
-    
-    B2_descriptor(descriptor_vals, descriptor_force_dervs,
-                  descriptor_stress_dervs,
-                  single_bond_vals, single_bond_force_dervs,
-                  single_bond_stress_dervs,
-                  env, nos, N, lmax);
-
-}
-
-void B1_descriptor(
-Eigen::VectorXd & B1_vals,
-Eigen::MatrixXd & B1_force_dervs,
-Eigen::MatrixXd & B1_stress_dervs,
-const Eigen::VectorXd & single_bond_vals,
-const Eigen::MatrixXd & single_bond_force_dervs,
-const Eigen::MatrixXd & single_bond_stress_dervs,
-const LocalEnvironment & env, int nos, int N, int lmax){
-
-int neigh_size = env.neighbor_list.size();
-int no_elements = nos * N;
-int no_harmonics = (lmax + 1) * (lmax + 1);
-int s, n, s_ind, n_ind, ind_curr, env_ind;
-int cent_ind = env.central_index;
-int counter = 0;
-
-for (s = 0; s < nos; s ++){
-    s_ind = s * N * no_harmonics;
-
-    for (n = 0; n < N; n ++){
-        n_ind = n * no_harmonics;
-        ind_curr = s_ind + n_ind;
-
-        // Store B1 value.
-        B1_vals(counter) = single_bond_vals(ind_curr);
-
-        // Store force derivatives.
-        for (int atom_index = 0; atom_index < neigh_size; atom_index ++){
-            env_ind = env.neighbor_list[atom_index];
-            B1_force_dervs(env_ind * 3, counter) =
-                single_bond_force_dervs(env_ind * 3, ind_curr);
-            B1_force_dervs(env_ind * 3 + 1, counter) =
-                single_bond_force_dervs(env_ind * 3 + 1, ind_curr);
-            B1_force_dervs(env_ind * 3 + 2, counter) =
-                single_bond_force_dervs(env_ind * 3 + 2, ind_curr);
-
-        }
-
-        // Store stress derivatives.
-        for (int p = 0; p < 6; p ++){
-            B1_stress_dervs(p, counter) =
-                single_bond_stress_dervs(p, ind_curr);
-        }
-
-        counter ++;
-    }
-}
+void DescriptorCalculator::compute(const LocalEnvironment & env){
+    std::cout << "test" << std::endl;
 }
 
 void B2_descriptor(
@@ -208,3 +99,85 @@ for (int n1 = 0; n1 < no_radial; n1 ++){
     }
 }
 };
+
+B1_Calculator :: B1_Calculator(){}
+
+B1_Calculator :: B1_Calculator(const std::string & radial_basis,
+    const std::string & cutoff_function,
+    const std::vector<double> & radial_hyps,
+    const std::vector<double> & cutoff_hyps,
+    const std::vector<int> & descriptor_settings)
+    : DescriptorCalculator(radial_basis, cutoff_function, radial_hyps,
+        cutoff_hyps, descriptor_settings){}
+
+void B1_Calculator :: compute(const LocalEnvironment & env){
+    // Initialize single bond vectors.
+    int nos = descriptor_settings[0];
+    int N = descriptor_settings[1];
+    int lmax = 0;
+    int no_descriptors = nos * N;
+
+    single_bond_vals = Eigen::VectorXd::Zero(no_descriptors);
+    single_bond_force_dervs =
+        Eigen::MatrixXd::Zero(env.noa * 3, no_descriptors);
+    single_bond_stress_dervs =
+        Eigen::MatrixXd::Zero(6, no_descriptors);
+
+    // Compute single bond vector.
+    single_bond_sum_env(single_bond_vals, single_bond_force_dervs,
+                        single_bond_stress_dervs, radial_pointer,
+                        cutoff_pointer, env, env.cutoff, N,
+                        lmax, radial_hyps, cutoff_hyps);
+
+    // Set B1 values.
+    descriptor_vals = single_bond_vals;
+    descriptor_force_dervs = single_bond_force_dervs;
+    descriptor_stress_dervs = single_bond_stress_dervs;
+}
+
+B2_Calculator :: B2_Calculator(){}
+
+B2_Calculator :: B2_Calculator(const std::string & radial_basis,
+    const std::string & cutoff_function,
+    const std::vector<double> & radial_hyps,
+    const std::vector<double> & cutoff_hyps,
+    const std::vector<int> & descriptor_settings)
+    : DescriptorCalculator(radial_basis, cutoff_function, radial_hyps,
+        cutoff_hyps, descriptor_settings){}
+
+void B2_Calculator :: compute(const LocalEnvironment & env){
+    // Initialize single bond vectors.
+    int nos = descriptor_settings[0];
+    int N = descriptor_settings[1];
+    int lmax = descriptor_settings[2];
+    int no_radial = nos * N;
+
+    int no_harmonics = (lmax + 1) * (lmax + 1);
+    int no_bond = nos * N * no_harmonics; 
+    int no_descriptors = no_radial * (no_radial + 1) * (lmax + 1) / 2;
+
+    single_bond_vals = Eigen::VectorXd::Zero(no_bond);
+    single_bond_force_dervs =
+        Eigen::MatrixXd::Zero(env.noa * 3, no_bond);
+    single_bond_stress_dervs =
+        Eigen::MatrixXd::Zero(6, no_bond);
+
+    // Compute single bond vector.
+    single_bond_sum_env(single_bond_vals, single_bond_force_dervs,
+                        single_bond_stress_dervs, radial_pointer,
+                        cutoff_pointer, env, env.cutoff, N,
+                        lmax, radial_hyps, cutoff_hyps);
+
+    // Initialize B2 vectors.
+    descriptor_vals = Eigen::VectorXd::Zero(no_descriptors);
+    descriptor_force_dervs =
+        Eigen::MatrixXd::Zero(env.noa * 3, no_descriptors);
+    descriptor_stress_dervs =
+        Eigen::MatrixXd::Zero(6, no_descriptors);
+    
+    B2_descriptor(descriptor_vals, descriptor_force_dervs,
+                  descriptor_stress_dervs,
+                  single_bond_vals, single_bond_force_dervs,
+                  single_bond_stress_dervs,
+                  env, nos, N, lmax);
+}

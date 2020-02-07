@@ -191,6 +191,17 @@ void LocalEnvironment :: compute_nested_environment(){
     }
 }
 
+void LocalEnvironment :: compute_descriptor(){
+    descriptor_calculator->compute(*this);
+    descriptor_vals = descriptor_calculator->descriptor_vals;
+    descriptor_force_dervs = descriptor_calculator->descriptor_force_dervs;
+    descriptor_stress_dervs = descriptor_calculator->descriptor_stress_dervs;
+
+    descriptor_norm = sqrt(descriptor_vals.dot(descriptor_vals));
+    force_dot = descriptor_force_dervs * descriptor_vals;
+    stress_dot = descriptor_stress_dervs * descriptor_vals;
+}
+
 // Nested environments
 NestedEnvironment :: NestedEnvironment(){}
 
@@ -245,7 +256,7 @@ LocalEnvironmentDescriptor :: LocalEnvironmentDescriptor(
 
 LocalEnvironmentDescriptor :: LocalEnvironmentDescriptor(
         const Structure & structure, int atom, double cutoff,
-        DescriptorCalculator & descriptor_calculator)
+        DescriptorCalculator * descriptor_calculator)
     : LocalEnvironment(structure, atom, cutoff){
 
 this->descriptor_calculator = descriptor_calculator;
@@ -253,10 +264,10 @@ this->compute_descriptor();
 }
 
 void LocalEnvironmentDescriptor :: compute_descriptor(){
-    descriptor_calculator.compute_B2(*this);
-    descriptor_vals = descriptor_calculator.descriptor_vals;
-    descriptor_force_dervs = descriptor_calculator.descriptor_force_dervs;
-    descriptor_stress_dervs = descriptor_calculator.descriptor_stress_dervs;
+    descriptor_calculator->compute(*this);
+    descriptor_vals = descriptor_calculator->descriptor_vals;
+    descriptor_force_dervs = descriptor_calculator->descriptor_force_dervs;
+    descriptor_stress_dervs = descriptor_calculator->descriptor_stress_dervs;
 
     descriptor_norm = sqrt(descriptor_vals.dot(descriptor_vals));
     force_dot = descriptor_force_dervs * descriptor_vals;
