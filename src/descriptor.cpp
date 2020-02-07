@@ -1,5 +1,9 @@
+#include "descriptor.h"
+#include "radial.h"
+#include "cutoffs.h"
+#include "local_environment.h"
+#include "single_bond.h"
 #include <cmath>
-#include "ace.h"
 
 DescriptorCalculator::DescriptorCalculator(){}
 

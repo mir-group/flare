@@ -1,4 +1,6 @@
-#include "ace.h"
+#include "y_grad.h"
+#include "radial.h"
+#include "cutoffs.h"
 #include <chrono>
 #include <iostream>
 #include <cmath>

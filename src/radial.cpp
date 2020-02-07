@@ -1,5 +1,5 @@
+#include "radial.h"
 #include <cmath>
-#include "ace.h"
 #define Pi 3.14159265358979323846
 
 void chebyshev(double * basis_vals, double * basis_derivs,

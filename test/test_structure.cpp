@@ -1,5 +1,7 @@
 #include "gtest/gtest.h"
-#include "ace.h"
+#include "structure.h"
+#include "local_environment.h"
+#include "descriptor.h"
 #include <iostream>
 #include <cmath>
 #include <Eigen/Dense>

@@ -1,5 +1,9 @@
 #include "gtest/gtest.h"
-#include "ace.h"
+#include "kernels.h"
+#include "structure.h"
+#include "local_environment.h"
+#include "cutoffs.h"
+#include "radial.h"
 #include <iostream>
 #include <Eigen/Dense>
 #include <cmath>
@@ -193,4 +197,9 @@ TEST_F(KernelTest, TwoBodyStressTest){
             stress_count ++;
         }
     }
+}
+
+TEST(StdTest, StdTest){
+    std::vector<double> test;
+    std::cout << test.size() << std::endl;
 }

@@ -1,5 +1,6 @@
 #include "gtest/gtest.h"
-#include "ace.h"
+#include "radial.h"
+#include "cutoffs.h"
 #include <iostream>
 #include <cmath>
 

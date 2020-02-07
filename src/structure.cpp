@@ -1,4 +1,5 @@
-#include "ace.h"
+#include "structure.h"
+#include "local_environment.h"
 #include <cmath>
 #include <iostream>
 

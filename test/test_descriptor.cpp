@@ -1,5 +1,10 @@
 #include "gtest/gtest.h"
-#include "ace.h"
+#include "descriptor.h"
+#include "single_bond.h"
+#include "structure.h"
+#include "local_environment.h"
+#include "cutoffs.h"
+#include "radial.h"
 #include <iostream>
 #include <cmath>
 #include <Eigen/Dense>

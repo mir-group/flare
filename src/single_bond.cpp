@@ -1,6 +1,9 @@
+#include "single_bond.h"
+#include "radial.h"
+#include "y_grad.h"
+#include "local_environment.h"
 #include <cmath>
 #include <iostream>
-#include "ace.h"
 using namespace std;
 
 void single_bond_update_env(

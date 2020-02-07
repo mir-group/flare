@@ -1,4 +1,6 @@
-#include "ace.h"
+#include "kernels.h"
+#include "cutoffs.h"
+#include "local_environment.h"
 #include <cmath>
 #include <iostream>
 
@@ -23,7 +25,7 @@ TwoBodyKernel :: TwoBodyKernel(double ls, const std::string & cutoff_function,
     }
 }
 
-// TODO: finish implementing two body kernel
+// TODO: test env_env method
 double TwoBodyKernel :: env_env(const LocalEnvironment & env1,
                                 const LocalEnvironment & env2){
     double kern = 0;
@@ -141,6 +143,62 @@ Eigen::VectorXd TwoBodyKernel :: env_struc(const LocalEnvironment & env1,
 
     return kernel_vector;
 }
+
+ThreeBodyKernel :: ThreeBodyKernel() {};
+
+ThreeBodyKernel :: ThreeBodyKernel(double ls,
+    const std::string & cutoff_function, std::vector<double> cutoff_hyps){
+
+    this->ls = ls;
+    ls1 = 1 / (2 * ls * ls);
+    ls2 = 1 / (ls * ls);
+    this->cutoff_hyps = cutoff_hyps;
+
+    if (cutoff_function == "quadratic"){
+        this->cutoff_pointer = quadratic_cutoff;
+    }
+    else if (cutoff_function == "hard"){
+        this->cutoff_pointer = hard_cutoff;
+    }
+    else if (cutoff_function == "cosine"){
+        this->cutoff_pointer = cos_cutoff;
+    }
+}
+
+// double ThreeBodyKernel :: env_env(const LocalEnvironment & env1,
+//                                   const LocalEnvironment & env2){
+//     double kern = 0;
+//     double ri, rj, fi, fj, rdiff;
+//     int e1, e2;
+
+//     double cut1 = env1.cutoff;
+//     double cut2 = env2.cutoff;
+//     double rcut_vals_1[2];
+//     double rcut_vals_2[2];
+//     int c1 = env1.central_species;
+//     int c2 = env2.central_species;
+
+//     for (int m = 0; m < env1.rs.size(); m ++){
+//         ri = env1.rs[m];
+//         e1 = env1.environment_species[m];
+//         (*cutoff_pointer)(rcut_vals_1, ri, cut1, cutoff_hyps);
+//         fi = rcut_vals_1[0];
+//         for (int n = 0; n < env2.rs.size(); n ++){
+//             e2 = env2.environment_species[n];
+
+//             // Proceed only if the pairs match.
+//             if ((c1 == c2 && e1 == e2) || (c1 == e2 && c2 == e1)){
+//                 rj = env2.rs[n];
+//                 (*cutoff_pointer)(rcut_vals_2, rj, cut2, cutoff_hyps);
+//                 fj = rcut_vals_2[0];
+//                 rdiff = ri - rj;
+//                 kern += fi * fj * exp(-rdiff * rdiff * ls1);
+//             }
+//         }
+//     }
+//     return kern;
+
+// }
 
 DotProductKernel :: DotProductKernel() {};
 

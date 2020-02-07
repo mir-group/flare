@@ -1,7 +1,15 @@
-#include "ace.h"
+#include "y_grad.h"
+#include "structure.h"
+#include "local_environment.h"
+#include "descriptor.h"
+
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include <pybind11/eigen.h>
+
+#include <vector>
+#include <Eigen/Dense>
+
 namespace py = pybind11;
 
 // Define spherical harmonics class.
