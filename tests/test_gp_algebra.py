@@ -372,3 +372,94 @@ def test_ky_hyp_grad():
                          get_like_grad_from_mats(ky_mat_m, hyp_mat_m, training_labels)
         diff = np.abs(like_grad[i]-(like_p-like_m)/2./delta)
         assert (diff < 1e-3), "wrong calculation of hyp_mat"
+=======
+
+
+    hyps, training_data, training_labels, kernel, cutoffs, \
+            kernel_m, hyps_list, hyps_mask_list = \
+            get_random_training_set(10)
+
+    # obtain reference
+    func = gp_algebra.get_ky_and_hyp
+    hyp_mat, ky_mat = func(hyps, training_data,
+                       kernel[1], cutoffs)
+    like0, like_grad0 = \
+                     get_like_grad_from_mats(ky_mat, hyp_mat, training_labels)
+
+    # serial implementation
+    func = gp_algebra.get_ky_and_hyp
+    hyp_mat, ky_mat = func(hyps, training_data,
+                       kernel[1], cutoffs)
+    like, like_grad = \
+                     get_like_grad_from_mats(ky_mat, hyp_mat, training_labels)
+
+    assert (like==like0), "wrong likelihood"
+    assert np.max(np.abs(like_grad-like_grad0))==0, "wrong likelihood"
+
+    func = gp_algebra_multi.get_ky_and_hyp
+    for i in range(len(hyps_list)):
+        hyps = hyps_list[i]
+        hyps_mask = hyps_mask_list[i]
+
+        if hyps_mask is None:
+            ker = kernel[1]
+        else:
+            ker = kernel_m[1]
+
+        hyp_mat, ky_mat = func(hyps, training_data,
+                          ker, cutoffs, hyps_mask)
+        like, like_grad = \
+                         get_like_grad_from_mats(ky_mat, hyp_mat, training_labels)
+        print(like, like0)
+        assert (like==like0), "wrong likelihood"
+
+        if (i==0):
+            like_grad9 = like_grad
+
+        print(like_grad, like_grad0)
+
+        diff = 0
+        if (i==1):
+            diff = (np.max(np.abs(like_grad-like_grad9[[0,2,4,6,8]])))
+        elif (i==2):
+            diff = (np.max(np.abs(like_grad-like_grad9[[0,2,4,6]])))
+        elif (i==3):
+            diff = (np.max(np.abs(like_grad-like_grad0)))
+        elif (i==4):
+            diff = (np.max(np.abs(like_grad-like_grad0)))
+        assert (diff==0), "multi hyps implementation is wrong"\
+                          f"in case {i}"
+
+def test_ky_hyp_grad():
+
+
+    hyps, training_data, training_labels, kernel, cutoffs, \
+            kernel_m, hyps_list, hyps_mask_list = \
+            get_random_training_set(10)
+
+    func = gp_algebra.get_ky_and_hyp
+
+    hyp_mat, ky_mat = func(hyps, training_data,
+                       kernel[1], cutoffs)
+
+    print(hyp_mat.shape, ky_mat.shape, len(training_labels), training_labels[0])
+
+    like, like_grad = \
+                     get_like_grad_from_mats(ky_mat, hyp_mat, training_labels)
+    delta = 0.001
+    for i in range(len(hyps)):
+        newhyps = np.copy(hyps)
+        newhyps[i] += delta
+        hyp_mat_p, ky_mat_p = func(newhyps, training_data,
+                           kernel[1], cutoffs)
+        like_p, like_grad_p = \
+                         get_like_grad_from_mats(ky_mat_p, hyp_mat_p, training_labels)
+        newhyps[i] -= 2*delta
+        hyp_mat_m, ky_mat_m = func(newhyps, training_data,
+                           kernel[1], cutoffs)
+        like_m, like_grad_m = \
+                         get_like_grad_from_mats(ky_mat_m, hyp_mat_m, training_labels)
+        diff = np.abs(like_grad[i]-(like_p-like_m)/2./delta)
+        assert (diff < 1e-3), "wrong calculation of hyp_mat"
+
+>>>>>>> flare-internal-dev/feature/steven/sampling

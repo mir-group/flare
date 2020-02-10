@@ -65,8 +65,10 @@ class TrajectoryTrainer:
                  calculate_energy: bool = False,
                  output_name: str = 'gp_from_aimd',
                  pre_train_max_iter: int = 50,
-                 max_atoms_from_frame: int = inf, max_trains: int = inf,
-                 min_atoms_added: int = 1, shuffle_frames: bool = False,
+                 max_atoms_from_frame: int = np.inf,
+                 max_trains: int = np.inf,
+                 min_atoms_per_train: int = 1,
+                 shuffle_frames: bool = False,
                  verbose: int = 0,
                  pre_train_on_skips: int = -1,
                  pre_train_seed_frames: List[Structure] = None,
@@ -127,10 +129,12 @@ class TrajectoryTrainer:
         self.max_force_error = max_force_error
         self.max_trains = max_trains
         self.max_atoms_from_frame = max_atoms_from_frame
-        self.min_atoms_added = min_atoms_added
+        self.min_atoms_per_train = min_atoms_per_train
+        self.verbose = verbose
+        self.train_count = 0
+
         self.parallel = parallel
         self.n_cpus = n_cpus
-
         # Set prediction function based on if forces or energies are
         # desired, and parallelization accordingly
         if (parallel and gp.par and gp.per_atom_par):
@@ -145,6 +149,10 @@ class TrajectoryTrainer:
                 self.pred_func = predict_on_structure
 
         # Parameters for negotiating with the training frames
+        self.output = Output(output_name, always_flush=True)
+
+        # To later be filled in using the time library
+        self.start_time = None
 
         self.skip = skip
         assert (isinstance(skip, int) and skip >= 1), "Skip needs to be a " \
@@ -336,7 +344,7 @@ class TrajectoryTrainer:
                         cur_frame, train_atoms, train=False)
                     nsample += len(train_atoms)
                     # Re-train if number of sampled atoms is high enough
-                    if nsample >= self.min_atoms_added or (
+                    if nsample >= self.min_atoms_per_train or (
                             i + 1) == train_frame:
                         if self.train_count < self.max_trains:
                             self.train_gp()

@@ -13,6 +13,7 @@ from flare.struc import Structure
 from flare import mc_simple
 from flare.otf_parser import OtfAnalysis
 from flare.mc_sephyps import _str_to_kernel as stk
+import flare.mc_sephyps as en
 
 def get_random_structure(cell, unique_species, noa):
     """Create a random test structure """
