@@ -84,25 +84,23 @@ PYBIND11_MODULE(ace, m){
         .def_readwrite("zs", &LocalEnvironment::zs)
         .def_readwrite("cutoff", &LocalEnvironment::cutoff);
 
-    py::class_<DescriptorCalculator>(m, "DescriptorCalculator")
-        .def(py::init<const std::string &, const std::string &,
-             const std::vector<double> &, const std::vector<double> &,
-             const std::vector<int> &>())
-        .def_readwrite("radial_basis", &DescriptorCalculator::radial_basis)
-        .def_readwrite("cutoff_function", 
-            &DescriptorCalculator::cutoff_function)
-        .def_readwrite("single_bond_vals",
-            &DescriptorCalculator::single_bond_vals)
-        .def_readwrite("single_bond_force_dervs",
-            &DescriptorCalculator::single_bond_force_dervs)
-        .def_readwrite("single_bond_stress_dervs",
-            &DescriptorCalculator::single_bond_stress_dervs)
-        .def_readwrite("descriptor_vals",
-            &DescriptorCalculator::descriptor_vals)
-        .def_readwrite("descriptor_force_dervs",
-            &DescriptorCalculator::descriptor_force_dervs)
-        .def_readwrite("descriptor_stress_dervs",
-            &DescriptorCalculator::descriptor_stress_dervs)
-        .def("compute_B1", &DescriptorCalculator::compute_B1)
-        .def("compute_B2", &DescriptorCalculator::compute_B2);
+    // py::class_<DescriptorCalculator>(m, "DescriptorCalculator")
+    //     .def(py::init<const std::string &, const std::string &,
+    //          const std::vector<double> &, const std::vector<double> &,
+    //          const std::vector<int> &>())
+    //     .def_readwrite("radial_basis", &DescriptorCalculator::radial_basis)
+    //     .def_readwrite("cutoff_function", 
+    //         &DescriptorCalculator::cutoff_function)
+    //     .def_readwrite("single_bond_vals",
+    //         &DescriptorCalculator::single_bond_vals)
+    //     .def_readwrite("single_bond_force_dervs",
+    //         &DescriptorCalculator::single_bond_force_dervs)
+    //     .def_readwrite("single_bond_stress_dervs",
+    //         &DescriptorCalculator::single_bond_stress_dervs)
+    //     .def_readwrite("descriptor_vals",
+    //         &DescriptorCalculator::descriptor_vals)
+    //     .def_readwrite("descriptor_force_dervs",
+    //         &DescriptorCalculator::descriptor_force_dervs)
+    //     .def_readwrite("descriptor_stress_dervs",
+    //         &DescriptorCalculator::descriptor_stress_dervs);
 }

@@ -165,40 +165,238 @@ ThreeBodyKernel :: ThreeBodyKernel(double ls,
     }
 }
 
-// double ThreeBodyKernel :: env_env(const LocalEnvironment & env1,
-//                                   const LocalEnvironment & env2){
-//     double kern = 0;
-//     double ri, rj, fi, fj, rdiff;
-//     int e1, e2;
+double ThreeBodyKernel :: env_env(const LocalEnvironment & env1,
+                                  const LocalEnvironment & env2){
+    double kern = 0;
+    double ri1, ri2, ri3, rj1, rj2, rj3, fi1, fi2, fi3, fj1, fj2, fj3,
+        fdi1, fdi2, fdi3, fdj1, fdj2, fdj3, fi, fj, r11, r12, r13, r21,
+        r22, r23, r31, r32, r33, p1, p2, p3, p4, p5, p6;
+    int i1, i2, j1, j2, ei1, ei2, ej1, ej2;
 
-//     double cut1 = env1.cutoff;
-//     double cut2 = env2.cutoff;
-//     double rcut_vals_1[2];
-//     double rcut_vals_2[2];
-//     int c1 = env1.central_species;
-//     int c2 = env2.central_species;
+    double cut1 = env1.cutoff;
+    double cut2 = env2.cutoff;
+    double rcut_vals_i1[2], rcut_vals_i2[2], rcut_vals_i3[2],
+        rcut_vals_j1[2], rcut_vals_j2[2], rcut_vals_j3[2];
+    int c1 = env1.central_species;
+    int c2 = env2.central_species;
 
-//     for (int m = 0; m < env1.rs.size(); m ++){
-//         ri = env1.rs[m];
-//         e1 = env1.environment_species[m];
-//         (*cutoff_pointer)(rcut_vals_1, ri, cut1, cutoff_hyps);
-//         fi = rcut_vals_1[0];
-//         for (int n = 0; n < env2.rs.size(); n ++){
-//             e2 = env2.environment_species[n];
+    for (int m = 0; m < env1.three_body_indices.size(); m ++){
+        i1 = env1.three_body_indices[m][0];
+        i2 = env1.three_body_indices[m][1];
 
-//             // Proceed only if the pairs match.
-//             if ((c1 == c2 && e1 == e2) || (c1 == e2 && c2 == e1)){
-//                 rj = env2.rs[n];
-//                 (*cutoff_pointer)(rcut_vals_2, rj, cut2, cutoff_hyps);
-//                 fj = rcut_vals_2[0];
-//                 rdiff = ri - rj;
-//                 kern += fi * fj * exp(-rdiff * rdiff * ls1);
-//             }
-//         }
-//     }
-//     return kern;
+        ri1 = env1.rs[i1];
+        ri2 = env1.rs[i2];
+        ri3 = env1.cross_bond_dists[m];
 
-// }
+        ei1 = env1.environment_species[i1];
+        ei2 = env1.environment_species[i2];
+
+        (*cutoff_pointer)(rcut_vals_i1, ri1, cut1, cutoff_hyps);
+        (*cutoff_pointer)(rcut_vals_i2, ri2, cut1, cutoff_hyps);
+        (*cutoff_pointer)(rcut_vals_i3, ri3, cut1, cutoff_hyps);
+
+        fi1 = rcut_vals_i1[0];
+        fi2 = rcut_vals_i2[0];
+        fi3 = rcut_vals_i3[0];
+        fi = fi1 * fi2 * fi3;
+
+        fdi1 = rcut_vals_i1[1];
+        fdi2 = rcut_vals_i2[1];
+
+        for (int n = 0; n < env2.three_body_indices.size(); n ++){
+            j1 = env2.three_body_indices[n][0];
+            j2 = env2.three_body_indices[n][1];
+
+            rj1 = env2.rs[j1];
+            rj2 = env2.rs[j2];
+            rj3 = env2.cross_bond_dists[n];
+
+            ej1 = env2.environment_species[j1];
+            ej2 = env2.environment_species[j2];
+
+            (*cutoff_pointer)(rcut_vals_j1, rj1, cut2, cutoff_hyps);
+            (*cutoff_pointer)(rcut_vals_j2, rj2, cut2, cutoff_hyps);
+            (*cutoff_pointer)(rcut_vals_j3, rj3, cut1, cutoff_hyps);
+
+            fj1 = rcut_vals_j1[0];
+            fj2 = rcut_vals_j2[0];
+            fj3 = rcut_vals_j3[0];
+            fj = fj1 * fj2 * fj3;
+
+            fdj1 = rcut_vals_j1[1];
+            fdj2 = rcut_vals_j2[1];
+
+            r11 = ri1 - rj1;
+            r12 = ri1 - rj2;
+            r13 = ri1 - rj3;
+            r21 = ri2 - rj1;
+            r22 = ri2 - rj2;
+            r23 = ri2 - rj3;
+            r31 = ri3 - rj1;
+            r32 = ri3 - rj2;
+            r33 = ri3 - rj3;
+
+            // Sum over six permutations.
+            if (c1 == c2){
+                if (ei1 == ej1 && ei2 == ej2){
+                    p1 = r11 * r11 + r22 * r22 + r33 * r33;
+                    kern += exp(-p1 * ls2) * fi * fj;
+                }
+                if (ei1 == ej2 && ei2 == ej1){
+                    p2 = r12 * r12 + r21 * r21 + r33 * r33;
+                    kern += exp(-p2 * ls2) * fi * fj;
+                }
+            }
+
+            if (c1 == ej1){
+                if (ei1 == ej2 && ei2 == c2){
+                    p3 = r13 * r13 + r21 * r21 + r32 * r32;
+                    kern += exp(-p3 * ls2) * fi * fj;
+                }
+                if (ei1 == c2 && ei2 == ej2){
+                    p4 = r11 * r11 + r23 * r23 + r32 * r32;
+                    kern += exp(-p4 * ls2) * fi * fj;
+                }
+            }
+
+            if (c1 == ej2){
+                if (ei1 == ej1 && ei2 == c2){
+                    p5 = r13 * r13 + r22 * r22 + r31 * r31;
+                    kern += exp(-p5 * ls2) * fi * fj;
+                }
+                if (ei1 == c2 && ei2 == ej1){
+                    p6 = r12*r12+r23*r23+r31*r31;
+                    kern += exp(-p6 * ls2) * fi * fj;
+                }
+            }
+
+        }
+    }
+
+    return kern;
+}
+
+Eigen::VectorXd ThreeBodyKernel :: env_struc(const LocalEnvironment & env1,
+    const StructureDescriptor & struc1){
+
+    int no_elements = 1 + 3 * struc1.noa + 6;
+    Eigen::VectorXd kernel_vector =
+        Eigen::VectorXd::Zero(no_elements);
+
+    double kern = 0;
+    double ri1, ri2, ri3, rj1, rj2, rj3, fi1, fi2, fi3, fj1, fj2, fj3,
+        fdi1, fdi2, fdi3, fdj1, fdj2, fdj3, fi, fj, r11, r12, r13, r21,
+        r22, r23, r31, r32, r33, p1, p2, p3, p4, p5, p6;
+    int i1, i2, j1, j2, ei1, ei2, ej1, ej2, c2;
+
+    LocalEnvironment env2;
+
+    double cut1 = env1.cutoff;
+    double cut2 = struc1.cutoff;
+    double rcut_vals_i1[2], rcut_vals_i2[2], rcut_vals_i3[2],
+        rcut_vals_j1[2], rcut_vals_j2[2], rcut_vals_j3[2];
+    int c1 = env1.central_species;
+
+    for (int i = 0; i < struc1.noa; i ++){
+       env2 = struc1.environment_descriptors[i];
+       c2 = env2.central_species;
+
+        for (int m = 0; m < env1.three_body_indices.size(); m ++){
+            i1 = env1.three_body_indices[m][0];
+            i2 = env1.three_body_indices[m][1];
+
+            ri1 = env1.rs[i1];
+            ri2 = env1.rs[i2];
+            ri3 = env1.cross_bond_dists[m];
+
+            ei1 = env1.environment_species[i1];
+            ei2 = env1.environment_species[i2];
+
+            (*cutoff_pointer)(rcut_vals_i1, ri1, cut1, cutoff_hyps);
+            (*cutoff_pointer)(rcut_vals_i2, ri2, cut1, cutoff_hyps);
+            (*cutoff_pointer)(rcut_vals_i3, ri3, cut1, cutoff_hyps);
+
+            fi1 = rcut_vals_i1[0];
+            fi2 = rcut_vals_i2[0];
+            fi3 = rcut_vals_i3[0];
+            fi = fi1 * fi2 * fi3;
+
+            fdi1 = rcut_vals_i1[1];
+            fdi2 = rcut_vals_i2[1];
+
+            for (int n = 0; n < env2.three_body_indices.size(); n ++){
+                j1 = env2.three_body_indices[n][0];
+                j2 = env2.three_body_indices[n][1];
+
+                rj1 = env2.rs[j1];
+                rj2 = env2.rs[j2];
+                rj3 = env2.cross_bond_dists[n];
+
+                ej1 = env2.environment_species[j1];
+                ej2 = env2.environment_species[j2];
+
+                (*cutoff_pointer)(rcut_vals_j1, rj1, cut2, cutoff_hyps);
+                (*cutoff_pointer)(rcut_vals_j2, rj2, cut2, cutoff_hyps);
+                (*cutoff_pointer)(rcut_vals_j3, rj3, cut1, cutoff_hyps);
+
+                fj1 = rcut_vals_j1[0];
+                fj2 = rcut_vals_j2[0];
+                fj3 = rcut_vals_j3[0];
+                fj = fj1 * fj2 * fj3;
+
+                fdj1 = rcut_vals_j1[1];
+                fdj2 = rcut_vals_j2[1];
+
+                r11 = ri1 - rj1;
+                r12 = ri1 - rj2;
+                r13 = ri1 - rj3;
+                r21 = ri2 - rj1;
+                r22 = ri2 - rj2;
+                r23 = ri2 - rj3;
+                r31 = ri3 - rj1;
+                r32 = ri3 - rj2;
+                r33 = ri3 - rj3;
+
+                // Sum over six permutations.
+                if (c1 == c2){
+                    if (ei1 == ej1 && ei2 == ej2){
+                        p1 = r11 * r11 + r22 * r22 + r33 * r33;
+                        kern += exp(-p1 * ls2) * fi * fj;
+                    }
+                    if (ei1 == ej2 && ei2 == ej1){
+                        p2 = r12 * r12 + r21 * r21 + r33 * r33;
+                        kern += exp(-p2 * ls2) * fi * fj;
+                    }
+                }
+
+                if (c1 == ej1){
+                    if (ei1 == ej2 && ei2 == c2){
+                        p3 = r13 * r13 + r21 * r21 + r32 * r32;
+                        kern += exp(-p3 * ls2) * fi * fj;
+                    }
+                    if (ei1 == c2 && ei2 == ej2){
+                        p4 = r11 * r11 + r23 * r23 + r32 * r32;
+                        kern += exp(-p4 * ls2) * fi * fj;
+                    }
+                }
+
+                if (c1 == ej2){
+                    if (ei1 == ej1 && ei2 == c2){
+                        p5 = r13 * r13 + r22 * r22 + r31 * r31;
+                        kern += exp(-p5 * ls2) * fi * fj;
+                    }
+                    if (ei1 == c2 && ei2 == ej1){
+                        p6 = r12*r12+r23*r23+r31*r31;
+                        kern += exp(-p6 * ls2) * fi * fj;
+                    }
+                }
+
+            }
+        }
+    }
+
+    return kernel_vector;
+}
 
 DotProductKernel :: DotProductKernel() {};
 

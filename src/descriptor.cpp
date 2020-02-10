@@ -36,10 +36,6 @@ DescriptorCalculator::DescriptorCalculator(
 
 }
 
-void DescriptorCalculator::compute(const LocalEnvironment & env){
-    std::cout << "test" << std::endl;
-}
-
 void B2_descriptor(
 Eigen::VectorXd & B2_vals,
 Eigen::MatrixXd & B2_force_dervs,
