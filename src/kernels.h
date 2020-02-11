@@ -5,7 +5,6 @@
 #include <Eigen/Dense>
 
 class LocalEnvironment;
-class LocalEnvironmentDescriptor;
 class StructureDescriptor;
 
 class DotProductKernel{
@@ -16,10 +15,10 @@ class DotProductKernel{
 
         DotProductKernel(double signal_variance, double power);
 
-        double env_env(const LocalEnvironmentDescriptor & env1,
-                       const LocalEnvironmentDescriptor & env2);
+        double env_env(const LocalEnvironment & env1,
+                       const LocalEnvironment & env2);
 
-        Eigen::VectorXd env_struc(const LocalEnvironmentDescriptor & env1,
+        Eigen::VectorXd env_struc(const LocalEnvironment & env1,
                                   const StructureDescriptor & struc1);
 
 };

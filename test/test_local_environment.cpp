@@ -15,7 +15,7 @@ class EnvironmentTest : public :: testing :: Test{
         B2_Calculator desc1;
         StructureDataset test_struc;
         int atom;
-        LocalEnvironmentDescriptor test_env;
+        LocalEnvironment test_env;
 
         std::string radial_string = "chebyshev";
         std::string cutoff_string = "cosine";
@@ -40,7 +40,7 @@ class EnvironmentTest : public :: testing :: Test{
         test_struc = StructureDataset(cell, species, positions, desc1, cutoff);
 
         atom = 0;
-        test_env = LocalEnvironmentDescriptor(test_struc, atom, cutoff, &desc1);
+        test_env = LocalEnvironment(test_struc, atom, cutoff, &desc1);
     }
 };
 

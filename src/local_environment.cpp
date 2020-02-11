@@ -36,6 +36,33 @@ LocalEnvironment :: LocalEnvironment(const Structure & structure, int atom,
     this->zrel = zrel;
 }
 
+LocalEnvironment :: LocalEnvironment(const Structure & structure, int atom,
+    double cutoff, std::vector<double> nested_cutoffs)
+    : LocalEnvironment(structure, atom, cutoff){
+
+    this->nested_cutoffs = nested_cutoffs;
+    compute_nested_environment();
+}
+
+LocalEnvironment :: LocalEnvironment(const Structure & structure, int atom,
+    double cutoff, DescriptorCalculator * descriptor_calculator)
+    : LocalEnvironment(structure, atom, cutoff){
+
+    this->descriptor_calculator = descriptor_calculator;
+    compute_descriptor();
+}
+
+LocalEnvironment :: LocalEnvironment(const Structure & structure, int atom,
+    double cutoff, std::vector<double> nested_cutoffs,
+    DescriptorCalculator * descriptor_calculator)
+    : LocalEnvironment(structure, atom, cutoff){
+
+    this->nested_cutoffs = nested_cutoffs;
+    this->descriptor_calculator = descriptor_calculator;
+    compute_nested_environment();
+    compute_descriptor();
+}
+
 void LocalEnvironment :: compute_environment(
     const Structure & structure,
     int noa, int atom, double cutoff, int sweep_val,
@@ -192,78 +219,6 @@ void LocalEnvironment :: compute_nested_environment(){
 }
 
 void LocalEnvironment :: compute_descriptor(){
-    descriptor_calculator->compute(*this);
-    descriptor_vals = descriptor_calculator->descriptor_vals;
-    descriptor_force_dervs = descriptor_calculator->descriptor_force_dervs;
-    descriptor_stress_dervs = descriptor_calculator->descriptor_stress_dervs;
-
-    descriptor_norm = sqrt(descriptor_vals.dot(descriptor_vals));
-    force_dot = descriptor_force_dervs * descriptor_vals;
-    stress_dot = descriptor_stress_dervs * descriptor_vals;
-}
-
-// Nested environments
-NestedEnvironment :: NestedEnvironment(){}
-
-NestedEnvironment :: NestedEnvironment(const Structure & structure, int atom,
-    double cutoff, double two_body_cutoff, double three_body_cutoff,
-    double many_body_cutoff)
-    : LocalEnvironment(structure, atom, cutoff){
-
-    int no_atoms = rs.size();
-    std::vector<int> three_body_inds;
-
-    // Store indices of atoms inside the 2-, 3-, and many-body cutoff spheres.
-    for (int i = 0; i < no_atoms; i ++){
-        double r_curr = rs[i];
-        if (r_curr <= two_body_cutoff) two_body_indices.push_back(i);
-        if (r_curr <= three_body_cutoff) three_body_inds.push_back(i);
-        if (r_curr <= many_body_cutoff) many_body_indices.push_back(i);
-    }
-
-    // Store triplets.
-    double cross_bond_dist, x1, y1, z1, x2, y2, z2, x_diff, y_diff, z_diff;
-    int ind1, ind2;
-    std::vector<int> triplet = std::vector<int> {0, 0};
-    for (int i = 0; i < three_body_inds.size(); i ++){
-        ind1 = three_body_inds[i];
-        x1 = xs[ind1];
-        y1 = ys[ind1];
-        z1 = zs[ind1];
-        for (int j = i + 1; j < three_body_inds.size(); j ++){
-            ind2 = three_body_inds[j];
-            x_diff = x1 - xs[ind2];
-            y_diff = y1 - ys[ind2];
-            z_diff = z1 - zs[ind2];
-            cross_bond_dist = 
-                sqrt(x_diff * x_diff + y_diff * y_diff + z_diff * z_diff);
-            if (cross_bond_dist <= three_body_cutoff){
-                cross_bond_dists.push_back(cross_bond_dist);
-                triplet[0] = ind1;
-                triplet[1] = ind2;
-                three_body_indices.push_back(triplet);
-            }
-        }
-    }
-}
-
-// Local environment descriptors
-LocalEnvironmentDescriptor :: LocalEnvironmentDescriptor(){}
-
-LocalEnvironmentDescriptor :: LocalEnvironmentDescriptor(
-        const Structure & structure, int atom, double cutoff)
-    : LocalEnvironment(structure, atom, cutoff){}
-
-LocalEnvironmentDescriptor :: LocalEnvironmentDescriptor(
-        const Structure & structure, int atom, double cutoff,
-        DescriptorCalculator * descriptor_calculator)
-    : LocalEnvironment(structure, atom, cutoff){
-
-this->descriptor_calculator = descriptor_calculator;
-this->compute_descriptor();
-}
-
-void LocalEnvironmentDescriptor :: compute_descriptor(){
     descriptor_calculator->compute(*this);
     descriptor_vals = descriptor_calculator->descriptor_vals;
     descriptor_force_dervs = descriptor_calculator->descriptor_force_dervs;

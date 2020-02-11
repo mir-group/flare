@@ -284,7 +284,6 @@ Eigen::VectorXd ThreeBodyKernel :: env_struc(const LocalEnvironment & env1,
     Eigen::VectorXd kernel_vector =
         Eigen::VectorXd::Zero(no_elements);
 
-    double kern = 0;
     double ri1, ri2, ri3, rj1, rj2, rj3, fi1, fi2, fi3, fj1, fj2, fj3,
         fdj1, fdj2, fi, fj, r11, r12, r13, r21, r22, r23, r31, r32, r33, p1,
         p2, p3, p4, xval1, xval2, xrel1, xrel2, yval1, yval2, yrel1,
@@ -486,8 +485,8 @@ DotProductKernel :: DotProductKernel(double signal_variance, double power){
     this->power = power;
 }
 
-double DotProductKernel :: env_env(const LocalEnvironmentDescriptor & env1,
-                                   const LocalEnvironmentDescriptor & env2){
+double DotProductKernel :: env_env(const LocalEnvironment & env1,
+                                   const LocalEnvironment & env2){
     // Central species must be the same to give a nonzero kernel.
     if (env1.central_species != env2.central_species) return 0;
 
@@ -499,7 +498,7 @@ double DotProductKernel :: env_env(const LocalEnvironmentDescriptor & env1,
 }
 
 Eigen::VectorXd DotProductKernel
-    :: env_struc(const LocalEnvironmentDescriptor & env1,
+    :: env_struc(const LocalEnvironment & env1,
                  const StructureDescriptor & struc1){
 
     Eigen::VectorXd kern_vec = Eigen::VectorXd::Zero(1 + struc1.noa * 3 + 6);
@@ -516,7 +515,7 @@ Eigen::VectorXd DotProductKernel
     Eigen::VectorXd force_dot, stress_dot, f1, s1;
     const double vol_inv = 1 / struc1.volume;
     double dot_val, d2, norm_dot, dval, d2_cubed;
-    LocalEnvironmentDescriptor env_curr;
+    LocalEnvironment env_curr;
 
     for (int i = 0; i < struc1.noa; i ++){
         env_curr = struc1.environment_descriptors[i];

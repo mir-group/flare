@@ -19,7 +19,7 @@ class KernelTest : public ::testing::Test{
         StructureDescriptor test_struc, test_struc_2, test_struc_3;
 
         // environment
-        LocalEnvironmentDescriptor test_env;
+        LocalEnvironment test_env;
 
         // descriptor
         std::string radial_string = "chebyshev";
@@ -74,8 +74,8 @@ class KernelTest : public ::testing::Test{
 };
 
 TEST_F(KernelTest, NormTest){
-    LocalEnvironmentDescriptor env1 = test_struc.environment_descriptors[0];
-    LocalEnvironmentDescriptor env2 = test_struc.environment_descriptors[1];
+    LocalEnvironment env1 = test_struc.environment_descriptors[0];
+    LocalEnvironment env2 = test_struc.environment_descriptors[1];
     double kern_val = kernel.env_env(env1, env1);
     EXPECT_NEAR(kern_val, 1, THRESHOLD);
 }
