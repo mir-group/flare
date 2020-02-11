@@ -119,7 +119,7 @@ def get_neg_likelihood(hyps: np.ndarray, training_data: list,
                        training_labels_np: np.ndarray,
                        kernel, output = None,
                        cutoffs=None, hyps_mask=None,
-                       ncpus=None, nsample=100):
+                       n_cpus=None, nsample=100):
 
     if output is not None:
         ostring="hyps:"
@@ -132,7 +132,7 @@ def get_neg_likelihood(hyps: np.ndarray, training_data: list,
     ky_mat = \
         get_ky_mat_par(hyps, training_data, kernel,
                        cutoffs=cutoffs, hyps_mask=hyps_mask,
-                       ncpus=ncpus, nsample=nsample)
+                       n_cpus=n_cpus, nsample=nsample)
 
     output.write_to_log(f"get_key_mat {time.time()-time0}\n", name="hyps")
 
@@ -152,7 +152,7 @@ def get_neg_like_grad(hyps: np.ndarray, training_data: list,
                       training_labels_np: np.ndarray,
                       kernel_grad, output = None,
                       cutoffs=None, hyps_mask=None,
-                      ncpus=None, nsample=100):
+                      n_cpus=None, nsample=100):
 
     time0 = time.time()
     if output is not None:
@@ -168,7 +168,7 @@ def get_neg_like_grad(hyps: np.ndarray, training_data: list,
                            kernel_grad,
                            cutoffs=cutoffs,
                            hyps_mask=hyps_mask,
-                           ncpus=ncpus, nsample=nsample)
+                           n_cpus=n_cpus, nsample=nsample)
 
     if output is not None:
         output.write_to_log(f"get_ky_and_hyp {time.time()-time0}\n", name="hyps")
@@ -287,11 +287,11 @@ def get_ky_mat_pack(hyps: np.ndarray, training_data1: list,
 
 def get_ky_mat_par(hyps: np.ndarray, training_data: list,
                    kernel, cutoffs=None, hyps_mask=None,
-                   ncpus=None, nsample=100):
+                   n_cpus=None, nsample=100):
 
-    if (ncpus is None):
-        ncpus =mp.cpu_count()
-    if (ncpus == 1):
+    if (n_cpus is None):
+        n_cpus =mp.cpu_count()
+    if (n_cpus == 1):
         return get_ky_mat(hyps, training_data,
                           kernel, cutoffs, hyps_mask)
 
@@ -309,12 +309,12 @@ def get_ky_mat_par(hyps: np.ndarray, training_data: list,
     size3 = 3*len(training_data)
     k_mat_slice = []
     k_mat = np.zeros([size3, size3])
-    with mp.Pool(processes=ncpus) as pool:
+    with mp.Pool(processes=n_cpus) as pool:
 
         ns = int(math.ceil(size/nsample))
         nproc = ns*(ns+1)//2
-        if (nproc < ncpus):
-            nsample = int(math.ceil(size/int(np.sqrt(ncpus*2))))
+        if (nproc < n_cpus):
+            nsample = int(math.ceil(size/int(np.sqrt(n_cpus*2))))
             ns = int(math.ceil(size/nsample))
 
         block_id = []
@@ -343,7 +343,7 @@ def get_ky_mat_par(hyps: np.ndarray, training_data: list,
                                         kernel, cutoffs,
                                         hyps_mask)))
             count += 1
-            if (count >= ncpus*3):
+            if (count >= n_cpus*3):
                 for iget in range(base, count+base):
                     s1, e1, s2, e2 = block_id[iget]
                     k_mat_block = k_mat_slice[iget-base].get()
@@ -381,12 +381,12 @@ def get_ky_mat_par(hyps: np.ndarray, training_data: list,
 def get_ky_and_hyp_par(hyps: np.ndarray, training_data: list,
                        kernel_grad, cutoffs=None,
                        hyps_mask=None,
-                       ncpus=None, nsample=100):
+                       n_cpus=None, nsample=100):
 
 
-    if (ncpus is None):
-        ncpus = mp.cpu_count()
-    if (ncpus == 1):
+    if (n_cpus is None):
+        n_cpus = mp.cpu_count()
+    if (n_cpus == 1):
         return get_ky_and_hyp(hyps, training_data,
                               kernel_grad,
                               cutoffs, hyps_mask)
@@ -409,12 +409,12 @@ def get_ky_and_hyp_par(hyps: np.ndarray, training_data: list,
     k_mat = np.zeros([size3, size3])
     hyp_mat0 = np.zeros([non_noise_hyps, size3, size3])
 
-    with mp.Pool(processes=ncpus) as pool:
+    with mp.Pool(processes=n_cpus) as pool:
 
         ns = int(math.ceil(size/nsample))
         nproc = ns*(ns+1)//2
-        if (nproc < ncpus):
-            nsample = int(math.ceil(size/np.sqrt(ncpus*2)))
+        if (nproc < n_cpus):
+            nsample = int(math.ceil(size/np.sqrt(n_cpus*2)))
             ns = int(math.ceil(size/nsample))
 
         block_id = []
@@ -446,7 +446,7 @@ def get_ky_and_hyp_par(hyps: np.ndarray, training_data: list,
                                         cutoffs, hyps_mask)))
 
             count += 1
-            if (count > ncpus*3):
+            if (count > n_cpus*3):
                 for iget in range(base, count+base):
                     s1, e1, s2, e2 = block_id[iget]
                     h_mat_block, k_mat_block = mat_slice[iget-base].get()
@@ -492,7 +492,7 @@ def get_ky_and_hyp_par(hyps: np.ndarray, training_data: list,
 
 def get_ky_mat_update_par(ky_mat_old, hyps: np.ndarray, training_data: list,
                       kernel, cutoffs=None, hyps_mask=None,
-                      ncpus=None, nsample=100):
+                      n_cpus=None, nsample=100):
     '''
     used for update_L_alpha, especially for parallelization
     parallelized for added atoms, for example, if add 10 atoms to the training
@@ -500,9 +500,9 @@ def get_ky_mat_update_par(ky_mat_old, hyps: np.ndarray, training_data: list,
     be distributed to 30 processors
     '''
 
-    if (ncpus is None):
-        ncpus = mp.cpu_count()
-    if (ncpus == 1):
+    if (n_cpus is None):
+        n_cpus = mp.cpu_count()
+    if (n_cpus == 1):
         return get_ky_mat_update(ky_mat_old, hyps, training_data,
                                  kernel, cutoffs, hyps_mask)
 
@@ -521,11 +521,11 @@ def get_ky_mat_update_par(ky_mat_old, hyps: np.ndarray, training_data: list,
     ky_mat = np.zeros([size3, size3])
     ky_mat[:old_size3, :old_size3] = ky_mat_old
     ds = [1, 2, 3]
-    with mp.Pool(processes=ncpus) as pool:
+    with mp.Pool(processes=n_cpus) as pool:
         ns = int(math.ceil(size/nsample))
         nproc = (size3-old_size3)*(ns+old_size3)//2
-        if (nproc < ncpus):
-            nsample = int(math.ceil(size/np.sqrt(ncpus*2)))
+        if (nproc < n_cpus):
+            nsample = int(math.ceil(size/np.sqrt(n_cpus*2)))
             ns = int(math.ceil(size/nsample))
 
         ns_new = int(math.ceil((size-old_size)/nsample))
@@ -566,7 +566,7 @@ def get_ky_mat_update_par(ky_mat_old, hyps: np.ndarray, training_data: list,
                                         bool(s1==s2),
                                         kernel, cutoffs, hyps_mask))]
             count += 1
-            if (count >= ncpus*3):
+            if (count >= n_cpus*3):
                 for iget in range(base, count+base):
                     s1, e1, s2, e2 = block_id[iget]
                     k_mat_block = k_mat_slice[iget-base].get()
@@ -667,7 +667,7 @@ def get_kernel_vector_unit(training_data, kernel, x,
 def get_kernel_vector_par(training_data, kernel,
                           x, d_1, hyps,
                           cutoffs=None, hyps_mask=None,
-                          ncpus=None, nsample=100):
+                          n_cpus=None, nsample=100):
     """
     Compute kernel vector, comparing input environment to all environments
     in the GP's training set.
@@ -679,18 +679,18 @@ def get_kernel_vector_par(training_data, kernel,
     :rtype: np.ndarray
     """
 
-    if (ncpus is None):
-        ncpus = mp.cpu_count()
-    if (ncpus == 1):
+    if (n_cpus is None):
+        n_cpus = mp.cpu_count()
+    if (n_cpus == 1):
         return get_kernel_vector(training_data, kernel,
                                  x, d_1, hyps,
                                  cutoffs, hyps_mask)
 
-    with mp.Pool(processes=ncpus) as pool:
+    with mp.Pool(processes=n_cpus) as pool:
 
         # sort of partition
         size = len(training_data)
-        ns = int(math.ceil(size/nsample/ncpus)*ncpus)
+        ns = int(math.ceil(size/nsample/n_cpus)*n_cpus)
         nsample = int(math.ceil(size/ns))
         ns = int(math.ceil(size/nsample))
 

@@ -54,7 +54,7 @@ def two_body_gp() -> GaussianProcess:
                         kernel_grad=en.three_body_grad,
                         hyps=np.array([1, 1, 1]),
                         hyp_labels=['Length', 'Signal Var.', 'Noise Var.'],
-                        par=True, ncpus=2,
+                        par=True, n_cpus=2,
                         cutoffs=cutoffs)
     gaussian.update_db(test_structure, forces)
 
@@ -170,7 +170,7 @@ def test_set_L_alpha(two_body_gp, params):
         GaussianProcess(kernel, kernel_grad, hyps, cutoffs, hyp_labels,
                         energy_force_kernel, energy_kernel,
                         opt_algorithm,
-                        par=True, ncpus=2)
+                        par=True, n_cpus=2)
     gaussian.update_db(test_structure, forces)
 
     gaussian.set_L_alpha()

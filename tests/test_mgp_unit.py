@@ -31,7 +31,7 @@ def construct_gp(bodies, params):
         kernel_grad = mc_simple.three_body_mc_grad # plus_three_body_mc_grad
 
     gp_model = gp.GaussianProcess(kernel, kernel_grad, hyps,
-                           cutoffs, par=True, ncpus=2)
+                           cutoffs, par=True, n_cpus=2)
     gp_model.hyp_labels = ['sig2', 'ls2', 'noise']
 
     np.random.seed(0)
@@ -93,7 +93,7 @@ def test_parse_header(bodies):
 
     mgp_model = MappedGaussianProcess(gp_model.hyps, gp_model.cutoffs,
             grid_params, struc_params, mean_only=True, container_only=False,
-            GP=gp_model, lmp_file_name=lammps_location, ncpus=4)
+            GP=gp_model, lmp_file_name=lammps_location, n_cpus=4)
 
     # -------------------------------------------------------------------------
     #                          test the mapped potential

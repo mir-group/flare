@@ -130,7 +130,7 @@ def two_body_gp() -> GaussianProcess:
                         hyps=hyps,
                         hyp_labels=hm['hyps_label'],
                         cutoffs=cutoffs, multihyps=True, hyps_mask=hm,
-                        par=False, ncpus=1)
+                        par=False, n_cpus=1)
     gaussian.update_db(test_structure, forces)
 
     # return gaussian
@@ -441,7 +441,7 @@ def test_constrained_optimization_simple():
                         kernel_grad=en.two_plus_three_body_mc_grad,
                         hyps=hyps,
                         hyp_labels=hyp_labels,
-                        cutoffs=cutoffs, par=False, ncpus=1,
+                        cutoffs=cutoffs, par=False, n_cpus=1,
                         hyps_mask=hyps_mask,
                         maxiter=1,multihyps=True)
 

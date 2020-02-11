@@ -51,7 +51,7 @@ class GaussianProcess:
             hyperparameter optimization algorithm. Defaults to 10.
         par (bool, optional): If True, the covariance matrix K of the GP is
             computed in parallel. Defaults to False.
-        ncpus (int, optional): Number of cpus used for parallel
+        n_cpus (int, optional): Number of cpus used for parallel
             calculations. Defaults to 1.
         output (Output, optional): Output object used to dump hyperparameters
             during optimization. Defaults to None.
@@ -66,7 +66,7 @@ class GaussianProcess:
                  opt_algorithm: str = 'L-BFGS-B',
                  maxiter: int = 10, par: bool = False, 
                  per_atom_par: bool = True,
-                 n_cpus: int = None, nsample: int = 100,
+                 n_cpus: int = 1, nsample: int = 100,
                  output: Output = None,
                  multihyps: bool = False, hyps_mask: dict = None):
         """Initialize GP parameters and training data."""
@@ -323,16 +323,16 @@ class GaussianProcess:
 
         # Kernel vector allows for evaluation of At. Env.
         if (self.par and not self.per_atom_par):
-            ncpus = self.n_cpus
+            n_cpus = self.n_cpus
         else:
-            ncpus = 1
+            n_cpus = 1
 
         k_v = get_kernel_vector_par(self.training_data, self.kernel,
                                     x_t, d,
                                     self.hyps,
                                     cutoffs=self.cutoffs,
                                     hyps_mask=self.hyps_mask,
-                                    ncpus=self.n_cpus,
+                                    n_cpus=self.n_cpus,
                                     nsample=self.nsample)
 
         # Guarantee that alpha is up to date with training set
@@ -479,7 +479,7 @@ class GaussianProcess:
                                 self.kernel,
                                 cutoffs=self.cutoffs,
                                 hyps_mask=self.hyps_mask,
-                                ncpus=self.n_cpus,
+                                n_cpus=self.n_cpus,
                                 nsample=self.nsample)
 
         l_mat = np.linalg.cholesky(ky_mat)
@@ -515,7 +515,7 @@ class GaussianProcess:
                                        self.kernel,
                                        cutoffs=self.cutoffs,
                                        hyps_mask=self.hyps_mask,
-                                       ncpus=n_cpus,
+                                       n_cpus=n_cpus,
                                        nsample=self.nsample)
 
         l_mat = np.linalg.cholesky(ky_mat)
@@ -616,7 +616,7 @@ class GaussianProcess:
                                  hyp_labels=dictionary['hyp_labels'],
                                  par=dictionary['par'],
                                  per_atom_par=dictionary.get('per_atom_par',True),
-                                 ncpus=dictionary.get('ncpus') or dictionary.get('no_cpus'),
+                                 n_cpus=dictionary.get('n_cpus') or dictionary.get('no_cpus'),
                                  maxiter=dictionary['maxiter'],
                                  opt_algorithm=dictionary['algo'],
                                  multihyps=dictionary.get('multihyps',False),

@@ -55,7 +55,7 @@ def test_otf_h2():
                         cutoffs=cutoffs,
                         hyp_labels=hyp_labels,
                         energy_force_kernel=energy_force_kernel,
-                        maxiter=50)
+                        maxiter=50,par=False, per_atom_par = True, n_cpus=1)
 
     otf = OTF(qe_input, dt, number_of_steps, gp, dft_loc,
               std_tolerance_factor, init_atoms=[0],
@@ -95,7 +95,7 @@ def test_otf_al():
                         cutoffs=cutoffs,
                         hyp_labels=hyp_labels,
                         energy_force_kernel=energy_force_kernel,
-                        maxiter=50)
+                        maxiter=50,n_cpus=1)
 
     # set up DFT calculator
     qe_input = './pwscf.in' # quantum espresso input file

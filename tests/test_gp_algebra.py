@@ -116,7 +116,7 @@ def test_ky_mat():
     # parallel version
     ky_mat = func[1](hyps, training_data,
                      kernel[0], cutoffs,
-                     ncpus=2, nsample=20)
+                     n_cpus=2, nsample=20)
     diff = (np.max(np.abs(ky_mat-ky_mat0)))
     assert (diff==0), "parallel implementation is wrong"
 
@@ -150,7 +150,7 @@ def test_ky_mat():
         # parallel implementation
         ky_mat = func[3](hyps, training_data,
                          ker,
-                         cutoffs, hyps_mask, ncpus=2, nsample=20)
+                         cutoffs, hyps_mask, n_cpus=2, nsample=20)
         diff = (np.max(np.abs(ky_mat-ky_mat0)))
         assert (diff==0), "multi hyps  parallel "\
                           "implementation is wrong"\
@@ -187,7 +187,7 @@ def test_ky_mat_update():
 
     ky_mat = func[2](ky_mat_old, hyps, training_data,
                      kernel[0], cutoffs,
-                     ncpus=2, nsample=20)
+                     n_cpus=2, nsample=20)
     diff = (np.max(np.abs(ky_mat-ky_mat0)))
     assert (diff==0), "parallel implementation is wrong"
 
@@ -211,7 +211,7 @@ def test_ky_mat_update():
         # parallel implementation
         ky_mat = func[4](ky_mat_old, hyps, training_data,
                          ker, cutoffs,
-                         hyps_mask, ncpus=2, nsample=20)
+                         hyps_mask, n_cpus=2, nsample=20)
         diff = (np.max(np.abs(ky_mat-ky_mat0)))
         assert (diff<1e-12), "multi hyps parameter parallel "\
                 "implementation is wrong"
@@ -232,7 +232,7 @@ def test_ky_and_hyp():
 
     # parallel version
     hypmat, ky_mat = func[1](hyps, training_data,
-                     kernel[1], cutoffs, ncpus=2)
+                     kernel[1], cutoffs, n_cpus=2)
     diff = (np.max(np.abs(ky_mat-ky_mat0)))
     assert (diff==0), "parallel implementation is wrong"
 
@@ -272,7 +272,7 @@ def test_ky_and_hyp():
         # parallel implementation
         hypmat_par, ky_mat_par = func[3](hyps, training_data,
                          ker, cutoffs, hyps_mask,
-                         ncpus=2, nsample=2)
+                         n_cpus=2, nsample=2)
 
         # compare to serial implementation
         diff = (np.max(np.abs(ky_mat-ky_mat_par)))

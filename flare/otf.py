@@ -25,7 +25,7 @@ class OTF:
                  max_atoms_added: int = 1, freeze_hyps: int = 10,
                  rescale_steps: List[int] = [], rescale_temps: List[int] = [],
                  dft_softwarename: str = "qe",
-                 no_cpus: int = 1, npool: int = None, mpi: str = "srun",
+                 n_cpus: int = 1, npool: int = None, mpi: str = "srun",
                  dft_kwargs=None,
                  store_dft_output: Tuple[Union[str,List[str]],str] = None):
         """Trains a Gaussian process force field on the fly during
@@ -68,7 +68,7 @@ class OTF:
                 Defaults to [].
             dft_softwarename (str, optional): DFT code used to calculate
                 ab initio forces during training. Defaults to "qe".
-            no_cpus (int, optional): Number of cpus used during training.
+            n_cpus (int, optional): Number of cpus used during training.
                 Defaults to 1.
             npool (int, optional): Number of k-point pools for DFT
                 calculations. Defaults to None.
@@ -148,7 +148,7 @@ class OTF:
         self.output = Output(output_name, always_flush=True)
 
         # set number of cpus and npool for DFT runs
-        self.no_cpus = no_cpus
+        self.n_cpus = n_cpus
         self.npool = npool
         self.mpi = mpi
 
@@ -192,7 +192,7 @@ class OTF:
             # after step 1, try predicting with GP model
             else:
                 self.gp.check_L_alpha()
-                self.pred_func(self.structure, self.gp, self.no_cpus)
+                self.pred_func(self.structure, self.gp, self.n_cpus)
                 self.dft_step = False
                 new_pos = md.update_positions(self.dt, self.noa,
                                               self.structure)
@@ -272,7 +272,7 @@ class OTF:
         # calculate DFT forces
         forces = self.dft_module.run_dft_par(self.dft_input, self.structure,
                                              self.dft_loc,
-                                             ncpus=self.no_cpus,
+                                             n_cpus=self.n_cpus,
                                              npool=self.npool,
                                              mpi=self.mpi,
                                              dft_kwargs=self.dft_kwargs)
