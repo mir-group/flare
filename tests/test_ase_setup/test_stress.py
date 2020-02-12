@@ -2,7 +2,7 @@ import os
 import sys
 import numpy as np
 from flare.otf_parser import OtfAnalysis
-from flare.kernels import two_plus_three_body, two_plus_three_body_grad
+from flare.kernels.kernels import two_plus_three_body, two_plus_three_body_grad
 from flare.mgp.mgp import MappedGaussianProcess
 from flare.ase.calculator import FLARE_Calculator
 from flare.kernels.mc_simple import two_plus_three_body_mc, two_plus_three_body_mc_grad
