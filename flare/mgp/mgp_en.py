@@ -1,18 +1,18 @@
 import time, os, subprocess, math, inspect
 import numpy as np
-from scipy.linalg import solve_triangular
 import multiprocessing as mp
+
+from scipy.linalg import solve_triangular
+
+import flare.kernels.mc_simple as mc
+import flare.mgp.utils as utils
 
 from flare import gp, struc, kernels
 from flare.env import AtomicEnvironment
 from flare.gp import GaussianProcess
-from flare.kernels import two_body, three_body, two_plus_three_body,\
-    two_body_jit
 from flare.cutoffs import quadratic_cutoff
-import flare.kernels.mc_simple as mc
-import flare.mgp.utils as utils
-from flare.mgp.utils import get_bonds, get_triplets, get_triplets_en,\
-    self_two_body_mc_jit, self_three_body_mc_jit
+from flare.mgp.utils import get_bonds, get_triplets, get_triplets_en
+#     self_two_body_mc_jit, self_three_body_mc_jit
 from flare.mgp.splines_methods import PCASplines, CubicSpline
 
 

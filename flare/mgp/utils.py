@@ -9,11 +9,13 @@ import flare.gp as gp
 import flare.env as env
 import flare.struc as struc
 import flare.kernels.mc_simple as mc_simple
+import flare.kernels.mc_sephyps as mc_sephyps
+import flare.kernels.kernels as sc
 from flare.env import AtomicEnvironment
 from flare.kernels.kernels import three_body_helper_1, \
     three_body_helper_2, force_helper
 from flare.cutoffs import quadratic_cutoff
-from flare.kernels.kernels.util import str_to_kernels
+from flare.kernels.kernels import str_to_kernel
 from flare.kernels.mc_simple import str_to_mc_kernel
 from flare.kernels.mc_sephyps import str_to_mc_kernel as str_to_mc_sephyps_kernel
 
@@ -39,8 +41,10 @@ def get_2bkernel(GP):
             energy_force_kernel = mc_simple.two_body_mc_force_en
         else:
             kernel = str_to_mc_sephyps_kernel('two_body_mc')
+            energy_force_kernel = mc_sephyps.two_body_mc_force_en
     else:
         kernel = str_to_kernel('two_body')
+        energy_force_kernel = sc.two_body_mc_force_en
 
     cutoffs = [GP.cutoffs[0]]
 
@@ -74,8 +78,10 @@ def get_3bkernel(GP):
             energy_force_kernel = mc_simple.three_body_mc_force_en
         else:
             kernel = str_to_mc_sephyps_kernel('three_body_mc')
+            energy_force_kernel = mc_sephyps.three_body_mc_force_en
     else:
         kernel = str_to_kernel('three_body')
+        energy_force_kernel = sc.three_body_mc_force_en
 
     if 'two' in GP.kernel_name:
         base = 2
@@ -106,30 +112,6 @@ def get_3bkernel(GP):
         hyps_mask = None
 
     return (kernel, energy_force_kernel, cutoffs, hyps, hyps_mask)
-
-def get_kernel_vector(training_data, x: AtomicEnvironment,
-                      d_1: int, kernel, hyps, cutoffs,
-                      hyps_mask=None):
-
-    ds = [1, 2, 3]
-    size = len(training_data) * 3
-    k_v = np.zeros(size, )
-
-    if (hyps_mask is not None):
-        for m_index in range(size):
-            x_2 = training_data[int(math.floor(m_index / 3))]
-            d_2 = ds[m_index % 3]
-            k_v[m_index] = kernel(x, x_2, d_1, d_2,
-                                  hyps, cutoffs,
-                                  hyps_mask=hyps_mask)
-
-    else:
-        for m_index in range(size):
-            x_2 = training_data[int(math.floor(m_index / 3))]
-            d_2 = ds[m_index % 3]
-            k_v[m_index] = kernel(x, x_2, d_1, d_2,
-                                  hyps, cutoffs)
-    return k_v
 
 
 def en_kern_vec(training_data, x: AtomicEnvironment,
