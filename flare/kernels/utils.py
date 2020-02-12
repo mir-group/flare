@@ -4,7 +4,7 @@ from flare.kernels.mc_sephyps import str_to_mc_kernel as str_to_mc_sephyps_kerne
 
 
 def str_to_kernels(name: str, multihyps: bool =False,
-        includ_grad: bool = False):
+        include_grad: bool = False):
     """
     return kernels and kernel gradient base on a string
 
@@ -16,7 +16,7 @@ def str_to_kernels(name: str, multihyps: bool =False,
 
     """
 
-    if (includ_grad):
+    if (include_grad):
         if 'mc' in name:
             if (multihyps is False):
                 force_kernel, grad = \
