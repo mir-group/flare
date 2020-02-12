@@ -1,12 +1,12 @@
 import time
 import math
-from copy import deepcopy
 import pickle
 import json
 
 import numpy as np
 import multiprocessing as mp
 
+from copy import deepcopy
 from typing import List, Callable
 from scipy.linalg import solve_triangular
 from scipy.optimize import minimize
@@ -20,9 +20,9 @@ from flare.gp_algebra_multi import get_ky_mat_par
 from flare.gp_algebra_multi import get_ky_mat_update_par
 from flare.gp_algebra_multi import get_neg_like_grad
 from flare.kernels.utils import str_to_kernels
-import flare.cutoffs as cf
 from flare.util import NumpyEncoder
 from flare.output import Output
+import flare.cutoffs as cf
 
 
 class GaussianProcess:
@@ -81,7 +81,6 @@ class GaussianProcess:
         self.bounds = None
 
         self.training_data = []
-        # self.data_store = []
         self.training_labels = []
         self.training_labels_np = np.empty(0, )
         self.maxiter = maxiter
@@ -96,7 +95,6 @@ class GaussianProcess:
         self.l_mat = None
         self.alpha = None
         self.ky_mat_inv = None
-        # self.l_mat_inv = None
         self.likelihood = None
         self.likelihood_gradient = None
 
@@ -319,7 +317,7 @@ class GaussianProcess:
             (float, float): Mean and epistemic variance of the prediction.
         """
 
-        # Kernel vector allows for evaluation of At. Env.
+        # Kernel vector allows for evaluation of atomic environments.
         if (self.par and not self.per_atom_par):
             n_cpus = self.n_cpus
         else:
@@ -341,6 +339,7 @@ class GaussianProcess:
         pred_mean = np.matmul(k_v, self.alpha)
 
         # get predictive variance without cholesky (possibly faster)
+        # pass args to kernel based on if mult. hyperparameters in use
         if (self.multihyps):
              self_kern = self.kernel(x_t, x_t, d, d, self.hyps,
                                      self.cutoffs, hyps_mask=self.hyps_mask)
