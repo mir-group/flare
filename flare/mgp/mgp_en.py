@@ -621,10 +621,11 @@ class Map3body:
         env12 = AtomicEnvironment(self.bond_struc, 0, GP.cutoffs)
 
         with mp.Pool(processes=processes) as pool:
-            if self.update:
-                if self.kv3name in os.listdir():
-                    subprocess.run(['rm', '-rf', self.kv3name])
-                subprocess.run(['mkdir', self.kv3name])
+
+            # if self.update:
+            #     if self.kv3name in os.listdir():
+            #         subprocess.run(['rm', '-rf', self.kv3name])
+            #     subprocess.run(['mkdir', self.kv3name])
 
             #print("prepare the package for parallelization")
             size = len(GP.training_data)
