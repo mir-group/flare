@@ -7,13 +7,29 @@
 class LocalEnvironment;
 class StructureDescriptor;
 
-class DotProductKernel{
+class Kernel{
+    public:
+        std::vector<double> kernel_hyperparameters;
+
+        Kernel();
+
+        Kernel(std::vector<double> kernel_hyperparameters);
+
+        virtual double env_env(const LocalEnvironment & env1,
+                               const LocalEnvironment & env2) = 0;
+
+        virtual Eigen::VectorXd env_struc(const LocalEnvironment & env1,
+            const StructureDescriptor & struc1) = 0;
+};
+
+class DotProductKernel : public Kernel{
     public:
         double signal_variance, power, sig2;
 
         DotProductKernel();
 
-        DotProductKernel(double signal_variance, double power);
+        // Hyperparameters: [signal_variance, power]
+        DotProductKernel(std::vector<double> kernel_hyperparameters);
 
         double env_env(const LocalEnvironment & env1,
                        const LocalEnvironment & env2);

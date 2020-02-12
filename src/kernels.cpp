@@ -4,6 +4,11 @@
 #include <cmath>
 #include <iostream>
 
+Kernel :: Kernel() {};
+Kernel :: Kernel(std::vector<double> kernel_hyperparameters){
+    this->kernel_hyperparameters = kernel_hyperparameters;
+};
+
 TwoBodyKernel :: TwoBodyKernel() {};
 
 TwoBodyKernel :: TwoBodyKernel(double ls, const std::string & cutoff_function,
@@ -269,14 +274,12 @@ double ThreeBodyKernel :: env_env(const LocalEnvironment & env1,
                     kern += exp(-p6 * ls2) * fi * fj;
                 }
             }
-
         }
     }
 
     return kern;
 }
 
-// TODO: Unit test.
 Eigen::VectorXd ThreeBodyKernel :: env_struc(const LocalEnvironment & env1,
     const StructureDescriptor & struc1){
 
@@ -428,7 +431,6 @@ Eigen::VectorXd ThreeBodyKernel :: env_struc(const LocalEnvironment & env1,
                             yval2, zrel1, zval1, zrel2, zval2);
                     }
                 }
-
             }
         }
     }
@@ -479,10 +481,12 @@ void ThreeBodyKernel :: update_kernel_vector(Eigen::VectorXd & kernel_vector,
 
 DotProductKernel :: DotProductKernel() {};
 
-DotProductKernel :: DotProductKernel(double signal_variance, double power){
-    this->signal_variance = signal_variance;
+DotProductKernel :: DotProductKernel(std::vector<double>
+    kernel_hyperparameters) : Kernel(kernel_hyperparameters){
+
+    signal_variance = kernel_hyperparameters[0];
     sig2 = signal_variance * signal_variance;
-    this->power = power;
+    power = kernel_hyperparameters[1];
 }
 
 double DotProductKernel :: env_env(const LocalEnvironment & env1,

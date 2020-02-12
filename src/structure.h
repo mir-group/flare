@@ -37,8 +37,6 @@ class StructureDescriptor : public Structure{
 
         StructureDescriptor();
 
-        // If a descriptor calculator isn't given, store the environments
-        // only (without descriptor vectors).
         StructureDescriptor(const Eigen::MatrixXd & cell,
                             const std::vector<int> & species,
                             const Eigen::MatrixXd & positions,
@@ -52,15 +50,13 @@ class StructureDescriptor : public Structure{
         StructureDescriptor(const Eigen::MatrixXd & cell,
                             const std::vector<int> & species,
                             const Eigen::MatrixXd & positions,
-                            double cutoff, std::vector<double> nested_cutoffs,
+                            double cutoff,
                             DescriptorCalculator * descriptor_calculator);
 
-        // TODO: reverse order of descriptor calculator and cutoff to match
-        // env.
         StructureDescriptor(const Eigen::MatrixXd & cell,
                             const std::vector<int> & species,
                             const Eigen::MatrixXd & positions,
-                            double cutoff,
+                            double cutoff, std::vector<double> nested_cutoffs,
                             DescriptorCalculator * descriptor_calculator);
 
         void compute_environments();
@@ -88,7 +84,6 @@ class StructureDataset : public StructureDescriptor{
                             std::vector<double>{},
                          std::vector<double> stress_components =
                             std::vector<double>{});
-
 };
 
 #endif
