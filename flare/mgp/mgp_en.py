@@ -53,7 +53,7 @@ class MappedGaussianProcess:
                  mean_only=False,
                  container_only=True,
                  lmp_file_name='lmp.mgp',
-                 ncpus=None,
+                 n_cpus=None,
                  nsample=100):
 
         # get all arguments as attributes
@@ -87,7 +87,7 @@ class MappedGaussianProcess:
             for b_struc in self.bond_struc[0]:
                 map_2 = Map2body(self.grid_num_2, self.bounds_2,
                                  b_struc, self.svd_rank_2,
-                                 self.mean_only, self.ncpus, self.nsample)
+                                 self.mean_only, self.n_cpus, self.nsample)
                 self.maps_2.append(map_2)
         if 3 in self.bodies:
             for b_struc in self.bond_struc[1]:
@@ -424,7 +424,7 @@ class MappedGaussianProcess:
 
 class Map2body:
     def __init__(self, grid_num, bounds, bond_struc,
-                 svd_rank=0, mean_only=False, ncpus=None, nsample=100):
+                 svd_rank=0, mean_only=False, n_cpus=None, nsample=100):
         '''
         Build 2-body MGP
         '''
@@ -453,10 +453,10 @@ class Map2body:
 
         kernel_info = utils.get_2bkernel(GP)
 
-        if (self.ncpus is None):
+        if (self.n_cpus is None):
             processes = mp.cpu_count()
         else:
-            processes = self.ncpus
+            processes = self.n_cpus
 
         # ------ construct grids ------
         nop = self.grid_num
@@ -565,7 +565,7 @@ class Map3body:
 
     def __init__(self, grid_num, bounds, bond_struc,
             svd_rank=0, mean_only=False, load_grid=None, update=True,
-            ncpus=None, nsample=100):
+            n_cpus=None, nsample=100):
         '''
         Build 3-body MGP
         '''
@@ -596,10 +596,10 @@ class Map3body:
            with GP.alpha
         '''
 
-        if (self.ncpus is None):
+        if (self.n_cpus is None):
             processes = mp.cpu_count()
         else:
-            processes = self.ncpus
+            processes = self.n_cpus
         if processes == 1:
             self.GenGrid_serial(GP)
 
