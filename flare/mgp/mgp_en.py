@@ -9,7 +9,7 @@ from flare.gp import GaussianProcess
 from flare.kernels import two_body, three_body, two_plus_three_body,\
     two_body_jit
 from flare.cutoffs import quadratic_cutoff
-import flare.mc_simple as mc
+import flare.kernels.mc_simple as mc
 import flare.mgp.utils as utils
 from flare.mgp.utils import get_bonds, get_triplets, get_triplets_en,\
     self_two_body_mc_jit, self_three_body_mc_jit
@@ -28,11 +28,11 @@ class MappedGaussianProcess:
     :param: GP: None or a GaussianProcess object. If input a GP, then build mapping when creating MappedGaussianProcess object
     :param: lmp_file_name : lammps coefficient file name
     Examples:
-    
+
     >>> struc_params = {'species': [0, 1],
                         'cube_lat': cell, # should input the cell matrix
                         'mass_dict': {'0': 27 * unit, '1': 16 * unit}}
-    >>> grid_params =  {'bounds_2': [[1.2], [3.5]], 
+    >>> grid_params =  {'bounds_2': [[1.2], [3.5]],
                                     # [[lower_bound], [upper_bound]]
                         'bounds_3': [[1.2, 1.2, 0], [3.5, 3.5, np.pi]],
                                     # [[lower,lower,0],[upper,upper,np.pi]]
@@ -40,28 +40,28 @@ class MappedGaussianProcess:
                         'grid_num_3': [16, 16, 16],
                         'svd_rank_2': 64,
                         'svd_rank_3': 16**3,
-                        'update': True, # if True: accelerating grids 
-                                        # generating by saving intermediate 
+                        'update': True, # if True: accelerating grids
+                                        # generating by saving intermediate
                                         # coeff when generating grids
                         'load_grid': None}
     '''
 
-    def __init__(self, 
-                 grid_params: dict, 
-                 struc_params: dict, 
+    def __init__(self,
+                 grid_params: dict,
+                 struc_params: dict,
                  GP=None,
-                 mean_only=False, 
-                 container_only=True, 
+                 mean_only=False,
+                 container_only=True,
                  lmp_file_name='lmp.mgp',
                  ncpus=None,
                  nsample=100):
 
-        # get all arguments as attributes 
+        # get all arguments as attributes
         arg_dict = inspect.getargvalues(inspect.currentframe())[3]
         del arg_dict['self'], arg_dict['GP']
         self.__dict__.update(arg_dict)
-        self.__dict__.update(grid_params) 
- 
+        self.__dict__.update(grid_params)
+
         self.hyps = GP.hyps
         self.cutoffs = GP.cutoffs
         self.kernel_name = GP.kernel_name
@@ -85,19 +85,19 @@ class MappedGaussianProcess:
         '''
         if 2 in self.bodies:
             for b_struc in self.bond_struc[0]:
-                map_2 = Map2body(self.grid_num_2, self.bounds_2, 
-                                 b_struc, self.svd_rank_2, 
+                map_2 = Map2body(self.grid_num_2, self.bounds_2,
+                                 b_struc, self.svd_rank_2,
                                  self.mean_only, self.ncpus, self.nsample)
                 self.maps_2.append(map_2)
         if 3 in self.bodies:
             for b_struc in self.bond_struc[1]:
-                map_3 = Map3body(self.grid_num_3, self.bounds_3, 
+                map_3 = Map3body(self.grid_num_3, self.bounds_3,
                                  b_struc, self.svd_rank_3,
-                                 self.mean_only, 
+                                 self.mean_only,
                                  self.grid_params['load_grid'],
                                  self.update)
                 self.maps_3.append(map_3)
-    
+
     def build_map(self, GP):
         '''
         generate/load grids and get spline coefficients
@@ -234,7 +234,7 @@ class MappedGaussianProcess:
 
     def get_3body_comp(self, atom_env, sig, ls, r_cut):
         '''
-        get triplets and grouped by species 
+        get triplets and grouped by species
         '''
         bond_array_3 = atom_env.bond_array_3
         cross_bond_inds = atom_env.cross_bond_inds
@@ -263,7 +263,7 @@ class MappedGaussianProcess:
     def predict_multicomponent(self, atom_env, sig, ls, r_cut, get_comp,
                                spcs_list, mappings, mean_only):
         '''
-        Add up results from `predict_component` to get the total contribution 
+        Add up results from `predict_component` to get the total contribution
         of all species
         '''
         f_spcs = 0
@@ -278,7 +278,7 @@ class MappedGaussianProcess:
             lengths = np.array(comp_r[i])
             xyzs = np.array(comp_xyz[i])
             map_ind = spcs_list.index(spc)
-            f, vir, v, e = self.predict_component(lengths, xyzs, 
+            f, vir, v, e = self.predict_component(lengths, xyzs,
                     mappings[map_ind],  mean_only)
             f_spcs += f
             vir_spcs += vir
@@ -329,7 +329,7 @@ class MappedGaussianProcess:
                 vir_i2 = f_d2[:,vir_order[i][0]]\
                        * xyzs[:,1,vir_order[i][1]] * lengths[:,1]
                 vir[i] = np.sum(vir_i1 + vir_i2)
-            vir *= 1.5 
+            vir *= 1.5
 
 
         # predict var
@@ -363,8 +363,8 @@ class MappedGaussianProcess:
 
     def write_three_body(self, f):
         a = self.bounds_3[0]
-        b = self.bounds_3[1] 
-        order = self.grid_num_3 
+        b = self.bounds_3[1]
+        order = self.grid_num_3
 
         for ind, spc in enumerate(self.spcs[1]):
             coefs_3 = self.maps_3[ind].mean.__coeffs__
@@ -432,17 +432,17 @@ class Map2body:
         arg_dict = inspect.getargvalues(inspect.currentframe())[3]
         del arg_dict['self']
         self.__dict__.update(arg_dict)
-                
+
         self.build_map_container()
 
 
     def GenGrid(self, GP):
 
         '''
-        To use GP to predict value on each grid point, we need to generate the 
-        kernel vector kv whose length is the same as the training set size. 
+        To use GP to predict value on each grid point, we need to generate the
+        kernel vector kv whose length is the same as the training set size.
 
-        1. We divide the training set into several batches, corresponding to 
+        1. We divide the training set into several batches, corresponding to
            different segments of kv
         2. Distribute each batch to a processor, i.e. each processor calculate
            the kv segment of one batch for all grids
@@ -545,14 +545,14 @@ class Map2body:
         '''
         build 1-d spline function for mean, 2-d for var
         '''
-        self.mean = CubicSpline(self.bounds[0], self.bounds[1], 
+        self.mean = CubicSpline(self.bounds[0], self.bounds[1],
                                 orders=[self.grid_num])
 
         if not self.mean_only:
             self.var = PCASplines(self.bounds[0], self.bounds[1],
                                   orders=[self.grid_num],
                                   svd_rank=self.svd_rank)
-        
+
     def build_map(self, GP):
         y_mean, y_var = self.GenGrid(GP)
         self.mean.set_values(y_mean)
@@ -563,18 +563,18 @@ class Map2body:
 
 class Map3body:
 
-    def __init__(self, grid_num, bounds, bond_struc, 
+    def __init__(self, grid_num, bounds, bond_struc,
             svd_rank=0, mean_only=False, load_grid=None, update=True,
             ncpus=None, nsample=100):
         '''
         Build 3-body MGP
         '''
 
-        # get all arguments as attributes 
+        # get all arguments as attributes
         arg_dict = inspect.getargvalues(inspect.currentframe())[3]
         del arg_dict['self']
         self.__dict__.update(arg_dict)
- 
+
         spc = bond_struc.coded_species
         self.species_code = str(spc[0]) + str(spc[1]) + str(spc[2])
 
@@ -584,10 +584,10 @@ class Map3body:
     def GenGrid(self, GP, processes=mp.cpu_count()):
 
         '''
-        To use GP to predict value on each grid point, we need to generate the 
-        kernel vector kv whose length is the same as the training set size. 
+        To use GP to predict value on each grid point, we need to generate the
+        kernel vector kv whose length is the same as the training set size.
 
-        1. We divide the training set into several batches, corresponding to 
+        1. We divide the training set into several batches, corresponding to
            different segments of kv
         2. Distribute each batch to a processor, i.e. each processor calculate
            the kv segment of one batch for all grids
@@ -645,7 +645,7 @@ class Map3body:
             #print('before for', ns, nsample, time.time())
             count = 0
             base = 0
-            k12_v_all = np.zeros([len(bonds1), len(bonds2), len(bonds12), 
+            k12_v_all = np.zeros([len(bonds1), len(bonds2), len(bonds12),
                                   size * 3])
             for ibatch in range(nbatch):
                 s, e = block_id[ibatch]
@@ -678,9 +678,9 @@ class Map3body:
                     k12_v = k12_v_all[b1, b2, b12, :]
                     grid_means[b1, b2, b12] = np.matmul(k12_v, GP.alpha)
                     if not self.mean_only:
-                        grid_vars[b1, b2, b12, :] = solve_triangular(GP.l_mat, 
+                        grid_vars[b1, b2, b12, :] = solve_triangular(GP.l_mat,
                             k12_v, lower=True)
-     
+
         # ------ save mean and var to file -------
         np.save('grid3_mean_'+self.species_code, grid_means)
         np.save('grid3_var_'+self.species_code, grid_vars)
@@ -711,7 +711,7 @@ class Map3body:
                     k12_v[b1, b2, b12, :] = utils.en_kern_vec(training_data,
                                                               env12, en_force_kernel,
                                                               hyps, cutoffs)
-        
+
         return k12_v
 
 
@@ -723,7 +723,7 @@ class Map3body:
         '''
 
        # create spline interpolation class object
-        self.mean = CubicSpline(self.bounds[0], self.bounds[1], 
+        self.mean = CubicSpline(self.bounds[0], self.bounds[1],
                                 orders=self.grid_num)
 
         if not self.mean_only:

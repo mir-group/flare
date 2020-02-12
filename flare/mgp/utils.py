@@ -8,14 +8,14 @@ import cProfile
 import flare.gp as gp
 import flare.env as env
 import flare.struc as struc
+import flare.kernels.mc_simple as mc_simple
 from flare.env import AtomicEnvironment
 from flare.kernels.kernels import three_body_helper_1, \
     three_body_helper_2, force_helper
 from flare.cutoffs import quadratic_cutoff
-from flare.kernels import str_to_kernel
-from flare.mc_simple import str_to_mc_kernel
-#from flare.mc_sephyps import str_to_mc_kernel as str_to_mc_sephyps_kernel
-
+from flare.kernels.kernels.util import str_to_kernels
+from flare.kernels.mc_simple import str_to_mc_kernel
+from flare.kernels.mc_sephyps import str_to_mc_kernel as str_to_mc_sephyps_kernel
 
 
 def save_GP(GP, prefix):
@@ -37,8 +37,8 @@ def get_2bkernel(GP):
         if (GP.multihyps is False):
             kernel = str_to_mc_kernel('two_body_mc')
             energy_force_kernel = mc_simple.two_body_mc_force_en
-#        else:
-#            kernel = str_to_mc_sephyps_kernel('two_body_mc')
+        else:
+            kernel = str_to_mc_sephyps_kernel('two_body_mc')
     else:
         kernel = str_to_kernel('two_body')
 
@@ -72,8 +72,8 @@ def get_3bkernel(GP):
         if (GP.multihyps is False):
             kernel = str_to_mc_kernel('three_body_mc')
             energy_force_kernel = mc_simple.three_body_mc_force_en
-#        else:
-#            kernel = str_to_mc_sephyps_kernel('three_body_mc')
+        else:
+            kernel = str_to_mc_sephyps_kernel('three_body_mc')
     else:
         kernel = str_to_kernel('three_body')
 
