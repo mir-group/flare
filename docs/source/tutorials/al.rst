@@ -11,7 +11,7 @@ First, let's set up a GP model with three-body kernel function.
 * `energy_force_kernel`: set to calculate local energy for each atom based on the integral of forces. 
 * `maxiter`: set to constrain the number of steps in training hyperparameters. 
 
-**Note:** If you are trying multi-component system, please use kernel functions in `mc_simple.py` instead of `kernels.py`
+**Note:** If you are trying multi-component system, please use kernel functions in `kernels.mc_simple.py` instead of `kernels.py`
 
 .. literalinclude:: ../../../tests/test_OTF_qe.py
    :lines: 82-97

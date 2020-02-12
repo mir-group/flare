@@ -30,7 +30,7 @@ At the header of a file, include the following imports:
 .. code-block:: python
 
 	from flare.gp import GaussianProcess
-	from flare.mc_simple import two_plus_three_body_mc, two_plus_three_body_mc_grad
+	from flare.kernels.mc_simple import two_plus_three_body_mc, two_plus_three_body_mc_grad
 
 We will then set up the ``GaussianProcess`` object.
 
