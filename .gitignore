@@ -11,6 +11,7 @@ tags
 pwscf.save/
 /docs/source/_build/html
 /docs/build/
+/docs/doctrees/
 /datasets/
 /tests/test_ase/out/
 /tests/test_ase/Al/

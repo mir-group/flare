@@ -165,7 +165,7 @@ class OTF:
         """
 
         self.output.write_header(self.gp.cutoffs, self.gp.kernel_name,
-                                 self.gp.hyps, self.gp.algo,
+                                 self.gp.hyps, self.gp.opt_algorithm,
                                  self.dt, self.number_of_steps,
                                  self.structure,
                                  self.std_tolerance)

@@ -1,7 +1,7 @@
 import numpy as np
 from numpy import array
 from numba import njit
-import io, os, sys, time, random, logging
+import io, os, sys, time, random, math
 import multiprocessing as mp
 import cProfile
 
@@ -12,6 +12,10 @@ from flare.env import AtomicEnvironment
 from flare.kernels.kernels import three_body_helper_1, \
     three_body_helper_2, force_helper
 from flare.cutoffs import quadratic_cutoff
+from flare.kernels import str_to_kernel
+from flare.mc_simple import str_to_mc_kernel
+#from flare.mc_sephyps import str_to_mc_kernel as str_to_mc_sephyps_kernel
+
 
 
 def save_GP(GP, prefix):
@@ -26,6 +30,124 @@ def load_GP(GP, prefix):
     GP.l_mat = np.load(prefix+'l_mat.npy')
     l_mat_inv = np.linalg.inv(GP.l_mat)
     GP.ky_mat_inv = l_mat_inv.T @ l_mat_inv
+
+
+def get_2bkernel(GP):
+    if 'mc' in GP.kernel_name:
+        if (GP.multihyps is False):
+            kernel = str_to_mc_kernel('two_body_mc')
+            energy_force_kernel = mc_simple.two_body_mc_force_en
+#        else:
+#            kernel = str_to_mc_sephyps_kernel('two_body_mc')
+    else:
+        kernel = str_to_kernel('two_body')
+
+    cutoffs = [GP.cutoffs[0]]
+
+    original_hyps = np.copy(GP.hyps)
+    if (GP.multihyps is True):
+        o_hyps_mask = GP.hyps_mask
+        if ('map' in o_hyps_mask.keys()):
+            ori_hyps = o_hyps_mask['original']
+            hm = o_hyps_mask['map']
+            for i, h in enumerate(original_hyps):
+                ori_hyps[hm[i]]=h
+        else:
+            ori_hyps = original_hyps
+        n2b = o_hyps_mask['nbond']
+        hyps = np.hstack([ori_hyps[:n2b*2], ori_hyps[-1]])
+        hyps_mask = {'nbond':n2b, 'ntriplet':0,
+              'nspec':o_hyps_mask['nspec'],
+              'spec_mask':o_hyps_mask['spec_mask'],
+              'bond_mask': o_hyps_mask['bond_mask']}
+    else:
+        hyps = [GP.hyps[0], GP.hyps[1], GP.hyps[-1]]
+        hyps_mask = None
+    return (kernel, energy_force_kernel, cutoffs, hyps, hyps_mask)
+
+
+def get_3bkernel(GP):
+
+    if 'mc' in GP.kernel_name:
+        if (GP.multihyps is False):
+            kernel = str_to_mc_kernel('three_body_mc')
+            energy_force_kernel = mc_simple.three_body_mc_force_en
+#        else:
+#            kernel = str_to_mc_sephyps_kernel('three_body_mc')
+    else:
+        kernel = str_to_kernel('three_body')
+
+    if 'two' in GP.kernel_name:
+        base = 2
+    else:
+        base = 0
+
+    cutoffs = np.copy(GP.cutoffs)
+
+    original_hyps = np.copy(GP.hyps)
+    if (GP.multihyps is True):
+        o_hyps_mask = GP.hyps_mask
+        if ('map' in o_hyps_mask.keys()):
+            ori_hyps = o_hyps_mask['original']
+            hm = o_hyps_mask['map']
+            for i, h in enumerate(original_hyps):
+                ori_hyps[hm[i]]=h
+        else:
+            ori_hyps = original_hyps
+        n2b = o_hyps_mask['nbond']
+        n3b = o_hyps_mask['ntriplet']
+        hyps = ori_hyps[n2b*2:]
+        hyps_mask = {'ntriplet':n3b,'nbond':0,
+                'nspec':o_hyps_mask['nspec'],
+                'spec_mask':o_hyps_mask['spec_mask'],
+                'triplet_mask': o_hyps_mask['triplet_mask']}
+    else:
+        hyps = [GP.hyps[0+base], GP.hyps[1+base], GP.hyps[-1]]
+        hyps_mask = None
+
+    return (kernel, energy_force_kernel, cutoffs, hyps, hyps_mask)
+
+def get_kernel_vector(training_data, x: AtomicEnvironment,
+                      d_1: int, kernel, hyps, cutoffs,
+                      hyps_mask=None):
+
+    ds = [1, 2, 3]
+    size = len(training_data) * 3
+    k_v = np.zeros(size, )
+
+    if (hyps_mask is not None):
+        for m_index in range(size):
+            x_2 = training_data[int(math.floor(m_index / 3))]
+            d_2 = ds[m_index % 3]
+            k_v[m_index] = kernel(x, x_2, d_1, d_2,
+                                  hyps, cutoffs,
+                                  hyps_mask=hyps_mask)
+
+    else:
+        for m_index in range(size):
+            x_2 = training_data[int(math.floor(m_index / 3))]
+            d_2 = ds[m_index % 3]
+            k_v[m_index] = kernel(x, x_2, d_1, d_2,
+                                  hyps, cutoffs)
+    return k_v
+
+
+def en_kern_vec(training_data, x: AtomicEnvironment,
+                energy_force_kernel, hyps, cutoffs):
+    """Compute the vector of energy/force kernels between an atomic \
+ronment and the environments in the training set."""
+
+    ds = [1, 2, 3]
+    size = len(training_data) * 3
+    k_v = np.zeros(size, )
+
+    for m_index in range(size):
+        x_2 = training_data[int(math.floor(m_index / 3))]
+        d_2 = ds[m_index % 3]
+        k_v[m_index] = energy_force_kernel(x_2, x, d_2,
+                                           hyps, cutoffs)
+
+    return k_v
 
 
 def save_grid(bond_lens, bond_ens_diff, bond_vars_diff, prefix):
@@ -90,15 +212,21 @@ def get_bonds(ctype, etypes, bond_array):
     bond_dirs = []
     for i in range(len(bond_array)):
         bond = bond_array[i]
-        spc = sorted([ctype, etypes[i]])
+        if ctype <= etypes[i]:
+            spc = [ctype, etypes[i]]
+            b_dir = bond[1:]
+        else:
+            spc = [etypes[i], ctype]
+            b_dir = bond[1:]
+
         if spc in exist_species:
             ind = exist_species.index(spc)
             bond_lengths[ind].append([bond[0]])
-            bond_dirs[ind].append(bond[1:])
+            bond_dirs[ind].append(b_dir)
         else:
             exist_species.append(spc)
             bond_lengths.append([[bond[0]]])
-            bond_dirs.append([bond[1:]])
+            bond_dirs.append([b_dir])
     return exist_species, bond_lengths, bond_dirs
 
 
@@ -165,6 +293,56 @@ def get_triplets(ctype, etypes, bond_array, cross_bond_inds,
                     k = exist_species.index(spcs)
                     tris[k].append(triplet)
                     tri_dir[k].append(coord)
+
+    return exist_species, tris, tri_dir
+
+@njit
+def get_triplets_en(ctype, etypes, bond_array, cross_bond_inds,
+                    cross_bond_dists, triplets):
+    exist_species = []
+    tris = []
+    tri_dir = []
+
+    for m in range(bond_array.shape[0]):
+        r1 = bond_array[m, 0]
+        c1 = bond_array[m, 1:]
+        spc1 = etypes[m]
+
+        for n in range(triplets[m]):
+            ind1 = cross_bond_inds[m, m+n+1]
+            r2 = bond_array[ind1, 0]
+            c2 = bond_array[ind1, 1:]
+            c12 = np.sum(c1*c2)
+            r12 = np.sqrt(r1**2 + r2**2 - 2*r1*r2*c12)
+
+            spc2 = etypes[ind1]
+
+#            if spc1 == spc2:
+#                spcs_list = [[ctype, spc1, spc2], [ctype, spc1, spc2]]
+#            elif ctype == spc1: # spc1 != spc2
+#                spcs_list = [[ctype, spc1, spc2], [spc2, ctype, spc1]]
+#            elif ctype == spc2: # spc1 != spc2
+#                spcs_list = [[spc1, spc2, ctype], [spc2, ctype, spc1]]
+#            else: # all different
+#                spcs_list = [[ctype, spc1, spc2], [ctype, spc2, spc1]]
+
+            if spc1 <= spc2:
+                spcs = [ctype, spc1, spc2]
+                triplet = array([r1, r2, r12])
+                coord = [c1, c2]
+            else:
+                spcs = [ctype, spc2, spc1]
+                triplet = array([r2, r1, r12])
+                coord = [c2, c1]
+
+            if spcs not in exist_species:
+                exist_species.append(spcs)
+                tris.append([triplet])
+                tri_dir.append([coord])
+            else:
+                k = exist_species.index(spcs)
+                tris[k].append(triplet)
+                tri_dir[k].append(coord)
 
     return exist_species, tris, tri_dir
 

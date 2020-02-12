@@ -48,7 +48,7 @@ class OTFLogger(MDLogger):
         self.logfile.write('\nnumber of hyperparameters: '+str(len(gp_model.hyps)))
         self.logfile.write('\nhyperparameters: '+str(gp_model.hyps))
         self.logfile.write('\nhyperparameter optimization algorithm: ' +
-                           gp_model.algo)
+                           gp_model.opt_algorithm)
         self.logfile.write('\nuncertainty tolerance: {} times noise'.format(
                            str(self.dyn.std_tolerance)))
         self.logfile.write('\ntimestep (ps): {}'.format(self.dyn.dt/1000))

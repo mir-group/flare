@@ -1,6 +1,7 @@
 import time
 import math
 import pickle
+import inspect
 import json
 
 import numpy as np
@@ -69,26 +70,15 @@ class GaussianProcess:
                  multihyps: bool = False, hyps_mask: dict = None):
         """Initialize GP parameters and training data."""
 
-        self.kernel = kernel
-        self.kernel_grad = kernel_grad
-        self.energy_kernel = energy_kernel
-        self.energy_force_kernel = energy_force_kernel
-        self.kernel_name = kernel.__name__
-        self.hyps = hyps
-        self.hyp_labels = hyp_labels
-        self.cutoffs = cutoffs
-        self.algo = opt_algorithm
-        self.bounds = None
+        # get all arguments as attributes
+        arg_dict = inspect.getargvalues(inspect.currentframe())[3]
+        del arg_dict['self']
+        self.__dict__.update(arg_dict)
 
+        self.kernel_name = kernel.__name__
         self.training_data = []
         self.training_labels = []
         self.training_labels_np = np.empty(0, )
-        self.maxiter = maxiter
-        self.par = par
-        self.per_atom_par = per_atom_par
-        self.n_cpus = n_cpus
-        self.nsample = nsample
-        self.output = output
 
         # Parameters set during training
         self.ky_mat = None
@@ -245,7 +235,7 @@ class GaussianProcess:
         objective_func = get_neg_like_grad
         res = None
 
-        if self.algo == 'L-BFGS-B':
+        if self.opt_algorithm == 'L-BFGS-B':
 
             # bound signal noise below to avoid overfitting
             if (self.bounds is None):
@@ -264,7 +254,7 @@ class GaussianProcess:
             except:
                 print("Warning! Algorithm for L-BFGS-B failed. Changing to "
                       "BFGS for remainder of run.")
-                self.algo = 'BFGS'
+                self.opt_algorithm = 'BFGS'
 
         if custom_bounds is not None:
             res = minimize(get_neg_like_grad, x_0, args,
@@ -273,13 +263,13 @@ class GaussianProcess:
                                     'maxls': line_steps,
                                     'maxiter': self.maxiter})
 
-        elif self.algo == 'BFGS':
+        elif self.opt_algorithm == 'BFGS':
             res = minimize(get_neg_like_grad, x_0, args,
                            method='BFGS', jac=True,
                            options={'disp': False, 'gtol': grad_tol,
                                     'maxiter': self.maxiter})
 
-        elif self.algo == 'nelder-mead':
+        elif self.opt_algorithm == 'nelder-mead':
             res = minimize(get_neg_likelihood, x_0, args,
                            method='nelder-mead',
                            options={'disp': False,
@@ -611,11 +601,12 @@ class GaussianProcess:
                                  per_atom_par=dictionary.get('per_atom_par',True),
                                  n_cpus=dictionary.get('n_cpus') or dictionary.get('no_cpus'),
                                  maxiter=dictionary['maxiter'],
-                                 opt_algorithm=dictionary['algo'],
+                                 opt_algorithm=dictionary['opt_algorithm'],
                                  multihyps=multihyps,
                                  hyps_mask=dictionary.get('hyps_mask',None)
                                  )
 
+        # Save time by attempting to load in computed attributes
         new_gp.training_data = [AtomicEnvironment.from_dict(env) for env in
                                 dictionary['training_data']]
         new_gp.training_labels = deepcopy(dictionary['training_labels'])
@@ -627,8 +618,12 @@ class GaussianProcess:
 
         # Save time by attempting to load in computed attributes
         if (len(new_gp.training_data)>5000):
-            new_gp.ky_mat = np.load(dictionary['ky_mat_file'])
-            new_gp.compute_matrices()
+            if ('ky_mat_file' in dictionary):
+                new_gp.ky_mat = np.load(dictionary['ky_mat_file'])
+                new_gp.compute_matrices()
+            else:
+                # TO DO, recompute the ky
+                pass
         else:
             new_gp.ky_mat_inv = np.array(dictionary.get('ky_mat_inv', None))
             new_gp.ky_mat = np.array(dictionary.get('ky_mat', None))

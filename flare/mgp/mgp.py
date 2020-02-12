@@ -228,7 +228,7 @@ class MappedGaussianProcess:
         f = f2 + f3
         vir = vir2 + vir3
         v = kern2 + kern3 - np.sum((v2 + v3)**2, axis=0)
-        return f, v, vir
+        return f, v, vir, 0
 
     def get_2body_comp(self, atom_env, sig, ls, r_cut):
         '''
@@ -583,7 +583,7 @@ class Map3body:
         '''
         generate grid for each angle, used to parallelize grid generation
         '''
-        a12, cos_angle12, bond_lengths, GP, env12, update = params
+        a12, cos_12, bond_lengths, GP, env12, update = params
         nop = self.grid_num[0]
         bond_means = np.zeros([nop, nop])
         bond_vars = np.zeros([nop, nop, len(GP.alpha)])
@@ -605,8 +605,8 @@ class Map3body:
         for b1, r1 in enumerate(bond_lengths):
             r1 = bond_lengths[b1]
             for b2, r2 in enumerate(bond_lengths):
-                x2 = r2 * cos_angle12
-                y2 = np.sqrt(r2**2 - x2**2)
+                x2 = r2 * cos_12
+                y2 = r2 * np.sqrt(1 - cos_12**2)
                 r12 = np.linalg.norm(np.array([x2-r1, y2, 0]))
 
                 env12.bond_array_3 = np.array([[r1, 1, 0, 0], [r2, 0, 0, 0]])

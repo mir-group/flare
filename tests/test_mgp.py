@@ -51,8 +51,8 @@ def params():
                                 [three_cut, three_cut,  1]],
                    'grid_num_2': grid_num_2,
                    'grid_num_3': [grid_num_3, grid_num_3, grid_num_3],
-                   'svd_rank_2': 64,
-                   'svd_rank_3': 90,
+                   'svd_rank_2': 64, #np.min((grid_num_2, 3*train_size)),
+                   'svd_rank_3': 90, #np.min((grid_num_3**3, 3*train_size)),
                    'bodies': [2, 3],
                    'load_grid': None,
                    'update': False}

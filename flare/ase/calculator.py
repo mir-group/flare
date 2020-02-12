@@ -97,32 +97,28 @@ class FLARE_Calculator(Calculator):
                                atoms.get_atomic_numbers(),
                                atoms.positions)
 
-        forces = np.zeros((nat, 3))
-        stress = np.zeros((nat, 6))
-        stds = np.zeros((nat, 3))
+        self.results['forces'] = np.zeros((nat, 3))
+        self.results['stresses'] = np.zeros((nat, 6))
+        self.results['stds'] = np.zeros((nat, 3))
+        self.results['local_energies'] = np.zeros(nat)
         for n in range(nat):
             chemenv = AtomicEnvironment(struc_curr, n,
                                         self.mgp_model.cutoffs)
-            f, v, vir = self.mgp_model.predict(chemenv, mean_only=False)
-            forces[n] = f
-            stress[n] = vir
-            stds[n] = np.sqrt(np.absolute(v))
+            f, v, vir, e = self.mgp_model.predict(chemenv, mean_only=False)
+            self.results['forces'][n] = f
+            self.results['stresses'][n] = vir
+            self.results['stds'][n] = np.sqrt(np.absolute(v))
+            self.results['local_energies'][n] = e
 
-        self.results['forces'] = forces
-        self.results['stds'] = stds
-        self.results['stresses'] = stress
-        self.results['stress'] = np.sum(stress, axis=0)
-
-        # TODO: implement energy mapping
-        self.results['local_energies'] = np.zeros(forces.shape)
-        self.results['energy'] = 0
+        self.results['stress'] = np.sum(self.results['stresses'], axis=0)
+        self.results['energy'] = np.sum(self.results['local_energies'])
 
         atoms.get_uncertainties = self.get_uncertainties
-        return forces
 
 
     def calculate_mgp_par(self, atoms):
-        return self.calculate_mgp_serial(atoms)
+        # TODO: to be done
+        self.calculate_mgp_serial(atoms)
 
 
     def calculation_required(self, atoms, quantities):

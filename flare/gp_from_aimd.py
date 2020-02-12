@@ -206,7 +206,7 @@ class TrajectoryTrainer:
         self.output.write_header(self.gp.cutoffs,
                                  self.gp.kernel_name,
                                  self.gp.hyps,
-                                 self.gp.algo,
+                                 self.gp.opt_algorithm,
                                  dt=0,
                                  Nsteps=len(self.frames),
                                  structure=self.frames[0],
