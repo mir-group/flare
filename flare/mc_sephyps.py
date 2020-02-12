@@ -38,8 +38,9 @@ For selective optimization. one can define 'map', 'train_noise' and 'original'
 to identify which element to be optimized. All three have to be defined.
 train_noise = Bool (True/False), whether the noise parameter can be optimized
 original: np.array. Full set of initial values for hyperparmeters
-map: np.array, array to map the hyper parameter back to the full set.               map[i]=j means the i-th element in hyps should be
-               the j-th element in hyps_mask['original']
+map: np.array, array to map the hyper parameter back to the full set.               
+map[i]=j means the i-th element in hyps should be the j-th element in 
+hyps_mask['original']
                
                
 For example, the full set of hyper parmeters 
@@ -53,12 +54,14 @@ Have a hyps list which contain those which you want to vary. Below,
 ls21, ls22 etc... represent floating-point variables which correspond
 to the initial guesses / static values.
 You would then pass in:
+
 hyps = [ls21, sig21]
 hyps_mask = { ..., 'train_noise': False, 'map':[0, 2],
                    'original': [ls21, ls22, sig21, sig22, ls3, sg3, noise]}
 the hyps argument should only contain the values that need to be optimized.
 If you want noise to be trained as well include noise as the
 final hyperparameter value in hyps.
+
 """
 
 

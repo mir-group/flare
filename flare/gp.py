@@ -51,7 +51,7 @@ class GaussianProcess:
             hyperparameter optimization algorithm. Defaults to 10.
         par (bool, optional): If True, the covariance matrix K of the GP is
             computed in parallel. Defaults to False.
-        ncpus (int, optional): Number of cpus used for parallel
+        n_cpus (int, optional): Number of cpus used for parallel
             calculations. Defaults to 1.
         output (Output, optional): Output object used to dump hyperparameters
             during optimization. Defaults to None.
@@ -66,7 +66,7 @@ class GaussianProcess:
                  opt_algorithm: str = 'L-BFGS-B',
                  maxiter: int = 10, par: bool = False, 
                  per_atom_par: bool = True,
-                 ncpus: int = None, nsample: int = 100,
+                 n_cpus: int = 1, nsample: int = 100,
                  output: Output = None,
                  multihyps: bool = False, hyps_mask: dict = None):
         """Initialize GP parameters and training data."""
@@ -89,7 +89,7 @@ class GaussianProcess:
         self.maxiter = maxiter
         self.par = par
         self.per_atom_par = per_atom_par
-        self.ncpus = ncpus
+        self.n_cpus = n_cpus
         self.nsample = nsample
         self.output = output
 
@@ -245,7 +245,7 @@ class GaussianProcess:
         args = (self.training_data, self.training_labels_np,
                 self.kernel_grad, output, 
                 self.cutoffs, self.hyps_mask,
-                self.ncpus, self.nsample)
+                self.n_cpus, self.nsample)
         objective_func = get_neg_like_grad
         res = None
 
@@ -323,16 +323,16 @@ class GaussianProcess:
 
         # Kernel vector allows for evaluation of At. Env.
         if (self.par and not self.per_atom_par):
-            ncpus = self.ncpus
+            n_cpus = self.n_cpus
         else:
-            ncpus = 1
+            n_cpus = 1
 
         k_v = get_kernel_vector_par(self.training_data, self.kernel,
                                     x_t, d,
                                     self.hyps,
                                     cutoffs=self.cutoffs,
                                     hyps_mask=self.hyps_mask,
-                                    ncpus=self.ncpus,
+                                    n_cpus=self.n_cpus,
                                     nsample=self.nsample)
 
         # Guarantee that alpha is up to date with training set
@@ -479,7 +479,7 @@ class GaussianProcess:
                                 self.kernel,
                                 cutoffs=self.cutoffs,
                                 hyps_mask=self.hyps_mask,
-                                ncpus=self.ncpus,
+                                n_cpus=self.n_cpus,
                                 nsample=self.nsample)
 
         l_mat = np.linalg.cholesky(ky_mat)
@@ -506,16 +506,16 @@ class GaussianProcess:
             return
 
         if (self.par and not self.per_atom_par):
-            ncpus=self.ncpus
+            n_cpus=self.n_cpus
         else:
-            ncpus=1
+            n_cpus=1
 
         ky_mat = get_ky_mat_update_par(self.ky_mat, self.hyps,
                                        self.training_data,
                                        self.kernel,
                                        cutoffs=self.cutoffs,
                                        hyps_mask=self.hyps_mask,
-                                       ncpus=ncpus,
+                                       n_cpus=n_cpus,
                                        nsample=self.nsample)
 
         l_mat = np.linalg.cholesky(ky_mat)
@@ -585,7 +585,7 @@ class GaussianProcess:
         """Create GP object from dictionary representation."""
 
         if 'mc' in dictionary['kernel_name']:
-            if (dictionary['multihyps'] is False):
+            if (dictionary.get('multihyps',False) is False):
                 force_kernel, grad = \
                     str_to_mc_kernel(dictionary['kernel_name'], include_grad=True)
             else:
@@ -615,11 +615,13 @@ class GaussianProcess:
                                  hyps=np.array(dictionary['hyps']),
                                  hyp_labels=dictionary['hyp_labels'],
                                  par=dictionary['par'],
-                                 ncpus=dictionary['ncpus'],
+                                 per_atom_par=dictionary.get('per_atom_par',True),
+                                 n_cpus=dictionary.get('n_cpus') or dictionary.get('no_cpus'),
                                  maxiter=dictionary['maxiter'],
                                  opt_algorithm=dictionary['algo'],
-                                 multihyps=dictionary['multihyps'],
-                                 hyps_mask=dictionary['hyps_mask'])
+                                 multihyps=dictionary.get('multihyps',False),
+                                 hyps_mask=dictionary.get('hyps_mask',None)
+                                 )
 
         new_gp.training_data = [AtomicEnvironment.from_dict(env) for env in
                                 dictionary['training_data']]
@@ -688,3 +690,28 @@ class GaussianProcess:
         if (len(self.training_data)>5000):
             self.ky_mat = np.load(f"{name}_ky_mat.npy")
             self.compute_matrices()
+
+
+    @staticmethod
+    def from_file(filename: str, format: str=''):
+        """
+        One-line convenience method to load a GP from a file stored using
+        write_file
+
+        Args:
+            filename (str): path to GP model
+            format (str): json or pickle if format is not in filename
+        :return:
+        """
+
+        if '.json' in filename or 'json' in format:
+            with open(filename, 'r') as f:
+                return GaussianProcess.from_dict(json.loads(f.readline()))
+
+        elif '.pickle' in filename or 'pickle' in format:
+            with open(filename, 'rb') as f:
+                return pickle.load(f)
+
+        else:
+            raise ValueError("Warning: Format unspecified or file is not "
+                             ".json or .pickle format.")

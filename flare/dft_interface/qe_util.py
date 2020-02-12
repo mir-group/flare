@@ -18,15 +18,15 @@ from typing import List
 
 name = "QE"
 
-def run_dft_par(dft_input, structure, dft_loc, ncpus=1, dft_out='pwscf.out',
+def run_dft_par(dft_input, structure, dft_loc, n_cpus=1, dft_out='pwscf.out',
                 npool=None, mpi="mpi", **dft_kwargs):
     """run DFT calculation with given input template
-    and atomic configurations. if ncpus == 1, it executes serial run.
+    and atomic configurations. if n_cpus == 1, it executes serial run.
 
     :param dft_input: input template file name
     :param structure: atomic configuration
     :param dft_loc:   relative/absolute executable of the DFT code
-    :param ncpus:   # of CPU for mpi
+    :param n_cpus:   # of CPU for mpi
     :param dft_out:   output file name
     :param npool:     not used
     :param mpi:       not used
@@ -43,11 +43,11 @@ def run_dft_par(dft_input, structure, dft_loc, ncpus=1, dft_out='pwscf.out',
         dft_command = \
             f'{dft_loc} -nk {npool} -i {newfilename} > {dft_out}'
 
-    if (ncpus > 1):
+    if (n_cpus > 1):
         if (mpi == "mpi"):
-            dft_command = f'mpirun -np {ncpus} {dft_command}'
+            dft_command = f'mpirun -np {n_cpus} {dft_command}'
         else:
-            dft_command = f'srun -n {ncpus} --mpi=pmi2 {dft_command}'
+            dft_command = f'srun -n {n_cpus} --mpi=pmi2 {dft_command}'
 
     call(dft_command, shell=True)
     os.remove(newfilename)
@@ -55,16 +55,16 @@ def run_dft_par(dft_input, structure, dft_loc, ncpus=1, dft_out='pwscf.out',
     return parse_dft_forces(dft_out)
 
 
-def run_dft_en_par(dft_input, structure, dft_loc, ncpus):
+def run_dft_en_par(dft_input, structure, dft_loc, n_cpus):
     """run DFT calculation with given input template
     and atomic configurations. This function is not used atm
 
-    if ncpus == 1, it executes serial run.
+    if n_cpus == 1, it executes serial run.
 
     :param dft_input: input template file name
     :param structure: atomic configuration
     :param dft_loc:   relative/absolute executable of the DFT code
-    :param ncpus:   # of CPU for mpi
+    :param n_cpus:   # of CPU for mpi
     :param dft_out:   output file name
     :param npool:     not used
     :param mpi:       not used
@@ -75,7 +75,7 @@ def run_dft_en_par(dft_input, structure, dft_loc, ncpus):
     run_qe_path = dft_input
     edit_dft_input_positions(run_qe_path, structure)
     qe_command = \
-        'mpirun -np {ncpus} {dft_loc} < {run_qe_path} > pwscf.out'
+        'mpirun -np {n_cpus} {dft_loc} < {run_qe_path} > pwscf.out'
     call(qe_command, shell=True)
 
     forces, energy = parse_dft_forces_and_energy('pwscf.out')

@@ -10,7 +10,7 @@ from typing import List, Callable
 #######################################
 
 def get_ky_mat_par(hyps: np.ndarray, training_data: list,
-                   kernel: Callable, cutoffs=None, ncpus=None, nsample=100):
+                   kernel: Callable, cutoffs=None, n_cpus=None, nsample=100):
     """
     Parallelized version of function which computes ky matrix
 
@@ -18,14 +18,14 @@ def get_ky_mat_par(hyps: np.ndarray, training_data: list,
     :param training_data: list of atomic envirionments
     :param kernel: 
     :param cutoffs:
-    :param ncpus: number of cpus to use.
+    :param n_cpus: number of cpus to use.
 
     :return: ky_mat
     """
 
-    if (ncpus is None):
-        ncpus = mp.cpu_count()
-    if (ncpus == 1):
+    if (n_cpus is None):
+        n_cpus = mp.cpu_count()
+    if (n_cpus == 1):
         return get_ky_mat(hyps, training_data,
                           kernel, cutoffs)
 
@@ -37,11 +37,11 @@ def get_ky_mat_par(hyps: np.ndarray, training_data: list,
     size = len(training_data)
     size3 = 3*len(training_data)
     k_mat = np.zeros([size3, size3])
-    with mp.Pool(processes=ncpus) as pool:
+    with mp.Pool(processes=n_cpus) as pool:
         ns = int(math.ceil(size/nsample))
         nproc = ns*(ns+1)//2
-        if (nproc < ncpus):
-            nsample = int(size/int(np.sqrt(ncpus*2)))
+        if (nproc < n_cpus):
+            nsample = int(size/int(np.sqrt(n_cpus*2)))
             ns = int(math.ceil(size/nsample))
 
         block_id = []
@@ -70,7 +70,7 @@ def get_ky_mat_par(hyps: np.ndarray, training_data: list,
                                         bool(s1==s2),
                                         kernel, cutoffs))]
             count += 1
-            if (count >= ncpus*3):
+            if (count >= n_cpus*3):
                 for iget in range(base, count+base):
                     s1, e1, s2, e2 = block_id[iget]
                     k_mat_block = k_mat_slice[iget-base].get()
@@ -147,7 +147,7 @@ def get_ky_mat_pack(hyps: np.ndarray, training_data1: list,
 
 
 def get_ky_and_hyp_par(hyps: np.ndarray, training_data: list,
-                       kernel_grad: Callable, cutoffs=None, ncpus=None, nsample=100):
+                       kernel_grad: Callable, cutoffs=None, n_cpus=None, nsample=100):
     """
     Parallelized version of function which computes ky matrix
     and its derivative to hyper-parameter
@@ -158,14 +158,14 @@ def get_ky_and_hyp_par(hyps: np.ndarray, training_data: list,
     :param kernel_grad: function object of the kernel gradient
     :param cutoffs: The cutoff values used for the atomic environments
     :type cutoffs: list of 2 float numbers
-    :param ncpus: number of cpus to use.
+    :param n_cpus: number of cpus to use.
 
     :return: hyp_mat, ky_mat
     """
 
-    if (ncpus is None):
-        ncpus = mp.cpu_count()
-    if (ncpus == 1):
+    if (n_cpus is None):
+        n_cpus = mp.cpu_count()
+    if (n_cpus == 1):
         return get_ky_and_hyp(hyps, training_data,
                               kernel_grad, cutoffs)
 
@@ -180,11 +180,11 @@ def get_ky_and_hyp_par(hyps: np.ndarray, training_data: list,
     k_mat = np.zeros([size3, size3])
     hyp_mat = np.zeros([number_of_hyps, size3, size3])
 
-    with mp.Pool(processes=ncpus) as pool:
+    with mp.Pool(processes=n_cpus) as pool:
         ns = int(math.ceil(size/nsample))
         nproc = ns*(ns+1)//2
-        if (nproc < ncpus):
-            nsample = int(size/int(np.sqrt(ncpus*2)))
+        if (nproc < n_cpus):
+            nsample = int(size/int(np.sqrt(n_cpus*2)))
             ns = int(math.ceil(size/nsample))
 
         block_id = []
@@ -212,7 +212,7 @@ def get_ky_and_hyp_par(hyps: np.ndarray, training_data: list,
                                         hyps, t1, t2,
                                         bool(s1==s2), kernel_grad, cutoffs))]
             count += 1
-            if (count >= ncpus*3):
+            if (count >= n_cpus*3):
                 for iget in range(base, count+base):
                     s1, e1, s2, e2 = block_id[iget]
                     h_mat_block, k_mat_block = mat_slice[iget-base].get()
@@ -402,7 +402,7 @@ def get_ky_and_hyp(hyps: np.ndarray, training_data: list,
     return hyp_mat, ky_mat
 
 def get_ky_mat_update_par(ky_mat_old, hyps: np.ndarray, training_data: list,
-                      kernel: Callable, cutoffs=None, ncpus=None, nsample=100):
+                      kernel: Callable, cutoffs=None, n_cpus=None, nsample=100):
     '''
     used for update_L_alpha, especially for parallelization
     parallelized for added atoms, for example, if add 10 atoms to the training
@@ -416,9 +416,9 @@ def get_ky_mat_update_par(ky_mat_old, hyps: np.ndarray, training_data: list,
     :return: updated covariance matrix
     '''
 
-    if (ncpus is None):
-        ncpus = mp.cpu_count()
-    if (ncpus == 1):
+    if (n_cpus is None):
+        n_cpus = mp.cpu_count()
+    if (n_cpus == 1):
         return get_ky_mat_update(ky_mat_old, hyps, training_data,
                                  kernel, cutoffs)
 
@@ -432,12 +432,12 @@ def get_ky_mat_update_par(ky_mat_old, hyps: np.ndarray, training_data: list,
     size3 = 3*len(training_data)
     ky_mat = np.zeros([size3, size3])
     ky_mat[:old_size3, :old_size3] = ky_mat_old
-    with mp.Pool(processes=ncpus) as pool:
+    with mp.Pool(processes=n_cpus) as pool:
 
         ns = int(math.ceil(size/nsample))
         nproc = (size3-old_size3)*(ns+old_size3)//2
-        if (nproc < ncpus):
-            nsample = int(size/int(np.sqrt(ncpus*2)))
+        if (nproc < n_cpus):
+            nsample = int(size/int(np.sqrt(n_cpus*2)))
             ns = int(math.ceil(size/nsample))
 
         ns_new = int(math.ceil((size-old_size)/nsample))
@@ -478,7 +478,7 @@ def get_ky_mat_update_par(ky_mat_old, hyps: np.ndarray, training_data: list,
                                         bool(s1==s2),
                                         kernel, cutoffs))]
             count += 1
-            if (count >= ncpus*3):
+            if (count >= n_cpus*3):
                 for iget in range(base, count+base):
                     s1, e1, s2, e2 = block_id[iget]
                     k_mat_block = k_mat_slice[iget-base].get()
@@ -630,7 +630,7 @@ def get_neg_likelihood(hyps: np.ndarray, training_data: list,
                        training_labels_np: np.ndarray,
                        kernel: Callable, output = None,
                        cutoffs=None,
-                       ncpus=None, nsample=100):
+                       n_cpus=None, nsample=100):
     """compute the negative log likelihood
 
     :param hyps: list of hyper-parameters
@@ -645,13 +645,13 @@ def get_neg_likelihood(hyps: np.ndarray, training_data: list,
     :param output: Output object for dumping every hyper-parameter
                    sets computed
     :type output: class Output
-    :param ncpus: number of cpus to use.
+    :param n_cpus: number of cpus to use.
 
     :return: float
     """
 
     ky_mat = get_ky_mat_par(hyps, training_data,
-                            kernel, cutoffs, ncpus, nsample)
+                            kernel, cutoffs, n_cpus, nsample)
 
     like = get_like_from_ky_mat(ky_mat, training_labels_np)
 
@@ -664,7 +664,7 @@ def get_neg_likelihood(hyps: np.ndarray, training_data: list,
 def get_neg_like_grad(hyps: np.ndarray, training_data: list,
                       training_labels_np: np.ndarray,
                       kernel_grad: Callable, cutoffs=None,
-                      output = None, ncpus=None, nsample=100):
+                      output = None, n_cpus=None, nsample=100):
     """compute the log likelihood and its gradients
 
     :param hyps: list of hyper-parameters
@@ -679,7 +679,7 @@ def get_neg_like_grad(hyps: np.ndarray, training_data: list,
     :param output: Output object for dumping every hyper-parameter
                    sets computed
     :type output: class Output
-    :param ncpus: number of cpus to use.
+    :param n_cpus: number of cpus to use.
 
     :return: float, np.array
     """
@@ -687,7 +687,7 @@ def get_neg_like_grad(hyps: np.ndarray, training_data: list,
 
     hyp_mat, ky_mat = \
         get_ky_and_hyp_par(hyps, training_data,
-                           kernel_grad, cutoffs, ncpus, nsample)
+                           kernel_grad, cutoffs, n_cpus, nsample)
 
     like, like_grad = \
         get_like_grad_from_mats(ky_mat, hyp_mat, training_labels_np)
@@ -725,7 +725,7 @@ def get_kernel_vector_unit(training_data, kernel, x,
 
 def get_kernel_vector_par(training_data, kernel, x,
                           d_1, hyps, cutoffs,
-                          ncpus=None, nsample=100):
+                          n_cpus=None, nsample=100):
     """
     Compute kernel vector, comparing input environment to all environments
     in the GP's training set.
@@ -737,17 +737,17 @@ def get_kernel_vector_par(training_data, kernel, x,
     :rtype: np.ndarray
     """
 
-    if (ncpus is None):
-        ncpus = mp.cpu_count()
-    if (ncpus == 1):
+    if (n_cpus is None):
+        n_cpus = mp.cpu_count()
+    if (n_cpus == 1):
         return get_kernel_vector(training_data, kernel,
                                  x, d_1, hyps, cutoffs)
 
     with mp.Pool(processes=processes) as pool:
         size = len(training_data)
         ns = int(math.ceil(size/nsample))
-        if (ns < ncpus):
-            nsample = int(size/int(ncpus))
+        if (ns < n_cpus):
+            nsample = int(size/int(n_cpus))
             ns = int(math.ceil(size/nsample))
         k12_slice = []
         for ibatch in range(ns):
