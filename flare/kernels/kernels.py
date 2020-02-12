@@ -1,4 +1,37 @@
-"""Single element 2-, 3-, and 2+3-body kernels."""
+"""Single element 2-, 3-, and 2+3-body kernels.
+The kernel functions to choose:
+
+* Two body:
+
+    * two_body: force kernel
+    * two_body_en: energy kernel
+    * two_body_grad: gradient of kernel function
+    * two_body_force_en: energy force kernel
+
+* Three body:
+
+    * three_body,
+    * three_body_grad,
+    * three_body_en,
+    * three_body_force_en,
+    
+* Two plus three body:
+
+    * two_plus_three_body,
+    * two_plus_three_body_grad,
+    * two_plus_three_en,
+    * two_plus_three_force_en
+
+**Example:**
+
+>>> gp_model = GaussianProcess(kernel=two_body,
+                               kernel_grad=two_body_grad,
+                               energy_force_kernel=two_body_force_en,
+                               energy_kernel=two_body_en,
+                               <other arguments>)
+"""
+
+
 import numpy as np
 from math import exp
 from flare.env import AtomicEnvironment

@@ -4,7 +4,7 @@ Tutorials
 .. toctree::
    :maxdepth: 3
 
-   al
+   otf_al
    ase
    gpfa
    after_training
