@@ -76,7 +76,6 @@ class MappedGaussianProcess:
         self.bounds_2 = grid_params['bounds_2']
         self.grid_num_3 = grid_params['grid_num_3']
         self.bounds_3 = grid_params['bounds_3']
-        self.bodies = grid_params['bodies']
 
         self.svd_rank_2 = grid_params['svd_rank_2']
         self.svd_rank_3 = grid_params['svd_rank_3']
@@ -117,10 +116,7 @@ class MappedGaussianProcess:
         '''
         for map_2 in self.maps_2:
             map_2.build_map(GP)
-        print('map 2 built')
-
         for map_3 in self.maps_3:
-            print('map 3:', map_3, 'built')
             map_3.build_map(GP)
 
         # write to lammps pair style coefficient file
@@ -295,7 +291,7 @@ class MappedGaussianProcess:
             lengths = np.array(comp_r[i])
             xyzs = np.array(comp_xyz[i])
             map_ind = spcs_list.index(spc)
-            f, vir, v = self.predict_component(lengths, xyzs,
+            f, vir, v = self.predict_component(lengths, xyzs, 
                                 mappings[map_ind], mean_only)
             f_spcs += f
             vir_spcs += vir
@@ -451,10 +447,7 @@ class Map2body:
         nop = self.grid_num
         bond_lengths = np.linspace(self.l_bounds[0], self.u_bounds[0], nop)
         bond_means = np.zeros([nop])
-        if not self.mean_only:
-            bond_vars = np.zeros([nop, len(GP.alpha)])
-        else:
-            bond_vars = None
+        bond_vars = np.zeros([nop, len(GP.alpha)])
         env12 = AtomicEnvironment(self.bond_struc, 0, self.cutoffs)
 
         pool_list = [(i, bond_lengths, GP, env12)
@@ -471,56 +464,6 @@ class Map2body:
         GP.cutoffs = original_cutoffs
         GP.hyps = original_hyps
         GP.kernel = original_kernel
-        with mp.Pool(processes=processes) as pool:
-            # A_list = pool.map(self._GenGrid_inner_most, pool_list)
-            # break it into pieces
-            size = len(GP.training_data)
-            nsample = self.nsample
-            ns = int(math.ceil(size/nsample/processes))*processes
-            nsample = int(math.ceil(size/ns))
-
-            print("prepare the package for parallelization")
-            block_id = []
-            nbatch = 0
-            for ibatch in range(ns):
-                s1 = int(nsample*ibatch)
-                e1 = int(np.min([s1 + nsample, size]))
-                block_id += [(s1, e1)]
-                print("block", ibatch, s1, e1)
-                nbatch += 1
-
-            k12_slice = []
-            k12_v_all = np.zeros([len(bond_lengths), size*3])
-            count = 0
-            base = 0
-            for ibatch in range(nbatch):
-                s, e = block_id[ibatch]
-                k12_slice.append(pool.apply_async(self._GenGrid_inner,
-                                                  args=(GP.training_data[s:e],
-                                                        bond_lengths,
-                                                        env12, kernel_info)))
-                count += 1
-                if (count > processes*2):
-                    for ibase in range(count):
-                        s, e = block_id[ibase+base]
-                        k12_v_all[:, s*3:e*3] = k12_slice[ibase].get()
-                    del k12_slice
-                    k12_slice = []
-                    count = 0
-                    base = ibatch+1
-            if (count > 0):
-               for ibase in range(count):
-                   s, e = block_id[ibase+base]
-                   k12_v_all[:, s*3:e*3] = k12_slice[ibase].get()
-               del k12_slice
-            pool.close()
-            pool.join()
-
-        for b, r in enumerate(bond_lengths):
-            k12_v = k12_v_all[b, :]
-            bond_means[b] = np.matmul(k12_v, GP.alpha)
-            if not self.mean_only:
-                bond_vars[b, :] = solve_triangular(GP.l_mat, k12_v, lower=True)
 
         return bond_means, bond_vars
 
@@ -588,6 +531,7 @@ class Map3body:
 
 
     def GenGrid(self, GP, processes=mp.cpu_count()):
+
         '''
         generate grid data of mean prediction and L^{-1}k* for each triplet
          implemented in a parallelized style
@@ -603,12 +547,8 @@ class Map3body:
         noa = self.grid_num[2]
         bond_lengths = np.linspace(self.l_bounds[0], self.u_bounds[0], nop)
         cos_angles = np.linspace(self.l_bounds[2], self.u_bounds[2], noa)
-
         bond_means = np.zeros([nop, nop, noa])
-        if not self.mean_only:
-            bond_vars = np.zeros([nop, nop, noa, len(GP.alpha)])
-        else:
-            bond_vars = None
+        bond_vars = np.zeros([nop, nop, noa, len(GP.alpha)])
         env12 = AtomicEnvironment(self.bond_struc, 0, self.cutoffs)
 
         pool_list = [(i, cos_angles[i], bond_lengths, GP, env12, self.update)\
@@ -638,141 +578,6 @@ class Map3body:
         return bond_means, bond_vars
 
     def _GenGrid_inner(self, params):
-        with mp.Pool(processes=processes) as pool:
-            if self.update:
-                if self.kv3name in os.listdir():
-                    subprocess.run(['rm', '-rf', self.kv3name])
-                subprocess.run(['mkdir', self.kv3name])
-
-            print("prepare the package for parallelization")
-            size = len(GP.training_data)
-            nsample = self.nsample
-            ns = int(math.ceil(size/nsample/processes))*processes
-            nsample = int(math.ceil(size/ns))
-
-            block_id = []
-            nbatch = 0
-            for ibatch in range(ns):
-                s1 = int(nsample*ibatch)
-                e1 = int(np.min([s1 + nsample, size]))
-                block_id += [(s1, e1)]
-                print("block", ibatch, s1, e1)
-                nbatch += 1
-
-            k12_slice = []
-            print('before for', ns, nsample, time.time())
-            count = 0
-            base = 0
-            k12_v_all = np.zeros([len(bond_lengths), len(bond_lengths), len(angles), size*3])
-            for ibatch in range(nbatch):
-                s, e = block_id[ibatch]
-                k12_slice.append(pool.apply_async(self._GenGrid_inner_most,
-                                                  args=(GP.training_data[s:e],
-                                                        angles, bond_lengths,
-                                                        env12, kernel_info)))
-                print('send', ibatch, ns, s, e, time.time())
-                count += 1
-                if (count > processes*2):
-                    for ibase in range(count):
-                        s, e = block_id[ibase+base]
-                        k12_v_all[:, :, :, s*3:e*3] = k12_slice[ibase].get()
-                    del k12_slice
-                    k12_slice = []
-                    count = 0
-                    base = ibatch+1
-            if (count > 0):
-               for ibase in range(count):
-                   s, e = block_id[ibase+base]
-                   k12_v_all[:, :, :, s*3:e*3] = k12_slice[ibase].get()
-               del k12_slice
-
-            pool.close()
-            pool.join()
-
-        for a12, angle in enumerate(angles):
-            for b1, r1 in enumerate(bond_lengths):
-                for b2, r2 in enumerate(bond_lengths):
-                    k12_v = k12_v_all[b1, b2, a12, :]
-                    bond_means[b1, b2, a12] = np.matmul(k12_v, GP.alpha)
-                    if not self.mean_only:
-                        bond_vars[b1, b2, a12, :] = solve_triangular(GP.l_mat, k12_v, lower=True)
-
-
-        # # ------ save mean and var to file -------
-        # np.save('grid3_mean', bond_means)
-        # np.save('grid3_var', bond_vars)
-
-        return bond_means, bond_vars
-
-    def GenGrid_serial(self, GP):
-        '''
-        generate grid data of mean prediction and L^{-1}k* for each triplet
-         implemented in a parallelized style
-        '''
-        print("running serial version")
-
-        # ------ get 3body kernel info ------
-        kernel_info = get_3bkernel(GP)
-        kernel, cutoffs, hyps, hyps_mask = kernel_info
-
-        # ------ construct grids ------
-        nop = self.grid_num[0]
-        noa = self.grid_num[2]
-        bond_lengths = np.linspace(self.l_bounds[0], self.u_bounds[0], nop)
-        angles = np.linspace(self.l_bounds[2], self.u_bounds[2], noa)
-        bond_means = np.zeros([nop, nop, noa])
-        bond_vars = np.zeros([nop, nop, noa, len(GP.alpha)])
-        env12 = AtomicEnvironment(self.bond_struc, 0, self.cutoffs)
-
-        if self.update:
-            if self.kv3name in os.listdir():
-                subprocess.run(['rm', '-rf', self.kv3name])
-            subprocess.run(['mkdir', self.kv3name])
-
-        size = len(GP.training_data)
-        ds = [1, 2, 3]
-        k_v = np.zeros(3)
-        k12_v_all = np.zeros([len(bond_lengths), len(bond_lengths), len(angles), size*3])
-        for b1, r1 in enumerate(bond_lengths):
-            for b2, r2 in enumerate(bond_lengths):
-                for a12, angle12 in enumerate(angles):
-
-                    x2 = r2 * np.cos(angle12)
-                    y2 = r2 * np.sin(angle12)
-                    r12 = np.linalg.norm(np.array([x2-r1, y2, 0]))
-
-                    env12.bond_array_3 = np.array([[r1, 1, 0, 0], [r2, 0, 0, 0]])
-                    env12.cross_bond_dists = np.array([[0, r12], [r12, 0]])
-
-                    for isample, sample in enumerate(GP.training_data):
-                        if (hyps_mask is not None):
-                            for d in ds:
-                                k_v[d-1] = kernel(env12, sample, 1, d,
-                                                  hyps, cutoffs,
-                                                  hyps_mask=hyps_mask)
-
-                        else:
-                            for d in ds:
-                                k_v[d-1] = kernel(env12, sample, 1, d,
-                                                  hyps, cutoffs)
-
-                        k12_v_all[b1, b2, a12, isample*3:isample*3+3] = k_v
-
-        for b1, r1 in enumerate(bond_lengths):
-            for b2, r2 in enumerate(bond_lengths):
-                for a12, angle in enumerate(angles):
-                    k12_v = k12_v_all[b1, b2, a12, :]
-                    bond_means[b1, b2, a12] = np.matmul(k12_v, GP.alpha)
-                    if not self.mean_only:
-                        bond_vars[b1, b2, a12, :] = solve_triangular(GP.l_mat, k12_v, lower=True)
-
-        # # ------ save mean and var to file -------
-        # np.save('grid3_mean', bond_means)
-        # np.save('grid3_var', bond_vars)
-
-        return bond_means, bond_vars
-
-    def _GenGrid_inner_most(self, training_data, angles, bond_lengths, env12, kernel_info):
 
         '''
         generate grid for each angle, used to parallelize grid generation
