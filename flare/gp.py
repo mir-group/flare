@@ -15,10 +15,10 @@ from flare.env import AtomicEnvironment
 from flare.struc import Structure
 from flare.gp_algebra import get_neg_likelihood, \
                              get_like_from_ky_mat
-from flare.gp_algebra_multi import get_kernel_vector_par
-from flare.gp_algebra_multi import get_ky_mat_par
-from flare.gp_algebra_multi import get_ky_mat_update_par
-from flare.gp_algebra_multi import get_neg_like_grad
+from flare.gp_algebra import get_kernel_vector_par
+from flare.gp_algebra import get_ky_mat_par
+from flare.gp_algebra import get_ky_mat_update_par
+from flare.gp_algebra import get_neg_like_grad
 from flare.kernels.utils import str_to_kernels
 from flare.util import NumpyEncoder
 from flare.output import Output
