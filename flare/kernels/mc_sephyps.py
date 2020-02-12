@@ -2,7 +2,7 @@ import numpy as np
 from numba import njit
 from math import exp
 import flare.cutoffs as cf
-from flare.kernels import force_helper, grad_constants, grad_helper, \
+from flare.kernels.kernels import force_helper, grad_constants, grad_helper, \
     force_energy_helper, three_body_en_helper, three_body_helper_1, \
     three_body_helper_2, three_body_grad_helper_1, three_body_grad_helper_2
 
@@ -38,19 +38,19 @@ For selective optimization. one can define 'map', 'train_noise' and 'original'
 to identify which element to be optimized. All three have to be defined.
 train_noise = Bool (True/False), whether the noise parameter can be optimized
 original: np.array. Full set of initial values for hyperparmeters
-map: np.array, array to map the hyper parameter back to the full set.               
-map[i]=j means the i-th element in hyps should be the j-th element in 
+map: np.array, array to map the hyper parameter back to the full set.
+map[i]=j means the i-th element in hyps should be the j-th element in
 hyps_mask['original']
-               
-               
-For example, the full set of hyper parmeters 
+
+
+For example, the full set of hyper parmeters
 may include [ls21, ls22, sig21, sig22, ls3
-sg3, noise] but suppose you wanted only the set 21 optimized. 
+sg3, noise] but suppose you wanted only the set 21 optimized.
 The full set of hyperparameters is defined in 'original'; include all those
 you want to leave static, and set initial guesses for those you want to vary.
 Have the 'map' list contain the indices of the hyperparameters in 'original'
 that correspond to the hyperparameters you want to vary.
-Have a hyps list which contain those which you want to vary. Below, 
+Have a hyps list which contain those which you want to vary. Below,
 ls21, ls22 etc... represent floating-point variables which correspond
 to the initial guesses / static values.
 You would then pass in:

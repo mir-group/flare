@@ -7,7 +7,7 @@ import sys
 import os
 from flare.env import AtomicEnvironment
 import flare.cutoffs as cf
-from flare.kernels import force_helper, grad_constants, grad_helper, \
+from flare.kernels.kernels import force_helper, grad_constants, grad_helper, \
     force_energy_helper, three_body_en_helper, three_body_helper_1, \
     three_body_helper_2, three_body_grad_helper_1, three_body_grad_helper_2
 from typing import Callable

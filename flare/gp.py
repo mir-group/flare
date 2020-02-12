@@ -19,9 +19,7 @@ from flare.gp_algebra_multi import get_kernel_vector_par
 from flare.gp_algebra_multi import get_ky_mat_par
 from flare.gp_algebra_multi import get_ky_mat_update_par
 from flare.gp_algebra_multi import get_neg_like_grad
-from flare.kernels import str_to_kernel
-from flare.mc_simple import str_to_mc_kernel
-from flare.mc_sephyps import str_to_mc_kernel as str_to_mc_sephyps_kernel
+from flare.kernels.utils import str_to_kernels
 import flare.cutoffs as cf
 from flare.util import NumpyEncoder
 from flare.output import Output
@@ -64,7 +62,7 @@ class GaussianProcess:
                  energy_force_kernel: Callable = None,
                  energy_kernel: Callable = None,
                  opt_algorithm: str = 'L-BFGS-B',
-                 maxiter: int = 10, par: bool = False, 
+                 maxiter: int = 10, par: bool = False,
                  per_atom_par: bool = True,
                  n_cpus: int = 1, nsample: int = 100,
                  output: Output = None,
@@ -243,7 +241,7 @@ class GaussianProcess:
         x_0 = self.hyps
 
         args = (self.training_data, self.training_labels_np,
-                self.kernel_grad, output, 
+                self.kernel_grad, output,
                 self.cutoffs, self.hyps_mask,
                 self.n_cpus, self.nsample)
         objective_func = get_neg_like_grad
@@ -584,26 +582,22 @@ class GaussianProcess:
     def from_dict(dictionary):
         """Create GP object from dictionary representation."""
 
-        if 'mc' in dictionary['kernel_name']:
-            if (dictionary.get('multihyps',False) is False):
-                force_kernel, grad = \
-                    str_to_mc_kernel(dictionary['kernel_name'], include_grad=True)
-            else:
-                force_kernel, grad = \
-                    str_to_mc_sephyps_kernel(dictionary['kernel_name'],
-                            include_grad=True)
-        else:
-            force_kernel, grad = str_to_kernel(dictionary['kernel_name'],
-                                               include_grad=True)
+        multihyps = dictionary.get('multihyps', False)
+
+        force_kernel, grad = str_to_kernels(dictionary['kernel_name'],
+                                            multihyps,
+                                            include_grad=True)
 
         if dictionary['energy_kernel'] is not None:
-            energy_kernel = str_to_kernel(dictionary['energy_kernel'])
+            energy_kernel = str_to_kernel(dictionary['energy_kernel'],
+                                          multihyps)
         else:
             energy_kernel = None
 
         if dictionary['energy_force_kernel'] is not None:
             energy_force_kernel = \
-                str_to_kernel(dictionary['energy_force_kernel'])
+                str_to_kernel(dictionary['energy_force_kernel'],
+                              multihyps)
         else:
             energy_force_kernel = None
 
@@ -619,7 +613,7 @@ class GaussianProcess:
                                  n_cpus=dictionary.get('n_cpus') or dictionary.get('no_cpus'),
                                  maxiter=dictionary['maxiter'],
                                  opt_algorithm=dictionary['algo'],
-                                 multihyps=dictionary.get('multihyps',False),
+                                 multihyps=multihyps,
                                  hyps_mask=dictionary.get('hyps_mask',None)
                                  )
 
@@ -659,7 +653,7 @@ class GaussianProcess:
     def write_model(self, name: str, format: str = 'json'):
         """
         Write model in a variety of formats to a file for later re-use.
-
+multihyps,
         Args:
             name (str): Output name.
             format (str): Output format.
