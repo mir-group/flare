@@ -324,7 +324,7 @@ Eigen::VectorXd ThreeBodyKernel :: env_struc(const LocalEnvironment & env1,
             fi3 = rcut_vals_i3[0];
             fi = fi1 * fi2 * fi3;
 
-            for (int n = 0; n < env2.three_body_indices.size(); n ++){
+            for (int n = 0; n < env2.cross_bond_dists.size(); n ++){
                 j1 = env2.three_body_indices[n][0];
                 j2 = env2.three_body_indices[n][1];
 
@@ -338,20 +338,20 @@ Eigen::VectorXd ThreeBodyKernel :: env_struc(const LocalEnvironment & env1,
                 xval1 = env2.xs[j1];
                 yval1 = env2.ys[j1];
                 zval1 = env2.zs[j1];
-                xrel1 = xval1 / rj1;
-                yrel1 = yval1 / rj1;
-                zrel1 = zval1 / rj1;
+                xrel1 = env2.xrel[j1];
+                yrel1 = env2.yrel[j1];
+                zrel1 = env2.zrel[j1];
 
                 xval2 = env2.xs[j2];
                 yval2 = env2.ys[j2];
                 zval2 = env2.zs[j2];
-                xrel2 = xval2 / rj2;
-                yrel2 = yval2 / rj2;
-                zrel2 = zval2 / rj2;
+                xrel2 = env2.xrel[j2];
+                yrel2 = env2.yrel[j2];
+                zrel2 = env2.zrel[j2];
 
                 (*cutoff_pointer)(rcut_vals_j1, rj1, cut2, cutoff_hyps);
                 (*cutoff_pointer)(rcut_vals_j2, rj2, cut2, cutoff_hyps);
-                (*cutoff_pointer)(rcut_vals_j3, rj3, cut1, cutoff_hyps);
+                (*cutoff_pointer)(rcut_vals_j3, rj3, cut2, cutoff_hyps);
 
                 fj1 = rcut_vals_j1[0];
                 fdj1 = rcut_vals_j1[1];
@@ -388,7 +388,7 @@ Eigen::VectorXd ThreeBodyKernel :: env_struc(const LocalEnvironment & env1,
                     }
                     if (ei1 == ej2 && ei2 == ej1){
                         update_kernel_vector(kernel_vector, no_elements, i,
-                            vol_inv, r12, r21, r33, fi, fj,
+                            vol_inv, r21, r12, r33, fi, fj,
                             fdjx1, fdjx2, fdjy1, fdjy2, fdjz1, fdjz2,
                             xrel1, xval1, xrel2, xval2, yrel1, yval1, yrel2,
                             yval2, zrel1, zval1, zrel2, zval2);
@@ -398,14 +398,14 @@ Eigen::VectorXd ThreeBodyKernel :: env_struc(const LocalEnvironment & env1,
                 if (c1 == ej1){
                     if (ei1 == ej2 && ei2 == c2){
                         update_kernel_vector(kernel_vector, no_elements, i,
-                            vol_inv, r13, r21, r32, fi, fj,
+                            vol_inv, r21, r32, r13, fi, fj,
                             fdjx1, fdjx2, fdjy1, fdjy2, fdjz1, fdjz2,
                             xrel1, xval1, xrel2, xval2, yrel1, yval1, yrel2,
                             yval2, zrel1, zval1, zrel2, zval2);
                     }
                     if (ei1 == c2 && ei2 == ej2){
                         update_kernel_vector(kernel_vector, no_elements, i,
-                            vol_inv, r11, r23, r32, fi, fj,
+                            vol_inv, r11, r32, r23, fi, fj,
                             fdjx1, fdjx2, fdjy1, fdjy2, fdjz1, fdjz2,
                             xrel1, xval1, xrel2, xval2, yrel1, yval1, yrel2,
                             yval2, zrel1, zval1, zrel2, zval2);
@@ -415,14 +415,14 @@ Eigen::VectorXd ThreeBodyKernel :: env_struc(const LocalEnvironment & env1,
                 if (c1 == ej2){
                     if (ei1 == ej1 && ei2 == c2){
                         update_kernel_vector(kernel_vector, no_elements, i,
-                            vol_inv, r13, r22, r31, fi, fj,
+                            vol_inv, r31, r22, r13, fi, fj,
                             fdjx1, fdjx2, fdjy1, fdjy2, fdjz1, fdjz2,
                             xrel1, xval1, xrel2, xval2, yrel1, yval1, yrel2,
                             yval2, zrel1, zval1, zrel2, zval2);
                     }
                     if (ei1 == c2 && ei2 == ej1){
                         update_kernel_vector(kernel_vector, no_elements, i,
-                            vol_inv, r12, r23, r31, fi, fj,
+                            vol_inv, r31, r12, r23, fi, fj,
                             fdjx1, fdjx2, fdjy1, fdjy2, fdjz1, fdjz2,
                             xrel1, xval1, xrel2, xval2, yrel1, yval1, yrel2,
                             yval2, zrel1, zval1, zrel2, zval2);
@@ -447,34 +447,34 @@ void ThreeBodyKernel :: update_kernel_vector(Eigen::VectorXd & kernel_vector,
 
     double p1 = r11 * r11 + r22 * r22 + r33 * r33;
     double p2 = exp(-p1 * ls1);
-    kernel_vector(0) += exp(-p1 * ls2) * fi * fj / 3;
+    kernel_vector(0) += p2 * fi * fj / 3;
 
     double p3 = p2 * ls2 * fi * fj;
     double p4 = p2 * fi;
-    
+
     double fx1 = p3 * r11 * xrel1 + p4 * fdjx1;
     double fx2 = p3 * r22 * xrel2 + p4 * fdjx2;
-    kernel_vector(1 + 3 * i) -= fx1 + fx2;
+    kernel_vector(1 + 3 * i) += fx1 + fx2;
     kernel_vector(no_elements - 6) -=
-        (fx1 * xval1 + fx2 * xval2) * vol_inv / 3;
+        (fx1 * xval1 + fx2 * xval2) * vol_inv / 2;
     kernel_vector(no_elements - 5) -=
-        (fx1 * yval1 + fx2 * yval2) * vol_inv / 3;
+        (fx1 * yval1 + fx2 * yval2) * vol_inv / 2;
     kernel_vector(no_elements - 4) -=
-        (fx1 * zval1 + fx2 * zval2) * vol_inv / 3;
+        (fx1 * zval1 + fx2 * zval2) * vol_inv / 2;
 
     double fy1 = p3 * r11 * yrel1  + p4 * fdjy1;
     double fy2 = p3 * r22 * yrel2 + p4 * fdjy2;
-    kernel_vector(2 + 3 * i) -= fy1 + fy2;
+    kernel_vector(2 + 3 * i) += fy1 + fy2;
     kernel_vector(no_elements - 3) -=
-        (fy1 * yval1 + fy2 * yval2) * vol_inv / 3;
+        (fy1 * yval1 + fy2 * yval2) * vol_inv / 2;
     kernel_vector(no_elements - 2) -=
-        (fy1 * zval1 + fy2 * zval2) * vol_inv / 3;
+        (fy1 * zval1 + fy2 * zval2) * vol_inv / 2;
 
     double fz1 = p3 * r11 * zrel1 + p4 * fdjz1;
     double fz2 = p3 * r22 * zrel2 + p4 * fdjz2;
-    kernel_vector(3 + 3 * i) -= fz1 + fz2;
+    kernel_vector(3 + 3 * i) += fz1 + fz2;
     kernel_vector(no_elements - 1) -=
-        (fz1 * zval1 + fz2 * zval2) * vol_inv / 3;
+        (fz1 * zval1 + fz2 * zval2) * vol_inv / 2;
 }
 
 DotProductKernel :: DotProductKernel() {};
