@@ -48,7 +48,7 @@ def get_random_training_set(nenv):
     hyps_mask2['spec_mask'][2] = 1
     hyps2 = np.ones(5, dtype=float)
 
-    # 9 different hyper-parameters, onlye train the 0, 2, 4, 6
+    # 9 different hyper-parameters, only train the 0, 2, 4, 6
     hyps_mask3 = {'nspec': 2,
                  'spec_mask': np.zeros(118, dtype=int),
                  'nbond': 2,
