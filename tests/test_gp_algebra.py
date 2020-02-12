@@ -5,11 +5,11 @@ import numpy as np
 from flare import gp, gp_algebra, gp_algebra_multi
 from flare.env import AtomicEnvironment
 from flare.struc import Structure
-from flare.mc_simple import two_plus_three_body_mc, \
+from flare.kernels.mc_simple import two_plus_three_body_mc, \
         two_plus_three_body_mc_grad
-from flare.mc_sephyps import two_plus_three_body_mc \
+from flare.kernels.mc_sephyps import two_plus_three_body_mc \
         as two_plus_three_body_mc_multi
-from flare.mc_sephyps import two_plus_three_body_mc_grad \
+from flare.kernels.mc_sephyps import two_plus_three_body_mc_grad \
         as two_plus_three_body_mc_grad_multi
 
 from flare.gp_algebra import get_like_grad_from_mats

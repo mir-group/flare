@@ -4,9 +4,9 @@ import sys
 from random import random, randint
 from copy import deepcopy
 from flare import env, gp, struc
-import flare.kernels as en
+import flare.kernels.kernels as en
 
-from flare.mc_sephyps import from_mask_to_hyps, from_grad_to_mask
+from flare.kernels.mc_sephyps import from_mask_to_hyps, from_grad_to_mask
 
 # -----------------------------------------------------------------------------
 #                        test two plus three body kernels

@@ -3,7 +3,7 @@ import sys
 import numpy as np
 from flare.otf_parser import OtfAnalysis
 from flare.kernels import two_plus_three_body, two_plus_three_body_grad
-from flare.mc_simple import two_plus_three_body_mc, two_plus_three_body_mc_grad
+from flare.kernels.mc_simple import two_plus_three_body_mc, two_plus_three_body_mc_grad
 from flare.env import AtomicEnvironment
 from flare.predict import predict_on_structure
 
@@ -43,7 +43,7 @@ def test_gp_parser():
     assert(pos2 == gp_positions[-1][0][2])
 
     force1 = -0.424080
-    force2 = 0.498037 
+    force2 = 0.498037
     assert(force1 == parsed.gp_force_list[0][-1][1])
     assert(force2 == parsed.gp_force_list[-1][0][2])
 
@@ -56,7 +56,7 @@ def test_md_parser():
 
     parsed = OtfAnalysis('test_files/VelocityVerlet.log')
 
-    pos1 = -0.172516 
+    pos1 = -0.172516
     assert(pos1 == parsed.position_list[0][0][2])
     assert(len(parsed.position_list[0]) == 4)
 

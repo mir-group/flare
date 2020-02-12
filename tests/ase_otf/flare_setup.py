@@ -4,7 +4,7 @@ from flare import otf, kernels
 from flare.gp import GaussianProcess
 from flare.mgp.mgp import MappedGaussianProcess
 from flare.ase.calculator import FLARE_Calculator
-import flare.mc_simple as mc_simple
+import flare.kernels.mc_simple as mc_simple
 
 # ---------- create gaussian process model -------------------
 kernel = mc_simple.two_plus_three_body_mc

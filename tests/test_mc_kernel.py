@@ -5,7 +5,7 @@ import numpy as np
 from numpy.random import random, randint
 
 from flare import env, struc, gp
-from flare.mc_simple import _str_to_kernel as stk
+from flare.kernels.mc_simple import _str_to_kernel as stk
 
 
 def generate_envs(cutoffs, delta):
