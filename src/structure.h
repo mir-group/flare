@@ -66,6 +66,7 @@ class StructureDescriptor : public Structure{
         void compute_environments();
         void compute_nested_environments();
         void compute_descriptors();
+        void nested_descriptors();
 };
 
 // Structure dataset. Stores energy, force, and stress labels.

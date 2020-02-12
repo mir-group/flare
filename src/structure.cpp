@@ -105,6 +105,17 @@ StructureDescriptor :: StructureDescriptor(const Eigen::MatrixXd & cell,
     this->compute_descriptors();
 }
 
+StructureDescriptor :: StructureDescriptor(const Eigen::MatrixXd & cell,
+    const std::vector<int> & species, const Eigen::MatrixXd & positions,
+    double cutoff, std::vector<double> nested_cutoffs,
+    DescriptorCalculator * descriptor_calculator){
+
+    this->descriptor_calculator = descriptor_calculator;
+    this->cutoff = cutoff;
+    this->nested_cutoffs = nested_cutoffs;
+    nested_descriptors();
+}
+
 void StructureDescriptor :: compute_environments(){
     int noa = species.size();
     LocalEnvironment env;
@@ -121,6 +132,7 @@ void StructureDescriptor :: compute_nested_environments(){
 
     for (int i = 0; i < noa; i ++){
         env = LocalEnvironment(*this, i, cutoff, nested_cutoffs);
+        environment_descriptors.push_back(env);
     }
 }
 
@@ -130,6 +142,17 @@ void StructureDescriptor :: compute_descriptors(){
 
     for (int i = 0; i < noa; i ++){
         env = LocalEnvironment(*this, i, cutoff, descriptor_calculator);
+        environment_descriptors.push_back(env);
+    }
+}
+
+void StructureDescriptor :: nested_descriptors(){
+    int noa = species.size();
+    LocalEnvironment env;
+
+    for (int i = 0; i < noa; i ++){
+        env = LocalEnvironment(*this, i, cutoff, nested_cutoffs,
+            descriptor_calculator);
         environment_descriptors.push_back(env);
     }
 }
