@@ -501,6 +501,7 @@ class Map2body:
         '''
         build 1-d spline function for mean, 2-d for var
         '''
+        assert (GP.multihyps is False), "multihyps is not supported in mgp"
         y_mean, y_var = self.GenGrid(GP)
         self.mean.set_values(y_mean)
         if not self.mean_only:
@@ -657,6 +658,8 @@ class Map3body:
         build 3-d spline function for mean,
         3-d for the low rank approximation of L^{-1}k*
         '''
+
+        assert (GP.multihyps is False), "multihyps is not supported in mgp"
 
         # Load grid or generate grid values
         if not self.load_grid:
