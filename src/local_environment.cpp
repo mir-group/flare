@@ -44,6 +44,7 @@ LocalEnvironment :: LocalEnvironment(const Structure & structure, int atom,
     compute_nested_environment();
 }
 
+// TODO: base "compute descriptor" on many body cutoff.
 LocalEnvironment :: LocalEnvironment(const Structure & structure, int atom,
     double cutoff, DescriptorCalculator * descriptor_calculator)
     : LocalEnvironment(structure, atom, cutoff){

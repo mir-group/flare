@@ -57,7 +57,7 @@ class ThreeBodyKernel{
 
         Eigen::VectorXd env_struc(const LocalEnvironment & env1,
                                   const StructureDescriptor & struc1);
-        
+
         void update_kernel_vector(Eigen::VectorXd & kernel_vector,
             int no_elements, int i, double vol_inv,
             double r11, double r22, double r33,

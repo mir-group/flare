@@ -22,6 +22,7 @@ class EnvironmentTest : public :: testing :: Test{
         std::vector<double> radial_hyps {0, 5};
         std::vector<double> cutoff_hyps;
         std::vector<int> descriptor_settings {5, 5, 5};
+        std::vector<double> nested_cutoffs {3, 3, 3};
         double cutoff = 3;
 
     EnvironmentTest(){
@@ -37,10 +38,12 @@ class EnvironmentTest : public :: testing :: Test{
 
         desc1 = B2_Calculator(radial_string, cutoff_string,
             radial_hyps, cutoff_hyps, descriptor_settings);
-        test_struc = StructureDataset(cell, species, positions, desc1, cutoff);
+        test_struc = StructureDataset(cell, species, positions, cutoff, 
+            &desc1);
 
         atom = 0;
-        test_env = LocalEnvironment(test_struc, atom, cutoff, &desc1);
+        test_env = LocalEnvironment(test_struc, atom, cutoff, 
+            nested_cutoffs, &desc1);
     }
 };
 

@@ -86,13 +86,21 @@ StructureDescriptor :: StructureDescriptor(const Eigen::MatrixXd & cell,
 }
 
 StructureDescriptor :: StructureDescriptor(const Eigen::MatrixXd & cell,
+    const std::vector<int> & species, const Eigen::MatrixXd & positions,
+    double cutoff, std::vector<double> nested_cutoffs){
+
+    this->nested_cutoffs = nested_cutoffs;
+    this->compute_nested_environments();
+}
+
+StructureDescriptor :: StructureDescriptor(const Eigen::MatrixXd & cell,
                         const std::vector<int> & species,
                         const Eigen::MatrixXd & positions,
-                        DescriptorCalculator & descriptor_calculator,
-                        double cutoff)
+                        double cutoff,
+                        DescriptorCalculator * descriptor_calculator)
                     : Structure(cell, species, positions){
 
-    this->descriptor_calculator = &descriptor_calculator;
+    this->descriptor_calculator = descriptor_calculator;
     this->cutoff = cutoff;
     this->compute_descriptors();
 }
@@ -104,6 +112,15 @@ void StructureDescriptor :: compute_environments(){
     for (int i = 0; i < noa; i ++){
         env = LocalEnvironment(*this, i, cutoff);
         environment_descriptors.push_back(env);
+    }
+}
+
+void StructureDescriptor :: compute_nested_environments(){
+    int noa = species.size();
+    LocalEnvironment env;
+
+    for (int i = 0; i < noa; i ++){
+        env = LocalEnvironment(*this, i, cutoff, nested_cutoffs);
     }
 }
 
@@ -122,12 +139,13 @@ StructureDataset :: StructureDataset(){}
 StructureDataset :: StructureDataset(const Eigen::MatrixXd & cell,
                          const std::vector<int> & species,
                          const Eigen::MatrixXd & positions,
-                         DescriptorCalculator & descriptor_calculator,
-                         double cutoff, std::vector<double> energy,
+                         double cutoff,
+                         DescriptorCalculator * descriptor_calculator,
+                        std::vector<double> energy,
                          std::vector<double> force_components,
                          std::vector<double> stress_components)
-                  : StructureDescriptor(cell, species, positions,
-                                        descriptor_calculator, cutoff){
+                  : StructureDescriptor(cell, species, positions, cutoff,
+                                        descriptor_calculator){
 
     this->energy = energy;
     this->force_components = force_components;

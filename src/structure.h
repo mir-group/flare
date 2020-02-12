@@ -28,13 +28,12 @@ class Structure{
 };
 
 // Structure descriptor. Stores the atomic environments in a structure.
-class LocalEnvironmentDescriptor;
-
 class StructureDescriptor : public Structure{
     public:
         DescriptorCalculator * descriptor_calculator;
         std::vector<LocalEnvironment> environment_descriptors;
         double cutoff;
+        std::vector<double> nested_cutoffs;
 
         StructureDescriptor();
 
@@ -48,10 +47,24 @@ class StructureDescriptor : public Structure{
         StructureDescriptor(const Eigen::MatrixXd & cell,
                             const std::vector<int> & species,
                             const Eigen::MatrixXd & positions,
-                            DescriptorCalculator & descriptor_calculator,
-                            double cutoff);
+                            double cutoff, std::vector<double> nested_cutoffs);
+
+        StructureDescriptor(const Eigen::MatrixXd & cell,
+                            const std::vector<int> & species,
+                            const Eigen::MatrixXd & positions,
+                            double cutoff, std::vector<double> nested_cutoffs,
+                            DescriptorCalculator * descriptor_calculator);
+
+        // TODO: reverse order of descriptor calculator and cutoff to match
+        // env.
+        StructureDescriptor(const Eigen::MatrixXd & cell,
+                            const std::vector<int> & species,
+                            const Eigen::MatrixXd & positions,
+                            double cutoff,
+                            DescriptorCalculator * descriptor_calculator);
 
         void compute_environments();
+        void compute_nested_environments();
         void compute_descriptors();
 };
 
@@ -67,8 +80,8 @@ class StructureDataset : public StructureDescriptor{
         StructureDataset(const Eigen::MatrixXd & cell,
                          const std::vector<int> & species,
                          const Eigen::MatrixXd & positions,
-                         DescriptorCalculator & descriptor_calculator,
                          double cutoff,
+                         DescriptorCalculator * descriptor_calculator,
                          std::vector<double> energy = std::vector<double>{},
                          std::vector<double> force_components =
                             std::vector<double>{},

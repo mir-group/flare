@@ -34,7 +34,8 @@ class StructureTest : public ::testing::Test{
 
         desc1 = B2_Calculator(radial_string, cutoff_string,
             radial_hyps, cutoff_hyps, descriptor_settings);
-        test_struc = StructureDataset(cell, species, positions, desc1, cutoff);
+        test_struc = StructureDataset(cell, species, positions, cutoff, 
+            &desc1);
     }
 };
 
@@ -91,7 +92,7 @@ TEST_F(StructureTest, StructureDataset){
     std::vector<double> force_components {1, 2, 3};
     std::vector<double> stress_components {4, 5, 6};
 
-    test_struc = StructureDataset(cell, species, positions, desc1, cutoff,
+    test_struc = StructureDataset(cell, species, positions, cutoff, &desc1,
                                   energy, force_components,
                                   stress_components);
     

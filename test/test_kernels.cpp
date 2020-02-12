@@ -36,7 +36,8 @@ class KernelTest : public ::testing::Test{
         double power = 2;
         DotProductKernel kernel;
         TwoBodyKernel two_body_kernel;
-        Eigen::VectorXd kern_vec, kern_vec_2;
+        ThreeBodyKernel three_body_kernel;
+        Eigen::VectorXd kern_vec, kern_vec_2, kern_vec_3;
 
     KernelTest(){
         cell << 10, 0, 0,
@@ -57,19 +58,22 @@ class KernelTest : public ::testing::Test{
 
         desc1 = B2_Calculator(radial_string, cutoff_string,
             radial_hyps, cutoff_hyps, descriptor_settings);
-        test_struc = StructureDescriptor(cell, species, positions, desc1,
-                                         cutoff);
+        test_struc = StructureDescriptor(cell, species, positions, cutoff,
+                                         &desc1);
 
-        test_struc_2 = StructureDescriptor(cell, species, positions_2, desc1,
-                                           cutoff);
+        test_struc_2 = StructureDescriptor(cell, species, positions_2, cutoff,
+                                           &desc1);
         test_env = test_struc_2.environment_descriptors[0];
 
         kernel = DotProductKernel(signal_variance, power);
         two_body_kernel = TwoBodyKernel(length_scale, cutoff_string,
             cutoff_hyps);
+        three_body_kernel = ThreeBodyKernel(length_scale, cutoff_string,
+            cutoff_hyps);
 
         kern_vec = kernel.env_struc(test_env, test_struc);
         kern_vec_2 = two_body_kernel.env_struc(test_env, test_struc);
+        kern_vec_3 = three_body_kernel.env_struc(test_env, test_struc);
     }
 };
 
@@ -92,7 +96,7 @@ TEST_F(KernelTest, ForceTest){
             positions_3 = positions;
             positions_3(p, m) += delta;
             test_struc_3 =  StructureDescriptor(cell, species, positions_3,
-                                                desc1, cutoff);
+                                                cutoff, &desc1);
             kern_pert = kernel.env_struc(test_env, test_struc_3);
             fin_val = -(kern_pert(0) - kern_vec(0)) / delta;
             exact_val = kern_vec(1 + 3 * p + m);
@@ -115,7 +119,7 @@ TEST_F(KernelTest, TwoBodyForceTest){
             positions_3 = positions;
             positions_3(p, m) += delta;
             test_struc_3 =  StructureDescriptor(cell, species, positions_3,
-                                                desc1, cutoff);
+                                                cutoff, &desc1);
             kern_pert = two_body_kernel.env_struc(test_env, test_struc_3);
             fin_val = -(kern_pert(0) - kern_vec_2(0)) / delta;
             exact_val = kern_vec_2(1 + 3 * p + m);
@@ -147,7 +151,7 @@ TEST_F(KernelTest, StressTest){
             }
 
             test_struc_3 = StructureDescriptor(cell_2, species, positions_3,
-                                               desc1, cutoff);
+                                               cutoff, &desc1);
 
             kern_pert = kernel.env_struc(test_env, test_struc_3);
             fin_val = -(kern_pert(0) - kern_vec(0)) / delta;
@@ -184,7 +188,7 @@ TEST_F(KernelTest, TwoBodyStressTest){
             }
 
             test_struc_3 = StructureDescriptor(cell_2, species, positions_3,
-                                               desc1, cutoff);
+                                               cutoff, &desc1);
 
             kern_pert = two_body_kernel.env_struc(test_env, test_struc_3);
             fin_val = -(kern_pert(0) - kern_vec_2(0)) / delta;
