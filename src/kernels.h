@@ -39,7 +39,7 @@ class DotProductKernel : public Kernel{
 
 };
 
-class TwoBodyKernel{
+class TwoBodyKernel : public Kernel{
     public:
         double ls, ls1, ls2;
         void (*cutoff_pointer)(double *, double, double, std::vector<double>);
@@ -57,7 +57,7 @@ class TwoBodyKernel{
                                   const StructureDescriptor & struc1);
 };
 
-class ThreeBodyKernel{
+class ThreeBodyKernel : public Kernel{
     public:
         double ls, ls1, ls2;
         void (*cutoff_pointer)(double *, double, double, std::vector<double>);
