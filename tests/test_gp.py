@@ -10,8 +10,8 @@ from pytest import raises
 from flare.gp import GaussianProcess
 from flare.env import AtomicEnvironment
 from flare.struc import Structure
-import flare.kernels as en
-from flare import mc_simple
+import flare.kernels.kernels as en
+import flare.kernels.mc_simple as mc_simple
 from flare.otf_parser import OtfAnalysis
 
 

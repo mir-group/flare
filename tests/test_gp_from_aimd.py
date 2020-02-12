@@ -4,7 +4,7 @@ import pickle
 
 from flare.env import AtomicEnvironment
 from flare.struc import Structure
-from flare.kernels import two_plus_three_body, two_plus_three_body_grad
+from flare.kernels.kernels import two_plus_three_body, two_plus_three_body_grad
 from flare.gp import GaussianProcess
 from flare.gp_from_aimd import TrajectoryTrainer
 from flare.kernels.mc_simple import two_plus_three_body_mc, two_plus_three_body_mc_grad

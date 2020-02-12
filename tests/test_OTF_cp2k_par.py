@@ -6,7 +6,7 @@ import numpy as np
 from flare.otf import OTF
 from flare.gp import GaussianProcess
 from flare.struc import Structure
-import flare.kernels as en
+import flare.kernels.kernels as en
 
 def cleanup(target: list = None):
     os.remove('cp2k.in')
