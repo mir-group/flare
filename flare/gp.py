@@ -87,6 +87,7 @@ class GaussianProcess:
         self.ky_mat_inv = None
         self.likelihood = None
         self.likelihood_gradient = None
+        self.bounds = None
 
         if multihyps is True and hyps_mask is None:
             raise ValueError("Warning! Multihyperparameter mode enabled,"
