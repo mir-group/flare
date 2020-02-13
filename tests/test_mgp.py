@@ -182,7 +182,7 @@ def test_lammps(otf_object, structure):
     lammps_calculator.write_text(data_file_name, data_text)
 
     # create lammps input
-    style_string = 'mgp'
+    style_string = 'mgpf'
     coeff_string = '* * {} Ag I yes yes'.format(lammps_location)
     lammps_executable = '$lmp'
     dump_file_name = 'tmp.dump'
