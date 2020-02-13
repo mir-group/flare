@@ -86,24 +86,26 @@ def test_init(bodies, multihyps, all_mgp):
 
 
 @pytest.mark.parametrize('bodies', [ 2, 3])
-def test_build_map(all_gp, all_mgp, bodies):
+@pytest.mark.parametrize('multihyps', [False, True])
+def test_build_map(all_gp, all_mgp, bodies, multihyps):
     """
     test the mapping for mc_simple kernel
     """
 
-    multihyps = False
+    # multihyps = False
     gp_model = all_gp[f'{bodies}{multihyps}']
     mgp_model = all_mgp[f'{bodies}{multihyps}']
 
     mgp_model.build_map(gp_model)
 
 @pytest.mark.parametrize('bodies', [ 2, 3])
-def test_predict(all_gp, all_mgp, bodies):
+@pytest.mark.parametrize('multihyps', [False, True])
+def test_predict(all_gp, all_mgp, bodies, multihyps):
     """
     test the predict for mc_simple kernel
     """
 
-    multihyps = False
+    # multihyps = False
     gp_model = all_gp[f'{bodies}{multihyps}']
     mgp_model = all_mgp[f'{bodies}{multihyps}']
 
