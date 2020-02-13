@@ -419,6 +419,42 @@ def three_body_en(env1, env2, hyps, cutoffs,
 
 
 # -----------------------------------------------------------------------------
+#                              many body kernels
+# -----------------------------------------------------------------------------
+
+
+def many_body(env1, env2, d1, d2, hyps, cutoffs,
+              cutoff_func=cf.quadratic_cutoff):
+    """
+
+    """
+
+    sig = hyps[0]
+    ls = hyps[1]
+    r_cut = cutoffs[2]
+
+    bond_array_1 = env1.bond_array_mb
+    bond_array_2 = env2.bond_array_mb
+
+    neigh_dists_1 = env1.neigh_dists_mb
+    num_neigh_1 = env1.num_neigh_mb
+
+    neigh_dists_2 = env2.neigh_dists_mb
+    num_neigh_2 = env2.num_neigh_mb
+
+    return many_body_jit(bond_array_1, bond_array_2, neigh_dists_1, num_neigh_1, neigh_dists_2,
+                         num_neigh_2, d1, d2, sig, ls, r_cut, cutoff_func)
+
+
+def many_body_grad(env1, env2, d1, d2, hyps, cutoffs,
+              cutoff_func=cf.quadratic_cutoff):
+    """
+
+    """
+
+    return None
+
+# -----------------------------------------------------------------------------
 #                           two body numba functions
 # -----------------------------------------------------------------------------
 
@@ -1008,6 +1044,65 @@ def three_body_en_jit(bond_array_1, bond_array_2,
 
 
 # -----------------------------------------------------------------------------
+#                            many body numba functions
+# -----------------------------------------------------------------------------
+
+
+@njit
+def many_body_jit(bond_array_1, bond_array_2, neigh_dists_1, num_neigh_1,
+                  neigh_dists_2, num_neigh_2, d1, d2, sig, ls,
+                  r_cut, cutoff_func):
+    """Descript
+
+    Args:
+        bond_array_1 (np.ndarray): 2-body bond array of the first local
+            environment.
+        bond_array_2 (np.ndarray): 2-body bond array of the second local
+            environment.
+        neigh_dists_1 (np.ndarray): array of nn distances of atoms in env1
+        num_neigh_1 (np.ndarray): num of nn distances of atoms in env1
+        neigh_dists_2 (np.ndarray): array of nn distances of atoms in env2
+        num_neigh_2 (np.ndarray): num of nn distances of atoms in env2
+        d1 (int): Force component of the first environment (1=x, 2=y, 3=z).
+        d2 (int): Force component of the second environment (1=x, 2=y, 3=z).
+        sig (float): 2-body signal variance hyperparameter.
+        ls (float): 2-body length scale hyperparameter.
+        r_cut (float): 2-body cutoff radius.
+        cutoff_func (Callable): Cutoff function.
+
+    Return:
+        float: Value of the many-body kernel.
+    """
+    kern = 0
+
+    ls1 = 1 / (2 * ls * ls)
+    ls2 = 1 / (ls * ls)
+    ls3 = ls2 * ls2
+    sig2 = sig * sig
+
+    for m in range(bond_array_1.shape[0]):
+        ri = bond_array_1[m, 0]
+        ci = bond_array_1[m, d1]
+        fi, fdi = cutoff_func(r_cut, ri, ci)
+
+        for n in range(bond_array_2.shape[0]):
+            rj = bond_array_2[n, 0]
+            cj = bond_array_2[n, d2]
+            fj, fdj = cutoff_func(r_cut, rj, cj)
+            r11 = ri - rj
+
+            A = ci * cj
+            B = r11 * ci
+            C = r11 * cj
+            D = r11 * r11
+
+            kern += force_helper(A, B, C, D, fi, fj, fdi, fdj, ls1, ls2,
+                                 ls3, sig2)
+
+    return kern
+
+
+# -----------------------------------------------------------------------------
 #                            general helper functions
 # -----------------------------------------------------------------------------
 
@@ -1290,6 +1385,7 @@ def k_sq_exp_double_grad(q1, q2, sig, ls):
 
     return ret
 
+
 @njit
 def q_density(rij, r0, cij, r_cut, cutoff_func):
     """Pairwise contribution to many-body descriptor based on electron density
@@ -1311,9 +1407,9 @@ def q_density(rij, r0, cij, r_cut, cutoff_func):
 
     q = exp(- (rij / r0 - 1.))
 
-    grad = q * (fij * cij / r0  +  fdij)
+    grad = q * (fij * cij / r0 + fdij)
 
-    return fij*q, grad
+    return fij * q, grad
 
 
 _str_to_kernel = {'two_body': two_body,
