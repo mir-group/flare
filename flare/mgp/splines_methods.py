@@ -2,10 +2,6 @@
 '''
 import numpy as np
 import numpy
-import time
-from memory_profiler import profile
-
-import flare.mgp.utils as utils
 from flare.mgp.cubic_splines_numba import *
 
 class PCASplines:
@@ -53,8 +49,8 @@ class PCASplines:
         dim_1 = y.shape[-1]
        
         var_matr = np.reshape(y, (dim_0, dim_1))
-        U, S, Vh = utils.svd_grid(var_matr, rank=self.svd_rank)
-        self.V = Vh.T
+        U, S, Vh = np.linalg.svd(var_matr, full_matrices=False)
+        self.V = Vh[:rank,:].T
         for r in range(self.svd_rank):
             self.models[r].set_values(S[r]*U[:, r])
         

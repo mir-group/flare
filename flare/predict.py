@@ -161,7 +161,7 @@ def predict_on_structure_en(structure: Structure, gp: GaussianProcess,
     :rtype: (np.ndarray, np.ndarray, np.ndarray)
     """
     # Set up local energy array
-    local_energies = np.array([0.0 for _ in range(structure.nat)])
+    local_energies = np.zeros(structure.nat)
 
     # Loop through atoms in structure and predict forces, uncertainties,
     # and energies
@@ -197,7 +197,7 @@ def predict_on_structure_par_en(structure: Structure, gp: GaussianProcess,
     if n_cpus is 1:
         predict_on_structure_en(structure, gp)
 
-    local_energies = np.array([0.0 for _ in range(structure.nat)])
+    local_energies = np.zeros(structure.nat)
 
     if n_cpus is None:
         pool = mp.Pool(processes=mp.cpu_count())

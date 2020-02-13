@@ -3,7 +3,6 @@ from numpy import array
 from numba import njit
 import io, os, sys, time, random, math
 import multiprocessing as mp
-import cProfile
 
 import flare.gp as gp
 import flare.env as env
@@ -17,19 +16,6 @@ from flare.kernels.kernels import three_body_helper_1, \
 from flare.cutoffs import quadratic_cutoff
 from flare.kernels.utils import str_to_kernel_set as stks
 
-
-def save_GP(GP, prefix):
-    np.save(prefix+'alpha', GP.alpha)
-    np.save(prefix+'hyps', GP.hyps)
-    np.save(prefix+'l_mat', GP.l_mat)
-
-
-def load_GP(GP, prefix):
-    GP.alpha = np.load(prefix+'alpha.npy')
-    GP.hyps = np.load(prefix+'hyps.npy')
-    GP.l_mat = np.load(prefix+'l_mat.npy')
-    l_mat_inv = np.linalg.inv(GP.l_mat)
-    GP.ky_mat_inv = l_mat_inv.T @ l_mat_inv
 
 
 def get_2bkernel(GP):
@@ -123,32 +109,6 @@ ronment and the environments in the training set."""
     return k_v
 
 
-def save_grid(bond_lens, bond_ens_diff, bond_vars_diff, prefix):
-    np.save(prefix+'-bond_lens', bond_lens)
-    np.save(prefix+'-bond_ens_diff', bond_ens_diff)
-    np.save(prefix+'-bond_vars_diff', bond_vars_diff)
-
-
-def load_grid(prefix):
-    bond_lens = np.load(prefix+'bond_lens.npy')
-    bond_ens_diff = np.load(prefix+'bond_ens_diff.npy')
-    bond_vars_diff = np.load(prefix+'bond_vars_diff.npy')
-    return bond_lens, bond_ens_diff, bond_vars_diff
-
-
-def merge(prefix, a_num, g_num):
-    grid_means = np.zeros((g_num, g_num, a_num))
-    grid_vars = np.zeros((g_num, g_num, a_num, g_num, g_num, a_num))
-    for a12 in range(a_num):
-        grid_means[:,:,a12] = np.load(prefix+str((a12, 0))+'-bond_means.npy')
-        for a34 in range(a_num):
-            grid_vars[:,:,a12,:,:,a34] = np.load(prefix+str((a12, a34))+'-bond_vars.npy')
-    return grid_means, grid_vars
-
-
-def svd_grid(matr, rank):
-    u, s, vh = np.linalg.svd(matr, full_matrices=False)
-    return u[:,:rank], s[:rank], vh[:rank, :]
 
 
 def get_l_bound(curr_l_bound, structure, two_d=False):
