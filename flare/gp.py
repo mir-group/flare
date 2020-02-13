@@ -655,7 +655,6 @@ class GaussianProcess:
     def write_model(self, name: str, format: str = 'json'):
         """
         Write model in a variety of formats to a file for later re-use.
-multihyps,
         Args:
             name (str): Output name.
             format (str): Output format.
