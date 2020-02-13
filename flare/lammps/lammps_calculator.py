@@ -155,8 +155,7 @@ def lammps_pos_text_charged(structure, charges, species):
     pos_text = '\n'
     for count, (pos, chrg, spec) in enumerate(zip(structure.positions, charges,
                                                   species)):
-        pos_text += '%i %i %f %f %f %f \n' % \
-            (count+1, spec, chrg, pos[0], pos[1], pos[2])
+        pos_text += f'{count+1} {spec} {chrg} {pos[0]} {pos[1]} {pos[2]}\n'
     return pos_text
 
 
@@ -171,25 +170,30 @@ def write_text(file, text):
 # -----------------------------------------------------------------------------
 
 
-def generic_lammps_input(dat_file, style_string, coeff_string, dump_file):
+def generic_lammps_input(dat_file, style_string, coeff_string, dump_file, newton=False):
     """Create text for generic LAMMPS input file."""
 
-    input_text = """# generic lammps input file
+    if newton is True:
+        ntn = 'on'
+    else:
+        ntn = 'off'
+
+    input_text = f"""# generic lammps input file
 units metal
 atom_style atomic
 dimension  3
 boundary   p p p
-newton off
-read_data %s
+newton {ntn}
+read_data {dat_file}
 
-pair_style %s
-pair_coeff %s
+pair_style {style_string}
+pair_coeff {coeff_string}
 
 thermo_style one
-dump 1 all custom 1 %s id type x y z fx fy fz
+dump 1 all custom 1 {dump_file} id type x y z fx fy fz
 dump_modify 1 sort id
 run 0
-""" % (dat_file, style_string, coeff_string, dump_file)
+"""
 
     return input_text
 
