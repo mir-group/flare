@@ -175,8 +175,14 @@ def test_lmp_predict(all_gp, all_mgp, bodies, multihyps):
     lammps_calculator.write_text(data_file_name, data_text)
 
     # create lammps input
+    if bodies == 2:
+        by = 'yes'
+        ty = 'no'
+    else:
+        by = 'no'
+        ty = 'yes'
     style_string = 'mgp'
-    coeff_string = f'* * {lammps_location} 1 2 yes yes'
+    coeff_string = f'* * {lammps_location} 1 2 {by} {ty}'
     lammps_executable = os.environ.get('lmp')
     dump_file_name = f'tmp{bodies}{multihyps}.dump'
     input_file_name = f'tmp{bodies}{multihyps}.in'
