@@ -1268,69 +1268,52 @@ def triplet_force_en_kernel(ci1, ci2, ri1, ri2, ri3, rj1, rj2, rj3,
 
 
 @njit
-def k_sq_exp_double_grad(q1, q2, sig, l):
+def k_sq_exp_double_grad(q1, q2, sig, ls):
     """Gradient of generic squared exponential kernel on two many body functions
 
     Args:
         q1 (float): the many body descriptor of the first local environment
         q2 (float): the many body descriptor of the second local environment
         sig (float): amplitude hyperparameter
-        l (float): lenghtscale hyperparameter
+        ls (float): lenghtscale hyperparameter
     Return:
         float: the value of the double derivative of the squared exponential kernel
     """
 
-    lsq = l * l
+    lsq = ls * ls
 
     qdiffsq = (q1 - q2) * (q1 - q2)
 
     ker = exp(-qdiffsq / (2 * lsq))
 
-    ret = sig * ker / lsq * (1 - qdiffsq / lsq)
+    ret = sig * sig * ker / lsq * (1 - qdiffsq / lsq)
 
     return ret
 
-
-def q_density(rij, r0, r_cut, cutoff_func):
+@njit
+def q_density(rij, r0, cij, r_cut, cutoff_func):
     """Pairwise contribution to many-body descriptor based on electron density
+    and its gradient w.r.t. ri
 
     Args:
         rij (float): distance between atoms i and j
         r0 (float):  hyperparameter
+        cij (float): Component of versor of rij along given direction
         r_cut (float): cutoff hyperparameter
         cutoff_func (callable): cutoff function
     Return:
         float: the value of the pairwise many-body contribution
+        float: the value of the derivative of the pairwise many-body
+        contribution w.r.t. the central atom displacement
     """
 
-    fij, _ = cutoff_func(r_cut, rij, 0)
+    fij, fdij = cutoff_func(r_cut, rij, cij)
 
-    ret = exp(- (rij / r0 - 1.)) * fij
+    q = exp(- (rij / r0 - 1.))
 
-    return ret
+    grad = q * (fij * cij / r0  +  fdij)
 
-
-def q_density_grad_TO_BE_CHECKED(rij, r0, ci, r_cut, cutoff_func):
-    """Gradient of pairwise contribution to many-body descriptor wrt rij
-
-    Args:
-        rij (float): distance between atoms i and j
-        r0 (float):  hyperparameter
-        r_cut (float): cutoff hyperparameter
-        cutoff_func (callable): cutoff function
-        ci (float):
-        d1 (int):
-    Return:
-        float: the value of the pairwise many-body contribution
-    """
-
-    fij, fdij = cutoff_func(r_cut, rij, ci)
-
-    q = exp(- (rij / r0 - 1.)) * fij
-
-    ret = q * (- (rij / r0 - 1) * fij * ci / r0  +  fdij)
-
-    return ret
+    return fij*q, grad
 
 
 _str_to_kernel = {'two_body': two_body,
