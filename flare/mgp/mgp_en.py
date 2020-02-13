@@ -127,15 +127,17 @@ class MappedGaussianProcess:
         species_list = struc_params['species']
         N_spc = len(species_list)
 
-        # ------------------- 2 body (2 atoms (1 bond) config) ---------------
+        # 2 body (2 atoms (1 bond) config)
         bond_struc_2 = []
+        spc_2 = []
+        spc_2_set = []
         if 2 in self.bodies:
             bodies = 2
-            spc_2 = []
             for spc1_ind, spc1 in enumerate(species_list):
                 for spc2 in species_list[spc1_ind:]:
                     species = [spc1, spc2]
                     spc_2.append(species)
+                    spc_2_set.append(set(species))
                     positions = [[(i+1)/(bodies+1)*cutoff, 0, 0]
                                  for i in range(bodies)]
                     spc_struc = \
@@ -143,11 +145,11 @@ class MappedGaussianProcess:
                     spc_struc.coded_species = np.array(species)
                     bond_struc_2.append(spc_struc)
 
-        # ------------------- 3 body (3 atoms (1 triplet) config) -------------
+        #  3 body (3 atoms (1 triplet) config)
         bond_struc_3 = []
+        spc_3 = []
         if 3 in self.bodies:
             bodies = 3
-            spc_3 = []
             for spc1_ind in range(N_spc):
                 spc1 = species_list[spc1_ind]
                 for spc2_ind in range(N_spc):  # (spc1_ind, N_spc):
@@ -183,6 +185,7 @@ class MappedGaussianProcess:
 
         self.bond_struc = [bond_struc_2, bond_struc_3]
         self.spcs = [spc_2, spc_3]
+        self.spcs_set = [spc_2_set, spc_3]
 
     def predict(self, atom_env: AtomicEnvironment, mean_only: bool=False):
         '''
@@ -199,7 +202,7 @@ class MappedGaussianProcess:
 
             f2, vir2, kern2, v2, e2 = \
                 self.predict_multicomponent(2, atom_env, self.kernel2b_info,
-                                            self.spcs[0],
+                                            self.spcs_set[0],
                                             self.maps_2, mean_only)
 
         # ---------------- predict for three body -------------------
@@ -242,6 +245,10 @@ class MappedGaussianProcess:
         if (body == 2):
             spcs, comp_r, comp_xyz = get_bonds(atom_env.ctype,
                     atom_env.etypes, atom_env.bond_array_2)
+            set_spcs = []
+            for spc in spcs:
+                set_spcs += [set(spc)]
+            spcs = set_spcs
         elif (body == 3):
             spcs, comp_r, comp_xyz = \
                 get_triplets_en(atom_env.ctype, atom_env.etypes,
