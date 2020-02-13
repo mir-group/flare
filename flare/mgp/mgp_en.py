@@ -10,6 +10,7 @@ from flare import gp, struc, kernels
 from flare.env import AtomicEnvironment
 from flare.gp import GaussianProcess
 from flare.cutoffs import quadratic_cutoff
+from flare.util import Z_to_element
 from flare.mgp.utils import get_bonds, get_triplets, get_triplets_en
 from flare.mgp.splines_methods import PCASplines, CubicSpline
 
