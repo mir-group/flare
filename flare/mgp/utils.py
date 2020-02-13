@@ -69,10 +69,10 @@ def get_3bkernel(GP):
     else:
         kernel, _, _, efk = stks('3', GP.multihyps)
 
-    if 'two' in GP.kernel_name:
-        base = 2
-    else:
-        base = 0
+    base = 0
+    for t in ['two', '2']:
+        if t in GP.kernel_name:
+            base = 2
 
     cutoffs = np.copy(GP.cutoffs)
 
