@@ -64,11 +64,11 @@ def lammps_dat(structure, atom_types, atom_masses, species):
     :type species: List[int]
     """
 
-    dat_text = """Header of the LAMMPS data file
+    dat_text = f"""Header of the LAMMPS data file
 
-%i atoms
-%i atom types
-""" % (structure.nat, len(atom_types))
+{structure.nat} atoms
+{len(atom_types)} atom types
+"""
 
     dat_text += lammps_cell_text(structure)
     dat_text += """
@@ -77,7 +77,7 @@ Masses
 """
     mass_text = ''
     for atom_type, atom_mass in zip(atom_types, atom_masses):
-        mass_text += '%i %i\n' % (atom_type, atom_mass)
+        mass_text += f'{atom_type} {atom_mass}\n'
     dat_text += mass_text
     dat_text += """
 Atoms
@@ -103,11 +103,11 @@ def lammps_dat_charged(structure, atom_types, atom_charges, atom_masses,
     :type species: List[int]
     """
 
-    dat_text = """Header of the LAMMPS data file
+    dat_text = f"""Header of the LAMMPS data file
 
-%i atoms
-%i atom types
-""" % (structure.nat, len(atom_types))
+{structure.nat} atoms
+{len(atom_types)} atom types
+"""
 
     dat_text += lammps_cell_text(structure)
     dat_text += """
@@ -117,7 +117,7 @@ Masses
     mass_text = ''
     for atom_type, atom_mass in zip(atom_types,
                                     atom_masses):
-        mass_text += '%i %i\n' % (atom_type, atom_mass)
+        mass_text += f'{atom_type} {atom_mass}\n'
     dat_text += mass_text
     dat_text += """
 Atoms
@@ -130,17 +130,12 @@ Atoms
 def lammps_cell_text(structure):
     """ Write cell from structure object."""
 
-    cell_text = """
-0.0 %f  xlo xhi
-0.0 %f  ylo yhi
-0.0 %f  zlo zhi
-%f %f %f  xy xz yz
-""" % (structure.cell[0, 0],
-       structure.cell[1, 1],
-       structure.cell[2, 2],
-       structure.cell[1, 0],
-       structure.cell[2, 0],
-       structure.cell[2, 1])
+    cell_text = f"""
+0.0 {structure.cell[0, 0]}  xlo xhi
+0.0 {structure.cell[1, 1]}  ylo yhi
+0.0 {structure.cell[2, 2]}  zlo zhi
+{structure.cell[1, 0]} {structure.cell[2, 0]} {structure.cell[2, 1]}  xy xz yz
+"""
 
     return cell_text
 
@@ -150,8 +145,7 @@ def lammps_pos_text(structure, species):
 
     pos_text = '\n'
     for count, (pos, spec) in enumerate(zip(structure.positions, species)):
-        pos_text += '%i %i %f %f %f \n' % \
-            (count+1, spec, pos[0], pos[1], pos[2])
+        pos_text += f'{count+1} {spec} {pos[0]} {pos[1]} {pos[2]}\n'
     return pos_text
 
 
@@ -200,24 +194,29 @@ run 0
     return input_text
 
 
-def ewald_input(dat_file, short_cut, kspace_accuracy, dump_file):
+def ewald_input(dat_file, short_cut, kspace_accuracy, dump_file, newton=False):
     """Create text for Ewald input file."""
+    if newton is True:
+        ntn = 'on'
+    else:
+        ntn = 'off'
 
-    input_text = """# Ewald input file
+    input_text = f"""# Ewald input file
+newton {ntn}
 units metal
 atom_style charge
 dimension  3
 boundary   p p p
-read_data %s
+read_data {dat_file}
 
-pair_style coul/long %s
+pair_style coul/long {short_cut}
 pair_coeff * *
-kspace_style ewald %s
+kspace_style ewald {kspace_accuracy}
 
 thermo_style one
-dump 1 all custom 1 %s id type x y z fx fy fz
+dump 1 all custom 1 {dump_file} id type x y z fx fy fz
 dump_modify 1 sort id
 run 0
-""" % (dat_file, short_cut, kspace_accuracy, dump_file)
+"""
 
     return input_text
