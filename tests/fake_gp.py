@@ -29,7 +29,15 @@ def get_random_structure(cell, unique_species, noa):
     return test_structure, forces
 
 
-def generate_hm(nbond, ntriplet, cutoffs=[1, 1], constraint=False):
+def generate_hm(nbond, ntriplet, cutoffs=[1, 1], constraint=False, multihyps=True):
+
+    if (multihyps is False):
+        hyps_label = ['ls2', 'sig2', 'ls3', 'sig3', 'noise']
+        if (nbond > 0):
+            nbond = 1
+        if (ntriplet >0):
+            ntriplet = 1
+        return random((nbond+ntriplet)*2+1), {'hyps_label':hyps_label}, deepcopy(cutoffs)
 
     specs_mask = np.zeros(118, dtype=int)
     specs_mask[1] = 0
@@ -164,7 +172,7 @@ def get_gp(bodies, kernel_type='mc', multihyps=True) -> GaussianProcess:
             ntriplet = 1
             prefix += '3'
 
-    hyps, hm, _ = generate_hm(nbond, ntriplet)
+    hyps, hm, _ = generate_hm(nbond, ntriplet, multihyps=multihyps)
 
     # create test structure
     test_structure, forces = get_random_structure(cell, unique_species,
