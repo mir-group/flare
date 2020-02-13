@@ -4,7 +4,6 @@ import multiprocessing as mp
 
 from scipy.linalg import solve_triangular
 
-import flare.kernels.mc_simple as mc
 import flare.mgp.utils as utils
 
 from flare import gp, struc, kernels
