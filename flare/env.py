@@ -400,14 +400,14 @@ def get_m_body_arrays(positions, atom: int, cell, cutoff_mb: float, species):
     """
     # TODO: this can be probably improved using stored arrays, redundant calls to get_2_body_arrays
     # Get distances, positions, species and indexes of neighbouring atoms
-    bond_array_mb, _, _, bond_inds = get_2_body_arrays_ind(
+    bond_array_mb, __, _, bond_inds = get_2_body_arrays_ind(
         positions, atom, cell, cutoff_mb, species)
 
     # For each neighbouring atom, get distances in its neighbourhood
     neighbouring_dists = []
     max_neighbours = 0
     for m in bond_inds:
-        neighbour_bond_array_2, _, _ = get_2_body_arrays(positions, m, cell,
+        neighbour_bond_array_2, __, _ = get_2_body_arrays(positions, m, cell,
                                                          cutoff_mb, species)
         neighbouring_dists.append(neighbour_bond_array_2[:, 0])
         if len(neighbour_bond_array_2[:, 0]) > max_neighbours:
