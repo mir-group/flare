@@ -1319,7 +1319,19 @@ _str_to_kernel = {'two_body_mc': two_body_mc,
                   'two_plus_three_body_mc': two_plus_three_body_mc,
                   'two_plus_three_body_mc_grad': two_plus_three_body_mc_grad,
                   'two_plus_three_mc_en': two_plus_three_mc_en,
-                  'two_plus_three_mc_force_en': two_plus_three_mc_force_en
+                  'two_plus_three_mc_force_en': two_plus_three_mc_force_en,
+                  '2': two_body_mc,
+                  '2_en': two_body_mc_en,
+                  '2_grad': two_body_mc_grad,
+                  '2_force_en': two_body_mc_force_en,
+                  '3': three_body_mc,
+                  '3_grad': three_body_mc_grad,
+                  '3_en': three_body_mc_en,
+                  '3_force_en': three_body_mc_force_en,
+                  '2+3': two_plus_three_body_mc,
+                  '2+3_grad': two_plus_three_body_mc_grad,
+                  '2+3_en': two_plus_three_mc_en,
+                  '2+3_force_en': two_plus_three_mc_force_en
                   }
 
 

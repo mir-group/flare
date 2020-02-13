@@ -4,7 +4,7 @@ import pytest
 from flare import struc, env, gp
 from flare import otf_parser
 from flare.mgp.mgp_en import MappedGaussianProcess
-from flare import mc_simple
+from flare.kernels.utils import str_to_kernel_set
 from flare.lammps import lammps_calculator
 import pickle
 import os
@@ -24,13 +24,11 @@ def construct_gp(bodies, params):
 
     # construct a 2b gp model
     if bodies==2:
-        kernel = mc_simple.two_body_mc #plus_three_body_mc
-        kernel_grad = mc_simple.two_body_mc_grad # plus_three_body_mc_grad
-        efk = mc_simple.two_body_mc_force_en
-    if bodies == 3:
-        kernel = mc_simple.three_body_mc #plus_three_body_mc
-        kernel_grad = mc_simple.three_body_mc_grad # plus_three_body_mc_grad
-        efk = mc_simple.three_body_mc_force_en
+        kernel, kernel_grad, _, efk = \
+                str_to_kernel_set('mc2', multihyps=False)
+    elif bodies == 3:
+        kernel, kernel_grad, _, efk = \
+                str_to_kernel_set('mc3', multihyps=False)
 
     gp_model = gp.GaussianProcess(kernel, kernel_grad, hyps,
                            cutoffs, energy_force_kernel=efk,
