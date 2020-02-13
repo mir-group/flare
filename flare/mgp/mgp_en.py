@@ -12,7 +12,6 @@ from flare.env import AtomicEnvironment
 from flare.gp import GaussianProcess
 from flare.cutoffs import quadratic_cutoff
 from flare.mgp.utils import get_bonds, get_triplets, get_triplets_en
-#     self_two_body_mc_jit, self_three_body_mc_jit
 from flare.mgp.splines_methods import PCASplines, CubicSpline
 
 
@@ -62,21 +61,27 @@ class MappedGaussianProcess:
         self.__dict__.update(arg_dict)
         self.__dict__.update(grid_params)
 
-        self.hyps = GP.hyps
-        self.cutoffs = GP.cutoffs
-        self.kernel_name = GP.kernel_name
-        self.bodies = []
-        if "two" in GP.kernel_name:
-            self.bodies.append(2)
-        if "three" in GP.kernel_name:
-            self.bodies.append(3)
+        # if GP exists, the GP setup overrides the grid_params setup
+        if (GP is not None):
+
+            self.kernel_name = GP.kernel_name
+            self.cutoffs = GP.cutoffs
+
+            self.bodies = []
+            if "two" in GP.kernel_name:
+                self.bodies.append(2)
+                self.kernel2b_info = utils.get_2bkernel(GP)
+            if "three" in GP.kernel_name:
+                self.bodies.append(3)
+                self.kernel3b_info = utils.get_3bkernel(GP)
 
         self.build_bond_struc(struc_params)
         self.maps_2 = []
         self.maps_3 = []
         self.build_map_container()
 
-        if not container_only and (GP is not None) and (len(GP.training_data) > 0):
+        if not container_only and (GP is not None) and \
+                (len(GP.training_data) > 0):
             self.build_map(GP)
 
     def build_map_container(self):
@@ -123,56 +128,58 @@ class MappedGaussianProcess:
         N_spc = len(species_list)
 
         # ------------------- 2 body (2 atoms (1 bond) config) ---------------
-        bodies = 2
         bond_struc_2 = []
-        spc_2 = []
-        for spc1_ind, spc1 in enumerate(species_list):
-            for spc2 in species_list[spc1_ind:]:
-                species = [spc1, spc2]
-                spc_2.append(species)
-                positions = [[(i+1)/(bodies+1)*cutoff, 0, 0]
-                             for i in range(bodies)]
-                spc_struc = \
-                    struc.Structure(cell, species, positions, mass_dict)
-                spc_struc.coded_species = np.array(species)
-                bond_struc_2.append(spc_struc)
-
-        # ------------------- 3 body (3 atoms (1 triplet) config) -------------
-        bodies = 3
-        bond_struc_3 = []
-        spc_3 = []
-        for spc1_ind in range(N_spc):
-            spc1 = species_list[spc1_ind]
-            for spc2_ind in range(N_spc):  # (spc1_ind, N_spc):
-                spc2 = species_list[spc2_ind]
-                for spc3_ind in range(N_spc):  # (spc2_ind, N_spc):
-                    spc3 = species_list[spc3_ind]
-                    species = [spc1, spc2, spc3]
-                    spc_3.append(species)
+        if 2 in self.bodies:
+            bodies = 2
+            spc_2 = []
+            for spc1_ind, spc1 in enumerate(species_list):
+                for spc2 in species_list[spc1_ind:]:
+                    species = [spc1, spc2]
+                    spc_2.append(species)
                     positions = [[(i+1)/(bodies+1)*cutoff, 0, 0]
                                  for i in range(bodies)]
-                    spc_struc = struc.Structure(cell, species, positions,
-                                                mass_dict)
+                    spc_struc = \
+                        struc.Structure(cell, species, positions, mass_dict)
                     spc_struc.coded_species = np.array(species)
-                    bond_struc_3.append(spc_struc)
-#                    if spc1 != spc2:
-#                        species = [spc2, spc3, spc1]
-#                        spc_3.append(species)
-#                        positions = [[(i+1)/(bodies+1)*cutoff, 0, 0] \
-#                                    for i in range(bodies)]
-#                        spc_struc = struc.Structure(cell, species, positions,
-#                                                    mass_dict)
-#                        spc_struc.coded_species = np.array(species)
-#                        bond_struc_3.append(spc_struc)
-#                    if spc2 != spc3:
-#                        species = [spc3, spc1, spc2]
-#                        spc_3.append(species)
-#                        positions = [[(i+1)/(bodies+1)*cutoff, 0, 0] \
-#                                    for i in range(bodies)]
-#                        spc_struc = struc.Structure(cell, species, positions,
-#                                                    mass_dict)
-#                        spc_struc.coded_species = np.array(species)
-#                        bond_struc_3.append(spc_struc)
+                    bond_struc_2.append(spc_struc)
+
+        # ------------------- 3 body (3 atoms (1 triplet) config) -------------
+        bond_struc_3 = []
+        if 3 in self.bodies:
+            bodies = 3
+            spc_3 = []
+            for spc1_ind in range(N_spc):
+                spc1 = species_list[spc1_ind]
+                for spc2_ind in range(N_spc):  # (spc1_ind, N_spc):
+                    spc2 = species_list[spc2_ind]
+                    for spc3_ind in range(N_spc):  # (spc2_ind, N_spc):
+                        spc3 = species_list[spc3_ind]
+                        species = [spc1, spc2, spc3]
+                        spc_3.append(species)
+                        positions = [[(i+1)/(bodies+1)*cutoff, 0, 0]
+                                     for i in range(bodies)]
+                        spc_struc = struc.Structure(cell, species, positions,
+                                                    mass_dict)
+                        spc_struc.coded_species = np.array(species)
+                        bond_struc_3.append(spc_struc)
+#                        if spc1 != spc2:
+#                            species = [spc2, spc3, spc1]
+#                            spc_3.append(species)
+#                            positions = [[(i+1)/(bodies+1)*cutoff, 0, 0] \
+#                                        for i in range(bodies)]
+#                            spc_struc = struc.Structure(cell, species, positions,
+#                                                        mass_dict)
+#                            spc_struc.coded_species = np.array(species)
+#                            bond_struc_3.append(spc_struc)
+#                        if spc2 != spc3:
+#                            species = [spc3, spc1, spc2]
+#                            spc_3.append(species)
+#                            positions = [[(i+1)/(bodies+1)*cutoff, 0, 0] \
+#                                        for i in range(bodies)]
+#                            spc_struc = struc.Structure(cell, species, positions,
+#                                                        mass_dict)
+#                            spc_struc.coded_species = np.array(species)
+#                            bond_struc_3.append(spc_struc)
 
         self.bond_struc = [bond_struc_2, bond_struc_3]
         self.spcs = [spc_2, spc_3]
@@ -189,24 +196,20 @@ class MappedGaussianProcess:
         # ---------------- predict for two body -------------------
         f2 = vir2 = kern2 = v2 = e2 = 0
         if 2 in self.bodies:
-            sig2, ls2 = self.hyps[:2]
-            r_cut2 = self.cutoffs[0]
 
             f2, vir2, kern2, v2, e2 = \
-                self.predict_multicomponent(atom_env, sig2, ls2, r_cut2,
-                                            self.get_2body_comp, self.spcs[0],
+                self.predict_multicomponent(2, atom_env, self.kernel2b_info,
+                                            self.spcs[0],
                                             self.maps_2, mean_only)
 
         # ---------------- predict for three body -------------------
         f3 = vir3 = kern3 = v3 = e3 = 0
         if 3 in self.bodies:
-            sig3, ls3, _ = self.hyps[-3:]
-            r_cut3 = self.cutoffs[1]
 
             f3, vir3, kern3, v3, e3 = \
-                self.predict_multicomponent(atom_env, sig3, ls3, r_cut3,
-                                            self.get_3body_comp, self.spcs[1],
-                                            self.maps_3, mean_only)
+                self.predict_multicomponent(3, atom_env, self.kernel3b_info,
+                                            self.spcs[1], self.maps_3,
+                                            mean_only)
 
         f = f2 + f3
         vir = vir2 + vir3
@@ -215,65 +218,41 @@ class MappedGaussianProcess:
 
         return f, v, vir, e
 
-    def get_2body_comp(self, atom_env, sig, ls, r_cut):
-        '''
-        get bonds grouped by species
-        '''
-        bond_array_2 = atom_env.bond_array_2
-        ctype = atom_env.ctype
-        etypes = atom_env.etypes
 
-        kern2 = np.zeros(3)
-        for d in range(3):
-            kern2[d] = \
-                self_two_body_mc_jit(bond_array_2, ctype, etypes, d+1, sig, ls,
-                                     r_cut, quadratic_cutoff)
-
-        spcs, comp_r, comp_xyz = get_bonds(ctype, etypes, bond_array_2)
-        return kern2, spcs, comp_r, comp_xyz
-
-    def get_3body_comp(self, atom_env, sig, ls, r_cut):
-        '''
-        get triplets and grouped by species
-        '''
-        bond_array_3 = atom_env.bond_array_3
-        cross_bond_inds = atom_env.cross_bond_inds
-        cross_bond_dists = atom_env.cross_bond_dists
-        triplets = atom_env.triplet_counts
-        ctype = atom_env.ctype
-        etypes = atom_env.etypes
-
-#        kern3 = np.zeros(3)
-#        for d in range(3):
-#            kern3[d] = self_three_body_mc_jit(bond_array_3, cross_bond_inds,
-#                    cross_bond_dists, triplets, ctype, etypes, d+1, sig, ls,
-#                    r_cut, quadratic_cutoff)
-
-        kern3_gp = np.zeros(3)
-        for d in range(3):
-            kern3_gp[d] = mc.three_body_mc(atom_env, atom_env, d+1, d+1,
-                                        self.hyps[-3:], self.cutoffs)
-
-        spcs, comp_r, comp_xyz = \
-            get_triplets_en(ctype, etypes, bond_array_3,
-                            cross_bond_inds, cross_bond_dists, triplets)
-
-        return kern3_gp, spcs, comp_r, comp_xyz
-
-    def predict_multicomponent(self, atom_env, sig, ls, r_cut, get_comp,
+    def predict_multicomponent(self, body, atom_env, kernel_info,
                                spcs_list, mappings, mean_only):
         '''
         Add up results from `predict_component` to get the total contribution
         of all species
         '''
+
+        kernel, en_force_kernel, cutoffs, hyps, hyps_mask = kernel_info
+
+        kern = np.zeros(3)
+        if (hyps_mask is None):
+            for d in range(3):
+                kern[d] = \
+                    kernel(atom_env, atom_env, d+1, d+1, hyps, cutoffs)
+        else:
+            for d in range(3):
+                kern[d] = \
+                    kernel(atom_env, atom_env, d+1, d+1, hyps, cutoffs,
+                           hyps_mask=hyps_mask)
+
+        if (body == 2):
+            spcs, comp_r, comp_xyz = get_bonds(atom_env.ctype,
+                    atom_env.etypes, atom_env.bond_array_2)
+        elif (body == 3):
+            spcs, comp_r, comp_xyz = \
+                get_triplets_en(atom_env.ctype, atom_env.etypes,
+                        atom_env.bond_array_3, atom_env.cross_bond_inds,
+                        atom_env.cross_bond_dists, atom_env.triplet_counts)
+
+        # predict for each species
         f_spcs = 0
         vir_spcs = 0
         v_spcs = 0
         e_spcs = 0
-
-        kern, spcs, comp_r, comp_xyz = get_comp(atom_env, sig, ls, r_cut)
-
-        # predict for each species
         for i, spc in enumerate(spcs):
             lengths = np.array(comp_r[i])
             xyzs = np.array(comp_xyz[i])
@@ -536,7 +515,7 @@ class Map2body:
             env12.bond_array_2 = np.array([[r, 1, 0, 0]])
             k12_v[b, :] = utils.en_kern_vec(training_data,
                                             env12, en_force_kernel,
-                                            hyps, cutoffs)
+                                            hyps, cutoffs, hyps_mask)
         return k12_v
 
 
@@ -711,7 +690,7 @@ class Map3body:
                     env12.cross_bond_dists = np.array([[0, r12], [r12, 0]])
                     k12_v[b1, b2, b12, :] = utils.en_kern_vec(training_data,
                                                               env12, en_force_kernel,
-                                                              hyps, cutoffs)
+                                                              hyps, cutoffs, hyps_mask)
 
         return k12_v
 

@@ -115,7 +115,7 @@ def get_3bkernel(GP):
 
 
 def en_kern_vec(training_data, x: AtomicEnvironment,
-                energy_force_kernel, hyps, cutoffs):
+                energy_force_kernel, hyps, cutoffs, hyps_mask=None):
     """Compute the vector of energy/force kernels between an atomic \
 ronment and the environments in the training set."""
 
@@ -126,8 +126,13 @@ ronment and the environments in the training set."""
     for m_index in range(size):
         x_2 = training_data[int(math.floor(m_index / 3))]
         d_2 = ds[m_index % 3]
-        k_v[m_index] = energy_force_kernel(x_2, x, d_2,
-                                           hyps, cutoffs)
+        if (hyps_mask is None):
+            k_v[m_index] = energy_force_kernel(x_2, x, d_2,
+                                               hyps, cutoffs)
+        else:
+            k_v[m_index] = energy_force_kernel(x_2, x, d_2,
+                                               hyps, cutoffs,
+                                               hyps_mask=hyps_mask)
 
     return k_v
 
