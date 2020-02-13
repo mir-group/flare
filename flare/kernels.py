@@ -443,7 +443,7 @@ def many_body(env1, env2, d1, d2, hyps, cutoffs,
     neigh_dists_2 = env2.neigh_dists_mb
     num_neigh_2 = env2.num_neighs_mb
 
-    return many_body_jit(bond_array_1, bond_array_2, neigh_dists_1, num_neigh_1, neigh_dists_2,
+    return many_body_jit(bond_array_1, bond_array_2, neigh_dists_1, neigh_dists_2, num_neigh_1,
                          num_neigh_2, d1, d2, sig, ls, r0, r_cut, cutoff_func)
 
 
@@ -1051,7 +1051,7 @@ def three_body_en_jit(bond_array_1, bond_array_2,
 
 @njit
 def many_body_jit(bond_array_1, bond_array_2,
-                  neighbouring_dists_array_1, neighbouring_dists_array_2,
+                  neighbouring_dists_array_1, neighbouring_dists_array_2, 
                   num_neighbours_1, num_neighbours_2,
                   d1, d2, sig, ls, r0, r_cut, cutoff_func):
     """many-body single-element kernel between two force components accelerated
@@ -1104,7 +1104,6 @@ def many_body_jit(bond_array_1, bond_array_2,
         ri1 = bond_array_1[i, 0]
         ci1 = bond_array_1[i, d1]
         qi1, qi1_grads[i] = q_pairwise(ri1, r0, ci1, r_cut, cutoff_func)
-
         # Calculate many-body descriptor value for i 
         qis[i] = q_value(neighbouring_dists_array_1[i, :num_neighbours_1[i]], r0, r_cut,
                          cutoff_func)
