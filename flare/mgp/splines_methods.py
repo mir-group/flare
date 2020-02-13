@@ -50,7 +50,7 @@ class PCASplines:
        
         var_matr = np.reshape(y, (dim_0, dim_1))
         U, S, Vh = np.linalg.svd(var_matr, full_matrices=False)
-        self.V = Vh[:rank,:].T
+        self.V = Vh[:self.svd_rank,:].T
         for r in range(self.svd_rank):
             self.models[r].set_values(S[r]*U[:, r])
         
