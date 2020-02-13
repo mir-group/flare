@@ -26,11 +26,11 @@ def test_stress_with_lammps():
     positions = parsed.position_list
     forces = parsed.force_list
 
-    gp_model = parsed.make_gp(kernel=mc.two_plus_three_body_mc,
-                              kernel_grad=mc.two_plus_three_body_mc_grad)
+    gp_model = parsed.make_gp(kernel=two_plus_three_body_mc,
+                              kernel_grad=two_plus_three_body_mc_grad)
 
-    gp_model.energy_force_kernel = mc.two_plus_three_mc_force_en
-    gp_model.energy_kernel = mc.two_plus_three_mc_en
+    gp_model.energy_force_kernel = two_plus_three_mc_force_en
+    gp_model.energy_kernel = two_plus_three_mc_en
 
     # build up MGP from GP
     struc_params = {'species': [47, 53],
