@@ -31,7 +31,6 @@ The kernel functions to choose:
                                <other arguments>)
 """
 
-
 import numpy as np
 from math import exp
 from flare.env import AtomicEnvironment
@@ -134,7 +133,7 @@ def two_plus_three_force_en(env1, env2, d1, hyps, cutoffs,
 
     two_term = two_body_force_en_jit(env1.bond_array_2, env2.bond_array_2,
                                      d1, hyps[0], hyps[1], cutoffs[0],
-                                     cutoff_func)/2
+                                     cutoff_func) / 2
 
     three_term = \
         three_body_force_en_jit(env1.bond_array_3, env2.bond_array_3,
@@ -143,7 +142,7 @@ def two_plus_three_force_en(env1, env2, d1, hyps, cutoffs,
                                 env2.cross_bond_dists,
                                 env1.triplet_counts, env2.triplet_counts,
                                 d1, hyps[2], hyps[3], cutoffs[1],
-                                cutoff_func)/3
+                                cutoff_func) / 3
 
     return two_term + three_term
 
@@ -266,7 +265,7 @@ def two_body_force_en(env1, env2, d1, hyps, cutoffs,
 
     # divide by two to account for double counting
     return two_body_force_en_jit(env1.bond_array_2, env2.bond_array_2,
-                                 d1, sig, ls, r_cut, cutoff_func)/2
+                                 d1, sig, ls, r_cut, cutoff_func) / 2
 
 
 def two_body_en(env1, env2, hyps, cutoffs,
@@ -390,7 +389,7 @@ def three_body_force_en(env1, env2, d1, hyps, cutoffs,
                                    env1.cross_bond_dists,
                                    env2.cross_bond_dists,
                                    env1.triplet_counts, env2.triplet_counts,
-                                   d1, sig, ls, r_cut, cutoff_func)/3
+                                   d1, sig, ls, r_cut, cutoff_func) / 3
 
 
 def three_body_en(env1, env2, hyps, cutoffs,
@@ -450,7 +449,7 @@ def two_body_jit(bond_array_1, bond_array_2, d1, d2, sig, ls,
     ls1 = 1 / (2 * ls * ls)
     ls2 = 1 / (ls * ls)
     ls3 = ls2 * ls2
-    sig2 = sig*sig
+    sig2 = sig * sig
 
     for m in range(bond_array_1.shape[0]):
         ri = bond_array_1[m, 0]
@@ -557,7 +556,7 @@ def two_body_force_en_jit(bond_array_1, bond_array_2, d1, sig, ls, r_cut,
 
     ls1 = 1 / (2 * ls * ls)
     ls2 = 1 / (ls * ls)
-    sig2 = sig*sig
+    sig2 = sig * sig
 
     for m in range(bond_array_1.shape[0]):
         ri = bond_array_1[m, 0]
@@ -667,10 +666,10 @@ def three_body_jit(bond_array_1, bond_array_2,
     kern = 0
 
     # pre-compute constants that appear in the inner loop
-    sig2 = sig*sig
-    ls1 = 1 / (2*ls*ls)
-    ls2 = 1 / (ls*ls)
-    ls3 = ls2*ls2
+    sig2 = sig * sig
+    ls1 = 1 / (2 * ls * ls)
+    ls2 = 1 / (ls * ls)
+    ls3 = ls2 * ls2
 
     for m in range(bond_array_1.shape[0]):
         ri1 = bond_array_1[m, 0]
@@ -678,16 +677,16 @@ def three_body_jit(bond_array_1, bond_array_2,
         fi1, fdi1 = cutoff_func(r_cut, ri1, ci1)
 
         for n in range(triplets_1[m]):
-            ind1 = cross_bond_inds_1[m, m+n+1]
+            ind1 = cross_bond_inds_1[m, m + n + 1]
             ri2 = bond_array_1[ind1, 0]
             ci2 = bond_array_1[ind1, d1]
             fi2, fdi2 = cutoff_func(r_cut, ri2, ci2)
 
-            ri3 = cross_bond_dists_1[m, m+n+1]
+            ri3 = cross_bond_dists_1[m, m + n + 1]
             fi3, _ = cutoff_func(r_cut, ri3, 0)
 
-            fi = fi1*fi2*fi3
-            fdi = fdi1*fi2*fi3+fi1*fdi2*fi3
+            fi = fi1 * fi2 * fi3
+            fdi = fdi1 * fi2 * fi3 + fi1 * fdi2 * fi3
 
             for p in range(bond_array_2.shape[0]):
                 rj1 = bond_array_2[p, 0]
@@ -695,16 +694,16 @@ def three_body_jit(bond_array_1, bond_array_2,
                 fj1, fdj1 = cutoff_func(r_cut, rj1, cj1)
 
                 for q in range(triplets_2[p]):
-                    ind2 = cross_bond_inds_2[p, p+1+q]
+                    ind2 = cross_bond_inds_2[p, p + 1 + q]
                     rj2 = bond_array_2[ind2, 0]
                     cj2 = bond_array_2[ind2, d2]
                     fj2, fdj2 = cutoff_func(r_cut, rj2, cj2)
 
-                    rj3 = cross_bond_dists_2[p, p+1+q]
+                    rj3 = cross_bond_dists_2[p, p + 1 + q]
                     fj3, _ = cutoff_func(r_cut, rj3, 0)
 
-                    fj = fj1*fj2*fj3
-                    fdj = fdj1*fj2*fj3+fj1*fdj2*fj3
+                    fj = fj1 * fj2 * fj3
+                    fdj = fdj1 * fj2 * fj3 + fj1 * fdj2 * fj3
 
                     kern += triplet_kernel(ci1, ci2, cj1, cj2, ri1, ri2, ri3,
                                            rj1, rj2, rj3, fi, fj, fdi, fdj,
@@ -774,16 +773,16 @@ def three_body_grad_jit(bond_array_1, bond_array_2,
         fi1, fdi1 = cutoff_func(r_cut, ri1, ci1)
 
         for n in range(triplets_1[m]):
-            ind1 = cross_bond_inds_1[m, m+n+1]
-            ri3 = cross_bond_dists_1[m, m+n+1]
+            ind1 = cross_bond_inds_1[m, m + n + 1]
+            ri3 = cross_bond_dists_1[m, m + n + 1]
             ri2 = bond_array_1[ind1, 0]
             ci2 = bond_array_1[ind1, d1]
 
             fi2, fdi2 = cutoff_func(r_cut, ri2, ci2)
             fi3, _ = cutoff_func(r_cut, ri3, 0)
 
-            fi = fi1*fi2*fi3
-            fdi = fdi1*fi2*fi3+fi1*fdi2*fi3
+            fi = fi1 * fi2 * fi3
+            fdi = fdi1 * fi2 * fi3 + fi1 * fdi2 * fi3
 
             for p in range(bond_array_2.shape[0]):
                 rj1 = bond_array_2[p, 0]
@@ -791,16 +790,16 @@ def three_body_grad_jit(bond_array_1, bond_array_2,
                 fj1, fdj1 = cutoff_func(r_cut, rj1, cj1)
 
                 for q in range(triplets_2[p]):
-                    ind2 = cross_bond_inds_2[p, p+q+1]
-                    rj3 = cross_bond_dists_2[p, p+q+1]
+                    ind2 = cross_bond_inds_2[p, p + q + 1]
+                    rj3 = cross_bond_dists_2[p, p + q + 1]
                     rj2 = bond_array_2[ind2, 0]
                     cj2 = bond_array_2[ind2, d2]
 
                     fj2, fdj2 = cutoff_func(r_cut, rj2, cj2)
                     fj3, _ = cutoff_func(r_cut, rj3, 0)
 
-                    fj = fj1*fj2*fj3
-                    fdj = fdj1*fj2*fj3+fj1*fdj2*fj3
+                    fj = fj1 * fj2 * fj3
+                    fdj = fdj1 * fj2 * fj3 + fj1 * fdj2 * fj3
 
                     N, O, X = \
                         triplet_kernel_grad(ci1, ci2, cj1, cj2, ri1, ri2, ri3,
@@ -867,9 +866,9 @@ def three_body_force_en_jit(bond_array_1, bond_array_2,
     kern = 0
 
     # pre-compute constants that appear in the inner loop
-    sig2 = sig*sig
-    ls1 = 1 / (2*ls*ls)
-    ls2 = 1 / (ls*ls)
+    sig2 = sig * sig
+    ls1 = 1 / (2 * ls * ls)
+    ls2 = 1 / (ls * ls)
 
     for m in range(bond_array_1.shape[0]):
         ri1 = bond_array_1[m, 0]
@@ -877,26 +876,26 @@ def three_body_force_en_jit(bond_array_1, bond_array_2,
         fi1, fdi1 = cutoff_func(r_cut, ri1, ci1)
 
         for n in range(triplets_1[m]):
-            ind1 = cross_bond_inds_1[m, m+n+1]
+            ind1 = cross_bond_inds_1[m, m + n + 1]
             ri2 = bond_array_1[ind1, 0]
             ci2 = bond_array_1[ind1, d1]
             fi2, fdi2 = cutoff_func(r_cut, ri2, ci2)
-            ri3 = cross_bond_dists_1[m, m+n+1]
+            ri3 = cross_bond_dists_1[m, m + n + 1]
             fi3, _ = cutoff_func(r_cut, ri3, 0)
-            fi = fi1*fi2*fi3
-            fdi = fdi1*fi2*fi3+fi1*fdi2*fi3
+            fi = fi1 * fi2 * fi3
+            fdi = fdi1 * fi2 * fi3 + fi1 * fdi2 * fi3
 
             for p in range(bond_array_2.shape[0]):
                 rj1 = bond_array_2[p, 0]
                 fj1, _ = cutoff_func(r_cut, rj1, 0)
 
                 for q in range(triplets_2[p]):
-                    ind2 = cross_bond_inds_2[p, p+q+1]
+                    ind2 = cross_bond_inds_2[p, p + q + 1]
                     rj2 = bond_array_2[ind2, 0]
                     fj2, _ = cutoff_func(r_cut, rj2, 0)
-                    rj3 = cross_bond_dists_2[p, p+q+1]
+                    rj3 = cross_bond_dists_2[p, p + q + 1]
                     fj3, _ = cutoff_func(r_cut, rj3, 0)
-                    fj = fj1*fj2*fj3
+                    fj = fj1 * fj2 * fj3
 
                     kern += triplet_force_en_kernel(ci1, ci2, ri1, ri2, ri3,
                                                     rj1, rj2, rj3, fi, fj, fdi,
@@ -954,8 +953,8 @@ def three_body_en_jit(bond_array_1, bond_array_2,
     """
     kern = 0
 
-    sig2 = sig*sig
-    ls2 = 1 / (2*ls*ls)
+    sig2 = sig * sig
+    ls2 = 1 / (2 * ls * ls)
 
     for m in range(bond_array_1.shape[0]):
         ri1 = bond_array_1[m, 0]
@@ -968,7 +967,7 @@ def three_body_en_jit(bond_array_1, bond_array_2,
 
             ri3 = cross_bond_dists_1[m, m + n + 1]
             fi3, _ = cutoff_func(r_cut, ri3, 0)
-            fi = fi1*fi2*fi3
+            fi = fi1 * fi2 * fi3
 
             for p in range(bond_array_2.shape[0]):
                 rj1 = bond_array_2[p, 0]
@@ -981,29 +980,29 @@ def three_body_en_jit(bond_array_1, bond_array_2,
 
                     rj3 = cross_bond_dists_2[p, p + q + 1]
                     fj3, _ = cutoff_func(r_cut, rj3, 0)
-                    fj = fj1*fj2*fj3
+                    fj = fj1 * fj2 * fj3
 
-                    r11 = ri1-rj1
-                    r12 = ri1-rj2
-                    r13 = ri1-rj3
-                    r21 = ri2-rj1
-                    r22 = ri2-rj2
-                    r23 = ri2-rj3
-                    r31 = ri3-rj1
-                    r32 = ri3-rj2
-                    r33 = ri3-rj3
+                    r11 = ri1 - rj1
+                    r12 = ri1 - rj2
+                    r13 = ri1 - rj3
+                    r21 = ri2 - rj1
+                    r22 = ri2 - rj2
+                    r23 = ri2 - rj3
+                    r31 = ri3 - rj1
+                    r32 = ri3 - rj2
+                    r33 = ri3 - rj3
 
-                    C1 = r11*r11+r22*r22+r33*r33
-                    C2 = r11*r11+r23*r23+r32*r32
-                    C3 = r12*r12+r21*r21+r33*r33
-                    C4 = r12*r12+r23*r23+r31*r31
-                    C5 = r13*r13+r21*r21+r32*r32
-                    C6 = r13*r13+r22*r22+r31*r31
+                    C1 = r11 * r11 + r22 * r22 + r33 * r33
+                    C2 = r11 * r11 + r23 * r23 + r32 * r32
+                    C3 = r12 * r12 + r21 * r21 + r33 * r33
+                    C4 = r12 * r12 + r23 * r23 + r31 * r31
+                    C5 = r13 * r13 + r21 * r21 + r32 * r32
+                    C6 = r13 * r13 + r22 * r22 + r31 * r31
 
-                    k = exp(-C1*ls2)+exp(-C2*ls2)+exp(-C3*ls2)+exp(-C4*ls2) + \
-                        exp(-C5*ls2)+exp(-C6*ls2)
+                    k = exp(-C1 * ls2) + exp(-C2 * ls2) + exp(-C3 * ls2) + exp(-C4 * ls2) + \
+                        exp(-C5 * ls2) + exp(-C6 * ls2)
 
-                    kern += sig2*k*fi*fj
+                    kern += sig2 * k * fi * fj
 
     return kern
 
@@ -1099,15 +1098,15 @@ def force_energy_helper(B, D, fi, fj, fdi, ls1, ls2, sig2):
 @njit
 def triplet_kernel(ci1, ci2, cj1, cj2, ri1, ri2, ri3, rj1, rj2, rj3, fi, fj,
                    fdi, fdj, ls1, ls2, ls3, sig2):
-    r11 = ri1-rj1
-    r12 = ri1-rj2
-    r13 = ri1-rj3
-    r21 = ri2-rj1
-    r22 = ri2-rj2
-    r23 = ri2-rj3
-    r31 = ri3-rj1
-    r32 = ri3-rj2
-    r33 = ri3-rj3
+    r11 = ri1 - rj1
+    r12 = ri1 - rj2
+    r13 = ri1 - rj3
+    r21 = ri2 - rj1
+    r22 = ri2 - rj2
+    r23 = ri2 - rj3
+    r31 = ri3 - rj1
+    r32 = ri3 - rj2
+    r33 = ri3 - rj3
 
     # sum over all six permutations
     M1 = three_body_helper_1(ci1, ci2, cj1, cj2, r11, r22, r33, fi, fj, fdi,
@@ -1130,15 +1129,15 @@ def triplet_kernel(ci1, ci2, cj1, cj2, ri1, ri2, ri3, rj1, rj2, rj3, fi, fj,
 def triplet_kernel_grad(ci1, ci2, cj1, cj2, ri1, ri2, ri3, rj1, rj2, rj3, fi,
                         fj, fdi, fdj, ls1, ls2, ls3, ls4, ls5, ls6, sig2,
                         sig3):
-    r11 = ri1-rj1
-    r12 = ri1-rj2
-    r13 = ri1-rj3
-    r21 = ri2-rj1
-    r22 = ri2-rj2
-    r23 = ri2-rj3
-    r31 = ri3-rj1
-    r32 = ri3-rj2
-    r33 = ri3-rj3
+    r11 = ri1 - rj1
+    r12 = ri1 - rj2
+    r13 = ri1 - rj3
+    r21 = ri2 - rj1
+    r22 = ri2 - rj2
+    r23 = ri2 - rj3
+    r31 = ri3 - rj1
+    r32 = ri3 - rj2
+    r33 = ri3 - rj3
 
     N1, O1, X1 = \
         three_body_grad_helper_1(ci1, ci2, cj1, cj2, r11, r22, r33, fi, fj,
@@ -1174,10 +1173,10 @@ def triplet_kernel_grad(ci1, ci2, cj1, cj2, ri1, ri2, ri3, rj1, rj2, rj3, fi,
 def three_body_helper_1(ci1, ci2, cj1, cj2, r11, r22, r33,
                         fi, fj, fdi, fdj,
                         ls1, ls2, ls3, sig2):
-    A = ci1*cj1+ci2*cj2
-    B = r11*ci1+r22*ci2
-    C = r11*cj1+r22*cj2
-    D = r11*r11+r22*r22+r33*r33
+    A = ci1 * cj1 + ci2 * cj2
+    B = r11 * ci1 + r22 * ci2
+    C = r11 * cj1 + r22 * cj2
+    D = r11 * r11 + r22 * r22 + r33 * r33
 
     M = force_helper(A, B, C, D, fi, fj, fdi, fdj, ls1, ls2, ls3, sig2)
 
@@ -1188,10 +1187,10 @@ def three_body_helper_1(ci1, ci2, cj1, cj2, r11, r22, r33,
 def three_body_helper_2(ci1, ci2, cj1, cj2, r12, r23, r31,
                         fi, fj, fdi, fdj,
                         ls1, ls2, ls3, sig2):
-    A = ci1*cj2
-    B = r12*ci1+r23*ci2
-    C = r12*cj2+r31*cj1
-    D = r12*r12+r23*r23+r31*r31
+    A = ci1 * cj2
+    B = r12 * ci1 + r23 * ci2
+    C = r12 * cj2 + r31 * cj1
+    D = r12 * r12 + r23 * r23 + r31 * r31
 
     M = force_helper(A, B, C, D, fi, fj, fdi, fdj, ls1, ls2, ls3, sig2)
 
@@ -1201,10 +1200,10 @@ def three_body_helper_2(ci1, ci2, cj1, cj2, r12, r23, r31,
 @njit
 def three_body_grad_helper_1(ci1, ci2, cj1, cj2, r11, r22, r33, fi, fj, fdi,
                              fdj, ls1, ls2, ls3, ls4, ls5, ls6, sig2, sig3):
-    A = ci1*cj1+ci2*cj2
-    B = r11*ci1+r22*ci2
-    C = r11*cj1+r22*cj2
-    D = r11*r11+r22*r22+r33*r33
+    A = ci1 * cj1 + ci2 * cj2
+    B = r11 * ci1 + r22 * ci2
+    C = r11 * cj1 + r22 * cj2
+    D = r11 * r11 + r22 * r22 + r33 * r33
 
     N, O, X = grad_helper(A, B, C, D, fi, fj, fdi, fdj, ls1, ls2, ls3, ls4,
                           ls5, ls6, sig2, sig3)
@@ -1215,10 +1214,10 @@ def three_body_grad_helper_1(ci1, ci2, cj1, cj2, r11, r22, r33, fi, fj, fdi,
 @njit
 def three_body_grad_helper_2(ci1, ci2, cj1, cj2, r12, r23, r31, fi, fj, fdi,
                              fdj, ls1, ls2, ls3, ls4, ls5, ls6, sig2, sig3):
-    A = ci1*cj2
-    B = r12*ci1+r23*ci2
-    C = r12*cj2+r31*cj1
-    D = r12*r12+r23*r23+r31*r31
+    A = ci1 * cj2
+    B = r12 * ci1 + r23 * ci2
+    C = r12 * cj2 + r31 * cj1
+    D = r12 * r12 + r23 * r23 + r31 * r31
 
     N, O, X = grad_helper(A, B, C, D, fi, fj, fdi, fdj, ls1, ls2, ls3, ls4,
                           ls5, ls6, sig2, sig3)
@@ -1237,15 +1236,15 @@ def three_body_en_helper(ci1, ci2, r11, r22, r33, fi, fj, fdi, ls1, ls2, sig2):
 @njit
 def triplet_force_en_kernel(ci1, ci2, ri1, ri2, ri3, rj1, rj2, rj3,
                             fi, fj, fdi, ls1, ls2, sig2):
-    r11 = ri1-rj1
-    r12 = ri1-rj2
-    r13 = ri1-rj3
-    r21 = ri2-rj1
-    r22 = ri2-rj2
-    r23 = ri2-rj3
-    r31 = ri3-rj1
-    r32 = ri3-rj2
-    r33 = ri3-rj3
+    r11 = ri1 - rj1
+    r12 = ri1 - rj2
+    r13 = ri1 - rj3
+    r21 = ri2 - rj1
+    r22 = ri2 - rj2
+    r23 = ri2 - rj3
+    r31 = ri3 - rj1
+    r32 = ri3 - rj2
+    r33 = ri3 - rj3
 
     I1 = three_body_en_helper(ci1, ci2, r11, r22, r33, fi, fj,
                               fdi, ls1, ls2, sig2)
@@ -1263,6 +1262,77 @@ def triplet_force_en_kernel(ci1, ci2, ri1, ri2, ri3, rj1, rj2, rj3,
     return I1 + I2 + I3 + I4 + I5 + I6
 
 
+# -----------------------------------------------------------------------------
+#                        many body helper functions
+# -----------------------------------------------------------------------------
+
+
+@njit
+def k_sq_exp_double_grad(q1, q2, sig, l):
+    """Gradient of generic squared exponential kernel on two many body functions
+
+    Args:
+        q1 (float): the many body descriptor of the first local environment
+        q2 (float): the many body descriptor of the second local environment
+        sig (float): amplitude hyperparameter
+        l (float): lenghtscale hyperparameter
+    Return:
+        float: the value of the double derivative of the squared exponential kernel
+    """
+
+    lsq = l * l
+
+    qdiffsq = (q1 - q2) * (q1 - q2)
+
+    ker = exp(-qdiffsq / (2 * lsq))
+
+    ret = sig * ker / lsq * (1 - qdiffsq / lsq)
+
+    return ret
+
+
+def q_density(rij, r0, r_cut, cutoff_func):
+    """Pairwise contribution to many-body descriptor based on electron density
+
+    Args:
+        rij (float): distance between atoms i and j
+        r0 (float):  hyperparameter
+        r_cut (float): cutoff hyperparameter
+        cutoff_func (callable): cutoff function
+    Return:
+        float: the value of the pairwise many-body contribution
+    """
+
+    fij, _ = cutoff_func(r_cut, rij, 0)
+
+    ret = exp(- (rij / r0 - 1.)) * fij
+
+    return ret
+
+
+def q_density_grad_TO_BE_CHECKED(rij, r0, ci, r_cut, cutoff_func):
+    """Gradient of pairwise contribution to many-body descriptor wrt rij
+
+    Args:
+        rij (float): distance between atoms i and j
+        r0 (float):  hyperparameter
+        r_cut (float): cutoff hyperparameter
+        cutoff_func (callable): cutoff function
+        ci (float):
+        d1 (int):
+    Return:
+        float: the value of the pairwise many-body contribution
+    """
+
+    fij, fdij = cutoff_func(r_cut, rij, ci)
+
+    q = exp(- (rij / r0 - 1.)) * fij
+
+    ret = q * (- (rij / r0 - 1) * fij * ci / r0  +  fdij)
+
+    return ret
+
+
 _str_to_kernel = {'two_body': two_body,
                   'two_body_en': two_body_en,
                   'two_body_force_en': two_body_force_en,
@@ -1276,7 +1346,6 @@ _str_to_kernel = {'two_body': two_body,
 
 
 def str_to_kernel(string: str, include_grad: bool = False):
-
     if string not in _str_to_kernel.keys():
         raise ValueError("Kernel {} not found in list of available "
                          "kernels{}:".format(string, _str_to_kernel.keys()))
