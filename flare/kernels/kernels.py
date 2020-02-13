@@ -14,7 +14,7 @@ The kernel functions to choose:
     * three_body_grad,
     * three_body_en,
     * three_body_force_en,
-    
+
 * Two plus three body:
 
     * two_plus_three_body,
@@ -1271,7 +1271,19 @@ _str_to_kernel = {'two_body': two_body,
                   'three_body_force_en': three_body_force_en,
                   'two_plus_three_body': two_plus_three_body,
                   'two_plus_three_en': two_plus_three_en,
-                  'two_plus_three_force_en': two_plus_three_force_en
+                  'two_plus_three_force_en': two_plus_three_force_en,
+                  '2': two_body,
+                  '2_en': two_body_en,
+                  '2_grad': two_body_grad,
+                  '2_force_en': two_body_force_en,
+                  '3': three_body,
+                  '3_grad': three_body_grad,
+                  '3_en': three_body_en,
+                  '3_force_en': three_body_force_en,
+                  '2+3': two_plus_three_body,
+                  '2+3_grad': two_plus_three_body_grad,
+                  '2+3_en': two_plus_three_en,
+                  '2+3_force_en': two_plus_three_force_en
                   }
 
 

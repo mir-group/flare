@@ -7,7 +7,7 @@ from flare.mgp.mgp_en import MappedGaussianProcess
 from flare import mc_simple
 from flare.lammps import lammps_calculator
 import pickle
-import os
+import os, re
 
 
 # ASSUMPTION: You have a Lammps executable with the mgp pair style with $lmp
@@ -34,7 +34,7 @@ def test_parse_header():
     kernel_grad = mc_simple.two_plus_three_body_mc_grad
     energy_force_kernel = mc_simple.two_plus_three_mc_force_en
     energy_kernel = mc_simple.two_plus_three_mc_en
-    gp_model = otf_object.make_gp(kernel=kernel, 
+    gp_model = otf_object.make_gp(kernel=kernel,
                                   kernel_grad=kernel_grad,
                                   energy_force_kernel=energy_force_kernel,
                                   hyp_no=hyp_no)
@@ -129,7 +129,7 @@ def test_parse_header():
 #    lammps_calculator.write_text(data_file_name, data_text)
 #
 #    # create lammps input
-#    style_string = 'mgp' 
+#    style_string = 'mgp'
 #    coeff_string = '* * {} 47 53 yes yes'.format(lammps_location)
 #    lammps_executable = '$lmp'
 #    dump_file_name = 'tmp.dump'
@@ -148,9 +148,12 @@ def test_parse_header():
 #    # check that lammps agrees with gp to within 1 meV/A
 #    assert(np.abs(lammps_forces[0, 1] - forces[0, 1]) < 1e-3)
 
-    os.system('rm tmp.in tmp.out tmp.dump tmp.data'
-              ' log.lammps')
-    os.system('rm '+lammps_location)
-    os.system('rm grid3*.npy')
-    os.system('rm -r kv3*')
+    for f in os.listdir("./"):
+        if f in ['tmp.in', 'tmp.out', 'tmp.dump',
+              'tmp.data', 'log.lammps', lammps_location]:
+            os.remove(f)
+        if re.search("grid3*.npy", f):
+            os.remove(f)
+        if re.search("kv3*", f):
+            os.rmdir(f)
 

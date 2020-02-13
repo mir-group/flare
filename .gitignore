@@ -34,3 +34,7 @@ test_files/qe_output_*.out
 /tests/*-bak
 /tests/cp2k.in*
 /tests/*.in_run
+/tests/tmp*
+/tests/grid3*npy
+/tests/AgI_Molten_15.txt
+/tests/log.lammps

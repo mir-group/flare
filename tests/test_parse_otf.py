@@ -2,7 +2,7 @@ import os
 import sys
 import numpy as np
 from flare.otf_parser import OtfAnalysis
-from flare.kernels import two_plus_three_body, two_plus_three_body_grad
+from flare.kernels.kernels import two_plus_three_body, two_plus_three_body_grad
 from flare.env import AtomicEnvironment
 from flare.predict import predict_on_structure
 

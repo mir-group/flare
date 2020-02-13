@@ -3,8 +3,8 @@ import numpy as np
 from flare.gp import GaussianProcess
 from flare.env import AtomicEnvironment
 from flare.struc import Structure
-import flare.kernels as en
-from flare import mc_simple
+import flare.kernels.kernels as en
+import flare.kernels.mc_simple as mc_simple
 from flare.otf_parser import OtfAnalysis
 
 
@@ -54,7 +54,7 @@ def two_body_gp() -> GaussianProcess:
                         kernel_grad=en.three_body_grad,
                         hyps=np.array([1, 1, 1]),
                         hyp_labels=['Length', 'Signal Var.', 'Noise Var.'],
-                        par=True, no_cpus=2,
+                        par=True, n_cpus=2,
                         cutoffs=cutoffs)
     gaussian.update_db(test_structure, forces)
 
@@ -114,11 +114,6 @@ def test_update_db(two_body_gp, params):
     assert (len(two_body_gp.training_labels_np) == params['noa'] * 2 * 3)
 
 
-def test_get_kernel_vector(two_body_gp, test_point, params):
-    assert (two_body_gp.get_kernel_vector(test_point, 1).shape ==
-            (params['db_pts'],))
-
-
 def test_train(two_body_gp, params):
     hyp = list(two_body_gp.hyps)
 
@@ -170,7 +165,7 @@ def test_set_L_alpha(two_body_gp, params):
         GaussianProcess(kernel, kernel_grad, hyps, cutoffs, hyp_labels,
                         energy_force_kernel, energy_kernel,
                         opt_algorithm,
-                        par=True, no_cpus=2)
+                        par=True, n_cpus=2)
     gaussian.update_db(test_structure, forces)
 
     gaussian.set_L_alpha()

@@ -4,13 +4,14 @@ import os
 import json
 import numpy as np
 
+from typing import List
 from pytest import raises
 
 from flare.gp import GaussianProcess
 from flare.env import AtomicEnvironment
 from flare.struc import Structure
-import flare.kernels as en
-from flare import mc_simple
+import flare.kernels.kernels as en
+import flare.kernels.mc_simple as mc_simple
 from flare.otf_parser import OtfAnalysis
 
 
@@ -102,6 +103,7 @@ def test_point() -> AtomicEnvironment:
     del test_pt
 
 
+
 # ------------------------------------------------------
 #                   test GP methods
 # ------------------------------------------------------
@@ -117,11 +119,6 @@ def test_update_db(two_body_gp, params):
 
     assert (len(two_body_gp.training_data) == params['noa'] * 2)
     assert (len(two_body_gp.training_labels_np) == params['noa'] * 2 * 3)
-
-
-def test_get_kernel_vector(two_body_gp, test_point, params):
-    assert (two_body_gp.get_kernel_vector(test_point, 1).shape ==
-            (params['db_pts'],))
 
 
 def test_train(two_body_gp, params):
@@ -267,7 +264,7 @@ def test_serialization_method(two_body_gp, test_point):
 
 def test_load_and_reload(two_body_gp, test_point):
 
-    two_body_gp.write_model('two_body.pickle', 'pickle')
+    two_body_gp.write_model('two_body', 'pickle')
 
     with open('two_body.pickle', 'rb') as f:
         new_gp = pickle.load(f)
@@ -277,7 +274,8 @@ def test_load_and_reload(two_body_gp, test_point):
                       new_gp.predict(x_t=test_point, d=d))
     os.remove('two_body.pickle')
 
-    two_body_gp.write_model('two_body.json')
+    two_body_gp.write_model('two_body', 'json')
+
     with open('two_body.json', 'r') as f:
         new_gp = GaussianProcess.from_dict(json.loads(f.readline()))
     for d in [0, 1, 2]:
@@ -286,6 +284,6 @@ def test_load_and_reload(two_body_gp, test_point):
     os.remove('two_body.json')
 
     with raises(ValueError):
-        two_body_gp.write_model('two_body.pickle', 'cucumber')
+        two_body_gp.write_model('two_body', 'cucumber')
 
 
