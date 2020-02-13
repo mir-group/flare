@@ -5,8 +5,7 @@ import numpy as np
 from ase.spacegroup import crystal
 
 from flare.otf_parser import OtfAnalysis
-from flare.kernels.kernels import two_plus_three_body, two_plus_three_body_grad
-from flare.kernels.mc_simple import two_plus_three_body_mc, two_plus_three_body_mc_grad
+from flare.kernels.utils import str_to_kernel_set as stk
 from flare.env import AtomicEnvironment
 from flare.predict import predict_on_structure
 from flare.ase.calculator import FLARE_Calculator
@@ -26,11 +25,11 @@ def test_stress_with_lammps():
     positions = parsed.position_list
     forces = parsed.force_list
 
-    gp_model = parsed.make_gp(kernel=two_plus_three_body_mc,
-                              kernel_grad=two_plus_three_body_mc_grad)
-
-    gp_model.energy_force_kernel = two_plus_three_mc_force_en
-    gp_model.energy_kernel = two_plus_three_mc_en
+    kernel, kernel_grad, ek, efk = stk("23mc", False)
+    gp_model = parsed.make_gp(kernel=kernel,
+                              kernel_grad=kernel_grad)
+    gp_model.energy_force_kernel = efk
+    gp_model.energy_kernel = ek
 
     # build up MGP from GP
     struc_params = {'species': [47, 53],
