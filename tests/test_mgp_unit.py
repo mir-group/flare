@@ -60,7 +60,7 @@ def test_init(bodies, multihyps, all_mgp, all_gp):
     lower_cut = 0.01
     two_cut = gp_model.cutoffs[0]
     three_cut = gp_model.cutoffs[1]
-    lammps_location = 'test_mgp.txt'
+    lammps_location = f'{bodies}{multihyps}.mgp'
 
     # set struc params. cell and masses arbitrary?
     mapped_cell = np.eye(3) * 2
@@ -85,7 +85,7 @@ def test_init(bodies, multihyps, all_mgp, all_gp):
     struc_params = {'species': [1, 2],
                     'cube_lat': np.eye(3)*2,
                     'mass_dict': {'0': 27, '1': 16}}
-    mgp_model = MappedGaussianProcess(grid_params, struc_params)
+    mgp_model = MappedGaussianProcess(grid_params, struc_params, n_cpus=4)
     all_mgp[f'{bodies}{multihyps}'] = mgp_model
 
 
@@ -143,63 +143,63 @@ def test_predict(all_gp, all_mgp, bodies, multihyps):
             os.rmdir(f)
 
 
-# @pytest.mark.parametrize('bodies', [ 2, 3])
-# @pytest.mark.parametrize('multihyps', [False, True])
-# def test_lmp_predict(all_gp, all_mgp, bodies, multihyps):
-#     """
-#     test the lammps implementation
-#     """
-#
-#     mgp_model = all_mgp[f'{bodies}{multihyps}']
-#     gp_model = all_gp[f'{bodies}{multihyps}']
-#     lammps_location = mgp_model.lmp_file_name
-#
-#     # lmp file is automatically written now every time MGP is constructed
-#     mgp_model.write_lmp_file(lammps_location)
-#
-#     # create test structure
-#     cell = np.eye(3)
-#     nenv = 10
-#     unique_species = gp_model.training_data[0].species
-#     cutoffs = gp_model.cutoffs
-#     struc_test, f = get_random_structure(cell, unique_species, nenv)
-#     test_envi = env.AtomicEnvironment(struc_test, 1, cutoffs)
-#     atom_types = [1, 2]
-#     atom_masses = [108, 127]
-#     atom_species = struc_test.coded_species
-#
-#     # create data file
-#     data_file_name = 'tmp.data'
-#     data_text = lammps_calculator.lammps_dat(struc_test, atom_types,
-#                                              atom_masses, atom_species)
-#     lammps_calculator.write_text(data_file_name, data_text)
-#
-#     # create lammps input
-#     style_string = 'mgp'
-#     coeff_string = f'* * {lammps_location} 1 2 yes yes'
-#     lammps_executable = os.environ.get('lmp')
-#     dump_file_name = 'tmp.dump'
-#     input_file_name = 'tmp.in'
-#     output_file_name = 'tmp.out'
-#     input_text = \
-#         lammps_calculator.generic_lammps_input(data_file_name, style_string,
-#                                                coeff_string, dump_file_name)
-#     lammps_calculator.write_text(input_file_name, input_text)
-#
-#     lammps_calculator.run_lammps(lammps_executable, input_file_name,
-#                                  output_file_name)
-#
-#     lammps_forces = lammps_calculator.lammps_parser(dump_file_name)
-#     mgp_forces = mgp_model.predict(test_envi, mean_only=True)
-#
-#     # check that lammps agrees with gp to within 1 meV/A
-#     assert (np.abs(lammps_forces[0, 1] - mgp_forces[0][1]) < 1e-3)
-#
-#     for f in os.listdir("./"):
-#         if f in ['tmp.in', 'tmp.out', 'tmp.dump',
-#               'tmp.data', 'log.lammps', lammps_location]:
-#             os.remove(f)
-#         if re.search("grid3*.npy", f):
-#             os.remove(f)
-#         if re.search("kv3*", f):
-#             os.rmdir(f)
+@pytest.mark.parametrize('bodies', [ 2, 3])
+@pytest.mark.parametrize('multihyps', [False, True])
+def test_lmp_predict(all_gp, all_mgp, bodies, multihyps):
+    """
+    test the lammps implementation
+    """
+
+    mgp_model = all_mgp[f'{bodies}{multihyps}']
+    gp_model = all_gp[f'{bodies}{multihyps}']
+    lammps_location = mgp_model.lmp_file_name
+
+    # lmp file is automatically written now every time MGP is constructed
+    mgp_model.write_lmp_file(lammps_location)
+
+    # create test structure
+    cell = np.eye(3)
+    nenv = 10
+    unique_species = gp_model.training_data[0].species
+    cutoffs = gp_model.cutoffs
+    struc_test, f = get_random_structure(cell, unique_species, nenv)
+    test_envi = env.AtomicEnvironment(struc_test, 1, cutoffs)
+    atom_types = [1, 2]
+    atom_masses = [108, 127]
+    atom_species = struc_test.coded_species
+
+    # create data file
+    data_file_name = f'tmp{bodies}{multihyps}.data'
+    data_text = lammps_calculator.lammps_dat(struc_test, atom_types,
+                                             atom_masses, atom_species)
+    lammps_calculator.write_text(data_file_name, data_text)
+
+    # create lammps input
+    style_string = 'mgp'
+    coeff_string = f'* * {lammps_location} 1 2 yes yes'
+    lammps_executable = os.environ.get('lmp')
+    dump_file_name = f'tmp{bodies}{multihyps}.dump'
+    input_file_name = f'tmp{bodies}{multihyps}.in'
+    output_file_name = f'tmp{bodies}{multihyps}.out'
+    input_text = \
+        lammps_calculator.generic_lammps_input(data_file_name, style_string,
+                                               coeff_string, dump_file_name)
+    lammps_calculator.write_text(input_file_name, input_text)
+
+    lammps_calculator.run_lammps(lammps_executable, input_file_name,
+                                 output_file_name)
+
+    lammps_forces = lammps_calculator.lammps_parser(dump_file_name)
+    mgp_forces = mgp_model.predict(test_envi, mean_only=True)
+
+    # check that lammps agrees with gp to within 1 meV/A
+    assert (np.abs(lammps_forces[0, 1] - mgp_forces[0][1]) < 1e-3)
+
+    for f in os.listdir("./"):
+        if f in [f'tmp{bodies}{multihyps}in', f'tmp{bodies}{multihyps}out', f'tmp{bodies}{multihyps}dump',
+              f'tmp{bodies}{multihyps}data', 'log.lammps', lammps_location]:
+            os.remove(f)
+        if re.search("grid3*.npy", f):
+            os.remove(f)
+        if re.search("kv3*", f):
+            os.rmdir(f)

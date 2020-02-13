@@ -21,7 +21,7 @@ def otf_object():
 
 
 @pytest.fixture(scope='module')
-def structure(otf_object): 
+def structure(otf_object):
     # create test structure
     otf_cell = otf_object.header['cell']
     species = np.array([47, 53] * 27)
@@ -57,7 +57,7 @@ def params():
                    'load_grid': None,
                    'update': False}
 
-    map_params = {'grid': grid_params, 
+    map_params = {'grid': grid_params,
                   'struc': struc_params}
 
     yield map_params
@@ -78,7 +78,7 @@ def test_2_body(otf_object, structure, params):
                                   hyps=hyps, hyp_no=hyp_no)
     gp_model.par = True
     gp_model.hyp_labels = ['sig2', 'ls2', 'noise']
- 
+
     # create MGP
     grid_params = params['grid']
     grid_params['bodies'] = [2]
@@ -113,7 +113,7 @@ def test_3_body(otf_object, structure, params):
                                   hyps=hyps, hyp_no=hyp_no)
     gp_model.par = True
     gp_model.hyp_labels = ['sig3', 'ls3', 'noise']
- 
+
     # create MGP
     grid_params = params['grid']
     grid_params['bodies'] = [3]
@@ -141,7 +141,7 @@ def test_2_plus_3_body(otf_object, structure, params):
                                   hyp_no=2)
     gp_model.par = True
     gp_model.hyp_labels = ['sig2', 'ls2', 'sig3', 'ls3', 'noise']
- 
+
     # create MGP
     grid_params = params['grid']
     grid_params['bodies'] = [2, 3]
@@ -184,7 +184,7 @@ def test_lammps(otf_object, structure):
     # create lammps input
     style_string = 'mgp'
     coeff_string = '* * {} Ag I yes yes'.format(lammps_location)
-    lammps_executable = '$lmp'
+    lammps_executable = os.environ.get('lmp')
     dump_file_name = 'tmp.dump'
     input_file_name = 'tmp.in'
     output_file_name = 'tmp.out'
@@ -202,9 +202,12 @@ def test_lammps(otf_object, structure):
     forces = otf_object.force_list[-1]
     assert(np.abs(lammps_forces[0, 1] - forces[0, 1]) < 1e-3)
 
-    os.system('rm tmp.in tmp.out tmp.dump tmp.data'
-              ' log.lammps')
-    os.system('rm '+lammps_location)
-    os.system('rm grid3*.npy')
-    os.system('rm -r kv3*')
+    for f in os.listdir("./"):
+        if f in ['tmp.in', 'tmp.out', 'tmp.dump',
+              'tmp.data', 'log.lammps', lammps_location]:
+            os.remove(f)
+        if re.search("grid3*.npy", f):
+            os.remove(f)
+        if re.search("kv3*", f):
+            os.rmdir(f)
 
