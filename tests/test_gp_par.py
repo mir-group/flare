@@ -114,11 +114,6 @@ def test_update_db(two_body_gp, params):
     assert (len(two_body_gp.training_labels_np) == params['noa'] * 2 * 3)
 
 
-def test_get_kernel_vector(two_body_gp, test_point, params):
-    assert (two_body_gp.get_kernel_vector(test_point, 1).shape ==
-            (params['db_pts'],))
-
-
 def test_train(two_body_gp, params):
     hyp = list(two_body_gp.hyps)
 
