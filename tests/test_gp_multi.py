@@ -13,7 +13,7 @@ from flare.otf_parser import OtfAnalysis
 from flare.kernels.mc_sephyps import _str_to_kernel as stk
 
 from .fake_gp import get_random_structure, generate_hm, \
-                    gp2b, gp3b, gp23b, get_params, get_tstp
+                    get_gp, get_params, get_tstp
 
 # ------------------------------------------------------
 #          fixtures
@@ -25,7 +25,7 @@ from .fake_gp import get_random_structure, generate_hm, \
 def two_body_gp() -> GaussianProcess:
     """Returns a GP instance with a two-body numba-based kernel"""
 
-    gaussian = gp2b()
+    gaussian = get_gp([2], 'mc', True)
 
     yield gaussian
     del gaussian
@@ -34,7 +34,7 @@ def two_body_gp() -> GaussianProcess:
 def three_body_gp() -> GaussianProcess:
     """Returns a GP instance with a two-body numba-based kernel"""
 
-    gaussian = gp3b()
+    gaussian = get_gp([3], 'mc', True)
 
     yield gaussian
     del gaussian
@@ -44,7 +44,7 @@ def three_body_gp() -> GaussianProcess:
 def two_plus_three_gp() -> GaussianProcess:
     """Returns a GP instance with a two-body numba-based kernel"""
 
-    gaussian = gp23b()
+    gaussian = get_gp([2, 3], 'mc', True)
 
     yield gaussian
     del gaussian

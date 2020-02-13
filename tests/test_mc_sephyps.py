@@ -8,48 +8,7 @@ from numpy.random import random, randint
 from flare import env, struc, gp
 from flare.kernels.mc_sephyps import _str_to_kernel as stk
 
-from .fake_gp import generate_hm
-
-def generate_envs(cutoffs, delta):
-    # create env 1
-    cell = np.eye(3)
-
-    positions_1 = np.vstack([[0, 0, 0], random([3, 3])])
-    positions_2 = deepcopy(positions_1)
-    positions_2[0][0] = delta
-    positions_3 = deepcopy(positions_1)
-    positions_3[0][0] = -delta
-
-    species_1 = [1, 2, 1, 1, 1, 1, 2, 1, 2]
-    atom_1 = 0
-    test_structure_1 = struc.Structure(cell, species_1, positions_1)
-    test_structure_2 = struc.Structure(cell, species_1, positions_2)
-    test_structure_3 = struc.Structure(cell, species_1, positions_3)
-
-    env1_1 = env.AtomicEnvironment(test_structure_1, atom_1, cutoffs)
-    env1_2 = env.AtomicEnvironment(test_structure_2, atom_1, cutoffs)
-    env1_3 = env.AtomicEnvironment(test_structure_3, atom_1, cutoffs)
-
-
-    # create env 2
-    positions_1 = np.vstack([[0, 0, 0], random([3, 3])])
-    positions_2 = deepcopy(positions_1)
-    positions_2[0][1] = delta
-    positions_3 = deepcopy(positions_1)
-    positions_3[0][1] = -delta
-
-    atom_2 = 0
-    species_2 = [1, 1, 2, 1, 2, 1, 2, 2, 2]
-
-    test_structure_1 = struc.Structure(cell, species_2, positions_1)
-    test_structure_2 = struc.Structure(cell, species_2, positions_2)
-    test_structure_3 = struc.Structure(cell, species_2, positions_3)
-
-    env2_1 = env.AtomicEnvironment(test_structure_1, atom_2, cutoffs)
-    env2_2 = env.AtomicEnvironment(test_structure_2, atom_2, cutoffs)
-    env2_3 = env.AtomicEnvironment(test_structure_3, atom_2, cutoffs)
-
-    return env1_1, env1_2, env1_3, env2_1, env2_2, env2_3
+from .fake_gp import generate_hm, generate_envs
 
 @pytest.mark.parametrize('kernel_name, nbond, ntriplet, constraint',
                          [ ('two_body_mc', 2, 0, True),

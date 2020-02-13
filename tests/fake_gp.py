@@ -2,15 +2,12 @@ import pytest
 import numpy as np
 from numpy.random import random, randint, permutation
 
-import flare.kernels.mc_sephyps as en
-
 from flare import env, struc, gp
 from flare.gp import GaussianProcess
 from flare.env import AtomicEnvironment
 from flare.struc import Structure
-from flare import mc_simple
 from flare.otf_parser import OtfAnalysis
-from flare.kernels.mc_sephyps import _str_to_kernel as stk
+from flare.kernels.utils import str_to_kernel_set as stks
 
 def get_random_structure(cell, unique_species, noa):
     """Create a random test structure """
@@ -126,7 +123,7 @@ def generate_hm(nbond, ntriplet, cutoffs=[1, 1], constraint=False):
     return hyps, hyps_mask, cut
 
 
-def gp2b() -> GaussianProcess:
+def get_gp(bodies, kernel_type='mc', multihyps=True) -> GaussianProcess:
     """Returns a GP instance with a two-body numba-based kernel"""
     print("\nSetting up...\n")
 
@@ -136,89 +133,46 @@ def gp2b() -> GaussianProcess:
     cutoffs = np.array([0.8, 0.8])
     noa = 5
 
-    nbond = 1
-    ntriplet = 0
+    if (bodies is 2):
+        nbond = 1
+        ntriplet = 0
+        prefix='2'
+    elif (bodies is 3):
+        nbond = 0
+        ntriplet = 1
+        prefix='3'
+    elif (isinstance(bodies, list)):
+        nbond = 0
+        ntriplet = 0
+        prefix = ''
+        if (2 in bodies):
+            nbond = 1
+            prefix += '2'
+        if (3 in bodies):
+            ntriplet = 1
+            prefix += '3'
+
+
     hyps, hm, _ = generate_hm(nbond, ntriplet)
 
     # create test structure
     test_structure, forces = get_random_structure(cell, unique_species,
                                                   noa)
 
+    kernel, kernel_grad, _, __ = stks(f'{prefix}{kernel_type}', multihyps=multihyps)
+
     # test update_db
     gaussian = \
-        GaussianProcess(kernel=en.two_body_mc,
-                        kernel_grad=en.two_body_mc_grad,
+        GaussianProcess(kernel=kernel,
+                        kernel_grad=kernel_grad,
                         hyps=hyps,
                         hyp_labels=hm['hyps_label'],
-                        cutoffs=cutoffs, multihyps=True, hyps_mask=hm,
+                        cutoffs=cutoffs, multihyps=multihyps, hyps_mask=hm,
                         par=False, n_cpus=1)
     gaussian.update_db(test_structure, forces)
 
     return gaussian
 
-def gp3b() -> GaussianProcess:
-    """Returns a GP instance with a two-body numba-based kernel"""
-    print("\nSetting up...\n")
-
-    # params
-    cell = np.eye(3)
-    unique_species = [2, 1]
-    cutoffs = np.array([0.8, 0.8])
-    noa = 5
-
-    nbond = 0
-    ntriplet = 1
-    hyps, hm, _ = generate_hm(nbond, ntriplet)
-
-    # create test structure
-    test_structure, forces = get_random_structure(cell, unique_species,
-                                                  noa)
-
-    # test update_db
-    gaussian = \
-        GaussianProcess(kernel=en.three_body_mc,
-                        kernel_grad=en.three_body_mc_grad,
-                        hyps=hyps,
-                        hyp_labels=hm['hyps_label'],
-                        cutoffs=cutoffs, multihyps=True, hyps_mask=hm)
-    gaussian.update_db(test_structure, forces)
-
-    return gaussian
-
-
-def gp23b() -> GaussianProcess:
-    """Returns a GP instance with a two-body numba-based kernel"""
-    print("\nSetting up...\n")
-
-    # params
-    cell = np.eye(3)
-    unique_species = [2, 1]
-    cutoffs = np.array([0.8, 0.8])
-    noa = 5
-
-    nbond = 1
-    ntriplet = 1
-    hyps, hm, _ = generate_hm(nbond, ntriplet)
-
-    # create test structure
-    test_structure, forces = get_random_structure(cell, unique_species,
-                                                  noa)
-    efk = en.two_plus_three_mc_force_en
-    ek = en.two_plus_three_mc_en
-
-    # test update_db
-    gaussian = \
-        GaussianProcess(kernel=en.two_plus_three_body_mc,
-                        kernel_grad=en.two_plus_three_body_mc_grad,
-                        hyps=hyps,
-                        energy_force_kernel = efk,
-                        energy_kernel=ek,
-                        opt_algorithm = 'BFGS',
-                        hyp_labels=hm['hyps_label'],
-                        cutoffs=cutoffs, multihyps=True, hyps_mask=hm)
-    gaussian.update_db(test_structure, forces)
-
-    return gaussian
 
 def get_params():
     parameters = {'unique_species': [2, 1],
@@ -242,3 +196,45 @@ def get_tstp() -> AtomicEnvironment:
     test_pt = AtomicEnvironment(test_structure_2, 0,
                                 np.array([cutoff, cutoff]))
     return test_pt
+
+
+def generate_envs(cutoffs, delta):
+    # create env 1
+    cell = np.eye(3)
+
+    positions_1 = np.vstack([[0, 0, 0], random([3, 3])])
+    positions_2 = deepcopy(positions_1)
+    positions_2[0][0] = delta
+    positions_3 = deepcopy(positions_1)
+    positions_3[0][0] = -delta
+
+    species_1 = [1, 2, 1, 1, 1, 1, 2, 1, 2]
+    atom_1 = 0
+    test_structure_1 = struc.Structure(cell, species_1, positions_1)
+    test_structure_2 = struc.Structure(cell, species_1, positions_2)
+    test_structure_3 = struc.Structure(cell, species_1, positions_3)
+
+    env1_1 = env.AtomicEnvironment(test_structure_1, atom_1, cutoffs)
+    env1_2 = env.AtomicEnvironment(test_structure_2, atom_1, cutoffs)
+    env1_3 = env.AtomicEnvironment(test_structure_3, atom_1, cutoffs)
+
+
+    # create env 2
+    positions_1 = np.vstack([[0, 0, 0], random([3, 3])])
+    positions_2 = deepcopy(positions_1)
+    positions_2[0][1] = delta
+    positions_3 = deepcopy(positions_1)
+    positions_3[0][1] = -delta
+
+    atom_2 = 0
+    species_2 = [1, 1, 2, 1, 2, 1, 2, 2, 2]
+
+    test_structure_1 = struc.Structure(cell, species_2, positions_1)
+    test_structure_2 = struc.Structure(cell, species_2, positions_2)
+    test_structure_3 = struc.Structure(cell, species_2, positions_3)
+
+    env2_1 = env.AtomicEnvironment(test_structure_1, atom_2, cutoffs)
+    env2_2 = env.AtomicEnvironment(test_structure_2, atom_2, cutoffs)
+    env2_3 = env.AtomicEnvironment(test_structure_3, atom_2, cutoffs)
+
+    return env1_1, env1_2, env1_3, env2_1, env2_2, env2_3
