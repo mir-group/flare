@@ -15,9 +15,7 @@ from flare.env import AtomicEnvironment
 from flare.kernels.kernels import three_body_helper_1, \
     three_body_helper_2, force_helper
 from flare.cutoffs import quadratic_cutoff
-from flare.kernels.kernels import str_to_kernel
-from flare.kernels.mc_simple import str_to_mc_kernel
-from flare.kernels.mc_sephyps import str_to_mc_kernel as str_to_mc_sephyps_kernel
+from flare.kernels.utils import str_to_kernel_set as stks
 
 
 def save_GP(GP, prefix):
@@ -36,15 +34,9 @@ def load_GP(GP, prefix):
 
 def get_2bkernel(GP):
     if 'mc' in GP.kernel_name:
-        if (GP.multihyps is False):
-            kernel = str_to_mc_kernel('two_body_mc')
-            energy_force_kernel = mc_simple.two_body_mc_force_en
-        else:
-            kernel = str_to_mc_sephyps_kernel('two_body_mc')
-            energy_force_kernel = mc_sephyps.two_body_mc_force_en
+        kernel, _, _, efk = stks('2mc', GP.multihyps)
     else:
-        kernel = str_to_kernel('two_body')
-        energy_force_kernel = sc.two_body_mc_force_en
+        kernel, _, _, efk = stks('2', GP.multihyps)
 
     cutoffs = [GP.cutoffs[0]]
 
@@ -67,21 +59,15 @@ def get_2bkernel(GP):
     else:
         hyps = [GP.hyps[0], GP.hyps[1], GP.hyps[-1]]
         hyps_mask = None
-    return (kernel, energy_force_kernel, cutoffs, hyps, hyps_mask)
+    return (kernel, efk, cutoffs, hyps, hyps_mask)
 
 
 def get_3bkernel(GP):
 
     if 'mc' in GP.kernel_name:
-        if (GP.multihyps is False):
-            kernel = str_to_mc_kernel('three_body_mc')
-            energy_force_kernel = mc_simple.three_body_mc_force_en
-        else:
-            kernel = str_to_mc_sephyps_kernel('three_body_mc')
-            energy_force_kernel = mc_sephyps.three_body_mc_force_en
+        kernel, _, _, efk = stks('3mc', GP.multihyps)
     else:
-        kernel = str_to_kernel('three_body')
-        energy_force_kernel = sc.three_body_mc_force_en
+        kernel, _, _, efk = stks('3', GP.multihyps)
 
     if 'two' in GP.kernel_name:
         base = 2
@@ -111,7 +97,7 @@ def get_3bkernel(GP):
         hyps = [GP.hyps[0+base], GP.hyps[1+base], GP.hyps[-1]]
         hyps_mask = None
 
-    return (kernel, energy_force_kernel, cutoffs, hyps, hyps_mask)
+    return (kernel, efk, cutoffs, hyps, hyps_mask)
 
 
 def en_kern_vec(training_data, x: AtomicEnvironment,

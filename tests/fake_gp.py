@@ -1,3 +1,4 @@
+from copy import deepcopy
 import pytest
 import numpy as np
 from numpy.random import random, randint, permutation
@@ -44,24 +45,24 @@ def generate_hm(nbond, ntriplet, cutoffs=[1, 1], constraint=False):
     cut += [cutoffs[0]]
     cut += [cutoffs[1]]
 
-    if (nbond==2):
+    if (nbond>2):
         sig1 = random(nbond)
         ls1 = random(nbond)
         bond_mask = np.ones(nspecs**2, dtype=int)
         bond_mask[0] = 0
-        bond_name = ["sig2"]*2+["ls2"]*2
+        bond_name = ["sig2"]*nbond+["ls2"]*nbond
     else:
         sig1 = [random()]
         ls1 = [random()]
         bond_mask = np.zeros(nspecs**2, dtype=int)
         bond_name = ["sig2"]+["ls2"]
 
-    if (ntriplet==2):
+    if (ntriplet>2):
         sig2 = random(ntriplet)
         ls2 = random(ntriplet)
         triplet_mask = np.ones(nspecs**3, dtype=int)
         triplet_mask[0] = 0
-        triplet_name = ["sig3"]*2+["ls3"]*2
+        triplet_name = ["sig3"]*ntriplet+["ls3"]*ntriplet
     else:
         sig2 = [random()]
         ls2 = [random()]
@@ -152,27 +153,31 @@ def get_gp(bodies, kernel_type='mc', multihyps=True) -> GaussianProcess:
             ntriplet = 1
             prefix += '3'
 
-
     hyps, hm, _ = generate_hm(nbond, ntriplet)
 
     # create test structure
     test_structure, forces = get_random_structure(cell, unique_species,
                                                   noa)
 
-    kernel, kernel_grad, _, __ = stks(f'{prefix}{kernel_type}', multihyps=multihyps)
+    kernel, kernel_grad, _, efk = stks(f'{prefix}{kernel_type}',
+                                       multihyps=multihyps)
+
+    hl = hm['hyps_label']
+    if (multihyps is False):
+        hm = None
 
     # test update_db
     gaussian = \
         GaussianProcess(kernel=kernel,
                         kernel_grad=kernel_grad,
                         hyps=hyps,
-                        hyp_labels=hm['hyps_label'],
+                        hyp_labels=hl,
+                        energy_force_kernel=efk,
                         cutoffs=cutoffs, multihyps=multihyps, hyps_mask=hm,
                         par=False, n_cpus=1)
     gaussian.update_db(test_structure, forces)
 
     return gaussian
-
 
 def get_params():
     parameters = {'unique_species': [2, 1],
@@ -199,6 +204,10 @@ def get_tstp() -> AtomicEnvironment:
 
 
 def generate_envs(cutoffs, delta):
+    """
+    create environment with perturbation on
+    direction i
+    """
     # create env 1
     cell = np.eye(3)
 
