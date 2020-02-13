@@ -589,9 +589,9 @@ def test_many_body_force():
     cutoffs = np.array([1.2, 1.2, 1.2])
 
     positions_1 = [np.array([0., 0., 0.]),
-                   np.array([0., 1., 0.]) + 0.01*np.array([random(), random(), random()]),
-                   np.array([1., 0., 0.]) + 0.01*np.array([random(), random(), random()]),
-                   np.array([1., 1., 0.]) + 0.01*np.array([random(), random(), random()])]
+                   np.array([0., 1., 0.]) + 0.1*np.array([random(), random(), random()]),
+                   np.array([1., 0., 0.]) + 0.1*np.array([random(), random(), random()]),
+                   np.array([1., 1., 0.]) + 0.1*np.array([random(), random(), random()])]
     
     positions_2 = deepcopy(positions_1)
     positions_2[0][0] = delt
@@ -621,9 +621,9 @@ def test_many_body_force():
 
     # create env 2
     positions_1 = [np.array([0., 0., 0.]),
-                   np.array([0., 1., 0.]) + 0.01*np.array([random(), random(), random()]),
-                   np.array([1., 0., 0.]) + 0.01*np.array([random(), random(), random()]),
-                   np.array([1., 1., 0.]) + 0.01*np.array([random(), random(), random()])]
+                   np.array([0., 1., 0.]) + 0.1*np.array([random(), random(), random()]),
+                   np.array([1., 0., 0.]) + 0.1*np.array([random(), random(), random()]),
+                   np.array([1., 1., 0.]) + 0.1*np.array([random(), random(), random()])]
     
     positions_2 = deepcopy(positions_1)
     positions_2[0][1] = delt
@@ -734,7 +734,7 @@ def test_many_body_force():
     kern_finite_diff = ( kern_finite_diff_00 + kern_finite_diff_01 + kern_finite_diff_02 +
                          kern_finite_diff_10 + kern_finite_diff_11 + kern_finite_diff_12 +
                          kern_finite_diff_20 + kern_finite_diff_21 + kern_finite_diff_22 )
-                         
+
     kern_analytical = en.many_body(env1_1_0, env2_1_0,
                                   d1, d2, hyps, cutoffs)
 
