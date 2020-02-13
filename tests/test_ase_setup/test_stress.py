@@ -6,7 +6,8 @@ from ase.spacegroup import crystal
 
 from flare.otf_parser import OtfAnalysis
 from flare.kernels.kernels import two_plus_three_body, two_plus_three_body_grad
-from flare.kernels.mc_simple import two_plus_three_body_mc, two_plus_three_body_mc_grad
+from flare.kernels.mc_simple import two_plus_three_body_mc, two_plus_three_body_mc_grad,\
+                                    two_plus_three_mc_force_en, two_plus_three_mc_en
 from flare.env import AtomicEnvironment
 from flare.predict import predict_on_structure
 from flare.ase.calculator import FLARE_Calculator
@@ -41,8 +42,7 @@ def test_stress_with_lammps():
     lower_cut = 2.5
     grid_num_2 = 64
     grid_num_3 = 48
-    two_cut = 5.0
-    three_cut = 5.0
+    two_cut, three_cut = gp_model.cutoffs
     grid_params = {'bounds_2': [[lower_cut], [two_cut]],
                    'bounds_3': [[lower_cut, lower_cut, lower_cut],
                                 [three_cut, three_cut, three_cut]],
