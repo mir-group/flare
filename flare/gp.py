@@ -630,11 +630,14 @@ class GaussianProcess:
             new_gp.ky_mat = np.load(dictionary['ky_mat_file'])
             new_gp.compute_matrices()
         else:
-            new_gp.ky_mat_inv = np.array(dictionary.get('ky_mat_inv', None))
-            new_gp.ky_mat = np.array(dictionary.get('ky_mat', None))
-            new_gp.l_mat = np.array(dictionary.get('l_mat', None))
-            new_gp.alpha = np.array(dictionary.get('alpha', None))
-
+            new_gp.ky_mat_inv = np.array(dictionary['ky_mat_inv']) \
+                if dictionary.get('ky_mat_inv') is not None else None
+            new_gp.ky_mat = np.array(dictionary['ky_mat']) \
+                if dictionary.get('ky_mat') is not None else None
+            new_gp.l_mat = np.array(dictionary['l_mat']) \
+                if dictionary.get('l_mat') is not None else None
+            new_gp.alpha = np.array(dictionary['alpha']) \
+                if dictionary.get('alpha') is not None  else None
         return new_gp
 
     def compute_matrices(self):
