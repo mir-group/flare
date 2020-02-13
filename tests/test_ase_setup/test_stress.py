@@ -40,8 +40,7 @@ def test_stress_with_lammps():
     lower_cut = 2.5
     grid_num_2 = 64
     grid_num_3 = 48
-    two_cut = 5.0
-    three_cut = 5.0
+    two_cut, three_cut = gp_model.cutoffs
     grid_params = {'bounds_2': [[lower_cut], [two_cut]],
                    'bounds_3': [[lower_cut, lower_cut, lower_cut],
                                 [three_cut, three_cut, three_cut]],

@@ -521,7 +521,7 @@ class Map2body:
             env12, kernel_info):
 
         '''
-        generate grid for each angle, used to parallelize grid generation
+        generate grid for each cos angle, used to parallelize grid generation
         '''
         print(kernel_info)
 
@@ -602,7 +602,7 @@ class Map3body:
         nop = self.grid_num[0]
         noa = self.grid_num[2]
         bond_lengths = np.linspace(self.l_bounds[0], self.u_bounds[0], nop)
-        angles = np.linspace(self.l_bounds[2], self.u_bounds[2], noa)
+        cos_angles = np.linspace(self.l_bounds[2], self.u_bounds[2], noa)
 
         bond_means = np.zeros([nop, nop, noa])
         if not self.mean_only:
@@ -637,13 +637,13 @@ class Map3body:
                 print('parallel set up:', size, ns, nsample, time.time())
             count = 0
             base = 0
-            k12_v_all = np.zeros([len(bond_lengths), len(bond_lengths), len(angles), size*3])
+            k12_v_all = np.zeros([len(bond_lengths), len(bond_lengths), len(cos_angles), size*3])
             for ibatch in range(nbatch):
                 s, e = block_id[ibatch]
                 k12_slice.append(\
                         pool.apply_async(self._GenGrid_inner_most,
                                          args=(GP.training_data[s:e],
-                                               angles, bond_lengths,
+                                               cos_angles, bond_lengths,
                                                env12, kernel_info)))
                 if (size>5000):
                     print('send', ibatch, ns, s, e, time.time())
@@ -667,7 +667,7 @@ class Map3body:
             pool.close()
             pool.join()
 
-        for a12, angle in enumerate(angles):
+        for a12, cos_angle in enumerate(cos_angles):
             for b1, r1 in enumerate(bond_lengths):
                 for b2, r2 in enumerate(bond_lengths):
                     k12_v = k12_v_all[b1, b2, a12, :]
@@ -696,7 +696,7 @@ class Map3body:
         nop = self.grid_num[0]
         noa = self.grid_num[2]
         bond_lengths = np.linspace(self.l_bounds[0], self.u_bounds[0], nop)
-        angles = np.linspace(self.l_bounds[2], self.u_bounds[2], noa)
+        cos_angles = np.linspace(self.l_bounds[2], self.u_bounds[2], noa)
         bond_means = np.zeros([nop, nop, noa])
         bond_vars = np.zeros([nop, nop, noa, len(GP.alpha)])
         env12 = AtomicEnvironment(self.bond_struc, 0, self.cutoffs)
@@ -710,13 +710,13 @@ class Map3body:
         ds = [1, 2, 3]
         k_v = np.zeros(3)
         k12_v_all = np.zeros([len(bond_lengths), len(bond_lengths),
-                              len(angles), size*3])
+                              len(cos_angles), size*3])
         for b1, r1 in enumerate(bond_lengths):
             for b2, r2 in enumerate(bond_lengths):
-                for a12, angle12 in enumerate(angles):
+                for a12, cos_angle12 in enumerate(cos_angles):
 
-                    x2 = r2 * np.cos(angle12)
-                    y2 = r2 * np.sin(angle12)
+                    x2 = r2 * cos_angle12
+                    y2 = r2 * np.sqrt(1-cos_angle12**2)
                     r12 = np.linalg.norm(np.array([x2-r1, y2, 0]))
 
                     env12.bond_array_3 = np.array([[r1, 1, 0, 0],
@@ -732,7 +732,7 @@ class Map3body:
 
         for b1, r1 in enumerate(bond_lengths):
             for b2, r2 in enumerate(bond_lengths):
-                for a12, angle in enumerate(angles):
+                for a12, cos_angle in enumerate(cos_angles):
                     k12_v = k12_v_all[b1, b2, a12, :]
                     bond_means[b1, b2, a12] = np.matmul(k12_v, GP.alpha)
                     if not self.mean_only:
@@ -744,23 +744,23 @@ class Map3body:
 
         return bond_means, bond_vars
 
-    def _GenGrid_inner_most(self, training_data, angles, bond_lengths, env12, kernel_info):
+    def _GenGrid_inner_most(self, training_data, cos_angles, bond_lengths, env12, kernel_info):
 
         '''
-        generate grid for each angle, used to parallelize grid generation
+        generate grid for each cos_angle, used to parallelize grid generation
         '''
 
         kernel, efk, cutoffs, hyps, hyps_mask = kernel_info
         # open saved k vector file, and write to new file
         size = len(training_data)*3
-        k12_v = np.zeros([len(angles), len(bond_lengths),
-                          len(bond_lengths), size])
-        for a12, angle12 in enumerate(angles):
+        k12_v = np.zeros([len(bond_lengths), len(bond_lengths), 
+                          len(cos_angles), size])
+        for a12, cos_angle12 in enumerate(cos_angles):
             for b1, r1 in enumerate(bond_lengths):
                 for b2, r2 in enumerate(bond_lengths):
 
-                    x2 = r2 * np.cos(angle12)
-                    y2 = r2 * np.sin(angle12)
+                    x2 = r2 * cos_angle12
+                    y2 = r2 * np.sqrt(1-cos_angle12**2)
                     r12 = np.linalg.norm(np.array([x2-r1, y2, 0]))
 
                     env12.bond_array_3 = np.array([[r1, 1, 0, 0],

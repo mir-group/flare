@@ -68,7 +68,7 @@ def test_init(bodies, all_gp, all_mgp):
     # grid parameters
     grid_params = {'bounds_2': [[lower_cut], [two_cut]],
                    'bounds_3': [[lower_cut, lower_cut, -1],
-                                [three_cut, three_cut, 1]],
+                                [three_cut, three_cut,  1]],
                    'grid_num_2': grid_num_2,
                    'grid_num_3': [grid_num_3, grid_num_3, grid_num_3],
                    'svd_rank_2': 64,
@@ -76,7 +76,7 @@ def test_init(bodies, all_gp, all_mgp):
                    'bodies': [bodies],
                    'cutoffs': [two_cut, three_cut],
                    'load_grid': None,
-                   'update': True}
+                   'update': False}
 
     struc_params = {'species': [1, 2],
                     'cube_lat': np.eye(3)*2,
@@ -84,7 +84,7 @@ def test_init(bodies, all_gp, all_mgp):
 
     mgp_model = MappedGaussianProcess(gp_model.hyps, gp_model.cutoffs,
             grid_params, struc_params, mean_only=True, container_only=True,
-            GP=gp_model, lmp_file_name='AgI_Molten_15.txt')
+            GP=gp_model, lmp_file_name=lammps_location)
     all_mgp[f'{bodies}'] = mgp_model
 
 
