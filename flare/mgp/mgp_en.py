@@ -329,12 +329,11 @@ class MappedGaussianProcess:
 
             elem1 = spc[0]
             elem2 = spc[1]
-            header_2 = '{elem1} {elem2} {a} {b} {order}\n'\
-                .format(elem1=elem1, elem2=elem2, a=a, b=b, order=order)
+            header_2 = f'{elem1} {elem2} {a} {b} {order}\n'
             f.write(header_2)
 
             for c, coef in enumerate(coefs_2):
-                f.write('{:.10e} '.format(coef))
+                f.write(f'{coef:.10e} ')
                 if c % 5 == 4 and c != len(coefs_2)-1:
                     f.write('\n')
 
@@ -352,12 +351,9 @@ class MappedGaussianProcess:
             elem2 = spc[1]
             elem3 = spc[2]
 
-            header_3 = '{elem1} {elem2} {elem3} {a1} {a2} {a3} {b1}'\
-                       ' {b2} {b3:.10e} {order1} {order2} {order3}\n'\
-                .format(elem1=elem1, elem2=elem2, elem3=elem3,
-                        a1=a[0], a2=a[1], a3=a[2],
-                        b1=b[0], b2=b[1], b3=b[2],
-                        order1=order[0], order2=order[1], order3=order[2])
+            header_3 = f'{elem1} {elem2} {elem3} {a[0]} {a[1]} {a[2]}'\
+                       f' {b[0]} {b[1]} {b[2]:.10e}'\
+                       f' {order[0]} {order[1]} {order[2]}\n'
             f.write(header_3)
 
             n = 0
@@ -365,7 +361,7 @@ class MappedGaussianProcess:
                 for j in range(coefs_3.shape[1]):
                     for k in range(coefs_3.shape[2]):
                         coef = coefs_3[i, j, k]
-                        f.write('{:.10e} '.format(coef))
+                        f.write(f'{coef:.10e} ')
                         if n % 5 == 4:
                             f.write('\n')
                         n += 1
@@ -387,7 +383,7 @@ class MappedGaussianProcess:
 
         twobodyarray = len(self.spcs[0])
         threebodyarray = len(self.spcs[1])
-        header = '\n{} {}\n'.format(twobodyarray, threebodyarray)
+        header = f'\n{twobodyarray} {threebodyarray}\n'
         f.write(header)
 
         # write two body
