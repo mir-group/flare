@@ -64,7 +64,6 @@ class MappedGaussianProcess:
         # if GP exists, the GP setup overrides the grid_params setup
         if (GP is not None):
 
-            self.kernel_name = GP.kernel_name
             self.cutoffs = GP.cutoffs
 
             self.bodies = []
@@ -107,6 +106,12 @@ class MappedGaussianProcess:
         '''
         generate/load grids and get spline coefficients
         '''
+
+        if 2 in self.bodies:
+            self.kernel2b_info = utils.get_2bkernel(GP)
+        if 3 in self.bodies:
+            self.kernel3b_info = utils.get_3bkernel(GP)
+
         for map_2 in self.maps_2:
             map_2.build_map(GP)
         for map_3 in self.maps_3:
