@@ -27,9 +27,8 @@ def get_ky_mat(hyps: np.ndarray, training_data: list,
     number_of_hyps = len(hyps)
     sigma_n = hyps[number_of_hyps - 1]
     if (hyps_mask is not None):
-        if ('train_noise' in hyps_mask):
-            if (hyps_mask['train_noise'] is False):
-                sigma_n = hyps_mask['original'][-1]
+        if (hyps_mask.get('train_noise', True) is False):
+            sigma_n = hyps_mask['original'][-1]
 
     # matrix manipulation
     k_mat = get_ky_mat_pack(hyps, training_data,
@@ -117,8 +116,7 @@ def get_ky_mat_par(hyps: np.ndarray, training_data: list,
     number_of_hyps = len(hyps)
     sigma_n = hyps[-1]
     if (hyps_mask is not None):
-        if ('train_noise' in hyps_mask.keys()):
-            if (hyps_mask['train_noise'] is False):
+        if (hyps_mask.get('train_noise', True) is False):
                 sigma_n = hyps_mask['original'][-1]
 
     # initialize matrices
@@ -245,9 +243,8 @@ def get_ky_and_hyp(hyps: np.ndarray, training_data: list,
     train_noise = True
     sigma_n = hyps[-1]
     if (hyps_mask is not None):
-        if ('train_noise' in hyps_mask):
-            if (hyps_mask['train_noise'] is False):
-                train_noise = False
+        train_noise = hyps_mask.get('train_noise', True)
+        if (train_noise is False):
                 sigma_n = hyps_mask['original'][-1]
     # add gradient of noise variance
     size3 = 3*len(training_data)
@@ -290,10 +287,9 @@ def get_ky_and_hyp_pack(hyps: np.ndarray, training_data1: list,
     non_noise_hyps = len(hyps)-1
     train_noise = True
     if (hyps_mask is not None):
-        if ('train_noise' in hyps_mask.keys()):
-            if (hyps_mask['train_noise'] is False):
-                train_noise = False
-                non_noise_hyps = len(hyps)
+        train_noise = hyps_mask.get('train_noise', True)
+        if (train_noise is False):
+            non_noise_hyps = len(hyps)
 
     # initialize matrices
     size1 = len(training_data1) * 3
@@ -367,11 +363,10 @@ def get_ky_and_hyp_par(hyps: np.ndarray, training_data: list,
     sigma_n = hyps[-1]
     train_noise = True
     if (hyps_mask is not None):
-        if ('train_noise' in hyps_mask.keys()):
-            if (hyps_mask['train_noise'] is False):
-                sigma_n = hyps_mask['original'][-1]
-                train_noise = False
-                non_noise_hyps = len(hyps)
+        train_noise = hyps_mask.get('train_noise', True)
+        if (train_noise is False):
+            sigma_n = hyps_mask['original'][-1]
+            non_noise_hyps = len(hyps)
 
     # initialize matrices
     size = len(training_data)
@@ -660,9 +655,8 @@ def get_ky_mat_update_par(ky_mat_old, hyps: np.ndarray, training_data: list,
     # assume sigma_n is the final hyperparameter
     sigma_n = hyps[-1]
     if (hyps_mask is not None):
-        if ('train_noise' in hyps_mask.keys()):
-            if (hyps_mask['train_noise'] is False):
-                sigma_n = hyps_mask['original'][-1]
+        if (hyps_mask.get('train_noise', True) is False):
+            sigma_n = hyps_mask['original'][-1]
 
     # initialize matrices
     old_size3 = ky_mat_old.shape[0]
@@ -796,9 +790,8 @@ def get_ky_mat_update(ky_mat_old, hyps: np.ndarray, training_data: list,
     # matrix manipulation
     sigma_n = hyps[-1]
     if (hyps_mask is not None):
-        if ('train_noise' in hyps_mask.keys()):
-            if (hyps_mask['train_noise'] is False):
-                sigma_n = hyps_mask['original'][-1]
+        if (hyps_mask.get('train_noise', True) is False):
+            sigma_n = hyps_mask['original'][-1]
     ky_mat[n:, n:] += sigma_n ** 2 * np.eye(size3-n)
     return ky_mat
 
