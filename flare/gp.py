@@ -20,7 +20,7 @@ from flare.gp_algebra import get_kernel_vector_par
 from flare.gp_algebra import get_ky_mat_par
 from flare.gp_algebra import get_ky_mat_update_par
 from flare.gp_algebra import get_neg_like_grad
-from flare.kernels.utils import str_to_kernel_set
+from flare.kernels.utils import str_to_kernel_set as stk
 from flare.util import NumpyEncoder
 from flare.output import Output
 import flare.cutoffs as cf
@@ -56,9 +56,9 @@ class GaussianProcess:
             during optimization. Defaults to None.
     """
 
-    def __init__(self, kernel: Callable,
-                 kernel_grad: Callable, hyps: 'ndarray',
-                 cutoffs: 'ndarray',
+    def __init__(self, kernel: Callable = None,
+                 kernel_grad: Callable = None, hyps: 'ndarray' = None,
+                 cutoffs: 'ndarray' = None,
                  hyp_labels: List = None,
                  energy_force_kernel: Callable = None,
                  energy_kernel: Callable = None,
@@ -67,7 +67,8 @@ class GaussianProcess:
                  per_atom_par: bool = True,
                  n_cpus: int = 1, nsample: int = 100,
                  output: Output = None,
-                 multihyps: bool = False, hyps_mask: dict = None):
+                 multihyps: bool = False, hyps_mask: dict = None,
+                 kernel_name="2+3_mc"):
         """Initialize GP parameters and training data."""
 
         # get all arguments as attributes
@@ -75,7 +76,18 @@ class GaussianProcess:
         del arg_dict['self']
         self.__dict__.update(arg_dict)
 
-        self.kernel_name = kernel.__name__
+        # TO DO, clean up all the other kernel arguments
+        if (kernel is None):
+            self.kernel_name = kernel_name
+            kernel, grad, ek, efk = stk(dictionary['kernel_name'],
+                                  multihyps)
+            self.kernel = kernel
+            self.kernel_grad = grad
+            self.energy_force_kernel = efk
+            self.energy_kernel = efk
+        else:
+            self.kernel_name = kernel.__name__
+
         self.training_data = []
         self.training_labels = []
         self.training_labels_np = np.empty(0, )
@@ -540,8 +552,7 @@ class GaussianProcess:
 
         multihyps = dictionary.get('multihyps', False)
 
-        force_kernel, grad, ek, efk = \
-                str_to_kernel_set(dictionary['kernel_name'],
+        force_kernel, grad, ek, efk = stk(dictionary['kernel_name'],
                                   multihyps)
 
         if dictionary['energy_kernel'] is not None:
