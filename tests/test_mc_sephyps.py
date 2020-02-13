@@ -8,6 +8,7 @@ from numpy.random import random, randint
 from flare import env, struc, gp
 from flare.kernels.mc_sephyps import _str_to_kernel as stk
 
+from .fake_gp import generate_hm
 
 def generate_envs(cutoffs, delta):
     # create env 1
@@ -49,86 +50,6 @@ def generate_envs(cutoffs, delta):
     env2_3 = env.AtomicEnvironment(test_structure_3, atom_2, cutoffs)
 
     return env1_1, env1_2, env1_3, env2_1, env2_2, env2_3
-
-
-def generate_hm(nbond, ntriplet, cutoffs, constraint=False):
-
-    specs_mask = np.zeros(118, dtype=int)
-    specs_mask[1] = 0
-    specs_mask[2] = 1
-    nspecs = 2
-
-    specs_mask = np.zeros(118, dtype=int)
-    specs_mask[1] = 0
-    specs_mask[2] = 1
-    nspecs = 2
-
-    cut = []
-    cut += [cutoffs[0]]
-    cut += [cutoffs[1]]
-
-    if (nbond==2):
-        sig1 = random(nbond)
-        ls1 = random(nbond)
-        bond_mask = np.ones(nspecs**2, dtype=int)
-        bond_mask[0] = 0
-    else:
-        sig1 = [random()]
-        ls1 = [random()]
-        bond_mask = np.zeros(nspecs**2, dtype=int)
-
-    if (ntriplet==2):
-        sig2 = random(ntriplet)
-        ls2 = random(ntriplet)
-        triplet_mask = np.ones(nspecs**3, dtype=int)
-        triplet_mask[0] = 0
-    else:
-        sig2 = [random()]
-        ls2 = [random()]
-        triplet_mask = np.zeros(nspecs**3, dtype=int)
-
-    sigman = [0.05]
-
-    if (nbond>0 and ntriplet>0):
-        hyps = np.hstack([sig1, ls1, sig2, ls2, sigman])
-    elif (nbond>0):
-        hyps = np.hstack([sig1, ls1, sigman])
-    else:
-        hyps = np.hstack([sig2, ls2, sigman])
-
-    hyps_mask = {'nspec': nspecs,
-                 'spec_mask': specs_mask,
-                 'nbond': nbond,
-                 'bond_mask': bond_mask,
-                 'ntriplet': ntriplet,
-                 'triplet_mask': triplet_mask}
-    if (constraint is False):
-        return hyps, hyps_mask, cut
-
-    hyps_mask['map'] = []
-    hyps_mask['original'] = hyps
-    hm = hyps_mask['map']
-    count = 0
-    newhyps = []
-    if (nbond>0):
-        # fix type 0, and only compute type 1 of bonds
-        hm += [1]
-        newhyps += [hyps[1]]
-        hm += [3]
-        newhyps += [hyps[3]]
-        count += 4
-    if (ntriplet>0):
-        # fix type 0, and only compute type 1 of triplets
-        hm += [1+count]
-        newhyps += [hyps[1+count]]
-        hm += [3+count]
-        newhyps += [hyps[3+count]]
-    hm += [len(hyps)-1]
-    newhyps += [hyps[-1]]
-    hyps = np.hstack(newhyps)
-    print(hm, hyps, newhyps)
-
-    return hyps, hyps_mask, cut
 
 @pytest.mark.parametrize('kernel_name, nbond, ntriplet, constraint',
                          [ ('two_body_mc', 2, 0, True),

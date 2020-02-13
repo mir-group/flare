@@ -5,7 +5,14 @@ import numpy as np
 from numpy.random import random, randint
 
 from flare import env, struc, gp
-from flare.kernels.mc_simple import _str_to_kernel as stk
+from flare.kernels.utils import str_to_kernel_set as stks
+
+def generate_hm(nbond, ntriplet):
+
+    if bool(nbond>0)!=bool(ntriplet>0):
+        return np.array([random(), random()])
+    else:
+        return np.array([random(), random(), random(), random()])
 
 
 def generate_envs(cutoffs, delta):
@@ -49,17 +56,10 @@ def generate_envs(cutoffs, delta):
     return env1_1, env1_2, env1_3, env2_1, env2_2, env2_3
 
 
-def generate_hm(nbond, ntriplet):
-
-    if bool(nbond>0)!=bool(ntriplet>0):
-        return np.array([random(), random()])
-    else:
-        return np.array([random(), random(), random(), random()])
-
 @pytest.mark.parametrize('kernel_name, nbond, ntriplet',
-                         [ ('two_body_mc', 1, 0),
-                           ('three_body_mc', 0, 1),
-                           ('two_plus_three_mc', 1, 1) ]
+                         [ ('2mc', 1, 0),
+                           ('3mc', 0, 1),
+                           ('2+3mc', 1, 1) ]
                          )
 
 def test_force_en(kernel_name, nbond, ntriplet):
@@ -74,22 +74,21 @@ def test_force_en(kernel_name, nbond, ntriplet):
     d1 = 1
     hyps = generate_hm(nbond, ntriplet)
 
-    force_en_kernel = stk[kernel_name+"_force_en"]
-    en_kernel = stk[kernel_name+"_en"]
-    if bool('two' in kernel_name) != bool('three' in kernel_name):
+    _, __, en_kernel, force_en_kernel = stks(kernel_name)
+    if bool('2' in kernel_name) != bool('3' in kernel_name):
 
         # check force kernel
         calc1 = en_kernel(env1_2, env2_1, hyps, cutoffs)
         calc2 = en_kernel(env1_1, env2_1, hyps, cutoffs)
 
         kern_finite_diff = (calc1 - calc2) / delta
-        if ('two' in kernel_name):
+        if ('2' in kernel_name):
             kern_finite_diff /= 2
         else:
             kern_finite_diff /= 3
     else:
-        en2_kernel = stk['two_body_mc_en']
-        en3_kernel = stk['three_body_mc_en']
+        _, __, en2_kernel, ___ = stks('2mc')
+        _, __, en3_kernel, ___ = stks('3mc')
         # check force kernel
         calc1 = en2_kernel(env1_2, env2_1, hyps[0:nbond*2], cutoffs)
         calc2 = en2_kernel(env1_1, env2_1, hyps[0:nbond*2], cutoffs)
@@ -104,9 +103,9 @@ def test_force_en(kernel_name, nbond, ntriplet):
     assert(np.isclose(-kern_finite_diff, kern_analytical, atol=tol))
 
 @pytest.mark.parametrize('kernel_name, nbond, ntriplet',
-                         [ ('two_body_mc', 1, 0),
-                           ('three_body_mc', 0, 1),
-                           ('two_plus_three_body_mc', 1, 1) ]
+                         [ ('2_mc', 1, 0),
+                           ('3_mc', 0, 1),
+                           ('2+3_mc', 1, 1) ]
                          )
 def test_force(kernel_name, nbond, ntriplet):
     """Check that the analytical force kernel matches finite difference of
@@ -122,11 +121,11 @@ def test_force(kernel_name, nbond, ntriplet):
     d1 = 1
     d2 = 2
 
-    kernel = stk[kernel_name]
-    if bool('two' in kernel_name) != bool('three' in kernel_name):
-        en_kernel = stk[kernel_name+"_en"]
+    kernel, _, __, ___ = stks(kernel_name)
+    if bool('2' in kernel_name) != bool('3' in kernel_name):
+        _, __, en_kernel, ___ = stks(kernel_name)
     else:
-        en_kernel = stk['two_plus_three_mc_en']
+        _, __, en_kernel, ___ = stks('2+3_mc')
 
     # check force kernel
     calc1 = en_kernel(env1_2, env2_2, hyps, cutoffs)
@@ -142,9 +141,9 @@ def test_force(kernel_name, nbond, ntriplet):
 
 
 @pytest.mark.parametrize('kernel_name, nbond, ntriplet',
-                         [ ('two_body_mc', 1, 0),
-                           ('three_body_mc', 0, 1),
-                           ('two_plus_three_body_mc', 1, 1) ]
+                         [ ('mc2', 1, 0),
+                           ('mc3', 0, 1),
+                           ('mc23', 1, 1) ]
                          )
 def test_hyps_grad(kernel_name, nbond, ntriplet):
 
@@ -156,8 +155,7 @@ def test_hyps_grad(kernel_name, nbond, ntriplet):
     d1 = randint(1, 3)
     d2 = randint(1, 3)
 
-    kernel = stk[kernel_name]
-    kernel_grad = stk[kernel_name+"_grad"]
+    kernel, kernel_grad, _, _ = stks(kernel_name, False)
 
     grad_test = kernel_grad(env1_1, env2_1,
                             d1, d2, hyps, cutoffs)
@@ -171,4 +169,5 @@ def test_hyps_grad(kernel_name, nbond, ntriplet):
         hgrad = (kernel(env1_1, env2_1, d1, d2, newhyps,
                         cutoffs)-
                  original)/delta
+        print(grad_test, hgrad)
         assert(np.isclose(grad_test[1][i], hgrad, atol=tol))
