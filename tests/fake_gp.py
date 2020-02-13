@@ -45,7 +45,7 @@ def generate_hm(nbond, ntriplet, cutoffs=[1, 1], constraint=False):
     cut += [cutoffs[0]]
     cut += [cutoffs[1]]
 
-    if (nbond>2):
+    if (nbond>1):
         sig1 = random(nbond)
         ls1 = random(nbond)
         bond_mask = np.ones(nspecs**2, dtype=int)
@@ -57,7 +57,7 @@ def generate_hm(nbond, ntriplet, cutoffs=[1, 1], constraint=False):
         bond_mask = np.zeros(nspecs**2, dtype=int)
         bond_name = ["sig2"]+["ls2"]
 
-    if (ntriplet>2):
+    if (ntriplet>1):
         sig2 = random(ntriplet)
         ls2 = random(ntriplet)
         triplet_mask = np.ones(nspecs**3, dtype=int)
@@ -98,7 +98,7 @@ def generate_hm(nbond, ntriplet, cutoffs=[1, 1], constraint=False):
     count = 0
     newhyps = []
     newlabel = []
-    if (nbond>0):
+    if (nbond>1):
         # fix type 0, and only compute type 1 of bonds
         hm += [1]
         newhyps += [hyps[1]]
@@ -107,7 +107,13 @@ def generate_hm(nbond, ntriplet, cutoffs=[1, 1], constraint=False):
         newhyps += [hyps[3]]
         newlabel += [hyps_label[3]]
         count += 4
-    if (ntriplet>0):
+    elif (nbond>0):
+        # fix sigma, and only vary ls
+        hm += [1]
+        newhyps += [hyps[1]]
+        newlabel += [hyps_label[1]]
+        count += 2
+    if (ntriplet>1):
         # fix type 0, and only compute type 1 of triplets
         hm += [1+count]
         newhyps += [hyps[1+count]]
@@ -115,6 +121,11 @@ def generate_hm(nbond, ntriplet, cutoffs=[1, 1], constraint=False):
         hm += [3+count]
         newhyps += [hyps[3+count]]
         newlabel += [hyps_label[3+count]]
+    elif (ntriplet>0):
+        # fix sigma, and only vary ls
+        hm += [1+count]
+        newhyps += [hyps[1+count]]
+        newlabel += [hyps_label[1+count]]
     hm += [len(hyps)-1]
     newhyps += [hyps[-1]]
     newlabel += ['noise']

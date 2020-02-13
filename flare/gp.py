@@ -20,7 +20,7 @@ from flare.gp_algebra import get_kernel_vector_par
 from flare.gp_algebra import get_ky_mat_par
 from flare.gp_algebra import get_ky_mat_update_par
 from flare.gp_algebra import get_neg_like_grad
-from flare.kernels.utils import str_to_kernels
+from flare.kernels.utils import str_to_kernel_set
 from flare.util import NumpyEncoder
 from flare.output import Output
 import flare.cutoffs as cf
@@ -387,40 +387,6 @@ class GaussianProcess:
 
         return pred_mean, pred_var
 
-    def get_kernel_vector(self, x: AtomicEnvironment,
-                          d_1: int):
-        """
-        Compute kernel vector, comparing input environment to all environments
-        in the GP's training set.
-
-        Args:
-            x (AtomicEnvironment): Local environment to compare against
-                the training environments.
-            d_1 (int): Cartesian component of the kernel (1=x, 2=y, 3=z).
-
-        Return:
-            np.ndarray: Kernel vector.
-        """
-
-        ds = [1, 2, 3]
-        size = len(self.training_data) * 3
-        k_v = np.zeros(size, )
-
-        if (self.multihyps):
-            for m_index in range(size):
-                x_2 = self.training_data[int(math.floor(m_index / 3))]
-                d_2 = ds[m_index % 3]
-                k_v[m_index] = self.kernel(x, x_2, d_1, d_2,
-                                           self.hyps, self.cutoffs,
-                                           hyps_mask=self.hyps_mask)
-        else:
-            for m_index in range(size):
-                x_2 = self.training_data[int(math.floor(m_index / 3))]
-                d_2 = ds[m_index % 3]
-                k_v[m_index] = self.kernel(x, x_2, d_1, d_2,
-                                           self.hyps, self.cutoffs)
-
-        return k_v
 
     def en_kern_vec(self, x: AtomicEnvironment):
         """Compute the vector of energy/force kernels between an atomic
@@ -574,20 +540,17 @@ class GaussianProcess:
 
         multihyps = dictionary.get('multihyps', False)
 
-        force_kernel, grad = str_to_kernels(dictionary['kernel_name'],
-                                            multihyps,
-                                            include_grad=True)
+        force_kernel, grad, ek, efk = \
+                str_to_kernel_set(dictionary['kernel_name'],
+                                  multihyps)
 
         if dictionary['energy_kernel'] is not None:
-            energy_kernel = str_to_kernel(dictionary['energy_kernel'],
-                                          multihyps)
+            energy_kernel = ek
         else:
             energy_kernel = None
 
         if dictionary['energy_force_kernel'] is not None:
-            energy_force_kernel = \
-                str_to_kernel(dictionary['energy_force_kernel'],
-                              multihyps)
+            energy_force_kernel = efk
         else:
             energy_force_kernel = None
 

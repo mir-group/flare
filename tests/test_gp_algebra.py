@@ -2,7 +2,7 @@ import time
 import pytest
 import numpy as np
 
-from flare import gp, gp_algebra
+from flare import gp
 from flare.env import AtomicEnvironment
 from flare.struc import Structure
 from flare.kernels.mc_simple import two_plus_three_body_mc, \
@@ -12,7 +12,20 @@ from flare.kernels.mc_sephyps import two_plus_three_body_mc \
 from flare.kernels.mc_sephyps import two_plus_three_body_mc_grad \
         as two_plus_three_body_mc_grad_multi
 
-from flare.gp_algebra import get_like_grad_from_mats
+from flare.gp_algebra import get_like_grad_from_mats, get_kernel_vector_par,\
+        get_ky_mat, get_ky_mat_par, \
+        get_ky_mat_update, get_ky_mat_update_par,\
+        get_ky_and_hyp, get_ky_and_hyp_par
+
+from .fake_gp import get_tstp
+
+@pytest.fixture(scope='module')
+def params():
+
+    parameters = get_random_training_set(10)
+
+    yield parameters
+    del parameters
 
 
 def get_random_training_set(nenv):
@@ -90,7 +103,7 @@ def get_random_training_set(nenv):
            kernel_m, hyps_list, hyps_mask_list
 
 
-def test_ky_mat():
+def test_ky_mat(params):
     """
     test function get_ky_mat in gp_algebra, gp_algebra_multi
     using gp_algebra_origin as reference
@@ -98,11 +111,10 @@ def test_ky_mat():
     """
 
     hyps, training_data, training_labels, kernel, cutoffs, \
-            kernel_m, hyps_list, hyps_mask_list = \
-            get_random_training_set(10)
+            kernel_m, hyps_list, hyps_mask_list = params
 
-    func = [gp_algebra.get_ky_mat,
-            gp_algebra.get_ky_mat_par]
+    func = [get_ky_mat,
+            get_ky_mat_par]
 
     # get the reference
     # timer0 = time.time()
@@ -156,19 +168,18 @@ def test_ky_mat():
                           "implementation is wrong"\
                           f"with case {i}"
 
-def test_ky_mat_update():
+def test_ky_mat_update(params):
     """
     check ky_mat_update function
     """
 
     hyps, training_data, training_labels, kernel, cutoffs, \
-            kernel_m, hyps_list, hyps_mask_list = \
-            get_random_training_set(10)
+            kernel_m, hyps_list, hyps_mask_list = params
 
 
-    func = [gp_algebra.get_ky_mat,
-            gp_algebra.get_ky_mat_update,
-            gp_algebra.get_ky_mat_update_par]
+    func = [get_ky_mat,
+            get_ky_mat_update,
+            get_ky_mat_update_par]
 
     # get the reference
     ky_mat0 = func[0](hyps, training_data,
@@ -215,14 +226,35 @@ def test_ky_mat_update():
         assert (diff<1e-12), "multi hyps parameter parallel "\
                 "implementation is wrong"
 
-def test_ky_and_hyp():
+def test_get_kernel_vector(params):
 
     hyps, training_data, training_labels, kernel, cutoffs, \
-            kernel_m, hyps_list, hyps_mask_list = \
-            get_random_training_set(10)
+            kernel_m, hyps_list, hyps_mask_list = params
 
-    func = [gp_algebra.get_ky_and_hyp,
-            gp_algebra.get_ky_and_hyp_par]
+    test_point = get_tstp()
+
+    vec = get_kernel_vector_par(training_data, kernel_m[0],
+                          test_point, 1, hyps,
+                          cutoffs, hyps_mask_list[0],
+                          n_cpus=1, nsample=100)
+
+    vec_par = get_kernel_vector_par(training_data, kernel_m[0],
+                          test_point, 1, hyps,
+                          cutoffs, hyps_mask_list[0],
+                          n_cpus=2, nsample=100)
+
+    assert (all(np.equal(vec, vec_par))), "parallel implementation is wrong"
+    assert (vec.shape[0] == len(training_data)*3), \
+            f"{vec} {len(training_data)}"
+
+
+def test_ky_and_hyp(params):
+
+    hyps, training_data, training_labels, kernel, cutoffs, \
+            kernel_m, hyps_list, hyps_mask_list = params
+
+    func = [get_ky_and_hyp,
+            get_ky_and_hyp_par]
 
     hypmat_0, ky_mat0 = func[0](hyps, training_data,
                        kernel[1], cutoffs)
@@ -280,22 +312,21 @@ def test_ky_and_hyp():
         assert (diff==0), f"multi hyps parallel implementation is wrong"\
                 f" in case{i}"
 
-def test_grad():
+def test_grad(params):
 
 
     hyps, training_data, training_labels, kernel, cutoffs, \
-            kernel_m, hyps_list, hyps_mask_list = \
-            get_random_training_set(10)
+            kernel_m, hyps_list, hyps_mask_list = params
 
     # obtain reference
-    func = gp_algebra.get_ky_and_hyp
+    func = get_ky_and_hyp
     hyp_mat, ky_mat = func(hyps, training_data,
                        kernel[1], cutoffs)
     like0, like_grad0 = \
                      get_like_grad_from_mats(ky_mat, hyp_mat, training_labels)
 
     # serial implementation
-    func = gp_algebra.get_ky_and_hyp
+    func = get_ky_and_hyp
     hyp_mat, ky_mat = func(hyps, training_data,
                        kernel[1], cutoffs)
     like, like_grad = \
@@ -304,7 +335,7 @@ def test_grad():
     assert (like==like0), "wrong likelihood"
     assert np.max(np.abs(like_grad-like_grad0))==0, "wrong likelihood"
 
-    func = gp_algebra.get_ky_and_hyp
+    func = get_ky_and_hyp
     for i in range(len(hyps_list)):
         hyps = hyps_list[i]
         hyps_mask = hyps_mask_list[i]
@@ -338,14 +369,13 @@ def test_grad():
         assert (diff==0), "multi hyps implementation is wrong"\
                           f"in case {i}"
 
-def test_ky_hyp_grad():
+def test_ky_hyp_grad(params):
 
 
     hyps, training_data, training_labels, kernel, cutoffs, \
-            kernel_m, hyps_list, hyps_mask_list = \
-            get_random_training_set(10)
+            kernel_m, hyps_list, hyps_mask_list = params
 
-    func = gp_algebra.get_ky_and_hyp
+    func = get_ky_and_hyp
 
     hyp_mat, ky_mat = func(hyps, training_data,
                        kernel[1], cutoffs)
