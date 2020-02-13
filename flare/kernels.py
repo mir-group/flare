@@ -431,19 +431,20 @@ def many_body(env1, env2, d1, d2, hyps, cutoffs,
 
     sig = hyps[0]
     ls = hyps[1]
+    r0 = hyps[2]
     r_cut = cutoffs[2]
 
     bond_array_1 = env1.bond_array_mb
     bond_array_2 = env2.bond_array_mb
 
     neigh_dists_1 = env1.neigh_dists_mb
-    num_neigh_1 = env1.num_neigh_mb
+    num_neigh_1 = env1.num_neighs_mb
 
     neigh_dists_2 = env2.neigh_dists_mb
-    num_neigh_2 = env2.num_neigh_mb
+    num_neigh_2 = env2.num_neighs_mb
 
     return many_body_jit(bond_array_1, bond_array_2, neigh_dists_1, num_neigh_1, neigh_dists_2,
-                         num_neigh_2, d1, d2, sig, ls, r_cut, cutoff_func)
+                         num_neigh_2, d1, d2, sig, ls, r0, r_cut, cutoff_func)
 
 
 def many_body_grad(env1, env2, d1, d2, hyps, cutoffs,
@@ -1090,13 +1091,13 @@ def many_body_jit(bond_array_1, bond_array_2,
 
     k12 = k_sq_exp_double_grad(q1, q2, sig, ls2)
 
-    qis = np.zeros(len(bond_array_1.shape[0]))
-    qi1_grads = np.zeros(len(bond_array_1.shape[0]))
-    ki2s = np.zeros(len(bond_array_1.shape[0]))
+    qis = np.zeros(bond_array_1.shape[0])
+    qi1_grads = np.zeros(bond_array_1.shape[0])
+    ki2s = np.zeros(bond_array_1.shape[0])
 
-    qjs = np.zeros(len(bond_array_2.shape[0]))
-    qj2_grads = np.zeros(len(bond_array_2.shape[0]))
-    k1js = np.zeros(len(bond_array_2.shape[0]))
+    qjs = np.zeros(bond_array_2.shape[0])
+    qj2_grads = np.zeros(bond_array_2.shape[0])
+    k1js = np.zeros(bond_array_2.shape[0])
 
     # Loop over neighbours i of 1
     for i in range(bond_array_1.shape[0]):
