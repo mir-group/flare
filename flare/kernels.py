@@ -1081,14 +1081,11 @@ def many_body_jit(bond_array_1, bond_array_2,
     """
     kern = 0
 
-    # pre-compute constants that appear in the inner loop
-    ls2 = ls * ls
-
     # Calculate many-body descriptor values for 1 and 2
     q1 = q_value(bond_array_1[:, 0], r0, r_cut, cutoff_func)
     q2 = q_value(bond_array_2[:, 0], r0, r_cut, cutoff_func)
 
-    k12 = k_sq_exp_double_grad(q1, q2, sig, ls2)
+    k12 = k_sq_exp_double_dev(q1, q2, sig, ls)
 
     qis = np.zeros(len(bond_array_1.shape[0]))
     qi1_grads = np.zeros(len(bond_array_1.shape[0]))
@@ -1108,7 +1105,7 @@ def many_body_jit(bond_array_1, bond_array_2,
         qis[i] = q_value(neighbouring_dists_array_1[i, :num_neighbours_1[i]], r0, r_cut,
                          cutoff_func)
 
-        ki2s[i] = k_sq_exp_double_grad(qis[i], q2, sig, ls2)
+        ki2s[i] = k_sq_exp_double_dev(qis[i], q2, sig, ls)
 
     # Loop over neighbours j of 2
     for j in range(bond_array_2.shape[0]):
@@ -1120,11 +1117,11 @@ def many_body_jit(bond_array_1, bond_array_2,
         qjs[j] = q_value(neighbouring_dists_array_2[j, :num_neighbours_2[j]], r0, r_cut,
                          cutoff_func)
 
-        k1js[j] = k_sq_exp_double_grad(q1, qjs[j], sig, ls2)
+        k1js[j] = k_sq_exp_double_dev(q1, qjs[j], sig, ls)
 
     for i in range(bond_array_1.shape[0]):
         for j in range(bond_array_2.shape[0]):
-            kij = k_sq_exp_double_grad(qis[i], qjs[j], sig, ls2)
+            kij = k_sq_exp_double_dev(qis[i], qjs[j], sig, ls)
             kern += qi1_grads[i] * qj2_grads[j] * (k12 + ki2s[i] + k1js[j] + kij)
 
     return kern
@@ -1391,7 +1388,7 @@ def triplet_force_en_kernel(ci1, ci2, ri1, ri2, ri3, rj1, rj2, rj3,
 
 
 @njit
-def k_sq_exp_double_grad(q1, q2, sig, ls2):
+def k_sq_exp_double_dev(q1, q2, sig, ls):
     """Gradient of generic squared exponential kernel on two many body functions
 
     Args:
@@ -1404,6 +1401,8 @@ def k_sq_exp_double_grad(q1, q2, sig, ls2):
     """
 
     qdiffsq = (q1 - q2) * (q1 - q2)
+
+    ls2 = ls * ls
 
     ker = exp(-qdiffsq / (2 * ls2))
 
