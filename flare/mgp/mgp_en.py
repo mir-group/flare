@@ -10,6 +10,7 @@ from flare import gp, struc, kernels
 from flare.env import AtomicEnvironment
 from flare.gp import GaussianProcess
 from flare.cutoffs import quadratic_cutoff
+from flare.util import Z_to_element
 from flare.mgp.utils import get_bonds, get_triplets, get_triplets_en
 from flare.mgp.splines_methods import PCASplines, CubicSpline
 
@@ -338,8 +339,9 @@ class MappedGaussianProcess:
         for ind, spc in enumerate(self.spcs[0]):
             coefs_2 = self.maps_2[ind].mean.__coeffs__
 
-            elem1 = spc[0]
-            elem2 = spc[1]
+            elem1 = Z_to_element(spc[0])
+            elem2 = Z_to_element(spc[1])
+
             header_2 = f'{elem1} {elem2} {a} {b} {order}\n'
             f.write(header_2)
 
@@ -358,9 +360,9 @@ class MappedGaussianProcess:
         for ind, spc in enumerate(self.spcs[1]):
             coefs_3 = self.maps_3[ind].mean.__coeffs__
 
-            elem1 = spc[0]
-            elem2 = spc[1]
-            elem3 = spc[2]
+            elem1 = Z_to_element(spc[0])
+            elem2 = Z_to_element(spc[1])
+            elem3 = Z_to_element(spc[2])
 
             header_3 = f'{elem1} {elem2} {elem3} {a[0]} {a[1]} {a[2]}'\
                        f' {b[0]} {b[1]} {b[2]:.10e}'\
