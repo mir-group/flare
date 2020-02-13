@@ -100,7 +100,7 @@ Third, set the number of threads for MKL before running your python script.
    If these numbers are larger than the actual CPUs number, it can lead to an overload of the machine.
 
 .. note::
-   If OTF.par=True and GaussianProcess.n_cpus>1, it is equivalent to run with no_cpu**2 threads
+   If OTF.par=True and GaussianProcess.n_cpus>1, it is equivalent to run with n_cpu**2 threads
    because the MKL calls are nested in the multiprocessing code. 
 
 The current version of FLARE can only support parallel calculations within one compute node.
