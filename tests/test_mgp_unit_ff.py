@@ -52,7 +52,7 @@ def test_init(bodies, all_gp, all_mgp):
 
     gp_model = all_gp[f'{bodies}']
 
-    grid_num_2 = 128
+    grid_num_2 = 64
     grid_num_3 = 40
     lower_cut = 0.01
     two_cut = gp_model.cutoffs[0]
@@ -67,12 +67,12 @@ def test_init(bodies, all_gp, all_mgp):
 
     # grid parameters
     grid_params = {'bounds_2': [[lower_cut], [two_cut]],
-                   'bounds_3': [[lower_cut, lower_cut, 0],
-                                [three_cut, three_cut, np.pi]],
+                   'bounds_3': [[lower_cut, lower_cut, -1],
+                                [three_cut, three_cut, 1]],
                    'grid_num_2': grid_num_2,
                    'grid_num_3': [grid_num_3, grid_num_3, grid_num_3],
-                   'svd_rank_2': 10,
-                   'svd_rank_3': 10,
+                   'svd_rank_2': 64,
+                   'svd_rank_3': 90,
                    'bodies': [bodies],
                    'cutoffs': [two_cut, three_cut],
                    'load_grid': None,
