@@ -1,6 +1,6 @@
 """LAMMPS calculator for preparing and parsing single-point LAMMPS \
 calculations."""
-import os
+import subprocess
 import numpy as np
 
 # TODO: split LAMMPS input and data files into separate classes
@@ -20,7 +20,7 @@ def run_lammps(lammps_executable, input_file, output_file):
     lammps_command = '%s < %s > %s' % (lammps_executable,
                                        input_file,
                                        output_file)
-    os.system(lammps_command)
+    subprocess.call(lammps_command)
 
 
 def lammps_parser(dump_file):
