@@ -5,7 +5,6 @@ import numpy as np
 
 # TODO: split LAMMPS input and data files into separate classes
 
-
 def run_lammps(lammps_executable, input_file, output_file):
     """Runs a single point LAMMPS calculation.
 
@@ -17,10 +16,8 @@ def run_lammps(lammps_executable, input_file, output_file):
     :type output_file: str
     """
     # run lammps
-    lammps_command = '%s < %s > %s' % (lammps_executable,
-                                       input_file,
-                                       output_file)
-    subprocess.call(lammps_command)
+    lammps_command = f'{lammps_executable} < {input_file} > {output_file}'
+    subprocess.call(lammps_command.split())
 
 
 def lammps_parser(dump_file):
