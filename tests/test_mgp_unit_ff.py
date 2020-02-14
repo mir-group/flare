@@ -11,6 +11,8 @@ from flare.lammps import lammps_calculator
 
 from .fake_gp import get_gp, get_random_structure
 
+body_list = [2, 3]
+
 # ASSUMPTION: You have a Lammps executable with the mgp pair style with $lmp
 # as the corresponding environment variable.
 @pytest.mark.skipif(not os.environ.get('lmp',
@@ -44,7 +46,7 @@ def all_mgp():
     yield allmgp_dict
     del allmgp_dict
 
-@pytest.mark.parametrize('bodies', [ 2, 3])
+@pytest.mark.parametrize('bodies', body_list)
 def test_init(bodies, all_gp, all_mgp):
     """
     test the init function
@@ -88,7 +90,7 @@ def test_init(bodies, all_gp, all_mgp):
     all_mgp[f'{bodies}'] = mgp_model
 
 
-@pytest.mark.parametrize('bodies', [2, 3])
+@pytest.mark.parametrize('bodies', body_list)
 def test_build_map(all_gp, all_mgp, bodies):
     """
     test the mapping for mc_simple kernel
@@ -105,7 +107,7 @@ def test_build_map(all_gp, all_mgp, bodies):
         if re.search("kv3*", f):
             os.rmdir(f)
 
-@pytest.mark.parametrize('bodies', [2, 3])
+@pytest.mark.parametrize('bodies', body_list)
 def test_predict(all_gp, all_mgp, bodies):
     """
     test the predict for mc_simple kernel
@@ -113,20 +115,22 @@ def test_predict(all_gp, all_mgp, bodies):
 
     gp_model = all_gp[f'{bodies}']
     mgp_model = all_mgp[f'{bodies}']
+    atom_id = 1
 
     nenv=10
     cell = np.eye(3)
     cutoffs = gp_model.cutoffs
     unique_species = gp_model.training_data[0].species
     struc_test, f = get_random_structure(cell, unique_species, nenv)
-    test_envi = env.AtomicEnvironment(struc_test, 1, cutoffs)
+    test_envi = env.AtomicEnvironment(struc_test, atom_id, cutoffs)
 
-    gp_pred_x = gp_model.predict(test_envi, 1)
     mgp_pred = mgp_model.predict(test_envi, mean_only=True)
 
     # check mgp is within 1 meV/A of the gp
-    assert(np.abs(mgp_pred[0][0] - gp_pred_x[0]) < 1e-3), \
-            f"{bodies} body mapping is wrong"
+    for s in range(3):
+        gp_pred_x = gp_model.predict(test_envi, s+1)
+        assert(np.abs(mgp_pred[0][s] - gp_pred_x[0]) < 1e-3), \
+                f"{bodies} body mapping is wrong"
 
     for f in os.listdir("./"):
         if re.search("grid3*.npy", f):
@@ -135,7 +139,7 @@ def test_predict(all_gp, all_mgp, bodies):
             os.rmdir(f)
 
 
-@pytest.mark.parametrize('bodies', [2, 3])
+@pytest.mark.parametrize('bodies', body_list)
 def test_lmp_predict(all_gp, all_mgp, bodies):
     """
     test the lammps implementation
@@ -143,6 +147,8 @@ def test_lmp_predict(all_gp, all_mgp, bodies):
 
     mgp_model = all_mgp[f'{bodies}']
     gp_model = all_gp[f'{bodies}']
+
+    atom_id = 1
 
     # lmp file is automatically written now every time MGP is constructed
     lammps_location = mgp_model.lmp_file_name
@@ -154,7 +160,7 @@ def test_lmp_predict(all_gp, all_mgp, bodies):
     nenv = 10
     cutoffs = gp_model.cutoffs
     struc_test, f = get_random_structure(cell, unique_species, nenv)
-    test_envi = env.AtomicEnvironment(struc_test, 1, cutoffs)
+    test_envi = env.AtomicEnvironment(struc_test, atom_id, cutoffs)
     atom_types = [1, 2]
     atom_masses = [108, 127]
     atom_species = struc_test.coded_species
@@ -174,19 +180,19 @@ def test_lmp_predict(all_gp, all_mgp, bodies):
     output_file_name = f'tmp{bodies}.out'
     input_text = \
         lammps_calculator.generic_lammps_input(data_file_name, style_string,
-                                               coeff_string, dump_file_name)
+                                               coeff_string, dump_file_name,
+                                               newton=False)
     lammps_calculator.write_text(input_file_name, input_text)
 
     lammps_calculator.run_lammps(lammps_executable, input_file_name,
                                  output_file_name)
 
-    print("hello", bodies, os.listdir("./"))
-
     lammps_forces = lammps_calculator.lammps_parser(dump_file_name)
     mgp_forces = mgp_model.predict(test_envi, mean_only=True)
 
     # check that lammps agrees with gp to within 1 meV/A
-    assert (np.abs(lammps_forces[0, 1] - mgp_forces[0][1]) < 1e-3)
+    for s in range(3):
+        assert (np.abs(lammps_forces[atom_id, s] - mgp_forces[0][s]) < 1e-3)
 
     for f in os.listdir("./"):
         if f in [f'tmp{bodies}.in', f'tmp{bodies}.out', f'tmp{bodies}.dump',
