@@ -368,7 +368,7 @@ class GaussianProcess:
             n_cpus = 1
 
         k_v = en_kern_vec_par(self.training_data,
-                              self.energy_kernel,
+                              self.energy_force_kernel,
                               x_t, self.hyps,
                               cutoffs=self.cutoffs,
                               hyps_mask=self.hyps_mask,
@@ -397,7 +397,7 @@ class GaussianProcess:
 
         # get kernel vector
         k_v = en_kern_vec_par(self.training_data,
-                              self.energy_kernel,
+                              self.energy_force_kernel,
                               x_t, self.hyps,
                               cutoffs=self.cutoffs,
                               hyps_mask=self.hyps_mask,
@@ -526,6 +526,8 @@ class GaussianProcess:
         # Remove the callables
         del out_dict['kernel']
         del out_dict['kernel_grad']
+        del out_dict['energy_kernel']
+        del out_dict['energy_force_kernel']
 
         return out_dict
 
@@ -534,9 +536,6 @@ class GaussianProcess:
         """Create GP object from dictionary representation."""
 
         multihyps = dictionary.get('multihyps', False)
-
-        force_kernel, grad, ek, efk = stk(dictionary['kernel_name'],
-                                  multihyps)
 
         new_gp = GaussianProcess(kernel_name=dictionary['kernel_name'],
                                  cutoffs=np.array(dictionary['cutoffs']),

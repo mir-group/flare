@@ -55,7 +55,7 @@ def test_init(bodies, all_gp, all_mgp):
     gp_model = all_gp[f'{bodies}']
 
     grid_num_2 = 64
-    grid_num_3 = 40
+    grid_num_3 = 20
     lower_cut = 0.01
     two_cut = gp_model.cutoffs[0]
     three_cut = gp_model.cutoffs[1]

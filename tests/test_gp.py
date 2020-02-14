@@ -57,8 +57,7 @@ def two_body_gp() -> GaussianProcess:
 
     # test update_db
     gaussian = \
-        GaussianProcess(kernel=en.three_body,
-                        kernel_grad=en.three_body_grad,
+        GaussianProcess(kernel_name='3',
                         hyps=np.array([1, 1, 1]),
                         hyp_labels=['Length', 'Signal Var.', 'Noise Var.'],
                         cutoffs=cutoffs)
@@ -172,21 +171,18 @@ def test_set_L_alpha(two_body_gp, params, par, n_cpus):
                                                   noa)
 
     # set gp model
-    kernel = en.two_plus_three_body
-    kernel_grad = en.two_plus_three_body_grad
     hyps = np.array([2.23751151e-01, 8.19990316e-01, 1.28421842e-04,
                      1.07467158e+00, 5.50677932e-02])
     cutoffs = np.array([5.4, 5.4])
     hyp_labels = ['sig2', 'ls2', 'sig3', 'ls3', 'noise']
-    energy_force_kernel = en.two_plus_three_force_en
-    energy_kernel = en.two_plus_three_en
     opt_algorithm = 'BFGS'
 
     # test update_db
     gaussian = \
-        GaussianProcess(kernel, kernel_grad, hyps, cutoffs, hyp_labels,
-                        energy_force_kernel, energy_kernel,
-                        opt_algorithm, par=par, n_cpus=n_cpus)
+        GaussianProcess(kernel_name='23', hyps=hyps,
+                        cutoffs=cutoffs, hyp_labels=hyp_labels,
+                        opt_algorithm=opt_algorithm, par=par,
+                        n_cpus=n_cpus)
     gaussian.update_db(test_structure, forces)
 
     gaussian.set_L_alpha()
@@ -236,7 +232,7 @@ def test_update_L_alpha(par, n_cpus):
 def test_representation_method(two_body_gp):
     the_str = str(two_body_gp)
     assert 'GaussianProcess Object' in the_str
-    assert 'Kernel: three_body' in the_str
+    assert 'Kernel: 3' in the_str
     assert 'Cutoffs: [0.8 0.8]' in the_str
     assert 'Model Likelihood: ' in the_str
     assert 'Length: ' in the_str
