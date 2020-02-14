@@ -17,32 +17,38 @@ from flare.mgp.splines_methods import PCASplines, CubicSpline
 
 class MappedGaussianProcess:
     '''
-    Build Mapped Gaussian Process (MGP) and automatically save coefficients for LAMMPS pair style.
-    :param: hyps: GP hyps
-    :param: cutoffs: GP cutoffs
-    :param: struc_params : information of training data
-    :param: grid_params : setting of grids for mapping
-    :param: mean_only : if True: only build mapping for mean (force)
-    :param: container_only : if True: only build splines container (with no coefficients)
-    :param: GP: None or a GaussianProcess object. If input a GP, then build mapping when creating MappedGaussianProcess object
-    :param: lmp_file_name : lammps coefficient file name
-    Examples:
-
-    >>> struc_params = {'species': [0, 1],
-                        'cube_lat': cell, # should input the cell matrix
-                        'mass_dict': {'0': 27 * unit, '1': 16 * unit}}
-    >>> grid_params =  {'bounds_2': [[1.2], [3.5]],
-                                    # [[lower_bound], [upper_bound]]
-                        'bounds_3': [[1.2, 1.2, 1.2], [3.5, 3.5, 3.5]],
-                                    # [[lower,lower,lower],[upper,upper,upper]]
-                        'grid_num_2': 64,
-                        'grid_num_3': [16, 16, 16],
-                        'svd_rank_2': 64,
-                        'svd_rank_3': 16**3,
-                        'update': True, # if True: accelerating grids
-                                        # generating by saving intermediate
-                                        # coeff when generating grids
-                        'load_grid': None}
+    Build Mapped Gaussian Process (MGP) with energy and automatically save \
+    coefficients for LAMMPS pair style.
+    Args:
+        grid_params (dict): setting of grids for mapping.
+        struc_params (dict): information of training data.
+        GP (GaussianProcess): None or a GaussianProcess object. If input a GP,\
+            then build mapping when creating MappedGaussianProcess object.
+        mean_only (Bool): if True: only build mapping for mean (force).
+        container_only (Bool): if True: only build splines container\
+            (with no coefficients). Default ``True``.
+        lmp_file_name (str): lammps coefficient file name.
+        n_cpus (int): number of CPUs for parallelization in grid generation. \
+            Default ``None``, if ``None``, then automatically use the number of\
+            CPUs in the node.
+        nsample (int): The training set is distributed to small batches of size 
+            ``nsample`` for parallelization. Default ``100``.
+    Example:
+        >>> struc_params = {'species': [0, 1],
+                            'cube_lat': cell} # input the cell matrix
+        >>> grid_params =  {'bounds_2': [[1.2], [3.5]], 
+                                        # [[lower], [upper]]
+                            'bounds_3': [[1.2, 1.2, 1.2], [3.5, 3.5, 3.5]],
+                                        # [[lower,lower,lower],[upper,upper,upper]]
+                            'grid_num_2': 64,
+                            'grid_num_3': [16, 16, 16],
+                            'svd_rank_2': 64,
+                            'svd_rank_3': 16**3,
+                            'bodies': [2, 3],
+                            'update': False, # if True: accelerating grids
+                                             # generating by saving intermediate
+                                             # coeff when generating grids
+                            'load_grid': None}
     '''
 
     def __init__(self,
@@ -194,9 +200,15 @@ class MappedGaussianProcess:
 
     def predict(self, atom_env: AtomicEnvironment, mean_only: bool=False):
         '''
-        predict force and variance for given atomic environment
-        :param atom_env: atomic environment (with a center atom and its neighbors)
-        :param mean_only: if True: only predict force (variance is always 0)
+        predict force, variance, stress and local energy for given atomic environment
+        Args:
+            atom_env: atomic environment (with a center atom and its neighbors)
+            mean_only: if True: only predict force (variance is always 0)
+        Return:
+            force: 3d array of atomic force
+            variance: 3d array of the predictive variance
+            stress: 6d array of the virial stress
+            energy: the local energy (atomic energy)
         '''
         if self.mean_only:  # if not build mapping for var
             mean_only = True
@@ -219,12 +231,12 @@ class MappedGaussianProcess:
                                             self.spcs[1], self.maps_3,
                                             mean_only)
 
-        f = f2 + f3
-        vir = vir2 + vir3
-        v = kern2 + kern3 - np.sum((v2 + v3)**2, axis=0)
-        e = e2 + e3
+        force = f2 + f3
+        virial = vir2 + vir3
+        var = kern2 + kern3 - np.sum((v2 + v3)**2, axis=0)
+        energy = e2 + e3
 
-        return f, v, vir, e
+        return force, virial, virial, energy
 
 
     def predict_multicomponent(self, body, atom_env, kernel_info,
