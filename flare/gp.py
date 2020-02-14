@@ -15,7 +15,7 @@ from scipy.optimize import minimize
 from flare.env import AtomicEnvironment
 from flare.struc import Structure
 from flare.gp_algebra import get_neg_likelihood, \
-        get_like_from_ky_mat, get_neg_like_grad, \
+        get_like_from_mats, get_neg_like_grad, \
         get_kernel_vector_par, en_kern_vec_par, \
         get_ky_mat_par, get_ky_mat_update_par
 from flare.kernels.utils import str_to_kernel_set as stk
@@ -216,6 +216,8 @@ class GaussianProcess:
         self.training_data.append(env)
         self.training_labels.append(force)
         self.training_labels_np = np.hstack(self.training_labels)
+        flare.gp_algebra._global_training_data[self.name] = self.training_data
+        flare.gp_algebra._global_training_labels[self.name] = self.training_labels_np
 
         if train:
             self.train(**kwargs)
@@ -303,9 +305,11 @@ class GaussianProcess:
         """
 
         # check that alpha is up to date with training set
-        if self.alpha is None or 3 * len(self.training_data) != len(
-                self.alpha):
+        size3 = len(self.training_data)*3
+        if (self.alpha is None) or (size3 > self.alpha.shape[0]):
             self.update_L_alpha()
+        elif (size3 != self.alpha.shape[0]):
+            self.set_L_alpha()
 
     def predict(self, x_t: AtomicEnvironment, d: int) -> [float, float]:
         """
@@ -326,7 +330,7 @@ class GaussianProcess:
         else:
             n_cpus = 1
 
-        k_v = get_kernel_vector_par(name, self.kernel,
+        k_v = get_kernel_vector_par(self.name, self.kernel,
                                     x_t, d,
                                     self.hyps,
                                     cutoffs=self.cutoffs,
@@ -449,7 +453,8 @@ class GaussianProcess:
         self.alpha = alpha
         self.ky_mat_inv = ky_mat_inv
 
-        self.likelihood = get_like_from_ky_mat(self.ky_mat, self.training_labels_np)
+        self.likelihood = get_like_from_mats(ky_mat, l_mat,
+                                             alpha, self.name)
 
     def update_L_alpha(self):
         """
@@ -521,6 +526,8 @@ class GaussianProcess:
 
     def as_dict(self):
         """Dictionary representation of the GP model."""
+
+        self.check_L_alpha()
 
         out_dict = deepcopy(dict(vars(self)))
 

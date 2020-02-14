@@ -298,8 +298,6 @@ def test_ky_and_hyp(params):
 
         # compare to no hyps_mask version
         diff = 0
-        print(i, hypmat.shape)
-        print(i, hypmat_0.shape)
         if (i == 1):
             diff = (np.max(np.abs(hypmat-hypmat9[[0,2,4,6,8], :, :])))
         elif (i==2):
@@ -362,13 +360,10 @@ def test_grad(params):
                           ker, cutoffs, hyps_mask)
         like, like_grad = \
                          get_like_grad_from_mats(ky_mat, hyp_mat, name)
-        print(like, like0)
         assert (like==like0), "wrong likelihood"
 
         if (i==0):
             like_grad9 = like_grad
-
-        print(like_grad, like_grad0)
 
         diff = 0
         if (i==1):
@@ -394,7 +389,6 @@ def test_ky_hyp_grad(params):
                        kernel[1], cutoffs)
 
     size = len(flare.gp_algebra._global_training_data[name])
-    print(hyp_mat.shape, ky_mat.shape, size)
 
     like, like_grad = \
                      get_like_grad_from_mats(ky_mat, hyp_mat, name)

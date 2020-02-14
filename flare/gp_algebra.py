@@ -246,7 +246,7 @@ def get_ky_mat_par(hyps: np.ndarray, name: str,
     return ky_mat
 
 
-def get_like_from_ky_mat(ky_mat):
+def get_like_from_ky_mat(ky_mat, name):
     """ compute the likelihood from the covariance matrix
 
     :param ky_mat: the covariance matrix
@@ -257,8 +257,29 @@ def get_like_from_ky_mat(ky_mat):
     try:
         ky_mat_inv = np.linalg.inv(ky_mat)
         l_mat = np.linalg.cholesky(ky_mat)
+        alpha = np.matmul(ky_mat_inv, labels)
     except:
         return -1e8
+
+    return get_like_from_mats(ky_mat, l_mat, alpha, name)
+
+def get_like_from_mats(ky_mat, l_mat, alpha, name):
+    """ compute the likelihood from the covariance matrix
+
+    :param ky_mat: the covariance matrix
+
+    :return: float, likelihood
+    """
+    # catch linear algebra errors
+    labels = _global_training_labels[name]
+
+    # calculate likelihood
+    like = (-0.5 * np.matmul(labels, alpha) -
+            np.sum(np.log(np.diagonal(l_mat))) -
+            math.log(2 * np.pi) * ky_mat.shape[1] / 2)
+
+    return like
+
 
 #######################################
 ##### KY MATRIX FUNCTIONS and gradients
@@ -520,7 +541,7 @@ def get_neg_likelihood(hyps: np.ndarray, name,
 
     time0 = time.time()
 
-    like = get_like_from_ky_mat(ky_mat, _global_training_labels[name])
+    like = get_like_from_ky_mat(ky_mat, name)
 
     output.write_to_log(f"get_like_from_ky_mat {time.time()-time0}\n", name="hyps")
 
@@ -563,7 +584,7 @@ def get_neg_like_grad(hyps: np.ndarray, name: str,
 
     hyp_mat, ky_mat = \
         get_ky_and_hyp_par(hyps,
-                           training_data,
+                           name,
                            kernel_grad,
                            cutoffs=cutoffs,
                            hyps_mask=hyps_mask,
@@ -575,7 +596,7 @@ def get_neg_like_grad(hyps: np.ndarray, name: str,
     time0 = time.time()
 
     like, like_grad = \
-        get_like_grad_from_mats(ky_mat, hyp_mat, _global_training_labels[name])
+        get_like_grad_from_mats(ky_mat, hyp_mat, name)
 
     print("like", like, like_grad)
     print("hyps", hyps)
