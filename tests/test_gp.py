@@ -49,7 +49,7 @@ def two_body_gp() -> GaussianProcess:
     cell = np.eye(3)
     unique_species = [2, 1]
     cutoffs = np.array([0.8, 0.8])
-    noa = 5
+    noa = 50
 
     # create test structure
     test_structure, forces = get_random_structure(cell, unique_species,
@@ -115,22 +115,29 @@ def test_update_db(two_body_gp, params):
                                                   params['noa'])
 
     # add structure and forces to db
+    oldsize = len(two_body_gp.training_data)
     two_body_gp.update_db(test_structure, forces)
 
-    assert (len(two_body_gp.training_data) == params['noa'] * 2)
-    assert (len(two_body_gp.training_labels_np) == params['noa'] * 2 * 3)
+    assert (len(two_body_gp.training_data) == params['noa']+oldsize)
+    assert (len(two_body_gp.training_labels_np) == (params['noa']+oldsize)*3)
 
 
-def test_train(two_body_gp, params):
+@pytest.mark.parametrize('par, n_cpus', [(True, 2),
+                                         (False, 1)])
+def test_train(two_body_gp, params, par, n_cpus):
     hyp = list(two_body_gp.hyps)
 
     # add struc and forces to db
     test_structure, forces = get_random_structure(params['cell'],
                                                   params['unique_species'],
                                                   params['noa'])
-    two_body_gp.update_db(test_structure, forces)
+    two_body_gp.par = par
+    two_body_gp.n_cpus = n_cpus
+
+    # two_body_gp.update_db(test_structure, forces)
 
     # train gp
+    two_body_gp.hyps = np.ones(3)
     two_body_gp.train()
 
     hyp_post = list(two_body_gp.hyps)
@@ -139,14 +146,22 @@ def test_train(two_body_gp, params):
     assert (hyp != hyp_post)
 
 
-def test_predict(two_body_gp, test_point):
+@pytest.mark.parametrize('par, per_atom_par, n_cpus',
+                         [(False, False, 1),
+                          (True, True, 2),
+                          (True, False, 2)])
+def test_predict(two_body_gp, test_point, par, per_atom_par, n_cpus):
+    two_body_gp.par = par
+    two_body_gp.per_atom_par = per_atom_par
     pred = two_body_gp.predict(x_t=test_point, d=1)
     assert (len(pred) == 2)
     assert (isinstance(pred[0], float))
     assert (isinstance(pred[1], float))
 
 
-def test_set_L_alpha(two_body_gp, params):
+@pytest.mark.parametrize('par, n_cpus', [(True, 2),
+                                         (False, 1)])
+def test_set_L_alpha(two_body_gp, params, par, n_cpus):
     # params
     cell = np.eye(3)
     unique_species = [2, 1]
@@ -171,13 +186,15 @@ def test_set_L_alpha(two_body_gp, params):
     gaussian = \
         GaussianProcess(kernel, kernel_grad, hyps, cutoffs, hyp_labels,
                         energy_force_kernel, energy_kernel,
-                        opt_algorithm)
+                        opt_algorithm, par=par, n_cpus=n_cpus)
     gaussian.update_db(test_structure, forces)
 
     gaussian.set_L_alpha()
 
 
-def test_update_L_alpha():
+@pytest.mark.parametrize('par, n_cpus', [(True, 2),
+                                         (False, 1)])
+def test_update_L_alpha(par, n_cpus):
     # set up gp model
     kernel = mc_simple.two_plus_three_body_mc
     kernel_grad = mc_simple.two_plus_three_body_mc_grad
@@ -194,7 +211,8 @@ def test_update_L_alpha():
                                cutoffs=cutoffs,
                                hyps=hyps)
 
-    gp_model.par = True
+    gp_model.par = par
+    gp_model.n_cpus = n_cpus
     # update database & use update_L_alpha to get ky_mat
     for n in range(call_no, call_no + 1):
         positions = old_otf.gp_position_list[n]
