@@ -145,7 +145,11 @@ def test_predict(all_gp, all_mgp, bodies, multihyps):
         if re.search("kv3*", f):
             os.rmdir(f)
 
-
+@pytest.mark.skipif(not os.environ.get('lmp',
+                          False), reason='lmp not found '
+                                  'in environment: Please install LAMMPS '
+                                  'and set the $lmp env. '
+                                  'variable to point to the executatble.')
 @pytest.mark.parametrize('bodies', body_list)
 @pytest.mark.parametrize('multihyps', multi_list)
 def test_lmp_predict(all_gp, all_mgp, bodies, multihyps):

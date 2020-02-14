@@ -427,6 +427,13 @@ class MappedGaussianProcess:
 
         f.close()
 
+    def write_model(self, model_name):
+        """
+        Write everything necessary to re-load and re-use the model
+        :param model_name:
+        :return:
+        """
+        raise NotImplementedError
 class Map2body:
     def __init__(self, grid_num, bounds, bond_struc,
                  svd_rank=0, mean_only=False, n_cpus=None, nsample=100):

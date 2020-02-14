@@ -133,13 +133,13 @@ def predict_on_atom_mgp(atom: int, structure, cutoffs, mgp,
 def predict_on_structure_mgp(structure, mgp, output=None,
                              output_name=None, n_cpus=None):  # changed
     """
-    Assign forces to self.structure based on self.gp
+    Assign forces to structure based on gp
     """
     if output and output_name:
         output.write_to_output('\npredict with mapping:\n', output_name)
 
     for n in range(structure.nat):
-        chemenv = AtomicEnvironment(structure, n, mgp.gp.cutoffs)
-        force, var = mgp.predict(chemenv)
+        chemenv = AtomicEnvironment(structure, n, mgp.cutoffs)
+        force, var, _, _ = mgp.predict(chemenv)
         structure.forces[n][:] = force
         structure.stds[n][:] = np.sqrt(np.absolute(var))

@@ -227,10 +227,11 @@ class MappedGaussianProcess:
                                             self.get_3body_comp, self.spcs[1],
                                             self.maps_3, mean_only)
 
-        f = f2 + f3
-        vir = vir2 + vir3
-        v = kern2 + kern3 - np.sum((v2 + v3)**2, axis=0)
-        return f, v, vir, 0
+        force = f2 + f3
+        variance = kern2 + kern3 - np.sum((v2 + v3)**2, axis=0)
+        virial_stress = vir2 + vir3
+
+        return force, variance, virial_stress, 0
 
     def get_2body_comp(self, atom_env, sig, ls, r_cut):
         '''

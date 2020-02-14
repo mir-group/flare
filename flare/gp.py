@@ -12,13 +12,12 @@ from typing import List, Callable, Union
 from scipy.linalg import solve_triangular
 from scipy.optimize import minimize
 
-
 from flare.env import AtomicEnvironment
 from flare.struc import Structure
 from flare.gp_algebra import get_neg_likelihood, \
-        get_like_from_ky_mat, get_neg_like_grad, \
-        get_kernel_vector_par, en_kern_vec_par, \
-        get_ky_mat_par, get_ky_mat_update_par
+    get_like_from_ky_mat, get_neg_like_grad, \
+    get_kernel_vector_par, en_kern_vec_par, \
+    get_ky_mat_par, get_ky_mat_update_par
 from flare.kernels.utils import str_to_kernel_set as stk
 from flare.util import NumpyEncoder
 from flare.output import Output
@@ -99,7 +98,6 @@ class GaussianProcess:
 
         self.check_instantiation()
 
-
     def check_instantiation(self):
         """
         Runs a series of checks to ensure that the user has not supplied
@@ -119,10 +117,10 @@ class GaussianProcess:
             self.multihyps = True
 
             assert 'nspec' in self.hyps_mask.keys(), "nspec key missing in " \
-                                                "hyps_mask dictionary"
+                                                     "hyps_mask dictionary"
             assert 'spec_mask' in self.hyps_mask.keys(), "spec_mask key " \
-                                                       "missing " \
-                                                    "in hyps_mask dicticnary"
+                                                         "missing " \
+                                                         "in hyps_mask dicticnary"
 
             hyps_mask = deepcopy(self.hyps_mask)
 
@@ -130,33 +128,33 @@ class GaussianProcess:
 
             if 'nbond' in hyps_mask.keys():
                 n2b = self.hyps_mask['nbond']
-                if n2b>0:
+                if n2b > 0:
                     assert (np.max(hyps_mask['bond_mask']) < n2b)
-                    assert len(hyps_mask['bond_mask']) == nspec**2, \
-                            f"wrong dimension of bond_mask: " \
-                            f" {len(hyps_mask['bond_mask']) != {nspec**2}}"
+                    assert len(hyps_mask['bond_mask']) == nspec ** 2, \
+                        f"wrong dimension of bond_mask: " \
+                        f" {len(hyps_mask['bond_mask']) != {nspec**2}}"
             else:
                 n2b = 0
 
             if 'ntriplet' in hyps_mask.keys():
                 n3b = self.hyps_mask['ntriplet']
-                if n3b>0:
+                if n3b > 0:
                     assert (np.max(hyps_mask['triplet_mask']) < n3b)
-                    assert len(hyps_mask['triplet_mask']) == nspec**3, \
-                            f"wrong dimension of triplet_mask" \
-                            f"{len(hyps_mask['triplet_mask']) != {nspec**3}}"
+                    assert len(hyps_mask['triplet_mask']) == nspec ** 3, \
+                        f"wrong dimension of triplet_mask" \
+                        f"{len(hyps_mask['triplet_mask']) != {nspec**3}}"
             else:
                 n3b = 0
 
-            assert ((n2b+n3b)>0)
+            assert ((n2b + n3b) > 0)
 
             if 'map' in hyps_mask.keys():
                 assert ('original' in hyps_mask.keys()), \
-                        "original hyper parameters have to be defined"
+                    "original hyper parameters have to be defined"
                 # Ensure typed correctly as numpy array
                 self.hyps_mask['original'] = np.array(hyps_mask['original'])
 
-                assert (n2b*2+n3b*2+1) == len(hyps_mask['original']), \
+                assert (n2b * 2 + n3b * 2 + 1) == len(hyps_mask['original']), \
                     "the hyperparmeter length is inconsistent with the mask"
                 assert len(hyps_mask['map']) == len(self.hyps), \
                     "the hyperparmeter length is inconsistent with the mask"
@@ -165,8 +163,8 @@ class GaussianProcess:
                         "train_noise should be False when noise is not in hyps"
             else:
                 assert hyps_mask['train_noise'] is True, \
-                       "train_noise should be True when map is not used"
-                assert (n2b*2+n3b*2+1) == len(self.hyps), \
+                    "train_noise should be True when map is not used"
+                assert (n2b * 2 + n3b * 2 + 1) == len(self.hyps), \
                     "the hyperparmeter length is inconsistent with the mask"
 
             if 'bounds' in hyps_mask.keys():
@@ -342,7 +340,7 @@ class GaussianProcess:
         # Guarantee that alpha is up to date with training set
         if self.alpha is None or \
                 3 * len(self.training_data) != len(self.alpha):
-                self.update_L_alpha()
+            self.update_L_alpha()
 
         # get predictive mean
         pred_mean = np.matmul(k_v, self.alpha)
@@ -350,14 +348,14 @@ class GaussianProcess:
         # get predictive variance without cholesky (possibly faster)
         # pass args to kernel based on if mult. hyperparameters in use
         if self.multihyps:
-             self_kern = self.kernel(x_t, x_t, d, d, self.hyps,
-                                     self.cutoffs, hyps_mask=self.hyps_mask)
+            self_kern = self.kernel(x_t, x_t, d, d, self.hyps,
+                                    self.cutoffs, hyps_mask=self.hyps_mask)
         else:
-             self_kern = self.kernel(x_t, x_t, d, d, self.hyps,
-                                     self.cutoffs)
+            self_kern = self.kernel(x_t, x_t, d, d, self.hyps,
+                                    self.cutoffs)
 
         pred_var = self_kern - \
-            np.matmul(np.matmul(k_v, self.ky_mat_inv), k_v)
+                   np.matmul(np.matmul(k_v, self.ky_mat_inv), k_v)
 
         return pred_mean, pred_var
 
@@ -419,15 +417,15 @@ class GaussianProcess:
         # get predictive variance
         v_vec = solve_triangular(self.l_mat, k_v, lower=True)
         if self.multihyps:
-             self_kern = self.energy_kernel(x_t, x_t, self.hyps,
-                                    self.cutoffs, hyps_mask=self.hyps_mask)
+            self_kern = self.energy_kernel(x_t, x_t, self.hyps,
+                                           self.cutoffs,
+                                           hyps_mask=self.hyps_mask)
         else:
-             self_kern = self.energy_kernel(x_t, x_t, self.hyps,
-                                            self.cutoffs)
+            self_kern = self.energy_kernel(x_t, x_t, self.hyps,
+                                           self.cutoffs)
         pred_var = self_kern - np.matmul(v_vec, v_vec)
 
         return pred_mean, pred_var
-
 
     def set_L_alpha(self):
         """
@@ -455,7 +453,8 @@ class GaussianProcess:
         self.alpha = alpha
         self.ky_mat_inv = ky_mat_inv
 
-        self.likelihood = get_like_from_ky_mat(self.ky_mat, self.training_labels_np)
+        self.likelihood = get_like_from_ky_mat(self.ky_mat,
+                                               self.training_labels_np)
 
     def update_L_alpha(self):
         """
@@ -507,20 +506,20 @@ class GaussianProcess:
 
         if self.multihyps:
             nspec = self.hyps_mask['nspec']
-            thestr +=f'nspec: {nspec}\n'
-            thestr +=f'spec_mask: \n'
+            thestr += f'nspec: {nspec}\n'
+            thestr += f'spec_mask: \n'
             thestr += str(self.hyps_mask['spec_mask']) + '\n'
 
             nbond = self.hyps_mask['nbond']
-            thestr +=f'nbond: {nbond}\n'
-            if nbond>0:
-                thestr +=f'bond_mask: \n'
+            thestr += f'nbond: {nbond}\n'
+            if nbond > 0:
+                thestr += f'bond_mask: \n'
                 thestr += str(self.hyps_mask['bond_mask']) + '\n'
 
             ntriplet = self.hyps_mask['ntriplet']
-            thestr +=f'ntriplet: {ntriplet}\n'
-            if ntriplet>0:
-                thestr +=f'triplet_mask: \n'
+            thestr += f'ntriplet: {ntriplet}\n'
+            if ntriplet > 0:
+                thestr += f'triplet_mask: \n'
                 thestr += str(self.hyps_mask['triplet_mask']) + '\n'
 
         return thestr
@@ -533,7 +532,7 @@ class GaussianProcess:
         out_dict['training_data'] = [env.as_dict() for env in
                                      self.training_data]
         # Remove the callables
-        for key in ['kernel','kernel_grad','energy_kernel',
+        for key in ['kernel', 'kernel_grad', 'energy_kernel',
                     'energy_force_kernel']:
             if out_dict.get(key) is not None:
                 del out_dict[key]
@@ -551,12 +550,14 @@ class GaussianProcess:
                                  hyps=np.array(dictionary['hyps']),
                                  hyp_labels=dictionary['hyp_labels'],
                                  par=dictionary['par'],
-                                 per_atom_par=dictionary.get('per_atom_par',True),
-                                 n_cpus=dictionary.get('n_cpus') or dictionary.get('no_cpus'),
+                                 per_atom_par=dictionary.get('per_atom_par',
+                                                             True),
+                                 n_cpus=dictionary.get(
+                                     'n_cpus') or dictionary.get('no_cpus'),
                                  maxiter=dictionary['maxiter'],
                                  opt_algorithm=dictionary['opt_algorithm'],
                                  multihyps=multihyps,
-                                 hyps_mask=dictionary.get('hyps_mask',None)
+                                 hyps_mask=dictionary.get('hyps_mask', None)
                                  )
 
         # Save time by attempting to load in computed attributes
@@ -570,7 +571,7 @@ class GaussianProcess:
         new_gp.training_labels_np = np.hstack(new_gp.training_labels)
 
         # Save time by attempting to load in computed attributes
-        if len(new_gp.training_data)>5000:
+        if len(new_gp.training_data) > 5000:
             if 'ky_mat_file' in dictionary:
                 new_gp.ky_mat = np.load(dictionary['ky_mat_file'])
                 new_gp.compute_matrices()
@@ -606,7 +607,7 @@ multihyps,
             format (str): Output format.
         """
 
-        if len(self.training_data)>5000:
+        if len(self.training_data) > 5000:
             np.save(f"{name}_ky_mat.npy", self.ky_mat)
             self.ky_mat_file = f"{name}_ky_mat.npy"
             del self.ky_mat
@@ -628,13 +629,12 @@ multihyps,
             raise ValueError("Output format not supported: try from "
                              "{}".format(supported_formats))
 
-        if len(self.training_data)>5000:
+        if len(self.training_data) > 5000:
             self.ky_mat = np.load(f"{name}_ky_mat.npy")
             self.compute_matrices()
 
-
     @staticmethod
-    def from_file(filename: str, format: str=''):
+    def from_file(filename: str, format: str = ''):
         """
         One-line convenience method to load a GP from a file stored using
         write_file
