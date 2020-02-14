@@ -187,11 +187,9 @@ def get_gp(bodies, kernel_type='mc', multihyps=True) -> GaussianProcess:
 
     # test update_db
     gaussian = \
-        GaussianProcess(kernel=kernel,
-                        kernel_grad=kernel_grad,
+        GaussianProcess(kernel_name=f'{prefix}{kernel_type}',
                         hyps=hyps,
                         hyp_labels=hl,
-                        energy_force_kernel=efk,
                         cutoffs=cutoffs, multihyps=multihyps, hyps_mask=hm,
                         par=False, n_cpus=1)
     gaussian.update_db(test_structure, forces)
