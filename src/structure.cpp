@@ -158,21 +158,3 @@ void StructureDescriptor :: nested_descriptors(){
         environment_descriptors.push_back(env);
     }
 }
-
-StructureDataset :: StructureDataset(){}
-
-StructureDataset :: StructureDataset(const Eigen::MatrixXd & cell,
-                         const std::vector<int> & species,
-                         const Eigen::MatrixXd & positions,
-                         double cutoff,
-                         DescriptorCalculator * descriptor_calculator,
-                        std::vector<double> energy,
-                         std::vector<double> force_components,
-                         std::vector<double> stress_components)
-                  : StructureDescriptor(cell, species, positions, cutoff,
-                                        descriptor_calculator){
-
-    this->energy = energy;
-    this->force_components = force_components;
-    this->stress_components = stress_components;
-}

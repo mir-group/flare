@@ -35,6 +35,11 @@ class StructureDescriptor : public Structure{
         double cutoff;
         std::vector<double> nested_cutoffs;
 
+        // Make structure labels empty by default.
+        std::vector<double> energy {};
+        std::vector<double> forces {};
+        std::vector<double> stresses {};
+
         StructureDescriptor();
 
         StructureDescriptor(const Eigen::MatrixXd & cell,
@@ -63,27 +68,6 @@ class StructureDescriptor : public Structure{
         void compute_nested_environments();
         void compute_descriptors();
         void nested_descriptors();
-};
-
-// Structure dataset. Stores energy, force, and stress labels.
-class StructureDataset : public StructureDescriptor{
-    public:
-        std::vector<double> energy;
-        std::vector<double> force_components;
-        std::vector<double> stress_components;
-
-        StructureDataset();
-
-        StructureDataset(const Eigen::MatrixXd & cell,
-                         const std::vector<int> & species,
-                         const Eigen::MatrixXd & positions,
-                         double cutoff,
-                         DescriptorCalculator * descriptor_calculator,
-                         std::vector<double> energy = std::vector<double>{},
-                         std::vector<double> force_components =
-                            std::vector<double>{},
-                         std::vector<double> stress_components =
-                            std::vector<double>{});
 };
 
 #endif

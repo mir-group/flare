@@ -12,7 +12,7 @@ class StructureTest : public ::testing::Test{
         std::vector<int> species {0, 1, 2, 3, 4};
         Eigen::MatrixXd positions{5, 3};
         B2_Calculator desc1;
-        StructureDataset test_struc;
+        StructureDescriptor test_struc;
 
         std::string radial_string = "chebyshev";
         std::string cutoff_string = "cosine";
@@ -34,7 +34,7 @@ class StructureTest : public ::testing::Test{
 
         desc1 = B2_Calculator(radial_string, cutoff_string,
             radial_hyps, cutoff_hyps, descriptor_settings);
-        test_struc = StructureDataset(cell, species, positions, cutoff, 
+        test_struc = StructureDescriptor(cell, species, positions, cutoff, 
             &desc1);
     }
 };
@@ -78,33 +78,5 @@ TEST_F(StructureTest, StructureDescriptor){
                             .descriptor_force_dervs(k, j));
             }
         }
-    }
-}
-
-TEST_F(StructureTest, StructureDataset){
-    // Check that label vectors are empty by default.
-    EXPECT_EQ(test_struc.energy.size(), 0);
-    EXPECT_EQ(test_struc.force_components.size(), 0);
-    EXPECT_EQ(test_struc.stress_components.size(), 0);
-
-    // Check that EFS labels are set correctly.
-    std::vector<double> energy {2.0};
-    std::vector<double> force_components {1, 2, 3};
-    std::vector<double> stress_components {4, 5, 6};
-
-    test_struc = StructureDataset(cell, species, positions, cutoff, &desc1,
-                                  energy, force_components,
-                                  stress_components);
-    
-    for (int i = 0; i < energy.size(); i ++){
-        EXPECT_EQ(energy[i], test_struc.energy[i]);
-    }
-
-    for (int i = 0; i < force_components.size(); i ++){
-        EXPECT_EQ(force_components[i], test_struc.force_components[i]);
-    }
-
-    for (int i = 0; i < stress_components.size(); i ++){
-        EXPECT_EQ(stress_components[i], test_struc.stress_components[i]);
     }
 }

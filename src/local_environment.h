@@ -24,7 +24,7 @@ class LocalEnvironment{
 
         LocalEnvironment(const Structure & structure, int atom,
                          double cutoff);
-        
+
         // If nested cutoffs are given, compute 2-, 3-, and many-body indices.
         LocalEnvironment(const Structure & structure, int atom,
                          double cutoff, std::vector<double> nested_cutoffs);
