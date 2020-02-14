@@ -1,5 +1,4 @@
-import sys
-import os
+import os, shutil, glob
 from copy import deepcopy
 import pytest
 import numpy as np
@@ -59,17 +58,18 @@ def otf_md_test(md_engine):
     number_of_steps = 3
     test_otf.otf_run(number_of_steps)
 
+    for f in glob.glob("AgI.pw*"):
+        os.remove(f)
+    for f in glob.glob("*.npy"):
+        os.remove(f)
+    for f in glob.glob("kv3*"):
+        shutil.rmtree(f)
+
     for f in os.listdir("./"):
         if f in [f'{md_engine}.log', 'lmp.mgp']:
             os.remove(f)
         if f in ['out', 'otf_data']:
-            os.rmdir(f)
-        if re.search("AgI.pw*", f):
-            os.remove(f)
-        if re.search("*.npy", f):
-            os.remove(f)
-        if re.search("kv3*", f):
-            os.rmdir(f)
+            shutil.rmtree(f)
 
 
 
