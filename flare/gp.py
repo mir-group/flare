@@ -15,11 +15,9 @@ from scipy.optimize import minimize
 from flare.env import AtomicEnvironment
 from flare.struc import Structure
 from flare.gp_algebra import get_neg_likelihood, \
-                             get_like_from_ky_mat
-from flare.gp_algebra import get_kernel_vector_par
-from flare.gp_algebra import get_ky_mat_par
-from flare.gp_algebra import get_ky_mat_update_par
-from flare.gp_algebra import get_neg_like_grad
+        get_like_from_ky_mat, get_neg_like_grad, \
+        get_kernel_vector_par, en_kern_vec_par, \
+        get_ky_mat_par, get_ky_mat_update_par
 from flare.kernels.utils import str_to_kernel_set as stk
 from flare.util import NumpyEncoder
 from flare.output import Output
@@ -330,7 +328,7 @@ class GaussianProcess:
                                     self.hyps,
                                     cutoffs=self.cutoffs,
                                     hyps_mask=self.hyps_mask,
-                                    n_cpus=self.n_cpus,
+                                    n_cpus=n_cpus,
                                     nsample=self.nsample)
 
         # Guarantee that alpha is up to date with training set
@@ -364,7 +362,19 @@ class GaussianProcess:
             float: Local energy predicted by the GP.
         """
 
-        k_v = self.en_kern_vec(x_t)
+        if (self.par and not self.per_atom_par):
+            n_cpus = self.n_cpus
+        else:
+            n_cpus = 1
+
+        k_v = en_kern_vec_par(self.training_data,
+                              self.energy_kernel,
+                              x_t, self.hyps,
+                              cutoffs=self.cutoffs,
+                              hyps_mask=self.hyps_mask,
+                              n_cpus=n_cpus,
+                              nsample=self.nsample)
+
         pred_mean = np.matmul(k_v, self.alpha)
 
         return pred_mean
@@ -380,8 +390,19 @@ class GaussianProcess:
             (float, float): Mean and predictive variance predicted by the GP.
         """
 
+        if (self.par and not self.per_atom_par):
+            n_cpus = self.n_cpus
+        else:
+            n_cpus = 1
+
         # get kernel vector
-        k_v = self.en_kern_vec(x_t)
+        k_v = en_kern_vec_par(self.training_data,
+                              self.energy_kernel,
+                              x_t, self.hyps,
+                              cutoffs=self.cutoffs,
+                              hyps_mask=self.hyps_mask,
+                              n_cpus=n_cpus,
+                              nsample=self.nsample)
 
         # get predictive mean
         pred_mean = np.matmul(k_v, self.alpha)
@@ -398,38 +419,6 @@ class GaussianProcess:
 
         return pred_mean, pred_var
 
-
-    def en_kern_vec(self, x: AtomicEnvironment):
-        """Compute the vector of energy/force kernels between an atomic
-        environment and the environments in the training set.
-
-        Args:
-            x (AtomicEnvironment): Local environment to compare against
-                the training environments.
-
-        Return:
-            np.ndarray: Kernel vector.
-        """
-
-        ds = [1, 2, 3]
-        size = len(self.training_data) * 3
-        k_v = np.zeros(size, )
-
-        if (self.multihyps):
-            for m_index in range(size):
-                x_2 = self.training_data[int(math.floor(m_index / 3))]
-                d_2 = ds[m_index % 3]
-                k_v[m_index] = self.energy_force_kernel(x_2, x, d_2,
-                                                        self.hyps, self.cutoffs,
-                                                        hyps_mask=self.hyps_mask)
-        else:
-            for m_index in range(size):
-                x_2 = self.training_data[int(math.floor(m_index / 3))]
-                d_2 = ds[m_index % 3]
-                k_v[m_index] = self.energy_force_kernel(x_2, x, d_2,
-                                                        self.hyps, self.cutoffs)
-
-        return k_v
 
     def set_L_alpha(self):
         """
@@ -470,17 +459,12 @@ class GaussianProcess:
             self.set_L_alpha()
             return
 
-        if (self.par and not self.per_atom_par):
-            n_cpus=self.n_cpus
-        else:
-            n_cpus=1
-
         ky_mat = get_ky_mat_update_par(self.ky_mat, self.hyps,
                                        self.training_data,
                                        self.kernel,
                                        cutoffs=self.cutoffs,
                                        hyps_mask=self.hyps_mask,
-                                       n_cpus=n_cpus,
+                                       n_cpus=self.n_cpus,
                                        nsample=self.nsample)
 
         l_mat = np.linalg.cholesky(ky_mat)

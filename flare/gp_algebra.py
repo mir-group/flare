@@ -926,3 +926,126 @@ def get_kernel_vector(training_data, kernel,
                                   hyps, cutoffs)
 
     return k_v
+
+def en_kern_vec_unit(training_data, kernel, x,
+                     hyps, cutoffs=None, hyps_mask=None):
+    """
+    Compute energy kernel vector, comparing input environment to all environments
+    in the GP's training set.
+    :param training_data: Set of atomic environments to compare against
+    :param kernel:
+    :param x: data point to compare against kernel matrix
+    :type x: AtomicEnvironment
+    :param hyps: list of hyper-parameters
+    :param cutoffs: The cutoff values used for the atomic environments
+    :type cutoffs: list of 2 float numbers
+    :param hyps_mask: dictionary used for multi-group hyperparmeters
+
+    :return: kernel vector
+    :rtype: np.ndarray
+    """
+
+
+    ds = [1, 2, 3]
+    size = len(training_data) * 3
+    k_v = np.zeros(size, )
+
+    for m_index in range(size):
+        x_2 = training_data[int(math.floor(m_index / 3))]
+        d_2 = ds[m_index % 3]
+        if (hyps_mask is not None):
+            k_v[m_index] = kernel(x_2, x, d_2,
+                                  hyps, cutoffs, hyps_mask=hyps_mask)
+        else:
+            k_v[m_index] = kernel(x_2, x, d_2,
+                                  hyps, cutoffs)
+    return k_v
+
+def en_kern_vec_par(training_data, kernel,
+                    x, hyps,
+                    cutoffs=None, hyps_mask=None,
+                    n_cpus=None, nsample=100):
+    """
+    Compute kernel vector, comparing input environment to all environments
+    in the GP's training set.
+
+    :param x: data point to compare against kernel matrix
+    :type x: AtomicEnvironment
+    :param hyps: list of hyper-parameters
+    :param cutoffs: The cutoff values used for the atomic environments
+    :type cutoffs: list of 2 float numbers
+    :param hyps_mask: dictionary used for multi-group hyperparmeters
+    :param n_cpus: number of cpus to use.
+    :param nsample: the size of block for matrix to compute
+
+    :return: kernel vector
+    :rtype: np.ndarray
+    """
+
+    if (n_cpus is None):
+        n_cpus = mp.cpu_count()
+    if (n_cpus == 1):
+        return en_kern_vec(training_data, kernel,
+                           x, hyps,
+                           cutoffs, hyps_mask)
+
+    with mp.Pool(processes=n_cpus) as pool:
+
+        # sort of partition
+        size = len(training_data)
+        ns = int(math.ceil(size/nsample/n_cpus)*n_cpus)
+        nsample = int(math.ceil(size/ns))
+        ns = int(math.ceil(size/nsample))
+
+        k12_slice = []
+        for ibatch in range(ns):
+            s = nsample*ibatch
+            e = np.min([s + nsample, size])
+            k12_slice.append(pool.apply_async(en_kern_vec_unit,
+                                              args=(training_data[s: e],
+                                                    kernel, x, hyps,
+                                                    cutoffs, hyps_mask)))
+
+        size3 = size*3
+        nsample3 = nsample*3
+        k12_v = np.zeros(size3)
+        for ibatch in range(ns):
+            s = nsample3*ibatch
+            e = np.min([s + nsample3, size3])
+            k12_v[s:e] = k12_slice[ibatch].get()
+        pool.close()
+        pool.join()
+
+    return k12_v
+
+def en_kern_vec(training_data, kernel, x, hyps, cutoffs=None,
+                hyps_mask=None):
+    """
+    Compute kernel vector, comparing input environment to all environments
+    in the GP's training set.
+
+    :param x: data point to compare against kernel matrix
+    :type x: AtomicEnvironment
+    :param hyps: list of hyper-parameters
+    :param cutoffs: The cutoff values used for the atomic environments
+    :type cutoffs: list of 2 float numbers
+    :param hyps_mask: dictionary used for multi-group hyperparmeters
+
+    """
+
+    ds = [1, 2, 3]
+    size = len(training_data) * 3
+    k_v = np.zeros(size, )
+
+    for m_index in range(size):
+        x_2 = training_data[int(math.floor(m_index / 3))]
+        d_2 = ds[m_index % 3]
+        if (hyps_mask is not None):
+            k_v[m_index] = kernel(x_2, x, d_2,
+                                  hyps, cutoffs,
+                                  hyps_mask=hyps_mask)
+        else:
+            k_v[m_index] = kernel(x_2, x, d_2,
+                                  hyps, cutoffs)
+
+    return k_v

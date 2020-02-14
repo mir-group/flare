@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 import numpy as np
 
@@ -85,8 +86,11 @@ def test_stress_with_lammps():
         strs = np.array([float(l) for l in line[1:]]) / 1.60217662e6
         assert np.isclose(stresses[ind], strs, atol=1e-3).all()
 
-    os.system('rm -r __pycache__')
-    os.system('rm grid3*')
-    os.system('rm -r kv3*')
-    os.system('rm lmp.mgp')
+    for f in os.listdir("./"):
+        if f in [f'lmp.mgp']:
+            os.remove(f)
+        if re.search("grid3*.npy", f):
+            os.remove(f)
+        if re.search("kv3*", f):
+            os.rmdir(f)
 
