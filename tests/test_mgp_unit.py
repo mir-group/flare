@@ -85,7 +85,8 @@ def test_init(bodies, multihyps, all_mgp, all_gp):
     struc_params = {'species': [1, 2],
                     'cube_lat': np.eye(3)*2,
                     'mass_dict': {'0': 27, '1': 16}}
-    mgp_model = MappedGaussianProcess(grid_params, struc_params, n_cpus=4)
+    mgp_model = MappedGaussianProcess(grid_params, struc_params, n_cpus=4,
+                lmp_file_name=lammps_location)
     all_mgp[f'{bodies}{multihyps}'] = mgp_model
 
 
@@ -150,6 +151,15 @@ def test_lmp_predict(all_gp, all_mgp, bodies, multihyps):
     test the lammps implementation
     """
 
+    for f in os.listdir("./"):
+        if f in [f'tmp{bodies}{multihyps}in', f'tmp{bodies}{multihyps}out', f'tmp{bodies}{multihyps}dump',
+                 f'tmp{bodies}{multihyps}data', 'log.lammps']:
+            os.remove(f)
+        if re.search("grid3*.npy", f):
+            os.remove(f)
+        if re.search("kv3*", f):
+            os.rmdir(f)
+
     mgp_model = all_mgp[f'{bodies}{multihyps}']
     gp_model = all_gp[f'{bodies}{multihyps}']
     lammps_location = mgp_model.lmp_file_name
@@ -182,14 +192,15 @@ def test_lmp_predict(all_gp, all_mgp, bodies, multihyps):
         by = 'no'
         ty = 'yes'
     style_string = 'mgp'
-    coeff_string = f'* * {lammps_location} 1 2 {by} {ty}'
+    coeff_string = f'* * {lammps_location} H He {by} {ty}'
     lammps_executable = os.environ.get('lmp')
     dump_file_name = f'tmp{bodies}{multihyps}.dump'
     input_file_name = f'tmp{bodies}{multihyps}.in'
     output_file_name = f'tmp{bodies}{multihyps}.out'
     input_text = \
         lammps_calculator.generic_lammps_input(data_file_name, style_string,
-                                               coeff_string, dump_file_name)
+                                               coeff_string, dump_file_name,
+                                               newton=True)
     lammps_calculator.write_text(input_file_name, input_text)
 
     lammps_calculator.run_lammps(lammps_executable, input_file_name,
