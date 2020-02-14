@@ -11,6 +11,9 @@ from flare.lammps import lammps_calculator
 
 from .fake_gp import get_gp, get_random_structure
 
+body_list = [2]
+multi_list = [False]
+
 # ASSUMPTION: You have a Lammps executable with the mgp pair style with $lmp
 # as the corresponding environment variable.
 @pytest.mark.skipif(not os.environ.get('lmp',
@@ -46,8 +49,8 @@ def all_mgp():
     yield allmgp_dict
     del allmgp_dict
 
-@pytest.mark.parametrize('bodies', [ 2, 3])
-@pytest.mark.parametrize('multihyps', [False, True])
+@pytest.mark.parametrize('bodies', body_list)
+@pytest.mark.parametrize('multihyps', multi_list)
 def test_init(bodies, multihyps, all_mgp, all_gp):
     """
     test the init function
@@ -90,8 +93,8 @@ def test_init(bodies, multihyps, all_mgp, all_gp):
     all_mgp[f'{bodies}{multihyps}'] = mgp_model
 
 
-@pytest.mark.parametrize('bodies', [ 2, 3])
-@pytest.mark.parametrize('multihyps', [False, True])
+@pytest.mark.parametrize('bodies', body_list)
+@pytest.mark.parametrize('multihyps', multi_list)
 def test_build_map(all_gp, all_mgp, bodies, multihyps):
     """
     test the mapping for mc_simple kernel
@@ -109,8 +112,8 @@ def test_build_map(all_gp, all_mgp, bodies, multihyps):
         if re.search("kv3*", f):
             os.rmdir(f)
 
-@pytest.mark.parametrize('bodies', [ 2, 3])
-@pytest.mark.parametrize('multihyps', [False, True])
+@pytest.mark.parametrize('bodies', body_list)
+@pytest.mark.parametrize('multihyps', multi_list)
 def test_predict(all_gp, all_mgp, bodies, multihyps):
     """
     test the predict for mc_simple kernel
@@ -144,8 +147,8 @@ def test_predict(all_gp, all_mgp, bodies, multihyps):
             os.rmdir(f)
 
 
-@pytest.mark.parametrize('bodies', [ 2, 3])
-@pytest.mark.parametrize('multihyps', [False, True])
+@pytest.mark.parametrize('bodies', body_list)
+@pytest.mark.parametrize('multihyps', multi_list)
 def test_lmp_predict(all_gp, all_mgp, bodies, multihyps):
     """
     test the lammps implementation

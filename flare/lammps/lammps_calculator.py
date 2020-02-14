@@ -16,8 +16,10 @@ def run_lammps(lammps_executable, input_file, output_file):
     :type output_file: str
     """
     # run lammps
-    lammps_command = f'{lammps_executable} < {input_file} > {output_file}'
-    subprocess.call(lammps_command.split())
+    lammps_command = f'{lammps_executable} -in {input_file} '
+    print("run command:", lammps_command)
+    with open("tmp2False.out", "w+") as fout:
+        subprocess.call(lammps_command.split(), stdout=fout)
 
 
 def lammps_parser(dump_file):
