@@ -31,8 +31,6 @@ def partition_cr(nsample, size, n_cpus):
             block_id += [(s1, e1, s2, e2)]
             nbatch2 += 1
             nbatch += 1
-            # print("add batch", s1, e1, s2, e2)
-    # print("partition_cr", nsample, size, nbatch)
     return block_id, nbatch
 
 def partition_c(nsample, size, n_cpus):
@@ -47,13 +45,12 @@ def partition_c(nsample, size, n_cpus):
         e = np.min([s + nsample, size])
         block_id += [(s, e)]
         nbatch += 1
-        # print("add batch", s, e)
     return block_id, nbatch
 
 def partition_update(nsample, size, old_size, n_cpus):
 
     ns = int(math.ceil(size/nsample))
-    nproc = (size3-old_size3)*(ns+old_size3)//2
+    nproc = (size*3-old_size*3)*(ns+old_size*3)//2
     if (nproc < n_cpus):
         nsample = int(math.ceil(size/np.sqrt(n_cpus*2)))
         ns = int(math.ceil(size/nsample))
@@ -125,8 +122,7 @@ def get_ky_mat_pack(hyps: np.ndarray, name: str,
                same: bool, kernel, cutoffs, hyps_mask):
     """ Compute covariance matrix element between set1 and set2
     :param hyps: list of hyper-parameters
-    :param training_data1: row elements
-    :param training_data2: column elements
+    :param name: name of the gp instance.
     :param same: whether the row and column are the same
     :param kernel: function object of the kernel
     :param cutoffs: The cutoff values used for the atomic environments
@@ -177,7 +173,7 @@ def get_ky_mat_par(hyps: np.ndarray, name: str,
                    n_cpus=None, nsample=100):
     """ parallel version of get_ky_mat
     :param hyps: list of hyper-parameters
-    :param training_data: list of atomic envirionments
+    :param name: name of the gp instance.
     :param kernel: function object of the kernel
     :param cutoffs: The cutoff values used for the atomic environments
     :type cutoffs: list of 2 float numbers
@@ -209,21 +205,18 @@ def get_ky_mat_par(hyps: np.ndarray, name: str,
     result_queue = mp.Queue()
     children = []
     for wid in range(nbatch):
-        s1, e1, s2, e2 = block_id[ibatch]
+        s1, e1, s2, e2 = block_id[wid]
         children.append(
             mp.Process(
-                target=get_ky_mat_pack,
-                args=(
-                    result_queue, wid,
+                target=queue_wrapper,
+                args=(result_queue, wid,
                     get_ky_mat_pack,
-                    (
-                   hyps, name, s1, e1, s2, e2,
+                    (hyps, name, s1, e1, s2, e2,
                    s1==s2, kernel, cutoffs, hyps_mask
                     )
                 )
             )
         )
-        print("send child process", block_id[wid])
 
     # Run child processes.
     for c in children:
@@ -232,11 +225,9 @@ def get_ky_mat_par(hyps: np.ndarray, name: str,
     # Wait for all results to arrive.
     size3 = 3*size
     k_mat = np.zeros([size3, size3])
-    k12_v = np.zeros(size*3)
     for _ in range(nbatch):
         wid, result_chunk = result_queue.get(block=True)
         s1, e1, s2, e2 = block_id[wid]
-        k12_v[s*3:e*3] = result_chunk
         k_mat[s1*3:e1*3, s2*3:e2*3] = result_chunk
         if (s1 != s2):
             k_mat[s2*3:e2*3, s1*3:e1*3] = result_chunk.T
@@ -259,8 +250,6 @@ def get_like_from_ky_mat(ky_mat):
     """ compute the likelihood from the covariance matrix
 
     :param ky_mat: the covariance matrix
-    :param training_labels_np: the numpy array of forces
-    :type training_labels_np: np.array
 
     :return: float, likelihood
     """
@@ -284,7 +273,7 @@ def get_ky_and_hyp(hyps: np.ndarray, name: str,
     If the cpu set up is None, it uses as much as posible cpus
 
     :param hyps: list of hyper-parameters
-    :param training_data: list of atomic envirionments
+    :param name: name of the gp instance.
     :param kernel_grad: function object of the kernel gradient
     :param cutoffs: The cutoff values used for the atomic environments
     :type cutoffs: list of 2 float numbers
@@ -335,8 +324,7 @@ def get_ky_and_hyp_pack(hyps: np.ndarray, name, s1, e1,
     If the cpu set up is None, it uses as much as posible cpus
 
     :param hyps: list of hyper-parameters
-    :param training_data1: row elements
-    :param training_data2: column elements
+    :param name: name of the gp instance.
     :param kernel_grad: function object of the kernel gradient
     :param cutoffs: The cutoff values used for the atomic environments
     :type cutoffs: list of 2 float numbers
@@ -355,8 +343,8 @@ def get_ky_and_hyp_pack(hyps: np.ndarray, name, s1, e1,
             non_noise_hyps = len(hyps)
 
     # initialize matrices
-    size1 = len(training_data1) * 3
-    size2 = len(training_data2) * 3
+    size1 = (e1-s1) * 3
+    size2 = (e2-s2) * 3
     k_mat = np.zeros([size1, size2])
     hyp_mat = np.zeros([non_noise_hyps, size1, size2])
 
@@ -402,7 +390,7 @@ def get_ky_and_hyp_par(hyps: np.ndarray, name,
     parallel version of get_ky_and_hyp
 
     :param hyps: list of hyper-parameters
-    :param training_data: list of atomic envirionments
+    :param name: name of the gp instance.
     :param kernel_grad: function object of the kernel gradient
     :param cutoffs: The cutoff values used for the atomic environments
     :type cutoffs: list of 2 float numbers
@@ -444,21 +432,18 @@ def get_ky_and_hyp_par(hyps: np.ndarray, name,
     result_queue = mp.Queue()
     children = []
     for wid in range(nbatch):
-        s1, e1, s2, e2 = block_id[ibatch]
+        s1, e1, s2, e2 = block_id[wid]
         children.append(
             mp.Process(
-                target=get_ky_mat_pack,
-                args=(
-                    result_queue, wid,
+                target=queue_wrapper,
+                args=(result_queue, wid,
                     get_ky_and_hyp_pack,
-                    (
-                   hyps, name, s1, e1, s2, e2,
-                   s1==s2, kernel, cutoffs, hyps_mask
+                    (hyps, name, s1, e1, s2, e2,
+                   s1==s2, kernel_grad, cutoffs, hyps_mask
                     )
                 )
             )
         )
-        print("send child process", block_id[wid])
 
     # Run child processes.
     for c in children:
@@ -503,10 +488,7 @@ def get_neg_likelihood(hyps: np.ndarray, name,
 
     :param hyps: list of hyper-parameters
     :type hyps: np.ndarray
-    :param training_data: Set of atomic environments to compare against
-    :type training_data: list of AtomicEnvironment objects
-    :param training_labels_np: forces
-    :type training_labels_np: np.array
+    :param name: name of the gp instance.
     :param kernel: function object of the kernel
     :param output: Output object for dumping every hyper-parameter
                    sets computed
@@ -530,7 +512,7 @@ def get_neg_likelihood(hyps: np.ndarray, name,
 
     time0 = time.time()
     ky_mat = \
-        get_ky_mat_par(hyps, training_data, kernel,
+        get_ky_mat_par(hyps, name, kernel,
                        cutoffs=cutoffs, hyps_mask=hyps_mask,
                        n_cpus=n_cpus, nsample=nsample)
 
@@ -538,7 +520,7 @@ def get_neg_likelihood(hyps: np.ndarray, name,
 
     time0 = time.time()
 
-    like = get_like_from_ky_mat(ky_mat, training_labels_np)
+    like = get_like_from_ky_mat(ky_mat, _global_training_labels[name])
 
     output.write_to_log(f"get_like_from_ky_mat {time.time()-time0}\n", name="hyps")
 
@@ -548,8 +530,7 @@ def get_neg_likelihood(hyps: np.ndarray, name,
     return -like
 
 
-def get_neg_like_grad(hyps: np.ndarray, training_data: list,
-                      training_labels_np: np.ndarray,
+def get_neg_like_grad(hyps: np.ndarray, name: str,
                       kernel_grad, output = None,
                       cutoffs=None, hyps_mask=None,
                       n_cpus=None, nsample=100):
@@ -557,10 +538,7 @@ def get_neg_like_grad(hyps: np.ndarray, training_data: list,
 
     :param hyps: list of hyper-parameters
     :type hyps: np.ndarray
-    :param training_data: Set of atomic environments to compare against
-    :type training_data: list of AtomicEnvironment objects
-    :param training_labels_np: forces
-    :type training_labels_np: np.array
+    :param name: name of the gp instance.
     :param kernel_grad: function object of the kernel gradient
     :param output: Output object for dumping every hyper-parameter
                    sets computed
@@ -596,9 +574,8 @@ def get_neg_like_grad(hyps: np.ndarray, training_data: list,
 
     time0 = time.time()
 
-
     like, like_grad = \
-        get_like_grad_from_mats(ky_mat, hyp_mat, training_labels_np)
+        get_like_grad_from_mats(ky_mat, hyp_mat, _global_training_labels[name])
 
     print("like", like, like_grad)
     print("hyps", hyps)
@@ -618,7 +595,7 @@ def get_neg_like_grad(hyps: np.ndarray, training_data: list,
     return -like, -like_grad
 
 
-def get_like_grad_from_mats(ky_mat, hyp_mat, training_labels_np):
+def get_like_grad_from_mats(ky_mat, hyp_mat, name):
     """compute the gradient of likelihood to hyper-parameters
     from covariance matrix and its gradient
 
@@ -626,8 +603,7 @@ def get_like_grad_from_mats(ky_mat, hyp_mat, training_labels_np):
     :type ky_mat: np.array
     :param hyp_mat: dky/d(hyper parameter) matrix
     :type hyp_mat: np.array
-    :param training_labels_np: forces
-    :type training_labels_np: np.array
+    :param name: name of the gp instance.
 
     :return: float, list. the likelihood and its gradients
     """
@@ -641,13 +617,15 @@ def get_like_grad_from_mats(ky_mat, hyp_mat, training_labels_np):
     except:
         return -1e8, np.zeros(number_of_hyps)
 
-    alpha = np.matmul(ky_mat_inv, training_labels_np)
-    alpha_mat = np.matmul(alpha.reshape(alpha.shape[0], 1),
-                          alpha.reshape(1, alpha.shape[0]))
+    labels = _global_training_labels[name]
+
+    alpha = np.matmul(ky_mat_inv, labels)
+    alpha_mat = np.matmul(alpha.reshape(-1, 1),
+                          alpha.reshape(1, -1))
     like_mat = alpha_mat - ky_mat_inv
 
     # calculate likelihood
-    like = (-0.5 * np.matmul(training_labels_np, alpha) -
+    like = (-0.5 * np.matmul(labels, alpha) -
             np.sum(np.log(np.diagonal(l_mat))) -
             math.log(2 * np.pi) * ky_mat.shape[1] / 2)
 
@@ -699,32 +677,28 @@ def get_ky_mat_update_par(ky_mat_old, hyps: np.ndarray, name: str,
     # initialize matrices
     old_size3 = ky_mat_old.shape[0]
     old_size = old_size3//3
-    size = len(training_data)
-    size3 = 3*len(training_data)
+    size = len(_global_training_data[name])
+    size3 = 3*size
     ds = [1, 2, 3]
 
     block_id, nbatch = partition_update(nsample, size, old_size, n_cpus)
 
+    # Send and Run child processes.
     result_queue = mp.Queue()
     children = []
     for wid in range(nbatch):
-        s1, e1, s2, e2 = block_id[ibatch]
+        s1, e1, s2, e2 = block_id[wid]
         children.append(
             mp.Process(
                 target=queue_wrapper,
-                args=(
-                    result_queue, wid,
+                args=(result_queue, wid,
                     get_ky_mat_pack,
-                    (
-                   hyps, name, s1, e1, s2, e2,
+                    (hyps, name, s1, e1, s2, e2,
                    s1==s2, kernel, cutoffs, hyps_mask
                     )
                 )
             )
         )
-        print("send child process", block_id[wid])
-
-    # Run child processes.
     for c in children:
         c.start()
 
@@ -879,23 +853,18 @@ def get_kernel_vector_par(name, kernel,
     result_queue = mp.Queue()
     children = []
     for wid in range(nbatch):
+        s, e = block_id[wid]
         children.append(
             mp.Process(
                 target=queue_wrapper,
-                args=(result_queue,
-                    wid,
+                args=(result_queue, wid,
                     get_kernel_vector_unit,
-                    (
-                  name,
-                  block_id[wid][0],
-                  block_id[wid][1],
-                  kernel, x, d_1, hyps,
+                    (name, s, e, kernel, x, d_1, hyps,
                   cutoffs, hyps_mask
                     )
                 )
             )
         )
-        # print("send child process", block_id[wid])
 
     # Run child processes.
     for c in children:
@@ -932,12 +901,11 @@ def get_kernel_vector(name, kernel,
 
     """
 
-    training_data = len(_global_training_data[name])
-
-    ds = [1, 2, 3]
+    training_data = _global_training_data[name]
     size = len(training_data) * 3
-    k_v = np.zeros(size, )
 
+    k_v = np.zeros(size, )
+    ds = [1, 2, 3]
     for m_index in range(size):
         x_2 = training_data[int(math.floor(m_index / 3))]
         d_2 = ds[m_index % 3]
@@ -1022,11 +990,9 @@ def en_kern_vec_par(name, kernel,
         children.append(
             mp.Process(
                 target=queue_wrapper,
-                args=(result_queue,
-                    wid,
+                args=(result_queue, wid,
                     en_kern_vec_unit,
-                    (
-                  name,
+                    (name,
                   block_id[wid][0],
                   block_id[wid][1],
                   kernel, x, hyps,
@@ -1035,7 +1001,6 @@ def en_kern_vec_par(name, kernel,
                 )
             )
         )
-        # print("send child process", block_id[wid])
 
     # Run child processes.
     for c in children:
