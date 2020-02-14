@@ -46,6 +46,7 @@ def test_otf_h2():
               std_tolerance_factor, init_atoms=[0],
               calculate_energy=True, max_atoms_added=1,
               n_cpus=1, dft_softwarename='vasp',
+              dft_output="vasprun.xml",
               output_name='h2_otf_vasp')
 
     otf.run()
