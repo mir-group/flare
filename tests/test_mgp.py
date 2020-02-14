@@ -7,7 +7,7 @@ from flare.mgp.mgp import MappedGaussianProcess
 from flare import mc_simple
 from flare.lammps import lammps_calculator
 import pickle
-import os
+import os, re
 
 @pytest.fixture(scope='module')
 def otf_object():
@@ -182,7 +182,7 @@ def test_lammps(otf_object, structure):
     lammps_calculator.write_text(data_file_name, data_text)
 
     # create lammps input
-    style_string = 'mgp'
+    style_string = 'mgpf'
     coeff_string = '* * {} Ag I yes yes'.format(lammps_location)
     lammps_executable = os.environ.get('lmp')
     dump_file_name = 'tmp.dump'
@@ -190,7 +190,8 @@ def test_lammps(otf_object, structure):
     output_file_name = 'tmp.out'
     input_text = \
         lammps_calculator.generic_lammps_input(data_file_name, style_string,
-                                               coeff_string, dump_file_name)
+                                               coeff_string, dump_file_name,
+                                               newton=False)
     lammps_calculator.write_text(input_file_name, input_text)
 
     lammps_calculator.run_lammps(lammps_executable, input_file_name,
