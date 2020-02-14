@@ -33,8 +33,8 @@ class MappedGaussianProcess:
                         'mass_dict': {'0': 27 * unit, '1': 16 * unit}}
     >>> grid_params =  {'bounds_2': [[1.2], [3.5]],
                                     # [[lower_bound], [upper_bound]]
-                        'bounds_3': [[1.2, 1.2, 0], [3.5, 3.5, np.pi]],
-                                    # [[lower,lower,0],[upper,upper,np.pi]]
+                        'bounds_3': [[1.2, 1.2, 1.2], [3.5, 3.5, 3.5]],
+                                    # [[lower,lower,lower],[upper,upper,upper]]
                         'grid_num_2': 64,
                         'grid_num_3': [16, 16, 16],
                         'svd_rank_2': 64,
