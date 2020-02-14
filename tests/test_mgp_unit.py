@@ -11,8 +11,8 @@ from flare.lammps import lammps_calculator
 
 from .fake_gp import get_gp, get_random_structure
 
-body_list = [2]
-multi_list = [False]
+body_list = [2, 3]
+multi_list = [False, True]
 
 # ASSUMPTION: You have a Lammps executable with the mgp pair style with $lmp
 # as the corresponding environment variable.
