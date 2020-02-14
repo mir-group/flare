@@ -79,8 +79,7 @@ class GaussianProcess:
         # TO DO, clean up all the other kernel arguments
         if (kernel is None):
             self.kernel_name = kernel_name
-            kernel, grad, ek, efk = stk(dictionary['kernel_name'],
-                                  multihyps)
+            kernel, grad, ek, efk = stk(kernel_name, multihyps)
             self.kernel = kernel
             self.kernel_grad = grad
             self.energy_force_kernel = efk

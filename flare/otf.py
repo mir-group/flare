@@ -26,7 +26,7 @@ class OTF:
                  rescale_steps: List[int] = [], rescale_temps: List[int] = [],
                  dft_softwarename: str = "qe",
                  n_cpus: int = 1, npool: int = None, mpi: str = "srun",
-                 dft_kwargs=None,
+                 dft_kwargs=None, dft_output='dft.out',
                  store_dft_output: Tuple[Union[str,List[str]],str] = None):
         """Trains a Gaussian process force field on the fly during
             molecular dynamics.
@@ -89,6 +89,7 @@ class OTF:
         """
 
         self.dft_input = dft_input
+        self.dft_output = dft_output
         self.dt = dt
         self.number_of_steps = number_of_steps
         self.gp = gp
@@ -260,7 +261,7 @@ class OTF:
 
     def run_dft(self):
         """Calculates DFT forces on atoms in the current structure.
-        
+
         If OTF has store_dft_output set, then the specified DFT files will
         be copied with the current date and time prepended in the format
         'Year.Month.Day:Hour:Minute:Second:'.
@@ -273,6 +274,7 @@ class OTF:
         forces = self.dft_module.run_dft_par(self.dft_input, self.structure,
                                              self.dft_loc,
                                              n_cpus=self.n_cpus,
+                                             dft_out=self.dft_output,
                                              npool=self.npool,
                                              mpi=self.mpi,
                                              dft_kwargs=self.dft_kwargs)
@@ -284,7 +286,7 @@ class OTF:
         time_curr = time.time() - self.start_time
         self.output.write_to_log('number of DFT calls: %i \n' % self.dft_count)
         self.output.write_to_log('wall time from start: %.2f s \n' % time_curr)
-        
+
         # Store DFT outputs in another folder if desired
         # specified in self.store_dft_output
         if self.store_dft_output is not None:
@@ -296,8 +298,8 @@ class OTF:
                 to_copy = [target_files]
             else:
                 to_copy = target_files
-            for file in to_copy:
-                copyfile(file, dest+'/'+dt_string+file)
+            for ofile in to_copy:
+                copyfile(ofile, dest+'/'+dt_string+ofile)
 
     def update_gp(self, train_atoms: List[int], dft_frcs: 'ndarray'):
         """

@@ -74,7 +74,7 @@ def str_to_kernel_set(name: str, multihyps: bool =False):
     elif (b3):
         prefix='3'
     else:
-        raise RuntimeError("the name has to include at least one number")
+        raise RuntimeError(f"the name has to include at least one number {name}")
 
     return stk(prefix), stk(prefix+'_grad'), stk(prefix+'_en'), \
             stk(prefix+'_force_en')
