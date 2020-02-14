@@ -143,7 +143,7 @@ def test_update_L_alpha(two_plus_three_gp):
 def test_representation_method(two_body_gp):
     the_str = str(two_body_gp)
     assert 'GaussianProcess Object' in the_str
-    assert 'Kernel: two_body_mc' in the_str
+    assert 'Kernel: 2mc' in the_str
     assert 'Cutoffs: [0.8 0.8]' in the_str
     assert 'Model Likelihood: ' in the_str
     assert 'ls2: ' in the_str
@@ -245,8 +245,7 @@ def test_constrained_optimization_simple():
                  'train_noise': True,
                  'map': [1, 3, 5, 7, 8]}
 
-    gp = GaussianProcess(kernel=en.two_plus_three_body_mc,
-                        kernel_grad=en.two_plus_three_body_mc_grad,
+    gp = GaussianProcess(kernel_name='23mc',
                         hyps=hyps,
                         hyp_labels=hyp_labels,
                         cutoffs=cutoffs, par=False, n_cpus=1,

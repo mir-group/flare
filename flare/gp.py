@@ -81,7 +81,7 @@ class GaussianProcess:
             self.kernel = kernel
             self.kernel_grad = grad
             self.energy_force_kernel = efk
-            self.energy_kernel = efk
+            self.energy_kernel = ek
         else:
             self.kernel_name = kernel.__name__
 
@@ -538,20 +538,7 @@ class GaussianProcess:
         force_kernel, grad, ek, efk = stk(dictionary['kernel_name'],
                                   multihyps)
 
-        if dictionary['energy_kernel'] is not None:
-            energy_kernel = ek
-        else:
-            energy_kernel = None
-
-        if dictionary['energy_force_kernel'] is not None:
-            energy_force_kernel = efk
-        else:
-            energy_force_kernel = None
-
-        new_gp = GaussianProcess(kernel=force_kernel,
-                                 kernel_grad=grad,
-                                 energy_kernel=energy_kernel,
-                                 energy_force_kernel=energy_force_kernel,
+        new_gp = GaussianProcess(kernel_name=dictionary['kernel_name'],
                                  cutoffs=np.array(dictionary['cutoffs']),
                                  hyps=np.array(dictionary['hyps']),
                                  hyp_labels=dictionary['hyp_labels'],
