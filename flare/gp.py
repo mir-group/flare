@@ -22,6 +22,7 @@ from flare.kernels.utils import str_to_kernel_set as stk
 from flare.util import NumpyEncoder
 from flare.output import Output
 import flare.cutoffs as cf
+import flare.gp_algebra
 
 
 class GaussianProcess:
@@ -66,7 +67,8 @@ class GaussianProcess:
                  n_cpus: int = 1, nsample: int = 100,
                  output: Output = None,
                  multihyps: bool = False, hyps_mask: dict = None,
-                 kernel_name="2+3_mc"):
+                 kernel_name="2+3_mc",
+                 name="default_gp"):
         """Initialize GP parameters and training data."""
 
         # get all arguments as attributes
@@ -195,6 +197,8 @@ class GaussianProcess:
 
         # create numpy array of training labels
         self.training_labels_np = np.hstack(self.training_labels)
+        flare.gp_algebra._global_training_data[self.name] = self.training_data
+        flare.gp_algebra._global_training_labels[self.name] = self.training_labels_np
 
     def add_one_env(self, env: AtomicEnvironment,
                     force, train: bool = False, **kwargs):
@@ -238,8 +242,7 @@ class GaussianProcess:
 
         x_0 = self.hyps
 
-        args = (self.training_data, self.training_labels_np,
-                self.kernel_grad, output,
+        args = (self.name, self.kernel_grad, output,
                 self.cutoffs, self.hyps_mask,
                 self.n_cpus, self.nsample)
         objective_func = get_neg_like_grad
@@ -323,7 +326,7 @@ class GaussianProcess:
         else:
             n_cpus = 1
 
-        k_v = get_kernel_vector_par(self.training_data, self.kernel,
+        k_v = get_kernel_vector_par(name, self.kernel,
                                     x_t, d,
                                     self.hyps,
                                     cutoffs=self.cutoffs,
@@ -367,7 +370,7 @@ class GaussianProcess:
         else:
             n_cpus = 1
 
-        k_v = en_kern_vec_par(self.training_data,
+        k_v = en_kern_vec_par(self.name,
                               self.energy_force_kernel,
                               x_t, self.hyps,
                               cutoffs=self.cutoffs,
@@ -396,7 +399,7 @@ class GaussianProcess:
             n_cpus = 1
 
         # get kernel vector
-        k_v = en_kern_vec_par(self.training_data,
+        k_v = en_kern_vec_par(self.name,
                               self.energy_force_kernel,
                               x_t, self.hyps,
                               cutoffs=self.cutoffs,
@@ -429,7 +432,7 @@ class GaussianProcess:
         """
 
         ky_mat = get_ky_mat_par(self.hyps,
-                                self.training_data,
+                                self.name,
                                 self.kernel,
                                 cutoffs=self.cutoffs,
                                 hyps_mask=self.hyps_mask,
@@ -460,7 +463,7 @@ class GaussianProcess:
             return
 
         ky_mat = get_ky_mat_update_par(self.ky_mat, self.hyps,
-                                       self.training_data,
+                                       self.name,
                                        self.kernel,
                                        cutoffs=self.cutoffs,
                                        hyps_mask=self.hyps_mask,

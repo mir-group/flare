@@ -16,7 +16,7 @@ import os
 from flare import gp, struc
 from flare.env import AtomicEnvironment
 from flare.gp import GaussianProcess
-from flare.gp_algebra import get_kernel_vector
+from flare.gp_algebra import get_kernel_vector_unit
 from flare.kernels.kernels import two_body, three_body, two_plus_three_body,\
     two_body_jit
 from flare.cutoffs import quadratic_cutoff
@@ -530,7 +530,7 @@ class Map2body:
         k12_v = np.zeros([len(bond_lengths), size*3])
         for b, r in enumerate(bond_lengths):
             env12.bond_array_2 = np.array([[r, 1, 0, 0]])
-            k12_v[b, :] = get_kernel_vector(training_data, kernel,
+            k12_v[b, :] = get_kernel_vector(name, kernel,
                                             env12, 1, hyps,
                                             cutoffs, hyps_mask)
         return k12_v
@@ -642,7 +642,7 @@ class Map3body:
                 s, e = block_id[ibatch]
                 k12_slice.append(\
                         pool.apply_async(self._GenGrid_inner_most,
-                                         args=(GP.training_data[s:e],
+                                         args=(name, s, e,
                                                cos_angles, bond_lengths,
                                                env12, kernel_info)))
                 if (size>5000):
@@ -744,16 +744,17 @@ class Map3body:
 
         return bond_means, bond_vars
 
-    def _GenGrid_inner_most(self, training_data, cos_angles, bond_lengths, env12, kernel_info):
+    def _GenGrid_inner_most(self, name, s, e, cos_angles, bond_lengths, env12, kernel_info):
 
         '''
         generate grid for each cos_angle, used to parallelize grid generation
         '''
 
         kernel, efk, cutoffs, hyps, hyps_mask = kernel_info
+        training_data = flare.gp_algebra._global_training_data[name]
         # open saved k vector file, and write to new file
         size = len(training_data)*3
-        k12_v = np.zeros([len(bond_lengths), len(bond_lengths), 
+        k12_v = np.zeros([len(bond_lengths), len(bond_lengths),
                           len(cos_angles), size])
         for a12, cos_angle12 in enumerate(cos_angles):
             for b1, r1 in enumerate(bond_lengths):
@@ -768,7 +769,7 @@ class Map3body:
                     env12.cross_bond_dists = np.array([[0, r12], [r12, 0]])
 
                     k12_v[b1, b2, a12, :] = \
-                            get_kernel_vector(training_data, kernel, env12,
+                            get_kernel_vector_unit(name, s, e, kernel, env12,
                                               1, hyps, cutoffs, hyps_mask)
 
         return k12_v

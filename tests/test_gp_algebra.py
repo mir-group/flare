@@ -2,6 +2,7 @@ import time
 import pytest
 import numpy as np
 
+import flare.gp_algebra
 from flare import gp
 from flare.env import AtomicEnvironment
 from flare.struc import Structure
@@ -99,7 +100,11 @@ def get_random_training_set(nenv):
         training_labels += [np.random.uniform(-1, 1, 3)]
     training_labels = np.hstack(training_labels)
 
-    return hyps, training_data, training_labels, kernel, cutoffs, \
+    name = "unit_test"
+    flare.gp_algebra._global_training_data[name] = training_data
+    flare.gp_algebra._global_training_labels[name] = training_labels
+
+    return hyps, name, kernel, cutoffs, \
            kernel_m, hyps_list, hyps_mask_list
 
 
@@ -110,7 +115,7 @@ def test_ky_mat(params):
     TO DO: store the reference... and call it explicitely
     """
 
-    hyps, training_data, training_labels, kernel, cutoffs, \
+    hyps, name, kernel, cutoffs, \
             kernel_m, hyps_list, hyps_mask_list = params
 
     func = [get_ky_mat,
@@ -173,7 +178,7 @@ def test_ky_mat_update(params):
     check ky_mat_update function
     """
 
-    hyps, training_data, training_labels, kernel, cutoffs, \
+    hyps, name, kernel, cutoffs, \
             kernel_m, hyps_list, hyps_mask_list = params
 
 
@@ -228,7 +233,7 @@ def test_ky_mat_update(params):
 
 def test_get_kernel_vector(params):
 
-    hyps, training_data, training_labels, kernel, cutoffs, \
+    hyps, name, kernel, cutoffs, \
             kernel_m, hyps_list, hyps_mask_list = params
 
     test_point = get_tstp()
@@ -250,7 +255,7 @@ def test_get_kernel_vector(params):
 
 def test_ky_and_hyp(params):
 
-    hyps, training_data, training_labels, kernel, cutoffs, \
+    hyps, name, kernel, cutoffs, \
             kernel_m, hyps_list, hyps_mask_list = params
 
     func = [get_ky_and_hyp,
@@ -315,7 +320,7 @@ def test_ky_and_hyp(params):
 def test_grad(params):
 
 
-    hyps, training_data, training_labels, kernel, cutoffs, \
+    hyps, name, kernel, cutoffs, \
             kernel_m, hyps_list, hyps_mask_list = params
 
     # obtain reference
@@ -372,7 +377,7 @@ def test_grad(params):
 def test_ky_hyp_grad(params):
 
 
-    hyps, training_data, training_labels, kernel, cutoffs, \
+    hyps, name, kernel, cutoffs, \
             kernel_m, hyps_list, hyps_mask_list = params
 
     func = get_ky_and_hyp
