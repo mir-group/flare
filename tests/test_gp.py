@@ -49,7 +49,7 @@ def two_body_gp() -> GaussianProcess:
     cell = np.eye(3)
     unique_species = [2, 1]
     cutoffs = np.array([0.8, 0.8])
-    noa = 50
+    noa = 10
 
     # create test structure
     test_structure, forces = get_random_structure(cell, unique_species,
@@ -91,7 +91,7 @@ def test_point() -> AtomicEnvironment:
     cell = np.eye(3)
     unique_species = [2, 1]
     cutoff = 0.8
-    noa = 10
+    noa = 5
 
     test_structure_2, _ = get_random_structure(cell, unique_species,
                                                noa)
@@ -125,7 +125,6 @@ def test_update_db(two_body_gp, params):
 @pytest.mark.parametrize('par, n_cpus', [(True, 2),
                                          (False, 1)])
 def test_train(two_body_gp, params, par, n_cpus):
-    hyp = list(two_body_gp.hyps)
 
     # add struc and forces to db
     test_structure, forces = get_random_structure(params['cell'],
@@ -138,6 +137,7 @@ def test_train(two_body_gp, params, par, n_cpus):
 
     # train gp
     two_body_gp.hyps = np.ones(3)
+    hyp = list(two_body_gp.hyps)
     two_body_gp.train()
 
     hyp_post = list(two_body_gp.hyps)
