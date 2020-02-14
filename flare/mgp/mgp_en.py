@@ -206,9 +206,15 @@ class MappedGaussianProcess:
     def predict(self, atom_env: AtomicEnvironment, mean_only: bool=False)-> \
             (float, 'ndarray','ndarray', float):
         '''
-        predict force and variance for given atomic environment
-        :param atom_env: atomic environment (with a center atom and its neighbors)
-        :param mean_only: if True: only predict force (variance is always 0)
+        predict force, variance, stress and local energy for given atomic environment
+        Args:
+            atom_env: atomic environment (with a center atom and its neighbors)
+            mean_only: if True: only predict force (variance is always 0)
+        Return:
+            force: 3d array of atomic force
+            variance: 3d array of the predictive variance
+            stress: 6d array of the virial stress
+            energy: the local energy (atomic energy)
         '''
         if self.mean_only:  # if not build mapping for var
             mean_only = True
