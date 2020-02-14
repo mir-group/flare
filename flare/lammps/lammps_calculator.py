@@ -172,7 +172,7 @@ def write_text(file, text):
 # -----------------------------------------------------------------------------
 
 
-def generic_lammps_input(dat_file, style_string, coeff_string, dump_file, newton=False):
+def generic_lammps_input(dat_file, style_string, coeff_string, dump_file, newton=True):
     """Create text for generic LAMMPS input file."""
 
     if newton is True:
@@ -200,7 +200,7 @@ run 0
     return input_text
 
 
-def ewald_input(dat_file, short_cut, kspace_accuracy, dump_file, newton=False):
+def ewald_input(dat_file, short_cut, kspace_accuracy, dump_file, newton=True):
     """Create text for Ewald input file."""
     if newton is True:
         ntn = 'on'
