@@ -332,8 +332,9 @@ class GaussianProcess:
                                     nsample=self.nsample)
 
         # Guarantee that alpha is up to date with training set
-        assert ((self.alpha is not None) and
-                (3 * len(self.training_data) == len(self.alpha)))
+        if  self.alpha is None or\
+                (3 * len(self.training_data) != len(self.alpha)):
+            self.update_L_alpha()
 
         # get predictive mean
         pred_mean = np.matmul(k_v, self.alpha)
