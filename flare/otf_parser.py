@@ -44,7 +44,7 @@ class OtfAnalysis:
 
     def make_gp(self, cell=None, kernel=None, kernel_grad=None, algo=None,
                 call_no=None, cutoffs=None, hyps=None, init_gp=None,
-                energy_force_kernel=None, hyp_no=None, par=True):
+                hyp_no=None, par=True):
 
         if init_gp is None:
             # Use run's values as extracted from header
@@ -71,7 +71,6 @@ class OtfAnalysis:
             gp_model = \
                 gp.GaussianProcess(kernel, kernel_grad, gp_hyps,
                                    cutoffs, opt_algorithm=algo,
-                                   energy_force_kernel=energy_force_kernel,
                                    par=par)
         else:
             gp_model = init_gp
