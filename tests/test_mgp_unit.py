@@ -176,7 +176,8 @@ def test_lmp_predict(all_gp, all_mgp, bodies, multihyps):
     unique_species = gp_model.training_data[0].species
     cutoffs = gp_model.cutoffs
     struc_test, f = get_random_structure(cell, unique_species, nenv)
-    test_envi = env.AtomicEnvironment(struc_test, 1, cutoffs)
+    atom_num = 1
+    test_envi = env.AtomicEnvironment(struc_test, atom_num, cutoffs)
     atom_types = [1, 2]
     atom_masses = [108, 127]
     atom_species = struc_test.coded_species
@@ -213,7 +214,8 @@ def test_lmp_predict(all_gp, all_mgp, bodies, multihyps):
     mgp_forces = mgp_model.predict(test_envi, mean_only=True)
 
     # check that lammps agrees with gp to within 1 meV/A
-    assert (np.abs(lammps_forces[0, 1] - mgp_forces[0][1]) < 1e-3)
+    for i in range(3):
+        assert (np.abs(lammps_forces[atom_num, i] - mgp_forces[0][i]) < 1e-3)
 
     for f in os.listdir("./"):
         if f in [f'tmp{bodies}{multihyps}in', f'tmp{bodies}{multihyps}out', f'tmp{bodies}{multihyps}dump',
