@@ -73,12 +73,12 @@ def test_two_plus_three_body_force_en():
     calc4 = en.three_body_en(env1_1, env2, hyps[2:4], cutoffs)
 
     kern_finite_diff = (calc1 - calc2) / (2 * delt) + \
-        (calc3 - calc4) / (3 * delt)
+                       (calc3 - calc4) / (3 * delt)
     kern_analytical = \
         en.two_plus_three_force_en(env1_1, env2, d1, hyps, cutoffs)
 
     tol = 1e-4
-    assert(np.isclose(-kern_finite_diff, kern_analytical, atol=tol))
+    assert (np.isclose(-kern_finite_diff, kern_analytical, atol=tol))
 
 
 def test_two_plus_three_body_force():
@@ -144,12 +144,12 @@ def test_two_plus_three_body_force():
     calc3 = en.two_plus_three_en(env1_2, env2_3, hyps, cutoffs)
     calc4 = en.two_plus_three_en(env1_3, env2_2, hyps, cutoffs)
 
-    kern_finite_diff = (calc1 + calc2 - calc3 - calc4) / (4*delt**2)
+    kern_finite_diff = (calc1 + calc2 - calc3 - calc4) / (4 * delt ** 2)
     kern_analytical = en.two_plus_three_body(env1_1, env2_1,
                                              d1, d2, hyps, cutoffs)
 
     tol = 1e-4
-    assert(np.isclose(kern_finite_diff, kern_analytical, atol=tol))
+    assert (np.isclose(kern_finite_diff, kern_analytical, atol=tol))
 
 
 def test_two_plus_three_body_grad():
@@ -188,10 +188,10 @@ def test_two_plus_three_body_grad():
     delta = 1e-8
 
     hyps = np.array([sig1, ls1, sig2, ls2])
-    hyps1 = np.array([sig1+delta, ls1, sig2, ls2])
-    hyps2 = np.array([sig1, ls1+delta, sig2, ls2])
-    hyps3 = np.array([sig1, ls1, sig2+delta, ls2])
-    hyps4 = np.array([sig1, ls1, sig2, ls2+delta])
+    hyps1 = np.array([sig1 + delta, ls1, sig2, ls2])
+    hyps2 = np.array([sig1, ls1 + delta, sig2, ls2])
+    hyps3 = np.array([sig1, ls1, sig2 + delta, ls2])
+    hyps4 = np.array([sig1, ls1, sig2, ls2 + delta])
 
     grad_test = en.two_plus_three_body_grad(env1, env2, d1, d2, hyps, cutoffs)
 
@@ -215,10 +215,10 @@ def test_two_plus_three_body_grad():
          en.two_plus_three_body(env1, env2, d1, d2, hyps, cutoffs)) / delta
 
     tol = 1e-4
-    assert(np.isclose(grad_test[1][0], sig1_derv_brute, atol=tol))
-    assert(np.isclose(grad_test[1][1], l1_derv_brute, atol=tol))
-    assert(np.isclose(grad_test[1][2], sig2_derv_brute, atol=tol))
-    assert(np.isclose(grad_test[1][3], l2_derv_brute, atol=tol))
+    assert (np.isclose(grad_test[1][0], sig1_derv_brute, atol=tol))
+    assert (np.isclose(grad_test[1][1], l1_derv_brute, atol=tol))
+    assert (np.isclose(grad_test[1][2], sig2_derv_brute, atol=tol))
+    assert (np.isclose(grad_test[1][3], l2_derv_brute, atol=tol))
 
 
 # -----------------------------------------------------------------------------
@@ -272,7 +272,7 @@ def test_two_body_force_en():
     kern_analytical = en.two_body_force_en(env1_1, env2, d1, hyps, cutoffs)
 
     tol = 1e-4
-    assert(np.isclose(-kern_finite_diff/2, kern_analytical, atol=tol))
+    assert (np.isclose(-kern_finite_diff / 2, kern_analytical, atol=tol))
 
 
 def test_two_body_force():
@@ -335,12 +335,12 @@ def test_two_body_force():
     calc3 = en.two_body_en(env1_2, env2_3, hyps, cutoffs)
     calc4 = en.two_body_en(env1_3, env2_2, hyps, cutoffs)
 
-    kern_finite_diff = (calc1 + calc2 - calc3 - calc4) / (4*delt**2)
+    kern_finite_diff = (calc1 + calc2 - calc3 - calc4) / (4 * delt ** 2)
     kern_analytical = en.two_body(env1_1, env2_1,
                                   d1, d2, hyps, cutoffs)
 
     tol = 1e-4
-    assert(np.isclose(kern_finite_diff, kern_analytical, atol=tol))
+    assert (np.isclose(kern_finite_diff, kern_analytical, atol=tol))
 
 
 def test_two_body_grad():
@@ -393,8 +393,8 @@ def test_two_body_grad():
                                 hyps, cutoffs)) / delta
 
     tol = 1e-4
-    assert(np.isclose(grad_test[1][0], sig_derv_brute, atol=tol))
-    assert(np.isclose(grad_test[1][1], l_derv_brute, atol=tol))
+    assert (np.isclose(grad_test[1][0], sig_derv_brute, atol=tol))
+    assert (np.isclose(grad_test[1][1], l_derv_brute, atol=tol))
 
 
 # -----------------------------------------------------------------------------
@@ -449,7 +449,7 @@ def test_three_body_force_en():
     kern_analytical = en.three_body_force_en(env1_1, env2, d1, hyps, cutoffs)
 
     tol = 1e-4
-    assert(np.isclose(-kern_finite_diff/3, kern_analytical, atol=tol))
+    assert (np.isclose(-kern_finite_diff / 3, kern_analytical, atol=tol))
 
 
 def test_three_body_force():
@@ -512,12 +512,12 @@ def test_three_body_force():
     calc3 = en.three_body_en(env1_2, env2_3, hyps, cutoffs)
     calc4 = en.three_body_en(env1_3, env2_2, hyps, cutoffs)
 
-    kern_finite_diff = (calc1 + calc2 - calc3 - calc4) / (4*delt**2)
+    kern_finite_diff = (calc1 + calc2 - calc3 - calc4) / (4 * delt ** 2)
     kern_analytical = en.three_body(env1_1, env2_1,
                                     d1, d2, hyps, cutoffs)
 
     tol = 1e-4
-    assert(np.isclose(kern_finite_diff, kern_analytical, atol=tol))
+    assert (np.isclose(kern_finite_diff, kern_analytical, atol=tol))
 
 
 def test_three_body_grad():
@@ -570,5 +570,174 @@ def test_three_body_grad():
                                   hyps, cutoffs)) / delta
 
     tol = 1e-4
-    assert(np.isclose(grad_test[1][0], sig_derv_brute, atol=tol))
-    assert(np.isclose(grad_test[1][1], l_derv_brute, atol=tol))
+    assert (np.isclose(grad_test[1][0], sig_derv_brute, atol=tol))
+    assert (np.isclose(grad_test[1][1], l_derv_brute, atol=tol))
+
+
+# -----------------------------------------------------------------------------
+#                              test many body kernels
+# -----------------------------------------------------------------------------
+
+
+def test_many_body_force():
+    """Check that the analytical force kernel matches finite difference of
+    energy kernel."""
+
+    # create env 1
+    delt = 1e-5
+    cell = 10.0 * np.eye(3)
+    cutoffs = np.array([1.2, 1.2, 1.2])
+
+    positions_1 = [np.array([0., 0., 0.]),
+                   np.array([0., 1., 0.]) + 0.1 * np.array([random(), random(), random()]),
+                   np.array([1., 0., 0.]) + 0.1 * np.array([random(), random(), random()]),
+                   np.array([1., 1., 0.]) + 0.1 * np.array([random(), random(), random()])]
+
+    positions_2 = deepcopy(positions_1)
+    positions_2[0][0] = delt
+
+    positions_3 = deepcopy(positions_1)
+    positions_3[0][0] = -delt
+
+    species_1 = [1, 1, 1, 1]
+    test_structure_1 = struc.Structure(cell, species_1, positions_1)
+    test_structure_2 = struc.Structure(cell, species_1, positions_2)
+    test_structure_3 = struc.Structure(cell, species_1, positions_3)
+
+    env1_1_0 = env.AtomicEnvironment(test_structure_1, 0, cutoffs)
+    env1_1_1 = env.AtomicEnvironment(test_structure_1, 1, cutoffs)
+    env1_1_2 = env.AtomicEnvironment(test_structure_1, 2, cutoffs)
+    env1_1_3 = env.AtomicEnvironment(test_structure_1, 3, cutoffs)
+
+    env1_2_0 = env.AtomicEnvironment(test_structure_2, 0, cutoffs)
+    env1_2_1 = env.AtomicEnvironment(test_structure_2, 1, cutoffs)
+    env1_2_2 = env.AtomicEnvironment(test_structure_2, 2, cutoffs)
+    env1_2_3 = env.AtomicEnvironment(test_structure_2, 3, cutoffs)
+
+    env1_3_0 = env.AtomicEnvironment(test_structure_3, 0, cutoffs)
+    env1_3_1 = env.AtomicEnvironment(test_structure_3, 1, cutoffs)
+    env1_3_2 = env.AtomicEnvironment(test_structure_3, 2, cutoffs)
+    env1_3_3 = env.AtomicEnvironment(test_structure_3, 3, cutoffs)
+
+    # create env 2
+    positions_1 = [np.array([0., 0., 0.]),
+                   np.array([0., 1., 0.]) + 0.1 * np.array([random(), random(), random()]),
+                   np.array([1., 0., 0.]) + 0.1 * np.array([random(), random(), random()]),
+                   np.array([1., 1., 0.]) + 0.1 * np.array([random(), random(), random()])]
+
+    positions_2 = deepcopy(positions_1)
+    positions_2[0][1] = delt
+    positions_3 = deepcopy(positions_1)
+    positions_3[0][1] = -delt
+
+    species_2 = [1, 1, 1, 1]
+    atom_2 = 0
+    test_structure_1 = struc.Structure(cell, species_2, positions_1)
+    test_structure_2 = struc.Structure(cell, species_2, positions_2)
+    test_structure_3 = struc.Structure(cell, species_2, positions_3)
+
+    env2_1_0 = env.AtomicEnvironment(test_structure_1, 0, cutoffs)
+    env2_1_1 = env.AtomicEnvironment(test_structure_1, 1, cutoffs)
+    env2_1_2 = env.AtomicEnvironment(test_structure_1, 2, cutoffs)
+    env2_1_3 = env.AtomicEnvironment(test_structure_1, 3, cutoffs)
+
+    env2_2_0 = env.AtomicEnvironment(test_structure_2, 0, cutoffs)
+    env2_2_1 = env.AtomicEnvironment(test_structure_2, 1, cutoffs)
+    env2_2_2 = env.AtomicEnvironment(test_structure_2, 2, cutoffs)
+    env2_2_3 = env.AtomicEnvironment(test_structure_2, 3, cutoffs)
+
+    env2_3_0 = env.AtomicEnvironment(test_structure_3, 0, cutoffs)
+    env2_3_1 = env.AtomicEnvironment(test_structure_3, 1, cutoffs)
+    env2_3_2 = env.AtomicEnvironment(test_structure_3, 2, cutoffs)
+    env2_3_3 = env.AtomicEnvironment(test_structure_3, 3, cutoffs)
+
+    sig = 1
+    ls = 0.1
+    r0 = 1
+    d1 = 1
+    d2 = 2
+
+    hyps = np.array([sig, ls, r0])
+
+    # check force kernel
+    calc1 = en.many_body_en(env1_2_0, env2_2_0, hyps, cutoffs)
+    calc2 = en.many_body_en(env1_3_0, env2_3_0, hyps, cutoffs)
+    calc3 = en.many_body_en(env1_2_0, env2_3_0, hyps, cutoffs)
+    calc4 = en.many_body_en(env1_3_0, env2_2_0, hyps, cutoffs)
+
+    kern_finite_diff_00 = (calc1 + calc2 - calc3 - calc4) / (4 * delt ** 2)
+
+    # check force kernel
+    calc1 = en.many_body_en(env1_2_0, env2_2_1, hyps, cutoffs)
+    calc2 = en.many_body_en(env1_3_0, env2_3_1, hyps, cutoffs)
+    calc3 = en.many_body_en(env1_2_0, env2_3_1, hyps, cutoffs)
+    calc4 = en.many_body_en(env1_3_0, env2_2_1, hyps, cutoffs)
+
+    kern_finite_diff_01 = (calc1 + calc2 - calc3 - calc4) / (4 * delt ** 2)
+
+    # check force kernel
+    calc1 = en.many_body_en(env1_2_0, env2_2_2, hyps, cutoffs)
+    calc2 = en.many_body_en(env1_3_0, env2_3_2, hyps, cutoffs)
+    calc3 = en.many_body_en(env1_2_0, env2_3_2, hyps, cutoffs)
+    calc4 = en.many_body_en(env1_3_0, env2_2_2, hyps, cutoffs)
+
+    kern_finite_diff_02 = (calc1 + calc2 - calc3 - calc4) / (4 * delt ** 2)
+
+    # check force kernel
+    calc1 = en.many_body_en(env1_2_1, env2_2_0, hyps, cutoffs)
+    calc2 = en.many_body_en(env1_3_1, env2_3_0, hyps, cutoffs)
+    calc3 = en.many_body_en(env1_2_1, env2_3_0, hyps, cutoffs)
+    calc4 = en.many_body_en(env1_3_1, env2_2_0, hyps, cutoffs)
+
+    kern_finite_diff_10 = (calc1 + calc2 - calc3 - calc4) / (4 * delt ** 2)
+
+    # check force kernel
+    calc1 = en.many_body_en(env1_2_1, env2_2_1, hyps, cutoffs)
+    calc2 = en.many_body_en(env1_3_1, env2_3_1, hyps, cutoffs)
+    calc3 = en.many_body_en(env1_2_1, env2_3_1, hyps, cutoffs)
+    calc4 = en.many_body_en(env1_3_1, env2_2_1, hyps, cutoffs)
+
+    kern_finite_diff_11 = (calc1 + calc2 - calc3 - calc4) / (4 * delt ** 2)
+
+    # check force kernel
+    calc1 = en.many_body_en(env1_2_1, env2_2_2, hyps, cutoffs)
+    calc2 = en.many_body_en(env1_3_1, env2_3_2, hyps, cutoffs)
+    calc3 = en.many_body_en(env1_2_1, env2_3_2, hyps, cutoffs)
+    calc4 = en.many_body_en(env1_3_1, env2_2_2, hyps, cutoffs)
+
+    kern_finite_diff_12 = (calc1 + calc2 - calc3 - calc4) / (4 * delt ** 2)
+
+    # check force kernel
+    calc1 = en.many_body_en(env1_2_2, env2_2_0, hyps, cutoffs)
+    calc2 = en.many_body_en(env1_3_2, env2_3_0, hyps, cutoffs)
+    calc3 = en.many_body_en(env1_2_2, env2_3_0, hyps, cutoffs)
+    calc4 = en.many_body_en(env1_3_2, env2_2_0, hyps, cutoffs)
+
+    kern_finite_diff_20 = (calc1 + calc2 - calc3 - calc4) / (4 * delt ** 2)
+
+    # check force kernel
+    calc1 = en.many_body_en(env1_2_2, env2_2_1, hyps, cutoffs)
+    calc2 = en.many_body_en(env1_3_2, env2_3_1, hyps, cutoffs)
+    calc3 = en.many_body_en(env1_2_2, env2_3_1, hyps, cutoffs)
+    calc4 = en.many_body_en(env1_3_2, env2_2_1, hyps, cutoffs)
+
+    kern_finite_diff_21 = (calc1 + calc2 - calc3 - calc4) / (4 * delt ** 2)
+
+    # check force kernel
+    calc1 = en.many_body_en(env1_2_2, env2_2_2, hyps, cutoffs)
+    calc2 = en.many_body_en(env1_3_2, env2_3_2, hyps, cutoffs)
+    calc3 = en.many_body_en(env1_2_2, env2_3_2, hyps, cutoffs)
+    calc4 = en.many_body_en(env1_3_2, env2_2_2, hyps, cutoffs)
+
+    kern_finite_diff_22 = (calc1 + calc2 - calc3 - calc4) / (4 * delt ** 2)
+
+    kern_finite_diff = (kern_finite_diff_00 + kern_finite_diff_01 + kern_finite_diff_02 +
+                        kern_finite_diff_10 + kern_finite_diff_11 + kern_finite_diff_12 +
+                        kern_finite_diff_20 + kern_finite_diff_21 + kern_finite_diff_22)
+
+    kern_analytical = en.many_body(env1_1_0, env2_1_0,
+                                   d1, d2, hyps, cutoffs)
+
+    tol = 1e-4
+
+    assert (np.isclose(kern_finite_diff, kern_analytical, atol=tol))

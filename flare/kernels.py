@@ -178,6 +178,89 @@ def two_plus_three_en(env1, env2, hyps, cutoffs,
 
 
 # -----------------------------------------------------------------------------
+#                     two plus three plus many body kernels
+# -----------------------------------------------------------------------------
+
+
+def two_plus_three_plus_many_body(env1: AtomicEnvironment, env2: AtomicEnvironment,
+                                  d1: int, d2: int, hyps, cutoffs,
+                                  cutoff_func=cf.quadratic_cutoff):
+    """2+3-body single-element kernel between two force components.
+
+    Args:
+        env1 (AtomicEnvironment): First local environment.
+        env2 (AtomicEnvironment): Second local environment.
+        d1 (int): Force component of the first environment.
+        d2 (int): Force component of the second environment.
+        hyps (np.ndarray): Hyperparameters of the kernel function (sig1, ls1,
+            sig2, ls2, sig3, ls3, r0, sig_n).
+        cutoffs (np.ndarray): Two-element array containing the 2- and 3-body
+            cutoffs.
+        cutoff_func (Callable): Cutoff function of the kernel.
+
+    Return:
+        float: Value of the 2+3+many-body kernel.
+    """
+
+    two_term = two_body_jit(env1.bond_array_2, env2.bond_array_2,
+                            d1, d2, hyps[0], hyps[1], cutoffs[0], cutoff_func)
+
+    three_term = \
+        three_body_jit(env1.bond_array_3, env2.bond_array_3,
+                       env1.cross_bond_inds, env2.cross_bond_inds,
+                       env1.cross_bond_dists, env2.cross_bond_dists,
+                       env1.triplet_counts, env2.triplet_counts,
+                       d1, d2, hyps[2], hyps[3], cutoffs[1], cutoff_func)
+
+    many_term = many_body_jit(env1.bond_array_mb, env2.bond_array_mb, env1.neigh_dists_mb,
+                              env2.neigh_dists_mb, env1.num_neighs_mb, env2.num_neighs_mb,
+                              d1, d2, hyps[4], hyps[5], hyps[6], cutoffs[2], cutoff_func)
+
+    return two_term + three_term + many_term
+
+
+def two_plus_three_plus_many_body_grad(env1: AtomicEnvironment, env2: AtomicEnvironment,
+                                       d1: int, d2: int, hyps, cutoffs,
+                                       cutoff_func=cf.quadratic_cutoff):
+    """2+3-body single-element kernel between two force components.
+
+    Args:
+        env1 (AtomicEnvironment): First local environment.
+        env2 (AtomicEnvironment): Second local environment.
+        d1 (int): Force component of the first environment.
+        d2 (int): Force component of the second environment.
+        hyps (np.ndarray): Hyperparameters of the kernel function (sig1, ls1,
+            sig2, ls2, sig3, ls3, r0, sig_n).
+        cutoffs (np.ndarray): Two-element array containing the 2- and 3-body
+            cutoffs.
+        cutoff_func (Callable): Cutoff function of the kernel.
+
+    Return:
+        float: Value of the 2+3+many-body kernel.
+    """
+
+    kern2, ls2, sig2 = \
+        two_body_grad_jit(env1.bond_array_2, env2.bond_array_2,
+                          d1, d2, hyps[0], hyps[1], cutoffs[0], cutoff_func)
+
+    kern3, sig3, ls3 = \
+        three_body_grad_jit(env1.bond_array_3, env2.bond_array_3,
+                            env1.cross_bond_inds, env2.cross_bond_inds,
+                            env1.cross_bond_dists, env2.cross_bond_dists,
+                            env1.triplet_counts, env2.triplet_counts,
+                            d1, d2, hyps[2], hyps[3], cutoffs[1], cutoff_func)
+
+    kern_many, sigm, lsm, r0 = many_body_grad_jit(env1.bond_array_mb, env2.bond_array_mb,
+                                                  env1.neigh_dists_mb,
+                                                  env2.neigh_dists_mb, env1.num_neighs_mb,
+                                                  env2.num_neighs_mb,
+                                                  d1, d2, hyps[4], hyps[5], hyps[6], cutoffs[2],
+                                                  cutoff_func)
+
+    return kern2 + kern3 + kern_many, np.array([sig2, ls2, sig3, ls3, sigm, lsm, r0])
+
+
+# -----------------------------------------------------------------------------
 #                              two body kernels
 # -----------------------------------------------------------------------------
 
@@ -424,8 +507,20 @@ def three_body_en(env1, env2, hyps, cutoffs,
 
 def many_body(env1, env2, d1, d2, hyps, cutoffs,
               cutoff_func=cf.quadratic_cutoff):
-    """
+    """many-body single-element kernel between two forces.
 
+    Args:
+        env1 (AtomicEnvironment): First local environment.
+        env2 (AtomicEnvironment): Second local environment.
+        d1 (int): Force component of the first environment.
+        d2 (int): Force component of the second environment.
+        hyps (np.ndarray): Hyperparameters of the kernel function (sig, ls, r0).
+        cutoffs (np.ndarray): Two-element array containing the 2-, 3-, and
+            many-body cutoffs.
+        cutoff_func (Callable): Cutoff function of the kernel.
+
+    Return:
+        float: Value of the many-body force/force kernel.
     """
 
     sig = hyps[0]
@@ -474,6 +569,34 @@ def many_body_grad(env1, env2, d1, d2, hyps, cutoffs,
     kernel_grad = np.array([sig_derv, ls_derv, r0_derv])
 
     return kernel, kernel_grad
+
+
+def many_body_en(env1, env2, hyps, cutoffs,
+                 cutoff_func=cf.quadratic_cutoff):
+    """many-body single-element kernel between two local energies.
+
+    Args:
+        env1 (AtomicEnvironment): First local environment.
+        env2 (AtomicEnvironment): Second local environment.
+        hyps (np.ndarray): Hyperparameters of the kernel function (sig, ls, r0).
+        cutoffs (np.ndarray): Two-element array containing the 2-, 3-, and
+            many-body cutoffs.
+        cutoff_func (Callable): Cutoff function of the kernel.
+
+    Return:
+        float: Value of the many-body energy/energy kernel.
+    """
+
+    sig = hyps[0]
+    ls = hyps[1]
+    r0 = hyps[2]
+    r_cut = cutoffs[2]
+
+    bond_array_1 = env1.bond_array_mb
+    bond_array_2 = env2.bond_array_mb
+
+    return many_body_en_jit(bond_array_1, bond_array_2,
+                            sig, ls, r0, r_cut, cutoff_func)
 
 
 # -----------------------------------------------------------------------------
@@ -1152,32 +1275,6 @@ def many_body_grad_jit(bond_array_1, bond_array_2,
                        neighbouring_dists_array_1, neighbouring_dists_array_2,
                        num_neighbours_1, num_neighbours_2,
                        d1, d2, sig, ls, r0, r_cut, cutoff_func):
-    """many-body single-element kernel between two force components accelerated
-    with Numba.
-
-    Args:
-        bond_array_1 (np.ndarray): many-body bond array of the first local
-            environment.
-        bond_array_2 (np.ndarray): many-body bond array of the second local
-            environment.
-        neighbouring_dists_array_1 (np.ndarray): matrix padded with zero values of distances
-            of neighbours for the atoms in the first local environment.
-        neighbouring_dists_array_2 (np.ndarray): matrix padded with zero values of distances
-            of neighbours for the atoms in the second local environment.
-        num_neighbours_1 (np.nsdarray): number of neighbours of each atom in the first
-            local environment
-        num_neighbours_2 (np.ndarray): number of neighbours of each atom in the second
-            local environment
-        d1 (int): Force component of the first environment.
-        d2 (int): Force component of the second environment.
-        sig (float): 3-body signal variance hyperparameter.
-        ls (float): 3-body length scale hyperparameter.
-        r_cut (float): 3-body cutoff radius.
-        cutoff_func (Callable): Cutoff function.
-
-    Return:
-        float: Value of the many-body kernel.
-    """
     kern = 0
     sig_derv = 0
     ls_derv = 0
@@ -1254,6 +1351,45 @@ def many_body_grad_jit(bond_array_1, bond_array_2,
             r0_derv += r0_term
 
     return kern, sig_derv, ls_derv, r0_derv
+
+
+@njit
+def many_body_en_jit(bond_array_1, bond_array_2,
+                     sig, ls, r0, r_cut, cutoff_func):
+    """many-body single-element energy kernel between accelerated
+    with Numba.
+
+    Args:
+        bond_array_1 (np.ndarray): many-body bond array of the first local
+            environment.
+        bond_array_2 (np.ndarray): many-body bond array of the second local
+            environment.
+        neighbouring_dists_array_1 (np.ndarray): matrix padded with zero values of distances
+            of neighbours for the atoms in the first local environment.
+        neighbouring_dists_array_2 (np.ndarray): matrix padded with zero values of distances
+            of neighbours for the atoms in the second local environment.
+        num_neighbours_1 (np.nsdarray): number of neighbours of each atom in the first
+            local environment
+        num_neighbours_2 (np.ndarray): number of neighbours of each atom in the second
+            local environment
+        d1 (int): Force component of the first environment.
+        d2 (int): Force component of the second environment.
+        sig (float): 3-body signal variance hyperparameter.
+        ls (float): 3-body length scale hyperparameter.
+        r_cut (float): 3-body cutoff radius.
+        cutoff_func (Callable): Cutoff function.
+
+    Return:
+        float: Value of the many-body kernel.
+    """
+
+    q1 = q_value(bond_array_1[:, 0], r0, r_cut, cutoff_func)
+    q2 = q_value(bond_array_2[:, 0], r0, r_cut, cutoff_func)
+    q1q2diff = q1 - q2
+
+    kern = sig * sig * exp(-q1q2diff * q1q2diff / (2 * ls * ls))
+
+    return kern
 
 
 # -----------------------------------------------------------------------------
