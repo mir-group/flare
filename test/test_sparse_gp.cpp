@@ -74,4 +74,13 @@ TEST_F(SparseTest, AddSparseTest){
     sparse_gp.add_sparse_environment(env1);
     sparse_gp.add_sparse_environment(env2);
     sparse_gp.add_sparse_environment(env3);
+
+    test_struc.energy = std::vector<double> {10};
+    test_struc.forces = std::vector<double> (15, 10);
+    test_struc.stresses = std::vector<double> {1, 2, 3, 4, 5, 6};
+
+    sparse_gp.add_training_structure(test_struc);
+    // sparse_gp.add_training_structure(test_struc);
+    std::cout << sparse_gp.Kuf << std::endl;
+    std::cout << sparse_gp.training_structures.size() << std::endl;
 }
