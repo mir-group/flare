@@ -81,6 +81,6 @@ TEST_F(SparseTest, AddSparseTest){
 
     sparse_gp.add_training_structure(test_struc);
     // sparse_gp.add_training_structure(test_struc);
-    std::cout << sparse_gp.Kuf << std::endl;
-    std::cout << sparse_gp.training_structures.size() << std::endl;
+    // std::cout << sparse_gp.Kuf << std::endl;
+    // std::cout << sparse_gp.training_structures.size() << std::endl;
 }
