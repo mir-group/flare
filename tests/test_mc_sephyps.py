@@ -7,7 +7,7 @@ from numpy.random import random, randint
 
 from flare import env, struc, gp
 from flare.kernels.mc_sephyps import _str_to_kernel as stk
-from flare.kernels.sephyps_helper import from_mask_to_args
+from flare.kernels.utils import from_mask_to_args
 
 from .fake_gp import generate_hm, generate_envs
 
