@@ -28,7 +28,7 @@ def all_gp():
     np.random.seed(0)
     for bodies in [2, 3]:
         gp_model = get_gp(bodies, 'mc', False)
-        gp_model.par = True
+        gp_model.parallel = True
         gp_model.n_cpus = 2
         gp_model.set_L_alpha()
         allgp_dict[f'{bodies}'] = gp_model

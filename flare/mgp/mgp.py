@@ -415,7 +415,7 @@ class MappedGaussianProcess:
 
 class Map2body:
     def __init__(self, grid_num, bounds, cutoffs, bond_struc, bodies='2',
-                 svd_rank=0, mean_only=False, n_cpus=1, nsample=100):
+                 svd_rank=0, mean_only=False, n_cpus=1, n_sample=100):
         '''
         Build 2-body MGP
         '''
@@ -429,7 +429,7 @@ class Map2body:
         self.svd_rank = svd_rank
         self.mean_only = mean_only
         self.n_cpus = n_cpus
-        self.nsample = nsample
+        self.n_sample = n_sample
 
         self.build_map_container()
 
@@ -462,7 +462,7 @@ class Map2body:
         else:
             with mp.Pool(processes=processes) as pool:
                 size = len(GP.training_data)
-                block_id, nbatch = partition_c(self.nsample, size, processes)
+                block_id, nbatch = partition_c(self.n_sample, size, processes)
 
                 k12_slice = []
                 k12_v_all = np.zeros([len(bond_lengths), size*3])
@@ -551,7 +551,7 @@ class Map3body:
 
     def __init__(self, grid_num, bounds, cutoffs, bond_struc, bodies='3',
             svd_rank=0, mean_only=False, load_grid=None, update=True,
-            n_cpus=1, nsample=100):
+            n_cpus=1, n_sample=100):
         '''
         Build 3-body MGP
         '''
@@ -567,7 +567,7 @@ class Map3body:
         self.load_grid = load_grid
         self.update = update
         self.n_cpus = n_cpus
-        self.nsample = nsample
+        self.n_sample = n_sample
 
         self.build_map_container()
 
@@ -610,11 +610,11 @@ class Map3body:
 
             print("prepare the package for parallelization")
             size = len(GP.training_data)
-            block_id, nbatch = partition_c(self.nsample, size, processes)
+            block_id, nbatch = partition_c(self.n_sample, size, processes)
 
             k12_slice = []
             if (size>5000):
-                print('parallel set up:', size, ns, nsample, time.time())
+                print('parallel set up:', size, ns, n_sample, time.time())
             count = 0
             base = 0
             k12_v_all = np.zeros([len(bond_lengths), len(bond_lengths), len(cos_angles), size*3])

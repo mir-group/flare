@@ -16,77 +16,77 @@ def queue_wrapper(result_queue, wid,
     """
     result_queue.put((wid, func(*args)))
 
-def partition_cr(nsample, size, n_cpus):
+def partition_cr(n_sample, size, n_cpus):
     """
     partition the training data for matrix calculation
     the number of blocks are close to n_cpus
     since mp.Process does not allow to change the thread number
     """
-    nsample = int(math.ceil(np.sqrt(size*size/n_cpus/2.)))
+    n_sample = int(math.ceil(np.sqrt(size*size/n_cpus/2.)))
     block_id=[]
     nbatch = 0
     nbatch1 = 0
     nbatch2 = 0
     e1 = 0
     while (e1 < size):
-        s1 = int(nsample*nbatch1)
-        e1 = int(np.min([s1 + nsample, size]))
+        s1 = int(n_sample*nbatch1)
+        e1 = int(np.min([s1 + n_sample, size]))
         nbatch2 = nbatch1
         nbatch1 += 1
         e2 = 0
         while (e2 <size):
-            s2 = int(nsample*nbatch2)
-            e2 = int(np.min([s2 + nsample, size]))
+            s2 = int(n_sample*nbatch2)
+            e2 = int(np.min([s2 + n_sample, size]))
             block_id += [(s1, e1, s2, e2)]
             nbatch2 += 1
             nbatch += 1
     return block_id, nbatch
 
-def partition_c(nsample, size, n_cpus):
+def partition_c(n_sample, size, n_cpus):
     """
     partition the training data for vector calculation
     the number of blocks are the same as n_cpus
     since mp.Process does not allow to change the thread number
     """
-    nsample = int(math.ceil(size/n_cpus))
+    n_sample = int(math.ceil(size/n_cpus))
     block_id = []
     nbatch = 0
     e = 0
     while (e < size):
-        s = nsample*nbatch
-        e = np.min([s + nsample, size])
+        s = n_sample*nbatch
+        e = np.min([s + n_sample, size])
         block_id += [(s, e)]
         nbatch += 1
     return block_id, nbatch
 
-def partition_update(nsample, size, old_size, n_cpus):
+def partition_update(n_sample, size, old_size, n_cpus):
 
-    ns = int(math.ceil(size/nsample))
+    ns = int(math.ceil(size/n_sample))
     nproc = (size*3-old_size*3)*(ns+old_size*3)//2
     if (nproc < n_cpus):
-        nsample = int(math.ceil(size/np.sqrt(n_cpus*2)))
-        ns = int(math.ceil(size/nsample))
+        n_sample = int(math.ceil(size/np.sqrt(n_cpus*2)))
+        ns = int(math.ceil(size/n_sample))
 
-    ns_new = int(math.ceil((size-old_size)/nsample))
-    old_ns = int(math.ceil(old_size/nsample))
+    ns_new = int(math.ceil((size-old_size)/n_sample))
+    old_ns = int(math.ceil(old_size/n_sample))
 
     nbatch = 0
     block_id = []
     for ibatch1 in range(old_ns):
-        s1 = int(nsample*ibatch1)
-        e1 = int(np.min([s1 + nsample, old_size]))
+        s1 = int(n_sample*ibatch1)
+        e1 = int(np.min([s1 + n_sample, old_size]))
         for ibatch2 in range(ns_new):
-            s2 = int(nsample*ibatch2)+old_size
-            e2 = int(np.min([s2 + nsample, size]))
+            s2 = int(n_sample*ibatch2)+old_size
+            e2 = int(np.min([s2 + n_sample, size]))
             block_id += [(s1, e1, s2, e2)]
             nbatch += 1
 
     for ibatch1 in range(ns_new):
-        s1 = int(nsample*ibatch1)+old_size
-        e1 = int(np.min([s1 + nsample, size]))
+        s1 = int(n_sample*ibatch1)+old_size
+        e1 = int(np.min([s1 + n_sample, size]))
         for ibatch2 in range(ns_new):
-            s2 = int(nsample*ibatch2)+old_size
-            e2 = int(np.min([s2 + nsample, size]))
+            s2 = int(n_sample*ibatch2)+old_size
+            e2 = int(np.min([s2 + n_sample, size]))
             block_id += [(s1, e1, s2, e2)]
             nbatch += 1
 
@@ -163,7 +163,7 @@ def get_ky_mat_pack(hyps: np.ndarray, name: str,
 
 def get_ky_mat(hyps: np.ndarray, name: str,
                kernel, cutoffs=None, hyps_mask=None,
-               n_cpus=1, nsample=100):
+               n_cpus=1, n_sample=100):
     """ parallel version of get_ky_mat
     :param hyps: list of hyper-parameters
     :param name: name of the gp instance.
@@ -188,7 +188,7 @@ def get_ky_mat(hyps: np.ndarray, name: str,
     else:
 
         # initialize matrices
-        block_id, nbatch = partition_cr(nsample, size, n_cpus)
+        block_id, nbatch = partition_cr(n_sample, size, n_cpus)
 
         result_queue = mp.Queue()
         children = []
@@ -334,7 +334,7 @@ def get_ky_and_hyp_pack(name, s1, e1, s2, e2, same: bool,
 def get_ky_and_hyp(hyps: np.ndarray, name,
                    kernel_grad, cutoffs=None,
                    hyps_mask=None,
-                   n_cpus=1, nsample=100):
+                   n_cpus=1, n_sample=100):
     """
     parallel version of get_ky_and_hyp
 
@@ -345,7 +345,7 @@ def get_ky_and_hyp(hyps: np.ndarray, name,
     :type cutoffs: list of 2 float numbers
     :param hyps_mask: dictionary used for multi-group hyperparmeters
     :param n_cpus: number of cpus to use.
-    :param nsample: the size of block for matrix to compute
+    :param n_sample: the size of block for matrix to compute
 
     :return: hyp_mat, ky_mat
     """
@@ -364,7 +364,7 @@ def get_ky_and_hyp(hyps: np.ndarray, name,
                 hyps, kernel_grad, cutoffs, hyps_mask)
     else:
 
-        block_id, nbatch = partition_cr(nsample, size, n_cpus)
+        block_id, nbatch = partition_cr(n_sample, size, n_cpus)
 
         result_queue = mp.Queue()
         children = []
@@ -418,7 +418,7 @@ def get_ky_and_hyp(hyps: np.ndarray, name,
 def get_neg_likelihood(hyps: np.ndarray, name,
                        kernel: Callable, output = None,
                        cutoffs=None, hyps_mask=None,
-                       n_cpus=1, nsample=100):
+                       n_cpus=1, n_sample=100):
     """compute the negative log likelihood
 
     :param hyps: list of hyper-parameters
@@ -432,7 +432,7 @@ def get_neg_likelihood(hyps: np.ndarray, name,
     :type cutoffs: list of 2 float numbers
     :param hyps_mask: dictionary used for multi-group hyperparmeters
     :param n_cpus: number of cpus to use.
-    :param nsample: the size of block for matrix to compute
+    :param n_sample: the size of block for matrix to compute
 
     :return: float
     """
@@ -449,7 +449,7 @@ def get_neg_likelihood(hyps: np.ndarray, name,
     ky_mat = \
         get_ky_mat(hyps, name, kernel,
                    cutoffs=cutoffs, hyps_mask=hyps_mask,
-                   n_cpus=n_cpus, nsample=nsample)
+                   n_cpus=n_cpus, n_sample=n_sample)
 
     output.write_to_log(f"get_key_mat {time.time()-time0}\n", name="hyps")
 
@@ -468,7 +468,7 @@ def get_neg_likelihood(hyps: np.ndarray, name,
 def get_neg_like_grad(hyps: np.ndarray, name: str,
                       kernel_grad, output = None,
                       cutoffs=None, hyps_mask=None,
-                      n_cpus=1, nsample=100):
+                      n_cpus=1, n_sample=100):
     """compute the log likelihood and its gradients
 
     :param hyps: list of hyper-parameters
@@ -482,7 +482,7 @@ def get_neg_like_grad(hyps: np.ndarray, name: str,
     :type cutoffs: list of 2 float numbers
     :param hyps_mask: dictionary used for multi-group hyperparmeters
     :param n_cpus: number of cpus to use.
-    :param nsample: the size of block for matrix to compute
+    :param n_sample: the size of block for matrix to compute
 
     :return: float, np.array
     """
@@ -502,7 +502,7 @@ def get_neg_like_grad(hyps: np.ndarray, name: str,
                        kernel_grad,
                        cutoffs=cutoffs,
                        hyps_mask=hyps_mask,
-                       n_cpus=n_cpus, nsample=nsample)
+                       n_cpus=n_cpus, n_sample=n_sample)
 
     if output is not None:
         output.write_to_log(f"get_ky_and_hyp {time.time()-time0}\n", name="hyps")
@@ -576,7 +576,7 @@ def get_like_grad_from_mats(ky_mat, hyp_mat, name):
 
 def get_ky_mat_update(ky_mat_old, hyps: np.ndarray, name: str,
                       kernel, cutoffs=None, hyps_mask=None,
-                      n_cpus=1, nsample=100):
+                      n_cpus=1, n_sample=100):
     '''
     used for update_L_alpha, especially for parallelization
     parallelized for added atoms, for example, if add 10 atoms to the training
@@ -591,7 +591,7 @@ def get_ky_mat_update(ky_mat_old, hyps: np.ndarray, name: str,
     :type cutoffs: list of 2 float numbers
     :param hyps_mask: dictionary used for multi-group hyperparmeters
     :param n_cpus: number of cpus to use.
-    :param nsample: the size of block for matrix to compute
+    :param n_sample: the size of block for matrix to compute
 
     :return: updated covariance matrix
 
@@ -612,7 +612,7 @@ def get_ky_mat_update(ky_mat_old, hyps: np.ndarray, name: str,
     size3 = 3*size
     ds = [1, 2, 3]
 
-    block_id, nbatch = partition_update(nsample, size, old_size, n_cpus)
+    block_id, nbatch = partition_update(n_sample, size, old_size, n_cpus)
 
     # Send and Run child processes.
     result_queue = mp.Queue()
@@ -739,7 +739,7 @@ def get_kernel_vector_unit(name, s, e, x, d_1, kernel, hyps,
 
 def get_kernel_vector(name, kernel, x, d_1, hyps,
                       cutoffs=None, hyps_mask=None,
-                      n_cpus=1, nsample=100):
+                      n_cpus=1, n_sample=100):
     """
     Compute kernel vector, comparing input environment to all environments
     in the GP's training set.
@@ -753,7 +753,7 @@ def get_kernel_vector(name, kernel, x, d_1, hyps,
     :type cutoffs: list of 2 float numbers
     :param hyps_mask: dictionary used for multi-group hyperparmeters
     :param n_cpus: number of cpus to use.
-    :param nsample: the size of block for matrix to compute
+    :param n_sample: the size of block for matrix to compute
 
     :return: kernel vector
     :rtype: np.ndarray
@@ -768,7 +768,7 @@ def get_kernel_vector(name, kernel, x, d_1, hyps,
                 name, 0, size, x, d_1, kernel, hyps,
                 cutoffs, hyps_mask)
 
-    block_id, nbatch = partition_c(nsample, size, n_cpus)
+    block_id, nbatch = partition_c(n_sample, size, n_cpus)
 
     result_queue = mp.Queue()
     children = []
@@ -840,7 +840,7 @@ def en_kern_vec_unit(name, s, e, x, kernel,
 def en_kern_vec(name, kernel,
                 x, hyps,
                 cutoffs=None, hyps_mask=None,
-                n_cpus=1, nsample=100):
+                n_cpus=1, n_sample=100):
     """
     Compute kernel vector, comparing input environment to all environments
     in the GP's training set.
@@ -852,7 +852,7 @@ def en_kern_vec(name, kernel,
     :type cutoffs: list of 2 float numbers
     :param hyps_mask: dictionary used for multi-group hyperparmeters
     :param n_cpus: number of cpus to use.
-    :param nsample: the size of block for matrix to compute
+    :param n_sample: the size of block for matrix to compute
 
     :return: kernel vector
     :rtype: np.ndarray
@@ -868,7 +868,7 @@ def en_kern_vec(name, kernel,
                 name, 0, size, x, kernel, hyps,
                 cutoffs, hyps_mask)
 
-    block_id, nbatch = partition_cr(nsample, size, n_cpus)
+    block_id, nbatch = partition_cr(n_sample, size, n_cpus)
     result_queue = mp.Queue()
     children = []
     for wid in range(nbatch):

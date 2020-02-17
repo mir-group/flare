@@ -7,11 +7,7 @@ from flare.ase.calculator import FLARE_Calculator
 import flare.kernels.mc_simple as mc_simple
 
 # ---------- create gaussian process model -------------------
-kernel = mc_simple.two_plus_three_body_mc
-kernel_grad = mc_simple.two_plus_three_body_mc_grad
-energy_force_kernel = mc_simple.two_plus_three_mc_force_en
-energy_kernel = mc_simple.two_plus_three_mc_en
-
+kernel = '2+3'
 hyps = np.array([0.1, 1., 0.001, 1, 0.06])
 two_cut = 5.0
 three_cut = 5.0
@@ -19,9 +15,7 @@ cutoffs = np.array([two_cut, three_cut])
 hyp_labels = ['sig2', 'ls2', 'sig3', 'ls3', 'noise']
 opt_algorithm = 'BFGS'
 
-gp_model = GaussianProcess(kernel, kernel_grad, hyps, cutoffs,
-                           energy_kernel=energy_kernel,
-                           energy_force_kernel=energy_force_kernel,
+gp_model = GaussianProcess(kernel_name=kernel, hyps=hyps, cutoffs=cutoffs,
                            hyp_labels=hyp_labels,
                            opt_algorithm=opt_algorithm, par=False)
 

@@ -174,11 +174,6 @@ def test_serialization_method(all_gps, test_point, multihyps):
     new_gp = GaussianProcess.from_dict(old_gp_dict)
     new_gp_dict = new_gp.as_dict()
 
-    print(len(new_gp.training_data))
-    print(new_gp.alpha.shape)
-    print(len(test_gp.training_data))
-    print(test_gp.alpha.shape)
-
     assert len(new_gp_dict) == len(old_gp_dict)
 
     dumpcompare(new_gp_dict, old_gp_dict)

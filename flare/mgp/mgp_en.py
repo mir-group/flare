@@ -9,6 +9,7 @@ from flare.env import AtomicEnvironment
 from flare.gp import GaussianProcess
 from flare.gp_algebra import partition_c
 from flare.gp_algebra import en_kern_vec_unit as en_kern_vec
+from flare.kernels.utils import from_mask_to_args
 from flare.cutoffs import quadratic_cutoff
 from flare.util import Z_to_element
 from flare.mgp.utils import get_bonds, get_triplets, get_triplets_en, \
@@ -64,7 +65,7 @@ class MappedGaussianProcess:
                  container_only: bool=True,
                  lmp_file_name: str='lmp.mgp',
                  n_cpus: int =None,
-                 nsample:int =100):
+                 n_sample:int =100):
 
         # get all arguments as attributes
         arg_dict = inspect.getargvalues(inspect.currentframe())[3]
@@ -103,7 +104,7 @@ class MappedGaussianProcess:
             for b_struc in self.bond_struc[0]:
                 map_2 = Map2body(self.grid_num_2, self.bounds_2,
                                  b_struc, self.svd_rank_2,
-                                 self.mean_only, self.n_cpus, self.nsample)
+                                 self.mean_only, self.n_cpus, self.n_sample)
                 self.maps_2.append(map_2)
         if 3 in self.bodies:
             for b_struc in self.bond_struc[1]:
@@ -255,16 +256,12 @@ class MappedGaussianProcess:
 
         kernel, en_force_kernel, cutoffs, hyps, hyps_mask = kernel_info
 
+        args = from_mask_to_args(hyps, hyps_mask, cutoffs)
+
         kern = np.zeros(3)
-        if (hyps_mask is None):
-            for d in range(3):
-                kern[d] = \
-                    kernel(atom_env, atom_env, d+1, d+1, hyps, cutoffs)
-        else:
-            for d in range(3):
-                kern[d] = \
-                    kernel(atom_env, atom_env, d+1, d+1, hyps, cutoffs,
-                           hyps_mask=hyps_mask)
+        for d in range(3):
+            kern[d] = \
+                kernel(atom_env, atom_env, d+1, d+1, *args)
 
         if (body == 2):
             spcs, comp_r, comp_xyz = get_bonds(atom_env.ctype,
@@ -351,6 +348,11 @@ class MappedGaussianProcess:
         return f, vir, v, e
 
     def write_two_body(self, f):
+        """
+        Write two-body components to a file handle f.
+        :param f:
+        :return:
+        """
         a = self.bounds_2[0][0]
         b = self.bounds_2[1][0]
         order = self.grid_num_2
@@ -400,7 +402,6 @@ class MappedGaussianProcess:
 
             f.write('\n')
 
-
     def write_lmp_file(self, lammps_name):
         '''
         write the coefficients to a file that can be used by lammps pair style
@@ -435,9 +436,14 @@ class MappedGaussianProcess:
         :return:
         """
         raise NotImplementedError
+
+    def load_model(self,elements):
+        raise NotImplementedError
+
+
 class Map2body:
     def __init__(self, grid_num, bounds, bond_struc,
-                 svd_rank=0, mean_only=False, n_cpus=None, nsample=100):
+                 svd_rank=0, mean_only=False, n_cpus=None, n_sample=100):
         '''
         Build 2-body MGP
         '''
@@ -485,7 +491,7 @@ class Map2body:
             # A_list = pool.map(self._GenGrid_inner_most, pool_list)
             # break it into pieces
             size = len(GP.training_data)
-            block_id, nbatch = partition_c(self.nsample, size, processes)
+            block_id, nbatch = partition_c(self.n_sample, size, processes)
 
             k12_slice = []
             k12_v_all = np.zeros([len(bond_lengths), size*3])
@@ -566,7 +572,7 @@ class Map3body:
 
     def __init__(self, grid_num, bounds, bond_struc,
             svd_rank=0, mean_only=False, load_grid=None, update=True,
-            n_cpus=None, nsample=100):
+            n_cpus=None, n_sample=100):
         '''
         Build 3-body MGP
         '''
@@ -633,10 +639,10 @@ class Map3body:
 
             #print("prepare the package for parallelization")
             size = len(GP.training_data)
-            block_id, nbatch = partition_c(self.nsample, size, processes)
+            block_id, nbatch = partition_c(self.n_sample, size, processes)
 
             k12_slice = []
-            #print('before for', ns, nsample, time.time())
+            #print('before for', ns, n_sample, time.time())
             count = 0
             base = 0
             k12_v_all = np.zeros([len(bonds1), len(bonds2), len(bonds12),
