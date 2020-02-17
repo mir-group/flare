@@ -48,7 +48,7 @@ def test_init(multihyps, all_gps):
                         hyps=hyps,
                         hyp_labels=hl,
                         cutoffs=cutoffs, multihyps=multihyps, hyps_mask=hm,
-                        par=False, n_cpus=1)
+                        parallel=False, n_cpus=1)
 
 
 @pytest.fixture(scope='module')
@@ -86,6 +86,8 @@ def test_train(all_gps, params, par, n_cpus, multihyps):
     test_gp = all_gps[multihyps]
     test_gp.parallel = par
     test_gp.n_cpus = n_cpus
+
+    test_gp.maxiter = 4
 
     # train gp
     test_gp.hyps = np.ones(len(test_gp.hyps))

@@ -834,6 +834,7 @@ def en_kern_vec_unit(name, s, e, x, kernel,
         x_2 = training_data[int(math.floor(m_index / 3))+s]
         d_2 = ds[m_index % 3]
         k_v[m_index] = kernel(x_2, x, d_2, *args)
+
     return k_v
 
 
@@ -868,7 +869,7 @@ def en_kern_vec(name, kernel,
                 name, 0, size, x, kernel, hyps,
                 cutoffs, hyps_mask)
 
-    block_id, nbatch = partition_cr(n_sample, size, n_cpus)
+    block_id, nbatch = partition_c(n_sample, size, n_cpus)
     result_queue = mp.Queue()
     children = []
     for wid in range(nbatch):
