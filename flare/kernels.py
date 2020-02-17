@@ -1192,7 +1192,7 @@ def three_body_en_jit(bond_array_1, bond_array_2,
 #                           many body numba functions
 # -----------------------------------------------------------------------------
 
-
+@njit
 def many_body_jit(bond_array_1, bond_array_2,
                   neighbouring_dists_array_1, neighbouring_dists_array_2,
                   num_neighbours_1, num_neighbours_2,
@@ -1269,7 +1269,7 @@ def many_body_jit(bond_array_1, bond_array_2,
 
     return kern
 
-
+@njit
 def many_body_grad_jit(bond_array_1, bond_array_2,
                        neighbouring_dists_array_1, neighbouring_dists_array_2,
                        num_neighbours_1, num_neighbours_2,
@@ -1664,7 +1664,7 @@ def triplet_force_en_kernel(ci1, ci2, ri1, ri2, ri3, rj1, rj2, rj3,
 #                        many body helper functions
 # -----------------------------------------------------------------------------
 
-
+@njit
 def k_sq_exp_double_dev(q1, q2, sig, ls):
     """Gradient of generic squared exponential kernel on two many body functions
 
@@ -1687,7 +1687,7 @@ def k_sq_exp_double_dev(q1, q2, sig, ls):
 
     return ret
 
-
+@njit
 def q_pairwise(rij, r0, cij, r_cut, cutoff_func):
     """Pairwise contribution to many-body descriptor based on electron density
     and its gradient w.r.t. ri
@@ -1713,7 +1713,7 @@ def q_pairwise(rij, r0, cij, r_cut, cutoff_func):
 
     return q, grad
 
-
+@njit
 def q_pairwise_der_r0(rij, r0, cij, r_cut, cutoff_func):
     """Derivative of pairwise mb descriptor wrt r0 hyperparameter
 
@@ -1734,7 +1734,7 @@ def q_pairwise_der_r0(rij, r0, cij, r_cut, cutoff_func):
 
     return q_der, grad_der
 
-
+@njit
 def q_value(distances, r0, r_cut, cutoff_func, q_func=q_pairwise):
     """Compute value of many-body descriptor based on distances of atoms
     in the local amny-body environment.
@@ -1757,7 +1757,7 @@ def q_value(distances, r0, r_cut, cutoff_func, q_func=q_pairwise):
 
     return q
 
-
+@njit
 def q_value_dr0(distances, r0, r_cut, cutoff_func, q_func_dr0=q_pairwise_der_r0):
     """Derivative of the descriptor wrt r0
 
@@ -1771,7 +1771,7 @@ def q_value_dr0(distances, r0, r_cut, cutoff_func, q_func_dr0=q_pairwise_der_r0)
 
     return q
 
-
+@njit
 def mb_grad_helper_ls_(qdiffsq, sig, ls):
     """Derivative of a many body force-force kernel wrt ls
 
@@ -1785,7 +1785,7 @@ def mb_grad_helper_ls_(qdiffsq, sig, ls):
 
     return ret
 
-
+@njit
 def mb_grad_helper_ls(q1, q2, qi, qj, sig, ls):
     """Helper function fr many body gradient collecting all the derivatives
     of the force-foce many body kernel wrt ls
@@ -1804,7 +1804,7 @@ def mb_grad_helper_ls(q1, q2, qi, qj, sig, ls):
 
     return dk12 + dkij + dki2 + dk1j
 
-
+@njit
 def mb_grad_helper_r0(Di1, Dj2, Di1p, Dj2p, k12, ki2, k1j, kij, q1, q2, qi, qj, q1p, q2p, qip, qjp,
                       ls, sig):
     """Helper function fr many body gradient collecting all the derivatives
@@ -1824,7 +1824,7 @@ def mb_grad_helper_r0(Di1, Dj2, Di1p, Dj2p, k12, ki2, k1j, kij, q1, q2, qi, qj, 
 
     return res
 
-
+@njit
 def mb_grad_helper_dkdr0(q1, q2, q1p, q2p, sig, ls):
     """Derivative of the force-force many body kernel wrt r0
 
