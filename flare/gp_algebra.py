@@ -4,6 +4,7 @@ import numpy as np
 import multiprocessing as mp
 
 from typing import List, Callable
+from flare.kernels.sephyps_helper import from_mask_to_args, from_grad_to_mask
 
 _global_training_data = {}
 _global_training_labels = {}
@@ -140,6 +141,8 @@ def get_ky_mat_pack(hyps: np.ndarray, name: str,
     ds = [1, 2, 3]
 
     # calculate elements
+    args = from_mask_to_args(hyps, hyps_mask, cutoffs)
+
     for m_index in range(size1):
         x_1 = training_data[int(math.floor(m_index / 3))+s1]
         d_1 = ds[m_index % 3]
@@ -150,15 +153,7 @@ def get_ky_mat_pack(hyps: np.ndarray, name: str,
         for n_index in range(lowbound, size2):
             x_2 = training_data[int(math.floor(n_index / 3))+s2]
             d_2 = ds[n_index % 3]
-
-            # calculate kernel and gradient
-            if (hyps_mask is not None):
-                kern_curr = kernel(x_1, x_2, d_1, d_2, hyps,
-                                   cutoffs, hyps_mask=hyps_mask)
-            else:
-                kern_curr = kernel(x_1, x_2, d_1, d_2, hyps,
-                                   cutoffs)
-
+            kern_curr = kernel(x_1, x_2, d_1, d_2, *args)
             # store kernel value
             k_mat[m_index, n_index] = kern_curr
             if (same):
@@ -304,6 +299,8 @@ def get_ky_and_hyp_pack(name, s1, e1, s2, e2, same: bool,
     k_mat = np.zeros([size1, size2])
     hyp_mat = np.zeros([non_noise_hyps, size1, size2])
 
+    args = from_mask_to_args(hyps, hyps_mask, cutoffs)
+
     ds = [1, 2, 3]
 
     training_data = _global_training_data[name]
@@ -321,19 +318,15 @@ def get_ky_and_hyp_pack(name, s1, e1, s2, e2, same: bool,
             d_2 = ds[n_index % 3]
 
             # calculate kernel and gradient
-            if (hyps_mask is not None):
-                cov = kernel_grad(x_1, x_2, d_1, d_2, hyps,
-                        cutoffs=cutoffs, hyps_mask=hyps_mask)
-            else:
-                cov = kernel_grad(x_1, x_2, d_1, d_2, hyps, cutoffs)
+            cov = kernel_grad(x_1, x_2, d_1, d_2, *args)
 
             # store kernel value
             k_mat[m_index, n_index] = cov[0]
-            hyp_mat[:, m_index, n_index] = cov[1]
-
+            grad = from_grad_to_mask(cov[1], hyps_mask)
+            hyp_mat[:, m_index, n_index] = grad
             if (same):
                 k_mat[n_index, m_index] = cov[0]
-                hyp_mat[:, n_index, m_index] = cov[1]
+                hyp_mat[:, n_index, m_index] = grad
 
     return hyp_mat, k_mat
 
@@ -689,6 +682,8 @@ def get_ky_mat_update_serial(\
 
     ds = [1, 2, 3]
 
+    args = from_mask_to_args(hyps, hyps_mask, cutoffs)
+
     # calculate elements
     for m_index in range(size3):
         x_1 = training_data[int(math.floor(m_index / 3))]
@@ -697,15 +692,8 @@ def get_ky_mat_update_serial(\
         for n_index in range(low, size3):
             x_2 = training_data[int(math.floor(n_index / 3))]
             d_2 = ds[n_index % 3]
-
-            # calculate kernel and gradient
-            if (hyps_mask is not None):
-                kern_curr = kernel(x_1, x_2, d_1, d_2, hyps,
-                                   cutoffs, hyps_mask=hyps_mask)
-            else:
-                kern_curr = kernel(x_1, x_2, d_1, d_2, hyps,
-                                   cutoffs)
-            # store kernel value
+            # calculate kernel
+            kern_curr = kernel(x_1, x_2, d_1, d_2, *args)
             ky_mat[m_index, n_index] = kern_curr
             ky_mat[n_index, m_index] = kern_curr
 
@@ -738,22 +726,18 @@ def get_kernel_vector_unit(name, s, e, x, d_1, kernel, hyps,
     size = (e-s)
     ds = [1, 2, 3]
 
+    args = from_mask_to_args(hyps, hyps_mask, cutoffs)
+
     k_v = np.zeros(size*3, )
     for m_index in range(size):
         x_2 = _global_training_data[name][m_index+s]
         for d_2 in ds:
-            if (hyps_mask is not None):
-                k_v[m_index*3+d_2-1] = kernel(x, x_2, d_1, d_2,
-                                      hyps, cutoffs, hyps_mask=hyps_mask)
-            else:
-                k_v[m_index*3+d_2-1] = kernel(x, x_2, d_1, d_2,
-                                      hyps, cutoffs)
+            k_v[m_index*3+d_2-1] = kernel(x, x_2, d_1, d_2, *args)
 
     return k_v
 
 
-def get_kernel_vector(name, kernel,
-                      x, d_1, hyps,
+def get_kernel_vector(name, kernel, x, d_1, hyps,
                       cutoffs=None, hyps_mask=None,
                       n_cpus=1, nsample=100):
     """
@@ -844,15 +828,12 @@ def en_kern_vec_unit(name, s, e, x, kernel,
     size = (e-s) * 3
     k_v = np.zeros(size, )
 
+    args = from_mask_to_args(hyps, hyps_mask, cutoffs)
+
     for m_index in range(size):
         x_2 = training_data[int(math.floor(m_index / 3))+s]
         d_2 = ds[m_index % 3]
-        if (hyps_mask is not None):
-            k_v[m_index] = kernel(x_2, x, d_2,
-                                  hyps, cutoffs, hyps_mask=hyps_mask)
-        else:
-            k_v[m_index] = kernel(x_2, x, d_2,
-                                  hyps, cutoffs)
+        k_v[m_index] = kernel(x_2, x, d_2, *args)
     return k_v
 
 

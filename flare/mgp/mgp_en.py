@@ -34,27 +34,37 @@ class MappedGaussianProcess:
                         'mass_dict': {'0': 27 * unit, '1': 16 * unit}}
     >>> grid_params =  {'bounds_2': [[1.2], [3.5]],
                                     # [[lower_bound], [upper_bound]]
-                        'bounds_3': [[1.2, 1.2, 0], [3.5, 3.5, np.pi]],
-                                    # [[lower,lower,0],[upper,upper,np.pi]]
-                        'grid_num_2': 64,
-                        'grid_num_3': [16, 16, 16],
-                        'svd_rank_2': 64,
+                                    # These describe the lower and upper
+                                    # bounds used to specify the 2-body spline
+                                    # fits.
+                        'bounds_3': [[1.2, 1.2, 1.2], [3.5, 3.5, 3.5]],
+                                    # [[lower,lower,lower],[upper,upper,upper]]
+                                    # Values describe lower and upper bounds
+                                    # for the bondlength-bondlength-bondlength
+                                    # grid used to construct and fit 3-body
+                                    # kernels; note that for force MGPs
+                                    # bondlength-bondlength-costheta
+                                    # are the bounds used instead.
+                        'grid_num_2': 64,# Fidelity of the grid
+                        'grid_num_3': [16, 16, 16],# Fidelity of the grid
+                        'svd_rank_2': 64, #Fidelity of uncertainty estimation
                         'svd_rank_3': 16**3,
                         'update': True, # if True: accelerating grids
                                         # generating by saving intermediate
                                         # coeff when generating grids
-                        'load_grid': None}
+                        'load_grid': None  # Used to load from file
+                        }
     '''
 
     def __init__(self,
                  grid_params: dict,
                  struc_params: dict,
                  GP=None,
-                 mean_only=False,
-                 container_only=True,
-                 lmp_file_name='lmp.mgp',
-                 n_cpus=None,
-                 nsample=100):
+                 mean_only: bool=False,
+                 container_only: bool=True,
+                 lmp_file_name: str='lmp.mgp',
+                 n_cpus: int =None,
+                 nsample:int =100):
 
         # get all arguments as attributes
         arg_dict = inspect.getargvalues(inspect.currentframe())[3]
@@ -63,7 +73,7 @@ class MappedGaussianProcess:
         self.__dict__.update(grid_params)
 
         # if GP exists, the GP setup overrides the grid_params setup
-        if (GP is not None):
+        if GP is not None:
 
             self.cutoffs = GP.cutoffs
 
@@ -79,6 +89,7 @@ class MappedGaussianProcess:
         self.maps_2 = []
         self.maps_3 = []
         self.build_map_container()
+        self.mean_only = mean_only
 
         if not container_only and (GP is not None) and \
                 (len(GP.training_data) > 0):
@@ -193,11 +204,18 @@ class MappedGaussianProcess:
         self.spcs = [spc_2, spc_3]
         self.spcs_set = [spc_2_set, spc_3]
 
-    def predict(self, atom_env: AtomicEnvironment, mean_only: bool=False):
+    def predict(self, atom_env: AtomicEnvironment, mean_only: bool=False)-> \
+            (float, 'ndarray','ndarray', float):
         '''
-        predict force and variance for given atomic environment
-        :param atom_env: atomic environment (with a center atom and its neighbors)
-        :param mean_only: if True: only predict force (variance is always 0)
+        predict force, variance, stress and local energy for given atomic environment
+        Args:
+            atom_env: atomic environment (with a center atom and its neighbors)
+            mean_only: if True: only predict force (variance is always 0)
+        Return:
+            force: 3d array of atomic force
+            variance: 3d array of the predictive variance
+            stress: 6d array of the virial stress
+            energy: the local energy (atomic energy)
         '''
         if self.mean_only:  # if not build mapping for var
             mean_only = True
@@ -220,12 +238,12 @@ class MappedGaussianProcess:
                                             self.spcs[1], self.maps_3,
                                             mean_only)
 
-        f = f2 + f3
-        vir = vir2 + vir3
-        v = kern2 + kern3 - np.sum((v2 + v3)**2, axis=0)
-        e = e2 + e3
+        force = f2 + f3
+        variance = kern2 + kern3 - np.sum((v2 + v3)**2, axis=0)
+        virial = vir2 + vir3
+        energy = e2 + e3
 
-        return f, v, vir, e
+        return force, variance, virial, energy
 
 
     def predict_multicomponent(self, body, atom_env, kernel_info,
@@ -410,7 +428,13 @@ class MappedGaussianProcess:
 
         f.close()
 
-
+    def write_model(self, model_name):
+        """
+        Write everything necessary to re-load and re-use the model
+        :param model_name:
+        :return:
+        """
+        raise NotImplementedError
 class Map2body:
     def __init__(self, grid_num, bounds, bond_struc,
                  svd_rank=0, mean_only=False, n_cpus=None, nsample=100):
@@ -556,9 +580,12 @@ class Map3body:
         self.species_code = str(spc[0]) + str(spc[1]) + str(spc[2])
 
         self.build_map_container()
+        self.n_cpus = n_cpus
+        self.bounds = bounds
+        self.mean_only = mean_only
 
 
-    def GenGrid(self, GP, processes=mp.cpu_count()):
+    def GenGrid(self, GP):
 
         '''
         To use GP to predict value on each grid point, we need to generate the
@@ -573,7 +600,7 @@ class Map3body:
            with GP.alpha
         '''
 
-        if (self.n_cpus is None):
+        if self.n_cpus is None:
             processes = mp.cpu_count()
         else:
             processes = self.n_cpus
@@ -673,7 +700,8 @@ class Map3body:
                     #    k12_v[b1, b2, b12, :] = np.zeros(size)
                     #    continue
 
-                    env12.bond_array_3 = np.array([[r1, 1, 0, 0], [r2, 0, 0, 0]])
+                    env12.bond_array_3 = np.array([[r1, 1, 0, 0],
+                                                   [r2, 0, 0, 0]])
                     env12.cross_bond_dists = np.array([[0, r12], [r12, 0]])
                     k12_v[b1, b2, b12, :] = en_kern_vec(name, s, e,
                                                         env12, en_force_kernel,

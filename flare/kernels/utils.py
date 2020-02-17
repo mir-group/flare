@@ -37,7 +37,7 @@ def str_to_kernels(name: str, multihyps: bool =False,
                 kernel = str_to_mc_sephyps_kernel(name)
         else:
             kernel = str_to_kernel(name)
-        return grad
+        return kernel
 
 def str_to_kernel_set(name: str, multihyps: bool =False):
     """
@@ -58,6 +58,7 @@ def str_to_kernel_set(name: str, multihyps: bool =False):
     else:
         stk = str_to_kernel
 
+    # b2 = Two body in use, b3 = Three body in use
     b2 = False
     b3 = False
 
