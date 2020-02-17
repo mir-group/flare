@@ -21,7 +21,6 @@ from flare.gp_algebra import get_neg_likelihood, \
 from flare.kernels.utils import str_to_kernel_set as stk
 from flare.util import NumpyEncoder
 from flare.output import Output
-import flare.cutoffs as cf
 
 
 class GaussianProcess:
@@ -49,6 +48,8 @@ class GaussianProcess:
             computed in parallel. Defaults to False.
         n_cpus (int, optional): Number of cpus used for parallel
             calculations. Defaults to 1.
+        n_samples (int, optional): Size of submatrix to use when parallelizing
+            predictions.
         output (Output, optional): Output object used to dump hyperparameters
             during optimization. Defaults to None.
     """
@@ -59,18 +60,34 @@ class GaussianProcess:
                  cutoffs: 'ndarray' = None,
                  hyp_labels: List = None,
                  opt_algorithm: str = 'L-BFGS-B',
-                 maxiter: int = 10, par: bool = False,
+                 maxiter: int = 10, parallel: bool = False,
                  per_atom_par: bool = True,
-                 n_cpus: int = 1, nsample: int = 100,
+                 n_cpus: int = 1, n_sample: int = 100,
                  output: Output = None,
                  multihyps: bool = False, hyps_mask: dict = None,
-                 kernel_name="2+3_mc"):
+                 kernel_name="2+3_mc", **kwargs):
         """Initialize GP parameters and training data."""
 
-        # load all arguments as attributes
-        arg_dict = inspect.getargvalues(inspect.currentframe())[3]
-        del arg_dict['self']
-        self.__dict__.update(arg_dict)
+        # load arguments into attributes
+
+        self.hyps = hyps
+        self.hyp_labels = hyp_labels
+        self.cutoffs = cutoffs
+        self.opt_algorithm = opt_algorithm
+
+        self.output = output
+        self.per_atom_par = per_atom_par
+        self.maxiter = maxiter
+        self.n_cpus = n_cpus
+        self.n_sample = n_sample
+        self.parallel = parallel
+
+        if 'nsample' in kwargs.keys():
+            DeprecationWarning("nsample is being replaced with n_sample")
+            self.n_sample =kwargs.get('nsample')
+        if 'par' in kwargs.keys():
+            DeprecationWarning("par is being replaced with parallel")
+            self.parallel =kwargs.get('par')
 
         # TO DO, clean up all the other kernel arguments
         if kernel is None:
@@ -82,6 +99,10 @@ class GaussianProcess:
             self.energy_kernel = ek
         else:
             self.kernel_name = kernel.__name__
+            self.kernel = kernel
+            self.kernel_grad = kernel_grad
+            self.energy_force_kernel = kwargs.get('energy_force_kernel')
+            self.energy_kernel = kwargs.get('energy_kernel')
 
         self.training_data = []
         self.training_labels = []
@@ -96,6 +117,8 @@ class GaussianProcess:
         self.likelihood_gradient = None
         self.bounds = None
 
+        self.hyps_mask = hyps_mask
+        self.multihyps = multihyps
         self.check_instantiation()
 
     def check_instantiation(self):
@@ -247,7 +270,7 @@ class GaussianProcess:
         args = (self.training_data, self.training_labels_np,
                 self.kernel_grad, output,
                 self.cutoffs, self.hyps_mask,
-                self.n_cpus, self.nsample)
+                self.n_cpus, self.n_sample)
         objective_func = get_neg_like_grad
         res = None
 
@@ -324,7 +347,7 @@ class GaussianProcess:
         """
 
         # Kernel vector allows for evaluation of atomic environments.
-        if self.par and not self.per_atom_par:
+        if self.parallel and not self.per_atom_par:
             n_cpus = self.n_cpus
         else:
             n_cpus = 1
@@ -335,10 +358,10 @@ class GaussianProcess:
                                     cutoffs=self.cutoffs,
                                     hyps_mask=self.hyps_mask,
                                     n_cpus=n_cpus,
-                                    nsample=self.nsample)
+                                    nsample=self.n_sample)
 
         # Guarantee that alpha is up to date with training set
-        if self.alpha is None or \
+        if self.alpha is None or\
                 3 * len(self.training_data) != len(self.alpha):
             self.update_L_alpha()
 
@@ -369,7 +392,7 @@ class GaussianProcess:
             float: Local energy predicted by the GP.
         """
 
-        if self.par and not self.per_atom_par:
+        if self.parallel and not self.per_atom_par:
             n_cpus = self.n_cpus
         else:
             n_cpus = 1
@@ -380,7 +403,7 @@ class GaussianProcess:
                               cutoffs=self.cutoffs,
                               hyps_mask=self.hyps_mask,
                               n_cpus=n_cpus,
-                              nsample=self.nsample)
+                              nsample=self.n_sample)
 
         pred_mean = np.matmul(k_v, self.alpha)
 
@@ -397,7 +420,7 @@ class GaussianProcess:
             (float, float): Mean and predictive variance predicted by the GP.
         """
 
-        if self.par and not self.per_atom_par:
+        if self.parallel and not self.per_atom_par:
             n_cpus = self.n_cpus
         else:
             n_cpus = 1
@@ -409,7 +432,7 @@ class GaussianProcess:
                               cutoffs=self.cutoffs,
                               hyps_mask=self.hyps_mask,
                               n_cpus=n_cpus,
-                              nsample=self.nsample)
+                              nsample=self.n_sample)
 
         # get predictive mean
         pred_mean = np.matmul(k_v, self.alpha)
@@ -441,7 +464,7 @@ class GaussianProcess:
                                 cutoffs=self.cutoffs,
                                 hyps_mask=self.hyps_mask,
                                 n_cpus=self.n_cpus,
-                                nsample=self.nsample)
+                                nsample=self.n_sample)
 
         l_mat = np.linalg.cholesky(ky_mat)
         l_mat_inv = np.linalg.inv(l_mat)
@@ -463,7 +486,7 @@ class GaussianProcess:
         """
 
         # Set L matrix and alpha if set_L_alpha has not been called yet
-        if self.l_mat is None:
+        if self.l_mat is None or np.array(self.ky_mat) is np.array(None):
             self.set_L_alpha()
             return
 
@@ -473,7 +496,7 @@ class GaussianProcess:
                                        cutoffs=self.cutoffs,
                                        hyps_mask=self.hyps_mask,
                                        n_cpus=self.n_cpus,
-                                       nsample=self.nsample)
+                                       nsample=self.n_sample)
 
         l_mat = np.linalg.cholesky(ky_mat)
         l_mat_inv = np.linalg.inv(l_mat)
@@ -549,7 +572,8 @@ class GaussianProcess:
                                  cutoffs=np.array(dictionary['cutoffs']),
                                  hyps=np.array(dictionary['hyps']),
                                  hyp_labels=dictionary['hyp_labels'],
-                                 par=dictionary['par'],
+                                 parallel=dictionary.get('parallel',False) or
+                                          dictionary.get('par',False),
                                  per_atom_par=dictionary.get('per_atom_par',
                                                              True),
                                  n_cpus=dictionary.get(
@@ -579,10 +603,14 @@ class GaussianProcess:
                 # TO DO, recompute the ky
                 pass
         else:
-            new_gp.ky_mat_inv = np.array(dictionary.get('ky_mat_inv', None))
-            new_gp.ky_mat = np.array(dictionary.get('ky_mat', None))
-            new_gp.l_mat = np.array(dictionary.get('l_mat', None))
-            new_gp.alpha = np.array(dictionary.get('alpha', None))
+            new_gp.ky_mat_inv = np.array(dictionary['ky_mat_inv']) \
+                if dictionary.get('ky_mat_inv') is not None else None
+            new_gp.ky_mat = np.array(dictionary['ky_mat']) \
+                if dictionary.get('ky_mat') is not None else None
+            new_gp.l_mat = np.array(dictionary['l_mat']) \
+                if dictionary.get('l_mat') is not None else None
+            new_gp.alpha = np.array(dictionary['alpha']) \
+                if dictionary.get('alpha') is not None else None
 
         return new_gp
 

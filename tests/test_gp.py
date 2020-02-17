@@ -129,7 +129,7 @@ def test_train(two_body_gp, params, par, n_cpus):
     test_structure, forces = get_random_structure(params['cell'],
                                                   params['unique_species'],
                                                   params['noa'])
-    two_body_gp.par = par
+    two_body_gp.parallel = par
     two_body_gp.n_cpus = n_cpus
 
     # two_body_gp.update_db(test_structure, forces)
@@ -150,7 +150,7 @@ def test_train(two_body_gp, params, par, n_cpus):
                           (True, True, 2),
                           (True, False, 2)])
 def test_predict(two_body_gp, test_point, par, per_atom_par, n_cpus):
-    two_body_gp.par = par
+    two_body_gp.parallel = par
     two_body_gp.per_atom_par = per_atom_par
     pred = two_body_gp.predict(x_t=test_point, d=1)
     assert (len(pred) == 2)
@@ -207,7 +207,7 @@ def test_update_L_alpha(par, n_cpus):
                                cutoffs=cutoffs,
                                hyps=hyps)
 
-    gp_model.par = par
+    gp_model.parallel = par
     gp_model.n_cpus = n_cpus
     # update database & use update_L_alpha to get ky_mat
     for n in range(call_no, call_no + 1):
@@ -251,7 +251,8 @@ def test_serialization_method(two_body_gp, test_point):
     new_gp = GaussianProcess.from_dict(old_gp_dict)
     new_gp_dict = new_gp.as_dict()
 
-    assert len(new_gp_dict) == len(old_gp_dict)
+    assert len(new_gp_dict) == len(old_gp_dict), \
+        str(new_gp_dict.keys())+str(old_gp_dict.keys())
 
     for k1, k2 in zip(sorted(new_gp_dict.keys()), sorted(old_gp_dict.keys())):
 
