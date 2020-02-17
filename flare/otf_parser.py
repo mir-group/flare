@@ -1,7 +1,7 @@
 import sys
 import numpy as np
 from typing import List, Tuple
-from flare import gp, env, struc, kernels, otf
+from flare import gp, env, struc, otf
 
 
 class OtfAnalysis:

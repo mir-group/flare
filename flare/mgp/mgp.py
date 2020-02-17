@@ -521,9 +521,9 @@ class Map2body:
         k12_v = np.zeros([len(bond_lengths), size*3])
         for b, r in enumerate(bond_lengths):
             env12.bond_array_2 = np.array([[r, 1, 0, 0]])
-            k12_v[b, :] = get_kernel_vector_unit(name, s, e, env12,
-                                            kernel, 1, hyps,
-                                            cutoffs, hyps_mask)
+            k12_v[b, :] = get_kernel_vector_unit(
+                    name, s, e, env12, 1,
+                    kernel, hyps, cutoffs, hyps_mask)
         return k12_v
 
     def build_map_container(self):
@@ -749,8 +749,8 @@ class Map3body:
                     env12.cross_bond_dists = np.array([[0, r12], [r12, 0]])
 
                     k12_v[b1, b2, a12, :] = \
-                            get_kernel_vector_unit(name, s, e, env12, kernel,
-                                              1, hyps, cutoffs, hyps_mask)
+                            get_kernel_vector_unit(name, s, e, env12, 1,
+                                    kernel, hyps, cutoffs, hyps_mask)
 
         return k12_v
 
