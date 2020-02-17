@@ -16,7 +16,7 @@ import os
 from flare import gp, struc
 from flare.env import AtomicEnvironment
 from flare.gp import GaussianProcess
-from flare.gp_algebra import get_kernel_vector_unit
+from flare.gp_algebra import get_kernel_vector_unit, partition_c
 from flare.kernels.kernels import two_body, three_body, two_plus_three_body,\
     two_body_jit
 from flare.cutoffs import quadratic_cutoff
@@ -456,22 +456,12 @@ class Map2body:
         env12 = AtomicEnvironment(self.bond_struc, 0, self.cutoffs)
 
         if processes == 1 :
-            k12_v_all = self._GenGrid_inner(GP.training_data,
+            k12_v_all = self._GenGrid_inner(GP.name, 0, len(GP.training_data),
                                             bond_lengths, env12, kernel_info)
         else:
             with mp.Pool(processes=processes) as pool:
                 size = len(GP.training_data)
-                nsample = self.nsample
-                ns = int(math.ceil(size/nsample/processes))*processes
-                nsample = int(math.ceil(size/ns))
-
-                block_id = []
-                nbatch = 0
-                for ibatch in range(ns):
-                    s1 = int(nsample*ibatch)
-                    e1 = int(np.min([s1 + nsample, size]))
-                    block_id += [(s1, e1)]
-                    nbatch += 1
+                block_id, nbatch = partition_c(self.nsample, size, processes)
 
                 k12_slice = []
                 k12_v_all = np.zeros([len(bond_lengths), size*3])
@@ -482,7 +472,7 @@ class Map2body:
                     s, e = block_id[ibatch]
                     k12_slice.append(\
                             pool.apply_async(self._GenGrid_inner,
-                                             args=(GP.training_data[s:e],
+                                             args=(name, s, e,
                                                    bond_lengths,
                                                    env12, kernel_info)))
                     count += 1
@@ -517,7 +507,7 @@ class Map2body:
         return bond_means, bond_vars
 
 
-    def _GenGrid_inner(self, training_data, bond_lengths,
+    def _GenGrid_inner(self, name, s, e, bond_lengths,
             env12, kernel_info):
 
         '''
@@ -526,12 +516,12 @@ class Map2body:
         print(kernel_info)
 
         kernel, efk, cutoffs, hyps, hyps_mask = kernel_info
-        size = len(training_data)
+        size = e-s
         k12_v = np.zeros([len(bond_lengths), size*3])
         for b, r in enumerate(bond_lengths):
             env12.bond_array_2 = np.array([[r, 1, 0, 0]])
-            k12_v[b, :] = get_kernel_vector(name, kernel,
-                                            env12, 1, hyps,
+            k12_v[b, :] = get_kernel_vector_unit(name, s, e, env12,
+                                            kernel, 1, hyps,
                                             cutoffs, hyps_mask)
         return k12_v
 
@@ -619,18 +609,7 @@ class Map3body:
 
             print("prepare the package for parallelization")
             size = len(GP.training_data)
-            nsample = self.nsample
-            ns = int(math.ceil(size/nsample/processes))*processes
-            nsample = int(math.ceil(size/ns))
-
-            block_id = []
-            nbatch = 0
-            for ibatch in range(ns):
-                s1 = int(nsample*ibatch)
-                e1 = int(np.min([s1 + nsample, size]))
-                block_id += [(s1, e1)]
-                print("block", ibatch, s1, e1)
-                nbatch += 1
+            block_id, nbatch = partition_c(self.nsample, size, processes)
 
             k12_slice = []
             if (size>5000):
@@ -769,7 +748,7 @@ class Map3body:
                     env12.cross_bond_dists = np.array([[0, r12], [r12, 0]])
 
                     k12_v[b1, b2, a12, :] = \
-                            get_kernel_vector_unit(name, s, e, kernel, env12,
+                            get_kernel_vector_unit(name, s, e, env12, kernel,
                                               1, hyps, cutoffs, hyps_mask)
 
         return k12_v
