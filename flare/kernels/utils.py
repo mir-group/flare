@@ -82,16 +82,24 @@ def str_to_kernel_set(name: str, multihyps: bool =False):
     return stk(prefix), stk(prefix+'_grad'), stk(prefix+'_en'), \
             stk(prefix+'_force_en')
 
+
 def from_mask_to_args(hyps, hyps_mask: dict, cutoffs):
-    """
-    :param hyps:
-    :param hyps_mask:
-    :return:
+    """ return the tuple of arguments needed for kernel function
+
+    :param hyps: list of hyperparmeter values
+    :type hyps: nd.array
+    :param hyps_mask: all the remaining parameters needed
+    :type hyps_mask: dictionary
+    :param cutoffs: cutoffs used
+
+    :return: args
     """
 
+    # no special setting
     if (hyps_mask is None):
         return (hyps, cutoffs)
 
+    # setting for mc_sephyps
     n2b = hyps_mask.get('nbond', 0)
     n3b = hyps_mask.get('ntriplet', 0)
     sig2 = None
@@ -126,16 +134,22 @@ def from_grad_to_mask(grad, hyps_mask):
     """
     Return gradient which only includes hyperparameters
     which are meant to vary
-    :param grad:
-    :param hyps_mask:
-    :return:
+    :param grad: original gradient vector
+    :param hyps_mask: dictionary for hyper-parameters
+
+    :return: newgrad
     """
+
+    # no special setting
     if (hyps_mask is None):
         return grad
 
+    # setting for mc_sephyps
+    # no constrained optimization
     if 'map' not in hyps_mask.keys():
         return grad
 
+    # setting for mc_sephyps
     # if the last element is not sigma_noise
     if (hyps_mask['map'][-1] == len(grad)):
         hm = hyps_mask['map'][:-1]
