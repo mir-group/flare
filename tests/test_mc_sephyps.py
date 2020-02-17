@@ -119,7 +119,7 @@ def test_force(kernel_name, nbond, ntriplet, constraint):
     kern_analytical = kernel(env1_1, env2_1,
                              d1, d2, *args0)
     tol = 1e-4
-    assert(np.isclose(kern_finite_diff, kern_analytical, atol=tol))
+    assert(np.isclose(kern_finite_diff, kern_analytical, atol=tol*kern_analytical))
 
 
 @pytest.mark.parametrize('kernel_name, nbond, ntriplet, constraint',
