@@ -561,7 +561,7 @@ def many_body_grad(env1, env2, d1, d2, hyps, cutoffs,
     neigh_dists_2 = env2.neigh_dists_mb
     num_neigh_2 = env2.num_neighs_mb
 
-    kernel, ls_derv, sig_derv, r0_derv = many_body_grad_jit(bond_array_1, bond_array_2,
+    kernel, sig_derv, ls_derv, r0_derv = many_body_grad_jit(bond_array_1, bond_array_2,
                                                             neigh_dists_1, neigh_dists_2,
                                                             num_neigh_1, num_neigh_2, d1, d2, sig,
                                                             ls, r0, r_cut, cutoff_func)
@@ -1192,7 +1192,7 @@ def three_body_en_jit(bond_array_1, bond_array_2,
 #                           many body numba functions
 # -----------------------------------------------------------------------------
 
-@njit
+
 def many_body_jit(bond_array_1, bond_array_2,
                   neighbouring_dists_array_1, neighbouring_dists_array_2,
                   num_neighbours_1, num_neighbours_2,
@@ -1270,7 +1270,6 @@ def many_body_jit(bond_array_1, bond_array_2,
     return kern
 
 
-@njit
 def many_body_grad_jit(bond_array_1, bond_array_2,
                        neighbouring_dists_array_1, neighbouring_dists_array_2,
                        num_neighbours_1, num_neighbours_2,
@@ -1291,14 +1290,18 @@ def many_body_grad_jit(bond_array_1, bond_array_2,
 
     qis = np.zeros(bond_array_1.shape[0])
     qips = np.zeros(bond_array_1.shape[0])
+
     qi1_grads = np.zeros(bond_array_1.shape[0])
     qi1_grads_dr0 = np.zeros(bond_array_1.shape[0])
+
     ki2s = np.zeros(bond_array_1.shape[0])
 
     qjs = np.zeros(bond_array_2.shape[0])
     qjps = np.zeros(bond_array_2.shape[0])
+
     qj2_grads = np.zeros(bond_array_2.shape[0])
     qj2_grads_dr0 = np.zeros(bond_array_2.shape[0])
+
     k1js = np.zeros(bond_array_2.shape[0])
 
     # Compute  ki2s, qi1_grads, and qis
@@ -1307,10 +1310,13 @@ def many_body_grad_jit(bond_array_1, bond_array_2,
         ci1 = bond_array_1[i, d1]
         qi1, qi1_grads[i] = q_pairwise(ri1, r0, ci1, r_cut, cutoff_func)
 
-        qips[i], qi1_grads_dr0[i] = q_pairwise_der_r0(ri1, r0, ci1, r_cut, cutoff_func)
+        qi1p, qi1_grads_dr0[i] = q_pairwise_der_r0(ri1, r0, ci1, r_cut, cutoff_func)
 
         # Calculate many-body descriptor value for i
         qis[i] = q_value(neighbouring_dists_array_1[i, :num_neighbours_1[i]], r0, r_cut,
+                         cutoff_func)
+
+        qips[i] = q_value_dr0(neighbouring_dists_array_1[i, :num_neighbours_1[i]], r0, r_cut,
                          cutoff_func)
 
         ki2s[i] = k_sq_exp_double_dev(qis[i], q2, sig, ls)
@@ -1321,10 +1327,13 @@ def many_body_grad_jit(bond_array_1, bond_array_2,
         cj2 = bond_array_2[j, d2]
         qj2, qj2_grads[j] = q_pairwise(rj2, r0, cj2, r_cut, cutoff_func)
 
-        qjps[j], qj2_grads_dr0[j] = q_pairwise_der_r0(rj2, r0, cj2, r_cut, cutoff_func)
+        qj2p, qj2_grads_dr0[j] = q_pairwise_der_r0(rj2, r0, cj2, r_cut, cutoff_func)
 
         # Calculate many-body descriptor value for j
         qjs[j] = q_value(neighbouring_dists_array_2[j, :num_neighbours_2[j]], r0, r_cut,
+                         cutoff_func)
+
+        qjps[j] = q_value_dr0(neighbouring_dists_array_2[j, :num_neighbours_2[j]], r0, r_cut,
                          cutoff_func)
 
         k1js[j] = k_sq_exp_double_dev(q1, qjs[j], sig, ls)
@@ -1332,15 +1341,17 @@ def many_body_grad_jit(bond_array_1, bond_array_2,
     for i in range(bond_array_1.shape[0]):
         for j in range(bond_array_2.shape[0]):
             kij = k_sq_exp_double_dev(qis[i], qjs[j], sig, ls)
+
             kern_term = qi1_grads[i] * qj2_grads[j] * (k12 + ki2s[i] + k1js[j] + kij)
 
             sig_term = 2. / sig * kern_term
 
             ls_term = qi1_grads[i] * qj2_grads[j] * mb_grad_helper_ls(q1, q2, qis[i], qjs[j], sig,
                                                                       ls)
-            r0_term = mb_grad_helper_r0(qi1_grads[i] * qj2_grads[j],
-                                        qi1_grads_dr0[i] * qj2_grads_dr0[j], k12, ki2s[i], k1js[j],
-                                        kij, q1, q2, qis[i], qjs[j], q1p, q2p, qips[i], qjps[j], ls)
+            r0_term = mb_grad_helper_r0(qi1_grads[i], qj2_grads[j],
+                                        qi1_grads_dr0[i], qj2_grads_dr0[j], k12, ki2s[i], k1js[j],
+                                        kij, q1, q2, qis[i], qjs[j], q1p, q2p, qips[i], qjps[j], ls,
+                                        sig)
 
             kern += kern_term
 
@@ -1349,6 +1360,8 @@ def many_body_grad_jit(bond_array_1, bond_array_2,
             ls_derv += ls_term
 
             r0_derv += r0_term
+
+    # sig_derv = 2./sig * kern
 
     return kern, sig_derv, ls_derv, r0_derv
 
@@ -1652,7 +1665,6 @@ def triplet_force_en_kernel(ci1, ci2, ri1, ri2, ri3, rj1, rj2, rj3,
 # -----------------------------------------------------------------------------
 
 
-@njit
 def k_sq_exp_double_dev(q1, q2, sig, ls):
     """Gradient of generic squared exponential kernel on two many body functions
 
@@ -1676,7 +1688,6 @@ def k_sq_exp_double_dev(q1, q2, sig, ls):
     return ret
 
 
-@njit
 def q_pairwise(rij, r0, cij, r_cut, cutoff_func):
     """Pairwise contribution to many-body descriptor based on electron density
     and its gradient w.r.t. ri
@@ -1703,7 +1714,6 @@ def q_pairwise(rij, r0, cij, r_cut, cutoff_func):
     return q, grad
 
 
-@njit
 def q_pairwise_der_r0(rij, r0, cij, r_cut, cutoff_func):
     """Derivative of pairwise mb descriptor wrt r0 hyperparameter
 
@@ -1713,13 +1723,13 @@ def q_pairwise_der_r0(rij, r0, cij, r_cut, cutoff_func):
     fij, fdij = cutoff_func(r_cut, rij, cij)
 
     q0 = exp(- (rij / r0 - 1.))
-    grad = q0 * (fij * cij / r0 + fdij)
 
     q = fij * q0
 
+    # correct
     q_der = q * rij / (r0 * r0)
 
-    # TODO: check this last expression
+    # also correct
     grad_der = q0 / (r0 * r0) * (fdij * rij + fij * cij * rij / r0 - fij * cij)
 
     return q_der, grad_der
@@ -1748,9 +1758,8 @@ def q_value(distances, r0, r_cut, cutoff_func, q_func=q_pairwise):
     return q
 
 
-@njit
 def q_value_dr0(distances, r0, r_cut, cutoff_func, q_func_dr0=q_pairwise_der_r0):
-    """
+    """Derivative of the descriptor wrt r0
 
     """
 
@@ -1763,45 +1772,70 @@ def q_value_dr0(distances, r0, r_cut, cutoff_func, q_func_dr0=q_pairwise_der_r0)
     return q
 
 
-@njit
-def mb_grad_helper_ls(q1, q2, qi, qj, sig, ls):
-    prefact = sig * sig / (ls * ls * ls)
+def mb_grad_helper_ls_(qdiffsq, sig, ls):
+    """Derivative of a many body force-force kernel wrt ls
+
+    """
 
     ls2 = ls * ls
-    q12diffsq = ((q1 - q2) * (q1 - q2)) / (2 * ls2)
-    qijdiffsq = ((qi - qj) * (qi - qj)) / (2 * ls2)
-    qi2diffsq = ((qi - q2) * (qi - q2)) / (2 * ls2)
-    q1jdiffsq = ((q1 - qj) * (q1 - qj)) / (2 * ls2)
 
-    exp12 = np.exp(-q12diffsq)
-    expij = np.exp(-qijdiffsq)
-    expi2 = np.exp(-qi2diffsq)
-    exp1j = np.exp(-q1jdiffsq)
+    prefact = exp(-(qdiffsq / (2 * ls2))) * (sig * sig) / ls ** 5
 
-    dk12 = exp12 * (2 * (q12diffsq - 1) + 4 * (q12diffsq * q12diffsq - 1))
-    dkij = expij * (2 * (qijdiffsq - 1) + 4 * (qijdiffsq * qijdiffsq - 1))
-    dki2 = expi2 * (2 * (qi2diffsq - 1) + 4 * (qi2diffsq * qi2diffsq - 1))
-    dk1j = exp1j * (2 * (q1jdiffsq - 1) + 4 * (q1jdiffsq * q1jdiffsq - 1))
+    ret = - prefact * (qdiffsq ** 2 / ls2 - 5 * qdiffsq + 2 * ls2)
 
-    return prefact * (dk12 + dkij + dki2 + dki2 + dk1j)
+    return ret
+
+
+def mb_grad_helper_ls(q1, q2, qi, qj, sig, ls):
+    """Helper function fr many body gradient collecting all the derivatives
+    of the force-foce many body kernel wrt ls
+
+    """
+
+    q12diffsq = ((q1 - q2) * (q1 - q2))
+    qijdiffsq = ((qi - qj) * (qi - qj))
+    qi2diffsq = ((qi - q2) * (qi - q2))
+    q1jdiffsq = ((q1 - qj) * (q1 - qj))
+
+    dk12 = mb_grad_helper_ls_(q12diffsq, sig, ls)
+    dkij = mb_grad_helper_ls_(qijdiffsq, sig, ls)
+    dki2 = mb_grad_helper_ls_(qi2diffsq, sig, ls)
+    dk1j = mb_grad_helper_ls_(q1jdiffsq, sig, ls)
+
+    return dk12 + dkij + dki2 + dk1j
 
 
 def mb_grad_helper_r0(Di1, Dj2, Di1p, Dj2p, k12, ki2, k1j, kij, q1, q2, qi, qj, q1p, q2p, qip, qjp,
-                      ls):
-    ls2 = ls * ls
+                      ls, sig):
+    """Helper function fr many body gradient collecting all the derivatives
+    of the force-foce many body kernel wrt a descriptor hyperparameter r0
 
-    k12p = k12 * (qi - qj) * (qip - qjp) / ls2
-    ki2p = ki2 * (q1 - q2) * (q1p - q2p) / ls2
-    k1jp = k1j * (q1 - qj) * (q1p - qjp) / ls2
-    kijp = kij * (qi - qj) * (qip - qjp) / ls2
+    """
 
-    D_term = Di1p * Dj2 + Di1 * Dj2p
+    k12p = mb_grad_helper_dkdr0(q1, q2, q1p, q2p, sig, ls)
+    ki2p = mb_grad_helper_dkdr0(qi, q2, qip, q2p, sig, ls)
+    k1jp = mb_grad_helper_dkdr0(q1, qj, q1p, qjp, sig, ls)
+    kijp = mb_grad_helper_dkdr0(qi, qj, qip, qjp, sig, ls)
 
-    k_term = k12p + ki2p + k1jp + kijp
+    k_term = k12 + ki2 + k1j + kij
+    kp_term = k12p + ki2p + k1jp + kijp
 
-    res = D_term * (k12 + ki2 + k1j + kij) + Di1 * Dj2 * k_term
+    res = Di1p * Dj2 * k_term + Di1 * Dj2p * k_term + Di1 * Dj2 * kp_term
 
     return res
+
+
+def mb_grad_helper_dkdr0(q1, q2, q1p, q2p, sig, ls):
+    """Derivative of the force-force many body kernel wrt r0
+
+    """
+
+    prefact = exp(- (q1 - q2) ** 2 / (2. * ls ** 2))
+
+    fact = (sig ** 2 * (q1 - q2) * (-3 * ls ** 2 + q1 ** 2 - 2 * q1 * q2 + q2 ** 2) * (
+                q1p - q2p)) / ls ** 6
+
+    return prefact * fact
 
 
 _str_to_kernel = {'two_body': two_body,

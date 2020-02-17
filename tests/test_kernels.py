@@ -583,6 +583,7 @@ def test_many_body_force():
     """Check that the analytical force kernel matches finite difference of
     energy kernel."""
 
+    # TODO: why env1_1_1, env1_1_2 and env1_1_3 (and other variables) are never used?
     # create env 1
     delt = 1e-5
     cell = 10.0 * np.eye(3)
@@ -741,3 +742,66 @@ def test_many_body_force():
     tol = 1e-4
 
     assert (np.isclose(kern_finite_diff, kern_analytical, atol=tol))
+
+
+def test_many_body_grad():
+    # create env 1
+    cell = np.eye(3)
+    cutoffs = np.array([1, 1])
+
+    positions_1 = [np.array([0., 0., 0.]),
+                   np.array([random(), random(), random()]),
+                   np.array([random(), random(), random()])]
+
+    species_1 = [1, 1, 1]
+    atom_1 = 0
+    test_structure_1 = struc.Structure(cell, species_1, positions_1)
+    env1 = env.AtomicEnvironment(test_structure_1, atom_1, cutoffs)
+
+    # create env 2
+    positions_1 = [np.array([0., 0., 0.]),
+                   np.array([random(), random(), random()]),
+                   np.array([random(), random(), random()])]
+
+    species_2 = [1, 1, 1]
+    atom_2 = 0
+    test_structure_1 = struc.Structure(cell, species_2, positions_1)
+    env2 = env.AtomicEnvironment(test_structure_1, atom_2, cutoffs)
+
+    sig = random()
+    ls = random()
+    r0 = random()
+    d1 = randint(1, 3)
+    d2 = randint(1, 3)
+
+    hyps = np.array([sig, ls, r0])
+
+    grad_test = en.many_body_grad(env1, env2, d1, d2, hyps, cutoffs)
+
+    delta = 1e-8
+    new_sig = sig + delta
+    new_ls = ls + delta
+    new_r0 = r0 + delta
+
+    sig_derv_brute = (en.many_body(env1, env2, d1, d2,
+                                    np.array([new_sig, ls, r0]),
+                                    cutoffs) -
+                      en.many_body(env1, env2, d1, d2,
+                                    hyps, cutoffs)) / delta
+
+    l_derv_brute = (en.many_body(env1, env2, d1, d2,
+                                  np.array([sig, new_ls, r0]),
+                                  cutoffs) -
+                    en.many_body(env1, env2, d1, d2,
+                                  hyps, cutoffs)) / delta
+
+    r0_derv_brute = (en.many_body(env1, env2, d1, d2,
+                                  np.array([sig, ls, new_r0]),
+                                  cutoffs) -
+                    en.many_body(env1, env2, d1, d2,
+                                  hyps, cutoffs)) / delta
+
+    tol = 1e-4
+    assert (np.isclose(grad_test[1][0], sig_derv_brute, atol=tol))
+    assert (np.isclose(grad_test[1][1], l_derv_brute, atol=tol))
+    assert (np.isclose(grad_test[1][2], r0_derv_brute, atol=tol))

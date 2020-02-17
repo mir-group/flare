@@ -33,3 +33,4 @@ test_files/qe_output_*.out
 /tests/*-bak
 /tests/cp2k.in*
 /tests/*.in_run
+.idea/
