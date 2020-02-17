@@ -113,7 +113,7 @@ def run_dft_par(dft_input: str, structure: Structure,
             "environment as VASP_COMMAND. ")
 
     if ncpus > 1:
-        if parallel_prefix == "mpi":
+        if parallel_prefix == "mpi" and mpi:
             dft_command = f'mpirun -np {ncpus} {dft_command}'
     else:
         serial_prefix = dft_kwargs.get('serial_prefix', '')
