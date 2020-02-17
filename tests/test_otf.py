@@ -131,7 +131,7 @@ def test_otf_par(software, per_atom_par, n_cpus):
 
     casename=name_list[example]
 
-    gp = get_gp(par=True, n_cpus=n_cpus, per_atom_par=per_atom_par)
+    gp = get_gp(parallel=True, n_cpus=n_cpus, per_atom_par=per_atom_par)
 
     otf = OTF(dft_input, dt, number_of_steps, gp, dft_loc,
               std_tolerance_factor, init_atoms=[0],

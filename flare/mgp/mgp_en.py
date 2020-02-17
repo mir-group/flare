@@ -350,6 +350,11 @@ class MappedGaussianProcess:
         return f, vir, v, e
 
     def write_two_body(self, f):
+        """
+        Write two-body components to a file handle f.
+        :param f:
+        :return:
+        """
         a = self.bounds_2[0][0]
         b = self.bounds_2[1][0]
         order = self.grid_num_2
@@ -399,7 +404,6 @@ class MappedGaussianProcess:
 
             f.write('\n')
 
-
     def write_lmp_file(self, lammps_name):
         '''
         write the coefficients to a file that can be used by lammps pair style
@@ -434,6 +438,11 @@ class MappedGaussianProcess:
         :return:
         """
         raise NotImplementedError
+
+    def load_model(self,elements):
+        raise NotImplementedError
+
+
 class Map2body:
     def __init__(self, grid_num, bounds, bond_struc,
                  svd_rank=0, mean_only=False, n_cpus=None, nsample=100):

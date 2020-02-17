@@ -7,12 +7,14 @@ from flare.ase.otf_md import otf_md
 from flare.ase.logger import OTFLogger
 
 from ase import units
-from ase.md.velocitydistribution import (MaxwellBoltzmannDistribution,
-                                         Stationary, ZeroRotation)
+from ase.md.velocitydistribution import MaxwellBoltzmannDistribution,\
+                                         Stationary, ZeroRotation
 
 
 def otf_md_test(md_engine):
-    import atom_setup, flare_setup, qe_setup
+    import atom_setup as atom_setup
+    import flare_setup as flare_setup
+    import qe_setup as qe_setup
     np.random.seed(12345)
 
     print(md_engine)
@@ -29,7 +31,8 @@ def otf_md_test(md_engine):
 
     # ----------- create otf object -----------
     # set up OTF MD engine
-    md_params = {'timestep': 1 * units.fs, 'trajectory': None, 'dt': None,
+    md_params = {'timestep': 1 * units.fs, 'trajectory': None, 'dt': 1*
+                                                                     units.fs,
                  'externalstress': 0, 'ttime': 25, 'pfactor': 3375,
                  'mask': None, 'temperature': 500, 'taut': 1, 'taup': 1,
                  'pressure': 0, 'compressibility': 0, 'fixcm': 1,
@@ -48,7 +51,6 @@ def otf_md_test(md_engine):
     ZeroRotation(super_cell)  # zero angular momentum
 
     test_otf = otf_md(md_engine, super_cell, md_params, otf_params)
-
     # set up logger
     test_otf.attach(OTFLogger(test_otf, super_cell,
         logfile=md_engine+'.log', mode="w", data_in_logfile=True),

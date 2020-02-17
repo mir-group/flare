@@ -87,7 +87,7 @@ class GaussianProcess:
             self.n_sample =kwargs.get('nsample')
         if 'par' in kwargs.keys():
             DeprecationWarning("par is being replaced with parallel")
-            self.parallel =kwargs.get('par')
+            self.parallel = kwargs.get('par')
 
         # TO DO, clean up all the other kernel arguments
         if kernel is None:
@@ -684,3 +684,11 @@ multihyps,
         else:
             raise ValueError("Warning: Format unspecified or file is not "
                              ".json or .pickle format.")
+
+    @property
+    def par(self):
+        """
+        Backwards compability attribute
+        :return:
+        """
+        return self.parallel
