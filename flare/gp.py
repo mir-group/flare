@@ -19,8 +19,7 @@ from flare.gp_algebra import get_neg_likelihood, \
         get_kernel_vector, en_kern_vec, \
         get_ky_mat, get_ky_mat_update
 
-from flare.kernels.utils import str_to_kernel_set as stk
-from flare.kernels.sephyps_helper import from_mask_to_args
+from flare.kernels.utils import str_to_kernel_set, from_mask_to_args
 from flare.util import NumpyEncoder
 from flare.output import Output
 import flare.cutoffs as cf
@@ -79,7 +78,7 @@ class GaussianProcess:
         # TO DO, clean up all the other kernel arguments
         if kernel is None:
             self.kernel_name = kernel_name
-            kernel, grad, ek, efk = stk(kernel_name, multihyps)
+            kernel, grad, ek, efk = str_to_kernel_set(kernel_name, multihyps)
             self.kernel = kernel
             self.kernel_grad = grad
             self.energy_force_kernel = efk

@@ -4,7 +4,7 @@ import numpy as np
 import multiprocessing as mp
 
 from typing import List, Callable
-from flare.kernels.sephyps_helper import from_mask_to_args, from_grad_to_mask
+from flare.kernels.utils import from_mask_to_args, from_grad_to_mask
 
 _global_training_data = {}
 _global_training_labels = {}
