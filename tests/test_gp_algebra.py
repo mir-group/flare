@@ -135,7 +135,7 @@ def test_ky_mat(params):
     time0 = time.time()
     ky_mat = get_ky_mat(hyps, name,
                      kernel[0], cutoffs,
-                     n_cpus=2, nsample=20)
+                     n_cpus=2, n_sample=20)
     print("compute ky_mat parallel", time.time()-time0)
 
     diff = (np.max(np.abs(ky_mat-ky_mat0)))
@@ -146,7 +146,7 @@ def test_ky_mat(params):
     #     timer0 = time.time()
     #     ky_mat = get_ky_mat(hyps, name,
     #                      kernel[0], cutoffs,
-    #                      ncpus=8, nsample=n)
+    #                      ncpus=8, n_sample=n)
     #     diff = (np.max(np.abs(ky_mat-ky_mat0)))
     #     print("parallel", n, time.time()-timer0, diff)
     #     assert (diff==0), "parallel implementation is wrong"
@@ -176,7 +176,7 @@ def test_ky_mat(params):
         time0 = time.time()
         ky_mat = get_ky_mat(hyps, name,
                          ker,
-                         cutoffs, hyps_mask, n_cpus=2, nsample=20)
+                         cutoffs, hyps_mask, n_cpus=2, n_sample=20)
         print(f"compute ky_mat with multihyps, test {i}, n_cpus=2", time.time()-time0)
         diff = (np.max(np.abs(ky_mat-ky_mat0)))
         assert (diff==0), "multi hyps  parallel "\
@@ -216,7 +216,7 @@ def test_ky_mat_update(params):
     # parallel version
     ky_mat = func[1](ky_mat_old, hyps, name,
                      kernel[0], cutoffs,
-                     n_cpus=2, nsample=20)
+                     n_cpus=2, n_sample=20)
     diff = (np.max(np.abs(ky_mat-ky_mat0)))
     assert (diff==0), "parallel implementation is wrong"
 
@@ -240,7 +240,7 @@ def test_ky_mat_update(params):
         # parallel implementation
         ky_mat = func[1](ky_mat_old, hyps, name,
                          ker, cutoffs,
-                         hyps_mask, n_cpus=2, nsample=20)
+                         hyps_mask, n_cpus=2, n_sample=20)
         diff = (np.max(np.abs(ky_mat-ky_mat0)))
         assert (diff<1e-12), "multi hyps parameter parallel "\
                 "implementation is wrong"
@@ -262,7 +262,7 @@ def test_get_kernel_vector(params):
     vec_par = get_kernel_vector(name, kernel_m[0],
                           test_point, 1, hyps,
                           cutoffs, hyps_mask_list[0],
-                          n_cpus=2, nsample=100)
+                          n_cpus=2, n_sample=100)
 
     assert (all(np.equal(vec, vec_par))), "parallel implementation is wrong"
     assert (vec.shape[0] == size*3), \
@@ -317,7 +317,7 @@ def test_ky_and_hyp(params):
         # parallel implementation
         hypmat_par, ky_mat_par = get_ky_and_hyp(hyps, name,
                          ker, cutoffs, hyps_mask,
-                         n_cpus=2, nsample=2)
+                         n_cpus=2, n_sample=2)
 
         # compare to serial implementation
         diff = (np.max(np.abs(ky_mat-ky_mat_par)))

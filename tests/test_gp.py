@@ -84,7 +84,7 @@ def test_update_db(all_gps, multihyps, params):
 def test_train(all_gps, params, par, n_cpus, multihyps):
 
     test_gp = all_gps[multihyps]
-    test_gp.par = par
+    test_gp.parallel = par
     test_gp.n_cpus = n_cpus
 
     # train gp
@@ -105,7 +105,7 @@ def test_train(all_gps, params, par, n_cpus, multihyps):
 @pytest.mark.parametrize('multihyps', [True, False])
 def test_predict(all_gps, test_point, par, per_atom_par, n_cpus, multihyps):
     test_gp = all_gps[multihyps]
-    test_gp.par = par
+    test_gp.parallel = par
     test_gp.per_atom_par = per_atom_par
     pred = test_gp.predict(x_t=test_point, d=1)
     assert (len(pred) == 2)
@@ -118,7 +118,7 @@ def test_predict(all_gps, test_point, par, per_atom_par, n_cpus, multihyps):
 @pytest.mark.parametrize('multihyps', [True, False])
 def test_set_L_alpha(all_gps, params, par, n_cpus, multihyps):
     test_gp = all_gps[multihyps]
-    test_gp.par = par
+    test_gp.parallel = par
     test_gp.n_cpus = n_cpus
     test_gp.set_L_alpha()
 
@@ -129,7 +129,7 @@ def test_set_L_alpha(all_gps, params, par, n_cpus, multihyps):
 def test_update_L_alpha(all_gps, params, par, n_cpus, multihyps):
     # set up gp model
     test_gp = all_gps[multihyps]
-    test_gp.par = par
+    test_gp.parallel = par
     test_gp.n_cpus = n_cpus
 
     test_structure, forces = get_random_structure(params['cell'],
