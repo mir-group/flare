@@ -158,6 +158,7 @@ def test_serialization_method(two_body_gp, test_point):
     :param two_body_gp:
     :return:
     """
+    two_body_gp.check_L_alpha()
     old_gp_dict = two_body_gp.as_dict()
     new_gp = GaussianProcess.from_dict(old_gp_dict)
     new_gp_dict = new_gp.as_dict()

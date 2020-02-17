@@ -31,7 +31,13 @@ def params():
 
 
 def get_random_training_set(nenv):
-    """Create a random training_set array with parameters """
+    """Create a random training_set array with parameters
+    And generate four different kinds of hyperparameter sets:
+    * multi hypper parameters with two bond type and two triplet type
+    * constrained optimization, with noise parameter optimized
+    * constrained optimization, without noise parameter optimized
+    * simple hyper parameters without multihyps set up
+    """
 
     np.random.seed(0)
 
@@ -123,6 +129,7 @@ def test_ky_mat(params):
     func = [get_ky_mat, get_ky_mat_par]
 
     # get the reference
+    # without multi hyps
     time0 = time.time()
     ky_mat0 = func[0](hyps, name, kernel[0], cutoffs)
     print("compute ky_mat serial", time.time()-time0)
@@ -148,7 +155,7 @@ def test_ky_mat(params):
     #     assert (diff==0), "parallel implementation is wrong"
 
     # check multi hyps implementation
-
+    # compute the ky_mat with different parameters
     for i in range(len(hyps_list)):
 
         hyps = hyps_list[i]
@@ -160,16 +167,20 @@ def test_ky_mat(params):
             ker = kernel_m[0]
 
         # serial implementation
+        time0 = time.time()
         ky_mat = func[0](hyps, name,
                           ker, cutoffs, hyps_mask)
+        print(f"compute ky_mat with multihyps, test {i}, n_cpus=1", time.time()-time0)
         diff = (np.max(np.abs(ky_mat-ky_mat0)))
         assert (diff==0), "multi hyps implementation is wrong"\
                           f"with case {i}"
 
         # parallel implementation
+        time0 = time.time()
         ky_mat = func[1](hyps, name,
                          ker,
                          cutoffs, hyps_mask, n_cpus=2, nsample=20)
+        print(f"compute ky_mat with multihyps, test {i}, n_cpus=2", time.time()-time0)
         diff = (np.max(np.abs(ky_mat-ky_mat0)))
         assert (diff==0), "multi hyps  parallel "\
                           "implementation is wrong"\
