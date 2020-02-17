@@ -29,7 +29,7 @@ def all_gp():
     for bodies in [2, 3]:
         for multihyps in [False, True]:
             gp_model = get_gp(bodies, 'mc', multihyps)
-            gp_model.par = True
+            gp_model.parallel = True
             gp_model.n_cpus = 2
             gp_model.set_L_alpha()
             allgp_dict[f'{bodies}{multihyps}'] = gp_model
