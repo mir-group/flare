@@ -102,6 +102,8 @@ def from_mask_to_args(hyps, hyps_mask: dict, cutoffs):
     # setting for mc_sephyps
     n2b = hyps_mask.get('nbond', 0)
     n3b = hyps_mask.get('ntriplet', 0)
+    triplet_mask = hyps_mask.get('triplet_mask', None)
+    bond_mask = hyps_mask.get('bond_mask', None)
     sig2 = None
     ls2 = None
     sig3 = None
@@ -125,8 +127,10 @@ def from_mask_to_args(hyps, hyps_mask: dict, cutoffs):
         raise NameError("Hyperparameter mask missing nbond and/or"
                         "ntriplet key")
 
+
+
     return (np.array(cutoffs), hyps_mask['nspec'], np.array(hyps_mask['spec_mask']),
-            n2b, np.array(hyps_mask['bond_mask']), n3b, np.array(hyps_mask['triplet_mask']),
+            n2b, np.array(bond_mask), n3b, np.array(triplet_mask),
             np.array(sig2), np.array(ls2), np.array(sig3), np.array(ls3))
 
 
