@@ -14,10 +14,8 @@ from flare.kernels.mc_sephyps import two_plus_three_body_mc_grad \
         as two_plus_three_body_mc_grad_multi
 
 from flare.gp_algebra import get_like_grad_from_mats, \
-        get_kernel_vector, get_kernel_vector_par,\
-        get_ky_mat, get_ky_mat_par, \
-        get_ky_mat_update, get_ky_mat_update_par,\
-        get_ky_and_hyp, get_ky_and_hyp_par
+        get_kernel_vector, get_ky_mat, \
+        get_ky_mat_update, get_ky_and_hyp
 
 from .fake_gp import get_tstp
 
@@ -126,17 +124,16 @@ def test_ky_mat(params):
     hyps, name, kernel, cutoffs, \
             kernel_m, hyps_list, hyps_mask_list = params
 
-    func = [get_ky_mat, get_ky_mat_par]
 
     # get the reference
     # without multi hyps
     time0 = time.time()
-    ky_mat0 = func[0](hyps, name, kernel[0], cutoffs)
+    ky_mat0 = get_ky_mat(hyps, name, kernel[0], cutoffs)
     print("compute ky_mat serial", time.time()-time0)
 
     # parallel version
     time0 = time.time()
-    ky_mat = func[1](hyps, name,
+    ky_mat = get_ky_mat(hyps, name,
                      kernel[0], cutoffs,
                      n_cpus=2, nsample=20)
     print("compute ky_mat parallel", time.time()-time0)
@@ -147,7 +144,7 @@ def test_ky_mat(params):
     # this part of the code can be use for timing the parallel performance
     # for n in [10, 50, 100]:
     #     timer0 = time.time()
-    #     ky_mat = func[1](hyps, name,
+    #     ky_mat = get_ky_mat(hyps, name,
     #                      kernel[0], cutoffs,
     #                      ncpus=8, nsample=n)
     #     diff = (np.max(np.abs(ky_mat-ky_mat0)))
@@ -168,7 +165,7 @@ def test_ky_mat(params):
 
         # serial implementation
         time0 = time.time()
-        ky_mat = func[0](hyps, name,
+        ky_mat = get_ky_mat(hyps, name,
                           ker, cutoffs, hyps_mask)
         print(f"compute ky_mat with multihyps, test {i}, n_cpus=1", time.time()-time0)
         diff = (np.max(np.abs(ky_mat-ky_mat0)))
@@ -177,7 +174,7 @@ def test_ky_mat(params):
 
         # parallel implementation
         time0 = time.time()
-        ky_mat = func[1](hyps, name,
+        ky_mat = get_ky_mat(hyps, name,
                          ker,
                          cutoffs, hyps_mask, n_cpus=2, nsample=20)
         print(f"compute ky_mat with multihyps, test {i}, n_cpus=2", time.time()-time0)
@@ -202,8 +199,7 @@ def test_ky_mat_update(params):
     flare.gp_algebra._global_training_labels['old'] = training_labels[:n]
 
     func = [get_ky_mat,
-            get_ky_mat_update,
-            get_ky_mat_update_par]
+            get_ky_mat_update]
 
     # get the reference
     ky_mat0 = func[0](hyps, name,
@@ -218,7 +214,7 @@ def test_ky_mat_update(params):
     assert (diff==0), "update function is wrong"
 
     # parallel version
-    ky_mat = func[2](ky_mat_old, hyps, name,
+    ky_mat = func[1](ky_mat_old, hyps, name,
                      kernel[0], cutoffs,
                      n_cpus=2, nsample=20)
     diff = (np.max(np.abs(ky_mat-ky_mat0)))
@@ -242,7 +238,7 @@ def test_ky_mat_update(params):
         assert (diff<1e-12), "multi hyps parameter implementation is wrong"
 
         # parallel implementation
-        ky_mat = func[2](ky_mat_old, hyps, name,
+        ky_mat = func[1](ky_mat_old, hyps, name,
                          ker, cutoffs,
                          hyps_mask, n_cpus=2, nsample=20)
         diff = (np.max(np.abs(ky_mat-ky_mat0)))
@@ -263,7 +259,7 @@ def test_get_kernel_vector(params):
                           test_point, 1, hyps,
                           cutoffs, hyps_mask_list[0])
 
-    vec_par = get_kernel_vector_par(name, kernel_m[0],
+    vec_par = get_kernel_vector(name, kernel_m[0],
                           test_point, 1, hyps,
                           cutoffs, hyps_mask_list[0],
                           n_cpus=2, nsample=100)
@@ -277,14 +273,11 @@ def test_ky_and_hyp(params):
     hyps, name, kernel, cutoffs, \
             kernel_m, hyps_list, hyps_mask_list = params
 
-    func = [get_ky_and_hyp,
-            get_ky_and_hyp_par]
-
-    hypmat_0, ky_mat0 = func[0](hyps, name,
+    hypmat_0, ky_mat0 = get_ky_and_hyp(hyps, name,
                        kernel[1], cutoffs)
 
     # parallel version
-    hypmat, ky_mat = func[1](hyps, name,
+    hypmat, ky_mat = get_ky_and_hyp(hyps, name,
                      kernel[1], cutoffs, n_cpus=2)
     diff = (np.max(np.abs(ky_mat-ky_mat0)))
     assert (diff==0), "parallel implementation is wrong"
@@ -300,8 +293,9 @@ def test_ky_and_hyp(params):
             ker = kernel_m[1]
 
         # serial implementation
-        hypmat, ky_mat = func[0](hyps, name,
-                          ker, cutoffs, hyps_mask)
+        hypmat, ky_mat = get_ky_and_hyp(
+                hyps, name, ker, cutoffs, hyps_mask)
+
         if (i == 0):
             hypmat9 = hypmat
         diff = (np.max(np.abs(ky_mat-ky_mat0)))
@@ -321,7 +315,7 @@ def test_ky_and_hyp(params):
                           f"in case {i}"
 
         # parallel implementation
-        hypmat_par, ky_mat_par = func[1](hyps, name,
+        hypmat_par, ky_mat_par = get_ky_and_hyp(hyps, name,
                          ker, cutoffs, hyps_mask,
                          n_cpus=2, nsample=2)
 

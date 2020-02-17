@@ -16,8 +16,8 @@ from flare.env import AtomicEnvironment
 from flare.struc import Structure
 from flare.gp_algebra import get_neg_likelihood, \
         get_like_from_mats, get_neg_like_grad, \
-        get_kernel_vector_par, en_kern_vec_par, \
-        get_ky_mat_par, get_ky_mat_update_par
+        get_kernel_vector, en_kern_vec, \
+        get_ky_mat, get_ky_mat_update
 from flare.kernels.utils import str_to_kernel_set as stk
 from flare.util import NumpyEncoder
 from flare.output import Output
@@ -330,17 +330,18 @@ class GaussianProcess:
         else:
             n_cpus = 1
 
-        k_v = get_kernel_vector_par(self.name, self.kernel,
-                                    x_t, d,
-                                    self.hyps,
-                                    cutoffs=self.cutoffs,
-                                    hyps_mask=self.hyps_mask,
-                                    n_cpus=n_cpus,
-                                    nsample=self.nsample)
+        k_v = get_kernel_vector(self.name, self.kernel,
+                                x_t, d,
+                                self.hyps,
+                                cutoffs=self.cutoffs,
+                                hyps_mask=self.hyps_mask,
+                                n_cpus=n_cpus,
+                                nsample=self.nsample)
 
         # Guarantee that alpha is up to date with training set
-        assert ((self.alpha is not None) and
-                (3 * len(self.training_data) == len(self.alpha)))
+        if  self.alpha is None or\
+                (3 * len(self.training_data) != len(self.alpha)):
+            self.update_L_alpha()
 
         # get predictive mean
         pred_mean = np.matmul(k_v, self.alpha)
@@ -374,13 +375,13 @@ class GaussianProcess:
         else:
             n_cpus = 1
 
-        k_v = en_kern_vec_par(self.name,
-                              self.energy_force_kernel,
-                              x_t, self.hyps,
-                              cutoffs=self.cutoffs,
-                              hyps_mask=self.hyps_mask,
-                              n_cpus=n_cpus,
-                              nsample=self.nsample)
+        k_v = en_kern_vec(self.name,
+                          self.energy_force_kernel,
+                          x_t, self.hyps,
+                          cutoffs=self.cutoffs,
+                          hyps_mask=self.hyps_mask,
+                          n_cpus=n_cpus,
+                          nsample=self.nsample)
 
         pred_mean = np.matmul(k_v, self.alpha)
 
@@ -403,13 +404,13 @@ class GaussianProcess:
             n_cpus = 1
 
         # get kernel vector
-        k_v = en_kern_vec_par(self.name,
-                              self.energy_force_kernel,
-                              x_t, self.hyps,
-                              cutoffs=self.cutoffs,
-                              hyps_mask=self.hyps_mask,
-                              n_cpus=n_cpus,
-                              nsample=self.nsample)
+        k_v = en_kern_vec(self.name,
+                          self.energy_force_kernel,
+                          x_t, self.hyps,
+                          cutoffs=self.cutoffs,
+                          hyps_mask=self.hyps_mask,
+                          n_cpus=n_cpus,
+                          nsample=self.nsample)
 
         # get predictive mean
         pred_mean = np.matmul(k_v, self.alpha)
@@ -435,13 +436,13 @@ class GaussianProcess:
         The forces and variances are later obtained using alpha.
         """
 
-        ky_mat = get_ky_mat_par(self.hyps,
-                                self.name,
-                                self.kernel,
-                                cutoffs=self.cutoffs,
-                                hyps_mask=self.hyps_mask,
-                                n_cpus=self.n_cpus,
-                                nsample=self.nsample)
+        ky_mat = get_ky_mat(self.hyps,
+                            self.name,
+                            self.kernel,
+                            cutoffs=self.cutoffs,
+                            hyps_mask=self.hyps_mask,
+                            n_cpus=self.n_cpus,
+                            nsample=self.nsample)
 
         l_mat = np.linalg.cholesky(ky_mat)
         l_mat_inv = np.linalg.inv(l_mat)
@@ -467,13 +468,13 @@ class GaussianProcess:
             self.set_L_alpha()
             return
 
-        ky_mat = get_ky_mat_update_par(self.ky_mat, self.hyps,
-                                       self.name,
-                                       self.kernel,
-                                       cutoffs=self.cutoffs,
-                                       hyps_mask=self.hyps_mask,
-                                       n_cpus=self.n_cpus,
-                                       nsample=self.nsample)
+        ky_mat = get_ky_mat_update(self.ky_mat, self.hyps,
+                                   self.name,
+                                   self.kernel,
+                                   cutoffs=self.cutoffs,
+                                   hyps_mask=self.hyps_mask,
+                                   n_cpus=self.n_cpus,
+                                   nsample=self.nsample)
 
         l_mat = np.linalg.cholesky(ky_mat)
         l_mat_inv = np.linalg.inv(l_mat)
@@ -579,11 +580,14 @@ class GaussianProcess:
                 # TO DO, recompute the ky
                 pass
         else:
-            new_gp.ky_mat_inv = np.array(dictionary.get('ky_mat_inv', None))
-            new_gp.ky_mat = np.array(dictionary.get('ky_mat', None))
-            new_gp.l_mat = np.array(dictionary.get('l_mat', None))
-            new_gp.alpha = np.array(dictionary.get('alpha', None))
-
+            new_gp.ky_mat_inv = np.array(dictionary['ky_mat_inv']) \
+                if dictionary.get('ky_mat_inv') is not None else None
+            new_gp.ky_mat = np.array(dictionary['ky_mat']) \
+                if dictionary.get('ky_mat') is not None else None
+            new_gp.l_mat = np.array(dictionary['l_mat']) \
+                if dictionary.get('l_mat') is not None else None
+            new_gp.alpha = np.array(dictionary['alpha']) \
+                if dictionary.get('alpha') is not None  else None
         return new_gp
 
     def compute_matrices(self):
@@ -601,7 +605,6 @@ class GaussianProcess:
     def write_model(self, name: str, format: str = 'json'):
         """
         Write model in a variety of formats to a file for later re-use.
-multihyps,
         Args:
             name (str): Output name.
             format (str): Output format.
