@@ -27,7 +27,8 @@ class OTF:
                  dft_softwarename: str = "qe",
                  n_cpus: int = 1, npool: int = None, mpi: str = "srun",
                  dft_kwargs=None, dft_output='dft.out',
-                 store_dft_output: Tuple[Union[str,List[str]],str] = None):
+                 store_dft_output: Tuple[Union[str, List[str]],str] = None,
+                 write_model: int = 0):
         """Trains a Gaussian process force field on the fly during
             molecular dynamics.
 
@@ -86,6 +87,9 @@ class OTF:
                 single file name, or a list of several. Copied files will be
                 prepended with the date and time with the format
                 'Year.Month.Day:Hour:Minute:Second:'.
+            write_model (int, optional): If 0, write never. If 1, write at
+                end of run. If 2, write after each training and end of run.
+                If 3, write after each time atoms are added and end of run.
         """
 
         self.dft_input = dft_input
@@ -99,6 +103,7 @@ class OTF:
         self.dft_step = True
         self.freeze_hyps = freeze_hyps
         self.dft_module = dft_software[dft_softwarename]
+        self.write_model = write_model
 
         # parse input file
         positions, species, cell, masses = \
@@ -147,7 +152,7 @@ class OTF:
         self.rescale_temps = rescale_temps
 
         self.output = Output(output_name, always_flush=True)
-
+        self.output_name = output_name
         # set number of cpus and npool for DFT runs
         self.n_cpus = n_cpus
         self.npool = npool
@@ -189,6 +194,8 @@ class OTF:
                 self.update_gp(self.init_atoms, dft_frcs)
                 if (self.dft_count-1) < self.freeze_hyps:
                     self.train_gp()
+                    if self.write_model >= 2:
+                        self.gp.write_model(self.output_name+"_model")
 
             # after step 1, try predicting with GP model
             else:
@@ -230,8 +237,13 @@ class OTF:
 
                     # add max uncertainty atoms to training set
                     self.update_gp(target_atoms, dft_frcs)
+
                     if (self.dft_count-1) < self.freeze_hyps:
                         self.train_gp()
+                        if self.write_model == 2:
+                            self.gp.write_model(self.output_name+"_model")
+                    if self.write_model == 3:
+                        self.gp.write_model(self.output_name+'_model')
 
                     # Store DFT outputs in another folder if desired
                     # specified in self.store_dft_output
@@ -258,6 +270,9 @@ class OTF:
             self.curr_step += 1
 
         self.output.conclude_run()
+
+        if self.write_model >= 1:
+            self.gp.write_model(self.output_name+"_model")
 
     def run_dft(self):
         """Calculates DFT forces on atoms in the current structure.
