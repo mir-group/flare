@@ -2,7 +2,9 @@ import time, os, math, inspect
 import numpy as np
 import multiprocessing as mp
 
+
 from scipy.linalg import solve_triangular
+from typing import List
 
 from flare.struc import Structure
 from flare.env import AtomicEnvironment
@@ -15,7 +17,7 @@ from flare.util import Z_to_element
 from flare.mgp.utils import get_bonds, get_triplets, get_triplets_en, \
         get_2bkernel, get_3bkernel
 from flare.mgp.splines_methods import PCASplines, CubicSpline
-
+from flare.util import Z_to_element
 
 class MappedGaussianProcess:
     '''
@@ -28,6 +30,7 @@ class MappedGaussianProcess:
     :param: container_only : if True: only build splines container (with no coefficients)
     :param: GP: None or a GaussianProcess object. If input a GP, then build mapping when creating MappedGaussianProcess object
     :param: lmp_file_name : lammps coefficient file name
+    :param: autorun: Attempt to build map immediately
     Examples:
 
     >>> struc_params = {'species': [0, 1],
@@ -65,7 +68,8 @@ class MappedGaussianProcess:
                  container_only: bool=True,
                  lmp_file_name: str='lmp.mgp',
                  n_cpus: int =None,
-                 n_sample:int =100):
+                 n_sample:int =100,
+                 autorun: bool = True):
 
         # get all arguments as attributes
         arg_dict = inspect.getargvalues(inspect.currentframe())[3]
@@ -93,7 +97,7 @@ class MappedGaussianProcess:
         self.mean_only = mean_only
 
         if not container_only and (GP is not None) and \
-                (len(GP.training_data) > 0):
+                (len(GP.training_data) > 0) and autorun:
             self.build_map(GP)
 
     def build_map_container(self):
@@ -385,16 +389,52 @@ class MappedGaussianProcess:
         """
         raise NotImplementedError
 
-    def load_model(self,elements):
+    @staticmethod
+    def load_model(elements: List[int], directory:str = './',
+                   kernel: str = '2+3',
+                   load_var: bool = False):
+        """
+        Loads the relevant files in a directory to an MGP model
+        :param elements:
+        :param directory:
+        :param kernel:
+        :return:
+        """
+
+        # Check to see if two body or three body kernels will be loaded
+        # so "2+3" makes b2 and b3 true
+        b2 = '2' in kernel or 'two' in kernel
+        b3 = '3' in kernel or 'three' in kernel
+
+
+
+
+
+
+
         raise NotImplementedError
 
 
 class Map2body:
-    def __init__(self, grid_num, bounds, bond_struc,
-                 svd_rank=0, mean_only=False, n_cpus=None, n_sample=100):
+    def __init__(self, grid_num: int, bounds, bond_struc: Structure,
+                 svd_rank=0, mean_only: bool=False, n_cpus: int=None,
+                 n_sample: int=100):
         '''
         Build 2-body MGP
+
+        bond_struc: Mock structure used to sample 2-body forces on 2 atoms
         '''
+
+        self.grid_num = grid_num
+        self.bounds = bounds
+        self.bond_struc = bond_struc
+        self.svd_rank = svd_rank
+        self.mean_only = mean_only
+        self.n_cpus = n_cpus
+        self.n_sample = n_sample
+
+        spc = bond_struc.coded_species
+        self.species_code = Z_to_element(spc[0]) + '_' + Z_to_element(spc[1])
 
         arg_dict = inspect.getargvalues(inspect.currentframe())[3]
         del arg_dict['self']
@@ -474,6 +514,13 @@ class Map2body:
             if not self.mean_only:
                 bond_vars[b, :] = solve_triangular(GP.l_mat, k12_v, lower=True)
 
+        write_species_name = ''
+        for x in self.bond_struc.coded_species:
+            write_species_name += "_" + Z_to_element(x)
+        # ------ save mean and var to file -------
+        np.save('grid2_mean' + write_species_name, bond_means)
+        np.save('grid2_var' + write_species_name, bond_vars)
+
         return bond_means, bond_vars
 
 
@@ -541,20 +588,28 @@ class Map2body:
 
 class Map3body:
 
-    def __init__(self, grid_num, bounds, bond_struc,
-            svd_rank=0, mean_only=False, load_grid=None, update=True,
+    def __init__(self, grid_num, bounds, bond_struc: Structure,
+            svd_rank: int=0, mean_only: bool=False, load_grid: str='',
+                 update: bool=True,
             n_cpus=None, n_sample=100):
         '''
         Build 3-body MGP
-        '''
 
-        # get all arguments as attributes
-        arg_dict = inspect.getargvalues(inspect.currentframe())[3]
-        del arg_dict['self']
-        self.__dict__.update(arg_dict)
+        bond_struc: Mock Structure object which contains 3 atoms to get map
+        from
+        '''
+        self.grid_num = grid_num
+        self.bounds = bounds
+        self.bond_struc = bond_struc
+        self.svd_rank = svd_rank
+        self.mean_only = mean_only
+        self.load_grid = load_grid
+        self.update = update
+        self.n_sample = n_sample
 
         spc = bond_struc.coded_species
-        self.species_code = str(spc[0]) + str(spc[1]) + str(spc[2])
+        self.species_code = Z_to_element(spc[0]) + '_' + \
+                            Z_to_element(spc[1]) + '_' + Z_to_element(spc[2])
 
         self.build_map_container()
         self.n_cpus = n_cpus
@@ -638,7 +693,6 @@ class Map3body:
                for ibase in range(count):
                    s, e = block_id[ibase+base]
                    k12_v_all[:, :, :, s*3:e*3] = k12_slice[ibase].get()
-               del k12_slice
 
             pool.close()
             pool.join()
@@ -651,6 +705,9 @@ class Map3body:
                     if not self.mean_only:
                         grid_vars[b1, b2, b12, :] = solve_triangular(GP.l_mat,
                             k12_v, lower=True)
+
+
+        # Construct file names according to current mapping
 
         # ------ save mean and var to file -------
         np.save('grid3_mean_'+self.species_code, grid_means)
@@ -705,8 +762,10 @@ class Map3body:
 
     def build_map(self, GP):
         # Load grid or generate grid values
-        if not self.load_grid:
+        # If load grid was not specified, will be none
+        if self.load_grid is None:
             y_mean, y_var = self.GenGrid(GP)
+        # If load grid is blank string '' or pre-fix, load in
         else:
             y_mean = np.load(self.load_grid+'grid3_mean_'+\
                     self.species_code+'.npy')

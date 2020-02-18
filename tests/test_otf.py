@@ -86,7 +86,8 @@ def test_otf(software, example):
               dft_softwarename=software,
               dft_output=dft_output,
               output_name=f'{casename}_otf_{software}',
-              store_dft_output=([dft_output, dft_input], '.'))
+              store_dft_output=([dft_output, dft_input], '.'),
+              write_model=3)
 
     otf.run()
 
@@ -129,7 +130,7 @@ def test_otf_par(software, per_atom_par, n_cpus):
     dft_loc = os.environ.get(cmd[software])
     std_tolerance_factor = -0.1
 
-    casename=name_list[example]
+    casename = name_list[example]
 
     gp = get_gp(par=True, n_cpus=n_cpus, per_atom_par=per_atom_par)
 
