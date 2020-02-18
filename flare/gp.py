@@ -86,7 +86,7 @@ class GaussianProcess:
 
         if 'nsample' in kwargs.keys():
             DeprecationWarning("nsample is being replaced with n_sample")
-            self.n_sample =kwargs.get('n_sample')
+            self.n_sample =kwargs.get('nsample')
         if 'par' in kwargs.keys():
             DeprecationWarning("par is being replaced with parallel")
             self.parallel = kwargs.get('par')

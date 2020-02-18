@@ -180,7 +180,7 @@ def get_ky_mat(hyps: np.ndarray, name: str,
     size3 = 3*size
 
     if (n_cpus is None):
-        n_cpus =mp.cpu_count()
+        n_cpus = mp.cpu_count()
     if (n_cpus == 1):
         k_mat = get_ky_mat_pack(
                 hyps, name, 0, size, 0, size, True,
@@ -198,9 +198,9 @@ def get_ky_mat(hyps: np.ndarray, name: str,
                 mp.Process(
                     target=queue_wrapper,
                     args=(result_queue, wid,
-                        get_ky_mat_pack,
-                        (hyps, name, s1, e1, s2, e2,
-                       s1==s2, kernel, cutoffs, hyps_mask
+                         get_ky_mat_pack,
+                         (hyps, name, s1, e1, s2, e2,
+                         s1==s2, kernel, cutoffs, hyps_mask
                         )
                     )
                 )

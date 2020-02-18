@@ -517,7 +517,7 @@ class Map2body:
         print(kernel_info)
 
         kernel, efk, cutoffs, hyps, hyps_mask = kernel_info
-        size = e-s
+        size = e - s
         k12_v = np.zeros([len(bond_lengths), size*3])
         for b, r in enumerate(bond_lengths):
             env12.bond_array_2 = np.array([[r, 1, 0, 0]])

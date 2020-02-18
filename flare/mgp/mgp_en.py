@@ -537,7 +537,7 @@ class Map2body:
         '''
 
         kernel, en_force_kernel, cutoffs, hyps, hyps_mask = kernel_info
-        size = e-s
+        size = e - s
         k12_v = np.zeros([len(bond_lengths), size*3])
         for b, r in enumerate(bond_lengths):
             env12.bond_array_2 = np.array([[r, 1, 0, 0]])
@@ -695,7 +695,7 @@ class Map3body:
 
         kernel, en_force_kernel, cutoffs, hyps, hyps_mask = kernel_info
         # open saved k vector file, and write to new file
-        size =  (e-s)*3
+        size =  (e - s) * 3
         k12_v = np.zeros([len(bonds1), len(bonds2), len(bonds12), size])
         for b12, r12 in enumerate(bonds12):
             for b1, r1 in enumerate(bonds1):
