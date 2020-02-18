@@ -14,8 +14,8 @@ for different elements, and different groupings of elements.
 hyps_mask is a dictionary with the following keys and values:
 spec_mask: 118-long integer array descirbing which elements belong to
     like groups for determining which bond hyperparameters to use. For
-    instance, [0,1,1,0 ...] assigns H to group 0, He and Li to group 1,
-    and Be to group 0.
+    instance, [0,0,1,1,0 ...] assigns H to group 0, He and Li to group 1,
+    and Be to group 0 (the 0th register is ignored).
 nspec: Integer, number of different species groups (equal to number of
     unique values in spec_mask).
 nbond: Integer, number of different hyperparameter sets to associate with
