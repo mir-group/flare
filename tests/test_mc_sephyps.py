@@ -119,7 +119,7 @@ def test_force(kernel_name, nbond, ntriplet, constraint):
     kern_analytical = kernel(env1_1, env2_1,
                              d1, d2, *args0)
     tol = 1e-4
-    assert(np.isclose(kern_finite_diff, kern_analytical, atol=tol*kern_analytical))
+    assert(np.isclose(kern_finite_diff, kern_analytical, atol=tol))
 
 
 @pytest.mark.parametrize('kernel_name, nbond, ntriplet, constraint',
@@ -170,8 +170,9 @@ def test_hyps_grad(kernel_name, nbond, ntriplet, constraint):
         newargs = from_mask_to_args(newhyps, hm, cutoffs)
 
         hgrad = (kernel(env1_1, env2_1, d1, d2, *newargs) - original)/delta
-        print(i, "hgrad", hgrad)
         if ('map' in hm.keys()):
+            print(i, "hgrad", hgrad, grad[hm['map'][i]])
             assert(np.isclose(grad[hm['map'][i]], hgrad, atol=tol))
         else:
+            print(i, "hgrad", hgrad, grad[i])
             assert(np.isclose(grad[i], hgrad, atol=tol))

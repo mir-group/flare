@@ -155,7 +155,7 @@ def test_mgp_gpfa(all_mgp, all_gp):
     :return:
     '''
 
-    gp_model  = get_gp(3, 'mc', False)
+    gp_model  = get_gp('3', 'mc', False)
     gp_model.set_L_alpha()
 
     grid_num_2 = 5

@@ -157,26 +157,11 @@ def get_gp(bodies, kernel_type='mc', multihyps=True) -> GaussianProcess:
 
     nbond = 0
     ntriplet = 0
-    if (bodies is 2):
+    prefix = bodies
+    if ('2' in bodies or 'two' in bodies):
         nbond = 1
-        prefix='2'
-    elif (bodies is 3):
+    if ('3' in bodies or 'three' in bodies):
         ntriplet = 1
-        prefix='3'
-    elif (isinstance(bodies, list)):
-        prefix = ''
-        if (2 in bodies):
-            nbond = 1
-            prefix += '2'
-        if (3 in bodies):
-            ntriplet = 1
-            prefix += '3'
-    elif (isinstance(bodies, str)):
-        prefix = bodies
-        if ('2' in bodies or 'two' in bodies):
-            nbond = 1
-        if ('3' in bodies or 'three' in bodies):
-            ntriplet = 1
 
     hyps, hm, _ = generate_hm(nbond, ntriplet, multihyps=multihyps)
 
@@ -196,6 +181,7 @@ def get_gp(bodies, kernel_type='mc', multihyps=True) -> GaussianProcess:
                         cutoffs=cutoffs, multihyps=multihyps, hyps_mask=hm,
                         parallel=False, n_cpus=1)
     gaussian.update_db(test_structure, forces)
+    gaussian.check_L_alpha()
 
     return gaussian
 
