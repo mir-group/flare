@@ -1,17 +1,19 @@
-import time, os, subprocess, math, inspect
+import time, os, math, inspect
 import numpy as np
 import multiprocessing as mp
 
 from scipy.linalg import solve_triangular
 
-import flare.mgp.utils as utils
-
-from flare import gp, struc, kernels
+from flare.struc import Structure
 from flare.env import AtomicEnvironment
 from flare.gp import GaussianProcess
+from flare.gp_algebra import partition_c
+from flare.gp_algebra import en_kern_vec_unit as en_kern_vec
+from flare.kernels.utils import from_mask_to_args
 from flare.cutoffs import quadratic_cutoff
 from flare.util import Z_to_element
-from flare.mgp.utils import get_bonds, get_triplets, get_triplets_en
+from flare.mgp.utils import get_bonds, get_triplets, get_triplets_en, \
+        get_2bkernel, get_3bkernel
 from flare.mgp.splines_methods import PCASplines, CubicSpline
 
 
@@ -63,7 +65,7 @@ class MappedGaussianProcess:
                  container_only: bool=True,
                  lmp_file_name: str='lmp.mgp',
                  n_cpus: int =None,
-                 nsample:int =100):
+                 n_sample:int =100):
 
         # get all arguments as attributes
         arg_dict = inspect.getargvalues(inspect.currentframe())[3]
@@ -79,10 +81,10 @@ class MappedGaussianProcess:
             self.bodies = []
             if "two" in GP.kernel_name:
                 self.bodies.append(2)
-                self.kernel2b_info = utils.get_2bkernel(GP)
+                self.kernel2b_info = get_2bkernel(GP)
             if "three" in GP.kernel_name:
                 self.bodies.append(3)
-                self.kernel3b_info = utils.get_3bkernel(GP)
+                self.kernel3b_info = get_3bkernel(GP)
 
         self.build_bond_struc(struc_params)
         self.maps_2 = []
@@ -102,7 +104,7 @@ class MappedGaussianProcess:
             for b_struc in self.bond_struc[0]:
                 map_2 = Map2body(self.grid_num_2, self.bounds_2,
                                  b_struc, self.svd_rank_2,
-                                 self.mean_only, self.n_cpus, self.nsample)
+                                 self.mean_only, self.n_cpus, self.n_sample)
                 self.maps_2.append(map_2)
         if 3 in self.bodies:
             for b_struc in self.bond_struc[1]:
@@ -119,9 +121,9 @@ class MappedGaussianProcess:
         '''
 
         if 2 in self.bodies:
-            self.kernel2b_info = utils.get_2bkernel(GP)
+            self.kernel2b_info = get_2bkernel(GP)
         if 3 in self.bodies:
-            self.kernel3b_info = utils.get_3bkernel(GP)
+            self.kernel3b_info = get_3bkernel(GP)
 
         for map_2 in self.maps_2:
             map_2.build_map(GP)
@@ -157,7 +159,7 @@ class MappedGaussianProcess:
                     positions = [[(i+1)/(bodies+1)*cutoff, 0, 0]
                                  for i in range(bodies)]
                     spc_struc = \
-                        struc.Structure(cell, species, positions, mass_dict)
+                        Structure(cell, species, positions, mass_dict)
                     spc_struc.coded_species = np.array(species)
                     bond_struc_2.append(spc_struc)
 
@@ -176,7 +178,7 @@ class MappedGaussianProcess:
                         spc_3.append(species)
                         positions = [[(i+1)/(bodies+1)*cutoff, 0, 0]
                                      for i in range(bodies)]
-                        spc_struc = struc.Structure(cell, species, positions,
+                        spc_struc = Structure(cell, species, positions,
                                                     mass_dict)
                         spc_struc.coded_species = np.array(species)
                         bond_struc_3.append(spc_struc)
@@ -185,7 +187,7 @@ class MappedGaussianProcess:
 #                            spc_3.append(species)
 #                            positions = [[(i+1)/(bodies+1)*cutoff, 0, 0] \
 #                                        for i in range(bodies)]
-#                            spc_struc = struc.Structure(cell, species, positions,
+#                            spc_struc = Structure(cell, species, positions,
 #                                                        mass_dict)
 #                            spc_struc.coded_species = np.array(species)
 #                            bond_struc_3.append(spc_struc)
@@ -194,7 +196,7 @@ class MappedGaussianProcess:
 #                            spc_3.append(species)
 #                            positions = [[(i+1)/(bodies+1)*cutoff, 0, 0] \
 #                                        for i in range(bodies)]
-#                            spc_struc = struc.Structure(cell, species, positions,
+#                            spc_struc = Structure(cell, species, positions,
 #                                                        mass_dict)
 #                            spc_struc.coded_species = np.array(species)
 #                            bond_struc_3.append(spc_struc)
@@ -254,16 +256,12 @@ class MappedGaussianProcess:
 
         kernel, en_force_kernel, cutoffs, hyps, hyps_mask = kernel_info
 
+        args = from_mask_to_args(hyps, hyps_mask, cutoffs)
+
         kern = np.zeros(3)
-        if (hyps_mask is None):
-            for d in range(3):
-                kern[d] = \
-                    kernel(atom_env, atom_env, d+1, d+1, hyps, cutoffs)
-        else:
-            for d in range(3):
-                kern[d] = \
-                    kernel(atom_env, atom_env, d+1, d+1, hyps, cutoffs,
-                           hyps_mask=hyps_mask)
+        for d in range(3):
+            kern[d] = \
+                kernel(atom_env, atom_env, d+1, d+1, *args)
 
         if (body == 2):
             spcs, comp_r, comp_xyz = get_bonds(atom_env.ctype,
@@ -445,7 +443,7 @@ class MappedGaussianProcess:
 
 class Map2body:
     def __init__(self, grid_num, bounds, bond_struc,
-                 svd_rank=0, mean_only=False, n_cpus=None, nsample=100):
+                 svd_rank=0, mean_only=False, n_cpus=None, n_sample=100):
         '''
         Build 2-body MGP
         '''
@@ -472,7 +470,7 @@ class Map2body:
            with GP.alpha
         '''
 
-        kernel_info = utils.get_2bkernel(GP)
+        kernel_info = get_2bkernel(GP)
 
         if (self.n_cpus is None):
             processes = mp.cpu_count()
@@ -493,19 +491,7 @@ class Map2body:
             # A_list = pool.map(self._GenGrid_inner_most, pool_list)
             # break it into pieces
             size = len(GP.training_data)
-            nsample = self.nsample
-            ns = int(math.ceil(size/nsample/processes))*processes
-            nsample = int(math.ceil(size/ns))
-
-            #print("prepare the package for parallelization")
-            block_id = []
-            nbatch = 0
-            for ibatch in range(ns):
-                s1 = int(nsample*ibatch)
-                e1 = int(np.min([s1 + nsample, size]))
-                block_id += [(s1, e1)]
-                #print("block", ibatch, s1, e1)
-                nbatch += 1
+            block_id, nbatch = partition_c(self.n_sample, size, processes)
 
             k12_slice = []
             k12_v_all = np.zeros([len(bond_lengths), size*3])
@@ -514,7 +500,7 @@ class Map2body:
             for ibatch in range(nbatch):
                 s, e = block_id[ibatch]
                 k12_slice.append(pool.apply_async(self._GenGrid_inner,
-                                                  args=(GP.training_data[s:e],
+                                                  args=(GP.name, s, e,
                                                         bond_lengths,
                                                         env12, kernel_info)))
                 count += 1
@@ -543,21 +529,21 @@ class Map2body:
         return bond_means, bond_vars
 
 
-    def _GenGrid_inner(self, training_data, bond_lengths,
-            env12, kernel_info):
+    def _GenGrid_inner(self, name, s, e, bond_lengths,
+                       env12, kernel_info):
 
         '''
         Calculate kv segments of the given batch of training data for all grids
         '''
 
         kernel, en_force_kernel, cutoffs, hyps, hyps_mask = kernel_info
-        size = len(training_data)
+        size = e - s
         k12_v = np.zeros([len(bond_lengths), size*3])
         for b, r in enumerate(bond_lengths):
             env12.bond_array_2 = np.array([[r, 1, 0, 0]])
-            k12_v[b, :] = utils.en_kern_vec(training_data,
-                                            env12, en_force_kernel,
-                                            hyps, cutoffs, hyps_mask)
+            k12_v[b, :] = en_kern_vec(name, s, e,
+                                      env12, en_force_kernel,
+                                      hyps, cutoffs, hyps_mask)
         return k12_v
 
 
@@ -586,7 +572,7 @@ class Map3body:
 
     def __init__(self, grid_num, bounds, bond_struc,
             svd_rank=0, mean_only=False, load_grid=None, update=True,
-            n_cpus=None, nsample=100):
+            n_cpus=None, n_sample=100):
         '''
         Build 3-body MGP
         '''
@@ -628,7 +614,7 @@ class Map3body:
             self.GenGrid_serial(GP)
 
         # ------ get 3body kernel info ------
-        kernel_info = utils.get_3bkernel(GP)
+        kernel_info = get_3bkernel(GP)
 
         # ------ construct grids ------
         n1, n2, n12 = self.grid_num
@@ -648,26 +634,15 @@ class Map3body:
 
             # if self.update:
             #     if self.kv3name in os.listdir():
-            #         subprocess.run(['rm', '-rf', self.kv3name])
-            #     subprocess.run(['mkdir', self.kv3name])
+                #     os.rmdir(self.kv3name)
+            #     os.mkdir(self.kv3name)
 
             #print("prepare the package for parallelization")
             size = len(GP.training_data)
-            nsample = self.nsample
-            ns = int(math.ceil(size/nsample/processes))*processes
-            nsample = int(math.ceil(size/ns))
-
-            block_id = []
-            nbatch = 0
-            for ibatch in range(ns):
-                s1 = int(nsample*ibatch)
-                e1 = int(np.min([s1 + nsample, size]))
-                block_id += [(s1, e1)]
-                #print("block", ibatch, s1, e1)
-                nbatch += 1
+            block_id, nbatch = partition_c(self.n_sample, size, processes)
 
             k12_slice = []
-            #print('before for', ns, nsample, time.time())
+            #print('before for', ns, n_sample, time.time())
             count = 0
             base = 0
             k12_v_all = np.zeros([len(bonds1), len(bonds2), len(bonds12),
@@ -675,7 +650,7 @@ class Map3body:
             for ibatch in range(nbatch):
                 s, e = block_id[ibatch]
                 k12_slice.append(pool.apply_async(self._GenGrid_inner,
-                                                  args=(GP.training_data[s:e],
+                                                  args=(GP.name, s, e,
                                                         bonds1, bonds2, bonds12,
                                                         env12, kernel_info)))
                 #print('send', ibatch, ns, s, e, time.time())
@@ -712,8 +687,7 @@ class Map3body:
 
         return grid_means, grid_vars
 
-    def _GenGrid_inner(self, training_data, bonds1, bonds2, bonds12, env12,
-                       kernel_info):
+    def _GenGrid_inner(self, name, s, e, bonds1, bonds2, bonds12, env12, kernel_info):
 
         '''
         Calculate kv segments of the given batch of training data for all grids
@@ -721,7 +695,7 @@ class Map3body:
 
         kernel, en_force_kernel, cutoffs, hyps, hyps_mask = kernel_info
         # open saved k vector file, and write to new file
-        size = len(training_data)*3
+        size =  (e - s) * 3
         k12_v = np.zeros([len(bonds1), len(bonds2), len(bonds12), size])
         for b12, r12 in enumerate(bonds12):
             for b1, r1 in enumerate(bonds1):
@@ -735,9 +709,9 @@ class Map3body:
                     env12.bond_array_3 = np.array([[r1, 1, 0, 0],
                                                    [r2, 0, 0, 0]])
                     env12.cross_bond_dists = np.array([[0, r12], [r12, 0]])
-                    k12_v[b1, b2, b12, :] = utils.en_kern_vec(training_data,
-                                                      env12, en_force_kernel,
-                                                      hyps, cutoffs, hyps_mask)
+                    k12_v[b1, b2, b12, :] = en_kern_vec(name, s, e,
+                                                        env12, en_force_kernel,
+                                                        hyps, cutoffs, hyps_mask)
 
         return k12_v
 

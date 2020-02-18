@@ -6,7 +6,7 @@ from copy import deepcopy
 from flare import env, gp, struc
 import flare.kernels.kernels as en
 
-from flare.kernels.mc_sephyps import from_mask_to_hyps, from_grad_to_mask
+from flare.kernels.utils import from_mask_to_args, from_grad_to_mask
 
 # -----------------------------------------------------------------------------
 #                        test two plus three body kernels
@@ -577,46 +577,66 @@ def test_three_body_grad():
 
 def test_masked_hyperparameter_function():
     """
-    Test simple input permutations for the from_mask_to_hyps function
+    Test simple input permutations for the from_mask_to_args function
     :return:
     """
 
+    cutoffs = [3, 4]
+
     # Standard sig2, ls2, sig3, ls3, noise hyp array
     with pytest.raises(NameError):
-        from_mask_to_hyps(hyps=[], hyps_mask={})
+        from_mask_to_args([], {}, cutoffs)
     # -----------------------
     # Test simple input cases
     # -----------------------
-    hyps_mask = {'nbond': 1}
+    hyps_mask = {'nbond': 1, 'nspec':1, 'spec_mask':np.zeros(118)}
     hyps = [1,2,5]
-    assert (from_mask_to_hyps(hyps, hyps_mask) == (1, 0, [1], [2], None,
-                                                   None))
+    c, ns, sm, n2b, bm, n3b, tm, sig2, ls2, sig3, ls3 \
+            = from_mask_to_args(hyps, hyps_mask, cutoffs)
+    assert (np.equal(sig2, [1]).all())
+    assert (np.equal(ls2, [2]).all())
 
     hyps = [3,4,5]
-    hyps_mask = {'ntriplet': 1}
-    assert (from_mask_to_hyps(hyps, hyps_mask) == (0, 1, None, None, [3],
-                                                   [4]))
+    hyps_mask = {'ntriplet': 1, 'nspec':1, 'spec_mask':np.zeros(118)}
+    c, ns, sm, n2b, bm, n3b, tm, sig2, ls2, sig3, ls3 \
+            = from_mask_to_args(hyps, hyps_mask, cutoffs)
+    assert (np.equal(sig3, [3]).all())
+    assert (np.equal(ls3, [4]).all())
+
     hyps = [1, 2, 3, 4, 5]
-    hyps_mask = {'nbond': 1, 'ntriplet':1 }
-    assert (from_mask_to_hyps(hyps, hyps_mask) == (1, 1, [1], [2], [3],
-                                                   [4]))
+    hyps_mask = {'nbond': 1, 'ntriplet':1,
+            'nspec':1, 'spec_mask':np.zeros(118)}
+    c, ns, sm, n2b, bm, n3b, tm, sig2, ls2, sig3, ls3 \
+            = from_mask_to_args(hyps, hyps_mask, cutoffs)
+    assert (np.equal(sig2, [1]).all())
+    assert (np.equal(ls2, [2]).all())
+    assert (np.equal(sig3, [3]).all())
+    assert (np.equal(ls3, [4]).all())
 
     hyps = [1, 2, 3, 4, 5]
     hyps_mask['map']=[0, 1, 2, 3, 4]
     hyps_mask['original'] = [1, 2, 3, 4, 5, 6]
-    assert (from_mask_to_hyps(hyps, hyps_mask) == (1, 1, [1], [2], [3],
-                                                   [4]))
+    c, ns, sm, n2b, bm, n3b, tm, sig2, ls2, sig3, ls3 \
+            = from_mask_to_args(hyps, hyps_mask, cutoffs)
+    assert (np.equal(sig2, [1]).all())
+    assert (np.equal(ls2, [2]).all())
+    assert (np.equal(sig3, [3]).all())
+    assert (np.equal(ls3, [4]).all())
+
     # -----------------------
     # Test simple 2+3 body input case
     # -----------------------
 
     # Hyps : sig21, sig22, ls21, ls22, sig31, sig32, ls31, ls32, noise
     hyps = [1.1,1.2, 2.1, 2.2, 3.1, 3.2, 4.1, 4.2, 5]
-    hyps_mask = {'nbond': 2, 'ntriplet': 2}
-
-    assert (from_mask_to_hyps(hyps,hyps_mask) == (2, 2, [1.1, 1.2], [2.1,2.2],
-                                                  [3.1, 3.2], [4.1, 4.2]))
-
+    hyps_mask = {'nbond': 2, 'ntriplet': 2,
+                 'nspec':1, 'spec_mask':np.zeros(118)}
+    c, ns, sm, n2b, bm, n3b, tm, sig2, ls2, sig3, ls3 \
+            = from_mask_to_args(hyps, hyps_mask, cutoffs)
+    assert (np.equal(sig2, [1.1, 1.2]).all())
+    assert (np.equal(ls2, [2.1, 2.2]).all())
+    assert (np.equal(sig3, [3.1, 3.2]).all())
+    assert (np.equal(ls3, [4.1, 4.2]).all())
 
 
 def test_grad_mask_function():

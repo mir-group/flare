@@ -15,10 +15,12 @@ from scipy.optimize import minimize
 from flare.env import AtomicEnvironment
 from flare.struc import Structure
 from flare.gp_algebra import get_neg_likelihood, \
-    get_like_from_ky_mat, get_neg_like_grad, \
-    get_kernel_vector_par, en_kern_vec_par, \
-    get_ky_mat_par, get_ky_mat_update_par
-from flare.kernels.utils import str_to_kernel_set as stk
+        get_like_from_mats, get_neg_like_grad, \
+        get_kernel_vector, en_kern_vec, \
+        get_ky_mat, get_ky_mat_update, \
+        _global_training_data, _global_training_labels
+
+from flare.kernels.utils import str_to_kernel_set, from_mask_to_args
 from flare.util import NumpyEncoder
 from flare.output import Output
 
@@ -65,7 +67,7 @@ class GaussianProcess:
                  n_cpus: int = 1, n_sample: int = 100,
                  output: Output = None,
                  multihyps: bool = False, hyps_mask: dict = None,
-                 kernel_name="2+3_mc", **kwargs):
+                 kernel_name="2+3_mc", name="default_gp", **kwargs):
         """Initialize GP parameters and training data."""
 
         # load arguments into attributes
@@ -91,8 +93,10 @@ class GaussianProcess:
 
         # TO DO, clean up all the other kernel arguments
         if kernel is None:
+            DeprecationWarning("kernel, kernel_grad, energy_force_kernel "
+                    "and energy_kernel will be replaced by kernel_name")
             self.kernel_name = kernel_name
-            kernel, grad, ek, efk = stk(kernel_name, multihyps)
+            kernel, grad, ek, efk = str_to_kernel_set(kernel_name, multihyps)
             self.kernel = kernel
             self.kernel_grad = grad
             self.energy_force_kernel = efk
@@ -103,6 +107,8 @@ class GaussianProcess:
             self.kernel_grad = kernel_grad
             self.energy_force_kernel = kwargs.get('energy_force_kernel')
             self.energy_kernel = kwargs.get('energy_kernel')
+
+        self.name = name
 
         self.training_data = []
         self.training_labels = []
@@ -224,6 +230,8 @@ class GaussianProcess:
 
         # create numpy array of training labels
         self.training_labels_np = np.hstack(self.training_labels)
+        _global_training_data[self.name] = self.training_data
+        _global_training_labels[self.name] = self.training_labels_np
 
     def add_one_env(self, env: AtomicEnvironment,
                     force, train: bool = False, **kwargs):
@@ -241,6 +249,8 @@ class GaussianProcess:
         self.training_data.append(env)
         self.training_labels.append(force)
         self.training_labels_np = np.hstack(self.training_labels)
+        _global_training_data[self.name] = self.training_data
+        _global_training_labels[self.name] = self.training_labels_np
 
         if train:
             self.train(**kwargs)
@@ -267,8 +277,7 @@ class GaussianProcess:
 
         x_0 = self.hyps
 
-        args = (self.training_data, self.training_labels_np,
-                self.kernel_grad, output,
+        args = (self.name, self.kernel_grad, output,
                 self.cutoffs, self.hyps_mask,
                 self.n_cpus, self.n_sample)
         objective_func = get_neg_like_grad
@@ -329,9 +338,11 @@ class GaussianProcess:
         """
 
         # check that alpha is up to date with training set
-        if self.alpha is None or 3 * len(self.training_data) != len(
-                self.alpha):
+        size3 = len(self.training_data)*3
+        if (self.alpha is None) or (size3 > self.alpha.shape[0]):
             self.update_L_alpha()
+        elif (size3 != self.alpha.shape[0]):
+            self.set_L_alpha()
 
     def predict(self, x_t: AtomicEnvironment, d: int) -> [float, float]:
         """
@@ -352,30 +363,25 @@ class GaussianProcess:
         else:
             n_cpus = 1
 
-        k_v = get_kernel_vector_par(self.training_data, self.kernel,
-                                    x_t, d,
-                                    self.hyps,
-                                    cutoffs=self.cutoffs,
-                                    hyps_mask=self.hyps_mask,
-                                    n_cpus=n_cpus,
-                                    nsample=self.n_sample)
+        k_v = get_kernel_vector(self.name, self.kernel,
+                                x_t, d,
+                                self.hyps,
+                                cutoffs=self.cutoffs,
+                                hyps_mask=self.hyps_mask,
+                                n_cpus=n_cpus,
+                                n_sample=self.n_sample)
 
         # Guarantee that alpha is up to date with training set
-        if self.alpha is None or\
-                3 * len(self.training_data) != len(self.alpha):
-            self.update_L_alpha()
+        self.check_L_alpha()
 
         # get predictive mean
         pred_mean = np.matmul(k_v, self.alpha)
 
         # get predictive variance without cholesky (possibly faster)
         # pass args to kernel based on if mult. hyperparameters in use
-        if self.multihyps:
-            self_kern = self.kernel(x_t, x_t, d, d, self.hyps,
-                                    self.cutoffs, hyps_mask=self.hyps_mask)
-        else:
-            self_kern = self.kernel(x_t, x_t, d, d, self.hyps,
-                                    self.cutoffs)
+        args = from_mask_to_args(self.hyps, self.hyps_mask, self.cutoffs)
+
+        self_kern = self.kernel(x_t, x_t, d, d, *args)
 
         pred_var = self_kern - \
                    np.matmul(np.matmul(k_v, self.ky_mat_inv), k_v)
@@ -397,13 +403,13 @@ class GaussianProcess:
         else:
             n_cpus = 1
 
-        k_v = en_kern_vec_par(self.training_data,
-                              self.energy_force_kernel,
-                              x_t, self.hyps,
-                              cutoffs=self.cutoffs,
-                              hyps_mask=self.hyps_mask,
-                              n_cpus=n_cpus,
-                              nsample=self.n_sample)
+        k_v = en_kern_vec(self.name,
+                          self.energy_force_kernel,
+                          x_t, self.hyps,
+                          cutoffs=self.cutoffs,
+                          hyps_mask=self.hyps_mask,
+                          n_cpus=n_cpus,
+                          n_sample=self.n_sample)
 
         pred_mean = np.matmul(k_v, self.alpha)
 
@@ -426,26 +432,23 @@ class GaussianProcess:
             n_cpus = 1
 
         # get kernel vector
-        k_v = en_kern_vec_par(self.training_data,
-                              self.energy_force_kernel,
-                              x_t, self.hyps,
-                              cutoffs=self.cutoffs,
-                              hyps_mask=self.hyps_mask,
-                              n_cpus=n_cpus,
-                              nsample=self.n_sample)
+        k_v = en_kern_vec(self.name,
+                          self.energy_force_kernel,
+                          x_t, self.hyps,
+                          cutoffs=self.cutoffs,
+                          hyps_mask=self.hyps_mask,
+                          n_cpus=n_cpus,
+                          n_sample=self.n_sample)
 
         # get predictive mean
         pred_mean = np.matmul(k_v, self.alpha)
 
         # get predictive variance
         v_vec = solve_triangular(self.l_mat, k_v, lower=True)
-        if self.multihyps:
-            self_kern = self.energy_kernel(x_t, x_t, self.hyps,
-                                           self.cutoffs,
-                                           hyps_mask=self.hyps_mask)
-        else:
-            self_kern = self.energy_kernel(x_t, x_t, self.hyps,
-                                           self.cutoffs)
+        args = from_mask_to_args(self.hyps, self.hyps_mask, self.cutoffs)
+
+        self_kern = self.energy_kernel(x_t, x_t, *args)
+
         pred_var = self_kern - np.matmul(v_vec, v_vec)
 
         return pred_mean, pred_var
@@ -458,13 +461,13 @@ class GaussianProcess:
         The forces and variances are later obtained using alpha.
         """
 
-        ky_mat = get_ky_mat_par(self.hyps,
-                                self.training_data,
-                                self.kernel,
-                                cutoffs=self.cutoffs,
-                                hyps_mask=self.hyps_mask,
-                                n_cpus=self.n_cpus,
-                                nsample=self.n_sample)
+        ky_mat = get_ky_mat(self.hyps,
+                            self.name,
+                            self.kernel,
+                            cutoffs=self.cutoffs,
+                            hyps_mask=self.hyps_mask,
+                            n_cpus=self.n_cpus,
+                            n_sample=self.n_sample)
 
         l_mat = np.linalg.cholesky(ky_mat)
         l_mat_inv = np.linalg.inv(l_mat)
@@ -476,8 +479,8 @@ class GaussianProcess:
         self.alpha = alpha
         self.ky_mat_inv = ky_mat_inv
 
-        self.likelihood = get_like_from_ky_mat(self.ky_mat,
-                                               self.training_labels_np)
+        self.likelihood = get_like_from_mats(ky_mat, l_mat,
+                                             alpha, self.name)
 
     def update_L_alpha(self):
         """
@@ -490,13 +493,13 @@ class GaussianProcess:
             self.set_L_alpha()
             return
 
-        ky_mat = get_ky_mat_update_par(self.ky_mat, self.hyps,
-                                       self.training_data,
-                                       self.kernel,
-                                       cutoffs=self.cutoffs,
-                                       hyps_mask=self.hyps_mask,
-                                       n_cpus=self.n_cpus,
-                                       nsample=self.n_sample)
+        ky_mat = get_ky_mat_update(self.ky_mat, self.hyps,
+                                   self.name,
+                                   self.kernel,
+                                   cutoffs=self.cutoffs,
+                                   hyps_mask=self.hyps_mask,
+                                   n_cpus=self.n_cpus,
+                                   n_sample=self.n_sample)
 
         l_mat = np.linalg.cholesky(ky_mat)
         l_mat_inv = np.linalg.inv(l_mat)
@@ -549,6 +552,8 @@ class GaussianProcess:
 
     def as_dict(self):
         """Dictionary representation of the GP model."""
+
+        self.check_L_alpha()
 
         out_dict = deepcopy(dict(vars(self)))
 
@@ -629,7 +634,6 @@ class GaussianProcess:
     def write_model(self, name: str, format: str = 'json'):
         """
         Write model in a variety of formats to a file for later re-use.
-multihyps,
         Args:
             name (str): Output name.
             format (str): Output format.
