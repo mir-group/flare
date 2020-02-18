@@ -392,10 +392,10 @@ def get_m_body_arrays(positions, atom: int, cell, cutoff_mb: float, species):
      etypes: Species of atoms in the 2-body local environment represented by
      their atomic number.
 
-     neighbouring_dists_array: Matrix padded with zero values of distances 
+     neigh_dists_mb: Matrix padded with zero values of distances 
      of neighbours for the atoms in the local environment. 
 
-     num_neighbours: number of neighbours of each atom in the local environment
+     num_neighs_mb: number of neighbours of each atom in the local environment
     :rtype: np.ndarray, np.ndarray, np.ndarray, np.ndarray
     """
     # TODO: this can be probably improved using stored arrays, redundant calls to get_2_body_arrays

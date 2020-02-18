@@ -22,6 +22,13 @@ The kernel functions to choose:
     * two_plus_three_en,
     * two_plus_three_force_en
 
+* Two plus three plus many body:
+
+    * two_plus_three_plus_many_body,
+    * two_plus_three_plus_many_body_grad,
+    * two_plus_three_plus_many_body_en,
+    * two_plus_three_plus_many_body_force_en (TODO)
+
 **Example:**
 
 >>> gp_model = GaussianProcess(kernel=two_body,
@@ -569,6 +576,31 @@ def many_body_grad(env1, env2, d1, d2, hyps, cutoffs,
     kernel_grad = np.array([sig_derv, ls_derv, r0_derv])
 
     return kernel, kernel_grad
+
+
+def many_body_force_en(env1, env2, d1, hyps, cutoffs,
+                        cutoff_func=cf.quadratic_cutoff):
+    """many-body single-element kernel between two local energies.
+
+    Args:
+        env1 (AtomicEnvironment): First local environment.
+        env2 (AtomicEnvironment): Second local environment.
+        hyps (np.ndarray): Hyperparameters of the kernel function (sig, ls, r0).
+        cutoffs (np.ndarray): Two-element array containing the 2-, 3-, and
+            many-body cutoffs.
+        cutoff_func (Callable): Cutoff function of the kernel.
+
+    Return:
+        float: Value of the many-body force/energy kernel.
+    """
+    sig = hyps[0]
+    ls = hyps[1]
+    r0 = hyps[2]
+    r_cut = cutoffs[2]
+
+    # divide by three to account for triple counting
+    return many_body_force_en_jit(env1.bond_array_mb, env2.bond_array_mb, env1.neigh_dists_mb, 
+                          env2.num_neighs_mb, d1, sig, ls, r0, r_cut, cutoff_func)
 
 
 def many_body_en(env1, env2, hyps, cutoffs,
@@ -1274,6 +1306,33 @@ def many_body_grad_jit(bond_array_1, bond_array_2,
                        neighbouring_dists_array_1, neighbouring_dists_array_2,
                        num_neighbours_1, num_neighbours_2,
                        d1, d2, sig, ls, r0, r_cut, cutoff_func):
+    """gradient of many-body single-element kernel between two force components 
+    w.r.t. the hyperparameters, accelerated with Numba.
+
+    Args:
+        bond_array_1 (np.ndarray): many-body bond array of the first local
+            environment.
+        bond_array_2 (np.ndarray): many-body bond array of the second local
+            environment.
+        neighbouring_dists_array_1 (np.ndarray): matrix padded with zero values of distances 
+            of neighbours for the atoms in the first local environment. 
+        neighbouring_dists_array_2 (np.ndarray): matrix padded with zero values of distances 
+            of neighbours for the atoms in the second local environment. 
+        num_neighbours_1 (np.nsdarray): number of neighbours of each atom in the first 
+            local environment
+        num_neighbours_2 (np.ndarray): number of neighbours of each atom in the second 
+            local environment
+        d1 (int): Force component of the first environment.
+        d2 (int): Force component of the second environment.
+        sig (float): 3-body signal variance hyperparameter.
+        ls (float): 3-body length scale hyperparameter.
+        r_cut (float): 3-body cutoff radius.
+        cutoff_func (Callable): Cutoff function.
+
+    Return:
+        array: Value of the many-body kernel and its gradient w.r.t. sig, ls and r0
+    """
+
     kern = 0
     sig_derv = 0
     ls_derv = 0
@@ -1365,6 +1424,60 @@ def many_body_grad_jit(bond_array_1, bond_array_2,
 
     return kern, sig_derv, ls_derv, r0_derv
 
+
+@njit
+def many_body_force_en_jit(bond_array_1, bond_array_2,
+                  neighbouring_dists_array_1,
+                  num_neighbours_1,
+                  d1, sig, ls, r0, r_cut, cutoff_func):
+    """many-body single-element kernel between force and energy components accelerated
+    with Numba.
+
+    Args:
+        bond_array_1 (np.ndarray): many-body bond array of the first local
+            environment.
+        bond_array_2 (np.ndarray): many-body bond array of the second local
+            environment.
+        neighbouring_dists_array_1 (np.ndarray): matrix padded with zero values of distances 
+            of neighbours for the atoms in the first local environment. 
+        num_neighbours_1 (np.nsdarray): number of neighbours of each atom in the first 
+            local environment
+        d1 (int): Force component of the first environment.
+        sig (float): 3-body signal variance hyperparameter.
+        ls (float): 3-body length scale hyperparameter.
+        r_cut (float): 3-body cutoff radius.
+        cutoff_func (Callable): Cutoff function.
+
+    Return:
+        float: Value of the many-body kernel.
+    """
+
+    kern = 0 
+
+    q1 = q_value(bond_array_1[:, 0], r0, r_cut, cutoff_func)
+    q2 = q_value(bond_array_2[:, 0], r0, r_cut, cutoff_func)
+
+    k12 = k_sq_exp_dev(q1, q2, sig, ls)
+
+    qis = np.zeros(bond_array_1.shape[0])
+    qi1_grads = np.zeros(bond_array_1.shape[0])
+    ki2s = np.zeros(bond_array_1.shape[0])
+
+    # Loop over neighbours i of 1
+    for i in range(bond_array_1.shape[0]):
+        ri1 = bond_array_1[i, 0]
+        ci1 = bond_array_1[i, d1]
+        _, qi1_grads[i] = q_pairwise(ri1, r0, ci1, r_cut, cutoff_func)
+        # Calculate many-body descriptor value for i 
+        qis[i] = q_value(neighbouring_dists_array_1[i, :num_neighbours_1[i]], r0, r_cut,
+                         cutoff_func)
+
+        ki2s[i] = k_sq_exp_dev(qis[i], q2, sig, ls)
+
+
+        kern += - qi1_grads[i] * (k12 + ki2s[i])
+
+    return kern
 
 @njit
 def many_body_en_jit(bond_array_1, bond_array_2,
@@ -1666,7 +1779,7 @@ def triplet_force_en_kernel(ci1, ci2, ri1, ri2, ri3, rj1, rj2, rj3,
 
 @njit
 def k_sq_exp_double_dev(q1, q2, sig, ls):
-    """Gradient of generic squared exponential kernel on two many body functions
+    """Second Gradient of generic squared exponential kernel on two many body functions
 
     Args:
         q1 (float): the many body descriptor of the first local environment
@@ -1684,6 +1797,29 @@ def k_sq_exp_double_dev(q1, q2, sig, ls):
     ker = exp(-qdiffsq / (2 * ls2))
 
     ret = sig * sig * ker / ls2 * (1 - qdiffsq / ls2)
+
+    return ret
+
+@njit
+def k_sq_exp_dev(q1, q2, sig, ls):
+    """Second Gradient of generic squared exponential kernel on two many body functions
+
+    Args:
+        q1 (float): the many body descriptor of the first local environment
+        q2 (float): the many body descriptor of the second local environment
+        sig (float): amplitude hyperparameter
+        ls2 (float): squared lenghtscale hyperparameter
+    Return:
+        float: the value of the derivative of the squared exponential kernel
+    """
+
+    qdiff = (q1 - q2) 
+
+    ls2 = ls * ls
+
+    ker = exp(-qdiff * qdiff / (2 * ls2))
+
+    ret = - sig * sig * ker / ls2 * qdiff
 
     return ret
 
