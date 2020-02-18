@@ -11,8 +11,8 @@ from flare.lammps import lammps_calculator
 
 from .fake_gp import get_gp, get_random_structure
 
-body_list = [2, 3]
-multi_list = [False, True]
+body_list = [3]
+multi_list = [False]
 
 # ASSUMPTION: You have a Lammps executable with the mgp pair style with $lmp
 # as the corresponding environment variable.
@@ -83,7 +83,7 @@ def test_init(bodies, multihyps, all_mgp, all_gp):
                    'svd_rank_2': np.min((grid_num_2, 3*train_size)),
                    'svd_rank_3': np.min((grid_num_3**3, 3*train_size)),
                    'load_grid': None,
-                   'update': False}
+                   'update': True}
 
     struc_params = {'species': [1, 2],
                     'cube_lat': np.eye(3)*2,
