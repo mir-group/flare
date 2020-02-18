@@ -229,7 +229,7 @@ def two_plus_three_plus_many_body(env1: AtomicEnvironment, env2: AtomicEnvironme
 def two_plus_three_plus_many_body_grad(env1: AtomicEnvironment, env2: AtomicEnvironment,
                                        d1: int, d2: int, hyps, cutoffs,
                                        cutoff_func=cf.quadratic_cutoff):
-    """2+3-body single-element kernel between two force components.
+    """2+3+many-body single-element kernel between two force components.
 
     Args:
         env1 (AtomicEnvironment): First local environment.
@@ -265,6 +265,81 @@ def two_plus_three_plus_many_body_grad(env1: AtomicEnvironment, env2: AtomicEnvi
                                                   cutoff_func)
 
     return kern2 + kern3 + kern_many, np.array([sig2, ls2, sig3, ls3, sigm, lsm, r0])
+
+
+def two_plus_three_plus_many_body_force_en(env1: AtomicEnvironment, env2: AtomicEnvironment,
+                                       d1: int,  hyps, cutoffs,
+                                       cutoff_func=cf.quadratic_cutoff):
+    """2+3+many-body single-element kernel between two force and energy components.
+
+    Args:
+        env1 (AtomicEnvironment): First local environment.
+        env2 (AtomicEnvironment): Second local environment.
+        d1 (int): Force component of the first environment.
+        hyps (np.ndarray): Hyperparameters of the kernel function (sig1, ls1,
+            sig2, ls2, sig3, ls3, r0, sig_n).
+        cutoffs (np.ndarray): Two-element array containing the 2- and 3-body
+            cutoffs.
+        cutoff_func (Callable): Cutoff function of the kernel.
+
+    Return:
+        float: Value of the 2+3+many-body kernel.
+    """
+
+    two_term = two_body_force_en_jit(env1.bond_array_2, env2.bond_array_2,
+                                     d1, hyps[0], hyps[1], cutoffs[0],
+                                     cutoff_func) / 2
+
+    three_term = \
+        three_body_force_en_jit(env1.bond_array_3, env2.bond_array_3,
+                                env1.cross_bond_inds, env2.cross_bond_inds,
+                                env1.cross_bond_dists,
+                                env2.cross_bond_dists,
+                                env1.triplet_counts, env2.triplet_counts,
+                                d1, hyps[2], hyps[3], cutoffs[1],
+                                cutoff_func) / 3
+
+
+    many_term = many_body_force_en_jit(env1.bond_array_mb, env2.bond_array_mb,
+                                                  env1.neigh_dists_mb,
+                                                  env1.num_neighs_mb,
+                                                  d1, hyps[4], hyps[5], hyps[6], cutoffs[2],
+                                                  cutoff_func)
+
+    return two_term + three_term + many_term
+
+
+def two_plus_three_plus_many_body_en(env1: AtomicEnvironment, env2: AtomicEnvironment,
+                                       hyps, cutoffs, cutoff_func=cf.quadratic_cutoff):
+    """2+3+many-body single-element energy kernel.
+
+    Args:
+        env1 (AtomicEnvironment): First local environment.
+        env2 (AtomicEnvironment): Second local environment.
+        hyps (np.ndarray): Hyperparameters of the kernel function (sig1, ls1,
+            sig2, ls2, sig3, ls3, r0, sig_n).
+        cutoffs (np.ndarray): Two-element array containing the 2- and 3-body
+            cutoffs.
+        cutoff_func (Callable): Cutoff function of the kernel.
+
+    Return:
+        float: Value of the 2+3+many-body kernel.
+    """
+
+    two_term = two_body_en_jit(env1.bond_array_2, env2.bond_array_2,
+                               hyps[0], hyps[1], cutoffs[0], cutoff_func)
+
+    three_term = \
+        three_body_en_jit(env1.bond_array_3, env2.bond_array_3,
+                          env1.cross_bond_inds, env2.cross_bond_inds,
+                          env1.cross_bond_dists, env2.cross_bond_dists,
+                          env1.triplet_counts, env2.triplet_counts,
+                          hyps[2], hyps[3], cutoffs[1], cutoff_func)
+
+    many_term  = many_body_en_jit(env1.bond_array_mb, env2.bond_array_mb, hyps[4], hyps[5], hyps[6], cutoffs[2],
+                                                  cutoff_func)
+
+    return two_term + three_term + many_term
 
 
 # -----------------------------------------------------------------------------
