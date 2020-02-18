@@ -51,7 +51,7 @@ class GaussianProcess:
         par (bool, optional): If True, the covariance matrix K of the GP is
             computed in parallel. Defaults to False.
         n_cpus (int, optional): Number of cpus used for parallel
-            calculations. Defaults to 1.
+            calculations. Defaults to None.
         output (Output, optional): Output object used to dump hyperparameters
             during optimization. Defaults to None.
     """
@@ -65,7 +65,7 @@ class GaussianProcess:
                  opt_algorithm: str = 'L-BFGS-B',
                  maxiter: int = 10, par: bool = False,
                  per_atom_par: bool = True,
-                 n_cpus: int = 1, nsample: int = 100,
+                 n_cpus: int = None, nsample: int = 100,
                  output: Output = None,
                  multihyps: bool = False, hyps_mask: dict = None,
                  kernel_name="2+3_mc"):
@@ -87,6 +87,16 @@ class GaussianProcess:
             self.energy_kernel = efk
         else:
             self.kernel_name = kernel.__name__
+
+        # parallelization     
+        if self.par:
+            if n_cpus is None:
+                self.n_cpus = mp.cpu_count()
+            else:
+                self.n_cpus = n_cpus
+        else:
+            self.n_cpus = 1
+
 
         self.training_data = []
         self.training_labels = []
@@ -331,7 +341,7 @@ class GaussianProcess:
                                     self.hyps,
                                     cutoffs=self.cutoffs,
                                     hyps_mask=self.hyps_mask,
-                                    n_cpus=self.n_cpus,
+                                    n_cpus=n_cpus,
                                     nsample=self.nsample)
 
         # Guarantee that alpha is up to date with training set
