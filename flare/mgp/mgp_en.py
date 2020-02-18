@@ -2,7 +2,9 @@ import time, os, subprocess, math, inspect
 import numpy as np
 import multiprocessing as mp
 
+
 from scipy.linalg import solve_triangular
+from typing import List
 
 import flare.mgp.utils as utils
 
@@ -13,7 +15,7 @@ from flare.cutoffs import quadratic_cutoff
 from flare.util import Z_to_element
 from flare.mgp.utils import get_bonds, get_triplets, get_triplets_en
 from flare.mgp.splines_methods import PCASplines, CubicSpline
-
+from flare.util import Z_to_element
 
 class MappedGaussianProcess:
     '''
@@ -439,16 +441,51 @@ class MappedGaussianProcess:
         """
         raise NotImplementedError
 
-    def load_model(self,elements):
+    @staticmethod
+    def load_model(elements: List[int], directory:str = './',
+                   kernel: str = '2+3',
+                   load_var: bool = False):
+        """
+        Loads the relevant files in a directory to an MGP model
+        :param elements:
+        :param directory:
+        :param kernel:
+        :return:
+        """
+
+        # Check to see if two body or three body kernels will be loaded
+        # so "2+3" makes b2 and b3 true
+        b2 = '2' in kernel or 'two' in kernel
+        b3 = '3' in kernel or 'three' in kernel
+
+
+
+
+
+
+
         raise NotImplementedError
 
 
 class Map2body:
-    def __init__(self, grid_num, bounds, bond_struc,
+    def __init__(self, grid_num, bounds, bond_struc: struc.Structure,
                  svd_rank=0, mean_only=False, n_cpus=None, nsample=100):
         '''
         Build 2-body MGP
+
+        bond_struc: Mock structure used to sample 2-body forces on 2 atoms
         '''
+
+        self.grid_num = grid_num
+        self.bounds = bounds
+        self.bond_struc = bond_struc
+        self.svd_rank = svd_rank
+        self.mean_only = mean_only
+        self.n_cpus = n_cpus
+        self.nsample = nsample
+
+        spc = bond_struc.coded_species
+        self.species_code = Z_to_element(spc[0]) + '_' + Z_to_element(spc[1])
 
         arg_dict = inspect.getargvalues(inspect.currentframe())[3]
         del arg_dict['self']
@@ -540,6 +577,13 @@ class Map2body:
             if not self.mean_only:
                 bond_vars[b, :] = solve_triangular(GP.l_mat, k12_v, lower=True)
 
+        write_species_name = ''
+        for x in self.bond_struc.coded_species:
+            write_species_name += "_" + Z_to_element(x)
+        # ------ save mean and var to file -------
+        np.save('grid2_mean' + write_species_name, bond_means)
+        np.save('grid2_var' + write_species_name, bond_vars)
+
         return bond_means, bond_vars
 
 
@@ -597,7 +641,8 @@ class Map3body:
         self.__dict__.update(arg_dict)
 
         spc = bond_struc.coded_species
-        self.species_code = str(spc[0]) + str(spc[1]) + str(spc[2])
+        self.species_code = Z_to_element(spc[0]) + '_' + \
+                            Z_to_element(spc[1]) + '_' + Z_to_element(spc[2])
 
         self.build_map_container()
         self.n_cpus = n_cpus
@@ -692,7 +737,6 @@ class Map3body:
                for ibase in range(count):
                    s, e = block_id[ibase+base]
                    k12_v_all[:, :, :, s*3:e*3] = k12_slice[ibase].get()
-               del k12_slice
 
             pool.close()
             pool.join()
@@ -705,6 +749,9 @@ class Map3body:
                     if not self.mean_only:
                         grid_vars[b1, b2, b12, :] = solve_triangular(GP.l_mat,
                             k12_v, lower=True)
+
+
+        # Construct file names according to current mapping
 
         # ------ save mean and var to file -------
         np.save('grid3_mean_'+self.species_code, grid_means)
