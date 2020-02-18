@@ -51,10 +51,13 @@ def otf_md_test(md_engine):
     ZeroRotation(super_cell)  # zero angular momentum
 
     test_otf = otf_md(md_engine, super_cell, md_params, otf_params)
+
+    print(test_otf.observers)
+
     # set up logger
-    test_otf.attach(OTFLogger(test_otf, super_cell,
-        logfile=md_engine+'.log', mode="w", data_in_logfile=True),
-        interval=1)
+    otf_logger = OTFLogger(test_otf, super_cell,
+        logfile=md_engine+'.log', mode="w", data_in_logfile=True)
+    test_otf.attach(otf_logger, interval=1)
 
     # run otf
     number_of_steps = 3

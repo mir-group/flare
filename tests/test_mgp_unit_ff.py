@@ -11,7 +11,7 @@ from flare.lammps import lammps_calculator
 
 from .fake_gp import get_gp, get_random_structure
 
-body_list = [2, 3]
+body_list = ['2', '3']
 
 # ASSUMPTION: You have a Lammps executable with the mgp pair style with $lmp
 # as the corresponding environment variable.
@@ -26,7 +26,7 @@ def all_gp():
 
     allgp_dict = {}
     np.random.seed(0)
-    for bodies in [2, 3]:
+    for bodies in ['2', '3', '2+3']:
         gp_model = get_gp(bodies, 'mc', False)
         gp_model.parallel = True
         gp_model.n_cpus = 2
@@ -40,7 +40,7 @@ def all_gp():
 def all_mgp():
 
     allmgp_dict = {}
-    for bodies in [2, 3]:
+    for bodies in ['2', '3', '2+3']:
         allmgp_dict[f'{bodies}'] = None
 
     yield allmgp_dict
@@ -68,6 +68,12 @@ def test_init(bodies, all_gp, all_mgp):
                     'mass_dict': {'0': 27, '1': 16}}
 
     # grid parameters
+    # grid parameters
+    blist = []
+    if ('2' in bodies):
+        blist+= [2]
+    if ('3' in bodies):
+        blist+= [3]
     grid_params = {'bounds_2': [[lower_cut], [two_cut]],
                    'bounds_3': [[lower_cut, lower_cut, -1],
                                 [three_cut, three_cut,  1]],
@@ -75,7 +81,7 @@ def test_init(bodies, all_gp, all_mgp):
                    'grid_num_3': [grid_num_3, grid_num_3, grid_num_3],
                    'svd_rank_2': 64,
                    'svd_rank_3': 90,
-                   'bodies': [bodies],
+                   'bodies': blist,
                    'cutoffs': [two_cut, three_cut],
                    'load_grid': None,
                    'update': False}
@@ -129,6 +135,7 @@ def test_predict(all_gp, all_mgp, bodies):
     # check mgp is within 1 meV/A of the gp
     for s in range(3):
         gp_pred_x = gp_model.predict(test_envi, s+1)
+        print(mgp_pred, gp_pred_x)
         assert(np.abs(mgp_pred[0][s] - gp_pred_x[0]) < 1e-3), \
                 f"{bodies} body mapping is wrong"
 
@@ -176,8 +183,14 @@ def test_lmp_predict(all_gp, all_mgp, bodies):
     lammps_calculator.write_text(data_file_name, data_text)
 
     # create lammps input
+    by = 'no'
+    ty = 'no'
+    if '2' in bodies:
+        by = 'yes'
+    if '3' in bodies:
+        ty = 'yes'
     style_string = 'mgpf'
-    coeff_string = f'* * {lammps_location} H He yes yes'
+    coeff_string = f'* * {lammps_location} H He {by} {ty}'
     lammps_executable = os.environ.get('lmp')
     dump_file_name = f'tmp{bodies}.dump'
     input_file_name = f'tmp{bodies}.in'

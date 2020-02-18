@@ -7,6 +7,7 @@ from numpy.random import random, randint
 
 from flare import env, struc, gp
 from flare.kernels.mc_sephyps import _str_to_kernel as stk
+from flare.kernels.utils import from_mask_to_args
 
 from .fake_gp import generate_hm, generate_envs
 
@@ -28,17 +29,18 @@ def test_force_en(kernel_name, nbond, ntriplet, constraint):
 
     # set hyperparameters
     d1 = 1
+
     hyps, hm, cut = generate_hm(nbond, ntriplet, cutoffs, constraint)
+    args0 = from_mask_to_args(hyps, hm, cutoffs)
+
 
     force_en_kernel = stk[kernel_name+"_force_en"]
     en_kernel = stk[kernel_name+"_en"]
     if bool('two' in kernel_name) != bool('three' in kernel_name):
 
         # check force kernel
-        calc1 = en_kernel(env1_2, env2_1, hyps, cut,
-                hyps_mask=hm)
-        calc2 = en_kernel(env1_1, env2_1, hyps, cut,
-                hyps_mask=hm)
+        calc1 = en_kernel(env1_2, env2_1, *args0)
+        calc2 = en_kernel(env1_1, env2_1, *args0)
 
         kern_finite_diff = (calc1 - calc2) / delta
         if ('two' in kernel_name):
@@ -61,19 +63,19 @@ def test_force_en(kernel_name, nbond, ntriplet, constraint):
         hm2['ntriplet']=0
         hm3['nbond']=0
 
-        calc1 = en2_kernel(env1_2, env2_1, hyps[0:nbond*2], cutoffs,
-                hyps_mask=hm2)
-        calc2 = en2_kernel(env1_1, env2_1, hyps[0:nbond*2], cutoffs,
-                hyps_mask=hm2)
+        args2 = from_mask_to_args(hyps[0:nbond*2], hm2, cutoffs)
+
+        calc1 = en2_kernel(env1_2, env2_1, *args2)
+        calc2 = en2_kernel(env1_1, env2_1, *args2)
         kern_finite_diff = (calc1 - calc2) / 2.0 / delta
-        calc1 = en3_kernel(env1_2, env2_1, hyps[nbond*2:-1], cutoffs,
-                hyps_mask=hm3)
-        calc2 = en3_kernel(env1_1, env2_1, hyps[nbond*2:-1], cutoffs,
-                hyps_mask=hm3)
+
+        args3 = from_mask_to_args(hyps[nbond*2:-1], hm3, cutoffs)
+
+        calc1 = en3_kernel(env1_2, env2_1, *args3)
+        calc2 = en3_kernel(env1_1, env2_1, *args3)
         kern_finite_diff += (calc1 - calc2) / 3.0 / delta
 
-    kern_analytical = force_en_kernel(env1_1, env2_1, d1, hyps, cutoffs,
-                hyps_mask=hm)
+    kern_analytical = force_en_kernel(env1_1, env2_1, d1, *args0)
 
     tol = 1e-4
     assert(np.isclose(-kern_finite_diff, kern_analytical, atol=tol))
@@ -97,6 +99,7 @@ def test_force(kernel_name, nbond, ntriplet, constraint):
 
     # set hyperparameters
     hyps, hm, cut = generate_hm(nbond, ntriplet, cutoffs, constraint)
+    args0 = from_mask_to_args(hyps, hm, cutoffs)
     d1 = 1
     d2 = 2
 
@@ -107,14 +110,14 @@ def test_force(kernel_name, nbond, ntriplet, constraint):
         en_kernel = stk['two_plus_three_mc_en']
 
     # check force kernel
-    calc1 = en_kernel(env1_2, env2_2, hyps, cut, hyps_mask=hm)
-    calc2 = en_kernel(env1_3, env2_3, hyps, cut, hyps_mask=hm)
-    calc3 = en_kernel(env1_2, env2_3, hyps, cut, hyps_mask=hm)
-    calc4 = en_kernel(env1_3, env2_2, hyps, cut, hyps_mask=hm)
+    calc1 = en_kernel(env1_2, env2_2, *args0)
+    calc2 = en_kernel(env1_3, env2_3, *args0)
+    calc3 = en_kernel(env1_2, env2_3, *args0)
+    calc4 = en_kernel(env1_3, env2_2, *args0)
 
     kern_finite_diff = (calc1 + calc2 - calc3 - calc4) / (4*delta**2)
     kern_analytical = kernel(env1_1, env2_1,
-                             d1, d2, hyps, cut, hyps_mask=hm)
+                             d1, d2, *args0)
     tol = 1e-4
     assert(np.isclose(kern_finite_diff, kern_analytical, atol=tol))
 
@@ -129,26 +132,29 @@ def test_force(kernel_name, nbond, ntriplet, constraint):
                          )
 def test_hyps_grad(kernel_name, nbond, ntriplet, constraint):
 
+    np.random.seed(0)
+
     delta = 1e-8
     cutoffs = np.array([1, 1])
     env1_1, env1_2, env1_3, env2_1, env2_2, env2_3 = generate_envs(cutoffs, delta)
 
     hyps, hm, cut = generate_hm(nbond, ntriplet, cutoffs, constraint)
-    d1 = randint(1, 3)
-    d2 = randint(1, 3)
+    args = from_mask_to_args(hyps, hm, cutoffs)
+    d1 = 1
+    d2 = 2
 
     kernel = stk[kernel_name]
     kernel_grad = stk[kernel_name+"_grad"]
 
-    k, grad = kernel_grad(env1_1, env2_1,
-                            d1, d2, hyps, cut, hyps_mask=hm)
+    # compute analytical values
+    k, grad = kernel_grad(env1_1, env2_1, d1, d2, *args)
+
     print(kernel_name)
     print("grad", grad)
     print("hyps", hyps)
 
     tol = 1e-4
-    original = kernel(env1_1, env2_1, d1, d2,
-                      hyps, cut, hyps_mask=hm)
+    original = kernel(env1_1, env2_1, d1, d2, *args)
 
     nhyps = len(hyps)-1
     if ('map' in hm.keys()):
@@ -164,8 +170,12 @@ def test_hyps_grad(kernel_name, nbond, ntriplet, constraint):
             newid = hm['map'][i]
             hm['original'] = np.copy(original_hyps)
             hm['original'][newid] += delta
-        hgrad = (kernel(env1_1, env2_1, d1, d2, newhyps,
-                        cut, hyps_mask=hm) -
-                 original)/delta
-        print(i, "hgrad", hgrad)
-        assert(np.isclose(grad[i], hgrad, atol=tol))
+        newargs = from_mask_to_args(newhyps, hm, cutoffs)
+
+        hgrad = (kernel(env1_1, env2_1, d1, d2, *newargs) - original)/delta
+        if ('map' in hm.keys()):
+            print(i, "hgrad", hgrad, grad[hm['map'][i]])
+            assert(np.isclose(grad[hm['map'][i]], hgrad, atol=tol))
+        else:
+            print(i, "hgrad", hgrad, grad[i])
+            assert(np.isclose(grad[i], hgrad, atol=tol))
