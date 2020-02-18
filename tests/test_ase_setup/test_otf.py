@@ -30,7 +30,7 @@ def otf_md_test(md_engine):
     
     # ----------- create otf object -----------
     # set up OTF MD engine
-    md_params = {'timestep': 1 * units.fs, 'trajectory': None, 'dt': None, 
+    md_params = {'timestep': 1 * units.fs, 'trajectory': 'otf_md.traj', 'dt': None, 
                  'externalstress': 0, 'ttime': 25, 'pfactor': 3375, 
                  'mask': None, 'temperature': 500, 'taut': 1, 'taup': 1,
                  'pressure': 0, 'compressibility': 0, 'fixcm': 1, 
@@ -50,10 +50,12 @@ def otf_md_test(md_engine):
 
     test_otf = otf_md(md_engine, super_cell, md_params, otf_params)
 
+    print(test_otf.observers)
+
     # set up logger
-    test_otf.attach(OTFLogger(test_otf, super_cell, 
-        logfile=md_engine+'.log', mode="w", data_in_logfile=True), 
-        interval=1)
+    otf_logger = OTFLogger(test_otf, super_cell, 
+        logfile=md_engine+'.log', mode="w", data_in_logfile=True) 
+    test_otf.attach(otf_logger, interval=1)
     
     # run otf
     number_of_steps = 3

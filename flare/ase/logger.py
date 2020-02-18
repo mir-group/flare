@@ -50,7 +50,7 @@ class OTFLogger(MDLogger):
         self.logfile.write('\nhyperparameter optimization algorithm: ' +
                            gp_model.opt_algorithm)
         self.logfile.write('\nuncertainty tolerance: {} times noise'.format(
-                           str(self.dyn.std_tolerance)))
+                           str(self.dyn.std_tolerance_factor)))
         self.logfile.write('\ntimestep (ps): {}'.format(self.dyn.dt/1000))
         self.logfile.write('\nnumber of frames: {}'.format(0))
         self.logfile.write('\nnumber of atoms: {}'.format(

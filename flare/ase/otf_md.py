@@ -33,7 +33,6 @@ class OTF_VelocityVerlet(VelocityVerlet, OTF):
                  **kwargs):
 
         VelocityVerlet.__init__(self, atoms, timestep, trajectory, dt=dt)
-
         OTF.__init__(self, **kwargs)
         
         self.md_engine = 'VelocityVerlet'
@@ -120,9 +119,10 @@ class OTF_Langevin(Langevin, OTF):
     """
 
     def __init__(self, atoms, timestep=None, temperature=None, friction=None, 
-                 trajectory=None, **kwargs):
+                 fixcm=True, trajectory=None, **kwargs):
 
-        Langevin.__init__(self, atoms, timestep, temperature, friction)
+        Langevin.__init__(self, atoms, timestep, temperature, friction, 
+                          fixcm, trajectory)
 
         OTF.__init__(self, **kwargs)
         
@@ -190,7 +190,7 @@ def otf_md(md_engine: str, atoms, md_params: dict, otf_params: dict):
 
     elif md_engine == 'Langevin':
         return OTF_Langevin(atoms, timestep, md['temperature'],
-                md['friction'], trajectory, **otf_params)
+                md['friction'], md['fixcm'], trajectory, **otf_params)
 
     else:
         raise NotImplementedError(md_engine+' is not implemented')
