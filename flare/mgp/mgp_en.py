@@ -55,7 +55,7 @@ class MappedGaussianProcess:
                  n_cpus=None,
                  nsample=100):
 
-        # get all arguments as attributes
+        # load all arguments as attributes
         arg_dict = inspect.getargvalues(inspect.currentframe())[3]
         del arg_dict['self'], arg_dict['GP']
         self.__dict__.update(arg_dict)
@@ -564,8 +564,10 @@ class Map3body:
         self.__dict__.update(arg_dict)
 
         spc = bond_struc.coded_species
-        self.species_code = str(spc[0]) + str(spc[1]) + str(spc[2])
-
+        self.species_code = Z_to_element(spc[0]) + \
+                            Z_to_element(spc[1]) + \
+                            Z_to_element(spc[2])
+        self.kv3name = f'kv3_{self.species_code}'
         self.build_map_container()
 
 
@@ -607,56 +609,89 @@ class Map3body:
             grid_vars = None
 
         env12 = AtomicEnvironment(self.bond_struc, 0, GP.cutoffs)
+        size = len(GP.training_data)
 
         with mp.Pool(processes=processes) as pool:
 
-            # if self.update:
-            #     if self.kv3name in os.listdir():
-            #         subprocess.run(['rm', '-rf', self.kv3name])
-            #     subprocess.run(['mkdir', self.kv3name])
+            if self.update:
+                if self.kv3name in os.listdir():
+                    subprocess.run(['rm', '-rf', self.kv3name])
+                subprocess.run(['mkdir', self.kv3name])
 
-            #print("prepare the package for parallelization")
-            size = len(GP.training_data)
-            nsample = self.nsample
-            ns = int(math.ceil(size/nsample/processes))*processes
-            nsample = int(math.ceil(size/ns))
+                # get the size of saved kv vector
+                if f'{self.kv3name}/0.npy' in os.listdir(self.kv3name):
+                    old_kv_file = np.load(f'{self.kv3name}/0.npy') 
+                    last_size = int(old_kv_file[0,0])
+                else:
+                    last_size = 0
 
-            block_id = []
-            nbatch = 0
-            for ibatch in range(ns):
-                s1 = int(nsample*ibatch)
-                e1 = int(np.min([s1 + nsample, size]))
-                block_id += [(s1, e1)]
-                #print("block", ibatch, s1, e1)
-                nbatch += 1
+                # parallelize based on grids, since usually the number of 
+                # the added training points are small
+                ngrids = int(math.ceil(n12 / processes))
+                nbatch = int(math.ceil(n12 / ngrids))
 
-            k12_slice = []
-            #print('before for', ns, nsample, time.time())
-            count = 0
-            base = 0
-            k12_v_all = np.zeros([len(bonds1), len(bonds2), len(bonds12),
-                                  size * 3])
-            for ibatch in range(nbatch):
-                s, e = block_id[ibatch]
-                k12_slice.append(pool.apply_async(self._GenGrid_inner,
-                                                  args=(GP.training_data[s:e],
-                                                        bonds1, bonds2, bonds12,
-                                                        env12, kernel_info)))
-                #print('send', ibatch, ns, s, e, time.time())
-                count += 1
-                if (count > processes*2):
-                    for ibase in range(count):
-                        s, e = block_id[ibase+base]
-                        k12_v_all[:, :, :, s*3:e*3] = k12_slice[ibase].get()
-                    del k12_slice
-                    k12_slice = []
-                    count = 0
-                    base = ibatch+1
-            if (count > 0):
-               for ibase in range(count):
-                   s, e = block_id[ibase+base]
-                   k12_v_all[:, :, :, s*3:e*3] = k12_slice[ibase].get()
-               del k12_slice
+                block_id = []
+                for ibatch in range(nbatch):
+                    s = int(ibatch * processes)
+                    e = int(np.min(((ibatch+1)*processes, n12)))
+                    block_id += [(s, e)]
+
+                k12_slice = []
+                for ibatch in range(nbatch):
+                    k12_slice.append(pool.apply_async(self._GenGrid_inner,\
+                                     args=(GP.training_data[last_size:],\
+                                           bonds1, bonds2, bonds12,\
+                                           env12, kernel_info, \
+                                           block_id[ibatch], size * 3)))
+
+                k12_v_all = np.zeros([len(bonds1), len(bonds2), len(bonds12),
+                                      size * 3])
+                for ibatch in range(nbatch):
+                    s, e = block_id[ibatch]
+                    k12_v_all[:, :, s:e, :] = k12_slice[ibatch].get()
+
+            else:
+                #print("prepare the package for parallelization")
+                nsample = self.nsample
+                ns = int(math.ceil(size/nsample/processes))*processes
+                nsample = int(math.ceil(size/ns))
+    
+                block_id = []
+                nbatch = 0
+                for ibatch in range(ns):
+                    s1 = int(nsample*ibatch)
+                    e1 = int(np.min([s1 + nsample, size]))
+                    block_id += [(s1, e1)]
+                    #print("block", ibatch, s1, e1)
+                    nbatch += 1
+    
+                k12_slice = []
+                #print('before for', ns, nsample, time.time())
+                count = 0
+                base = 0
+                k12_v_all = np.zeros([len(bonds1), len(bonds2), len(bonds12),
+                                      size * 3])
+                for ibatch in range(nbatch):
+                    s, e = block_id[ibatch]
+                    k12_slice.append(pool.apply_async(self._GenGrid_inner,
+                                                      args=(GP.training_data[s:e],
+                                                            bonds1, bonds2, bonds12,
+                                                            env12, kernel_info)))
+                    #print('send', ibatch, ns, s, e, time.time())
+                    count += 1
+                    if (count > processes*2):
+                        for ibase in range(count):
+                            s, e = block_id[ibase+base]
+                            k12_v_all[:, :, :, s*3:e*3] = k12_slice[ibase].get()
+                        del k12_slice
+                        k12_slice = []
+                        count = 0
+                        base = ibatch+1
+                if (count > 0):
+                   for ibase in range(count):
+                       s, e = block_id[ibase+base]
+                       k12_v_all[:, :, :, s*3:e*3] = k12_slice[ibase].get()
+                   del k12_slice
 
             pool.close()
             pool.join()
@@ -676,31 +711,79 @@ class Map3body:
 
         return grid_means, grid_vars
 
-    def _GenGrid_inner(self, training_data, bonds1, bonds2, bonds12, env12, kernel_info):
+    def _GenGrid_inner(self, training_data, bonds1, bonds2, bonds12, 
+                       env12, kernel_info, block=None, total_size=None):
 
         '''
         Calculate kv segments of the given batch of training data for all grids
         '''
 
         kernel, en_force_kernel, cutoffs, hyps, hyps_mask = kernel_info
-        # open saved k vector file, and write to new file
         size = len(training_data)*3
         k12_v = np.zeros([len(bonds1), len(bonds2), len(bonds12), size])
-        for b12, r12 in enumerate(bonds12):
-            for b1, r1 in enumerate(bonds1):
-                for b2, r2 in enumerate(bonds2):
 
-                    #r12 = np.sqrt(r1**2 + r2**2 - 2*r1*r2*c12)
-                    #if (r1>r12+r2) or (r2>r12+r1) or (r12>r1+r2): # not a triangle
-                    #    k12_v[b1, b2, b12, :] = np.zeros(size)
-                    #    continue
+        # open saved k vector file, and write to new file
+        if self.update:
+            s, e = block
+            chunk = e - s
+            new_kv_file = np.zeros((chunk, 
+                                    self.grid_num[0]*self.grid_num[1]+1, 
+                                    total_size))
+            new_kv_file[:,0,0] = np.ones(chunk) * total_size
+            for i in range(s, e):
+                kv_filename = f'{self.kv3name}/{i}'
+                if kv_filename in os.listdir(self.kv3name):
+                    old_kv_file = np.load(kv_filename+'.npy') 
+                    last_size = int(old_kv_file[0,0])
+                    new_kv_file[i, :, :last_size] = old_kv_file
+                else:
+                    last_size = 0
+            ds = [1, 2, 3]
+            nop = self.grid_num[0]
 
-                    env12.bond_array_3 = np.array([[r1, 1, 0, 0], [r2, 0, 0, 0]])
-                    env12.cross_bond_dists = np.array([[0, r12], [r12, 0]])
-                    k12_v[b1, b2, b12, :] = utils.en_kern_vec(training_data,
-                                                              env12, en_force_kernel,
-                                                              hyps, cutoffs, hyps_mask)
+        for b1, r1 in enumerate(bonds1):
+            for b2, r2 in enumerate(bonds2):
 
+                if self.update:
+
+                    for i in range(s, e):
+                        r12 = bonds12[i]
+
+                        # if not a triangle, skip
+                        if (r1>r12+r2) or (r2>r12+r1) or (r12>r1+r2): 
+                            new_kv_file[i, 1+b1*nop+b2, :] = np.zeros(total_size)
+                            continue
+
+                        env12.bond_array_3 = np.array([[r1, 1, 0, 0], 
+                                                       [r2, 0, 0, 0]])
+                        env12.cross_bond_dists = np.array([[0, r12], [r12, 0]])
+
+                        k_v = np.zeros(size)
+                        for m_index in range(size):
+                            x_2 = training_data[int(math.floor(m_index / 3))]
+                            d_2 = ds[m_index % 3]
+                            k_v[m_index] = en_force_kernel(env12, x_2, 1, d_2, 
+                                                     hyps, cutoffs)
+                        new_kv_file[i, 1+b1*nop+b2, last_size:] = k_v
+                else:
+                    for b12, r12 in enumerate(bonds12):
+                        # if not a triangle, skip
+                        if (r1>r12+r2) or (r2>r12+r1) or (r12>r1+r2): 
+                            k12_v[b1, b2, b12, :] = np.zeros(size)
+                            continue
+        
+                        env12.bond_array_3 = np.array([[r1, 1, 0, 0], 
+                                                       [r2, 0, 0, 0]])
+                        env12.cross_bond_dists = np.array([[0, r12], [r12, 0]])
+
+                        k12_v[b1, b2, b12, :] = utils.en_kern_vec(training_data,
+                                                env12, en_force_kernel,
+                                                hyps, cutoffs, hyps_mask)
+
+        if self.update:
+            k12_v = new_kv_file[:,1:,:]
+            for i in range(s, e):
+                np.save(f'{self.kv3name}/{i}', new_kv_file[i,:,:])
         return k12_v
 
 
