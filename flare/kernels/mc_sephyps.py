@@ -121,8 +121,7 @@ def two_plus_three_body_mc_grad(env1, env2, d1, d2, cutoffs,
                                d1, d2, sig3, ls3, r_cut_3,
                                cutoff_func,
                                nspec, spec_mask,
-                               ntriplet,
-                               triplet_mask)
+                               ntriplet, triplet_mask)
 
     g = np.hstack([grad2, grad3])
 
