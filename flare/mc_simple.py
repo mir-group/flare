@@ -240,6 +240,115 @@ def two_plus_three_mc_en(env1: AtomicEnvironment, env2: AtomicEnvironment,
 
 
 # -----------------------------------------------------------------------------
+#                     two plus three plus many body kernels
+# -----------------------------------------------------------------------------
+
+def two_plus_three_plus_many_body_mc(env1: AtomicEnvironment, env2: AtomicEnvironment,
+                                     d1: int, d2: int, hyps, cutoffs,
+                                     cutoff_func=cf.quadratic_cutoff):
+    """2+3-body single-element kernel between two force components.
+
+    Args:
+        env1 (AtomicEnvironment): First local environment.
+        env2 (AtomicEnvironment): Second local environment.
+        d1 (int): Force component of the first environment.
+        d2 (int): Force component of the second environment.
+        hyps (np.ndarray): Hyperparameters of the kernel function (sig1, ls1,
+            sig2, ls2, sig3, ls3, r0, sig_n).
+        cutoffs (np.ndarray): Two-element array containing the 2- and 3-body
+            cutoffs.
+        cutoff_func (Callable): Cutoff function of the kernel.
+
+    Return:
+        float: Value of the 2+3+many-body kernel.
+    """
+
+    sig2 = hyps[0]
+    ls2 = hyps[1]
+    sig3 = hyps[2]
+    ls3 = hyps[3]
+    sigm = hyps[4]
+    lsm = hyps[5]
+    r0 = hyps[6]
+
+    r_cut_2 = cutoffs[0]
+    r_cut_3 = cutoffs[1]
+    r_cut_m = cutoffs[1]
+
+    two_term = two_body_mc_jit(env1.bond_array_2, env1.ctype, env1.etypes,
+                               env2.bond_array_2, env2.ctype, env2.etypes,
+                               d1, d2, sig2, ls2, r_cut_2, cutoff_func)
+
+    three_term = \
+        three_body_mc_jit(env1.bond_array_3, env1.ctype, env1.etypes,
+                          env2.bond_array_3, env2.ctype, env2.etypes,
+                          env1.cross_bond_inds, env2.cross_bond_inds,
+                          env1.cross_bond_dists, env2.cross_bond_dists,
+                          env1.triplet_counts, env2.triplet_counts,
+                          d1, d2, sig3, ls3, r_cut_3, cutoff_func)
+
+    many_term = many_body_mc_jit(env1.bond_array_mb, env2.bond_array_mb, env1.neigh_dists_mb,
+                                 env2.neigh_dists_mb, env1.num_neighs_mb, env2.num_neighs_mb,
+                                 env1.ctype, env2.ctype, env1.etypes, env2.etypes, d1, d2, sigm,
+                                 lsm, r0, r_cut_m, cutoff_func)
+
+    return two_term + three_term + many_term
+
+
+def two_plus_three_plus_many_body_mc_grad(env1: AtomicEnvironment, env2: AtomicEnvironment,
+                                          d1: int, d2: int, hyps, cutoffs,
+                                          cutoff_func=cf.quadratic_cutoff):
+    """2+3+many-body single-element kernel between two force components.
+
+    Args:
+        env1 (AtomicEnvironment): First local environment.
+        env2 (AtomicEnvironment): Second local environment.
+        d1 (int): Force component of the first environment.
+        d2 (int): Force component of the second environment.
+        hyps (np.ndarray): Hyperparameters of the kernel function (sig1, ls1,
+            sig2, ls2, sig3, ls3, r0, sig_n).
+        cutoffs (np.ndarray): Two-element array containing the 2- and 3-body
+            cutoffs.
+        cutoff_func (Callable): Cutoff function of the kernel.
+
+    Return:
+        float: Value of the 2+3+many-body kernel.
+    """
+
+    sig2 = hyps[0]
+    ls2 = hyps[1]
+    sig3 = hyps[2]
+    ls3 = hyps[3]
+    sigm = hyps[4]
+    lsm = hyps[5]
+    r0 = hyps[6]
+
+    r_cut_2 = cutoffs[0]
+    r_cut_3 = cutoffs[1]
+    r_cut_m = cutoffs[1]
+
+    kern2, grad2 = two_body_mc_grad_jit(env1.bond_array_2, env1.ctype, env1.etypes,
+                                        env2.bond_array_2, env2.ctype, env2.etypes,
+                                        d1, d2, sig2, ls2, r_cut_2, cutoff_func)
+
+    kern3, grad3 = \
+        three_body_mc_grad_jit(env1.bond_array_3, env1.ctype, env1.etypes,
+                               env2.bond_array_3, env2.ctype, env2.etypes,
+                               env1.cross_bond_inds, env2.cross_bond_inds,
+                               env1.cross_bond_dists, env2.cross_bond_dists,
+                               env1.triplet_counts, env2.triplet_counts,
+                               d1, d2, sig3, ls3, r_cut_3, cutoff_func)
+
+    kern_many, grad3 = many_body_mc_grad_jit(env1.bond_array_mb, env2.bond_array_mb,
+                                             env1.neigh_dists_mb, env2.neigh_dists_mb,
+                                             env1.num_neighs_mb, env2.num_neighs_mb, env1.ctype,
+                                             env2.ctype, env1.etypes, env2.etypes, d1, d2, sigm,
+                                             lsm, r0, r_cut_m, cutoff_func)
+
+    return kern2 + kern3 + kern_many, np.array([sig2, ls2, sig3, ls3, sigm, lsm, r0])
+
+
+# -----------------------------------------------------------------------------
 #                      three body multicomponent kernel
 # -----------------------------------------------------------------------------
 
@@ -1431,6 +1540,7 @@ def two_body_mc_en_jit(bond_array_1, c1, etypes1,
 #                 many body multicomponent kernel (numba)
 # -----------------------------------------------------------------------------
 
+@njit
 def many_body_mc_jit(bond_array_1, bond_array_2, neigh_dists_1, neigh_dists_2, num_neigh_1,
                      num_neigh_2, c1, c2, etypes1, etypes2, d1, d2, sig, ls, r0, r_cut,
                      cutoff_func):
@@ -1487,7 +1597,6 @@ def many_body_mc_jit(bond_array_1, bond_array_2, neigh_dists_1, neigh_dists_2, n
         pass
 
     return kern
-
 
 @njit
 def many_body_mc_grad_jit(bond_array_1, bond_array_2,
@@ -1591,7 +1700,8 @@ def many_body_mc_grad_jit(bond_array_1, bond_array_2,
     else:
         pass
 
-    return kern, sig_derv, ls_derv, r0_derv
+    grad = np.array([sig_derv, ls_derv, r0_derv])
+    return kern, grad
 
 
 _str_to_kernel = {'two_body_mc': two_body_mc,
