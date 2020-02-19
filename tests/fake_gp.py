@@ -8,7 +8,6 @@ from flare.gp import GaussianProcess
 from flare.env import AtomicEnvironment
 from flare.struc import Structure
 from flare.otf_parser import OtfAnalysis
-from flare.kernels.utils import str_to_kernel_set as stks
 
 def get_random_structure(cell, unique_species, noa):
     """Create a random test structure """
@@ -32,11 +31,14 @@ def get_random_structure(cell, unique_species, noa):
 def generate_hm(nbond, ntriplet, cutoffs=[1, 1], constraint=False, multihyps=True):
 
     if (multihyps is False):
-        hyps_label = ['ls2', 'sig2', 'ls3', 'sig3', 'noise']
+        hyps_label = []
         if (nbond > 0):
             nbond = 1
+            hyps_label += ['Length', 'Signal Var.']
         if (ntriplet >0):
             ntriplet = 1
+            hyps_label += ['Length', 'Signal Var.']
+        hyps_label += ['Noise Var.']
         return random((nbond+ntriplet)*2+1), {'hyps_label':hyps_label}, deepcopy(cutoffs)
 
     specs_mask = np.zeros(118, dtype=int)
@@ -153,24 +155,13 @@ def get_gp(bodies, kernel_type='mc', multihyps=True) -> GaussianProcess:
     cutoffs = np.array([0.8, 0.8])
     noa = 5
 
-    if (bodies is 2):
+    nbond = 0
+    ntriplet = 0
+    prefix = bodies
+    if ('2' in bodies or 'two' in bodies):
         nbond = 1
-        ntriplet = 0
-        prefix='2'
-    elif (bodies is 3):
-        nbond = 0
+    if ('3' in bodies or 'three' in bodies):
         ntriplet = 1
-        prefix='3'
-    elif (isinstance(bodies, list)):
-        nbond = 0
-        ntriplet = 0
-        prefix = ''
-        if (2 in bodies):
-            nbond = 1
-            prefix += '2'
-        if (3 in bodies):
-            ntriplet = 1
-            prefix += '3'
 
     hyps, hm, _ = generate_hm(nbond, ntriplet, multihyps=multihyps)
 
@@ -178,23 +169,19 @@ def get_gp(bodies, kernel_type='mc', multihyps=True) -> GaussianProcess:
     test_structure, forces = get_random_structure(cell, unique_species,
                                                   noa)
 
-    kernel, kernel_grad, _, efk = stks(f'{prefix}{kernel_type}',
-                                       multihyps=multihyps)
-
     hl = hm['hyps_label']
     if (multihyps is False):
         hm = None
 
     # test update_db
     gaussian = \
-        GaussianProcess(kernel=kernel,
-                        kernel_grad=kernel_grad,
+        GaussianProcess(kernel_name=f'{prefix}{kernel_type}',
                         hyps=hyps,
                         hyp_labels=hl,
-                        energy_force_kernel=efk,
                         cutoffs=cutoffs, multihyps=multihyps, hyps_mask=hm,
-                        par=False, n_cpus=1)
+                        parallel=False, n_cpus=1)
     gaussian.update_db(test_structure, forces)
+    gaussian.check_L_alpha()
 
     return gaussian
 

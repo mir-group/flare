@@ -350,7 +350,8 @@ class Output:
 
     def write_gp_dft_comparison(self, curr_step, frame,
                                 start_time, dft_forces,
-                                error, local_energies=None, KE=None):
+                                error, local_energies=None, KE=None,
+                                mgp= False):
         """ write the comparison to logfile
 
         :param curr_step: current timestep
@@ -371,6 +372,8 @@ class Output:
 
         # Construct Header line
         string += '\nEl  Position (A) \t\t\t\t '
+        if mgp:
+            string += 'M'
         string += 'GP Force (ev/A)  \t\t\t\t'
         string += 'Std. Dev (ev/A) \t\t\t\t'
         string += 'DFT Force (ev/A)  \t\t\t\t \n'

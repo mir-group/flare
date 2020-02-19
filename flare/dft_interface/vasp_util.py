@@ -112,7 +112,7 @@ def run_dft_par(dft_input: str, structure: Structure,
             ("Warning: No VASP Command passed, or stored in "
             "environment as VASP_COMMAND. ")
 
-    if ncpus > 1:
+    if n_cpus > 1:
         # why is parallel prefix needed?
         if (parallel_prefix == "mpi") and (mpi == 'mpi'):
             dft_command = f'mpirun -np {ncpus} {dft_command}'

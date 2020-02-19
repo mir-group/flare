@@ -16,7 +16,7 @@ import os
 from flare import gp, struc
 from flare.env import AtomicEnvironment
 from flare.gp import GaussianProcess
-from flare.gp_algebra import get_kernel_vector
+from flare.gp_algebra import get_kernel_vector_unit, partition_c
 from flare.kernels.kernels import two_body, three_body, two_plus_three_body,\
     two_body_jit
 from flare.cutoffs import quadratic_cutoff
@@ -227,10 +227,11 @@ class MappedGaussianProcess:
                                             self.get_3body_comp, self.spcs[1],
                                             self.maps_3, mean_only)
 
-        f = f2 + f3
-        vir = vir2 + vir3
-        v = kern2 + kern3 - np.sum((v2 + v3)**2, axis=0)
-        return f, v, vir, 0
+        force = f2 + f3
+        variance = kern2 + kern3 - np.sum((v2 + v3)**2, axis=0)
+        virial_stress = vir2 + vir3
+
+        return force, variance, virial_stress, 0
 
     def get_2body_comp(self, atom_env, sig, ls, r_cut):
         '''
@@ -414,7 +415,7 @@ class MappedGaussianProcess:
 
 class Map2body:
     def __init__(self, grid_num, bounds, cutoffs, bond_struc, bodies='2',
-                 svd_rank=0, mean_only=False, n_cpus=1, nsample=100):
+                 svd_rank=0, mean_only=False, n_cpus=1, n_sample=100):
         '''
         Build 2-body MGP
         '''
@@ -428,7 +429,7 @@ class Map2body:
         self.svd_rank = svd_rank
         self.mean_only = mean_only
         self.n_cpus = n_cpus
-        self.nsample = nsample
+        self.n_sample = n_sample
 
         self.build_map_container()
 
@@ -456,22 +457,12 @@ class Map2body:
         env12 = AtomicEnvironment(self.bond_struc, 0, self.cutoffs)
 
         if processes == 1 :
-            k12_v_all = self._GenGrid_inner(GP.training_data,
+            k12_v_all = self._GenGrid_inner(GP.name, 0, len(GP.training_data),
                                             bond_lengths, env12, kernel_info)
         else:
             with mp.Pool(processes=processes) as pool:
                 size = len(GP.training_data)
-                nsample = self.nsample
-                ns = int(math.ceil(size/nsample/processes))*processes
-                nsample = int(math.ceil(size/ns))
-
-                block_id = []
-                nbatch = 0
-                for ibatch in range(ns):
-                    s1 = int(nsample*ibatch)
-                    e1 = int(np.min([s1 + nsample, size]))
-                    block_id += [(s1, e1)]
-                    nbatch += 1
+                block_id, nbatch = partition_c(self.n_sample, size, processes)
 
                 k12_slice = []
                 k12_v_all = np.zeros([len(bond_lengths), size*3])
@@ -482,7 +473,7 @@ class Map2body:
                     s, e = block_id[ibatch]
                     k12_slice.append(\
                             pool.apply_async(self._GenGrid_inner,
-                                             args=(GP.training_data[s:e],
+                                             args=(name, s, e,
                                                    bond_lengths,
                                                    env12, kernel_info)))
                     count += 1
@@ -517,7 +508,7 @@ class Map2body:
         return bond_means, bond_vars
 
 
-    def _GenGrid_inner(self, training_data, bond_lengths,
+    def _GenGrid_inner(self, name, s, e, bond_lengths,
             env12, kernel_info):
 
         '''
@@ -526,13 +517,13 @@ class Map2body:
         print(kernel_info)
 
         kernel, efk, cutoffs, hyps, hyps_mask = kernel_info
-        size = len(training_data)
+        size = e - s
         k12_v = np.zeros([len(bond_lengths), size*3])
         for b, r in enumerate(bond_lengths):
             env12.bond_array_2 = np.array([[r, 1, 0, 0]])
-            k12_v[b, :] = get_kernel_vector(training_data, kernel,
-                                            env12, 1, hyps,
-                                            cutoffs, hyps_mask)
+            k12_v[b, :] = get_kernel_vector_unit(
+                    name, s, e, env12, 1,
+                    kernel, hyps, cutoffs, hyps_mask)
         return k12_v
 
     def build_map_container(self):
@@ -560,7 +551,7 @@ class Map3body:
 
     def __init__(self, grid_num, bounds, cutoffs, bond_struc, bodies='3',
             svd_rank=0, mean_only=False, load_grid=None, update=True,
-            n_cpus=1, nsample=100):
+            n_cpus=1, n_sample=100):
         '''
         Build 3-body MGP
         '''
@@ -576,7 +567,7 @@ class Map3body:
         self.load_grid = load_grid
         self.update = update
         self.n_cpus = n_cpus
-        self.nsample = nsample
+        self.n_sample = n_sample
 
         self.build_map_container()
 
@@ -619,22 +610,11 @@ class Map3body:
 
             print("prepare the package for parallelization")
             size = len(GP.training_data)
-            nsample = self.nsample
-            ns = int(math.ceil(size/nsample/processes))*processes
-            nsample = int(math.ceil(size/ns))
-
-            block_id = []
-            nbatch = 0
-            for ibatch in range(ns):
-                s1 = int(nsample*ibatch)
-                e1 = int(np.min([s1 + nsample, size]))
-                block_id += [(s1, e1)]
-                print("block", ibatch, s1, e1)
-                nbatch += 1
+            block_id, nbatch = partition_c(self.n_sample, size, processes)
 
             k12_slice = []
             if (size>5000):
-                print('parallel set up:', size, ns, nsample, time.time())
+                print('parallel set up:', size, ns, n_sample, time.time())
             count = 0
             base = 0
             k12_v_all = np.zeros([len(bond_lengths), len(bond_lengths), len(cos_angles), size*3])
@@ -642,7 +622,7 @@ class Map3body:
                 s, e = block_id[ibatch]
                 k12_slice.append(\
                         pool.apply_async(self._GenGrid_inner_most,
-                                         args=(GP.training_data[s:e],
+                                         args=(name, s, e,
                                                cos_angles, bond_lengths,
                                                env12, kernel_info)))
                 if (size>5000):
@@ -744,16 +724,17 @@ class Map3body:
 
         return bond_means, bond_vars
 
-    def _GenGrid_inner_most(self, training_data, cos_angles, bond_lengths, env12, kernel_info):
+    def _GenGrid_inner_most(self, name, s, e, cos_angles, bond_lengths, env12, kernel_info):
 
         '''
         generate grid for each cos_angle, used to parallelize grid generation
         '''
 
         kernel, efk, cutoffs, hyps, hyps_mask = kernel_info
+        training_data = flare.gp_algebra._global_training_data[name]
         # open saved k vector file, and write to new file
         size = len(training_data)*3
-        k12_v = np.zeros([len(bond_lengths), len(bond_lengths), 
+        k12_v = np.zeros([len(bond_lengths), len(bond_lengths),
                           len(cos_angles), size])
         for a12, cos_angle12 in enumerate(cos_angles):
             for b1, r1 in enumerate(bond_lengths):
@@ -768,8 +749,8 @@ class Map3body:
                     env12.cross_bond_dists = np.array([[0, r12], [r12, 0]])
 
                     k12_v[b1, b2, a12, :] = \
-                            get_kernel_vector(training_data, kernel, env12,
-                                              1, hyps, cutoffs, hyps_mask)
+                            get_kernel_vector_unit(name, s, e, env12, 1,
+                                    kernel, hyps, cutoffs, hyps_mask)
 
         return k12_v
 
