@@ -60,8 +60,6 @@ def all_ase_calc():
     del all_ase_calc_dict
 
 
-    flare_calc = FLARE_Calculator(gp_model, mgp_model, par=False, use_mapping=True)
-
 @pytest.mark.parametrize('bodies', body_list)
 @pytest.mark.parametrize('multihyps', multi_list)
 def test_init(bodies, multihyps, all_mgp, all_gp):
@@ -110,6 +108,8 @@ def test_init(bodies, multihyps, all_mgp, all_gp):
                 mean_only=True, lmp_file_name=lammps_location)
     all_mgp[f'{bodies}{multihyps}'] = mgp_model
 
+    all_ase_calc[f'{bodies}{multihyps}'] = FLARE_Calculator(gp_model, mgp_model, 
+                                           par=False, use_mapping=True)
 
 @pytest.mark.parametrize('bodies', body_list)
 @pytest.mark.parametrize('multihyps', multi_list)
@@ -137,9 +137,7 @@ def test_predict(all_gp, all_mgp, bodies, multihyps):
     test the predict for mc_simple kernel
     """
 
-    # multihyps = False
-    gp_model = all_gp[f'{bodies}{multihyps}']
-    mgp_model = all_mgp[f'{bodies}{multihyps}']
+    flare_calc = all_ase_calc[f'{bodies}{multihyps}']
 
     nenv=10
     cell = np.eye(3)
@@ -148,9 +146,7 @@ def test_predict(all_gp, all_mgp, bodies, multihyps):
     struc_test, f = get_random_structure(cell, unique_species, nenv)
     test_envi = env.AtomicEnvironment(struc_test, 1, cutoffs)
 
-    gp_pred_en = gp_model.predict_local_energy(test_envi)
-    gp_pred_x = gp_model.predict(test_envi, 1)
-    mgp_pred = mgp_model.predict(test_envi, mean_only=True)
+    mgp_pred[-1] = mgp_model.predict(test_envi, mean_only=True)
 
     # check mgp is within 1 meV/A of the gp
     assert(np.abs(mgp_pred[3] - gp_pred_en) < 1e-3), \
