@@ -230,3 +230,4 @@ def test_lmp_predict(all_ase_calc, all_lmp_calc, bodies, multihyps):
             os.remove(f)
         if f in ['log.lammps', lammps_location]:
             os.remove(f)
+    os.remove('tmp')
