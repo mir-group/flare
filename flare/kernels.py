@@ -2057,7 +2057,10 @@ _str_to_kernel = {'two_body': two_body,
                   'three_body_force_en': three_body_force_en,
                   'two_plus_three_body': two_plus_three_body,
                   'two_plus_three_en': two_plus_three_en,
-                  'two_plus_three_force_en': two_plus_three_force_en
+                  'two_plus_three_force_en': two_plus_three_force_en, 
+                  'two_plus_three_plus_many_body': two_plus_three_body,
+                  'two_plus_three_plus_many_en': two_plus_three_plus_many_body_en,
+                  'two_plus_three_plus_many_force_en': two_plus_three_plus_many_body_force_en, 
                   }
 
 
