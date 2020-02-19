@@ -64,7 +64,7 @@ class GaussianProcess:
                  opt_algorithm: str = 'L-BFGS-B',
                  maxiter: int = 10, parallel: bool = False,
                  per_atom_par: bool = True,
-                 n_cpus: int = None, nsample: int = 100,
+                 n_cpus: int = None, n_sample: int = 100,
                  output: Output = None,
                  multihyps: bool = False, hyps_mask: dict = None,
                  kernel_name="2+3_mc", name="default_gp", **kwargs):
@@ -373,13 +373,13 @@ class GaussianProcess:
         else:
             n_cpus = 1
 
-        k_v = get_kernel_vector_par(self.training_data, self.kernel,
-                                    x_t, d,
-                                    self.hyps,
-                                    cutoffs=self.cutoffs,
-                                    hyps_mask=self.hyps_mask,
-                                    n_cpus=n_cpus,
-                                    nsample=self.nsample)
+        k_v = get_kernel_vector(self.name, self.kernel,
+                                x_t, d,
+                                self.hyps,
+                                cutoffs=self.cutoffs,
+                                hyps_mask=self.hyps_mask,
+                                n_cpus=n_cpus,
+                                n_sample=self.n_sample)
 
         # Guarantee that alpha is up to date with training set
         self.check_L_alpha()

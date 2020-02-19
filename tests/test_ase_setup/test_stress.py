@@ -1,96 +1,245 @@
-import os
-import re
-import sys
 import numpy as np
+import time
+import pytest
+import os, pickle, re
 
-from ase.spacegroup import crystal
-
-from flare.otf_parser import OtfAnalysis
-from flare.kernels.utils import str_to_kernel_set as stk
-from flare.env import AtomicEnvironment
-from flare.predict import predict_on_structure
-from flare.ase.calculator import FLARE_Calculator
+from flare import struc, env, gp
+from flare import otf_parser
 from flare.mgp.mgp_en import MappedGaussianProcess
+from flare.lammps import lammps_calculator
+from flare.ase.calculator import FLARE_Calculator
 
-def test_stress_with_lammps():
+from .fake_gp import get_gp, get_random_structure
+
+body_list = ['2', '3']
+multi_list = [False, True]
+
+# ASSUMPTION: You have a Lammps executable with the mgp pair style with $lmp
+# as the corresponding environment variable.
+@pytest.mark.skipif(not os.environ.get('lmp',
+                          False), reason='lmp not found '
+                                  'in environment: Please install LAMMPS '
+                                  'and set the $lmp env. '
+                                  'variable to point to the executatble.')
+
+@pytest.fixture(scope='module')
+def all_gp():
+
+    allgp_dict = {}
+    np.random.seed(0)
+    for bodies in ['2', '3', '2+3']:
+        for multihyps in [False, True]:
+            gp_model = get_gp(bodies, 'mc', multihyps)
+            gp_model.parallel = True
+            gp_model.n_cpus = 2
+            allgp_dict[f'{bodies}{multihyps}'] = gp_model
+
+    yield allgp_dict
+    del allgp_dict
+
+@pytest.fixture(scope='module')
+def all_mgp():
+
+    allmgp_dict = {}
+    for bodies in ['2', '3', '2+3']:
+        for multihyps in [False, True]:
+            allmgp_dict[f'{bodies}{multihyps}'] = None
+
+    yield allmgp_dict
+    del allmgp_dict
+
+@pytest.fixture(scope='module')
+def all_ase_calc():
+
+    all_ase_calc_dict = {}
+    for bodies in ['2', '3', '2+3']:
+        for multihyps in [False, True]:
+            all_ase_calc_dict[f'{bodies}{multihyps}'] = None
+
+    yield all_ase_calc_dict
+    del all_ase_calc_dict
+
+
+@pytest.mark.parametrize('bodies', body_list)
+@pytest.mark.parametrize('multihyps', multi_list)
+def test_init(bodies, multihyps, all_mgp, all_gp):
     """
-    Based on gp_test_al.out, ensures that given hyperparameters and DFT calls
-    a GP model can be reproduced and correctly re-predict forces and
-    uncertainties
-    :return:
+    test the init function
     """
 
-    # build up GP from a previous trajectory
-    parsed = OtfAnalysis('test_files/VelocityVerlet.log')
+    gp_model = all_gp[f'{bodies}{multihyps}']
 
-    positions = parsed.position_list
-    forces = parsed.force_list
+    grid_num_2 = 64
+    grid_num_3 = 20
+    lower_cut = 0.01
+    two_cut = gp_model.cutoffs[0]
+    three_cut = gp_model.cutoffs[1]
+    lammps_location = f'{bodies}{multihyps}.mgp'
 
-    kernel, kernel_grad, ek, efk = stk("23mc", False)
-    gp_model = parsed.make_gp(kernel=kernel,
-                              kernel_grad=kernel_grad)
-    gp_model.energy_force_kernel = efk
-    gp_model.energy_kernel = ek
-
-    # build up MGP from GP
-    struc_params = {'species': [47, 53],
-                    'cube_lat': np.eye(3) * 100,
+    # set struc params. cell and masses arbitrary?
+    mapped_cell = np.eye(3) * 2
+    struc_params = {'species': [1, 2],
+                    'cube_lat': mapped_cell,
                     'mass_dict': {'0': 27, '1': 16}}
 
     # grid parameters
-    lower_cut = 2.5
-    grid_num_2 = 64
-    grid_num_3 = 48
-    two_cut, three_cut = gp_model.cutoffs
-    grid_params = {'bounds_2': [[lower_cut], [two_cut]],
+    blist = []
+    if ('2' in bodies):
+        blist+= [2]
+    if ('3' in bodies):
+        blist+= [3]
+    train_size = len(gp_model.training_data)
+    grid_params = {'bodies': blist,
+                   'cutoffs':gp_model.cutoffs,
+                   'bounds_2': [[lower_cut], [two_cut]],
                    'bounds_3': [[lower_cut, lower_cut, lower_cut],
                                 [three_cut, three_cut, three_cut]],
                    'grid_num_2': grid_num_2,
                    'grid_num_3': [grid_num_3, grid_num_3, grid_num_3],
-                   'svd_rank_2': 0,
-                   'svd_rank_3': 0,
-                   'bodies': [2, 3],
+                   'svd_rank_2': 14,
+                   'svd_rank_3': 14,
                    'load_grid': None,
                    'update': False}
 
-    mgp_model = MappedGaussianProcess(grid_params, struc_params, GP=gp_model,
-                                      mean_only=True, container_only=False,
-                                      lmp_file_name='lmp.mgp')
+    struc_params = {'species': [1, 2],
+                    'cube_lat': np.eye(3)*2,
+                    'mass_dict': {'0': 27, '1': 16}}
+    mgp_model = MappedGaussianProcess(grid_params, struc_params, n_cpus=4,
+                mean_only=True, lmp_file_name=lammps_location)
+    all_mgp[f'{bodies}{multihyps}'] = mgp_model
 
-    # ------------ create ASE's flare calculator -----------------------
-    flare_calc = FLARE_Calculator(gp_model, mgp_model, par=False, use_mapping=True)
+    all_ase_calc[f'{bodies}{multihyps}'] = FLARE_Calculator(gp_model, mgp_model, 
+                                           par=False, use_mapping=True)
 
-    a = 3.855
-    alpha = 90
-    super_cell = crystal(['Ag', 'I'], # Ag, I
-                 basis=[(0, 0, 0), (0.5, 0.5, 0.5)],
-                 size=(2, 1, 1),
-                 cellpar=[a, a, a, alpha, alpha, alpha])
-    super_cell.positions = positions[-1]
-    super_cell.set_calculator(flare_calc)
-    super_cell.calc.calculate_gp(super_cell)
-    print('gp_forces', super_cell.calc.results['forces'])
-    print('gp_energies', super_cell.calc.results['local_energies'])
-    super_cell.calc.calculate_mgp_serial(super_cell)
-    print('mgp_forces', super_cell.calc.results['forces'])
-    print('mgp_energies', super_cell.calc.results['local_energies'])
+@pytest.mark.parametrize('bodies', body_list)
+@pytest.mark.parametrize('multihyps', multi_list)
+def test_build_map(all_gp, all_mgp, bodies, multihyps):
+    """
+    test the mapping for mc_simple kernel
+    """
 
+    # multihyps = False
+    gp_model = all_gp[f'{bodies}{multihyps}']
+    mgp_model = all_mgp[f'{bodies}{multihyps}']
 
-    stresses = super_cell.calc.results['stresses']
-
-    # parse lammps stress
-    lmp_file = open('test_files/stress.lammps')
-    lines = lmp_file.readlines()[9:]
-    for ind, line in enumerate(lines):
-        line = line.split()
-        strs = np.array([float(l) for l in line[1:]]) / 1.60217662e6
-        assert np.isclose(stresses[ind], strs, atol=1e-3).all()
+    mgp_model.build_map(gp_model)
 
     for f in os.listdir("./"):
-        if f in [f'lmp.mgp']:
+        if re.search("grid3*.npy", f):
+            os.remove(f)
+        if re.search("kv3*", f):
+            os.rmdir(f)
+
+@pytest.mark.parametrize('bodies', body_list)
+@pytest.mark.parametrize('multihyps', multi_list)
+def test_predict(all_gp, all_mgp, bodies, multihyps):
+    """
+    test the predict for mc_simple kernel
+    """
+
+    flare_calc = all_ase_calc[f'{bodies}{multihyps}']
+
+    nenv=10
+    cell = np.eye(3)
+    cutoffs = gp_model.cutoffs
+    unique_species = gp_model.training_data[0].species
+    struc_test, f = get_random_structure(cell, unique_species, nenv)
+    test_envi = env.AtomicEnvironment(struc_test, 1, cutoffs)
+
+    mgp_pred[-1] = mgp_model.predict(test_envi, mean_only=True)
+
+    # check mgp is within 1 meV/A of the gp
+    assert(np.abs(mgp_pred[3] - gp_pred_en) < 1e-3), \
+            f"{bodies} body energy mapping is wrong"
+    assert(np.abs(mgp_pred[0][0] - gp_pred_x[0]) < 1e-3), \
+            f"{bodies} body mapping is wrong"
+
+    for f in os.listdir("./"):
+        if re.search("grid3*.npy", f):
+            os.remove(f)
+        if re.search("kv3*", f):
+            os.rmdir(f)
+
+@pytest.mark.skipif(not os.environ.get('lmp',
+                          False), reason='lmp not found '
+                                  'in environment: Please install LAMMPS '
+                                  'and set the $lmp env. '
+                                  'variable to point to the executatble.')
+@pytest.mark.parametrize('bodies', body_list)
+@pytest.mark.parametrize('multihyps', multi_list)
+def test_lmp_predict(all_gp, all_mgp, bodies, multihyps):
+    """
+    test the lammps implementation
+    """
+
+    for f in os.listdir("./"):
+        if f in [f'tmp{bodies}{multihyps}in', f'tmp{bodies}{multihyps}out', f'tmp{bodies}{multihyps}dump',
+                 f'tmp{bodies}{multihyps}data', 'log.lammps']:
             os.remove(f)
         if re.search("grid3*.npy", f):
             os.remove(f)
         if re.search("kv3*", f):
             os.rmdir(f)
 
+    mgp_model = all_mgp[f'{bodies}{multihyps}']
+    gp_model = all_gp[f'{bodies}{multihyps}']
+    lammps_location = mgp_model.lmp_file_name
+
+    # lmp file is automatically written now every time MGP is constructed
+    mgp_model.write_lmp_file(lammps_location)
+
+    # create test structure
+    cell = np.eye(3)
+    nenv = 10
+    unique_species = gp_model.training_data[0].species
+    cutoffs = gp_model.cutoffs
+    struc_test, f = get_random_structure(cell, unique_species, nenv)
+    atom_num = 1
+    test_envi = env.AtomicEnvironment(struc_test, atom_num, cutoffs)
+    atom_types = [1, 2]
+    atom_masses = [108, 127]
+    atom_species = struc_test.coded_species
+
+    # create data file
+    data_file_name = f'tmp{bodies}{multihyps}.data'
+    data_text = lammps_calculator.lammps_dat(struc_test, atom_types,
+                                             atom_masses, atom_species)
+    lammps_calculator.write_text(data_file_name, data_text)
+
+    # create lammps input
+    by = 'no'
+    ty = 'no'
+    if '2' in bodies:
+        by = 'yes'
+    if '3' in bodies:
+        ty = 'yes'
+    style_string = 'mgp'
+    coeff_string = f'* * {lammps_location} H He {by} {ty}'
+    lammps_executable = os.environ.get('lmp')
+    dump_file_name = f'tmp{bodies}{multihyps}.dump'
+    input_file_name = f'tmp{bodies}{multihyps}.in'
+    output_file_name = f'tmp{bodies}{multihyps}.out'
+    input_text = \
+        lammps_calculator.generic_lammps_input(data_file_name, style_string,
+                                               coeff_string, dump_file_name,
+                                               newton=True)
+    lammps_calculator.write_text(input_file_name, input_text)
+
+    lammps_calculator.run_lammps(lammps_executable, input_file_name,
+                                 output_file_name)
+
+    lammps_forces = lammps_calculator.lammps_parser(dump_file_name)
+    mgp_forces = mgp_model.predict(test_envi, mean_only=True)
+
+    # check that lammps agrees with gp to within 1 meV/A
+    for i in range(3):
+        assert (np.abs(lammps_forces[atom_num, i] - mgp_forces[0][i]) < 1e-3)
+
+    for f in os.listdir("./"):
+        if f in [f'tmp{bodies}{multihyps}in', f'tmp{bodies}{multihyps}out', f'tmp{bodies}{multihyps}dump',
+              f'tmp{bodies}{multihyps}data', 'log.lammps', lammps_location]:
+            os.remove(f)
+        if re.search("grid3*.npy", f):
+            os.remove(f)
+        if re.search("kv3*", f):
+            os.rmdir(f)

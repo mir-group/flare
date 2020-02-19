@@ -331,59 +331,6 @@ class MappedGaussianProcess:
             v = mapping.var.V @ v_d
         return f, vir, v
 
-    def write_two_body(self, f):
-        a = self.bounds_2[0][0]
-        b = self.bounds_2[1][0]
-        order = self.grid_num_2
-
-        for ind, spc in enumerate(self.spcs[0]):
-            coefs_2 = self.maps_2[ind].mean.__coeffs__
-
-            elem1 = Z_to_element(spc[0])
-            elem2 = Z_to_element(spc[1])
-            header_2 = '{elem1} {elem2} {a} {b} {order}\n'\
-                .format(elem1=elem1, elem2=elem2, a=a, b=b, order=order)
-            f.write(header_2)
-
-            for c, coef in enumerate(coefs_2):
-                f.write('{:.10e} '.format(coef))
-                if c % 5 == 4 and c != len(coefs_2)-1:
-                    f.write('\n')
-
-            f.write('\n')
-
-    def write_three_body(self, f):
-        a = self.bounds_3[0]
-        b = self.bounds_3[1]
-        order = self.grid_num_3
-
-        for ind, spc in enumerate(self.spcs[1]):
-            coefs_3 = self.maps_3[ind].mean.__coeffs__
-
-            elem1 = Z_to_element(spc[0])
-            elem2 = Z_to_element(spc[1])
-            elem3 = Z_to_element(spc[2])
-
-            header_3 = '{elem1} {elem2} {elem3} {a1} {a2} {a3} {b1}'\
-                       ' {b2} {b3:.10e} {order1} {order2} {order3}\n'\
-                .format(elem1=elem1, elem2=elem2, elem3=elem3,
-                        a1=a[0], a2=a[1], a3=a[2],
-                        b1=b[0], b2=b[1], b3=b[2],
-                        order1=order[0], order2=order[1], order3=order[2])
-            f.write(header_3)
-
-            n = 0
-            for i in range(coefs_3.shape[0]):
-                for j in range(coefs_3.shape[1]):
-                    for k in range(coefs_3.shape[2]):
-                        coef = coefs_3[i, j, k]
-                        f.write('{:.10e} '.format(coef))
-                        if n % 5 == 4:
-                            f.write('\n')
-                        n += 1
-
-            f.write('\n')
-
 
     def write_lmp_file(self, lammps_name):
         '''
@@ -404,11 +351,13 @@ class MappedGaussianProcess:
 
         # write two body
         if twobodyarray > 0:
-            self.write_two_body(f)
+            for ind, spc in enumerate(self.spcs[0]):
+                self.maps_2[ind].write(f, spc)
 
         # write three body
         if threebodyarray > 0:
-            self.write_three_body(f)
+            for ind, spc in enumerate(self.spcs[1]):
+                self.maps_3[ind].write(f, spc)
 
         f.close()
 
@@ -544,6 +493,29 @@ class Map2body:
         self.mean.set_values(y_mean)
         if not self.mean_only:
             self.var.set_values(y_var)
+
+    def write(self, f, spc):
+        '''
+        Write LAMMPS coefficient file
+        '''
+        a = self.l_bounds[0]
+        b = self.u_bounds[0]
+        order = self.grid_num
+
+        coefs_2 = self.mean.__coeffs__
+
+        elem1 = Z_to_element(spc)
+        elem2 = Z_to_element(spc)
+        header_2 = '{elem1} {elem2} {a} {b} {order}\n'\
+            .format(elem1=elem1, elem2=elem2, a=a, b=b, order=order)
+        f.write(header_2)
+
+        for c, coef in enumerate(coefs_2):
+            f.write('{:.10e} '.format(coef))
+            if c % 5 == 4 and c != len(coefs_2)-1:
+                f.write('\n')
+
+        f.write('\n')
 
 
 
@@ -756,14 +728,12 @@ class Map3body:
 
     def build_map_container(self):
        # create spline interpolation class object
-        nop = self.grid_num[0]
-        noa = self.grid_num[2]
         self.mean = CubicSpline(self.l_bounds, self.u_bounds,
-                                orders=[nop, nop, noa])
+                                orders=self.grid_num)
 
         if not self.mean_only:
             self.var = PCASplines(self.l_bounds, self.u_bounds,
-                                  orders=[nop, nop, noa],
+                                  orders=self.grid_num,
                                   svd_rank=self.svd_rank)
 
     def build_map(self, GP):
@@ -785,4 +755,36 @@ class Map3body:
         self.mean.set_values(y_mean)
         if not self.mean_only:
             self.var.set_values(y_var)
+
+    def write(self, f, spc):
+        a = self.l_bounds
+        b = self.u_bounds
+        order = self.grid_num
+
+        coefs_3 = self.mean.__coeffs__
+
+        elem1 = Z_to_element(spc[0])
+        elem2 = Z_to_element(spc[1])
+        elem3 = Z_to_element(spc[2])
+
+        header_3 = '{elem1} {elem2} {elem3} {a1} {a2} {a3} {b1}'\
+                   ' {b2} {b3:.10e} {order1} {order2} {order3}\n'\
+            .format(elem1=elem1, elem2=elem2, elem3=elem3,
+                    a1=a[0], a2=a[1], a3=a[2],
+                    b1=b[0], b2=b[1], b3=b[2],
+                    order1=order[0], order2=order[1], order3=order[2])
+        f.write(header_3)
+
+        n = 0
+        for i in range(coefs_3.shape[0]):
+            for j in range(coefs_3.shape[1]):
+                for k in range(coefs_3.shape[2]):
+                    coef = coefs_3[i, j, k]
+                    f.write('{:.10e} '.format(coef))
+                    if n % 5 == 4:
+                        f.write('\n')
+                    n += 1
+
+        f.write('\n')
+
 
