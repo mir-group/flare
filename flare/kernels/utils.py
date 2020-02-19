@@ -4,51 +4,30 @@ from flare.kernels.kernels import str_to_kernel
 from flare.kernels.mc_simple import str_to_mc_kernel
 from flare.kernels.mc_sephyps import str_to_mc_kernel as str_to_mc_sephyps_kernel
 
+"""
+This module includes interface functions between kernels and gp/gp_algebra
 
-def str_to_kernels(name: str, multihyps: bool =False,
-        include_grad: bool = False):
-    """
-    return kernels and kernel gradient base on a string
+str_to_kernel_set is used in GaussianProcess class to search for a kernel function
+based on a string name.
 
-    Args:
+from_mask_to_args converts the hyperparameter vector and the dictionary of hyps_mask
+to the list of arguments needed by the kernel function.
 
-    name (str):
-    multihyps (bool):
-    include_grad (bool) : whether gradient should be include
-
-    """
-
-    if (include_grad):
-        if 'mc' in name:
-            if (multihyps is False):
-                force_kernel, grad = \
-                    str_to_mc_kernel(name, include_grad=True)
-            else:
-                force_kernel, grad = \
-                    str_to_mc_sephyps_kernel(name,
-                            include_grad=True)
-        else:
-            force_kernel, grad = str_to_kernel(name,
-                                               include_grad=True)
-        return force_kernel, grad
-    else:
-        if 'mc' in name:
-            if (multihyps is False):
-                kernel = str_to_mc_kernel(name)
-            else:
-                kernel = str_to_mc_sephyps_kernel(name)
-        else:
-            kernel = str_to_kernel(name)
-        return kernel
+from_grad_to_mask(grad, hyps_mask) converts the gradient matrix to the actual gradient
+matrix by removing the fixed dimensions.
+"""
 
 def str_to_kernel_set(name: str, multihyps: bool =False):
     """
-    return kernels and kernel gradient base on a string
+    return kernels and kernel gradient function base on a string
 
     Args:
 
-    name (str):
-    multihyps (bool):
+    name (str): name for kernels. example: "2+3mc"
+    multihyps (bool): True for using multiple hyperparameter groups
+
+    :return: kernel function, kernel gradient, energy kernel,
+             energy_and_force kernel
 
     """
 
@@ -85,6 +64,8 @@ def str_to_kernel_set(name: str, multihyps: bool =False):
 
 def from_mask_to_args(hyps, hyps_mask: dict, cutoffs):
     """ return the tuple of arguments needed for kernel function
+    the order of the tuple has to be exactly the same as the one
+    taken by the kernel function
 
     :param hyps: list of hyperparmeter values
     :type hyps: nd.array
@@ -136,6 +117,7 @@ def from_grad_to_mask(grad, hyps_mask):
     """
     Return gradient which only includes hyperparameters
     which are meant to vary
+
     :param grad: original gradient vector
     :param hyps_mask: dictionary for hyper-parameters
 
