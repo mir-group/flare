@@ -4,6 +4,7 @@ from numba import njit
 import io, os, sys, time, random, math
 import multiprocessing as mp
 
+import flare.gp_algebra
 import flare.gp as gp
 import flare.env as env
 import flare.struc as struc
@@ -84,31 +85,6 @@ def get_3bkernel(GP):
         hyps_mask = None
 
     return (kernel, efk, cutoffs, hyps, hyps_mask)
-
-
-def en_kern_vec(training_data, x: AtomicEnvironment,
-                energy_force_kernel, hyps, cutoffs, hyps_mask=None):
-    """Compute the vector of energy/force kernels between an atomic \
-ronment and the environments in the training set."""
-
-    ds = [1, 2, 3]
-    size = len(training_data) * 3
-    k_v = np.zeros(size, )
-
-    for m_index in range(size):
-        x_2 = training_data[int(math.floor(m_index / 3))]
-        d_2 = ds[m_index % 3]
-        if (hyps_mask is None):
-            k_v[m_index] = energy_force_kernel(x_2, x, d_2,
-                                               hyps, cutoffs)
-        else:
-            k_v[m_index] = energy_force_kernel(x_2, x, d_2,
-                                               hyps, cutoffs,
-                                               hyps_mask=hyps_mask)
-
-    return k_v
-
-
 
 
 def get_l_bound(curr_l_bound, structure, two_d=False):

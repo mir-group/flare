@@ -1,5 +1,5 @@
 '''
-This module provides OTF training with ASE MD engines: VerlocityVerlet, NVTBerendsen, NPTBerendsen, NPT and Langevin. 
+This module provides OTF training with ASE MD engines: VerlocityVerlet, NVTBerendsen, NPTBerendsen, NPT and Langevin.
 Please see the function `otf_md` below for usage
 '''
 import os
@@ -23,18 +23,19 @@ class OTF_VelocityVerlet(VelocityVerlet, OTF):
     On-the-fly training with ASE's VelocityVerlet molecular dynamics engine.
     Inherit from ASE `VelocityVerlet <https://wiki.fysik.dtu.dk/ase/ase/md.html#ase.md.verlet.VelocityVerlet>`_ class and our ASE-coupled on-the-fly training engine `flare.ase.OTF`
 
-    Args: 
+    Args:
         atoms, timestep, trajectory, dt:
             see `VelocityVerlet <https://wiki.fysik.dtu.dk/ase/ase/md.html#ase.md.verlet.VelocityVerlet>`_
         kwargs: same parameters as :class:`flare.ase.OTF`
     """
 
-    def __init__(self, atoms, timestep=None, trajectory=None, dt=None, 
+    def __init__(self, atoms, trajectory=None, dt=None,
                  **kwargs):
 
-        VelocityVerlet.__init__(self, atoms, timestep, trajectory, dt=dt)
+        VelocityVerlet.__init__(self, atoms=atoms, trajectory=trajectory,
+                                dt=dt)
+
         OTF.__init__(self, **kwargs)
-        
         self.md_engine = 'VelocityVerlet'
 
 class OTF_NVTBerendsen(NVTBerendsen, OTF):
@@ -52,9 +53,9 @@ class OTF_NVTBerendsen(NVTBerendsen, OTF):
     def __init__(self, atoms, timestep, temperature, taut, fixcm=True,
                  trajectory=None, **kwargs):
 
-        NVTBerendsen.__init__(self, atoms, timestep, temperature, taut, 
+        NVTBerendsen.__init__(self, atoms, timestep, temperature, taut,
                               fixcm, trajectory)
- 
+
         OTF.__init__(self, **kwargs)
 
         self.md_engine = 'NVTBerendsen'
@@ -96,7 +97,7 @@ class OTF_NPT(NPT, OTF):
     """
 
 
-    def __init__(self, atoms, timestep, temperature, externalstress, 
+    def __init__(self, atoms, timestep, temperature, externalstress,
             ttime, pfactor, mask=None, trajectory=None, **kwargs):
 
         NPT.__init__(self, atoms, timestep, temperature,
@@ -118,29 +119,29 @@ class OTF_Langevin(Langevin, OTF):
         kwargs: same parameters as :class:`flare.ase.OTF`
     """
 
-    def __init__(self, atoms, timestep=None, temperature=None, friction=None, 
+    def __init__(self, atoms, timestep=None, temperature=None, friction=None,
                  fixcm=True, trajectory=None, **kwargs):
 
-        Langevin.__init__(self, atoms, timestep, temperature, friction, 
+        Langevin.__init__(self, atoms, timestep, temperature, friction,
                           fixcm, trajectory)
 
         OTF.__init__(self, **kwargs)
-        
+
         self.md_engine = 'Langevin'
 
 
 
 def otf_md(md_engine: str, atoms, md_params: dict, otf_params: dict):
     '''
-    Create an OTF MD engine 
-    
+    Create an OTF MD engine
+
     Args:
         md_engine (str): the name of md engine, including `VelocityVerlet`,
             `NVTBerendsen`, `NPTBerendsen`, `NPT`, `Langevin`
         atoms (Atoms): ASE Atoms to apply this md engine
-        md_params (dict): parameters used in MD engines, 
+        md_params (dict): parameters used in MD engines,
             must include: `timestep`, `trajectory` (usually set to None).
-            Also include those parameters required for ASE MD engine, 
+            Also include those parameters required for ASE MD engine,
             please look at ASE website to find out parameters for different engines
         otf_params (dict): parameters used in OTF module
 
@@ -150,18 +151,18 @@ def otf_md(md_engine: str, atoms, md_params: dict, otf_params: dict):
     Example:
         >>> from ase import units
         >>> from ase.spacegroup import crystal
-        >>> super_cell = crystal(['Ag', 'I'],  
+        >>> super_cell = crystal(['Ag', 'I'],
                                  basis=[(0, 0, 0), (0.5, 0.5, 0.5)],
                                  size=(2, 1, 1),
                                  cellpar=[3.85, 3.85, 3.85, 90, 90, 90])
         >>> md_engine = 'VelocityVerlet'
-        >>> md_params = {'timestep': 1 * units.fs, 'trajectory': None, 
-                         'dt': None} 
-        >>> otf_params = {'dft_calc': dft_calc, 
+        >>> md_params = {'timestep': 1 * units.fs, 'trajectory': None,
+                         'dt': None}
+        >>> otf_params = {'dft_calc': dft_calc,
                           'init_atoms': [0],
-                          'std_tolerance_factor': 1, 
+                          'std_tolerance_factor': 1,
                           'max_atoms_added' : len(super_cell.positions),
-                          'freeze_hyps': 10, 
+                          'freeze_hyps': 10,
                           'use_mapping': False}
         >>> test_otf = otf_md(md_engine, super_cell, md_params, otf_params)
     '''
@@ -171,21 +172,21 @@ def otf_md(md_engine: str, atoms, md_params: dict, otf_params: dict):
     trajectory = md['trajectory']
 
     if md_engine == 'VelocityVerlet':
-        return OTF_VelocityVerlet(atoms, timestep, trajectory, dt=md['dt'],
+        return OTF_VelocityVerlet(atoms, trajectory=trajectory, dt=md['dt'],
                 **otf_params)
-       
+
     elif md_engine == 'NVTBerendsen':
-        return OTF_NVTBerendsen(atoms, timestep, md['temperature'], 
+        return OTF_NVTBerendsen(atoms, timestep, md['temperature'],
                 md['taut'], md['fixcm'], trajectory, **otf_params)
-    
+
     elif md_engine == 'NPTBerendsen':
-        return OTF_NPTBerendsen(atoms, timestep, md['temperature'], 
-                md['taut'], md['pressure'], md['taup'], 
+        return OTF_NPTBerendsen(atoms, timestep, md['temperature'],
+                md['taut'], md['pressure'], md['taup'],
                 md['compressibility'], md['fixcm'], trajectory, **otf_params)
 
     elif md_engine == 'NPT':
         return OTF_NPT(atoms, timestep, md['temperature'],
-                md['externalstress'], md['ttime'], md['pfactor'], 
+                md['externalstress'], md['ttime'], md['pfactor'],
                 md['mask'], trajectory, **otf_params)
 
     elif md_engine == 'Langevin':

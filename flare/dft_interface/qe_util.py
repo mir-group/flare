@@ -38,10 +38,10 @@ def run_dft_par(dft_input, structure, dft_loc, n_cpus=1, dft_out='pwscf.out',
 
     if npool is None:
         dft_command = \
-            f'{dft_loc} -i {newfilename} > {dft_out}'
+            f'{dft_loc} -i {newfilename}'
     else:
         dft_command = \
-            f'{dft_loc} -nk {npool} -i {newfilename} > {dft_out}'
+            f'{dft_loc} -nk {npool} -i {newfilename}'
 
     if (n_cpus > 1):
         if (mpi == "mpi"):
@@ -49,7 +49,9 @@ def run_dft_par(dft_input, structure, dft_loc, n_cpus=1, dft_out='pwscf.out',
         else:
             dft_command = f'srun -n {n_cpus} --mpi=pmi2 {dft_command}'
 
-    call(dft_command, shell=True)
+    with open(dft_out, "w+") as fout:
+        call(dft_command.split(), stdout=fout)
+
     os.remove(newfilename)
 
     return parse_dft_forces(dft_out)
@@ -75,8 +77,10 @@ def run_dft_en_par(dft_input, structure, dft_loc, n_cpus):
     run_qe_path = dft_input
     edit_dft_input_positions(run_qe_path, structure)
     qe_command = \
-        'mpirun -np {n_cpus} {dft_loc} < {run_qe_path} > pwscf.out'
-    call(qe_command, shell=True)
+        'mpirun -np {n_cpus} {dft_loc} -i {run_qe_path}'
+
+    with open('pwscf.out', "w+") as fout:
+        call(qe_command.split(), stdout=fout)
 
     forces, energy = parse_dft_forces_and_energy('pwscf.out')
 

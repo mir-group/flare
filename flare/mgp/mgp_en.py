@@ -1,19 +1,23 @@
-import time, os, subprocess, math, inspect
+import time, os, math, inspect
 import numpy as np
 import multiprocessing as mp
 
+
 from scipy.linalg import solve_triangular
+from typing import List
 
-import flare.mgp.utils as utils
-
-from flare import gp, struc, kernels
+from flare.struc import Structure
 from flare.env import AtomicEnvironment
 from flare.gp import GaussianProcess
+from flare.gp_algebra import partition_c
+from flare.gp_algebra import en_kern_vec_unit as en_kern_vec
+from flare.kernels.utils import from_mask_to_args
 from flare.cutoffs import quadratic_cutoff
 from flare.util import Z_to_element
-from flare.mgp.utils import get_bonds, get_triplets, get_triplets_en
+from flare.mgp.utils import get_bonds, get_triplets, get_triplets_en, \
+        get_2bkernel, get_3bkernel
 from flare.mgp.splines_methods import PCASplines, CubicSpline
-
+from flare.util import Z_to_element
 
 class MappedGaussianProcess:
     '''
@@ -26,6 +30,7 @@ class MappedGaussianProcess:
     :param: container_only : if True: only build splines container (with no coefficients)
     :param: GP: None or a GaussianProcess object. If input a GP, then build mapping when creating MappedGaussianProcess object
     :param: lmp_file_name : lammps coefficient file name
+    :param: autorun: Attempt to build map immediately
     Examples:
 
     >>> struc_params = {'species': [0, 1],
@@ -33,27 +38,38 @@ class MappedGaussianProcess:
                         'mass_dict': {'0': 27 * unit, '1': 16 * unit}}
     >>> grid_params =  {'bounds_2': [[1.2], [3.5]],
                                     # [[lower_bound], [upper_bound]]
-                        'bounds_3': [[1.2, 1.2, 0], [3.5, 3.5, np.pi]],
-                                    # [[lower,lower,0],[upper,upper,np.pi]]
-                        'grid_num_2': 64,
-                        'grid_num_3': [16, 16, 16],
-                        'svd_rank_2': 64,
+                                    # These describe the lower and upper
+                                    # bounds used to specify the 2-body spline
+                                    # fits.
+                        'bounds_3': [[1.2, 1.2, 1.2], [3.5, 3.5, 3.5]],
+                                    # [[lower,lower,lower],[upper,upper,upper]]
+                                    # Values describe lower and upper bounds
+                                    # for the bondlength-bondlength-bondlength
+                                    # grid used to construct and fit 3-body
+                                    # kernels; note that for force MGPs
+                                    # bondlength-bondlength-costheta
+                                    # are the bounds used instead.
+                        'grid_num_2': 64,# Fidelity of the grid
+                        'grid_num_3': [16, 16, 16],# Fidelity of the grid
+                        'svd_rank_2': 64, #Fidelity of uncertainty estimation
                         'svd_rank_3': 16**3,
                         'update': True, # if True: accelerating grids
                                         # generating by saving intermediate
                                         # coeff when generating grids
-                        'load_grid': None}
+                        'load_grid': None  # Used to load from file
+                        }
     '''
 
     def __init__(self,
                  grid_params: dict,
                  struc_params: dict,
                  GP=None,
-                 mean_only=False,
-                 container_only=True,
-                 lmp_file_name='lmp.mgp',
-                 n_cpus=None,
-                 nsample=100):
+                 mean_only: bool=False,
+                 container_only: bool=True,
+                 lmp_file_name: str='lmp.mgp',
+                 n_cpus: int =None,
+                 n_sample:int =100,
+                 autorun: bool = True):
 
         # load all arguments as attributes
         arg_dict = inspect.getargvalues(inspect.currentframe())[3]
@@ -62,25 +78,26 @@ class MappedGaussianProcess:
         self.__dict__.update(grid_params)
 
         # if GP exists, the GP setup overrides the grid_params setup
-        if (GP is not None):
+        if GP is not None:
 
             self.cutoffs = GP.cutoffs
 
             self.bodies = []
             if "two" in GP.kernel_name:
                 self.bodies.append(2)
-                self.kernel2b_info = utils.get_2bkernel(GP)
+                self.kernel2b_info = get_2bkernel(GP)
             if "three" in GP.kernel_name:
                 self.bodies.append(3)
-                self.kernel3b_info = utils.get_3bkernel(GP)
+                self.kernel3b_info = get_3bkernel(GP)
 
         self.build_bond_struc(struc_params)
         self.maps_2 = []
         self.maps_3 = []
         self.build_map_container()
+        self.mean_only = mean_only
 
         if not container_only and (GP is not None) and \
-                (len(GP.training_data) > 0):
+                (len(GP.training_data) > 0) and autorun:
             self.build_map(GP)
 
     def build_map_container(self):
@@ -91,7 +108,7 @@ class MappedGaussianProcess:
             for b_struc in self.bond_struc[0]:
                 map_2 = Map2body(self.grid_num_2, self.bounds_2,
                                  b_struc, self.svd_rank_2,
-                                 self.mean_only, self.n_cpus, self.nsample)
+                                 self.mean_only, self.n_cpus, self.n_sample)
                 self.maps_2.append(map_2)
         if 3 in self.bodies:
             for b_struc in self.bond_struc[1]:
@@ -108,9 +125,9 @@ class MappedGaussianProcess:
         '''
 
         if 2 in self.bodies:
-            self.kernel2b_info = utils.get_2bkernel(GP)
+            self.kernel2b_info = get_2bkernel(GP)
         if 3 in self.bodies:
-            self.kernel3b_info = utils.get_3bkernel(GP)
+            self.kernel3b_info = get_3bkernel(GP)
 
         for map_2 in self.maps_2:
             map_2.build_map(GP)
@@ -146,7 +163,7 @@ class MappedGaussianProcess:
                     positions = [[(i+1)/(bodies+1)*cutoff, 0, 0]
                                  for i in range(bodies)]
                     spc_struc = \
-                        struc.Structure(cell, species, positions, mass_dict)
+                        Structure(cell, species, positions, mass_dict)
                     spc_struc.coded_species = np.array(species)
                     bond_struc_2.append(spc_struc)
 
@@ -165,7 +182,7 @@ class MappedGaussianProcess:
                         spc_3.append(species)
                         positions = [[(i+1)/(bodies+1)*cutoff, 0, 0]
                                      for i in range(bodies)]
-                        spc_struc = struc.Structure(cell, species, positions,
+                        spc_struc = Structure(cell, species, positions,
                                                     mass_dict)
                         spc_struc.coded_species = np.array(species)
                         bond_struc_3.append(spc_struc)
@@ -174,7 +191,7 @@ class MappedGaussianProcess:
 #                            spc_3.append(species)
 #                            positions = [[(i+1)/(bodies+1)*cutoff, 0, 0] \
 #                                        for i in range(bodies)]
-#                            spc_struc = struc.Structure(cell, species, positions,
+#                            spc_struc = Structure(cell, species, positions,
 #                                                        mass_dict)
 #                            spc_struc.coded_species = np.array(species)
 #                            bond_struc_3.append(spc_struc)
@@ -183,7 +200,7 @@ class MappedGaussianProcess:
 #                            spc_3.append(species)
 #                            positions = [[(i+1)/(bodies+1)*cutoff, 0, 0] \
 #                                        for i in range(bodies)]
-#                            spc_struc = struc.Structure(cell, species, positions,
+#                            spc_struc = Structure(cell, species, positions,
 #                                                        mass_dict)
 #                            spc_struc.coded_species = np.array(species)
 #                            bond_struc_3.append(spc_struc)
@@ -192,11 +209,18 @@ class MappedGaussianProcess:
         self.spcs = [spc_2, spc_3]
         self.spcs_set = [spc_2_set, spc_3]
 
-    def predict(self, atom_env: AtomicEnvironment, mean_only: bool=False):
+    def predict(self, atom_env: AtomicEnvironment, mean_only: bool=False)-> \
+            (float, 'ndarray','ndarray', float):
         '''
-        predict force and variance for given atomic environment
-        :param atom_env: atomic environment (with a center atom and its neighbors)
-        :param mean_only: if True: only predict force (variance is always 0)
+        predict force, variance, stress and local energy for given atomic environment
+        Args:
+            atom_env: atomic environment (with a center atom and its neighbors)
+            mean_only: if True: only predict force (variance is always 0)
+        Return:
+            force: 3d array of atomic force
+            variance: 3d array of the predictive variance
+            stress: 6d array of the virial stress
+            energy: the local energy (atomic energy)
         '''
         if self.mean_only:  # if not build mapping for var
             mean_only = True
@@ -219,12 +243,12 @@ class MappedGaussianProcess:
                                             self.spcs[1], self.maps_3,
                                             mean_only)
 
-        f = f2 + f3
-        vir = vir2 + vir3
-        v = kern2 + kern3 - np.sum((v2 + v3)**2, axis=0)
-        e = e2 + e3
+        force = f2 + f3
+        variance = kern2 + kern3 - np.sum((v2 + v3)**2, axis=0)
+        virial = vir2 + vir3
+        energy = e2 + e3
 
-        return f, v, vir, e
+        return force, variance, virial, energy
 
 
     def predict_multicomponent(self, body, atom_env, kernel_info,
@@ -236,16 +260,12 @@ class MappedGaussianProcess:
 
         kernel, en_force_kernel, cutoffs, hyps, hyps_mask = kernel_info
 
+        args = from_mask_to_args(hyps, hyps_mask, cutoffs)
+
         kern = np.zeros(3)
-        if (hyps_mask is None):
-            for d in range(3):
-                kern[d] = \
-                    kernel(atom_env, atom_env, d+1, d+1, hyps, cutoffs)
-        else:
-            for d in range(3):
-                kern[d] = \
-                    kernel(atom_env, atom_env, d+1, d+1, hyps, cutoffs,
-                           hyps_mask=hyps_mask)
+        for d in range(3):
+            kern[d] = \
+                kernel(atom_env, atom_env, d+1, d+1, *args)
 
         if (body == 2):
             spcs, comp_r, comp_xyz = get_bonds(atom_env.ctype,
@@ -332,6 +352,11 @@ class MappedGaussianProcess:
         return f, vir, v, e
 
     def write_two_body(self, f):
+        """
+        Write two-body components to a file handle f.
+        :param f:
+        :return:
+        """
         a = self.bounds_2[0][0]
         b = self.bounds_2[1][0]
         order = self.grid_num_2
@@ -381,7 +406,6 @@ class MappedGaussianProcess:
 
             f.write('\n')
 
-
     def write_lmp_file(self, lammps_name):
         '''
         write the coefficients to a file that can be used by lammps pair style
@@ -409,13 +433,60 @@ class MappedGaussianProcess:
 
         f.close()
 
+    def write_model(self, model_name):
+        """
+        Write everything necessary to re-load and re-use the model
+        :param model_name:
+        :return:
+        """
+        raise NotImplementedError
+
+    @staticmethod
+    def load_model(elements: List[int], directory:str = './',
+                   kernel: str = '2+3',
+                   load_var: bool = False):
+        """
+        Loads the relevant files in a directory to an MGP model
+        :param elements:
+        :param directory:
+        :param kernel:
+        :return:
+        """
+
+        # Check to see if two body or three body kernels will be loaded
+        # so "2+3" makes b2 and b3 true
+        b2 = '2' in kernel or 'two' in kernel
+        b3 = '3' in kernel or 'three' in kernel
+
+
+
+
+
+
+
+        raise NotImplementedError
+
 
 class Map2body:
-    def __init__(self, grid_num, bounds, bond_struc,
-                 svd_rank=0, mean_only=False, n_cpus=None, nsample=100):
+    def __init__(self, grid_num: int, bounds, bond_struc: Structure,
+                 svd_rank=0, mean_only: bool=False, n_cpus: int=None,
+                 n_sample: int=100):
         '''
         Build 2-body MGP
+
+        bond_struc: Mock structure used to sample 2-body forces on 2 atoms
         '''
+
+        self.grid_num = grid_num
+        self.bounds = bounds
+        self.bond_struc = bond_struc
+        self.svd_rank = svd_rank
+        self.mean_only = mean_only
+        self.n_cpus = n_cpus
+        self.n_sample = n_sample
+
+        spc = bond_struc.coded_species
+        self.species_code = Z_to_element(spc[0]) + '_' + Z_to_element(spc[1])
 
         arg_dict = inspect.getargvalues(inspect.currentframe())[3]
         del arg_dict['self']
@@ -439,7 +510,7 @@ class Map2body:
            with GP.alpha
         '''
 
-        kernel_info = utils.get_2bkernel(GP)
+        kernel_info = get_2bkernel(GP)
 
         if (self.n_cpus is None):
             processes = mp.cpu_count()
@@ -460,19 +531,7 @@ class Map2body:
             # A_list = pool.map(self._GenGrid_inner_most, pool_list)
             # break it into pieces
             size = len(GP.training_data)
-            nsample = self.nsample
-            ns = int(math.ceil(size/nsample/processes))*processes
-            nsample = int(math.ceil(size/ns))
-
-            #print("prepare the package for parallelization")
-            block_id = []
-            nbatch = 0
-            for ibatch in range(ns):
-                s1 = int(nsample*ibatch)
-                e1 = int(np.min([s1 + nsample, size]))
-                block_id += [(s1, e1)]
-                #print("block", ibatch, s1, e1)
-                nbatch += 1
+            block_id, nbatch = partition_c(self.n_sample, size, processes)
 
             k12_slice = []
             k12_v_all = np.zeros([len(bond_lengths), size*3])
@@ -481,7 +540,7 @@ class Map2body:
             for ibatch in range(nbatch):
                 s, e = block_id[ibatch]
                 k12_slice.append(pool.apply_async(self._GenGrid_inner,
-                                                  args=(GP.training_data[s:e],
+                                                  args=(GP.name, s, e,
                                                         bond_lengths,
                                                         env12, kernel_info)))
                 count += 1
@@ -507,24 +566,31 @@ class Map2body:
             if not self.mean_only:
                 bond_vars[b, :] = solve_triangular(GP.l_mat, k12_v, lower=True)
 
+        write_species_name = ''
+        for x in self.bond_struc.coded_species:
+            write_species_name += "_" + Z_to_element(x)
+        # ------ save mean and var to file -------
+        np.save('grid2_mean' + write_species_name, bond_means)
+        np.save('grid2_var' + write_species_name, bond_vars)
+
         return bond_means, bond_vars
 
 
-    def _GenGrid_inner(self, training_data, bond_lengths,
-            env12, kernel_info):
+    def _GenGrid_inner(self, name, s, e, bond_lengths,
+                       env12, kernel_info):
 
         '''
         Calculate kv segments of the given batch of training data for all grids
         '''
 
         kernel, en_force_kernel, cutoffs, hyps, hyps_mask = kernel_info
-        size = len(training_data)
+        size = e - s
         k12_v = np.zeros([len(bond_lengths), size*3])
         for b, r in enumerate(bond_lengths):
             env12.bond_array_2 = np.array([[r, 1, 0, 0]])
-            k12_v[b, :] = utils.en_kern_vec(training_data,
-                                            env12, en_force_kernel,
-                                            hyps, cutoffs, hyps_mask)
+            k12_v[b, :] = en_kern_vec(name, s, e,
+                                      env12, en_force_kernel,
+                                      hyps, cutoffs, hyps_mask)
         return k12_v
 
 
@@ -551,27 +617,37 @@ class Map2body:
 
 class Map3body:
 
-    def __init__(self, grid_num, bounds, bond_struc,
-            svd_rank=0, mean_only=False, load_grid=None, update=True,
-            n_cpus=None, nsample=100):
+    def __init__(self, grid_num, bounds, bond_struc: Structure,
+            svd_rank: int=0, mean_only: bool=False, load_grid: str='',
+                 update: bool=True,
+            n_cpus=None, n_sample=100):
         '''
         Build 3-body MGP
-        '''
 
-        # get all arguments as attributes
-        arg_dict = inspect.getargvalues(inspect.currentframe())[3]
-        del arg_dict['self']
-        self.__dict__.update(arg_dict)
+        bond_struc: Mock Structure object which contains 3 atoms to get map
+        from
+        '''
+        self.grid_num = grid_num
+        self.bounds = bounds
+        self.bond_struc = bond_struc
+        self.svd_rank = svd_rank
+        self.mean_only = mean_only
+        self.load_grid = load_grid
+        self.update = update
+        self.n_sample = n_sample
 
         spc = bond_struc.coded_species
-        self.species_code = Z_to_element(spc[0]) + \
-                            Z_to_element(spc[1]) + \
-                            Z_to_element(spc[2])
         self.kv3name = f'kv3_{self.species_code}'
+        self.species_code = Z_to_element(spc[0]) + '_' + \
+                            Z_to_element(spc[1]) + '_' + Z_to_element(spc[2])
+
         self.build_map_container()
+        self.n_cpus = n_cpus
+        self.bounds = bounds
+        self.mean_only = mean_only
 
 
-    def GenGrid(self, GP, processes=mp.cpu_count()):
+    def GenGrid(self, GP):
 
         '''
         To use GP to predict value on each grid point, we need to generate the
@@ -586,7 +662,7 @@ class Map3body:
            with GP.alpha
         '''
 
-        if (self.n_cpus is None):
+        if self.n_cpus is None:
             processes = mp.cpu_count()
         else:
             processes = self.n_cpus
@@ -594,7 +670,7 @@ class Map3body:
             self.GenGrid_serial(GP)
 
         # ------ get 3body kernel info ------
-        kernel_info = utils.get_3bkernel(GP)
+        kernel_info = get_3bkernel(GP)
 
         # ------ construct grids ------
         n1, n2, n12 = self.grid_num
@@ -705,22 +781,40 @@ class Map3body:
                         grid_vars[b1, b2, b12, :] = solve_triangular(GP.l_mat,
                             k12_v, lower=True)
 
+
+        # Construct file names according to current mapping
+
         # ------ save mean and var to file -------
         np.save('grid3_mean_'+self.species_code, grid_means)
         np.save('grid3_var_'+self.species_code, grid_vars)
 
         return grid_means, grid_vars
 
-    def _GenGrid_inner(self, training_data, bonds1, bonds2, bonds12, 
-                       env12, kernel_info, block=None, total_size=None):
+    def _GenGrid_inner(self, name, s, e, bonds1, bonds2, bonds12, env12, kernel_info):
 
         '''
         Calculate kv segments of the given batch of training data for all grids
         '''
 
         kernel, en_force_kernel, cutoffs, hyps, hyps_mask = kernel_info
-        size = len(training_data)*3
+        # open saved k vector file, and write to new file
+        size =  (e - s) * 3
         k12_v = np.zeros([len(bonds1), len(bonds2), len(bonds12), size])
+        for b12, r12 in enumerate(bonds12):
+            for b1, r1 in enumerate(bonds1):
+                for b2, r2 in enumerate(bonds2):
+
+                    #r12 = np.sqrt(r1**2 + r2**2 - 2*r1*r2*c12)
+                    #if (r1>r12+r2) or (r2>r12+r1) or (r12>r1+r2): # not a triangle
+                    #    k12_v[b1, b2, b12, :] = np.zeros(size)
+                    #    continue
+
+                    env12.bond_array_3 = np.array([[r1, 1, 0, 0],
+                                                   [r2, 0, 0, 0]])
+                    env12.cross_bond_dists = np.array([[0, r12], [r12, 0]])
+                    k12_v[b1, b2, b12, :] = en_kern_vec(name, s, e,
+                                                        env12, en_force_kernel,
+                                                        hyps, cutoffs, hyps_mask)
 
         # open saved k vector file, and write to new file
         if self.update:
@@ -805,8 +899,10 @@ class Map3body:
 
     def build_map(self, GP):
         # Load grid or generate grid values
-        if not self.load_grid:
+        # If load grid was not specified, will be none
+        if self.load_grid is None:
             y_mean, y_var = self.GenGrid(GP)
+        # If load grid is blank string '' or pre-fix, load in
         else:
             y_mean = np.load(self.load_grid+'grid3_mean_'+\
                     self.species_code+'.npy')

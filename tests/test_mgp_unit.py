@@ -6,13 +6,12 @@ import os, pickle, re
 from flare import struc, env, gp
 from flare import otf_parser
 from flare.mgp.mgp_en import MappedGaussianProcess
-from flare.kernels.utils import str_to_kernel_set
 from flare.lammps import lammps_calculator
 
 from .fake_gp import get_gp, get_random_structure
 
-body_list = [3]
-multi_list = [False]
+body_list = ['2', '3']
+multi_list = [False, True]
 
 # ASSUMPTION: You have a Lammps executable with the mgp pair style with $lmp
 # as the corresponding environment variable.
@@ -27,12 +26,11 @@ def all_gp():
 
     allgp_dict = {}
     np.random.seed(0)
-    for bodies in [2, 3]:
+    for bodies in ['2', '3', '2+3']:
         for multihyps in [False, True]:
             gp_model = get_gp(bodies, 'mc', multihyps)
-            gp_model.par = True
+            gp_model.parallel = True
             gp_model.n_cpus = 2
-            gp_model.set_L_alpha()
             allgp_dict[f'{bodies}{multihyps}'] = gp_model
 
     yield allgp_dict
@@ -42,7 +40,7 @@ def all_gp():
 def all_mgp():
 
     allmgp_dict = {}
-    for bodies in [2, 3]:
+    for bodies in ['2', '3', '2+3']:
         for multihyps in [False, True]:
             allmgp_dict[f'{bodies}{multihyps}'] = None
 
@@ -58,8 +56,8 @@ def test_init(bodies, multihyps, all_mgp, all_gp):
 
     gp_model = all_gp[f'{bodies}{multihyps}']
 
-    grid_num_2 = 128
-    grid_num_3 = 40
+    grid_num_2 = 64
+    grid_num_3 = 20
     lower_cut = 0.01
     two_cut = gp_model.cutoffs[0]
     three_cut = gp_model.cutoffs[1]
@@ -72,16 +70,21 @@ def test_init(bodies, multihyps, all_mgp, all_gp):
                     'mass_dict': {'0': 27, '1': 16}}
 
     # grid parameters
+    blist = []
+    if ('2' in bodies):
+        blist+= [2]
+    if ('3' in bodies):
+        blist+= [3]
     train_size = len(gp_model.training_data)
-    grid_params = {'bodies': [bodies],
+    grid_params = {'bodies': blist,
                    'cutoffs':gp_model.cutoffs,
                    'bounds_2': [[lower_cut], [two_cut]],
                    'bounds_3': [[lower_cut, lower_cut, lower_cut],
                                 [three_cut, three_cut, three_cut]],
                    'grid_num_2': grid_num_2,
                    'grid_num_3': [grid_num_3, grid_num_3, grid_num_3],
-                   'svd_rank_2': np.min((grid_num_2, 3*train_size)),
-                   'svd_rank_3': np.min((grid_num_3**3, 3*train_size)),
+                   'svd_rank_2': 14,
+                   'svd_rank_3': 14,
                    'load_grid': None,
                    'update': True}
 
@@ -146,7 +149,11 @@ def test_predict(all_gp, all_mgp, bodies, multihyps):
         if re.search("kv3*", f):
             os.rmdir(f)
 
-
+@pytest.mark.skipif(not os.environ.get('lmp',
+                          False), reason='lmp not found '
+                                  'in environment: Please install LAMMPS '
+                                  'and set the $lmp env. '
+                                  'variable to point to the executatble.')
 @pytest.mark.parametrize('bodies', body_list)
 @pytest.mark.parametrize('multihyps', multi_list)
 def test_lmp_predict(all_gp, all_mgp, bodies, multihyps):
@@ -189,11 +196,11 @@ def test_lmp_predict(all_gp, all_mgp, bodies, multihyps):
     lammps_calculator.write_text(data_file_name, data_text)
 
     # create lammps input
-    if bodies == 2:
+    by = 'no'
+    ty = 'no'
+    if '2' in bodies:
         by = 'yes'
-        ty = 'no'
-    else:
-        by = 'no'
+    if '3' in bodies:
         ty = 'yes'
     style_string = 'mgp'
     coeff_string = f'* * {lammps_location} H He {by} {ty}'

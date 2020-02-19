@@ -85,8 +85,8 @@ Second, in the initialization of the GP class and OTF class, turn on the GP para
 
 .. code-block:: python
 
-    gp_model = GaussianProcess(..., no_cpus=2)
-    otf_instance = OTF(..., par=False, no_cpus=2)
+    gp_model = GaussianProcess(..., par=True, per_atom_par=False, n_cpus=2)
+    otf_instance = OTF(..., par=True, n_cpus=2)
 
 Third, set the number of threads for MKL before running your python script.
 
@@ -96,11 +96,11 @@ Third, set the number of threads for MKL before running your python script.
     python training.py
 
 .. note::
-   The "no_cpus" and OMB_NUM_THREAD should be equal or less than the number of CPUs available in the computer.
+   The "n_cpus" and OMB_NUM_THREAD should be equal or less than the number of CPUs available in the computer.
    If these numbers are larger than the actual CPUs number, it can lead to an overload of the machine.
 
 .. note::
-   If OTF.par=True and GaussianProcess.no_cpus>1, it is equivalent to run with no_cpu**2 threads
+   If gp_model.per_atom_par=True and NUM_OMB_THREAD>1, it is equivalent to run with NUM_OMB_THREAD*otf.n_cpus threads
    because the MKL calls are nested in the multiprocessing code. 
 
 The current version of FLARE can only support parallel calculations within one compute node.

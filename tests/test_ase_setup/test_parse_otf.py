@@ -1,5 +1,3 @@
-import os
-import sys
 import numpy as np
 from flare.otf_parser import OtfAnalysis
 from flare.kernels.kernels import two_plus_three_body, two_plus_three_body_grad

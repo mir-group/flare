@@ -37,14 +37,17 @@ def run_dft_par(dft_input, structure, dft_loc, ncpus=1, dft_out="dft.out",
 
     newfilename = edit_dft_input_positions(dft_input, structure)
     dft_command = \
-        f'{dft_loc} -i {newfilename} > {dft_out}'
+        f'{dft_loc} -i {newfilename}'
     if (ncpus > 1):
         if (mpi == "mpi"):
             dft_command = f'mpirun -np {ncpus} {dft_command}'
         else:
             dft_command = f'srun -n {ncpus} {dft_command}'
+
     # output.write_to_output(dft_command+'\n')
-    call(dft_command, shell=True)
+    with open(dft_out, "w+") as fout:
+        call(dft_command.split(), stdout=fout)
+
     os.remove(newfilename)
 
     return parse_dft_forces(dft_out)
