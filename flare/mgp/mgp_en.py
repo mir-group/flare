@@ -21,15 +21,21 @@ from flare.util import Z_to_element
 
 class MappedGaussianProcess:
     '''
-    Build Mapped Gaussian Process (MGP) and automatically save coefficients for LAMMPS pair style.
-    :param: hyps: GP hyps
-    :param: cutoffs: GP cutoffs
-    :param: struc_params : information of training data
-    :param: grid_params : setting of grids for mapping
+    Build Mapped Gaussian Process (MGP)
+    and automatically save coefficients for LAMMPS pair style.
+
+    :param: struc_params : Parameters for a dummy structure which will be
+        internally used to probe/store forces associated with different atomic
+        configurations
+    :param: grid_params : Parameters for the mapping itself, such as
+        grid size of spline fit, etc.
     :param: mean_only : if True: only build mapping for mean (force)
-    :param: container_only : if True: only build splines container (with no coefficients)
-    :param: GP: None or a GaussianProcess object. If input a GP, then build mapping when creating MappedGaussianProcess object
-    :param: lmp_file_name : lammps coefficient file name
+    :param: container_only : if True: only build splines container
+        (with no coefficients)
+    :param: GP: None or a GaussianProcess object. If a GP is input,
+        and autorun is true, automatically build a mapping corresponding
+        to the GaussianProcess.
+    :param: lmp_file_name : LAMMPS coefficient file name
     :param: autorun: Attempt to build map immediately
     Examples:
 
@@ -63,7 +69,7 @@ class MappedGaussianProcess:
     def __init__(self,
                  grid_params: dict,
                  struc_params: dict,
-                 GP=None,
+                 GP: GaussianProcess=None,
                  mean_only: bool=False,
                  container_only: bool=True,
                  lmp_file_name: str='lmp.mgp',
@@ -72,10 +78,16 @@ class MappedGaussianProcess:
                  autorun: bool = True):
 
         # load all arguments as attributes
-        arg_dict = inspect.getargvalues(inspect.currentframe())[3]
-        del arg_dict['self'], arg_dict['GP']
-        self.__dict__.update(arg_dict)
-        self.__dict__.update(grid_params)
+        self.lmp_file_name = lmp_file_name
+        self.n_cpus = n_cpus
+        self.n_sample = n_sample
+        self.grid_params = grid_params
+        self.struc_params = struc_params
+
+        # arg_dict = inspect.getargvalues(inspect.currentframe())[3]
+        # del arg_dict['self'], arg_dict['GP']
+        # self.__dict__.update(arg_dict)
+        # self.__dict__.update(grid_params)
 
         # if GP exists, the GP setup overrides the grid_params setup
         if GP is not None:
@@ -102,7 +114,7 @@ class MappedGaussianProcess:
 
     def build_map_container(self):
         '''
-        construct an empty spline container without coefficients
+        construct an empty spline container without coefficients.
         '''
         if 2 in self.bodies:
             for b_struc in self.bond_struc[0]:
