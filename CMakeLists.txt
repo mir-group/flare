@@ -27,7 +27,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 # add subdirectories
 add_subdirectory(src)
-add_subdirectory(test)
+add_subdirectory(tests)
 add_subdirectory(timing)
 add_subdirectory(pybind11)
 add_subdirectory(googletest)
