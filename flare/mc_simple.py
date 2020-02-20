@@ -1567,7 +1567,7 @@ def two_body_mc_en_jit(bond_array_1, c1, etypes1,
 #                 many body multicomponent kernel (numba)
 # -----------------------------------------------------------------------------
 
-# @njit
+@njit
 def many_body_mc_jit(bond_array_1, bond_array_2, neigh_dists_1, neigh_dists_2, num_neigh_1,
                      num_neigh_2, c1, c2, etypes1, etypes2, etypes_neigh_1, etypes_neigh_2,
                      species1, species2, d1, d2, sig, ls, r_cut, cutoff_func):
