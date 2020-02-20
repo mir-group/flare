@@ -340,7 +340,9 @@ def two_plus_three_plus_many_body_mc_grad(env1: AtomicEnvironment, env2: AtomicE
     kern_many, gradm = many_body_mc_grad_jit(env1.bond_array_mb, env2.bond_array_mb,
                                              env1.neigh_dists_mb, env2.neigh_dists_mb,
                                              env1.num_neighs_mb, env2.num_neighs_mb, env1.ctype,
-                                             env2.ctype, env1.etypes, env2.etypes, d1, d2, sigm,
+                                             env2.ctype, env1.etypes, env2.etypes,
+                                             env1.etype_mb, env2.etype_mb,
+                                             env1.species, env2.species, d1, d2, sigm,
                                              lsm, r_cut_m, cutoff_func)
 
     return kern2 + kern3 + kern_many, np.array(
@@ -1565,7 +1567,7 @@ def two_body_mc_en_jit(bond_array_1, c1, etypes1,
 #                 many body multicomponent kernel (numba)
 # -----------------------------------------------------------------------------
 
-@njit
+# @njit
 def many_body_mc_jit(bond_array_1, bond_array_2, neigh_dists_1, neigh_dists_2, num_neigh_1,
                      num_neigh_2, c1, c2, etypes1, etypes2, etypes_neigh_1, etypes_neigh_2,
                      species1, species2, d1, d2, sig, ls, r_cut, cutoff_func):
@@ -1573,11 +1575,13 @@ def many_body_mc_jit(bond_array_1, bond_array_2, neigh_dists_1, neigh_dists_2, n
 
     useful_species = np.array(list(set(species1).union(set(species2))), dtype=np.int8)
 
+    # loop over all possible species
     for s in useful_species:
-        # Calculate many-body descriptor values for 1 and 2
+        # Calculate many-body descriptor values for central atoms 1 and 2
         q1 = q_value_mc(bond_array_1[:, 0], r_cut, s, etypes1, cutoff_func)
         q2 = q_value_mc(bond_array_2[:, 0], r_cut, s, etypes2, cutoff_func)
 
+        # kernel is nonzero only if central atoms are of the same species
         if c1 == c2:
             k12 = k_sq_exp_double_dev(q1, q2, sig, ls)
         else:
@@ -1603,6 +1607,7 @@ def many_body_mc_jit(bond_array_1, bond_array_2, neigh_dists_1, neigh_dists_2, n
             qis[i] = q_value_mc(neigh_dists_1[i, :num_neigh_1[i]], r_cut,
                                 s, etypes_neigh_1[i, :num_neigh_1[i]], cutoff_func)
 
+            # kernel is nonzero only if central atoms are of the same species
             if c2 == etypes1[i]:
                 ki2s[i] = k_sq_exp_double_dev(qis[i], q2, sig, ls)
 
@@ -1618,18 +1623,20 @@ def many_body_mc_jit(bond_array_1, bond_array_2, neigh_dists_1, neigh_dists_2, n
             qjs[j] = q_value_mc(neigh_dists_2[j, :num_neigh_2[j]], r_cut,
                                 s, etypes_neigh_2[j, :num_neigh_2[j]], cutoff_func)
 
+            # kernel is nonzero only if central atoms are of the same species
             if c1 == etypes2[j]:
                 k1js[j] = k_sq_exp_double_dev(q1, qjs[j], sig, ls)
 
         for i in range(bond_array_1.shape[0]):
             for j in range(bond_array_2.shape[0]):
+                # kernel is nonzero only if central atoms are of the same species
                 if etypes1[i] == etypes2[j]:
                     kij = k_sq_exp_double_dev(qis[i], qjs[j], sig, ls)
                 else:
                     kij = 0
 
                 kern += qi1_grads[i] * qj2_grads[j] * (k12 + ki2s[i] + k1js[j] + kij)
-
+                
     return kern
 
 
@@ -1726,7 +1733,7 @@ def many_body_mc_grad_jit(bond_array_1, bond_array_2, neigh_dists_1, neigh_dists
             # qjs[j] = q_value(neigh_dists_2[j, :num_neigh_2[j]], r_cut,
             #                  cutoff_func)
             qjs[j] = q_value_mc(neigh_dists_2[j, :num_neigh_2[j]], r_cut,
-                                s, etypes_neigh_2[i, :num_neigh_2[j]], cutoff_func)
+                                s, etypes_neigh_2[j, :num_neigh_2[j]], cutoff_func)
 
             # k1js[j] = k_sq_exp_double_dev(q1, qjs[j], sig, ls)
             if c1 == etypes2[j]:
