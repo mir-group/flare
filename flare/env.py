@@ -422,7 +422,7 @@ def get_m_body_arrays(positions, atom: int, cell, cutoff_mb: float, species):
     for i in range(len(bond_inds)):
         num_neighs_mb[i] = len(neighbouring_dists[i])
         neigh_dists_mb[i, :num_neighs_mb[i]] = neighbouring_dists[i]
-        etypes_mb_array[i, :num_neighs_mb[i]] = etypes_mb[i]
+        etypes_mb_array[i, :num_neighs_mb[i]] = neighbouring_etypes[i]
 
 
     return bond_array_mb, neigh_dists_mb, num_neighs_mb, etypes_mb_array
