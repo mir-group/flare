@@ -92,7 +92,7 @@ def test_init(bodies, multihyps, all_mgp, all_gp):
     mapped_cell = np.eye(3) * 2
     struc_params = {'species': [1, 2],
                     'cube_lat': mapped_cell,
-                    'mass_dict': {'0': 27, '1': 16}}
+                    'mass_dict': {'0': 2, '1': 4}}
 
     # grid parameters
     blist = []
