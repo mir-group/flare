@@ -334,7 +334,7 @@ def test_many_body_force():
 def test_many_body_grad():
     # create env 1
     cell = np.eye(3)
-    cutoffs = np.array([1, 1])
+    cutoffs = np.array([1, 1, 1])
 
     positions_1 = [np.array([0., 0., 0.]),
                    np.array([random(), random(), random()]),
