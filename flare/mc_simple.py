@@ -1762,7 +1762,9 @@ def many_body_mc_grad_jit(bond_array_1, bond_array_2, neigh_dists_1, neigh_dists
 
         # sig_derv = 2./sig * kern
 
-    return kern, sig_derv, ls_derv
+    grad = np.array([sig_derv, ls_derv])
+
+    return kern, grad
 
 
 @njit
