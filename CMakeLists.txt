@@ -16,7 +16,7 @@ endif()
 
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
-find_package(Eigen3)
+find_package(Eigen3 REQUIRED)
 INCLUDE_DIRECTORIES ("${EIGEN3_INCLUDE_DIR}")
 
 set(ACE_ROOT_DIR $ENV{ACE})
@@ -27,7 +27,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 # add subdirectories
 add_subdirectory(src)
-add_subdirectory(test)
+add_subdirectory(tests)
 add_subdirectory(timing)
 add_subdirectory(pybind11)
 add_subdirectory(googletest)
