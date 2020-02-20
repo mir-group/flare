@@ -640,13 +640,12 @@ def test_many_body_force():
     env2_3_1 = env.AtomicEnvironment(test_structure_3, 1, cutoffs)
     env2_3_2 = env.AtomicEnvironment(test_structure_3, 2, cutoffs)
 
-    sig = 1
-    ls = 0.1
-    r0 = 1
+    sig = random()
+    ls = random()
     d1 = 1
     d2 = 2
 
-    hyps = np.array([sig, ls, r0])
+    hyps = np.array([sig, ls])
 
     # check force kernel
     calc1 = en.many_body_en(env1_2_0, env2_2_0, hyps, cutoffs)
@@ -781,12 +780,11 @@ def test_many_body_force_en():
 
     env2_1_0 = env.AtomicEnvironment(test_structure_1, 0, cutoffs)
 
-    sig = 1
-    ls = 0.1
-    r0 = 1
+    sig = random()
+    ls = random()
     d1 = 1
 
-    hyps = np.array([sig, ls, r0])
+    hyps = np.array([sig, ls])
 
     # check force kernel
     calc1 = en.many_body_en(env1_2_0, env2_1_0, hyps, cutoffs)
@@ -804,11 +802,12 @@ def test_many_body_force_en():
     kern_finite_diff = -(kern_finite_diff_00 + kern_finite_diff_10 + kern_finite_diff_20)
 
     kern_analytical = en.many_body_force_en(env1_1_0, env2_1_0,
-                                   d1, hyps, cutoffs)
+                                            d1, hyps, cutoffs)
 
     tol = 1e-4
 
-    assert (np.isclose(kern_finite_diff, kern_analytical, atol=tol))    
+    assert (np.isclose(kern_finite_diff, kern_analytical, atol=tol))
+
 
 def test_many_body_grad():
     # create env 1
@@ -836,38 +835,30 @@ def test_many_body_grad():
 
     sig = random()
     ls = random()
-    r0 = random()
+
     d1 = randint(1, 3)
     d2 = randint(1, 3)
 
-    hyps = np.array([sig, ls, r0])
+    hyps = np.array([sig, ls])
 
     grad_test = en.many_body_grad(env1, env2, d1, d2, hyps, cutoffs)
 
     delta = 1e-8
     new_sig = sig + delta
     new_ls = ls + delta
-    new_r0 = r0 + delta
 
     sig_derv_brute = (en.many_body(env1, env2, d1, d2,
-                                    np.array([new_sig, ls, r0]),
-                                    cutoffs) -
+                                   np.array([new_sig, ls]),
+                                   cutoffs) -
                       en.many_body(env1, env2, d1, d2,
-                                    hyps, cutoffs)) / delta
+                                   hyps, cutoffs)) / delta
 
     l_derv_brute = (en.many_body(env1, env2, d1, d2,
-                                  np.array([sig, new_ls, r0]),
-                                  cutoffs) -
+                                 np.array([sig, new_ls]),
+                                 cutoffs) -
                     en.many_body(env1, env2, d1, d2,
-                                  hyps, cutoffs)) / delta
-
-    r0_derv_brute = (en.many_body(env1, env2, d1, d2,
-                                  np.array([sig, ls, new_r0]),
-                                  cutoffs) -
-                    en.many_body(env1, env2, d1, d2,
-                                  hyps, cutoffs)) / delta
+                                 hyps, cutoffs)) / delta
 
     tol = 1e-4
     assert (np.isclose(grad_test[1][0], sig_derv_brute, atol=tol))
     assert (np.isclose(grad_test[1][1], l_derv_brute, atol=tol))
-    assert (np.isclose(grad_test[1][2], r0_derv_brute, atol=tol))
