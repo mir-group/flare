@@ -448,9 +448,9 @@ class Map2body:
         spc = bond_struc.coded_species
         self.species_code = Z_to_element(spc[0]) + '_' + Z_to_element(spc[1])
 
-        arg_dict = inspect.getargvalues(inspect.currentframe())[3]
-        del arg_dict['self']
-        self.__dict__.update(arg_dict)
+#        arg_dict = inspect.getargvalues(inspect.currentframe())[3]
+#        del arg_dict['self']
+#        self.__dict__.update(arg_dict)
 
         self.build_map_container()
 
@@ -577,14 +577,14 @@ class Map2body:
         '''
         Write LAMMPS coefficient file
         '''
-        a = self.l_bounds[0]
-        b = self.u_bounds[0]
+        a = self.bounds[0][0]
+        b = self.bounds[1][0]
         order = self.grid_num
 
         coefs_2 = self.mean.__coeffs__
 
-        elem1 = Z_to_element(spc)
-        elem2 = Z_to_element(spc)
+        elem1 = Z_to_element(spc[0])
+        elem2 = Z_to_element(spc[1])
         header_2 = '{elem1} {elem2} {a} {b} {order}\n'\
             .format(elem1=elem1, elem2=elem2, a=a, b=b, order=order)
         f.write(header_2)
@@ -620,9 +620,9 @@ class Map3body:
         self.n_sample = n_sample
 
         spc = bond_struc.coded_species
-        self.kv3name = f'kv3_{self.species_code}'
         self.species_code = Z_to_element(spc[0]) + '_' + \
                             Z_to_element(spc[1]) + '_' + Z_to_element(spc[2])
+        self.kv3name = f'kv3_{self.species_code}'
 
         self.build_map_container()
         self.n_cpus = n_cpus
@@ -710,20 +710,8 @@ class Map3body:
                     k12_v_all[:, :, s:e, :] = k12_slice[ibatch].get()
 
             else:
-                #print("prepare the package for parallelization")
-                nsample = self.nsample
-                ns = int(math.ceil(size/nsample/processes))*processes
-                nsample = int(math.ceil(size/ns))
-    
-                block_id = []
-                nbatch = 0
-                for ibatch in range(ns):
-                    s1 = int(nsample*ibatch)
-                    e1 = int(np.min([s1 + nsample, size]))
-                    block_id += [(s1, e1)]
-                    #print("block", ibatch, s1, e1)
-                    nbatch += 1
-    
+                block_id, nbatch = partition_c(self.n_sample, size, processes)    
+
                 k12_slice = []
                 #print('before for', ns, nsample, time.time())
                 count = 0
@@ -733,7 +721,7 @@ class Map3body:
                 for ibatch in range(nbatch):
                     s, e = block_id[ibatch]
                     k12_slice.append(pool.apply_async(self._GenGrid_inner,
-                                                      args=(GP.training_data[s:e],
+                                                      args=(GP.name, s, e,
                                                             bonds1, bonds2, bonds12,
                                                             env12, kernel_info)))
                     #print('send', ibatch, ns, s, e, time.time())
@@ -853,9 +841,9 @@ class Map3body:
                                                        [r2, 0, 0, 0]])
                         env12.cross_bond_dists = np.array([[0, r12], [r12, 0]])
 
-                        k12_v[b1, b2, b12, :] = utils.en_kern_vec(training_data,
-                                                env12, en_force_kernel,
-                                                hyps, cutoffs, hyps_mask)
+                        k12_v[b1, b2, b12, :] = en_kern_vec(name, s, e,
+                                                            env12, en_force_kernel,
+                                                            hyps, cutoffs, hyps_mask)
 
         if self.update:
             k12_v = new_kv_file[:,1:,:]
@@ -897,8 +885,8 @@ class Map3body:
             self.var.set_values(y_var)
 
     def write(self, f, spc):
-        a = self.l_bounds
-        b = self.u_bounds
+        a = self.bounds[0]
+        b = self.bounds[1]
         order = self.grid_num
 
         coefs_3 = self.mean.__coeffs__

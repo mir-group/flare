@@ -504,8 +504,8 @@ class Map2body:
 
         coefs_2 = self.mean.__coeffs__
 
-        elem1 = Z_to_element(spc)
-        elem2 = Z_to_element(spc)
+        elem1 = Z_to_element(spc[0])
+        elem2 = Z_to_element(spc[1])
         header_2 = '{elem1} {elem2} {a} {b} {order}\n'\
             .format(elem1=elem1, elem2=elem2, a=a, b=b, order=order)
         f.write(header_2)
