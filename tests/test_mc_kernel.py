@@ -6,6 +6,7 @@ from numpy.random import random, randint
 
 from flare import env, struc, gp
 from flare.mc_simple import _str_to_kernel as stk
+from flare import mc_simple as mck
 
 
 def generate_envs(cutoffs, delta):
@@ -177,7 +178,6 @@ def test_hyps_grad(kernel_name, nbond, ntriplet):
 #                              test many body kernels
 # -----------------------------------------------------------------------------
 
-from flare import mc_simple as mck
 
 def test_many_body_force():
     """Check that the analytical force kernel matches finite difference of
@@ -384,3 +384,81 @@ def test_many_body_grad():
     tol = 1e-4
     assert (np.isclose(grad_test[1][0], sig_derv_brute, atol=tol))
     assert (np.isclose(grad_test[1][1], l_derv_brute, atol=tol))
+
+
+def test_many_body_force_en():
+    """Check that the analytical force-energy kernel matches finite difference of
+    energy kernel."""
+
+    # TODO: why env1_1_1, env1_1_2 and env1_1_3 (and other variables) are never used?
+    # create env 1
+    delt = 1e-5
+    cell = 10.0 * np.eye(3)
+    cutoffs = np.array([1.2, 1.2, 1.2])
+
+    positions_1 = [np.array([0., 0., 0.]),
+                   np.array([0., 1., 0.]) + 0.1 * np.array([random(), random(), random()]),
+                   np.array([1., 0., 0.]) + 0.1 * np.array([random(), random(), random()]),
+                   np.array([1., 1., 0.]) + 0.1 * np.array([random(), random(), random()])]
+
+    positions_2 = deepcopy(positions_1)
+    positions_2[0][0] = delt
+
+    positions_3 = deepcopy(positions_1)
+    positions_3[0][0] = -delt
+
+    species_1 = [1, 1, 1, 1]
+
+    test_structure_1 = struc.Structure(cell, species_1, positions_1)
+    test_structure_2 = struc.Structure(cell, species_1, positions_2)
+    test_structure_3 = struc.Structure(cell, species_1, positions_3)
+
+    env1_1_0 = env.AtomicEnvironment(test_structure_1, 0, cutoffs)
+
+    env1_2_0 = env.AtomicEnvironment(test_structure_2, 0, cutoffs)
+    env1_2_1 = env.AtomicEnvironment(test_structure_2, 1, cutoffs)
+    env1_2_2 = env.AtomicEnvironment(test_structure_2, 2, cutoffs)
+
+    env1_3_0 = env.AtomicEnvironment(test_structure_3, 0, cutoffs)
+    env1_3_1 = env.AtomicEnvironment(test_structure_3, 1, cutoffs)
+    env1_3_2 = env.AtomicEnvironment(test_structure_3, 2, cutoffs)
+
+    # create env 2
+    positions_1 = [np.array([0., 0., 0.]),
+                   np.array([0., 1., 0.]) + 0.1 * np.array([random(), random(), random()]),
+                   np.array([1., 0., 0.]) + 0.1 * np.array([random(), random(), random()]),
+                   np.array([1., 1., 0.]) + 0.1 * np.array([random(), random(), random()])]
+
+    species_2 = [1, 2, 2, 1]
+
+    test_structure_1 = struc.Structure(cell, species_2, positions_1)
+
+    env2_1_0 = env.AtomicEnvironment(test_structure_1, 0, cutoffs)
+
+    sig = random()
+    ls = random()
+    d1 = 1
+
+    hyps = np.array([sig, ls])
+
+    # check force kernel
+    calc1 = mck.many_body_mc_en(env1_2_0, env2_1_0, hyps, cutoffs)
+    calc2 = mck.many_body_mc_en(env1_3_0, env2_1_0, hyps, cutoffs)
+    kern_finite_diff_00 = (calc1 - calc2) / (2 * delt)
+
+    calc1 = mck.many_body_mc_en(env1_2_1, env2_1_0, hyps, cutoffs)
+    calc2 = mck.many_body_mc_en(env1_3_1, env2_1_0, hyps, cutoffs)
+    kern_finite_diff_10 = (calc1 - calc2) / (2 * delt)  
+
+    calc1 = mck.many_body_mc_en(env1_2_2, env2_1_0, hyps, cutoffs)
+    calc2 = mck.many_body_mc_en(env1_3_2, env2_1_0, hyps, cutoffs)
+    kern_finite_diff_20 = (calc1 - calc2) / (2 * delt)
+
+    kern_finite_diff = -(kern_finite_diff_00 + kern_finite_diff_10 + kern_finite_diff_20)
+
+    kern_analytical = mck.many_body_mc_force_en(env1_1_0, env2_1_0,
+                                            d1, hyps, cutoffs)
+
+    tol = 1e-4
+
+    assert (np.isclose(kern_finite_diff, kern_analytical, atol=tol))

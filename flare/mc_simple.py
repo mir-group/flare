@@ -44,7 +44,7 @@ from flare.kernels import force_helper, grad_constants, grad_helper, \
     force_energy_helper, three_body_en_helper, three_body_helper_1, \
     three_body_helper_2, three_body_grad_helper_1, three_body_grad_helper_2
 
-from flare.kernels import k_sq_exp_double_dev, mb_grad_helper_ls_, \
+from flare.kernels import k_sq_exp_double_dev, k_sq_exp_dev, mb_grad_helper_ls_, \
     mb_grad_helper_ls, q_value, coordination_number
 
 from typing import Callable
@@ -681,6 +681,42 @@ def many_body_mc_grad(env1: AtomicEnvironment, env2: AtomicEnvironment,
     kernel_grad = np.array([sig_derv, ls_derv])
 
     return kernel, kernel_grad
+
+
+def many_body_mc_force_en(env1, env2, d1, hyps, cutoffs,
+                        cutoff_func=cf.quadratic_cutoff):
+    """many-body single-element kernel between two local energies.
+
+    Args:
+        env1 (AtomicEnvironment): First local environment.
+        env2 (AtomicEnvironment): Second local environment.
+        hyps (np.ndarray): Hyperparameters of the kernel function (sig, ls).
+        cutoffs (np.ndarray): Two-element array containing the 2-, 3-, and
+            many-body cutoffs.
+        cutoff_func (Callable): Cutoff function of the kernel.
+
+    Return:
+        float: Value of the many-body force/energy kernel.
+    """
+    sig = hyps[0]
+    ls = hyps[1]
+    r_cut = cutoffs[2]
+
+    bond_array_1 = env1.bond_array_mb
+    bond_array_2 = env2.bond_array_mb
+
+    neigh_dists_1 = env1.neigh_dists_mb
+    num_neigh_1 = env1.num_neighs_mb
+
+    c1, c2 = env1.ctype, env2.ctype
+    etypes1, etypes2 = env1.etypes, env2.etypes
+    etypes_neigh_1 = env1.etype_mb
+
+    # divide by three to account for triple counting
+    return many_body_mc_force_en_jit(bond_array_1, bond_array_2, neigh_dists_1, num_neigh_1,
+                     c1, c2, etypes1, etypes2, etypes_neigh_1,
+                     env1.species, env2.species, d1, sig, ls, r_cut, cutoff_func)
+
 
 
 def many_body_mc_en(env1: AtomicEnvironment, env2: AtomicEnvironment,
@@ -1765,6 +1801,68 @@ def many_body_mc_grad_jit(bond_array_1, bond_array_2, neigh_dists_1, neigh_dists
     grad = np.array([sig_derv, ls_derv])
 
     return kern, grad
+
+
+@njit
+def many_body_mc_force_en_jit(bond_array_1, bond_array_2, neigh_dists_1, num_neigh_1,
+                     c1, c2, etypes1, etypes2, etypes_neigh_1,
+                     species1, species2, d1, sig, ls, r_cut, cutoff_func):
+    """many-body many-element kernel between force and energy components accelerated
+    with Numba.
+
+    Args:
+        bond_array_1 (np.ndarray): many-body bond array of the first local
+            environment.
+        bond_array_2 (np.ndarray): many-body bond array of the second local
+            environment.
+        neighbouring_dists_array_1 (np.ndarray): matrix padded with zero values of distances 
+            of neighbours for the atoms in the first local environment. 
+        num_neighbours_1 (np.nsdarray): number of neighbours of each atom in the first 
+            local environment
+        d1 (int): Force component of the first environment.
+        sig (float): 3-body signal variance hyperparameter.
+        ls (float): 3-body length scale hyperparameter.
+        r_cut (float): 3-body cutoff radius.
+        cutoff_func (Callable): Cutoff function.
+
+    Return:
+        float: Value of the many-body kernel.
+    """
+
+    kern = 0 
+
+    useful_species = np.array(list(set(species1).union(set(species2))), dtype=np.int8)
+
+    for s in useful_species:
+
+        q1 = q_value_mc(bond_array_1[:, 0], r_cut, s, etypes1, cutoff_func)
+        q2 = q_value_mc(bond_array_2[:, 0], r_cut, s, etypes2, cutoff_func)
+
+        if c1 == c2:
+            k12 = k_sq_exp_dev(q1, q2, sig, ls)
+
+        qis = np.zeros(bond_array_1.shape[0])
+        qi1_grads = np.zeros(bond_array_1.shape[0])
+        ki2s = np.zeros(bond_array_1.shape[0])
+
+        # Loop over neighbours i of 1
+        for i in range(bond_array_1.shape[0]):
+            ri1 = bond_array_1[i, 0]
+            ci1 = bond_array_1[i, d1]
+
+            if etypes1[i] == s:
+                _, qi1_grads[i] = coordination_number(ri1, ci1, r_cut, cutoff_func)
+
+            # Calculate many-body descriptor value for i 
+            qis[i] = q_value_mc(neigh_dists_1[i, :num_neigh_1[i]], r_cut,
+                                s, etypes_neigh_1[i, :num_neigh_1[i]], cutoff_func)
+
+            if c2 == etypes1[i]:
+                ki2s[i] = k_sq_exp_dev(qis[i], q2, sig, ls)
+
+            kern += - qi1_grads[i] * (k12 + ki2s[i])
+
+    return kern
 
 
 @njit
