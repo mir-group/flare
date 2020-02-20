@@ -16,7 +16,7 @@ endif()
 
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
-find_package(Eigen3)
+find_package(Eigen3 REQUIRED)
 INCLUDE_DIRECTORIES ("${EIGEN3_INCLUDE_DIR}")
 
 set(ACE_ROOT_DIR $ENV{ACE})
