@@ -644,7 +644,7 @@ def many_body_mc(env1: AtomicEnvironment, env2: AtomicEnvironment,
 
     return many_body_mc_jit(bond_array_1, bond_array_2, neigh_dists_1, neigh_dists_2, num_neigh_1,
                             num_neigh_2, c1, c2, etypes1, etypes2, etypes_neigh_1, etypes_neigh_2, 
-                            env1.species1, env2.species2, d1, d2, sig, ls, r_cut, cutoff_func)
+                            env1.species, env2.species, d1, d2, sig, ls, r_cut, cutoff_func)
 
 
 def many_body_mc_grad(env1: AtomicEnvironment, env2: AtomicEnvironment,
@@ -679,6 +679,30 @@ def many_body_mc_grad(env1: AtomicEnvironment, env2: AtomicEnvironment,
 
     return kernel, kernel_grad
 
+
+def many_body_mc_en(env1: AtomicEnvironment, env2: AtomicEnvironment,
+                   hyps: 'ndarray', cutoffs: 'ndarray',
+                   cutoff_func: Callable = cf.quadratic_cutoff) -> float:
+    """many-body multi-element kernel between two local energies.
+
+    Args:
+        env1 (AtomicEnvironment): First local environment.
+        env2 (AtomicEnvironment): Second local environment.
+        hyps (np.ndarray): Hyperparameters of the kernel function (sig, ls).
+        cutoffs (np.ndarray): One-element array containing the 2-body
+            cutoff.
+        cutoff_func (Callable): Cutoff function of the kernel.
+
+    Return:
+        float: Value of the 2-body force/energy kernel.
+    """
+    sig = hyps[0]
+    ls = hyps[1]
+    r_cut = cutoffs[0]
+
+    return many_body_mc_en_jit(env1.bond_array_2, env2.bond_array_2, env1.ctype, 
+                               env2.ctype, env1.etypes, env2.etypes, env1.species, env2.species,
+                              sig, ls, r_cut, cutoff_func)
 
 # -----------------------------------------------------------------------------
 #                 three body multicomponent kernel (numba)
@@ -1599,6 +1623,8 @@ def many_body_mc_jit(bond_array_1, bond_array_2, neigh_dists_1, neigh_dists_2, n
             for j in range(bond_array_2.shape[0]):
                 if etypes1[i] == etypes2[j]:
                     kij = k_sq_exp_double_dev(qis[i], qjs[j], sig, ls)
+                else:
+                    kij = 0
                 
                 kern += qi1_grads[i] * qj2_grads[j] * (k12 + ki2s[i] + k1js[j] + kij)
 
@@ -1623,7 +1649,7 @@ def many_body_mc_grad_jit(bond_array_1, bond_array_2,
         k12 = k_sq_exp_double_dev(q1, q2, sig, ls)
 
         qis = np.zeros(bond_array_1.shape[0])
-    
+
         qi1_grads = np.zeros(bond_array_1.shape[0])
 
         ki2s = np.zeros(bond_array_1.shape[0])
@@ -1686,7 +1712,30 @@ def many_body_mc_grad_jit(bond_array_1, bond_array_2,
 
 
 @njit
-def q_value_mc(distances, r_cut, ref_species, species, cutoff_func, q_func=coordination_number):
+def many_body_mc_en_jit(bond_array_1, bond_array_2, c1, c2, etypes1, etypes2,
+                     species1, species2, sig, ls, r_cut, cutoff_func):
+    
+    useful_species = np.array(list(set(species1).union(set(species2))), dtype = np.int8)
+    kern = 0 
+
+    if c1 == c2:
+        for s in useful_species:
+            q1 = q_value_mc(bond_array_1[:, 0], s, etypes1, r_cut, cutoff_func)
+            q2 = q_value_mc(bond_array_2[:, 0], s, etypes2, r_cut, cutoff_func)
+            q1q2diff = q1 - q2
+
+            kern += sig * sig * exp(-q1q2diff * q1q2diff / (2 * ls * ls))
+
+    return kern
+
+
+# -----------------------------------------------------------------------------
+#                           helper funcions
+# -----------------------------------------------------------------------------
+
+
+@njit
+def q_value_mc(distances, ref_species, species, r_cut, cutoff_func, q_func=coordination_number):
     """Compute value of many-body many components descriptor based 
     on distances of atoms in the local many-body environment.
 
@@ -1704,9 +1753,9 @@ def q_value_mc(distances, r_cut, ref_species, species, cutoff_func, q_func=coord
     
     q = 0
 
-    for s, d in zip(distances, species):
-        if s == ref_species:
-            q_, _ = q_func(d, 0, r_cut, cutoff_func)
+    for i in range(len(distances)):
+        if species[i] == ref_species:
+            q_, _ = q_func(distances[i], 0, r_cut, cutoff_func)
             q += q_
 
     return q
