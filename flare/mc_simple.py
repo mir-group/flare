@@ -1766,8 +1766,8 @@ def many_body_mc_en_jit(bond_array_1, bond_array_2, c1, c2, etypes1, etypes2,
 
     if c1 == c2:
         for s in useful_species:
-            q1 = q_value_mc(bond_array_1[:, 0], s, etypes1, r_cut, cutoff_func)
-            q2 = q_value_mc(bond_array_2[:, 0], s, etypes2, r_cut, cutoff_func)
+            q1 = q_value_mc(bond_array_1[:, 0], r_cut, s, etypes1, cutoff_func)
+            q2 = q_value_mc(bond_array_2[:, 0], r_cut, s, etypes2, cutoff_func)
             q1q2diff = q1 - q2
 
             kern += sig * sig * exp(-q1q2diff * q1q2diff / (2 * ls * ls))
@@ -1781,7 +1781,7 @@ def many_body_mc_en_jit(bond_array_1, bond_array_2, c1, c2, etypes1, etypes2,
 
 
 @njit
-def q_value_mc(distances, ref_species, species, r_cut, cutoff_func, q_func=coordination_number):
+def q_value_mc(distances, r_cut, ref_species, species, cutoff_func, q_func=coordination_number):
     """Compute value of many-body many components descriptor based 
     on distances of atoms in the local many-body environment.
 
