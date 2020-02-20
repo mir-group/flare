@@ -643,11 +643,7 @@ def many_body_mc(env1: AtomicEnvironment, env2: AtomicEnvironment,
     etypes_neigh_1, etypes_neigh_2 = env1.etype_mb, env2.etype_mb
 
     return many_body_mc_jit(bond_array_1, bond_array_2, neigh_dists_1, neigh_dists_2, num_neigh_1,
-<<<<<<< HEAD
                             num_neigh_2, c1, c2, etypes1, etypes2, etypes_neigh_1, etypes_neigh_2,
-=======
-                            num_neigh_2, c1, c2, etypes1, etypes2, etypes_neigh_1, etypes_neigh_2, 
->>>>>>> ef19fc681895dcc8ce8448d2b25cbb94158ea8b8
                             env1.species, env2.species, d1, d2, sig, ls, r_cut, cutoff_func)
 
 
@@ -686,8 +682,8 @@ def many_body_mc_grad(env1: AtomicEnvironment, env2: AtomicEnvironment,
 
 
 def many_body_mc_en(env1: AtomicEnvironment, env2: AtomicEnvironment,
-                   hyps: 'ndarray', cutoffs: 'ndarray',
-                   cutoff_func: Callable = cf.quadratic_cutoff) -> float:
+                    hyps: 'ndarray', cutoffs: 'ndarray',
+                    cutoff_func: Callable = cf.quadratic_cutoff) -> float:
     """many-body multi-element kernel between two local energies.
 
     Args:
@@ -705,9 +701,10 @@ def many_body_mc_en(env1: AtomicEnvironment, env2: AtomicEnvironment,
     ls = hyps[1]
     r_cut = cutoffs[0]
 
-    return many_body_mc_en_jit(env1.bond_array_2, env2.bond_array_2, env1.ctype, 
+    return many_body_mc_en_jit(env1.bond_array_2, env2.bond_array_2, env1.ctype,
                                env2.ctype, env1.etypes, env2.etypes, env1.species, env2.species,
-                              sig, ls, r_cut, cutoff_func)
+                               sig, ls, r_cut, cutoff_func)
+
 
 # -----------------------------------------------------------------------------
 #                 three body multicomponent kernel (numba)
@@ -1628,13 +1625,8 @@ def many_body_mc_jit(bond_array_1, bond_array_2, neigh_dists_1, neigh_dists_2, n
             for j in range(bond_array_2.shape[0]):
                 if etypes1[i] == etypes2[j]:
                     kij = k_sq_exp_double_dev(qis[i], qjs[j], sig, ls)
-<<<<<<< HEAD
-=======
                 else:
                     kij = 0
-                
-                kern += qi1_grads[i] * qj2_grads[j] * (k12 + ki2s[i] + k1js[j] + kij)
->>>>>>> ef19fc681895dcc8ce8448d2b25cbb94158ea8b8
 
                 kern += qi1_grads[i] * qj2_grads[j] * (k12 + ki2s[i] + k1js[j] + kij)
 
@@ -1768,10 +1760,9 @@ def many_body_mc_grad_jit(bond_array_1, bond_array_2, neigh_dists_1, neigh_dists
 
 @njit
 def many_body_mc_en_jit(bond_array_1, bond_array_2, c1, c2, etypes1, etypes2,
-                     species1, species2, sig, ls, r_cut, cutoff_func):
-    
-    useful_species = np.array(list(set(species1).union(set(species2))), dtype = np.int8)
-    kern = 0 
+                        species1, species2, sig, ls, r_cut, cutoff_func):
+    useful_species = np.array(list(set(species1).union(set(species2))), dtype=np.int8)
+    kern = 0
 
     if c1 == c2:
         for s in useful_species:
