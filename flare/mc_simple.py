@@ -1616,7 +1616,7 @@ def many_body_mc_jit(bond_array_1, bond_array_2, neigh_dists_1, neigh_dists_2, n
 
             # Calculate many-body descriptor value for j
             qjs[j] = q_value_mc(neigh_dists_2[j, :num_neigh_2[j]], r_cut,
-                                s, etypes_neigh_2[i, :num_neigh_2[j]], cutoff_func)
+                                s, etypes_neigh_2[j, :num_neigh_2[j]], cutoff_func)
 
             if c1 == etypes2[j]:
                 k1js[j] = k_sq_exp_double_dev(q1, qjs[j], sig, ls)
