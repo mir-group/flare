@@ -10,7 +10,7 @@ from flare.lammps import lammps_calculator
 from flare.ase.calculator import FLARE_Calculator
 from ase.calculators.lammpsrun import LAMMPS
 
-from fake_gp import get_gp, get_random_structure
+from .fake_gp import get_gp, get_random_structure
 
 body_list = ['2', '3']
 multi_list = [False, True]
