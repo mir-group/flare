@@ -796,7 +796,7 @@ def many_body_mc_en(env1: AtomicEnvironment, env2: AtomicEnvironment,
     """
     sig = hyps[0]
     ls = hyps[1]
-    r_cut = cutoffs[0]
+    r_cut = cutoffs[2]
 
     return many_body_mc_en_jit(env1.bond_array_2, env2.bond_array_2, env1.ctype,
                                env2.ctype, env1.etypes, env2.etypes, env1.species, env2.species,
