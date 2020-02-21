@@ -43,6 +43,7 @@ def str_to_kernel_set(name: str, multihyps: bool =False):
     # b2 = Two body in use, b3 = Three body in use
     b2 = False
     b3 = False
+    many = False
 
     for s in ['2', 'two']:
         if (s in name):
@@ -50,13 +51,20 @@ def str_to_kernel_set(name: str, multihyps: bool =False):
     for s in ['3', 'three']:
         if (s in name):
             b3 = True
-    if (b2 and b3):
-        prefix='2+3'
-    elif (b2):
-        prefix='2'
-    elif (b3):
-        prefix='3'
-    else:
+    for s in ['mb', 'manybody']:
+        if (s in name):
+            many = True
+
+    prefix=''
+    str_term={'2':b2, '3':b3, 'mb':many}
+    # TO DO, check whether the name match with the ones in
+    # kernels.py and mc_simple.py
+    for term in str_term:
+        if str_term[term]:
+            if (len(prefix)>0):
+                prefix += '+'
+            prefix += term
+    if len(prefix)==0:
         raise RuntimeError(f"the name has to include at least one number {name}")
 
     return stk(prefix), stk(prefix+'_grad'), stk(prefix+'_en'), \
