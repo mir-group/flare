@@ -689,15 +689,20 @@ class GaussianProcess:
 
         if '.json' in filename or 'json' in format:
             with open(filename, 'r') as f:
-                return GaussianProcess.from_dict(json.loads(f.readline()))
+                gp_model = GaussianProcess.from_dict(json.loads(f.readline()))
 
         elif '.pickle' in filename or 'pickle' in format:
             with open(filename, 'rb') as f:
-                return pickle.load(f)
+                gp_model = pickle.load(f)
 
         else:
             raise ValueError("Warning: Format unspecified or file is not "
                              ".json or .pickle format.")
+
+        _global_training_data[gp_model.name] = gp_model.training_data
+        _global_training_labels[gp_model.name] = gp_model.training_labels_np
+        return gp_model
+
 
     @property
     def par(self):
