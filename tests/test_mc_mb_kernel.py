@@ -5,6 +5,7 @@ import numpy as np
 from numpy.random import random, randint
 
 from flare import env, struc, gp
+import flare.kernels.mc_simple as mck
 from flare.kernels.utils import str_to_kernel_set as stks
 
 from .fake_gp import generate_envs
@@ -33,14 +34,8 @@ def test_force_en(kernel_name, nbond, ntriplet):
     d1 = 1
     hyps = generate_hm(nbond, ntriplet)
 
-<<<<<<< HEAD
     _, __, en_kernel, force_en_kernel = stks(kernel_name)
     if bool('2' in kernel_name) != bool('3' in kernel_name):
-=======
-    force_en_kernel = stk[kernel_name + "_force_en"]
-    en_kernel = stk[kernel_name + "_en"]
-    if bool('two' in kernel_name) != bool('three' in kernel_name):
->>>>>>> d52af9cdfca0b134a35a8ae6f033f4d0e6a4c816
 
         # check force kernel
         calc1 = en_kernel(env1_2, env2_1, hyps, cutoffs)
@@ -69,15 +64,9 @@ def test_force_en(kernel_name, nbond, ntriplet):
 
 
 @pytest.mark.parametrize('kernel_name, nbond, ntriplet',
-<<<<<<< HEAD
                          [ ('2_mc', 1, 0),
                            ('3_mc', 0, 1),
                            ('2+3_mc', 1, 1) ]
-=======
-                         [('two_body_mc', 1, 0),
-                          ('three_body_mc', 0, 1),
-                          ('two_plus_three_body_mc', 1, 1)]
->>>>>>> d52af9cdfca0b134a35a8ae6f033f4d0e6a4c816
                          )
 def test_force(kernel_name, nbond, ntriplet):
     """Check that the analytical force kernel matches finite difference of
@@ -93,15 +82,9 @@ def test_force(kernel_name, nbond, ntriplet):
     d1 = 1
     d2 = 2
 
-<<<<<<< HEAD
     kernel, _, __, ___ = stks(kernel_name)
     if bool('2' in kernel_name) != bool('3' in kernel_name):
         _, __, en_kernel, ___ = stks(kernel_name)
-=======
-    kernel = stk[kernel_name]
-    if bool('two' in kernel_name) != bool('three' in kernel_name):
-        en_kernel = stk[kernel_name + "_en"]
->>>>>>> d52af9cdfca0b134a35a8ae6f033f4d0e6a4c816
     else:
         _, __, en_kernel, ___ = stks('2+3_mc')
 
@@ -119,15 +102,9 @@ def test_force(kernel_name, nbond, ntriplet):
 
 
 @pytest.mark.parametrize('kernel_name, nbond, ntriplet',
-<<<<<<< HEAD
                          [ ('mc2', 1, 0),
                            ('mc3', 0, 1),
                            ('mc23', 1, 1) ]
-=======
-                         [('two_body_mc', 1, 0),
-                          ('three_body_mc', 0, 1),
-                          ('two_plus_three_body_mc', 1, 1)]
->>>>>>> d52af9cdfca0b134a35a8ae6f033f4d0e6a4c816
                          )
 def test_hyps_grad(kernel_name, nbond, ntriplet):
     delta = 1e-8
@@ -138,12 +115,7 @@ def test_hyps_grad(kernel_name, nbond, ntriplet):
     d1 = randint(1, 3)
     d2 = randint(1, 3)
 
-<<<<<<< HEAD
     kernel, kernel_grad, _, _ = stks(kernel_name, False)
-=======
-    kernel = stk[kernel_name]
-    kernel_grad = stk[kernel_name + "_grad"]
->>>>>>> d52af9cdfca0b134a35a8ae6f033f4d0e6a4c816
 
     grad_test = kernel_grad(env1_1, env2_1,
                             d1, d2, hyps, cutoffs)
@@ -155,16 +127,10 @@ def test_hyps_grad(kernel_name, nbond, ntriplet):
         newhyps = np.copy(hyps)
         newhyps[i] += delta
         hgrad = (kernel(env1_1, env2_1, d1, d2, newhyps,
-<<<<<<< HEAD
                         cutoffs)-
                  original)/delta
         print(grad_test, hgrad)
         assert(np.isclose(grad_test[1][i], hgrad, atol=tol))
-=======
-                        cutoffs) -
-                 original) / delta
-        assert (np.isclose(grad_test[1][i], hgrad, atol=tol))
-
 
 # -----------------------------------------------------------------------------
 #                              test many body kernels
@@ -454,4 +420,3 @@ def test_many_body_force_en():
     tol = 1e-4
 
     assert (np.isclose(kern_finite_diff, kern_analytical, atol=tol))
->>>>>>> d52af9cdfca0b134a35a8ae6f033f4d0e6a4c816
