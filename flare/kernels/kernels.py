@@ -1984,7 +1984,19 @@ _str_to_kernel = {'two_body': two_body,
                   '2+3': two_plus_three_body,
                   '2+3_grad': two_plus_three_body_grad,
                   '2+3_en': two_plus_three_en,
-                  '2+3_force_en': two_plus_three_force_en
+                  '2+3_force_en': two_plus_three_force_en,
+                  'many_body': many_body, 
+                  'many_body_en': many_body_en, 
+                  'many_body_grad': many_body_grad,
+                  'many_body_force_en': many_body_en,
+                  'two_plus_three_plus_many_body': two_plus_three_plus_many_body,
+                  'two_plus_three_plus_many_body_grad': two_plus_three_plus_many_body_grad,
+                  'two_plus_three_plus_many_body_en': two_plus_three_plus_many_body_en,
+                  'two_plus_three_plus_many_body_force_en': two_plus_three_plus_many_body_force_en,
+                  '2+3+many': two_plus_three_plus_many_body,
+                  '2+3+many_grad': two_plus_three_plus_many_body_grad,
+                  '2+3+many_en': two_plus_three_plus_many_body_en,
+                  '2+3+many_force_en': two_plus_three_plus_many_body_force_en
                   }
 
 
