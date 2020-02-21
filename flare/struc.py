@@ -280,7 +280,8 @@ class Structure:
         from ase import Atoms
         return Atoms(self.species_labels,
                      positions=self.positions,
-                     cell=self.cell)
+                     cell=self.cell, 
+                     pbc=True)
 
 
     def to_pmg_structure(self):
