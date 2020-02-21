@@ -1705,6 +1705,43 @@ def two_body_mc_en_jit(bond_array_1, c1, etypes1,
 def many_body_mc_jit(bond_array_1, bond_array_2, neigh_dists_1, neigh_dists_2, num_neigh_1,
                      num_neigh_2, c1, c2, etypes1, etypes2, etypes_neigh_1, etypes_neigh_2,
                      species1, species2, d1, d2, sig, ls, r_cut, cutoff_func):
+    """many-body multi-element kernel between two force components accelerated
+    with Numba.
+
+    Args:
+        bond_array_1 (np.ndarray): many-body bond array of the first local
+            environment.
+        bond_array_2 (np.ndarray): many-body bond array of the second local
+            environment.
+        neigh_dists_1 (np.ndarray): matrix padded with zero values of distances 
+            of neighbours for the atoms in the first local environment. 
+        neigh_dists_2 (np.ndarray): matrix padded with zero values of distances 
+            of neighbours for the atoms in the second local environment. 
+        num_neigh_1 (np.ndarray): number of neighbours of each atom in the first 
+            local environment
+        num_neigh_2 (np.ndarray): number of neighbours of each atom in the second 
+            local environment
+        c1 (int): atomic species of the central atom in env 1
+        c2 (int): atomic species of the central atom in env 2
+        etypes1 (np.ndarray): atomic species of atoms in env 1
+        etypes2 (np.ndarray): atomic species of atoms in env 2
+        etypes_neigh_1 (np.ndarray): atomic species of atoms in the neighbourhoods
+            of atoms in env 1
+        etypes_neigh_2 (np.ndarray): atomic species of atoms in the neighbourhoods
+            of atoms in env 2
+        species1 (np.ndarray): all the atomic species present in trajectory 1
+        species2 (np.ndarray): all the atomic species present in trajectory 2
+        d1 (int): Force component of the first environment.
+        d2 (int): Force component of the second environment.
+        sig (float): 3-body signal variance hyperparameter.
+        ls (float): 3-body length scale hyperparameter.
+        r_cut (float): 3-body cutoff radius.
+        cutoff_func (Callable): Cutoff function.
+
+    Return:
+        float: Value of the many-body kernel.
+    """
+
     kern = 0
 
     useful_species = np.array(list(set(species1).union(set(species2))), dtype=np.int8)
@@ -1786,14 +1823,24 @@ def many_body_mc_grad_jit(bond_array_1, bond_array_2, neigh_dists_1, neigh_dists
             environment.
         bond_array_2 (np.ndarray): many-body bond array of the second local
             environment.
-        neighbouring_dists_array_1 (np.ndarray): matrix padded with zero values of distances
-            of neighbours for the atoms in the first local environment.
-        neighbouring_dists_array_2 (np.ndarray): matrix padded with zero values of distances
-            of neighbours for the atoms in the second local environment.
-        num_neighbours_1 (np.nsdarray): number of neighbours of each atom in the first
+        neigh_dists_1 (np.ndarray): matrix padded with zero values of distances 
+            of neighbours for the atoms in the first local environment. 
+        neigh_dists_2 (np.ndarray): matrix padded with zero values of distances 
+            of neighbours for the atoms in the second local environment. 
+        num_neigh_1 (np.ndarray): number of neighbours of each atom in the first 
             local environment
-        num_neighbours_2 (np.ndarray): number of neighbours of each atom in the second
+        num_neigh_2 (np.ndarray): number of neighbours of each atom in the second 
             local environment
+        c1 (int): atomic species of the central atom in env 1
+        c2 (int): atomic species of the central atom in env 2
+        etypes1 (np.ndarray): atomic species of atoms in env 1
+        etypes2 (np.ndarray): atomic species of atoms in env 2
+        etypes_neigh_1 (np.ndarray): atomic species of atoms in the neighbourhoods
+            of atoms in env 1
+        etypes_neigh_2 (np.ndarray): atomic species of atoms in the neighbourhoods
+            of atoms in env 2
+        species1 (np.ndarray): all the atomic species present in trajectory 1
+        species2 (np.ndarray): all the atomic species present in trajectory 2
         d1 (int): Force component of the first environment.
         d2 (int): Force component of the second environment.
         sig (float): 3-body signal variance hyperparameter.
@@ -1913,10 +1960,18 @@ def many_body_mc_force_en_jit(bond_array_1, bond_array_2, neigh_dists_1, num_nei
             environment.
         bond_array_2 (np.ndarray): many-body bond array of the second local
             environment.
-        neighbouring_dists_array_1 (np.ndarray): matrix padded with zero values of distances 
+        neigh_dists_1 (np.ndarray): matrix padded with zero values of distances 
             of neighbours for the atoms in the first local environment. 
-        num_neighbours_1 (np.nsdarray): number of neighbours of each atom in the first 
+        num_neigh_1 (np.ndarray): number of neighbours of each atom in the first 
             local environment
+        c1 (int): atomic species of the central atom in env 1
+        c2 (int): atomic species of the central atom in env 2
+        etypes1 (np.ndarray): atomic species of atoms in env 1
+        etypes2 (np.ndarray): atomic species of atoms in env 2
+        etypes_neigh_1 (np.ndarray): atomic species of atoms in the neighbourhoods
+            of atoms in env 1
+        species1 (np.ndarray): all the atomic species present in trajectory 1
+        species2 (np.ndarray): all the atomic species present in trajectory 2
         d1 (int): Force component of the first environment.
         sig (float): 3-body signal variance hyperparameter.
         ls (float): 3-body length scale hyperparameter.
@@ -1966,6 +2021,28 @@ def many_body_mc_force_en_jit(bond_array_1, bond_array_2, neigh_dists_1, num_nei
 @njit
 def many_body_mc_en_jit(bond_array_1, bond_array_2, c1, c2, etypes1, etypes2,
                         species1, species2, sig, ls, r_cut, cutoff_func):
+    """many-body many-element kernel between energy components accelerated
+    with Numba.
+
+    Args:
+        bond_array_1 (np.ndarray): many-body bond array of the first local
+            environment.
+        bond_array_2 (np.ndarray): many-body bond array of the second local
+            environment.
+        c1 (int): atomic species of the central atom in env 1
+        c2 (int): atomic species of the central atom in env 2
+        etypes1 (np.ndarray): atomic species of atoms in env 1
+        etypes2 (np.ndarray): atomic species of atoms in env 2
+        species1 (np.ndarray): all the atomic species present in trajectory 1
+        species2 (np.ndarray): all the atomic species present in trajectory 2
+        sig (float): 3-body signal variance hyperparameter.
+        ls (float): 3-body length scale hyperparameter.
+        r_cut (float): 3-body cutoff radius.
+        cutoff_func (Callable): Cutoff function.
+
+    Return:
+        float: Value of the many-body kernel.
+    """
     useful_species = np.array(list(set(species1).union(set(species2))), dtype=np.int8)
     kern = 0
 

@@ -27,7 +27,7 @@ The kernel functions to choose:
     * two_plus_three_plus_many_body,
     * two_plus_three_plus_many_body_grad,
     * two_plus_three_plus_many_body_en,
-    * two_plus_three_plus_many_body_force_en (TODO)
+    * two_plus_three_plus_many_body_force_en
 
 **Example:**
 
@@ -199,8 +199,8 @@ def two_plus_three_plus_many_body(env1: AtomicEnvironment, env2: AtomicEnvironme
         env2 (AtomicEnvironment): Second local environment.
         d1 (int): Force component of the first environment.
         d2 (int): Force component of the second environment.
-        hyps (np.ndarray): Hyperparameters of the kernel function (sig1, ls1,
-            sig2, ls2, sig3, ls3, sig_n).
+        hyps (np.ndarray): Hyperparameters of the kernel function (sig2, ls2,
+            sig3, ls3, sigm, lsm, sig_n).
         cutoffs (np.ndarray): Two-element array containing the 2- and 3-body
             cutoffs.
         cutoff_func (Callable): Cutoff function of the kernel.
@@ -236,8 +236,8 @@ def two_plus_three_plus_many_body_grad(env1: AtomicEnvironment, env2: AtomicEnvi
         env2 (AtomicEnvironment): Second local environment.
         d1 (int): Force component of the first environment.
         d2 (int): Force component of the second environment.
-        hyps (np.ndarray): Hyperparameters of the kernel function (sig1, ls1,
-            sig2, ls2, sig3, ls3, sig_n).
+        hyps (np.ndarray): Hyperparameters of the kernel function (sig2, ls2,
+            sig3, ls3, sigm, lsm, sig_n).
         cutoffs (np.ndarray): Two-element array containing the 2- and 3-body
             cutoffs.
         cutoff_func (Callable): Cutoff function of the kernel.
@@ -276,8 +276,8 @@ def two_plus_three_plus_many_body_force_en(env1: AtomicEnvironment, env2: Atomic
         env1 (AtomicEnvironment): First local environment.
         env2 (AtomicEnvironment): Second local environment.
         d1 (int): Force component of the first environment.
-        hyps (np.ndarray): Hyperparameters of the kernel function (sig1, ls1,
-            sig2, ls2, sig3, ls3, sig_n).
+        hyps (np.ndarray): Hyperparameters of the kernel function (sig2, ls2,
+            sig3, ls3, sigm, lsm, sig_n).
         cutoffs (np.ndarray): Two-element array containing the 2- and 3-body
             cutoffs.
         cutoff_func (Callable): Cutoff function of the kernel.
@@ -316,8 +316,8 @@ def two_plus_three_plus_many_body_en(env1: AtomicEnvironment, env2: AtomicEnviro
     Args:
         env1 (AtomicEnvironment): First local environment.
         env2 (AtomicEnvironment): Second local environment.
-        hyps (np.ndarray): Hyperparameters of the kernel function (sig1, ls1,
-            sig2, ls2, sig3, ls3, sig_n).
+        hyps (np.ndarray): Hyperparameters of the kernel function (sig2, ls2,
+            sig3, ls3, sigm, lsm, sig_n).
         cutoffs (np.ndarray): Two-element array containing the 2- and 3-body
             cutoffs.
         cutoff_func (Callable): Cutoff function of the kernel.
@@ -624,8 +624,22 @@ def many_body(env1, env2, d1, d2, hyps, cutoffs,
 
 def many_body_grad(env1, env2, d1, d2, hyps, cutoffs,
                    cutoff_func=cf.quadratic_cutoff):
-    """
+    """many-body single-element kernel between two force components and its
+    gradient with respect to the hyperparameters.
 
+    Args:
+        env1 (AtomicEnvironment): First local environment.
+        env2 (AtomicEnvironment): Second local environment.
+        d1 (int): Force component of the first environment.
+        d2 (int): Force component of the second environment.
+        hyps (np.ndarray): Hyperparameters of the kernel function (sig, ls).
+        cutoffs (np.ndarray): Two-element array containing the 2-, 3-, and
+            many-body cutoffs.
+        cutoff_func (Callable): Cutoff function of the kernel.
+
+    Return:
+        (float, np.ndarray): Value of the many-body kernel and its gradient
+            with respect to the hyperparameters.
     """
 
     sig = hyps[0]
