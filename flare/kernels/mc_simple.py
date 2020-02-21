@@ -733,13 +733,11 @@ def many_body_mc_grad(env1: AtomicEnvironment, env2: AtomicEnvironment,
     etypes1, etypes2 = env1.etypes, env2.etypes
     etypes_neigh_1, etypes_neigh_2 = env1.etype_mb, env2.etype_mb
 
-    kernel, sig_derv, ls_derv = many_body_mc_grad_jit(bond_array_1, bond_array_2, neigh_dists_1,
+    kernel, kernel_grad = many_body_mc_grad_jit(bond_array_1, bond_array_2, neigh_dists_1,
                                                       neigh_dists_2, num_neigh_1, num_neigh_2, c1,
                                                       c2, etypes1, etypes2, etypes_neigh_1,
                                                       etypes_neigh_2, env1.species, env2.species,
                                                       d1, d2, sig, ls, r_cut, cutoff_func)
-
-    kernel_grad = np.array([sig_derv, ls_derv])
 
     return kernel, kernel_grad
 
@@ -2075,9 +2073,9 @@ _str_to_kernel = {'two_body_mc': two_body_mc,
                   '2+3': two_plus_three_body_mc,
                   '2+3_grad': two_plus_three_body_mc_grad,
                   '2+3_en': two_plus_three_mc_en,
-                  '2+3_force_en': two_plus_three_mc_force_en, 
-                  'many_body_mc': many_body_mc, 
-                  'many_body_mc_en': many_body_mc_en, 
+                  '2+3_force_en': two_plus_three_mc_force_en,
+                  'many_body_mc': many_body_mc,
+                  'many_body_mc_en': many_body_mc_en,
                   'many_body_mc_grad': many_body_mc_grad,
                   'many_body_mc_force_en': many_body_mc_en,
                   'two_plus_three_plus_many_body_mc': two_plus_three_plus_many_body_mc,
