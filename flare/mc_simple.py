@@ -1733,9 +1733,9 @@ def many_body_mc_jit(bond_array_1, bond_array_2, neigh_dists_1, neigh_dists_2, n
         species2 (np.ndarray): all the atomic species present in trajectory 2
         d1 (int): Force component of the first environment.
         d2 (int): Force component of the second environment.
-        sig (float): 3-body signal variance hyperparameter.
-        ls (float): 3-body length scale hyperparameter.
-        r_cut (float): 3-body cutoff radius.
+        sig (float): many-body signal variance hyperparameter.
+        ls (float): many-body length scale hyperparameter.
+        r_cut (float): many-body cutoff radius.
         cutoff_func (Callable): Cutoff function.
 
     Return:
@@ -1843,9 +1843,9 @@ def many_body_mc_grad_jit(bond_array_1, bond_array_2, neigh_dists_1, neigh_dists
         species2 (np.ndarray): all the atomic species present in trajectory 2
         d1 (int): Force component of the first environment.
         d2 (int): Force component of the second environment.
-        sig (float): 3-body signal variance hyperparameter.
-        ls (float): 3-body length scale hyperparameter.
-        r_cut (float): 3-body cutoff radius.
+        sig (float): many-body signal variance hyperparameter.
+        ls (float): many-body length scale hyperparameter.
+        r_cut (float): many-body cutoff radius.
         cutoff_func (Callable): Cutoff function.
 
     Return:
@@ -1973,9 +1973,9 @@ def many_body_mc_force_en_jit(bond_array_1, bond_array_2, neigh_dists_1, num_nei
         species1 (np.ndarray): all the atomic species present in trajectory 1
         species2 (np.ndarray): all the atomic species present in trajectory 2
         d1 (int): Force component of the first environment.
-        sig (float): 3-body signal variance hyperparameter.
-        ls (float): 3-body length scale hyperparameter.
-        r_cut (float): 3-body cutoff radius.
+        sig (float): many-body signal variance hyperparameter.
+        ls (float): many-body length scale hyperparameter.
+        r_cut (float): many-body cutoff radius.
         cutoff_func (Callable): Cutoff function.
 
     Return:
@@ -2035,9 +2035,9 @@ def many_body_mc_en_jit(bond_array_1, bond_array_2, c1, c2, etypes1, etypes2,
         etypes2 (np.ndarray): atomic species of atoms in env 2
         species1 (np.ndarray): all the atomic species present in trajectory 1
         species2 (np.ndarray): all the atomic species present in trajectory 2
-        sig (float): 3-body signal variance hyperparameter.
-        ls (float): 3-body length scale hyperparameter.
-        r_cut (float): 3-body cutoff radius.
+        sig (float): many-body signal variance hyperparameter.
+        ls (float): many-body length scale hyperparameter.
+        r_cut (float): many-body cutoff radius.
         cutoff_func (Callable): Cutoff function.
 
     Return:

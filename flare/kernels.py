@@ -1332,9 +1332,9 @@ def many_body_jit(bond_array_1, bond_array_2,
             local environment
         d1 (int): Force component of the first environment.
         d2 (int): Force component of the second environment.
-        sig (float): 3-body signal variance hyperparameter.
-        ls (float): 3-body length scale hyperparameter.
-        r_cut (float): 3-body cutoff radius.
+        sig (float): many-body signal variance hyperparameter.
+        ls (float): many-body length scale hyperparameter.
+        r_cut (float): many-body cutoff radius.
         cutoff_func (Callable): Cutoff function.
 
     Return:
@@ -1409,9 +1409,9 @@ def many_body_grad_jit(bond_array_1, bond_array_2,
             local environment
         d1 (int): Force component of the first environment.
         d2 (int): Force component of the second environment.
-        sig (float): 3-body signal variance hyperparameter.
-        ls (float): 3-body length scale hyperparameter.
-        r_cut (float): 3-body cutoff radius.
+        sig (float): many-body signal variance hyperparameter.
+        ls (float): many-body length scale hyperparameter.
+        r_cut (float): many-body cutoff radius.
         cutoff_func (Callable): Cutoff function.
 
     Return:
@@ -1504,9 +1504,9 @@ def many_body_force_en_jit(bond_array_1, bond_array_2,
         num_neighbours_1 (np.nsdarray): number of neighbours of each atom in the first 
             local environment
         d1 (int): Force component of the first environment.
-        sig (float): 3-body signal variance hyperparameter.
-        ls (float): 3-body length scale hyperparameter.
-        r_cut (float): 3-body cutoff radius.
+        sig (float): many-body signal variance hyperparameter.
+        ls (float): many-body length scale hyperparameter.
+        r_cut (float): many-body cutoff radius.
         cutoff_func (Callable): Cutoff function.
 
     Return:
@@ -1561,9 +1561,9 @@ def many_body_en_jit(bond_array_1, bond_array_2,
             local environment
         d1 (int): Force component of the first environment.
         d2 (int): Force component of the second environment.
-        sig (float): 3-body signal variance hyperparameter.
-        ls (float): 3-body length scale hyperparameter.
-        r_cut (float): 3-body cutoff radius.
+        sig (float): many-body signal variance hyperparameter.
+        ls (float): many-body length scale hyperparameter.
+        r_cut (float): many-body cutoff radius.
         cutoff_func (Callable): Cutoff function.
 
     Return:
