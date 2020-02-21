@@ -17,6 +17,7 @@ from_grad_to_mask(grad, hyps_mask) converts the gradient matrix to the actual gr
 matrix by removing the fixed dimensions.
 """
 
+# TO DO, add mb kernels
 def str_to_kernel_set(name: str, multihyps: bool =False):
     """
     return kernels and kernel gradient function base on a string
@@ -62,6 +63,7 @@ def str_to_kernel_set(name: str, multihyps: bool =False):
             stk(prefix+'_force_en')
 
 
+# TO DO, add mb kernels names
 def from_mask_to_args(hyps, hyps_mask: dict, cutoffs):
     """ return the tuple of arguments needed for kernel function
     the order of the tuple has to be exactly the same as the one

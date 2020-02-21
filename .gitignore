@@ -39,3 +39,4 @@ test_files/qe_output_*.out
 /tests/AgI_Molten_15.txt
 /tests/log.lammps
 /tests/*.txt
+.idea/
