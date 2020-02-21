@@ -1,7 +1,7 @@
 import numpy as np
 import time
 import pytest
-import os, pickle, re
+import os, pickle, re, shutil
 
 from flare import struc, env, gp
 from flare import otf_parser
@@ -82,7 +82,7 @@ def test_init(bodies, multihyps, all_mgp, all_gp):
     gp_model = all_gp[f'{bodies}{multihyps}']
 
     grid_num_2 = 64
-    grid_num_3 = 20
+    grid_num_3 = 16
     lower_cut = 0.01
     two_cut = gp_model.cutoffs[0]
     three_cut = gp_model.cutoffs[1]
@@ -120,36 +120,7 @@ def test_init(bodies, multihyps, all_mgp, all_gp):
                 mean_only=True, lmp_file_name=lammps_location)
     all_mgp[f'{bodies}{multihyps}'] = mgp_model
 
-
-@pytest.mark.parametrize('bodies', body_list)
-@pytest.mark.parametrize('multihyps', multi_list)
-def test_lmp_calc(bodies, multihyps, all_lmp_calc):
-
-    label = f'{bodies}{multihyps}'
-    # set up input params
-
-    by = 'no'
-    ty = 'no'
-    if '2' in bodies:
-        by = 'yes'
-    if '3' in bodies:
-        ty = 'yes'
-
-    parameters = {'command': os.environ.get('lmp'), # set up executable for ASE
-                  'pair_style': 'mgp',
-                  'pair_coeff': [f'* * {label}.mgp H He {by} {ty}'],
-                  'mass': ['1 2', '2 4']}
-    files = [f'{label}.mgp']
-
-    os.system('mkdir tmp')
-
-    # create ASE calc
-    lmp_calc = LAMMPS(label=f'tmp{label}', keep_tmp_files=True, tmp_dir='./tmp', 
-            parameters=parameters, files=files)
-    
-    all_lmp_calc[label] = lmp_calc
-
-    
+   
 @pytest.mark.parametrize('bodies', body_list)
 @pytest.mark.parametrize('multihyps', multi_list)
 def test_build_map(all_gp, all_mgp, all_ase_calc, bodies, multihyps):
@@ -173,6 +144,36 @@ def test_build_map(all_gp, all_mgp, all_ase_calc, bodies, multihyps):
             os.rmdir(f)
 
 
+@pytest.mark.parametrize('bodies', body_list)
+@pytest.mark.parametrize('multihyps', multi_list)
+def test_lmp_calc(bodies, multihyps, all_lmp_calc):
+
+    label = f'{bodies}{multihyps}'
+    # set up input params
+
+    by = 'no'
+    ty = 'no'
+    if '2' in bodies:
+        by = 'yes'
+    if '3' in bodies:
+        ty = 'yes'
+
+    parameters = {'command': os.environ.get('lmp'), # set up executable for ASE
+                  'newton': 'off',
+                  'pair_style': 'mgp',
+                  'pair_coeff': [f'* * {label}.mgp H He {by} {ty}'],
+                  'mass': ['1 2', '2 4']}
+    files = [f'{label}.mgp']
+
+    os.system('mkdir tmp')
+
+    # create ASE calc
+    lmp_calc = LAMMPS(label=f'tmp{label}', keep_tmp_files=True, tmp_dir='./tmp', 
+            parameters=parameters, files=files)
+    
+    all_lmp_calc[label] = lmp_calc
+
+ 
 @pytest.mark.skipif(not os.environ.get('lmp',
                           False), reason='lmp not found '
                                   'in environment: Please install LAMMPS '
@@ -186,12 +187,13 @@ def test_lmp_predict(all_ase_calc, all_lmp_calc, bodies, multihyps):
     """
 
     label = f'{bodies}{multihyps}'
+
     for f in os.listdir("./"):
-        if f'tmp{label}' in f:
+        if label in f:
             os.remove(f)
         if f in ['log.lammps']:
             os.remove(f)
-        if re.search("grid3*.npy", f):
+        if 'grid' in f and 'npy' in f:
             os.remove(f)
         if re.search("kv3*", f):
             os.rmdir(f)
@@ -207,27 +209,39 @@ def test_lmp_predict(all_ase_calc, all_lmp_calc, bodies, multihyps):
     mgp_model.write_lmp_file(lammps_location)
 
     # create test structure
-    cell = np.eye(3)
+    cell = np.diag(np.array([1, 1, 1.5]))
     nenv = 10
     unique_species = gp_model.training_data[0].species
     cutoffs = gp_model.cutoffs
     struc_test, f = get_random_structure(cell, unique_species, nenv)
 
     # build ase atom from struc
-    ase_atoms_lmp = struc_test.to_ase_atoms()
-    ase_atoms_lmp.set_calculator(lmp_calc)
     ase_atoms_flare = struc_test.to_ase_atoms()
     ase_atoms_flare.set_calculator(flare_calc)
+    ase_atoms_lmp = struc_test.to_ase_atoms()
+    ase_atoms_lmp.set_calculator(lmp_calc)
+
+    lmp_en = ase_atoms_lmp.get_potential_energy()
+    flare_en = ase_atoms_flare.get_potential_energy()
 
     lmp_stress = ase_atoms_lmp.get_stress()
     flare_stress = ase_atoms_flare.get_stress()
 
+    lmp_forces = ase_atoms_lmp.get_forces()
+    flare_forces = ase_atoms_flare.get_forces()
+
     # check that lammps agrees with gp to within 1 meV/A
+    assert np.all(np.abs(lmp_en - flare_en) < 1e-4)
+    assert np.all(np.abs(lmp_forces - flare_forces) < 1e-4)
     assert np.all(np.abs(lmp_stress - flare_stress) < 1e-3)
 
     for f in os.listdir("./"):
-        if f'tmp{label}' in f:
+        if label in f:
             os.remove(f)
-        if f in ['log.lammps', lammps_location]:
+        if f in ['log.lammps']:
             os.remove(f)
-    os.remove('tmp')
+
+    for f in os.listdir("./tmp/"):
+        if label in f:
+            os.remove(f'tmp/{f}')
+
