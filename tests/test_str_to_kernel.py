@@ -7,8 +7,9 @@ from numpy.random import random, randint
 from flare import env, struc, gp
 from flare.kernels.utils import str_to_kernel_set as stks
 
-@pytest.mark.parametrize('kernel_name', ['2mc', '3mc', '2+3mc', '2', '3',
-                                         '2+3'])
+@pytest.mark.parametrize('kernel_name', ['2mc', '3mc', '2+3mc',
+                                         '2', '3', '2+3',
+                                         '2+3+many'])
 def test_stk(kernel_name):
     """Check whether the str_to_kernel_set can return kernel functions
     properly"""
