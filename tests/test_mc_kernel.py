@@ -199,7 +199,7 @@ def test_many_body_force():
     positions_3 = deepcopy(positions_1)
     positions_3[0][0] = -delt
 
-    species_1 = [1, 1, 1, 1]
+    species_1 = [1, 2, 1, 1]
     test_structure_1 = struc.Structure(cell, species_1, positions_1)
     test_structure_2 = struc.Structure(cell, species_1, positions_2)
     test_structure_3 = struc.Structure(cell, species_1, positions_3)
