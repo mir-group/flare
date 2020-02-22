@@ -11,15 +11,19 @@ Kernel :: Kernel(std::vector<double> kernel_hyperparameters){
 
 TwoBodyKernel :: TwoBodyKernel() {};
 
-TwoBodyKernel :: TwoBodyKernel(double ls, const std::string & cutoff_function,
+TwoBodyKernel :: TwoBodyKernel(double sigma, double ls,
+    const std::string & cutoff_function,
     std::vector<double> cutoff_hyps){
+
+    this->sigma = sigma;
+    sig2 = sigma * sigma;
 
     this->ls = ls;
     ls1 = 1 / (2 * ls * ls);
     ls2 = 1 / (ls * ls);
     this->cutoff_hyps = cutoff_hyps;
 
-    kernel_hyperparameters.push_back(ls);
+    kernel_hyperparameters = std::vector<double> {sigma, ls};
 
     if (cutoff_function == "quadratic"){
         this->cutoff_pointer = quadratic_cutoff;
@@ -64,7 +68,7 @@ double TwoBodyKernel :: env_env(const LocalEnvironment & env1,
             }
         }
     }
-    return kern;
+    return sig2 * kern;
 }
 
 Eigen::VectorXd TwoBodyKernel :: env_struc(const LocalEnvironment & env1,
@@ -120,7 +124,7 @@ Eigen::VectorXd TwoBodyKernel :: env_struc(const LocalEnvironment & env1,
                     // energy kernel
                     c1 = rdiff * rdiff;
                     c2 = exp(-c1 * ls1);
-                    kernel_vector(0) += fi * fj * c2 / 2;
+                    kernel_vector(0) += sig2 * fi * fj * c2 / 2;
 
                     // helper constants
                     c3 = c2 * ls2 * fi * fj * rdiff;
@@ -128,21 +132,27 @@ Eigen::VectorXd TwoBodyKernel :: env_struc(const LocalEnvironment & env1,
 
                     // fx + exx, exy, exz stress components
                     fx = xrel * c3 + c4 * xrel;
-                    kernel_vector(1 + 3 * i) += fx;
-                    kernel_vector(no_elements - 6) -= fx * xval * vol_inv / 2;
-                    kernel_vector(no_elements - 5) -= fx * yval * vol_inv / 2;
-                    kernel_vector(no_elements - 4) -= fx * zval * vol_inv / 2;
-                    
+                    kernel_vector(1 + 3 * i) += sig2 * fx;
+                    kernel_vector(no_elements - 6) -=
+                        sig2 * fx * xval * vol_inv / 2;
+                    kernel_vector(no_elements - 5) -=
+                        sig2 * fx * yval * vol_inv / 2;
+                    kernel_vector(no_elements - 4) -=
+                        sig2 * fx * zval * vol_inv / 2;
+
                     // fy + eyy, eyz stress components
                     fy = yrel * c3 + c4 * yrel;
-                    kernel_vector(2 + 3 * i) += fy;
-                    kernel_vector(no_elements - 3) -= fy * yval * vol_inv / 2;
-                    kernel_vector(no_elements - 2) -= fy * zval * vol_inv / 2;
+                    kernel_vector(2 + 3 * i) += sig2 * fy;
+                    kernel_vector(no_elements - 3) -=
+                        sig2 * fy * yval * vol_inv / 2;
+                    kernel_vector(no_elements - 2) -=
+                        sig2 * fy * zval * vol_inv / 2;
 
                     // fz + ezz stress component
                     fz = zrel * c3 + c4 * zrel;
-                    kernel_vector(3 + 3 * i) += fz;
-                    kernel_vector(no_elements - 1) -= fz * zval * vol_inv / 2;
+                    kernel_vector(3 + 3 * i) += sig2 * fz;
+                    kernel_vector(no_elements - 1) -=
+                        sig2 * fz * zval * vol_inv / 2;
                 }
             }
         } 
@@ -153,15 +163,18 @@ Eigen::VectorXd TwoBodyKernel :: env_struc(const LocalEnvironment & env1,
 
 ThreeBodyKernel :: ThreeBodyKernel() {};
 
-ThreeBodyKernel :: ThreeBodyKernel(double ls,
+ThreeBodyKernel :: ThreeBodyKernel(double sigma, double ls,
     const std::string & cutoff_function, std::vector<double> cutoff_hyps){
+
+    this->sigma = sigma;
+    sig2 = sigma * sigma;
 
     this->ls = ls;
     ls1 = 1 / (2 * ls * ls);
     ls2 = 1 / (ls * ls);
     this->cutoff_hyps = cutoff_hyps;
 
-    kernel_hyperparameters.push_back(ls);
+    kernel_hyperparameters = std::vector<double> {sigma, ls};
 
     if (cutoff_function == "quadratic"){
         this->cutoff_pointer = quadratic_cutoff;
@@ -281,7 +294,7 @@ double ThreeBodyKernel :: env_env(const LocalEnvironment & env1,
         }
     }
 
-    return kern;
+    return sig2 * kern;
 }
 
 Eigen::VectorXd ThreeBodyKernel :: env_struc(const LocalEnvironment & env1,
@@ -453,42 +466,45 @@ void ThreeBodyKernel :: update_kernel_vector(Eigen::VectorXd & kernel_vector,
 
     double p1 = r11 * r11 + r22 * r22 + r33 * r33;
     double p2 = exp(-p1 * ls1);
-    kernel_vector(0) += p2 * fi * fj / 3;
+    kernel_vector(0) += sig2 * p2 * fi * fj / 3;
 
     double p3 = p2 * ls2 * fi * fj;
     double p4 = p2 * fi;
 
     double fx1 = p3 * r11 * xrel1 + p4 * fdjx1;
     double fx2 = p3 * r22 * xrel2 + p4 * fdjx2;
-    kernel_vector(1 + 3 * i) += fx1 + fx2;
+    kernel_vector(1 + 3 * i) += sig2 * (fx1 + fx2);
     kernel_vector(no_elements - 6) -=
-        (fx1 * xval1 + fx2 * xval2) * vol_inv / 2;
+        sig2 * (fx1 * xval1 + fx2 * xval2) * vol_inv / 2;
     kernel_vector(no_elements - 5) -=
-        (fx1 * yval1 + fx2 * yval2) * vol_inv / 2;
+        sig2 * (fx1 * yval1 + fx2 * yval2) * vol_inv / 2;
     kernel_vector(no_elements - 4) -=
-        (fx1 * zval1 + fx2 * zval2) * vol_inv / 2;
+        sig2 * (fx1 * zval1 + fx2 * zval2) * vol_inv / 2;
 
     double fy1 = p3 * r11 * yrel1  + p4 * fdjy1;
     double fy2 = p3 * r22 * yrel2 + p4 * fdjy2;
-    kernel_vector(2 + 3 * i) += fy1 + fy2;
+    kernel_vector(2 + 3 * i) += sig2 * (fy1 + fy2);
     kernel_vector(no_elements - 3) -=
-        (fy1 * yval1 + fy2 * yval2) * vol_inv / 2;
+        sig2 * (fy1 * yval1 + fy2 * yval2) * vol_inv / 2;
     kernel_vector(no_elements - 2) -=
-        (fy1 * zval1 + fy2 * zval2) * vol_inv / 2;
+        sig2 * (fy1 * zval1 + fy2 * zval2) * vol_inv / 2;
 
     double fz1 = p3 * r11 * zrel1 + p4 * fdjz1;
     double fz2 = p3 * r22 * zrel2 + p4 * fdjz2;
-    kernel_vector(3 + 3 * i) += fz1 + fz2;
+    kernel_vector(3 + 3 * i) += sig2 * (fz1 + fz2);
     kernel_vector(no_elements - 1) -=
-        (fz1 * zval1 + fz2 * zval2) * vol_inv / 2;
+        sig2 * (fz1 * zval1 + fz2 * zval2) * vol_inv / 2;
 }
 
 DotProductKernel :: DotProductKernel() {};
 
-DotProductKernel :: DotProductKernel(double power){
+DotProductKernel :: DotProductKernel(double sigma, double power){
 
+    this->sigma = sigma;
+    sig2 = sigma * sigma;
     this->power = power;
-    kernel_hyperparameters.push_back(power);
+
+    kernel_hyperparameters = std::vector<double> {sigma, power};
 }
 
 double DotProductKernel :: env_env(const LocalEnvironment & env1,
@@ -500,7 +516,7 @@ double DotProductKernel :: env_env(const LocalEnvironment & env1,
     double d1 = env1.descriptor_norm;
     double d2 = env2.descriptor_norm;
 
-    return pow(dot / (d1 * d2), power);
+    return sig2 * pow(dot / (d1 * d2), power);
 }
 
 Eigen::VectorXd DotProductKernel
@@ -553,8 +569,8 @@ Eigen::VectorXd DotProductKernel
         stress_kern += dval * s1;
     }
 
-    kern_vec(0) = en_kern;
-    kern_vec.segment(1, struc1.noa * 3) = -force_kern;
-    kern_vec.tail(6) = -stress_kern * vol_inv;
+    kern_vec(0) = sig2 * en_kern;
+    kern_vec.segment(1, struc1.noa * 3) = -sig2 * force_kern;
+    kern_vec.tail(6) = -sig2 * stress_kern * vol_inv;
     return kern_vec;
 }

@@ -24,11 +24,11 @@ class Kernel{
 
 class DotProductKernel : public Kernel{
     public:
-        double power;
+        double sigma, sig2, power;
 
         DotProductKernel();
 
-        DotProductKernel(double power);
+        DotProductKernel(double sigma, double power);
 
         double env_env(const LocalEnvironment & env1,
                        const LocalEnvironment & env2);
@@ -40,13 +40,14 @@ class DotProductKernel : public Kernel{
 
 class TwoBodyKernel : public Kernel{
     public:
-        double ls, ls1, ls2;
+        double sigma, sig2, ls, ls1, ls2;
         void (*cutoff_pointer)(double *, double, double, std::vector<double>);
         std::vector<double> cutoff_hyps;
 
         TwoBodyKernel();
 
-        TwoBodyKernel(double ls, const std::string & cutoff_function,
+        TwoBodyKernel(double sigma, double ls,
+                      const std::string & cutoff_function,
                       std::vector<double> cutoff_hyps);
 
         double env_env(const LocalEnvironment & env1,
@@ -58,13 +59,14 @@ class TwoBodyKernel : public Kernel{
 
 class ThreeBodyKernel : public Kernel{
     public:
-        double ls, ls1, ls2;
+        double sigma, sig2, ls, ls1, ls2;
         void (*cutoff_pointer)(double *, double, double, std::vector<double>);
         std::vector<double> cutoff_hyps;
 
         ThreeBodyKernel();
-        
-        ThreeBodyKernel(double ls, const std::string & cutoff_function,
+
+        ThreeBodyKernel(double sigma, double ls,
+                        const std::string & cutoff_function,
                         std::vector<double> cutoff_hyps);
 
         double env_env(const LocalEnvironment & env1,

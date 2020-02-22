@@ -66,11 +66,11 @@ class KernelTest : public ::testing::Test{
                                            nested_cutoffs, &desc1);
         test_env = test_struc_2.local_environments[0];
 
-        kernel = DotProductKernel(power);
-        two_body_kernel = TwoBodyKernel(length_scale, cutoff_string,
-            cutoff_hyps);
-        three_body_kernel = ThreeBodyKernel(length_scale, cutoff_string,
-            cutoff_hyps);
+        kernel = DotProductKernel(signal_variance, power);
+        two_body_kernel = TwoBodyKernel(signal_variance, length_scale,
+            cutoff_string, cutoff_hyps);
+        three_body_kernel = ThreeBodyKernel(signal_variance, length_scale,
+        cutoff_string, cutoff_hyps);
 
         kern_vec = kernel.env_struc(test_env, test_struc);
         kern_vec_2 = two_body_kernel.env_struc(test_env, test_struc);
@@ -82,7 +82,7 @@ TEST_F(KernelTest, NormTest){
     LocalEnvironment env1 = test_struc.local_environments[0];
     LocalEnvironment env2 = test_struc.local_environments[1];
     double kern_val = kernel.env_env(env1, env1);
-    EXPECT_NEAR(kern_val, 1, THRESHOLD);
+    EXPECT_NEAR(kern_val, signal_variance*signal_variance, THRESHOLD);
 }
 
 TEST_F(KernelTest, ForceTest){

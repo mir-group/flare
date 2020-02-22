@@ -59,11 +59,11 @@ class SparseTest : public ::testing::Test{
         test_struc.forces = forces;
         test_struc.stresses = stresses;
 
-        two_body_kernel = TwoBodyKernel(length_scale, cutoff_string,
-            cutoff_hyps);
-        three_body_kernel = ThreeBodyKernel(length_scale, cutoff_string,
-            cutoff_hyps);
-        many_body_kernel = DotProductKernel(power);
+        two_body_kernel = TwoBodyKernel(signal_variance, length_scale,
+            cutoff_string, cutoff_hyps);
+        three_body_kernel = ThreeBodyKernel(signal_variance, length_scale,
+            cutoff_string, cutoff_hyps);
+        many_body_kernel = DotProductKernel(signal_variance, power);
 
         kernels = 
             std::vector<Kernel *> {&two_body_kernel, &three_body_kernel,
