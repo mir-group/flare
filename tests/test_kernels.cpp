@@ -35,7 +35,6 @@ class KernelTest : public ::testing::Test{
         double signal_variance = 2;
         double length_scale = 1;
         double power = 2;
-        std::vector<double> kernel_hyperparameters {signal_variance, power};
         DotProductKernel kernel;
         TwoBodyKernel two_body_kernel;
         ThreeBodyKernel three_body_kernel;
@@ -67,7 +66,7 @@ class KernelTest : public ::testing::Test{
                                            nested_cutoffs, &desc1);
         test_env = test_struc_2.local_environments[0];
 
-        kernel = DotProductKernel(kernel_hyperparameters);
+        kernel = DotProductKernel(power);
         two_body_kernel = TwoBodyKernel(length_scale, cutoff_string,
             cutoff_hyps);
         three_body_kernel = ThreeBodyKernel(length_scale, cutoff_string,

@@ -24,12 +24,11 @@ class Kernel{
 
 class DotProductKernel : public Kernel{
     public:
-        double signal_variance, power, sig2;
+        double power;
 
         DotProductKernel();
 
-        // Hyperparameters: [signal_variance, power]
-        DotProductKernel(std::vector<double> kernel_hyperparameters);
+        DotProductKernel(double power);
 
         double env_env(const LocalEnvironment & env1,
                        const LocalEnvironment & env2);

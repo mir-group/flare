@@ -19,6 +19,8 @@ TwoBodyKernel :: TwoBodyKernel(double ls, const std::string & cutoff_function,
     ls2 = 1 / (ls * ls);
     this->cutoff_hyps = cutoff_hyps;
 
+    kernel_hyperparameters.push_back(ls);
+
     if (cutoff_function == "quadratic"){
         this->cutoff_pointer = quadratic_cutoff;
     }
@@ -158,6 +160,8 @@ ThreeBodyKernel :: ThreeBodyKernel(double ls,
     ls1 = 1 / (2 * ls * ls);
     ls2 = 1 / (ls * ls);
     this->cutoff_hyps = cutoff_hyps;
+
+    kernel_hyperparameters.push_back(ls);
 
     if (cutoff_function == "quadratic"){
         this->cutoff_pointer = quadratic_cutoff;
@@ -481,12 +485,10 @@ void ThreeBodyKernel :: update_kernel_vector(Eigen::VectorXd & kernel_vector,
 
 DotProductKernel :: DotProductKernel() {};
 
-DotProductKernel :: DotProductKernel(std::vector<double>
-    kernel_hyperparameters) : Kernel(kernel_hyperparameters){
+DotProductKernel :: DotProductKernel(double power){
 
-    signal_variance = kernel_hyperparameters[0];
-    sig2 = signal_variance * signal_variance;
-    power = kernel_hyperparameters[1];
+    this->power = power;
+    kernel_hyperparameters.push_back(power);
 }
 
 double DotProductKernel :: env_env(const LocalEnvironment & env1,

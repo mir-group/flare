@@ -29,7 +29,6 @@ class SparseTest : public ::testing::Test{
         double signal_variance = 2;
         double length_scale = 1;
         double power = 2;
-        std::vector<double> kernel_hyperparameters {signal_variance, power};
         DotProductKernel kernel;
         TwoBodyKernel two_body_kernel;
         ThreeBodyKernel three_body_kernel;
@@ -64,7 +63,7 @@ class SparseTest : public ::testing::Test{
             cutoff_hyps);
         three_body_kernel = ThreeBodyKernel(length_scale, cutoff_string,
             cutoff_hyps);
-        many_body_kernel = DotProductKernel(kernel_hyperparameters);
+        many_body_kernel = DotProductKernel(power);
 
         kernels = 
             std::vector<Kernel *> {&two_body_kernel, &three_body_kernel,
