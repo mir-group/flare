@@ -72,7 +72,11 @@ class SparseTest : public ::testing::Test{
 };
 
 TEST_F(SparseTest, UpdateK){
-    SparseGP sparse_gp = SparseGP(kernels);
+    double sigma_e = 0;
+    double sigma_f = 0;
+    double sigma_s = 0;
+
+    SparseGP sparse_gp = SparseGP(kernels, sigma_e, sigma_f, sigma_s);
     LocalEnvironment env1 = test_struc.local_environments[0];
     LocalEnvironment env2 = test_struc.local_environments[1];
     sparse_gp.add_sparse_environment(env1);

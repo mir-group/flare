@@ -4,8 +4,38 @@
 
 SparseGP :: SparseGP(){}
 
-SparseGP :: SparseGP(std::vector<Kernel *> kernels){
+SparseGP :: SparseGP(std::vector<Kernel *> kernels, double sigma_e,
+    double sigma_f, double sigma_s){
+
     this->kernels = kernels;
+
+    // Count hyperparameters.
+    int n_hyps = 0;
+    for (int i = 0; i < kernels.size(); i ++){
+        n_hyps += kernels[i]->kernel_hyperparameters.size();
+    }
+
+    // Set the kernel hyperparameters.
+    hyperparameters = Eigen::VectorXd::Zero(n_hyps + 3);
+    std::vector<double> hyps_curr;
+    int hyp_counter = 0;
+    for (int i = 0; i < kernels.size(); i ++){
+        hyps_curr = kernels[i]->kernel_hyperparameters;
+
+        for (int j = 0; j < hyps_curr.size(); j ++){
+            hyperparameters(hyp_counter) = hyps_curr[j];
+            hyp_counter ++;
+        }
+    }
+
+    // Set the noise hyperparameters.
+    hyperparameters(n_hyps) = sigma_e;
+    hyperparameters(n_hyps+1) = sigma_f;
+    hyperparameters(n_hyps+2) = sigma_s;
+
+    this->sigma_e = sigma_e;
+    this->sigma_f = sigma_f;
+    this->sigma_s = sigma_s;
 }
 
 void SparseGP :: add_sparse_environment(LocalEnvironment env){
