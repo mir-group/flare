@@ -154,22 +154,31 @@ void SparseGP :: add_training_structure(StructureDescriptor training_structure){
     // Store training structure.
     training_structures.push_back(training_structure);
 
-    // Update y vector.
+    // Update y vector and noise matrix.
     Eigen::VectorXd labels = Eigen::VectorXd::Zero(n_labels);
+    Eigen::VectorXd noise_vector = Eigen::VectorXd::Zero(n_labels);
 
     if (training_structure.energy.size() != 0){
         labels.head(1) = training_structure.energy;
+        noise_vector(0) = 1 / (sigma_e * sigma_e);
     }
 
     if (training_structure.forces.size() != 0){
         labels.segment(1, n_atoms * 3) = training_structure.forces;
+        noise_vector.segment(1, n_atoms * 3) =
+            Eigen::VectorXd::Constant(n_atoms * 3, 1 / (sigma_f * sigma_f));
     }
 
     if (training_structure.stresses.size() != 0){
-        stresses.conservativeResize(stresses.size() + 6);
         labels.tail(6) = training_structure.stresses;
+        noise_vector.tail(6) =
+            Eigen::VectorXd::Constant(6, 1 / (sigma_s * sigma_s));
     }
 
     y.conservativeResize(y.size() + n_labels);
     y.tail(n_labels) = labels;
+
+    noise.conservativeResize(prev_cols + n_labels);
+    noise.tail(n_labels) = noise_vector;
+    noise_matrix = noise.asDiagonal();
 }

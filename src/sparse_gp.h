@@ -10,9 +10,8 @@
 
 class SparseGP{
     public:
-        Eigen::MatrixXd Kuu, Kuf, Sigma;
-        Eigen::VectorXd y, alpha, hyperparameters;
-        Eigen::VectorXd energies, forces, stresses;
+        Eigen::MatrixXd Kuu, Kuf, Sigma, noise_matrix;
+        Eigen::VectorXd y, alpha, hyperparameters, noise;
         std::vector<Kernel *> kernels;
 
         std::vector<LocalEnvironment> sparse_environments;
