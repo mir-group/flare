@@ -66,7 +66,7 @@ int main() {
     LocalEnvironment* env;
     B2_Calculator* calc;
     double duration = 0;
-    int num_reps = 10;
+    int num_reps = 20;
 
     construct_calculator(&calc);
 
