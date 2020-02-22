@@ -1,4 +1,4 @@
-import time, os, math, inspect
+import time, os, math, inspect, subprocess
 import numpy as np
 import multiprocessing as mp
 
@@ -323,7 +323,7 @@ class MappedGaussianProcess:
 
         # predict forces and stress
         vir = np.zeros(6)
-        vir_order = ((0,0), (1,1), (2,2), (0,1), (0,2), (1,2))
+        vir_order = ((0,0), (1,1), (2,2), (1,2), (0,2), (0,1)) # match the ASE order
 
         # two-body
         if lengths.shape[-1] == 1:

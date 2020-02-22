@@ -42,46 +42,53 @@ def super_cell():
 
 @pytest.fixture(scope='module')
 def flare_calc():
-    # ---------- create gaussian process model -------------------
-    gp_model = GaussianProcess(kernel_name='2+3_mc', 
-                               hyps=[0.1, 1., 0.001, 1, 0.06], 
-                               cutoffs=(5.0, 5.0),
-                               hyp_labels=['sig2', 'ls2', 'sig3', 
-                                           'ls3', 'noise'],
-                               opt_algorithm='BFGS', 
-                               par=False)
-    
-    # ----------- create mapped gaussian process ------------------
-    struc_params = {'species': [1, 2],
-                    'cube_lat': np.eye(3) * 100,
-                    'mass_dict': {'0': 2, '1': 4}}
-    
-    # grid parameters
-    lower_cut = 2.5
-    two_cut, three_cut = gp_model.cutoffs
-    grid_num_2 = 8
-    grid_num_3 = 8
-    grid_params = {'bounds_2': [[lower_cut], [two_cut]],
-                   'bounds_3': [[lower_cut, lower_cut, -1],
-                                [three_cut, three_cut,  1]],
-                   'grid_num_2': grid_num_2,
-                   'grid_num_3': [grid_num_3, grid_num_3, grid_num_3],
-                   'svd_rank_2': 0,
-                   'svd_rank_3': 0,
-                   'bodies': [2, 3],
-                   'load_grid': None,
-                   'update': True}
-    
-    mgp_model = MappedGaussianProcess(gp_model.hyps, gp_model.cutoffs,
-                grid_params, struc_params, mean_only=False, container_only=False,
-                GP=gp_model, lmp_file_name='lmp.mgp')
+    flare_calc_dict = {}
+    for md_engine in md_list:
 
-    # ------------ create ASE's flare calculator -----------------------
-    flare_calculator = FLARE_Calculator(gp_model, mgp_model, 
-                                        par=True, use_mapping=True)
+        # ---------- create gaussian process model -------------------
+        gp_model = GaussianProcess(kernel_name='2+3_mc', 
+                                   hyps=[0.1, 1., 0.001, 1, 0.06], 
+                                   cutoffs=(5.0, 5.0),
+                                   hyp_labels=['sig2', 'ls2', 'sig3', 
+                                               'ls3', 'noise'],
+                                   opt_algorithm='BFGS', 
+                                   par=False)
+        
+        # ----------- create mapped gaussian process ------------------
+        struc_params = {'species': [1, 2],
+                        'cube_lat': np.eye(3) * 100,
+                        'mass_dict': {'0': 2, '1': 4}}
+        
+        # grid parameters
+        lower_cut = 2.5
+        two_cut, three_cut = gp_model.cutoffs
+        grid_num_2 = 8
+        grid_num_3 = 8
+        grid_params = {'bounds_2': [[lower_cut], [two_cut]],
+                       'bounds_3': [[lower_cut, lower_cut, -1],
+                                    [three_cut, three_cut,  1]],
+                       'grid_num_2': grid_num_2,
+                       'grid_num_3': [grid_num_3, grid_num_3, grid_num_3],
+                       'svd_rank_2': 0,
+                       'svd_rank_3': 0,
+                       'bodies': [2, 3],
+                       'load_grid': None,
+                       'update': True}
+        
+        mgp_model = MappedGaussianProcess(gp_model.hyps, gp_model.cutoffs,
+                    grid_params, struc_params, mean_only=False, container_only=False,
+                    GP=gp_model, lmp_file_name='lmp.mgp')
+    
+        # ------------ create ASE's flare calculator -----------------------
+        flare_calculator = FLARE_Calculator(gp_model, mgp_model, 
+                                            par=True, use_mapping=True)
+    
 
-    yield flare_calculator
-    del flare_calculator
+        flare_calc_dict[md_engine] = flare_calculator
+        print(md_engine)
+    yield flare_calc_dict
+    del flare_calc_dict
+
 
 @pytest.fixture(scope='module')
 def qe_calc():
@@ -125,6 +132,7 @@ def qe_calc():
 def test_otf_md(md_engine, super_cell, flare_calc, qe_calc):
     np.random.seed(12345)
 
+    flare_calculator = flare_calc[md_engine]
     # set up OTF MD engine
     md_params = {'timestep': 1 * units.fs, 'trajectory': None, 'dt': 1*
                                                                      units.fs,
@@ -138,7 +146,7 @@ def test_otf_md(md_engine, super_cell, flare_calc, qe_calc):
                   'std_tolerance_factor': 2,
                   'max_atoms_added' : len(super_cell.positions),
                   'freeze_hyps': 10,
-                  'use_mapping': flare_calc.use_mapping}
+                  'use_mapping': flare_calculator.use_mapping}
 
     # intialize velocity
     temperature = md_params['temperature']
@@ -146,7 +154,7 @@ def test_otf_md(md_engine, super_cell, flare_calc, qe_calc):
     Stationary(super_cell)  # zero linear momentum
     ZeroRotation(super_cell)  # zero angular momentum
 
-    super_cell.set_calculator(flare_calc)
+    super_cell.set_calculator(flare_calculator)
     test_otf = otf_md(md_engine, super_cell, md_params, otf_params)
 
     # set up logger

@@ -86,7 +86,7 @@ def test_init(bodies, multihyps, all_mgp, all_gp):
                    'svd_rank_2': 14,
                    'svd_rank_3': 14,
                    'load_grid': None,
-                   'update': True}
+                   'update': False}
 
     struc_params = {'species': [1, 2],
                     'cube_lat': np.eye(3)*2,

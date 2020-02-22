@@ -112,7 +112,9 @@ class FLARE_Calculator(Calculator):
             self.results['stds'][n] = np.sqrt(np.absolute(v))
             self.results['local_energies'][n] = e
 
-        self.results['stress'] = np.sum(self.results['stresses'], axis=0)
+        volume = atoms.get_volume()
+        total_stress = np.sum(self.results['stresses'], axis=0) 
+        self.results['stress'] = total_stress / volume
         self.results['energy'] = np.sum(self.results['local_energies'])
 
         atoms.get_uncertainties = self.get_uncertainties
