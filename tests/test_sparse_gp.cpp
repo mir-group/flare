@@ -72,7 +72,7 @@ class SparseTest : public ::testing::Test{
     }
 };
 
-TEST_F(SparseTest, AddSparseTest){
+TEST_F(SparseTest, UpdateK){
     SparseGP sparse_gp = SparseGP(kernels);
     LocalEnvironment env1 = test_struc.local_environments[0];
     LocalEnvironment env2 = test_struc.local_environments[1];
@@ -80,11 +80,21 @@ TEST_F(SparseTest, AddSparseTest){
     sparse_gp.add_sparse_environment(env2);
 
     sparse_gp.add_training_structure(test_struc);
+
+    test_struc.stresses = Eigen::VectorXd {};
     sparse_gp.add_training_structure(test_struc);
 
-    std::cout << sparse_gp.y;
+    EXPECT_EQ(sparse_gp.Kuu.rows(), 2);
+    EXPECT_EQ(sparse_gp.Kuf.rows(), 2);
+    EXPECT_EQ(sparse_gp.Kuf.cols(), 2 + 6 * n_atoms + 6);
+    EXPECT_EQ(sparse_gp.y.size(), 2 + 6 * n_atoms + 6);
+    EXPECT_EQ(test_struc.forces, sparse_gp.y.segment(1, 3 * n_atoms));
 
-    // sparse_gp.add_training_structure(test_struc);
-    // std::cout << sparse_gp.Kuf << std::endl;
-    // std::cout << sparse_gp.training_structures.size() << std::endl;
+    double kern_val = 0;
+    double kern_curr;
+    for (int i = 0; i < kernels.size(); i ++){
+        kern_curr =  kernels[i] -> env_env(env1, env1);
+        kern_val += kern_curr;
+    }
+    EXPECT_EQ(kern_val, sparse_gp.Kuu(0,0));
 }
