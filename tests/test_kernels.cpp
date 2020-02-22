@@ -65,7 +65,7 @@ class KernelTest : public ::testing::Test{
 
         test_struc_2 = StructureDescriptor(cell, species, positions_2, cutoff,
                                            nested_cutoffs, &desc1);
-        test_env = test_struc_2.environment_descriptors[0];
+        test_env = test_struc_2.local_environments[0];
 
         kernel = DotProductKernel(kernel_hyperparameters);
         two_body_kernel = TwoBodyKernel(length_scale, cutoff_string,
@@ -80,8 +80,8 @@ class KernelTest : public ::testing::Test{
 };
 
 TEST_F(KernelTest, NormTest){
-    LocalEnvironment env1 = test_struc.environment_descriptors[0];
-    LocalEnvironment env2 = test_struc.environment_descriptors[1];
+    LocalEnvironment env1 = test_struc.local_environments[0];
+    LocalEnvironment env2 = test_struc.local_environments[1];
     double kern_val = kernel.env_env(env1, env1);
     EXPECT_NEAR(kern_val, 1, THRESHOLD);
 }

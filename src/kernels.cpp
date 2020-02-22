@@ -86,7 +86,7 @@ Eigen::VectorXd TwoBodyKernel :: env_struc(const LocalEnvironment & env1,
 
     LocalEnvironment env_curr;
     for (int i = 0; i < struc1.noa; i ++){
-       env_curr = struc1.environment_descriptors[i];
+       env_curr = struc1.local_environments[i];
        cent2 = env_curr.central_species;
 
         for (int m = 0; m < env1.rs.size(); m ++){
@@ -304,7 +304,7 @@ Eigen::VectorXd ThreeBodyKernel :: env_struc(const LocalEnvironment & env1,
     int c1 = env1.central_species;
 
     for (int i = 0; i < struc1.noa; i ++){
-       env2 = struc1.environment_descriptors[i];
+       env2 = struc1.local_environments[i];
        c2 = env2.central_species;
 
         for (int m = 0; m < env1.three_body_indices.size(); m ++){
@@ -522,7 +522,7 @@ Eigen::VectorXd DotProductKernel
     LocalEnvironment env_curr;
 
     for (int i = 0; i < struc1.noa; i ++){
-        env_curr = struc1.environment_descriptors[i];
+        env_curr = struc1.local_environments[i];
 
         // Check that the environments have the same central species.
         if (env1.central_species != env_curr.central_species) continue;

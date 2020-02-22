@@ -124,7 +124,7 @@ void StructureDescriptor :: compute_environments(){
 
     for (int i = 0; i < noa; i ++){
         env = LocalEnvironment(*this, i, cutoff);
-        environment_descriptors.push_back(env);
+        local_environments.push_back(env);
     }
 }
 
@@ -134,7 +134,7 @@ void StructureDescriptor :: compute_nested_environments(){
 
     for (int i = 0; i < noa; i ++){
         env = LocalEnvironment(*this, i, cutoff, nested_cutoffs);
-        environment_descriptors.push_back(env);
+        local_environments.push_back(env);
     }
 }
 
@@ -144,7 +144,7 @@ void StructureDescriptor :: compute_descriptors(){
 
     for (int i = 0; i < noa; i ++){
         env = LocalEnvironment(*this, i, cutoff, descriptor_calculator);
-        environment_descriptors.push_back(env);
+        local_environments.push_back(env);
     }
 }
 
@@ -155,6 +155,6 @@ void StructureDescriptor :: nested_descriptors(){
     for (int i = 0; i < noa; i ++){
         env = LocalEnvironment(*this, i, cutoff, nested_cutoffs,
             descriptor_calculator);
-        environment_descriptors.push_back(env);
+        local_environments.push_back(env);
     }
 }

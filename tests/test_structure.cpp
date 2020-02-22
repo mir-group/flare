@@ -70,11 +70,11 @@ TEST_F(StructureTest, StructureDescriptor){
 
         for (int j = 0; j < desc1.descriptor_vals.size(); j ++){
             EXPECT_EQ(desc1.descriptor_vals(j),
-                      test_struc.environment_descriptors[i]
+                      test_struc.local_environments[i]
                         .descriptor_vals(j));
             for (int k = 0; k < test_struc.species.size(); k ++){
                 EXPECT_EQ(desc1.descriptor_force_dervs(k, j),
-                          test_struc.environment_descriptors[i]
+                          test_struc.local_environments[i]
                             .descriptor_force_dervs(k, j));
             }
         }

@@ -31,14 +31,14 @@ class Structure{
 class StructureDescriptor : public Structure{
     public:
         DescriptorCalculator * descriptor_calculator;
-        std::vector<LocalEnvironment> environment_descriptors;
+        std::vector<LocalEnvironment> local_environments;
         double cutoff;
         std::vector<double> nested_cutoffs;
 
         // Make structure labels empty by default.
-        std::vector<double> energy {};
-        std::vector<double> forces {};
-        std::vector<double> stresses {};
+        Eigen::VectorXd energy;
+        Eigen::VectorXd forces;
+        Eigen::VectorXd stresses;
 
         StructureDescriptor();
 
