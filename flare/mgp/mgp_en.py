@@ -78,6 +78,7 @@ class MappedGaussianProcess:
                  autorun: bool = True):
 
         # load all arguments as attributes
+        self.mean_only = mean_only
         self.lmp_file_name = lmp_file_name
         self.n_cpus = n_cpus
         self.n_sample = n_sample
@@ -87,7 +88,7 @@ class MappedGaussianProcess:
         # arg_dict = inspect.getargvalues(inspect.currentframe())[3]
         # del arg_dict['self'], arg_dict['GP']
         # self.__dict__.update(arg_dict)
-        # self.__dict__.update(grid_params)
+        self.__dict__.update(grid_params)
 
         # if GP exists, the GP setup overrides the grid_params setup
         if GP is not None:
