@@ -20,6 +20,8 @@ class Kernel{
 
         virtual Eigen::VectorXd env_struc(const LocalEnvironment & env1,
             const StructureDescriptor & struc1) = 0;
+        
+        virtual ~Kernel() = default;
 };
 
 class DotProductKernel : public Kernel{

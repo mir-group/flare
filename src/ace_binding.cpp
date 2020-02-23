@@ -2,6 +2,8 @@
 #include "structure.h"
 #include "local_environment.h"
 #include "descriptor.h"
+#include "sparse_gp.h"
+#include "kernels.h"
 
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
@@ -12,49 +14,8 @@
 
 namespace py = pybind11;
 
-// Define spherical harmonics class.
-class SphericalHarmonics{
-    public:
-        double x, y, z;
-        int lmax;
-        std::vector<double> Y, Yx, Yy, Yz;
-
-        SphericalHarmonics(double x, double y, double z, int lmax);
-};
-
-SphericalHarmonics :: SphericalHarmonics(double x, double y, double z,
-                                         int lmax){
-    int number_of_harmonics = (lmax + 1) * (lmax + 1);
-
-    this->x = x;
-    this->y = y;
-    this->z = z;
-    this->lmax = lmax;
-
-    // Initialize spherical harmonic vectors.
-    Y = std::vector<double>(number_of_harmonics, 0);
-    Yx = std::vector<double>(number_of_harmonics, 0);
-    Yy = std::vector<double>(number_of_harmonics, 0);
-    Yz = std::vector<double>(number_of_harmonics, 0);
-
-    get_Y(Y, Yx, Yy, Yz, x, y, z, lmax);
-};
-
 PYBIND11_MODULE(ace, m){
-    // Bind the spherical harmonics class.
-    py::class_<SphericalHarmonics>(m, "SphericalHarmonics")
-        .def(py::init<double, double, double, int>())
-        // Make attributes accessible.
-        .def_readwrite("x", &SphericalHarmonics::x)
-        .def_readwrite("y", &SphericalHarmonics::y)
-        .def_readwrite("z", &SphericalHarmonics::z)
-        .def_readwrite("lmax", &SphericalHarmonics::lmax)
-        .def_readwrite("Y", &SphericalHarmonics::Y)
-        .def_readwrite("Yx", &SphericalHarmonics::Yx)
-        .def_readwrite("Yy", &SphericalHarmonics::Yy)
-        .def_readwrite("Yz", &SphericalHarmonics::Yz);
-
-    // Bind the structure class.
+    // Structure
     py::class_<Structure>(m, "Structure")
         .def(py::init<const Eigen::MatrixXd &,
                       const std::vector<int> &,
@@ -67,6 +28,7 @@ PYBIND11_MODULE(ace, m){
         .def_readwrite("volume", &Structure::volume)
         .def("wrap_positions", &Structure::wrap_positions);
 
+    // Local environment
     py::class_<LocalEnvironment>(m, "LocalEnvironment")
         .def(py::init<const Structure &, int, double>())
         .def_readwrite("sweep", &LocalEnvironment::sweep)
@@ -84,6 +46,7 @@ PYBIND11_MODULE(ace, m){
         .def_readwrite("zs", &LocalEnvironment::zs)
         .def_readwrite("cutoff", &LocalEnvironment::cutoff);
 
+    // Descriptor calculators
     py::class_<B2_Calculator>(m, "B2_Calculator")
         .def(py::init<const std::string &, const std::string &,
              const std::vector<double> &, const std::vector<double> &,
@@ -96,4 +59,26 @@ PYBIND11_MODULE(ace, m){
         .def_readwrite("descriptor_stress_dervs",
             &B2_Calculator::descriptor_stress_dervs)
         .def("compute", &B2_Calculator::compute);
+
+    // Kernel functions
+    py::class_<Kernel>(m, "Kernel")
+        .def("env_env", &Kernel::env_env)
+        .def("env_struc", &Kernel::env_struc);
+
+    py::class_<TwoBodyKernel, Kernel>(m, "TwoBodyKernel")
+        .def(py::init<double, double, std::string, std::vector<double>>());
+    
+    py::class_<ThreeBodyKernel, Kernel>(m, "ThreeBodyKernel")
+        .def(py::init<double, double, std::string, std::vector<double>>());
+    
+    py::class_<DotProductKernel, Kernel>(m, "DotProductKernel")
+        .def(py::init<double, double>());
+
+    // Sparse GP
+    py::class_<SparseGP>(m, "SparseGP")
+        .def(py::init<std::vector<Kernel *>, double, double, double>())
+        .def("add_sparse_environment", &SparseGP::add_sparse_environment)
+        .def("add_training_structure", &SparseGP::add_training_structure)
+        .def("update_alpha", &SparseGP::update_alpha)
+        .def("predict", &SparseGP::predict);
 }

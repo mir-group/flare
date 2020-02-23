@@ -121,11 +121,11 @@ TEST_F(SparseTest, Predict){
 
     Eigen::VectorXd pred_vals = sparse_gp.predict(test_struc);
 
-    std::cout << "predicted values:" << std::endl;
-    std::cout << pred_vals << std::endl;
+    // std::cout << "predicted values:" << std::endl;
+    // std::cout << pred_vals << std::endl;
 
-    std::cout << sparse_gp.Kuu << std::endl;
-    std::cout << sparse_gp.Kuf << std::endl;
-    std::cout << sparse_gp.Sigma << std::endl;
-    std::cout << sparse_gp.alpha << std::endl;
+    // std::cout << sparse_gp.Kuu << std::endl;
+    // std::cout << sparse_gp.Kuf << std::endl;
+    // std::cout << sparse_gp.Sigma << std::endl;
+    // std::cout << sparse_gp.alpha << std::endl;
 }
