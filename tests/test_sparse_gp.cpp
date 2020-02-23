@@ -8,9 +8,8 @@ class SparseTest : public ::testing::Test{
         int n_atoms = 2;
         Eigen::MatrixXd cell{3, 3}, cell_2{3, 3};
         std::vector<int> species {0, 1};
-        Eigen::MatrixXd positions{n_atoms, 3}, positions_2{n_atoms, 3},
-            positions_3{n_atoms, 3};
-        StructureDescriptor test_struc, test_struc_2, test_struc_3;
+        Eigen::MatrixXd positions{n_atoms, 3};
+        StructureDescriptor test_struc;
     
         // labels
         Eigen::VectorXd energy{1}, forces{n_atoms * 3}, stresses{6};
@@ -26,9 +25,9 @@ class SparseTest : public ::testing::Test{
         B2_Calculator desc1;
 
         // kernel
-        double signal_variance = 2;
+        double signal_variance = 1;
         double length_scale = 1;
-        double power = 2;
+        double power = 1;
         DotProductKernel kernel;
         TwoBodyKernel two_body_kernel;
         ThreeBodyKernel three_body_kernel;
@@ -36,18 +35,15 @@ class SparseTest : public ::testing::Test{
         std::vector<Kernel *> kernels;
 
     SparseTest(){
-        cell << 10, 0, 0,
-                0, 10, 0,
-                0, 0, 10;
+        cell << 100, 0, 0,
+                0, 100, 0,
+                0, 0, 100;
 
-        positions << -0.68402216, 0.54343671, -0.52961224,
-                      0.33045915, 0.40010388, 0.59849816;
+        positions << 0, 0, 0,
+                     1, 0, 0;
         
-        positions_2 << 0.69955637, -0.41619112, -0.51725003,
-                       0.43189622, 0.88548458, -0.74495343;
-        
-        energy = Eigen::VectorXd::Random(1);
-        forces = Eigen::VectorXd::Random(n_atoms * 3);
+        energy << 0.01;
+        forces << -1, 0, 0, 1, 0, 0;
         stresses = Eigen::VectorXd::Random(6);
 
         desc1 = B2_Calculator(radial_string, cutoff_string,
@@ -65,9 +61,12 @@ class SparseTest : public ::testing::Test{
             cutoff_string, cutoff_hyps);
         many_body_kernel = DotProductKernel(signal_variance, power);
 
+        // kernels = 
+        //     std::vector<Kernel *> {&two_body_kernel, &three_body_kernel,
+        //         &many_body_kernel};
+    
         kernels = 
-            std::vector<Kernel *> {&two_body_kernel, &three_body_kernel,
-                &many_body_kernel};
+            std::vector<Kernel *> {&two_body_kernel};
     }
 };
 
@@ -100,4 +99,33 @@ TEST_F(SparseTest, UpdateK){
         kern_val += kern_curr;
     }
     EXPECT_EQ(kern_val, sparse_gp.Kuu(0,0));
+}
+
+TEST_F(SparseTest, Predict){
+    double sigma_e = 0.1;
+    double sigma_f = 0.01;
+    double sigma_s = 1;
+
+    SparseGP sparse_gp = SparseGP(kernels, sigma_e, sigma_f, sigma_s);
+    LocalEnvironment env1 = test_struc.local_environments[0];
+    LocalEnvironment env2 = test_struc.local_environments[1];
+    sparse_gp.add_sparse_environment(env1);
+
+    // test_struc.energy = Eigen::VectorXd {};
+    // test_struc.forces = Eigen::VectorXd {};
+    test_struc.stresses = Eigen::VectorXd {};
+
+    sparse_gp.add_training_structure(test_struc);
+
+    sparse_gp.update_alpha();
+
+    Eigen::VectorXd pred_vals = sparse_gp.predict(test_struc);
+
+    std::cout << "predicted values:" << std::endl;
+    std::cout << pred_vals << std::endl;
+
+    std::cout << sparse_gp.Kuu << std::endl;
+    std::cout << sparse_gp.Kuf << std::endl;
+    std::cout << sparse_gp.Sigma << std::endl;
+    std::cout << sparse_gp.alpha << std::endl;
 }

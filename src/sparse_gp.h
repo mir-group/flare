@@ -29,6 +29,8 @@ class SparseGP{
 
         void add_sparse_environment(LocalEnvironment env);
         void add_training_structure(StructureDescriptor training_structure);
+        void update_alpha();
+        Eigen::VectorXd predict(StructureDescriptor test_structure);
 };
 
 #endif

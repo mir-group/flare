@@ -158,14 +158,16 @@ void SparseGP :: add_training_structure(StructureDescriptor training_structure){
     Eigen::VectorXd labels = Eigen::VectorXd::Zero(n_labels);
     Eigen::VectorXd noise_vector = Eigen::VectorXd::Zero(n_labels);
 
+    label_count = 0;
     if (training_structure.energy.size() != 0){
         labels.head(1) = training_structure.energy;
         noise_vector(0) = 1 / (sigma_e * sigma_e);
+        label_count ++;
     }
 
     if (training_structure.forces.size() != 0){
-        labels.segment(1, n_atoms * 3) = training_structure.forces;
-        noise_vector.segment(1, n_atoms * 3) =
+        labels.segment(label_count, n_atoms * 3) = training_structure.forces;
+        noise_vector.segment(label_count, n_atoms * 3) =
             Eigen::VectorXd::Constant(n_atoms * 3, 1 / (sigma_f * sigma_f));
     }
 
@@ -181,4 +183,32 @@ void SparseGP :: add_training_structure(StructureDescriptor training_structure){
     noise.conservativeResize(prev_cols + n_labels);
     noise.tail(n_labels) = noise_vector;
     noise_matrix = noise.asDiagonal();
+}
+
+void SparseGP::update_alpha(){
+    Eigen::MatrixXd sigma_inv = Kuu + Kuf * noise_matrix * Kuf.transpose();
+    Sigma = sigma_inv.inverse();
+    alpha = Sigma * Kuf * noise_matrix * y;
+}
+
+Eigen::VectorXd SparseGP::predict(StructureDescriptor test_structure){
+    int n_atoms = test_structure.noa;
+    int n_out = 1 + 3 * n_atoms + 6;
+    int n_sparse = sparse_environments.size();
+    int n_kernels = kernels.size();
+    Eigen::MatrixXd kern_mat = Eigen::MatrixXd::Zero(n_out, n_sparse);
+
+    LocalEnvironment sparse_env;
+    Eigen::VectorXd kernel_vector;
+    for (int i = 0; i < n_sparse; i ++){
+        sparse_env = sparse_environments[i];
+        kernel_vector = Eigen::VectorXd::Zero(n_out);
+        for (int j = 0; j < n_kernels; j ++){
+            kernel_vector +=
+                kernels[j] -> env_struc(sparse_env, test_structure);
+        }
+        kern_mat.col(i) = kernel_vector;
+    }
+
+    return kern_mat * alpha;
 }
