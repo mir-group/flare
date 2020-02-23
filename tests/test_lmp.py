@@ -165,10 +165,9 @@ def test_lmp_calc(bodies, multihyps, all_lmp_calc):
                   'mass': ['1 2', '2 4']}
     files = [f'{label}.mgp']
 
-    os.system('mkdir tmp')
 
     # create ASE calc
-    lmp_calc = LAMMPS(label=f'tmp{label}', keep_tmp_files=True, tmp_dir='./tmp', 
+    lmp_calc = LAMMPS(label=f'tmp{label}', keep_tmp_files=True, 
             parameters=parameters, files=files)
     
     all_lmp_calc[label] = lmp_calc
@@ -240,8 +239,4 @@ def test_lmp_predict(all_ase_calc, all_lmp_calc, bodies, multihyps):
             os.remove(f)
         if f in ['log.lammps']:
             os.remove(f)
-
-    for f in os.listdir("./tmp/"):
-        if label in f:
-            os.remove(f'tmp/{f}')
 
