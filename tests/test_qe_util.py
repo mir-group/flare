@@ -7,10 +7,10 @@ from flare.dft_interface.qe_util import parse_dft_input, parse_dft_forces, run_d
 
 def cleanup_espresso_run(basename: str):
     for f in glob.glob(f"{basename}*"):
-        if f is f'{basename}.save':
-            shutil.rmtree(f)
-        else:
+        if os.path.isfile(f):
             os.remove(f)
+        else:
+            shutil.rmtree(f)
 
 
 # ------------------------------------------------------
