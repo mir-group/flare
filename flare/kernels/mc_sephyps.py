@@ -100,7 +100,7 @@ def two_three_many_body_mc(env1, env2, d1, d2, cutoffs,
                                  env1.etype_mb, env2.etype_mb, env1.species, env2.species,
                                  d1, d2, sigm, lsm, r_cut_m, cutoff_func)
 
-    return two_term + three_term+many_term
+    return two_term + three_term + many_term
 
 
 def two_three_many_body_mc_grad(env1, env2, d1, d2, cutoffs,
@@ -141,7 +141,7 @@ def two_three_many_body_mc_grad(env1, env2, d1, d2, cutoffs,
 
     g = np.hstack([grad2, grad3, gradm])
 
-    return kern2 + kern3, g
+    return kern2 + kern3 + kern_many, g
 
 
 def two_three_many_mc_force_en(env1, env2, d1, cutoffs,
@@ -179,7 +179,7 @@ def two_three_many_mc_force_en(env1, env2, d1, cutoffs,
                                           env1.species, env2.species, d1, sigm, lsm, r_cut_m,
                                           cutoff_func)
 
-    return two_term + three_term + many_term + many_term
+    return two_term + three_term + many_term
 
 
 def two_three_many_mc_en(env1, env2, cutoffs,

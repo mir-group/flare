@@ -216,18 +216,18 @@ def generate_envs(cutoffs, delta):
     """
     # create env 1
     # perturb the x direction of atom 0 for +- delta
-    cell = np.eye(3)
+    cell = np.eye(3)*np.max(cutoffs+0.1)
     atom_1 = 0
-    positions_1 = np.vstack([[0, 0, 0], random([3, 3])])
-    positions_2 = deepcopy(positions_1)
-    positions_2[0][0] = delta
-    positions_3 = deepcopy(positions_1)
-    positions_3[0][0] = -delta
+    pos_1 = np.vstack([[0, 0, 0], random([3, 3])])
+    pos_2 = deepcopy(pos_1)
+    pos_2[0][0] = delta
+    pos_3 = deepcopy(pos_1)
+    pos_3[0][0] = -delta
 
     species_1 = [1, 2, 1, 1] # , 1, 1, 2, 1, 2]
-    test_structure_1 = struc.Structure(cell, species_1, positions_1)
-    test_structure_2 = struc.Structure(cell, species_1, positions_2)
-    test_structure_3 = struc.Structure(cell, species_1, positions_3)
+    test_structure_1 = struc.Structure(cell, species_1, pos_1)
+    test_structure_2 = struc.Structure(cell, species_1, pos_2)
+    test_structure_3 = struc.Structure(cell, species_1, pos_3)
 
     env1_1 = env.AtomicEnvironment(test_structure_1, atom_1, cutoffs)
     env1_2 = env.AtomicEnvironment(test_structure_2, atom_1, cutoffs)
@@ -236,18 +236,18 @@ def generate_envs(cutoffs, delta):
 
     # create env 2
     # perturb the y direction
-    positions_1 = np.vstack([[0, 0, 0], random([3, 3])])
-    positions_2 = deepcopy(positions_1)
-    positions_2[0][1] = delta
-    positions_3 = deepcopy(positions_1)
-    positions_3[0][1] = -delta
+    pos_1 = np.vstack([[0, 0, 0], random([3, 3])])
+    pos_2 = deepcopy(pos_1)
+    pos_2[0][1] = delta
+    pos_3 = deepcopy(pos_1)
+    pos_3[0][1] = -delta
 
     atom_2 = 0
     species_2 = [1, 1, 2, 1] #, 2, 1, 2, 2, 2]
 
-    test_structure_1 = struc.Structure(cell, species_2, positions_1)
-    test_structure_2 = struc.Structure(cell, species_2, positions_2)
-    test_structure_3 = struc.Structure(cell, species_2, positions_3)
+    test_structure_1 = struc.Structure(cell, species_2, pos_1)
+    test_structure_2 = struc.Structure(cell, species_2, pos_2)
+    test_structure_3 = struc.Structure(cell, species_2, pos_3)
 
     env2_1 = env.AtomicEnvironment(test_structure_1, atom_2, cutoffs)
     env2_2 = env.AtomicEnvironment(test_structure_2, atom_2, cutoffs)

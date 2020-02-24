@@ -134,7 +134,7 @@ def from_mask_to_args(hyps, hyps_mask: dict, cutoffs):
 
         return (np.array(cutoffs), hyps_mask['nspec'], np.array(hyps_mask['spec_mask']),
                 n2b, np.array(bond_mask), n3b, np.array(triplet_mask),
-                np.array(sig2), np.array(ls2), np.array(sig3), np.array(ls3)), sigm, lsm
+                np.array(sig2), np.array(ls2), np.array(sig3), np.array(ls3), sigm, lsm)
     else:
         raise RuntimeError("only support up to 3 cutoffs")
 
