@@ -36,15 +36,21 @@ def params():
 
 @pytest.mark.parametrize('multihyps', [True, False])
 def test_init(multihyps, all_gps):
-    cutoffs = np.array([0.8, 0.8])
+    cutoffs = np.ones(2)*0.8
     hyps, hm, _ = generate_hm(1, 1, multihyps=multihyps)
     hl = hm['hyps_label']
     if (multihyps is False):
         hm = None
 
     # test update_db
+    gpname = '2+3mc'
+    if multihyps is False:
+        gpname += 'mb'
+        hyps = np.hstack([hyps, [1, 1]])
+        cutoffs = np.ones(3)*0.8
+
     all_gps[multihyps] = \
-        GaussianProcess(kernel_name='2+3mc',
+        GaussianProcess(kernel_name=gpname,
                         hyps=hyps,
                         hyp_labels=hl,
                         cutoffs=cutoffs, multihyps=multihyps, hyps_mask=hm,
@@ -87,7 +93,7 @@ def test_train(all_gps, params, par, n_cpus, multihyps):
     test_gp.parallel = par
     test_gp.n_cpus = n_cpus
 
-    test_gp.maxiter = 4
+    test_gp.maxiter = 1
 
     # train gp
     test_gp.hyps = np.ones(len(test_gp.hyps))
