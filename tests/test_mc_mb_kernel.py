@@ -291,14 +291,14 @@ def test_many_body_force():
 
 def test_many_body_grad():
     # create env 1
-    cell = np.eye(3)
-    cutoffs = np.array([1, 1, 1])
+    cell = 1e7 * np.eye(3)
+    cutoffs = np.array([2, 2, 2])
 
     positions_1 = [np.array([0., 0., 0.]),
                    np.array([random(), random(), random()]),
                    np.array([random(), random(), random()])]
 
-    species_1 = [1, 2, 1]
+    species_1 = [randint(1, 2) for i in range(3)]
     atom_1 = 0
     test_structure_1 = struc.Structure(cell, species_1, positions_1)
     env1 = env.AtomicEnvironment(test_structure_1, atom_1, cutoffs)
@@ -308,7 +308,7 @@ def test_many_body_grad():
                    np.array([random(), random(), random()]),
                    np.array([random(), random(), random()])]
 
-    species_2 = [1, 1, 2]
+    species_2 = [randint(1, 2) for i in range(3)]
     atom_2 = 0
     test_structure_1 = struc.Structure(cell, species_2, positions_1)
     env2 = env.AtomicEnvironment(test_structure_1, atom_2, cutoffs)
@@ -328,16 +328,16 @@ def test_many_body_grad():
     new_ls = ls + delta
 
     sig_derv_brute = (mck.many_body_mc(env1, env2, d1, d2,
-                                   np.array([new_sig, ls]),
-                                   cutoffs) -
+                                       np.array([new_sig, ls]),
+                                       cutoffs) -
                       mck.many_body_mc(env1, env2, d1, d2,
-                                   hyps, cutoffs)) / delta
+                                       hyps, cutoffs)) / delta
 
     l_derv_brute = (mck.many_body_mc(env1, env2, d1, d2,
-                                 np.array([sig, new_ls]),
-                                 cutoffs) -
+                                     np.array([sig, new_ls]),
+                                     cutoffs) -
                     mck.many_body_mc(env1, env2, d1, d2,
-                                 hyps, cutoffs)) / delta
+                                     hyps, cutoffs)) / delta
 
     tol = 1e-4
     assert (np.isclose(grad_test[1][0], sig_derv_brute, atol=tol))
@@ -348,7 +348,6 @@ def test_many_body_force_en():
     """Check that the analytical force-energy kernel matches finite difference of
     energy kernel."""
 
-    # TODO: why env1_1_1, env1_1_2 and env1_1_3 (and other variables) are never used?
     # create env 1
     delt = 1e-5
     cell = 10.0 * np.eye(3)
