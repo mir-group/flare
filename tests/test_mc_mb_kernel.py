@@ -12,6 +12,7 @@ from .fake_gp import generate_envs, another_env
 
 list_to_test = ['2mc', '3mc', '2+3mc', 'mbmc', '2+3+mbmc']
 
+
 def generate_hm(kernel_name):
     hyps = []
     for term in ['2', '3', 'mb']:
@@ -19,6 +20,7 @@ def generate_hm(kernel_name):
             hyps += [random(2)]
     hyps += [random()]
     return np.hstack(hyps)
+
 
 @pytest.mark.parametrize('kernel_name', list_to_test)
 def test_force_en(kernel_name):
@@ -28,8 +30,8 @@ def test_force_en(kernel_name):
     cutoffs = np.ones(3)*1.2
     delta = 1e-8
     env1_1, env1_2, env1_3, \
-            env1_2_1, env1_3_1, env1_2_2, env1_3_2, env2_1 \
-            = another_env(cutoffs, delta)
+        env1_2_1, env1_3_1, env1_2_2, env1_3_2, env2_1 \
+        = another_env(cutoffs, delta)
 
     # set hyperparameters
     d1 = 1
@@ -58,8 +60,8 @@ def test_force_en(kernel_name):
         calc2 = enm_kernel(env1_3_2, env2_1, mhyps, cutoffs)
         kern_finite_diff_20 = (calc1 - calc2) / (2 * delta)
 
-        mb_diff = (kern_finite_diff_00 + \
-                 kern_finite_diff_10 + kern_finite_diff_20)
+        mb_diff = (kern_finite_diff_00 +
+                   kern_finite_diff_10 + kern_finite_diff_20)
 
         kern_finite_diff += mb_diff
 
@@ -100,9 +102,8 @@ def test_force(kernel_name):
     # create env 1
     delta = 1e-5
     cutoffs = np.ones(3)*1.2
-    env1_1, env1_2, env1_3, \
-            env1_2_1, env1_3_1, env1_2_2, env1_3_2, env2_1 \
-            = another_env(cutoffs, delta)
+    env1_1, env1_2, env1_3, env2_1, env2_2, env2_3 \
+        = generate_envs(cutoffs, delta)
 
     # set hyperparameters
     hyps = generate_hm(kernel_name)
@@ -132,7 +133,8 @@ def test_hyps_grad(kernel_name):
 
     delta = 1e-8
     cutoffs = np.array([1, 1, 1])
-    env1_1, env1_2, env1_3, env2_1, env2_2, env2_3 = generate_envs(cutoffs, delta)
+    env1_1, env1_2, env1_3, env2_1, env2_2, env2_3 = generate_envs(
+        cutoffs, delta)
 
     hyps = generate_hm(kernel_name)
     d1 = randint(1, 3)
@@ -152,7 +154,7 @@ def test_hyps_grad(kernel_name):
         newhyps = np.copy(hyps)
         newhyps[i] += delta
         hgrad = (kernel(env1_1, env2_1, d1, d2, newhyps,
-                        cutoffs)-
+                        cutoffs) -
                  original)/delta
         print("numerical gradients", hgrad)
         assert(np.isclose(grad_test[1][i], hgrad, atol=tol))
@@ -172,8 +174,10 @@ def test_many_body_force():
     cutoffs = np.array([1.2, 1.2, 1.2])
 
     positions_1 = [np.array([0., 0., 0.]),
-                   np.array([0., 1., 0.]) + 0.1 * np.array([random(), random(), random()]),
-                   np.array([1., 0., 0.]) + 0.1 * np.array([random(), random(), random()]),
+                   np.array([0., 1., 0.]) + 0.1 *
+                   np.array([random(), random(), random()]),
+                   np.array([1., 0., 0.]) + 0.1 *
+                   np.array([random(), random(), random()]),
                    np.array([1., 1., 0.]) + 0.1 * np.array([random(), random(), random()])]
 
     positions_2 = deepcopy(positions_1)
@@ -199,8 +203,10 @@ def test_many_body_force():
 
     # create env 2
     positions_1 = [np.array([0., 0., 0.]),
-                   np.array([0., 1., 0.]) + 0.1 * np.array([random(), random(), random()]),
-                   np.array([1., 0., 0.]) + 0.1 * np.array([random(), random(), random()]),
+                   np.array([0., 1., 0.]) + 0.1 *
+                   np.array([random(), random(), random()]),
+                   np.array([1., 0., 0.]) + 0.1 *
+                   np.array([random(), random(), random()]),
                    np.array([1., 1., 0.]) + 0.1 * np.array([random(), random(), random()])]
 
     positions_2 = deepcopy(positions_1)
@@ -307,7 +313,7 @@ def test_many_body_force():
                         kern_finite_diff_20 + kern_finite_diff_21 + kern_finite_diff_22)
 
     kern_analytical = mck.many_body_mc(env1_1_0, env2_1_0,
-                                   d1, d2, hyps, cutoffs)
+                                       d1, d2, hyps, cutoffs)
 
     tol = 1e-4
 
@@ -379,8 +385,10 @@ def test_many_body_force_en():
     cutoffs = np.array([1.2, 1.2, 1.2])
 
     positions_1 = [np.array([0., 0., 0.]),
-                   np.array([0., 1., 0.]) + 0.1 * np.array([random(), random(), random()]),
-                   np.array([1., 0., 0.]) + 0.1 * np.array([random(), random(), random()]),
+                   np.array([0., 1., 0.]) + 0.1 *
+                   np.array([random(), random(), random()]),
+                   np.array([1., 0., 0.]) + 0.1 *
+                   np.array([random(), random(), random()]),
                    np.array([1., 1., 0.]) + 0.1 * np.array([random(), random(), random()])]
 
     positions_2 = deepcopy(positions_1)
@@ -407,8 +415,10 @@ def test_many_body_force_en():
 
     # create env 2
     positions_1 = [np.array([0., 0., 0.]),
-                   np.array([0., 1., 0.]) + 0.1 * np.array([random(), random(), random()]),
-                   np.array([1., 0., 0.]) + 0.1 * np.array([random(), random(), random()]),
+                   np.array([0., 1., 0.]) + 0.1 *
+                   np.array([random(), random(), random()]),
+                   np.array([1., 0., 0.]) + 0.1 *
+                   np.array([random(), random(), random()]),
                    np.array([1., 1., 0.]) + 0.1 * np.array([random(), random(), random()])]
 
     species_2 = [1, 2, 2, 1]
@@ -436,10 +446,11 @@ def test_many_body_force_en():
     calc2 = mck.many_body_mc_en(env1_3_2, env2_1_0, hyps, cutoffs)
     kern_finite_diff_20 = (calc1 - calc2) / (2 * delt)
 
-    kern_finite_diff = -(kern_finite_diff_00 + kern_finite_diff_10 + kern_finite_diff_20)
+    kern_finite_diff = -(kern_finite_diff_00 +
+                         kern_finite_diff_10 + kern_finite_diff_20)
 
     kern_analytical = mck.many_body_mc_force_en(env1_1_0, env2_1_0,
-                                            d1, hyps, cutoffs)
+                                                d1, hyps, cutoffs)
 
     tol = 1e-4
 

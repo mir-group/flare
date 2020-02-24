@@ -259,6 +259,7 @@ def another_env(cutoffs, delt):
 
     cell = 10.0 * np.eye(3)
 
+    # atomic structure 1
     pos_1 = np.vstack([[0, 0, 0], 0.1*random([3, 3])])
     pos_1[1, 1] += 1
     pos_1[2, 0] += 1
@@ -268,20 +269,6 @@ def another_env(cutoffs, delt):
     pos_3 = deepcopy(pos_1)
     pos_3[0][0] = -delt
 
-    # atomic structure 1
-
-    # positions_1 = [np.array([0., 0., 0.]),
-    #                np.array([0., 1., 0.]) + 0.1 * np.array([random(), random(), random()]),
-    #                np.array([1., 0., 0.]) + 0.1 * np.array([random(), random(), random()]),
-    #                np.array([1., 1., 0.]) + 0.1 * np.array([random(), random(), random()])]
-
-    # # structure 2 with atom 0 perturbe along x
-    # positions_2 = deepcopy(positions_1)
-    # positions_2[0][0] = delt
-
-    # # structure 2 with atom 0 perturbe along -x
-    # positions_3 = deepcopy(positions_1)
-    # positions_3[0][0] = -delt
 
     species_1 = [1, 1, 1, 1]
 
@@ -291,7 +278,6 @@ def another_env(cutoffs, delt):
 
     # atom 0, original position
     env1_1_0 = env.AtomicEnvironment(test_structure_1, 0, cutoffs)
-
     # atom 0, 0 perturbe along x
     env1_2_0 = env.AtomicEnvironment(test_structure_2, 0, cutoffs)
     # atom 1, 0 perturbe along x
@@ -299,15 +285,14 @@ def another_env(cutoffs, delt):
     # atom 2, 0 perturbe along x
     env1_2_2 = env.AtomicEnvironment(test_structure_2, 2, cutoffs)
 
+    # atom 0, 0 perturbe along -x
     env1_3_0 = env.AtomicEnvironment(test_structure_3, 0, cutoffs)
+    # atom 1, 0 perturbe along -x
     env1_3_1 = env.AtomicEnvironment(test_structure_3, 1, cutoffs)
+    # atom 2, 0 perturbe along -x
     env1_3_2 = env.AtomicEnvironment(test_structure_3, 2, cutoffs)
 
     # create env 2
-    # pos_1 = [np.array([0., 0., 0.]),
-    #          np.array([0., 1., 0.]) + 0.1 * np.array([random(),         random(), random()]),
-    #          np.array([1., 0., 0.]) + 0.1 * np.array([random(),         random(), random()]),
-    #          np.array([1., 1., 0.]) + 0.1 * np.array([random(),         random(), random()])]
     pos_1 = np.vstack([[0, 0, 0], 0.1*random([3, 3])])
     pos_1[1, 1] += 1
     pos_1[2, 0] += 1
