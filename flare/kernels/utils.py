@@ -54,8 +54,6 @@ def str_to_kernel_set(name: str, multihyps: bool =False):
 
     prefix=''
     str_term={'2':b2, '3':b3, 'many':many}
-    # TO DO, check whether the name match with the ones in
-    # kernels.py and mc_simple.py
     for term in str_term:
         if str_term[term]:
             if (len(prefix)>0):

@@ -1243,7 +1243,11 @@ _str_to_kernel = {'two_body_mc': two_body_mc,
                   '2+3': two_plus_three_body_mc,
                   '2+3_grad': two_plus_three_body_mc_grad,
                   '2+3_en': two_plus_three_mc_en,
-                  '2+3_force_en': two_plus_three_mc_force_en
+                  '2+3_force_en': two_plus_three_mc_force_en,
+                  '2+3+many': two_three_many_body_mc,
+                  '2+3+many_grad': two_three_many_body_mc_grad,
+                  '2+3+many_en': two_three_many_mc_en,
+                  '2+3+many_force_en': two_three_many_mc_force_en
                   }
 
 
