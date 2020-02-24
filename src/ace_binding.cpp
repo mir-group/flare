@@ -28,6 +28,20 @@ PYBIND11_MODULE(ace, m){
         .def_readwrite("volume", &Structure::volume)
         .def("wrap_positions", &Structure::wrap_positions);
 
+    py::class_<StructureDescriptor, Structure>(m, "StructureDescriptor")
+        .def(py::init<const Eigen::MatrixXd &, const std::vector<int> &,
+                      const Eigen::MatrixXd &, double>())
+        .def(py::init<const Eigen::MatrixXd &, const std::vector<int> &,
+                      const Eigen::MatrixXd &, double,
+                      DescriptorCalculator *>())
+        .def_readwrite("local_environments",
+            &StructureDescriptor::local_environments)
+        .def_readwrite("energy", &StructureDescriptor::energy)
+        .def_readwrite("forces", &StructureDescriptor::forces)
+        .def_readwrite("stresses", &StructureDescriptor::stresses)
+        .def_readwrite("cutoff", &StructureDescriptor::cutoff)
+        .def_readwrite("nested_cutoffs", &StructureDescriptor::nested_cutoffs);
+
     // Local environment
     py::class_<LocalEnvironment>(m, "LocalEnvironment")
         .def(py::init<const Structure &, int, double>())
@@ -44,21 +58,39 @@ PYBIND11_MODULE(ace, m){
         .def_readwrite("xs", &LocalEnvironment::xs)
         .def_readwrite("ys", &LocalEnvironment::ys)
         .def_readwrite("zs", &LocalEnvironment::zs)
-        .def_readwrite("cutoff", &LocalEnvironment::cutoff);
+        .def_readwrite("cutoff", &LocalEnvironment::cutoff)
+        .def_readwrite("descriptor_vals", &LocalEnvironment::descriptor_vals)
+        .def_readwrite("descriptor_force_dervs",
+            &LocalEnvironment::descriptor_force_dervs)
+        .def_readwrite("descriptor_stress_dervs",
+            &LocalEnvironment::descriptor_stress_dervs);
 
+        Eigen::VectorXd descriptor_vals;
+        Eigen::MatrixXd descriptor_force_dervs, descriptor_stress_dervs,
+            force_dot, stress_dot;
     // Descriptor calculators
-    py::class_<B2_Calculator>(m, "B2_Calculator")
+    py::class_<DescriptorCalculator>(m, "DescriptorCalculator")
+        .def("compute", &DescriptorCalculator::compute)
+        .def_readwrite("radial_basis", &DescriptorCalculator::radial_basis)
+        .def_readwrite("cutoff_function", 
+            &DescriptorCalculator::cutoff_function)
+        .def_readwrite("descriptor_vals",
+            &DescriptorCalculator::descriptor_vals)
+        .def_readwrite("descriptor_force_dervs",
+            &DescriptorCalculator::descriptor_force_dervs)
+        .def_readwrite("descriptor_stress_dervs",
+            &DescriptorCalculator::descriptor_stress_dervs)
+        .def_readwrite("radial_hyps",
+            &DescriptorCalculator::radial_hyps)
+        .def_readwrite("cutoff_hyps",
+            &DescriptorCalculator::cutoff_hyps)
+        .def_readwrite("descriptor_settings",
+            &DescriptorCalculator::descriptor_settings);
+
+    py::class_<B2_Calculator, DescriptorCalculator>(m, "B2_Calculator")
         .def(py::init<const std::string &, const std::string &,
              const std::vector<double> &, const std::vector<double> &,
-             const std::vector<int> &>())
-        .def_readwrite("radial_basis", &B2_Calculator::radial_basis)
-        .def_readwrite("cutoff_function", &B2_Calculator::cutoff_function)
-        .def_readwrite("descriptor_vals", &B2_Calculator::descriptor_vals)
-        .def_readwrite("descriptor_force_dervs",
-            &B2_Calculator::descriptor_force_dervs)
-        .def_readwrite("descriptor_stress_dervs",
-            &B2_Calculator::descriptor_stress_dervs)
-        .def("compute", &B2_Calculator::compute);
+             const std::vector<int> &>());
 
     // Kernel functions
     py::class_<Kernel>(m, "Kernel")
@@ -77,6 +109,15 @@ PYBIND11_MODULE(ace, m){
     // Sparse GP
     py::class_<SparseGP>(m, "SparseGP")
         .def(py::init<std::vector<Kernel *>, double, double, double>())
+        .def_readwrite("Kuu", &SparseGP::Kuu)
+        .def_readwrite("Kuf", &SparseGP::Kuf)
+        .def_readwrite("Sigma", &SparseGP::Sigma)
+        .def_readwrite("noise", &SparseGP::noise)
+        .def_readwrite("noise_matrix", &SparseGP::noise_matrix)
+        .def_readwrite("kernels", &SparseGP::kernels)
+        .def_readwrite("alpha", &SparseGP::alpha)
+        .def_readwrite("y", &SparseGP::y)
+        .def_readwrite("hyperparameters", &SparseGP::hyperparameters)
         .def("add_sparse_environment", &SparseGP::add_sparse_environment)
         .def("add_training_structure", &SparseGP::add_training_structure)
         .def("update_alpha", &SparseGP::update_alpha)

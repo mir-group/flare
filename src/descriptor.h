@@ -29,6 +29,8 @@ class DescriptorCalculator{
         const std::vector<int> & descriptor_settings);
 
     virtual void compute(const LocalEnvironment & env) = 0;
+
+    virtual ~DescriptorCalculator() = default;
 };
 
 void B2_descriptor(
