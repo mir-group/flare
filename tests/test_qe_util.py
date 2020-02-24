@@ -1,21 +1,16 @@
 import pytest
-import os
-import sys
+import os, shutil, global
 import numpy as np
 from flare.struc import Structure, get_unique_species
 from flare.dft_interface.qe_util import parse_dft_input, parse_dft_forces, run_dft_par, \
     edit_dft_input_positions, dft_input_to_structure
 
-def cleanup_espresso_run(basename: str, target: str = None):
-    os.system(f'rm {basename}.out')
-    os.system(f'rm {basename}.wfc')
-    os.system(f'rm -r {basename}.save')
-    os.system(f'rm {basename}.in')
-    os.system(f'rm {basename}.wfc1')
-    os.system(f'rm {basename}.wfc2')
-    os.system(f'rm {basename}.xml')
-    if target:
-        os.system(f'rm {target}')
+def cleanup_espresso_run(basename: str):
+    for f in glob.glob(f"{basename}*"):
+        if f is f'{basename}.save']:
+            shutil.rmtree(f)
+        else:
+            os.remove(f)
 
 
 # ------------------------------------------------------
@@ -29,11 +24,6 @@ def cleanup_espresso_run(basename: str, target: str = None):
                          ]
                          )
 def test_species_parsing(qe_input, exp_spec):
-    print("current dir", os.getcwd())
-    print("list dir", os.listdir())
-    print("list dir", os.listdir())
-    for f in os.walk(os.getcwd()):
-        print("file:", f)
     positions, species, cell, masses = parse_dft_input(qe_input)
     assert len(species) == len(exp_spec)
     for i, spec in enumerate(species):

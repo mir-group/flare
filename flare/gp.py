@@ -564,8 +564,6 @@ class GaussianProcess:
     def as_dict(self):
         """Dictionary representation of the GP model."""
 
-        print("as_dict", self.cutoffs)
-
         self.check_L_alpha()
 
         out_dict = deepcopy(dict(vars(self)))
@@ -586,7 +584,6 @@ class GaussianProcess:
 
         multihyps = dictionary.get('multihyps', False)
 
-        print("from_dict", dictionary('cutoffs'))
         new_gp = GaussianProcess(kernel_name=dictionary['kernel_name'],
                                  cutoffs=np.array(dictionary['cutoffs']),
                                  hyps=np.array(dictionary['hyps']),

@@ -73,7 +73,8 @@ def test_load_trained_gp_and_run(methanol_gp):
                            skip=15)
 
     tt.run()
-    os.system('rm ./gp_from_aimd*')
+    for f in glob.glob(f"gp_from_aimd*"):
+        os.remove(f)
 
 
 def test_load_one_frame_and_run():
