@@ -34,6 +34,9 @@ PYBIND11_MODULE(ace, m){
         .def(py::init<const Eigen::MatrixXd &, const std::vector<int> &,
                       const Eigen::MatrixXd &, double,
                       DescriptorCalculator *>())
+        .def(py::init<const Eigen::MatrixXd &, const std::vector<int> &,
+                      const Eigen::MatrixXd &, double, std::vector<double>,
+                      DescriptorCalculator *>())        
         .def_readwrite("local_environments",
             &StructureDescriptor::local_environments)
         .def_readwrite("energy", &StructureDescriptor::energy)
