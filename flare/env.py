@@ -59,8 +59,8 @@ class AtomicEnvironment:
             self.cutoff_mb = None
             self.bond_array_mb = None
             self.neigh_dists_mb = None
-            self.num_neighs_mb_mb = None
-            self.etype_mb_mb = None
+            self.num_neighs_mb = None
+            self.etype_mb = None
 
 
     def as_dict(self):

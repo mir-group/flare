@@ -110,7 +110,7 @@ class GaussianProcess:
 
         self.name = name
 
-        # parallelization     
+        # parallelization
         if self.par:
             if n_cpus is None:
                 self.n_cpus = mp.cpu_count()
@@ -144,6 +144,7 @@ class GaussianProcess:
         with multiple hyperparameters.
         :return:
         """
+
         if self.multihyps is True and self.hyps_mask is None:
             raise ValueError("Warning! Multihyperparameter mode enabled,"
                              "but no configuration hyperparameter mask was "
@@ -563,6 +564,8 @@ class GaussianProcess:
     def as_dict(self):
         """Dictionary representation of the GP model."""
 
+        print("as_dict", self.cutoffs)
+
         self.check_L_alpha()
 
         out_dict = deepcopy(dict(vars(self)))
@@ -583,6 +586,7 @@ class GaussianProcess:
 
         multihyps = dictionary.get('multihyps', False)
 
+        print("from_dict", dictionary('cutoffs'))
         new_gp = GaussianProcess(kernel_name=dictionary['kernel_name'],
                                  cutoffs=np.array(dictionary['cutoffs']),
                                  hyps=np.array(dictionary['hyps']),
@@ -598,6 +602,7 @@ class GaussianProcess:
                                  multihyps=multihyps,
                                  hyps_mask=dictionary.get('hyps_mask', None)
                                  )
+
 
         # Save time by attempting to load in computed attributes
         new_gp.training_data = [AtomicEnvironment.from_dict(env) for env in
