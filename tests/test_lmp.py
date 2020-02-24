@@ -74,7 +74,7 @@ def all_lmp_calc():
 
 @pytest.mark.parametrize('bodies', body_list)
 @pytest.mark.parametrize('multihyps', multi_list)
-def test_init(bodies, multihyps, all_mgp, all_gp, all_ase_calc):
+def test_init(bodies, multihyps, all_mgp, all_gp):
     """
     test the init function
     """
@@ -120,8 +120,6 @@ def test_init(bodies, multihyps, all_mgp, all_gp, all_ase_calc):
                 mean_only=True, lmp_file_name=lammps_location)
     all_mgp[f'{bodies}{multihyps}'] = mgp_model
 
-    all_ase_calc[f'{bodies}{multihyps}'] = FLARE_Calculator(gp_model, mgp_model,
-                                           par=False, use_mapping=True)
 
 @pytest.mark.parametrize('bodies', body_list)
 @pytest.mark.parametrize('multihyps', multi_list)
