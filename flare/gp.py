@@ -110,7 +110,7 @@ class GaussianProcess:
 
         self.name = name
 
-        # parallelization     
+        # parallelization
         if self.par:
             if n_cpus is None:
                 self.n_cpus = mp.cpu_count()
@@ -144,6 +144,7 @@ class GaussianProcess:
         with multiple hyperparameters.
         :return:
         """
+
         if self.multihyps is True and self.hyps_mask is None:
             raise ValueError("Warning! Multihyperparameter mode enabled,"
                              "but no configuration hyperparameter mask was "
@@ -598,6 +599,7 @@ class GaussianProcess:
                                  multihyps=multihyps,
                                  hyps_mask=dictionary.get('hyps_mask', None)
                                  )
+
 
         # Save time by attempting to load in computed attributes
         new_gp.training_data = [AtomicEnvironment.from_dict(env) for env in

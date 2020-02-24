@@ -31,20 +31,19 @@ class AtomicEnvironment:
         self.atom = atom
         self.ctype = structure.coded_species[atom]
 
-        self.cutoff_2 = cutoffs[0]
+        self.cutoffs = np.copy(cutoffs)
 
         # get 2-body arrays
         bond_array_2, bond_positions_2, etypes = \
             get_2_body_arrays(self.positions, self.atom, self.cell,
-                              self.cutoff_2, self.species)
+                              self.cutoffs[0], self.species)
         self.bond_array_2 = bond_array_2
         self.etypes = etypes
 
         # if 2 cutoffs are given, create 3-body arrays
         if len(cutoffs) > 1:
-            self.cutoff_3 = cutoffs[1]
             bond_array_3, cross_bond_inds, cross_bond_dists, triplet_counts = \
-                get_3_body_arrays(bond_array_2, bond_positions_2, cutoffs[1])
+                get_3_body_arrays(bond_array_2, bond_positions_2, self.cutoffs[1])
             self.bond_array_3 = bond_array_3
             self.cross_bond_inds = cross_bond_inds
             self.cross_bond_dists = cross_bond_dists
@@ -52,15 +51,13 @@ class AtomicEnvironment:
 
         # if 3 cutoffs are given, create many-body arrays
         if len(cutoffs) > 2:
-            self.cutoff_mb = cutoffs[2]
             self.bond_array_mb, self.neigh_dists_mb, self.num_neighs_mb, self.etype_mb = get_m_body_arrays(
-                self.positions, self.atom, self.cell, self.cutoff_mb, self.species)
+                self.positions, self.atom, self.cell, self.cutoffs[2], self.species)
         else:
-            self.cutoff_mb = None
             self.bond_array_mb = None
             self.neigh_dists_mb = None
-            self.num_neighs_mb_mb = None
-            self.etype_mb_mb = None
+            self.num_neighs_mb = None
+            self.etype_mb = None
 
 
     def as_dict(self):
@@ -99,13 +96,7 @@ class AtomicEnvironment:
                           species=dictionary['species'])
         index = dictionary['atom']
 
-        cutoffs = []
-        if dictionary.get('cutoff_2', False):
-            cutoffs.append(dictionary.get('cutoff_2'))
-
-        if dictionary.get('cutoff_3', False):
-            cutoffs.append(dictionary.get('cutoff_3'))
-        cutoffs = np.array(cutoffs)
+        cutoffs = dictionary['cutoffs']
 
         return AtomicEnvironment(struc, index, cutoffs)
 

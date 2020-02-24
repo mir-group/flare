@@ -30,8 +30,7 @@ def test_env_methods(cutoff):
 
     the_dict = env_test.as_dict()
     assert isinstance(the_dict, dict)
-    for key in ['positions', 'cell', 'atom', 'cutoff_2', 'cutoff_3',
-                'species']:
+    for key in ['positions', 'cell', 'atom', 'cutoffs', 'species']:
         assert key in the_dict.keys()
 
     remade_env = AtomicEnvironment.from_dict(the_dict)
@@ -39,3 +38,4 @@ def test_env_methods(cutoff):
 
     assert np.array_equal(remade_env.bond_array_2, env_test.bond_array_2)
     assert np.array_equal(remade_env.bond_array_3, env_test.bond_array_3)
+    assert np.array_equal(remade_env.bond_array_mb, env_test.bond_array_mb)
