@@ -101,7 +101,8 @@ def test_force(kernel_name):
         return 0
     # create env 1
     delta = 1e-5
-    cutoffs = np.ones(3)*1.2
+    cutoffs = np.ones(3)*0.8
+
     env1_1, env1_2, env1_3, env2_1, env2_2, env2_3 \
         = generate_envs(cutoffs, delta)
 
