@@ -10,8 +10,7 @@ from flare.kernels.utils import str_to_kernel_set as stks
 
 from .fake_gp import generate_envs, another_env
 
-list_to_test = ['2mc', '3mc', '2+3mc']
-# list_to_test = ['mbmc', '2+3+mbmc']
+list_to_test = ['2mc', '3mc', '2+3mc', 'mbmc', '2+3+mbmc']
 
 def generate_hm(kernel_name):
     hyps = []
@@ -43,6 +42,7 @@ def test_force_en(kernel_name):
         if (term in kernel_name):
             nterm += 1
 
+    kern_finite_diff = 0
     if ('mb' in kernel_name):
         _, __, enm_kernel, ___ = stks('mbmc')
         mhyps = hyps[(nterm-1)*2:]
@@ -61,33 +61,26 @@ def test_force_en(kernel_name):
         mb_diff = (kern_finite_diff_00 + \
                  kern_finite_diff_10 + kern_finite_diff_20)
 
-    if nterm ==1:
-        # check force kernel
-        calc1 = en_kernel(env1_2, env2_1, hyps, cutoffs)
-        calc2 = en_kernel(env1_1, env2_1, hyps, cutoffs)
+        kern_finite_diff += mb_diff
 
-        kern_finite_diff = (calc1 - calc2) / delta
-        if ('2' in kernel_name):
-            kern_finite_diff /= 2
-        elif ('3' in kernel_name):
-            kern_finite_diff /= 3
-        elif ('mb' in kernel_name):
-            kernel_finit_diff = mb_diff
-    elif nterm >= 2:
-        kern_finite_diff = 0
-        if ('2' in kernel_name):
-            nbond = 1
-            _, __, en2_kernel, ___ = stks('2mc')
-            calc1 = en2_kernel(env1_2, env2_1, hyps[0:nbond * 2], cutoffs)
-            calc2 = en2_kernel(env1_1, env2_1, hyps[0:nbond * 2], cutoffs)
-            kern_finite_diff += (calc1 - calc2) / 2.0 / delta
-        if ('3' in kernel_name):
-            _, __, en3_kernel, ___ = stks('3mc')
-            calc1 = en3_kernel(env1_2, env2_1, hyps[nbond * 2:], cutoffs)
-            calc2 = en3_kernel(env1_1, env2_1, hyps[nbond * 2:], cutoffs)
-            kern_finite_diff += (calc1 - calc2) / 3.0 / delta
-        if ('mb' in kernel_name):
-            kern_finite_diff += mb_diff
+    if ('2' in kernel_name):
+        nbond = 1
+        _, __, en2_kernel, ___ = stks('2mc')
+        calc1 = en2_kernel(env1_2, env2_1, hyps[0:nbond * 2], cutoffs)
+        calc2 = en2_kernel(env1_1, env2_1, hyps[0:nbond * 2], cutoffs)
+        diff2b = (calc1 - calc2) / 2.0 / delta
+
+        kern_finite_diff += diff2b
+    else:
+        nbond = 0
+
+    if ('3' in kernel_name):
+        _, __, en3_kernel, ___ = stks('3mc')
+        calc1 = en3_kernel(env1_2, env2_1, hyps[nbond * 2:], cutoffs)
+        calc2 = en3_kernel(env1_1, env2_1, hyps[nbond * 2:], cutoffs)
+        diff3b = (calc1 - calc2) / 3.0 / delta
+
+        kern_finite_diff += diff3b
 
     kern_analytical = force_en_kernel(env1_1, env2_1, d1, hyps, cutoffs)
 
@@ -102,10 +95,14 @@ def test_force(kernel_name):
     """Check that the analytical force kernel matches finite difference of
     energy kernel."""
 
+    if ('mb' in kernel_name):
+        return 0
     # create env 1
     delta = 1e-5
-    cutoffs = np.array([1, 1, 1])
-    env1_1, env1_2, env1_3, env2_1, env2_2, env2_3 = generate_envs(cutoffs, delta)
+    cutoffs = np.ones(3)*1.2
+    env1_1, env1_2, env1_3, \
+            env1_2_1, env1_3_1, env1_2_2, env1_3_2, env2_1 \
+            = another_env(cutoffs, delta)
 
     # set hyperparameters
     hyps = generate_hm(kernel_name)
@@ -129,6 +126,10 @@ def test_force(kernel_name):
 
 @pytest.mark.parametrize('kernel_name', list_to_test)
 def test_hyps_grad(kernel_name):
+
+    if ('mb' in kernel_name):
+        return 0
+
     delta = 1e-8
     cutoffs = np.array([1, 1, 1])
     env1_1, env1_2, env1_3, env2_1, env2_2, env2_3 = generate_envs(cutoffs, delta)
