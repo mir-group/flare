@@ -1,8 +1,6 @@
 import numpy as np
 
-from flare.kernels.kernels import str_to_kernel
-from flare.kernels.mc_simple import str_to_mc_kernel
-from flare.kernels.mc_sephyps import str_to_mc_kernel as str_to_mc_sephyps_kernel
+import flare.kernels
 
 """
 This module includes interface functions between kernels and gp/gp_algebra
@@ -34,11 +32,11 @@ def str_to_kernel_set(name: str, multihyps: bool =False):
 
     if 'mc' in name:
         if (multihyps is False):
-            stk = str_to_mc_kernel
+            stk = flare.kernels.mc_simple._str_to_kernel
         else:
-            stk = str_to_mc_sephyps_kernel
+            stk = flare.kernels.mc_sephyps._str_to_kernel
     else:
-        stk = str_to_kernel
+        stk = flare.kernels.kernels._str_to_kernel
 
     # b2 = Two body in use, b3 = Three body in use
     b2 = False
@@ -56,7 +54,7 @@ def str_to_kernel_set(name: str, multihyps: bool =False):
             many = True
 
     prefix=''
-    str_term={'2':b2, '3':b3, 'mb':many}
+    str_term={'2':b2, '3':b3, 'many':many}
     # TO DO, check whether the name match with the ones in
     # kernels.py and mc_simple.py
     for term in str_term:
@@ -67,8 +65,12 @@ def str_to_kernel_set(name: str, multihyps: bool =False):
     if len(prefix)==0:
         raise RuntimeError(f"the name has to include at least one number {name}")
 
-    return stk(prefix), stk(prefix+'_grad'), stk(prefix+'_en'), \
-            stk(prefix+'_force_en')
+    for suffix in ['', '_grad', '_en', '_force_en']:
+        if prefix+suffix not in stk:
+            raise RuntimeError(f"cannot find kernel function of {prefix}{suffix}")
+
+    return stk[prefix], stk[prefix+'_grad'], stk[prefix+'_en'], \
+            stk[prefix+'_force_en']
 
 
 # TO DO, add mb kernels names

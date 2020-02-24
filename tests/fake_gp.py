@@ -215,16 +215,16 @@ def generate_envs(cutoffs, delta):
     direction i
     """
     # create env 1
+    # perturb the x direction of atom 0 for +- delta
     cell = np.eye(3)
-
+    atom_1 = 0
     positions_1 = np.vstack([[0, 0, 0], random([3, 3])])
     positions_2 = deepcopy(positions_1)
     positions_2[0][0] = delta
     positions_3 = deepcopy(positions_1)
     positions_3[0][0] = -delta
 
-    species_1 = [1, 2, 1, 1, 1, 1, 2, 1, 2]
-    atom_1 = 0
+    species_1 = [1, 2, 1, 1] # , 1, 1, 2, 1, 2]
     test_structure_1 = struc.Structure(cell, species_1, positions_1)
     test_structure_2 = struc.Structure(cell, species_1, positions_2)
     test_structure_3 = struc.Structure(cell, species_1, positions_3)
@@ -235,6 +235,7 @@ def generate_envs(cutoffs, delta):
 
 
     # create env 2
+    # perturb the y direction
     positions_1 = np.vstack([[0, 0, 0], random([3, 3])])
     positions_2 = deepcopy(positions_1)
     positions_2[0][1] = delta
@@ -242,7 +243,7 @@ def generate_envs(cutoffs, delta):
     positions_3[0][1] = -delta
 
     atom_2 = 0
-    species_2 = [1, 1, 2, 1, 2, 1, 2, 2, 2]
+    species_2 = [1, 1, 2, 1] #, 2, 1, 2, 2, 2]
 
     test_structure_1 = struc.Structure(cell, species_2, positions_1)
     test_structure_2 = struc.Structure(cell, species_2, positions_2)
@@ -253,3 +254,75 @@ def generate_envs(cutoffs, delta):
     env2_3 = env.AtomicEnvironment(test_structure_3, atom_2, cutoffs)
 
     return env1_1, env1_2, env1_3, env2_1, env2_2, env2_3
+
+def another_env(cutoffs, delt):
+
+    cell = 10.0 * np.eye(3)
+
+    pos_1 = np.vstack([[0, 0, 0], 0.1*random([3, 3])])
+    pos_1[1, 1] += 1
+    pos_1[2, 0] += 1
+    pos_1[3, :2] += 1
+    pos_2 = deepcopy(pos_1)
+    pos_2[0][0] = delt
+    pos_3 = deepcopy(pos_1)
+    pos_3[0][0] = -delt
+
+    # atomic structure 1
+
+    # positions_1 = [np.array([0., 0., 0.]),
+    #                np.array([0., 1., 0.]) + 0.1 * np.array([random(), random(), random()]),
+    #                np.array([1., 0., 0.]) + 0.1 * np.array([random(), random(), random()]),
+    #                np.array([1., 1., 0.]) + 0.1 * np.array([random(), random(), random()])]
+
+    # # structure 2 with atom 0 perturbe along x
+    # positions_2 = deepcopy(positions_1)
+    # positions_2[0][0] = delt
+
+    # # structure 2 with atom 0 perturbe along -x
+    # positions_3 = deepcopy(positions_1)
+    # positions_3[0][0] = -delt
+
+    species_1 = [1, 1, 1, 1]
+
+    test_structure_1 = struc.Structure(cell, species_1, pos_1)
+    test_structure_2 = struc.Structure(cell, species_1, pos_2)
+    test_structure_3 = struc.Structure(cell, species_1, pos_3)
+
+    # atom 0, original position
+    env1_1_0 = env.AtomicEnvironment(test_structure_1, 0, cutoffs)
+
+    # atom 0, 0 perturbe along x
+    env1_2_0 = env.AtomicEnvironment(test_structure_2, 0, cutoffs)
+    # atom 1, 0 perturbe along x
+    env1_2_1 = env.AtomicEnvironment(test_structure_2, 1, cutoffs)
+    # atom 2, 0 perturbe along x
+    env1_2_2 = env.AtomicEnvironment(test_structure_2, 2, cutoffs)
+
+    env1_3_0 = env.AtomicEnvironment(test_structure_3, 0, cutoffs)
+    env1_3_1 = env.AtomicEnvironment(test_structure_3, 1, cutoffs)
+    env1_3_2 = env.AtomicEnvironment(test_structure_3, 2, cutoffs)
+
+    # create env 2
+    # pos_1 = [np.array([0., 0., 0.]),
+    #          np.array([0., 1., 0.]) + 0.1 * np.array([random(),         random(), random()]),
+    #          np.array([1., 0., 0.]) + 0.1 * np.array([random(),         random(), random()]),
+    #          np.array([1., 1., 0.]) + 0.1 * np.array([random(),         random(), random()])]
+    pos_1 = np.vstack([[0, 0, 0], 0.1*random([3, 3])])
+    pos_1[1, 1] += 1
+    pos_1[2, 0] += 1
+    pos_1[3, :2] += 1
+    pos_2 = deepcopy(pos_1)
+    pos_2[0][0] = delt
+    pos_3 = deepcopy(pos_1)
+    pos_3[0][0] = -delt
+
+    species_2 = [1, 2, 2, 1]
+
+    test_structure_1 = struc.Structure(cell, species_2, pos_1)
+
+    env2_1_0 = env.AtomicEnvironment(test_structure_1, 0, cutoffs)
+
+    return env1_1_0, env1_2_0, env1_3_0, \
+           env1_2_1, env1_3_1, env1_2_2, env1_3_2, env2_1_0
+
