@@ -51,16 +51,20 @@ int cent_ind = env.central_index;
 int no_radial = nos * N;
 int no_harmonics = (lmax + 1) * (lmax + 1);
 int l_ind, n1_l, n2_l, env_ind;
-int counter = 0;
-int temp_counter;
+int counter;
+int n1_count;
+int n2_count;
 
-for (int n1 = 0; n1 < no_radial * no_harmonics; n1 += no_harmonics){
-    for (int n2 = n1; n2 < no_radial * no_harmonics; n2 += no_harmonics){
+for (int n1 = 0; n1 < no_radial; n1 ++){
+    for (int n2 = n1; n2 < no_radial; n2 ++){
         for (int l = 0; l < (lmax + 1); l ++){
-            // counter = l + n2 * (lmax + 1) + n1
             for (int m = 0; m < (2 * l + 1); m ++){
-                n1_l = n1 + (l * l + m);
-                n2_l = n2 + (l * l + m);
+                n1_l = n1 * no_harmonics + (l * l + m);
+                n2_l = n2 * no_harmonics + (l * l + m);
+
+                n1_count = (n1 * (2*no_radial - n1 + 1)) / 2;
+                n2_count = n2 - n1;
+                counter = l + (n1_count + n2_count) * (lmax+1);
 
                 // Store B2 value.
                 B2_vals(counter) +=
@@ -89,20 +93,8 @@ for (int n1 = 0; n1 < no_radial * no_harmonics; n1 += no_harmonics){
                         single_bond_vals(n2_l);
                 }
             }
-
-
-            temp_counter = (l + (n2*(lmax+1))); //+ (n1 * (no_radial * no_harmonics - n1) * (n1 + no_radial * no_harmonics - 1) * (lmax+1)));
-            // if (temp_counter != counter) {
-                std::cout << counter << " " << temp_counter << std::endl;
-            // } else {
-
-            // }
-
-            counter ++;
         }
     }
-    assert(false);
-    
 }
 };
 
