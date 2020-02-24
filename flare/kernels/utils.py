@@ -1,6 +1,6 @@
 import numpy as np
 
-import flare.kernels
+from flare.kernels import kernels, mc_simple, mc_sephyps
 
 """
 This module includes interface functions between kernels and gp/gp_algebra
@@ -32,11 +32,11 @@ def str_to_kernel_set(name: str, multihyps: bool =False):
 
     if 'mc' in name:
         if (multihyps is False):
-            stk = flare.kernels.mc_simple._str_to_kernel
+            stk = mc_simple._str_to_kernel
         else:
-            stk = flare.kernels.mc_sephyps._str_to_kernel
+            stk = mc_sephyps._str_to_kernel
     else:
-        stk = flare.kernels.kernels._str_to_kernel
+        stk = kernels._str_to_kernel
 
     # b2 = Two body in use, b3 = Three body in use
     b2 = False
@@ -49,7 +49,7 @@ def str_to_kernel_set(name: str, multihyps: bool =False):
     for s in ['3', 'three']:
         if (s in name):
             b3 = True
-    for s in ['mb', 'manybody']:
+    for s in ['mb', 'manybody', 'many']:
         if (s in name):
             many = True
 
