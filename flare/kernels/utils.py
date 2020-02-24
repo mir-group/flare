@@ -15,7 +15,6 @@ from_grad_to_mask(grad, hyps_mask) converts the gradient matrix to the actual gr
 matrix by removing the fixed dimensions.
 """
 
-# TO DO, add mb kernels
 def str_to_kernel_set(name: str, multihyps: bool =False):
     """
     return kernels and kernel gradient function base on a string
@@ -73,7 +72,6 @@ def str_to_kernel_set(name: str, multihyps: bool =False):
             stk[prefix+'_force_en']
 
 
-# TO DO, add mb kernels names
 def from_mask_to_args(hyps, hyps_mask: dict, cutoffs):
     """ return the tuple of arguments needed for kernel function
     the order of the tuple has to be exactly the same as the one
@@ -110,19 +108,37 @@ def from_mask_to_args(hyps, hyps_mask: dict, cutoffs):
     else:
         orig_hyps = hyps
 
-    if (n2b != 0):
-        sig2 = orig_hyps[:n2b]
-        ls2 = orig_hyps[n2b:n2b * 2]
-    if (n3b !=0):
-        sig3 = orig_hyps[n2b * 2:n2b * 2 + n3b]
-        ls3 = orig_hyps[n2b * 2 + n3b:n2b * 2 + n3b * 2]
-    if (n2b == 0) and (n3b == 0):
-        raise NameError("Hyperparameter mask missing nbond and/or"
-                        "ntriplet key")
+    if (len(cutoffs)<=2):
+        if (n2b != 0):
+            sig2 = orig_hyps[:n2b]
+            ls2 = orig_hyps[n2b:n2b * 2]
+        if (n3b !=0):
+            sig3 = orig_hyps[n2b * 2:n2b * 2 + n3b]
+            ls3 = orig_hyps[n2b * 2 + n3b:n2b * 2 + n3b * 2]
+        if (n2b == 0) and (n3b == 0):
+            raise NameError("Hyperparameter mask missing nbond and/or"
+                            "ntriplet key")
 
-    return (np.array(cutoffs), hyps_mask['nspec'], np.array(hyps_mask['spec_mask']),
-            n2b, np.array(bond_mask), n3b, np.array(triplet_mask),
-            np.array(sig2), np.array(ls2), np.array(sig3), np.array(ls3))
+        return (np.array(cutoffs), hyps_mask['nspec'], np.array(hyps_mask['spec_mask']),
+                n2b, np.array(bond_mask), n3b, np.array(triplet_mask),
+                np.array(sig2), np.array(ls2), np.array(sig3), np.array(ls3))
+    elif (len(cutoffs)==3):
+        sigm = None
+        lsm = None
+        if (n2b != 0):
+            sig2 = orig_hyps[:n2b]
+            ls2 = orig_hyps[n2b:n2b * 2]
+        if (n3b !=0):
+            sig3 = orig_hyps[n2b * 2:n2b * 2 + n3b]
+            ls3 = orig_hyps[n2b * 2 + n3b:n2b * 2 + n3b * 2]
+        sigm = orig_hyps[n2b*2+n3b*2]
+        lsm = orig_hyps[n2b*2+n3b*2+1]
+
+        return (np.array(cutoffs), hyps_mask['nspec'], np.array(hyps_mask['spec_mask']),
+                n2b, np.array(bond_mask), n3b, np.array(triplet_mask),
+                np.array(sig2), np.array(ls2), np.array(sig3), np.array(ls3)), sigm, lsm
+    else:
+        raise RuntimeError("only support up to 3 cutoffs")
 
 
 def from_grad_to_mask(grad, hyps_mask):
