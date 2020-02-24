@@ -8,7 +8,7 @@ Energy, force, and stress information can be included which can then be
 used to train ML models.
 """
 import numpy as np
-from flare.util import element_to_Z, NumpyEncoder
+from flare.util import element_to_Z, Z_to_element, NumpyEncoder
 from json import dumps
 
 from typing import List, Union, Any
@@ -280,7 +280,8 @@ class Structure:
         from ase import Atoms
         return Atoms(self.species_labels,
                      positions=self.positions,
-                     cell=self.cell)
+                     cell=self.cell, 
+                     pbc=True)
 
 
     def to_pmg_structure(self):
@@ -332,6 +333,66 @@ class Structure:
             new_struc.stds = [np.array(std) for std in stds]
 
         return new_struc
+
+
+    def to_xyz(self, extended_xyz: bool = True,
+                      print_stds: bool = False,
+                      print_forces : bool = False,
+                      print_max_stds: bool = False,
+                      write_file: str = '')->str:
+        """
+        Convenience function which turns a structure into an extended .xyz
+        file; useful for further input into visualization programs like VESTA
+        or Ovito. Can be saved to an output file via write_file.
+
+        :param print_stds: Print the stds associated with the structure.
+        :param print_forces:
+        :param extended_xyz:
+        :param print_max_stds:
+        :param write_file:
+        :return:
+        """
+        species_list = [Z_to_element(x) for x in self.coded_species]
+        xyz_str = ''
+        xyz_str += f'{len(self.coded_species)} \n'
+
+        if extended_xyz:
+            cell = self.cell
+
+            xyz_str += f'Lattice="{cell[0,0]} {cell[0,1]} {cell[0,2]}'
+            xyz_str += f' {cell[1,0]} {cell[1,1]} {cell[1,2]}'
+            xyz_str += f' {cell[2,0]} {cell[2,1]} {cell[2,2]}"'
+            xyz_str += f' Proprties="species:S:1:pos:R:3'
+
+            if print_stds:
+                xyz_str += ':stds:R:3'
+                stds = self.stds
+            if print_forces:
+                xyz_str += ':forces:R:3'
+                forces = self.forces
+            if print_max_stds:
+                xyz_str += ':max_std:R:1'
+            xyz_str += '\n'
+        else:
+            xyz_str += '\n'
+
+        for i, pos in enumerate(self.positions):
+
+            xyz_str += f"{species_list[i]} {pos[0]} {pos[1]} {pos[2]}"
+
+            if print_stds and extended_xyz:
+                xyz_str += f" {stds[i,0]} {stds[i,1]} {stds[i,2]}"
+            if print_forces and extended_xyz:
+                xyz_str += f" {forces[i,0]} {forces[i,1]} {forces[i,2]}"
+            if print_max_stds and extended_xyz:
+                xyz_str += f" {np.max(stds[i,:])} "
+            xyz_str += '\n'
+
+        if write_file:
+            with open(write_file, 'w') as f:
+                f.write(xyz_str)
+
+        return xyz_str
 
 
 def get_unique_species(species: List[Any])-> (List, List[int]):

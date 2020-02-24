@@ -4,6 +4,7 @@ import sys
 from tests.test_gp import get_random_structure
 from flare.struc import Structure
 from json import loads
+from flare.util import Z_to_element
 
 try:
     import pymatgen.core.structure as pmgstruc
@@ -191,3 +192,38 @@ def test_to_pmg_structure(varied_test_struc):
     assert len(varied_test_struc) == len(varied_test_struc)
     assert np.equal(new_struc.cart_coords, varied_test_struc.positions).all()
     assert (new_struc.atomic_numbers == varied_test_struc.coded_species).all()
+
+def test_to_xyz(varied_test_struc):
+
+    simple_str = varied_test_struc.to_xyz(extended_xyz=False,
+                print_stds=False, print_forces=False, print_max_stds=False)
+
+    simple_str_by_line = simple_str.split('\n')
+
+    assert len(simple_str_by_line)-3 == len(varied_test_struc)
+
+    for i, atom_line in enumerate(simple_str_by_line[2:-1]):
+        split_line = atom_line.split()
+        assert split_line[0] == \
+               Z_to_element(varied_test_struc.species_labels[i])
+        for j in range(3):
+            assert float(split_line[1+j]) == varied_test_struc.positions[i][j]
+
+
+
+    complex_str = varied_test_struc.to_xyz(True,True,True,True)
+    complex_str_by_line = complex_str.split('\n')
+
+    assert len(complex_str_by_line)-3 == len(varied_test_struc)
+
+    for i, atom_line in enumerate(complex_str_by_line[2:-1]):
+        split_line = atom_line.split()
+        assert split_line[0] == \
+               Z_to_element(varied_test_struc.species_labels[i])
+        for j in range(1,4):
+            assert float(split_line[j]) == varied_test_struc.positions[i][j-1]
+        for j in range(4,7):
+            assert float(split_line[j]) == varied_test_struc.stds[i][j-4]
+        for j in range(7,10):
+            assert float(split_line[j]) == varied_test_struc.forces[i][j-7]
+        assert float(split_line[10]) == np.max(varied_test_struc.stds[i])
