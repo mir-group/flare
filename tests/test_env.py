@@ -3,8 +3,10 @@ import numpy as np
 from flare.struc import Structure
 from flare.env import AtomicEnvironment
 
+cutoff_list=[np.ones(2), np.ones(3)*0.8]
 
-def test_species_count():
+@pytest.mark.parametrize('cutoff', cutoff_list)
+def test_species_count(cutoff):
     cell = np.eye(3)
     species = [1, 2, 3]
     positions = np.array([[0, 0, 0], [0.5, 0.5, 0.5], [0.1, 0.1, 0.1]])
@@ -16,8 +18,8 @@ def test_species_count():
     assert (len(env_test.bond_array_2) == len(env_test.etypes))
     assert (isinstance(env_test.etypes[0], np.int8))
 
-
-def test_env_methods():
+@pytest.mark.parametrize('cutoff', cutoff_list)
+def test_env_methods(cutoff):
     cell = np.eye(3)
     species = [1, 2, 3]
     positions = np.array([[0, 0, 0], [0.5, 0.5, 0.5], [0.1, 0.1, 0.1]])

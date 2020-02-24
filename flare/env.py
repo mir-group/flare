@@ -55,6 +55,13 @@ class AtomicEnvironment:
             self.cutoff_mb = cutoffs[2]
             self.bond_array_mb, self.neigh_dists_mb, self.num_neighs_mb, self.etype_mb = get_m_body_arrays(
                 self.positions, self.atom, self.cell, self.cutoff_mb, self.species)
+        else:
+            self.cutoff_mb = None
+            self.bond_array_mb = None
+            self.neigh_dists_mb = None
+            self.num_neighs_mb_mb = None
+            self.etype_mb_mb = None
+
 
     def as_dict(self):
         """
@@ -71,6 +78,7 @@ class AtomicEnvironment:
         dictionary['forces'] = self.structure.forces
         dictionary['energy'] = self.structure.energy
         dictionary['stress'] = self.structure.stress
+
         del dictionary['structure']
 
         return dictionary
@@ -131,7 +139,7 @@ def get_2_body_arrays(positions, atom: int, cell, cutoff_2: float, species):
     :type species: np.ndarray
     :return: Tuple of arrays describing pairs of atoms in the 2-body local
      environment.
-    
+
      bond_array_2: Array containing the distances and relative
      coordinates of atoms in the 2-body local environment. First column
      contains distances, remaining columns contain Cartesian coordinates
@@ -200,7 +208,7 @@ def get_2_body_arrays(positions, atom: int, cell, cutoff_2: float, species):
 @njit
 def get_2_body_arrays_ind(positions, atom: int, cell, cutoff_2: float, species):
     """Returns distances, coordinates, species of atoms, and indexes of neighbors
-    in the 2-body local environment. This method is implemented outside 
+    in the 2-body local environment. This method is implemented outside
     the AtomicEnvironment class to allow for njit acceleration with Numba.
 
     :param positions: Positions of atoms in the structure.
@@ -216,7 +224,7 @@ def get_2_body_arrays_ind(positions, atom: int, cell, cutoff_2: float, species):
     :type species: np.ndarray
     :return: Tuple of arrays describing pairs of atoms in the 2-body local
      environment.
-    
+
      bond_array_2: Array containing the distances and relative
      coordinates of atoms in the 2-body local environment. First column
      contains distances, remaining columns contain Cartesian coordinates
@@ -382,7 +390,7 @@ def get_m_body_arrays(positions, atom: int, cell, cutoff_mb: float, species):
     :type indexes: boolean
     :return: Tuple of arrays describing pairs of atoms in the 2-body local
      environment.
-    
+
      bond_array_mb: Array containing the distances and relative
      coordinates of atoms in the 2-body local environment. First column
      contains distances, remaining columns contain Cartesian coordinates
@@ -392,8 +400,8 @@ def get_m_body_arrays(positions, atom: int, cell, cutoff_mb: float, species):
      etypes: Species of atoms in the 2-body local environment represented by
      their atomic number.
 
-     neigh_dists_mb: Matrix padded with zero values of distances 
-     of neighbours for the atoms in the local environment. 
+     neigh_dists_mb: Matrix padded with zero values of distances
+     of neighbours for the atoms in the local environment.
 
      num_neighs_mb: number of neighbours of each atom in the local environment
 
