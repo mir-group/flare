@@ -29,6 +29,11 @@ def cleanup_espresso_run(basename: str, target: str = None):
                          ]
                          )
 def test_species_parsing(qe_input, exp_spec):
+    print("current dir", os.getcwd())
+    print("list dir", os.listdir())
+    print("list dir", os.listdir())
+    for f in os.walk(os.getcwd()):
+        print("file:", f)
     positions, species, cell, masses = parse_dft_input(qe_input)
     assert len(species) == len(exp_spec)
     for i, spec in enumerate(species):

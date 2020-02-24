@@ -21,7 +21,7 @@ before_install:
 script:
     - cd tests
     - PWSCF_COMMAND=pw.x CP2K_COMMAND=../cp2k-6.1-Linux-x86_64.sopt lmp=../lmp
-      pytest -vv --durations=0 --cov=../flare/
+      pytest -show-capture=all -vv --durations=0 --cov=../flare/
     - coverage xml
 
 after_success:
