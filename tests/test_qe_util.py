@@ -7,7 +7,7 @@ from flare.dft_interface.qe_util import parse_dft_input, parse_dft_forces, run_d
 
 def cleanup_espresso_run(basename: str):
     for f in glob.glob(f"{basename}*"):
-        if f is f'{basename}.save']:
+        if f is f'{basename}.save':
             shutil.rmtree(f)
         else:
             os.remove(f)
@@ -79,7 +79,7 @@ def test_input_to_structure(qe_input):
 def test_espresso_calling(qe_input, qe_output):
 
     dft_loc = os.environ.get('PWSCF_COMMAND')
-    os.system(' '.join(['cp', qe_input, 'pwscf.in']))
+    shutil.copyfile(qe_input, 'pwscf.in')
     positions, species, cell, masses = parse_dft_input(qe_input)
 
     structure = Structure(cell=cell, species=species,
@@ -120,4 +120,4 @@ def test_espresso_input_edit():
     assert np.equal(positions[0], structure.positions[0]).all()
     assert np.equal(structure.vec1, cell[0, :]).all()
 
-    os.system('rm ./qe_input_1.in')
+    os.remove('qe_input_1.in')
