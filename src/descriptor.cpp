@@ -53,12 +53,17 @@ int neigh_size = env.neighbor_list.size();
 int cent_ind = env.central_index;
 int no_radial = nos * N;
 int no_harmonics = (lmax + 1) * (lmax + 1);
-int l_ind, n1_l, n2_l, env_ind;
+
+
+
+#pragma omp parallel num_threads(NUM_THREADS)
+{
+int n1_l, n2_l, env_ind;
 int counter;
 int n1_count;
 int n2_count;
 
-#pragma omp parallel for num_threads(NUM_THREADS) schedule(guided,8)
+#pragma omp for schedule(guided,8)
 for (int n1 = no_radial-1; n1 >= 0; n1 --){
 
     for (int n2 = n1; n2 < no_radial; n2 ++){
@@ -102,6 +107,9 @@ for (int n1 = no_radial-1; n1 >= 0; n1 --){
         }
     }
 }
+
+}
+
 };
 
 B1_Calculator :: B1_Calculator(){}
