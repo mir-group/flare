@@ -198,14 +198,14 @@ def get_tstp() -> AtomicEnvironment:
     # params
     cell = np.eye(3)
     unique_species = [2, 1]
-    cutoff = 0.8
+    cutoffs = np.ones(3)*0.8
     noa = 10
 
     test_structure_2, _ = get_random_structure(cell, unique_species,
                                                noa)
 
     test_pt = AtomicEnvironment(test_structure_2, 0,
-                                np.array([cutoff, cutoff]))
+                                cutoffs)
     return test_pt
 
 

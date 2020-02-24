@@ -9,8 +9,10 @@ cache:
 
 before_install:
     - sudo apt update
-    - sudo apt install -y quantum-espresso
+    - sudo apt install -y quantum-espresso tree
     - pip install codecov pytest pytest-cov
+    - pwd
+    - tree
     - wget http://folk.uio.no/anjohan/lmp
     - "wget https://github.com/cp2k/cp2k/releases/download/\
       v6.1.0/cp2k-6.1-Linux-x86_64.sopt"
@@ -19,6 +21,8 @@ before_install:
     - pip install -r requirements.txt
 
 script:
+    - pwd
+    - tree
     - cd tests
     - PWSCF_COMMAND=pw.x CP2K_COMMAND=../cp2k-6.1-Linux-x86_64.sopt lmp=../lmp
       pytest --show-capture=all -vv --durations=0 --cov=../flare/
