@@ -7,8 +7,6 @@
 #include <iostream>
 
 
-#define NUM_THREADS 4
-
 DescriptorCalculator::DescriptorCalculator(){}
 
 DescriptorCalculator::DescriptorCalculator(
@@ -56,7 +54,7 @@ int no_harmonics = (lmax + 1) * (lmax + 1);
 
 
 
-#pragma omp parallel num_threads(NUM_THREADS)
+#pragma omp parallel
 {
 int n1_l, n2_l, env_ind;
 int counter;
