@@ -9,7 +9,7 @@ from flare.mgp.mgp_en import MappedGaussianProcess
 from flare.lammps import lammps_calculator
 from flare.ase.calculator import FLARE_Calculator
 
-from .fake_gp import get_gp, get_random_structure
+from tests.fake_gp import get_gp, get_random_structure
 
 body_list = ['2', '3']
 multi_list = [False, True]
@@ -108,7 +108,7 @@ def test_init(bodies, multihyps, all_mgp, all_gp):
                 mean_only=True, lmp_file_name=lammps_location)
     all_mgp[f'{bodies}{multihyps}'] = mgp_model
 
-    all_ase_calc[f'{bodies}{multihyps}'] = FLARE_Calculator(gp_model, mgp_model, 
+    all_ase_calc[f'{bodies}{multihyps}'] = FLARE_Calculator(gp_model, mgp_model,
                                            par=False, use_mapping=True)
 
 @pytest.mark.parametrize('bodies', body_list)

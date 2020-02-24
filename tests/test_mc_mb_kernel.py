@@ -10,8 +10,8 @@ from flare.kernels.utils import str_to_kernel_set as stks
 
 from .fake_gp import generate_envs, another_env
 
-# list_to_test = ['2mc', '3mc', '2+3mc', '2+3+mbmc']
-list_to_test = ['mbmc', '2+3+mbmc']
+list_to_test = ['2mc', '3mc', '2+3mc']
+# list_to_test = ['mbmc', '2+3+mbmc']
 
 def generate_hm(kernel_name):
     hyps = []
@@ -136,22 +136,24 @@ def test_hyps_grad(kernel_name):
     hyps = generate_hm(kernel_name)
     d1 = randint(1, 3)
     d2 = randint(1, 3)
+    print("hyps", hyps)
 
     kernel, kernel_grad, _, _ = stks(kernel_name, False)
 
     grad_test = kernel_grad(env1_1, env2_1,
                             d1, d2, hyps, cutoffs)
+    print("analytical gradients", grad_test)
 
     tol = 1e-4
     original = kernel(env1_1, env2_1, d1, d2,
                       hyps, cutoffs)
-    for i in range(len(hyps)):
+    for i in range(len(hyps)-1):
         newhyps = np.copy(hyps)
         newhyps[i] += delta
         hgrad = (kernel(env1_1, env2_1, d1, d2, newhyps,
                         cutoffs)-
                  original)/delta
-        print(grad_test, hgrad)
+        print("numerical gradients", hgrad)
         assert(np.isclose(grad_test[1][i], hgrad, atol=tol))
 
 # -----------------------------------------------------------------------------
