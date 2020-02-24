@@ -64,6 +64,126 @@ final hyperparameter value in hyps.
 
 """
 
+# -----------------------------------------------------------------------------
+#                        two plus three plus many body kernels
+# -----------------------------------------------------------------------------
+
+
+def two_three_many_body_mc(env1, env2, d1, d2, cutoffs,
+                           nspec, spec_mask,
+                           nbond, bond_mask, ntriplet, triplet_mask,
+                           sig2, ls2, sig3, ls3,
+                           cutoff_func=cf.quadratic_cutoff):
+
+    r_cut_2 = cutoffs[0]
+    r_cut_3 = cutoffs[1]
+
+    two_term = two_body_mc_jit(env1.bond_array_2, env1.ctype, env1.etypes,
+                               env2.bond_array_2, env2.ctype, env2.etypes,
+                               d1, d2, sig2, ls2, r_cut_2, cutoff_func,
+                               nspec, spec_mask, bond_mask)
+
+    three_term = \
+        three_body_mc_jit(env1.bond_array_3, env1.ctype, env1.etypes,
+                          env2.bond_array_3, env2.ctype, env2.etypes,
+                          env1.cross_bond_inds, env2.cross_bond_inds,
+                          env1.cross_bond_dists, env2.cross_bond_dists,
+                          env1.triplet_counts, env2.triplet_counts,
+                          d1, d2, sig3, ls3, r_cut_3, cutoff_func,
+                          nspec, spec_mask, triplet_mask)
+
+    return two_term + three_term
+
+
+def two_three_many_body_mc_grad(env1, env2, d1, d2, cutoffs,
+                                nspec, spec_mask,
+                                nbond, bond_mask, ntriplet, triplet_mask,
+                                sig2, ls2, sig3, ls3,
+                                cutoff_func=cf.quadratic_cutoff):
+
+    r_cut_2 = cutoffs[0]
+    r_cut_3 = cutoffs[1]
+
+    kern2, grad2 = \
+        two_body_mc_grad_jit(env1.bond_array_2, env1.ctype, env1.etypes,
+                             env2.bond_array_2, env2.ctype, env2.etypes,
+                             d1, d2, sig2, ls2, r_cut_2, cutoff_func,
+                             nspec, spec_mask,
+                             nbond, bond_mask)
+
+    kern3, grad3 = \
+        three_body_mc_grad_jit(env1.bond_array_3, env1.ctype, env1.etypes,
+                               env2.bond_array_3, env2.ctype, env2.etypes,
+                               env1.cross_bond_inds, env2.cross_bond_inds,
+                               env1.cross_bond_dists, env2.cross_bond_dists,
+                               env1.triplet_counts, env2.triplet_counts,
+                               d1, d2, sig3, ls3, r_cut_3,
+                               cutoff_func,
+                               nspec, spec_mask,
+                               ntriplet, triplet_mask)
+
+    g = np.hstack([grad2, grad3])
+
+    return kern2 + kern3, g
+
+
+def two_three_many_mc_force_en(env1, env2, d1, cutoffs,
+                               nspec, spec_mask,
+                               nbond, bond_mask, ntriplet, triplet_mask,
+                               sig2, ls2, sig3, ls3,
+                               cutoff_func=cf.quadratic_cutoff):
+    r_cut_2 = cutoffs[0]
+    r_cut_3 = cutoffs[1]
+
+    two_term = \
+        two_body_mc_force_en_jit(env1.bond_array_2, env1.ctype, env1.etypes,
+                                 env2.bond_array_2, env2.ctype, env2.etypes,
+                                 d1, sig2, ls2, r_cut_2, cutoff_func,
+                                 nspec, spec_mask,
+                                 bond_mask) / 2
+
+    three_term = \
+        three_body_mc_force_en_jit(env1.bond_array_3, env1.ctype, env1.etypes,
+                                   env2.bond_array_3, env2.ctype, env2.etypes,
+                                   env1.cross_bond_inds, env2.cross_bond_inds,
+                                   env1.cross_bond_dists,
+                                   env2.cross_bond_dists,
+                                   env1.triplet_counts, env2.triplet_counts,
+                                   d1, sig3, ls3, r_cut_3, cutoff_func,
+                                   nspec,
+                                   spec_mask,
+                                   triplet_mask) / 3
+
+    return two_term + three_term
+
+
+def two_three_many_mc_en(env1, env2, cutoffs,
+                         nspec, spec_mask,
+                         nbond, bond_mask, ntriplet, triplet_mask,
+                         sig2, ls2, sig3, ls3,
+                         cutoff_func=cf.quadratic_cutoff):
+    r_cut_2 = cutoffs[0]
+    r_cut_3 = cutoffs[1]
+
+    two_term = two_body_mc_en_jit(env1.bond_array_2, env1.ctype, env1.etypes,
+                                  env2.bond_array_2, env2.ctype, env2.etypes,
+                                  sig2, ls2, r_cut_2, cutoff_func,
+                                  nspec,
+                                  spec_mask,
+                                  bond_mask)
+
+    three_term = \
+        three_body_mc_en_jit(env1.bond_array_3, env1.ctype, env1.etypes,
+                             env2.bond_array_3, env2.ctype, env2.etypes,
+                             env1.cross_bond_inds, env2.cross_bond_inds,
+                             env1.cross_bond_dists, env2.cross_bond_dists,
+                             env1.triplet_counts, env2.triplet_counts,
+                             sig3, ls3, r_cut_3, cutoff_func,
+                             nspec, spec_mask,
+                             triplet_mask)
+
+    return two_term + three_term
+
 
 # -----------------------------------------------------------------------------
 #                        two plus three body kernels
@@ -1112,3 +1232,4 @@ def str_to_mc_kernel(string: str, include_grad: bool = False):
         else:
             raise ValueError("Gradient callable for {} not found".format(
                 string))
+
