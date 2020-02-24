@@ -1,5 +1,5 @@
 import pytest
-import os, shutil, global
+import os, shutil, glob
 import numpy as np
 from flare.struc import Structure, get_unique_species
 from flare.dft_interface.qe_util import parse_dft_input, parse_dft_forces, run_dft_par, \
