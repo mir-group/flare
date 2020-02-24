@@ -14,6 +14,7 @@ from .fake_gp import get_gp, get_random_structure
 
 body_list = ['2', '3']
 multi_list = [False, True]
+curr_path = os.getcwd()
 
 # ASSUMPTION: You have a Lammps executable with the mgp pair style with $lmp
 # as the corresponding environment variable.
@@ -62,6 +63,9 @@ def all_ase_calc():
 
 @pytest.fixture(scope='module')
 def all_lmp_calc():
+
+    if 'tmp' not in  os.listdir("./"):
+        os.mkdir('tmp')
 
     all_lmp_calc_dict = {}
     for bodies in ['2', '3', '2+3']:
@@ -167,7 +171,7 @@ def test_lmp_calc(bodies, multihyps, all_lmp_calc):
 
 
     # create ASE calc
-    lmp_calc = LAMMPS(label=f'tmp{label}', keep_tmp_files=True, 
+    lmp_calc = LAMMPS(label=f'tmp{label}', keep_tmp_files=True, tmp_dir='/tmp', 
             parameters=parameters, files=files)
     
     all_lmp_calc[label] = lmp_calc
@@ -234,9 +238,10 @@ def test_lmp_predict(all_ase_calc, all_lmp_calc, bodies, multihyps):
     assert np.all(np.abs(lmp_forces - flare_forces) < 1e-4)
     assert np.all(np.abs(lmp_stress - flare_stress) < 1e-3)
 
-    for f in os.listdir("./"):
-        if label in f:
-            os.remove(f)
-        if f in ['log.lammps']:
+    for f in os.listdir('./'):
+        if (label in f) or (f in ['log.lammps']):
             os.remove(f)
 
+    for f in os.listdir('./tmp'):
+        if label in f:
+            os.remove(f'tmp/{f}')

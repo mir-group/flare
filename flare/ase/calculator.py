@@ -37,8 +37,6 @@ class FLARE_Calculator(Calculator):
 
 
     def get_potential_energy(self, atoms=None, force_consistent=False):
-        if self.use_mapping:
-            print('MGP energy mapping not implemented, temporarily set to 0')
         return self.get_property('energy', atoms)
                                                  
                                                  
