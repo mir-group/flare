@@ -18,7 +18,7 @@ def get_random_structure(cell, unique_species, noa):
     species = []
 
     for n in range(noa):
-        positions.append(np.random.uniform(-1, 1, 3))
+        positions.append(np.random.uniform(-1, 1, 3) * 4)
         forces.append(np.random.uniform(-1, 1, 3))
         species.append(unique_species[np.random.randint(0,
                                                         len(unique_species))])
@@ -150,9 +150,9 @@ def get_gp(bodies, kernel_type='mc', multihyps=True) -> GaussianProcess:
     print("\nSetting up...\n")
 
     # params
-    cell = np.eye(3)
+    cell = np.diag(np.array([1, 1, 1.5])) * 4
     unique_species = [2, 1]
-    cutoffs = np.array([0.8, 0.8])
+    cutoffs = np.array([0.8, 0.8]) * 4
     noa = 5
 
     nbond = 0
