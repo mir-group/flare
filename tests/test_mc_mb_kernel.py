@@ -171,7 +171,12 @@ def test_many_body_force():
 
     # create env 1
     delt = 1e-5
-    cell = 10.0 * np.eye(3)
+    cell = 1e7 * np.eye(3)
+
+
+    d1 = randint(1, 3)
+    d2 = randint(1, 3)
+
     cutoffs = np.array([1.2, 1.2, 1.2])
 
     positions_1 = [np.array([0., 0., 0.]),
@@ -182,12 +187,12 @@ def test_many_body_force():
                    np.array([1., 1., 0.]) + 0.1 * np.array([random(), random(), random()])]
 
     positions_2 = deepcopy(positions_1)
-    positions_2[0][0] = delt
+    positions_2[0][d1-1] = delt
 
     positions_3 = deepcopy(positions_1)
-    positions_3[0][0] = -delt
+    positions_3[0][d1-1] = -delt
 
-    species_1 = [1, 1, 1, 1]
+    species_1 = [randint(1, 2) for i in range(4)]
     test_structure_1 = struc.Structure(cell, species_1, positions_1)
     test_structure_2 = struc.Structure(cell, species_1, positions_2)
     test_structure_3 = struc.Structure(cell, species_1, positions_3)
@@ -211,11 +216,11 @@ def test_many_body_force():
                    np.array([1., 1., 0.]) + 0.1 * np.array([random(), random(), random()])]
 
     positions_2 = deepcopy(positions_1)
-    positions_2[0][1] = delt
+    positions_2[0][d2-1] = delt
     positions_3 = deepcopy(positions_1)
-    positions_3[0][1] = -delt
+    positions_3[0][d2-1] = -delt
 
-    species_2 = [1, 2, 2, 1]
+    species_2 = [randint(1, 2) for i in range(4)]
     test_structure_1 = struc.Structure(cell, species_2, positions_1)
     test_structure_2 = struc.Structure(cell, species_2, positions_2)
     test_structure_3 = struc.Structure(cell, species_2, positions_3)
@@ -230,10 +235,8 @@ def test_many_body_force():
     env2_3_1 = env.AtomicEnvironment(test_structure_3, 1, cutoffs)
     env2_3_2 = env.AtomicEnvironment(test_structure_3, 2, cutoffs)
 
-    sig = random()
-    ls = random()
-    d1 = 1
-    d2 = 2
+    sig = random()*2
+    ls = random()*2
 
     hyps = np.array([sig, ls])
 
@@ -345,8 +348,8 @@ def test_many_body_grad():
     test_structure_1 = struc.Structure(cell, species_2, positions_1)
     env2 = env.AtomicEnvironment(test_structure_1, atom_2, cutoffs)
 
-    sig = random()
-    ls = random()
+    sig = random()*2
+    ls = random()*2
 
     d1 = randint(1, 3)
     d2 = randint(1, 3)
@@ -382,8 +385,9 @@ def test_many_body_force_en():
 
     # create env 1
     delt = 1e-5
-    cell = 10.0 * np.eye(3)
+    cell = 1e7 * np.eye(3)
     cutoffs = np.array([1.2, 1.2, 1.2])
+    d1 = randint(1, 3)
 
     positions_1 = [np.array([0., 0., 0.]),
                    np.array([0., 1., 0.]) + 0.1 *
@@ -393,12 +397,12 @@ def test_many_body_force_en():
                    np.array([1., 1., 0.]) + 0.1 * np.array([random(), random(), random()])]
 
     positions_2 = deepcopy(positions_1)
-    positions_2[0][0] = delt
+    positions_2[0][d1-1] = delt
 
     positions_3 = deepcopy(positions_1)
-    positions_3[0][0] = -delt
+    positions_3[0][d1-1] = -delt
 
-    species_1 = [1, 1, 1, 1]
+    species_1 = [randint(1, 2) for i in range(4)]
 
     test_structure_1 = struc.Structure(cell, species_1, positions_1)
     test_structure_2 = struc.Structure(cell, species_1, positions_2)
@@ -422,15 +426,14 @@ def test_many_body_force_en():
                    np.array([random(), random(), random()]),
                    np.array([1., 1., 0.]) + 0.1 * np.array([random(), random(), random()])]
 
-    species_2 = [1, 2, 2, 1]
+    species_2 = [randint(1, 2) for i in range(4)]
 
     test_structure_1 = struc.Structure(cell, species_2, positions_1)
 
     env2_1_0 = env.AtomicEnvironment(test_structure_1, 0, cutoffs)
 
-    sig = random()
-    ls = random()
-    d1 = 1
+    sig = random()*2
+    ls = random()*2
 
     hyps = np.array([sig, ls])
 
