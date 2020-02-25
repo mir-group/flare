@@ -97,6 +97,8 @@ def from_mask_to_args(hyps, hyps_mask: dict, cutoffs):
     ls2 = None
     sig3 = None
     ls3 = None
+    sigm = None
+    lsm = None
 
     if ('map' in hyps_mask.keys()):
         orig_hyps = hyps_mask['original']
@@ -120,9 +122,8 @@ def from_mask_to_args(hyps, hyps_mask: dict, cutoffs):
         return (np.array(cutoffs), hyps_mask['nspec'], np.array(hyps_mask['spec_mask']),
                 n2b, np.array(bond_mask), n3b, np.array(triplet_mask),
                 np.array(sig2), np.array(ls2), np.array(sig3), np.array(ls3))
+
     elif (len(cutoffs)==3):
-        sigm = None
-        lsm = None
         if (n2b != 0):
             sig2 = orig_hyps[:n2b]
             ls2 = orig_hyps[n2b:n2b * 2]
