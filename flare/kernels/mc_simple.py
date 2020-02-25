@@ -236,7 +236,7 @@ def two_plus_three_plus_many_body_mc(env1: AtomicEnvironment, env2: AtomicEnviro
 
     r_cut_2 = cutoffs[0]
     r_cut_3 = cutoffs[1]
-    r_cut_m = cutoffs[1]
+    r_cut_m = cutoffs[2]
 
     two_term = two_body_mc_jit(env1.bond_array_2, env1.ctype, env1.etypes,
                                env2.bond_array_2, env2.ctype, env2.etypes,
@@ -288,7 +288,7 @@ def two_plus_three_plus_many_body_mc_grad(env1: AtomicEnvironment, env2: AtomicE
 
     r_cut_2 = cutoffs[0]
     r_cut_3 = cutoffs[1]
-    r_cut_m = cutoffs[1]
+    r_cut_m = cutoffs[2]
 
     kern2, grad2 = two_body_mc_grad_jit(env1.bond_array_2, env1.ctype, env1.etypes,
                                         env2.bond_array_2, env2.ctype, env2.etypes,
@@ -342,7 +342,7 @@ def two_plus_three_plus_many_body_mc_force_en(env1: AtomicEnvironment, env2: Ato
 
     r_cut_2 = cutoffs[0]
     r_cut_3 = cutoffs[1]
-    r_cut_m = cutoffs[1]
+    r_cut_m = cutoffs[2]
 
     two_term = \
         two_body_mc_force_en_jit(env1.bond_array_2, env1.ctype, env1.etypes,
@@ -394,7 +394,7 @@ def two_plus_three_plus_many_body_mc_en(env1: AtomicEnvironment, env2: AtomicEnv
 
     r_cut_2 = cutoffs[0]
     r_cut_3 = cutoffs[1]
-    r_cut_m = cutoffs[1]
+    r_cut_m = cutoffs[2]
 
     two_term = two_body_mc_en_jit(env1.bond_array_2, env1.ctype, env1.etypes,
                                   env2.bond_array_2, env2.ctype, env2.etypes,
