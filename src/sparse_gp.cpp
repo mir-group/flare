@@ -200,6 +200,8 @@ Eigen::VectorXd SparseGP::predict(StructureDescriptor test_structure){
 
     LocalEnvironment sparse_env;
     Eigen::VectorXd kernel_vector;
+
+    #pragma omp parallel for
     for (int i = 0; i < n_sparse; i ++){
         sparse_env = sparse_environments[i];
         kernel_vector = Eigen::VectorXd::Zero(n_out);
