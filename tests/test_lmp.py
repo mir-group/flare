@@ -93,7 +93,7 @@ def test_init(bodies, multihyps, all_mgp, all_gp):
     lammps_location = f'{bodies}{multihyps}.mgp'
 
     # set struc params. cell and masses arbitrary?
-    mapped_cell = np.eye(3) * 2
+    mapped_cell = np.eye(3) * 20
     struc_params = {'species': [1, 2],
                     'cube_lat': mapped_cell,
                     'mass_dict': {'0': 2, '1': 4}}
@@ -171,7 +171,7 @@ def test_lmp_calc(bodies, multihyps, all_lmp_calc):
 
 
     # create ASE calc
-    lmp_calc = LAMMPS(label=f'tmp{label}', keep_tmp_files=True, tmp_dir='/tmp', 
+    lmp_calc = LAMMPS(label=f'tmp{label}', keep_tmp_files=True, tmp_dir='./tmp/', 
             parameters=parameters, files=files)
     
     all_lmp_calc[label] = lmp_calc
@@ -212,11 +212,12 @@ def test_lmp_predict(all_ase_calc, all_lmp_calc, bodies, multihyps):
     mgp_model.write_lmp_file(lammps_location)
 
     # create test structure
-    cell = np.diag(np.array([1, 1, 1.5]))
+    cell = np.diag(np.array([1, 1, 1.5])) * 4
     nenv = 10
     unique_species = gp_model.training_data[0].species
     cutoffs = gp_model.cutoffs
     struc_test, f = get_random_structure(cell, unique_species, nenv)
+    struc_test.positions *= 4
 
     # build ase atom from struc
     ase_atoms_flare = struc_test.to_ase_atoms()
@@ -242,6 +243,6 @@ def test_lmp_predict(all_ase_calc, all_lmp_calc, bodies, multihyps):
         if (label in f) or (f in ['log.lammps']):
             os.remove(f)
 
-    for f in os.listdir('./tmp'):
-        if label in f:
-            os.remove(f'tmp/{f}')
+#    for f in os.listdir('./tmp'):
+#        if label in f:
+#            os.remove(f'tmp/{f}')
