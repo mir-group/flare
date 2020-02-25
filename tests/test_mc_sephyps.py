@@ -7,9 +7,59 @@ from numpy.random import random, randint
 
 from flare import env, struc, gp
 from flare.kernels.mc_sephyps import _str_to_kernel as stk
-from flare.kernels.utils import from_mask_to_args
+from flare.kernels.utils import from_mask_to_args, str_to_kernel_set
 
 from .fake_gp import generate_hm, generate_envs
+
+
+def test_force_en_multi_vs_simple():
+    """Check that the analytical kernel matches the one implemented
+    in mc_simple.py"""
+
+    cutoffs = np.ones(3)
+    delta = 1e-8
+    env1_1, env1_2, env1_3, env2_1, env2_2, env2_3 = generate_envs(cutoffs, delta)
+
+    # set hyperparameters
+    d1 = 1
+    d2 = 2
+    tol = 1e-4
+
+    hyps, hm, cut = generate_hm(1, 1, cutoffs, False)
+
+    # mc_simple
+    kernel0, kg0, en_kernel0, force_en_kernel0 = str_to_kernel_set("2+3+mb+mc", False)
+    hyps = np.ones(7)
+    args0 = (hyps, cutoffs)
+
+    # mc_sephyps
+    kernel, kg, en_kernel, force_en_kernel = str_to_kernel_set("2+3+mb+mc", True)
+    args1 = from_mask_to_args(hyps, hm, cutoffs)
+
+    funcs = [[kernel0, kg0, en_kernel0, force_en_kernel0],
+             [kernel, kg, en_kernel, force_en_kernel]]
+
+    i = 0
+    reference = funcs[0][i](env1_1, env2_1, d1, d2, *args0)
+    result = funcs[1][i](env1_1, env2_1, d1, d2, *args1)
+    assert(np.isclose(reference, result, atol=tol))
+
+    i = 1
+    reference = funcs[0][i](env1_1, env2_1, d1, d2, *args0)
+    result = funcs[1][i](env1_1, env2_1, d1, d2, *args1)
+    assert(np.isclose(reference[0], result[0], atol=tol))
+    assert(np.isclose(reference[1], result[1], atol=tol).all())
+
+    i = 2
+    reference = funcs[0][i](env1_1, env2_1, *args0)
+    result = funcs[1][i](env1_1, env2_1, *args1)
+    assert(np.isclose(reference, result, atol=tol))
+
+    i = 3
+    reference = funcs[0][i](env1_1, env2_1, d1, *args0)
+    result = funcs[1][i](env1_1, env2_1, d1, *args1)
+    assert(np.isclose(reference, result, atol=tol))
+
 
 @pytest.mark.parametrize('kernel_name, nbond, ntriplet, constraint',
                          [ ('two_body_mc', 2, 0, True),

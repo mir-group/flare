@@ -110,7 +110,7 @@ class GaussianProcess:
 
         self.name = name
 
-        # parallelization     
+        # parallelization
         if self.par:
             if n_cpus is None:
                 self.n_cpus = mp.cpu_count()
@@ -144,6 +144,9 @@ class GaussianProcess:
         with multiple hyperparameters.
         :return:
         """
+
+        assert (len(self.cutoffs)<=3)
+
         if self.multihyps is True and self.hyps_mask is None:
             raise ValueError("Warning! Multihyperparameter mode enabled,"
                              "but no configuration hyperparameter mask was "
@@ -185,7 +188,8 @@ class GaussianProcess:
             else:
                 n3b = 0
 
-            assert ((n2b + n3b) > 0)
+            if (len(self.cutoffs)<=2):
+                assert ((n2b + n3b) > 0)
 
             if 'map' in hyps_mask.keys():
                 assert ('original' in hyps_mask.keys()), \
@@ -193,8 +197,12 @@ class GaussianProcess:
                 # Ensure typed correctly as numpy array
                 self.hyps_mask['original'] = np.array(hyps_mask['original'])
 
-                assert (n2b * 2 + n3b * 2 + 1) == len(hyps_mask['original']), \
-                    "the hyperparmeter length is inconsistent with the mask"
+                if (len(self.cutoffs)<=2):
+                    assert (n2b * 2 + n3b * 2 + 1) == len(hyps_mask['original']), \
+                        "the hyperparmeter length is inconsistent with the mask"
+                else:
+                    assert (n2b * 2 + n3b * 2 + 3) == len(hyps_mask['original']), \
+                        "the hyperparmeter length is inconsistent with the mask"
                 assert len(hyps_mask['map']) == len(self.hyps), \
                     "the hyperparmeter length is inconsistent with the mask"
                 if (len(hyps_mask['original']) - 1) not in hyps_mask['map']:
@@ -203,8 +211,12 @@ class GaussianProcess:
             else:
                 assert hyps_mask['train_noise'] is True, \
                     "train_noise should be True when map is not used"
-                assert (n2b * 2 + n3b * 2 + 1) == len(self.hyps), \
-                    "the hyperparmeter length is inconsistent with the mask"
+                if (len(self.cutoffs)<=2):
+                    assert (n2b * 2 + n3b * 2 + 1) == len(self.hyps), \
+                        "the hyperparmeter length is inconsistent with the mask"
+                else:
+                    assert (n2b * 2 + n3b * 2 + 3) == len(self.hyps), \
+                        "the hyperparmeter length is inconsistent with the mask"
 
             if 'bounds' in hyps_mask.keys():
                 self.bounds = deepcopy(hyps_mask['bounds'])
@@ -598,6 +610,7 @@ class GaussianProcess:
                                  multihyps=multihyps,
                                  hyps_mask=dictionary.get('hyps_mask', None)
                                  )
+
 
         # Save time by attempting to load in computed attributes
         new_gp.training_data = [AtomicEnvironment.from_dict(env) for env in

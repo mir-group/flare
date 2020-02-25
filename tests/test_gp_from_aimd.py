@@ -1,6 +1,8 @@
 import pytest
 import numpy as np
 import pickle
+from glob import glob
+from os import remove
 
 from flare.env import AtomicEnvironment
 from flare.struc import Structure
@@ -12,7 +14,6 @@ from flare.kernels.mc_simple import two_plus_three_body_mc, \
     two_plus_three_body_mc_grad
 from json import loads
 from flare.env import AtomicEnvironment
-import os
 from .test_mgp_unit import all_mgp, all_gp, get_random_structure
 from .fake_gp import get_gp
 
@@ -73,7 +74,8 @@ def test_load_trained_gp_and_run(methanol_gp):
                            skip=15)
 
     tt.run()
-    os.system('rm ./gp_from_aimd*')
+    for f in glob(f"gp_from_aimd*"):
+        remove(f)
 
 
 def test_load_one_frame_and_run():
@@ -97,7 +99,8 @@ def test_load_one_frame_and_run():
                            skip=15)
 
     tt.run()
-    os.system('rm ./gp_from_aimd*')
+    for f in glob(f"gp_from_aimd*"):
+        remove(f)
 
 
 def test_seed_and_run():
@@ -144,7 +147,8 @@ def test_seed_and_run():
         assert np.all(the_gp.predict(x_t=test_env, d=d) ==
                       new_gp.predict(x_t=test_env, d=d))
 
-    os.system('rm ./meth_test*')
+    for f in glob(f"meth_test*"):
+        remove(f)
 
 
 def test_mgp_gpfa(all_mgp, all_gp):
