@@ -174,6 +174,7 @@ def get_ky_and_hyp(hyps: np.ndarray, training_data: list,
 
     return hyp_mat, ky_mat
 
+
 def get_ky_mat_par(hyps: np.ndarray, training_data: list,
                    kernel, cutoffs=None, ncpus:int =None):
     """
@@ -438,7 +439,7 @@ def get_like_grad_from_mats(ky_mat, hyp_mat, training_labels_np):
 
 def get_neg_likelihood(hyps, training_data: list,
                        training_labels_np,
-                       kernel, cutoffs=None, output = None,
+                       kernel, cutoffs=None, output=None,
                        ncpus=1):
     """compute the negative log likelihood
 
@@ -474,7 +475,7 @@ def get_neg_likelihood(hyps, training_data: list,
 def get_neg_like_grad(hyps, training_data: list,
                       training_labels_np: np.ndarray,
                       kernel_grad, cutoffs=None,
-                      output = None, ncpus=1):
+                      output=None, ncpus=1, print_progress=False):
     """compute the log likelihood and its gradients
 
     :param hyps: list of hyper-parameters
@@ -503,5 +504,10 @@ def get_neg_like_grad(hyps, training_data: list,
 
     if output is not None:
         output.write_hyps(None, hyps, None, like, like_grad, name="hyps")
+
+    if print_progress:
+        print('\nhyperparameters: '+str(hyps))
+        print('likelihood: ' + str(like))
+        print('likelihood gradient: ' + str(like_grad))
 
     return -like, -like_grad

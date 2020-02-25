@@ -139,7 +139,8 @@ class GaussianProcess:
     def train(self, output=None, custom_bounds=None,
               grad_tol: float = 1e-4,
               x_tol: float = 1e-5,
-              line_steps: int = 20):
+              line_steps: int = 20,
+              print_progress: bool = False):
         """Train Gaussian Process model on training data. Tunes the
         hyperparameters to maximize the likelihood, then computes L and alpha
         (related to the covariance matrix of the training set).
@@ -160,7 +161,7 @@ class GaussianProcess:
 
         args = (self.training_data, self.training_labels_np,
                 self.kernel_grad, self.cutoffs, output,
-                self.no_cpus)
+                self.no_cpus, print_progress)
         res = None
 
         if self.algo == 'L-BFGS-B':
