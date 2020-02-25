@@ -10,7 +10,7 @@ from flare.lammps import lammps_calculator
 from flare.ase.calculator import FLARE_Calculator
 from ase.calculators.lammpsrun import LAMMPS
 
-from .fake_gp import get_gp, get_random_structure
+from tests.fake_gp import get_gp, get_random_structure
 
 body_list = ['2', '3']
 multi_list = [False, True]
@@ -124,7 +124,7 @@ def test_init(bodies, multihyps, all_mgp, all_gp):
                 mean_only=True, lmp_file_name=lammps_location)
     all_mgp[f'{bodies}{multihyps}'] = mgp_model
 
-   
+
 @pytest.mark.parametrize('bodies', body_list)
 @pytest.mark.parametrize('multihyps', multi_list)
 def test_build_map(all_gp, all_mgp, all_ase_calc, bodies, multihyps):
@@ -138,7 +138,7 @@ def test_build_map(all_gp, all_mgp, all_ase_calc, bodies, multihyps):
 
     mgp_model.build_map(gp_model)
 
-    all_ase_calc[f'{bodies}{multihyps}'] = FLARE_Calculator(gp_model, 
+    all_ase_calc[f'{bodies}{multihyps}'] = FLARE_Calculator(gp_model,
             mgp_model, par=False, use_mapping=True)
 
     for f in os.listdir("./"):
@@ -173,10 +173,10 @@ def test_lmp_calc(bodies, multihyps, all_lmp_calc):
     # create ASE calc
     lmp_calc = LAMMPS(label=f'tmp{label}', keep_tmp_files=True, tmp_dir='./tmp/', 
             parameters=parameters, files=files)
-    
+
     all_lmp_calc[label] = lmp_calc
 
- 
+
 @pytest.mark.skipif(not os.environ.get('lmp',
                           False), reason='lmp not found '
                                   'in environment: Please install LAMMPS '

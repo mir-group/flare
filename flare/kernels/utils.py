@@ -1,8 +1,6 @@
 import numpy as np
 
-from flare.kernels.kernels import str_to_kernel
-from flare.kernels.mc_simple import str_to_mc_kernel
-from flare.kernels.mc_sephyps import str_to_mc_kernel as str_to_mc_sephyps_kernel
+from flare.kernels import kernels, mc_simple, mc_sephyps
 
 """
 This module includes interface functions between kernels and gp/gp_algebra
@@ -33,15 +31,16 @@ def str_to_kernel_set(name: str, multihyps: bool =False):
 
     if 'mc' in name:
         if (multihyps is False):
-            stk = str_to_mc_kernel
+            stk = mc_simple._str_to_kernel
         else:
-            stk = str_to_mc_sephyps_kernel
+            stk = mc_sephyps._str_to_kernel
     else:
-        stk = str_to_kernel
+        stk = kernels._str_to_kernel
 
     # b2 = Two body in use, b3 = Three body in use
     b2 = False
     b3 = False
+    many = False
 
     for s in ['2', 'two']:
         if (s in name):
@@ -49,17 +48,26 @@ def str_to_kernel_set(name: str, multihyps: bool =False):
     for s in ['3', 'three']:
         if (s in name):
             b3 = True
-    if (b2 and b3):
-        prefix='2+3'
-    elif (b2):
-        prefix='2'
-    elif (b3):
-        prefix='3'
-    else:
+    for s in ['mb', 'manybody', 'many']:
+        if (s in name):
+            many = True
+
+    prefix=''
+    str_term={'2':b2, '3':b3, 'many':many}
+    for term in str_term:
+        if str_term[term]:
+            if (len(prefix)>0):
+                prefix += '+'
+            prefix += term
+    if len(prefix)==0:
         raise RuntimeError(f"the name has to include at least one number {name}")
 
-    return stk(prefix), stk(prefix+'_grad'), stk(prefix+'_en'), \
-            stk(prefix+'_force_en')
+    for suffix in ['', '_grad', '_en', '_force_en']:
+        if prefix+suffix not in stk:
+            raise RuntimeError(f"cannot find kernel function of {prefix}{suffix}")
+
+    return stk[prefix], stk[prefix+'_grad'], stk[prefix+'_en'], \
+            stk[prefix+'_force_en']
 
 
 def from_mask_to_args(hyps, hyps_mask: dict, cutoffs):
@@ -89,6 +97,8 @@ def from_mask_to_args(hyps, hyps_mask: dict, cutoffs):
     ls2 = None
     sig3 = None
     ls3 = None
+    sigm = None
+    lsm = None
 
     if ('map' in hyps_mask.keys()):
         orig_hyps = hyps_mask['original']
@@ -98,19 +108,36 @@ def from_mask_to_args(hyps, hyps_mask: dict, cutoffs):
     else:
         orig_hyps = hyps
 
-    if (n2b != 0):
-        sig2 = orig_hyps[:n2b]
-        ls2 = orig_hyps[n2b:n2b * 2]
-    if (n3b !=0):
-        sig3 = orig_hyps[n2b * 2:n2b * 2 + n3b]
-        ls3 = orig_hyps[n2b * 2 + n3b:n2b * 2 + n3b * 2]
-    if (n2b == 0) and (n3b == 0):
-        raise NameError("Hyperparameter mask missing nbond and/or"
-                        "ntriplet key")
+    if (len(cutoffs)<=2):
+        if (n2b != 0):
+            sig2 = orig_hyps[:n2b]
+            ls2 = orig_hyps[n2b:n2b * 2]
+        if (n3b !=0):
+            sig3 = orig_hyps[n2b * 2:n2b * 2 + n3b]
+            ls3 = orig_hyps[n2b * 2 + n3b:n2b * 2 + n3b * 2]
+        if (n2b == 0) and (n3b == 0):
+            raise NameError("Hyperparameter mask missing nbond and/or"
+                            "ntriplet key")
 
-    return (np.array(cutoffs), hyps_mask['nspec'], np.array(hyps_mask['spec_mask']),
-            n2b, np.array(bond_mask), n3b, np.array(triplet_mask),
-            np.array(sig2), np.array(ls2), np.array(sig3), np.array(ls3))
+        return (np.array(cutoffs), hyps_mask['nspec'], np.array(hyps_mask['spec_mask']),
+                n2b, np.array(bond_mask), n3b, np.array(triplet_mask),
+                np.array(sig2), np.array(ls2), np.array(sig3), np.array(ls3))
+
+    elif (len(cutoffs)==3):
+        if (n2b != 0):
+            sig2 = orig_hyps[:n2b]
+            ls2 = orig_hyps[n2b:n2b * 2]
+        if (n3b !=0):
+            sig3 = orig_hyps[n2b * 2:n2b * 2 + n3b]
+            ls3 = orig_hyps[n2b * 2 + n3b:n2b * 2 + n3b * 2]
+        sigm = orig_hyps[n2b*2+n3b*2]
+        lsm = orig_hyps[n2b*2+n3b*2+1]
+
+        return (np.array(cutoffs), hyps_mask['nspec'], np.array(hyps_mask['spec_mask']),
+                n2b, np.array(bond_mask), n3b, np.array(triplet_mask),
+                np.array(sig2), np.array(ls2), np.array(sig3), np.array(ls3), sigm, lsm)
+    else:
+        raise RuntimeError("only support up to 3 cutoffs")
 
 
 def from_grad_to_mask(grad, hyps_mask):
