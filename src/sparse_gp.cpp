@@ -121,6 +121,8 @@ void SparseGP :: add_training_structure(StructureDescriptor training_structure){
     LocalEnvironment sparse_env;
     Eigen::VectorXd kernel_vector;
     int label_count;
+
+    #pragma omp parallel for
     for (int i = 0; i < n_sparse; i ++){
         sparse_env = sparse_environments[i];
         kernel_vector = Eigen::VectorXd::Zero(1 + 3 * n_atoms + 6);
