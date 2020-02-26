@@ -582,6 +582,11 @@ def get_neg_like_grad(hyps: np.ndarray, training_data: list,
         output.write_to_log(ostring, name="hyps")
         output.write_to_log('like: ' + str(like)+'\n', name="hyps")
 
+    if print_progress:
+        print('\nhyperparameters: '+str(hyps))
+        print('likelihood: ' + str(like))
+        print('likelihood gradient: ' + str(like_grad))
+
     return -like, -like_grad
 
 
@@ -754,6 +759,7 @@ def get_ky_mat_update(ky_mat_old, hyps: np.ndarray, training_data: list,
     '''
     used for update_L_alpha. if add 10 atoms to the training
     set, the K matrix will add 10x3 columns and 10x3 rows
+
 
     :param ky_mat_old: old covariance matrix
     :param hyps: list of hyper-parameters
