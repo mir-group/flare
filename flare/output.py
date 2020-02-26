@@ -36,9 +36,7 @@ class Output:
         """
         self.basename = f"{basename}"
         self.outfiles = {}
-        filesuffix = {'log': '.out', 'xyz': '.xyz',
-                      'fxyz': '-f.xyz', 'hyps': "-hyps.dat",
-                      'std': '-std.xyz', 'stat': '-stat.dat'}
+        filesuffix = {'log': '.out', 'hyps': '-hyps.dat'}
 
         for filetype in filesuffix.keys():
             self.open_new_log(filetype, filesuffix[filetype])
@@ -223,10 +221,6 @@ class Output:
             for j in range(3):
                 string += f'{velocities[i][j]:8.4f}'
             string += '\n'
-
-        self.write_xyz_config(curr_step, structure, dft_step)
-        self.write_xyz(curr_step, structure.stds, structure.species_labels,
-                       "std", header)
 
         string += '\n'
         string += f'temperature: {temperature:.2f} K \n'

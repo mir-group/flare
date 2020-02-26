@@ -311,9 +311,6 @@ class OTF:
         """Optimizes the hyperparameters of the current GP model."""
 
         self.gp.train(self.output)
-        self.output.write_hyps(self.gp.hyp_labels, self.gp.hyps,
-                               self.start_time,
-                               self.gp.likelihood, self.gp.likelihood_gradient)
 
     def update_positions(self, new_pos: 'ndarray'):
         """Performs a Verlet update of the atomic positions.
@@ -351,5 +348,3 @@ class OTF:
                                     self.local_energies, self.start_time,
                                     self.dft_step,
                                     self.velocities)
-        self.output.write_xyz_config(self.curr_step, self.structure,
-                                     self.dft_step)
