@@ -192,7 +192,7 @@ class Output:
         string += f'\nSimulation Time: {(dt * curr_step):.3} ps \n'
 
         # Construct Header line
-        n_space = 26
+        n_space = 30
         string += str.ljust('El', 5)
         string += str.center('Position (A)', n_space)
         string += ' ' * 4
