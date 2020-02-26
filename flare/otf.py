@@ -86,7 +86,7 @@ class OTF:
                  dft_softwarename: str = "qe",
                  no_cpus: int = 1, npool: int = None, mpi: str = "srun",
                  dft_kwargs=None,
-                 store_dft_output: Tuple[Union[str,List[str]],str] = None):
+                 store_dft_output: Tuple[Union[str, List[str]], str] = None):
 
         self.dft_input = dft_input
         self.dt = dt
@@ -102,7 +102,6 @@ class OTF:
         # parse input file
         positions, species, cell, masses = \
             self.dft_module.parse_dft_input(self.dft_input)
-
 
         self.structure = struc.Structure(cell=cell, species=species,
                                          positions=positions,
@@ -228,7 +227,6 @@ class OTF:
                     if (self.dft_count-1) < self.freeze_hyps:
                         self.train_gp()
 
-
             # write gp forces
             if counter >= self.skip and not self.dft_step:
                 self.update_temperature(new_pos)
@@ -243,7 +241,7 @@ class OTF:
 
     def run_dft(self):
         """Calculates DFT forces on atoms in the current structure.
-        
+
         If OTF has store_dft_output set, then the specified DFT files will
         be copied with the current date and time prepended in the format
         'Year.Month.Day:Hour:Minute:Second:'.
@@ -266,7 +264,7 @@ class OTF:
         time_curr = time.time() - self.start_time
         self.output.write_to_log('number of DFT calls: %i \n' % self.dft_count)
         self.output.write_to_log('wall time from start: %.2f s \n' % time_curr)
-        
+
         # Store DFT outputs in another folder if desired
         # specified in self.store_dft_output
         if self.store_dft_output is not None:
@@ -332,8 +330,8 @@ class OTF:
             new_pos (np.ndarray): Positions of atoms in the next MD frame.
         """
         KE, temperature, velocities = \
-                md.calculate_temperature(new_pos, self.structure, self.dt,
-                                         self.noa)
+            md.calculate_temperature(new_pos, self.structure, self.dt,
+                                     self.noa)
         self.KE = KE
         self.temperature = temperature
         self.velocities = velocities
