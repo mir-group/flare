@@ -49,12 +49,14 @@ def get_random_velocities(noa: int, temperature: float, mass: float):
     Returns:
         np.ndarray: Particle velocities, corrected to give zero center of mass motion.
     """
-
+    
+    # Use FLARE mass units (time = ps, length = A, energy = eV)
     mass_md = mass * 0.000103642695727
     kb = 0.0000861733034
     std = np.sqrt(kb * temperature / mass_md)
     velocities = np.random.normal(scale=std, size=(noa, 3))
-
+    
+    # Remove center-of-mass motion
     vel_sum = np.sum(velocities, axis=0)
     corrected_velocities = velocities - vel_sum / noa
 
@@ -79,6 +81,7 @@ def multicomponent_velocities(temperature: float, masses: List[float]):
     mom_tot = np.array([0., 0., 0.])
 
     for n, mass in enumerate(masses):
+        # Convert to FLARE mass units (time = ps, length = A, energy = eV)
         mass_md = mass * 0.000103642695727
         std = np.sqrt(kb * temperature / mass_md)
         rand_vel = np.random.normal(scale=std, size=(3))
@@ -86,7 +89,7 @@ def multicomponent_velocities(temperature: float, masses: List[float]):
         mom_curr = rand_vel * mass_md
         mom_tot += mom_curr
 
-    # correct momentum
+    # Correct momentum, remove center of mass motion
     mom_corr = mom_tot / noa
     for n, mass in enumerate(masses):
         mass_md = mass * 0.000103642695727
