@@ -1,4 +1,5 @@
 import numpy as np
+from typing import List
 
 
 def update_positions(dt, noa, structure):
@@ -37,8 +38,17 @@ def calculate_temperature(new_pos, structure, dt, noa):
 
 
 def get_random_velocities(noa: int, temperature: float, mass: float):
-    """Draw velocities from Maxwell-Boltzmann distribution. Assumes mass
-    is given in amu."""
+    """Draw velocities from the Maxwell-Boltzmann distribution, assuming a
+    fixed mass for all particles in amu.
+
+    Args:
+        noa (int): Number of atoms in the system.
+        temperature (float): Temperature of the system.
+        mass (float): Mass of each particle in amu.
+
+    Returns:
+        np.ndarray: Particle velocities, corrected to give zero center of mass motion.
+    """
 
     mass_md = mass * 0.000103642695727
     kb = 0.0000861733034
@@ -51,8 +61,17 @@ def get_random_velocities(noa: int, temperature: float, mass: float):
     return corrected_velocities
 
 
-def multicomponent_velocities(temperature, masses):
-    """Draw velocities from the Maxwell-Boltzmann distribution for particles of varying mass. Assumes mass is given in amu."""
+def multicomponent_velocities(temperature: float, masses: List[float]):
+    """Draw velocities from the Maxwell-Boltzmann distribution for particles of
+    varying mass.
+
+    Args:
+        temperature (float): Temperature of the system.
+        masses (List[float]): Particle masses in amu.
+
+    Returns:
+        np.ndarray: Particle velocities, corrected to give zero center of mass motion.
+    """
 
     noa = len(masses)
     velocities = np.zeros((noa, 3))

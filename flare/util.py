@@ -11,7 +11,8 @@ import numpy as np
 
 def get_supercell_positions(sc_size: int, cell: np.ndarray,
                             positions: np.ndarray):
-    """Returns the positions of a supercell of atoms, with the number of cells in each direction fixed.
+    """Returns the positions of a supercell of atoms, with the number of cells
+    in each direction fixed.
 
     Args:
         sc_size (int): Size of the supercell.
@@ -39,15 +40,16 @@ def get_supercell_positions(sc_size: int, cell: np.ndarray,
 
 def supercell_custom(cell: np.ndarray, positions: np.ndarray,
                      size1: int, size2: int, size3: int):
-    """Returns the positions of a supercell of atoms with a chosen number of cells in each direction.
-    
+    """Returns the positions of a supercell of atoms with a chosen number of
+    cells in each direction.
+
     Args:
         cell (np.ndarray): 3x3 array of cell vectors.
         positions (np.ndarray): Positions of atoms in the unit cell.
         size1 (int): Number of cells along the first cell vector.
         size2 (int): Number of cells along the second cell vector.
         size3 (int): Number of cells along the third cell vector.
-    
+
     Returns:
         np.ndarray: Positions of atoms in the supercell.
     """
