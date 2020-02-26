@@ -178,7 +178,6 @@ class OTF:
         self.start_time = time.time()
 
         while self.curr_step < self.number_of_steps:
-            print('curr_step:', self.curr_step)
             # run DFT and train initial model if first step and DFT is on
             if self.curr_step == 0 and self.std_tolerance != 0:
                 # call dft and update positions
