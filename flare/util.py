@@ -8,6 +8,64 @@ from math import inf
 
 import numpy as np
 
+
+def get_supercell_positions(sc_size: int, cell: np.ndarray,
+                            positions: np.ndarray):
+    """Returns the positions of a supercell of atoms, with the number of cells in each direction fixed.
+
+    Args:
+        sc_size (int): Size of the supercell.
+        cell (np.ndarray): 3x3 array of cell vectors.
+        positions (np.ndarray): Positions of atoms in the unit cell.
+
+    Returns:
+        np.ndarray: Positions of atoms in the supercell.
+    """
+
+    sc_positions = []
+    for m in range(sc_size):
+        vec1 = m * cell[0]
+        for n in range(sc_size):
+            vec2 = n * cell[1]
+            for p in range(sc_size):
+                vec3 = p * cell[2]
+
+                # append translated positions
+                for pos in positions:
+                    sc_positions.append(pos+vec1+vec2+vec3)
+
+    return np.array(sc_positions)
+
+
+def supercell_custom(cell: np.ndarray, positions: np.ndarray,
+                     size1: int, size2: int, size3: int):
+    """Returns the positions of a supercell of atoms with a chosen number of cells in each direction.
+    
+    Args:
+        cell (np.ndarray): 3x3 array of cell vectors.
+        positions (np.ndarray): Positions of atoms in the unit cell.
+        size1 (int): Number of cells along the first cell vector.
+        size2 (int): Number of cells along the second cell vector.
+        size3 (int): Number of cells along the third cell vector.
+    
+    Returns:
+        np.ndarray: Positions of atoms in the supercell.
+    """
+
+    sc_positions = []
+    for m in range(size1):
+        vec1 = m * cell[0]
+        for n in range(size2):
+            vec2 = n * cell[1]
+            for p in range(size3):
+                vec3 = p * cell[2]
+
+                # append translated positions
+                for pos in positions:
+                    sc_positions.append(pos+vec1+vec2+vec3)
+
+    return np.array(sc_positions)
+
 # Dictionary mapping elements to their atomic number (Z)
 _element_to_Z = {'H': 1,
                  'He': 2,
