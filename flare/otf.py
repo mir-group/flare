@@ -89,9 +89,8 @@ class OTF:
                  calculate_energy: bool = False, output_name: str = 'otf_run',
                  max_atoms_added: int = 1, freeze_hyps: int = 10,
                  rescale_steps: List[int] = [], rescale_temps: List[int] = [],
-                 dft_softwarename: str = "qe",
-                 no_cpus: int = 1, npool: int = None, mpi: str = "srun",
-                 dft_kwargs=None,
+                 dft_softwarename: str = "qe", no_cpus: int = 1,
+                 npool: int = None, mpi: str = "srun", dft_kwargs=None,
                  store_dft_output: Tuple[Union[str, List[str]], str] = None,
                  custom_module=None):
 
