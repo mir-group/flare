@@ -182,7 +182,7 @@ def test_lammps(otf_object, structure):
     lammps_calculator.write_text(data_file_name, data_text)
 
     # create lammps input
-    style_string = 'mgpf' # use mgpf for the new lmp executable pair_style, 
+    style_string = 'mgpf' # use mgpf for the new lammps executable pair_style, 
                           # because mgp is the energy version 
     coeff_string = '* * {} Ag I yes yes'.format(lammps_location)
     lammps_executable = '$lmp'
