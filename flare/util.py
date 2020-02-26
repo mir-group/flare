@@ -68,6 +68,7 @@ def supercell_custom(cell: np.ndarray, positions: np.ndarray,
 
     return np.array(sc_positions)
 
+
 # Dictionary mapping elements to their atomic number (Z)
 _element_to_Z = {'H': 1,
                  'He': 2,

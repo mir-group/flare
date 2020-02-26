@@ -162,7 +162,6 @@ class Output:
         if self.always_flush:
             f.flush()
 
-    # TO DO: this module should be removed in the future
     def write_md_config(self, dt, curr_step, structure,
                         temperature, KE, local_energies,
                         start_time, dft_step, velocities):
@@ -207,16 +206,16 @@ class Output:
         for i in range(len(structure.positions)):
             string += f'{structure.species_labels[i]} '
             for j in range(3):
-                string += f"{structure.positions[i][j]:8.4} "
+                string += f"{structure.positions[i][j]:8.4f} "
             string += '\t'
             for j in range(3):
-                string += f"{structure.forces[i][j]:8.4} "
+                string += f"{structure.forces[i][j]:8.4f} "
             string += '\t'
             for j in range(3):
-                string += f'{structure.stds[i][j]:8.4} '
+                string += f'{structure.stds[i][j]:8.4f} '
             string += '\t'
             for j in range(3):
-                string += f'{velocities[i][j]:8.4} '
+                string += f'{velocities[i][j]:8.4f} '
             string += '\n'
 
         self.write_xyz_config(curr_step, structure, dft_step)
@@ -341,7 +340,7 @@ class Output:
         f.write(f'likelihood gradient: {like_grad}\n')
         if start_time:
             time_curr = time.time() - start_time
-            f.write(f'wall time from start: {time_curr:.2} s \n')
+            f.write(f'wall time from start: {time_curr:.2f} s \n')
 
         if self.always_flush:
             f.flush()
