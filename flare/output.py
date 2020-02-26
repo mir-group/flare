@@ -390,9 +390,9 @@ class Output:
 
         string += '\n'
 
-        self.write_xyz_config(curr_step, frame, forces=frame.forces,
-                              stds=frame.stds, forces_2=dft_forces,
-                              dft_step=True)
+        # self.write_xyz_config(curr_step, frame, forces=frame.forces,
+        #                       stds=frame.stds, forces_2=dft_forces,
+        #                       dft_step=True)
 
         mae = np.mean(error) * 1000
         mac = np.mean(np.abs(dft_forces)) * 1000
@@ -433,7 +433,7 @@ class Output:
         stat += f' {dt}\n'
 
         self.outfiles['log'].write(string)
-        self.outfiles['stat'].write(stat)
+        # self.outfiles['stat'].write(stat)
 
         if self.always_flush:
             self.outfiles['log'].flush()
