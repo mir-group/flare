@@ -89,10 +89,9 @@ class OTF:
                  calculate_energy: bool = False, output_name: str = 'otf_run',
                  max_atoms_added: int = 1, freeze_hyps: int = 10,
                  rescale_steps: List[int] = [], rescale_temps: List[int] = [],
-                 dft_softwarename: str = "qe", no_cpus: int = 1,
+                 force_source: Union[str, object] = "qe", no_cpus: int = 1,
                  npool: int = None, mpi: str = "srun", dft_kwargs=None,
-                 store_dft_output: Tuple[Union[str, List[str]], str] = None,
-                 custom_module=None):
+                 store_dft_output: Tuple[Union[str, List[str]], str] = None):
 
         self.dft_input = dft_input
         self.dt = dt
@@ -104,10 +103,10 @@ class OTF:
         self.dft_step = True
         self.freeze_hyps = freeze_hyps
 
-        if custom_module is not None:
-            self.dft_module = custom_module
+        if isinstance(force_source, str):
+            self.dft_module = dft_software[force_source]
         else:
-            self.dft_module = dft_software[dft_softwarename]
+            self.dft_module = force_source
 
         # parse input file
         positions, species, cell, masses = \
