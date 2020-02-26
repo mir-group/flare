@@ -162,49 +162,48 @@ def test_2_plus_3_body(otf_object, structure, params):
 
 
 
-# ASSUMPTION: You have a Lammps executable with the mgp pair style with $lmp
-# as the corresponding environment variable.
-@pytest.mark.skipif(not os.environ.get('lmp',
-                          False), reason='lmp not found '
-                                  'in environment: Please install LAMMPS '
-                                  'and set the $lmp env. '
-                                  'variable to point to the executatble.')
-def test_lammps(otf_object, structure):
-    atom_types = [1, 2]
-    atom_masses = [108, 127]
-    atom_species = [1, 2] * 27
+# # ASSUMPTION: You have a Lammps executable with the mgp pair style with $lmp
+# # as the corresponding environment variable.
+# @pytest.mark.skipif(not os.environ.get('lmp',
+#                           False), reason='lmp not found '
+#                                   'in environment: Please install LAMMPS '
+#                                   'and set the $lmp env. '
+#                                   'variable to point to the executatble.')
+# def test_lammps(otf_object, structure):
+#     atom_types = [1, 2]
+#     atom_masses = [108, 127]
+#     atom_species = [1, 2] * 27
 
-    # create data file
-    lammps_location = 'AgI_Molten_15.txt'
-    data_file_name = 'tmp.data'
-    data_text = lammps_calculator.lammps_dat(structure, atom_types,
-                                             atom_masses, atom_species)
-    lammps_calculator.write_text(data_file_name, data_text)
+#     # create data file
+#     lammps_location = 'AgI_Molten_15.txt'
+#     data_file_name = 'tmp.data'
+#     data_text = lammps_calculator.lammps_dat(structure, atom_types,
+#                                              atom_masses, atom_species)
+#     lammps_calculator.write_text(data_file_name, data_text)
 
-    # create lammps input
-    style_string = 'mgp' 
-    coeff_string = '* * {} Ag I yes yes'.format(lammps_location)
-    lammps_executable = '$lmp'
-    dump_file_name = 'tmp.dump'
-    input_file_name = 'tmp.in'
-    output_file_name = 'tmp.out'
-    input_text = \
-        lammps_calculator.generic_lammps_input(data_file_name, style_string,
-                                               coeff_string, dump_file_name)
-    lammps_calculator.write_text(input_file_name, input_text)
+#     # create lammps input
+#     style_string = 'mgp' 
+#     coeff_string = '* * {} Ag I yes yes'.format(lammps_location)
+#     lammps_executable = '$lmp'
+#     dump_file_name = 'tmp.dump'
+#     input_file_name = 'tmp.in'
+#     output_file_name = 'tmp.out'
+#     input_text = \
+#         lammps_calculator.generic_lammps_input(data_file_name, style_string,
+#                                                coeff_string, dump_file_name)
+#     lammps_calculator.write_text(input_file_name, input_text)
 
-    lammps_calculator.run_lammps(lammps_executable, input_file_name,
-                                 output_file_name)
+#     lammps_calculator.run_lammps(lammps_executable, input_file_name,
+#                                  output_file_name)
 
-    lammps_forces = lammps_calculator.lammps_parser(dump_file_name)
+#     lammps_forces = lammps_calculator.lammps_parser(dump_file_name)
 
-    # check that lammps agrees with gp to within 1 meV/A
-    forces = otf_object.force_list[-1]
-    assert(np.abs(lammps_forces[0, 1] - forces[0, 1]) < 1e-3)
+#     # check that lammps agrees with gp to within 1 meV/A
+#     forces = otf_object.force_list[-1]
+#     assert(np.abs(lammps_forces[0, 1] - forces[0, 1]) < 1e-3)
 
-    os.system('rm tmp.in tmp.out tmp.dump tmp.data'
-              ' log.lammps')
-    os.system('rm '+lammps_location)
-    os.system('rm grid3*.npy')
-    os.system('rm -r kv3')
-
+#     os.system('rm tmp.in tmp.out tmp.dump tmp.data'
+#               ' log.lammps')
+#     os.system('rm '+lammps_location)
+#     os.system('rm grid3*.npy')
+#     os.system('rm -r kv3')
