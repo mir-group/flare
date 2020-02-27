@@ -35,17 +35,17 @@ def test_otf_h2():
     energy_force_kernel = en.two_body_force_en
 
     gp = GaussianProcess(kernel=kernel,
-                        kernel_grad=kernel_grad,
-                        hyps=hyps,
-                        cutoffs=cutoffs,
-                        hyp_labels=hyp_labels,
-                        energy_force_kernel=energy_force_kernel,
-                        maxiter=50)
+                         kernel_grad=kernel_grad,
+                         hyps=hyps,
+                         cutoffs=cutoffs,
+                         hyp_labels=hyp_labels,
+                         energy_force_kernel=energy_force_kernel,
+                         maxiter=50)
 
     otf = OTF(vasp_input, dt, number_of_steps, gp, dft_loc,
               std_tolerance_factor, init_atoms=[0],
               calculate_energy=True, max_atoms_added=1,
-              no_cpus=1, dft_softwarename='vasp',
+              no_cpus=1, force_source='vasp',
               output_name='h2_otf_vasp')
 
     otf.run()
