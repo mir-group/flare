@@ -468,7 +468,7 @@ def get_neg_likelihood(hyps: np.ndarray, name,
 def get_neg_like_grad(hyps: np.ndarray, name: str,
                       kernel_grad, output = None,
                       cutoffs=None, hyps_mask=None,
-                      n_cpus=1, n_sample=100):
+                      n_cpus=1, n_sample=100, print_progress=False):
     """compute the log likelihood and its gradients
 
     :param hyps: list of hyper-parameters
@@ -527,7 +527,13 @@ def get_neg_like_grad(hyps: np.ndarray, name: str,
         output.write_to_log(ostring, name="hyps")
         output.write_to_log('like: ' + str(like)+'\n', name="hyps")
 
+    if print_progress:
+        print('\nhyperparameters: '+str(hyps))
+        print('likelihood: ' + str(like))
+        print('likelihood gradient: ' + str(like_grad))
+
     return -like, -like_grad
+
 
 
 def get_like_grad_from_mats(ky_mat, hyp_mat, name):
@@ -571,7 +577,6 @@ def get_like_grad_from_mats(ky_mat, hyp_mat, name):
                        np.trace(np.matmul(like_mat, hyp_mat[n, :, :]))
 
     return like, like_grad
-
 
 
 def get_ky_mat_update(ky_mat_old, hyps: np.ndarray, name: str,
@@ -736,7 +741,6 @@ def get_kernel_vector_unit(name, s, e, x, d_1, kernel, hyps,
 
     return k_v
 
-
 def get_kernel_vector(name, kernel, x, d_1, hyps,
                       cutoffs=None, hyps_mask=None,
                       n_cpus=1, n_sample=100):
@@ -897,3 +901,4 @@ def en_kern_vec(name, kernel,
         c.join()
 
     return k12_v
+

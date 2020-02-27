@@ -16,6 +16,75 @@ from flare.util import is_std_in_bound
 
 
 class OTF:
+    """Trains a Gaussian process force field on the fly during
+        molecular dynamics.
+
+    Args:
+        dft_input (str): Input file.
+        dt (float): MD timestep.
+        number_of_steps (int): Number of timesteps in the training
+            simulation.
+        gp (gp.GaussianProcess): Initial GP model.
+        dft_loc (str): Location of DFT executable.
+        std_tolerance_factor (float, optional): Threshold that determines
+            when DFT is called. Specifies a multiple of the current noise
+            hyperparameter. If the epistemic uncertainty on a force
+            component exceeds this value, DFT is called. Defaults to 1.
+        prev_pos_init ([type], optional): Previous positions. Defaults
+            to None.
+        par (bool, optional): If True, force predictions are made in
+            parallel. Defaults to False.
+        skip (int, optional): Number of frames that are skipped when
+            dumping to the output file. Defaults to 0.
+        init_atoms (List[int], optional): List of atoms from the input
+            structure whose local environments and force components are
+            used to train the initial GP model. If None is specified, all
+            atoms are used to train the initial GP. Defaults to None.
+        calculate_energy (bool, optional): If True, the energy of each
+            frame is calculated with the GP. Defaults to False.
+        output_name (str, optional): Name of the output file. Defaults to
+            'otf_run'.
+        max_atoms_added (int, optional): Number of atoms added each time
+            DFT is called. Defaults to 1.
+        freeze_hyps (int, optional): Specifies the number of times the
+            hyperparameters of the GP are optimized. After this many
+            updates to the GP, the hyperparameters are frozen.
+            Defaults to 10.
+        rescale_steps (List[int], optional): List of frames for which the
+            velocities of the atoms are rescaled. Defaults to [].
+        rescale_temps (List[int], optional): List of rescaled temperatures.
+            Defaults to [].
+        force_source (Union[str, object], optional): DFT code used to 
+            calculate ab initio forces during training. A custom module can 
+            be used here in place of the DFT modules available in the FLARE 
+            package. The module must contain two functions: parse_dft_input, 
+            which takes a file name (in string format) as input and returns 
+            the positions, species, cell, and masses of a structure of atoms; 
+            and run_dft_par, which takes a number of DFT related inputs and 
+            returns the forces on all atoms.  Defaults to "qe".
+        n_cpus (int, optional): Number of cpus used during training.
+            Defaults to 1.
+        npool (int, optional): Number of k-point pools for DFT
+            calculations. Defaults to None.
+        mpi (str, optional): Determines how mpi is called. Defaults to
+            "srun".
+        dft_kwargs ([type], optional): Additional arguments which are
+            passed when DFT is called; keyword arguments vary based on the
+            program (e.g. ESPRESSO vs. VASP). Defaults to None.
+        store_dft_output (Tuple[Union[str,List[str]],str], optional):
+            After DFT calculations are called, copy the file or files
+            specified in the first element of the tuple to a directory
+            specified as the second element of the tuple.
+            Useful when DFT calculations are expensive and want to be kept
+            for later use. The first element of the tuple can either be a
+            single file name, or a list of several. Copied files will be
+            prepended with the date and time with the format
+            'Year.Month.Day:Hour:Minute:Second:'.
+        write_model (int, optional): If 0, write never. If 1, write at
+            end of run. If 2, write after each training and end of run.
+            If 3, write after each time atoms are added and end of run.
+    """
+
     def __init__(self, dft_input: str, dt: float, number_of_steps: int,
                  gp: gp.GaussianProcess, dft_loc: str,
                  std_tolerance_factor: float = 1,
@@ -24,73 +93,11 @@ class OTF:
                  calculate_energy: bool = False, output_name: str = 'otf_run',
                  max_atoms_added: int = 1, freeze_hyps: int = 10,
                  rescale_steps: List[int] = [], rescale_temps: List[int] = [],
-                 dft_softwarename: str = "qe",
+                 force_source: str = "qe",
                  n_cpus: int = 1, npool: int = None, mpi: str = "srun",
                  dft_kwargs=None, dft_output='dft.out',
                  store_dft_output: Tuple[Union[str, List[str]],str] = None,
                  write_model: int = 0):
-        """Trains a Gaussian process force field on the fly during
-            molecular dynamics.
-
-        Args:
-            dft_input (str): Input file.
-            dt (float): MD timestep.
-            number_of_steps (int): Number of timesteps in the training
-                simulation.
-            gp (gp.GaussianProcess): Initial GP model.
-            dft_loc (str): Location of DFT executable.
-            std_tolerance_factor (float, optional): Threshold that determines
-                when DFT is called. Specifies a multiple of the current noise
-                hyperparameter. If the epistemic uncertainty on a force
-                component exceeds this value, DFT is called. Defaults to 1.
-            prev_pos_init ([type], optional): Previous positions. Defaults
-                to None.
-            par (bool, optional): If True, force predictions are made in
-                parallel. Defaults to False.
-            skip (int, optional): Number of frames that are skipped when
-                dumping to the output file. Defaults to 0.
-            init_atoms (List[int], optional): List of atoms from the input
-                structure whose local environments and force components are
-                used to train the initial GP model. If None is specified, all
-                atoms are used to train the initial GP. Defaults to None.
-            calculate_energy (bool, optional): If True, the energy of each
-                frame is calculated with the GP. Defaults to False.
-            output_name (str, optional): Name of the output file. Defaults to
-                'otf_run'.
-            max_atoms_added (int, optional): Number of atoms added each time
-                DFT is called. Defaults to 1.
-            freeze_hyps (int, optional): Specifies the number of times the
-                hyperparameters of the GP are optimized. After this many
-                updates to the GP, the hyperparameters are frozen.
-                Defaults to 10.
-            rescale_steps (List[int], optional): List of frames for which the
-                velocities of the atoms are rescaled. Defaults to [].
-            rescale_temps (List[int], optional): List of rescaled temperatures.
-                Defaults to [].
-            dft_softwarename (str, optional): DFT code used to calculate
-                ab initio forces during training. Defaults to "qe".
-            n_cpus (int, optional): Number of cpus used during training.
-                Defaults to 1.
-            npool (int, optional): Number of k-point pools for DFT
-                calculations. Defaults to None.
-            mpi (str, optional): Determines how mpi is called. Defaults to
-                "srun".
-            dft_kwargs ([type], optional): Additional arguments which are
-                passed when DFT is called; keyword arguments vary based on the
-                program (e.g. ESPRESSO vs. VASP). Defaults to None.
-            store_dft_output (Tuple[Union[str,List[str]],str], optional):
-                After DFT calculations are called, copy the file or files
-                specified in the first element of the tuple to a directory
-                specified as the second element of the tuple.
-                Useful when DFT calculations are expensive and want to be kept
-                for later use. The first element of the tuple can either be a
-                single file name, or a list of several. Copied files will be
-                prepended with the date and time with the format
-                'Year.Month.Day:Hour:Minute:Second:'.
-            write_model (int, optional): If 0, write never. If 1, write at
-                end of run. If 2, write after each training and end of run.
-                If 3, write after each time atoms are added and end of run.
-        """
 
         self.dft_input = dft_input
         self.dft_output = dft_output
@@ -102,13 +109,15 @@ class OTF:
         self.skip = skip
         self.dft_step = True
         self.freeze_hyps = freeze_hyps
-        self.dft_module = dft_software[dft_softwarename]
-        self.write_model = write_model
+
+        if isinstance(force_source, str):
+            self.dft_module = dft_software[force_source]
+        else:
+            self.dft_module = force_source
 
         # parse input file
         positions, species, cell, masses = \
             self.dft_module.parse_dft_input(self.dft_input)
-
 
         self.structure = struc.Structure(cell=cell, species=species,
                                          positions=positions,
@@ -179,7 +188,6 @@ class OTF:
         self.start_time = time.time()
 
         while self.curr_step < self.number_of_steps:
-            print('curr_step:', self.curr_step)
             # run DFT and train initial model if first step and DFT is on
             if self.curr_step == 0 and self.std_tolerance != 0 and len(self.gp.training_data)==0:
                 # call dft and update positions
@@ -369,8 +377,8 @@ class OTF:
             new_pos (np.ndarray): Positions of atoms in the next MD frame.
         """
         KE, temperature, velocities = \
-                md.calculate_temperature(new_pos, self.structure, self.dt,
-                                         self.noa)
+            md.calculate_temperature(new_pos, self.structure, self.dt,
+                                     self.noa)
         self.KE = KE
         self.temperature = temperature
         self.velocities = velocities
@@ -381,5 +389,3 @@ class OTF:
                                     self.local_energies, self.start_time,
                                     self.dft_step,
                                     self.velocities)
-        self.output.write_xyz_config(self.curr_step, self.structure,
-                                     self.dft_step)

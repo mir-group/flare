@@ -31,16 +31,20 @@ def test_otf_h2():
     hyp_labels = ['Signal Std', 'Length Scale', 'Noise Std']
 
     gp = GaussianProcess(kernel_name='2',
-                        hyps=hyps,
-                        cutoffs=cutoffs,
-                        hyp_labels=hyp_labels,
-                        maxiter=50)
+                         hyps=hyps,
+                         cutoffs=cutoffs,
+                         hyp_labels=hyp_labels,
+                         maxiter=50)
 
     otf = OTF(vasp_input, dt, number_of_steps, gp, dft_loc,
               std_tolerance_factor, init_atoms=[0],
               calculate_energy=True, max_atoms_added=1,
+<<<<<<< HEAD
               n_cpus=1, dft_softwarename='vasp',
               dft_output="vasprun.xml",
+=======
+              no_cpus=1, force_source='vasp',
+>>>>>>> 68ee2976a21b9288dc5b29d7c899835d633ae781
               output_name='h2_otf_vasp')
 
     otf.run()

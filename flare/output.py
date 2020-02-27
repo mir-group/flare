@@ -36,9 +36,7 @@ class Output:
         """
         self.basename = f"{basename}"
         self.outfiles = {}
-        filesuffix = {'log': '.out', 'xyz': '.xyz',
-                      'fxyz': '-f.xyz', 'hyps': "-hyps.dat",
-                      'std': '-std.xyz', 'stat': '-stat.dat'}
+        filesuffix = {'log': '.out', 'hyps': '-hyps.dat'}
 
         for filetype in filesuffix.keys():
             self.open_new_log(filetype, filesuffix[filetype])
@@ -151,9 +149,9 @@ class Output:
         # report previous positions
         headerstring += '\nprevious positions (A):\n'
         for i in range(len(structure.positions)):
-            headerstring += f'{structure.species_labels[i]} '
+            headerstring += f'{structure.species_labels[i]:5}'
             for j in range(3):
-                headerstring += f'{structure.prev_positions[i][j]:10.4} '
+                headerstring += f'{structure.prev_positions[i][j]:8.4f}'
             headerstring += '\n'
         headerstring += '-' * 80 + '\n'
 
@@ -162,7 +160,6 @@ class Output:
         if self.always_flush:
             f.flush()
 
-    # TO DO: this module should be removed in the future
     def write_md_config(self, dt, curr_step, structure,
                         temperature, KE, local_energies,
                         start_time, dft_step, velocities):
@@ -195,35 +192,35 @@ class Output:
         string += f'\nSimulation Time: {(dt * curr_step):.3} ps \n'
 
         # Construct Header line
-        string += 'El  Position (A) \t\t\t\t '
+        n_space = 24
+        string += str.ljust('El', 5)
+        string += str.center('Position (A)', n_space)
+        string += ' ' * 4
         if not dft_step:
-            string += 'GP Force (ev/A) '
+            string += str.center('GP Force (ev/A)', n_space)
+            string += ' ' * 4
         else:
-            string += 'DFT Force (ev/A) '
-        string += '\t\t\t\t Std. Dev (ev/A) \t'
-        string += '\t\t\t\t Velocities (A/ps) \n'
+            string += str.center('DFT Force (ev/A)', n_space)
+            string += ' ' * 4
+        string += str.center('Std. Dev (ev/A)', n_space) + ' ' * 4
+        string += str.center('Velocities (A/ps)', n_space) + '\n'
 
         # Construct atom-by-atom description
         for i in range(len(structure.positions)):
-            string += f'{structure.species_labels[i]} '
+            string += f'{structure.species_labels[i]:5}'
+            # string += '\t'
             for j in range(3):
-                string += f"{structure.positions[i][j]:8.4} "
-            string += '\t'
+                string += f'{structure.positions[i][j]:8.4f}'
+            string += ' ' * 4
             for j in range(3):
-                string += f"{structure.forces[i][j]:8.4} "
-            string += '\t'
+                string += f'{structure.forces[i][j]:8.4f}'
+            string += ' ' * 4
             for j in range(3):
-                string += f'{structure.stds[i][j]:8.4} '
-            string += '\t'
+                string += f'{structure.stds[i][j]:8.4f}'
+            string += ' ' * 4
             for j in range(3):
-                string += f'{velocities[i][j]:8.4} '
+                string += f'{velocities[i][j]:8.4f}'
             string += '\n'
-
-        print(curr_step)
-        print(structure.species_labels)
-        self.write_xyz_config(curr_step, structure, dft_step)
-        self.write_xyz(curr_step, structure.stds, structure.species_labels,
-                       "std", header)
 
         string += '\n'
         string += f'temperature: {temperature:.2f} K \n'
@@ -334,16 +331,16 @@ class Output:
 
         if hyp_labels is not None:
             for i, label in enumerate(hyp_labels):
-                f.write(f'Hyp{i} : {label} = {hyps[i]}\n')
+                f.write(f'Hyp{i} : {label} = {hyps[i]:.4f}\n')
         else:
             for i, hyp in enumerate(hyps):
-                f.write(f'Hyp{i} : {hyp}\n')
+                f.write(f'Hyp{i} : {hyp:.4f}\n')
 
-        f.write(f'likelihood: {like}\n')
+        f.write(f'likelihood: {like:.4f}\n')
         f.write(f'likelihood gradient: {like_grad}\n')
         if start_time:
             time_curr = time.time() - start_time
-            f.write(f'wall time from start: {time_curr:.2} s \n')
+            f.write(f'wall time from start: {time_curr:.2f} s \n')
 
         if self.always_flush:
             f.flush()
@@ -396,9 +393,9 @@ class Output:
 
         string += '\n'
 
-        self.write_xyz_config(curr_step, frame, forces=frame.forces,
-                              stds=frame.stds, forces_2=dft_forces,
-                              dft_step=True)
+        # self.write_xyz_config(curr_step, frame, forces=frame.forces,
+        #                       stds=frame.stds, forces_2=dft_forces,
+        #                       dft_step=True)
 
         mae = np.mean(error) * 1000
         mac = np.mean(np.abs(dft_forces)) * 1000
@@ -439,7 +436,7 @@ class Output:
         stat += f' {dt}\n'
 
         self.outfiles['log'].write(string)
-        self.outfiles['stat'].write(stat)
+        # self.outfiles['stat'].write(stat)
 
         if self.always_flush:
             self.outfiles['log'].flush()

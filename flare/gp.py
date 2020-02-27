@@ -280,7 +280,8 @@ class GaussianProcess:
     def train(self, output=None, custom_bounds=None,
               grad_tol: float = 1e-4,
               x_tol: float = 1e-5,
-              line_steps: int = 20):
+              line_steps: int = 20,
+              print_progress: bool = False):
         """Train Gaussian Process model on training data. Tunes the
         hyperparameters to maximize the likelihood, then computes L and alpha
         (related to the covariance matrix of the training set).
@@ -301,7 +302,7 @@ class GaussianProcess:
 
         args = (self.name, self.kernel_grad, output,
                 self.cutoffs, self.hyps_mask,
-                self.n_cpus, self.n_sample)
+                self.n_cpus, self.n_sample, print_progress)
         objective_func = get_neg_like_grad
         res = None
 
