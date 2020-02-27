@@ -5,7 +5,7 @@ import numpy as np
 from flare.otf import OTF
 from flare.gp import GaussianProcess
 from flare.struc import Structure
-import flare.kernels as en
+import flare.kernels.kernels as en
 
 
 def cleanup_espresso_run(target: str = None):
@@ -55,7 +55,7 @@ def test_otf_h2():
                         cutoffs=cutoffs,
                         hyp_labels=hyp_labels,
                         energy_force_kernel=energy_force_kernel,
-                        maxiter=50)
+                        maxiter=50,par=False, per_atom_par = True, n_cpus=1)
 
     otf = OTF(qe_input, dt, number_of_steps, gp, dft_loc,
               std_tolerance_factor, init_atoms=[0],
@@ -95,16 +95,16 @@ def test_otf_al():
                         cutoffs=cutoffs,
                         hyp_labels=hyp_labels,
                         energy_force_kernel=energy_force_kernel,
-                        maxiter=50)
+                        maxiter=50,n_cpus=1)
 
     # set up DFT calculator
     qe_input = './pwscf.in' # quantum espresso input file
-    dft_loc = os.environ.get('PWSCF_COMMAND') 
- 
+    dft_loc = os.environ.get('PWSCF_COMMAND')
+
     # set up OTF parameters
     dt = 0.001                  # timestep (ps)
     number_of_steps = 100       # number of steps
-    std_tolerance_factor = 1   
+    std_tolerance_factor = 1
     max_atoms_added = 2
     freeze_hyps = 3
 

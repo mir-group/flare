@@ -1,5 +1,5 @@
 Single-element Kernels
 ======================
 
-.. automodule:: flare.kernels
+.. automodule:: flare.kernels.kernels
     :members:

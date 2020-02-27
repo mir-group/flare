@@ -8,9 +8,8 @@ import cProfile
 import flare.gp as gp
 import flare.env as env
 import flare.struc as struc
-import flare.kernels as kernels
 from flare.env import AtomicEnvironment
-from flare.kernels import triplet_kernel, three_body_helper_1, \
+from flare.kernels.kernels import three_body_helper_1, \
     three_body_helper_2, force_helper
 from flare.cutoffs import quadratic_cutoff
 
@@ -32,13 +31,13 @@ def load_GP(GP, prefix):
 def save_grid(bond_lens, bond_ens_diff, bond_vars_diff, prefix):
     np.save(prefix+'-bond_lens', bond_lens)
     np.save(prefix+'-bond_ens_diff', bond_ens_diff)
-    np.save(prefix+'-bond_vars_diff', bond_vars_diff) 
+    np.save(prefix+'-bond_vars_diff', bond_vars_diff)
 
 
 def load_grid(prefix):
     bond_lens = np.load(prefix+'bond_lens.npy')
     bond_ens_diff = np.load(prefix+'bond_ens_diff.npy')
-    bond_vars_diff = np.load(prefix+'bond_vars_diff.npy')  
+    bond_vars_diff = np.load(prefix+'bond_vars_diff.npy')
     return bond_lens, bond_ens_diff, bond_vars_diff
 
 
@@ -104,7 +103,7 @@ def get_bonds(ctype, etypes, bond_array):
 
 
 #@njit
-def add_triplets(spcs_list, exist_species, tris, tri_dir, 
+def add_triplets(spcs_list, exist_species, tris, tri_dir,
         r1, r2, a12, c1, c2):
     for i in range(2):
         spcs = spcs_list[i]
@@ -122,7 +121,7 @@ def add_triplets(spcs_list, exist_species, tris, tri_dir,
 
 
 @njit
-def get_triplets(ctype, etypes, bond_array, cross_bond_inds,  
+def get_triplets(ctype, etypes, bond_array, cross_bond_inds,
                  cross_bond_dists, triplets):
     exist_species = []
     tris = []
@@ -152,11 +151,11 @@ def get_triplets(ctype, etypes, bond_array, cross_bond_inds,
 #                spcs_list = [[spc1, spc2, ctype], [spc2, ctype, spc1]]
 #            else: # all different
 #                spcs_list = [[ctype, spc1, spc2], [ctype, spc2, spc1]]
-   
+
             spcs_list = [[ctype, spc1, spc2], [ctype, spc2, spc1]]
             for i in range(2):
                 spcs = spcs_list[i]
-                triplet = array([r2, r1, c12]) if i else array([r1, r2, c12]) 
+                triplet = array([r2, r1, c12]) if i else array([r1, r2, c12])
                 coord = c2 if i else c1
                 if spcs not in exist_species:
                     exist_species.append(spcs)
@@ -167,7 +166,7 @@ def get_triplets(ctype, etypes, bond_array, cross_bond_inds,
                     tris[k].append(triplet)
                     tri_dir[k].append(coord)
 
-    return exist_species, tris, tri_dir 
+    return exist_species, tris, tri_dir
 
 
 @njit

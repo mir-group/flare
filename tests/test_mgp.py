@@ -21,7 +21,7 @@ def otf_object():
 
 
 @pytest.fixture(scope='module')
-def structure(otf_object): 
+def structure(otf_object):
     # create test structure
     otf_cell = otf_object.header['cell']
     species = np.array([47, 53] * 27)
@@ -57,7 +57,7 @@ def params():
                    'load_grid': None,
                    'update': False}
 
-    map_params = {'grid': grid_params, 
+    map_params = {'grid': grid_params,
                   'struc': struc_params}
 
     yield map_params
@@ -78,7 +78,7 @@ def test_2_body(otf_object, structure, params):
                                   hyps=hyps, hyp_no=hyp_no)
     gp_model.par = True
     gp_model.hyp_labels = ['sig2', 'ls2', 'noise']
- 
+
     # create MGP
     grid_params = params['grid']
     grid_params['bodies'] = [2]
@@ -113,7 +113,7 @@ def test_3_body(otf_object, structure, params):
                                   hyps=hyps, hyp_no=hyp_no)
     gp_model.par = True
     gp_model.hyp_labels = ['sig3', 'ls3', 'noise']
- 
+
     # create MGP
     grid_params = params['grid']
     grid_params['bodies'] = [3]
@@ -141,7 +141,7 @@ def test_2_plus_3_body(otf_object, structure, params):
                                   hyp_no=2)
     gp_model.par = True
     gp_model.hyp_labels = ['sig2', 'ls2', 'sig3', 'ls3', 'noise']
- 
+
     # create MGP
     grid_params = params['grid']
     grid_params['bodies'] = [2, 3]
@@ -159,7 +159,6 @@ def test_2_plus_3_body(otf_object, structure, params):
 
     # check mgp is within 1 meV/A of the gp
     assert(np.abs(mgp_pred[0][0] - gp_pred_x[0]) < 1e-3)
-
 
 
 # ASSUMPTION: You have a Lammps executable with the mgp pair style with $lmp

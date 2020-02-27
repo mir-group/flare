@@ -6,7 +6,7 @@ import numpy as np
 from flare.otf import OTF
 from flare.gp import GaussianProcess
 from flare.struc import Structure
-import flare.kernels as en
+import flare.kernels.kernels as en
 
 def cleanup(target: list = None):
     os.remove('cp2k.in')
@@ -61,13 +61,14 @@ def test_otf_h2_par():
                         hyp_labels=hyp_labels,
                         energy_force_kernel=energy_force_kernel,
                         par=True,
+                        per_atom_par=False,
                         maxiter=50)
 
     otf = OTF(cp2k_input, dt, number_of_steps, gp, dft_loc,
               std_tolerance_factor, init_atoms=[0],
               calculate_energy=True, max_atoms_added=1,
               force_source="cp2k",
-              no_cpus=2,
+              n_cpus=2,
               par=True, mpi="mpi",
               output_name='h2_otf_cp2k_par')
 
