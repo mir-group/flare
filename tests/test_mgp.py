@@ -35,7 +35,7 @@ def structure(otf_object):
 @pytest.fixture(scope='module')
 def params():
     grid_num_2 = 64
-    grid_num_3 = 25
+    grid_num_3 = 24
     lower_cut = 2.5
     two_cut = 7.
     three_cut = 5.
