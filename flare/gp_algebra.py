@@ -519,7 +519,8 @@ def get_neg_like_grad(hyps: np.ndarray, training_data: list,
                       training_labels_np: np.ndarray,
                       kernel_grad, output = None,
                       cutoffs=None, hyps_mask=None,
-                      n_cpus=None, nsample=100):
+                      n_cpus=None, nsample=100,
+                      print_progress=False):
     """compute the log likelihood and its gradients
 
     :param hyps: list of hyper-parameters

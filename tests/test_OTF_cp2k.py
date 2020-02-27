@@ -62,7 +62,7 @@ def test_otf_h2():
     otf = OTF(cp2k_input, dt, number_of_steps, gp, dft_loc,
               std_tolerance_factor, init_atoms=[0],
               calculate_energy=True, max_atoms_added=1,
-              dft_softwarename="cp2k",
+              force_source="cp2k",
               output_name='h2_otf_cp2k')
 
     otf.run()
@@ -111,7 +111,7 @@ def test_otf_al():
               std_tolerance_factor, init_atoms=[0],
               calculate_energy=True, output_name='al_otf_cp2k',
               freeze_hyps=freeze_hyps, skip=5,
-              dft_softwarename="cp2k",
+              force_source="cp2k",
               max_atoms_added=max_atoms_added)
 
     otf.run()
