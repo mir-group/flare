@@ -83,7 +83,7 @@ def test_otf(software, example):
               std_tolerance_factor, init_atoms=[0],
               calculate_energy=True, max_atoms_added=1,
               freeze_hyps=1, skip=1,
-              dft_softwarename=software,
+              force_source=software,
               dft_output=dft_output,
               output_name=f'{casename}_otf_{software}',
               store_dft_output=([dft_output, dft_input], '.'),
@@ -139,7 +139,7 @@ def test_otf_par(software, per_atom_par, n_cpus):
               calculate_energy=True, max_atoms_added=1,
               par=True, n_cpus=n_cpus,
               freeze_hyps=1, skip=1,
-              mpi="mpi", dft_softwarename=software,
+              mpi="mpi", force_source=software,
               dft_output=dft_output,
               output_name=f'{casename}_otf_{software}',
               store_dft_output=([dft_output, dft_input], '.'))

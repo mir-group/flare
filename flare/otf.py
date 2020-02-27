@@ -169,6 +169,7 @@ class OTF:
 
         self.dft_kwargs = dft_kwargs
         self.store_dft_output = store_dft_output
+        self.write_model = write_model
 
     def run(self):
         """
