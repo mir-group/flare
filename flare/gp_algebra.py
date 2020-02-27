@@ -319,7 +319,7 @@ def get_ky_and_hyp_pack(hyps: np.ndarray, training_data1: list,
             # calculate kernel and gradient
             if (hyps_mask is not None):
                 cov = kernel_grad(x_1, x_2, d_1, d_2, hyps,
-                        cutoffs=cutoffs, hyps_mask=hyps_mask)
+                                  cutoffs=cutoffs, hyps_mask=hyps_mask)
             else:
                 cov = kernel_grad(x_1, x_2, d_1, d_2, hyps, cutoffs)
 
@@ -507,7 +507,8 @@ def get_neg_likelihood(hyps: np.ndarray, training_data: list,
 
     like = get_like_from_ky_mat(ky_mat, training_labels_np)
 
-    output.write_to_log(f"get_like_from_ky_mat {time.time()-time0}\n", name="hyps")
+    output.write_to_log(f"get_like_from_ky_mat {time.time()-time0}\n",
+                        name="hyps")
 
     if output is not None:
         output.write_to_log('like: ' + str(like)+'\n', name="hyps")
@@ -542,13 +543,12 @@ def get_neg_like_grad(hyps: np.ndarray, training_data: list,
     :return: float, np.array
     """
 
-
     time0 = time.time()
     if output is not None:
-        ostring="hyps:"
+        ostring = "hyps:"
         for hyp in hyps:
-            ostring+=f" {hyp}"
-        ostring+="\n"
+            ostring +=  f" {hyp}"
+        ostring += "\n"
         output.write_to_log(ostring, name="hyps")
 
     hyp_mat, ky_mat = \
@@ -560,26 +560,23 @@ def get_neg_like_grad(hyps: np.ndarray, training_data: list,
                            n_cpus=n_cpus, nsample=nsample)
 
     if output is not None:
-        output.write_to_log(f"get_ky_and_hyp {time.time()-time0}\n", name="hyps")
+        output.write_to_log(f"get_ky_and_hyp {time.time()-time0}\n",
+                            name="hyps")
 
     time0 = time.time()
-
 
     like, like_grad = \
         get_like_grad_from_mats(ky_mat, hyp_mat, training_labels_np)
 
-    print("like", like, like_grad)
-    print("hyps", hyps)
-    print("\n")
+    if output is not None:
+        output.write_to_log(f"get_like_grad_from_mats {time.time()-time0}\n",
+                            name="hyps")
 
     if output is not None:
-        output.write_to_log(f"get_like_grad_from_mats {time.time()-time0}\n", name="hyps")
-
-    if output is not None:
-        ostring="like grad:"
+        ostring = "like grad:"
         for lg in like_grad:
-            ostring+=f" {lg}"
-        ostring+="\n"
+            ostring += f" {lg}"
+        ostring += "\n"
         output.write_to_log(ostring, name="hyps")
         output.write_to_log('like: ' + str(like)+'\n', name="hyps")
 
@@ -631,7 +628,6 @@ def get_like_grad_from_mats(ky_mat, hyp_mat, training_labels_np):
                        np.trace(np.matmul(like_mat, hyp_mat[n, :, :]))
 
     return like, like_grad
-
 
 
 def get_ky_mat_update_par(ky_mat_old, hyps: np.ndarray, training_data: list,
