@@ -212,6 +212,15 @@ def get_like_from_ky_mat(ky_mat, training_labels_np):
     except:
         return -1e8
 
+    alpha = np.matmul(ky_mat_inv, training_labels_np)
+
+    # calculate likelihood
+    like = (-0.5 * np.matmul(training_labels_np, alpha) -
+            np.sum(np.log(np.diagonal(l_mat))) -
+            math.log(2 * np.pi) * ky_mat.shape[1] / 2)
+
+    return like
+
 #######################################
 ##### KY MATRIX FUNCTIONS and gradients
 #######################################
