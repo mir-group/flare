@@ -252,10 +252,10 @@ class GaussianProcess:
             # bound signal noise below to avoid overfitting
             if (self.bounds is None):
                 bounds = np.array([(1e-6, np.inf)] * len(x_0))
+                bounds[-1, 0] = 1e-3
             else:
                 bounds = self.bounds
-            # bounds = np.array([(1e-6, np.inf)] * len(x_0))
-            # bounds[-1] = [1e-6,np.inf]
+
             # Catch linear algebra errors and switch to BFGS if necessary
             try:
                 res = minimize(get_neg_like_grad, x_0, args,
@@ -334,7 +334,7 @@ class GaussianProcess:
                                     nsample=self.nsample)
 
         # Guarantee that alpha is up to date with training set
-        if  self.alpha is None or\
+        if self.alpha is None or\
                 (3 * len(self.training_data) != len(self.alpha)):
             self.update_L_alpha()
 
@@ -344,11 +344,11 @@ class GaussianProcess:
         # get predictive variance without cholesky (possibly faster)
         # pass args to kernel based on if mult. hyperparameters in use
         if (self.multihyps):
-             self_kern = self.kernel(x_t, x_t, d, d, self.hyps,
-                                     self.cutoffs, hyps_mask=self.hyps_mask)
+            self_kern = self.kernel(x_t, x_t, d, d, self.hyps,
+                                    self.cutoffs, hyps_mask=self.hyps_mask)
         else:
-             self_kern = self.kernel(x_t, x_t, d, d, self.hyps,
-                                     self.cutoffs)
+            self_kern = self.kernel(x_t, x_t, d, d, self.hyps,
+                                    self.cutoffs)
 
         pred_var = self_kern - \
             np.matmul(np.matmul(k_v, self.ky_mat_inv), k_v)
@@ -390,11 +390,12 @@ class GaussianProcess:
         # get predictive variance
         v_vec = solve_triangular(self.l_mat, k_v, lower=True)
         if (self.multihyps):
-             self_kern = self.energy_kernel(x_t, x_t, self.hyps,
-                                            self.cutoffs, hyps_mask=self.hyps_mask)
+            self_kern = self.energy_kernel(x_t, x_t, self.hyps,
+                                           self.cutoffs,
+                                           hyps_mask=self.hyps_mask)
         else:
-             self_kern = self.energy_kernel(x_t, x_t, self.hyps,
-                                            self.cutoffs)
+            self_kern = self.energy_kernel(x_t, x_t, self.hyps,
+                                           self.cutoffs)
         pred_var = self_kern - np.matmul(v_vec, v_vec)
 
         return pred_mean, pred_var
@@ -454,15 +455,17 @@ class GaussianProcess:
             for m_index in range(size):
                 x_2 = self.training_data[int(math.floor(m_index / 3))]
                 d_2 = ds[m_index % 3]
-                k_v[m_index] = self.energy_force_kernel(x_2, x, d_2,
-                                                        self.hyps, self.cutoffs,
-                                                        hyps_mask=self.hyps_mask)
+                k_v[m_index] = \
+                    self.energy_force_kernel(x_2, x, d_2, self.hyps,
+                                             self.cutoffs,
+                                             hyps_mask=self.hyps_mask)
         else:
             for m_index in range(size):
                 x_2 = self.training_data[int(math.floor(m_index / 3))]
                 d_2 = ds[m_index % 3]
                 k_v[m_index] = self.energy_force_kernel(x_2, x, d_2,
-                                                        self.hyps, self.cutoffs)
+                                                        self.hyps,
+                                                        self.cutoffs)
 
         return k_v
 
@@ -492,7 +495,8 @@ class GaussianProcess:
         self.alpha = alpha
         self.ky_mat_inv = ky_mat_inv
 
-        self.likelihood = get_like_from_ky_mat(self.ky_mat, self.training_labels_np)
+        self.likelihood = \
+            get_like_from_ky_mat(self.ky_mat, self.training_labels_np)
 
     def update_L_alpha(self):
         """
@@ -506,9 +510,9 @@ class GaussianProcess:
             return
 
         if (self.par and not self.per_atom_par):
-            n_cpus=self.n_cpus
+            n_cpus = self.n_cpus
         else:
-            n_cpus=1
+            n_cpus = 1
 
         ky_mat = get_ky_mat_update_par(self.ky_mat, self.hyps,
                                        self.training_data,
@@ -549,20 +553,20 @@ class GaussianProcess:
 
         if (self.multihyps):
             nspec = self.hyps_mask['nspec']
-            thestr +=f'nspec: {nspec}\n'
-            thestr +=f'spec_mask: \n'
+            thestr += f'nspec: {nspec}\n'
+            thestr += f'spec_mask: \n'
             thestr += str(self.hyps_mask['spec_mask']) + '\n'
 
             nbond = self.hyps_mask['nbond']
-            thestr +=f'nbond: {nbond}\n'
-            if (nbond>0):
-                thestr +=f'bond_mask: \n'
+            thestr += f'nbond: {nbond}\n'
+            if (nbond > 0):
+                thestr +=  f'bond_mask: \n'
                 thestr += str(self.hyps_mask['bond_mask']) + '\n'
 
             ntriplet = self.hyps_mask['ntriplet']
-            thestr +=f'ntriplet: {ntriplet}\n'
-            if (ntriplet>0):
-                thestr +=f'triplet_mask: \n'
+            thestr += f'ntriplet: {ntriplet}\n'
+            if (ntriplet > 0):
+                thestr += f'triplet_mask: \n'
                 thestr += str(self.hyps_mask['triplet_mask']) + '\n'
 
         return thestr
