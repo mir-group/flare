@@ -31,6 +31,7 @@ class SparseGP{
         void add_training_structure(StructureDescriptor training_structure);
         void update_alpha();
         Eigen::VectorXd predict(StructureDescriptor test_structure);
+        Eigen::VectorXd predict_serial(StructureDescriptor test_structure);
 };
 
 #endif

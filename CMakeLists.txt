@@ -16,11 +16,6 @@ endif()
 
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
-find_package(OpenMP)
-if(OpenMP_CXX_FOUND)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-endif()
-
 find_package(Eigen3 REQUIRED)
 INCLUDE_DIRECTORIES ("${EIGEN3_INCLUDE_DIR}")
 
@@ -36,6 +31,7 @@ add_subdirectory(tests)
 add_subdirectory(timing)
 add_subdirectory(pybind11)
 add_subdirectory(googletest)
+add_subdirectory(parallel_tests)
 
 # make python bindings
 pybind11_add_module(ace src/ace_binding.cpp src/y_grad.cpp src/structure.cpp
