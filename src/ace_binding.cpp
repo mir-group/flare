@@ -123,9 +123,10 @@ PYBIND11_MODULE(ace, m){
         .def_readwrite("alpha", &SparseGP::alpha)
         .def_readwrite("y", &SparseGP::y)
         .def_readwrite("hyperparameters", &SparseGP::hyperparameters)
-        .def("add_sparse_environment", &SparseGP::add_sparse_environment)
+        .def("add_sparse_environment",
+             &SparseGP::add_sparse_environment)
         .def("add_sparse_environment_serial",
-            &SparseGP::add_sparse_environment_serial)
+             &SparseGP::add_sparse_environment_serial)
         .def("add_training_structure", &SparseGP::add_training_structure)
         .def("add_training_structure_serial",
             &SparseGP::add_training_structure_serial)
