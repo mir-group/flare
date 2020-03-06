@@ -35,6 +35,8 @@ PYBIND11_MODULE(ace, m){
                       const Eigen::MatrixXd &, double,
                       DescriptorCalculator *>())
         .def(py::init<const Eigen::MatrixXd &, const std::vector<int> &,
+                      const Eigen::MatrixXd &, double, std::vector<double>>())
+        .def(py::init<const Eigen::MatrixXd &, const std::vector<int> &,
                       const Eigen::MatrixXd &, double, std::vector<double>,
                       DescriptorCalculator *>())        
         .def_readwrite("local_environments",
@@ -122,7 +124,12 @@ PYBIND11_MODULE(ace, m){
         .def_readwrite("y", &SparseGP::y)
         .def_readwrite("hyperparameters", &SparseGP::hyperparameters)
         .def("add_sparse_environment", &SparseGP::add_sparse_environment)
+        .def("add_sparse_environment_serial",
+            &SparseGP::add_sparse_environment_serial)
         .def("add_training_structure", &SparseGP::add_training_structure)
+        .def("add_training_structure_serial",
+            &SparseGP::add_training_structure_serial)
         .def("update_alpha", &SparseGP::update_alpha)
-        .def("predict", &SparseGP::predict);
+        .def("predict", &SparseGP::predict)
+        .def("predict_serial", &SparseGP::predict_serial);
 }

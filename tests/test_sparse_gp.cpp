@@ -51,7 +51,7 @@ class SparseTest : public ::testing::Test{
             radial_hyps, cutoff_hyps, descriptor_settings);
 
         test_struc = StructureDescriptor(cell, species, positions, cutoff,
-                                         nested_cutoffs, &desc1);
+                                         nested_cutoffs);
         test_struc.energy = energy;
         test_struc.forces = forces;
         test_struc.stresses = stresses;
@@ -62,12 +62,12 @@ class SparseTest : public ::testing::Test{
             cutoff_string, cutoff_hyps);
         many_body_kernel = DotProductKernel(signal_variance, power);
 
-        kernels = 
-            std::vector<Kernel *> {&two_body_kernel, &three_body_kernel,
-                &many_body_kernel};
-    
         // kernels = 
-        //     std::vector<Kernel *> {&two_body_kernel};
+        //     std::vector<Kernel *> {&two_body_kernel, &three_body_kernel,
+        //         &many_body_kernel};
+    
+        kernels = 
+            std::vector<Kernel *> {&two_body_kernel, &three_body_kernel};
     }
 };
 
@@ -102,50 +102,50 @@ TEST_F(SparseTest, UpdateK){
     EXPECT_EQ(kern_val, sparse_gp.Kuu(0,0));
 }
 
-TEST_F(SparseTest, Predict){
-    // Eigen::initParallel();
+// TEST_F(SparseTest, Predict){
+//     // Eigen::initParallel();
 
-    double sigma_e = 0.1;
-    double sigma_f = 0.01;
-    double sigma_s = 1;
+//     double sigma_e = 0.1;
+//     double sigma_f = 0.01;
+//     double sigma_s = 1;
 
-    SparseGP sparse_gp = SparseGP(kernels, sigma_e, sigma_f, sigma_s);
-    LocalEnvironment env1 = test_struc.local_environments[0];
-    LocalEnvironment env2 = test_struc.local_environments[1];
-    sparse_gp.add_sparse_environment(env1);
-    sparse_gp.add_sparse_environment(env2);
+//     SparseGP sparse_gp = SparseGP(kernels, sigma_e, sigma_f, sigma_s);
+//     LocalEnvironment env1 = test_struc.local_environments[0];
+//     LocalEnvironment env2 = test_struc.local_environments[1];
+//     sparse_gp.add_sparse_environment(env1);
+//     sparse_gp.add_sparse_environment(env2);
 
-    test_struc.stresses = Eigen::VectorXd {};
+//     test_struc.stresses = Eigen::VectorXd {};
 
-    sparse_gp.add_training_structure(test_struc);
-    sparse_gp.update_alpha();
-    Eigen::VectorXd pred_vals;
+//     sparse_gp.add_training_structure(test_struc);
+//     sparse_gp.update_alpha();
+//     Eigen::VectorXd pred_vals;
 
-    // predict in parallel
-    auto t1 = std::chrono::high_resolution_clock::now();
-    for (int i = 0; i < 1000; i ++){
-        pred_vals = sparse_gp.predict(test_struc);
-    }
-    auto t2 = std::chrono::high_resolution_clock::now();
-    auto tot_time = 
-        std::chrono::duration_cast<std::chrono::microseconds>(t2-t1).count();
-    std::cout << tot_time << std::endl;
+//     // predict in parallel
+//     auto t1 = std::chrono::high_resolution_clock::now();
+//     for (int i = 0; i < 1000; i ++){
+//         pred_vals = sparse_gp.predict(test_struc);
+//     }
+//     auto t2 = std::chrono::high_resolution_clock::now();
+//     auto tot_time = 
+//         std::chrono::duration_cast<std::chrono::microseconds>(t2-t1).count();
+//     // std::cout << tot_time << std::endl;
 
-    // // predict in serial
-    // t1 = std::chrono::high_resolution_clock::now();
-    // for (int i = 0; i < 1000; i ++){
-    //     Eigen::VectorXd pred_vals = sparse_gp.predict_serial(test_struc);
-    // }
-    // t2 = std::chrono::high_resolution_clock::now();
-    // tot_time = 
-    //     std::chrono::duration_cast<std::chrono::microseconds>(t2-t1).count();
-    // std::cout << tot_time << std::endl;
+//     // // predict in serial
+//     // t1 = std::chrono::high_resolution_clock::now();
+//     // for (int i = 0; i < 1000; i ++){
+//     //     Eigen::VectorXd pred_vals = sparse_gp.predict_serial(test_struc);
+//     // }
+//     // t2 = std::chrono::high_resolution_clock::now();
+//     // tot_time = 
+//     //     std::chrono::duration_cast<std::chrono::microseconds>(t2-t1).count();
+//     // std::cout << tot_time << std::endl;
 
-    std::cout << "predicted values:" << std::endl;
-    std::cout << pred_vals << std::endl;
+//     // std::cout << "predicted values:" << std::endl;
+//     // std::cout << pred_vals << std::endl;
 
-    // std::cout << sparse_gp.Kuu << std::endl;
-    // std::cout << sparse_gp.Kuf << std::endl;
-    // std::cout << sparse_gp.Sigma << std::endl;
-    // std::cout << sparse_gp.alpha << std::endl;
-}
+//     // std::cout << sparse_gp.Kuu << std::endl;
+//     // std::cout << sparse_gp.Kuf << std::endl;
+//     // std::cout << sparse_gp.Sigma << std::endl;
+//     // std::cout << sparse_gp.alpha << std::endl;
+// }

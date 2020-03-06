@@ -87,7 +87,8 @@ StructureDescriptor :: StructureDescriptor(const Eigen::MatrixXd & cell,
 
 StructureDescriptor :: StructureDescriptor(const Eigen::MatrixXd & cell,
     const std::vector<int> & species, const Eigen::MatrixXd & positions,
-    double cutoff, std::vector<double> nested_cutoffs){
+    double cutoff, std::vector<double> nested_cutoffs)
+                    : Structure(cell, species, positions){
 
     this->cutoff = cutoff;
     this->nested_cutoffs = nested_cutoffs;
