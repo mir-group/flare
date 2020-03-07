@@ -31,21 +31,27 @@ PYBIND11_MODULE(ace, m){
     py::class_<StructureDescriptor, Structure>(m, "StructureDescriptor")
         .def(py::init<const Eigen::MatrixXd &, const std::vector<int> &,
                       const Eigen::MatrixXd &, double>())
-        .def(py::init<const Eigen::MatrixXd &, const std::vector<int> &,
-                      const Eigen::MatrixXd &, double,
-                      DescriptorCalculator *>())
+        // n-body
         .def(py::init<const Eigen::MatrixXd &, const std::vector<int> &,
                       const Eigen::MatrixXd &, double, std::vector<double>>())
+        // many-body
         .def(py::init<const Eigen::MatrixXd &, const std::vector<int> &,
                       const Eigen::MatrixXd &, double, std::vector<double>,
-                      DescriptorCalculator *>())        
+                      std::vector<DescriptorCalculator *>>())
+        // n-body + many-body
+        .def(py::init<const Eigen::MatrixXd &, const std::vector<int> &,
+                      const Eigen::MatrixXd &, double, std::vector<double>,
+                      std::vector<double>,
+                      std::vector<DescriptorCalculator *>>())        
         .def_readwrite("local_environments",
             &StructureDescriptor::local_environments)
         .def_readwrite("energy", &StructureDescriptor::energy)
         .def_readwrite("forces", &StructureDescriptor::forces)
         .def_readwrite("stresses", &StructureDescriptor::stresses)
         .def_readwrite("cutoff", &StructureDescriptor::cutoff)
-        .def_readwrite("nested_cutoffs", &StructureDescriptor::nested_cutoffs);
+        .def_readwrite("n_body_cutoffs", &StructureDescriptor::n_body_cutoffs)
+        .def_readwrite("many_body_cutoffs",
+            &StructureDescriptor::many_body_cutoffs);
 
     // Local environment
     py::class_<LocalEnvironment>(m, "LocalEnvironment")
@@ -70,9 +76,9 @@ PYBIND11_MODULE(ace, m){
         .def_readwrite("descriptor_stress_dervs",
             &LocalEnvironment::descriptor_stress_dervs);
 
-        Eigen::VectorXd descriptor_vals;
-        Eigen::MatrixXd descriptor_force_dervs, descriptor_stress_dervs,
-            force_dot, stress_dot;
+        // Eigen::VectorXd descriptor_vals;
+        // Eigen::MatrixXd descriptor_force_dervs, descriptor_stress_dervs,
+        //     force_dot, stress_dot;
     // Descriptor calculators
     py::class_<DescriptorCalculator>(m, "DescriptorCalculator")
         .def("compute", &DescriptorCalculator::compute)
@@ -109,7 +115,7 @@ PYBIND11_MODULE(ace, m){
         .def(py::init<double, double, std::string, std::vector<double>>());
     
     py::class_<DotProductKernel, Kernel>(m, "DotProductKernel")
-        .def(py::init<double, double>());
+        .def(py::init<double, double, int>());
 
     // Sparse GP
     py::class_<SparseGP>(m, "SparseGP")

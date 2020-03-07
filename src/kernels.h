@@ -27,10 +27,11 @@ class Kernel{
 class DotProductKernel : public Kernel{
     public:
         double sigma, sig2, power;
+        int descriptor_index;
 
         DotProductKernel();
 
-        DotProductKernel(double sigma, double power);
+        DotProductKernel(double sigma, double power, int descriptor_index);
 
         double env_env(const LocalEnvironment & env1,
                        const LocalEnvironment & env2);

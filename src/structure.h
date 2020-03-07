@@ -30,10 +30,11 @@ class Structure{
 // Structure descriptor. Stores the atomic environments in a structure.
 class StructureDescriptor : public Structure{
     public:
-        DescriptorCalculator * descriptor_calculator;
+        std::vector<DescriptorCalculator *> descriptor_calculators;
         std::vector<LocalEnvironment> local_environments;
         double cutoff;
-        std::vector<double> nested_cutoffs;
+        std::vector<double> n_body_cutoffs;
+        std::vector<double> many_body_cutoffs;
 
         // Make structure labels empty by default.
         Eigen::VectorXd energy;
@@ -47,22 +48,28 @@ class StructureDescriptor : public Structure{
                             const Eigen::MatrixXd & positions,
                             double cutoff);
 
+        // n-body
         StructureDescriptor(const Eigen::MatrixXd & cell,
                             const std::vector<int> & species,
                             const Eigen::MatrixXd & positions,
-                            double cutoff, std::vector<double> nested_cutoffs);
+                            double cutoff, std::vector<double> n_body_cutoffs);
 
+        // many-body
         StructureDescriptor(const Eigen::MatrixXd & cell,
                             const std::vector<int> & species,
-                            const Eigen::MatrixXd & positions,
-                            double cutoff,
-                            DescriptorCalculator * descriptor_calculator);
+                            const Eigen::MatrixXd & positions, double cutoff,
+                            std::vector<double> many_body_cutoffs,
+                            std::vector<DescriptorCalculator *>
+                                descriptor_calculators);
 
+        // n-body + many-body
         StructureDescriptor(const Eigen::MatrixXd & cell,
                             const std::vector<int> & species,
                             const Eigen::MatrixXd & positions,
-                            double cutoff, std::vector<double> nested_cutoffs,
-                            DescriptorCalculator * descriptor_calculator);
+                            double cutoff, std::vector<double> n_body_cutoffs,
+                            std::vector<double> many_body_cutoffs,
+                            std::vector<DescriptorCalculator *>
+                                descriptor_calculators);
 
         void compute_environments();
         void compute_nested_environments();

@@ -74,6 +74,10 @@ double Structure :: get_max_cutoff(){
     return max_cutoff;
 }
 
+// ----------------------------------------------------------------------------
+//                          structure descriptor
+// ---------------------------------------------------------------------------- 
+
 StructureDescriptor :: StructureDescriptor(){}
 
 StructureDescriptor :: StructureDescriptor(const Eigen::MatrixXd & cell,
@@ -85,37 +89,44 @@ StructureDescriptor :: StructureDescriptor(const Eigen::MatrixXd & cell,
     this->compute_environments();
 }
 
+// n-body
 StructureDescriptor :: StructureDescriptor(const Eigen::MatrixXd & cell,
     const std::vector<int> & species, const Eigen::MatrixXd & positions,
-    double cutoff, std::vector<double> nested_cutoffs)
+    double cutoff, std::vector<double> n_body_cutoffs)
                     : Structure(cell, species, positions){
 
     this->cutoff = cutoff;
-    this->nested_cutoffs = nested_cutoffs;
+    this->n_body_cutoffs = n_body_cutoffs;
     this->compute_nested_environments();
 }
 
+// many-body
 StructureDescriptor :: StructureDescriptor(const Eigen::MatrixXd & cell,
                         const std::vector<int> & species,
                         const Eigen::MatrixXd & positions,
                         double cutoff,
-                        DescriptorCalculator * descriptor_calculator)
+                        std::vector<double> many_body_cutoffs,
+                        std::vector<DescriptorCalculator *>
+                            descriptor_calculators)
                     : Structure(cell, species, positions){
 
-    this->descriptor_calculator = descriptor_calculator;
+    this->descriptor_calculators = descriptor_calculators;
     this->cutoff = cutoff;
+    this->many_body_cutoffs = many_body_cutoffs;
     this->compute_descriptors();
 }
 
 StructureDescriptor :: StructureDescriptor(const Eigen::MatrixXd & cell,
     const std::vector<int> & species, const Eigen::MatrixXd & positions,
-    double cutoff, std::vector<double> nested_cutoffs,
-    DescriptorCalculator * descriptor_calculator)
+    double cutoff, std::vector<double> n_body_cutoffs,
+    std::vector<double> many_body_cutoffs,
+    std::vector<DescriptorCalculator *> descriptor_calculators)
     : Structure(cell, species, positions){
 
-    this->descriptor_calculator = descriptor_calculator;
+    this->descriptor_calculators = descriptor_calculators;
     this->cutoff = cutoff;
-    this->nested_cutoffs = nested_cutoffs;
+    this->n_body_cutoffs = n_body_cutoffs;
+    this->many_body_cutoffs = many_body_cutoffs;
     this->nested_descriptors();
 }
 
@@ -134,7 +145,7 @@ void StructureDescriptor :: compute_nested_environments(){
     LocalEnvironment env;
 
     for (int i = 0; i < noa; i ++){
-        env = LocalEnvironment(*this, i, cutoff, nested_cutoffs);
+        env = LocalEnvironment(*this, i, cutoff, n_body_cutoffs);
         local_environments.push_back(env);
     }
 }
@@ -144,7 +155,8 @@ void StructureDescriptor :: compute_descriptors(){
     LocalEnvironment env;
 
     for (int i = 0; i < noa; i ++){
-        env = LocalEnvironment(*this, i, cutoff, descriptor_calculator);
+        env = LocalEnvironment(*this, i, cutoff, many_body_cutoffs,
+            descriptor_calculators);
         local_environments.push_back(env);
     }
 }
@@ -154,8 +166,8 @@ void StructureDescriptor :: nested_descriptors(){
     LocalEnvironment env;
 
     for (int i = 0; i < noa; i ++){
-        env = LocalEnvironment(*this, i, cutoff, nested_cutoffs,
-            descriptor_calculator);
+        env = LocalEnvironment(*this, i, cutoff, n_body_cutoffs,
+            many_body_cutoffs, descriptor_calculators);
         local_environments.push_back(env);
     }
 }

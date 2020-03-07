@@ -30,6 +30,7 @@ class DescriptorTest : public ::testing::Test{
     std::vector<int> descriptor_settings {5, 10, 10};
 
     double rcut = 3;
+    std::vector<double> many_body_cutoffs {rcut};
     
     // Choose arbitrary rotation angles.
     double xrot = 1.28;
@@ -64,6 +65,7 @@ class DescriptorTest : public ::testing::Test{
     // Set up descriptor calculator.
     std::string radial_string = "chebyshev";
     std::string cutoff_string = "quadratic";
+    int descriptor_index = 0;
 
     DescriptorTest(){
         // Define rotation matrices.
@@ -96,6 +98,7 @@ class DescriptorTest : public ::testing::Test{
 
         env1 = LocalEnvironment(struc1, 0, rcut);
         env2 = LocalEnvironment(struc2, 0, rcut);
+        env1.many_body_cutoffs = env2.many_body_cutoffs = many_body_cutoffs;
 
         single_bond_vals = Eigen::VectorXd::Zero(no_descriptors);
         force_dervs = Eigen::MatrixXd::Zero(noa * 3, no_descriptors);
@@ -103,11 +106,13 @@ class DescriptorTest : public ::testing::Test{
 
         // Create B1 and B2 descriptor calculators.
         desc1 = B1_Calculator(radial_string, cutoff_string,
-            radial_hyps, cutoff_hyps, descriptor_settings);
+            radial_hyps, cutoff_hyps, descriptor_settings,
+            descriptor_index);
         desc2 = desc3 = desc1;
 
         desc4 = B2_Calculator(radial_string, cutoff_string,
-            radial_hyps, cutoff_hyps, descriptor_settings);
+            radial_hyps, cutoff_hyps, descriptor_settings,
+            descriptor_index);
         desc5 = desc6 = desc4;
     }
 
@@ -171,6 +176,7 @@ TEST_F(DescriptorTest, CentTest){
         positions_3(0, m) += delta;
         struc3 = Structure(cell, species, positions_3);
         env3 = LocalEnvironment(struc3, 0, rcut);
+        env3.many_body_cutoffs = many_body_cutoffs;
         desc3.compute(env3);
 
         // Check derivatives.
@@ -194,6 +200,7 @@ TEST_F(DescriptorTest, CentTest){
         positions_3(0, m) += delta;
         struc3 = Structure(cell, species, positions_3);
         env3 = LocalEnvironment(struc3, 0, rcut);
+        env3.many_body_cutoffs = many_body_cutoffs;
         desc6.compute(env3);
 
         // Check derivatives.
@@ -221,6 +228,7 @@ TEST_F(DescriptorTest, EnvTest){
             positions_3(p, m) += delta;
             struc3 =  Structure(cell, species, positions_3);
             env3 = LocalEnvironment(struc3, 0, rcut);
+            env3.many_body_cutoffs = many_body_cutoffs;          
             desc3.compute(env3);
 
             // Check derivatives.
@@ -247,6 +255,7 @@ TEST_F(DescriptorTest, EnvTest){
             positions_3(p, m) += delta;
             struc3 =  Structure(cell, species, positions_3);
             env3 = LocalEnvironment(struc3, 0, rcut);
+            env3.many_body_cutoffs = many_body_cutoffs;
             desc6.compute(env3);
 
             // Check derivatives.
@@ -286,6 +295,7 @@ TEST_F(DescriptorTest, StressTest){
 
             struc2 = Structure(cell_2, species, positions_2);
             env2 = LocalEnvironment(struc2, 0, rcut);
+            env2.many_body_cutoffs = many_body_cutoffs;
             desc2.compute(env2);
 
             // Check stress derivatives.
@@ -324,6 +334,7 @@ TEST_F(DescriptorTest, StressTest){
 
             struc2 = Structure(cell_2, species, positions_2);
             env2 = LocalEnvironment(struc2, 0, rcut);
+            env2.many_body_cutoffs = many_body_cutoffs;
             desc5.compute(env2);
 
             // Check stress derivatives.

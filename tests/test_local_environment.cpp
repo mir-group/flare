@@ -13,6 +13,7 @@ class EnvironmentTest : public :: testing :: Test{
         std::vector<int> species {0, 1, 2, 3, 4};
         Eigen::MatrixXd positions{5, 3};
         B2_Calculator desc1;
+        std::vector<DescriptorCalculator *> descriptor_calculators;
         StructureDescriptor test_struc;
         int atom;
         LocalEnvironment test_env;
@@ -22,8 +23,10 @@ class EnvironmentTest : public :: testing :: Test{
         std::vector<double> radial_hyps {0, 5};
         std::vector<double> cutoff_hyps;
         std::vector<int> descriptor_settings {5, 5, 5};
+        int descriptor_index = 0;
         std::vector<double> nested_cutoffs {3, 3, 3};
         double cutoff = 3;
+        std::vector<double> many_body_cutoffs {cutoff};
 
     EnvironmentTest(){
         cell << 1.3, 0.5, 0.8,
@@ -37,13 +40,14 @@ class EnvironmentTest : public :: testing :: Test{
                      3.2, 1.1, 3.3;
 
         desc1 = B2_Calculator(radial_string, cutoff_string,
-            radial_hyps, cutoff_hyps, descriptor_settings);
+            radial_hyps, cutoff_hyps, descriptor_settings, descriptor_index);
+        descriptor_calculators.push_back(&desc1);
         test_struc = StructureDescriptor(cell, species, positions, cutoff, 
-            &desc1);
+            many_body_cutoffs, descriptor_calculators);
 
         atom = 0;
         test_env = LocalEnvironment(test_struc, atom, cutoff, 
-            nested_cutoffs, &desc1);
+            nested_cutoffs, descriptor_calculators);
     }
 };
 
@@ -76,14 +80,14 @@ TEST_F(EnvironmentTest, DotTest){
     // Calculate the descriptor norm the old fashioned way.
     double norm_val = 0;
     double val_curr;
-    int no_desc = test_env.descriptor_vals.rows();
+    int no_desc = test_env.descriptor_vals[0].rows();
 
     for (int i = 0; i < no_desc; i++){
-        val_curr = test_env.descriptor_vals(i);
+        val_curr = test_env.descriptor_vals[0](i);
         norm_val += val_curr * val_curr;
     }
     norm_val = sqrt(norm_val);
-    EXPECT_NEAR(norm_val, test_env.descriptor_norm, THRESHOLD);
+    EXPECT_NEAR(norm_val, test_env.descriptor_norm[0], THRESHOLD);
 }
 
 // TEST_F(EnvironmentTest, NestedTest){

@@ -41,26 +41,30 @@ double TwoBodyKernel :: env_env(const LocalEnvironment & env1,
                                 const LocalEnvironment & env2){
     double kern = 0;
     double ri, rj, fi, fj, rdiff;
-    int e1, e2;
+    int e1, e2, ind1, ind2;
 
-    double cut1 = env1.cutoff;
-    double cut2 = env2.cutoff;
+    double cut1 = env1.n_body_cutoffs[0];
+    double cut2 = env2.n_body_cutoffs[0];
     double rcut_vals_1[2];
     double rcut_vals_2[2];
     int c1 = env1.central_species;
     int c2 = env2.central_species;
+    std::vector<int> inds1 = env1.n_body_indices[0];
+    std::vector<int> inds2 = env2.n_body_indices[0];
 
-    for (int m = 0; m < env1.rs.size(); m ++){
-        ri = env1.rs[m];
-        e1 = env1.environment_species[m];
+    for (int m = 0; m < inds1.size(); m ++){
+        ind1 = inds1[m];
+        ri = env1.rs[ind1];
+        e1 = env1.environment_species[ind1];
         (*cutoff_pointer)(rcut_vals_1, ri, cut1, cutoff_hyps);
         fi = rcut_vals_1[0];
-        for (int n = 0; n < env2.rs.size(); n ++){
-            e2 = env2.environment_species[n];
+        for (int n = 0; n < inds2.size(); n ++){
+            ind2 = inds2[n];
+            e2 = env2.environment_species[ind2];
 
             // Proceed only if the pairs match.
             if ((c1 == c2 && e1 == e2) || (c1 == e2 && c2 == e1)){
-                rj = env2.rs[n];
+                rj = env2.rs[ind2];
                 (*cutoff_pointer)(rcut_vals_2, rj, cut2, cutoff_hyps);
                 fj = rcut_vals_2[0];
                 rdiff = ri - rj;
@@ -80,42 +84,48 @@ Eigen::VectorXd TwoBodyKernel :: env_struc(const LocalEnvironment & env1,
     double ri, rj, fi, fj, fdj, rdiff, c1, c2, c3, c4, fx, fy, fz, xval, yval,
         zval, xrel, yrel, zrel, en_kern;
 
-    int e1, e2, cent2;
+    int e1, e2, cent2, ind1, ind2;
     int cent1 = env1.central_species;
 
-    double cut1 = env1.cutoff;
-    double cut2 = struc1.cutoff;
+    double cut1 = env1.n_body_cutoffs[0];
+    double cut2 = struc1.n_body_cutoffs[0];
     double rcut_vals_1[2];
     double rcut_vals_2[2];
+
+    std::vector<int> inds1 = env1.n_body_indices[0];
+    std::vector<int> inds2;
 
     double vol_inv = 1 / struc1.volume;
 
     LocalEnvironment env_curr;
     for (int i = 0; i < struc1.noa; i ++){
        env_curr = struc1.local_environments[i];
+       inds2 = env_curr.n_body_indices[0];
        cent2 = env_curr.central_species;
 
-        for (int m = 0; m < env1.rs.size(); m ++){
-            ri = env1.rs[m];
+        for (int m = 0; m < inds1.size(); m ++){
+            ind1 = inds1[m];
+            ri = env1.rs[ind1];
             (*cutoff_pointer)(rcut_vals_1, ri, cut1, cutoff_hyps);
             fi = rcut_vals_1[0];
-            e1 = env1.environment_species[m];
+            e1 = env1.environment_species[ind1];
 
-            for (int n = 0; n < env_curr.rs.size(); n ++){
-                e2 = env_curr.environment_species[n];
+            for (int n = 0; n < inds2.size(); n ++){
+                ind2 = inds2[n];
+                e2 = env_curr.environment_species[ind2];
 
                 // Proceed only if the pairs match.
                 if ((cent1 == cent2 && e1 == e2) || (cent1 == e2 && 
                  cent2 == e1)){
-                    rj = env_curr.rs[n];
+                    rj = env_curr.rs[ind2];
                     rdiff = ri - rj;
 
-                    xval = env_curr.xs[n];
-                    yval = env_curr.ys[n];
-                    zval = env_curr.zs[n];
-                    xrel = env_curr.xrel[n];
-                    yrel = env_curr.yrel[n];
-                    zrel = env_curr.zrel[n];
+                    xval = env_curr.xs[ind2];
+                    yval = env_curr.ys[ind2];
+                    zval = env_curr.zs[ind2];
+                    xrel = env_curr.xrel[ind2];
+                    yrel = env_curr.yrel[ind2];
+                    zrel = env_curr.zrel[ind2];
 
                     (*cutoff_pointer)(rcut_vals_2, rj, cut2, cutoff_hyps);
                     fj = rcut_vals_2[0];
@@ -498,11 +508,13 @@ void ThreeBodyKernel :: update_kernel_vector(Eigen::VectorXd & kernel_vector,
 
 DotProductKernel :: DotProductKernel() {};
 
-DotProductKernel :: DotProductKernel(double sigma, double power){
+DotProductKernel :: DotProductKernel(double sigma, double power,
+    int descriptor_index){
 
     this->sigma = sigma;
     sig2 = sigma * sigma;
     this->power = power;
+    this -> descriptor_index = descriptor_index;
 
     kernel_hyperparameters = std::vector<double> {sigma, power};
 }
@@ -512,9 +524,10 @@ double DotProductKernel :: env_env(const LocalEnvironment & env1,
     // Central species must be the same to give a nonzero kernel.
     if (env1.central_species != env2.central_species) return 0;
 
-    double dot = env1.descriptor_vals.dot(env2.descriptor_vals);
-    double d1 = env1.descriptor_norm;
-    double d2 = env2.descriptor_norm;
+    double dot = env1.descriptor_vals[descriptor_index]
+        .dot(env2.descriptor_vals[descriptor_index]);
+    double d1 = env1.descriptor_norm[descriptor_index];
+    double d2 = env2.descriptor_norm[descriptor_index];
 
     return sig2 * pow(dot / (d1 * d2), power);
 }
@@ -527,7 +540,7 @@ Eigen::VectorXd DotProductKernel
 
     // Account for edge case where d1 is zero.
     double empty_thresh = 1e-8;
-    double d1 = env1.descriptor_norm;
+    double d1 = env1.descriptor_norm[descriptor_index];
     if (d1 < empty_thresh) return kern_vec;
 
     double en_kern = 0;
@@ -546,26 +559,29 @@ Eigen::VectorXd DotProductKernel
         if (env1.central_species != env_curr.central_species) continue;
 
         // Check that d2 is nonzero.
-        d2 = env_curr.descriptor_norm;
+        d2 = env_curr.descriptor_norm[descriptor_index];
         if (d2 < empty_thresh) continue;
         d2_cubed = d2 * d2 * d2;
 
         // Energy kernel
-        dot_val = env1.descriptor_vals.dot(env_curr.descriptor_vals);
+        dot_val = env1.descriptor_vals[descriptor_index]
+            .dot(env_curr.descriptor_vals[descriptor_index]);
         norm_dot = dot_val / (d1 * d2);
         en_kern += pow(norm_dot, power);
 
         // Force kernel
-        force_dot = env_curr.descriptor_force_dervs * env1.descriptor_vals;
+        force_dot = env_curr.descriptor_force_dervs[descriptor_index] *
+            env1.descriptor_vals[descriptor_index];
         f1 = (force_dot / (d1 * d2)) -
-            (dot_val * env_curr.force_dot / (d2_cubed * d1));
+            (dot_val * env_curr.force_dot[descriptor_index] / (d2_cubed * d1));
         dval = power * pow(norm_dot, power - 1);
         force_kern += dval * f1;
 
         // Stress kernel
-        stress_dot = env_curr.descriptor_stress_dervs * env1.descriptor_vals;
+        stress_dot = env_curr.descriptor_stress_dervs[descriptor_index] *
+            env1.descriptor_vals[descriptor_index];
         s1 = (stress_dot / (d1 * d2)) -
-            (dot_val * env_curr.stress_dot /(d2_cubed * d1));
+            (dot_val * env_curr.stress_dot[descriptor_index] /(d2_cubed * d1));
         stress_kern += dval * s1;
     }
 
