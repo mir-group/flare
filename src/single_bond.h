@@ -25,7 +25,7 @@ void single_bond_sum_env(
     void (*basis_function)(double *, double *, double, int,
                            std::vector<double>),
     void (*cutoff_function)(double *, double, double, std::vector<double>),
-    const LocalEnvironment & env, double rcut, int N, int lmax,
+    const LocalEnvironment & env, int descriptor_index, int N, int lmax,
     const std::vector<double> & radial_hyps,
     const std::vector<double> & cutoff_hyps);
 

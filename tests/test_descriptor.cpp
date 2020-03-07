@@ -99,6 +99,8 @@ class DescriptorTest : public ::testing::Test{
         env1 = LocalEnvironment(struc1, 0, rcut);
         env2 = LocalEnvironment(struc2, 0, rcut);
         env1.many_body_cutoffs = env2.many_body_cutoffs = many_body_cutoffs;
+        env1.compute_indices();
+        env2.compute_indices();
 
         single_bond_vals = Eigen::VectorXd::Zero(no_descriptors);
         force_dervs = Eigen::MatrixXd::Zero(noa * 3, no_descriptors);
@@ -177,6 +179,7 @@ TEST_F(DescriptorTest, CentTest){
         struc3 = Structure(cell, species, positions_3);
         env3 = LocalEnvironment(struc3, 0, rcut);
         env3.many_body_cutoffs = many_body_cutoffs;
+        env3.compute_indices();
         desc3.compute(env3);
 
         // Check derivatives.
@@ -201,6 +204,7 @@ TEST_F(DescriptorTest, CentTest){
         struc3 = Structure(cell, species, positions_3);
         env3 = LocalEnvironment(struc3, 0, rcut);
         env3.many_body_cutoffs = many_body_cutoffs;
+        env3.compute_indices();
         desc6.compute(env3);
 
         // Check derivatives.
@@ -228,7 +232,8 @@ TEST_F(DescriptorTest, EnvTest){
             positions_3(p, m) += delta;
             struc3 =  Structure(cell, species, positions_3);
             env3 = LocalEnvironment(struc3, 0, rcut);
-            env3.many_body_cutoffs = many_body_cutoffs;          
+            env3.many_body_cutoffs = many_body_cutoffs;  
+            env3.compute_indices();        
             desc3.compute(env3);
 
             // Check derivatives.
@@ -256,6 +261,7 @@ TEST_F(DescriptorTest, EnvTest){
             struc3 =  Structure(cell, species, positions_3);
             env3 = LocalEnvironment(struc3, 0, rcut);
             env3.many_body_cutoffs = many_body_cutoffs;
+            env3.compute_indices();
             desc6.compute(env3);
 
             // Check derivatives.
@@ -296,6 +302,7 @@ TEST_F(DescriptorTest, StressTest){
             struc2 = Structure(cell_2, species, positions_2);
             env2 = LocalEnvironment(struc2, 0, rcut);
             env2.many_body_cutoffs = many_body_cutoffs;
+            env2.compute_indices();
             desc2.compute(env2);
 
             // Check stress derivatives.
@@ -335,6 +342,7 @@ TEST_F(DescriptorTest, StressTest){
             struc2 = Structure(cell_2, species, positions_2);
             env2 = LocalEnvironment(struc2, 0, rcut);
             env2.many_body_cutoffs = many_body_cutoffs;
+            env2.compute_indices();
             desc5.compute(env2);
 
             // Check stress derivatives.

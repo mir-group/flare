@@ -95,15 +95,17 @@ void single_bond_sum_env(
     Eigen::MatrixXd & force_dervs, Eigen::MatrixXd & stress_dervs,
     void (*basis_function)(double *, double *, double, int, vector<double>),
     void (*cutoff_function)(double *, double, double, vector<double>),
-    const LocalEnvironment & env, double rcut, int N, int lmax,
+    const LocalEnvironment & env, int descriptor_index, int N, int lmax,
     const vector<double> & radial_hyps, const vector<double> & cutoff_hyps){
 
-    int noa = env.rs.size();
+    int noa = env.many_body_indices[descriptor_index].size();
     int cent_ind = env.central_index;
     double x, y, z, r;
-    int s, env_ind;
+    int s, env_ind, atom_index;
+    double rcut = env.many_body_cutoffs[descriptor_index];
 
-    for (int atom_index = 0; atom_index < noa; atom_index ++){
+    for (int n = 0; n < noa; n ++){
+        atom_index = env.many_body_indices[descriptor_index][n];
         x = env.xs[atom_index];
         y = env.ys[atom_index];
         z = env.zs[atom_index];

@@ -125,8 +125,7 @@ void B1_Calculator :: compute(const LocalEnvironment & env){
     // Compute single bond vector.
     single_bond_sum_env(single_bond_vals, single_bond_force_dervs,
                         single_bond_stress_dervs, radial_pointer,
-                        cutoff_pointer, env,
-                        env.many_body_cutoffs[descriptor_index], N,
+                        cutoff_pointer, env, descriptor_index, N,
                         lmax, radial_hyps, cutoff_hyps);
 
     // Set B1 values.
@@ -166,8 +165,7 @@ void B2_Calculator :: compute(const LocalEnvironment & env){
     // Compute single bond vector.
     single_bond_sum_env(single_bond_vals, single_bond_force_dervs,
                         single_bond_stress_dervs, radial_pointer,
-                        cutoff_pointer, env,
-                        env.many_body_cutoffs[descriptor_index], N,
+                        cutoff_pointer, env, descriptor_index, N,
                         lmax, radial_hyps, cutoff_hyps);
 
     // Initialize B2 vectors.

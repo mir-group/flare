@@ -69,8 +69,8 @@ TEST_F(StructureTest, StructureDescriptor){
     // Check that structure descriptors match environment descriptors.
     LocalEnvironment env;
     for (int i = 0; i < test_struc.species.size(); i ++){
-        env = LocalEnvironment(test_struc, i, cutoff);
-        env.many_body_cutoffs = many_body_cutoffs;
+        env = LocalEnvironment(test_struc, i, cutoff, many_body_cutoffs,
+            descriptor_calculators);
         desc1.compute(env);
 
         for (int j = 0; j < desc1.descriptor_vals.size(); j ++){

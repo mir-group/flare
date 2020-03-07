@@ -55,6 +55,7 @@ LocalEnvironment :: LocalEnvironment(const Structure & structure, int atom,
 
     this->many_body_cutoffs = many_body_cutoffs;
     this->descriptor_calculators = descriptor_calculators;
+    compute_indices();
     compute_descriptors();
 }
 
