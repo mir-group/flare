@@ -70,6 +70,7 @@ for (int n1 = 0; n1 < no_radial; n1 ++){
                     single_bond_vals(n2_l);
 
                 // Store force derivatives.
+                // TODO: loop over many body indices, not entire neighbor list
                 for (int atom_index = 0; atom_index < neigh_size;
                      atom_index ++){
                     env_ind = env.neighbor_list[atom_index];
