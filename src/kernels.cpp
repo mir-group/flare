@@ -205,8 +205,8 @@ double ThreeBodyKernel :: env_env(const LocalEnvironment & env1,
         r22, r23, r31, r32, r33, p1, p2, p3, p4, p5, p6;
     int i1, i2, j1, j2, ei1, ei2, ej1, ej2;
 
-    double cut1 = env1.cutoff;
-    double cut2 = env2.cutoff;
+    double cut1 = env1.n_body_cutoffs[1];
+    double cut2 = env2.n_body_cutoffs[1];
     double rcut_vals_i1[2], rcut_vals_i2[2], rcut_vals_i3[2],
         rcut_vals_j1[2], rcut_vals_j2[2], rcut_vals_j3[2];
     int c1 = env1.central_species;
@@ -324,8 +324,8 @@ Eigen::VectorXd ThreeBodyKernel :: env_struc(const LocalEnvironment & env1,
     LocalEnvironment env2;
     double vol_inv = 1 / struc1.volume;
 
-    double cut1 = env1.cutoff;
-    double cut2 = struc1.cutoff;
+    double cut1 = env1.n_body_cutoffs[1];
+    double cut2 = struc1.n_body_cutoffs[1];
     double rcut_vals_i1[2], rcut_vals_i2[2], rcut_vals_i3[2],
         rcut_vals_j1[2], rcut_vals_j2[2], rcut_vals_j3[2];
     int c1 = env1.central_species;
