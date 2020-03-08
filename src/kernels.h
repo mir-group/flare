@@ -38,6 +38,9 @@ class DotProductKernel : public Kernel{
 
         Eigen::VectorXd env_struc(const LocalEnvironment & env1,
                                   const StructureDescriptor & struc1);
+        
+        Eigen::VectorXd env_struc_partial(const LocalEnvironment & env1,
+            const StructureDescriptor & struc1, int atom);
 
 };
 
@@ -58,6 +61,9 @@ class TwoBodyKernel : public Kernel{
         
         Eigen::VectorXd env_struc(const LocalEnvironment & env1,
                                   const StructureDescriptor & struc1);
+    
+        Eigen::VectorXd env_struc_partial(const LocalEnvironment & env1,
+            const StructureDescriptor & struc1, int atom);
 };
 
 class ThreeBodyKernel : public Kernel{
@@ -77,6 +83,9 @@ class ThreeBodyKernel : public Kernel{
 
         Eigen::VectorXd env_struc(const LocalEnvironment & env1,
                                   const StructureDescriptor & struc1);
+
+        Eigen::VectorXd env_struc_partial(const LocalEnvironment & env1,
+            const StructureDescriptor & struc1, int atom);
 
         void update_kernel_vector(Eigen::VectorXd & kernel_vector,
             int no_elements, int i, double vol_inv,

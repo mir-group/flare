@@ -307,8 +307,9 @@ double ThreeBodyKernel :: env_env(const LocalEnvironment & env1,
     return sig2 * kern;
 }
 
-Eigen::VectorXd ThreeBodyKernel :: env_struc(const LocalEnvironment & env1,
-    const StructureDescriptor & struc1){
+Eigen::VectorXd ThreeBodyKernel :: env_struc_partial(
+    const LocalEnvironment & env1, const StructureDescriptor & struc1,
+    int atom){
 
     int no_elements = 1 + 3 * struc1.noa + 6;
     Eigen::VectorXd kernel_vector =
@@ -319,9 +320,9 @@ Eigen::VectorXd ThreeBodyKernel :: env_struc(const LocalEnvironment & env1,
         p2, p3, p4, xval1, xval2, xrel1, xrel2, yval1, yval2, yrel1,
         yrel2, zval1, zval2, zrel1, zrel2, fdjx1, fdjx2, fdjy1, fdjy2, fdjz1,
         fdjz2, fx1, fx2, fy1, fy2, fz1, fz2;
-    int i1, i2, j1, j2, ei1, ei2, ej1, ej2, c2;
+    int i1, i2, j1, j2, ei1, ei2, ej1, ej2;
 
-    LocalEnvironment env2;
+    LocalEnvironment env2 = struc1.local_environments[atom];
     double vol_inv = 1 / struc1.volume;
 
     double cut1 = env1.n_body_cutoffs[1];
@@ -329,137 +330,147 @@ Eigen::VectorXd ThreeBodyKernel :: env_struc(const LocalEnvironment & env1,
     double rcut_vals_i1[2], rcut_vals_i2[2], rcut_vals_i3[2],
         rcut_vals_j1[2], rcut_vals_j2[2], rcut_vals_j3[2];
     int c1 = env1.central_species;
+    int c2 = env2.central_species;
+        
+    for (int m = 0; m < env1.three_body_indices.size(); m ++){
+        i1 = env1.three_body_indices[m][0];
+        i2 = env1.three_body_indices[m][1];
 
-    for (int i = 0; i < struc1.noa; i ++){
-       env2 = struc1.local_environments[i];
-       c2 = env2.central_species;
+        ri1 = env1.rs[i1];
+        ri2 = env1.rs[i2];
+        ri3 = env1.cross_bond_dists[m];
 
-        for (int m = 0; m < env1.three_body_indices.size(); m ++){
-            i1 = env1.three_body_indices[m][0];
-            i2 = env1.three_body_indices[m][1];
+        ei1 = env1.environment_species[i1];
+        ei2 = env1.environment_species[i2];
 
-            ri1 = env1.rs[i1];
-            ri2 = env1.rs[i2];
-            ri3 = env1.cross_bond_dists[m];
+        (*cutoff_pointer)(rcut_vals_i1, ri1, cut1, cutoff_hyps);
+        (*cutoff_pointer)(rcut_vals_i2, ri2, cut1, cutoff_hyps);
+        (*cutoff_pointer)(rcut_vals_i3, ri3, cut1, cutoff_hyps);
 
-            ei1 = env1.environment_species[i1];
-            ei2 = env1.environment_species[i2];
+        fi1 = rcut_vals_i1[0];
+        fi2 = rcut_vals_i2[0];
+        fi3 = rcut_vals_i3[0];
+        fi = fi1 * fi2 * fi3;
 
-            (*cutoff_pointer)(rcut_vals_i1, ri1, cut1, cutoff_hyps);
-            (*cutoff_pointer)(rcut_vals_i2, ri2, cut1, cutoff_hyps);
-            (*cutoff_pointer)(rcut_vals_i3, ri3, cut1, cutoff_hyps);
+        for (int n = 0; n < env2.cross_bond_dists.size(); n ++){
+            j1 = env2.three_body_indices[n][0];
+            j2 = env2.three_body_indices[n][1];
 
-            fi1 = rcut_vals_i1[0];
-            fi2 = rcut_vals_i2[0];
-            fi3 = rcut_vals_i3[0];
-            fi = fi1 * fi2 * fi3;
+            rj1 = env2.rs[j1];
+            rj2 = env2.rs[j2];
+            rj3 = env2.cross_bond_dists[n];
 
-            for (int n = 0; n < env2.cross_bond_dists.size(); n ++){
-                j1 = env2.three_body_indices[n][0];
-                j2 = env2.three_body_indices[n][1];
+            ej1 = env2.environment_species[j1];
+            ej2 = env2.environment_species[j2];
 
-                rj1 = env2.rs[j1];
-                rj2 = env2.rs[j2];
-                rj3 = env2.cross_bond_dists[n];
+            xval1 = env2.xs[j1];
+            yval1 = env2.ys[j1];
+            zval1 = env2.zs[j1];
+            xrel1 = env2.xrel[j1];
+            yrel1 = env2.yrel[j1];
+            zrel1 = env2.zrel[j1];
 
-                ej1 = env2.environment_species[j1];
-                ej2 = env2.environment_species[j2];
+            xval2 = env2.xs[j2];
+            yval2 = env2.ys[j2];
+            zval2 = env2.zs[j2];
+            xrel2 = env2.xrel[j2];
+            yrel2 = env2.yrel[j2];
+            zrel2 = env2.zrel[j2];
 
-                xval1 = env2.xs[j1];
-                yval1 = env2.ys[j1];
-                zval1 = env2.zs[j1];
-                xrel1 = env2.xrel[j1];
-                yrel1 = env2.yrel[j1];
-                zrel1 = env2.zrel[j1];
+            (*cutoff_pointer)(rcut_vals_j1, rj1, cut2, cutoff_hyps);
+            (*cutoff_pointer)(rcut_vals_j2, rj2, cut2, cutoff_hyps);
+            (*cutoff_pointer)(rcut_vals_j3, rj3, cut2, cutoff_hyps);
 
-                xval2 = env2.xs[j2];
-                yval2 = env2.ys[j2];
-                zval2 = env2.zs[j2];
-                xrel2 = env2.xrel[j2];
-                yrel2 = env2.yrel[j2];
-                zrel2 = env2.zrel[j2];
+            fj1 = rcut_vals_j1[0];
+            fdj1 = rcut_vals_j1[1];
+            fj2 = rcut_vals_j2[0];
+            fdj2 = rcut_vals_j2[1];
+            fj3 = rcut_vals_j3[0];
+            fj = fj1 * fj2 * fj3;
 
-                (*cutoff_pointer)(rcut_vals_j1, rj1, cut2, cutoff_hyps);
-                (*cutoff_pointer)(rcut_vals_j2, rj2, cut2, cutoff_hyps);
-                (*cutoff_pointer)(rcut_vals_j3, rj3, cut2, cutoff_hyps);
+            fdjx1 = xrel1 * fdj1 * fj2 * fj3;
+            fdjy1 = yrel1 * fdj1 * fj2 * fj3;
+            fdjz1 = zrel1 * fdj1 * fj2 * fj3;
+            fdjx2 = xrel2 * fj1 * fdj2 * fj3;
+            fdjy2 = yrel2 * fj1 * fdj2 * fj3;
+            fdjz2 = zrel2 * fj1 * fdj2 * fj3;
 
-                fj1 = rcut_vals_j1[0];
-                fdj1 = rcut_vals_j1[1];
-                fj2 = rcut_vals_j2[0];
-                fdj2 = rcut_vals_j2[1];
-                fj3 = rcut_vals_j3[0];
-                fj = fj1 * fj2 * fj3;
+            r11 = ri1 - rj1;
+            r12 = ri1 - rj2;
+            r13 = ri1 - rj3;
+            r21 = ri2 - rj1;
+            r22 = ri2 - rj2;
+            r23 = ri2 - rj3;
+            r31 = ri3 - rj1;
+            r32 = ri3 - rj2;
+            r33 = ri3 - rj3;
 
-                fdjx1 = xrel1 * fdj1 * fj2 * fj3;
-                fdjy1 = yrel1 * fdj1 * fj2 * fj3;
-                fdjz1 = zrel1 * fdj1 * fj2 * fj3;
-                fdjx2 = xrel2 * fj1 * fdj2 * fj3;
-                fdjy2 = yrel2 * fj1 * fdj2 * fj3;
-                fdjz2 = zrel2 * fj1 * fdj2 * fj3;
-
-                r11 = ri1 - rj1;
-                r12 = ri1 - rj2;
-                r13 = ri1 - rj3;
-                r21 = ri2 - rj1;
-                r22 = ri2 - rj2;
-                r23 = ri2 - rj3;
-                r31 = ri3 - rj1;
-                r32 = ri3 - rj2;
-                r33 = ri3 - rj3;
-
-                // Sum over six permutations.
-                if (c1 == c2){
-                    if (ei1 == ej1 && ei2 == ej2){
-                        update_kernel_vector(kernel_vector, no_elements, i,
-                            vol_inv, r11, r22, r33, fi, fj,
-                            fdjx1, fdjx2, fdjy1, fdjy2, fdjz1, fdjz2,
-                            xrel1, xval1, xrel2, xval2, yrel1, yval1, yrel2,
-                            yval2, zrel1, zval1, zrel2, zval2);
-                    }
-                    if (ei1 == ej2 && ei2 == ej1){
-                        update_kernel_vector(kernel_vector, no_elements, i,
-                            vol_inv, r21, r12, r33, fi, fj,
-                            fdjx1, fdjx2, fdjy1, fdjy2, fdjz1, fdjz2,
-                            xrel1, xval1, xrel2, xval2, yrel1, yval1, yrel2,
-                            yval2, zrel1, zval1, zrel2, zval2);
-                    }
+            // Sum over six permutations.
+            if (c1 == c2){
+                if (ei1 == ej1 && ei2 == ej2){
+                    update_kernel_vector(kernel_vector, no_elements, atom,
+                        vol_inv, r11, r22, r33, fi, fj,
+                        fdjx1, fdjx2, fdjy1, fdjy2, fdjz1, fdjz2,
+                        xrel1, xval1, xrel2, xval2, yrel1, yval1, yrel2,
+                        yval2, zrel1, zval1, zrel2, zval2);
                 }
-
-                if (c1 == ej1){
-                    if (ei1 == ej2 && ei2 == c2){
-                        update_kernel_vector(kernel_vector, no_elements, i,
-                            vol_inv, r21, r32, r13, fi, fj,
-                            fdjx1, fdjx2, fdjy1, fdjy2, fdjz1, fdjz2,
-                            xrel1, xval1, xrel2, xval2, yrel1, yval1, yrel2,
-                            yval2, zrel1, zval1, zrel2, zval2);
-                    }
-                    if (ei1 == c2 && ei2 == ej2){
-                        update_kernel_vector(kernel_vector, no_elements, i,
-                            vol_inv, r11, r32, r23, fi, fj,
-                            fdjx1, fdjx2, fdjy1, fdjy2, fdjz1, fdjz2,
-                            xrel1, xval1, xrel2, xval2, yrel1, yval1, yrel2,
-                            yval2, zrel1, zval1, zrel2, zval2);
-                    }
+                if (ei1 == ej2 && ei2 == ej1){
+                    update_kernel_vector(kernel_vector, no_elements, atom,
+                        vol_inv, r21, r12, r33, fi, fj,
+                        fdjx1, fdjx2, fdjy1, fdjy2, fdjz1, fdjz2,
+                        xrel1, xval1, xrel2, xval2, yrel1, yval1, yrel2,
+                        yval2, zrel1, zval1, zrel2, zval2);
                 }
+            }
 
-                if (c1 == ej2){
-                    if (ei1 == ej1 && ei2 == c2){
-                        update_kernel_vector(kernel_vector, no_elements, i,
-                            vol_inv, r31, r22, r13, fi, fj,
-                            fdjx1, fdjx2, fdjy1, fdjy2, fdjz1, fdjz2,
-                            xrel1, xval1, xrel2, xval2, yrel1, yval1, yrel2,
-                            yval2, zrel1, zval1, zrel2, zval2);
-                    }
-                    if (ei1 == c2 && ei2 == ej1){
-                        update_kernel_vector(kernel_vector, no_elements, i,
-                            vol_inv, r31, r12, r23, fi, fj,
-                            fdjx1, fdjx2, fdjy1, fdjy2, fdjz1, fdjz2,
-                            xrel1, xval1, xrel2, xval2, yrel1, yval1, yrel2,
-                            yval2, zrel1, zval1, zrel2, zval2);
-                    }
+            if (c1 == ej1){
+                if (ei1 == ej2 && ei2 == c2){
+                    update_kernel_vector(kernel_vector, no_elements, atom,
+                        vol_inv, r21, r32, r13, fi, fj,
+                        fdjx1, fdjx2, fdjy1, fdjy2, fdjz1, fdjz2,
+                        xrel1, xval1, xrel2, xval2, yrel1, yval1, yrel2,
+                        yval2, zrel1, zval1, zrel2, zval2);
+                }
+                if (ei1 == c2 && ei2 == ej2){
+                    update_kernel_vector(kernel_vector, no_elements, atom,
+                        vol_inv, r11, r32, r23, fi, fj,
+                        fdjx1, fdjx2, fdjy1, fdjy2, fdjz1, fdjz2,
+                        xrel1, xval1, xrel2, xval2, yrel1, yval1, yrel2,
+                        yval2, zrel1, zval1, zrel2, zval2);
+                }
+            }
+
+            if (c1 == ej2){
+                if (ei1 == ej1 && ei2 == c2){
+                    update_kernel_vector(kernel_vector, no_elements, atom,
+                        vol_inv, r31, r22, r13, fi, fj,
+                        fdjx1, fdjx2, fdjy1, fdjy2, fdjz1, fdjz2,
+                        xrel1, xval1, xrel2, xval2, yrel1, yval1, yrel2,
+                        yval2, zrel1, zval1, zrel2, zval2);
+                }
+                if (ei1 == c2 && ei2 == ej1){
+                    update_kernel_vector(kernel_vector, no_elements, atom,
+                        vol_inv, r31, r12, r23, fi, fj,
+                        fdjx1, fdjx2, fdjy1, fdjy2, fdjz1, fdjz2,
+                        xrel1, xval1, xrel2, xval2, yrel1, yval1, yrel2,
+                        yval2, zrel1, zval1, zrel2, zval2);
                 }
             }
         }
+    }
+
+    return kernel_vector;
+}
+
+Eigen::VectorXd ThreeBodyKernel :: env_struc(const LocalEnvironment & env1,
+    const StructureDescriptor & struc1){
+
+    int no_elements = 1 + 3 * struc1.noa + 6;
+    Eigen::VectorXd kernel_vector =
+        Eigen::VectorXd::Zero(no_elements);
+
+    for (int i = 0; i < struc1.noa; i ++){
+       kernel_vector += env_struc_partial(env1, struc1, i);
     }
 
     return kernel_vector;
