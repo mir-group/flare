@@ -18,6 +18,10 @@ class Kernel{
         virtual double env_env(const LocalEnvironment & env1,
                                const LocalEnvironment & env2) = 0;
 
+        virtual Eigen::VectorXd env_struc_partial(
+            const LocalEnvironment & env1, const StructureDescriptor & struc1,
+            int atom) = 0;
+
         virtual Eigen::VectorXd env_struc(const LocalEnvironment & env1,
             const StructureDescriptor & struc1) = 0;
         
@@ -35,13 +39,12 @@ class DotProductKernel : public Kernel{
 
         double env_env(const LocalEnvironment & env1,
                        const LocalEnvironment & env2);
-
-        Eigen::VectorXd env_struc(const LocalEnvironment & env1,
-                                  const StructureDescriptor & struc1);
         
         Eigen::VectorXd env_struc_partial(const LocalEnvironment & env1,
             const StructureDescriptor & struc1, int atom);
 
+        Eigen::VectorXd env_struc(const LocalEnvironment & env1,
+                                  const StructureDescriptor & struc1);
 };
 
 class TwoBodyKernel : public Kernel{
@@ -58,12 +61,12 @@ class TwoBodyKernel : public Kernel{
 
         double env_env(const LocalEnvironment & env1,
                        const LocalEnvironment & env2);
-        
-        Eigen::VectorXd env_struc(const LocalEnvironment & env1,
-                                  const StructureDescriptor & struc1);
-    
+
         Eigen::VectorXd env_struc_partial(const LocalEnvironment & env1,
             const StructureDescriptor & struc1, int atom);
+
+        Eigen::VectorXd env_struc(const LocalEnvironment & env1,
+                                  const StructureDescriptor & struc1);
 };
 
 class ThreeBodyKernel : public Kernel{
@@ -81,11 +84,11 @@ class ThreeBodyKernel : public Kernel{
         double env_env(const LocalEnvironment & env1,
                        const LocalEnvironment & env2);
 
-        Eigen::VectorXd env_struc(const LocalEnvironment & env1,
-                                  const StructureDescriptor & struc1);
-
         Eigen::VectorXd env_struc_partial(const LocalEnvironment & env1,
             const StructureDescriptor & struc1, int atom);
+
+        Eigen::VectorXd env_struc(const LocalEnvironment & env1,
+                                  const StructureDescriptor & struc1);
 
         void update_kernel_vector(Eigen::VectorXd & kernel_vector,
             int no_elements, int i, double vol_inv,
