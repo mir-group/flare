@@ -101,7 +101,7 @@ PYBIND11_MODULE(ace, m){
     py::class_<B2_Calculator, DescriptorCalculator>(m, "B2_Calculator")
         .def(py::init<const std::string &, const std::string &,
              const std::vector<double> &, const std::vector<double> &,
-             const std::vector<int> &>());
+             const std::vector<int> &, int>());
 
     // Kernel functions
     py::class_<Kernel>(m, "Kernel")

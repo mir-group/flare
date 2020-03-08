@@ -22,6 +22,8 @@ class SparseGP{
 
         double sigma_e, sigma_f, sigma_s;
 
+        double log_marginal_likelihood, data_fit, complexity_penalty;
+
         SparseGP();
 
         SparseGP(std::vector<Kernel *>, double sigma_e, double sigma_f,
@@ -35,6 +37,8 @@ class SparseGP{
             training_structure);
 
         void update_alpha();
+
+        void compute_likelihood();
 
         Eigen::VectorXd predict(StructureDescriptor test_structure);
         Eigen::VectorXd predict_serial(StructureDescriptor test_structure);
