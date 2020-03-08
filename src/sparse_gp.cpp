@@ -330,7 +330,9 @@ void SparseGP :: add_training_structure(StructureDescriptor training_structure){
 
 void SparseGP::update_alpha(){
     Eigen::MatrixXd sigma_inv = Kuu + Kuf * noise_matrix * Kuf.transpose();
+    // TODO: Use Woodbury identity to perform inversion once.
     Sigma = sigma_inv.inverse();
+    Kuu_inverse = Kuu.inverse();
     alpha = Sigma * Kuf * noise_matrix * y;
 }
 

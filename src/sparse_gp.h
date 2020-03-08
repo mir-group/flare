@@ -10,7 +10,7 @@
 
 class SparseGP{
     public:
-        Eigen::MatrixXd Kuu, Kuf, Sigma, noise_matrix;
+        Eigen::MatrixXd Kuu, Kuf, Sigma, Kuu_inverse, noise_matrix;
         Eigen::VectorXd y, alpha, hyperparameters, noise;
         std::vector<Kernel *> kernels;
 
@@ -42,6 +42,9 @@ class SparseGP{
 
         Eigen::VectorXd predict(StructureDescriptor test_structure);
         Eigen::VectorXd predict_serial(StructureDescriptor test_structure);
+
+        void predict_distribution(StructureDescriptor test_structure,
+            Eigen::VectorXd & mean_vector, Eigen::VectorXd & std_vector);
 };
 
 #endif
