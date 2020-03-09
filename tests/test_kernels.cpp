@@ -27,8 +27,8 @@ class KernelTest : public ::testing::Test{
         std::vector<double> radial_hyps {0, 5};
         std::vector<double> cutoff_hyps;
         std::vector<int> descriptor_settings {2, 5, 5};
-        double cutoff = 6;
-        std::vector<double> nested_cutoffs {5, 4};
+        double cutoff = 10;
+        std::vector<double> nested_cutoffs {5, 5};
         std::vector<double> many_body_cutoffs {3};
         B2_Calculator desc1;
         std::vector<DescriptorCalculator *> descriptor_calculators;
@@ -80,6 +80,10 @@ class KernelTest : public ::testing::Test{
         kern_vec = kernel.env_struc(test_env, test_struc);
         kern_vec_2 = two_body_kernel.env_struc(test_env, test_struc);
         kern_vec_3 = three_body_kernel.env_struc(test_env, test_struc);
+
+        // std::cout << kern_vec(0) << std::endl;
+        // std::cout << kern_vec_2(0) << std::endl;
+        // std::cout << kern_vec_3(0) << std::endl;
     }
 };
 
@@ -139,6 +143,11 @@ TEST_F(KernelTest, TwoBodyForceTest){
 
 TEST_F(KernelTest, ThreeBodyForceTest){
     // Perturb the coordinates of the environment atoms.
+    // std::cout << test_env.rs.size() << std::endl;
+    // std::cout << kern_vec_3(1) << std::endl;
+    std::cout  << test_env.n_body_indices.size() << std::endl;
+    // std::cout << test_env.three_body_indices.size() << std::endl;
+    // std::cout << test_struc.n_body_cutoffs[1] << std::endl;
     double thresh = 1e-5;
     int noa = 5;
     double delta = 1e-8;

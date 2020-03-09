@@ -28,28 +28,13 @@ class Kernel{
         virtual ~Kernel() = default;
 };
 
-class DotProductKernel : public Kernel{
-    public:
-        double sigma, sig2, power;
-        int descriptor_index;
-
-        DotProductKernel();
-
-        DotProductKernel(double sigma, double power, int descriptor_index);
-
-        double env_env(const LocalEnvironment & env1,
-                       const LocalEnvironment & env2);
-        
-        Eigen::VectorXd env_struc_partial(const LocalEnvironment & env1,
-            const StructureDescriptor & struc1, int atom);
-
-        Eigen::VectorXd env_struc(const LocalEnvironment & env1,
-                                  const StructureDescriptor & struc1);
-};
+double force_helper(double rel1_rel2, double diff_rel1, double diff_rel2,
+    double diff_sq, double fi, double fj, double fdi, double fdj, double ls1,
+    double ls2, double ls3, double sig2);
 
 class TwoBodyKernel : public Kernel{
     public:
-        double sigma, sig2, ls, ls1, ls2;
+        double sigma, sig2, ls, ls1, ls2, ls3;
         void (*cutoff_pointer)(double *, double, double, std::vector<double>);
         std::vector<double> cutoff_hyps;
 
@@ -62,6 +47,9 @@ class TwoBodyKernel : public Kernel{
         double env_env(const LocalEnvironment & env1,
                        const LocalEnvironment & env2);
 
+        Eigen::VectorXd self_kernel(const StructureDescriptor & struc1,
+            int atom);
+
         Eigen::VectorXd env_struc_partial(const LocalEnvironment & env1,
             const StructureDescriptor & struc1, int atom);
 
@@ -71,7 +59,7 @@ class TwoBodyKernel : public Kernel{
 
 class ThreeBodyKernel : public Kernel{
     public:
-        double sigma, sig2, ls, ls1, ls2;
+        double sigma, sig2, ls, ls1, ls2, ls3;
         void (*cutoff_pointer)(double *, double, double, std::vector<double>);
         std::vector<double> cutoff_hyps;
 
@@ -83,6 +71,9 @@ class ThreeBodyKernel : public Kernel{
 
         double env_env(const LocalEnvironment & env1,
                        const LocalEnvironment & env2);
+
+        Eigen::VectorXd self_kernel(const StructureDescriptor & struc1,
+            int atom);
 
         Eigen::VectorXd env_struc_partial(const LocalEnvironment & env1,
             const StructureDescriptor & struc1, int atom);
@@ -98,6 +89,28 @@ class ThreeBodyKernel : public Kernel{
             double xrel1, double xval1, double xrel2, double xval2,
             double yrel1, double yval1, double yrel2, double yval2,
             double zrel1, double zval1, double zrel2, double zval2);
+};
+
+class DotProductKernel : public Kernel{
+    public:
+        double sigma, sig2, power;
+        int descriptor_index;
+
+        DotProductKernel();
+
+        DotProductKernel(double sigma, double power, int descriptor_index);
+
+        double env_env(const LocalEnvironment & env1,
+                       const LocalEnvironment & env2);
+
+        Eigen::VectorXd self_kernel(const StructureDescriptor & struc1,
+            int atom);
+
+        Eigen::VectorXd env_struc_partial(const LocalEnvironment & env1,
+            const StructureDescriptor & struc1, int atom);
+
+        Eigen::VectorXd env_struc(const LocalEnvironment & env1,
+                                  const StructureDescriptor & struc1);
 };
 
 #endif
