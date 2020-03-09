@@ -54,7 +54,7 @@ void construct_calculator(B2_Calculator** calc) {
     std::vector<int> descriptor_settings {5, 10, 10};
 
     (*calc) = new B2_Calculator(radial_string, cutoff_string, radial_hyps,
-                            cutoff_hyps, descriptor_settings);
+                            cutoff_hyps, descriptor_settings, 0);
 }
 
 void deconstruct_calculator(B2_Calculator* calc) {
