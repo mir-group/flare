@@ -27,15 +27,17 @@ class KernelTest : public ::testing::Test{
         std::vector<double> radial_hyps {0, 5};
         std::vector<double> cutoff_hyps;
         std::vector<int> descriptor_settings {2, 5, 5};
-        double cutoff = 5;
-        std::vector<double> nested_cutoffs {5, 5};
+        double cutoff = 6;
+        std::vector<double> nested_cutoffs {5, 4};
+        std::vector<double> many_body_cutoffs {3};
         B2_Calculator desc1;
+        std::vector<DescriptorCalculator *> descriptor_calculators;
+        int descriptor_index = 0;
 
         // kernel
         double signal_variance = 2;
         double length_scale = 1;
         double power = 2;
-        std::vector<double> kernel_hyperparameters {signal_variance, power};
         DotProductKernel kernel;
         TwoBodyKernel two_body_kernel;
         ThreeBodyKernel three_body_kernel;
@@ -59,19 +61,21 @@ class KernelTest : public ::testing::Test{
                        0.35585787, -0.87190223, 0.06770428;
 
         desc1 = B2_Calculator(radial_string, cutoff_string,
-            radial_hyps, cutoff_hyps, descriptor_settings);
+            radial_hyps, cutoff_hyps, descriptor_settings, 0);
+        descriptor_calculators.push_back(&desc1);
+
         test_struc = StructureDescriptor(cell, species, positions, cutoff,
-                                         nested_cutoffs, &desc1);
+            nested_cutoffs, many_body_cutoffs, descriptor_calculators);
 
         test_struc_2 = StructureDescriptor(cell, species, positions_2, cutoff,
-                                           nested_cutoffs, &desc1);
-        test_env = test_struc_2.environment_descriptors[0];
+            nested_cutoffs, many_body_cutoffs, descriptor_calculators);
+        test_env = test_struc_2.local_environments[0];
 
-        kernel = DotProductKernel(kernel_hyperparameters);
-        two_body_kernel = TwoBodyKernel(length_scale, cutoff_string,
-            cutoff_hyps);
-        three_body_kernel = ThreeBodyKernel(length_scale, cutoff_string,
-            cutoff_hyps);
+        kernel = DotProductKernel(signal_variance, power, descriptor_index);
+        two_body_kernel = TwoBodyKernel(signal_variance, length_scale,
+            cutoff_string, cutoff_hyps);
+        three_body_kernel = ThreeBodyKernel(signal_variance, length_scale,
+        cutoff_string, cutoff_hyps);
 
         kern_vec = kernel.env_struc(test_env, test_struc);
         kern_vec_2 = two_body_kernel.env_struc(test_env, test_struc);
@@ -80,10 +84,10 @@ class KernelTest : public ::testing::Test{
 };
 
 TEST_F(KernelTest, NormTest){
-    LocalEnvironment env1 = test_struc.environment_descriptors[0];
-    LocalEnvironment env2 = test_struc.environment_descriptors[1];
+    LocalEnvironment env1 = test_struc.local_environments[0];
+    LocalEnvironment env2 = test_struc.local_environments[1];
     double kern_val = kernel.env_env(env1, env1);
-    EXPECT_NEAR(kern_val, 1, THRESHOLD);
+    EXPECT_NEAR(kern_val, signal_variance*signal_variance, THRESHOLD);
 }
 
 TEST_F(KernelTest, ForceTest){
@@ -97,8 +101,9 @@ TEST_F(KernelTest, ForceTest){
         for (int m = 0; m < 3; m ++){
             positions_3 = positions;
             positions_3(p, m) += delta;
-            test_struc_3 =  StructureDescriptor(cell, species, positions_3,
-                                                cutoff, nested_cutoffs, &desc1);
+            test_struc_3 = StructureDescriptor(cell, species, positions_3,
+                cutoff, nested_cutoffs, many_body_cutoffs,
+                descriptor_calculators);
             kern_pert = kernel.env_struc(test_env, test_struc_3);
             fin_val = -(kern_pert(0) - kern_vec(0)) / delta;
             exact_val = kern_vec(1 + 3 * p + m);
@@ -121,7 +126,8 @@ TEST_F(KernelTest, TwoBodyForceTest){
             positions_3 = positions;
             positions_3(p, m) += delta;
             test_struc_3 =  StructureDescriptor(cell, species, positions_3,
-                                                cutoff, nested_cutoffs, &desc1);
+                cutoff, nested_cutoffs, many_body_cutoffs,
+                descriptor_calculators);
             kern_pert = two_body_kernel.env_struc(test_env, test_struc_3);
             fin_val = -(kern_pert(0) - kern_vec_2(0)) / delta;
             exact_val = kern_vec_2(1 + 3 * p + m);
@@ -143,7 +149,8 @@ TEST_F(KernelTest, ThreeBodyForceTest){
             positions_3 = positions;
             positions_3(p, m) += delta;
             test_struc_3 =  StructureDescriptor(cell, species, positions_3,
-                                                cutoff, nested_cutoffs, &desc1);
+                cutoff, nested_cutoffs, many_body_cutoffs,
+                descriptor_calculators);
             kern_pert = three_body_kernel.env_struc(test_env, test_struc_3);
             fin_val = -(kern_pert(0) - kern_vec_3(0)) / delta;
             exact_val = kern_vec_3(1 + 3 * p + m);
@@ -175,7 +182,8 @@ TEST_F(KernelTest, StressTest){
             }
 
             test_struc_3 = StructureDescriptor(cell_2, species, positions_3,
-                                               cutoff, nested_cutoffs, &desc1);
+                cutoff, nested_cutoffs, many_body_cutoffs,
+                descriptor_calculators);
 
             kern_pert = kernel.env_struc(test_env, test_struc_3);
             fin_val = -(kern_pert(0) - kern_vec(0)) / delta;
@@ -212,7 +220,8 @@ TEST_F(KernelTest, TwoBodyStressTest){
             }
 
             test_struc_3 = StructureDescriptor(cell_2, species, positions_3,
-                                               cutoff, nested_cutoffs, &desc1);
+                cutoff, nested_cutoffs, many_body_cutoffs,
+                descriptor_calculators);
 
             kern_pert = two_body_kernel.env_struc(test_env, test_struc_3);
             fin_val = -(kern_pert(0) - kern_vec_2(0)) / delta;
@@ -249,7 +258,8 @@ TEST_F(KernelTest, ThreeBodyStressTest){
             }
 
             test_struc_3 = StructureDescriptor(cell_2, species, positions_3,
-                                               cutoff, nested_cutoffs, &desc1);
+                cutoff, nested_cutoffs, many_body_cutoffs,
+                descriptor_calculators);
 
             kern_pert = three_body_kernel.env_struc(test_env, test_struc_3);
             fin_val = -(kern_pert(0) - kern_vec_3(0)) / delta;

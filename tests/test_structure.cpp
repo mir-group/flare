@@ -12,6 +12,7 @@ class StructureTest : public ::testing::Test{
         std::vector<int> species {0, 1, 2, 3, 4};
         Eigen::MatrixXd positions{5, 3};
         B2_Calculator desc1;
+        std::vector<DescriptorCalculator *> descriptor_calculators;
         StructureDescriptor test_struc;
 
         std::string radial_string = "chebyshev";
@@ -19,7 +20,9 @@ class StructureTest : public ::testing::Test{
         std::vector<double> radial_hyps {0, 5};
         std::vector<double> cutoff_hyps;
         std::vector<int> descriptor_settings {5, 5, 5};
+        int descriptor_index = 0;
         double cutoff = 3;
+        std::vector<double> many_body_cutoffs {cutoff};
 
     StructureTest(){
         cell << 4.0, 0.5, 0.8,
@@ -33,9 +36,10 @@ class StructureTest : public ::testing::Test{
                      3.2, 1.1, 3.3;
 
         desc1 = B2_Calculator(radial_string, cutoff_string,
-            radial_hyps, cutoff_hyps, descriptor_settings);
+            radial_hyps, cutoff_hyps, descriptor_settings, descriptor_index);
+        descriptor_calculators.push_back(&desc1);
         test_struc = StructureDescriptor(cell, species, positions, cutoff, 
-            &desc1);
+            many_body_cutoffs, descriptor_calculators);
     }
 };
 
@@ -65,17 +69,18 @@ TEST_F(StructureTest, StructureDescriptor){
     // Check that structure descriptors match environment descriptors.
     LocalEnvironment env;
     for (int i = 0; i < test_struc.species.size(); i ++){
-        env = LocalEnvironment(test_struc, i, cutoff);
+        env = LocalEnvironment(test_struc, i, cutoff, many_body_cutoffs,
+            descriptor_calculators);
         desc1.compute(env);
 
         for (int j = 0; j < desc1.descriptor_vals.size(); j ++){
             EXPECT_EQ(desc1.descriptor_vals(j),
-                      test_struc.environment_descriptors[i]
-                        .descriptor_vals(j));
+                      test_struc.local_environments[i]
+                        .descriptor_vals[0](j));
             for (int k = 0; k < test_struc.species.size(); k ++){
                 EXPECT_EQ(desc1.descriptor_force_dervs(k, j),
-                          test_struc.environment_descriptors[i]
-                            .descriptor_force_dervs(k, j));
+                          test_struc.local_environments[i]
+                            .descriptor_force_dervs[0](k, j));
             }
         }
     }

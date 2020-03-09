@@ -4,6 +4,7 @@
 #include "structure.h"
 #include "cutoffs.h"
 #include "radial.h"
+#include "descriptor.h"
 #include <iostream>
 #include <cmath>
 #include <Eigen/Dense>
@@ -23,6 +24,7 @@ class BondEnv : public ::testing::Test{
     LocalEnvironment env1, env2;
 
     double rcut = 3;
+    std::vector<double> many_body_cutoffs {rcut};
  
     // Prepare cutoff.
     std::vector<double> cutoff_hyps;
@@ -62,6 +64,8 @@ class BondEnv : public ::testing::Test{
 
         struc1 = Structure(cell, species, positions_1);
         env1 = LocalEnvironment(struc1, 0, rcut);
+        env1.many_body_cutoffs = many_body_cutoffs;
+        env1.compute_indices();
 
         single_bond_vals =Eigen::VectorXd::Zero(no_descriptors);
         force_dervs = Eigen::MatrixXd::Zero(noa * 3, no_descriptors);
@@ -72,7 +76,7 @@ class BondEnv : public ::testing::Test{
 
 TEST_F(BondEnv, CentTest){
     single_bond_sum_env(single_bond_vals, force_dervs, stress_dervs,
-        basis_function, cutoff_function, env1, rcut, N, lmax,
+        basis_function, cutoff_function, env1, 0, N, lmax,
         radial_hyps, cutoff_hyps);
 
     // Perturb the coordinates of the central atom.
@@ -81,6 +85,8 @@ TEST_F(BondEnv, CentTest){
         positions_2(0, m) += delta;
         struc2 =  Structure(cell, species, positions_2);
         env2 = LocalEnvironment(struc2, 0, rcut);
+        env2.many_body_cutoffs = many_body_cutoffs;
+        env2.compute_indices();
 
         // Initialize matrices.
         single_bond_vals_2 = Eigen::VectorXd::Zero(no_descriptors);
@@ -88,7 +94,7 @@ TEST_F(BondEnv, CentTest){
         stress_dervs_2 = Eigen::MatrixXd::Zero(6, no_descriptors);
 
         single_bond_sum_env(single_bond_vals_2, force_dervs_2, stress_dervs_2,
-            basis_function, cutoff_function, env2, rcut, N, lmax,
+            basis_function, cutoff_function, env2, 0, N, lmax,
             radial_hyps, cutoff_hyps);
 
         double finite_diff, exact, diff;
@@ -107,7 +113,7 @@ TEST_F(BondEnv, CentTest){
 
 TEST_F(BondEnv, EnvTest){
     single_bond_sum_env(single_bond_vals, force_dervs, stress_dervs,
-        basis_function, cutoff_function, env1, rcut, N, lmax,
+        basis_function, cutoff_function, env1, 0, N, lmax,
         radial_hyps, cutoff_hyps);
 
     double finite_diff, exact, diff;
@@ -120,6 +126,8 @@ TEST_F(BondEnv, EnvTest){
             positions_2(p, m) += delta;
             struc2 =  Structure(cell, species, positions_2);
             env2 = LocalEnvironment(struc2, 0, rcut);
+            env2.many_body_cutoffs = many_body_cutoffs;
+            env2.compute_indices();
 
             // Initialize matrices.
             single_bond_vals_2 = Eigen::VectorXd::Zero(no_descriptors);
@@ -127,7 +135,7 @@ TEST_F(BondEnv, EnvTest){
             stress_dervs_2 = Eigen::MatrixXd::Zero(6, no_descriptors);
 
             single_bond_sum_env(single_bond_vals_2, force_dervs_2,
-                stress_dervs_2, basis_function, cutoff_function, env2, rcut,
+                stress_dervs_2, basis_function, cutoff_function, env2, 0,
                 N, lmax, radial_hyps, cutoff_hyps);
 
             // Check derivatives.
@@ -148,7 +156,7 @@ TEST_F(BondEnv, StressTest){
     double tolerance = 1e-5;
 
     single_bond_sum_env(single_bond_vals, force_dervs, stress_dervs,
-        basis_function, cutoff_function, env1, rcut, N, lmax,
+        basis_function, cutoff_function, env1, 0, N, lmax,
         radial_hyps, cutoff_hyps);
 
     // Test all 6 independent strains (xx, xy, xz, yy, yz, zz).
@@ -167,6 +175,8 @@ TEST_F(BondEnv, StressTest){
 
             struc2 = Structure(cell_2, species, positions_2);
             env2 = LocalEnvironment(struc2, 0, rcut);
+            env2.many_body_cutoffs = many_body_cutoffs;
+            env2.compute_indices();
 
             single_bond_vals_2 = Eigen::VectorXd::Zero(no_descriptors);
             force_dervs_2 = Eigen::MatrixXd::Zero(noa * 3, no_descriptors);
@@ -174,7 +184,7 @@ TEST_F(BondEnv, StressTest){
 
             // Calculate descriptors.
             single_bond_sum_env(single_bond_vals_2, force_dervs_2,
-                stress_dervs_2, basis_function, cutoff_function, env2, rcut,
+                stress_dervs_2, basis_function, cutoff_function, env2, 0,
                 N, lmax, radial_hyps, cutoff_hyps);
 
             // Check stress derivatives.

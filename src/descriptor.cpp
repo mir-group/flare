@@ -13,13 +13,15 @@ DescriptorCalculator::DescriptorCalculator(
         const std::string & radial_basis, const std::string & cutoff_function,
         const std::vector<double> & radial_hyps,
         const std::vector<double> & cutoff_hyps,
-        const std::vector<int> & descriptor_settings){
+        const std::vector<int> & descriptor_settings,
+        int descriptor_index){
 
     this->radial_basis = radial_basis;
     this->cutoff_function = cutoff_function;
     this->radial_hyps = radial_hyps;
     this->cutoff_hyps = cutoff_hyps;
     this->descriptor_settings = descriptor_settings;
+    this->descriptor_index = descriptor_index;
 
     if (radial_basis == "chebyshev"){
         this->radial_pointer = chebyshev;
@@ -81,6 +83,7 @@ for (int n1 = no_radial-1; n1 >= 0; n1 --){
                     single_bond_vals(n2_l);
 
                 // Store force derivatives.
+                // TODO: loop over many body indices, not entire neighbor list
                 for (int atom_index = 0; atom_index < neigh_size;
                      atom_index ++){
                     env_ind = env.neighbor_list[atom_index];
@@ -116,9 +119,10 @@ B1_Calculator :: B1_Calculator(const std::string & radial_basis,
     const std::string & cutoff_function,
     const std::vector<double> & radial_hyps,
     const std::vector<double> & cutoff_hyps,
-    const std::vector<int> & descriptor_settings)
+    const std::vector<int> & descriptor_settings,
+    int descriptor_index)
     : DescriptorCalculator(radial_basis, cutoff_function, radial_hyps,
-        cutoff_hyps, descriptor_settings){}
+        cutoff_hyps, descriptor_settings, descriptor_index){}
 
 void B1_Calculator :: compute(const LocalEnvironment & env){
     // Initialize single bond vectors.
@@ -136,7 +140,7 @@ void B1_Calculator :: compute(const LocalEnvironment & env){
     // Compute single bond vector.
     single_bond_sum_env(single_bond_vals, single_bond_force_dervs,
                         single_bond_stress_dervs, radial_pointer,
-                        cutoff_pointer, env, env.cutoff, N,
+                        cutoff_pointer, env, descriptor_index, N,
                         lmax, radial_hyps, cutoff_hyps);
 
     // Set B1 values.
@@ -151,9 +155,10 @@ B2_Calculator :: B2_Calculator(const std::string & radial_basis,
     const std::string & cutoff_function,
     const std::vector<double> & radial_hyps,
     const std::vector<double> & cutoff_hyps,
-    const std::vector<int> & descriptor_settings)
+    const std::vector<int> & descriptor_settings,
+    int descriptor_index)
     : DescriptorCalculator(radial_basis, cutoff_function, radial_hyps,
-        cutoff_hyps, descriptor_settings){}
+        cutoff_hyps, descriptor_settings, descriptor_index){}
 
 void B2_Calculator :: compute(const LocalEnvironment & env){
     // Initialize single bond vectors.
@@ -176,7 +181,7 @@ void B2_Calculator :: compute(const LocalEnvironment & env){
     // Compute single bond vector.
     single_bond_sum_env(single_bond_vals, single_bond_force_dervs,
                         single_bond_stress_dervs, radial_pointer,
-                        cutoff_pointer, env, env.cutoff, N,
+                        cutoff_pointer, env, descriptor_index, N,
                         lmax, radial_hyps, cutoff_hyps);
 
     // Initialize B2 vectors.

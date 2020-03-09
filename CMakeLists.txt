@@ -36,9 +36,12 @@ add_subdirectory(tests)
 add_subdirectory(timing)
 add_subdirectory(pybind11)
 add_subdirectory(googletest)
+add_subdirectory(parallel_tests)
 
 # make python bindings
 pybind11_add_module(ace src/ace_binding.cpp src/y_grad.cpp src/structure.cpp
 		    src/local_environment.cpp src/descriptor.cpp
 		    src/radial.cpp src/cutoffs.cpp src/single_bond.cpp
 		    src/kernels.cpp src/sparse_gp.cpp)
+find_package(OpenMP REQUIRED)
+target_link_libraries(ace PRIVATE OpenMP::OpenMP_CXX)

@@ -2,6 +2,8 @@
 #include <cmath>
 #include  <iostream>
 
+// TODO: carefully review and edit changes
+
 LocalEnvironment :: LocalEnvironment(){}
 
 LocalEnvironment :: LocalEnvironment(const Structure & structure, int atom,
@@ -36,32 +38,39 @@ LocalEnvironment :: LocalEnvironment(const Structure & structure, int atom,
     this->zrel = zrel;
 }
 
+// n-body
 LocalEnvironment :: LocalEnvironment(const Structure & structure, int atom,
-    double cutoff, std::vector<double> nested_cutoffs)
+    double cutoff, std::vector<double> n_body_cutoffs)
     : LocalEnvironment(structure, atom, cutoff){
 
-    this->nested_cutoffs = nested_cutoffs;
-    compute_nested_environment();
+    this->n_body_cutoffs = n_body_cutoffs;
+    compute_indices();
 }
 
-// TODO: base "compute descriptor" on many body cutoff.
+// many-body
 LocalEnvironment :: LocalEnvironment(const Structure & structure, int atom,
-    double cutoff, DescriptorCalculator * descriptor_calculator)
+    double cutoff, std::vector<double> many_body_cutoffs,
+    std::vector<DescriptorCalculator *> descriptor_calculators)
     : LocalEnvironment(structure, atom, cutoff){
 
-    this->descriptor_calculator = descriptor_calculator;
-    compute_descriptor();
+    this->many_body_cutoffs = many_body_cutoffs;
+    this->descriptor_calculators = descriptor_calculators;
+    compute_indices();
+    compute_descriptors();
 }
 
+// n-body + many-body
 LocalEnvironment :: LocalEnvironment(const Structure & structure, int atom,
-    double cutoff, std::vector<double> nested_cutoffs,
-    DescriptorCalculator * descriptor_calculator)
+    double cutoff, std::vector<double> n_body_cutoffs,
+    std::vector<double> many_body_cutoffs,
+    std::vector<DescriptorCalculator *> descriptor_calculators)
     : LocalEnvironment(structure, atom, cutoff){
 
-    this->nested_cutoffs = nested_cutoffs;
-    this->descriptor_calculator = descriptor_calculator;
-    compute_nested_environment();
-    compute_descriptor();
+    this->n_body_cutoffs = n_body_cutoffs;
+    this->many_body_cutoffs = many_body_cutoffs;
+    this->descriptor_calculators = descriptor_calculators;
+    compute_indices();
+    compute_descriptors();
 }
 
 void LocalEnvironment :: compute_environment(
@@ -174,25 +183,48 @@ void LocalEnvironment :: compute_environment(
     delete [] dists; delete [] xvals; delete [] yvals; delete [] zvals;
 }
 
-void LocalEnvironment :: compute_nested_environment(){
-
-    double two_body_cutoff = nested_cutoffs[0];
-    double three_body_cutoff = nested_cutoffs[1];
-    double many_body_cutoff = nested_cutoffs[2];
+void LocalEnvironment :: compute_indices(){
 
     int no_atoms = rs.size();
     std::vector<int> three_body_inds;
 
+    // Initialize a list of lists storing atom indices.
+    int n_cutoffs = n_body_cutoffs.size();
+    std::vector<int> empty;
+    for (int i = 0; i < n_cutoffs; i ++){
+        n_body_indices.push_back(empty);
+    }
+
+    int n_mb_cutoffs = many_body_cutoffs.size();
+    for (int i = 0; i < n_mb_cutoffs; i ++){
+        many_body_indices.push_back(empty);
+    }
+
     // Store indices of atoms inside the 2-, 3-, and many-body cutoff spheres.
+    double current_cutoff;
     for (int i = 0; i < no_atoms; i ++){
         double r_curr = rs[i];
-        if (r_curr <= two_body_cutoff) two_body_indices.push_back(i);
-        if (r_curr <= three_body_cutoff) three_body_inds.push_back(i);
-        if (r_curr <= many_body_cutoff) many_body_indices.push_back(i);
+        
+        // Store n-body index
+        for (int j = 0; j < n_cutoffs; j ++){
+            current_cutoff = n_body_cutoffs[j];
+            if (r_curr < current_cutoff){
+                n_body_indices[j].push_back(i);
+            }
+        }
+
+        // Store body index
+        for (int j = 0; j < n_mb_cutoffs; j ++){
+            current_cutoff = many_body_cutoffs[j];
+            if (r_curr < current_cutoff){
+                many_body_indices[j].push_back(i);
+            }
+        }
     }
 
     // Store triplets if the 3-body cutoff is nonzero.
-    if (three_body_cutoff > 0){
+    if (n_cutoffs > 1){
+        double three_body_cutoff = n_body_cutoffs[1];
         double cross_bond_dist, x1, y1, z1, x2, y2, z2, x_diff, y_diff, z_diff;
         int ind1, ind2;
         std::vector<int> triplet = std::vector<int> {0, 0};
@@ -219,13 +251,19 @@ void LocalEnvironment :: compute_nested_environment(){
     }
 }
 
-void LocalEnvironment :: compute_descriptor(){
-    descriptor_calculator->compute(*this);
-    descriptor_vals = descriptor_calculator->descriptor_vals;
-    descriptor_force_dervs = descriptor_calculator->descriptor_force_dervs;
-    descriptor_stress_dervs = descriptor_calculator->descriptor_stress_dervs;
+void LocalEnvironment :: compute_descriptors(){
+    int n_calculators = descriptor_calculators.size();
+    for (int i = 0; i < n_calculators; i ++){
+        descriptor_calculators[i]->compute(*this);
+        descriptor_vals.push_back(descriptor_calculators[i]->descriptor_vals);
+        descriptor_force_dervs.push_back(
+            descriptor_calculators[i]->descriptor_force_dervs);
+        descriptor_stress_dervs.push_back(
+            descriptor_calculators[i]->descriptor_stress_dervs);
 
-    descriptor_norm = sqrt(descriptor_vals.dot(descriptor_vals));
-    force_dot = descriptor_force_dervs * descriptor_vals;
-    stress_dot = descriptor_stress_dervs * descriptor_vals;
+        descriptor_norm.push_back(sqrt(
+            descriptor_vals[i].dot(descriptor_vals[i])));
+        force_dot.push_back(descriptor_force_dervs[i] * descriptor_vals[i]);
+        stress_dot.push_back(descriptor_stress_dervs[i] * descriptor_vals[i]);
+    }
 }

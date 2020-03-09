@@ -4,9 +4,9 @@
 #include <vector>
 #include <Eigen/Dense>
 
-// Descriptor calculator.
 class LocalEnvironment;
 
+// Descriptor calculator.
 class DescriptorCalculator{
     protected:
         void (*radial_pointer)(double *, double *, double, int,
@@ -19,6 +19,7 @@ class DescriptorCalculator{
         std::string radial_basis, cutoff_function;
         std::vector<double> radial_hyps, cutoff_hyps;
         std::vector<int> descriptor_settings;
+        int descriptor_index;
 
     DescriptorCalculator();
 
@@ -26,9 +27,11 @@ class DescriptorCalculator{
         const std::string & radial_basis, const std::string & cutoff_function,
         const std::vector<double> & radial_hyps,
         const std::vector<double> & cutoff_hyps,
-        const std::vector<int> & descriptor_settings);
+        const std::vector<int> & descriptor_settings, int descriptor_index);
 
     virtual void compute(const LocalEnvironment & env) = 0;
+
+    virtual ~DescriptorCalculator() = default;
 };
 
 void B2_descriptor(
@@ -49,7 +52,8 @@ class B1_Calculator : public DescriptorCalculator{
             const std::string & cutoff_function,
             const std::vector<double> & radial_hyps,
             const std::vector<double> & cutoff_hyps,
-            const std::vector<int> & descriptor_settings);
+            const std::vector<int> & descriptor_settings,
+            int descriptor_index);
 
         void compute(const LocalEnvironment & env);
 };
@@ -63,7 +67,8 @@ class B2_Calculator : public DescriptorCalculator{
             const std::string & cutoff_function,
             const std::vector<double> & radial_hyps,
             const std::vector<double> & cutoff_hyps,
-            const std::vector<int> & descriptor_settings);
+            const std::vector<int> & descriptor_settings,
+            int descriptor_index);
 
         void compute(const LocalEnvironment & env);
 };
