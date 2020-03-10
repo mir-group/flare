@@ -272,3 +272,5 @@ TEST_F(KernelTest, ThreeBodyStressTest){
         }
     }
 }
+
+// TODO: Write tests of self kernel methods
