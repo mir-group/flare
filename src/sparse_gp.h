@@ -16,6 +16,7 @@ class SparseGP{
 
         std::vector<LocalEnvironment> sparse_environments;
         std::vector<StructureDescriptor> training_structures;
+        std::vector<int> label_count;
 
         double energy_norm, forces_norm, stresses_norm,
             energy_offset, forces_offset, stresses_offset;

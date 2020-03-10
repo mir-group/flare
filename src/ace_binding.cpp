@@ -144,5 +144,7 @@ PYBIND11_MODULE(ace, m){
             &SparseGP::add_training_structure_serial)
         .def("update_alpha", &SparseGP::update_alpha)
         .def("predict", &SparseGP::predict)
-        .def("predict_serial", &SparseGP::predict_serial);
+        .def("predict_serial", &SparseGP::predict_serial)
+        .def_readwrite("sparse_environments", &SparseGP::sparse_environments)
+        .def_readwrite("training_structures", &SparseGP::training_structures);
 }
