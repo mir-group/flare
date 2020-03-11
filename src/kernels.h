@@ -29,8 +29,8 @@ class Kernel{
 };
 
 double force_helper(double rel1_rel2, double diff_rel1, double diff_rel2,
-    double diff_sq, double fi, double fj, double fdi, double fdj, double ls1,
-    double ls2, double ls3, double sig2);
+    double diff_sq, double fi, double fj, double fdi, double fdj, double l1,
+    double l2, double l3, double s2);
 
 class TwoBodyKernel : public Kernel{
     public:
