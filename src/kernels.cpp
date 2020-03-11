@@ -160,13 +160,10 @@ Eigen::VectorXd TwoBodyKernel :: self_kernel(
                 c2 = exp(-c1 * ls1);
                 kernel_vector(0) += sig2 * fi * fj * c2 / 4;
 
-                // helper constants
-                c3 = c2 * ls2 * fi * fj * rdiff;
-                c4 = c2 * fi * fdj;
-
                 // fx + exx, exy, exz stress component
                 fx = force_helper(xrel1 * xrel2, rdiff * xrel1, rdiff * xrel2,
-                    c1, fi, fj, fdi, fdj, ls1, ls2, ls3, sig2);
+                    c1, fi, fj, -fdi * xrel1, -fdj * xrel2, ls1, ls2, ls3,
+                    sig2);
 
                 kernel_vector(1 + 3 * atom) += fx;
                 kernel_vector(no_elements - 6) +=
@@ -178,7 +175,8 @@ Eigen::VectorXd TwoBodyKernel :: self_kernel(
 
                 // fy + eyy, eyz stress component
                 fy = force_helper(yrel1 * yrel2, rdiff * yrel1, rdiff * yrel2,
-                    c1, fi, fj, fdi, fdj, ls1, ls2, ls3, sig2);
+                    c1, fi, fj, -fdi * yrel1, -fdj * yrel2, ls1, ls2, ls3,
+                    sig2);
 
                 kernel_vector(2 + 3 * atom) += fy;
                 kernel_vector(no_elements - 3) +=
@@ -188,7 +186,8 @@ Eigen::VectorXd TwoBodyKernel :: self_kernel(
 
                 // fz + ezz stress component
                 fz = force_helper(zrel1 * zrel2, rdiff * zrel1, rdiff * zrel2,
-                    c1, fi, fj, fdi, fdj, ls1, ls2, ls3, sig2);
+                    c1, fi, fj, -fdi * zrel1, -fdj * zrel2, ls1, ls2, ls3,
+                    sig2);
 
                 kernel_vector(3 + 3 * atom) += fz;
                 kernel_vector(no_elements - 1) +=

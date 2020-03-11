@@ -15,11 +15,13 @@ class KernelTest : public ::testing::Test{
         // structure
         Eigen::MatrixXd cell{3, 3}, cell_2{3, 3};
         std::vector<int> species {0, 1, 0, 1, 0};
-        Eigen::MatrixXd positions{5, 3}, positions_2{5, 3}, positions_3{5, 3};
-        StructureDescriptor test_struc, test_struc_2, test_struc_3;
+        Eigen::MatrixXd positions{5, 3}, positions_2{5, 3}, positions_3{5, 3},
+            positions_4{5, 3};
+        StructureDescriptor test_struc, test_struc_2, test_struc_3,
+            test_struc_4;
 
         // environment
-        LocalEnvironment test_env;
+        LocalEnvironment test_env, test_env_3, test_env_4;
 
         // descriptor
         std::string radial_string = "chebyshev";
@@ -276,32 +278,41 @@ TEST_F(KernelTest, ThreeBodyStressTest){
 TEST_F(KernelTest, TwoBodySelfTest){
     // Perturb the coordinates of the environment atoms.
     Eigen::VectorXd self_kern = two_body_kernel.self_kernel(test_struc_2, 0);
-    std::cout << self_kern << std::endl;
 
-    // // Check energy/energy kernel.
-    // double en_val = two_body_kernel.env_env(test_env, test_env);
-    // EXPECT_EQ(en_val, self_kern[0]);
+    // Check energy/energy kernel.
+    double en_val = two_body_kernel.env_env(test_env, test_env);
+    EXPECT_EQ(en_val, self_kern[0]);
 
     // Check force/force kernel.
+    double delta = 1e-5;
+    double thresh = 1e-4;
 
+    for (int n = 0; n < 3; n ++){
+        positions_3 = positions_2;
+        positions_3(0, n) += delta;
+        positions_4 = positions_2;
+        positions_4(0, n) -= delta;
 
-    // double thresh = 1e-5;
-    // int noa = 5;
-    // double delta = 1e-8;
-    // Eigen::VectorXd kern_pert;
-    // double fin_val, exact_val, abs_diff;
-    // for (int p = 0; p < noa; p ++){
-    //     for (int m = 0; m < 3; m ++){
-    //         positions_3 = positions;
-    //         positions_3(p, m) += delta;
-    //         test_struc_3 =  StructureDescriptor(cell, species, positions_3,
-    //             cutoff, nested_cutoffs, many_body_cutoffs,
-    //             descriptor_calculators);
-    //         kern_pert = two_body_kernel.env_struc(test_env, test_struc_3);
-    //         fin_val = -(kern_pert(0) - kern_vec_2(0)) / delta;
-    //         exact_val = kern_vec_2(1 + 3 * p + m);
-    //         abs_diff = abs(fin_val - exact_val); 
-    //         EXPECT_NEAR(abs_diff, 0, thresh);
-    //     }
-    // }
+        test_struc_3 = StructureDescriptor(cell, species,
+            positions_3, cutoff, nested_cutoffs, many_body_cutoffs,
+            descriptor_calculators);
+        test_env_3 = test_struc_3.local_environments[0];
+
+        test_struc_4 = StructureDescriptor(cell, species,
+            positions_4, cutoff, nested_cutoffs, many_body_cutoffs,
+            descriptor_calculators);
+        test_env_4 = test_struc_4.local_environments[0];
+
+        double calc1 = two_body_kernel.env_env(test_env_3, test_env_3);
+        double calc2 = two_body_kernel.env_env(test_env_4, test_env_4);
+        double calc3 = two_body_kernel.env_env(test_env_3, test_env_4);
+        double calc4 = two_body_kernel.env_env(test_env_4, test_env_3);
+
+        double kern_finite_diff = (calc1 + calc2 - calc3 - calc4) /
+            (4*delta*delta);
+
+        EXPECT_NEAR(kern_finite_diff * 4, self_kern(1 + n), thresh);
+    }
+
+    // TODO: add stress/stress test
 }
