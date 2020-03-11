@@ -6,7 +6,7 @@ if(${CMAKE_VERSION} VERSION_LESS 3.12)
 endif()
 
 # set the project name
-project(ACE_Tests VERSION 1.0
+project(flare_pp VERSION 1.0
 	    DESCRIPTION "High performance implementation of the atomic cluster expansion."
 	    LANGUAGES CXX)
 
@@ -34,14 +34,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 add_subdirectory(src)
 add_subdirectory(tests)
 add_subdirectory(timing)
-add_subdirectory(pybind11)
 add_subdirectory(googletest)
 add_subdirectory(parallel_tests)
 
 # make python bindings
-pybind11_add_module(ace src/ace_binding.cpp src/y_grad.cpp src/structure.cpp
-		    src/local_environment.cpp src/descriptor.cpp
-		    src/radial.cpp src/cutoffs.cpp src/single_bond.cpp
-		    src/kernels.cpp src/sparse_gp.cpp)
-find_package(OpenMP REQUIRED)
-target_link_libraries(ace PRIVATE OpenMP::OpenMP_CXX)
+add_subdirectory(pybind11)
+pybind11_add_module(ace SHARED src/ace_binding.cpp)
+target_link_libraries(ace PRIVATE flare_pp)
+target_include_directories(ace PRIVATE ${ACE_INCLUDE_DIR})
