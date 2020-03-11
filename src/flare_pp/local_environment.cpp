@@ -186,7 +186,6 @@ void LocalEnvironment :: compute_environment(
 void LocalEnvironment :: compute_indices(){
 
     int no_atoms = rs.size();
-    std::vector<int> three_body_inds;
 
     // Initialize a list of lists storing atom indices.
     int n_cutoffs = n_body_cutoffs.size();
@@ -228,13 +227,13 @@ void LocalEnvironment :: compute_indices(){
         double cross_bond_dist, x1, y1, z1, x2, y2, z2, x_diff, y_diff, z_diff;
         int ind1, ind2;
         std::vector<int> triplet = std::vector<int> {0, 0};
-        for (int i = 0; i < three_body_inds.size(); i ++){
-            ind1 = three_body_inds[i];
+        for (int i = 0; i < n_body_indices[1].size(); i ++){
+            ind1 = n_body_indices[1][i];
             x1 = xs[ind1];
             y1 = ys[ind1];
             z1 = zs[ind1];
-            for (int j = i + 1; j < three_body_inds.size(); j ++){
-                ind2 = three_body_inds[j];
+            for (int j = i + 1; j < n_body_indices[1].size(); j ++){
+                ind2 = n_body_indices[1][j];
                 x_diff = x1 - xs[ind2];
                 y_diff = y1 - ys[ind2];
                 z_diff = z1 - zs[ind2];

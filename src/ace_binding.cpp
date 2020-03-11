@@ -69,12 +69,18 @@ PYBIND11_MODULE(ace, m){
         .def_readwrite("xs", &LocalEnvironment::xs)
         .def_readwrite("ys", &LocalEnvironment::ys)
         .def_readwrite("zs", &LocalEnvironment::zs)
+        .def_readwrite("many_body_cutoffs",
+            &LocalEnvironment::many_body_cutoffs)
+        .def_readwrite("many_body_indices",
+            &LocalEnvironment::many_body_indices)
         .def_readwrite("cutoff", &LocalEnvironment::cutoff)
         .def_readwrite("descriptor_vals", &LocalEnvironment::descriptor_vals)
         .def_readwrite("descriptor_force_dervs",
             &LocalEnvironment::descriptor_force_dervs)
         .def_readwrite("descriptor_stress_dervs",
-            &LocalEnvironment::descriptor_stress_dervs);
+            &LocalEnvironment::descriptor_stress_dervs)
+        .def_readwrite("descriptor_norm",
+            &LocalEnvironment::descriptor_norm);
 
         // Eigen::VectorXd descriptor_vals;
         // Eigen::MatrixXd descriptor_force_dervs, descriptor_stress_dervs,
@@ -138,5 +144,7 @@ PYBIND11_MODULE(ace, m){
             &SparseGP::add_training_structure_serial)
         .def("update_alpha", &SparseGP::update_alpha)
         .def("predict", &SparseGP::predict)
-        .def("predict_serial", &SparseGP::predict_serial);
+        .def("predict_serial", &SparseGP::predict_serial)
+        .def_readwrite("sparse_environments", &SparseGP::sparse_environments)
+        .def_readwrite("training_structures", &SparseGP::training_structures);
 }
