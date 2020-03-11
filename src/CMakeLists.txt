@@ -1,6 +1,3 @@
-# make library
-add_library(flare_pp SHARED y_grad.cpp radial.cpp cutoffs.cpp single_bond.cpp
-            structure.cpp local_environment.cpp descriptor.cpp
-	    kernels.cpp sparse_gp.cpp)
+add_subdirectory(flare_pp)
 
-set(ACE_INCLUDE_DIR "${ACE_ROOT_DIR}/src" PARENT_SCOPE)
+set(ACE_INCLUDE_DIR ${ACE_INCLUDE_DIR} PARENT_SCOPE)
