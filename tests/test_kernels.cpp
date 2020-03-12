@@ -277,7 +277,8 @@ TEST_F(KernelTest, ThreeBodyStressTest){
 
 TEST_F(KernelTest, TwoBodySelfTest){
     // Perturb the coordinates of the environment atoms.
-    Eigen::VectorXd self_kern = two_body_kernel.self_kernel(test_struc_2, 0);
+    Eigen::VectorXd self_kern = 
+        two_body_kernel.self_kernel_env(test_struc_2, 0);
 
     // Check energy/energy kernel.
     double en_val = two_body_kernel.env_env(test_env, test_env);

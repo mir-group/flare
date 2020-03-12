@@ -96,7 +96,7 @@ double TwoBodyKernel :: env_env(const LocalEnvironment & env1,
     return sig2 * kern / 4;
 }
 
-Eigen::VectorXd TwoBodyKernel :: self_kernel(
+Eigen::VectorXd TwoBodyKernel :: self_kernel_env(
     const StructureDescriptor & struc1, int atom){
 
     LocalEnvironment env_curr = struc1.local_environments[atom];
@@ -443,8 +443,8 @@ double ThreeBodyKernel :: env_env(const LocalEnvironment & env1,
     return sig2 * kern / 9;
 }
 
-Eigen::VectorXd self_kernel(const StructureDescriptor & struc1,
-    int atom){
+Eigen::VectorXd ThreeBodyKernel :: self_kernel_env(
+    const StructureDescriptor & struc1, int atom){
 
     int no_elements = 1 + 3 * struc1.noa + 6;
     Eigen::VectorXd kernel_vector =
@@ -691,6 +691,18 @@ double DotProductKernel :: env_env(const LocalEnvironment & env1,
     return sig2 * pow(dot / (d1 * d2), power);
 }
 
+Eigen::VectorXd DotProductKernel :: self_kernel_env(
+    const StructureDescriptor & struc1, int atom){
+
+    int no_elements = 1 + 3 * struc1.noa + 6;
+    Eigen::VectorXd kernel_vector =
+        Eigen::VectorXd::Zero(no_elements);
+    
+    // TODO: implement the rest
+
+    return kernel_vector;
+}
+
 Eigen::VectorXd DotProductKernel :: env_struc_partial(
     const LocalEnvironment & env1, const StructureDescriptor & struc1,
     int atom){
@@ -750,9 +762,8 @@ Eigen::VectorXd DotProductKernel :: env_struc_partial(
     return kern_vec;
 }
 
-Eigen::VectorXd DotProductKernel
-    :: env_struc(const LocalEnvironment & env1,
-                 const StructureDescriptor & struc1){
+Eigen::VectorXd DotProductKernel :: env_struc(const LocalEnvironment & env1,
+    const StructureDescriptor & struc1){
 
     Eigen::VectorXd kern_vec = Eigen::VectorXd::Zero(1 + struc1.noa * 3 + 6);
 

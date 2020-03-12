@@ -18,6 +18,9 @@ class Kernel{
         virtual double env_env(const LocalEnvironment & env1,
                                const LocalEnvironment & env2) = 0;
 
+        virtual Eigen::VectorXd self_kernel_env(
+            const StructureDescriptor & struc1, int atom) = 0;
+
         virtual Eigen::VectorXd env_struc_partial(
             const LocalEnvironment & env1, const StructureDescriptor & struc1,
             int atom) = 0;
@@ -47,8 +50,10 @@ class TwoBodyKernel : public Kernel{
         double env_env(const LocalEnvironment & env1,
                        const LocalEnvironment & env2);
 
-        Eigen::VectorXd self_kernel(const StructureDescriptor & struc1,
+        Eigen::VectorXd self_kernel_env(const StructureDescriptor & struc1,
             int atom);
+        
+        Eigen::VectorXd self_kernel_struc(const StructureDescriptor & struc);
 
         Eigen::VectorXd env_struc_partial(const LocalEnvironment & env1,
             const StructureDescriptor & struc1, int atom);
@@ -72,8 +77,10 @@ class ThreeBodyKernel : public Kernel{
         double env_env(const LocalEnvironment & env1,
                        const LocalEnvironment & env2);
 
-        Eigen::VectorXd self_kernel(const StructureDescriptor & struc1,
+        Eigen::VectorXd self_kernel_env(const StructureDescriptor & struc1,
             int atom);
+
+        Eigen::VectorXd self_kernel_struc(const StructureDescriptor & struc);
 
         Eigen::VectorXd env_struc_partial(const LocalEnvironment & env1,
             const StructureDescriptor & struc1, int atom);
@@ -103,8 +110,10 @@ class DotProductKernel : public Kernel{
         double env_env(const LocalEnvironment & env1,
                        const LocalEnvironment & env2);
 
-        Eigen::VectorXd self_kernel(const StructureDescriptor & struc1,
+        Eigen::VectorXd self_kernel_env(const StructureDescriptor & struc1,
             int atom);
+
+        Eigen::VectorXd self_kernel_struc(const StructureDescriptor & struc);
 
         Eigen::VectorXd env_struc_partial(const LocalEnvironment & env1,
             const StructureDescriptor & struc1, int atom);
