@@ -199,6 +199,130 @@ Eigen::VectorXd TwoBodyKernel :: self_kernel_env(
     return kernel_vector;
 }
 
+Eigen::VectorXd TwoBodyKernel :: self_kernel_struc(
+    const StructureDescriptor & struc){
+
+    int no_elements = 1 + 3 * struc.noa + 6;
+    Eigen::VectorXd kernel_vector =
+        Eigen::VectorXd::Zero(no_elements);
+    double ri, fi, fj, fdj, c1, c2, c3, c4, en_kern,
+        xval1, yval1, zval1, xrel1, yrel1, zrel1,
+        xval2, yval2, zval2, xrel2, yrel2, zrel2,
+        diff_sq, fdi, fx, fy, fz, rj, rdiff,
+        cut1, cut2;
+
+    int e1, ind1, e2, ind2, cent1, cent2;
+
+    std::vector<int> inds1, inds2;
+
+    double rcut_vals_1[2], rcut_vals_2[2];
+
+    double vol_inv = 1 / struc.volume;
+    double vol_inv_sq = vol_inv * vol_inv;
+
+    // Double loop over environments.
+    LocalEnvironment env1, env2;
+    for (int i = 0; i < struc.noa; i ++){
+        env1 = struc.local_environments[i];
+        cut1 = env1.n_body_cutoffs[0];
+        cent1 = env1.central_species;
+        inds1 = env1.n_body_indices[0];
+        for (int j = i; j < struc.noa; j ++){
+            env2 = struc.local_environments[j];
+            cut2 = env2.n_body_cutoffs[0];
+            cent2 = env2.central_species;
+            inds2 = env2.n_body_indices[0];
+
+            // Loop over neighbors.
+            for (int m = 0; m < inds1.size(); m ++){
+                ind1 = inds1[m];
+                ri = env1.rs[ind1];
+                (*cutoff_pointer)(rcut_vals_1, ri, cut1, cutoff_hyps);
+                fi = rcut_vals_1[0];
+                fdi = rcut_vals_1[1];
+                e1 = env1.environment_species[ind1];
+            
+                xval1 = env1.xs[ind1];
+                yval1 = env1.ys[ind1];
+                zval1 = env1.zs[ind1];
+                xrel1 = env1.xrel[ind1];
+                yrel1 = env1.yrel[ind1];
+                zrel1 = env1.zrel[ind1];
+
+                for (int n = 0; n < inds2.size(); n ++){
+                    ind2 = inds2[n];
+                    e2 = env2.environment_species[ind2];
+
+                    // Proceed only if the pairs match.
+                    if ((cent1 == cent2 && e1 == e2) ||
+                        (cent1 == e2 && cent2 == e1)){
+
+                        rj = env2.rs[ind2];
+                        rdiff = ri - rj;
+
+                        xval2 = env2.xs[ind2];
+                        yval2 = env2.ys[ind2];
+                        zval2 = env2.zs[ind2];
+                        xrel2 = env2.xrel[ind2];
+                        yrel2 = env2.yrel[ind2];
+                        zrel2 = env2.zrel[ind2];
+
+                        (*cutoff_pointer)(rcut_vals_2, rj, cut2, cutoff_hyps);
+                        fj = rcut_vals_2[0];
+                        fdj = rcut_vals_2[1];
+
+                        // energy kernel
+                        c1 = rdiff * rdiff;
+                        c2 = exp(-c1 * ls1);
+                        kernel_vector(0) += sig2 * fi * fj * c2 / 4;
+
+                        // fx + exx, exy, exz stress component
+                        fx = force_helper(
+                            xrel1 * xrel2, rdiff * xrel1, rdiff * xrel2,
+                            c1, fi, fj, -fdi * xrel1, -fdj * xrel2, ls1, ls2,
+                            ls3, sig2);
+
+                        kernel_vector(no_elements - 6) +=
+                            fx * xval1 * xval2 * vol_inv_sq / 4;
+                        kernel_vector(no_elements - 5) +=
+                            fx * yval1 * yval2 * vol_inv_sq / 4;
+                        kernel_vector(no_elements - 4) +=
+                            fx * zval1 * zval2 * vol_inv_sq / 4;
+
+                        // fy + eyy, eyz stress component
+                        fy = force_helper(
+                            yrel1 * yrel2, rdiff * yrel1, rdiff * yrel2,
+                            c1, fi, fj, -fdi * yrel1, -fdj * yrel2, ls1, ls2,
+                            ls3, sig2);
+
+                        kernel_vector(no_elements - 3) +=
+                            fy * yval1 * yval2 * vol_inv_sq / 4;
+                        kernel_vector(no_elements - 2) +=
+                            fy * zval1 * zval2 * vol_inv_sq / 4;
+
+                        // fz + ezz stress component
+                        fz = force_helper(
+                            zrel1 * zrel2, rdiff * zrel1, rdiff * zrel2,
+                            c1, fi, fj, -fdi * zrel1, -fdj * zrel2, ls1, ls2,
+                            ls3, sig2);
+
+                        kernel_vector(no_elements - 1) +=
+                            fz * zval1 * zval2 * vol_inv_sq / 4;
+
+                        if (i == j){
+                            kernel_vector(1 + 3 * i) += fx;
+                            kernel_vector(2 + 3 * i) += fy;
+                            kernel_vector(3 + 3 * i) += fz;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return kernel_vector;
+}
+
 Eigen::VectorXd TwoBodyKernel :: env_struc_partial(
     const LocalEnvironment & env1, const StructureDescriptor & struc1,
     int atom){
