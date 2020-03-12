@@ -4,6 +4,25 @@
 #include <cmath>
 #include <iostream>
 
+double force_helper(double rel1_rel2, double diff_rel1, double diff_rel2,
+    double diff_sq, double fi, double fj, double fdi, double fdj, double l1,
+    double l2, double l3, double s2){
+
+    double A, B, C, D, E, F, G, H, I;
+
+    A = exp(-diff_sq * l1);
+    B = A * diff_rel1 * l2;
+    C = -A * diff_rel2 * l2;
+    D = rel1_rel2 * A * l2 - diff_rel1 * diff_rel2 * A * l3;
+    E = A * fdi * fdj;
+    F = B * fi * fdj;
+    G = C * fdi * fj;
+    H = D * fi * fj;
+    I = s2 * (E + F + G + H);
+
+    return I;
+}
+
 Kernel :: Kernel() {};
 Kernel :: Kernel(std::vector<double> kernel_hyperparameters){
     this->kernel_hyperparameters = kernel_hyperparameters;
@@ -77,38 +96,19 @@ double TwoBodyKernel :: env_env(const LocalEnvironment & env1,
     return sig2 * kern / 4;
 }
 
-double force_helper(double rel1_rel2, double diff_rel1, double diff_rel2,
-    double diff_sq, double fi, double fj, double fdi, double fdj, double ls1,
-    double ls2, double ls3, double sig2){
-
-    double A, B, C, D, E, F, G, H, I;
-
-    A = exp(-diff_sq * ls1);
-    B = E * diff_rel1 * ls2;
-    C = -E * diff_rel2 * ls2;
-    D = rel1_rel2 * E * ls2 - diff_rel1 * diff_rel2 * E * ls3;
-    E = E * fdi * fdj;
-    F = F * fi * fdj;
-    G = G * fdi * fj;
-    H = H * fi * fj;
-    I = sig2 * (E + F + G + H);
-
-    return I;
-}
-
-Eigen::VectorXd TwoBodyKernel :: self_kernel(
+Eigen::VectorXd TwoBodyKernel :: self_kernel_env(
     const StructureDescriptor & struc1, int atom){
 
     LocalEnvironment env_curr = struc1.local_environments[atom];
     int no_elements = 1 + 3 * struc1.noa + 6;
     Eigen::VectorXd kernel_vector =
         Eigen::VectorXd::Zero(no_elements);
-    double ri, rj, fi, fj, fdj, rdiff, c1, c2, c3, c4, fx, fy, fz, en_kern,
+    double ri, fi, fj, fdj, c1, c2, c3, c4, en_kern,
         xval1, yval1, zval1, xrel1, yrel1, zrel1,
         xval2, yval2, zval2, xrel2, yrel2, zrel2,
-        rel1_rel2, diff_rel1, diff_rel2, diff_sq, fdi;
+        diff_sq, fdi, fx, fy, fz, rj, rdiff;
 
-    int e1, e2, ind1, ind2;
+    int e1, ind1, e2, ind2;
     int cent = env_curr.central_species;
 
     double cut = env_curr.n_body_cutoffs[0];
@@ -128,12 +128,12 @@ Eigen::VectorXd TwoBodyKernel :: self_kernel(
         fdi = rcut_vals_1[1];
         e1 = env_curr.environment_species[ind1];
     
-        xval1 = env_curr.xs[ind2];
-        yval1 = env_curr.ys[ind2];
-        zval1 = env_curr.zs[ind2];
-        xrel1 = env_curr.xrel[ind2];
-        yrel1 = env_curr.yrel[ind2];
-        zrel1 = env_curr.zrel[ind2];
+        xval1 = env_curr.xs[ind1];
+        yval1 = env_curr.ys[ind1];
+        zval1 = env_curr.zs[ind1];
+        xrel1 = env_curr.xrel[ind1];
+        yrel1 = env_curr.yrel[ind1];
+        zrel1 = env_curr.zrel[ind1];
 
         for (int n = 0; n < inds.size(); n ++){
             ind2 = inds[n];
@@ -160,16 +160,10 @@ Eigen::VectorXd TwoBodyKernel :: self_kernel(
                 c2 = exp(-c1 * ls1);
                 kernel_vector(0) += sig2 * fi * fj * c2 / 4;
 
-                // helper constants
-                c3 = c2 * ls2 * fi * fj * rdiff;
-                c4 = c2 * fi * fdj;
-
                 // fx + exx, exy, exz stress component
-                rel1_rel2 = xrel1 * xrel2;
-                diff_rel1 = rdiff * xrel1;
-                diff_rel2 = rdiff * xrel2;
-                fx = force_helper(rel1_rel2, diff_rel1, diff_rel2, c1,
-                    fi, fj, fdi, fdj, ls1, ls2, ls3, sig2);
+                fx = force_helper(xrel1 * xrel2, rdiff * xrel1, rdiff * xrel2,
+                    c1, fi, fj, -fdi * xrel1, -fdj * xrel2, ls1, ls2, ls3,
+                    sig2);
 
                 kernel_vector(1 + 3 * atom) += fx;
                 kernel_vector(no_elements - 6) +=
@@ -180,11 +174,9 @@ Eigen::VectorXd TwoBodyKernel :: self_kernel(
                     fx * zval1 * zval2 * vol_inv_sq / 4;
 
                 // fy + eyy, eyz stress component
-                rel1_rel2 = yrel1 * yrel2;
-                diff_rel1 = rdiff * yrel1;
-                diff_rel2 = rdiff * yrel2;
-                fy = force_helper(rel1_rel2, diff_rel1, diff_rel2, c1,
-                    fi, fj, fdi, fdj, ls1, ls2, ls3, sig2);
+                fy = force_helper(yrel1 * yrel2, rdiff * yrel1, rdiff * yrel2,
+                    c1, fi, fj, -fdi * yrel1, -fdj * yrel2, ls1, ls2, ls3,
+                    sig2);
 
                 kernel_vector(2 + 3 * atom) += fy;
                 kernel_vector(no_elements - 3) +=
@@ -193,11 +185,9 @@ Eigen::VectorXd TwoBodyKernel :: self_kernel(
                     fy * zval1 * zval2 * vol_inv_sq / 4;
 
                 // fz + ezz stress component
-                rel1_rel2 = zrel1 * zrel2;
-                diff_rel1 = rdiff * zrel1;
-                diff_rel2 = rdiff * zrel2;
-                fz = force_helper(rel1_rel2, diff_rel1, diff_rel2, c1,
-                    fi, fj, fdi, fdj, ls1, ls2, ls3, sig2);
+                fz = force_helper(zrel1 * zrel2, rdiff * zrel1, rdiff * zrel2,
+                    c1, fi, fj, -fdi * zrel1, -fdj * zrel2, ls1, ls2, ls3,
+                    sig2);
 
                 kernel_vector(3 + 3 * atom) += fz;
                 kernel_vector(no_elements - 1) +=
@@ -453,6 +443,18 @@ double ThreeBodyKernel :: env_env(const LocalEnvironment & env1,
     return sig2 * kern / 9;
 }
 
+Eigen::VectorXd ThreeBodyKernel :: self_kernel_env(
+    const StructureDescriptor & struc1, int atom){
+
+    int no_elements = 1 + 3 * struc1.noa + 6;
+    Eigen::VectorXd kernel_vector =
+        Eigen::VectorXd::Zero(no_elements);
+    
+    // TODO: implement the rest
+
+    return kernel_vector;
+}
+
 Eigen::VectorXd ThreeBodyKernel :: env_struc_partial(
     const LocalEnvironment & env1, const StructureDescriptor & struc1,
     int atom){
@@ -689,6 +691,18 @@ double DotProductKernel :: env_env(const LocalEnvironment & env1,
     return sig2 * pow(dot / (d1 * d2), power);
 }
 
+Eigen::VectorXd DotProductKernel :: self_kernel_env(
+    const StructureDescriptor & struc1, int atom){
+
+    int no_elements = 1 + 3 * struc1.noa + 6;
+    Eigen::VectorXd kernel_vector =
+        Eigen::VectorXd::Zero(no_elements);
+    
+    // TODO: implement the rest
+
+    return kernel_vector;
+}
+
 Eigen::VectorXd DotProductKernel :: env_struc_partial(
     const LocalEnvironment & env1, const StructureDescriptor & struc1,
     int atom){
@@ -748,9 +762,8 @@ Eigen::VectorXd DotProductKernel :: env_struc_partial(
     return kern_vec;
 }
 
-Eigen::VectorXd DotProductKernel
-    :: env_struc(const LocalEnvironment & env1,
-                 const StructureDescriptor & struc1){
+Eigen::VectorXd DotProductKernel :: env_struc(const LocalEnvironment & env1,
+    const StructureDescriptor & struc1){
 
     Eigen::VectorXd kern_vec = Eigen::VectorXd::Zero(1 + struc1.noa * 3 + 6);
 
