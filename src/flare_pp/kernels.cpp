@@ -96,6 +96,24 @@ double TwoBodyKernel :: env_env(const LocalEnvironment & env1,
     return sig2 * kern / 4;
 }
 
+double TwoBodyKernel :: struc_struc_en(const StructureDescriptor & struc1,
+            const StructureDescriptor & struc2){
+
+    double kern_val = 0;
+
+    // Double loop over environments.
+    LocalEnvironment env1, env2;
+    for (int i = 0; i < struc1.noa; i ++){
+        env1 = struc1.local_environments[i];
+        for (int j = 0; j < struc2.noa; j ++){
+            env2 = struc2.local_environments[j];
+            kern_val += env_env(env1, env2);
+        }
+    }
+
+    return kern_val;
+}
+
 Eigen::VectorXd TwoBodyKernel :: self_kernel_env(
     const StructureDescriptor & struc1, int atom){
 
@@ -209,7 +227,7 @@ Eigen::VectorXd TwoBodyKernel :: self_kernel_struc(
         xval1, yval1, zval1, xrel1, yrel1, zrel1,
         xval2, yval2, zval2, xrel2, yrel2, zrel2,
         diff_sq, fdi, fx, fy, fz, rj, rdiff,
-        cut1, cut2;
+        cut1, cut2, mult_fac;
 
     int e1, ind1, e2, ind2, cent1, cent2;
 
@@ -232,6 +250,13 @@ Eigen::VectorXd TwoBodyKernel :: self_kernel_struc(
             cut2 = env2.n_body_cutoffs[0];
             cent2 = env2.central_species;
             inds2 = env2.n_body_indices[0];
+
+            if (i == j){
+                mult_fac = 1;
+            }
+            else{
+                mult_fac = 2;
+            }
 
             // Loop over neighbors.
             for (int m = 0; m < inds1.size(); m ++){
@@ -274,7 +299,7 @@ Eigen::VectorXd TwoBodyKernel :: self_kernel_struc(
                         // energy kernel
                         c1 = rdiff * rdiff;
                         c2 = exp(-c1 * ls1);
-                        kernel_vector(0) += sig2 * fi * fj * c2 / 4;
+                        kernel_vector(0) += mult_fac * sig2 * fi * fj * c2 / 4;
 
                         // fx + exx, exy, exz stress component
                         fx = force_helper(
@@ -283,11 +308,11 @@ Eigen::VectorXd TwoBodyKernel :: self_kernel_struc(
                             ls3, sig2);
 
                         kernel_vector(no_elements - 6) +=
-                            fx * xval1 * xval2 * vol_inv_sq / 4;
+                            mult_fac * fx * xval1 * xval2 * vol_inv_sq / 4;
                         kernel_vector(no_elements - 5) +=
-                            fx * yval1 * yval2 * vol_inv_sq / 4;
+                            mult_fac * fx * yval1 * yval2 * vol_inv_sq / 4;
                         kernel_vector(no_elements - 4) +=
-                            fx * zval1 * zval2 * vol_inv_sq / 4;
+                            mult_fac * fx * zval1 * zval2 * vol_inv_sq / 4;
 
                         // fy + eyy, eyz stress component
                         fy = force_helper(
@@ -296,9 +321,9 @@ Eigen::VectorXd TwoBodyKernel :: self_kernel_struc(
                             ls3, sig2);
 
                         kernel_vector(no_elements - 3) +=
-                            fy * yval1 * yval2 * vol_inv_sq / 4;
+                            mult_fac * fy * yval1 * yval2 * vol_inv_sq / 4;
                         kernel_vector(no_elements - 2) +=
-                            fy * zval1 * zval2 * vol_inv_sq / 4;
+                            mult_fac * fy * zval1 * zval2 * vol_inv_sq / 4;
 
                         // fz + ezz stress component
                         fz = force_helper(
@@ -307,7 +332,7 @@ Eigen::VectorXd TwoBodyKernel :: self_kernel_struc(
                             ls3, sig2);
 
                         kernel_vector(no_elements - 1) +=
-                            fz * zval1 * zval2 * vol_inv_sq / 4;
+                            mult_fac * fz * zval1 * zval2 * vol_inv_sq / 4;
 
                         if (i == j){
                             kernel_vector(1 + 3 * i) += fx;
