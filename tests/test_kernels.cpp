@@ -373,42 +373,45 @@ TEST_F(KernelTest, TwoBodySelfStrucTest){
     Eigen::VectorXd self_kern = 
         two_body_kernel.self_kernel_struc(test_struc_2);
     
-    std::cout << self_kern << std::endl;
+    // std::cout << self_kern << std::endl;
 
     // Check energy/energy kernel.
     double en_val = two_body_kernel.struc_struc_en(test_struc_2, test_struc_2);
-    std::cout << en_val << std::endl;
-    // EXPECT_EQ(en_val, self_kern[0]);
+    EXPECT_NEAR(en_val, self_kern[0], THRESHOLD);
 
-    // // Check force/force kernel.
-    // double delta = 1e-5;
-    // double thresh = 1e-4;
+    // Check force/force kernel.
+    double delta = 1e-4;
+    double thresh = 1e-4;
 
-    // for (int n = 0; n < 3; n ++){
-    //     positions_3 = positions_2;
-    //     positions_3(0, n) += delta;
-    //     positions_4 = positions_2;
-    //     positions_4(0, n) -= delta;
+    for (int m = 0; m < test_struc_2.noa; m++){
+        for (int n = 0; n < 3; n ++){
+            positions_3 = positions_2;
+            positions_3(m, n) += delta;
+            positions_4 = positions_2;
+            positions_4(m, n) -= delta;
 
-    //     test_struc_3 = StructureDescriptor(cell, species,
-    //         positions_3, cutoff, nested_cutoffs, many_body_cutoffs,
-    //         descriptor_calculators);
-    //     test_struc_4 = StructureDescriptor(cell, species,
-    //         positions_4, cutoff, nested_cutoffs, many_body_cutoffs,
-    //         descriptor_calculators);
+            test_struc_3 = StructureDescriptor(cell, species,
+                positions_3, cutoff, nested_cutoffs, many_body_cutoffs,
+                descriptor_calculators);
+            test_struc_4 = StructureDescriptor(cell, species,
+                positions_4, cutoff, nested_cutoffs, many_body_cutoffs,
+                descriptor_calculators);
 
-    //     double calc1 = 
-    //         two_body_kernel.self_kernel_struc(test_struc_3)[0];
-    //     double calc2 =
-    //         two_body_kernel.self_kernel_struc(test_env_4, test_env_4);
-    //     double calc3 = two_body_kernel.env_env(test_env_3, test_env_4);
-    //     double calc4 = two_body_kernel.env_env(test_env_4, test_env_3);
+            double calc1 = 
+                two_body_kernel.struc_struc_en(test_struc_3, test_struc_3);
+            double calc2 =
+                two_body_kernel.struc_struc_en(test_struc_4, test_struc_4);
+            double calc3 = \
+                two_body_kernel.struc_struc_en(test_struc_3, test_struc_4);
+            double calc4 = \
+                two_body_kernel.struc_struc_en(test_struc_4, test_struc_3);
 
-    //     double kern_finite_diff = (calc1 + calc2 - calc3 - calc4) /
-    //         (4*delta*delta);
+            double kern_finite_diff = (calc1 + calc2 - calc3 - calc4) /
+                (4*delta*delta);
 
-    //     EXPECT_NEAR(kern_finite_diff * 4, self_kern(1 + n), thresh);
-    // }
+        EXPECT_NEAR(kern_finite_diff, self_kern(1 + 3 * m + n), thresh);
+        }
+    }
 
     // // Check stress/stress kernel.
     // int stress_count = 0;
