@@ -443,6 +443,18 @@ double ThreeBodyKernel :: env_env(const LocalEnvironment & env1,
     return sig2 * kern / 9;
 }
 
+Eigen::VectorXd self_kernel(const StructureDescriptor & struc1,
+    int atom){
+
+    int no_elements = 1 + 3 * struc1.noa + 6;
+    Eigen::VectorXd kernel_vector =
+        Eigen::VectorXd::Zero(no_elements);
+    
+    // TODO: implement the rest
+
+    return kernel_vector;
+}
+
 Eigen::VectorXd ThreeBodyKernel :: env_struc_partial(
     const LocalEnvironment & env1, const StructureDescriptor & struc1,
     int atom){
