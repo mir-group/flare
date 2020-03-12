@@ -6,6 +6,7 @@
 #include <cmath>
 #include <iostream>
 
+
 DescriptorCalculator::DescriptorCalculator(){}
 
 DescriptorCalculator::DescriptorCalculator(
@@ -38,6 +39,7 @@ DescriptorCalculator::DescriptorCalculator(
 
 }
 
+
 void B2_descriptor(
 Eigen::VectorXd & B2_vals,
 Eigen::MatrixXd & B2_force_dervs,
@@ -51,18 +53,25 @@ int neigh_size = env.neighbor_list.size();
 int cent_ind = env.central_index;
 int no_radial = nos * N;
 int no_harmonics = (lmax + 1) * (lmax + 1);
-int n1_ind, n2_ind, l_ind, n1_l, n2_l, env_ind;
-int counter = 0;
 
-for (int n1 = 0; n1 < no_radial; n1 ++){
-    n1_ind = n1 * no_harmonics;
+
+int n1_l, n2_l, env_ind;
+int counter;
+int n1_count;
+int n2_count;
+
+for (int n1 = no_radial-1; n1 >= 0; n1 --){
+
     for (int n2 = n1; n2 < no_radial; n2 ++){
-        n2_ind = n2 * no_harmonics;
-        l_ind = 0;
+
         for (int l = 0; l < (lmax + 1); l ++){
             for (int m = 0; m < (2 * l + 1); m ++){
-                n1_l = n1_ind + l_ind;
-                n2_l = n2_ind + l_ind;
+                n1_l = n1 * no_harmonics + (l * l + m);
+                n2_l = n2 * no_harmonics + (l * l + m);
+
+                n1_count = (n1 * (2*no_radial - n1 + 1)) / 2;
+                n2_count = n2 - n1;
+                counter = l + (n1_count + n2_count) * (lmax+1);
 
                 // Store B2 value.
                 B2_vals(counter) +=
@@ -91,12 +100,11 @@ for (int n1 = 0; n1 < no_radial; n1 ++){
                         single_bond_stress_dervs(p, n1_l) *
                         single_bond_vals(n2_l);
                 }
-                l_ind ++;
             }
-            counter ++;
         }
     }
 }
+
 };
 
 B1_Calculator :: B1_Calculator(){}
@@ -154,8 +162,9 @@ void B2_Calculator :: compute(const LocalEnvironment & env){
     int no_radial = nos * N;
 
     int no_harmonics = (lmax + 1) * (lmax + 1);
-    int no_bond = nos * N * no_harmonics; 
-    int no_descriptors = no_radial * (no_radial + 1) * (lmax + 1) / 2;
+
+    int no_bond = no_radial * no_harmonics;
+    int no_descriptors = (no_radial * (no_radial + 1) / 2) * (lmax + 1);
 
     single_bond_vals = Eigen::VectorXd::Zero(no_bond);
     single_bond_force_dervs =
@@ -175,7 +184,7 @@ void B2_Calculator :: compute(const LocalEnvironment & env){
         Eigen::MatrixXd::Zero(env.noa * 3, no_descriptors);
     descriptor_stress_dervs =
         Eigen::MatrixXd::Zero(6, no_descriptors);
-    
+
     B2_descriptor(descriptor_vals, descriptor_force_dervs,
                   descriptor_stress_dervs,
                   single_bond_vals, single_bond_force_dervs,

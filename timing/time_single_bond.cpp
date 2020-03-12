@@ -1,9 +1,11 @@
-#include "y_grad.h"
-#include "radial.h"
-#include "cutoffs.h"
 #include <chrono>
 #include <iostream>
 #include <cmath>
+
+#include "y_grad.h"
+#include "radial.h"
+#include "cutoffs.h"
+
 using namespace std;
 
 int main(){
@@ -25,8 +27,8 @@ int main(){
 
     // Prepare cutoff.
     double rcut = 7;
-    std::vector<double> cutoff_hyps;
-    void (*cutoff_function)(double *, double, double, std::vector<double>) =
+    vector<double> cutoff_hyps;
+    void (*cutoff_function)(double *, double, double, vector<double>) =
         cos_cutoff;
 
     // Prepare spherical harmonics.
@@ -38,9 +40,9 @@ int main(){
     double first_gauss = 1;
     double final_gauss = 6;
     int N = 10;
-    std::vector<double> radial_hyps = {sigma, first_gauss, final_gauss};
+    vector<double> radial_hyps = {sigma, first_gauss, final_gauss};
     void (*basis_function)(double *, double *, double, int,
-        std::vector<double>) = equispaced_gaussians;
+        vector<double>) = equispaced_gaussians;
 
     // Time radial basis.
     double * g = new double[N];
@@ -48,20 +50,20 @@ int main(){
     double * gy = new double[N];
     double * gz = new double[N];
 
-    auto t1 = std::chrono::high_resolution_clock::now();
+    auto t1 = chrono::high_resolution_clock::now();
 
-    int reps = 10000;
+    int reps = 1000000;
     for (int n = 0; n < reps; n++){
-    calculate_radial(g, gx, gy, gz, basis_function, cutoff_function, 
+    calculate_radial(g, gx, gy, gz, basis_function, cutoff_function,
                      x, y, z, r, rcut, N, radial_hyps, cutoff_hyps);
     }
 
-    auto t2 = std::chrono::high_resolution_clock::now();
-    auto tot_time = 
-        std::chrono::duration_cast<std::chrono::microseconds>(t2-t1).count();
+    auto t2 = chrono::high_resolution_clock::now();
+    auto tot_time =
+        (double) chrono::duration_cast<chrono::microseconds>(t2-t1).count();
     auto mean_time = tot_time / reps;
-    std::cout << "calculating the radial basis took "
-              << mean_time << " microseconds\n";
+    cout << "calculating the radial basis took "
+              << mean_time << " microseconds" << endl;
 
     delete [] g; delete [] gx; delete [] gy; delete [] gz;
 
@@ -71,15 +73,15 @@ int main(){
     vector<double> hy = vector<double>(number_of_harmonics, 0);
     vector<double> hz = vector<double>(number_of_harmonics, 0);
 
-    t1 = std::chrono::high_resolution_clock::now();
+    t1 = chrono::high_resolution_clock::now();
     for (int n = 0; n < reps; n++){
     get_Y(h, hx, hy, hz, x, y, z, lmax);
     }
-    t2 = std::chrono::high_resolution_clock::now();
+    t2 = chrono::high_resolution_clock::now();
 
-    tot_time = 
-        std::chrono::duration_cast<std::chrono::microseconds>(t2-t1).count();
+    tot_time =
+        (double) chrono::duration_cast<chrono::microseconds>(t2-t1).count();
     mean_time = tot_time / reps;
-    std::cout << "calculating the spherical harmonics took "
-              << mean_time << " microseconds\n";
+    cout << "calculating the spherical harmonics took "
+              << mean_time << " microseconds" << endl;
 }
