@@ -250,7 +250,26 @@ def get_like_from_ky_mat(ky_mat, name):
     except:
         return -1e8
 
+<<<<<<< HEAD
     return get_like_from_mats(ky_mat, l_mat, alpha, name)
+=======
+    alpha = np.matmul(ky_mat_inv, training_labels_np)
+
+    # calculate likelihood
+    like = (-0.5 * np.matmul(training_labels_np, alpha) -
+            np.sum(np.log(np.diagonal(l_mat))) -
+            math.log(2 * np.pi) * ky_mat.shape[1] / 2)
+
+    return like
+
+#######################################
+##### KY MATRIX FUNCTIONS and gradients
+#######################################
+
+
+def get_ky_and_hyp(hyps: np.ndarray, training_data: list,
+                   kernel_grad, cutoffs=None, hyps_mask=None):
+>>>>>>> 9a972151d39e3ce56703b937d35035da70adf436
 
 def get_like_from_mats(ky_mat, l_mat, alpha, name):
     """ compute the likelihood from the covariance matrix
@@ -274,8 +293,14 @@ def get_like_from_mats(ky_mat, l_mat, alpha, name):
 ##### KY MATRIX FUNCTIONS and gradients
 #######################################
 
+<<<<<<< HEAD
 def get_ky_and_hyp_pack(name, s1, e1, s2, e2, same: bool,
         hyps: np.ndarray, kernel_grad, cutoffs=None, hyps_mask=None):
+=======
+def get_ky_and_hyp_pack(hyps: np.ndarray, training_data1: list,
+                   training_data2: list, same: bool,
+                   kernel_grad, cutoffs=None, hyps_mask=None):
+>>>>>>> 9a972151d39e3ce56703b937d35035da70adf436
     """
     computes a block of ky matrix and its derivative to hyper-parameter
     If the cpu set up is None, it uses as much as posible cpus
@@ -318,7 +343,15 @@ def get_ky_and_hyp_pack(name, s1, e1, s2, e2, same: bool,
             d_2 = ds[n_index % 3]
 
             # calculate kernel and gradient
+<<<<<<< HEAD
             cov = kernel_grad(x_1, x_2, d_1, d_2, *args)
+=======
+            if (hyps_mask is not None):
+                cov = kernel_grad(x_1, x_2, d_1, d_2, hyps,
+                                  cutoffs=cutoffs, hyps_mask=hyps_mask)
+            else:
+                cov = kernel_grad(x_1, x_2, d_1, d_2, hyps, cutoffs)
+>>>>>>> 9a972151d39e3ce56703b937d35035da70adf436
 
             # store kernel value
             k_mat[m_index, n_index] = cov[0]
@@ -457,7 +490,8 @@ def get_neg_likelihood(hyps: np.ndarray, name,
 
     like = get_like_from_ky_mat(ky_mat, name)
 
-    output.write_to_log(f"get_like_from_ky_mat {time.time()-time0}\n", name="hyps")
+    output.write_to_log(f"get_like_from_ky_mat {time.time()-time0}\n",
+                        name="hyps")
 
     if output is not None:
         output.write_to_log('like: ' + str(like)+'\n', name="hyps")
@@ -468,7 +502,12 @@ def get_neg_likelihood(hyps: np.ndarray, name,
 def get_neg_like_grad(hyps: np.ndarray, name: str,
                       kernel_grad, output = None,
                       cutoffs=None, hyps_mask=None,
+<<<<<<< HEAD
                       n_cpus=1, n_sample=100, print_progress=False):
+=======
+                      n_cpus=None, nsample=100,
+                      print_progress=False):
+>>>>>>> 9a972151d39e3ce56703b937d35035da70adf436
     """compute the log likelihood and its gradients
 
     :param hyps: list of hyper-parameters
@@ -487,13 +526,12 @@ def get_neg_like_grad(hyps: np.ndarray, name: str,
     :return: float, np.array
     """
 
-
     time0 = time.time()
     if output is not None:
-        ostring="hyps:"
+        ostring = "hyps:"
         for hyp in hyps:
-            ostring+=f" {hyp}"
-        ostring+="\n"
+            ostring +=  f" {hyp}"
+        ostring += "\n"
         output.write_to_log(ostring, name="hyps")
 
     hyp_mat, ky_mat = \
@@ -505,25 +543,23 @@ def get_neg_like_grad(hyps: np.ndarray, name: str,
                        n_cpus=n_cpus, n_sample=n_sample)
 
     if output is not None:
-        output.write_to_log(f"get_ky_and_hyp {time.time()-time0}\n", name="hyps")
+        output.write_to_log(f"get_ky_and_hyp {time.time()-time0}\n",
+                            name="hyps")
 
     time0 = time.time()
 
     like, like_grad = \
         get_like_grad_from_mats(ky_mat, hyp_mat, name)
 
-    print("like", like, like_grad)
-    print("hyps", hyps)
-    print("\n")
+    if output is not None:
+        output.write_to_log(f"get_like_grad_from_mats {time.time()-time0}\n",
+                            name="hyps")
 
     if output is not None:
-        output.write_to_log(f"get_like_grad_from_mats {time.time()-time0}\n", name="hyps")
-
-    if output is not None:
-        ostring="like grad:"
+        ostring = "like grad:"
         for lg in like_grad:
-            ostring+=f" {lg}"
-        ostring+="\n"
+            ostring += f" {lg}"
+        ostring += "\n"
         output.write_to_log(ostring, name="hyps")
         output.write_to_log('like: ' + str(like)+'\n', name="hyps")
 
@@ -579,7 +615,11 @@ def get_like_grad_from_mats(ky_mat, hyp_mat, name):
     return like, like_grad
 
 
+<<<<<<< HEAD
 def get_ky_mat_update(ky_mat_old, hyps: np.ndarray, name: str,
+=======
+def get_ky_mat_update_par(ky_mat_old, hyps: np.ndarray, training_data: list,
+>>>>>>> 9a972151d39e3ce56703b937d35035da70adf436
                       kernel, cutoffs=None, hyps_mask=None,
                       n_cpus=1, n_sample=100):
     '''
@@ -665,6 +705,10 @@ def get_ky_mat_update_serial(\
     '''
     used for update_L_alpha. if add 10 atoms to the training
     set, the K matrix will add 10x3 columns and 10x3 rows
+<<<<<<< HEAD
+=======
+
+>>>>>>> 9a972151d39e3ce56703b937d35035da70adf436
 
     :param ky_mat_old: old covariance matrix
     :param hyps: list of hyper-parameters
@@ -731,9 +775,12 @@ def get_kernel_vector_unit(name, s, e, x, d_1, kernel, hyps,
     size = (e-s)
     ds = [1, 2, 3]
 
+<<<<<<< HEAD
     args = from_mask_to_args(hyps, hyps_mask, cutoffs)
 
     k_v = np.zeros(size*3, )
+=======
+>>>>>>> 9a972151d39e3ce56703b937d35035da70adf436
     for m_index in range(size):
         x_2 = _global_training_data[name][m_index+s]
         for d_2 in ds:
@@ -840,6 +887,7 @@ def en_kern_vec_unit(name, s, e, x, kernel,
         k_v[m_index] = kernel(x_2, x, d_2, *args)
 
     return k_v
+<<<<<<< HEAD
 
 
 def en_kern_vec(name, kernel,
@@ -902,3 +950,5 @@ def en_kern_vec(name, kernel,
 
     return k12_v
 
+=======
+>>>>>>> 9a972151d39e3ce56703b937d35035da70adf436

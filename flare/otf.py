@@ -54,14 +54,14 @@ class OTF:
             velocities of the atoms are rescaled. Defaults to [].
         rescale_temps (List[int], optional): List of rescaled temperatures.
             Defaults to [].
-        force_source (Union[str, object], optional): DFT code used to 
-            calculate ab initio forces during training. A custom module can 
-            be used here in place of the DFT modules available in the FLARE 
-            package. The module must contain two functions: parse_dft_input, 
-            which takes a file name (in string format) as input and returns 
-            the positions, species, cell, and masses of a structure of atoms; 
-            and run_dft_par, which takes a number of DFT related inputs and 
-            returns the forces on all atoms.  Defaults to "qe".
+        force_source (Union[str, object], optional): DFT code used to calculate
+            ab initio forces during training. A custom module can be used here
+            in place of the DFT modules available in the FLARE package. The
+            module must contain two functions: parse_dft_input, which takes a
+            file name (in string format) as input and returns the positions,
+            species, cell, and masses of a structure of atoms; and run_dft_par,
+            which takes a number of DFT related inputs and returns the forces
+            on all atoms.  Defaults to "qe".
         n_cpus (int, optional): Number of cpus used during training.
             Defaults to 1.
         npool (int, optional): Number of k-point pools for DFT

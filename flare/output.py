@@ -151,7 +151,7 @@ class Output:
         for i in range(len(structure.positions)):
             headerstring += f'{structure.species_labels[i]:5}'
             for j in range(3):
-                headerstring += f'{structure.prev_positions[i][j]:8.4f}'
+                headerstring += f'{structure.prev_positions[i][j]:10.4f}'
             headerstring += '\n'
         headerstring += '-' * 80 + '\n'
 
@@ -192,7 +192,7 @@ class Output:
         string += f'\nSimulation Time: {(dt * curr_step):.3} ps \n'
 
         # Construct Header line
-        n_space = 24
+        n_space = 30
         string += str.ljust('El', 5)
         string += str.center('Position (A)', n_space)
         string += ' ' * 4
@@ -210,16 +210,16 @@ class Output:
             string += f'{structure.species_labels[i]:5}'
             # string += '\t'
             for j in range(3):
-                string += f'{structure.positions[i][j]:8.4f}'
+                string += f'{structure.positions[i][j]:10.4f}'
             string += ' ' * 4
             for j in range(3):
-                string += f'{structure.forces[i][j]:8.4f}'
+                string += f'{structure.forces[i][j]:10.4f}'
             string += ' ' * 4
             for j in range(3):
-                string += f'{structure.stds[i][j]:8.4f}'
+                string += f'{structure.stds[i][j]:10.4f}'
             string += ' ' * 4
             for j in range(3):
-                string += f'{velocities[i][j]:8.4f}'
+                string += f'{velocities[i][j]:10.4f}'
             string += '\n'
 
         string += '\n'

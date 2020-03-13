@@ -8,6 +8,8 @@
 
 FLARE is an open-source Python package for creating fast and accurate atomistic potentials. Documentation of the code can be accessed here: https://flare.readthedocs.io/
 
+We have an introductory tutorial in Google Colab available [here](https://colab.research.google.com/drive/1Q2NCCQWYQdTW9-e35v1W-mBlWTiQ4zfT).
+
 ## Major Features
 
 * Gaussian Process Force Fields

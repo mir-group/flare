@@ -115,9 +115,9 @@ def run_dft_par(dft_input: str, structure: Structure,
     if n_cpus > 1:
         # why is parallel prefix needed?
         if (parallel_prefix == "mpi") and (mpi == 'mpi'):
-            dft_command = f'mpirun -np {ncpus} {dft_command}'
+            dft_command = f'mpirun -np {n_cpus} {dft_command}'
         elif mpi == 'srun':
-            dft_command = f'srun -n {ncpus} {dft_command}'
+            dft_command = f'srun -n {n_cpus} {dft_command}'
 
     else:
         serial_prefix = dft_kwargs.get('serial_prefix', '')
