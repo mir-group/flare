@@ -300,17 +300,10 @@ class GaussianProcess:
 
         x_0 = self.hyps
 
-<<<<<<< HEAD
         args = (self.name, self.kernel_grad, output,
                 self.cutoffs, self.hyps_mask,
                 self.n_cpus, self.n_sample, print_progress)
-=======
-        args = (self.training_data, self.training_labels_np,
-                self.kernel_grad, output,
-                self.cutoffs, self.hyps_mask,
-                self.n_cpus, self.nsample,
-                print_progress)
->>>>>>> 9a972151d39e3ce56703b937d35035da70adf436
+
         objective_func = get_neg_like_grad
         res = None
 
@@ -403,31 +396,16 @@ class GaussianProcess:
                                 n_sample=self.n_sample)
 
         # Guarantee that alpha is up to date with training set
-<<<<<<< HEAD
         self.check_L_alpha()
-=======
-        if self.alpha is None or\
-                (3 * len(self.training_data) != len(self.alpha)):
-            self.update_L_alpha()
->>>>>>> 9a972151d39e3ce56703b937d35035da70adf436
 
         # get predictive mean
         pred_mean = np.matmul(k_v, self.alpha)
 
         # get predictive variance without cholesky (possibly faster)
         # pass args to kernel based on if mult. hyperparameters in use
-<<<<<<< HEAD
         args = from_mask_to_args(self.hyps, self.hyps_mask, self.cutoffs)
 
         self_kern = self.kernel(x_t, x_t, d, d, *args)
-=======
-        if (self.multihyps):
-            self_kern = self.kernel(x_t, x_t, d, d, self.hyps,
-                                    self.cutoffs, hyps_mask=self.hyps_mask)
-        else:
-            self_kern = self.kernel(x_t, x_t, d, d, self.hyps,
-                                    self.cutoffs)
->>>>>>> 9a972151d39e3ce56703b937d35035da70adf436
 
         pred_var = self_kern - \
                    np.matmul(np.matmul(k_v, self.ky_mat_inv), k_v)
@@ -491,60 +469,11 @@ class GaussianProcess:
 
         # get predictive variance
         v_vec = solve_triangular(self.l_mat, k_v, lower=True)
-<<<<<<< HEAD
         args = from_mask_to_args(self.hyps, self.hyps_mask, self.cutoffs)
-=======
-        if (self.multihyps):
-            self_kern = self.energy_kernel(x_t, x_t, self.hyps,
-                                           self.cutoffs,
-                                           hyps_mask=self.hyps_mask)
-        else:
-            self_kern = self.energy_kernel(x_t, x_t, self.hyps,
-                                           self.cutoffs)
-        pred_var = self_kern - np.matmul(v_vec, v_vec)
-
-        return pred_mean, pred_var
->>>>>>> 9a972151d39e3ce56703b937d35035da70adf436
 
         self_kern = self.energy_kernel(x_t, x_t, *args)
 
-<<<<<<< HEAD
         pred_var = self_kern - np.matmul(v_vec, v_vec)
-=======
-        return k_v
-
-    def en_kern_vec(self, x: AtomicEnvironment):
-        """Compute the vector of energy/force kernels between an atomic
-        environment and the environments in the training set.
-
-        Args:
-            x (AtomicEnvironment): Local environment to compare against
-                the training environments.
-
-        Return:
-            np.ndarray: Kernel vector.
-        """
-
-        ds = [1, 2, 3]
-        size = len(self.training_data) * 3
-        k_v = np.zeros(size, )
-
-        if (self.multihyps):
-            for m_index in range(size):
-                x_2 = self.training_data[int(math.floor(m_index / 3))]
-                d_2 = ds[m_index % 3]
-                k_v[m_index] = \
-                    self.energy_force_kernel(x_2, x, d_2, self.hyps,
-                                             self.cutoffs,
-                                             hyps_mask=self.hyps_mask)
-        else:
-            for m_index in range(size):
-                x_2 = self.training_data[int(math.floor(m_index / 3))]
-                d_2 = ds[m_index % 3]
-                k_v[m_index] = self.energy_force_kernel(x_2, x, d_2,
-                                                        self.hyps,
-                                                        self.cutoffs)
->>>>>>> 9a972151d39e3ce56703b937d35035da70adf436
 
         return pred_mean, pred_var
 
@@ -574,13 +503,8 @@ class GaussianProcess:
         self.alpha = alpha
         self.ky_mat_inv = ky_mat_inv
 
-<<<<<<< HEAD
         self.likelihood = get_like_from_mats(ky_mat, l_mat,
                                              alpha, self.name)
-=======
-        self.likelihood = \
-            get_like_from_ky_mat(self.ky_mat, self.training_labels_np)
->>>>>>> 9a972151d39e3ce56703b937d35035da70adf436
 
     def update_L_alpha(self):
         """
@@ -593,7 +517,6 @@ class GaussianProcess:
             self.set_L_alpha()
             return
 
-<<<<<<< HEAD
         ky_mat = get_ky_mat_update(self.ky_mat, self.hyps,
                                    self.name,
                                    self.kernel,
@@ -601,20 +524,6 @@ class GaussianProcess:
                                    hyps_mask=self.hyps_mask,
                                    n_cpus=self.n_cpus,
                                    n_sample=self.n_sample)
-=======
-        if (self.par and not self.per_atom_par):
-            n_cpus = self.n_cpus
-        else:
-            n_cpus = 1
-
-        ky_mat = get_ky_mat_update_par(self.ky_mat, self.hyps,
-                                       self.training_data,
-                                       self.kernel,
-                                       cutoffs=self.cutoffs,
-                                       hyps_mask=self.hyps_mask,
-                                       n_cpus=n_cpus,
-                                       nsample=self.nsample)
->>>>>>> 9a972151d39e3ce56703b937d35035da70adf436
 
         l_mat = np.linalg.cholesky(ky_mat)
         l_mat_inv = np.linalg.inv(l_mat)
@@ -653,22 +562,14 @@ class GaussianProcess:
 
             nbond = self.hyps_mask['nbond']
             thestr += f'nbond: {nbond}\n'
-<<<<<<< HEAD
+
             if nbond > 0:
                 thestr += f'bond_mask: \n'
-=======
-            if (nbond > 0):
-                thestr +=  f'bond_mask: \n'
->>>>>>> 9a972151d39e3ce56703b937d35035da70adf436
                 thestr += str(self.hyps_mask['bond_mask']) + '\n'
 
             ntriplet = self.hyps_mask['ntriplet']
             thestr += f'ntriplet: {ntriplet}\n'
-<<<<<<< HEAD
             if ntriplet > 0:
-=======
-            if (ntriplet > 0):
->>>>>>> 9a972151d39e3ce56703b937d35035da70adf436
                 thestr += f'triplet_mask: \n'
                 thestr += str(self.hyps_mask['triplet_mask']) + '\n'
 
@@ -740,12 +641,8 @@ class GaussianProcess:
             new_gp.l_mat = np.array(dictionary['l_mat']) \
                 if dictionary.get('l_mat') is not None else None
             new_gp.alpha = np.array(dictionary['alpha']) \
-<<<<<<< HEAD
                 if dictionary.get('alpha') is not None else None
 
-=======
-                if dictionary.get('alpha') is not None  else None
->>>>>>> 9a972151d39e3ce56703b937d35035da70adf436
         return new_gp
 
     def compute_matrices(self):
