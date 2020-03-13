@@ -372,8 +372,6 @@ TEST_F(KernelTest, TwoBodySelfStrucTest){
     // Perturb the coordinates of the environment atoms.
     Eigen::VectorXd self_kern = 
         two_body_kernel.self_kernel_struc(test_struc_2);
-    
-    // std::cout << self_kern << std::endl;
 
     // Check energy/energy kernel.
     double en_val = two_body_kernel.struc_struc_en(test_struc_2, test_struc_2);
@@ -413,55 +411,57 @@ TEST_F(KernelTest, TwoBodySelfStrucTest){
         }
     }
 
-    // // Check stress/stress kernel.
-    // int stress_count = 0;
-    // int noa = 5;
-    // double vol_sq = test_struc.volume * test_struc.volume;
-    // for (int m = 0; m < 3; m ++){
-    //     for (int n = m; n < 3; n ++){
-    //         cell_3 = cell_4 = cell;
-    //         positions_3 = positions_4 = positions_2;
+    // Check stress/stress kernel.
+    int stress_count = 0;
+    int noa = 5;
+    double vol_sq = test_struc.volume * test_struc.volume;
+    for (int m = 0; m < 3; m ++){
+        for (int n = m; n < 3; n ++){
+            cell_3 = cell_4 = cell;
+            positions_3 = positions_4 = positions_2;
 
-    //         // Perform strain.
-    //         cell_3(0, m) += cell(0, n) * delta;
-    //         cell_3(1, m) += cell(1, n) * delta;
-    //         cell_3(2, m) += cell(2, n) * delta;
+            // Perform strain.
+            cell_3(0, m) += cell(0, n) * delta;
+            cell_3(1, m) += cell(1, n) * delta;
+            cell_3(2, m) += cell(2, n) * delta;
 
-    //         cell_4(0, m) -= cell(0, n) * delta;
-    //         cell_4(1, m) -= cell(1, n) * delta;
-    //         cell_4(2, m) -= cell(2, n) * delta;
+            cell_4(0, m) -= cell(0, n) * delta;
+            cell_4(1, m) -= cell(1, n) * delta;
+            cell_4(2, m) -= cell(2, n) * delta;
 
-    //         for (int k = 0; k < noa; k ++){
-    //             positions_3(k, m) += positions_2(k, n) * delta;
-    //             positions_4(k, m) -= positions_2(k, n) * delta;
-    //         }
+            for (int k = 0; k < noa; k ++){
+                positions_3(k, m) += positions_2(k, n) * delta;
+                positions_4(k, m) -= positions_2(k, n) * delta;
+            }
 
-    //         test_struc_3 = StructureDescriptor(cell_3, species, positions_3,
-    //             cutoff, nested_cutoffs, many_body_cutoffs,
-    //             descriptor_calculators);
-    //         test_env_3 = test_struc_3.local_environments[0];
-    //         test_struc_4 = StructureDescriptor(cell_4, species, positions_4,
-    //             cutoff, nested_cutoffs, many_body_cutoffs,
-    //             descriptor_calculators);
-    //         test_env_4 = test_struc_4.local_environments[0];
+            test_struc_3 = StructureDescriptor(cell_3, species,
+                positions_3, cutoff, nested_cutoffs, many_body_cutoffs,
+                descriptor_calculators);
+            test_struc_4 = StructureDescriptor(cell_4, species,
+                positions_4, cutoff, nested_cutoffs, many_body_cutoffs,
+                descriptor_calculators);
 
-    //         // Compute stress with finite difference.
-    //         double calc1 = two_body_kernel.env_env(test_env_3, test_env_3);
-    //         double calc2 = two_body_kernel.env_env(test_env_4, test_env_4);
-    //         double calc3 = two_body_kernel.env_env(test_env_3, test_env_4);
-    //         double calc4 = two_body_kernel.env_env(test_env_4, test_env_3);
+            // Compute stress with finite difference.
+            double calc1 =
+                two_body_kernel.struc_struc_en(test_struc_3, test_struc_3);
+            double calc2 =
+                two_body_kernel.struc_struc_en(test_struc_4, test_struc_4);
+            double calc3 =
+                two_body_kernel.struc_struc_en(test_struc_3, test_struc_4);
+            double calc4 =
+                two_body_kernel.struc_struc_en(test_struc_4, test_struc_3);
         
-    //         double kern_finite_diff = (calc1 + calc2 - calc3 - calc4) /
-    //             (4*delta*delta);
+            double kern_finite_diff = (calc1 + calc2 - calc3 - calc4) /
+                (4*delta*delta);
 
-    //         // Check that the values match.
-    //         double exact_val = self_kern(1 + 3 * noa + stress_count)
-    //             * vol_sq;
-    //         double abs_diff = abs(kern_finite_diff - exact_val); 
+            // Check that the values match.
+            double exact_val = self_kern(1 + 3 * noa + stress_count)
+                * vol_sq;
+            double abs_diff = abs(kern_finite_diff - exact_val); 
 
-    //         EXPECT_NEAR(abs_diff, 0, thresh);
+            EXPECT_NEAR(abs_diff, 0, thresh);
 
-    //         stress_count ++;
-    //     }
-    // }
+            stress_count ++;
+        }
+    }
 }

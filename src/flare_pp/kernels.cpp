@@ -28,6 +28,24 @@ Kernel :: Kernel(std::vector<double> kernel_hyperparameters){
     this->kernel_hyperparameters = kernel_hyperparameters;
 };
 
+double Kernel :: struc_struc_en(
+    const StructureDescriptor & struc1, const StructureDescriptor & struc2){
+
+    double kern_val = 0;
+
+    // Double loop over environments.
+    LocalEnvironment env1, env2;
+    for (int i = 0; i < struc1.noa; i ++){
+        env1 = struc1.local_environments[i];
+        for (int j = 0; j < struc2.noa; j ++){
+            env2 = struc2.local_environments[j];
+            kern_val += env_env(env1, env2);
+        }
+    }
+
+    return kern_val;
+}
+
 TwoBodyKernel :: TwoBodyKernel() {};
 
 TwoBodyKernel :: TwoBodyKernel(double sigma, double ls,
@@ -56,8 +74,6 @@ TwoBodyKernel :: TwoBodyKernel(double sigma, double ls,
     }
 }
 
-// TODO: test env_env method
-// factor of 1/4 missing?
 double TwoBodyKernel :: env_env(const LocalEnvironment & env1,
                                 const LocalEnvironment & env2){
     double kern = 0;
@@ -94,24 +110,6 @@ double TwoBodyKernel :: env_env(const LocalEnvironment & env1,
         }
     }
     return sig2 * kern / 4;
-}
-
-double TwoBodyKernel :: struc_struc_en(const StructureDescriptor & struc1,
-            const StructureDescriptor & struc2){
-
-    double kern_val = 0;
-
-    // Double loop over environments.
-    LocalEnvironment env1, env2;
-    for (int i = 0; i < struc1.noa; i ++){
-        env1 = struc1.local_environments[i];
-        for (int j = 0; j < struc2.noa; j ++){
-            env2 = struc2.local_environments[j];
-            kern_val += env_env(env1, env2);
-        }
-    }
-
-    return kern_val;
 }
 
 Eigen::VectorXd TwoBodyKernel :: self_kernel_env(
@@ -599,6 +597,18 @@ Eigen::VectorXd ThreeBodyKernel :: self_kernel_env(
     Eigen::VectorXd kernel_vector =
         Eigen::VectorXd::Zero(no_elements);
     
+    // TODO: implement the rest
+
+    return kernel_vector;
+}
+
+Eigen::VectorXd ThreeBodyKernel :: self_kernel_struc(
+    const StructureDescriptor & struc){
+
+    int no_elements = 1 + 3 * struc.noa + 6;
+    Eigen::VectorXd kernel_vector =
+        Eigen::VectorXd::Zero(no_elements);
+
     // TODO: implement the rest
 
     return kernel_vector;

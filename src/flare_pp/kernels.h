@@ -18,6 +18,9 @@ class Kernel{
         virtual double env_env(const LocalEnvironment & env1,
                                const LocalEnvironment & env2) = 0;
 
+        double struc_struc_en(const StructureDescriptor & struc1,
+            const StructureDescriptor & struc2);
+
         virtual Eigen::VectorXd self_kernel_env(
             const StructureDescriptor & struc1, int atom) = 0;
 
@@ -49,9 +52,6 @@ class TwoBodyKernel : public Kernel{
 
         double env_env(const LocalEnvironment & env1,
                        const LocalEnvironment & env2);
-
-        double struc_struc_en(const StructureDescriptor & struc1,
-            const StructureDescriptor & struc2);
 
         Eigen::VectorXd self_kernel_env(const StructureDescriptor & struc1,
             int atom);
