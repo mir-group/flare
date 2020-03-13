@@ -29,11 +29,11 @@ class OTF_VelocityVerlet(VelocityVerlet, OTF):
         kwargs: same parameters as :class:`flare.ase.OTF`
     """
 
-    def __init__(self, atoms, trajectory=None, dt=None,
+    def __init__(self, atoms, timestep, trajectory=None, dt=None,
                  **kwargs):
 
-        VelocityVerlet.__init__(self, atoms=atoms, trajectory=trajectory,
-                                dt=dt)
+        VelocityVerlet.__init__(self, atoms=atoms, timestep=timestep, 
+                                trajectory=trajectory, dt=dt)
 
         OTF.__init__(self, **kwargs)
         self.md_engine = 'VelocityVerlet'
@@ -172,8 +172,8 @@ def otf_md(md_engine: str, atoms, md_params: dict, otf_params: dict):
     trajectory = md['trajectory']
 
     if md_engine == 'VelocityVerlet':
-        return OTF_VelocityVerlet(atoms, trajectory=trajectory, dt=md['dt'],
-                **otf_params)
+        return OTF_VelocityVerlet(atoms, timestep, trajectory=trajectory, 
+                dt=md['dt'], **otf_params)
 
     elif md_engine == 'NVTBerendsen':
         return OTF_NVTBerendsen(atoms, timestep, md['temperature'],

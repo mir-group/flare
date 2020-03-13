@@ -200,3 +200,4 @@ class OTFLogger(MDLogger):
             f.close()
         for f in self.dft_data_files:
             f.close()
+        self.added_atoms_dat.close()
