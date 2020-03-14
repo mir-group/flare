@@ -90,18 +90,21 @@ class GaussianProcess:
         if 'par' in kwargs.keys():
             DeprecationWarning("par is being replaced with parallel")
             self.parallel = kwargs.get('par')
+        if 'no_cpus' in kwargs.keys():
+            DeprecationWarning("no_cpus is being replaced with n_cpu")
+            self.n_cpus = no_cpus
 
         # TO DO, clean up all the other kernel arguments
         if kernel is None:
-            DeprecationWarning("kernel, kernel_grad, energy_force_kernel "
-                    "and energy_kernel will be replaced by kernel_name")
-            self.kernel_name = kernel_name
             kernel, grad, ek, efk = str_to_kernel_set(kernel_name, multihyps)
             self.kernel = kernel
             self.kernel_grad = grad
             self.energy_force_kernel = efk
             self.energy_kernel = ek
+            self.kernel_name = kernel.__name__
         else:
+            DeprecationWarning("kernel, kernel_grad, energy_force_kernel "
+                    "and energy_kernel will be replaced by kernel_name")
             self.kernel_name = kernel.__name__
             self.kernel = kernel
             self.kernel_grad = kernel_grad

@@ -44,7 +44,7 @@ class OtfAnalysis:
 
     def make_gp(self, cell=None, kernel_name=None, algo=None,
                 call_no=None, cutoffs=None, hyps=None, init_gp=None,
-                hyp_no=None, par=True):
+                hyp_no=None, par=True, kernel=None):
 
         if init_gp is None:
             # Use run's values as extracted from header
@@ -65,6 +65,10 @@ class OtfAnalysis:
                 gp_hyps = self.gp_hyp_list[hyp_no-1][-1]
             else:
                 gp_hyps = hyps
+
+            if (kernel is not None) and (kernel_name is None):
+                DeprecationWarning("kernel replaced with kernel_name")
+                kernel_name = kernel.__name__
 
             gp_model = \
                 gp.GaussianProcess(kernel_name=kernel_name,
@@ -358,6 +362,8 @@ def parse_header_information(outfile: str = 'otf_run.out') -> dict:
         if 'frames' in line:
             header_info['frames'] = int(line.split(':')[1])
         if 'kernel_name' in line:
+            header_info['kernel_name'] = line.split(':')[1].strip()
+        if 'kernel' in line:
             header_info['kernel_name'] = line.split(':')[1].strip()
         if 'number of hyperparameters:' in line:
             header_info['n_hyps'] = int(line.split(':')[1])

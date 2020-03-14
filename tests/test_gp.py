@@ -166,10 +166,11 @@ def test_representation_method(all_gps, multihyps):
     test_gp = all_gps[multihyps]
     the_str = str(test_gp)
     assert 'GaussianProcess Object' in the_str
-    assert 'Kernel: 2+3mc' in the_str
     if (multihyps):
+        assert 'Kernel: two_plus_three_body_mc' in the_str
         assert 'Cutoffs: [0.8 0.8]' in the_str
     else:
+        assert 'Kernel: two_plus_three_plus_many_body_mc' in the_str
         assert 'Cutoffs: [0.8 0.8 0.8]' in the_str
     assert 'Model Likelihood: ' in the_str
     if not multihyps:
