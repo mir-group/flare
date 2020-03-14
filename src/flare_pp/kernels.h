@@ -91,7 +91,16 @@ class ThreeBodyKernel : public Kernel{
         Eigen::VectorXd env_struc(const LocalEnvironment & env1,
                                   const StructureDescriptor & struc1);
 
-        void update_kernel_vector(Eigen::VectorXd & kernel_vector,
+        void env_struc_update(Eigen::VectorXd & kernel_vector,
+            int no_elements, int i, double vol_inv,
+            double r11, double r22, double r33,
+            double fi, double fj, double fdjx1, double fdjx2,
+            double fdjy1, double fdjy2, double fdjz1, double fdjz2,
+            double xrel1, double xval1, double xrel2, double xval2,
+            double yrel1, double yval1, double yrel2, double yval2,
+            double zrel1, double zval1, double zrel2, double zval2);
+
+        void env_env_update(Eigen::VectorXd & kernel_vector,
             int no_elements, int i, double vol_inv,
             double r11, double r22, double r33,
             double fi, double fj, double fdjx1, double fdjx2,
