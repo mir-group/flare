@@ -6,12 +6,9 @@ from os import remove
 
 from flare.env import AtomicEnvironment
 from flare.struc import Structure
-from flare.kernels.kernels import two_plus_three_body, two_plus_three_body_grad
 from flare.gp import GaussianProcess
 from flare.mgp.mgp_en import MappedGaussianProcess
 from flare.gp_from_aimd import TrajectoryTrainer
-from flare.kernels.mc_simple import two_plus_three_body_mc, \
-    two_plus_three_body_mc_grad
 from json import loads
 from flare.env import AtomicEnvironment
 from .test_mgp_unit import all_mgp, all_gp, get_random_structure
@@ -19,8 +16,7 @@ from .fake_gp import get_gp
 
 @pytest.fixture
 def methanol_gp():
-    the_gp = GaussianProcess(kernel=two_plus_three_body_mc,
-                             kernel_grad=two_plus_three_body_mc_grad,
+    the_gp = GaussianProcess(kernel_name="2+3_mc",
                              hyps=np.array([3.75996759e-06, 1.53990678e-02,
                                             2.50624782e-05, 5.07884426e-01,
                                             1.70172923e-03]),
@@ -43,8 +39,7 @@ def methanol_gp():
 
 @pytest.fixture
 def fake_gp():
-    return GaussianProcess(kernel=two_plus_three_body,
-                           kernel_grad=two_plus_three_body_grad,
+    return GaussianProcess(kernel_name="2+3",
                            hyps=np.array([1]),
                            cutoffs=np.array([]))
 
@@ -79,8 +74,7 @@ def test_load_trained_gp_and_run(methanol_gp):
 
 
 def test_load_one_frame_and_run():
-    the_gp = GaussianProcess(kernel=two_plus_three_body_mc,
-                             kernel_grad=two_plus_three_body_mc_grad,
+    the_gp = GaussianProcess(kernel_name="2+3_mc",
                              hyps=np.array([3.75996759e-06, 1.53990678e-02,
                                             2.50624782e-05, 5.07884426e-01,
                                             1.70172923e-03]),
@@ -104,8 +98,7 @@ def test_load_one_frame_and_run():
 
 
 def test_seed_and_run():
-    the_gp = GaussianProcess(kernel=two_plus_three_body_mc,
-                             kernel_grad=two_plus_three_body_mc_grad,
+    the_gp = GaussianProcess(kernel_name="2+3_mc",
                              hyps=np.array([3.75996759e-06, 1.53990678e-02,
                                             2.50624782e-05, 5.07884426e-01,
                                             1.70172923e-03]),

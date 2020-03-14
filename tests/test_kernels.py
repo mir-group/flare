@@ -4,7 +4,7 @@ import sys
 from random import random, randint
 from copy import deepcopy
 from flare import env, gp, struc
-import flare.kernels.kernels as en
+import flare.kernels.sc as en
 
 from flare.kernels.utils import from_mask_to_args, from_grad_to_mask
 
