@@ -42,13 +42,13 @@ def str_to_kernel_set(name: str, multihyps: bool =False):
     b3 = False
     many = False
 
-    for s in ['2', 'two']:
+    for s in ['2', 'two', 'Two', 'TWO']:
         if (s in name):
             b2 = True
-    for s in ['3', 'three']:
+    for s in ['3', 'three', 'Three', 'THREE']:
         if (s in name):
             b3 = True
-    for s in ['mb', 'manybody', 'many']:
+    for s in ['mb', 'manybody', 'many', 'Many', 'ManyBody']:
         if (s in name):
             many = True
 

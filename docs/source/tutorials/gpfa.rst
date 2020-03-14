@@ -18,7 +18,7 @@ Step 1: Setting up a Gaussian Process Object
 Our goal is to train a GP, which first must be instantiated with a set of parameters.
 
 For the sake of this example, which is a molecule, we will use a two-plus-three body kernel. 
-We must provide the kernel and the kernel gradient as ``callable`` s to the GP. 
+We must provide the kernel name to the GP, "two-plus-three-mc" or "2+3mc'.
 Our initial guesses for the hyperparameters are not important. 
 The hyperparameter labels are included below for later output.
 The system contains a small number of atoms, so we choose a relatively 
@@ -30,7 +30,6 @@ At the header of a file, include the following imports:
 .. code-block:: python
 
 	from flare.gp import GaussianProcess
-	from flare.kernels.mc_simple import two_plus_three_body_mc, two_plus_three_body_mc_grad
 
 We will then set up the ``GaussianProcess`` object.
 
@@ -47,17 +46,15 @@ We will then set up the ``GaussianProcess`` object.
 * | The two cutoff values correspond to the functions which set up 
   | the two- and three-body Atomic Environments. Since Methanol is a small 
   | molecule, 7 Angstrom each will be sufficent.
-* | The kernels which facilitate these comparisons must be imported as Python  ``callable`` s. 
+* | The kernel name must contain the terms you want to use. 
 * | Here, we will use the ``two_plus_three_body_mc`` kernel, which 
   | uses two-body and three-body comparisons. ``mc`` means multi-component, 
   | indicating that it can handle multiple atomic species being present.
-* | We must also import the gradient of the kernel, which is
-  | ``two_plus_three_body_mc_grad``.
  
 
 .. code-block:: python
 
-	gp = GaussianProcess(kernel=two_plus_three_body_mc, kernel_grad=two_plus_three_body_mc_grad,
+	gp = GaussianProcess(kernel_name="2+3mc", 
 	hyps=[0.01, 0.01, 0.01, 0.01, 0.01],
 	cutoffs = (7,7),
 	hyp_labels=['Two-Body Signal Variance','Two-Body Length Scale','Three-Body Signal Variance',
