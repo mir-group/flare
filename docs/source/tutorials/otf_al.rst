@@ -8,7 +8,7 @@ Step 1: Set up a GP Model
 -------------------------
 
 Let's start up with the GP model with three-body kernel function. 
-(See :doc:`kernels.py <../flare/kernels/kernels>` (single component)
+(See :doc:`kernels.py <../flare/kernels/sc>` (single component)
 or :doc:`mc_simple.py <../flare/kernels/mc_simple>` (multi-component) for more options.)
 
 .. code-block:: python
@@ -31,7 +31,7 @@ or :doc:`mc_simple.py <../flare/kernels/mc_simple>` (multi-component) for more o
 
 * ``kernel_name``: set to be the name of kernel functions
 
-    * import from :doc:`kernels.py <../flare/kernels/kernels>` (single-component system) 
+    * import from :doc:`sc.py <../flare/kernels/sc>` (single-component system) 
       or :doc:`mc_simple.py <../flare/kernels/mc_simple>` (multi-component system). 
     * Currently we have the choices of two-body, three-body and two-plus-three-body kernel functions.
     * Two-plus-three-body kernel function is simply the summation of two-body and three-body kernels,
