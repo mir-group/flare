@@ -17,7 +17,7 @@ from flare import gp, struc
 from flare.env import AtomicEnvironment
 from flare.gp import GaussianProcess
 from flare.gp_algebra import get_kernel_vector_unit, partition_c
-from flare.kernels.kernels import two_body, three_body, two_plus_three_body,\
+from flare.kernels.sc import two_body, three_body, two_plus_three_body,\
     two_body_jit
 from flare.cutoffs import quadratic_cutoff
 from flare.kernels.mc_simple import two_body_mc, three_body_mc, two_plus_three_body_mc

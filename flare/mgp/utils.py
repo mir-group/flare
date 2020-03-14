@@ -10,7 +10,7 @@ import flare.env as env
 import flare.struc as struc
 import flare.kernels.mc_simple as mc_simple
 import flare.kernels.mc_sephyps as mc_sephyps
-import flare.kernels.kernels as sc
+import flare.kernels.sc as sc
 from flare.env import AtomicEnvironment
 from flare.kernels.kernels import three_body_helper_1, \
     three_body_helper_2, force_helper
