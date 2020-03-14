@@ -49,7 +49,7 @@ class GaussianProcess:
         par (bool, optional): If True, the covariance matrix K of the GP is
             computed in parallel. Defaults to False.
         n_cpus (int, optional): Number of cpus used for parallel
-            calculations. Defaults to None.
+            calculations. Defaults to 1 (serial)
         n_samples (int, optional): Size of submatrix to use when parallelizing
             predictions.
         output (Output, optional): Output object used to dump hyperparameters
@@ -64,7 +64,7 @@ class GaussianProcess:
                  opt_algorithm: str = 'L-BFGS-B',
                  maxiter: int = 10, parallel: bool = False,
                  per_atom_par: bool = True,
-                 n_cpus: int = None, n_sample: int = 100,
+                 n_cpus: int = 1, n_sample: int = 100,
                  output: Output = None,
                  multihyps: bool = False, hyps_mask: dict = None,
                  kernel_name="2+3_mc", name="default_gp", **kwargs):

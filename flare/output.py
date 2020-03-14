@@ -130,7 +130,7 @@ class Output:
         headerstring += \
             f'number of cpu cores: {multiprocessing.cpu_count()}\n'
         headerstring += f'cutoffs: {cutoffs}\n'
-        headerstring += f'kernel: {kernel_name}\n'
+        headerstring += f'kernel_name: {kernel_name}\n'
         headerstring += f'number of hyperparameters: {len(hyps)}\n'
         headerstring += f'hyperparameters: {hyps}\n'
         headerstring += f'hyperparameter optimization algorithm: {algo}\n'

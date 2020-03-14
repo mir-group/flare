@@ -42,7 +42,7 @@ class OtfAnalysis:
         self.gp_species_list = gp_species_list
         self.gp_atom_count = gp_atom_count
 
-    def make_gp(self, cell=None, kernel=None, kernel_grad=None, algo=None,
+    def make_gp(self, cell=None, kernel_name=None, algo=None,
                 call_no=None, cutoffs=None, hyps=None, init_gp=None,
                 hyp_no=None, par=True):
 
@@ -51,10 +51,8 @@ class OtfAnalysis:
             # TODO Allow for kernel gradient in header
             if cell is None:
                 cell = self.header['cell']
-            if kernel is None:
-                kernel = self.header['kernel']
-            if kernel_grad is None:
-                raise Exception('Kernel gradient not supplied')
+            if kernel_name is None:
+                kernel_name = self.header['kernel_name']
             if algo is None:
                 algo = self.header['algo']
             if cutoffs is None:
@@ -69,8 +67,9 @@ class OtfAnalysis:
                 gp_hyps = hyps
 
             gp_model = \
-                gp.GaussianProcess(kernel, kernel_grad, gp_hyps,
-                                   cutoffs, opt_algorithm=algo,
+                gp.GaussianProcess(kernel_name=kernel_name,
+                                   hyps=gp_hyps,
+                                   cutoffs=cutoffs, opt_algorithm=algo,
                                    par=par)
         else:
             gp_model = init_gp
@@ -358,8 +357,8 @@ def parse_header_information(outfile: str = 'otf_run.out') -> dict:
             header_info['cutoffs'] = cutoffs
         if 'frames' in line:
             header_info['frames'] = int(line.split(':')[1])
-        if 'kernel' in line:
-            header_info['kernel'] = line.split(':')[1].strip()
+        if 'kernel_name' in line:
+            header_info['kernel_name'] = line.split(':')[1].strip()
         if 'number of hyperparameters:' in line:
             header_info['n_hyps'] = int(line.split(':')[1])
         if 'optimization algorithm' in line:

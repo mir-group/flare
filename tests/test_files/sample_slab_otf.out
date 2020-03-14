@@ -1,7 +1,7 @@
 2019-04-15 18:34:47.476879
 number of cpu cores: 16
 cutoffs: [7.  4.5]
-kernel: two_plus_three_body
+kernel_name: two_plus_three_body
 number of hyperparameters: 5
 hyperparameters: [0.1  1.   0.01 1.   0.05]
 hyperparameter optimization algorithm: BFGS
