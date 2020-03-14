@@ -134,6 +134,10 @@ class OTF:
                 self.observers[self.logger_ind][0].add_atom_info(atom, 
                     self.stds[atom])
             self.train()
+
+            if self.use_mapping:
+                self.build_mgp()
+
             self.observers[self.logger_ind][0].write_wall_time()
   
         if self.md_engine == 'NPT':
@@ -188,27 +192,30 @@ class OTF:
                 self.update_GP(dft_forces)
                 calc.mgp_updated = False
 
-            
-            # build mgp
             if self.use_mapping:
-                if self.nsteps in self.non_mapping_steps:
-                    calc.use_mapping = False
-                    skip = True
-                else: 
-                    calc.use_mapping = True
-
-                    if calc.mgp_updated:
-                        skip = True
-                    else:
-                        skip = False
-                        calc.mgp_updated = True
-
-                calc.build_mgp(skip)
-
+                self.build_mgp()
 
         self.observers[self.logger_ind][0].run_complete()
 
     
+    def build_mgp(self):
+        # build mgp
+        calc = self.atoms.calc
+        if self.nsteps in self.non_mapping_steps:
+            calc.use_mapping = False
+            skip = True
+        else: 
+            calc.use_mapping = True
+
+            if calc.mgp_updated:
+                skip = True
+            else:
+                skip = False
+                calc.mgp_updated = True
+
+        calc.build_mgp(skip)
+
+
     def call_DFT(self):
         self.dft_calc.nsteps = self.nsteps
         prev_calc = self.atoms.calc

@@ -243,6 +243,3 @@ def test_lmp_predict(all_ase_calc, all_lmp_calc, bodies, multihyps):
         if (label in f) or (f in ['log.lammps']):
             os.remove(f)
 
-#    for f in os.listdir('./tmp'):
-#        if label in f:
-#            os.remove(f'tmp/{f}')

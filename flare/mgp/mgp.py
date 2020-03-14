@@ -13,14 +13,12 @@ import multiprocessing as mp
 import subprocess
 import os
 
-from flare import gp, struc
+from flare import gp, struc, gp_algebra
 from flare.env import AtomicEnvironment
 from flare.gp import GaussianProcess
 from flare.gp_algebra import get_kernel_vector_unit, partition_c
-from flare.kernels.sc import two_body, three_body, two_plus_three_body,\
-    two_body_jit
 from flare.cutoffs import quadratic_cutoff
-from flare.kernels.mc_simple import two_body_mc, three_body_mc, two_plus_three_body_mc
+from flare.kernels.mc_simple import two_body_mc, three_body_mc
 from flare.util import Z_to_element
 
 import flare.mgp.utils as utils
@@ -67,7 +65,7 @@ class MappedGaussianProcess:
 
     def __init__(self, hyps, cutoffs, grid_params: dict, struc_params: dict,
                  mean_only=False, container_only=True, GP=None,
-                 lmp_file_name='lmp.mgp'):
+                 lmp_file_name='lmp.mgp', n_cpus=None, n_sample=100):
 
         self.hyps = hyps
         self.cutoffs = cutoffs
@@ -84,6 +82,8 @@ class MappedGaussianProcess:
         self.update = grid_params['update']
         self.mean_only = mean_only
         self.lmp_file_name = lmp_file_name
+        self.n_cpus = n_cpus
+        self.n_sample = n_sample
 
         self.build_bond_struc(struc_params)
         self.maps_2 = []
@@ -101,7 +101,7 @@ class MappedGaussianProcess:
             for b_struc in self.bond_struc[0]:
                 map_2 = Map2body(self.grid_num_2, self.bounds_2, self.cutoffs,
                                  b_struc, self.bodies, self.svd_rank_2,
-                                 self.mean_only)
+                                 self.mean_only, self.n_cpus, self.n_sample)
                 self.maps_2.append(map_2)
         if 3 in self.bodies:
             for b_struc in self.bond_struc[1]:
@@ -109,7 +109,8 @@ class MappedGaussianProcess:
                                  b_struc, self.bodies, self.svd_rank_3,
                                  self.mean_only,
                                  self.grid_params['load_grid'],
-                                 self.update)
+                                 self.update,
+                                 self.n_cpus, self.n_sample)
                 self.maps_3.append(map_3)
 
     def build_map(self, GP):
@@ -422,7 +423,7 @@ class Map2body:
                     s, e = block_id[ibatch]
                     k12_slice.append(\
                             pool.apply_async(self._GenGrid_inner,
-                                             args=(name, s, e,
+                                             args=(GP.name, s, e,
                                                    bond_lengths,
                                                    env12, kernel_info)))
                     count += 1
@@ -594,7 +595,7 @@ class Map3body:
                 s, e = block_id[ibatch]
                 k12_slice.append(\
                         pool.apply_async(self._GenGrid_inner_most,
-                                         args=(name, s, e,
+                                         args=(GP.name, s, e,
                                                cos_angles, bond_lengths,
                                                env12, kernel_info)))
                 if (size>5000):
@@ -703,9 +704,9 @@ class Map3body:
         '''
 
         kernel, efk, cutoffs, hyps, hyps_mask = kernel_info
-        training_data = flare.gp_algebra._global_training_data[name]
+        training_data = gp_algebra._global_training_data[name]
         # open saved k vector file, and write to new file
-        size = len(training_data)*3
+        size = (e-s)*3
         k12_v = np.zeros([len(bond_lengths), len(bond_lengths),
                           len(cos_angles), size])
         for a12, cos_angle12 in enumerate(cos_angles):
