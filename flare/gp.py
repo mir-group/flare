@@ -364,8 +364,13 @@ class GaussianProcess:
         not, update_L_alpha is called.
         """
 
-        # check that alpha is up to date with training set
+        # Check that alpha is up to date with training set
         size3 = len(self.training_data)*3
+
+        # If model is empty, then just return
+        if size3 == 0:
+            return
+
         if (self.alpha is None) or (size3 > self.alpha.shape[0]):
             self.update_L_alpha()
         elif (size3 != self.alpha.shape[0]):
