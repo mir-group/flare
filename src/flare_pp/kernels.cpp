@@ -4,25 +4,6 @@
 #include <cmath>
 #include <iostream>
 
-double force_helper(double rel1_rel2, double diff_rel1, double diff_rel2,
-    double diff_sq, double fi, double fj, double fdi, double fdj, double l1,
-    double l2, double l3, double s2){
-
-    double A, B, C, D, E, F, G, H, I;
-
-    A = exp(-diff_sq * l1);
-    B = A * diff_rel1 * l2;
-    C = -A * diff_rel2 * l2;
-    D = rel1_rel2 * A * l2 - diff_rel1 * diff_rel2 * A * l3;
-    E = A * fdi * fdj;
-    F = B * fi * fdj;
-    G = C * fdi * fj;
-    H = D * fi * fj;
-    I = s2 * (E + F + G + H);
-
-    return I;
-}
-
 Kernel :: Kernel() {};
 Kernel :: Kernel(std::vector<double> kernel_hyperparameters){
     this->kernel_hyperparameters = kernel_hyperparameters;
@@ -451,6 +432,25 @@ Eigen::VectorXd TwoBodyKernel :: env_struc(const LocalEnvironment & env1,
     }
 
     return kernel_vector;
+}
+
+double force_helper(double rel1_rel2, double diff_rel1, double diff_rel2,
+    double diff_sq, double fi, double fj, double fdi, double fdj, double l1,
+    double l2, double l3, double s2){
+
+    double A, B, C, D, E, F, G, H, I;
+
+    A = exp(-diff_sq * l1);
+    B = A * diff_rel1 * l2;
+    C = -A * diff_rel2 * l2;
+    D = rel1_rel2 * A * l2 - diff_rel1 * diff_rel2 * A * l3;
+    E = A * fdi * fdj;
+    F = B * fi * fdj;
+    G = C * fdi * fj;
+    H = D * fi * fj;
+    I = s2 * (E + F + G + H);
+
+    return I;
 }
 
 ThreeBodyKernel :: ThreeBodyKernel() {};
@@ -1901,6 +1901,54 @@ Eigen::VectorXd DotProductKernel :: self_kernel_env(
         Eigen::VectorXd::Zero(no_elements);
     
     // TODO: implement the rest
+
+    return kernel_vector;
+}
+
+Eigen::VectorXd DotProductKernel :: self_kernel_struc(
+    const StructureDescriptor & struc){
+
+    int no_elements = 1 + 3 * struc.noa + 6;
+    Eigen::VectorXd kernel_vector =
+        Eigen::VectorXd::Zero(no_elements);
+    double empty_thresh = 1e-8;
+    
+    LocalEnvironment env1, env2;
+    for (int m = 0; m < struc.noa; m ++){
+        env1 = struc.local_environments[m];
+
+        // Check that d1 is nonzero.
+        double d1 = env1.descriptor_norm[descriptor_index];
+        if (d1 < empty_thresh){
+            continue;
+        }
+        double d1_cubed = d1 * d1 * d1;
+
+        for (int n = m; n < struc.noa; n ++){
+            env2 = struc.local_environments[n];
+
+            // Check that the environments have the same central species.
+            if (env1.central_species != env2.central_species){
+                continue;
+            };
+
+            // Check that d2 is nonzero.
+            double d2 = env2.descriptor_norm[descriptor_index];
+            if (d2 < empty_thresh){
+                continue;
+            };
+            double d2_cubed = d2 * d2 * d2;
+
+            // Energy kernel
+            double dot_val = env1.descriptor_vals[descriptor_index]
+                .dot(env2.descriptor_vals[descriptor_index]);
+            double norm_dot = dot_val / (d1 * d2);
+            kernel_vector(0) += sig2 * pow(norm_dot, power);
+
+            // Force kernel
+
+        }
+    }
 
     return kernel_vector;
 }

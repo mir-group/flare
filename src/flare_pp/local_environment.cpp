@@ -2,8 +2,6 @@
 #include <cmath>
 #include  <iostream>
 
-// TODO: carefully review and edit changes
-
 LocalEnvironment :: LocalEnvironment(){}
 
 LocalEnvironment :: LocalEnvironment(const Structure & structure, int atom,
