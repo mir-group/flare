@@ -56,7 +56,10 @@ def partition_c(n_sample, size, n_cpus):
     the number of blocks are the same as n_cpus
     since mp.Process does not allow to change the thread number
     """
-    n_sample = int(math.ceil(size/n_cpus))
+    n_sample0 = int(math.ceil(size/n_cpus))
+    if (n_sample0 > n_sample):
+        n_sample = n_sample0
+
     block_id = []
     nbatch = 0
     e = 0
