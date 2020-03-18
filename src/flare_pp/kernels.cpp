@@ -1912,6 +1912,8 @@ Eigen::VectorXd DotProductKernel :: self_kernel_struc(
     Eigen::VectorXd kernel_vector =
         Eigen::VectorXd::Zero(no_elements);
     double empty_thresh = 1e-8;
+    double vol_inv = 1 / struc.volume;
+    double vol_inv_sq = vol_inv * vol_inv;
     
     LocalEnvironment env1, env2;
     for (int m = 0; m < struc.noa; m ++){
@@ -1937,16 +1939,77 @@ Eigen::VectorXd DotProductKernel :: self_kernel_struc(
             if (d2 < empty_thresh){
                 continue;
             };
+
+            double mult_fac;
+            if (m == n){
+                mult_fac = 1;
+            }
+            else{
+                mult_fac = 2;
+            }
+
             double d2_cubed = d2 * d2 * d2;
 
             // Energy kernel
             double dot_val = env1.descriptor_vals[descriptor_index]
                 .dot(env2.descriptor_vals[descriptor_index]);
             double norm_dot = dot_val / (d1 * d2);
-            kernel_vector(0) += sig2 * pow(norm_dot, power);
+            kernel_vector(0) += sig2 * mult_fac * pow(norm_dot, power);
 
             // Force kernel
+            Eigen::MatrixXd p1_d2, d1_p2, p1_p2;
 
+            p1_d2 = env1.descriptor_force_dervs[descriptor_index] *
+                env2.descriptor_vals[descriptor_index];
+            d1_p2 = env2.descriptor_force_dervs[descriptor_index] *
+                env1.descriptor_vals[descriptor_index];
+            p1_p2 = (env1.descriptor_force_dervs[descriptor_index].array() *
+                env2.descriptor_force_dervs[descriptor_index].array())
+                .rowwise().sum();
+
+            double c1, c2;
+            Eigen::MatrixXd v1, v2, v3, v4, v5, v6, force_kern;
+
+            c1 = (power - 1) * power * pow(norm_dot, power-2);
+            v1 = p1_d2 / (d1 * d2) - norm_dot * env1.force_dot[descriptor_index] / (d1 * d1);
+            v2 = d1_p2 / (d1 * d2) - norm_dot * env2.force_dot[descriptor_index] / (d2 * d2);
+
+            c2 = power * pow(norm_dot, power-1);
+            v3 = p1_p2 / (d1 * d2);
+            v4 = env1.force_dot[descriptor_index].array() * d1_p2.array() / (d1 * d1 * d1 * d2);
+            v5 = env2.force_dot[descriptor_index].array() *  p1_d2.array() / (d1 * d2 * d2 * d2);
+            v6 = env1.force_dot[descriptor_index].array() * env2.force_dot[descriptor_index].array() * norm_dot / (d1 * d1 * d2 * d2);
+
+            force_kern = c1 * (v1.array() * v2.array()).matrix() + c2 * (v3 - v4 - v5 + v6);
+            kernel_vector.segment(1, struc.noa * 3) +=
+                sig2 * mult_fac * force_kern;
+
+            // Stress kernel
+            Eigen::MatrixXd p1_d2_s, d1_p2_s, p1_p2_s;
+
+            p1_d2_s = env1.descriptor_stress_dervs[descriptor_index] *
+                env2.descriptor_vals[descriptor_index];
+            d1_p2_s = env2.descriptor_stress_dervs[descriptor_index] *
+                env1.descriptor_vals[descriptor_index];
+            p1_p2_s = (env1.descriptor_stress_dervs[descriptor_index].array() *
+                env2.descriptor_stress_dervs[descriptor_index].array())
+                .rowwise().sum();
+
+            double c1_s, c2_s;
+            Eigen::MatrixXd v1_s, v2_s, v3_s, v4_s, v5_s, v6_s, stress_kern;
+
+            c1_s = (power - 1) * power * pow(norm_dot, power-2);
+            v1_s = p1_d2_s / (d1 * d2) - norm_dot * env1.stress_dot[descriptor_index] / (d1 * d1);
+            v2_s = d1_p2_s / (d1 * d2) - norm_dot * env2.stress_dot[descriptor_index] / (d2 * d2);
+
+            c2_s = power * pow(norm_dot, power-1);
+            v3_s = p1_p2_s / (d1 * d2);
+            v4_s = env1.stress_dot[descriptor_index].array() * d1_p2_s.array() / (d1 * d1 * d1 * d2);
+            v5_s = env2.stress_dot[descriptor_index].array() *  p1_d2_s.array() / (d1 * d2 * d2 * d2);
+            v6_s = env1.stress_dot[descriptor_index].array() * env2.stress_dot[descriptor_index].array() * norm_dot / (d1 * d1 * d2 * d2);
+
+            stress_kern = c1_s * (v1_s.array() * v2_s.array()).matrix() + c2_s * (v3_s - v4_s - v5_s + v6_s);
+            kernel_vector.tail(6) += sig2 * mult_fac * vol_inv_sq * stress_kern;
         }
     }
 
