@@ -601,7 +601,7 @@ class GaussianProcess:
         return out_dict
 
     @staticmethod
-    def from_dict(dictionary):
+    def from_dict(dictionary, recompute=False):
         """Create GP object from dictionary representation."""
 
         multihyps = dictionary.get('multihyps', False)
@@ -633,14 +633,27 @@ class GaussianProcess:
         new_gp.likelihood_gradient = dictionary['likelihood_gradient']
         new_gp.training_labels_np = np.hstack(new_gp.training_labels)
 
+        _global_training_data[gp_model.name] = new_gp.training_data
+        _global_training_labels[gp_model.name] = new_gp.training_labels_np
+
         # Save time by attempting to load in computed attributes
         if len(new_gp.training_data) > 5000:
             if 'ky_mat_file' in dictionary:
                 new_gp.ky_mat = np.load(dictionary['ky_mat_file'])
                 new_gp.compute_matrices()
             else:
-                # TO DO, recompute the ky
-                pass
+                if (recompute):
+                    ky_mat = get_ky_mat(new_gp.hyps,
+                                        new_gp.name,
+                                        new_gp.kernel,
+                                        cutoffs=new_gp.cutoffs,
+                                        hyps_mask=new_gp.hyps_mask,
+                                        n_cpus=new_gp.n_cpus,
+                                        n_sample=new_gp.n_sample)
+                    new_gp.compute_matrices()
+                else:
+                    raise RuntimeError("cannot find the npy file for"\
+                            "ky mat, set recompute=True")
         else:
             new_gp.ky_mat_inv = np.array(dictionary['ky_mat_inv']) \
                 if dictionary.get('ky_mat_inv') is not None else None
@@ -700,7 +713,7 @@ class GaussianProcess:
             self.compute_matrices()
 
     @staticmethod
-    def from_file(filename: str, format: str = ''):
+    def from_file(filename: str, format: str = '', recompute: bool = False):
         """
         One-line convenience method to load a GP from a file stored using
         write_file
@@ -708,23 +721,46 @@ class GaussianProcess:
         Args:
             filename (str): path to GP model
             format (str): json or pickle if format is not in filename
+            recompute (bool): whether recompute ky_mat
         :return:
         """
 
         if '.json' in filename or 'json' in format:
             with open(filename, 'r') as f:
-                gp_model = GaussianProcess.from_dict(json.loads(f.readline()))
+                gp_model = GaussianProcess.from_dict(json.loads(f.readline()),
+                                                     recompute=recompute)
 
         elif '.pickle' in filename or 'pickle' in format:
             with open(filename, 'rb') as f:
                 gp_model = pickle.load(f)
 
+                _global_training_data[gp_model.name] \
+                        = gp_model.training_data
+                _global_training_labels[gp_model.name] \
+                        = gp_model.training_labels_np
+
+                if len(gp_model.training_data) > 5000:
+                    try:
+                        gp_model.ky_mat = np.load(gp_model.ky_mat_file)
+                        gp_model.compute_matrices()
+                    except:
+                        if (recompute):
+                            ky_mat = get_ky_mat(gp_model.hyps,
+                                                gp_model.name,
+                                                gp_model.kernel,
+                                                cutoffs=gp_model.cutoffs,
+                                                hyps_mask=gp_model.hyps_mask,
+                                                n_cpus=gp_model.n_cpus,
+                                                n_sample=gp_model.n_sample)
+                            gp_model.compute_matrices()
+                        else:
+                            raise RuntimeError("cannot find the npy file"\
+                                    "for ky mat")
+
         else:
             raise ValueError("Warning: Format unspecified or file is not "
                              ".json or .pickle format.")
 
-        _global_training_data[gp_model.name] = gp_model.training_data
-        _global_training_labels[gp_model.name] = gp_model.training_labels_np
         return gp_model
 
 
