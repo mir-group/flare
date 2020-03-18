@@ -371,7 +371,9 @@ class GaussianProcess:
         if size3 == 0:
             return
 
-        if (self.alpha is None) or (size3 > self.alpha.shape[0]):
+        if (self.alpha is None):
+            self.update_L_alpha()
+        elif (size3 > self.alpha.shape[0]):
             self.update_L_alpha()
         elif (size3 != self.alpha.shape[0]):
             self.set_L_alpha()
@@ -601,7 +603,7 @@ class GaussianProcess:
         return out_dict
 
     @staticmethod
-    def from_dict(dictionary, recompute=False):
+    def from_dict(dictionary):
         """Create GP object from dictionary representation."""
 
         multihyps = dictionary.get('multihyps', False)
@@ -638,22 +640,17 @@ class GaussianProcess:
 
         # Save time by attempting to load in computed attributes
         if len(new_gp.training_data) > 5000:
-            if 'ky_mat_file' in dictionary:
+            try:
                 new_gp.ky_mat = np.load(dictionary['ky_mat_file'])
                 new_gp.compute_matrices()
-            else:
-                if (recompute):
-                    ky_mat = get_ky_mat(new_gp.hyps,
-                                        new_gp.name,
-                                        new_gp.kernel,
-                                        cutoffs=new_gp.cutoffs,
-                                        hyps_mask=new_gp.hyps_mask,
-                                        n_cpus=new_gp.n_cpus,
-                                        n_sample=new_gp.n_sample)
-                    new_gp.compute_matrices()
-                else:
-                    raise RuntimeError("cannot find the npy file for"\
-                            "ky mat, set recompute=True")
+            except:
+                new_gp.ky_mat = None
+                new_gp.l_mat = None
+                new_gp.alpha = None
+                new_gp.ky_mat_inv = None
+                filename = dictionary['ky_mat_file']
+                Warning("the covariance matrices are not loaded"\
+                        f"because {filename} cannot be found")
         else:
             new_gp.ky_mat_inv = np.array(dictionary['ky_mat_inv']) \
                 if dictionary.get('ky_mat_inv') is not None else None
@@ -713,7 +710,7 @@ class GaussianProcess:
             self.compute_matrices()
 
     @staticmethod
-    def from_file(filename: str, format: str = '', recompute: bool = False):
+    def from_file(filename: str, format: str = ''):
         """
         One-line convenience method to load a GP from a file stored using
         write_file
@@ -721,14 +718,13 @@ class GaussianProcess:
         Args:
             filename (str): path to GP model
             format (str): json or pickle if format is not in filename
-            recompute (bool): whether recompute ky_mat
         :return:
         """
 
         if '.json' in filename or 'json' in format:
             with open(filename, 'r') as f:
-                gp_model = GaussianProcess.from_dict(json.loads(f.readline()),
-                                                     recompute=recompute)
+                gp_model = GaussianProcess.from_dict(json.loads(f.readline()))
+
 
         elif '.pickle' in filename or 'pickle' in format:
             with open(filename, 'rb') as f:
@@ -744,18 +740,12 @@ class GaussianProcess:
                         gp_model.ky_mat = np.load(gp_model.ky_mat_file)
                         gp_model.compute_matrices()
                     except:
-                        if (recompute):
-                            ky_mat = get_ky_mat(gp_model.hyps,
-                                                gp_model.name,
-                                                gp_model.kernel,
-                                                cutoffs=gp_model.cutoffs,
-                                                hyps_mask=gp_model.hyps_mask,
-                                                n_cpus=gp_model.n_cpus,
-                                                n_sample=gp_model.n_sample)
-                            gp_model.compute_matrices()
-                        else:
-                            raise RuntimeError("cannot find the npy file"\
-                                    "for ky mat")
+                        gp_model.ky_mat = None
+                        gp_model.l_mat = None
+                        gp_model.alpha = None
+                        gp_model.ky_mat_inv = None
+                        Warning("the covariance matrices are not loaded"\
+                                f"it can take extra long time to recompute")
 
         else:
             raise ValueError("Warning: Format unspecified or file is not "
