@@ -441,7 +441,7 @@ class Structure:
             else:
                 return structures
 
-        is_poscar = 'POSCAR' in file_name or 'vasp' in format.lower()
+        is_poscar = 'POSCAR' in file_name or 'CONTCAR' in file_name or 'vasp' in format.lower()
         if is_poscar and _pmg_present:
             pmg_structure = pmgvaspio.Poscar.from_file(file_name).structure
             return Structure.from_pmg_structure(pmg_structure)
