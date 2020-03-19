@@ -301,6 +301,12 @@ class GaussianProcess:
                 hyperparameter optimization.
         """
 
+        if len(self.training_data)==0 or len(self.training_labels) ==0:
+            raise Warning ("You are attempting to train a GP with no "
+                           "training data. Add environments and forces "
+                           "to the GP and try again.")
+            return None
+
         x_0 = self.hyps
 
         args = (self.name, self.kernel_grad, output,
