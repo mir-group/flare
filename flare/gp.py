@@ -377,7 +377,9 @@ class GaussianProcess:
         if size3 == 0:
             return
 
-        if (self.alpha is None) or (size3 > self.alpha.shape[0]):
+        if (self.alpha is None):
+            self.update_L_alpha()
+        elif (size3 > self.alpha.shape[0]):
             self.update_L_alpha()
         elif (size3 != self.alpha.shape[0]):
             self.set_L_alpha()
@@ -639,14 +641,22 @@ class GaussianProcess:
         new_gp.likelihood_gradient = dictionary['likelihood_gradient']
         new_gp.training_labels_np = np.hstack(new_gp.training_labels)
 
+        _global_training_data[new_gp.name] = new_gp.training_data
+        _global_training_labels[new_gp.name] = new_gp.training_labels_np
+
         # Save time by attempting to load in computed attributes
         if len(new_gp.training_data) > 5000:
-            if 'ky_mat_file' in dictionary:
+            try:
                 new_gp.ky_mat = np.load(dictionary['ky_mat_file'])
                 new_gp.compute_matrices()
-            else:
-                # TO DO, recompute the ky
-                pass
+            except:
+                new_gp.ky_mat = None
+                new_gp.l_mat = None
+                new_gp.alpha = None
+                new_gp.ky_mat_inv = None
+                filename = dictionary['ky_mat_file']
+                Warning("the covariance matrices are not loaded"\
+                        f"because {filename} cannot be found")
         else:
             new_gp.ky_mat_inv = np.array(dictionary['ky_mat_inv']) \
                 if dictionary.get('ky_mat_inv') is not None else None
@@ -721,16 +731,32 @@ class GaussianProcess:
             with open(filename, 'r') as f:
                 gp_model = GaussianProcess.from_dict(json.loads(f.readline()))
 
+
         elif '.pickle' in filename or 'pickle' in format:
             with open(filename, 'rb') as f:
                 gp_model = pickle.load(f)
+
+                _global_training_data[gp_model.name] \
+                        = gp_model.training_data
+                _global_training_labels[gp_model.name] \
+                        = gp_model.training_labels_np
+
+                if len(gp_model.training_data) > 5000:
+                    try:
+                        gp_model.ky_mat = np.load(gp_model.ky_mat_file)
+                        gp_model.compute_matrices()
+                    except:
+                        gp_model.ky_mat = None
+                        gp_model.l_mat = None
+                        gp_model.alpha = None
+                        gp_model.ky_mat_inv = None
+                        Warning("the covariance matrices are not loaded"\
+                                f"it can take extra long time to recompute")
 
         else:
             raise ValueError("Warning: Format unspecified or file is not "
                              ".json or .pickle format.")
 
-        _global_training_data[gp_model.name] = gp_model.training_data
-        _global_training_labels[gp_model.name] = gp_model.training_labels_np
         return gp_model
 
 

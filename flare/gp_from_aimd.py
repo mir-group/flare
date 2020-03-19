@@ -166,8 +166,8 @@ class TrajectoryTrainer:
         self.validate_ratio = validate_ratio
         assert (validate_ratio>=0 and validate_ratio<=1), \
                 "validate_ratio needs to be [0,1]"
-        
-        # Set up for pretraining 
+
+        # Set up for pretraining
         self.pre_train_max_iter = pre_train_max_iter
         self.pre_train_on_skips = pre_train_on_skips
         self.seed_envs = [] if pre_train_seed_envs is None else \
@@ -210,7 +210,8 @@ class TrajectoryTrainer:
         """
 
         if self.mgp:
-            raise NotImplementedError("Pre-running not yet configured for MGP")
+            raise NotImplementedError("Pre-running not" \
+                    "yet configured for MGP")
         self.output.write_header(self.gp.cutoffs,
                                  self.gp.kernel_name,
                                  self.gp.hyps,
@@ -269,7 +270,8 @@ class TrajectoryTrainer:
             self.update_gp_and_print(frame, train_atoms, train=False)
 
         if self.verbose >= 3 and atom_count > 0:
-            print(f"Added {atom_count} atoms to pretrain")
+            self.output.write_to_log(f"Added {atom_count} atoms to pretrain",
+                                     flush=True)
 
         if (self.seed_envs or atom_count or self.seed_frames) and self.max_trains>0:
             if self.verbose >= 3:
@@ -307,7 +309,7 @@ class TrajectoryTrainer:
         for i, cur_frame in enumerate(self.frames[::self.skip]):
 
             if self.verbose >= 2:
-                print("=====NOW ON FRAME {}=====".format(i))
+                print(f"=====NOW ON FRAME {i}=====")
             dft_forces = deepcopy(cur_frame.forces)
 
             self.pred_func(cur_frame, self.gp, self.n_cpus)
@@ -389,11 +391,10 @@ class TrajectoryTrainer:
         :return: None
         """
 
-        self.output.write_to_log('\nAdding atom(s) {} to the '
-                                 'training set.\n'
-                                 .format(train_atoms, ))
-        self.output.write_to_log('Uncertainties: {}.\n'
-                                 .format(frame.stds[train_atoms]),
+        self.output.write_to_log(f'\nAdding atom(s) {train_atoms} to the '
+                                 'training set.\n')
+        self.output.write_to_log(f'Uncertainties: '\
+                                 f'{frame.stds[train_atoms]}.\n',
                                  flush=True)
 
         # update gp model; handling differently if it's an MGP

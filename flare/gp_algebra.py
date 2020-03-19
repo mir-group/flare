@@ -56,7 +56,10 @@ def partition_c(n_sample, size, n_cpus):
     the number of blocks are the same as n_cpus
     since mp.Process does not allow to change the thread number
     """
-    n_sample = int(math.ceil(size/n_cpus))
+    n_sample0 = int(math.ceil(size/n_cpus))
+    if (n_sample0 > n_sample):
+        n_sample = n_sample0
+
     block_id = []
     nbatch = 0
     e = 0
@@ -534,9 +537,9 @@ def get_neg_like_grad(hyps: np.ndarray, name: str,
         output.write_to_log('like: ' + str(like)+'\n', name="hyps")
 
     if print_progress:
-        print('\nhyperparameters: '+str(hyps))
-        print('likelihood: ' + str(like))
-        print('likelihood gradient: ' + str(like_grad))
+        print('\nHyperparameters: ', list(hyps))
+        print('Likelihood: ' + str(like))
+        print('Likelihood Gradient: ',list(like_grad))
 
     return -like, -like_grad
 
