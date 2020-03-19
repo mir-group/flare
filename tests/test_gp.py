@@ -208,8 +208,7 @@ def test_load_and_reload(all_gps, test_point, multihyps):
 
     test_gp.write_model('test_gp_write', 'pickle')
 
-    with open('test_gp_write.pickle', 'rb') as f:
-        new_gp = pickle.load(f)
+    new_gp = GaussianProcess.from_file('test_gp_write.pickle')
 
     for d in [0, 1, 2]:
         assert np.all(test_gp.predict(x_t=test_point, d=d) ==

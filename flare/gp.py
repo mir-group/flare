@@ -635,8 +635,8 @@ class GaussianProcess:
         new_gp.likelihood_gradient = dictionary['likelihood_gradient']
         new_gp.training_labels_np = np.hstack(new_gp.training_labels)
 
-        _global_training_data[gp_model.name] = new_gp.training_data
-        _global_training_labels[gp_model.name] = new_gp.training_labels_np
+        _global_training_data[new_gp.name] = new_gp.training_data
+        _global_training_labels[new_gp.name] = new_gp.training_labels_np
 
         # Save time by attempting to load in computed attributes
         if len(new_gp.training_data) > 5000:
