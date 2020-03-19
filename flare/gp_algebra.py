@@ -537,9 +537,9 @@ def get_neg_like_grad(hyps: np.ndarray, name: str,
         output.write_to_log('like: ' + str(like)+'\n', name="hyps")
 
     if print_progress:
-        print('\nhyperparameters: '+str(hyps))
-        print('likelihood: ' + str(like))
-        print('likelihood gradient: ' + str(like_grad))
+        print('\nHyperparameters: ', list(hyps))
+        print('Likelihood: ' + str(like))
+        print('Likelihood Gradient: ',list(like_grad))
 
     return -like, -like_grad
 
