@@ -1,4 +1,4 @@
-import os, shutil, glob
+import time, os, shutil, glob, subprocess
 from copy import deepcopy
 import pytest
 import numpy as np
@@ -15,6 +15,29 @@ from ase.md.velocitydistribution import (MaxwellBoltzmannDistribution,
                                          Stationary, ZeroRotation)
 from ase.spacegroup import crystal
 from ase.calculators.espresso import Espresso
+from ase import io
+
+def read_qe_results(self):
+
+    out_file = self.label + '.pwo'
+
+    # find out slurm job id
+    qe_slurm_dat = open('qe_slurm.dat').readlines()[0].split()
+    qe_slurm_id = qe_slurm_dat[3]
+
+    # mv scf.pwo to scp+nsteps.pwo
+    if ('forces' not in self.results.keys()) and (out_file in os.listdir()):
+        subprocess.call(['mv', out_file, f'{self.label}{self.nsteps}.pwo'])
+    
+    # sleep until the job is finished
+    job_list = subprocess.check_output(['showq', '-p', 'kozinsky']).decode('utf-8')
+    while qe_slurm_id in job_list:
+        time.sleep(10)
+        job_list = subprocess.check_output(['showq', '-p', 'kozinsky']).decode('utf-8')
+
+    output = io.read(out_file)
+    self.calc = output.calc
+    self.results = output.calc.results
 
 
 md_list = ['VelocityVerlet', 'NVTBerendsen', 'NPTBerendsen', 'NPT', 'Langevin']
@@ -105,6 +128,10 @@ def qe_calc():
     pw = os.environ.get('PWSCF_COMMAND')
     os.environ['ASE_ESPRESSO_COMMAND'] = f'{pw} < {input_file} > {output_file}'
 
+#    # set quantum espresso read_results method
+#    Espresso.read_results = read_qe_results
+#    os.environ['ASE_ESPRESSO_COMMAND'] = 'sbatch qe.sh | tee qe_slurm.dat'
+
     # set up input parameters
     input_data = {'control':   {'prefix': label,
                                 'pseudo_dir': 'test_files/pseudos/',
@@ -128,6 +155,7 @@ def qe_calc():
     dft_calculator = Espresso(pseudopotentials=ion_pseudo, label=label,
                               tstress=True, tprnfor=True, nosym=True,
                               input_data=input_data, kpts=(1,1,1))
+
 
     yield dft_calculator
     del dft_calculator
@@ -176,15 +204,19 @@ def test_otf_md(md_engine, super_cell, flare_calc, qe_calc):
     number_of_steps = 3
     test_otf.otf_run(number_of_steps)
 
-    for f in glob.glob("scf.pw*"):
+    for f in glob.glob("scf*.pw*"):
         os.remove(f)
     for f in glob.glob("*.npy"):
         os.remove(f)
     for f in glob.glob("kv3*"):
         shutil.rmtree(f)
+    for f in glob.glob("otf_data"):
+        shutil.rmtree(f, ignore_errors=True)
+    for f in glob.glob("out"):
+        shutil.rmtree(f, ignore_errors=True)
 
     for f in os.listdir("./"):
         if f in [f'{md_engine}.log', 'lmp.mgp']:
             os.remove(f)
-        if f in ['out', 'otf_data']:
-            shutil.rmtree(f)
+        if 'slurm' in f:
+            os.remove(f)
