@@ -112,8 +112,9 @@ class Structure:
             keys = list(mass_dict.keys())
             for elt in keys:
                 if isinstance(elt, str):
-                    mass_dict[int(elt)] = mass_dict[elt]
                     mass_dict[element_to_Z(elt)] = mass_dict[elt]
+                    if elt.isnumeric():
+                        mass_dict[int(elt)] = mass_dict[elt]
 
     def get_cell_dot(self):
         """
