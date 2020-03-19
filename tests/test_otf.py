@@ -6,7 +6,6 @@ import numpy as np
 from flare.otf import OTF
 from flare.gp import GaussianProcess
 from flare.struc import Structure
-import flare.kernels.kernels as en
 
 
 cmd = {'cp2k':'CP2K_COMMAND', 'qe':'PWSCF_COMMAND'}

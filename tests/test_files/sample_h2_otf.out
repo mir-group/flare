@@ -1,7 +1,7 @@
 2019-03-26 12:26:08.749589
 number of cpu cores: 4
 cutoffs: [5]
-kernel: two_body
+kernel_name: two_body
 number of hyperparameters: 3
 hyperparameters: [1 1 1]
 hyperparameter optimization algorithm: L-BFGS-B

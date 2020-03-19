@@ -10,7 +10,7 @@ from pytest import raises
 from flare.gp import GaussianProcess
 from flare.env import AtomicEnvironment
 from flare.struc import Structure
-import flare.kernels.kernels as en
+import flare.kernels.sc as en
 import flare.kernels.mc_simple as mc_simple
 from flare.otf_parser import OtfAnalysis
 
@@ -166,10 +166,11 @@ def test_representation_method(all_gps, multihyps):
     test_gp = all_gps[multihyps]
     the_str = str(test_gp)
     assert 'GaussianProcess Object' in the_str
-    assert 'Kernel: 2+3mc' in the_str
     if (multihyps):
+        assert 'Kernel: two_plus_three_body_mc' in the_str
         assert 'Cutoffs: [0.8 0.8]' in the_str
     else:
+        assert 'Kernel: two_plus_three_plus_many_body_mc' in the_str
         assert 'Cutoffs: [0.8 0.8 0.8]' in the_str
     assert 'Model Likelihood: ' in the_str
     if not multihyps:
@@ -207,8 +208,7 @@ def test_load_and_reload(all_gps, test_point, multihyps):
 
     test_gp.write_model('test_gp_write', 'pickle')
 
-    with open('test_gp_write.pickle', 'rb') as f:
-        new_gp = pickle.load(f)
+    new_gp = GaussianProcess.from_file('test_gp_write.pickle')
 
     for d in [0, 1, 2]:
         assert np.all(test_gp.predict(x_t=test_point, d=d) ==

@@ -9,14 +9,14 @@ used to train ML models.
 """
 import numpy as np
 from flare.util import element_to_Z, Z_to_element, NumpyEncoder
-from json import dumps
+from json import dumps, loads
 
 from typing import List, Union, Any
 
 try:
     # Used for to_pmg_structure method
     import pymatgen.core.structure as pmgstruc
-
+    import pymatgen.io.vasp.inputs as pmgvaspio
     _pmg_present = True
 except ImportError:
     _pmg_present = False
@@ -106,6 +106,15 @@ class Structure:
             self.stds = np.zeros((len(positions), 3))
 
         self.mass_dict = mass_dict
+
+        # Convert from elements to atomic numbers in mass dict
+        if mass_dict is not None:
+            keys = list(mass_dict.keys())
+            for elt in keys:
+                if isinstance(elt, str):
+                    mass_dict[element_to_Z(elt)] = mass_dict[elt]
+                    if elt.isnumeric():
+                        mass_dict[int(elt)] = mass_dict[elt]
 
     def get_cell_dot(self):
         """
@@ -334,12 +343,11 @@ class Structure:
 
         return new_struc
 
-
     def to_xyz(self, extended_xyz: bool = True,
-                      print_stds: bool = False,
-                      print_forces : bool = False,
-                      print_max_stds: bool = False,
-                      write_file: str = '')->str:
+                     print_stds: bool = False,
+                     print_forces : bool = False,
+                     print_max_stds: bool = False,
+                     write_file: str = '')->str:
         """
         Convenience function which turns a structure into an extended .xyz
         file; useful for further input into visualization programs like VESTA
@@ -356,6 +364,8 @@ class Structure:
         xyz_str = ''
         xyz_str += f'{len(self.coded_species)} \n'
 
+        # Add header line with info about lattice and properties if extended
+        #  xyz option is called.
         if extended_xyz:
             cell = self.cell
 
@@ -377,9 +387,10 @@ class Structure:
             xyz_str += '\n'
 
         for i, pos in enumerate(self.positions):
-
+            # Write positions
             xyz_str += f"{species_list[i]} {pos[0]} {pos[1]} {pos[2]}"
 
+            # If extended XYZ: Add in extra information
             if print_stds and extended_xyz:
                 xyz_str += f" {stds[i,0]} {stds[i,1]} {stds[i,2]}"
             if print_forces and extended_xyz:
@@ -388,11 +399,57 @@ class Structure:
                 xyz_str += f" {np.max(stds[i,:])} "
             xyz_str += '\n'
 
+        # Write to file, optionally
         if write_file:
             with open(write_file, 'w') as f:
                 f.write(xyz_str)
 
         return xyz_str
+
+    @staticmethod
+    def from_file(file_name, format='') -> Union['flare.struc.Structure',
+                                                List['flare.struc.Structure']]:
+        """
+        Load a FLARE structure from a file or a series of FLARE structures
+        :param file_name:
+        :param format:
+        :return:
+        """
+
+        try:
+            with open(file_name, 'r') as _:
+                pass
+        except:
+            raise FileNotFoundError
+
+        if 'xyz' in file_name or 'xyz' in format.lower():
+            raise NotImplementedError
+
+        if 'json' in format.lower() or '.json' in file_name:
+            # Assumed format is one FLARE structure per line,
+            # or one line with many FLARE structures
+            with open(file_name, 'r') as f:
+                thelines = f.readlines()
+
+                non_empty_lines = [loads(line) for line in thelines if
+                                   len(line) > 2]
+
+            structures = [Structure.from_dict(struc_dict) for struc_dict in
+                          non_empty_lines]
+
+            if len(structures) == 1:
+                return structures[0]
+            else:
+                return structures
+
+        is_poscar = 'POSCAR' in file_name or 'CONTCAR' in file_name or 'vasp' in format.lower()
+        if is_poscar and _pmg_present:
+            pmg_structure = pmgvaspio.Poscar.from_file(file_name).structure
+            return Structure.from_pmg_structure(pmg_structure)
+        elif is_poscar and not _pmg_present:
+            raise ImportError("Pymatgen not imported; " \
+                              "functionality requires pymatgen.")
+
 
 
 def get_unique_species(species: List[Any])-> (List, List[int]):
@@ -414,3 +471,5 @@ def get_unique_species(species: List[Any])-> (List, List[int]):
     coded_species = np.array(coded_species)
 
     return unique_species, coded_species
+
+

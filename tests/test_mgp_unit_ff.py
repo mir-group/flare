@@ -87,6 +87,8 @@ def test_init(bodies, all_gp, all_mgp):
                    'update': False}
 
     struc_params = {'species': [1, 2],
+                    'cube_lat': mapped_cell,
+                    'mass_dict': {'0': 27, '1': 16}}
 
     mgp_model = MappedGaussianProcess(gp_model.hyps, gp_model.cutoffs,
             grid_params, struc_params, mean_only=True, container_only=True,

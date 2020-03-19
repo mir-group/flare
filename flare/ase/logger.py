@@ -44,7 +44,7 @@ class OTFLogger(MDLogger):
         self.logfile.write(str(datetime.datetime.now()))
         self.logfile.write('\nnumber of cpu cores: ')  # TODO
         self.logfile.write('\ncutoffs: '+str(gp_model.cutoffs))
-        self.logfile.write('\nkernel: '+gp_model.kernel.__name__)
+        self.logfile.write('\nkernel_name: '+gp_model.kernel.__name__)
         self.logfile.write('\nnumber of hyperparameters: '+str(len(gp_model.hyps)))
         self.logfile.write('\nhyperparameters: '+str(gp_model.hyps))
         self.logfile.write('\nhyperparameter optimization algorithm: ' +

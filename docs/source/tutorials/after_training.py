@@ -8,11 +8,11 @@ otf_object = otf_parser.OtfAnalysis(file_name)
 # -------------------------------------------------------------------------
 #                  reconstruct gp model from otf snippet
 # -------------------------------------------------------------------------
-import flare.kernels.mc_simple as mc_simple
 
-kernel = mc_simple.two_plus_three_body_mc
-kernel_grad = mc_simple.two_plus_three_body_mc_grad
-gp_model = otf_object.make_gp(kernel=kernel, kernel_grad=kernel_grad,
+
+
+
+gp_model = otf_object.make_gp(kernel_name="2+3_mc",
                               hyp_no=hyp_no)
 gp_model.par = True
 gp_model.hyp_labels = ['sig2', 'ls2', 'sig3', 'ls3', 'noise']

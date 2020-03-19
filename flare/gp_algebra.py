@@ -22,7 +22,14 @@ def partition_cr(n_sample, size, n_cpus):
     the number of blocks are close to n_cpus
     since mp.Process does not allow to change the thread number
     """
-    n_sample = int(math.ceil(np.sqrt(size*size/n_cpus/2.)))
+
+    # divid the block by n_cpu partitions, with size n_sample0
+    # if the divided chunk is smaller than the requested chunk n_sample
+    # use the requested chunk size
+    n_sample0 = int(math.ceil(np.sqrt(size*size/n_cpus/2.)))
+    if (n_sample0 > n_sample):
+        n_sample = n_sample0
+
     block_id=[]
     nbatch = 0
     nbatch1 = 0
@@ -40,6 +47,7 @@ def partition_cr(n_sample, size, n_cpus):
             block_id += [(s1, e1, s2, e2)]
             nbatch2 += 1
             nbatch += 1
+
     return block_id, nbatch
 
 def partition_c(n_sample, size, n_cpus):
@@ -48,7 +56,10 @@ def partition_c(n_sample, size, n_cpus):
     the number of blocks are the same as n_cpus
     since mp.Process does not allow to change the thread number
     """
-    n_sample = int(math.ceil(size/n_cpus))
+    n_sample0 = int(math.ceil(size/n_cpus))
+    if (n_sample0 > n_sample):
+        n_sample = n_sample0
+
     block_id = []
     nbatch = 0
     e = 0
@@ -457,7 +468,8 @@ def get_neg_likelihood(hyps: np.ndarray, name,
 
     like = get_like_from_ky_mat(ky_mat, name)
 
-    output.write_to_log(f"get_like_from_ky_mat {time.time()-time0}\n", name="hyps")
+    output.write_to_log(f"get_like_from_ky_mat {time.time()-time0}\n",
+                        name="hyps")
 
     if output is not None:
         output.write_to_log('like: ' + str(like)+'\n', name="hyps")
@@ -487,13 +499,12 @@ def get_neg_like_grad(hyps: np.ndarray, name: str,
     :return: float, np.array
     """
 
-
     time0 = time.time()
     if output is not None:
-        ostring="hyps:"
+        ostring = "hyps:"
         for hyp in hyps:
-            ostring+=f" {hyp}"
-        ostring+="\n"
+            ostring +=  f" {hyp}"
+        ostring += "\n"
         output.write_to_log(ostring, name="hyps")
 
     hyp_mat, ky_mat = \
@@ -505,32 +516,30 @@ def get_neg_like_grad(hyps: np.ndarray, name: str,
                        n_cpus=n_cpus, n_sample=n_sample)
 
     if output is not None:
-        output.write_to_log(f"get_ky_and_hyp {time.time()-time0}\n", name="hyps")
+        output.write_to_log(f"get_ky_and_hyp {time.time()-time0}\n",
+                            name="hyps")
 
     time0 = time.time()
 
     like, like_grad = \
         get_like_grad_from_mats(ky_mat, hyp_mat, name)
 
-    print("like", like, like_grad)
-    print("hyps", hyps)
-    print("\n")
+    if output is not None:
+        output.write_to_log(f"get_like_grad_from_mats {time.time()-time0}\n",
+                            name="hyps")
 
     if output is not None:
-        output.write_to_log(f"get_like_grad_from_mats {time.time()-time0}\n", name="hyps")
-
-    if output is not None:
-        ostring="like grad:"
+        ostring = "like grad:"
         for lg in like_grad:
-            ostring+=f" {lg}"
-        ostring+="\n"
+            ostring += f" {lg}"
+        ostring += "\n"
         output.write_to_log(ostring, name="hyps")
         output.write_to_log('like: ' + str(like)+'\n', name="hyps")
 
     if print_progress:
-        print('\nhyperparameters: '+str(hyps))
-        print('likelihood: ' + str(like))
-        print('likelihood gradient: ' + str(like_grad))
+        print('\nHyperparameters: ', list(hyps))
+        print('Likelihood: ' + str(like))
+        print('Likelihood Gradient: ',list(like_grad))
 
     return -like, -like_grad
 
@@ -734,6 +743,7 @@ def get_kernel_vector_unit(name, s, e, x, d_1, kernel, hyps,
     args = from_mask_to_args(hyps, hyps_mask, cutoffs)
 
     k_v = np.zeros(size*3, )
+
     for m_index in range(size):
         x_2 = _global_training_data[name][m_index+s]
         for d_2 in ds:
@@ -901,4 +911,3 @@ def en_kern_vec(name, kernel,
         c.join()
 
     return k12_v
-

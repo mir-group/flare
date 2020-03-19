@@ -1,6 +1,6 @@
 import numpy as np
 
-from flare.kernels import kernels, mc_simple, mc_sephyps
+from flare.kernels import sc, mc_simple, mc_sephyps
 
 """
 This module includes interface functions between kernels and gp/gp_algebra
@@ -17,7 +17,10 @@ matrix by removing the fixed dimensions.
 
 def str_to_kernel_set(name: str, multihyps: bool =False):
     """
-    return kernels and kernel gradient function base on a string
+    return kernels and kernel gradient function base on a string.
+    If it contains 'mc', it will use the kernel in mc_simple module
+    if multihyps is True, it will use the kernel in mc_sephyps module
+    otherwise, it will use the kernel in the sc module
 
     Args:
 
@@ -35,20 +38,20 @@ def str_to_kernel_set(name: str, multihyps: bool =False):
         else:
             stk = mc_sephyps._str_to_kernel
     else:
-        stk = kernels._str_to_kernel
+        stk = sc._str_to_kernel
 
     # b2 = Two body in use, b3 = Three body in use
     b2 = False
     b3 = False
     many = False
 
-    for s in ['2', 'two']:
+    for s in ['2', 'two', 'Two', 'TWO']:
         if (s in name):
             b2 = True
-    for s in ['3', 'three']:
+    for s in ['3', 'three', 'Three', 'THREE']:
         if (s in name):
             b3 = True
-    for s in ['mb', 'manybody', 'many']:
+    for s in ['mb', 'manybody', 'many', 'Many', 'ManyBody']:
         if (s in name):
             many = True
 
