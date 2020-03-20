@@ -145,6 +145,44 @@ TEST(ChebyTest, ChebyDerv){
 
 }
 
+TEST(ChebyTest, WeightedChebyDerv){
+    double r1 = 2;
+    double r2 = 4;
+    double r = 2.5;
+    int N = 10;
+    double delta = 1e-8;
+    double rdelt = r + delta;
+    double rdelt_2 = r - delta;
+    double lambda = 5;
+    double r_finite_diff, r_diff;
+    double tolerance = 1e-4;
+    std::vector<double> hyps = {r1, r2, lambda};
+
+    double * g, * gderv, * g_rdelt, * gderv_rdelt, * g_rdelt_2,
+        * gderv_rdelt_2;
+    
+    g = new double [N]();
+    gderv = new double [N]();
+    g_rdelt = new double [N]();
+    gderv_rdelt = new double [N]();
+    g_rdelt_2 = new double [N]();
+    gderv_rdelt_2 = new double [N]();
+
+    weighted_chebyshev(g, gderv, r, N, hyps);
+    weighted_chebyshev(g_rdelt, gderv_rdelt, rdelt, N, hyps);
+    weighted_chebyshev(g_rdelt_2, gderv_rdelt_2, rdelt_2, N, hyps);
+
+    for (int n = 0; n < N; n ++){
+        r_finite_diff = (g_rdelt[n] - g_rdelt_2[n]) / (2 * delta);
+        r_diff = abs(r_finite_diff - gderv[n]);
+        EXPECT_LE(r_diff, tolerance);
+    }
+
+    delete [] g; delete [] g_rdelt; delete [] gderv; delete [] g_rdelt_2;
+    delete [] gderv_rdelt_2;
+
+}
+
 TEST_F(RadialTest, GnDerv){
     // Test that the Gaussian gradients are correctly computed.
     double sigma = 1;

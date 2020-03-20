@@ -1,5 +1,6 @@
 #include "radial.h"
 #include <cmath>
+#include <iostream>
 #define Pi 3.14159265358979323846
 
 void chebyshev(double * basis_vals, double * basis_derivs,
@@ -46,14 +47,15 @@ void weighted_chebyshev(double * basis_vals, double * basis_derivs,
     }
 
     double c = 1 / (r2 - r1);
-    double x = r * c;
+    double x = (r - r1) * c;
     double lambda = radial_hyps[2];
     double exp_const = exp(-lambda * (x - 1));
     double lambda_const = exp(lambda) - 1;
     double x_weighted =
         1 - 2 * (exp_const - 1) / lambda_const;
     double dx_dr = 2 * c * lambda * exp_const / lambda_const;
-    
+    double half = 1./2.;
+
     std::vector<double> cheby_vals = std::vector<double>(N, 0);
     std::vector<double> cheby_derivs = std::vector<double>(N, 0);
 
@@ -61,6 +63,7 @@ void weighted_chebyshev(double * basis_vals, double * basis_derivs,
         if (n == 0){
             cheby_vals[n] = 1;
             cheby_derivs[n] = 0;
+
             basis_vals[n] = 1;
             basis_derivs[n] = 0;
         }
@@ -68,16 +71,17 @@ void weighted_chebyshev(double * basis_vals, double * basis_derivs,
             cheby_vals[n] = x_weighted;
             cheby_derivs[n] = 1;
 
-            basis_vals[n] = (1/2) * (1 - x_weighted);
-            basis_derivs[n] = -(1/2) * dx_dr;
+            basis_vals[n] = half * (1 - x_weighted);
+            basis_derivs[n] = -half * dx_dr;
         }
         else{
-            cheby_vals[n] = 2 * x * cheby_vals[n - 1] - cheby_vals[n - 2];
+            cheby_vals[n] = 2 * x_weighted * cheby_vals[n - 1] -
+                cheby_vals[n - 2];
             cheby_derivs[n] = 2 * cheby_vals[n - 1] +
-                2 * x * cheby_derivs[n - 1] - cheby_derivs[n - 2];
+                2 * x_weighted * cheby_derivs[n - 1] - cheby_derivs[n - 2];
 
-            basis_vals[n] = (1/2) * (1 - cheby_vals[n]);
-            basis_derivs[n] = -(1/2) * cheby_derivs[n] * dx_dr;
+            basis_vals[n] = half * (1 - cheby_vals[n]);
+            basis_derivs[n] = -half * cheby_derivs[n] * dx_dr;
         }
     }
 }
