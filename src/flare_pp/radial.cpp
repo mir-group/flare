@@ -34,6 +34,54 @@ void chebyshev(double * basis_vals, double * basis_derivs,
     }
 }
 
+void weighted_chebyshev(double * basis_vals, double * basis_derivs,
+                        double r, int N, std::vector<double> radial_hyps){
+
+    double r1 = radial_hyps[0];
+    double r2 = radial_hyps[1];
+
+    // If r is ouside the support of the radial basis set, return.
+    if ((r < r1) || (r > r2)){
+        return;
+    }
+
+    double c = 1 / (r2 - r1);
+    double x = r * c;
+    double lambda = radial_hyps[2];
+    double exp_const = exp(-lambda * (x - 1));
+    double lambda_const = exp(lambda) - 1;
+    double x_weighted =
+        1 - 2 * (exp_const - 1) / lambda_const;
+    double dx_dr = 2 * c * lambda * exp_const / lambda_const;
+    
+    std::vector<double> cheby_vals = std::vector<double>(N, 0);
+    std::vector<double> cheby_derivs = std::vector<double>(N, 0);
+
+    for (int n = 0; n < N; n ++){
+        if (n == 0){
+            cheby_vals[n] = 1;
+            cheby_derivs[n] = 0;
+            basis_vals[n] = 1;
+            basis_derivs[n] = 0;
+        }
+        else if (n == 1){
+            cheby_vals[n] = x_weighted;
+            cheby_derivs[n] = 1;
+
+            basis_vals[n] = (1/2) * (1 - x_weighted);
+            basis_derivs[n] = -(1/2) * dx_dr;
+        }
+        else{
+            cheby_vals[n] = 2 * x * cheby_vals[n - 1] - cheby_vals[n - 2];
+            cheby_derivs[n] = 2 * cheby_vals[n - 1] +
+                2 * x * cheby_derivs[n - 1] - cheby_derivs[n - 2];
+
+            basis_vals[n] = (1/2) * (1 - cheby_vals[n]);
+            basis_derivs[n] = -(1/2) * cheby_derivs[n] * dx_dr;
+        }
+    }
+}
+
 void equispaced_gaussians(double * basis_vals, double * basis_derivs,
                           double r, int N, std::vector<double> radial_hyps){
 
