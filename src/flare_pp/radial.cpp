@@ -15,7 +15,7 @@ void chebyshev(double * basis_vals, double * basis_derivs,
     }
 
     double c = 1 / (r2 - r1);
-    double x = r * c;
+    double x = (r - r1) * c;
 
     for (int n = 0; n < N; n ++){
         if (n == 0){
