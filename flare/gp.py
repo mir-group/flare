@@ -7,11 +7,13 @@ import json
 import numpy as np
 import multiprocessing as mp
 
+from collections import Counter
 from copy import deepcopy
 from typing import List, Callable, Union
 from scipy.linalg import solve_triangular
 from scipy.optimize import minimize
 
+from flare.util import Z_to_element
 from flare.env import AtomicEnvironment
 from flare.struc import Structure
 from flare.gp_algebra import get_neg_likelihood, \
@@ -123,8 +125,8 @@ class GaussianProcess:
             self.n_cpus = 1
 
 
-        self.training_data = []
-        self.training_labels = []
+        self.training_data = []   # Atomic environments
+        self.training_labels = [] # Forces acting on central atoms of at. envs.
         self.training_labels_np = np.empty(0, )
 
         # Parameters set during training
@@ -758,6 +760,31 @@ class GaussianProcess:
                              ".json or .pickle format.")
 
         return gp_model
+
+
+    @property
+    def training_statistics(self) -> dict:
+        """
+        Return a dictionary with statistics about the current training data.
+        Useful for quickly summarizing info about the GP.
+        :return:
+        """
+
+        data = {}
+
+        data['N'] = len(self.training_data)
+
+        # Count all of the present species in the atomic env. data
+        present_species = []
+        for env,force in zip(self.training_data,self.training_labels):
+            present_species.append(Z_to_element(env.structure.coded_species[
+                                                    env.atom]))
+
+        # Summarize the relevant information
+        data['species'] = set(present_species)
+        data['envs_by_species'] = dict(Counter(present_species))
+
+        return data
 
 
     @property

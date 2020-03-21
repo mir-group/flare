@@ -391,8 +391,12 @@ class TrajectoryTrainer:
         :return: None
         """
 
-        self.output.write_to_log(f'\nAdding atom(s) {train_atoms} to the '
-                                 'training set.\n')
+
+        train_atoms_and_species = {at:frame.coded_species[at] for at in
+                               train_atoms}
+
+        self.output.write_to_log(f'\nAdding atom(s) {train_atoms_and_species}'
+                                 ' to the training set.\n')
         self.output.write_to_log(f'Uncertainties: '\
                                  f'{frame.stds[train_atoms]}.\n',
                                  flush=True)

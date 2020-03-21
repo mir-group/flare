@@ -298,3 +298,22 @@ def test_constrained_optimization_simple(all_gps):
     # Check that the hyperparameters were updated
     results = test_gp.train()
     assert not np.equal(results.x, init_hyps).all()
+
+def test_training_statistics():
+    """
+    Ensure training statistics are being recorded correctly
+    :return:
+    """
+
+    test_structure, forces = get_random_structure(np.eye(3),
+                                                  ['H','Be'],
+                                                  10)
+
+    gp = GaussianProcess(kernel_name='2',cutoffs=[10])
+
+    gp.update_db(test_structure, forces)
+
+    data = gp.training_statistics
+
+    assert data['N'] == 10
+    assert len(data['species']) == len(set(test_structure.coded_species))
