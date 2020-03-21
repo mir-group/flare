@@ -132,7 +132,7 @@ class Output:
         headerstring += f'cutoffs: {cutoffs}\n'
         headerstring += f'kernel_name: {kernel_name}\n'
         headerstring += f'number of hyperparameters: {len(hyps)}\n'
-        headerstring += f'hyperparameters: {hyps}\n'
+        headerstring += f'hyperparameters: {str(hyps)}\n'
         headerstring += f'hyperparameter optimization algorithm: {algo}\n'
         headerstring += std_string
         headerstring += f'timestep (ps): {dt}\n'
@@ -140,7 +140,7 @@ class Output:
         headerstring += f'number of atoms: {structure.nat}\n'
         headerstring += f'system species: {set(structure.species_labels)}\n'
         headerstring += 'periodic cell: \n'
-        headerstring += str(structure.cell)
+        headerstring += str(structure.cell)+'\n'
 
         if optional:
             for key, value in optional.items():
