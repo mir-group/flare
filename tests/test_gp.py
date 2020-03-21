@@ -311,9 +311,18 @@ def test_training_statistics():
 
     gp = GaussianProcess(kernel_name='2',cutoffs=[10])
 
+
+    data = gp.training_statistics
+
+    assert data['N'] == 0
+    assert len(data['species']) == 0
+    assert len(data['envs_by_species']) == 0
+
     gp.update_db(test_structure, forces)
 
     data = gp.training_statistics
 
     assert data['N'] == 10
     assert len(data['species']) == len(set(test_structure.coded_species))
+    assert len(data['envs_by_species']) == len(set(
+        test_structure.coded_species))

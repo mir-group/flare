@@ -220,7 +220,8 @@ class TrajectoryTrainer:
                                  Nsteps=len(self.frames),
                                  structure=self.frames[0],
                                  std_tolerance=(self.rel_std_tolerance,
-                                                self.abs_std_tolerance))
+                                                self.abs_std_tolerance),
+                     optional={'GP Statistics': self.gp.training_statistics})
 
         self.start_time = time.time()
         if self.verbose >= 3:
