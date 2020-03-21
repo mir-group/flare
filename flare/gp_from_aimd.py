@@ -47,7 +47,8 @@ from flare.predict import predict_on_structure, \
     predict_on_structure_par_en
 from flare.struc import Structure
 from flare.util import element_to_Z, \
-    is_std_in_bound_per_species, is_force_in_bound_per_species
+    is_std_in_bound_per_species, is_force_in_bound_per_species, \
+    Z_to_element
 from flare.mgp.otf import predict_on_structure_mgp
 from flare.mgp.mgp_en import MappedGaussianProcess
 
@@ -392,12 +393,17 @@ class TrajectoryTrainer:
         :return: None
         """
 
+        # Group added atoms by species for easier output
+        added_species = [Z_to_element(frame.coded_species[at]) for at in
+                         train_atoms]
+        added_atoms = {spec:[] for spec in set(added_species)}
 
-        train_atoms_and_species = {at:frame.coded_species[at] for at in
-                               train_atoms}
+        for atom, spec in zip(train_atoms, added_species):
+            added_atoms[spec].append(atom)
 
-        self.output.write_to_log(f'\nAdding atom(s) {train_atoms_and_species}'
+        self.output.write_to_log(f'\nAdding atom(s) {added_atoms}'
                                  ' to the training set.\n')
+
         self.output.write_to_log(f'Uncertainties: '\
                                  f'{frame.stds[train_atoms]}.\n',
                                  flush=True)
