@@ -21,7 +21,7 @@ class SparseGP{
         double energy_norm, forces_norm, stresses_norm,
             energy_offset, forces_offset, stresses_offset;
 
-        double sigma_e, sigma_f, sigma_s;
+        double sigma_e, sigma_f, sigma_s, Kuu_jitter;
 
         double log_marginal_likelihood, data_fit, complexity_penalty;
 

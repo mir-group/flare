@@ -8,6 +8,7 @@ SparseGP :: SparseGP(std::vector<Kernel *> kernels, double sigma_e,
     double sigma_f, double sigma_s){
 
     this->kernels = kernels;
+    Kuu_jitter = 1e-8;  // default value
 
     // Count hyperparameters.
     int n_hyps = 0;
@@ -359,7 +360,7 @@ void SparseGP :: add_training_structure(StructureDescriptor training_structure){
 
 void SparseGP::update_alpha(){
     Eigen::MatrixXd sigma_inv = Kuu + Kuf * noise_matrix * Kuf.transpose() +
-        1e-3 * Eigen::MatrixXd::Identity(Kuu.rows(), Kuu.cols());
+        Kuu_jitter * Eigen::MatrixXd::Identity(Kuu.rows(), Kuu.cols());
     // TODO: Use Woodbury identity to perform inversion once.
     Sigma = sigma_inv.inverse();
     Kuu_inverse = Kuu.inverse();

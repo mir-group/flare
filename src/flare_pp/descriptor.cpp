@@ -23,10 +23,18 @@ DescriptorCalculator::DescriptorCalculator(
     this->descriptor_settings = descriptor_settings;
     this->descriptor_index = descriptor_index;
 
+    // Set the radial basis.
     if (radial_basis == "chebyshev"){
         this->radial_pointer = chebyshev;
     }
+    else if (radial_basis == "weighted_chebyshev"){
+        this->radial_pointer = weighted_chebyshev;
+    }
+    else if (radial_basis == "equispaced_gaussians"){
+        this->radial_pointer = equispaced_gaussians;
+    }
 
+    // Set the cutoff function.
     if (cutoff_function == "quadratic"){
         this->cutoff_pointer = quadratic_cutoff;
     }
