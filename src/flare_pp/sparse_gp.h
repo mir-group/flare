@@ -36,6 +36,9 @@ class SparseGP{
         void add_training_structure(StructureDescriptor training_structure);
         void add_training_structure_serial(StructureDescriptor
             training_structure);
+        
+        void three_body_grid(double min_dist, double max_dist, double cutoff,
+            int n_species, int n_dist, int n_angle);
 
         void update_alpha();
 

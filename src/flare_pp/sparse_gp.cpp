@@ -2,6 +2,8 @@
 #include <cmath>
 #include <iostream>
 
+static const double Pi = 3.14159265358979323846;
+
 SparseGP :: SparseGP(){}
 
 SparseGP :: SparseGP(std::vector<Kernel *> kernels, double sigma_e,
@@ -356,6 +358,90 @@ void SparseGP :: add_training_structure(StructureDescriptor training_structure){
     noise.conservativeResize(prev_cols + n_labels);
     noise.tail(n_labels) = noise_vector;
     noise_matrix = noise.asDiagonal();
+}
+
+void SparseGP :: three_body_grid(double min_dist, double max_dist,
+    double cutoff, int n_species, int n_dist, int n_angle){
+
+    double dist1, dist2, dist3, angle;
+    double dist_step = (max_dist - min_dist) / (n_dist - 1);
+    double angle_step = Pi / (n_angle - 1);
+
+    // Create cell. Both max_dist and cutoff should be no greater than half the cell size to avoid periodic images.
+    double max_val;
+    if (max_dist > cutoff){
+        max_val = max_dist;
+    }
+    else{
+        max_val = cutoff;
+    }
+
+    double struc_factor = 10;
+    Eigen::MatrixXd cell{3, 3};
+    cell << max_val * struc_factor, 0, 0,
+            0, max_val * struc_factor, 0,
+            0, 0, max_val * struc_factor;
+    std::vector<int> species;
+    Eigen::MatrixXd positions = Eigen::MatrixXd::Zero(3, 3);
+    std::vector<double> n_body_cutoffs {cutoff, cutoff};
+    StructureDescriptor struc;
+    LocalEnvironment env;
+
+    // Loop over species.
+    for (int s1 = 0; s1 < n_species; s1 ++){
+        for (int s2 = s1; s2 < n_species; s2 ++){
+            for (int s3 = s2; s3 < n_species; s3 ++){
+                species = {s1, s2, s3};
+
+                // Loop over distances.
+                for (int d1 = 0; d1 < n_dist; d1 ++){
+                    dist1 = min_dist + d1 * dist_step;
+
+                    for (int d2 = 0; d2 < n_dist; d2 ++){
+                        dist2 = min_dist + d2 * dist_step;
+
+                        if ((s2 == s3) && (dist2 < dist1)){
+                            continue;
+                        }
+                        else{
+                            // Loop over angles ranging from 0 to Pi.
+                            for (int a1 = 0; a1 < n_angle; a1 ++){
+                                angle = a1 * angle_step;
+                                dist3 = sqrt(dist1 * dist1 + dist2 * dist2 -
+                                    2 * dist1 * dist2 * cos(angle));
+
+                                // Skip over triplets for which dist3 exceeds the cutoff.
+                                if (dist3 > cutoff){
+                                    continue;
+                                }
+                                // If all three species are the same, neglect the case where dist3 < dist2.
+                                else if ((s1 == s2) && (s2 == s3) && (dist3 < dist2)){
+                                    continue;
+                                }
+                                else{
+                                    // Create structure of 3 atoms.
+                                    positions(1, 0) = dist1;
+                                    positions(2, 0) = dist2 * cos(angle);
+                                    positions(2, 1) = dist2 * sin(angle);
+                                    struc = StructureDescriptor(cell, species,
+                                        positions, cutoff, n_body_cutoffs);
+
+                                    // Create environment.
+                                    env = struc.local_environments[0];
+
+                                    std::cout << positions << std::endl;
+                                    // std::cout << env.rs.size() << std::endl;
+
+                                    // Add to the training set
+                                    this->add_sparse_environment(env);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 void SparseGP::update_alpha(){
