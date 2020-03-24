@@ -360,6 +360,7 @@ void SparseGP :: add_training_structure(StructureDescriptor training_structure){
     noise_matrix = noise.asDiagonal();
 }
 
+// TODO: decouple triplets of different types.
 void SparseGP :: three_body_grid(double min_dist, double max_dist,
     double cutoff, int n_species, int n_dist, int n_angle){
 
@@ -386,6 +387,7 @@ void SparseGP :: three_body_grid(double min_dist, double max_dist,
     std::vector<double> n_body_cutoffs {cutoff, cutoff};
     StructureDescriptor struc;
     LocalEnvironment env;
+    int counter = 0;
 
     // Loop over species.
     for (int s1 = 0; s1 < n_species; s1 ++){
@@ -429,11 +431,10 @@ void SparseGP :: three_body_grid(double min_dist, double max_dist,
                                     // Create environment.
                                     env = struc.local_environments[0];
 
-                                    std::cout << positions << std::endl;
-                                    // std::cout << env.rs.size() << std::endl;
-
                                     // Add to the training set
-                                    this->add_sparse_environment(env);
+                                    this->add_sparse_environment_serial(env);
+
+                                    counter ++;
                                 }
                             }
                         }

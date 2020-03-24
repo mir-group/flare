@@ -35,6 +35,50 @@ void chebyshev(double * basis_vals, double * basis_derivs,
     }
 }
 
+void positive_chebyshev(double * basis_vals, double * basis_derivs,
+                        double r, int N, std::vector<double> radial_hyps){
+
+    double r1 = radial_hyps[0];
+    double r2 = radial_hyps[1];
+
+    // If r is ouside the support of the radial basis set, return.
+    if ((r < r1) || (r > r2)){
+        return;
+    }
+
+    std::vector<double> cheby_vals = std::vector<double>(N, 0);
+    std::vector<double> cheby_derivs = std::vector<double>(N, 0);
+
+    double c = 1 / (r2 - r1);
+    double x = (r - r1) * c;
+    double half = 1./2.;
+
+    for (int n = 0; n < N; n ++){
+        if (n == 0){
+            cheby_vals[n] = 1;
+            cheby_derivs[n] = 0;
+
+            basis_vals[n] = half;
+            basis_derivs[n] = 0;
+        }
+        else if (n == 1){
+            cheby_vals[n] = x;
+            cheby_derivs[n] = c;
+
+            basis_vals[n] = half * (1 - x);
+            basis_derivs[n] = -half * c;
+        }
+        else{
+            cheby_vals[n] = 2 * x * basis_vals[n - 1] - basis_vals[n - 2];
+            cheby_derivs[n] = 2 * basis_vals[n - 1] * c +
+                2 * x * basis_derivs[n - 1] - basis_derivs[n - 2];
+
+            basis_vals[n] = half * (1 - cheby_vals[n]);
+            basis_derivs[n] = -half * cheby_derivs[n];
+        }
+    }
+}
+
 void weighted_chebyshev(double * basis_vals, double * basis_derivs,
                         double r, int N, std::vector<double> radial_hyps){
 

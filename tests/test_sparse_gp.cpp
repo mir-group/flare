@@ -152,22 +152,22 @@ TEST_F(SparseTest, Predict){
     // std::cout << sparse_gp.alpha << std::endl;
 }
 
-TEST_F(SparseTest, ThreeBodyGrid){
-    double sigma_e = 0.1;
-    double sigma_f = 0.01;
-    double sigma_s = 1;
+// TEST_F(SparseTest, ThreeBodyGrid){
+//     double sigma_e = 0.1;
+//     double sigma_f = 0.01;
+//     double sigma_s = 1;
 
-    double min_dist = 0.1;
-    double max_dist = 3;
-    double cutoff = 3;
-    int n_species = 1;
-    int n_dist = 3;
-    int n_angle = 3;
+//     double min_dist = 0.1;
+//     double max_dist = 3;
+//     double cutoff = 3;
+//     int n_species = 5;
+//     int n_dist = 3;
+//     int n_angle = 3;
 
-    SparseGP sparse_gp = SparseGP(kernels, sigma_e, sigma_f, sigma_s);
-    sparse_gp.three_body_grid(min_dist, max_dist, cutoff, n_species,
-        n_dist, n_angle);
+//     SparseGP sparse_gp = SparseGP(kernels, sigma_e, sigma_f, sigma_s);
+//     sparse_gp.three_body_grid(min_dist, max_dist, cutoff, n_species,
+//         n_dist, n_angle);
 
-    // std::cout << sparse_gp.sparse_environments.size() << std::endl;
-    // std::cout << sparse_gp.sparse_environments[1].xs.size() << std::endl;
-}
+//     // std::cout << sparse_gp.sparse_environments.size() << std::endl;
+//     // std::cout << sparse_gp.sparse_environments[1].xs.size() << std::endl;
+// }

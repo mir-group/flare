@@ -33,6 +33,9 @@ DescriptorCalculator::DescriptorCalculator(
     else if (radial_basis == "equispaced_gaussians"){
         this->radial_pointer = equispaced_gaussians;
     }
+    else if (radial_basis == "positive_chebyshev"){
+        this->radial_pointer = positive_chebyshev;
+    }
 
     // Set the cutoff function.
     if (cutoff_function == "quadratic"){

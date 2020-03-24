@@ -10,6 +10,9 @@ void equispaced_gaussians(double * basis_vals, double * basis_derivs,
 void chebyshev(double * basis_vals, double * basis_derivs,
                double r, int N, std::vector<double> radial_hyps);
 
+void positive_chebyshev(double * basis_vals, double * basis_derivs,
+                        double r, int N, std::vector<double> radial_hyps);
+
 // The weighted Chebyshev radial basis set is based on Eqs. 21-24 of Drautz, Ralf. "Atomic cluster expansion for accurate and transferable interatomic potentials." Physical Review B 99.1 (2019): 014104. Atoms closer to the central atom are given exponentially more weight.
 void weighted_chebyshev(double * basis_vals, double * basis_derivs,
                         double r, int N, std::vector<double> radial_hyps);
