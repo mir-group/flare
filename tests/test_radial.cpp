@@ -213,6 +213,9 @@ TEST(ChebyTest, WeightedChebyDerv){
         r_finite_diff = (g_rdelt[n] - g_rdelt_2[n]) / (2 * delta);
         r_diff = abs(r_finite_diff - gderv[n]);
         EXPECT_LE(r_diff, tolerance);
+
+        // std::cout << g_rdelt[n] << std::endl;
+        // std::cout << gderv[n] << std::endl;
     }
 
     delete [] g; delete [] g_rdelt; delete [] gderv; delete [] g_rdelt_2;
