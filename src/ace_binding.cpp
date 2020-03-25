@@ -104,6 +104,11 @@ PYBIND11_MODULE(ace, m){
         .def_readwrite("descriptor_settings",
             &DescriptorCalculator::descriptor_settings);
 
+    py::class_<B1_Calculator, DescriptorCalculator>(m, "B1_Calculator")
+        .def(py::init<const std::string &, const std::string &,
+             const std::vector<double> &, const std::vector<double> &,
+             const std::vector<int> &, int>());
+        
     py::class_<B2_Calculator, DescriptorCalculator>(m, "B2_Calculator")
         .def(py::init<const std::string &, const std::string &,
              const std::vector<double> &, const std::vector<double> &,

@@ -34,7 +34,7 @@ DescriptorCalculator::DescriptorCalculator(
         this->radial_pointer = equispaced_gaussians;
     }
     else if (radial_basis == "weighted_positive_chebyshev"){
-        this->radial_pointer = positive_chebyshev;
+        this->radial_pointer = weighted_positive_chebyshev;
     }
     else if (radial_basis == "positive_chebyshev"){
         this->radial_pointer = positive_chebyshev;
