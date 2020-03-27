@@ -264,27 +264,16 @@ void LocalEnvironment :: compute_descriptors_and_gradients(){
     }
 }
 
-// void LocalEnvironment :: compute_descriptors(
-//     const Structure & structure, std::vector<double> many_body_cutoffs,
-//     std::vector<DescriptorCalculator *> descriptor_calculators){
-    
-//     LocalEnvironment full_env; 
+void LocalEnvironment :: compute_descriptors(){
 
-//     int n_calculators = descriptor_calculators.size();
-//     for (int i = 0; i < n_calculators; i ++){
-//         descriptor_calculators[i]->compute(*this);
-//         descriptor_vals.push_back(descriptor_calculators[i]->descriptor_vals);
-//         descriptor_force_dervs.push_back(
-//             descriptor_calculators[i]->descriptor_force_dervs);
-//         descriptor_stress_dervs.push_back(
-//             descriptor_calculators[i]->descriptor_stress_dervs);
-
-//         descriptor_norm.push_back(sqrt(
-//             descriptor_vals[i].dot(descriptor_vals[i])));
-//         force_dot.push_back(descriptor_force_dervs[i] * descriptor_vals[i]);
-//         stress_dot.push_back(descriptor_stress_dervs[i] * descriptor_vals[i]);
-//     }
-// }
+    int n_calculators = descriptor_calculators.size();
+    for (int i = 0; i < n_calculators; i ++){
+        descriptor_calculators[i]->compute(*this);
+        descriptor_vals.push_back(descriptor_calculators[i]->descriptor_vals);
+        descriptor_norm.push_back(sqrt(
+            descriptor_vals[i].dot(descriptor_vals[i])));
+    }
+}
 
 void LocalEnvironment :: compute_neighbor_descriptors(){
 
