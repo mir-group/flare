@@ -10,11 +10,13 @@
 
 class SparseGP{
     public:
-        Eigen::MatrixXd Kuu, Kuf, Sigma, Kuu_inverse, noise_matrix;
+        Eigen::MatrixXd Kuu, Kuf, Sigma, Kuu_inverse, noise_matrix,
+            Kuf_env, Kuf_struc;
         Eigen::VectorXd y, alpha, hyperparameters, noise;
         std::vector<Kernel *> kernels;
 
-        std::vector<LocalEnvironment> sparse_environments;
+        std::vector<LocalEnvironment> sparse_environments,
+            training_environments;
         std::vector<StructureDescriptor> training_structures;
         std::vector<int> label_count;
 
@@ -31,11 +33,9 @@ class SparseGP{
             double sigma_s);
 
         void add_sparse_environment(LocalEnvironment env);
-        void add_sparse_environment_serial(LocalEnvironment env);
-
+        void add_training_environment(LocalEnvironment env);
         void add_training_structure(StructureDescriptor training_structure);
-        void add_training_structure_serial(StructureDescriptor
-            training_structure);
+
         
         void three_body_grid(double min_dist, double max_dist, double cutoff,
             int n_species, int n_dist, int n_angle);

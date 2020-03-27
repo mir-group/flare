@@ -117,162 +117,6 @@ void SparseGP :: add_sparse_environment(LocalEnvironment env){
     sparse_environments.push_back(env);
 }
 
-void SparseGP :: add_sparse_environment_serial(LocalEnvironment env){
-    // Compute kernels between new environment and previous sparse
-    // environments.
-    int n_sparse = sparse_environments.size();
-    int n_kernels = kernels.size();
-
-    Eigen::VectorXd uu_vector = Eigen::VectorXd::Zero(n_sparse + 1);
-    for (int i = 0; i < n_sparse; i ++){
-        for (int j = 0; j < n_kernels; j ++){
-            uu_vector(i) += kernels[j] -> env_env(sparse_environments[i], env);
-        }
-    }
-
-    // Compute self kernel.
-    double self_kernel = 0;
-    for (int j = 0; j < n_kernels; j ++){
-        self_kernel += kernels[j] -> env_env(env, env);
-    }
-
-    // Update Kuu matrix.
-    Kuu.conservativeResize(Kuu.rows()+1, Kuu.cols()+1);
-    Kuu.col(Kuu.cols()-1) = uu_vector;
-    Kuu.row(Kuu.rows()-1) = uu_vector;
-    Kuu(n_sparse, n_sparse) = self_kernel;
-
-    // Compute kernels between new environment and training structures.
-    int n_labels = Kuf.cols();
-    int n_strucs = training_structures.size();
-    Eigen::VectorXd uf_vector = Eigen::VectorXd::Zero(n_labels);
-    Eigen::VectorXd kernel_vector;
-    int label_count = 0;
-    int n_atoms;
-    for (int i = 0; i < n_strucs; i ++){
-        n_atoms = training_structures[i].noa;
-        kernel_vector = Eigen::VectorXd::Zero(1 + 3 * n_atoms + 6);
-        for (int j = 0; j < n_kernels; j ++){
-            kernel_vector += kernels[j] -> env_struc(env,
-                training_structures[i]);
-        }
-
-        if (training_structures[i].energy.size() != 0){
-            uf_vector(label_count) = kernel_vector(0);
-            label_count += 1;
-        }
-
-        if (training_structures[i].forces.size() != 0){
-            uf_vector.segment(label_count, n_atoms * 3) =
-                kernel_vector.segment(1, n_atoms * 3);
-            label_count += n_atoms * 3;
-        }
-
-        if (training_structures[i].stresses.size() != 0){
-            uf_vector.segment(label_count, 6) =
-                kernel_vector.tail(6);
-            label_count += 6;
-        }
-    }
-
-    // Update Kuf matrix.
-    Kuf.conservativeResize(Kuf.rows()+1, Kuf.cols());
-    Kuf.row(Kuf.rows()-1) = uf_vector;
-
-    // Store sparse environment.
-    sparse_environments.push_back(env);
-}
-
-void SparseGP :: add_training_structure_serial(StructureDescriptor
-    training_structure){
-
-    int n_labels = training_structure.energy.size() +
-        training_structure.forces.size() + training_structure.stresses.size();
-    
-    // Update label counts.
-    int prev_count;
-    int curr_size = label_count.size();
-    if (label_count.size() == 0){
-        label_count.push_back(n_labels);
-    }
-    else{
-        prev_count = label_count[curr_size-1];
-        label_count.push_back(n_labels + prev_count);
-    }
-
-    int n_atoms = training_structure.noa;
-    int n_sparse = sparse_environments.size();
-    int n_kernels = kernels.size();
-
-    // Calculate kernels between sparse environments and training structure.
-    Eigen::MatrixXd kernel_block = Eigen::MatrixXd::Zero(n_sparse, n_labels);
-    LocalEnvironment sparse_env;
-    Eigen::VectorXd kernel_vector;
-    int label_count;
-
-    for (int i = 0; i < n_sparse; i ++){
-        kernel_vector = Eigen::VectorXd::Zero(1 + 3 * n_atoms + 6);
-        for (int j = 0; j < n_kernels; j ++){
-            kernel_vector += kernels[j] -> env_struc(sparse_environments[i],
-                training_structure);
-        }
-
-        // Update kernel block.
-        label_count = 0;
-        if (training_structure.energy.size() != 0){
-            kernel_block(i, 0) = kernel_vector(0);
-            label_count += 1;
-        }
-
-        if (training_structure.forces.size() != 0){
-            kernel_block.row(i).segment(label_count, n_atoms * 3) =
-                kernel_vector.segment(1, n_atoms * 3);
-        }
-
-        if (training_structure.stresses.size() != 0){
-            kernel_block.row(i).tail(6) = kernel_vector.tail(6);
-        }
-    }
-
-    // Add kernel block to Kuf.
-    int prev_cols = Kuf.cols();
-    Kuf.conservativeResize(n_sparse, prev_cols + n_labels);
-    Kuf.block(0, prev_cols, n_sparse, n_labels) = kernel_block;
-
-    // Store training structure.
-    training_structures.push_back(training_structure);
-
-    // Update y vector and noise matrix.
-    Eigen::VectorXd labels = Eigen::VectorXd::Zero(n_labels);
-    Eigen::VectorXd noise_vector = Eigen::VectorXd::Zero(n_labels);
-
-    label_count = 0;
-    if (training_structure.energy.size() != 0){
-        labels.head(1) = training_structure.energy;
-        noise_vector(0) = 1 / (sigma_e * sigma_e);
-        label_count ++;
-    }
-
-    if (training_structure.forces.size() != 0){
-        labels.segment(label_count, n_atoms * 3) = training_structure.forces;
-        noise_vector.segment(label_count, n_atoms * 3) =
-            Eigen::VectorXd::Constant(n_atoms * 3, 1 / (sigma_f * sigma_f));
-    }
-
-    if (training_structure.stresses.size() != 0){
-        labels.tail(6) = training_structure.stresses;
-        noise_vector.tail(6) =
-            Eigen::VectorXd::Constant(6, 1 / (sigma_s * sigma_s));
-    }
-
-    y.conservativeResize(y.size() + n_labels);
-    y.tail(n_labels) = labels;
-
-    noise.conservativeResize(prev_cols + n_labels);
-    noise.tail(n_labels) = noise_vector;
-    noise_matrix = noise.asDiagonal();
-}
-
 void SparseGP :: add_training_structure(StructureDescriptor training_structure){
 
     int n_labels = training_structure.energy.size() +
@@ -432,7 +276,7 @@ void SparseGP :: three_body_grid(double min_dist, double max_dist,
                                     env = struc.local_environments[0];
 
                                     // Add to the training set
-                                    this->add_sparse_environment_serial(env);
+                                    this->add_sparse_environment(env);
 
                                     counter ++;
                                 }
@@ -469,29 +313,6 @@ Eigen::VectorXd SparseGP::predict(StructureDescriptor test_structure){
             kern_mat.col(i) +=
                 kernels[j] -> env_struc(sparse_environments[i], test_structure);
         }
-    }
-
-    return kern_mat * alpha;
-}
-
-Eigen::VectorXd SparseGP::predict_serial(StructureDescriptor test_structure){
-    int n_atoms = test_structure.noa;
-    int n_out = 1 + 3 * n_atoms + 6;
-    int n_sparse = sparse_environments.size();
-    int n_kernels = kernels.size();
-    Eigen::MatrixXd kern_mat = Eigen::MatrixXd::Zero(n_out, n_sparse);
-
-    LocalEnvironment sparse_env;
-    Eigen::VectorXd kernel_vector;
-
-    for (int i = 0; i < n_sparse; i ++){
-        sparse_env = sparse_environments[i];
-        kernel_vector = Eigen::VectorXd::Zero(n_out);
-        for (int j = 0; j < n_kernels; j ++){
-            kernel_vector +=
-                kernels[j] -> env_struc(sparse_env, test_structure);
-        }
-        kern_mat.col(i) = kernel_vector;
     }
 
     return kern_mat * alpha;
