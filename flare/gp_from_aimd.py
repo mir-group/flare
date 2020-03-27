@@ -334,10 +334,15 @@ class TrajectoryTrainer:
                     local_energies=None)
 
             if i < train_frame:
+                # Noise hyperparameter & relative std tolerance is not for mgp.
+                if self.mgp:
+                    noise = 0
+                else:
+                    noise = self.gp.hyps[-1]
                 std_in_bound, std_train_atoms = is_std_in_bound_per_species(
                         rel_std_tolerance=self.rel_std_tolerance,
                         abs_std_tolerance=self.abs_std_tolerance,
-                        noise=self.gp.hyps[-1], structure=cur_frame,
+                        noise=noise, structure=cur_frame,
                         max_atoms_added=self.max_atoms_from_frame,
                         max_by_species=self.train_env_per_species)
 
@@ -379,7 +384,7 @@ class TrajectoryTrainer:
                         self.gp.write_model(f'{self.output_name}_checkpt',
                                 self.model_format)
 
-                if (i + 1) == train_frame:
+                if (i + 1) == train_frame and not self.mgp:
                     self.gp.check_L_alpha()
 
         if self.verbose:

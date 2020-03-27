@@ -196,8 +196,7 @@ def test_mgp_gpfa(all_mgp, all_gp):
 
     frames = [struc]
 
-
-    tt = TrajectoryTrainer(frames, mgp_model)
-    print(mgp_model)
+    tt = TrajectoryTrainer(frames, mgp_model, rel_std_tolerance=0,
+                           abs_std_tolerance=0, abs_force_tolerance=0)
     assert tt.mgp is True
     tt.run()
