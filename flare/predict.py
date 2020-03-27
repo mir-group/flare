@@ -73,7 +73,8 @@ def predict_on_atom_en(param: Tuple[Structure, int, GaussianProcess]) -> (
 
 
 def predict_on_structure(structure: Structure, gp: GaussianProcess,
-                         n_cpus: int=None) -> (
+                         n_cpus: int=None, write_to_structure: bool = True) \
+        -> (
         'np.ndarray', 'np.ndarray'):
     """
     Return the forces/std. dev. uncertainty associated with each
@@ -82,28 +83,35 @@ def predict_on_structure(structure: Structure, gp: GaussianProcess,
 
     :param structure: FLARE structure to obtain forces for, with N atoms
     :param gp: Gaussian Process model
+    :param write_to_structure: Write results to structure's forces,
+                            std attributes
     :return: N x 3 numpy array of foces, Nx3 numpy array of uncertainties
     :rtype: (np.ndarray, np.ndarray)
     """
     # Loop through individual atoms, cast to atomic environments,
     # make predictions
 
+    forces = np.zeros(shape=(structure.nat,3))
+    stds = np.zeros(shape=(structure.nat,3))
+
     for n in range(structure.nat):
         chemenv = AtomicEnvironment(structure, n, gp.cutoffs)
         for i in range(3):
             force, var = gp.predict(chemenv, i + 1)
-            structure.forces[n][i] = float(force)
-            structure.stds[n][i] = np.sqrt(np.abs(var))
+            forces[n][i] = float(force)
+            stds[n][i] = float(var)
 
-    forces = np.array(structure.forces)
-    stds = np.array(structure.stds)
+            if write_to_structure:
+                structure.forces[n][i] = float(force)
+                structure.stds[n][i] = np.sqrt(np.abs(var))
 
     return forces, stds
 
 
 def predict_on_structure_par(structure: Structure,
                              gp: GaussianProcess,
-                             n_cpus: int = None) -> (
+                             n_cpus: int = None,
+                             write_to_structure: bool = True) -> (
         'np.ndarray', 'np.ndarray'):
     """
     Return the forces/std. dev. uncertainty associated with each
@@ -113,12 +121,14 @@ def predict_on_structure_par(structure: Structure,
     :param structure: FLARE structure to obtain forces for, with N atoms
     :param gp: Gaussian Process model
     :param n_cpus: Number of cores to parallelize over
+    :param write_to_structure: Write results to structure's forces,
+                            std attributes
     :return: N x 3 array of forces, N x 3 array of uncertainties
     :rtype: (np.ndarray, np.ndarray)
     """
     # Just work in serial in the number of cpus is 1
     if n_cpus is 1:
-        return predict_on_structure(structure, gp)
+        return predict_on_structure(structure, gp,n_cpus,write_to_structure)
 
     # Automatically detect number of cpus available
     if (n_cpus is None):
@@ -133,14 +143,17 @@ def predict_on_structure_par(structure: Structure,
                                         args=[(structure, atom, gp)]))
     pool.close()
     pool.join()
+    forces = np.zeros(shape=(structure.nat,3))
+    stds = np.zeros(shape=(structure.nat,3))
 
     for i in range(structure.nat):
         r = results[i].get()
-        structure.forces[i] = r[0]
-        structure.stds[i] = r[1]
+        forces[i] = r[0]
+        stds[i] = r[1]
+        if write_to_structure:
+            structure.forces[i] = r[0]
+            structure.stds[i] = r[1]
 
-    forces = np.array(structure.forces)
-    stds = np.array(structure.stds)
     return forces, stds
 
 

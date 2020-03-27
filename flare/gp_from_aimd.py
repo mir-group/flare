@@ -314,10 +314,11 @@ class TrajectoryTrainer:
                 print(f"=====NOW ON FRAME {i}=====")
             dft_forces = deepcopy(cur_frame.forces)
 
-            self.pred_func(cur_frame, self.gp, self.n_cpus)
+            forces, stds = self.pred_func(cur_frame, self.gp, self.n_cpus,
+                                          in_place=True)
 
             # Convert to meV/A
-            error = np.abs(cur_frame.forces - dft_forces)
+            error = np.abs(forces - dft_forces)
 
             self.output.write_gp_dft_comparison(
                 curr_step=i, frame=cur_frame,
@@ -417,7 +418,6 @@ class TrajectoryTrainer:
 
         else:
             raise NotImplementedError
-
 
 
     def train_gp(self, max_iter: int = None):
