@@ -12,6 +12,7 @@ class LocalEnvironment{
         int central_index, central_species, noa, sweep;
         std::vector<double> rs, xs, ys, zs, xrel, yrel, zrel;
         double cutoff, structure_volume;
+        Structure structure;
 
         // Neighbor descriptors and derivatives.
         std::vector<std::vector<Eigen::VectorXd>> neighbor_descriptors;

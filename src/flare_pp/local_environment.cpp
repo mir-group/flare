@@ -7,6 +7,7 @@ LocalEnvironment :: LocalEnvironment(){}
 LocalEnvironment :: LocalEnvironment(const Structure & structure, int atom,
                                      double cutoff){
     this->cutoff = cutoff;
+    this->structure = structure;
     central_index = atom;
     central_species = structure.species[atom];
     noa = structure.wrapped_positions.rows();
