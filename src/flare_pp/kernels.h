@@ -186,6 +186,9 @@ class DotProductKernel : public Kernel{
 
         double env_env(const LocalEnvironment & env1,
                        const LocalEnvironment & env2);
+        
+        Eigen::VectorXd env_env_force(const LocalEnvironment & env1,
+            const LocalEnvironment & env2);
 
         Eigen::VectorXd self_kernel_env(const StructureDescriptor & struc1,
             int atom);

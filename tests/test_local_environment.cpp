@@ -90,6 +90,36 @@ TEST_F(EnvironmentTest, DotTest){
     EXPECT_NEAR(norm_val, test_env.descriptor_norm[0], THRESHOLD);
 }
 
+TEST_F(EnvironmentTest, NeighborTest){
+    test_env.compute_neighbor_descriptors(test_struc,
+        many_body_cutoffs, descriptor_calculators);
+    
+    int n_desc = test_env.descriptor_vals.size();
+
+    int neighbor = 3;
+    int neighbor_ind = test_env.neighbor_list[neighbor];
+    int force_comp = 2;
+    int desc_el = 1000;
+
+    // Check that descriptors agree.
+    double val1 = test_env.neighbor_descriptors[neighbor][0](desc_el);
+    double val2 = test_struc.local_environments[neighbor_ind].descriptor_vals[0](desc_el);
+
+    EXPECT_EQ(val1, val2);
+
+    // Check that descriptor derivatives agree.
+    double val3 =
+        test_env.neighbor_force_dervs[neighbor][0](force_comp, desc_el);
+    double val4 =
+        test_struc.local_environments[neighbor_ind].descriptor_force_dervs[0](3 * test_env.central_index + force_comp, desc_el);
+
+    EXPECT_EQ(val3, val4);
+
+    // std::cout << test_struc.local_environments[neighbor_ind].descriptor_norm[0] << std::endl;
+    // std::cout << test_env.neighbor_descriptor_norms[neighbor][0] << std::endl;
+    // std::cout << test_env.neighbor_force_dots[neighbor][0] << std::endl;
+}
+
 // TEST_F(EnvironmentTest, NestedTest){
 //     NestedEnvironment nest =  NestedEnvironment(test_struc, 0, cutoff, 3, 2, 1);
 //     std::cout << nest.three_body_indices.size() << std::endl;

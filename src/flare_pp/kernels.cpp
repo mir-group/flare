@@ -1893,6 +1893,26 @@ double DotProductKernel :: env_env(const LocalEnvironment & env1,
     return sig2 * pow(dot / (d1 * d2), power);
 }
 
+Eigen::VectorXd DotProductKernel :: env_env_force(
+    const LocalEnvironment & env1, const LocalEnvironment & env2){
+
+    // TODO: implement
+
+    // double dot_val, d2, norm_dot, dval, d2_cubed;
+    // Eigen::VectorXd force_dot, stress_dot, f1, s1;
+
+    // // Force kernel
+    // double dot_val = env1.descriptor_vals[descriptor_index]
+    //     .dot(env2.descriptor_vals[descriptor_index]);
+    // force_dot = env_curr.descriptor_force_dervs[descriptor_index] *
+    //     env1.descriptor_vals[descriptor_index];
+    // f1 = (force_dot / (d1 * d2)) -
+    //     (dot_val * env_curr.force_dot[descriptor_index] / (d2_cubed * d1));
+    // dval = power * pow(norm_dot, power - 1);
+    // force_kern += dval * f1;
+
+}
+
 Eigen::VectorXd DotProductKernel :: self_kernel_env(
     const StructureDescriptor & struc1, int atom){
 

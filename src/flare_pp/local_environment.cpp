@@ -264,3 +264,33 @@ void LocalEnvironment :: compute_descriptors(){
         stress_dot.push_back(descriptor_stress_dervs[i] * descriptor_vals[i]);
     }
 }
+
+void LocalEnvironment :: compute_neighbor_descriptors(
+    const Structure & structure, std::vector<double> many_body_cutoffs,
+    std::vector<DescriptorCalculator *> descriptor_calculators){
+
+    int n_neighbors = neighbor_list.size();
+    int n_descriptors = descriptor_calculators.size();
+    int neighbor;
+    LocalEnvironment env_curr;
+
+    for (int m = 0; m < n_neighbors; m ++){
+        neighbor = neighbor_list[m];
+        env_curr = LocalEnvironment(structure, neighbor, cutoff,
+            many_body_cutoffs, descriptor_calculators);
+        neighbor_descriptors.push_back(env_curr.descriptor_vals);
+        neighbor_descriptor_norms.push_back(env_curr.descriptor_norm);
+
+        std::vector<Eigen::MatrixXd> derivs, dots;
+        for (int n = 0; n < n_descriptors; n ++){
+            int n_descriptors = env_curr.descriptor_vals[n].size();
+            derivs.push_back(
+                env_curr.descriptor_force_dervs[n].block(
+                    3 * central_index, 0, 3, n_descriptors));
+            dots.push_back(env_curr.force_dot[n].block(
+                3 * central_index, 0, 3, 1));
+        }
+        neighbor_force_dervs.push_back(derivs);
+        neighbor_force_dots.push_back(dots);
+    }
+}
