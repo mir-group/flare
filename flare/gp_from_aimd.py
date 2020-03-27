@@ -61,9 +61,9 @@ class TrajectoryTrainer:
                  abs_force_tolerance: float = 0,
                  max_force_error: float = inf,
                  parallel: bool = False,
-                 n_cpus: int = None,
+                 n_cpus: int = 1,
                  skip: int = 1,
-                 validate_ratio: float = 0.1,
+                 validate_ratio: float = 0.0,
                  calculate_energy: bool = False,
                  output_name: str = 'gp_from_aimd',
                  pre_train_max_iter: int = 50,
@@ -78,7 +78,7 @@ class TrajectoryTrainer:
                                                  'np.array']] = None,
                  pre_train_atoms_per_element: dict = None,
                  train_atoms_per_element: dict = None,
-                 checkpoint_interval: int = None,
+                 checkpoint_interval: int = 1,
                  model_format: str = 'json'):
         """
         Class which trains a GP off of an AIMD trajectory, and generates
@@ -96,7 +96,6 @@ class TrajectoryTrainer:
         :param max_force_error: Don't add atom if force error exceeds this
         :param parallel: Use parallel functions or not
         :param validate_ratio: Fraction of frames used for validation
-        :param n_cpus: number of cpus to run with multithreading
         :param skip: Skip through frames
         :param calculate_energy: Use local energy kernel or not
         :param output_name: Write output of training to this file
@@ -104,7 +103,7 @@ class TrajectoryTrainer:
         :param min_atoms_added: Only train when this many atoms have been
             added
         :param max_trains: Stop training GP after this many calls to train
-        :param n_cpus: Number of CPUs to parallelize over
+        :param n_cpus: Number of CPUs to parallelize over for parallelization over atoms
         :param shuffle_frames: Randomize order of frames for better training
         :param verbose: 0: Silent, 1: Minimal, 2: Lots of information
         :param pre_train_on_skips: Train model on every n frames before running
