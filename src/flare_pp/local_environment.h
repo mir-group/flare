@@ -23,6 +23,11 @@ class LocalEnvironment{
             std::vector<double> many_body_cutoffs,
             std::vector<DescriptorCalculator *> descriptor_calculators);
 
+        // Compute descriptor and descriptor norm of a bare environment.
+        void compute_descriptors(const Structure & structure,
+            std::vector<double> many_body_cutoffs,
+            std::vector<DescriptorCalculator *> descriptor_calculator);
+
         // Store cutoffs for each kernel and indices of atoms inside each cutoff sphere.
         std::vector<double> n_body_cutoffs, many_body_cutoffs;
         std::vector<std::vector<int>> n_body_indices, many_body_indices;
@@ -75,7 +80,7 @@ class LocalEnvironment{
                                  std::vector<double> & zrel);
 
         void compute_indices();
-        void compute_descriptors();
+        void compute_descriptors_and_gradients();
 };
 
 #endif

@@ -54,7 +54,6 @@ LocalEnvironment :: LocalEnvironment(const Structure & structure, int atom,
     this->many_body_cutoffs = many_body_cutoffs;
     this->descriptor_calculators = descriptor_calculators;
     compute_indices();
-    compute_descriptors();
 }
 
 // n-body + many-body
@@ -68,7 +67,6 @@ LocalEnvironment :: LocalEnvironment(const Structure & structure, int atom,
     this->many_body_cutoffs = many_body_cutoffs;
     this->descriptor_calculators = descriptor_calculators;
     compute_indices();
-    compute_descriptors();
 }
 
 void LocalEnvironment :: compute_environment(
@@ -248,7 +246,7 @@ void LocalEnvironment :: compute_indices(){
     }
 }
 
-void LocalEnvironment :: compute_descriptors(){
+void LocalEnvironment :: compute_descriptors_and_gradients(){
     int n_calculators = descriptor_calculators.size();
     for (int i = 0; i < n_calculators; i ++){
         descriptor_calculators[i]->compute(*this);
@@ -265,6 +263,28 @@ void LocalEnvironment :: compute_descriptors(){
     }
 }
 
+// void LocalEnvironment :: compute_descriptors(
+//     const Structure & structure, std::vector<double> many_body_cutoffs,
+//     std::vector<DescriptorCalculator *> descriptor_calculators){
+    
+//     LocalEnvironment full_env; 
+
+//     int n_calculators = descriptor_calculators.size();
+//     for (int i = 0; i < n_calculators; i ++){
+//         descriptor_calculators[i]->compute(*this);
+//         descriptor_vals.push_back(descriptor_calculators[i]->descriptor_vals);
+//         descriptor_force_dervs.push_back(
+//             descriptor_calculators[i]->descriptor_force_dervs);
+//         descriptor_stress_dervs.push_back(
+//             descriptor_calculators[i]->descriptor_stress_dervs);
+
+//         descriptor_norm.push_back(sqrt(
+//             descriptor_vals[i].dot(descriptor_vals[i])));
+//         force_dot.push_back(descriptor_force_dervs[i] * descriptor_vals[i]);
+//         stress_dot.push_back(descriptor_stress_dervs[i] * descriptor_vals[i]);
+//     }
+// }
+
 void LocalEnvironment :: compute_neighbor_descriptors(
     const Structure & structure, std::vector<double> many_body_cutoffs,
     std::vector<DescriptorCalculator *> descriptor_calculators){
@@ -278,9 +298,13 @@ void LocalEnvironment :: compute_neighbor_descriptors(
         neighbor = neighbor_list[m];
         env_curr = LocalEnvironment(structure, neighbor, cutoff,
             many_body_cutoffs, descriptor_calculators);
+        env_curr.compute_descriptors_and_gradients();
+
+        // Add neighbor descriptors and norms.
         neighbor_descriptors.push_back(env_curr.descriptor_vals);
         neighbor_descriptor_norms.push_back(env_curr.descriptor_norm);
 
+        // Add neighbor derivatives and force/descriptor dot products.
         std::vector<Eigen::MatrixXd> derivs, dots;
         for (int n = 0; n < n_descriptors; n ++){
             int n_descriptors = env_curr.descriptor_vals[n].size();

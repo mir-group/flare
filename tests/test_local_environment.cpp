@@ -48,6 +48,7 @@ class EnvironmentTest : public :: testing :: Test{
         atom = 0;
         test_env = LocalEnvironment(test_struc, atom, cutoff, 
             nested_cutoffs, descriptor_calculators);
+        test_env.compute_descriptors_and_gradients();
     }
 };
 
@@ -93,7 +94,7 @@ TEST_F(EnvironmentTest, DotTest){
 TEST_F(EnvironmentTest, NeighborTest){
     test_env.compute_neighbor_descriptors(test_struc,
         many_body_cutoffs, descriptor_calculators);
-    
+
     int n_desc = test_env.descriptor_vals.size();
 
     int neighbor = 3;

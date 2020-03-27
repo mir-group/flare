@@ -157,6 +157,7 @@ void StructureDescriptor :: compute_descriptors(){
     for (int i = 0; i < noa; i ++){
         env = LocalEnvironment(*this, i, cutoff, many_body_cutoffs,
             descriptor_calculators);
+        env.compute_descriptors_and_gradients();
         local_environments.push_back(env);
     }
 }
@@ -168,6 +169,7 @@ void StructureDescriptor :: nested_descriptors(){
     for (int i = 0; i < noa; i ++){
         env = LocalEnvironment(*this, i, cutoff, n_body_cutoffs,
             many_body_cutoffs, descriptor_calculators);
+        env.compute_descriptors_and_gradients();
         local_environments.push_back(env);
     }
 }

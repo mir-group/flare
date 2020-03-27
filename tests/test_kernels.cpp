@@ -21,7 +21,9 @@ class KernelTest : public ::testing::Test{
             test_struc_4;
 
         // environment
-        LocalEnvironment test_env, test_env_3, test_env_4;
+        Structure struc_bare_1, struc_bare_2;
+        LocalEnvironment test_env, test_env_3, test_env_4, env_bare_1,
+            env_bare_2;
 
         // descriptor
         std::string radial_string = "chebyshev";
@@ -73,6 +75,12 @@ class KernelTest : public ::testing::Test{
             nested_cutoffs, many_body_cutoffs, descriptor_calculators);
         test_env = test_struc_2.local_environments[0];
 
+        // Construct "bare" structures and environments, which don't contain descriptor vectors and are therefore more memory-friendly.
+        struc_bare_1 = Structure(cell, species, positions);
+        struc_bare_2 = Structure(cell, species, positions_2);
+        env_bare_1 = LocalEnvironment(struc_bare_1, 0, cutoff);
+        env_bare_2 = LocalEnvironment(struc_bare_2, 0, cutoff);
+
         kernel = DotProductKernel(signal_variance, power, descriptor_index);
         two_body_kernel = TwoBodyKernel(signal_variance, length_scale,
             cutoff_string, cutoff_hyps);
@@ -90,6 +98,12 @@ TEST_F(KernelTest, NormTest){
     LocalEnvironment env2 = test_struc.local_environments[1];
     double kern_val = kernel.env_env(env1, env1);
     EXPECT_NEAR(kern_val, signal_variance*signal_variance, THRESHOLD);
+}
+
+TEST_F(KernelTest, EnvForceTest){
+    // Compute neighbor descriptors.
+    env_bare_2.compute_neighbor_descriptors(struc_bare_2, many_body_cutoffs,
+        descriptor_calculators);
 }
 
 TEST_F(KernelTest, ForceTest){
