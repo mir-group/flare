@@ -15,6 +15,7 @@ class LocalEnvironment{
         Structure structure;
 
         // Neighbor descriptors and derivatives.
+        // TODO: add neighbor lists for each many body cutoff.
         std::vector<std::vector<Eigen::VectorXd>> neighbor_descriptors;
         std::vector<std::vector<Eigen::MatrixXd>> neighbor_force_dervs,
             neighbor_force_dots;

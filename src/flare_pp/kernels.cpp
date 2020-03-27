@@ -1899,17 +1899,32 @@ Eigen::VectorXd DotProductKernel :: env_env_force(
     // Note that env2 is assumed to have neighbor descriptors stored.
 
     Eigen::VectorXd kern_vec = Eigen::VectorXd::Zero(3);
-    double dot_val, d2, norm_dot, dval, d2_cubed;
-    Eigen::VectorXd force_dot, stress_dot, f1, s1;
+    double d2, dot_val, norm_dot, dval, d2_cubed;
+    Eigen::VectorXd force_dot, f1;
+    double empty_thresh = 1e-8;
+    int env_spec;
 
     int n_neighbors = env2.neighbor_list.size();
     double d1 = env1.descriptor_norm[descriptor_index];
+    if (d1 < empty_thresh){
+        return kern_vec;
+    }
 
     // Compute force kernel (3-element vector)
     for (int n = 0; n < n_neighbors; n ++){
+        env_spec = env2.structure.species[env2.neighbor_list[n]];
+        if (env_spec != env1.central_species){
+            continue;
+        }
+
         d2 = env2.neighbor_descriptor_norms[n][descriptor_index];
+        if (d2 < empty_thresh){
+            continue;
+        }
+        d2_cubed = d2 * d2 * d2;
         dot_val = env1.descriptor_vals[descriptor_index]
             .dot(env2.neighbor_descriptors[n][descriptor_index]);
+        norm_dot = dot_val / (d1 * d2);
         force_dot = env2.neighbor_force_dervs[n][descriptor_index] *
             env1.descriptor_vals[descriptor_index];
         f1 = (force_dot / (d1 * d2)) -
@@ -1918,7 +1933,7 @@ Eigen::VectorXd DotProductKernel :: env_env_force(
         kern_vec += dval * f1;
     }
 
-    return kern_vec;
+    return -sig2 * kern_vec;
 }
 
 Eigen::VectorXd DotProductKernel :: self_kernel_env(

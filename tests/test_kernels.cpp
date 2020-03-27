@@ -75,11 +75,9 @@ class KernelTest : public ::testing::Test{
             nested_cutoffs, many_body_cutoffs, descriptor_calculators);
         test_env = test_struc_2.local_environments[0];
 
-        // Construct "bare" structures and environments, which don't contain descriptor vectors and are therefore more memory-friendly.
-        struc_bare_1 = Structure(cell, species, positions);
-        struc_bare_2 = Structure(cell, species, positions_2);
-        env_bare_1 = LocalEnvironment(struc_bare_1, 0, cutoff);
-        env_bare_2 = LocalEnvironment(struc_bare_2, 0, cutoff);
+        // Construct "bare" structures, which don't contain descriptor vectors and are therefore more memory-friendly.
+        struc_bare_1 = Structure(cell, species, positions_2);
+        struc_bare_2 = Structure(cell, species, positions);
 
         kernel = DotProductKernel(signal_variance, power, descriptor_index);
         two_body_kernel = TwoBodyKernel(signal_variance, length_scale,
@@ -101,8 +99,26 @@ TEST_F(KernelTest, NormTest){
 }
 
 TEST_F(KernelTest, EnvForceTest){
-    // Compute neighbor descriptors.
-    env_bare_2.compute_neighbor_descriptors();
+    int atom1 = 0;
+    env_bare_1 = LocalEnvironment(struc_bare_1, atom1, cutoff,
+        many_body_cutoffs, descriptor_calculators);
+
+    // Compute descriptors of environment 1.
+    env_bare_1.compute_descriptors();
+
+    for (int atom2 = 0; atom2 < struc_bare_2.species.size(); atom2 ++){
+        env_bare_2 = LocalEnvironment(struc_bare_2, atom2, cutoff,
+            many_body_cutoffs, descriptor_calculators);
+        // Compute neighbor descriptors of environment 2.
+        env_bare_2.compute_neighbor_descriptors();
+
+        Eigen::VectorXd test_kern =
+            kernel.env_env_force(env_bare_1, env_bare_2);
+    
+        for (int i = 0; i < 3; i ++){
+            EXPECT_NEAR(test_kern(i), kern_vec(1 + 3 * atom2 + i), THRESHOLD);
+        }
+    }
 }
 
 TEST_F(KernelTest, ForceTest){
