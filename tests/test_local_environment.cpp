@@ -92,8 +92,7 @@ TEST_F(EnvironmentTest, DotTest){
 }
 
 TEST_F(EnvironmentTest, NeighborTest){
-    test_env.compute_neighbor_descriptors(test_struc,
-        many_body_cutoffs, descriptor_calculators);
+    test_env.compute_neighbor_descriptors();
 
     int n_desc = test_env.descriptor_vals.size();
 

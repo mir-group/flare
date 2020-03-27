@@ -102,8 +102,7 @@ TEST_F(KernelTest, NormTest){
 
 TEST_F(KernelTest, EnvForceTest){
     // Compute neighbor descriptors.
-    env_bare_2.compute_neighbor_descriptors(struc_bare_2, many_body_cutoffs,
-        descriptor_calculators);
+    env_bare_2.compute_neighbor_descriptors();
 }
 
 TEST_F(KernelTest, ForceTest){

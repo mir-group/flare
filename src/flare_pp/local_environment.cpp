@@ -286,9 +286,7 @@ void LocalEnvironment :: compute_descriptors_and_gradients(){
 //     }
 // }
 
-void LocalEnvironment :: compute_neighbor_descriptors(
-    const Structure & structure, std::vector<double> many_body_cutoffs,
-    std::vector<DescriptorCalculator *> descriptor_calculators){
+void LocalEnvironment :: compute_neighbor_descriptors(){
 
     int n_neighbors = neighbor_list.size();
     int n_descriptors = descriptor_calculators.size();
