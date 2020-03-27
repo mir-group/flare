@@ -315,7 +315,7 @@ class TrajectoryTrainer:
             dft_forces = deepcopy(cur_frame.forces)
 
             forces, stds = self.pred_func(cur_frame, self.gp, self.n_cpus,
-                                          in_place=True)
+                                          write_to_structure=True)
 
             # Convert to meV/A
             error = np.abs(forces - dft_forces)
