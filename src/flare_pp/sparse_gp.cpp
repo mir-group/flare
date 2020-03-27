@@ -68,7 +68,7 @@ void SparseGP :: add_sparse_environment(LocalEnvironment env){
     Kuu(n_sparse, n_sparse) = self_kernel;
 
     // Compute kernels between new environment and training structures.
-    int n_labels = Kuf.cols();
+    int n_labels = Kuf_struc.cols();
     int n_strucs = training_structures.size();
     Eigen::VectorXd uf_vector = Eigen::VectorXd::Zero(n_labels);
 
@@ -109,9 +109,11 @@ void SparseGP :: add_sparse_environment(LocalEnvironment env){
         }
     }
 
-    // Update Kuf matrix.
-    Kuf.conservativeResize(Kuf.rows()+1, Kuf.cols());
-    Kuf.row(Kuf.rows()-1) = uf_vector;
+    // Update Kuf_struc matrix.
+    Kuf_struc.conservativeResize(Kuf_struc.rows()+1, Kuf_struc.cols());
+    Kuf_struc.row(Kuf_struc.rows()-1) = uf_vector;
+
+    // Compute kernels between new environment and training environments.
 
     // Store sparse environment.
     sparse_environments.push_back(env);
@@ -165,10 +167,10 @@ void SparseGP :: add_training_structure(StructureDescriptor training_structure){
         }
     }
 
-    // Add kernel block to Kuf.
-    int prev_cols = Kuf.cols();
-    Kuf.conservativeResize(n_sparse, prev_cols + n_labels);
-    Kuf.block(0, prev_cols, n_sparse, n_labels) = kernel_block;
+    // Add kernel block to Kuf_struc.
+    int prev_cols = Kuf_struc.cols();
+    Kuf_struc.conservativeResize(n_sparse, prev_cols + n_labels);
+    Kuf_struc.block(0, prev_cols, n_sparse, n_labels) = kernel_block;
 
     // Store training structure.
     training_structures.push_back(training_structure);
@@ -290,12 +292,12 @@ void SparseGP :: three_body_grid(double min_dist, double max_dist,
 }
 
 void SparseGP::update_alpha(){
-    Eigen::MatrixXd sigma_inv = Kuu + Kuf * noise_matrix * Kuf.transpose() +
+    Eigen::MatrixXd sigma_inv = Kuu + Kuf_struc * noise_matrix * Kuf_struc.transpose() +
         Kuu_jitter * Eigen::MatrixXd::Identity(Kuu.rows(), Kuu.cols());
     // TODO: Use Woodbury identity to perform inversion once.
     Sigma = sigma_inv.inverse();
     Kuu_inverse = Kuu.inverse();
-    alpha = Sigma * Kuf * noise_matrix * y;
+    alpha = Sigma * Kuf_struc * noise_matrix * y;
 }
 
 Eigen::VectorXd SparseGP::predict(StructureDescriptor test_structure){

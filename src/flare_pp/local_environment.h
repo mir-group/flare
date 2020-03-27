@@ -13,6 +13,7 @@ class LocalEnvironment{
         std::vector<double> rs, xs, ys, zs, xrel, yrel, zrel;
         double cutoff, structure_volume;
         Structure structure;
+        Eigen::VectorXd force;  // Force on the central atom
 
         // Neighbor descriptors and derivatives.
         // TODO: add neighbor lists for each many body cutoff.
