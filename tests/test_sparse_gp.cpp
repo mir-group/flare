@@ -20,10 +20,12 @@ class SparseTest : public ::testing::Test{
         std::string cutoff_string = "cosine";
         std::vector<double> radial_hyps {0, 5};
         std::vector<double> cutoff_hyps;
-        std::vector<int> descriptor_settings {2, 10, 10};
+        std::vector<int> descriptor_settings {2, 5, 5};
         double cutoff = 5;
         std::vector<double> nested_cutoffs {5, 5};
+        std::vector<double> many_body_cutoffs {5};
         B2_Calculator desc1;
+        std::vector<DescriptorCalculator *> calcs;
 
         // kernel
         double signal_variance = 1;
@@ -50,9 +52,11 @@ class SparseTest : public ::testing::Test{
 
         desc1 = B2_Calculator(radial_string, cutoff_string,
             radial_hyps, cutoff_hyps, descriptor_settings, 0);
+        calcs.push_back(&desc1);
 
         test_struc = StructureDescriptor(cell, species, positions, cutoff,
-                                         nested_cutoffs);
+                                         nested_cutoffs, many_body_cutoffs,
+                                         calcs);
         test_struc.energy = energy;
         test_struc.forces = forces;
         test_struc.stresses = stresses;
@@ -64,12 +68,12 @@ class SparseTest : public ::testing::Test{
         many_body_kernel = DotProductKernel(signal_variance, power,
             descriptor_index);
 
-        // kernels = 
-        //     std::vector<Kernel *> {&two_body_kernel, &three_body_kernel,
-        //         &many_body_kernel};
-    
         kernels = 
-            std::vector<Kernel *> {&two_body_kernel, &three_body_kernel};
+            std::vector<Kernel *> {&two_body_kernel, &three_body_kernel,
+                &many_body_kernel};
+    
+        // kernels = 
+        //     std::vector<Kernel *> {&two_body_kernel, &three_body_kernel};
     }
 };
 
@@ -103,7 +107,21 @@ TEST_F(SparseTest, UpdateK){
     }
     EXPECT_EQ(kern_val, sparse_gp.Kuu(0,0));
 
+    // Add a training environment to the training set.
+    env1.compute_neighbor_descriptors();
+    Eigen::VectorXd force{3};
+    force << 1, 1, 1;
+    env1.force = force;
+    sparse_gp.add_training_environment(env1);
+
     sparse_gp.update_alpha();
+    EXPECT_EQ(sparse_gp.Kuf.rows(), 2);
+    EXPECT_EQ(sparse_gp.Kuf.cols(),
+        sparse_gp.Kuf_struc.cols() + sparse_gp.Kuf_env.cols());
+    EXPECT_EQ(sparse_gp.y.size(),
+        sparse_gp.y_struc.size() + sparse_gp.y_env.size());
+    EXPECT_EQ(sparse_gp.noise_matrix.rows(),
+        sparse_gp.noise_env.size() + sparse_gp.noise_struc.size());    
 }
 
 TEST_F(SparseTest, Predict){
