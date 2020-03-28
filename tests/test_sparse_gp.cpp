@@ -92,8 +92,8 @@ TEST_F(SparseTest, UpdateK){
     EXPECT_EQ(sparse_gp.Kuu.rows(), 2);
     EXPECT_EQ(sparse_gp.Kuf_struc.rows(), 2);
     EXPECT_EQ(sparse_gp.Kuf_struc.cols(), 2 + 6 * n_atoms + 6);
-    EXPECT_EQ(sparse_gp.y.size(), 2 + 6 * n_atoms + 6);
-    EXPECT_EQ(test_struc.forces, sparse_gp.y.segment(1, 3 * n_atoms));
+    EXPECT_EQ(sparse_gp.y_struc.size(), 2 + 6 * n_atoms + 6);
+    EXPECT_EQ(test_struc.forces, sparse_gp.y_struc.segment(1, 3 * n_atoms));
 
     double kern_val = 0;
     double kern_curr;

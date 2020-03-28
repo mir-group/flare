@@ -127,25 +127,12 @@ void SparseGP :: add_sparse_environment(LocalEnvironment env){
                 training_environments[i]);
         }
 
-    //     if (training_structures[i].energy.size() != 0){
-    //         uf_vector(index) = kernel_vector(0);
-    //         index += 1;
-    //     }
-
-    //     if (training_structures[i].forces.size() != 0){
-    //         uf_vector.segment(index, n_atoms * 3) =
-    //             kernel_vector.segment(1, n_atoms * 3);
-    //         index += n_atoms * 3;
-    //     }
-
-    //     if (training_structures[i].stresses.size() != 0){
-    //         uf_vector.segment(index, 6) = kernel_vector.tail(6);
-    //     }
+        uf_vector.segment(3 * i, 3) = kernel_vector;
     }
 
-    // // Update Kuf_struc matrix.
-    // Kuf_struc.conservativeResize(Kuf_struc.rows()+1, Kuf_struc.cols());
-    // Kuf_struc.row(Kuf_struc.rows()-1) = uf_vector;
+    // Update Kuf_env matrix.
+    Kuf_env.conservativeResize(Kuf_env.rows()+1, Kuf_env.cols());
+    Kuf_env.row(Kuf_env.rows()-1) = uf_vector;
 
     // Store sparse environment.
     sparse_environments.push_back(env);
@@ -230,12 +217,55 @@ void SparseGP :: add_training_structure(StructureDescriptor training_structure){
             Eigen::VectorXd::Constant(6, 1 / (sigma_s * sigma_s));
     }
 
-    y.conservativeResize(y.size() + n_labels);
-    y.tail(n_labels) = labels;
+    y_struc.conservativeResize(y_struc.size() + n_labels);
+    y_struc.tail(n_labels) = labels;
 
-    noise.conservativeResize(prev_cols + n_labels);
-    noise.tail(n_labels) = noise_vector;
-    noise_matrix = noise.asDiagonal();
+    noise_struc.conservativeResize(prev_cols + n_labels);
+    noise_struc.tail(n_labels) = noise_vector;
+    noise_matrix_struc = noise_struc.asDiagonal();
+}
+
+void SparseGP :: add_training_environment(
+    LocalEnvironment training_environment){
+
+    int n_sparse = sparse_environments.size();
+    int n_kernels = kernels.size();
+    int n_labels = 3; // Assumes that all three force components are given.
+
+    // Calculate kernels between sparse environments and training environment.
+    Eigen::MatrixXd kernel_block = Eigen::MatrixXd::Zero(n_sparse, n_labels);
+
+    #pragma omp parallel for
+    for (int i = 0; i < n_sparse; i ++){
+        Eigen::VectorXd kernel_vector = Eigen::VectorXd::Zero(3);
+        for (int j = 0; j < n_kernels; j ++){
+            kernel_vector += kernels[j] ->
+                env_env_force(sparse_environments[i], training_environment);
+        }
+
+        // Update kernel block.
+        kernel_block.row(i) = kernel_vector;
+    }
+
+    // Add kernel block to Kuf_env.
+    int prev_cols = Kuf_env.cols();
+    Kuf_env.conservativeResize(n_sparse, prev_cols + n_labels);
+    Kuf_env.block(0, prev_cols, n_sparse, n_labels) = kernel_block;
+
+    // Store training structure.
+    training_environments.push_back(training_environment);
+
+    // Update y vector and noise matrix.
+    Eigen::VectorXd labels = training_environment.force;
+    Eigen::VectorXd noise_vector =
+        Eigen::VectorXd::Constant(3, 1 / (sigma_f * sigma_f));
+
+    y_env.conservativeResize(y_env.size() + n_labels);
+    y_env.tail(n_labels) = labels;
+
+    noise_env.conservativeResize(prev_cols + n_labels);
+    noise_env.tail(n_labels) = noise_vector;
+    noise_matrix_env = noise_env.asDiagonal();
 }
 
 // TODO: decouple triplets of different types.
@@ -324,12 +354,12 @@ void SparseGP :: three_body_grid(double min_dist, double max_dist,
 }
 
 void SparseGP::update_alpha(){
-    Eigen::MatrixXd sigma_inv = Kuu + Kuf_struc * noise_matrix * Kuf_struc.transpose() +
+    Eigen::MatrixXd sigma_inv = Kuu + Kuf_struc * noise_matrix_struc * Kuf_struc.transpose() +
         Kuu_jitter * Eigen::MatrixXd::Identity(Kuu.rows(), Kuu.cols());
     // TODO: Use Woodbury identity to perform inversion once.
     Sigma = sigma_inv.inverse();
     Kuu_inverse = Kuu.inverse();
-    alpha = Sigma * Kuf_struc * noise_matrix * y;
+    alpha = Sigma * Kuf_struc * noise_matrix_struc * y_struc;
 }
 
 Eigen::VectorXd SparseGP::predict(StructureDescriptor test_structure){
