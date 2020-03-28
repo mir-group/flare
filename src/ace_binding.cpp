@@ -56,6 +56,15 @@ PYBIND11_MODULE(ace, m){
     // Local environment
     py::class_<LocalEnvironment>(m, "LocalEnvironment")
         .def(py::init<const Structure &, int, double>())
+        // n-body
+        .def(py::init<const Structure &, int, double, std::vector<double>>())
+        // many-body
+        .def(py::init<const Structure &, int, double, std::vector<double>,
+                      std::vector<DescriptorCalculator *>>())
+        // n-body + many-body
+        .def(py::init<const Structure &, int, double, std::vector<double>,
+                      std::vector<double>,
+                      std::vector<DescriptorCalculator *>>())     
         .def_readwrite("sweep", &LocalEnvironment::sweep)
         .def_readwrite("structure_volume", &LocalEnvironment::structure_volume)
         .def_readwrite("central_index", &LocalEnvironment::central_index)
@@ -80,11 +89,11 @@ PYBIND11_MODULE(ace, m){
         .def_readwrite("descriptor_stress_dervs",
             &LocalEnvironment::descriptor_stress_dervs)
         .def_readwrite("descriptor_norm",
-            &LocalEnvironment::descriptor_norm);
+            &LocalEnvironment::descriptor_norm)
+        .def("compute_descriptors", &LocalEnvironment::compute_descriptors)
+        .def("compute_neighbor_descriptors",
+                &LocalEnvironment::compute_neighbor_descriptors);
 
-        // Eigen::VectorXd descriptor_vals;
-        // Eigen::MatrixXd descriptor_force_dervs, descriptor_stress_dervs,
-        //     force_dot, stress_dot;
     // Descriptor calculators
     py::class_<DescriptorCalculator>(m, "DescriptorCalculator")
         .def("compute", &DescriptorCalculator::compute)
@@ -144,6 +153,7 @@ PYBIND11_MODULE(ace, m){
         .def("add_sparse_environment",
              &SparseGP::add_sparse_environment)
         .def("add_training_structure", &SparseGP::add_training_structure)
+        .def("add_training_environment", &SparseGP::add_training_environment)
         .def("update_alpha", &SparseGP::update_alpha)
         .def("predict", &SparseGP::predict)
         .def_readwrite("sparse_environments", &SparseGP::sparse_environments)
