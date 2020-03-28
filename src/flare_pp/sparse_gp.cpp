@@ -118,26 +118,14 @@ void SparseGP :: add_sparse_environment(LocalEnvironment env){
     int n_envs = training_environments.size();
     uf_vector = Eigen::VectorXd::Zero(n_labels);
 
-    // #pragma omp parallel for
-    // for (int i = 0; i < n_strucs; i ++){
-    //     int initial_index, index;
+    #pragma omp parallel for
+    for (int i = 0; i < n_envs; i ++){
 
-    //     // Get initial index.
-    //     if (i == 0){
-    //         initial_index = 0;
-    //     }
-    //     else{
-    //         initial_index = label_count[i - 1];
-    //     }
-    //     index = initial_index;
-
-    //     int n_atoms = training_structures[i].noa;
-    //     Eigen::VectorXd kernel_vector =\
-    //         Eigen::VectorXd::Zero(1 + 3 * n_atoms + 6);
-    //     for (int j = 0; j < n_kernels; j ++){
-    //         kernel_vector += kernels[j] -> env_struc(env,
-    //             training_structures[i]);
-    //     }
+        Eigen::VectorXd kernel_vector = Eigen::VectorXd::Zero(3);
+        for (int j = 0; j < n_kernels; j ++){
+            kernel_vector += kernels[j] -> env_env_force(env,
+                training_environments[i]);
+        }
 
     //     if (training_structures[i].energy.size() != 0){
     //         uf_vector(index) = kernel_vector(0);
@@ -153,7 +141,7 @@ void SparseGP :: add_sparse_environment(LocalEnvironment env){
     //     if (training_structures[i].stresses.size() != 0){
     //         uf_vector.segment(index, 6) = kernel_vector.tail(6);
     //     }
-    // }
+    }
 
     // // Update Kuf_struc matrix.
     // Kuf_struc.conservativeResize(Kuf_struc.rows()+1, Kuf_struc.cols());

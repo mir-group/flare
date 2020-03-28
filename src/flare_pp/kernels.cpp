@@ -93,6 +93,14 @@ double TwoBodyKernel :: env_env(const LocalEnvironment & env1,
     return sig2 * kern / 4;
 }
 
+Eigen::VectorXd TwoBodyKernel :: env_env_force(const LocalEnvironment & env1,
+    const LocalEnvironment & env2){
+
+    // TODO: Implement.
+    Eigen::VectorXd kernel_vector = Eigen::VectorXd::Zero(3);
+    return kernel_vector;
+}
+
 Eigen::VectorXd TwoBodyKernel :: self_kernel_env(
     const StructureDescriptor & struc1, int atom){
 
@@ -588,6 +596,14 @@ double ThreeBodyKernel :: env_env(const LocalEnvironment & env1,
     }
 
     return sig2 * kern / 9;
+}
+
+Eigen::VectorXd ThreeBodyKernel :: env_env_force(const LocalEnvironment & env1,
+    const LocalEnvironment & env2){
+
+    // TODO: Implement.
+    Eigen::VectorXd kernel_vector = Eigen::VectorXd::Zero(3);
+    return kernel_vector;
 }
 
 Eigen::VectorXd ThreeBodyKernel :: self_kernel_env(
