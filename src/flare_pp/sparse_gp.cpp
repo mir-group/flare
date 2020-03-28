@@ -354,12 +354,32 @@ void SparseGP :: three_body_grid(double min_dist, double max_dist,
 }
 
 void SparseGP::update_alpha(){
-    Eigen::MatrixXd sigma_inv = Kuu + Kuf_struc * noise_matrix_struc * Kuf_struc.transpose() +
+    // Combine Kuf_struc and Kuf_env.
+    int n_sparse = Kuf_struc.rows();
+    int n_struc_labels = Kuf_struc.cols();
+    int n_env_labels = Kuf_env.cols();
+    Kuf = Eigen::MatrixXd::Zero(n_sparse, n_struc_labels + n_env_labels);
+    Kuf.block(0, 0, n_sparse, n_struc_labels) = Kuf_struc;
+    Kuf.block(0, n_struc_labels, n_sparse, n_env_labels) = Kuf_env;
+    
+    // Combine noise_struc and noise_env.
+    noise = Eigen::VectorXd::Zero(n_struc_labels + n_env_labels);
+    noise.segment(0, n_struc_labels) = noise_struc;
+    noise.segment(n_struc_labels, n_env_labels) = noise_env;
+    noise_matrix = noise.asDiagonal();
+
+    // Combine training labels.
+    y = Eigen::VectorXd::Zero(n_struc_labels + n_env_labels);
+    y.segment(0, n_struc_labels) = y_struc;
+    y.segment(n_struc_labels, n_env_labels) = y_env;
+
+    // Set alpha.
+    Eigen::MatrixXd sigma_inv = Kuu + Kuf * noise_matrix * Kuf.transpose() +
         Kuu_jitter * Eigen::MatrixXd::Identity(Kuu.rows(), Kuu.cols());
     // TODO: Use Woodbury identity to perform inversion once.
     Sigma = sigma_inv.inverse();
     Kuu_inverse = Kuu.inverse();
-    alpha = Sigma * Kuf_struc * noise_matrix_struc * y_struc;
+    alpha = Sigma * Kuf * noise_matrix * y;
 }
 
 Eigen::VectorXd SparseGP::predict(StructureDescriptor test_structure){

@@ -102,6 +102,8 @@ TEST_F(SparseTest, UpdateK){
         kern_val += kern_curr;
     }
     EXPECT_EQ(kern_val, sparse_gp.Kuu(0,0));
+
+    sparse_gp.update_alpha();
 }
 
 TEST_F(SparseTest, Predict){
@@ -132,24 +134,6 @@ TEST_F(SparseTest, Predict){
     auto tot_time = 
         std::chrono::duration_cast<std::chrono::microseconds>(t2-t1).count();
     std::cout << tot_time << std::endl;
-
-    // // predict in serial
-    // t1 = std::chrono::high_resolution_clock::now();
-    // for (int i = 0; i < 1000; i ++){
-    //     Eigen::VectorXd pred_vals = sparse_gp.predict_serial(test_struc);
-    // }
-    // t2 = std::chrono::high_resolution_clock::now();
-    // tot_time = 
-    //     std::chrono::duration_cast<std::chrono::microseconds>(t2-t1).count();
-    // std::cout << tot_time << std::endl;
-
-    // std::cout << "predicted values:" << std::endl;
-    // std::cout << pred_vals << std::endl;
-
-    // std::cout << sparse_gp.Kuu << std::endl;
-    // std::cout << sparse_gp.Kuf << std::endl;
-    // std::cout << sparse_gp.Sigma << std::endl;
-    // std::cout << sparse_gp.alpha << std::endl;
 }
 
 // TEST_F(SparseTest, ThreeBodyGrid){
