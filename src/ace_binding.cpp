@@ -143,14 +143,9 @@ PYBIND11_MODULE(ace, m){
         .def_readwrite("hyperparameters", &SparseGP::hyperparameters)
         .def("add_sparse_environment",
              &SparseGP::add_sparse_environment)
-        .def("add_sparse_environment_serial",
-             &SparseGP::add_sparse_environment_serial)
         .def("add_training_structure", &SparseGP::add_training_structure)
-        .def("add_training_structure_serial",
-            &SparseGP::add_training_structure_serial)
         .def("update_alpha", &SparseGP::update_alpha)
         .def("predict", &SparseGP::predict)
-        .def("predict_serial", &SparseGP::predict_serial)
         .def_readwrite("sparse_environments", &SparseGP::sparse_environments)
         .def_readwrite("training_structures", &SparseGP::training_structures);
 }
