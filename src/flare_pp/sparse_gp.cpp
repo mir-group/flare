@@ -120,14 +120,10 @@ void SparseGP :: add_sparse_environment(LocalEnvironment env){
 
     #pragma omp parallel for
     for (int i = 0; i < n_envs; i ++){
-
-        Eigen::VectorXd kernel_vector = Eigen::VectorXd::Zero(3);
         for (int j = 0; j < n_kernels; j ++){
-            kernel_vector += kernels[j] -> env_env_force(env,
+            uf_vector.segment(3 * i, 3) += kernels[j] -> env_env_force(env,
                 training_environments[i]);
         }
-
-        uf_vector.segment(3 * i, 3) = kernel_vector;
     }
 
     // Update Kuf_env matrix.
@@ -237,14 +233,10 @@ void SparseGP :: add_training_environment(
 
     #pragma omp parallel for
     for (int i = 0; i < n_sparse; i ++){
-        Eigen::VectorXd kernel_vector = Eigen::VectorXd::Zero(3);
         for (int j = 0; j < n_kernels; j ++){
-            kernel_vector += kernels[j] ->
+            kernel_block.row(i) += kernels[j] ->
                 env_env_force(sparse_environments[i], training_environment);
         }
-
-        // Update kernel block.
-        kernel_block.row(i) = kernel_vector;
     }
 
     // Add kernel block to Kuf_env.
