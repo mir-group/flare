@@ -374,6 +374,50 @@ void SparseGP::update_alpha(){
     alpha = Sigma * Kuf * noise_matrix * y;
 }
 
+void  SparseGP::compute_beta(){
+    // Assumptions:
+    //  1. power = 2, so that the potential is linear in the square of the power spectrum.
+    //  2. There is only one many-body kernel, and it is the first member of the "kernels" vector. This can be generalized, but would require computing alpha vectors for each many-body kernel, which is not currently implemented.
+    // 3. There is at least one sparse environment stored in the sparse GP.
+
+    // TODO: Test that local energy prediction with beta agrees with sparse GP preiction.
+
+    // Initialize beta vector.
+    int p_size = sparse_environments[0].descriptor_vals[0].size();
+    int beta_size = p_size * (p_size + 1) / 2;
+    beta = Eigen::VectorXd::Zero(beta_size);
+
+    double sig = kernels[0] -> kernel_hyperparameters[0];
+    double sig2 = sig * sig;
+    int n_sparse = sparse_environments.size();
+    for (int i = 0; i < n_sparse; i++){
+        Eigen::VectorXd p_current =
+            sparse_environments[i].descriptor_vals[0];
+        double p_norm = sparse_environments[i].descriptor_norm[0];
+        double alpha_val = alpha(i);
+        int beta_count = 0;
+
+        for (int j = 0; j < p_size; j++){
+            double p_ij = p_current(j) / p_norm;
+    
+            for(int k = j; k < p_size; k++){
+                double p_ik = p_current(k) / p_norm;
+                double beta_val = sig2 * p_ij * p_ik * alpha_val;
+
+                // Update beta vector.
+                if (j != k){
+                    beta(beta_count) += 2 * beta_val;
+                }
+                else{
+                    beta(beta_count) += beta_val;
+                }
+
+                beta_count ++;
+            }
+        }
+    }
+}
+
 Eigen::VectorXd SparseGP::predict(StructureDescriptor test_structure){
     int n_atoms = test_structure.noa;
     int n_out = 1 + 3 * n_atoms + 6;
