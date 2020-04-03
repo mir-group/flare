@@ -116,7 +116,7 @@ class GaussianProcess:
         self.name = name
 
         # parallelization
-        if self.par:
+        if self.parallel:
             if n_cpus is None:
                 self.n_cpus = mp.cpu_count()
             else:
