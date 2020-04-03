@@ -629,7 +629,8 @@ class GaussianProcess:
                                  maxiter=dictionary['maxiter'],
                                  opt_algorithm=dictionary['opt_algorithm'],
                                  multihyps=multihyps,
-                                 hyps_mask=dictionary.get('hyps_mask', None)
+                                 hyps_mask=dictionary.get('hyps_mask', None),
+                                 name=dictionary.get('name','default_gp')
                                  )
 
 

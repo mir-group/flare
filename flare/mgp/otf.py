@@ -112,7 +112,7 @@ class MGPOTF(OTF):
 
 
 def predict_on_atom_mgp(atom: int, structure, cutoffs, mgp,
-                        in_place=False):
+                        write_to_structure=False):
     chemenv = AtomicEnvironment(structure, atom, cutoffs)
     # predict force components and standard deviations
     force, var = mgp.predict(chemenv)
@@ -123,7 +123,7 @@ def predict_on_atom_mgp(atom: int, structure, cutoffs, mgp,
     #     local_energy = self.gp.predict_local_energy(chemenv)
     local_energy = 0
 
-    if in_place:
+    if write_to_structure:
         structure.forces[atom][:] = force
         structure.stds[atom][:] = stds
 
@@ -131,15 +131,24 @@ def predict_on_atom_mgp(atom: int, structure, cutoffs, mgp,
 
 
 def predict_on_structure_mgp(structure, mgp, output=None,
-                             output_name=None, n_cpus=None):  # changed
+                             output_name=None, n_cpus=None,
+                             write_to_structure=True):  # changed
     """
     Assign forces to structure based on gp
     """
     if output and output_name:
         output.write_to_output('\npredict with mapping:\n', output_name)
 
+    forces = np.zeros(shape=(structure.nat,3))
+    vars = np.zeros(shape=(structure.nat,3))
+
     for n in range(structure.nat):
         chemenv = AtomicEnvironment(structure, n, mgp.cutoffs)
         force, var, _, _ = mgp.predict(chemenv)
-        structure.forces[n][:] = force
-        structure.stds[n][:] = np.sqrt(np.absolute(var))
+        if write_to_structure:
+            structure.forces[n][:] = force
+            structure.stds[n][:] = np.sqrt(np.absolute(var))
+        forces[n, :] = force
+        vars[n, :] = var
+
+    return forces, vars
