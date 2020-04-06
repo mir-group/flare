@@ -330,7 +330,7 @@ class GaussianProcess:
                                     self.hyps,
                                     cutoffs=self.cutoffs,
                                     hyps_mask=self.hyps_mask,
-                                    n_cpus=self.n_cpus,
+                                    n_cpus=n_cpus,
                                     nsample=self.nsample)
 
         # Guarantee that alpha is up to date with training set
