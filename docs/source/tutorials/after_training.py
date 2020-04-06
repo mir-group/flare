@@ -14,7 +14,7 @@ otf_object = otf_parser.OtfAnalysis(file_name)
 
 gp_model = otf_object.make_gp(kernel_name="2+3_mc",
                               hyp_no=hyp_no)
-gp_model.par = True
+gp_model.parallel = True
 gp_model.hyp_labels = ['sig2', 'ls2', 'sig3', 'ls3', 'noise']
 
 # write model to a binary file
