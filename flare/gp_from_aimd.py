@@ -252,6 +252,7 @@ class TrajectoryTrainer:
                     newframes += [self.frames[i]]
             self.frames = newframes
 
+        # If the GP is empty, use the first frame as a seed frame.
         elif len(self.gp.training_data) == 0 and len(self.seed_frames) == 0:
             self.seed_frames = [self.frames[0]]
             self.frames = self.frames[1:]

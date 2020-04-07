@@ -82,7 +82,7 @@ class GaussianProcess:
         if hyps is None:
             # If no hyperparameters are passed in, assume 2 hyps for each
             # cutoff, plus one noise hyperparameter, and use a guess value
-            hyps = np.array([0.1]*(1+2*len(cutoffs)))
+            self.hyps = np.array([0.1]*(1+2*len(cutoffs)))
 
 
         self.output = output
