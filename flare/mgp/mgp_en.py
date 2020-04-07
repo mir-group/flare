@@ -690,36 +690,44 @@ class Map3body:
                     os.mkdir(self.kv3name)
 
                     # get the size of saved kv vector
-                    if f'{self.kv3name}/0.npy' in os.listdir(self.kv3name):
-                        old_kv_file = np.load(f'{self.kv3name}/0.npy')
+                    kv_filename = f'{self.kv3name}/{0}'
+                    if kv_filename in os.listdir(self.kv3name):
+                        old_kv_file = np.load(kv_filename+'.npy')
                         last_size = int(old_kv_file[0,0])
-                    else:
-                        last_size = 0
-
-                    # parallelize based on grids, since usually the number of
-                    # the added training points are small
-                    ngrids = int(math.ceil(n12 / processes))
-                    nbatch = int(math.ceil(n12 / ngrids))
-
-                    block_id = []
-                    for ibatch in range(nbatch):
-                        s = int(ibatch * processes)
-                        e = int(np.min(((ibatch+1)*processes, n12)))
-                        block_id += [(s, e)]
-
-                    k12_slice = []
-                    for ibatch in range(nbatch):
-                        k12_slice.append(pool.apply_async(self._GenGrid_inner,\
-                                         args=(GP.training_data[last_size:],\
-                                               bonds1, bonds2, bonds12,\
-                                               env12, kernel_info, \
-                                               block_id[ibatch], size * 3)))
-
-                    k12_v_all = np.zeros([len(bonds1), len(bonds2), len(bonds12),
-                                          size * 3])
-                    for ibatch in range(nbatch):
-                        s, e = block_id[ibatch]
-                        k12_v_all[:, :, s:e, :] = k12_slice[ibatch].get()
+                        new_kv_file[i, :, :last_size] = old_kv_file
+    
+                        k12_v_all = np.zeros([len(bonds1), len(bonds2), len(bonds12),
+                                              size * 3])
+    
+                        for i in range(n12):
+                            if f'{self.kv3name}/{i}.npy' in os.listdir(self.kv3name):
+                                old_kv_file = np.load(f'{self.kv3name}/{i}.npy')
+                                last_size = int(old_kv_file[0,0])
+                                #TODO k12_v_all[]
+                            else:
+                                last_size = 0
+    
+                        # parallelize based on grids, since usually the number of
+                        # the added training points are small
+                        ngrids = int(math.ceil(n12 / processes))
+                        nbatch = int(math.ceil(n12 / ngrids))
+    
+                        block_id = []
+                        for ibatch in range(nbatch):
+                            s = int(ibatch * processes)
+                            e = int(np.min(((ibatch+1)*processes, n12)))
+                            block_id += [(s, e)]
+    
+                        k12_slice = []
+                        for ibatch in range(nbatch):
+                            k12_slice.append(pool.apply_async(self._GenGrid_inner,
+                                                              args=(GP.name, last_size, size,
+                                                                    bonds1, bonds2, bonds12[s:e],
+                                                                    env12, kernel_info)))
+    
+                        for ibatch in range(nbatch):
+                            s, e = block_id[ibatch]
+                            k12_v_all[:, :, s:e, :] = k12_slice[ibatch].get()
 
                 else:
                     block_id, nbatch = partition_c(self.n_sample, size, processes)

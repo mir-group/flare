@@ -48,7 +48,7 @@ class GaussianProcess:
             Defaults to 'L-BFGS-B'.
         maxiter (int, optional): Maximum number of iterations of the
             hyperparameter optimization algorithm. Defaults to 10.
-        par (bool, optional): If True, the covariance matrix K of the GP is
+        parallel (bool, optional): If True, the covariance matrix K of the GP is
             computed in parallel. Defaults to False.
         n_cpus (int, optional): Number of cpus used for parallel
             calculations. Defaults to 1 (serial)
@@ -122,7 +122,7 @@ class GaussianProcess:
         self.name = name
 
         # parallelization
-        if self.par:
+        if self.parallel:
             if n_cpus is None:
                 self.n_cpus = mp.cpu_count()
             else:
@@ -340,7 +340,7 @@ class GaussianProcess:
                                options={'disp': False, 'gtol': grad_tol,
                                         'maxls': line_steps,
                                         'maxiter': self.maxiter})
-            except:
+            except np.linalg.LinAlgError:
                 print("Warning! Algorithm for L-BFGS-B failed. Changing to "
                       "BFGS for remainder of run.")
                 self.opt_algorithm = 'BFGS'

@@ -314,7 +314,7 @@ class Output:
                        forces=forces, stds=stds, forces_2=forces_2)
 
     def write_hyps(self, hyp_labels, hyps, start_time, like, like_grad,
-                   name='log'):
+                   name='log', hyps_mask=None):
         """ write hyperparameters to logfile
 
         :param name:
@@ -328,6 +328,12 @@ class Output:
         """
         f = self.outfiles[name]
         f.write('\nGP hyperparameters: \n')
+
+        if hyps_mask is not None:
+            if 'map' in hyps_mask:
+                hyps = hyps_mask['original']
+                if len(hyp_labels)!=len(hyps):
+                    hyp_labels = None
 
         if hyp_labels is not None:
             for i, label in enumerate(hyp_labels):

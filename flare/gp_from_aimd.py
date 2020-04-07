@@ -462,5 +462,6 @@ class TrajectoryTrainer:
         if self.verbose:
             self.output.write_hyps(self.gp.hyp_labels, self.gp.hyps,
                                self.start_time,
-                               self.gp.likelihood, self.gp.likelihood_gradient)
+                               self.gp.likelihood, self.gp.likelihood_gradient,
+                               hyps_mask=self.gp.hyps_mask)
         self.train_count += 1

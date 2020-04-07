@@ -99,7 +99,7 @@ def predict_on_structure(structure: Structure, gp: GaussianProcess,
         for i in range(3):
             force, var = gp.predict(chemenv, i + 1)
             forces[n][i] = float(force)
-            stds[n][i] = float(var)
+            stds[n][i] = float(np.sqrt(np.absolute(var)))
 
             if write_to_structure:
                 structure.forces[n][i] = float(force)
