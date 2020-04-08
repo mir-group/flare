@@ -33,6 +33,10 @@ class AtomicEnvironment:
 
         self.cutoffs = np.copy(cutoffs)
 
+        self.compute_env()
+
+    def compute_env(self):
+
         # get 2-body arrays
         bond_array_2, bond_positions_2, etypes = \
             get_2_body_arrays(self.positions, self.atom, self.cell,
@@ -41,7 +45,7 @@ class AtomicEnvironment:
         self.etypes = etypes
 
         # if 2 cutoffs are given, create 3-body arrays
-        if len(cutoffs) > 1:
+        if len(self.cutoffs) > 1:
             bond_array_3, cross_bond_inds, cross_bond_dists, triplet_counts = \
                 get_3_body_arrays(bond_array_2, bond_positions_2, self.cutoffs[1])
             self.bond_array_3 = bond_array_3
@@ -50,7 +54,7 @@ class AtomicEnvironment:
             self.triplet_counts = triplet_counts
 
         # if 3 cutoffs are given, create many-body arrays
-        if len(cutoffs) > 2:
+        if len(self.cutoffs) > 2:
             self.bond_array_mb, self.neigh_dists_mb, self.num_neighs_mb, self.etype_mb = get_m_body_arrays(
                 self.positions, self.atom, self.cell, self.cutoffs[2], self.species)
         else:
