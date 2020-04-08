@@ -129,7 +129,7 @@ class MappedGaussianProcess:
                                  b_struc, self.svd_rank_3,
                                  self.mean_only,
                                  self.grid_params['load_grid'],
-                                 self.update)
+                                 self.update, self.n_cpus, self.n_sample)
                 self.maps_3.append(map_3)
 
     def build_map(self, GP):
@@ -602,9 +602,8 @@ class Map2body:
 class Map3body:
 
     def __init__(self, grid_num, bounds, bond_struc: Structure,
-            svd_rank: int=0, mean_only: bool=False, load_grid: str='',
-                 update: bool=True,
-            n_cpus=None, n_sample=100):
+                 svd_rank: int=0, mean_only: bool=False, load_grid: str='',
+                 update: bool=True, n_cpus=None, n_sample=100):
         '''
         Build 3-body MGP
 
@@ -695,10 +694,10 @@ class Map3body:
                         old_kv_file = np.load(kv_filename+'.npy')
                         last_size = int(old_kv_file[0,0])
                         new_kv_file[i, :, :last_size] = old_kv_file
-    
+
                         k12_v_all = np.zeros([len(bonds1), len(bonds2), len(bonds12),
                                               size * 3])
-    
+
                         for i in range(n12):
                             if f'{self.kv3name}/{i}.npy' in os.listdir(self.kv3name):
                                 old_kv_file = np.load(f'{self.kv3name}/{i}.npy')
@@ -706,25 +705,25 @@ class Map3body:
                                 #TODO k12_v_all[]
                             else:
                                 last_size = 0
-    
+
                         # parallelize based on grids, since usually the number of
                         # the added training points are small
                         ngrids = int(math.ceil(n12 / processes))
                         nbatch = int(math.ceil(n12 / ngrids))
-    
+
                         block_id = []
                         for ibatch in range(nbatch):
                             s = int(ibatch * processes)
                             e = int(np.min(((ibatch+1)*processes, n12)))
                             block_id += [(s, e)]
-    
+
                         k12_slice = []
                         for ibatch in range(nbatch):
                             k12_slice.append(pool.apply_async(self._GenGrid_inner,
                                                               args=(GP.name, last_size, size,
                                                                     bonds1, bonds2, bonds12[s:e],
                                                                     env12, kernel_info)))
-    
+
                         for ibatch in range(nbatch):
                             s, e = block_id[ibatch]
                             k12_v_all[:, :, s:e, :] = k12_slice[ibatch].get()
