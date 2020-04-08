@@ -18,27 +18,29 @@ matrix by removing the fixed dimensions.
 def str_to_kernel_set(name: str, multihyps: bool =False):
     """
     return kernels and kernel gradient function base on a string.
-    If it contains 'mc', it will use the kernel in mc_simple module
-    if multihyps is True, it will use the kernel in mc_sephyps module
+    If it contains 'sc', it will use the kernel in sc module;
+    otherwise, it uses the kernel in mc_simple;
+    if sc is not included and multihyps is True,
+    it will use the kernel in mc_sephyps module
     otherwise, it will use the kernel in the sc module
 
     Args:
 
     name (str): name for kernels. example: "2+3mc"
-    multihyps (bool): True for using multiple hyperparameter groups
+    multihyps (bool, optional): True for using multiple hyperparameter groups
 
     :return: kernel function, kernel gradient, energy kernel,
              energy_and_force kernel
 
     """
 
-    if 'mc' in name:
+    if 'sc' in name:
+        stk = sc._str_to_kernel
+    else:
         if (multihyps is False):
             stk = mc_simple._str_to_kernel
         else:
             stk = mc_sephyps._str_to_kernel
-    else:
-        stk = sc._str_to_kernel
 
     # b2 = Two body in use, b3 = Three body in use
     b2 = False
