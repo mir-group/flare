@@ -1,12 +1,15 @@
-import pytest
-import pickle
 import os
+import pickle
 import json
-import numpy as np
-
 from typing import List
-from pytest import raises
 
+import numpy as np
+import pytest
+from pytest_mock import mocker
+from pytest import raises
+import scipy
+
+import flare.gp
 from flare.gp import GaussianProcess
 from flare.env import AtomicEnvironment
 from flare.struc import Structure
@@ -40,7 +43,7 @@ def get_random_structure(cell, unique_species, noa):
 
 
 # set the scope to module so it will only be setup once
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='function')
 def two_body_gp() -> GaussianProcess:
     """Returns a GP instance with a two-body numba-based kernel"""
     print("\nSetting up...\n")
@@ -142,6 +145,43 @@ def test_train(two_body_gp, params):
 
     # check if hyperparams have been updated
     assert (hyp != hyp_post)
+
+
+def test_train_failure(two_body_gp, params, mocker):
+    """
+    Tests the case when 'L-BFGS-B' fails due to a linear algebra error and
+    training falls back to BFGS
+    """
+    # Sets up mocker for scipy minimize. Note that we are mocking
+    # 'flare.gp.minimize' because of how the imports are done in gp
+    x_result = np.random.rand()
+    fun_result = np.random.rand()
+    jac_result = np.random.rand()
+    train_result = scipy.optimize.OptimizeResult(x=x_result, fun=fun_result,
+                                                 jac=jac_result)
+
+    side_effects = [np.linalg.LinAlgError(), train_result]
+    mocker.patch('flare.gp.minimize', side_effect=side_effects)
+    two_body_gp.set_L_alpha = mocker.Mock()
+
+    # Executes training
+    two_body_gp.algo = 'L-BFGS-B'
+    two_body_gp.train()
+
+    # Assert that everything happened as expected
+    assert(flare.gp.minimize.call_count == 2)
+
+    calls = flare.gp.minimize.call_args_list
+    args, kwargs = calls[0]
+    assert(kwargs['method'] == 'L-BFGS-B')
+
+    args, kwargs = calls[1]
+    assert(kwargs['method'] == 'BFGS')
+
+    two_body_gp.set_L_alpha.assert_called_once()
+    assert(two_body_gp.hyps == x_result)
+    assert(two_body_gp.likelihood == -1 * fun_result)
+    assert(two_body_gp.likelihood_gradient == -1 * jac_result)
 
 
 def test_predict(two_body_gp, test_point):
@@ -290,5 +330,3 @@ def test_load_and_reload(two_body_gp, test_point):
 
     with raises(ValueError):
         two_body_gp.write_model('two_body', 'cucumber')
-
-
