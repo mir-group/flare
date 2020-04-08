@@ -33,11 +33,11 @@ class GaussianProcess:
     Williams.
 
     Args:
-        kernel (Callable,str): Name of the kernel to use, or the kernel itself.
-        kernel_grad (Callable): Function that returns the gradient of the GP
+        kernel (Callable, optional): Name of the kernel to use, or the kernel itself.
+        kernel_grad (Callable, optional): Function that returns the gradient of the GP
             kernel with respect to the hyperparameters.
-        hyps (np.ndarray): Hyperparameters of the GP.
-        cutoffs (np.ndarray): Cutoffs of the GP kernel.
+        hyps (np.ndarray, optional): Hyperparameters of the GP.
+        cutoffs (np.ndarray, optional): Cutoffs of the GP kernel.
         hyp_labels (List, optional): List of hyperparameter labels. Defaults
             to None.
         energy_force_kernel (Callable, optional): Energy/force kernel of the
@@ -56,6 +56,14 @@ class GaussianProcess:
             predictions.
         output (Output, optional): Output object used to dump hyperparameters
             during optimization. Defaults to None.
+        multihyps (bool, optional): If True, turn on multiple-group of hyper-
+            parameters.
+        hyps_mask (dict, optional): If multihyps is True, hyps_mask can set up
+            which hyper parameter is used for what interaction. Details see
+            kernels/mc_sephyps.py
+        kernel_name (str, optional): Determine the type of kernels. Example:
+            2+3_mc, 2+3+mb_mc, 2_mc, 2_sc, 3_sc, ...
+        name (str, optional): Name for the GP instance.
     """
 
     def __init__(self, kernel: Callable = None,
