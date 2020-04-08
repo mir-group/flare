@@ -82,10 +82,16 @@ class GaussianProcess:
 
         # load arguments into attributes
 
-        self.hyps = hyps
         self.hyp_labels = hyp_labels
         self.cutoffs = cutoffs
         self.opt_algorithm = opt_algorithm
+        self.hyps = hyps
+
+        if hyps is None:
+            # If no hyperparameters are passed in, assume 2 hyps for each
+            # cutoff, plus one noise hyperparameter, and use a guess value
+            self.hyps = np.array([0.1]*(1+2*len(cutoffs)))
+
 
         self.output = output
         self.per_atom_par = per_atom_par
