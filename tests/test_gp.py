@@ -43,7 +43,7 @@ def get_random_structure(cell, unique_species, noa):
 
 
 # set the scope to module so it will only be setup once
-@pytest.fixture(scope='function')
+@pytest.fixture(scope='class')
 def two_body_gp() -> GaussianProcess:
     """Returns a GP instance with a two-body numba-based kernel"""
     print("\nSetting up...\n")
@@ -111,222 +111,220 @@ def test_point() -> AtomicEnvironment:
 #                   test GP methods
 # ------------------------------------------------------
 
-def test_update_db(two_body_gp, params):
-    # params
-    test_structure, forces = get_random_structure(params['cell'],
-                                                  params['unique_species'],
-                                                  params['noa'])
+class TestDataUpdating():
+    def test_update_db(self, two_body_gp, params):
+        # params
+        test_structure, forces = get_random_structure(params['cell'],
+                                                      params['unique_species'],
+                                                      params['noa'])
 
-    # add structure and forces to db
-    two_body_gp.update_db(test_structure, forces)
+        # add structure and forces to db
+        two_body_gp.update_db(test_structure, forces)
 
-    assert (len(two_body_gp.training_data) == params['noa'] * 2)
-    assert (len(two_body_gp.training_labels_np) == params['noa'] * 2 * 3)
+        assert (len(two_body_gp.training_data) == params['noa'] * 2)
+        assert (len(two_body_gp.training_labels_np) == params['noa'] * 2 * 3)
 
-
-def test_get_kernel_vector(two_body_gp, test_point, params):
-    assert (two_body_gp.get_kernel_vector(test_point, 1).shape ==
-            (params['db_pts'],))
-
-
-def test_train(two_body_gp, params):
-    hyp = list(two_body_gp.hyps)
-
-    # add struc and forces to db
-    test_structure, forces = get_random_structure(params['cell'],
-                                                  params['unique_species'],
-                                                  params['noa'])
-    two_body_gp.update_db(test_structure, forces)
-
-    # train gp
-    two_body_gp.train()
-
-    hyp_post = list(two_body_gp.hyps)
-
-    # check if hyperparams have been updated
-    assert (hyp != hyp_post)
+    def test_get_kernel_vector(self, two_body_gp, test_point, params):
+        assert (two_body_gp.get_kernel_vector(test_point, 1).shape ==
+                (params['db_pts'],))
 
 
-def test_train_failure(two_body_gp, params, mocker):
-    """
-    Tests the case when 'L-BFGS-B' fails due to a linear algebra error and
-    training falls back to BFGS
-    """
-    # Sets up mocker for scipy minimize. Note that we are mocking
-    # 'flare.gp.minimize' because of how the imports are done in gp
-    x_result = np.random.rand()
-    fun_result = np.random.rand()
-    jac_result = np.random.rand()
-    train_result = scipy.optimize.OptimizeResult(x=x_result, fun=fun_result,
-                                                 jac=jac_result)
+class TestTraining():
+    def test_train(self, two_body_gp, params):
+        hyp = list(two_body_gp.hyps)
 
-    side_effects = [np.linalg.LinAlgError(), train_result]
-    mocker.patch('flare.gp.minimize', side_effect=side_effects)
-    two_body_gp.set_L_alpha = mocker.Mock()
+        # add struc and forces to db
+        test_structure, forces = get_random_structure(params['cell'],
+                                                      params['unique_species'],
+                                                      params['noa'])
+        two_body_gp.update_db(test_structure, forces)
 
-    # Executes training
-    two_body_gp.algo = 'L-BFGS-B'
-    two_body_gp.train()
+        # train gp
+        two_body_gp.train()
 
-    # Assert that everything happened as expected
-    assert(flare.gp.minimize.call_count == 2)
+        hyp_post = list(two_body_gp.hyps)
 
-    calls = flare.gp.minimize.call_args_list
-    args, kwargs = calls[0]
-    assert(kwargs['method'] == 'L-BFGS-B')
+        # check if hyperparams have been updated
+        assert (hyp != hyp_post)
 
-    args, kwargs = calls[1]
-    assert(kwargs['method'] == 'BFGS')
+    def test_train_failure(self, two_body_gp, params, mocker):
+        """
+        Tests the case when 'L-BFGS-B' fails due to a linear algebra error and
+        training falls back to BFGS
+        """
+        # Sets up mocker for scipy minimize. Note that we are mocking
+        # 'flare.gp.minimize' because of how the imports are done in gp
+        x_result = np.random.rand()
+        fun_result = np.random.rand()
+        jac_result = np.random.rand()
+        train_result = scipy.optimize.OptimizeResult(x=x_result, fun=fun_result,
+                                                     jac=jac_result)
 
-    two_body_gp.set_L_alpha.assert_called_once()
-    assert(two_body_gp.hyps == x_result)
-    assert(two_body_gp.likelihood == -1 * fun_result)
-    assert(two_body_gp.likelihood_gradient == -1 * jac_result)
+        side_effects = [np.linalg.LinAlgError(), train_result]
+        mocker.patch('flare.gp.minimize', side_effect=side_effects)
+        two_body_gp.set_L_alpha = mocker.Mock()
 
+        # Executes training
+        two_body_gp.algo = 'L-BFGS-B'
+        two_body_gp.train()
 
-def test_predict(two_body_gp, test_point):
-    pred = two_body_gp.predict(x_t=test_point, d=1)
-    assert (len(pred) == 2)
-    assert (isinstance(pred[0], float))
-    assert (isinstance(pred[1], float))
+        # Assert that everything happened as expected
+        assert(flare.gp.minimize.call_count == 2)
 
+        calls = flare.gp.minimize.call_args_list
+        args, kwargs = calls[0]
+        assert(kwargs['method'] == 'L-BFGS-B')
 
-def test_set_L_alpha(two_body_gp, params):
-    # params
-    cell = np.eye(3)
-    unique_species = [2, 1]
-    noa = 2
+        args, kwargs = calls[1]
+        assert(kwargs['method'] == 'BFGS')
 
-    # create test structure
-    test_structure, forces = get_random_structure(cell, unique_species,
-                                                  noa)
-
-    # set gp model
-    kernel = en.two_plus_three_body
-    kernel_grad = en.two_plus_three_body_grad
-    hyps = np.array([2.23751151e-01, 8.19990316e-01, 1.28421842e-04,
-                     1.07467158e+00, 5.50677932e-02])
-    cutoffs = np.array([5.4, 5.4])
-    hyp_labels = ['sig2', 'ls2', 'sig3', 'ls3', 'noise']
-    energy_force_kernel = en.two_plus_three_force_en
-    energy_kernel = en.two_plus_three_en
-    opt_algorithm = 'BFGS'
-
-    # test update_db
-    gaussian = \
-        GaussianProcess(kernel, kernel_grad, hyps, cutoffs, hyp_labels,
-                        energy_force_kernel, energy_kernel,
-                        opt_algorithm)
-    gaussian.update_db(test_structure, forces)
-
-    gaussian.set_L_alpha()
+        two_body_gp.set_L_alpha.assert_called_once()
+        assert(two_body_gp.hyps == x_result)
+        assert(two_body_gp.likelihood == -1 * fun_result)
+        assert(two_body_gp.likelihood_gradient == -1 * jac_result)
 
 
-def test_update_L_alpha():
-    # set up gp model
-    kernel = mc_simple.two_plus_three_body_mc
-    kernel_grad = mc_simple.two_plus_three_body_mc_grad
-    cutoffs = [6.0, 5.0]
-    hyps = np.array([0.001770, 0.183868, -0.001415, 0.372588, 0.026315])
+class TestAlgebra():
+    def test_predict(self, two_body_gp, test_point):
+        pred = two_body_gp.predict(x_t=test_point, d=1)
+        assert (len(pred) == 2)
+        assert (isinstance(pred[0], float))
+        assert (isinstance(pred[1], float))
 
-    # get an otf traj from file for training data
-    old_otf = OtfAnalysis('test_files/AgI_snippet.out')
-    call_no = 1
-    cell = old_otf.header['cell']
-    gp_model = old_otf.make_gp(kernel=kernel,
-                               kernel_grad=kernel_grad,
-                               call_no=call_no,
-                               cutoffs=cutoffs,
-                               hyps=hyps)
+    def test_set_L_alpha(self, two_body_gp, params):
+        # params
+        cell = np.eye(3)
+        unique_species = [2, 1]
+        noa = 2
 
-    gp_model.par = True
-    # update database & use update_L_alpha to get ky_mat
-    for n in range(call_no, call_no + 1):
-        positions = old_otf.gp_position_list[n]
-        species = old_otf.gp_species_list[n]
-        atoms = old_otf.gp_atom_list[n]
-        forces = old_otf.gp_force_list[n]
+        # create test structure
+        test_structure, forces = get_random_structure(cell, unique_species,
+                                                      noa)
 
-        struc_curr = Structure(cell, species, positions)
-        gp_model.update_db(struc_curr, forces, custom_range=atoms)
-        gp_model.update_L_alpha()
+        # set gp model
+        kernel = en.two_plus_three_body
+        kernel_grad = en.two_plus_three_body_grad
+        hyps = np.array([2.23751151e-01, 8.19990316e-01, 1.28421842e-04,
+                         1.07467158e+00, 5.50677932e-02])
+        cutoffs = np.array([5.4, 5.4])
+        hyp_labels = ['sig2', 'ls2', 'sig3', 'ls3', 'noise']
+        energy_force_kernel = en.two_plus_three_force_en
+        energy_kernel = en.two_plus_three_en
+        opt_algorithm = 'BFGS'
 
-    ky_mat_from_update = np.copy(gp_model.ky_mat)
+        # test update_db
+        gaussian = \
+            GaussianProcess(kernel, kernel_grad, hyps, cutoffs, hyp_labels,
+                            energy_force_kernel, energy_kernel,
+                            opt_algorithm)
+        gaussian.update_db(test_structure, forces)
 
-    # use set_L_alpha to get ky_mat
-    gp_model.set_L_alpha()
-    ky_mat_from_set = np.copy(gp_model.ky_mat)
+        gaussian.set_L_alpha()
 
-    assert (np.all(np.absolute(ky_mat_from_update - ky_mat_from_set)) < 1e-6)
+    def test_update_L_alpha(self):
+        # set up gp model
+        kernel = mc_simple.two_plus_three_body_mc
+        kernel_grad = mc_simple.two_plus_three_body_mc_grad
+        cutoffs = [6.0, 5.0]
+        hyps = np.array([0.001770, 0.183868, -0.001415, 0.372588, 0.026315])
+
+        # get an otf traj from file for training data
+        old_otf = OtfAnalysis('test_files/AgI_snippet.out')
+        call_no = 1
+        cell = old_otf.header['cell']
+        gp_model = old_otf.make_gp(kernel=kernel,
+                                   kernel_grad=kernel_grad,
+                                   call_no=call_no,
+                                   cutoffs=cutoffs,
+                                   hyps=hyps)
+
+        gp_model.par = True
+        # update database & use update_L_alpha to get ky_mat
+        for n in range(call_no, call_no + 1):
+            positions = old_otf.gp_position_list[n]
+            species = old_otf.gp_species_list[n]
+            atoms = old_otf.gp_atom_list[n]
+            forces = old_otf.gp_force_list[n]
+
+            struc_curr = Structure(cell, species, positions)
+            gp_model.update_db(struc_curr, forces, custom_range=atoms)
+            gp_model.update_L_alpha()
+
+        ky_mat_from_update = np.copy(gp_model.ky_mat)
+
+        # use set_L_alpha to get ky_mat
+        gp_model.set_L_alpha()
+        ky_mat_from_set = np.copy(gp_model.ky_mat)
+
+        assert (np.all(np.absolute(ky_mat_from_update - ky_mat_from_set)) < 1e-6)
 
 
-def test_representation_method(two_body_gp):
-    the_str = str(two_body_gp)
-    assert 'GaussianProcess Object' in the_str
-    assert 'Kernel: three_body' in the_str
-    assert 'Cutoffs: [0.8 0.8]' in the_str
-    assert 'Model Likelihood: ' in the_str
-    assert 'Length: ' in the_str
-    assert 'Signal Var.: ' in the_str
-    assert "Noise Var.: " in the_str
+class TestIO():
+    def test_representation_method(self, two_body_gp):
+        the_str = str(two_body_gp)
+        assert 'GaussianProcess Object' in the_str
+        assert 'Kernel: three_body' in the_str
+        assert 'Cutoffs: [0.8 0.8]' in the_str
+        assert 'Model Likelihood: ' in the_str
+        assert 'Length: ' in the_str
+        assert 'Signal Var.: ' in the_str
+        assert "Noise Var.: " in the_str
 
+    def test_serialization_method(self, two_body_gp, test_point):
+        """
+        Serialize and then un-serialize a GP and ensure that no info was lost.
+        Compare one calculation to ensure predictions work correctly.
+        :param two_body_gp:
+        :return:
+        """
+        old_gp_dict = two_body_gp.as_dict()
+        new_gp = GaussianProcess.from_dict(old_gp_dict)
+        new_gp_dict = new_gp.as_dict()
 
-def test_serialization_method(two_body_gp, test_point):
-    """
-    Serialize and then un-serialize a GP and ensure that no info was lost.
-    Compare one calculation to ensure predictions work correctly.
-    :param two_body_gp:
-    :return:
-    """
-    old_gp_dict = two_body_gp.as_dict()
-    new_gp = GaussianProcess.from_dict(old_gp_dict)
-    new_gp_dict = new_gp.as_dict()
+        assert len(new_gp_dict) == len(old_gp_dict)
 
-    assert len(new_gp_dict) == len(old_gp_dict)
+        for k1, k2 in zip(sorted(new_gp_dict.keys()), sorted(old_gp_dict.keys())):
 
-    for k1, k2 in zip(sorted(new_gp_dict.keys()), sorted(old_gp_dict.keys())):
+            x = new_gp_dict[k1]
+            y = new_gp_dict[k2]
 
-        x = new_gp_dict[k1]
-        y = new_gp_dict[k2]
-
-        if isinstance(x, np.ndarray):
-            assert np.equal(x, y).all()
-        elif hasattr(x, '__len__'):
-
-            if isinstance(x[0], np.ndarray):
+            if isinstance(x, np.ndarray):
                 assert np.equal(x, y).all()
+            elif hasattr(x, '__len__'):
 
+                if isinstance(x[0], np.ndarray):
+                    assert np.equal(x, y).all()
+
+                else:
+                    for xx, yy in zip(x, y):
+                        assert xx == yy
             else:
-                for xx, yy in zip(x, y):
-                    assert xx == yy
-        else:
-            assert x == y
+                assert x == y
 
-    for d in [0, 1, 2]:
-        assert np.all(two_body_gp.predict(x_t=test_point, d=d) ==
-                      new_gp.predict(x_t=test_point, d=d))
+        for d in [0, 1, 2]:
+            assert np.all(two_body_gp.predict(x_t=test_point, d=d) ==
+                          new_gp.predict(x_t=test_point, d=d))
 
+    def test_load_and_reload(self, two_body_gp, test_point):
 
-def test_load_and_reload(two_body_gp, test_point):
+        two_body_gp.write_model('two_body', 'pickle')
 
-    two_body_gp.write_model('two_body', 'pickle')
+        with open('two_body.pickle', 'rb') as f:
+            new_gp = pickle.load(f)
 
-    with open('two_body.pickle', 'rb') as f:
-        new_gp = pickle.load(f)
+        for d in [0, 1, 2]:
+            assert np.all(two_body_gp.predict(x_t=test_point, d=d) ==
+                          new_gp.predict(x_t=test_point, d=d))
+        os.remove('two_body.pickle')
 
-    for d in [0, 1, 2]:
-        assert np.all(two_body_gp.predict(x_t=test_point, d=d) ==
-                      new_gp.predict(x_t=test_point, d=d))
-    os.remove('two_body.pickle')
+        two_body_gp.write_model('two_body', 'json')
 
-    two_body_gp.write_model('two_body', 'json')
+        with open('two_body.json', 'r') as f:
+            new_gp = GaussianProcess.from_dict(json.loads(f.readline()))
+        for d in [0, 1, 2]:
+            assert np.all(two_body_gp.predict(x_t=test_point, d=d) ==
+                          new_gp.predict(x_t=test_point, d=d))
+        os.remove('two_body.json')
 
-    with open('two_body.json', 'r') as f:
-        new_gp = GaussianProcess.from_dict(json.loads(f.readline()))
-    for d in [0, 1, 2]:
-        assert np.all(two_body_gp.predict(x_t=test_point, d=d) ==
-                      new_gp.predict(x_t=test_point, d=d))
-    os.remove('two_body.json')
-
-    with raises(ValueError):
-        two_body_gp.write_model('two_body', 'cucumber')
+        with raises(ValueError):
+            two_body_gp.write_model('two_body', 'cucumber')
