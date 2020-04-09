@@ -164,6 +164,10 @@ class GaussianProcess:
         :return:
         """
 
+        if (self.name in _global_training_labels):
+            milliseconds = int(round(time.time() * 1000))
+            self.name = f"{self.name}_{milliseconds}"
+
         assert (self.name not in _global_training_labels), \
                 f"the gp instance name, {self.name} is used"
         assert (self.name not in _global_training_data),  \

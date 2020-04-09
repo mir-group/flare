@@ -243,8 +243,9 @@ def dumpcompare(obj1, obj2):
         for k1, k2 in zip(sorted(obj1.keys()), sorted(obj2.keys())):
 
             assert k1 == k2, f"key {k1} is not the same as {k2}"
-            assert dumpcompare(obj1[k1], obj2[k2]
-                               ), f"value {k1} is not the same as {k2}"
+            if (k1 is not "name"):
+                assert dumpcompare(obj1[k1], obj2[k2]
+                                   ), f"value {k1} is not the same as {k2}"
 
     elif isinstance(obj1, (list, tuple)):
 
