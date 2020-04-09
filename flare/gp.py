@@ -100,7 +100,7 @@ class GaussianProcess:
             self.parallel = kwargs.get('par')
         if 'no_cpus' in kwargs.keys():
             DeprecationWarning("no_cpus is being replaced with n_cpu")
-            self.n_cpus = no_cpus
+            self.n_cpus = kwargs.get('no_cpus')
 
         # TO DO, clean up all the other kernel arguments
         if kernel is None:
@@ -689,6 +689,44 @@ class GaussianProcess:
         self.l_mat = l_mat
         self.alpha = alpha
         self.ky_mat_inv = ky_mat_inv
+
+    def adjust_cutoffs(self, new_cutoffs: Union[list, tuple, 'np.ndarray'],
+                       reset_L_alpha = True,
+                       train = True):
+        """
+        Loop through atomic environment objects stored in the training data,
+        and re-compute cutoffs for each. Useful if you want to gauge the
+        impact of cutoffs given a certain training set! Unless you know
+        *exactly* what you are doing for some development or test purpose,
+        it is **highly** suggested that you call set_L_alpha and
+        re-optimize your hyperparameters afterwards as is default here.
+
+        :param new_cutoffs:
+        :return:
+        """
+
+        old_structures = [env.structure for env in self.training_data]
+        old_atoms = [env.atom for env in self.training_data]
+        new_environments = [AtomicEnvironment(struc, atom, new_cutoffs) for
+                            struc, atom in zip(old_structures, old_atoms)]
+
+        self.training_data = new_environments
+        # Ensure that training data and labels are still consistent
+        _global_training_data[self.name] = self.training_data
+        _global_training_labels[self.name] = self.training_labels_np
+
+
+        self.cutoffs = np.array(new_cutoffs)
+
+        if reset_L_alpha:
+            del self.l_mat
+            del self.ky_mat
+            self.set_L_alpha()
+
+        if train:
+            self.train()
+
+
 
     def write_model(self, name: str, format: str = 'json'):
         """

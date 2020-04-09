@@ -15,6 +15,7 @@ import flare.kernels.mc_simple as mc_simple
 from flare.otf_parser import OtfAnalysis
 
 from .fake_gp import generate_hm, get_tstp, get_random_structure
+from copy import deepcopy
 
 multihyps_list = [True, False]
 
@@ -88,6 +89,24 @@ def test_update_db(all_gps, multihyps, params):
 
     assert (len(test_gp.training_data) == params['noa']+oldsize)
     assert (len(test_gp.training_labels_np) == (params['noa']+oldsize)*3)
+
+def test_adjust_cutoffs(all_gps):
+
+    test_gp = all_gps[False]
+    new_gp = deepcopy(test_gp)
+    new_gp.name = 'adjust_cutoff_gp' # So as to not interfere with other
+    # global training data
+    # No need to ajust the other global values since we're not
+    # testing on the predictions made, just that the cutoffs in the
+    # atomic environments are correctly re-created
+
+    new_gp.adjust_cutoffs(np.array(new_gp.cutoffs) + .5, train=False)
+
+    assert np.array_equal(new_gp.cutoffs, test_gp.cutoffs + .5)
+
+    for env in new_gp.training_data:
+        assert np.array_equal(env.cutoffs, new_gp.cutoffs)
+
 
 
 @pytest.mark.parametrize('par, n_cpus', [(True, 2),
