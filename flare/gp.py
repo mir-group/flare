@@ -164,6 +164,11 @@ class GaussianProcess:
         :return:
         """
 
+        assert (self.name not in _global_training_labels), \
+                f"the gp instance name, {self.name} is used"
+        assert (self.name not in _global_training_data),  \
+                f"the gp instance name, {self.name} is used"
+
         assert (len(self.cutoffs)<=3)
 
         if self.multihyps is True and self.hyps_mask is None:
@@ -747,11 +752,13 @@ class GaussianProcess:
         if '.json' in filename or 'json' in format:
             with open(filename, 'r') as f:
                 gp_model = GaussianProcess.from_dict(json.loads(f.readline()))
+                gp_model.check_instantiation()
 
 
         elif '.pickle' in filename or 'pickle' in format:
             with open(filename, 'rb') as f:
                 gp_model = pickle.load(f)
+                gp_model.check_instantiation()
 
                 _global_training_data[gp_model.name] \
                         = gp_model.training_data
