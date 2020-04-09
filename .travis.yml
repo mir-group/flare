@@ -9,7 +9,7 @@ cache:
 
 before_install:
     - sudo apt update
-    - sudo apt install -y quantum-espresso 
+    - sudo apt install -y quantum-espresso libopenmpi-dev
     - pip install codecov pytest pytest-cov
     - pwd
     - wget http://folk.uio.no/anjohan/lmp
@@ -22,7 +22,7 @@ before_install:
 script:
     - pwd
     - cd tests
-    - PWSCF_COMMAND=pw.x CP2K_COMMAND=../cp2k-6.1-Linux-x86_64.sopt 
+    - PWSCF_COMMAND=pw.x CP2K_COMMAND=../cp2k-6.1-Linux-x86_64.sopt
       lmp=$(pwd)/../lmp
       pytest --show-capture=all -vv --durations=0 --cov=../flare/
     - coverage xml
