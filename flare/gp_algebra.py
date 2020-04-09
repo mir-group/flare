@@ -2,6 +2,7 @@ import math
 import time
 import numpy as np
 import multiprocessing as mp
+import numba
 
 from typing import List, Callable
 from flare.kernels.utils import from_mask_to_args, from_grad_to_mask
@@ -9,12 +10,13 @@ from flare.kernels.utils import from_mask_to_args, from_grad_to_mask
 _global_training_data = {}
 _global_training_labels = {}
 
-def queue_wrapper(result_queue, wid,
-                  func, args):
+
+def queue_wrapper(result_queue, wid, func, args):
     """
     wrapper function for multiprocessing queue
     """
     result_queue.put((wid, func(*args)))
+
 
 def partition_cr(n_sample, size, n_cpus):
     """
@@ -26,23 +28,23 @@ def partition_cr(n_sample, size, n_cpus):
     # divid the block by n_cpu partitions, with size n_sample0
     # if the divided chunk is smaller than the requested chunk n_sample
     # use the requested chunk size
-    n_sample0 = int(math.ceil(np.sqrt(size*size/n_cpus/2.)))
-    if (n_sample0 > n_sample):
+    n_sample0 = int(math.ceil(np.sqrt(size * size / n_cpus / 2.0)))
+    if n_sample0 > n_sample:
         n_sample = n_sample0
 
-    block_id=[]
+    block_id = []
     nbatch = 0
     nbatch1 = 0
     nbatch2 = 0
     e1 = 0
-    while (e1 < size):
-        s1 = int(n_sample*nbatch1)
+    while e1 < size:
+        s1 = int(n_sample * nbatch1)
         e1 = int(np.min([s1 + n_sample, size]))
         nbatch2 = nbatch1
         nbatch1 += 1
         e2 = 0
-        while (e2 <size):
-            s2 = int(n_sample*nbatch2)
+        while e2 < size:
+            s2 = int(n_sample * nbatch2)
             e2 = int(np.min([s2 + n_sample, size]))
             block_id += [(s1, e1, s2, e2)]
             nbatch2 += 1
@@ -50,53 +52,55 @@ def partition_cr(n_sample, size, n_cpus):
 
     return block_id, nbatch
 
+
 def partition_c(n_sample, size, n_cpus):
     """
     partition the training data for vector calculation
     the number of blocks are the same as n_cpus
     since mp.Process does not allow to change the thread number
     """
-    n_sample0 = int(math.ceil(size/n_cpus))
-    if (n_sample0 > n_sample):
+    n_sample0 = int(math.ceil(size / n_cpus))
+    if n_sample0 > n_sample:
         n_sample = n_sample0
 
     block_id = []
     nbatch = 0
     e = 0
-    while (e < size):
-        s = n_sample*nbatch
+    while e < size:
+        s = n_sample * nbatch
         e = np.min([s + n_sample, size])
         block_id += [(s, e)]
         nbatch += 1
     return block_id, nbatch
 
+
 def partition_update(n_sample, size, old_size, n_cpus):
 
-    ns = int(math.ceil(size/n_sample))
-    nproc = (size*3-old_size*3)*(ns+old_size*3)//2
-    if (nproc < n_cpus):
-        n_sample = int(math.ceil(size/np.sqrt(n_cpus*2)))
-        ns = int(math.ceil(size/n_sample))
+    ns = int(math.ceil(size / n_sample))
+    nproc = (size * 3 - old_size * 3) * (ns + old_size * 3) // 2
+    if nproc < n_cpus:
+        n_sample = int(math.ceil(size / np.sqrt(n_cpus * 2)))
+        ns = int(math.ceil(size / n_sample))
 
-    ns_new = int(math.ceil((size-old_size)/n_sample))
-    old_ns = int(math.ceil(old_size/n_sample))
+    ns_new = int(math.ceil((size - old_size) / n_sample))
+    old_ns = int(math.ceil(old_size / n_sample))
 
     nbatch = 0
     block_id = []
     for ibatch1 in range(old_ns):
-        s1 = int(n_sample*ibatch1)
+        s1 = int(n_sample * ibatch1)
         e1 = int(np.min([s1 + n_sample, old_size]))
         for ibatch2 in range(ns_new):
-            s2 = int(n_sample*ibatch2)+old_size
+            s2 = int(n_sample * ibatch2) + old_size
             e2 = int(np.min([s2 + n_sample, size]))
             block_id += [(s1, e1, s2, e2)]
             nbatch += 1
 
     for ibatch1 in range(ns_new):
-        s1 = int(n_sample*ibatch1)+old_size
+        s1 = int(n_sample * ibatch1) + old_size
         e1 = int(np.min([s1 + n_sample, size]))
         for ibatch2 in range(ns_new):
-            s2 = int(n_sample*ibatch2)+old_size
+            s2 = int(n_sample * ibatch2) + old_size
             e2 = int(np.min([s2 + n_sample, size]))
             block_id += [(s1, e1, s2, e2)]
             nbatch += 1
@@ -104,6 +108,7 @@ def partition_update(n_sample, size, old_size, n_cpus):
     return block_id, nbatch
 
 
+@numba.njit
 def obtain_noise_len(hyps, hyps_mask):
     """
     obtain the noise parameter from hyps and mask
@@ -112,13 +117,16 @@ def obtain_noise_len(hyps, hyps_mask):
     # assume sigma_n is the final hyperparameter
     sigma_n = hyps[-1]
     # correct it if map is defined
-    non_noise_hyps = len(hyps)-1
+    non_noise_hyps = len(hyps) - 1
     train_noise = True
-    if (hyps_mask is not None):
-        train_noise = hyps_mask.get('train_noise', True)
-        if (train_noise is False):
-            sigma_n = hyps_mask['original'][-1]
+    assert hyps_mask is None
+    """
+    if hyps_mask is not None:
+        train_noise = hyps_mask.get("train_noise", True)
+        if train_noise is False:
+            sigma_n = hyps_mask["original"][-1]
             non_noise_hyps = len(hyps)
+    """
 
     return sigma_n, non_noise_hyps, train_noise
 
@@ -127,9 +135,19 @@ def obtain_noise_len(hyps, hyps_mask):
 ##### KY MATRIX FUNCTIONS
 #######################################
 
-def get_ky_mat_pack(hyps: np.ndarray, name: str,
-               s1: int, e1: int, s2: int, e2: int,
-               same: bool, kernel, cutoffs, hyps_mask):
+
+def get_ky_mat_pack(
+    hyps: np.ndarray,
+    name: str,
+    s1: int,
+    e1: int,
+    s2: int,
+    e2: int,
+    same: bool,
+    kernel,
+    cutoffs,
+    hyps_mask,
+):
     """ Compute covariance matrix element between set1 and set2
     :param hyps: list of hyper-parameters
     :param name: name of the gp instance.
@@ -142,11 +160,10 @@ def get_ky_mat_pack(hyps: np.ndarray, name: str,
     :return: covariance matrix
     """
 
-
     # initialize matrices
     training_data = _global_training_data[name]
-    size1 = (e1-s1)*3
-    size2 = (e2-s2)*3
+    size1 = (e1 - s1) * 3
+    size2 = (e2 - s2) * 3
     k_mat = np.zeros([size1, size2])
 
     ds = [1, 2, 3]
@@ -155,26 +172,33 @@ def get_ky_mat_pack(hyps: np.ndarray, name: str,
     args = from_mask_to_args(hyps, hyps_mask, cutoffs)
 
     for m_index in range(size1):
-        x_1 = training_data[int(math.floor(m_index / 3))+s1]
+        x_1 = training_data[int(math.floor(m_index / 3)) + s1]
         d_1 = ds[m_index % 3]
-        if (same):
+        if same:
             lowbound = m_index
         else:
             lowbound = 0
         for n_index in range(lowbound, size2):
-            x_2 = training_data[int(math.floor(n_index / 3))+s2]
+            x_2 = training_data[int(math.floor(n_index / 3)) + s2]
             d_2 = ds[n_index % 3]
             kern_curr = kernel(x_1, x_2, d_1, d_2, *args)
             # store kernel value
             k_mat[m_index, n_index] = kern_curr
-            if (same):
+            if same:
                 k_mat[n_index, m_index] = kern_curr
 
     return k_mat
 
-def get_ky_mat(hyps: np.ndarray, name: str,
-               kernel, cutoffs=None, hyps_mask=None,
-               n_cpus=1, n_sample=100):
+
+def get_ky_mat(
+    hyps: np.ndarray,
+    name: str,
+    kernel,
+    cutoffs=None,
+    hyps_mask=None,
+    n_cpus=1,
+    n_sample=100,
+):
     """ parallel version of get_ky_mat
     :param hyps: list of hyper-parameters
     :param name: name of the gp instance.
@@ -188,14 +212,14 @@ def get_ky_mat(hyps: np.ndarray, name: str,
 
     training_data = _global_training_data[name]
     size = len(training_data)
-    size3 = 3*size
+    size3 = 3 * size
 
-    if (n_cpus is None):
+    if n_cpus is None:
         n_cpus = mp.cpu_count()
-    if (n_cpus == 1):
+    if n_cpus == 1:
         k_mat = get_ky_mat_pack(
-                hyps, name, 0, size, 0, size, True,
-                kernel, cutoffs, hyps_mask)
+            hyps, name, 0, size, 0, size, True, kernel, cutoffs, hyps_mask
+        )
     else:
 
         # initialize matrices
@@ -208,12 +232,23 @@ def get_ky_mat(hyps: np.ndarray, name: str,
             children.append(
                 mp.Process(
                     target=queue_wrapper,
-                    args=(result_queue, wid,
-                         get_ky_mat_pack,
-                         (hyps, name, s1, e1, s2, e2,
-                         s1==s2, kernel, cutoffs, hyps_mask
-                        )
-                    )
+                    args=(
+                        result_queue,
+                        wid,
+                        get_ky_mat_pack,
+                        (
+                            hyps,
+                            name,
+                            s1,
+                            e1,
+                            s2,
+                            e2,
+                            s1 == s2,
+                            kernel,
+                            cutoffs,
+                            hyps_mask,
+                        ),
+                    ),
                 )
             )
 
@@ -226,9 +261,9 @@ def get_ky_mat(hyps: np.ndarray, name: str,
         for _ in range(nbatch):
             wid, result_chunk = result_queue.get(block=True)
             s1, e1, s2, e2 = block_id[wid]
-            k_mat[s1*3:e1*3, s2*3:e2*3] = result_chunk
-            if (s1 != s2):
-                k_mat[s2*3:e2*3, s1*3:e1*3] = result_chunk.T
+            k_mat[s1 * 3 : e1 * 3, s2 * 3 : e2 * 3] = result_chunk
+            if s1 != s2:
+                k_mat[s2 * 3 : e2 * 3, s1 * 3 : e1 * 3] = result_chunk.T
 
         # Join child processes (clean up zombies).
         for c in children:
@@ -263,6 +298,7 @@ def get_like_from_ky_mat(ky_mat, name):
 
     return get_like_from_mats(ky_mat, l_mat, alpha, name)
 
+
 def get_like_from_mats(ky_mat, l_mat, alpha, name):
     """ compute the likelihood from the covariance matrix
 
@@ -274,9 +310,11 @@ def get_like_from_mats(ky_mat, l_mat, alpha, name):
     labels = _global_training_labels[name]
 
     # calculate likelihood
-    like = (-0.5 * np.matmul(labels, alpha) -
-            np.sum(np.log(np.diagonal(l_mat))) -
-            math.log(2 * np.pi) * ky_mat.shape[1] / 2)
+    like = (
+        -0.5 * np.matmul(labels, alpha)
+        - np.sum(np.log(np.diagonal(l_mat)))
+        - math.log(2 * np.pi) * ky_mat.shape[1] / 2
+    )
 
     return like
 
@@ -285,8 +323,22 @@ def get_like_from_mats(ky_mat, l_mat, alpha, name):
 ##### KY MATRIX FUNCTIONS and gradients
 #######################################
 
-def get_ky_and_hyp_pack(name, s1, e1, s2, e2, same: bool,
-        hyps: np.ndarray, kernel_grad, cutoffs=None, hyps_mask=None):
+
+@numba.njit(parallel=False)
+def get_ky_and_hyp_pack(
+    training_data,
+    s1,
+    e1,
+    s2,
+    e2,
+    sigma_n,
+    non_noise_hyps,
+    same: bool,
+    hyps: np.ndarray,
+    kernel_grad,
+    cutoffs=None,
+    hyps_mask=None,
+):
     """
     computes a block of ky matrix and its derivative to hyper-parameter
     If the cpu set up is None, it uses as much as posible cpus
@@ -302,30 +354,59 @@ def get_ky_and_hyp_pack(name, s1, e1, s2, e2, same: bool,
     """
 
     # assume sigma_n is the final hyperparameter
-    sigma_n, non_noise_hyps, _ = obtain_noise_len(hyps, hyps_mask)
+    # sigma_n, non_noise_hyps, _ = obtain_noise_len(hyps, hyps_mask)
 
     # initialize matrices
-    size1 = (e1-s1) * 3
-    size2 = (e2-s2) * 3
-    k_mat = np.zeros([size1, size2])
-    hyp_mat = np.zeros([non_noise_hyps, size1, size2])
+    size1 = (e1 - s1) * 3
+    size2 = (e2 - s2) * 3
+    k_mat = np.zeros((size1, size2))
+    # hyp_mat = np.zeros((non_noise_hyps, size1, size2), order="F")
+    hyp_mat = np.zeros((size2, size1, non_noise_hyps)).T
 
     args = from_mask_to_args(hyps, hyps_mask, cutoffs)
 
     ds = [1, 2, 3]
 
-    training_data = _global_training_data[name]
+    # training_data = _global_training_data[name]
     # calculate elements
-    for m_index in range(size1):
-        x_1 = training_data[int(math.floor(m_index / 3))+s1]
+    """
+    assert s1 == 0 and s2 == 0
+    for i in numba.prange(e1):
+        x_1 = training_data[i]
+
+        for d_1 in range(3):
+
+            if same:
+                lowbound = i
+            else:
+                lowbound = 0
+            for j in range(lowbound, e2 - s2):
+                x_2 = training_data[j]
+                for d_2 in range(3):
+
+                    m_index = 3 * i + d_1
+                    n_index = 3 * j + d_2
+                    # calculate kernel and gradient
+                    cov = kernel_grad(x_1, x_2, d_1, d_2, *args)
+
+                    # store kernel value
+                    k_mat[m_index, n_index] = cov[0]
+                    grad = from_grad_to_mask(cov[1], hyps_mask)
+                    hyp_mat[:, m_index, n_index] = grad
+                    if same:
+                        k_mat[n_index, m_index] = cov[0]
+                        hyp_mat[:, n_index, m_index] = grad
+    """
+    for m_index in numba.prange(size1):
+        x_1 = training_data[int(math.floor(m_index / 3)) + s1]
         d_1 = ds[m_index % 3]
 
-        if (same):
+        if same:
             lowbound = m_index
         else:
             lowbound = 0
         for n_index in range(lowbound, size2):
-            x_2 = training_data[int(math.floor(n_index / 3))+s2]
+            x_2 = training_data[int(math.floor(n_index / 3)) + s2]
             d_2 = ds[n_index % 3]
 
             # calculate kernel and gradient
@@ -335,17 +416,22 @@ def get_ky_and_hyp_pack(name, s1, e1, s2, e2, same: bool,
             k_mat[m_index, n_index] = cov[0]
             grad = from_grad_to_mask(cov[1], hyps_mask)
             hyp_mat[:, m_index, n_index] = grad
-            if (same):
+            if same:
                 k_mat[n_index, m_index] = cov[0]
                 hyp_mat[:, n_index, m_index] = grad
 
     return hyp_mat, k_mat
 
 
-def get_ky_and_hyp(hyps: np.ndarray, name,
-                   kernel_grad, cutoffs=None,
-                   hyps_mask=None,
-                   n_cpus=1, n_sample=100):
+def get_ky_and_hyp(
+    hyps: np.ndarray,
+    name,
+    kernel_grad,
+    cutoffs=None,
+    hyps_mask=None,
+    n_cpus=1,
+    n_sample=100,
+):
     """
     parallel version of get_ky_and_hyp
 
@@ -361,18 +447,31 @@ def get_ky_and_hyp(hyps: np.ndarray, name,
     :return: hyp_mat, ky_mat
     """
 
+    sigma_n, non_noise_hyps, _ = obtain_noise_len(hyps, hyps_mask)
+
     training_data = _global_training_data[name]
     size = len(training_data)
-    size3 = size*3
+    size3 = size * 3
 
     sigma_n, non_noise_hyps, train_noise = obtain_noise_len(hyps, hyps_mask)
 
-    if (n_cpus is None):
+    if n_cpus is None:
         n_cpus = mp.cpu_count()
-    if (n_cpus == 1):
+    if n_cpus == 1:
         hyp_mat0, k_mat = get_ky_and_hyp_pack(
-                name, 0, size, 0, size, True,
-                hyps, kernel_grad, cutoffs, hyps_mask)
+            training_data,
+            0,
+            size,
+            0,
+            size,
+            sigma_n,
+            non_noise_hyps,
+            True,
+            hyps,
+            kernel_grad,
+            cutoffs,
+            hyps_mask,
+        )
     else:
 
         block_id, nbatch = partition_cr(n_sample, size, n_cpus)
@@ -384,10 +483,25 @@ def get_ky_and_hyp(hyps: np.ndarray, name,
             children.append(
                 mp.Process(
                     target=queue_wrapper,
-                    args=(result_queue, wid,
+                    args=(
+                        result_queue,
+                        wid,
                         get_ky_and_hyp_pack,
-                        (name, s1, e1, s2, e2, s1==s2,
-                         hyps, kernel_grad, cutoffs, hyps_mask))))
+                        (
+                            name,
+                            s1,
+                            e1,
+                            s2,
+                            e2,
+                            s1 == s2,
+                            hyps,
+                            kernel_grad,
+                            cutoffs,
+                            hyps_mask,
+                        ),
+                    ),
+                )
+            )
 
         # Run child processes.
         for c in children:
@@ -399,22 +513,22 @@ def get_ky_and_hyp(hyps: np.ndarray, name,
             wid, result_chunk = result_queue.get(block=True)
             s1, e1, s2, e2 = block_id[wid]
             h_mat_block, k_mat_block = result_chunk
-            k_mat[s1*3:e1*3, s2*3:e2*3] = k_mat_block
-            hyp_mat0[:, s1*3:e1*3, s2*3:e2*3] = h_mat_block
-            if (s1 != s2):
-                k_mat[s2*3:e2*3, s1*3:e1*3] = k_mat_block.T
+            k_mat[s1 * 3 : e1 * 3, s2 * 3 : e2 * 3] = k_mat_block
+            hyp_mat0[:, s1 * 3 : e1 * 3, s2 * 3 : e2 * 3] = h_mat_block
+            if s1 != s2:
+                k_mat[s2 * 3 : e2 * 3, s1 * 3 : e1 * 3] = k_mat_block.T
                 for idx in range(hyp_mat0.shape[0]):
-                    hyp_mat0[idx, s2*3:e2*3, s1*3:e1*3] = h_mat_block[idx].T
+                    hyp_mat0[idx, s2 * 3 : e2 * 3, s1 * 3 : e1 * 3] = h_mat_block[idx].T
 
         # Join child processes (clean up zombies).
         for c in children:
             c.join()
 
     # add gradient of noise variance
-    if (train_noise):
-        hyp_mat = np.zeros([hyp_mat0.shape[0]+1,
-                            hyp_mat0.shape[1],
-                            hyp_mat0.shape[2]])
+    if train_noise:
+        hyp_mat = np.zeros(
+            [hyp_mat0.shape[0] + 1, hyp_mat0.shape[1], hyp_mat0.shape[2]]
+        )
         hyp_mat[:-1, :, :] = hyp_mat0
         hyp_mat[-1, :, :] = np.eye(size3) * 2 * sigma_n
     else:
@@ -426,10 +540,16 @@ def get_ky_and_hyp(hyps: np.ndarray, name,
     return hyp_mat, ky_mat
 
 
-def get_neg_likelihood(hyps: np.ndarray, name,
-                       kernel: Callable, output = None,
-                       cutoffs=None, hyps_mask=None,
-                       n_cpus=1, n_sample=100):
+def get_neg_likelihood(
+    hyps: np.ndarray,
+    name,
+    kernel: Callable,
+    output=None,
+    cutoffs=None,
+    hyps_mask=None,
+    n_cpus=1,
+    n_sample=100,
+):
     """compute the negative log likelihood
 
     :param hyps: list of hyper-parameters
@@ -448,19 +568,23 @@ def get_neg_likelihood(hyps: np.ndarray, name,
     :return: float
     """
 
-
     if output is not None:
-        ostring="hyps:"
+        ostring = "hyps:"
         for hyp in hyps:
-            ostring+=f" {hyp}"
-        ostring+="\n"
+            ostring += f" {hyp}"
+        ostring += "\n"
         output.write_to_log(ostring, name="hyps")
 
     time0 = time.time()
-    ky_mat = \
-        get_ky_mat(hyps, name, kernel,
-                   cutoffs=cutoffs, hyps_mask=hyps_mask,
-                   n_cpus=n_cpus, n_sample=n_sample)
+    ky_mat = get_ky_mat(
+        hyps,
+        name,
+        kernel,
+        cutoffs=cutoffs,
+        hyps_mask=hyps_mask,
+        n_cpus=n_cpus,
+        n_sample=n_sample,
+    )
 
     output.write_to_log(f"get_key_mat {time.time()-time0}\n", name="hyps")
 
@@ -468,19 +592,25 @@ def get_neg_likelihood(hyps: np.ndarray, name,
 
     like = get_like_from_ky_mat(ky_mat, name)
 
-    output.write_to_log(f"get_like_from_ky_mat {time.time()-time0}\n",
-                        name="hyps")
+    output.write_to_log(f"get_like_from_ky_mat {time.time()-time0}\n", name="hyps")
 
     if output is not None:
-        output.write_to_log('like: ' + str(like)+'\n', name="hyps")
+        output.write_to_log("like: " + str(like) + "\n", name="hyps")
 
     return -like
 
 
-def get_neg_like_grad(hyps: np.ndarray, name: str,
-                      kernel_grad, output = None,
-                      cutoffs=None, hyps_mask=None,
-                      n_cpus=1, n_sample=100, print_progress=False):
+def get_neg_like_grad(
+    hyps: np.ndarray,
+    name: str,
+    kernel_grad,
+    output=None,
+    cutoffs=None,
+    hyps_mask=None,
+    n_cpus=1,
+    n_sample=100,
+    print_progress=False,
+):
     """compute the log likelihood and its gradients
 
     :param hyps: list of hyper-parameters
@@ -503,30 +633,31 @@ def get_neg_like_grad(hyps: np.ndarray, name: str,
     if output is not None:
         ostring = "hyps:"
         for hyp in hyps:
-            ostring +=  f" {hyp}"
+            ostring += f" {hyp}"
         ostring += "\n"
         output.write_to_log(ostring, name="hyps")
 
-    hyp_mat, ky_mat = \
-        get_ky_and_hyp(hyps,
-                       name,
-                       kernel_grad,
-                       cutoffs=cutoffs,
-                       hyps_mask=hyps_mask,
-                       n_cpus=n_cpus, n_sample=n_sample)
+    hyp_mat, ky_mat = get_ky_and_hyp(
+        hyps,
+        name,
+        kernel_grad,
+        cutoffs=cutoffs,
+        hyps_mask=hyps_mask,
+        n_cpus=n_cpus,
+        n_sample=n_sample,
+    )
 
     if output is not None:
-        output.write_to_log(f"get_ky_and_hyp {time.time()-time0}\n",
-                            name="hyps")
+        output.write_to_log(f"get_ky_and_hyp {time.time()-time0}\n", name="hyps")
 
     time0 = time.time()
 
-    like, like_grad = \
-        get_like_grad_from_mats(ky_mat, hyp_mat, name)
+    like, like_grad = get_like_grad_from_mats(ky_mat, hyp_mat, name)
 
     if output is not None:
-        output.write_to_log(f"get_like_grad_from_mats {time.time()-time0}\n",
-                            name="hyps")
+        output.write_to_log(
+            f"get_like_grad_from_mats {time.time()-time0}\n", name="hyps"
+        )
 
     if output is not None:
         ostring = "like grad:"
@@ -534,15 +665,14 @@ def get_neg_like_grad(hyps: np.ndarray, name: str,
             ostring += f" {lg}"
         ostring += "\n"
         output.write_to_log(ostring, name="hyps")
-        output.write_to_log('like: ' + str(like)+'\n', name="hyps")
+        output.write_to_log("like: " + str(like) + "\n", name="hyps")
 
     if print_progress:
-        print('\nHyperparameters: ', list(hyps))
-        print('Likelihood: ' + str(like))
-        print('Likelihood Gradient: ',list(like_grad))
+        print("\nHyperparameters: ", list(hyps))
+        print("Likelihood: " + str(like))
+        print("Likelihood Gradient: ", list(like_grad))
 
     return -like, -like_grad
-
 
 
 def get_like_grad_from_mats(ky_mat, hyp_mat, name):
@@ -570,28 +700,35 @@ def get_like_grad_from_mats(ky_mat, hyp_mat, name):
     labels = _global_training_labels[name]
 
     alpha = np.matmul(ky_mat_inv, labels)
-    alpha_mat = np.matmul(alpha.reshape(-1, 1),
-                          alpha.reshape(1, -1))
+    alpha_mat = np.matmul(alpha.reshape(-1, 1), alpha.reshape(1, -1))
     like_mat = alpha_mat - ky_mat_inv
 
     # calculate likelihood
-    like = (-0.5 * np.matmul(labels, alpha) -
-            np.sum(np.log(np.diagonal(l_mat))) -
-            math.log(2 * np.pi) * ky_mat.shape[1] / 2)
+    like = (
+        -0.5 * np.matmul(labels, alpha)
+        - np.sum(np.log(np.diagonal(l_mat)))
+        - math.log(2 * np.pi) * ky_mat.shape[1] / 2
+    )
 
     # calculate likelihood gradient
     like_grad = np.zeros(number_of_hyps)
     for n in range(number_of_hyps):
-        like_grad[n] = 0.5 * \
-                       np.trace(np.matmul(like_mat, hyp_mat[n, :, :]))
+        like_grad[n] = 0.5 * np.trace(np.matmul(like_mat, hyp_mat[n, :, :]))
 
     return like, like_grad
 
 
-def get_ky_mat_update(ky_mat_old, hyps: np.ndarray, name: str,
-                      kernel, cutoffs=None, hyps_mask=None,
-                      n_cpus=1, n_sample=100):
-    '''
+def get_ky_mat_update(
+    ky_mat_old,
+    hyps: np.ndarray,
+    name: str,
+    kernel,
+    cutoffs=None,
+    hyps_mask=None,
+    n_cpus=1,
+    n_sample=100,
+):
+    """
     used for update_L_alpha, especially for parallelization
     parallelized for added atoms, for example, if add 10 atoms to the training
     set, the K matrix will add 10x3 columns and 10x3 rows, and the task will
@@ -609,21 +746,22 @@ def get_ky_mat_update(ky_mat_old, hyps: np.ndarray, name: str,
 
     :return: updated covariance matrix
 
-    '''
+    """
 
-    if (n_cpus is None):
+    if n_cpus is None:
         n_cpus = mp.cpu_count()
-    if (n_cpus == 1):
+    if n_cpus == 1:
         return get_ky_mat_update_serial(
-                ky_mat_old, hyps, name, kernel, cutoffs, hyps_mask)
+            ky_mat_old, hyps, name, kernel, cutoffs, hyps_mask
+        )
 
     sigma_n, non_noise_hyps, _ = obtain_noise_len(hyps, hyps_mask)
 
     # initialize matrices
     old_size3 = ky_mat_old.shape[0]
-    old_size = old_size3//3
+    old_size = old_size3 // 3
     size = len(_global_training_data[name])
-    size3 = 3*size
+    size3 = 3 * size
     ds = [1, 2, 3]
 
     block_id, nbatch = partition_update(n_sample, size, old_size, n_cpus)
@@ -636,42 +774,43 @@ def get_ky_mat_update(ky_mat_old, hyps: np.ndarray, name: str,
         children.append(
             mp.Process(
                 target=queue_wrapper,
-                args=(result_queue, wid,
+                args=(
+                    result_queue,
+                    wid,
                     get_ky_mat_pack,
-                    (hyps, name, s1, e1, s2, e2,
-                   s1==s2, kernel, cutoffs, hyps_mask
-                    )
-                )
+                    (hyps, name, s1, e1, s2, e2, s1 == s2, kernel, cutoffs, hyps_mask),
+                ),
             )
         )
     for c in children:
         c.start()
 
     # Wait for all results to arrive.
-    size3 = 3*size
+    size3 = 3 * size
     ky_mat = np.zeros([size3, size3])
     ky_mat[:old_size3, :old_size3] = ky_mat_old
     del ky_mat_old
     for _ in range(nbatch):
         wid, result_chunk = result_queue.get(block=True)
         s1, e1, s2, e2 = block_id[wid]
-        ky_mat[s1*3:e1*3, s2*3:e2*3] = result_chunk
-        if (s1 != s2):
-            ky_mat[s2*3:e2*3, s1*3:e1*3] = result_chunk.T
+        ky_mat[s1 * 3 : e1 * 3, s2 * 3 : e2 * 3] = result_chunk
+        if s1 != s2:
+            ky_mat[s2 * 3 : e2 * 3, s1 * 3 : e1 * 3] = result_chunk.T
 
     # Join child processes (clean up zombies).
     for c in children:
         c.join()
 
     # matrix manipulation
-    ky_mat[old_size3:, old_size3:] += sigma_n ** 2 * np.eye(size3-old_size3)
+    ky_mat[old_size3:, old_size3:] += sigma_n ** 2 * np.eye(size3 - old_size3)
 
     return ky_mat
 
-def get_ky_mat_update_serial(\
-        ky_mat_old, hyps: np.ndarray, name,
-        kernel, cutoffs=None, hyps_mask=None):
-    '''
+
+def get_ky_mat_update_serial(
+    ky_mat_old, hyps: np.ndarray, name, kernel, cutoffs=None, hyps_mask=None
+):
+    """
     used for update_L_alpha. if add 10 atoms to the training
     set, the K matrix will add 10x3 columns and 10x3 rows
 
@@ -683,13 +822,13 @@ def get_ky_mat_update_serial(\
     :type cutoffs: list of 2 float numbers
     :param hyps_mask: dictionary used for multi-group hyperparmeters
 
-    '''
+    """
 
     training_data = _global_training_data[name]
 
     n = ky_mat_old.shape[0]
     size = len(training_data)
-    size3 = size*3
+    size3 = size * 3
     m = size - n // 3  # number of new data added
     ky_mat = np.zeros((size3, size3))
     ky_mat[:n, :n] = ky_mat_old
@@ -713,12 +852,11 @@ def get_ky_mat_update_serial(\
 
     # matrix manipulation
     sigma_n, _, __ = obtain_noise_len(hyps, hyps_mask)
-    ky_mat[n:, n:] += sigma_n ** 2 * np.eye(size3-n)
+    ky_mat[n:, n:] += sigma_n ** 2 * np.eye(size3 - n)
     return ky_mat
 
 
-def get_kernel_vector_unit(name, s, e, x, d_1, kernel, hyps,
-                      cutoffs, hyps_mask):
+def get_kernel_vector_unit(name, s, e, x, d_1, kernel, hyps, cutoffs, hyps_mask):
     """
     Compute kernel vector, comparing input environment to all environments
     in the GP's training set.
@@ -737,23 +875,24 @@ def get_kernel_vector_unit(name, s, e, x, d_1, kernel, hyps,
     :rtype: np.ndarray
     """
 
-    size = (e-s)
+    size = e - s
     ds = [1, 2, 3]
 
     args = from_mask_to_args(hyps, hyps_mask, cutoffs)
 
-    k_v = np.zeros(size*3, )
+    k_v = np.zeros(size * 3,)
 
     for m_index in range(size):
-        x_2 = _global_training_data[name][m_index+s]
+        x_2 = _global_training_data[name][m_index + s]
         for d_2 in ds:
-            k_v[m_index*3+d_2-1] = kernel(x, x_2, d_1, d_2, *args)
+            k_v[m_index * 3 + d_2 - 1] = kernel(x, x_2, d_1, d_2, *args)
 
     return k_v
 
-def get_kernel_vector(name, kernel, x, d_1, hyps,
-                      cutoffs=None, hyps_mask=None,
-                      n_cpus=1, n_sample=100):
+
+def get_kernel_vector(
+    name, kernel, x, d_1, hyps, cutoffs=None, hyps_mask=None, n_cpus=1, n_sample=100
+):
     """
     Compute kernel vector, comparing input environment to all environments
     in the GP's training set.
@@ -775,12 +914,12 @@ def get_kernel_vector(name, kernel, x, d_1, hyps,
 
     size = len(_global_training_data[name])
 
-    if (n_cpus is None):
+    if n_cpus is None:
         n_cpus = mp.cpu_count()
-    if (n_cpus == 1):
+    if n_cpus == 1:
         return get_kernel_vector_unit(
-                name, 0, size, x, d_1, kernel, hyps,
-                cutoffs, hyps_mask)
+            name, 0, size, x, d_1, kernel, hyps, cutoffs, hyps_mask
+        )
 
     block_id, nbatch = partition_c(n_sample, size, n_cpus)
 
@@ -791,12 +930,12 @@ def get_kernel_vector(name, kernel, x, d_1, hyps,
         children.append(
             mp.Process(
                 target=queue_wrapper,
-                args=(result_queue, wid,
+                args=(
+                    result_queue,
+                    wid,
                     get_kernel_vector_unit,
-                    (name, s, e, x, d_1, kernel, hyps,
-                  cutoffs, hyps_mask
-                    )
-                )
+                    (name, s, e, x, d_1, kernel, hyps, cutoffs, hyps_mask),
+                ),
             )
         )
 
@@ -805,11 +944,11 @@ def get_kernel_vector(name, kernel, x, d_1, hyps,
         c.start()
 
     # Wait for all results to arrive.
-    k12_v = np.zeros(size*3)
+    k12_v = np.zeros(size * 3)
     for _ in range(nbatch):
         wid, result_chunk = result_queue.get(block=True)
         s, e = block_id[wid]
-        k12_v[s*3:e*3] = result_chunk
+        k12_v[s * 3 : e * 3] = result_chunk
 
     # Join child processes (clean up zombies).
     for c in children:
@@ -818,8 +957,7 @@ def get_kernel_vector(name, kernel, x, d_1, hyps,
     return k12_v
 
 
-def en_kern_vec_unit(name, s, e, x, kernel,
-                     hyps, cutoffs=None, hyps_mask=None):
+def en_kern_vec_unit(name, s, e, x, kernel, hyps, cutoffs=None, hyps_mask=None):
     """
     Compute energy kernel vector, comparing input environment to all environments
     in the GP's training set.
@@ -839,23 +977,22 @@ def en_kern_vec_unit(name, s, e, x, kernel,
     training_data = _global_training_data[name]
 
     ds = [1, 2, 3]
-    size = (e-s) * 3
-    k_v = np.zeros(size, )
+    size = (e - s) * 3
+    k_v = np.zeros(size,)
 
     args = from_mask_to_args(hyps, hyps_mask, cutoffs)
 
     for m_index in range(size):
-        x_2 = training_data[int(math.floor(m_index / 3))+s]
+        x_2 = training_data[int(math.floor(m_index / 3)) + s]
         d_2 = ds[m_index % 3]
         k_v[m_index] = kernel(x_2, x, d_2, *args)
 
     return k_v
 
 
-def en_kern_vec(name, kernel,
-                x, hyps,
-                cutoffs=None, hyps_mask=None,
-                n_cpus=1, n_sample=100):
+def en_kern_vec(
+    name, kernel, x, hyps, cutoffs=None, hyps_mask=None, n_cpus=1, n_sample=100
+):
     """
     Compute kernel vector, comparing input environment to all environments
     in the GP's training set.
@@ -876,12 +1013,10 @@ def en_kern_vec(name, kernel,
     training_data = _global_training_data[name]
     size = len(training_data)
 
-    if (n_cpus is None):
+    if n_cpus is None:
         n_cpus = mp.cpu_count()
-    if (n_cpus == 1):
-        return en_kern_vec_unit(
-                name, 0, size, x, kernel, hyps,
-                cutoffs, hyps_mask)
+    if n_cpus == 1:
+        return en_kern_vec_unit(name, 0, size, x, kernel, hyps, cutoffs, hyps_mask)
 
     block_id, nbatch = partition_c(n_sample, size, n_cpus)
     result_queue = mp.Queue()
@@ -890,21 +1025,34 @@ def en_kern_vec(name, kernel,
         children.append(
             mp.Process(
                 target=queue_wrapper,
-                args=(result_queue, wid,
+                args=(
+                    result_queue,
+                    wid,
                     en_kern_vec_unit,
-                    (name, block_id[wid][0], block_id[wid][1], x,
-                     kernel, hyps, cutoffs, hyps_mask))))
+                    (
+                        name,
+                        block_id[wid][0],
+                        block_id[wid][1],
+                        x,
+                        kernel,
+                        hyps,
+                        cutoffs,
+                        hyps_mask,
+                    ),
+                ),
+            )
+        )
 
     # Run child processes.
     for c in children:
         c.start()
 
     # Wait for all results to arrive.
-    k12_v = np.zeros(size*3)
+    k12_v = np.zeros(size * 3)
     for _ in range(nbatch):
         wid, result_chunk = result_queue.get(block=True)
         s, e = block_id[wid]
-        k12_v[s*3:e*3] = result_chunk
+        k12_v[s * 3 : e * 3] = result_chunk
 
     # Join child processes (clean up zombies).
     for c in children:

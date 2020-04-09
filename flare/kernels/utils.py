@@ -1,5 +1,6 @@
 import numpy as np
 
+import numba
 from flare.kernels import sc, mc_simple, mc_sephyps
 
 """
@@ -15,7 +16,8 @@ from_grad_to_mask(grad, hyps_mask) converts the gradient matrix to the actual gr
 matrix by removing the fixed dimensions.
 """
 
-def str_to_kernel_set(name: str, multihyps: bool =False):
+
+def str_to_kernel_set(name: str, multihyps: bool = False):
     """
     return kernels and kernel gradient function base on a string.
     If it contains 'sc', it will use the kernel in sc module;
@@ -34,10 +36,10 @@ def str_to_kernel_set(name: str, multihyps: bool =False):
 
     """
 
-    if 'sc' in name:
+    if "sc" in name:
         stk = sc._str_to_kernel
     else:
-        if (multihyps is False):
+        if multihyps is False:
             stk = mc_simple._str_to_kernel
         else:
             stk = mc_sephyps._str_to_kernel
@@ -47,34 +49,39 @@ def str_to_kernel_set(name: str, multihyps: bool =False):
     b3 = False
     many = False
 
-    for s in ['2', 'two', 'Two', 'TWO']:
-        if (s in name):
+    for s in ["2", "two", "Two", "TWO"]:
+        if s in name:
             b2 = True
-    for s in ['3', 'three', 'Three', 'THREE']:
-        if (s in name):
+    for s in ["3", "three", "Three", "THREE"]:
+        if s in name:
             b3 = True
-    for s in ['mb', 'manybody', 'many', 'Many', 'ManyBody']:
-        if (s in name):
+    for s in ["mb", "manybody", "many", "Many", "ManyBody"]:
+        if s in name:
             many = True
 
-    prefix=''
-    str_term={'2':b2, '3':b3, 'many':many}
+    prefix = ""
+    str_term = {"2": b2, "3": b3, "many": many}
     for term in str_term:
         if str_term[term]:
-            if (len(prefix)>0):
-                prefix += '+'
+            if len(prefix) > 0:
+                prefix += "+"
             prefix += term
-    if len(prefix)==0:
+    if len(prefix) == 0:
         raise RuntimeError(f"the name has to include at least one number {name}")
 
-    for suffix in ['', '_grad', '_en', '_force_en']:
-        if prefix+suffix not in stk:
+    for suffix in ["", "_grad", "_en", "_force_en"]:
+        if prefix + suffix not in stk:
             raise RuntimeError(f"cannot find kernel function of {prefix}{suffix}")
 
-    return stk[prefix], stk[prefix+'_grad'], stk[prefix+'_en'], \
-            stk[prefix+'_force_en']
+    return (
+        stk[prefix],
+        stk[prefix + "_grad"],
+        stk[prefix + "_en"],
+        stk[prefix + "_force_en"],
+    )
 
 
+@numba.njit
 def from_mask_to_args(hyps, hyps_mask: dict, cutoffs):
     """ return the tuple of arguments needed for kernel function
     the order of the tuple has to be exactly the same as the one
@@ -90,9 +97,11 @@ def from_mask_to_args(hyps, hyps_mask: dict, cutoffs):
     """
 
     # no special setting
-    if (hyps_mask is None):
+    assert hyps_mask is None
+    if hyps_mask is None:
         return (hyps, cutoffs)
 
+    """
     # setting for mc_sephyps
     n2b = hyps_mask.get('nbond', 0)
     n3b = hyps_mask.get('ntriplet', 0)
@@ -143,8 +152,10 @@ def from_mask_to_args(hyps, hyps_mask: dict, cutoffs):
                 np.array(sig2), np.array(ls2), np.array(sig3), np.array(ls3), sigm, lsm)
     else:
         raise RuntimeError("only support up to 3 cutoffs")
+    """
 
 
+@numba.njit
 def from_grad_to_mask(grad, hyps_mask):
     """
     Return gradient which only includes hyperparameters
@@ -157,23 +168,25 @@ def from_grad_to_mask(grad, hyps_mask):
     """
 
     # no special setting
-    if (hyps_mask is None):
+    assert hyps_mask is None
+    if hyps_mask is None:
         return grad
 
+    """
     # setting for mc_sephyps
     # no constrained optimization
-    if 'map' not in hyps_mask.keys():
+    if "map" not in hyps_mask.keys():
         return grad
 
     # setting for mc_sephyps
     # if the last element is not sigma_noise
-    if (hyps_mask['map'][-1] == len(grad)):
-        hm = hyps_mask['map'][:-1]
+    if hyps_mask["map"][-1] == len(grad):
+        hm = hyps_mask["map"][:-1]
     else:
-        hm = hyps_mask['map']
+        hm = hyps_mask["map"]
 
     newgrad = np.zeros(len(hm))
     for i, mapid in enumerate(hm):
         newgrad[i] = grad[mapid]
     return newgrad
-
+    """

@@ -20,6 +20,7 @@ from typing import Callable
 # -----------------------------------------------------------------------------
 
 
+@njit
 def two_plus_three_body_mc(env1: AtomicEnvironment, env2: AtomicEnvironment,
                            d1: int, d2: int, hyps: 'ndarray',
                            cutoffs: 'ndarray',
@@ -64,6 +65,7 @@ def two_plus_three_body_mc(env1: AtomicEnvironment, env2: AtomicEnvironment,
     return two_term + three_term
 
 
+@njit
 def two_plus_three_body_mc_grad(env1: AtomicEnvironment,
                                 env2: AtomicEnvironment,
                                 d1: int, d2: int, hyps: 'ndarray',

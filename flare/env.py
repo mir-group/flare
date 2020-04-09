@@ -3,10 +3,47 @@ environment of an atom. :class:`AtomicEnvironment` objects are inputs to the
 2-, 3-, and 2+3-body kernels."""
 import numpy as np
 from math import sqrt
+import numba
 from numba import njit
 from flare.struc import Structure
 
 
+def atomic_env_from_struc(struc, atom, cutoffs):
+    return AtomicEnvironment(
+        struc.wrapped_positions,
+        struc.cell,
+        struc.coded_species,
+        struc.forces,
+        struc.energy,
+        struc.stress,
+        atom,
+        cutoffs,
+    )
+
+
+@numba.jitclass(
+    [
+        ("positions", numba.float64[:, :]),
+        ("cell", numba.float64[:, :]),
+        ("species", numba.int64[:]),
+        ("forces", numba.float64[:, :]),
+        ("energy", numba.float64[:]),
+        ("stress", numba.float64[:, :]),
+        ("atom", numba.int64),
+        ("ctype", numba.int64),
+        ("cutoffs", numba.float64[:]),
+        ("bond_array_2", numba.float64[:, :]),
+        ("bond_array_3", numba.float64[:, :]),
+        ("bond_array_mb", numba.float64[:, :]),
+        ("etypes", numba.int8[:]),
+        ("cross_bond_inds", numba.int64[:, :]),
+        ("cross_bond_dists", numba.float64[:, :]),
+        ("neigh_dists_mb", numba.float64[:, :]),
+        ("num_neighs_mb", numba.int8[:]),
+        ("triplet_counts", numba.int8[:]),
+        ("etype_mb", numba.int8[:, :]),
+    ]
+)
 class AtomicEnvironment:
     """
     Contains information about the local environment of an atom, including
@@ -22,32 +59,51 @@ class AtomicEnvironment:
     :type cutoffs: np.ndarray
     """
 
-    def __init__(self, structure: Structure, atom: int, cutoffs):
-        self.structure = structure
-        self.positions = structure.wrapped_positions
-        self.cell = structure.cell
-        self.species = structure.coded_species
+    # def __init__(self, structure: Structure, atom: int, cutoffs):
+    def __init__(
+        self,
+        wrapped_positions,
+        cell,
+        coded_species,
+        forces,
+        energy,
+        stress,
+        atom: int,
+        cutoffs,
+    ):
+        self.positions = wrapped_positions
+        self.cell = cell
+        self.species = coded_species
+        self.forces = forces
+        if not energy is None:
+            self.energy = energy
+        if not stress is None:
+            self.stress = stress
 
         self.atom = atom
-        self.ctype = structure.coded_species[atom]
+        self.ctype = coded_species[atom]
 
-        self.cutoffs = np.copy(cutoffs)
+        self.cutoffs = np.array(cutoffs)
 
         self.compute_env()
 
     def compute_env(self):
 
         # get 2-body arrays
-        bond_array_2, bond_positions_2, etypes = \
-            get_2_body_arrays(self.positions, self.atom, self.cell,
-                              self.cutoffs[0], self.species)
+        bond_array_2, bond_positions_2, etypes = get_2_body_arrays(
+            self.positions, self.atom, self.cell, self.cutoffs[0], self.species
+        )
         self.bond_array_2 = bond_array_2
         self.etypes = etypes
 
         # if 2 cutoffs are given, create 3-body arrays
         if len(self.cutoffs) > 1:
-            bond_array_3, cross_bond_inds, cross_bond_dists, triplet_counts = \
-                get_3_body_arrays(bond_array_2, bond_positions_2, self.cutoffs[1])
+            (
+                bond_array_3,
+                cross_bond_inds,
+                cross_bond_dists,
+                triplet_counts,
+            ) = get_3_body_arrays(bond_array_2, bond_positions_2, self.cutoffs[1])
             self.bond_array_3 = bond_array_3
             self.cross_bond_inds = cross_bond_inds
             self.cross_bond_dists = cross_bond_dists
@@ -55,14 +111,22 @@ class AtomicEnvironment:
 
         # if 3 cutoffs are given, create many-body arrays
         if len(self.cutoffs) > 2:
-            self.bond_array_mb, self.neigh_dists_mb, self.num_neighs_mb, self.etype_mb = get_m_body_arrays(
-                self.positions, self.atom, self.cell, self.cutoffs[2], self.species)
+            (
+                self.bond_array_mb,
+                self.neigh_dists_mb,
+                self.num_neighs_mb,
+                self.etype_mb,
+            ) = get_m_body_arrays(
+                self.positions, self.atom, self.cell, self.cutoffs[2], self.species
+            )
+        assert len(self.cutoffs) <= 2
+        """
         else:
             self.bond_array_mb = None
             self.neigh_dists_mb = None
             self.num_neighs_mb = None
             self.etype_mb = None
-
+        """
 
     def as_dict(self):
         """
@@ -75,44 +139,46 @@ class AtomicEnvironment:
         # so that the removal of the structure is not messed up
         # by JSON serialization
         dictionary = dict(vars(self))
-        dictionary['object'] = 'AtomicEnvironment'
-        dictionary['forces'] = self.structure.forces
-        dictionary['energy'] = self.structure.energy
-        dictionary['stress'] = self.structure.stress
+        dictionary["object"] = "AtomicEnvironment"
+        dictionary["forces"] = self.forces
+        dictionary["energy"] = self.energy
+        dictionary["stress"] = self.stress
 
-        del dictionary['structure']
+        del dictionary["structure"]
 
         return dictionary
-
-    @staticmethod
-    def from_dict(dictionary):
-        """
-        Loads in atomic environment object from a dictionary which was
-        serialized by the to_dict method.
-
-        :param dictionary: Dictionary describing atomic environment.
-        """
-        # TODO Instead of re-computing 2 and 3 body environment,
-        # directly load in, this would be much more efficient
-
-        struc = Structure(cell=np.array(dictionary['cell']),
-                          positions=dictionary['positions'],
-                          species=dictionary['species'])
-        index = dictionary['atom']
-
-        cutoffs = dictionary['cutoffs']
-
-        return AtomicEnvironment(struc, index, cutoffs)
 
     def __str__(self):
         atom_type = self.ctype
         neighbor_types = self.etypes
         n_neighbors = len(self.bond_array_2)
-        string = 'Atomic Env. of Type {} surrounded by {} atoms of Types {}' \
-                 ''.format(atom_type, n_neighbors,
-                           sorted(list(set(neighbor_types))))
+        string = "Atomic Env. of Type {} surrounded by {} atoms of Types {}" "".format(
+            atom_type, n_neighbors, sorted(list(set(neighbor_types)))
+        )
 
         return string
+
+
+def atomic_env_from_dict(dictionary):
+    """
+    Loads in atomic environment object from a dictionary which was
+    serialized by the to_dict method.
+
+    :param dictionary: Dictionary describing atomic environment.
+    """
+    # TODO Instead of re-computing 2 and 3 body environment,
+    # directly load in, this would be much more efficient
+
+    struc = Structure(
+        cell=np.array(dictionary["cell"]),
+        positions=dictionary["positions"],
+        species=dictionary["species"],
+    )
+    index = dictionary["atom"]
+
+    cutoffs = dictionary["cutoffs"]
+
+    return AtomicEnvironment(struc, index, cutoffs)
 
 
 @njit
@@ -350,8 +416,7 @@ def get_3_body_arrays(bond_array_2, bond_positions_2, cutoff_3: float):
         for n in range(m + 1, ind_3):
             pos2 = bond_positions_3[n]
             diff = pos2 - pos1
-            dist_curr = sqrt(
-                diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2])
+            dist_curr = sqrt(diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2])
 
             if dist_curr < cutoff_3:
                 cross_bond_inds[m, count] = n
@@ -407,15 +472,17 @@ def get_m_body_arrays(positions, atom: int, cell, cutoff_mb: float, species):
     # TODO: this can be probably improved using stored arrays, redundant calls to get_2_body_arrays
     # Get distances, positions, species and indexes of neighbouring atoms
     bond_array_mb, __, _, bond_inds = get_2_body_arrays_ind(
-        positions, atom, cell, cutoff_mb, species)
+        positions, atom, cell, cutoff_mb, species
+    )
 
     # For each neighbouring atom, get distances in its neighbourhood
     neighbouring_dists = []
     neighbouring_etypes = []
     max_neighbours = 0
     for m in bond_inds:
-        neighbour_bond_array_2, ___, etypes_mb = get_2_body_arrays(positions, m, cell,
-                                                         cutoff_mb, species)
+        neighbour_bond_array_2, ___, etypes_mb = get_2_body_arrays(
+            positions, m, cell, cutoff_mb, species
+        )
         neighbouring_dists.append(neighbour_bond_array_2[:, 0])
         neighbouring_etypes.append(etypes_mb)
         if len(neighbour_bond_array_2[:, 0]) > max_neighbours:
@@ -427,12 +494,11 @@ def get_m_body_arrays(positions, atom: int, cell, cutoff_mb: float, species):
     etypes_mb_array = np.zeros((len(bond_inds), max_neighbours), dtype=np.int8)
     for i in range(len(bond_inds)):
         num_neighs_mb[i] = len(neighbouring_dists[i])
-        neigh_dists_mb[i, :num_neighs_mb[i]] = neighbouring_dists[i]
-        etypes_mb_array[i, :num_neighs_mb[i]] = neighbouring_etypes[i]
-
+        neigh_dists_mb[i, : num_neighs_mb[i]] = neighbouring_dists[i]
+        etypes_mb_array[i, : num_neighs_mb[i]] = neighbouring_etypes[i]
 
     return bond_array_mb, neigh_dists_mb, num_neighs_mb, etypes_mb_array
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     pass
