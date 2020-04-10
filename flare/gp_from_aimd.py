@@ -100,7 +100,7 @@ class TrajectoryTrainer:
         :param calculate_energy: Use local energy kernel or not
         :param output_name: Write output of training to this file
         :param max_atoms_from_frame: Largest # of atoms added from one frame
-        :param min_atoms_added: Only train when this many atoms have been
+        :param min_atoms_per_train: Only train when this many atoms have been
             added
         :param max_trains: Stop training GP after this many calls to train
         :param n_cpus: Number of CPUs to parallelize over for parallelization over atoms
