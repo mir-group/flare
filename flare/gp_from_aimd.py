@@ -131,6 +131,12 @@ class TrajectoryTrainer:
         :param model_format: Format to write GP model to
         """
 
+        # Make sure all random stuff is identical on all procs with MPI
+        # Pick a random seed, distribute it
+        seed = np.random.randint(3, 1000000)
+        seed = comm.bcast(seed, root=0)
+        np.random.seed(seed)
+
         # Set up parameters
         self.frames = frames
         if shuffle_frames:
@@ -231,7 +237,7 @@ class TrajectoryTrainer:
 
         if self.mgp:
             raise NotImplementedError("Pre-running not" "yet configured for MGP")
-        if self.verbose:
+        if self.verbose and rank == 0:
             self.output.write_header(
                 self.gp.cutoffs,
                 self.gp.kernel_name,
@@ -351,7 +357,7 @@ class TrajectoryTrainer:
             # Convert to meV/A
             error = np.abs(forces - dft_forces)
 
-            if self.verbose:
+            if self.verbose and rank == 0:
                 self.output.write_gp_dft_comparison(
                     curr_step=i,
                     frame=cur_frame,
@@ -485,12 +491,18 @@ class TrajectoryTrainer:
         elif max_iter is not None:
             temp_maxiter = self.gp.maxiter
             self.gp.maxiter = max_iter
-            self.gp.train(output=self.output if self.verbose >= 2 else None)
+            self.gp.train(
+                output=self.output if self.verbose >= 2 else None,
+                print_progress=self.verbose and rank == 0,
+            )
             self.gp.maxiter = temp_maxiter
         else:
-            self.gp.train(output=self.output if self.verbose >= 2 else None)
+            self.gp.train(
+                output=self.output if self.verbose >= 2 else None,
+                print_progress=self.verbose and rank == 0,
+            )
 
-        if self.verbose:
+        if self.verbose and rank == 0:
             self.output.write_hyps(
                 self.gp.hyp_labels,
                 self.gp.hyps,

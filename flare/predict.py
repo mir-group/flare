@@ -10,10 +10,12 @@ from typing import Tuple
 from flare.env import AtomicEnvironment
 from flare.gp import GaussianProcess
 from flare.struc import Structure
+from mpi4py import MPI
 
 
-def predict_on_atom(param: Tuple[Structure, int, GaussianProcess]) -> (
-        'np.ndarray', 'np.ndarray'):
+def predict_on_atom(
+    param: Tuple[Structure, int, GaussianProcess]
+) -> ("np.ndarray", "np.ndarray"):
     """
     Return the forces/std. dev. uncertainty associated with an individual atom
     in a structure, without necessarily having cast it to a chemical
@@ -41,8 +43,9 @@ def predict_on_atom(param: Tuple[Structure, int, GaussianProcess]) -> (
     return np.array(components), np.array(stds)
 
 
-def predict_on_atom_en(param: Tuple[Structure, int, GaussianProcess]) -> (
-        'np.ndarray', 'np.ndarray', float):
+def predict_on_atom_en(
+    param: Tuple[Structure, int, GaussianProcess]
+) -> ("np.ndarray", "np.ndarray", float):
     """
     Return the forces/std. dev. uncertainty / energy associated with an
     individual atom in a structure, without necessarily having cast it to a
@@ -72,10 +75,12 @@ def predict_on_atom_en(param: Tuple[Structure, int, GaussianProcess]) -> (
     return np.array(comps), np.array(stds), local_energy
 
 
-def predict_on_structure(structure: Structure, gp: GaussianProcess,
-                         n_cpus: int=None, write_to_structure: bool = True) \
-        -> (
-        'np.ndarray', 'np.ndarray'):
+def predict_on_structure(
+    structure: Structure,
+    gp: GaussianProcess,
+    n_cpus: int = None,
+    write_to_structure: bool = True,
+) -> ("np.ndarray", "np.ndarray"):
     """
     Return the forces/std. dev. uncertainty associated with each
     individual atom in a structure. Forces are stored directly to the
@@ -91,28 +96,47 @@ def predict_on_structure(structure: Structure, gp: GaussianProcess,
     # Loop through individual atoms, cast to atomic environments,
     # make predictions
 
-    forces = np.zeros(shape=(structure.nat,3))
-    stds = np.zeros(shape=(structure.nat,3))
+    N = structure.nat
+    forces = np.zeros(shape=(structure.nat, 3))
+    stds = np.zeros(shape=(structure.nat, 3))
 
-    for n in range(structure.nat):
+    comm = MPI.COMM_WORLD
+    rank = comm.Get_rank()
+    size = comm.Get_size()
+
+    ranks = np.arange(size)
+    local_starts = np.floor(N * ranks / size).astype(np.int32)
+    local_ends = np.floor(N * (ranks + 1) / size).astype(np.int32)
+    local_sizes = local_ends - local_starts
+
+    if rank == 0:
+        print(size, local_starts, local_sizes)
+
+    for n in range(local_starts[rank], local_ends[rank]):
         chemenv = AtomicEnvironment(structure, n, gp.cutoffs)
         for i in range(3):
             force, var = gp.predict(chemenv, i + 1)
             forces[n][i] = float(force)
             stds[n][i] = float(np.sqrt(np.absolute(var)))
 
-            if write_to_structure:
-                structure.forces[n][i] = float(force)
-                structure.stds[n][i] = np.sqrt(np.abs(var))
+    comm.Allgatherv(
+        MPI.IN_PLACE, [forces, 3 * local_sizes, 3 * local_starts, MPI.DOUBLE]
+    )
+    comm.Allgatherv(MPI.IN_PLACE, [stds, 3 * local_sizes, 3 * local_starts, MPI.DOUBLE])
+
+    if write_to_structure:
+        structure.forces = forces
+        structure.stds = stds
 
     return forces, stds
 
 
-def predict_on_structure_par(structure: Structure,
-                             gp: GaussianProcess,
-                             n_cpus: int = None,
-                             write_to_structure: bool = True) -> (
-        'np.ndarray', 'np.ndarray'):
+def predict_on_structure_par(
+    structure: Structure,
+    gp: GaussianProcess,
+    n_cpus: int = None,
+    write_to_structure: bool = True,
+) -> ("np.ndarray", "np.ndarray"):
     """
     Return the forces/std. dev. uncertainty associated with each
     individual atom in a structure. Forces are stored directly to the
@@ -128,10 +152,10 @@ def predict_on_structure_par(structure: Structure,
     """
     # Just work in serial in the number of cpus is 1
     if n_cpus is 1:
-        return predict_on_structure(structure, gp,n_cpus,write_to_structure)
+        return predict_on_structure(structure, gp, n_cpus, write_to_structure)
 
     # Automatically detect number of cpus available
-    if (n_cpus is None):
+    if n_cpus is None:
         pool = mp.Pool(processes=mp.cpu_count())
     else:
         pool = mp.Pool(processes=n_cpus)
@@ -139,12 +163,11 @@ def predict_on_structure_par(structure: Structure,
     # Parallelize over atoms in structure
     results = []
     for atom in range(structure.nat):
-        results.append(pool.apply_async(predict_on_atom,
-                                        args=[(structure, atom, gp)]))
+        results.append(pool.apply_async(predict_on_atom, args=[(structure, atom, gp)]))
     pool.close()
     pool.join()
-    forces = np.zeros(shape=(structure.nat,3))
-    stds = np.zeros(shape=(structure.nat,3))
+    forces = np.zeros(shape=(structure.nat, 3))
+    stds = np.zeros(shape=(structure.nat, 3))
 
     for i in range(structure.nat):
         r = results[i].get()
@@ -157,9 +180,9 @@ def predict_on_structure_par(structure: Structure,
     return forces, stds
 
 
-def predict_on_structure_en(structure: Structure, gp: GaussianProcess,
-                            n_cpus: int = None) -> (
-        'np.ndarray', 'np.ndarray', 'np.ndarray'):
+def predict_on_structure_en(
+    structure: Structure, gp: GaussianProcess, n_cpus: int = None
+) -> ("np.ndarray", "np.ndarray", "np.ndarray"):
     """
     Return the forces/std. dev. uncertainty / local energy associated with each
     individual atom in a structure. Forces are stored directly to the
@@ -176,9 +199,22 @@ def predict_on_structure_en(structure: Structure, gp: GaussianProcess,
     # Set up local energy array
     local_energies = np.zeros(structure.nat)
 
+    comm = MPI.COMM_WORLD
+    rank = comm.Get_rank()
+    size = comm.Get_size()
+    N = structure.nat
+
+    ranks = np.arange(size)
+    local_starts = np.floor(N * ranks / size).astype(np.int32)
+    local_ends = np.floor(N * (ranks + 1) / size).astype(np.int32)
+    local_sizes = local_ends - local_starts
+
+    if rank == 0:
+        print(size, local_starts, local_sizes)
+
     # Loop through atoms in structure and predict forces, uncertainties,
     # and energies
-    for n in range(structure.nat):
+    for n in range(local_starts[rank], local_ends[rank]):
         chemenv = AtomicEnvironment(structure, n, gp.cutoffs)
         for i in range(3):
             force, var = gp.predict(chemenv, i + 1)
@@ -186,14 +222,25 @@ def predict_on_structure_en(structure: Structure, gp: GaussianProcess,
             structure.stds[n][i] = np.sqrt(np.abs(var))
         local_energies[n] = gp.predict_local_energy(chemenv)
 
+    print("WARNING: Haven't tested MPI predict_en")
+    comm.Allgatherv(
+        MPI.IN_PLACE, [structure.forces, 3 * local_sizes, 3 * local_starts, MPI.DOUBLE]
+    )
+    comm.Allgatherv(
+        MPI.IN_PLACE, [structure.stds, 3 * local_sizes, 3 * local_starts, MPI.DOUBLE]
+    )
+    comm.Allgatherv(
+        MPI.IN_PLACE, [local_energies, local_sizes, local_starts, MPI.DOUBLE]
+    )
+
     forces = np.array(structure.forces)
     stds = np.array(structure.stds)
     return forces, stds, local_energies
 
 
-def predict_on_structure_par_en(structure: Structure, gp: GaussianProcess,
-                                n_cpus: int = None) -> (
-        'np.ndarray', 'np.ndarray', 'np.ndarray'):
+def predict_on_structure_par_en(
+    structure: Structure, gp: GaussianProcess, n_cpus: int = None
+) -> ("np.ndarray", "np.ndarray", "np.ndarray"):
     """
     Return the forces/std. dev. uncertainty / local energy associated with each
     individual atom in a structure, parallelized over atoms. Forces are
@@ -220,8 +267,9 @@ def predict_on_structure_par_en(structure: Structure, gp: GaussianProcess,
     results = []
     # Parallelize over atoms in structure
     for atom_i in range(structure.nat):
-        results.append(pool.apply_async(predict_on_atom_en,
-                                        args=[(structure, atom_i, gp)]))
+        results.append(
+            pool.apply_async(predict_on_atom_en, args=[(structure, atom_i, gp)])
+        )
     pool.close()
     pool.join()
 
