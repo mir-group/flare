@@ -5,6 +5,7 @@ import multiprocessing as mp
 
 from typing import List, Callable
 from flare.kernels.utils import from_mask_to_args, from_grad_to_mask
+from flare.env import AtomicEnvironment
 from mpi4py import MPI
 
 _global_training_data = {}
@@ -377,9 +378,6 @@ def get_ky_and_hyp_pack(
     # flattened version of lower triangular for Allgatherv
     k_mat_triang = np.zeros(N)
     hyp_mat_triang = np.zeros((N, non_noise_hyps))
-
-    if rank == 0:
-        print(size, local_starts, local_sizes, local_ends)
 
     for x in range(local_starts[rank], local_ends[rank]):
         # convert flattened index to matrix index
@@ -879,6 +877,55 @@ def get_kernel_vector_unit(name, s, e, x, d_1, kernel, hyps, cutoffs, hyps_mask)
             k_v[m_index * 3 + d_2 - 1] = kernel(x, x_2, d_1, d_2, *args)
 
     return k_v
+
+
+def get_kernel_mat(struc, name, kernel, hyps, cutoffs, hyps_mask):
+    """
+    Compute all the kernel vectors in parallel.
+    """
+    n_training = len(_global_training_data[name])
+    N = struc.nat
+    kernel_mat = np.zeros((N, 3, n_training, 3))
+
+    Ntot = N * 3 * n_training
+
+    comm = MPI.COMM_WORLD
+    rank = comm.Get_rank()
+    size = comm.Get_size()
+
+    ranks = np.arange(size)
+    local_starts = np.floor(Ntot * ranks / size).astype(np.int32)
+    local_ends = np.floor(Ntot * (ranks + 1) / size).astype(np.int32)
+    local_sizes = local_ends - local_starts
+
+    old_atom = -13
+
+    for x in range(local_starts[rank], local_ends[rank]):
+        atom = x // (3 * n_training)
+        tmp = x - 3 * n_training * atom
+        dim = tmp // n_training
+        training_atom = tmp - n_training * dim
+
+        if atom != old_atom:
+            old_atom = atom
+            chemenv = AtomicEnvironment(struc, atom, cutoffs)
+
+        kernel_mat[atom, dim, training_atom, :] = get_kernel_vector_unit(
+            name,
+            training_atom,
+            training_atom + 1,
+            chemenv,
+            dim + 1,
+            kernel,
+            hyps,
+            cutoffs,
+            hyps_mask,
+        )
+    comm.Allgatherv(
+        MPI.IN_PLACE, [kernel_mat, 3 * local_sizes, 3 * local_starts, MPI.DOUBLE]
+    )
+
+    return kernel_mat
 
 
 def get_kernel_vector(

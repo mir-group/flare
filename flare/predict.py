@@ -10,6 +10,7 @@ from typing import Tuple
 from flare.env import AtomicEnvironment
 from flare.gp import GaussianProcess
 from flare.struc import Structure
+from flare.gp_algebra import get_kernel_mat
 from mpi4py import MPI
 
 
@@ -93,36 +94,44 @@ def predict_on_structure(
     :return: N x 3 numpy array of foces, Nx3 numpy array of uncertainties
     :rtype: (np.ndarray, np.ndarray)
     """
-    # Loop through individual atoms, cast to atomic environments,
-    # make predictions
+
+    # First construct full matrix of all kernel vectors in parallel,
+    # then predict on atoms in parallel
+
+    kernel_mat = get_kernel_mat(
+        structure, gp.name, gp.kernel, gp.hyps, gp.cutoffs, gp.hyps_mask
+    )
 
     N = structure.nat
-    forces = np.zeros(shape=(structure.nat, 3))
-    stds = np.zeros(shape=(structure.nat, 3))
+    Ntot = 3 * N
+    forces = np.zeros(shape=(N, 3))
+    stds = np.zeros(shape=(N, 3))
 
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
     size = comm.Get_size()
 
     ranks = np.arange(size)
-    local_starts = np.floor(N * ranks / size).astype(np.int32)
-    local_ends = np.floor(N * (ranks + 1) / size).astype(np.int32)
+    local_starts = np.floor(Ntot * ranks / size).astype(np.int32)
+    local_ends = np.floor(Ntot * (ranks + 1) / size).astype(np.int32)
     local_sizes = local_ends - local_starts
 
-    if rank == 0:
-        print(size, local_starts, local_sizes)
+    old_atom = -13
 
-    for n in range(local_starts[rank], local_ends[rank]):
-        chemenv = AtomicEnvironment(structure, n, gp.cutoffs)
-        for i in range(3):
-            force, var = gp.predict(chemenv, i + 1)
-            forces[n][i] = float(force)
-            stds[n][i] = float(np.sqrt(np.absolute(var)))
+    for x in range(local_starts[rank], local_ends[rank]):
+        atom = x // 3
+        dim = x - atom * 3
+        if old_atom != atom:
+            old_atom = atom
+            x_t = AtomicEnvironment(structure, atom, gp.cutoffs)
+        force, var = gp.predict_on_kernel_vec(
+            kernel_mat[atom, dim].reshape(-1), x_t, dim + 1
+        )
+        forces[atom][dim] = float(force)
+        stds[atom][dim] = float(np.sqrt(np.absolute(var)))
 
-    comm.Allgatherv(
-        MPI.IN_PLACE, [forces, 3 * local_sizes, 3 * local_starts, MPI.DOUBLE]
-    )
-    comm.Allgatherv(MPI.IN_PLACE, [stds, 3 * local_sizes, 3 * local_starts, MPI.DOUBLE])
+    comm.Allgatherv(MPI.IN_PLACE, [forces, local_sizes, local_starts, MPI.DOUBLE])
+    comm.Allgatherv(MPI.IN_PLACE, [stds, local_sizes, local_starts, MPI.DOUBLE])
 
     if write_to_structure:
         structure.forces = forces
@@ -208,9 +217,6 @@ def predict_on_structure_en(
     local_starts = np.floor(N * ranks / size).astype(np.int32)
     local_ends = np.floor(N * (ranks + 1) / size).astype(np.int32)
     local_sizes = local_ends - local_starts
-
-    if rank == 0:
-        print(size, local_starts, local_sizes)
 
     # Loop through atoms in structure and predict forces, uncertainties,
     # and energies
