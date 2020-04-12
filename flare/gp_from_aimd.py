@@ -213,7 +213,7 @@ class TrajectoryTrainer:
         # Output parameters
         self.verbose = verbose
         if self.verbose:
-            self.output = Output(output_name, always_flush=True)
+            self.output = Output(output_name, always_flush=False)
         else:
             self.output = None
         self.checkpoint_interval = checkpoint_interval
@@ -303,7 +303,7 @@ class TrajectoryTrainer:
 
         if self.verbose >= 3 and atom_count > 0 and rank == 0:
             self.output.write_to_log(
-                f"Added {atom_count} atoms to pretrain", flush=True
+                f"Added {atom_count} atoms to pretrain", flush=False
             )
 
         if (self.seed_envs or atom_count or self.seed_frames) and (
@@ -457,7 +457,7 @@ class TrajectoryTrainer:
             )
 
             self.output.write_to_log(
-                f"Uncertainties: " f"{frame.stds[train_atoms]}.\n", flush=True
+                f"Uncertainties: " f"{frame.stds[train_atoms]}.\n", flush=False
             )
 
         # update gp model; handling differently if it's an MGP
