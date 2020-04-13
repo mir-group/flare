@@ -757,6 +757,10 @@ class GaussianProcess:
             with open(filename, 'r') as f:
                 gp_model = GaussianProcess.from_dict(json.loads(f.readline()))
                 gp_model.check_instantiation()
+                _global_training_data[gp_model.name] \
+                        = gp_model.training_data
+                _global_training_labels[gp_model.name] \
+                        = gp_model.training_labels_np
 
 
         elif '.pickle' in filename or 'pickle' in format:
