@@ -16,6 +16,14 @@ body_list = ['2', '3']
 multi_list = [False, True]
 curr_path = os.getcwd()
 
+def clean():
+    for f in os.listdir("./"):
+        if re.search(r"grid.*npy", f):
+            os.remove(f)
+        if re.search("kv3", f):
+            os.rmdir(f)
+
+
 # ASSUMPTION: You have a Lammps executable with the mgp pair style with $lmp
 # as the corresponding environment variable.
 @pytest.mark.skipif(not os.environ.get('lmp',
@@ -141,12 +149,7 @@ def test_build_map(all_gp, all_mgp, all_ase_calc, bodies, multihyps):
     all_ase_calc[f'{bodies}{multihyps}'] = FLARE_Calculator(gp_model,
             mgp_model, par=False, use_mapping=True)
 
-    for f in os.listdir("./"):
-        if re.search("grid3*.npy", f):
-            os.remove(f)
-        if re.search("kv3*", f):
-            os.rmdir(f)
-
+    clean()
 
 @pytest.mark.parametrize('bodies', body_list)
 @pytest.mark.parametrize('multihyps', multi_list)
@@ -196,10 +199,7 @@ def test_lmp_predict(all_ase_calc, all_lmp_calc, bodies, multihyps):
             os.remove(f)
         if f in ['log.lammps']:
             os.remove(f)
-        if 'grid' in f and 'npy' in f:
-            os.remove(f)
-        if re.search("kv3*", f):
-            os.rmdir(f)
+    clean()
 
     flare_calc = all_ase_calc[label]
     lmp_calc = all_lmp_calc[label]
