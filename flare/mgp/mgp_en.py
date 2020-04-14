@@ -1,7 +1,8 @@
 import time, os, math, inspect, subprocess
 import numpy as np
 import multiprocessing as mp
-
+import json
+from copy import deepcopy
 
 from scipy.linalg import solve_triangular
 from typing import List
@@ -11,13 +12,13 @@ from flare.env import AtomicEnvironment
 from flare.gp import GaussianProcess
 from flare.gp_algebra import partition_c
 from flare.gp_algebra import en_kern_vec_unit as en_kern_vec
-from flare.kernels.utils import from_mask_to_args
+from flare.kernels.utils import from_mask_to_args, str_to_kernel_set 
 from flare.cutoffs import quadratic_cutoff
 from flare.util import Z_to_element
 from flare.mgp.utils import get_bonds, get_triplets, get_triplets_en, \
         get_2bkernel, get_3bkernel
 from flare.mgp.splines_methods import PCASplines, CubicSpline
-from flare.util import Z_to_element
+from flare.util import Z_to_element, NumpyEncoder
 
 class MappedGaussianProcess:
     '''
@@ -55,6 +56,7 @@ class MappedGaussianProcess:
                                     # kernels; note that for force MGPs
                                     # bondlength-bondlength-costheta
                                     # are the bounds used instead.
+                        'bodies':   [2, 3] # use 2+3 body
                         'grid_num_2': 64,# Fidelity of the grid
                         'grid_num_3': [16, 16, 16],# Fidelity of the grid
                         'svd_rank_2': 64, #Fidelity of uncertainty estimation
@@ -129,7 +131,7 @@ class MappedGaussianProcess:
                                  b_struc, self.svd_rank_3,
                                  self.mean_only,
                                  self.grid_params['load_grid'],
-                                 self.update)
+                                 self.update, self.n_cpus, self.n_sample)
                 self.maps_3.append(map_3)
 
     def build_map(self, GP):
@@ -394,38 +396,115 @@ class MappedGaussianProcess:
         f.close()
 
 
-    def write_model(self, model_name):
+    def as_dict(self):
+        """Dictionary representation of the MGP model."""
+
+        if not self.mean_only:
+            raise NotImplementedError
+
+        out_dict = deepcopy(dict(vars(self)))
+
+        for i in self.bodies:
+            kern_info = f'kernel{i}b_info'
+            kernel, efk, cutoffs, hyps, hyps_mask = out_dict[kern_info]
+            out_dict[kern_info] = (kernel.__name__, efk.__name__, 
+                                   cutoffs, hyps, hyps_mask)
+
+        # only save the coefficients 
+        out_dict['maps_2'] = [map_2.mean.__coeffs__ for map_2 in self.maps_2] 
+        out_dict['maps_3'] = [map_3.mean.__coeffs__ for map_3 in self.maps_3] 
+
+
+        # don't need them since it's built in the __init__ function 
+        key_list = ['bond_struc', 'spcs_set']
+        for key in key_list:
+            if out_dict.get(key) is not None:
+                del out_dict[key]
+
+        return out_dict
+
+
+    @staticmethod
+    def from_dict(dictionary):
+        """Create MGP object from dictionary representation."""
+        new_mgp = MappedGaussianProcess(grid_params=dictionary['grid_params'],
+                                        struc_params=dictionary['struc_params'],
+                                        GP=None,
+                                        mean_only=dictionary['mean_only'],
+                                        container_only=True,
+                                        lmp_file_name=dictionary['lmp_file_name'],
+                                        n_cpus=dictionary['n_cpus'],
+                                        n_sample=dictionary['n_sample'],
+                                        autorun=False)
+
+        # restore kernel_info
+        for i in dictionary['bodies']:
+            kern_info = f'kernel{i}b_info'
+            hyps_mask = dictionary[kern_info][-1]
+            if (hyps_mask is None):
+                multihyps = False
+            else:
+                multihyps = True
+
+            kernel_info = dictionary[kern_info]
+            kernel_name = kernel_info[0]
+            kernel, _, _, efk = str_to_kernel_set(kernel_name, multihyps)
+            kernel_info[0] = kernel
+            kernel_info[1] = efk
+            setattr(new_mgp, kern_info, kernel_info)
+
+
+        # filled up the model with the saved coeffs
+        for m, map_2 in enumerate(new_mgp.maps_2):
+            map_2.mean.__coeffs__ = np.array(dictionary['maps_2'][m])
+        for m, map_3 in enumerate(new_mgp.maps_3):
+            map_3.mean.__coeffs__ = np.array(dictionary['maps_3'][m])
+            
+
+        return new_mgp 
+
+    def write_model(self, name: str):
         """
         Write everything necessary to re-load and re-use the model
         :param model_name:
         :return:
         """
-        raise NotImplementedError
+        with open(f'{name}.json', 'w') as f:                          
+            json.dump(self.as_dict(), f, cls=NumpyEncoder)    
+
+
+#    @staticmethod
+#    def load_model(elements: List[int], directory:str = './',
+#                   kernel: str = '2+3',
+#                   load_var: bool = False):
+#        """
+#        Loads the relevant files in a directory to an MGP model
+#        :param elements:
+#        :param directory:
+#        :param kernel:
+#        :return:
+#        """
+#
+#        # Check to see if two body or three body kernels will be loaded
+#        # so "2+3" makes b2 and b3 true
+#        b2 = '2' in kernel or 'two' in kernel
+#        b3 = '3' in kernel or 'three' in kernel
+#
+#
+#        raise NotImplementedError
+
+
 
     @staticmethod
-    def load_model(elements: List[int], directory:str = './',
-                   kernel: str = '2+3',
-                   load_var: bool = False):
-        """
-        Loads the relevant files in a directory to an MGP model
-        :param elements:
-        :param directory:
-        :param kernel:
-        :return:
-        """
+    def load_model(filename):
+        if '.json' in filename:
+            with open(filename, 'r') as f:
+                model = MappedGaussianProcess.from_dict(json.loads(f.readline()))
 
-        # Check to see if two body or three body kernels will be loaded
-        # so "2+3" makes b2 and b3 true
-        b2 = '2' in kernel or 'two' in kernel
-        b3 = '3' in kernel or 'three' in kernel
+            return model
 
-
-
-
-
-
-
-        raise NotImplementedError
+        else:
+            raise NotImplementedError
 
 
 class Map2body:
@@ -602,9 +681,8 @@ class Map2body:
 class Map3body:
 
     def __init__(self, grid_num, bounds, bond_struc: Structure,
-            svd_rank: int=0, mean_only: bool=False, load_grid: str='',
-                 update: bool=True,
-            n_cpus=None, n_sample=100):
+                 svd_rank: int=0, mean_only: bool=False, load_grid: str='',
+                 update: bool=True, n_cpus=None, n_sample=100):
         '''
         Build 3-body MGP
 
@@ -695,10 +773,10 @@ class Map3body:
                         old_kv_file = np.load(kv_filename+'.npy')
                         last_size = int(old_kv_file[0,0])
                         new_kv_file[i, :, :last_size] = old_kv_file
-    
+
                         k12_v_all = np.zeros([len(bonds1), len(bonds2), len(bonds12),
                                               size * 3])
-    
+
                         for i in range(n12):
                             if f'{self.kv3name}/{i}.npy' in os.listdir(self.kv3name):
                                 old_kv_file = np.load(f'{self.kv3name}/{i}.npy')
@@ -706,25 +784,25 @@ class Map3body:
                                 #TODO k12_v_all[]
                             else:
                                 last_size = 0
-    
+
                         # parallelize based on grids, since usually the number of
                         # the added training points are small
                         ngrids = int(math.ceil(n12 / processes))
                         nbatch = int(math.ceil(n12 / ngrids))
-    
+
                         block_id = []
                         for ibatch in range(nbatch):
                             s = int(ibatch * processes)
                             e = int(np.min(((ibatch+1)*processes, n12)))
                             block_id += [(s, e)]
-    
+
                         k12_slice = []
                         for ibatch in range(nbatch):
                             k12_slice.append(pool.apply_async(self._GenGrid_inner,
                                                               args=(GP.name, last_size, size,
                                                                     bonds1, bonds2, bonds12[s:e],
                                                                     env12, kernel_info)))
-    
+
                         for ibatch in range(nbatch):
                             s, e = block_id[ibatch]
                             k12_v_all[:, :, s:e, :] = k12_slice[ibatch].get()
