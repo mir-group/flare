@@ -430,8 +430,8 @@ def is_std_in_bound_per_species(rel_std_tolerance: float,
 
     # Determine if any std component will trigger the threshold
     # before looking through individual species.
-    max_std_components = [np.max(std) for std in structure.stds]
-    if max(max_std_components) < threshold:
+    max_std_components = [np.nanmax(std) for std in structure.stds]
+    if np.nanmax(max_std_components) < threshold:
         return True, [-1]
 
     target_atoms = []
@@ -447,8 +447,12 @@ def is_std_in_bound_per_species(rel_std_tolerance: float,
         # If max atoms added reached or stds of atoms considered are now below
         # threshold, conclude
         if len(target_atoms) == max_atoms_added or \
-                max_std_components[i] < threshold:
+                (max_std_components[i] < threshold and max_std_components[i]
+                 != np.nan):
             break
+
+        if np.isnan(max_std_components[i]):
+            continue
 
         # Only add up to species allowance, if it exists
         cur_spec = structure.species_labels[i]
@@ -511,7 +515,7 @@ def is_force_in_bound_per_species(abs_force_tolerance: float,
 
     # Determine if any force component will trigger the threshold
     max_error_components = np.amax(errors, axis=1)
-    if np.max(max_error_components) < abs_force_tolerance:
+    if np.nanmax(max_error_components) < abs_force_tolerance:
         return True, [-1]
 
     target_atoms = []
@@ -527,7 +531,8 @@ def is_force_in_bound_per_species(abs_force_tolerance: float,
         # If max atoms added reached or force errors are now below threshold,
         # conclude
         if len(target_atoms) == max_atoms_added or \
-                max_error_components[i] < abs_force_tolerance:
+                (max_error_components[i] < abs_force_tolerance and
+                        max_error_components[i] != np.nan):
             break
 
         cur_spec = structure.species_labels[i]
@@ -545,3 +550,46 @@ def is_force_in_bound_per_species(abs_force_tolerance: float,
         return False, target_atoms
     else:
         return True, [-1]
+
+
+def subset_of_frame_by_element(frame: 'flare.Structure',
+                           predict_atoms_per_element: dict)->List[int]:
+    """
+    Given a structure and a dictionary formatted as {"Symbol":int,
+    ..} describing a number of atoms per element, return a sorted list of
+    indices corresponding to a random subset of atoms by species
+    :param frame:
+    :param predict_atoms_by_species:
+    :return:
+    """
+
+    # Null case: No dictionary or empty dict passed in; just return all indices
+    if not predict_atoms_per_element:
+        return list(range(len(frame)))
+
+    # Keep track of atoms which were considered (dictionary may only cover a
+    #  subset of species of the whole frame)
+    all_atoms = set(range(len(frame)))
+    return_atoms = []
+    considered_atoms = set([])
+
+    species = frame.species_labels
+
+    # Main loop: Obtain the number of relevant atoms for each element
+    for elt, n in predict_atoms_per_element.items():
+
+        matching_atoms = [i for i in all_atoms if species[i] == elt]
+        considered_atoms.update(matching_atoms)
+
+        if len(matching_atoms) == 0:
+            continue
+        # Choose the atoms to add
+        to_add_atoms = np.random.choice(matching_atoms,replace=False,
+                                        size=min(n, len(matching_atoms)))
+        return_atoms += list(to_add_atoms)
+
+    return_atoms += list(all_atoms - considered_atoms)
+
+    return_atoms.sort()
+
+    return return_atoms

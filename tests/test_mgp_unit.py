@@ -129,6 +129,16 @@ def test_write_model(all_mgp, bodies, multihyps):
     mgp_model.mean_only = True
     mgp_model.write_model(f'my_mgp_{bodies}_{multihyps}')
 
+    mgp_model.write_model(f'my_mgp_{bodies}_{multihyps}', format='pickle')
+
+    # Ensure that user is warned when a non-mean_only
+    # model is serialized into a Dictionary
+    with pytest.warns(Warning):
+        mgp_model.mean_only = False
+        mgp_model.as_dict()
+        mgp_model.mean_only = True
+
+
 @pytest.mark.parametrize('bodies', body_list)
 @pytest.mark.parametrize('multihyps', multi_list)
 def test_load_model(all_mgp, bodies, multihyps):
@@ -138,7 +148,11 @@ def test_load_model(all_mgp, bodies, multihyps):
 
     # multihyps = False
     name = f'my_mgp_{bodies}_{multihyps}.json'
-    all_mgp[f'{bodies}{multihyps}'] = MappedGaussianProcess.load_model(name)
+    all_mgp[f'{bodies}{multihyps}'] = MappedGaussianProcess.from_file(name)
+    os.remove(name)
+
+    name = f'my_mgp_{bodies}_{multihyps}.pickle'
+    all_mgp[f'{bodies}{multihyps}'] = MappedGaussianProcess.from_file(name)
     os.remove(name)
 
 

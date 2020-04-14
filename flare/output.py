@@ -403,31 +403,34 @@ class Output:
         #                       stds=frame.stds, forces_2=dft_forces,
         #                       dft_step=True)
 
-        mae = np.mean(error) * 1000
+        mae = np.nanmean(error) * 1000
         mac = np.mean(np.abs(dft_forces)) * 1000
         string += f'mean absolute error: {mae:.2f} meV/A\n'
         string += f'mean absolute dft component: {mac:.2f} meV/A\n'
         stat = f'{curr_step} {mae:.2} {mac:.2}'
 
-        mae_ps = {}
-        count_ps = {}
+        mae_per_species = {}
+        count_per_species = {}
         species = [Z_to_element(Z) for Z in set(frame.coded_species)]
         for ele in species:
-            mae_ps[ele] = 0
-            count_ps[ele] = 0
+            mae_per_species[ele] = 0
+            count_per_species[ele] = 0
+
         for atom in range(frame.nat):
             Z = frame.coded_species[atom]
             ele = Z_to_element(Z)
-            mae_ps[ele] += np.sum(error[atom, :])
-            count_ps[ele] += 1
+            if np.isnan(np.sum(error[atom, :])):
+                continue
+            mae_per_species[ele] += np.sum(error[atom, :])
+            count_per_species[ele] += 1
 
         string += "mae per species\n"
         for ele in species:
-            if count_ps[ele] > 0:
-                mae_ps[ele] /= (count_ps[ele] * 3)
-                mae_ps[ele] *= 1000  # Put in meV/A
-                string += f"type {ele} mae: {mae_ps[ele]:.2f} meV/A\n"
-            stat += f' {mae_ps[ele]:.2f}'
+            if count_per_species[ele] > 0:
+                mae_per_species[ele] /= (count_per_species[ele] * 3)
+                mae_per_species[ele] *= 1000  # Put in meV/A
+                string += f"type {ele} mae: {mae_per_species[ele]:.2f} meV/A\n"
+            stat += f' {mae_per_species[ele]:.2f}'
 
         # calculate potential and total energy
         if local_energies is not None:

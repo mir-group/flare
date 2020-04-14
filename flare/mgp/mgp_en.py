@@ -2,8 +2,10 @@ import time, os, math, inspect, subprocess
 import numpy as np
 import multiprocessing as mp
 import json
-from copy import deepcopy
+import warnings
 
+from copy import deepcopy
+import pickle as pickle
 from scipy.linalg import solve_triangular
 from typing import List
 
@@ -396,14 +398,22 @@ class MappedGaussianProcess:
         f.close()
 
 
-    def as_dict(self):
-        """Dictionary representation of the MGP model."""
-
-        if not self.mean_only:
-            raise NotImplementedError
+    def as_dict(self)->dict:
+        """
+        Dictionary representation of the MGP model.
+        """
 
         out_dict = deepcopy(dict(vars(self)))
 
+        # Uncertainty mappings currently not serializable;
+        if not self.mean_only:
+            warnings.warn("Uncertainty mappings cannot be serialized, "
+                            "and so the MGP dict outputted will not have "
+                          "them.", Warning)
+            out_dict['mean_only'] = True
+
+
+        # Iterate through the mappings for various bodies
         for i in self.bodies:
             kern_info = f'kernel{i}b_info'
             kernel, efk, cutoffs, hyps, hyps_mask = out_dict[kern_info]
@@ -415,8 +425,8 @@ class MappedGaussianProcess:
         out_dict['maps_3'] = [map_3.mean.__coeffs__ for map_3 in self.maps_3] 
 
 
-        # don't need them since it's built in the __init__ function 
-        key_list = ['bond_struc', 'spcs_set']
+        # don't need these since they are built in the __init__ function
+        key_list = ['bond_struc', 'spcs_set', ]
         for key in key_list:
             if out_dict.get(key) is not None:
                 del out_dict[key]
@@ -425,8 +435,10 @@ class MappedGaussianProcess:
 
 
     @staticmethod
-    def from_dict(dictionary):
-        """Create MGP object from dictionary representation."""
+    def from_dict(dictionary:dict):
+        """
+        Create MGP object from dictionary representation.
+        """
         new_mgp = MappedGaussianProcess(grid_params=dictionary['grid_params'],
                                         struc_params=dictionary['struc_params'],
                                         GP=None,
@@ -437,7 +449,7 @@ class MappedGaussianProcess:
                                         n_sample=dictionary['n_sample'],
                                         autorun=False)
 
-        # restore kernel_info
+        # Restore kernel_info
         for i in dictionary['bodies']:
             kern_info = f'kernel{i}b_info'
             hyps_mask = dictionary[kern_info][-1]
@@ -454,23 +466,34 @@ class MappedGaussianProcess:
             setattr(new_mgp, kern_info, kernel_info)
 
 
-        # filled up the model with the saved coeffs
+        # Fill up the model with the saved coeffs
         for m, map_2 in enumerate(new_mgp.maps_2):
             map_2.mean.__coeffs__ = np.array(dictionary['maps_2'][m])
         for m, map_3 in enumerate(new_mgp.maps_3):
             map_3.mean.__coeffs__ = np.array(dictionary['maps_3'][m])
-            
+
+        # Set GP
+        if dictionary.get('GP'):
+            new_mgp.GP = GaussianProcess.from_dict(dictionary.get("GP"))
 
         return new_mgp 
 
-    def write_model(self, name: str):
+    def write_model(self, name: str, format='json'):
         """
         Write everything necessary to re-load and re-use the model
         :param model_name:
         :return:
         """
-        with open(f'{name}.json', 'w') as f:                          
-            json.dump(self.as_dict(), f, cls=NumpyEncoder)    
+        if 'json' in format.lower():
+            with open(f'{name}.json', 'w') as f:
+                json.dump(self.as_dict(), f, cls=NumpyEncoder)
+
+        elif 'pickle' in format.lower() or 'binary' in format.lower():
+            with open(f'{name}.pickle', 'wb') as f:
+                pickle.dump(self, f)
+
+        else:
+            raise ValueError("Requested format not found.")
 
 
 #    @staticmethod
@@ -494,15 +517,16 @@ class MappedGaussianProcess:
 #        raise NotImplementedError
 
 
-
     @staticmethod
-    def load_model(filename):
+    def from_file(filename: str):
         if '.json' in filename:
             with open(filename, 'r') as f:
                 model = MappedGaussianProcess.from_dict(json.loads(f.readline()))
-
             return model
 
+        elif 'pickle' in filename:
+            with open(filename, 'rb') as f:
+                return pickle.load(f)
         else:
             raise NotImplementedError
 
