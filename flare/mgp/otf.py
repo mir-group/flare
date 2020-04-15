@@ -115,13 +115,9 @@ def predict_on_atom_mgp(atom: int, structure, cutoffs, mgp,
                         write_to_structure=False):
     chemenv = AtomicEnvironment(structure, atom, cutoffs)
     # predict force components and standard deviations
-    force, var = mgp.predict(chemenv)
+    force, var, virial, local_energy = mgp.predict(chemenv)
     comps = force
     stds = np.sqrt(np.absolute(var))
-
-    # predict local energy
-    #     local_energy = self.gp.predict_local_energy(chemenv)
-    local_energy = 0
 
     if write_to_structure:
         structure.forces[atom][:] = force

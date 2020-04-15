@@ -38,18 +38,17 @@ from typing import List, Tuple, Union
 
 import numpy as np
 from math import inf
+import warnings
 
 from flare.env import AtomicEnvironment
 from flare.gp import GaussianProcess
 from flare.output import Output
-from flare.predict import predict_on_structure, \
-    predict_on_structure_par, predict_on_structure_en, \
-    predict_on_structure_par_en
+from flare.predict import predict_on_atom, predict_on_atom_en
 from flare.struc import Structure
 from flare.util import element_to_Z, \
     is_std_in_bound_per_species, is_force_in_bound_per_species, \
-    Z_to_element
-from flare.mgp.otf import predict_on_structure_mgp
+    Z_to_element, subset_of_frame_by_element
+from flare.mgp.otf import predict_on_atom_mgp
 from flare.mgp.mgp_en import MappedGaussianProcess
 
 class TrajectoryTrainer:
@@ -78,6 +77,7 @@ class TrajectoryTrainer:
                                                  'np.array']] = None,
                  pre_train_atoms_per_element: dict = None,
                  train_atoms_per_element: dict = None,
+                 predict_atoms_per_element: dict = None,
                  checkpoint_interval: int = 1,
                  model_format: str = 'json'):
         """
@@ -115,6 +115,13 @@ class TrajectoryTrainer:
             each species in the seed pre-training steps
         :param train_atoms_per_element: Max # of environments to add from
             each species in the training steps
+        :param predict_atoms_per_element: Choose a random subset of N random
+            atoms from each specified element to predict on. For instance,
+            {"H":5} will only predict the forces and uncertainties
+            associated with 5 Hydrogen atoms per frame. Elements not
+            specified will be predicted as normal. This is useful for
+            systems where you are most interested in a subset of elements.
+            This will result in a faster but less exhaustive learning process.
         :param checkpoint_interval: How often to write model after trainings
         :param model_format: Format to write GP model to
         """
@@ -136,25 +143,30 @@ class TrajectoryTrainer:
         self.max_trains = max_trains
         self.max_atoms_from_frame = max_atoms_from_frame
         self.min_atoms_per_train = min_atoms_per_train
+        self.predict_atoms_per_element = predict_atoms_per_element
         self.verbose = verbose
         self.train_count = 0
 
-        self.parallel = parallel
-        self.n_cpus = n_cpus
+        if parallel is True or n_cpus>1:
+            warnings.warn("Parallelization by structure is no longer going"
+                          "to be supported in the Trajectory Trainer module; "
+                          "parallelization within the GP is faster in "
+                          "practice. "
+                          "Setting parallel to False and n_cpus to 1..." ,
+                          DeprecationWarning)
+            self.parallel = False
+            self.n_cpus = 1
+
         # Set prediction function based on if forces or energies are
         # desired, and parallelization accordingly
-        if parallel and gp.par and gp.per_atom_par and not self.mgp:
+        if not self.mgp:
             if calculate_energy:
-                self.pred_func = predict_on_structure_par_en
+                self.pred_func = predict_on_atom_en
             else:
-                self.pred_func = predict_on_structure_par
-        elif not self.mgp:
-            if calculate_energy:
-                self.pred_func = predict_on_structure_en
-            else:
-                self.pred_func = predict_on_structure
-        else:
-            self.pred_func = predict_on_structure_mgp
+                self.pred_func = predict_on_atom
+
+        elif self.mgp:
+            self.pred_func = predict_on_atom_mgp
 
         # Parameters for negotiating with the training frames
 
@@ -180,6 +192,7 @@ class TrajectoryTrainer:
                                     is None else pre_train_atoms_per_element
         self.train_env_per_species = {} if train_atoms_per_element \
                                         is None else train_atoms_per_element
+
 
         # Convert to Coded Species
         if self.pre_train_env_per_species:
@@ -306,30 +319,57 @@ class TrajectoryTrainer:
 
         :return: None
         """
+
+        # Perform pre-run, in which seed trames are used.
         if self.verbose >= 3:
             print("Commencing run with pre-run...")
         if not self.mgp:
             self.pre_run()
 
-        train_frame = int(len(self.frames) * (1 - self.validate_ratio))
+        # Past this frame, stop adding atoms to the training set
+        #  (used for validation of model)
+        train_frame = int(len(self.frames[::self.skip]) * (1 -
+                                                       self.validate_ratio))
 
-        # Loop through trajectory
+        # Loop through trajectory.
         nsample = 0
         for i, cur_frame in enumerate(self.frames[::self.skip]):
 
             if self.verbose >= 2:
                 print(f"=====NOW ON FRAME {i}=====")
-            dft_forces = deepcopy(cur_frame.forces)
 
-            forces, stds = self.pred_func(cur_frame, self.gp, self.n_cpus,
-                                          write_to_structure=True)
+
+            # If no predict_atoms_per_element was specified, predict_atoms
+            # will be equal to every atom in the frame.
+            predict_atoms = subset_of_frame_by_element(cur_frame,
+                                            self.predict_atoms_per_element)
+            # Atoms which are skipped will have NaN as their force / std values
+            size = (len(cur_frame),3)
+            pred_forces, pred_stds = np.empty(shape=size), np.empty(shape=size)
+            pred_forces[:], pred_stds[:] = np.nan, np.nan
+
+            # Core loop: Make predictions on the atoms to predict on
+            for j in predict_atoms:
+                if self.mgp:
+                    pred_forces[j,:], pred_stds[j,:], _ = self.pred_func(j,
+                                                     cur_frame, self.gp.cutoffs,
+                                                     self.gp)
+                else:
+                    pred_forces[j, :], pred_stds[j, :] = self.pred_func((
+                    cur_frame, j, self.gp))
 
             # Convert to meV/A
-            error = np.abs(forces - dft_forces)
+            dft_forces = cur_frame.forces
+            error = np.abs(pred_forces - dft_forces)
+
+            # Create dummy frame with the predicted forces written
+            dummy_frame = deepcopy(cur_frame)
+            dummy_frame.forces = pred_forces
+            dummy_frame.stds = pred_stds
 
             if self.verbose:
                 self.output.write_gp_dft_comparison(
-                    curr_step=i, frame=cur_frame,
+                    curr_step=i, frame=dummy_frame,
                     start_time=time.time(),
                     dft_forces=dft_forces,
                     error=error,
@@ -344,7 +384,7 @@ class TrajectoryTrainer:
                 std_in_bound, std_train_atoms = is_std_in_bound_per_species(
                         rel_std_tolerance=self.rel_std_tolerance,
                         abs_std_tolerance=self.abs_std_tolerance,
-                        noise=noise, structure=cur_frame,
+                        noise=noise, structure=dummy_frame,
                         max_atoms_added=self.max_atoms_from_frame,
                         max_by_species=self.train_env_per_species)
 
@@ -352,15 +392,17 @@ class TrajectoryTrainer:
                 force_in_bound, force_train_atoms = \
                     is_force_in_bound_per_species(
                         abs_force_tolerance=self.abs_force_tolerance,
-                        predicted_forces=cur_frame.forces,
+                        predicted_forces=pred_forces,
                         label_forces=dft_forces,
-                        structure=cur_frame,
+                        structure=dummy_frame,
                         max_atoms_added=self.max_atoms_from_frame,
                         max_by_species=self.train_env_per_species,
                         max_force_error=self.max_force_error)
 
-                if (not std_in_bound) or (not force_in_bound):
+                if not std_in_bound or not force_in_bound:
 
+                    # -1 is returned from the is_in_bound methods,
+                    # so filter that out and the use sets to remove repeats
                     train_atoms = list(set(std_train_atoms).union(
                         force_train_atoms) - {-1})
 
@@ -466,3 +508,4 @@ class TrajectoryTrainer:
                                self.gp.likelihood, self.gp.likelihood_gradient,
                                hyps_mask=self.gp.hyps_mask)
         self.train_count += 1
+

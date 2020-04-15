@@ -74,8 +74,7 @@ def predict_on_atom_en(param: Tuple[Structure, int, GaussianProcess]) -> (
 
 def predict_on_structure(structure: Structure, gp: GaussianProcess,
                          n_cpus: int=None, write_to_structure: bool = True) \
-        -> (
-        'np.ndarray', 'np.ndarray'):
+        -> ('np.ndarray', 'np.ndarray'):
     """
     Return the forces/std. dev. uncertainty associated with each
     individual atom in a structure. Forces are stored directly to the
