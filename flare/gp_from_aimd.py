@@ -277,7 +277,8 @@ class TrajectoryTrainer:
             self.update_gp_and_print(frame, train_atoms, train=False)
 
         if self.verbose >= 3 and atom_count > 0:
-            self.output.write_to_log(f"Added {atom_count} atoms to pretrain",
+            self.output.write_to_log(f"Added {atom_count} atoms to pretrain\n"\
+                                     f"In total {len(self.gp.training_data)} atoms",
                                      flush=True)
 
         if (self.seed_envs or atom_count or self.seed_frames) and \
