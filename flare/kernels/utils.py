@@ -96,8 +96,31 @@ def from_mask_to_args(hyps, hyps_mask: dict, cutoffs):
     # setting for mc_sephyps
     n2b = hyps_mask.get('nbond', 0)
     n3b = hyps_mask.get('ntriplet', 0)
-    triplet_mask = hyps_mask.get('triplet_mask', None)
-    bond_mask = hyps_mask.get('bond_mask', None)
+    nmb = hyps_mask.get('nmb', 0)
+
+    triplet_mask = np.array(hyps_mask.get('triplet_mask', None))
+    bond_mask = np.array(hyps_mask.get('bond_mask', None))
+    mb_mask = np.array(hyps_mask.get('mb_mask', None))
+
+    cutoff_2b = np.array(hyps_mask.get('cutoff_2b', None))
+    cutoff_3b = np.array(hyps_mask.get('cutoff_3b', None))
+    cutoff_mb = np.array(hyps_mask.get('cutoff_mb', None))
+
+    if cutoff_2b is None and n2b > 0:
+        cutoff_2b = np.ones(n2b)*cutoffs[0]
+    elif n2b==0:
+        cutoff_2b = None
+
+    if cutoff_3b is None and n3b > 0:
+        cutoff_3b = np.ones(n3b)*cutoffs[0]
+    elif n3b == 0:
+        cutoff_3b = 0
+
+    if cutoff_mb is None and nmb > 0:
+        cutoff_mb = np.ones(nmb)*cutoffs[0]
+    elif nmb == 0 :
+        cutoff_mb = None
+
     sig2 = None
     ls2 = None
     sig3 = None
@@ -105,7 +128,8 @@ def from_mask_to_args(hyps, hyps_mask: dict, cutoffs):
     sigm = None
     lsm = None
 
-    if ('map' in hyps_mask.keys()):
+
+    if ('map' in hyps_mask):
         orig_hyps = hyps_mask['original']
         hm = hyps_mask['map']
         for i, h in enumerate(hyps):
@@ -115,32 +139,40 @@ def from_mask_to_args(hyps, hyps_mask: dict, cutoffs):
 
     if (len(cutoffs)<=2):
         if (n2b != 0):
-            sig2 = orig_hyps[:n2b]
-            ls2 = orig_hyps[n2b:n2b * 2]
+            sig2 = np.array(orig_hyps[:n2b])
+            ls2 = np.array(orig_hyps[n2b:n2b * 2])
         if (n3b !=0):
-            sig3 = orig_hyps[n2b * 2:n2b * 2 + n3b]
-            ls3 = orig_hyps[n2b * 2 + n3b:n2b * 2 + n3b * 2]
+            sig3 = np.array(orig_hyps[n2b * 2:n2b * 2 + n3b])
+            ls3 = np.array(orig_hyps[n2b * 2 + n3b:n2b * 2 + n3b * 2])
         if (n2b == 0) and (n3b == 0):
             raise NameError("Hyperparameter mask missing nbond and/or"
                             "ntriplet key")
-
-        return (np.array(cutoffs), hyps_mask['nspec'], np.array(hyps_mask['spec_mask']),
-                n2b, np.array(bond_mask), n3b, np.array(triplet_mask),
-                np.array(sig2), np.array(ls2), np.array(sig3), np.array(ls3))
+        return (cutoffs_2b, cutoffs_3b,
+                hyps_mask['nspec'], np.array(hyps_mask['spec_mask']),
+                n2b, bond_mask, n3b, triplet_mask,
+                sig2, ls2, sig3, ls3)
 
     elif (len(cutoffs)==3):
-        if (n2b != 0):
-            sig2 = orig_hyps[:n2b]
-            ls2 = orig_hyps[n2b:n2b * 2]
-        if (n3b !=0):
-            sig3 = orig_hyps[n2b * 2:n2b * 2 + n3b]
-            ls3 = orig_hyps[n2b * 2 + n3b:n2b * 2 + n3b * 2]
-        sigm = orig_hyps[n2b*2+n3b*2]
-        lsm = orig_hyps[n2b*2+n3b*2+1]
 
-        return (np.array(cutoffs), hyps_mask['nspec'], np.array(hyps_mask['spec_mask']),
-                n2b, np.array(bond_mask), n3b, np.array(triplet_mask),
-                np.array(sig2), np.array(ls2), np.array(sig3), np.array(ls3), sigm, lsm)
+        if (n2b != 0):
+            sig2 = np.array(orig_hyps[:n2b])
+            ls2 = np.array(orig_hyps[n2b:n2b * 2])
+        if (n3b !=0):
+            start = n2b*2
+            sig3 = np.array(orig_hyps[start:start + n3b])
+            ls3 = np.array(orig_hyps[start + n3b:start + n3b * 2])
+        if (nmb !=0):
+            start = n2b*2 + n3b*2
+            sigm = np.array(orig_hyps[start: start+nmb])
+            lsm = np.array(orig_hyps[start+nmb: start+nmb*2])
+
+        return (cutoffs_2b, cutoffs_3b, cutoffs_mb,
+                hyps_mask['nspc'],
+                np.array(hyps_mask['spec_mask']),
+                n2b, bond_mask,
+                n3b, triplet_mask,
+                nmb, mb_mask,
+                sig2, ls2, sig3, ls3, sigm, lsm)
     else:
         raise RuntimeError("only support up to 3 cutoffs")
 
@@ -162,7 +194,7 @@ def from_grad_to_mask(grad, hyps_mask):
 
     # setting for mc_sephyps
     # no constrained optimization
-    if 'map' not in hyps_mask.keys():
+    if 'map' not in hyps_mask:
         return grad
 
     # setting for mc_sephyps
