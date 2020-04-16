@@ -53,21 +53,23 @@ class AtomicEnvironment:
         if (self.cutoffs_mask is None):
             return
 
-        if ('cutoff_2b' in self.cutoffs_mask):
-            self.nspec = 0
-            self.n2b = self.cutoffs_mask['nbond']
-            self.bond_mask = self.cutoffs_mask['bond_mask']
-            sellf.cutoff_2b = self.cutoffs_mask['cutoff_2b']
+        if ('nspec' in self.cutoffs_mask):
+            self.nspec = self.cutoffs_mask['nspec']
+            self.spec_mask = self.cutoffs_mask['spec_mask']
+            if ('cutoff_2b' in self.cutoffs_mask):
+                self.n2b = self.cutoffs_mask['nbond']
+                self.bond_mask = self.cutoffs_mask['bond_mask']
+                self.cutoff_2b = self.cutoffs_mask['cutoff_2b']
 
-        if ('cutoff_3b' in self.cutoffs_mask):
-            self.n3b = self.cutoffs_mask['ntriplet']
-            self.triplet_mask = self.cutoffs_mask['triplet_mask']
-            sellf.cutoff_3b = self.cutoffs_mask['cutoff_3b']
+            if ('cutoff_3b' in self.cutoffs_mask):
+                self.n3b = self.cutoffs_mask['ntriplet']
+                self.triplet_mask = self.cutoffs_mask['triplet_mask']
+                self.cutoff_3b = self.cutoffs_mask['cutoff_3b']
 
-        if ('cutoff_mb' in self.cutoffs_mask):
-            self.nmb = self.cutoffs_mask['ntriplet']
-            self.mb_mask = self.cutoffs_mask['mb_mask']
-            sellf.cutoff_mb = self.cutoffs_mask['cutoff_mb']
+            if ('cutoff_mb' in self.cutoffs_mask):
+                self.nmb = self.cutoffs_mask['nmb']
+                self.mb_mask = self.cutoffs_mask['mb_mask']
+                self.cutoff_mb = self.cutoffs_mask['cutoff_mb']
 
     def compute_env(self):
 
@@ -76,7 +78,7 @@ class AtomicEnvironment:
             bond_array_2, bond_positions_2, etypes = \
                 get_2_body_arrays_sepcut(self.positions, self.atom, self.cell,
                                   self.cutoff_2b, self.species,
-                                  self.nsepc, self.sepc_mask, self.bond_mask)
+                                  self.nspec, self.spec_mask, self.bond_mask)
         else:
             bond_array_2, bond_positions_2, etypes = \
                 get_2_body_arrays(self.positions, self.atom, self.cell,
@@ -90,7 +92,8 @@ class AtomicEnvironment:
             if (self.n3b>0):
                 bond_array_3, cross_bond_inds, cross_bond_dists, triplet_counts = \
                     get_3_body_arrays_sepcut(bond_array_2, bond_positions_2,
-                            self.species[self.atom], etypes, self.cutoff_3b)
+                            self.species[self.atom], etypes, self.cutoff_3b,
+                            self.nspec, self.spec_mask, self.triplet_mask)
             else:
                 bond_array_3, cross_bond_inds, cross_bond_dists, triplet_counts = \
                     get_3_body_arrays(bond_array_2, bond_positions_2, self.cutoffs[1])
@@ -105,7 +108,7 @@ class AtomicEnvironment:
             if (self.nmb > 0):
                 self.bond_array_mb, self.neigh_dists_mb, self.num_neighs_mb, self.etype_mb = get_m_body_arrays(
                     self.positions, self.atom, self.cell, self.cutoff_mb, self.species,
-                    self.nspec, sellf.spec_mask, self.mb_mask)
+                    self.nspec, self.spec_mask, self.mb_mask)
             else:
                 self.bond_array_mb, self.neigh_dists_mb, self.num_neighs_mb, self.etype_mb = get_m_body_arrays(
                     self.positions, self.atom, self.cell, self.cutoffs[2], self.species)
@@ -488,9 +491,9 @@ def get_m_body_arrays(positions, atom: int, cell, cutoff_mb: float, species):
 
     return bond_array_mb, neigh_dists_mb, num_neighs_mb, etypes_mb_array
 
-@njit
+# @njit
 def get_2_body_arrays_sepcut(positions, atom: int, cell, cutoff_2, species,
-                             nspec, spec_mask, n2b, bond_mask):
+                             nspec, spec_mask, bond_mask):
     """Returns distances, coordinates, and species of atoms in the 2-body
     local environment. This method is implemented outside the AtomicEnvironment
     class to allow for njit acceleration with Numba.
@@ -588,7 +591,7 @@ def get_2_body_arrays_sepcut(positions, atom: int, cell, cutoff_2, species,
     return bond_array_2, bond_positions_2, etypes
 
 
-@njit
+# @njit
 def get_2_body_arrays_ind_sepcut(positions, atom: int, cell, cutoff_2, species,
         nspec, spec_mask, bond_mask):
     """Returns distances, coordinates, species of atoms, and indexes of neighbors
@@ -688,7 +691,7 @@ def get_2_body_arrays_ind_sepcut(positions, atom: int, cell, cutoff_2, species,
     return bond_array_2, bond_positions_2, etypes, bond_indexes
 
 
-@njit
+# @njit
 def get_3_body_arrays_sepcut(bond_array_2, bond_positions_2, ctype,
         etypes, cutoff_3,
         nspec, spec_mask, triplet_mask):
@@ -726,13 +729,15 @@ def get_3_body_arrays_sepcut(bond_array_2, bond_positions_2, ctype,
     """
 
     bc = spec_mask[ctype]
-    bcn = nspec * nsepc * bc
+    bcn = nspec * nspec * bc
+
+    cut3 = np.max(cutoff_3)
 
     # get 3-body bond array
     ind_3 = -1
     noa = bond_array_2.shape[0]
     for count, dist in enumerate(bond_array_2[:, 0]):
-        if dist > cutoff_3:
+        if dist > cut3:
             ind_3 = count
             break
     if ind_3 == -1:
@@ -772,7 +777,7 @@ def get_3_body_arrays_sepcut(bond_array_2, bond_positions_2, ctype,
     return bond_array_3, cross_bond_inds, cross_bond_dists, triplet_counts
 
 
-@njit
+# @njit
 def get_m_body_arrays_sepcut(positions, atom: int, cell, cutoff_mb, species,
         nspec, spec_mask, mb_mask):
     """Returns distances, and species of atoms in the many-body
