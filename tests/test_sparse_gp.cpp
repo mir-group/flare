@@ -69,9 +69,8 @@ class SparseTest : public ::testing::Test{
             descriptor_index);
 
         kernels = 
-            std::vector<Kernel *> {&two_body_kernel, &three_body_kernel,
-                &many_body_kernel};
-    
+            std::vector<Kernel *> {&many_body_kernel};
+
         // kernels = 
         //     std::vector<Kernel *> {&two_body_kernel, &three_body_kernel};
     }
@@ -125,7 +124,6 @@ TEST_F(SparseTest, UpdateK){
 }
 
 TEST_F(SparseTest, Predict){
-    // Eigen::initParallel();
 
     double sigma_e = 0.1;
     double sigma_f = 0.01;
@@ -141,18 +139,21 @@ TEST_F(SparseTest, Predict){
 
     sparse_gp.add_training_structure(test_struc);
     sparse_gp.update_alpha();
-    Eigen::VectorXd pred_vals;
+    Eigen::VectorXd pred_vals, pred_env;
 
-    // predict in parallel
-    auto t1 = std::chrono::high_resolution_clock::now();
-    for (int i = 0; i < 1000; i ++){
-        pred_vals = sparse_gp.predict(test_struc);
-    }
-    auto t2 = std::chrono::high_resolution_clock::now();
-    auto tot_time = 
-        std::chrono::duration_cast<std::chrono::microseconds>(t2-t1).count();
-    std::cout << tot_time << std::endl;
+    // Predict on structure.
+    pred_vals = sparse_gp.predict(test_struc);
+
+    // Predict on local environment
+    env1.compute_descriptors_and_gradients();
+    env1.compute_neighbor_descriptors();
+    pred_env = sparse_gp.predict_force(env1);
+
+    // Check that the prediction methods agree.
+    EXPECT_EQ(pred_vals(1), pred_env(0));
+
 }
+
 
 // TEST_F(SparseTest, ThreeBodyGrid){
 //     double sigma_e = 0.1;
