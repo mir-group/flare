@@ -72,7 +72,7 @@ class AtomicEnvironment:
     def compute_env(self):
 
         # get 2-body arrays
-        if (n2b>0):
+        if (self.n2b>0):
             bond_array_2, bond_positions_2, etypes = \
                 get_2_body_arrays_sepcut(self.positions, self.atom, self.cell,
                                   self.cutoff_2b, self.species,
@@ -87,7 +87,7 @@ class AtomicEnvironment:
 
         # if 2 cutoffs are given, create 3-body arrays
         if len(self.cutoffs) > 1:
-            if (n3b>0):
+            if (self.n3b>0):
                 bond_array_3, cross_bond_inds, cross_bond_dists, triplet_counts = \
                     get_3_body_arrays_sepcut(bond_array_2, bond_positions_2,
                             self.species[self.atom], etypes, self.cutoff_3b)

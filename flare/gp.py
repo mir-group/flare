@@ -272,7 +272,7 @@ class GaussianProcess:
         update_indices = custom_range or list(range(noa))
 
         for atom in update_indices:
-            env_curr = AtomicEnvironment(struc, atom, self.cutoffs)
+            env_curr = AtomicEnvironment(struc, atom, self.cutoffs, self.hyps_mask)
             forces_curr = np.array(forces[atom])
 
             self.training_data.append(env_curr)
@@ -709,7 +709,7 @@ class GaussianProcess:
 
     def adjust_cutoffs(self, new_cutoffs: Union[list, tuple, 'np.ndarray'],
                        reset_L_alpha = True,
-                       train = True):
+                       train = True, new_hyps_mask = None):
         """
         Loop through atomic environment objects stored in the training data,
         and re-compute cutoffs for each. Useful if you want to gauge the
@@ -722,9 +722,14 @@ class GaussianProcess:
         :return:
         """
 
+        if (new_hyps_mask is not None):
+            hm = new_hyps_mask
+        ellse:
+            hm = self.hyps_mask
+
         old_structures = [env.structure for env in self.training_data]
         old_atoms = [env.atom for env in self.training_data]
-        new_environments = [AtomicEnvironment(struc, atom, new_cutoffs) for
+        new_environments = [AtomicEnvironment(struc, atom, new_cutoffs, hm) for
                             struc, atom in zip(old_structures, old_atoms)]
 
         self.training_data = new_environments

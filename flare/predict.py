@@ -29,7 +29,7 @@ def predict_on_atom(param: Tuple[Structure, int, GaussianProcess]) -> (
     # Unpack the input tuple, convert a chemical environment
     structure, atom, gp = param
     # Obtain the associated chemical environment
-    chemenv = AtomicEnvironment(structure, atom, gp.cutoffs)
+    chemenv = AtomicEnvironment(structure, atom, gp.cutoffs, gp.hyps_mask)
     components = []
     stds = []
     # predict force components and standard deviations
@@ -58,7 +58,7 @@ def predict_on_atom_en(param: Tuple[Structure, int, GaussianProcess]) -> (
     # Unpack the input tuple, convert a chemical environment
     structure, atom, gp = param
     # Obtain the associated chemical environment
-    chemenv = AtomicEnvironment(structure, atom, gp.cutoffs)
+    chemenv = AtomicEnvironment(structure, atom, gp.cutoffs, gp.hyps_mask)
     comps = []
     stds = []
     # predict force components and standard deviations
@@ -94,7 +94,7 @@ def predict_on_structure(structure: Structure, gp: GaussianProcess,
     stds = np.zeros(shape=(structure.nat,3))
 
     for n in range(structure.nat):
-        chemenv = AtomicEnvironment(structure, n, gp.cutoffs)
+        chemenv = AtomicEnvironment(structure, n, gp.cutoffs, gp.hyps_mask)
         for i in range(3):
             force, var = gp.predict(chemenv, i + 1)
             forces[n][i] = float(force)
@@ -178,7 +178,7 @@ def predict_on_structure_en(structure: Structure, gp: GaussianProcess,
     # Loop through atoms in structure and predict forces, uncertainties,
     # and energies
     for n in range(structure.nat):
-        chemenv = AtomicEnvironment(structure, n, gp.cutoffs)
+        chemenv = AtomicEnvironment(structure, n, gp.cutoffs, gp.hyps_mask)
         for i in range(3):
             force, var = gp.predict(chemenv, i + 1)
             structure.forces[n][i] = float(force)
