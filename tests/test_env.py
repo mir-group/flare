@@ -3,8 +3,9 @@ import numpy as np
 from flare.struc import Structure
 from flare.env import AtomicEnvironment
 
-cutoff_list=[np.array([1]), np.array([1, 0.8]), np.array([1, 0.8, 0.4])]
+cutoff_list = [np.array([1]), np.array([1, 0.8]), np.array([1, 0.8, 0.4])]
 mask_list = [True, False]
+
 
 @pytest.mark.parametrize('cutoff', cutoff_list)
 @pytest.mark.parametrize('mask', mask_list)
@@ -23,7 +24,7 @@ def test_species_count(cutoff, mask):
 
     env_test = AtomicEnvironment(structure=struc_test,
                                  atom=0,
-                                 cutoffs=np.array([1, 1]),
+                                 cutoffs=cutoff,
                                  cutoffs_mask=mask)
     assert (len(struc_test.positions) == len(struc_test.coded_species))
     assert (len(env_test.bond_array_2) == len(env_test.etypes))
@@ -44,7 +45,7 @@ def test_env_methods(cutoff, mask):
     else:
         mask = None
 
-    env_test = AtomicEnvironment(struc_test, 0, np.array([1, 1]), mask)
+    env_test = AtomicEnvironment(struc_test, 0, cutoff, mask)
 
     assert str(env_test) == 'Atomic Env. of Type 1 surrounded by 12 atoms' \
                             ' of Types [2, 3]'
@@ -58,36 +59,15 @@ def test_env_methods(cutoff, mask):
     assert isinstance(remade_env, AtomicEnvironment)
 
     assert np.array_equal(remade_env.bond_array_2, env_test.bond_array_2)
-    assert np.array_equal(remade_env.bond_array_3, env_test.bond_array_3)
-    assert np.array_equal(remade_env.bond_array_mb, env_test.bond_array_mb)
+    if (len(cutoff)>1):
+        assert np.array_equal(remade_env.bond_array_3, env_test.bond_array_3)
+    if (len(cutoff)>2):
+        assert np.array_equal(remade_env.bond_array_mb, env_test.bond_array_mb)
 
-@pytest.mark.parametrize('cutoff', cutoff_list)
-def test_env_methods(cutoff):
-    cell = np.eye(3)
-    species = [1, 2, 3, 1]
-    positions = np.array([[0, 0, 0], [0.5, 0.5, 0.5],
-                          [0.1, 0.1, 0.1], [1, 1, 1]])
-    positions = np.array([[0, 0, 0], [0.5, 0.5, 0.5], [0.1, 0.1, 0.1]])
-    struc_test = Structure(cell, species, positions)
-    env_test = AtomicEnvironment(struc_test, 0, np.array([1, 1]))
-    assert str(env_test) == 'Atomic Env. of Type 1 surrounded by 12 atoms' \
-                            ' of Types [2, 3]'
-
-    the_dict = env_test.as_dict()
-    assert isinstance(the_dict, dict)
-    for key in ['positions', 'cell', 'atom', 'cutoffs', 'species']:
-        assert key in the_dict.keys()
-
-    remade_env = AtomicEnvironment.from_dict(the_dict)
-    assert isinstance(remade_env, AtomicEnvironment)
-
-    assert np.array_equal(remade_env.bond_array_2, env_test.bond_array_2)
-    assert np.array_equal(remade_env.bond_array_3, env_test.bond_array_3)
-    assert np.array_equal(remade_env.bond_array_mb, env_test.bond_array_mb)
 
 def generate_mask(cutoff):
     ncutoff = len(cutoff)
-    mask = {'nspec': 2, 'spec_mask':np.zeros(118, dtype=int)}
+    mask = {'nspec': 2, 'spec_mask': np.zeros(118, dtype=int)}
     mask['spec_mask'][2] = 1
     if (ncutoff == 1):
         mask['cutoff_2b'] = np.ones(2)*cutoff[0]
