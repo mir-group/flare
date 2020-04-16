@@ -591,14 +591,14 @@ def test_masked_hyperparameter_function():
     # -----------------------
     hyps_mask = {'nbond': 1, 'nspec':1, 'spec_mask':np.zeros(118)}
     hyps = [1,2,5]
-    c, ns, sm, n2b, bm, n3b, tm, sig2, ls2, sig3, ls3 \
+    c2, c3, ns, sm, n2b, bm, n3b, tm, sig2, ls2, sig3, ls3 \
             = from_mask_to_args(hyps, hyps_mask, cutoffs)
     assert (np.equal(sig2, [1]).all())
     assert (np.equal(ls2, [2]).all())
 
     hyps = [3,4,5]
     hyps_mask = {'ntriplet': 1, 'nspec':1, 'spec_mask':np.zeros(118)}
-    c, ns, sm, n2b, bm, n3b, tm, sig2, ls2, sig3, ls3 \
+    c2, c3, ns, sm, n2b, bm, n3b, tm, sig2, ls2, sig3, ls3 \
             = from_mask_to_args(hyps, hyps_mask, cutoffs)
     assert (np.equal(sig3, [3]).all())
     assert (np.equal(ls3, [4]).all())
@@ -606,7 +606,7 @@ def test_masked_hyperparameter_function():
     hyps = [1, 2, 3, 4, 5]
     hyps_mask = {'nbond': 1, 'ntriplet':1,
             'nspec':1, 'spec_mask':np.zeros(118)}
-    c, ns, sm, n2b, bm, n3b, tm, sig2, ls2, sig3, ls3 \
+    c2, c3, ns, sm, n2b, bm, n3b, tm, sig2, ls2, sig3, ls3 \
             = from_mask_to_args(hyps, hyps_mask, cutoffs)
     assert (np.equal(sig2, [1]).all())
     assert (np.equal(ls2, [2]).all())
@@ -616,7 +616,7 @@ def test_masked_hyperparameter_function():
     hyps = [1, 2, 3, 4, 5]
     hyps_mask['map']=[0, 1, 2, 3, 4]
     hyps_mask['original'] = [1, 2, 3, 4, 5, 6]
-    c, ns, sm, n2b, bm, n3b, tm, sig2, ls2, sig3, ls3 \
+    c2, c3, ns, sm, n2b, bm, n3b, tm, sig2, ls2, sig3, ls3 \
             = from_mask_to_args(hyps, hyps_mask, cutoffs)
     assert (np.equal(sig2, [1]).all())
     assert (np.equal(ls2, [2]).all())
@@ -631,7 +631,7 @@ def test_masked_hyperparameter_function():
     hyps = [1.1,1.2, 2.1, 2.2, 3.1, 3.2, 4.1, 4.2, 5]
     hyps_mask = {'nbond': 2, 'ntriplet': 2,
                  'nspec':1, 'spec_mask':np.zeros(118)}
-    c, ns, sm, n2b, bm, n3b, tm, sig2, ls2, sig3, ls3 \
+    c2, c3, ns, sm, n2b, bm, n3b, tm, sig2, ls2, sig3, ls3 \
             = from_mask_to_args(hyps, hyps_mask, cutoffs)
     assert (np.equal(sig2, [1.1, 1.2]).all())
     assert (np.equal(ls2, [2.1, 2.2]).all())

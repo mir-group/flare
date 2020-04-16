@@ -103,27 +103,29 @@ def from_mask_to_args(hyps, hyps_mask: dict, cutoffs):
     mb_mask = np.array(hyps_mask.get('mb_mask', None))
 
     ncutoff = len(cutoffs)
+
     if (ncutoff>0):
+        cutoff_2b = np.array([cutoffs[0]])
         if ('cutoff_2b' in hyps_mask):
             cutoff_2b = np.array(hyps_mask['cutoff_2b'])
         elif ('cutoff_2b' not in hyps_mask and n2b>0):
             cutoff_2b = np.ones(n2b)*cutoffs[0]
-        else:
-            cutoff_2b = np.array([cutoffs[0]])
 
     cutoff_3b = None
     if (ncutoff>1):
+        cutoff_3b = np.array([cutoffs[1]])
         if ('cutoff_3b' in hyps_mask):
             cutoff_3b = np.array(hyps_mask['cutoff_3b'])
-        elif ('cutoff_3b' not in hyps_mask and n3b>0):
-            cutoff_3b = np.array([cutoffs[1]])
 
     cutoff_mb = None
     if (ncutoff>2):
-        if ('cutoff_mb' not in hyps_mask and nmb>0):
-            cutoff_3b = np.array([cutoffs[2]])
-        elif ('cutoff_mb' in hyps_mask):
+        cutoff_mb = np.array([cutoffs[2]])
+        if ('cutoff_mb' in hyps_mask):
             cutoff_mb = np.array(hyps_mask['cutoff_mb'])
+        if (nmb ==0):
+            nmb = 1
+            nspec = hyps_mask['nspec']
+            mb_mask = np.zeros(nspec*nspec)
 
     sig2 = None
     ls2 = None
@@ -171,7 +173,7 @@ def from_mask_to_args(hyps, hyps_mask: dict, cutoffs):
             lsm = np.array(orig_hyps[start+nmb: start+nmb*2])
 
         return (cutoff_2b, cutoff_3b, cutoff_mb,
-                hyps_mask['nspc'],
+                hyps_mask['nspec'],
                 np.array(hyps_mask['spec_mask']),
                 n2b, bond_mask,
                 n3b, triplet_mask,
