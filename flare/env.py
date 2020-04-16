@@ -744,14 +744,11 @@ def get_3_body_arrays_sepcut(bond_array_2, bond_positions_2, ctype,
     cut3 = np.max(cutoff_3)
 
     # get 3-body bond array
-    ind_3 = -1
-    noa = bond_array_2.shape[0]
-    for count, dist in enumerate(bond_array_2[:, 0]):
-        if dist > cut3:
-            ind_3 = count
-            break
-    if ind_3 == -1:
-        ind_3 = noa
+    ind_3 = np.where(bond_array_2[:, 0]>cut3)[0]
+    if (len(ind_3)>0):
+        ind_3 = ind_3[0]
+    else:
+        ind_3 = bond_array_2.shape[0]
 
     bond_array_3 = bond_array_2[0:ind_3, :]
     bond_positions_3 = bond_positions_2[0:ind_3, :]
@@ -776,7 +773,13 @@ def get_3_body_arrays_sepcut(bond_array_2, bond_positions_2, ctype,
             dist_curr = sqrt(
                 diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2])
 
-            if dist_curr < cutoff_3[btype]:
+            cut3 = cutoff_3[btype]
+
+            print(btype, ctype, etypes[m], etypes[n], np.min([bond_array_2[m, 0], bond_array_2[n, 0], dist_curr]))
+
+            if dist_curr < cut3 \
+                and bond_array_2[m, 0] < cut3 \
+                and bond_array_2[n, 0] < cut3 :
                 cross_bond_inds[m, count] = n
                 cross_bond_dists[m, count] = dist_curr
                 count += 1

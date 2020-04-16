@@ -3,52 +3,57 @@ import numpy as np
 from flare.struc import Structure
 from flare.env import AtomicEnvironment
 
-cutoff_list = [np.array([1]), np.array([1, 0.8]), np.array([1, 0.8, 0.4])]
-mask_list = [True, False]
+# cutoff_list = [np.array([1]), np.array([1, 0.8]), np.array([1, 0.8, 0.4])]
+# mask_list = [True, False]
+
+cutoff_list = [np.array([1, 0.05]), np.array([1, 0.9]), np.array([1, 0.8, 0.4])]
+mask_list = [True]
+
+@pytest.fixture(scope='module')
+def structure() -> Structure:
+    """Returns a GP instance with a two-body numba-based kernel"""
+    cell = np.eye(3)
+    species = [1, 2, 3, 1]
+    positions = np.array([[0, 0, 0], [0.5, 0.5, 0.5],
+                          [0.1, 0.1, 0.1], [0.75, 0.75, 0.75]])
+    struc_test = Structure(cell, species, positions)
+
+    yield struc_test
+    del struc_test
 
 
 @pytest.mark.parametrize('cutoff', cutoff_list)
 @pytest.mark.parametrize('mask', mask_list)
-def test_species_count(cutoff, mask):
-
-    cell = np.eye(3)
-    species = [1, 2, 3, 1]
-    positions = np.array([[0, 0, 0], [0.5, 0.5, 0.5],
-                          [0.1, 0.1, 0.1], [1, 1, 1]])
-    struc_test = Structure(cell, species, positions)
+def test_species_count(structure, cutoff, mask):
 
     if (mask is True):
         mask = generate_mask(cutoff)
     else:
         mask = None
 
-    env_test = AtomicEnvironment(structure=struc_test,
+    env_test = AtomicEnvironment(structure=structure,
                                  atom=0,
                                  cutoffs=cutoff,
                                  cutoffs_mask=mask)
-    assert (len(struc_test.positions) == len(struc_test.coded_species))
+    assert (len(structure.positions) == len(structure.coded_species))
     assert (len(env_test.bond_array_2) == len(env_test.etypes))
     assert (isinstance(env_test.etypes[0], np.int8))
 
 
 @pytest.mark.parametrize('cutoff', cutoff_list)
 @pytest.mark.parametrize('mask', mask_list)
-def test_env_methods(cutoff, mask):
-    cell = np.eye(3)
-    species = [1, 2, 3, 1]
-    positions = np.array([[0, 0, 0], [0.5, 0.5, 0.5],
-                          [0.1, 0.1, 0.1], [1, 1, 1]])
-    struc_test = Structure(cell, species, positions)
+def test_env_methods(structure, cutoff, mask):
 
     if (mask is True):
         mask = generate_mask(cutoff)
     else:
         mask = None
 
-    env_test = AtomicEnvironment(struc_test, 0, cutoff, mask)
+    env_test = AtomicEnvironment(structure, 0, cutoff, mask)
 
-    assert str(env_test) == 'Atomic Env. of Type 1 surrounded by 12 atoms' \
-                            ' of Types [2, 3]'
+    print(str(env_test))
+    assert str(env_test) == 'Atomic Env. of Type 1 surrounded by 16 atoms' \
+                            ' of Types [1, 2, 3]'
 
     the_dict = env_test.as_dict()
     assert isinstance(the_dict, dict)
@@ -67,18 +72,38 @@ def test_env_methods(cutoff, mask):
 
 def generate_mask(cutoff):
     ncutoff = len(cutoff)
-    mask = {'nspec': 2, 'spec_mask': np.zeros(118, dtype=int)}
-    mask['spec_mask'][2] = 1
     if (ncutoff == 1):
+        mask = {'nspec': 2, 'spec_mask': np.ones(118, dtype=int)}
+        mask['spec_mask'][1] = 0
         mask['cutoff_2b'] = np.ones(2)*cutoff[0]
         mask['nbond'] = 2
         mask['bond_mask'] = np.ones(4, dtype=int)
         mask['bond_mask'][0] = 1
     elif (ncutoff == 2):
-        mask['cutoff_3b'] = np.ones(2)*cutoff[1]
-        mask['ntriplet'] = 2
-        mask['triplet_mask'] = np.ones(4, dtype=int)
-        mask['triplet_mask'][0] = 1
+        nspec = 3
+        ntriplet = 3
+        mask = {'nspec': nspec, 'spec_mask': np.zeros(118, dtype=int)}
+        mask['spec_mask'][1] = 0
+        mask['spec_mask'][2] = 1
+        mask['spec_mask'][3] = 2
+        spec_mask = mask['spec_mask']
+        mask['cutoff_3b'] = np.array([0.2, 0.5, 0.9])
+        mask['ntriplet'] = ntriplet
+        tmask = np.zeros(nspec**3, dtype=int)+ntriplet-1
+        groups = [ [[1, 1, 3], [1, 3, 2]],
+                   [[1, 1, 1], [1, 1, 2]]]
+        for ttype in range(ntriplet-1):
+            for triplet in groups[ttype]:
+                t1 = spec_mask[triplet[0]]
+                t2 = spec_mask[triplet[1]]
+                t3 = spec_mask[triplet[2]]
+                tmask[t1*nspec**2+t2*nspec+t3] = ttype
+                tmask[t1*nspec**2+t3*nspec+t2] = ttype
+                tmask[t2*nspec**2+t1*nspec+t3] = ttype
+                tmask[t2*nspec**2+t3*nspec+t1] = ttype
+                tmask[t3*nspec**2+t1*nspec+t2] = ttype
+                tmask[t3*nspec**2+t2*nspec+t1] = ttype
+        mask['triplet_mask'] = tmask
     elif (ncutoff == 3):
         mask['cutoff_mb'] = np.ones(2)*cutoff[2]
         mask['nmb'] = 2
