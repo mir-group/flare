@@ -112,12 +112,12 @@ def from_mask_to_args(hyps, hyps_mask: dict, cutoffs):
         cutoff_2b = None
 
     if cutoff_3b is None and n3b > 0:
-        cutoff_3b = np.ones(n3b)*cutoffs[0]
+        cutoff_3b = np.array([cutoffs[0]])
     elif n3b == 0:
         cutoff_3b = 0
 
     if cutoff_mb is None and nmb > 0:
-        cutoff_mb = np.ones(nmb)*cutoffs[0]
+        cutoff_mb = np.array([cutoffs[0]])
     elif nmb == 0 :
         cutoff_mb = None
 
