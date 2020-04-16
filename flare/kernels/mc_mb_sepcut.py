@@ -474,17 +474,17 @@ def many_body_mc_grad_sepcut_jit(bond_array_1, bond_array_2, neigh_dists_1, neig
                 kern += kern_term_c1s
 
                 # s e1 and c2 s and c2==e1 --> c2 s
-                kern_term_c2s = qi1_grads[i] * q2j_grads[j] * ki2s[i] \
+                kern_term_c2s = qi1_grads[i] * q2j_grads[j] * ki2s[i]
                 sig_derv[mbtype2] += kern_term_c2s * 2. / t2sig
                 kern += kern_term_c2s
 
                 # c1 s and s e2 and  c1==e2 --> c1 s
-                kern_term_c1s = q1i_grads[i] * qj2_grads[j] * k1js[j] \
+                kern_term_c1s = q1i_grads[i] * qj2_grads[j] * k1js[j]
                 sig_derv[mbtype1] += kern_term_c1s * 2. / t1sig
                 kern += kern_term_c1s
 
                 # s e1 and s e2 and e1 == e2 -> s e
-                kern_term_se = qi1_grads[i] * qj2_grads[j] * kij \
+                kern_term_se = qi1_grads[i] * qj2_grads[j] * kij
                 sig_derv[mbtype] += kern_term_se * 2. / sig[mbtype]
                 kern += kern_term_se
 

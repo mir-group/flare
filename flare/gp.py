@@ -100,13 +100,13 @@ class GaussianProcess:
         self.n_sample = n_sample
         self.parallel = parallel
 
-        if 'nsample' in kwargs.keys():
+        if 'nsample' in kwargs:
             DeprecationWarning("nsample is being replaced with n_sample")
             self.n_sample =kwargs.get('nsample')
-        if 'par' in kwargs.keys():
+        if 'par' in kwargs:
             DeprecationWarning("par is being replaced with parallel")
             self.parallel = kwargs.get('par')
-        if 'no_cpus' in kwargs.keys():
+        if 'no_cpus' in kwargs:
             DeprecationWarning("no_cpus is being replaced with n_cpu")
             self.n_cpus = kwargs.get('no_cpus')
 
@@ -175,6 +175,10 @@ class GaussianProcess:
 
         assert (len(self.cutoffs)<=3)
 
+        if (len(self.cutoffs)>1):
+            assert self.cutoffs[0]>=self.cutoffs[1], \
+                    "2b cutoff has to be larger than 3b cutoffs"
+
         if self.multihyps is True and self.hyps_mask is None:
             raise ValueError("Warning! Multihyperparameter mode enabled,"
                              "but no configuration hyperparameter mask was "
@@ -186,9 +190,9 @@ class GaussianProcess:
         if isinstance(self.hyps_mask, dict) and self.multihyps is True:
             self.multihyps = True
 
-            assert 'nspec' in self.hyps_mask.keys(), "nspec key missing in " \
+            assert 'nspec' in self.hyps_mask, "nspec key missing in " \
                                                      "hyps_mask dictionary"
-            assert 'spec_mask' in self.hyps_mask.keys(), "spec_mask key " \
+            assert 'spec_mask' in self.hyps_mask, "spec_mask key " \
                                                          "missing " \
                                                          "in hyps_mask dicticnary"
 
@@ -196,31 +200,73 @@ class GaussianProcess:
 
             nspec = hyps_mask['nspec']
 
-            if 'nbond' in hyps_mask.keys():
+            if 'nbond' in hyps_mask:
                 n2b = self.hyps_mask['nbond']
                 if n2b > 0:
-                    assert (np.max(hyps_mask['bond_mask']) < n2b)
-                    assert len(hyps_mask['bond_mask']) == nspec ** 2, \
+                    bmask = hyps_mask['bond_mask']
+                    assert (np.max(bmask) < n2b)
+                    assert len(bmask) == nspec ** 2, \
                         f"wrong dimension of bond_mask: " \
-                        f" {len(hyps_mask['bond_mask']) != {nspec**2}}"
+                        f" {len(bmask)} != nspec^2 {nspec**2}"
+                    for t2b in range(nspec):
+                        for t2b_2 in range(t2b, nspec):
+                            assert bmask[t2b*nspec+t2b_2] == bmask[t2b_2*nspec+t2b], \
+                                    'bond_mask has to be symmetric'
             else:
                 n2b = 0
 
-            if 'ntriplet' in hyps_mask.keys():
+            if 'ntriplet' in hyps_mask:
                 n3b = self.hyps_mask['ntriplet']
                 if n3b > 0:
-                    assert (np.max(hyps_mask['triplet_mask']) < n3b)
-                    assert len(hyps_mask['triplet_mask']) == nspec ** 3, \
-                        f"wrong dimension of triplet_mask" \
-                        f"{len(hyps_mask['triplet_mask']) != {nspec**3}}"
+                    tmask = hyps_mask['triplet_mask']
+                    assert (np.max(tmask) < n3b)
+                    assert len(tmask) == nspec ** 3, \
+                        f"wrong dimension of bond_mask: " \
+                        f" {len(tmask)} != nspec^3 {nspec**3}"
+
+                    for t3b in range(nspec):
+                        for t3b_2 in range(t3b, nspec):
+                            for t3b_3 in range(t3b_2, nspec):
+                                assert tmask[t3b*nspec*nspec+t3b_2*nspec+t3b_3] \
+                                        == tmask[t3b*nspec*nspec+t3b_3*nspec+t3b_2], \
+                                        'bond_mask has to be symmetric'
+                                assert tmask[t3b*nspec*nspec+t3b_2*nspec+t3b_3] \
+                                        == tmask[t3b_2*nspec*nspec+t3b*nspec+t3b_3], \
+                                        'bond_mask has to be symmetric'
+                                assert tmask[t3b*nspec*nspec+t3b_2*nspec+t3b_3] \
+                                        == tmask[t3b_2*nspec*nspec+t3b_3*nspec+t3b], \
+                                        'bond_mask has to be symmetric'
+                                assert tmask[t3b*nspec*nspec+t3b_2*nspec+t3b_3] \
+                                        == tmask[t3b_3*nspec*nspec+t3b*nspec+t3b_2], \
+                                        'bond_mask has to be symmetric'
+                                assert tmask[t3b*nspec*nspec+t3b_2*nspec+t3b_3] \
+                                        == tmask[t3b_3*nspec*nspec+t3b_2*nspec+t3b], \
+                                        'bond_mask has to be symmetric'
             else:
                 n3b = 0
 
+            if 'nmb' in hyps_mask:
+                nmb = self.hyps_mask['nmb']
+                if nmb > 0:
+                    bmask = hyps_mask['mb_mask']
+                    assert (np.max(bmask) < nmb)
+                    assert len(bmask) == nspec ** 2, \
+                        f"wrong dimension of mb_mask: " \
+                        f" {len(bmask)} != nspec^2 {nspec**2}"
+                    for tmb in range(nspec):
+                        for tmb_2 in range(tmb, nspec):
+                            assert bmask[tmb*nspec+tmb_2] == bmask[tmb_2*nspec+tmb], \
+                                    'mb_mask has to be symmetric'
+            else:
+                nmb = 0
+
             if (len(self.cutoffs)<=2):
                 assert ((n2b + n3b) > 0)
+            else:
+                assert ((n2b + n3b + nmb) > 0)
 
-            if 'map' in hyps_mask.keys():
-                assert ('original' in hyps_mask.keys()), \
+            if 'map' in hyps_mask:
+                assert ('original' in hyps_mask), \
                     "original hyper parameters have to be defined"
                 # Ensure typed correctly as numpy array
                 self.hyps_mask['original'] = np.array(hyps_mask['original'])
@@ -229,7 +275,7 @@ class GaussianProcess:
                     assert (n2b * 2 + n3b * 2 + 1) == len(hyps_mask['original']), \
                         "the hyperparmeter length is inconsistent with the mask"
                 else:
-                    assert (n2b * 2 + n3b * 2 + 3) == len(hyps_mask['original']), \
+                    assert (n2b * 2 + n3b * 2 + nmb * 2 + 1) == len(hyps_mask['original']), \
                         "the hyperparmeter length is inconsistent with the mask"
                 assert len(hyps_mask['map']) == len(self.hyps), \
                     "the hyperparmeter length is inconsistent with the mask"
@@ -243,11 +289,32 @@ class GaussianProcess:
                     assert (n2b * 2 + n3b * 2 + 1) == len(self.hyps), \
                         "the hyperparmeter length is inconsistent with the mask"
                 else:
-                    assert (n2b * 2 + n3b * 2 + 3) == len(self.hyps), \
+                    assert (n2b * 2 + n3b * 2 + nmb*2 + 1) == len(self.hyps), \
                         "the hyperparmeter length is inconsistent with the mask"
 
-            if 'bounds' in hyps_mask.keys():
+            if 'bounds' in hyps_mask:
                 self.bounds = deepcopy(hyps_mask['bounds'])
+
+            if 'cutoff_2b' in hyps_mask:
+                c2b = hyps_mask['cutoff_2b']
+                assert self.cutoffs[0] > np.max(hyps_mask['cutoff_2b']), \
+                        'general cutoff should be larger than all cutoffs listed in hyps_mask'
+                assert len(c2b) == n2b, \
+                        f'number of 2b cutoff should be the same as n2b {n2b}'
+
+            if 'cutoff_3b' in hyps_mask:
+                c3b = hyps_mask['cutoff_3b']
+                assert self.cutoffs[0] > np.max(hyps_mask['cutoff_3b']), \
+                        'general cutoff should be larger than all cutoffs listed in hyps_mask'
+                assert len(c3b) == n3b, \
+                        f'number of 3b cutoff should be the same as n3b {n3b}'
+
+            if 'cutoff_mb' in hyps_mask:
+                cmb = hyps_mask['cutoff_mb']
+                assert self.cutoffs[0] > np.max(hyps_mask['cutoff_mb']), \
+                        'general cutoff should be larger than all cutoffs listed in hyps_mask'
+                assert len(cmb) == nmb, \
+                        f'number of mb cutoff should be the same as nmb {nmb}'
         else:
             self.multihyps = False
             self.hyps_mask = None
@@ -724,7 +791,7 @@ class GaussianProcess:
 
         if (new_hyps_mask is not None):
             hm = new_hyps_mask
-        ellse:
+        else:
             hm = self.hyps_mask
 
         old_structures = [env.structure for env in self.training_data]

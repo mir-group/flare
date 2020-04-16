@@ -102,24 +102,28 @@ def from_mask_to_args(hyps, hyps_mask: dict, cutoffs):
     bond_mask = np.array(hyps_mask.get('bond_mask', None))
     mb_mask = np.array(hyps_mask.get('mb_mask', None))
 
-    cutoff_2b = np.array(hyps_mask.get('cutoff_2b', None))
-    cutoff_3b = np.array(hyps_mask.get('cutoff_3b', None))
-    cutoff_mb = np.array(hyps_mask.get('cutoff_mb', None))
+    ncutoff = len(cutoffs)
+    if (ncutoff>0):
+        if ('cutoff_2b' in hyps_mask):
+            cutoff_2b = np.array(hyps_mask['cutoff_2b'])
+        elif ('cutoff_2b' not in hyps_mask and n2b>0):
+            cutoff_2b = np.ones(n2b)*cutoffs[0]
+        else:
+            cutoff_2b = np.array([cutoffs[0]])
 
-    if cutoff_2b is None and n2b > 0:
-        cutoff_2b = np.ones(n2b)*cutoffs[0]
-    elif n2b==0:
-        cutoff_2b = None
+    cutoff_3b = None
+    if (ncutoff>1):
+        if ('cutoff_3b' in hyps_mask):
+            cutoff_3b = np.array(hyps_mask['cutoff_3b'])
+        elif ('cutoff_3b' not in hyps_mask and n3b>0):
+            cutoff_3b = np.array([cutoffs[1]])
 
-    if cutoff_3b is None and n3b > 0:
-        cutoff_3b = np.array([cutoffs[0]])
-    elif n3b == 0:
-        cutoff_3b = 0
-
-    if cutoff_mb is None and nmb > 0:
-        cutoff_mb = np.array([cutoffs[0]])
-    elif nmb == 0 :
-        cutoff_mb = None
+    cutoff_mb = None
+    if (ncutoff>2):
+        if ('cutoff_mb' not in hyps_mask and nmb>0):
+            cutoff_3b = np.array([cutoffs[2]])
+        elif ('cutoff_mb' in hyps_mask):
+            cutoff_mb = np.array(hyps_mask['cutoff_mb'])
 
     sig2 = None
     ls2 = None
@@ -137,7 +141,7 @@ def from_mask_to_args(hyps, hyps_mask: dict, cutoffs):
     else:
         orig_hyps = hyps
 
-    if (len(cutoffs)<=2):
+    if (ncutoff<=2):
         if (n2b != 0):
             sig2 = np.array(orig_hyps[:n2b])
             ls2 = np.array(orig_hyps[n2b:n2b * 2])
@@ -147,12 +151,12 @@ def from_mask_to_args(hyps, hyps_mask: dict, cutoffs):
         if (n2b == 0) and (n3b == 0):
             raise NameError("Hyperparameter mask missing nbond and/or"
                             "ntriplet key")
-        return (cutoffs_2b, cutoffs_3b,
+        return (cutoff_2b, cutoff_3b,
                 hyps_mask['nspec'], np.array(hyps_mask['spec_mask']),
                 n2b, bond_mask, n3b, triplet_mask,
                 sig2, ls2, sig3, ls3)
 
-    elif (len(cutoffs)==3):
+    elif (ncutoff==3):
 
         if (n2b != 0):
             sig2 = np.array(orig_hyps[:n2b])
@@ -166,7 +170,7 @@ def from_mask_to_args(hyps, hyps_mask: dict, cutoffs):
             sigm = np.array(orig_hyps[start: start+nmb])
             lsm = np.array(orig_hyps[start+nmb: start+nmb*2])
 
-        return (cutoffs_2b, cutoffs_3b, cutoffs_mb,
+        return (cutoff_2b, cutoff_3b, cutoff_mb,
                 hyps_mask['nspc'],
                 np.array(hyps_mask['spec_mask']),
                 n2b, bond_mask,

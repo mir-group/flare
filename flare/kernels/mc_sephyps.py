@@ -109,7 +109,7 @@ def two_three_many_body_mc(env1, env2, d1, d2, cutoff_2b, cutoff_3b, cutoff_mb,
                       env2.neigh_dists_mb, env1.num_neighs_mb, env2.num_neighs_mb,
                       env1.ctype, env2.ctype, env1.etypes, env2.etypes,
                       env1.etype_mb, env2.etype_mb, env1.species, env2.species,
-                      d1, d2, sigm[0], lsm[0], cutoff_mb[0],, cutoff_func)
+                      d1, d2, sigm[0], lsm[0], cutoff_mb[0], cutoff_func)
     else:
         mbmcj = many_body_mc_sepcut_jit
         many_term = mbmcj(env1.bond_array_mb, env2.bond_array_mb, env1.neigh_dists_mb,
@@ -1098,7 +1098,7 @@ def two_body_mc_jit(bond_array_1, c1, etypes1, bond_array_2, c2, etypes2,
         tls2 = ls2[btype]
         tls3 = ls3[btype]
         tsig2 = sig2[btype]
-        tr_cut = rcut[btype]
+        tr_cut = r_cut[btype]
 
         fi, fdi = cutoff_func(tr_cut, ri, ci)
 
@@ -1123,7 +1123,7 @@ def two_body_mc_jit(bond_array_1, c1, etypes1, bond_array_2, c2, etypes2,
     return kern
 
 
-@njit
+# @njit
 def two_body_mc_grad_jit(bond_array_1, c1, etypes1,
                          bond_array_2, c2, etypes2,
                          d1, d2, sig, ls, r_cut, cutoff_func,
