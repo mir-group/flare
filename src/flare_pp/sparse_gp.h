@@ -48,6 +48,8 @@ class SparseGP{
 
         Eigen::VectorXd predict(StructureDescriptor test_structure);
 
+        Eigen::VectorXd predict_force(LocalEnvironment test_environment);
+
         void predict_DTC(StructureDescriptor test_structure,
             Eigen::VectorXd & mean_vector, Eigen::VectorXd & std_vector);
 

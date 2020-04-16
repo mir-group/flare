@@ -437,3 +437,19 @@ Eigen::VectorXd SparseGP::predict(StructureDescriptor test_structure){
 
     return kern_mat * alpha;
 }
+
+Eigen::VectorXd SparseGP::predict_force(LocalEnvironment test_environment){
+    int n_sparse = sparse_environments.size();
+    int n_kernels = kernels.size();
+    Eigen::MatrixXd kern_mat = Eigen::MatrixXd::Zero(3, n_sparse);
+
+    for (int i = 0; i < n_sparse; i ++){
+        for (int j = 0; j < n_kernels; j ++){
+            kern_mat.col(i) +=
+                kernels[j] ->
+                    env_env_force(sparse_environments[i], test_environment);
+        }
+    }
+
+    return kern_mat * alpha;
+}

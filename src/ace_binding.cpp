@@ -157,6 +157,7 @@ PYBIND11_MODULE(ace, m){
         .def("add_training_environment", &SparseGP::add_training_environment)
         .def("update_alpha", &SparseGP::update_alpha)
         .def("predict", &SparseGP::predict)
+        .def("predict_force", &SparseGP::predict_force)
         .def_readwrite("sparse_environments", &SparseGP::sparse_environments)
         .def_readwrite("training_structures", &SparseGP::training_structures);
 }
