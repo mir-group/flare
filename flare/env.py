@@ -20,9 +20,12 @@ class AtomicEnvironment:
     :param cutoffs: 2- and 3-body cutoff radii. 2-body if one cutoff is
      given, 2+3-body if two are passed.
     :type cutoffs: np.ndarray
+    :param cutoffs_mask: a dictionary to store multiple cutoffs if neede
+                         it should be exactly the same as the hyps mask
+    :type cutoffs_mask: dict
     """
 
-    def __init__(self, structure: Structure, atom: int, cutoffs):
+    def __init__(self, structure: Structure, atom: int, cutoffs, cutoffs_mask=None):
         self.structure = structure
         self.positions = structure.wrapped_positions
         self.cell = structure.cell
@@ -32,22 +35,66 @@ class AtomicEnvironment:
         self.ctype = structure.coded_species[atom]
 
         self.cutoffs = np.copy(cutoffs)
+        self.cutoffs_mask = cutoffs_mask
 
+        self.setup_mask()
         self.compute_env()
+
+    def setup_mask(self):
+        self.nspec = 0
+        self.n2b = 0
+        self.n3b = 0
+        self.nmb = 0
+        self.spec_mask = None
+        self.bond_mask = None
+        self.triplet_mask = None
+        self.mb_mask = None
+
+        if (self.cutoffs_mask is None):
+            return
+
+        if ('cutoff_2b' in self.cutoffs_mask):
+            self.nspec = 0
+            self.n2b = self.cutoffs_mask['nbond']
+            self.bond_mask = self.cutoffs_mask['bond_mask']
+            sellf.cutoff_2b = self.cutoffs_mask['cutoff_2b']
+
+        if ('cutoff_3b' in self.cutoffs_mask):
+            self.n3b = self.cutoffs_mask['ntriplet']
+            self.triplet_mask = self.cutoffs_mask['triplet_mask']
+            sellf.cutoff_3b = self.cutoffs_mask['cutoff_3b']
+
+        if ('cutoff_mb' in self.cutoffs_mask):
+            self.nmb = self.cutoffs_mask['ntriplet']
+            self.mb_mask = self.cutoffs_mask['mb_mask']
+            sellf.cutoff_mb = self.cutoffs_mask['cutoff_mb']
 
     def compute_env(self):
 
         # get 2-body arrays
-        bond_array_2, bond_positions_2, etypes = \
-            get_2_body_arrays(self.positions, self.atom, self.cell,
-                              self.cutoffs[0], self.species)
+        if (n2b>0):
+            bond_array_2, bond_positions_2, etypes = \
+                get_2_body_arrays_sepcut(self.positions, self.atom, self.cell,
+                                  self.cutoff_2b, self.species,
+                                  self.nsepc, self.sepc_mask, self.bond_mask)
+        else:
+            bond_array_2, bond_positions_2, etypes = \
+                get_2_body_arrays(self.positions, self.atom, self.cell,
+                                  self.cutoffs[0], self.species)
+
         self.bond_array_2 = bond_array_2
         self.etypes = etypes
 
         # if 2 cutoffs are given, create 3-body arrays
         if len(self.cutoffs) > 1:
-            bond_array_3, cross_bond_inds, cross_bond_dists, triplet_counts = \
-                get_3_body_arrays(bond_array_2, bond_positions_2, self.cutoffs[1])
+            if (n3b>0):
+                bond_array_3, cross_bond_inds, cross_bond_dists, triplet_counts = \
+                    get_3_body_arrays_sepcut(bond_array_2, bond_positions_2,
+                            self.species[self.atom], etypes, self.cutoff_3b)
+            else:
+                bond_array_3, cross_bond_inds, cross_bond_dists, triplet_counts = \
+                    get_3_body_arrays(bond_array_2, bond_positions_2, self.cutoffs[1])
+
             self.bond_array_3 = bond_array_3
             self.cross_bond_inds = cross_bond_inds
             self.cross_bond_dists = cross_bond_dists
@@ -55,8 +102,13 @@ class AtomicEnvironment:
 
         # if 3 cutoffs are given, create many-body arrays
         if len(self.cutoffs) > 2:
-            self.bond_array_mb, self.neigh_dists_mb, self.num_neighs_mb, self.etype_mb = get_m_body_arrays(
-                self.positions, self.atom, self.cell, self.cutoffs[2], self.species)
+            if (self.nmb > 0):
+                self.bond_array_mb, self.neigh_dists_mb, self.num_neighs_mb, self.etype_mb = get_m_body_arrays(
+                    self.positions, self.atom, self.cell, self.cutoff_mb, self.species,
+                    self.nspec, sellf.spec_mask, self.mb_mask)
+            else:
+                self.bond_array_mb, self.neigh_dists_mb, self.num_neighs_mb, self.etype_mb = get_m_body_arrays(
+                    self.positions, self.atom, self.cell, self.cutoffs[2], self.species)
         else:
             self.bond_array_mb = None
             self.neigh_dists_mb = None
@@ -79,6 +131,7 @@ class AtomicEnvironment:
         dictionary['forces'] = self.structure.forces
         dictionary['energy'] = self.structure.energy
         dictionary['stress'] = self.structure.stress
+        dictionary['cutoffs_mask'] = self.cutoffs_mask
 
         del dictionary['structure']
 
@@ -102,7 +155,9 @@ class AtomicEnvironment:
 
         cutoffs = dictionary['cutoffs']
 
-        return AtomicEnvironment(struc, index, cutoffs)
+        cutoffs_mask = dictionary.get('cutoffs_mask', None)
+
+        return AtomicEnvironment(struc, index, cutoffs, cutoffs_mask)
 
     def __str__(self):
         atom_type = self.ctype
@@ -416,6 +471,363 @@ def get_m_body_arrays(positions, atom: int, cell, cutoff_mb: float, species):
     for m in bond_inds:
         neighbour_bond_array_2, ___, etypes_mb = get_2_body_arrays(positions, m, cell,
                                                          cutoff_mb, species)
+        neighbouring_dists.append(neighbour_bond_array_2[:, 0])
+        neighbouring_etypes.append(etypes_mb)
+        if len(neighbour_bond_array_2[:, 0]) > max_neighbours:
+            max_neighbours = len(neighbour_bond_array_2[:, 0])
+
+    # Transform list of distances into Numpy array
+    neigh_dists_mb = np.zeros((len(bond_inds), max_neighbours))
+    num_neighs_mb = np.zeros(len(bond_inds), dtype=np.int8)
+    etypes_mb_array = np.zeros((len(bond_inds), max_neighbours), dtype=np.int8)
+    for i in range(len(bond_inds)):
+        num_neighs_mb[i] = len(neighbouring_dists[i])
+        neigh_dists_mb[i, :num_neighs_mb[i]] = neighbouring_dists[i]
+        etypes_mb_array[i, :num_neighs_mb[i]] = neighbouring_etypes[i]
+
+
+    return bond_array_mb, neigh_dists_mb, num_neighs_mb, etypes_mb_array
+
+@njit
+def get_2_body_arrays_sepcut(positions, atom: int, cell, cutoff_2, species,
+                             nspec, spec_mask, n2b, bond_mask):
+    """Returns distances, coordinates, and species of atoms in the 2-body
+    local environment. This method is implemented outside the AtomicEnvironment
+    class to allow for njit acceleration with Numba.
+
+    :param positions: Positions of atoms in the structure.
+    :type positions: np.ndarray
+    :param atom: Index of the central atom of the local environment.
+    :type atom: int
+    :param cell: 3x3 array whose rows are the Bravais lattice vectors of the
+        cell.
+    :type cell: np.ndarray
+    :param cutoff_2: 2-body cutoff radius.
+    :type cutoff_2: float
+    :param species: Numpy array of species represented by their atomic numbers.
+    :type species: np.ndarray
+    :return: Tuple of arrays describing pairs of atoms in the 2-body local
+     environment.
+
+     bond_array_2: Array containing the distances and relative
+     coordinates of atoms in the 2-body local environment. First column
+     contains distances, remaining columns contain Cartesian coordinates
+     divided by the distance (with the origin defined as the position of the
+     central atom). The rows are sorted by distance from the central atom.
+
+     bond_positions_2: Coordinates of atoms in the 2-body local environment.
+
+     etypes: Species of atoms in the 2-body local environment represented by
+     their atomic number.
+    :rtype: np.ndarray, np.ndarray, np.ndarray
+    """
+    noa = len(positions)
+    pos_atom = positions[atom]
+    coords = np.zeros((noa, 3, 27))
+    dists = np.zeros((noa, 27))
+    cutoff_count = 0
+    super_sweep = np.array([-1, 0, 1])
+
+    vec1 = cell[0]
+    vec2 = cell[1]
+    vec3 = cell[2]
+
+    bc = spec_mask[species[atom]]
+    bcn = nspec * bc
+
+    # record distances and positions of images
+    for n in range(noa):
+        diff_curr = positions[n] - pos_atom
+        im_count = 0
+
+        be = spec_mask[species[n]]
+        btype = bond_mask[be+bcn]
+        rcut = cutoff_2[btype]
+
+        for s1 in super_sweep:
+            for s2 in super_sweep:
+                for s3 in super_sweep:
+                    im = diff_curr + s1 * vec1 + s2 * vec2 + s3 * vec3
+                    dist = sqrt(im[0] * im[0] + im[1] * im[1] + im[2] * im[2])
+                    if (dist < rcut) and (dist != 0):
+                        dists[n, im_count] = dist
+                        coords[n, :, im_count] = im
+                        cutoff_count += 1
+                    im_count += 1
+
+    # create 2-body bond array
+    bond_array_2 = np.zeros((cutoff_count, 4))
+    bond_positions_2 = np.zeros((cutoff_count, 3))
+    etypes = np.zeros(cutoff_count, dtype=np.int8)
+    bond_count = 0
+
+    for m in range(noa):
+        spec_curr = species[m]
+
+        bm = spec_mask[spec_curr]
+        btype = bond_mask[bm + bcn]
+        rcut = cutoff_2[btype]
+
+        for n in range(27):
+            dist_curr = dists[m, n]
+
+            if (dist_curr < rcut) and (dist_curr != 0):
+                coord = coords[m, :, n]
+                bond_array_2[bond_count, 0] = dist_curr
+                bond_array_2[bond_count, 1:4] = coord / dist_curr
+                bond_positions_2[bond_count, :] = coord
+                etypes[bond_count] = spec_curr
+                bond_count += 1
+
+    # sort by distance
+    sort_inds = bond_array_2[:, 0].argsort()
+    bond_array_2 = bond_array_2[sort_inds]
+    bond_positions_2 = bond_positions_2[sort_inds]
+    etypes = etypes[sort_inds]
+
+    return bond_array_2, bond_positions_2, etypes
+
+
+@njit
+def get_2_body_arrays_ind_sepcut(positions, atom: int, cell, cutoff_2, species,
+        nspec, spec_mask, bond_mask):
+    """Returns distances, coordinates, species of atoms, and indexes of neighbors
+    in the 2-body local environment. This method is implemented outside
+    the AtomicEnvironment class to allow for njit acceleration with Numba.
+
+    :param positions: Positions of atoms in the structure.
+    :type positions: np.ndarray
+    :param atom: Index of the central atom of the local environment.
+    :type atom: int
+    :param cell: 3x3 array whose rows are the Bravais lattice vectors of the
+        cell.
+    :type cell: np.ndarray
+    :param cutoff_2: 2-body cutoff radius.
+    :type cutoff_2: float
+    :param species: Numpy array of species represented by their atomic numbers.
+    :type species: np.ndarray
+    :return: Tuple of arrays describing pairs of atoms in the 2-body local
+     environment.
+
+     bond_array_2: Array containing the distances and relative
+     coordinates of atoms in the 2-body local environment. First column
+     contains distances, remaining columns contain Cartesian coordinates
+     divided by the distance (with the origin defined as the position of the
+     central atom). The rows are sorted by distance from the central atom.
+
+     bond_positions_2: Coordinates of atoms in the 2-body local environment.
+
+     etypes: Species of atoms in the 2-body local environment represented by
+     their atomic number.
+
+     bond_indexes: Structure indexes of atoms in the local environment.
+
+    :rtype: np.ndarray, np.ndarray, np.ndarray, np.ndarray
+    """
+    noa = len(positions)
+    pos_atom = positions[atom]
+    coords = np.zeros((noa, 3, 27))
+    dists = np.zeros((noa, 27))
+    cutoff_count = 0
+    super_sweep = np.array([-1, 0, 1])
+
+    vec1 = cell[0]
+    vec2 = cell[1]
+    vec3 = cell[2]
+
+    bc = spec_mask[species[atom]]
+    bcn = nspec * bc
+
+    # record distances and positions of images
+    for n in range(noa):
+        diff_curr = positions[n] - pos_atom
+        im_count = 0
+        bn = spec_mask[species[n]]
+        rcut = cutoff_2[bond_mask[bn+bcn]]
+
+        for s1 in super_sweep:
+            for s2 in super_sweep:
+                for s3 in super_sweep:
+                    im = diff_curr + s1 * vec1 + s2 * vec2 + s3 * vec3
+                    dist = sqrt(im[0] * im[0] + im[1] * im[1] + im[2] * im[2])
+                    if (dist < rcut) and (dist != 0):
+                        dists[n, im_count] = dist
+                        coords[n, :, im_count] = im
+                        cutoff_count += 1
+                    im_count += 1
+
+    # create 2-body bond array
+    bond_indexes = np.zeros(cutoff_count, dtype=np.int8)
+    bond_array_2 = np.zeros((cutoff_count, 4))
+    bond_positions_2 = np.zeros((cutoff_count, 3))
+    etypes = np.zeros(cutoff_count, dtype=np.int8)
+    bond_count = 0
+
+    for m in range(noa):
+        spec_curr = species[m]
+        bm = spec_mask[species[m]]
+        rcut = cutoff_2[bond_mask[bm+bcn]]
+        for n in range(27):
+            dist_curr = dists[m, n]
+            if (dist_curr < rcut) and (dist_curr != 0):
+                coord = coords[m, :, n]
+                bond_array_2[bond_count, 0] = dist_curr
+                bond_array_2[bond_count, 1:4] = coord / dist_curr
+                bond_positions_2[bond_count, :] = coord
+                etypes[bond_count] = spec_curr
+                bond_indexes[bond_count] = m
+                bond_count += 1
+
+    # sort by distance
+    sort_inds = bond_array_2[:, 0].argsort()
+    bond_array_2 = bond_array_2[sort_inds]
+    bond_positions_2 = bond_positions_2[sort_inds]
+    bond_indexes = bond_indexes[sort_inds]
+    etypes = etypes[sort_inds]
+
+    return bond_array_2, bond_positions_2, etypes, bond_indexes
+
+
+@njit
+def get_3_body_arrays_sepcut(bond_array_2, bond_positions_2, ctype,
+        etypes, cutoff_3,
+        nspec, spec_mask, triplet_mask):
+    """Returns distances and coordinates of triplets of atoms in the
+    3-body local environment.
+
+    :param bond_array_2: 2-body bond array.
+    :type bond_array_2: np.ndarray
+    :param bond_positions_2: Coordinates of atoms in the 2-body local
+     environment.
+    :type bond_positions_2: np.ndarray
+    :param cutoff_3: 3-body cutoff radius.
+    :type cutoff_3: float
+    :return: Tuple of 4 arrays describing triplets of atoms in the 3-body local
+     environment.
+
+     bond_array_3: Array containing the distances and relative
+     coordinates of atoms in the 3-body local environment. First column
+     contains distances, remaining columns contain Cartesian coordinates
+     divided by the distance (with the origin defined as the position of the
+     central atom). The rows are sorted by distance from the central atom.
+
+     cross_bond_inds: Two dimensional array whose row m contains the indices
+     of atoms n > m that are within a distance cutoff_3 of both atom n and the
+     central atom.
+
+     cross_bond_dists: Two dimensional array whose row m contains the
+     distances from atom m of atoms n > m that are within a distance cutoff_3
+     of both atom n and the central atom.
+
+     triplet_counts: One dimensional array of integers whose entry m is the
+     number of atoms that are within a distance cutoff_3 of atom m.
+
+    :rtype: (np.ndarray, np.ndarray, np.ndarray, np.ndarray)
+    """
+
+    bc = spec_mask[ctype]
+    bcn = nspec * nsepc * bc
+
+    # get 3-body bond array
+    ind_3 = -1
+    noa = bond_array_2.shape[0]
+    for count, dist in enumerate(bond_array_2[:, 0]):
+        if dist > cutoff_3:
+            ind_3 = count
+            break
+    if ind_3 == -1:
+        ind_3 = noa
+
+    bond_array_3 = bond_array_2[0:ind_3, :]
+    bond_positions_3 = bond_positions_2[0:ind_3, :]
+
+    # get cross bond array
+    cross_bond_inds = np.zeros((ind_3, ind_3), dtype=np.int8) - 1
+    cross_bond_dists = np.zeros((ind_3, ind_3))
+    triplet_counts = np.zeros(ind_3, dtype=np.int8)
+    for m in range(ind_3):
+        pos1 = bond_positions_3[m]
+        count = m + 1
+        trips = 0
+
+        bmn = nspec*spec_mask[etypes[m]] + bcn
+
+        for n in range(m + 1, ind_3):
+
+            btype = triplet_mask[spec_mask[etypes[n]] + bmn]
+
+            pos2 = bond_positions_3[n]
+            diff = pos2 - pos1
+            dist_curr = sqrt(
+                diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2])
+
+            if dist_curr < cutoff_3[btype]:
+                cross_bond_inds[m, count] = n
+                cross_bond_dists[m, count] = dist_curr
+                count += 1
+                trips += 1
+
+        triplet_counts[m] = trips
+
+    return bond_array_3, cross_bond_inds, cross_bond_dists, triplet_counts
+
+
+@njit
+def get_m_body_arrays_sepcut(positions, atom: int, cell, cutoff_mb, species,
+        nspec, spec_mask, mb_mask):
+    """Returns distances, and species of atoms in the many-body
+    local environment, and returns distances and numbers of neighbours for atoms in the one
+    many-body local environment. This method is implemented outside the AtomicEnvironment
+    class to allow for njit acceleration with Numba.
+
+    :param positions: Positions of atoms in the structure.
+    :type positions: np.ndarray
+    :param atom: Index of the central atom of the local environment.
+    :type atom: int
+    :param cell: 3x3 array whose rows are the Bravais lattice vectors of the
+        cell.
+    :type cell: np.ndarray
+    :param cutoff_mb: 2-body cutoff radius.
+    :type cutoff_mb: float
+    :param species: Numpy array of species represented by their atomic numbers.
+    :type species: np.ndarray
+    :param indexes: Boolean indicating whether indexes of neighbours are returned
+    :type indexes: boolean
+    :return: Tuple of arrays describing pairs of atoms in the 2-body local
+     environment.
+
+     bond_array_mb: Array containing the distances and relative
+     coordinates of atoms in the 2-body local environment. First column
+     contains distances, remaining columns contain Cartesian coordinates
+     divided by the distance (with the origin defined as the position of the
+     central atom). The rows are sorted by distance from the central atom.
+
+     etypes: Species of atoms in the 2-body local environment represented by
+     their atomic number.
+
+     neigh_dists_mb: Matrix padded with zero values of distances
+     of neighbours for the atoms in the local environment.
+
+     num_neighs_mb: number of neighbours of each atom in the local environment
+
+     etypes_mb_array: species of neighbours of each atom in the local environment
+
+    :rtype: np.ndarray, np.ndarray, np.ndarray, np.ndarray
+    """
+    # TODO: this can be probably improved using stored arrays, redundant calls to get_2_body_arrays
+    # Get distances, positions, species and indexes of neighbouring atoms
+    bond_array_mb, __, _, bond_inds = get_2_body_arrays_ind_sepcut(
+        positions, atom, cell, cutoff_mb, species,
+        nspec, spec_mask, mb_mask)
+
+    # For each neighbouring atom, get distances in its neighbourhood
+    neighbouring_dists = []
+    neighbouring_etypes = []
+    max_neighbours = 0
+    for m in bond_inds:
+        neighbour_bond_array_2, ___, etypes_mb = get_2_body_arrays_sepcut(positions, m, cell,
+                                                         cutoff_mb, species,
+                                                         nspec, spec_mask, mb_mask)
         neighbouring_dists.append(neighbour_bond_array_2[:, 0])
         neighbouring_etypes.append(etypes_mb)
         if len(neighbour_bond_array_2[:, 0]) > max_neighbours:
