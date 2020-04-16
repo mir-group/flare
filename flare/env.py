@@ -74,11 +74,11 @@ class AtomicEnvironment:
     def compute_env(self):
 
         # get 2-body arrays
-        if (self.n2b>0):
+        if (self.n2b > 0):
             bond_array_2, bond_positions_2, etypes = \
                 get_2_body_arrays_sepcut(self.positions, self.atom, self.cell,
-                                  self.cutoff_2b, self.species,
-                                  self.nspec, self.spec_mask, self.bond_mask)
+                                         self.cutoff_2b, self.species,
+                                         self.nspec, self.spec_mask, self.bond_mask)
         else:
             bond_array_2, bond_positions_2, etypes = \
                 get_2_body_arrays(self.positions, self.atom, self.cell,
@@ -89,14 +89,15 @@ class AtomicEnvironment:
 
         # if 2 cutoffs are given, create 3-body arrays
         if len(self.cutoffs) > 1:
-            if (self.n3b>0):
+            if (self.n3b > 0):
                 bond_array_3, cross_bond_inds, cross_bond_dists, triplet_counts = \
                     get_3_body_arrays_sepcut(bond_array_2, bond_positions_2,
-                            self.species[self.atom], etypes, self.cutoff_3b,
-                            self.nspec, self.spec_mask, self.triplet_mask)
+                                             self.species[self.atom], etypes, self.cutoff_3b,
+                                             self.nspec, self.spec_mask, self.triplet_mask)
             else:
                 bond_array_3, cross_bond_inds, cross_bond_dists, triplet_counts = \
-                    get_3_body_arrays(bond_array_2, bond_positions_2, self.cutoffs[1])
+                    get_3_body_arrays(
+                        bond_array_2, bond_positions_2, self.cutoffs[1])
 
             self.bond_array_3 = bond_array_3
             self.cross_bond_inds = cross_bond_inds
@@ -106,18 +107,23 @@ class AtomicEnvironment:
         # if 3 cutoffs are given, create many-body arrays
         if len(self.cutoffs) > 2:
             if (self.nmb > 0):
-                self.bond_array_mb, self.neigh_dists_mb, self.num_neighs_mb, self.etype_mb = get_m_body_arrays(
-                    self.positions, self.atom, self.cell, self.cutoff_mb, self.species,
-                    self.nspec, self.spec_mask, self.mb_mask)
+                self.bond_array_mb, self.neigh_dists_mb, \
+                    self.num_neighs_mb, self.etype_mb = \
+                    get_m_body_arrays_sepcut(
+                        self.positions, self.atom, self.cell,
+                        self.cutoff_mb, self.species,
+                        self.nspec, self.spec_mask, self.mb_mask)
             else:
-                self.bond_array_mb, self.neigh_dists_mb, self.num_neighs_mb, self.etype_mb = get_m_body_arrays(
-                    self.positions, self.atom, self.cell, self.cutoffs[2], self.species)
+                self.bond_array_mb, self.neigh_dists_mb, \
+                    self.num_neighs_mb, self.etype_mb = \
+                    get_m_body_arrays(
+                        self.positions, self.atom, self.cell,
+                        self.cutoffs[2], self.species)
         else:
             self.bond_array_mb = None
             self.neigh_dists_mb = None
             self.num_neighs_mb = None
             self.etype_mb = None
-
 
     def as_dict(self):
         """
@@ -166,9 +172,9 @@ class AtomicEnvironment:
         atom_type = self.ctype
         neighbor_types = self.etypes
         n_neighbors = len(self.bond_array_2)
-        string = 'Atomic Env. of Type {} surrounded by {} atoms of Types {}' \
-                 ''.format(atom_type, n_neighbors,
-                           sorted(list(set(neighbor_types))))
+        string = 'Atomic Env. of Type {} surrounded by {} atoms '\
+                 'of Types {}'.format(atom_type, n_neighbors,
+                                      sorted(list(set(neighbor_types))))
 
         return string
 
@@ -224,7 +230,9 @@ def get_2_body_arrays(positions, atom: int, cell, cutoff_2: float, species):
             for s2 in super_sweep:
                 for s3 in super_sweep:
                     im = diff_curr + s1 * vec1 + s2 * vec2 + s3 * vec3
-                    dist = sqrt(im[0] * im[0] + im[1] * im[1] + im[2] * im[2])
+                    dist = sqrt(im[0] * im[0] +
+                                im[1] * im[1] +
+                                im[2] * im[2])
                     if (dist < cutoff_2) and (dist != 0):
                         dists[n, im_count] = dist
                         coords[n, :, im_count] = im
@@ -312,7 +320,8 @@ def get_2_body_arrays_ind(positions, atom: int, cell, cutoff_2: float, species):
             for s2 in super_sweep:
                 for s3 in super_sweep:
                     im = diff_curr + s1 * vec1 + s2 * vec2 + s3 * vec3
-                    dist = sqrt(im[0] * im[0] + im[1] * im[1] + im[2] * im[2])
+                    dist = sqrt(im[0] * im[0] + im[1] * im[1]
+                                + im[2] * im[2])
                     if (dist < cutoff_2) and (dist != 0):
                         dists[n, im_count] = dist
                         coords[n, :, im_count] = im
@@ -473,7 +482,7 @@ def get_m_body_arrays(positions, atom: int, cell, cutoff_mb: float, species):
     max_neighbours = 0
     for m in bond_inds:
         neighbour_bond_array_2, ___, etypes_mb = get_2_body_arrays(positions, m, cell,
-                                                         cutoff_mb, species)
+                                                                   cutoff_mb, species)
         neighbouring_dists.append(neighbour_bond_array_2[:, 0])
         neighbouring_etypes.append(etypes_mb)
         if len(neighbour_bond_array_2[:, 0]) > max_neighbours:
@@ -488,10 +497,11 @@ def get_m_body_arrays(positions, atom: int, cell, cutoff_mb: float, species):
         neigh_dists_mb[i, :num_neighs_mb[i]] = neighbouring_dists[i]
         etypes_mb_array[i, :num_neighs_mb[i]] = neighbouring_etypes[i]
 
-
     return bond_array_mb, neigh_dists_mb, num_neighs_mb, etypes_mb_array
 
 # @njit
+
+
 def get_2_body_arrays_sepcut(positions, atom: int, cell, cutoff_2, species,
                              nspec, spec_mask, bond_mask):
     """Returns distances, coordinates, and species of atoms in the 2-body
@@ -593,7 +603,7 @@ def get_2_body_arrays_sepcut(positions, atom: int, cell, cutoff_2, species,
 
 # @njit
 def get_2_body_arrays_ind_sepcut(positions, atom: int, cell, cutoff_2, species,
-        nspec, spec_mask, bond_mask):
+                                 nspec, spec_mask, bond_mask):
     """Returns distances, coordinates, species of atoms, and indexes of neighbors
     in the 2-body local environment. This method is implemented outside
     the AtomicEnvironment class to allow for njit acceleration with Numba.
@@ -693,8 +703,8 @@ def get_2_body_arrays_ind_sepcut(positions, atom: int, cell, cutoff_2, species,
 
 # @njit
 def get_3_body_arrays_sepcut(bond_array_2, bond_positions_2, ctype,
-        etypes, cutoff_3,
-        nspec, spec_mask, triplet_mask):
+                             etypes, cutoff_3,
+                             nspec, spec_mask, triplet_mask):
     """Returns distances and coordinates of triplets of atoms in the
     3-body local environment.
 
@@ -779,7 +789,7 @@ def get_3_body_arrays_sepcut(bond_array_2, bond_positions_2, ctype,
 
 # @njit
 def get_m_body_arrays_sepcut(positions, atom: int, cell, cutoff_mb, species,
-        nspec, spec_mask, mb_mask):
+                             nspec, spec_mask, mb_mask):
     """Returns distances, and species of atoms in the many-body
     local environment, and returns distances and numbers of neighbours for atoms in the one
     many-body local environment. This method is implemented outside the AtomicEnvironment
@@ -831,8 +841,8 @@ def get_m_body_arrays_sepcut(positions, atom: int, cell, cutoff_mb, species,
     max_neighbours = 0
     for m in bond_inds:
         neighbour_bond_array_2, ___, etypes_mb = get_2_body_arrays_sepcut(positions, m, cell,
-                                                         cutoff_mb, species,
-                                                         nspec, spec_mask, mb_mask)
+                                                                          cutoff_mb, species,
+                                                                          nspec, spec_mask, mb_mask)
         neighbouring_dists.append(neighbour_bond_array_2[:, 0])
         neighbouring_etypes.append(etypes_mb)
         if len(neighbour_bond_array_2[:, 0]) > max_neighbours:
@@ -846,7 +856,6 @@ def get_m_body_arrays_sepcut(positions, atom: int, cell, cutoff_mb, species,
         num_neighs_mb[i] = len(neighbouring_dists[i])
         neigh_dists_mb[i, :num_neighs_mb[i]] = neighbouring_dists[i]
         etypes_mb_array[i, :num_neighs_mb[i]] = neighbouring_etypes[i]
-
 
     return bond_array_mb, neigh_dists_mb, num_neighs_mb, etypes_mb_array
 
