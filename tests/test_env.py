@@ -105,6 +105,8 @@ def generate_mask(cutoff):
                 tmask[t3*nspec**2+t2*nspec+t1] = ttype
         mask['triplet_mask'] = tmask
     elif (ncutoff == 3):
+        mask = {'nspec': 2, 'spec_mask': np.ones(118, dtype=int)}
+        mask['spec_mask'][1] = 0
         mask['cutoff_mb'] = np.ones(2)*cutoff[2]
         mask['nmb'] = 2
         mask['mb_mask'] = np.ones(4, dtype=int)
