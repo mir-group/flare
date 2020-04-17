@@ -75,7 +75,7 @@ def generate_mask(cutoff):
     if (ncutoff == 1):
         mask = {'nspec': 2, 'spec_mask': np.ones(118, dtype=int)}
         mask['spec_mask'][1] = 0
-        mask['cutoff_2b'] = np.ones(2)*cutoff[0]
+        mask['cutoff_2b'] = np.array([0.5, 0.9])
         mask['nbond'] = 2
         mask['bond_mask'] = np.ones(4, dtype=int)
         mask['bond_mask'][0] = 1

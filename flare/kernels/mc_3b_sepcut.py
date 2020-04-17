@@ -53,8 +53,8 @@ def three_body_mc_sepcut_jit(bond_array_1, c1, etypes1,
             ri3 = cross_bond_dists_1[m, m + n + 1]
             fi3, _ = cutoff_func(tr_cut, ri3, 0)
 
-            fi2, fdi2 = cutoff_func(tr_cut, ri2, ci2)
             fi1, fdi1 = cutoff_func(tr_cut, ri1, ci1)
+            fi2, fdi2 = cutoff_func(tr_cut, ri2, ci2)
 
             fi = fi1 * fi2 * fi3
             fdi = fdi1 * fi2 * fi3 + fi1 * fdi2 * fi3
