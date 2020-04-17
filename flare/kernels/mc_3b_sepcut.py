@@ -13,7 +13,11 @@ def three_body_mc_sepcut_jit(bond_array_1, c1, etypes1,
                              cross_bond_dists_1, cross_bond_dists_2,
                              triplets_1, triplets_2,
                              d1, d2, sig, ls, r_cut, cutoff_func,
-                             nspec, spec_mask, triplet_mask):
+                             nspec, spec_mask, bond_mask, triplet_mask):
+    '''
+    bond_mask is for multiple cutoffs
+    '''
+
     kern = 0
 
     # pre-compute constants that appear in the inner loop
@@ -22,8 +26,10 @@ def three_body_mc_sepcut_jit(bond_array_1, c1, etypes1,
     ls2 = 1 / (ls * ls)
     ls3 = ls2 * ls2
 
-    bc1 = spec_mask[c1]
-    bc1n = bc1 * nspec * nspec
+    bci = spec_mask[ci]
+    bcin = bci * nspec
+    bcj = spec_mask[cj]
+    bcjn = bcj * nspec
 
     for m in range(bond_array_1.shape[0]):
         ri1 = bond_array_1[m, 0]
@@ -31,8 +37,10 @@ def three_body_mc_sepcut_jit(bond_array_1, c1, etypes1,
         ei1 = etypes1[m]
 
         bei1 = spec_mask[ei1]
+        btype_ei1 = bond_mask[bei1 + bcin]
+        cut_ei1 = r_cut[btype_ei1]
         bei1n = nspec * bei1
-
+        fi1, fdi1 = cutoff_func(cut_ei1, ri1, ci1)
 
         for n in range(triplets_1[m]):
             ind1 = cross_bond_inds_1[m, m + n + 1]
@@ -40,21 +48,29 @@ def three_body_mc_sepcut_jit(bond_array_1, c1, etypes1,
             ci2 = bond_array_1[ind1, d1]
             ei2 = etypes1[ind1]
 
+            # skip if species does not match
+            tr_spec = [c1, ei1, ei2]
+            c2_ind = tr_spec
+            if c2 not in tr_spec:
+                continue
+            else:
+                tr_spec.remove(c2)
+
             bei2 = spec_mask[ei2]
+            btype_ei2 = bond_mask[bei2 + bcin]
+            cut_ei2 = r_cut[btype_ei2]
+            fi2, fdi2 = cutoff_func(cut_ei2, ri2, ci2)
 
-            ttypei = triplet_mask[bc1n + bei1n + bei2]
-
+            ttypei = triplet_mask[bcin + bei1n + bei2]
             tls1 = ls1[ttypei]
             tls2 = ls2[ttypei]
             tls3 = ls3[ttypei]
             tsig2 = sig2[ttypei]
-            tr_cut = r_cut[ttypei]
 
+            btype_ei3 = bond_mask[bei1n + bei2]
+            cut_ei3 = r_cut[btype_ei3]
             ri3 = cross_bond_dists_1[m, m + n + 1]
-            fi3, _ = cutoff_func(tr_cut, ri3, 0)
-
-            fi1, fdi1 = cutoff_func(tr_cut, ri1, ci1)
-            fi2, fdi2 = cutoff_func(tr_cut, ri2, ci2)
+            fi3, _ = cutoff_func(cut_ei3, ri3, 0)
 
             fi = fi1 * fi2 * fi3
             fdi = fdi1 * fi2 * fi3 + fi1 * fdi2 * fi3
@@ -63,17 +79,38 @@ def three_body_mc_sepcut_jit(bond_array_1, c1, etypes1,
                 rj1 = bond_array_2[p, 0]
                 cj1 = bond_array_2[p, d2]
                 ej1 = etypes2[p]
-                fj1, fdj1 = cutoff_func(tr_cut, rj1, cj1)
+
+                if ej1 not in tr_spec:
+                    continue
+                else:
+                    tr_spec.remove(ej1)
+
+                bej1 = spec_mask[ej1]
+                btype_ej1 = bond_mask[bej1 + bcjn]
+                cut_ej1 = r_cut[btype_ej1]
+                bej1n = nspec * bej1
+
+                fj1, fdj1 = cutoff_func(cut_ej1, rj1, cj1)
 
                 for q in range(triplets_2[p]):
                     ind2 = cross_bond_inds_2[p, p + 1 + q]
                     rj2 = bond_array_2[ind2, 0]
                     cj2 = bond_array_2[ind2, d2]
-                    fj2, fdj2 = cutoff_func(tr_cut, rj2, cj2)
                     ej2 = etypes2[ind2]
 
+                    if ej2 != tr_spec[0]:
+                        continue
+
+                    bej2 = spec_mask[ej2]
+                    btype_ej2 = bond_mask[bej2 + bcjn]
+                    cut_ej2 = r_cut[btype_ej2]
+
+                    fj2, fdj2 = cutoff_func(cut_ej2, rj2, cj2)
+
+                    btype_ej3 = bond_mask[bej1n + bej2]
+                    cut_ej3 = r_cut[btype_ej3]
                     rj3 = cross_bond_dists_2[p, p + 1 + q]
-                    fj3, _ = cutoff_func(tr_cut, rj3, 0)
+                    fj3, _ = cutoff_func(cut_ej3, rj3, 0)
 
                     fj = fj1 * fj2 * fj3
                     fdj = fdj1 * fj2 * fj3 + fj1 * fdj2 * fj3

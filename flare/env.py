@@ -472,6 +472,11 @@ def get_m_body_arrays(positions, atom: int, cell, cutoff_mb: float, species):
     :rtype: np.ndarray, np.ndarray, np.ndarray, np.ndarray
     """
     # TODO: this can be probably improved using stored arrays, redundant calls to get_2_body_arrays
+    # TODO: merge this with get_2_body_arrays, 
+    # and change this line to getting from 2_array short list, similar to get_3_body
+    # TODO: find a way to get the coordination number for each atom in the whole structure,
+    # and use them directly, instead of the redundant computation here
+
     # Get distances, positions, species and indexes of neighbouring atoms
     bond_array_mb, __, _, bond_inds = get_2_body_arrays_ind(
         positions, atom, cell, cutoff_mb, species)
@@ -739,7 +744,7 @@ def get_3_body_arrays_sepcut(bond_array_2, bond_positions_2, ctype,
     """
 
     bc = spec_mask[ctype]
-    bcn = nspec * nspec * bc
+    bcn = nspec * bc
 
     cut3 = np.max(cutoff_3)
 
@@ -762,24 +767,29 @@ def get_3_body_arrays_sepcut(bond_array_2, bond_positions_2, ctype,
         count = m + 1
         trips = 0
 
-        bmn = nspec*spec_mask[etypes[m]] + bcn
+        bm = spec_mask[etypes[m]]
+        btype_m = triplet_mask[bm + bcn] # triplet mask is actually for bonds
+        cut_m = cutoff_3[btype_m]
+        bmn = nspec * bm # for cross_dist usage
 
         for n in range(m + 1, ind_3):
 
-            btype = triplet_mask[spec_mask[etypes[n]] + bmn]
+            bn = spec_mask[etypes[n]]
+            btype_n = triplet_mask[bn + bcn] 
+            cut_n = cutoff_3[btype_n]
+
+            # for cross_dist (m,n) pair
+            btype_mn = triplet_mask[bn + bmn]
+            cut_mn = cutoff_3[btype_mn]
 
             pos2 = bond_positions_3[n]
             diff = pos2 - pos1
             dist_curr = sqrt(
                 diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2])
 
-            cut3 = cutoff_3[btype]
-
-            print(btype, ctype, etypes[m], etypes[n], np.min([bond_array_2[m, 0], bond_array_2[n, 0], dist_curr]))
-
-            if dist_curr < cut3 \
-                and bond_array_2[m, 0] < cut3 \
-                and bond_array_2[n, 0] < cut3 :
+            if dist_curr < cut_mn \
+                and bond_array_2[m, 0] < cut_m \
+                and bond_array_2[n, 0] < cut_n :
                 cross_bond_inds[m, count] = n
                 cross_bond_dists[m, count] = dist_curr
                 count += 1

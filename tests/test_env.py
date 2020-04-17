@@ -3,10 +3,13 @@ import numpy as np
 from flare.struc import Structure
 from flare.env import AtomicEnvironment
 
+
+np.random.seed(0)
+
 # cutoff_list = [np.array([1]), np.array([1, 0.8]), np.array([1, 0.8, 0.4])]
 # mask_list = [True, False]
 
-cutoff_list = [np.array([1, 0.05]), np.array([1, 0.9]), np.array([1, 0.8, 0.4])]
+cutoff_list = [np.array([1, 0.05]), np.array([1, 0.9])] #, np.array([1, 0.8, 0.4])]
 mask_list = [True]
 
 @pytest.fixture(scope='module')
@@ -79,31 +82,26 @@ def generate_mask(cutoff):
         mask['nbond'] = 2
         mask['bond_mask'] = np.ones(4, dtype=int)
         mask['bond_mask'][0] = 1
-    elif (ncutoff == 2):
+
+    elif (ncutoff == 2): # the 3b mask is the same structure as 2b
         nspec = 3
-        ntriplet = 3
-        mask = {'nspec': nspec, 'spec_mask': np.zeros(118, dtype=int)}
-        mask['spec_mask'][1] = 0
-        mask['spec_mask'][2] = 1
-        mask['spec_mask'][3] = 2
+        ntriplet = 3 # number of bond cutoffs 
+        mask = {'nspec': nspec, 
+                'spec_mask': np.zeros(118, dtype=int),
+                'cutoff_3b': np.array([0.2, 0.5, 0.9]),
+                'ntriplet': ntriplet,
+                'triplet_mask': np.zeros(nspec**2, dtype=int)}
         spec_mask = mask['spec_mask']
-        mask['cutoff_3b'] = np.array([0.2, 0.5, 0.9])
-        mask['ntriplet'] = ntriplet
-        tmask = np.zeros(nspec**3, dtype=int)+ntriplet-1
-        groups = [ [[1, 1, 3], [1, 3, 2]],
-                   [[1, 1, 1], [1, 1, 2]]]
-        for ttype in range(ntriplet-1):
-            for triplet in groups[ttype]:
-                t1 = spec_mask[triplet[0]]
-                t2 = spec_mask[triplet[1]]
-                t3 = spec_mask[triplet[2]]
-                tmask[t1*nspec**2+t2*nspec+t3] = ttype
-                tmask[t1*nspec**2+t3*nspec+t2] = ttype
-                tmask[t2*nspec**2+t1*nspec+t3] = ttype
-                tmask[t2*nspec**2+t3*nspec+t1] = ttype
-                tmask[t3*nspec**2+t1*nspec+t2] = ttype
-                tmask[t3*nspec**2+t2*nspec+t1] = ttype
-        mask['triplet_mask'] = tmask
+        chem_spec = [1, 2, 3]
+        spec_mask[chem_spec] = np.arange(3)
+
+        tmask = mask['triplet_mask']
+        for cs1 in range(nspec):
+            for cs2 in range(cs1, nspec):
+                ttype = np.random.randint(ntriplet)
+                tmask[cs1*nspec+cs2] = ttype
+                tmask[cs2*nspec+cs1] = ttype
+
     elif (ncutoff == 3):
         mask = {'nspec': 2, 'spec_mask': np.ones(118, dtype=int)}
         mask['spec_mask'][1] = 0
