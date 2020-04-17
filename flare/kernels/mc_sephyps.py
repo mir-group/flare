@@ -18,29 +18,48 @@ Multicomponent kernels that restrict all signal variance hyperparameters to
 a single value.
 Masking hyperparameters allows you to have different sets of hyperparameters
 for different elements, and different groupings of elements.
-hyps_mask is a dictionary with the following keys and values:
-spec_mask: 118-long integer array descirbing which elements belong to
-    like groups for determining which bond hyperparameters to use. For
-    instance, [0,0,1,1,0 ...] assigns H to group 0, He and Li to group 1,
-    and Be to group 0 (the 0th register is ignored).
-nspec: Integer, number of different species groups (equal to number of
-    unique values in spec_mask).
-nbond: Integer, number of different hyperparameter sets to associate with
-    different 2-body pairings of atoms in groups defined in spec_mask.
-bond_mask: Array of length nspec^2, which describes the hyperparameter sets to
-    associate with different pairings of species types. For example, if there
-    are atoms of type 0 and 1, then bond_mask defines which hyperparameters
-    to use for parings [0-0, 0-1, 1-0, 1-1]: if we wanted hyperparameter set 0 for
-    0-0 parings and set 1 for 0-1 and 1-1 pairings, then we would make
-    bond_mask [0, 1, 1, 1].
-ntriplet = Integer, number of different hyperparameter sets to associate
-    with different 3-body pariings of atoms in groups defined in spec_mask.
-triplet_mask: Similar to bond mask: Triplet pairings of type 0 and 1 atoms
-    would go {0-0-0, 0-0-1, 0-1-0, 0-1-1, 1-0-0, 1-0-1, 1-1-0, 1-1-1},
-    and if we wanted hyp. set 0 for triplets with only atoms of type 0
-    and hyp. set 1 for all the rest, then the triplet_mask array would
-    read [0,1,1,1,1,1,1,1]. The user should make sure that the mask has
-    a permutational symmetry.
+* hyps_mask is a dictionary with the following keys and values:
+* spec_mask: 118-long integer array descirbing which elements belong to
+             like groups for determining which bond hyperparameters to use. For
+             instance, [0,0,1,1,0 ...] assigns H to group 0, He and Li to group 1,
+             and Be to group 0 (the 0th register is ignored).
+* nspec: Integer, number of different species groups (equal to number of
+         unique values in spec_mask).
+* nbond: Integer, number of different hyperparameter sets to associate with
+         different 2-body pairings of atoms in groups defined in spec_mask.
+* bond_mask: Array of length nspec^2, which describes the hyperparameter sets to
+             associate with different pairings of species types. For example, if there
+             are atoms of type 0 and 1, then bond_mask defines which hyperparameters
+             to use for parings [0-0, 0-1, 1-0, 1-1]: if we wanted hyperparameter set 0 for
+             0-0 parings and set 1 for 0-1 and 1-1 pairings, then we would make
+             bond_mask [0, 1, 1, 1].
+* ntriplet: Integer, number of different hyperparameter sets to associate
+            with different 3-body pariings of atoms in groups defined in spec_mask.
+* triplet_mask: Similar to bond mask: Triplet pairings of type 0 and 1 atoms
+                would go {0-0-0, 0-0-1, 0-1-0, 0-1-1, 1-0-0, 1-0-1, 1-1-0, 1-1-1},
+                and if we wanted hyp. set 0 for triplets with only atoms of type 0
+                and hyp. set 1 for all the rest, then the triplet_mask array would
+                read [0,1,1,1,1,1,1,1]. The user should make sure that the mask has
+                a permutational symmetry.
+* cutoff_2b: Array of length nbond, which stores the cutoff used for different
+             types of bonds defined in bond_mask
+* ncut3b:    Integer, number of different cutoffs sets to associate
+             with different 3-body pariings of atoms in groups defined in spec_mask.
+* cut3b_mask: Array of length nspec^2, which describes the cutoff to
+             associate with different bond types in triplets. For example, in a triplet
+             (C, O, H) , there are three cutoffs. Cutoffs for CH bond, CO bond and OH bond.
+             If C and O are associate with atom group 1 in spec_mask and H are associate with
+             group 0 in spec_mask, the cut3b_mask[1*nspec+0] determines the C/O-H bond cutoff,
+             and cut3b_mask[1*nspec+1] determines the C-O bond cutoff. If we want the
+             former one to use the 1st cutoff in cutoff_3b and the later to use the 2nd cutoff
+             in cutoff_3b, the cut3b_mask should be [0, 0, 0, 1]
+* cutoff_3b: Array of length ncut3b, which stores the cutoff used for different
+             types of bonds in triplets.
+* nmb :      Integer, number of different cutoffs set to associate with different coordination
+             numbers
+* mb_mask:   similar to bond_mask and cut3b_mask.
+* cutoff_mb: Array of length nmb, stores the cutoff used for different many body terms
+
 For selective optimization. one can define 'map', 'train_noise' and 'original'
 to identify which element to be optimized. All three have to be defined.
 train_noise = Bool (True/False), whether the noise parameter can be optimized

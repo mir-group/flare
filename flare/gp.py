@@ -306,8 +306,14 @@ class GaussianProcess:
                 c3b = hyps_mask['cutoff_3b']
                 assert self.cutoffs[0] > np.max(hyps_mask['cutoff_3b']), \
                         'general cutoff should be larger than all cutoffs listed in hyps_mask'
-                assert len(c3b) == n3b, \
-                        f'number of 3b cutoff should be the same as n3b {n3b}'
+                assert len(c3b) == hyps_mask['ncut3b'], \
+                        f'number of 3b cutoff should be the same as ncut3b {ncut3b}'
+                assert len(hyps_mask['cut3b_mask']) == nspec ** 2, \
+                    f"wrong dimension of cut3b_mask: " \
+                    f" {len(bmask)} != nspec^2 {nspec**2}"
+                assert np.max(hyps_mask['cut3b_mask']) < hyps_mask['ncut3b'], \
+                    f"wrong dimension of cut3b_mask: " \
+                    f" {len(bmask)} != nspec^2 {nspec**2}"
 
             if 'cutoff_mb' in hyps_mask:
                 cmb = hyps_mask['cutoff_mb']
