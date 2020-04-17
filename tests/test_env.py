@@ -85,20 +85,20 @@ def generate_mask(cutoff):
 
     elif (ncutoff == 2): # the 3b mask is the same structure as 2b
         nspec = 3
-        ntriplet = 3 # number of bond cutoffs 
-        mask = {'nspec': nspec, 
+        ncut3b = 3 # number of bond cutoffs
+        mask = {'nspec': nspec,
                 'spec_mask': np.zeros(118, dtype=int),
                 'cutoff_3b': np.array([0.2, 0.5, 0.9]),
-                'ntriplet': ntriplet,
-                'triplet_mask': np.zeros(nspec**2, dtype=int)}
+                'ncut3b': ncut3b,
+                'cut3b_mask': np.zeros(nspec**2, dtype=int)}
         spec_mask = mask['spec_mask']
         chem_spec = [1, 2, 3]
         spec_mask[chem_spec] = np.arange(3)
 
-        tmask = mask['triplet_mask']
+        tmask = mask['cut3b_mask']
         for cs1 in range(nspec):
             for cs2 in range(cs1, nspec):
-                ttype = np.random.randint(ntriplet)
+                ttype = np.random.randint(ncut3b)
                 tmask[cs1*nspec+cs2] = ttype
                 tmask[cs2*nspec+cs1] = ttype
 
