@@ -63,7 +63,7 @@ class AtomicEnvironment:
 
             if ('cutoff_3b' in self.cutoffs_mask):
                 self.n3b = self.cutoffs_mask['ntriplet']
-                self.triplet_mask = self.cutoffs_mask['triplet_mask']
+                self.bond_mask = self.cutoffs_mask['bond_mask']
                 self.cutoff_3b = self.cutoffs_mask['cutoff_3b']
 
             if ('cutoff_mb' in self.cutoffs_mask):
@@ -93,7 +93,7 @@ class AtomicEnvironment:
                 bond_array_3, cross_bond_inds, cross_bond_dists, triplet_counts = \
                     get_3_body_arrays_sepcut(bond_array_2, bond_positions_2,
                                              self.species[self.atom], etypes, self.cutoff_3b,
-                                             self.nspec, self.spec_mask, self.triplet_mask)
+                                             self.nspec, self.spec_mask, self.bond_mask)
             else:
                 bond_array_3, cross_bond_inds, cross_bond_dists, triplet_counts = \
                     get_3_body_arrays(
@@ -472,7 +472,7 @@ def get_m_body_arrays(positions, atom: int, cell, cutoff_mb: float, species):
     :rtype: np.ndarray, np.ndarray, np.ndarray, np.ndarray
     """
     # TODO: this can be probably improved using stored arrays, redundant calls to get_2_body_arrays
-    # TODO: merge this with get_2_body_arrays, 
+    # TODO: merge this with get_2_body_arrays,
     # and change this line to getting from 2_array short list, similar to get_3_body
     # TODO: find a way to get the coordination number for each atom in the whole structure,
     # and use them directly, instead of the redundant computation here
@@ -709,7 +709,7 @@ def get_2_body_arrays_ind_sepcut(positions, atom: int, cell, cutoff_2, species,
 # @njit
 def get_3_body_arrays_sepcut(bond_array_2, bond_positions_2, ctype,
                              etypes, cutoff_3,
-                             nspec, spec_mask, triplet_mask):
+                             nspec, spec_mask, bond_mask):
     """Returns distances and coordinates of triplets of atoms in the
     3-body local environment.
 
@@ -767,19 +767,20 @@ def get_3_body_arrays_sepcut(bond_array_2, bond_positions_2, ctype,
         count = m + 1
         trips = 0
 
+        # choose bond dependent bond
         bm = spec_mask[etypes[m]]
-        btype_m = triplet_mask[bm + bcn] # triplet mask is actually for bonds
+        btype_m = bond_mask[bm + bcn] # (m, c)
         cut_m = cutoff_3[btype_m]
         bmn = nspec * bm # for cross_dist usage
 
         for n in range(m + 1, ind_3):
 
             bn = spec_mask[etypes[n]]
-            btype_n = triplet_mask[bn + bcn] 
+            btype_n = bond_mask[bn + bcn] # (n, c)
             cut_n = cutoff_3[btype_n]
 
             # for cross_dist (m,n) pair
-            btype_mn = triplet_mask[bn + bmn]
+            btype_mn = bond_mask[bn + bmn]
             cut_mn = cutoff_3[btype_mn]
 
             pos2 = bond_positions_3[n]
