@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 #include "sparse_gp.h"
 #include "descriptor.h"
+#include "omp.h"
 #include <chrono>
 
 class SparseTest : public ::testing::Test{
@@ -152,6 +153,12 @@ TEST_F(SparseTest, Predict){
     // Check that the prediction methods agree.
     EXPECT_EQ(pred_vals(1), pred_env(0));
 
+}
+
+TEST(CountThreads, CountThreads){
+    int test = omp_get_max_threads();
+    std::cout << test << std::endl;
+    EXPECT_EQ(1, 1);
 }
 
 
