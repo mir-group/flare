@@ -57,6 +57,8 @@ class AtomicEnvironment:
     * cutoff_3b: Array of length ncut3b, which stores the cutoff used for different
                  types of bonds in triplets.
 
+    Examples can be found at the end of in tests/test_env.py
+
     """
 
     def __init__(self, structure: Structure, atom: int, cutoffs, cutoffs_mask=None):
@@ -316,7 +318,7 @@ def get_2_body_arrays(positions, atom: int, cell, cutoff_2: float, species):
 
 @njit
 def get_2_body_arrays_ind(positions, atom: int, cell, cutoff_2: float, species):
-    """Returns distances, coordinates, species of atoms, and indexes of neighbors
+    """Returns distances, coordinates, species of atoms, and indices of neighbors
     in the 2-body local environment. This method is implemented outside
     the AtomicEnvironment class to allow for njit acceleration with Numba.
 
@@ -345,7 +347,7 @@ def get_2_body_arrays_ind(positions, atom: int, cell, cutoff_2: float, species):
      etypes: Species of atoms in the 2-body local environment represented by
      their atomic number.
 
-     bond_indexes: Structure indexes of atoms in the local environment.
+     bond_indices: Structure indices of atoms in the local environment.
 
     :rtype: np.ndarray, np.ndarray, np.ndarray, np.ndarray
     """
@@ -377,7 +379,7 @@ def get_2_body_arrays_ind(positions, atom: int, cell, cutoff_2: float, species):
                     im_count += 1
 
     # create 2-body bond array
-    bond_indexes = np.zeros(cutoff_count, dtype=np.int8)
+    bond_indices = np.zeros(cutoff_count, dtype=np.int8)
     bond_array_2 = np.zeros((cutoff_count, 4))
     bond_positions_2 = np.zeros((cutoff_count, 3))
     etypes = np.zeros(cutoff_count, dtype=np.int8)
@@ -393,17 +395,17 @@ def get_2_body_arrays_ind(positions, atom: int, cell, cutoff_2: float, species):
                 bond_array_2[bond_count, 1:4] = coord / dist_curr
                 bond_positions_2[bond_count, :] = coord
                 etypes[bond_count] = spec_curr
-                bond_indexes[bond_count] = m
+                bond_indices[bond_count] = m
                 bond_count += 1
 
     # sort by distance
     sort_inds = bond_array_2[:, 0].argsort()
     bond_array_2 = bond_array_2[sort_inds]
     bond_positions_2 = bond_positions_2[sort_inds]
-    bond_indexes = bond_indexes[sort_inds]
+    bond_indices = bond_indices[sort_inds]
     etypes = etypes[sort_inds]
 
-    return bond_array_2, bond_positions_2, etypes, bond_indexes
+    return bond_array_2, bond_positions_2, etypes, bond_indices
 
 
 @njit
@@ -496,8 +498,8 @@ def get_m_body_arrays(positions, atom: int, cell, cutoff_mb: float, species):
     :type cutoff_mb: float
     :param species: Numpy array of species represented by their atomic numbers.
     :type species: np.ndarray
-    :param indexes: Boolean indicating whether indexes of neighbours are returned
-    :type indexes: boolean
+    :param indices: Boolean indicating whether indices of neighbours are returned
+    :type indices: boolean
     :return: Tuple of arrays describing pairs of atoms in the 2-body local
      environment.
 
@@ -525,7 +527,7 @@ def get_m_body_arrays(positions, atom: int, cell, cutoff_mb: float, species):
     # TODO: find a way to get the coordination number for each atom in the whole structure,
     # and use them directly, instead of the redundant computation here
 
-    # Get distances, positions, species and indexes of neighbouring atoms
+    # Get distances, positions, species and indices of neighbouring atoms
     bond_array_mb, __, _, bond_inds = get_2_body_arrays_ind(
         positions, atom, cell, cutoff_mb, species)
 
@@ -570,6 +572,12 @@ def get_2_body_arrays_sepcut(positions, atom: int, cell, cutoff_2, species,
     :type cutoff_2: float
     :param species: Numpy array of species represented by their atomic numbers.
     :type species: np.ndarray
+    :param nspec: number of atom types to define bonds
+    :type: int
+    :param spec_mask: mapping from atomic number to atom types
+    :type: np.ndarray
+    :param bond_mask: mapping from the types of end atoms to bond types
+    :type: np.ndarray
     :return: Tuple of arrays describing pairs of atoms in the 2-body local
      environment.
 
@@ -655,7 +663,7 @@ def get_2_body_arrays_sepcut(positions, atom: int, cell, cutoff_2, species,
 @njit
 def get_2_body_arrays_ind_sepcut(positions, atom: int, cell, cutoff_2, species,
                                  nspec, spec_mask, bond_mask):
-    """Returns distances, coordinates, species of atoms, and indexes of neighbors
+    """Returns distances, coordinates, species of atoms, and indices of neighbors
     in the 2-body local environment. This method is implemented outside
     the AtomicEnvironment class to allow for njit acceleration with Numba.
 
@@ -667,9 +675,15 @@ def get_2_body_arrays_ind_sepcut(positions, atom: int, cell, cutoff_2, species,
         cell.
     :type cell: np.ndarray
     :param cutoff_2: 2-body cutoff radius.
-    :type cutoff_2: float
+    :type cutoff_2: np.ndarray
     :param species: Numpy array of species represented by their atomic numbers.
     :type species: np.ndarray
+    :param nspec: number of atom types to define bonds
+    :type: int
+    :param spec_mask: mapping from atomic number to atom types
+    :type: np.ndarray
+    :param bond_mask: mapping from the types of end atoms to bond types
+    :type: np.ndarray
     :return: Tuple of arrays describing pairs of atoms in the 2-body local
      environment.
 
@@ -684,7 +698,7 @@ def get_2_body_arrays_ind_sepcut(positions, atom: int, cell, cutoff_2, species,
      etypes: Species of atoms in the 2-body local environment represented by
      their atomic number.
 
-     bond_indexes: Structure indexes of atoms in the local environment.
+     bond_indices: Structure indices of atoms in the local environment.
 
     :rtype: np.ndarray, np.ndarray, np.ndarray, np.ndarray
     """
@@ -721,7 +735,7 @@ def get_2_body_arrays_ind_sepcut(positions, atom: int, cell, cutoff_2, species,
                     im_count += 1
 
     # create 2-body bond array
-    bond_indexes = np.zeros(cutoff_count, dtype=np.int8)
+    bond_indices = np.zeros(cutoff_count, dtype=np.int8)
     bond_array_2 = np.zeros((cutoff_count, 4))
     bond_positions_2 = np.zeros((cutoff_count, 3))
     etypes = np.zeros(cutoff_count, dtype=np.int8)
@@ -739,17 +753,17 @@ def get_2_body_arrays_ind_sepcut(positions, atom: int, cell, cutoff_2, species,
                 bond_array_2[bond_count, 1:4] = coord / dist_curr
                 bond_positions_2[bond_count, :] = coord
                 etypes[bond_count] = spec_curr
-                bond_indexes[bond_count] = m
+                bond_indices[bond_count] = m
                 bond_count += 1
 
     # sort by distance
     sort_inds = bond_array_2[:, 0].argsort()
     bond_array_2 = bond_array_2[sort_inds]
     bond_positions_2 = bond_positions_2[sort_inds]
-    bond_indexes = bond_indexes[sort_inds]
+    bond_indices = bond_indices[sort_inds]
     etypes = etypes[sort_inds]
 
-    return bond_array_2, bond_positions_2, etypes, bond_indexes
+    return bond_array_2, bond_positions_2, etypes, bond_indices
 
 
 @njit
@@ -764,8 +778,16 @@ def get_3_body_arrays_sepcut(bond_array_2, bond_positions_2, ctype,
     :param bond_positions_2: Coordinates of atoms in the 2-body local
      environment.
     :type bond_positions_2: np.ndarray
+    :param ctype: atomic number of the center atom
+    :type: int
     :param cutoff_3: 3-body cutoff radius.
-    :type cutoff_3: float
+    :type cutoff_3: np.ndarray
+    :param nspec: number of atom types to define bonds
+    :type: int
+    :param spec_mask: mapping from atomic number to atom types
+    :type: np.ndarray
+    :param cut3b_mask: mapping from the types of end atoms to bond types
+    :type: np.ndarray
     :return: Tuple of 4 arrays describing triplets of atoms in the 3-body local
      environment.
 
@@ -864,11 +886,15 @@ def get_m_body_arrays_sepcut(positions, atom: int, cell, cutoff_mb, species,
         cell.
     :type cell: np.ndarray
     :param cutoff_mb: 2-body cutoff radius.
-    :type cutoff_mb: float
+    :type cutoff_mb: np.ndarray
     :param species: Numpy array of species represented by their atomic numbers.
     :type species: np.ndarray
-    :param indexes: Boolean indicating whether indexes of neighbours are returned
-    :type indexes: boolean
+    :param nspec: number of atom types to define bonds
+    :type: int
+    :param spec_mask: mapping from atomic number to atom types
+    :type: np.ndarray
+    :param mb_mask: mapping from the types of end atoms to CN types
+    :type: np.ndarray
     :return: Tuple of arrays describing pairs of atoms in the 2-body local
      environment.
 
@@ -891,7 +917,7 @@ def get_m_body_arrays_sepcut(positions, atom: int, cell, cutoff_mb, species,
     :rtype: np.ndarray, np.ndarray, np.ndarray, np.ndarray
     """
     # TODO: this can be probably improved using stored arrays, redundant calls to get_2_body_arrays
-    # Get distances, positions, species and indexes of neighbouring atoms
+    # Get distances, positions, species and indices of neighbouring atoms
     bond_array_mb, __, _, bond_inds = get_2_body_arrays_ind_sepcut(
         positions, atom, cell, cutoff_mb, species,
         nspec, spec_mask, mb_mask)
