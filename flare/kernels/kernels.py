@@ -179,7 +179,7 @@ def k_sq_exp_double_dev(q1, q2, sig, ls):
 
 @njit
 def k_sq_exp_dev(q1, q2, sig, ls):
-    """Second Gradient of generic squared exponential kernel on two many body functions
+    """First Gradient of generic squared exponential kernel on two many body functions
 
     Args:
         q1 (float): the many body descriptor of the first local environment
@@ -225,7 +225,7 @@ def coordination_number(rij, cij, r_cut, cutoff_func):
 @njit
 def q_value(distances, r_cut, cutoff_func, q_func=coordination_number):
     """Compute value of many-body descriptor based on distances of atoms
-    in the local amny-body environment.
+    in the local many-body environment.
 
     Args:
         distances (np.ndarray): distances between atoms i and j
@@ -247,8 +247,8 @@ def q_value(distances, r_cut, cutoff_func, q_func=coordination_number):
 
 @njit
 def mb_grad_helper_ls_(qdiffsq, sig, ls):
-    """Derivative of a many body force-force kernel wrt ls
-
+    """
+    Derivative of a many body force-force kernel w.r.t. ls
     """
 
     ls2 = ls * ls
@@ -261,9 +261,9 @@ def mb_grad_helper_ls_(qdiffsq, sig, ls):
 
 @njit
 def mb_grad_helper_ls(q1, q2, qi, qj, sig, ls):
-    """Helper function fr many body gradient collecting all the derivatives
-    of the force-foce many body kernel wrt ls
-
+    """
+    Helper function for many body gradient collecting all the derivatives
+    of the force-force many body kernel w.r.t. ls
     """
 
     q12diffsq = ((q1 - q2) * (q1 - q2))
