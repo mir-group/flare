@@ -23,6 +23,40 @@ class AtomicEnvironment:
     :param cutoffs_mask: a dictionary to store multiple cutoffs if neede
                          it should be exactly the same as the hyps mask
     :type cutoffs_mask: dict
+
+    The cutoffs_mask allows the user to define multiple cutoffs for different
+    bonds, triples, and many body interaction. This dictionary should be
+    consistent with the hyps_mask used in the GuassianProcess object.
+
+    * spec_mask: 118-long integer array descirbing which elements belong to
+                 like groups for determining which bond hyperparameters to use.
+                 For instance, [0,0,1,1,0 ...] assigns H to group 0, He and
+                 Li to group 1, and Be to group 0 (the 0th register is ignored).
+    * nspec: Integer, number of different species groups (equal to number of
+             unique values in spec_mask).
+    * nbond: Integer, number of different hyperparameter/cutoff sets to associate with
+             different 2-body pairings of atoms in groups defined in spec_mask.
+    * bond_mask: Array of length nspec^2, which describes the cutoff to
+                 associate with different pairings of species types. For example, if there
+                 are atoms of type 0 and 1, then bond_mask defines which cutoff
+                 to use for parings [0-0, 0-1, 1-0, 1-1]: if we wanted cutoff0 for
+                 0-0 parings and set 1 for 0-1 and 1-1 pairings, then we would make
+                 bond_mask [0, 1, 1, 1].
+    * cutoff_2b: Array of length nbond, which stores the cutoff used for different
+                 types of bonds defined in bond_mask
+    * ncut3b:    Integer, number of different cutoffs sets to associate
+                 with different 3-body pariings of atoms in groups defined in spec_mask.
+    * cut3b_mask: Array of length nspec^2, which describes the cutoff to
+                 associate with different bond types in triplets. For example, in a triplet
+                 (C, O, H) , there are three cutoffs. Cutoffs for CH bond, CO bond and OH bond.
+                 If C and O are associate with atom group 1 in spec_mask and H are associate with
+                 group 0 in spec_mask, the cut3b_mask[1*nspec+0] determines the C/O-H bond cutoff,
+                 and cut3b_mask[1*nspec+1] determines the C-O bond cutoff. If we want the
+                 former one to use the 1st cutoff in cutoff_3b and the later to use the 2nd cutoff
+                 in cutoff_3b, the cut3b_mask should be [0, 0, 0, 1]
+    * cutoff_3b: Array of length ncut3b, which stores the cutoff used for different
+                 types of bonds in triplets.
+
     """
 
     def __init__(self, structure: Structure, atom: int, cutoffs, cutoffs_mask=None):
@@ -62,8 +96,8 @@ class AtomicEnvironment:
                 self.cutoff_2b = self.cutoffs_mask['cutoff_2b']
 
             if ('cutoff_3b' in self.cutoffs_mask):
-                self.n3b = self.cutoffs_mask['ntriplet']
-                self.bond_mask = self.cutoffs_mask['bond_mask']
+                self.n3b = self.cutoffs_mask['ncut3b']
+                self.cut3b_mask = self.cutoffs_mask['cut3b_mask']
                 self.cutoff_3b = self.cutoffs_mask['cutoff_3b']
 
             if ('cutoff_mb' in self.cutoffs_mask):
@@ -93,7 +127,7 @@ class AtomicEnvironment:
                 bond_array_3, cross_bond_inds, cross_bond_dists, triplet_counts = \
                     get_3_body_arrays_sepcut(bond_array_2, bond_positions_2,
                                              self.species[self.atom], etypes, self.cutoff_3b,
-                                             self.nspec, self.spec_mask, self.bond_mask)
+                                             self.nspec, self.spec_mask, self.cut3b_mask)
             else:
                 bond_array_3, cross_bond_inds, cross_bond_dists, triplet_counts = \
                     get_3_body_arrays(
@@ -709,7 +743,7 @@ def get_2_body_arrays_ind_sepcut(positions, atom: int, cell, cutoff_2, species,
 # @njit
 def get_3_body_arrays_sepcut(bond_array_2, bond_positions_2, ctype,
                              etypes, cutoff_3,
-                             nspec, spec_mask, bond_mask):
+                             nspec, spec_mask, cut3b_mask):
     """Returns distances and coordinates of triplets of atoms in the
     3-body local environment.
 
@@ -769,18 +803,18 @@ def get_3_body_arrays_sepcut(bond_array_2, bond_positions_2, ctype,
 
         # choose bond dependent bond
         bm = spec_mask[etypes[m]]
-        btype_m = bond_mask[bm + bcn] # (m, c)
+        btype_m = cut3b_mask[bm + bcn] # (m, c)
         cut_m = cutoff_3[btype_m]
         bmn = nspec * bm # for cross_dist usage
 
         for n in range(m + 1, ind_3):
 
             bn = spec_mask[etypes[n]]
-            btype_n = bond_mask[bn + bcn] # (n, c)
+            btype_n = cut3b_mask[bn + bcn] # (n, c)
             cut_n = cutoff_3[btype_n]
 
             # for cross_dist (m,n) pair
-            btype_mn = bond_mask[bn + bmn]
+            btype_mn = cut3b_mask[bn + bmn]
             cut_mn = cutoff_3[btype_mn]
 
             pos2 = bond_positions_3[n]
