@@ -6,11 +6,9 @@ from flare.env import AtomicEnvironment
 
 np.random.seed(0)
 
-# cutoff_list = [np.array([1]), np.array([1, 0.8]), np.array([1, 0.8, 0.4])]
-# mask_list = [True, False]
-
-cutoff_list = [np.array([1, 0.05]), np.array([1, 0.9])] #, np.array([1, 0.8, 0.4])]
-mask_list = [True]
+cutoff_mask_list = [(True, np.array([1, 0.8])), (True, np.array([1, 0.8, 0.4])),
+        (False, np.array([1])), (False, np.array([1, 0.05])),
+        (False, np.array([1, 0.8])), (False, np.array([1, 0.8, 0.4]))]
 
 @pytest.fixture(scope='module')
 def structure() -> Structure:
@@ -25,9 +23,8 @@ def structure() -> Structure:
     del struc_test
 
 
-@pytest.mark.parametrize('cutoff', cutoff_list)
-@pytest.mark.parametrize('mask', mask_list)
-def test_species_count(structure, cutoff, mask):
+@pytest.mark.parametrize('mask, cutoff', cutoff_mask_list)
+def test_species_count(structure, mask, cutoff):
 
     if (mask is True):
         mask = generate_mask(cutoff)
@@ -43,9 +40,8 @@ def test_species_count(structure, cutoff, mask):
     assert (isinstance(env_test.etypes[0], np.int8))
 
 
-@pytest.mark.parametrize('cutoff', cutoff_list)
-@pytest.mark.parametrize('mask', mask_list)
-def test_env_methods(structure, cutoff, mask):
+@pytest.mark.parametrize('mask, cutoff', cutoff_mask_list)
+def test_env_methods(structure, mask, cutoff):
 
     if (mask is True):
         mask = generate_mask(cutoff)
