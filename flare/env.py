@@ -99,11 +99,25 @@ class AtomicEnvironment:
                 self.n3b = self.cutoffs_mask['ncut3b']
                 self.cut3b_mask = self.cutoffs_mask['cut3b_mask']
                 self.cutoff_3b = self.cutoffs_mask['cutoff_3b']
+                if ('cutoff_2b' in self.cutoffs_mask):
+                    assert np.max(self.cutoff_3b) <= np.min(self.cutoff_2b), \
+                            "2b cutoff has to be larger than 3b cutoff"
+                else:
+                    assert np.max(self.cutoff_3b) <= self.cutoffs[0], \
+                            "2b cutoff has to be larger than 3b cutoff"
 
             if ('cutoff_mb' in self.cutoffs_mask):
                 self.nmb = self.cutoffs_mask['nmb']
                 self.mb_mask = self.cutoffs_mask['mb_mask']
                 self.cutoff_mb = self.cutoffs_mask['cutoff_mb']
+                # # TO DO, once the mb function is updated to use the bond_array_2
+                # # this block should be activated.
+                # if ('cutoff_2b' in self.cutoffs_mask):
+                #     assert np.max(self.cutoff_mb) <= np.min(self.cutoff_2b), \
+                #             "2b cutoff has to be larger than 3b cutoff"
+                # else:
+                #     assert np.max(self.cutoff_mb) <= self.cutoffs[0]:
+                #             "2b cutoff has to be larger than 3b cutoff"
 
     def compute_env(self):
 
@@ -538,9 +552,7 @@ def get_m_body_arrays(positions, atom: int, cell, cutoff_mb: float, species):
 
     return bond_array_mb, neigh_dists_mb, num_neighs_mb, etypes_mb_array
 
-# @njit
-
-
+@njit
 def get_2_body_arrays_sepcut(positions, atom: int, cell, cutoff_2, species,
                              nspec, spec_mask, bond_mask):
     """Returns distances, coordinates, and species of atoms in the 2-body
@@ -640,7 +652,7 @@ def get_2_body_arrays_sepcut(positions, atom: int, cell, cutoff_2, species,
     return bond_array_2, bond_positions_2, etypes
 
 
-# @njit
+@njit
 def get_2_body_arrays_ind_sepcut(positions, atom: int, cell, cutoff_2, species,
                                  nspec, spec_mask, bond_mask):
     """Returns distances, coordinates, species of atoms, and indexes of neighbors
@@ -740,7 +752,7 @@ def get_2_body_arrays_ind_sepcut(positions, atom: int, cell, cutoff_2, species,
     return bond_array_2, bond_positions_2, etypes, bond_indexes
 
 
-# @njit
+@njit
 def get_3_body_arrays_sepcut(bond_array_2, bond_positions_2, ctype,
                              etypes, cutoff_3,
                              nspec, spec_mask, cut3b_mask):
@@ -783,11 +795,12 @@ def get_3_body_arrays_sepcut(bond_array_2, bond_positions_2, ctype,
     cut3 = np.max(cutoff_3)
 
     # get 3-body bond array
-    ind_3 = np.where(bond_array_2[:, 0]>cut3)[0]
-    if (len(ind_3)>0):
-        ind_3 = ind_3[0]
+    ind_3_l = np.where(bond_array_2[:, 0]>cut3)[0]
+    if (ind_3_l.shape[0]>0):
+        ind_3 = ind_3_l[0]
     else:
         ind_3 = bond_array_2.shape[0]
+
 
     bond_array_3 = bond_array_2[0:ind_3, :]
     bond_positions_3 = bond_positions_2[0:ind_3, :]
@@ -835,7 +848,7 @@ def get_3_body_arrays_sepcut(bond_array_2, bond_positions_2, ctype,
     return bond_array_3, cross_bond_inds, cross_bond_dists, triplet_counts
 
 
-# @njit
+@njit
 def get_m_body_arrays_sepcut(positions, atom: int, cell, cutoff_mb, species,
                              nspec, spec_mask, mb_mask):
     """Returns distances, and species of atoms in the many-body
