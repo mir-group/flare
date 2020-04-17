@@ -103,10 +103,10 @@ class AtomicEnvironment:
                 self.cutoff_3b = self.cutoffs_mask['cutoff_3b']
                 if ('cutoff_2b' in self.cutoffs_mask):
                     assert np.max(self.cutoff_3b) <= np.min(self.cutoff_2b), \
-                            "2b cutoff has to be larger than 3b cutoff"
+                        "2b cutoff has to be larger than 3b cutoff"
                 else:
                     assert np.max(self.cutoff_3b) <= self.cutoffs[0], \
-                            "2b cutoff has to be larger than 3b cutoff"
+                        "2b cutoff has to be larger than 3b cutoff"
 
             if ('cutoff_mb' in self.cutoffs_mask):
                 self.nmb = self.cutoffs_mask['nmb']
@@ -554,6 +554,7 @@ def get_m_body_arrays(positions, atom: int, cell, cutoff_mb: float, species):
 
     return bond_array_mb, neigh_dists_mb, num_neighs_mb, etypes_mb_array
 
+
 @njit
 def get_2_body_arrays_sepcut(positions, atom: int, cell, cutoff_2, species,
                              nspec, spec_mask, bond_mask):
@@ -817,12 +818,11 @@ def get_3_body_arrays_sepcut(bond_array_2, bond_positions_2, ctype,
     cut3 = np.max(cutoff_3)
 
     # get 3-body bond array
-    ind_3_l = np.where(bond_array_2[:, 0]>cut3)[0]
-    if (ind_3_l.shape[0]>0):
+    ind_3_l = np.where(bond_array_2[:, 0] > cut3)[0]
+    if (ind_3_l.shape[0] > 0):
         ind_3 = ind_3_l[0]
     else:
         ind_3 = bond_array_2.shape[0]
-
 
     bond_array_3 = bond_array_2[0:ind_3, :]
     bond_positions_3 = bond_positions_2[0:ind_3, :]
@@ -838,14 +838,14 @@ def get_3_body_arrays_sepcut(bond_array_2, bond_positions_2, ctype,
 
         # choose bond dependent bond
         bm = spec_mask[etypes[m]]
-        btype_m = cut3b_mask[bm + bcn] # (m, c)
+        btype_m = cut3b_mask[bm + bcn]  # (m, c)
         cut_m = cutoff_3[btype_m]
-        bmn = nspec * bm # for cross_dist usage
+        bmn = nspec * bm  # for cross_dist usage
 
         for n in range(m + 1, ind_3):
 
             bn = spec_mask[etypes[n]]
-            btype_n = cut3b_mask[bn + bcn] # (n, c)
+            btype_n = cut3b_mask[bn + bcn]  # (n, c)
             cut_n = cutoff_3[btype_n]
 
             # for cross_dist (m,n) pair
@@ -858,8 +858,8 @@ def get_3_body_arrays_sepcut(bond_array_2, bond_positions_2, ctype,
                 diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2])
 
             if dist_curr < cut_mn \
-                and bond_array_2[m, 0] < cut_m \
-                and bond_array_2[n, 0] < cut_n :
+                    and bond_array_2[m, 0] < cut_m \
+                    and bond_array_2[n, 0] < cut_n:
                 cross_bond_inds[m, count] = n
                 cross_bond_dists[m, count] = dist_curr
                 count += 1

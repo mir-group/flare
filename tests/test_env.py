@@ -15,9 +15,11 @@ cutoff_mask_list = [(True, np.array([1]), [10]),
                     (True, np.array([1, 0.05, 0.4]), [16, 0]),
                     (False, np.array([1, 0.05, 0.4]), [16, 0])]
 
+
 @pytest.fixture(scope='module')
 def structure() -> Structure:
     """Returns a GP instance with a two-body numba-based kernel"""
+    # list of all bonds and triplets can be found in test_files/test_env_list
     cell = np.eye(3)
     species = [1, 2, 3, 1]
     positions = np.array([[0, 0, 0], [0.5, 0.5, 0.5],
@@ -26,6 +28,7 @@ def structure() -> Structure:
 
     yield struc_test
     del struc_test
+
 
 @pytest.mark.parametrize('mask, cutoff, result', cutoff_mask_list)
 def test_2bspecies_count(structure, mask, cutoff, result):
@@ -45,8 +48,9 @@ def test_2bspecies_count(structure, mask, cutoff, result):
     assert (isinstance(env_test.etypes[0], np.int8))
     assert (len(env_test.bond_array_2) == result[0])
 
-    if (len(cutoff)>1):
+    if (len(cutoff) > 1):
         assert (np.sum(env_test.triplet_counts) == result[1])
+
 
 @pytest.mark.parametrize('mask, cutoff, result', cutoff_mask_list)
 def test_env_methods(structure, mask, cutoff, result):
@@ -73,9 +77,9 @@ def test_env_methods(structure, mask, cutoff, result):
     assert isinstance(remade_env, AtomicEnvironment)
 
     assert np.array_equal(remade_env.bond_array_2, env_test.bond_array_2)
-    if (len(cutoff)>1):
+    if (len(cutoff) > 1):
         assert np.array_equal(remade_env.bond_array_3, env_test.bond_array_3)
-    if (len(cutoff)>2):
+    if (len(cutoff) > 2):
         assert np.array_equal(remade_env.bond_array_mb, env_test.bond_array_mb)
 
 
@@ -125,4 +129,3 @@ def generate_mask(cutoff):
         mask['mb_mask'] = np.ones(4, dtype=int)
         mask['mb_mask'][0] = 0
     return mask
-
