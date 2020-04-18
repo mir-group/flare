@@ -256,11 +256,11 @@ def test_get_kernel_vector(params):
 
     # test the parallel implementation for multihyps
     vec = get_kernel_vector(name, kernel_m[0],
-                          test_point, 1, hyps,
+                          test_point, 1, hyps_list[0],
                           cutoffs, hyps_mask_list[0])
 
     vec_par = get_kernel_vector(name, kernel_m[0],
-                          test_point, 1, hyps,
+                          test_point, 1, hyps_list[0],
                           cutoffs, hyps_mask_list[0],
                           n_cpus=2, n_sample=100)
 
