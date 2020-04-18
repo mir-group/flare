@@ -1,25 +1,23 @@
 """Multi-element 2-, 3-, and 2+3-body kernels that restrict all signal
 variance hyperparameters to a single value."""
 import numpy as np
-from numba import njit
+# from numba import njit
 from math import exp
 import sys
 import os
 from flare.env import AtomicEnvironment
 import flare.cutoffs as cf
-from flare.kernels.kernels import force_helper, grad_constants, grad_helper, \
-    force_energy_helper, three_body_en_helper, three_body_helper_1, \
-    three_body_helper_2, three_body_grad_helper_1, three_body_grad_helper_2, \
-    coordination_number, q_value, \
-    mb_grad_helper_ls_, mb_grad_helper_ls_
+from flare.kernels.kernels import coordination_number, q_value, q_value_mc, \
+    mb_grad_helper_ls_, mb_grad_helper_ls_, k_sq_exp_double_dev
 from typing import Callable
 
 
-@njit
-def many_body_mc_sepcut_jit_(bond_array_1, bond_array_2, neigh_dists_1, neigh_dists_2, num_neigh_1,
-                      num_neigh_2, c1, c2, etypes1, etypes2, etypes_neigh_1, etypes_neigh_2,
-                      species1, species2, d1, d2, sig, ls, r_cut, cutoff_func,
-                      nspec, spec_mask, mb_mask):
+# @njit
+def many_body_mc_sepcut_jit_(bond_array_1, bond_array_2, neigh_dists_1, neigh_dists_2,
+                             num_neigh_1, num_neigh_2, c1, c2, etypes1, etypes2,
+                             etypes_neigh_1, etypes_neigh_2, species1, species2,
+                             d1, d2, sig, ls, r_cut, cutoff_func,
+                             nspec, spec_mask, mb_mask):
     """many-body multi-element kernel between two force components accelerated
     with Numba.
 
@@ -159,9 +157,11 @@ def many_body_mc_sepcut_jit_(bond_array_1, bond_array_2, neigh_dists_1, neigh_di
     return kern
 
 
-def many_body_mc_sepcut_jit(bond_array_1, bond_array_2, neigh_dists_1, neigh_dists_2, num_neigh_1,
-                     num_neigh_2, c1, c2, etypes1, etypes2, etypes_neigh_1, etypes_neigh_2,
-                     species1, species2, d1, d2, sig, ls, r_cut, cutoff_func):
+def many_body_mc_sepcut_jit(bond_array_1, bond_array_2, neigh_dists_1, neigh_dists_2,
+                            num_neigh_1, num_neigh_2, c1, c2,
+                            etypes1, etypes2, etypes_neigh_1, etypes_neigh_2,
+                            species1, species2, d1, d2, sig, ls, r_cut, cutoff_func,
+                            nspec, spec_mask, mb_mask):
     """many-body multi-element kernel between two force components accelerated
     with Numba.
 
@@ -310,7 +310,7 @@ def many_body_mc_sepcut_jit(bond_array_1, bond_array_2, neigh_dists_1, neigh_dis
     return kern
 
 
-@njit
+# @njit
 def many_body_mc_grad_sepcut_jit(bond_array_1, bond_array_2, neigh_dists_1, neigh_dists_2, num_neigh_1,
                           num_neigh_2, c1, c2, etypes1, etypes2, etypes_neigh_1, etypes_neigh_2,
                           species1, species2, d1, d2, sig, ls, r_cut, cutoff_func,
@@ -500,7 +500,7 @@ def many_body_mc_grad_sepcut_jit(bond_array_1, bond_array_2, neigh_dists_1, neig
     return kern, grad
 
 
-@njit
+# @njit
 def many_body_mc_force_en_sepcut_jit(bond_array_1, bond_array_2, neigh_dists_1, num_neigh_1,
                               c1, c2, etypes1, etypes2, etypes_neigh_1,
                               species1, species2, d1, sig, ls, r_cut, cutoff_func):
@@ -597,7 +597,7 @@ def many_body_mc_force_en_sepcut_jit(bond_array_1, bond_array_2, neigh_dists_1, 
     return kern
 
 
-@njit
+# @njit
 def many_body_mc_en_sepcut_jit(bond_array_1, bond_array_2, c1, c2, etypes1, etypes2,
                         species1, species2,
                         sig, ls, r_cut, cutoff_func,

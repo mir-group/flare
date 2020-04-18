@@ -34,7 +34,7 @@ def test_two_plus_three_body_force_en():
     positions_2 = deepcopy(positions_1)
     positions_2[0][0] = delt
 
-    species_1 = [1, 2, 1]
+    species_1 = [1, 2, 1, 2, 2, 1, 1, 1, 2]
     atom_1 = 0
     test_structure_1 = struc.Structure(cell, species_1, positions_1)
     test_structure_2 = struc.Structure(cell, species_1, positions_2)
@@ -53,7 +53,7 @@ def test_two_plus_three_body_force_en():
                    np.array([random(), random(), random()]),
                    np.array([random(), random(), random()])]
 
-    species_2 = [1, 1, 2]
+    species_2 = [1, 1, 2, 1, 2, 2, 2, 1, 2]
     atom_2 = 0
     test_structure_1 = struc.Structure(cell, species_2, positions_1)
     env2 = env.AtomicEnvironment(test_structure_1, atom_2, cutoffs)
@@ -186,7 +186,7 @@ def test_two_plus_three_body_grad():
     d1 = randint(1, 3)
     d2 = randint(1, 3)
 
-    delta = 1e-8
+    delta = 1e-10
 
     hyps = np.array([sig1, ls1, sig2, ls2])
     hyps1 = np.array([sig1+delta, ls1, sig2, ls2])
@@ -591,14 +591,14 @@ def test_masked_hyperparameter_function():
     # -----------------------
     hyps_mask = {'nbond': 1, 'nspec':1, 'spec_mask':np.zeros(118)}
     hyps = [1,2,5]
-    c2, c3, ns, sm, n2b, bm, n3b, tm, sig2, ls2, sig3, ls3 \
+    c2, c3, ns, sm, n2b, bm, n3b, tm, nc3, c3m, sig2, ls2, sig3, ls3 \
             = from_mask_to_args(hyps, hyps_mask, cutoffs)
     assert (np.equal(sig2, [1]).all())
     assert (np.equal(ls2, [2]).all())
 
     hyps = [3,4,5]
     hyps_mask = {'ntriplet': 1, 'nspec':1, 'spec_mask':np.zeros(118)}
-    c2, c3, ns, sm, n2b, bm, n3b, tm, sig2, ls2, sig3, ls3 \
+    c2, c3, ns, sm, n2b, bm, n3b, tm, nc3, c3m, sig2, ls2, sig3, ls3 \
             = from_mask_to_args(hyps, hyps_mask, cutoffs)
     assert (np.equal(sig3, [3]).all())
     assert (np.equal(ls3, [4]).all())
@@ -606,7 +606,7 @@ def test_masked_hyperparameter_function():
     hyps = [1, 2, 3, 4, 5]
     hyps_mask = {'nbond': 1, 'ntriplet':1,
             'nspec':1, 'spec_mask':np.zeros(118)}
-    c2, c3, ns, sm, n2b, bm, n3b, tm, sig2, ls2, sig3, ls3 \
+    c2, c3, ns, sm, n2b, bm, n3b, tm, nc3, c3m, sig2, ls2, sig3, ls3 \
             = from_mask_to_args(hyps, hyps_mask, cutoffs)
     assert (np.equal(sig2, [1]).all())
     assert (np.equal(ls2, [2]).all())
@@ -616,7 +616,7 @@ def test_masked_hyperparameter_function():
     hyps = [1, 2, 3, 4, 5]
     hyps_mask['map']=[0, 1, 2, 3, 4]
     hyps_mask['original'] = [1, 2, 3, 4, 5, 6]
-    c2, c3, ns, sm, n2b, bm, n3b, tm, sig2, ls2, sig3, ls3 \
+    c2, c3, ns, sm, n2b, bm, n3b, tm, nc3, c3m, sig2, ls2, sig3, ls3 \
             = from_mask_to_args(hyps, hyps_mask, cutoffs)
     assert (np.equal(sig2, [1]).all())
     assert (np.equal(ls2, [2]).all())
@@ -631,7 +631,7 @@ def test_masked_hyperparameter_function():
     hyps = [1.1,1.2, 2.1, 2.2, 3.1, 3.2, 4.1, 4.2, 5]
     hyps_mask = {'nbond': 2, 'ntriplet': 2,
                  'nspec':1, 'spec_mask':np.zeros(118)}
-    c2, c3, ns, sm, n2b, bm, n3b, tm, sig2, ls2, sig3, ls3 \
+    c2, c3, ns, sm, n2b, bm, n3b, tm, nc3, c3m, sig2, ls2, sig3, ls3 \
             = from_mask_to_args(hyps, hyps_mask, cutoffs)
     assert (np.equal(sig2, [1.1, 1.2]).all())
     assert (np.equal(ls2, [2.1, 2.2]).all())

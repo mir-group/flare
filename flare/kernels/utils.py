@@ -97,10 +97,12 @@ def from_mask_to_args(hyps, hyps_mask: dict, cutoffs):
     n2b = hyps_mask.get('nbond', 0)
     n3b = hyps_mask.get('ntriplet', 0)
     nmb = hyps_mask.get('nmb', 0)
+    ncut3b = hyps_mask.get('ncut3b', 0)
 
-    triplet_mask = np.array(hyps_mask.get('triplet_mask', None))
     bond_mask = np.array(hyps_mask.get('bond_mask', None))
+    triplet_mask = np.array(hyps_mask.get('triplet_mask', None))
     mb_mask = np.array(hyps_mask.get('mb_mask', None))
+    cut3b_mask = np.array(hyps_mask.get('cut3b_mask', None))
 
     ncutoff = len(cutoffs)
 
@@ -113,7 +115,7 @@ def from_mask_to_args(hyps, hyps_mask: dict, cutoffs):
 
     cutoff_3b = None
     if (ncutoff>1):
-        cutoff_3b = np.array([cutoffs[1]])
+        cutoff_3b = cutoffs[1]
         if ('cutoff_3b' in hyps_mask):
             cutoff_3b = np.array(hyps_mask['cutoff_3b'])
 
@@ -122,10 +124,13 @@ def from_mask_to_args(hyps, hyps_mask: dict, cutoffs):
         cutoff_mb = np.array([cutoffs[2]])
         if ('cutoff_mb' in hyps_mask):
             cutoff_mb = np.array(hyps_mask['cutoff_mb'])
-        if (nmb ==0):
+        # if the user forget to define nmb
+        # there has to be a mask, because this is the
+        # multi hyper parameter mode
+        if (nmb==0):
             nmb = 1
             nspec = hyps_mask['nspec']
-            mb_mask = np.zeros(nspec*nspec)
+            mb_mask = np.zeros(nspec*nspec, dtype=int)
 
     sig2 = None
     ls2 = None
@@ -156,6 +161,7 @@ def from_mask_to_args(hyps, hyps_mask: dict, cutoffs):
         return (cutoff_2b, cutoff_3b,
                 hyps_mask['nspec'], np.array(hyps_mask['spec_mask']),
                 n2b, bond_mask, n3b, triplet_mask,
+                ncut3b, cut3b_mask,
                 sig2, ls2, sig3, ls3)
 
     elif (ncutoff==3):
@@ -177,6 +183,7 @@ def from_mask_to_args(hyps, hyps_mask: dict, cutoffs):
                 np.array(hyps_mask['spec_mask']),
                 n2b, bond_mask,
                 n3b, triplet_mask,
+                ncut3b, cut3b_mask,
                 nmb, mb_mask,
                 sig2, ls2, sig3, ls3, sigm, lsm)
     else:

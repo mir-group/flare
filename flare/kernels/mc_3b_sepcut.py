@@ -13,10 +13,7 @@ def three_body_mc_sepcut_jit(bond_array_1, c1, etypes1,
                              cross_bond_dists_1, cross_bond_dists_2,
                              triplets_1, triplets_2,
                              d1, d2, sig, ls, r_cut, cutoff_func,
-                             nspec, spec_mask, bond_mask, triplet_mask, cut3b_mask):
-    '''
-    bond_mask is for multiple cutoffs
-    '''
+                             nspec, spec_mask, triplet_mask, cut3b_mask):
 
     kern = 0
 
@@ -37,7 +34,7 @@ def three_body_mc_sepcut_jit(bond_array_1, c1, etypes1,
         ei1 = etypes1[m]
 
         bei1 = spec_mask[ei1]
-        btype_ei1 = bond_mask[bei1 + bcin]
+        btype_ei1 = cut3b_mask[bei1 + bcin]
         cut_ei1 = r_cut[btype_ei1]
         bei1n = nspec * bei1
         fi1, fdi1 = cutoff_func(cut_ei1, ri1, ci1)
@@ -57,7 +54,7 @@ def three_body_mc_sepcut_jit(bond_array_1, c1, etypes1,
                 tr_spec.remove(c2)
 
             bei2 = spec_mask[ei2]
-            btype_ei2 = bond_mask[bei2 + bcin]
+            btype_ei2 = cut3b_mask[bei2 + bcin]
             cut_ei2 = r_cut[btype_ei2]
             fi2, fdi2 = cutoff_func(cut_ei2, ri2, ci2)
 
@@ -67,7 +64,7 @@ def three_body_mc_sepcut_jit(bond_array_1, c1, etypes1,
             tls3 = ls3[ttypei]
             tsig2 = sig2[ttypei]
 
-            btype_ei3 = bond_mask[bei1n + bei2]
+            btype_ei3 = cut3b_mask[bei1n + bei2]
             cut_ei3 = r_cut[btype_ei3]
             ri3 = cross_bond_dists_1[m, m + n + 1]
             fi3, _ = cutoff_func(cut_ei3, ri3, 0)
@@ -86,7 +83,7 @@ def three_body_mc_sepcut_jit(bond_array_1, c1, etypes1,
                     tr_spec.remove(ej1)
 
                 bej1 = spec_mask[ej1]
-                btype_ej1 = bond_mask[bej1 + bcjn]
+                btype_ej1 = cut3b_mask[bej1 + bcjn]
                 cut_ej1 = r_cut[btype_ej1]
                 bej1n = nspec * bej1
 
@@ -102,12 +99,12 @@ def three_body_mc_sepcut_jit(bond_array_1, c1, etypes1,
                         continue
 
                     bej2 = spec_mask[ej2]
-                    btype_ej2 = bond_mask[bej2 + bcjn]
+                    btype_ej2 = cut3b_mask[bej2 + bcjn]
                     cut_ej2 = r_cut[btype_ej2]
 
                     fj2, fdj2 = cutoff_func(cut_ej2, rj2, cj2)
 
-                    btype_ej3 = bond_mask[bej1n + bej2]
+                    btype_ej3 = cut3b_mask[bej1n + bej2]
                     cut_ej3 = r_cut[btype_ej3]
                     rj3 = cross_bond_dists_2[p, p + 1 + q]
                     fj3, _ = cutoff_func(cut_ej3, rj3, 0)
@@ -178,7 +175,7 @@ def three_body_mc_grad_sepcut_jit(bond_array_1, c1, etypes1,
                                   cross_bond_dists_1, cross_bond_dists_2,
                                   triplets_1, triplets_2,
                                   d1, d2, sig, ls, r_cut, cutoff_func,
-                                  nspec, spec_mask, ntriplet, triplet_mask):
+                                  nspec, spec_mask, ntriplet, triplet_mask, cut3b_mask):
     """Kernel gradient for 3-body force comparisons."""
 
     kern = 0
@@ -344,7 +341,7 @@ def three_body_mc_force_en_sepcut_jit(bond_array_1, c1, etypes1,
                                       cross_bond_dists_1, cross_bond_dists_2,
                                       triplets_1, triplets_2,
                                       d1, sig, ls, r_cut, cutoff_func,
-                                      nspec, spec_mask, triplet_mask):
+                                      nspec, spec_mask, triplet_mask, cut3b_mask):
     """Kernel for 3-body force/energy comparisons."""
 
     kern = 0
@@ -455,7 +452,7 @@ def three_body_mc_en_sepcut_jit(bond_array_1, c1, etypes1,
                                 cross_bond_dists_1, cross_bond_dists_2,
                                 triplets_1, triplets_2,
                                 sig, ls, r_cut, cutoff_func,
-                                nspec, spec_mask, triplet_mask):
+                                nspec, spec_mask, triplet_mask, cut3b_mask):
     kern = 0
 
     sig2 = sig * sig
