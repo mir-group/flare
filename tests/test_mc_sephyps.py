@@ -25,57 +25,7 @@ def test_force_en_multi_vs_simple(kernel_name):
     d2 = 2
     tol = 1e-4
 
-    cutoffs = []
-    hyps0 = []
-    hyps2 = []
-    hm1 = {'nspec': 1, 'spec_mask': np.zeros(118, dtype=int)}
-    hm2 = {'nspec': 2, 'spec_mask': np.zeros(118, dtype=int)}
-    hm2['spec_mask'][2] = 1
-    if ('2' in kernel_name):
-        cutoffs = np.ones(1)
-
-        hyps0 += [1, 0.9]
-        hm1['nbond'] = 1
-        hm1['bond_mask'] = np.zeros(1, dtype=int)
-
-        hyps2 += [1, 1, 0.9, 0.9]
-        hm2['nbond'] = 2
-        hm2['bond_mask'] = np.ones(4, dtype=int)
-        hm2['bond_mask'][0] = 0
-        hm2['cutoff_2b'] = np.ones(2)
-    if ('3' in kernel_name):
-        cutoffs = np.ones(2)
-
-        hyps0 += [1, 0.8]
-
-        hm1['ntriplet'] = 1
-        hm1['triplet_mask'] = np.zeros(1, dtype=int)
-
-        hyps2 += [1, 1, 0.8, 0.8]
-        hm2['ntriplet'] = 2
-        hm2['triplet_mask'] = np.ones(4, dtype=int)
-        hm2['triplet_mask'][0] = 0
-        hm2['ncut3b'] = 2
-        hm2['cut3b_mask'] = np.ones(4, dtype=int)
-        hm2['cut3b_mask'][0] = 0
-        hm2['cutoff_3b'] = np.ones(2)
-    if ('mb' in kernel_name):
-        cutoffs = np.ones(3)
-
-        hyps0 += [1, 0.7]
-
-        hm1['nmb'] = 1
-        hm1['mb_mask'] = np.zeros(1, dtype=int)
-
-        hyps2 += [1, 1, 0.7, 0.7]
-        hm2['nmb'] = 2
-        hm2['mb_mask'] = np.ones(4, dtype=int)
-        hm2['mb_mask'][0] = 0
-        hm2['cutoff_mb'] = np.ones(2)
-
-    hyps0 = np.hstack([hyps0, 0.5])
-    hyps2 = np.hstack([hyps2, 0.5])
-    hyps1 = np.hstack([hyps0, 0.5])
+    cutoffs, hyps0, hyps1, hyps2, hm1, hm2 = generate_same_hm(kernel_name)
 
     # mc_simple
     kernel0, kg0, en_kernel0, force_en_kernel0 = str_to_kernel_set(kernel_name, False)
@@ -121,6 +71,7 @@ def test_force_en_multi_vs_simple(kernel_name):
     assert(np.isclose(reference, result, atol=tol))
     result = funcs[1][i](env1_1, env2_1, d1, *args2)
     assert(np.isclose(reference, result, atol=tol))
+
 
 
 @pytest.mark.parametrize('kernel_name, nbond, ntriplet, constraint',
@@ -291,3 +242,57 @@ def test_hyps_grad(kernel_name, nbond, ntriplet, constraint):
         else:
             print(i, "hgrad", hgrad, grad[i])
             assert(np.isclose(grad[i], hgrad, atol=tol))
+
+def generate_same_hm(kernel_name):
+    cutoffs = []
+    hyps0 = []
+    hyps2 = []
+    hm1 = {'nspec': 1, 'spec_mask': np.zeros(118, dtype=int)}
+    hm2 = {'nspec': 2, 'spec_mask': np.zeros(118, dtype=int)}
+    hm2['spec_mask'][2] = 1
+    if ('2' in kernel_name):
+        cutoffs = np.ones(1)
+
+        hyps0 += [1, 0.9]
+        hm1['nbond'] = 1
+        hm1['bond_mask'] = np.zeros(1, dtype=int)
+
+        hyps2 += [1, 1, 0.9, 0.9]
+        hm2['nbond'] = 2
+        hm2['bond_mask'] = np.ones(4, dtype=int)
+        hm2['bond_mask'][0] = 0
+        hm2['cutoff_2b'] = np.ones(2)
+    if ('3' in kernel_name):
+        cutoffs = np.ones(2)
+
+        hyps0 += [1, 0.8]
+
+        hm1['ntriplet'] = 1
+        hm1['triplet_mask'] = np.zeros(1, dtype=int)
+
+        hyps2 += [1, 1, 0.8, 0.8]
+        hm2['ntriplet'] = 2
+        hm2['triplet_mask'] = np.ones(4, dtype=int)
+        hm2['triplet_mask'][0] = 0
+        hm2['ncut3b'] = 2
+        hm2['cut3b_mask'] = np.ones(4, dtype=int)
+        hm2['cut3b_mask'][0] = 0
+        hm2['cutoff_3b'] = np.ones(2)
+    if ('mb' in kernel_name):
+        cutoffs = np.ones(3)
+
+        hyps0 += [1, 0.7]
+
+        hm1['nmb'] = 1
+        hm1['mb_mask'] = np.zeros(1, dtype=int)
+
+        hyps2 += [1, 1, 0.7, 0.7]
+        hm2['nmb'] = 2
+        hm2['mb_mask'] = np.ones(4, dtype=int)
+        hm2['mb_mask'][0] = 0
+        hm2['cutoff_mb'] = np.ones(2)
+
+    hyps0 = np.hstack([hyps0, 0.5])
+    hyps2 = np.hstack([hyps2, 0.5])
+    hyps1 = np.hstack([hyps0, 0.5])
+    return cutoffs, hyps0, hyps1, hyps2, hm1, hm2

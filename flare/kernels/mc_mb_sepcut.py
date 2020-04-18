@@ -8,7 +8,7 @@ import os
 from flare.env import AtomicEnvironment
 import flare.cutoffs as cf
 from flare.kernels.kernels import coordination_number, q_value, q_value_mc, \
-    mb_grad_helper_ls_, mb_grad_helper_ls_, k_sq_exp_double_dev
+    mb_grad_helper_ls_, mb_grad_helper_ls_, k_sq_exp_double_dev, k_sq_exp_dev
 from typing import Callable
 
 
@@ -493,8 +493,6 @@ def many_body_mc_grad_sepcut_jit(bond_array_1, bond_array_2, neigh_dists_1, neig
                 ls_derv[mbtype1] += q1i_grads[i] * qj2_grads[j] * dk1js[j]
                 ls_derv[mbtype] += qi1_grads[i] * qj2_grads[j] * dkij
 
-                kern += kern_term_c1s
-
     grad = np.hstack([sig_derv, ls_derv])
 
     return kern, grad
@@ -503,7 +501,8 @@ def many_body_mc_grad_sepcut_jit(bond_array_1, bond_array_2, neigh_dists_1, neig
 # @njit
 def many_body_mc_force_en_sepcut_jit(bond_array_1, bond_array_2, neigh_dists_1, num_neigh_1,
                               c1, c2, etypes1, etypes2, etypes_neigh_1,
-                              species1, species2, d1, sig, ls, r_cut, cutoff_func):
+                              species1, species2, d1, sig, ls, r_cut, cutoff_func,
+                              nspec, spec_mask, mb_mask):
     """many-body many-element kernel between force and energy components accelerated
     with Numba.
 
@@ -641,11 +640,10 @@ def many_body_mc_en_sepcut_jit(bond_array_1, bond_array_2, c1, c2, etypes1, etyp
         for s in useful_species:
 
             bs = spec_mask[s]
-            btype = bond_mask[bc1n + bs]
             mbtype = mb_mask[bc1n + bs]
 
-            tls2 = ls2[btype]
-            tsig2 = sig2[btype]
+            tls2 = ls2[mbtype]
+            tsig2 = sig2[mbtype]
             tr_cut = r_cut[mbtype]
 
             q1 = q_value_mc(bond_array_1[:, 0], tr_cut, s, etypes1, cutoff_func)

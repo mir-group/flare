@@ -227,7 +227,7 @@ def two_three_many_mc_en(env1, env2, cutoff_2b, cutoff_3b, cutoff_mb,
                          nspec, spec_mask,
                          nbond, bond_mask, ntriplet, triplet_mask,
                          ncut3b, cut3b_mask,
-                         nmb, nmb_mask,
+                         nmb, mb_mask,
                          sig2, ls2, sig3, ls3, sigm, lsm,
                          cutoff_func=cf.quadratic_cutoff):
 
