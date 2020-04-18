@@ -41,7 +41,7 @@ SparseGP :: SparseGP(std::vector<Kernel *> kernels, double sigma_e,
     this->sigma_s = sigma_s;
 }
 
-void SparseGP :: add_sparse_environment(LocalEnvironment env){
+void SparseGP :: add_sparse_environment(const LocalEnvironment & env){
     // Compute kernels between new environment and previous sparse
     // environments.
     int n_sparse = sparse_environments.size();
@@ -134,7 +134,8 @@ void SparseGP :: add_sparse_environment(LocalEnvironment env){
     sparse_environments.push_back(env);
 }
 
-void SparseGP :: add_training_structure(StructureDescriptor training_structure){
+void SparseGP :: add_training_structure(
+    const StructureDescriptor & training_structure){
 
     int n_labels = training_structure.energy.size() +
         training_structure.forces.size() + training_structure.stresses.size();
@@ -222,7 +223,7 @@ void SparseGP :: add_training_structure(StructureDescriptor training_structure){
 }
 
 void SparseGP :: add_training_environment(
-    LocalEnvironment training_environment){
+    const LocalEnvironment & training_environment){
 
     int n_sparse = sparse_environments.size();
     int n_kernels = kernels.size();
@@ -263,7 +264,7 @@ void SparseGP :: add_training_environment(
 }
 
 void SparseGP :: add_training_environments(
-    std::vector<LocalEnvironment> envs){
+    const std::vector<LocalEnvironment> & envs){
 
     int n_sparse = sparse_environments.size();
     int n_envs = envs.size();
@@ -468,7 +469,7 @@ void  SparseGP::compute_beta(){
     }
 }
 
-Eigen::VectorXd SparseGP::predict(StructureDescriptor test_structure){
+Eigen::VectorXd SparseGP::predict(const StructureDescriptor & test_structure){
     int n_atoms = test_structure.noa;
     int n_out = 1 + 3 * n_atoms + 6;
     int n_sparse = sparse_environments.size();
@@ -488,7 +489,9 @@ Eigen::VectorXd SparseGP::predict(StructureDescriptor test_structure){
     return kern_mat * alpha;
 }
 
-Eigen::VectorXd SparseGP::predict_force(LocalEnvironment test_environment){
+Eigen::VectorXd SparseGP::predict_force(
+    const LocalEnvironment & test_environment){
+
     int n_sparse = sparse_environments.size();
     int n_kernels = kernels.size();
     Eigen::MatrixXd kern_mat = Eigen::MatrixXd::Zero(3, n_sparse);

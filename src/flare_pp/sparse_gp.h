@@ -33,11 +33,15 @@ class SparseGP{
         SparseGP(std::vector<Kernel *> kernels, double sigma_e, double sigma_f,
             double sigma_s);
 
-        void add_sparse_environment(LocalEnvironment env);
-        void add_sparse_environments(std::vector<LocalEnvironment> envs);
-        void add_training_environment(LocalEnvironment training_environment);
-        void add_training_environments(std::vector<LocalEnvironment> envs);
-        void add_training_structure(StructureDescriptor training_structure);
+        void add_sparse_environment(const LocalEnvironment & env);
+        void add_sparse_environments(
+            const std::vector<LocalEnvironment> & envs);
+        void add_training_environment(
+            const LocalEnvironment & training_environment);
+        void add_training_environments(
+            const std::vector<LocalEnvironment> & envs);
+        void add_training_structure(
+            const StructureDescriptor & training_structure);
 
         void three_body_grid(double min_dist, double max_dist, double cutoff,
             int n_species, int n_dist, int n_angle);
@@ -48,15 +52,16 @@ class SparseGP{
 
         void compute_likelihood();
 
-        Eigen::VectorXd predict(StructureDescriptor test_structure);
+        Eigen::VectorXd predict(const StructureDescriptor & test_structure);
 
-        Eigen::VectorXd predict_force(LocalEnvironment test_environment);
+        Eigen::VectorXd predict_force(
+            const LocalEnvironment & test_environment);
 
-        void predict_DTC(StructureDescriptor test_structure,
-            Eigen::VectorXd & mean_vector, Eigen::VectorXd & std_vector);
+        // void predict_DTC(StructureDescriptor test_structure,
+        //     Eigen::VectorXd & mean_vector, Eigen::VectorXd & std_vector);
 
-        void predict_SOR(StructureDescriptor test_structure,
-            Eigen::VectorXd & mean_vector, Eigen::VectorXd & std_vector);
+        // void predict_SOR(StructureDescriptor test_structure,
+        //     Eigen::VectorXd & mean_vector, Eigen::VectorXd & std_vector);
 };
 
 #endif
