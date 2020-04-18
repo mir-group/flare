@@ -7,6 +7,7 @@ from numpy.random import random, randint
 from flare import env, struc, gp
 from flare.kernels.utils import str_to_kernel_set as stks
 
+
 @pytest.mark.parametrize('kernel_name', ['2sc', '3sc', '2+3sc',
                                          '2', '3', '2+3',
                                          '2+3+many', '2+3mb'])

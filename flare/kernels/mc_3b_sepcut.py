@@ -7,6 +7,8 @@ from flare.kernels.kernels import force_helper, grad_constants, grad_helper, \
     three_body_helper_2, three_body_grad_helper_1, three_body_grad_helper_2
 
 # @njit
+
+
 def three_body_mc_sepcut_jit(bond_array_1, c1, etypes1,
                              bond_array_2, c2, etypes2,
                              cross_bond_inds_1, cross_bond_inds_2,
@@ -39,7 +41,6 @@ def three_body_mc_sepcut_jit(bond_array_1, c1, etypes1,
         btype_ei1 = cut3b_mask[bei1 + bcin]
         cut_ei1 = r_cut[btype_ei1]
         fi1, fdi1 = cutoff_func(cut_ei1, ri1, ci1)
-
 
         for n in range(triplets_1[m]):
             ind1 = cross_bond_inds_1[m, m + n + 1]
@@ -172,6 +173,8 @@ def three_body_mc_sepcut_jit(bond_array_1, c1, etypes1,
     return kern
 
 # @njit
+
+
 def three_body_mc_grad_sepcut_jit(bond_array_1, c1, etypes1,
                                   bond_array_2, c2, etypes2,
                                   cross_bond_inds_1, cross_bond_inds_2,
@@ -338,6 +341,8 @@ def three_body_mc_grad_sepcut_jit(bond_array_1, c1, etypes1,
     return kern, kern_grad
 
 # @njit
+
+
 def three_body_mc_force_en_sepcut_jit(bond_array_1, c1, etypes1,
                                       bond_array_2, c2, etypes2,
                                       cross_bond_inds_1, cross_bond_inds_2,
@@ -449,6 +454,8 @@ def three_body_mc_force_en_sepcut_jit(bond_array_1, c1, etypes1,
     return kern
 
 # @njit
+
+
 def three_body_mc_en_sepcut_jit(bond_array_1, c1, etypes1,
                                 bond_array_2, c2, etypes2,
                                 cross_bond_inds_1, cross_bond_inds_2,

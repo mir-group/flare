@@ -57,7 +57,8 @@ def many_body_mc_sepcut_jit_(bond_array_1, bond_array_2, neigh_dists_1, neigh_di
 
     kern = 0
 
-    useful_species = np.array(list(set(species1).union(set(species2))), dtype=np.int8)
+    useful_species = np.array(
+        list(set(species1).union(set(species2))), dtype=np.int8)
 
     bc1 = spec_mask[c1]
     bc1n = bc1 * nspec
@@ -108,11 +109,13 @@ def many_body_mc_sepcut_jit_(bond_array_1, bond_array_2, neigh_dists_1, neigh_di
             be = spec_mask[etypes1[i]]
 
             if etypes1[i] == s:
-                qi1, qi1_grads[i] = coordination_number(ri1, ci1, t1r_cut, cutoff_func)
+                qi1, qi1_grads[i] = coordination_number(
+                    ri1, ci1, t1r_cut, cutoff_func)
 
             if c1 == s:
                 mbtype = mb_mask[bc1n + be]
-                qi1, q1i_grads[i] = coordination_number(ri1, ci1, r_cut[mbtype], cutoff_func)
+                qi1, q1i_grads[i] = coordination_number(
+                    ri1, ci1, r_cut[mbtype], cutoff_func)
 
             # kernel is nonzero only if central atoms are of the same species
             # TO DO, qis[i] is 0 anyway
@@ -128,10 +131,12 @@ def many_body_mc_sepcut_jit_(bond_array_1, bond_array_2, neigh_dists_1, neigh_di
             mbtype = mb_mask[be+bsn]
 
             if etypes2[j] == s:
-                qj2, qj2_grads[j] = coordination_number(rj2, cj2, t2r_cut, cutoff_func)
+                qj2, qj2_grads[j] = coordination_number(
+                    rj2, cj2, t2r_cut, cutoff_func)
 
             if c2 == s:
-                qj2, q2j_grads[j] = coordination_number(rj2, cj2, r_cut[mbtype], cutoff_func)
+                qj2, q2j_grads[j] = coordination_number(
+                    rj2, cj2, r_cut[mbtype], cutoff_func)
 
             # Calculate many-body descriptor value for j
             qjs[j] = q_value_mc(neigh_dists_2[j, :num_neigh_2[j]], r_cut[mbtype],
@@ -148,11 +153,13 @@ def many_body_mc_sepcut_jit_(bond_array_1, bond_array_2, neigh_dists_1, neigh_di
                 if etypes1[i] == etypes2[j]:
                     be = spec_mask[etypes1[i]]
                     mbtype = mb_mask[be+bsn]
-                    kij = k_sq_exp_double_dev(qis[i], qjs[j], sig[mbtype], ls[mbtype])
+                    kij = k_sq_exp_double_dev(
+                        qis[i], qjs[j], sig[mbtype], ls[mbtype])
                 else:
                     kij = 0
 
-                kern += qi1_grads[i] * qj2_grads[j] * (k12 + ki2s[i] + k1js[j] + kij)
+                kern += qi1_grads[i] * qj2_grads[j] * \
+                    (k12 + ki2s[i] + k1js[j] + kij)
 
     return kern
 
@@ -201,7 +208,8 @@ def many_body_mc_sepcut_jit(bond_array_1, bond_array_2, neigh_dists_1, neigh_dis
 
     kern = 0
 
-    useful_species = np.array(list(set(species1).union(set(species2))), dtype=np.int8)
+    useful_species = np.array(
+        list(set(species1).union(set(species2))), dtype=np.int8)
 
     bc1 = spec_mask[c1]
     bc1n = bc1 * nspec
@@ -225,8 +233,10 @@ def many_body_mc_sepcut_jit(bond_array_1, bond_array_2, neigh_dists_1, neigh_dis
         t2r_cut = r_cut[mbtype2]
 
         # Calculate many-body descriptor values for central atoms 1 and 2
-        q1 = q_value_mc(bond_array_1[:, 0], r_cut[mbtype1], s, etypes1, cutoff_func)
-        q2 = q_value_mc(bond_array_2[:, 0], r_cut[mbtype2], s, etypes2, cutoff_func)
+        q1 = q_value_mc(bond_array_1[:, 0],
+                        r_cut[mbtype1], s, etypes1, cutoff_func)
+        q2 = q_value_mc(bond_array_2[:, 0],
+                        r_cut[mbtype2], s, etypes2, cutoff_func)
 
         # compute kernel between central atoms only if central atoms are of the same species
         if c1 == c2:
@@ -255,12 +265,14 @@ def many_body_mc_sepcut_jit(bond_array_1, bond_array_2, neigh_dists_1, neigh_dis
 
             if etypes1[i] == s:
                 # derivative of pairwise component of many body descriptor q1i
-                _, q1i_grads[i] = coordination_number(ri1, ci1, r_cut[mbtype1], cutoff_func)
+                _, q1i_grads[i] = coordination_number(
+                    ri1, ci1, r_cut[mbtype1], cutoff_func)
 
             if c1 == s:
                 mbtype = mb_mask[bc1n + be]
                 # derivative of pairwise component of many body descriptor qi1
-                _, qi1_grads[i] = coordination_number(ri1, ci1, r_cut[mbtype], cutoff_func)
+                _, qi1_grads[i] = coordination_number(
+                    ri1, ci1, r_cut[mbtype], cutoff_func)
 
             # Calculate many-body descriptor value for i
             mbtype = mb_mask[bsn + be]
@@ -280,10 +292,12 @@ def many_body_mc_sepcut_jit(bond_array_1, bond_array_2, neigh_dists_1, neigh_dis
             mbtype = mb_mask[be+bsn]
 
             if etypes2[j] == s:
-                _, q2j_grads[j] = coordination_number(rj2, cj2, t2r_cut, cutoff_func)
+                _, q2j_grads[j] = coordination_number(
+                    rj2, cj2, t2r_cut, cutoff_func)
 
             if c2 == s:
-                _, qj2_grads[j] = coordination_number(rj2, cj2, r_cut[mbtype], cutoff_func)
+                _, qj2_grads[j] = coordination_number(
+                    rj2, cj2, r_cut[mbtype], cutoff_func)
 
             # Calculate many-body descriptor value for j
             qjs[j] = q_value_mc(neigh_dists_2[j, :num_neigh_2[j]], r_cut[mbtype],
@@ -299,7 +313,8 @@ def many_body_mc_sepcut_jit(bond_array_1, bond_array_2, neigh_dists_1, neigh_dis
                 if etypes1[i] == etypes2[j]:
                     be = spec_mask[etypes1[i]]
                     mbtype = mb_mask[be+bsn]
-                    kij = k_sq_exp_double_dev(qis[i], qjs[j], sig[mbtype], ls[mbtype])
+                    kij = k_sq_exp_double_dev(
+                        qis[i], qjs[j], sig[mbtype], ls[mbtype])
                 else:
                     kij = 0
 
@@ -312,9 +327,9 @@ def many_body_mc_sepcut_jit(bond_array_1, bond_array_2, neigh_dists_1, neigh_dis
 
 # @njit
 def many_body_mc_grad_sepcut_jit(bond_array_1, bond_array_2, neigh_dists_1, neigh_dists_2, num_neigh_1,
-                          num_neigh_2, c1, c2, etypes1, etypes2, etypes_neigh_1, etypes_neigh_2,
-                          species1, species2, d1, d2, sig, ls, r_cut, cutoff_func,
-                          nspec, spec_mask, nmb, mb_mask):
+                                 num_neigh_2, c1, c2, etypes1, etypes2, etypes_neigh_1, etypes_neigh_2,
+                                 species1, species2, d1, d2, sig, ls, r_cut, cutoff_func,
+                                 nspec, spec_mask, nmb, mb_mask):
     """gradient of many-body multi-element kernel between two force components
     w.r.t. the hyperparameters, accelerated with Numba.
 
@@ -356,7 +371,8 @@ def many_body_mc_grad_sepcut_jit(bond_array_1, bond_array_2, neigh_dists_1, neig
     sig_derv = np.zeros(nmb)
     ls_derv = np.zeros(nmb)
 
-    useful_species = np.array(list(set(species1).union(set(species2))), dtype=np.int8)
+    useful_species = np.array(
+        list(set(species1).union(set(species2))), dtype=np.int8)
 
     bc1 = spec_mask[c1]
     bc1n = bc1 * nspec
@@ -411,11 +427,13 @@ def many_body_mc_grad_sepcut_jit(bond_array_1, bond_array_2, neigh_dists_1, neig
             mbtype = mb_mask[bsn + be]
 
             if etypes1[i] == s:
-                _, q1i_grads[i] = coordination_number(ri1, ci1, t1r_cut, cutoff_func)
+                _, q1i_grads[i] = coordination_number(
+                    ri1, ci1, t1r_cut, cutoff_func)
 
             if c1 == s:
                 # derivative of pairwise component of many body descriptor qi1
-                __, qi1_grads[i] = coordination_number(ri1, ci1, r_cut[mbtype], cutoff_func)
+                __, qi1_grads[i] = coordination_number(
+                    ri1, ci1, r_cut[mbtype], cutoff_func)
 
             # Calculate many-body descriptor value for i
             qis[i] = q_value_mc(neigh_dists_1[i, :num_neigh_1[i]], r_cut[mbtype],
@@ -437,10 +455,12 @@ def many_body_mc_grad_sepcut_jit(bond_array_1, bond_array_2, neigh_dists_1, neig
             tr_cut = r_cut[mbtype]
 
             if etypes2[j] == s:
-                _, q2j_grads[j] = coordination_number(rj2, cj2, t2r_cut, cutoff_func)
+                _, q2j_grads[j] = coordination_number(
+                    rj2, cj2, t2r_cut, cutoff_func)
 
             if c2 == s:
-                _, qj2_grads[j] = coordination_number(rj2, cj2, tr_cut, cutoff_func)
+                _, qj2_grads[j] = coordination_number(
+                    rj2, cj2, tr_cut, cutoff_func)
 
             # Calculate many-body descriptor value for j
             qjs[j] = q_value_mc(neigh_dists_2[j, :num_neigh_2[j]], tr_cut,
@@ -461,9 +481,11 @@ def many_body_mc_grad_sepcut_jit(bond_array_1, bond_array_2, neigh_dists_1, neig
                 mbtype = mb_mask[bsn + be]
 
                 if etypes1[i] == etypes2[j]:
-                    kij = k_sq_exp_double_dev(qis[i], qjs[j], sig[mbtype], ls[mbtype])
+                    kij = k_sq_exp_double_dev(
+                        qis[i], qjs[j], sig[mbtype], ls[mbtype])
                     qijdiffsq = (qis[i] - qjs[j]) * (qis[i] - qjs[j])
-                    dkij = mb_grad_helper_ls_(qijdiffsq, sig[mbtype], ls[mbtype])
+                    dkij = mb_grad_helper_ls_(
+                        qijdiffsq, sig[mbtype], ls[mbtype])
                 else:
                     kij = 0
                     dkij = 0
@@ -500,9 +522,9 @@ def many_body_mc_grad_sepcut_jit(bond_array_1, bond_array_2, neigh_dists_1, neig
 
 # @njit
 def many_body_mc_force_en_sepcut_jit(bond_array_1, bond_array_2, neigh_dists_1, num_neigh_1,
-                              c1, c2, etypes1, etypes2, etypes_neigh_1,
-                              species1, species2, d1, sig, ls, r_cut, cutoff_func,
-                              nspec, spec_mask, mb_mask):
+                                     c1, c2, etypes1, etypes2, etypes_neigh_1,
+                                     species1, species2, d1, sig, ls, r_cut, cutoff_func,
+                                     nspec, spec_mask, mb_mask):
     """many-body many-element kernel between force and energy components accelerated
     with Numba.
 
@@ -535,7 +557,8 @@ def many_body_mc_force_en_sepcut_jit(bond_array_1, bond_array_2, neigh_dists_1, 
 
     kern = 0
 
-    useful_species = np.array(list(set(species1).union(set(species2))), dtype=np.int8)
+    useful_species = np.array(
+        list(set(species1).union(set(species2))), dtype=np.int8)
 
     bc1 = spec_mask[c1]
     bc1n = bc1 * nspec
@@ -579,10 +602,12 @@ def many_body_mc_force_en_sepcut_jit(bond_array_1, bond_array_2, neigh_dists_1, 
             mbtype = mb_mask[bsn + be]
 
             if etypes1[i] == s:
-                _, q1i_grads[i] = coordination_number(ri1, ci1, t1r_cut, cutoff_func)
+                _, q1i_grads[i] = coordination_number(
+                    ri1, ci1, t1r_cut, cutoff_func)
 
             if c1 == s:
-                _, qi1_grads[i] = coordination_number(ri1, ci1, r_cut[mbtype], cutoff_func)
+                _, qi1_grads[i] = coordination_number(
+                    ri1, ci1, r_cut[mbtype], cutoff_func)
 
             # Calculate many-body descriptor value for i
             qis[i] = q_value_mc(neigh_dists_1[i, :num_neigh_1[i]], r_cut[mbtype],
@@ -598,9 +623,9 @@ def many_body_mc_force_en_sepcut_jit(bond_array_1, bond_array_2, neigh_dists_1, 
 
 # @njit
 def many_body_mc_en_sepcut_jit(bond_array_1, bond_array_2, c1, c2, etypes1, etypes2,
-                        species1, species2,
-                        sig, ls, r_cut, cutoff_func,
-                        nspec, spec_mask, mb_mask):
+                               species1, species2,
+                               sig, ls, r_cut, cutoff_func,
+                               nspec, spec_mask, mb_mask):
     """many-body many-element kernel between energy components accelerated
     with Numba.
 
@@ -623,7 +648,8 @@ def many_body_mc_en_sepcut_jit(bond_array_1, bond_array_2, c1, c2, etypes1, etyp
     Return:
         float: Value of the many-body kernel.
     """
-    useful_species = np.array(list(set(species1).union(set(species2))), dtype=np.int8)
+    useful_species = np.array(
+        list(set(species1).union(set(species2))), dtype=np.int8)
 
     bc1 = spec_mask[c1]
     bc1n = bc1 * nspec
@@ -646,8 +672,10 @@ def many_body_mc_en_sepcut_jit(bond_array_1, bond_array_2, c1, c2, etypes1, etyp
             tsig2 = sig2[mbtype]
             tr_cut = r_cut[mbtype]
 
-            q1 = q_value_mc(bond_array_1[:, 0], tr_cut, s, etypes1, cutoff_func)
-            q2 = q_value_mc(bond_array_2[:, 0], tr_cut, s, etypes2, cutoff_func)
+            q1 = q_value_mc(bond_array_1[:, 0],
+                            tr_cut, s, etypes1, cutoff_func)
+            q2 = q_value_mc(bond_array_2[:, 0],
+                            tr_cut, s, etypes2, cutoff_func)
             q1q2diff = q1 - q2
 
             kern += tsig2 * exp(-q1q2diff * q1q2diff / (2 * tls2))

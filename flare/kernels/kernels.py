@@ -155,6 +155,8 @@ def three_body_en_helper(ci1, ci2, r11, r22, r33, fi, fj, fdi, ls1, ls2, sig2):
 # -----------------------------------------------------------------------------
 
 # @njit
+
+
 def k_sq_exp_double_dev(q1, q2, sig, ls):
     """Second Gradient of generic squared exponential kernel on two many body functions
 
@@ -178,6 +180,8 @@ def k_sq_exp_double_dev(q1, q2, sig, ls):
     return ret
 
 # @njit
+
+
 def k_sq_exp_dev(q1, q2, sig, ls):
     """Second Gradient of generic squared exponential kernel on two many body functions
 
@@ -287,6 +291,8 @@ def mb_grad_helper_ls_(qdiffsq, sig, ls):
     return ret
 
 # @njit
+
+
 def mb_grad_helper_ls(q1, q2, qi, qj, sig, ls):
     """Helper function fr many body gradient collecting all the derivatives
     of the force-foce many body kernel wrt ls

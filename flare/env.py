@@ -130,13 +130,13 @@ class AtomicEnvironment:
         # get 2-body arrays
         if (self.n2b > 0):
             bond_array_2, bond_positions_2, etypes, bond_inds = \
-                    get_2_body_arrays_ind_sepcut(self.positions, self.atom, self.cell,
-                                         self.cutoff_2b, self.species,
-                                         self.nspec, self.spec_mask, self.bond_mask)
+                get_2_body_arrays_ind_sepcut(self.positions, self.atom, self.cell,
+                                             self.cutoff_2b, self.species,
+                                             self.nspec, self.spec_mask, self.bond_mask)
         else:
             bond_array_2, bond_positions_2, etypes, bond_inds = \
                 get_2_body_arrays_ind(self.positions, self.atom, self.cell,
-                                  self.cutoffs[0], self.species)
+                                      self.cutoffs[0], self.species)
 
         self.bond_array_2 = bond_array_2
         self.etypes = etypes
@@ -454,8 +454,8 @@ def get_m_body_arrays(positions, atom: int, cell, cutoff_mb: float, species):
     max_neighbours = 0
     for m in bond_inds:
         neighbour_bond_array_2, ___, etypes_mb, ____ \
-                = get_2_body_arrays_ind(positions, m, cell,
-                                        cutoff_mb, species)
+            = get_2_body_arrays_ind(positions, m, cell,
+                                    cutoff_mb, species)
         neighbouring_dists.append(neighbour_bond_array_2[:, 0])
         neighbouring_etypes.append(etypes_mb)
         if len(neighbour_bond_array_2[:, 0]) > max_neighbours:
@@ -740,9 +740,9 @@ def get_m_body_arrays_sepcut(positions, atom: int, cell, cutoff_mb, species,
     max_neighbours = 0
     for m in bond_inds:
         neighbour_bond_array_2, ___, etypes_mb, ____ \
-                = get_2_body_arrays_ind_sepcut(positions, m, cell,
-                                               cutoff_mb, species,
-                                               nspec, spec_mask, mb_mask)
+            = get_2_body_arrays_ind_sepcut(positions, m, cell,
+                                           cutoff_mb, species,
+                                           nspec, spec_mask, mb_mask)
         neighbouring_dists.append(neighbour_bond_array_2[:, 0])
         neighbouring_etypes.append(etypes_mb)
         if len(neighbour_bond_array_2[:, 0]) > max_neighbours:

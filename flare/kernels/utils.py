@@ -15,7 +15,8 @@ from_grad_to_mask(grad, hyps_mask) converts the gradient matrix to the actual gr
 matrix by removing the fixed dimensions.
 """
 
-def str_to_kernel_set(name: str, multihyps: bool =False):
+
+def str_to_kernel_set(name: str, multihyps: bool = False):
     """
     return kernels and kernel gradient function base on a string.
     If it contains 'sc', it will use the kernel in sc module;
@@ -57,22 +58,24 @@ def str_to_kernel_set(name: str, multihyps: bool =False):
         if (s in name):
             many = True
 
-    prefix=''
-    str_term={'2':b2, '3':b3, 'many':many}
+    prefix = ''
+    str_term = {'2': b2, '3': b3, 'many': many}
     for term in str_term:
         if str_term[term]:
-            if (len(prefix)>0):
+            if (len(prefix) > 0):
                 prefix += '+'
             prefix += term
-    if len(prefix)==0:
-        raise RuntimeError(f"the name has to include at least one number {name}")
+    if len(prefix) == 0:
+        raise RuntimeError(
+            f"the name has to include at least one number {name}")
 
     for suffix in ['', '_grad', '_en', '_force_en']:
         if prefix+suffix not in stk:
-            raise RuntimeError(f"cannot find kernel function of {prefix}{suffix}")
+            raise RuntimeError(
+                f"cannot find kernel function of {prefix}{suffix}")
 
     return stk[prefix], stk[prefix+'_grad'], stk[prefix+'_en'], \
-            stk[prefix+'_force_en']
+        stk[prefix+'_force_en']
 
 
 def from_mask_to_args(hyps, hyps_mask: dict, cutoffs):
@@ -106,28 +109,28 @@ def from_mask_to_args(hyps, hyps_mask: dict, cutoffs):
 
     ncutoff = len(cutoffs)
 
-    if (ncutoff>0):
+    if (ncutoff > 0):
         cutoff_2b = [cutoffs[0]]
         if ('cutoff_2b' in hyps_mask):
             cutoff_2b = hyps_mask['cutoff_2b']
-        elif ('cutoff_2b' not in hyps_mask and n2b>0):
+        elif ('cutoff_2b' not in hyps_mask and n2b > 0):
             cutoff_2b = np.ones(n2b)*cutoffs[0]
 
     cutoff_3b = None
-    if (ncutoff>1):
+    if (ncutoff > 1):
         cutoff_3b = cutoffs[1]
         if ('cutoff_3b' in hyps_mask):
             cutoff_3b = hyps_mask['cutoff_3b']
 
     cutoff_mb = None
-    if (ncutoff>2):
+    if (ncutoff > 2):
         cutoff_mb = np.array([cutoffs[2]])
         if ('cutoff_mb' in hyps_mask):
             cutoff_mb = hyps_mask['cutoff_mb']
         # if the user forget to define nmb
         # there has to be a mask, because this is the
         # multi hyper parameter mode
-        if (nmb==0):
+        if (nmb == 0):
             nmb = 1
             nspec = hyps_mask['nspec']
             mb_mask = np.zeros(nspec*nspec, dtype=int)
@@ -139,7 +142,6 @@ def from_mask_to_args(hyps, hyps_mask: dict, cutoffs):
     sigm = None
     lsm = None
 
-
     if ('map' in hyps_mask):
         orig_hyps = hyps_mask['original']
         hm = hyps_mask['map']
@@ -148,11 +150,11 @@ def from_mask_to_args(hyps, hyps_mask: dict, cutoffs):
     else:
         orig_hyps = hyps
 
-    if (ncutoff<=2):
+    if (ncutoff <= 2):
         if (n2b != 0):
             sig2 = np.array(orig_hyps[:n2b])
             ls2 = np.array(orig_hyps[n2b:n2b * 2])
-        if (n3b !=0):
+        if (n3b != 0):
             sig3 = np.array(orig_hyps[n2b * 2:n2b * 2 + n3b])
             ls3 = np.array(orig_hyps[n2b * 2 + n3b:n2b * 2 + n3b * 2])
         if (n2b == 0) and (n3b == 0):
@@ -164,16 +166,16 @@ def from_mask_to_args(hyps, hyps_mask: dict, cutoffs):
                 ncut3b, cut3b_mask,
                 sig2, ls2, sig3, ls3)
 
-    elif (ncutoff==3):
+    elif (ncutoff == 3):
 
         if (n2b != 0):
             sig2 = np.array(orig_hyps[:n2b])
             ls2 = np.array(orig_hyps[n2b:n2b * 2])
-        if (n3b !=0):
+        if (n3b != 0):
             start = n2b*2
             sig3 = np.array(orig_hyps[start:start + n3b])
             ls3 = np.array(orig_hyps[start + n3b:start + n3b * 2])
-        if (nmb !=0):
+        if (nmb != 0):
             start = n2b*2 + n3b*2
             sigm = np.array(orig_hyps[start: start+nmb])
             lsm = np.array(orig_hyps[start+nmb: start+nmb*2])
@@ -221,4 +223,3 @@ def from_grad_to_mask(grad, hyps_mask):
     for i, mapid in enumerate(hm):
         newgrad[i] = grad[mapid]
     return newgrad
-

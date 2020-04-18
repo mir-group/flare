@@ -6,11 +6,11 @@ from flare.kernels.kernels import force_helper, grad_constants, grad_helper, \
     force_energy_helper, three_body_en_helper, three_body_helper_1, \
     three_body_helper_2, three_body_grad_helper_1, three_body_grad_helper_2
 from flare.kernels.mc_3b_sepcut import three_body_mc_sepcut_jit, \
-        three_body_mc_grad_sepcut_jit, three_body_mc_force_en_sepcut_jit, \
-        three_body_mc_en_sepcut_jit
+    three_body_mc_grad_sepcut_jit, three_body_mc_force_en_sepcut_jit, \
+    three_body_mc_en_sepcut_jit
 from flare.kernels.mc_mb_sepcut import many_body_mc_sepcut_jit_, \
-        many_body_mc_sepcut_jit, many_body_mc_grad_sepcut_jit, \
-        many_body_mc_force_en_sepcut_jit, many_body_mc_en_sepcut_jit
+    many_body_mc_sepcut_jit, many_body_mc_grad_sepcut_jit, \
+    many_body_mc_force_en_sepcut_jit, many_body_mc_en_sepcut_jit
 """
 Multicomponent kernels that restrict all signal variance hyperparameters to
 a single value.
@@ -149,7 +149,7 @@ def two_three_many_body_mc_grad(env1, env2, d1, d2, cutoff_2b, cutoff_3b, cutoff
                              nspec, spec_mask,
                              nbond, bond_mask)
 
-    if (ncut3b==0):
+    if (ncut3b == 0):
         tbmcj = three_body_mc_grad_jit
     else:
         tbmcj = three_body_mc_grad_sepcut_jit
@@ -195,7 +195,7 @@ def two_three_many_mc_force_en(env1, env2, d1, cutoff_2b, cutoff_3b, cutoff_mb,
                                  nspec, spec_mask,
                                  bond_mask) / 2
 
-    if (ncut3b==0):
+    if (ncut3b == 0):
         tbmcj = three_body_mc_force_en_jit
     else:
         tbmcj = three_body_mc_force_en_sepcut_jit
@@ -260,7 +260,6 @@ def two_three_many_mc_en(env1, env2, cutoff_2b, cutoff_3b, cutoff_mb,
                       sigm, lsm, cutoff_mb, cutoff_func,
                       nspec, spec_mask, mb_mask)
 
-
     return two_term + three_term + many_term
 
 
@@ -281,7 +280,7 @@ def two_plus_three_body_mc(env1, env2, d1, d2, cutoff_2b, cutoff_3b,
                                d1, d2, sig2, ls2, cutoff_2b, cutoff_func,
                                nspec, spec_mask, bond_mask)
 
-    if (ncut3b==0):
+    if (ncut3b == 0):
         tbmcj = three_body_mc_jit
     else:
         tbmcj = three_body_mc_sepcut_jit
@@ -410,7 +409,7 @@ def three_body_mc(env1, env2, d1, d2, cutoff_2b, cutoff_3b,
                   sig2, ls2, sig3, ls3,
                   cutoff_func=cf.quadratic_cutoff):
 
-    if (ncut3b==0):
+    if (ncut3b == 0):
         tbmcj = three_body_mc_jit
     else:
         tbmcj = three_body_mc_sepcut_jit
@@ -432,19 +431,19 @@ def three_body_mc_grad(env1, env2, d1, d2, cutoff_2b, cutoff_3b,
                        sig2, ls2, sig3, ls3,
                        cutoff_func=cf.quadratic_cutoff):
 
-    if (ncut3b==0):
+    if (ncut3b == 0):
         tbmcj = three_body_mc_grad_jit
     else:
         tbmcj = three_body_mc_grad_sepcut_jit
 
     return tbmcj(
-            env1.bond_array_3, env1.ctype, env1.etypes,
-            env2.bond_array_3, env2.ctype, env2.etypes,
-            env1.cross_bond_inds, env2.cross_bond_inds,
-            env1.cross_bond_dists, env2.cross_bond_dists,
-            env1.triplet_counts, env2.triplet_counts,
-            d1, d2, sig3, ls3, cutoff_3b, cutoff_func,
-            nspec, spec_mask, ntriplet, triplet_mask, cut3b_mask)
+        env1.bond_array_3, env1.ctype, env1.etypes,
+        env2.bond_array_3, env2.ctype, env2.etypes,
+        env1.cross_bond_inds, env2.cross_bond_inds,
+        env1.cross_bond_dists, env2.cross_bond_dists,
+        env1.triplet_counts, env2.triplet_counts,
+        d1, d2, sig3, ls3, cutoff_3b, cutoff_func,
+        nspec, spec_mask, ntriplet, triplet_mask, cut3b_mask)
 
 
 def three_body_mc_force_en(
@@ -454,7 +453,7 @@ def three_body_mc_force_en(
         sig2, ls2, sig3, ls3,
         cutoff_func=cf.quadratic_cutoff):
 
-    if (ncut3b==0):
+    if (ncut3b == 0):
         tbmcj = three_body_mc_force_en_jit
     else:
         tbmcj = three_body_mc_force_en_sepcut_jit
@@ -477,11 +476,11 @@ def three_body_mc_force_en(
 
 
 def three_body_mc_en(env1, env2, cutoff_2b, cutoff_3b, nspec, spec_mask,
-        nbond, bond_mask, ntriplet, triplet_mask,
-        ncut3b, cut3b_mask, sig2, ls2, sig3, ls3,
-        cutoff_func=cf.quadratic_cutoff):
+                     nbond, bond_mask, ntriplet, triplet_mask,
+                     ncut3b, cut3b_mask, sig2, ls2, sig3, ls3,
+                     cutoff_func=cf.quadratic_cutoff):
 
-    if (ncut3b==0):
+    if (ncut3b == 0):
         tbmcj = three_body_mc_en_jit
     else:
         tbmcj = three_body_mc_en_sepcut_jit
@@ -520,28 +519,28 @@ def two_body_mc_grad(
         cutoff_func=cf.quadratic_cutoff):
 
     return two_body_mc_grad_jit(
-                 env1.bond_array_2, env1.ctype, env1.etypes,
-                 env2.bond_array_2, env2.ctype, env2.etypes,
-                 d1, d2, sig2, ls2, cutoff_2b, cutoff_func,
-                 nspec, spec_mask, nbond, bond_mask)
+        env1.bond_array_2, env1.ctype, env1.etypes,
+        env2.bond_array_2, env2.ctype, env2.etypes,
+        d1, d2, sig2, ls2, cutoff_2b, cutoff_func,
+        nspec, spec_mask, nbond, bond_mask)
 
 
 def two_body_mc_force_en(env1, env2, d1, cutoff_2b, cutoff_3b,
-        nspec, spec_mask, nbond, bond_mask, ntriplet, triplet_mask,
-        ncut3b, cut3b_mask,
-        sig2, ls2, sig3, ls3, cutoff_func=cf.quadratic_cutoff):
+                         nspec, spec_mask, nbond, bond_mask, ntriplet, triplet_mask,
+                         ncut3b, cut3b_mask,
+                         sig2, ls2, sig3, ls3, cutoff_func=cf.quadratic_cutoff):
 
     return two_body_mc_force_en_jit(
-            env1.bond_array_2, env1.ctype, env1.etypes,
-            env2.bond_array_2, env2.ctype, env2.etypes,
-            d1, sig2, ls2, cutoff_2b, cutoff_func,
-            nspec, spec_mask, bond_mask) / 2
+        env1.bond_array_2, env1.ctype, env1.etypes,
+        env2.bond_array_2, env2.ctype, env2.etypes,
+        d1, sig2, ls2, cutoff_2b, cutoff_func,
+        nspec, spec_mask, bond_mask) / 2
 
 
 def two_body_mc_en(env1, env2, cutoff_2b, cutoff_3b, nspec, spec_mask,
-        nbond, bond_mask, ntriplet, triplet_mask,
-        ncut3b, cut3b_mask, sig2, ls2, sig3, ls3,
-        cutoff_func=cf.quadratic_cutoff):
+                   nbond, bond_mask, ntriplet, triplet_mask,
+                   ncut3b, cut3b_mask, sig2, ls2, sig3, ls3,
+                   cutoff_func=cf.quadratic_cutoff):
 
     return two_body_mc_en_jit(env1.bond_array_2, env1.ctype, env1.etypes,
                               env2.bond_array_2, env2.ctype, env2.etypes,
@@ -962,6 +961,8 @@ def three_body_mc_force_en_jit(bond_array_1, c1, etypes1,
     return kern
 
 # @njit
+
+
 def three_body_mc_en_jit(bond_array_1, c1, etypes1,
                          bond_array_2, c2, etypes2,
                          cross_bond_inds_1, cross_bond_inds_2,

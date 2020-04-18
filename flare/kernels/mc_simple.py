@@ -1710,7 +1710,8 @@ def many_body_mc_jit_(bond_array_1, bond_array_2, neigh_dists_1, neigh_dists_2, 
 
     kern = 0
 
-    useful_species = np.array(list(set(species1).union(set(species2))), dtype=np.int8)
+    useful_species = np.array(
+        list(set(species1).union(set(species2))), dtype=np.int8)
 
     # loop over all possible species
     for s in useful_species:
@@ -1740,10 +1741,12 @@ def many_body_mc_jit_(bond_array_1, bond_array_2, neigh_dists_1, neigh_dists_2, 
             ci1 = bond_array_1[i, d1]
 
             if etypes1[i] == s:
-                qi1, qi1_grads[i] = coordination_number(ri1, ci1, r_cut, cutoff_func)
+                qi1, qi1_grads[i] = coordination_number(
+                    ri1, ci1, r_cut, cutoff_func)
 
             if c1 == s:
-                qi1, q1i_grads[i] = coordination_number(ri1, ci1, r_cut, cutoff_func)
+                qi1, q1i_grads[i] = coordination_number(
+                    ri1, ci1, r_cut, cutoff_func)
 
             # kernel is nonzero only if central atoms are of the same species
             if c2 == etypes1[i]:
@@ -1755,10 +1758,12 @@ def many_body_mc_jit_(bond_array_1, bond_array_2, neigh_dists_1, neigh_dists_2, 
             cj2 = bond_array_2[j, d2]
 
             if etypes2[j] == s:
-                qj2, qj2_grads[j] = coordination_number(rj2, cj2, r_cut, cutoff_func)
+                qj2, qj2_grads[j] = coordination_number(
+                    rj2, cj2, r_cut, cutoff_func)
 
             if c2 == s:
-                qj2, q2j_grads[j] = coordination_number(rj2, cj2, r_cut, cutoff_func)
+                qj2, q2j_grads[j] = coordination_number(
+                    rj2, cj2, r_cut, cutoff_func)
 
             # Calculate many-body descriptor value for j
             qjs[j] = q_value_mc(neigh_dists_2[j, :num_neigh_2[j]], r_cut,
@@ -1776,7 +1781,8 @@ def many_body_mc_jit_(bond_array_1, bond_array_2, neigh_dists_1, neigh_dists_2, 
                 else:
                     kij = 0
 
-                kern += qi1_grads[i] * qj2_grads[j] * (k12 + ki2s[i] + k1js[j] + kij)
+                kern += qi1_grads[i] * qj2_grads[j] * \
+                    (k12 + ki2s[i] + k1js[j] + kij)
 
     return kern
 
@@ -1823,7 +1829,8 @@ def many_body_mc_jit(bond_array_1, bond_array_2, neigh_dists_1, neigh_dists_2, n
 
     kern = 0
 
-    useful_species = np.array(list(set(species1).union(set(species2))), dtype=np.int8)
+    useful_species = np.array(
+        list(set(species1).union(set(species2))), dtype=np.int8)
 
     # loop over all possible species
     for s in useful_species:
@@ -1857,11 +1864,13 @@ def many_body_mc_jit(bond_array_1, bond_array_2, neigh_dists_1, neigh_dists_2, n
 
             if etypes1[i] == s:
                 # derivative of pairwise component of many body descriptor q1i
-                _, q1i_grads[i] = coordination_number(ri1, ci1, r_cut, cutoff_func)
+                _, q1i_grads[i] = coordination_number(
+                    ri1, ci1, r_cut, cutoff_func)
 
             if c1 == s:
                 # derivative of pairwise component of many body descriptor qi1
-                _, qi1_grads[i] = coordination_number(ri1, ci1, r_cut, cutoff_func)
+                _, qi1_grads[i] = coordination_number(
+                    ri1, ci1, r_cut, cutoff_func)
 
             # Calculate many-body descriptor value for i
             qis[i] = q_value_mc(neigh_dists_1[i, :num_neigh_1[i]], r_cut,
@@ -1877,10 +1886,12 @@ def many_body_mc_jit(bond_array_1, bond_array_2, neigh_dists_1, neigh_dists_2, n
             cj2 = bond_array_2[j, d2]
 
             if etypes2[j] == s:
-                _, q2j_grads[j] = coordination_number(rj2, cj2, r_cut, cutoff_func)
+                _, q2j_grads[j] = coordination_number(
+                    rj2, cj2, r_cut, cutoff_func)
 
             if c2 == s:
-                _, qj2_grads[j] = coordination_number(rj2, cj2, r_cut, cutoff_func)
+                _, qj2_grads[j] = coordination_number(
+                    rj2, cj2, r_cut, cutoff_func)
 
             # Calculate many-body descriptor value for j
             qjs[j] = q_value_mc(neigh_dists_2[j, :num_neigh_2[j]], r_cut,
@@ -1950,7 +1961,8 @@ def many_body_mc_grad_jit(bond_array_1, bond_array_2, neigh_dists_1, neigh_dists
     sig_derv = 0
     ls_derv = 0
 
-    useful_species = np.array(list(set(species1).union(set(species2))), dtype=np.int8)
+    useful_species = np.array(
+        list(set(species1).union(set(species2))), dtype=np.int8)
 
     for s in useful_species:
 
@@ -1984,11 +1996,13 @@ def many_body_mc_grad_jit(bond_array_1, bond_array_2, neigh_dists_1, neigh_dists
             ci1 = bond_array_1[i, d1]
 
             if etypes1[i] == s:
-                _, q1i_grads[i] = coordination_number(ri1, ci1, r_cut, cutoff_func)
+                _, q1i_grads[i] = coordination_number(
+                    ri1, ci1, r_cut, cutoff_func)
 
             if c1 == s:
                 # derivative of pairwise component of many body descriptor qi1
-                __, qi1_grads[i] = coordination_number(ri1, ci1, r_cut, cutoff_func)
+                __, qi1_grads[i] = coordination_number(
+                    ri1, ci1, r_cut, cutoff_func)
 
             # Calculate many-body descriptor value for i
             qis[i] = q_value_mc(neigh_dists_1[i, :num_neigh_1[i]], r_cut,
@@ -2006,10 +2020,12 @@ def many_body_mc_grad_jit(bond_array_1, bond_array_2, neigh_dists_1, neigh_dists
             cj2 = bond_array_2[j, d2]
 
             if etypes2[j] == s:
-                _, q2j_grads[j] = coordination_number(rj2, cj2, r_cut, cutoff_func)
+                _, q2j_grads[j] = coordination_number(
+                    rj2, cj2, r_cut, cutoff_func)
 
             if c2 == s:
-                _, qj2_grads[j] = coordination_number(rj2, cj2, r_cut, cutoff_func)
+                _, qj2_grads[j] = coordination_number(
+                    rj2, cj2, r_cut, cutoff_func)
 
             # Calculate many-body descriptor value for j
             qjs[j] = q_value_mc(neigh_dists_2[j, :num_neigh_2[j]], r_cut,
@@ -2094,7 +2110,8 @@ def many_body_mc_force_en_jit(bond_array_1, bond_array_2, neigh_dists_1, num_nei
 
     kern = 0
 
-    useful_species = np.array(list(set(species1).union(set(species2))), dtype=np.int8)
+    useful_species = np.array(
+        list(set(species1).union(set(species2))), dtype=np.int8)
 
     for s in useful_species:
 
@@ -2117,10 +2134,12 @@ def many_body_mc_force_en_jit(bond_array_1, bond_array_2, neigh_dists_1, num_nei
             ci1 = bond_array_1[i, d1]
 
             if etypes1[i] == s:
-                _, q1i_grads[i] = coordination_number(ri1, ci1, r_cut, cutoff_func)
+                _, q1i_grads[i] = coordination_number(
+                    ri1, ci1, r_cut, cutoff_func)
 
             if c1 == s:
-                _, qi1_grads[i] = coordination_number(ri1, ci1, r_cut, cutoff_func)
+                _, qi1_grads[i] = coordination_number(
+                    ri1, ci1, r_cut, cutoff_func)
 
             # Calculate many-body descriptor value for i
             qis[i] = q_value_mc(neigh_dists_1[i, :num_neigh_1[i]], r_cut,
@@ -2159,7 +2178,8 @@ def many_body_mc_en_jit(bond_array_1, bond_array_2, c1, c2, etypes1, etypes2,
     Return:
         float: Value of the many-body kernel.
     """
-    useful_species = np.array(list(set(species1).union(set(species2))), dtype=np.int8)
+    useful_species = np.array(
+        list(set(species1).union(set(species2))), dtype=np.int8)
     kern = 0
 
     if c1 == c2:
@@ -2171,7 +2191,6 @@ def many_body_mc_en_jit(bond_array_1, bond_array_2, c1, c2, etypes1, etypes2,
             kern += sig * sig * exp(-q1q2diff * q1q2diff / (2 * ls * ls))
 
     return kern
-
 
 
 _str_to_kernel = {'two_body_mc': two_body_mc,

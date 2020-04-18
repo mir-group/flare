@@ -173,7 +173,6 @@ def test_many_body_force():
     delt = 1e-5
     cell = 1e7 * np.eye(3)
 
-
     d1 = randint(1, 3)
     d2 = randint(1, 3)
 
