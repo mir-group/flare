@@ -1284,40 +1284,153 @@ def two_body_mc_en_jit(bond_array_1, c1, etypes1,
 
     return kern
 
+def many_body_mc(env1, env2, d1, d2, cutoff_2b, cutoff_3b, cutoff_mb,
+                 nspec, spec_mask,
+                 nbond, bond_mask, ntriplet, triplet_mask,
+                 ncut3b, cut3b_mask,
+                 nmb, mb_mask,
+                 sig2, ls2, sig3, ls3, sigm, lsm,
+                 cutoff_func=cf.quadratic_cutoff):
+    """many-body multi-element kernel between two force components.
 
-_str_to_kernel = {'two_body_mc': two_body_mc,
-                  'two_body_mc_grad': two_body_mc_grad,
-                  'two_body_mc_en': two_body_mc_en,
-                  'two_body_mc_force_en': two_body_mc_force_en,
-                  'three_body_mc': three_body_mc,
-                  'three_body_mc_grad': three_body_mc_grad,
-                  'three_body_mc_en': three_body_mc_en,
-                  'three_body_mc_force_en': three_body_mc_force_en,
-                  'two_plus_three_body_mc': two_plus_three_body_mc,
-                  'two_plus_three_body_mc_grad': two_plus_three_body_mc_grad,
-                  'two_plus_three_body_mc_en': two_plus_three_mc_en,
-                  'two_plus_three_body_mc_force_en': two_plus_three_mc_force_en,
-                  'two_plus_three_mc': two_plus_three_body_mc,
-                  'two_plus_three_mc_grad': two_plus_three_body_mc_grad,
-                  'two_plus_three_mc_en': two_plus_three_mc_en,
-                  'two_plus_three_mc_force_en': two_plus_three_mc_force_en,
-                  'two_body_mc_sh': two_body_mc,
-                  'two_body_mc_sh_grad': two_body_mc_grad,
-                  'two_body_mc_sh_en': two_body_mc_en,
-                  'two_body_mc_sh_force_en': two_body_mc_force_en,
-                  'three_body_mc_sh': three_body_mc,
-                  'three_body_mc_sh_grad': three_body_mc_grad,
-                  'three_body_mc_sh_en': three_body_mc_en,
-                  'three_body_mc_sh_force_en': three_body_mc_force_en,
-                  'two_plus_three_body_mc_sh': two_plus_three_body_mc,
-                  'two_plus_three_body_mc_sh_grad': two_plus_three_body_mc_grad,
-                  'two_plus_three_body_mc_sh_en': two_plus_three_mc_en,
-                  'two_plus_three_body_mc_sh_force_en': two_plus_three_mc_force_en,
-                  'two_plus_three_mc_sh': two_plus_three_body_mc,
-                  'two_plus_three_mc_sh_grad': two_plus_three_body_mc_grad,
-                  'two_plus_three_mc_sh_en': two_plus_three_mc_en,
-                  'two_plus_three_mc_sh_force_en': two_plus_three_mc_force_en,
-                  '2': two_body_mc,
+    Args:
+        env1 (AtomicEnvironment): First local environment.
+        env2 (AtomicEnvironment): Second local environment.
+        d1 (int): Force component of the first environment.
+        d2 (int): Force component of the second environment.
+        hyps (np.ndarray): Hyperparameters of the kernel function (sig, ls).
+        cutoffs (np.ndarray): Two-element array containing the 2- and 3-body
+            cutoffs.
+        cutoff_func (Callable): Cutoff function of the kernel.
+
+    Return:
+        float: Value of the 3-body kernel.
+    """
+    bond_array_1 = env1.bond_array_mb
+    bond_array_2 = env2.bond_array_mb
+
+    neigh_dists_1 = env1.neigh_dists_mb
+    num_neigh_1 = env1.num_neighs_mb
+
+    neigh_dists_2 = env2.neigh_dists_mb
+    num_neigh_2 = env2.num_neighs_mb
+
+    # Get atomic species of central atom, their neighbours, and their neighbours' neighbours
+    c1, c2 = env1.ctype, env2.ctype
+    etypes1, etypes2 = env1.etypes, env2.etypes
+    etypes_neigh_1, etypes_neigh_2 = env1.etype_mb, env2.etype_mb
+
+    return many_body_mc_jit(env1.bond_array_mb, env2.bond_array_mb,
+                            env1.neigh_dists_mb, env1.num_neighs_mb,
+                            env1.ctype, env2.ctype, env1.etypes, env2.etypes,
+                            env1.etype_mb,
+                            env1.species, env2.species, d1, sigm, lsm, cutoff_mb,
+                            cutoff_func,
+                            nspec, spec_mask, mb_mask)
+
+
+def many_body_mc_grad(env1, env2, d1, d2, cutoff_2b, cutoff_3b, cutoff_mb,
+                      nspec, spec_mask,
+                      nbond, bond_mask, ntriplet, triplet_mask,
+                      ncut3b, cut3b_mask,
+                      nmb, mb_mask,
+                      sig2, ls2, sig3, ls3, sigm, lsm,
+                      cutoff_func=cf.quadratic_cutoff):
+    """gradient manybody-body multi-element kernel between two force components.
+
+    """
+
+    bond_array_1 = env1.bond_array_mb
+    bond_array_2 = env2.bond_array_mb
+
+    neigh_dists_1 = env1.neigh_dists_mb
+    num_neigh_1 = env1.num_neighs_mb
+
+    neigh_dists_2 = env2.neigh_dists_mb
+    num_neigh_2 = env2.num_neighs_mb
+
+    c1, c2 = env1.ctype, env2.ctype
+    etypes1, etypes2 = env1.etypes, env2.etypes
+    etypes_neigh_1, etypes_neigh_2 = env1.etype_mb, env2.etype_mb
+
+    return many_body_mc_grad_sepcut_jit(env1.bond_array_mb, env2.bond_array_mb,
+                                        env1.neigh_dists_mb, env2.neigh_dists_mb,
+                                        env1.num_neighs_mb, env2.num_neighs_mb, env1.ctype,
+                                        env2.ctype, env1.etypes, env2.etypes,
+                                        env1.etype_mb, env2.etype_mb,
+                                        env1.species, env2.species, d1, d2, sigm,
+                                        lsm, cutoff_mb, cutoff_func,
+                                        nspec, spec_mask, nmb, mb_mask)
+
+
+def many_body_mc_force_en(env1, env2, d1, d2, cutoff_2b, cutoff_3b, cutoff_mb,
+                          nspec, spec_mask,
+                          nbond, bond_mask, ntriplet, triplet_mask,
+                          ncut3b, cut3b_mask,
+                          nmb, mb_mask,
+                          sig2, ls2, sig3, ls3, sigm, lsm,
+                          cutoff_func=cf.quadratic_cutoff):
+    """many-body single-element kernel between two local energies.
+
+    Args:
+        env1 (AtomicEnvironment): First local environment.
+        env2 (AtomicEnvironment): Second local environment.
+        hyps (np.ndarray): Hyperparameters of the kernel function (sig, ls).
+        cutoffs (np.ndarray): Two-element array containing the 2-, 3-, and
+            many-body cutoffs.
+        cutoff_func (Callable): Cutoff function of the kernel.
+
+    Return:
+        float: Value of the many-body force/energy kernel.
+    """
+
+    bond_array_1 = env1.bond_array_mb
+    bond_array_2 = env2.bond_array_mb
+
+    neigh_dists_1 = env1.neigh_dists_mb
+    num_neigh_1 = env1.num_neighs_mb
+
+    c1, c2 = env1.ctype, env2.ctype
+    etypes1, etypes2 = env1.etypes, env2.etypes
+    etypes_neigh_1 = env1.etype_mb
+
+    return many_body_mc_force_en_sepcut_jit(env1.bond_array_mb, env2.bond_array_mb,
+                                            env1.neigh_dists_mb, env1.num_neighs_mb,
+                                            env1.ctype, env2.ctype, env1.etypes, env2.etypes,
+                                            env1.etype_mb,
+                                            env1.species, env2.species, d1, sigm, lsm, cutoff_mb,
+                                            cutoff_func,
+                                            nspec, spec_mask, mb_mask)
+
+
+def many_body_mc_en(env1, env2, d1, d2, cutoff_2b, cutoff_3b, cutoff_mb,
+                    nspec, spec_mask,
+                    nbond, bond_mask, ntriplet, triplet_mask,
+                    ncut3b, cut3b_mask,
+                    nmb, mb_mask,
+                    sig2, ls2, sig3, ls3, sigm, lsm,
+                    cutoff_func=cf.quadratic_cutoff):
+    """many-body multi-element kernel between two local energies.
+
+    Args:
+        env1 (AtomicEnvironment): First local environment.
+        env2 (AtomicEnvironment): Second local environment.
+        hyps (np.ndarray): Hyperparameters of the kernel function (sig, ls).
+        cutoffs (np.ndarray): One-element array containing the 2-body
+            cutoff.
+        cutoff_func (Callable): Cutoff function of the kernel.
+
+    Return:
+        float: Value of the 2-body force/energy kernel.
+    """
+
+    return many_body_mc_en_sepcut_jit(env1.bond_array_2, env2.bond_array_2, env1.ctype,
+                                      env2.ctype, env1.etypes, env2.etypes, env1.species,
+                                      env2.species,
+                                      sigm, lsm, cutoff_mb, cutoff_func,
+                                      nspec, spec_mask, mb_mask)
+
+_str_to_kernel = {'2': two_body_mc,
                   '2_en': two_body_mc_en,
                   '2_grad': two_body_mc_grad,
                   '2_force_en': two_body_mc_force_en,
@@ -1325,6 +1438,10 @@ _str_to_kernel = {'two_body_mc': two_body_mc,
                   '3_grad': three_body_mc_grad,
                   '3_en': three_body_mc_en,
                   '3_force_en': three_body_mc_force_en,
+                  'many': many_body_mc,
+                  'many_grad': many_body_mc_grad,
+                  'many_en': many_body_mc_en,
+                  'many_force_en': many_body_mc_force_en,
                   '2+3': two_plus_three_body_mc,
                   '2+3_grad': two_plus_three_body_mc_grad,
                   '2+3_en': two_plus_three_mc_en,

@@ -255,7 +255,7 @@ def generate_envs(cutoffs, delta):
 
     return env1_1, env1_2, env1_3, env2_1, env2_2, env2_3
 
-def another_env(cutoffs, delt):
+def another_env(cutoffs, delt, mask=None):
 
     cell = 10.0 * np.eye(3)
 
@@ -277,20 +277,20 @@ def another_env(cutoffs, delt):
     test_structure_3 = struc.Structure(cell, species_1, pos_3)
 
     # atom 0, original position
-    env1_1_0 = env.AtomicEnvironment(test_structure_1, 0, cutoffs)
+    env1_1_0 = env.AtomicEnvironment(test_structure_1, 0, cutoffs, cutoffs_mask=mask)
     # atom 0, 0 perturbe along x
-    env1_2_0 = env.AtomicEnvironment(test_structure_2, 0, cutoffs)
+    env1_2_0 = env.AtomicEnvironment(test_structure_2, 0, cutoffs, cutoffs_mask=mask)
     # atom 1, 0 perturbe along x
-    env1_2_1 = env.AtomicEnvironment(test_structure_2, 1, cutoffs)
+    env1_2_1 = env.AtomicEnvironment(test_structure_2, 1, cutoffs, cutoffs_mask=mask)
     # atom 2, 0 perturbe along x
-    env1_2_2 = env.AtomicEnvironment(test_structure_2, 2, cutoffs)
+    env1_2_2 = env.AtomicEnvironment(test_structure_2, 2, cutoffs, cutoffs_mask=mask)
 
     # atom 0, 0 perturbe along -x
-    env1_3_0 = env.AtomicEnvironment(test_structure_3, 0, cutoffs)
+    env1_3_0 = env.AtomicEnvironment(test_structure_3, 0, cutoffs, cutoffs_mask=mask)
     # atom 1, 0 perturbe along -x
-    env1_3_1 = env.AtomicEnvironment(test_structure_3, 1, cutoffs)
+    env1_3_1 = env.AtomicEnvironment(test_structure_3, 1, cutoffs, cutoffs_mask=mask)
     # atom 2, 0 perturbe along -x
-    env1_3_2 = env.AtomicEnvironment(test_structure_3, 2, cutoffs)
+    env1_3_2 = env.AtomicEnvironment(test_structure_3, 2, cutoffs, cutoffs_mask=mask)
 
     # create env 2
     pos_1 = np.vstack([[0, 0, 0], 0.1*random([3, 3])])
@@ -306,7 +306,7 @@ def another_env(cutoffs, delt):
 
     test_structure_1 = struc.Structure(cell, species_2, pos_1)
 
-    env2_1_0 = env.AtomicEnvironment(test_structure_1, 0, cutoffs)
+    env2_1_0 = env.AtomicEnvironment(test_structure_1, 0, cutoffs, cutoffs_mask=mask)
 
     return env1_1_0, env1_2_0, env1_3_0, \
            env1_2_1, env1_3_1, env1_2_2, env1_3_2, env2_1_0

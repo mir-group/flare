@@ -9,10 +9,11 @@ from flare import env, struc, gp
 from flare.kernels.mc_sephyps import _str_to_kernel as stk
 from flare.kernels.utils import from_mask_to_args, str_to_kernel_set
 
-from .fake_gp import generate_hm, generate_envs
+from .fake_gp import generate_hm, generate_envs, another_env
 
+list_to_test = ['2', '3', '2+3', '2+3+mb']
 
-@pytest.mark.parametrize('kernel_name', ['2', '3', '2+3', '2+3+mb'])
+@pytest.mark.parametrize('kernel_name', list_to_test)
 def test_force_en_multi_vs_simple(kernel_name):
     """Check that the analytical kernel matches the one implemented
     in mc_simple.py"""
@@ -78,14 +79,9 @@ def test_force_en_multi_vs_simple(kernel_name):
 
 
 @pytest.mark.parametrize('kernel_name, nbond, ntriplet, constraint',
-                         [('two_body_mc', 2, 0, True),
-                          ('two_body_mc', 2, 0, False),
-                          ('three_body_mc', 0, 2, True),
-                          ('three_body_mc', 0, 2, False),
-                          ('two_plus_three_mc', 2, 2, True),
-                          ('two_plus_three_mc', 2, 2, False)]
+                         [ ('2+3', 2, 2, True)]
                          )
-def test_force_en(kernel_name, nbond, ntriplet, constraint):
+def test_constraint(kernel_name, nbond, ntriplet, constraint):
     """Check that the analytical force/en kernel matches finite difference of
     energy kernel."""
 
@@ -102,59 +98,100 @@ def test_force_en(kernel_name, nbond, ntriplet, constraint):
 
     force_en_kernel = stk[kernel_name+"_force_en"]
     en_kernel = stk[kernel_name+"_en"]
-    if bool('two' in kernel_name) != bool('three' in kernel_name):
+    en2_kernel = stk['2_en']
+    en3_kernel = stk['3_en']
+    # check force kernel
+    hm2 = deepcopy(hm)
+    hm3 = deepcopy(hm)
+    if ('map' in hm):
+        hm2['original'] = np.hstack(
+            [hm2['original'][0:nbond*2], hm2['original'][-1]])
+        hm2['map'] = np.array([1, 3, 4])
+        hm3['original'] = hm3['original'][nbond*2:]
+        hm3['map'] = np.array([1, 3, 4])
+        nbond = 1
 
-        # check force kernel
-        calc1 = en_kernel(env1_2, env2_1, *args0)
-        calc2 = en_kernel(env1_1, env2_1, *args0)
+    hm2['ntriplet'] = 0
+    hm3['nbond'] = 0
 
-        kern_finite_diff = (calc1 - calc2) / delta
-        if ('two' in kernel_name):
-            kern_finite_diff /= 2
-        else:
-            kern_finite_diff /= 3
-    else:
-        en2_kernel = stk['two_body_mc_en']
-        en3_kernel = stk['three_body_mc_en']
-        # check force kernel
-        hm2 = deepcopy(hm)
-        hm3 = deepcopy(hm)
-        if ('map' in hm):
-            hm2['original'] = np.hstack(
-                [hm2['original'][0:nbond*2], hm2['original'][-1]])
-            hm2['map'] = np.array([1, 3, 4])
-            hm3['original'] = hm3['original'][nbond*2:]
-            hm3['map'] = np.array([1, 3, 4])
-            nbond = 1
+    args2 = from_mask_to_args(hyps[0:nbond*2], hm2, cutoffs)
 
-        hm2['ntriplet'] = 0
-        hm3['nbond'] = 0
+    calc1 = en2_kernel(env1_2, env2_1, *args2)
+    calc2 = en2_kernel(env1_1, env2_1, *args2)
+    kern_finite_diff = (calc1 - calc2) / 2.0 / delta
 
-        args2 = from_mask_to_args(hyps[0:nbond*2], hm2, cutoffs)
+    args3 = from_mask_to_args(hyps[nbond*2:-1], hm3, cutoffs)
 
-        calc1 = en2_kernel(env1_2, env2_1, *args2)
-        calc2 = en2_kernel(env1_1, env2_1, *args2)
-        kern_finite_diff = (calc1 - calc2) / 2.0 / delta
-
-        args3 = from_mask_to_args(hyps[nbond*2:-1], hm3, cutoffs)
-
-        calc1 = en3_kernel(env1_2, env2_1, *args3)
-        calc2 = en3_kernel(env1_1, env2_1, *args3)
-        kern_finite_diff += (calc1 - calc2) / 3.0 / delta
+    calc1 = en3_kernel(env1_2, env2_1, *args3)
+    calc2 = en3_kernel(env1_1, env2_1, *args3)
+    kern_finite_diff += (calc1 - calc2) / 3.0 / delta
 
     kern_analytical = force_en_kernel(env1_1, env2_1, d1, *args0)
 
     tol = 1e-4
     assert(np.isclose(-kern_finite_diff, kern_analytical, atol=tol))
 
+@pytest.mark.parametrize('kernel_name', list_to_test)
+def test_force_en(kernel_name):
+    """Check that the analytical force/en kernel matches finite difference of
+    energy kernel."""
+
+    cutoffs, hyps, hm = generate_diff_hm(kernel_name)
+    args = from_mask_to_args(hyps, hm, cutoffs)
+
+    delta = 1e-8
+    env1_1, env1_2, env1_3, \
+        env1_2_1, env1_3_1, env1_2_2, env1_3_2, env2_1 \
+        = another_env(cutoffs, delta, mask=hm)
+
+    # set hyperparameters
+    d1 = 1
+    # hyps = generate_hm(kernel_name)
+
+    _, __, en_kernel, force_en_kernel = str_to_kernel_set(kernel_name)
+
+    nterm = 0
+    for term in ['2', '3', 'mb']:
+        if (term in kernel_name):
+            nterm += 1
+
+    kern_finite_diff = 0
+    if ('mb' in kernel_name):
+        _, __, enm_kernel, ___ = str_to_kernel_set('mb')
+        mhyps = hyps[(nterm-1)*2:]
+        calc1 = enm_kernel(env1_2, env2_1, mhyps, cutoffs)
+        calc2 = enm_kernel(env1_3, env2_1, mhyps, cutoffs)
+        kern_finite_diff_00 = (calc1 - calc2) / (2 * delta)
+
+        calc1 = enm_kernel(env1_2_1, env2_1, mhyps, cutoffs)
+        calc2 = enm_kernel(env1_3_1, env2_1, mhyps, cutoffs)
+        kern_finite_diff_10 = (calc1 - calc2) / (2 * delta)
+
+        calc1 = enm_kernel(env1_2_2, env2_1, mhyps, cutoffs)
+        calc2 = enm_kernel(env1_3_2, env2_1, mhyps, cutoffs)
+        kern_finite_diff_20 = (calc1 - calc2) / (2 * delta)
+
+        mb_diff = (kern_finite_diff_00 +
+                   kern_finite_diff_10 + kern_finite_diff_20)
+
+        kern_finite_diff += mb_diff
+
+    if ('2' in kernel_name):
+        nbond = 1
+        _, __, en2_kernel, ___ = str_to_kernel_set('2mc')
+        calc1 = en2_kernel(env1_2, env2_1, hyps[0:nbond * 2], cutoffs)
+        calc2 = en2_kernel(env1_1, env2_1, hyps[0:nbond * 2], cutoffs)
+        diff2b = (calc1 - calc2) / 2.0 / delta
+
+
 
 @pytest.mark.parametrize('kernel_name, nbond, ntriplet, constraint',
-                         [('two_body_mc', 2, 0, True),
-                          ('two_body_mc', 2, 0, False),
-                          ('three_body_mc', 0, 2, True),
-                          ('three_body_mc', 0, 2, False),
-                          ('two_plus_three_mc', 2, 2, True),
-                          ('two_plus_three_mc', 2, 2, False)]
+                         [('2', 2, 0, True),
+                          ('2', 2, 0, False),
+                          ('3', 0, 2, True),
+                          ('3', 0, 2, False),
+                          ('2+3', 2, 2, True),
+                          ('2+3', 2, 2, False)]
                          )
 def test_force(kernel_name, nbond, ntriplet, constraint):
     """Check that the analytical force kernel matches finite difference of
@@ -173,10 +210,10 @@ def test_force(kernel_name, nbond, ntriplet, constraint):
     d2 = 2
 
     kernel = stk[kernel_name]
-    if bool('two' in kernel_name) != bool('three' in kernel_name):
+    if bool('2' in kernel_name) != bool('3' in kernel_name):
         en_kernel = stk[kernel_name+"_en"]
     else:
-        en_kernel = stk['two_plus_three_mc_en']
+        en_kernel = stk['2+3_en']
 
     # check force kernel
     calc1 = en_kernel(env1_2, env2_2, *args0)
@@ -192,12 +229,12 @@ def test_force(kernel_name, nbond, ntriplet, constraint):
 
 
 @pytest.mark.parametrize('kernel_name, nbond, ntriplet, constraint',
-                         [('two_body_mc', 2, 0, True),
-                          ('two_body_mc', 2, 0, False),
-                          ('three_body_mc', 0, 2, True),
-                          ('three_body_mc', 0, 2, False),
-                          ('two_plus_three_mc', 2, 2, True),
-                          ('two_plus_three_mc', 2, 2, False)]
+                         [('2', 2, 0, True),
+                          ('2', 2, 0, False),
+                          ('3', 0, 2, True),
+                          ('3', 0, 2, False),
+                          ('2+3', 2, 2, True),
+                          ('2+3', 2, 2, False)]
                          )
 def test_hyps_grad(kernel_name, nbond, ntriplet, constraint):
 
@@ -304,3 +341,41 @@ def generate_same_hm(kernel_name):
     hyps2 = np.hstack([hyps2, 0.5])
     hyps1 = np.hstack([hyps0, 0.5])
     return cutoffs, hyps0, hyps1, hyps2, hm1, hm2
+
+def generate_diff_hm(kernel_name):
+    cutoffs = []
+    hyps2 = []
+    hm2 = {'nspec': 2, 'spec_mask': np.zeros(118, dtype=int)}
+    hm2['spec_mask'][2] = 1
+    if ('2' in kernel_name):
+        cutoffs = np.array([1.2])
+
+        hyps2 += [1, 0.8, 0.7, 0.6]
+        hm2['nbond'] = 2
+        hm2['bond_mask'] = np.ones(4, dtype=int)
+        hm2['bond_mask'][0] = 0
+        hm2['cutoff_2b'] = np.array([1.2, 1.25])
+
+    if ('3' in kernel_name):
+        cutoffs = np.array([1.2, 1.2])
+
+        hyps2 += [1, 0.9, 0.8, 0.7]
+        hm2['ntriplet'] = 2
+        hm2['triplet_mask'] = np.ones(4, dtype=int)
+        hm2['triplet_mask'][0] = 0
+        hm2['ncut3b'] = 2
+        hm2['cut3b_mask'] = np.ones(4, dtype=int)
+        hm2['cut3b_mask'][0] = 0
+        hm2['cutoff_3b'] = np.array([1.15, 1.2])
+
+    if ('mb' in kernel_name):
+        cutoffs = np.ones(3)
+
+        hyps2 += [1, 0.9, 0.8, 0.7]
+        hm2['nmb'] = 2
+        hm2['mb_mask'] = np.ones(4, dtype=int)
+        hm2['mb_mask'][0] = 0
+        hm2['cutoff_mb'] = np.array([1.15, 1.2])
+
+    hyps2 = np.hstack([hyps2, 0.5])
+    return cutoffs, hyps2, hm2
