@@ -1,5 +1,5 @@
 import numpy as np
-# from numba import njit
+from numba import njit
 from math import exp
 import flare.cutoffs as cf
 from flare.kernels.kernels import force_helper, grad_constants, grad_helper, \

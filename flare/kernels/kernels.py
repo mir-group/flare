@@ -1,7 +1,7 @@
 import numpy as np
 from math import exp
 from flare.env import AtomicEnvironment
-# from numba import njit
+from numba import njit
 import flare.cutoffs as cf
 
 # -----------------------------------------------------------------------------

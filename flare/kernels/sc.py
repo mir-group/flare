@@ -41,7 +41,7 @@ from flare.env import AtomicEnvironment
 
 import flare.cutoffs as cf
 
-# from numba import njit
+from numba import njit
 
 from flare.kernels.kernels import force_helper, grad_constants, grad_helper, \
     force_energy_helper, three_body_en_helper, three_body_helper_1, \

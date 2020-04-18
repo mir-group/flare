@@ -1,5 +1,5 @@
 import numpy as np
-# from numba import njit
+from numba import njit
 from math import exp
 import flare.cutoffs as cf
 from flare.kernels.kernels import force_helper, grad_constants, grad_helper, \
@@ -7,8 +7,6 @@ from flare.kernels.kernels import force_helper, grad_constants, grad_helper, \
     three_body_helper_2, three_body_grad_helper_1, three_body_grad_helper_2
 
 @njit
-
-
 def three_body_mc_sepcut_jit(bond_array_1, c1, etypes1,
                              bond_array_2, c2, etypes2,
                              cross_bond_inds_1, cross_bond_inds_2,
@@ -172,9 +170,8 @@ def three_body_mc_sepcut_jit(bond_array_1, c1, etypes1,
 
     return kern
 
+
 @njit
-
-
 def three_body_mc_grad_sepcut_jit(bond_array_1, c1, etypes1,
                                   bond_array_2, c2, etypes2,
                                   cross_bond_inds_1, cross_bond_inds_2,
@@ -340,9 +337,8 @@ def three_body_mc_grad_sepcut_jit(bond_array_1, c1, etypes1,
 
     return kern, kern_grad
 
+
 @njit
-
-
 def three_body_mc_force_en_sepcut_jit(bond_array_1, c1, etypes1,
                                       bond_array_2, c2, etypes2,
                                       cross_bond_inds_1, cross_bond_inds_2,
@@ -453,9 +449,8 @@ def three_body_mc_force_en_sepcut_jit(bond_array_1, c1, etypes1,
 
     return kern
 
+
 @njit
-
-
 def three_body_mc_en_sepcut_jit(bond_array_1, c1, etypes1,
                                 bond_array_2, c2, etypes2,
                                 cross_bond_inds_1, cross_bond_inds_2,

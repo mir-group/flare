@@ -3,7 +3,7 @@ environment of an atom. :class:`AtomicEnvironment` objects are inputs to the
 2-, 3-, and 2+3-body kernels."""
 import numpy as np
 from math import sqrt
-# from numba import njit
+from numba import njit
 from flare.struc import Structure
 
 
