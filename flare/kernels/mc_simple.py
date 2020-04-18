@@ -1,7 +1,7 @@
 """Multi-element 2-, 3-, and 2+3-body kernels that restrict all signal
 variance hyperparameters to a single value."""
 import numpy as np
-from numba import njit
+# from numba import njit
 from math import exp
 import sys
 import os
@@ -813,7 +813,7 @@ def many_body_mc_en(env1: AtomicEnvironment, env2: AtomicEnvironment,
 # -----------------------------------------------------------------------------
 
 
-@njit
+# @njit
 def three_body_mc_jit(bond_array_1, c1, etypes1,
                       bond_array_2, c2, etypes2,
                       cross_bond_inds_1, cross_bond_inds_2,
@@ -964,7 +964,7 @@ def three_body_mc_jit(bond_array_1, c1, etypes1,
     return kern
 
 
-@njit
+# @njit
 def three_body_mc_grad_jit(bond_array_1, c1, etypes1,
                            bond_array_2, c2, etypes2,
                            cross_bond_inds_1, cross_bond_inds_2,
@@ -1151,7 +1151,7 @@ def three_body_mc_grad_jit(bond_array_1, c1, etypes1,
     return kern, kern_grad
 
 
-@njit
+# @njit
 def three_body_mc_force_en_jit(bond_array_1, c1, etypes1,
                                bond_array_2, c2, etypes2,
                                cross_bond_inds_1, cross_bond_inds_2,
@@ -1285,7 +1285,7 @@ def three_body_mc_force_en_jit(bond_array_1, c1, etypes1,
     return kern
 
 
-@njit
+# @njit
 def three_body_mc_en_jit(bond_array_1, c1, etypes1,
                          bond_array_2, c2, etypes2,
                          cross_bond_inds_1, cross_bond_inds_2,
@@ -1413,7 +1413,7 @@ def three_body_mc_en_jit(bond_array_1, c1, etypes1,
 # -----------------------------------------------------------------------------
 
 
-@njit
+# @njit
 def two_body_mc_jit(bond_array_1, c1, etypes1,
                     bond_array_2, c2, etypes2,
                     d1, d2, sig, ls, r_cut, cutoff_func):
@@ -1475,7 +1475,7 @@ def two_body_mc_jit(bond_array_1, c1, etypes1,
     return kern
 
 
-@njit
+# @njit
 def two_body_mc_grad_jit(bond_array_1, c1, etypes1,
                          bond_array_2, c2, etypes2,
                          d1, d2, sig, ls, r_cut, cutoff_func):
@@ -1557,7 +1557,7 @@ def two_body_mc_grad_jit(bond_array_1, c1, etypes1,
     return kern, kern_grad
 
 
-@njit
+# @njit
 def two_body_mc_force_en_jit(bond_array_1, c1, etypes1,
                              bond_array_2, c2, etypes2,
                              d1, sig, ls, r_cut, cutoff_func):
@@ -1614,7 +1614,7 @@ def two_body_mc_force_en_jit(bond_array_1, c1, etypes1,
     return kern
 
 
-@njit
+# @njit
 def two_body_mc_en_jit(bond_array_1, c1, etypes1,
                        bond_array_2, c2, etypes2,
                        sig, ls, r_cut, cutoff_func):
@@ -1667,7 +1667,7 @@ def two_body_mc_en_jit(bond_array_1, c1, etypes1,
 #                 many body multicomponent kernel (numba)
 # -----------------------------------------------------------------------------
 
-@njit
+# @njit
 def many_body_mc_jit_(bond_array_1, bond_array_2, neigh_dists_1, neigh_dists_2, num_neigh_1,
                       num_neigh_2, c1, c2, etypes1, etypes2, etypes_neigh_1, etypes_neigh_2,
                       species1, species2, d1, d2, sig, ls, r_cut, cutoff_func):
@@ -1905,7 +1905,7 @@ def many_body_mc_jit(bond_array_1, bond_array_2, neigh_dists_1, neigh_dists_2, n
     return kern
 
 
-@njit
+# @njit
 def many_body_mc_grad_jit(bond_array_1, bond_array_2, neigh_dists_1, neigh_dists_2, num_neigh_1,
                           num_neigh_2, c1, c2, etypes1, etypes2, etypes_neigh_1, etypes_neigh_2,
                           species1, species2, d1, d2, sig, ls, r_cut, cutoff_func):
@@ -2058,7 +2058,7 @@ def many_body_mc_grad_jit(bond_array_1, bond_array_2, neigh_dists_1, neigh_dists
     return kern, grad
 
 
-@njit
+# @njit
 def many_body_mc_force_en_jit(bond_array_1, bond_array_2, neigh_dists_1, num_neigh_1,
                               c1, c2, etypes1, etypes2, etypes_neigh_1,
                               species1, species2, d1, sig, ls, r_cut, cutoff_func):
@@ -2134,7 +2134,7 @@ def many_body_mc_force_en_jit(bond_array_1, bond_array_2, neigh_dists_1, num_nei
     return kern
 
 
-@njit
+# @njit
 def many_body_mc_en_jit(bond_array_1, bond_array_2, c1, c2, etypes1, etypes2,
                         species1, species2, sig, ls, r_cut, cutoff_func):
     """many-body many-element kernel between energy components accelerated
@@ -2178,7 +2178,7 @@ def many_body_mc_en_jit(bond_array_1, bond_array_2, c1, c2, etypes1, etypes2,
 # -----------------------------------------------------------------------------
 
 
-@njit
+# @njit
 def q_value_mc(distances, r_cut, ref_species, species, cutoff_func, q_func=coordination_number):
     """Compute value of many-body many components descriptor based
     on distances of atoms in the local many-body environment.

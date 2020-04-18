@@ -1,7 +1,7 @@
 import numpy as np
 from math import exp
 from flare.env import AtomicEnvironment
-from numba import njit
+# from numba import njit
 import flare.cutoffs as cf
 
 # -----------------------------------------------------------------------------
@@ -9,7 +9,7 @@ import flare.cutoffs as cf
 # -----------------------------------------------------------------------------
 
 
-@njit
+# @njit
 def grad_constants(sig, ls):
     sig2 = sig * sig
     sig3 = 2 * sig
@@ -24,7 +24,7 @@ def grad_constants(sig, ls):
     return sig2, sig3, ls1, ls2, ls3, ls4, ls5, ls6
 
 
-@njit
+# @njit
 def force_helper(A, B, C, D, fi, fj, fdi, fdj, ls1, ls2, ls3, sig2):
     """Helper function for computing the force/force kernel between two
     pairs or triplets of atoms of the same type.
@@ -49,7 +49,7 @@ def force_helper(A, B, C, D, fi, fj, fdi, fdj, ls1, ls2, ls3, sig2):
     return M
 
 
-@njit
+# @njit
 def grad_helper(A, B, C, D, fi, fj, fdi, fdj, ls1, ls2, ls3, ls4, ls5, ls6,
                 sig2, sig3):
     E = exp(-D * ls1)
@@ -76,7 +76,7 @@ def grad_helper(A, B, C, D, fi, fj, fdi, fdj, ls1, ls2, ls3, ls4, ls5, ls6,
     return N, O, X
 
 
-@njit
+# @njit
 def force_energy_helper(B, D, fi, fj, fdi, ls1, ls2, sig2):
     E = exp(-D * ls1)
     F = E * B * ls2
@@ -87,7 +87,7 @@ def force_energy_helper(B, D, fi, fj, fdi, ls1, ls2, sig2):
     return I
 
 
-@njit
+# @njit
 def three_body_helper_1(ci1, ci2, cj1, cj2, r11, r22, r33,
                         fi, fj, fdi, fdj,
                         ls1, ls2, ls3, sig2):
@@ -101,7 +101,7 @@ def three_body_helper_1(ci1, ci2, cj1, cj2, r11, r22, r33,
     return M
 
 
-@njit
+# @njit
 def three_body_helper_2(ci1, ci2, cj1, cj2, r12, r23, r31,
                         fi, fj, fdi, fdj,
                         ls1, ls2, ls3, sig2):
@@ -115,7 +115,7 @@ def three_body_helper_2(ci1, ci2, cj1, cj2, r12, r23, r31,
     return M
 
 
-@njit
+# @njit
 def three_body_grad_helper_1(ci1, ci2, cj1, cj2, r11, r22, r33, fi, fj, fdi,
                              fdj, ls1, ls2, ls3, ls4, ls5, ls6, sig2, sig3):
     A = ci1 * cj1 + ci2 * cj2
@@ -129,7 +129,7 @@ def three_body_grad_helper_1(ci1, ci2, cj1, cj2, r11, r22, r33, fi, fj, fdi,
     return N, O, X
 
 
-@njit
+# @njit
 def three_body_grad_helper_2(ci1, ci2, cj1, cj2, r12, r23, r31, fi, fj, fdi,
                              fdj, ls1, ls2, ls3, ls4, ls5, ls6, sig2, sig3):
     A = ci1 * cj2
@@ -143,7 +143,7 @@ def three_body_grad_helper_2(ci1, ci2, cj1, cj2, r12, r23, r31, fi, fj, fdi,
     return N, O, X
 
 
-@njit
+# @njit
 def three_body_en_helper(ci1, ci2, r11, r22, r33, fi, fj, fdi, ls1, ls2, sig2):
     B = r11 * ci1 + r22 * ci2
     D = r11 * r11 + r22 * r22 + r33 * r33
@@ -154,7 +154,7 @@ def three_body_en_helper(ci1, ci2, r11, r22, r33, fi, fj, fdi, ls1, ls2, sig2):
 #                        many body helper functions
 # -----------------------------------------------------------------------------
 
-@njit
+# @njit
 def k_sq_exp_double_dev(q1, q2, sig, ls):
     """Second Gradient of generic squared exponential kernel on two many body functions
 
@@ -177,7 +177,7 @@ def k_sq_exp_double_dev(q1, q2, sig, ls):
 
     return ret
 
-@njit
+# @njit
 def k_sq_exp_dev(q1, q2, sig, ls):
     """Second Gradient of generic squared exponential kernel on two many body functions
 
@@ -201,7 +201,7 @@ def k_sq_exp_dev(q1, q2, sig, ls):
     return ret
 
 
-@njit
+# @njit
 def coordination_number(rij, cij, r_cut, cutoff_func):
     """Pairwise contribution to many-body descriptor based on number of
         atoms in the environment
@@ -222,7 +222,7 @@ def coordination_number(rij, cij, r_cut, cutoff_func):
     return fij, fdij
 
 
-@njit
+# @njit
 def q_value(distances, r_cut, cutoff_func, q_func=coordination_number):
     """Compute value of many-body descriptor based on distances of atoms
     in the local amny-body environment.
@@ -245,7 +245,7 @@ def q_value(distances, r_cut, cutoff_func, q_func=coordination_number):
     return q
 
 
-@njit
+# @njit
 def mb_grad_helper_ls_(qdiffsq, sig, ls):
     """Derivative of a many body force-force kernel wrt ls
 
@@ -259,7 +259,7 @@ def mb_grad_helper_ls_(qdiffsq, sig, ls):
 
     return ret
 
-@njit
+# @njit
 def mb_grad_helper_ls(q1, q2, qi, qj, sig, ls):
     """Helper function fr many body gradient collecting all the derivatives
     of the force-foce many body kernel wrt ls

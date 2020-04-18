@@ -126,7 +126,7 @@ def predict_on_structure_par(structure: Structure,
     :rtype: (np.ndarray, np.ndarray)
     """
     # Just work in serial in the number of cpus is 1
-    if n_cpus is 1:
+    if n_cpus == 1:
         return predict_on_structure(structure, gp,n_cpus,write_to_structure)
 
     # Automatically detect number of cpus available
@@ -206,7 +206,7 @@ def predict_on_structure_par_en(structure: Structure, gp: GaussianProcess,
     :rtype: (np.ndarray, np.ndarray, np.ndarray)
     """
     # Work in serial if the number of cpus is 1
-    if n_cpus is 1:
+    if n_cpus == 1:
         predict_on_structure_en(structure, gp)
 
     local_energies = np.zeros(structure.nat)

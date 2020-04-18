@@ -3,7 +3,7 @@ environment of an atom. :class:`AtomicEnvironment` objects are inputs to the
 2-, 3-, and 2+3-body kernels."""
 import numpy as np
 from math import sqrt
-from numba import njit
+# from numba import njit
 from flare.struc import Structure
 
 
@@ -233,7 +233,7 @@ class AtomicEnvironment:
         return string
 
 
-@njit
+# @njit
 def get_2_body_arrays_ind(positions, atom: int, cell, cutoff_2: float, species):
     """Returns distances, coordinates, species of atoms, and indices of neighbors
     in the 2-body local environment. This method is implemented outside
@@ -325,7 +325,7 @@ def get_2_body_arrays_ind(positions, atom: int, cell, cutoff_2: float, species):
     return bond_array_2, bond_positions_2, etypes, bond_indices
 
 
-@njit
+# @njit
 def get_3_body_arrays(bond_array_2, bond_positions_2, cutoff_3: float):
     """Returns distances and coordinates of triplets of atoms in the
     3-body local environment.
@@ -397,7 +397,7 @@ def get_3_body_arrays(bond_array_2, bond_positions_2, cutoff_3: float):
     return bond_array_3, cross_bond_inds, cross_bond_dists, triplet_counts
 
 
-@njit
+# @njit
 def get_m_body_arrays(positions, atom: int, cell, cutoff_mb: float, species):
     """Returns distances, and species of atoms in the many-body
     local environment, and returns distances and numbers of neighbours for atoms in the one
@@ -473,7 +473,7 @@ def get_m_body_arrays(positions, atom: int, cell, cutoff_mb: float, species):
     return bond_array_mb, neigh_dists_mb, num_neighs_mb, etypes_mb_array
 
 
-@njit
+# @njit
 def get_2_body_arrays_ind_sepcut(positions, atom: int, cell, cutoff_2, species,
                                  nspec, spec_mask, bond_mask):
     """Returns distances, coordinates, species of atoms, and indices of neighbors
@@ -579,7 +579,7 @@ def get_2_body_arrays_ind_sepcut(positions, atom: int, cell, cutoff_2, species,
     return bond_array_2, bond_positions_2, etypes, bond_indices
 
 
-@njit
+# @njit
 def get_3_body_arrays_sepcut(bond_array_2, bond_positions_2, ctype,
                              etypes, cutoff_3,
                              nspec, spec_mask, cut3b_mask):
@@ -682,7 +682,7 @@ def get_3_body_arrays_sepcut(bond_array_2, bond_positions_2, ctype,
     return bond_array_3, cross_bond_inds, cross_bond_dists, triplet_counts
 
 
-@njit
+# @njit
 def get_m_body_arrays_sepcut(positions, atom: int, cell, cutoff_mb, species,
                              nspec, spec_mask, mb_mask):
     """Returns distances, and species of atoms in the many-body
