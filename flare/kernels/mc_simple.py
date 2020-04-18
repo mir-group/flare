@@ -10,7 +10,7 @@ import flare.cutoffs as cf
 from flare.kernels.kernels import force_helper, grad_constants, grad_helper, \
     force_energy_helper, three_body_en_helper, three_body_helper_1, \
     three_body_helper_2, three_body_grad_helper_1, three_body_grad_helper_2, \
-    k_sq_exp_double_dev, k_sq_exp_dev, coordination_number, q_value, \
+    k_sq_exp_double_dev, k_sq_exp_dev, coordination_number, q_value, q_value_mc, \
     mb_grad_helper_ls_, mb_grad_helper_ls_
 from typing import Callable
 
@@ -2172,37 +2172,6 @@ def many_body_mc_en_jit(bond_array_1, bond_array_2, c1, c2, etypes1, etypes2,
 
     return kern
 
-
-# -----------------------------------------------------------------------------
-#                           helper funcions
-# -----------------------------------------------------------------------------
-
-
-# @njit
-def q_value_mc(distances, r_cut, ref_species, species, cutoff_func, q_func=coordination_number):
-    """Compute value of many-body many components descriptor based
-    on distances of atoms in the local many-body environment.
-
-    Args:
-        distances (np.ndarray): distances between atoms i and j
-        r_cut (float): cutoff hyperparameter
-        ref_species (int): species to consider to compute the contribution
-        species (np.ndarray): atomic species of neighbours
-        cutoff_func (callable): cutoff function
-        q_func (callable): many-body pairwise descrptor function
-
-    Return:
-        float: the value of the many-body descriptor
-    """
-
-    q = 0
-
-    for i in range(len(distances)):
-        if species[i] == ref_species:
-            q_, _ = q_func(distances[i], 0, r_cut, cutoff_func)
-            q += q_
-
-    return q
 
 
 _str_to_kernel = {'two_body_mc': two_body_mc,
