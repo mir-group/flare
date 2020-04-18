@@ -165,8 +165,11 @@ class GaussianProcess:
         """
 
         if (self.name in _global_training_labels):
-            milliseconds = int(round(time.time() * 1000))
-            self.name = f"{self.name}_{milliseconds}"
+            base = f'{self.name}'
+            count = 2
+            while (self.name in _global_training_labels):
+                self.name = f'{base}_{count}'
+                count += 1
 
         assert (self.name not in _global_training_labels), \
                 f"the gp instance name, {self.name} is used"
@@ -946,3 +949,7 @@ class GaussianProcess:
         :return:
         """
         return self.parallel
+
+    def __del__(self):
+        _global_training_labels.pop(self.name, None)
+        _global_training_data.pop(self.name, None)
