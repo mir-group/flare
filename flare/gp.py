@@ -262,7 +262,8 @@ class GaussianProcess:
                             assert bmask[tmb*nspec+tmb_2] == bmask[tmb_2*nspec+tmb], \
                                     'mb_mask has to be symmetric'
             else:
-                nmb = 0
+                nmb = 1
+                self.hyps_mask['mb_mask'] = np.zeros(nspec**2)
 
             if (len(self.cutoffs)<=2):
                 assert ((n2b + n3b) > 0)

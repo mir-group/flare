@@ -6,7 +6,9 @@ import numpy as np
 
 from typing import List
 from pytest import raises
+from scipy.optimize import OptimizeResult
 
+import flare
 from flare.gp import GaussianProcess
 from flare.env import AtomicEnvironment
 from flare.struc import Structure
@@ -20,11 +22,38 @@ from copy import deepcopy
 multihyps_list = [True, False]
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='class')
 def all_gps() -> GaussianProcess:
     """Returns a GP instance with a two-body numba-based kernel"""
 
     gp_dict = {True: None, False: None}
+    for multihyps in multihyps_list:
+        cutoffs = np.ones(2)*0.8
+        hyps, hm, _ = generate_hm(1, 1, multihyps=multihyps)
+        hl = hm['hyps_label']
+        if (multihyps is False):
+            hm = None
+
+        # test update_db
+        gpname = '2+3+mb_mc'
+        hyps = np.hstack([hyps, [1, 1]])
+        hl = np.hstack([hl[:-1], ['sigm', 'lsm'], hl[-1]])
+        cutoffs = np.ones(3)*0.8
+
+        gp_dict[multihyps] = \
+            GaussianProcess(kernel_name=gpname,
+                            hyps=hyps,
+                            hyp_labels=hl,
+                            cutoffs=cutoffs,
+                            multihyps=multihyps, hyps_mask=hm,
+                            parallel=False, n_cpus=1)
+
+        test_structure, forces = get_random_structure(np.eye(3),
+                                                      [1, 2],
+                                                      3)
+
+        gp_dict[multihyps].update_db(test_structure, forces)
+
     yield gp_dict
     del gp_dict
 
@@ -33,218 +62,246 @@ def all_gps() -> GaussianProcess:
 def params():
     parameters = {'unique_species': [2, 1],
                   'cutoff': 0.8,
-                  'noa': 5,
+                  'noa': 3,
                   'cell': np.eye(3),
                   'db_pts': 30}
     yield parameters
     del parameters
 
 
-@pytest.mark.parametrize('multihyps', multihyps_list)
-def test_init(multihyps, all_gps):
-    cutoffs = np.ones(2)*0.8
-    hyps, hm, _ = generate_hm(1, 1, multihyps=multihyps)
-    hl = hm['hyps_label']
-    if (multihyps is False):
-        hm = None
-
-    # test update_db
-    gpname = '2+3mc'
-    if multihyps is False:
-        gpname += 'mb'
-        hyps = np.hstack([hyps, [1, 1]])
-        cutoffs = np.ones(3)*0.8
-
-    all_gps[multihyps] = \
-        GaussianProcess(kernel_name=gpname,
-                        hyps=hyps,
-                        hyp_labels=hl,
-                        cutoffs=cutoffs, multihyps=multihyps, hyps_mask=hm,
-                        parallel=False, n_cpus=1)
-
-
 @pytest.fixture(scope='module')
-def test_point() -> AtomicEnvironment:
+def validation_env() -> AtomicEnvironment:
     test_pt = get_tstp()
     yield test_pt
     del test_pt
+
 
 # ------------------------------------------------------
 #                   test GP methods
 # ------------------------------------------------------
 
+class TestDataUpdating():
 
-@pytest.mark.parametrize('multihyps', multihyps_list)
-def test_update_db(all_gps, multihyps, params):
+    @pytest.mark.parametrize('multihyps', multihyps_list)
+    def test_update_db(self, all_gps, multihyps, params):
 
-    test_gp = all_gps[multihyps]
-    oldsize = len(test_gp.training_data)
+        test_gp = all_gps[multihyps]
+        oldsize = len(test_gp.training_data)
 
-    # add structure and forces to db
-    test_structure, forces = get_random_structure(params['cell'],
-                                                  params['unique_species'],
-                                                  params['noa'])
+        # add structure and forces to db
+        test_structure, forces = get_random_structure(params['cell'],
+                                                      params['unique_species'],
+                                                      params['noa'])
 
-    test_gp.update_db(test_structure, forces)
+        test_gp.update_db(test_structure, forces)
 
-    assert (len(test_gp.training_data) == params['noa']+oldsize)
-    assert (len(test_gp.training_labels_np) == (params['noa']+oldsize)*3)
+        assert (len(test_gp.training_data) == params['noa']+oldsize)
+        assert (len(test_gp.training_labels_np) == (params['noa']+oldsize)*3)
 
-def test_adjust_cutoffs(all_gps):
-
-    test_gp = all_gps[False]
-    new_gp = deepcopy(test_gp)
-    new_gp.name = 'adjust_cutoff_gp' # So as to not interfere with other
-    # global training data
-    # No need to ajust the other global values since we're not
-    # testing on the predictions made, just that the cutoffs in the
-    # atomic environments are correctly re-created
-
-    new_gp.adjust_cutoffs(np.array(new_gp.cutoffs) + .5, train=False)
-
-    assert np.array_equal(new_gp.cutoffs, test_gp.cutoffs + .5)
-
-    for env in new_gp.training_data:
-        assert np.array_equal(env.cutoffs, new_gp.cutoffs)
+#
 
 
+class TestTraining():
+    @pytest.mark.parametrize('par, n_cpus', [(False, 1),
+                                             (True, 2)])
+    @pytest.mark.parametrize('multihyps', multihyps_list)
+    def test_train(self, all_gps, params, par, n_cpus, multihyps):
 
-@pytest.mark.parametrize('par, n_cpus', [(True, 2),
-                                         (False, 1)])
-@pytest.mark.parametrize('multihyps', multihyps_list)
-def test_train(all_gps, params, par, n_cpus, multihyps):
+        test_gp = all_gps[multihyps]
+        test_gp.parallel = par
+        test_gp.n_cpus = n_cpus
 
-    test_gp = all_gps[multihyps]
-    test_gp.parallel = par
-    test_gp.n_cpus = n_cpus
+        test_gp.maxiter = 1
 
-    test_gp.maxiter = 1
+        # train gp
+        test_gp.hyps = np.ones(len(test_gp.hyps))
+        hyp = list(test_gp.hyps)
+        test_gp.train()
 
-    # train gp
-    test_gp.hyps = np.ones(len(test_gp.hyps))
-    hyp = list(test_gp.hyps)
-    test_gp.train()
+        hyp_post = list(test_gp.hyps)
 
-    hyp_post = list(test_gp.hyps)
+        # check if hyperparams have been updated
+        assert (hyp != hyp_post)
 
-    # check if hyperparams have been updated
-    assert (hyp != hyp_post)
+    def test_train_failure(self, all_gps, params, mocker):
+        """
+        Tests the case when 'L-BFGS-B' fails due to a linear algebra error and
+        training falls back to BFGS
+        """
+        # Sets up mocker for scipy minimize. Note that we are mocking
+        # 'flare.gp.minimize' because of how the imports are done in gp
+        x_result = np.random.rand()
+        fun_result = np.random.rand()
+        jac_result = np.random.rand()
+        train_result = OptimizeResult(x=x_result, fun=fun_result,
+                                      jac=jac_result)
 
+        side_effects = [np.linalg.LinAlgError(), train_result]
+        mocker.patch('flare.gp.minimize', side_effect=side_effects)
+        two_body_gp = all_gps[True]
+        two_body_gp.set_L_alpha = mocker.Mock()
 
-@pytest.mark.parametrize('par, per_atom_par, n_cpus',
-                         [(False, False, 1),
-                          (True, True, 2),
-                          (True, False, 2)])
-@pytest.mark.parametrize('multihyps', multihyps_list)
-def test_predict(all_gps, test_point, par, per_atom_par, n_cpus, multihyps):
-    test_gp = all_gps[multihyps]
-    test_gp.parallel = par
-    test_gp.per_atom_par = per_atom_par
-    pred = test_gp.predict(x_t=test_point, d=1)
-    assert (len(pred) == 2)
-    assert (isinstance(pred[0], float))
-    assert (isinstance(pred[1], float))
+        # Executes training
+        two_body_gp.algo = 'L-BFGS-B'
+        two_body_gp.train()
 
+        # Assert that everything happened as expected
+        assert(flare.gp.minimize.call_count == 2)
 
-@pytest.mark.parametrize('par, n_cpus', [(True, 2),
-                                         (False, 1)])
-@pytest.mark.parametrize('multihyps', multihyps_list)
-def test_set_L_alpha(all_gps, params, par, n_cpus, multihyps):
-    test_gp = all_gps[multihyps]
-    test_gp.parallel = par
-    test_gp.n_cpus = n_cpus
-    test_gp.set_L_alpha()
+        calls = flare.gp.minimize.call_args_list
+        args, kwargs = calls[0]
+        assert(kwargs['method'] == 'L-BFGS-B')
 
+        args, kwargs = calls[1]
+        assert(kwargs['method'] == 'BFGS')
 
-@pytest.mark.parametrize('par, n_cpus', [(True, 2),
-                                         (False, 1)])
-@pytest.mark.parametrize('multihyps', multihyps_list)
-def test_update_L_alpha(all_gps, params, par, n_cpus, multihyps):
-    # set up gp model
-    test_gp = all_gps[multihyps]
-    test_gp.parallel = par
-    test_gp.n_cpus = n_cpus
-
-    test_structure, forces = get_random_structure(params['cell'],
-                                                  params['unique_species'],
-                                                  params['noa'])
-    test_gp.check_L_alpha()
-    test_gp.update_db(test_structure, forces)
-    test_gp.update_L_alpha()
-
-    # compare results with set_L_alpha
-    ky_mat_from_update = np.copy(test_gp.ky_mat)
-    test_gp.set_L_alpha()
-    ky_mat_from_set = np.copy(test_gp.ky_mat)
-
-    assert (np.all(np.absolute(ky_mat_from_update - ky_mat_from_set)) < 1e-6)
+        two_body_gp.set_L_alpha.assert_called_once()
+        assert(two_body_gp.hyps == x_result)
+        assert(two_body_gp.likelihood == -1 * fun_result)
+        assert(two_body_gp.likelihood_gradient == -1 * jac_result)
 
 
-@pytest.mark.parametrize('multihyps', multihyps_list)
-def test_representation_method(all_gps, multihyps):
-    test_gp = all_gps[multihyps]
-    the_str = str(test_gp)
-    assert 'GaussianProcess Object' in the_str
-    if (multihyps):
-        assert 'Kernel: two_plus_three_body_mc' in the_str
-        assert 'Cutoffs: [0.8 0.8]' in the_str
-    else:
-        assert 'Kernel: two_plus_three_plus_many_body_mc' in the_str
+class TestConstraint():
+
+    def test_constrained_optimization_simple(self, all_gps):
+        """
+        Test constrained optimization with a standard
+        number of hyperparameters (3 for a 3-body)
+        :return:
+        """
+
+        test_gp = all_gps[True]
+        orig_hyp_labels = test_gp.hyp_labels
+        orig_hyps = np.copy(test_gp.hyps)
+
+        test_gp.hyps_mask['map'] = np.array([1, 3, 5], dtype=int)
+        test_gp.hyps_mask['train_noise'] = False
+        test_gp.hyps_mask['original'] = orig_hyps
+
+        test_gp.hyp_labels = orig_hyp_labels[test_gp.hyps_mask['map']]
+        test_gp.hyps = orig_hyps[test_gp.hyps_mask['map']]
+
+        # Check that the hyperparameters were updated
+        test_gp.maxiter = 1
+        init_hyps = np.copy(test_gp.hyps)
+        results = test_gp.train()
+        assert not np.equal(results.x, init_hyps).all()
+
+
+class TestAlgebra():
+
+    @pytest.mark.parametrize('par, per_atom_par, n_cpus',
+                             [(False, False, 1),
+                              (True, True, 2),
+                              (True, False, 2)])
+    @pytest.mark.parametrize('multihyps', multihyps_list)
+    def test_predict(self, all_gps, validation_env,
+                     par, per_atom_par, n_cpus, multihyps):
+        test_gp = all_gps[multihyps]
+        test_gp.parallel = par
+        test_gp.per_atom_par = per_atom_par
+        pred = test_gp.predict(x_t=validation_env, d=1)
+        assert (len(pred) == 2)
+        assert (isinstance(pred[0], float))
+        assert (isinstance(pred[1], float))
+
+    @pytest.mark.parametrize('par, n_cpus', [(True, 2),
+                                             (False, 1)])
+    @pytest.mark.parametrize('multihyps', multihyps_list)
+    def test_set_L_alpha(self, all_gps, params, par, n_cpus, multihyps):
+        test_gp = all_gps[multihyps]
+        test_gp.parallel = par
+        test_gp.n_cpus = n_cpus
+        test_gp.set_L_alpha()
+
+    @pytest.mark.parametrize('par, n_cpus', [(True, 2),
+                                             (False, 1)])
+    @pytest.mark.parametrize('multihyps', multihyps_list)
+    def test_update_L_alpha(self, all_gps, params, par, n_cpus, multihyps):
+        # set up gp model
+        test_gp = all_gps[multihyps]
+        test_gp.parallel = par
+        test_gp.n_cpus = n_cpus
+
+        test_structure, forces = \
+            get_random_structure(params['cell'],
+                                 params['unique_species'],
+                                 2)
+        test_gp.check_L_alpha()
+        test_gp.update_db(test_structure, forces)
+        test_gp.update_L_alpha()
+
+        # compare results with set_L_alpha
+        ky_mat_from_update = np.copy(test_gp.ky_mat)
+        test_gp.set_L_alpha()
+        ky_mat_from_set = np.copy(test_gp.ky_mat)
+
+        assert (np.all(np.absolute(ky_mat_from_update - ky_mat_from_set)) < 1e-6)
+
+
+class TestIO():
+    @pytest.mark.parametrize('multihyps', multihyps_list)
+    def test_representation_method(self, all_gps, multihyps):
+        test_gp = all_gps[multihyps]
+        the_str = str(test_gp)
+        assert 'GaussianProcess Object' in the_str
+        if (multihyps):
+            assert 'Kernel: two_three_many_body_mc' in the_str
+        else:
+            assert 'Kernel: two_plus_three_plus_many_body_mc' in the_str
         assert 'Cutoffs: [0.8 0.8 0.8]' in the_str
-    assert 'Model Likelihood: ' in the_str
-    if not multihyps:
-        assert 'Length: ' in the_str
-        assert 'Signal Var.: ' in the_str
-        assert "Noise Var.: " in the_str
+        assert 'Model Likelihood: ' in the_str
+        if not multihyps:
+            assert 'Length: ' in the_str
+            assert 'Signal Var.: ' in the_str
+            assert "Noise Var.: " in the_str
 
+    @pytest.mark.parametrize('multihyps', multihyps_list)
+    def test_serialization_method(self, all_gps, validation_env, multihyps):
+        """
+        Serialize and then un-serialize a GP and ensure that no info was lost.
+        Compare one calculation to ensure predictions work correctly.
+        :param test_gp:
+        :return:
+        """
+        test_gp = all_gps[multihyps]
+        old_gp_dict = test_gp.as_dict()
+        new_gp = GaussianProcess.from_dict(old_gp_dict)
+        new_gp_dict = new_gp.as_dict()
 
-@pytest.mark.parametrize('multihyps', multihyps_list)
-def test_serialization_method(all_gps, test_point, multihyps):
-    """
-    Serialize and then un-serialize a GP and ensure that no info was lost.
-    Compare one calculation to ensure predictions work correctly.
-    :param test_gp:
-    :return:
-    """
-    test_gp = all_gps[multihyps]
-    old_gp_dict = test_gp.as_dict()
-    new_gp = GaussianProcess.from_dict(old_gp_dict)
-    new_gp_dict = new_gp.as_dict()
+        assert len(new_gp_dict) == len(old_gp_dict)
 
-    assert len(new_gp_dict) == len(old_gp_dict)
+        dumpcompare(new_gp_dict, old_gp_dict)
 
-    dumpcompare(new_gp_dict, old_gp_dict)
+        for d in [0, 1, 2]:
+            assert np.all(test_gp.predict(x_t=validation_env, d=d) ==
+                          new_gp.predict(x_t=validation_env, d=d))
 
-    for d in [0, 1, 2]:
-        assert np.all(test_gp.predict(x_t=test_point, d=d) ==
-                      new_gp.predict(x_t=test_point, d=d))
+    @pytest.mark.parametrize('multihyps', multihyps_list)
+    def test_load_and_reload(self, all_gps, validation_env, multihyps):
 
+        test_gp = all_gps[multihyps]
 
-@pytest.mark.parametrize('multihyps', multihyps_list)
-def test_load_and_reload(all_gps, test_point, multihyps):
+        test_gp.write_model('test_gp_write', 'pickle')
 
-    test_gp = all_gps[multihyps]
+        new_gp = GaussianProcess.from_file('test_gp_write.pickle')
 
-    test_gp.write_model('test_gp_write', 'pickle')
+        for d in [0, 1, 2]:
+            assert np.all(test_gp.predict(x_t=validation_env, d=d) ==
+                          new_gp.predict(x_t=validation_env, d=d))
+        os.remove('test_gp_write.pickle')
 
-    new_gp = GaussianProcess.from_file('test_gp_write.pickle')
+        test_gp.write_model('test_gp_write', 'json')
 
-    for d in [0, 1, 2]:
-        assert np.all(test_gp.predict(x_t=test_point, d=d) ==
-                      new_gp.predict(x_t=test_point, d=d))
-    os.remove('test_gp_write.pickle')
+        with open('test_gp_write.json', 'r') as f:
+            new_gp = GaussianProcess.from_dict(json.loads(f.readline()))
+        for d in [0, 1, 2]:
+            assert np.all(test_gp.predict(x_t=validation_env, d=d) ==
+                          new_gp.predict(x_t=validation_env, d=d))
+        os.remove('test_gp_write.json')
 
-    test_gp.write_model('test_gp_write', 'json')
-
-    with open('test_gp_write.json', 'r') as f:
-        new_gp = GaussianProcess.from_dict(json.loads(f.readline()))
-    for d in [0, 1, 2]:
-        assert np.all(test_gp.predict(x_t=test_point, d=d) ==
-                      new_gp.predict(x_t=test_point, d=d))
-    os.remove('test_gp_write.json')
-
-    with raises(ValueError):
-        test_gp.write_model('test_gp_write', 'cucumber')
+        with raises(ValueError):
+            test_gp.write_model('test_gp_write', 'cucumber')
 
 
 def dumpcompare(obj1, obj2):
@@ -262,7 +319,7 @@ def dumpcompare(obj1, obj2):
         for k1, k2 in zip(sorted(obj1.keys()), sorted(obj2.keys())):
 
             assert k1 == k2, f"key {k1} is not the same as {k2}"
-            if (k1 is not "name"):
+            if (k1 != "name"):
                 assert dumpcompare(obj1[k1], obj2[k2]
                                    ), f"value {k1} is not the same as {k2}"
 
@@ -287,38 +344,6 @@ def dumpcompare(obj1, obj2):
     return True
 
 
-def test_constrained_optimization_simple(all_gps):
-    """
-    Test constrained optimization with a standard
-    number of hyperparameters (3 for a 3-body)
-    :return:
-    """
-
-    test_gp = all_gps[True]
-    test_gp.hyp_labels = ['2-Body_sig2,', '2-Body_l2',
-                          '3-Body_sig2', '3-Body_l2', 'noise']
-    test_gp.hyps = np.array([1.2, 2.2, 3.2, 4.2, 12.])
-    init_hyps = np.copy(test_gp.hyps)
-
-    # Define hyp masks
-    spec_mask = np.zeros(118, dtype=int)
-    spec_mask[1] = 1
-    test_gp.hyps_mask = {
-        'nspec': 2,
-        'spec_mask': spec_mask,
-        'nbond': 2,
-        'bond_mask': np.array([0, 1, 1, 1], dtype=int),
-        'ntriplet': 2,
-        'triplet_mask': np.array([0, 1, 1, 1, 1, 1, 1, 1], dtype=int),
-        'original': np.array([1.1, 1.2, 2.1, 2.2, 3.1, 3.2, 4.1, 4.2,
-                              12.]),
-        'train_noise': True,
-        'map': np.array([1, 3, 5, 7, 8])}
-
-    # Check that the hyperparameters were updated
-    results = test_gp.train()
-    assert not np.equal(results.x, init_hyps).all()
-
 def test_training_statistics():
     """
     Ensure training statistics are being recorded correctly
@@ -326,11 +351,10 @@ def test_training_statistics():
     """
 
     test_structure, forces = get_random_structure(np.eye(3),
-                                                  ['H','Be'],
+                                                  ['H', 'Be'],
                                                   10)
 
-    gp = GaussianProcess(kernel_name='2',cutoffs=[10])
-
+    gp = GaussianProcess(kernel_name='2', cutoffs=[10])
 
     data = gp.training_statistics
 
@@ -346,3 +370,21 @@ def test_training_statistics():
     assert len(data['species']) == len(set(test_structure.coded_species))
     assert len(data['envs_by_species']) == len(set(
         test_structure.coded_species))
+
+
+def TestHelper():
+
+    def test_adjust_cutoffs(self, all_gps):
+
+        test_gp = all_gps[False]
+        # global training data
+        # No need to ajust the other global values since we're not
+        # testing on the predictions made, just that the cutoffs in the
+        # atomic environments are correctly re-created
+
+        test_gp.adjust_cutoffs(np.array(test_gp.cutoffs) + .5, train=False)
+
+        assert np.array_equal(test_gp.cutoffs, test_gp.cutoffs + .5)
+
+        for env in test_gp.training_data:
+            assert np.array_equal(env.cutoffs, test_gp.cutoffs)
