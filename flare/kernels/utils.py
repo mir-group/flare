@@ -99,17 +99,17 @@ def from_mask_to_args(hyps, hyps_mask: dict, cutoffs):
     nmb = hyps_mask.get('nmb', 0)
     ncut3b = hyps_mask.get('ncut3b', 0)
 
-    bond_mask = np.array(hyps_mask.get('bond_mask', None))
-    triplet_mask = np.array(hyps_mask.get('triplet_mask', None))
-    mb_mask = np.array(hyps_mask.get('mb_mask', None))
-    cut3b_mask = np.array(hyps_mask.get('cut3b_mask', None))
+    bond_mask = hyps_mask.get('bond_mask', None)
+    triplet_mask = hyps_mask.get('triplet_mask', None)
+    mb_mask = hyps_mask.get('mb_mask', None)
+    cut3b_mask = hyps_mask.get('cut3b_mask', None)
 
     ncutoff = len(cutoffs)
 
     if (ncutoff>0):
-        cutoff_2b = np.array([cutoffs[0]])
+        cutoff_2b = [cutoffs[0]]
         if ('cutoff_2b' in hyps_mask):
-            cutoff_2b = np.array(hyps_mask['cutoff_2b'])
+            cutoff_2b = hyps_mask['cutoff_2b']
         elif ('cutoff_2b' not in hyps_mask and n2b>0):
             cutoff_2b = np.ones(n2b)*cutoffs[0]
 
@@ -117,13 +117,13 @@ def from_mask_to_args(hyps, hyps_mask: dict, cutoffs):
     if (ncutoff>1):
         cutoff_3b = cutoffs[1]
         if ('cutoff_3b' in hyps_mask):
-            cutoff_3b = np.array(hyps_mask['cutoff_3b'])
+            cutoff_3b = hyps_mask['cutoff_3b']
 
     cutoff_mb = None
     if (ncutoff>2):
         cutoff_mb = np.array([cutoffs[2]])
         if ('cutoff_mb' in hyps_mask):
-            cutoff_mb = np.array(hyps_mask['cutoff_mb'])
+            cutoff_mb = hyps_mask['cutoff_mb']
         # if the user forget to define nmb
         # there has to be a mask, because this is the
         # multi hyper parameter mode
@@ -159,7 +159,7 @@ def from_mask_to_args(hyps, hyps_mask: dict, cutoffs):
             raise NameError("Hyperparameter mask missing nbond and/or"
                             "ntriplet key")
         return (cutoff_2b, cutoff_3b,
-                hyps_mask['nspec'], np.array(hyps_mask['spec_mask']),
+                hyps_mask['nspec'], hyps_mask['spec_mask'],
                 n2b, bond_mask, n3b, triplet_mask,
                 ncut3b, cut3b_mask,
                 sig2, ls2, sig3, ls3)

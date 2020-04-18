@@ -312,9 +312,8 @@ def two_plus_three_body_mc_grad(env1, env2, d1, d2, cutoff_2b, cutoff_3b,
                              nspec, spec_mask,
                              nbond, bond_mask)
 
-    if (cutoff_3b.shape[0]==1):
+    if (ncut3b == 0):
         tbmcj = three_body_mc_grad_jit
-        cutoff_3b = cutoff_3b[0]
     else:
         tbmcj = three_body_mc_grad_sepcut_jit
 
@@ -348,9 +347,8 @@ def two_plus_three_mc_force_en(env1, env2, d1, cutoff_2b, cutoff_3b,
                                  nspec, spec_mask,
                                  bond_mask) / 2
 
-    if (cutoff_3b.shape[0]==1):
+    if (ncut3b == 0):
         tbmcj = three_body_mc_force_en_jit
-        cutoff_3b = cutoff_3b[0]
     else:
         tbmcj = three_body_mc_force_en_sepcut_jit
 
@@ -382,9 +380,8 @@ def two_plus_three_mc_en(env1, env2, cutoff_2b, cutoff_3b,
                                   spec_mask,
                                   bond_mask)
 
-    if (cutoff_3b.shape[0]==1):
+    if (ncut3b == 0):
         tbmcj = three_body_mc_en_jit
-        cutoff_3b = cutoff_3b[0]
     else:
         tbmcj = three_body_mc_en_sepcut_jit
 
@@ -413,9 +410,8 @@ def three_body_mc(env1, env2, d1, d2, cutoff_2b, cutoff_3b,
                   sig2, ls2, sig3, ls3,
                   cutoff_func=cf.quadratic_cutoff):
 
-    if (cutoff_3b.shape[0]==1):
+    if (ncut3b==0):
         tbmcj = three_body_mc_jit
-        cutoff_3b = cutoff_3b[0]
     else:
         tbmcj = three_body_mc_sepcut_jit
 
@@ -436,9 +432,8 @@ def three_body_mc_grad(env1, env2, d1, d2, cutoff_2b, cutoff_3b,
                        sig2, ls2, sig3, ls3,
                        cutoff_func=cf.quadratic_cutoff):
 
-    if (cutoff_3b.shape[0]==1):
+    if (ncut3b==0):
         tbmcj = three_body_mc_grad_jit
-        cutoff_3b = cutoff_3b[0]
     else:
         tbmcj = three_body_mc_grad_sepcut_jit
 

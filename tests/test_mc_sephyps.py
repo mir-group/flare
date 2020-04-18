@@ -11,8 +11,8 @@ from flare.kernels.utils import from_mask_to_args, str_to_kernel_set
 
 from .fake_gp import generate_hm, generate_envs
 
-
-def test_force_en_multi_vs_simple():
+@pytest.mark.parametrize('kernel_name', ['2', '3', '2+3', '2+3+mb'])
+def test_force_en_multi_vs_simple(kernel_name):
     """Check that the analytical kernel matches the one implemented
     in mc_simple.py"""
 
@@ -25,16 +25,66 @@ def test_force_en_multi_vs_simple():
     d2 = 2
     tol = 1e-4
 
-    hyps, hm, cut = generate_hm(1, 1, cutoffs, False)
+    cutoffs = []
+    hyps0 = []
+    hyps2 = []
+    hm1 = {'nspec': 1, 'spec_mask': np.zeros(118, dtype=int)}
+    hm2 = {'nspec': 2, 'spec_mask': np.zeros(118, dtype=int)}
+    hm2['spec_mask'][2] = 1
+    if ('2' in kernel_name):
+        cutoffs = np.ones(1)
+
+        hyps0 += [1, 0.9]
+        hm1['nbond'] = 1
+        hm1['bond_mask'] = np.zeros(1, dtype=int)
+
+        hyps2 += [1, 1, 0.9, 0.9]
+        hm2['nbond'] = 2
+        hm2['bond_mask'] = np.ones(4, dtype=int)
+        hm2['bond_mask'][0] = 0
+        hm2['cutoff_2b'] = np.ones(2)
+    if ('3' in kernel_name):
+        cutoffs = np.ones(2)
+
+        hyps0 += [1, 0.8]
+
+        hm1['ntriplet'] = 1
+        hm1['triplet_mask'] = np.zeros(1, dtype=int)
+
+        hyps2 += [1, 1, 0.8, 0.8]
+        hm2['ntriplet'] = 2
+        hm2['triplet_mask'] = np.ones(4, dtype=int)
+        hm2['triplet_mask'][0] = 0
+        hm2['ncut3b'] = 2
+        hm2['cut3b_mask'] = np.ones(4, dtype=int)
+        hm2['cut3b_mask'][0] = 0
+        hm2['cutoff_3b'] = np.ones(2)
+    if ('mb' in kernel_name):
+        cutoffs = np.ones(3)
+
+        hyps0 += [1, 0.7]
+
+        hm1['nmb'] = 1
+        hm1['mb_mask'] = np.zeros(1, dtype=int)
+
+        hyps2 += [1, 1, 0.7, 0.7]
+        hm2['nmb'] = 2
+        hm2['mb_mask'] = np.ones(4, dtype=int)
+        hm2['mb_mask'][0] = 0
+        hm2['cutoff_mb'] = np.ones(2)
+
+    hyps0 = np.hstack([hyps0, 0.5])
+    hyps2 = np.hstack([hyps2, 0.5])
+    hyps1 = np.hstack([hyps0, 0.5])
 
     # mc_simple
-    kernel0, kg0, en_kernel0, force_en_kernel0 = str_to_kernel_set("2+3+mb+mc", False)
-    hyps = np.ones(7)
-    args0 = (hyps, cutoffs)
+    kernel0, kg0, en_kernel0, force_en_kernel0 = str_to_kernel_set(kernel_name, False)
+    args0 = (hyps0, cutoffs)
 
     # mc_sephyps
-    kernel, kg, en_kernel, force_en_kernel = str_to_kernel_set("2+3+mb+mc", True)
-    args1 = from_mask_to_args(hyps, hm, cutoffs)
+    kernel, kg, en_kernel, force_en_kernel = str_to_kernel_set(kernel_name, True)
+    args1 = from_mask_to_args(hyps1, hm1, cutoffs)
+    args2 = from_mask_to_args(hyps2, hm2, cutoffs)
 
     funcs = [[kernel0, kg0, en_kernel0, force_en_kernel0],
              [kernel, kg, en_kernel, force_en_kernel]]
@@ -43,21 +93,33 @@ def test_force_en_multi_vs_simple():
     reference = funcs[0][i](env1_1, env2_1, d1, d2, *args0)
     result = funcs[1][i](env1_1, env2_1, d1, d2, *args1)
     assert(np.isclose(reference, result, atol=tol))
+    result = funcs[1][i](env1_1, env2_1, d1, d2, *args2)
+    assert(np.isclose(reference, result, atol=tol))
 
     i = 1
     reference = funcs[0][i](env1_1, env2_1, d1, d2, *args0)
     result = funcs[1][i](env1_1, env2_1, d1, d2, *args1)
     assert(np.isclose(reference[0], result[0], atol=tol))
     assert(np.isclose(reference[1], result[1], atol=tol).all())
+    result = funcs[1][i](env1_1, env2_1, d1, d2, *args2)
+    assert(np.isclose(reference[0], result[0], atol=tol))
+    joint_grad = np.zeros(len(result[1])//2)
+    for i in range(joint_grad.shape[0]):
+        joint_grad[i] = result[1][i*2] + result[1][i*2+1]
+    assert(np.isclose(reference[1], joint_grad, atol=tol).all())
 
     i = 2
     reference = funcs[0][i](env1_1, env2_1, *args0)
     result = funcs[1][i](env1_1, env2_1, *args1)
     assert(np.isclose(reference, result, atol=tol))
+    result = funcs[1][i](env1_1, env2_1, *args2)
+    assert(np.isclose(reference, result, atol=tol))
 
     i = 3
     reference = funcs[0][i](env1_1, env2_1, d1, *args0)
     result = funcs[1][i](env1_1, env2_1, d1, *args1)
+    assert(np.isclose(reference, result, atol=tol))
+    result = funcs[1][i](env1_1, env2_1, d1, *args2)
     assert(np.isclose(reference, result, atol=tol))
 
 

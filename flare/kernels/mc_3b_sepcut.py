@@ -23,9 +23,9 @@ def three_body_mc_sepcut_jit(bond_array_1, c1, etypes1,
     ls2 = 1 / (ls * ls)
     ls3 = ls2 * ls2
 
-    bci = spec_mask[ci]
+    bci = spec_mask[c1]
     bcin = bci * nspec
-    bcj = spec_mask[cj]
+    bcj = spec_mask[c2]
     bcjn = bcj * nspec
 
     for m in range(bond_array_1.shape[0]):
@@ -33,11 +33,13 @@ def three_body_mc_sepcut_jit(bond_array_1, c1, etypes1,
         ci1 = bond_array_1[m, d1]
         ei1 = etypes1[m]
 
+        # determine cutoff1 based on the end points
         bei1 = spec_mask[ei1]
+        bei1n = nspec * bei1
         btype_ei1 = cut3b_mask[bei1 + bcin]
         cut_ei1 = r_cut[btype_ei1]
-        bei1n = nspec * bei1
         fi1, fdi1 = cutoff_func(cut_ei1, ri1, ci1)
+
 
         for n in range(triplets_1[m]):
             ind1 = cross_bond_inds_1[m, m + n + 1]
@@ -77,10 +79,11 @@ def three_body_mc_sepcut_jit(bond_array_1, c1, etypes1,
                 cj1 = bond_array_2[p, d2]
                 ej1 = etypes2[p]
 
-                if ej1 not in tr_spec:
+                tr_spec1 = [tr_spec[0], tr_spec[1]]
+                if ej1 not in tr_spec1:
                     continue
                 else:
-                    tr_spec.remove(ej1)
+                    tr_spec1.remove(ej1)
 
                 bej1 = spec_mask[ej1]
                 btype_ej1 = cut3b_mask[bej1 + bcjn]
@@ -95,7 +98,7 @@ def three_body_mc_sepcut_jit(bond_array_1, c1, etypes1,
                     cj2 = bond_array_2[ind2, d2]
                     ej2 = etypes2[ind2]
 
-                    if ej2 != tr_spec[0]:
+                    if ej2 != tr_spec1[0]:
                         continue
 
                     bej2 = spec_mask[ej2]
