@@ -41,7 +41,7 @@ from flare.env import AtomicEnvironment
 
 import flare.cutoffs as cf
 
-from numba import njit
+# from numba import njit
 
 from flare.kernels.kernels import force_helper, grad_constants, grad_helper, \
     force_energy_helper, three_body_en_helper, three_body_helper_1, \
@@ -724,7 +724,7 @@ def many_body_en(env1, env2, hyps, cutoffs,
 # -----------------------------------------------------------------------------
 
 
-@njit
+# @njit
 def two_body_jit(bond_array_1, bond_array_2, d1, d2, sig, ls,
                  r_cut, cutoff_func):
     """2-body single-element kernel between two force components accelerated
@@ -774,7 +774,7 @@ def two_body_jit(bond_array_1, bond_array_2, d1, d2, sig, ls,
     return kern
 
 
-@njit
+# @njit
 def two_body_grad_jit(bond_array_1, bond_array_2, d1, d2, sig, ls,
                       r_cut, cutoff_func):
     """2-body single-element kernel between two force components and its
@@ -832,7 +832,7 @@ def two_body_grad_jit(bond_array_1, bond_array_2, d1, d2, sig, ls,
     return kern, ls_derv, sig_derv
 
 
-@njit
+# @njit
 def two_body_force_en_jit(bond_array_1, bond_array_2, d1, sig, ls, r_cut,
                           cutoff_func):
     """2-body single-element kernel between a force component and a local
@@ -876,7 +876,7 @@ def two_body_force_en_jit(bond_array_1, bond_array_2, d1, sig, ls, r_cut,
     return kern
 
 
-@njit
+# @njit
 def two_body_en_jit(bond_array_1, bond_array_2, sig, ls, r_cut, cutoff_func):
     """2-body single-element kernel between two local energies accelerated
     with Numba.
@@ -918,7 +918,7 @@ def two_body_en_jit(bond_array_1, bond_array_2, sig, ls, r_cut, cutoff_func):
 # -----------------------------------------------------------------------------
 
 
-@njit
+# @njit
 def three_body_jit(bond_array_1, bond_array_2,
                    cross_bond_inds_1, cross_bond_inds_2,
                    cross_bond_dists_1, cross_bond_dists_2,
@@ -1012,7 +1012,7 @@ def three_body_jit(bond_array_1, bond_array_2,
     return kern
 
 
-@njit
+# @njit
 def three_body_grad_jit(bond_array_1, bond_array_2,
                         cross_bond_inds_1, cross_bond_inds_2,
                         cross_bond_dists_1, cross_bond_dists_2,
@@ -1115,7 +1115,7 @@ def three_body_grad_jit(bond_array_1, bond_array_2,
     return kern, sig_derv, ls_derv
 
 
-@njit
+# @njit
 def three_body_force_en_jit(bond_array_1, bond_array_2,
                             cross_bond_inds_1,
                             cross_bond_inds_2,
@@ -1205,7 +1205,7 @@ def three_body_force_en_jit(bond_array_1, bond_array_2,
     return kern
 
 
-@njit
+# @njit
 def three_body_en_jit(bond_array_1, bond_array_2,
                       cross_bond_inds_1,
                       cross_bond_inds_2,
@@ -1312,7 +1312,7 @@ def three_body_en_jit(bond_array_1, bond_array_2,
 #                           many body numba functions
 # -----------------------------------------------------------------------------
 
-@njit
+# @njit
 def many_body_jit(bond_array_1, bond_array_2,
                   neighbouring_dists_array_1, neighbouring_dists_array_2,
                   num_neighbours_1, num_neighbours_2,
@@ -1389,7 +1389,7 @@ def many_body_jit(bond_array_1, bond_array_2,
 
     return kern
 
-@njit
+# @njit
 def many_body_grad_jit(bond_array_1, bond_array_2,
                        neighbouring_dists_array_1, neighbouring_dists_array_2,
                        num_neighbours_1, num_neighbours_2,
@@ -1489,7 +1489,7 @@ def many_body_grad_jit(bond_array_1, bond_array_2,
     return kern, sig_derv, ls_derv
 
 
-@njit
+# @njit
 def many_body_force_en_jit(bond_array_1, bond_array_2,
                   neighbouring_dists_array_1,
                   num_neighbours_1,
@@ -1543,7 +1543,7 @@ def many_body_force_en_jit(bond_array_1, bond_array_2,
 
     return kern
 
-@njit
+# @njit
 def many_body_en_jit(bond_array_1, bond_array_2,
                      sig, ls, r_cut, cutoff_func):
     """many-body single-element energy kernel between accelerated
@@ -1586,7 +1586,7 @@ def many_body_en_jit(bond_array_1, bond_array_2,
 # -----------------------------------------------------------------------------
 
 
-@njit
+# @njit
 def triplet_kernel(ci1, ci2, cj1, cj2, ri1, ri2, ri3, rj1, rj2, rj3, fi, fj,
                    fdi, fdj, ls1, ls2, ls3, sig2):
     r11 = ri1 - rj1
@@ -1616,7 +1616,7 @@ def triplet_kernel(ci1, ci2, cj1, cj2, ri1, ri2, ri3, rj1, rj2, rj3, fi, fj,
     return M1 + M2 + M3 + M4 + M5 + M6
 
 
-@njit
+# @njit
 def triplet_kernel_grad(ci1, ci2, cj1, cj2, ri1, ri2, ri3, rj1, rj2, rj3, fi,
                         fj, fdi, fdj, ls1, ls2, ls3, ls4, ls5, ls6, sig2,
                         sig3):
@@ -1659,7 +1659,7 @@ def triplet_kernel_grad(ci1, ci2, cj1, cj2, ri1, ri2, ri3, rj1, rj2, rj3, fi,
     X = X1 + X2 + X3 + X4 + X5 + X6
     return N, O, X
 
-@njit
+# @njit
 def triplet_force_en_kernel(ci1, ci2, ri1, ri2, ri3, rj1, rj2, rj3,
                             fi, fj, fdi, ls1, ls2, sig2):
     r11 = ri1 - rj1
@@ -1692,7 +1692,7 @@ def triplet_force_en_kernel(ci1, ci2, ri1, ri2, ri3, rj1, rj2, rj3,
 #                        many body helper functions
 # -----------------------------------------------------------------------------
 
-@njit
+# @njit
 def k_sq_exp_double_dev(q1, q2, sig, ls):
     """Second Gradient of generic squared exponential kernel on two many body functions
 
@@ -1715,7 +1715,7 @@ def k_sq_exp_double_dev(q1, q2, sig, ls):
 
     return ret
 
-@njit
+# @njit
 def k_sq_exp_dev(q1, q2, sig, ls):
     """Second Gradient of generic squared exponential kernel on two many body functions
 
@@ -1739,7 +1739,7 @@ def k_sq_exp_dev(q1, q2, sig, ls):
     return ret
 
 
-@njit
+# @njit
 def coordination_number(rij, cij, r_cut, cutoff_func):
     """Pairwise contribution to many-body descriptor based on number of
         atoms in the environment
@@ -1760,7 +1760,7 @@ def coordination_number(rij, cij, r_cut, cutoff_func):
     return fij, fdij
 
 
-@njit
+# @njit
 def q_value(distances, r_cut, cutoff_func, q_func=coordination_number):
     """Compute value of many-body descriptor based on distances of atoms
     in the local amny-body environment.
@@ -1783,7 +1783,7 @@ def q_value(distances, r_cut, cutoff_func, q_func=coordination_number):
     return q
 
 
-@njit
+# @njit
 def mb_grad_helper_ls_(qdiffsq, sig, ls):
     """Derivative of a many body force-force kernel wrt ls
 
@@ -1797,7 +1797,7 @@ def mb_grad_helper_ls_(qdiffsq, sig, ls):
 
     return ret
 
-@njit
+# @njit
 def mb_grad_helper_ls(q1, q2, qi, qj, sig, ls):
     """Helper function fr many body gradient collecting all the derivatives
     of the force-foce many body kernel wrt ls
