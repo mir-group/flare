@@ -34,7 +34,9 @@ class SparseGP{
             double sigma_s);
 
         void add_sparse_environment(LocalEnvironment env);
+        void add_sparse_environments(std::vector<LocalEnvironment> envs);
         void add_training_environment(LocalEnvironment training_environment);
+        void add_training_environments(std::vector<LocalEnvironment> envs);
         void add_training_structure(StructureDescriptor training_structure);
 
         void three_body_grid(double min_dist, double max_dist, double cutoff,

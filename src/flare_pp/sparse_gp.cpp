@@ -231,6 +231,8 @@ void SparseGP :: add_training_environment(
     // Calculate kernels between sparse environments and training environment.
     Eigen::MatrixXd kernel_block = Eigen::MatrixXd::Zero(n_sparse, n_labels);
 
+    // Note: this doesn't appear to give an efficient speed-up.
+    // (Probably not enough action in the for loop.)
     #pragma omp parallel for
     for (int i = 0; i < n_sparse; i ++){
         for (int j = 0; j < n_kernels; j ++){
@@ -257,6 +259,54 @@ void SparseGP :: add_training_environment(
 
     noise_env.conservativeResize(prev_cols + n_labels);
     noise_env.tail(n_labels) = noise_vector;
+    noise_matrix_env = noise_env.asDiagonal();
+}
+
+void SparseGP :: add_training_environments(
+    std::vector<LocalEnvironment> envs){
+
+    int n_sparse = sparse_environments.size();
+    int n_envs = envs.size();
+    int n_kernels = kernels.size();
+    int n_labels = 3; // Assumes that all three force components are given.
+
+    // Calculate kernels between sparse environments and training environments.
+    Eigen::MatrixXd kernel_block =
+        Eigen::MatrixXd::Zero(n_sparse, n_labels * n_envs);
+
+    // Note: this can be parallelized more efficiently by splitting the training environments into groups, with the number of groups equal to the number of threads.
+    #pragma omp parallel for
+    for (int k = 0; k < n_envs; k ++){
+        for (int i = 0; i < n_sparse; i ++){
+            for (int j = 0; j < n_kernels; j ++){
+                kernel_block.block(i, k * n_labels, 1, 3) += kernels[j] ->
+                    env_env_force(sparse_environments[i], envs[k]);
+            }
+        }
+    }
+
+    // Add kernel block to Kuf_env.
+    int prev_cols = Kuf_env.cols();
+    Kuf_env.conservativeResize(n_sparse, prev_cols + n_labels * n_envs);
+    Kuf_env.block(0, prev_cols, n_sparse, n_labels * n_envs) = kernel_block;
+
+    // Store training environments and forces.
+    Eigen::VectorXd labels = Eigen::VectorXd::Zero(n_labels * n_envs);
+    for (int i = 0; i < n_envs; i ++){
+        training_environments.push_back(envs[i]);
+        labels.segment(i * n_labels, n_labels) = envs[i].force;
+    }
+
+    // Update y vector.
+    y_env.conservativeResize(y_env.size() + n_labels * n_envs);
+    y_env.tail(n_labels * n_envs) = labels;
+
+    // Update noise matrix.
+    Eigen::VectorXd noise_vector =
+        Eigen::VectorXd::Constant(n_labels * n_envs, 1 / (sigma_f * sigma_f));
+
+    noise_env.conservativeResize(prev_cols + n_labels * n_envs);
+    noise_env.tail(n_labels * n_envs) = noise_vector;
     noise_matrix_env = noise_env.asDiagonal();
 }
 
