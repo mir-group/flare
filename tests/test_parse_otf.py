@@ -89,14 +89,13 @@ def test_replicate_gp():
     :return:
     """
 
-    os.system('cp test_files/sample_slab_otf.out .')
-    parsed = OtfAnalysis('sample_slab_otf.out')
+    os.system('cp test_files/sample_h2_otf.out .')
+    parsed = OtfAnalysis('sample_h2_otf.out')
 
     positions = parsed.position_list
     forces = parsed.force_list
 
     gp_model = parsed.make_gp(kernel_name='2+3')
-
 
     structures = parsed.output_md_structures()
 
