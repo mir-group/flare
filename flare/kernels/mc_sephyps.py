@@ -552,7 +552,7 @@ def two_body_mc_en(env1, env2, cutoff_2b, cutoff_3b, nspec, spec_mask,
 #                 three body multicomponent kernel (numba)
 # -----------------------------------------------------------------------------
 
-# @njit
+@njit
 def three_body_mc_jit(bond_array_1, c1, etypes1,
                       bond_array_2, c2, etypes2,
                       cross_bond_inds_1, cross_bond_inds_2,
@@ -679,7 +679,7 @@ def three_body_mc_jit(bond_array_1, c1, etypes1,
     return kern
 
 
-# @njit
+@njit
 def three_body_mc_grad_jit(bond_array_1, c1, etypes1,
                            bond_array_2, c2, etypes2,
                            cross_bond_inds_1, cross_bond_inds_2,
@@ -850,7 +850,7 @@ def three_body_mc_grad_jit(bond_array_1, c1, etypes1,
     return kern, kern_grad
 
 
-# @njit
+@njit
 def three_body_mc_force_en_jit(bond_array_1, c1, etypes1,
                                bond_array_2, c2, etypes2,
                                cross_bond_inds_1, cross_bond_inds_2,
@@ -960,7 +960,7 @@ def three_body_mc_force_en_jit(bond_array_1, c1, etypes1,
 
     return kern
 
-# @njit
+@njit
 
 
 def three_body_mc_en_jit(bond_array_1, c1, etypes1,
@@ -1058,7 +1058,7 @@ def three_body_mc_en_jit(bond_array_1, c1, etypes1,
 # -----------------------------------------------------------------------------
 
 
-# @njit
+@njit
 def two_body_mc_jit(bond_array_1, c1, etypes1, bond_array_2, c2, etypes2,
                     d1, d2, sig, ls, r_cut, cutoff_func,
                     nspec, spec_mask, bond_mask):
@@ -1115,7 +1115,7 @@ def two_body_mc_jit(bond_array_1, c1, etypes1, bond_array_2, c2, etypes2,
     return kern
 
 
-# # @njit
+# @njit
 def two_body_mc_grad_jit(bond_array_1, c1, etypes1,
                          bond_array_2, c2, etypes2,
                          d1, d2, sig, ls, r_cut, cutoff_func,
@@ -1195,7 +1195,7 @@ def two_body_mc_grad_jit(bond_array_1, c1, etypes1,
     return kern, kern_grad
 
 
-# @njit
+@njit
 def two_body_mc_force_en_jit(bond_array_1, c1, etypes1,
                              bond_array_2, c2, etypes2,
                              d1, sig, ls, r_cut, cutoff_func,
@@ -1245,7 +1245,7 @@ def two_body_mc_force_en_jit(bond_array_1, c1, etypes1,
     return kern
 
 
-# @njit
+@njit
 def two_body_mc_en_jit(bond_array_1, c1, etypes1,
                        bond_array_2, c2, etypes2,
                        sig, ls, r_cut, cutoff_func,

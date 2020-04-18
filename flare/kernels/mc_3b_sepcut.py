@@ -6,7 +6,7 @@ from flare.kernels.kernels import force_helper, grad_constants, grad_helper, \
     force_energy_helper, three_body_en_helper, three_body_helper_1, \
     three_body_helper_2, three_body_grad_helper_1, three_body_grad_helper_2
 
-# @njit
+@njit
 
 
 def three_body_mc_sepcut_jit(bond_array_1, c1, etypes1,
@@ -172,7 +172,7 @@ def three_body_mc_sepcut_jit(bond_array_1, c1, etypes1,
 
     return kern
 
-# @njit
+@njit
 
 
 def three_body_mc_grad_sepcut_jit(bond_array_1, c1, etypes1,
@@ -340,7 +340,7 @@ def three_body_mc_grad_sepcut_jit(bond_array_1, c1, etypes1,
 
     return kern, kern_grad
 
-# @njit
+@njit
 
 
 def three_body_mc_force_en_sepcut_jit(bond_array_1, c1, etypes1,
@@ -453,7 +453,7 @@ def three_body_mc_force_en_sepcut_jit(bond_array_1, c1, etypes1,
 
     return kern
 
-# @njit
+@njit
 
 
 def three_body_mc_en_sepcut_jit(bond_array_1, c1, etypes1,

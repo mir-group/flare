@@ -6,7 +6,7 @@ from math import cos, sin, pi
 # from numba import njit
 
 
-# @njit
+@njit
 def hard_cutoff(r_cut: float, ri: float, ci: float):
     """A hard cutoff that assigns a value of 1 to all interatomic distances.
 
@@ -20,7 +20,7 @@ def hard_cutoff(r_cut: float, ri: float, ci: float):
     """
     return 1, 0
 
-# @njit
+@njit
 def quadratic_cutoff_bound(r_cut: float, ri: float, ci: float):
     """A quadratic cutoff that goes to zero smoothly at the cutoff boundary.
 
@@ -44,7 +44,7 @@ def quadratic_cutoff_bound(r_cut: float, ri: float, ci: float):
     return fi, fdi
 
 
-# @njit
+@njit
 def quadratic_cutoff(r_cut: float, ri: float, ci: float):
     """A quadratic cutoff that goes to zero smoothly at the cutoff boundary.
 
@@ -64,7 +64,7 @@ def quadratic_cutoff(r_cut: float, ri: float, ci: float):
     return fi, fdi
 
 
-# @njit
+@njit
 def cubic_cutoff(r_cut: float, ri: float, ci: float):
     """A cubic cutoff that goes to zero smoothly at the cutoff boundary.
 
@@ -84,7 +84,7 @@ def cubic_cutoff(r_cut: float, ri: float, ci: float):
     return fi, fdi
 
 
-# @njit
+@njit
 def cosine_cutoff(r_cut: float, ri: float, ci: float, d: float = 1):
     """A cosine cutoff that returns 1 up to r_cut - d, and assigns a cosine
     envelope to values of r between r_cut - d and r_cut. Based on Eq. 24 of
