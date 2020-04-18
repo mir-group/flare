@@ -199,9 +199,11 @@ class GaussianProcess:
             hyps_mask = deepcopy(self.hyps_mask)
 
             nspec = hyps_mask['nspec']
+            self.hyps_mask['spec_mask'] = np.array(hyps_mask['spec_mask'], dtype=int)
 
             if 'nbond' in hyps_mask:
                 n2b = self.hyps_mask['nbond']
+                self.hyps_mask['bond_mask'] = np.array(hyps_mask['bond_mask'], dtype=int)
                 if n2b > 0:
                     bmask = hyps_mask['bond_mask']
                     assert (np.max(bmask) < n2b)
@@ -217,6 +219,7 @@ class GaussianProcess:
 
             if 'ntriplet' in hyps_mask:
                 n3b = self.hyps_mask['ntriplet']
+                self.hyps_mask['triplet_mask'] = np.array(hyps_mask['triplet_mask'], dtype=int)
                 if n3b > 0:
                     tmask = hyps_mask['triplet_mask']
                     assert (np.max(tmask) < n3b)
@@ -247,6 +250,7 @@ class GaussianProcess:
 
             if 'nmb' in hyps_mask:
                 nmb = self.hyps_mask['nmb']
+                self.hyps_mask['mb_mask'] = np.array(hyps_mask['mb_mask'], dtype=int)
                 if nmb > 0:
                     bmask = hyps_mask['mb_mask']
                     assert (np.max(bmask) < nmb)
@@ -304,6 +308,7 @@ class GaussianProcess:
 
             if 'cutoff_3b' in hyps_mask:
                 c3b = hyps_mask['cutoff_3b']
+                hyps_mask['cut3b_mask'] = np.array(hyps_mask['cut3b_mask'], dtype=int)
                 assert self.cutoffs[0] > np.max(hyps_mask['cutoff_3b']), \
                         'general cutoff should be larger than all cutoffs listed in hyps_mask'
                 assert len(c3b) == hyps_mask['ncut3b'], \

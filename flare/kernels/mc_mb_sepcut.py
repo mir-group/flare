@@ -515,7 +515,9 @@ def many_body_mc_grad_sepcut_jit(bond_array_1, bond_array_2, neigh_dists_1, neig
                 ls_derv[mbtype1] += q1i_grads[i] * qj2_grads[j] * dk1js[j]
                 ls_derv[mbtype] += qi1_grads[i] * qj2_grads[j] * dkij
 
-    grad = np.hstack([sig_derv, ls_derv])
+    grad = np.zeros(nmb*2)
+    grad[:nmb] = sig_derv
+    grad[nmb:] = ls_derv
 
     return kern, grad
 
