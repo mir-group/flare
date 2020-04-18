@@ -18,7 +18,10 @@ cutoff_mask_list = [(True, np.array([1]), [10]),
 
 @pytest.fixture(scope='module')
 def structure() -> Structure:
-    """Returns a GP instance with a two-body numba-based kernel"""
+    """
+    Returns a GP instance with a two-body numba-based kernel
+    """
+
     # list of all bonds and triplets can be found in test_files/test_env_list
     cell = np.eye(3)
     species = [1, 2, 3, 1]
