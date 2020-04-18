@@ -48,7 +48,7 @@ void SparseGP :: add_sparse_environment(const LocalEnvironment & env){
     int n_kernels = kernels.size();
 
     Eigen::VectorXd uu_vector = Eigen::VectorXd::Zero(n_sparse + 1);
-    #pragma omp parallel for
+    #pragma omp parallel for schedule(static)
     for (int i = 0; i < n_sparse; i ++){
         for (int j = 0; j < n_kernels; j ++){
             uu_vector(i) += kernels[j] -> env_env(sparse_environments[i], env);
@@ -72,7 +72,7 @@ void SparseGP :: add_sparse_environment(const LocalEnvironment & env){
     int n_strucs = training_structures.size();
     Eigen::VectorXd uf_vector = Eigen::VectorXd::Zero(n_labels);
 
-    #pragma omp parallel for
+    #pragma omp parallel for schedule(static)
     for (int i = 0; i < n_strucs; i ++){
         int initial_index, index;
 
@@ -118,7 +118,7 @@ void SparseGP :: add_sparse_environment(const LocalEnvironment & env){
     int n_envs = training_environments.size();
     uf_vector = Eigen::VectorXd::Zero(n_labels);
 
-    #pragma omp parallel for
+    #pragma omp parallel for schedule(static)
     for (int i = 0; i < n_envs; i ++){
         for (int j = 0; j < n_kernels; j ++){
             uf_vector.segment(3 * i, 3) += kernels[j] -> env_env_force(env,
@@ -133,6 +133,41 @@ void SparseGP :: add_sparse_environment(const LocalEnvironment & env){
     // Store sparse environment.
     sparse_environments.push_back(env);
 }
+
+// void SparseGP :: add_sparse_environments(
+//     const std::vector<LocalEnvironment> & envs){
+
+//     // Compute kernels between new environment and previous sparse
+//     // environments.
+//     int n_envs = envs.size();
+//     int n_sparse = sparse_environments.size();
+//     int n_kernels = kernels.size();
+
+//     Eigen::MatrixXd prev_block = Eigen::MatrixXd::Zero(n_sparse, n_envs);
+//     #pragma omp parallel for
+//     for (int k = 0; k < n_envs; k ++){
+//         for (int i = 0; i < n_sparse; i ++){
+//             for (int j = 0; j < n_kernels; j ++){
+//                 prev_block(i, k) +=
+//                     kernels[j] -> env_env(sparse_environments[i], envs[k]);
+//             }
+//         }
+//     }
+
+//     // Compute self block.
+//     Eigen::MatrixXd self_block = Eigen::MatrixXd::Zero(n_envs, n_envs);
+//     for (int k = 0; k < n_envs; k ++){
+//         for (int l = k; l < n_envs; l ++){
+//             for (int j = 0; j < n_kernels; j ++){
+//                 double kern_val = kernels[j] -> env_env(envs[k], envs[l]);
+//                 self_block(k, l) += kern_val;
+//                 if (k != l){
+//                     self_block(l, k) += kern_val;
+//                 }
+//             }
+//         }
+//     }
+// }
 
 void SparseGP :: add_training_structure(
     const StructureDescriptor & training_structure){
@@ -157,7 +192,7 @@ void SparseGP :: add_training_structure(
     // Calculate kernels between sparse environments and training structure.
     Eigen::MatrixXd kernel_block = Eigen::MatrixXd::Zero(n_sparse, n_labels);
 
-    #pragma omp parallel for
+    #pragma omp parallel for schedule(static)
     for (int i = 0; i < n_sparse; i ++){
         Eigen::VectorXd kernel_vector =
             Eigen::VectorXd::Zero(1 + 3 * n_atoms + 6);
@@ -234,7 +269,7 @@ void SparseGP :: add_training_environment(
 
     // Note: this doesn't appear to give an efficient speed-up.
     // (Probably not enough action in the for loop.)
-    #pragma omp parallel for
+    #pragma omp parallel for schedule(static)
     for (int i = 0; i < n_sparse; i ++){
         for (int j = 0; j < n_kernels; j ++){
             kernel_block.row(i) += kernels[j] ->
@@ -275,8 +310,7 @@ void SparseGP :: add_training_environments(
     Eigen::MatrixXd kernel_block =
         Eigen::MatrixXd::Zero(n_sparse, n_labels * n_envs);
 
-    // Note: this can be parallelized more efficiently by splitting the training environments into groups, with the number of groups equal to the number of threads.
-    #pragma omp parallel for
+    #pragma omp parallel for schedule(static)
     for (int k = 0; k < n_envs; k ++){
         for (int i = 0; i < n_sparse; i ++){
             for (int j = 0; j < n_kernels; j ++){
@@ -478,7 +512,7 @@ Eigen::VectorXd SparseGP::predict(const StructureDescriptor & test_structure){
 
     // Compute the kernel between the test structure and each sparse
     // environment, parallelizing over environments.
-    #pragma omp parallel for
+    #pragma omp parallel for schedule(static)
     for (int i = 0; i < n_sparse; i ++){
         for (int j = 0; j < n_kernels; j ++){
             kern_mat.col(i) +=
