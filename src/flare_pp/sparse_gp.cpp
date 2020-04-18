@@ -279,7 +279,7 @@ void SparseGP :: add_training_environments(
     for (int k = 0; k < n_envs; k ++){
         for (int i = 0; i < n_sparse; i ++){
             for (int j = 0; j < n_kernels; j ++){
-                kernel_block.block(i, k * n_labels, 1, 3) += kernels[j] ->
+                kernel_block.row(i).segment(k * n_labels, 3) += kernels[j] ->
                     env_env_force(sparse_environments[i], envs[k]);
             }
         }

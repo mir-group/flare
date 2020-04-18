@@ -124,6 +124,61 @@ TEST_F(SparseTest, UpdateK){
         sparse_gp.noise_env.size() + sparse_gp.noise_struc.size());    
 }
 
+TEST_F(SparseTest, TrainingEnvironments){
+    double sigma_e = 1;
+    double sigma_f = 2;
+    double sigma_s = 3;
+
+    SparseGP sparse_gp = SparseGP(kernels, sigma_e, sigma_f, sigma_s);
+    SparseGP sparse_gp_2 = SparseGP(kernels, sigma_e, sigma_f, sigma_s);
+    LocalEnvironment env1 = test_struc.local_environments[0];
+    LocalEnvironment env2 = test_struc.local_environments[1];
+
+    // Add sparse environments.
+    sparse_gp.add_sparse_environment(env1);
+    sparse_gp.add_sparse_environment(env2);
+
+    sparse_gp_2.add_sparse_environment(env1);
+    sparse_gp_2.add_sparse_environment(env2);
+
+    // Add a training environment to the training set.
+    env1.compute_neighbor_descriptors();
+    env2.compute_neighbor_descriptors();
+    Eigen::VectorXd force{3};
+    force << 1, 1, 1;
+    env1.force = force;
+    env2.force = force;
+    std::vector<LocalEnvironment> envs {env1, env2};
+
+    sparse_gp.add_training_environments(envs);
+
+    sparse_gp_2.add_training_environment(env1);
+    sparse_gp_2.add_training_environment(env2);
+
+    sparse_gp.update_alpha();
+    sparse_gp_2.update_alpha();
+
+    // Check that Kufs match.
+    for (int i = 0; i < sparse_gp.Kuf.rows(); i++){
+        for (int j = 0; j < sparse_gp.Kuf.cols(); j++){
+            EXPECT_EQ(sparse_gp.Kuf(i, j), sparse_gp_2.Kuf(i, j));
+        }
+    }
+
+    // Check that Kuus match.
+    for (int i = 0; i < sparse_gp.Kuu.rows(); i++){
+        for (int j = 0; j < sparse_gp.Kuu.cols(); j++){
+            EXPECT_EQ(sparse_gp.Kuu(i, j), sparse_gp_2.Kuu(i, j));
+        }
+    }
+
+    // Check that ys and noises match.
+    for (int i = 0; i < sparse_gp.y.size(); i++){
+            EXPECT_EQ(sparse_gp.y(i), sparse_gp_2.y(i));
+            EXPECT_EQ(sparse_gp.noise(i), sparse_gp_2.noise(i));
+    }
+}
+
 TEST_F(SparseTest, Predict){
 
     double sigma_e = 0.1;
