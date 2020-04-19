@@ -306,3 +306,19 @@ void LocalEnvironment :: compute_neighbor_descriptors(){
         neighbor_force_dots.push_back(dots);
     }
 }
+
+void compute_neighbor_descriptors(std::vector<LocalEnvironment> & envs){
+    int n_envs = envs.size();
+    #pragma omp parallel for schedule(static)
+    for (int i = 0; i < n_envs; i ++){
+        envs[i].compute_neighbor_descriptors();
+    }
+}
+
+void compute_descriptors(std::vector<LocalEnvironment> & envs){
+    int n_envs = envs.size();
+    #pragma omp parallel for schedule(static)
+    for (int i = 0; i < n_envs; i ++){
+        envs[i].compute_descriptors();
+    }
+}

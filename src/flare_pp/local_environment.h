@@ -82,4 +82,7 @@ class LocalEnvironment{
         void compute_descriptors_and_gradients();
 };
 
+void compute_neighbor_descriptors(std::vector<LocalEnvironment> & envs);
+void compute_descriptors(std::vector<LocalEnvironment> & envs);
+
 #endif

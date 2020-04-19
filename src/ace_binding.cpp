@@ -94,6 +94,9 @@ PYBIND11_MODULE(ace, m){
         .def("compute_neighbor_descriptors",
                 &LocalEnvironment::compute_neighbor_descriptors)
         .def_readwrite("force", &LocalEnvironment::force);
+    
+    m.def("compute_neighbor_descriptors", &compute_neighbor_descriptors);
+    m.def("compute_descriptors", &compute_descriptors);
 
     // Descriptor calculators
     py::class_<DescriptorCalculator>(m, "DescriptorCalculator")
