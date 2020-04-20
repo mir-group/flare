@@ -139,7 +139,7 @@ def get_bonds(ctype, etypes, bond_array):
     return exist_species, bond_lengths, bond_dirs
 
 
-#@njit
+@njit
 def add_triplets(spcs_list, exist_species, tris, tri_dir,
         r1, r2, a12, c1, c2):
     for i in range(2):

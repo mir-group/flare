@@ -372,7 +372,7 @@ def test_training_statistics():
         test_structure.coded_species))
 
 
-def TestHelper():
+class TestHelper():
 
     def test_adjust_cutoffs(self, all_gps):
 
@@ -382,9 +382,11 @@ def TestHelper():
         # testing on the predictions made, just that the cutoffs in the
         # atomic environments are correctly re-created
 
+        old_cutoffs = np.copy(test_gp.cutoffs)
+
         test_gp.adjust_cutoffs(np.array(test_gp.cutoffs) + .5, train=False)
 
-        assert np.array_equal(test_gp.cutoffs, test_gp.cutoffs + .5)
+        assert np.array_equal(test_gp.cutoffs, old_cutoffs + .5)
 
         for env in test_gp.training_data:
             assert np.array_equal(env.cutoffs, test_gp.cutoffs)
