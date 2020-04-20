@@ -296,7 +296,7 @@ def generate_same_hm(kernel_name):
     hm2 = {'nspec': 2, 'spec_mask': np.zeros(118, dtype=int)}
     hm2['spec_mask'][2] = 1
     if ('2' in kernel_name):
-        cutoffs = np.ones(1)
+        cutoffs = np.ones(1, dtype=float)
 
         hyps0 += [1, 0.9]
         hm1['nbond'] = 1
@@ -306,7 +306,7 @@ def generate_same_hm(kernel_name):
         hm2['nbond'] = 2
         hm2['bond_mask'] = np.ones(4, dtype=int)
         hm2['bond_mask'][0] = 0
-        hm2['cutoff_2b'] = np.ones(2)
+        hm2['cutoff_2b'] = np.ones(2, dtype=float)
     if ('3' in kernel_name):
         cutoffs = np.ones(2)
 
@@ -322,7 +322,7 @@ def generate_same_hm(kernel_name):
         hm2['ncut3b'] = 2
         hm2['cut3b_mask'] = np.ones(4, dtype=int)
         hm2['cut3b_mask'][0] = 0
-        hm2['cutoff_3b'] = np.ones(2)
+        hm2['cutoff_3b'] = np.ones(2, dtype=float)
     if ('mb' in kernel_name):
         cutoffs = np.ones(3)
 

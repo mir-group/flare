@@ -332,8 +332,7 @@ def three_body_mc_grad_sepcut_jit(bond_array_1, c1, etypes1,
                             sig_derv[ttypei] += sig_term
                             ls_derv[ttypei] += ls_term
 
-    # print("hello", sig_derv, ls_derv)
-    kern_grad = np.hstack([sig_derv, ls_derv])
+    kern_grad = np.hstack((sig_derv, ls_derv))
     # np.zeros(2*ntriplet, dtype=np.float64)
     # kern_grad[:ntriplet] = sig_derv
     # kern_grad[ntriplet:] = ls_derv

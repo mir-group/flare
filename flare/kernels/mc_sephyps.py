@@ -1186,11 +1186,7 @@ def two_body_mc_grad_jit(bond_array_1, c1, etypes1,
                 sig_derv[btype] += sig_term
                 ls_derv[btype] += ls_term
 
-    kern_grad = np.hstack([sig_derv, ls_derv])
-    # for i in range(nbond):
-    #     kern_grad[i] = sig_derv[i]
-    # for i in range(nbond):
-    #     kern_grad[i + nbond] = ls_derv[i]
+    kern_grad = np.hstack((sig_derv, ls_derv))
 
     return kern, kern_grad
 
