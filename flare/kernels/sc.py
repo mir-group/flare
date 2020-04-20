@@ -1350,13 +1350,13 @@ def many_body_jit(bond_array_1, bond_array_2,
 
     k12 = k_sq_exp_double_dev(q1, q2, sig, ls)
 
-    qis = np.zeros(bond_array_1.shape[0], dtype=float)
-    qi1_grads = np.zeros(bond_array_1.shape[0], dtype=float)
-    ki2s = np.zeros(bond_array_1.shape[0], dtype=float)
+    qis = np.zeros(bond_array_1.shape[0], dtype=np.float64)
+    qi1_grads = np.zeros(bond_array_1.shape[0], dtype=np.float64)
+    ki2s = np.zeros(bond_array_1.shape[0], dtype=np.float64)
 
-    qjs = np.zeros(bond_array_2.shape[0], dtype=float)
-    qj2_grads = np.zeros(bond_array_2.shape[0], dtype=float)
-    k1js = np.zeros(bond_array_2.shape[0], dtype=float)
+    qjs = np.zeros(bond_array_2.shape[0], dtype=np.float64)
+    qj2_grads = np.zeros(bond_array_2.shape[0], dtype=np.float64)
+    k1js = np.zeros(bond_array_2.shape[0], dtype=np.float64)
 
     # Loop over neighbours i of 1
     for i in range(bond_array_1.shape[0]):
@@ -1433,17 +1433,17 @@ def many_body_grad_jit(bond_array_1, bond_array_2,
 
     k12 = k_sq_exp_double_dev(q1, q2, sig, ls)
 
-    qis = np.zeros(bond_array_1.shape[0], dtype=float)
+    qis = np.zeros(bond_array_1.shape[0], dtype=np.float64)
 
-    qi1_grads = np.zeros(bond_array_1.shape[0], dtype=float)
+    qi1_grads = np.zeros(bond_array_1.shape[0], dtype=np.float64)
 
-    ki2s = np.zeros(bond_array_1.shape[0], dtype=float)
+    ki2s = np.zeros(bond_array_1.shape[0], dtype=np.float64)
 
-    qjs = np.zeros(bond_array_2.shape[0], dtype=float)
+    qjs = np.zeros(bond_array_2.shape[0], dtype=np.float64)
 
-    qj2_grads = np.zeros(bond_array_2.shape[0], dtype=float)
+    qj2_grads = np.zeros(bond_array_2.shape[0], dtype=np.float64)
 
-    k1js = np.zeros(bond_array_2.shape[0], dtype=float)
+    k1js = np.zeros(bond_array_2.shape[0], dtype=np.float64)
 
     # Compute  ki2s, qi1_grads, and qis
     for i in range(bond_array_1.shape[0]):
@@ -1526,9 +1526,9 @@ def many_body_force_en_jit(bond_array_1, bond_array_2,
 
     k12 = k_sq_exp_dev(q1, q2, sig, ls)
 
-    qis = np.zeros(bond_array_1.shape[0], dtype=float)
-    qi1_grads = np.zeros(bond_array_1.shape[0], dtype=float)
-    ki2s = np.zeros(bond_array_1.shape[0], dtype=float)
+    qis = np.zeros(bond_array_1.shape[0], dtype=np.float64)
+    qi1_grads = np.zeros(bond_array_1.shape[0], dtype=np.float64)
+    ki2s = np.zeros(bond_array_1.shape[0], dtype=np.float64)
 
     # Loop over neighbours i of 1
     for i in range(bond_array_1.shape[0]):

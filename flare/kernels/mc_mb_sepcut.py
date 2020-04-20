@@ -91,15 +91,15 @@ def many_body_mc_sepcut_jit_(bond_array_1, bond_array_2, neigh_dists_1, neigh_di
         else:
             k12 = 0
 
-        qis = np.zeros(bond_array_1.shape[0], dtype=float)
-        q1i_grads = np.zeros(bond_array_1.shape[0], dtype=float)
-        qi1_grads = np.zeros(bond_array_1.shape[0], dtype=float)
-        ki2s = np.zeros(bond_array_1.shape[0], dtype=float)
+        qis = np.zeros(bond_array_1.shape[0], dtype=np.float64)
+        q1i_grads = np.zeros(bond_array_1.shape[0], dtype=np.float64)
+        qi1_grads = np.zeros(bond_array_1.shape[0], dtype=np.float64)
+        ki2s = np.zeros(bond_array_1.shape[0], dtype=np.float64)
 
-        qjs = np.zeros(bond_array_2.shape[0], dtype=float)
-        qj2_grads = np.zeros(bond_array_2.shape[0], dtype=float)
-        q2j_grads = np.zeros(bond_array_2.shape[0], dtype=float)
-        k1js = np.zeros(bond_array_2.shape[0], dtype=float)
+        qjs = np.zeros(bond_array_2.shape[0], dtype=np.float64)
+        qj2_grads = np.zeros(bond_array_2.shape[0], dtype=np.float64)
+        q2j_grads = np.zeros(bond_array_2.shape[0], dtype=np.float64)
+        k1js = np.zeros(bond_array_2.shape[0], dtype=np.float64)
 
         # Loop over neighbours i of 1
         for i in range(bond_array_1.shape[0]):
@@ -246,15 +246,15 @@ def many_body_mc_sepcut_jit(bond_array_1, bond_array_2, neigh_dists_1, neigh_dis
 
         # initialise arrays of many body descriptors and gradients for the neighbour atoms in
         # the two configurations
-        qis = np.zeros(bond_array_1.shape[0], dtype=float)
-        q1i_grads = np.zeros(bond_array_1.shape[0], dtype=float)
-        qi1_grads = np.zeros(bond_array_1.shape[0], dtype=float)
-        ki2s = np.zeros(bond_array_1.shape[0], dtype=float)
+        qis = np.zeros(bond_array_1.shape[0], dtype=np.float64)
+        q1i_grads = np.zeros(bond_array_1.shape[0], dtype=np.float64)
+        qi1_grads = np.zeros(bond_array_1.shape[0], dtype=np.float64)
+        ki2s = np.zeros(bond_array_1.shape[0], dtype=np.float64)
 
-        qjs = np.zeros(bond_array_2.shape[0], dtype=float)
-        qj2_grads = np.zeros(bond_array_2.shape[0], dtype=float)
-        q2j_grads = np.zeros(bond_array_2.shape[0], dtype=float)
-        k1js = np.zeros(bond_array_2.shape[0], dtype=float)
+        qjs = np.zeros(bond_array_2.shape[0], dtype=np.float64)
+        qj2_grads = np.zeros(bond_array_2.shape[0], dtype=np.float64)
+        q2j_grads = np.zeros(bond_array_2.shape[0], dtype=np.float64)
+        k1js = np.zeros(bond_array_2.shape[0], dtype=np.float64)
 
         # Loop over neighbours i of 1st configuration
         for i in range(bond_array_1.shape[0]):
@@ -368,8 +368,8 @@ def many_body_mc_grad_sepcut_jit(bond_array_1, bond_array_2, neigh_dists_1, neig
     """
 
     kern = 0
-    sig_derv = np.zeros(nmb, dtype=float)
-    ls_derv = np.zeros(nmb, dtype=float)
+    sig_derv = np.zeros(nmb, dtype=np.float64)
+    ls_derv = np.zeros(nmb, dtype=np.float64)
 
     useful_species = np.array(
         list(set(species1).union(set(species2))), dtype=np.int8)
@@ -406,17 +406,17 @@ def many_body_mc_grad_sepcut_jit(bond_array_1, bond_array_2, neigh_dists_1, neig
             k12 = 0
             dk12 = 0
 
-        qis = np.zeros(bond_array_1.shape[0], dtype=float)
-        q1i_grads = np.zeros(bond_array_1.shape[0], dtype=float)
-        qi1_grads = np.zeros(bond_array_1.shape[0], dtype=float)
-        ki2s = np.zeros(bond_array_1.shape[0], dtype=float)
-        dki2s = np.zeros(bond_array_1.shape[0], dtype=float)
+        qis = np.zeros(bond_array_1.shape[0], dtype=np.float64)
+        q1i_grads = np.zeros(bond_array_1.shape[0], dtype=np.float64)
+        qi1_grads = np.zeros(bond_array_1.shape[0], dtype=np.float64)
+        ki2s = np.zeros(bond_array_1.shape[0], dtype=np.float64)
+        dki2s = np.zeros(bond_array_1.shape[0], dtype=np.float64)
 
-        qjs = np.zeros(bond_array_2.shape[0], dtype=float)
-        qj2_grads = np.zeros(bond_array_2.shape[0], dtype=float)
-        q2j_grads = np.zeros(bond_array_2.shape[0], dtype=float)
-        k1js = np.zeros(bond_array_2.shape[0], dtype=float)
-        dk1js = np.zeros(bond_array_2.shape[0], dtype=float)
+        qjs = np.zeros(bond_array_2.shape[0], dtype=np.float64)
+        qj2_grads = np.zeros(bond_array_2.shape[0], dtype=np.float64)
+        q2j_grads = np.zeros(bond_array_2.shape[0], dtype=np.float64)
+        k1js = np.zeros(bond_array_2.shape[0], dtype=np.float64)
+        dk1js = np.zeros(bond_array_2.shape[0], dtype=np.float64)
 
         # Compute  ki2s, qi1_grads, and qis
         for i in range(bond_array_1.shape[0]):
@@ -515,7 +515,7 @@ def many_body_mc_grad_sepcut_jit(bond_array_1, bond_array_2, neigh_dists_1, neig
                 ls_derv[mbtype1] += q1i_grads[i] * qj2_grads[j] * dk1js[j]
                 ls_derv[mbtype] += qi1_grads[i] * qj2_grads[j] * dkij
 
-    grad = np.zeros(nmb*2, dtype=float)
+    grad = np.zeros(nmb*2, dtype=np.float64)
     grad[:nmb] = sig_derv
     grad[nmb:] = ls_derv
 
@@ -590,10 +590,10 @@ def many_body_mc_force_en_sepcut_jit(bond_array_1, bond_array_2, neigh_dists_1, 
         else:
             k12 = 0
 
-        qis = np.zeros(bond_array_1.shape[0], dtype=float)
-        qi1_grads = np.zeros(bond_array_1.shape[0], dtype=float)
-        q1i_grads = np.zeros(bond_array_1.shape[0], dtype=float)
-        ki2s = np.zeros(bond_array_1.shape[0], dtype=float)
+        qis = np.zeros(bond_array_1.shape[0], dtype=np.float64)
+        qi1_grads = np.zeros(bond_array_1.shape[0], dtype=np.float64)
+        q1i_grads = np.zeros(bond_array_1.shape[0], dtype=np.float64)
+        ki2s = np.zeros(bond_array_1.shape[0], dtype=np.float64)
 
         # Loop over neighbours i of 1
         for i in range(bond_array_1.shape[0]):
