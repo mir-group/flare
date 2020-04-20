@@ -48,7 +48,7 @@ void SparseGP :: add_sparse_environment(const LocalEnvironment & env){
     int n_kernels = kernels.size();
 
     Eigen::VectorXd uu_vector = Eigen::VectorXd::Zero(n_sparse + 1);
-    #pragma omp parallel for schedule(static)
+    // #pragma omp parallel for schedule(static)
     for (int i = 0; i < n_sparse; i ++){
         for (int j = 0; j < n_kernels; j ++){
             uu_vector(i) += kernels[j] -> env_env(sparse_environments[i], env);
@@ -72,7 +72,7 @@ void SparseGP :: add_sparse_environment(const LocalEnvironment & env){
     int n_strucs = training_structures.size();
     Eigen::VectorXd uf_vector = Eigen::VectorXd::Zero(n_labels);
 
-    #pragma omp parallel for schedule(static)
+    // #pragma omp parallel for schedule(static)
     for (int i = 0; i < n_strucs; i ++){
         int initial_index, index;
 
@@ -118,7 +118,7 @@ void SparseGP :: add_sparse_environment(const LocalEnvironment & env){
     int n_envs = training_environments.size();
     uf_vector = Eigen::VectorXd::Zero(n_labels);
 
-    #pragma omp parallel for schedule(static)
+    // #pragma omp parallel for schedule(static)
     for (int i = 0; i < n_envs; i ++){
         for (int j = 0; j < n_kernels; j ++){
             uf_vector.segment(3 * i, 3) += kernels[j] -> env_env_force(env,
@@ -269,7 +269,7 @@ void SparseGP :: add_training_environment(
 
     // Note: this doesn't appear to give an efficient speed-up.
     // (Probably not enough action in the for loop.)
-    #pragma omp parallel for schedule(static)
+    // #pragma omp parallel for schedule(static)
     for (int i = 0; i < n_sparse; i ++){
         for (int j = 0; j < n_kernels; j ++){
             kernel_block.row(i) += kernels[j] ->
