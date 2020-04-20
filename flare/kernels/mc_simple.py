@@ -866,7 +866,7 @@ def three_body_mc_jit(bond_array_1, c1, etypes1,
     Return:
         float: Value of the 3-body kernel.
     """
-    kern = 0
+    kern = 0.0
 
     # pre-compute constants that appear in the inner loop
     sig2 = sig * sig
@@ -1019,10 +1019,10 @@ def three_body_mc_grad_jit(bond_array_1, c1, etypes1,
             Value of the 3-body kernel and its gradient with respect to the
             hyperparameters.
     """
-    kern = 0
-    sig_derv = 0
-    ls_derv = 0
-    kern_grad = np.zeros(2)
+    kern = 0.0
+    sig_derv = 0.0
+    ls_derv = 0.0
+    kern_grad = np.zeros(2, dtype=float)
 
     # pre-compute constants that appear in the inner loop
     sig2, sig3, ls1, ls2, ls3, ls4, ls5, ls6 = grad_constants(sig, ls)
@@ -1506,10 +1506,10 @@ def two_body_mc_grad_jit(bond_array_1, c1, etypes1,
             hyperparameters.
     """
 
-    kern = 0
-    sig_derv = 0
-    ls_derv = 0
-    kern_grad = np.zeros(2)
+    kern = 0.0
+    sig_derv = 0.0
+    ls_derv = 0.0
+    kern_grad = np.zeros(2, dtype=float)
 
     ls1 = 1 / (2 * ls * ls)
     ls2 = 1 / (ls * ls)
@@ -1725,15 +1725,15 @@ def many_body_mc_jit_(bond_array_1, bond_array_2, neigh_dists_1, neigh_dists_2, 
         else:
             k12 = 0
 
-        qis = np.zeros(bond_array_1.shape[0])
-        q1i_grads = np.zeros(bond_array_1.shape[0])
-        qi1_grads = np.zeros(bond_array_1.shape[0])
-        ki2s = np.zeros(bond_array_1.shape[0])
+        qis = np.zeros(bond_array_1.shape[0], dtype=float)
+        q1i_grads = np.zeros(bond_array_1.shape[0], dtype=float)
+        qi1_grads = np.zeros(bond_array_1.shape[0], dtype=float)
+        ki2s = np.zeros(bond_array_1.shape[0], dtype=float)
 
-        qjs = np.zeros(bond_array_2.shape[0])
-        qj2_grads = np.zeros(bond_array_2.shape[0])
-        q2j_grads = np.zeros(bond_array_2.shape[0])
-        k1js = np.zeros(bond_array_2.shape[0])
+        qjs = np.zeros(bond_array_2.shape[0], dtype=float)
+        qj2_grads = np.zeros(bond_array_2.shape[0], dtype=float)
+        q2j_grads = np.zeros(bond_array_2.shape[0], dtype=float)
+        k1js = np.zeros(bond_array_2.shape[0], dtype=float)
 
         # Loop over neighbours i of 1
         for i in range(bond_array_1.shape[0]):
@@ -1847,15 +1847,15 @@ def many_body_mc_jit(bond_array_1, bond_array_2, neigh_dists_1, neigh_dists_2, n
 
         # initialise arrays of many body descriptors and gradients for the neighbour atoms in
         # the two configurations
-        qis = np.zeros(bond_array_1.shape[0])
-        q1i_grads = np.zeros(bond_array_1.shape[0])
-        qi1_grads = np.zeros(bond_array_1.shape[0])
-        ki2s = np.zeros(bond_array_1.shape[0])
+        qis = np.zeros(bond_array_1.shape[0], dtype=float)
+        q1i_grads = np.zeros(bond_array_1.shape[0], dtype=float)
+        qi1_grads = np.zeros(bond_array_1.shape[0], dtype=float)
+        ki2s = np.zeros(bond_array_1.shape[0], dtype=float)
 
-        qjs = np.zeros(bond_array_2.shape[0])
-        qj2_grads = np.zeros(bond_array_2.shape[0])
-        q2j_grads = np.zeros(bond_array_2.shape[0])
-        k1js = np.zeros(bond_array_2.shape[0])
+        qjs = np.zeros(bond_array_2.shape[0], dtype=float)
+        qj2_grads = np.zeros(bond_array_2.shape[0], dtype=float)
+        q2j_grads = np.zeros(bond_array_2.shape[0], dtype=float)
+        k1js = np.zeros(bond_array_2.shape[0], dtype=float)
 
         # Loop over neighbours i of 1st configuration
         for i in range(bond_array_1.shape[0]):
@@ -1957,9 +1957,9 @@ def many_body_mc_grad_jit(bond_array_1, bond_array_2, neigh_dists_1, neigh_dists
         array: Value of the many-body kernel and its gradient w.r.t. sig and ls
     """
 
-    kern = 0
-    sig_derv = 0
-    ls_derv = 0
+    kern = 0.0
+    sig_derv = 0.0
+    ls_derv = 0.0
 
     useful_species = np.array(
         list(set(species1).union(set(species2))), dtype=np.int8)
@@ -1978,17 +1978,17 @@ def many_body_mc_grad_jit(bond_array_1, bond_array_2, neigh_dists_1, neigh_dists
             k12 = 0
             dk12 = 0
 
-        qis = np.zeros(bond_array_1.shape[0])
-        q1i_grads = np.zeros(bond_array_1.shape[0])
-        qi1_grads = np.zeros(bond_array_1.shape[0])
-        ki2s = np.zeros(bond_array_1.shape[0])
-        dki2s = np.zeros(bond_array_1.shape[0])
+        qis = np.zeros(bond_array_1.shape[0], dtype=float)
+        q1i_grads = np.zeros(bond_array_1.shape[0], dtype=float)
+        qi1_grads = np.zeros(bond_array_1.shape[0], dtype=float)
+        ki2s = np.zeros(bond_array_1.shape[0], dtype=float)
+        dki2s = np.zeros(bond_array_1.shape[0], dtype=float)
 
-        qjs = np.zeros(bond_array_2.shape[0])
-        qj2_grads = np.zeros(bond_array_2.shape[0])
-        q2j_grads = np.zeros(bond_array_2.shape[0])
-        k1js = np.zeros(bond_array_2.shape[0])
-        dk1js = np.zeros(bond_array_2.shape[0])
+        qjs = np.zeros(bond_array_2.shape[0], dtype=float)
+        qj2_grads = np.zeros(bond_array_2.shape[0], dtype=float)
+        q2j_grads = np.zeros(bond_array_2.shape[0], dtype=float)
+        k1js = np.zeros(bond_array_2.shape[0], dtype=float)
+        dk1js = np.zeros(bond_array_2.shape[0], dtype=float)
 
         # Compute  ki2s, qi1_grads, and qis
         for i in range(bond_array_1.shape[0]):
@@ -2123,10 +2123,10 @@ def many_body_mc_force_en_jit(bond_array_1, bond_array_2, neigh_dists_1, num_nei
         else:
             k12 = 0
 
-        qis = np.zeros(bond_array_1.shape[0])
-        qi1_grads = np.zeros(bond_array_1.shape[0])
-        q1i_grads = np.zeros(bond_array_1.shape[0])
-        ki2s = np.zeros(bond_array_1.shape[0])
+        qis = np.zeros(bond_array_1.shape[0], dtype=float)
+        qi1_grads = np.zeros(bond_array_1.shape[0], dtype=float)
+        q1i_grads = np.zeros(bond_array_1.shape[0], dtype=float)
+        ki2s = np.zeros(bond_array_1.shape[0], dtype=float)
 
         # Loop over neighbours i of 1
         for i in range(bond_array_1.shape[0]):

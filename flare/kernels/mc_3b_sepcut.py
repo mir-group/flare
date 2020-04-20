@@ -181,9 +181,9 @@ def three_body_mc_grad_sepcut_jit(bond_array_1, c1, etypes1,
                                   nspec, spec_mask, ntriplet, triplet_mask, cut3b_mask):
     """Kernel gradient for 3-body force comparisons."""
 
-    kern = 0
-    sig_derv = np.zeros(ntriplet)
-    ls_derv = np.zeros(ntriplet)
+    kern = 0.0
+    sig_derv = np.zeros(ntriplet, dtype=float)
+    ls_derv = np.zeros(ntriplet, dtype=float)
 
     # pre-compute constants that appear in the inner loop
     sig2, sig3, ls1, ls2, ls3, ls4, ls5, ls6 = grad_constants(sig, ls)
@@ -333,9 +333,10 @@ def three_body_mc_grad_sepcut_jit(bond_array_1, c1, etypes1,
                             ls_derv[ttypei] += ls_term
 
     # print("hello", sig_derv, ls_derv)
-    kern_grad = np.zeros(2*ntriplet)
-    kern_grad[:ntriplet] = sig_derv
-    kern_grad[ntriplet:] = ls_derv
+    kern_grad = np.hstack([sig_derv, ls_derv])
+    # np.zeros(2*ntriplet, dtype=float)
+    # kern_grad[:ntriplet] = sig_derv
+    # kern_grad[ntriplet:] = ls_derv
 
     return kern, kern_grad
 

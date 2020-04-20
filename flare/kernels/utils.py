@@ -219,7 +219,7 @@ def from_grad_to_mask(grad, hyps_mask):
     else:
         hm = hyps_mask['map']
 
-    newgrad = np.zeros(len(hm))
+    newgrad = np.zeros(len(hm), dtype=float)
     for i, mapid in enumerate(hm):
         newgrad[i] = grad[mapid]
     return newgrad
