@@ -301,19 +301,19 @@ def test_constrained_optimization_simple(all_gps):
     init_hyps = np.copy(test_gp.hyps)
 
     # Define hyp masks
-    spec_mask = np.zeros(118, dtype=int)
+    spec_mask = np.zeros(118, dtype=np.int8)
     spec_mask[1] = 1
     test_gp.hyps_mask = {
         'nspec': 2,
         'spec_mask': spec_mask,
         'nbond': 2,
-        'bond_mask': [0, 1, 1, 1],
+        'bond_mask': np.array([0, 1, 1, 1], dtype=np.int8),
         'ntriplet': 2,
-        'triplet_mask': [0, 1, 1, 1, 1, 1, 1, 1],
+        'triplet_mask': np.array([0, 1, 1, 1, 1, 1, 1, 1], dtype=np.int8),
         'original': np.array([1.1, 1.2, 2.1, 2.2, 3.1, 3.2, 4.1, 4.2,
                               12.]),
         'train_noise': True,
-        'map': [1, 3, 5, 7, 8]}
+        'map': np.array([1, 3, 5, 7, 8], dtype=np.int8)}
 
     # Check that the hyperparameters were updated
     results = test_gp.train()
