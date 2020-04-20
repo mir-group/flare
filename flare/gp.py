@@ -176,6 +176,9 @@ class GaussianProcess:
         assert (self.name not in _global_training_data),  \
                 f"the gp instance name, {self.name} is used"
 
+        _global_training_data[self.name] = self.training_data
+        _global_training_labels[self.name] = self.training_labels_np
+
         assert (len(self.cutoffs)<=3)
 
         if (len(self.cutoffs)>1):
@@ -491,6 +494,7 @@ class GaussianProcess:
         elif (size3 != self.alpha.shape[0]):
             self.set_L_alpha()
 
+
     def predict(self, x_t: AtomicEnvironment, d: int) -> [float, float]:
         """
         Predict a force component of the central atom of a local environment.
@@ -509,6 +513,9 @@ class GaussianProcess:
             n_cpus = self.n_cpus
         else:
             n_cpus = 1
+
+        _global_training_data[self.name] = self.training_data
+        _global_training_labels[self.name] = self.training_labels_np
 
         k_v = get_kernel_vector(self.name, self.kernel,
                                 x_t, d,
@@ -550,6 +557,9 @@ class GaussianProcess:
         else:
             n_cpus = 1
 
+        _global_training_data[self.name] = self.training_data
+        _global_training_labels[self.name] = self.training_labels_np
+
         k_v = en_kern_vec(self.name,
                           self.energy_force_kernel,
                           x_t, self.hyps,
@@ -577,6 +587,9 @@ class GaussianProcess:
             n_cpus = self.n_cpus
         else:
             n_cpus = 1
+
+        _global_training_data[self.name] = self.training_data
+        _global_training_labels[self.name] = self.training_labels_np
 
         # get kernel vector
         k_v = en_kern_vec(self.name,
@@ -607,6 +620,9 @@ class GaussianProcess:
         covariance matrix multiplied by the vector of training labels.
         The forces and variances are later obtained using alpha.
         """
+
+        _global_training_data[self.name] = self.training_data
+        _global_training_labels[self.name] = self.training_labels_np
 
         ky_mat = get_ky_mat(self.hyps,
                             self.name,
@@ -639,6 +655,9 @@ class GaussianProcess:
         if self.l_mat is None or np.array(self.ky_mat) is np.array(None):
             self.set_L_alpha()
             return
+
+        _global_training_data[self.name] = self.training_data
+        _global_training_labels[self.name] = self.training_labels_np
 
         ky_mat = get_ky_mat_update(self.ky_mat, self.hyps,
                                    self.name,
