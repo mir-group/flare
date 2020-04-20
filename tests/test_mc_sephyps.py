@@ -16,7 +16,7 @@ def test_force_en_multi_vs_simple():
     """Check that the analytical kernel matches the one implemented
     in mc_simple.py"""
 
-    cutoffs = np.ones(3)
+    cutoffs = np.ones(3, dtype=np.float64)
     delta = 1e-8
     env1_1, env1_2, env1_3, env2_1, env2_2, env2_3 = generate_envs(cutoffs, delta)
 
@@ -29,7 +29,7 @@ def test_force_en_multi_vs_simple():
 
     # mc_simple
     kernel0, kg0, en_kernel0, force_en_kernel0 = str_to_kernel_set("2+3+mb+mc", False)
-    hyps = np.ones(7)
+    hyps = np.ones(7, dtype=np.float64)
     args0 = (hyps, cutoffs)
 
     # mc_sephyps
