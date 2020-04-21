@@ -199,7 +199,7 @@ def test_force_en(kernel_name, diff_cutoff):
         kernel, _, enm_kernel, efk = str_to_kernel_set('mb', True)
 
         calc = 0
-        for i in range(3):
+        for i in range(len(env1[0])):
             calc += enm_kernel(env1[1][i], env2[0][0], *args)
             calc -= enm_kernel(env1[2][i], env2[0][0], *args)
 
@@ -337,14 +337,14 @@ def test_many_force(diff_cutoff):
 
     args = from_mask_to_args(hyps, hm, cutoffs)
 
-    env1 = generate_debug_envs(cutoffs, cell, delta, d1, hm)
-    env2 = generate_debug_envs(cutoffs, cell, delta, d2, hm)
+    env1 = generate_mb_envs(cutoffs, cell, delta, d1, hm)
+    env2 = generate_mb_envs(cutoffs, cell, delta, d2, hm)
 
     kernel, _, en_kernel, ___ = str_to_kernel_set('mb', True)
 
     cal = 0
     for i in range(3):
-        for j in range(3):
+        for j in range(len(env1[0])):
             cal += en_kernel(env1[1][i], env2[1][j], *args)
             cal += en_kernel(env1[2][i], env2[2][j], *args)
             cal -= en_kernel(env1[1][i], env2[2][j], *args)
