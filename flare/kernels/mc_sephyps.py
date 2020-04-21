@@ -280,7 +280,7 @@ def two_plus_three_body_mc(env1, env2, d1, d2, cutoff_2b, cutoff_3b,
                                d1, d2, sig2, ls2, cutoff_2b, cutoff_func,
                                nspec, spec_mask, bond_mask)
 
-    if (ncut3b == 0):
+    if (ncut3b <= 1):
         tbmcj = three_body_mc_jit
     else:
         tbmcj = three_body_mc_sepcut_jit
@@ -1079,38 +1079,40 @@ def two_body_mc_jit(bond_array_1, c1, etypes1, bond_array_2, c2, etypes2,
     bc1n = bc1 * nspec
 
     for m in range(bond_array_1.shape[0]):
-        ri = bond_array_1[m, 0]
-        ci = bond_array_1[m, d1]
         e1 = etypes1[m]
 
-        be1 = spec_mask[e1]
-        btype = bond_mask[bc1n + be1]
+        if ((c2 == e1) or (c2 == c1)):
+            ri = bond_array_1[m, 0]
+            ci = bond_array_1[m, d1]
 
-        tls1 = ls1[btype]
-        tls2 = ls2[btype]
-        tls3 = ls3[btype]
-        tsig2 = sig2[btype]
-        tr_cut = r_cut[btype]
+            be1 = spec_mask[e1]
+            btype = bond_mask[bc1n + be1]
 
-        fi, fdi = cutoff_func(tr_cut, ri, ci)
+            tls1 = ls1[btype]
+            tls2 = ls2[btype]
+            tls3 = ls3[btype]
+            tsig2 = sig2[btype]
+            tr_cut = r_cut[btype]
 
-        for n in range(bond_array_2.shape[0]):
-            e2 = etypes2[n]
+            fi, fdi = cutoff_func(tr_cut, ri, ci)
 
-            # check if bonds agree
-            if (c1 == c2 and e1 == e2) or (c1 == e2 and c2 == e1):
-                rj = bond_array_2[n, 0]
-                cj = bond_array_2[n, d2]
-                fj, fdj = cutoff_func(tr_cut, rj, cj)
-                r11 = ri - rj
+            for n in range(bond_array_2.shape[0]):
+                e2 = etypes2[n]
 
-                A = ci * cj
-                B = r11 * ci
-                C = r11 * cj
-                D = r11 * r11
+                # check if bonds agree
+                if (c1 == c2 and e1 == e2) or (c1 == e2 and c2 == e1):
+                    rj = bond_array_2[n, 0]
+                    cj = bond_array_2[n, d2]
+                    fj, fdj = cutoff_func(tr_cut, rj, cj)
+                    r11 = ri - rj
 
-                kern += force_helper(A, B, C, D, fi, fj, fdi, fdj,
-                                     tls1, tls2, tls3, tsig2)
+                    A = ci * cj
+                    B = r11 * ci
+                    C = r11 * cj
+                    D = r11 * r11
+
+                    kern += force_helper(A, B, C, D, fi, fj, fdi, fdj,
+                                         tls1, tls2, tls3, tsig2)
 
     return kern
 
@@ -1141,50 +1143,51 @@ def two_body_mc_grad_jit(bond_array_1, c1, etypes1,
     bc1n = bc1 * nspec
 
     for m in range(bond_array_1.shape[0]):
-        ri = bond_array_1[m, 0]
-        ci = bond_array_1[m, d1]
         e1 = etypes1[m]
+        if ((c2 == e1) or (c2 == c1)):
+            ri = bond_array_1[m, 0]
+            ci = bond_array_1[m, d1]
 
-        be1 = spec_mask[e1]
-        btype = bond_mask[bc1n + be1]
+            be1 = spec_mask[e1]
+            btype = bond_mask[bc1n + be1]
 
-        tls1 = ls1[btype]
-        tls2 = ls2[btype]
-        tls3 = ls3[btype]
-        tls4 = ls4[btype]
-        tls5 = ls5[btype]
-        tls6 = ls6[btype]
-        tsig2 = sig2[btype]
-        tsig3 = sig3[btype]
-        tr_cut = r_cut[btype]
+            tls1 = ls1[btype]
+            tls2 = ls2[btype]
+            tls3 = ls3[btype]
+            tls4 = ls4[btype]
+            tls5 = ls5[btype]
+            tls6 = ls6[btype]
+            tsig2 = sig2[btype]
+            tsig3 = sig3[btype]
+            tr_cut = r_cut[btype]
 
-        fi, fdi = cutoff_func(tr_cut, ri, ci)
+            fi, fdi = cutoff_func(tr_cut, ri, ci)
 
-        for n in range(bond_array_2.shape[0]):
-            e2 = etypes2[n]
+            for n in range(bond_array_2.shape[0]):
+                e2 = etypes2[n]
 
-            # check if bonds agree
-            if (c1 == c2 and e1 == e2) or (c1 == e2 and c2 == e1):
-                rj = bond_array_2[n, 0]
-                cj = bond_array_2[n, d2]
-                fj, fdj = cutoff_func(tr_cut, rj, cj)
+                # check if bonds agree
+                if (c1 == c2 and e1 == e2) or (c1 == e2 and c2 == e1):
+                    rj = bond_array_2[n, 0]
+                    cj = bond_array_2[n, d2]
+                    fj, fdj = cutoff_func(tr_cut, rj, cj)
 
-                r11 = ri - rj
+                    r11 = ri - rj
 
-                A = ci * cj
-                B = r11 * ci
-                C = r11 * cj
-                D = r11 * r11
+                    A = ci * cj
+                    B = r11 * ci
+                    C = r11 * cj
+                    D = r11 * r11
 
-                kern_term, sig_term, ls_term = \
-                    grad_helper(A, B, C, D, fi, fj, fdi, fdj,
-                                tls1, tls2, tls3,
-                                tls4, tls5, tls6,
-                                tsig2, tsig3)
+                    kern_term, sig_term, ls_term = \
+                        grad_helper(A, B, C, D, fi, fj, fdi, fdj,
+                                    tls1, tls2, tls3,
+                                    tls4, tls5, tls6,
+                                    tsig2, tsig3)
 
-                kern += kern_term
-                sig_derv[btype] += sig_term
-                ls_derv[btype] += ls_term
+                    kern += kern_term
+                    sig_derv[btype] += sig_term
+                    ls_derv[btype] += ls_term
 
     kern_grad = np.hstack((sig_derv, ls_derv))
 
@@ -1209,34 +1212,35 @@ def two_body_mc_force_en_jit(bond_array_1, c1, etypes1,
     bc1n = bc1 * nspec
 
     for m in range(bond_array_1.shape[0]):
-        ri = bond_array_1[m, 0]
-        ci = bond_array_1[m, d1]
         e1 = etypes1[m]
+        if ((c2 == e1) or (c2 == c1)):
+            ri = bond_array_1[m, 0]
+            ci = bond_array_1[m, d1]
 
-        be1 = spec_mask[e1]
-        btype = bond_mask[bc1n + be1]
+            be1 = spec_mask[e1]
+            btype = bond_mask[bc1n + be1]
 
-        tls1 = ls1[btype]
-        tls2 = ls2[btype]
-        tsig2 = sig2[btype]
-        tr_cut = r_cut[btype]
+            tls1 = ls1[btype]
+            tls2 = ls2[btype]
+            tsig2 = sig2[btype]
+            tr_cut = r_cut[btype]
 
-        fi, fdi = cutoff_func(tr_cut, ri, ci)
+            fi, fdi = cutoff_func(tr_cut, ri, ci)
 
-        for n in range(bond_array_2.shape[0]):
-            e2 = etypes2[n]
+            for n in range(bond_array_2.shape[0]):
+                e2 = etypes2[n]
 
-            # check if bonds agree
-            if (c1 == c2 and e1 == e2) or (c1 == e2 and c2 == e1):
-                rj = bond_array_2[n, 0]
-                fj, _ = cutoff_func(tr_cut, rj, 0)
+                # check if bonds agree
+                if (c1 == c2 and e1 == e2) or (c1 == e2 and c2 == e1):
+                    rj = bond_array_2[n, 0]
+                    fj, _ = cutoff_func(tr_cut, rj, 0)
 
-                r11 = ri - rj
-                B = r11 * ci
-                D = r11 * r11
-                kern += force_energy_helper(B, D, fi, fj, fdi,
-                                            tls1, tls2,
-                                            tsig2)
+                    r11 = ri - rj
+                    B = r11 * ci
+                    D = r11 * r11
+                    kern += force_energy_helper(B, D, fi, fj, fdi,
+                                                tls1, tls2,
+                                                tsig2)
 
     return kern
 
@@ -1258,25 +1262,26 @@ def two_body_mc_en_jit(bond_array_1, c1, etypes1,
     bc1n = bc1 * nspec
 
     for m in range(bond_array_1.shape[0]):
-        ri = bond_array_1[m, 0]
         e1 = etypes1[m]
+        if ((c2 == e1) or (c2 == c1)):
+            ri = bond_array_1[m, 0]
 
-        be1 = spec_mask[e1]
-        btype = bond_mask[bc1n + be1]
+            be1 = spec_mask[e1]
+            btype = bond_mask[bc1n + be1]
 
-        tls1 = ls1[btype]
-        tsig2 = sig2[btype]
-        tr_cut = r_cut[btype]
-        fi, _ = cutoff_func(tr_cut, ri, 0)
+            tls1 = ls1[btype]
+            tsig2 = sig2[btype]
+            tr_cut = r_cut[btype]
+            fi, _ = cutoff_func(tr_cut, ri, 0)
 
-        for n in range(bond_array_2.shape[0]):
-            e2 = etypes2[n]
+            for n in range(bond_array_2.shape[0]):
+                e2 = etypes2[n]
 
-            if (c1 == c2 and e1 == e2) or (c1 == e2 and c2 == e1):
-                rj = bond_array_2[n, 0]
-                fj, _ = cutoff_func(tr_cut, rj, 0)
-                r11 = ri - rj
-                kern += fi * fj * tsig2 * exp(-r11 * r11 * tls1)
+                if (c1 == c2 and e1 == e2) or (c1 == e2 and c2 == e1):
+                    rj = bond_array_2[n, 0]
+                    fj, _ = cutoff_func(tr_cut, rj, 0)
+                    r11 = ri - rj
+                    kern += fi * fj * tsig2 * exp(-r11 * r11 * tls1)
 
     return kern
 
@@ -1302,26 +1307,16 @@ def many_body_mc(env1, env2, d1, d2, cutoff_2b, cutoff_3b, cutoff_mb,
     Return:
         float: Value of the 3-body kernel.
     """
-    bond_array_1 = env1.bond_array_mb
-    bond_array_2 = env2.bond_array_mb
 
-    neigh_dists_1 = env1.neigh_dists_mb
-    num_neigh_1 = env1.num_neighs_mb
-
-    neigh_dists_2 = env2.neigh_dists_mb
-    num_neigh_2 = env2.num_neighs_mb
-
-    # Get atomic species of central atom, their neighbours, and their neighbours' neighbours
-    c1, c2 = env1.ctype, env2.ctype
-    etypes1, etypes2 = env1.etypes, env2.etypes
-    etypes_neigh_1, etypes_neigh_2 = env1.etype_mb, env2.etype_mb
-
-    return many_body_mc_jit(env1.bond_array_mb, env2.bond_array_mb,
-                            env1.neigh_dists_mb, env1.num_neighs_mb,
-                            env1.ctype, env2.ctype, env1.etypes, env2.etypes,
-                            env1.etype_mb,
-                            env1.species, env2.species, d1, sigm, lsm, cutoff_mb,
-                            cutoff_func,
+    return many_body_mc_sepcut_jit(env1.bond_array_mb, env2.bond_array_mb,
+                            env1.neigh_dists_mb, env2.neigh_dists_mb,
+                            env1.num_neighs_mb, env2.num_neighs_mb,
+                            env1.ctype, env2.ctype,
+                            env1.etypes, env2.etypes,
+                            env1.etype_mb, env2.etype_mb,
+                            env1.species, env2.species,
+                            d1, d2, sigm, lsm,
+                            cutoff_mb, cutoff_func,
                             nspec, spec_mask, mb_mask)
 
 
@@ -1336,19 +1331,6 @@ def many_body_mc_grad(env1, env2, d1, d2, cutoff_2b, cutoff_3b, cutoff_mb,
 
     """
 
-    bond_array_1 = env1.bond_array_mb
-    bond_array_2 = env2.bond_array_mb
-
-    neigh_dists_1 = env1.neigh_dists_mb
-    num_neigh_1 = env1.num_neighs_mb
-
-    neigh_dists_2 = env2.neigh_dists_mb
-    num_neigh_2 = env2.num_neighs_mb
-
-    c1, c2 = env1.ctype, env2.ctype
-    etypes1, etypes2 = env1.etypes, env2.etypes
-    etypes_neigh_1, etypes_neigh_2 = env1.etype_mb, env2.etype_mb
-
     return many_body_mc_grad_sepcut_jit(env1.bond_array_mb, env2.bond_array_mb,
                                         env1.neigh_dists_mb, env2.neigh_dists_mb,
                                         env1.num_neighs_mb, env2.num_neighs_mb, env1.ctype,
@@ -1359,7 +1341,7 @@ def many_body_mc_grad(env1, env2, d1, d2, cutoff_2b, cutoff_3b, cutoff_mb,
                                         nspec, spec_mask, nmb, mb_mask)
 
 
-def many_body_mc_force_en(env1, env2, d1, d2, cutoff_2b, cutoff_3b, cutoff_mb,
+def many_body_mc_force_en(env1, env2, d1, cutoff_2b, cutoff_3b, cutoff_mb,
                           nspec, spec_mask,
                           nbond, bond_mask, ntriplet, triplet_mask,
                           ncut3b, cut3b_mask,
@@ -1380,16 +1362,6 @@ def many_body_mc_force_en(env1, env2, d1, d2, cutoff_2b, cutoff_3b, cutoff_mb,
         float: Value of the many-body force/energy kernel.
     """
 
-    bond_array_1 = env1.bond_array_mb
-    bond_array_2 = env2.bond_array_mb
-
-    neigh_dists_1 = env1.neigh_dists_mb
-    num_neigh_1 = env1.num_neighs_mb
-
-    c1, c2 = env1.ctype, env2.ctype
-    etypes1, etypes2 = env1.etypes, env2.etypes
-    etypes_neigh_1 = env1.etype_mb
-
     return many_body_mc_force_en_sepcut_jit(env1.bond_array_mb, env2.bond_array_mb,
                                             env1.neigh_dists_mb, env1.num_neighs_mb,
                                             env1.ctype, env2.ctype, env1.etypes, env2.etypes,
@@ -1399,7 +1371,7 @@ def many_body_mc_force_en(env1, env2, d1, d2, cutoff_2b, cutoff_3b, cutoff_mb,
                                             nspec, spec_mask, mb_mask)
 
 
-def many_body_mc_en(env1, env2, d1, d2, cutoff_2b, cutoff_3b, cutoff_mb,
+def many_body_mc_en(env1, env2, cutoff_2b, cutoff_3b, cutoff_mb,
                     nspec, spec_mask,
                     nbond, bond_mask, ntriplet, triplet_mask,
                     ncut3b, cut3b_mask,

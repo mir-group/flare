@@ -113,7 +113,7 @@ def from_mask_to_args(hyps, hyps_mask: dict, cutoffs):
         cutoff_2b = [cutoffs[0]]
         if ('cutoff_2b' in hyps_mask):
             cutoff_2b = hyps_mask['cutoff_2b']
-        elif ('cutoff_2b' not in hyps_mask and n2b > 0):
+        elif (n2b > 0):
             cutoff_2b = np.ones(n2b)*cutoffs[0]
 
     cutoff_3b = None
@@ -127,6 +127,8 @@ def from_mask_to_args(hyps, hyps_mask: dict, cutoffs):
         cutoff_mb = np.array([cutoffs[2]])
         if ('cutoff_mb' in hyps_mask):
             cutoff_mb = hyps_mask['cutoff_mb']
+        elif (nmb > 0):
+            cutoff_mb = np.ones(nmb)*cutoffs[2]
         # if the user forget to define nmb
         # there has to be a mask, because this is the
         # multi hyper parameter mode
@@ -134,6 +136,7 @@ def from_mask_to_args(hyps, hyps_mask: dict, cutoffs):
             nmb = 1
             nspec = hyps_mask['nspec']
             mb_mask = np.zeros(nspec*nspec, dtype=int)
+
 
     sig2 = None
     ls2 = None

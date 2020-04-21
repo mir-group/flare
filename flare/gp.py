@@ -83,14 +83,15 @@ class GaussianProcess:
         # load arguments into attributes
 
         self.hyp_labels = hyp_labels
-        self.cutoffs = cutoffs
+        self.cutoffs = np.array(cutoffs, dtype=np.float64)
         self.opt_algorithm = opt_algorithm
-        self.hyps = hyps
 
         if hyps is None:
             # If no hyperparameters are passed in, assume 2 hyps for each
             # cutoff, plus one noise hyperparameter, and use a guess value
             self.hyps = np.array([0.1]*(1+2*len(cutoffs)))
+        else:
+            self.hyps = np.array(hyps, dtype=np.float64)
 
 
         self.output = output

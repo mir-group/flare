@@ -310,8 +310,7 @@ def two_plus_three_plus_many_body_mc_grad(env1: AtomicEnvironment, env2: AtomicE
                                              env1.species, env2.species, d1, d2, sigm,
                                              lsm, r_cut_m, cutoff_func)
 
-    return kern2 + kern3 + kern_many, np.array(
-        [grad2[0], grad2[1], grad3[0], grad3[1], gradm[0], gradm[1]])
+    return kern2 + kern3 + kern_many, np.hstack([grad2, grad3, gradm])
 
 
 def two_plus_three_plus_many_body_mc_force_en(env1: AtomicEnvironment, env2: AtomicEnvironment,
