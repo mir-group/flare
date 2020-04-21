@@ -96,6 +96,14 @@ def from_mask_to_args(hyps, hyps_mask: dict, cutoffs):
     if (hyps_mask is None):
         return (hyps, cutoffs)
 
+    if ('map' in hyps_mask):
+        orig_hyps = hyps_mask['original']
+        hm = hyps_mask['map']
+        for i, h in enumerate(hyps):
+            orig_hyps[hm[i]] = h
+    else:
+        orig_hyps = hyps
+
     # setting for mc_sephyps
     n2b = hyps_mask.get('nbond', 0)
     n3b = hyps_mask.get('ntriplet', 0)
@@ -121,6 +129,8 @@ def from_mask_to_args(hyps, hyps_mask: dict, cutoffs):
         cutoff_3b = cutoffs[1]
         if ('cutoff_3b' in hyps_mask):
             cutoff_3b = hyps_mask['cutoff_3b']
+            if (ncut3b == 1):
+                cutoff_3b = cutoff_3b[0]
 
     cutoff_mb = None
     if (ncutoff > 2):
@@ -132,7 +142,7 @@ def from_mask_to_args(hyps, hyps_mask: dict, cutoffs):
         # if the user forget to define nmb
         # there has to be a mask, because this is the
         # multi hyper parameter mode
-        if (nmb == 0):
+        if (nmb == 0 and len(orig_hyps)>(n2b*2+n3b*2+1)):
             nmb = 1
             nspec = hyps_mask['nspec']
             mb_mask = np.zeros(nspec*nspec, dtype=int)
@@ -144,14 +154,6 @@ def from_mask_to_args(hyps, hyps_mask: dict, cutoffs):
     ls3 = None
     sigm = None
     lsm = None
-
-    if ('map' in hyps_mask):
-        orig_hyps = hyps_mask['original']
-        hm = hyps_mask['map']
-        for i, h in enumerate(hyps):
-            orig_hyps[hm[i]] = h
-    else:
-        orig_hyps = hyps
 
     if (ncutoff <= 2):
         if (n2b != 0):
