@@ -41,6 +41,7 @@ def three_body_mc_sepcut_jit(bond_array_1, c1, etypes1,
         fi1, fdi1 = cutoff_func(cut_ei1, ri1, ci1)
 
         for n in range(triplets_1[m]):
+
             ind1 = cross_bond_inds_1[m, m + n + 1]
             ri2 = bond_array_1[ind1, 0]
             ci2 = bond_array_1[ind1, d1]
@@ -189,7 +190,8 @@ def three_body_mc_grad_sepcut_jit(bond_array_1, c1, etypes1,
     sig2, sig3, ls1, ls2, ls3, ls4, ls5, ls6 = grad_constants(sig, ls)
 
     bc1 = spec_mask[c1]
-    bc1n = bc1 * nspec * nspec
+    bc2 = spec_mask[c2]
+    bc1nn = bc1 * nspec * nspec
 
     for m in range(bond_array_1.shape[0]):
         ri1 = bond_array_1[m, 0]
@@ -198,6 +200,8 @@ def three_body_mc_grad_sepcut_jit(bond_array_1, c1, etypes1,
 
         bei1 = spec_mask[ei1]
         bei1n = bei1 * nspec
+        bond_m = cut3b_mask[bei1n+bc1]
+        fi1, fdi1 = cutoff_func(r_cut[bond_m], ri1, ci1)
 
         for n in range(triplets_1[m]):
             ind1 = cross_bond_inds_1[m, m + n + 1]
@@ -206,9 +210,17 @@ def three_body_mc_grad_sepcut_jit(bond_array_1, c1, etypes1,
             ci2 = bond_array_1[ind1, d1]
             ei2 = etypes1[ind1]
 
+            # skip if species does not match
+            tr_spec = [c1, ei1, ei2]
+            c2_ind = tr_spec
+            if c2 not in tr_spec:
+                continue
+            else:
+                tr_spec.remove(c2)
+
             bei2 = spec_mask[ei2]
 
-            ttypei = triplet_mask[bc1n + bei1n + bei2]
+            ttypei = triplet_mask[bc1nn + bei1n + bei2]
 
             tls1 = ls1[ttypei]
             tls2 = ls2[ttypei]
@@ -218,11 +230,12 @@ def three_body_mc_grad_sepcut_jit(bond_array_1, c1, etypes1,
             tls6 = ls6[ttypei]
             tsig2 = sig2[ttypei]
             tsig3 = sig3[ttypei]
-            tr_cut = r_cut[ttypei]
 
-            fi1, fdi1 = cutoff_func(tr_cut, ri1, ci1)
-            fi2, fdi2 = cutoff_func(tr_cut, ri2, ci2)
-            fi3, _ = cutoff_func(tr_cut, ri3, 0)
+            bond_n = cut3b_mask[bei2*nspec+bc1]
+            fi2, fdi2 = cutoff_func(r_cut[bond_n], ri2, ci2)
+
+            bond_mn = cut3b_mask[bei2+bei1n]
+            fi3, _ = cutoff_func(r_cut[bond_mn], ri3, 0)
 
             fi = fi1 * fi2 * fi3
             fdi = fdi1 * fi2 * fi3 + fi1 * fdi2 * fi3
@@ -231,7 +244,19 @@ def three_body_mc_grad_sepcut_jit(bond_array_1, c1, etypes1,
                 rj1 = bond_array_2[p, 0]
                 cj1 = bond_array_2[p, d2]
                 ej1 = etypes2[p]
-                fj1, fdj1 = cutoff_func(tr_cut, rj1, cj1)
+
+                tr_spec1 = [tr_spec[0], tr_spec[1]]
+                if ej1 not in tr_spec1:
+                    continue
+                else:
+                    tr_spec1.remove(ej1)
+
+                bej1 = spec_mask[ej1]
+                bej1n = spec_mask[ej1]*nspec
+
+                bond_p = cut3b_mask[bc2+bej1n]
+
+                fj1, fdj1 = cutoff_func(r_cut[bond_p], rj1, cj1)
 
                 for q in range(triplets_2[p]):
                     ind2 = cross_bond_inds_2[p, p + q + 1]
@@ -240,8 +265,12 @@ def three_body_mc_grad_sepcut_jit(bond_array_1, c1, etypes1,
                     cj2 = bond_array_2[ind2, d2]
                     ej2 = etypes2[ind2]
 
-                    fj2, fdj2 = cutoff_func(tr_cut, rj2, cj2)
-                    fj3, _ = cutoff_func(tr_cut, rj3, 0)
+                    bej2 = spec_mask[ej2]
+                    bond_q = cut3b_mask[bc2+bej2*nspec]
+                    fj2, fdj2 = cutoff_func(r_cut[bond_q], rj2, cj2)
+
+                    bond_pq = cut3b_mask[bej1n + bej2]
+                    fj3, _ = cutoff_func(r_cut[bond_pq], rj3, 0)
 
                     fj = fj1 * fj2 * fj3
                     fdj = fdj1 * fj2 * fj3 + fj1 * fdj2 * fj3
@@ -358,7 +387,8 @@ def three_body_mc_force_en_sepcut_jit(bond_array_1, c1, etypes1,
     ls2 = 1 / (ls * ls)
 
     bc1 = spec_mask[c1]
-    bc1n = nspec * nspec * bc1
+    bc2 = spec_mask[c2]
+    bc1nn = nspec * nspec * bc1
 
     for m in range(bond_array_1.shape[0]):
         ri1 = bond_array_1[m, 0]
@@ -368,41 +398,72 @@ def three_body_mc_force_en_sepcut_jit(bond_array_1, c1, etypes1,
         bei1 = spec_mask[ei1]
         bei1n = nspec * bei1
 
+        bond_m = cut3b_mask[bc1+bei1n]
+
+        fi1, fdi1 = cutoff_func(r_cut[bond_m], ri1, ci1)
+
         for n in range(triplets_1[m]):
             ind1 = cross_bond_inds_1[m, m + n + 1]
             ri2 = bond_array_1[ind1, 0]
             ci2 = bond_array_1[ind1, d1]
             ei2 = etypes1[ind1]
 
+            # skip if species does not match
+            tr_spec = [c1, ei1, ei2]
+            c2_ind = tr_spec
+            if c2 not in tr_spec:
+                continue
+            else:
+                tr_spec.remove(c2)
+
             bei2 = spec_mask[ei2]
 
-            ttypei = triplet_mask[bc1n + bei1n + bei2]
+            ttypei = triplet_mask[bc1nn + bei1n + bei2]
 
             tls1 = ls1[ttypei]
             tls2 = ls2[ttypei]
             tsig2 = sig2[ttypei]
-            tr_cut = r_cut[ttypei]
 
-            fi2, fdi2 = cutoff_func(tr_cut, ri2, ci2)
-            fi1, fdi1 = cutoff_func(tr_cut, ri1, ci1)
+            bond_n = cut3b_mask[bc1*nspec+bei2]
+            fi2, fdi2 = cutoff_func(r_cut[bond_n], ri2, ci2)
+
             ri3 = cross_bond_dists_1[m, m + n + 1]
-            fi3, _ = cutoff_func(tr_cut, ri3, 0)
+            bond_mn = cut3b_mask[bei1n+bei2]
+            fi3, _ = cutoff_func(r_cut[bond_mn], ri3, 0)
 
             fi = fi1 * fi2 * fi3
             fdi = fdi1 * fi2 * fi3 + fi1 * fdi2 * fi3
 
             for p in range(bond_array_2.shape[0]):
                 rj1 = bond_array_2[p, 0]
-                fj1, _ = cutoff_func(tr_cut, rj1, 0)
                 ej1 = etypes2[p]
+
+                bej1 = spec_mask[ej1]
+                bej1n = nspec*bej1
+
+                bond_p = cut3b_mask[bej1n+bc2]
+
+                fj1, _ = cutoff_func(r_cut[bond_p], rj1, 0)
+
+                tr_spec1 = [tr_spec[0], tr_spec[1]]
+                if ej1 not in tr_spec1:
+                    continue
+                else:
+                    tr_spec1.remove(ej1)
 
                 for q in range(triplets_2[p]):
                     ind2 = cross_bond_inds_2[p, p + q + 1]
                     rj2 = bond_array_2[ind2, 0]
-                    fj2, _ = cutoff_func(tr_cut, rj2, 0)
                     ej2 = etypes2[ind2]
                     rj3 = cross_bond_dists_2[p, p + q + 1]
-                    fj3, _ = cutoff_func(tr_cut, rj3, 0)
+
+                    bej2 = spec_mask[ej2]
+                    bond_q = cut3b_mask[bej2+bc2*nspec]
+                    fj2, _ = cutoff_func(r_cut[bond_q], rj2, 0)
+
+                    bond_pq = cut3b_mask[bej2+bej1n]
+                    fj3, _ = cutoff_func(r_cut[bond_pq], rj3, 0)
+
                     fj = fj1 * fj2 * fj3
 
                     r11 = ri1 - rj1
@@ -466,7 +527,8 @@ def three_body_mc_en_sepcut_jit(bond_array_1, c1, etypes1,
     ls2 = 1 / (2 * ls * ls)
 
     bc1 = spec_mask[c1]
-    bc1n = bc1 * nspec * nspec
+    bc1nn = bc1 * nspec * nspec
+    bc2 = spec_mask[c2]
 
     for m in range(bond_array_1.shape[0]):
         ri1 = bond_array_1[m, 0]
@@ -475,38 +537,60 @@ def three_body_mc_en_sepcut_jit(bond_array_1, c1, etypes1,
         bei1 = spec_mask[ei1]
         bei1n = nspec * bei1
 
+        bond_m = cut3b_mask[bei1n + bc1]
+
+        fi1, _ = cutoff_func(r_cut[bond_m], ri1, 0)
+
         for n in range(triplets_1[m]):
             ind1 = cross_bond_inds_1[m, m + n + 1]
             ri2 = bond_array_1[ind1, 0]
             ei2 = etypes1[ind1]
 
+            # skip if species does not match
+            tr_spec = [c1, ei1, ei2]
+            c2_ind = tr_spec
+            if c2 not in tr_spec:
+                continue
+            else:
+                tr_spec.remove(c2)
+
             bei2 = spec_mask[ei2]
 
-            ttypei = triplet_mask[bc1n + bei1n + bei2]
+            ttypei = triplet_mask[bc1nn + bei1n + bei2]
 
             tls2 = ls2[ttypei]
             tsig2 = sig2[ttypei]
-            tr_cut = r_cut[ttypei]
 
             ri3 = cross_bond_dists_1[m, m + n + 1]
-            fi1, _ = cutoff_func(tr_cut, ri1, 0)
-            fi2, _ = cutoff_func(tr_cut, ri2, 0)
-            fi3, _ = cutoff_func(tr_cut, ri3, 0)
+
+            bond_n = cut3b_mask[bei2 + bc1*nspec]
+            fi2, _ = cutoff_func(r_cut[bond_n], ri2, 0)
+
+            bond_mn = cut3b_mask[bei1n + bei2]
+            fi3, _ = cutoff_func(r_cut[bond_mn], ri3, 0)
+
             fi = fi1 * fi2 * fi3
 
             for p in range(bond_array_2.shape[0]):
                 rj1 = bond_array_2[p, 0]
-                fj1, _ = cutoff_func(tr_cut, rj1, 0)
                 ej1 = etypes2[p]
+
+                bej1n = spec_mask[ej1]*nspec
+                bond_p = cut3b_mask[bc2 + bej1n]
+                fj1, _ = cutoff_func(r_cut[bond_p], rj1, 0)
 
                 for q in range(triplets_2[p]):
                     ind2 = cross_bond_inds_2[p, p + q + 1]
                     rj2 = bond_array_2[ind2, 0]
-                    fj2, _ = cutoff_func(tr_cut, rj2, 0)
                     ej2 = etypes2[ind2]
 
+                    bej2 = spec_mask[ej2]
+                    bond_q = cut3b_mask[bc2+bej2*nspec]
+                    fj2, _ = cutoff_func(r_cut[bond_q], rj2, 0)
+
                     rj3 = cross_bond_dists_2[p, p + q + 1]
-                    fj3, _ = cutoff_func(tr_cut, rj3, 0)
+                    bond_pq = cut3b_mask[bej1n+bej2]
+                    fj3, _ = cutoff_func(r_cut[bond_pq], rj3, 0)
                     fj = fj1 * fj2 * fj3
 
                     r11 = ri1 - rj1
