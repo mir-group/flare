@@ -8,7 +8,7 @@ from flare.kernels.kernels import force_helper, grad_constants, grad_helper, \
 from flare.kernels.mc_3b_sepcut import three_body_mc_sepcut_jit, \
     three_body_mc_grad_sepcut_jit, three_body_mc_force_en_sepcut_jit, \
     three_body_mc_en_sepcut_jit
-from flare.kernels.mc_mb_sepcut import many_body_mc_sepcut_jit_, \
+from flare.kernels.mc_mb_sepcut import \
     many_body_mc_sepcut_jit, many_body_mc_grad_sepcut_jit, \
     many_body_mc_force_en_sepcut_jit, many_body_mc_en_sepcut_jit
 """

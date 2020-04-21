@@ -266,6 +266,8 @@ def generate_mb_envs(cutoffs, cell, delt, d1, mask=None):
                    np.array([random(), random(), random()]),
                    np.array([1., 1., 0.]) + 0.1 * np.array([random(), random(), random()])]]
 
+    noa = len(positions[0])
+
     positions_2 = deepcopy(positions[0])
     positions_2[0][d1-1] = delt
     positions += [positions_2]
@@ -284,7 +286,7 @@ def generate_mb_envs(cutoffs, cell, delt, d1, mask=None):
     env_0 = []
     env_p = []
     env_m = []
-    for i in range(3):
+    for i in range(noa):
         env_0 += [env.AtomicEnvironment(test_struc[0], i, cutoffs, mask)]
         env_p += [env.AtomicEnvironment(test_struc[1], i, cutoffs, mask)]
         env_m += [env.AtomicEnvironment(test_struc[2], i, cutoffs, mask)]

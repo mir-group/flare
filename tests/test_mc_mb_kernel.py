@@ -5,12 +5,11 @@ import numpy as np
 from numpy.random import random, randint
 
 from flare import env, struc, gp
-import flare.kernels.mc_simple as mck
 from flare.kernels.utils import str_to_kernel_set as stks
 
 from .fake_gp import generate_envs, generate_mb_envs
 
-list_to_test = ['2mc', '3mc', '2+3mc', 'mbmc', '2+3+mbmc']
+list_to_test = ['2', '3', '2+3', 'mb', '2+3+mb']
 
 
 def generate_hm(kernel_name):
@@ -48,7 +47,7 @@ def test_force_en(kernel_name):
 
     kern_finite_diff = 0
     if ('mb' in kernel_name):
-        _, __, enm_kernel, ___ = stks('mbmc')
+        _, __, enm_kernel, ___ = stks('mb')
         mhyps = hyps[(nterm-1)*2:]
         calc = 0
         for i in range(3):
@@ -59,7 +58,7 @@ def test_force_en(kernel_name):
 
     if ('2' in kernel_name):
         nbond = 1
-        _, __, en2_kernel, ___ = stks('2mc')
+        _, __, en2_kernel, ___ = stks('2')
         calc1 = en2_kernel(env1[2][0], env2[0][0], hyps[0:nbond * 2], cutoffs)
         calc2 = en2_kernel(env1[1][0], env2[0][0], hyps[0:nbond * 2], cutoffs)
         diff2b = (calc1 - calc2) / 2.0 / 2.0 / delta
@@ -69,7 +68,7 @@ def test_force_en(kernel_name):
         nbond = 0
 
     if ('3' in kernel_name):
-        _, __, en3_kernel, ___ = stks('3mc')
+        _, __, en3_kernel, ___ = stks('3')
         calc1 = en3_kernel(env1[2][0], env2[0][0], hyps[nbond * 2:], cutoffs)
         calc2 = en3_kernel(env1[1][0], env2[0][0], hyps[nbond * 2:], cutoffs)
         diff3b = (calc1 - calc2) / 2.0 / 3.0 / delta
@@ -122,7 +121,7 @@ def test_many_force():
     energy kernel."""
 
     # create env 1
-    delta = 1e-5
+    delta = 1e-4
     cutoffs = np.ones(3)*1.2
 
     cell = 1e7 * np.eye(3)

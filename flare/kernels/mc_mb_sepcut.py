@@ -107,13 +107,13 @@ def many_body_mc_sepcut_jit_(bond_array_1, bond_array_2, neigh_dists_1, neigh_di
             ci1 = bond_array_1[i, d1]
 
             be = spec_mask[etypes1[i]]
+            mbtype = mb_mask[bsn + be]
 
             if etypes1[i] == s:
                 qi1, qi1_grads[i] = coordination_number(
                     ri1, ci1, t1r_cut, cutoff_func)
 
             if c1 == s:
-                mbtype = mb_mask[bc1n + be]
                 qi1, q1i_grads[i] = coordination_number(
                     ri1, ci1, r_cut[mbtype], cutoff_func)
 
@@ -234,13 +234,13 @@ def many_body_mc_sepcut_jit(bond_array_1, bond_array_2, neigh_dists_1, neigh_dis
 
         # Calculate many-body descriptor values for central atoms 1 and 2
         q1 = q_value_mc(bond_array_1[:, 0],
-                        r_cut[mbtype1], s, etypes1, cutoff_func)
+                        t1r_cut, s, etypes1, cutoff_func)
         q2 = q_value_mc(bond_array_2[:, 0],
-                        r_cut[mbtype2], s, etypes2, cutoff_func)
+                        t2r_cut, s, etypes2, cutoff_func)
 
         # compute kernel between central atoms only if central atoms are of the same species
         if c1 == c2:
-            k12 = k_sq_exp_double_dev(q1, q2, sig[mbtype1], ls[mbtype1])
+            k12 = k_sq_exp_double_dev(q1, q2, t1sig, t1ls)
         else:
             k12 = 0
 
@@ -262,20 +262,19 @@ def many_body_mc_sepcut_jit(bond_array_1, bond_array_2, neigh_dists_1, neigh_dis
             ci1 = bond_array_1[i, d1]
 
             be = spec_mask[etypes1[i]]
+            mbtype = mb_mask[bsn + be]
 
             if etypes1[i] == s:
                 # derivative of pairwise component of many body descriptor q1i
                 _, q1i_grads[i] = coordination_number(
-                    ri1, ci1, r_cut[mbtype1], cutoff_func)
+                    ri1, ci1, t1r_cut, cutoff_func)
 
             if c1 == s:
-                mbtype = mb_mask[bc1n + be]
                 # derivative of pairwise component of many body descriptor qi1
                 _, qi1_grads[i] = coordination_number(
                     ri1, ci1, r_cut[mbtype], cutoff_func)
 
             # Calculate many-body descriptor value for i
-            mbtype = mb_mask[bsn + be]
             qis[i] = q_value_mc(neigh_dists_1[i, :num_neigh_1[i]], r_cut[mbtype],
                                 s, etypes_neigh_1[i, :num_neigh_1[i]], cutoff_func)
 
