@@ -54,9 +54,15 @@ class OTF:
             velocities of the atoms are rescaled. Defaults to [].
         rescale_temps (List[int], optional): List of rescaled temperatures.
             Defaults to [].
-        dft_softwarename (str, optional): DFT code used to calculate
-            ab initio forces during training. Defaults to "qe".
-        no_cpus (int, optional): Number of cpus used during training.
+        force_source (Union[str, object], optional): DFT code used to calculate
+            ab initio forces during training. A custom module can be used here
+            in place of the DFT modules available in the FLARE package. The
+            module must contain two functions: parse_dft_input, which takes a
+            file name (in string format) as input and returns the positions,
+            species, cell, and masses of a structure of atoms; and run_dft_par,
+            which takes a number of DFT related inputs and returns the forces
+            on all atoms.  Defaults to "qe".
+        n_cpus (int, optional): Number of cpus used during training.
             Defaults to 1.
         npool (int, optional): Number of k-point pools for DFT
             calculations. Defaults to None.
@@ -74,7 +80,11 @@ class OTF:
             single file name, or a list of several. Copied files will be
             prepended with the date and time with the format
             'Year.Month.Day:Hour:Minute:Second:'.
+        write_model (int, optional): If 0, write never. If 1, write at
+            end of run. If 2, write after each training and end of run.
+            If 3, write after each time atoms are added and end of run.
     """
+
     def __init__(self, dft_input: str, dt: float, number_of_steps: int,
                  gp: gp.GaussianProcess, dft_loc: str,
                  std_tolerance_factor: float = 1,
@@ -83,12 +93,14 @@ class OTF:
                  calculate_energy: bool = False, output_name: str = 'otf_run',
                  max_atoms_added: int = 1, freeze_hyps: int = 10,
                  rescale_steps: List[int] = [], rescale_temps: List[int] = [],
-                 dft_softwarename: str = "qe",
-                 no_cpus: int = 1, npool: int = None, mpi: str = "srun",
-                 dft_kwargs=None,
-                 store_dft_output: Tuple[Union[str,List[str]],str] = None):
+                 force_source: str = "qe",
+                 n_cpus: int = 1, npool: int = None, mpi: str = "srun",
+                 dft_kwargs=None, dft_output='dft.out',
+                 store_dft_output: Tuple[Union[str, List[str]],str] = None,
+                 write_model: int = 0):
 
         self.dft_input = dft_input
+        self.dft_output = dft_output
         self.dt = dt
         self.number_of_steps = number_of_steps
         self.gp = gp
@@ -97,12 +109,15 @@ class OTF:
         self.skip = skip
         self.dft_step = True
         self.freeze_hyps = freeze_hyps
-        self.dft_module = dft_software[dft_softwarename]
+
+        if isinstance(force_source, str):
+            self.dft_module = dft_software[force_source]
+        else:
+            self.dft_module = force_source
 
         # parse input file
         positions, species, cell, masses = \
             self.dft_module.parse_dft_input(self.dft_input)
-
 
         self.structure = struc.Structure(cell=cell, species=species,
                                          positions=positions,
@@ -131,14 +146,14 @@ class OTF:
         self.dft_count = 0
 
         # set pred function
-        if not par and not calculate_energy:
-            self.pred_func = predict.predict_on_structure
-        elif par and not calculate_energy:
+        if (par and gp.per_atom_par and gp.par) and not calculate_energy:
             self.pred_func = predict.predict_on_structure_par
-        elif not par and calculate_energy:
-            self.pred_func = predict.predict_on_structure_en
-        elif par and calculate_energy:
+        elif not calculate_energy:
+            self.pred_func = predict.predict_on_structure
+        elif (par and gp.per_atom_par and gp.par):
             self.pred_func = predict.predict_on_structure_par_en
+        else:
+            self.pred_func = predict.predict_on_structure_en
         self.par = par
 
         # set rescale attributes
@@ -146,22 +161,27 @@ class OTF:
         self.rescale_temps = rescale_temps
 
         self.output = Output(output_name, always_flush=True)
-
+        self.output_name = output_name
         # set number of cpus and npool for DFT runs
-        self.no_cpus = no_cpus
+        self.n_cpus = n_cpus
         self.npool = npool
         self.mpi = mpi
 
         self.dft_kwargs = dft_kwargs
         self.store_dft_output = store_dft_output
+        self.write_model = write_model
 
     def run(self):
         """
         Performs an on-the-fly training run.
+
+        If OTF has store_dft_output set, then the specified DFT files will
+        be copied with the current date and time prepended in the format
+        'Year.Month.Day:Hour:Minute:Second:'.
         """
 
         self.output.write_header(self.gp.cutoffs, self.gp.kernel_name,
-                                 self.gp.hyps, self.gp.algo,
+                                 self.gp.hyps, self.gp.opt_algorithm,
                                  self.dt, self.number_of_steps,
                                  self.structure,
                                  self.std_tolerance)
@@ -169,9 +189,8 @@ class OTF:
         self.start_time = time.time()
 
         while self.curr_step < self.number_of_steps:
-            print('curr_step:', self.curr_step)
             # run DFT and train initial model if first step and DFT is on
-            if self.curr_step == 0 and self.std_tolerance != 0:
+            if self.curr_step == 0 and self.std_tolerance != 0 and len(self.gp.training_data)==0:
                 # call dft and update positions
                 self.run_dft()
                 dft_frcs = copy.deepcopy(self.structure.forces)
@@ -184,11 +203,13 @@ class OTF:
                 self.update_gp(self.init_atoms, dft_frcs)
                 if (self.dft_count-1) < self.freeze_hyps:
                     self.train_gp()
+                    if self.write_model >= 2:
+                        self.gp.write_model(self.output_name+"_model")
 
             # after step 1, try predicting with GP model
             else:
                 self.gp.check_L_alpha()
-                self.pred_func(self.structure, self.gp, self.no_cpus)
+                self.pred_func(self.structure, self.gp, self.n_cpus)
                 self.dft_step = False
                 new_pos = md.update_positions(self.dt, self.noa,
                                               self.structure)
@@ -225,9 +246,27 @@ class OTF:
 
                     # add max uncertainty atoms to training set
                     self.update_gp(target_atoms, dft_frcs)
+
                     if (self.dft_count-1) < self.freeze_hyps:
                         self.train_gp()
+                        if self.write_model == 2:
+                            self.gp.write_model(self.output_name+"_model")
+                    if self.write_model == 3:
+                        self.gp.write_model(self.output_name+'_model')
 
+                    # Store DFT outputs in another folder if desired
+                    # specified in self.store_dft_output
+                    if self.store_dft_output is not None:
+                        dest = self.store_dft_output[1]
+                        target_files = self.store_dft_output[0]
+                        now = datetime.now()
+                        dt_string = now.strftime("%Y.%m.%d:%H:%M:%S:")
+                        if isinstance(target_files, str):
+                            to_copy = [target_files]
+                        else:
+                            to_copy = target_files
+                        for file in to_copy:
+                            copyfile(file, dest+'/'+dt_string+file)
 
             # write gp forces
             if counter >= self.skip and not self.dft_step:
@@ -241,20 +280,25 @@ class OTF:
 
         self.output.conclude_run()
 
+        if self.write_model >= 1:
+            self.gp.write_model(self.output_name+"_model")
+
     def run_dft(self):
         """Calculates DFT forces on atoms in the current structure.
-        
+
         If OTF has store_dft_output set, then the specified DFT files will
         be copied with the current date and time prepended in the format
         'Year.Month.Day:Hour:Minute:Second:'.
-        """
+
+        Calculates DFT forces on atoms in the current structure."""
 
         self.output.write_to_log('\nCalling DFT...\n')
 
         # calculate DFT forces
         forces = self.dft_module.run_dft_par(self.dft_input, self.structure,
                                              self.dft_loc,
-                                             ncpus=self.no_cpus,
+                                             n_cpus=self.n_cpus,
+                                             dft_out=self.dft_output,
                                              npool=self.npool,
                                              mpi=self.mpi,
                                              dft_kwargs=self.dft_kwargs)
@@ -266,7 +310,7 @@ class OTF:
         time_curr = time.time() - self.start_time
         self.output.write_to_log('number of DFT calls: %i \n' % self.dft_count)
         self.output.write_to_log('wall time from start: %.2f s \n' % time_curr)
-        
+
         # Store DFT outputs in another folder if desired
         # specified in self.store_dft_output
         if self.store_dft_output is not None:
@@ -278,11 +322,13 @@ class OTF:
                 to_copy = [target_files]
             else:
                 to_copy = target_files
-            for file in to_copy:
-                copyfile(file, dest+'/'+dt_string+file)
+            for ofile in to_copy:
+                copyfile(ofile, dest+'/'+dt_string+ofile)
 
     def update_gp(self, train_atoms: List[int], dft_frcs: 'ndarray'):
-        """Updates the current GP model.
+        """
+        Updates the current GP model.
+
 
         Args:
             train_atoms (List[int]): List of atoms whose local environments
@@ -306,7 +352,8 @@ class OTF:
         self.gp.train(self.output)
         self.output.write_hyps(self.gp.hyp_labels, self.gp.hyps,
                                self.start_time,
-                               self.gp.likelihood, self.gp.likelihood_gradient)
+                               self.gp.likelihood, self.gp.likelihood_gradient,
+                               hyps_mask=self.gp.hyps_mask)
 
     def update_positions(self, new_pos: 'ndarray'):
         """Performs a Verlet update of the atomic positions.
@@ -332,8 +379,8 @@ class OTF:
             new_pos (np.ndarray): Positions of atoms in the next MD frame.
         """
         KE, temperature, velocities = \
-                md.calculate_temperature(new_pos, self.structure, self.dt,
-                                         self.noa)
+            md.calculate_temperature(new_pos, self.structure, self.dt,
+                                     self.noa)
         self.KE = KE
         self.temperature = temperature
         self.velocities = velocities
@@ -344,5 +391,3 @@ class OTF:
                                     self.local_energies, self.start_time,
                                     self.dft_step,
                                     self.velocities)
-        self.output.write_xyz_config(self.curr_step, self.structure,
-                                     self.dft_step)

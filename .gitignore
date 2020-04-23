@@ -11,7 +11,9 @@ tags
 pwscf.save/
 /docs/source/_build/html
 /docs/build/
+/docs/doctrees/
 /datasets/
+/tests/otf_data/
 /tests/test_ase/out/
 /tests/test_ase/Al/
 /tests/test_ase/__pycache__/
@@ -30,7 +32,17 @@ test_files/qe_output_*.out
 /tests/pwscf.xml
 /tests/*-RESTART.kp*
 /tests/*.wfn*
+/tests/*.pwi*
+/tests/*.pwo*
 /tests/*-bak
 /tests/cp2k.in*
 /tests/*.in_run
+/tests/tmp*
+/tests/grid3*npy
+/tests/AgI_Molten_15.txt
+/tests/log.lammps
+/tests/*.txt
+/tests/*.mgp
+/tests/*.log
+/tests/POSCAR*
 .idea/

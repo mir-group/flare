@@ -36,8 +36,8 @@ H 2.8 2.5 2.5
     &END QS
     &MGRID
       NGRIDS 4
-      CUTOFF 360
-      REL_CUTOFF 60
+      CUTOFF 200
+      REL_CUTOFF 50
     &END MGRID
     &XC
       &XC_FUNCTIONAL PBE

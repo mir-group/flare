@@ -36,9 +36,7 @@ class Output:
         """
         self.basename = f"{basename}"
         self.outfiles = {}
-        filesuffix = {'log': '.out', 'xyz': '.xyz',
-                      'fxyz': '-f.xyz', 'hyps': "-hyps.dat",
-                      'std': '-std.xyz', 'stat': '-stat.dat'}
+        filesuffix = {'log': '.out', 'hyps': '-hyps.dat'}
 
         for filetype in filesuffix.keys():
             self.open_new_log(filetype, filesuffix[filetype])
@@ -132,9 +130,9 @@ class Output:
         headerstring += \
             f'number of cpu cores: {multiprocessing.cpu_count()}\n'
         headerstring += f'cutoffs: {cutoffs}\n'
-        headerstring += f'kernel: {kernel_name}\n'
+        headerstring += f'kernel_name: {kernel_name}\n'
         headerstring += f'number of hyperparameters: {len(hyps)}\n'
-        headerstring += f'hyperparameters: {hyps}\n'
+        headerstring += f'hyperparameters: {str(hyps)}\n'
         headerstring += f'hyperparameter optimization algorithm: {algo}\n'
         headerstring += std_string
         headerstring += f'timestep (ps): {dt}\n'
@@ -142,7 +140,7 @@ class Output:
         headerstring += f'number of atoms: {structure.nat}\n'
         headerstring += f'system species: {set(structure.species_labels)}\n'
         headerstring += 'periodic cell: \n'
-        headerstring += str(structure.cell)
+        headerstring += str(structure.cell)+'\n'
 
         if optional:
             for key, value in optional.items():
@@ -151,9 +149,9 @@ class Output:
         # report previous positions
         headerstring += '\nprevious positions (A):\n'
         for i in range(len(structure.positions)):
-            headerstring += f'{structure.species_labels[i]} '
+            headerstring += f'{structure.species_labels[i]:5}'
             for j in range(3):
-                headerstring += f'{structure.prev_positions[i][j]:10.4} '
+                headerstring += f'{structure.prev_positions[i][j]:10.4f}'
             headerstring += '\n'
         headerstring += '-' * 80 + '\n'
 
@@ -162,7 +160,6 @@ class Output:
         if self.always_flush:
             f.flush()
 
-    # TO DO: this module should be removed in the future
     def write_md_config(self, dt, curr_step, structure,
                         temperature, KE, local_energies,
                         start_time, dft_step, velocities):
@@ -195,35 +192,35 @@ class Output:
         string += f'\nSimulation Time: {(dt * curr_step):.3} ps \n'
 
         # Construct Header line
-        string += 'El  Position (A) \t\t\t\t '
+        n_space = 30
+        string += str.ljust('El', 5)
+        string += str.center('Position (A)', n_space)
+        string += ' ' * 4
         if not dft_step:
-            string += 'GP Force (ev/A) '
+            string += str.center('GP Force (ev/A)', n_space)
+            string += ' ' * 4
         else:
-            string += 'DFT Force (ev/A) '
-        string += '\t\t\t\t Std. Dev (ev/A) \t'
-        string += '\t\t\t\t Velocities (A/ps) \n'
+            string += str.center('DFT Force (ev/A)', n_space)
+            string += ' ' * 4
+        string += str.center('Std. Dev (ev/A)', n_space) + ' ' * 4
+        string += str.center('Velocities (A/ps)', n_space) + '\n'
 
         # Construct atom-by-atom description
         for i in range(len(structure.positions)):
-            string += f'{structure.species_labels[i]} '
+            string += f'{structure.species_labels[i]:5}'
+            # string += '\t'
             for j in range(3):
-                string += f"{structure.positions[i][j]:8.4} "
-            string += '\t'
+                string += f'{structure.positions[i][j]:10.4f}'
+            string += ' ' * 4
             for j in range(3):
-                string += f"{structure.forces[i][j]:8.4} "
-            string += '\t'
+                string += f'{structure.forces[i][j]:10.4f}'
+            string += ' ' * 4
             for j in range(3):
-                string += f'{structure.stds[i][j]:8.4} '
-            string += '\t'
+                string += f'{structure.stds[i][j]:10.4f}'
+            string += ' ' * 4
             for j in range(3):
-                string += f'{velocities[i][j]:8.4} '
+                string += f'{velocities[i][j]:10.4f}'
             string += '\n'
-
-        print(curr_step)
-        print(structure.species_labels)
-        self.write_xyz_config(curr_step, structure, dft_step)
-        self.write_xyz(curr_step, structure.stds, structure.species_labels,
-                       "std", header)
 
         string += '\n'
         string += f'temperature: {temperature:.2f} K \n'
@@ -317,7 +314,7 @@ class Output:
                        forces=forces, stds=stds, forces_2=forces_2)
 
     def write_hyps(self, hyp_labels, hyps, start_time, like, like_grad,
-                   name='log'):
+                   name='log', hyps_mask=None):
         """ write hyperparameters to logfile
 
         :param name:
@@ -332,25 +329,32 @@ class Output:
         f = self.outfiles[name]
         f.write('\nGP hyperparameters: \n')
 
+        if hyps_mask is not None:
+            if 'map' in hyps_mask:
+                hyps = hyps_mask['original']
+                if len(hyp_labels)!=len(hyps):
+                    hyp_labels = None
+
         if hyp_labels is not None:
             for i, label in enumerate(hyp_labels):
-                f.write(f'Hyp{i} : {label} = {hyps[i]}\n')
+                f.write(f'Hyp{i} : {label} = {hyps[i]:.4f}\n')
         else:
             for i, hyp in enumerate(hyps):
-                f.write(f'Hyp{i} : {hyp}\n')
+                f.write(f'Hyp{i} : {hyp:.4f}\n')
 
-        f.write(f'likelihood: {like}\n')
+        f.write(f'likelihood: {like:.4f}\n')
         f.write(f'likelihood gradient: {like_grad}\n')
         if start_time:
             time_curr = time.time() - start_time
-            f.write(f'wall time from start: {time_curr:.2} s \n')
+            f.write(f'wall time from start: {time_curr:.2f} s \n')
 
         if self.always_flush:
             f.flush()
 
     def write_gp_dft_comparison(self, curr_step, frame,
                                 start_time, dft_forces,
-                                error, local_energies=None, KE=None):
+                                error, local_energies=None, KE=None,
+                                mgp= False):
         """ write the comparison to logfile
 
         :param curr_step: current timestep
@@ -371,6 +375,8 @@ class Output:
 
         # Construct Header line
         string += '\nEl  Position (A) \t\t\t\t '
+        if mgp:
+            string += 'M'
         string += 'GP Force (ev/A)  \t\t\t\t'
         string += 'Std. Dev (ev/A) \t\t\t\t'
         string += 'DFT Force (ev/A)  \t\t\t\t \n'
@@ -393,35 +399,38 @@ class Output:
 
         string += '\n'
 
-        self.write_xyz_config(curr_step, frame, forces=frame.forces,
-                              stds=frame.stds, forces_2=dft_forces,
-                              dft_step=True)
+        # self.write_xyz_config(curr_step, frame, forces=frame.forces,
+        #                       stds=frame.stds, forces_2=dft_forces,
+        #                       dft_step=True)
 
-        mae = np.mean(error) * 1000
+        mae = np.nanmean(error) * 1000
         mac = np.mean(np.abs(dft_forces)) * 1000
         string += f'mean absolute error: {mae:.2f} meV/A\n'
         string += f'mean absolute dft component: {mac:.2f} meV/A\n'
         stat = f'{curr_step} {mae:.2} {mac:.2}'
 
-        mae_ps = {}
-        count_ps = {}
+        mae_per_species = {}
+        count_per_species = {}
         species = [Z_to_element(Z) for Z in set(frame.coded_species)]
         for ele in species:
-            mae_ps[ele] = 0
-            count_ps[ele] = 0
+            mae_per_species[ele] = 0
+            count_per_species[ele] = 0
+
         for atom in range(frame.nat):
             Z = frame.coded_species[atom]
             ele = Z_to_element(Z)
-            mae_ps[ele] += np.sum(error[atom, :])
-            count_ps[ele] += 1
+            if np.isnan(np.sum(error[atom, :])):
+                continue
+            mae_per_species[ele] += np.sum(error[atom, :])
+            count_per_species[ele] += 1
 
         string += "mae per species\n"
         for ele in species:
-            if count_ps[ele] > 0:
-                mae_ps[ele] /= (count_ps[ele] * 3)
-                mae_ps[ele] *= 1000  # Put in meV/A
-                string += f"type {ele} mae: {mae_ps[ele]:.2f} meV/A\n"
-            stat += f' {mae_ps[ele]:.2f}'
+            if count_per_species[ele] > 0:
+                mae_per_species[ele] /= (count_per_species[ele] * 3)
+                mae_per_species[ele] *= 1000  # Put in meV/A
+                string += f"type {ele} mae: {mae_per_species[ele]:.2f} meV/A\n"
+            stat += f' {mae_per_species[ele]:.2f}'
 
         # calculate potential and total energy
         if local_energies is not None:
@@ -436,7 +445,7 @@ class Output:
         stat += f' {dt}\n'
 
         self.outfiles['log'].write(string)
-        self.outfiles['stat'].write(stat)
+        # self.outfiles['stat'].write(stat)
 
         if self.always_flush:
             self.outfiles['log'].flush()

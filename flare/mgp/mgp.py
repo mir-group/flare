@@ -13,18 +13,18 @@ import multiprocessing as mp
 import subprocess
 import os
 
-from flare import gp, struc, kernels
+from flare import gp, struc, gp_algebra
 from flare.env import AtomicEnvironment
 from flare.gp import GaussianProcess
-from flare.kernels import two_body, three_body, two_plus_three_body,\
-    two_body_jit
+from flare.gp_algebra import get_kernel_vector_unit, partition_c
 from flare.cutoffs import quadratic_cutoff
-from flare.mc_simple import two_body_mc, three_body_mc, two_plus_three_body_mc
+from flare.kernels.mc_simple import two_body_mc, three_body_mc
 from flare.util import Z_to_element
 
 import flare.mgp.utils as utils
 from flare.mgp.utils import get_bonds, get_triplets, self_two_body_mc_jit, \
-    self_three_body_mc_jit
+    self_three_body_mc_jit, \
+    get_2bkernel, get_3bkernel
 from flare.mgp.splines_methods import PCASplines, CubicSpline
 
 
@@ -48,7 +48,7 @@ class MappedGaussianProcess:
     Example:
         >>> struc_params = {'species': [0, 1],
                             'cube_lat': cell} # input the cell matrix
-        >>> grid_params =  {'bounds_2': [[1.2], [3.5]], 
+        >>> grid_params =  {'bounds_2': [[1.2], [3.5]],
                                         # [[lower_bound], [upper_bound]]
                             'bounds_3': [[1.2, 1.2, -1], [3.5, 3.5, 1]],
                                         # [[lower,lower,cos(pi)],[upper,upper,cos(0)]]
@@ -57,15 +57,15 @@ class MappedGaussianProcess:
                             'svd_rank_2': 64,
                             'svd_rank_3': 16**3,
                             'bodies': [2, 3],
-                            'update': True, # if True: accelerating grids 
-                                            # generating by saving intermediate 
+                            'update': True, # if True: accelerating grids
+                                            # generating by saving intermediate
                                             # coeff when generating grids
                             'load_grid': None}
     '''
 
-    def __init__(self, hyps, cutoffs, grid_params: dict, struc_params: dict, 
-                 mean_only=False, container_only=True, GP=None, 
-                 lmp_file_name='lmp.mgp'):
+    def __init__(self, hyps, cutoffs, grid_params: dict, struc_params: dict,
+                 mean_only=False, container_only=True, GP=None,
+                 lmp_file_name='lmp.mgp', n_cpus=None, n_sample=100):
 
         self.hyps = hyps
         self.cutoffs = cutoffs
@@ -82,6 +82,8 @@ class MappedGaussianProcess:
         self.update = grid_params['update']
         self.mean_only = mean_only
         self.lmp_file_name = lmp_file_name
+        self.n_cpus = n_cpus
+        self.n_sample = n_sample
 
         self.build_bond_struc(struc_params)
         self.maps_2 = []
@@ -98,18 +100,19 @@ class MappedGaussianProcess:
         if 2 in self.bodies:
             for b_struc in self.bond_struc[0]:
                 map_2 = Map2body(self.grid_num_2, self.bounds_2, self.cutoffs,
-                                 b_struc, self.bodies, self.svd_rank_2, 
-                                 self.mean_only)
+                                 b_struc, self.bodies, self.svd_rank_2,
+                                 self.mean_only, self.n_cpus, self.n_sample)
                 self.maps_2.append(map_2)
         if 3 in self.bodies:
             for b_struc in self.bond_struc[1]:
                 map_3 = Map3body(self.grid_num_3, self.bounds_3, self.cutoffs,
                                  b_struc, self.bodies, self.svd_rank_3,
-                                 self.mean_only, 
+                                 self.mean_only,
                                  self.grid_params['load_grid'],
-                                 self.update)
+                                 self.update,
+                                 self.n_cpus, self.n_sample)
                 self.maps_3.append(map_3)
-    
+
     def build_map(self, GP):
         '''
         generate/load grids and get spline coefficients
@@ -225,10 +228,11 @@ class MappedGaussianProcess:
                                             self.get_3body_comp, self.spcs[1],
                                             self.maps_3, mean_only)
 
-        f = f2 + f3
-        vir = vir2 + vir3
-        v = kern2 + kern3 - np.sum((v2 + v3)**2, axis=0)
-        return f, v, vir
+        force = f2 + f3
+        variance = kern2 + kern3 - np.sum((v2 + v3)**2, axis=0)
+        virial_stress = vir2 + vir3
+
+        return force, variance, virial_stress, 0
 
     def get_2body_comp(self, atom_env, sig, ls, r_cut):
         '''
@@ -249,7 +253,7 @@ class MappedGaussianProcess:
 
     def get_3body_comp(self, atom_env, sig, ls, r_cut):
         '''
-        get triplets and grouped by species 
+        get triplets and grouped by species
         '''
         bond_array_3 = atom_env.bond_array_3
         cross_bond_inds = atom_env.cross_bond_inds
@@ -277,7 +281,7 @@ class MappedGaussianProcess:
     def predict_multicomponent(self, atom_env, sig, ls, r_cut, get_comp,
                                spcs_list, mappings, mean_only):
         '''
-        Add up results from `predict_component` to get the total contribution 
+        Add up results from `predict_component` to get the total contribution
         of all species
         '''
         f_spcs = 0
@@ -291,7 +295,7 @@ class MappedGaussianProcess:
             lengths = np.array(comp_r[i])
             xyzs = np.array(comp_xyz[i])
             map_ind = spcs_list.index(spc)
-            f, vir, v = self.predict_component(lengths, xyzs, 
+            f, vir, v = self.predict_component(lengths, xyzs,
                                 mappings[map_ind], mean_only)
             f_spcs += f
             vir_spcs += vir
@@ -328,59 +332,6 @@ class MappedGaussianProcess:
             v = mapping.var.V @ v_d
         return f, vir, v
 
-    def write_two_body(self, f):
-        a = self.bounds_2[0][0]
-        b = self.bounds_2[1][0]
-        order = self.grid_num_2
-
-        for ind, spc in enumerate(self.spcs[0]):
-            coefs_2 = self.maps_2[ind].mean.__coeffs__
-
-            elem1 = Z_to_element(spc[0])
-            elem2 = Z_to_element(spc[1])
-            header_2 = '{elem1} {elem2} {a} {b} {order}\n'\
-                .format(elem1=elem1, elem2=elem2, a=a, b=b, order=order)
-            f.write(header_2)
-
-            for c, coef in enumerate(coefs_2):
-                f.write('{:.10e} '.format(coef))
-                if c % 5 == 4 and c != len(coefs_2)-1:
-                    f.write('\n')
-
-            f.write('\n')
-
-    def write_three_body(self, f):
-        a = self.bounds_3[0]
-        b = self.bounds_3[1] 
-        order = self.grid_num_3 
-
-        for ind, spc in enumerate(self.spcs[1]):
-            coefs_3 = self.maps_3[ind].mean.__coeffs__
-
-            elem1 = Z_to_element(spc[0])
-            elem2 = Z_to_element(spc[1])
-            elem3 = Z_to_element(spc[2])
-
-            header_3 = '{elem1} {elem2} {elem3} {a1} {a2} {a3} {b1}'\
-                       ' {b2} {b3:.10e} {order1} {order2} {order3}\n'\
-                .format(elem1=elem1, elem2=elem2, elem3=elem3,
-                        a1=a[0], a2=a[1], a3=a[2],
-                        b1=b[0], b2=b[1], b3=b[2],
-                        order1=order[0], order2=order[1], order3=order[2])
-            f.write(header_3)
-
-            n = 0
-            for i in range(coefs_3.shape[0]):
-                for j in range(coefs_3.shape[1]):
-                    for k in range(coefs_3.shape[2]):
-                        coef = coefs_3[i, j, k]
-                        f.write('{:.10e} '.format(coef))
-                        if n % 5 == 4:
-                            f.write('\n')
-                        n += 1
-
-            f.write('\n')
-
 
     def write_lmp_file(self, lammps_name):
         '''
@@ -401,18 +352,20 @@ class MappedGaussianProcess:
 
         # write two body
         if twobodyarray > 0:
-            self.write_two_body(f)
+            for ind, spc in enumerate(self.spcs[0]):
+                self.maps_2[ind].write(f, spc)
 
         # write three body
         if threebodyarray > 0:
-            self.write_three_body(f)
+            for ind, spc in enumerate(self.spcs[1]):
+                self.maps_3[ind].write(f, spc)
 
         f.close()
 
 
 class Map2body:
     def __init__(self, grid_num, bounds, cutoffs, bond_struc, bodies='2',
-                 svd_rank=0, mean_only=False):
+                 svd_rank=0, mean_only=False, n_cpus=1, n_sample=100):
         '''
         Build 2-body MGP
         '''
@@ -425,93 +378,148 @@ class Map2body:
         self.bodies = bodies
         self.svd_rank = svd_rank
         self.mean_only = mean_only
+        self.n_cpus = n_cpus
+        self.n_sample = n_sample
 
         self.build_map_container()
 
-    def GenGrid(self, GP, processes=mp.cpu_count()):
+    def GenGrid(self, GP, processes=1):
 
         '''
         generate grid data of mean prediction and L^{-1}k* for each triplet
          implemented in a parallelized style
         '''
+        kernel_info = get_2bkernel(GP)
 
-        # ------ change GP kernel to 2 body ------
-        original_kernel = GP.kernel
-        GP.kernel = two_body_mc
-        original_cutoffs = np.copy(GP.cutoffs)
-        GP.cutoffs = [GP.cutoffs[0]]
-        original_hyps = np.copy(GP.hyps)
-        GP.hyps = [GP.hyps[0], GP.hyps[1], GP.hyps[-1]]
+        if (self.n_cpus is None):
+            processes = mp.cpu_count()
+        else:
+            processes = self.n_cpus
 
         # ------ construct grids ------
         nop = self.grid_num
         bond_lengths = np.linspace(self.l_bounds[0], self.u_bounds[0], nop)
         bond_means = np.zeros([nop])
-        bond_vars = np.zeros([nop, len(GP.alpha)])
+        if not self.mean_only:
+            bond_vars = np.zeros([nop, len(GP.alpha)])
+        else:
+            bond_vars = None
         env12 = AtomicEnvironment(self.bond_struc, 0, self.cutoffs)
 
-        pool_list = [(i, bond_lengths, GP, env12)
-                     for i in range(nop)]
-        pool = mp.Pool(processes=processes)
-        A_list = pool.map(self._GenGrid_inner, pool_list)
-        for p in range(nop):
-            bond_means[p] = A_list[p][0]
-            bond_vars[p, :] = A_list[p][1]
-        pool.close()
-        pool.join()
+        if processes == 1 :
+            k12_v_all = self._GenGrid_inner(GP.name, 0, len(GP.training_data),
+                                            bond_lengths, env12, kernel_info)
+        else:
+            with mp.Pool(processes=processes) as pool:
+                size = len(GP.training_data)
+                block_id, nbatch = partition_c(self.n_sample, size, processes)
 
-        # ------ change back original GP ------
-        GP.cutoffs = original_cutoffs
-        GP.hyps = original_hyps
-        GP.kernel = original_kernel
+                k12_slice = []
+                k12_v_all = np.zeros([len(bond_lengths), size*3])
+                count = 0
+                base = 0
+                for ibatch in range(nbatch):
+                    s, e = block_id[ibatch]
+                    k12_slice.append(\
+                            pool.apply_async(self._GenGrid_inner,
+                                             args=(GP.name, s, e,
+                                                   bond_lengths,
+                                                   env12, kernel_info)))
+                    count += 1
+                    # when there are too many threads, collect some of
+                    # the result to reduce memory footprint
+                    if (count > processes*2):
+                        for ibase in range(count):
+                            s, e = block_id[ibase+base]
+                            k12_v_all[:, s*3:e*3] = k12_slice[ibase].get()
+                        del k12_slice
+                        k12_slice = []
+                        count = 0
+                        base = ibatch+1
+                if (count > 0):
+                   for ibase in range(count):
+                       s, e = block_id[ibase+base]
+                       vec =  k12_slice[ibase].get()
+                       k12_v_all[:, s*3:e*3] = k12_slice[ibase].get()
+                   del k12_slice
+                pool.close()
+                pool.join()
+
+        for b, r in enumerate(bond_lengths):
+            k12_v = k12_v_all[b, :]
+            bond_means[b] = np.matmul(k12_v, GP.alpha)
+            if not self.mean_only:
+                bond_vars[b, :] = solve_triangular(GP.l_mat, k12_v, lower=True)
 
         return bond_means, bond_vars
 
-    def _GenGrid_inner(self, params):
+
+    def _GenGrid_inner(self, name, s, e, bond_lengths,
+            env12, kernel_info):
 
         '''
-        generate grid for each angle, used to parallelize grid generation
+        generate grid for each cos angle, used to parallelize grid generation
         '''
-        b, bond_lengths, GP, env12 = params
-        # nop = self.grid_num
-        r = bond_lengths[b]
-        env12.bond_array_2 = np.array([[r, 1, 0, 0]])
 
-        k12_v = GP.get_kernel_vector(env12, 1)
-        mean_diff = np.matmul(k12_v, GP.alpha)
-        bond_means = mean_diff
-        bond_vars = np.zeros(k12_v.shape)
-
-        if not self.mean_only:
-            v12_vec = solve_triangular(GP.l_mat, k12_v, lower=True)
-            bond_vars = v12_vec
-
-        return bond_means, bond_vars
+        kernel, efk, cutoffs, hyps, hyps_mask = kernel_info
+        size = e - s
+        k12_v = np.zeros([len(bond_lengths), size*3])
+        for b, r in enumerate(bond_lengths):
+            env12.bond_array_2 = np.array([[r, 1, 0, 0]])
+            k12_v[b, :] = get_kernel_vector_unit(
+                    name, s, e, env12, 1,
+                    kernel, hyps, cutoffs, hyps_mask)
+        return k12_v
 
     def build_map_container(self):
-        self.mean = CubicSpline(self.l_bounds, self.u_bounds, 
+        self.mean = CubicSpline(self.l_bounds, self.u_bounds,
                                 orders=[self.grid_num])
 
         if not self.mean_only:
             self.var = PCASplines(self.l_bounds, self.u_bounds,
                                   orders=[self.grid_num],
                                   svd_rank=self.svd_rank)
-        
+
     def build_map(self, GP):
         '''
         build 1-d spline function for mean, 2-d for var
         '''
+        assert (GP.multihyps is False), "multihyps is not supported in mgp"
         y_mean, y_var = self.GenGrid(GP)
         self.mean.set_values(y_mean)
         if not self.mean_only:
             self.var.set_values(y_var)
+
+    def write(self, f, spc):
+        '''
+        Write LAMMPS coefficient file
+        '''
+        a = self.l_bounds[0]
+        b = self.u_bounds[0]
+        order = self.grid_num
+
+        coefs_2 = self.mean.__coeffs__
+
+        elem1 = Z_to_element(spc[0])
+        elem2 = Z_to_element(spc[1])
+        header_2 = '{elem1} {elem2} {a} {b} {order}\n'\
+            .format(elem1=elem1, elem2=elem2, a=a, b=b, order=order)
+        f.write(header_2)
+
+        for c, coef in enumerate(coefs_2):
+            f.write('{:.10e} '.format(coef))
+            if c % 5 == 4 and c != len(coefs_2)-1:
+                f.write('\n')
+
+        f.write('\n')
 
 
 
 class Map3body:
 
     def __init__(self, grid_num, bounds, cutoffs, bond_struc, bodies='3',
-            svd_rank=0, mean_only=False, load_grid=None, update=True):
+            svd_rank=0, mean_only=False, load_grid=None, update=True,
+            n_cpus=1, n_sample=100):
         '''
         Build 3-body MGP
         '''
@@ -526,21 +534,109 @@ class Map3body:
         self.mean_only = mean_only
         self.load_grid = load_grid
         self.update = update
+        self.n_cpus = n_cpus
+        self.n_sample = n_sample
 
         self.build_map_container()
 
 
-    def GenGrid(self, GP, processes=mp.cpu_count()):
-
+    def GenGrid(self, GP):
         '''
         generate grid data of mean prediction and L^{-1}k* for each triplet
          implemented in a parallelized style
         '''
-        # ------ change GP kernel to 3 body ------
-        original_kernel = GP.kernel
-        original_hyps = np.copy(GP.hyps)
-        GP.kernel = three_body_mc
-        GP.hyps = GP.hyps[-3:]
+
+        if (self.n_cpus is None):
+            processes = mp.cpu_count()
+        else:
+            processes = self.n_cpus
+
+        if processes == 1:
+            return self.GenGrid_serial(GP)
+
+        # ------ get 3body kernel info ------
+        kernel_info = get_3bkernel(GP)
+
+        # ------ construct grids ------
+        nop = self.grid_num[0]
+        noa = self.grid_num[2]
+        bond_lengths = np.linspace(self.l_bounds[0], self.u_bounds[0], nop)
+        cos_angles = np.linspace(self.l_bounds[2], self.u_bounds[2], noa)
+
+        bond_means = np.zeros([nop, nop, noa])
+        if not self.mean_only:
+            bond_vars = np.zeros([nop, nop, noa, len(GP.alpha)])
+        else:
+            bond_vars = None
+        env12 = AtomicEnvironment(self.bond_struc, 0, self.cutoffs)
+
+        with mp.Pool(processes=processes) as pool:
+            if self.update:
+                if 'kv3' in os.listdir():
+                    os.rmdir('kv3')
+                os.mkdir('kv3')
+
+            size = len(GP.training_data)
+            block_id, nbatch = partition_c(self.n_sample, size, processes)
+
+            k12_slice = []
+            if (size>5000):
+                print('parallel set up:', size, ns, n_sample, time.time())
+            count = 0
+            base = 0
+            k12_v_all = np.zeros([len(bond_lengths), len(bond_lengths), len(cos_angles), size*3])
+            for ibatch in range(nbatch):
+                s, e = block_id[ibatch]
+                k12_slice.append(\
+                        pool.apply_async(self._GenGrid_inner_most,
+                                         args=(GP.name, s, e,
+                                               cos_angles, bond_lengths,
+                                               env12, kernel_info)))
+                if (size>5000):
+                    print('send', ibatch, ns, s, e, time.time())
+                count += 1
+                if (count > processes*2):
+                    for ibase in range(count):
+                        s, e = block_id[ibase+base]
+                        k12_v_all[:, :, :, s*3:e*3] = k12_slice[ibase].get()
+                        if (size>5000):
+                            print('get', ibase+base)
+                    del k12_slice
+                    k12_slice = []
+                    count = 0
+                    base = ibatch+1
+            if (count > 0):
+               for ibase in range(count):
+                   s, e = block_id[ibase+base]
+                   k12_v_all[:, :, :, s*3:e*3] = k12_slice[ibase].get()
+               del k12_slice
+
+            pool.close()
+            pool.join()
+
+        for a12, cos_angle in enumerate(cos_angles):
+            for b1, r1 in enumerate(bond_lengths):
+                for b2, r2 in enumerate(bond_lengths):
+                    k12_v = k12_v_all[b1, b2, a12, :]
+                    bond_means[b1, b2, a12] = np.matmul(k12_v, GP.alpha)
+                    if not self.mean_only:
+                        bond_vars[b1, b2, a12, :] = solve_triangular(GP.l_mat, k12_v, lower=True)
+
+
+        # # ------ save mean and var to file -------
+        np.save('grid3_mean', bond_means)
+        np.save('grid3_var', bond_vars)
+
+        return bond_means, bond_vars
+
+    def GenGrid_serial(self, GP):
+        '''
+        generate grid data of mean prediction and L^{-1}k* for each triplet
+         implemented in a parallelized style
+        '''
+        
+        # ------ get 3body kernel info ------
+        kernel, efk, cutoffs, hyps, hyps_mask = get_3bkernel(GP)
 
         # ------ construct grids ------
         nop = self.grid_num[0]
@@ -551,104 +647,87 @@ class Map3body:
         bond_vars = np.zeros([nop, nop, noa, len(GP.alpha)])
         env12 = AtomicEnvironment(self.bond_struc, 0, self.cutoffs)
 
-        pool_list = [(i, cos_angles[i], bond_lengths, GP, env12, self.update)\
-                     for i in range(noa)]
-        pool = mp.Pool(processes=processes)
-
         if self.update:
             if 'kv3' in os.listdir():
-                subprocess.run(['rm', '-r', 'kv3'])
-            subprocess.run(['mkdir', 'kv3'])
-       
-        A_list = pool.map(self._GenGrid_inner, pool_list)
-        for a12 in range(noa):
-            bond_means[:, :, a12] = A_list[a12][0]
-            bond_vars[:, :, a12, :] = A_list[a12][1]
-        pool.close()
-        pool.join()
+                os.rmdir('kv3')
+            os.mkdir('kv3')
 
-        # ------ change back to original GP ------
-        GP.hyps = original_hyps
-        GP.kernel = original_kernel
-      
-        # ------ save mean and var to file -------
+        size = len(GP.training_data)
+        ds = [1, 2, 3]
+        k_v = np.zeros(3)
+        k12_v_all = np.zeros([len(bond_lengths), len(bond_lengths),
+                              len(cos_angles), size*3])
+        for b1, r1 in enumerate(bond_lengths):
+            for b2, r2 in enumerate(bond_lengths):
+                for a12, cos_angle12 in enumerate(cos_angles):
+
+                    x2 = r2 * cos_angle12
+                    y2 = r2 * np.sqrt(1-cos_angle12**2)
+                    r12 = np.linalg.norm(np.array([x2-r1, y2, 0]))
+
+                    env12.bond_array_3 = np.array([[r1, 1, 0, 0],
+                                                   [r2, 0, 0, 0]])
+                    env12.cross_bond_dists = np.array([[0, r12], [r12, 0]])
+
+                    for isample, sample in enumerate(GP.training_data):
+                        for d in ds:
+                            k_v[d-1] = kernel(env12, sample, 1, d,
+                                              hyps, cutoffs)
+
+                        k12_v_all[b1, b2, a12, isample*3:isample*3+3] = k_v
+
+        for b1, r1 in enumerate(bond_lengths):
+            for b2, r2 in enumerate(bond_lengths):
+                for a12, cos_angle in enumerate(cos_angles):
+                    k12_v = k12_v_all[b1, b2, a12, :]
+                    bond_means[b1, b2, a12] = np.matmul(k12_v, GP.alpha)
+                    if not self.mean_only:
+                        bond_vars[b1, b2, a12, :] = solve_triangular(GP.l_mat, k12_v, lower=True)
+
+        # # ------ save mean and var to file -------
         np.save('grid3_mean', bond_means)
         np.save('grid3_var', bond_vars)
 
         return bond_means, bond_vars
 
-    def _GenGrid_inner(self, params):
+    def _GenGrid_inner_most(self, name, s, e, cos_angles, bond_lengths, env12, kernel_info):
 
         '''
-        generate grid for each angle, used to parallelize grid generation
+        generate grid for each cos_angle, used to parallelize grid generation
         '''
-        a12, cos_angle12, bond_lengths, GP, env12, update = params
-        nop = self.grid_num[0]
-        bond_means = np.zeros([nop, nop])
-        bond_vars = np.zeros([nop, nop, len(GP.alpha)])
 
+        kernel, efk, cutoffs, hyps, hyps_mask = kernel_info
+        training_data = gp_algebra._global_training_data[name]
         # open saved k vector file, and write to new file
-        if update:
-            kv_filename = 'kv3/'+str(a12)
-            size = len(GP.training_data) * 3
-            new_kv_file = np.zeros((nop**2+1, size))
-            new_kv_file[0,0] = size
-            if str(a12)+'.npy' in os.listdir('kv3'):
-                old_kv_file = np.load(kv_filename+'.npy') 
-                last_size = int(old_kv_file[0,0])
-                new_kv_file[:, :last_size] = old_kv_file
-            else:
-                last_size = 0
-            ds = [1, 2, 3]
+        size = (e-s)*3
+        k12_v = np.zeros([len(bond_lengths), len(bond_lengths),
+                          len(cos_angles), size])
+        for a12, cos_angle12 in enumerate(cos_angles):
+            for b1, r1 in enumerate(bond_lengths):
+                for b2, r2 in enumerate(bond_lengths):
 
-        for b1, r1 in enumerate(bond_lengths):
-            r1 = bond_lengths[b1]
-            for b2, r2 in enumerate(bond_lengths):
-                x2 = r2 * cos_angle12
-                y2 = np.sqrt(r2**2 - x2**2)
-                r12 = np.linalg.norm(np.array([x2-r1, y2, 0]))
+                    x2 = r2 * cos_angle12
+                    y2 = r2 * np.sqrt(1-cos_angle12**2)
+                    r12 = np.linalg.norm(np.array([x2-r1, y2, 0]))
 
-                env12.bond_array_3 = np.array([[r1, 1, 0, 0], [r2, 0, 0, 0]])
-                env12.cross_bond_dists = np.array([[0, r12], [r12, 0]])
+                    env12.bond_array_3 = np.array([[r1, 1, 0, 0],
+                                                   [r2, 0, 0, 0]])
+                    env12.cross_bond_dists = np.array([[0, r12], [r12, 0]])
 
-                # calculate kernel functions of those newly added training data
-                if update:
-                    k12_v = new_kv_file[1+b1*nop+b2, :]
-                    for m_index in range(last_size, size):
-                        x_2 = GP.training_data[int(math.floor(m_index / 3))]
-                        d_2 = ds[m_index % 3]
-                        k12_v[m_index] = GP.kernel(env12, x_2, 1, d_2,
-                                               GP.hyps, GP.cutoffs)
-                else:
-                    k12_v = GP.get_kernel_vector(env12, 1)   
+                    k12_v[b1, b2, a12, :] = \
+                            get_kernel_vector_unit(name, s, e, env12, 1,
+                                    kernel, hyps, cutoffs, hyps_mask)
 
-                if update:
-                    new_kv_file[1+b1*nop+b2, :] = k12_v
-
-                # calculate mean and var value for the mapping
-                mean_diff = np.matmul(k12_v, GP.alpha)
-                bond_means[b1, b2] = mean_diff
-
-                if not self.mean_only:
-                    v12_vec = solve_triangular(GP.l_mat, k12_v, lower=True)
-                    bond_vars[b1, b2, :] = v12_vec
-
-        # replace the old file with the new file
-        if update:
-            np.save(kv_filename, new_kv_file)
-
-        return bond_means, bond_vars
+        return k12_v
 
     def build_map_container(self):
        # create spline interpolation class object
-        nop = self.grid_num[0]
-        noa = self.grid_num[2]
-        self.mean = CubicSpline(self.l_bounds, self.u_bounds, 
-                                orders=[nop, nop, noa])
+        self.mean = CubicSpline(self.l_bounds, self.u_bounds,
+                                orders=self.grid_num)
 
         if not self.mean_only:
             self.var = PCASplines(self.l_bounds, self.u_bounds,
-                                  orders=[nop, nop, noa],
+                                  orders=self.grid_num,
                                   svd_rank=self.svd_rank)
 
     def build_map(self, GP):
@@ -657,6 +736,8 @@ class Map3body:
         build 3-d spline function for mean,
         3-d for the low rank approximation of L^{-1}k*
         '''
+
+        assert (GP.multihyps is False), "multihyps is not supported in mgp"
 
         # Load grid or generate grid values
         if not self.load_grid:
@@ -668,4 +749,36 @@ class Map3body:
         self.mean.set_values(y_mean)
         if not self.mean_only:
             self.var.set_values(y_var)
+
+    def write(self, f, spc):
+        a = self.l_bounds
+        b = self.u_bounds
+        order = self.grid_num
+
+        coefs_3 = self.mean.__coeffs__
+
+        elem1 = Z_to_element(spc[0])
+        elem2 = Z_to_element(spc[1])
+        elem3 = Z_to_element(spc[2])
+
+        header_3 = '{elem1} {elem2} {elem3} {a1} {a2} {a3} {b1}'\
+                   ' {b2} {b3:.10e} {order1} {order2} {order3}\n'\
+            .format(elem1=elem1, elem2=elem2, elem3=elem3,
+                    a1=a[0], a2=a[1], a3=a[2],
+                    b1=b[0], b2=b[1], b3=b[2],
+                    order1=order[0], order2=order[1], order3=order[2])
+        f.write(header_3)
+
+        n = 0
+        for i in range(coefs_3.shape[0]):
+            for j in range(coefs_3.shape[1]):
+                for k in range(coefs_3.shape[2]):
+                    coef = coefs_3[i, j, k]
+                    f.write('{:.10e} '.format(coef))
+                    if n % 5 == 4:
+                        f.write('\n')
+                    n += 1
+
+        f.write('\n')
+
 

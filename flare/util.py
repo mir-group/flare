@@ -8,6 +8,128 @@ from math import inf
 
 import numpy as np
 
+
+def get_random_velocities(noa: int, temperature: float, mass: float):
+    """Draw velocities from the Maxwell-Boltzmann distribution, assuming a
+    fixed mass for all particles in amu.
+
+    Args:
+        noa (int): Number of atoms in the system.
+        temperature (float): Temperature of the system.
+        mass (float): Mass of each particle in amu.
+
+    Returns:
+        np.ndarray: Particle velocities, corrected to give zero center of mass motion.
+    """
+    
+    # Use FLARE mass units (time = ps, length = A, energy = eV)
+    mass_md = mass * 0.000103642695727
+    kb = 0.0000861733034
+    std = np.sqrt(kb * temperature / mass_md)
+    velocities = np.random.normal(scale=std, size=(noa, 3))
+    
+    # Remove center-of-mass motion
+    vel_sum = np.sum(velocities, axis=0)
+    corrected_velocities = velocities - vel_sum / noa
+
+    return corrected_velocities
+
+
+def multicomponent_velocities(temperature: float, masses: List[float]):
+    """Draw velocities from the Maxwell-Boltzmann distribution for particles of
+    varying mass.
+
+    Args:
+        temperature (float): Temperature of the system.
+        masses (List[float]): Particle masses in amu.
+
+    Returns:
+        np.ndarray: Particle velocities, corrected to give zero center of mass motion.
+    """
+
+    noa = len(masses)
+    velocities = np.zeros((noa, 3))
+    kb = 0.0000861733034
+    mom_tot = np.array([0., 0., 0.])
+
+    for n, mass in enumerate(masses):
+        # Convert to FLARE mass units (time = ps, length = A, energy = eV)
+        mass_md = mass * 0.000103642695727
+        std = np.sqrt(kb * temperature / mass_md)
+        rand_vel = np.random.normal(scale=std, size=(3))
+        velocities[n] = rand_vel
+        mom_curr = rand_vel * mass_md
+        mom_tot += mom_curr
+
+    # Correct momentum, remove center of mass motion
+    mom_corr = mom_tot / noa
+    for n, mass in enumerate(masses):
+        mass_md = mass * 0.000103642695727
+        velocities[n] -= mom_corr / mass_md
+
+    return velocities
+
+
+def get_supercell_positions(sc_size: int, cell: np.ndarray,
+                            positions: np.ndarray):
+    """Returns the positions of a supercell of atoms, with the number of cells
+    in each direction fixed.
+
+    Args:
+        sc_size (int): Size of the supercell.
+        cell (np.ndarray): 3x3 array of cell vectors.
+        positions (np.ndarray): Positions of atoms in the unit cell.
+
+    Returns:
+        np.ndarray: Positions of atoms in the supercell.
+    """
+
+    sc_positions = []
+    for m in range(sc_size):
+        vec1 = m * cell[0]
+        for n in range(sc_size):
+            vec2 = n * cell[1]
+            for p in range(sc_size):
+                vec3 = p * cell[2]
+
+                # append translated positions
+                for pos in positions:
+                    sc_positions.append(pos+vec1+vec2+vec3)
+
+    return np.array(sc_positions)
+
+
+def supercell_custom(cell: np.ndarray, positions: np.ndarray,
+                     size1: int, size2: int, size3: int):
+    """Returns the positions of a supercell of atoms with a chosen number of
+    cells in each direction.
+
+    Args:
+        cell (np.ndarray): 3x3 array of cell vectors.
+        positions (np.ndarray): Positions of atoms in the unit cell.
+        size1 (int): Number of cells along the first cell vector.
+        size2 (int): Number of cells along the second cell vector.
+        size3 (int): Number of cells along the third cell vector.
+
+    Returns:
+        np.ndarray: Positions of atoms in the supercell.
+    """
+
+    sc_positions = []
+    for m in range(size1):
+        vec1 = m * cell[0]
+        for n in range(size2):
+            vec2 = n * cell[1]
+            for p in range(size3):
+                vec3 = p * cell[2]
+
+                # append translated positions
+                for pos in positions:
+                    sc_positions.append(pos+vec1+vec2+vec3)
+
+    return np.array(sc_positions)
+
+
 # Dictionary mapping elements to their atomic number (Z)
 _element_to_Z = {'H': 1,
                  'He': 2,
@@ -308,8 +430,8 @@ def is_std_in_bound_per_species(rel_std_tolerance: float,
 
     # Determine if any std component will trigger the threshold
     # before looking through individual species.
-    max_std_components = [np.max(std) for std in structure.stds]
-    if max(max_std_components) < threshold:
+    max_std_components = [np.nanmax(std) for std in structure.stds]
+    if np.nanmax(max_std_components) < threshold:
         return True, [-1]
 
     target_atoms = []
@@ -325,8 +447,12 @@ def is_std_in_bound_per_species(rel_std_tolerance: float,
         # If max atoms added reached or stds of atoms considered are now below
         # threshold, conclude
         if len(target_atoms) == max_atoms_added or \
-                max_std_components[i] < threshold:
+                (max_std_components[i] < threshold and max_std_components[i]
+                 != np.nan):
             break
+
+        if np.isnan(max_std_components[i]):
+            continue
 
         # Only add up to species allowance, if it exists
         cur_spec = structure.species_labels[i]
@@ -389,7 +515,7 @@ def is_force_in_bound_per_species(abs_force_tolerance: float,
 
     # Determine if any force component will trigger the threshold
     max_error_components = np.amax(errors, axis=1)
-    if np.max(max_error_components) < abs_force_tolerance:
+    if np.nanmax(max_error_components) < abs_force_tolerance:
         return True, [-1]
 
     target_atoms = []
@@ -405,7 +531,8 @@ def is_force_in_bound_per_species(abs_force_tolerance: float,
         # If max atoms added reached or force errors are now below threshold,
         # conclude
         if len(target_atoms) == max_atoms_added or \
-                max_error_components[i] < abs_force_tolerance:
+                (max_error_components[i] < abs_force_tolerance and
+                        max_error_components[i] != np.nan):
             break
 
         cur_spec = structure.species_labels[i]
@@ -423,3 +550,46 @@ def is_force_in_bound_per_species(abs_force_tolerance: float,
         return False, target_atoms
     else:
         return True, [-1]
+
+
+def subset_of_frame_by_element(frame: 'flare.Structure',
+                           predict_atoms_per_element: dict)->List[int]:
+    """
+    Given a structure and a dictionary formatted as {"Symbol":int,
+    ..} describing a number of atoms per element, return a sorted list of
+    indices corresponding to a random subset of atoms by species
+    :param frame:
+    :param predict_atoms_by_species:
+    :return:
+    """
+
+    # Null case: No dictionary or empty dict passed in; just return all indices
+    if not predict_atoms_per_element:
+        return list(range(len(frame)))
+
+    # Keep track of atoms which were considered (dictionary may only cover a
+    #  subset of species of the whole frame)
+    all_atoms = set(range(len(frame)))
+    return_atoms = []
+    considered_atoms = set([])
+
+    species = frame.species_labels
+
+    # Main loop: Obtain the number of relevant atoms for each element
+    for elt, n in predict_atoms_per_element.items():
+
+        matching_atoms = [i for i in all_atoms if species[i] == elt]
+        considered_atoms.update(matching_atoms)
+
+        if len(matching_atoms) == 0:
+            continue
+        # Choose the atoms to add
+        to_add_atoms = np.random.choice(matching_atoms,replace=False,
+                                        size=min(n, len(matching_atoms)))
+        return_atoms += list(to_add_atoms)
+
+    return_atoms += list(all_atoms - considered_atoms)
+
+    return_atoms.sort()
+
+    return return_atoms

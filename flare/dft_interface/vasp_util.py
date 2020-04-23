@@ -99,7 +99,7 @@ def run_dft(calc_dir: str, dft_loc: str,
 
 
 def run_dft_par(dft_input: str, structure: Structure,
-                dft_command:str= None, ncpus=1,
+                dft_command:str= None, n_cpus=1,
                 dft_out="vasprun.xml",
                 parallel_prefix="mpi",
                 mpi = None, npool = None,
@@ -112,9 +112,13 @@ def run_dft_par(dft_input: str, structure: Structure,
             ("Warning: No VASP Command passed, or stored in "
             "environment as VASP_COMMAND. ")
 
-    if ncpus > 1:
-        if parallel_prefix == "mpi":
-            dft_command = f'mpirun -np {ncpus} {dft_command}'
+    if n_cpus > 1:
+        # why is parallel prefix needed?
+        if (parallel_prefix == "mpi") and (mpi == 'mpi'):
+            dft_command = f'mpirun -np {n_cpus} {dft_command}'
+        elif mpi == 'srun':
+            dft_command = f'srun -n {n_cpus} {dft_command}'
+
     else:
         serial_prefix = dft_kwargs.get('serial_prefix', '')
         dft_command = f'{serial_prefix} {dft_command}'
@@ -183,8 +187,8 @@ def md_trajectory_from_vasprun(vasprun: Union[str, Vasprun],
         structure = Structure.from_pmg_structure(step["structure"])
         structure.energy = step["electronic_steps"][-1]["e_0_energy"]
         # TODO should choose e_wo_entrp or e_fr_energy?
-        structure.forces = np.array(step["forces"])
-        structure.stress = np.array(step["stress"])
+        structure.forces = np.array(step.get("forces"))
+        structure.stress = np.array(step.get("stress"))
         struc_lst.append(structure)
 
     return struc_lst

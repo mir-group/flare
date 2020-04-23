@@ -14,7 +14,7 @@ The kernel functions to choose:
     * three_body_grad,
     * three_body_en,
     * three_body_force_en,
-    
+
 * Two plus three body:
 
     * two_plus_three_body,
@@ -31,18 +31,21 @@ The kernel functions to choose:
 
 **Example:**
 
->>> gp_model = GaussianProcess(kernel=two_body,
-                               kernel_grad=two_body_grad,
-                               energy_force_kernel=two_body_force_en,
-                               energy_kernel=two_body_en,
+>>> gp_model = GaussianProcess(kernel_name='2b',
                                <other arguments>)
 """
 
 import numpy as np
 from math import exp
 from flare.env import AtomicEnvironment
-from numba import njit
+
 import flare.cutoffs as cf
+
+from numba import njit
+
+from flare.kernels.kernels import force_helper, grad_constants, grad_helper, \
+    force_energy_helper, three_body_en_helper, three_body_helper_1, \
+    three_body_helper_2, three_body_grad_helper_1, three_body_grad_helper_2
 
 
 # -----------------------------------------------------------------------------
@@ -258,18 +261,18 @@ def two_plus_three_plus_many_body_grad(env1: AtomicEnvironment, env2: AtomicEnvi
                             d1, d2, hyps[2], hyps[3], cutoffs[1], cutoff_func)
 
     kern_many, sigm, lsm = many_body_grad_jit(env1.bond_array_mb, env2.bond_array_mb,
-                                                  env1.neigh_dists_mb,
-                                                  env2.neigh_dists_mb, env1.num_neighs_mb,
-                                                  env2.num_neighs_mb,
-                                                  d1, d2, hyps[4], hyps[5], cutoffs[2],
-                                                  cutoff_func)
+                                              env1.neigh_dists_mb,
+                                              env2.neigh_dists_mb, env1.num_neighs_mb,
+                                              env2.num_neighs_mb,
+                                              d1, d2, hyps[4], hyps[5], cutoffs[2],
+                                              cutoff_func)
 
     return kern2 + kern3 + kern_many, np.array([sig2, ls2, sig3, ls3, sigm, lsm])
 
 
 def two_plus_three_plus_many_body_force_en(env1: AtomicEnvironment, env2: AtomicEnvironment,
-                                       d1: int,  hyps, cutoffs,
-                                       cutoff_func=cf.quadratic_cutoff):
+                                           d1: int,  hyps, cutoffs,
+                                           cutoff_func=cf.quadratic_cutoff):
     """2+3+many-body single-element kernel between two force and energy components.
 
     Args:
@@ -299,18 +302,17 @@ def two_plus_three_plus_many_body_force_en(env1: AtomicEnvironment, env2: Atomic
                                 d1, hyps[2], hyps[3], cutoffs[1],
                                 cutoff_func) / 3
 
-
     many_term = many_body_force_en_jit(env1.bond_array_mb, env2.bond_array_mb,
-                                                  env1.neigh_dists_mb,
-                                                  env1.num_neighs_mb,
-                                                  d1, hyps[4], hyps[5], cutoffs[2],
-                                                  cutoff_func)
+                                       env1.neigh_dists_mb,
+                                       env1.num_neighs_mb,
+                                       d1, hyps[4], hyps[5], cutoffs[2],
+                                       cutoff_func)
 
     return two_term + three_term + many_term
 
 
 def two_plus_three_plus_many_body_en(env1: AtomicEnvironment, env2: AtomicEnvironment,
-                                       hyps, cutoffs, cutoff_func=cf.quadratic_cutoff):
+                                     hyps, cutoffs, cutoff_func=cf.quadratic_cutoff):
     """2+3+many-body single-element energy kernel.
 
     Args:
@@ -336,8 +338,8 @@ def two_plus_three_plus_many_body_en(env1: AtomicEnvironment, env2: AtomicEnviro
                           env1.triplet_counts, env2.triplet_counts,
                           hyps[2], hyps[3], cutoffs[1], cutoff_func)
 
-    many_term  = many_body_en_jit(env1.bond_array_mb, env2.bond_array_mb, hyps[4], hyps[5], cutoffs[2],
-                                                  cutoff_func)
+    many_term = many_body_en_jit(env1.bond_array_mb, env2.bond_array_mb, hyps[4], hyps[5], cutoffs[2],
+                                 cutoff_func)
 
     return two_term + three_term + many_term
 
@@ -656,9 +658,9 @@ def many_body_grad(env1, env2, d1, d2, hyps, cutoffs,
     num_neigh_2 = env2.num_neighs_mb
 
     kernel, sig_derv, ls_derv = many_body_grad_jit(bond_array_1, bond_array_2,
-                                                            neigh_dists_1, neigh_dists_2,
-                                                            num_neigh_1, num_neigh_2, d1, d2, sig,
-                                                            ls, r_cut, cutoff_func)
+                                                   neigh_dists_1, neigh_dists_2,
+                                                   num_neigh_1, num_neigh_2, d1, d2, sig,
+                                                   ls, r_cut, cutoff_func)
 
     kernel_grad = np.array([sig_derv, ls_derv])
 
@@ -666,7 +668,7 @@ def many_body_grad(env1, env2, d1, d2, hyps, cutoffs,
 
 
 def many_body_force_en(env1, env2, d1, hyps, cutoffs,
-                        cutoff_func=cf.quadratic_cutoff):
+                       cutoff_func=cf.quadratic_cutoff):
     """many-body single-element kernel between two local energies.
 
     Args:
@@ -685,8 +687,8 @@ def many_body_force_en(env1, env2, d1, hyps, cutoffs,
     r_cut = cutoffs[2]
 
     # divide by three to account for triple counting
-    return many_body_force_en_jit(env1.bond_array_mb, env2.bond_array_mb, env1.neigh_dists_mb, 
-                          env2.num_neighs_mb, d1, sig, ls, r_cut, cutoff_func)
+    return many_body_force_en_jit(env1.bond_array_mb, env2.bond_array_mb, env1.neigh_dists_mb,
+                                  env2.num_neighs_mb, d1, sig, ls, r_cut, cutoff_func)
 
 
 def many_body_en(env1, env2, hyps, cutoffs,
@@ -1322,13 +1324,13 @@ def many_body_jit(bond_array_1, bond_array_2,
             environment.
         bond_array_2 (np.ndarray): many-body bond array of the second local
             environment.
-        neighbouring_dists_array_1 (np.ndarray): matrix padded with zero values of distances 
-            of neighbours for the atoms in the first local environment. 
-        neighbouring_dists_array_2 (np.ndarray): matrix padded with zero values of distances 
-            of neighbours for the atoms in the second local environment. 
-        num_neighbours_1 (np.nsdarray): number of neighbours of each atom in the first 
+        neighbouring_dists_array_1 (np.ndarray): matrix padded with zero values of distances
+            of neighbours for the atoms in the first local environment.
+        neighbouring_dists_array_2 (np.ndarray): matrix padded with zero values of distances
+            of neighbours for the atoms in the second local environment.
+        num_neighbours_1 (np.nsdarray): number of neighbours of each atom in the first
             local environment
-        num_neighbours_2 (np.ndarray): number of neighbours of each atom in the second 
+        num_neighbours_2 (np.ndarray): number of neighbours of each atom in the second
             local environment
         d1 (int): Force component of the first environment.
         d2 (int): Force component of the second environment.
@@ -1348,20 +1350,20 @@ def many_body_jit(bond_array_1, bond_array_2,
 
     k12 = k_sq_exp_double_dev(q1, q2, sig, ls)
 
-    qis = np.zeros(bond_array_1.shape[0])
-    qi1_grads = np.zeros(bond_array_1.shape[0])
-    ki2s = np.zeros(bond_array_1.shape[0])
+    qis = np.zeros(bond_array_1.shape[0], dtype=np.float64)
+    qi1_grads = np.zeros(bond_array_1.shape[0], dtype=np.float64)
+    ki2s = np.zeros(bond_array_1.shape[0], dtype=np.float64)
 
-    qjs = np.zeros(bond_array_2.shape[0])
-    qj2_grads = np.zeros(bond_array_2.shape[0])
-    k1js = np.zeros(bond_array_2.shape[0])
+    qjs = np.zeros(bond_array_2.shape[0], dtype=np.float64)
+    qj2_grads = np.zeros(bond_array_2.shape[0], dtype=np.float64)
+    k1js = np.zeros(bond_array_2.shape[0], dtype=np.float64)
 
     # Loop over neighbours i of 1
     for i in range(bond_array_1.shape[0]):
         ri1 = bond_array_1[i, 0]
         ci1 = bond_array_1[i, d1]
         qi1, qi1_grads[i] = coordination_number(ri1, ci1, r_cut, cutoff_func)
-        # Calculate many-body descriptor value for i 
+        # Calculate many-body descriptor value for i
         qis[i] = q_value(neighbouring_dists_array_1[i, :num_neighbours_1[i]], r_cut,
                          cutoff_func)
 
@@ -1382,16 +1384,19 @@ def many_body_jit(bond_array_1, bond_array_2,
     for i in range(bond_array_1.shape[0]):
         for j in range(bond_array_2.shape[0]):
             kij = k_sq_exp_double_dev(qis[i], qjs[j], sig, ls)
-            kern += qi1_grads[i] * qj2_grads[j] * (k12 + ki2s[i] + k1js[j] + kij)
+            kern += qi1_grads[i] * qj2_grads[j] * \
+                (k12 + ki2s[i] + k1js[j] + kij)
 
     return kern
 
 @njit
+
+
 def many_body_grad_jit(bond_array_1, bond_array_2,
                        neighbouring_dists_array_1, neighbouring_dists_array_2,
                        num_neighbours_1, num_neighbours_2,
                        d1, d2, sig, ls, r_cut, cutoff_func):
-    """gradient of many-body single-element kernel between two force components 
+    """gradient of many-body single-element kernel between two force components
     w.r.t. the hyperparameters, accelerated with Numba.
 
     Args:
@@ -1399,13 +1404,13 @@ def many_body_grad_jit(bond_array_1, bond_array_2,
             environment.
         bond_array_2 (np.ndarray): many-body bond array of the second local
             environment.
-        neighbouring_dists_array_1 (np.ndarray): matrix padded with zero values of distances 
-            of neighbours for the atoms in the first local environment. 
-        neighbouring_dists_array_2 (np.ndarray): matrix padded with zero values of distances 
-            of neighbours for the atoms in the second local environment. 
-        num_neighbours_1 (np.nsdarray): number of neighbours of each atom in the first 
+        neighbouring_dists_array_1 (np.ndarray): matrix padded with zero values of distances
+            of neighbours for the atoms in the first local environment.
+        neighbouring_dists_array_2 (np.ndarray): matrix padded with zero values of distances
+            of neighbours for the atoms in the second local environment.
+        num_neighbours_1 (np.nsdarray): number of neighbours of each atom in the first
             local environment
-        num_neighbours_2 (np.ndarray): number of neighbours of each atom in the second 
+        num_neighbours_2 (np.ndarray): number of neighbours of each atom in the second
             local environment
         d1 (int): Force component of the first environment.
         d2 (int): Force component of the second environment.
@@ -1428,17 +1433,17 @@ def many_body_grad_jit(bond_array_1, bond_array_2,
 
     k12 = k_sq_exp_double_dev(q1, q2, sig, ls)
 
-    qis = np.zeros(bond_array_1.shape[0])
+    qis = np.zeros(bond_array_1.shape[0], dtype=np.float64)
 
-    qi1_grads = np.zeros(bond_array_1.shape[0])
+    qi1_grads = np.zeros(bond_array_1.shape[0], dtype=np.float64)
 
-    ki2s = np.zeros(bond_array_1.shape[0])
+    ki2s = np.zeros(bond_array_1.shape[0], dtype=np.float64)
 
-    qjs = np.zeros(bond_array_2.shape[0])
+    qjs = np.zeros(bond_array_2.shape[0], dtype=np.float64)
 
-    qj2_grads = np.zeros(bond_array_2.shape[0])
+    qj2_grads = np.zeros(bond_array_2.shape[0], dtype=np.float64)
 
-    k1js = np.zeros(bond_array_2.shape[0])
+    k1js = np.zeros(bond_array_2.shape[0], dtype=np.float64)
 
     # Compute  ki2s, qi1_grads, and qis
     for i in range(bond_array_1.shape[0]):
@@ -1468,7 +1473,8 @@ def many_body_grad_jit(bond_array_1, bond_array_2,
         for j in range(bond_array_2.shape[0]):
             kij = k_sq_exp_double_dev(qis[i], qjs[j], sig, ls)
 
-            kern_term = qi1_grads[i] * qj2_grads[j] * (k12 + ki2s[i] + k1js[j] + kij)
+            kern_term = qi1_grads[i] * qj2_grads[j] * \
+                (k12 + ki2s[i] + k1js[j] + kij)
 
             sig_term = 2. / sig * kern_term
 
@@ -1488,9 +1494,9 @@ def many_body_grad_jit(bond_array_1, bond_array_2,
 
 @njit
 def many_body_force_en_jit(bond_array_1, bond_array_2,
-                  neighbouring_dists_array_1,
-                  num_neighbours_1,
-                  d1, sig, ls, r_cut, cutoff_func):
+                           neighbouring_dists_array_1,
+                           num_neighbours_1,
+                           d1, sig, ls, r_cut, cutoff_func):
     """many-body single-element kernel between force and energy components accelerated
     with Numba.
 
@@ -1499,9 +1505,9 @@ def many_body_force_en_jit(bond_array_1, bond_array_2,
             environment.
         bond_array_2 (np.ndarray): many-body bond array of the second local
             environment.
-        neighbouring_dists_array_1 (np.ndarray): matrix padded with zero values of distances 
-            of neighbours for the atoms in the first local environment. 
-        num_neighbours_1 (np.nsdarray): number of neighbours of each atom in the first 
+        neighbouring_dists_array_1 (np.ndarray): matrix padded with zero values of distances
+            of neighbours for the atoms in the first local environment.
+        num_neighbours_1 (np.nsdarray): number of neighbours of each atom in the first
             local environment
         d1 (int): Force component of the first environment.
         sig (float): many-body signal variance hyperparameter.
@@ -1513,34 +1519,35 @@ def many_body_force_en_jit(bond_array_1, bond_array_2,
         float: Value of the many-body kernel.
     """
 
-    kern = 0 
+    kern = 0
 
     q1 = q_value(bond_array_1[:, 0], r_cut, cutoff_func)
     q2 = q_value(bond_array_2[:, 0], r_cut, cutoff_func)
 
     k12 = k_sq_exp_dev(q1, q2, sig, ls)
 
-    qis = np.zeros(bond_array_1.shape[0])
-    qi1_grads = np.zeros(bond_array_1.shape[0])
-    ki2s = np.zeros(bond_array_1.shape[0])
+    qis = np.zeros(bond_array_1.shape[0], dtype=np.float64)
+    qi1_grads = np.zeros(bond_array_1.shape[0], dtype=np.float64)
+    ki2s = np.zeros(bond_array_1.shape[0], dtype=np.float64)
 
     # Loop over neighbours i of 1
     for i in range(bond_array_1.shape[0]):
         ri1 = bond_array_1[i, 0]
         ci1 = bond_array_1[i, d1]
         _, qi1_grads[i] = coordination_number(ri1, ci1, r_cut, cutoff_func)
-        # Calculate many-body descriptor value for i 
+        # Calculate many-body descriptor value for i
         qis[i] = q_value(neighbouring_dists_array_1[i, :num_neighbours_1[i]], r_cut,
                          cutoff_func)
 
         ki2s[i] = k_sq_exp_dev(qis[i], q2, sig, ls)
-
 
         kern += - qi1_grads[i] * (k12 + ki2s[i])
 
     return kern
 
 @njit
+
+
 def many_body_en_jit(bond_array_1, bond_array_2,
                      sig, ls, r_cut, cutoff_func):
     """many-body single-element energy kernel between accelerated
@@ -1577,90 +1584,6 @@ def many_body_en_jit(bond_array_1, bond_array_2,
     kern = sig * sig * exp(-q1q2diff * q1q2diff / (2 * ls * ls))
 
     return kern
-
-
-# -----------------------------------------------------------------------------
-#                            general helper functions
-# -----------------------------------------------------------------------------
-
-
-@njit
-def grad_constants(sig, ls):
-    sig2 = sig * sig
-    sig3 = 2 * sig
-
-    ls1 = 1 / (2 * ls * ls)
-    ls2 = 1 / (ls * ls)
-    ls3 = ls2 * ls2
-    ls4 = 1 / (ls * ls * ls)
-    ls5 = ls * ls
-    ls6 = ls2 * ls4
-
-    return sig2, sig3, ls1, ls2, ls3, ls4, ls5, ls6
-
-
-@njit
-def force_helper(A, B, C, D, fi, fj, fdi, fdj, ls1, ls2, ls3, sig2):
-    """Helper function for computing the force/force kernel between two
-    pairs or triplets of atoms of the same type.
-
-    See Table IV of the SI of the FLARE paper for definitions of intermediate
-    quantities.
-
-    Returns:
-        float: Force/force kernel between two pairs or triplets of atoms of
-            the same type.
-    """
-    E = exp(-D * ls1)
-    F = E * B * ls2
-    G = -E * C * ls2
-    H = A * E * ls2 - B * C * E * ls3
-    I = E * fdi * fdj
-    J = F * fi * fdj
-    K = G * fdi * fj
-    L = H * fi * fj
-    M = sig2 * (I + J + K + L)
-
-    return M
-
-
-@njit
-def grad_helper(A, B, C, D, fi, fj, fdi, fdj, ls1, ls2, ls3, ls4, ls5, ls6,
-                sig2, sig3):
-    E = exp(-D * ls1)
-    F = E * B * ls2
-    G = -E * C * ls2
-    H = A * E * ls2 - B * C * E * ls3
-    I = E * fdi * fdj
-    J = F * fi * fdj
-    K = G * fdi * fj
-    L = H * fi * fj
-    M = I + J + K + L
-    N = sig2 * M
-    O = sig3 * M
-    P = E * D * ls4
-    Q = B * (ls2 * P - 2 * E * ls4)
-    R = -C * (ls2 * P - 2 * E * ls4)
-    S = (A * ls5 - B * C) * (P * ls3 - 4 * E * ls6) + 2 * E * A * ls4
-    T = P * fdi * fdj
-    U = Q * fi * fdj
-    V = R * fdi * fj
-    W = S * fi * fj
-    X = sig2 * (T + U + V + W)
-
-    return N, O, X
-
-
-@njit
-def force_energy_helper(B, D, fi, fj, fdi, ls1, ls2, sig2):
-    E = exp(-D * ls1)
-    F = E * B * ls2
-    G = -F * fi * fj
-    H = -E * fdi * fj
-    I = sig2 * (G + H)
-
-    return I
-
 
 # -----------------------------------------------------------------------------
 #                        three body helper functions
@@ -1740,72 +1663,9 @@ def triplet_kernel_grad(ci1, ci2, cj1, cj2, ri1, ri2, ri3, rj1, rj2, rj3, fi,
     X = X1 + X2 + X3 + X4 + X5 + X6
     return N, O, X
 
-
 @njit
-def three_body_helper_1(ci1, ci2, cj1, cj2, r11, r22, r33,
-                        fi, fj, fdi, fdj,
-                        ls1, ls2, ls3, sig2):
-    A = ci1 * cj1 + ci2 * cj2
-    B = r11 * ci1 + r22 * ci2
-    C = r11 * cj1 + r22 * cj2
-    D = r11 * r11 + r22 * r22 + r33 * r33
-
-    M = force_helper(A, B, C, D, fi, fj, fdi, fdj, ls1, ls2, ls3, sig2)
-
-    return M
 
 
-@njit
-def three_body_helper_2(ci1, ci2, cj1, cj2, r12, r23, r31,
-                        fi, fj, fdi, fdj,
-                        ls1, ls2, ls3, sig2):
-    A = ci1 * cj2
-    B = r12 * ci1 + r23 * ci2
-    C = r12 * cj2 + r31 * cj1
-    D = r12 * r12 + r23 * r23 + r31 * r31
-
-    M = force_helper(A, B, C, D, fi, fj, fdi, fdj, ls1, ls2, ls3, sig2)
-
-    return M
-
-
-@njit
-def three_body_grad_helper_1(ci1, ci2, cj1, cj2, r11, r22, r33, fi, fj, fdi,
-                             fdj, ls1, ls2, ls3, ls4, ls5, ls6, sig2, sig3):
-    A = ci1 * cj1 + ci2 * cj2
-    B = r11 * ci1 + r22 * ci2
-    C = r11 * cj1 + r22 * cj2
-    D = r11 * r11 + r22 * r22 + r33 * r33
-
-    N, O, X = grad_helper(A, B, C, D, fi, fj, fdi, fdj, ls1, ls2, ls3, ls4,
-                          ls5, ls6, sig2, sig3)
-
-    return N, O, X
-
-
-@njit
-def three_body_grad_helper_2(ci1, ci2, cj1, cj2, r12, r23, r31, fi, fj, fdi,
-                             fdj, ls1, ls2, ls3, ls4, ls5, ls6, sig2, sig3):
-    A = ci1 * cj2
-    B = r12 * ci1 + r23 * ci2
-    C = r12 * cj2 + r31 * cj1
-    D = r12 * r12 + r23 * r23 + r31 * r31
-
-    N, O, X = grad_helper(A, B, C, D, fi, fj, fdi, fdj, ls1, ls2, ls3, ls4,
-                          ls5, ls6, sig2, sig3)
-
-    return N, O, X
-
-
-@njit
-def three_body_en_helper(ci1, ci2, r11, r22, r33, fi, fj, fdi, ls1, ls2, sig2):
-    B = r11 * ci1 + r22 * ci2
-    D = r11 * r11 + r22 * r22 + r33 * r33
-
-    return force_energy_helper(B, D, fi, fj, fdi, ls1, ls2, sig2)
-
-
-@njit
 def triplet_force_en_kernel(ci1, ci2, ri1, ri2, ri3, rj1, rj2, rj3,
                             fi, fj, fdi, ls1, ls2, sig2):
     r11 = ri1 - rj1
@@ -1862,6 +1722,8 @@ def k_sq_exp_double_dev(q1, q2, sig, ls):
     return ret
 
 @njit
+
+
 def k_sq_exp_dev(q1, q2, sig, ls):
     """Second Gradient of generic squared exponential kernel on two many body functions
 
@@ -1874,7 +1736,7 @@ def k_sq_exp_dev(q1, q2, sig, ls):
         float: the value of the derivative of the squared exponential kernel
     """
 
-    qdiff = (q1 - q2) 
+    qdiff = (q1 - q2)
 
     ls2 = ls * ls
 
@@ -1887,7 +1749,7 @@ def k_sq_exp_dev(q1, q2, sig, ls):
 
 @njit
 def coordination_number(rij, cij, r_cut, cutoff_func):
-    """Pairwise contribution to many-body descriptor based on number of 
+    """Pairwise contribution to many-body descriptor based on number of
         atoms in the environment
 
     Args:
@@ -1944,6 +1806,8 @@ def mb_grad_helper_ls_(qdiffsq, sig, ls):
     return ret
 
 @njit
+
+
 def mb_grad_helper_ls(q1, q2, qi, qj, sig, ls):
     """Helper function fr many body gradient collecting all the derivatives
     of the force-foce many body kernel wrt ls
@@ -1963,7 +1827,6 @@ def mb_grad_helper_ls(q1, q2, qi, qj, sig, ls):
     return dk12 + dkij + dki2 + dk1j
 
 
-
 _str_to_kernel = {'two_body': two_body,
                   'two_body_en': two_body_en,
                   'two_body_force_en': two_body_force_en,
@@ -1972,10 +1835,31 @@ _str_to_kernel = {'two_body': two_body,
                   'three_body_force_en': three_body_force_en,
                   'two_plus_three_body': two_plus_three_body,
                   'two_plus_three_en': two_plus_three_en,
-                  'two_plus_three_force_en': two_plus_three_force_en, 
-                  'two_plus_three_plus_many_body': two_plus_three_body,
-                  'two_plus_three_plus_many_en': two_plus_three_plus_many_body_en,
-                  'two_plus_three_plus_many_force_en': two_plus_three_plus_many_body_force_en, 
+                  'two_plus_three_force_en': two_plus_three_force_en,
+                  '2': two_body,
+                  '2_en': two_body_en,
+                  '2_grad': two_body_grad,
+                  '2_force_en': two_body_force_en,
+                  '3': three_body,
+                  '3_grad': three_body_grad,
+                  '3_en': three_body_en,
+                  '3_force_en': three_body_force_en,
+                  '2+3': two_plus_three_body,
+                  '2+3_grad': two_plus_three_body_grad,
+                  '2+3_en': two_plus_three_en,
+                  '2+3_force_en': two_plus_three_force_en,
+                  'many': many_body,
+                  'many_en': many_body_en,
+                  'many_grad': many_body_grad,
+                  'many_force_en': many_body_force_en,
+                  'two_plus_three_plus_many_body': two_plus_three_plus_many_body,
+                  'two_plus_three_plus_many_body_grad': two_plus_three_plus_many_body_grad,
+                  'two_plus_three_plus_many_body_en': two_plus_three_plus_many_body_en,
+                  'two_plus_three_plus_many_body_force_en': two_plus_three_plus_many_body_force_en,
+                  '2+3+many': two_plus_three_plus_many_body,
+                  '2+3+many_grad': two_plus_three_plus_many_body_grad,
+                  '2+3+many_en': two_plus_three_plus_many_body_en,
+                  '2+3+many_force_en': two_plus_three_plus_many_body_force_en
                   }
 
 

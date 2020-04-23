@@ -8,41 +8,34 @@ Step 1: Set up a GP Model
 -------------------------
 
 Let's start up with the GP model with three-body kernel function. 
-(See :doc:`kernels.py <../flare/kernels>` (single component)
-or :doc:`mc_simple.py <../flare/mc_simple>` (multi-component) for more options.)
+(See :doc:`kernels.py <../flare/kernels/sc>` (single component)
+or :doc:`mc_simple.py <../flare/kernels/mc_simple>` (multi-component) for more options.)
 
 .. code-block:: python
     :linenos:
 
     # make gp model
-    kernel = en.three_body
-    kernel_grad = en.three_body_grad
     hyps = np.array([0.1, 1, 0.01])
     hyp_labels = ['Signal Std', 'Length Scale', 'Noise Std']
     cutoffs = np.array([3.9, 3.9])
-    energy_force_kernel = en.three_body_force_en
 
     gp = \
-        GaussianProcess(kernel=kernel,
-                        kernel_grad=kernel_grad,
+        GaussianProcess(kernel_name='3b',
                         hyps=hyps,
                         cutoffs=cutoffs,
                         hyp_labels=hyp_labels,
-                        energy_force_kernel=energy_force_kernel,
                         maxiter=50)
 
 
 **Some Explanation about the parameters:**
 
-* ``kernel``: set to be the kernel function  
+* ``kernel_name``: set to be the name of kernel functions
 
-    * import from :doc:`kernels.py <../flare/kernels>` (single-component system) 
-      or :doc:`mc_simple.py <../flare/mc_simple>` (multi-component system). 
+    * import from :doc:`sc.py <../flare/kernels/sc>` (single-component system) 
+      or :doc:`mc_simple.py <../flare/kernels/mc_simple>` (multi-component system). 
     * Currently we have the choices of two-body, three-body and two-plus-three-body kernel functions.
     * Two-plus-three-body kernel function is simply the summation of two-body and three-body kernels,
       and is tested to have best performance.
-
-* ``kernel_grad``: set to be the gradient of kernel function used for hyperparameter training. 
 
 * ``hyps``: the array of hyperparameters, whose names are shown in ``hyp_labels``.
 
@@ -53,20 +46,12 @@ or :doc:`mc_simple.py <../flare/mc_simple>` (multi-component) for more options.)
 * ``cutoffs``: consists of two values. The 1st is the cutoff of two-body and the 2nd is for three-body kernel. 
   Usually we will set a larger one for two-body.
 
-* ``energy_force_kernel``: set to calculate local energy for each atom based on the integral of forces. 
-
 * ``maxiter``: set to constrain the number of steps in training hyperparameters. 
 
 
 **Note:**
 
 1. See :doc:`GaussianProcess <../flare/gp>` for complete description of arguments of ``GaussianProcess`` class.
-
-2. In any case, you need to set up ``kernel``. 
-
-    a. If you want to train the hyperparameters, you need to set up ``kernel_grad``;
-    b. If you want the output of local energy, you need to set up ``energy_force_kernel`` and ``energy_kernel``, 
-       otherwise you don't need them.
 
 
 Step 2: Set up DFT Calculator

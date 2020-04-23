@@ -1,5 +1,5 @@
 Multi-element Kernels
 =====================
 
-.. automodule:: flare.mc_simple
+.. automodule:: flare.kernels.mc_simple
     :members:
