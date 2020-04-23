@@ -55,7 +55,8 @@ class AtomicEnvironment:
 
         # if 3 cutoffs are given, create many-body arrays
         if len(self.cutoffs) > 2:
-            self.bond_array_mb, self.neigh_dists_mb, self.num_neighs_mb, self.etype_mb = get_m_body_arrays(
+            self.bond_array_mb, self.neigh_dists_mb, self.num_neighs_mb, self.etype_mb, \
+                    self.bond_array_mb_etypes = get_m_body_arrays(
                 self.positions, self.atom, self.cell, self.cutoffs[2], self.species)
         else:
             self.bond_array_mb = None
@@ -406,7 +407,7 @@ def get_m_body_arrays(positions, atom: int, cell, cutoff_mb: float, species):
     """
     # TODO: this can be probably improved using stored arrays, redundant calls to get_2_body_arrays
     # Get distances, positions, species and indexes of neighbouring atoms
-    bond_array_mb, __, _, bond_inds = get_2_body_arrays_ind(
+    bond_array_mb, __, etypes, bond_inds = get_2_body_arrays_ind(
         positions, atom, cell, cutoff_mb, species)
 
     # For each neighbouring atom, get distances in its neighbourhood
@@ -431,7 +432,7 @@ def get_m_body_arrays(positions, atom: int, cell, cutoff_mb: float, species):
         etypes_mb_array[i, :num_neighs_mb[i]] = neighbouring_etypes[i]
 
 
-    return bond_array_mb, neigh_dists_mb, num_neighs_mb, etypes_mb_array
+    return bond_array_mb, neigh_dists_mb, num_neighs_mb, etypes_mb_array, etypes
 
 
 if __name__ == '__main__':
