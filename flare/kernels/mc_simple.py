@@ -252,7 +252,8 @@ def two_plus_three_plus_many_body_mc(env1: AtomicEnvironment, env2: AtomicEnviro
 
     many_term = many_body_mc_jit(env1.bond_array_mb, env2.bond_array_mb, env1.neigh_dists_mb,
                                  env2.neigh_dists_mb, env1.num_neighs_mb, env2.num_neighs_mb,
-                                 env1.ctype, env2.ctype, env1.etypes, env2.etypes,
+                                 env1.ctype, env2.ctype,
+                                 env1.bond_array_mb_etypes, env2.bond_array_mb_etypes,
                                  env1.etype_mb, env2.etype_mb, env1.species, env2.species,
                                  d1, d2, sigm, lsm, r_cut_m, cutoff_func)
 
@@ -305,7 +306,8 @@ def two_plus_three_plus_many_body_mc_grad(env1: AtomicEnvironment, env2: AtomicE
     kern_many, gradm = many_body_mc_grad_jit(env1.bond_array_mb, env2.bond_array_mb,
                                              env1.neigh_dists_mb, env2.neigh_dists_mb,
                                              env1.num_neighs_mb, env2.num_neighs_mb, env1.ctype,
-                                             env2.ctype, env1.etypes, env2.etypes,
+                                             env2.ctype, env1.bond_array_mb_etypes,
+                                             env2.bond_array_mb_etypes,
                                              env1.etype_mb, env2.etype_mb,
                                              env1.species, env2.species, d1, d2, sigm,
                                              lsm, r_cut_m, cutoff_func)
@@ -359,7 +361,8 @@ def two_plus_three_plus_many_body_mc_force_en(env1: AtomicEnvironment, env2: Ato
 
     many_term = many_body_mc_force_en_jit(env1.bond_array_mb, env2.bond_array_mb,
                                           env1.neigh_dists_mb, env1.num_neighs_mb,
-                                          env1.ctype, env2.ctype, env1.etypes, env2.etypes,
+                                          env1.ctype, env2.ctype, env1.bond_array_mb_etypes,
+                                          env2.bond_array_mb_etypes,
                                           env1.etype_mb,
                                           env1.species, env2.species, d1, sigm, lsm, r_cut_m,
                                           cutoff_func)
@@ -408,7 +411,8 @@ def two_plus_three_plus_many_body_mc_en(env1: AtomicEnvironment, env2: AtomicEnv
                              sig3, ls3, r_cut_3, cutoff_func)
 
     many_term = many_body_mc_en_jit(env1.bond_array_2, env2.bond_array_2, env1.ctype,
-                                    env2.ctype, env1.etypes, env2.etypes, env1.species,
+                                    env2.ctype, env1.bond_array_mb_etypes,
+                                    env2.bond_array_mb_etypes, env1.species,
                                     env2.species,
                                     sigm, lsm, r_cut_m, cutoff_func)
 
@@ -707,7 +711,7 @@ def many_body_mc(env1: AtomicEnvironment, env2: AtomicEnvironment,
 
     # Get atomic species of central atom, their neighbours, and their neighbours' neighbours
     c1, c2 = env1.ctype, env2.ctype
-    etypes1, etypes2 = env1.etypes, env2.etypes
+    etypes1, etypes2 = env1.bond_array_mb_etypes, env2.bond_array_mb_etypes
     etypes_neigh_1, etypes_neigh_2 = env1.etype_mb, env2.etype_mb
 
     return many_body_mc_jit(bond_array_1, bond_array_2, neigh_dists_1, neigh_dists_2, num_neigh_1,
@@ -735,7 +739,7 @@ def many_body_mc_grad(env1: AtomicEnvironment, env2: AtomicEnvironment,
     num_neigh_2 = env2.num_neighs_mb
 
     c1, c2 = env1.ctype, env2.ctype
-    etypes1, etypes2 = env1.etypes, env2.etypes
+    etypes1, etypes2 = env1.bond_array_mb_etypes, env2.bond_array_mb_etypes
     etypes_neigh_1, etypes_neigh_2 = env1.etype_mb, env2.etype_mb
 
     kernel, kernel_grad = many_body_mc_grad_jit(bond_array_1, bond_array_2, neigh_dists_1,
@@ -773,7 +777,7 @@ def many_body_mc_force_en(env1, env2, d1, hyps, cutoffs,
     num_neigh_1 = env1.num_neighs_mb
 
     c1, c2 = env1.ctype, env2.ctype
-    etypes1, etypes2 = env1.etypes, env2.etypes
+    etypes1, etypes2 = env1.bond_array_mb_etypes, env2.bond_array_mb_etypes
     etypes_neigh_1 = env1.etype_mb
 
     # divide by three to account for triple counting
@@ -802,8 +806,9 @@ def many_body_mc_en(env1: AtomicEnvironment, env2: AtomicEnvironment,
     ls = hyps[1]
     r_cut = cutoffs[2]
 
-    return many_body_mc_en_jit(env1.bond_array_2, env2.bond_array_2, env1.ctype,
-                               env2.ctype, env1.etypes, env2.etypes, env1.species, env2.species,
+    return many_body_mc_en_jit(env1.bond_array_mb, env2.bond_array_mb, env1.ctype,
+                               env2.ctype, env1.bond_array_mb_etypes, env2.bond_array_mb_etypes,
+                               env1.species, env2.species,
                                sig, ls, r_cut, cutoff_func)
 
 
