@@ -149,7 +149,6 @@ def from_mask_to_args(hyps, hyps_mask: dict, cutoffs):
             nspec = hyps_mask['nspec']
             mb_mask = np.zeros(nspec*nspec, dtype=int)
 
-
     sig2 = None
     ls2 = None
     sig3 = None

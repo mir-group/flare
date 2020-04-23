@@ -319,11 +319,10 @@ def mb_grad_helper_ls_(qdiffsq, sig, ls):
     return ret
 
 @njit
-
 def mb_grad_helper_ls(q1, q2, qi, qj, sig, ls):
-
-    """Helper function fr many body gradient collecting all the derivatives
-    of the force-foce many body kernel wrt ls
+    """
+    Helper function for many body gradient collecting all the derivatives
+    of the force-force many body kernel w.r.t. ls
     """
 
     q12diffsq = ((q1 - q2) * (q1 - q2))
