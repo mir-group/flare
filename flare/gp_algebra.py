@@ -1028,6 +1028,45 @@ def en_kern_vec_unit(name, s, e, x, kernel, hyps, cutoffs=None, hyps_mask=None):
     return k_v
 
 
+def get_en_kernel_mat(struc, name, kernel, hyps, cutoffs, hyps_mask):
+    """
+    Compute all the kernel vectors in parallel.
+    """
+    n_training = len(_global_training_data[name])
+    N = struc.nat
+    kernel_mat = np.zeros((N, n_training, 3))
+
+    Ntot = N * n_training
+
+    comm = MPI.COMM_WORLD
+    rank = comm.Get_rank()
+    size = comm.Get_size()
+
+    ranks = np.arange(size)
+    local_starts = np.floor(Ntot * ranks / size).astype(np.int32)
+    local_ends = np.floor(Ntot * (ranks + 1) / size).astype(np.int32)
+    local_sizes = local_ends - local_starts
+
+    old_atom = -13
+
+    for x in range(local_starts[rank], local_ends[rank]):
+        atom = x // (n_training)
+        tmp = x - n_training * atom
+
+        if atom != old_atom:
+            old_atom = atom
+            chemenv = AtomicEnvironment(struc, atom, cutoffs)
+
+        kernel_mat[atom, tmp, :] = en_kern_vec_unit(
+            name, tmp, tmp + 1, chemenv, kernel, hyps, cutoffs, hyps_mask,
+        )
+    comm.Allgatherv(
+        MPI.IN_PLACE, [kernel_mat, 3 * local_sizes, 3 * local_starts, MPI.DOUBLE]
+    )
+
+    return kernel_mat
+
+
 def en_kern_vec(
     name, kernel, x, hyps, cutoffs=None, hyps_mask=None, n_cpus=1, n_sample=100
 ):

@@ -541,9 +541,13 @@ class GaussianProcess:
             n_sample=self.n_sample,
         )
 
-        pred_mean = np.matmul(k_v, self.alpha)
+        pred_mean = self.predict_en_on_kern_vec(k_v)
 
         return pred_mean
+
+    def predict_en_on_kern_vec(self, k_v) -> float:
+        # print(k_v.shape, self.alpha.shape)
+        return np.matmul(k_v, self.alpha)
 
     def predict_local_energy_and_var(self, x_t: AtomicEnvironment):
         """Predict the local energy of a local environment and its
@@ -573,7 +577,9 @@ class GaussianProcess:
             n_sample=self.n_sample,
         )
 
-        # get predictive mean
+        return self.predict_en_and_var_on_kern_vec(k_v, x_t)
+
+    def predict_en_and_var_on_kern_vec(self, k_v, x_t):
         pred_mean = np.matmul(k_v, self.alpha)
 
         # get predictive variance

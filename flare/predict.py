@@ -10,7 +10,7 @@ from typing import Tuple
 from flare.env import AtomicEnvironment
 from flare.gp import GaussianProcess
 from flare.struc import Structure
-from flare.gp_algebra import get_kernel_mat
+from flare.gp_algebra import get_kernel_mat, get_en_kernel_mat
 from mpi4py import MPI
 
 
@@ -190,7 +190,10 @@ def predict_on_structure_par(
 
 
 def predict_on_structure_en(
-    structure: Structure, gp: GaussianProcess, n_cpus: int = None
+    structure: Structure,
+    gp: GaussianProcess,
+    n_cpus: int = None,
+    write_to_structure: bool = True,
 ) -> ("np.ndarray", "np.ndarray", "np.ndarray"):
     """
     Return the forces/std. dev. uncertainty / local energy associated with each
@@ -208,6 +211,12 @@ def predict_on_structure_en(
     # Set up local energy array
     local_energies = np.zeros(structure.nat)
 
+    forces, stds = predict_on_structure(structure, gp, write_to_structure)
+
+    kernel_mat = get_en_kernel_mat(
+        structure, gp.name, gp.energy_force_kernel, gp.hyps, gp.cutoffs, gp.hyps_mask
+    )
+
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
     size = comm.Get_size()
@@ -221,26 +230,12 @@ def predict_on_structure_en(
     # Loop through atoms in structure and predict forces, uncertainties,
     # and energies
     for n in range(local_starts[rank], local_ends[rank]):
-        chemenv = AtomicEnvironment(structure, n, gp.cutoffs)
-        for i in range(3):
-            force, var = gp.predict(chemenv, i + 1)
-            structure.forces[n][i] = float(force)
-            structure.stds[n][i] = np.sqrt(np.abs(var))
-        local_energies[n] = gp.predict_local_energy(chemenv)
+        local_energies[n] = gp.predict_en_on_kern_vec(kernel_mat[n].reshape(-1))
 
-    print("WARNING: Haven't tested MPI predict_en")
-    comm.Allgatherv(
-        MPI.IN_PLACE, [structure.forces, 3 * local_sizes, 3 * local_starts, MPI.DOUBLE]
-    )
-    comm.Allgatherv(
-        MPI.IN_PLACE, [structure.stds, 3 * local_sizes, 3 * local_starts, MPI.DOUBLE]
-    )
     comm.Allgatherv(
         MPI.IN_PLACE, [local_energies, local_sizes, local_starts, MPI.DOUBLE]
     )
 
-    forces = np.array(structure.forces)
-    stds = np.array(structure.stds)
     return forces, stds, local_energies
 
 
