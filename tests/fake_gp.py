@@ -271,5 +271,4 @@ def generate_mb_envs_pos(positions0, species_1, cutoffs, cell, delt, d1, mask=No
         env_0 += [env.AtomicEnvironment(test_struc[0], i, cutoffs, mask)]
         env_p += [env.AtomicEnvironment(test_struc[1], i, cutoffs, mask)]
         env_m += [env.AtomicEnvironment(test_struc[2], i, cutoffs, mask)]
-
     return [env_0, env_p, env_m]
