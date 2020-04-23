@@ -4,15 +4,17 @@ from copy import deepcopy
 import pytest
 import numpy as np
 from numpy.random import random, randint
+from numpy import isclose
 
 from flare import env, struc, gp
 from flare.kernels.mc_sephyps import _str_to_kernel as stk
 from flare.kernels.utils import from_mask_to_args, str_to_kernel_set
-from flare.cutoffs import  quadratic_cutoff_bound
+from flare.cutoffs import quadratic_cutoff_bound
 
-from .fake_gp import generate_envs, generate_mb_envs
+from .fake_gp import generate_mb_envs, generate_mb_twin_envs
 
 list_to_test = ['2', '3', 'mb', '2+3', '2+3+mb']
+
 
 @pytest.mark.parametrize('kernel_name', list_to_test)
 @pytest.mark.parametrize('diff_cutoff', [True, False])
@@ -20,17 +22,20 @@ def test_force_en_multi_vs_simple(kernel_name, diff_cutoff):
     """Check that the analytical kernel matches the one implemented
     in mc_simple.py"""
 
-    cutoffs = np.ones(3, dtype=np.float64)
-    delta = 1e-8
-    env1_1, env1_2, env1_3, env2_1, env2_2, env2_3 = generate_envs(
-        cutoffs, delta)
-
-    # set hyperparameters
     d1 = 1
     d2 = 2
     tol = 1e-4
+    cell = 1e7 * np.eye(3)
 
-    cutoffs, hyps0, hyps1, hyps2, hm1, hm2 = generate_same_hm(kernel_name, diff_cutoff)
+    # set hyperparameters
+    cutoffs, hyps0, hyps1, hyps2, hm1, hm2 = generate_same_hm(
+        kernel_name, diff_cutoff)
+
+    delta = 1e-8
+    env1 = generate_mb_envs(cutoffs, cell, delta, d1)
+    env2 = generate_mb_envs(cutoffs, cell, delta, d2)
+    env1 = env1[0][0]
+    env2 = env2[0][0]
 
     # mc_simple
     kernel0, kg0, en_kernel0, force_en_kernel0 = str_to_kernel_set(
@@ -38,6 +43,9 @@ def test_force_en_multi_vs_simple(kernel_name, diff_cutoff):
     args0 = (hyps0, cutoffs)
 
     # mc_sephyps
+    # args1 and args 2 use 1 and 2 groups of hyper-parameters
+    # if (diff_cutoff), 1 or 2 group of cutoffs
+    # but same value as in args0
     kernel, kg, en_kernel, force_en_kernel = str_to_kernel_set(
         kernel_name, True)
     args1 = from_mask_to_args(hyps1, hm1, cutoffs)
@@ -46,46 +54,127 @@ def test_force_en_multi_vs_simple(kernel_name, diff_cutoff):
     funcs = [[kernel0, kg0, en_kernel0, force_en_kernel0],
              [kernel, kg, en_kernel, force_en_kernel]]
 
+    # compare whether mc_sephyps and mc_simple
+    # yield the same values
     i = 0
-    reference = funcs[0][i](env1_1, env2_1, d1, d2, *args0)
-    result = funcs[1][i](env1_1, env2_1, d1, d2, *args1)
-    assert(np.isclose(reference, result, atol=tol))
+    reference = funcs[0][i](env1, env2, d1, d2, *args0)
+    result = funcs[1][i](env1, env2, d1, d2, *args1)
+    assert(isclose(reference, result, rtol=tol))
     print(kernel_name, i, reference, result)
-    result = funcs[1][i](env1_1, env2_1, d1, d2, *args2)
-    assert(np.isclose(reference, result, atol=tol))
+    result = funcs[1][i](env1, env2, d1, d2, *args2)
+    assert(isclose(reference, result, rtol=tol))
     print(kernel_name, i, reference, result)
 
     i = 1
-    reference = funcs[0][i](env1_1, env2_1, d1, d2, *args0)
-    result = funcs[1][i](env1_1, env2_1, d1, d2, *args1)
+    reference = funcs[0][i](env1, env2, d1, d2, *args0)
+    result = funcs[1][i](env1, env2, d1, d2, *args1)
     print(kernel_name, i, reference, result)
-    assert(np.isclose(reference[0], result[0], atol=tol))
-    assert(np.isclose(reference[1], result[1], atol=tol).all())
-    result = funcs[1][i](env1_1, env2_1, d1, d2, *args2)
+    assert(isclose(reference[0], result[0], rtol=tol))
+    assert(isclose(reference[1], result[1], rtol=tol).all())
+
+    result = funcs[1][i](env1, env2, d1, d2, *args2)
     print(kernel_name, i, reference, result)
-    assert(np.isclose(reference[0], result[0], atol=tol))
+    assert(isclose(reference[0], result[0], rtol=tol))
     joint_grad = np.zeros(len(result[1])//2)
     for i in range(joint_grad.shape[0]):
         joint_grad[i] = result[1][i*2] + result[1][i*2+1]
-    assert(np.isclose(reference[1], joint_grad, atol=tol).all())
+    assert(isclose(reference[1], joint_grad, rtol=tol).all())
 
     i = 2
-    reference = funcs[0][i](env1_1, env2_1, *args0)
-    result = funcs[1][i](env1_1, env2_1, *args1)
+    reference = funcs[0][i](env1, env2, *args0)
+    result = funcs[1][i](env1, env2, *args1)
     print(kernel_name, i, reference, result)
-    assert(np.isclose(reference, result, atol=tol))
-    result = funcs[1][i](env1_1, env2_1, *args2)
+    assert(isclose(reference, result, rtol=tol))
+    result = funcs[1][i](env1, env2, *args2)
     print(kernel_name, i, reference, result)
-    assert(np.isclose(reference, result, atol=tol))
+    assert(isclose(reference, result, rtol=tol))
 
     i = 3
-    reference = funcs[0][i](env1_1, env2_1, d1, *args0)
-    result = funcs[1][i](env1_1, env2_1, d1, *args1)
+    reference = funcs[0][i](env1, env2, d1, *args0)
+    result = funcs[1][i](env1, env2, d1, *args1)
     print(kernel_name, i, reference, result)
-    assert(np.isclose(reference, result, atol=tol))
-    result = funcs[1][i](env1_1, env2_1, d1, *args2)
+    assert(isclose(reference, result, rtol=tol))
+    result = funcs[1][i](env1, env2, d1, *args2)
     print(kernel_name, i, reference, result)
-    assert(np.isclose(reference, result, atol=tol))
+    assert(isclose(reference, result, rtol=tol))
+
+
+@pytest.mark.parametrize('kernel_name', list_to_test)
+@pytest.mark.parametrize('diff_cutoff', [True, False])
+def test_check_sig_scale(kernel_name, diff_cutoff):
+    """Check whether the grouping is properly assign
+    with four environments
+
+    * env1 and env2 are computed from two structures with four
+    atoms each. There are two species 1, 2
+    * env1_t and env2_t are derived from the same structure, but
+      species 2 atoms are removed.
+    * only the sigma of 1-1 are non-zero
+    * so using env1 and env1_t should produce the same value
+    * if the separate group of hyperparameter is properly
+      applied, the result should be 2**2 times of
+      the reference
+    """
+
+    d1 = 1
+    d2 = 2
+    tol = 1e-4
+    scale = 2
+
+    cutoffs, hyps0, hm = generate_diff_hm(kernel_name, diff_cutoff)
+
+    delta = 1e-8
+    env1, env1_t = generate_mb_twin_envs(cutoffs, np.eye(3)*100, delta, d1, hm)
+    env2, env2_t = generate_mb_twin_envs(cutoffs, np.eye(3)*100, delta, d2, hm)
+    env1 = env1[0][0]
+    env2 = env2[0][0]
+    env1_t = env1_t[0][0]
+    env2_t = env2_t[0][0]
+
+    # make the second sigma zero
+    hyps1 = np.copy(hyps0)
+    hyps0[1::4] = 0  # 1e-8
+    hyps1[1::4] = 0  # 1e-8
+    hyps1[0::4] *= scale
+
+    kernel, kg, en_kernel, force_en_kernel = str_to_kernel_set(
+        kernel_name, True)
+
+    args0 = from_mask_to_args(hyps0, hm, cutoffs)
+    args1 = from_mask_to_args(hyps1, hm, cutoffs)
+
+    reference = kernel(env1, env2, d1, d2, *args0)
+    result = kernel(env1_t, env2_t, d1, d2, *args1)
+    print(kernel.__name__, result, reference)
+    if (reference != 0):
+        assert isclose(result/reference, scale**2, rtol=tol)
+
+    reference = kg(env1, env2, d1, d2, *args0)
+    result = kg(env1_t, env2_t, d1, d2, *args1)
+    print(kg.__name__, result, reference)
+    if (reference[0] != 0):
+        assert isclose(result[0]/reference[0], scale**2, rtol=tol)
+    for idx in range(reference[1].shape[0]):
+        # check sig0
+        if (reference[1][idx] != 0 and (idx % 4) == 0):
+            assert isclose(result[1][idx]/reference[1][idx], scale, rtol=tol)
+        # check the rest, but skip sig 1
+        elif (reference[1][idx] != 0 and (idx % 4) != 1):
+            assert isclose(result[1][idx]/reference[1]
+                           [idx], scale**2, rtol=tol)
+
+    reference = en_kernel(env1, env2, *args0)
+    result = en_kernel(env1_t, env2_t, *args1)
+    print(en_kernel.__name__, result, reference)
+    if (reference != 0):
+        assert isclose(result/reference, scale**2, rtol=tol)
+
+    reference = force_en_kernel(env1, env2, d1, *args0)
+    result = force_en_kernel(env1_t, env2_t, d1, *args1)
+    print(force_en_kernel.__name__, result, reference)
+    if (reference != 0):
+        assert isclose(result/reference, scale**2, rtol=tol)
+
 
 @pytest.mark.parametrize('kernel_name', list_to_test)
 @pytest.mark.parametrize('diff_cutoff', [True, False])
@@ -93,39 +182,40 @@ def test_force_bound_cutoff_compare(kernel_name, diff_cutoff):
     """Check that the analytical kernel matches the one implemented
     in mc_simple.py"""
 
-    cutoffs = np.ones(3, dtype=np.float64)
-    delta = 1e-8
-    env1_1, env1_2, env1_3, env2_1, env2_2, env2_3 = generate_envs(
-        cutoffs, delta)
-
-    # set hyperparameters
     d1 = 1
     d2 = 2
     tol = 1e-4
+    cell = 1e7 * np.eye(3)
+    delta = 1e-8
 
     cutoffs, hyps, hm = generate_diff_hm(kernel_name, diff_cutoff, False)
-
-    # mc_sephyps
     kernel, kg, en_kernel, force_en_kernel = str_to_kernel_set(
         kernel_name, True)
     args = from_mask_to_args(hyps, hm, cutoffs)
 
-    reference = kernel(env1_1, env2_1, d1, d2, *args, quadratic_cutoff_bound)
-    result = kernel(env1_1, env2_1, d1, d2, *args)
-    assert(np.isclose(reference, result, atol=tol))
+    np.random.seed(10)
+    env1 = generate_mb_envs(cutoffs, cell, delta, d1, hm)
+    env2 = generate_mb_envs(cutoffs, cell, delta, d2, hm)
+    env1 = env1[0][0]
+    env2 = env2[0][0]
 
-    reference = kg(env1_1, env2_1, d1, d2, *args, quadratic_cutoff_bound)
-    result = kg(env1_1, env2_1, d1, d2, *args)
-    assert(np.isclose(reference[0], result[0], atol=tol))
-    assert(np.isclose(reference[1], result[1], atol=tol).all())
+    reference = kernel(env1, env2, d1, d2, *args, quadratic_cutoff_bound)
+    result = kernel(env1, env2, d1, d2, *args)
+    assert(isclose(reference, result, rtol=tol))
 
-    reference = en_kernel(env1_1, env2_1, *args, quadratic_cutoff_bound)
-    result = en_kernel(env1_1, env2_1, *args)
-    assert(np.isclose(reference, result, atol=tol))
+    reference = kg(env1, env2, d1, d2, *args, quadratic_cutoff_bound)
+    result = kg(env1, env2, d1, d2, *args)
+    assert(isclose(reference[0], result[0], rtol=tol))
+    assert(isclose(reference[1], result[1], rtol=tol).all())
 
-    reference = force_en_kernel(env1_1, env2_1, d1, *args, quadratic_cutoff_bound)
-    result = force_en_kernel(env1_1, env2_1, d1, *args)
-    assert(np.isclose(reference, result, atol=tol))
+    reference = en_kernel(env1, env2, *args, quadratic_cutoff_bound)
+    result = en_kernel(env1, env2, *args)
+    assert(isclose(reference, result, rtol=tol))
+
+    reference = force_en_kernel(
+        env1, env2, d1, *args, quadratic_cutoff_bound)
+    result = force_en_kernel(env1, env2, d1, *args)
+    assert(isclose(reference, result, rtol=tol))
 
 
 @pytest.mark.parametrize('kernel_name', ['2+3'])
@@ -137,38 +227,38 @@ def test_constraint(kernel_name, diff_cutoff):
     if ('mb' in kernel_name):
         return
 
-    cutoffs = np.array([1, 1])
-    delta = 1e-8
-    env1_1, env1_2, env1_3, env2_1, env2_2, env2_3 = generate_envs(
-        cutoffs, delta)
-
-    # set hyperparameters
     d1 = 1
+    d2 = 2
+    cell = 1e7 * np.eye(3)
+    delta = 1e-8
 
-    # hyps, hm, cut = generate_hm(nbond, ntriplet, cutoffs, constraint)
-    cut, hyps, hm = generate_diff_hm(kernel_name, diff_cutoff=diff_cutoff, constraint=True)
-    args0 = from_mask_to_args(hyps, hm, cut)
-
+    cutoffs, hyps, hm = generate_diff_hm(
+        kernel_name, diff_cutoff=diff_cutoff, constraint=True)
     _, __, en_kernel, force_en_kernel = str_to_kernel_set(kernel_name, True)
+    args0 = from_mask_to_args(hyps, hm, cutoffs)
+
+    np.random.seed(10)
+    env1 = generate_mb_envs(cutoffs, cell, delta, d1, hm)
+    env2 = generate_mb_envs(cutoffs, cell, delta, d2, hm)
 
     kern_finite_diff = 0
 
     if ('2' in kernel_name):
         _, __, en2_kernel, fek2 = str_to_kernel_set('2', True)
-        calc1 = en2_kernel(env1_2, env2_1, *args0)
-        calc2 = en2_kernel(env1_1, env2_1, *args0)
+        calc1 = en2_kernel(env1[1][0], env2[0][0], *args0)
+        calc2 = en2_kernel(env1[0][0], env2[0][0], *args0)
         kern_finite_diff += (calc1 - calc2) / 2.0 / delta
 
     if ('3' in kernel_name):
         _, __, en3_kernel, fek3 = str_to_kernel_set('3', True)
-        calc1 = en3_kernel(env1_2, env2_1, *args0)
-        calc2 = en3_kernel(env1_1, env2_1, *args0)
+        calc1 = en3_kernel(env1[1][0], env2[0][0], *args0)
+        calc2 = en3_kernel(env1[0][0], env2[0][0], *args0)
         kern_finite_diff += (calc1 - calc2) / 3.0 / delta
 
-    kern_analytical = force_en_kernel(env1_1, env2_1, d1, *args0)
+    kern_analytical = force_en_kernel(env1[0][0], env2[0][0], d1, *args0)
 
     tol = 1e-4
-    assert(np.isclose(-kern_finite_diff, kern_analytical, atol=tol))
+    assert(isclose(-kern_finite_diff, kern_analytical, rtol=tol))
 
 
 @pytest.mark.parametrize('kernel_name', list_to_test)
@@ -177,22 +267,21 @@ def test_force_en(kernel_name, diff_cutoff):
     """Check that the analytical force/en kernel matches finite difference of
     energy kernel."""
 
-    delta = 1e-6
+    delta = 1e-5
     d1 = 1
     d2 = 2
+    cell = 1e7 * np.eye(3)
+    np.random.seed(0)
 
     cutoffs, hyps, hm = generate_diff_hm(kernel_name, diff_cutoff, False)
     args = from_mask_to_args(hyps, hm, cutoffs)
 
-    print("generate environment")
-    env1 = generate_mb_envs(cutoffs, np.eye(3)*100, delta, d1, hm)
-    env2 = generate_mb_envs(cutoffs, np.eye(3)*100, delta, d2, hm)
+    env1 = generate_mb_envs(cutoffs, cell, delta, d1, hm)
+    env2 = generate_mb_envs(cutoffs, cell, delta, d2, hm)
 
     _, __, en_kernel, force_en_kernel = str_to_kernel_set(kernel_name, True)
 
-    print("analytical")
     kern_analytical = force_en_kernel(env1[0][0], env2[0][0], d1, *args)
-    print(kern_analytical)
 
     kern_finite_diff = 0
     if ('mb' in kernel_name):
@@ -227,7 +316,7 @@ def test_force_en(kernel_name, diff_cutoff):
     print("\nforce_en", kernel_name, kern_finite_diff, kern_analytical)
 
     tol = 1e-3
-    assert (np.isclose(-kern_finite_diff, kern_analytical, atol=tol))
+    assert (isclose(-kern_finite_diff, kern_analytical, rtol=tol))
 
 
 @pytest.mark.parametrize('kernel_name', list_to_test)
@@ -236,68 +325,74 @@ def test_force(kernel_name, constraint):
     """Check that the analytical force kernel matches finite difference of
     energy kernel."""
 
-    if ('mb' in kernel_name):
-        return
-
-
-    # create env 1
-    delta = 1e-5
     d1 = 1
     d2 = 2
+    tol = 1e-4
+    cell = 1e7 * np.eye(3)
+    delta = 1e-5
 
-    cutoffs, hyps, hm = generate_diff_hm(kernel_name, constraint=constraint)
-    env1_1, env1_2, env1_3, env2_1, env2_2, env2_3 = generate_envs(
-        cutoffs, delta, hm)
-    args0 = from_mask_to_args(hyps, hm, cutoffs)
+    cutoffs, hyps, hm = generate_diff_hm(
+        kernel_name, diff_cutoff=False, constraint=constraint)
+    kernel, kg, en_kernel, fek = str_to_kernel_set(kernel_name, True)
+    args = from_mask_to_args(hyps, hm, cutoffs)
 
-    kernel, g, en_kernel, fek = str_to_kernel_set(kernel_name, True)
+    np.random.seed(10)
+    env1 = generate_mb_envs(cutoffs, cell, delta, d1, hm)
+    env2 = generate_mb_envs(cutoffs, cell, delta, d2, hm)
 
     # check force kernel
-    calc1 = en_kernel(env1_2, env2_2, *args0)
-    calc2 = en_kernel(env1_3, env2_3, *args0)
-    calc3 = en_kernel(env1_2, env2_3, *args0)
-    calc4 = en_kernel(env1_3, env2_2, *args0)
+    if ('mb' == kernel_name):
+        cal = 0
+        for i in range(3):
+            for j in range(len(env1[0])):
+                cal += en_kernel(env1[1][i], env2[1][j], *args)
+                cal += en_kernel(env1[2][i], env2[2][j], *args)
+                cal -= en_kernel(env1[1][i], env2[2][j], *args)
+                cal -= en_kernel(env1[2][i], env2[1][j], *args)
+        kern_finite_diff = cal / (4 * delta ** 2)
+    elif ('mb' not in kernel_name):
+        calc1 = en_kernel(env1[1][0], env2[1][0], *args)
+        calc2 = en_kernel(env1[2][0], env2[2][0], *args)
+        calc3 = en_kernel(env1[1][0], env2[2][0], *args)
+        calc4 = en_kernel(env1[2][0], env2[1][0], *args)
+        kern_finite_diff = (calc1 + calc2 - calc3 - calc4) / (4*delta**2)
+    else:
+        return
 
-    kern_finite_diff = (calc1 + calc2 - calc3 - calc4) / (4*delta**2)
-    kern_analytical = kernel(env1_1, env2_1,
-                             d1, d2, *args0)
+    kern_analytical = kernel(env1[0][0], env2[0][0],
+                             d1, d2, *args)
     tol = 1e-4
-    assert(np.isclose(kern_finite_diff, kern_analytical, atol=tol))
+    assert(isclose(kern_finite_diff, kern_analytical, rtol=tol))
 
 
 @pytest.mark.parametrize('kernel_name', list_to_test)
 @pytest.mark.parametrize('constraint', [True, False])
 def test_hyps_grad(kernel_name, constraint):
 
-    np.random.seed(0)
-
     delta = 1e-8
-    cutoffs, hyps, hm = generate_diff_hm(kernel_name, constraint=constraint)
-
-    env1_1, env1_2, env1_3, env2_1, env2_2, env2_3 = generate_envs(
-        cutoffs, delta, hm)
-
-    args = from_mask_to_args(hyps, hm, cutoffs)
     d1 = 1
     d2 = 2
+    tol = 1e-4
 
+    cutoffs, hyps, hm = generate_diff_hm(kernel_name, constraint=constraint)
+    args = from_mask_to_args(hyps, hm, cutoffs)
     kernel, kernel_grad, _, __ = str_to_kernel_set(kernel_name, True)
 
+    np.random.seed(0)
+    env1 = generate_mb_envs(cutoffs, np.eye(3)*100, delta, d1)
+    env2 = generate_mb_envs(cutoffs, np.eye(3)*100, delta, d2)
+    env1 = env1[0][0]
+    env2 = env2[0][0]
+
     # compute analytical values
-    k, grad = kernel_grad(env1_1, env2_1, d1, d2, *args)
+    k, grad = kernel_grad(env1, env2, d1, d2, *args)
 
-    print(kernel_name)
-    print("grad", grad)
-    print("hyps", hyps)
-
-    tol = 1e-4
-    original = kernel(env1_1, env2_1, d1, d2, *args)
+    original = kernel(env1, env2, d1, d2, *args)
 
     nhyps = len(hyps)-1
     if ('map' in hm.keys()):
         if (hm['map'][-1] != (len(hm['original'])-1)):
             nhyps = len(hyps)
-        print(hm['map'])
         original_hyps = np.copy(hm['original'])
 
     for i in range(nhyps):
@@ -309,101 +404,14 @@ def test_hyps_grad(kernel_name, constraint):
             hm['original'][newid] += delta
         newargs = from_mask_to_args(newhyps, hm, cutoffs)
 
-        hgrad = (kernel(env1_1, env2_1, d1, d2, *newargs) - original)/delta
+        hgrad = (kernel(env1, env2, d1, d2, *newargs) - original)/delta
         if ('map' in hm.keys()):
             print(i, "hgrad", hgrad, grad[hm['map'][i]])
-            assert(np.isclose(grad[hm['map'][i]], hgrad, atol=tol))
+            assert(isclose(grad[hm['map'][i]], hgrad, rtol=tol))
         else:
             print(i, "hgrad", hgrad, grad[i])
-            assert(np.isclose(grad[i], hgrad, atol=tol))
+            assert(isclose(grad[i], hgrad, rtol=tol))
 
-
-
-
-@pytest.mark.parametrize('diff_cutoff', [True, False])
-def test_many_force(diff_cutoff):
-    """Check that the analytical force kernel matches finite difference of
-    energy kernel."""
-
-    # create env 1
-    d1 = 1
-    d2 = 2
-    delta = 1e-6
-    tol = 1e-4
-    cutoffs = np.ones(3)*1.2
-    cell = 1e7 * np.eye(3)
-
-    cutoffs, hyps, hm = generate_diff_hm('mb', diff_cutoff, constraint=False)
-
-    args = from_mask_to_args(hyps, hm, cutoffs)
-
-    env1 = generate_mb_envs(cutoffs, cell, delta, d1, hm)
-    env2 = generate_mb_envs(cutoffs, cell, delta, d2, hm)
-
-    kernel, _, en_kernel, ___ = str_to_kernel_set('mb', True)
-
-    cal = 0
-    for i in range(3):
-        for j in range(len(env1[0])):
-            cal += en_kernel(env1[1][i], env2[1][j], *args)
-            cal += en_kernel(env1[2][i], env2[2][j], *args)
-            cal -= en_kernel(env1[1][i], env2[2][j], *args)
-            cal -= en_kernel(env1[2][i], env2[1][j], *args)
-    kern_finite_diff = cal / (4 * delta ** 2)
-    kern_analytical = kernel(env1[0][0], env2[0][0],
-                             d1, d2, *args)
-    print("mb force", kern_finite_diff, kern_analytical)
-    assert (np.isclose(kern_finite_diff, kern_analytical, atol=tol))
-
-    # delt = 1e-4
-    # for ihyp in range(len(hyps)):
-    #     newhyps = np.copy(hyps)
-    #     newhyps[ihyp] *= (1+delt)
-    #     args = from_mask_to_args(newhyps, hm, cutoffs)
-    #     cal = 0
-    #     for i in range(3):
-    #         for j in range(3):
-    #             cal += en_kernel(env1[1][i], env2[1][j], *args)
-    #             cal += en_kernel(env1[2][i], env2[2][j], *args)
-    #             cal -= en_kernel(env1[1][i], env2[2][j], *args)
-    #             cal -= en_kernel(env1[2][i], env2[1][j], *args)
-    #     kern_finite_diff = cal / (4 * delta ** 2)
-    #     kern_analytical = kernel(env1[0][0], env2[0][0],
-    #                              d1, d2, *args)
-    #     print("mb force", ihyp, kern_finite_diff, kern_analytical)
-
-def generate_debug_envs(cutoffs, cell, delt, d1, mask=None):
-
-    positions = []
-    positions += [[np.array([0., 0., 0.]),
-                   np.array([0., 0.3, 0.]),
-                   np.array([0.3, 0., 0.]),
-                   np.array([1., 1., 0.])]]
-
-    noa = len(positions[0])
-
-    positions_2 = deepcopy(positions[0])
-    positions_2[0][d1-1] = delt
-    positions += [positions_2]
-
-    positions_3 = deepcopy(positions[0])
-    positions_3[0][d1-1] = -delt
-    positions += [positions_3]
-
-    species_1 = [1, 2, 1, 1]
-    test_struc = []
-    for i in range(3):
-        test_struc += [struc.Structure(cell, species_1, positions[i])]
-
-    env_0 = []
-    env_p = []
-    env_m = []
-    for i in range(noa):
-        env_0 += [env.AtomicEnvironment(test_struc[0], i, cutoffs, mask)]
-        env_p += [env.AtomicEnvironment(test_struc[1], i, cutoffs, mask)]
-        env_m += [env.AtomicEnvironment(test_struc[2], i, cutoffs, mask)]
-
-    return [env_0, env_p, env_m]
 
 def generate_same_hm(kernel_name, diff_cutoff=False):
     cutoffs = []
@@ -469,13 +477,14 @@ def generate_same_hm(kernel_name, diff_cutoff=False):
     hyps1 = np.hstack([hyps0, 0.5])
     return cutoffs, hyps0, hyps1, hyps2, hm1, hm2
 
+
 def generate_diff_hm(kernel_name, diff_cutoff=False, constraint=False):
     cutoffs = []
     hyps2 = []
     hm2 = {'nspec': 2, 'spec_mask': np.zeros(118, dtype=int)}
     hm2['spec_mask'][2] = 1
     if ('2' in kernel_name):
-        cutoffs = np.array([1.25])
+        cutoffs = np.array([2.5])
 
         hyps2 += [1, 0.8, 0.7, 0.05]
         hm2['nbond'] = 2
@@ -485,7 +494,7 @@ def generate_diff_hm(kernel_name, diff_cutoff=False, constraint=False):
             hm2['cutoff_2b'] = np.array([1.2, 1.25])
 
     if ('3' in kernel_name):
-        cutoffs = np.array([1.25, 1.2])
+        cutoffs = np.array([2.5, 1.2])
 
         hyps2 += [1, 0.9, 0.8, 0.05]
         hm2['ntriplet'] = 2
@@ -498,14 +507,14 @@ def generate_diff_hm(kernel_name, diff_cutoff=False, constraint=False):
             hm2['cutoff_3b'] = np.array([1.15, 1.2])
 
     if ('mb' in kernel_name):
-        cutoffs = np.array([1.25, 1.2, 1.2])
+        cutoffs = np.array([2, 1.2, 1.2])
 
         hyps2 += [1, 0.9, 0.8, 0.05]
         hm2['nmb'] = 2
         hm2['mb_mask'] = np.ones(4, dtype=int)
+        hm2['mb_mask'][0] = 0
         if (diff_cutoff):
-            hm2['mb_mask'][0] = 0
-            hm2['cutoff_mb'] = np.array([1.1, 1.2])
+            hm2['cutoff_mb'] = np.array([1.25, 1.2])
 
     hyps2 = np.hstack([hyps2, 0.5])
 

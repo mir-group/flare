@@ -9,6 +9,7 @@ from flare.env import AtomicEnvironment
 from flare.struc import Structure
 from flare.otf_parser import OtfAnalysis
 
+
 def get_random_structure(cell, unique_species, noa):
     """Create a random test structure """
     np.random.seed(0)
@@ -35,11 +36,11 @@ def generate_hm(nbond, ntriplet, cutoffs=[1, 1], constraint=False, multihyps=Tru
         if (nbond > 0):
             nbond = 1
             hyps_label += ['Length', 'Signal Var.']
-        if (ntriplet >0):
+        if (ntriplet > 0):
             ntriplet = 1
             hyps_label += ['Length', 'Signal Var.']
         hyps_label += ['Noise Var.']
-        return random((nbond+ntriplet)*2+1), {'hyps_label':hyps_label}, deepcopy(cutoffs)
+        return random((nbond+ntriplet)*2+1), {'hyps_label': hyps_label}, deepcopy(cutoffs)
 
     specs_mask = np.zeros(118, dtype=int)
     specs_mask[1] = 0
@@ -55,7 +56,7 @@ def generate_hm(nbond, ntriplet, cutoffs=[1, 1], constraint=False, multihyps=Tru
     cut += [cutoffs[0]]
     cut += [cutoffs[1]]
 
-    if (nbond>1):
+    if (nbond > 1):
         sig1 = random(nbond)
         ls1 = random(nbond)
         bond_mask = np.ones(nspecs**2, dtype=int)
@@ -67,7 +68,7 @@ def generate_hm(nbond, ntriplet, cutoffs=[1, 1], constraint=False, multihyps=Tru
         bond_mask = np.zeros(nspecs**2, dtype=int)
         bond_name = ["sig2"]+["ls2"]
 
-    if (ntriplet>1):
+    if (ntriplet > 1):
         sig2 = random(ntriplet)
         ls2 = random(ntriplet)
         triplet_mask = np.ones(nspecs**3, dtype=int)
@@ -81,10 +82,10 @@ def generate_hm(nbond, ntriplet, cutoffs=[1, 1], constraint=False, multihyps=Tru
 
     sigman = [0.05]
 
-    if (nbond>0 and ntriplet>0):
+    if (nbond > 0 and ntriplet > 0):
         hyps = np.hstack([sig1, ls1, sig2, ls2, sigman])
         hyps_label = np.hstack([bond_name, triplet_name, ['noise']])
-    elif (nbond>0):
+    elif (nbond > 0):
         hyps = np.hstack([sig1, ls1, sigman])
         hyps_label = np.hstack([bond_name, ['noise']])
     else:
@@ -108,7 +109,7 @@ def generate_hm(nbond, ntriplet, cutoffs=[1, 1], constraint=False, multihyps=Tru
     count = 0
     newhyps = []
     newlabel = []
-    if (nbond>1):
+    if (nbond > 1):
         # fix type 0, and only compute type 1 of bonds
         hm += [1]
         newhyps += [hyps[1]]
@@ -117,13 +118,13 @@ def generate_hm(nbond, ntriplet, cutoffs=[1, 1], constraint=False, multihyps=Tru
         newhyps += [hyps[3]]
         newlabel += [hyps_label[3]]
         count += 4
-    elif (nbond>0):
+    elif (nbond > 0):
         # fix sigma, and only vary ls
         hm += [1]
         newhyps += [hyps[1]]
         newlabel += [hyps_label[1]]
         count += 2
-    if (ntriplet>1):
+    if (ntriplet > 1):
         # fix type 0, and only compute type 1 of triplets
         hm += [1+count]
         newhyps += [hyps[1+count]]
@@ -131,7 +132,7 @@ def generate_hm(nbond, ntriplet, cutoffs=[1, 1], constraint=False, multihyps=Tru
         hm += [3+count]
         newhyps += [hyps[3+count]]
         newlabel += [hyps_label[3+count]]
-    elif (ntriplet>0):
+    elif (ntriplet > 0):
         # fix sigma, and only vary ls
         hm += [1+count]
         newhyps += [hyps[1+count]]
@@ -185,6 +186,7 @@ def get_gp(bodies, kernel_type='mc', multihyps=True) -> GaussianProcess:
 
     return gaussian
 
+
 def get_params():
     parameters = {'unique_species': [2, 1],
                   'cutoff': 0.8,
@@ -192,6 +194,7 @@ def get_params():
                   'cell': np.eye(3),
                   'db_pts': 30}
     return parameters
+
 
 def get_tstp() -> AtomicEnvironment:
     """Create test point for kernel to compare against"""
@@ -209,66 +212,47 @@ def get_tstp() -> AtomicEnvironment:
     return test_pt
 
 
-def generate_envs(cutoffs, delta, mask=None):
-    """
-    create environment with perturbation on
-    direction i
-    """
-    # create env 1
-    # perturb the x direction of atom 0 for +- delta
-    cell = np.eye(3)*np.max(cutoffs+0.1)
-    atom_1 = 0
-    pos_1 = np.vstack([[0, 0, 0], random([3, 3])])
-    pos_2 = deepcopy(pos_1)
-    pos_2[0][0] = delta
-    pos_3 = deepcopy(pos_1)
-    pos_3[0][0] = -delta
-
-    species_1 = [1, 2, 1, 1] # , 1, 1, 2, 1, 2]
-    test_structure_1 = struc.Structure(cell, species_1, pos_1)
-    test_structure_2 = struc.Structure(cell, species_1, pos_2)
-    test_structure_3 = struc.Structure(cell, species_1, pos_3)
-
-    env1_1 = env.AtomicEnvironment(test_structure_1, atom_1, cutoffs, mask)
-    env1_2 = env.AtomicEnvironment(test_structure_2, atom_1, cutoffs, mask)
-    env1_3 = env.AtomicEnvironment(test_structure_3, atom_1, cutoffs, mask)
-
-
-    # create env 2
-    # perturb the y direction
-    pos_1 = np.vstack([[0, 0, 0], random([3, 3])])
-    pos_2 = deepcopy(pos_1)
-    pos_2[0][1] = delta
-    pos_3 = deepcopy(pos_1)
-    pos_3[0][1] = -delta
-
-    atom_2 = 0
-    species_2 = [1, 1, 2, 1] #, 2, 1, 2, 2, 2]
-
-    test_structure_1 = struc.Structure(cell, species_2, pos_1)
-    test_structure_2 = struc.Structure(cell, species_2, pos_2)
-    test_structure_3 = struc.Structure(cell, species_2, pos_3)
-
-    env2_1 = env.AtomicEnvironment(test_structure_1, atom_2, cutoffs, mask)
-    env2_2 = env.AtomicEnvironment(test_structure_2, atom_2, cutoffs, mask)
-    env2_3 = env.AtomicEnvironment(test_structure_3, atom_2, cutoffs, mask)
-
-    return env1_1, env1_2, env1_3, env2_1, env2_2, env2_3
-
-
 def generate_mb_envs(cutoffs, cell, delt, d1, mask=None):
+    positions0 = np.array([[0., 0., 0.],
+                           [0., 0.3, 0.],
+                           [0.3, 0., 0.],
+                           [0.0, 0., 0.3],
+                           [1., 1., 0.]])
+    positions0[1:] += 0.1*np.random.random([4, 3])
+    triplet = [1, 1, 2, 1]
+    np.random.shuffle(triplet)
+    species_1 = np.hstack([triplet, randint(1, 2)])
+    return generate_mb_envs_pos(positions0, species_1, cutoffs, cell, delt, d1, mask)
 
-    positions = []
-    positions += [[np.array([0., 0., 0.]),
-                   np.array([0., 0.3, 0.]) + 0.1 *
-                   np.array([random(), random(), random()]),
-                   np.array([0.3, 0., 0.]) + 0.1 *
-                   np.array([random(), random(), random()]),
-                   np.array([1., 1., 0.]) + 0.1 * np.array([random(), random(), random()])]]
 
-    noa = len(positions[0])
+def generate_mb_twin_envs(cutoffs, cell, delt, d1, mask=None):
 
-    positions_2 = deepcopy(positions[0])
+    positions0 = np.array([[0., 0., 0.],
+                           [0., 0.3, 0.],
+                           [0.3, 0., 0.],
+                           [0.0, 0., 0.3],
+                           [1., 1., 0.]])
+    positions0[1:] += 0.1*np.random.random([4, 3])
+
+    species_1 = np.array([1, 2, 1, 1, 1], dtype=np.int)
+    env1 = generate_mb_envs_pos(
+        positions0, species_1, cutoffs, cell, delt, d1, mask)
+
+    positions1 = positions0[[0, 2, 3, 4]]
+    species_2 = species_1[[0, 2, 3, 4]]
+    env2 = generate_mb_envs_pos(
+        positions1, species_2, cutoffs, cell, delt, d1, mask)
+
+    return env1, env2
+
+
+def generate_mb_envs_pos(positions0, species_1, cutoffs, cell, delt, d1, mask=None):
+
+    positions = [positions0]
+
+    noa = len(positions0)
+
+    positions_2 = deepcopy(positions0)
     positions_2[0][d1-1] = delt
     positions += [positions_2]
 
@@ -276,9 +260,6 @@ def generate_mb_envs(cutoffs, cell, delt, d1, mask=None):
     positions_3[0][d1-1] = -delt
     positions += [positions_3]
 
-    triplet = [1, 1, 2]
-    np.random.shuffle(triplet)
-    species_1 = np.hstack([triplet, randint(1, 2)])
     test_struc = []
     for i in range(3):
         test_struc += [struc.Structure(cell, species_1, positions[i])]
