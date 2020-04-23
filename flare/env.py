@@ -158,10 +158,10 @@ def get_2_body_arrays(positions, atom: int, cell, cutoff_2: float, species):
     """
     noa = len(positions)
     pos_atom = positions[atom]
-    coords = np.zeros((noa, 3, 27))
-    dists = np.zeros((noa, 27))
+    coords = np.zeros((noa, 3, 27), dtype=np.float64)
+    dists = np.zeros((noa, 27), dtype=np.float64)
     cutoff_count = 0
-    super_sweep = np.array([-1, 0, 1])
+    super_sweep = np.array([-1, 0, 1], dtype=np.float64)
 
     vec1 = cell[0]
     vec2 = cell[1]
@@ -183,8 +183,8 @@ def get_2_body_arrays(positions, atom: int, cell, cutoff_2: float, species):
                     im_count += 1
 
     # create 2-body bond array
-    bond_array_2 = np.zeros((cutoff_count, 4))
-    bond_positions_2 = np.zeros((cutoff_count, 3))
+    bond_array_2 = np.zeros((cutoff_count, 4), dtype=np.float64)
+    bond_positions_2 = np.zeros((cutoff_count, 3), dtype=np.float64)
     etypes = np.zeros(cutoff_count, dtype=np.int8)
     bond_count = 0
 
@@ -246,10 +246,10 @@ def get_2_body_arrays_ind(positions, atom: int, cell, cutoff_2: float, species):
     """
     noa = len(positions)
     pos_atom = positions[atom]
-    coords = np.zeros((noa, 3, 27))
-    dists = np.zeros((noa, 27))
+    coords = np.zeros((noa, 3, 27), dtype=np.float64)
+    dists = np.zeros((noa, 27), dtype=np.float64)
     cutoff_count = 0
-    super_sweep = np.array([-1, 0, 1])
+    super_sweep = np.array([-1, 0, 1], dtype=np.float64)
 
     vec1 = cell[0]
     vec2 = cell[1]
@@ -272,8 +272,8 @@ def get_2_body_arrays_ind(positions, atom: int, cell, cutoff_2: float, species):
 
     # create 2-body bond array
     bond_indexes = np.zeros(cutoff_count, dtype=np.int8)
-    bond_array_2 = np.zeros((cutoff_count, 4))
-    bond_positions_2 = np.zeros((cutoff_count, 3))
+    bond_array_2 = np.zeros((cutoff_count, 4), dtype=np.float64)
+    bond_positions_2 = np.zeros((cutoff_count, 3), dtype=np.float64)
     etypes = np.zeros(cutoff_count, dtype=np.int8)
     bond_count = 0
 
@@ -350,7 +350,7 @@ def get_3_body_arrays(bond_array_2, bond_positions_2, cutoff_3: float):
 
     # get cross bond array
     cross_bond_inds = np.zeros((ind_3, ind_3), dtype=np.int8) - 1
-    cross_bond_dists = np.zeros((ind_3, ind_3))
+    cross_bond_dists = np.zeros((ind_3, ind_3), dtype=np.float64)
     triplet_counts = np.zeros(ind_3, dtype=np.int8)
     for m in range(ind_3):
         pos1 = bond_positions_3[m]
@@ -431,7 +431,7 @@ def get_m_body_arrays(positions, atom: int, cell, cutoff_mb: float, species):
             max_neighbours = len(neighbour_bond_array_2[:, 0])
 
     # Transform list of distances into Numpy array
-    neigh_dists_mb = np.zeros((len(bond_inds), max_neighbours))
+    neigh_dists_mb = np.zeros((len(bond_inds), max_neighbours), dtype=np.float64)
     num_neighs_mb = np.zeros(len(bond_inds), dtype=np.int8)
     etypes_mb_array = np.zeros((len(bond_inds), max_neighbours), dtype=np.int8)
     for i in range(len(bond_inds)):

@@ -155,6 +155,8 @@ def three_body_en_helper(ci1, ci2, r11, r22, r33, fi, fj, fdi, ls1, ls2, sig2):
 # -----------------------------------------------------------------------------
 
 @njit
+
+
 def k_sq_exp_double_dev(q1, q2, sig, ls):
     """Second Gradient of generic squared exponential kernel on two many body functions
 
@@ -178,8 +180,10 @@ def k_sq_exp_double_dev(q1, q2, sig, ls):
     return ret
 
 @njit
+
+
 def k_sq_exp_dev(q1, q2, sig, ls):
-    """Second Gradient of generic squared exponential kernel on two many body functions
+    """First Gradient of generic squared exponential kernel on two many body functions
 
     Args:
         q1 (float): the many body descriptor of the first local environment
@@ -225,7 +229,7 @@ def coordination_number(rij, cij, r_cut, cutoff_func):
 @njit
 def q_value(distances, r_cut, cutoff_func, q_func=coordination_number):
     """Compute value of many-body descriptor based on distances of atoms
-    in the local amny-body environment.
+    in the local many-body environment.
 
     Args:
         distances (np.ndarray): distances between atoms i and j
@@ -244,11 +248,39 @@ def q_value(distances, r_cut, cutoff_func, q_func=coordination_number):
 
     return q
 
+@njit
+
+
+def q_value_mc(distances, r_cut, ref_species, species, cutoff_func, q_func=coordination_number):
+    """Compute value of many-body many components descriptor based
+    on distances of atoms in the local many-body environment.
+
+    Args:
+        distances (np.ndarray): distances between atoms i and j
+        r_cut (float): cutoff hyperparameter
+        ref_species (int): species to consider to compute the contribution
+        species (np.ndarray): atomic species of neighbours
+        cutoff_func (callable): cutoff function
+        q_func (callable): many-body pairwise descrptor function
+
+    Return:
+        float: the value of the many-body descriptor
+    """
+
+    q = 0
+
+    for i in range(len(distances)):
+        if species[i] == ref_species:
+            q_, _ = q_func(distances[i], 0, r_cut, cutoff_func)
+            q += q_
+
+    return q
+
 
 @njit
 def mb_grad_helper_ls_(qdiffsq, sig, ls):
-    """Derivative of a many body force-force kernel wrt ls
-
+    """
+    Derivative of a many body force-force kernel w.r.t. ls
     """
 
     ls2 = ls * ls
@@ -260,10 +292,12 @@ def mb_grad_helper_ls_(qdiffsq, sig, ls):
     return ret
 
 @njit
-def mb_grad_helper_ls(q1, q2, qi, qj, sig, ls):
-    """Helper function fr many body gradient collecting all the derivatives
-    of the force-foce many body kernel wrt ls
 
+
+def mb_grad_helper_ls(q1, q2, qi, qj, sig, ls):
+    """
+    Helper function for many body gradient collecting all the derivatives
+    of the force-force many body kernel w.r.t. ls
     """
 
     q12diffsq = ((q1 - q2) * (q1 - q2))

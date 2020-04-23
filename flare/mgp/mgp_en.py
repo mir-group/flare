@@ -773,7 +773,8 @@ class Map3body:
 
         if processes == 1:
             if self.update:
-                raise NotImplementedError("the update function is not yet implemented")
+                raise NotImplementedError("the update function is "
+                                          "not yet implemented")
             else:
                 k12_v_all = self._GenGrid_inner(GP.name, 0, size, bonds1,
                                                 bonds2, bonds12, env12,
@@ -783,7 +784,7 @@ class Map3body:
 
                 if self.update:
 
-                    raise NotImplementedError("the update function is"\
+                    raise NotImplementedError("the update function is "
                             "not yet implemented")
 
                     if self.kv3name in os.listdir():
@@ -953,7 +954,7 @@ class Map3body:
     def build_map(self, GP):
         # Load grid or generate grid values
         # If load grid was not specified, will be none
-        if self.load_grid is None:
+        if not self.load_grid:
             y_mean, y_var = self.GenGrid(GP)
         # If load grid is blank string '' or pre-fix, load in
         else:
