@@ -102,7 +102,16 @@ class AtomicEnvironment:
 
         cutoffs = dictionary['cutoffs']
 
-        return AtomicEnvironment(struc, index, cutoffs)
+
+        if dictionary.get('cutoffs') is not None:
+            cutoffs = dictionary['cutoffs']
+        else:
+            cutoffs = []
+            for cutoff in ['cutoff_2','cutoff_3','cutoff_mb']:
+                if dictionary.get(cutoff):
+                    cutoffs.append(dictionary[cutoff])
+
+        return AtomicEnvironment(struc, index, np.array(cutoffs))
 
     def __str__(self):
         atom_type = self.ctype
