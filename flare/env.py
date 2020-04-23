@@ -100,9 +100,6 @@ class AtomicEnvironment:
                           species=dictionary['species'])
         index = dictionary['atom']
 
-        cutoffs = dictionary['cutoffs']
-
-
         if dictionary.get('cutoffs') is not None:
             cutoffs = dictionary['cutoffs']
         else:
