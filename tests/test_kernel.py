@@ -137,16 +137,15 @@ def test_force(kernel_name, kernel_type):
 @pytest.mark.parametrize('kernel_type', list_type)
 def test_hyps_grad(kernel_name, kernel_type):
 
+    d1 = randint(1, 3)
+    d2 = randint(1, 3)
+    tol = 1e-4
+    cell = 1e7 * np.eye(3)
     delta = 1e-8
     cutoffs = np.ones(3)*1.2
 
-    hyps = generate_hm(kernel_name)
-    d1 = randint(1, 3)
-    d2 = randint(1, 3)
-    print("hyps", hyps)
-    cell = 1e7 * np.eye(3)
-
     np.random.seed(10)
+    hyps = generate_hm(kernel_name)
     env1 = generate_mb_envs(cutoffs, cell, 0, d1)[0][0]
     env2 = generate_mb_envs(cutoffs, cell, 0, d2)[0][0]
 
@@ -155,7 +154,6 @@ def test_hyps_grad(kernel_name, kernel_type):
     grad_test = kernel_grad(env1, env2,
                             d1, d2, hyps, cutoffs)
 
-    tol = 1e-4
     original = kernel(env1, env2, d1, d2,
                       hyps, cutoffs)
     for i in range(len(hyps)-1):
