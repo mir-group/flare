@@ -221,7 +221,13 @@ class AtomicEnvironment:
                           species=dictionary['species'])
         index = dictionary['atom']
 
-        cutoffs = dictionary['cutoffs']
+        if dictionary.get('cutoffs') is not None:
+            cutoffs = dictionary['cutoffs']
+        else:
+            cutoffs = []
+            for cutoff in ['cutoff_2','cutoff_3','cutoff_mb']:
+                if dictionary.get(cutoff):
+                    cutoffs.append(dictionary[cutoff])
 
         cutoffs_mask = dictionary.get('cutoffs_mask', None)
 

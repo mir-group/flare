@@ -9,6 +9,7 @@ import multiprocessing as mp
 
 from collections import Counter
 from copy import deepcopy
+from numpy.random import random
 from typing import List, Callable, Union
 from scipy.linalg import solve_triangular
 from scipy.optimize import minimize
@@ -168,9 +169,16 @@ class GaussianProcess:
         if (self.name in _global_training_labels):
             base = f'{self.name}'
             count = 2
-            while (self.name in _global_training_labels):
+            while (self.name in _global_training_labels and count<100):
+                time.sleep(random())
                 self.name = f'{base}_{count}'
+                print(f"try to rename the gp instance to {self.name}")
                 count += 1
+            if (self.name in _global_training_labels):
+                milliseconds = int(round(time.time() * 1000)%10000000)
+                self.name = f"{base}_{milliseconds}"
+                print(f"try to rename the gp instance to {self.name}")
+            print(f"final name of the gp instance is {self.name}")
 
         assert (self.name not in _global_training_labels), \
                 f"the gp instance name, {self.name} is used"
@@ -185,6 +193,15 @@ class GaussianProcess:
         if (len(self.cutoffs)>1):
             assert self.cutoffs[0]>=self.cutoffs[1], \
                     "2b cutoff has to be larger than 3b cutoffs"
+
+        if ('three' in self.kernel_name):
+            assert len(self.cutoffs)>=2, \
+                    "3b kernel needs two cutoffs, one for building"\
+                    " neighbor list and one for the 3b"
+        if ('many' in self.kernel_name):
+            assert len(self.cutoffs)>=3, \
+                    "many-body kernel needs three cutoffs, one for building"\
+                    " neighbor list and one for the 3b"
 
         if self.multihyps is True and self.hyps_mask is None:
             raise ValueError("Warning! Multihyperparameter mode enabled,"
@@ -752,7 +769,7 @@ class GaussianProcess:
                                  n_cpus=dictionary.get(
                                      'n_cpus') or dictionary.get('no_cpus'),
                                  maxiter=dictionary['maxiter'],
-                                 opt_algorithm=dictionary['opt_algorithm'],
+                                 opt_algorithm=dictionary.get('opt_algorithm','L-BFGS-B'),
                                  multihyps=multihyps,
                                  hyps_mask=dictionary.get('hyps_mask', None),
                                  name=dictionary.get('name','default_gp')
