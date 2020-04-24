@@ -81,54 +81,86 @@ class AtomicEnvironment:
         self.compute_env()
 
     def setup_mask(self):
-        self.nspec = 0
-        self.n2b = 0
-        self.n3b = 0
-        self.nmb = 0
-        self.spec_mask = None
-        self.bond_mask = None
-        self.triplet_mask = None
-        self.mb_mask = None
+
+        if isinstance(self.cutoffs, dict):
+            self.scalar_cutoff_2 = self.cutoffs.get('2', 0)
+            self.scalar_cutoff_3 = self.cutoffs.get('3', 0)
+            self.scalar_cutoff_mb = self.cutoffs.get('mb', 0)
+        else:
+            ncutoffs = len(self.cutoffs)
+            self.scalar_cutoff_2 = self.cutoffs[0]
+            self.scalar_cutoff_3 = 0
+            self.scalar_cutoff_mb = 0
+            if (ncutoffs > 1):
+                self.scalar_cutoff_3 = self.cutoffs[1]
+            if (ncutoffs > 2):
+                self.scalar_cutoff_3 = self.cutoffs[2]
+
+        if (self.scalar_cutoff_2 == 0):
+            self.scalar_cutoff_2 = np.max([self.scalar_cutoff_3, self.scalar_cutoff_mb])
+
 
         if (self.cutoffs_mask is None):
+            self.nspec = 1
+            self.n2b = 1
+            self.n3b = 1
+            self.nmb = 1
             return
 
-        if ('nspec' in self.cutoffs_mask):
-            self.nspec = self.cutoffs_mask['nspec']
-            self.spec_mask = self.cutoffs_mask['spec_mask']
-            if ('cutoff_2b' in self.cutoffs_mask):
-                self.n2b = self.cutoffs_mask['nbond']
-                self.bond_mask = self.cutoffs_mask['bond_mask']
-                self.cutoff_2b = self.cutoffs_mask['cutoff_2b']
+        self.nspec = self.cutoffs_mask.get('nspec', 1)
+        nspec = self.nspec
+        if (nspec == 1):
+            return
 
-            if ('cutoff_3b' in self.cutoffs_mask):
-                self.n3b = self.cutoffs_mask['ncut3b']
-                self.cut3b_mask = self.cutoffs_mask['cut3b_mask']
-                self.cutoff_3b = self.cutoffs_mask['cutoff_3b']
-                if ('cutoff_2b' in self.cutoffs_mask):
-                    assert np.max(self.cutoff_3b) <= np.min(self.cutoff_2b), \
-                        "2b cutoff has to be larger than 3b cutoff"
-                else:
-                    assert np.max(self.cutoff_3b) <= self.cutoffs[0], \
-                        "2b cutoff has to be larger than 3b cutoff"
+        self.n2b = self.cutoffs_mask.get('nbond', 1)
+        self.n3b = self.cutoffs_mask.get('ncut3b', 1)
+        self.nmb = self.cutoffs_mask.get('nmb', 1)
+        self.spec_mask = self.cutoffs_mask.get('spec_mask', None)
+        self.bond_mask = self.cutoffs_mask.get('bond_mask', None)
+        self.cut3b_mask = self.cutoffs_mask.get('cut3b_mask', None)
+        self.mb_mask = self.cutoffs_mask.get('mb_mask', None)
+        self.cutoff_2b = self.cutoffs_mask.get('cutoff_2b', None)
+        self.cutoff_3b = self.cutoffs_mask.get('cutoff_3b', None)
+        self.cutoff_mb = self.cutoffs_mask.get('cutoff_mb', None)
 
-            if ('cutoff_mb' in self.cutoffs_mask):
-                self.nmb = self.cutoffs_mask['nmb']
-                self.mb_mask = self.cutoffs_mask['mb_mask']
-                self.cutoff_mb = self.cutoffs_mask['cutoff_mb']
-                # # TO DO, once the mb function is updated to use the bond_array_2
-                # # this block should be activated.
-                # if ('cutoff_2b' in self.cutoffs_mask):
-                #     assert np.max(self.cutoff_mb) <= np.min(self.cutoff_2b), \
-                #             "2b cutoff has to be larger than 3b cutoff"
-                # else:
-                #     assert np.max(self.cutoff_mb) <= self.cutoffs[0]:
-                #             "2b cutoff has to be larger than 3b cutoff"
+        assert self.n2b >=1
+        assert self.n3b >=1
+        assert self.nmb >=1
+
+        assert isinstance(self.n2b, int)
+        assert isinstance(self.n3b, int)
+        assert isinstance(self.nmb, int)
+
+        if self.cutoff_2b is not None:
+            self.scalar_cutoff_2 = np.max(self.cutoff_2b)
+            if (self.n2b > 1):
+                assert self.bond_mask is not None
+        else:
+            self.n2b == 1
+
+        if self.cutoff_3b is not None:
+            self.scalar_cutoff_3 = np.max(self.cutoff_3b)
+            assert self.scalar_cutoff_3 <= self.scalar_cutoff_2, \
+                "2b cutoff has to be larger than 3b cutoff"
+            if (self.n3b > 1):
+                assert self.cut3b_mask is not None
+        else:
+            self.n3b == 1
+
+        if self.cutoff_mb is not None:
+            self.scalar_cutoff_mb = np.max(self.cutoff_mb)
+            if (self.nmb > 1):
+                assert self.mb_mask is not None
+        # # TO DO, once the mb function is updated to use the bond_array_2
+        # # this block should be activated.
+        # assert self.scalar_cutoff_mb <= self.scalar_cutoff_2, \
+        #         "mb cutoff has to be larger than mb cutoff"
+
 
     def compute_env(self):
 
         # get 2-body arrays
-        if (self.n2b > 0):
+        if (self.n2b > 1):
             bond_array_2, bond_positions_2, etypes, bond_inds = \
                 get_2_body_arrays_ind_sepcut(self.positions, self.atom, self.cell,
                                              self.cutoff_2b, self.species,
@@ -136,15 +168,15 @@ class AtomicEnvironment:
         else:
             bond_array_2, bond_positions_2, etypes, bond_inds = \
                 get_2_body_arrays_ind(self.positions, self.atom, self.cell,
-                                      self.cutoffs[0], self.species)
+                                      self.scalar_cutoff_2, self.species)
 
         self.bond_array_2 = bond_array_2
         self.etypes = etypes
         self.bond_inds = bond_inds
 
         # if 2 cutoffs are given, create 3-body arrays
-        if len(self.cutoffs) > 1:
-            if (self.n3b > 0):
+        if self.scalar_cutoff_3 > 0:
+            if (self.n3b > 1):
                 bond_array_3, cross_bond_inds, cross_bond_dists, triplet_counts = \
                     get_3_body_arrays_sepcut(bond_array_2, bond_positions_2,
                                              self.species[self.atom], etypes, self.cutoff_3b,
@@ -152,7 +184,7 @@ class AtomicEnvironment:
             else:
                 bond_array_3, cross_bond_inds, cross_bond_dists, triplet_counts = \
                     get_3_body_arrays(
-                        bond_array_2, bond_positions_2, self.cutoffs[1])
+                        bond_array_2, bond_positions_2, self.scalar_cutoff_3)
 
             self.bond_array_3 = bond_array_3
             self.cross_bond_inds = cross_bond_inds
@@ -160,8 +192,8 @@ class AtomicEnvironment:
             self.triplet_counts = triplet_counts
 
         # if 3 cutoffs are given, create many-body arrays
-        if len(self.cutoffs) > 2:
-            if (self.nmb > 0):
+        if self.scalar_cutoff_mb > 0:
+            if (self.nmb > 1):
                 self.bond_array_mb, self.neigh_dists_mb, \
                     self.num_neighs_mb, self.etype_mb, \
                     self.bond_array_mb_etypes = \
@@ -175,7 +207,7 @@ class AtomicEnvironment:
                     self.bond_array_mb_etypes = \
                     get_m_body_arrays(
                         self.positions, self.atom, self.cell,
-                        self.cutoffs[2], self.species,
+                        self.scalar_cutoff_mb, self.species,
                         self.bond_array_2, self.etypes, self.bond_inds)
         else:
             self.bond_array_mb = None
@@ -224,10 +256,11 @@ class AtomicEnvironment:
         if dictionary.get('cutoffs') is not None:
             cutoffs = dictionary['cutoffs']
         else:
-            cutoffs = []
-            for cutoff in ['cutoff_2','cutoff_3','cutoff_mb']:
-                if dictionary.get(cutoff):
-                    cutoffs.append(dictionary[cutoff])
+            cutoffs = {}
+            for cutoff_type in ['2','3','mb']:
+                key = 'scalar_cutoff_'+cutoff_type
+                if (key in dictionary):
+                    cutoffs[key] = dictionary[key]
 
         cutoffs_mask = dictionary.get('cutoffs_mask', None)
 
