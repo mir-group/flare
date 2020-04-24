@@ -30,7 +30,7 @@ def get_random_structure(cell, unique_species, noa):
     return test_structure, forces
 
 
-def generate_hm(nbond, ntriplet, constraint=False, multihyps=True):
+def generate_hm(nbond, ntriplet, nmb=1, constraint=False, multihyps=True):
 
     if (multihyps is False):
         hyps_label = []
@@ -48,7 +48,8 @@ def generate_hm(nbond, ntriplet, constraint=False, multihyps=True):
         'cutoff3b': 0.8, 'cutoffmb': 0.8, 'noise':0.05})
     pm.define_group('bond', 'b1', ['*', '*'], parameters=random(2))
     pm.define_group('triplet', 't1', ['*', '*', '*'], parameters=random(2))
-    pm.define_group('mb', 'mb1', ['*', '*'], parameters=random(2))
+    if (nmb>0):
+        pm.define_group('mb', 'mb1', ['*', '*'], parameters=random(2))
     if (nbond > 1):
         pm.define_group('bond', 'b2', ['H', 'H'], parameters=random(2))
     if (ntriplet > 1):
@@ -90,7 +91,7 @@ def get_gp(bodies, kernel_type='mc', multihyps=True) -> GaussianProcess:
     if ('3' in bodies or 'three' in bodies):
         ntriplet = 1
 
-    hyps, hm, _ = generate_hm(nbond, ntriplet, multihyps=multihyps)
+    hyps, hm, _ = generate_hm(nbond, ntriplet, nmb=0, multihyps=multihyps)
 
     # create test structure
     test_structure, forces = get_random_structure(cell, unique_species,

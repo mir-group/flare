@@ -141,6 +141,7 @@ class MappedGaussianProcess:
         '''
         generate/load grids and get spline coefficients
         '''
+        self.hyps_mask = GP.hyps_mask
 
         if 2 in self.bodies:
             self.kernel2b_info = get_2bkernel(GP)

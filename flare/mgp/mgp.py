@@ -120,6 +120,7 @@ class MappedGaussianProcess:
         '''
         generate/load grids and get spline coefficients
         '''
+        self.hyps_mask = GP.hyps_mask
         for map_2 in self.maps_2:
             map_2.build_map(GP)
         for map_3 in self.maps_3:
