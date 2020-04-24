@@ -14,7 +14,7 @@ from flare.env import AtomicEnvironment
 from flare.gp import GaussianProcess
 from flare.gp_algebra import partition_c
 from flare.gp_algebra import en_kern_vec_unit as en_kern_vec
-from flare.kernels.utils import from_mask_to_args, str_to_kernel_set 
+from flare.kernels.utils import from_mask_to_args, str_to_kernel_set
 from flare.cutoffs import quadratic_cutoff
 from flare.util import Z_to_element
 from flare.mgp.utils import get_bonds, get_triplets, get_triplets_en, \
@@ -98,6 +98,7 @@ class MappedGaussianProcess:
         if GP is not None:
 
             self.cutoffs = GP.cutoffs
+            self.hyps_mask = GP.hyps_mask
 
             self.bodies = []
             if "two" in GP.kernel_name:
@@ -417,12 +418,12 @@ class MappedGaussianProcess:
         for i in self.bodies:
             kern_info = f'kernel{i}b_info'
             kernel, efk, cutoffs, hyps, hyps_mask = out_dict[kern_info]
-            out_dict[kern_info] = (kernel.__name__, efk.__name__, 
+            out_dict[kern_info] = (kernel.__name__, efk.__name__,
                                    cutoffs, hyps, hyps_mask)
 
-        # only save the coefficients 
-        out_dict['maps_2'] = [map_2.mean.__coeffs__ for map_2 in self.maps_2] 
-        out_dict['maps_3'] = [map_3.mean.__coeffs__ for map_3 in self.maps_3] 
+        # only save the coefficients
+        out_dict['maps_2'] = [map_2.mean.__coeffs__ for map_2 in self.maps_2]
+        out_dict['maps_3'] = [map_3.mean.__coeffs__ for map_3 in self.maps_3]
 
 
         # don't need these since they are built in the __init__ function
@@ -476,7 +477,7 @@ class MappedGaussianProcess:
         if dictionary.get('GP'):
             new_mgp.GP = GaussianProcess.from_dict(dictionary.get("GP"))
 
-        return new_mgp 
+        return new_mgp
 
     def write_model(self, name: str, format='json'):
         """
@@ -589,7 +590,7 @@ class Map2body:
             bond_vars = np.zeros([nop, len(GP.alpha)])
         else:
             bond_vars = None
-        env12 = AtomicEnvironment(self.bond_struc, 0, GP.cutoffs)
+        env12 = AtomicEnvironment(self.bond_struc, 0, GP.cutoffs, GP.hyps_mask)
 
         with mp.Pool(processes=processes) as pool:
             # A_list = pool.map(self._GenGrid_inner_most, pool_list)
@@ -768,7 +769,7 @@ class Map3body:
         else:
             grid_vars = None
 
-        env12 = AtomicEnvironment(self.bond_struc, 0, GP.cutoffs)
+        env12 = AtomicEnvironment(self.bond_struc, 0, GP.cutoffs, GP.hyps_mask)
         size = len(GP.training_data)
 
         if processes == 1:

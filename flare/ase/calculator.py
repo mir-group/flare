@@ -14,7 +14,7 @@ class FLARE_Calculator(Calculator):
     :type gp_model: GaussianProcess
     :param mgp_model: FLARE's Mapped Gaussian Process object. `None` by default. MGP will only be used if `use_mapping` is set to True
     :type mgp_model: MappedGaussianProcess
-    :param par: set to `True` if parallelize the prediction. `False` by default. 
+    :param par: set to `True` if parallelize the prediction. `False` by default.
     :type par: Bool
     :param use_mapping: set to `True` if use MGP for prediction. `False` by default.
     :type use_mapping: Bool
@@ -38,9 +38,9 @@ class FLARE_Calculator(Calculator):
 
     def get_potential_energy(self, atoms=None, force_consistent=False):
         return self.get_property('energy', atoms)
-                                                 
-                                                 
-    def get_forces(self, atoms):                 
+
+
+    def get_forces(self, atoms):
         return self.get_property('forces', atoms)
 
 
@@ -72,7 +72,7 @@ class FLARE_Calculator(Calculator):
 
     def calculate_gp(self, atoms):
         nat = len(atoms)
-        struc_curr = Structure(np.array(atoms.cell), 
+        struc_curr = Structure(np.array(atoms.cell),
                                atoms.get_atomic_numbers(),
                                atoms.positions)
 
@@ -93,7 +93,7 @@ class FLARE_Calculator(Calculator):
 
     def calculate_mgp_serial(self, atoms):
         nat = len(atoms)
-        struc_curr = Structure(np.array(atoms.cell), 
+        struc_curr = Structure(np.array(atoms.cell),
                                atoms.get_atomic_numbers(),
                                atoms.positions)
 
@@ -103,7 +103,8 @@ class FLARE_Calculator(Calculator):
         self.results['local_energies'] = np.zeros(nat)
         for n in range(nat):
             chemenv = AtomicEnvironment(struc_curr, n,
-                                        self.mgp_model.cutoffs)
+                                        self.mgp_model.cutoffs,
+                                        self.mgp_model.hyps_mask)
             f, v, vir, e = self.mgp_model.predict(chemenv, mean_only=False)
             self.results['forces'][n] = f
             self.results['stresses'][n] = vir
@@ -111,7 +112,7 @@ class FLARE_Calculator(Calculator):
             self.results['local_energies'][n] = e
 
         volume = atoms.get_volume()
-        total_stress = np.sum(self.results['stresses'], axis=0) 
+        total_stress = np.sum(self.results['stresses'], axis=0)
         self.results['stress'] = total_stress / volume
         self.results['energy'] = np.sum(self.results['local_energies'])
 
@@ -157,7 +158,7 @@ class FLARE_Calculator(Calculator):
         rank_3 = np.min([1000, grid_params['grid_num_3'][0]**3, train_size*3])
         grid_params['svd_rank_2'] = rank_2
         grid_params['svd_rank_3'] = rank_3
-       
+
         hyps = self.gp_model.hyps
         cutoffs = self.gp_model.cutoffs
         self.mgp_model = MappedGaussianProcess(hyps, cutoffs,

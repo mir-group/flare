@@ -46,7 +46,7 @@ class ParameterMasking():
         self.cutoff_list = {}
         self.noise = 0.05
 
-        self.cutoffs = {}
+        self.cutoffs = [0, 0, 0]
         self.hyps = None
 
         if (specie is not None):
@@ -180,6 +180,11 @@ class ParameterMasking():
             self.opt['noise'] = opt
             return
 
+        if (name in ['cutoff2b', 'cutoff3b', 'cutoffmb']):
+            name_map = {'cutoff2b':0, 'cutoff3b':1, 'cutoffmb':2}
+            self.cutoffs[name_map[name]] = parameters
+            return
+
         if (isinstance(opt, bool)):
             opt = [opt, opt, opt]
         if ('cut3b' not in name):
@@ -205,8 +210,11 @@ class ParameterMasking():
         element_list (list):
         """
         aeg = self.all_group_names[group_type]
+        nspecie = self.n['specie']
         if (group_type == "specie"):
-            self.nspecie = self.n['specie']
+            self.nspecie = nspecie
+            if (nspecie==1):
+                return
             self.specie_mask = np.ones(118, dtype=np.int)*(self.n['specie']-1)
             for idt in range(self.n['specie']):
                 for ele in self.groups['specie'][idt]:
@@ -216,7 +224,6 @@ class ParameterMasking():
                             f"{aeg[idt]}")
             print(f"All the remaining elements are left as type {idt}")
         elif (group_type in ['bond', 'cut3b', 'mb']):
-            nspecie = self.n['specie']
             if (self.n[group_type] == 0):
                 return
             self.mask[group_type] = np.ones(nspecie**2, dtype=np.int)*(self.n[group_type]-1)
@@ -243,25 +250,27 @@ class ParameterMasking():
                     self.hyps_opt[group_type] += [self.opt[name+'ls']]
                     print(f"   using hyper-parameters of {sig} {ls}")
             print(f"All the remaining elements are left as type {idt}")
+
             self.cutoff_list[group_type] = []
             cut_define = np.zeros(self.n[group_type], dtype=bool)
-            max_cutoff = 0
             for idt in range(self.n[group_type]):
-                name = aeg[idt]
-                if (name in self.cutoff):
+                if (aeg[idt] in self.cutoff):
                     cut_define[idt] = True
-                    if (self.cutoff[name] > max_cutoff):
-                        max_cutoff = self.cutoff[name]
-            self.cutoffs[group_type] = max_cutoff
+
+            name_map = {'bond':0, 'cut3b':1, 'mb':2}
+
             if cut_define.all():
                 self.cutoff_list[group_type] = []
                 for idt in range(self.n[group_type]):
                     self.cutoff_list[group_type] += [self.cutoff[aeg[idt]]]
                 print("Different cutoffs were also defined", self.cutoff_list[group_type])
-            elif cut_define.any():
-                print("There were some cutoff defined, but not all of them")
+                self.cutoffs[name_map[group_type]] = np.max(self.cutoff_list[group_type])
+            else:
+                if cut_define.any():
+                    print("There were some cutoff defined, but not all of them")
+                if (self.cutoffs[name_map[group_type]] <=0):
+                    raise RuntimeError(f"cutoffs for {group_type} is undefined")
         elif (group_type == "triplet"):
-            nspecie = self.n['specie']
             self.ntriplet = self.n['triplet']
             if (self.ntriplet == 0):
                 return
@@ -294,6 +303,9 @@ class ParameterMasking():
                 self.hyps_opt[group_type] += [self.opt[name+'ls']]
                 print(f"   using hyper-parameters of {sig} {ls}")
             print(f"all the remaining elements are left as type {idt}")
+
+            if (self.cutoffs[1] <=0):
+                raise RuntimeError(f"cutoffs for triplet is undefined")
         else:
             pass
 
@@ -476,6 +488,7 @@ class ParameterMasking():
             cmb = hyps_mask['cutoff_mb']
             assert len(cmb) == nmb, \
                     f'number of mb cutoff should be the same as nmb {nmb}'
+
         return hyps_mask
 
     @staticmethod
@@ -521,20 +534,16 @@ class ParameterMasking():
 
     @staticmethod
     def mask2cutoff(cutoffs, cutoffs_mask):
+        """use in flare.env AtomicEnvironment to resolve what cutoff to use"""
 
-        if isinstance(cutoffs, dict):
-            scalar_cutoff_2 = cutoffs.get('bond', 0)
-            scalar_cutoff_3 = cutoffs.get('cut3b', 0)
-            scalar_cutoff_mb = cutoffs.get('mb', 0)
-        else:
-            ncutoffs = len(cutoffs)
-            scalar_cutoff_2 = cutoffs[0]
-            scalar_cutoff_3 = 0
-            scalar_cutoff_mb = 0
-            if (ncutoffs > 1):
-                scalar_cutoff_3 = cutoffs[1]
-            if (ncutoffs > 2):
-                scalar_cutoff_3 = cutoffs[2]
+        ncutoffs = len(cutoffs)
+        scalar_cutoff_2 = cutoffs[0]
+        scalar_cutoff_3 = 0
+        scalar_cutoff_mb = 0
+        if (ncutoffs > 1):
+            scalar_cutoff_3 = cutoffs[1]
+        if (ncutoffs > 2):
+            scalar_cutoff_3 = cutoffs[2]
 
         if (scalar_cutoff_2 == 0):
             scalar_cutoff_2 = np.max([scalar_cutoff_3, scalar_cutoff_mb])
@@ -563,38 +572,15 @@ class ParameterMasking():
         cutoff_3b = cutoffs_mask.get('cutoff_3b', None)
         cutoff_mb = cutoffs_mask.get('cutoff_mb', None)
 
-        assert n2b >=1
-        assert n3b >=1
-        assert nmb >=1
-
-        assert isinstance(n2b, int)
-        assert isinstance(n3b, int)
-        assert isinstance(nmb, int)
-
         if cutoff_2b is not None:
             scalar_cutoff_2 = np.max(cutoff_2b)
-            if (n2b > 1):
-                assert bond_mask is not None
-        else:
-            n2b == 1
 
         if cutoff_3b is not None:
             scalar_cutoff_3 = np.max(cutoff_3b)
-            assert scalar_cutoff_3 <= scalar_cutoff_2, \
-                "2b cutoff has to be larger than 3b cutoff"
-            if (n3b > 1):
-                assert cut3b_mask is not None
-        else:
-            n3b == 1
 
         if cutoff_mb is not None:
             scalar_cutoff_mb = np.max(cutoff_mb)
-            if (nmb > 1):
-                assert mb_mask is not None
-        # # TO DO, once the mb function is updated to use the bond_array_2
-        # # this block should be activated.
-        # assert scalar_cutoff_mb <= scalar_cutoff_2, \
-        #         "mb cutoff has to be larger than mb cutoff"
+
         return scalar_cutoff_2, scalar_cutoff_3, scalar_cutoff_mb, \
             cutoff_2b, cutoff_3b, cutoff_mb, \
             nspecie, n2b, n3b, nmb, specie_mask, bond_mask, cut3b_mask, mb_mask

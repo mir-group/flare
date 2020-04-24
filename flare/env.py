@@ -79,6 +79,14 @@ class AtomicEnvironment:
         self.cutoffs_mask = cutoffs_mask
 
         self.setup_mask()
+
+        assert self.scalar_cutoff_3 <= self.scalar_cutoff_2, \
+            "2b cutoff has to be larger than 3b cutoff"
+        # # TO DO, once the mb function is updated to use the bond_array_2
+        # # this block should be activated.
+        # assert self.scalar_cutoff_mb <= self.scalar_cutoff_2, \
+        #         "mb cutoff has to be larger than mb cutoff"
+
         self.compute_env()
 
     def setup_mask(self):

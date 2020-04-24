@@ -115,7 +115,7 @@ class Validate:
 
         output.write_to_output('\npredict with mapping:\n', self.output_name)
         for n in range(self.structure.nat):
-            chemenv = env.AtomicEnvironment(self.structure, n, self.gp.cutoffs)
+            chemenv = env.AtomicEnvironment(self.structure, n, self.gp.cutoffs, self.gp.hyps_mask)
             force, var = self.mgp_model.predict(chemenv)
             self.structure.forces[n][:] = force
             self.structure.stds[n][:] = np.sqrt(np.absolute(var))

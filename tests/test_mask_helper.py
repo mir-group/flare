@@ -28,6 +28,9 @@ def test_generate_by_line():
     pm.set_parameters('1.5', [1, 0.5, 1.5])
     pm.set_parameters('2', [1, 0.5, 2])
     pm.set_parameters('2.8', [1, 0.5, 2.8])
+    pm.set_parameters('cutoff2b', 5)
+    pm.set_parameters('cutoff3b', 4)
+    pm.set_parameters('cutoffmb', 3)
     hm = pm.generate_dict()
     print(hm)
     ParameterMasking.check_instantiation(hm)
@@ -45,6 +48,8 @@ def test_generate_by_line2():
     pm.set_parameters('CuCu', [1, 0.5])
     pm.set_parameters('Cuall', [1, 0.5])
     pm.set_parameters('***', [1, 0.5])
+    pm.set_parameters('cutoff2b', 5)
+    pm.set_parameters('cutoff3b', 4)
     hm = pm.generate_dict()
     print(hm)
     ParameterMasking.check_instantiation(hm)
@@ -56,7 +61,8 @@ def test_generate_by_list():
     pm.list_sweeping('bond', [['*', '*'], ['Cu','Cu']])
     pm.list_sweeping('triplet', [['*', '*', '*'], ['Cu','Cu', 'Cu']])
     pm.list_parameters({'bond0':[1, 0.5], 'bond1':[2, 0.2],
-                        'triplet0':[1, 0.5], 'triplet1':[2, 0.2]})
+                        'triplet0':[1, 0.5], 'triplet1':[2, 0.2],
+                        'cutoff2b':2, 'cutoff3b':1})
     hm = pm.generate_dict()
     print(hm)
     ParameterMasking.check_instantiation(hm)
@@ -66,7 +72,8 @@ def test_initialization():
                           bond=[['*', '*'], ['Cu','Cu']],
                           triplet=[['*', '*', '*'], ['Cu','Cu', 'Cu']],
                           para={'bond0':[1, 0.5], 'bond1':[2, 0.2],
-                                'triplet0':[1, 0.5], 'triplet1':[2, 0.2]})
+                                'triplet0':[1, 0.5], 'triplet1':[2, 0.2],
+                                'cutoff2b':2, 'cutoff3b':1})
     hm = pm.hyps_mask
     print(hm)
     ParameterMasking.check_instantiation(hm)
@@ -76,7 +83,8 @@ def test_opt():
                           bond=[['*', '*'], ['Cu','Cu']],
                           triplet=[['*', '*', '*'], ['Cu','Cu', 'Cu']],
                           para={'bond0':[1, 0.5, 1], 'bond1':[2, 0.2, 2],
-                                'triplet0':[1, 0.5], 'triplet1':[2, 0.2]},
+                                'triplet0':[1, 0.5], 'triplet1':[2, 0.2],
+                                'cutoff2b':2, 'cutoff3b':1},
                           constraint={'bond0':[False, True]})
     hm = pm.hyps_mask
     print(hm)
