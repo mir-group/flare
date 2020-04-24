@@ -132,7 +132,6 @@ class AtomicEnvironment:
             self.triplet_counts = triplet_counts
 
         # if 3 cutoffs are given, create many-body arrays
-        print("hello", self.scalar_cutoff_mb)
         if self.scalar_cutoff_mb > 0:
             if (self.nmb > 1):
                 self.bond_array_mb, self.neigh_dists_mb, \

@@ -122,7 +122,7 @@ def get_params():
     return parameters
 
 
-def get_tstp(hm) -> AtomicEnvironment:
+def get_tstp(hm=None) -> AtomicEnvironment:
     """Create test point for kernel to compare against"""
     # params
     cell = np.eye(3)
