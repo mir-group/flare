@@ -146,8 +146,8 @@ def from_mask_to_args(hyps, hyps_mask: dict, cutoffs):
         # multi hyper parameter mode
         if (nmb == 0 and len(orig_hyps)>(n2b*2+n3b*2+1)):
             nmb = 1
-            nspec = hyps_mask['nspec']
-            mb_mask = np.zeros(nspec*nspec, dtype=int)
+            nspecie = hyps_mask['nspecie']
+            mb_mask = np.zeros(nspecie*nspecie, dtype=int)
 
     sig2 = None
     ls2 = None
@@ -167,7 +167,7 @@ def from_mask_to_args(hyps, hyps_mask: dict, cutoffs):
             raise NameError("Hyperparameter mask missing nbond and/or"
                             "ntriplet key")
         return (cutoff_2b, cutoff_3b,
-                hyps_mask['nspec'], hyps_mask['spec_mask'],
+                hyps_mask['nspecie'], hyps_mask['specie_mask'],
                 n2b, bond_mask, n3b, triplet_mask,
                 ncut3b, cut3b_mask,
                 sig2, ls2, sig3, ls3)
@@ -187,8 +187,8 @@ def from_mask_to_args(hyps, hyps_mask: dict, cutoffs):
             lsm = np.array(orig_hyps[start+nmb: start+nmb*2])
 
         return (cutoff_2b, cutoff_3b, cutoff_mb,
-                hyps_mask['nspec'],
-                np.array(hyps_mask['spec_mask']),
+                hyps_mask['nspecie'],
+                np.array(hyps_mask['specie_mask']),
                 n2b, bond_mask,
                 n3b, triplet_mask,
                 ncut3b, cut3b_mask,

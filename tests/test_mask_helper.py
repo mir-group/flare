@@ -7,10 +7,10 @@ from flare.mask_helper import ParameterMasking
 def test_generate():
 
     pm = ParameterMasking()
-    pm.define_group('spec', 'Cu', ['Cu'])
-    pm.define_group('spec', 'O', ['O'])
-    pm.define_group('spec', 'C', ['C'])
-    pm.define_group('spec', 'H', ['H'])
+    pm.define_group('specie', 'Cu', ['Cu'])
+    pm.define_group('specie', 'O', ['O'])
+    pm.define_group('specie', 'C', ['C'])
+    pm.define_group('specie', 'H', ['H'])
     pm.define_group('bond', 'CuCu', ['Cu', 'Cu'])
     pm.define_group('bond', '**', ['C', 'H'])
     pm.define_group('triplet', 'Cu', ['Cu', 'Cu', 'Cu'])
@@ -35,8 +35,8 @@ def test_generate():
 def test_generate():
 
     pm = ParameterMasking()
-    pm.define_group('spec', 'Cu', ['Cu'])
-    pm.define_group('spec', '*', ['*'])
+    pm.define_group('specie', 'Cu', ['Cu'])
+    pm.define_group('specie', '*', ['*'])
     pm.define_group('bond', 'CuCu', ['Cu', 'Cu'])
     pm.define_group('bond', '**', ['*', '*'])
     pm.define_group('triplet', 'Cu', ['Cu', 'Cu', 'Cu'])

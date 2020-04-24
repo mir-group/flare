@@ -28,15 +28,15 @@ class AtomicEnvironment:
     bonds, triples, and many body interaction. This dictionary should be
     consistent with the hyps_mask used in the GuassianProcess object.
 
-    * spec_mask: 118-long integer array descirbing which elements belong to
+    * specie_mask: 118-long integer array descirbing which elements belong to
                  like groups for determining which bond hyperparameters to use.
                  For instance, [0,0,1,1,0 ...] assigns H to group 0, He and
                  Li to group 1, and Be to group 0 (the 0th register is ignored).
-    * nspec: Integer, number of different species groups (equal to number of
-             unique values in spec_mask).
+    * nspecie: Integer, number of different species groups (equal to number of
+             unique values in specie_mask).
     * nbond: Integer, number of different hyperparameter/cutoff sets to associate with
-             different 2-body pairings of atoms in groups defined in spec_mask.
-    * bond_mask: Array of length nspec^2, which describes the cutoff to
+             different 2-body pairings of atoms in groups defined in specie_mask.
+    * bond_mask: Array of length nspecie^2, which describes the cutoff to
                  associate with different pairings of species types. For example, if there
                  are atoms of type 0 and 1, then bond_mask defines which cutoff
                  to use for parings [0-0, 0-1, 1-0, 1-1]: if we wanted cutoff0 for
@@ -45,13 +45,13 @@ class AtomicEnvironment:
     * cutoff_2b: Array of length nbond, which stores the cutoff used for different
                  types of bonds defined in bond_mask
     * ncut3b:    Integer, number of different cutoffs sets to associate
-                 with different 3-body pariings of atoms in groups defined in spec_mask.
-    * cut3b_mask: Array of length nspec^2, which describes the cutoff to
+                 with different 3-body pariings of atoms in groups defined in specie_mask.
+    * cut3b_mask: Array of length nspecie^2, which describes the cutoff to
                  associate with different bond types in triplets. For example, in a triplet
                  (C, O, H) , there are three cutoffs. Cutoffs for CH bond, CO bond and OH bond.
-                 If C and O are associate with atom group 1 in spec_mask and H are associate with
-                 group 0 in spec_mask, the cut3b_mask[1*nspec+0] determines the C/O-H bond cutoff,
-                 and cut3b_mask[1*nspec+1] determines the C-O bond cutoff. If we want the
+                 If C and O are associate with atom group 1 in specie_mask and H are associate with
+                 group 0 in specie_mask, the cut3b_mask[1*nspecie+0] determines the C/O-H bond cutoff,
+                 and cut3b_mask[1*nspecie+1] determines the C-O bond cutoff. If we want the
                  former one to use the 1st cutoff in cutoff_3b and the later to use the 2nd cutoff
                  in cutoff_3b, the cut3b_mask should be [0, 0, 0, 1]
     * cutoff_3b: Array of length ncut3b, which stores the cutoff used for different
@@ -101,21 +101,21 @@ class AtomicEnvironment:
 
 
         if (self.cutoffs_mask is None):
-            self.nspec = 1
+            self.nspecie = 1
             self.n2b = 1
             self.n3b = 1
             self.nmb = 1
             return
 
-        self.nspec = self.cutoffs_mask.get('nspec', 1)
-        nspec = self.nspec
-        if (nspec == 1):
+        self.nspecie = self.cutoffs_mask.get('nspecie', 1)
+        nspecie = self.nspecie
+        if (nspecie == 1):
             return
 
         self.n2b = self.cutoffs_mask.get('nbond', 1)
         self.n3b = self.cutoffs_mask.get('ncut3b', 1)
         self.nmb = self.cutoffs_mask.get('nmb', 1)
-        self.spec_mask = self.cutoffs_mask.get('spec_mask', None)
+        self.specie_mask = self.cutoffs_mask.get('specie_mask', None)
         self.bond_mask = self.cutoffs_mask.get('bond_mask', None)
         self.cut3b_mask = self.cutoffs_mask.get('cut3b_mask', None)
         self.mb_mask = self.cutoffs_mask.get('mb_mask', None)
@@ -164,7 +164,7 @@ class AtomicEnvironment:
             bond_array_2, bond_positions_2, etypes, bond_inds = \
                 get_2_body_arrays_ind_sepcut(self.positions, self.atom, self.cell,
                                              self.cutoff_2b, self.species,
-                                             self.nspec, self.spec_mask, self.bond_mask)
+                                             self.nspecie, self.specie_mask, self.bond_mask)
         else:
             bond_array_2, bond_positions_2, etypes, bond_inds = \
                 get_2_body_arrays_ind(self.positions, self.atom, self.cell,
@@ -180,7 +180,7 @@ class AtomicEnvironment:
                 bond_array_3, cross_bond_inds, cross_bond_dists, triplet_counts = \
                     get_3_body_arrays_sepcut(bond_array_2, bond_positions_2,
                                              self.species[self.atom], etypes, self.cutoff_3b,
-                                             self.nspec, self.spec_mask, self.cut3b_mask)
+                                             self.nspecie, self.specie_mask, self.cut3b_mask)
             else:
                 bond_array_3, cross_bond_inds, cross_bond_dists, triplet_counts = \
                     get_3_body_arrays(
@@ -200,7 +200,7 @@ class AtomicEnvironment:
                     get_m_body_arrays_sepcut(
                         self.positions, self.atom, self.cell,
                         self.cutoff_mb, self.species,
-                        self.nspec, self.spec_mask, self.mb_mask)
+                        self.nspecie, self.specie_mask, self.mb_mask)
             else:
                 self.bond_array_mb, self.neigh_dists_mb, \
                     self.num_neighs_mb, self.etype_mb, \
@@ -532,7 +532,7 @@ def get_m_body_arrays(positions, atom: int, cell,
 
 @njit
 def get_2_body_arrays_ind_sepcut(positions, atom: int, cell, cutoff_2, species,
-                                 nspec, spec_mask, bond_mask):
+                                 nspecie, specie_mask, bond_mask):
     """Returns distances, coordinates, species of atoms, and indices of neighbors
     in the 2-body local environment. This method is implemented outside
     the AtomicEnvironment class to allow for njit acceleration with Numba.
@@ -548,9 +548,9 @@ def get_2_body_arrays_ind_sepcut(positions, atom: int, cell, cutoff_2, species,
     :type cutoff_2: np.ndarray
     :param species: Numpy array of species represented by their atomic numbers.
     :type species: np.ndarray
-    :param nspec: number of atom types to define bonds
+    :param nspecie: number of atom types to define bonds
     :type: int
-    :param spec_mask: mapping from atomic number to atom types
+    :param specie_mask: mapping from atomic number to atom types
     :type: np.ndarray
     :param bond_mask: mapping from the types of end atoms to bond types
     :type: np.ndarray
@@ -583,14 +583,14 @@ def get_2_body_arrays_ind_sepcut(positions, atom: int, cell, cutoff_2, species,
     vec2 = cell[1]
     vec3 = cell[2]
 
-    bc = spec_mask[species[atom]]
-    bcn = nspec * bc
+    bc = specie_mask[species[atom]]
+    bcn = nspecie * bc
 
     # record distances and positions of images
     for n in range(noa):
         diff_curr = positions[n] - pos_atom
         im_count = 0
-        bn = spec_mask[species[n]]
+        bn = specie_mask[species[n]]
         rcut = cutoff_2[bond_mask[bn+bcn]]
 
         for s1 in super_sweep:
@@ -613,7 +613,7 @@ def get_2_body_arrays_ind_sepcut(positions, atom: int, cell, cutoff_2, species,
 
     for m in range(noa):
         spec_curr = species[m]
-        bm = spec_mask[species[m]]
+        bm = specie_mask[species[m]]
         rcut = cutoff_2[bond_mask[bm+bcn]]
         for n in range(27):
             dist_curr = dists[m, n]
@@ -639,7 +639,7 @@ def get_2_body_arrays_ind_sepcut(positions, atom: int, cell, cutoff_2, species,
 @njit
 def get_3_body_arrays_sepcut(bond_array_2, bond_positions_2, ctype,
                              etypes, cutoff_3,
-                             nspec, spec_mask, cut3b_mask):
+                             nspecie, specie_mask, cut3b_mask):
     """Returns distances and coordinates of triplets of atoms in the
     3-body local environment.
 
@@ -652,9 +652,9 @@ def get_3_body_arrays_sepcut(bond_array_2, bond_positions_2, ctype,
     :type: int
     :param cutoff_3: 3-body cutoff radius.
     :type cutoff_3: np.ndarray
-    :param nspec: number of atom types to define bonds
+    :param nspecie: number of atom types to define bonds
     :type: int
-    :param spec_mask: mapping from atomic number to atom types
+    :param specie_mask: mapping from atomic number to atom types
     :type: np.ndarray
     :param cut3b_mask: mapping from the types of end atoms to bond types
     :type: np.ndarray
@@ -681,8 +681,8 @@ def get_3_body_arrays_sepcut(bond_array_2, bond_positions_2, ctype,
     :rtype: (np.ndarray, np.ndarray, np.ndarray, np.ndarray)
     """
 
-    bc = spec_mask[ctype]
-    bcn = nspec * bc
+    bc = specie_mask[ctype]
+    bcn = nspecie * bc
 
     cut3 = np.max(cutoff_3)
 
@@ -706,14 +706,14 @@ def get_3_body_arrays_sepcut(bond_array_2, bond_positions_2, ctype,
         trips = 0
 
         # choose bond dependent bond
-        bm = spec_mask[etypes[m]]
+        bm = specie_mask[etypes[m]]
         btype_m = cut3b_mask[bm + bcn]  # (m, c)
         cut_m = cutoff_3[btype_m]
-        bmn = nspec * bm  # for cross_dist usage
+        bmn = nspecie * bm  # for cross_dist usage
 
         for n in range(m + 1, ind_3):
 
-            bn = spec_mask[etypes[n]]
+            bn = specie_mask[etypes[n]]
             btype_n = cut3b_mask[bn + bcn]  # (n, c)
             cut_n = cutoff_3[btype_n]
 
@@ -741,7 +741,7 @@ def get_3_body_arrays_sepcut(bond_array_2, bond_positions_2, ctype,
 
 @njit
 def get_m_body_arrays_sepcut(positions, atom: int, cell, cutoff_mb, species,
-                             nspec, spec_mask, mb_mask):
+                             nspecie, specie_mask, mb_mask):
     """Returns distances, and species of atoms in the many-body
     local environment, and returns distances and numbers of neighbours for atoms in the one
     many-body local environment. This method is implemented outside the AtomicEnvironment
@@ -758,9 +758,9 @@ def get_m_body_arrays_sepcut(positions, atom: int, cell, cutoff_mb, species,
     :type cutoff_mb: np.ndarray
     :param species: Numpy array of species represented by their atomic numbers.
     :type species: np.ndarray
-    :param nspec: number of atom types to define bonds
+    :param nspecie: number of atom types to define bonds
     :type: int
-    :param spec_mask: mapping from atomic number to atom types
+    :param specie_mask: mapping from atomic number to atom types
     :type: np.ndarray
     :param mb_mask: mapping from the types of end atoms to CN types
     :type: np.ndarray
@@ -789,7 +789,7 @@ def get_m_body_arrays_sepcut(positions, atom: int, cell, cutoff_mb, species,
     # Get distances, positions, species and indices of neighbouring atoms
     bond_array_mb, __, etypes, bond_inds = get_2_body_arrays_ind_sepcut(
         positions, atom, cell, cutoff_mb, species,
-        nspec, spec_mask, mb_mask)
+        nspecie, specie_mask, mb_mask)
 
     # For each neighbouring atom, get distances in its neighbourhood
     neighbouring_dists = []
@@ -799,7 +799,7 @@ def get_m_body_arrays_sepcut(positions, atom: int, cell, cutoff_mb, species,
         neighbour_bond_array_2, ___, etypes_mb, ____ \
             = get_2_body_arrays_ind_sepcut(positions, m, cell,
                                            cutoff_mb, species,
-                                           nspec, spec_mask, mb_mask)
+                                           nspecie, specie_mask, mb_mask)
         neighbouring_dists.append(neighbour_bond_array_2[:, 0])
         neighbouring_etypes.append(etypes_mb)
         if len(neighbour_bond_array_2[:, 0]) > max_neighbours:

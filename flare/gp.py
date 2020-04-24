@@ -1,7 +1,7 @@
 import time
 import math
 import pickle
-import inspect
+import inspeciet
 import json
 
 import numpy as np
@@ -583,10 +583,10 @@ class GaussianProcess:
                 thestr += f"{label}: {hyp}\n"
 
         if self.multihyps:
-            nspec = self.hyps_mask['nspec']
-            thestr += f'nspec: {nspec}\n'
-            thestr += f'spec_mask: \n'
-            thestr += str(self.hyps_mask['spec_mask']) + '\n'
+            nspecie = self.hyps_mask['nspecie']
+            thestr += f'nspecie: {nspecie}\n'
+            thestr += f'specie_mask: \n'
+            thestr += str(self.hyps_mask['specie_mask']) + '\n'
 
             nbond = self.hyps_mask['nbond']
             thestr += f'nbond: {nbond}\n'
@@ -816,7 +816,7 @@ class GaussianProcess:
                                 f"it can take extra long time to recompute")
 
         else:
-            raise ValueError("Warning: Format unspecified or file is not "
+            raise ValueError("Warning: Format unspecieified or file is not "
                              ".json or .pickle format.")
 
         return gp_model

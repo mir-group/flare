@@ -17,15 +17,15 @@ class ParameterMasking():
 
     def __init__(self, hyps_mask=None):
         self.n = {}
-        self.element_group = {}
-        self.all_elements = {}
-        self.all_ele_group = {}
+        self.groups = {}
+        self.all_members = {}
+        self.all_group_names = {}
 
-        for group_type in ['spec', 'bond', 'triplet', 'cut3b', 'mb']:
+        for group_type in ['specie', 'bond', 'triplet', 'cut3b', 'mb']:
             self.n[group_type] = 0
-            self.element_group[group_type] = []
-            self.all_elements[group_type] = []
-            self.all_ele_group[group_type] = []
+            self.groups[group_type] = []
+            self.all_members[group_type] = []
+            self.all_group_names[group_type] = []
         self.sigma = {'bond':{}, 'triplet':{}, 'mb':{}}
         self.ls = {'bond':{}, 'triplet':{}, 'mb': {}}
         self.cutoff = {'bond':{}, 'cut3b':{}, 'mb': {}}
@@ -36,45 +36,45 @@ class ParameterMasking():
 
     def define_group(self, group_type, name, element_list, atomic_str=False):
         """
-        group_type (str): spec, bond, triplet, cut3b, mb
+        group_type (str): species, bond, triplet, cut3b, mb
         name (str): the name use for indexing
         element_list (list):
         """
 
-        if (name in self.all_ele_group[group_type]):
-            groupid = self.all_ele_group[group_type].index(name)
+        if (name in self.all_group_names[group_type]):
+            groupid = self.all_group_names[group_type].index(name)
         else:
             groupid = self.n[group_type]
-            self.all_ele_group[group_type].append(name)
-            self.element_group[group_type].append([])
+            self.all_group_names[group_type].append(name)
+            self.groups[group_type].append([])
             self.n[group_type] += 1
 
-        if (group_type is 'spec'):
+        if (group_type is 'specie'):
             for ele in element_list:
-                assert ele not in self.all_elements['spec'], \
+                assert ele not in self.all_members['specie'], \
                         "the element has already been defined"
-                self.element_group['spec'][groupid].append(ele)
-                self.all_elements['spec'].append(ele)
+                self.groups['specie'][groupid].append(ele)
+                self.all_members['specie'].append(ele)
         else:
             gid = []
             for ele_name in element_list:
                 if (atomic_str):
-                    for idx in range(self.n['spec']):
-                        if (ele_name in self.element_group['spec'][idx]):
+                    for idx in range(self.n['specie']):
+                        if (ele_name in self.groups['specie'][idx]):
                             gid += [idx]
                             print(f"Define {group_type}: Element {ele_name}"\
-                                  f"is in group {self.all_ele_group[idx]}")
+                                  f"is in group {self.all_group_names[idx]}")
                 else:
-                    print(self.element_group['spec'])
-                    print(self.all_ele_group['spec'])
-                    gid += [self.all_ele_group['spec'].index(ele_name)]
+                    print(self.groups['specie'])
+                    print(self.all_group_names['specie'])
+                    gid += [self.all_group_names['specie'].index(ele_name)]
 
-            for ele in self.all_elements[group_type]:
+            for ele in self.all_members[group_type]:
                 assert set(gid) != set(ele), \
                     f"the {group_type} {ele} has already been defined"
 
-            self.element_group[group_type][groupid].append(gid)
-            self.all_elements[group_type].append(gid)
+            self.groups[group_type][groupid].append(gid)
+            self.all_members[group_type].append(gid)
 
     def define_parameters(self, group_type, name, sig, ls, cutoff=None):
 
@@ -87,45 +87,45 @@ class ParameterMasking():
 
     def print_group(self, group_type):
         """
-        group_type (str): spec, bond, triplet, cut3b, mb
+        group_type (str): species, bond, triplet, cut3b, mb
         name (str): the name use for indexing
         element_list (list):
         """
-        aeg = self.all_ele_group[group_type]
-        if (group_type == "spec"):
-            self.nspec = self.n['spec']
-            self.spec_mask = np.ones(118, dtype=np.int)*(self.n['spec']-1)
-            for idt in range(self.n['spec']):
+        aeg = self.all_group_names[group_type]
+        if (group_type == "specie"):
+            self.nspecie = self.n['specie']
+            self.specie_mask = np.ones(118, dtype=np.int)*(self.n['specie']-1)
+            for idt in range(self.n['specie']):
                 if (aeg[idt] == "*"):
                     for i in range(118):
-                        if self.spec_mask[i] > idt:
-                            self.spec_mask[i] = idt
+                        if self.specie_mask[i] > idt:
+                            self.specie_mask[i] = idt
                             print(f"element [i] is defined as type {idt} with name"\
                                 f"aeg[idt]")
                 else:
-                    for ele in self.element_group['spec'][idt]:
+                    for ele in self.groups['specie'][idt]:
                         atom_n = element_to_Z(ele)
-                        self.spec_mask[atom_n] = idt
+                        self.specie_mask[atom_n] = idt
                         print(f"elemtn {ele} is defined as type {idt} with name"\
                                 f"aeg[idt]")
             print("all the remaining elements are left as type 0")
         elif (group_type in ['bond', 'cut3b', 'mb']):
-            nspec = self.n['spec']
-            self.mask[group_type] = np.ones(nspec**2, dtype=np.int)*(self.n[group_type]-1)
+            nspecie = self.n['specie']
+            self.mask[group_type] = np.ones(nspecie**2, dtype=np.int)*(self.n[group_type]-1)
             self.hyps_sig[group_type] = []
             self.hyps_ls[group_type] = []
             for idt in range(self.n[group_type]):
                 name = aeg[idt]
                 if (aeg[idt] == "*"):
-                    for i in range(nspec**2):
+                    for i in range(nspecie**2):
                         if (self.mask[group_type][i]>idt):
                             self.mask[group_type][i] = idt
                 else:
-                    for bond in self.element_group[group_type][idt]:
+                    for bond in self.groups[group_type][idt]:
                         g1 = bond[0]
                         g2 = bond[1]
-                        self.mask[group_type][g1+g2*nspec] = idt
-                        self.mask[group_type][g2+g1*nspec] = idt
+                        self.mask[group_type][g1+g2*nspecie] = idt
+                        self.mask[group_type][g2+g1*nspecie] = idt
                         print(f"{group_type} {bond} is defined as type {idt} with name"\
                                 f"{name}")
                 if (group_type != 'cut3b'):
@@ -138,31 +138,31 @@ class ParameterMasking():
                 for idt in range(self.n[group_type]):
                     self.cutoff_list[group_type] += [self.cutoff[group_type][aeg[idt]]]
         elif (group_type == "triplet"):
-            nspec = self.n['spec']
+            nspecie = self.n['specie']
             self.ntriplet = self.n['triplet']
-            self.mask[group_type] = np.ones(nspec**3, dtype=np.int)*(self.ntriplet-1)
+            self.mask[group_type] = np.ones(nspecie**3, dtype=np.int)*(self.ntriplet-1)
             self.hyps_sig[group_type] = []
             self.hyps_ls[group_type] = []
             for idt in range(self.n['triplet']):
                 if (aeg[idt] == "*"):
-                    for i in range(nspec**3):
+                    for i in range(nspecie**3):
                         if (self.mask[group_type][i]>idt):
                             self.mask[group_type][i] = idt
                 else:
-                    for triplet in self.element_group['triplet'][idt]:
+                    for triplet in self.groups['triplet'][idt]:
                         g1 = triplet[0]
                         g2 = triplet[1]
                         g3 = triplet[2]
-                        self.mask[group_type][g1+g2*nspec+g3*nspec**2] = idt
-                        self.mask[group_type][g1+g3*nspec+g2*nspec**2] = idt
-                        self.mask[group_type][g2+g1*nspec+g3*nspec**2] = idt
-                        self.mask[group_type][g2+g3*nspec+g1*nspec**2] = idt
-                        self.mask[group_type][g3+g1*nspec+g2*nspec**2] = idt
-                        self.mask[group_type][g3+g2*nspec+g1*nspec**2] = idt
+                        self.mask[group_type][g1+g2*nspecie+g3*nspecie**2] = idt
+                        self.mask[group_type][g1+g3*nspecie+g2*nspecie**2] = idt
+                        self.mask[group_type][g2+g1*nspecie+g3*nspecie**2] = idt
+                        self.mask[group_type][g2+g3*nspecie+g1*nspecie**2] = idt
+                        self.mask[group_type][g3+g1*nspecie+g2*nspecie**2] = idt
+                        self.mask[group_type][g3+g2*nspecie+g1*nspecie**2] = idt
                         print(f"triplet {triplet} is defined as type {idt} with name"\
-                                "self.all_ele_group[group_type][idt]")
-                self.hyps_sig[group_type] += [self.sigma['triplet'][self.all_ele_group[group_type][idt]]]
-                self.hyps_ls[group_type] += [self.ls['triplet'][self.all_ele_group[group_type][idt]]]
+                                "self.all_group_names[group_type][idt]")
+                self.hyps_sig[group_type] += [self.sigma['triplet'][self.all_group_names[group_type][idt]]]
+                self.hyps_ls[group_type] += [self.ls['triplet'][self.all_group_names[group_type][idt]]]
                 print(f"   using hyper-parameters of {self.hyps_sig[group_type][-1]}"\
                         "{ self.hyps_ls[group_type][-1]}")
         else:
@@ -170,18 +170,18 @@ class ParameterMasking():
 
     def generate_dict(self):
         """Dictionary representation of the GP model."""
-        if self.n['spec'] < 2:
+        if self.n['specie'] < 2:
             print("only one type of elements was defined. return None")
             hyps_mask = None
         else:
-            self.print_group('spec')
+            self.print_group('specie')
             self.print_group('bond')
             self.print_group('triplet')
             self.print_group('cut3b')
             self.print_group('mb')
             hyps_mask = {}
-            hyps_mask['nspec'] = self.n['spec']
-            hyps_mask['spec_mask'] = self.spec_mask
+            hyps_mask['nspecie'] = self.n['specie']
+            hyps_mask['specie_mask'] = self.specie_mask
             hyps = []
             for group in ['bond', 'triplet', 'mb']:
                 if (self.n[group]>1):
@@ -213,14 +213,14 @@ class ParameterMasking():
 
         assert isinstance(hyps_mask, dict)
 
-        assert 'nspec' in hyps_mask, "nspec key missing in " \
+        assert 'nspecie' in hyps_mask, "nspecie key missing in " \
                                                  "hyps_mask dictionary"
-        assert 'spec_mask' in hyps_mask, "spec_mask key " \
+        assert 'specie_mask' in hyps_mask, "specie_mask key " \
                                                      "missing " \
                                                      "in hyps_mask dicticnary"
 
-        nspec = hyps_mask['nspec']
-        hyps_mask['spec_mask'] = nparray(hyps_mask['spec_mask'], dtype=int)
+        nspecie = hyps_mask['nspecie']
+        hyps_mask['specie_mask'] = nparray(hyps_mask['specie_mask'], dtype=int)
 
         if 'nbond' in hyps_mask:
             n2b = hyps_mask['nbond']
@@ -230,12 +230,12 @@ class ParameterMasking():
             if n2b > 0:
                 bmask = hyps_mask['bond_mask']
                 assert (npmax(bmask) < n2b)
-                assert len(bmask) == nspec ** 2, \
+                assert len(bmask) == nspecie ** 2, \
                     f"wrong dimension of bond_mask: " \
-                    f" {len(bmask)} != nspec^2 {nspec**2}"
-                for t2b in range(nspec):
-                    for t2b_2 in range(t2b, nspec):
-                        assert bmask[t2b*nspec+t2b_2] == bmask[t2b_2*nspec+t2b], \
+                    f" {len(bmask)} != nspecie^2 {nspecie**2}"
+                for t2b in range(nspecie):
+                    for t2b_2 in range(t2b, nspecie):
+                        assert bmask[t2b*nspecie+t2b_2] == bmask[t2b_2*nspecie+t2b], \
                                 'bond_mask has to be symmetric'
         else:
             n2b = 0
@@ -248,27 +248,27 @@ class ParameterMasking():
             if n3b > 0:
                 tmask = hyps_mask['triplet_mask']
                 assert (npmax(tmask) < n3b)
-                assert len(tmask) == nspec ** 3, \
+                assert len(tmask) == nspecie ** 3, \
                     f"wrong dimension of bond_mask: " \
-                    f" {len(tmask)} != nspec^3 {nspec**3}"
+                    f" {len(tmask)} != nspecie^3 {nspecie**3}"
 
-                for t3b in range(nspec):
-                    for t3b_2 in range(t3b, nspec):
-                        for t3b_3 in range(t3b_2, nspec):
-                            assert tmask[t3b*nspec*nspec+t3b_2*nspec+t3b_3] \
-                                    == tmask[t3b*nspec*nspec+t3b_3*nspec+t3b_2], \
+                for t3b in range(nspecie):
+                    for t3b_2 in range(t3b, nspecie):
+                        for t3b_3 in range(t3b_2, nspecie):
+                            assert tmask[t3b*nspecie*nspecie+t3b_2*nspecie+t3b_3] \
+                                    == tmask[t3b*nspecie*nspecie+t3b_3*nspecie+t3b_2], \
                                     'bond_mask has to be symmetric'
-                            assert tmask[t3b*nspec*nspec+t3b_2*nspec+t3b_3] \
-                                    == tmask[t3b_2*nspec*nspec+t3b*nspec+t3b_3], \
+                            assert tmask[t3b*nspecie*nspecie+t3b_2*nspecie+t3b_3] \
+                                    == tmask[t3b_2*nspecie*nspecie+t3b*nspecie+t3b_3], \
                                     'bond_mask has to be symmetric'
-                            assert tmask[t3b*nspec*nspec+t3b_2*nspec+t3b_3] \
-                                    == tmask[t3b_2*nspec*nspec+t3b_3*nspec+t3b], \
+                            assert tmask[t3b*nspecie*nspecie+t3b_2*nspecie+t3b_3] \
+                                    == tmask[t3b_2*nspecie*nspecie+t3b_3*nspecie+t3b], \
                                     'bond_mask has to be symmetric'
-                            assert tmask[t3b*nspec*nspec+t3b_2*nspec+t3b_3] \
-                                    == tmask[t3b_3*nspec*nspec+t3b*nspec+t3b_2], \
+                            assert tmask[t3b*nspecie*nspecie+t3b_2*nspecie+t3b_3] \
+                                    == tmask[t3b_3*nspecie*nspecie+t3b*nspecie+t3b_2], \
                                     'bond_mask has to be symmetric'
-                            assert tmask[t3b*nspec*nspec+t3b_2*nspec+t3b_3] \
-                                    == tmask[t3b_3*nspec*nspec+t3b_2*nspec+t3b], \
+                            assert tmask[t3b*nspecie*nspecie+t3b_2*nspecie+t3b_3] \
+                                    == tmask[t3b_3*nspecie*nspecie+t3b_2*nspecie+t3b], \
                                     'bond_mask has to be symmetric'
         else:
             n3b = 0
@@ -281,16 +281,16 @@ class ParameterMasking():
             if nmb > 0:
                 bmask = hyps_mask['mb_mask']
                 assert (npmax(bmask) < nmb)
-                assert len(bmask) == nspec ** 2, \
+                assert len(bmask) == nspecie ** 2, \
                     f"wrong dimension of mb_mask: " \
-                    f" {len(bmask)} != nspec^2 {nspec**2}"
-                for tmb in range(nspec):
-                    for tmb_2 in range(tmb, nspec):
-                        assert bmask[tmb*nspec+tmb_2] == bmask[tmb_2*nspec+tmb], \
+                    f" {len(bmask)} != nspecie^2 {nspecie**2}"
+                for tmb in range(nspecie):
+                    for tmb_2 in range(tmb, nspecie):
+                        assert bmask[tmb*nspecie+tmb_2] == bmask[tmb_2*nspecie+tmb], \
                                 'mb_mask has to be symmetric'
         else:
             nmb = 1
-            hyps_mask['mb_mask'] = np.zeros(nspec**2)
+            hyps_mask['mb_mask'] = np.zeros(nspecie**2)
 
         if 'map' in hyps_mask:
             assert ('original' in hyps_mask), \
@@ -317,12 +317,12 @@ class ParameterMasking():
             hyps_mask['cut3b_mask'] = nparray(hyps_mask['cut3b_mask'], dtype=int)
             assert len(c3b) == hyps_mask['ncut3b'], \
                     f'number of 3b cutoff should be the same as ncut3b {ncut3b}'
-            assert len(hyps_mask['cut3b_mask']) == nspec ** 2, \
+            assert len(hyps_mask['cut3b_mask']) == nspecie ** 2, \
                 f"wrong dimension of cut3b_mask: " \
-                f" {len(bmask)} != nspec^2 {nspec**2}"
+                f" {len(bmask)} != nspecie^2 {nspecie**2}"
             assert npmax(hyps_mask['cut3b_mask']) < hyps_mask['ncut3b'], \
                 f"wrong dimension of cut3b_mask: " \
-                f" {len(bmask)} != nspec^2 {nspec**2}"
+                f" {len(bmask)} != nspecie^2 {nspecie**2}"
 
         if 'cutoff_mb' in hyps_mask:
             cmb = hyps_mask['cutoff_mb']
