@@ -1,7 +1,7 @@
 import time
 import math
 import pickle
-import inspeciet
+import inspect
 import json
 
 import numpy as np

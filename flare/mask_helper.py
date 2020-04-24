@@ -5,17 +5,24 @@ import inspect
 import json
 
 import numpy as np
+from copy import deepcopy
 from numpy.random import random
 from numpy import array as nparray
 from numpy import max as npmax
 from typing import List, Callable, Union
+from warnings import warn
 
 from flare.util import  element_to_Z
 
 
 class ParameterMasking():
-
-    def __init__(self, hyps_mask=None):
+    """
+    A helper class to construct the hyps_mask dictionary for AtomicEnvironment
+    and GaussianProcess
+    """
+    def __init__(self, hyps_mask=None, specie=None, bond=None,
+                 triplet=None, cut3b=None, mb=None, para=None,
+                 constraint={}):
         self.n = {}
         self.groups = {}
         self.all_members = {}
@@ -26,20 +33,88 @@ class ParameterMasking():
             self.groups[group_type] = []
             self.all_members[group_type] = []
             self.all_group_names[group_type] = []
-        self.sigma = {'bond':{}, 'triplet':{}, 'mb':{}}
-        self.ls = {'bond':{}, 'triplet':{}, 'mb': {}}
-        self.cutoff = {'bond':{}, 'cut3b':{}, 'mb': {}}
+        self.sigma = {}
+        self.ls = {}
+        self.cutoff = {}
         self.hyps_sig = {}
         self.hyps_ls = {}
+        self.hyps_opt = {}
+        self.opt = {'noise':True}
         self.mask = {}
         self.cutoff_list = {}
+        self.noise = 0.05
 
-    def define_group(self, group_type, name, element_list, atomic_str=False):
+        if (specie is not None):
+            self.list_sweeping('specie', specie)
+            if (bond is not None):
+                self.list_sweeping('bond', bond)
+            if (triplet is not None):
+                self.list_sweeping('triplet', triplet)
+            if (cut3b is not None):
+                self.list_sweeping('cut3b', cut3b)
+            if (mb is not None):
+                self.list_sweeping('mb', mb)
+            if (para is not None):
+                self.list_parameters(para, constraint)
+            self.hyps_mask = self.generate_dict()
+
+    def list_parameters(self, para_list, constraint={}):
+        for name in para_list:
+            setp = False
+            for gt in ['bond', 'triplet', 'mb', 'cut3b']:
+                if (name in self.all_group_names[gt]):
+                    self.set_parameters(gt, name, para_list[name], constraint.get(name, True))
+                    setp = True
+                    break
+            if (name == 'noise'):
+                self.noise = para_list[name]
+                setp = True
+            if (not setp):
+                print(f"Warning: name {name} is not found in any group. Skip")
+
+    def list_sweeping(self, group_type, element_list):
+        if (group_type == 'specie'):
+            if (len(self.all_group_names['specie'])>0):
+                raise RuntimeError("this function has to be run "\
+                        "before any define_group")
+            if (isinstance(element_list, list)):
+                for ele in element_list:
+                    if isinstance(ele, list):
+                        self.define_group('specie', ele, ele)
+                    else:
+                        self.define_group('specie', ele, [ele])
+            elif (isinstance(elemnt_list, dict)):
+                for ele in element_list:
+                    self.define_group('specie', ele, element_list[ele])
+            else:
+                raise RuntimeError("type unknown")
+        else:
+            if (len(self.all_group_names['specie'])==0):
+                raise RuntimeError("this function has to be run "\
+                        "before any define_group")
+            if (isinstance(element_list, list)):
+                ngroup = len(element_list)
+                for idg in range(ngroup):
+                    self.define_group(group_type, f"{group_type}_{idg}",
+                            element_list[idg])
+            elif (isinstance(element_list, dict)):
+                for name in element_list:
+                    if (isinstance(element_list[name][0], list)):
+                        for ele in element_list[name]:
+                            self.define_group(group_type, name, ele)
+                    else:
+                        self.define_group(group_type, name, element_list[name])
+
+    def define_group(self, group_type, name, element_list, parameters=None, atomic_str=False):
         """
         group_type (str): species, bond, triplet, cut3b, mb
         name (str): the name use for indexing
         element_list (list):
         """
+
+        if (name == '*'):
+            raise ValueError("* is reserved for substitution, cannot be used "\
+                    "as a group name")
 
         if (name in self.all_group_names[group_type]):
             groupid = self.all_group_names[group_type].index(name)
@@ -55,34 +130,63 @@ class ParameterMasking():
                         "the element has already been defined"
                 self.groups['specie'][groupid].append(ele)
                 self.all_members['specie'].append(ele)
+                print(f"element {ele} is defined as group {name}")
         else:
-            gid = []
-            for ele_name in element_list:
-                if (atomic_str):
-                    for idx in range(self.n['specie']):
-                        if (ele_name in self.groups['specie'][idx]):
-                            gid += [idx]
-                            print(f"Define {group_type}: Element {ele_name}"\
-                                  f"is in group {self.all_group_names[idx]}")
-                else:
-                    print(self.groups['specie'])
-                    print(self.all_group_names['specie'])
-                    gid += [self.all_group_names['specie'].index(ele_name)]
+            if (len(self.all_group_names['specie'])==0):
+                raise RuntimeError("the atomic species have to be"
+                        "defined ahead")
+            if ("*" not in element_list):
+                gid = []
+                for ele_name in element_list:
+                    if (atomic_str):
+                        for idx in range(self.n['specie']):
+                            if (ele_name in self.groups['specie'][idx]):
+                                gid += [idx]
+                                print(f"Warning: Element {ele_name} is used for "\
+                                      f"definition, but the whole group "\
+                                      f"{self.all_group_names[idx]} is affected")
+                    else:
+                        gid += [self.all_group_names['specie'].index(ele_name)]
 
-            for ele in self.all_members[group_type]:
-                assert set(gid) != set(ele), \
-                    f"the {group_type} {ele} has already been defined"
+                for ele in self.all_members[group_type]:
+                    if set(gid) == set(ele):
+                        print(f"Warning: the definition of {group_type} {ele} will be overriden")
+                self.groups[group_type][groupid].append(gid)
+                self.all_members[group_type].append(gid)
+                print(f"{group_type} {gid} is defined as group {name}")
+                if (parameters is not None):
+                    self.set_parameters(group_type, name, parameters)
+            else:
+                one_star_less = deepcopy(element_list)
+                idstar = element_list.index('*')
+                one_star_less.pop(idstar)
+                for sub in self.all_group_names['specie']:
+                    # print("head of replacement", group_type, name,
+                    #       non_star_element +[sub])
+                    self.define_group(group_type, name,
+                            one_star_less +[sub], parameters=parameters, atomic_str=atomic_str)
 
-            self.groups[group_type][groupid].append(gid)
-            self.all_members[group_type].append(gid)
+    def set_parameters(self, group_type, name, parameters, opt=True):
 
-    def define_parameters(self, group_type, name, sig, ls, cutoff=None):
+        if ('group_type' == 'noise'):
+            self.noise = parameters
+            self.opt['noise'] = opt
+            return
 
+        fullname = group_type+name
+        if (isinstance(opt, bool)):
+            opt = [opt, opt, opt]
         if (group_type != 'cut3b'):
-            self.sigma[group_type][name] = sig
-            self.ls[group_type][name] = ls
-        if (cutoff is not None):
-            self.cutoff[group_type][name] = cutoff
+            if (fullname in self.sigma):
+                print(f"Warning, the sig, ls of group {name} is overriden")
+            self.sigma[fullname] = parameters[0]
+            self.ls[fullname] = parameters[1]
+            self.opt[fullname+'sig'] = opt[0]
+            self.opt[fullname+'ls'] = opt[1]
+        if (len(parameters)>2):
+            if (fullname in self.cutoff):
+                print(f"Warning, the cutoff of group {name} is overriden")
+            self.cutoff[fullname] = parameters[2]
 
 
     def print_group(self, group_type):
@@ -96,75 +200,84 @@ class ParameterMasking():
             self.nspecie = self.n['specie']
             self.specie_mask = np.ones(118, dtype=np.int)*(self.n['specie']-1)
             for idt in range(self.n['specie']):
-                if (aeg[idt] == "*"):
-                    for i in range(118):
-                        if self.specie_mask[i] > idt:
-                            self.specie_mask[i] = idt
-                            print(f"element [i] is defined as type {idt} with name"\
-                                f"aeg[idt]")
-                else:
-                    for ele in self.groups['specie'][idt]:
-                        atom_n = element_to_Z(ele)
-                        self.specie_mask[atom_n] = idt
-                        print(f"elemtn {ele} is defined as type {idt} with name"\
-                                f"aeg[idt]")
-            print("all the remaining elements are left as type 0")
+                for ele in self.groups['specie'][idt]:
+                    atom_n = element_to_Z(ele)
+                    self.specie_mask[atom_n] = idt
+                    print(f"elemtn {ele} is defined as type {idt} with name "\
+                            f"{aeg[idt]}")
+            print(f"all the remaining elements are left as type {idt}")
         elif (group_type in ['bond', 'cut3b', 'mb']):
             nspecie = self.n['specie']
+            if (self.n[group_type] == 0):
+                return
             self.mask[group_type] = np.ones(nspecie**2, dtype=np.int)*(self.n[group_type]-1)
             self.hyps_sig[group_type] = []
             self.hyps_ls[group_type] = []
+            self.hyps_opt[group_type] = []
             for idt in range(self.n[group_type]):
                 name = aeg[idt]
-                if (aeg[idt] == "*"):
-                    for i in range(nspecie**2):
-                        if (self.mask[group_type][i]>idt):
-                            self.mask[group_type][i] = idt
-                else:
-                    for bond in self.groups[group_type][idt]:
-                        g1 = bond[0]
-                        g2 = bond[1]
-                        self.mask[group_type][g1+g2*nspecie] = idt
-                        self.mask[group_type][g2+g1*nspecie] = idt
-                        print(f"{group_type} {bond} is defined as type {idt} with name"\
-                                f"{name}")
+                for bond in self.groups[group_type][idt]:
+                    g1 = bond[0]
+                    g2 = bond[1]
+                    self.mask[group_type][g1+g2*nspecie] = idt
+                    self.mask[group_type][g2+g1*nspecie] = idt
+                    s1 = self.groups['specie'][g1]
+                    s2 = self.groups['specie'][g2]
+                    print(f"{group_type} {s1} - {s2} is defined as type {idt} "\
+                          f"with name {name}")
                 if (group_type != 'cut3b'):
-                    self.hyps_sig[group_type] += [self.sigma[group_type][name]]
-                    self.hyps_ls[group_type] += [self.ls[group_type][name]]
-                    print(f"   using hyper-parameters of {self.hyps_sig[group_type][-1]}"\
-                            "{ self.hyps_ls[group_type][-1]}")
-            if len(self.cutoff[group_type]) >0:
+                    fullname = group_type+name
+                    sig = self.sigma[fullname]
+                    ls = self.ls[fullname]
+                    self.hyps_sig[group_type] += [sig]
+                    self.hyps_ls[group_type] += [ls]
+                    self.hyps_opt[group_type] += [self.opt[fullname+'sig']]
+                    self.hyps_opt[group_type] += [self.opt[fullname+'ls']]
+                    print(f"   using hyper-parameters of {sig} {ls}")
+            print(f"all the remaining elements are left as type {idt}")
+            self.cutoff_list[group_type] = []
+            diff_cut = False
+            for idt in range(self.n[group_type]):
+                if (group_type+aeg[idt] in self.cutoff):
+                    diff_cut = True
+            if diff_cut:
                 self.cutoff_list[group_type] = []
                 for idt in range(self.n[group_type]):
-                    self.cutoff_list[group_type] += [self.cutoff[group_type][aeg[idt]]]
+                    self.cutoff_list[group_type] += [self.cutoff[group_type+aeg[idt]]]
         elif (group_type == "triplet"):
             nspecie = self.n['specie']
             self.ntriplet = self.n['triplet']
+            if (self.ntriplet == 0):
+                return
             self.mask[group_type] = np.ones(nspecie**3, dtype=np.int)*(self.ntriplet-1)
             self.hyps_sig[group_type] = []
             self.hyps_ls[group_type] = []
+            self.hyps_opt[group_type] = []
             for idt in range(self.n['triplet']):
-                if (aeg[idt] == "*"):
-                    for i in range(nspecie**3):
-                        if (self.mask[group_type][i]>idt):
-                            self.mask[group_type][i] = idt
-                else:
-                    for triplet in self.groups['triplet'][idt]:
-                        g1 = triplet[0]
-                        g2 = triplet[1]
-                        g3 = triplet[2]
-                        self.mask[group_type][g1+g2*nspecie+g3*nspecie**2] = idt
-                        self.mask[group_type][g1+g3*nspecie+g2*nspecie**2] = idt
-                        self.mask[group_type][g2+g1*nspecie+g3*nspecie**2] = idt
-                        self.mask[group_type][g2+g3*nspecie+g1*nspecie**2] = idt
-                        self.mask[group_type][g3+g1*nspecie+g2*nspecie**2] = idt
-                        self.mask[group_type][g3+g2*nspecie+g1*nspecie**2] = idt
-                        print(f"triplet {triplet} is defined as type {idt} with name"\
-                                "self.all_group_names[group_type][idt]")
-                self.hyps_sig[group_type] += [self.sigma['triplet'][self.all_group_names[group_type][idt]]]
-                self.hyps_ls[group_type] += [self.ls['triplet'][self.all_group_names[group_type][idt]]]
-                print(f"   using hyper-parameters of {self.hyps_sig[group_type][-1]}"\
-                        "{ self.hyps_ls[group_type][-1]}")
+                name = aeg[idt]
+                for triplet in self.groups['triplet'][idt]:
+                    g1 = triplet[0]
+                    g2 = triplet[1]
+                    g3 = triplet[2]
+                    self.mask[group_type][g1+g2*nspecie+g3*nspecie**2] = idt
+                    self.mask[group_type][g1+g3*nspecie+g2*nspecie**2] = idt
+                    self.mask[group_type][g2+g1*nspecie+g3*nspecie**2] = idt
+                    self.mask[group_type][g2+g3*nspecie+g1*nspecie**2] = idt
+                    self.mask[group_type][g3+g1*nspecie+g2*nspecie**2] = idt
+                    self.mask[group_type][g3+g2*nspecie+g1*nspecie**2] = idt
+                    s1 = self.groups['specie'][g1]
+                    s2 = self.groups['specie'][g2]
+                    s3 = self.groups['specie'][g3]
+                    print(f"triplet {s1} - {s2} - {s3} is defined as type {idt} with name "\
+                            f"{name}")
+                sig = self.sigma['triplet'+name]
+                ls = self.ls['triplet'+name]
+                self.hyps_sig[group_type] += [sig]
+                self.hyps_ls[group_type] += [ls]
+                self.hyps_opt[group_type] += [self.opt['triplet'+name+'sig']]
+                self.hyps_opt[group_type] += [self.opt['triplet'+name+'ls']]
+                print(f"   using hyper-parameters of {sig} {ls}")
+            print(f"all the remaining elements are left as type {idt}")
         else:
             pass
 
@@ -183,13 +296,31 @@ class ParameterMasking():
             hyps_mask['nspecie'] = self.n['specie']
             hyps_mask['specie_mask'] = self.specie_mask
             hyps = []
+            opt = []
             for group in ['bond', 'triplet', 'mb']:
-                if (self.n[group]>1):
+                if (self.n[group]>=1):
                     hyps_mask['n'+group] = self.n[group]
                     hyps_mask[group+'_mask'] = self.mask[group]
                     hyps += [self.hyps_sig[group]]
                     hyps += [self.hyps_ls[group]]
+                    opt += [self.hyps_opt[group]]
+            opt += [self.opt['noise']]
             hyps_mask['original'] = np.hstack(hyps)
+            hyps_mask['original'] = np.hstack([hyps_mask['original'], self.noise])
+            opt = np.hstack(opt)
+            hyps_mask['train_noise'] = self.opt['noise']
+            if (not opt.all()):
+                nhyps = len(hyps_mask['original'])
+                mapping = []
+                for i in range(nhyps):
+                    if (opt[i]):
+                        mapping += [i]
+                newhyps = hyps_mask['original'][mapping]
+                hyps_mask['map'] = np.hstack(mapping)
+            else:
+                newhyps = hyps_mask['original']
+            hyps_mask['hyps'] = newhyps
+
             if len(self.cutoff_list.get('bond', []))>0:
                 hyps_mask['cutoff_2b'] = self.cutoff_list['bond']
             if len(self.cutoff_list.get('cut3b', []))>0:
