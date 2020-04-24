@@ -45,12 +45,12 @@ def generate_hm(nbond, ntriplet, cutoffs=[1, 1], constraint=False, multihyps=Tru
     specs_mask = np.zeros(118, dtype=int)
     specs_mask[1] = 0
     specs_mask[2] = 1
-    nspecs = 2
+    nspecie = 2
 
     specs_mask = np.zeros(118, dtype=int)
     specs_mask[1] = 0
     specs_mask[2] = 1
-    nspecs = 2
+    nspecie = 2
 
     cut = []
     cut += [cutoffs[0]]
@@ -59,25 +59,25 @@ def generate_hm(nbond, ntriplet, cutoffs=[1, 1], constraint=False, multihyps=Tru
     if (nbond > 1):
         sig1 = random(nbond)
         ls1 = random(nbond)
-        bond_mask = np.ones(nspecs**2, dtype=int)
+        bond_mask = np.ones(nspecie**2, dtype=int)
         bond_mask[0] = 0
         bond_name = ["sig2"]*nbond+["ls2"]*nbond
     else:
         sig1 = [random()]
         ls1 = [random()]
-        bond_mask = np.zeros(nspecs**2, dtype=int)
+        bond_mask = np.zeros(nspecie**2, dtype=int)
         bond_name = ["sig2"]+["ls2"]
 
     if (ntriplet > 1):
         sig2 = random(ntriplet)
         ls2 = random(ntriplet)
-        triplet_mask = np.ones(nspecs**3, dtype=int)
+        triplet_mask = np.ones(nspecie**3, dtype=int)
         triplet_mask[0] = 0
         triplet_name = ["sig3"]*ntriplet+["ls3"]*ntriplet
     else:
         sig2 = [random()]
         ls2 = [random()]
-        triplet_mask = np.zeros(nspecs**3, dtype=int)
+        triplet_mask = np.zeros(nspecie**3, dtype=int)
         triplet_name = ["sig3"]+["ls3"]
 
     sigman = [0.05]
@@ -92,8 +92,8 @@ def generate_hm(nbond, ntriplet, cutoffs=[1, 1], constraint=False, multihyps=Tru
         hyps = np.hstack([sig2, ls2, sigman])
         hyps_label = np.hstack([triplet_name, ['noise']])
 
-    hyps_mask = {'nspec': nspecs,
-                 'spec_mask': specs_mask,
+    hyps_mask = {'nspecie': nspecie,
+                 'specie_mask': specs_mask,
                  'nbond': nbond,
                  'bond_mask': bond_mask,
                  'ntriplet': ntriplet,

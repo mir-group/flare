@@ -591,7 +591,7 @@ def test_masked_hyperparameter_function():
     # -----------------------
     # Test simple input cases
     # -----------------------
-    hyps_mask = {'nbond': 1, 'nspec': 1, 'spec_mask': np.zeros(118)}
+    hyps_mask = {'nbond': 1, 'nspecie': 1, 'specie_mask': np.zeros(118)}
     hyps = [1, 2, 5]
     c2, c3, ns, sm, n2b, bm, n3b, tm, nc3, c3m, sig2, ls2, sig3, ls3 \
         = from_mask_to_args(hyps, hyps_mask, cutoffs)
@@ -599,7 +599,7 @@ def test_masked_hyperparameter_function():
     assert (np.equal(ls2, [2]).all())
 
     hyps = [3, 4, 5]
-    hyps_mask = {'ntriplet': 1, 'nspec': 1, 'spec_mask': np.zeros(118)}
+    hyps_mask = {'ntriplet': 1, 'nspecie': 1, 'specie_mask': np.zeros(118)}
     c2, c3, ns, sm, n2b, bm, n3b, tm, nc3, c3m, sig2, ls2, sig3, ls3 \
         = from_mask_to_args(hyps, hyps_mask, cutoffs)
     assert (np.equal(sig3, [3]).all())
@@ -607,7 +607,7 @@ def test_masked_hyperparameter_function():
 
     hyps = [1, 2, 3, 4, 5]
     hyps_mask = {'nbond': 1, 'ntriplet': 1,
-                 'nspec': 1, 'spec_mask': np.zeros(118)}
+                 'nspecie': 1, 'specie_mask': np.zeros(118)}
     c2, c3, ns, sm, n2b, bm, n3b, tm, nc3, c3m, sig2, ls2, sig3, ls3 \
         = from_mask_to_args(hyps, hyps_mask, cutoffs)
     assert (np.equal(sig2, [1]).all())
@@ -632,7 +632,7 @@ def test_masked_hyperparameter_function():
     # Hyps : sig21, sig22, ls21, ls22, sig31, sig32, ls31, ls32, noise
     hyps = [1.1, 1.2, 2.1, 2.2, 3.1, 3.2, 4.1, 4.2, 5]
     hyps_mask = {'nbond': 2, 'ntriplet': 2,
-                 'nspec': 1, 'spec_mask': np.zeros(118)}
+                 'nspecie': 1, 'specie_mask': np.zeros(118)}
     c2, c3, ns, sm, n2b, bm, n3b, tm, nc3, c3m, sig2, ls2, sig3, ls3 \
         = from_mask_to_args(hyps, hyps_mask, cutoffs)
     assert (np.equal(sig2, [1.1, 1.2]).all())

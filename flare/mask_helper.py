@@ -27,8 +27,10 @@ class ParameterMasking():
         self.groups = {}
         self.all_members = {}
         self.all_group_names = {}
+        self.all_names = []
+        self.all_types = ['specie', 'bond', 'triplet', 'mb', 'cut3b']
 
-        for group_type in ['specie', 'bond', 'triplet', 'cut3b', 'mb']:
+        for group_type in self.all_types:
             self.n[group_type] = 0
             self.groups[group_type] = []
             self.all_members[group_type] = []
@@ -43,6 +45,9 @@ class ParameterMasking():
         self.mask = {}
         self.cutoff_list = {}
         self.noise = 0.05
+
+        self.cutoffs = {}
+        self.hyps = None
 
         if (specie is not None):
             self.list_sweeping('specie', specie)
@@ -60,17 +65,7 @@ class ParameterMasking():
 
     def list_parameters(self, para_list, constraint={}):
         for name in para_list:
-            setp = False
-            for gt in ['bond', 'triplet', 'mb', 'cut3b']:
-                if (name in self.all_group_names[gt]):
-                    self.set_parameters(gt, name, para_list[name], constraint.get(name, True))
-                    setp = True
-                    break
-            if (name == 'noise'):
-                self.noise = para_list[name]
-                setp = True
-            if (not setp):
-                print(f"Warning: name {name} is not found in any group. Skip")
+            self.set_parameters(name, para_list[name], constraint.get(name, True))
 
     def list_sweeping(self, group_type, element_list):
         if (group_type == 'specie'):
@@ -95,7 +90,7 @@ class ParameterMasking():
             if (isinstance(element_list, list)):
                 ngroup = len(element_list)
                 for idg in range(ngroup):
-                    self.define_group(group_type, f"{group_type}_{idg}",
+                    self.define_group(group_type, f"{group_type}{idg}",
                             element_list[idg])
             elif (isinstance(element_list, dict)):
                 for name in element_list:
@@ -116,6 +111,18 @@ class ParameterMasking():
             raise ValueError("* is reserved for substitution, cannot be used "\
                     "as a group name")
 
+        if (group_type != 'specie'):
+            fullname = group_type + name
+            exclude_list = deepcopy(self.all_types)
+            ide = exclude_list.index(group_type)
+            exclude_list.pop(ide)
+            for gt in exclude_list:
+                if (name in self.all_group_names[gt]):
+                    raise ValueError("group name has to be unique across all types. "\
+                                     f"{name} is found in type {gt}")
+        # else:
+        #     fullname = name
+
         if (name in self.all_group_names[group_type]):
             groupid = self.all_group_names[group_type].index(name)
         else:
@@ -124,17 +131,17 @@ class ParameterMasking():
             self.groups[group_type].append([])
             self.n[group_type] += 1
 
-        if (group_type is 'specie'):
+        if (group_type == 'specie'):
             for ele in element_list:
                 assert ele not in self.all_members['specie'], \
-                        "the element has already been defined"
+                        "The element has already been defined"
                 self.groups['specie'][groupid].append(ele)
                 self.all_members['specie'].append(ele)
-                print(f"element {ele} is defined as group {name}")
+                print(f"Element {ele} will be defined as group {name}")
         else:
             if (len(self.all_group_names['specie'])==0):
-                raise RuntimeError("the atomic species have to be"
-                        "defined ahead")
+                raise RuntimeError("The atomic species have to be"
+                        "defined in advance")
             if ("*" not in element_list):
                 gid = []
                 for ele_name in element_list:
@@ -153,9 +160,9 @@ class ParameterMasking():
                         print(f"Warning: the definition of {group_type} {ele} will be overriden")
                 self.groups[group_type][groupid].append(gid)
                 self.all_members[group_type].append(gid)
-                print(f"{group_type} {gid} is defined as group {name}")
+                print(f"{group_type} {gid} will be defined as group {name}")
                 if (parameters is not None):
-                    self.set_parameters(group_type, name, parameters)
+                    self.set_parameters(name, parameters)
             else:
                 one_star_less = deepcopy(element_list)
                 idstar = element_list.index('*')
@@ -166,27 +173,29 @@ class ParameterMasking():
                     self.define_group(group_type, name,
                             one_star_less +[sub], parameters=parameters, atomic_str=atomic_str)
 
-    def set_parameters(self, group_type, name, parameters, opt=True):
+    def set_parameters(self, name, parameters, opt=True):
 
-        if ('group_type' == 'noise'):
+        if (name == 'noise'):
             self.noise = parameters
             self.opt['noise'] = opt
             return
 
-        fullname = group_type+name
         if (isinstance(opt, bool)):
             opt = [opt, opt, opt]
-        if (group_type != 'cut3b'):
-            if (fullname in self.sigma):
+        if ('cut3b' not in name):
+            if (name in self.sigma):
                 print(f"Warning, the sig, ls of group {name} is overriden")
-            self.sigma[fullname] = parameters[0]
-            self.ls[fullname] = parameters[1]
-            self.opt[fullname+'sig'] = opt[0]
-            self.opt[fullname+'ls'] = opt[1]
+            self.sigma[name] = parameters[0]
+            self.ls[name] = parameters[1]
+            self.opt[name+'sig'] = opt[0]
+            self.opt[name+'ls'] = opt[1]
+            print(f"Parameters for group {name} will be set as "\
+                  f"sig={parameters[0]} ({opt[0]}) "\
+                  f"ls={parameters[1]} ({opt[1]})")
         if (len(parameters)>2):
-            if (fullname in self.cutoff):
+            if (name in self.cutoff):
                 print(f"Warning, the cutoff of group {name} is overriden")
-            self.cutoff[fullname] = parameters[2]
+            self.cutoff[name] = parameters[2]
 
 
     def print_group(self, group_type):
@@ -205,7 +214,7 @@ class ParameterMasking():
                     self.specie_mask[atom_n] = idt
                     print(f"elemtn {ele} is defined as type {idt} with name "\
                             f"{aeg[idt]}")
-            print(f"all the remaining elements are left as type {idt}")
+            print(f"All the remaining elements are left as type {idt}")
         elif (group_type in ['bond', 'cut3b', 'mb']):
             nspecie = self.n['specie']
             if (self.n[group_type] == 0):
@@ -226,24 +235,31 @@ class ParameterMasking():
                     print(f"{group_type} {s1} - {s2} is defined as type {idt} "\
                           f"with name {name}")
                 if (group_type != 'cut3b'):
-                    fullname = group_type+name
-                    sig = self.sigma[fullname]
-                    ls = self.ls[fullname]
+                    sig = self.sigma[name]
+                    ls = self.ls[name]
                     self.hyps_sig[group_type] += [sig]
                     self.hyps_ls[group_type] += [ls]
-                    self.hyps_opt[group_type] += [self.opt[fullname+'sig']]
-                    self.hyps_opt[group_type] += [self.opt[fullname+'ls']]
+                    self.hyps_opt[group_type] += [self.opt[name+'sig']]
+                    self.hyps_opt[group_type] += [self.opt[name+'ls']]
                     print(f"   using hyper-parameters of {sig} {ls}")
-            print(f"all the remaining elements are left as type {idt}")
+            print(f"All the remaining elements are left as type {idt}")
             self.cutoff_list[group_type] = []
-            diff_cut = False
+            cut_define = np.zeros(self.n[group_type], dtype=bool)
+            max_cutoff = 0
             for idt in range(self.n[group_type]):
-                if (group_type+aeg[idt] in self.cutoff):
-                    diff_cut = True
-            if diff_cut:
+                name = aeg[idt]
+                if (name in self.cutoff):
+                    cut_define[idt] = True
+                    if (self.cutoff[name] > max_cutoff):
+                        max_cutoff = self.cutoff[name]
+            self.cutoffs[group_type] = max_cutoff
+            if cut_define.all():
                 self.cutoff_list[group_type] = []
                 for idt in range(self.n[group_type]):
-                    self.cutoff_list[group_type] += [self.cutoff[group_type+aeg[idt]]]
+                    self.cutoff_list[group_type] += [self.cutoff[aeg[idt]]]
+                print("Different cutoffs were also defined", self.cutoff_list[group_type])
+            elif cut_define.any():
+                print("There were some cutoff defined, but not all of them")
         elif (group_type == "triplet"):
             nspecie = self.n['specie']
             self.ntriplet = self.n['triplet']
@@ -270,12 +286,12 @@ class ParameterMasking():
                     s3 = self.groups['specie'][g3]
                     print(f"triplet {s1} - {s2} - {s3} is defined as type {idt} with name "\
                             f"{name}")
-                sig = self.sigma['triplet'+name]
-                ls = self.ls['triplet'+name]
+                sig = self.sigma[name]
+                ls = self.ls[name]
                 self.hyps_sig[group_type] += [sig]
                 self.hyps_ls[group_type] += [ls]
-                self.hyps_opt[group_type] += [self.opt['triplet'+name+'sig']]
-                self.hyps_opt[group_type] += [self.opt['triplet'+name+'ls']]
+                self.hyps_opt[group_type] += [self.opt[name+'sig']]
+                self.hyps_opt[group_type] += [self.opt[name+'ls']]
                 print(f"   using hyper-parameters of {sig} {ls}")
             print(f"all the remaining elements are left as type {idt}")
         else:
@@ -331,6 +347,7 @@ class ParameterMasking():
                 hyps_mask['cutoff_mb'] = self.cutoff_list['mb']
 
         self.hyps_mask = hyps_mask
+        hyps_mask['cutoffs'] = self.cutoffs
         return hyps_mask
 
     @staticmethod
@@ -502,3 +519,82 @@ class ParameterMasking():
             assert cutoffs[0] > npmax(hyps_mask['cutoff_mb']), \
                     'general cutoff should be larger than all cutoffs listed in hyps_mask'
 
+    @staticmethod
+    def mask2cutoff(cutoffs, cutoffs_mask):
+
+        if isinstance(cutoffs, dict):
+            scalar_cutoff_2 = cutoffs.get('bond', 0)
+            scalar_cutoff_3 = cutoffs.get('cut3b', 0)
+            scalar_cutoff_mb = cutoffs.get('mb', 0)
+        else:
+            ncutoffs = len(cutoffs)
+            scalar_cutoff_2 = cutoffs[0]
+            scalar_cutoff_3 = 0
+            scalar_cutoff_mb = 0
+            if (ncutoffs > 1):
+                scalar_cutoff_3 = cutoffs[1]
+            if (ncutoffs > 2):
+                scalar_cutoff_3 = cutoffs[2]
+
+        if (scalar_cutoff_2 == 0):
+            scalar_cutoff_2 = np.max([scalar_cutoff_3, scalar_cutoff_mb])
+
+
+        if (cutoffs_mask is None):
+            return scalar_cutoff_2, scalar_cutoff_3, scalar_cutoff_mb, \
+                None, None, None, \
+                1, 1, 1, 1, None, None, None, None
+
+        nspecie = cutoffs_mask.get('nspecie', 1)
+        nspecie = nspecie
+        if (nspecie == 1):
+            return scalar_cutoff_2, scalar_cutoff_3, scalar_cutoff_mb, \
+                None, None, None, \
+                1, 1, 1, 1, None, None, None, None
+
+        n2b = cutoffs_mask.get('nbond', 1)
+        n3b = cutoffs_mask.get('ncut3b', 1)
+        nmb = cutoffs_mask.get('nmb', 1)
+        specie_mask = cutoffs_mask.get('specie_mask', None)
+        bond_mask = cutoffs_mask.get('bond_mask', None)
+        cut3b_mask = cutoffs_mask.get('cut3b_mask', None)
+        mb_mask = cutoffs_mask.get('mb_mask', None)
+        cutoff_2b = cutoffs_mask.get('cutoff_2b', None)
+        cutoff_3b = cutoffs_mask.get('cutoff_3b', None)
+        cutoff_mb = cutoffs_mask.get('cutoff_mb', None)
+
+        assert n2b >=1
+        assert n3b >=1
+        assert nmb >=1
+
+        assert isinstance(n2b, int)
+        assert isinstance(n3b, int)
+        assert isinstance(nmb, int)
+
+        if cutoff_2b is not None:
+            scalar_cutoff_2 = np.max(cutoff_2b)
+            if (n2b > 1):
+                assert bond_mask is not None
+        else:
+            n2b == 1
+
+        if cutoff_3b is not None:
+            scalar_cutoff_3 = np.max(cutoff_3b)
+            assert scalar_cutoff_3 <= scalar_cutoff_2, \
+                "2b cutoff has to be larger than 3b cutoff"
+            if (n3b > 1):
+                assert cut3b_mask is not None
+        else:
+            n3b == 1
+
+        if cutoff_mb is not None:
+            scalar_cutoff_mb = np.max(cutoff_mb)
+            if (nmb > 1):
+                assert mb_mask is not None
+        # # TO DO, once the mb function is updated to use the bond_array_2
+        # # this block should be activated.
+        # assert scalar_cutoff_mb <= scalar_cutoff_2, \
+        #         "mb cutoff has to be larger than mb cutoff"
+        return scalar_cutoff_2, scalar_cutoff_3, scalar_cutoff_mb, \
+            cutoff_2b, cutoff_3b, cutoff_mb, \
+            nspecie, n2b, n3b, nmb, specie_mask, bond_mask, cut3b_mask, mb_mask

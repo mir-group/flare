@@ -417,9 +417,9 @@ def generate_same_hm(kernel_name, diff_cutoff=False):
     cutoffs = []
     hyps0 = []
     hyps2 = []
-    hm1 = {'nspec': 1, 'spec_mask': np.zeros(118, dtype=int)}
-    hm2 = {'nspec': 2, 'spec_mask': np.zeros(118, dtype=int)}
-    hm2['spec_mask'][2] = 1
+    hm1 = {'nspecie': 1, 'specie_mask': np.zeros(118, dtype=int)}
+    hm2 = {'nspecie': 2, 'specie_mask': np.zeros(118, dtype=int)}
+    hm2['specie_mask'][2] = 1
     if ('2' in kernel_name):
         cutoffs = np.ones(1, dtype=float)
 
@@ -481,8 +481,8 @@ def generate_same_hm(kernel_name, diff_cutoff=False):
 def generate_diff_hm(kernel_name, diff_cutoff=False, constraint=False):
     cutoffs = []
     hyps2 = []
-    hm2 = {'nspec': 2, 'spec_mask': np.zeros(118, dtype=int)}
-    hm2['spec_mask'][2] = 1
+    hm2 = {'nspecie': 2, 'specie_mask': np.zeros(118, dtype=int)}
+    hm2['specie_mask'][2] = 1
     if ('2' in kernel_name):
         cutoffs = np.array([2.5])
 

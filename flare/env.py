@@ -5,6 +5,7 @@ import numpy as np
 from math import sqrt
 from numba import njit
 from flare.struc import Structure
+from flare.mask_helper import ParameterMasking
 
 
 class AtomicEnvironment:
@@ -82,80 +83,11 @@ class AtomicEnvironment:
 
     def setup_mask(self):
 
-        if isinstance(self.cutoffs, dict):
-            self.scalar_cutoff_2 = self.cutoffs.get('2', 0)
-            self.scalar_cutoff_3 = self.cutoffs.get('3', 0)
-            self.scalar_cutoff_mb = self.cutoffs.get('mb', 0)
-        else:
-            ncutoffs = len(self.cutoffs)
-            self.scalar_cutoff_2 = self.cutoffs[0]
-            self.scalar_cutoff_3 = 0
-            self.scalar_cutoff_mb = 0
-            if (ncutoffs > 1):
-                self.scalar_cutoff_3 = self.cutoffs[1]
-            if (ncutoffs > 2):
-                self.scalar_cutoff_3 = self.cutoffs[2]
-
-        if (self.scalar_cutoff_2 == 0):
-            self.scalar_cutoff_2 = np.max([self.scalar_cutoff_3, self.scalar_cutoff_mb])
-
-
-        if (self.cutoffs_mask is None):
-            self.nspecie = 1
-            self.n2b = 1
-            self.n3b = 1
-            self.nmb = 1
-            return
-
-        self.nspecie = self.cutoffs_mask.get('nspecie', 1)
-        nspecie = self.nspecie
-        if (nspecie == 1):
-            return
-
-        self.n2b = self.cutoffs_mask.get('nbond', 1)
-        self.n3b = self.cutoffs_mask.get('ncut3b', 1)
-        self.nmb = self.cutoffs_mask.get('nmb', 1)
-        self.specie_mask = self.cutoffs_mask.get('specie_mask', None)
-        self.bond_mask = self.cutoffs_mask.get('bond_mask', None)
-        self.cut3b_mask = self.cutoffs_mask.get('cut3b_mask', None)
-        self.mb_mask = self.cutoffs_mask.get('mb_mask', None)
-        self.cutoff_2b = self.cutoffs_mask.get('cutoff_2b', None)
-        self.cutoff_3b = self.cutoffs_mask.get('cutoff_3b', None)
-        self.cutoff_mb = self.cutoffs_mask.get('cutoff_mb', None)
-
-        assert self.n2b >=1
-        assert self.n3b >=1
-        assert self.nmb >=1
-
-        assert isinstance(self.n2b, int)
-        assert isinstance(self.n3b, int)
-        assert isinstance(self.nmb, int)
-
-        if self.cutoff_2b is not None:
-            self.scalar_cutoff_2 = np.max(self.cutoff_2b)
-            if (self.n2b > 1):
-                assert self.bond_mask is not None
-        else:
-            self.n2b == 1
-
-        if self.cutoff_3b is not None:
-            self.scalar_cutoff_3 = np.max(self.cutoff_3b)
-            assert self.scalar_cutoff_3 <= self.scalar_cutoff_2, \
-                "2b cutoff has to be larger than 3b cutoff"
-            if (self.n3b > 1):
-                assert self.cut3b_mask is not None
-        else:
-            self.n3b == 1
-
-        if self.cutoff_mb is not None:
-            self.scalar_cutoff_mb = np.max(self.cutoff_mb)
-            if (self.nmb > 1):
-                assert self.mb_mask is not None
-        # # TO DO, once the mb function is updated to use the bond_array_2
-        # # this block should be activated.
-        # assert self.scalar_cutoff_mb <= self.scalar_cutoff_2, \
-        #         "mb cutoff has to be larger than mb cutoff"
-
+        self.scalar_cutoff_2, self.scalar_cutoff_3, self.scalar_cutoff_mb, \
+            self.cutoff_2b, self.cutoff_3b, self.cutoff_mb, \
+            self.nspecie, self.n2b, self.n3b, self.nmb, self.specie_mask, \
+            self.bond_mask, self.cut3b_mask, self.mb_mask = \
+            ParameterMasking.mask2cutoff(self.cutoffs, self.cutoffs_mask)
 
     def compute_env(self):
 
