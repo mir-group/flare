@@ -115,13 +115,9 @@ def predict_on_atom_mgp(atom: int, structure, cutoffs, mgp,
                         write_to_structure=False):
     chemenv = AtomicEnvironment(structure, atom, cutoffs)
     # predict force components and standard deviations
-    force, var = mgp.predict(chemenv)
+    force, var, virial, local_energy = mgp.predict(chemenv)
     comps = force
     stds = np.sqrt(np.absolute(var))
-
-    # predict local energy
-    #     local_energy = self.gp.predict_local_energy(chemenv)
-    local_energy = 0
 
     if write_to_structure:
         structure.forces[atom][:] = force
@@ -132,17 +128,30 @@ def predict_on_atom_mgp(atom: int, structure, cutoffs, mgp,
 
 def predict_on_structure_mgp(structure, mgp, output=None,
                              output_name=None, n_cpus=None,
-                             write_to_structure=True):  # changed
+                             write_to_structure=True,
+                             selective_atoms: List[int] = None,
+                             skipped_atom_value=0):  # changed
     """
-    Assign forces to structure based on gp
+    Assign forces to structure based on an mgp
     """
     if output and output_name:
         output.write_to_output('\npredict with mapping:\n', output_name)
 
-    forces = np.zeros(shape=(structure.nat,3))
-    vars = np.zeros(shape=(structure.nat,3))
+    forces = np.zeros(shape=(structure.nat, 3))
+    vars = np.zeros(shape=(structure.nat, 3))
+
+    if selective_atoms:
+        forces.fill(skipped_atom_value)
+        vars.fill(skipped_atom_value)
+    else:
+        selective_atoms = []
+
 
     for n in range(structure.nat):
+
+        if n not in selective_atoms and selective_atoms:
+            continue
+
         chemenv = AtomicEnvironment(structure, n, mgp.cutoffs)
         force, var, _, _ = mgp.predict(chemenv)
         if write_to_structure:
@@ -150,5 +159,6 @@ def predict_on_structure_mgp(structure, mgp, output=None,
             structure.stds[n][:] = np.sqrt(np.absolute(var))
         forces[n, :] = force
         vars[n, :] = var
+
 
     return forces, vars

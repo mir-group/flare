@@ -38,6 +38,7 @@ from typing import List, Tuple, Union
 
 import numpy as np
 from math import inf
+import warnings
 
 from flare.env import AtomicEnvironment
 from flare.gp import GaussianProcess
@@ -53,7 +54,7 @@ from flare.util import (
     element_to_Z,
     is_std_in_bound_per_species,
     is_force_in_bound_per_species,
-    Z_to_element,
+    Z_to_element, subset_of_frame_by_element
 )
 from flare.mgp.otf import predict_on_structure_mgp
 from flare.mgp.mgp_en import MappedGaussianProcess
@@ -64,34 +65,34 @@ rank = comm.Get_rank()
 
 
 class TrajectoryTrainer:
-    def __init__(
-        self,
-        frames: List[Structure],
-        gp: Union[GaussianProcess, MappedGaussianProcess],
-        rel_std_tolerance: float = 4,
-        abs_std_tolerance: float = 1,
-        abs_force_tolerance: float = 0,
-        max_force_error: float = inf,
-        parallel: bool = False,
-        n_cpus: int = 1,
-        skip: int = 1,
-        validate_ratio: float = 0.0,
-        calculate_energy: bool = False,
-        output_name: str = "gp_from_aimd",
-        pre_train_max_iter: int = 50,
-        max_atoms_from_frame: int = np.inf,
-        max_trains: int = np.inf,
-        min_atoms_per_train: int = 1,
-        shuffle_frames: bool = False,
-        verbose: int = 1,
-        pre_train_on_skips: int = -1,
-        pre_train_seed_frames: List[Structure] = None,
-        pre_train_seed_envs: List[Tuple[AtomicEnvironment, "np.array"]] = None,
-        pre_train_atoms_per_element: dict = None,
-        train_atoms_per_element: dict = None,
-        checkpoint_interval: int = 1,
-        model_format: str = "json",
-    ):
+
+    def __init__(self, frames: List[Structure],
+                 gp: Union[GaussianProcess, MappedGaussianProcess],
+                 rel_std_tolerance: float = 4,
+                 abs_std_tolerance: float = 1,
+                 abs_force_tolerance: float = 0,
+                 max_force_error: float = inf,
+                 parallel: bool = False,
+                 n_cpus: int = 1,
+                 skip: int = 1,
+                 validate_ratio: float = 0.0,
+                 calculate_energy: bool = False,
+                 output_name: str = 'gp_from_aimd',
+                 pre_train_max_iter: int = 50,
+                 max_atoms_from_frame: int = np.inf,
+                 max_trains: int = np.inf,
+                 min_atoms_per_train: int = 1,
+                 shuffle_frames: bool = False,
+                 verbose: int = 1,
+                 pre_train_on_skips: int = -1,
+                 pre_train_seed_frames: List[Structure] = None,
+                 pre_train_seed_envs: List[Tuple[AtomicEnvironment,
+                                                 'np.array']] = None,
+                 pre_train_atoms_per_element: dict = None,
+                 train_atoms_per_element: dict = None,
+                 predict_atoms_per_element: dict = None,
+                 checkpoint_interval: int = 1,
+                 model_format: str = 'json'):
         """
         Class which trains a GP off of an AIMD trajectory, and generates
         error statistics between the DFT and GP calls.
@@ -112,7 +113,7 @@ class TrajectoryTrainer:
         :param calculate_energy: Use local energy kernel or not
         :param output_name: Write output of training to this file
         :param max_atoms_from_frame: Largest # of atoms added from one frame
-        :param min_atoms_added: Only train when this many atoms have been
+        :param min_atoms_per_train: Only train when this many atoms have been
             added
         :param max_trains: Stop training GP after this many calls to train
         :param n_cpus: Number of CPUs to parallelize over for parallelization over atoms
@@ -127,6 +128,13 @@ class TrajectoryTrainer:
             each species in the seed pre-training steps
         :param train_atoms_per_element: Max # of environments to add from
             each species in the training steps
+        :param predict_atoms_per_element: Choose a random subset of N random
+            atoms from each specified element to predict on. For instance,
+            {"H":5} will only predict the forces and uncertainties
+            associated with 5 Hydrogen atoms per frame. Elements not
+            specified will be predicted as normal. This is useful for
+            systems where you are most interested in a subset of elements.
+            This will result in a faster but less exhaustive learning process.
         :param checkpoint_interval: How often to write model after trainings
         :param model_format: Format to write GP model to
         """
@@ -153,24 +161,26 @@ class TrajectoryTrainer:
         self.max_trains = max_trains
         self.max_atoms_from_frame = max_atoms_from_frame
         self.min_atoms_per_train = min_atoms_per_train
+        self.predict_atoms_per_element = predict_atoms_per_element
         self.verbose = verbose
         self.train_count = 0
-
-        self.parallel = parallel
+        self.calculate_energy = calculate_energy
         self.n_cpus = n_cpus
+
+        if parallel is True:
+            warnings.warn("Parallel flag will be deprecated;"
+                          "we will instead use n_cpu alone.",
+                          DeprecationWarning)
+
         # Set prediction function based on if forces or energies are
         # desired, and parallelization accordingly
-        if parallel and gp.par and gp.per_atom_par and not self.mgp:
-            if calculate_energy:
-                self.pred_func = predict_on_structure_par_en
-            else:
-                self.pred_func = predict_on_structure_par
-        elif not self.mgp:
+        if not self.mgp:
             if calculate_energy:
                 self.pred_func = predict_on_structure_en
             else:
                 self.pred_func = predict_on_structure
-        else:
+
+        elif self.mgp:
             self.pred_func = predict_on_structure_mgp
 
         # Parameters for negotiating with the training frames
@@ -179,28 +189,24 @@ class TrajectoryTrainer:
         self.start_time = None
 
         self.skip = skip
-        assert isinstance(skip, int) and skip >= 1, (
-            "Skip needs to be a " "positive integer."
-        )
+        assert (isinstance(skip, int) and skip >= 1), "Skip needs to be a " \
+                                                      "positive integer."
         self.validate_ratio = validate_ratio
-        assert (
-            validate_ratio >= 0 and validate_ratio <= 1
-        ), "validate_ratio needs to be [0,1]"
+        assert (validate_ratio >= 0 and validate_ratio <= 1), \
+            "validate_ratio needs to be [0,1]"
 
         # Set up for pretraining
         self.pre_train_max_iter = pre_train_max_iter
         self.pre_train_on_skips = pre_train_on_skips
-        self.seed_envs = [] if pre_train_seed_envs is None else pre_train_seed_envs
-        self.seed_frames = (
-            [] if pre_train_seed_frames is None else pre_train_seed_frames
-        )
+        self.seed_envs = [] if pre_train_seed_envs is None else \
+            pre_train_seed_envs
+        self.seed_frames = [] if pre_train_seed_frames is None \
+            else pre_train_seed_frames
 
-        self.pre_train_env_per_species = (
-            {} if pre_train_atoms_per_element is None else pre_train_atoms_per_element
-        )
-        self.train_env_per_species = (
-            {} if train_atoms_per_element is None else train_atoms_per_element
-        )
+        self.pre_train_env_per_species = {} if pre_train_atoms_per_element \
+                                               is None else pre_train_atoms_per_element
+        self.train_env_per_species = {} if train_atoms_per_element \
+                                           is None else train_atoms_per_element
 
         # Convert to Coded Species
         if self.pre_train_env_per_species:
@@ -236,19 +242,20 @@ class TrajectoryTrainer:
         """
 
         if self.mgp:
-            raise NotImplementedError("Pre-running not" "yet configured for MGP")
+            raise NotImplementedError("Pre-running not" \
+                                      "yet configured for MGP")
         if self.verbose and rank == 0:
-            self.output.write_header(
-                self.gp.cutoffs,
-                self.gp.kernel_name,
-                self.gp.hyps,
-                self.gp.opt_algorithm,
-                dt=0,
-                Nsteps=len(self.frames),
-                structure=self.frames[0],
-                std_tolerance=(self.rel_std_tolerance, self.abs_std_tolerance),
-                optional={"GP Statistics": self.gp.training_statistics},
-            )
+            self.output.write_header(self.gp.cutoffs,
+                                     self.gp.kernel_name,
+                                     self.gp.hyps,
+                                     self.gp.opt_algorithm,
+                                     dt=0,
+                                     Nsteps=len(self.frames),
+                                     structure=self.frames[0],
+                                     std_tolerance=(self.rel_std_tolerance,
+                                                    self.abs_std_tolerance),
+                                     optional={
+                                         'GP Statistics': self.gp.training_statistics})
 
         self.start_time = time.time()
         if self.verbose >= 3 and rank == 0:
@@ -301,19 +308,16 @@ class TrajectoryTrainer:
 
             self.update_gp_and_print(frame, train_atoms, train=False)
 
-        if self.verbose >= 3 and atom_count > 0 and rank == 0:
-            self.output.write_to_log(
-                f"Added {atom_count} atoms to pretrain", flush=False
-            )
+        if self.verbose >= 3 and atom_count > 0 and rank==0:
+            self.output.write_to_log(f"Added {atom_count} atoms to pretrain\n" \
+                                     f"In total {len(self.gp.training_data)} atoms",
+                                     flush=True)
 
-        if (self.seed_envs or atom_count or self.seed_frames) and (
-            self.pre_train_max_iter or self.max_trains
-        ):
-            if self.verbose >= 3 and rank == 0:
-                print(
-                    "Now commencing pre-run training of GP (which has "
-                    "non-empty training set)"
-                )
+        if (self.seed_envs or atom_count or self.seed_frames) and \
+                (self.pre_train_max_iter or self.max_trains):
+            if self.verbose >= 3 and rank==0:
+                print("Now commencing pre-run training of GP (which has "
+                      "non-empty training set)")
             self.train_gp(max_iter=self.pre_train_max_iter)
         else:
             if self.verbose >= 3 and rank == 0:
@@ -323,8 +327,9 @@ class TrajectoryTrainer:
                 )
             self.gp.set_L_alpha()
 
-        if self.model_format and not self.mgp and rank == 0:
-            self.gp.write_model(f"{self.output_name}_prerun", self.model_format)
+        if self.model_format and not self.mgp and rank ==0:
+            self.gp.write_model(f'{self.output_name}_prerun',
+                                self.model_format)
 
     def run(self):
         """
@@ -340,32 +345,61 @@ class TrajectoryTrainer:
         if not self.mgp:
             self.pre_run()
 
-        train_frame = int(len(self.frames) * (1 - self.validate_ratio))
+        # Past this frame, stop adding atoms to the training set
+        #  (used for validation of model)
+        train_frame = int(len(self.frames[::self.skip]) * (1 -
+                                                           self.validate_ratio))
 
-        # Loop through trajectory
+        # Loop through trajectory.
         nsample = 0
         for i, cur_frame in enumerate(self.frames[:: self.skip]):
 
             if self.verbose >= 2 and rank == 0:
                 print(f"=====NOW ON FRAME {i}=====")
-            dft_forces = deepcopy(cur_frame.forces)
 
-            forces, stds = self.pred_func(
-                cur_frame, self.gp, self.n_cpus, write_to_structure=True
-            )
+            # If no predict_atoms_per_element was specified, predict_atoms
+            # will be equal to every atom in the frame.
+            predict_atoms = subset_of_frame_by_element(cur_frame,
+                                                       self.predict_atoms_per_element)
+            # Atoms which are skipped will have NaN as their force / std values
+            local_energies = None
 
-            # Convert to meV/A
-            error = np.abs(forces - dft_forces)
+            # Three different predictions: Either MGP, GP with energy,
+            # or GP without
+            if self.mgp:
+                pred_forces, pred_stds = self.pred_func(
+                    structure=cur_frame, mgp=self.gp, write_to_structure=False,
+                    selective_atoms=predict_atoms, skipped_atom_value=
+                    np.nan)
+            elif self.calculate_energy:
+                pred_forces, pred_stds, local_energies = self.pred_func(
+                    structure=cur_frame, gp=self.gp, n_cpus=self.n_cpus,
+                    write_to_structure=False, selective_atoms=predict_atoms,
+                    skipped_atom_value=np.nan)
+            else:
+                pred_forces, pred_stds = self.pred_func(structure=cur_frame,
+                                                gp=self.gp,
+                                                n_cpus=self.n_cpus,
+                                                write_to_structure=False,
+                                                selective_atoms=predict_atoms,
+                                                skipped_atom_value=np.nan)
+
+            # Get Error
+            dft_forces = cur_frame.forces
+            error = np.abs(pred_forces - dft_forces)
+
+            # Create dummy frame with the predicted forces written
+            dummy_frame = deepcopy(cur_frame)
+            dummy_frame.forces = pred_forces
+            dummy_frame.stds = pred_stds
 
             if self.verbose and rank == 0:
                 self.output.write_gp_dft_comparison(
-                    curr_step=i,
-                    frame=cur_frame,
+                    curr_step=i, frame=dummy_frame,
                     start_time=time.time(),
                     dft_forces=dft_forces,
                     error=error,
-                    local_energies=None,
-                )
+                    local_energies=local_energies)
 
             if i < train_frame:
                 # Noise hyperparameter & relative std tolerance is not for mgp.
@@ -376,28 +410,27 @@ class TrajectoryTrainer:
                 std_in_bound, std_train_atoms = is_std_in_bound_per_species(
                     rel_std_tolerance=self.rel_std_tolerance,
                     abs_std_tolerance=self.abs_std_tolerance,
-                    noise=noise,
-                    structure=cur_frame,
+                    noise=noise, structure=dummy_frame,
                     max_atoms_added=self.max_atoms_from_frame,
-                    max_by_species=self.train_env_per_species,
-                )
+                    max_by_species=self.train_env_per_species)
 
                 # Get max force error atoms
-                force_in_bound, force_train_atoms = is_force_in_bound_per_species(
-                    abs_force_tolerance=self.abs_force_tolerance,
-                    predicted_forces=cur_frame.forces,
-                    label_forces=dft_forces,
-                    structure=cur_frame,
-                    max_atoms_added=self.max_atoms_from_frame,
-                    max_by_species=self.train_env_per_species,
-                    max_force_error=self.max_force_error,
-                )
+                force_in_bound, force_train_atoms = \
+                    is_force_in_bound_per_species(
+                        abs_force_tolerance=self.abs_force_tolerance,
+                        predicted_forces=pred_forces,
+                        label_forces=dft_forces,
+                        structure=dummy_frame,
+                        max_atoms_added=self.max_atoms_from_frame,
+                        max_by_species=self.train_env_per_species,
+                        max_force_error=self.max_force_error)
 
-                if (not std_in_bound) or (not force_in_bound):
+                if not std_in_bound or not force_in_bound:
 
-                    train_atoms = list(
-                        set(std_train_atoms).union(force_train_atoms) - {-1}
-                    )
+                    # -1 is returned from the is_in_bound methods,
+                    # so filter that out and the use sets to remove repeats
+                    train_atoms = list(set(std_train_atoms).union(
+                        force_train_atoms) - {-1})
 
                     # Compute mae and write to output;
                     # Add max uncertainty atoms to training set
@@ -413,15 +446,11 @@ class TrajectoryTrainer:
                     else:
                         self.gp.update_L_alpha()
 
-                    if (
-                        self.checkpoint_interval
-                        and self.train_count % self.checkpoint_interval == 0
-                        and self.model_format
-                        and rank == 0
-                    ):
-                        self.gp.write_model(
-                            f"{self.output_name}_checkpt", self.model_format
-                        )
+                    if self.checkpoint_interval \
+                            and self.train_count % self.checkpoint_interval == 0 \
+                            and self.model_format and rank == 0:
+                        self.gp.write_model(f'{self.output_name}_checkpt',
+                                            self.model_format)
 
                 if (i + 1) == train_frame and not self.mgp:
                     self.gp.check_L_alpha()
@@ -429,8 +458,9 @@ class TrajectoryTrainer:
         if self.verbose:
             self.output.conclude_run()
 
-        if self.model_format and not self.mgp and rank == 0:
-            self.gp.write_model(f"{self.output_name}_model", self.model_format)
+        if self.model_format and not self.mgp and rank==0:
+            self.gp.write_model(f'{self.output_name}_model',
+                                self.model_format)
 
     def update_gp_and_print(
         self, frame: Structure, train_atoms: List[int], train: bool = True
@@ -446,7 +476,8 @@ class TrajectoryTrainer:
         """
 
         # Group added atoms by species for easier output
-        added_species = [Z_to_element(frame.coded_species[at]) for at in train_atoms]
+        added_species = [Z_to_element(frame.coded_species[at]) for at in
+                         train_atoms]
         added_atoms = {spec: [] for spec in set(added_species)}
 
         for atom, spec in zip(train_atoms, added_species):
@@ -499,7 +530,7 @@ class TrajectoryTrainer:
         else:
             self.gp.train(
                 output=self.output if self.verbose >= 2 else None,
-                print_progress=self.verbose and rank == 0,
+                print_progress=self.verbose>=2 and rank == 0,
             )
 
         if self.verbose and rank == 0:

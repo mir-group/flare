@@ -3,12 +3,13 @@ import numpy as np
 import pickle
 from glob import glob
 from os import remove
+from copy import deepcopy
 
 from flare.env import AtomicEnvironment
 from flare.struc import Structure
 from flare.gp import GaussianProcess
 from flare.mgp.mgp_en import MappedGaussianProcess
-from flare.gp_from_aimd import TrajectoryTrainer
+from flare.gp_from_aimd import TrajectoryTrainer, subset_of_frame_by_element
 from json import loads
 from flare.env import AtomicEnvironment
 from .test_mgp_unit import all_mgp, all_gp, get_random_structure
@@ -41,7 +42,7 @@ def methanol_gp():
 def fake_gp():
     return GaussianProcess(kernel_name="2+3",
                            hyps=np.array([1]),
-                           cutoffs=np.array([]))
+                           cutoffs=np.array([4, 3]))
 
 
 def test_instantiation_of_trajectory_trainer(fake_gp):
@@ -50,12 +51,12 @@ def test_instantiation_of_trajectory_trainer(fake_gp):
     assert isinstance(a, TrajectoryTrainer)
 
     fake_gp.parallel = True
-    _ = TrajectoryTrainer([], fake_gp, parallel=True, calculate_energy=True)
-    _ = TrajectoryTrainer([], fake_gp, parallel=True, calculate_energy=False)
+    _ = TrajectoryTrainer([], fake_gp, n_cpus=2, calculate_energy=True)
+    _ = TrajectoryTrainer([], fake_gp, n_cpus=2, calculate_energy=False)
 
     fake_gp.parallel = False
-    _ = TrajectoryTrainer([], fake_gp, parallel=False, calculate_energy=True)
-    _ = TrajectoryTrainer([], fake_gp, parallel=False, calculate_energy=False)
+    _ = TrajectoryTrainer([], fake_gp, n_cpus=2, calculate_energy=True)
+    _ = TrajectoryTrainer([], fake_gp, n_cpus=2, calculate_energy=False)
 
 
 def test_load_trained_gp_and_run(methanol_gp):
@@ -139,6 +140,57 @@ def test_seed_and_run():
     for d in [0, 1, 2]:
         assert np.all(the_gp.predict(x_t=test_env, d=d) ==
                       new_gp.predict(x_t=test_env, d=d))
+
+    for f in glob(f"meth_test*"):
+        remove(f)
+
+
+
+def test_pred_on_elements():
+    the_gp = GaussianProcess(kernel_name="2+3_mc",
+                             hyps=np.array([3.75996759e-06, 1.53990678e-02,
+                                            2.50624782e-05, 5.07884426e-01,
+                                            1.70172923e-03]),
+                             cutoffs=np.array([7, 3]),
+                             hyp_labels=['l2', 's2', 'l3', 's3', 'n0'],
+                             maxiter=1,
+                             opt_algorithm='L-BFGS-B')
+
+    with open('./test_files/methanol_frames.json', 'r') as f:
+        frames = [Structure.from_dict(loads(s)) for s in f.readlines()]
+
+    with open('./test_files/methanol_envs.json', 'r') as f:
+        data_dicts = [loads(s) for s in f.readlines()[:6]]
+        envs = [AtomicEnvironment.from_dict(d) for d in data_dicts]
+        forces = [np.array(d['forces']) for d in data_dicts]
+        seeds = list(zip(envs, forces))
+
+    all_frames = deepcopy(frames)
+    tt = TrajectoryTrainer(frames,
+                           gp=the_gp, shuffle_frames=False,
+                           rel_std_tolerance=0,
+                           abs_std_tolerance=0,
+                           abs_force_tolerance=.001,
+                           skip=5,
+                           min_atoms_per_train=100,
+                           pre_train_seed_envs=seeds,
+                           pre_train_seed_frames=[frames[-1]],
+                           max_atoms_from_frame=4,
+                           output_name='meth_test',
+                           model_format='',
+                           checkpoint_interval=50,
+                           pre_train_atoms_per_element={'H': 1},
+                           predict_atoms_per_element={'H': 0,'C': 1,'O': 0})
+    # Set to predict only on Carbon after training on H to ensure errors are
+    #  high and that they get added to the gp
+    tt.run()
+
+    # Ensure forces weren't written directly to structure
+    for i in range(len(all_frames)):
+        assert np.array_equal(all_frames[i].forces, frames[i].forces)
+
+    # Assert that Carbon atoms were correctly added
+    assert the_gp.training_statistics['envs_by_species']['C']>2
 
     for f in glob(f"meth_test*"):
         remove(f)

@@ -879,12 +879,12 @@ def get_kernel_vector_unit(name, s, e, x, d_1, kernel, hyps, cutoffs, hyps_mask)
     return k_v
 
 
-def get_kernel_mat(struc, name, kernel, hyps, cutoffs, hyps_mask):
+def get_kernel_mat(struc, name, kernel, hyps, cutoffs, hyps_mask, selective_atoms):
     """
     Compute all the kernel vectors in parallel.
     """
     n_training = len(_global_training_data[name])
-    N = struc.nat
+    N = len(selective_atoms)
     kernel_mat = np.zeros((N, 3, n_training, 3))
 
     Ntot = N * 3 * n_training
@@ -908,7 +908,7 @@ def get_kernel_mat(struc, name, kernel, hyps, cutoffs, hyps_mask):
 
         if atom != old_atom:
             old_atom = atom
-            chemenv = AtomicEnvironment(struc, atom, cutoffs)
+            chemenv = AtomicEnvironment(struc, selective_atoms[atom], cutoffs)
 
         kernel_mat[atom, dim, training_atom, :] = get_kernel_vector_unit(
             name,
@@ -1028,12 +1028,12 @@ def en_kern_vec_unit(name, s, e, x, kernel, hyps, cutoffs=None, hyps_mask=None):
     return k_v
 
 
-def get_en_kernel_mat(struc, name, kernel, hyps, cutoffs, hyps_mask):
+def get_en_kernel_mat(struc, name, kernel, hyps, cutoffs, hyps_mask, selective_atoms):
     """
     Compute all the kernel vectors in parallel.
     """
     n_training = len(_global_training_data[name])
-    N = struc.nat
+    N = len(selective_atoms)
     kernel_mat = np.zeros((N, n_training, 3))
 
     Ntot = N * n_training
@@ -1055,7 +1055,7 @@ def get_en_kernel_mat(struc, name, kernel, hyps, cutoffs, hyps_mask):
 
         if atom != old_atom:
             old_atom = atom
-            chemenv = AtomicEnvironment(struc, atom, cutoffs)
+            chemenv = AtomicEnvironment(struc, selective_atoms[atom], cutoffs)
 
         kernel_mat[atom, tmp, :] = en_kern_vec_unit(
             name, tmp, tmp + 1, chemenv, kernel, hyps, cutoffs, hyps_mask,

@@ -614,9 +614,9 @@ def three_body_mc_grad_jit(bond_array_1, c1, etypes1,
     """Kernel gradient for 3-body force comparisons."""
 
     kern = 0
-    sig_derv = np.zeros(ntriplet)
-    ls_derv = np.zeros(ntriplet)
-    kern_grad = np.zeros(2)
+    sig_derv = np.zeros(ntriplet, dtype=np.float64)
+    ls_derv = np.zeros(ntriplet, dtype=np.float64)
+    kern_grad = np.zeros(2, dtype=np.float64)
 
     # pre-compute constants that appear in the inner loop
     sig2, sig3, ls1, ls2, ls3, ls4, ls5, ls6 = grad_constants(sig, ls)
@@ -764,7 +764,7 @@ def three_body_mc_grad_jit(bond_array_1, c1, etypes1,
                             sig_derv[ttypei] += sig_term
                             ls_derv[ttypei] += ls_term
 
-    kern_grad = np.zeros(2 * ntriplet)
+    kern_grad = np.zeros(2 * ntriplet, dtype=np.float64)
     for i in range(ntriplet):
         kern_grad[i] = sig_derv[i]
     for i in range(ntriplet):
@@ -1044,8 +1044,8 @@ def two_body_mc_grad_jit(bond_array_1, c1, etypes1,
     Numba's njit decorator."""
 
     kern = 0
-    sig_derv = np.zeros(nbond)
-    ls_derv = np.zeros(nbond)
+    sig_derv = np.zeros(nbond, dtype=np.float64)
+    ls_derv = np.zeros(nbond, dtype=np.float64)
 
     ls1 = 1 / (2 * ls * ls)
     ls2 = 1 / (ls * ls)
@@ -1104,11 +1104,7 @@ def two_body_mc_grad_jit(bond_array_1, c1, etypes1,
                 sig_derv[btype] += sig_term
                 ls_derv[btype] += ls_term
 
-    kern_grad = np.zeros(2 * nbond)
-    for i in range(nbond):
-        kern_grad[i] = sig_derv[i]
-    for i in range(nbond):
-        kern_grad[i + nbond] = ls_derv[i]
+    kern_grad = np.hstack((sig_derv, ls_derv))
 
     return kern, kern_grad
 
