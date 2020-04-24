@@ -10,11 +10,197 @@ from numpy import array as nparray
 from numpy import max as npmax
 from typing import List, Callable, Union
 
+from flare.util import  element_to_Z
+
 
 class ParameterMasking():
 
     def __init__(self, hyps_mask=None):
-        pass
+        self.n = {}
+        self.element_group = {}
+        self.all_elements = {}
+        self.all_ele_group = {}
+
+        for group_type in ['spec', 'bond', 'triplet', 'cut3b', 'mb']:
+            self.n[group_type] = 0
+            self.element_group[group_type] = []
+            self.all_elements[group_type] = []
+            self.all_ele_group[group_type] = []
+        self.sigma = {'bond':{}, 'triplet':{}, 'mb':{}}
+        self.ls = {'bond':{}, 'triplet':{}, 'mb': {}}
+        self.cutoff = {'bond':{}, 'cut3b':{}, 'mb': {}}
+        self.hyps_sig = {}
+        self.hyps_ls = {}
+        self.mask = {}
+        self.cutoff_list = {}
+
+    def define_group(self, group_type, name, element_list, atomic_str=False):
+        """
+        group_type (str): spec, bond, triplet, cut3b, mb
+        name (str): the name use for indexing
+        element_list (list):
+        """
+
+        if (name in self.all_ele_group[group_type]):
+            groupid = self.all_ele_group[group_type].index(name)
+        else:
+            groupid = self.n[group_type]
+            self.all_ele_group[group_type].append(name)
+            self.element_group[group_type].append([])
+            self.n[group_type] += 1
+
+        if (group_type is 'spec'):
+            for ele in element_list:
+                assert ele not in self.all_elements['spec'], \
+                        "the element has already been defined"
+                self.element_group['spec'][groupid].append(ele)
+                self.all_elements['spec'].append(ele)
+        else:
+            gid = []
+            for ele_name in element_list:
+                if (atomic_str):
+                    for idx in range(self.n['spec']):
+                        if (ele_name in self.element_group['spec'][idx]):
+                            gid += [idx]
+                            print(f"Define {group_type}: Element {ele_name}"\
+                                  f"is in group {self.all_ele_group[idx]}")
+                else:
+                    print(self.element_group['spec'])
+                    print(self.all_ele_group['spec'])
+                    gid += [self.all_ele_group['spec'].index(ele_name)]
+
+            for ele in self.all_elements[group_type]:
+                assert set(gid) != set(ele), \
+                    f"the {group_type} {ele} has already been defined"
+
+            self.element_group[group_type][groupid].append(gid)
+            self.all_elements[group_type].append(gid)
+
+    def define_parameters(self, group_type, name, sig, ls, cutoff=None):
+
+        if (group_type != 'cut3b'):
+            self.sigma[group_type][name] = sig
+            self.ls[group_type][name] = ls
+        if (cutoff is not None):
+            self.cutoff[group_type][name] = cutoff
+
+
+    def print_group(self, group_type):
+        """
+        group_type (str): spec, bond, triplet, cut3b, mb
+        name (str): the name use for indexing
+        element_list (list):
+        """
+        aeg = self.all_ele_group[group_type]
+        if (group_type == "spec"):
+            self.nspec = self.n['spec']
+            self.spec_mask = np.ones(118, dtype=np.int)*(self.n['spec']-1)
+            for idt in range(self.n['spec']):
+                if (aeg[idt] == "*"):
+                    for i in range(118):
+                        if self.spec_mask[i] > idt:
+                            self.spec_mask[i] = idt
+                            print(f"element [i] is defined as type {idt} with name"\
+                                f"aeg[idt]")
+                else:
+                    for ele in self.element_group['spec'][idt]:
+                        atom_n = element_to_Z(ele)
+                        self.spec_mask[atom_n] = idt
+                        print(f"elemtn {ele} is defined as type {idt} with name"\
+                                f"aeg[idt]")
+            print("all the remaining elements are left as type 0")
+        elif (group_type in ['bond', 'cut3b', 'mb']):
+            nspec = self.n['spec']
+            self.mask[group_type] = np.ones(nspec**2, dtype=np.int)*(self.n[group_type]-1)
+            self.hyps_sig[group_type] = []
+            self.hyps_ls[group_type] = []
+            for idt in range(self.n[group_type]):
+                name = aeg[idt]
+                if (aeg[idt] == "*"):
+                    for i in range(nspec**2):
+                        if (self.mask[group_type][i]>idt):
+                            self.mask[group_type][i] = idt
+                else:
+                    for bond in self.element_group[group_type][idt]:
+                        g1 = bond[0]
+                        g2 = bond[1]
+                        self.mask[group_type][g1+g2*nspec] = idt
+                        self.mask[group_type][g2+g1*nspec] = idt
+                        print(f"{group_type} {bond} is defined as type {idt} with name"\
+                                f"{name}")
+                if (group_type != 'cut3b'):
+                    self.hyps_sig[group_type] += [self.sigma[group_type][name]]
+                    self.hyps_ls[group_type] += [self.ls[group_type][name]]
+                    print(f"   using hyper-parameters of {self.hyps_sig[group_type][-1]}"\
+                            "{ self.hyps_ls[group_type][-1]}")
+            if len(self.cutoff[group_type]) >0:
+                self.cutoff_list[group_type] = []
+                for idt in range(self.n[group_type]):
+                    self.cutoff_list[group_type] += [self.cutoff[group_type][aeg[idt]]]
+        elif (group_type == "triplet"):
+            nspec = self.n['spec']
+            self.ntriplet = self.n['triplet']
+            self.mask[group_type] = np.ones(nspec**3, dtype=np.int)*(self.ntriplet-1)
+            self.hyps_sig[group_type] = []
+            self.hyps_ls[group_type] = []
+            for idt in range(self.n['triplet']):
+                if (aeg[idt] == "*"):
+                    for i in range(nspec**3):
+                        if (self.mask[group_type][i]>idt):
+                            self.mask[group_type][i] = idt
+                else:
+                    for triplet in self.element_group['triplet'][idt]:
+                        g1 = triplet[0]
+                        g2 = triplet[1]
+                        g3 = triplet[2]
+                        self.mask[group_type][g1+g2*nspec+g3*nspec**2] = idt
+                        self.mask[group_type][g1+g3*nspec+g2*nspec**2] = idt
+                        self.mask[group_type][g2+g1*nspec+g3*nspec**2] = idt
+                        self.mask[group_type][g2+g3*nspec+g1*nspec**2] = idt
+                        self.mask[group_type][g3+g1*nspec+g2*nspec**2] = idt
+                        self.mask[group_type][g3+g2*nspec+g1*nspec**2] = idt
+                        print(f"triplet {triplet} is defined as type {idt} with name"\
+                                "self.all_ele_group[group_type][idt]")
+                self.hyps_sig[group_type] += [self.sigma['triplet'][self.all_ele_group[group_type][idt]]]
+                self.hyps_ls[group_type] += [self.ls['triplet'][self.all_ele_group[group_type][idt]]]
+                print(f"   using hyper-parameters of {self.hyps_sig[group_type][-1]}"\
+                        "{ self.hyps_ls[group_type][-1]}")
+        else:
+            pass
+
+    def generate_dict(self):
+        """Dictionary representation of the GP model."""
+        if self.n['spec'] < 2:
+            print("only one type of elements was defined. return None")
+            hyps_mask = None
+        else:
+            self.print_group('spec')
+            self.print_group('bond')
+            self.print_group('triplet')
+            self.print_group('cut3b')
+            self.print_group('mb')
+            hyps_mask = {}
+            hyps_mask['nspec'] = self.n['spec']
+            hyps_mask['spec_mask'] = self.spec_mask
+            hyps = []
+            for group in ['bond', 'triplet', 'mb']:
+                if (self.n[group]>1):
+                    hyps_mask['n'+group] = self.n[group]
+                    hyps_mask[group+'_mask'] = self.mask[group]
+                    hyps += [self.hyps_sig[group]]
+                    hyps += [self.hyps_ls[group]]
+            hyps_mask['original'] = np.hstack(hyps)
+            if len(self.cutoff_list.get('bond', []))>0:
+                hyps_mask['cutoff_2b'] = self.cutoff_list['bond']
+            if len(self.cutoff_list.get('cut3b', []))>0:
+                hyps_mask['cutoff_3b'] = self.cutoff_list['cut3b']
+                hyps_mask['ncut3b'] = self.n['cut3b']
+                hyps_mask['cut3b_mask'] = self.mask['cut3b']
+            if len(self.cutoff_list.get('mb', []))>0:
+                hyps_mask['cutoff_mb'] = self.cutoff_list['mb']
+
+        self.hyps_mask = hyps_mask
+        return hyps_mask
 
     @staticmethod
     def check_instantiation(hyps_mask):
@@ -185,12 +371,3 @@ class ParameterMasking():
             assert cutoffs[0] > npmax(hyps_mask['cutoff_mb']), \
                     'general cutoff should be larger than all cutoffs listed in hyps_mask'
 
-
-    def __str__(self):
-        """String representation of the GP model."""
-        pass
-
-
-    def as_dict(self):
-        """Dictionary representation of the GP model."""
-        pass
