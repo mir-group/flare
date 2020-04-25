@@ -11,9 +11,9 @@
 class SparseGP{
     public:
         Eigen::MatrixXd Kuu, Kuf, Sigma, Kuu_inverse, noise_matrix,
-            Kuf_env, Kuf_struc, noise_matrix_struc, noise_matrix_env;
+            Kuf_env, Kuf_struc, noise_matrix_struc, noise_matrix_env, beta;
         Eigen::VectorXd y_struc, y_env, y, alpha, hyperparameters, noise,
-            noise_env, noise_struc, beta;
+            noise_env, noise_struc;
         std::vector<Kernel *> kernels;
 
         std::vector<LocalEnvironment> sparse_environments,
@@ -48,7 +48,7 @@ class SparseGP{
 
         void update_alpha();
 
-        void compute_beta();
+        void compute_beta(int kernel_index, int descriptor_index);
 
         void compute_likelihood();
 

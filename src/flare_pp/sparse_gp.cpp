@@ -459,26 +459,34 @@ void SparseGP::update_alpha(){
     alpha = Sigma * Kuf * noise_matrix * y;
 }
 
-void  SparseGP::compute_beta(){
+void  SparseGP::compute_beta(int kernel_index, int descriptor_index){
     // Assumptions:
     //  1. power = 2, so that the potential is linear in the square of the power spectrum.
-    //  2. There is only one many-body kernel, and it is the first member of the "kernels" vector. This can be generalized, but would require computing alpha vectors for each many-body kernel, which is not currently implemented.
-    // 3. There is at least one sparse environment stored in the sparse GP.
+    // 2. There is at least one sparse environment stored in the sparse GP.
 
     // TODO: Test that local energy prediction with beta agrees with sparse GP preiction.
 
     // Initialize beta vector.
-    int p_size = sparse_environments[0].descriptor_vals[0].size();
+    int p_size =
+        sparse_environments[0].descriptor_vals[descriptor_index].size();
     int beta_size = p_size * (p_size + 1) / 2;
-    beta = Eigen::VectorXd::Zero(beta_size);
 
-    double sig = kernels[0] -> kernel_hyperparameters[0];
+    // Should be a better way to access the number of species.
+    int n_species =
+        sparse_environments[0].descriptor_calculators[descriptor_index]->descriptor_settings[0];
+
+    beta = Eigen::MatrixXd::Zero(n_species, beta_size);
+
+    double sig = kernels[kernel_index] -> kernel_hyperparameters[0];
     double sig2 = sig * sig;
     int n_sparse = sparse_environments.size();
+
     for (int i = 0; i < n_sparse; i++){
+        int species = sparse_environments[i].central_species;
         Eigen::VectorXd p_current =
-            sparse_environments[i].descriptor_vals[0];
-        double p_norm = sparse_environments[i].descriptor_norm[0];
+            sparse_environments[i].descriptor_vals[descriptor_index];
+        double p_norm =
+            sparse_environments[i].descriptor_norm[descriptor_index];
         double alpha_val = alpha(i);
         int beta_count = 0;
 
@@ -491,10 +499,10 @@ void  SparseGP::compute_beta(){
 
                 // Update beta vector.
                 if (j != k){
-                    beta(beta_count) += 2 * beta_val;
+                    beta(species, beta_count) += 2 * beta_val;
                 }
                 else{
-                    beta(beta_count) += beta_val;
+                    beta(species, beta_count) += beta_val;
                 }
 
                 beta_count ++;
