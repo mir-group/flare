@@ -21,10 +21,76 @@ class ParameterMasking():
     """
     A helper class to construct the hyps_mask dictionary for AtomicEnvironment
     and GaussianProcess
+
+    examples:
+        pm = ParameterMasking(species=['Cu', 'C', 'H', 'O'],
+                              bonds=[['*', '*'], ['Cu','Cu']],
+                              triplets=[['*', '*', '*'], ['Cu','Cu', 'Cu']],
+                              parameters={'bond0':[1, 0.5, 1], 'bond1':[2, 0.2, 2],
+                                    'triplet0':[1, 0.5], 'triplet1':[2, 0.2],
+                                    'cutoff3b':1},
+                              constraints={'bond0':[False, True]})
+        hm = pm.hyps_mask
+        hyps = hm['hyps']
+        cutoffs = hm['cutoffs']
+
+    In this example, four atomic species are involved. There are many kinds
+    of bonds and triplets. But we only want to use eight different sigmas
+    and lengthscales.
+
+    In order to do so, we first define all the bonds to be group "bond0", by
+    listing "*-*" as the first element in the bond argument. The second
+    element Cu-Cu is then defined to be group "bond1". Note that the order
+    matters here. The later element overrides the ealier one. If
+    bonds=[['Cu', 'Cu'], ['*', '*']], then all bonds belong to group "bond1".
+
+    Similarly, Cu-Cu-Cu is defined as triplet1, while all remaining ones
+    are left as triplet0.
+
+    The hyperpameters for each group is listed in the order of
+    [sig, ls, cutoff] in the parameters argument.  So in this example,
+    Cu-Cu interaction will use [2, 0.2, 2] as its sigma, length scale, and
+    cutoff.
+
+    For triplet, the parameter arrays only come with two elements. So there
+    is no cutoff associated with triplet0 or triplet1; instead, a universal
+    cutoff is used, which is defined as 'cutoff3b'.
+
+    The constraints argument define which hyper-parameters will be optimized.
+    True for optimized and false for being fixed.
+
+    There are more examples see tests/test_mask_helper.py
+
     """
     def __init__(self, hyps_mask=None, species=None, bonds=None,
                  triplets=None, cut3b=None, mb=None, parameters=None,
                  constraints={}, verbose=False):
+        """ Initialization function
+
+        :param hyps_mask: Not implemented yet
+        :type hyps_mask: dict
+        :param species: list or dictionary that define specie groups
+        :type species: [dict, list]
+        :param bonds: list or dictionary that define bond groups
+        :type bonds: [dict, list]
+        :param triplets: list or dictionary that define triplet groups
+        :type triplets: [dict, list]
+        :param cut3b: list or dictionary that define 3b-cutoff groups
+        :type cut3b: [dict, list]
+        :param mb: list or dictionary that define many-body groups
+        :type mb: [dict, list]
+        :param parameters: dictionary of parameters
+        :type parameters: dict
+        :param constraints: whether the hyperparmeters are optimized (True) or not (False)
+        :constraints: dict
+        :param verbose: print the process to screen
+        :type verbose: bool
+
+        See format of species, bonds, triplets, cut3b, mb in list_groups() function.
+
+        See format of parameters and constraints in list_parameters() function.
+
+        """
 
         if (verbose):
             self.fout = stdout
@@ -74,48 +140,180 @@ class ParameterMasking():
             except:
                 print("more parameters needed to generate the hypsmask", file=self.fout)
 
-    def list_parameters(self, para_list, constraints={}):
-        for name in para_list:
-            self.set_parameters(name, para_list[name], constraints.get(name, True))
+    def list_parameters(self, parameter_dict, constraints={}):
+        """Define many groups of parameters
 
-    def list_groups(self, group_type, element_list):
+        :param parameter_dict: dictionary of all parameters
+        :type parameter_dict: dict
+        :param constraints: dictionary of all constraints
+        :type constraints: dict
+
+        example: parameter_dict={"name":[sig, ls, cutoffs], ...}
+                 constraints={"name":[True, False, False], ...}
+
+        The name of parameters can be the group name previously defined in
+        define_group or list_groups function. Aside from the group name,
+        "noise", "cutoff2b", "cutoff3b", and "cutoffmb" are reserved for
+        noise parmater and universal cutoffs.
+
+        For non-reserved keys, the value should be a list of 2-3 elements,
+        correspond to the sigma, lengthscale (and cutoff if the third one
+        is defined). For reserved keys, the value should be a scalar.
+
+        The parameter_dict and constraints should uses the same set of keys.
+        The keys in constraints but not in parameter_dict will be ignored.
+
+        The value in the constraints can be either a single bool, which apply
+        to all parameters, or list of bools that apply to each parameter.
+        """
+
+        for name in para_list:
+            self.set_parameters(name, parameter_dict[name], constraints.get(name, True))
+
+    def list_groups(self, group_type, definition_list):
+        """define groups in batches.
+
+        Args:
+
+        group_type (str): "specie", "bond", "triplet", "cut3b", "mb"
+        definition_list (list, dict): list of elements
+
+        This function runs define_group in batch. Please first read
+        the manual of define_group.
+
+        If the definition_list is a list, it is equivalent to
+        executing define_group through the definition_list.
+
+        | for all terms in the list:
+        |     define_group(group_type, group_type+'n', the nth term in the list)
+
+        So the first bond defined will be group bond0, second one will be
+        group bond1. For specie, it will define all the listed elements as
+        groups with only one element with their original name.
+
+        If the definition_list is a dictionary, it is equivalent to
+
+        | for k, v in the dict:
+        |     define_group(group_type, k, v)
+
+        It is not recommended to use the dictionary mode, especially when
+        the group definitions are conflicting with each other. There is no
+        guarantee that the looping order is the same as you want.
+
+        Unlike define_group, it can only be called once for each
+        group_type, and not after any define_group calls.
+
+        """
         if (group_type == 'specie'):
             if (len(self.all_group_names['specie'])>0):
                 raise RuntimeError("this function has to be run "\
                         "before any define_group")
-            if (isinstance(element_list, list)):
-                for ele in element_list:
+            if (isinstance(definition_list, list)):
+                for ele in definition_list:
                     if isinstance(ele, list):
                         self.define_group('specie', ele, ele)
                     else:
                         self.define_group('specie', ele, [ele])
             elif (isinstance(elemnt_list, dict)):
-                for ele in element_list:
-                    self.define_group('specie', ele, element_list[ele])
+                for ele in definition_list:
+                    self.define_group('specie', ele, definition_list[ele])
             else:
                 raise RuntimeError("type unknown")
         else:
             if (len(self.all_group_names['specie'])==0):
                 raise RuntimeError("this function has to be run "\
                         "before any define_group")
-            if (isinstance(element_list, list)):
-                ngroup = len(element_list)
+            if (isinstance(definition_list, list)):
+                ngroup = len(definition_list)
                 for idg in range(ngroup):
                     self.define_group(group_type, f"{group_type}{idg}",
-                            element_list[idg])
-            elif (isinstance(element_list, dict)):
-                for name in element_list:
-                    if (isinstance(element_list[name][0], list)):
-                        for ele in element_list[name]:
+                            definition_list[idg])
+            elif (isinstance(definition_list, dict)):
+                for name in definition_list:
+                    if (isinstance(definition_list[name][0], list)):
+                        for ele in definition_list[name]:
                             self.define_group(group_type, name, ele)
                     else:
-                        self.define_group(group_type, name, element_list[name])
+                        self.define_group(group_type, name, definition_list[name])
 
     def define_group(self, group_type, name, element_list, parameters=None, atomic_str=False):
-        """
-        group_type (str): species, bond, triplet, cut3b, mb
-        name (str): the name use for indexing
-        element_list (list):
+        """Define specie/bond/triplet/3b cutoff/manybody group
+
+        Args:
+        group_type (str): "specie", "bond", "triplet", "cut3b", "mb"
+        name (str): the name use for indexing. can be anything but "*"
+        element_list (list): list of elements
+        parameters (list): corresponding parameters for this group
+        atomic_str (bool): whether the element in element_list is
+                           group name or periodic table element name.
+
+        The function is helped to define different groups for specie/bond/triplet
+        /3b cutoff/manybody terms. This function can be used for many times.
+        The later one always overrides the former one.
+
+        The name of the group has to be unique string (but not "*"), that
+        define a group of species or bonds, etc. If the same name is used,
+        in two function calls, the definitions of the group will be merged.
+        Both calls will be effective.
+
+        element_list has to be a list of atomic elements, or a list of
+        specie group names (which should be defined in previous calls), or "*".
+        "*" will loop the function over all previously defined species.
+        It has to be two elements for bond/3b cutoff/manybody term, or
+        three elements for triplet. For specie group definition, it can be
+        as many elements as you want.
+
+        If multiple define_group calls have conflict with element, the later one
+        has higher priority. For example, bond 1-2 are defined as group1 in
+        the first call, and as group2 in the second call. In the end, the bond
+        will be left as group2.
+
+        Example 1:
+
+            define_group('specie', 'water', ['H', 'O'])
+            define_group('specie', 'salt', ['Cl', 'Na'])
+
+        They define H and O to be group water, and Na and Cl to be group salt.
+
+        Example 2.1:
+
+            define_group('bond', 'in-water', ['H', 'H'], atomic_str=True)
+            define_group('bond', 'in-water', ['H', 'O'], atomic_str=True)
+            define_group('bond', 'in-water', ['O', 'O'], atomic_str=True)
+
+        Example 2.2:
+            define_group('bond', 'in-water', ['water', 'water'])
+
+        The 2.1 is equivalent to 2.2.
+
+        Example 3.1:
+
+            define_group('specie', '1', ['H'])
+            define_group('specie', '2', ['O'])
+            define_group('bond', 'Hgroup', ['H', 'H'], atomic_str=True)
+            define_group('bond', 'Hgroup', ['H', 'O'], atomic_str=True)
+            define_group('bond', 'OO', ['O', 'O'], atomic_str=True)
+
+        Example 3.2:
+
+            define_group('specie', '1', ['H'])
+            define_group('specie', '2', ['O'])
+            define_group('bond', 'Hgroup', ['H', '*'], atomic_str=True)
+            define_group('bond', 'OO', ['O', 'O'], atomic_str=True)
+
+        Example 3.3:
+
+            list_groups('specie', ['H', 'O'])
+            define_group('bond', 'Hgroup', ['H', '*'])
+            define_group('bond', 'OO', ['O', 'O'])
+
+        Example 3.4:
+
+            list_groups('specie', ['H', 'O'])
+            define_group('bond', 'OO', ['*', '*'])
+            define_group('bond', 'Hgroup', ['H', '*'])
+
+        3.1 to 3.4 are all equivalent.
         """
 
         if (name == '*'):
@@ -185,6 +383,26 @@ class ParameterMasking():
                             one_star_less +[sub], parameters=parameters, atomic_str=atomic_str)
 
     def set_parameters(self, name, parameters, opt=True):
+        """Set the parameters for certain group
+
+        :param name: name of the patermeters
+        :type name: str
+        :param parameters: the sigma, lengthscale, and cutoff of each group.
+        :type parameters: list
+        :param opt: whether to optimize the parameter or not
+        :type opt: bool, list
+
+        The name of parameters can be the group name previously defined in
+        define_group or list_groups function. Aside from the group name,
+        "noise", "cutoff2b", "cutoff3b", and "cutoffmb" are reserved for
+        noise parmater and universal cutoffs.
+
+        The parameter should be a list of 2-3 elements, for sigma,
+        lengthscale (and cutoff if the third one is defined).
+
+        The optimization flag can be a single bool, which apply to all
+        parameters, or list of bools that apply to each parameter.
+        """
 
         if (name == 'noise'):
             self.noise = parameters
@@ -215,10 +433,11 @@ class ParameterMasking():
 
 
     def summarize_group(self, group_type):
-        """
+        """Sort and combine all the previous definition to internal varialbes
+
+        Args:
+
         group_type (str): species, bond, triplet, cut3b, mb
-        name (str): the name use for indexing
-        element_list (list):
         """
         aeg = self.all_group_names[group_type]
         nspecie = self.n['specie']
