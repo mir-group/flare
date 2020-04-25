@@ -167,7 +167,7 @@ class ParameterMasking():
         to all parameters, or list of bools that apply to each parameter.
         """
 
-        for name in para_list:
+        for name in parameter_dict:
             self.set_parameters(name, parameter_dict[name], constraints.get(name, True))
 
     def list_groups(self, group_type, definition_list):
