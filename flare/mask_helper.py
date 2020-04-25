@@ -22,9 +22,9 @@ class ParameterMasking():
     A helper class to construct the hyps_mask dictionary for AtomicEnvironment
     and GaussianProcess
     """
-    def __init__(self, hyps_mask=None, specie=None, bond=None,
-                 triplet=None, cut3b=None, mb=None, para=None,
-                 constraint={}, verbose=False):
+    def __init__(self, hyps_mask=None, species=None, bonds=None,
+                 triplets=None, cut3b=None, mb=None, parameters=None,
+                 constraints={}, verbose=False):
 
         if (verbose):
             self.fout = stdout
@@ -45,7 +45,7 @@ class ParameterMasking():
             self.all_group_names[group_type] = []
         self.sigma = {}
         self.ls = {}
-        self.cutoff = {}
+        self.all_cutoff = {}
         self.hyps_sig = {}
         self.hyps_ls = {}
         self.hyps_opt = {}
@@ -54,31 +54,31 @@ class ParameterMasking():
         self.cutoff_list = {}
         self.noise = 0.05
 
-        self.cutoffs = [0, 0, 0]
+        self.cutoffs_array = [0, 0, 0]
         self.hyps = None
 
-        if (specie is not None):
-            self.list_sweeping('specie', specie)
-            if (bond is not None):
-                self.list_sweeping('bond', bond)
-            if (triplet is not None):
-                self.list_sweeping('triplet', triplet)
+        if (species is not None):
+            self.list_groups('specie', species)
+            if (bonds is not None):
+                self.list_groups('bond', bonds)
+            if (triplets is not None):
+                self.list_groups('triplet', triplets)
             if (cut3b is not None):
-                self.list_sweeping('cut3b', cut3b)
+                self.list_groups('cut3b', cut3b)
             if (mb is not None):
-                self.list_sweeping('mb', mb)
-            if (para is not None):
-                self.list_parameters(para, constraint)
+                self.list_groups('mb', mb)
+            if (parameters is not None):
+                self.list_parameters(parameters, constraints)
             try:
                 self.hyps_mask = self.generate_dict()
             except:
                 print("more parameters needed to generate the hypsmask", file=self.fout)
 
-    def list_parameters(self, para_list, constraint={}):
+    def list_parameters(self, para_list, constraints={}):
         for name in para_list:
-            self.set_parameters(name, para_list[name], constraint.get(name, True))
+            self.set_parameters(name, para_list[name], constraints.get(name, True))
 
-    def list_sweeping(self, group_type, element_list):
+    def list_groups(self, group_type, element_list):
         if (group_type == 'specie'):
             if (len(self.all_group_names['specie'])>0):
                 raise RuntimeError("this function has to be run "\
@@ -193,7 +193,7 @@ class ParameterMasking():
 
         if (name in ['cutoff2b', 'cutoff3b', 'cutoffmb']):
             name_map = {'cutoff2b':0, 'cutoff3b':1, 'cutoffmb':2}
-            self.cutoffs[name_map[name]] = parameters
+            self.cutoffs_array[name_map[name]] = parameters
             return
 
         if (isinstance(opt, bool)):
@@ -209,12 +209,12 @@ class ParameterMasking():
                   f"sig={parameters[0]} ({opt[0]}) "\
                   f"ls={parameters[1]} ({opt[1]})", file=self.fout)
         if (len(parameters)>2):
-            if (name in self.cutoff):
+            if (name in self.all_cutoff):
                 print(f"Warning, the cutoff of group {name} is overriden", file=self.fout)
-            self.cutoff[name] = parameters[2]
+            self.all_cutoff[name] = parameters[2]
 
 
-    def print_group(self, group_type):
+    def summarize_group(self, group_type):
         """
         group_type (str): species, bond, triplet, cut3b, mb
         name (str): the name use for indexing
@@ -262,24 +262,27 @@ class ParameterMasking():
                     print(f"   using hyper-parameters of {sig} {ls}", file=self.fout)
             print(f"All the remaining elements are left as type {idt}", file=self.fout)
 
+            name_map = {'bond':0, 'cut3b':1, 'mb':2}
+
             self.cutoff_list[group_type] = []
             cut_define = np.zeros(self.n[group_type], dtype=bool)
+            allcut = [self.cutoffs_array[name_map[group_type]]]
             for idt in range(self.n[group_type]):
-                if (aeg[idt] in self.cutoff):
+                if (aeg[idt] in self.all_cutoff):
                     cut_define[idt] = True
-
-            name_map = {'bond':0, 'cut3b':1, 'mb':2}
+                    allcut += [self.all_cutoff[aeg[idt]]]
 
             if cut_define.all():
                 self.cutoff_list[group_type] = []
                 for idt in range(self.n[group_type]):
-                    self.cutoff_list[group_type] += [self.cutoff[aeg[idt]]]
+                    self.cutoff_list[group_type] += [self.all_cutoff[aeg[idt]]]
                 print("Different cutoffs were also defined", self.cutoff_list[group_type], file=self.fout)
-                self.cutoffs[name_map[group_type]] = np.max(self.cutoff_list[group_type])
+                self.cutoffs_array[name_map[group_type]] = np.max(self.cutoff_list[group_type])
             else:
                 if cut_define.any():
                     print("There were some cutoff defined, but not all of them", file=self.fout)
-                if (self.cutoffs[name_map[group_type]] <=0):
+                    self.cutoffs_array[name_map[group_type]] = np.max(allcut)
+                if (self.cutoffs_array[name_map[group_type]] <=0):
                     raise RuntimeError(f"cutoffs for {group_type} is undefined")
         elif (group_type == "triplet"):
             self.ntriplet = self.n['triplet']
@@ -314,9 +317,17 @@ class ParameterMasking():
                 self.hyps_opt[group_type] += [self.opt[name+'ls']]
                 print(f"   using hyper-parameters of {sig} {ls}", file=self.fout)
             print(f"all the remaining elements are left as type {idt}", file=self.fout)
-
-            if (self.cutoffs[1] <=0):
-                raise RuntimeError(f"cutoffs for triplet is undefined")
+            if (self.cutoffs_array[1] == 0):
+                cut_define = False
+                allcut = []
+                for idt in range(self.n[group_type]):
+                    if (aeg[idt] in self.all_cutoff):
+                        cut_define = True
+                        allcut += [self.all_cutoff[aeg[idt]]]
+                if cut_define:
+                    self.cutoffs_array[1] = np.max(allcut)
+                else:
+                    raise RuntimeError(f"cutoffs for {group_type} is undefined")
         else:
             pass
 
@@ -326,11 +337,11 @@ class ParameterMasking():
             print("only one type of elements was defined. return None", file=self.fout)
             hyps_mask = None
         else:
-            self.print_group('specie')
-            self.print_group('bond')
-            self.print_group('triplet')
-            self.print_group('cut3b')
-            self.print_group('mb')
+            self.summarize_group('specie')
+            self.summarize_group('bond')
+            self.summarize_group('cut3b')
+            self.summarize_group('triplet')
+            self.summarize_group('mb')
             hyps_mask = {}
             hyps_mask['nspecie'] = self.n['specie']
             hyps_mask['specie_mask'] = self.specie_mask
@@ -381,7 +392,10 @@ class ParameterMasking():
                 hyps_mask['cutoff_mb'] = self.cutoff_list['mb']
 
         self.hyps_mask = hyps_mask
-        hyps_mask['cutoffs'] = self.cutoffs
+        if (self.cutoffs_array[2]>0):
+            hyps_mask['cutoffs'] = self.cutoffs_array
+        else:
+            hyps_mask['cutoffs'] = self.cutoffs_array[:2]
         return hyps_mask
 
     @staticmethod
@@ -596,12 +610,18 @@ class ParameterMasking():
 
         if cutoff_2b is not None:
             scalar_cutoff_2 = np.max(cutoff_2b)
+        else:
+            n2b = 1
 
         if cutoff_3b is not None:
             scalar_cutoff_3 = np.max(cutoff_3b)
+        else:
+            n3b = 1
 
         if cutoff_mb is not None:
             scalar_cutoff_mb = np.max(cutoff_mb)
+        else:
+            nmb = 1
 
         return scalar_cutoff_2, scalar_cutoff_3, scalar_cutoff_mb, \
             cutoff_2b, cutoff_3b, cutoff_mb, \

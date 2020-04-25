@@ -10,6 +10,7 @@ from flare import env, struc, gp
 from flare.kernels.mc_sephyps import _str_to_kernel as stk
 from flare.kernels.utils import from_mask_to_args, str_to_kernel_set
 from flare.cutoffs import quadratic_cutoff_bound
+from flare.mask_helper import ParameterMasking
 
 from .fake_gp import generate_mb_envs, generate_mb_twin_envs
 
@@ -28,7 +29,7 @@ def test_force_en_multi_vs_simple(kernel_name, diff_cutoff):
     cell = 1e7 * np.eye(3)
 
     # set hyperparameters
-    cutoffs, hyps0, hyps1, hyps2, hm1, hm2 = generate_same_hm(
+    cutoffs, hyps1, hyps2, hm1, hm2 = generate_same_hm(
         kernel_name, diff_cutoff)
 
     delta = 1e-8
@@ -40,7 +41,8 @@ def test_force_en_multi_vs_simple(kernel_name, diff_cutoff):
     # mc_simple
     kernel0, kg0, en_kernel0, force_en_kernel0 = str_to_kernel_set(
         kernel_name, False)
-    args0 = (hyps0, cutoffs)
+    args0 = (hyps1, cutoffs)
+    print("hello", args0)
 
     # mc_sephyps
     # args1 and args 2 use 1 and 2 groups of hyper-parameters
@@ -122,6 +124,8 @@ def test_check_sig_scale(kernel_name, diff_cutoff):
     scale = 2
 
     cutoffs, hyps0, hm = generate_diff_hm(kernel_name, diff_cutoff)
+    print(cutoffs)
+    print(hm)
 
     delta = 1e-8
     env1, env1_t = generate_mb_twin_envs(cutoffs, np.eye(3)*100, delta, d1, hm)
@@ -133,9 +137,9 @@ def test_check_sig_scale(kernel_name, diff_cutoff):
 
     # make the second sigma zero
     hyps1 = np.copy(hyps0)
-    hyps0[1::4] = 0  # 1e-8
-    hyps1[1::4] = 0  # 1e-8
-    hyps1[0::4] *= scale
+    hyps0[0::4] = 0  # 1e-8
+    hyps1[0::4] = 0  # 1e-8
+    hyps1[1::4] *= scale
 
     kernel, kg, en_kernel, force_en_kernel = str_to_kernel_set(
         kernel_name, True)
@@ -414,120 +418,121 @@ def test_hyps_grad(kernel_name, constraint):
 
 
 def generate_same_hm(kernel_name, diff_cutoff=False):
-    cutoffs = []
-    hyps0 = []
-    hyps2 = []
-    hm1 = {'nspecie': 1, 'specie_mask': np.zeros(118, dtype=int)}
-    hm2 = {'nspecie': 2, 'specie_mask': np.zeros(118, dtype=int)}
-    hm2['specie_mask'][2] = 1
+
+    pm1 = ParameterMasking(species=['H', 'He'], parameters={'noise':0.05})
+    pm2 = ParameterMasking(species=['H', 'He'], parameters={'noise':0.05})
     if ('2' in kernel_name):
-        cutoffs = np.ones(1, dtype=float)
-
-        hyps0 += [1, 0.9]
-        hm1['nbond'] = 1
-        hm1['bond_mask'] = np.zeros(1, dtype=int)
-
-        hyps2 += [1, 1, 0.9, 0.9]
-        hm2['nbond'] = 2
-        hm2['bond_mask'] = np.ones(4, dtype=int)
-        hm2['bond_mask'][0] = 0
+        para = 2.5+0.1*random(3)
+        pm1.define_group('bond', 'b1', ['*', '*'], parameters=para)
+        pm2.define_group('bond', 'b1', ['*', '*'], parameters=para)
+        pm2.define_group('bond', 'b2', ['H', 'H'], parameters=para[:2])
         if (diff_cutoff):
-            hm1['cutoff_2b'] = np.ones(1, dtype=float)*cutoffs[0]
-            hm2['cutoff_2b'] = np.ones(2, dtype=float)*cutoffs[0]
+            pm2.set_parameters('b2', parameters=para)
     if ('3' in kernel_name):
-        cutoffs = np.ones(2)
-
-        hyps0 += [1, 0.8]
-
-        hm1['ntriplet'] = 1
-        hm1['triplet_mask'] = np.zeros(1, dtype=int)
-
-        hyps2 += [1, 1, 0.8, 0.8]
-        hm2['ntriplet'] = 2
-        hm2['triplet_mask'] = np.ones(8, dtype=int)
-        hm2['triplet_mask'][0] = 0
+        para = 1.2+0.1*random(3)
+        pm1.define_group('triplet', 't1', ['*', '*', '*'], parameters=para)
+        pm2.define_group('triplet', 't1', ['*', '*', '*'], parameters=para)
+        pm2.define_group('triplet', 't2', ['H', 'H', 'H'], parameters=para[:2])
         if (diff_cutoff):
-            hm1['ncut3b'] = 1
-            hm1['cut3b_mask'] = np.zeros(1, dtype=int)
-            hm1['cutoff_3b'] = np.ones(1, dtype=float)*cutoffs[1]
-            hm2['ncut3b'] = 2
-            hm2['cut3b_mask'] = np.ones(4, dtype=int)
-            hm2['cut3b_mask'][0] = 0
-            hm2['cutoff_3b'] = np.ones(2, dtype=float)*cutoffs[1]
+            pm2.set_parameters('t2', parameters=para)
     if ('mb' in kernel_name):
-        cutoffs = np.ones(3)
-
-        hyps0 += [1, 0.7]
-
-        hm1['nmb'] = 1
-        hm1['mb_mask'] = np.zeros(1, dtype=int)
-
-        hyps2 += [1, 1, 0.7, 0.7]
-
-        hm2['nmb'] = 2
-        hm2['mb_mask'] = np.ones(4, dtype=int)
-        hm2['mb_mask'][0] = 0
-
+        para = 1.2+0.1*random(3)
+        pm1.define_group('mb', 'mb1', ['*', '*'], parameters=para)
+        pm2.define_group('mb', 'mb1', ['*', '*'], parameters=para)
+        pm2.define_group('mb', 'mb2', ['H', 'H'], parameters=para[:2])
         if (diff_cutoff):
-            hm1['cutoff_mb'] = np.ones(1)*cutoffs[2]
-            hm2['cutoff_mb'] = np.ones(2)*cutoffs[2]
+            pm2.set_parameters('mb2', parameters=para)
 
-    hyps0 = np.hstack([hyps0, 0.5])
-    hyps2 = np.hstack([hyps2, 0.5])
-    hyps1 = np.hstack([hyps0, 0.5])
-    return cutoffs, hyps0, hyps1, hyps2, hm1, hm2
+    hm1 = pm1.generate_dict()
+    hyps1 = hm1['hyps']
+    cut = hm1['cutoffs']
+
+    hm2 = pm2.generate_dict()
+    hyps2 = hm2['hyps']
+    cut = hm2['cutoffs']
+
+    return cut, hyps1, hyps2, hm1, hm2
 
 
 def generate_diff_hm(kernel_name, diff_cutoff=False, constraint=False):
-    cutoffs = []
-    hyps2 = []
-    hm2 = {'nspecie': 2, 'specie_mask': np.zeros(118, dtype=int)}
-    hm2['specie_mask'][2] = 1
+
+    pm = ParameterMasking(species=['H', 'He'], parameters={'noise':0.05}) #, para={'cutoff2b': 0.8,
     if ('2' in kernel_name):
-        cutoffs = np.array([2.5])
-
-        hyps2 += [1, 0.8, 0.7, 0.05]
-        hm2['nbond'] = 2
-        hm2['bond_mask'] = np.ones(4, dtype=int)
-        hm2['bond_mask'][0] = 0
+        para = 2.5+0.1*random(3)
+        pm.define_group('bond', 'b1', ['*', '*'], parameters=para)
+        para = 2.5+0.1*random(3)
+        pm.define_group('bond', 'b2', ['H', 'H'], parameters=para[:2])
         if (diff_cutoff):
-            hm2['cutoff_2b'] = np.array([1.2, 1.25])
-
+            pm.set_parameters('b2', parameters=para, opt=(not constraint))
     if ('3' in kernel_name):
-        cutoffs = np.array([2.5, 1.2])
-
-        hyps2 += [1, 0.9, 0.8, 0.05]
-        hm2['ntriplet'] = 2
-        hm2['triplet_mask'] = np.ones(8, dtype=int)
-        hm2['triplet_mask'][0] = 0
+        para = 1.2+0.1*random(3)
+        pm.define_group('triplet', 't1', ['*', '*', '*'], parameters=para)
+        para = 1.2+0.1*random(3)
+        pm.define_group('triplet', 't2', ['H', 'H', 'H'], parameters=para[:2])
         if (diff_cutoff):
-            hm2['ncut3b'] = 2
-            hm2['cut3b_mask'] = np.ones(4, dtype=int)
-            hm2['cut3b_mask'][0] = 0
-            hm2['cutoff_3b'] = np.array([1.15, 1.2])
-
+            pm.set_parameters('t2', parameters=para, opt=(not constraint))
     if ('mb' in kernel_name):
-        cutoffs = np.array([2, 1.2, 1.2])
-
-        hyps2 += [1, 0.9, 0.8, 0.05]
-        hm2['nmb'] = 2
-        hm2['mb_mask'] = np.ones(4, dtype=int)
-        hm2['mb_mask'][0] = 0
+        para = 1.2+0.1*random(3)
+        pm.define_group('mb', 'mb1', ['*', '*'], parameters=para)
+        para = 1.2+0.1*random(3)
+        pm.define_group('mb', 'mb2', ['H', 'H'], parameters=para[:2])
         if (diff_cutoff):
-            hm2['cutoff_mb'] = np.array([1.25, 1.2])
+            pm.set_parameters('mb2', parameters=para, opt=(not constraint))
 
-    hyps2 = np.hstack([hyps2, 0.5])
+    hm = pm.generate_dict()
+    hyps = hm['hyps']
+    cut = hm['cutoffs']
 
-    if (constraint is False):
-        return cutoffs, hyps2, hm2
+    return cut, hyps, hm
+    # cutoffs = []
+    # hyps2 = []
+    # hm2 = {'nspecie': 2, 'specie_mask': np.zeros(118, dtype=int)}
+    # hm2['specie_mask'][2] = 1
+    # if ('2' in kernel_name):
+    #     cutoffs = np.array([2.5])
 
-    hm2['original'] = hyps2
-    hm2['map'] = np.arange(0, len(hyps2), 2)
-    hm2['hyps_label'] = np.arange(0, len(hyps2), 2)
-    hyps2 = hyps2[hm2['map']]
-    if (len(hyps2)-1) in hm2['map']:
-        hm2['train_noise'] = True
-    else:
-        hm2['train_noise'] = False
+    #     hyps2 += [1, 0.8, 0.7, 0.05]
+    #     hm2['nbond'] = 2
+    #     hm2['bond_mask'] = np.ones(4, dtype=int)
+    #     hm2['bond_mask'][0] = 0
+    #     if (diff_cutoff):
+    #         hm2['cutoff_2b'] = np.array([1.2, 1.25])
 
-    return cutoffs, hyps2, hm2
+    # if ('3' in kernel_name):
+    #     cutoffs = np.array([2.5, 1.2])
+
+    #     hyps2 += [1, 0.9, 0.8, 0.05]
+    #     hm2['ntriplet'] = 2
+    #     hm2['triplet_mask'] = np.ones(8, dtype=int)
+    #     hm2['triplet_mask'][0] = 0
+    #     if (diff_cutoff):
+    #         hm2['ncut3b'] = 2
+    #         hm2['cut3b_mask'] = np.ones(4, dtype=int)
+    #         hm2['cut3b_mask'][0] = 0
+    #         hm2['cutoff_3b'] = np.array([1.15, 1.2])
+
+    # if ('mb' in kernel_name):
+    #     cutoffs = np.array([2, 1.2, 1.2])
+
+    #     hyps2 += [1, 0.9, 0.8, 0.05]
+    #     hm2['nmb'] = 2
+    #     hm2['mb_mask'] = np.ones(4, dtype=int)
+    #     hm2['mb_mask'][0] = 0
+    #     if (diff_cutoff):
+    #         hm2['cutoff_mb'] = np.array([1.25, 1.2])
+
+    # hyps2 = np.hstack([hyps2, 0.5])
+
+    # if (constraint is False):
+    #     return cutoffs, hyps2, hm2
+
+    # hm2['original'] = hyps2
+    # hm2['map'] = np.arange(0, len(hyps2), 2)
+    # hm2['hyps_label'] = np.arange(0, len(hyps2), 2)
+    # hyps2 = hyps2[hm2['map']]
+    # if (len(hyps2)-1) in hm2['map']:
+    #     hm2['train_noise'] = True
+    # else:
+    #     hm2['train_noise'] = False
+
+    # return cutoffs, hyps2, hm2

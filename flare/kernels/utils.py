@@ -116,6 +116,9 @@ def from_mask_to_args(hyps, hyps_mask: dict, cutoffs):
     cut3b_mask = hyps_mask.get('cut3b_mask', None)
 
     ncutoff = len(cutoffs)
+    if (ncutoff > 2):
+        if (cutoffs[2] == 0):
+            ncutoff = 2
 
     if (ncutoff > 0):
         cutoff_2b = [cutoffs[0]]
