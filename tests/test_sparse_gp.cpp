@@ -7,9 +7,9 @@
 class SparseTest : public ::testing::Test{
     public:
         // structure
-        int n_atoms = 2;
+        int n_atoms = 4;
         Eigen::MatrixXd cell{3, 3}, cell_2{3, 3};
-        std::vector<int> species {0, 1};
+        std::vector<int> species {0, 1, 0, 1};
         Eigen::MatrixXd positions{n_atoms, 3};
         StructureDescriptor test_struc;
     
@@ -31,7 +31,7 @@ class SparseTest : public ::testing::Test{
         // kernel
         double signal_variance = 1;
         double length_scale = 1;
-        double power = 1;
+        double power = 2;
         int descriptor_index = 0;
         DotProductKernel kernel;
         TwoBodyKernel two_body_kernel;
@@ -44,11 +44,9 @@ class SparseTest : public ::testing::Test{
                 0, 100, 0,
                 0, 0, 100;
 
-        positions << 0, 0, 0,
-                     1, 0, 0;
-        
-        energy << 0.01;
-        forces << -1, 0, 0, 1, 0, 0;
+        positions = Eigen::MatrixXd::Random(n_atoms, 3);
+        energy = Eigen::VectorXd::Random(1);
+        forces = Eigen::VectorXd::Random(n_atoms * 3);
         stresses = Eigen::VectorXd::Random(6);
 
         desc1 = B2_Calculator(radial_string, cutoff_string,
@@ -219,19 +217,27 @@ TEST_F(SparseTest, TestBeta){
     SparseGP sparse_gp = SparseGP(kernels, sigma_e, sigma_f, sigma_s);
     LocalEnvironment env1 = test_struc.local_environments[0];
     LocalEnvironment env2 = test_struc.local_environments[1];
+    LocalEnvironment env3 = test_struc.local_environments[2];
+    LocalEnvironment env4 = test_struc.local_environments[3];
     sparse_gp.add_sparse_environment(env1);
     sparse_gp.add_sparse_environment(env2);
+    sparse_gp.add_sparse_environment(env3);
+    sparse_gp.add_sparse_environment(env4);
     sparse_gp.add_training_structure(test_struc);
     sparse_gp.update_alpha();
-    std::cout << sparse_gp.alpha << std::endl;
+    // std::cout << sparse_gp.alpha << std::endl;
+    // std::cout << positions << std::endl;
 
     // Predict local energy with alpha.
     double loc_en = sparse_gp.predict_local_energy(env1);
     std::cout << loc_en << std::endl;
 
-    // Compute beta.
+    // Predict local energy with beta.
     sparse_gp.compute_beta(0, 0);
-    std::cout << sparse_gp.beta.cols() << std::endl;
+    env1.compute_descriptor_squared();
+    std::cout << (sparse_gp.beta.row(0)).dot(env1.descriptor_squared[0]) << std::endl;
+
+    // std::cout << env1.descriptor_squared[0].size() << std::endl;
 
 }
 

@@ -37,7 +37,7 @@ class LocalEnvironment{
 
         // Store descriptor calculators for each many body cutoff.
         std::vector<DescriptorCalculator *> descriptor_calculators;
-        std::vector<Eigen::VectorXd> descriptor_vals;
+        std::vector<Eigen::VectorXd> descriptor_vals, descriptor_squared;
         std::vector<Eigen::MatrixXd> descriptor_force_dervs,
             descriptor_stress_dervs, force_dot, stress_dot;
         std::vector<double> descriptor_norm;
@@ -80,6 +80,7 @@ class LocalEnvironment{
 
         void compute_indices();
         void compute_descriptors_and_gradients();
+        void compute_descriptor_squared();
 };
 
 void compute_neighbor_descriptors(std::vector<LocalEnvironment> & envs);

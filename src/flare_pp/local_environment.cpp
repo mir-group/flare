@@ -275,6 +275,30 @@ void LocalEnvironment :: compute_descriptors(){
     }
 }
 
+void LocalEnvironment :: compute_descriptor_squared(){
+    // Assumes descriptors have already been computed.
+    int n_calculators = descriptor_calculators.size();
+
+    for (int i = 0; i < n_calculators; i ++){
+        int desc_size = descriptor_vals[i].size();
+        double desc_norm = descriptor_norm[i];
+        Eigen::VectorXd desc_sq =
+            Eigen::VectorXd::Zero(desc_size * (desc_size + 1) / 2);
+        int desc_count = 0;
+
+        for (int j = 0; j < desc_size; j++){
+            double desc_norm_j = descriptor_vals[i](j) / desc_norm;
+
+            for (int k = j; k < desc_size; k ++){
+                double desc_norm_k = descriptor_vals[i](k) / desc_norm;
+                desc_sq(desc_count) = desc_norm_j * desc_norm_k;
+                desc_count ++;
+            }
+        }
+        descriptor_squared.push_back(desc_sq);
+    }
+}
+
 void LocalEnvironment :: compute_neighbor_descriptors(){
 
     int n_neighbors = neighbor_list.size();
