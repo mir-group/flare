@@ -210,6 +210,31 @@ TEST_F(SparseTest, Predict){
 
 }
 
+
+TEST_F(SparseTest, TestBeta){
+    double sigma_e = 1;
+    double sigma_f = 2;
+    double sigma_s = 3;
+
+    SparseGP sparse_gp = SparseGP(kernels, sigma_e, sigma_f, sigma_s);
+    LocalEnvironment env1 = test_struc.local_environments[0];
+    LocalEnvironment env2 = test_struc.local_environments[1];
+    sparse_gp.add_sparse_environment(env1);
+    sparse_gp.add_sparse_environment(env2);
+    sparse_gp.add_training_structure(test_struc);
+    sparse_gp.update_alpha();
+    std::cout << sparse_gp.alpha << std::endl;
+
+    // Predict local energy with alpha.
+    double loc_en = sparse_gp.predict_local_energy(env1);
+    std::cout << loc_en << std::endl;
+
+    // Compute beta.
+    sparse_gp.compute_beta(0, 0);
+    std::cout << sparse_gp.beta.cols() << std::endl;
+
+}
+
 TEST(CountThreads, CountThreads){
     int test = omp_get_max_threads();
     std::cout << test << std::endl;

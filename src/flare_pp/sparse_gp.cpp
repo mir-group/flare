@@ -548,3 +548,21 @@ Eigen::VectorXd SparseGP::predict_force(
 
     return kern_mat * alpha;
 }
+
+double SparseGP::predict_local_energy(
+    const LocalEnvironment & test_environment){
+
+    int n_sparse = sparse_environments.size();
+    int n_kernels = kernels.size();
+    Eigen::VectorXd kern_vec = Eigen::VectorXd::Zero(n_sparse);
+
+    for (int i = 0; i < n_sparse; i ++){
+        for (int j = 0; j < n_kernels; j ++){
+            kern_vec(i) +=
+                kernels[j] ->
+                    env_env(sparse_environments[i], test_environment);
+        }
+    }
+
+    return kern_vec.dot(alpha);
+}

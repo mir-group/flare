@@ -57,6 +57,8 @@ class SparseGP{
         Eigen::VectorXd predict_force(
             const LocalEnvironment & test_environment);
 
+        double predict_local_energy(const LocalEnvironment & test_environment);
+
         // void predict_DTC(StructureDescriptor test_structure,
         //     Eigen::VectorXd & mean_vector, Eigen::VectorXd & std_vector);
 
