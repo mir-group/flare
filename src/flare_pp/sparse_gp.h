@@ -50,6 +50,8 @@ class SparseGP{
 
         void compute_beta(int kernel_index, int descriptor_index);
 
+        void write_beta(std::string file_name);
+
         void compute_likelihood();
 
         Eigen::VectorXd predict(const StructureDescriptor & test_structure);

@@ -1,6 +1,8 @@
 #include "sparse_gp.h"
 #include <cmath>
 #include <iostream>
+#include <fstream>
+#include <ctime>
 
 static const double Pi = 3.14159265358979323846;
 
@@ -464,14 +466,13 @@ void  SparseGP::compute_beta(int kernel_index, int descriptor_index){
     //  1. power = 2, so that the potential is linear in the square of the power spectrum.
     // 2. There is at least one sparse environment stored in the sparse GP.
 
-    // TODO: Test that local energy prediction with beta agrees with sparse GP preiction.
-
     // Initialize beta vector.
     int p_size =
         sparse_environments[0].descriptor_vals[descriptor_index].size();
     int beta_size = p_size * (p_size + 1) / 2;
 
     // Should be a better way to access the number of species.
+    // Consider assigning descriptor calculators to the sparse GP object rather than to local environments (also reduces memory).
     int n_species =
         sparse_environments[0].descriptor_calculators[descriptor_index]->descriptor_settings[0];
 
@@ -509,6 +510,23 @@ void  SparseGP::compute_beta(int kernel_index, int descriptor_index){
             }
         }
     }
+}
+
+void SparseGP::write_beta(std::string file_name){
+    std::ofstream beta_file;
+
+    beta_file.open(file_name);
+
+    // Record the date.
+    time_t now = std::time(0);
+    char* dt = std::ctime(&now);
+    beta_file << dt << "\n";
+
+    // Record number of species, nmax, lmax, and the cutoff.
+
+    // Write beta vectors to file.
+
+    beta_file.close();
 }
 
 Eigen::VectorXd SparseGP::predict(const StructureDescriptor & test_structure){

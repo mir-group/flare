@@ -237,6 +237,10 @@ TEST_F(SparseTest, TestBeta){
     env1.compute_descriptor_squared();
     std::cout << (sparse_gp.beta.row(0)).dot(env1.descriptor_squared[0]) << std::endl;
 
+    // Write beta to file.
+    std::string beta_file = "beta.txt";
+    sparse_gp.write_beta(beta_file);
+
     // std::cout << env1.descriptor_squared[0].size() << std::endl;
 
 }
