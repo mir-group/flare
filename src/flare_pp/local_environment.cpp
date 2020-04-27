@@ -261,6 +261,9 @@ void LocalEnvironment :: compute_descriptors_and_gradients(){
             descriptor_vals[i].dot(descriptor_vals[i])));
         force_dot.push_back(descriptor_force_dervs[i] * descriptor_vals[i]);
         stress_dot.push_back(descriptor_stress_dervs[i] * descriptor_vals[i]);
+
+        // Clear descriptor calculator matrices to save memory.
+        descriptor_calculators[i]->destroy_matrices();
     }
 }
 
@@ -272,6 +275,9 @@ void LocalEnvironment :: compute_descriptors(){
         descriptor_vals.push_back(descriptor_calculators[i]->descriptor_vals);
         descriptor_norm.push_back(sqrt(
             descriptor_vals[i].dot(descriptor_vals[i])));
+
+        // Clear descriptor calculator matrices to save memory.
+        descriptor_calculators[i]->destroy_matrices();
     }
 }
 

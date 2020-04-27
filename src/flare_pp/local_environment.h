@@ -75,8 +75,8 @@ class LocalEnvironment{
 
         // Compute descriptor and descriptor norm of a bare environment.
         void compute_descriptors();
-        void compute_neighbor_descriptors();
         void compute_descriptors_and_gradients();
+        void compute_neighbor_descriptors();
         void compute_descriptor_squared();
         void compute_indices();
 };
