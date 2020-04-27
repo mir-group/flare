@@ -154,8 +154,8 @@ PYBIND11_MODULE(ace, m){
         .def_readwrite("y", &SparseGP::y)
         .def_readwrite("Kuu_jitter", &SparseGP::Kuu_jitter)
         .def_readwrite("hyperparameters", &SparseGP::hyperparameters)
-        .def("add_sparse_environment",
-             &SparseGP::add_sparse_environment)
+        .def("add_sparse_environment", &SparseGP::add_sparse_environment)
+        .def("add_sparse_environments", &SparseGP::add_sparse_environments)
         .def("add_training_structure", &SparseGP::add_training_structure)
         .def("add_training_environment", &SparseGP::add_training_environment)
         .def("add_training_environments", &SparseGP::add_training_environments)
