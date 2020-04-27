@@ -22,7 +22,7 @@ from flare.gp_algebra import get_neg_likelihood, \
         get_kernel_vector, en_kern_vec, \
         get_ky_mat, get_ky_mat_update, \
         _global_training_data, _global_training_labels
-from flare.mask_helper import ParameterMasking
+from flare.mask_helper import HyperParameterMasking
 
 from flare.kernels.utils import str_to_kernel_set, from_mask_to_args
 from flare.util import NumpyEncoder
@@ -83,26 +83,21 @@ class GaussianProcess:
         """Initialize GP parameters and training data."""
 
         # load arguments into attributes
+        self.name = name
 
-        self.hyp_labels = hyp_labels
         self.cutoffs = np.array(cutoffs, dtype=np.float64)
         self.opt_algorithm = opt_algorithm
-
-        if hyps is None:
-            # If no hyperparameters are passed in, assume 2 hyps for each
-            # cutoff, plus one noise hyperparameter, and use a guess value
-            self.hyps = np.array([0.1]*(1+2*len(cutoffs)))
-        else:
-            self.hyps = np.array(hyps, dtype=np.float64)
-
 
         self.output = output
         self.per_atom_par = per_atom_par
         self.maxiter = maxiter
+
+        self.update_hyps(hyps, hyp_labels, multihyps, hyps_mask)
+
+        # set up parallelization
         self.n_cpus = n_cpus
         self.n_sample = n_sample
         self.parallel = parallel
-
         if 'nsample' in kwargs:
             DeprecationWarning("nsample is being replaced with n_sample")
             self.n_sample =kwargs.get('nsample')
@@ -112,26 +107,6 @@ class GaussianProcess:
         if 'no_cpus' in kwargs:
             DeprecationWarning("no_cpus is being replaced with n_cpu")
             self.n_cpus = kwargs.get('no_cpus')
-
-        # TO DO, clean up all the other kernel arguments
-        if kernel is None:
-            kernel, grad, ek, efk = str_to_kernel_set(kernel_name, multihyps)
-            self.kernel = kernel
-            self.kernel_grad = grad
-            self.energy_force_kernel = efk
-            self.energy_kernel = ek
-            self.kernel_name = kernel.__name__
-        else:
-            DeprecationWarning("kernel, kernel_grad, energy_force_kernel "
-                    "and energy_kernel will be replaced by kernel_name")
-            self.kernel_name = kernel.__name__
-            self.kernel = kernel
-            self.kernel_grad = kernel_grad
-            self.energy_force_kernel = kwargs.get('energy_force_kernel')
-            self.energy_kernel = kwargs.get('energy_kernel')
-
-        self.name = name
-
         # parallelization
         if self.parallel:
             if n_cpus is None:
@@ -141,6 +116,18 @@ class GaussianProcess:
         else:
             self.n_cpus = 1
 
+        # TO DO, clean up all the other kernel arguments
+        if kernel is None:
+            self.update_kernel(kernel_name, multihyps)
+        else:
+            DeprecationWarning("kernel, kernel_grad, energy_force_kernel "
+                    "and energy_kernel will be replaced by kernel_name")
+            self.kernel_name = kernel.__name__
+            self.update_kernel(self.kernel_name, multihyps)
+            # self.kernel = kernel
+            # self.kernel_grad = kernel_grad
+            # self.energy_force_kernel = kwargs.get('energy_force_kernel')
+            # self.energy_kernel = kwargs.get('energy_kernel')
 
         self.training_data = []   # Atomic environments
         self.training_labels = [] # Forces acting on central atoms of at. envs.
@@ -155,9 +142,8 @@ class GaussianProcess:
         self.likelihood_gradient = None
         self.bounds = None
 
-        self.hyps_mask = hyps_mask
-        self.multihyps = multihyps
         self.check_instantiation()
+
 
     def check_instantiation(self):
         """
@@ -215,13 +201,32 @@ class GaussianProcess:
 
         if self.multihyps is True:
 
-            self.hyps_mask = ParameterMasking.check_instantiation(self.hyps_mask)
-            ParameterMasking.check_matching(self.hyps_mask, self.hyps, self.cutoffs)
+            self.hyps_mask = HyperParameterMasking.check_instantiation(self.hyps_mask)
+            HyperParameterMasking.check_matching(self.hyps_mask, self.hyps, self.cutoffs)
             self.bounds = deepcopy(self.hyps_mask.get('bounds', None))
 
         else:
             self.multihyps = False
             self.hyps_mask = None
+
+    def update_kernel(self, kernel_name, multihyps=False):
+        kernel, grad, ek, efk = str_to_kernel_set(kernel_name, multihyps)
+        self.kernel = kernel
+        self.kernel_grad = grad
+        self.energy_force_kernel = efk
+        self.energy_kernel = ek
+        self.kernel_name = kernel.__name__
+
+    def update_hyps(self, hyps=None, hyp_labels=None, multihyps=False, hyps_mask=None):
+        if hyps is None:
+            # If no hyperparameters are passed in, assume 2 hyps for each
+            # cutoff, plus one noise hyperparameter, and use a guess value
+            self.hyps = np.array([0.1]*(1+2*len(cutoffs)))
+        else:
+            self.hyps = np.array(hyps, dtype=np.float64)
+        self.hyp_labels = hyp_labels
+        self.hyps_mask = hyps_mask
+        self.multihyps = multihyps
 
     def update_db(self, struc: Structure, forces: List,
                   custom_range: List[int] = ()):
@@ -714,12 +719,14 @@ class GaussianProcess:
         else:
             hm = self.hyps_mask
 
-        old_structures = [env.structure for env in self.training_data]
-        old_atoms = [env.atom for env in self.training_data]
-        new_environments = [AtomicEnvironment(struc, atom, new_cutoffs, hm) for
-                            struc, atom in zip(old_structures, old_atoms)]
+        # update environment
+        nenv = len(self.training_data)
+        for i in range(nenv):
+            self.training_data[i].cutoffs = np.array(new_cutoffs, dtype=np.float)
+            self.training_data[i].cutoffs_mask = hm
+            self.training_data[i].setup_mask()
+            self.training_data[i].compute_env()
 
-        self.training_data = new_environments
         # Ensure that training data and labels are still consistent
         _global_training_data[self.name] = self.training_data
         _global_training_labels[self.name] = self.training_labels_np
@@ -733,8 +740,7 @@ class GaussianProcess:
             self.set_L_alpha()
 
         if train:
-            self.train()
-
+            self.train(print_progress=True)
 
 
     def write_model(self, name: str, format: str = 'json'):
@@ -796,6 +802,12 @@ class GaussianProcess:
         elif '.pickle' in filename or 'pickle' in format:
             with open(filename, 'rb') as f:
                 gp_model = pickle.load(f)
+
+                if ('nspec' in gp_model.hyps_mask):
+                    gp_model.hyps_mask['nspecie'] = gp_model.hyps_mask['nspec']
+                if ('spec_mask' in gp_model.hyps_mask):
+                    gp_model.hyps_mask['specie_mask'] = gp_model.hyps_mask['spec_mask']
+
                 gp_model.check_instantiation()
 
                 _global_training_data[gp_model.name] \

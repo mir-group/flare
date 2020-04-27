@@ -10,7 +10,7 @@ from flare import env, struc, gp
 from flare.kernels.mc_sephyps import _str_to_kernel as stk
 from flare.kernels.utils import from_mask_to_args, str_to_kernel_set
 from flare.cutoffs import quadratic_cutoff_bound
-from flare.mask_helper import ParameterMasking
+from flare.mask_helper import HyperParameterMasking
 
 from .fake_gp import generate_mb_envs, generate_mb_twin_envs
 
@@ -419,8 +419,8 @@ def test_hyps_grad(kernel_name, constraint):
 
 def generate_same_hm(kernel_name, diff_cutoff=False):
 
-    pm1 = ParameterMasking(species=['H', 'He'], parameters={'noise':0.05})
-    pm2 = ParameterMasking(species=['H', 'He'], parameters={'noise':0.05})
+    pm1 = HyperParameterMasking(species=['H', 'He'], parameters={'noise':0.05})
+    pm2 = HyperParameterMasking(species=['H', 'He'], parameters={'noise':0.05})
     if ('2' in kernel_name):
         para = 2.5+0.1*random(3)
         pm1.define_group('bond', 'b1', ['*', '*'], parameters=para)
@@ -456,7 +456,7 @@ def generate_same_hm(kernel_name, diff_cutoff=False):
 
 def generate_diff_hm(kernel_name, diff_cutoff=False, constraint=False):
 
-    pm = ParameterMasking(species=['H', 'He'], parameters={'noise':0.05}) #, para={'cutoff2b': 0.8,
+    pm = HyperParameterMasking(species=['H', 'He'], parameters={'noise':0.05}) #, para={'cutoff2b': 0.8,
     if ('2' in kernel_name):
         para = 2.5+0.1*random(3)
         pm.define_group('bond', 'b1', ['*', '*'], parameters=para)

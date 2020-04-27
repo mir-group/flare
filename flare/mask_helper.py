@@ -17,19 +17,19 @@ from os import devnull
 from flare.util import  element_to_Z
 
 
-class ParameterMasking():
+class HyperParameterMasking():
     """
     A helper class to construct the hyps_mask dictionary for AtomicEnvironment
     and GaussianProcess
 
     examples:
-        pm = ParameterMasking(species=['Cu', 'C', 'H', 'O'],
-                              bonds=[['*', '*'], ['Cu','Cu']],
-                              triplets=[['*', '*', '*'], ['Cu','Cu', 'Cu']],
-                              parameters={'bond0':[1, 0.5, 1], 'bond1':[2, 0.2, 2],
-                                    'triplet0':[1, 0.5], 'triplet1':[2, 0.2],
-                                    'cutoff3b':1},
-                              constraints={'bond0':[False, True]})
+        pm = HyperParameterMasking(species=['Cu', 'C', 'H', 'O'],
+                                   bonds=[['*', '*'], ['Cu','Cu']],
+                                   triplets=[['*', '*', '*'], ['Cu','Cu', 'Cu']],
+                                   parameters={'bond0':[1, 0.5, 1], 'bond1':[2, 0.2, 2],
+                                         'triplet0':[1, 0.5], 'triplet1':[2, 0.2],
+                                         'cutoff3b':1},
+                                   constraints={'bond0':[False, True]})
         hm = pm.hyps_mask
         hyps = hm['hyps']
         cutoffs = hm['cutoffs']
@@ -576,13 +576,13 @@ class ParameterMasking():
                     opt += [self.hyps_opt[group]]
                     aeg = self.all_group_names[group]
                     for idt in range(self.n[group]):
-                        hyps_label += ['sig_'+aeg[idt]]
+                        hyps_label += ['Signal_Var._'+aeg[idt]]
                     for idt in range(self.n[group]):
-                        hyps_label += ['ls_'+group]
+                        hyps_label += ['Length_Scale_'+group]
             opt += [self.opt['noise']]
             hyps_mask['original'] = np.hstack(hyps)
             hyps_mask['original'] = np.hstack([hyps_mask['original'], self.noise])
-            hyps_label += ['Noise']
+            hyps_label += ['Noise_Var.']
             hyps_mask['original'] = np.array(hyps_mask['original'], dtype=np.float)
             hyps_mask['hyps_label']=hyps_label
             opt = np.hstack(opt)
@@ -602,13 +602,13 @@ class ParameterMasking():
             hyps_mask['hyps'] = newhyps
 
             if len(self.cutoff_list.get('bond', []))>0:
-                hyps_mask['cutoff_2b'] = self.cutoff_list['bond']
+                hyps_mask['cutoff_2b'] = np.array(self.cutoff_list['bond'], dtype=np.float)
             if len(self.cutoff_list.get('cut3b', []))>0:
-                hyps_mask['cutoff_3b'] = self.cutoff_list['cut3b']
+                hyps_mask['cutoff_3b'] = np.array(self.cutoff_list['cut3b'], dtype=np.float)
                 hyps_mask['ncut3b'] = self.n['cut3b']
                 hyps_mask['cut3b_mask'] = self.mask['cut3b']
             if len(self.cutoff_list.get('mb', []))>0:
-                hyps_mask['cutoff_mb'] = self.cutoff_list['mb']
+                hyps_mask['cutoff_mb'] = np.array(self.cutoff_list['mb'], dtype=np.float)
 
         self.hyps_mask = hyps_mask
         if (self.cutoffs_array[2]>0):

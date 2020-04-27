@@ -5,7 +5,7 @@ import numpy as np
 from math import sqrt
 from numba import njit
 from flare.struc import Structure
-from flare.mask_helper import ParameterMasking
+from flare.mask_helper import HyperParameterMasking
 
 
 class AtomicEnvironment:
@@ -95,7 +95,7 @@ class AtomicEnvironment:
             self.cutoff_2b, self.cutoff_3b, self.cutoff_mb, \
             self.nspecie, self.n2b, self.n3b, self.nmb, self.specie_mask, \
             self.bond_mask, self.cut3b_mask, self.mb_mask = \
-            ParameterMasking.mask2cutoff(self.cutoffs, self.cutoffs_mask)
+            HyperParameterMasking.mask2cutoff(self.cutoffs, self.cutoffs_mask)
 
     def compute_env(self):
 
