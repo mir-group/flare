@@ -133,8 +133,8 @@ TEST_F(SparseTest, TrainingEnvironments){
     LocalEnvironment env2 = test_struc.local_environments[1];
 
     // Add sparse environments.
-    sparse_gp.add_sparse_environment(env1);
-    sparse_gp.add_sparse_environment(env2);
+    std::vector<LocalEnvironment> sparse_envs {env1, env2};
+    sparse_gp.add_sparse_environments(sparse_envs);
 
     sparse_gp_2.add_sparse_environment(env1);
     sparse_gp_2.add_sparse_environment(env2);

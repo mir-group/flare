@@ -176,6 +176,9 @@ void SparseGP :: add_sparse_environments(
     Kuu.block(n_sparse, n_sparse, n_envs, n_envs) = self_block;
 
     // TODO: compute kernels between new environments and training structures.
+    
+    // Update Kuf_struc matrix.
+    Kuf_struc.conservativeResize(Kuf_struc.rows()+n_envs, Kuf_struc.cols());
 
     // Compute kernels between new sparse environments and training environments.
     int n_labels = Kuf_env.cols();
