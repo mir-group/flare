@@ -887,11 +887,20 @@ def three_body_mc_jit(bond_array_1, c1, etypes1,
 
         # second loop over the first 3-body environment
         for n in range(triplets_1[m]):
+
+            # skip if species does not match
+            ei2 = etypes1[ind1]
+            tr_spec = [c1, ei1, ei2]
+            c2_ind = tr_spec
+            if c2 not in tr_spec:
+                continue
+            else:
+                tr_spec.remove(c2)
+
             ind1 = cross_bond_inds_1[m, m + n + 1]
             ri2 = bond_array_1[ind1, 0]
             ci2 = bond_array_1[ind1, d1]
             fi2, fdi2 = cutoff_func(r_cut, ri2, ci2)
-            ei2 = etypes1[ind1]
 
             ri3 = cross_bond_dists_1[m, m + n + 1]
             fi3, _ = cutoff_func(r_cut, ri3, 0)
@@ -901,18 +910,29 @@ def three_body_mc_jit(bond_array_1, c1, etypes1,
 
             # first loop over the second 3-body environment
             for p in range(bond_array_2.shape[0]):
+
+                ej1 = etypes2[p]
+                tr_spec1 = [tr_spec[0], tr_spec[1]]
+                if ej1 not in tr_spec1:
+                    continue
+                else:
+                    tr_spec1.remove(ej1)
+
                 rj1 = bond_array_2[p, 0]
                 cj1 = bond_array_2[p, d2]
                 fj1, fdj1 = cutoff_func(r_cut, rj1, cj1)
-                ej1 = etypes2[p]
 
                 # second loop over the second 3-body environment
                 for q in range(triplets_2[p]):
+
+                    ej2 = etypes2[ind2]
+                    if ej2 != tr_spec1[0]:
+                        continue
+
                     ind2 = cross_bond_inds_2[p, p + 1 + q]
                     rj2 = bond_array_2[ind2, 0]
                     cj2 = bond_array_2[ind2, d2]
                     fj2, fdj2 = cutoff_func(r_cut, rj2, cj2)
-                    ej2 = etypes2[ind2]
 
                     rj3 = cross_bond_dists_2[p, p + 1 + q]
                     fj3, _ = cutoff_func(r_cut, rj3, 0)
