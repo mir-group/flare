@@ -137,40 +137,72 @@ void SparseGP :: add_sparse_environment(const LocalEnvironment & env){
     sparse_environments.push_back(env);
 }
 
-// void SparseGP :: add_sparse_environments(
-//     const std::vector<LocalEnvironment> & envs){
+void SparseGP :: add_sparse_environments(
+    const std::vector<LocalEnvironment> & envs){
 
-//     // Compute kernels between new environment and previous sparse
-//     // environments.
-//     int n_envs = envs.size();
-//     int n_sparse = sparse_environments.size();
-//     int n_kernels = kernels.size();
+    // Compute kernels between new environment and previous sparse
+    // environments.
+    int n_envs = envs.size();
+    int n_sparse = sparse_environments.size();
+    int n_kernels = kernels.size();
 
-//     Eigen::MatrixXd prev_block = Eigen::MatrixXd::Zero(n_sparse, n_envs);
-//     #pragma omp parallel for
-//     for (int k = 0; k < n_envs; k ++){
-//         for (int i = 0; i < n_sparse; i ++){
-//             for (int j = 0; j < n_kernels; j ++){
-//                 prev_block(i, k) +=
-//                     kernels[j] -> env_env(sparse_environments[i], envs[k]);
-//             }
-//         }
-//     }
+    Eigen::MatrixXd prev_block = Eigen::MatrixXd::Zero(n_sparse, n_envs);
+    #pragma omp parallel for schedule(static)
+    for (int k = 0; k < n_envs; k ++){
+        for (int i = 0; i < n_sparse; i ++){
+            for (int j = 0; j < n_kernels; j ++){
+                prev_block(i, k) +=
+                    kernels[j] -> env_env(sparse_environments[i], envs[k]);
+            }
+        }
+    }
 
-//     // Compute self block.
-//     Eigen::MatrixXd self_block = Eigen::MatrixXd::Zero(n_envs, n_envs);
-//     for (int k = 0; k < n_envs; k ++){
-//         for (int l = k; l < n_envs; l ++){
-//             for (int j = 0; j < n_kernels; j ++){
-//                 double kern_val = kernels[j] -> env_env(envs[k], envs[l]);
-//                 self_block(k, l) += kern_val;
-//                 if (k != l){
-//                     self_block(l, k) += kern_val;
-//                 }
-//             }
-//         }
-//     }
-// }
+    // Compute self block. (Note that the work can be cut in half by exploiting the symmetry of the matrix, but this makes parallelization slightly trickier.)
+    Eigen::MatrixXd self_block = Eigen::MatrixXd::Zero(n_envs, n_envs);
+    #pragma omp parallel for schedule(static)
+    for (int k = 0; k < n_envs; k ++){
+        for (int l = 0; l < n_envs; l ++){
+            for (int j = 0; j < n_kernels; j ++){
+                self_block(k, l) +=
+                    kernels[j] -> env_env(envs[k], envs[l]);
+                }
+            }
+        }
+
+    // Update Kuu matrix.
+    Kuu.conservativeResize(n_sparse + n_envs, n_sparse + n_envs);
+    Kuu.block(0, n_sparse, n_sparse, n_envs) = prev_block;
+    Kuu.block(n_sparse, 0, n_envs, n_sparse) = prev_block.transpose();
+    Kuu.block(n_sparse, n_sparse, n_envs, n_envs) = self_block;
+
+    // TODO: compute kernels between new environments and training structures.
+
+    // Compute kernels between new sparse environments and training environments.
+    int n_labels = Kuf_env.cols();
+    int n_training_envs = training_environments.size();
+
+    Eigen::MatrixXd uf_block = Eigen::MatrixXd::Zero(n_envs, n_labels);
+
+    #pragma omp parallel for schedule(static)
+    for (int i = 0; i < n_envs; i ++){
+        for (int j = 0; j < n_training_envs; j++){
+            for (int k = 0; k < n_kernels; k ++){
+                uf_block.row(i).segment(3 * j, 3) +=
+                    kernels[k] ->
+                        env_env_force(envs[i], training_environments[j]);
+            }
+        }
+    }
+
+    // Update Kuf_env matrix.
+    Kuf_env.conservativeResize(n_sparse + n_envs, n_labels);
+    Kuf_env.block(n_sparse, 0, n_envs, n_labels) = uf_block;
+
+    // Store sparse environments.
+    for (int i = 0; i < n_envs; i ++){
+        sparse_environments.push_back(envs[i]);
+    }
+}
 
 void SparseGP :: add_training_structure(
     const StructureDescriptor & training_structure){
