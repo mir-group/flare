@@ -92,6 +92,10 @@ class GaussianProcess:
         self.per_atom_par = per_atom_par
         self.maxiter = maxiter
 
+        if hyps is None:
+            # If no hyperparameters are passed in, assume 2 hyps for each
+            # cutoff, plus one noise hyperparameter, and use a guess value
+            hyps = np.array([0.1]*(1+2*len(cutoffs)))
         self.update_hyps(hyps, hyp_labels, multihyps, hyps_mask)
 
         # set up parallelization
@@ -218,12 +222,7 @@ class GaussianProcess:
         self.kernel_name = kernel.__name__
 
     def update_hyps(self, hyps=None, hyp_labels=None, multihyps=False, hyps_mask=None):
-        if hyps is None:
-            # If no hyperparameters are passed in, assume 2 hyps for each
-            # cutoff, plus one noise hyperparameter, and use a guess value
-            self.hyps = np.array([0.1]*(1+2*len(cutoffs)))
-        else:
-            self.hyps = np.array(hyps, dtype=np.float64)
+        self.hyps = np.array(hyps, dtype=np.float64)
         self.hyp_labels = hyp_labels
         self.hyps_mask = hyps_mask
         self.multihyps = multihyps
@@ -803,10 +802,11 @@ class GaussianProcess:
             with open(filename, 'rb') as f:
                 gp_model = pickle.load(f)
 
-                if ('nspec' in gp_model.hyps_mask):
-                    gp_model.hyps_mask['nspecie'] = gp_model.hyps_mask['nspec']
-                if ('spec_mask' in gp_model.hyps_mask):
-                    gp_model.hyps_mask['specie_mask'] = gp_model.hyps_mask['spec_mask']
+                if (gp_model.hyps_mask is not None):
+                    if ('nspec' in gp_model.hyps_mask):
+                        gp_model.hyps_mask['nspecie'] = gp_model.hyps_mask['nspec']
+                    if ('spec_mask' in gp_model.hyps_mask):
+                        gp_model.hyps_mask['specie_mask'] = gp_model.hyps_mask['spec_mask']
 
                 gp_model.check_instantiation()
 

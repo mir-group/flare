@@ -618,6 +618,93 @@ class HyperParameterMasking():
         return hyps_mask
 
     @staticmethod
+    def from_dict(hyps_mask):
+
+        HyperParameterMasking.check_instantiation(hyps_mask)
+
+        pm = HyperParameterMasking()
+
+        hyps = hyps_mask['hyps']
+
+        if 'map' in hyps_mask:
+            hyps = hyps_mask['original']
+            constraints = np.zeros(len(hyps), dtype=bool)
+            for ele in hyps_mask['map']:
+                constraints[ele] = True
+        else:
+            constraints = np.ones(len(hyps), dtype=bool)
+
+        pm.nspecie = hyps_mask['nspecie']
+        nele = len(hyps_mask['specie_mask'])
+        for i in range(nele):
+            pm.define_group("specie", hyps_mask['specie_mask'][i],
+                            [Z_to_element(i)])
+
+        nbond = hyps_mask.get('nbond', 0)
+        ntriplet = hyps_mask.get('ntriplet', 0)
+        nmb = hyps_mask.get('nmb', 0)
+        for t in ['bond', 'mb']:
+            if (f'n{t}' in hyps_mask):
+                if (t=='bond'):
+                    cutoffname = 'cutoff_2b'
+                    sig = hyps
+                    ls = hyps[nbond:]
+                    csig = constraint
+                    cls = constraint[nbond:]
+                else:
+                    cutoffname = 'cutoff_mb'
+                    sig = hyps[nbond*2+ntriplet*2:]
+                    ls = hyps[nbond*2+ntriplet*2+nmb:]
+                    csig = constraint[nbond*2+ntriplet*2:]
+                    cls = constraint[hyps[nbond*2+ntriplet*2+nmb:]]
+                for i in range(pm.nspecie):
+                    for j in range(i, pm.nspecie):
+                        ttype = hyps_mask[f'{t}_mask'][i+j*pm.nspecie]
+                        pm.define_group(f"{t}", f"{t}{ttype}", [i, j])
+                for i in range(hyps_mask[f'n{t}']):
+                    if (cutoffname in hyps_mask):
+                        pm.set_parameters(f"{t}{i}", [sig[i], ls[i], hyps_mask[cutoffname][i]],
+                                          opt=[csig[i], cls[i]])
+                    else:
+                        pm.set_parameters(f"{t}{i}", [sig[i], ls[i]],
+                                          opt=[csig[i], cls[i]])
+        if ('ntriplet' in hyps_mask):
+            sig = hyps[nbond*2:]
+            ls = hyps[nbond*2+ntriplet:]
+            csig = constraint[nbond*2:]
+            cls = constraint[hyps[nbond*2+ntriplet:]]
+            for i in range(pm.nspecie):
+                for j in range(i, pm.nspecie):
+                    for k in range(j, pm.nspecie):
+                        triplettype = hyps_mask[f'triplet_mask'][i+j*pm.nspecie+k*pm.nspecie*pm.nspecie]
+                        pm.define_group(f"triplet", f"triplet{triplettype}", [i, j, k])
+            for i in range(hyps_mask[f'ntriplet']):
+                pm.set_parameters(f"triplet{i}", [sig[i], ls[i]],
+                        opt=[csig[i], cls[i]])
+        if (f'ncut3b' in hyps_mask):
+            for i in range(pm.nspecie):
+                for j in range(i, pm.nspecie):
+                    ttype = hyps_mask[f'cut3b_mask'][i+j*pm.nspecie]
+                    pm.define_group("cut3b", f"cut3b{ttype}", [i, j])
+            for i in range(hyps_mask['ncut3b']):
+                pm.set_parameters(f"cut3b{i}", [0, 0, hyps_mask['cutoff_3b'][i]])
+
+        pm.set_parameters('noise', hyps)
+        if 'cutoffs' in hyps_mask:
+            cut = hyps_mask['cutoffs']
+            pm.set_parameters(f"cutoff2b", cut[0])
+            try:
+                pm.set_parameters(f"cutoff3b", cut[1])
+            except:
+                pass
+            try:
+                pm.set_parameters(f"cutoffmb", cut[2])
+            except:
+                pass
+
+        return pm
+
+    @staticmethod
     def check_instantiation(hyps_mask):
         """
         Runs a series of checks to ensure that the user has not supplied
