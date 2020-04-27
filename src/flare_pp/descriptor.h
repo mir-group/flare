@@ -31,6 +31,8 @@ class DescriptorCalculator{
 
     virtual void compute(const LocalEnvironment & env) = 0;
 
+    void destroy_matrices();
+
     virtual ~DescriptorCalculator() = default;
 };
 

@@ -22,11 +22,6 @@ class LocalEnvironment{
             neighbor_force_dots;
         std::vector<std::vector<double>> neighbor_descriptor_norms;
 
-        void compute_neighbor_descriptors();
-
-        // Compute descriptor and descriptor norm of a bare environment.
-        void compute_descriptors();
-
         // Store cutoffs for each kernel and indices of atoms inside each cutoff sphere.
         std::vector<double> n_body_cutoffs, many_body_cutoffs;
         std::vector<std::vector<int>> n_body_indices, many_body_indices;
@@ -78,9 +73,12 @@ class LocalEnvironment{
                                  std::vector<double> & yrel,
                                  std::vector<double> & zrel);
 
-        void compute_indices();
+        // Compute descriptor and descriptor norm of a bare environment.
+        void compute_descriptors();
+        void compute_neighbor_descriptors();
         void compute_descriptors_and_gradients();
         void compute_descriptor_squared();
+        void compute_indices();
 };
 
 void compute_neighbor_descriptors(std::vector<LocalEnvironment> & envs);

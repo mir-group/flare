@@ -251,6 +251,30 @@ TEST(CountThreads, CountThreads){
     EXPECT_EQ(1, 1);
 }
 
+TEST(TestErase, TestErase){
+
+    // LocalEnvironment env1 = test_struc.local_environments[0];
+    // LocalEnvironment env2 = test_struc.local_environments[1];
+
+    // std::vector<double> test {1, 2, 3, 4};
+    // std::cout << test[2] << std::endl;
+
+    // test.clear();
+    // std::cout << test.size() << std::endl;
+
+    // test.push_back(5.2);
+    // std::cout << test[0] << std::endl;
+
+    // std::cout << env1.
+
+    Eigen::VectorXd test = Eigen::VectorXd::Zero(5);
+    std::cout << test << std::endl;
+
+    test.resize(0);
+    test = Eigen::VectorXd::Zero(10);
+    std::cout << test.size() << std::endl;
+}
+
 
 // TEST_F(SparseTest, ThreeBodyGrid){
 //     double sigma_e = 0.1;

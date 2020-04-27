@@ -53,6 +53,14 @@ DescriptorCalculator::DescriptorCalculator(
 
 }
 
+void DescriptorCalculator::destroy_matrices(){
+    single_bond_vals.resize(0);
+    descriptor_vals.resize(0);
+    single_bond_force_dervs.resize(0, 0);
+    single_bond_stress_dervs.resize(0, 0);
+    descriptor_force_dervs.resize(0, 0);
+    descriptor_stress_dervs.resize(0, 0);
+}
 
 void B2_descriptor(
 Eigen::VectorXd & B2_vals,
