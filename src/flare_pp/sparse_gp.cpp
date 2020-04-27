@@ -3,6 +3,7 @@
 #include <iostream>
 #include <fstream>
 #include <ctime>
+#include <iomanip>
 
 static const double Pi = 3.14159265358979323846;
 
@@ -466,6 +467,8 @@ void  SparseGP::compute_beta(int kernel_index, int descriptor_index){
     //  1. power = 2, so that the potential is linear in the square of the power spectrum.
     // 2. There is at least one sparse environment stored in the sparse GP.
 
+    // TODO: Compute and store betas for all descriptors.
+
     // Initialize beta vector.
     int p_size =
         sparse_environments[0].descriptor_vals[descriptor_index].size();
@@ -512,19 +515,67 @@ void  SparseGP::compute_beta(int kernel_index, int descriptor_index){
     }
 }
 
-void SparseGP::write_beta(std::string file_name){
+void SparseGP::write_beta(std::string file_name, std::string contributor,
+                          int descriptor_index){
+
     std::ofstream beta_file;
 
     beta_file.open(file_name);
 
     // Record the date.
     time_t now = std::time(0);
-    char* dt = std::ctime(&now);
-    beta_file << dt << "\n";
+    std::string t (ctime(&now));
+    beta_file << "DATE: ";
+    beta_file << t.substr(0, t.length() -1) << " ";
+
+    // Record the contributor.
+    beta_file << "CONTRIBUTOR: ";
+    beta_file << contributor << "\n\n";
 
     // Record number of species, nmax, lmax, and the cutoff.
+    std::vector<int> descriptor_settings =
+        sparse_environments[0].descriptor_calculators[descriptor_index]->descriptor_settings;
+    int n_species = descriptor_settings[0];
+    int n_max = descriptor_settings[1];
+    int l_max = descriptor_settings[2];
+
+    double cutoff =
+        sparse_environments[0].many_body_cutoffs[descriptor_index];
+
+    beta_file << n_species << " " << n_max << " " << l_max << " ";
+
+    // Report cutoff to 2 decimal places.
+    beta_file << std::fixed << std::setprecision(2);
+    beta_file << cutoff << "\n";
+    beta_file << beta.row(0).size() << "\n";
 
     // Write beta vectors to file.
+    beta_file << std::scientific << std::setprecision(16);
+
+    int count = 0;
+    for (int i = 0; i < n_species; i ++){
+        Eigen::VectorXd beta_vals = beta.row(i);
+        for (int j = 0; j < beta_vals.size(); j ++){
+            double beta_val = beta_vals[j];
+
+            // Pad with 2 spaces if positive, 1 if negative.
+            if(beta_val > 0){
+                beta_file << "  ";
+            }
+            else{
+                beta_file << " ";
+            }
+
+            beta_file << beta_vals[j];
+            count ++;
+            
+            // New line if 5 numbers have been added.
+            if (count == 5){
+                count = 0;
+                beta_file << "\n";
+            }
+        }
+    }
 
     beta_file.close();
 }

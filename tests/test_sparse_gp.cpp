@@ -21,7 +21,7 @@ class SparseTest : public ::testing::Test{
         std::string cutoff_string = "cosine";
         std::vector<double> radial_hyps {0, 5};
         std::vector<double> cutoff_hyps;
-        std::vector<int> descriptor_settings {2, 5, 5};
+        std::vector<int> descriptor_settings {2, 3, 3};
         double cutoff = 5;
         std::vector<double> nested_cutoffs {5, 5};
         std::vector<double> many_body_cutoffs {5};
@@ -239,7 +239,10 @@ TEST_F(SparseTest, TestBeta){
 
     // Write beta to file.
     std::string beta_file = "beta.txt";
-    sparse_gp.write_beta(beta_file);
+    std::string contributor = 
+        "Jonathan Vandermause, jonathan_vandermause@g.harvard.edu";
+    int descriptor_index = 0;
+    sparse_gp.write_beta(beta_file, contributor, descriptor_index);
 
     // std::cout << env1.descriptor_squared[0].size() << std::endl;
 
@@ -250,31 +253,6 @@ TEST(CountThreads, CountThreads){
     std::cout << test << std::endl;
     EXPECT_EQ(1, 1);
 }
-
-TEST(TestErase, TestErase){
-
-    // LocalEnvironment env1 = test_struc.local_environments[0];
-    // LocalEnvironment env2 = test_struc.local_environments[1];
-
-    // std::vector<double> test {1, 2, 3, 4};
-    // std::cout << test[2] << std::endl;
-
-    // test.clear();
-    // std::cout << test.size() << std::endl;
-
-    // test.push_back(5.2);
-    // std::cout << test[0] << std::endl;
-
-    // std::cout << env1.
-
-    Eigen::VectorXd test = Eigen::VectorXd::Zero(5);
-    std::cout << test << std::endl;
-
-    test.resize(0);
-    test = Eigen::VectorXd::Zero(10);
-    std::cout << test.size() << std::endl;
-}
-
 
 // TEST_F(SparseTest, ThreeBodyGrid){
 //     double sigma_e = 0.1;
