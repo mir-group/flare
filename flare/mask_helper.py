@@ -431,6 +431,44 @@ class HyperParameterMasking():
                 print(f"Warning, the cutoff of group {name} is overriden", file=self.fout)
             self.all_cutoff[name] = parameters[2]
 
+    def set_constraints(self, name, opt):
+        """Set the parameters for certain group
+
+        :param name: name of the patermeters
+        :type name: str
+        :param opt: whether to optimize the parameter or not
+        :type opt: bool, list
+
+        The name of parameters can be the group name previously defined in
+        define_group or list_groups function. Aside from the group name,
+        "noise", "cutoff2b", "cutoff3b", and "cutoffmb" are reserved for
+        noise parmater and universal cutoffs.
+
+        The optimization flag can be a single bool, which apply to all
+        parameters under that name, or list of bools that apply to each
+        parameter.
+        """
+
+        if (name == 'noise'):
+            self.opt['noise'] = opt
+            return
+
+        if (name in ['cutoff2b', 'cutoff3b', 'cutoffmb']):
+            name_map = {'cutoff2b':0, 'cutoff3b':1, 'cutoffmb':2}
+            return
+
+        if (isinstance(opt, bool)):
+            opt = [opt, opt, opt]
+
+        if ('cut3b' not in name):
+            if (name in self.sigma):
+                print(f"Warning, the sig, ls of group {name} is overriden", file=self.fout)
+            self.opt[name+'sig'] = opt[0]
+            self.opt[name+'ls'] = opt[1]
+            print(f"Parameters for group {name} will be set as "\
+                  f"sig {opt[0]} "\
+                  f"ls {opt[1]}", file=self.fout)
+
 
     def summarize_group(self, group_type):
         """Sort and combine all the previous definition to internal varialbes
