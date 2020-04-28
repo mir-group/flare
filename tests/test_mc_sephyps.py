@@ -366,6 +366,7 @@ def test_force(kernel_name, constraint):
     kern_analytical = kernel(env1[0][0], env2[0][0],
                              d1, d2, *args)
     tol = 1e-4
+    print(kernel_name, kern_finite_diff, kern_analytical)
     assert(isclose(kern_finite_diff, kern_analytical, rtol=tol))
 
 

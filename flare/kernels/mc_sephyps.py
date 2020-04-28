@@ -708,7 +708,6 @@ def three_body_mc_grad_jit(bond_array_1, c1, etypes1,
     kern = 0
     sig_derv = np.zeros(ntriplet, dtype=np.float64)
     ls_derv = np.zeros(ntriplet, dtype=np.float64)
-    kern_grad = np.zeros(2, dtype=np.float64)
 
     # pre-compute constants that appear in the inner loop
     sig2, sig3, ls1, ls2, ls3, ls4, ls5, ls6 = grad_constants(sig, ls)
@@ -994,8 +993,6 @@ def three_body_mc_force_en_jit(bond_array_1, c1, etypes1,
     return kern
 
 @njit
-
-
 def three_body_mc_en_jit(bond_array_1, c1, etypes1,
                          bond_array_2, c2, etypes2,
                          cross_bond_inds_1, cross_bond_inds_2,
@@ -1158,7 +1155,7 @@ def two_body_mc_jit(bond_array_1, c1, etypes1, bond_array_2, c2, etypes2,
     return kern
 
 
-# @njit
+@njit
 def two_body_mc_grad_jit(bond_array_1, c1, etypes1,
                          bond_array_2, c2, etypes2,
                          d1, d2, sig, ls, r_cut, cutoff_func,

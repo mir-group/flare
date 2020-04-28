@@ -163,7 +163,7 @@ def many_body_mc_sepcut_jit_(bond_array_1, bond_array_2, neigh_dists_1, neigh_di
 
     return kern
 
-
+@njit
 def many_body_mc_sepcut_jit(bond_array_1, bond_array_2, neigh_dists_1, neigh_dists_2,
                             num_neigh_1, num_neigh_2, c1, c2,
                             etypes1, etypes2, etypes_neigh_1, etypes_neigh_2,
