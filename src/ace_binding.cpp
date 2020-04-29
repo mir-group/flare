@@ -166,5 +166,10 @@ PYBIND11_MODULE(ace, m){
         .def("write_beta", &SparseGP::write_beta)
         .def("clear_environment_lists", &SparseGP::clear_environment_lists)
         .def_readwrite("sparse_environments", &SparseGP::sparse_environments)
-        .def_readwrite("training_structures", &SparseGP::training_structures);
+        .def_readwrite("training_structures", &SparseGP::training_structures)
+        .def_readwrite("training_environments",
+            &SparseGP::training_environments)
+        .def_readwrite("noise_matrix_env", &SparseGP::noise_matrix_env)
+        .def_readwrite("Kuf_env", &SparseGP::Kuf_env);
+        
 }
