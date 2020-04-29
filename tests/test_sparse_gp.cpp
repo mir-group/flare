@@ -113,13 +113,6 @@ TEST_F(SparseTest, UpdateK){
     sparse_gp.add_training_environment(env1);
 
     sparse_gp.update_alpha();
-    EXPECT_EQ(sparse_gp.Kuf.rows(), 2);
-    EXPECT_EQ(sparse_gp.Kuf.cols(),
-        sparse_gp.Kuf_struc.cols() + sparse_gp.Kuf_env.cols());
-    EXPECT_EQ(sparse_gp.y.size(),
-        sparse_gp.y_struc.size() + sparse_gp.y_env.size());
-    EXPECT_EQ(sparse_gp.noise_matrix.rows(),
-        sparse_gp.noise_env.size() + sparse_gp.noise_struc.size());    
 }
 
 TEST_F(SparseTest, TrainingEnvironments){
@@ -157,9 +150,9 @@ TEST_F(SparseTest, TrainingEnvironments){
     sparse_gp_2.update_alpha();
 
     // Check that Kufs match.
-    for (int i = 0; i < sparse_gp.Kuf.rows(); i++){
-        for (int j = 0; j < sparse_gp.Kuf.cols(); j++){
-            EXPECT_EQ(sparse_gp.Kuf(i, j), sparse_gp_2.Kuf(i, j));
+    for (int i = 0; i < sparse_gp.Kuf_env.rows(); i++){
+        for (int j = 0; j < sparse_gp.Kuf_env.cols(); j++){
+            EXPECT_EQ(sparse_gp.Kuf_env(i, j), sparse_gp_2.Kuf_env(i, j));
         }
     }
 
@@ -168,12 +161,6 @@ TEST_F(SparseTest, TrainingEnvironments){
         for (int j = 0; j < sparse_gp.Kuu.cols(); j++){
             EXPECT_EQ(sparse_gp.Kuu(i, j), sparse_gp_2.Kuu(i, j));
         }
-    }
-
-    // Check that ys and noises match.
-    for (int i = 0; i < sparse_gp.y.size(); i++){
-            EXPECT_EQ(sparse_gp.y(i), sparse_gp_2.y(i));
-            EXPECT_EQ(sparse_gp.noise(i), sparse_gp_2.noise(i));
     }
 }
 
@@ -208,7 +195,6 @@ TEST_F(SparseTest, Predict){
 
 }
 
-
 TEST_F(SparseTest, TestBeta){
     double sigma_e = 1;
     double sigma_f = 2;
@@ -226,7 +212,7 @@ TEST_F(SparseTest, TestBeta){
     sparse_gp.add_sparse_environment(env4);
     sparse_gp.add_training_structure(test_struc);
     // sparse_gp.update_alpha();
-    sparse_gp.update_alpha_LLT();
+    sparse_gp.update_alpha_LDLT();
 
     // Predict local energy with alpha.
     double loc_en = sparse_gp.predict_local_energy(env1);

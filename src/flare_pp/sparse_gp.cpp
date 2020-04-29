@@ -302,7 +302,6 @@ void SparseGP :: add_training_structure(
 
     noise_struc.conservativeResize(prev_cols + n_labels);
     noise_struc.tail(n_labels) = noise_vector;
-    noise_matrix_struc = noise_struc.asDiagonal();
 }
 
 void SparseGP :: add_training_environment(
@@ -343,7 +342,6 @@ void SparseGP :: add_training_environment(
 
     noise_env.conservativeResize(prev_cols + n_labels);
     noise_env.tail(n_labels) = noise_vector;
-    noise_matrix_env = noise_env.asDiagonal();
 }
 
 void SparseGP :: add_training_environments(
@@ -390,7 +388,6 @@ void SparseGP :: add_training_environments(
 
     noise_env.conservativeResize(prev_cols + n_labels * n_envs);
     noise_env.tail(n_labels * n_envs) = noise_vector;
-    noise_matrix_env = noise_env.asDiagonal();
 }
 
 // TODO: decouple triplets of different types.
@@ -483,28 +480,28 @@ void SparseGP::update_alpha(){
     int n_sparse = Kuf_struc.rows();
     int n_struc_labels = Kuf_struc.cols();
     int n_env_labels = Kuf_env.cols();
-    Kuf = Eigen::MatrixXd::Zero(n_sparse, n_struc_labels + n_env_labels);
+    Eigen::MatrixXd Kuf =
+        Eigen::MatrixXd::Zero(n_sparse, n_struc_labels + n_env_labels);
     Kuf.block(0, 0, n_sparse, n_struc_labels) = Kuf_struc;
     Kuf.block(0, n_struc_labels, n_sparse, n_env_labels) = Kuf_env;
-    
+
     // Combine noise_struc and noise_env.
-    noise = Eigen::VectorXd::Zero(n_struc_labels + n_env_labels);
+    Eigen::VectorXd noise =
+        Eigen::VectorXd::Zero(n_struc_labels + n_env_labels);
     noise.segment(0, n_struc_labels) = noise_struc;
     noise.segment(n_struc_labels, n_env_labels) = noise_env;
-    noise_matrix = noise.asDiagonal();
 
     // Combine training labels.
-    y = Eigen::VectorXd::Zero(n_struc_labels + n_env_labels);
+    Eigen::VectorXd y = Eigen::VectorXd::Zero(n_struc_labels + n_env_labels);
     y.segment(0, n_struc_labels) = y_struc;
     y.segment(n_struc_labels, n_env_labels) = y_env;
 
     // Set alpha.
-    Eigen::MatrixXd sigma_inv = Kuu + Kuf * noise_matrix * Kuf.transpose() +
+    Eigen::MatrixXd sigma_inv =
+        Kuu + Kuf * noise.asDiagonal() * Kuf.transpose() +
         Kuu_jitter * Eigen::MatrixXd::Identity(Kuu.rows(), Kuu.cols());
-    // TODO: Use Woodbury identity to perform inversion once.
-    Sigma = sigma_inv.inverse();
-    Kuu_inverse = Kuu.inverse();
-    alpha = Sigma * Kuf * noise_matrix * y;
+
+    alpha = sigma_inv.inverse() * Kuf * noise.asDiagonal() * y;
 }
 
 void SparseGP::update_alpha_LLT(){
@@ -512,27 +509,59 @@ void SparseGP::update_alpha_LLT(){
     int n_sparse = Kuf_struc.rows();
     int n_struc_labels = Kuf_struc.cols();
     int n_env_labels = Kuf_env.cols();
-    Kuf = Eigen::MatrixXd::Zero(n_sparse, n_struc_labels + n_env_labels);
+    Eigen::MatrixXd Kuf =
+        Eigen::MatrixXd::Zero(n_sparse, n_struc_labels + n_env_labels);
     Kuf.block(0, 0, n_sparse, n_struc_labels) = Kuf_struc;
     Kuf.block(0, n_struc_labels, n_sparse, n_env_labels) = Kuf_env;
     
     // Combine noise_struc and noise_env.
-    noise = Eigen::VectorXd::Zero(n_struc_labels + n_env_labels);
+    Eigen::VectorXd noise =
+        Eigen::VectorXd::Zero(n_struc_labels + n_env_labels);
     noise.segment(0, n_struc_labels) = noise_struc;
     noise.segment(n_struc_labels, n_env_labels) = noise_env;
-    noise_matrix = noise.asDiagonal();
 
     // Combine training labels.
-    y = Eigen::VectorXd::Zero(n_struc_labels + n_env_labels);
+    Eigen::VectorXd y = Eigen::VectorXd::Zero(n_struc_labels + n_env_labels);
     y.segment(0, n_struc_labels) = y_struc;
     y.segment(n_struc_labels, n_env_labels) = y_env;
 
     // Solve for alpha with Cholesky decomposition.
-    Eigen::MatrixXd sigma_inv = Kuu + Kuf * noise_matrix * Kuf.transpose() +
+    Eigen::MatrixXd sigma_inv =
+        Kuu + Kuf * noise.asDiagonal() * Kuf.transpose() +
         Kuu_jitter * Eigen::MatrixXd::Identity(Kuu.rows(), Kuu.cols());
-    Eigen::VectorXd b = Kuf * noise_matrix * y;
+    Eigen::VectorXd b = Kuf * noise.asDiagonal() * y;
 
     alpha = sigma_inv.llt().solve(b);
+}
+
+void SparseGP::update_alpha_LDLT(){
+    // Combine Kuf_struc and Kuf_env.
+    int n_sparse = Kuf_struc.rows();
+    int n_struc_labels = Kuf_struc.cols();
+    int n_env_labels = Kuf_env.cols();
+    Eigen::MatrixXd Kuf =
+        Eigen::MatrixXd::Zero(n_sparse, n_struc_labels + n_env_labels);
+    Kuf.block(0, 0, n_sparse, n_struc_labels) = Kuf_struc;
+    Kuf.block(0, n_struc_labels, n_sparse, n_env_labels) = Kuf_env;
+    
+    // Combine noise_struc and noise_env.
+    Eigen::VectorXd noise =
+        Eigen::VectorXd::Zero(n_struc_labels + n_env_labels);
+    noise.segment(0, n_struc_labels) = noise_struc;
+    noise.segment(n_struc_labels, n_env_labels) = noise_env;
+
+    // Combine training labels.
+    Eigen::VectorXd y = Eigen::VectorXd::Zero(n_struc_labels + n_env_labels);
+    y.segment(0, n_struc_labels) = y_struc;
+    y.segment(n_struc_labels, n_env_labels) = y_env;
+
+    // Solve for alpha with Cholesky decomposition.
+    Eigen::MatrixXd sigma_inv =
+        Kuu + Kuf * noise.asDiagonal() * Kuf.transpose() +
+        Kuu_jitter * Eigen::MatrixXd::Identity(Kuu.rows(), Kuu.cols());
+    Eigen::VectorXd b = Kuf * noise.asDiagonal() * y;
+
+    alpha = sigma_inv.ldlt().solve(b);
 }
 
 void SparseGP::update_alpha_CG(){
@@ -540,25 +569,27 @@ void SparseGP::update_alpha_CG(){
     int n_sparse = Kuf_struc.rows();
     int n_struc_labels = Kuf_struc.cols();
     int n_env_labels = Kuf_env.cols();
-    Kuf = Eigen::MatrixXd::Zero(n_sparse, n_struc_labels + n_env_labels);
+    Eigen::MatrixXd Kuf =
+        Eigen::MatrixXd::Zero(n_sparse, n_struc_labels + n_env_labels);
     Kuf.block(0, 0, n_sparse, n_struc_labels) = Kuf_struc;
     Kuf.block(0, n_struc_labels, n_sparse, n_env_labels) = Kuf_env;
     
     // Combine noise_struc and noise_env.
-    noise = Eigen::VectorXd::Zero(n_struc_labels + n_env_labels);
+    Eigen::VectorXd noise =
+        Eigen::VectorXd::Zero(n_struc_labels + n_env_labels);
     noise.segment(0, n_struc_labels) = noise_struc;
     noise.segment(n_struc_labels, n_env_labels) = noise_env;
-    noise_matrix = noise.asDiagonal();
 
     // Combine training labels.
-    y = Eigen::VectorXd::Zero(n_struc_labels + n_env_labels);
+    Eigen::VectorXd y = Eigen::VectorXd::Zero(n_struc_labels + n_env_labels);
     y.segment(0, n_struc_labels) = y_struc;
     y.segment(n_struc_labels, n_env_labels) = y_env;
 
     // Solve for alpha with an iterative conjugate gradient algorithm.
-    Eigen::MatrixXd sigma_inv = Kuu + Kuf * noise_matrix * Kuf.transpose() +
+    Eigen::MatrixXd sigma_inv =
+        Kuu + Kuf * noise.asDiagonal() * Kuf.transpose() +
         Kuu_jitter * Eigen::MatrixXd::Identity(Kuu.rows(), Kuu.cols());
-    Eigen::VectorXd b = Kuf * noise_matrix * y;
+    Eigen::VectorXd b = Kuf * noise.asDiagonal() * y;
 
     Eigen::ConjugateGradient<Eigen::MatrixXd> cg;
     cg.compute(sigma_inv);

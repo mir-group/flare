@@ -11,9 +11,8 @@
 
 class SparseGP{
     public:
-        Eigen::MatrixXd Kuu, Kuf, Sigma, Kuu_inverse, noise_matrix,
-            Kuf_env, Kuf_struc, noise_matrix_struc, noise_matrix_env, beta;
-        Eigen::VectorXd y_struc, y_env, y, alpha, hyperparameters, noise,
+        Eigen::MatrixXd Kuu, Kuf_env, Kuf_struc, beta;
+        Eigen::VectorXd y_struc, y_env, alpha, hyperparameters,
             noise_env, noise_struc;
         std::vector<Kernel *> kernels;
 
@@ -52,6 +51,7 @@ class SparseGP{
 
         void update_alpha();  // find alpha with naive matrix inversion
         void update_alpha_LLT();  // find alpha with Cholesky decomposition
+        void update_alpha_LDLT();  // Choesky minus square root
         void update_alpha_CG();  // find alpha with conjugate gradient methods
 
         void compute_beta(int kernel_index, int descriptor_index);

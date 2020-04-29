@@ -162,6 +162,7 @@ PYBIND11_MODULE(ace, m){
         .def("update_alpha", &SparseGP::update_alpha)
         .def("update_alpha_CG", &SparseGP::update_alpha_CG)
         .def("update_alpha_LLT", &SparseGP::update_alpha_LLT)
+        .def("update_alpha_LDLT", &SparseGP::update_alpha_LDLT)
         .def("predict", &SparseGP::predict)
         .def("predict_force", &SparseGP::predict_force)
         .def("compute_beta", &SparseGP::compute_beta)
