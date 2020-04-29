@@ -670,3 +670,9 @@ double SparseGP::predict_local_energy(
 
     return kern_vec.dot(alpha);
 }
+
+void SparseGP::clear_environment_lists(){
+    sparse_environments.clear();
+    training_environments.clear();
+    training_structures.clear();
+}

@@ -62,6 +62,8 @@ class SparseGP{
 
         double predict_local_energy(const LocalEnvironment & test_environment);
 
+        void clear_environment_lists();
+
         // void predict_DTC(StructureDescriptor test_structure,
         //     Eigen::VectorXd & mean_vector, Eigen::VectorXd & std_vector);
 
