@@ -215,6 +215,10 @@ TEST_F(SparseTest, TestBeta){
     double sigma_s = 3;
 
     SparseGP sparse_gp = SparseGP(kernels, sigma_e, sigma_f, sigma_s);
+
+    sparse_gp.memory_profile();
+    std::cout << sparse_gp.model_size << std::endl;
+
     LocalEnvironment env1 = test_struc.local_environments[0];
     LocalEnvironment env2 = test_struc.local_environments[1];
     LocalEnvironment env3 = test_struc.local_environments[2];
@@ -244,7 +248,16 @@ TEST_F(SparseTest, TestBeta){
     int descriptor_index = 0;
     sparse_gp.write_beta(beta_file, contributor, descriptor_index);
 
-    // std::cout << env1.descriptor_squared[0].size() << std::endl;
+    // Check that memory profile works
+    sparse_gp.memory_profile();
+    std::cout << sparse_gp.model_size << std::endl;
+    std::cout << sparse_gp.sparse_size << std::endl;
+    std::cout << sparse_gp.training_size << std::endl;
+    std::cout << sizeof(sparse_gp.sparse_environments[0]) << std::endl;
+    std::cout << sparse_gp.Kuu_size << std::endl;
+
+    std::cout << sparse_gp.Kuu.size() << std::endl;
+    std::cout << sizeof(sparse_gp.Kuu(0,0)) << std::endl;
 
 }
 

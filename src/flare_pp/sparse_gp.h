@@ -16,6 +16,9 @@ class SparseGP{
             noise_env, noise_struc;
         std::vector<Kernel *> kernels;
 
+        double model_size, sparse_size, training_size, Kuu_size, Kuf_env_size,
+            noise_env_size;
+
         std::vector<LocalEnvironment> sparse_environments,
             training_environments;
         std::vector<StructureDescriptor> training_structures;
@@ -52,6 +55,8 @@ class SparseGP{
 
         void write_beta(std::string file_name, std::string contributor,
                         int descriptor_index);
+
+        void memory_profile();
 
         void compute_likelihood();
 

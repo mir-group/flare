@@ -44,6 +44,16 @@ SparseGP :: SparseGP(std::vector<Kernel *> kernels, double sigma_e,
     this->sigma_s = sigma_s;
 }
 
+void SparseGP :: memory_profile(){
+    // Record sizes in bytes
+    model_size = sizeof(*this);
+    sparse_size = sizeof(sparse_environments);
+    training_size = sizeof(training_environments);
+    Kuu_size = sizeof(Kuu);
+    Kuf_env_size = sizeof(Kuf_env);
+    noise_env_size = sizeof(noise_env);
+}
+
 void SparseGP :: add_sparse_environment(const LocalEnvironment & env){
     // Compute kernels between new environment and previous sparse
     // environments.
