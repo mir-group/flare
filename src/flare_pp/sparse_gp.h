@@ -51,6 +51,7 @@ class SparseGP{
             int n_species, int n_dist, int n_angle);
 
         void update_alpha();  // find alpha with naive matrix inversion
+        void update_alpha_LLT();  // find alpha with Cholesky decomposition
         void update_alpha_CG();  // find alpha with conjugate gradient methods
 
         void compute_beta(int kernel_index, int descriptor_index);

@@ -226,7 +226,7 @@ TEST_F(SparseTest, TestBeta){
     sparse_gp.add_sparse_environment(env4);
     sparse_gp.add_training_structure(test_struc);
     // sparse_gp.update_alpha();
-    sparse_gp.update_alpha_CG();
+    sparse_gp.update_alpha_LLT();
 
     // Predict local energy with alpha.
     double loc_en = sparse_gp.predict_local_energy(env1);
