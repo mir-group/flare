@@ -216,9 +216,6 @@ TEST_F(SparseTest, TestBeta){
 
     SparseGP sparse_gp = SparseGP(kernels, sigma_e, sigma_f, sigma_s);
 
-    sparse_gp.memory_profile();
-    std::cout << sparse_gp.model_size << std::endl;
-
     LocalEnvironment env1 = test_struc.local_environments[0];
     LocalEnvironment env2 = test_struc.local_environments[1];
     LocalEnvironment env3 = test_struc.local_environments[2];
@@ -228,9 +225,8 @@ TEST_F(SparseTest, TestBeta){
     sparse_gp.add_sparse_environment(env3);
     sparse_gp.add_sparse_environment(env4);
     sparse_gp.add_training_structure(test_struc);
-    sparse_gp.update_alpha();
-    // std::cout << sparse_gp.alpha << std::endl;
-    // std::cout << positions << std::endl;
+    // sparse_gp.update_alpha();
+    sparse_gp.update_alpha_CG();
 
     // Predict local energy with alpha.
     double loc_en = sparse_gp.predict_local_energy(env1);
@@ -248,16 +244,16 @@ TEST_F(SparseTest, TestBeta){
     int descriptor_index = 0;
     sparse_gp.write_beta(beta_file, contributor, descriptor_index);
 
-    // Check that memory profile works
-    sparse_gp.memory_profile();
-    std::cout << sparse_gp.model_size << std::endl;
-    std::cout << sparse_gp.sparse_size << std::endl;
-    std::cout << sparse_gp.training_size << std::endl;
-    std::cout << sizeof(sparse_gp.sparse_environments[0]) << std::endl;
-    std::cout << sparse_gp.Kuu_size << std::endl;
+    // // Check that memory profile works
+    // sparse_gp.memory_profile();
+    // std::cout << sparse_gp.model_size << std::endl;
+    // std::cout << sparse_gp.sparse_size << std::endl;
+    // std::cout << sparse_gp.training_size << std::endl;
+    // std::cout << sizeof(sparse_gp.sparse_environments[0]) << std::endl;
+    // std::cout << sparse_gp.Kuu_size << std::endl;
 
-    std::cout << sparse_gp.Kuu.size() << std::endl;
-    std::cout << sizeof(sparse_gp.Kuu(0,0)) << std::endl;
+    // std::cout << sparse_gp.Kuu.size() << std::endl;
+    // std::cout << sizeof(sparse_gp.Kuu(0,0)) << std::endl;
 
 }
 

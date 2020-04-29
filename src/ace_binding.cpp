@@ -160,6 +160,7 @@ PYBIND11_MODULE(ace, m){
         .def("add_training_environment", &SparseGP::add_training_environment)
         .def("add_training_environments", &SparseGP::add_training_environments)
         .def("update_alpha", &SparseGP::update_alpha)
+        .def("update_alpha_CG", &SparseGP::update_alpha_CG)
         .def("predict", &SparseGP::predict)
         .def("predict_force", &SparseGP::predict_force)
         .def("compute_beta", &SparseGP::compute_beta)

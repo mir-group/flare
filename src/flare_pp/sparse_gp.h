@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <Eigen/Dense>
+#include <Eigen/IterativeLinearSolvers>
 
 #include "local_environment.h"
 #include "structure.h"
@@ -49,7 +50,8 @@ class SparseGP{
         void three_body_grid(double min_dist, double max_dist, double cutoff,
             int n_species, int n_dist, int n_angle);
 
-        void update_alpha();
+        void update_alpha();  // find alpha with naive matrix inversion
+        void update_alpha_CG();  // find alpha with conjugate gradient methods
 
         void compute_beta(int kernel_index, int descriptor_index);
 

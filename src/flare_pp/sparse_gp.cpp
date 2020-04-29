@@ -507,6 +507,36 @@ void SparseGP::update_alpha(){
     alpha = Sigma * Kuf * noise_matrix * y;
 }
 
+void SparseGP::update_alpha_CG(){
+    // Combine Kuf_struc and Kuf_env.
+    int n_sparse = Kuf_struc.rows();
+    int n_struc_labels = Kuf_struc.cols();
+    int n_env_labels = Kuf_env.cols();
+    Kuf = Eigen::MatrixXd::Zero(n_sparse, n_struc_labels + n_env_labels);
+    Kuf.block(0, 0, n_sparse, n_struc_labels) = Kuf_struc;
+    Kuf.block(0, n_struc_labels, n_sparse, n_env_labels) = Kuf_env;
+    
+    // Combine noise_struc and noise_env.
+    noise = Eigen::VectorXd::Zero(n_struc_labels + n_env_labels);
+    noise.segment(0, n_struc_labels) = noise_struc;
+    noise.segment(n_struc_labels, n_env_labels) = noise_env;
+    noise_matrix = noise.asDiagonal();
+
+    // Combine training labels.
+    y = Eigen::VectorXd::Zero(n_struc_labels + n_env_labels);
+    y.segment(0, n_struc_labels) = y_struc;
+    y.segment(n_struc_labels, n_env_labels) = y_env;
+
+    // Solve for alpha with an iterative conjugate gradient algorithm.
+    Eigen::MatrixXd sigma_inv = Kuu + Kuf * noise_matrix * Kuf.transpose() +
+        Kuu_jitter * Eigen::MatrixXd::Identity(Kuu.rows(), Kuu.cols());
+    Eigen::VectorXd b = Kuf * noise_matrix * y;
+
+    Eigen::ConjugateGradient<Eigen::MatrixXd> cg;
+    cg.compute(sigma_inv);
+    alpha = cg.solve(b);
+}
+
 void  SparseGP::compute_beta(int kernel_index, int descriptor_index){
     // Assumptions:
     //  1. power = 2, so that the potential is linear in the square of the power spectrum.
