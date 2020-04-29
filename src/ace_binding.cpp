@@ -145,13 +145,8 @@ PYBIND11_MODULE(ace, m){
     py::class_<SparseGP>(m, "SparseGP")
         .def(py::init<std::vector<Kernel *>, double, double, double>())
         .def_readwrite("Kuu", &SparseGP::Kuu)
-        .def_readwrite("Kuf", &SparseGP::Kuf)
-        .def_readwrite("Sigma", &SparseGP::Sigma)
-        .def_readwrite("noise", &SparseGP::noise)
-        .def_readwrite("noise_matrix", &SparseGP::noise_matrix)
         .def_readwrite("kernels", &SparseGP::kernels)
         .def_readwrite("alpha", &SparseGP::alpha)
-        .def_readwrite("y", &SparseGP::y)
         .def_readwrite("Kuu_jitter", &SparseGP::Kuu_jitter)
         .def_readwrite("hyperparameters", &SparseGP::hyperparameters)
         .def("add_sparse_environment", &SparseGP::add_sparse_environment)
@@ -172,7 +167,6 @@ PYBIND11_MODULE(ace, m){
         .def_readwrite("training_structures", &SparseGP::training_structures)
         .def_readwrite("training_environments",
             &SparseGP::training_environments)
-        .def_readwrite("noise_matrix_env", &SparseGP::noise_matrix_env)
         .def_readwrite("Kuf_env", &SparseGP::Kuf_env);
         
 }
