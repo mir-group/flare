@@ -543,13 +543,15 @@ void SparseGP::update_alpha_LDLT(){
 
     // Solve for alpha with inplace Cholesky decomposition.
     // Experiment with constant noise to check the effect on memory.
+    double noise_val = 1 / (sigma_f * sigma_f);
+
     Eigen::MatrixXd sigma_inv =
-        Kuu + sigma_f * Kuf_env * Kuf_env.transpose() +
-        sigma_f * Kuf_struc * Kuf_struc.transpose() +
+        Kuu + noise_val * Kuf_env * Kuf_env.transpose() +
+        noise_val * Kuf_struc * Kuf_struc.transpose() +
         Kuu_jitter * Eigen::MatrixXd::Identity(Kuu.rows(), Kuu.cols());
     Eigen::VectorXd b =
-        sigma_f * Kuf_env * y_env +
-        sigma_f * Kuf_struc * y_struc;
+        noise_val * Kuf_env * y_env +
+        noise_val * Kuf_struc * y_struc;
 
     Eigen::LDLT<Eigen::Ref<Eigen::MatrixXd> > ldlt(sigma_inv);
     alpha = ldlt.solve(b);
