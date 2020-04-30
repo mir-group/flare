@@ -540,27 +540,16 @@ void SparseGP::update_alpha_LDLT(){
     int n_sparse = Kuf_struc.rows();
     int n_struc_labels = Kuf_struc.cols();
     int n_env_labels = Kuf_env.cols();
-    Eigen::MatrixXd Kuf =
-        Eigen::MatrixXd::Zero(n_sparse, n_struc_labels + n_env_labels);
-    Kuf.block(0, 0, n_sparse, n_struc_labels) = Kuf_struc;
-    Kuf.block(0, n_struc_labels, n_sparse, n_env_labels) = Kuf_env;
-    
-    // Combine noise_struc and noise_env.
-    Eigen::VectorXd noise =
-        Eigen::VectorXd::Zero(n_struc_labels + n_env_labels);
-    noise.segment(0, n_struc_labels) = noise_struc;
-    noise.segment(n_struc_labels, n_env_labels) = noise_env;
-
-    // Combine training labels.
-    Eigen::VectorXd y = Eigen::VectorXd::Zero(n_struc_labels + n_env_labels);
-    y.segment(0, n_struc_labels) = y_struc;
-    y.segment(n_struc_labels, n_env_labels) = y_env;
 
     // Solve for alpha with inplace Cholesky decomposition.
+    // Experiment with constant noise to check the effect on memory.
     Eigen::MatrixXd sigma_inv =
-        Kuu + Kuf * noise.asDiagonal() * Kuf.transpose() +
+        Kuu + sigma_f * Kuf_env * Kuf_env.transpose() +
+        sigma_f * Kuf_struc * Kuf_struc.transpose() +
         Kuu_jitter * Eigen::MatrixXd::Identity(Kuu.rows(), Kuu.cols());
-    Eigen::VectorXd b = Kuf * noise.asDiagonal() * y;
+    Eigen::VectorXd b =
+        sigma_f * Kuf_env * y_env +
+        sigma_f * Kuf_struc * y_struc;
 
     Eigen::LDLT<Eigen::Ref<Eigen::MatrixXd> > ldlt(sigma_inv);
     alpha = ldlt.solve(b);
