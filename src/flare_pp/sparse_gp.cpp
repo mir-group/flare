@@ -531,7 +531,8 @@ void SparseGP::update_alpha_LLT(){
         Kuu_jitter * Eigen::MatrixXd::Identity(Kuu.rows(), Kuu.cols());
     Eigen::VectorXd b = Kuf * noise.asDiagonal() * y;
 
-    alpha = sigma_inv.llt().solve(b);
+    Eigen::LLT<Eigen::Ref<Eigen::MatrixXd> > llt(sigma_inv);
+    alpha = llt.solve(b);
 }
 
 void SparseGP::update_alpha_LDLT(){
@@ -555,13 +556,14 @@ void SparseGP::update_alpha_LDLT(){
     y.segment(0, n_struc_labels) = y_struc;
     y.segment(n_struc_labels, n_env_labels) = y_env;
 
-    // Solve for alpha with Cholesky decomposition.
+    // Solve for alpha with inplace Cholesky decomposition.
     Eigen::MatrixXd sigma_inv =
         Kuu + Kuf * noise.asDiagonal() * Kuf.transpose() +
         Kuu_jitter * Eigen::MatrixXd::Identity(Kuu.rows(), Kuu.cols());
     Eigen::VectorXd b = Kuf * noise.asDiagonal() * y;
 
-    alpha = sigma_inv.ldlt().solve(b);
+    Eigen::LDLT<Eigen::Ref<Eigen::MatrixXd> > ldlt(sigma_inv);
+    alpha = ldlt.solve(b);
 }
 
 void SparseGP::update_alpha_CG(){
