@@ -589,70 +589,89 @@ class HyperParameterMasking():
             pass
 
     def generate_dict(self):
-        """Dictionary representation of the GP model."""
-        if self.n['specie'] < 2:
-            print("only one type of elements was defined. return None", file=self.fout)
-            hyps_mask = None
-        else:
-            self.summarize_group('specie')
-            self.summarize_group('bond')
-            self.summarize_group('cut3b')
-            self.summarize_group('triplet')
-            self.summarize_group('mb')
-            hyps_mask = {}
-            hyps_mask['nspecie'] = self.n['specie']
-            hyps_mask['specie_mask'] = self.specie_mask
-            hyps = []
-            hyps_label = []
-            opt = []
-            for group in ['bond', 'triplet', 'mb']:
-                if (self.n[group]>=1):
-                    hyps_mask['n'+group] = self.n[group]
-                    hyps_mask[group+'_mask'] = self.mask[group]
-                    hyps += [self.hyps_sig[group]]
-                    hyps += [self.hyps_ls[group]]
-                    opt += [self.hyps_opt[group]]
-                    aeg = self.all_group_names[group]
-                    for idt in range(self.n[group]):
-                        hyps_label += ['Signal_Var._'+aeg[idt]]
-                    for idt in range(self.n[group]):
-                        hyps_label += ['Length_Scale_'+group]
-            opt += [self.opt['noise']]
-            hyps_mask['original'] = np.hstack(hyps)
-            hyps_mask['original'] = np.hstack([hyps_mask['original'], self.noise])
-            hyps_label += ['Noise_Var.']
-            hyps_mask['original'] = np.array(hyps_mask['original'], dtype=np.float)
-            hyps_mask['hyps_label']=hyps_label
-            opt = np.hstack(opt)
-            hyps_mask['train_noise'] = self.opt['noise']
-            if (not opt.all()):
-                nhyps = len(hyps_mask['original'])
-                mapping = []
-                hyps_mask['hyps_label']=[]
-                for i in range(nhyps):
-                    if (opt[i]):
-                        mapping += [i]
-                        hyps_mask['hyps_label'] += [hyps_label[i]]
-                newhyps = hyps_mask['original'][mapping]
-                hyps_mask['map'] = np.array(mapping, dtype=np.int)
-            else:
-                newhyps = hyps_mask['original']
-            hyps_mask['hyps'] = newhyps
+        """Dictionary representation of the mask. The output can be used for AtomicEnvironment
+        or the GaussianProcess
+        """
 
-            if len(self.cutoff_list.get('bond', []))>0:
-                hyps_mask['cutoff_2b'] = np.array(self.cutoff_list['bond'], dtype=np.float)
-            if len(self.cutoff_list.get('cut3b', []))>0:
-                hyps_mask['cutoff_3b'] = np.array(self.cutoff_list['cut3b'], dtype=np.float)
-                hyps_mask['ncut3b'] = self.n['cut3b']
-                hyps_mask['cut3b_mask'] = self.mask['cut3b']
-            if len(self.cutoff_list.get('mb', []))>0:
-                hyps_mask['cutoff_mb'] = np.array(self.cutoff_list['mb'], dtype=np.float)
+        # sort out all the definitions and resolve conflicts
+        # cut3b has to be summarize before triplet
+        # because the universal triplet cutoff is checked
+        # at the end of triplet search
+        self.summarize_group('specie')
+        self.summarize_group('bond')
+        self.summarize_group('cut3b')
+        self.summarize_group('triplet')
+        self.summarize_group('mb')
+
+        hyps_mask = {}
+        hyps_mask['nspecie'] = self.n['specie']
+        hyps_mask['specie_mask'] = self.specie_mask
+
+        hyps = []
+        hyps_label = []
+        opt = []
+        for group in ['bond', 'triplet', 'mb']:
+            if (self.n[group]>=1):
+                # copy the mask
+                hyps_mask['n'+group] = self.n[group]
+                hyps_mask[group+'_mask'] = self.mask[group]
+                hyps += [self.hyps_sig[group]]
+                hyps += [self.hyps_ls[group]]
+                # check parameters
+                opt += [self.hyps_opt[group]]
+                aeg = self.all_group_names[group]
+                for idt in range(self.n[group]):
+                    hyps_label += ['Signal_Var._'+aeg[idt]]
+                for idt in range(self.n[group]):
+                    hyps_label += ['Length_Scale_'+group]
+        opt += [self.opt['noise']]
+
+        # handle partial optimization if any constraints are defined
+        hyps_mask['original'] = np.hstack(hyps)
+        hyps_mask['original'] = np.hstack([hyps_mask['original'], self.noise])
+        hyps_label += ['Noise_Var.']
+        hyps_mask['original'] = np.array(hyps_mask['original'], dtype=np.float)
+        hyps_mask['hyps_label']=hyps_label
+        opt = np.hstack(opt)
+        hyps_mask['train_noise'] = self.opt['noise']
+        if (not opt.all()):
+            nhyps = len(hyps_mask['original'])
+            mapping = []
+            hyps_mask['hyps_label']=[]
+            for i in range(nhyps):
+                if (opt[i]):
+                    mapping += [i]
+                    hyps_mask['hyps_label'] += [hyps_label[i]]
+            newhyps = hyps_mask['original'][mapping]
+            hyps_mask['map'] = np.array(mapping, dtype=np.int)
+        elif (opt.any()):
+            newhyps = hyps_mask['original']
+        else:
+            raise RuntimeError("hyps has length zero."\
+                    "at least one component of the hyper-parameters"\
+                    "should be allowed to be optimized. \n")
+        hyps_mask['hyps'] = newhyps
+
+        # checkout universal cutoffs and seperate cutoffs
+        if len(self.cutoff_list.get('bond', []))>0:
+            hyps_mask['cutoff_2b'] = np.array(self.cutoff_list['bond'], dtype=np.float)
+        if len(self.cutoff_list.get('cut3b', []))>0:
+            hyps_mask['cutoff_3b'] = np.array(self.cutoff_list['cut3b'], dtype=np.float)
+            hyps_mask['ncut3b'] = self.n['cut3b']
+            hyps_mask['cut3b_mask'] = self.mask['cut3b']
+        if len(self.cutoff_list.get('mb', []))>0:
+            hyps_mask['cutoff_mb'] = np.array(self.cutoff_list['mb'], dtype=np.float)
 
         self.hyps_mask = hyps_mask
         if (self.cutoffs_array[2]>0):
             hyps_mask['cutoffs'] = self.cutoffs_array
         else:
             hyps_mask['cutoffs'] = self.cutoffs_array[:2]
+
+        if self.n['specie'] < 2:
+            print("only one type of elements was defined. Please use multihyps=False",
+                  file=self.fout)
+
         return hyps_mask
 
     @staticmethod
@@ -750,6 +769,14 @@ class HyperParameterMasking():
         with multiple hyperparameters.
         :return:
         """
+
+        # backward compatability
+        if ('nspec' in hyps_mask):
+            hyps_mask['nspecie'] = hyps_mask['nspec']
+        if ('spec_mask' in gp_model.hyps_mask):
+            hyps_mask['specie_mask'] = hyps_mask['spec_mask']
+        if ('train_noise' not in hyps_mask):
+            hyps_mask['train_noise'] = True
 
         assert isinstance(hyps_mask, dict)
 

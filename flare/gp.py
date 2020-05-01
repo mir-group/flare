@@ -791,29 +791,17 @@ class GaussianProcess:
         if '.json' in filename or 'json' in format:
             with open(filename, 'r') as f:
                 gp_model = GaussianProcess.from_dict(json.loads(f.readline()))
-                gp_model.check_instantiation()
-                _global_training_data[gp_model.name] \
-                        = gp_model.training_data
-                _global_training_labels[gp_model.name] \
-                        = gp_model.training_labels_np
 
+                gp_model.check_instantiation()
 
         elif '.pickle' in filename or 'pickle' in format:
             with open(filename, 'rb') as f:
                 gp_model = pickle.load(f)
 
-                if (gp_model.hyps_mask is not None):
-                    if ('nspec' in gp_model.hyps_mask):
-                        gp_model.hyps_mask['nspecie'] = gp_model.hyps_mask['nspec']
-                    if ('spec_mask' in gp_model.hyps_mask):
-                        gp_model.hyps_mask['specie_mask'] = gp_model.hyps_mask['spec_mask']
+                if ('name' not in gp_model.__dict__):
+                    gp_model.name = 'default_gp'
 
                 gp_model.check_instantiation()
-
-                _global_training_data[gp_model.name] \
-                        = gp_model.training_data
-                _global_training_labels[gp_model.name] \
-                        = gp_model.training_labels_np
 
                 if len(gp_model.training_data) > 5000:
                     try:
@@ -830,6 +818,9 @@ class GaussianProcess:
         else:
             raise ValueError("Warning: Format unspecieified or file is not "
                              ".json or .pickle format.")
+
+        _global_training_data[gp_model.name] = gp_model.training_data
+        _global_training_labels[gp_model.name] = gp_model.training_labels_np
 
         return gp_model
 
