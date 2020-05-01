@@ -545,10 +545,12 @@ void SparseGP::update_alpha_LDLT(){
     // Experiment with constant noise to check the effect on memory.
     double noise_val = 1 / (sigma_f * sigma_f);
 
-    Eigen::MatrixXd sigma_inv =
-        Kuu + noise_val * Kuf_env * Kuf_env.transpose() +
-        noise_val * Kuf_struc * Kuf_struc.transpose() +
+    Eigen::MatrixXd sigma_inv = Kuu;
+    sigma_inv.noalias() += noise_val * Kuf_env * Kuf_env.transpose();
+    sigma_inv.noalias() += noise_val * Kuf_struc * Kuf_struc.transpose();
+    sigma_inv.noalias() +=
         Kuu_jitter * Eigen::MatrixXd::Identity(Kuu.rows(), Kuu.cols());
+
     Eigen::VectorXd b =
         noise_val * Kuf_env * y_env +
         noise_val * Kuf_struc * y_struc;
