@@ -89,3 +89,15 @@ def test_opt():
     hm = pm.hyps_mask
     print(hm)
     HyperParameterMasking.check_instantiation(hm)
+
+def test_randomization():
+    pm = HyperParameterMasking(species=['He', 'C', 'H', 'O'],
+                          bonds=True, triplets=True,
+                          mb=False, random=True,
+                          parameters={'cutoff2b': 7,
+                              'cutoff3b': 4.5,
+                              'cutoffmb': 3},
+                          verbose=True)
+    hm = pm.hyps_mask
+    print(hm)
+    HyperParameterMasking.check_instantiation(hm)

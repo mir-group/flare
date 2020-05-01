@@ -65,7 +65,7 @@ class HyperParameterMasking():
 
     def __init__(self, hyps_mask=None, species=None, bonds=None,
                  triplets=None, cut3b=None, mb=None, parameters=None,
-                 constraints={}, verbose=False):
+                 constraints={}, random=False, verbose=False):
         """ Initialization function
 
         :param hyps_mask: Not implemented yet
@@ -73,18 +73,20 @@ class HyperParameterMasking():
         :param species: list or dictionary that define specie groups
         :type species: [dict, list]
         :param bonds: list or dictionary that define bond groups
-        :type bonds: [dict, list]
+        :type bonds: [dict, list, bool]
         :param triplets: list or dictionary that define triplet groups
-        :type triplets: [dict, list]
+        :type triplets: [dict, list, bool]
         :param cut3b: list or dictionary that define 3b-cutoff groups
         :type cut3b: [dict, list]
         :param mb: list or dictionary that define many-body groups
-        :type mb: [dict, list]
+        :type mb: [dict, list, bool]
         :param parameters: dictionary of parameters
         :type parameters: dict
         :param constraints: whether the hyperparmeters are optimized (True) or not (False)
         :constraints: dict
-        :param verbose: print the process to screen
+        :param random: if True, define each single bond type into a separate group and randomized initial parameters
+        :type random: bool
+        :param verbose: print the process to screen or to null
         :type verbose: bool
 
         See format of species, bonds, triplets, cut3b, mb in list_groups() function.
@@ -126,21 +128,52 @@ class HyperParameterMasking():
 
         if (species is not None):
             self.list_groups('specie', species)
-            if (bonds is not None):
-                self.list_groups('bond', bonds)
-            if (triplets is not None):
-                self.list_groups('triplet', triplets)
-            if (cut3b is not None):
-                self.list_groups('cut3b', cut3b)
-            if (mb is not None):
-                self.list_groups('mb', mb)
-            if (parameters is not None):
-                self.list_parameters(parameters, constraints)
-            try:
+            if (not random):
+                if (bonds is not None):
+                    self.list_groups('bond', bonds)
+                if (triplets is not None):
+                    self.list_groups('triplet', triplets)
+                if (cut3b is not None):
+                    self.list_groups('cut3b', cut3b)
+                if (mb is not None):
+                    self.list_groups('mb', mb)
+                if (parameters is not None):
+                    self.list_parameters(parameters, constraints)
+                try:
+                    self.hyps_mask = self.generate_dict()
+                except:
+                    print("more parameters needed to generate the hypsmask",
+                          file=self.fout)
+            else:
+
+                # sort the types
+                if (bonds is not None):
+                    assert isinstance(bonds, bool)
+                else:
+                    bonds = False
+                if (triplets is not None):
+                    assert isinstance(triplets, bool)
+                else:
+                    triplets = False
+                if (mb is not None):
+                    assert isinstance(mb, bool)
+                else:
+                    mb = False
+
+                if bonds:
+                   self.fill_in_random('bond')
+                if triplets:
+                   self.fill_in_random('triplet')
+                if mb:
+                    self.fill_in_random('mb')
+                if (parameters is not None):
+                    self.list_parameters(parameters, constraints)
                 self.hyps_mask = self.generate_dict()
-            except:
-                print("more parameters needed to generate the hypsmask",
-                      file=self.fout)
+                # try:
+                #    self.hyps_mask = self.generate_dict()
+                # except:
+                #     print("more parameters needed to generate the hypsmask",
+                #           file=self.fout)
 
     def list_parameters(self, parameter_dict, constraints={}):
         """Define many groups of parameters
@@ -239,6 +272,42 @@ class HyperParameterMasking():
                     else:
                         self.define_group(group_type, name,
                                           definition_list[name])
+
+    def fill_in_random(self, group_type):
+        """Separate all possible types of bonds, triplets, mb.
+        One type per group. And fill in random parameters
+
+        Args:
+
+        group_type (str): "specie", "bond", "triplet", "cut3b", "mb"
+        definition_list (list, dict): list of elements
+
+        """
+        nspec = len(self.all_group_names['specie'])
+        if (nspec < 1):
+            raise RuntimeError("the specie group has to be defined in advance")
+        if (group_type in ['bond', 'mb']):
+            tid = 0
+            for i in range(nspec):
+                ele1 = self.all_group_names['specie'][i]
+                for j in range(i, nspec):
+                    ele2 = self.all_group_names['specie'][j]
+                    self.define_group(group_type, f'{group_type}{tid}',
+                                      [ele1, ele2], parameters=random(2))
+                    tid += 1
+        elif (group_type == 'triplet'):
+            tid = 0
+            for i in range(nspec):
+                ele1 = self.all_group_names['specie'][i]
+                for j in range(i, nspec):
+                    ele2 = self.all_group_names['specie'][j]
+                    for k in range(j, nspec):
+                        ele3 = self.all_group_names['specie'][k]
+                        self.define_group(group_type, f'{group_type}{tid}',
+                                          [ele1, ele2, ele3], parameters=random(2))
+                        tid += 1
+        else:
+            print(group_type, "will be ignored", file=self.fout)
 
     def define_group(self, group_type, name, element_list, parameters=None, atomic_str=False):
         """Define specie/bond/triplet/3b cutoff/manybody group
@@ -490,10 +559,8 @@ class HyperParameterMasking():
         nspecie = self.n['specie']
         if (group_type == "specie"):
             self.nspecie = nspecie
-            if (nspecie == 1):
-                return
-            self.specie_mask = np.ones(118, dtype=np.int)*(self.n['specie']-1)
-            for idt in range(self.n['specie']):
+            self.specie_mask = np.ones(118, dtype=np.int)*(nspecie-1)
+            for idt in range(self.nspecie):
                 for ele in self.groups['specie'][idt]:
                     atom_n = element_to_Z(ele)
                     self.specie_mask[atom_n] = idt
@@ -503,6 +570,7 @@ class HyperParameterMasking():
                 f"All the remaining elements are left as type {idt}", file=self.fout)
         elif (group_type in ['bond', 'cut3b', 'mb']):
             if (self.n[group_type] == 0):
+                print(group_type, "is not defined. Skipped", file=self.fout)
                 return
             self.mask[group_type] = np.ones(
                 nspecie**2, dtype=np.int)*(self.n[group_type]-1)
@@ -561,6 +629,7 @@ class HyperParameterMasking():
         elif (group_type == "triplet"):
             self.ntriplet = self.n['triplet']
             if (self.ntriplet == 0):
+                print(group_type, "is not defined. Skipped", file=self.fout)
                 return
             self.mask[group_type] = np.ones(
                 nspecie**3, dtype=np.int)*(self.ntriplet-1)
@@ -700,6 +769,9 @@ class HyperParameterMasking():
 
     @staticmethod
     def from_dict(hyps_mask):
+        """ convert dictionary mask to HM instance
+        This function is not tested yet
+        """
 
         HyperParameterMasking.check_instantiation(hyps_mask)
 
@@ -800,7 +872,7 @@ class HyperParameterMasking():
         # backward compatability
         if ('nspec' in hyps_mask):
             hyps_mask['nspecie'] = hyps_mask['nspec']
-        if ('spec_mask' in gp_model.hyps_mask):
+        if ('spec_mask' in hyps_mask):
             hyps_mask['specie_mask'] = hyps_mask['spec_mask']
         if ('train_noise' not in hyps_mask):
             hyps_mask['train_noise'] = True
@@ -932,6 +1004,10 @@ class HyperParameterMasking():
 
     @staticmethod
     def check_matching(hyps_mask, hyps, cutoffs):
+        """
+        check whether hyps_mask, hyps and cutoffs are compatible
+        used in GaussianProcess
+        """
 
         n2b = hyps_mask.get('nbond', 0)
         n3b = hyps_mask.get('ntriplet', 0)
