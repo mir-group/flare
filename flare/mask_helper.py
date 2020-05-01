@@ -14,7 +14,7 @@ from warnings import warn
 from sys import stdout
 from os import devnull
 
-from flare.util import  element_to_Z
+from flare.util import element_to_Z
 
 
 class HyperParameterMasking():
@@ -62,6 +62,7 @@ class HyperParameterMasking():
     There are more examples see tests/test_mask_helper.py
 
     """
+
     def __init__(self, hyps_mask=None, species=None, bonds=None,
                  triplets=None, cut3b=None, mb=None, parameters=None,
                  constraints={}, verbose=False):
@@ -115,7 +116,7 @@ class HyperParameterMasking():
         self.hyps_sig = {}
         self.hyps_ls = {}
         self.hyps_opt = {}
-        self.opt = {'noise':True}
+        self.opt = {'noise': True}
         self.mask = {}
         self.cutoff_list = {}
         self.noise = 0.05
@@ -138,7 +139,8 @@ class HyperParameterMasking():
             try:
                 self.hyps_mask = self.generate_dict()
             except:
-                print("more parameters needed to generate the hypsmask", file=self.fout)
+                print("more parameters needed to generate the hypsmask",
+                      file=self.fout)
 
     def list_parameters(self, parameter_dict, constraints={}):
         """Define many groups of parameters
@@ -168,7 +170,8 @@ class HyperParameterMasking():
         """
 
         for name in parameter_dict:
-            self.set_parameters(name, parameter_dict[name], constraints.get(name, True))
+            self.set_parameters(
+                name, parameter_dict[name], constraints.get(name, True))
 
     def list_groups(self, group_type, definition_list):
         """define groups in batches.
@@ -205,9 +208,9 @@ class HyperParameterMasking():
 
         """
         if (group_type == 'specie'):
-            if (len(self.all_group_names['specie'])>0):
-                raise RuntimeError("this function has to be run "\
-                        "before any define_group")
+            if (len(self.all_group_names['specie']) > 0):
+                raise RuntimeError("this function has to be run "
+                                   "before any define_group")
             if (isinstance(definition_list, list)):
                 for ele in definition_list:
                     if isinstance(ele, list):
@@ -220,21 +223,22 @@ class HyperParameterMasking():
             else:
                 raise RuntimeError("type unknown")
         else:
-            if (len(self.all_group_names['specie'])==0):
-                raise RuntimeError("this function has to be run "\
-                        "before any define_group")
+            if (len(self.all_group_names['specie']) == 0):
+                raise RuntimeError("this function has to be run "
+                                   "before any define_group")
             if (isinstance(definition_list, list)):
                 ngroup = len(definition_list)
                 for idg in range(ngroup):
                     self.define_group(group_type, f"{group_type}{idg}",
-                            definition_list[idg])
+                                      definition_list[idg])
             elif (isinstance(definition_list, dict)):
                 for name in definition_list:
                     if (isinstance(definition_list[name][0], list)):
                         for ele in definition_list[name]:
                             self.define_group(group_type, name, ele)
                     else:
-                        self.define_group(group_type, name, definition_list[name])
+                        self.define_group(group_type, name,
+                                          definition_list[name])
 
     def define_group(self, group_type, name, element_list, parameters=None, atomic_str=False):
         """Define specie/bond/triplet/3b cutoff/manybody group
@@ -317,8 +321,8 @@ class HyperParameterMasking():
         """
 
         if (name == '*'):
-            raise ValueError("* is reserved for substitution, cannot be used "\
-                    "as a group name")
+            raise ValueError("* is reserved for substitution, cannot be used "
+                             "as a group name")
 
         if (group_type != 'specie'):
             fullname = group_type + name
@@ -327,7 +331,7 @@ class HyperParameterMasking():
             exclude_list.pop(ide)
             for gt in exclude_list:
                 if (name in self.all_group_names[gt]):
-                    raise ValueError("group name has to be unique across all types. "\
+                    raise ValueError("group name has to be unique across all types. "
                                      f"{name} is found in type {gt}")
         # else:
         #     fullname = name
@@ -343,14 +347,15 @@ class HyperParameterMasking():
         if (group_type == 'specie'):
             for ele in element_list:
                 assert ele not in self.all_members['specie'], \
-                        "The element has already been defined"
+                    "The element has already been defined"
                 self.groups['specie'][groupid].append(ele)
                 self.all_members['specie'].append(ele)
-                print(f"Element {ele} will be defined as group {name}", file=self.fout)
+                print(
+                    f"Element {ele} will be defined as group {name}", file=self.fout)
         else:
-            if (len(self.all_group_names['specie'])==0):
+            if (len(self.all_group_names['specie']) == 0):
                 raise RuntimeError("The atomic species have to be"
-                        "defined in advance")
+                                   "defined in advance")
             if ("*" not in element_list):
                 gid = []
                 for ele_name in element_list:
@@ -358,18 +363,20 @@ class HyperParameterMasking():
                         for idx in range(self.n['specie']):
                             if (ele_name in self.groups['specie'][idx]):
                                 gid += [idx]
-                                print(f"Warning: Element {ele_name} is used for "\
-                                      f"definition, but the whole group "\
+                                print(f"Warning: Element {ele_name} is used for "
+                                      f"definition, but the whole group "
                                       f"{self.all_group_names[idx]} is affected", file=self.fout)
                     else:
                         gid += [self.all_group_names['specie'].index(ele_name)]
 
                 for ele in self.all_members[group_type]:
                     if set(gid) == set(ele):
-                        print(f"Warning: the definition of {group_type} {ele} will be overriden", file=self.fout)
+                        print(
+                            f"Warning: the definition of {group_type} {ele} will be overriden", file=self.fout)
                 self.groups[group_type][groupid].append(gid)
                 self.all_members[group_type].append(gid)
-                print(f"{group_type} {gid} will be defined as group {name}", file=self.fout)
+                print(
+                    f"{group_type} {gid} will be defined as group {name}", file=self.fout)
                 if (parameters is not None):
                     self.set_parameters(name, parameters)
             else:
@@ -380,7 +387,7 @@ class HyperParameterMasking():
                     # print("head of replacement", group_type, name,
                     #       non_star_element +[sub])
                     self.define_group(group_type, name,
-                            one_star_less +[sub], parameters=parameters, atomic_str=atomic_str)
+                                      one_star_less + [sub], parameters=parameters, atomic_str=atomic_str)
 
     def set_parameters(self, name, parameters, opt=True):
         """Set the parameters for certain group
@@ -410,7 +417,7 @@ class HyperParameterMasking():
             return
 
         if (name in ['cutoff2b', 'cutoff3b', 'cutoffmb']):
-            name_map = {'cutoff2b':0, 'cutoff3b':1, 'cutoffmb':2}
+            name_map = {'cutoff2b': 0, 'cutoff3b': 1, 'cutoffmb': 2}
             self.cutoffs_array[name_map[name]] = parameters
             return
 
@@ -418,17 +425,19 @@ class HyperParameterMasking():
             opt = [opt, opt, opt]
         if ('cut3b' not in name):
             if (name in self.sigma):
-                print(f"Warning, the sig, ls of group {name} is overriden", file=self.fout)
+                print(
+                    f"Warning, the sig, ls of group {name} is overriden", file=self.fout)
             self.sigma[name] = parameters[0]
             self.ls[name] = parameters[1]
             self.opt[name+'sig'] = opt[0]
             self.opt[name+'ls'] = opt[1]
-            print(f"Parameters for group {name} will be set as "\
-                  f"sig={parameters[0]} ({opt[0]}) "\
+            print(f"Parameters for group {name} will be set as "
+                  f"sig={parameters[0]} ({opt[0]}) "
                   f"ls={parameters[1]} ({opt[1]})", file=self.fout)
-        if (len(parameters)>2):
+        if (len(parameters) > 2):
             if (name in self.all_cutoff):
-                print(f"Warning, the cutoff of group {name} is overriden", file=self.fout)
+                print(
+                    f"Warning, the cutoff of group {name} is overriden", file=self.fout)
             self.all_cutoff[name] = parameters[2]
 
     def set_constraints(self, name, opt):
@@ -454,7 +463,7 @@ class HyperParameterMasking():
             return
 
         if (name in ['cutoff2b', 'cutoff3b', 'cutoffmb']):
-            name_map = {'cutoff2b':0, 'cutoff3b':1, 'cutoffmb':2}
+            name_map = {'cutoff2b': 0, 'cutoff3b': 1, 'cutoffmb': 2}
             return
 
         if (isinstance(opt, bool)):
@@ -462,13 +471,13 @@ class HyperParameterMasking():
 
         if ('cut3b' not in name):
             if (name in self.sigma):
-                print(f"Warning, the sig, ls of group {name} is overriden", file=self.fout)
+                print(
+                    f"Warning, the sig, ls of group {name} is overriden", file=self.fout)
             self.opt[name+'sig'] = opt[0]
             self.opt[name+'ls'] = opt[1]
-            print(f"Parameters for group {name} will be set as "\
-                  f"sig {opt[0]} "\
+            print(f"Parameters for group {name} will be set as "
+                  f"sig {opt[0]} "
                   f"ls {opt[1]}", file=self.fout)
-
 
     def summarize_group(self, group_type):
         """Sort and combine all the previous definition to internal varialbes
@@ -481,20 +490,22 @@ class HyperParameterMasking():
         nspecie = self.n['specie']
         if (group_type == "specie"):
             self.nspecie = nspecie
-            if (nspecie==1):
+            if (nspecie == 1):
                 return
             self.specie_mask = np.ones(118, dtype=np.int)*(self.n['specie']-1)
             for idt in range(self.n['specie']):
                 for ele in self.groups['specie'][idt]:
                     atom_n = element_to_Z(ele)
                     self.specie_mask[atom_n] = idt
-                    print(f"elemtn {ele} is defined as type {idt} with name "\
-                            f"{aeg[idt]}", file=self.fout)
-            print(f"All the remaining elements are left as type {idt}", file=self.fout)
+                    print(f"elemtn {ele} is defined as type {idt} with name "
+                          f"{aeg[idt]}", file=self.fout)
+            print(
+                f"All the remaining elements are left as type {idt}", file=self.fout)
         elif (group_type in ['bond', 'cut3b', 'mb']):
             if (self.n[group_type] == 0):
                 return
-            self.mask[group_type] = np.ones(nspecie**2, dtype=np.int)*(self.n[group_type]-1)
+            self.mask[group_type] = np.ones(
+                nspecie**2, dtype=np.int)*(self.n[group_type]-1)
             self.hyps_sig[group_type] = []
             self.hyps_ls[group_type] = []
             self.hyps_opt[group_type] = []
@@ -507,7 +518,7 @@ class HyperParameterMasking():
                     self.mask[group_type][g2+g1*nspecie] = idt
                     s1 = self.groups['specie'][g1]
                     s2 = self.groups['specie'][g2]
-                    print(f"{group_type} {s1} - {s2} is defined as type {idt} "\
+                    print(f"{group_type} {s1} - {s2} is defined as type {idt} "
                           f"with name {name}", file=self.fout)
                 if (group_type != 'cut3b'):
                     sig = self.sigma[name]
@@ -516,10 +527,12 @@ class HyperParameterMasking():
                     self.hyps_ls[group_type] += [ls]
                     self.hyps_opt[group_type] += [self.opt[name+'sig']]
                     self.hyps_opt[group_type] += [self.opt[name+'ls']]
-                    print(f"   using hyper-parameters of {sig} {ls}", file=self.fout)
-            print(f"All the remaining elements are left as type {idt}", file=self.fout)
+                    print(
+                        f"   using hyper-parameters of {sig} {ls}", file=self.fout)
+            print(
+                f"All the remaining elements are left as type {idt}", file=self.fout)
 
-            name_map = {'bond':0, 'cut3b':1, 'mb':2}
+            name_map = {'bond': 0, 'cut3b': 1, 'mb': 2}
 
             self.cutoff_list[group_type] = []
             cut_define = np.zeros(self.n[group_type], dtype=bool)
@@ -533,19 +546,24 @@ class HyperParameterMasking():
                 self.cutoff_list[group_type] = []
                 for idt in range(self.n[group_type]):
                     self.cutoff_list[group_type] += [self.all_cutoff[aeg[idt]]]
-                print("Different cutoffs were also defined", self.cutoff_list[group_type], file=self.fout)
-                self.cutoffs_array[name_map[group_type]] = np.max(self.cutoff_list[group_type])
+                print("Different cutoffs were also defined",
+                      self.cutoff_list[group_type], file=self.fout)
+                self.cutoffs_array[name_map[group_type]] = np.max(
+                    self.cutoff_list[group_type])
             else:
                 if cut_define.any():
-                    print("There were some cutoff defined, but not all of them", file=self.fout)
+                    print(
+                        "There were some cutoff defined, but not all of them", file=self.fout)
                     self.cutoffs_array[name_map[group_type]] = np.max(allcut)
-                if (self.cutoffs_array[name_map[group_type]] <=0):
-                    raise RuntimeError(f"cutoffs for {group_type} is undefined")
+                if (self.cutoffs_array[name_map[group_type]] <= 0):
+                    raise RuntimeError(
+                        f"cutoffs for {group_type} is undefined")
         elif (group_type == "triplet"):
             self.ntriplet = self.n['triplet']
             if (self.ntriplet == 0):
                 return
-            self.mask[group_type] = np.ones(nspecie**3, dtype=np.int)*(self.ntriplet-1)
+            self.mask[group_type] = np.ones(
+                nspecie**3, dtype=np.int)*(self.ntriplet-1)
             self.hyps_sig[group_type] = []
             self.hyps_ls[group_type] = []
             self.hyps_opt[group_type] = []
@@ -564,16 +582,18 @@ class HyperParameterMasking():
                     s1 = self.groups['specie'][g1]
                     s2 = self.groups['specie'][g2]
                     s3 = self.groups['specie'][g3]
-                    print(f"triplet {s1} - {s2} - {s3} is defined as type {idt} with name "\
-                            f"{name}", file=self.fout)
+                    print(f"triplet {s1} - {s2} - {s3} is defined as type {idt} with name "
+                          f"{name}", file=self.fout)
                 sig = self.sigma[name]
                 ls = self.ls[name]
                 self.hyps_sig[group_type] += [sig]
                 self.hyps_ls[group_type] += [ls]
                 self.hyps_opt[group_type] += [self.opt[name+'sig']]
                 self.hyps_opt[group_type] += [self.opt[name+'ls']]
-                print(f"   using hyper-parameters of {sig} {ls}", file=self.fout)
-            print(f"all the remaining elements are left as type {idt}", file=self.fout)
+                print(
+                    f"   using hyper-parameters of {sig} {ls}", file=self.fout)
+            print(
+                f"all the remaining elements are left as type {idt}", file=self.fout)
             if (self.cutoffs_array[1] == 0):
                 cut_define = False
                 allcut = []
@@ -584,7 +604,8 @@ class HyperParameterMasking():
                 if cut_define:
                     self.cutoffs_array[1] = np.max(allcut)
                 else:
-                    raise RuntimeError(f"cutoffs for {group_type} is undefined")
+                    raise RuntimeError(
+                        f"cutoffs for {group_type} is undefined")
         else:
             pass
 
@@ -611,7 +632,7 @@ class HyperParameterMasking():
         hyps_label = []
         opt = []
         for group in ['bond', 'triplet', 'mb']:
-            if (self.n[group]>=1):
+            if (self.n[group] >= 1):
                 # copy the mask
                 hyps_mask['n'+group] = self.n[group]
                 hyps_mask[group+'_mask'] = self.mask[group]
@@ -631,13 +652,13 @@ class HyperParameterMasking():
         hyps_mask['original'] = np.hstack([hyps_mask['original'], self.noise])
         hyps_label += ['Noise_Var.']
         hyps_mask['original'] = np.array(hyps_mask['original'], dtype=np.float)
-        hyps_mask['hyps_label']=hyps_label
+        hyps_mask['hyps_label'] = hyps_label
         opt = np.hstack(opt)
         hyps_mask['train_noise'] = self.opt['noise']
         if (not opt.all()):
             nhyps = len(hyps_mask['original'])
             mapping = []
-            hyps_mask['hyps_label']=[]
+            hyps_mask['hyps_label'] = []
             for i in range(nhyps):
                 if (opt[i]):
                     mapping += [i]
@@ -647,23 +668,26 @@ class HyperParameterMasking():
         elif (opt.any()):
             newhyps = hyps_mask['original']
         else:
-            raise RuntimeError("hyps has length zero."\
-                    "at least one component of the hyper-parameters"\
-                    "should be allowed to be optimized. \n")
+            raise RuntimeError("hyps has length zero."
+                               "at least one component of the hyper-parameters"
+                               "should be allowed to be optimized. \n")
         hyps_mask['hyps'] = newhyps
 
         # checkout universal cutoffs and seperate cutoffs
-        if len(self.cutoff_list.get('bond', []))>0:
-            hyps_mask['cutoff_2b'] = np.array(self.cutoff_list['bond'], dtype=np.float)
-        if len(self.cutoff_list.get('cut3b', []))>0:
-            hyps_mask['cutoff_3b'] = np.array(self.cutoff_list['cut3b'], dtype=np.float)
+        if len(self.cutoff_list.get('bond', [])) > 0:
+            hyps_mask['cutoff_2b'] = np.array(
+                self.cutoff_list['bond'], dtype=np.float)
+        if len(self.cutoff_list.get('cut3b', [])) > 0:
+            hyps_mask['cutoff_3b'] = np.array(
+                self.cutoff_list['cut3b'], dtype=np.float)
             hyps_mask['ncut3b'] = self.n['cut3b']
             hyps_mask['cut3b_mask'] = self.mask['cut3b']
-        if len(self.cutoff_list.get('mb', []))>0:
-            hyps_mask['cutoff_mb'] = np.array(self.cutoff_list['mb'], dtype=np.float)
+        if len(self.cutoff_list.get('mb', [])) > 0:
+            hyps_mask['cutoff_mb'] = np.array(
+                self.cutoff_list['mb'], dtype=np.float)
 
         self.hyps_mask = hyps_mask
-        if (self.cutoffs_array[2]>0):
+        if (self.cutoffs_array[2] > 0):
             hyps_mask['cutoffs'] = self.cutoffs_array
         else:
             hyps_mask['cutoffs'] = self.cutoffs_array[:2]
@@ -702,7 +726,7 @@ class HyperParameterMasking():
         nmb = hyps_mask.get('nmb', 0)
         for t in ['bond', 'mb']:
             if (f'n{t}' in hyps_mask):
-                if (t=='bond'):
+                if (t == 'bond'):
                     cutoffname = 'cutoff_2b'
                     sig = hyps
                     ls = hyps[nbond:]
@@ -733,18 +757,21 @@ class HyperParameterMasking():
             for i in range(pm.nspecie):
                 for j in range(i, pm.nspecie):
                     for k in range(j, pm.nspecie):
-                        triplettype = hyps_mask[f'triplet_mask'][i+j*pm.nspecie+k*pm.nspecie*pm.nspecie]
-                        pm.define_group(f"triplet", f"triplet{triplettype}", [i, j, k])
+                        triplettype = hyps_mask[f'triplet_mask'][i +
+                                                                 j*pm.nspecie+k*pm.nspecie*pm.nspecie]
+                        pm.define_group(
+                            f"triplet", f"triplet{triplettype}", [i, j, k])
             for i in range(hyps_mask[f'ntriplet']):
                 pm.set_parameters(f"triplet{i}", [sig[i], ls[i]],
-                        opt=[csig[i], cls[i]])
+                                  opt=[csig[i], cls[i]])
         if (f'ncut3b' in hyps_mask):
             for i in range(pm.nspecie):
                 for j in range(i, pm.nspecie):
                     ttype = hyps_mask[f'cut3b_mask'][i+j*pm.nspecie]
                     pm.define_group("cut3b", f"cut3b{ttype}", [i, j])
             for i in range(hyps_mask['ncut3b']):
-                pm.set_parameters(f"cut3b{i}", [0, 0, hyps_mask['cutoff_3b'][i]])
+                pm.set_parameters(
+                    f"cut3b{i}", [0, 0, hyps_mask['cutoff_3b'][i]])
 
         pm.set_parameters('noise', hyps)
         if 'cutoffs' in hyps_mask:
@@ -781,19 +808,21 @@ class HyperParameterMasking():
         assert isinstance(hyps_mask, dict)
 
         assert 'nspecie' in hyps_mask, "nspecie key missing in " \
-                                                 "hyps_mask dictionary"
+            "hyps_mask dictionary"
         assert 'specie_mask' in hyps_mask, "specie_mask key " \
-                                                     "missing " \
-                                                     "in hyps_mask dicticnary"
+            "missing " \
+            "in hyps_mask dicticnary"
 
         nspecie = hyps_mask['nspecie']
-        hyps_mask['specie_mask'] = nparray(hyps_mask['specie_mask'], dtype=np.int)
+        hyps_mask['specie_mask'] = nparray(
+            hyps_mask['specie_mask'], dtype=np.int)
 
         if 'nbond' in hyps_mask:
             n2b = hyps_mask['nbond']
-            assert n2b>0
+            assert n2b > 0
             assert isinstance(n2b, int)
-            hyps_mask['bond_mask'] = nparray(hyps_mask['bond_mask'], dtype=np.int)
+            hyps_mask['bond_mask'] = nparray(
+                hyps_mask['bond_mask'], dtype=np.int)
             if n2b > 0:
                 bmask = hyps_mask['bond_mask']
                 assert (npmax(bmask) < n2b)
@@ -803,15 +832,16 @@ class HyperParameterMasking():
                 for t2b in range(nspecie):
                     for t2b_2 in range(t2b, nspecie):
                         assert bmask[t2b*nspecie+t2b_2] == bmask[t2b_2*nspecie+t2b], \
-                                'bond_mask has to be symmetric'
+                            'bond_mask has to be symmetric'
         else:
             n2b = 0
 
         if 'ntriplet' in hyps_mask:
             n3b = hyps_mask['ntriplet']
-            assert n3b>0
+            assert n3b > 0
             assert isinstance(n3b, int)
-            hyps_mask['triplet_mask'] = nparray(hyps_mask['triplet_mask'], dtype=np.int)
+            hyps_mask['triplet_mask'] = nparray(
+                hyps_mask['triplet_mask'], dtype=np.int)
             if n3b > 0:
                 tmask = hyps_mask['triplet_mask']
                 assert (npmax(tmask) < n3b)
@@ -823,26 +853,26 @@ class HyperParameterMasking():
                     for t3b_2 in range(t3b, nspecie):
                         for t3b_3 in range(t3b_2, nspecie):
                             assert tmask[t3b*nspecie*nspecie+t3b_2*nspecie+t3b_3] \
-                                    == tmask[t3b*nspecie*nspecie+t3b_3*nspecie+t3b_2], \
-                                    'bond_mask has to be symmetric'
+                                == tmask[t3b*nspecie*nspecie+t3b_3*nspecie+t3b_2], \
+                                'bond_mask has to be symmetric'
                             assert tmask[t3b*nspecie*nspecie+t3b_2*nspecie+t3b_3] \
-                                    == tmask[t3b_2*nspecie*nspecie+t3b*nspecie+t3b_3], \
-                                    'bond_mask has to be symmetric'
+                                == tmask[t3b_2*nspecie*nspecie+t3b*nspecie+t3b_3], \
+                                'bond_mask has to be symmetric'
                             assert tmask[t3b*nspecie*nspecie+t3b_2*nspecie+t3b_3] \
-                                    == tmask[t3b_2*nspecie*nspecie+t3b_3*nspecie+t3b], \
-                                    'bond_mask has to be symmetric'
+                                == tmask[t3b_2*nspecie*nspecie+t3b_3*nspecie+t3b], \
+                                'bond_mask has to be symmetric'
                             assert tmask[t3b*nspecie*nspecie+t3b_2*nspecie+t3b_3] \
-                                    == tmask[t3b_3*nspecie*nspecie+t3b*nspecie+t3b_2], \
-                                    'bond_mask has to be symmetric'
+                                == tmask[t3b_3*nspecie*nspecie+t3b*nspecie+t3b_2], \
+                                'bond_mask has to be symmetric'
                             assert tmask[t3b*nspecie*nspecie+t3b_2*nspecie+t3b_3] \
-                                    == tmask[t3b_3*nspecie*nspecie+t3b_2*nspecie+t3b], \
-                                    'bond_mask has to be symmetric'
+                                == tmask[t3b_3*nspecie*nspecie+t3b_2*nspecie+t3b], \
+                                'bond_mask has to be symmetric'
         else:
             n3b = 0
 
         if 'nmb' in hyps_mask:
             nmb = hyps_mask['nmb']
-            assert nmb>0
+            assert nmb > 0
             assert isinstance(nmb, int)
             hyps_mask['mb_mask'] = nparray(hyps_mask['mb_mask'], dtype=np.int)
             if nmb > 0:
@@ -854,7 +884,7 @@ class HyperParameterMasking():
                 for tmb in range(nspecie):
                     for tmb_2 in range(tmb, nspecie):
                         assert bmask[tmb*nspecie+tmb_2] == bmask[tmb_2*nspecie+tmb], \
-                                'mb_mask has to be symmetric'
+                            'mb_mask has to be symmetric'
         else:
             nmb = 1
             hyps_mask['mb_mask'] = np.zeros(nspecie**2, dtype=np.int)
@@ -863,7 +893,8 @@ class HyperParameterMasking():
             assert ('original' in hyps_mask), \
                 "original hyper parameters have to be defined"
             # Ensure typed correctly as numpy array
-            hyps_mask['original'] = nparray(hyps_mask['original'], dtype=np.float)
+            hyps_mask['original'] = nparray(
+                hyps_mask['original'], dtype=np.float)
 
             if (len(hyps_mask['original']) - 1) not in hyps_mask['map']:
                 assert hyps_mask['train_noise'] is False, \
@@ -875,15 +906,16 @@ class HyperParameterMasking():
         if 'cutoff_2b' in hyps_mask:
             c2b = hyps_mask['cutoff_2b']
             assert len(c2b) == n2b, \
-                    f'number of 2b cutoff should be the same as n2b {n2b}'
+                f'number of 2b cutoff should be the same as n2b {n2b}'
 
         if 'cutoff_3b' in hyps_mask:
             c3b = hyps_mask['cutoff_3b']
-            assert nc3b>0
+            assert nc3b > 0
             assert isinstance(nc3b, int)
-            hyps_mask['cut3b_mask'] = nparray(hyps_mask['cut3b_mask'], dtype=int)
+            hyps_mask['cut3b_mask'] = nparray(
+                hyps_mask['cut3b_mask'], dtype=int)
             assert len(c3b) == hyps_mask['ncut3b'], \
-                    f'number of 3b cutoff should be the same as ncut3b {ncut3b}'
+                f'number of 3b cutoff should be the same as ncut3b {ncut3b}'
             assert len(hyps_mask['cut3b_mask']) == nspecie ** 2, \
                 f"wrong dimension of cut3b_mask: " \
                 f" {len(bmask)} != nspecie^2 {nspecie**2}"
@@ -894,7 +926,7 @@ class HyperParameterMasking():
         if 'cutoff_mb' in hyps_mask:
             cmb = hyps_mask['cutoff_mb']
             assert len(cmb) == nmb, \
-                    f'number of mb cutoff should be the same as nmb {nmb}'
+                f'number of mb cutoff should be the same as nmb {nmb}'
 
         return hyps_mask
 
@@ -905,13 +937,13 @@ class HyperParameterMasking():
         n3b = hyps_mask.get('ntriplet', 0)
         nmb = hyps_mask.get('nmb', 1)
 
-        if (len(cutoffs)<=2):
+        if (len(cutoffs) <= 2):
             assert ((n2b + n3b) > 0)
         else:
             assert ((n2b + n3b + nmb) > 0)
 
         if 'map' in hyps_mask:
-            if (len(cutoffs)<=2):
+            if (len(cutoffs) <= 2):
                 assert (n2b * 2 + n3b * 2 + 1) == len(hyps_mask['original']), \
                     "the hyperparmeter length is inconsistent with the mask"
             else:
@@ -920,7 +952,7 @@ class HyperParameterMasking():
             assert len(hyps_mask['map']) == len(hyps), \
                 "the hyperparmeter length is inconsistent with the mask"
         else:
-            if (len(cutoffs)<=2):
+            if (len(cutoffs) <= 2):
                 assert (n2b * 2 + n3b * 2 + 1) == len(hyps), \
                     "the hyperparmeter length is inconsistent with the mask"
             else:
@@ -929,15 +961,15 @@ class HyperParameterMasking():
 
         if 'cutoff_2b' in hyps_mask:
             assert cutoffs[0] > npmax(hyps_mask['cutoff_2b']), \
-                    'general cutoff should be larger than all cutoffs listed in hyps_mask'
+                'general cutoff should be larger than all cutoffs listed in hyps_mask'
 
         if 'cutoff_3b' in hyps_mask:
             assert cutoffs[0] > npmax(hyps_mask['cutoff_3b']), \
-                    'general cutoff should be larger than all cutoffs listed in hyps_mask'
+                'general cutoff should be larger than all cutoffs listed in hyps_mask'
 
         if 'cutoff_mb' in hyps_mask:
             assert cutoffs[0] > npmax(hyps_mask['cutoff_mb']), \
-                    'general cutoff should be larger than all cutoffs listed in hyps_mask'
+                'general cutoff should be larger than all cutoffs listed in hyps_mask'
 
     @staticmethod
     def mask2cutoff(cutoffs, cutoffs_mask):
@@ -954,7 +986,6 @@ class HyperParameterMasking():
 
         if (scalar_cutoff_2 == 0):
             scalar_cutoff_2 = np.max([scalar_cutoff_3, scalar_cutoff_mb])
-
 
         if (cutoffs_mask is None):
             return scalar_cutoff_2, scalar_cutoff_3, scalar_cutoff_mb, \
