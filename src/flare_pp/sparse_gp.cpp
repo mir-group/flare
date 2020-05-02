@@ -654,7 +654,13 @@ void SparseGP::write_beta(std::string file_name, std::string contributor,
 
     // Record the contributor.
     beta_file << "CONTRIBUTOR: ";
-    beta_file << contributor << "\n\n";
+    beta_file << contributor << "\n";
+
+    // Report radial basis set.
+    std::string radial_basis =
+        sparse_environments[0].descriptor_calculators[descriptor_index]
+        ->radial_basis;
+    beta_file << radial_basis << "\n";
 
     // Record number of species, nmax, lmax, and the cutoff.
     std::vector<int> descriptor_settings =
@@ -668,10 +674,18 @@ void SparseGP::write_beta(std::string file_name, std::string contributor,
 
     beta_file << n_species << " " << n_max << " " << l_max << " ";
 
+    // Report the size of each beta vector.
+    beta_file << beta.row(0).size() << "\n";
+
+    // Report the cutoff function.
+    std::string cutoff_func =
+        sparse_environments[0].descriptor_calculators[descriptor_index]
+        ->cutoff_function;
+    beta_file << cutoff_func << "\n";
+
     // Report cutoff to 2 decimal places.
     beta_file << std::fixed << std::setprecision(2);
     beta_file << cutoff << "\n";
-    beta_file << beta.row(0).size() << "\n";
 
     // Write beta vectors to file.
     beta_file << std::scientific << std::setprecision(16);
