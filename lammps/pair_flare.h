@@ -1,5 +1,5 @@
 // Jonathan Vandermause
-// Pair style based on pair_sw.h
+// Pair style based on pair_eam.h
 
 #ifdef PAIR_CLASS
 
@@ -10,50 +10,96 @@ PairStyle(flare,PairFLARE)
 #ifndef LMP_PAIR_FLARE_H
 #define LMP_PAIR_FLARE_H
 
+#include <cstdio>
 #include "pair.h"
 
 namespace LAMMPS_NS {
 
+
 class PairFLARE : public Pair {
  public:
+  friend class FixSemiGrandCanonicalMC;   // Alex Stukowski option
+
+  // public variables so USER-ATC package can access them
+
+  double cutmax;
+
+  // potentials as array data
+
+  int nrho,nr;
+  int nfrho,nrhor,nz2r;
+  double **frho,**rhor,**z2r;
+  int *type2frho,**type2rhor,**type2z2r;
+
+  // potentials in spline form used for force computation
+
+  double dr,rdr,drho,rdrho,rhomax;
+  double ***rhor_spline,***frho_spline,***z2r_spline;
+
   PairFLARE(class LAMMPS *);
   virtual ~PairFLARE();
   virtual void compute(int, int);
   void settings(int, char **);
   virtual void coeff(int, char **);
-  virtual double init_one(int, int);
-  virtual void init_style();
+  void init_style();
+  double init_one(int, int);
+  double single(int, int, int, int, double, double, double, double &);
+  virtual void *extract(const char *, int &);
 
-  struct Param {
-    double epsilon,sigma;
-    double littlea,lambda,gamma,costheta;
-    double biga,bigb;
-    double powerp,powerq;
-    double tol;
-    double cut,cutsq;
-    double sigma_gamma,lambda_epsilon,lambda_epsilon2;
-    double c1,c2,c3,c4,c5,c6;
-    int ielement,jelement,kelement;
-  };
+  virtual int pack_forward_comm(int, int *, double *, int, int *);
+  virtual void unpack_forward_comm(int, int, double *);
+  int pack_reverse_comm(int, int, double *);
+  void unpack_reverse_comm(int, int *, double *);
+  double memory_usage();
+  void swap_eam(double *, double **);
 
  protected:
-  double cutmax;                // max cutoff for all elements
-  int nelements;                // # of unique elements
-  char **elements;              // names of unique elements
-  int ***elem2param;            // mapping from element triplets to parameters
-  int *map;                     // mapping from atom types to elements
-  int nparams;                  // # of stored parameter sets
-  int maxparam;                 // max # of parameter sets
-  Param *params;                // parameter set for an I-J-K interaction
-  int maxshort;                 // size of short neighbor list array
-  int *neighshort;              // short neighbor list array
+  int nmax;                   // allocated size of per-atom arrays
+  double cutforcesq;
+  double **scale;
+
+  // per-atom arrays
+
+  double *rho,*fp;
+
+  // potentials as file data
+
+  int *map;                   // which element each atom type maps to
+
+  struct Funcfl {
+    char *file;
+    int nrho,nr;
+    double drho,dr,cut,mass;
+    double *frho,*rhor,*zr;
+  };
+  Funcfl *funcfl;
+  int nfuncfl;
+
+  struct Setfl {
+    char **elements;
+    int nelements,nrho,nr;
+    double drho,dr,cut;
+    double *mass;
+    double **frho,**rhor,***z2r;
+  };
+  Setfl *setfl;
+
+  struct Fs {
+    char **elements;
+    int nelements,nrho,nr;
+    double drho,dr,cut;
+    double *mass;
+    double **frho,***rhor,***z2r;
+  };
+  Fs *fs;
 
   virtual void allocate();
-  void read_file(char *);
-  virtual void setup_params();
-  void twobody(Param *, double, double &, int, double &);
-  void threebody(Param *, Param *, Param *, double, double, double *, double *,
-                 double *, double *, int, double &);
+  virtual void array2spline();
+  void interpolate(int, double, double *, double **);
+  void grab(FILE *, int, double *);
+
+  virtual void read_file(char *);
+  virtual void file2array();
 };
 
 }

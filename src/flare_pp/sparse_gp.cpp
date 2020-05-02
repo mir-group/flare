@@ -536,11 +536,6 @@ void SparseGP::update_alpha_LLT(){
 }
 
 void SparseGP::update_alpha_LDLT(){
-    // Combine Kuf_struc and Kuf_env.
-    int n_sparse = Kuf_struc.rows();
-    int n_struc_labels = Kuf_struc.cols();
-    int n_env_labels = Kuf_env.cols();
-
     // Solve for alpha with inplace Cholesky decomposition.
     // Experiment with constant noise to check the effect on memory.
     double noise_val = 1 / (sigma_f * sigma_f);

@@ -4,11 +4,8 @@
 #include <cstring>
 #include "pair_flare.h"
 #include "atom.h"
-#include "neighbor.h"
-#include "neigh_request.h"
 #include "force.h"
 #include "comm.h"
-#include "memory.h"
 #include "neighbor.h"
 #include "neigh_list.h"
 #include "memory.h"
@@ -17,24 +14,39 @@
 using namespace LAMMPS_NS;
 
 #define MAXLINE 1024
-#define DELTA 4
+
+/* ---------------------------------------------------------------------- */
 
 PairFLARE::PairFLARE(LAMMPS *lmp) : Pair(lmp)
 {
-  single_enable = 0;
   restartinfo = 0;
-  one_coeff = 1;
   manybody_flag = 1;
 
-  nelements = 0;
-  elements = NULL;
-  nparams = maxparam = 0;
-  params = NULL;
-  elem2param = NULL;
+  nmax = 0;
+  rho = NULL;
+  fp = NULL;
   map = NULL;
+  type2frho = NULL;
 
-  maxshort = 10;
-  neighshort = NULL;
+  nfuncfl = 0;
+  funcfl = NULL;
+
+  setfl = NULL;
+  fs = NULL;
+
+  frho = NULL;
+  rhor = NULL;
+  z2r = NULL;
+  scale = NULL;
+
+  frho_spline = NULL;
+  rhor_spline = NULL;
+  z2r_spline = NULL;
+
+  // set comm size needed by this Pair
+
+  comm_forward = 1;
+  comm_reverse = 1;
 }
 
 /* ----------------------------------------------------------------------
@@ -45,40 +57,92 @@ PairFLARE::~PairFLARE()
 {
   if (copymode) return;
 
-  if (elements)
-    for (int i = 0; i < nelements; i++) delete [] elements[i];
-  delete [] elements;
-  memory->destroy(params);
-  memory->destroy(elem2param);
+  memory->destroy(rho);
+  memory->destroy(fp);
 
   if (allocated) {
     memory->destroy(setflag);
     memory->destroy(cutsq);
-    memory->destroy(neighshort);
     delete [] map;
+    delete [] type2frho;
+    map = NULL;
+    type2frho = NULL;
+    memory->destroy(type2rhor);
+    memory->destroy(type2z2r);
+    memory->destroy(scale);
   }
+
+  if (funcfl) {
+    for (int i = 0; i < nfuncfl; i++) {
+      delete [] funcfl[i].file;
+      memory->destroy(funcfl[i].frho);
+      memory->destroy(funcfl[i].rhor);
+      memory->destroy(funcfl[i].zr);
+    }
+    memory->sfree(funcfl);
+    funcfl = NULL;
+  }
+
+  if (setfl) {
+    for (int i = 0; i < setfl->nelements; i++) delete [] setfl->elements[i];
+    delete [] setfl->elements;
+    delete [] setfl->mass;
+    memory->destroy(setfl->frho);
+    memory->destroy(setfl->rhor);
+    memory->destroy(setfl->z2r);
+    delete setfl;
+    setfl = NULL;
+  }
+
+  if (fs) {
+    for (int i = 0; i < fs->nelements; i++) delete [] fs->elements[i];
+    delete [] fs->elements;
+    delete [] fs->mass;
+    memory->destroy(fs->frho);
+    memory->destroy(fs->rhor);
+    memory->destroy(fs->z2r);
+    delete fs;
+    fs = NULL;
+  }
+
+  memory->destroy(frho);
+  memory->destroy(rhor);
+  memory->destroy(z2r);
+
+  memory->destroy(frho_spline);
+  memory->destroy(rhor_spline);
+  memory->destroy(z2r_spline);
 }
 
 /* ---------------------------------------------------------------------- */
 
 void PairFLARE::compute(int eflag, int vflag)
 {
-  int i,j,k,ii,jj,kk,inum,jnum,jnumm1;
-  int itype,jtype,ktype,ijparam,ikparam,ijkparam;
-  tagint itag,jtag;
+  int i,j,ii,jj,m,inum,jnum,itype,jtype;
   double xtmp,ytmp,ztmp,delx,dely,delz,evdwl,fpair;
-  double rsq,rsq1,rsq2;
-  double delr1[3],delr2[3],fj[3],fk[3];
+  double rsq,r,p,rhoip,rhojp,z2,z2p,recip,phip,psip,phi;
+  double *coeff;
   int *ilist,*jlist,*numneigh,**firstneigh;
 
   evdwl = 0.0;
   ev_init(eflag,vflag);
 
+  // grow energy and fp arrays if necessary
+  // need to be atom->nmax in length
+
+  if (atom->nmax > nmax) {
+    memory->destroy(rho);
+    memory->destroy(fp);
+    nmax = atom->nmax;
+    memory->create(rho,nmax,"pair:rho");
+    memory->create(fp,nmax,"pair:fp");
+  }
+
   double **x = atom->x;
   double **f = atom->f;
-  tagint *tag = atom->tag;
   int *type = atom->type;
   int nlocal = atom->nlocal;
+  int nall = nlocal + atom->nghost;
   int newton_pair = force->newton_pair;
 
   inum = list->inum;
@@ -86,24 +150,23 @@ void PairFLARE::compute(int eflag, int vflag)
   numneigh = list->numneigh;
   firstneigh = list->firstneigh;
 
-  double fxtmp,fytmp,fztmp;
+  // zero out density
 
-  // loop over full neighbor list of my atoms
+  if (newton_pair) {
+    for (i = 0; i < nall; i++) rho[i] = 0.0;
+  } else for (i = 0; i < nlocal; i++) rho[i] = 0.0;
+
+  // rho = density at each atom
+  // loop over neighbors of my atoms
 
   for (ii = 0; ii < inum; ii++) {
     i = ilist[ii];
-    itag = tag[i];
-    itype = map[type[i]];
     xtmp = x[i][0];
     ytmp = x[i][1];
     ztmp = x[i][2];
-    fxtmp = fytmp = fztmp = 0.0;
-
-    // two-body interactions, skip half of them
-
+    itype = type[i];
     jlist = firstneigh[i];
     jnum = numneigh[i];
-    int numshort = 0;
 
     for (jj = 0; jj < jnum; jj++) {
       j = jlist[jj];
@@ -114,95 +177,132 @@ void PairFLARE::compute(int eflag, int vflag)
       delz = ztmp - x[j][2];
       rsq = delx*delx + dely*dely + delz*delz;
 
-      jtype = map[type[j]];
-      ijparam = elem2param[itype][jtype][jtype];
-      if (rsq >= params[ijparam].cutsq) {
-        continue;
-      } else {
-        neighshort[numshort++] = j;
-        if (numshort >= maxshort) {
-          maxshort += maxshort/2;
-          memory->grow(neighshort,maxshort,"pair:neighshort");
+      if (rsq < cutforcesq) {
+        jtype = type[j];
+        p = sqrt(rsq)*rdr + 1.0;
+        m = static_cast<int> (p);
+        m = MIN(m,nr-1);
+        p -= m;
+        p = MIN(p,1.0);
+        coeff = rhor_spline[type2rhor[jtype][itype]][m];
+        rho[i] += ((coeff[3]*p + coeff[4])*p + coeff[5])*p + coeff[6];
+        if (newton_pair || j < nlocal) {
+          coeff = rhor_spline[type2rhor[itype][jtype]][m];
+          rho[j] += ((coeff[3]*p + coeff[4])*p + coeff[5])*p + coeff[6];
         }
       }
-
-      jtag = tag[j];
-      if (itag > jtag) {
-        if ((itag+jtag) % 2 == 0) continue;
-      } else if (itag < jtag) {
-        if ((itag+jtag) % 2 == 1) continue;
-      } else {
-        if (x[j][2] < ztmp) continue;
-        if (x[j][2] == ztmp && x[j][1] < ytmp) continue;
-        if (x[j][2] == ztmp && x[j][1] == ytmp && x[j][0] < xtmp) continue;
-      }
-
-      twobody(&params[ijparam],rsq,fpair,eflag,evdwl);
-
-      fxtmp += delx*fpair;
-      fytmp += dely*fpair;
-      fztmp += delz*fpair;
-      f[j][0] -= delx*fpair;
-      f[j][1] -= dely*fpair;
-      f[j][2] -= delz*fpair;
-
-      if (evflag) ev_tally(i,j,nlocal,newton_pair,
-                           evdwl,0.0,fpair,delx,dely,delz);
     }
+  }
 
-    jnumm1 = numshort - 1;
+  // communicate and sum densities
 
-    for (jj = 0; jj < jnumm1; jj++) {
-      j = neighshort[jj];
-      jtype = map[type[j]];
-      ijparam = elem2param[itype][jtype][jtype];
-      delr1[0] = x[j][0] - xtmp;
-      delr1[1] = x[j][1] - ytmp;
-      delr1[2] = x[j][2] - ztmp;
-      rsq1 = delr1[0]*delr1[0] + delr1[1]*delr1[1] + delr1[2]*delr1[2];
+  if (newton_pair) comm->reverse_comm_pair(this);
 
-      double fjxtmp,fjytmp,fjztmp;
-      fjxtmp = fjytmp = fjztmp = 0.0;
+  // fp = derivative of embedding energy at each atom
+  // phi = embedding energy at each atom
+  // if rho > rhomax (e.g. due to close approach of two atoms),
+  //   will exceed table, so add linear term to conserve energy
 
-      for (kk = jj+1; kk < numshort; kk++) {
-        k = neighshort[kk];
-        ktype = map[type[k]];
-        ikparam = elem2param[itype][ktype][ktype];
-        ijkparam = elem2param[itype][jtype][ktype];
-
-        delr2[0] = x[k][0] - xtmp;
-        delr2[1] = x[k][1] - ytmp;
-        delr2[2] = x[k][2] - ztmp;
-        rsq2 = delr2[0]*delr2[0] + delr2[1]*delr2[1] + delr2[2]*delr2[2];
-
-        threebody(&params[ijparam],&params[ikparam],&params[ijkparam],
-                  rsq1,rsq2,delr1,delr2,fj,fk,eflag,evdwl);
-
-        fxtmp -= fj[0] + fk[0];
-        fytmp -= fj[1] + fk[1];
-        fztmp -= fj[2] + fk[2];
-        fjxtmp += fj[0];
-        fjytmp += fj[1];
-        fjztmp += fj[2];
-        f[k][0] += fk[0];
-        f[k][1] += fk[1];
-        f[k][2] += fk[2];
-
-        if (evflag) ev_tally3(i,j,k,evdwl,0.0,fj,fk,delr1,delr2);
-      }
-      f[j][0] += fjxtmp;
-      f[j][1] += fjytmp;
-      f[j][2] += fjztmp;
+  for (ii = 0; ii < inum; ii++) {
+    i = ilist[ii];
+    p = rho[i]*rdrho + 1.0;
+    m = static_cast<int> (p);
+    m = MAX(1,MIN(m,nrho-1));
+    p -= m;
+    p = MIN(p,1.0);
+    coeff = frho_spline[type2frho[type[i]]][m];
+    fp[i] = (coeff[0]*p + coeff[1])*p + coeff[2];
+    if (eflag) {
+      phi = ((coeff[3]*p + coeff[4])*p + coeff[5])*p + coeff[6];
+      if (rho[i] > rhomax) phi += fp[i] * (rho[i]-rhomax);
+      phi *= scale[type[i]][type[i]];
+      if (eflag_global) eng_vdwl += phi;
+      if (eflag_atom) eatom[i] += phi;
     }
-    f[i][0] += fxtmp;
-    f[i][1] += fytmp;
-    f[i][2] += fztmp;
+  }
+
+  // communicate derivative of embedding function
+
+  comm->forward_comm_pair(this);
+
+  // compute forces on each atom
+  // loop over neighbors of my atoms
+
+  for (ii = 0; ii < inum; ii++) {
+    i = ilist[ii];
+    xtmp = x[i][0];
+    ytmp = x[i][1];
+    ztmp = x[i][2];
+    itype = type[i];
+
+    jlist = firstneigh[i];
+    jnum = numneigh[i];
+
+    for (jj = 0; jj < jnum; jj++) {
+      j = jlist[jj];
+      j &= NEIGHMASK;
+
+      delx = xtmp - x[j][0];
+      dely = ytmp - x[j][1];
+      delz = ztmp - x[j][2];
+      rsq = delx*delx + dely*dely + delz*delz;
+
+      if (rsq < cutforcesq) {
+        jtype = type[j];
+        r = sqrt(rsq);
+        p = r*rdr + 1.0;
+        m = static_cast<int> (p);
+        m = MIN(m,nr-1);
+        p -= m;
+        p = MIN(p,1.0);
+
+        // rhoip = derivative of (density at atom j due to atom i)
+        // rhojp = derivative of (density at atom i due to atom j)
+        // phi = pair potential energy
+        // phip = phi'
+        // z2 = phi * r
+        // z2p = (phi * r)' = (phi' r) + phi
+        // psip needs both fp[i] and fp[j] terms since r_ij appears in two
+        //   terms of embed eng: Fi(sum rho_ij) and Fj(sum rho_ji)
+        //   hence embed' = Fi(sum rho_ij) rhojp + Fj(sum rho_ji) rhoip
+        // scale factor can be applied by thermodynamic integration
+
+        coeff = rhor_spline[type2rhor[itype][jtype]][m];
+        rhoip = (coeff[0]*p + coeff[1])*p + coeff[2];
+        coeff = rhor_spline[type2rhor[jtype][itype]][m];
+        rhojp = (coeff[0]*p + coeff[1])*p + coeff[2];
+        coeff = z2r_spline[type2z2r[itype][jtype]][m];
+        z2p = (coeff[0]*p + coeff[1])*p + coeff[2];
+        z2 = ((coeff[3]*p + coeff[4])*p + coeff[5])*p + coeff[6];
+
+        recip = 1.0/r;
+        phi = z2*recip;
+        phip = z2p*recip - phi*recip;
+        psip = fp[i]*rhojp + fp[j]*rhoip + phip;
+        fpair = -scale[itype][jtype]*psip*recip;
+
+        f[i][0] += delx*fpair;
+        f[i][1] += dely*fpair;
+        f[i][2] += delz*fpair;
+        if (newton_pair || j < nlocal) {
+          f[j][0] -= delx*fpair;
+          f[j][1] -= dely*fpair;
+          f[j][2] -= delz*fpair;
+        }
+
+        if (eflag) evdwl = scale[itype][jtype]*phi;
+        if (evflag) ev_tally(i,j,nlocal,newton_pair,
+                             evdwl,0.0,fpair,delx,dely,delz);
+      }
+    }
   }
 
   if (vflag_fdotr) virial_fdotr_compute();
 }
 
-/* ---------------------------------------------------------------------- */
+/* ----------------------------------------------------------------------
+   allocate all arrays
+------------------------------------------------------------------------- */
 
 void PairFLARE::allocate()
 {
@@ -210,9 +310,19 @@ void PairFLARE::allocate()
   int n = atom->ntypes;
 
   memory->create(setflag,n+1,n+1,"pair:setflag");
+  for (int i = 1; i <= n; i++)
+    for (int j = i; j <= n; j++)
+      setflag[i][j] = 0;
+
   memory->create(cutsq,n+1,n+1,"pair:cutsq");
-  memory->create(neighshort,maxshort,"pair:neighshort");
+
   map = new int[n+1];
+  for (int i = 1; i <= n; i++) map[i] = -1;
+
+  type2frho = new int[n+1];
+  memory->create(type2rhor,n+1,n+1,"pair:type2rhor");
+  memory->create(type2z2r,n+1,n+1,"pair:type2z2r");
+  memory->create(scale,n+1,n+1,"pair:scale");
 }
 
 /* ----------------------------------------------------------------------
@@ -221,77 +331,58 @@ void PairFLARE::allocate()
 
 void PairFLARE::settings(int narg, char **/*arg*/)
 {
-  if (narg != 0) error->all(FLERR,"Illegal pair_style command");
+  if (narg > 0) error->all(FLERR,"Illegal pair_style command");
 }
 
 /* ----------------------------------------------------------------------
    set coeffs for one or more type pairs
+   read DYNAMO funcfl file
 ------------------------------------------------------------------------- */
 
 void PairFLARE::coeff(int narg, char **arg)
 {
-  int i,j,n;
-
   if (!allocated) allocate();
 
-  if (narg != 3 + atom->ntypes)
-    error->all(FLERR,"Incorrect args for pair coefficients");
+  if (narg != 3) error->all(FLERR,"Incorrect args for pair coefficients");
 
-  // insure I,J args are * *
+  // parse pair of atom types
 
-  if (strcmp(arg[0],"*") != 0 || strcmp(arg[1],"*") != 0)
-    error->all(FLERR,"Incorrect args for pair coefficients");
+  int ilo,ihi,jlo,jhi;
+  force->bounds(FLERR,arg[0],atom->ntypes,ilo,ihi);
+  force->bounds(FLERR,arg[1],atom->ntypes,jlo,jhi);
 
-  // read args that map atom types to elements in potential file
-  // map[i] = which element the Ith atom type is, -1 if NULL
-  // nelements = # of unique elements
-  // elements = list of element names
+  // read funcfl file if hasn't already been read
+  // store filename in Funcfl data struct
 
-  if (elements) {
-    for (i = 0; i < nelements; i++) delete [] elements[i];
-    delete [] elements;
-  }
-  elements = new char*[atom->ntypes];
-  for (i = 0; i < atom->ntypes; i++) elements[i] = NULL;
+  int ifuncfl;
+  for (ifuncfl = 0; ifuncfl < nfuncfl; ifuncfl++)
+    if (strcmp(arg[2],funcfl[ifuncfl].file) == 0) break;
 
-  nelements = 0;
-  for (i = 3; i < narg; i++) {
-    if (strcmp(arg[i],"NULL") == 0) {
-      map[i-2] = -1;
-      continue;
-    }
-    for (j = 0; j < nelements; j++)
-      if (strcmp(arg[i],elements[j]) == 0) break;
-    map[i-2] = j;
-    if (j == nelements) {
-      n = strlen(arg[i]) + 1;
-      elements[j] = new char[n];
-      strcpy(elements[j],arg[i]);
-      nelements++;
-    }
+  if (ifuncfl == nfuncfl) {
+    nfuncfl++;
+    funcfl = (Funcfl *)
+      memory->srealloc(funcfl,nfuncfl*sizeof(Funcfl),"pair:funcfl");
+    read_file(arg[2]);
+    int n = strlen(arg[2]) + 1;
+    funcfl[ifuncfl].file = new char[n];
+    strcpy(funcfl[ifuncfl].file,arg[2]);
   }
 
-  // read potential file and initialize potential parameters
-
-  read_file(arg[2]);
-  setup_params();
-
-  // clear setflag since coeff() called once with I,J = * *
-
-  n = atom->ntypes;
-  for (int i = 1; i <= n; i++)
-    for (int j = i; j <= n; j++)
-      setflag[i][j] = 0;
-
-  // set setflag i,j for type pairs where both are mapped to elements
+  // set setflag and map only for i,i type pairs
+  // set mass of atom type if i = j
 
   int count = 0;
-  for (int i = 1; i <= n; i++)
-    for (int j = i; j <= n; j++)
-      if (map[i] >= 0 && map[j] >= 0) {
-        setflag[i][j] = 1;
+  for (int i = ilo; i <= ihi; i++) {
+    for (int j = MAX(jlo,i); j <= jhi; j++) {
+      if (i == j) {
+        setflag[i][i] = 1;
+        map[i] = ifuncfl;
+        atom->set_mass(FLERR,i,funcfl[ifuncfl].mass);
         count++;
       }
+      scale[i][j] = 1.0;
+    }
+  }
 
   if (count == 0) error->all(FLERR,"Incorrect args for pair coefficients");
 }
@@ -302,16 +393,12 @@ void PairFLARE::coeff(int narg, char **arg)
 
 void PairFLARE::init_style()
 {
-  if (atom->tag_enable == 0)
-    error->all(FLERR,"Pair style Stillinger-Weber requires atom IDs");
-  if (force->newton_pair == 0)
-    error->all(FLERR,"Pair style Stillinger-Weber requires newton pair on");
+  // convert read-in file(s) to arrays and spline them
 
-  // need a full neighbor list
+  file2array();
+  array2spline();
 
-  int irequest = neighbor->request(this,instance_me);
-  neighbor->requests[irequest]->half = 0;
-  neighbor->requests[irequest]->full = 1;
+  neighbor->request(this,instance_me);
 }
 
 /* ----------------------------------------------------------------------
@@ -320,288 +407,486 @@ void PairFLARE::init_style()
 
 double PairFLARE::init_one(int i, int j)
 {
-  if (setflag[i][j] == 0) error->all(FLERR,"All pair coeffs are not set");
+  // single global cutoff = max of cut from all files read in
+  // for funcfl could be multiple files
+  // for setfl or fs, just one file
+
+  if (setflag[i][j] == 0) scale[i][j] = 1.0;
+  scale[j][i] = scale[i][j];
+
+  if (funcfl) {
+    cutmax = 0.0;
+    for (int m = 0; m < nfuncfl; m++)
+      cutmax = MAX(cutmax,funcfl[m].cut);
+  } else if (setfl) cutmax = setfl->cut;
+  else if (fs) cutmax = fs->cut;
+
+  cutforcesq = cutmax*cutmax;
 
   return cutmax;
 }
 
-/* ---------------------------------------------------------------------- */
+/* ----------------------------------------------------------------------
+   read potential values from a DYNAMO single element funcfl file
+------------------------------------------------------------------------- */
 
-void PairFLARE::read_file(char *file)
+void PairFLARE::read_file(char *filename)
 {
-  int params_per_line = 14;
-  char **words = new char*[params_per_line+1];
+  Funcfl *file = &funcfl[nfuncfl-1];
 
-  memory->sfree(params);
-  params = NULL;
-  nparams = maxparam = 0;
+  int me = comm->me;
+  FILE *fptr;
+  char line[MAXLINE];
 
-  // open file on proc 0
-
-  FILE *fp;
-  if (comm->me == 0) {
-    fp = force->open_potential(file);
-    if (fp == NULL) {
+  if (me == 0) {
+    fptr = force->open_potential(filename);
+    if (fptr == NULL) {
       char str[128];
-      snprintf(str,128,"Cannot open Stillinger-Weber potential file %s",file);
+      snprintf(str,128,"Cannot open EAM potential file %s",filename);
       error->one(FLERR,str);
     }
   }
 
-  // read each set of params from potential file
-  // one set of params can span multiple lines
-  // store params if all 3 element tags are in element list
-
-  int n,nwords,ielement,jelement,kelement;
-  char line[MAXLINE],*ptr;
-  int eof = 0;
-
-  while (1) {
-    if (comm->me == 0) {
-      ptr = fgets(line,MAXLINE,fp);
-      if (ptr == NULL) {
-        eof = 1;
-        fclose(fp);
-      } else n = strlen(line) + 1;
-    }
-    MPI_Bcast(&eof,1,MPI_INT,0,world);
-    if (eof) break;
-    MPI_Bcast(&n,1,MPI_INT,0,world);
-    MPI_Bcast(line,n,MPI_CHAR,0,world);
-
-    // strip comment, skip line if blank
-
-    if ((ptr = strchr(line,'#'))) *ptr = '\0';
-    nwords = atom->count_words(line);
-    if (nwords == 0) continue;
-
-    // concatenate additional lines until have params_per_line words
-
-    while (nwords < params_per_line) {
-      n = strlen(line);
-      if (comm->me == 0) {
-        ptr = fgets(&line[n],MAXLINE-n,fp);
-        if (ptr == NULL) {
-          eof = 1;
-          fclose(fp);
-        } else n = strlen(line) + 1;
-      }
-      MPI_Bcast(&eof,1,MPI_INT,0,world);
-      if (eof) break;
-      MPI_Bcast(&n,1,MPI_INT,0,world);
-      MPI_Bcast(line,n,MPI_CHAR,0,world);
-      if ((ptr = strchr(line,'#'))) *ptr = '\0';
-      nwords = atom->count_words(line);
-    }
-
-    if (nwords != params_per_line)
-      error->all(FLERR,"Incorrect format in Stillinger-Weber potential file");
-
-    // words = ptrs to all words in line
-
-    nwords = 0;
-    words[nwords++] = strtok(line," \t\n\r\f");
-    while ((words[nwords++] = strtok(NULL," \t\n\r\f"))) continue;
-
-    // ielement,jelement,kelement = 1st args
-    // if all 3 args are in element list, then parse this line
-    // else skip to next entry in file
-
-    for (ielement = 0; ielement < nelements; ielement++)
-      if (strcmp(words[0],elements[ielement]) == 0) break;
-    if (ielement == nelements) continue;
-    for (jelement = 0; jelement < nelements; jelement++)
-      if (strcmp(words[1],elements[jelement]) == 0) break;
-    if (jelement == nelements) continue;
-    for (kelement = 0; kelement < nelements; kelement++)
-      if (strcmp(words[2],elements[kelement]) == 0) break;
-    if (kelement == nelements) continue;
-
-    // load up parameter settings and error check their values
-
-    if (nparams == maxparam) {
-      maxparam += DELTA;
-      params = (Param *) memory->srealloc(params,maxparam*sizeof(Param),
-                                          "pair:params");
-    }
-
-    params[nparams].ielement = ielement;
-    params[nparams].jelement = jelement;
-    params[nparams].kelement = kelement;
-    params[nparams].epsilon = atof(words[3]);
-    params[nparams].sigma = atof(words[4]);
-    params[nparams].littlea = atof(words[5]);
-    params[nparams].lambda = atof(words[6]);
-    params[nparams].gamma = atof(words[7]);
-    params[nparams].costheta = atof(words[8]);
-    params[nparams].biga = atof(words[9]);
-    params[nparams].bigb = atof(words[10]);
-    params[nparams].powerp = atof(words[11]);
-    params[nparams].powerq = atof(words[12]);
-    params[nparams].tol = atof(words[13]);
-
-    if (params[nparams].epsilon < 0.0 || params[nparams].sigma < 0.0 ||
-        params[nparams].littlea < 0.0 || params[nparams].lambda < 0.0 ||
-        params[nparams].gamma < 0.0 || params[nparams].biga < 0.0 ||
-        params[nparams].bigb < 0.0 || params[nparams].powerp < 0.0 ||
-        params[nparams].powerq < 0.0 || params[nparams].tol < 0.0)
-      error->all(FLERR,"Illegal Stillinger-Weber parameter");
-
-    nparams++;
+  int tmp,nwords;
+  if (me == 0) {
+    fgets(line,MAXLINE,fptr);
+    fgets(line,MAXLINE,fptr);
+    sscanf(line,"%d %lg",&tmp,&file->mass);
+    fgets(line,MAXLINE,fptr);
+    nwords = sscanf(line,"%d %lg %d %lg %lg",
+           &file->nrho,&file->drho,&file->nr,&file->dr,&file->cut);
   }
 
-  delete [] words;
+  MPI_Bcast(&nwords,1,MPI_INT,0,world);
+  MPI_Bcast(&file->mass,1,MPI_DOUBLE,0,world);
+  MPI_Bcast(&file->nrho,1,MPI_INT,0,world);
+  MPI_Bcast(&file->drho,1,MPI_DOUBLE,0,world);
+  MPI_Bcast(&file->nr,1,MPI_INT,0,world);
+  MPI_Bcast(&file->dr,1,MPI_DOUBLE,0,world);
+  MPI_Bcast(&file->cut,1,MPI_DOUBLE,0,world);
+
+  if ((nwords != 5) || (file->nrho <= 0) || (file->nr <= 0) || (file->dr <= 0.0))
+    error->all(FLERR,"Invalid EAM potential file");
+
+  memory->create(file->frho,(file->nrho+1),"pair:frho");
+  memory->create(file->rhor,(file->nr+1),"pair:rhor");
+  memory->create(file->zr,(file->nr+1),"pair:zr");
+
+  if (me == 0) grab(fptr,file->nrho,&file->frho[1]);
+  MPI_Bcast(&file->frho[1],file->nrho,MPI_DOUBLE,0,world);
+
+  if (me == 0) grab(fptr,file->nr,&file->zr[1]);
+  MPI_Bcast(&file->zr[1],file->nr,MPI_DOUBLE,0,world);
+
+  if (me == 0) grab(fptr,file->nr,&file->rhor[1]);
+  MPI_Bcast(&file->rhor[1],file->nr,MPI_DOUBLE,0,world);
+
+  if (me == 0) fclose(fptr);
 }
 
-/* ---------------------------------------------------------------------- */
+/* ----------------------------------------------------------------------
+   convert read-in funcfl potential(s) to standard array format
+   interpolate all file values to a single grid and cutoff
+------------------------------------------------------------------------- */
 
-void PairFLARE::setup_params()
+void PairFLARE::file2array()
 {
   int i,j,k,m,n;
-  double rtmp;
+  int ntypes = atom->ntypes;
+  double sixth = 1.0/6.0;
 
-  // set elem2param for all triplet combinations
-  // must be a single exact match to lines read from file
-  // do not allow for ACB in place of ABC
+  // determine max function params from all active funcfl files
+  // active means some element is pointing at it via map
 
-  memory->destroy(elem2param);
-  memory->create(elem2param,nelements,nelements,nelements,"pair:elem2param");
+  int active;
+  double rmax;
+  dr = drho = rmax = rhomax = 0.0;
 
-  for (i = 0; i < nelements; i++)
-    for (j = 0; j < nelements; j++)
-      for (k = 0; k < nelements; k++) {
-        n = -1;
-        for (m = 0; m < nparams; m++) {
-          if (i == params[m].ielement && j == params[m].jelement &&
-              k == params[m].kelement) {
-            if (n >= 0) error->all(FLERR,"Potential file has duplicate entry");
-            n = m;
-          }
-        }
-        if (n < 0) error->all(FLERR,"Potential file is missing an entry");
-        elem2param[i][j][k] = n;
-      }
-
-
-  // compute parameter values derived from inputs
-
-  // set cutsq using shortcut to reduce neighbor list for accelerated
-  // calculations. cut must remain unchanged as it is a potential parameter
-  // (cut = a*sigma)
-
-  for (m = 0; m < nparams; m++) {
-    params[m].cut = params[m].sigma*params[m].littlea;
-
-    rtmp = params[m].cut;
-    if (params[m].tol > 0.0) {
-      if (params[m].tol > 0.01) params[m].tol = 0.01;
-      if (params[m].gamma < 1.0)
-        rtmp = rtmp +
-          params[m].gamma * params[m].sigma / log(params[m].tol);
-      else rtmp = rtmp +
-             params[m].sigma / log(params[m].tol);
-    }
-    params[m].cutsq = rtmp * rtmp;
-
-    params[m].sigma_gamma = params[m].sigma*params[m].gamma;
-    params[m].lambda_epsilon = params[m].lambda*params[m].epsilon;
-    params[m].lambda_epsilon2 = 2.0*params[m].lambda*params[m].epsilon;
-    params[m].c1 = params[m].biga*params[m].epsilon *
-      params[m].powerp*params[m].bigb *
-      pow(params[m].sigma,params[m].powerp);
-    params[m].c2 = params[m].biga*params[m].epsilon*params[m].powerq *
-      pow(params[m].sigma,params[m].powerq);
-    params[m].c3 = params[m].biga*params[m].epsilon*params[m].bigb *
-      pow(params[m].sigma,params[m].powerp+1.0);
-    params[m].c4 = params[m].biga*params[m].epsilon *
-      pow(params[m].sigma,params[m].powerq+1.0);
-    params[m].c5 = params[m].biga*params[m].epsilon*params[m].bigb *
-      pow(params[m].sigma,params[m].powerp);
-    params[m].c6 = params[m].biga*params[m].epsilon *
-      pow(params[m].sigma,params[m].powerq);
+  for (int i = 0; i < nfuncfl; i++) {
+    active = 0;
+    for (j = 1; j <= ntypes; j++)
+      if (map[j] == i) active = 1;
+    if (active == 0) continue;
+    Funcfl *file = &funcfl[i];
+    dr = MAX(dr,file->dr);
+    drho = MAX(drho,file->drho);
+    rmax = MAX(rmax,(file->nr-1) * file->dr);
+    rhomax = MAX(rhomax,(file->nrho-1) * file->drho);
   }
 
-  // set cutmax to max of all params
+  // set nr,nrho from cutoff and spacings
+  // 0.5 is for round-off in divide
 
-  cutmax = 0.0;
-  for (m = 0; m < nparams; m++) {
-    rtmp = sqrt(params[m].cutsq);
-    if (rtmp > cutmax) cutmax = rtmp;
+  nr = static_cast<int> (rmax/dr + 0.5);
+  nrho = static_cast<int> (rhomax/drho + 0.5);
+
+  // ------------------------------------------------------------------
+  // setup frho arrays
+  // ------------------------------------------------------------------
+
+  // allocate frho arrays
+  // nfrho = # of funcfl files + 1 for zero array
+
+  nfrho = nfuncfl + 1;
+  memory->destroy(frho);
+  memory->create(frho,nfrho,nrho+1,"pair:frho");
+
+  // interpolate each file's frho to a single grid and cutoff
+
+  double r,p,cof1,cof2,cof3,cof4;
+
+  n = 0;
+  for (i = 0; i < nfuncfl; i++) {
+    Funcfl *file = &funcfl[i];
+    for (m = 1; m <= nrho; m++) {
+      r = (m-1)*drho;
+      p = r/file->drho + 1.0;
+      k = static_cast<int> (p);
+      k = MIN(k,file->nrho-2);
+      k = MAX(k,2);
+      p -= k;
+      p = MIN(p,2.0);
+      cof1 = -sixth*p*(p-1.0)*(p-2.0);
+      cof2 = 0.5*(p*p-1.0)*(p-2.0);
+      cof3 = -0.5*p*(p+1.0)*(p-2.0);
+      cof4 = sixth*p*(p*p-1.0);
+      frho[n][m] = cof1*file->frho[k-1] + cof2*file->frho[k] +
+        cof3*file->frho[k+1] + cof4*file->frho[k+2];
+    }
+    n++;
+  }
+
+  // add extra frho of zeroes for non-EAM types to point to (pair hybrid)
+  // this is necessary b/c fp is still computed for non-EAM atoms
+
+  for (m = 1; m <= nrho; m++) frho[nfrho-1][m] = 0.0;
+
+  // type2frho[i] = which frho array (0 to nfrho-1) each atom type maps to
+  // if atom type doesn't point to file (non-EAM atom in pair hybrid)
+  // then map it to last frho array of zeroes
+
+  for (i = 1; i <= ntypes; i++)
+    if (map[i] >= 0) type2frho[i] = map[i];
+    else type2frho[i] = nfrho-1;
+
+  // ------------------------------------------------------------------
+  // setup rhor arrays
+  // ------------------------------------------------------------------
+
+  // allocate rhor arrays
+  // nrhor = # of funcfl files
+
+  nrhor = nfuncfl;
+  memory->destroy(rhor);
+  memory->create(rhor,nrhor,nr+1,"pair:rhor");
+
+  // interpolate each file's rhor to a single grid and cutoff
+
+  n = 0;
+  for (i = 0; i < nfuncfl; i++) {
+    Funcfl *file = &funcfl[i];
+    for (m = 1; m <= nr; m++) {
+      r = (m-1)*dr;
+      p = r/file->dr + 1.0;
+      k = static_cast<int> (p);
+      k = MIN(k,file->nr-2);
+      k = MAX(k,2);
+      p -= k;
+      p = MIN(p,2.0);
+      cof1 = -sixth*p*(p-1.0)*(p-2.0);
+      cof2 = 0.5*(p*p-1.0)*(p-2.0);
+      cof3 = -0.5*p*(p+1.0)*(p-2.0);
+      cof4 = sixth*p*(p*p-1.0);
+      rhor[n][m] = cof1*file->rhor[k-1] + cof2*file->rhor[k] +
+        cof3*file->rhor[k+1] + cof4*file->rhor[k+2];
+    }
+    n++;
+  }
+
+  // type2rhor[i][j] = which rhor array (0 to nrhor-1) each type pair maps to
+  // for funcfl files, I,J mapping only depends on I
+  // OK if map = -1 (non-EAM atom in pair hybrid) b/c type2rhor not used
+
+  for (i = 1; i <= ntypes; i++)
+    for (j = 1; j <= ntypes; j++)
+      type2rhor[i][j] = map[i];
+
+  // ------------------------------------------------------------------
+  // setup z2r arrays
+  // ------------------------------------------------------------------
+
+  // allocate z2r arrays
+  // nz2r = N*(N+1)/2 where N = # of funcfl files
+
+  nz2r = nfuncfl*(nfuncfl+1)/2;
+  memory->destroy(z2r);
+  memory->create(z2r,nz2r,nr+1,"pair:z2r");
+
+  // create a z2r array for each file against other files, only for I >= J
+  // interpolate zri and zrj to a single grid and cutoff
+
+  double zri,zrj;
+
+  n = 0;
+  for (i = 0; i < nfuncfl; i++) {
+    Funcfl *ifile = &funcfl[i];
+    for (j = 0; j <= i; j++) {
+      Funcfl *jfile = &funcfl[j];
+
+      for (m = 1; m <= nr; m++) {
+        r = (m-1)*dr;
+
+        p = r/ifile->dr + 1.0;
+        k = static_cast<int> (p);
+        k = MIN(k,ifile->nr-2);
+        k = MAX(k,2);
+        p -= k;
+        p = MIN(p,2.0);
+        cof1 = -sixth*p*(p-1.0)*(p-2.0);
+        cof2 = 0.5*(p*p-1.0)*(p-2.0);
+        cof3 = -0.5*p*(p+1.0)*(p-2.0);
+        cof4 = sixth*p*(p*p-1.0);
+        zri = cof1*ifile->zr[k-1] + cof2*ifile->zr[k] +
+          cof3*ifile->zr[k+1] + cof4*ifile->zr[k+2];
+
+        p = r/jfile->dr + 1.0;
+        k = static_cast<int> (p);
+        k = MIN(k,jfile->nr-2);
+        k = MAX(k,2);
+        p -= k;
+        p = MIN(p,2.0);
+        cof1 = -sixth*p*(p-1.0)*(p-2.0);
+        cof2 = 0.5*(p*p-1.0)*(p-2.0);
+        cof3 = -0.5*p*(p+1.0)*(p-2.0);
+        cof4 = sixth*p*(p*p-1.0);
+        zrj = cof1*jfile->zr[k-1] + cof2*jfile->zr[k] +
+          cof3*jfile->zr[k+1] + cof4*jfile->zr[k+2];
+
+        z2r[n][m] = 27.2*0.529 * zri*zrj;
+      }
+      n++;
+    }
+  }
+
+  // type2z2r[i][j] = which z2r array (0 to nz2r-1) each type pair maps to
+  // set of z2r arrays only fill lower triangular Nelement matrix
+  // value = n = sum over rows of lower-triangular matrix until reach irow,icol
+  // swap indices when irow < icol to stay lower triangular
+  // if map = -1 (non-EAM atom in pair hybrid):
+  //   type2z2r is not used by non-opt
+  //   but set type2z2r to 0 since accessed by opt
+
+  int irow,icol;
+  for (i = 1; i <= ntypes; i++) {
+    for (j = 1; j <= ntypes; j++) {
+      irow = map[i];
+      icol = map[j];
+      if (irow == -1 || icol == -1) {
+        type2z2r[i][j] = 0;
+        continue;
+      }
+      if (irow < icol) {
+        irow = map[j];
+        icol = map[i];
+      }
+      n = 0;
+      for (m = 0; m < irow; m++) n += m + 1;
+      n += icol;
+      type2z2r[i][j] = n;
+    }
   }
 }
 
 /* ---------------------------------------------------------------------- */
 
-void PairFLARE::twobody(Param *param, double rsq, double &fforce,
-                     int eflag, double &eng)
+void PairFLARE::array2spline()
 {
-  double r,rinvsq,rp,rq,rainv,rainvsq,expsrainv;
+  rdr = 1.0/dr;
+  rdrho = 1.0/drho;
+
+  memory->destroy(frho_spline);
+  memory->destroy(rhor_spline);
+  memory->destroy(z2r_spline);
+
+  memory->create(frho_spline,nfrho,nrho+1,7,"pair:frho");
+  memory->create(rhor_spline,nrhor,nr+1,7,"pair:rhor");
+  memory->create(z2r_spline,nz2r,nr+1,7,"pair:z2r");
+
+  for (int i = 0; i < nfrho; i++)
+    interpolate(nrho,drho,frho[i],frho_spline[i]);
+
+  for (int i = 0; i < nrhor; i++)
+    interpolate(nr,dr,rhor[i],rhor_spline[i]);
+
+  for (int i = 0; i < nz2r; i++)
+    interpolate(nr,dr,z2r[i],z2r_spline[i]);
+}
+
+/* ---------------------------------------------------------------------- */
+
+void PairFLARE::interpolate(int n, double delta, double *f, double **spline)
+{
+  for (int m = 1; m <= n; m++) spline[m][6] = f[m];
+
+  spline[1][5] = spline[2][6] - spline[1][6];
+  spline[2][5] = 0.5 * (spline[3][6]-spline[1][6]);
+  spline[n-1][5] = 0.5 * (spline[n][6]-spline[n-2][6]);
+  spline[n][5] = spline[n][6] - spline[n-1][6];
+
+  for (int m = 3; m <= n-2; m++)
+    spline[m][5] = ((spline[m-2][6]-spline[m+2][6]) +
+                    8.0*(spline[m+1][6]-spline[m-1][6])) / 12.0;
+
+  for (int m = 1; m <= n-1; m++) {
+    spline[m][4] = 3.0*(spline[m+1][6]-spline[m][6]) -
+      2.0*spline[m][5] - spline[m+1][5];
+    spline[m][3] = spline[m][5] + spline[m+1][5] -
+      2.0*(spline[m+1][6]-spline[m][6]);
+  }
+
+  spline[n][4] = 0.0;
+  spline[n][3] = 0.0;
+
+  for (int m = 1; m <= n; m++) {
+    spline[m][2] = spline[m][5]/delta;
+    spline[m][1] = 2.0*spline[m][4]/delta;
+    spline[m][0] = 3.0*spline[m][3]/delta;
+  }
+}
+
+/* ----------------------------------------------------------------------
+   grab n values from file fp and put them in list
+   values can be several to a line
+   only called by proc 0
+------------------------------------------------------------------------- */
+
+void PairFLARE::grab(FILE *fptr, int n, double *list)
+{
+  char *ptr;
+  char line[MAXLINE];
+
+  int i = 0;
+  while (i < n) {
+    fgets(line,MAXLINE,fptr);
+    ptr = strtok(line," \t\n\r\f");
+    list[i++] = atof(ptr);
+    while ((ptr = strtok(NULL," \t\n\r\f"))) list[i++] = atof(ptr);
+  }
+}
+
+/* ---------------------------------------------------------------------- */
+
+double PairFLARE::single(int i, int j, int itype, int jtype,
+                       double rsq, double /*factor_coul*/, double /*factor_lj*/,
+                       double &fforce)
+{
+  int m;
+  double r,p,rhoip,rhojp,z2,z2p,recip,phi,phip,psip;
+  double *coeff;
 
   r = sqrt(rsq);
-  rinvsq = 1.0/rsq;
-  rp = pow(r,-param->powerp);
-  rq = pow(r,-param->powerq);
-  rainv = 1.0 / (r - param->cut);
-  rainvsq = rainv*rainv*r;
-  expsrainv = exp(param->sigma * rainv);
-  fforce = (param->c1*rp - param->c2*rq +
-            (param->c3*rp -param->c4*rq) * rainvsq) * expsrainv * rinvsq;
-  if (eflag) eng = (param->c5*rp - param->c6*rq) * expsrainv;
+  p = r*rdr + 1.0;
+  m = static_cast<int> (p);
+  m = MIN(m,nr-1);
+  p -= m;
+  p = MIN(p,1.0);
+
+  coeff = rhor_spline[type2rhor[itype][jtype]][m];
+  rhoip = (coeff[0]*p + coeff[1])*p + coeff[2];
+  coeff = rhor_spline[type2rhor[jtype][itype]][m];
+  rhojp = (coeff[0]*p + coeff[1])*p + coeff[2];
+  coeff = z2r_spline[type2z2r[itype][jtype]][m];
+  z2p = (coeff[0]*p + coeff[1])*p + coeff[2];
+  z2 = ((coeff[3]*p + coeff[4])*p + coeff[5])*p + coeff[6];
+
+  recip = 1.0/r;
+  phi = z2*recip;
+  phip = z2p*recip - phi*recip;
+  psip = fp[i]*rhojp + fp[j]*rhoip + phip;
+  fforce = -psip*recip;
+
+  return phi;
 }
 
 /* ---------------------------------------------------------------------- */
 
-void PairFLARE::threebody(Param *paramij, Param *paramik, Param *paramijk,
-                       double rsq1, double rsq2,
-                       double *delr1, double *delr2,
-                       double *fj, double *fk, int eflag, double &eng)
+int PairFLARE::pack_forward_comm(int n, int *list, double *buf,
+                               int /*pbc_flag*/, int * /*pbc*/)
 {
-  double r1,rinvsq1,rainv1,gsrainv1,gsrainvsq1,expgsrainv1;
-  double r2,rinvsq2,rainv2,gsrainv2,gsrainvsq2,expgsrainv2;
-  double rinv12,cs,delcs,delcssq,facexp,facrad,frad1,frad2;
-  double facang,facang12,csfacang,csfac1,csfac2;
+  int i,j,m;
 
-  r1 = sqrt(rsq1);
-  rinvsq1 = 1.0/rsq1;
-  rainv1 = 1.0/(r1 - paramij->cut);
-  gsrainv1 = paramij->sigma_gamma * rainv1;
-  gsrainvsq1 = gsrainv1*rainv1/r1;
-  expgsrainv1 = exp(gsrainv1);
+  m = 0;
+  for (i = 0; i < n; i++) {
+    j = list[i];
+    buf[m++] = fp[j];
+  }
+  return m;
+}
 
-  r2 = sqrt(rsq2);
-  rinvsq2 = 1.0/rsq2;
-  rainv2 = 1.0/(r2 - paramik->cut);
-  gsrainv2 = paramik->sigma_gamma * rainv2;
-  gsrainvsq2 = gsrainv2*rainv2/r2;
-  expgsrainv2 = exp(gsrainv2);
+/* ---------------------------------------------------------------------- */
 
-  rinv12 = 1.0/(r1*r2);
-  cs = (delr1[0]*delr2[0] + delr1[1]*delr2[1] + delr1[2]*delr2[2]) * rinv12;
-  delcs = cs - paramijk->costheta;
-  delcssq = delcs*delcs;
+void PairFLARE::unpack_forward_comm(int n, int first, double *buf)
+{
+  int i,m,last;
 
-  facexp = expgsrainv1*expgsrainv2;
+  m = 0;
+  last = first + n;
+  for (i = first; i < last; i++) fp[i] = buf[m++];
+}
 
-  // facrad = sqrt(paramij->lambda_epsilon*paramik->lambda_epsilon) *
-  //          facexp*delcssq;
+/* ---------------------------------------------------------------------- */
 
-  facrad = paramijk->lambda_epsilon * facexp*delcssq;
-  frad1 = facrad*gsrainvsq1;
-  frad2 = facrad*gsrainvsq2;
-  facang = paramijk->lambda_epsilon2 * facexp*delcs;
-  facang12 = rinv12*facang;
-  csfacang = cs*facang;
-  csfac1 = rinvsq1*csfacang;
+int PairFLARE::pack_reverse_comm(int n, int first, double *buf)
+{
+  int i,m,last;
 
-  fj[0] = delr1[0]*(frad1+csfac1)-delr2[0]*facang12;
-  fj[1] = delr1[1]*(frad1+csfac1)-delr2[1]*facang12;
-  fj[2] = delr1[2]*(frad1+csfac1)-delr2[2]*facang12;
+  m = 0;
+  last = first + n;
+  for (i = first; i < last; i++) buf[m++] = rho[i];
+  return m;
+}
 
-  csfac2 = rinvsq2*csfacang;
+/* ---------------------------------------------------------------------- */
 
-  fk[0] = delr2[0]*(frad2+csfac2)-delr1[0]*facang12;
-  fk[1] = delr2[1]*(frad2+csfac2)-delr1[1]*facang12;
-  fk[2] = delr2[2]*(frad2+csfac2)-delr1[2]*facang12;
+void PairFLARE::unpack_reverse_comm(int n, int *list, double *buf)
+{
+  int i,j,m;
 
-  if (eflag) eng = facrad;
+  m = 0;
+  for (i = 0; i < n; i++) {
+    j = list[i];
+    rho[j] += buf[m++];
+  }
+}
+
+/* ----------------------------------------------------------------------
+   memory usage of local atom-based arrays
+------------------------------------------------------------------------- */
+
+double PairFLARE::memory_usage()
+{
+  double bytes = maxeatom * sizeof(double);
+  bytes += maxvatom*6 * sizeof(double);
+  bytes += 2 * nmax * sizeof(double);
+  return bytes;
+}
+
+/* ----------------------------------------------------------------------
+   swap fp array with one passed in by caller
+------------------------------------------------------------------------- */
+
+void PairFLARE::swap_eam(double *fp_caller, double **fp_caller_hold)
+{
+  double *tmp = fp;
+  fp = fp_caller;
+  *fp_caller_hold = tmp;
+}
+
+/* ---------------------------------------------------------------------- */
+
+void *PairFLARE::extract(const char *str, int &dim)
+{
+  dim = 2;
+  if (strcmp(str,"scale") == 0) return (void *) scale;
+  return NULL;
 }
