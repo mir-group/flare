@@ -1,0 +1,15 @@
+# generic lammps input file
+units metal
+atom_style atomic
+dimension  3
+boundary   p p p
+newton off
+read_data tmp.data
+
+pair_style flare
+pair_coeff * * Ag_u3.eam
+
+thermo_style one
+dump 1 all custom 1 tmp.dump id type x y z fx fy fz
+dump_modify 1 sort id
+run 0

@@ -306,8 +306,25 @@ void PairFLARE::compute(int eflag, int vflag)
 
 void PairFLARE::allocate()
 {
+  // Called by coeff if allocated != 1.
+
+  // This method allocates the following arrays:
+  //    setflag (ntype x ntype, init to 0):
+  //        Check whether i, j atom type pair has been set.
+  //        i, i pairs must be set, or else pair.cpp throws an error.
+  //    cutsq (ntype x ntype, double): 
+  //    map (ntype, int, init to -1):
+  //        "Which element each atom type maps to" (from header)
+  //    type2frho (ntype, int):
+  //    type2rhor (ntype x ntype, int):
+  //    type2z2r (ntype x ntype, int):
+  //    scale (ntype x ntype, double):
+  //        1 for all i,j pairs?
+
+  // Note that the array starts from 1, so (n+1)x(n+1) arrays are allocated.
+
   allocated = 1;
-  int n = atom->ntypes;
+  int n = atom->ntypes;  // Number of atom types in the simulation.
 
   memory->create(setflag,n+1,n+1,"pair:setflag");
   for (int i = 1; i <= n; i++)
@@ -331,6 +348,7 @@ void PairFLARE::allocate()
 
 void PairFLARE::settings(int narg, char **/*arg*/)
 {
+  // "flare" should be the only word after "pair_style" in the input file.
   if (narg > 0) error->all(FLERR,"Illegal pair_style command");
 }
 
@@ -343,10 +361,23 @@ void PairFLARE::coeff(int narg, char **arg)
 {
   if (!allocated) allocate();
 
+  // Should be exactly 3 arguments following "pair_coeff" in the input file.
   if (narg != 3) error->all(FLERR,"Incorrect args for pair coefficients");
 
   // parse pair of atom types
 
+/*
+   From force.cpp, force->bounds does the following:
+
+   compute bounds implied by numeric str with a possible wildcard asterik
+   1 = lower bound, nmax = upper bound
+   5 possibilities:
+     (1) i = i to i, (2) * = nmin to nmax,
+     (3) i* = i to nmax, (4) *j = nmin to j, (5) i*j = i to j
+   return nlo,nhi
+
+   Note that nmax = ntypes here, and nmin defaults to 1.
+  */
   int ilo,ihi,jlo,jhi;
   force->bounds(FLERR,arg[0],atom->ntypes,ilo,ihi);
   force->bounds(FLERR,arg[1],atom->ntypes,jlo,jhi);
@@ -362,9 +393,9 @@ void PairFLARE::coeff(int narg, char **arg)
     nfuncfl++;
     funcfl = (Funcfl *)
       memory->srealloc(funcfl,nfuncfl*sizeof(Funcfl),"pair:funcfl");
-    read_file(arg[2]);
+    read_file(arg[2]);  // read the potential file
     int n = strlen(arg[2]) + 1;
-    funcfl[ifuncfl].file = new char[n];
+    funcfl[ifuncfl].file = new char[n];  // store the name of the file
     strcpy(funcfl[ifuncfl].file,arg[2]);
   }
 
@@ -376,10 +407,15 @@ void PairFLARE::coeff(int narg, char **arg)
     for (int j = MAX(jlo,i); j <= jhi; j++) {
       if (i == j) {
         setflag[i][i] = 1;
-        map[i] = ifuncfl;
+
+        // Map stores the potential file index.
+        // How are distinct pairs handled? A: pair potentials are mixed.
+        map[i] = ifuncfl; 
         atom->set_mass(FLERR,i,funcfl[ifuncfl].mass);
         count++;
       }
+      // Scale determines if a pair is assigned a nonzero force.
+      // Unclear what role it actually plays; all values appear to be set to 1 in the init_one method.
       scale[i][j] = 1.0;
     }
   }
@@ -398,6 +434,8 @@ void PairFLARE::init_style()
   file2array();
   array2spline();
 
+  // Request neighbor list. Default is a half-neighbor list.
+  // See tersoff.cpp for a potential that requires a full neighbor list and newton on
   neighbor->request(this,instance_me);
 }
 
@@ -407,13 +445,16 @@ void PairFLARE::init_style()
 
 double PairFLARE::init_one(int i, int j)
 {
-  // single global cutoff = max of cut from all files read in
-  // for funcfl could be multiple files
-  // for setfl or fs, just one file
+  // init_one is called for each i, j pair in pair.cpp after calling init_style.
 
+  // Note that setflag is initialized to zero in the allocate method; diagonal elements are set equal to 1 in the coeff method.
   if (setflag[i][j] == 0) scale[i][j] = 1.0;
   scale[j][i] = scale[i][j];
 
+
+  // single global cutoff = max of cut from all files read in
+  // for funcfl could be multiple files
+  // for setfl or fs, just one file
   if (funcfl) {
     cutmax = 0.0;
     for (int m = 0; m < nfuncfl; m++)
@@ -437,6 +478,10 @@ void PairFLARE::read_file(char *filename)
   int me = comm->me;
   FILE *fptr;
   char line[MAXLINE];
+
+  // check if printing works
+//   if (me==0 && screen) fprintf(screen, "hello world\n");
+//   fprintf(screen, "hello world\n");
 
   if (me == 0) {
     fptr = force->open_potential(filename);
@@ -774,39 +819,6 @@ void PairFLARE::grab(FILE *fptr, int n, double *list)
   }
 }
 
-/* ---------------------------------------------------------------------- */
-
-double PairFLARE::single(int i, int j, int itype, int jtype,
-                       double rsq, double /*factor_coul*/, double /*factor_lj*/,
-                       double &fforce)
-{
-  int m;
-  double r,p,rhoip,rhojp,z2,z2p,recip,phi,phip,psip;
-  double *coeff;
-
-  r = sqrt(rsq);
-  p = r*rdr + 1.0;
-  m = static_cast<int> (p);
-  m = MIN(m,nr-1);
-  p -= m;
-  p = MIN(p,1.0);
-
-  coeff = rhor_spline[type2rhor[itype][jtype]][m];
-  rhoip = (coeff[0]*p + coeff[1])*p + coeff[2];
-  coeff = rhor_spline[type2rhor[jtype][itype]][m];
-  rhojp = (coeff[0]*p + coeff[1])*p + coeff[2];
-  coeff = z2r_spline[type2z2r[itype][jtype]][m];
-  z2p = (coeff[0]*p + coeff[1])*p + coeff[2];
-  z2 = ((coeff[3]*p + coeff[4])*p + coeff[5])*p + coeff[6];
-
-  recip = 1.0/r;
-  phi = z2*recip;
-  phip = z2p*recip - phi*recip;
-  psip = fp[i]*rhojp + fp[j]*rhoip + phip;
-  fforce = -psip*recip;
-
-  return phi;
-}
 
 /* ---------------------------------------------------------------------- */
 
@@ -857,36 +869,4 @@ void PairFLARE::unpack_reverse_comm(int n, int *list, double *buf)
     j = list[i];
     rho[j] += buf[m++];
   }
-}
-
-/* ----------------------------------------------------------------------
-   memory usage of local atom-based arrays
-------------------------------------------------------------------------- */
-
-double PairFLARE::memory_usage()
-{
-  double bytes = maxeatom * sizeof(double);
-  bytes += maxvatom*6 * sizeof(double);
-  bytes += 2 * nmax * sizeof(double);
-  return bytes;
-}
-
-/* ----------------------------------------------------------------------
-   swap fp array with one passed in by caller
-------------------------------------------------------------------------- */
-
-void PairFLARE::swap_eam(double *fp_caller, double **fp_caller_hold)
-{
-  double *tmp = fp;
-  fp = fp_caller;
-  *fp_caller_hold = tmp;
-}
-
-/* ---------------------------------------------------------------------- */
-
-void *PairFLARE::extract(const char *str, int &dim)
-{
-  dim = 2;
-  if (strcmp(str,"scale") == 0) return (void *) scale;
-  return NULL;
 }

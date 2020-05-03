@@ -43,15 +43,11 @@ class PairFLARE : public Pair {
   virtual void coeff(int, char **);
   void init_style();
   double init_one(int, int);
-  double single(int, int, int, int, double, double, double, double &);
-  virtual void *extract(const char *, int &);
 
   virtual int pack_forward_comm(int, int *, double *, int, int *);
   virtual void unpack_forward_comm(int, int, double *);
   int pack_reverse_comm(int, int, double *);
   void unpack_reverse_comm(int, int *, double *);
-  double memory_usage();
-  void swap_eam(double *, double **);
 
  protected:
   int nmax;                   // allocated size of per-atom arrays
