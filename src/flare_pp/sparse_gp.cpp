@@ -693,6 +693,12 @@ void SparseGP::write_beta(std::string file_name, std::string contributor,
     int count = 0;
     for (int i = 0; i < n_species; i ++){
         Eigen::VectorXd beta_vals = beta.row(i);
+
+        // Start a new line for each beta.
+        if (count != 0){
+            beta_file << "\n";
+        }
+
         for (int j = 0; j < beta_vals.size(); j ++){
             double beta_val = beta_vals[j];
 
