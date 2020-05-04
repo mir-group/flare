@@ -14,7 +14,7 @@ structure = struc.Structure(cell, atom_species, positions)
 
 # set up input and data files
 data_file_name = 'tmp.data'
-lammps_location = 'Ag_u3.eam'
+lammps_location = 'beta.txt'
 style_string = 'flare'
 coeff_string = '* * {}'.format(lammps_location)
 lammps_executable = '$lmp'

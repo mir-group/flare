@@ -3,6 +3,7 @@
 #include "descriptor.h"
 #include "omp.h"
 #include <chrono>
+#include <stdio.h>
 
 class SparseTest : public ::testing::Test{
     public:
@@ -247,6 +248,25 @@ TEST(CountThreads, CountThreads){
     int test = omp_get_max_threads();
     std::cout << test << std::endl;
     EXPECT_EQ(1, 1);
+}
+
+TEST(BetaParse, BetaParse){
+    FILE *fp;
+    char str1[1024], str2[1024];
+    fp = fopen("beta.txt" , "r");
+
+    fgets(str1, 1024, fp);  // skip the first line
+    fgets(str1, 1024, fp);
+    sscanf(str1, "%s", str2);
+    // puts(str1);
+    // puts(str2);
+
+    // convert to std string
+    std::string str(str2);
+
+    std::cout << str.size() << std::endl;
+
+    fclose(fp);
 }
 
 // TEST_F(SparseTest, ThreeBodyGrid){
