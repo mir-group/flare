@@ -14,7 +14,7 @@ from warnings import warn
 from sys import stdout
 from os import devnull
 
-from flare.util import element_to_Z
+from flare.util import element_to_Z, Z_to_element
 
 
 class HyperParameterMasking():
@@ -123,7 +123,7 @@ class HyperParameterMasking():
         self.cutoff_list = {}
         self.noise = 0.05
 
-        self.cutoffs_array = [0, 0, 0]
+        self.cutoffs_array = np.array([0, 0, 0], dtype=np.float)
         self.hyps = None
 
         if (species is not None):
@@ -169,11 +169,6 @@ class HyperParameterMasking():
                 if (parameters is not None):
                     self.list_parameters(parameters, constraints)
                 self.hyps_mask = self.generate_dict()
-                # try:
-                #    self.hyps_mask = self.generate_dict()
-                # except:
-                #     print("more parameters needed to generate the hypsmask",
-                #           file=self.fout)
 
     def list_parameters(self, parameter_dict, constraints={}):
         """Define many groups of parameters
@@ -453,8 +448,6 @@ class HyperParameterMasking():
                 idstar = element_list.index('*')
                 one_star_less.pop(idstar)
                 for sub in self.all_group_names['specie']:
-                    # print("head of replacement", group_type, name,
-                    #       non_star_element +[sub])
                     self.define_group(group_type, name,
                                       one_star_less + [sub], parameters=parameters, atomic_str=atomic_str)
 
@@ -715,17 +708,18 @@ class HyperParameterMasking():
                 for idt in range(self.n[group]):
                     hyps_label += ['Length_Scale_'+group]
         opt += [self.opt['noise']]
+        hyps_label += ['Noise_Var.']
+        hyps_mask['hyps_label'] = hyps_label
+        hyps += [self.noise]
 
         # handle partial optimization if any constraints are defined
         hyps_mask['original'] = np.hstack(hyps)
-        hyps_mask['original'] = np.hstack([hyps_mask['original'], self.noise])
-        hyps_label += ['Noise_Var.']
-        hyps_mask['original'] = np.array(hyps_mask['original'], dtype=np.float)
-        hyps_mask['hyps_label'] = hyps_label
+
         opt = np.hstack(opt)
         hyps_mask['train_noise'] = self.opt['noise']
         if (not opt.all()):
             nhyps = len(hyps_mask['original'])
+            hyps_mask['original_labels'] = hyps_mask['hyps_label']
             mapping = []
             hyps_mask['hyps_label'] = []
             for i in range(nhyps):
@@ -743,20 +737,26 @@ class HyperParameterMasking():
         hyps_mask['hyps'] = newhyps
 
         # checkout universal cutoffs and seperate cutoffs
-        if len(self.cutoff_list.get('bond', [])) > 0:
+        nbond = hyps_mask.get('nbond', 0)
+        ntriplet = hyps_mask.get('ntriplet', 0)
+        nmb = hyps_mask.get('nmb', 0)
+        if len(self.cutoff_list.get('bond', [])) > 0 \
+                and nbond > 0:
             hyps_mask['cutoff_2b'] = np.array(
                 self.cutoff_list['bond'], dtype=np.float)
-        if len(self.cutoff_list.get('cut3b', [])) > 0:
+        if len(self.cutoff_list.get('cut3b', [])) > 0 \
+                and ntriplet > 0:
             hyps_mask['cutoff_3b'] = np.array(
                 self.cutoff_list['cut3b'], dtype=np.float)
             hyps_mask['ncut3b'] = self.n['cut3b']
             hyps_mask['cut3b_mask'] = self.mask['cut3b']
-        if len(self.cutoff_list.get('mb', [])) > 0:
+        if len(self.cutoff_list.get('mb', [])) > 0 \
+                and nmb > 0:
             hyps_mask['cutoff_mb'] = np.array(
                 self.cutoff_list['mb'], dtype=np.float)
 
         self.hyps_mask = hyps_mask
-        if (self.cutoffs_array[2] > 0):
+        if (self.cutoffs_array[2] > 0) and nmb > 0:
             hyps_mask['cutoffs'] = self.cutoffs_array
         else:
             hyps_mask['cutoffs'] = self.cutoffs_array[:2]
@@ -768,30 +768,41 @@ class HyperParameterMasking():
         return hyps_mask
 
     @staticmethod
-    def from_dict(hyps_mask):
+    def from_dict(hyps_mask, verbose=False):
         """ convert dictionary mask to HM instance
         This function is not tested yet
         """
 
         HyperParameterMasking.check_instantiation(hyps_mask)
 
-        pm = HyperParameterMasking()
+        pm = HyperParameterMasking(verbose=verbose)
 
         hyps = hyps_mask['hyps']
 
         if 'map' in hyps_mask:
+            ihyps = hyps
             hyps = hyps_mask['original']
             constraints = np.zeros(len(hyps), dtype=bool)
             for ele in hyps_mask['map']:
                 constraints[ele] = True
+            for i, ori in enumerate(hyps_mask['map']):
+                hyps[ori] = ihyps[i]
         else:
             constraints = np.ones(len(hyps), dtype=bool)
 
         pm.nspecie = hyps_mask['nspecie']
         nele = len(hyps_mask['specie_mask'])
-        for i in range(nele):
-            pm.define_group("specie", hyps_mask['specie_mask'][i],
-                            [Z_to_element(i)])
+        max_species = np.max(hyps_mask['specie_mask'])
+        specie_mask = hyps_mask['specie_mask']
+        for i in range(max_species+1):
+            elelist = np.where(specie_mask==i)[0]
+            if len(elelist)>0:
+                for ele in elelist:
+                    if (ele!=0):
+                        pm.define_group("specie", i, [Z_to_element(ele)])
+        # for i in range(1, nele):
+        #     pm.define_group("specie", hyps_mask['specie_mask'][i],
+        #                     [Z_to_element(i)])
 
         nbond = hyps_mask.get('nbond', 0)
         ntriplet = hyps_mask.get('ntriplet', 0)
@@ -802,14 +813,14 @@ class HyperParameterMasking():
                     cutoffname = 'cutoff_2b'
                     sig = hyps
                     ls = hyps[nbond:]
-                    csig = constraint
-                    cls = constraint[nbond:]
+                    csig = constraints
+                    cls = constraints[nbond:]
                 else:
                     cutoffname = 'cutoff_mb'
                     sig = hyps[nbond*2+ntriplet*2:]
                     ls = hyps[nbond*2+ntriplet*2+nmb:]
-                    csig = constraint[nbond*2+ntriplet*2:]
-                    cls = constraint[hyps[nbond*2+ntriplet*2+nmb:]]
+                    csig = constraints[nbond*2+ntriplet*2:]
+                    cls = constraints[nbond*2+ntriplet*2+nmb:]
                 for i in range(pm.nspecie):
                     for j in range(i, pm.nspecie):
                         ttype = hyps_mask[f'{t}_mask'][i+j*pm.nspecie]
@@ -824,8 +835,8 @@ class HyperParameterMasking():
         if ('ntriplet' in hyps_mask):
             sig = hyps[nbond*2:]
             ls = hyps[nbond*2+ntriplet:]
-            csig = constraint[nbond*2:]
-            cls = constraint[hyps[nbond*2+ntriplet:]]
+            csig = constraints[nbond*2:]
+            cls = constraints[nbond*2+ntriplet:]
             for i in range(pm.nspecie):
                 for j in range(i, pm.nspecie):
                     for k in range(j, pm.nspecie):
@@ -845,7 +856,7 @@ class HyperParameterMasking():
                 pm.set_parameters(
                     f"cut3b{i}", [0, 0, hyps_mask['cutoff_3b'][i]])
 
-        pm.set_parameters('noise', hyps)
+        pm.set_parameters('noise', hyps[-1])
         if 'cutoffs' in hyps_mask:
             cut = hyps_mask['cutoffs']
             pm.set_parameters(f"cutoff2b", cut[0])
@@ -957,9 +968,9 @@ class HyperParameterMasking():
                     for tmb_2 in range(tmb, nspecie):
                         assert bmask[tmb*nspecie+tmb_2] == bmask[tmb_2*nspecie+tmb], \
                             'mb_mask has to be symmetric'
-        else:
-            nmb = 1
-            hyps_mask['mb_mask'] = np.zeros(nspecie**2, dtype=np.int)
+        # else:
+        #     nmb = 1
+        #     hyps_mask['mb_mask'] = np.zeros(nspecie**2, dtype=np.int)
 
         if 'map' in hyps_mask:
             assert ('original' in hyps_mask), \
@@ -1011,7 +1022,7 @@ class HyperParameterMasking():
 
         n2b = hyps_mask.get('nbond', 0)
         n3b = hyps_mask.get('ntriplet', 0)
-        nmb = hyps_mask.get('nmb', 1)
+        nmb = hyps_mask.get('nmb', 0)
 
         if (len(cutoffs) <= 2):
             assert ((n2b + n3b) > 0)
@@ -1023,6 +1034,9 @@ class HyperParameterMasking():
                 assert (n2b * 2 + n3b * 2 + 1) == len(hyps_mask['original']), \
                     "the hyperparmeter length is inconsistent with the mask"
             else:
+                if (nmb == 0):
+                    nmb = 1
+                    hyps_mask['mb_mask'] = np.zeros(hyps_mask['nspecie']**2, dtype=np.int)
                 assert (n2b * 2 + n3b * 2 + nmb * 2 + 1) == len(hyps_mask['original']), \
                     "the hyperparmeter length is inconsistent with the mask"
             assert len(hyps_mask['map']) == len(hyps), \
@@ -1032,19 +1046,22 @@ class HyperParameterMasking():
                 assert (n2b * 2 + n3b * 2 + 1) == len(hyps), \
                     "the hyperparmeter length is inconsistent with the mask"
             else:
+                if (nmb == 0):
+                    nmb = 1
+                    hyps_mask['mb_mask'] = np.zeros(hyps_mask['nspecie']**2, dtype=np.int)
                 assert (n2b * 2 + n3b * 2 + nmb*2 + 1) == len(hyps), \
                     "the hyperparmeter length is inconsistent with the mask"
 
         if 'cutoff_2b' in hyps_mask:
-            assert cutoffs[0] > npmax(hyps_mask['cutoff_2b']), \
+            assert cutoffs[0] >= npmax(hyps_mask['cutoff_2b']), \
                 'general cutoff should be larger than all cutoffs listed in hyps_mask'
 
         if 'cutoff_3b' in hyps_mask:
-            assert cutoffs[0] > npmax(hyps_mask['cutoff_3b']), \
+            assert cutoffs[0] >= npmax(hyps_mask['cutoff_3b']), \
                 'general cutoff should be larger than all cutoffs listed in hyps_mask'
 
         if 'cutoff_mb' in hyps_mask:
-            assert cutoffs[0] > npmax(hyps_mask['cutoff_mb']), \
+            assert cutoffs[0] >= npmax(hyps_mask['cutoff_mb']), \
                 'general cutoff should be larger than all cutoffs listed in hyps_mask'
 
     @staticmethod
