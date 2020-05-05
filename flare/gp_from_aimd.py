@@ -417,7 +417,7 @@ class TrajectoryTrainer:
                     # Add max uncertainty atoms to training set
                     self.update_gp_and_print(
                         cur_frame, train_atoms=train_atoms,
-                        uncertainties=pred_stds,
+                        uncertainties=pred_stds[train_atoms],
                         train=False)
                     nsample += len(train_atoms)
                     # Re-train if number of sampled atoms is high enough
