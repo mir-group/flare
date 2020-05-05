@@ -285,7 +285,9 @@ class TrajectoryTrainer:
                     train_atoms.append(atom)
                     atom_count += 1
 
-            self.update_gp_and_print(frame, train_atoms, train=False)
+            self.update_gp_and_print(frame=frame,
+                                     train_atoms=train_atoms,
+                                     uncertainties=[], train=False)
 
         if self.verbose >= 3 and atom_count > 0:
             self.output.write_to_log(f"Added {atom_count} atoms to pretrain\n" \
@@ -414,7 +416,9 @@ class TrajectoryTrainer:
                     # Compute mae and write to output;
                     # Add max uncertainty atoms to training set
                     self.update_gp_and_print(
-                        cur_frame, train_atoms, train=False)
+                        cur_frame, train_atoms=train_atoms,
+                        uncertainties=pred_stds,
+                        train=False)
                     nsample += len(train_atoms)
                     # Re-train if number of sampled atoms is high enough
                     if nsample >= self.min_atoms_per_train or (
@@ -444,6 +448,7 @@ class TrajectoryTrainer:
                                 self.model_format)
 
     def update_gp_and_print(self, frame: Structure, train_atoms: List[int],
+                            uncertainties: List[int]=None,
                             train: bool = True):
         """
         Update the internal GP model training set with a list of training
@@ -451,9 +456,12 @@ class TrajectoryTrainer:
         the GP by optimizing hyperparameters.
         :param frame: Structure to train on
         :param train_atoms: Index atoms to train on
+        :param: uncertainties: Uncertainties to print, pass in [] to silence
         :param train: Train or not
         :return: None
         """
+
+
 
         # Group added atoms by species for easier output
         added_species = [Z_to_element(frame.coded_species[at]) for at in
@@ -462,12 +470,18 @@ class TrajectoryTrainer:
 
         for atom, spec in zip(train_atoms, added_species):
             added_atoms[spec].append(atom)
+
+
         if self.verbose:
             self.output.write_to_log(f'\nAdding atom(s) {added_atoms}'
                                      ' to the training set.\n')
 
-            self.output.write_to_log(f'Uncertainties: ' \
-                                     f'{frame.stds[train_atoms]}.\n',
+        if uncertainties is None and not (uncertainties is []):
+            uncertainties = frame.stds[train_atoms]
+
+        if self.verbose and not(uncertainties is []):
+            self.output.write_to_log(f'Uncertainties: '
+                                     f'{uncertainties}.\n',
                                      flush=True)
 
         # update gp model; handling differently if it's an MGP
