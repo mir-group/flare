@@ -1724,14 +1724,15 @@ def many_body_mc_jit(bond_array_1, bond_array_2, neigh_dists_1, neigh_dists_2, n
         q1 = q_value_mc(bond_array_1[:, 0], r_cut, s, etypes1, cutoff_func)
         q2 = q_value_mc(bond_array_2[:, 0], r_cut, s, etypes2, cutoff_func)
 
-        # compute kernel between central atoms only if central atoms are of the same species
+        # compute kernel between central atoms only if central atoms are of 
+        # the same species
         if c1 == c2:
             k12 = k_sq_exp_double_dev(q1, q2, sig, ls)
         else:
             k12 = 0
 
-        # initialise arrays of many body descriptors and gradients for the neighbour atoms in
-        # the two configurations
+        # initialize arrays of many body descriptors and gradients for the 
+        # neighbour atoms in the two configurations
         qis = np.zeros(bond_array_1.shape[0], dtype=np.float64)
         q1i_grads = np.zeros(bond_array_1.shape[0], dtype=np.float64)
         qi1_grads = np.zeros(bond_array_1.shape[0], dtype=np.float64)
@@ -2008,32 +2009,27 @@ def many_body_mc_force_en_jit(bond_array_1, bond_array_2, neigh_dists_1, num_nei
         else:
             k12 = 0
 
-        qis = np.zeros(bond_array_1.shape[0], dtype=np.float64)
-        qi1_grads = np.zeros(bond_array_1.shape[0], dtype=np.float64)
-        q1i_grads = np.zeros(bond_array_1.shape[0], dtype=np.float64)
-        ki2s = np.zeros(bond_array_1.shape[0], dtype=np.float64)
-
+        qi1_grads = q1i_grads = 0
         # Loop over neighbours i of 1
         for i in range(bond_array_1.shape[0]):
             ri1 = bond_array_1[i, 0]
             ci1 = bond_array_1[i, d1]
 
             if etypes1[i] == s:
-                _, q1i_grads[i] = coordination_number(
+                _, q1i_grads = coordination_number(
                     ri1, ci1, r_cut, cutoff_func)
 
             if c1 == s:
-                _, qi1_grads[i] = coordination_number(
+                _, qi1_grads = coordination_number(
                     ri1, ci1, r_cut, cutoff_func)
 
-            # Calculate many-body descriptor value for i
-            qis[i] = q_value_mc(neigh_dists_1[i, :num_neigh_1[i]], r_cut,
-                                s, etypes_neigh_1[i, :num_neigh_1[i]], cutoff_func)
-
             if c2 == etypes1[i]:
-                ki2s[i] = k_sq_exp_dev(qis[i], q2, sig, ls)
+                # Calculate many-body descriptor value for i
+                qis = q_value_mc(neigh_dists_1[i, :num_neigh_1[i]], r_cut,
+                                 s, etypes_neigh_1[i, :num_neigh_1[i]], cutoff_func)
+                ki2s = k_sq_exp_dev(qis, q2, sig, ls)
 
-            kern += - (q1i_grads[i] * k12 + qi1_grads[i] * ki2s[i])
+            kern += - (q1i_grads * k12 + qi1_grads * ki2s)
 
     return kern
 
