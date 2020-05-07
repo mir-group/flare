@@ -38,4 +38,4 @@ def test_env_methods(cutoff):
 
     assert np.array_equal(remade_env.bond_array_2, env_test.bond_array_2)
     assert np.array_equal(remade_env.bond_array_3, env_test.bond_array_3)
-    assert np.array_equal(remade_env.bond_array_mb, env_test.bond_array_mb)
+    assert np.array_equal(remade_env.q_array, env_test.q_array)
