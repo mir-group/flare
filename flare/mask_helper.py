@@ -768,7 +768,7 @@ class HyperParameterMasking():
         return hyps_mask
 
     @staticmethod
-    def from_dict(hyps_mask, verbose=False):
+    def from_dict(hyps_mask, verbose=False, init_spec=[]):
         """ convert dictionary mask to HM instance
         This function is not tested yet
         """
@@ -799,7 +799,13 @@ class HyperParameterMasking():
             if len(elelist)>0:
                 for ele in elelist:
                     if (ele!=0):
-                        pm.define_group("specie", i, [Z_to_element(ele)])
+                        if (len(init_spec)>0):
+                            if Z_to_element(ele) in init_spec:
+                                print("try ele", Z_to_element(ele), init_spec)
+                                # pm.define_group("specie", Z_to_element(ele), [Z_to_element(ele)])
+                                pm.define_group("specie", i, [Z_to_element(ele)])
+                        else:
+                            pm.define_group("specie", i, [Z_to_element(ele)])
         # for i in range(1, nele):
         #     pm.define_group("specie", hyps_mask['specie_mask'][i],
         #                     [Z_to_element(i)])
