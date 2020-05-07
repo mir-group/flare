@@ -418,7 +418,6 @@ class Map2body:
                 count = 0
                 base = 0
                 for ibatch in range(nbatch):
-                    print("sending", ibatch, count)
                     s, e = block_id[ibatch]
                     k12_slice.append(\
                             pool.apply_async(self._GenGrid_inner,
@@ -438,11 +437,8 @@ class Map2body:
                         base = ibatch+1
                 if (count > 0):
                    for ibase in range(count):
-                       print("getting", ibase, ibase+base)
                        s, e = block_id[ibase+base]
                        vec =  k12_slice[ibase].get()
-                       print(vec)
-                       print(s, e)
                        k12_v_all[:, s*3:e*3] = k12_slice[ibase].get()
                    del k12_slice
                 pool.close()
@@ -463,7 +459,6 @@ class Map2body:
         '''
         generate grid for each cos angle, used to parallelize grid generation
         '''
-        print(kernel_info)
 
         kernel, efk, cutoffs, hyps, hyps_mask = kernel_info
         size = e - s
@@ -580,7 +575,6 @@ class Map3body:
                     os.rmdir('kv3')
                 os.mkdir('kv3')
 
-            print("prepare the package for parallelization")
             size = len(GP.training_data)
             block_id, nbatch = partition_c(self.n_sample, size, processes)
 
@@ -639,8 +633,7 @@ class Map3body:
         generate grid data of mean prediction and L^{-1}k* for each triplet
          implemented in a parallelized style
         '''
-        print("running serial version")
-
+        
         # ------ get 3body kernel info ------
         kernel, efk, cutoffs, hyps, hyps_mask = get_3bkernel(GP)
 
