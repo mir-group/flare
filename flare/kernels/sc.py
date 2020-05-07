@@ -46,6 +46,8 @@ from numba import njit
 from flare.kernels.kernels import force_helper, grad_constants, grad_helper, \
     force_energy_helper, three_body_en_helper, three_body_helper_1, \
     three_body_helper_2, three_body_grad_helper_1, three_body_grad_helper_2
+    k_sq_exp_double_dev, k_sq_exp_dev, coordination_number, q_value, q_value_mc, \
+    mb_grad_helper_ls_, mb_grad_helper_ls_
 
 
 # -----------------------------------------------------------------------------
@@ -1545,9 +1547,8 @@ def many_body_force_en_jit(bond_array_1, bond_array_2,
 
     return kern
 
+
 @njit
-
-
 def many_body_en_jit(bond_array_1, bond_array_2,
                      sig, ls, r_cut, cutoff_func):
     """many-body single-element energy kernel between accelerated
@@ -1694,139 +1695,6 @@ def triplet_force_en_kernel(ci1, ci2, ri1, ri2, ri3, rj1, rj2, rj3,
     return I1 + I2 + I3 + I4 + I5 + I6
 
 
-# -----------------------------------------------------------------------------
-#                        many body helper functions
-# -----------------------------------------------------------------------------
-
-@njit
-def k_sq_exp_double_dev(q1, q2, sig, ls):
-    """Second Gradient of generic squared exponential kernel on two many body functions
-
-    Args:
-        q1 (float): the many body descriptor of the first local environment
-        q2 (float): the many body descriptor of the second local environment
-        sig (float): amplitude hyperparameter
-        ls2 (float): squared lenghtscale hyperparameter
-    Return:
-        float: the value of the double derivative of the squared exponential kernel
-    """
-
-    qdiffsq = (q1 - q2) * (q1 - q2)
-
-    ls2 = ls * ls
-
-    ker = exp(-qdiffsq / (2 * ls2))
-
-    ret = sig * sig * ker / ls2 * (1 - qdiffsq / ls2)
-
-    return ret
-
-@njit
-
-
-def k_sq_exp_dev(q1, q2, sig, ls):
-    """Second Gradient of generic squared exponential kernel on two many body functions
-
-    Args:
-        q1 (float): the many body descriptor of the first local environment
-        q2 (float): the many body descriptor of the second local environment
-        sig (float): amplitude hyperparameter
-        ls2 (float): squared lenghtscale hyperparameter
-    Return:
-        float: the value of the derivative of the squared exponential kernel
-    """
-
-    qdiff = (q1 - q2)
-
-    ls2 = ls * ls
-
-    ker = exp(-qdiff * qdiff / (2 * ls2))
-
-    ret = - sig * sig * ker / ls2 * qdiff
-
-    return ret
-
-
-@njit
-def coordination_number(rij, cij, r_cut, cutoff_func):
-    """Pairwise contribution to many-body descriptor based on number of
-        atoms in the environment
-
-    Args:
-        rij (float): distance between atoms i and j
-        cij (float): Component of versor of rij along given direction
-        r_cut (float): cutoff hyperparameter
-        cutoff_func (callable): cutoff function
-    Return:
-        float: the value of the pairwise many-body contribution
-        float: the value of the derivative of the pairwise many-body
-        contribution w.r.t. the central atom displacement
-    """
-
-    fij, fdij = cutoff_func(r_cut, rij, cij)
-
-    return fij, fdij
-
-
-@njit
-def q_value(distances, r_cut, cutoff_func, q_func=coordination_number):
-    """Compute value of many-body descriptor based on distances of atoms
-    in the local amny-body environment.
-
-    Args:
-        distances (np.ndarray): distances between atoms i and j
-        r_cut (float): cutoff hyperparameter
-        cutoff_func (callable): cutoff function
-        q_func (callable): many-body pairwise descrptor function
-
-    Return:
-        float: the value of the many-body descriptor
-    """
-    q = 0
-
-    for d in distances:
-        q_, _ = q_func(d, 0, r_cut, cutoff_func)
-        q += q_
-
-    return q
-
-
-@njit
-def mb_grad_helper_ls_(qdiffsq, sig, ls):
-    """Derivative of a many body force-force kernel wrt ls
-
-    """
-
-    ls2 = ls * ls
-
-    prefact = exp(-(qdiffsq / (2 * ls2))) * (sig * sig) / ls ** 5
-
-    ret = - prefact * (qdiffsq ** 2 / ls2 - 5 * qdiffsq + 2 * ls2)
-
-    return ret
-
-@njit
-
-
-def mb_grad_helper_ls(q1, q2, qi, qj, sig, ls):
-    """Helper function fr many body gradient collecting all the derivatives
-    of the force-foce many body kernel wrt ls
-
-    """
-
-    q12diffsq = ((q1 - q2) * (q1 - q2))
-    qijdiffsq = ((qi - qj) * (qi - qj))
-    qi2diffsq = ((qi - q2) * (qi - q2))
-    q1jdiffsq = ((q1 - qj) * (q1 - qj))
-
-    dk12 = mb_grad_helper_ls_(q12diffsq, sig, ls)
-    dkij = mb_grad_helper_ls_(qijdiffsq, sig, ls)
-    dki2 = mb_grad_helper_ls_(qi2diffsq, sig, ls)
-    dk1j = mb_grad_helper_ls_(q1jdiffsq, sig, ls)
-
-    return dk12 + dkij + dki2 + dk1j
-
-
 _str_to_kernel = {'two_body': two_body,
                   'two_body_en': two_body_en,
                   'two_body_force_en': two_body_force_en,
@@ -1863,6 +1731,7 @@ _str_to_kernel = {'two_body': two_body,
                   }
 
 
+# TODO: do we still need this function?
 def str_to_kernel(string: str, include_grad: bool = False):
     if string not in _str_to_kernel.keys():
         raise ValueError("Kernel {} not found in list of available "
