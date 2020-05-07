@@ -1,5 +1,6 @@
 import numpy as np
-from flare import struc, energy_gp_algebra, mc_simple, energy_gp
+from flare import struc, energy_gp_algebra, energy_gp
+from flare.kernels import mc_simple
 from flare.energy_gp_algebra import get_ky_block, get_ky_mat, kernel_ee, \
     kernel_fe
 import pytest
