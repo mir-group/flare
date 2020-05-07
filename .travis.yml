@@ -16,7 +16,7 @@ before_install:
 #    - "wget https://github.com/cp2k/cp2k/releases/download/\
 #      v6.1.0/cp2k-6.1-Linux-x86_64.sopt"
     - chmod u+x lmp
-    - chmod u+x cp2k-6.1-Linux-x86_64.sopt
+#    - chmod u+x cp2k-6.1-Linux-x86_64.sopt
     - pip install -r requirements.txt
 
 script:
