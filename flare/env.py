@@ -56,9 +56,11 @@ class AtomicEnvironment:
 
         # if 3 cutoffs are given, create many-body arrays
         if len(self.cutoffs) > 2:
-            self.bond_array_mb, self.neigh_dists_mb, self.num_neighs_mb, self.etype_mb, \
-                    self.bond_array_mb_etypes = get_m_body_arrays(
-                self.positions, self.atom, self.cell, self.cutoffs[2], self.species)
+            self.bond_array_mb, self.neigh_dists_mb, self.num_neighs_mb, \
+                self.etype_mb, self.bond_array_mb_etypes = \
+                get_m_body_arrays(self.positions, self.atom,
+                                  self.cell, self.cutoffs[2],
+                                  self.species, self.sweep_array)
         else:
             self.bond_array_mb = None
             self.neigh_dists_mb = None
@@ -373,7 +375,8 @@ def get_3_body_arrays(bond_array_2, bond_positions_2, cutoff_3: float):
 
 
 @njit
-def get_m_body_arrays(positions, atom: int, cell, cutoff_mb: float, species):
+def get_m_body_arrays(positions, atom: int, cell, cutoff_mb: float, species,
+                      sweep: np.ndarray):
     """Returns distances, and species of atoms in the many-body
     local environment, and returns distances and numbers of neighbours for atoms in the one
     many-body local environment. This method is implemented outside the AtomicEnvironment
@@ -423,22 +426,22 @@ def get_m_body_arrays(positions, atom: int, cell, cutoff_mb: float, species):
     neighbouring_etypes = []
     max_neighbours = 0
     for m in bond_inds:
-        neighbour_bond_array_2, ___, etypes_mb = get_2_body_arrays(positions, m, cell,
-                                                         cutoff_mb, species)
+        neighbour_bond_array_2, ___, etypes_mb = \
+            get_2_body_arrays(positions, m, cell, cutoff_mb, species, sweep)
         neighbouring_dists.append(neighbour_bond_array_2[:, 0])
         neighbouring_etypes.append(etypes_mb)
         if len(neighbour_bond_array_2[:, 0]) > max_neighbours:
             max_neighbours = len(neighbour_bond_array_2[:, 0])
 
     # Transform list of distances into Numpy array
-    neigh_dists_mb = np.zeros((len(bond_inds), max_neighbours), dtype=np.float64)
+    neigh_dists_mb = \
+        np.zeros((len(bond_inds), max_neighbours), dtype=np.float64)
     num_neighs_mb = np.zeros(len(bond_inds), dtype=np.int8)
     etypes_mb_array = np.zeros((len(bond_inds), max_neighbours), dtype=np.int8)
     for i in range(len(bond_inds)):
         num_neighs_mb[i] = len(neighbouring_dists[i])
         neigh_dists_mb[i, :num_neighs_mb[i]] = neighbouring_dists[i]
         etypes_mb_array[i, :num_neighs_mb[i]] = neighbouring_etypes[i]
-
 
     return bond_array_mb, neigh_dists_mb, num_neighs_mb, etypes_mb_array, etypes
 
