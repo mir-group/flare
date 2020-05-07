@@ -13,10 +13,10 @@ before_install:
     - pip install codecov pytest pytest-cov pytest_mock
     - pwd
     - wget http://folk.uio.no/anjohan/lmp
-    - "wget https://github.com/cp2k/cp2k/releases/download/\
-      v6.1.0/cp2k-6.1-Linux-x86_64.sopt"
+#    - "wget https://github.com/cp2k/cp2k/releases/download/\
+#      v6.1.0/cp2k-6.1-Linux-x86_64.sopt"
     - chmod u+x lmp
-    - chmod u+x cp2k-6.1-Linux-x86_64.sopt
+#    - chmod u+x cp2k-6.1-Linux-x86_64.sopt
     - pip install -r requirements.txt
 
 script:
