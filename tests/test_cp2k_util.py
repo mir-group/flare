@@ -1,19 +1,22 @@
 import pytest
-import os
+from os import remove, environ
+from shutil import copyfile
 import sys
 import numpy as np
 from flare.struc import Structure, get_unique_species
 from flare.dft_interface.cp2k_util import parse_dft_input, parse_dft_forces, run_dft_par, \
     edit_dft_input_positions, dft_input_to_structure
 
+
 def cleanup(target: str = None):
     for i in ['cp2k-RESTART.wfn', 'dft.out', 'cp2k.in']:
         try:
-            os.remove(i)
+            remove(i)
         except:
             pass
     if (target is not None):
-        os.remove(target)
+        remove(target)
+
 
 @pytest.mark.parametrize("cp2k_input,exp_spec",
                          [
@@ -21,12 +24,12 @@ def cleanup(target: str = None):
                               ['H', 'H'])
                          ]
                          )
-
 def test_species_parsing(cp2k_input, exp_spec):
     positions, species, cell, masses = parse_dft_input(cp2k_input)
     assert len(species) == len(exp_spec)
     for i, spec in enumerate(species):
         assert spec == exp_spec[i]
+
 
 @pytest.mark.parametrize("cp2k_input,exp_cell",
                          [
@@ -68,16 +71,15 @@ def test_input_to_structure(cp2k_input):
                               './test_files/cp2k_output_1.out')
                          ]
                          )
-@pytest.mark.skipif(not os.environ.get('CP2K_COMMAND',
-                          False), reason='CP2K_COMMAND not found '
-                                  'in environment: Please install CP2K '
-                                  ' and set the CP2K_COMMAND env. '
-                                  'variable to point to cp2k.popt')
-
+@pytest.mark.skipif(not environ.get('CP2K_COMMAND',
+                                    False), reason='CP2K_COMMAND not found '
+                    'in environment: Please install CP2K '
+                    ' and set the CP2K_COMMAND env. '
+                    'variable to point to cp2k.popt')
 def test_cp2k_calling(cp2k_input, cp2k_output):
 
-    dft_loc = os.environ.get('CP2K_COMMAND')
-    os.system(' '.join(['cp', cp2k_input, 'cp2k.in']))
+    dft_loc = environ.get('CP2K_COMMAND')
+    copyfile(cp2k_input, 'cp2k.in')
     positions, species, cell, masses = parse_dft_input(cp2k_input)
 
     structure = Structure(cell=cell, species=species,
@@ -85,7 +87,7 @@ def test_cp2k_calling(cp2k_input, cp2k_output):
                           mass_dict=masses, species_labels=species)
 
     forces = run_dft_par('cp2k.in',
-                          structure, dft_loc)
+                         structure, dft_loc)
 
     ref_forces = parse_dft_forces(cp2k_output)
 
@@ -96,13 +98,15 @@ def test_cp2k_calling(cp2k_input, cp2k_output):
 
     cleanup()
 
+
 def test_cp2k_input_edit():
     """
     Load a structure in from cp2k_input_1, change the position and cell,
     then edit and re-parse
     :return:
     """
-    positions, species, cell, masses = parse_dft_input('./test_files/cp2k_input_1.in')
+    positions, species, cell, masses = parse_dft_input(
+        './test_files/cp2k_input_1.in')
     _, coded_species = get_unique_species(species)
     structure = Structure(cell, coded_species, positions, masses,
                           species_labels=species)
@@ -110,12 +114,13 @@ def test_cp2k_input_edit():
     structure.vec1 += np.random.randn(3)
     structure.positions[0] += np.random.randn(3)
 
-    newfilename = edit_dft_input_positions('./test_files/cp2k_input_1.in', structure=structure)
+    newfilename = edit_dft_input_positions(
+        './test_files/cp2k_input_1.in', structure=structure)
 
     positions, species, cell, masses = parse_dft_input(newfilename)
 
     assert np.equal(positions[0], structure.positions[0]).all()
     assert np.equal(structure.vec1, cell[0, :]).all()
 
-    os.remove(newfilename)
+    remove(newfilename)
     cleanup()

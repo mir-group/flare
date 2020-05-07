@@ -6,8 +6,9 @@ Gaussian Process Force Fields
 
    struc
    env
-   kernels
-   mc_simple
+   kernels/sc
+   kernels/mc_simple
+   kernels/mc_sephyps
    cutoffs
    predict
    gp_algebra

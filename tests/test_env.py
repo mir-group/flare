@@ -3,8 +3,10 @@ import numpy as np
 from flare.struc import Structure
 from flare.env import AtomicEnvironment
 
+cutoff_list=[np.ones(2), np.ones(3)*0.8]
 
-def test_species_count():
+@pytest.mark.parametrize('cutoff', cutoff_list)
+def test_species_count(cutoff):
     cell = np.eye(3)
     species = [1, 2, 3]
     positions = np.array([[0, 0, 0], [0.5, 0.5, 0.5], [0.1, 0.1, 0.1]])
@@ -16,8 +18,8 @@ def test_species_count():
     assert (len(env_test.bond_array_2) == len(env_test.etypes))
     assert (isinstance(env_test.etypes[0], np.int8))
 
-
-def test_env_methods():
+@pytest.mark.parametrize('cutoff', cutoff_list)
+def test_env_methods(cutoff):
     cell = np.eye(3)
     species = [1, 2, 3]
     positions = np.array([[0, 0, 0], [0.5, 0.5, 0.5], [0.1, 0.1, 0.1]])
@@ -28,8 +30,7 @@ def test_env_methods():
 
     the_dict = env_test.as_dict()
     assert isinstance(the_dict, dict)
-    for key in ['positions', 'cell', 'atom', 'cutoff_2', 'cutoff_3',
-                'species']:
+    for key in ['positions', 'cell', 'atom', 'cutoffs', 'species']:
         assert key in the_dict.keys()
 
     remade_env = AtomicEnvironment.from_dict(the_dict)
@@ -37,3 +38,4 @@ def test_env_methods():
 
     assert np.array_equal(remade_env.bond_array_2, env_test.bond_array_2)
     assert np.array_equal(remade_env.bond_array_3, env_test.bond_array_3)
+    assert np.array_equal(remade_env.bond_array_mb, env_test.bond_array_mb)

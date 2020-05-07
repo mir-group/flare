@@ -8,13 +8,13 @@ otf_object = otf_parser.OtfAnalysis(file_name)
 # -------------------------------------------------------------------------
 #                  reconstruct gp model from otf snippet
 # -------------------------------------------------------------------------
-from flare import mc_simple
 
-kernel = mc_simple.two_plus_three_body_mc
-kernel_grad = mc_simple.two_plus_three_body_mc_grad
-gp_model = otf_object.make_gp(kernel=kernel, kernel_grad=kernel_grad,
+
+
+
+gp_model = otf_object.make_gp(kernel_name="2+3_mc",
                               hyp_no=hyp_no)
-gp_model.par = True
+gp_model.parallel = True
 gp_model.hyp_labels = ['sig2', 'ls2', 'sig3', 'ls3', 'noise']
 
 # write model to a binary file
@@ -86,7 +86,7 @@ data_text = lammps_calculator.lammps_dat(structure, atom_types,
 lammps_calculator.write_text(data_file_name, data_text)
 
 # create lammps input
-style_string = 'mgp' 
+style_string = 'mgp'
 coeff_string = '* * {} Ag I yes yes'.format(lammps_location)
 lammps_executable = '$lmp'
 dump_file_name = 'tmp.dump'
