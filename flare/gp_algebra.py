@@ -152,7 +152,7 @@ def get_force_block_pack(hyps: np.ndarray, name: str, s1: int, e1: int,
     training_data = _global_training_data[name]
     size1 = (e1-s1)*3
     size2 = (e2-s2)*3
-    k_mat = np.zeros([size1, size2])
+    force_block = np.zeros([size1, size2])
 
     ds = [1, 2, 3]
 
@@ -171,11 +171,23 @@ def get_force_block_pack(hyps: np.ndarray, name: str, s1: int, e1: int,
             d_2 = ds[n_index % 3]
             kern_curr = kernel(x_1, x_2, d_1, d_2, *args)
             # store kernel value
-            k_mat[m_index, n_index] = kern_curr
+            force_block[m_index, n_index] = kern_curr
             if (same):
-                k_mat[n_index, m_index] = kern_curr
+                force_block[n_index, m_index] = kern_curr
 
-    return k_mat
+    return force_block
+
+
+def get_energy_block_pack(hyps: np.ndarray, name: str, s1: int, e1: int,
+                          s2: int, e2: int, same: bool, kernel, cutoffs,
+                          hyps_mask):
+    pass
+
+
+def get_force_energy_block_pack(hyps: np.ndarray, name: str, s1: int,
+                                e1: int, s2: int, e2: int, same: bool, kernel,
+                                cutoffs, hyps_mask):
+    pass
 
 
 def parallel_matrix_construction(pack_function, hyps, name, kernel, cutoffs,
@@ -250,15 +262,14 @@ def get_force_block(hyps: np.ndarray, name: str, kernel, cutoffs=None,
                                          block_id, nbatch, size3, multiplier)
 
     sigma_n, _, __ = obtain_noise_len(hyps, hyps_mask)
-
     ky_mat = k_mat
     ky_mat += sigma_n ** 2 * np.eye(size3)
 
     return ky_mat
 
 
-def get_energy_block(hyps: np.ndarray, name: str, kernel, cutoffs=None,
-                     hyps_mask=None, n_cpus=1, n_sample=100):
+def get_energy_block(hyps: np.ndarray, name: str, kernel, energy_noise,
+                     cutoffs=None, hyps_mask=None, n_cpus=1, n_sample=100):
     pass
 
 
