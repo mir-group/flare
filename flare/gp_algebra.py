@@ -418,6 +418,35 @@ def get_force_energy_block(hyps: np.ndarray, name: str, kernel, cutoffs=None,
     return force_energy_block
 
 
+def get_Ky_mat(hyps: np.ndarray, name: str, kernel, energy_noise,
+               cutoffs=None, hyps_mask=None, n_cpus=1, n_sample=100):
+
+    training_data = _global_training_data[name]
+    training_structures = _global_training_structures[name]
+    size1 = len(training_data) * 3
+    size2 = len(training_structures)
+
+    # Initialize Ky.
+    ky_mat = np.zeros((size1 + size2, size1 + size2))
+
+    # Assemble the full covariance matrix block-by-block.
+    force_block = get_force_block(hyps, name, kernel, cutoffs, hyps_mask,
+                                  n_cpus, n_sample)
+
+    energy_block = get_energy_block(hyps, name, kernel, energy_noise, cutoffs,
+                                    hyps_mask, n_cpus, n_sample)
+
+    force_energy_block = get_force_energy_block(hyps, name, kernel, cutoffs,
+                                                hyps_mask, n_cpus, n_sample)
+
+    ky_mat[0:size1, 0:size1] = force_block
+    ky_mat[size1:, size1:] = energy_block
+    ky_mat[0:size1, size1:] = force_energy_block
+    ky_mat[size1:, 0:size1] = force_energy_block.transpose()
+
+    return ky_mat
+
+
 # --------------------------------------------------------------------------
 #                              Ky updates
 # --------------------------------------------------------------------------
