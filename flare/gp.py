@@ -149,6 +149,9 @@ class GaussianProcess:
 
         # Parameters set during training
         self.ky_mat = None
+        self.force_block = None
+        self.energy_block = None
+        self.force_energy_block = None
         self.l_mat = None
         self.alpha = None
         self.ky_mat_inv = None
@@ -522,13 +525,10 @@ class GaussianProcess:
         _global_training_data[self.name] = self.training_data
         _global_training_labels[self.name] = self.training_labels_np
 
-        k_v = get_kernel_vector(self.name, self.kernel,
-                                x_t, d,
-                                self.hyps,
-                                cutoffs=self.cutoffs,
-                                hyps_mask=self.hyps_mask,
-                                n_cpus=n_cpus,
-                                n_sample=self.n_sample)
+        k_v = \
+            get_kernel_vector(self.name, self.kernel, x_t, d, self.hyps,
+                              cutoffs=self.cutoffs, hyps_mask=self.hyps_mask,
+                              n_cpus=n_cpus, n_sample=self.n_sample)
 
         # Guarantee that alpha is up to date with training set
         self.check_L_alpha()

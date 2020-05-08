@@ -133,8 +133,9 @@ def obtain_noise_len(hyps, hyps_mask):
 #                            Ky construction
 # --------------------------------------------------------------------------
 
-def get_ky_mat_pack(hyps: np.ndarray, name: str, s1: int, e1: int, s2: int,
-                    e2: int, same: bool, kernel, cutoffs, hyps_mask):
+def get_force_block_pack(hyps: np.ndarray, name: str, s1: int, e1: int,
+                         s2: int, e2: int, same: bool, kernel, cutoffs,
+                         hyps_mask):
     """ Compute covariance matrix element between set1 and set2
     :param hyps: list of hyper-parameters
     :param name: name of the gp instance.
@@ -197,8 +198,9 @@ def get_force_block(hyps: np.ndarray, name: str, kernel, cutoffs=None,
     if (n_cpus is None):
         n_cpus = mp.cpu_count()
     if (n_cpus == 1):
-        k_mat = get_ky_mat_pack(hyps, name, 0, size, 0, size, True,
-                                kernel, cutoffs, hyps_mask)
+        k_mat = \
+            get_force_block_pack(hyps, name, 0, size, 0, size, True, kernel,
+                                 cutoffs, hyps_mask)
     else:
         # initialize matrices
         block_id, nbatch = partition_cr(n_sample, size, n_cpus)
@@ -210,7 +212,7 @@ def get_force_block(hyps: np.ndarray, name: str, kernel, cutoffs=None,
             children.append(
                 mp.Process(
                     target=queue_wrapper,
-                    args=(result_queue, wid, get_ky_mat_pack,
+                    args=(result_queue, wid, get_force_block_pack,
                           (hyps, name, s1, e1, s2, e2,
                            s1 == s2, kernel, cutoffs, hyps_mask))))
 
@@ -247,9 +249,8 @@ def get_force_block(hyps: np.ndarray, name: str, kernel, cutoffs=None,
 #                              Ky updates
 # --------------------------------------------------------------------------
 
-def get_ky_mat_update(ky_mat_old, hyps: np.ndarray, name: str,
-                      kernel, cutoffs=None, hyps_mask=None,
-                      n_cpus=1, n_sample=100):
+def get_ky_mat_update(ky_mat_old, hyps: np.ndarray, name: str, kernel,
+                      cutoffs=None, hyps_mask=None, n_cpus=1, n_sample=100):
     '''
     used for update_L_alpha, especially for parallelization
     parallelized for added atoms, for example, if add 10 atoms to the training
@@ -267,7 +268,6 @@ def get_ky_mat_update(ky_mat_old, hyps: np.ndarray, name: str,
     :param n_sample: the size of block for matrix to compute
 
     :return: updated covariance matrix
-
     '''
 
     if (n_cpus is None):
@@ -293,7 +293,7 @@ def get_ky_mat_update(ky_mat_old, hyps: np.ndarray, name: str,
         s1, e1, s2, e2 = block_id[wid]
         children.append(
             mp.Process(target=queue_wrapper,
-                       args=(result_queue, wid, get_ky_mat_pack,
+                       args=(result_queue, wid, get_force_block_pack,
                              (hyps, name, s1, e1, s2, e2,
                               s1 == s2, kernel, cutoffs, hyps_mask))))
 
@@ -689,8 +689,7 @@ def get_ky_and_hyp(hyps: np.ndarray, name, kernel_grad, cutoffs=None,
 
     # add gradient of noise variance
     if (train_noise):
-        hyp_mat = np.zeros([hyp_mat0.shape[0]+1,
-                            hyp_mat0.shape[1],
+        hyp_mat = np.zeros([hyp_mat0.shape[0]+1, hyp_mat0.shape[1],
                             hyp_mat0.shape[2]])
         hyp_mat[:-1, :, :] = hyp_mat0
         hyp_mat[-1, :, :] = np.eye(size3) * 2 * sigma_n
@@ -813,8 +812,7 @@ def get_like_grad_from_mats(ky_mat, hyp_mat, name):
     labels = _global_training_labels[name]
 
     alpha = np.matmul(ky_mat_inv, labels)
-    alpha_mat = np.matmul(alpha.reshape(-1, 1),
-                          alpha.reshape(1, -1))
+    alpha_mat = np.matmul(alpha.reshape(-1, 1), alpha.reshape(1, -1))
     like_mat = alpha_mat - ky_mat_inv
 
     # calculate likelihood
@@ -825,7 +823,6 @@ def get_like_grad_from_mats(ky_mat, hyp_mat, name):
     # calculate likelihood gradient
     like_grad = np.zeros(number_of_hyps)
     for n in range(number_of_hyps):
-        like_grad[n] = 0.5 * \
-                       np.trace(np.matmul(like_mat, hyp_mat[n, :, :]))
+        like_grad[n] = 0.5 * np.trace(np.matmul(like_mat, hyp_mat[n, :, :]))
 
     return like, like_grad
