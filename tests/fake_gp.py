@@ -3,7 +3,7 @@ import pytest
 import numpy as np
 from numpy.random import random, randint, permutation
 
-from flare import env, struc, gp
+from flare import struc, gp
 from flare.gp import GaussianProcess
 from flare.env import AtomicEnvironment
 from flare.struc import Structure
@@ -268,9 +268,9 @@ def generate_mb_envs_pos(positions0, species_1, cutoffs, cell, delt, d1, mask=No
     env_p = []
     env_m = []
     for i in range(noa):
-        env_0 += [env.AtomicEnvironment(test_struc[0], i, cutoffs)]
-        env_p += [env.AtomicEnvironment(test_struc[1], i, cutoffs)]
-        env_m += [env.AtomicEnvironment(test_struc[2], i, cutoffs)]
+        env_0 += [AtomicEnvironment(test_struc[0], i, cutoffs)]
+        env_p += [AtomicEnvironment(test_struc[1], i, cutoffs)]
+        env_m += [AtomicEnvironment(test_struc[2], i, cutoffs)]
 
     return [env_0, env_p, env_m]
 def generate_envs(cutoffs, delta):
@@ -293,9 +293,9 @@ def generate_envs(cutoffs, delta):
     test_structure_2 = struc.Structure(cell, species_1, pos_2)
     test_structure_3 = struc.Structure(cell, species_1, pos_3)
 
-    env1_1 = env.AtomicEnvironment(test_structure_1, atom_1, cutoffs)
-    env1_2 = env.AtomicEnvironment(test_structure_2, atom_1, cutoffs)
-    env1_3 = env.AtomicEnvironment(test_structure_3, atom_1, cutoffs)
+    env1_1 = AtomicEnvironment(test_structure_1, atom_1, cutoffs)
+    env1_2 = AtomicEnvironment(test_structure_2, atom_1, cutoffs)
+    env1_3 = AtomicEnvironment(test_structure_3, atom_1, cutoffs)
 
 
     # create env 2
@@ -313,9 +313,9 @@ def generate_envs(cutoffs, delta):
     test_structure_2 = struc.Structure(cell, species_2, pos_2)
     test_structure_3 = struc.Structure(cell, species_2, pos_3)
 
-    env2_1 = env.AtomicEnvironment(test_structure_1, atom_2, cutoffs)
-    env2_2 = env.AtomicEnvironment(test_structure_2, atom_2, cutoffs)
-    env2_3 = env.AtomicEnvironment(test_structure_3, atom_2, cutoffs)
+    env2_1 = AtomicEnvironment(test_structure_1, atom_2, cutoffs)
+    env2_2 = AtomicEnvironment(test_structure_2, atom_2, cutoffs)
+    env2_3 = AtomicEnvironment(test_structure_3, atom_2, cutoffs)
 
     return env1_1, env1_2, env1_3, env2_1, env2_2, env2_3
 
@@ -341,20 +341,20 @@ def another_env(cutoffs, delt):
     test_structure_3 = struc.Structure(cell, species_1, pos_3)
 
     # atom 0, original position
-    env1_1_0 = env.AtomicEnvironment(test_structure_1, 0, cutoffs)
+    env1_1_0 = AtomicEnvironment(test_structure_1, 0, cutoffs)
     # atom 0, 0 perturbe along x
-    env1_2_0 = env.AtomicEnvironment(test_structure_2, 0, cutoffs)
+    env1_2_0 = AtomicEnvironment(test_structure_2, 0, cutoffs)
     # atom 1, 0 perturbe along x
-    env1_2_1 = env.AtomicEnvironment(test_structure_2, 1, cutoffs)
+    env1_2_1 = AtomicEnvironment(test_structure_2, 1, cutoffs)
     # atom 2, 0 perturbe along x
-    env1_2_2 = env.AtomicEnvironment(test_structure_2, 2, cutoffs)
+    env1_2_2 = AtomicEnvironment(test_structure_2, 2, cutoffs)
 
     # atom 0, 0 perturbe along -x
-    env1_3_0 = env.AtomicEnvironment(test_structure_3, 0, cutoffs)
+    env1_3_0 = AtomicEnvironment(test_structure_3, 0, cutoffs)
     # atom 1, 0 perturbe along -x
-    env1_3_1 = env.AtomicEnvironment(test_structure_3, 1, cutoffs)
+    env1_3_1 = AtomicEnvironment(test_structure_3, 1, cutoffs)
     # atom 2, 0 perturbe along -x
-    env1_3_2 = env.AtomicEnvironment(test_structure_3, 2, cutoffs)
+    env1_3_2 = AtomicEnvironment(test_structure_3, 2, cutoffs)
 
     # create env 2
     pos_1 = np.vstack([[0, 0, 0], 0.1*random([3, 3])])
@@ -370,7 +370,7 @@ def another_env(cutoffs, delt):
 
     test_structure_1 = struc.Structure(cell, species_2, pos_1)
 
-    env2_1_0 = env.AtomicEnvironment(test_structure_1, 0, cutoffs)
+    env2_1_0 = AtomicEnvironment(test_structure_1, 0, cutoffs)
 
     return env1_1_0, env1_2_0, env1_3_0, \
            env1_2_1, env1_3_1, env1_2_2, env1_3_2, env2_1_0

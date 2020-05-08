@@ -57,7 +57,8 @@ def test_force_en(kernel_name, kernel_type):
         _, __, enm_kernel, ___ = str_to_kernel_set('mb'+kernel_type)
         mhyps = hyps[(nterm-1)*2:]
         calc = 0
-        for i in range(len(env1[0])):
+        nat = len(env1[0])
+        for i in range(nat):
             calc += enm_kernel(env1[2][i], env2[0][0], mhyps, cutoffs)
             calc -= enm_kernel(env1[1][i], env2[0][0], mhyps, cutoffs)
         mb_diff = calc / (2 * delta)
