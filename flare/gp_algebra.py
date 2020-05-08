@@ -8,6 +8,9 @@ from flare.kernels.utils import from_mask_to_args, from_grad_to_mask
 
 _global_training_data = {}
 _global_training_labels = {}
+_global_training_structures = {}
+_global_energy_labels = {}
+
 
 def queue_wrapper(result_queue, wid,
                   func, args):
@@ -16,6 +19,7 @@ def queue_wrapper(result_queue, wid,
     """
     result_queue.put((wid, func(*args)))
 
+
 def partition_cr(n_sample, size, n_cpus):
     """
     partition the training data for matrix calculation
@@ -23,14 +27,14 @@ def partition_cr(n_sample, size, n_cpus):
     since mp.Process does not allow to change the thread number
     """
 
-    # divid the block by n_cpu partitions, with size n_sample0
+    # divide the block by n_cpu partitions, with size n_sample0
     # if the divided chunk is smaller than the requested chunk n_sample
     # use the requested chunk size
     n_sample0 = int(math.ceil(np.sqrt(size*size/n_cpus/2.)))
     if (n_sample0 > n_sample):
         n_sample = n_sample0
 
-    block_id=[]
+    block_id = []
     nbatch = 0
     nbatch1 = 0
     nbatch2 = 0
@@ -41,7 +45,7 @@ def partition_cr(n_sample, size, n_cpus):
         nbatch2 = nbatch1
         nbatch1 += 1
         e2 = 0
-        while (e2 <size):
+        while (e2 < size):
             s2 = int(n_sample*nbatch2)
             e2 = int(np.min([s2 + n_sample, size]))
             block_id += [(s1, e1, s2, e2)]
@@ -49,6 +53,7 @@ def partition_cr(n_sample, size, n_cpus):
             nbatch += 1
 
     return block_id, nbatch
+
 
 def partition_c(n_sample, size, n_cpus):
     """
@@ -69,6 +74,7 @@ def partition_c(n_sample, size, n_cpus):
         block_id += [(s, e)]
         nbatch += 1
     return block_id, nbatch
+
 
 def partition_update(n_sample, size, old_size, n_cpus):
 
@@ -124,12 +130,11 @@ def obtain_noise_len(hyps, hyps_mask):
 
 
 #######################################
-##### KY MATRIX FUNCTIONS
+#        KY MATRIX FUNCTIONS
 #######################################
 
-def get_ky_mat_pack(hyps: np.ndarray, name: str,
-               s1: int, e1: int, s2: int, e2: int,
-               same: bool, kernel, cutoffs, hyps_mask):
+def get_ky_mat_pack(hyps: np.ndarray, name: str, s1: int, e1: int, s2: int,
+                    e2: int, same: bool, kernel, cutoffs, hyps_mask):
     """ Compute covariance matrix element between set1 and set2
     :param hyps: list of hyper-parameters
     :param name: name of the gp instance.
@@ -141,7 +146,6 @@ def get_ky_mat_pack(hyps: np.ndarray, name: str,
 
     :return: covariance matrix
     """
-
 
     # initialize matrices
     training_data = _global_training_data[name]
@@ -171,6 +175,7 @@ def get_ky_mat_pack(hyps: np.ndarray, name: str,
                 k_mat[n_index, m_index] = kern_curr
 
     return k_mat
+
 
 def get_ky_mat(hyps: np.ndarray, name: str,
                kernel, cutoffs=None, hyps_mask=None,
@@ -208,14 +213,9 @@ def get_ky_mat(hyps: np.ndarray, name: str,
             children.append(
                 mp.Process(
                     target=queue_wrapper,
-                    args=(result_queue, wid,
-                         get_ky_mat_pack,
-                         (hyps, name, s1, e1, s2, e2,
-                         s1==s2, kernel, cutoffs, hyps_mask
-                        )
-                    )
-                )
-            )
+                    args=(result_queue, wid, get_ky_mat_pack,
+                          (hyps, name, s1, e1, s2, e2,
+                           s1 == s2, kernel, cutoffs, hyps_mask))))
 
         # Run child processes.
         for c in children:
@@ -544,7 +544,6 @@ def get_neg_like_grad(hyps: np.ndarray, name: str,
     return -like, -like_grad
 
 
-
 def get_like_grad_from_mats(ky_mat, hyp_mat, name):
     """compute the gradient of likelihood to hyper-parameters
     from covariance matrix and its gradient
@@ -634,16 +633,11 @@ def get_ky_mat_update(ky_mat_old, hyps: np.ndarray, name: str,
     for wid in range(nbatch):
         s1, e1, s2, e2 = block_id[wid]
         children.append(
-            mp.Process(
-                target=queue_wrapper,
-                args=(result_queue, wid,
-                    get_ky_mat_pack,
-                    (hyps, name, s1, e1, s2, e2,
-                   s1==s2, kernel, cutoffs, hyps_mask
-                    )
-                )
-            )
-        )
+            mp.Process(target=queue_wrapper,
+                       args=(result_queue, wid, get_ky_mat_pack,
+                             (hyps, name, s1, e1, s2, e2,
+                              s1 == s2, kernel, cutoffs, hyps_mask))))
+
     for c in children:
         c.start()
 
@@ -667,6 +661,7 @@ def get_ky_mat_update(ky_mat_old, hyps: np.ndarray, name: str,
     ky_mat[old_size3:, old_size3:] += sigma_n ** 2 * np.eye(size3-old_size3)
 
     return ky_mat
+
 
 def get_ky_mat_update_serial(\
         ky_mat_old, hyps: np.ndarray, name,
@@ -718,7 +713,7 @@ def get_ky_mat_update_serial(\
 
 
 def get_kernel_vector_unit(name, s, e, x, d_1, kernel, hyps,
-                      cutoffs, hyps_mask):
+                           cutoffs, hyps_mask):
     """
     Compute kernel vector, comparing input environment to all environments
     in the GP's training set.
@@ -750,6 +745,7 @@ def get_kernel_vector_unit(name, s, e, x, d_1, kernel, hyps,
             k_v[m_index*3+d_2-1] = kernel(x, x_2, d_1, d_2, *args)
 
     return k_v
+
 
 def get_kernel_vector(name, kernel, x, d_1, hyps,
                       cutoffs=None, hyps_mask=None,
@@ -791,14 +787,8 @@ def get_kernel_vector(name, kernel, x, d_1, hyps,
         children.append(
             mp.Process(
                 target=queue_wrapper,
-                args=(result_queue, wid,
-                    get_kernel_vector_unit,
-                    (name, s, e, x, d_1, kernel, hyps,
-                  cutoffs, hyps_mask
-                    )
-                )
-            )
-        )
+                args=(result_queue, wid, get_kernel_vector_unit,
+                      (name, s, e, x, d_1, kernel, hyps, cutoffs, hyps_mask))))
 
     # Run child processes.
     for c in children:
@@ -852,10 +842,8 @@ def en_kern_vec_unit(name, s, e, x, kernel,
     return k_v
 
 
-def en_kern_vec(name, kernel,
-                x, hyps,
-                cutoffs=None, hyps_mask=None,
-                n_cpus=1, n_sample=100):
+def en_kern_vec(name, kernel, x, hyps, cutoffs=None, hyps_mask=None, n_cpus=1,
+                n_sample=100):
     """
     Compute kernel vector, comparing input environment to all environments
     in the GP's training set.
@@ -890,10 +878,9 @@ def en_kern_vec(name, kernel,
         children.append(
             mp.Process(
                 target=queue_wrapper,
-                args=(result_queue, wid,
-                    en_kern_vec_unit,
-                    (name, block_id[wid][0], block_id[wid][1], x,
-                     kernel, hyps, cutoffs, hyps_mask))))
+                args=(result_queue, wid, en_kern_vec_unit,
+                      (name, block_id[wid][0], block_id[wid][1], x,
+                       kernel, hyps, cutoffs, hyps_mask))))
 
     # Run child processes.
     for c in children:

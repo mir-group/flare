@@ -77,13 +77,6 @@ def test_input_to_structure(cp2k_input):
                     ' and set the CP2K_COMMAND env. '
                     'variable to point to cp2k.popt')
 def test_cp2k_calling(cp2k_input, cp2k_output):
-
-    if (not environ.get('CP2K_COMMAND', False)):
-        pytest.skip(f'CP2K_COMMAND not found in environment:'
-                    f' Please install the code '
-                    f' and set the CP2K_COMMAND env. '
-                    'variable to point to the executable.')
-
     dft_loc = environ.get('CP2K_COMMAND')
     copyfile(cp2k_input, 'cp2k.in')
     positions, species, cell, masses = parse_dft_input(cp2k_input)
