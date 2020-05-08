@@ -23,9 +23,10 @@ class HyperParameterMasking():
     and GaussianProcess
 
     examples:
-        pm = HyperParameterMasking(species=['Cu', 'C', 'H', 'O'],
-                                   bonds=[['*', '*'], ['Cu','Cu']],
-                                   triplets=[['*', '*', '*'], ['Cu','Cu', 'Cu']],
+        pm = HyperParameterMasking(species=['C', 'H', 'O'],
+                                   bonds=[['*', '*'], ['O','O']],
+                                   triplets=[['*', '*', '*'],
+                                       ['O','O', 'O']],
                                    parameters={'bond0':[1, 0.5, 1], 'bond1':[2, 0.2, 2],
                                          'triplet0':[1, 0.5], 'triplet1':[2, 0.2],
                                          'cutoff3b':1},
@@ -40,16 +41,16 @@ class HyperParameterMasking():
 
     In order to do so, we first define all the bonds to be group "bond0", by
     listing "*-*" as the first element in the bond argument. The second
-    element Cu-Cu is then defined to be group "bond1". Note that the order
+    element O-O is then defined to be group "bond1". Note that the order
     matters here. The later element overrides the ealier one. If
-    bonds=[['Cu', 'Cu'], ['*', '*']], then all bonds belong to group "bond1".
+    bonds=[['O', 'O'], ['*', '*']], then all bonds belong to group "bond1".
 
-    Similarly, Cu-Cu-Cu is defined as triplet1, while all remaining ones
+    Similarly, O-O-O is defined as triplet1, while all remaining ones
     are left as triplet0.
 
     The hyperpameters for each group is listed in the order of
     [sig, ls, cutoff] in the parameters argument.  So in this example,
-    Cu-Cu interaction will use [2, 0.2, 2] as its sigma, length scale, and
+    O-O interaction will use [2, 0.2, 2] as its sigma, length scale, and
     cutoff.
 
     For triplet, the parameter arrays only come with two elements. So there
@@ -642,11 +643,9 @@ class HyperParameterMasking():
 
             self.cutoff_list[group_type] = []
             cut_define = np.zeros(self.n[group_type], dtype=bool)
-            allcut = [self.cutoffs_array[name_map[group_type]]]
             for idt in range(self.n[group_type]):
                 if (aeg[idt] in self.all_cutoff):
                     cut_define[idt] = True
-                    allcut += [self.all_cutoff[aeg[idt]]]
 
             if cut_define.all():
                 self.cutoff_list[group_type] = []
@@ -656,11 +655,22 @@ class HyperParameterMasking():
                       self.cutoff_list[group_type], file=self.fout)
                 self.cutoffs_array[name_map[group_type]] = np.max(
                     self.cutoff_list[group_type])
+            elif cut_define.any():
+                print("Warining, there were some cutoff defined, "
+                      "but not all of them", file=self.fout)
+                if (self.cutoffs_array[name_map[group_type]] <= 0):
+                    print(f"Warning, universal cutoffs {name_map[group_type]}for "
+                            "{group_type} is defined as zero!")
+                    # self.cutoffs_array[name_map[group_type]] = np.max(allcut)
+                universal_cutoff = self.cutoffs_array[name_map[group_type]]
+                self.cutoff_list[group_type] = []
+                for idt in range(self.n[group_type]):
+                    self.cutoff_list[group_type] += [
+                            self.all_cutoff.get(aeg[idt],
+                                                universal_cutoff)]
+                self.cutoffs_array[name_map[group_type]] = np.max(
+                    self.cutoff_list[group_type])
             else:
-                if cut_define.any():
-                    print(
-                        "There were some cutoff defined, but not all of them", file=self.fout)
-                    self.cutoffs_array[name_map[group_type]] = np.max(allcut)
                 if (self.cutoffs_array[name_map[group_type]] <= 0):
                     raise RuntimeError(
                         f"cutoffs for {group_type} is undefined")
@@ -840,15 +850,16 @@ class HyperParameterMasking():
         max_species = np.max(hyps_mask['specie_mask'])
         specie_mask = hyps_mask['specie_mask']
         for i in range(max_species+1):
-            elelist = np.where(specie_mask==i)[0]
-            if len(elelist)>0:
+            elelist= np.where(specie_mask == i)[0]
+            if len(elelist) > 0:
                 for ele in elelist:
-                    if (ele!=0):
-                        if (len(init_spec)>0):
+                    if (ele != 0):
+                        if (len(init_spec) > 0):
                             if Z_to_element(ele) in init_spec:
                                 print("try ele", Z_to_element(ele), init_spec)
                                 # pm.define_group("specie", Z_to_element(ele), [Z_to_element(ele)])
-                                pm.define_group("specie", i, [Z_to_element(ele)])
+                                pm.define_group(
+                                    "specie", i, [Z_to_element(ele)])
                         else:
                             pm.define_group("specie", i, [Z_to_element(ele)])
         # for i in range(1, nele):
