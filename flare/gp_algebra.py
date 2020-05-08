@@ -129,9 +129,9 @@ def obtain_noise_len(hyps, hyps_mask):
     return sigma_n, non_noise_hyps, train_noise
 
 
-#######################################
-#        KY MATRIX FUNCTIONS
-#######################################
+# --------------------------------------------------------------------------
+#                           Ky matrix functions
+# --------------------------------------------------------------------------
 
 def get_ky_mat_pack(hyps: np.ndarray, name: str, s1: int, e1: int, s2: int,
                     e2: int, same: bool, kernel, cutoffs, hyps_mask):
@@ -264,9 +264,9 @@ def get_like_from_mats(ky_mat, l_mat, alpha, name):
     return like
 
 
-#######################################
-#  KY MATRIX FUNCTIONS and gradients
-#######################################
+# --------------------------------------------------------------------------
+#                     Ky matrix functions and gradients
+# --------------------------------------------------------------------------
 
 def get_ky_and_hyp_pack(name, s1, e1, s2, e2, same: bool, hyps: np.ndarray,
                         kernel_grad, cutoffs=None, hyps_mask=None):
@@ -488,7 +488,7 @@ def get_like_grad_from_mats(ky_mat, hyp_mat, name):
     try:
         ky_mat_inv = np.linalg.inv(ky_mat)
         l_mat = np.linalg.cholesky(ky_mat)
-    except:
+    except np.linalg.LinAlgError:
         return -1e8, np.zeros(number_of_hyps)
 
     labels = _global_training_labels[name]
