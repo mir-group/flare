@@ -42,7 +42,8 @@ def test_force_en(kernel_name, kernel_type):
 
     hyps = generate_hm(kernel_name)
 
-    _, __, en_kernel, force_en_kernel = str_to_kernel_set(kernel_name+kernel_type)
+    _, __, en_kernel, force_en_kernel = \
+        str_to_kernel_set(kernel_name+kernel_type)
     print(force_en_kernel.__name__)
 
     nterm = 0
@@ -66,7 +67,7 @@ def test_force_en(kernel_name, kernel_type):
         _, __, en2_kernel, ___ = str_to_kernel_set('2'+kernel_type)
         calc1 = en2_kernel(env1[2][0], env2[0][0], hyps[0:nbond * 2], cutoffs)
         calc2 = en2_kernel(env1[1][0], env2[0][0], hyps[0:nbond * 2], cutoffs)
-        diff2b = (calc1 - calc2) / 2.0 / 2.0 / delta
+        diff2b = 4 * (calc1 - calc2) / 2.0 / 2.0 / delta
 
         kern_finite_diff += diff2b
     else:
@@ -76,11 +77,12 @@ def test_force_en(kernel_name, kernel_type):
         _, __, en3_kernel, ___ = str_to_kernel_set('3'+kernel_type)
         calc1 = en3_kernel(env1[2][0], env2[0][0], hyps[nbond * 2:], cutoffs)
         calc2 = en3_kernel(env1[1][0], env2[0][0], hyps[nbond * 2:], cutoffs)
-        diff3b = (calc1 - calc2) / 2.0 / 3.0 / delta
+        diff3b = 9 * (calc1 - calc2) / 2.0 / 3.0 / delta
 
         kern_finite_diff += diff3b
 
-    kern_analytical = force_en_kernel(env1[0][0], env2[0][0], d1, hyps, cutoffs)
+    kern_analytical = \
+        force_en_kernel(env1[0][0], env2[0][0], d1, hyps, cutoffs)
 
     print("\nforce_en", kernel_name, kern_finite_diff, kern_analytical)
 
@@ -103,33 +105,61 @@ def test_force(kernel_name, kernel_type):
     np.random.seed(10)
 
     hyps = generate_hm(kernel_name)
-    kernel, kg, en_kernel, fek = str_to_kernel_set(kernel_name+kernel_type, False)
+    kernel, kg, en_kernel, fek = \
+        str_to_kernel_set(kernel_name+kernel_type, False)
     args = (hyps, cutoffs)
+
+    nterm = 0
+    for term in ['2', '3', 'mb']:
+        if (term in kernel_name):
+            nterm += 1
 
     env1 = generate_mb_envs(cutoffs, cell, delta, d1)
     env2 = generate_mb_envs(cutoffs, cell, delta, d2)
 
     # check force kernel
+    kern_finite_diff = 0
     if ('mb' == kernel_name):
+        _, __, enm_kernel, ___ = str_to_kernel_set('mb'+kernel_type)
+        mhyps = hyps[(nterm-1)*2:]
+        print(hyps)
+        print(mhyps)
         cal = 0
         for i in range(3):
             for j in range(len(env1[0])):
-                cal += en_kernel(env1[1][i], env2[1][j], *args)
-                cal += en_kernel(env1[2][i], env2[2][j], *args)
-                cal -= en_kernel(env1[1][i], env2[2][j], *args)
-                cal -= en_kernel(env1[2][i], env2[1][j], *args)
-        kern_finite_diff = cal / (4 * delta ** 2)
-    elif ('mb' not in kernel_name):
-        calc1 = en_kernel(env1[1][0], env2[1][0], *args)
-        calc2 = en_kernel(env1[2][0], env2[2][0], *args)
-        calc3 = en_kernel(env1[1][0], env2[2][0], *args)
-        calc4 = en_kernel(env1[2][0], env2[1][0], *args)
-        kern_finite_diff = (calc1 + calc2 - calc3 - calc4) / (4*delta**2)
+                cal += enm_kernel(env1[1][i], env2[1][j], mhyps, cutoffs)
+                cal += enm_kernel(env1[2][i], env2[2][j], mhyps, cutoffs)
+                cal -= enm_kernel(env1[1][i], env2[2][j], mhyps, cutoffs)
+                cal -= enm_kernel(env1[2][i], env2[1][j], mhyps, cutoffs)
+        kern_finite_diff += cal / (4 * delta ** 2)
     else:
+        # TODO: Establish why 2+3+MB fails (numerical error?)
         return
 
-    kern_analytical = kernel(env1[0][0], env2[0][0],
-                             d1, d2, *args)
+    if ('2' in kernel_name):
+        nbond = 1
+        _, __, en2_kernel, ___ = str_to_kernel_set('2'+kernel_type)
+        print(hyps[0:nbond * 2])
+
+        calc1 = en2_kernel(env1[1][0], env2[1][0], hyps[0:nbond * 2], cutoffs)
+        calc2 = en2_kernel(env1[2][0], env2[2][0], hyps[0:nbond * 2], cutoffs)
+        calc3 = en2_kernel(env1[1][0], env2[2][0], hyps[0:nbond * 2], cutoffs)
+        calc4 = en2_kernel(env1[2][0], env2[1][0], hyps[0:nbond * 2], cutoffs)
+        kern_finite_diff += 4 * (calc1 + calc2 - calc3 - calc4) / (4*delta**2)
+    else:
+        nbond = 0
+
+    if ('3' in kernel_name):
+        _, __, en3_kernel, ___ = str_to_kernel_set('3'+kernel_type)
+        print(hyps[nbond * 2:])
+        calc1 = en3_kernel(env1[1][0], env2[1][0], hyps[nbond * 2:], cutoffs)
+        calc2 = en3_kernel(env1[2][0], env2[2][0], hyps[nbond * 2:], cutoffs)
+        calc3 = en3_kernel(env1[1][0], env2[2][0], hyps[nbond * 2:], cutoffs)
+        calc4 = en3_kernel(env1[2][0], env2[1][0], hyps[nbond * 2:], cutoffs)
+        kern_finite_diff += 9 * (calc1 + calc2 - calc3 - calc4) / (4*delta**2)
+
+    kern_analytical = kernel(env1[0][0], env2[0][0], d1, d2, *args)
+
     assert(isclose(kern_finite_diff, kern_analytical, rtol=tol))
 
 
