@@ -284,8 +284,8 @@ def get_force_energy_block_pack(hyps: np.ndarray, name: str, s1: int,
 
 
 def parallel_matrix_construction(pack_function, hyps, name, kernel, cutoffs,
-                                 hyps_mask, block_id, nbatch, size,
-                                 multiplier):
+                                 hyps_mask, block_id, nbatch, size1, size2,
+                                 m1, m2):
     result_queue = mp.Queue()
     children = []
     for wid in range(nbatch):
@@ -300,15 +300,15 @@ def parallel_matrix_construction(pack_function, hyps, name, kernel, cutoffs,
         c.start()
 
     # Wait for all results to arrive.
-    matrix = np.zeros((size, size))
+    matrix = np.zeros((size1, size2))
     for _ in range(nbatch):
         wid, result_chunk = result_queue.get(block=True)
         s1, e1, s2, e2 = block_id[wid]
-        matrix[s1 * multiplier:e1 * multiplier,
-               s2 * multiplier:e2 * multiplier] = result_chunk
+        matrix[s1 * m1:e1 * m1,
+               s2 * m2:e2 * m2] = result_chunk
         if (s1 != s2):
-            matrix[s2 * multiplier:e2 * multiplier,
-                   s1 * multiplier:e1 * multiplier] = result_chunk.T
+            matrix[s2 * m2:e2 * m2,
+                   s1 * m1:e1 * m1] = result_chunk.T
 
     # Join child processes (clean up zombies).
     for c in children:
@@ -347,12 +347,13 @@ def get_force_block(hyps: np.ndarray, name: str, kernel, cutoffs=None,
     else:
         # initialize matrices
         block_id, nbatch = partition_matrix(n_sample, size, n_cpus)
-        multiplier = 3
+        mult = 3
 
         k_mat = \
             parallel_matrix_construction(get_force_block_pack, hyps, name,
                                          kernel, cutoffs, hyps_mask,
-                                         block_id, nbatch, size3, multiplier)
+                                         block_id, nbatch, size3, size3,
+                                         mult, mult)
 
     sigma_n, _, __ = obtain_noise_len(hyps, hyps_mask)
     force_block = k_mat
@@ -374,12 +375,13 @@ def get_energy_block(hyps: np.ndarray, name: str, kernel, energy_noise,
                                   cutoffs, hyps_mask)
     else:
         block_id, nbatch = partition_matrix(n_sample, size, n_cpus)
-        multiplier = 1
+        mult = 1
 
         k_mat = \
             parallel_matrix_construction(get_energy_block_pack, hyps, name,
                                          kernel, cutoffs, hyps_mask,
-                                         block_id, nbatch, size, multiplier)
+                                         block_id, nbatch, size, size, mult,
+                                         mult)
 
     energy_block = k_mat
     energy_block += (energy_noise ** 2) * np.eye(size)
@@ -397,24 +399,23 @@ def get_force_energy_block(hyps: np.ndarray, name: str, kernel, cutoffs=None,
     if (n_cpus is None):
         n_cpus = mp.cpu_count()
     if (n_cpus == 1):
-        k_mat = \
+        force_energy_block = \
             get_force_energy_block_pack(hyps, name, 0, size1, 0, size2, True,
                                         kernel, cutoffs, hyps_mask)
     else:
         # initialize matrices
-        block_id, nbatch = partition_vector(n_sample, size1, n_cpus)
-        multiplier = 3
+        block_id, nbatch = \
+            partition_force_energy_block(n_sample, size1, size2, n_cpus)
+        m1 = 3  # 3 force components per environment
+        m2 = 1  # 1 energy per structure
 
-    #     k_mat = \
-    #         parallel_matrix_construction(get_force_block_pack, hyps, name,
-    #                                      kernel, cutoffs, hyps_mask,
-    #                                      block_id, nbatch, size3, multiplier)
+        force_energy_block = \
+            parallel_matrix_construction(get_force_energy_block_pack, hyps,
+                                         name, kernel, cutoffs, hyps_mask,
+                                         block_id, nbatch, size1, size2, m1,
+                                         m2)
 
-    # sigma_n, _, __ = obtain_noise_len(hyps, hyps_mask)
-    # force_block = k_mat
-    # force_block += sigma_n ** 2 * np.eye(size3)
-
-    pass
+    return force_energy_block
 
 
 # --------------------------------------------------------------------------
