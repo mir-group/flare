@@ -20,7 +20,7 @@ def queue_wrapper(result_queue, wid,
     result_queue.put((wid, func(*args)))
 
 
-def partition_cr(n_sample, size, n_cpus):
+def partition_matrix(n_sample, size, n_cpus):
     """
     partition the training data for matrix calculation
     the number of blocks are close to n_cpus
@@ -55,7 +55,7 @@ def partition_cr(n_sample, size, n_cpus):
     return block_id, nbatch
 
 
-def partition_c(n_sample, size, n_cpus):
+def partition_vector(n_sample, size, n_cpus):
     """
     partition the training data for vector calculation
     the number of blocks are the same as n_cpus
@@ -312,7 +312,7 @@ def get_force_block(hyps: np.ndarray, name: str, kernel, cutoffs=None,
                                  cutoffs, hyps_mask)
     else:
         # initialize matrices
-        block_id, nbatch = partition_cr(n_sample, size, n_cpus)
+        block_id, nbatch = partition_matrix(n_sample, size, n_cpus)
         multiplier = 3
 
         k_mat = \
@@ -329,8 +329,8 @@ def get_force_block(hyps: np.ndarray, name: str, kernel, cutoffs=None,
 
 def get_energy_block(hyps: np.ndarray, name: str, kernel, energy_noise,
                      cutoffs=None, hyps_mask=None, n_cpus=1, n_sample=100):
-    training_data = _global_training_structures[name]
-    size = len(training_data)
+    training_structures = _global_training_structures[name]
+    size = len(training_structures)
 
     if (n_cpus is None):
         n_cpus = mp.cpu_count()
@@ -339,8 +339,7 @@ def get_energy_block(hyps: np.ndarray, name: str, kernel, energy_noise,
             get_energy_block_pack(hyps, name, 0, size, 0, size, True, kernel,
                                   cutoffs, hyps_mask)
     else:
-        # initialize matrices
-        block_id, nbatch = partition_cr(n_sample, size, n_cpus)
+        block_id, nbatch = partition_matrix(n_sample, size, n_cpus)
         multiplier = 1
 
         k_mat = \
@@ -356,6 +355,31 @@ def get_energy_block(hyps: np.ndarray, name: str, kernel, energy_noise,
 
 def get_force_energy_block(hyps: np.ndarray, name: str, kernel, cutoffs=None,
                            hyps_mask=None, n_cpus=1, n_sample=100):
+    training_data = _global_training_data[name]
+    training_structures = _global_training_structures[name]
+    size1 = len(training_data) * 3
+    size2 = len(training_structures)
+
+    if (n_cpus is None):
+        n_cpus = mp.cpu_count()
+    if (n_cpus == 1):
+        k_mat = \
+            get_force_energy_block_pack(hyps, name, 0, size1, 0, size2, True,
+                                        kernel, cutoffs, hyps_mask)
+    else:
+        # initialize matrices
+        block_id, nbatch = partition_vector(n_sample, size1, n_cpus)
+        multiplier = 3
+
+    #     k_mat = \
+    #         parallel_matrix_construction(get_force_block_pack, hyps, name,
+    #                                      kernel, cutoffs, hyps_mask,
+    #                                      block_id, nbatch, size3, multiplier)
+
+    # sigma_n, _, __ = obtain_noise_len(hyps, hyps_mask)
+    # force_block = k_mat
+    # force_block += sigma_n ** 2 * np.eye(size3)
+
     pass
 
 
@@ -553,7 +577,7 @@ def get_kernel_vector(name, kernel, x, d_1, hyps,
                 name, 0, size, x, d_1, kernel, hyps,
                 cutoffs, hyps_mask)
 
-    block_id, nbatch = partition_c(n_sample, size, n_cpus)
+    block_id, nbatch = partition_vector(n_sample, size, n_cpus)
 
     result_queue = mp.Queue()
     children = []
@@ -646,7 +670,7 @@ def en_kern_vec(name, kernel, x, hyps, cutoffs=None, hyps_mask=None, n_cpus=1,
                 name, 0, size, x, kernel, hyps,
                 cutoffs, hyps_mask)
 
-    block_id, nbatch = partition_c(n_sample, size, n_cpus)
+    block_id, nbatch = partition_vector(n_sample, size, n_cpus)
     result_queue = mp.Queue()
     children = []
     for wid in range(nbatch):
@@ -767,7 +791,7 @@ def get_ky_and_hyp(hyps: np.ndarray, name, kernel_grad, cutoffs=None,
                 hyps, kernel_grad, cutoffs, hyps_mask)
     else:
 
-        block_id, nbatch = partition_cr(n_sample, size, n_cpus)
+        block_id, nbatch = partition_matrix(n_sample, size, n_cpus)
 
         result_queue = mp.Queue()
         children = []
