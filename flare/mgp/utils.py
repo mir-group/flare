@@ -21,9 +21,9 @@ from flare.kernels.utils import str_to_kernel_set as stks
 
 def get_2bkernel(GP):
     if 'mc' in GP.kernel_name:
-        kernel, _, _, efk = stks('2mc', GP.multihyps)
-    else:
         kernel, _, _, efk = stks('2', GP.multihyps)
+    else:
+        kernel, _, _, efk = stks('2sc', GP.multihyps)
 
     cutoffs = [GP.cutoffs[0]]
 
@@ -52,9 +52,9 @@ def get_2bkernel(GP):
 def get_3bkernel(GP):
 
     if 'mc' in GP.kernel_name:
-        kernel, _, _, efk = stks('3mc', GP.multihyps)
-    else:
         kernel, _, _, efk = stks('3', GP.multihyps)
+    else:
+        kernel, _, _, efk = stks('3sc', GP.multihyps)
 
     base = 0
     for t in ['two', '2']:
