@@ -107,6 +107,10 @@ def test_randomization():
     print(hm)
     HyperParameterMasking.check_instantiation(hm)
     HyperParameterMasking.check_matching(hm, hm['hyps'], hm['cutoffs'])
+    name = pm.find_group('specie', 'O')
+    print("find group name for O", name)
+    name = pm.find_group('bond', ['O', 'C'])
+    print("find group name for O-C", name)
 
 def test_from_dict():
     pm = HyperParameterMasking(species=['O', 'C', 'H'],

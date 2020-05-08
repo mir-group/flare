@@ -389,16 +389,16 @@ class HyperParameterMasking():
                              "as a group name")
 
         if (group_type != 'specie'):
-            fullname = group_type + name
+
+            # Check all the other group_type to
             exclude_list = deepcopy(self.all_types)
             ide = exclude_list.index(group_type)
             exclude_list.pop(ide)
+
             for gt in exclude_list:
                 if (name in self.all_group_names[gt]):
                     raise ValueError("group name has to be unique across all types. "
                                      f"{name} is found in type {gt}")
-        # else:
-        #     fullname = name
 
         if (name in self.all_group_names[group_type]):
             groupid = self.all_group_names[group_type].index(name)
@@ -450,6 +450,51 @@ class HyperParameterMasking():
                 for sub in self.all_group_names['specie']:
                     self.define_group(group_type, name,
                                       one_star_less + [sub], parameters=parameters, atomic_str=atomic_str)
+
+    def find_group(self, group_type, element_list, atomic_str=False):
+
+        # remember the later command override the earlier ones
+        if (group_type == 'specie'):
+            if (not isinstance(element_list, str)):
+                print("for element, it has to be a string", file=self.fout)
+                return None
+            name = None
+            for igroup in range(self.n['specie']):
+                gname = self.all_group_names[group_type][igroup]
+                allspec = self.groups[group_type][igroup]
+                if (element_list in allspec):
+                    name = gname
+            return name
+            print("cannot find the group", file=self.fout)
+            return None
+        else:
+            if ("*" in element_list):
+                print("* cannot be used for find", file=self.fout)
+                return None
+            gid = []
+            for ele_name in element_list:
+                 gid += [self.all_group_names['specie'].index(ele_name)]
+            setlist = set(gid)
+            name = None
+            for igroup in range(self.n[group_type]):
+                gname = self.all_group_names[group_type][igroup]
+                for ele in self.groups[group_type][igroup]:
+                    if set(gid) == set(ele):
+                        name = gname
+            return name
+        #         self.groups[group_type][groupid].append(gid)
+        #         self.all_members[group_type].append(gid)
+        #         print(
+        #             f"{group_type} {gid} will be defined as group {name}", file=self.fout)
+        #         if (parameters is not None):
+        #             self.set_parameters(name, parameters)
+        #     else:
+        #         one_star_less = deepcopy(element_list)
+        #         idstar = element_list.index('*')
+        #         one_star_less.pop(idstar)
+        #         for sub in self.all_group_names['specie']:
+        #             self.define_group(group_type, name,
+        #                               one_star_less + [sub], parameters=parameters, atomic_str=atomic_str)
 
     def set_parameters(self, name, parameters, opt=True):
         """Set the parameters for certain group
