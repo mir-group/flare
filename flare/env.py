@@ -338,7 +338,7 @@ def get_m_body_arrays(positions, atom: int, cell, cutoff_mb: float, species,
     for i in range(n_bonds):
         ri = bond_array_mb[i, 0]
         for d in range(3):
-            ci = bond_array_mb[i, d]
+            ci = bond_array_mb[i, d+1]
             _, q_grads[i, d] = coordination_number(ri, ci, cutoff_mb, 
                 cutoff_func)
 

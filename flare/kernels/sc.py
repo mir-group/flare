@@ -1350,12 +1350,12 @@ def many_body_jit(q_array_1, q_array_2,
 #        k1js[j] = k_sq_exp_double_dev(q1, qjs[j], sig, ls)
 
     for i in range(q_neigh_array_1.shape[0]):
-        qi_grad = q_neigh_grads_1[i, d1]
+        qi_grad = q_neigh_grads_1[i, d1-1]
         qis = q_neigh_array_1[i, 0]
         ki2s = k_sq_exp_double_dev(qis, q2, sig, ls)
 
         for j in range(q_neigh_array_2.shape[0]):
-            qj_grad = q_neigh_grads_2[j, d2]
+            qj_grad = q_neigh_grads_2[j, d2-1]
             qjs = q_neigh_array_2[j, 0]
             k1js = k_sq_exp_double_dev(q1, qjs, sig, ls)
 
@@ -1444,12 +1444,12 @@ def many_body_grad_jit(q_array_1, q_array_2,
 #        k1js[j] = k_sq_exp_double_dev(q1, qjs[j], sig, ls)
 
     for i in range(q_neigh_array_1.shape[0]):
-        qi_grad = q_neigh_grads_1[i, d1]
+        qi_grad = q_neigh_grads_1[i, d1-1]
         qis = q_neigh_array_1[i, 0]
         ki2s = k_sq_exp_double_dev(qis, q2, sig, ls)
 
         for j in range(q_neigh_array_2.shape[0]):
-            qj_grad = q_neigh_grads_2[j, d2]
+            qj_grad = q_neigh_grads_2[j, d2-1]
             qjs = q_neigh_array_2[j, 0]
             k1js = k_sq_exp_double_dev(q1, qjs, sig, ls)
 
@@ -1496,7 +1496,7 @@ def many_body_force_en_jit(q_array_1, q_array_2, q_neigh_array_1,
     # Loop over neighbours i of 1
     kern = 0
     for i in range(q_neigh_array_1.shape[0]):
-        qi1_grad = q_neigh_grads[i, d1]
+        qi1_grad = q_neigh_grads[i, d1-1]
         qis = q_neigh_array_1[i, 0]
         ki2s = k_sq_exp_dev(qis, q2, sig, ls)
         kern += - qi1_grad * (k12 + ki2s)
@@ -1520,7 +1520,6 @@ def many_body_en_jit(q_array_1, q_array_2, sig, ls):
     Return:
         float: Value of the many-body kernel.
     """
-
     q1q2diff = q_array_1[0] - q_array_2[0]
     kern = sig * sig * exp(-q1q2diff * q1q2diff / (2 * ls * ls))
     return kern
