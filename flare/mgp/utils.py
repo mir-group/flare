@@ -73,7 +73,7 @@ def get_3bkernel(GP):
                 ori_hyps[hm[i]]=h
         else:
             ori_hyps = original_hyps
-        n2b = o_hyps_mask['nbond']
+        n2b = o_hyps_mask.get('nbond', 0)
         n3b = o_hyps_mask['ntriplet']
         hyps = ori_hyps[n2b*2:]
         hyps_mask = {'ntriplet':n3b,'nbond':0,
