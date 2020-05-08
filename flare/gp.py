@@ -19,7 +19,8 @@ from flare.env import AtomicEnvironment
 from flare.struc import Structure
 from flare.gp_algebra import get_like_from_mats, get_neg_like_grad, \
     get_kernel_vector, en_kern_vec, get_ky_mat, get_ky_mat_update, \
-    _global_training_data, _global_training_labels
+    _global_training_data, _global_training_labels, \
+    _global_training_structures, _global_energy_labels
 
 from flare.kernels.utils import str_to_kernel_set, from_mask_to_args
 from flare.util import NumpyEncoder
@@ -302,8 +303,10 @@ class GaussianProcess:
                         "the hyperparmeter length is inconsistent with the "\
                         "mask"
                 else:
-                    assert (n2b * 2 + n3b * 2 + 1 * 2 + 1) == len(hyps_mask['original']), \
-                        "the hyperparmeter length is inconsistent with the mask"
+                    assert (n2b * 2 + n3b * 2 + 1 * 2 + 1) ==\
+                        len(hyps_mask['original']), \
+                        "the hyperparmeter length is inconsistent with the "\
+                        "mask"
                 assert len(hyps_mask['map']) == len(self.hyps), \
                     "the hyperparmeter length is inconsistent with the mask"
                 if (len(hyps_mask['original']) - 1) not in hyps_mask['map']:
@@ -312,12 +315,14 @@ class GaussianProcess:
             else:
                 assert hyps_mask['train_noise'] is True, \
                     "train_noise should be True when map is not used"
-                if (len(self.cutoffs)<=2):
+                if (len(self.cutoffs) <= 2):
                     assert (n2b * 2 + n3b * 2 + 1) == len(self.hyps), \
-                        "the hyperparmeter length is inconsistent with the mask"
+                        "the hyperparmeter length is inconsistent with the "\
+                        "mask"
                 else:
-                    assert (n2b * 2 + n3b * 2 + 1*2 + 1) == len(self.hyps), \
-                        "the hyperparmeter length is inconsistent with the mask"
+                    assert (n2b * 2 + n3b * 2 + 1 * 2 + 1) == len(self.hyps), \
+                        "the hyperparmeter length is inconsistent with the "\
+                        "mask"
 
             if 'bounds' in hyps_mask:
                 self.bounds = deepcopy(hyps_mask['bounds'])
@@ -348,17 +353,32 @@ class GaussianProcess:
         noa = len(struc.positions)
         update_indices = custom_range or list(range(noa))
 
-        for atom in update_indices:
-            env_curr = AtomicEnvironment(struc, atom, self.cutoffs)
-            forces_curr = np.array(forces[atom])
+        # If forces are given, update the environment list.
+        if forces is not None:
+            for atom in update_indices:
+                env_curr = AtomicEnvironment(struc, atom, self.cutoffs)
+                forces_curr = np.array(forces[atom])
 
-            self.training_data.append(env_curr)
-            self.training_labels.append(forces_curr)
+                self.training_data.append(env_curr)
+                self.training_labels.append(forces_curr)
 
-        # create numpy array of training labels
-        self.training_labels_np = np.hstack(self.training_labels)
-        _global_training_data[self.name] = self.training_data
-        _global_training_labels[self.name] = self.training_labels_np
+            # create numpy array of training labels
+            self.training_labels_np = np.hstack(self.training_labels)
+            _global_training_data[self.name] = self.training_data
+            _global_training_labels[self.name] = self.training_labels_np
+
+        # If an energy is given, update the structure list.
+        if energy is not None:
+            structure_list = []  # Populate with all environments of the struc
+            for atom in range(noa):
+                env_curr = AtomicEnvironment(struc, atom, self.cutoffs)
+                structure_list.append(env_curr)
+
+            self.energy_labels.append(energy)
+            self.training_structures.append(structure_list)
+            self.energy_labels_np = np.array(self.energy_labels)
+            _global_training_structures[self.name] = self.training_structures
+            _global_energy_labels[self.name] = self.energy_labels_np
 
     def add_one_env(self, env: AtomicEnvironment,
                     force, train: bool = False, **kwargs):
@@ -403,11 +423,10 @@ class GaussianProcess:
                 hyperparameter optimization.
         """
 
-        if len(self.training_data)==0 or len(self.training_labels) ==0:
-            raise Warning ("You are attempting to train a GP with no "
-                           "training data. Add environments and forces "
-                           "to the GP and try again.")
-            return None
+        if len(self.training_data) == 0 or len(self.training_labels) == 0:
+            raise Warning("You are attempting to train a GP with no "
+                          "training data. Add environments and forces "
+                          "to the GP and try again.")
 
         x_0 = self.hyps
 
@@ -415,7 +434,6 @@ class GaussianProcess:
                 self.cutoffs, self.hyps_mask,
                 self.n_cpus, self.n_sample, print_progress)
 
-        objective_func = get_neg_like_grad
         res = None
 
         if self.opt_algorithm == 'L-BFGS-B':
@@ -481,7 +499,6 @@ class GaussianProcess:
         elif (size3 != self.alpha.shape[0]):
             self.set_L_alpha()
 
-
     def predict(self, x_t: AtomicEnvironment, d: int) -> [float, float]:
         """
         Predict a force component of the central atom of a local environment.
@@ -521,11 +538,8 @@ class GaussianProcess:
         # get predictive variance without cholesky (possibly faster)
         # pass args to kernel based on if mult. hyperparameters in use
         args = from_mask_to_args(self.hyps, self.hyps_mask, self.cutoffs)
-
         self_kern = self.kernel(x_t, x_t, d, d, *args)
-
-        pred_var = self_kern - \
-                   np.matmul(np.matmul(k_v, self.ky_mat_inv), k_v)
+        pred_var = self_kern - np.matmul(np.matmul(k_v, self.ky_mat_inv), k_v)
 
         return pred_mean, pred_var
 
