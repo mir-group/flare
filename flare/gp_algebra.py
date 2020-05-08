@@ -178,6 +178,44 @@ def get_force_block_pack(hyps: np.ndarray, name: str, s1: int, e1: int,
     return k_mat
 
 
+def parallel_matrix_construction(pack_function, hyps, name, kernel, cutoffs,
+                                 hyps_mask, block_id, nbatch, size,
+                                 multiplier):
+    result_queue = mp.Queue()
+    children = []
+    for wid in range(nbatch):
+        s1, e1, s2, e2 = block_id[wid]
+        children.append(mp.Process(target=queue_wrapper,
+                        args=(result_queue, wid, pack_function,
+                              (hyps, name, s1, e1, s2, e2, s1 == s2,
+                               kernel, cutoffs, hyps_mask))))
+
+    # Run child processes.
+    for c in children:
+        c.start()
+
+    # Wait for all results to arrive.
+    matrix = np.zeros((size, size))
+    for _ in range(nbatch):
+        wid, result_chunk = result_queue.get(block=True)
+        s1, e1, s2, e2 = block_id[wid]
+        matrix[s1 * multiplier:e1 * multiplier,
+               s2 * multiplier:e2 * multiplier] = result_chunk
+        if (s1 != s2):
+            matrix[s2 * multiplier:e2 * multiplier,
+                   s1 * multiplier:e1 * multiplier] = result_chunk.T
+
+    # Join child processes (clean up zombies).
+    for c in children:
+        c.join()
+
+    # matrix manipulation
+    del result_queue
+    del children
+
+    return matrix
+
+
 def get_force_block(hyps: np.ndarray, name: str, kernel, cutoffs=None,
                     hyps_mask=None, n_cpus=1, n_sample=100):
     """ parallel version of get_ky_mat
@@ -193,7 +231,7 @@ def get_force_block(hyps: np.ndarray, name: str, kernel, cutoffs=None,
 
     training_data = _global_training_data[name]
     size = len(training_data)
-    size3 = 3*size
+    size3 = 3 * size
 
     if (n_cpus is None):
         n_cpus = mp.cpu_count()
@@ -204,38 +242,12 @@ def get_force_block(hyps: np.ndarray, name: str, kernel, cutoffs=None,
     else:
         # initialize matrices
         block_id, nbatch = partition_cr(n_sample, size, n_cpus)
+        multiplier = 3
 
-        result_queue = mp.Queue()
-        children = []
-        for wid in range(nbatch):
-            s1, e1, s2, e2 = block_id[wid]
-            children.append(
-                mp.Process(
-                    target=queue_wrapper,
-                    args=(result_queue, wid, get_force_block_pack,
-                          (hyps, name, s1, e1, s2, e2,
-                           s1 == s2, kernel, cutoffs, hyps_mask))))
-
-        # Run child processes.
-        for c in children:
-            c.start()
-
-        # Wait for all results to arrive.
-        k_mat = np.zeros([size3, size3])
-        for _ in range(nbatch):
-            wid, result_chunk = result_queue.get(block=True)
-            s1, e1, s2, e2 = block_id[wid]
-            k_mat[s1*3:e1*3, s2*3:e2*3] = result_chunk
-            if (s1 != s2):
-                k_mat[s2*3:e2*3, s1*3:e1*3] = result_chunk.T
-
-        # Join child processes (clean up zombies).
-        for c in children:
-            c.join()
-
-        # matrix manipulation
-        del result_queue
-        del children
+        k_mat = \
+            parallel_matrix_construction(get_force_block_pack, hyps, name,
+                                         kernel, cutoffs, hyps_mask,
+                                         block_id, nbatch, size3, multiplier)
 
     sigma_n, _, __ = obtain_noise_len(hyps, hyps_mask)
 
@@ -243,6 +255,16 @@ def get_force_block(hyps: np.ndarray, name: str, kernel, cutoffs=None,
     ky_mat += sigma_n ** 2 * np.eye(size3)
 
     return ky_mat
+
+
+def get_energy_block(hyps: np.ndarray, name: str, kernel, cutoffs=None,
+                     hyps_mask=None, n_cpus=1, n_sample=100):
+    pass
+
+
+def get_force_energy_block(hyps: np.ndarray, name: str, kernel, cutoffs=None,
+                           hyps_mask=None, n_cpus=1, n_sample=100):
+    pass
 
 
 # --------------------------------------------------------------------------
