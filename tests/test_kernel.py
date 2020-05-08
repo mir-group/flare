@@ -10,8 +10,8 @@ from flare.kernels.utils import str_to_kernel_set
 
 from .fake_gp import generate_mb_envs
 
-#list_to_test = ['2', '3', '2+3', 'mb', '2+3+mb']
-list_to_test = ['mb']
+list_to_test = ['2', '3', '2+3', 'mb', '2+3+mb']
+#list_to_test = ['mb']
 list_type = ['sc']
 #list_type = ['sc', 'mc']
 
@@ -39,8 +39,8 @@ def test_force_en(kernel_name, kernel_type):
     d1 = 1
 
     np.random.seed(10)
-    env1 = generate_mb_envs(cutoffs, cell, delta, d1)
-    env2 = generate_mb_envs(cutoffs, cell, delta, d1)
+    env1 = generate_mb_envs(cutoffs, cell, delta, d1, kern_type=kernel_type)
+    env2 = generate_mb_envs(cutoffs, cell, delta, d1, kern_type=kernel_type)
 
     hyps = generate_hm(kernel_name)
 
@@ -109,8 +109,8 @@ def test_force(kernel_name, kernel_type):
     kernel, kg, en_kernel, fek = str_to_kernel_set(kernel_name+kernel_type, False)
     args = (hyps, cutoffs)
 
-    env1 = generate_mb_envs(cutoffs, cell, delta, d1)
-    env2 = generate_mb_envs(cutoffs, cell, delta, d2)
+    env1 = generate_mb_envs(cutoffs, cell, delta, d1, kern_type=kernel_type)
+    env2 = generate_mb_envs(cutoffs, cell, delta, d2, kern_type=kernel_type)
 
     # check force kernel
     if ('mb' == kernel_name):
@@ -150,8 +150,8 @@ def test_hyps_grad(kernel_name, kernel_type):
 
     np.random.seed(10)
     hyps = generate_hm(kernel_name)
-    env1 = generate_mb_envs(cutoffs, cell, 0, d1)[0][0]
-    env2 = generate_mb_envs(cutoffs, cell, 0, d2)[0][0]
+    env1 = generate_mb_envs(cutoffs, cell, 0, d1, kern_type=kernel_type)[0][0]
+    env2 = generate_mb_envs(cutoffs, cell, 0, d2, kern_type=kernel_type)[0][0]
 
     kernel, kernel_grad, _, _ = str_to_kernel_set(kernel_name+kernel_type, False)
 

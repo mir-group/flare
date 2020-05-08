@@ -212,7 +212,7 @@ def get_tstp() -> AtomicEnvironment:
     return test_pt
 
 
-def generate_mb_envs(cutoffs, cell, delt, d1, mask=None):
+def generate_mb_envs(cutoffs, cell, delt, d1, mask=None, kern_type='mc'):
     positions0 = np.array([[0., 0., 0.],
                            [0., 0.3, 0.],
                            [0.3, 0., 0.],
@@ -222,6 +222,8 @@ def generate_mb_envs(cutoffs, cell, delt, d1, mask=None):
     triplet = [1, 1, 2, 1]
     np.random.shuffle(triplet)
     species_1 = np.hstack([triplet, randint(1, 2)])
+    if kern_type == 'sc':
+        species_1 = np.ones(species_1.shape)
     return generate_mb_envs_pos(positions0, species_1, cutoffs, cell, delt, d1, mask)
 
 
