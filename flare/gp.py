@@ -74,7 +74,8 @@ class GaussianProcess:
                  per_atom_par: bool = True, n_cpus: int = 1,
                  n_sample: int = 100, output: Output = None,
                  multihyps: bool = False, hyps_mask: dict = None,
-                 kernel_name="2+3_mc", name="default_gp", **kwargs):
+                 kernel_name="2+3_mc", name="default_gp",
+                 energy_noise: float = None, **kwargs,):
         """Initialize GP parameters and training data."""
 
         # load arguments into attributes
@@ -138,13 +139,13 @@ class GaussianProcess:
 
         self.training_data = []   # Atomic environments
         self.training_labels = []  # Forces acting on central atoms
+        self.training_labels_np = np.empty(0, )
 
-        # Lists to accomodate energy labels:
+        # Attributes to accomodate energy labels:
         self.training_structures = []  # Environments of each structure
         self.energy_labels = []  # Energies of training structures
-
-        self.training_labels_np = np.empty(0, )
         self.energy_labels_np = np.empty(0, )
+        self.energy_noise = energy_noise
 
         # Parameters set during training
         self.ky_mat = None

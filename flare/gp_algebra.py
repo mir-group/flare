@@ -198,11 +198,9 @@ def get_ky_mat(hyps: np.ndarray, name: str,
     if (n_cpus is None):
         n_cpus = mp.cpu_count()
     if (n_cpus == 1):
-        k_mat = get_ky_mat_pack(
-                hyps, name, 0, size, 0, size, True,
-                kernel, cutoffs, hyps_mask)
+        k_mat = get_ky_mat_pack(hyps, name, 0, size, 0, size, True,
+                                kernel, cutoffs, hyps_mask)
     else:
-
         # initialize matrices
         block_id, nbatch = partition_cr(n_sample, size, n_cpus)
 
