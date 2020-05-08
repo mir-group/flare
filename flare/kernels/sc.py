@@ -224,9 +224,10 @@ def two_plus_three_plus_many_body(env1: AtomicEnvironment, env2: AtomicEnvironme
                        env1.triplet_counts, env2.triplet_counts,
                        d1, d2, hyps[2], hyps[3], cutoffs[1], cutoff_func)
 
-    many_term = many_body_jit(env1.bond_array_mb, env2.bond_array_mb, env1.neigh_dists_mb,
-                              env2.neigh_dists_mb, env1.num_neighs_mb, env2.num_neighs_mb,
-                              d1, d2, hyps[4], hyps[5], cutoffs[2], cutoff_func)
+    many_term =  many_body_jit(env1.q_array, env2.q_array, 
+                         env1.q_neigh_array, env2.q_neigh_array, 
+                         env1.q_neigh_grads, env2.q_neigh_grads,
+                         d1, d2, hyps[4], hyps[5])
 
     return two_term + three_term + many_term
 
@@ -262,12 +263,10 @@ def two_plus_three_plus_many_body_grad(env1: AtomicEnvironment, env2: AtomicEnvi
                             env1.triplet_counts, env2.triplet_counts,
                             d1, d2, hyps[2], hyps[3], cutoffs[1], cutoff_func)
 
-    kern_many, sigm, lsm = many_body_grad_jit(env1.bond_array_mb, env2.bond_array_mb,
-                                              env1.neigh_dists_mb,
-                                              env2.neigh_dists_mb, env1.num_neighs_mb,
-                                              env2.num_neighs_mb,
-                                              d1, d2, hyps[4], hyps[5], cutoffs[2],
-                                              cutoff_func)
+    kern_many, sigm, lsm = many_body_grad_jit(env1.q_array, env2.q_array,
+                                       env1.q_neigh_array, env2.q_neigh_array,
+                                       env1.q_neigh_grads, env2.q_neigh_grads,
+                                       d1, d2, hyps[4], hyps[5])
 
     return kern2 + kern3 + kern_many, np.array([sig2, ls2, sig3, ls3, sigm, lsm])
 
@@ -304,11 +303,9 @@ def two_plus_three_plus_many_body_force_en(env1: AtomicEnvironment, env2: Atomic
                                 d1, hyps[2], hyps[3], cutoffs[1],
                                 cutoff_func) / 3
 
-    many_term = many_body_force_en_jit(env1.bond_array_mb, env2.bond_array_mb,
-                                       env1.neigh_dists_mb,
-                                       env1.num_neighs_mb,
-                                       d1, hyps[4], hyps[5], cutoffs[2],
-                                       cutoff_func)
+    many_term = many_body_force_en_jit(env1.q_array, env2.q_array, 
+                                  env1.q_neigh_array, env1.q_neigh_grads, 
+                                  d1, hyps[4], hyps[5])
 
     return two_term + three_term + many_term
 
@@ -340,8 +337,7 @@ def two_plus_three_plus_many_body_en(env1: AtomicEnvironment, env2: AtomicEnviro
                           env1.triplet_counts, env2.triplet_counts,
                           hyps[2], hyps[3], cutoffs[1], cutoff_func)
 
-    many_term = many_body_en_jit(env1.bond_array_mb, env2.bond_array_mb, hyps[4], hyps[5], cutoffs[2],
-                                 cutoff_func)
+    many_term = many_body_en_jit(env1.q_array, env2.q_array, hyps[4], hyps[5])
 
     return two_term + three_term + many_term
 
