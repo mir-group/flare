@@ -10,8 +10,10 @@ from flare.kernels.utils import str_to_kernel_set
 
 from .fake_gp import generate_mb_envs
 
-list_to_test = ['2', '3', '2+3', 'mb', '2+3+mb']
-list_type = ['sc', 'mc']
+#list_to_test = ['2', '3', '2+3', 'mb', '2+3+mb']
+list_to_test = ['mb']
+list_type = ['sc']
+#list_type = ['sc', 'mc']
 
 def generate_hm(kernel_name):
     hyps = []
@@ -119,6 +121,7 @@ def test_force(kernel_name, kernel_type):
                 cal -= en_kernel(env1[1][i], env2[2][j], *args)
                 cal -= en_kernel(env1[2][i], env2[1][j], *args)
         kern_finite_diff = cal / (4 * delta ** 2)
+
     elif ('mb' not in kernel_name):
         calc1 = en_kernel(env1[1][0], env2[1][0], *args)
         calc2 = en_kernel(env1[2][0], env2[2][0], *args)

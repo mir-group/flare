@@ -11,7 +11,7 @@ from flare.kernels.kernels import force_helper, grad_constants, grad_helper, \
     force_energy_helper, three_body_en_helper, three_body_helper_1, \
     three_body_helper_2, three_body_grad_helper_1, three_body_grad_helper_2, \
     k_sq_exp_double_dev, k_sq_exp_dev, coordination_number, q_value, q_value_mc, \
-    mb_grad_helper_ls_, mb_grad_helper_ls_
+    mb_grad_helper_ls_, mb_grad_helper_ls
 from typing import Callable
 
 
