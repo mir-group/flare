@@ -329,32 +329,29 @@ def get_force_block(hyps: np.ndarray, name: str, kernel, cutoffs=None,
 
 def get_energy_block(hyps: np.ndarray, name: str, kernel, energy_noise,
                      cutoffs=None, hyps_mask=None, n_cpus=1, n_sample=100):
-    # training_data = _global_training_structures[name]
-    # size = len(training_data)
+    training_data = _global_training_structures[name]
+    size = len(training_data)
 
-    # if (n_cpus is None):
-    #     n_cpus = mp.cpu_count()
-    # if (n_cpus == 1):
-    #     k_mat = \
-    #         get_energy_block_pack(hyps, name, 0, size, 0, size, True, kernel,
-    #                               cutoffs, hyps_mask)
-    # else:
-    #     # initialize matrices
-    #     block_id, nbatch = partition_cr(n_sample, size, n_cpus)
-    #     multiplier = 3
+    if (n_cpus is None):
+        n_cpus = mp.cpu_count()
+    if (n_cpus == 1):
+        k_mat = \
+            get_energy_block_pack(hyps, name, 0, size, 0, size, True, kernel,
+                                  cutoffs, hyps_mask)
+    else:
+        # initialize matrices
+        block_id, nbatch = partition_cr(n_sample, size, n_cpus)
+        multiplier = 1
 
-    #     k_mat = \
-    #         parallel_matrix_construction(get_force_block_pack, hyps, name,
-    #                                      kernel, cutoffs, hyps_mask,
-    #                                      block_id, nbatch, size3, multiplier)
+        k_mat = \
+            parallel_matrix_construction(get_energy_block_pack, hyps, name,
+                                         kernel, cutoffs, hyps_mask,
+                                         block_id, nbatch, size, multiplier)
 
-    # sigma_n, _, __ = obtain_noise_len(hyps, hyps_mask)
-    # ky_mat = k_mat
-    # ky_mat += sigma_n ** 2 * np.eye(size3)
+    energy_block = k_mat
+    energy_block += (energy_noise ** 2) * np.eye(size)
 
-    # return ky_mat
-
-    pass
+    return energy_block
 
 
 def get_force_energy_block(hyps: np.ndarray, name: str, kernel, cutoffs=None,
