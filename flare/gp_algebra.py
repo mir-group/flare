@@ -246,23 +246,6 @@ def get_ky_mat(hyps: np.ndarray, name: str,
     return ky_mat
 
 
-def get_like_from_ky_mat(ky_mat, name):
-    """ compute the likelihood from the covariance matrix
-
-    :param ky_mat: the covariance matrix
-
-    :return: float, likelihood
-    """
-    # catch linear algebra errors
-    try:
-        ky_mat_inv = np.linalg.inv(ky_mat)
-        l_mat = np.linalg.cholesky(ky_mat)
-        alpha = np.matmul(ky_mat_inv, labels)
-    except:
-        return -1e8
-
-    return get_like_from_mats(ky_mat, l_mat, alpha, name)
-
 def get_like_from_mats(ky_mat, l_mat, alpha, name):
     """ compute the likelihood from the covariance matrix
 
@@ -282,11 +265,11 @@ def get_like_from_mats(ky_mat, l_mat, alpha, name):
 
 
 #######################################
-##### KY MATRIX FUNCTIONS and gradients
+#  KY MATRIX FUNCTIONS and gradients
 #######################################
 
-def get_ky_and_hyp_pack(name, s1, e1, s2, e2, same: bool,
-        hyps: np.ndarray, kernel_grad, cutoffs=None, hyps_mask=None):
+def get_ky_and_hyp_pack(name, s1, e1, s2, e2, same: bool, hyps: np.ndarray,
+                        kernel_grad, cutoffs=None, hyps_mask=None):
     """
     computes a block of ky matrix and its derivative to hyper-parameter
     If the cpu set up is None, it uses as much as posible cpus
@@ -302,7 +285,7 @@ def get_ky_and_hyp_pack(name, s1, e1, s2, e2, same: bool,
     """
 
     # assume sigma_n is the final hyperparameter
-    sigma_n, non_noise_hyps, _ = obtain_noise_len(hyps, hyps_mask)
+    _, non_noise_hyps, _ = obtain_noise_len(hyps, hyps_mask)
 
     # initialize matrices
     size1 = (e1-s1) * 3
@@ -342,10 +325,8 @@ def get_ky_and_hyp_pack(name, s1, e1, s2, e2, same: bool,
     return hyp_mat, k_mat
 
 
-def get_ky_and_hyp(hyps: np.ndarray, name,
-                   kernel_grad, cutoffs=None,
-                   hyps_mask=None,
-                   n_cpus=1, n_sample=100):
+def get_ky_and_hyp(hyps: np.ndarray, name, kernel_grad, cutoffs=None,
+                   hyps_mask=None, n_cpus=1, n_sample=100):
     """
     parallel version of get_ky_and_hyp
 
@@ -384,10 +365,9 @@ def get_ky_and_hyp(hyps: np.ndarray, name,
             children.append(
                 mp.Process(
                     target=queue_wrapper,
-                    args=(result_queue, wid,
-                        get_ky_and_hyp_pack,
-                        (name, s1, e1, s2, e2, s1==s2,
-                         hyps, kernel_grad, cutoffs, hyps_mask))))
+                    args=(result_queue, wid, get_ky_and_hyp_pack,
+                          (name, s1, e1, s2, e2, s1 == s2,
+                           hyps, kernel_grad, cutoffs, hyps_mask))))
 
         # Run child processes.
         for c in children:
@@ -426,59 +406,8 @@ def get_ky_and_hyp(hyps: np.ndarray, name,
     return hyp_mat, ky_mat
 
 
-def get_neg_likelihood(hyps: np.ndarray, name,
-                       kernel: Callable, output = None,
-                       cutoffs=None, hyps_mask=None,
-                       n_cpus=1, n_sample=100):
-    """compute the negative log likelihood
-
-    :param hyps: list of hyper-parameters
-    :type hyps: np.ndarray
-    :param name: name of the gp instance.
-    :param kernel: function object of the kernel
-    :param output: Output object for dumping every hyper-parameter
-                   sets computed
-    :type output: class Output
-    :param cutoffs: The cutoff values used for the atomic environments
-    :type cutoffs: list of 2 float numbers
-    :param hyps_mask: dictionary used for multi-group hyperparmeters
-    :param n_cpus: number of cpus to use.
-    :param n_sample: the size of block for matrix to compute
-
-    :return: float
-    """
-
-
-    if output is not None:
-        ostring="hyps:"
-        for hyp in hyps:
-            ostring+=f" {hyp}"
-        ostring+="\n"
-        output.write_to_log(ostring, name="hyps")
-
-    time0 = time.time()
-    ky_mat = \
-        get_ky_mat(hyps, name, kernel,
-                   cutoffs=cutoffs, hyps_mask=hyps_mask,
-                   n_cpus=n_cpus, n_sample=n_sample)
-
-    output.write_to_log(f"get_key_mat {time.time()-time0}\n", name="hyps")
-
-    time0 = time.time()
-
-    like = get_like_from_ky_mat(ky_mat, name)
-
-    output.write_to_log(f"get_like_from_ky_mat {time.time()-time0}\n",
-                        name="hyps")
-
-    if output is not None:
-        output.write_to_log('like: ' + str(like)+'\n', name="hyps")
-
-    return -like
-
-
 def get_neg_like_grad(hyps: np.ndarray, name: str,
-                      kernel_grad, output = None,
+                      kernel_grad, output=None,
                       cutoffs=None, hyps_mask=None,
                       n_cpus=1, n_sample=100, print_progress=False):
     """compute the log likelihood and its gradients
@@ -508,12 +437,8 @@ def get_neg_like_grad(hyps: np.ndarray, name: str,
         output.write_to_log(ostring, name="hyps")
 
     hyp_mat, ky_mat = \
-        get_ky_and_hyp(hyps,
-                       name,
-                       kernel_grad,
-                       cutoffs=cutoffs,
-                       hyps_mask=hyps_mask,
-                       n_cpus=n_cpus, n_sample=n_sample)
+        get_ky_and_hyp(hyps, name, kernel_grad, cutoffs=cutoffs,
+                       hyps_mask=hyps_mask, n_cpus=n_cpus, n_sample=n_sample)
 
     if output is not None:
         output.write_to_log(f"get_ky_and_hyp {time.time()-time0}\n",
@@ -539,7 +464,7 @@ def get_neg_like_grad(hyps: np.ndarray, name: str,
     if print_progress:
         print('\nHyperparameters: ', list(hyps))
         print('Likelihood: ' + str(like))
-        print('Likelihood Gradient: ',list(like_grad))
+        print('Likelihood Gradient: ', list(like_grad))
 
     return -like, -like_grad
 

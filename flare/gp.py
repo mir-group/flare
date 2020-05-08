@@ -17,11 +17,9 @@ from scipy.optimize import minimize
 from flare.util import Z_to_element
 from flare.env import AtomicEnvironment
 from flare.struc import Structure
-from flare.gp_algebra import get_neg_likelihood, \
-        get_like_from_mats, get_neg_like_grad, \
-        get_kernel_vector, en_kern_vec, \
-        get_ky_mat, get_ky_mat_update, \
-        _global_training_data, _global_training_labels
+from flare.gp_algebra import get_like_from_mats, get_neg_like_grad, \
+    get_kernel_vector, en_kern_vec, get_ky_mat, get_ky_mat_update, \
+    _global_training_data, _global_training_labels
 
 from flare.kernels.utils import str_to_kernel_set, from_mask_to_args
 from flare.util import NumpyEncoder
@@ -435,18 +433,13 @@ class GaussianProcess:
                            options={'disp': False, 'gtol': grad_tol,
                                     'maxiter': self.maxiter})
 
-        elif self.opt_algorithm == 'nelder-mead':
-            res = minimize(get_neg_likelihood, x_0, args,
-                           method='nelder-mead',
-                           options={'disp': False,
-                                    'maxiter': self.maxiter,
-                                    'xtol': x_tol})
         if res is None:
             raise RuntimeError("Optimization failed for some reason.")
         self.hyps = res.x
         self.set_L_alpha()
         self.likelihood = -res.fun
         self.likelihood_gradient = -res.jac
+
         return res
 
     def check_L_alpha(self):

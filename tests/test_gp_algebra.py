@@ -42,41 +42,34 @@ def get_random_training_set(nenv):
     cutoffs = np.array([0.8, 0.8])
     hyps = np.ones(5, dtype=float)
     kernel = (two_plus_three_body_mc, two_plus_three_body_mc_grad)
-    kernel_m = (two_plus_three_body_mc_multi, two_plus_three_body_mc_grad_multi)
+    kernel_m = \
+        (two_plus_three_body_mc_multi, two_plus_three_body_mc_grad_multi)
 
     # 9 different hyper-parameters
-    hyps_mask1 = {'nspec': 2,
-                 'spec_mask': np.zeros(118, dtype=int),
-                 'nbond': 2,
-                 'bond_mask': np.array([0, 1, 1, 1]),
-                 'triplet_mask': np.array([0, 1, 1, 1, 1, 1, 1, 1]),
-                 'ntriplet': 2}
+    hyps_mask1 = {'nspec': 2, 'spec_mask': np.zeros(118, dtype=int),
+                  'nbond': 2, 'bond_mask': np.array([0, 1, 1, 1]),
+                  'triplet_mask': np.array([0, 1, 1, 1, 1, 1, 1, 1]),
+                  'ntriplet': 2}
     hyps_mask1['spec_mask'][2] = 1
     hyps1 = np.ones(9, dtype=float)
 
-    # 9 different hyper-parameters, onlye train the 0, 2, 4, 6, 8
-    hyps_mask2 = {'nspec': 2,
-                 'spec_mask': np.zeros(118, dtype=int),
-                 'nbond': 2,
-                 'bond_mask': np.array([0, 1, 1, 1]),
-                 'ntriplet': 2,
-                 'triplet_mask': np.array([0, 1, 1, 1, 1, 1, 1, 1]),
-                 'train_noise':True,
-                 'map':[0,2,4,6,8],
-                 'original':np.array([1, 1, 1, 1, 1, 1, 1, 1, 1])}
+    # 9 different hyper-parameters, only train the 0, 2, 4, 6, 8
+    hyps_mask2 = {'nspec': 2, 'spec_mask': np.zeros(118, dtype=int),
+                  'nbond': 2, 'bond_mask': np.array([0, 1, 1, 1]),
+                  'ntriplet': 2,
+                  'triplet_mask': np.array([0, 1, 1, 1, 1, 1, 1, 1]),
+                  'train_noise': True, 'map': [0, 2, 4, 6, 8],
+                  'original': np.array([1, 1, 1, 1, 1, 1, 1, 1, 1])}
     hyps_mask2['spec_mask'][2] = 1
     hyps2 = np.ones(5, dtype=float)
 
     # 9 different hyper-parameters, only train the 0, 2, 4, 6
-    hyps_mask3 = {'nspec': 2,
-                 'spec_mask': np.zeros(118, dtype=int),
-                 'nbond': 2,
-                 'bond_mask': np.array([0, 1, 1, 1]),
-                 'ntriplet': 2,
-                 'triplet_mask': np.array([0, 1, 1, 1, 1, 1, 1, 1]),
-                 'train_noise':False,
-                 'map':[0,2,4,6],
-                 'original':np.array([1, 1, 1, 1, 1, 1, 1, 1, 1])}
+    hyps_mask3 = {'nspec': 2, 'spec_mask': np.zeros(118, dtype=int),
+                  'nbond': 2, 'bond_mask': np.array([0, 1, 1, 1]),
+                  'ntriplet': 2,
+                  'triplet_mask': np.array([0, 1, 1, 1, 1, 1, 1, 1]),
+                  'train_noise': False, 'map': [0, 2, 4, 6],
+                  'original': np.array([1, 1, 1, 1, 1, 1, 1, 1, 1])}
     hyps_mask3['spec_mask'][2] = 1
     hyps3 = np.ones(4, dtype=float)
 
