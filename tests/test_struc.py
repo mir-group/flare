@@ -231,23 +231,21 @@ def test_to_xyz(varied_test_struc):
 
 
 def test_file_load():
-
     struct1, forces = get_random_structure(cell=np.eye(3),
-                                          unique_species=[1, 2],
-                                          noa=2)
-
+                                           unique_species=[1, 2],
+                                           noa=2)
     struct2, forces = get_random_structure(cell=np.eye(3),
-                                          unique_species=[1, 2],
-                                          noa=2)
+                                           unique_species=[1, 2],
+                                           noa=2)
 
     with open("test_write.json",'w') as f:
-        f.write(dumps(struct1.as_dict(),cls=NumpyEncoder))
+        f.write(dumps(struct1.as_dict(), cls=NumpyEncoder))
 
     with pytest.raises(NotImplementedError):
         Structure.from_file(file_name='test_write.json', format='xyz')
 
     struct1a = Structure.from_file('test_write.json')
-    assert dumpcompare(struct1.as_dict() , struct1a.as_dict())
+    assert dumpcompare(struct1.as_dict(), struct1a.as_dict())
     os.remove('test_write.json')
 
     with open("test_write_set.json", 'w') as f:
@@ -269,6 +267,3 @@ def test_file_load():
     vasp_struct = Structure.from_file('./test_files/test_POSCAR')
     assert isinstance(vasp_struct, Structure)
     assert len(vasp_struct) == 6
-
-
-
