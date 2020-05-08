@@ -866,6 +866,7 @@ class Map3body:
                 pool.close()
                 pool.join()
 
+        # set OMB_NUM_THREADS mkl threads number to # of logical cores, per_atom_par=False
         for b12 in range(len(bonds12)):
             for b1 in range(len(bonds1)):
                 for b2 in range(len(bonds2)):
