@@ -18,7 +18,7 @@ from flare.util import Z_to_element
 from flare.env import AtomicEnvironment
 from flare.struc import Structure
 from flare.gp_algebra import get_like_from_mats, get_neg_like_grad, \
-    get_kernel_vector, en_kern_vec, get_ky_mat, get_ky_mat_update, \
+    get_kernel_vector, en_kern_vec, get_force_block, get_ky_mat_update, \
     _global_training_data, _global_training_labels, \
     _global_training_structures, _global_energy_labels
 
@@ -626,13 +626,10 @@ class GaussianProcess:
         _global_training_data[self.name] = self.training_data
         _global_training_labels[self.name] = self.training_labels_np
 
-        ky_mat = get_ky_mat(self.hyps,
-                            self.name,
-                            self.kernel,
-                            cutoffs=self.cutoffs,
-                            hyps_mask=self.hyps_mask,
-                            n_cpus=self.n_cpus,
-                            n_sample=self.n_sample)
+        ky_mat = \
+            get_force_block(self.hyps, self.name, self.kernel,
+                            cutoffs=self.cutoffs, hyps_mask=self.hyps_mask,
+                            n_cpus=self.n_cpus, n_sample=self.n_sample)
 
         l_mat = np.linalg.cholesky(ky_mat)
         l_mat_inv = np.linalg.inv(l_mat)

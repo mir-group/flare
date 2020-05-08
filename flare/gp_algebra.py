@@ -177,9 +177,8 @@ def get_ky_mat_pack(hyps: np.ndarray, name: str, s1: int, e1: int, s2: int,
     return k_mat
 
 
-def get_ky_mat(hyps: np.ndarray, name: str,
-               kernel, cutoffs=None, hyps_mask=None,
-               n_cpus=1, n_sample=100):
+def get_force_block(hyps: np.ndarray, name: str, kernel, cutoffs=None,
+                    hyps_mask=None, n_cpus=1, n_sample=100):
     """ parallel version of get_ky_mat
     :param hyps: list of hyper-parameters
     :param name: name of the gp instance.

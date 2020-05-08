@@ -14,7 +14,7 @@ from flare.kernels.mc_sephyps import two_plus_three_body_mc_grad \
         as two_plus_three_body_mc_grad_multi
 
 from flare.gp_algebra import get_like_grad_from_mats, \
-        get_kernel_vector, get_ky_mat, \
+        get_kernel_vector, get_force_block, \
         get_ky_mat_update, get_ky_and_hyp
 
 from .fake_gp import get_tstp
@@ -121,12 +121,12 @@ def test_ky_mat(params):
     # get the reference
     # without multi hyps
     time0 = time.time()
-    ky_mat0 = get_ky_mat(hyps, name, kernel[0], cutoffs)
+    ky_mat0 = get_force_block(hyps, name, kernel[0], cutoffs)
     print("compute ky_mat serial", time.time()-time0)
 
     # parallel version
     time0 = time.time()
-    ky_mat = get_ky_mat(hyps, name,
+    ky_mat = get_force_block(hyps, name,
                      kernel[0], cutoffs,
                      n_cpus=2, n_sample=20)
     print("compute ky_mat parallel", time.time()-time0)
@@ -137,7 +137,7 @@ def test_ky_mat(params):
     # this part of the code can be use for timing the parallel performance
     # for n in [10, 50, 100]:
     #     timer0 = time.time()
-    #     ky_mat = get_ky_mat(hyps, name,
+    #     ky_mat = get_force_block(hyps, name,
     #                      kernel[0], cutoffs,
     #                      ncpus=8, n_sample=n)
     #     diff = (np.max(np.abs(ky_mat-ky_mat0)))
@@ -158,7 +158,7 @@ def test_ky_mat(params):
 
         # serial implementation
         time0 = time.time()
-        ky_mat = get_ky_mat(hyps, name,
+        ky_mat = get_force_block(hyps, name,
                           ker, cutoffs, hyps_mask)
         print(f"compute ky_mat with multihyps, test {i}, n_cpus=1", time.time()-time0)
         diff = (np.max(np.abs(ky_mat-ky_mat0)))
@@ -167,7 +167,7 @@ def test_ky_mat(params):
 
         # parallel implementation
         time0 = time.time()
-        ky_mat = get_ky_mat(hyps, name,
+        ky_mat = get_force_block(hyps, name,
                          ker,
                          cutoffs, hyps_mask, n_cpus=2, n_sample=20)
         print(f"compute ky_mat with multihyps, test {i}, n_cpus=2", time.time()-time0)
@@ -191,8 +191,7 @@ def test_ky_mat_update(params):
     training_labels = flare.gp_algebra._global_training_labels[name]
     flare.gp_algebra._global_training_labels['old'] = training_labels[:n]
 
-    func = [get_ky_mat,
-            get_ky_mat_update]
+    func = [get_force_block, get_ky_mat_update]
 
     # get the reference
     ky_mat0 = func[0](hyps, name,
