@@ -1,6 +1,5 @@
 import numpy as np
 from flare.energy_gp_algebra import get_ky_mat
-from flare.gp_algebra import get_like_from_ky_mat
 from flare.gp import GaussianProcess
 from flare.env import AtomicEnvironment
 from flare.struc import Structure
