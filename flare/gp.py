@@ -658,10 +658,8 @@ class GaussianProcess:
         _global_training_data[self.name] = self.training_data
         _global_training_labels[self.name] = self.training_labels_np
 
-        ky_mat = get_ky_mat_update(self.ky_mat, self.hyps,
-                                   self.name,
-                                   self.kernel,
-                                   cutoffs=self.cutoffs,
+        ky_mat = get_ky_mat_update(self.ky_mat, self.hyps, self.name,
+                                   self.kernel, cutoffs=self.cutoffs,
                                    hyps_mask=self.hyps_mask,
                                    n_cpus=self.n_cpus,
                                    n_sample=self.n_sample)
@@ -743,20 +741,19 @@ class GaussianProcess:
                                  cutoffs=np.array(dictionary['cutoffs']),
                                  hyps=np.array(dictionary['hyps']),
                                  hyp_labels=dictionary['hyp_labels'],
-                                 parallel=dictionary.get('parallel',False) or
-                                          dictionary.get('par',False),
+                                 parallel=dictionary.get('parallel', False) or
+                                 dictionary.get('par', False),
                                  per_atom_par=dictionary.get('per_atom_par',
                                                              True),
-                                 n_cpus=dictionary.get(
-                                     'n_cpus') or dictionary.get('no_cpus'),
+                                 n_cpus=dictionary.get('n_cpus') or
+                                 dictionary.get('no_cpus'),
                                  maxiter=dictionary['maxiter'],
                                  opt_algorithm=dictionary.get(
-                                     'opt_algorithm','L-BFGS-B'),
+                                     'opt_algorithm', 'L-BFGS-B'),
                                  multihyps=multihyps,
                                  hyps_mask=dictionary.get('hyps_mask', None),
-                                 name=dictionary.get('name','default_gp')
+                                 name=dictionary.get('name', 'default_gp')
                                  )
-
 
         # Save time by attempting to load in computed attributes
         new_gp.training_data = [AtomicEnvironment.from_dict(env) for env in
@@ -776,13 +773,13 @@ class GaussianProcess:
             try:
                 new_gp.ky_mat = np.load(dictionary['ky_mat_file'])
                 new_gp.compute_matrices()
-            except:
+            except FileNotFoundError:
                 new_gp.ky_mat = None
                 new_gp.l_mat = None
                 new_gp.alpha = None
                 new_gp.ky_mat_inv = None
                 filename = dictionary['ky_mat_file']
-                Warning("the covariance matrices are not loaded"\
+                Warning("the covariance matrices are not loaded"
                         f"because {filename} cannot be found")
         else:
             new_gp.ky_mat_inv = np.array(dictionary['ky_mat_inv']) \
@@ -809,8 +806,7 @@ class GaussianProcess:
         self.ky_mat_inv = ky_mat_inv
 
     def adjust_cutoffs(self, new_cutoffs: Union[list, tuple, 'np.ndarray'],
-                       reset_L_alpha = True,
-                       train = True):
+                       reset_L_alpha=True, train=True):
         """
         Loop through atomic environment objects stored in the training data,
         and re-compute cutoffs for each. Useful if you want to gauge the
@@ -833,7 +829,6 @@ class GaussianProcess:
         _global_training_data[self.name] = self.training_data
         _global_training_labels[self.name] = self.training_labels_np
 
-
         self.cutoffs = np.array(new_cutoffs)
 
         if reset_L_alpha:
@@ -843,8 +838,6 @@ class GaussianProcess:
 
         if train:
             self.train()
-
-
 
     def write_model(self, name: str, format: str = 'json'):
         """
@@ -896,32 +889,29 @@ class GaussianProcess:
             with open(filename, 'r') as f:
                 gp_model = GaussianProcess.from_dict(json.loads(f.readline()))
                 gp_model.check_instantiation()
-                _global_training_data[gp_model.name] \
-                        = gp_model.training_data
-                _global_training_labels[gp_model.name] \
-                        = gp_model.training_labels_np
-
+                _global_training_data[gp_model.name] = gp_model.training_data
+                _global_training_labels[gp_model.name] = \
+                    gp_model.training_labels_np
 
         elif '.pickle' in filename or 'pickle' in format:
             with open(filename, 'rb') as f:
                 gp_model = pickle.load(f)
                 gp_model.check_instantiation()
 
-                _global_training_data[gp_model.name] \
-                        = gp_model.training_data
-                _global_training_labels[gp_model.name] \
-                        = gp_model.training_labels_np
+                _global_training_data[gp_model.name] = gp_model.training_data
+                _global_training_labels[gp_model.name] = \
+                    gp_model.training_labels_np
 
                 if len(gp_model.training_data) > 5000:
                     try:
                         gp_model.ky_mat = np.load(gp_model.ky_mat_file)
                         gp_model.compute_matrices()
-                    except:
+                    except FileNotFoundError:
                         gp_model.ky_mat = None
                         gp_model.l_mat = None
                         gp_model.alpha = None
                         gp_model.ky_mat_inv = None
-                        Warning("the covariance matrices are not loaded"\
+                        Warning("the covariance matrices are not loaded"
                                 f"it can take extra long time to recompute")
 
         else:
@@ -929,7 +919,6 @@ class GaussianProcess:
                              ".json or .pickle format.")
 
         return gp_model
-
 
     @property
     def training_statistics(self) -> dict:
@@ -945,7 +934,7 @@ class GaussianProcess:
 
         # Count all of the present species in the atomic env. data
         present_species = []
-        for env,force in zip(self.training_data,self.training_labels):
+        for env, _ in zip(self.training_data, self.training_labels):
             present_species.append(Z_to_element(env.structure.coded_species[
                                                     env.atom]))
 
@@ -954,7 +943,6 @@ class GaussianProcess:
         data['envs_by_species'] = dict(Counter(present_species))
 
         return data
-
 
     @property
     def par(self):
