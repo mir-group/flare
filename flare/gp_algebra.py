@@ -181,13 +181,72 @@ def get_force_block_pack(hyps: np.ndarray, name: str, s1: int, e1: int,
 def get_energy_block_pack(hyps: np.ndarray, name: str, s1: int, e1: int,
                           s2: int, e2: int, same: bool, kernel, cutoffs,
                           hyps_mask):
-    pass
+
+    # initialize matrices
+    training_structures = _global_training_structures[name]
+    size1 = e1 - s1
+    size2 = e2 - s2
+    energy_block = np.zeros([size1, size2])
+
+    # calculate elements
+    args = from_mask_to_args(hyps, hyps_mask, cutoffs)
+
+    for m_index in range(size1):
+        struc_1 = training_structures[m_index + s1]
+        if (same):
+            lowbound = m_index
+        else:
+            lowbound = 0
+
+        for n_index in range(lowbound, size2):
+            struc_2 = training_structures[n_index + s2]
+
+            # Loop over environments in both structures to compute the
+            # energy/energy kernel.
+            kern_curr = 0
+            for environment_1 in struc_1:
+                for environment_2 in struc_2:
+                    kern_curr += kernel(environment_1, environment_2, *args)
+
+            # Store kernel value.
+            energy_block[m_index, n_index] = kern_curr
+            if (same):
+                energy_block[n_index, m_index] = kern_curr
+
+    return energy_block
 
 
 def get_force_energy_block_pack(hyps: np.ndarray, name: str, s1: int,
                                 e1: int, s2: int, e2: int, same: bool, kernel,
                                 cutoffs, hyps_mask):
-    pass
+    # initialize matrices
+    training_data = _global_training_data[name]
+    training_structures = _global_training_structures[name]
+    size1 = (e1 - s1) * 3
+    size2 = e2 - s2
+    force_energy_block = np.zeros([size1, size2])
+
+    ds = [1, 2, 3]
+
+    # calculate elements
+    args = from_mask_to_args(hyps, hyps_mask, cutoffs)
+
+    for m_index in range(size1):
+        environment_1 = training_data[int(math.floor(m_index / 3)) + s1]
+        d_1 = ds[m_index % 3]
+
+        for n_index in range(size2):
+            structure = training_structures[n_index + s2]
+
+            # Loop over environments in the training structure.
+            kern_curr = 0
+            for environment_2 in structure:
+                kern_curr += kernel(environment_1, environment_2, d_1, *args)
+
+            # store kernel value
+            force_energy_block[m_index, n_index] = kern_curr
+
+    return force_energy_block
 
 
 def parallel_matrix_construction(pack_function, hyps, name, kernel, cutoffs,
@@ -262,14 +321,39 @@ def get_force_block(hyps: np.ndarray, name: str, kernel, cutoffs=None,
                                          block_id, nbatch, size3, multiplier)
 
     sigma_n, _, __ = obtain_noise_len(hyps, hyps_mask)
-    ky_mat = k_mat
-    ky_mat += sigma_n ** 2 * np.eye(size3)
+    force_block = k_mat
+    force_block += sigma_n ** 2 * np.eye(size3)
 
-    return ky_mat
+    return force_block
 
 
 def get_energy_block(hyps: np.ndarray, name: str, kernel, energy_noise,
                      cutoffs=None, hyps_mask=None, n_cpus=1, n_sample=100):
+    # training_data = _global_training_structures[name]
+    # size = len(training_data)
+
+    # if (n_cpus is None):
+    #     n_cpus = mp.cpu_count()
+    # if (n_cpus == 1):
+    #     k_mat = \
+    #         get_energy_block_pack(hyps, name, 0, size, 0, size, True, kernel,
+    #                               cutoffs, hyps_mask)
+    # else:
+    #     # initialize matrices
+    #     block_id, nbatch = partition_cr(n_sample, size, n_cpus)
+    #     multiplier = 3
+
+    #     k_mat = \
+    #         parallel_matrix_construction(get_force_block_pack, hyps, name,
+    #                                      kernel, cutoffs, hyps_mask,
+    #                                      block_id, nbatch, size3, multiplier)
+
+    # sigma_n, _, __ = obtain_noise_len(hyps, hyps_mask)
+    # ky_mat = k_mat
+    # ky_mat += sigma_n ** 2 * np.eye(size3)
+
+    # return ky_mat
+
     pass
 
 
