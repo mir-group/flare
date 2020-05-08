@@ -432,7 +432,7 @@ def get_neg_like_grad(hyps: np.ndarray, name: str,
     if output is not None:
         ostring = "hyps:"
         for hyp in hyps:
-            ostring +=  f" {hyp}"
+            ostring += f" {hyp}"
         ostring += "\n"
         output.write_to_log(ostring, name="hyps")
 
@@ -541,14 +541,13 @@ def get_ky_mat_update(ky_mat_old, hyps: np.ndarray, name: str,
         return get_ky_mat_update_serial(
                 ky_mat_old, hyps, name, kernel, cutoffs, hyps_mask)
 
-    sigma_n, non_noise_hyps, _ = obtain_noise_len(hyps, hyps_mask)
+    sigma_n, _, _ = obtain_noise_len(hyps, hyps_mask)
 
     # initialize matrices
     old_size3 = ky_mat_old.shape[0]
     old_size = old_size3//3
     size = len(_global_training_data[name])
     size3 = 3*size
-    ds = [1, 2, 3]
 
     block_id, nbatch = partition_update(n_sample, size, old_size, n_cpus)
 
@@ -588,9 +587,8 @@ def get_ky_mat_update(ky_mat_old, hyps: np.ndarray, name: str,
     return ky_mat
 
 
-def get_ky_mat_update_serial(\
-        ky_mat_old, hyps: np.ndarray, name,
-        kernel, cutoffs=None, hyps_mask=None):
+def get_ky_mat_update_serial(ky_mat_old, hyps: np.ndarray, name, kernel,
+                             cutoffs=None, hyps_mask=None):
     '''
     used for update_L_alpha. if add 10 atoms to the training
     set, the K matrix will add 10x3 columns and 10x3 rows
@@ -610,7 +608,6 @@ def get_ky_mat_update_serial(\
     n = ky_mat_old.shape[0]
     size = len(training_data)
     size3 = size*3
-    m = size - n // 3  # number of new data added
     ky_mat = np.zeros((size3, size3))
     ky_mat[:n, :n] = ky_mat_old
 
@@ -736,14 +733,14 @@ def get_kernel_vector(name, kernel, x, d_1, hyps,
 def en_kern_vec_unit(name, s, e, x, kernel,
                      hyps, cutoffs=None, hyps_mask=None):
     """
-    Compute energy kernel vector, comparing input environment to all environments
-    in the GP's training set.
-    :param training_data: Set of atomic environments to compare against
+    Compute energy kernel vector, comparing input environment to all
+        environments in the GP's training set.
+    :param training_data: Set of atomic environments to compare against.
     :param kernel:
     :param x: data point to compare against kernel matrix
     :type x: AtomicEnvironment
     :param hyps: list of hyper-parameters
-    :param cutoffs: The cutoff values used for the atomic environments
+    :param cutoffs: The cutoff values used for the atomic environments.
     :type cutoffs: list of 2 float numbers
     :param hyps_mask: dictionary used for multi-group hyperparmeters
 
