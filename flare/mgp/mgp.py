@@ -16,7 +16,7 @@ import os
 from flare import gp, struc, gp_algebra
 from flare.env import AtomicEnvironment
 from flare.gp import GaussianProcess
-from flare.gp_algebra import get_kernel_vector_unit, partition_c
+from flare.gp_algebra import get_kernel_vector_unit, partition_vector
 from flare.cutoffs import quadratic_cutoff
 from flare.kernels.mc_simple import two_body_mc, three_body_mc
 from flare.util import Z_to_element
@@ -411,7 +411,7 @@ class Map2body:
         else:
             with mp.Pool(processes=processes) as pool:
                 size = len(GP.training_data)
-                block_id, nbatch = partition_c(self.n_sample, size, processes)
+                block_id, nbatch = partition_vector(self.n_sample, size, processes)
 
                 k12_slice = []
                 k12_v_all = np.zeros([len(bond_lengths), size*3])
@@ -576,7 +576,7 @@ class Map3body:
                 os.mkdir('kv3')
 
             size = len(GP.training_data)
-            block_id, nbatch = partition_c(self.n_sample, size, processes)
+            block_id, nbatch = partition_vector(self.n_sample, size, processes)
 
             k12_slice = []
             if (size>5000):

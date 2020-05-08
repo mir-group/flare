@@ -46,7 +46,7 @@ def partition_matrix(n_sample, size, n_cpus):
         nbatch1 += 1
         e2 = 0
         while (e2 < size):
-            s2 = int(n_sample*nbatch2)
+            s2 = int(n_sample * nbatch2)
             e2 = int(np.min([s2 + n_sample, size]))
             block_id += [(s1, e1, s2, e2)]
             nbatch2 += 1
@@ -73,6 +73,40 @@ def partition_vector(n_sample, size, n_cpus):
         e = np.min([s + n_sample, size])
         block_id += [(s, e)]
         nbatch += 1
+    return block_id, nbatch
+
+
+def partition_force_energy_block(n_sample: int, size1: int, size2: int,
+                                 n_cpus: int):
+
+    """Special partition method for the force/energy block. Because the number
+    of environments in a structure can vary, we only split up the environment
+    list, which has length size1.
+
+    Note that two sizes need to be specified: the size of the envirvironment
+    list and the size of the structure list.
+
+    Args:
+        n_sample (int): Number of environments per processor.
+        size1 (int): Size of the environment list.
+        size2 (int): Size of the structure list.
+        n_cpus (int): Number of cpus.
+    """
+
+    n_sample0 = int(math.ceil(size1/n_cpus))
+    if (n_sample0 > n_sample):
+        n_sample = n_sample0
+
+    block_id = []
+    nbatch = 0
+    e = 0
+
+    while (e < size1):
+        s = n_sample * nbatch
+        e = np.min([s + n_sample, size1])
+        block_id += [(s, e, 0, size2)]
+        nbatch += 1
+
     return block_id, nbatch
 
 

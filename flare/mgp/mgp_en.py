@@ -12,7 +12,7 @@ from typing import List
 from flare.struc import Structure
 from flare.env import AtomicEnvironment
 from flare.gp import GaussianProcess
-from flare.gp_algebra import partition_c
+from flare.gp_algebra import partition_vector
 from flare.gp_algebra import en_kern_vec_unit as en_kern_vec
 from flare.kernels.utils import from_mask_to_args, str_to_kernel_set 
 from flare.cutoffs import quadratic_cutoff
@@ -595,7 +595,7 @@ class Map2body:
             # A_list = pool.map(self._GenGrid_inner_most, pool_list)
             # break it into pieces
             size = len(GP.training_data)
-            block_id, nbatch = partition_c(self.n_sample, size, processes)
+            block_id, nbatch = partition_vector(self.n_sample, size, processes)
 
             k12_slice = []
             k12_v_all = np.zeros([len(bond_lengths), size*3])
@@ -833,7 +833,7 @@ class Map3body:
                             k12_v_all[:, :, s:e, :] = k12_slice[ibatch].get()
 
                 else:
-                    block_id, nbatch = partition_c(self.n_sample, size, processes)
+                    block_id, nbatch = partition_vector(self.n_sample, size, processes)
 
                     k12_slice = []
                     #print('before for', ns, nsample, time.time())
