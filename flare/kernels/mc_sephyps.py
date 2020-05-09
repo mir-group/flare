@@ -420,7 +420,7 @@ def three_body_mc_en(env1, env2, cutoffs, nspec, spec_mask,
                                 env1.triplet_counts, env2.triplet_counts,
                                 sig3, ls3, r_cut, cutoff_func,
                                 nspec, spec_mask,
-                                triplet_mask)
+                                triplet_mask) / 9
 
 
 # -----------------------------------------------------------------------------

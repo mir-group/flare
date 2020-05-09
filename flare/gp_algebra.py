@@ -285,7 +285,7 @@ def get_force_energy_block_pack(hyps: np.ndarray, name: str, s1: int,
 
 def parallel_matrix_construction(pack_function, hyps, name, kernel, cutoffs,
                                  hyps_mask, block_id, nbatch, size1, size2,
-                                 m1, m2):
+                                 m1, m2, symm=True):
     result_queue = mp.Queue()
     children = []
     for wid in range(nbatch):
@@ -306,9 +306,10 @@ def parallel_matrix_construction(pack_function, hyps, name, kernel, cutoffs,
         s1, e1, s2, e2 = block_id[wid]
         matrix[s1 * m1:e1 * m1,
                s2 * m2:e2 * m2] = result_chunk
-        if (s1 != s2):
-            matrix[s2 * m2:e2 * m2,
-                   s1 * m1:e1 * m1] = result_chunk.T
+        # Note that the force/energy block is not symmetric; in this case
+        # symm is False.
+        if ((s1 != s2) and (symm is True)):
+            matrix[s2 * m2:e2 * m2, s1 * m1:e1 * m1] = result_chunk.T
 
     # Join child processes (clean up zombies).
     for c in children:
@@ -395,17 +396,18 @@ def get_force_energy_block(hyps: np.ndarray, name: str, kernel, cutoffs=None,
     training_structures = _global_training_structures[name]
     size1 = len(training_data) * 3
     size2 = len(training_structures)
+    size3 = len(training_data)
 
     if (n_cpus is None):
         n_cpus = mp.cpu_count()
     if (n_cpus == 1):
         force_energy_block = \
-            get_force_energy_block_pack(hyps, name, 0, size1, 0, size2, True,
+            get_force_energy_block_pack(hyps, name, 0, size3, 0, size2, True,
                                         kernel, cutoffs, hyps_mask)
     else:
         # initialize matrices
         block_id, nbatch = \
-            partition_force_energy_block(n_sample, size1, size2, n_cpus)
+            partition_force_energy_block(n_sample, size3, size2, n_cpus)
         m1 = 3  # 3 force components per environment
         m2 = 1  # 1 energy per structure
 
@@ -413,7 +415,7 @@ def get_force_energy_block(hyps: np.ndarray, name: str, kernel, cutoffs=None,
             parallel_matrix_construction(get_force_energy_block_pack, hyps,
                                          name, kernel, cutoffs, hyps_mask,
                                          block_id, nbatch, size1, size2, m1,
-                                         m2)
+                                         m2, symm=False)
 
     return force_energy_block
 

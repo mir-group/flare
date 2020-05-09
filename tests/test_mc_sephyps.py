@@ -18,7 +18,8 @@ def test_force_en_multi_vs_simple():
 
     cutoffs = np.ones(3, dtype=np.float64)
     delta = 1e-8
-    env1_1, env1_2, env1_3, env2_1, env2_2, env2_3 = generate_envs(cutoffs, delta)
+    env1_1, env1_2, env1_3, env2_1, env2_2, env2_3 = \
+        generate_envs(cutoffs, delta)
 
     # set hyperparameters
     d1 = 1
@@ -83,7 +84,6 @@ def test_force_en(kernel_name, nbond, ntriplet, constraint):
     hyps, hm, cut = generate_hm(nbond, ntriplet, cutoffs, constraint)
     args0 = from_mask_to_args(hyps, hm, cutoffs)
 
-
     force_en_kernel = stk[kernel_name+"_force_en"]
     en_kernel = stk[kernel_name+"_en"]
     if bool('two' in kernel_name) != bool('three' in kernel_name):
@@ -94,9 +94,9 @@ def test_force_en(kernel_name, nbond, ntriplet, constraint):
 
         kern_finite_diff = (calc1 - calc2) / delta
         if ('two' in kernel_name):
-            kern_finite_diff /= 2
+            kern_finite_diff *= 2
         else:
-            kern_finite_diff /= 3
+            kern_finite_diff *= 3
     else:
         en2_kernel = stk['two_body_mc_en']
         en3_kernel = stk['three_body_mc_en']
@@ -117,13 +117,13 @@ def test_force_en(kernel_name, nbond, ntriplet, constraint):
 
         calc1 = en2_kernel(env1_2, env2_1, *args2)
         calc2 = en2_kernel(env1_1, env2_1, *args2)
-        kern_finite_diff = (calc1 - calc2) / 2.0 / delta
+        kern_finite_diff = 4 * (calc1 - calc2) / 2.0 / delta
 
         args3 = from_mask_to_args(hyps[nbond*2:-1], hm3, cutoffs)
 
         calc1 = en3_kernel(env1_2, env2_1, *args3)
         calc2 = en3_kernel(env1_1, env2_1, *args3)
-        kern_finite_diff += (calc1 - calc2) / 3.0 / delta
+        kern_finite_diff += 9 * (calc1 - calc2) / 3.0 / delta
 
     kern_analytical = force_en_kernel(env1_1, env2_1, d1, *args0)
 
@@ -154,20 +154,26 @@ def test_force(kernel_name, nbond, ntriplet, constraint):
     d2 = 2
 
     kernel = stk[kernel_name]
-    if bool('two' in kernel_name) != bool('three' in kernel_name):
-        en_kernel = stk[kernel_name+"_en"]
-    else:
-        en_kernel = stk['two_plus_three_mc_en']
-
-    # check force kernel
-    calc1 = en_kernel(env1_2, env2_2, *args0)
-    calc2 = en_kernel(env1_3, env2_3, *args0)
-    calc3 = en_kernel(env1_2, env2_3, *args0)
-    calc4 = en_kernel(env1_3, env2_2, *args0)
+    
+    en2_kernel = stk['two_body_mc_en']
+    en3_kernel = stk['three_body_mc_en']
+    calc1 = 0
+    calc2 = 0
+    calc3 = 0
+    calc4 = 0
+    if 'two' in kernel_name:
+        calc1 += 4 * en2_kernel(env1_2, env2_2, *args0)
+        calc2 += 4 * en2_kernel(env1_3, env2_3, *args0)
+        calc3 += 4 * en2_kernel(env1_2, env2_3, *args0)
+        calc4 += 4 * en2_kernel(env1_3, env2_2, *args0)
+    if 'three' in kernel_name:
+        calc1 += 9 * en3_kernel(env1_2, env2_2, *args0)
+        calc2 += 9 * en3_kernel(env1_3, env2_3, *args0)
+        calc3 += 9 * en3_kernel(env1_2, env2_3, *args0)
+        calc4 += 9 * en3_kernel(env1_3, env2_2, *args0)
 
     kern_finite_diff = (calc1 + calc2 - calc3 - calc4) / (4*delta**2)
-    kern_analytical = kernel(env1_1, env2_1,
-                             d1, d2, *args0)
+    kern_analytical = kernel(env1_1, env2_1, d1, d2, *args0)
     tol = 1e-4
     assert(np.isclose(kern_finite_diff, kern_analytical, atol=tol))
 

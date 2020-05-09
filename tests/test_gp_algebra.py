@@ -16,7 +16,7 @@ from flare.kernels.mc_sephyps import two_plus_three_body_mc_grad \
 from flare.kernels import mc_sephyps
 
 from flare.gp_algebra import get_like_grad_from_mats, \
-        get_kernel_vector, get_force_block, \
+        get_kernel_vector, get_force_block, get_force_energy_block, \
         get_ky_mat_update, get_ky_and_hyp, get_energy_block
 
 from .fake_gp import get_tstp
@@ -252,6 +252,28 @@ def test_energy_block_mat(params):
         diff = (np.max(np.abs(ky_mat-ky_mat0)))
         assert (diff == 0), "multi hyps  parallel "\
             "implementation is wrong with case {i}"
+
+
+def test_force_energy_block(params):
+    hyps, name, kernel, cutoffs, kernel_m, hyps_list, hyps_mask_list, \
+        energy_noise = params
+
+    # get the reference without multi hyps
+    time0 = time.time()
+    ky_mat0 = get_force_energy_block(hyps, name, kernel[3], cutoffs)
+    print("compute ky_mat serial", time.time()-time0)
+
+    # parallel version
+    time0 = time.time()
+    ky_mat = \
+        get_force_energy_block(hyps, name, kernel[3], cutoffs, n_cpus=2,
+                               n_sample=5)
+    print("compute ky_mat parallel", time.time()-time0)
+    print(ky_mat0)
+    print(ky_mat)
+
+    diff = (np.max(np.abs(ky_mat-ky_mat0)))
+    assert (diff == 0), "parallel implementation is wrong"
 
 
 def test_ky_mat_update(params):
