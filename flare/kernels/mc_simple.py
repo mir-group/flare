@@ -408,11 +408,10 @@ def two_plus_three_plus_many_body_mc_en(env1: AtomicEnvironment, env2: AtomicEnv
                              env1.triplet_counts, env2.triplet_counts,
                              sig3, ls3, r_cut_3, cutoff_func)
 
-    many_term = many_body_mc_en_jit(env1.bond_array_2, env2.bond_array_2, env1.ctype,
-                                    env2.ctype, env1.bond_array_mb_etypes,
-                                    env2.bond_array_mb_etypes, env1.species,
-                                    env2.species,
-                                    sigm, lsm, r_cut_m, cutoff_func)
+    many_term = many_body_mc_en_jit(env1.q_array, env2.q_array, 
+                                    env1.ctype, env2.ctype, 
+                                    env1.unique_species, env2.unique_species,
+                                    sigm, lsm)
 
     return two_term + three_term + many_term
 

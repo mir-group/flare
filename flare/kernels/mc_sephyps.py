@@ -94,11 +94,13 @@ def two_three_many_body_mc(env1, env2, d1, d2, cutoffs,
                           d1, d2, sig3, ls3, r_cut_3, cutoff_func,
                           nspec, spec_mask, triplet_mask)
 
-    many_term = many_body_mc_jit(env1.bond_array_mb, env2.bond_array_mb, env1.neigh_dists_mb,
-                                 env2.neigh_dists_mb, env1.num_neighs_mb, env2.num_neighs_mb,
-                                 env1.ctype, env2.ctype, env1.bond_array_mb_etypes, env2.bond_array_mb_etypes,
-                                 env1.etype_mb, env2.etype_mb, env1.species, env2.species,
-                                 d1, d2, sigm, lsm, r_cut_m, cutoff_func)
+    many_term = many_body_mc_jit(env1.q_array, env2.q_array, 
+                            env1.q_neigh_array, env2.q_neigh_array, 
+                            env1.q_neigh_grads, env2.q_neigh_grads,
+                            env1.ctype, env2.ctype, 
+                            env1.etypes_mb, env2.etypes_mb, 
+                            env1.unique_species, env2.unique_species, 
+                            d1, d2, sigm, lsm)
 
     return two_term + three_term + many_term
 
@@ -131,17 +133,15 @@ def two_three_many_body_mc_grad(env1, env2, d1, d2, cutoffs,
                                nspec, spec_mask,
                                ntriplet, triplet_mask)
 
-    kern_many, gradm = many_body_mc_grad_jit(env1.bond_array_mb, env2.bond_array_mb,
-                                             env1.neigh_dists_mb, env2.neigh_dists_mb,
-                                             env1.num_neighs_mb, env2.num_neighs_mb, env1.ctype,
-                                             env2.ctype, env1.bond_array_mb_etypes, env2.bond_array_mb_etypes,
-                                             env1.etype_mb, env2.etype_mb,
-                                             env1.species, env2.species, d1, d2, sigm,
-                                             lsm, r_cut_m, cutoff_func)
+    kern_many, gradm = many_body_mc_grad_jit(env1.q_array, env2.q_array, 
+                                 env1.q_neigh_array, env2.q_neigh_array, 
+                                 env1.q_neigh_grads, env2.q_neigh_grads,
+                                 env1.ctype, env2.ctype, 
+                                 env1.etypes_mb, env2.etypes_mb,
+                                 env1.unique_species, env2.unique_species, 
+                                 d1, d2, sigm, lsm)
 
-    g = np.hstack([grad2, grad3, gradm])
-
-    return kern2 + kern3 + kern_many, g
+    return kern2 + kern3 + kern_many, np.hstack([grad2, grad3, gradm])
 
 
 def two_three_many_mc_force_en(env1, env2, d1, cutoffs,
@@ -172,12 +172,11 @@ def two_three_many_mc_force_en(env1, env2, d1, cutoffs,
                                    spec_mask,
                                    triplet_mask) / 3
 
-    many_term = many_body_mc_force_en_jit(env1.bond_array_mb, env2.bond_array_mb,
-                                          env1.neigh_dists_mb, env1.num_neighs_mb,
-                                          env1.ctype, env2.ctype, env1.bond_array_mb_etypes, env2.bond_array_mb_etypes,
-                                          env1.etype_mb,
-                                          env1.species, env2.species, d1, sigm, lsm, r_cut_m,
-                                          cutoff_func)
+    many_term = many_body_mc_force_en_jit(env1.q_array, env2.q_array, 
+                              env1.q_neigh_array, env1.q_neigh_grads,
+                              env1.ctype, env2.ctype, env1.etypes_mb,  
+                              env1.unique_species, env2.unique_species, 
+                              d1, sigm, lsm)
 
     return two_term + three_term + many_term
 
@@ -208,11 +207,10 @@ def two_three_many_mc_en(env1, env2, cutoffs,
                              nspec, spec_mask,
                              triplet_mask)
 
-    many_term = many_body_mc_en_jit(env1.bond_array_2, env2.bond_array_2, env1.ctype,
-                                    env2.ctype, env1.bond_array_mb_etypes, env2.bond_array_mb_etypes, env1.species,
-                                    env2.species,
-                                    sigm, lsm, r_cut_m, cutoff_func)
-
+    many_term = many_body_mc_en_jit(env1.q_array, env2.q_array, 
+                                    env1.ctype, env2.ctype, 
+                                    env1.unique_species, env2.unique_species,
+                                    sigm, lsm)
 
     return two_term + three_term + many_term
 

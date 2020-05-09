@@ -344,31 +344,6 @@ def get_m_body_arrays(positions, atom: int, cell, cutoff_mb: float, species,
 
     return qs, qs_neigh, q_grads, species_list, etypes 
 
-#    # For each neighbouring atom, get distances in its neighbourhood
-#    neighbouring_dists = []
-#    neighbouring_etypes = []
-#    max_neighbours = 0
-#    for i, m in enumerate(bond_inds):
-#        neighbour_bond_array_2, ___, etypes_mb, _ = get_2_body_arrays(positions, m, cell,
-#                                                         cutoff_mb, species)
-#        neighbouring_dists.append(neighbour_bond_array_2[:, 0])
-#        neighbouring_etypes.append(etypes_mb)
-#        if len(neighbour_bond_array_2[:, 0]) > max_neighbours:
-#            max_neighbours = len(neighbour_bond_array_2[:, 0])
-
-
-#    # Transform list of distances into Numpy array
-#    neigh_dists_mb = np.zeros((len(bond_inds), max_neighbours), dtype=np.float64)
-#    num_neighs_mb = np.zeros(len(bond_inds), dtype=np.int8)
-#    etypes_mb_array = np.zeros((len(bond_inds), max_neighbours), dtype=np.int8)
-#    for i in range(len(bond_inds)):
-#        num_neighs_mb[i] = len(neighbouring_dists[i])
-#        neigh_dists_mb[i, :num_neighs_mb[i]] = neighbouring_dists[i]
-#        etypes_mb_array[i, :num_neighs_mb[i]] = neighbouring_etypes[i]
-
-
-#    return bond_array_mb, neigh_dists_mb, num_neighs_mb, etypes_mb_array, etypes
-
 
 if __name__ == '__main__':
     pass
