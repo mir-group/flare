@@ -766,24 +766,12 @@ def many_body_mc_force_en(env1, env2, d1, hyps, cutoffs,
     Return:
         float: Value of the many-body force/energy kernel.
     """
-    sig = hyps[0]
-    ls = hyps[1]
-    r_cut = cutoffs[2]
-
-    bond_array_1 = env1.bond_array_mb
-    bond_array_2 = env2.bond_array_mb
-
-    neigh_dists_1 = env1.neigh_dists_mb
-    num_neigh_1 = env1.num_neighs_mb
-
-    c1, c2 = env1.ctype, env2.ctype
-    etypes1, etypes2 = env1.bond_array_mb_etypes, env2.bond_array_mb_etypes
-    etypes_neigh_1 = env1.etype_mb
-
     # divide by three to account for triple counting
-    return many_body_mc_force_en_jit(bond_array_1, bond_array_2, neigh_dists_1, num_neigh_1,
-                                     c1, c2, etypes1, etypes2, etypes_neigh_1,
-                                     env1.species, env2.species, d1, sig, ls, r_cut, cutoff_func)
+    return many_body_mc_force_en_jit(env1.q_array, env2.q_array, 
+                              env1.q_neigh_array, env1.q_neigh_grads,
+                              env1.ctype, env2.ctype, env1.etypes_mb,  
+                              env1.unique_species, env2.unique_species, 
+                              d1, hyps[0], hyps[1])
 
 
 def many_body_mc_en(env1: AtomicEnvironment, env2: AtomicEnvironment,
@@ -802,14 +790,10 @@ def many_body_mc_en(env1: AtomicEnvironment, env2: AtomicEnvironment,
     Return:
         float: Value of the 2-body force/energy kernel.
     """
-    sig = hyps[0]
-    ls = hyps[1]
-    r_cut = cutoffs[2]
-
-    return many_body_mc_en_jit(env1.bond_array_mb, env2.bond_array_mb, env1.ctype,
-                               env2.ctype, env1.bond_array_mb_etypes, env2.bond_array_mb_etypes,
-                               env1.species, env2.species,
-                               sig, ls, r_cut, cutoff_func)
+    return many_body_mc_en_jit(env1.q_array, env2.q_array, 
+                               env1.ctype, env2.ctype, 
+                               env1.unique_species, env2.unique_species,
+                               hyps[0], hyps[1])
 
 
 # -----------------------------------------------------------------------------
@@ -1961,9 +1945,10 @@ def many_body_mc_grad_jit(bond_array_1, bond_array_2, neigh_dists_1, neigh_dists
 
 
 @njit
-def many_body_mc_force_en_jit(bond_array_1, bond_array_2, neigh_dists_1, num_neigh_1,
-                              c1, c2, etypes1, etypes2, etypes_neigh_1,
-                              species1, species2, d1, sig, ls, r_cut, cutoff_func):
+def many_body_mc_force_en_jit(q_array_1, q_array_2, 
+                              q_neigh_array_1, q_neigh_grads_1,
+                              c1, c2, etypes1,  
+                              species1, species2, d1, sig, ls):
     """many-body many-element kernel between force and energy components accelerated
     with Numba.
 
@@ -2000,9 +1985,10 @@ def many_body_mc_force_en_jit(bond_array_1, bond_array_2, neigh_dists_1, num_nei
         list(set(species1).union(set(species2))), dtype=np.int8)
 
     for s in useful_species:
-
-        q1 = q_value_mc(bond_array_1[:, 0], r_cut, s, etypes1, cutoff_func)
-        q2 = q_value_mc(bond_array_2[:, 0], r_cut, s, etypes2, cutoff_func)
+        s1 = np.where(species1==s)[0][0] 
+        s2 = np.where(species2==s)[0][0] 
+        q1 = q_array_1[s1]
+        q2 = q_array_2[s2]
 
         if c1 == c2:
             k12 = k_sq_exp_dev(q1, q2, sig, ls)
@@ -2011,22 +1997,17 @@ def many_body_mc_force_en_jit(bond_array_1, bond_array_2, neigh_dists_1, num_nei
 
         qi1_grads = q1i_grads = 0
         # Loop over neighbours i of 1
-        for i in range(bond_array_1.shape[0]):
-            ri1 = bond_array_1[i, 0]
-            ci1 = bond_array_1[i, d1]
+        for i in range(q_neigh_array_1.shape[0]):
 
             if etypes1[i] == s:
-                _, q1i_grads = coordination_number(
-                    ri1, ci1, r_cut, cutoff_func)
+                q1i_grads = q_neigh_grads_1[i, d1]
 
             if c1 == s:
-                _, qi1_grads = coordination_number(
-                    ri1, ci1, r_cut, cutoff_func)
+                qi1_grads = q_neigh_grads_1[i, d1]
 
             if c2 == etypes1[i]:
                 # Calculate many-body descriptor value for i
-                qis = q_value_mc(neigh_dists_1[i, :num_neigh_1[i]], r_cut,
-                                 s, etypes_neigh_1[i, :num_neigh_1[i]], cutoff_func)
+                qis = q_neigh_array_1[i, s1]
                 ki2s = k_sq_exp_dev(qis, q2, sig, ls)
 
             kern += - (q1i_grads * k12 + qi1_grads * ki2s)
@@ -2035,8 +2016,8 @@ def many_body_mc_force_en_jit(bond_array_1, bond_array_2, neigh_dists_1, num_nei
 
 
 @njit
-def many_body_mc_en_jit(bond_array_1, bond_array_2, c1, c2, etypes1, etypes2,
-                        species1, species2, sig, ls, r_cut, cutoff_func):
+def many_body_mc_en_jit(q_array_1, q_array_2, c1, c2, 
+                        species1, species2, sig, ls):
     """many-body many-element kernel between energy components accelerated
     with Numba.
 
@@ -2065,8 +2046,8 @@ def many_body_mc_en_jit(bond_array_1, bond_array_2, c1, c2, etypes1, etypes2,
 
     if c1 == c2:
         for s in useful_species:
-            q1 = q_value_mc(bond_array_1[:, 0], r_cut, s, etypes1, cutoff_func)
-            q2 = q_value_mc(bond_array_2[:, 0], r_cut, s, etypes2, cutoff_func)
+            q1 = q_array_1[np.where(species1==s)[0][0]]
+            q2 = q_array_2[np.where(species2==s)[0][0]]
             q1q2diff = q1 - q2
 
             kern += sig * sig * exp(-q1q2diff * q1q2diff / (2 * ls * ls))
