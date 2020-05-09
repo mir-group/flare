@@ -651,8 +651,7 @@ def get_kernel_vector_unit(name, s, e, x, kernel, hyps, cutoffs, hyps_mask,
     return k_v
 
 
-def get_kernel_vector(name, kernel, x, d_1, hyps,
-                      cutoffs=None, hyps_mask=None,
+def get_kernel_vector(name, kernel, x, d_1, hyps, cutoffs=None, hyps_mask=None,
                       n_cpus=1, n_sample=100):
     """
     Compute kernel vector, comparing input environment to all environments
