@@ -129,183 +129,6 @@ def get_random_training_set(nenv, nstruc):
         energy_noise
 
 
-def test_force_block_mat(params):
-    """
-    test function get_ky_mat in gp_algebra, gp_algebra_multi
-    using gp_algebra_origin as reference
-    TO DO: store the reference... and call it explicitely
-    """
-
-    hyps, name, kernel, cutoffs, kernel_m, hyps_list, hyps_mask_list, \
-        _ = params
-
-    # get the reference without multi hyps
-    time0 = time.time()
-    ky_mat0 = get_force_block(hyps, name, kernel[0], cutoffs)
-    print("compute ky_mat serial", time.time()-time0)
-
-    # parallel version
-    time0 = time.time()
-    ky_mat = \
-        get_force_block(hyps, name, kernel[0], cutoffs, n_cpus=2, n_sample=20)
-    print("compute ky_mat parallel", time.time()-time0)
-
-    diff = (np.max(np.abs(ky_mat-ky_mat0)))
-    assert (diff == 0), "parallel implementation is wrong"
-
-    # this part of the code can be use for timing the parallel performance
-    # for n in [10, 50, 100]:
-    #     timer0 = time.time()
-    #     ky_mat = get_force_block(hyps, name,
-    #                      kernel[0], cutoffs,
-    #                      ncpus=8, n_sample=n)
-    #     diff = (np.max(np.abs(ky_mat-ky_mat0)))
-    #     print("parallel", n, time.time()-timer0, diff)
-    #     assert (diff==0), "parallel implementation is wrong"
-
-    # check multi hyps implementation
-    # compute the ky_mat with different parameters
-    for i in range(len(hyps_list)):
-
-        hyps = hyps_list[i]
-        hyps_mask = hyps_mask_list[i]
-
-        if hyps_mask is None:
-            ker = kernel[0]
-        else:
-            ker = kernel_m[0]
-
-        # serial implementation
-        time0 = time.time()
-        ky_mat = get_force_block(hyps, name, ker, cutoffs, hyps_mask)
-        print(f"compute ky_mat with multihyps, test {i}, n_cpus=1",
-              time.time()-time0)
-        diff = (np.max(np.abs(ky_mat-ky_mat0)))
-        assert (diff == 0), "multi hyps implementation is wrong"\
-            f"with case {i}"
-
-        # parallel implementation
-        time0 = time.time()
-        ky_mat = \
-            get_force_block(hyps, name, ker, cutoffs, hyps_mask, n_cpus=2,
-                            n_sample=20)
-        print(f"compute ky_mat with multihyps, test {i}, n_cpus=2",
-              time.time()-time0)
-        diff = (np.max(np.abs(ky_mat-ky_mat0)))
-        assert (diff == 0), "multi hyps  parallel "\
-            "implementation is wrong with case {i}"
-
-
-def test_energy_block_mat(params):
-    """
-    test function get_ky_mat in gp_algebra, gp_algebra_multi
-    using gp_algebra_origin as reference
-    TO DO: store the reference... and call it explicitely
-    """
-
-    hyps, name, kernel, cutoffs, kernel_m, hyps_list, hyps_mask_list, \
-        energy_noise = params
-
-    # get the reference without multi hyps
-    time0 = time.time()
-    ky_mat0 = get_energy_block(hyps, name, kernel[2], energy_noise, cutoffs)
-    print("compute ky_mat serial", time.time()-time0)
-
-    # parallel version
-    time0 = time.time()
-    ky_mat = \
-        get_energy_block(hyps, name, kernel[2], energy_noise, cutoffs,
-                         n_cpus=2, n_sample=20)
-    print("compute ky_mat parallel", time.time()-time0)
-
-    diff = (np.max(np.abs(ky_mat-ky_mat0)))
-    assert (diff == 0), "parallel implementation is wrong"
-
-    # compute the ky_mat with different parameters
-    for i in range(len(hyps_list)):
-
-        hyps = hyps_list[i]
-        hyps_mask = hyps_mask_list[i]
-
-        if hyps_mask is None:
-            ker = kernel[2]
-        else:
-            ker = kernel_m[2]
-
-        # serial implementation
-        time0 = time.time()
-        ky_mat = get_energy_block(hyps, name, ker, energy_noise, cutoffs,
-                                  hyps_mask)
-        print(f"compute ky_mat with multihyps, test {i}, n_cpus=1",
-              time.time()-time0)
-        diff = (np.max(np.abs(ky_mat-ky_mat0)))
-        assert (diff == 0), "multi hyps implementation is wrong"\
-            f"with case {i}"
-
-        # parallel implementation
-        time0 = time.time()
-        ky_mat = \
-            get_energy_block(hyps, name, ker, energy_noise,
-                             cutoffs, hyps_mask, n_cpus=2,
-                             n_sample=20)
-        print(f"compute ky_mat with multihyps, test {i}, n_cpus=2",
-              time.time()-time0)
-        diff = (np.max(np.abs(ky_mat-ky_mat0)))
-        assert (diff == 0), "multi hyps  parallel "\
-            "implementation is wrong with case {i}"
-
-
-def test_force_energy_block(params):
-    hyps, name, kernel, cutoffs, kernel_m, hyps_list, hyps_mask_list, \
-        _ = params
-
-    # get the reference without multi hyps
-    time0 = time.time()
-    ky_mat0 = get_force_energy_block(hyps, name, kernel[3], cutoffs)
-    print("compute ky_mat serial", time.time()-time0)
-
-    # parallel version
-    time0 = time.time()
-    ky_mat = \
-        get_force_energy_block(hyps, name, kernel[3], cutoffs, n_cpus=2,
-                               n_sample=5)
-    print("compute ky_mat parallel", time.time()-time0)
-
-    diff = (np.max(np.abs(ky_mat-ky_mat0)))
-    assert (diff == 0), "parallel implementation is wrong"
-
-    # compute the ky_mat with different parameters
-    for i in range(len(hyps_list)):
-
-        hyps = hyps_list[i]
-        hyps_mask = hyps_mask_list[i]
-
-        if hyps_mask is None:
-            ker = kernel[3]
-        else:
-            ker = kernel_m[3]
-
-        # serial implementation
-        time0 = time.time()
-        ky_mat = get_force_energy_block(hyps, name, ker, cutoffs, hyps_mask)
-        print(f"compute ky_mat with multihyps, test {i}, n_cpus=1",
-              time.time()-time0)
-        diff = (np.max(np.abs(ky_mat-ky_mat0)))
-        assert (diff == 0), "multi hyps implementation is wrong"\
-            f"with case {i}"
-
-        # parallel implementation
-        time0 = time.time()
-        ky_mat = \
-            get_force_energy_block(hyps, name, ker, cutoffs, hyps_mask,
-                                   n_cpus=2, n_sample=20)
-        print(f"compute ky_mat with multihyps, test {i}, n_cpus=2",
-              time.time()-time0)
-        diff = (np.max(np.abs(ky_mat-ky_mat0)))
-        assert (diff == 0), "multi hyps  parallel "\
-            "implementation is wrong with case {i}"
-
-
 def test_ky_mat(params):
     hyps, name, kernel, cutoffs, kernel_m, hyps_list, hyps_mask_list, \
         energy_noise = params
@@ -323,8 +146,45 @@ def test_ky_mat(params):
                    energy_noise, cutoffs, n_cpus=2, n_sample=5)
     print("compute ky_mat parallel", time.time()-time0)
 
+    print(ky_mat)
     diff = (np.max(np.abs(ky_mat-ky_mat0)))
     assert (diff == 0), "parallel implementation is wrong"
+
+    # compute the ky_mat with different parameters
+    for i in range(len(hyps_list)):
+
+        hyps = hyps_list[i]
+        hyps_mask = hyps_mask_list[i]
+
+        if hyps_mask is None:
+            ker1 = kernel[0]
+            ker2 = kernel[2]
+            ker3 = kernel[3]
+        else:
+            ker1 = kernel_m[0]
+            ker2 = kernel_m[2]
+            ker3 = kernel_m[3]
+
+        # serial implementation
+        time0 = time.time()
+        ky_mat = get_Ky_mat(hyps, name, ker1, ker2, ker3,
+                            energy_noise, cutoffs, hyps_mask)
+        print(f"compute ky_mat with multihyps, test {i}, n_cpus=1",
+              time.time()-time0)
+        diff = (np.max(np.abs(ky_mat-ky_mat0)))
+        assert (diff == 0), "multi hyps implementation is wrong"\
+            f"with case {i}"
+
+        # parallel implementation
+        time0 = time.time()
+        ky_mat = get_Ky_mat(hyps, name, ker1, ker2, ker3,
+                            energy_noise, cutoffs, hyps_mask, n_cpus=2,
+                            n_sample=20)
+        print(f"compute ky_mat with multihyps, test {i}, n_cpus=2",
+              time.time()-time0)
+        diff = (np.max(np.abs(ky_mat-ky_mat0)))
+        assert (diff == 0), "multi hyps  parallel "\
+            "implementation is wrong with case {i}"
 
 
 def test_ky_mat_update(params):
