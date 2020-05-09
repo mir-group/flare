@@ -10,9 +10,9 @@ from flare.kernels.utils import str_to_kernel_set
 
 from .fake_gp import generate_mb_envs
 
-list_to_test = ['2', '3', '2+3', 'mb', '2+3+mb']
-#list_to_test = ['mb']
-list_type = ['sc']
+#list_to_test = ['2', '3', '2+3', 'mb', '2+3+mb']
+list_to_test = ['mb']
+list_type = ['mc']
 #list_type = ['sc', 'mc']
 
 def generate_hm(kernel_name):

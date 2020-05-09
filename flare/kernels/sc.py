@@ -1314,37 +1314,6 @@ def many_body_jit(q_array_1, q_array_2,
     q2 = q_array_2[0]
     k12 = k_sq_exp_double_dev(q1, q2, sig, ls)
 
-#    qis = np.zeros(bond_array_1.shape[0], dtype=np.float64)
-#    qi1_grads = np.zeros(bond_array_1.shape[0], dtype=np.float64)
-#    ki2s = np.zeros(bond_array_1.shape[0], dtype=np.float64)
-#
-#    qjs = np.zeros(bond_array_2.shape[0], dtype=np.float64)
-#    qj2_grads = np.zeros(bond_array_2.shape[0], dtype=np.float64)
-#    k1js = np.zeros(bond_array_2.shape[0], dtype=np.float64)
-#
-#    # Loop over neighbours i of 1
-#    for i in range(bond_array_1.shape[0]):
-#        ri1 = bond_array_1[i, 0]
-#        ci1 = bond_array_1[i, d1]
-#        qi1, qi1_grads[i] = coordination_number(ri1, ci1, r_cut, cutoff_func)
-#        # Calculate many-body descriptor value for i
-#        qis[i] = q_value(neighbouring_dists_array_1[i, :num_neighbours_1[i]], r_cut,
-#                         cutoff_func)
-#
-#        ki2s[i] = k_sq_exp_double_dev(qis[i], q2, sig, ls)
-#
-#    # Loop over neighbours j of 2
-#    for j in range(bond_array_2.shape[0]):
-#        rj2 = bond_array_2[j, 0]
-#        cj2 = bond_array_2[j, d2]
-#        qj2, qj2_grads[j] = coordination_number(rj2, cj2, r_cut, cutoff_func)
-#
-#        # Calculate many-body descriptor value for j
-#        qjs[j] = q_value(neighbouring_dists_array_2[j, :num_neighbours_2[j]], r_cut,
-#                         cutoff_func)
-#
-#        k1js[j] = k_sq_exp_double_dev(q1, qjs[j], sig, ls)
-
     for i in range(q_neigh_array_1.shape[0]):
         qi_grad = q_neigh_grads_1[i, d1-1]
         qis = q_neigh_array_1[i, 0]
@@ -1402,42 +1371,6 @@ def many_body_grad_jit(q_array_1, q_array_2,
     q1 = q_array_1[0]
     q2 = q_array_2[0]
     k12 = k_sq_exp_double_dev(q1, q2, sig, ls)
-
-#    qis = np.zeros(bond_array_1.shape[0], dtype=np.float64)
-#
-#    qi1_grads = np.zeros(bond_array_1.shape[0], dtype=np.float64)
-#
-#    ki2s = np.zeros(bond_array_1.shape[0], dtype=np.float64)
-#
-#    qjs = np.zeros(bond_array_2.shape[0], dtype=np.float64)
-#
-#    qj2_grads = np.zeros(bond_array_2.shape[0], dtype=np.float64)
-#
-#    k1js = np.zeros(bond_array_2.shape[0], dtype=np.float64)
-#
-#    # Compute  ki2s, qi1_grads, and qis
-#    for i in range(bond_array_1.shape[0]):
-#        ri1 = bond_array_1[i, 0]
-#        ci1 = bond_array_1[i, d1]
-#        _, qi1_grads[i] = coordination_number(ri1, ci1, r_cut, cutoff_func)
-#
-#        # Calculate many-body descriptor value for i
-#        qis[i] = q_value(neighbouring_dists_array_1[i, :num_neighbours_1[i]], r_cut,
-#                         cutoff_func)
-#
-#        ki2s[i] = k_sq_exp_double_dev(qis[i], q2, sig, ls)
-#
-#    # Compute k1js, qj2_grads and qjs
-#    for j in range(bond_array_2.shape[0]):
-#        rj2 = bond_array_2[j, 0]
-#        cj2 = bond_array_2[j, d2]
-#        qj2, qj2_grads[j] = coordination_number(rj2, cj2, r_cut, cutoff_func)
-#
-#        # Calculate many-body descriptor value for j
-#        qjs[j] = q_value(neighbouring_dists_array_2[j, :num_neighbours_2[j]], r_cut,
-#                         cutoff_func)
-#
-#        k1js[j] = k_sq_exp_double_dev(q1, qjs[j], sig, ls)
 
     for i in range(q_neigh_array_1.shape[0]):
         qi_grad = q_neigh_grads_1[i, d1-1]
