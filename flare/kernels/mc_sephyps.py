@@ -327,10 +327,8 @@ def two_plus_three_mc_en(env1, env2, cutoffs,
 
     two_term = two_body_mc_en_jit(env1.bond_array_2, env1.ctype, env1.etypes,
                                   env2.bond_array_2, env2.ctype, env2.etypes,
-                                  sig2, ls2, r_cut_2, cutoff_func,
-                                  nspec,
-                                  spec_mask,
-                                  bond_mask)
+                                  sig2, ls2, r_cut_2, cutoff_func, nspec,
+                                  spec_mask, bond_mask) / 4
 
     three_term = \
         three_body_mc_en_jit(env1.bond_array_3, env1.ctype, env1.etypes,
@@ -340,7 +338,7 @@ def two_plus_three_mc_en(env1, env2, cutoffs,
                              env1.triplet_counts, env2.triplet_counts,
                              sig3, ls3, r_cut_3, cutoff_func,
                              nspec, spec_mask,
-                             triplet_mask)
+                             triplet_mask) / 9
 
     return two_term + three_term
 

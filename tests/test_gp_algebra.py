@@ -13,6 +13,7 @@ from flare.kernels.mc_sephyps import two_plus_three_body_mc \
         as two_plus_three_body_mc_multi
 from flare.kernels.mc_sephyps import two_plus_three_body_mc_grad \
         as two_plus_three_body_mc_grad_multi
+from flare.kernels import mc_sephyps
 
 from flare.gp_algebra import get_like_grad_from_mats, \
         get_kernel_vector, get_force_block, \
@@ -46,7 +47,9 @@ def get_random_training_set(nenv, nstruc):
     kernel = (two_plus_three_body_mc, two_plus_three_body_mc_grad,
               two_plus_three_mc_en, two_plus_three_mc_force_en)
     kernel_m = \
-        (two_plus_three_body_mc_multi, two_plus_three_body_mc_grad_multi)
+        (two_plus_three_body_mc_multi, two_plus_three_body_mc_grad_multi,
+         mc_sephyps.two_plus_three_mc_en,
+         mc_sephyps.two_plus_three_mc_force_en)
 
     # 9 different hyper-parameters
     hyps_mask1 = {'nspec': 2, 'spec_mask': np.zeros(118, dtype=int),
@@ -207,45 +210,48 @@ def test_energy_block_mat(params):
     ky_mat0 = get_energy_block(hyps, name, kernel[2], energy_noise, cutoffs)
     print("compute ky_mat serial", time.time()-time0)
 
-    # # parallel version
-    # time0 = time.time()
-    # ky_mat = \
-    #     get_force_block(hyps, name, kernel[0], cutoffs, n_cpus=2, n_sample=20)
-    # print("compute ky_mat parallel", time.time()-time0)
+    # parallel version
+    time0 = time.time()
+    ky_mat = \
+        get_energy_block(hyps, name, kernel[2], energy_noise, cutoffs,
+                         n_cpus=2, n_sample=20)
+    print("compute ky_mat parallel", time.time()-time0)
 
-    # diff = (np.max(np.abs(ky_mat-ky_mat0)))
-    # assert (diff == 0), "parallel implementation is wrong"
+    diff = (np.max(np.abs(ky_mat-ky_mat0)))
+    assert (diff == 0), "parallel implementation is wrong"
 
-    # # compute the ky_mat with different parameters
-    # for i in range(len(hyps_list)):
+    # compute the ky_mat with different parameters
+    for i in range(len(hyps_list)):
 
-    #     hyps = hyps_list[i]
-    #     hyps_mask = hyps_mask_list[i]
+        hyps = hyps_list[i]
+        hyps_mask = hyps_mask_list[i]
 
-    #     if hyps_mask is None:
-    #         ker = kernel[0]
-    #     else:
-    #         ker = kernel_m[0]
+        if hyps_mask is None:
+            ker = kernel[2]
+        else:
+            ker = kernel_m[2]
 
-    #     # serial implementation
-    #     time0 = time.time()
-    #     ky_mat = get_force_block(hyps, name, ker, cutoffs, hyps_mask)
-    #     print(f"compute ky_mat with multihyps, test {i}, n_cpus=1",
-    #           time.time()-time0)
-    #     diff = (np.max(np.abs(ky_mat-ky_mat0)))
-    #     assert (diff == 0), "multi hyps implementation is wrong"\
-    #         f"with case {i}"
+        # serial implementation
+        time0 = time.time()
+        ky_mat = get_energy_block(hyps, name, ker, energy_noise, cutoffs,
+                                  hyps_mask)
+        print(f"compute ky_mat with multihyps, test {i}, n_cpus=1",
+              time.time()-time0)
+        diff = (np.max(np.abs(ky_mat-ky_mat0)))
+        assert (diff == 0), "multi hyps implementation is wrong"\
+            f"with case {i}"
 
-    #     # parallel implementation
-    #     time0 = time.time()
-    #     ky_mat = \
-    #         get_force_block(hyps, name, ker, cutoffs, hyps_mask, n_cpus=2,
-    #                         n_sample=20)
-    #     print(f"compute ky_mat with multihyps, test {i}, n_cpus=2",
-    #           time.time()-time0)
-    #     diff = (np.max(np.abs(ky_mat-ky_mat0)))
-    #     assert (diff == 0), "multi hyps  parallel "\
-    #         "implementation is wrong with case {i}"
+        # parallel implementation
+        time0 = time.time()
+        ky_mat = \
+            get_energy_block(hyps, name, ker, energy_noise,
+                             cutoffs, hyps_mask, n_cpus=2,
+                             n_sample=20)
+        print(f"compute ky_mat with multihyps, test {i}, n_cpus=2",
+              time.time()-time0)
+        diff = (np.max(np.abs(ky_mat-ky_mat0)))
+        assert (diff == 0), "multi hyps  parallel "\
+            "implementation is wrong with case {i}"
 
 
 def test_ky_mat_update(params):
