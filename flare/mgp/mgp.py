@@ -689,7 +689,8 @@ class Map3body:
 
         return bond_means, bond_vars
 
-    def _GenGrid_inner_most(self, name, s, e, cos_angles, bond_lengths, env12, kernel_info):
+    def _GenGrid_inner_most(self, name, s, e, cos_angles, bond_lengths, env12,
+                            kernel_info):
 
         '''
         generate grid for each cos_angle, used to parallelize grid generation
@@ -714,9 +715,8 @@ class Map3body:
                     env12.cross_bond_dists = np.array([[0, r12], [r12, 0]])
 
                     k12_v[b1, b2, a12, :] = \
-                            get_kernel_vector_unit(name, s, e, env12,
-                                                   kernel, hyps, cutoffs,
-                                                   hyps_mask, 1)
+                        get_kernel_vector_unit(name, s, e, env12, kernel, hyps,
+                                               cutoffs, hyps_mask, 1)
 
         return k12_v
 

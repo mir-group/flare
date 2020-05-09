@@ -692,7 +692,7 @@ def get_kernel_vector(name, kernel, x, d_1, hyps, cutoffs=None, hyps_mask=None,
 
 
 def en_kern_vec_unit(name, s, e, x, kernel, hyps, cutoffs=None,
-                     hyps_mask=None):
+                     hyps_mask=None, d_1=None):
     """
     Compute energy kernel vector, comparing input environment to all
         environments in the GP's training set.
@@ -755,7 +755,7 @@ def en_kern_vec(name, kernel, x, hyps, cutoffs=None, hyps_mask=None, n_cpus=1,
 
     block_id, nbatch = partition_vector(n_sample, size, n_cpus)
     pack_function = en_kern_vec_unit
-    mult = 1
+    mult = 3
 
     k12_v = parallel_vector_construction(pack_function, name, x, kernel,
                                          hyps, cutoffs, hyps_mask, block_id,
