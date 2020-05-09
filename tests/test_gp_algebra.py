@@ -16,9 +16,11 @@ from flare.kernels.mc_sephyps import two_plus_three_body_mc_grad \
 from flare.kernels import mc_sephyps
 
 from flare.gp_algebra import get_like_grad_from_mats, \
-        force_force_vector, get_force_block, get_force_energy_block, \
+        get_force_block, get_force_energy_block, \
+        energy_energy_vector, energy_force_vector, force_force_vector, \
+        force_energy_vector, \
         get_ky_mat_update, get_ky_and_hyp, get_energy_block, \
-        get_Ky_mat, energy_force_vector
+        get_Ky_mat
 
 from .fake_gp import get_tstp
 
@@ -247,6 +249,67 @@ def test_ky_mat_update(params):
             "implementation is wrong"
 
 
+def test_energy_energy_vector(params):
+
+    hyps, name, _, cutoffs, kernel_m, _, hyps_mask_list, _ = params
+
+    test_point = get_tstp()
+
+    size = len(flare.gp_algebra._global_training_structures[name])
+
+    # test the parallel implementation for multihyps
+    vec = energy_energy_vector(name, kernel_m[2], test_point, hyps, cutoffs,
+                               hyps_mask_list[0])
+
+    vec_par = \
+        energy_energy_vector(name, kernel_m[2], test_point, hyps,
+                             cutoffs, hyps_mask_list[0], n_cpus=2,
+                             n_sample=100)
+
+    assert (all(np.equal(vec, vec_par))), "parallel implementation is wrong"
+    assert (vec.shape[0] == size), f"{vec} {size}"
+
+
+def test_energy_force_vector(params):
+
+    hyps, name, _, cutoffs, kernel_m, _, hyps_mask_list, _ = params
+
+    test_point = get_tstp()
+
+    size = len(flare.gp_algebra._global_training_data[name])
+
+    # test the parallel implementation for multihyps
+    vec = energy_force_vector(name, kernel_m[3], test_point, hyps, cutoffs,
+                              hyps_mask_list[0])
+
+    vec_par = \
+        energy_force_vector(name, kernel_m[3], test_point, hyps,
+                            cutoffs, hyps_mask_list[0], n_cpus=2, n_sample=100)
+
+    assert (all(np.equal(vec, vec_par))), "parallel implementation is wrong"
+    assert (vec.shape[0] == size*3), f"{vec} {size}"
+
+
+def test_force_energy_vector(params):
+
+    hyps, name, _, cutoffs, kernel_m, _, hyps_mask_list, _ = params
+
+    test_point = get_tstp()
+
+    size = len(flare.gp_algebra._global_training_structures[name])
+
+    # test the parallel implementation for multihyps
+    vec = force_energy_vector(name, kernel_m[3], test_point, 1, hyps, cutoffs,
+                              hyps_mask_list[0])
+
+    vec_par = \
+        force_energy_vector(name, kernel_m[3], test_point, 1, hyps,
+                            cutoffs, hyps_mask_list[0], n_cpus=2, n_sample=100)
+
+    assert (all(np.equal(vec, vec_par))), "parallel implementation is wrong"
+    assert (vec.shape[0] == size), f"{vec} {size}"
+
+
 def test_force_force_vector(params):
 
     hyps, name, _, cutoffs, kernel_m, _, hyps_mask_list, _ = params
@@ -257,31 +320,11 @@ def test_force_force_vector(params):
 
     # test the parallel implementation for multihyps
     vec = force_force_vector(name, kernel_m[0], test_point, 1, hyps, cutoffs,
-                            hyps_mask_list[0])
+                             hyps_mask_list[0])
 
     vec_par = \
         force_force_vector(name, kernel_m[0], test_point, 1, hyps,
-                          cutoffs, hyps_mask_list[0], n_cpus=2, n_sample=100)
-
-    assert (all(np.equal(vec, vec_par))), "parallel implementation is wrong"
-    assert (vec.shape[0] == size*3), f"{vec} {size}"
-
-
-def test_en_kern(params):
-
-    hyps, name, _, cutoffs, kernel_m, _, hyps_mask_list, _ = params
-
-    test_point = get_tstp()
-
-    size = len(flare.gp_algebra._global_training_data[name])
-
-    # test the parallel implementation for multihyps
-    vec = energy_force_vector(name, kernel_m[3], test_point, hyps, cutoffs,
-                      hyps_mask_list[0])
-
-    vec_par = \
-        energy_force_vector(name, kernel_m[3], test_point, hyps,
-                    cutoffs, hyps_mask_list[0], n_cpus=2, n_sample=100)
+                           cutoffs, hyps_mask_list[0], n_cpus=2, n_sample=100)
 
     assert (all(np.equal(vec, vec_par))), "parallel implementation is wrong"
     assert (vec.shape[0] == size*3), f"{vec} {size}"

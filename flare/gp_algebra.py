@@ -615,6 +615,30 @@ def get_ky_mat_update_serial(ky_mat_old, hyps: np.ndarray, name, kernel,
 #                            Kernel vectors
 # --------------------------------------------------------------------------
 
+def energy_energy_vector_unit(name, s, e, x, kernel, hyps, cutoffs=None,
+                              hyps_mask=None, d_1=None):
+    """
+    Gets part of the energy/energy vector.
+    """
+
+    training_structures = _global_training_structures[name]
+
+    size = e - s
+    energy_energy_unit = np.zeros(size, )
+
+    args = from_mask_to_args(hyps, hyps_mask, cutoffs)
+
+    for m_index in range(size):
+        structure = training_structures[m_index + s]
+        kern_curr = 0
+        for environment in structure:
+            kern_curr += kernel(x, environment, *args)
+
+        energy_energy_unit[m_index] = kern_curr
+
+    return energy_energy_unit
+
+
 def energy_force_vector_unit(name, s, e, x, kernel, hyps, cutoffs=None,
                              hyps_mask=None, d_1=None):
     """
@@ -679,6 +703,60 @@ def force_force_vector_unit(name, s, e, x, kernel, hyps, cutoffs, hyps_mask,
     return k_v
 
 
+def energy_energy_vector(name, kernel, x, hyps, cutoffs=None,
+                         hyps_mask=None, n_cpus=1, n_sample=100):
+    """
+    Get a vector of covariances between the local energy of a test environment
+    and the total energy labels in the training set.
+    """
+
+    size = len(_global_training_structures[name])
+
+    if (n_cpus is None):
+        n_cpus = mp.cpu_count()
+    if (n_cpus == 1):
+        return energy_energy_vector_unit(name, 0, size, x, kernel, hyps,
+                                         cutoffs, hyps_mask)
+
+    block_id, nbatch = partition_vector(n_sample, size, n_cpus)
+    pack_function = energy_energy_vector_unit
+    mult = 1
+
+    force_energy_vector = \
+        parallel_vector_construction(pack_function, name, x, kernel,
+                                     hyps, cutoffs, hyps_mask, block_id,
+                                     nbatch, size, mult)
+
+    return force_energy_vector
+
+
+def energy_force_vector(name, kernel, x, hyps, cutoffs=None, hyps_mask=None,
+                        n_cpus=1, n_sample=100):
+    """
+    Get the vector of covariances between the local energy of a test
+    environment and the force labels in the training set.
+    """
+
+    training_data = _global_training_data[name]
+    size = len(training_data)
+
+    if (n_cpus is None):
+        n_cpus = mp.cpu_count()
+    if (n_cpus == 1):
+        return energy_force_vector_unit(name, 0, size, x, kernel, hyps,
+                                        cutoffs, hyps_mask)
+
+    block_id, nbatch = partition_vector(n_sample, size, n_cpus)
+    pack_function = energy_force_vector_unit
+    mult = 3
+
+    k12_v = parallel_vector_construction(pack_function, name, x, kernel,
+                                         hyps, cutoffs, hyps_mask, block_id,
+                                         nbatch, size, mult)
+
+    return k12_v
+
+
 def force_energy_vector(name, kernel, x, d_1, hyps, cutoffs=None,
                         hyps_mask=None, n_cpus=1, n_sample=100):
     """
@@ -729,33 +807,6 @@ def force_force_vector(name, kernel, x, d_1, hyps, cutoffs=None,
     k12_v = parallel_vector_construction(pack_function, name, x, kernel,
                                          hyps, cutoffs, hyps_mask, block_id,
                                          nbatch, size, mult, d_1)
-
-    return k12_v
-
-
-def energy_force_vector(name, kernel, x, hyps, cutoffs=None, hyps_mask=None,
-                        n_cpus=1, n_sample=100):
-    """
-    Get the vector of covariances between the local energy of a test
-    environment and the force labels in the training set.
-    """
-
-    training_data = _global_training_data[name]
-    size = len(training_data)
-
-    if (n_cpus is None):
-        n_cpus = mp.cpu_count()
-    if (n_cpus == 1):
-        return energy_force_vector_unit(name, 0, size, x, kernel, hyps,
-                                        cutoffs, hyps_mask)
-
-    block_id, nbatch = partition_vector(n_sample, size, n_cpus)
-    pack_function = energy_force_vector_unit
-    mult = 3
-
-    k12_v = parallel_vector_construction(pack_function, name, x, kernel,
-                                         hyps, cutoffs, hyps_mask, block_id,
-                                         nbatch, size, mult)
 
     return k12_v
 
