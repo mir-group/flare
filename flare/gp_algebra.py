@@ -615,11 +615,19 @@ def get_ky_mat_update_serial(ky_mat_old, hyps: np.ndarray, name, kernel,
 #                            Kernel vectors
 # --------------------------------------------------------------------------
 
-def get_kernel_vector_unit(name, s, e, x, kernel, hyps, cutoffs, hyps_mask,
+def force_energy_vector_unit(name, s, e, x, kernel, hyps, cutoffs, hyps_mask,
+                             d_1):
+    """Get a vector of covariances between a force component of a test
+    environment and the total energy labels in the training set."""
+
+    pass
+
+
+def force_force_vector_unit(name, s, e, x, kernel, hyps, cutoffs, hyps_mask,
                            d_1):
     """
-    Compute kernel vector, comparing input environment to all environments and
-    structures in the GP's training set.
+    Get a vector of covariances between a force component of a test environment
+    and the force labels in the training set.
 
     :param training_data: Set of atomic environments to compare against
     :param kernel:
@@ -677,11 +685,11 @@ def get_kernel_vector(name, kernel, x, d_1, hyps, cutoffs=None, hyps_mask=None,
     if (n_cpus is None):
         n_cpus = mp.cpu_count()
     if (n_cpus == 1):
-        return get_kernel_vector_unit(name, 0, size, x, kernel, hyps, cutoffs,
+        return force_force_vector_unit(name, 0, size, x, kernel, hyps, cutoffs,
                                       hyps_mask, d_1)
 
     block_id, nbatch = partition_vector(n_sample, size, n_cpus)
-    pack_function = get_kernel_vector_unit
+    pack_function = force_force_vector_unit
     mult = 3
 
     k12_v = parallel_vector_construction(pack_function, name, x, kernel,

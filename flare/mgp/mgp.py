@@ -16,7 +16,7 @@ import os
 from flare import gp, struc, gp_algebra
 from flare.env import AtomicEnvironment
 from flare.gp import GaussianProcess
-from flare.gp_algebra import get_kernel_vector_unit, partition_vector
+from flare.gp_algebra import force_force_vector_unit, partition_vector
 from flare.cutoffs import quadratic_cutoff
 from flare.kernels.mc_simple import two_body_mc, three_body_mc
 from flare.util import Z_to_element
@@ -466,7 +466,7 @@ class Map2body:
         for b, r in enumerate(bond_lengths):
             env12.bond_array_2 = np.array([[r, 1, 0, 0]])
             k12_v[b, :] = \
-                get_kernel_vector_unit(name, s, e, env12, kernel, hyps,
+                force_force_vector_unit(name, s, e, env12, kernel, hyps,
                                        cutoffs, hyps_mask, 1)
         return k12_v
 
@@ -715,7 +715,7 @@ class Map3body:
                     env12.cross_bond_dists = np.array([[0, r12], [r12, 0]])
 
                     k12_v[b1, b2, a12, :] = \
-                        get_kernel_vector_unit(name, s, e, env12, kernel, hyps,
+                        force_force_vector_unit(name, s, e, env12, kernel, hyps,
                                                cutoffs, hyps_mask, 1)
 
         return k12_v

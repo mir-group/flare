@@ -1,4 +1,8 @@
-import time, os, math, inspect, subprocess
+import time
+import os
+import math
+import inspect
+import subprocess
 import numpy as np
 import multiprocessing as mp
 import json
@@ -14,7 +18,7 @@ from flare.env import AtomicEnvironment
 from flare.gp import GaussianProcess
 from flare.gp_algebra import partition_vector
 from flare.gp_algebra import en_kern_vec_unit as en_kern_vec
-from flare.kernels.utils import from_mask_to_args, str_to_kernel_set 
+from flare.kernels.utils import from_mask_to_args, str_to_kernel_set
 from flare.cutoffs import quadratic_cutoff
 from flare.util import Z_to_element
 from flare.mgp.utils import get_bonds, get_triplets, get_triplets_en, \
@@ -70,15 +74,10 @@ class MappedGaussianProcess:
                         }
     '''
 
-    def __init__(self,
-                 grid_params: dict,
-                 struc_params: dict,
-                 GP: GaussianProcess=None,
-                 mean_only: bool=False,
-                 container_only: bool=True,
-                 lmp_file_name: str='lmp.mgp',
-                 n_cpus: int =None,
-                 n_sample:int =100,
+    def __init__(self, grid_params: dict, struc_params: dict,
+                 GP: GaussianProcess = None, mean_only: bool = False,
+                 container_only: bool = True, lmp_file_name: str = 'lmp.mgp',
+                 n_cpus: int = None, n_sample: int = 100,
                  autorun: bool = True):
 
         # load all arguments as attributes
@@ -266,7 +265,6 @@ class MappedGaussianProcess:
         energy = e2 + e3
 
         return force, variance, virial, energy
-
 
     def predict_multicomponent(self, body, atom_env, kernel_info,
                                spcs_list, mappings, mean_only):
@@ -997,5 +995,3 @@ class Map3body:
                     n += 1
 
         f.write('\n')
-
-
