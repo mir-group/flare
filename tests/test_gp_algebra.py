@@ -18,7 +18,7 @@ from flare.kernels import mc_sephyps
 from flare.gp_algebra import get_like_grad_from_mats, \
         get_kernel_vector, get_force_block, get_force_energy_block, \
         get_ky_mat_update, get_ky_and_hyp, get_energy_block, \
-        get_Ky_mat
+        get_Ky_mat, en_kern_vec
 
 from .fake_gp import get_tstp
 
@@ -262,6 +262,26 @@ def test_get_kernel_vector(params):
     vec_par = \
         get_kernel_vector(name, kernel_m[0], test_point, 1, hyps,
                           cutoffs, hyps_mask_list[0], n_cpus=2, n_sample=100)
+
+    assert (all(np.equal(vec, vec_par))), "parallel implementation is wrong"
+    assert (vec.shape[0] == size*3), f"{vec} {size}"
+
+
+def test_en_kern(params):
+
+    hyps, name, _, cutoffs, kernel_m, _, hyps_mask_list, _ = params
+
+    test_point = get_tstp()
+
+    size = len(flare.gp_algebra._global_training_data[name])
+
+    # test the parallel implementation for multihyps
+    vec = en_kern_vec(name, kernel_m[3], test_point, hyps, cutoffs,
+                      hyps_mask_list[0])
+
+    vec_par = \
+        en_kern_vec(name, kernel_m[3], test_point, hyps,
+                    cutoffs, hyps_mask_list[0], n_cpus=2, n_sample=100)
 
     assert (all(np.equal(vec, vec_par))), "parallel implementation is wrong"
     assert (vec.shape[0] == size*3), f"{vec} {size}"
