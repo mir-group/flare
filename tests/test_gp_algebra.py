@@ -7,7 +7,8 @@ from flare import gp
 from flare.env import AtomicEnvironment
 from flare.struc import Structure
 from flare.kernels.mc_simple import two_plus_three_body_mc, \
-        two_plus_three_body_mc_grad
+        two_plus_three_body_mc_grad, two_plus_three_mc_en,\
+        two_plus_three_mc_force_en
 from flare.kernels.mc_sephyps import two_plus_three_body_mc \
         as two_plus_three_body_mc_multi
 from flare.kernels.mc_sephyps import two_plus_three_body_mc_grad \
@@ -15,7 +16,7 @@ from flare.kernels.mc_sephyps import two_plus_three_body_mc_grad \
 
 from flare.gp_algebra import get_like_grad_from_mats, \
         get_kernel_vector, get_force_block, \
-        get_ky_mat_update, get_ky_and_hyp
+        get_ky_mat_update, get_ky_and_hyp, get_energy_block
 
 from .fake_gp import get_tstp
 
@@ -23,13 +24,13 @@ from .fake_gp import get_tstp
 @pytest.fixture(scope='module')
 def params():
 
-    parameters = get_random_training_set(10)
+    parameters = get_random_training_set(10, 2)
 
     yield parameters
     del parameters
 
 
-def get_random_training_set(nenv):
+def get_random_training_set(nenv, nstruc):
     """Create a random training_set array with parameters
     And generate four different kinds of hyperparameter sets:
     * multi hypper parameters with two bond type and two triplet type
@@ -42,7 +43,8 @@ def get_random_training_set(nenv):
 
     cutoffs = np.array([0.8, 0.8])
     hyps = np.ones(5, dtype=float)
-    kernel = (two_plus_three_body_mc, two_plus_three_body_mc_grad)
+    kernel = (two_plus_three_body_mc, two_plus_three_body_mc_grad,
+              two_plus_three_mc_en, two_plus_three_mc_force_en)
     kernel_m = \
         (two_plus_three_body_mc_multi, two_plus_three_body_mc_grad_multi)
 
@@ -75,17 +77,14 @@ def get_random_training_set(nenv):
     hyps3 = np.ones(4, dtype=float)
 
     # 5 different hyper-parameters, equivalent to no multihyps
-    hyps_mask4 = {'nspec': 1,
-                  'spec_mask': np.zeros(118, dtype=int),
-                  'nbond': 1,
-                  'bond_mask': np.array([0]),
-                  'ntriplet': 1,
-                  'triplet_mask': np.array([0])}
+    hyps_mask4 = {'nspec': 1, 'spec_mask': np.zeros(118, dtype=int),
+                  'nbond': 1, 'bond_mask': np.array([0]),
+                  'ntriplet': 1, 'triplet_mask': np.array([0])}
     hyps4 = np.ones(5, dtype=float)
     hyps_list = [hyps1, hyps2, hyps3, hyps4, hyps]
     hyps_mask_list = [hyps_mask1, hyps_mask2, hyps_mask3, hyps_mask4, None]
 
-    # create test data
+    # create training environments and forces
     cell = np.eye(3)
     unique_species = [2, 1]
     noa = 5
@@ -99,22 +98,42 @@ def get_random_training_set(nenv):
         training_labels += [np.random.uniform(-1, 1, 3)]
     training_labels = np.hstack(training_labels)
 
+    # create training structures and energies
+    training_structures = []
+    energy_labels = []
+    for _ in range(nstruc):
+        positions = np.random.uniform(-1, 1, [noa, 3])
+        species = np.random.randint(0, len(unique_species), noa)
+        struc = Structure(cell, species, positions)
+        struc_envs = []
+        for n in range(noa):
+            struc_envs.append(AtomicEnvironment(struc, n, cutoffs))
+        training_structures.append(struc_envs)
+        energy_labels.append(np.random.uniform(-1, 1))
+    energy_labels = np.array(energy_labels)
+
     # store it as global variables
     name = "unit_test"
     flare.gp_algebra._global_training_data[name] = training_data
     flare.gp_algebra._global_training_labels[name] = training_labels
+    flare.gp_algebra._global_training_structures[name] = training_structures
+    flare.gp_algebra._global_energy_labels[name] = energy_labels
 
-    return hyps, name, kernel, cutoffs, kernel_m, hyps_list, hyps_mask_list
+    energy_noise = 0.01
+
+    return hyps, name, kernel, cutoffs, kernel_m, hyps_list, hyps_mask_list, \
+        energy_noise
 
 
-def test_ky_mat(params):
+def test_force_block_mat(params):
     """
     test function get_ky_mat in gp_algebra, gp_algebra_multi
     using gp_algebra_origin as reference
     TO DO: store the reference... and call it explicitely
     """
 
-    hyps, name, kernel, cutoffs, kernel_m, hyps_list, hyps_mask_list = params
+    hyps, name, kernel, cutoffs, kernel_m, hyps_list, hyps_mask_list, \
+        _ = params
 
     # get the reference without multi hyps
     time0 = time.time()
@@ -173,13 +192,69 @@ def test_ky_mat(params):
             "implementation is wrong with case {i}"
 
 
+def test_energy_block_mat(params):
+    """
+    test function get_ky_mat in gp_algebra, gp_algebra_multi
+    using gp_algebra_origin as reference
+    TO DO: store the reference... and call it explicitely
+    """
+
+    hyps, name, kernel, cutoffs, kernel_m, hyps_list, hyps_mask_list, \
+        energy_noise = params
+
+    # get the reference without multi hyps
+    time0 = time.time()
+    ky_mat0 = get_energy_block(hyps, name, kernel[2], energy_noise, cutoffs)
+    print("compute ky_mat serial", time.time()-time0)
+
+    # # parallel version
+    # time0 = time.time()
+    # ky_mat = \
+    #     get_force_block(hyps, name, kernel[0], cutoffs, n_cpus=2, n_sample=20)
+    # print("compute ky_mat parallel", time.time()-time0)
+
+    # diff = (np.max(np.abs(ky_mat-ky_mat0)))
+    # assert (diff == 0), "parallel implementation is wrong"
+
+    # # compute the ky_mat with different parameters
+    # for i in range(len(hyps_list)):
+
+    #     hyps = hyps_list[i]
+    #     hyps_mask = hyps_mask_list[i]
+
+    #     if hyps_mask is None:
+    #         ker = kernel[0]
+    #     else:
+    #         ker = kernel_m[0]
+
+    #     # serial implementation
+    #     time0 = time.time()
+    #     ky_mat = get_force_block(hyps, name, ker, cutoffs, hyps_mask)
+    #     print(f"compute ky_mat with multihyps, test {i}, n_cpus=1",
+    #           time.time()-time0)
+    #     diff = (np.max(np.abs(ky_mat-ky_mat0)))
+    #     assert (diff == 0), "multi hyps implementation is wrong"\
+    #         f"with case {i}"
+
+    #     # parallel implementation
+    #     time0 = time.time()
+    #     ky_mat = \
+    #         get_force_block(hyps, name, ker, cutoffs, hyps_mask, n_cpus=2,
+    #                         n_sample=20)
+    #     print(f"compute ky_mat with multihyps, test {i}, n_cpus=2",
+    #           time.time()-time0)
+    #     diff = (np.max(np.abs(ky_mat-ky_mat0)))
+    #     assert (diff == 0), "multi hyps  parallel "\
+    #         "implementation is wrong with case {i}"
+
+
 def test_ky_mat_update(params):
     """
     check ky_mat_update function
     """
 
     hyps, name, kernel, cutoffs, \
-        kernel_m, hyps_list, hyps_mask_list = params
+        kernel_m, hyps_list, hyps_mask_list, _ = params
 
     # prepare old data set as the starting point
     n = 5
@@ -235,7 +310,7 @@ def test_ky_mat_update(params):
 
 def test_get_kernel_vector(params):
 
-    hyps, name, _, cutoffs, kernel_m, _, hyps_mask_list = params
+    hyps, name, _, cutoffs, kernel_m, _, hyps_mask_list, _ = params
 
     test_point = get_tstp()
 
@@ -256,7 +331,7 @@ def test_get_kernel_vector(params):
 def test_ky_and_hyp(params):
 
     hyps, name, kernel, cutoffs, \
-            kernel_m, hyps_list, hyps_mask_list = params
+            kernel_m, hyps_list, hyps_mask_list, _ = params
 
     hypmat_0, ky_mat0 = get_ky_and_hyp(hyps, name, kernel[1], cutoffs)
 
@@ -313,7 +388,7 @@ def test_ky_and_hyp(params):
 
 def test_grad(params):
     hyps, name, kernel, cutoffs, \
-            kernel_m, hyps_list, hyps_mask_list = params
+            kernel_m, hyps_list, hyps_mask_list, _ = params
 
     # obtain reference
     func = get_ky_and_hyp
@@ -361,7 +436,7 @@ def test_grad(params):
 
 
 def test_ky_hyp_grad(params):
-    hyps, name, kernel, cutoffs, _, _, _ = params
+    hyps, name, kernel, cutoffs, _, _, _, _ = params
 
     func = get_ky_and_hyp
 
