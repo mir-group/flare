@@ -164,6 +164,80 @@ def obtain_noise_len(hyps, hyps_mask):
 
 
 # --------------------------------------------------------------------------
+#                   Parallel matrix/vector construction
+# --------------------------------------------------------------------------
+
+def parallel_matrix_construction(pack_function, hyps, name, kernel, cutoffs,
+                                 hyps_mask, block_id, nbatch, size1, size2,
+                                 m1, m2, symm=True):
+    result_queue = mp.Queue()
+    children = []
+    for wid in range(nbatch):
+        s1, e1, s2, e2 = block_id[wid]
+        children.append(mp.Process(target=queue_wrapper,
+                        args=(result_queue, wid, pack_function,
+                              (hyps, name, s1, e1, s2, e2, s1 == s2,
+                               kernel, cutoffs, hyps_mask))))
+
+    # Run child processes.
+    for c in children:
+        c.start()
+
+    # Wait for all results to arrive.
+    matrix = np.zeros((size1, size2))
+    for _ in range(nbatch):
+        wid, result_chunk = result_queue.get(block=True)
+        s1, e1, s2, e2 = block_id[wid]
+        matrix[s1 * m1:e1 * m1,
+               s2 * m2:e2 * m2] = result_chunk
+        # Note that the force/energy block is not symmetric; in this case
+        # symm is False.
+        if ((s1 != s2) and (symm is True)):
+            matrix[s2 * m2:e2 * m2, s1 * m1:e1 * m1] = result_chunk.T
+
+    # Join child processes (clean up zombies).
+    for c in children:
+        c.join()
+
+    # matrix manipulation
+    del result_queue
+    del children
+
+    return matrix
+
+
+def parallel_vector_construction(pack_function, name, x, kernel, hyps,
+                                 cutoffs, hyps_mask, block_id, nbatch, size,
+                                 mult, d_1=None):
+    result_queue = mp.Queue()
+    children = []
+    for wid in range(nbatch):
+        s, e = block_id[wid]
+        children.append(
+            mp.Process(
+                target=queue_wrapper,
+                args=(result_queue, wid, pack_function,
+                      (name, s, e, x, kernel, hyps, cutoffs, hyps_mask, d_1))))
+
+    # Run child processes.
+    for c in children:
+        c.start()
+
+    # Wait for all results to arrive.
+    vector = np.zeros(size * mult)
+    for _ in range(nbatch):
+        wid, result_chunk = result_queue.get(block=True)
+        s, e = block_id[wid]
+        vector[s * mult:e * mult] = result_chunk
+
+    # Join child processes (clean up zombies).
+    for c in children:
+        c.join()
+
+    return vector
+
+
+# --------------------------------------------------------------------------
 #                            Ky construction
 # --------------------------------------------------------------------------
 
@@ -281,45 +355,6 @@ def get_force_energy_block_pack(hyps: np.ndarray, name: str, s1: int,
             force_energy_block[m_index, n_index] = kern_curr
 
     return force_energy_block
-
-
-def parallel_matrix_construction(pack_function, hyps, name, kernel, cutoffs,
-                                 hyps_mask, block_id, nbatch, size1, size2,
-                                 m1, m2, symm=True):
-    result_queue = mp.Queue()
-    children = []
-    for wid in range(nbatch):
-        s1, e1, s2, e2 = block_id[wid]
-        children.append(mp.Process(target=queue_wrapper,
-                        args=(result_queue, wid, pack_function,
-                              (hyps, name, s1, e1, s2, e2, s1 == s2,
-                               kernel, cutoffs, hyps_mask))))
-
-    # Run child processes.
-    for c in children:
-        c.start()
-
-    # Wait for all results to arrive.
-    matrix = np.zeros((size1, size2))
-    for _ in range(nbatch):
-        wid, result_chunk = result_queue.get(block=True)
-        s1, e1, s2, e2 = block_id[wid]
-        matrix[s1 * m1:e1 * m1,
-               s2 * m2:e2 * m2] = result_chunk
-        # Note that the force/energy block is not symmetric; in this case
-        # symm is False.
-        if ((s1 != s2) and (symm is True)):
-            matrix[s2 * m2:e2 * m2, s1 * m1:e1 * m1] = result_chunk.T
-
-    # Join child processes (clean up zombies).
-    for c in children:
-        c.join()
-
-    # matrix manipulation
-    del result_queue
-    del children
-
-    return matrix
 
 
 def get_force_block(hyps: np.ndarray, name: str, kernel, cutoffs=None,
@@ -580,11 +615,12 @@ def get_ky_mat_update_serial(ky_mat_old, hyps: np.ndarray, name, kernel,
 #                            Kernel vectors
 # --------------------------------------------------------------------------
 
-def get_kernel_vector_unit(name, s, e, x, d_1, kernel, hyps,
-                           cutoffs, hyps_mask):
+def get_kernel_vector_unit(name, s, e, x, kernel, hyps, cutoffs, hyps_mask,
+                           d_1):
     """
-    Compute kernel vector, comparing input environment to all environments
-    in the GP's training set.
+    Compute kernel vector, comparing input environment to all environments and
+    structures in the GP's training set.
+
     :param training_data: Set of atomic environments to compare against
     :param kernel:
     :param x: data point to compare against kernel matrix
@@ -620,9 +656,9 @@ def get_kernel_vector(name, kernel, x, d_1, hyps,
                       n_cpus=1, n_sample=100):
     """
     Compute kernel vector, comparing input environment to all environments
-    in the GP's training set.
+    and structures in the GP's training set.
 
-    :param x: data point to compare against kernel matrix
+    :param x: Atomic environments to be compared against training environments.
     :type x: AtomicEnvironment
     :param d_1: Cartesian component of force vector to get (1=x,2=y,3=z)
     :type d_1: int
@@ -642,42 +678,22 @@ def get_kernel_vector(name, kernel, x, d_1, hyps,
     if (n_cpus is None):
         n_cpus = mp.cpu_count()
     if (n_cpus == 1):
-        return get_kernel_vector_unit(
-                name, 0, size, x, d_1, kernel, hyps,
-                cutoffs, hyps_mask)
+        return get_kernel_vector_unit(name, 0, size, x, kernel, hyps, cutoffs,
+                                      hyps_mask, d_1)
 
     block_id, nbatch = partition_vector(n_sample, size, n_cpus)
+    pack_function = get_kernel_vector_unit
+    mult = 3
 
-    result_queue = mp.Queue()
-    children = []
-    for wid in range(nbatch):
-        s, e = block_id[wid]
-        children.append(
-            mp.Process(
-                target=queue_wrapper,
-                args=(result_queue, wid, get_kernel_vector_unit,
-                      (name, s, e, x, d_1, kernel, hyps, cutoffs, hyps_mask))))
-
-    # Run child processes.
-    for c in children:
-        c.start()
-
-    # Wait for all results to arrive.
-    k12_v = np.zeros(size*3)
-    for _ in range(nbatch):
-        wid, result_chunk = result_queue.get(block=True)
-        s, e = block_id[wid]
-        k12_v[s*3:e*3] = result_chunk
-
-    # Join child processes (clean up zombies).
-    for c in children:
-        c.join()
+    k12_v = parallel_vector_construction(pack_function, name, x, kernel,
+                                         hyps, cutoffs, hyps_mask, block_id,
+                                         nbatch, size, mult, d_1)
 
     return k12_v
 
 
-def en_kern_vec_unit(name, s, e, x, kernel,
-                     hyps, cutoffs=None, hyps_mask=None):
+def en_kern_vec_unit(name, s, e, x, kernel, hyps, cutoffs=None,
+                     hyps_mask=None):
     """
     Compute energy kernel vector, comparing input environment to all
         environments in the GP's training set.
@@ -735,35 +751,16 @@ def en_kern_vec(name, kernel, x, hyps, cutoffs=None, hyps_mask=None, n_cpus=1,
     if (n_cpus is None):
         n_cpus = mp.cpu_count()
     if (n_cpus == 1):
-        return en_kern_vec_unit(
-                name, 0, size, x, kernel, hyps,
-                cutoffs, hyps_mask)
+        return en_kern_vec_unit(name, 0, size, x, kernel, hyps, cutoffs,
+                                hyps_mask)
 
     block_id, nbatch = partition_vector(n_sample, size, n_cpus)
-    result_queue = mp.Queue()
-    children = []
-    for wid in range(nbatch):
-        children.append(
-            mp.Process(
-                target=queue_wrapper,
-                args=(result_queue, wid, en_kern_vec_unit,
-                      (name, block_id[wid][0], block_id[wid][1], x,
-                       kernel, hyps, cutoffs, hyps_mask))))
+    pack_function = en_kern_vec_unit
+    mult = 1
 
-    # Run child processes.
-    for c in children:
-        c.start()
-
-    # Wait for all results to arrive.
-    k12_v = np.zeros(size*3)
-    for _ in range(nbatch):
-        wid, result_chunk = result_queue.get(block=True)
-        s, e = block_id[wid]
-        k12_v[s*3:e*3] = result_chunk
-
-    # Join child processes (clean up zombies).
-    for c in children:
-        c.join()
+    k12_v = parallel_vector_construction(pack_function, name, x, kernel,
+                                         hyps, cutoffs, hyps_mask, block_id,
+                                         nbatch, size, mult)
 
     return k12_v
 
