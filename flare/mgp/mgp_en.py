@@ -17,7 +17,7 @@ from flare.struc import Structure
 from flare.env import AtomicEnvironment
 from flare.gp import GaussianProcess
 from flare.gp_algebra import partition_vector
-from flare.gp_algebra import en_kern_vec_unit as en_kern_vec
+from flare.gp_algebra import energy_force_vector_unit as en_kern_vec
 from flare.kernels.utils import from_mask_to_args, str_to_kernel_set
 from flare.cutoffs import quadratic_cutoff
 from flare.util import Z_to_element

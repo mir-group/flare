@@ -615,24 +615,10 @@ def get_ky_mat_update_serial(ky_mat_old, hyps: np.ndarray, name, kernel,
 #                            Kernel vectors
 # --------------------------------------------------------------------------
 
-# TODO: rename to energy_force_vector_unit
-def en_kern_vec_unit(name, s, e, x, kernel, hyps, cutoffs=None,
-                     hyps_mask=None, d_1=None):
+def energy_force_vector_unit(name, s, e, x, kernel, hyps, cutoffs=None,
+                             hyps_mask=None, d_1=None):
     """
-    Get a vector of covariances between a local energy of a test
-    environment and the force component labels in the training set.
-
-    :param training_data: Set of atomic environments to compare against.
-    :param kernel:
-    :param x: data point to compare against kernel matrix
-    :type x: AtomicEnvironment
-    :param hyps: list of hyper-parameters
-    :param cutoffs: The cutoff values used for the atomic environments.
-    :type cutoffs: list of 2 float numbers
-    :param hyps_mask: dictionary used for multi-group hyperparmeters
-
-    :return: kernel vector
-    :rtype: np.ndarray
+    Gets part of the energy/force vector.
     """
 
     training_data = _global_training_data[name]
@@ -653,8 +639,9 @@ def en_kern_vec_unit(name, s, e, x, kernel, hyps, cutoffs=None,
 
 def force_energy_vector_unit(name, s, e, x, kernel, hyps, cutoffs, hyps_mask,
                              d_1):
-    """Get a vector of covariances between a force component of a test
-    environment and the total energy labels in the training set."""
+    """
+    Gets part of the force/energy vector.
+    """
 
     size = e - s
     args = from_mask_to_args(hyps, hyps_mask, cutoffs)
@@ -674,22 +661,7 @@ def force_energy_vector_unit(name, s, e, x, kernel, hyps, cutoffs, hyps_mask,
 def force_force_vector_unit(name, s, e, x, kernel, hyps, cutoffs, hyps_mask,
                             d_1):
     """
-    Get a vector of covariances between a force component of a test environment
-    and the force labels in the training set.
-
-    :param training_data: Set of atomic environments to compare against
-    :param kernel:
-    :param x: data point to compare against kernel matrix
-    :type x: AtomicEnvironment
-    :param d_1: Cartesian component of force vector to get (1=x,2=y,3=z)
-    :type d_1: int
-    :param hyps: list of hyper-parameters
-    :param cutoffs: The cutoff values used for the atomic environments
-    :type cutoffs: list of 2 float numbers
-    :param hyps_mask: dictionary used for multi-group hyperparmeters
-
-    :return: kernel vector
-    :rtype: np.ndarray
+    Gets part of the force/force vector.
     """
 
     size = (e-s)
@@ -709,6 +681,10 @@ def force_force_vector_unit(name, s, e, x, kernel, hyps, cutoffs, hyps_mask,
 
 def force_energy_vector(name, kernel, x, d_1, hyps, cutoffs=None,
                         hyps_mask=None, n_cpus=1, n_sample=100):
+    """
+    Get a vector of covariances between a force component of a test environment
+    and the total energy labels in the training set.
+    """
 
     size = len(_global_training_structures[name])
 
@@ -730,27 +706,12 @@ def force_energy_vector(name, kernel, x, d_1, hyps, cutoffs=None,
     return force_energy_vector
 
 
-# TODO: Rename to force_force_vector.
 # TODO: Implement full get_kernel_vector, which combines force and energy.
-def get_kernel_vector(name, kernel, x, d_1, hyps, cutoffs=None, hyps_mask=None,
-                      n_cpus=1, n_sample=100):
+def force_force_vector(name, kernel, x, d_1, hyps, cutoffs=None,
+                       hyps_mask=None, n_cpus=1, n_sample=100):
     """
-    Compute kernel vector, comparing input environment to all environments
-    and structures in the GP's training set.
-
-    :param x: Atomic environments to be compared against training environments.
-    :type x: AtomicEnvironment
-    :param d_1: Cartesian component of force vector to get (1=x,2=y,3=z)
-    :type d_1: int
-    :param hyps: list of hyper-parameters
-    :param cutoffs: The cutoff values used for the atomic environments
-    :type cutoffs: list of 2 float numbers
-    :param hyps_mask: dictionary used for multi-group hyperparmeters
-    :param n_cpus: number of cpus to use.
-    :param n_sample: the size of block for matrix to compute
-
-    :return: kernel vector
-    :rtype: np.ndarray
+    Get a vector of covariances between a force component of a test environment
+    and the force labels in the training set.
     """
 
     size = len(_global_training_data[name])
@@ -772,24 +733,11 @@ def get_kernel_vector(name, kernel, x, d_1, hyps, cutoffs=None, hyps_mask=None,
     return k12_v
 
 
-# TODO: Rename to energy_force_vector.
-def en_kern_vec(name, kernel, x, hyps, cutoffs=None, hyps_mask=None, n_cpus=1,
-                n_sample=100):
+def energy_force_vector(name, kernel, x, hyps, cutoffs=None, hyps_mask=None,
+                        n_cpus=1, n_sample=100):
     """
-    Compute kernel vector, comparing input environment to all environments
-    in the GP's training set.
-
-    :param x: data point to compare against kernel matrix
-    :type x: AtomicEnvironment
-    :param hyps: list of hyper-parameters
-    :param cutoffs: The cutoff values used for the atomic environments
-    :type cutoffs: list of 2 float numbers
-    :param hyps_mask: dictionary used for multi-group hyperparmeters
-    :param n_cpus: number of cpus to use.
-    :param n_sample: the size of block for matrix to compute
-
-    :return: kernel vector
-    :rtype: np.ndarray
+    Get the vector of covariances between the local energy of a test
+    environment and the force labels in the training set.
     """
 
     training_data = _global_training_data[name]
@@ -798,11 +746,11 @@ def en_kern_vec(name, kernel, x, hyps, cutoffs=None, hyps_mask=None, n_cpus=1,
     if (n_cpus is None):
         n_cpus = mp.cpu_count()
     if (n_cpus == 1):
-        return en_kern_vec_unit(name, 0, size, x, kernel, hyps, cutoffs,
-                                hyps_mask)
+        return energy_force_vector_unit(name, 0, size, x, kernel, hyps,
+                                        cutoffs, hyps_mask)
 
     block_id, nbatch = partition_vector(n_sample, size, n_cpus)
-    pack_function = en_kern_vec_unit
+    pack_function = energy_force_vector_unit
     mult = 3
 
     k12_v = parallel_vector_construction(pack_function, name, x, kernel,

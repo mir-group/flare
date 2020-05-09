@@ -16,9 +16,9 @@ from flare.kernels.mc_sephyps import two_plus_three_body_mc_grad \
 from flare.kernels import mc_sephyps
 
 from flare.gp_algebra import get_like_grad_from_mats, \
-        get_kernel_vector, get_force_block, get_force_energy_block, \
+        force_force_vector, get_force_block, get_force_energy_block, \
         get_ky_mat_update, get_ky_and_hyp, get_energy_block, \
-        get_Ky_mat, en_kern_vec
+        get_Ky_mat, energy_force_vector
 
 from .fake_gp import get_tstp
 
@@ -247,7 +247,7 @@ def test_ky_mat_update(params):
             "implementation is wrong"
 
 
-def test_get_kernel_vector(params):
+def test_force_force_vector(params):
 
     hyps, name, _, cutoffs, kernel_m, _, hyps_mask_list, _ = params
 
@@ -256,11 +256,11 @@ def test_get_kernel_vector(params):
     size = len(flare.gp_algebra._global_training_data[name])
 
     # test the parallel implementation for multihyps
-    vec = get_kernel_vector(name, kernel_m[0], test_point, 1, hyps, cutoffs,
+    vec = force_force_vector(name, kernel_m[0], test_point, 1, hyps, cutoffs,
                             hyps_mask_list[0])
 
     vec_par = \
-        get_kernel_vector(name, kernel_m[0], test_point, 1, hyps,
+        force_force_vector(name, kernel_m[0], test_point, 1, hyps,
                           cutoffs, hyps_mask_list[0], n_cpus=2, n_sample=100)
 
     assert (all(np.equal(vec, vec_par))), "parallel implementation is wrong"
@@ -276,11 +276,11 @@ def test_en_kern(params):
     size = len(flare.gp_algebra._global_training_data[name])
 
     # test the parallel implementation for multihyps
-    vec = en_kern_vec(name, kernel_m[3], test_point, hyps, cutoffs,
+    vec = energy_force_vector(name, kernel_m[3], test_point, hyps, cutoffs,
                       hyps_mask_list[0])
 
     vec_par = \
-        en_kern_vec(name, kernel_m[3], test_point, hyps,
+        energy_force_vector(name, kernel_m[3], test_point, hyps,
                     cutoffs, hyps_mask_list[0], n_cpus=2, n_sample=100)
 
     assert (all(np.equal(vec, vec_par))), "parallel implementation is wrong"

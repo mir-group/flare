@@ -18,8 +18,8 @@ from flare.util import Z_to_element
 from flare.env import AtomicEnvironment
 from flare.struc import Structure
 from flare.gp_algebra import get_like_from_mats, get_neg_like_grad, \
-    get_kernel_vector, en_kern_vec, get_force_block, get_ky_mat_update, \
-    _global_training_data, _global_training_labels, \
+    force_force_vector, energy_force_vector, get_force_block, \
+    get_ky_mat_update, _global_training_data, _global_training_labels, \
     _global_training_structures, _global_energy_labels
 
 from flare.kernels.utils import str_to_kernel_set, from_mask_to_args
@@ -526,9 +526,9 @@ class GaussianProcess:
         _global_training_labels[self.name] = self.training_labels_np
 
         k_v = \
-            get_kernel_vector(self.name, self.kernel, x_t, d, self.hyps,
-                              cutoffs=self.cutoffs, hyps_mask=self.hyps_mask,
-                              n_cpus=n_cpus, n_sample=self.n_sample)
+            force_force_vector(self.name, self.kernel, x_t, d, self.hyps,
+                               cutoffs=self.cutoffs, hyps_mask=self.hyps_mask,
+                               n_cpus=n_cpus, n_sample=self.n_sample)
 
         # Guarantee that alpha is up to date with training set
         self.check_L_alpha()
@@ -562,13 +562,10 @@ class GaussianProcess:
         _global_training_data[self.name] = self.training_data
         _global_training_labels[self.name] = self.training_labels_np
 
-        k_v = en_kern_vec(self.name,
-                          self.energy_force_kernel,
-                          x_t, self.hyps,
-                          cutoffs=self.cutoffs,
-                          hyps_mask=self.hyps_mask,
-                          n_cpus=n_cpus,
-                          n_sample=self.n_sample)
+        k_v = energy_force_vector(self.name, self.energy_force_kernel,
+                                  x_t, self.hyps, cutoffs=self.cutoffs,
+                                  hyps_mask=self.hyps_mask, n_cpus=n_cpus,
+                                  n_sample=self.n_sample)
 
         pred_mean = np.matmul(k_v, self.alpha)
 
@@ -594,13 +591,10 @@ class GaussianProcess:
         _global_training_labels[self.name] = self.training_labels_np
 
         # get kernel vector
-        k_v = en_kern_vec(self.name,
-                          self.energy_force_kernel,
-                          x_t, self.hyps,
-                          cutoffs=self.cutoffs,
-                          hyps_mask=self.hyps_mask,
-                          n_cpus=n_cpus,
-                          n_sample=self.n_sample)
+        k_v = energy_force_vector(self.name, self.energy_force_kernel,
+                                  x_t, self.hyps, cutoffs=self.cutoffs,
+                                  hyps_mask=self.hyps_mask, n_cpus=n_cpus,
+                                  n_sample=self.n_sample)
 
         # get predictive mean
         pred_mean = np.matmul(k_v, self.alpha)
