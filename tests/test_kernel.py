@@ -10,10 +10,8 @@ from flare.kernels.utils import str_to_kernel_set
 
 from .fake_gp import generate_mb_envs
 
-#list_to_test = ['2', '3', '2+3', 'mb', '2+3+mb']
-list_to_test = ['mb']
-list_type = ['mc']
-#list_type = ['sc', 'mc']
+list_to_test = ['2', '3', '2+3', 'mb', '2+3+mb']
+list_type = ['sc', 'mc']
 
 def generate_hm(kernel_name):
     hyps = []
@@ -160,6 +158,8 @@ def test_hyps_grad(kernel_name, kernel_type):
 
     original = kernel(env1, env2, d1, d2,
                       hyps, cutoffs)
+    assert(isclose(grad_test[0], original, rtol=tol))
+
     for i in range(len(hyps)-1):
         newhyps = np.copy(hyps)
         newhyps[i] += delta

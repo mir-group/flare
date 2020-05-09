@@ -1451,7 +1451,7 @@ def many_body_en_jit(q_array_1, q_array_2, sig, ls):
     """
     q1 = np.sum(q_array_1) # use sum to be compatible with mc
     q2 = np.sum(q_array_2)
-    q1q2diff = np.sum(q1 - q2)
+    q1q2diff = q1 - q2 
     kern = sig * sig * exp(-q1q2diff * q1q2diff / (2 * ls * ls))
     return kern
 
