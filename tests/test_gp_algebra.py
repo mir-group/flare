@@ -269,11 +269,40 @@ def test_force_energy_block(params):
         get_force_energy_block(hyps, name, kernel[3], cutoffs, n_cpus=2,
                                n_sample=5)
     print("compute ky_mat parallel", time.time()-time0)
-    print(ky_mat0)
-    print(ky_mat)
 
     diff = (np.max(np.abs(ky_mat-ky_mat0)))
     assert (diff == 0), "parallel implementation is wrong"
+
+    # compute the ky_mat with different parameters
+    for i in range(len(hyps_list)):
+
+        hyps = hyps_list[i]
+        hyps_mask = hyps_mask_list[i]
+
+        if hyps_mask is None:
+            ker = kernel[3]
+        else:
+            ker = kernel_m[3]
+
+        # serial implementation
+        time0 = time.time()
+        ky_mat = get_force_energy_block(hyps, name, ker, cutoffs, hyps_mask)
+        print(f"compute ky_mat with multihyps, test {i}, n_cpus=1",
+              time.time()-time0)
+        diff = (np.max(np.abs(ky_mat-ky_mat0)))
+        assert (diff == 0), "multi hyps implementation is wrong"\
+            f"with case {i}"
+
+        # parallel implementation
+        time0 = time.time()
+        ky_mat = \
+            get_force_energy_block(hyps, name, ker, cutoffs, hyps_mask,
+                                   n_cpus=2, n_sample=20)
+        print(f"compute ky_mat with multihyps, test {i}, n_cpus=2",
+              time.time()-time0)
+        diff = (np.max(np.abs(ky_mat-ky_mat0)))
+        assert (diff == 0), "multi hyps  parallel "\
+            "implementation is wrong with case {i}"
 
 
 def test_ky_mat_update(params):
