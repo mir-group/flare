@@ -420,8 +420,10 @@ def get_force_energy_block(hyps: np.ndarray, name: str, kernel, cutoffs=None,
     return force_energy_block
 
 
-def get_Ky_mat(hyps: np.ndarray, name: str, kernel, energy_noise,
-               cutoffs=None, hyps_mask=None, n_cpus=1, n_sample=100):
+def get_Ky_mat(hyps: np.ndarray, name: str, force_kernel: Callable,
+               energy_kernel: Callable, force_energy_kernel: Callable,
+               energy_noise, cutoffs=None, hyps_mask=None,
+               n_cpus=1, n_sample=100):
 
     training_data = _global_training_data[name]
     training_structures = _global_training_structures[name]
@@ -432,14 +434,15 @@ def get_Ky_mat(hyps: np.ndarray, name: str, kernel, energy_noise,
     ky_mat = np.zeros((size1 + size2, size1 + size2))
 
     # Assemble the full covariance matrix block-by-block.
-    force_block = get_force_block(hyps, name, kernel, cutoffs, hyps_mask,
+    force_block = get_force_block(hyps, name, force_kernel, cutoffs, hyps_mask,
                                   n_cpus, n_sample)
 
-    energy_block = get_energy_block(hyps, name, kernel, energy_noise, cutoffs,
-                                    hyps_mask, n_cpus, n_sample)
+    energy_block = get_energy_block(hyps, name, energy_kernel, energy_noise,
+                                    cutoffs, hyps_mask, n_cpus, n_sample)
 
-    force_energy_block = get_force_energy_block(hyps, name, kernel, cutoffs,
-                                                hyps_mask, n_cpus, n_sample)
+    force_energy_block = \
+        get_force_energy_block(hyps, name, force_energy_kernel, cutoffs,
+                               hyps_mask, n_cpus, n_sample)
 
     ky_mat[0:size1, 0:size1] = force_block
     ky_mat[size1:, size1:] = energy_block
