@@ -102,7 +102,7 @@ def test_init(bodies, multihyps, all_mgp, all_gp):
 
     # set struc params. cell and masses arbitrary?
     mapped_cell = np.eye(3) * 20
-    struc_params = {'species': [0, 1],
+    struc_params = {'species': [1, 2],
                     'cube_lat': mapped_cell,
                     'mass_dict': {'0': 2, '1': 4}}
 
@@ -125,7 +125,7 @@ def test_init(bodies, multihyps, all_mgp, all_gp):
                    'load_grid': None,
                    'update': False}
 
-    struc_params = {'species': [0, 1],
+    struc_params = {'species': [1, 2],
                     'cube_lat': np.eye(3)*2,
                     'mass_dict': {'0': 27, '1': 16}}
     mgp_model = MappedGaussianProcess(grid_params, struc_params, n_cpus=4,

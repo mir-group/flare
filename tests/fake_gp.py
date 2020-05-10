@@ -152,7 +152,7 @@ def get_gp(bodies, kernel_type='mc', multihyps=True) -> GaussianProcess:
 
     # params
     cell = np.diag(np.array([1, 1, 1.5]))
-    unique_species = [0, 1]
+    unique_species = [2, 1]
     cutoffs = np.array([0.8, 0.8])
     noa = 5
 
@@ -188,7 +188,7 @@ def get_gp(bodies, kernel_type='mc', multihyps=True) -> GaussianProcess:
 
 
 def get_params():
-    parameters = {'unique_species': [0, 1],
+    parameters = {'unique_species': [2, 1],
                   'cutoff': 0.8,
                   'noa': 5,
                   'cell': np.eye(3),
@@ -200,7 +200,7 @@ def get_tstp() -> AtomicEnvironment:
     """Create test point for kernel to compare against"""
     # params
     cell = np.eye(3)
-    unique_species = [0, 1]
+    unique_species = [2, 1]
     cutoffs = np.ones(3)*0.8
     noa = 10
 

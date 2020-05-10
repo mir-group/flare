@@ -71,7 +71,7 @@ def test_init(bodies, all_gp, all_mgp):
 
     # set struc params. cell and masses arbitrary?
     mapped_cell = np.eye(3) * 2
-    struc_params = {'species': [0, 1],
+    struc_params = {'species': [1, 2],
                     'cube_lat': mapped_cell,
                     'mass_dict': {'0': 27, '1': 16}}
 
@@ -94,7 +94,7 @@ def test_init(bodies, all_gp, all_mgp):
                    'load_grid': None,
                    'update': False}
 
-    struc_params = {'species': [0, 1],
+    struc_params = {'species': [1, 2],
                     'cube_lat': mapped_cell,
                     'mass_dict': {'0': 27, '1': 16}}
 
@@ -174,7 +174,7 @@ def test_lmp_predict(all_gp, all_mgp, bodies):
     cutoffs = gp_model.cutoffs
     struc_test, f = get_random_structure(cell, unique_species, nenv)
     test_envi = env.AtomicEnvironment(struc_test, atom_id, cutoffs)
-    atom_types = [0, 1]
+    atom_types = [1, 2]
     atom_masses = [108, 127]
     atom_species = struc_test.coded_species
 
