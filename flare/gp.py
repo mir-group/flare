@@ -483,6 +483,8 @@ class GaussianProcess:
             (float, float): Mean and epistemic variance of the prediction.
         """
 
+        assert (d in [1, 2, 3]), "d should be 1, 2, or 3"
+
         # Kernel vector allows for evaluation of atomic environments.
         if self.parallel and not self.per_atom_par:
             n_cpus = self.n_cpus
