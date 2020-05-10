@@ -137,7 +137,7 @@ def test_seed_and_run():
 
     test_env = envs[0]
 
-    for d in [0, 1, 2]:
+    for d in [1, 2, 3]:
         assert np.all(the_gp.predict(x_t=test_env, d=d) ==
                       new_gp.predict(x_t=test_env, d=d))
 
