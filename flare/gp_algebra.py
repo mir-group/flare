@@ -831,10 +831,24 @@ def get_kernel_vector(name, force_force_kernel: Callable,
     return kernel_vector
 
 
-# TODO: implement
-def en_kern_vec(name, kernel, x, d_1, hyps, cutoffs=None,
-                hyps_mask=None, n_cpus=1, n_sample=100):
-    pass
+def en_kern_vec(name, energy_force_kernel, energy_energy_kernel, x, d_1, hyps,
+                cutoffs=None, hyps_mask=None, n_cpus=1, n_sample=100):
+
+    size1 = len(_global_training_data[name])
+    size2 = len(_global_training_structures[name])
+    kernel_vector = np.zeros(size1 * 3 + size2)
+
+    force_vector = \
+        energy_force_vector(name, energy_force_kernel, x, hyps, cutoffs,
+                            hyps_mask, n_cpus, n_sample)
+    energy_vector = \
+        energy_energy_vector(name, energy_energy_kernel, x, hyps, cutoffs,
+                             hyps_mask, n_cpus, n_sample)
+
+    kernel_vector[0:size1*3] = force_vector
+    kernel_vector[size1*3:] = energy_vector
+
+    return kernel_vector
 
 
 # --------------------------------------------------------------------------

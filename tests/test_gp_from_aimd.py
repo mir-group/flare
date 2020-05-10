@@ -214,7 +214,7 @@ def test_mgp_gpfa(all_mgp, all_gp):
     three_cut = gp_model.cutoffs[1]
     # set struc params. cell and masses arbitrary?
     mapped_cell = np.eye(3) * 2
-    struc_params = {'species': [1, 2],
+    struc_params = {'species': [0, 1],
                     'cube_lat': mapped_cell,
                     'mass_dict': {'0': 27, '1': 16}}
 
@@ -232,7 +232,7 @@ def test_mgp_gpfa(all_mgp, all_gp):
                    'load_grid': None,
                    'update': False}
 
-    struc_params = {'species': [1, 2],
+    struc_params = {'species': [0, 1],
                     'cube_lat': np.eye(3) * 2,
                     'mass_dict': {'0': 27, '1': 16}}
 

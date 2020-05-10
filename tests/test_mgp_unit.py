@@ -73,7 +73,7 @@ def test_init(bodies, multihyps, all_mgp, all_gp):
 
     # set struc params. cell and masses arbitrary?
     mapped_cell = np.eye(3) * 2
-    struc_params = {'species': [1, 2],
+    struc_params = {'species': [0, 1],
                     'cube_lat': mapped_cell,
                     'mass_dict': {'0': 27, '1': 16}}
 
@@ -96,7 +96,7 @@ def test_init(bodies, multihyps, all_mgp, all_gp):
                    'load_grid': None,
                    'update': False}
 
-    struc_params = {'species': [1, 2],
+    struc_params = {'species': [0, 1],
                     'cube_lat': np.eye(3)*2,
                     'mass_dict': {'0': 27, '1': 16}}
     mgp_model = MappedGaussianProcess(grid_params, struc_params, n_cpus=4,
@@ -219,7 +219,7 @@ def test_lmp_predict(all_gp, all_mgp, bodies, multihyps):
     struc_test, f = get_random_structure(cell, unique_species, nenv)
     atom_num = 1
     test_envi = env.AtomicEnvironment(struc_test, atom_num, cutoffs)
-    atom_types = [1, 2]
+    atom_types = [0, 1]
     atom_masses = [108, 127]
     atom_species = struc_test.coded_species
 
