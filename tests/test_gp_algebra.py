@@ -98,7 +98,7 @@ def get_random_training_set(nenv, nstruc):
     training_labels = []
     for _ in range(nenv):
         positions = np.random.uniform(-1, 1, [noa, 3])
-        species = np.random.randint(0, len(unique_species), noa)
+        species = np.random.randint(0, len(unique_species), noa) + 1
         struc = Structure(cell, species, positions)
         training_data += [AtomicEnvironment(struc, 1, cutoffs)]
         training_labels += [np.random.uniform(-1, 1, 3)]
@@ -109,7 +109,7 @@ def get_random_training_set(nenv, nstruc):
     energy_labels = []
     for _ in range(nstruc):
         positions = np.random.uniform(-1, 1, [noa, 3])
-        species = np.random.randint(0, len(unique_species), noa)
+        species = np.random.randint(0, len(unique_species), noa) + 1
         struc = Structure(cell, species, positions)
         struc_envs = []
         for n in range(noa):
@@ -302,10 +302,6 @@ def test_force_energy_vector(params):
         force_energy_vector(name, kernel[3], test_point, 1, hyps,
                             cutoffs, n_cpus=2, n_sample=100)
 
-    print('force energy:')
-    print(vec)
-    print(vec_par)
-
     assert (all(np.equal(vec, vec_par))), "parallel implementation is wrong"
     assert (vec.shape[0] == size), f"{vec} {size}"
 
@@ -346,6 +342,27 @@ def test_kernel_vector(params):
     vec_par = \
         get_kernel_vector(name, kernel[0], kernel[3], test_point, 1, hyps,
                           cutoffs, n_cpus=2, n_sample=100)
+
+    assert (all(np.equal(vec, vec_par))), "parallel implementation is wrong"
+    assert (vec.shape[0] == size1 * 3 + size2)
+
+
+def test_en_kern_vec(params):
+
+    hyps, name, kernel, cutoffs, kernel_m, _, hyps_mask_list, _ = params
+
+    test_point = get_tstp()
+
+    size1 = len(flare.gp_algebra._global_training_data[name])
+    size2 = len(flare.gp_algebra._global_training_structures[name])
+
+    # test the parallel implementation for multihyps
+    vec = en_kern_vec(name, kernel[3], kernel[2], test_point, 1,
+                      hyps, cutoffs)
+
+    vec_par = \
+        en_kern_vec(name, kernel[3], kernel[2], test_point, 1, hyps,
+                    cutoffs, n_cpus=2, n_sample=100)
 
     assert (all(np.equal(vec, vec_par))), "parallel implementation is wrong"
     assert (vec.shape[0] == size1 * 3 + size2)
