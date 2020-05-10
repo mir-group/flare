@@ -50,7 +50,7 @@ from flare.util import element_to_Z, \
     is_std_in_bound_per_species, is_force_in_bound_per_species, \
     Z_to_element, subset_of_frame_by_element
 from flare.mgp.otf import predict_on_structure_mgp
-from flare.mgp.mgp_en import MappedGaussianProcess
+from flare.mgp.mgp import MappedGaussianProcess
 
 
 class TrajectoryTrainer:
