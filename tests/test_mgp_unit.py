@@ -244,7 +244,12 @@ def test_lmp_predict(all_gp, all_mgp, bodies, multihyps, map_force):
         by = 'yes'
     if '3' in bodies:
         ty = 'yes'
-    style_string = 'mgp'
+    
+    if map_force:
+        style_string = 'mgpf'
+    else:
+        style_string = 'mgp'
+
     coeff_string = f'* * {lammps_location} H He {by} {ty}'
     lammps_executable = os.environ.get('lmp')
     dump_file_name = f'{prefix}.dump'
