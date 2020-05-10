@@ -688,17 +688,17 @@ def force_force_vector_unit(name, s, e, x, kernel, hyps, cutoffs, hyps_mask,
     Gets part of the force/force vector.
     """
 
-    size = (e-s)
+    size = (e - s)
     ds = [1, 2, 3]
 
     args = from_mask_to_args(hyps, hyps_mask, cutoffs)
 
-    k_v = np.zeros(size*3, )
+    k_v = np.zeros(size * 3)
 
     for m_index in range(size):
-        x_2 = _global_training_data[name][m_index+s]
+        x_2 = _global_training_data[name][m_index + s]
         for d_2 in ds:
-            k_v[m_index*3+d_2-1] = kernel(x, x_2, d_1, d_2, *args)
+            k_v[m_index * 3 + d_2 - 1] = kernel(x, x_2, d_1, d_2, *args)
 
     return k_v
 
@@ -784,7 +784,6 @@ def force_energy_vector(name, kernel, x, d_1, hyps, cutoffs=None,
     return force_energy_vector
 
 
-# TODO: Implement full get_kernel_vector, which combines force and energy.
 def force_force_vector(name, kernel, x, d_1, hyps, cutoffs=None,
                        hyps_mask=None, n_cpus=1, n_sample=100):
     """
@@ -809,6 +808,33 @@ def force_force_vector(name, kernel, x, d_1, hyps, cutoffs=None,
                                          nbatch, size, mult, d_1)
 
     return k12_v
+
+
+def get_kernel_vector(name, force_force_kernel: Callable,
+                      force_energy_kernel: Callable, x, d_1, hyps,
+                      cutoffs=None, hyps_mask=None, n_cpus=1, n_sample=100):
+
+    size1 = len(_global_training_data[name])
+    size2 = len(_global_training_structures[name])
+    kernel_vector = np.zeros(size1 * 3 + size2)
+
+    force_vector = \
+        force_force_vector(name, force_force_kernel, x, d_1, hyps, cutoffs,
+                           hyps_mask, n_cpus, n_sample)
+    energy_vector = \
+        force_energy_vector(name, force_energy_kernel, x, d_1, hyps, cutoffs,
+                            hyps_mask, n_cpus, n_sample)
+
+    kernel_vector[0:size1*3] = force_vector
+    kernel_vector[size1*3:] = energy_vector
+
+    return kernel_vector
+
+
+# TODO: implement
+def en_kern_vec(name, kernel, x, d_1, hyps, cutoffs=None,
+                hyps_mask=None, n_cpus=1, n_sample=100):
+    pass
 
 
 # --------------------------------------------------------------------------
