@@ -6,8 +6,7 @@ import os, pickle, re
 
 from flare import struc, env, gp
 from flare import otf_parser
-from flare.mgp.mgp_en import MappedGaussianProcess
-import flare.mgp.mgp as mgp
+from flare.mgp.mgp import MappedGaussianProcess
 from flare.lammps import lammps_calculator
 
 from .fake_gp import get_gp, get_random_structure

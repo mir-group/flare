@@ -8,7 +8,7 @@ from copy import deepcopy
 from flare.env import AtomicEnvironment
 from flare.struc import Structure
 from flare.gp import GaussianProcess
-from flare.mgp.mgp_en import MappedGaussianProcess
+from flare.mgp.mgp import MappedGaussianProcess
 from flare.gp_from_aimd import TrajectoryTrainer, subset_of_frame_by_element
 from json import loads
 from flare.env import AtomicEnvironment
