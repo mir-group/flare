@@ -162,7 +162,6 @@ class MappedGaussianProcess:
         build a bond structure, used in grid generating
         '''
 
-        cutoff = np.min(self.cutoffs)
         cell = struc_params['cube_lat']
         mass_dict = struc_params['mass_dict']
         species_list = struc_params['species']
@@ -174,6 +173,7 @@ class MappedGaussianProcess:
         spc_2_set = []
         if 2 in self.bodies:
             bodies = 2
+            cutoff = self.cutoffs[0]
             for spc1_ind, spc1 in enumerate(species_list):
                 for spc2 in species_list[spc1_ind:]:
                     species = [spc1, spc2]
@@ -191,6 +191,7 @@ class MappedGaussianProcess:
         spc_3 = []
         if 3 in self.bodies:
             bodies = 3
+            cutoff = self.cutoffs[1]
             for spc1_ind in range(N_spc):
                 spc1 = species_list[spc1_ind]
                 for spc2_ind in range(N_spc):  # (spc1_ind, N_spc):
@@ -591,40 +592,45 @@ class Map2body:
             bond_vars = np.zeros([nop, len(GP.alpha)])
         else:
             bond_vars = None
+
         env12 = AtomicEnvironment(self.bond_struc, 0, GP.cutoffs, GP.hyps_mask)
 
-        with mp.Pool(processes=processes) as pool:
-            # A_list = pool.map(self._GenGrid_inner_most, pool_list)
-            # break it into pieces
+        if (processes == 1):
             size = len(GP.training_data)
-            block_id, nbatch = partition_c(self.n_sample, size, processes)
+            k12_v_all = self._GenGrid_inner(GP.name, 0, size, bond_lengths, env12, kernel_info)
+        else:
+            with mp.Pool(processes=processes) as pool:
+                # A_list = pool.map(self._GenGrid_inner_most, pool_list)
+                # break it into pieces
+                size = len(GP.training_data)
+                block_id, nbatch = partition_c(self.n_sample, size, processes)
 
-            k12_slice = []
-            k12_v_all = np.zeros([len(bond_lengths), size*3])
-            count = 0
-            base = 0
-            for ibatch in range(nbatch):
-                s, e = block_id[ibatch]
-                k12_slice.append(pool.apply_async(self._GenGrid_inner,
-                                                  args=(GP.name, s, e,
-                                                        bond_lengths,
-                                                        env12, kernel_info)))
-                count += 1
-                if (count > processes*2):
-                    for ibase in range(count):
-                        s, e = block_id[ibase+base]
-                        k12_v_all[:, s*3:e*3] = k12_slice[ibase].get()
-                    del k12_slice
-                    k12_slice = []
-                    count = 0
-                    base = ibatch+1
-            if (count > 0):
-               for ibase in range(count):
-                   s, e = block_id[ibase+base]
-                   k12_v_all[:, s*3:e*3] = k12_slice[ibase].get()
-               del k12_slice
-            pool.close()
-            pool.join()
+                k12_slice = []
+                k12_v_all = np.zeros([len(bond_lengths), size*3])
+                count = 0
+                base = 0
+                for ibatch in range(nbatch):
+                    s, e = block_id[ibatch]
+                    k12_slice.append(pool.apply_async(self._GenGrid_inner,
+                                                      args=(GP.name, s, e,
+                                                            bond_lengths,
+                                                            env12, kernel_info)))
+                    count += 1
+                    if (count > processes*2):
+                        for ibase in range(count):
+                            s, e = block_id[ibase+base]
+                            k12_v_all[:, s*3:e*3] = k12_slice[ibase].get()
+                        del k12_slice
+                        k12_slice = []
+                        count = 0
+                        base = ibatch+1
+                if (count > 0):
+                   for ibase in range(count):
+                       s, e = block_id[ibase+base]
+                       k12_v_all[:, s*3:e*3] = k12_slice[ibase].get()
+                   del k12_slice
+                pool.close()
+                pool.join()
 
         for b, r in enumerate(bond_lengths):
             k12_v = k12_v_all[b, :]
