@@ -20,7 +20,8 @@ from flare.gp_algebra import get_like_grad_from_mats, \
         energy_energy_vector, energy_force_vector, force_force_vector, \
         force_energy_vector, get_kernel_vector, en_kern_vec, \
         get_ky_mat_update, get_ky_and_hyp, get_energy_block, \
-        get_Ky_mat, update_force_block, update_energy_block
+        get_Ky_mat, update_force_block, update_energy_block, \
+        update_force_energy_block
 
 from .fake_gp import get_tstp
 
@@ -258,6 +259,46 @@ def test_energy_block_update(params):
 
     # parallel version
     energy_block_par = func[1](ky_mat_old, n, hyps, name, kernel[0],
+                               energy_noise, cutoffs, n_cpus=2, n_sample=20)
+    diff = (np.max(np.abs(energy_block_par - energy_block_ref)))
+
+    assert (diff == 0), "parallel implementation is wrong"
+
+
+def test_force_energy_block_update(params):
+    """
+    check ky_mat_update function
+    """
+
+    hyps, name, kernel, cutoffs, _, _, _, energy_noise = params
+
+    # prepare old data set as the starting point
+    n = 5
+    s = 1
+    training_data = flare.gp_algebra._global_training_data[name]
+    training_structures = flare.gp_algebra._global_training_structures[name]
+    flare.gp_algebra._global_training_data['old'] = training_data[:n]
+    flare.gp_algebra._global_training_structures['old'] = \
+        training_structures[:s]
+
+    func = [get_Ky_mat, update_force_energy_block]
+
+    # get the reference
+    ky_mat0 = func[0](hyps, name, kernel[0], kernel[2], kernel[3],
+                      energy_noise, cutoffs)
+    ky_mat_old = func[0](hyps, 'old', kernel[0], kernel[2], kernel[3],
+                         energy_noise, cutoffs)
+    energy_block_ref = ky_mat0[:30, 30:32]
+
+    # update
+    energy_block = func[1](ky_mat_old, n, hyps, name, kernel[3], energy_noise,
+                           cutoffs)
+    diff = (np.max(np.abs(energy_block - energy_block_ref)))
+
+    assert (diff <= 1e-15), "update function is wrong"
+
+    # parallel version
+    energy_block_par = func[1](ky_mat_old, n, hyps, name, kernel[3],
                                energy_noise, cutoffs, n_cpus=2, n_sample=20)
     diff = (np.max(np.abs(energy_block_par - energy_block_ref)))
 

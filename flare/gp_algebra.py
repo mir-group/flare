@@ -56,6 +56,40 @@ def partition_matrix(n_sample, size, n_cpus):
     return block_id, nbatch
 
 
+def partition_matrix_custom(n_sample: int, start1, end1, start2, end2, n_cpus):
+    """
+    Partition a specified portion of a matrix.
+    """
+
+    n_rows = end1 - start1
+    n_cols = end2 - start2
+    n_unique_elements = n_rows * n_cols
+    n_sample0 = int(math.ceil(np.sqrt(n_unique_elements / n_cpus)))
+    if (n_sample0 > n_sample):
+        n_sample = n_sample0
+
+    block_id = []
+    n_block = 0  # total number of blocks
+    nbatch1 = 0
+    nbatch2 = 0
+    e1 = 0
+    while (e1 < end1):
+        s1 = start1 + n_sample * nbatch1
+        e1 = np.min([s1 + n_sample, end1])
+        nbatch1 += 1
+
+        e2 = 0
+        nbatch2 = 0
+        while (e2 < end2):
+            s2 = start2 + n_sample * nbatch2
+            e2 = np.min([s2 + n_sample, end2])
+            block_id += [(s1, e1, s2, e2)]
+            nbatch2 += 1
+            n_block += 1  # update block count
+
+    return block_id, n_block
+
+
 def partition_vector(n_sample, size, n_cpus):
     """
     partition the training data for vector calculation
@@ -84,7 +118,7 @@ def partition_force_energy_block(n_sample: int, size1: int, size2: int,
     of environments in a structure can vary, we only split up the environment
     list, which has length size1.
 
-    Note that two sizes need to be specified: the size of the envirvironment
+    Note that two sizes need to be specified: the size of the envionment
     list and the size of the structure list.
 
     Args:
@@ -117,12 +151,6 @@ def partition_update(n_sample, size, old_size, n_cpus):
     n_sample0 = int(math.ceil(np.sqrt(n_unique_elements / n_cpus)))
     if (n_sample0 > n_sample):
         n_sample = n_sample0
-
-    # ns = int(math.ceil(size / n_sample))
-    # nproc = (size * 3 - old_size * 3) * (ns + old_size * 3) // 2
-    # if (nproc < n_cpus):
-    #     n_sample = int(math.ceil(size / np.sqrt(n_cpus * 2)))
-    #     ns = int(math.ceil(size / n_sample))
 
     ns_new = int(math.ceil((size - old_size) / n_sample))
     old_ns = int(math.ceil(old_size / n_sample))
@@ -582,8 +610,71 @@ def update_energy_block(ky_mat_old: np.ndarray, n_envs_prev: int,
     return ky_mat
 
 
-def update_force_energy_block():
-    pass
+def update_force_energy_block(ky_mat_old: np.ndarray, n_envs_prev: int,
+                              hyps: np.ndarray, name: str, kernel,
+                              energy_noise: float, cutoffs=None,
+                              hyps_mask=None, n_cpus=1, n_sample=100):
+
+    n_strucs_prev = ky_mat_old.shape[0] - 3 * n_envs_prev
+    n_envs = len(_global_training_data[name])
+    n_strucs = len(_global_training_structures[name])
+    force_energy_block = np.zeros((n_envs * 3, n_strucs))
+
+    if (n_cpus is None):
+        n_cpus = mp.cpu_count()
+
+    # serial version
+    if (n_cpus == 1):
+        mat_1 = \
+            get_force_energy_block_pack(hyps, name, 0, n_envs,
+                                        n_strucs_prev, n_strucs,
+                                        False, kernel, cutoffs, hyps_mask)
+
+        mat_2 = \
+            get_force_energy_block_pack(hyps, name, n_envs_prev, n_envs,
+                                        0, n_strucs_prev,
+                                        False, kernel, cutoffs, hyps_mask)
+
+    # parallel version
+    else:
+        force_energy_block = np.zeros((n_envs * 3, n_strucs))
+
+        block_id_1, nbatch_1 = \
+            partition_matrix_custom(n_sample, 0, n_envs, n_strucs_prev,
+                                    n_strucs, n_cpus)
+        block_id_2, nbatch_2 = \
+            partition_matrix_custom(n_sample, n_envs_prev, n_envs,
+                                    0, n_strucs_prev, n_cpus)
+
+        size1 = n_envs * 3
+        size2 = n_strucs
+        m1 = 3
+        m2 = 1
+
+        mat_1 = \
+            parallel_matrix_construction(get_force_energy_block_pack,
+                                         hyps, name, kernel, cutoffs,
+                                         hyps_mask, block_id_1, nbatch_1,
+                                         size1, size2, m1, m2, False)
+        mat_2 = \
+            parallel_matrix_construction(get_force_energy_block_pack,
+                                         hyps, name, kernel, cutoffs,
+                                         hyps_mask, block_id_2, nbatch_2,
+                                         size1, size2, m1, m2, False)
+
+        # reduce the size of the matrices
+        mat_1 = mat_1[:n_envs * 3, n_strucs_prev:n_strucs]
+        mat_2 = mat_2[n_envs_prev * 3:n_envs * 3, :n_strucs_prev]
+
+    force_energy_block[:n_envs * 3, n_strucs_prev:n_strucs] = mat_1
+    force_energy_block[n_envs_prev * 3:n_envs * 3, :n_strucs_prev] = mat_2
+
+    # insert previous covariance matrix
+    force_energy_block[:n_envs_prev * 3, :n_strucs_prev] = \
+        ky_mat_old[:n_envs_prev * 3,
+                   n_envs_prev * 3:n_envs_prev * 3 + n_strucs_prev]
+
+    return force_energy_block
 
 
 # Assumes ky_mat_old is the previous force block.
