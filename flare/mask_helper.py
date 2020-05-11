@@ -66,7 +66,7 @@ class HyperParameterMasking():
 
     def __init__(self, hyps_mask=None, species=None, bonds=None,
                  triplets=None, cut3b=None, mb=None, parameters=None,
-                 constraints={}, random=False, verbose=False):
+                 constraints={}, allseparate=False, random=False, verbose=False):
         """ Initialization function
 
         :param hyps_mask: Not implemented yet
@@ -123,13 +123,14 @@ class HyperParameterMasking():
         self.mask = {}
         self.cutoff_list = {}
         self.noise = 0.05
+        self.universal = {}
 
         self.cutoffs_array = np.array([0, 0, 0], dtype=np.float)
         self.hyps = None
 
         if (species is not None):
             self.list_groups('specie', species)
-            if (not random):
+            if (not allseparate):
                 if (bonds is not None):
                     self.list_groups('bond', bonds)
                 if (triplets is not None):
@@ -146,6 +147,11 @@ class HyperParameterMasking():
                     print("more parameters needed to generate the hypsmask",
                           file=self.fout)
             else:
+                if (parameters is not None):
+                    self.list_parameters(parameters, constraints)
+                if (not random):
+                    assert 'lengthscale' in self.universal
+                    assert 'sigma' in self.universal
 
                 # sort the types
                 if (bonds is not None):
@@ -162,13 +168,11 @@ class HyperParameterMasking():
                     mb = False
 
                 if bonds:
-                   self.fill_in_random('bond')
+                   self.fill_in_parameters('bond', random)
                 if triplets:
-                   self.fill_in_random('triplet')
+                   self.fill_in_parameters('triplet', random)
                 if mb:
-                    self.fill_in_random('mb')
-                if (parameters is not None):
-                    self.list_parameters(parameters, constraints)
+                    self.fill_in_parameters('mb', random)
                 self.hyps_mask = self.generate_dict()
 
     def list_parameters(self, parameter_dict, constraints={}):
@@ -269,9 +273,11 @@ class HyperParameterMasking():
                         self.define_group(group_type, name,
                                           definition_list[name])
 
-    def fill_in_random(self, group_type):
+    def fill_in_parameters(self, group_type, random=False):
         """Separate all possible types of bonds, triplets, mb.
-        One type per group. And fill in random parameters
+        One type per group. And fill in either universal ls and sigma from
+        pre-defined parameters from set_parameters("sigma", ..) and set_parameters("ls", ..)
+        or random parameters if random is True.
 
         Args:
 
@@ -288,8 +294,14 @@ class HyperParameterMasking():
                 ele1 = self.all_group_names['specie'][i]
                 for j in range(i, nspec):
                     ele2 = self.all_group_names['specie'][j]
-                    self.define_group(group_type, f'{group_type}{tid}',
-                                      [ele1, ele2], parameters=random(2))
+                    if (random):
+                        self.define_group(group_type, f'{group_type}{tid}',
+                                          [ele1, ele2], parameters=random(2))
+                    else:
+                        self.define_group(group_type, f'{group_type}{tid}',
+                                          [ele1, ele2],
+                                          parameters=[self.universal['sigma'],
+                                                      self.universal['lengthscale']])
                     tid += 1
         elif (group_type == 'triplet'):
             tid = 0
@@ -299,8 +311,14 @@ class HyperParameterMasking():
                     ele2 = self.all_group_names['specie'][j]
                     for k in range(j, nspec):
                         ele3 = self.all_group_names['specie'][k]
-                        self.define_group(group_type, f'{group_type}{tid}',
-                                          [ele1, ele2, ele3], parameters=random(2))
+                        if (random):
+                            self.define_group(group_type, f'{group_type}{tid}',
+                                              [ele1, ele2, ele3], parameters=random(2))
+                        else:
+                            self.define_group(group_type, f'{group_type}{tid}',
+                                              [ele1, ele2, ele3],
+                                              parameters=[self.universal['sigma'],
+                                                          self.universal['lengthscale']])
                         tid += 1
         else:
             print(group_type, "will be ignored", file=self.fout)
@@ -527,6 +545,10 @@ class HyperParameterMasking():
         if (name in ['cutoff2b', 'cutoff3b', 'cutoffmb']):
             name_map = {'cutoff2b': 0, 'cutoff3b': 1, 'cutoffmb': 2}
             self.cutoffs_array[name_map[name]] = parameters
+            return
+
+        if (name in ['sigma', 'lengthscale']):
+            self.universal[name] = parameters
             return
 
         if (isinstance(opt, bool)):
