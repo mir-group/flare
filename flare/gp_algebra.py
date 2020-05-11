@@ -113,11 +113,7 @@ def partition_force_energy_block(n_sample: int, size1: int, size2: int,
 
 def partition_update(n_sample, size, old_size, n_cpus):
 
-    # compute total number of new pairs of environments
-    n_unique_1 = (size - old_size) * (size - old_size + 1) / 2
-    n_unique_2 = old_size * (size - old_size)
-    n_unique_elements = n_unique_1 + n_unique_2
-
+    n_unique_elements = (size - old_size) * size
     n_sample0 = int(math.ceil(np.sqrt(n_unique_elements / n_cpus)))
     if (n_sample0 > n_sample):
         n_sample = n_sample0
