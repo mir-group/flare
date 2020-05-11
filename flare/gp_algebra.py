@@ -30,7 +30,8 @@ def partition_matrix(n_sample, size, n_cpus):
     # divide the block by n_cpu partitions, with size n_sample0
     # if the divided chunk is smaller than the requested chunk n_sample
     # use the requested chunk size
-    n_sample0 = int(math.ceil(np.sqrt(size*size/n_cpus/2.)))
+    n_unique_elements = size * (size + 1) / 2
+    n_sample0 = int(math.ceil(np.sqrt(n_unique_elements / n_cpus)))
     if (n_sample0 > n_sample):
         n_sample = n_sample0
 
@@ -112,31 +113,42 @@ def partition_force_energy_block(n_sample: int, size1: int, size2: int,
 
 def partition_update(n_sample, size, old_size, n_cpus):
 
-    ns = int(math.ceil(size/n_sample))
-    nproc = (size*3-old_size*3)*(ns+old_size*3)//2
-    if (nproc < n_cpus):
-        n_sample = int(math.ceil(size/np.sqrt(n_cpus*2)))
-        ns = int(math.ceil(size/n_sample))
+    # compute total number of new pairs of environments
+    n_unique_1 = (size - old_size) * (size - old_size + 1) / 2
+    n_unique_2 = old_size * (size - old_size)
+    n_unique_elements = n_unique_1 + n_unique_2
 
-    ns_new = int(math.ceil((size-old_size)/n_sample))
-    old_ns = int(math.ceil(old_size/n_sample))
+    n_sample0 = int(math.ceil(np.sqrt(n_unique_elements / n_cpus)))
+    if (n_sample0 > n_sample):
+        n_sample = n_sample0
+
+    # ns = int(math.ceil(size / n_sample))
+    # nproc = (size * 3 - old_size * 3) * (ns + old_size * 3) // 2
+    # if (nproc < n_cpus):
+    #     n_sample = int(math.ceil(size / np.sqrt(n_cpus * 2)))
+    #     ns = int(math.ceil(size / n_sample))
+
+    ns_new = int(math.ceil((size - old_size) / n_sample))
+    old_ns = int(math.ceil(old_size / n_sample))
 
     nbatch = 0
     block_id = []
     for ibatch1 in range(old_ns):
         s1 = int(n_sample*ibatch1)
         e1 = int(np.min([s1 + n_sample, old_size]))
+
         for ibatch2 in range(ns_new):
-            s2 = int(n_sample*ibatch2)+old_size
+            s2 = int(n_sample * ibatch2) + old_size
             e2 = int(np.min([s2 + n_sample, size]))
             block_id += [(s1, e1, s2, e2)]
             nbatch += 1
 
     for ibatch1 in range(ns_new):
-        s1 = int(n_sample*ibatch1)+old_size
+        s1 = int(n_sample * ibatch1) + old_size
         e1 = int(np.min([s1 + n_sample, size]))
+
         for ibatch2 in range(ns_new):
-            s2 = int(n_sample*ibatch2)+old_size
+            s2 = int(n_sample * ibatch2) + old_size
             e2 = int(np.min([s2 + n_sample, size]))
             block_id += [(s1, e1, s2, e2)]
             nbatch += 1
@@ -491,123 +503,130 @@ def get_Ky_mat(hyps: np.ndarray, name: str, force_kernel: Callable,
 #                              Ky updates
 # --------------------------------------------------------------------------
 
-def get_ky_mat_update(ky_mat_old, hyps: np.ndarray, name: str, kernel,
-                      cutoffs=None, hyps_mask=None, n_cpus=1, n_sample=100):
-    '''
-    used for update_L_alpha, especially for parallelization
-    parallelized for added atoms, for example, if add 10 atoms to the training
-    set, the K matrix will add 10x3 columns and 10x3 rows, and the task will
-    be distributed to 30 processors
+def update_force_block(ky_mat_old: np.ndarray, n_envs_prev: int,
+                       hyps: np.ndarray, name: str, kernel, cutoffs=None,
+                       hyps_mask=None, n_cpus=1, n_sample=100):
 
-    :param ky_mat_old: old covariance matrix
-    :param hyps: list of hyper-parameters
-    :param training_data: Set of atomic environments to compare against
-    :param kernel:
-    :param cutoffs: The cutoff values used for the atomic environments
-    :type cutoffs: list of 2 float numbers
-    :param hyps_mask: dictionary used for multi-group hyperparmeters
-    :param n_cpus: number of cpus to use.
-    :param n_sample: the size of block for matrix to compute
-
-    :return: updated covariance matrix
-    '''
+    old_size = n_envs_prev
+    old_size3 = n_envs_prev * 3
+    mult = 3
+    size = len(_global_training_data[name])
+    size3 = 3 * size
 
     if (n_cpus is None):
         n_cpus = mp.cpu_count()
+
+    # serial version
     if (n_cpus == 1):
-        return get_ky_mat_update_serial(
-                ky_mat_old, hyps, name, kernel, cutoffs, hyps_mask)
+        ky_mat = np.zeros((size3, size3))
+        new_mat = \
+            get_force_block_pack(hyps, name, 0, size, old_size, size, False,
+                                 kernel, cutoffs, hyps_mask)
+        ky_mat[:, old_size3:] = new_mat
+        ky_mat[old_size3:, :] = new_mat.transpose()
 
+    # parallel version
+    else:
+        block_id, nbatch = partition_update(n_sample, size, old_size, n_cpus)
+
+        ky_mat = \
+            parallel_matrix_construction(get_force_block_pack, hyps, name,
+                                         kernel, cutoffs, hyps_mask,
+                                         block_id, nbatch, size3, size3,
+                                         mult, mult)
+
+    # insert previous covariance matrix
+    ky_mat[:old_size3, :old_size3] = ky_mat_old[:old_size3, :old_size3]
+
+    # add the noise parameter
     sigma_n, _, _ = obtain_noise_len(hyps, hyps_mask)
-
-    # initialize matrices
-    old_size3 = ky_mat_old.shape[0]
-    old_size = old_size3//3
-    size = len(_global_training_data[name])
-    size3 = 3*size
-
-    block_id, nbatch = partition_update(n_sample, size, old_size, n_cpus)
-
-    # Send and Run child processes.
-    result_queue = mp.Queue()
-    children = []
-    for wid in range(nbatch):
-        s1, e1, s2, e2 = block_id[wid]
-        children.append(
-            mp.Process(target=queue_wrapper,
-                       args=(result_queue, wid, get_force_block_pack,
-                             (hyps, name, s1, e1, s2, e2,
-                              s1 == s2, kernel, cutoffs, hyps_mask))))
-
-    for c in children:
-        c.start()
-
-    # Wait for all results to arrive.
-    size3 = 3*size
-    ky_mat = np.zeros([size3, size3])
-    ky_mat[:old_size3, :old_size3] = ky_mat_old
-    del ky_mat_old
-    for _ in range(nbatch):
-        wid, result_chunk = result_queue.get(block=True)
-        s1, e1, s2, e2 = block_id[wid]
-        ky_mat[s1*3:e1*3, s2*3:e2*3] = result_chunk
-        if (s1 != s2):
-            ky_mat[s2*3:e2*3, s1*3:e1*3] = result_chunk.T
-
-    # Join child processes (clean up zombies).
-    for c in children:
-        c.join()
-
-    # matrix manipulation
     ky_mat[old_size3:, old_size3:] += sigma_n ** 2 * np.eye(size3-old_size3)
 
     return ky_mat
 
 
-def get_ky_mat_update_serial(ky_mat_old, hyps: np.ndarray, name, kernel,
-                             cutoffs=None, hyps_mask=None):
-    '''
-    used for update_L_alpha. if add 10 atoms to the training
-    set, the K matrix will add 10x3 columns and 10x3 rows
+def update_energy_block(ky_mat_old: np.ndarray, n_envs_prev: int,
+                        hyps: np.ndarray, name: str, kernel,
+                        energy_noise: float, cutoffs=None, hyps_mask=None,
+                        n_cpus=1, n_sample=100):
 
-    :param ky_mat_old: old covariance matrix
-    :param hyps: list of hyper-parameters
-    :param training_data: Set of atomic environments to compare against
-    :param kernel:
-    :param cutoffs: The cutoff values used for the atomic environments
-    :type cutoffs: list of 2 float numbers
-    :param hyps_mask: dictionary used for multi-group hyperparmeters
+    old_size = ky_mat_old.shape[0] - 3 * n_envs_prev
+    mult = 1
+    size = len(_global_training_structures[name])
 
-    '''
+    if (n_cpus is None):
+        n_cpus = mp.cpu_count()
 
-    training_data = _global_training_data[name]
+    # serial version
+    if (n_cpus == 1):
+        ky_mat = np.zeros((size, size))
+        new_mat = \
+            get_energy_block_pack(hyps, name, 0, size, old_size, size, False,
+                                  kernel, cutoffs, hyps_mask)
+        ky_mat[:, old_size:] = new_mat
+        ky_mat[old_size:, :] = new_mat.transpose()
 
-    n = ky_mat_old.shape[0]
-    size = len(training_data)
-    size3 = size*3
-    ky_mat = np.zeros((size3, size3))
-    ky_mat[:n, :n] = ky_mat_old
+    # parallel version
+    else:
+        block_id, nbatch = partition_update(n_sample, size, old_size, n_cpus)
 
-    ds = [1, 2, 3]
+        ky_mat = \
+            parallel_matrix_construction(get_energy_block_pack, hyps, name,
+                                         kernel, cutoffs, hyps_mask,
+                                         block_id, nbatch, size, size,
+                                         mult, mult)
 
-    args = from_mask_to_args(hyps, hyps_mask, cutoffs)
+    # insert previous covariance matrix
+    ky_mat[:old_size, :old_size] = ky_mat_old[-old_size:, -old_size:]
 
-    # calculate elements
-    for m_index in range(size3):
-        x_1 = training_data[int(math.floor(m_index / 3))]
-        d_1 = ds[m_index % 3]
-        low = int(np.max([m_index, n]))
-        for n_index in range(low, size3):
-            x_2 = training_data[int(math.floor(n_index / 3))]
-            d_2 = ds[n_index % 3]
-            # calculate kernel
-            kern_curr = kernel(x_1, x_2, d_1, d_2, *args)
-            ky_mat[m_index, n_index] = kern_curr
-            ky_mat[n_index, m_index] = kern_curr
+    # add the noise parameter
+    ky_mat[old_size:, old_size:] += \
+        (energy_noise ** 2) * np.eye(size - old_size)
 
-    # matrix manipulation
-    sigma_n, _, __ = obtain_noise_len(hyps, hyps_mask)
-    ky_mat[n:, n:] += sigma_n ** 2 * np.eye(size3-n)
+    return ky_mat
+
+
+def update_force_energy_block():
+    pass
+
+
+# Assumes ky_mat_old is the previous force block.
+# TODO: Generalize to full covariance matrix.
+def get_ky_mat_update(ky_mat_old, hyps: np.ndarray, name: str, kernel,
+                      cutoffs=None, hyps_mask=None, n_cpus=1, n_sample=100):
+
+    old_size3 = ky_mat_old.shape[0]
+    old_size = old_size3//3
+    mult = 3
+    size = len(_global_training_data[name])
+    size3 = 3 * size
+
+    if (n_cpus is None):
+        n_cpus = mp.cpu_count()
+
+    # serial version
+    if (n_cpus == 1):
+        ky_mat = np.zeros((size3, size3))
+        new_mat = \
+            get_force_block_pack(hyps, name, 0, size, old_size, size, False,
+                                 kernel, cutoffs, hyps_mask)
+        ky_mat[:, old_size3:] = new_mat
+        ky_mat[old_size3:, :] = new_mat.transpose()
+
+    # parallel version
+    else:
+        block_id, nbatch = partition_update(n_sample, size, old_size, n_cpus)
+
+        ky_mat = \
+            parallel_matrix_construction(get_force_block_pack, hyps, name,
+                                         kernel, cutoffs, hyps_mask,
+                                         block_id, nbatch, size3, size3,
+                                         mult, mult)
+
+    sigma_n, _, _ = obtain_noise_len(hyps, hyps_mask)
+    ky_mat[:old_size3, :old_size3] = ky_mat_old
+    ky_mat[old_size3:, old_size3:] += sigma_n ** 2 * np.eye(size3-old_size3)
+
     return ky_mat
 
 
