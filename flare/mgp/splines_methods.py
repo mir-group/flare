@@ -137,17 +137,14 @@ class CubicSpline:
         if not with_derivatives:
             if points.ndim == 1:
                 # evaluate only on one point
-                return eval_cubic_spline(self.a, self.b, self.orders, 
-                                         self.__coeffs__, points)
-            else:
-
-                N, d = points.shape
-                assert(d==self.d)
-                if values is None:
-                    values = np.empty(N, dtype=self.dtype)
-                vec_eval_cubic_spline(self.a, self.b, self.orders, 
-                                      self.__coeffs__, points, values)
-                return values
+                points = np.array([points])
+            N, d = points.shape
+            assert(d==self.d)
+            if values is None:
+                values = np.empty(N, dtype=self.dtype)
+            vec_eval_cubic_spline(self.a, self.b, self.orders, 
+                                  self.__coeffs__, points, values)
+            return values
         else:
             N, d = points.shape
             assert(d==self.d)
