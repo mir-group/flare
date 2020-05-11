@@ -656,8 +656,8 @@ class HyperParameterMasking():
                     self.hyps_ls[group_type] += [ls]
                     self.hyps_opt[group_type] += [self.opt[name+'sig']]
                     self.hyps_opt[group_type] += [self.opt[name+'ls']]
-                    print(
-                        f"   using hyper-parameters of {sig} {ls}", file=self.fout)
+                    print(f"   using hyper-parameters of {sig:6.2g} "\
+                          f"{ls:6.2g}", file=self.fout)
             print(
                 f"All the remaining elements are left as type {idt}", file=self.fout)
 
@@ -877,16 +877,12 @@ class HyperParameterMasking():
                 for ele in elelist:
                     if (ele != 0):
                         if (len(init_spec) > 0):
-                            if Z_to_element(ele) in init_spec:
-                                print("try ele", Z_to_element(ele), init_spec)
-                                # pm.define_group("specie", Z_to_element(ele), [Z_to_element(ele)])
+                            elename = Z_to_element(ele)
+                            if elename in init_spec:
                                 pm.define_group(
-                                    "specie", i, [Z_to_element(ele)])
+                                    "specie", i, [elename])
                         else:
-                            pm.define_group("specie", i, [Z_to_element(ele)])
-        # for i in range(1, nele):
-        #     pm.define_group("specie", hyps_mask['specie_mask'][i],
-        #                     [Z_to_element(i)])
+                            pm.define_group("specie", i, [elename])
 
         nbond = hyps_mask.get('nbond', 0)
         ntriplet = hyps_mask.get('ntriplet', 0)
@@ -895,14 +891,14 @@ class HyperParameterMasking():
             if (f'n{t}' in hyps_mask):
                 if (t == 'bond'):
                     cutoffname = 'cutoff_2b'
-                    sig = hyps
-                    ls = hyps[nbond:]
-                    csig = constraints
-                    cls = constraints[nbond:]
+                    sig = hyps[:nbond]
+                    ls = hyps[nbond:2*nbond]
+                    csig = constraints[:nbond]
+                    cls = constraints[nbond:2*nbond]
                 else:
                     cutoffname = 'cutoff_mb'
-                    sig = hyps[nbond*2+ntriplet*2:]
-                    ls = hyps[nbond*2+ntriplet*2+nmb:]
+                    sig = hyps[nbond*2+ntriplet*2:nbond*2+ntriplet*2+nmb]
+                    ls = hyps[nbond*2+ntriplet*2+nmb:nbond*2+ntriplet*2+nmb*2]
                     csig = constraints[nbond*2+ntriplet*2:]
                     cls = constraints[nbond*2+ntriplet*2+nmb:]
                 for i in range(pm.nspecie):
@@ -917,10 +913,10 @@ class HyperParameterMasking():
                         pm.set_parameters(f"{t}{i}", [sig[i], ls[i]],
                                           opt=[csig[i], cls[i]])
         if ('ntriplet' in hyps_mask):
-            sig = hyps[nbond*2:]
-            ls = hyps[nbond*2+ntriplet:]
-            csig = constraints[nbond*2:]
-            cls = constraints[nbond*2+ntriplet:]
+            sig = hyps[nbond*2:nbond*2+ntriplet]
+            ls = hyps[nbond*2+ntriplet:nbond*2+ntriplet*2]
+            csig = constraints[nbond*2:nbond*2+ntriplet]
+            cls = constraints[nbond*2+ntriplet:nbond*2+ntriplet*2]
             for i in range(pm.nspecie):
                 for j in range(i, pm.nspecie):
                     for k in range(j, pm.nspecie):
