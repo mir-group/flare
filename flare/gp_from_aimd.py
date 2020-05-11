@@ -44,12 +44,12 @@ from flare.env import AtomicEnvironment
 from flare.gp import GaussianProcess
 from flare.output import Output
 from flare.predict import predict_on_atom, predict_on_atom_en, \
-    predict_on_structure_par, predict_on_structure_par_en
+    predict_on_structure_par, predict_on_structure_par_en, \
+    predict_on_structure_mgp
 from flare.struc import Structure
 from flare.util import element_to_Z, \
     is_std_in_bound_per_species, is_force_in_bound_per_species, \
     Z_to_element, subset_of_frame_by_element
-from flare.mgp.otf import predict_on_structure_mgp
 from flare.mgp.mgp import MappedGaussianProcess
 
 
