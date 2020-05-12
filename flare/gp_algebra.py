@@ -602,8 +602,9 @@ def update_energy_block(ky_mat_old: np.ndarray, n_envs_prev: int,
                                          block_id, nbatch, size, size,
                                          mult, mult)
 
-    # insert previous covariance matrix
-    energy_block[:old_size, :old_size] = ky_mat_old[-old_size:, -old_size:]
+    # insert previous covariance matrix (if it has nonzero size)
+    if old_size > 0:
+        energy_block[:old_size, :old_size] = ky_mat_old[-old_size:, -old_size:]
 
     # add the noise parameter
     energy_block[old_size:, old_size:] += \

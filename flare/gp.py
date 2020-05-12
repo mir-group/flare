@@ -75,7 +75,7 @@ class GaussianProcess:
                  n_sample: int = 100, output: Output = None,
                  multihyps: bool = False, hyps_mask: dict = None,
                  kernel_name="2+3_mc", name="default_gp",
-                 energy_noise: float = None, **kwargs,):
+                 energy_noise: float = 0.01, **kwargs,):
         """Initialize GP parameters and training data."""
 
         # load arguments into attributes
@@ -140,6 +140,7 @@ class GaussianProcess:
         self.training_data = []   # Atomic environments
         self.training_labels = []  # Forces acting on central atoms
         self.training_labels_np = np.empty(0, )
+        self.n_envs_prev = len(self.training_data)
 
         # Attributes to accomodate energy labels:
         self.training_structures = []  # Environments of each structure
@@ -637,6 +638,7 @@ class GaussianProcess:
 
         self.likelihood = get_like_from_mats(ky_mat, l_mat,
                                              alpha, self.name)
+        self.n_envs_prev = len(self.training_data)
 
     def update_L_alpha(self):
         """
@@ -649,11 +651,16 @@ class GaussianProcess:
             self.set_L_alpha()
             return
 
+        # Reset global variables.
         _global_training_data[self.name] = self.training_data
+        _global_training_structures[self.name] = self.training_structures
         _global_training_labels[self.name] = self.training_labels_np
+        _global_energy_labels[self.name] = self.energy_labels_np
 
-        ky_mat = get_ky_mat_update(self.ky_mat, self.hyps, self.name,
-                                   self.kernel, cutoffs=self.cutoffs,
+        ky_mat = get_ky_mat_update(self.ky_mat, self.n_envs_prev, self.hyps,
+                                   self.name, self.kernel, self.energy_kernel,
+                                   self.energy_force_kernel, self.energy_noise,
+                                   cutoffs=self.cutoffs,
                                    hyps_mask=self.hyps_mask,
                                    n_cpus=self.n_cpus,
                                    n_sample=self.n_sample)
@@ -667,6 +674,7 @@ class GaussianProcess:
         self.l_mat = l_mat
         self.alpha = alpha
         self.ky_mat_inv = ky_mat_inv
+        self.n_envs_prev = len(self.training_data)
 
     def __str__(self):
         """String representation of the GP model."""
@@ -758,6 +766,7 @@ class GaussianProcess:
         new_gp.likelihood = dictionary['likelihood']
         new_gp.likelihood_gradient = dictionary['likelihood_gradient']
         new_gp.training_labels_np = np.hstack(new_gp.training_labels)
+        new_gp.n_envs_prev = dictionary['n_envs_prev']
 
         _global_training_data[new_gp.name] = new_gp.training_data
         _global_training_labels[new_gp.name] = new_gp.training_labels_np
