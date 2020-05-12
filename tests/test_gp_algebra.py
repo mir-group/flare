@@ -190,87 +190,13 @@ def test_ky_mat(params):
             "implementation is wrong with case {i}"
 
 
-def test_force_block_update(params):
+def test_ky_mat_update(params):
     """
     check ky_mat_update function
     """
 
-    hyps, name, kernel, cutoffs, _, _, _, energy_noise = params
-
-    # prepare old data set as the starting point
-    n = 5
-    training_data = flare.gp_algebra._global_training_data[name]
-    training_structures = flare.gp_algebra._global_training_structures[name]
-    flare.gp_algebra._global_training_data['old'] = training_data[:n]
-    flare.gp_algebra._global_training_structures['old'] = training_structures
-
-    func = [get_Ky_mat, update_force_block]
-
-    # get the reference
-    ky_mat0 = func[0](hyps, name, kernel[0], kernel[2], kernel[3],
-                      energy_noise, cutoffs)
-    ky_mat_old = func[0](hyps, 'old', kernel[0], kernel[2], kernel[3],
-                         energy_noise, cutoffs)
-    force_block_ref = ky_mat0[:30, :30]
-
-    # update
-    force_block = func[1](ky_mat_old, n, hyps, name, kernel[0], cutoffs)
-    diff = (np.max(np.abs(force_block - force_block_ref)))
-
-    assert (diff <= 1e-15), "update function is wrong"
-
-    # parallel version
-    force_block_par = func[1](ky_mat_old, n, hyps, name, kernel[0], cutoffs,
-                              n_cpus=2, n_sample=20)
-    diff = (np.max(np.abs(force_block_par - force_block_ref)))
-
-    assert (diff == 0), "parallel implementation is wrong"
-
-
-def test_energy_block_update(params):
-    """
-    check ky_mat_update function
-    """
-
-    hyps, name, kernel, cutoffs, _, _, _, energy_noise = params
-
-    # prepare old data set as the starting point
-    n = 5
-    training_data = flare.gp_algebra._global_training_data[name]
-    training_structures = flare.gp_algebra._global_training_structures[name]
-    flare.gp_algebra._global_training_data['old'] = training_data[:n]
-    flare.gp_algebra._global_training_structures['old'] = training_structures
-
-    func = [get_Ky_mat, update_energy_block]
-
-    # get the reference
-    ky_mat0 = func[0](hyps, name, kernel[0], kernel[2], kernel[3],
-                      energy_noise, cutoffs)
-    ky_mat_old = func[0](hyps, 'old', kernel[0], kernel[2], kernel[3],
-                         energy_noise, cutoffs)
-    energy_block_ref = ky_mat0[30:, 30:]
-
-    # update
-    energy_block = func[1](ky_mat_old, n, hyps, name, kernel[0], energy_noise,
-                           cutoffs)
-    diff = (np.max(np.abs(energy_block - energy_block_ref)))
-
-    assert (diff <= 1e-15), "update function is wrong"
-
-    # parallel version
-    energy_block_par = func[1](ky_mat_old, n, hyps, name, kernel[0],
-                               energy_noise, cutoffs, n_cpus=2, n_sample=20)
-    diff = (np.max(np.abs(energy_block_par - energy_block_ref)))
-
-    assert (diff == 0), "parallel implementation is wrong"
-
-
-def test_force_energy_block_update(params):
-    """
-    check ky_mat_update function
-    """
-
-    hyps, name, kernel, cutoffs, _, _, _, energy_noise = params
+    hyps, name, kernel, cutoffs, \
+        kernel_m, hyps_list, hyps_mask_list, energy_noise = params
 
     # prepare old data set as the starting point
     n = 5
@@ -280,61 +206,24 @@ def test_force_energy_block_update(params):
     flare.gp_algebra._global_training_data['old'] = training_data[:n]
     flare.gp_algebra._global_training_structures['old'] = \
         training_structures[:s]
-
-    func = [get_Ky_mat, update_force_energy_block]
+    func = [get_Ky_mat, get_ky_mat_update]
 
     # get the reference
     ky_mat0 = func[0](hyps, name, kernel[0], kernel[2], kernel[3],
                       energy_noise, cutoffs)
     ky_mat_old = func[0](hyps, 'old', kernel[0], kernel[2], kernel[3],
                          energy_noise, cutoffs)
-    energy_block_ref = ky_mat0[:30, 30:32]
 
     # update
-    energy_block = func[1](ky_mat_old, n, hyps, name, kernel[3], energy_noise,
-                           cutoffs)
-    diff = (np.max(np.abs(energy_block - energy_block_ref)))
-
-    assert (diff <= 1e-15), "update function is wrong"
-
-    # parallel version
-    energy_block_par = func[1](ky_mat_old, n, hyps, name, kernel[3],
-                               energy_noise, cutoffs, n_cpus=2, n_sample=20)
-    diff = (np.max(np.abs(energy_block_par - energy_block_ref)))
-
-    assert (diff == 0), "parallel implementation is wrong"
-
-
-def test_ky_mat_update(params):
-    """
-    check ky_mat_update function
-    """
-
-    hyps, name, kernel, cutoffs, \
-        kernel_m, hyps_list, hyps_mask_list, _ = params
-
-    # prepare old data set as the starting point
-    n = 5
-    training_data = flare.gp_algebra._global_training_data[name]
-    flare.gp_algebra._global_training_data['old'] = training_data[:n]
-    training_labels = flare.gp_algebra._global_training_labels[name]
-    flare.gp_algebra._global_training_labels['old'] = training_labels[:n]
-
-    func = [get_force_block, get_ky_mat_update]
-
-    # get the reference
-    ky_mat0 = func[0](hyps, name, kernel[0], cutoffs)
-    ky_mat_old = func[0](hyps, 'old', kernel[0], cutoffs)
-
-    # update
-    ky_mat = func[1](ky_mat_old, hyps, name, kernel[0], cutoffs)
+    ky_mat = func[1](ky_mat_old, n, hyps, name, kernel[0], kernel[2],
+                     kernel[3], energy_noise, cutoffs)
     diff = (np.max(np.abs(ky_mat-ky_mat0)))
 
     assert (diff <= 1e-15), "update function is wrong"
 
     # parallel version
-    ky_mat = func[1](ky_mat_old, hyps, name, kernel[0], cutoffs, n_cpus=2,
-                     n_sample=20)
+    ky_mat = func[1](ky_mat_old, n, hyps, name, kernel[0], kernel[2],
+                     kernel[3], energy_noise, cutoffs, n_cpus=2, n_sample=20)
     diff = (np.max(np.abs(ky_mat-ky_mat0)))
 
     assert (diff == 0), "parallel implementation is wrong"
@@ -346,105 +235,32 @@ def test_ky_mat_update(params):
         hyps_mask = hyps_mask_list[i]
 
         if hyps_mask is None:
-            ker = kernel[0]
+            ker1 = kernel[0]
+            ker2 = kernel[2]
+            ker3 = kernel[3]
         else:
-            ker = kernel_m[0]
+            ker1 = kernel_m[0]
+            ker2 = kernel_m[2]
+            ker3 = kernel_m[3]
 
         # serial implementation
-        ky_mat = func[1](ky_mat_old, hyps, name,
-                         ker, cutoffs, hyps_mask)
+        ky_mat = func[1](ky_mat_old, n, hyps, name, ker1, ker2, ker3,
+                         energy_noise, cutoffs, hyps_mask)
         diff = (np.max(np.abs(ky_mat-ky_mat0)))
         assert (diff < 1e-12), "multi hyps parameter implementation is wrong"
 
         # parallel implementation
-        ky_mat = func[1](ky_mat_old, hyps, name,
-                         ker, cutoffs,
-                         hyps_mask, n_cpus=2, n_sample=20)
+        ky_mat = func[1](ky_mat_old, n, hyps, name, ker1, ker2, ker3,
+                         energy_noise, cutoffs, hyps_mask, n_cpus=2,
+                         n_sample=20)
         diff = (np.max(np.abs(ky_mat-ky_mat0)))
         assert (diff < 1e-12), "multi hyps parameter parallel "\
             "implementation is wrong"
 
 
-def test_energy_energy_vector(params):
-
-    hyps, name, kernel, cutoffs, kernel_m, _, hyps_mask_list, _ = params
-
-    test_point = get_tstp()
-
-    size = len(flare.gp_algebra._global_training_structures[name])
-
-    # test the parallel implementation for multihyps
-    vec = energy_energy_vector(name, kernel[2], test_point, hyps, cutoffs)
-
-    vec_par = \
-        energy_energy_vector(name, kernel[2], test_point, hyps, cutoffs,
-                             n_cpus=2, n_sample=100)
-
-    assert (all(np.equal(vec, vec_par))), "parallel implementation is wrong"
-    assert (vec.shape[0] == size), f"{vec} {size}"
-
-
-def test_energy_force_vector(params):
-
-    hyps, name, kernel, cutoffs, kernel_m, _, hyps_mask_list, _ = params
-
-    test_point = get_tstp()
-
-    size = len(flare.gp_algebra._global_training_data[name])
-
-    # test the parallel implementation for multihyps
-    vec = energy_force_vector(name, kernel[3], test_point, hyps, cutoffs)
-
-    vec_par = \
-        energy_force_vector(name, kernel[3], test_point, hyps,
-                            cutoffs, n_cpus=2, n_sample=100)
-
-    assert (all(np.equal(vec, vec_par))), "parallel implementation is wrong"
-    assert (vec.shape[0] == size*3), f"{vec} {size}"
-
-
-def test_force_energy_vector(params):
-
-    hyps, name, kernel, cutoffs, kernel_m, _, hyps_mask_list, _ = params
-
-    test_point = get_tstp()
-
-    size = len(flare.gp_algebra._global_training_structures[name])
-
-    # test the parallel implementation for multihyps
-    vec = force_energy_vector(name, kernel[3], test_point, 1, hyps, cutoffs)
-
-    vec_par = \
-        force_energy_vector(name, kernel[3], test_point, 1, hyps,
-                            cutoffs, n_cpus=2, n_sample=100)
-
-    assert (all(np.equal(vec, vec_par))), "parallel implementation is wrong"
-    assert (vec.shape[0] == size), f"{vec} {size}"
-
-
-def test_force_force_vector(params):
-
-    hyps, name, kernel, cutoffs, kernel_m, _, hyps_mask_list, _ = params
-
-    test_point = get_tstp()
-
-    size = len(flare.gp_algebra._global_training_data[name])
-    print(size)
-
-    # test the parallel implementation for multihyps
-    vec = force_force_vector(name, kernel[0], test_point, 1, hyps, cutoffs)
-
-    vec_par = \
-        force_force_vector(name, kernel[0], test_point, 1, hyps,
-                           cutoffs, n_cpus=2, n_sample=100)
-
-    assert (all(np.equal(vec, vec_par))), "parallel implementation is wrong"
-    assert (vec.shape[0] == size*3), f"{vec} {size}"
-
-
 def test_kernel_vector(params):
 
-    hyps, name, kernel, cutoffs, kernel_m, _, hyps_mask_list, _ = params
+    hyps, name, kernel, cutoffs, _, _, _, _ = params
 
     test_point = get_tstp()
 
@@ -465,7 +281,7 @@ def test_kernel_vector(params):
 
 def test_en_kern_vec(params):
 
-    hyps, name, kernel, cutoffs, kernel_m, _, hyps_mask_list, _ = params
+    hyps, name, kernel, cutoffs, _, _, _, _ = params
 
     test_point = get_tstp()
 

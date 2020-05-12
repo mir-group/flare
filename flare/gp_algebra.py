@@ -542,31 +542,33 @@ def update_force_block(ky_mat_old: np.ndarray, n_envs_prev: int,
 
     # serial version
     if (n_cpus == 1):
-        ky_mat = np.zeros((size3, size3))
+        force_block = np.zeros((size3, size3))
         new_mat = \
             get_force_block_pack(hyps, name, 0, size, old_size, size, False,
                                  kernel, cutoffs, hyps_mask)
-        ky_mat[:, old_size3:] = new_mat
-        ky_mat[old_size3:, :] = new_mat.transpose()
+        force_block[:, old_size3:] = new_mat
+        force_block[old_size3:, :] = new_mat.transpose()
 
     # parallel version
     else:
         block_id, nbatch = partition_update(n_sample, size, old_size, n_cpus)
 
-        ky_mat = \
+        force_block = \
             parallel_matrix_construction(get_force_block_pack, hyps, name,
                                          kernel, cutoffs, hyps_mask,
                                          block_id, nbatch, size3, size3,
                                          mult, mult)
 
     # insert previous covariance matrix
-    ky_mat[:old_size3, :old_size3] = ky_mat_old[:old_size3, :old_size3]
+    force_block[:old_size3, :old_size3] = \
+        ky_mat_old[:old_size3, :old_size3]
 
     # add the noise parameter
     sigma_n, _, _ = obtain_noise_len(hyps, hyps_mask)
-    ky_mat[old_size3:, old_size3:] += sigma_n ** 2 * np.eye(size3-old_size3)
+    force_block[old_size3:, old_size3:] += \
+        sigma_n ** 2 * np.eye(size3-old_size3)
 
-    return ky_mat
+    return force_block
 
 
 def update_energy_block(ky_mat_old: np.ndarray, n_envs_prev: int,
@@ -583,31 +585,31 @@ def update_energy_block(ky_mat_old: np.ndarray, n_envs_prev: int,
 
     # serial version
     if (n_cpus == 1):
-        ky_mat = np.zeros((size, size))
+        energy_block = np.zeros((size, size))
         new_mat = \
             get_energy_block_pack(hyps, name, 0, size, old_size, size, False,
                                   kernel, cutoffs, hyps_mask)
-        ky_mat[:, old_size:] = new_mat
-        ky_mat[old_size:, :] = new_mat.transpose()
+        energy_block[:, old_size:] = new_mat
+        energy_block[old_size:, :] = new_mat.transpose()
 
     # parallel version
     else:
         block_id, nbatch = partition_update(n_sample, size, old_size, n_cpus)
 
-        ky_mat = \
+        energy_block = \
             parallel_matrix_construction(get_energy_block_pack, hyps, name,
                                          kernel, cutoffs, hyps_mask,
                                          block_id, nbatch, size, size,
                                          mult, mult)
 
     # insert previous covariance matrix
-    ky_mat[:old_size, :old_size] = ky_mat_old[-old_size:, -old_size:]
+    energy_block[:old_size, :old_size] = ky_mat_old[-old_size:, -old_size:]
 
     # add the noise parameter
-    ky_mat[old_size:, old_size:] += \
+    energy_block[old_size:, old_size:] += \
         (energy_noise ** 2) * np.eye(size - old_size)
 
-    return ky_mat
+    return energy_block
 
 
 def update_force_energy_block(ky_mat_old: np.ndarray, n_envs_prev: int,
@@ -677,42 +679,35 @@ def update_force_energy_block(ky_mat_old: np.ndarray, n_envs_prev: int,
     return force_energy_block
 
 
-# Assumes ky_mat_old is the previous force block.
-# TODO: Generalize to full covariance matrix.
-def get_ky_mat_update(ky_mat_old, hyps: np.ndarray, name: str, kernel,
-                      cutoffs=None, hyps_mask=None, n_cpus=1, n_sample=100):
+def get_ky_mat_update(ky_mat_old: np.ndarray, n_envs_prev: int,
+                      hyps: np.ndarray, name: str, force_kernel: Callable,
+                      energy_kernel: Callable, force_energy_kernel: Callable,
+                      energy_noise: float, cutoffs=None, hyps_mask=None,
+                      n_cpus=1, n_sample=100):
 
-    old_size3 = ky_mat_old.shape[0]
-    old_size = old_size3//3
-    mult = 3
-    size = len(_global_training_data[name])
-    size3 = 3 * size
+    n_envs = len(_global_training_data[name])
+    n_strucs = len(_global_training_structures[name])
+    size1 = n_envs * 3
+    size2 = n_strucs
+    ky_mat = np.zeros((size1 + size2, size1 + size2))
 
-    if (n_cpus is None):
-        n_cpus = mp.cpu_count()
+    force_block = \
+        update_force_block(ky_mat_old, n_envs_prev, hyps, name, force_kernel,
+                           cutoffs, hyps_mask, n_cpus, n_sample)
 
-    # serial version
-    if (n_cpus == 1):
-        ky_mat = np.zeros((size3, size3))
-        new_mat = \
-            get_force_block_pack(hyps, name, 0, size, old_size, size, False,
-                                 kernel, cutoffs, hyps_mask)
-        ky_mat[:, old_size3:] = new_mat
-        ky_mat[old_size3:, :] = new_mat.transpose()
+    energy_block = \
+        update_energy_block(ky_mat_old, n_envs_prev, hyps, name, energy_kernel,
+                            energy_noise, cutoffs, hyps_mask, n_cpus, n_sample)
 
-    # parallel version
-    else:
-        block_id, nbatch = partition_update(n_sample, size, old_size, n_cpus)
+    force_energy_block = \
+        update_force_energy_block(ky_mat_old, n_envs_prev, hyps, name,
+                                  force_energy_kernel, energy_noise, cutoffs,
+                                  hyps_mask, n_cpus, n_sample)
 
-        ky_mat = \
-            parallel_matrix_construction(get_force_block_pack, hyps, name,
-                                         kernel, cutoffs, hyps_mask,
-                                         block_id, nbatch, size3, size3,
-                                         mult, mult)
-
-    sigma_n, _, _ = obtain_noise_len(hyps, hyps_mask)
-    ky_mat[:old_size3, :old_size3] = ky_mat_old
-    ky_mat[old_size3:, old_size3:] += sigma_n ** 2 * np.eye(size3-old_size3)
+    ky_mat[0:size1, 0:size1] = force_block
+    ky_mat[size1:, size1:] = energy_block
+    ky_mat[0:size1, size1:] = force_energy_block
+    ky_mat[size1:, 0:size1] = force_energy_block.transpose()
 
     return ky_mat
 
