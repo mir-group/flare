@@ -26,6 +26,7 @@ from flare.mgp.utils import get_bonds, get_triplets, get_triplets_en, \
 from flare.mgp.splines_methods import PCASplines, CubicSpline
 from flare.util import Z_to_element, NumpyEncoder
 
+
 class MappedGaussianProcess:
     '''
     Build Mapped Gaussian Process (MGP)
@@ -91,6 +92,7 @@ class MappedGaussianProcess:
         # arg_dict = inspect.getargvalues(inspect.currentframe())[3]
         # del arg_dict['self'], arg_dict['GP']
         # self.__dict__.update(arg_dict)
+
         self.__dict__.update(grid_params)
 
         # if GP exists, the GP setup overrides the grid_params setup
@@ -637,7 +639,6 @@ class Map2body:
 
         return bond_means, bond_vars
 
-
     def _GenGrid_inner(self, name, s, e, bond_lengths,
                        env12, kernel_info):
 
@@ -654,7 +655,6 @@ class Map2body:
                                       env12, en_force_kernel,
                                       hyps, cutoffs, hyps_mask)
         return k12_v
-
 
     def build_map_container(self):
 
@@ -882,7 +882,8 @@ class Map3body:
 
         return grid_means, grid_vars
 
-    def _GenGrid_inner(self, name, s, e, bonds1, bonds2, bonds12, env12, kernel_info):
+    def _GenGrid_inner(self, name, s, e, bonds1, bonds2, bonds12, env12,
+                       kernel_info):
 
         '''
         Calculate kv segments of the given batch of training data for all grids
@@ -912,7 +913,7 @@ class Map3body:
             s, e = block
             chunk = e - s
             new_kv_file = np.zeros((chunk,
-                                    self.grid_num[0]*self.grid_num[1]+1,
+                                    self.grid_num[0] * self.grid_num[1] + 1,
                                     total_size))
             new_kv_file[:,0,0] = np.ones(chunk) * total_size
             for i in range(s, e):
