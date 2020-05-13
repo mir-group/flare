@@ -1,15 +1,15 @@
 import time
 import os
-import math
 import inspect
 import subprocess
+import pickle as pickle
 import numpy as np
 import multiprocessing as mp
 import json
 import warnings
 
 from copy import deepcopy
-import pickle as pickle
+from math import floor, ceil
 from scipy.linalg import solve_triangular
 from typing import List
 
@@ -593,7 +593,7 @@ class Map2body:
         else:
             bond_vars = None
 
-        env12 = AtomicEnvironment(self.bond_struc, 0, GP.cutoffs, GP.hyps_mask)
+        env12 = AtomicEnvironment(self.bond_struc, 0, GP.cutoffs)
 
         if (processes == 1):
             size = len(GP.training_data)
@@ -770,7 +770,7 @@ class Map3body:
         else:
             grid_vars = None
 
-        env12 = AtomicEnvironment(self.bond_struc, 0, GP.cutoffs, GP.hyps_mask)
+        env12 = AtomicEnvironment(self.bond_struc, 0, GP.cutoffs)
         size = len(GP.training_data)
 
         if processes == 1:
@@ -816,8 +816,8 @@ class Map3body:
 
                         # parallelize based on grids, since usually the number of
                         # the added training points are small
-                        ngrids = int(math.ceil(n12 / processes))
-                        nbatch = int(math.ceil(n12 / ngrids))
+                        ngrids = int(ceil(n12 / processes))
+                        nbatch = int(ceil(n12 / ngrids))
 
                         block_id = []
                         for ibatch in range(nbatch):
@@ -892,51 +892,64 @@ class Map3body:
 
         return grid_means, grid_vars
 
-        def _GenGrid_inner(self, name, s, e, bonds1, bonds2, bonds12, env12, kernel_info):
+    def _GenGrid_inner(self, name, s, e, bonds1, bonds2, bonds12, env12, kernel_info):
+        """
+        Loop over different parts of the training set. from element s to element e
 
-            if self.update:
-                raise NotImplementedError("the update function is not yet"
-                                          "implemented")
+        Args:
+            name: name of the gp instance
+            s: start index of the training data parition
+            e: end index of the training data parition
+            bonds1: list of bond to consider for edge center-1
+            bonds2: list of bond to consider for edge center-2
+            bonds12: list of bond to consider for edge 1-2
+            env12: AtomicEnvironment container of the triplet
+            kernel_info: return value of the get_3b_kernel
+        """
 
-            kernel, en_force_kernel, cutoffs, hyps, hyps_mask = kernel_info
+        if self.update:
+            raise NotImplementedError("the update function is not yet"
+                                      "implemented")
 
-            training_data = _global_training_data[name]
+        kernel, en_force_kernel, cutoffs, hyps, hyps_mask = kernel_info
 
-            ds = [1, 2, 3]
-            size = (e-s) * 3
+        training_data = _global_training_data[name]
 
-            nb12 = len(bonds12)
-            nb1 = len(bonds1)
-            nb2 = len(bonds2)
+        ds = [1, 2, 3]
+        size = (e-s) * 3
 
-            r1 = np.ones([nb1, nb2, nb12], dtype=np.float64)
-            r2 = np.ones([nb1, nb2, nb12], dtype=np.float64)
-            r12 = np.ones([nb1, nb2, nb12], dtype=np.float64)
-            for b12 in range(nb12):
-                for b1 in range(nb1):
-                    for b2 in range(nb2):
-                        r1[b1, b2, b12] = bonds1[b1]
-                        r2[b1, b2, b12] = bonds2[b2]
-                        r12[b1, b2, b12] = bonds12[b12]
+        nb12 = len(bonds12)
+        nb1 = len(bonds1)
+        nb2 = len(bonds2)
 
-            k_v = np.zeros([size, nb1, nb2, nb12])
+        r12 = np.tile(bonds12, (nb1, nb2, 1))
+        r1 = np.tile(bonds1, (nb2, nb12, 1))
+        r1 = np.moveaxis(r1, -1, 0)
+        r2 = np.tile(bonds2, (nb1, nb12, 1))
+        r2 = np.moveaxis(r2, -1, 1)
 
-            args = from_mask_to_args(hyps, hyps_mask, cutoffs)
+        k_v = [] # np.zeros([size, nb1, nb2, nb12])
 
-            if (hyps_mask is not None):
-                tbmfe = three_body_mc_force_en_sephyps
-            else:
-                tbmfe = three_body_mc_force_en
+        args = from_mask_to_args(hyps, hyps_mask, cutoffs)
 
-            for m_index in range(size):
-                x_2 = training_data[int(floor(m_index / 3))+s]
-                d_2 = ds[m_index % 3]
-                k_v[m_index, :, :, :] = tbmfe(x_2, r1, r2, r12,
-                                                env12.ctype, env12.etypes,
-                                                d_2, *args)
+        ctype = env12.ctype
+        etypes = env12.etypes
 
-            return k_v
+        if (hyps_mask is not None):
+            tbmfe = three_body_mc_force_en_sephyps
+        else:
+            tbmfe = three_body_mc_force_en
 
+        for m_index in range(size):
+            x_2 = training_data[int(floor(m_index / 3))+s]
+            d_2 = ds[m_index % 3]
+            k_v += [tbmfe(x_2, r1, r2, r12,
+                          ctype, etypes,
+                          d_2, *args)]
+
+        k_v = np.array(k_v, dtype=np.float64)
+
+        return k_v
 
 
     def build_map_container(self):
