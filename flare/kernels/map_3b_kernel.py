@@ -11,48 +11,6 @@ from flare.kernels.utils import from_mask_to_args, from_grad_to_mask
 from flare.gp_algebra import _global_training_data, _global_training_labels
 
 
-def _GenGrid_inner(name, s, e, bonds1, bonds2, bonds12, env12, kernel_info):
-
-    kernel, en_force_kernel, cutoffs, hyps, hyps_mask = kernel_info
-
-    training_data = _global_training_data[name]
-
-    ds = [1, 2, 3]
-    size = (e-s) * 3
-
-    nb12 = len(bonds12)
-    nb1 = len(bonds1)
-    nb2 = len(bonds2)
-
-    r1 = np.ones([nb1, nb2, nb12], dtype=np.float64)
-    r2 = np.ones([nb1, nb2, nb12], dtype=np.float64)
-    r12 = np.ones([nb1, nb2, nb12], dtype=np.float64)
-    for b12 in range(nb12):
-        for b1 in range(nb1):
-            for b2 in range(nb2):
-                r1[b1, b2, b12] = bonds1[b1]
-                r2[b1, b2, b12] = bonds2[b2]
-                r12[b1, b2, b12] = bonds12[b12]
-
-    k_v = np.zeros([size, nb1, nb2, nb12])
-
-    args = from_mask_to_args(hyps, hyps_mask, cutoffs)
-
-    if (hyps_mask is not None):
-        tbmfe = three_body_mc_force_en_sephyps
-    else:
-        tbmfe = three_body_mc_force_en
-
-    for m_index in range(size):
-        x_2 = training_data[int(floor(m_index / 3))+s]
-        d_2 = ds[m_index % 3]
-        k_v[m_index, :, :, :] = tbmfe(x_2, r1, r2, r12,
-                                        env12.ctype, env12.etypes,
-                                        d_2, *args)
-
-    return k_v
-
-
 def three_body_mc_force_en(env1: AtomicEnvironment, r1, r2, r12, c2, etypes2,
                            d1: int, hyps: 'ndarray', cutoffs: 'ndarray',
                            cutoff_func: Callable = cf.quadratic_cutoff) \
