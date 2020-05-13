@@ -80,7 +80,9 @@ class TrajectoryTrainer:
                  pre_train_atoms_per_element: dict = None,
                  train_atoms_per_element: dict = None,
                  predict_atoms_per_element: dict = None,
+                 train_checkpoint_interval: int = 1,
                  checkpoint_interval: int = 1,
+                 atom_checkpoint_interval: int = 100,
                  model_format: str = 'json'):
         """
         Class which trains a GP off of an AIMD trajectory, and generates
@@ -124,7 +126,12 @@ class TrajectoryTrainer:
             specified will be predicted as normal. This is useful for
             systems where you are most interested in a subset of elements.
             This will result in a faster but less exhaustive learning process.
-        :param checkpoint_interval: How often to write model after trainings
+        :param checkpoint_interval: Will be deprecated. Same as
+                            train_checkpoint_interval
+        :param train_checkpoint_interval: How often to write model after
+                        trainings
+        :param checkpoint_interval: How often to write model after atoms are
+            added (since atoms may be added without training)
         :param model_format: Format to write GP model to
         """
 
@@ -204,7 +211,10 @@ class TrajectoryTrainer:
             self.output = Output(output_name, always_flush=True)
         else:
             self.output = None
-        self.checkpoint_interval = checkpoint_interval
+        self.train_checkpoint_interval = train_checkpoint_interval or \
+                                         checkpoint_interval
+        self.atom_checkpoint_interval = atom_checkpoint_interval
+
         self.model_format = model_format
         self.output_name = output_name
 
@@ -332,7 +342,10 @@ class TrajectoryTrainer:
                                                            self.validate_ratio))
 
         # Loop through trajectory.
-        nsample = 0
+        cur_atoms_added_train = 0 # Track atoms added for training
+        cur_atoms_added_write = 0 # Track atoms added for writing
+        cur_trains_done_write = 0       # Track training done for writing
+
         for i, cur_frame in enumerate(self.frames[::self.skip]):
 
             if self.verbose >= 2:
@@ -419,21 +432,40 @@ class TrajectoryTrainer:
                         cur_frame, train_atoms=train_atoms,
                         uncertainties=pred_stds[train_atoms],
                         train=False)
-                    nsample += len(train_atoms)
+                    cur_atoms_added_train += len(train_atoms)
+                    cur_atoms_added_write += len(train_atoms)
                     # Re-train if number of sampled atoms is high enough
-                    if nsample >= self.min_atoms_per_train or (
+
+                    if cur_atoms_added_train >= self.min_atoms_per_train or (
                             i + 1) == train_frame:
                         if self.train_count < self.max_trains:
                             self.train_gp()
+                            cur_trains_done_write += 1
                         else:
                             self.gp.update_L_alpha()
-                        nsample = 0
+                        cur_atoms_added_train = 0
                     else:
                         self.gp.update_L_alpha()
 
-                    if self.checkpoint_interval \
-                            and self.train_count % self.checkpoint_interval == 0 \
-                            and self.model_format:
+
+                    # Loop to decide of a model should be written this
+                    # iteration
+                    will_write = False
+
+                    if self.train_checkpoint_interval and \
+                            cur_trains_done_write and\
+                            self.train_checkpoint_interval \
+                            % cur_trains_done_write == 0:
+                        will_write = True
+                        cur_trains_done_write = 0
+
+                    if self.atom_checkpoint_interval and cur_atoms_added_write\
+                       and self.atom_checkpoint_interval \
+                            % cur_atoms_added_write == 0:
+                        will_write = True
+                        cur_atoms_added_write = 0
+
+                    if self.model_format and will_write:
                         self.gp.write_model(f'{self.output_name}_checkpt',
                                             self.model_format)
 
@@ -476,10 +508,10 @@ class TrajectoryTrainer:
             self.output.write_to_log(f'\nAdding atom(s) {added_atoms}'
                                      ' to the training set.\n')
 
-        if uncertainties is None and not (uncertainties is []):
+        if uncertainties is None or len(uncertainties)!=0:
             uncertainties = frame.stds[train_atoms]
 
-        if self.verbose and not(uncertainties is []):
+        if self.verbose and len(uncertainties) != 0:
             self.output.write_to_log(f'Uncertainties: '
                                      f'{uncertainties}.\n',
                                      flush=True)

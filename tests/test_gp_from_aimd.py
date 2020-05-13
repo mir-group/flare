@@ -67,7 +67,7 @@ def test_load_trained_gp_and_run(methanol_gp):
                            gp=methanol_gp,
                            rel_std_tolerance=0,
                            abs_std_tolerance=0,
-                           skip=15)
+                           skip=15, train_checkpoint_interval=10)
 
     tt.run()
     for f in glob(f"gp_from_aimd*"):
@@ -127,7 +127,7 @@ def test_seed_and_run():
                            max_atoms_from_frame=4,
                            output_name='meth_test',
                            model_format='pickle',
-                           checkpoint_interval=1,
+                           train_checkpoint_interval=1,
                            pre_train_atoms_per_element={'H': 1})
 
     tt.run()
@@ -177,8 +177,8 @@ def test_pred_on_elements():
                            pre_train_seed_frames=[frames[-1]],
                            max_atoms_from_frame=4,
                            output_name='meth_test',
-                           model_format='',
-                           checkpoint_interval=50,
+                           model_format='json',
+                           atom_checkpoint_interval=50,
                            pre_train_atoms_per_element={'H': 1},
                            predict_atoms_per_element={'H': 0,'C': 1,'O': 0})
     # Set to predict only on Carbon after training on H to ensure errors are
@@ -193,6 +193,9 @@ def test_pred_on_elements():
     assert the_gp.training_statistics['envs_by_species']['C']>2
 
     for f in glob(f"meth_test*"):
+        remove(f)
+
+    for f in glob(f"gp_from_aimd*"):
         remove(f)
 
 
