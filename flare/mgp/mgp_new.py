@@ -849,7 +849,7 @@ class Map3body:
                         [size*3, len(bonds1), len(bonds2), len(bonds12)])
                     for ibatch in range(nbatch):
                         s, e = block_id[ibatch]
-                        k12_slice.append(pool.apply_async(self._GenGrid_inner,
+                        k12_slice.append(pool.apply_async(newGen,
                                                           args=(GP.name, s, e,
                                                                 bonds1, bonds2, bonds12,
                                                                 env12, kernel_info)))
