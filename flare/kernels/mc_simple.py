@@ -1977,6 +1977,40 @@ def many_body_mc_en_jit(q_array_1, q_array_2, c1, c2,
     return kern
 
 
+@njit
+def many_3body_mc_en_jit(m3b_array_1, m3b_array_2, c1, c2, 
+                         species1, species2, sig, ls):
+    """many-body many-element kernel between energy components accelerated
+    with Numba.
+
+    Args:
+        To be filled.
+
+    Return:
+        float: Value of the many-body kernel.
+    """
+    useful_species = np.array(
+        list(set(species1).union(set(species2))), dtype=np.int8)
+    n_species = len(useful_species)
+    kern = 0
+
+    if c1 == c2:
+        for s1 in range(n_species):
+            ind1_s1 = np.where(species1==useful_species[s1])[0][0]
+            ind2_s1 = np.where(species2==useful_species[s1])[0][0]
+            for s2 in range(s1, n_species):
+                ind1_s2 = np.where(species1==useful_species[s2])[0][0]
+                ind2_s2 = np.where(species2==useful_species[s2])[0][0]
+
+                q1 = m3b_array_1[ind1_s1, ind1_s2]
+                q2 = m3b_array_2[ind2_s1, ind2_s2]
+                q1q2diff = q1 - q2
+
+            kern += sig * sig * exp(-q1q2diff * q1q2diff / (2 * ls * ls))
+
+    return kern
+
+
 _str_to_kernel = {'two_body_mc': two_body_mc,
                   'two_body_mc_en': two_body_mc_en,
                   'two_body_mc_grad': two_body_mc_grad,

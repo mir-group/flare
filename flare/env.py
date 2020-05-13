@@ -5,7 +5,7 @@ import numpy as np
 from math import sqrt
 from numba import njit
 from flare.struc import Structure
-from flare.kernels.kernels import coordination_number, q_value_mc
+from flare.kernels.kernels import coordination_number, q_value_mc, q3_value_mc
 import flare.cutoffs as cf
 
 class AtomicEnvironment:
@@ -46,6 +46,8 @@ class AtomicEnvironment:
         self.etypes = etypes
 
         # if 2 cutoffs are given, create 3-body arrays
+        # because the bond lengths have ascent order, the 3b etypes can be 
+        # directly obtained from 2b etypes
         if len(self.cutoffs) > 1:
             bond_array_3, cross_bond_inds, cross_bond_dists, triplet_counts = \
                 get_3_body_arrays(bond_array_2, bond_positions_2, self.cutoffs[1])
@@ -57,14 +59,21 @@ class AtomicEnvironment:
         # if 3 cutoffs are given, create many-body arrays
         if len(self.cutoffs) > 2:
             self.q_array, self.q_neigh_array, self.q_neigh_grads, \
-                self.unique_species, self.etypes_mb = get_m_body_arrays(\
+                self.unique_species, self.etypes_mb = get_m2_body_arrays(\
                     self.positions, self.atom, self.cell, \
                     self.cutoffs[2], self.species, cf.quadratic_cutoff)
-        else:
-            self.q_array = None
-            self.q_neigh_array = None 
-            self.q_neigh_grads = None
-            self.etype_mb = None
+#        else:
+#            self.q_array = None
+#            self.q_neigh_array = None 
+#            self.q_neigh_grads = None
+#            self.etype_mb = None
+
+        # if 3 cutoffs are given, create many-3body arrays
+        if len(self.cutoffs) > 3:
+            self.m3b_array = get_m3_body_arrays(\
+                    self.positions, self.atom, self.cell, \
+                    self.cutoffs[3], self.species, cf.quadratic_cutoff)
+
 
 
     def as_dict(self):
@@ -288,8 +297,8 @@ def get_3_body_arrays(bond_array_2, bond_positions_2, cutoff_3: float):
 
 
 @njit
-def get_m_body_arrays(positions, atom: int, cell, cutoff_mb: float, species, 
-    cutoff_func=cf.quadratic_cutoff):
+def get_m2_body_arrays(positions, atom: int, cell, cutoff: float, species, 
+                       cutoff_func=cf.quadratic_cutoff):
     # TODO: 
     # 1. need to deal with the conflict of cutoff functions if other funcs are used
     # 2. complete the docs of "Return"
@@ -303,7 +312,7 @@ def get_m_body_arrays(positions, atom: int, cell, cutoff_mb: float, species,
         atom (int): Index of the central atom of the local environment.
         cell (np.ndarray): 3x3 array whose rows are the Bravais lattice vectors of the
             cell.
-        cutoff_mb (float): 2-body cutoff radius.
+        cutoff (float): 2-body cutoff radius.
         species (np.ndarray): Numpy array of species represented by their atomic numbers.
 
     Return:
@@ -312,7 +321,7 @@ def get_m_body_arrays(positions, atom: int, cell, cutoff_mb: float, species,
     """
     # Get distances, positions, species and indexes of neighbouring atoms
     bond_array_mb, __, etypes, bond_inds = get_2_body_arrays(
-        positions, atom, cell, cutoff_mb, species)
+        positions, atom, cell, cutoff, species)
 
     species_list = np.array(list(set(species)), dtype=np.int8)
     n_bonds = len(bond_inds)
@@ -321,28 +330,54 @@ def get_m_body_arrays(positions, atom: int, cell, cutoff_mb: float, species,
     qs_neigh = np.zeros((n_bonds, n_specs), dtype=np.float64)
     q_grads = np.zeros((n_bonds, 3), dtype=np.float64)
 
+    q_func = coordination_number
     # get coordination number of center atom for each species
     for s in range(n_specs):
-        qs[s] = q_value_mc(bond_array_mb[:, 0], cutoff_mb, species_list[s], 
-            etypes, cutoff_func)
+        qs[s] = q_value_mc(bond_array_mb[:, 0], cutoff, species_list[s], 
+            etypes, q_func)
 
     # get coordination number of all neighbor atoms for each species
     for i in range(n_bonds):
         neigh_bond_array, _, neigh_etypes, _ = get_2_body_arrays(positions, 
-            bond_inds[i], cell, cutoff_mb, species)
+            bond_inds[i], cell, cutoff, species)
         for s in range(n_specs):
-            qs_neigh[i, s] = q_value_mc(neigh_bond_array[:, 0], cutoff_mb,
-                species_list[s], neigh_etypes, cutoff_func)
+            qs_neigh[i, s] = q_value_mc(neigh_bond_array[:, 0], cutoff,
+                species_list[s], neigh_etypes, q_func)
 
     # get grad from each neighbor atom
     for i in range(n_bonds):
         ri = bond_array_mb[i, 0]
         for d in range(3):
             ci = bond_array_mb[i, d+1]
-            _, q_grads[i, d] = coordination_number(ri, ci, cutoff_mb, 
-                cutoff_func)
+            _, q_grads[i, d] = q_func(ri, ci, cutoff, cutoff_func)
 
     return qs, qs_neigh, q_grads, species_list, etypes 
+
+@njit
+def get_m3_body_arrays(positions, atom: int, cell, cutoff: float, species, 
+                       cutoff_func=cf.quadratic_cutoff):
+
+    bond_array, __, etypes, bond_inds = \
+        get_2_body_arrays(positions, atom, cell, cutoff, species)
+
+    bond_array_m3b, cross_bond_inds, cross_bond_dists, triplet_counts = \
+        get_3_body_arrays(positions, bond_array, cutoff)
+
+    species_list = np.array(list(set(species)), dtype=np.int8)
+    n_species = len(species_list)
+    mb3_array = np.zeros((n_species, n_species))
+
+    q_func = coordination_number
+    for s1 in range(n_species):
+        ref_species_1 = species_list[s1]
+        for s2 in range(s1, n_species):
+            ref_species_2 = species_list[s2]
+            mb3_array[s1, s2] = q3_value_mc(bond_array_m3b[:, 0], 
+                cross_bond_inds, cross_bond_dists, triplet_counts,
+                cutoff, ref_species_1, ref_species_2, etypes, 
+                cutoff_func, q_func)
+
+    return mb3_array
 
 
 if __name__ == '__main__':

@@ -308,3 +308,43 @@ def mb_grad_helper_ls(q1, q2, qi, qj, sig, ls):
     dk1j = mb_grad_helper_ls_(q1jdiffsq, sig, ls)
 
     return dk12 + dkij + dki2 + dk1j
+
+
+@njit
+def q3_value_mc(distances, cross_bond_inds, cross_bond_dists, triplets,
+                r_cut, ref_species_1, ref_species_2, 
+                species, cutoff_func, q_func=coordination_number):
+    """Compute value of many-body many components descriptor based
+    on distances of atoms in the local many-body environment.
+
+    Args:
+        distances (np.ndarray): distances between atoms i and j
+        r_cut (float): cutoff hyperparameter
+        ref_species (int): species to consider to compute the contribution
+        species (np.ndarray): atomic species of neighbours
+        cutoff_func (callable): cutoff function
+        q_func (callable): many-body pairwise descrptor function
+
+    Return:
+        float: the value of the many-body descriptor
+    """
+
+    q = 0.0
+    n_bonds = len(distances)
+    for m in range(n_bonds):
+        if species[m] == ref_species_1:
+            q1, _ = q_func(distances[m], 0, r_cut, cutoff_func)
+
+            for n in range(triplets[m]):
+                if species[m] == ref_species_2:
+                    ind1 = cross_bond_inds[m, m + n + 1]
+                    q2, _ = q_func(distances[ind1], 0, r_cut, cutoff_func)
+    
+                    r3 = cross_bond_dists[m, m + n + 1]
+                    q3, _ = q_func(r3, 0, r_cut, cutoff_func)
+
+                    q += q1 * q2 * q3
+
+    return q
+
+
