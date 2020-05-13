@@ -460,7 +460,7 @@ class Map2body:
         generate grid for each cos angle, used to parallelize grid generation
         '''
 
-        kernel, efk, cutoffs, hyps, hyps_mask = kernel_info
+        kernel, ek, efk, cutoffs, hyps, hyps_mask = kernel_info
         size = e - s
         k12_v = np.zeros([len(bond_lengths), size*3])
         for b, r in enumerate(bond_lengths):
@@ -635,7 +635,7 @@ class Map3body:
         '''
         
         # ------ get 3body kernel info ------
-        kernel, efk, cutoffs, hyps, hyps_mask = get_3bkernel(GP)
+        kernel, ek, efk, cutoffs, hyps, hyps_mask = get_3bkernel(GP)
 
         # ------ construct grids ------
         nop = self.grid_num[0]
@@ -696,7 +696,7 @@ class Map3body:
         generate grid for each cos_angle, used to parallelize grid generation
         '''
 
-        kernel, efk, cutoffs, hyps, hyps_mask = kernel_info
+        kernel, ek, efk, cutoffs, hyps, hyps_mask = kernel_info
         training_data = gp_algebra._global_training_data[name]
         # open saved k vector file, and write to new file
         size = (e-s)*3

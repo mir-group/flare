@@ -191,6 +191,51 @@ def get_gp(bodies, kernel_type='mc', multihyps=True) -> GaussianProcess:
     return gaussian
 
 
+def get_force_gp(bodies, kernel_type='mc', multihyps=True) -> GaussianProcess:
+    """Returns a GP instance with a two-body numba-based kernel"""
+    print("\nSetting up...\n")
+
+    # params
+    cell = np.diag(np.array([1, 1, 1.5]))
+    unique_species = [2, 1]
+    cutoffs = np.array([0.8, 0.8])
+    noa = 5
+
+    nbond = 0
+    ntriplet = 0
+    prefix = bodies
+    if ('2' in bodies or 'two' in bodies):
+        nbond = 1
+    if ('3' in bodies or 'three' in bodies):
+        ntriplet = 1
+
+    hyps, hm, _ = generate_hm(nbond, ntriplet, multihyps=multihyps)
+
+    # create test structure
+    test_structure, forces = get_random_structure(cell, unique_species,
+                                                  noa)
+    energy = 3.14
+
+    hl = hm['hyps_label']
+    if (multihyps is False):
+        hm = None
+
+    # test update_db
+    gaussian = \
+        GaussianProcess(kernel_name=f'{prefix}{kernel_type}',
+                        hyps=hyps,
+                        hyp_labels=hl,
+                        cutoffs=cutoffs, multihyps=multihyps, hyps_mask=hm,
+                        parallel=False, n_cpus=1)
+    gaussian.update_db(test_structure, forces)
+    gaussian.check_L_alpha()
+
+    print('alpha:')
+    print(gaussian.alpha)
+
+    return gaussian
+
+
 def get_params():
     parameters = {'unique_species': [2, 1],
                   'cutoff': 0.8,
