@@ -20,7 +20,8 @@ from flare.struc import Structure
 from flare.gp_algebra import get_like_from_mats, get_neg_like_grad, \
     force_force_vector, energy_force_vector, get_force_block, \
     get_ky_mat_update, _global_training_data, _global_training_labels, \
-    _global_training_structures, _global_energy_labels
+    _global_training_structures, _global_energy_labels, get_Ky_mat, \
+    get_kernel_vector, en_kern_vec
 
 from flare.kernels.utils import str_to_kernel_set, from_mask_to_args
 from flare.util import NumpyEncoder
@@ -147,6 +148,7 @@ class GaussianProcess:
         self.energy_labels = []  # Energies of training structures
         self.energy_labels_np = np.empty(0, )
         self.energy_noise = energy_noise
+        self.all_labels = np.empty(0, )
 
         # Parameters set during training
         self.ky_mat = None
@@ -385,6 +387,10 @@ class GaussianProcess:
             _global_training_structures[self.name] = self.training_structures
             _global_energy_labels[self.name] = self.energy_labels_np
 
+        # update list of all labels
+        self.all_labels = np.concatenate((self.training_labels_np,
+                                          self.energy_labels_np))
+
     def add_one_env(self, env: AtomicEnvironment,
                     force, train: bool = False, **kwargs):
         """Add a single local environment to the training set of the GP.
@@ -403,6 +409,10 @@ class GaussianProcess:
         self.training_labels_np = np.hstack(self.training_labels)
         _global_training_data[self.name] = self.training_data
         _global_training_labels[self.name] = self.training_labels_np
+
+        # update list of all labels
+        self.all_labels = np.concatenate((self.training_labels_np,
+                                          self.energy_labels_np))
 
         if train:
             self.train(**kwargs)
@@ -527,9 +537,10 @@ class GaussianProcess:
         _global_training_labels[self.name] = self.training_labels_np
 
         k_v = \
-            force_force_vector(self.name, self.kernel, x_t, d, self.hyps,
-                               cutoffs=self.cutoffs, hyps_mask=self.hyps_mask,
-                               n_cpus=n_cpus, n_sample=self.n_sample)
+            get_kernel_vector(self.name, self.kernel, self.energy_force_kernel,
+                              x_t, d, self.hyps, cutoffs=self.cutoffs,
+                              hyps_mask=self.hyps_mask, n_cpus=n_cpus,
+                              n_sample=self.n_sample)
 
         # Guarantee that alpha is up to date with training set
         self.check_L_alpha()
@@ -563,10 +574,11 @@ class GaussianProcess:
         _global_training_data[self.name] = self.training_data
         _global_training_labels[self.name] = self.training_labels_np
 
-        k_v = energy_force_vector(self.name, self.energy_force_kernel,
-                                  x_t, self.hyps, cutoffs=self.cutoffs,
-                                  hyps_mask=self.hyps_mask, n_cpus=n_cpus,
-                                  n_sample=self.n_sample)
+        k_v = en_kern_vec(self.name, self.energy_force_kernel,
+                          self.energy_kernel,
+                          x_t, self.hyps, cutoffs=self.cutoffs,
+                          hyps_mask=self.hyps_mask, n_cpus=n_cpus,
+                          n_sample=self.n_sample)
 
         pred_mean = np.matmul(k_v, self.alpha)
 
@@ -592,10 +604,11 @@ class GaussianProcess:
         _global_training_labels[self.name] = self.training_labels_np
 
         # get kernel vector
-        k_v = energy_force_vector(self.name, self.energy_force_kernel,
-                                  x_t, self.hyps, cutoffs=self.cutoffs,
-                                  hyps_mask=self.hyps_mask, n_cpus=n_cpus,
-                                  n_sample=self.n_sample)
+        k_v = en_kern_vec(self.name, self.energy_force_kernel,
+                          self.energy_kernel,
+                          x_t, self.hyps, cutoffs=self.cutoffs,
+                          hyps_mask=self.hyps_mask, n_cpus=n_cpus,
+                          n_sample=self.n_sample)
 
         # get predictive mean
         pred_mean = np.matmul(k_v, self.alpha)
@@ -619,25 +632,28 @@ class GaussianProcess:
         """
 
         _global_training_data[self.name] = self.training_data
+        _global_training_structures[self.name] = self.training_structures
         _global_training_labels[self.name] = self.training_labels_np
+        _global_energy_labels[self.name] = self.energy_labels_np
 
         ky_mat = \
-            get_force_block(self.hyps, self.name, self.kernel,
-                            cutoffs=self.cutoffs, hyps_mask=self.hyps_mask,
-                            n_cpus=self.n_cpus, n_sample=self.n_sample)
+            get_Ky_mat(self.hyps, self.name, self.kernel,
+                       self.energy_kernel, self.energy_force_kernel,
+                       self.energy_noise,
+                       cutoffs=self.cutoffs, hyps_mask=self.hyps_mask,
+                       n_cpus=self.n_cpus, n_sample=self.n_sample)
 
         l_mat = np.linalg.cholesky(ky_mat)
         l_mat_inv = np.linalg.inv(l_mat)
         ky_mat_inv = l_mat_inv.T @ l_mat_inv
-        alpha = np.matmul(ky_mat_inv, self.training_labels_np)
+        alpha = np.matmul(ky_mat_inv, self.all_labels)
 
         self.ky_mat = ky_mat
         self.l_mat = l_mat
         self.alpha = alpha
         self.ky_mat_inv = ky_mat_inv
 
-        self.likelihood = get_like_from_mats(ky_mat, l_mat,
-                                             alpha, self.name)
+        self.likelihood = get_like_from_mats(ky_mat, l_mat, alpha, self.name)
         self.n_envs_prev = len(self.training_data)
 
     def update_L_alpha(self):
@@ -668,7 +684,7 @@ class GaussianProcess:
         l_mat = np.linalg.cholesky(ky_mat)
         l_mat_inv = np.linalg.inv(l_mat)
         ky_mat_inv = l_mat_inv.T @ l_mat_inv
-        alpha = np.matmul(ky_mat_inv, self.training_labels_np)
+        alpha = np.matmul(ky_mat_inv, self.all_labels)
 
         self.ky_mat = ky_mat
         self.l_mat = l_mat
@@ -725,6 +741,14 @@ class GaussianProcess:
 
         out_dict['training_data'] = [env.as_dict() for env in
                                      self.training_data]
+
+        # Write training structures (which are just list of environments)
+        out_dict['training_structures'] = []
+        for n, env_list in enumerate(self.training_structures):
+            out_dict['training_structures'].append([])
+            for env_curr in env_list:
+                out_dict['training_structures'][n].append(env_curr.as_dict())
+
         # Remove the callables
         for key in ['kernel', 'kernel_grad', 'energy_kernel',
                     'energy_force_kernel']:
@@ -760,8 +784,20 @@ class GaussianProcess:
         # Save time by attempting to load in computed attributes
         new_gp.training_data = [AtomicEnvironment.from_dict(env) for env in
                                 dictionary['training_data']]
+
+        # Reconstruct training structures.
+        new_gp.training_structures = []
+        for n, env_list in enumerate(dictionary['training_structures']):
+            new_gp.training_structures.append([])
+            for env_curr in env_list:
+                new_gp.training_structures[n].append(
+                    AtomicEnvironment.from_dict(env_curr))
+
         new_gp.training_labels = deepcopy(dictionary['training_labels'])
         new_gp.training_labels_np = deepcopy(dictionary['training_labels_np'])
+        new_gp.energy_labels = deepcopy(dictionary['energy_labels'])
+        new_gp.energy_labels_np = deepcopy(dictionary['energy_labels_np'])
+        new_gp.all_labels = deepcopy(dictionary['all_labels'])
 
         new_gp.likelihood = dictionary['likelihood']
         new_gp.likelihood_gradient = dictionary['likelihood_gradient']
@@ -769,7 +805,9 @@ class GaussianProcess:
         new_gp.n_envs_prev = dictionary['n_envs_prev']
 
         _global_training_data[new_gp.name] = new_gp.training_data
+        _global_training_structures[new_gp.name] = new_gp.training_structures
         _global_training_labels[new_gp.name] = new_gp.training_labels_np
+        _global_energy_labels[new_gp.name] = new_gp.energy_labels_np
 
         # Save time by attempting to load in computed attributes
         if len(new_gp.training_data) > 5000:

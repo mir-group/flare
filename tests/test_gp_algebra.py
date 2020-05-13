@@ -289,12 +289,11 @@ def test_en_kern_vec(params):
     size2 = len(flare.gp_algebra._global_training_structures[name])
 
     # test the parallel implementation for multihyps
-    vec = en_kern_vec(name, kernel[3], kernel[2], test_point, 1,
-                      hyps, cutoffs)
+    vec = en_kern_vec(name, kernel[3], kernel[2], test_point, hyps, cutoffs)
 
     vec_par = \
-        en_kern_vec(name, kernel[3], kernel[2], test_point, 1, hyps,
-                    cutoffs, n_cpus=2, n_sample=100)
+        en_kern_vec(name, kernel[3], kernel[2], test_point, hyps, cutoffs,
+                    n_cpus=2, n_sample=100)
 
     assert (all(np.equal(vec, vec_par))), "parallel implementation is wrong"
     assert (vec.shape[0] == size1 * 3 + size2)

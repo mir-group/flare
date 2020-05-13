@@ -933,7 +933,7 @@ def get_kernel_vector(name, force_force_kernel: Callable,
     return kernel_vector
 
 
-def en_kern_vec(name, energy_force_kernel, energy_energy_kernel, x, d_1, hyps,
+def en_kern_vec(name, energy_force_kernel, energy_energy_kernel, x, hyps,
                 cutoffs=None, hyps_mask=None, n_cpus=1, n_sample=100):
 
     size1 = len(_global_training_data[name])
@@ -1106,7 +1106,9 @@ def get_like_from_mats(ky_mat, l_mat, alpha, name):
     :return: float, likelihood
     """
     # catch linear algebra errors
-    labels = _global_training_labels[name]
+    force_labels = _global_training_labels[name]
+    energy_labels = _global_energy_labels[name]
+    labels = np.concatenate((force_labels, energy_labels))
 
     # calculate likelihood
     like = (-0.5 * np.matmul(labels, alpha) -

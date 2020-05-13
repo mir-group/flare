@@ -48,11 +48,11 @@ def all_gps() -> GaussianProcess:
                             multihyps=multihyps, hyps_mask=hm,
                             parallel=False, n_cpus=1)
 
-        test_structure, forces = get_random_structure(np.eye(3),
-                                                      [1, 2],
-                                                      3)
+        test_structure, forces = \
+            get_random_structure(np.eye(3), [1, 2], 3)
+        energy = 3.14
 
-        gp_dict[multihyps].update_db(test_structure, forces)
+        gp_dict[multihyps].update_db(test_structure, forces, energy=energy)
 
     yield gp_dict
     del gp_dict
@@ -89,11 +89,11 @@ class TestDataUpdating():
         oldsize = len(test_gp.training_data)
 
         # add structure and forces to db
-        test_structure, forces = get_random_structure(params['cell'],
-                                                      params['unique_species'],
-                                                      params['noa'])
-
-        test_gp.update_db(test_structure, forces)
+        test_structure, forces = \
+            get_random_structure(params['cell'], params['unique_species'],
+                                 params['noa'])
+        energy = 3.14
+        test_gp.update_db(test_structure, forces, energy=energy)
 
         assert (len(test_gp.training_data) == params['noa']+oldsize)
         assert (len(test_gp.training_labels_np) == (params['noa']+oldsize)*3)
@@ -224,11 +224,10 @@ class TestAlgebra():
         test_gp.n_cpus = n_cpus
 
         test_structure, forces = \
-            get_random_structure(params['cell'],
-                                 params['unique_species'],
-                                 2)
+            get_random_structure(params['cell'], params['unique_species'], 2)
+        energy = 3.14                 
         test_gp.check_L_alpha()
-        test_gp.update_db(test_structure, forces)
+        test_gp.update_db(test_structure, forces, energy=energy)
         test_gp.update_L_alpha()
 
         # compare results with set_L_alpha
@@ -352,9 +351,9 @@ def test_training_statistics():
     :return:
     """
 
-    test_structure, forces = get_random_structure(np.eye(3),
-                                                  ['H', 'Be'],
-                                                  10)
+    test_structure, forces = \
+        get_random_structure(np.eye(3), ['H', 'Be'], 10)
+    energy = 3.14
 
     gp = GaussianProcess(kernel_name='2', cutoffs=[10])
 
@@ -364,7 +363,7 @@ def test_training_statistics():
     assert len(data['species']) == 0
     assert len(data['envs_by_species']) == 0
 
-    gp.update_db(test_structure, forces)
+    gp.update_db(test_structure, forces, energy=energy)
 
     data = gp.training_statistics
 

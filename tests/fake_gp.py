@@ -185,6 +185,9 @@ def get_gp(bodies, kernel_type='mc', multihyps=True) -> GaussianProcess:
     gaussian.update_db(test_structure, forces, energy=energy)
     gaussian.check_L_alpha()
 
+    print('alpha:')
+    print(gaussian.alpha)
+
     return gaussian
 
 
