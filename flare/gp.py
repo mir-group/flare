@@ -172,13 +172,16 @@ class GaussianProcess:
             while (self.name in _global_training_labels and count<100):
                 time.sleep(random())
                 self.name = f'{base}_{count}'
-                print(f"try to rename the gp instance to {self.name}")
+                print("Specified GP name is present in global memory; "
+                      "Attempting to rename the "
+                      f"GP instance to {self.name}")
                 count += 1
             if (self.name in _global_training_labels):
                 milliseconds = int(round(time.time() * 1000)%10000000)
                 self.name = f"{base}_{milliseconds}"
-                print(f"try to rename the gp instance to {self.name}")
-            print(f"final name of the gp instance is {self.name}")
+                print("Specified GP name still present in global memory: "
+                      f"renaming the gp instance to {self.name}")
+            print(f"Final name of the gp instance is {self.name}")
 
         assert (self.name not in _global_training_labels), \
                 f"the gp instance name, {self.name} is used"
