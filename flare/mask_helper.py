@@ -296,7 +296,7 @@ class HyperParameterMasking():
                     ele2 = self.all_group_names['specie'][j]
                     if (random):
                         self.define_group(group_type, f'{group_type}{tid}',
-                                          [ele1, ele2], parameters=random(2))
+                                          [ele1, ele2], parameters=np.random.random(2))
                     else:
                         self.define_group(group_type, f'{group_type}{tid}',
                                           [ele1, ele2],
@@ -313,7 +313,7 @@ class HyperParameterMasking():
                         ele3 = self.all_group_names['specie'][k]
                         if (random):
                             self.define_group(group_type, f'{group_type}{tid}',
-                                              [ele1, ele2, ele3], parameters=random(2))
+                                              [ele1, ele2, ele3], parameters=np.random.random(2))
                         else:
                             self.define_group(group_type, f'{group_type}{tid}',
                                               [ele1, ele2, ele3],
