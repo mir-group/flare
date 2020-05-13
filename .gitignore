@@ -46,3 +46,4 @@ test_files/qe_output_*.out
 /tests/*.log
 /tests/POSCAR*
 .idea/
+.coverage
