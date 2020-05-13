@@ -71,9 +71,8 @@ def three_body_mc_force_en(env1: AtomicEnvironment, r1, r2, r12, c2, etypes2,
                                       d1, sig, ls, r_cut, cutoff_func) / 3
 
 def three_body_mc_force_en_sephyps(env1, r1, r2, r12, c2, etypes2,
-                                   d1, cutoff_2b, cutoff_3b, nspec, spec_mask,
+                                   d1, cutoffs, nspec, spec_mask,
                                    nbond, bond_mask, ntriplet, triplet_mask,
-                                   ncut3b, cut3b_mask,
                                    sig2, ls2, sig3, ls3,
                                    cutoff_func=cf.quadratic_cutoff) -> float:
 
@@ -85,7 +84,7 @@ def three_body_mc_force_en_sephyps(env1, r1, r2, r12, c2, etypes2,
     ttype = triplet_mask[nspec * nspec * bc1 + nspec*bc2 + bc3]
     ls = ls3[ttype]
     sig = sig3[ttype]
-    r_cut = cutoff_3b
+    r_cut = cutoffs[1]
 
     return three_body_mc_force_en_jit(env1.bond_array_3, env1.ctype,
                                       env1.etypes,
