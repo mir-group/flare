@@ -65,7 +65,7 @@ def test_init(bodies, multihyps, all_mgp, all_gp):
     gp_model = all_gp[f'{bodies}{multihyps}']
 
     grid_num_2 = 64
-    grid_num_3 = 20
+    grid_num_3 = 25
     lower_cut = 0.01
     two_cut = gp_model.cutoffs[0]
     three_cut = gp_model.cutoffs[1]
@@ -80,9 +80,9 @@ def test_init(bodies, multihyps, all_mgp, all_gp):
     # grid parameters
     blist = []
     if ('2' in bodies):
-        blist+= [2]
+        blist += [2]
     if ('3' in bodies):
-        blist+= [3]
+        blist += [3]
     train_size = len(gp_model.training_data)
     grid_params = {'bodies': blist,
                    'cutoffs':gp_model.cutoffs,
