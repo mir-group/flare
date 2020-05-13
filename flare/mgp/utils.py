@@ -37,7 +37,7 @@ def get_2bkernel(GP):
                 ori_hyps[hm[i]]=h
         else:
             ori_hyps = original_hyps
-        n2b = o_hyps_mask['nbond']
+        n2b = o_hyps_mask.get('nbond', 0)
         hyps = np.hstack([ori_hyps[:n2b*2], ori_hyps[-1]])
         hyps_mask = {'nbond':n2b, 'ntriplet':0,
               'nspec':o_hyps_mask['nspec'],
@@ -73,9 +73,9 @@ def get_3bkernel(GP):
                 ori_hyps[hm[i]]=h
         else:
             ori_hyps = original_hyps
-        n2b = o_hyps_mask['nbond']
-        n3b = o_hyps_mask['ntriplet']
-        hyps = ori_hyps[n2b*2:]
+        n2b = o_hyps_mask.get('nbond', 0)
+        n3b = o_hyps_mask.get('ntriplet', 0)
+        hyps = np.hstack([ori_hyps[n2b*2:n2b*2+n3b*2], ori_hyps[-1]])
         hyps_mask = {'ntriplet':n3b,'nbond':0,
                 'nspec':o_hyps_mask['nspec'],
                 'spec_mask':o_hyps_mask['spec_mask'],
