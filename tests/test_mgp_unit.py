@@ -178,8 +178,8 @@ def test_predict(all_gp, all_mgp, bodies, multihyps):
     gp_pred_x = gp_model.predict(test_envi, 1)
     mgp_pred = mgp_model.predict(test_envi, mean_only=True)
 
-    # check mgp is within 1 meV/A of the gp
-    assert(np.abs(mgp_pred[3] - gp_pred_en) < 1e-3), \
+    # check mgp is within 2 meV/A of the gp
+    assert(np.abs(mgp_pred[3] - gp_pred_en) < 2e-3), \
             f"{bodies} body energy mapping is wrong"
     assert(np.abs(mgp_pred[0][0] - gp_pred_x[0]) < 1e-3), \
             f"{bodies} body mapping is wrong"
