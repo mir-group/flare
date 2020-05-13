@@ -169,6 +169,7 @@ def get_gp(bodies, kernel_type='mc', multihyps=True) -> GaussianProcess:
     # create test structure
     test_structure, forces = get_random_structure(cell, unique_species,
                                                   noa)
+    energy = 3.14
 
     hl = hm['hyps_label']
     if (multihyps is False):
@@ -181,7 +182,7 @@ def get_gp(bodies, kernel_type='mc', multihyps=True) -> GaussianProcess:
                         hyp_labels=hl,
                         cutoffs=cutoffs, multihyps=multihyps, hyps_mask=hm,
                         parallel=False, n_cpus=1)
-    gaussian.update_db(test_structure, forces)
+    gaussian.update_db(test_structure, forces, energy=energy)
     gaussian.check_L_alpha()
 
     return gaussian
