@@ -98,7 +98,8 @@ def test_opt():
 def test_randomization():
     pm = HyperParameterMasking(species=['O', 'C', 'H'],
                           bonds=True, triplets=True,
-                          mb=False, random=True,
+                          mb=False, allseparate=True,
+                          random=True,
                           parameters={'cutoff2b': 7,
                               'cutoff3b': 4.5,
                               'cutoffmb': 3},
@@ -115,7 +116,8 @@ def test_randomization():
 def test_from_dict():
     pm = HyperParameterMasking(species=['O', 'C', 'H'],
                           bonds=True, triplets=True,
-                          mb=False, random=True,
+                          mb=False, allseparate=True,
+                          random=True,
                           parameters={'cutoff2b': 7,
                               'cutoff3b': 4.5,
                               'cutoffmb': 3},

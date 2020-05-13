@@ -543,8 +543,8 @@ class HyperParameterMasking():
             return
 
         if (name in ['cutoff2b', 'cutoff3b', 'cutoffmb']):
-            name_map = {'cutoff2b': 0, 'cutoff3b': 1, 'cutoffmb': 2}
-            self.cutoffs_array[name_map[name]] = parameters
+            cutstr2index = {'cutoff2b': 0, 'cutoff3b': 1, 'cutoffmb': 2}
+            self.cutoffs_array[cutstr2index[name]] = parameters
             return
 
         if (name in ['sigma', 'lengthscale']):
@@ -593,7 +593,7 @@ class HyperParameterMasking():
             return
 
         if (name in ['cutoff2b', 'cutoff3b', 'cutoffmb']):
-            name_map = {'cutoff2b': 0, 'cutoff3b': 1, 'cutoffmb': 2}
+            cutstr2index = {'cutoff2b': 0, 'cutoff3b': 1, 'cutoffmb': 2}
             return
 
         if (isinstance(opt, bool)):
@@ -661,41 +661,48 @@ class HyperParameterMasking():
             print(
                 f"All the remaining elements are left as type {idt}", file=self.fout)
 
-            name_map = {'bond': 0, 'cut3b': 1, 'mb': 2}
+            cutstr2index = {'bond': 0, 'cut3b': 1, 'mb': 2}
 
-            self.cutoff_list[group_type] = []
-            cut_define = np.zeros(self.n[group_type], dtype=bool)
+            # sort out the cutoffs
+            allcut = []
+            alldefine = True
             for idt in range(self.n[group_type]):
                 if (aeg[idt] in self.all_cutoff):
-                    cut_define[idt] = True
+                    allcut += [self.all_cutoff[aeg[idt]]]
+                else:
+                    alldefine = False
+                    print(f"Warning, {aeg[idt]} cutoff is not define. "\
+                          "it's going to use the universal cutoff.")
 
-            if cut_define.all():
-                self.cutoff_list[group_type] = []
-                for idt in range(self.n[group_type]):
-                    self.cutoff_list[group_type] += [self.all_cutoff[aeg[idt]]]
-                print("Different cutoffs were also defined",
-                      self.cutoff_list[group_type], file=self.fout)
-                self.cutoffs_array[name_map[group_type]] = np.max(
-                    self.cutoff_list[group_type])
-            elif cut_define.any():
-                print("Warining, there were some cutoff defined, "
-                      "but not all of them", file=self.fout)
-                if (self.cutoffs_array[name_map[group_type]] <= 0):
-                    print(f"Warning, universal cutoffs {name_map[group_type]}for "
-                            "{group_type} is defined as zero!")
-                    # self.cutoffs_array[name_map[group_type]] = np.max(allcut)
-                universal_cutoff = self.cutoffs_array[name_map[group_type]]
-                self.cutoff_list[group_type] = []
-                for idt in range(self.n[group_type]):
-                    self.cutoff_list[group_type] += [
-                            self.all_cutoff.get(aeg[idt],
-                                                universal_cutoff)]
-                self.cutoffs_array[name_map[group_type]] = np.max(
-                    self.cutoff_list[group_type])
-            else:
-                if (self.cutoffs_array[name_map[group_type]] <= 0):
-                    raise RuntimeError(
+            universal_cutoff = self.cutoffs_array[cutstr2index[group_type]]
+            if (universal_cutoff <= 0):
+                universal_cutoff = np.max(allcut)
+                print(f"Warning, universal cutoffs {cutstr2index[group_type]}for "
+                      f"{group_type} is defined as zero! reset it to {universal_cutoff}")
+
+            self.cutoff_list[group_type] = []
+            for idt in range(self.n[group_type]):
+                self.cutoff_list[group_type] += [
+                self.all_cutoff.get(aeg[idt], universal_cutoff)]
+
+            max_cutoff = np.max(self.cutoff_list[group_type])
+            # update the universal cutoff to make it higher than
+            if (alldefine):
+                self.cutoffs_array[cutstr2index[group_type]] = \
+                        max_cutoff
+            elif (not np.any(self.cutoff_list[group_type]-max_cutoff)):
+                # if not all the cutoffs are defined separately
+                # and they are all the same value. so
+                del self.cutoff_list[group_type]
+                if (group_type == 'cut3b'):
+                    self.cutoffs_array[cutstr2index[group_type]] = max_cutoff
+                    self.n['cut3b'] = 0
+
+
+            if (self.cutoffs_array[cutstr2index[group_type]] <= 0):
+                raise RuntimeError(
                         f"cutoffs for {group_type} is undefined")
+
         elif (group_type == "triplet"):
             self.ntriplet = self.n['triplet']
             if (self.ntriplet == 0):
@@ -734,13 +741,10 @@ class HyperParameterMasking():
             print(
                 f"all the remaining elements are left as type {idt}", file=self.fout)
             if (self.cutoffs_array[1] == 0):
-                cut_define = False
                 allcut = []
                 for idt in range(self.n[group_type]):
-                    if (aeg[idt] in self.all_cutoff):
-                        cut_define = True
-                        allcut += [self.all_cutoff[aeg[idt]]]
-                if cut_define:
+                    allcut += self.all_cutoff.get(aeg[idt], 0)
+                if (len(allcut)>1):
                     self.cutoffs_array[1] = np.max(allcut)
                 else:
                     raise RuntimeError(
@@ -842,6 +846,7 @@ class HyperParameterMasking():
             print("only one type of elements was defined. Please use multihyps=False",
                   file=self.fout)
 
+        print(hyps_mask, file=self.fout)
         return hyps_mask
 
     @staticmethod
@@ -876,8 +881,8 @@ class HyperParameterMasking():
             if len(elelist) > 0:
                 for ele in elelist:
                     if (ele != 0):
+                        elename = Z_to_element(ele)
                         if (len(init_spec) > 0):
-                            elename = Z_to_element(ele)
                             if elename in init_spec:
                                 pm.define_group(
                                     "specie", i, [elename])
