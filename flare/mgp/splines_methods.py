@@ -2,10 +2,6 @@
 '''
 import numpy as np
 import numpy
-import time
-from memory_profiler import profile
-
-import flare.mgp.utils as utils
 from flare.mgp.cubic_splines_numba import *
 
 class PCASplines:
@@ -53,8 +49,8 @@ class PCASplines:
         dim_1 = y.shape[-1]
        
         var_matr = np.reshape(y, (dim_0, dim_1))
-        U, S, Vh = utils.svd_grid(var_matr, rank=self.svd_rank)
-        self.V = Vh.T
+        U, S, Vh = np.linalg.svd(var_matr, full_matrices=False)
+        self.V = Vh[:self.svd_rank,:].T
         for r in range(self.svd_rank):
             self.models[r].set_values(S[r]*U[:, r])
         
@@ -141,17 +137,24 @@ class CubicSpline:
         if not with_derivatives:
             if points.ndim == 1:
                 # evaluate only on one point
-                return eval_cubic_spline(self.a, self.b, self.orders, self.__coeffs__, points)
+                return eval_cubic_spline(self.a, self.b, self.orders, 
+                                         self.__coeffs__, points)
             else:
 
                 N, d = points.shape
                 assert(d==self.d)
                 if values is None:
                     values = np.empty(N, dtype=self.dtype)
-                vec_eval_cubic_spline(self.a, self.b, self.orders, self.__coeffs__, points, values)
+                vec_eval_cubic_spline(self.a, self.b, self.orders, 
+                                      self.__coeffs__, points, values)
                 return values
         else:
-            raise Exception("Not implemented.")
+            N, d = points.shape
+            assert(d==self.d)
+            values, dvalues = vec_eval_cubic_splines_G(self.a, self.b, 
+                    self.orders, self.__coeffs__, points, values, dvalues=None)
+
+            return values, dvalues
 
 
     @property
@@ -162,14 +165,14 @@ class CubicSpline:
             self.__grid__ = mlinspace(self.a, self.b, self.orders)
         return self.__grid__
 
-    def __call__(self, s):
+    def __call__(self, s, with_derivatives=False):
         """Interpolate the spline at one or many points"""
 
         if s.ndim == 1:
             res = self.__call__( numpy.atleast_2d(s) )
             return res[0]
 
-        return self.interpolate(s)
+        return self.interpolate(s, with_derivatives=with_derivatives)
 
 
 def cartesian(arrays, out=None):
@@ -302,4 +305,38 @@ def vec_eval_cubic_spline(a, b, orders, coefs, points, values=None):
 
     return values
 
+def vec_eval_cubic_splines_G(a, b, orders, mcoefs, points,
+                             values=None, dvalues=None):
 
+    a = numpy.array(a, dtype=float)
+    b = numpy.array(b, dtype=float)
+    orders = numpy.array(orders, dtype=int)
+
+    d = a.shape[0]
+    N = points.shape[0]
+    #n_sp = mcoefs.shape[-1]
+    n_sp = 1
+
+    if values is None:
+        values = numpy.empty((N, n_sp))
+
+    if dvalues is None:
+        dvalues = numpy.empty((N, d, n_sp))
+
+    if d == 1:
+        vec_eval_cubic_splines_G_1(a, b, orders, mcoefs, points, values,
+                                   dvalues)
+
+    elif d == 2:
+        vec_eval_cubic_splines_G_2(a, b, orders, mcoefs, points, values,
+                                   dvalues)
+
+    elif d == 3:
+        vec_eval_cubic_splines_G_3(a, b, orders, mcoefs, points, values,
+                                   dvalues)
+
+    elif d == 4:
+        vec_eval_cubic_splines_G_4(a, b, orders, mcoefs, points, values,
+                                   dvalues)
+
+    return [values, dvalues]

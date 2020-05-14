@@ -1,9 +1,5 @@
-import os
-import sys
 import numpy as np
 from flare.otf_parser import OtfAnalysis
-from flare.kernels.kernels import two_plus_three_body, two_plus_three_body_grad
-from flare.kernels.mc_simple import two_plus_three_body_mc, two_plus_three_body_mc_grad
 from flare.env import AtomicEnvironment
 from flare.predict import predict_on_structure
 
@@ -16,7 +12,7 @@ def test_parse_header():
     assert header_dict['atoms'] == 4
     assert header_dict['species_set'] == {'Ag', 'I'}
     assert header_dict['dt'] == .001
-    assert header_dict['kernel'] == 'two_plus_three_body_mc'
+    assert header_dict['kernel_name'] == 'two_plus_three_body_mc'
     assert header_dict['n_hyps'] == 5
     assert header_dict['algo'] == 'BFGS'
     assert np.equal(header_dict['cell'],
@@ -86,8 +82,7 @@ def test_replicate_gp():
     positions = parsed.position_list
     forces = parsed.force_list
 
-    gp_model = parsed.make_gp(kernel=two_plus_three_body_mc,
-                              kernel_grad=two_plus_three_body_mc_grad)
+    gp_model = parsed.make_gp(kernel_name="two_plus_three_body_mc")
 
     structures = parsed.output_md_structures()
 

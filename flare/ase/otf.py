@@ -10,12 +10,13 @@ import inspect
 from copy import deepcopy
 
 from flare.struc import Structure
+from flare.gp import GaussianProcess
 from flare.util import is_std_in_bound
 from flare.mgp.utils import get_l_bound
 
 import numpy as np
-from ase.md.md import MolecularDynamics
 from ase import units
+from ase.calculators.espresso import Espresso
 
 
 class OTF:
@@ -104,13 +105,16 @@ class OTF:
                 self.logger_ind = i
                 break
 
+        # initialize gp by a dft calculation
+        calc = self.atoms.calc
+        calc.mgp_updated = False
+
         # restart from previous OTF training
         if self.restart_from is not None:
             self.restart()
             f = self.atoms.calc.results['forces']
 
-        # initialize gp by a dft calculation
-        if not self.atoms.calc.gp_model.training_data:
+        if not calc.gp_model.training_data:
             self.dft_count = 0
             self.stds = np.zeros((self.noa, 3))
             dft_forces = self.call_DFT()
@@ -121,7 +125,7 @@ class OTF:
             self.l_bound = get_l_bound(100, curr_struc, self.two_d)
             print('l_bound:', self.l_bound)
 
-            self.atoms.calc.gp_model.update_db(curr_struc, dft_forces,
+            calc.gp_model.update_db(curr_struc, dft_forces,
                            custom_range=self.init_atoms)
 
             # train calculator
@@ -130,6 +134,10 @@ class OTF:
                 self.observers[self.logger_ind][0].add_atom_info(atom, 
                     self.stds[atom])
             self.train()
+
+            if self.use_mapping:
+                self.build_mgp()
+
             self.observers[self.logger_ind][0].write_wall_time()
   
         if self.md_engine == 'NPT':
@@ -143,7 +151,8 @@ class OTF:
         step_0 = self.nsteps
         for i in range(step_0, steps):
             print('step:', i)
-            self.atoms.calc.results = {} # clear the calculation from last step
+
+            calc.results = {} # clear the calculation from last step
             self.stds = np.zeros((self.noa, 3))
 
             # temperature rescaling
@@ -167,12 +176,11 @@ class OTF:
             self.l_bound = get_l_bound(self.l_bound, curr_struc, self.two_d)
             print('l_bound:', self.l_bound)
             curr_struc.stds = np.copy(self.stds)
-            noise = self.atoms.calc.gp_model.hyps[-1]
+            noise = calc.gp_model.hyps[-1]
             self.std_in_bound, self.target_atoms = is_std_in_bound(\
                     noise, self.std_tolerance_factor, curr_struc, self.max_atoms_added)
 
             print('std in bound:', self.std_in_bound, self.target_atoms)
-            #self.is_std_in_bound([])
 
             if not self.std_in_bound:
                 # call dft/eam
@@ -182,11 +190,34 @@ class OTF:
                 # update gp
                 print('updating gp')
                 self.update_GP(dft_forces)
+                calc.mgp_updated = False
+
+            if self.use_mapping:
+                self.build_mgp()
 
         self.observers[self.logger_ind][0].run_complete()
 
     
+    def build_mgp(self):
+        # build mgp
+        calc = self.atoms.calc
+        if self.nsteps in self.non_mapping_steps:
+            calc.use_mapping = False
+            skip = True
+        else: 
+            calc.use_mapping = True
+
+            if calc.mgp_updated:
+                skip = True
+            else:
+                skip = False
+                calc.mgp_updated = True
+
+        calc.build_mgp(skip)
+
+
     def call_DFT(self):
+        self.dft_calc.nsteps = self.nsteps
         prev_calc = self.atoms.calc
         calc = deepcopy(self.dft_calc)
         self.atoms.set_calculator(calc)
@@ -247,15 +278,8 @@ class OTF:
             #TODO: change to update_L_alpha()
             calc.gp_model.set_L_alpha()
 
-        # build mgp
-        if self.use_mapping:
-            if self.get_time() in self.non_mapping_steps:
-                skip = True
-
-            calc.build_mgp(skip)
-
-        np.save('ky_mat_inv', calc.gp_model.ky_mat_inv)
-        np.save('alpha', calc.gp_model.alpha)
+        # save gp_model everytime after training
+        calc.gp_model.write_model('otf_data/gp_model', format='pickle')
 
     def restart(self):
         # Recover atomic configuration: positions, velocities, forces
@@ -265,27 +289,29 @@ class OTF:
         self.atoms.calc.results['forces'] = self.read_frame('forces.dat', -1)[0]
         print('Last frame recovered')
 
-        # Recover training data set
-        gp_model = self.atoms.calc.gp_model
-        atoms = deepcopy(self.atoms)
-        nat = len(self.atoms.positions)
-        dft_positions = self.read_all_frames('dft_positions.xyz', nat)
-        dft_forces = self.read_all_frames('dft_forces.dat', nat)
-        added_atoms = self.read_all_frames('added_atoms.dat', 1, 1, 'int')
-        for i, frame in enumerate(dft_positions):
-            atoms.set_positions(frame)
-            curr_struc = Structure.from_ase_atoms(atoms)
-            gp_model.update_db(curr_struc, dft_forces[i], added_atoms[i])
-        gp_model.set_L_alpha()
-        print('GP training set ready')
+#        # Recover training data set
+#        gp_model = self.atoms.calc.gp_model
+#        atoms = deepcopy(self.atoms)
+#        nat = len(self.atoms.positions)
+#        dft_positions = self.read_all_frames('dft_positions.xyz', nat)
+#        dft_forces = self.read_all_frames('dft_forces.dat', nat)
+#        added_atoms = self.read_all_frames('added_atoms.dat', 1, 1, 'int')
+#        for i, frame in enumerate(dft_positions):
+#            atoms.set_positions(frame)
+#            curr_struc = Structure.from_ase_atoms(atoms)
+#            gp_model.update_db(curr_struc, dft_forces[i], added_atoms[i].tolist())
+#        gp_model.set_L_alpha()
+#        print('GP training set ready')
 
         # Recover FLARE calculator
-        gp_model.ky_mat_inv = np.load(self.restart_from+'/ky_mat_inv.npy')
-        gp_model.alpha = np.load(self.restart_from+'/alpha.npy')
+        self.atoms.calc.gp_model = GaussianProcess.from_file(self.restart_from+'/gp_model.pickle')
+#        gp_model.ky_mat_inv = np.load(self.restart_from+'/ky_mat_inv.npy')
+#        gp_model.alpha = np.load(self.restart_from+'/alpha.npy')
         if self.atoms.calc.use_mapping:
             for map_3 in self.atoms.calc.mgp_model.maps_3:
                 map_3.load_grid = self.restart_from + '/'
             self.atoms.calc.build_mgp(skip=False)
+            self.atoms.calc.mgp_updated = True
         print('GP and MGP ready')
 
         self.l_bound = 10
@@ -327,5 +353,6 @@ class OTF:
                 line = line.split()
                 properties.append([float(d) for d in line[1:]])
         return np.array(properties), len(lines)//(nat+2)
+
 
 

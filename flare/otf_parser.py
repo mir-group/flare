@@ -1,7 +1,7 @@
 import sys
 import numpy as np
 from typing import List, Tuple
-from flare import gp, env, struc, kernels, otf
+from flare import gp, env, struc, otf
 
 
 class OtfAnalysis:
@@ -42,19 +42,17 @@ class OtfAnalysis:
         self.gp_species_list = gp_species_list
         self.gp_atom_count = gp_atom_count
 
-    def make_gp(self, cell=None, kernel=None, kernel_grad=None, algo=None,
+    def make_gp(self, cell=None, kernel_name=None, algo=None,
                 call_no=None, cutoffs=None, hyps=None, init_gp=None,
-                energy_force_kernel=None, hyp_no=None, par=True):
+                hyp_no=None, par=True, kernel=None):
 
         if init_gp is None:
             # Use run's values as extracted from header
             # TODO Allow for kernel gradient in header
             if cell is None:
                 cell = self.header['cell']
-            if kernel is None:
-                kernel = self.header['kernel']
-            if kernel_grad is None:
-                raise Exception('Kernel gradient not supplied')
+            if kernel_name is None:
+                kernel_name = self.header['kernel_name']
             if algo is None:
                 algo = self.header['algo']
             if cutoffs is None:
@@ -68,10 +66,14 @@ class OtfAnalysis:
             else:
                 gp_hyps = hyps
 
+            if (kernel is not None) and (kernel_name is None):
+                DeprecationWarning("kernel replaced with kernel_name")
+                kernel_name = kernel.__name__
+
             gp_model = \
-                gp.GaussianProcess(kernel, kernel_grad, gp_hyps,
-                                   cutoffs, opt_algorithm=algo,
-                                   energy_force_kernel=energy_force_kernel,
+                gp.GaussianProcess(kernel_name=kernel_name,
+                                   hyps=gp_hyps,
+                                   cutoffs=cutoffs, opt_algorithm=algo,
                                    par=par)
         else:
             gp_model = init_gp
@@ -359,8 +361,10 @@ def parse_header_information(outfile: str = 'otf_run.out') -> dict:
             header_info['cutoffs'] = cutoffs
         if 'frames' in line:
             header_info['frames'] = int(line.split(':')[1])
+        if 'kernel_name' in line:
+            header_info['kernel_name'] = line.split(':')[1].strip()
         if 'kernel' in line:
-            header_info['kernel'] = line.split(':')[1].strip()
+            header_info['kernel_name'] = line.split(':')[1].strip()
         if 'number of hyperparameters:' in line:
             header_info['n_hyps'] = int(line.split(':')[1])
         if 'optimization algorithm' in line:
