@@ -190,7 +190,7 @@ def two_plus_three_mc_en(env1: AtomicEnvironment, env2: AtomicEnvironment,
 
     two_term = two_body_mc_en_jit(env1.bond_array_2, env1.ctype, env1.etypes,
                                   env2.bond_array_2, env2.ctype, env2.etypes,
-                                  sig2, ls2, r_cut_2, cutoff_func)
+                                  sig2, ls2, r_cut_2, cutoff_func)/4
 
     three_term = \
         three_body_mc_en_jit(env1.bond_array_3, env1.ctype, env1.etypes,
@@ -198,7 +198,7 @@ def two_plus_three_mc_en(env1: AtomicEnvironment, env2: AtomicEnvironment,
                              env1.cross_bond_inds, env2.cross_bond_inds,
                              env1.cross_bond_dists, env2.cross_bond_dists,
                              env1.triplet_counts, env2.triplet_counts,
-                             sig3, ls3, r_cut_3, cutoff_func)
+                             sig3, ls3, r_cut_3, cutoff_func)/9
 
     return two_term + three_term
 
@@ -250,12 +250,14 @@ def two_plus_three_plus_many_body_mc(env1: AtomicEnvironment, env2: AtomicEnviro
                           env1.triplet_counts, env2.triplet_counts,
                           d1, d2, sig3, ls3, r_cut_3, cutoff_func)
 
-    many_term = many_body_mc_jit(env1.bond_array_mb, env2.bond_array_mb, env1.neigh_dists_mb,
-                                 env2.neigh_dists_mb, env1.num_neighs_mb, env2.num_neighs_mb,
-                                 env1.ctype, env2.ctype,
-                                 env1.bond_array_mb_etypes, env2.bond_array_mb_etypes,
-                                 env1.etype_mb, env2.etype_mb, env1.species, env2.species,
-                                 d1, d2, sigm, lsm, r_cut_m, cutoff_func)
+    many_term = \
+        many_body_mc_jit(env1.bond_array_mb, env2.bond_array_mb,
+                         env1.neigh_dists_mb, env2.neigh_dists_mb,
+                         env1.num_neighs_mb, env2.num_neighs_mb,
+                         env1.ctype, env2.ctype, env1.bond_array_mb_etypes,
+                         env2.bond_array_mb_etypes, env1.etype_mb,
+                         env2.etype_mb, env1.species, env2.species,
+                         d1, d2, sigm, lsm, r_cut_m, cutoff_func)
 
     return two_term + three_term + many_term
 
@@ -351,15 +353,19 @@ def two_plus_three_plus_many_body_mc_force_en(env1: AtomicEnvironment, env2: Ato
                                  d1, sig2, ls2, r_cut_2, cutoff_func) / 2
 
     three_term = \
-        three_body_mc_force_en_jit(env1.bond_array_3, env1.ctype, env1.etypes,
-                                   env2.bond_array_3, env2.ctype, env2.etypes,
-                                   env1.cross_bond_inds, env2.cross_bond_inds,
-                                   env1.cross_bond_dists,
-                                   env2.cross_bond_dists,
-                                   env1.triplet_counts, env2.triplet_counts,
-                                   d1, sig3, ls3, r_cut_3, cutoff_func) / 3
+        three_body_mc_force_en_jit(env1.bond_array_3,
+                                       env1.ctype, env1.etypes,
+                                       env2.bond_array_3, env2.ctype,
+                                       env2.etypes, env1.cross_bond_inds,
+                                       env2.cross_bond_inds,
+                                       env1.cross_bond_dists,
+                                       env2.cross_bond_dists,
+                                       env1.triplet_counts,
+                                       env2.triplet_counts,
+                                       d1, sig3, ls3, r_cut_3, cutoff_func) / 3
 
-    many_term = many_body_mc_force_en_jit(env1.bond_array_mb, env2.bond_array_mb,
+    many_term = many_body_mc_force_en_jit(env1.bond_array_mb,
+                                          env2.bond_array_mb,
                                           env1.neigh_dists_mb, env1.num_neighs_mb,
                                           env1.ctype, env2.ctype, env1.bond_array_mb_etypes,
                                           env2.bond_array_mb_etypes,
@@ -370,8 +376,10 @@ def two_plus_three_plus_many_body_mc_force_en(env1: AtomicEnvironment, env2: Ato
     return two_term + three_term + many_term
 
 
-def two_plus_three_plus_many_body_mc_en(env1: AtomicEnvironment, env2: AtomicEnvironment,
-                                        hyps, cutoffs, cutoff_func=cf.quadratic_cutoff):
+def two_plus_three_plus_many_body_mc_en(env1: AtomicEnvironment,
+                                        env2: AtomicEnvironment,
+                                        hyps, cutoffs,
+                                        cutoff_func=cf.quadratic_cutoff):
     """2+3+many-body single-element energy kernel.
 
     Args:
@@ -400,7 +408,7 @@ def two_plus_three_plus_many_body_mc_en(env1: AtomicEnvironment, env2: AtomicEnv
 
     two_term = two_body_mc_en_jit(env1.bond_array_2, env1.ctype, env1.etypes,
                                   env2.bond_array_2, env2.ctype, env2.etypes,
-                                  sig2, ls2, r_cut_2, cutoff_func)
+                                  sig2, ls2, r_cut_2, cutoff_func)/4
 
     three_term = \
         three_body_mc_en_jit(env1.bond_array_3, env1.ctype, env1.etypes,
@@ -408,7 +416,7 @@ def two_plus_three_plus_many_body_mc_en(env1: AtomicEnvironment, env2: AtomicEnv
                              env1.cross_bond_inds, env2.cross_bond_inds,
                              env1.cross_bond_dists, env2.cross_bond_dists,
                              env1.triplet_counts, env2.triplet_counts,
-                             sig3, ls3, r_cut_3, cutoff_func)
+                             sig3, ls3, r_cut_3, cutoff_func)/9
 
     many_term = many_body_mc_en_jit(env1.bond_array_mb, env2.bond_array_mb, env1.ctype,
                                     env2.ctype, env1.bond_array_mb_etypes,
@@ -551,7 +559,7 @@ def three_body_mc_en(env1: AtomicEnvironment, env2: AtomicEnvironment,
                                 env1.cross_bond_inds, env2.cross_bond_inds,
                                 env1.cross_bond_dists, env2.cross_bond_dists,
                                 env1.triplet_counts, env2.triplet_counts,
-                                sig, ls, r_cut, cutoff_func)
+                                sig, ls, r_cut, cutoff_func)/9
 
 
 # -----------------------------------------------------------------------------
@@ -670,7 +678,7 @@ def two_body_mc_en(env1: AtomicEnvironment, env2: AtomicEnvironment,
 
     return two_body_mc_en_jit(env1.bond_array_2, env1.ctype, env1.etypes,
                               env2.bond_array_2, env2.ctype, env2.etypes,
-                              sig, ls, r_cut, cutoff_func)
+                              sig, ls, r_cut, cutoff_func)/4
 
 
 # -----------------------------------------------------------------------------
@@ -806,8 +814,10 @@ def many_body_mc_en(env1: AtomicEnvironment, env2: AtomicEnvironment,
     ls = hyps[1]
     r_cut = cutoffs[2]
 
-    return many_body_mc_en_jit(env1.bond_array_mb, env2.bond_array_mb, env1.ctype,
-                               env2.ctype, env1.bond_array_mb_etypes, env2.bond_array_mb_etypes,
+    return many_body_mc_en_jit(env1.bond_array_mb, env2.bond_array_mb,
+                               env1.ctype, env2.ctype,
+                               env1.bond_array_mb_etypes,
+                               env2.bond_array_mb_etypes,
                                env1.species, env2.species,
                                sig, ls, r_cut, cutoff_func)
 
