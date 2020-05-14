@@ -553,6 +553,7 @@ class HyperParameterMasking():
 
         if (isinstance(opt, bool)):
             opt = [opt, opt, opt]
+
         if ('cut3b' not in name):
             if (name in self.sigma):
                 print(
@@ -564,11 +565,15 @@ class HyperParameterMasking():
             print(f"Parameters for group {name} will be set as "
                   f"sig={parameters[0]} ({opt[0]}) "
                   f"ls={parameters[1]} ({opt[1]})", file=self.fout)
-        if (len(parameters) > 2):
-            if (name in self.all_cutoff):
-                print(
-                    f"Warning, the cutoff of group {name} is overriden", file=self.fout)
-            self.all_cutoff[name] = parameters[2]
+            if (len(parameters) > 2):
+                if (name in self.all_cutoff):
+                    print(
+                        f"Warning, the cutoff of group {name} is overriden", file=self.fout)
+                self.all_cutoff[name] = parameters[2]
+                print(f"Cutoff for group {name} will be set as "
+                      f"{parameters[2]}", file=self.fout)
+        else:
+            self.all_cutoff[name] = parameters
 
     def set_constraints(self, name, opt):
         """Set the parameters for certain group
@@ -674,30 +679,30 @@ class HyperParameterMasking():
                     print(f"Warning, {aeg[idt]} cutoff is not define. "\
                           "it's going to use the universal cutoff.")
 
-            universal_cutoff = self.cutoffs_array[cutstr2index[group_type]]
-            if (universal_cutoff <= 0):
-                universal_cutoff = np.max(allcut)
-                print(f"Warning, universal cutoffs {cutstr2index[group_type]}for "
-                      f"{group_type} is defined as zero! reset it to {universal_cutoff}")
+            if len(allcut)>0:
+                universal_cutoff = self.cutoffs_array[cutstr2index[group_type]]
+                if (universal_cutoff <= 0):
+                    universal_cutoff = np.max(allcut)
+                    print(f"Warning, universal cutoffs {cutstr2index[group_type]}for "
+                          f"{group_type} is defined as zero! reset it to {universal_cutoff}")
 
-            self.cutoff_list[group_type] = []
-            for idt in range(self.n[group_type]):
-                self.cutoff_list[group_type] += [
-                self.all_cutoff.get(aeg[idt], universal_cutoff)]
+                self.cutoff_list[group_type] = []
+                for idt in range(self.n[group_type]):
+                    self.cutoff_list[group_type] += [
+                    self.all_cutoff.get(aeg[idt], universal_cutoff)]
 
-            max_cutoff = np.max(self.cutoff_list[group_type])
-            # update the universal cutoff to make it higher than
-            if (alldefine):
-                self.cutoffs_array[cutstr2index[group_type]] = \
-                        max_cutoff
-            elif (not np.any(self.cutoff_list[group_type]-max_cutoff)):
-                # if not all the cutoffs are defined separately
-                # and they are all the same value. so
-                del self.cutoff_list[group_type]
-                if (group_type == 'cut3b'):
-                    self.cutoffs_array[cutstr2index[group_type]] = max_cutoff
-                    self.n['cut3b'] = 0
-
+                max_cutoff = np.max(self.cutoff_list[group_type])
+                # update the universal cutoff to make it higher than
+                if (alldefine):
+                    self.cutoffs_array[cutstr2index[group_type]] = \
+                            max_cutoff
+                elif (not np.any(self.cutoff_list[group_type]-max_cutoff)):
+                    # if not all the cutoffs are defined separately
+                    # and they are all the same value. so
+                    del self.cutoff_list[group_type]
+                    if (group_type == 'cut3b'):
+                        self.cutoffs_array[cutstr2index[group_type]] = max_cutoff
+                        self.n['cut3b'] = 0
 
             if (self.cutoffs_array[cutstr2index[group_type]] <= 0):
                 raise RuntimeError(
@@ -743,8 +748,11 @@ class HyperParameterMasking():
             if (self.cutoffs_array[1] == 0):
                 allcut = []
                 for idt in range(self.n[group_type]):
-                    allcut += self.all_cutoff.get(aeg[idt], 0)
-                if (len(allcut)>1):
+                    allcut += [self.all_cutoff.get(aeg[idt], 0)]
+                aeg_ = self.all_group_names['cut3b']
+                for idt in range(self.n['cut3b']):
+                    allcut += [self.all_cutoff.get(aeg_[idt], 0)]
+                if (len(allcut)>0):
                     self.cutoffs_array[1] = np.max(allcut)
                 else:
                     raise RuntimeError(
@@ -846,7 +854,6 @@ class HyperParameterMasking():
             print("only one type of elements was defined. Please use multihyps=False",
                   file=self.fout)
 
-        print(hyps_mask, file=self.fout)
         return hyps_mask
 
     @staticmethod
