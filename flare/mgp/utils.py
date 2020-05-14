@@ -18,12 +18,11 @@ from flare.cutoffs import quadratic_cutoff
 from flare.kernels.utils import str_to_kernel_set as stks
 
 
-
 def get_2bkernel(GP):
     if 'mc' in GP.kernel_name:
-        kernel, _, _, efk = stks('2mc', GP.multihyps)
+        kernel, _, ek, efk = stks('2mc', GP.multihyps)
     else:
-        kernel, _, _, efk = stks('2', GP.multihyps)
+        kernel, _, ek, efk = stks('2', GP.multihyps)
 
     cutoffs = [GP.cutoffs[0]]
 
@@ -39,22 +38,22 @@ def get_2bkernel(GP):
             ori_hyps = original_hyps
         n2b = o_hyps_mask['nbond']
         hyps = np.hstack([ori_hyps[:n2b*2], ori_hyps[-1]])
-        hyps_mask = {'nbond':n2b, 'ntriplet':0,
-              'nspec':o_hyps_mask['nspec'],
-              'spec_mask':o_hyps_mask['spec_mask'],
-              'bond_mask': o_hyps_mask['bond_mask']}
+        hyps_mask = {'nbond': n2b, 'ntriplet': 0,
+                     'nspec': o_hyps_mask['nspec'],
+                     'spec_mask': o_hyps_mask['spec_mask'],
+                     'bond_mask': o_hyps_mask['bond_mask']}
     else:
         hyps = [GP.hyps[0], GP.hyps[1], GP.hyps[-1]]
         hyps_mask = None
-    return (kernel, efk, cutoffs, hyps, hyps_mask)
+    return (kernel, ek, efk, cutoffs, hyps, hyps_mask)
 
 
 def get_3bkernel(GP):
 
     if 'mc' in GP.kernel_name:
-        kernel, _, _, efk = stks('3mc', GP.multihyps)
+        kernel, _, ek, efk = stks('3mc', GP.multihyps)
     else:
-        kernel, _, _, efk = stks('3', GP.multihyps)
+        kernel, _, ek, efk = stks('3', GP.multihyps)
 
     base = 0
     for t in ['two', '2']:
@@ -70,21 +69,21 @@ def get_3bkernel(GP):
             ori_hyps = o_hyps_mask['original']
             hm = o_hyps_mask['map']
             for i, h in enumerate(original_hyps):
-                ori_hyps[hm[i]]=h
+                ori_hyps[hm[i]] = h
         else:
             ori_hyps = original_hyps
         n2b = o_hyps_mask['nbond']
         n3b = o_hyps_mask['ntriplet']
         hyps = ori_hyps[n2b*2:]
-        hyps_mask = {'ntriplet':n3b,'nbond':0,
-                'nspec':o_hyps_mask['nspec'],
-                'spec_mask':o_hyps_mask['spec_mask'],
-                'triplet_mask': o_hyps_mask['triplet_mask']}
+        hyps_mask = {'ntriplet': n3b, 'nbond': 0,
+                     'nspec': o_hyps_mask['nspec'],
+                     'spec_mask': o_hyps_mask['spec_mask'],
+                     'triplet_mask': o_hyps_mask['triplet_mask']}
     else:
         hyps = [GP.hyps[0+base], GP.hyps[1+base], GP.hyps[-1]]
         hyps_mask = None
 
-    return (kernel, efk, cutoffs, hyps, hyps_mask)
+    return (kernel, ek, efk, cutoffs, hyps, hyps_mask)
 
 
 def get_l_bound(curr_l_bound, structure, two_d=False):

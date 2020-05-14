@@ -9,7 +9,7 @@ from flare.mgp.mgp import MappedGaussianProcess
 from flare.kernels.utils import str_to_kernel_set
 from flare.lammps import lammps_calculator
 
-from .fake_gp import get_gp, get_random_structure
+from .fake_gp import get_force_gp, get_random_structure
 
 body_list = ['2', '3']
 
@@ -35,7 +35,7 @@ def all_gp():
     allgp_dict = {}
     np.random.seed(0)
     for bodies in ['2', '3', '2+3']:
-        gp_model = get_gp(bodies, 'mc', False)
+        gp_model = get_force_gp(bodies, 'mc', False)
         gp_model.parallel = True
         gp_model.n_cpus = 2
         gp_model.set_L_alpha()
