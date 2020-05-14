@@ -55,7 +55,7 @@ def three_body_mc_force_en_sephyps(env1, r1, r2, r12, c2, etypes2,
                                       d1, sig, ls, r_cut, cutoff_func) / 3
 
 
-@njit
+@njit(parallel=True)
 def three_body_mc_force_en_jit(bond_array_1, c1, etypes1,
                                cross_bond_inds_1, cross_bond_dists_1,
                                triplets_1,
@@ -117,6 +117,9 @@ def three_body_mc_force_en_jit(bond_array_1, c1, etypes1,
     f2, _ = cutoff_func(r_cut, rj2, 0)
     f3, _ = cutoff_func(r_cut, rj3, 0)
     fj = f1 * f2 * f3
+    # del f1
+    # del f2
+    # del f3
 
     for m in range(bond_array_1.shape[0]):
         ei1 = etypes1[m]
@@ -137,25 +140,41 @@ def three_body_mc_force_en_jit(bond_array_1, c1, etypes1,
 
                 if (ei2 == one_spec):
 
+                    if (ei2 == ej2):
+                        r11 = ri1 - rj1
+                    if (ei2 == ej1):
+                        r12 = ri1 - rj2
+                    if (ei2 == c2):
+                        r13 = ri1 - rj3
+
                     ri2 = bond_array_1[ind1, 0]
+                    if (ei1 == ej2):
+                        r21 = ri2 - rj1
+                    if (ei1 == ej1):
+                        r22 = ri2 - rj2
+                    if (ei1 == c2):
+                        r23 = ri2 - rj3
                     ci2 = bond_array_1[ind1, d1]
                     fi2, fdi2 = cutoff_func(r_cut, ri2, ci2)
+                    # del ri2
 
                     ri3 = cross_bond_dists_1[m, m + n + 1]
+                    if (c1 == ej2):
+                        r31 = ri3 - rj1
+                    if (c1 == ej1):
+                        r32 = ri3 - rj2
+                    if (c1 == c2):
+                        r33 = ri3 - rj3
                     fi3, _ = cutoff_func(r_cut, ri3, 0)
+                    # del ri3
 
                     fi = fi1 * fi2 * fi3
                     fdi = fdi1 * fi2 * fi3 + fi1 * fdi2 * fi3
-
-                    r11 = ri1 - rj1
-                    r12 = ri1 - rj2
-                    r13 = ri1 - rj3
-                    r21 = ri2 - rj1
-                    r22 = ri2 - rj2
-                    r23 = ri2 - rj3
-                    r31 = ri3 - rj1
-                    r32 = ri3 - rj2
-                    r33 = ri3 - rj3
+                    # del fi1
+                    # del fi2
+                    # del fi3
+                    # del fdi1
+                    # del fdi2
 
                     if (c1 == c2):
                         if (ei1 == ej1) and (ei2 == ej2):
@@ -195,8 +214,14 @@ def three_body_en_helper(ci1, ci2, r11, r22, r33, fi, fj, fdi, ls1, ls2, sig2):
     B = r11 * ci1 + r22 * ci2
     D = r11 * r11 + r22 * r22 + r33 * r33
     E = np.exp(-D * ls1)
+    # del D
     F = E * B * ls2
+    # del B
     G = -F * fi * fj
+    # del F
     H = -E * fdi * fj
+    # del E
     I = sig2 * (G + H)
+    # del G
+    # del H
     return I
