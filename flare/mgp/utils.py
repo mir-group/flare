@@ -16,44 +16,28 @@ from flare.kernels.kernels import three_body_helper_1, \
     three_body_helper_2, force_helper
 from flare.cutoffs import quadratic_cutoff
 from flare.kernels.utils import str_to_kernel_set as stks
+from flare.mask_helper import HyperParameterMasking
 
 
 def get_2bkernel(GP):
     if 'mc' in GP.kernel_name:
-        kernel, _, ek, efk = stks('2mc', GP.multihyps)
+        kernel, _, _, efk = stks('2', GP.multihyps)
     else:
-        kernel, _, ek, efk = stks('2', GP.multihyps)
+        kernel, _, _, efk = stks('2sc', GP.multihyps)
 
     cutoffs = [GP.cutoffs[0]]
 
-    original_hyps = np.copy(GP.hyps)
-    if (GP.multihyps is True):
-        o_hyps_mask = GP.hyps_mask
-        if ('map' in o_hyps_mask.keys()):
-            ori_hyps = o_hyps_mask['original']
-            hm = o_hyps_mask['map']
-            for i, h in enumerate(original_hyps):
-                ori_hyps[hm[i]]=h
-        else:
-            ori_hyps = original_hyps
-        n2b = o_hyps_mask['nbond']
-        hyps = np.hstack([ori_hyps[:n2b*2], ori_hyps[-1]])
-        hyps_mask = {'nbond': n2b, 'ntriplet': 0,
-                     'nspec': o_hyps_mask['nspec'],
-                     'spec_mask': o_hyps_mask['spec_mask'],
-                     'bond_mask': o_hyps_mask['bond_mask']}
-    else:
-        hyps = [GP.hyps[0], GP.hyps[1], GP.hyps[-1]]
-        hyps_mask = None
+    hyps, hyps_mask = HyperParameterMasking.get_2b_hyps(GP.hyps, GP.hyps_mask, GP.multihyps)
+
     return (kernel, ek, efk, cutoffs, hyps, hyps_mask)
 
 
 def get_3bkernel(GP):
 
     if 'mc' in GP.kernel_name:
-        kernel, _, ek, efk = stks('3mc', GP.multihyps)
+        kernel, _, _, efk = stks('3', GP.multihyps)
     else:
-        kernel, _, ek, efk = stks('3', GP.multihyps)
+        kernel, _, _, efk = stks('3sc', GP.multihyps)
 
     base = 0
     for t in ['two', '2']:
@@ -62,26 +46,9 @@ def get_3bkernel(GP):
 
     cutoffs = np.copy(GP.cutoffs)
 
-    original_hyps = np.copy(GP.hyps)
-    if (GP.multihyps is True):
-        o_hyps_mask = GP.hyps_mask
-        if ('map' in o_hyps_mask.keys()):
-            ori_hyps = o_hyps_mask['original']
-            hm = o_hyps_mask['map']
-            for i, h in enumerate(original_hyps):
-                ori_hyps[hm[i]] = h
-        else:
-            ori_hyps = original_hyps
-        n2b = o_hyps_mask['nbond']
-        n3b = o_hyps_mask['ntriplet']
-        hyps = ori_hyps[n2b*2:]
-        hyps_mask = {'ntriplet': n3b, 'nbond': 0,
-                     'nspec': o_hyps_mask['nspec'],
-                     'spec_mask': o_hyps_mask['spec_mask'],
-                     'triplet_mask': o_hyps_mask['triplet_mask']}
-    else:
-        hyps = [GP.hyps[0+base], GP.hyps[1+base], GP.hyps[-1]]
-        hyps_mask = None
+    hyps, hyps_mask = \
+            HyperParameterMasking.get_3b_hyps(\
+                GP.hyps, GP.hyps_mask, GP.multihyps)
 
     return (kernel, ek, efk, cutoffs, hyps, hyps_mask)
 
@@ -138,7 +105,7 @@ def get_bonds(ctype, etypes, bond_array):
     return exist_species, bond_lengths, bond_dirs
 
 
-#@njit
+@njit
 def add_triplets(spcs_list, exist_species, tris, tri_dir,
         r1, r2, a12, c1, c2):
     for i in range(2):

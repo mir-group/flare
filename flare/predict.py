@@ -29,7 +29,7 @@ def predict_on_atom(param: Tuple[Structure, int, GaussianProcess]) -> (
     # Unpack the input tuple, convert a chemical environment
     structure, atom, gp = param
     # Obtain the associated chemical environment
-    chemenv = AtomicEnvironment(structure, atom, gp.cutoffs)
+    chemenv = AtomicEnvironment(structure, atom, gp.cutoffs, gp.hyps_mask)
     components = []
     stds = []
     # predict force components and standard deviations
@@ -58,7 +58,7 @@ def predict_on_atom_en(param: Tuple[Structure, int, GaussianProcess]) -> (
     # Unpack the input tuple, convert a chemical environment
     structure, atom, gp = param
     # Obtain the associated chemical environment
-    chemenv = AtomicEnvironment(structure, atom, gp.cutoffs)
+    chemenv = AtomicEnvironment(structure, atom, gp.cutoffs, gp.hyps_mask)
     comps = []
     stds = []
     # predict force components and standard deviations
@@ -131,7 +131,7 @@ def predict_on_structure(structure: Structure, gp: GaussianProcess,
         if n not in selective_atoms and selective_atoms:
             continue
 
-        chemenv = AtomicEnvironment(structure, n, gp.cutoffs)
+        chemenv = AtomicEnvironment(structure, n, gp.cutoffs, gp.hyps_mask)
 
         for i in range(3):
             force, var = gp.predict(chemenv, i + 1)
@@ -172,7 +172,7 @@ def predict_on_structure_par(structure: Structure,
     :rtype: (np.ndarray, np.ndarray)
     """
     # Just work in serial in the number of cpus is 1
-    if n_cpus is 1:
+    if n_cpus == 1:
         return predict_on_structure(structure=structure,
                                     gp=gp,
                                     n_cpus=n_cpus,
@@ -268,7 +268,8 @@ def predict_on_structure_en(structure: Structure, gp: GaussianProcess,
         if selective_atoms and n not in selective_atoms:
             continue
 
-        chemenv = AtomicEnvironment(structure, n, gp.cutoffs)
+        chemenv = AtomicEnvironment(structure, n, gp.cutoffs, gp.hyps_mask)
+
         for i in range(3):
             force, var = gp.predict(chemenv, i + 1)
             forces[n][i] = float(force)
@@ -301,6 +302,12 @@ def predict_on_structure_par_en(structure: Structure, gp: GaussianProcess,
         N-length array of energies
     :rtype: (np.ndarray, np.ndarray, np.ndarray)
     """
+    # Work in serial if the number of cpus is 1
+    if n_cpus == 1:
+        predict_on_structure_en(structure, gp,
+                                n_cpus, write_to_structure,
+                                selective_atoms,
+                                skipped_atom_value)
 
     forces = np.zeros((structure.nat, 3))
     stds = np.zeros((structure.nat, 3))

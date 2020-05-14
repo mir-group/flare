@@ -68,6 +68,9 @@ class MappedGaussianProcess:
 
         self.hyps = hyps
         self.cutoffs = cutoffs
+        self.hyps_mask = None
+        if (GP is not None):
+            self.hyps_mask = GP.hyps_mask
         self.grid_params = grid_params
         self.struc_params = struc_params
         self.bodies = grid_params['bodies']
@@ -116,6 +119,7 @@ class MappedGaussianProcess:
         '''
         generate/load grids and get spline coefficients
         '''
+        self.hyps_mask = GP.hyps_mask
         for map_2 in self.maps_2:
             map_2.build_map(GP)
         for map_3 in self.maps_3:
@@ -403,7 +407,7 @@ class Map2body:
             bond_vars = np.zeros([nop, len(GP.alpha)])
         else:
             bond_vars = None
-        env12 = AtomicEnvironment(self.bond_struc, 0, self.cutoffs)
+        env12 = AtomicEnvironment(self.bond_struc, 0, GP.cutoffs, GP.hyps_mask)
 
         if processes == 1 :
             k12_v_all = self._GenGrid_inner(GP.name, 0, len(GP.training_data),
@@ -567,7 +571,7 @@ class Map3body:
             bond_vars = np.zeros([nop, nop, noa, len(GP.alpha)])
         else:
             bond_vars = None
-        env12 = AtomicEnvironment(self.bond_struc, 0, self.cutoffs)
+        env12 = AtomicEnvironment(self.bond_struc, 0, GP.cutoffs, GP.hyps_mask)
 
         with mp.Pool(processes=processes) as pool:
             if self.update:
@@ -633,7 +637,7 @@ class Map3body:
         generate grid data of mean prediction and L^{-1}k* for each triplet
          implemented in a parallelized style
         '''
-        
+
         # ------ get 3body kernel info ------
         kernel, ek, efk, cutoffs, hyps, hyps_mask = get_3bkernel(GP)
 
@@ -644,7 +648,7 @@ class Map3body:
         cos_angles = np.linspace(self.l_bounds[2], self.u_bounds[2], noa)
         bond_means = np.zeros([nop, nop, noa])
         bond_vars = np.zeros([nop, nop, noa, len(GP.alpha)])
-        env12 = AtomicEnvironment(self.bond_struc, 0, self.cutoffs)
+        env12 = AtomicEnvironment(self.bond_struc, 0, GP.cutoffs, GP.hyps_mask)
 
         if self.update:
             if 'kv3' in os.listdir():

@@ -53,7 +53,7 @@ class MGPOTF(OTF):
             self.pool = mp.Pool(processes=no_cpus)
 
     def predict_on_structure_par_mgp(self):
-        args_list = [(atom, self.structure, self.gp.cutoffs, self.mgp) for atom
+        args_list = [(atom, self.structure, self.mgp) for atom
                      in self.atom_list]
         results = self.pool.starmap(predict_on_atom_mgp, args_list)
         for atom in self.atom_list:
@@ -70,7 +70,7 @@ class MGPOTF(OTF):
 
         output.write_to_output('\npredict with mapping:\n', self.output_name)
         for n in range(self.structure.nat):
-            chemenv = AtomicEnvironment(self.structure, n, self.gp.cutoffs)
+            chemenv = AtomicEnvironment(self.structure, n, self.gp.cutoffs, self.gp.hyps_mask)
             force, var = self.mgp.predict(chemenv)
             self.structure.forces[n][:] = force
             self.structure.stds[n][:] = np.sqrt(np.absolute(var))
@@ -111,9 +111,9 @@ class MGPOTF(OTF):
         self.is_mgp_built = True
 
 
-def predict_on_atom_mgp(atom: int, structure, cutoffs, mgp,
+def predict_on_atom_mgp(atom: int, structure, mgp,
                         write_to_structure=False):
-    chemenv = AtomicEnvironment(structure, atom, cutoffs)
+    chemenv = AtomicEnvironment(structure, atom, mgp.cutoffs, mgp.hyps_mask)
     # predict force components and standard deviations
     force, var, virial, local_energy = mgp.predict(chemenv)
     comps = force
@@ -152,7 +152,7 @@ def predict_on_structure_mgp(structure, mgp, output=None,
         if n not in selective_atoms and selective_atoms:
             continue
 
-        chemenv = AtomicEnvironment(structure, n, mgp.cutoffs)
+        chemenv = AtomicEnvironment(structure, n, mgp.cutoffs, mgp.hyps_mask)
         force, var, _, _ = mgp.predict(chemenv)
         if write_to_structure:
             structure.forces[n][:] = force

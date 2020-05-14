@@ -33,7 +33,7 @@ def cleanup(software="qe", casename="h2_otf_cp2k"):
     for f in glob.glob(f"*{software}.out"):
         os.remove(f)
 
-    if (software is 'qe'):
+    if (software == 'qe'):
         for f in glob.glob(f"pwscf.wfc*"):
             os.remove(f)
         for f in glob.glob(f"*pwscf.out"):
@@ -115,7 +115,7 @@ def test_otf_par(software, per_atom_par, n_cpus):
                     f' Please install the code '
                     f' and set the {cmd[software]} env. '
                     'variable to point to the executable.')
-    if (software is 'cp2k'):
+    if (software == 'cp2k'):
         if (not "popt" in os.environ.get(cmd[software])):
             pytest.skip(f'cp2k is serial version'
                         f' skipping the parallel test')

@@ -5,15 +5,19 @@ import inspect
 import subprocess
 import numpy as np
 import multiprocessing as mp
+import numpy as np
+import os, subprocess
+import pickle as pickle
+# import time
 import json
 import warnings
 
 from copy import deepcopy
-import pickle as pickle
+from math import ceil, floor
 from scipy.linalg import solve_triangular
 from typing import List
 
-from flare.struc import Structure
+from flare.cutoffs import quadratic_cutoff
 from flare.env import AtomicEnvironment
 from flare.gp import GaussianProcess
 from flare.gp_algebra import partition_vector, energy_force_vector_unit, \
@@ -24,7 +28,6 @@ from flare.util import Z_to_element
 from flare.mgp.utils import get_bonds, get_triplets, get_triplets_en, \
         get_2bkernel, get_3bkernel
 from flare.mgp.splines_methods import PCASplines, CubicSpline
-from flare.util import Z_to_element, NumpyEncoder
 
 
 class MappedGaussianProcess:
@@ -96,6 +99,7 @@ class MappedGaussianProcess:
         if GP is not None:
 
             self.cutoffs = GP.cutoffs
+            self.hyps_mask = GP.hyps_mask
 
             self.bodies = []
             if "two" in GP.kernel_name:
@@ -138,6 +142,7 @@ class MappedGaussianProcess:
         '''
         generate/load grids and get spline coefficients
         '''
+        self.hyps_mask = GP.hyps_mask
 
         if 2 in self.bodies:
             self.kernel2b_info = get_2bkernel(GP)
@@ -153,12 +158,10 @@ class MappedGaussianProcess:
         self.write_lmp_file(self.lmp_file_name)
 
     def build_bond_struc(self, struc_params):
-
         '''
         build a bond structure, used in grid generating
         '''
 
-        cutoff = np.min(self.cutoffs)
         cell = struc_params['cube_lat']
         mass_dict = struc_params['mass_dict']
         species_list = struc_params['species']
@@ -170,6 +173,7 @@ class MappedGaussianProcess:
         spc_2_set = []
         if 2 in self.bodies:
             bodies = 2
+            cutoff = self.cutoffs[0]
             for spc1_ind, spc1 in enumerate(species_list):
                 for spc2 in species_list[spc1_ind:]:
                     species = [spc1, spc2]
@@ -187,6 +191,7 @@ class MappedGaussianProcess:
         spc_3 = []
         if 3 in self.bodies:
             bodies = 3
+            cutoff = self.cutoffs[1]
             for spc1_ind in range(N_spc):
                 spc1 = species_list[spc1_ind]
                 for spc2_ind in range(N_spc):  # (spc1_ind, N_spc):
@@ -555,7 +560,6 @@ class Map2body:
         self.build_map_container()
 
     def GenGrid(self, GP):
-
         '''
         To use GP to predict value on each grid point, we need to generate the
         kernel vector kv whose length is the same as the training set size.
@@ -584,7 +588,6 @@ class Map2body:
             bond_vars = np.zeros([nop, len(GP.alpha)])
         else:
             bond_vars = None
-        env12 = AtomicEnvironment(self.bond_struc, 0, GP.cutoffs)
 
         # --------- calculate force kernels ---------------
         with mp.Pool(processes=processes) as pool:
@@ -679,7 +682,6 @@ class Map2body:
 
     def _GenGrid_inner(self, name, s, e, bond_lengths,
                        env12, kernel_info):
-
         '''
         Calculate kv segments of the given batch of training data for all grids
         '''
@@ -712,8 +714,8 @@ class Map2body:
                                           hyps, cutoffs, hyps_mask)
         return k12_v
 
-    def build_map_container(self):
 
+    def build_map_container(self):
         '''
         build 1-d spline function for mean, 2-d for var
         '''
@@ -787,7 +789,6 @@ class Map3body:
         self.mean_only = mean_only
 
     def GenGrid(self, GP):
-
         '''
         To use GP to predict value on each grid point, we need to generate the
         kernel vector kv whose length is the same as the training set size.
@@ -801,10 +802,7 @@ class Map3body:
            with GP.alpha
         '''
 
-        if self.n_cpus is None:
-            processes = mp.cpu_count()
-        else:
-            processes = self.n_cpus
+        # should insert a sanity check to compare n_cpu with OMP_NUM_THREADS
 
         # ------ get 3body kernel info ------
         kernel_info = get_3bkernel(GP)
@@ -821,7 +819,7 @@ class Map3body:
         else:
             grid_vars = None
 
-        env12 = AtomicEnvironment(self.bond_struc, 0, GP.cutoffs)
+        env12 = AtomicEnvironment(self.bond_struc, 0, GP.cutoffs, GP.hyps_mask)
         n_envs = len(GP.training_data)
         n_strucs = len(GP.training_structures)
         n_kern = n_envs * 3 + n_strucs
@@ -951,10 +949,17 @@ class Map3body:
 
     def _GenGrid_inner(self, name, s, e, bonds1, bonds2, bonds12, env12,
                        kernel_info):
-
-        '''
-        Calculate kv segments of the given batch of training data for all grids
-        '''
+        """
+        Args:
+            name: name of the gp instance
+            s: start index of the training data parition
+            e: end index of the training data parition
+            bonds1: list of bond to consider for edge center-1
+            bonds2: list of bond to consider for edge center-2
+            bonds12: list of bond to consider for edge 1-2
+            env12: AtomicEnvironment container of the triplet
+            kernel_info: return value of the get_3b_kernel
+        """
 
         kernel, en_kernel, en_force_kernel, cutoffs, hyps, hyps_mask = \
             kernel_info
@@ -1001,7 +1006,8 @@ class Map3body:
             # for i in range(s, e):
             #     np.save(f'{self.kv3name}/{i}', new_kv_file[i, :, :])
 
-        return k12_v
+        ds = [1, 2, 3]
+        size = (e-s) * 3
 
     def _GenGrid_energy(self, name, s, e, bonds1, bonds2, bonds12, env12,
                         kernel_info):
@@ -1035,8 +1041,8 @@ class Map3body:
 
         return k12_v
 
-    def build_map_container(self):
 
+    def build_map_container(self):
         '''
         build 3-d spline function for mean,
         3-d for the low rank approximation of L^{-1}k*
