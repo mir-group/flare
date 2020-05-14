@@ -197,7 +197,9 @@ class GaussianProcess:
             f"the gp instance name, {self.name} is used"
 
         _global_training_data[self.name] = self.training_data
+        _global_training_structures[self.name] = self.training_structures
         _global_training_labels[self.name] = self.training_labels_np
+        _global_energy_labels[self.name] = self.energy_labels_np
 
         assert (len(self.cutoffs) <= 3)
 
