@@ -750,10 +750,8 @@ class Map3body:
            with GP.alpha
         '''
 
-        if self.n_cpus is None:
-            processes = mp.cpu_count()
-        else:
-            processes = self.n_cpus
+        # TO DO: add sanity check to enable consistency between n_cpu and
+        # OMP_NUMBER_THREAD
 
         # ------ get 3body kernel info ------
         kernel_info = get_3bkernel(GP)
@@ -773,107 +771,15 @@ class Map3body:
         env12 = AtomicEnvironment(self.bond_struc, 0, GP.cutoffs)
         size = len(GP.training_data)
 
-        if processes == 1:
-            if self.update:
-                raise NotImplementedError("the update function is "
-                                          "not yet implemented")
-            else:
-                k12_v_all = self._GenGrid_inner(GP.name, 0, size, bonds1,
-                                                bonds2, bonds12, env12,
-                                                kernel_info)
-                k12_v_all = np.moveaxis(k12_v_all, 0, -1)
+        if self.update:
+            raise NotImplementedError("the update function is "
+                                      "not yet implemented")
         else:
-            with mp.Pool(processes=processes) as pool:
+            k12_v_all = self._GenGrid_inner(GP.name, 0, size, bonds1,
+                                            bonds2, bonds12, env12,
+                                            kernel_info)
+            k12_v_all = np.moveaxis(k12_v_all, 0, -1)
 
-                if self.update:
-
-                    raise NotImplementedError("the update function is "
-                                              "not yet implemented")
-
-                    if self.kv3name in os.listdir():
-                        subprocess.run(['rm', '-rf', self.kv3name])
-
-                    os.mkdir(self.kv3name)
-
-                    # get the size of saved kv vector
-                    kv_filename = f'{self.kv3name}/{0}'
-                    if kv_filename in os.listdir(self.kv3name):
-                        old_kv_file = np.load(kv_filename+'.npy')
-                        last_size = int(old_kv_file[0, 0])
-                        new_kv_file[i, :, :last_size] = old_kv_file
-
-                        k12_v_all = np.zeros([len(bonds1), len(bonds2), len(bonds12),
-                                              size * 3])
-
-                        for i in range(n12):
-                            if f'{self.kv3name}/{i}.npy' in os.listdir(self.kv3name):
-                                old_kv_file = np.load(
-                                    f'{self.kv3name}/{i}.npy')
-                                last_size = int(old_kv_file[0, 0])
-                                # TODO k12_v_all[]
-                            else:
-                                last_size = 0
-
-                        # parallelize based on grids, since usually the number of
-                        # the added training points are small
-                        ngrids = int(ceil(n12 / processes))
-                        nbatch = int(ceil(n12 / ngrids))
-
-                        block_id = []
-                        for ibatch in range(nbatch):
-                            s = int(ibatch * processes)
-                            e = int(np.min(((ibatch+1)*processes, n12)))
-                            block_id += [(s, e)]
-
-                        k12_slice = []
-                        for ibatch in range(nbatch):
-                            k12_slice.append(pool.apply_async(self._GenGrid_inner,
-                                                              args=(GP.name, last_size, size,
-                                                                    bonds1, bonds2, bonds12[s:e],
-                                                                    env12, kernel_info)))
-
-                        for ibatch in range(nbatch):
-                            s, e = block_id[ibatch]
-                            k12_v_all[:, :, s:e, :] = k12_slice[ibatch].get()
-
-                else:
-                    block_id, nbatch = partition_c(
-                        self.n_sample, size, processes)
-
-                    k12_slice = []
-                    #print('before for', ns, nsample, time.time())
-                    count = 0
-                    base = 0
-                    k12_v_all = np.zeros(
-                        [size*3, len(bonds1), len(bonds2), len(bonds12)])
-                    for ibatch in range(nbatch):
-                        s, e = block_id[ibatch]
-                        k12_slice.append(pool.apply_async(self._GenGrid_inner,
-                                                          args=(GP.name, s, e,
-                                                                bonds1, bonds2, bonds12,
-                                                                env12, kernel_info)))
-                        #print('send', ibatch, ns, s, e, time.time())
-                        count += 1
-                        if (count > processes*2):
-                            for ibase in range(count):
-                                s, e = block_id[ibase+base]
-                                k12_v_all[s*3:e*3, :, :,
-                                          :] = k12_slice[ibase].get()
-
-                            del k12_slice
-                            k12_slice = []
-                            count = 0
-                            base = ibatch+1
-                    if (count > 0):
-                        for ibase in range(count):
-                            s, e = block_id[ibase+base]
-                            k12_v_all[s*3:e*3, :, :,
-                                      :] = k12_slice[ibase].get()
-                        del k12_slice
-
-                pool.close()
-                pool.join()
-                k12_v_all = np.moveaxis(k12_v_all, 0, -1)
 
         for b12 in range(len(bonds12)):
             for b1 in range(len(bonds1)):
