@@ -71,12 +71,12 @@ def generate_hm(nbond, ntriplet, nmb=1, constraint=False, multihyps=True):
     return hyps, hm, cut
 
 
-def get_gp(bodies, kernel_type='mc', multihyps=True) -> GaussianProcess:
+def get_gp(bodies, kernel_type='mc', multihyps=True, cellabc=[1, 1, 1.5]) -> GaussianProcess:
     """Returns a GP instance with a two-body numba-based kernel"""
     print("\nSetting up...\n")
 
     # params
-    cell = np.diag(np.array([1, 1, 1.5]))
+    cell = np.diag(cellabc)
     unique_species = [2, 1]
     cutoffs = np.array([0.8, 0.8])
     noa = 5
@@ -116,12 +116,12 @@ def get_gp(bodies, kernel_type='mc', multihyps=True) -> GaussianProcess:
     return gaussian
 
 
-def get_force_gp(bodies, kernel_type='mc', multihyps=True) -> GaussianProcess:
+def get_force_gp(bodies, kernel_type='mc', multihyps=True, cellabc=[1,1,1.5]) -> GaussianProcess:
     """Returns a GP instance with a two-body numba-based kernel"""
     print("\nSetting up...\n")
 
     # params
-    cell = np.diag(np.array([1, 1, 1.5]))
+    cell = np.diag(cellabc)
     unique_species = [2, 1]
     cutoffs = np.array([0.8, 0.8])
     noa = 5

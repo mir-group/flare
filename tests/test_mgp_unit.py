@@ -36,7 +36,7 @@ def all_gp():
     np.random.seed(0)
     for bodies in ['2', '3', '2+3']:
         for multihyps in [False, True]:
-            gp_model = get_gp(bodies, 'mc', multihyps)
+            gp_model = get_gp(bodies, 'mc', multihyps, cellabc=[100, 100, 100])
             gp_model.parallel = True
             gp_model.n_cpus = 2
             allgp_dict[f'{bodies}{multihyps}'] = gp_model

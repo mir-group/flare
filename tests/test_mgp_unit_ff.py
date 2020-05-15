@@ -35,7 +35,7 @@ def all_gp():
     allgp_dict = {}
     np.random.seed(0)
     for bodies in ['2', '3', '2+3']:
-        gp_model = get_force_gp(bodies, 'mc', False)
+        gp_model = get_force_gp(bodies, 'mc', False, cellabc=[100, 100, 100])
         gp_model.parallel = True
         gp_model.n_cpus = 2
         gp_model.set_L_alpha()
