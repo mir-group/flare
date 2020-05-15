@@ -603,11 +603,14 @@ class Map2body:
                 k12_slice.append(pool.apply_async(
                     self._GenGrid_inner, args=(GP.name, s, e, bond_lengths,
                                                env12, kernel_info)))
+            k12_matrix = []
+            for ibatch in range(nbatch):
+                k12_matrix +=[k12_slice[ibatch].get()]
             pool.close()
             pool.join()
-        k12_v_force = np.vstack(k12_slice)
         del k12_slice
-        print("k12_v_force", k12_v_force.shape)
+        k12_v_force = np.vstack(k12_matrix)
+        del k12_matrix
 
         # --------- calculate energy kernels ---------------
         with mp.Pool(processes=processes) as pool:
@@ -620,16 +623,19 @@ class Map2body:
                 k12_slice.append(pool.apply_async(
                     self._GenGrid_energy,
                     args=(GP.name, s, e, bond_lengths, env12, kernel_info)))
-
+            k12_matrix = []
+            for ibatch in range(nbatch):
+                k12_matrix +=[k12_slice[ibatch].get()]
             pool.close()
             pool.join()
-        k12_v_energy = np.vstack(k12_slice)
         del k12_slice
-        print("k12_v_energy", k12_v_energy.shape)
+        k12_v_energy = np.vstack(k12_matrix)
+        del k12_matrix
 
         k12_v_all = np.vstack([k12_v_force, k12_v_energy])
-        print("k12_v_all", k12_v_all.shape)
         k12_v_all = np.moveaxis(k12_v_all, 0, -1)
+        del k12_v_force
+        del k12_v_energy
 
         # ------- compute bond means and variances ---------------
         for b, _ in enumerate(bond_lengths):
@@ -821,7 +827,6 @@ class Map3body:
                     partition_vector(self.n_sample, n_envs, processes)
 
                 k12_slice = []
-                # print('before for', ns, nsample, time.time())
                 with mp.Pool(processes=processes) as pool:
                     for ibatch in range(nbatch):
                         s, e = block_id[ibatch]
@@ -829,15 +834,15 @@ class Map3body:
                             self._GenGrid_inner,
                             args=(GP.name, s, e, bonds1, bonds2, bonds12,
                                   env12, kernel_info)))
+                    k12_matrix = []
+                    for ibatch in range(nbatch):
+                        k12_matrix +=[k12_slice[ibatch].get()]
                     pool.close()
                     pool.join()
 
-                # k12_v_all = \
-                #     np.zeros([len(bonds1), len(bonds2), len(bonds12),
-                #               n_envs * 3 + n_strucs])
-
-                k12_v_force = np.vstack(k12_slice)
                 del k12_slice
+                k12_v_force = np.vstack(k12_matrix)
+                del k12_matrix
 
             # ------------ force kernels -------------
 
@@ -852,7 +857,6 @@ class Map3body:
                     partition_vector(self.n_sample, n_strucs, processes)
 
                 k12_slice = []
-                # print('before for', ns, nsample, time.time())
                 with mp.Pool(processes=processes) as pool:
                     for ibatch in range(nbatch):
                         s, e = block_id[ibatch]
@@ -860,14 +864,17 @@ class Map3body:
                             self._GenGrid_energy,
                             args=(GP.name, s, e, bonds1, bonds2, bonds12,
                                   env12, kernel_info)))
+                    k12_matrix = []
+                    for ibatch in range(nbatch):
+                        k12_matrix +=[k12_slice[ibatch].get()]
                     pool.close()
                     pool.join()
 
-                k12_v_energy = np.vstack(k12_slice)
                 del k12_slice
+                k12_v_energy = np.vstack(k12_matrix)
+                del k12_matrix
 
         k12_v_all = np.vstack([k12_v_force, k12_v_energy])
-        print("k12_v_all", k12_v_all.shape, k12_v_force.shapee, k12_v_energy.shape)
         k12_v_all = np.moveaxis(k12_v_all, 0, -1)
         del k12_v_force
         del k12_v_energy
@@ -941,7 +948,7 @@ class Map3body:
             # for i in range(s, e):
             #     np.save(f'{self.kv3name}/{i}', new_kv_file[i, :, :])
 
-        return np.moveaxis(k12_v, 0, -1)
+        return np.moveaxis(k12_v, -1, 0)
 
     def _GenGrid_energy(self, name, s, e, bonds1, bonds2, bonds12, env12,
                         kernel_info):
@@ -973,7 +980,7 @@ class Map3body:
             raise NotImplementedError("the update function is not yet"
                                       "implemented")
 
-        return np.moveaxis(k12_v, 0, -1)
+        return np.moveaxis(k12_v, -1, 0)
 
     def build_map_container(self):
 
