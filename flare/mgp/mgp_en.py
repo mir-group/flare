@@ -88,6 +88,7 @@ class MappedGaussianProcess:
         self.n_sample = n_sample
         self.grid_params = grid_params
         self.struc_params = struc_params
+        self.hyps_mask = None
 
         # It would be helpful to define the attributes explicitly.
         self.__dict__.update(grid_params)
@@ -96,6 +97,7 @@ class MappedGaussianProcess:
         if GP is not None:
 
             self.cutoffs = GP.cutoffs
+            self.hyps_mask = GP.hyps_mask
 
             self.bodies = []
             if "two" in GP.kernel_name:

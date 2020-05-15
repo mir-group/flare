@@ -530,6 +530,7 @@ class Map3body:
         self.grid_num = grid_num
         self.l_bounds, self.u_bounds = bounds
         self.cutoffs = cutoffs
+        self.hyps_mask = None
         self.bond_struc = bond_struc
         self.species = bond_struc.coded_species
         self.bodies = bodies
