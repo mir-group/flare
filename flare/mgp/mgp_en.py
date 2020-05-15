@@ -598,34 +598,15 @@ class Map2body:
                 partition_vector(self.n_sample, n_envs, processes)
 
             k12_slice = []
-            k12_v_all = np.zeros([len(bond_lengths), n_kern])
-            count = 0
-            base = 0
             for ibatch in range(nbatch):
                 s, e = block_id[ibatch]
                 k12_slice.append(pool.apply_async(
                     self._GenGrid_inner, args=(GP.name, s, e, bond_lengths,
                                                env12, kernel_info)))
-                count += 1
-
-                # What is the point of this if statement?
-                if (count > processes * 2):
-                    for ibase in range(count):
-                        s, e = block_id[ibase+base]
-                        k12_v_all[:, s * 3:e * 3] = k12_slice[ibase].get()
-                    del k12_slice
-                    k12_slice = []
-                    count = 0
-                    base = ibatch+1
-
-            if (count > 0):
-                for ibase in range(count):
-                    s, e = block_id[ibase+base]
-                    k12_v_all[:, s * 3:e * 3] = k12_slice[ibase].get()
-                del k12_slice
-
             pool.close()
             pool.join()
+        k12_v_force = np.vstack(k12_slice)
+        del k12_slice
 
         # --------- calculate energy kernels ---------------
         with mp.Pool(processes=processes) as pool:
@@ -633,35 +614,19 @@ class Map2body:
                 partition_vector(self.n_sample, n_strucs, processes)
 
             k12_slice = []
-            count = 0
-            base = 0
             for ibatch in range(nbatch):
                 s, e = block_id[ibatch]
                 k12_slice.append(pool.apply_async(
                     self._GenGrid_energy,
                     args=(GP.name, s, e, bond_lengths, env12, kernel_info)))
-                count += 1
-
-                # What is the point of this if statement?
-                if (count > processes * 2):
-                    for ibase in range(count):
-                        s, e = block_id[ibase+base]
-                        k12_v_all[:, n_envs * 3 + s:n_envs * 3 + e] = \
-                            k12_slice[ibase].get()
-                    del k12_slice
-                    k12_slice = []
-                    count = 0
-                    base = ibatch+1
-
-            if (count > 0):
-                for ibase in range(count):
-                    s, e = block_id[ibase+base]
-                    k12_v_all[:, n_envs * 3 + s:n_envs * 3 + e] = \
-                        k12_slice[ibase].get()
-                del k12_slice
 
             pool.close()
             pool.join()
+        k12_v_energy = np.vstack(k12_slice)
+        del k12_slice
+
+        k12_v_all = np.vstack([k12_v_force, k12_v_energy])
+        k12_v_all = np.moveaxis(k12_v_all, 0, -1)
 
         # ------- compute bond means and variances ---------------
         for b, _ in enumerate(bond_lengths):
@@ -695,7 +660,7 @@ class Map2body:
             k12_v[b, :] = \
                 energy_force_vector_unit(name, s, e, env12, en_force_kernel,
                                          hyps, cutoffs, hyps_mask)
-        return k12_v
+        return np.moveaxis(k12_v, 0, -1)
 
     def _GenGrid_energy(self, name, s, e, bond_lengths, env12, kernel_info):
 
@@ -712,7 +677,7 @@ class Map2body:
             k12_v[b, :] = \
                 energy_energy_vector_unit(name, s, e, env12, en_kernel,
                                           hyps, cutoffs, hyps_mask)
-        return k12_v
+        return np.moveaxis(k12_v, 0, -1)
 
     def build_map_container(self):
 
@@ -833,106 +798,75 @@ class Map3body:
                 raise NotImplementedError("the update function is "
                                           "not yet implemented")
             else:
-                k12_v_all = \
-                        np.zeros([len(bonds1), len(bonds2), len(bonds12),
-                                  n_kern])
-                k12_v_all[:, :, :, :n_envs * 3] = \
+                k12_v_force = \
                     self._GenGrid_inner(GP.name, 0, n_envs, bonds1, bonds2,
                                         bonds12, env12, kernel_info)
-                k12_v_all[:, :, :, n_envs*3:] = \
+                k12_v_energy = \
                     self._GenGrid_energy(GP.name, 0, n_strucs, bonds1, bonds2,
                                          bonds12, env12, kernel_info)
         else:
 
             # ------------ force kernels -------------
-            with mp.Pool(processes=processes) as pool:
+            if self.update:
 
-                if self.update:
+                raise NotImplementedError(
+                    "the update function is "
+                    "not yet implemented")
 
-                    raise NotImplementedError(
-                        "the update function is "
-                        "not yet implemented")
+            else:
+                block_id, nbatch = \
+                    partition_vector(self.n_sample, n_envs, processes)
 
-                else:
-                    block_id, nbatch = \
-                        partition_vector(self.n_sample, n_envs, processes)
-
-                    k12_slice = []
-                    # print('before for', ns, nsample, time.time())
-                    count = 0
-                    base = 0
-                    k12_v_all = \
-                        np.zeros([len(bonds1), len(bonds2), len(bonds12),
-                                  n_envs * 3 + n_strucs])
+                k12_slice = []
+                # print('before for', ns, nsample, time.time())
+                with mp.Pool(processes=processes) as pool:
                     for ibatch in range(nbatch):
                         s, e = block_id[ibatch]
                         k12_slice.append(pool.apply_async(
                             self._GenGrid_inner,
                             args=(GP.name, s, e, bonds1, bonds2, bonds12,
                                   env12, kernel_info)))
-                        # print('send', ibatch, ns, s, e, time.time())
-                        count += 1
-                        if (count > processes*2):
-                            for ibase in range(count):
-                                s, e = block_id[ibase+base]
-                                k12_v_all[:, :, :, s * 3:e * 3] = \
-                                    k12_slice[ibase].get()
-                            del k12_slice
-                            k12_slice = []
-                            count = 0
-                            base = ibatch+1
-                    if (count > 0):
-                        for ibase in range(count):
-                            s, e = block_id[ibase+base]
-                            k12_v_all[:, :, :, s * 3:e * 3] = \
-                                k12_slice[ibase].get()
-                        del k12_slice
+                    pool.close()
+                    pool.join()
+
+                # k12_v_all = \
+                #     np.zeros([len(bonds1), len(bonds2), len(bonds12),
+                #               n_envs * 3 + n_strucs])
+
+                k12_v_force = np.vstack(k12_slice)
+                del k12_slice
 
             # ------------ force kernels -------------
-            with mp.Pool(processes=processes) as pool:
 
-                if self.update:
+            if self.update:
 
-                    raise NotImplementedError(
-                        "the update function is "
-                        "not yet implemented")
+                raise NotImplementedError(
+                    "the update function is "
+                    "not yet implemented")
 
-                else:
-                    block_id, nbatch = \
-                        partition_vector(self.n_sample, n_strucs, processes)
+            else:
+                block_id, nbatch = \
+                    partition_vector(self.n_sample, n_strucs, processes)
 
-                    k12_slice = []
-                    # print('before for', ns, nsample, time.time())
-                    count = 0
-                    base = 0
+                k12_slice = []
+                # print('before for', ns, nsample, time.time())
+                with mp.Pool(processes=processes) as pool:
                     for ibatch in range(nbatch):
                         s, e = block_id[ibatch]
                         k12_slice.append(pool.apply_async(
                             self._GenGrid_energy,
                             args=(GP.name, s, e, bonds1, bonds2, bonds12,
                                   env12, kernel_info)))
-                        # print('send', ibatch, ns, s, e, time.time())
-                        count += 1
-                        if (count > processes*2):
-                            for ibase in range(count):
-                                s, e = block_id[ibase+base]
-                                k12_v_all[:, :, :,
-                                          n_envs * 3 + s:n_envs * 3 + e] = \
-                                    k12_slice[ibase].get()
-                            del k12_slice
-                            k12_slice = []
-                            count = 0
-                            base = ibatch+1
-                    if (count > 0):
-                        for ibase in range(count):
-                            s, e = block_id[ibase+base]
-                            k12_v_all[:, :, :,
-                                      n_envs * 3 + s:n_envs * 3 + e] = \
-                                k12_slice[ibase].get()
-                        del k12_slice
+                    pool.close()
+                    pool.join()
 
-                pool.close()
-                pool.join()
+                k12_v_energy = np.vstack(k12_slice)
+                del k12_slice
+
+        k12_v_all = np.vstack([k12_v_force, k12_v_energy])
+        k12_v_all = np.moveaxis(k12_v_all, 0, -1)
+        del k12_v_force
+        del k12_v_energy
 
         for b12 in range(len(bonds12)):
             for b1 in range(len(bonds1)):
@@ -1003,7 +937,7 @@ class Map3body:
             # for i in range(s, e):
             #     np.save(f'{self.kv3name}/{i}', new_kv_file[i, :, :])
 
-        return k12_v
+        return np.moveaxis(k12_v, 0, -1)
 
     def _GenGrid_energy(self, name, s, e, bonds1, bonds2, bonds12, env12,
                         kernel_info):
@@ -1035,7 +969,7 @@ class Map3body:
             raise NotImplementedError("the update function is not yet"
                                       "implemented")
 
-        return k12_v
+        return np.moveaxis(k12_v, 0, -1)
 
     def build_map_container(self):
 
