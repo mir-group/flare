@@ -1,20 +1,40 @@
 """Multi-element 2-, 3-, and 2+3-body kernels that restrict all signal
 variance hyperparameters to a single value."""
 import numpy as np
-from numba import njit
+from numba import njit, prange
 from math import exp, floor
 from typing import Callable
 
 from flare.env import AtomicEnvironment
-from flare.gp_algebra import _global_training_data, _global_training_labels
 import flare.kernels.cutoffs as cf
-from flare.kernels.utils import from_mask_to_args, from_grad_to_mask
 
 
 def three_body_mc_force_en(env1: AtomicEnvironment, r1, r2, r12, c2, etypes2,
                            d1: int, hyps: 'ndarray', cutoffs: 'ndarray',
                            cutoff_func: Callable = cf.quadratic_cutoff) \
         -> float:
+    """3-body multi-element kernel between a force component and many local
+    energies on the grid.
+
+    Args:
+        env1 (AtomicEnvironment): First local environment.
+        rj1 (np.ndarray): matrix of the first edge length
+        rj2 (np.ndarray): matrix of the second edge length
+        rj12 (np.ndarray): matrix of the third edge length
+        c2 (int): Species of the central atom of the second local environment.
+        etypes2 (np.ndarray): Species of atoms in the second local
+            environment.
+        d1 (int): Force component of the first environment (1=x, 2=y, 3=z).
+        hyps (np.ndarray): Hyperparameters of the kernel function (sig1, ls1,
+            sig2, ls2).
+        cutoffs (np.ndarray): Two-element array containing the 2- and 3-body
+            cutoffs.
+        cutoff_func (Callable): Cutoff function.
+
+    Returns:
+        float:
+            Value of the 3-body force/energy kernel.
+    """
     sig = hyps[0]
     ls = hyps[1]
     r_cut = cutoffs[1]
@@ -34,6 +54,38 @@ def three_body_mc_force_en_sephyps(env1, r1, r2, r12, c2, etypes2,
                                    ncut3b, cut3b_mask,
                                    sig2, ls2, sig3, ls3,
                                    cutoff_func=cf.quadratic_cutoff) -> float:
+    """3-body multi-element kernel between a force component and many local
+    energies on the grid.
+
+    Args:
+        env1 (AtomicEnvironment): First local environment.
+        rj1 (np.ndarray): matrix of the first edge length
+        rj2 (np.ndarray): matrix of the second edge length
+        rj12 (np.ndarray): matrix of the third edge length
+        c2 (int): Species of the central atom of the second local environment.
+        etypes2 (np.ndarray): Species of atoms in the second local
+            environment.
+        d1 (int): Force component of the first environment (1=x, 2=y, 3=z).
+        cutoff_2b: dummy
+        cutoff_3b (float, np.ndarray): cutoff(s) for three-body interaction
+        nspec (int): number of different species groups
+        spec_mask (np.ndarray): 118-long integer array that determines specie group
+        nbond: dummy
+        bond_mask: dummy
+        ntriplet (int): number of different hyperparameter sets to associate with 3-body pairings
+        triplet_mask (np.ndarray): nspec^3 long integer array
+        ncut3b (int): number of different 3-body cutoff sets to associate with 3-body pairings
+        cut3b_mask (np.ndarray): nspec^2 long integer array
+        sig2: dummy
+        ls2: dummy
+        sig3 (np.ndarray): signal variances associates with three-body term
+        ls3 (np.ndarray): length scales associates with three-body term
+        cutoff_func (Callable): Cutoff function of the kernel.
+
+    Returns:
+        float:
+            Value of the 3-body force/energy kernel.
+    """
 
     ej1 = etypes2[0]
     ej2 = etypes2[1]
@@ -62,19 +114,14 @@ def three_body_mc_force_en_jit(bond_array_1, c1, etypes1,
                                c2, etypes2,
                                rj1, rj2, rj3,
                                d1, sig, ls, r_cut, cutoff_func):
-    """3-body multi-element kernel between a force component and a local
-    energy accelerated with Numba.
+    """3-body multi-element kernel between a force component and many local
+    energies on the grid.
 
     Args:
         bond_array_1 (np.ndarray): 3-body bond array of the first local
             environment.
         c1 (int): Species of the central atom of the first local environment.
         etypes1 (np.ndarray): Species of atoms in the first local
-            environment.
-        bond_array_2 (np.ndarray): 3-body bond array of the second local
-            environment.
-        c2 (int): Species of the central atom of the second local environment.
-        etypes2 (np.ndarray): Species of atoms in the second local
             environment.
         cross_bond_inds_1 (np.ndarray): Two dimensional array whose row m
             contains the indices of atoms n > m in the first local
@@ -87,6 +134,12 @@ def three_body_mc_force_en_jit(bond_array_1, c1, etypes1,
         triplets_1 (np.ndarray): One dimensional array of integers whose entry
             m is the number of atoms in the first local environment that are
             within a distance r_cut of atom m.
+        c2 (int): Species of the central atom of the second local environment.
+        etypes2 (np.ndarray): Species of atoms in the second local
+            environment.
+        rj1 (np.ndarray): matrix of the first edge length
+        rj2 (np.ndarray): matrix of the second edge length
+        rj12 (np.ndarray): matrix of the third edge length
         d1 (int): Force component of the first environment (1=x, 2=y, 3=z).
         sig (float): 3-body signal variance hyperparameter.
         ls (float): 3-body length scale hyperparameter.
@@ -121,7 +174,7 @@ def three_body_mc_force_en_jit(bond_array_1, c1, etypes1,
     # del f2
     # del f3
 
-    for m in range(bond_array_1.shape[0]):
+    for m in prange(bond_array_1.shape[0]):
         ei1 = etypes1[m]
 
         two_spec = [all_spec[0], all_spec[1]]
@@ -133,7 +186,7 @@ def three_body_mc_force_en_jit(bond_array_1, c1, etypes1,
             ci1 = bond_array_1[m, d1]
             fi1, fdi1 = cutoff_func(r_cut, ri1, ci1)
 
-            for n in range(triplets_1[m]):
+            for n in prange(triplets_1[m]):
 
                 ind1 = cross_bond_inds_1[m, m + n + 1]
                 ei2 = etypes1[ind1]

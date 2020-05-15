@@ -1,6 +1,5 @@
 import inspect
 import json
-import math
 import multiprocessing as mp
 import numpy as np
 import os
@@ -10,20 +9,21 @@ import time
 import warnings
 
 from copy import deepcopy
+from math import floor, ceil
 from scipy.linalg import solve_triangular
 from typing import List
 
 from flare.env import AtomicEnvironment
 from flare.gp import GaussianProcess
 from flare.gp_algebra import partition_vector, energy_force_vector_unit, \
-    energy_energy_vector_unit
-from flare.kernels.utils import from_mask_to_args, str_to_kernel_set
+    energy_energy_vector_unit, _global_training_data
+from flare.kernels.utils import from_mask_to_args, str_to_kernel_set, str_to_mapped_kernel
 from flare.kernels.cutoffs import quadratic_cutoff
 from flare.struc import Structure
 from flare.utils.element_coder import Z_to_element, NumpyEncoder
 
 from flare.mgp.utils import get_bonds, get_triplets, get_triplets_en, \
-        get_2bkernel, get_3bkernel
+    get_2bkernel, get_3bkernel
 from flare.mgp.splines_methods import PCASplines, CubicSpline
 
 
@@ -155,7 +155,6 @@ class MappedGaussianProcess:
         self.write_lmp_file(self.lmp_file_name)
 
     def build_bond_struc(self, struc_params):
-
         '''
         build a bond structure, used in grid generating
         '''
@@ -342,7 +341,7 @@ class MappedGaussianProcess:
 
             for i in range(6):
                 vir_i = f_d[:, vir_order[i][0]]\
-                        * xyzs[:, vir_order[i][1]] * lengths[:, 0]
+                    * xyzs[:, vir_order[i][1]] * lengths[:, 0]
                 vir[i] = np.sum(vir_i)
 
         # three-body
@@ -358,7 +357,7 @@ class MappedGaussianProcess:
 
             for i in range(6):
                 vir_i1 = f_d1[:, vir_order[i][0]]\
-                       * xyzs[:, 0, vir_order[i][1]] * lengths[:, 0]
+                    * xyzs[:, 0, vir_order[i][1]] * lengths[:, 0]
                 vir_i2 = f_d2[:, vir_order[i][0]]\
                     * xyzs[:, 1, vir_order[i][1]] * lengths[:, 1]
                 vir[i] = np.sum(vir_i1 + vir_i2)
@@ -557,7 +556,6 @@ class Map2body:
         self.build_map_container()
 
     def GenGrid(self, GP):
-
         '''
         To use GP to predict value on each grid point, we need to generate the
         kernel vector kv whose length is the same as the training set size.
@@ -586,7 +584,8 @@ class Map2body:
             bond_vars = np.zeros([nop, len(GP.alpha)])
         else:
             bond_vars = None
-        env12 = AtomicEnvironment(self.bond_struc, 0, GP.cutoffs, cutoffs_mask=GP.hyps_mask)
+        env12 = AtomicEnvironment(
+            self.bond_struc, 0, GP.cutoffs, cutoffs_mask=GP.hyps_mask)
 
         # --------- calculate force kernels ---------------
         with mp.Pool(processes=processes) as pool:
@@ -605,7 +604,7 @@ class Map2body:
                                                env12, kernel_info)))
             k12_matrix = []
             for ibatch in range(nbatch):
-                k12_matrix +=[k12_slice[ibatch].get()]
+                k12_matrix += [k12_slice[ibatch].get()]
             pool.close()
             pool.join()
         del k12_slice
@@ -625,7 +624,7 @@ class Map2body:
                     args=(GP.name, s, e, bond_lengths, env12, kernel_info)))
             k12_matrix = []
             for ibatch in range(nbatch):
-                k12_matrix +=[k12_slice[ibatch].get()]
+                k12_matrix += [k12_slice[ibatch].get()]
             pool.close()
             pool.join()
         del k12_slice
@@ -655,7 +654,6 @@ class Map2body:
 
     def _GenGrid_inner(self, name, s, e, bond_lengths,
                        env12, kernel_info):
-
         '''
         Calculate kv segments of the given batch of training data for all grids
         '''
@@ -672,7 +670,6 @@ class Map2body:
         return np.moveaxis(k12_v, 0, -1)
 
     def _GenGrid_energy(self, name, s, e, bond_lengths, env12, kernel_info):
-
         '''
         Calculate kv segments of the given batch of training data for all grids
         '''
@@ -689,7 +686,6 @@ class Map2body:
         return np.moveaxis(k12_v, 0, -1)
 
     def build_map_container(self):
-
         '''
         build 1-d spline function for mean, 2-d for var
         '''
@@ -763,7 +759,6 @@ class Map3body:
         self.mean_only = mean_only
 
     def GenGrid(self, GP):
-
         '''
         To use GP to predict value on each grid point, we need to generate the
         kernel vector kv whose length is the same as the training set size.
@@ -797,7 +792,8 @@ class Map3body:
         else:
             grid_vars = None
 
-        env12 = AtomicEnvironment(self.bond_struc, 0, GP.cutoffs, cutoffs_mask=GP.hyps_mask)
+        env12 = AtomicEnvironment(
+            self.bond_struc, 0, GP.cutoffs, cutoffs_mask=GP.hyps_mask)
         n_envs = len(GP.training_data)
         n_strucs = len(GP.training_structures)
         n_kern = n_envs * 3 + n_strucs
@@ -807,9 +803,12 @@ class Map3body:
                 raise NotImplementedError("the update function is "
                                           "not yet implemented")
             else:
+                mapk = str_to_mapped_kernel('3', GP.multihyps)
+                mapped_kernel_info = (kernel_info[0], kernel_info[1], mapk,
+                                      kernel_info[3], kernel_info[4], kernel_info[5])
                 k12_v_force = \
-                    self._GenGrid_inner(GP.name, 0, n_envs, bonds1, bonds2,
-                                        bonds12, env12, kernel_info)
+                    self._GenGrid_numba(GP.name, 0, n_envs, self.bounds,
+                                        n1, n2, n12, env12, mapped_kernel_info)
                 k12_v_energy = \
                     self._GenGrid_energy(GP.name, 0, n_strucs, bonds1, bonds2,
                                          bonds12, env12, kernel_info)
@@ -836,7 +835,7 @@ class Map3body:
                                   env12, kernel_info)))
                     k12_matrix = []
                     for ibatch in range(nbatch):
-                        k12_matrix +=[k12_slice[ibatch].get()]
+                        k12_matrix += [k12_slice[ibatch].get()]
                     pool.close()
                     pool.join()
 
@@ -866,7 +865,7 @@ class Map3body:
                                   env12, kernel_info)))
                     k12_matrix = []
                     for ibatch in range(nbatch):
-                        k12_matrix +=[k12_slice[ibatch].get()]
+                        k12_matrix += [k12_slice[ibatch].get()]
                     pool.close()
                     pool.join()
 
@@ -898,7 +897,6 @@ class Map3body:
 
     def _GenGrid_inner(self, name, s, e, bonds1, bonds2, bonds12, env12,
                        kernel_info):
-
         '''
         Calculate kv segments of the given batch of training data for all grids
         '''
@@ -950,9 +948,60 @@ class Map3body:
 
         return np.moveaxis(k12_v, -1, 0)
 
+    def _GenGrid_numba(self, name, s, e, bounds, nb1, nb2, nb12, env12, kernel_info):
+        """
+        Loop over different parts of the training set. from element s to element e
+
+        Args:
+            name: name of the gp instance
+            s: start index of the training data parition
+            e: end index of the training data parition
+            bonds1: list of bond to consider for edge center-1
+            bonds2: list of bond to consider for edge center-2
+            bonds12: list of bond to consider for edge 1-2
+            env12: AtomicEnvironment container of the triplet
+            kernel_info: return value of the get_3b_kernel
+        """
+
+        kernel, en_kernel, en_force_kernel, cutoffs, hyps, hyps_mask = \
+            kernel_info
+
+        training_data = _global_training_data[name]
+
+        ds = [1, 2, 3]
+        size = (e-s) * 3
+
+        bonds1 = np.linspace(bounds[0][0], bounds[1][0], nb1)
+        bonds2 = np.linspace(bounds[0][0], bounds[1][0], nb2)
+        bonds12 = np.linspace(bounds[0][2], bounds[1][2], nb12)
+
+        r1 = np.ones([nb1, nb2, nb12], dtype=np.float64)
+        r2 = np.ones([nb1, nb2, nb12], dtype=np.float64)
+        r12 = np.ones([nb1, nb2, nb12], dtype=np.float64)
+        for b12 in range(nb12):
+            for b1 in range(nb1):
+                for b2 in range(nb2):
+                    r1[b1, b2, b12] = bonds1[b1]
+                    r2[b1, b2, b12] = bonds2[b2]
+                    r12[b1, b2, b12] = bonds12[b12]
+        del bonds1
+        del bonds2
+        del bonds12
+
+        args = from_mask_to_args(hyps, hyps_mask, cutoffs)
+
+        k_v = []
+        for m_index in range(size):
+            x_2 = training_data[int(floor(m_index / 3))+s]
+            d_2 = ds[m_index % 3]
+            k_v += [[en_force_kernel(x_2, r1, r2, r12,
+                                     env12.ctype, env12.etypes,
+                                     d_2, *args)]]
+
+        return np.vstack(k_v)
+
     def _GenGrid_energy(self, name, s, e, bonds1, bonds2, bonds12, env12,
                         kernel_info):
-
         '''
         Calculate kv segments of the given batch of training data for all grids
         '''
@@ -983,7 +1032,6 @@ class Map3body:
         return np.moveaxis(k12_v, -1, 0)
 
     def build_map_container(self):
-
         '''
         build 3-d spline function for mean,
         3-d for the low rank approximation of L^{-1}k*

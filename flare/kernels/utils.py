@@ -1,6 +1,7 @@
 import numpy as np
 
 from flare.kernels import sc, mc_simple, mc_sephyps
+import flare.kernels.map_3b_kernel as map_3b
 
 """
 This module includes interface functions between kernels and gp/gp_algebra
@@ -76,6 +77,49 @@ def str_to_kernel_set(name: str, multihyps: bool = False):
 
     return stk[prefix], stk[prefix+'_grad'], stk[prefix+'_en'], \
         stk[prefix+'_force_en']
+
+def str_to_mapped_kernel(name: str, multihyps: bool = False, energy=False):
+    """
+    return kernels and kernel gradient function base on a string.
+    If it contains 'sc', it will use the kernel in sc module;
+    otherwise, it uses the kernel in mc_simple;
+    if sc is not included and multihyps is True,
+    it will use the kernel in mc_sephyps module
+    otherwise, it will use the kernel in the sc module
+
+    Args:
+
+    name (str): name for kernels. example: "2+3mc"
+    multihyps (bool, optional): True for using multiple hyperparameter groups
+    energy (bool, optional): True for mapping energy/energy kernel
+
+    :return: mapped kernel function, kernel gradient, energy kernel,
+             energy_and_force kernel
+
+    """
+
+    if 'sc' in name:
+        raise NotImplementedError("mapped kernel for single component "\
+                "is not implemented")
+
+    # b2 = Two body in use, b3 = Three body in use
+    b2 = False
+    many = False
+    b3 = False
+    for s in ['3', 'three', 'Three', 'THREE']:
+        if (s in name):
+            b3 = True
+
+    if (b3 == True and energy == False):
+        if (multihyps is True):
+            tbmfe = map_3b.three_body_mc_force_en_sephyps
+        else:
+            tbmfe = map_3b.three_body_mc_force_en
+    else:
+        raise NotImplementedError("mapped kernel for two-body and manybody kernels "\
+                "are not implemented")
+
+    return tbmfe
 
 
 def from_mask_to_args(hyps, hyps_mask: dict, cutoffs):
