@@ -407,7 +407,7 @@ class Map2body:
             bond_vars = np.zeros([nop, len(GP.alpha)])
         else:
             bond_vars = None
-        env12 = AtomicEnvironment(self.bond_struc, 0, GP.cutoffs, GP.hyps_mask)
+        env12 = AtomicEnvironment(self.bond_struc, 0, GP.cutoffs, cutoffs_mask=GP.hyps_mask)
 
         if processes == 1 :
             k12_v_all = self._GenGrid_inner(GP.name, 0, len(GP.training_data),
@@ -571,7 +571,7 @@ class Map3body:
             bond_vars = np.zeros([nop, nop, noa, len(GP.alpha)])
         else:
             bond_vars = None
-        env12 = AtomicEnvironment(self.bond_struc, 0, GP.cutoffs, GP.hyps_mask)
+        env12 = AtomicEnvironment(self.bond_struc, 0, GP.cutoffs, cutoffs_mask=GP.hyps_mask)
 
         with mp.Pool(processes=processes) as pool:
             if self.update:
@@ -648,7 +648,7 @@ class Map3body:
         cos_angles = np.linspace(self.l_bounds[2], self.u_bounds[2], noa)
         bond_means = np.zeros([nop, nop, noa])
         bond_vars = np.zeros([nop, nop, noa, len(GP.alpha)])
-        env12 = AtomicEnvironment(self.bond_struc, 0, GP.cutoffs, GP.hyps_mask)
+        env12 = AtomicEnvironment(self.bond_struc, 0, GP.cutoffs, cutoffs_mask=GP.hyps_mask)
 
         if self.update:
             if 'kv3' in os.listdir():

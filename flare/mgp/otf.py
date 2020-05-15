@@ -152,7 +152,7 @@ def predict_on_structure_mgp(structure, mgp, output=None,
         if n not in selective_atoms and selective_atoms:
             continue
 
-        chemenv = AtomicEnvironment(structure, n, mgp.cutoffs, mgp.hyps_mask)
+        chemenv = AtomicEnvironment(structure, n, mgp.cutoffs, cutoffs_mask=mgp.hyps_mask)
         force, var, _, _ = mgp.predict(chemenv)
         if write_to_structure:
             structure.forces[n][:] = force

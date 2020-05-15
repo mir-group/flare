@@ -104,7 +104,7 @@ class FLARE_Calculator(Calculator):
         for n in range(nat):
             chemenv = AtomicEnvironment(struc_curr, n,
                                         self.mgp_model.cutoffs,
-                                        self.mgp_model.hyps_mask)
+                                        cutoffs_mask = self.mgp_model.hyps_mask)
             f, v, vir, e = self.mgp_model.predict(chemenv, mean_only=False)
             self.results['forces'][n] = f
             self.results['stresses'][n] = vir

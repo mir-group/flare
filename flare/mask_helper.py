@@ -1267,6 +1267,8 @@ class HyperParameterMasking():
                 hyps_mask['cut3b_mask'] = o_hyps_mask['cut3b_mask']
                 hyps_mask['cutoff_3b'] = o_hyps_mask['cutoff_3b']
         else:
+            # kind of assuming that 2-body is there
+            base = 2
             hyps = [hyps[0+base], hyps[1+base], hyps[-1]]
             hyps_mask = None
 
@@ -1302,6 +1304,8 @@ class HyperParameterMasking():
             if ('cutoff_mb' in o_hyps_mask):
                 hyps_mask['cutoff_mb'] = o_hyps_mask['cutoff_mb']
         else:
+            # kind of assuming that 2+3 are there
+            base = 4
             hyps = [hyps[0+base], hyps[1+base], hyps[-1]]
             hyps_mask = None
 

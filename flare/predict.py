@@ -29,7 +29,7 @@ def predict_on_atom(param: Tuple[Structure, int, GaussianProcess]) -> (
     # Unpack the input tuple, convert a chemical environment
     structure, atom, gp = param
     # Obtain the associated chemical environment
-    chemenv = AtomicEnvironment(structure, atom, gp.cutoffs, gp.hyps_mask)
+    chemenv = AtomicEnvironment(structure, atom, gp.cutoffs, cutoffs_mask=gp.hyps_mask)
     components = []
     stds = []
     # predict force components and standard deviations
@@ -58,7 +58,7 @@ def predict_on_atom_en(param: Tuple[Structure, int, GaussianProcess]) -> (
     # Unpack the input tuple, convert a chemical environment
     structure, atom, gp = param
     # Obtain the associated chemical environment
-    chemenv = AtomicEnvironment(structure, atom, gp.cutoffs, gp.hyps_mask)
+    chemenv = AtomicEnvironment(structure, atom, gp.cutoffs, cutoffs_mask=gp.hyps_mask)
     comps = []
     stds = []
     # predict force components and standard deviations
@@ -77,7 +77,7 @@ def predict_on_atom_en_std(param):
     """Predict local energy and predictive std of a chemical environment."""
 
     structure, atom, gp = param
-    chemenv = AtomicEnvironment(structure, atom, gp.cutoffs)
+    chemenv = AtomicEnvironment(structure, atom, gp.cutoffs, cutoffs_mask=gp.hyps_mask)
 
     # predict local energy
     loc_en, loc_en_var = gp.predict_local_energy_and_var(chemenv)
@@ -131,7 +131,7 @@ def predict_on_structure(structure: Structure, gp: GaussianProcess,
         if n not in selective_atoms and selective_atoms:
             continue
 
-        chemenv = AtomicEnvironment(structure, n, gp.cutoffs, gp.hyps_mask)
+        chemenv = AtomicEnvironment(structure, n, gp.cutoffs, cutoffs_mask=gp.hyps_mask)
 
         for i in range(3):
             force, var = gp.predict(chemenv, i + 1)
@@ -268,7 +268,7 @@ def predict_on_structure_en(structure: Structure, gp: GaussianProcess,
         if selective_atoms and n not in selective_atoms:
             continue
 
-        chemenv = AtomicEnvironment(structure, n, gp.cutoffs, gp.hyps_mask)
+        chemenv = AtomicEnvironment(structure, n, gp.cutoffs, cutoffs_mask=gp.hyps_mask)
 
         for i in range(3):
             force, var = gp.predict(chemenv, i + 1)
