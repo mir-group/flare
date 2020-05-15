@@ -1,12 +1,19 @@
-"""Multi-element 2-, 3-, and 2+3-body kernels that restrict all signal
-variance hyperparameters to a single value."""
+"""
+Implementation of three-body kernels using different cutoffs.
+
+The kernels are slightly slower.
+"""
+
 import numpy as np
+import os
+import sys
+
 from numba import njit
 from math import exp
-import sys
-import os
-from flare.env import AtomicEnvironment
+
 import flare.kernels.cutoffs as cf
+
+from flare.env import AtomicEnvironment
 from flare.kernels.kernels import coordination_number, q_value, q_value_mc, \
     mb_grad_helper_ls_, mb_grad_helper_ls_, k_sq_exp_double_dev, k_sq_exp_dev
 from typing import Callable

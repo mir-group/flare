@@ -178,7 +178,7 @@ def two_plus_three_mc_en(env1: AtomicEnvironment, env2: AtomicEnvironment,
         cutoff_func (Callable): Cutoff function of the kernel.
 
     Return:
-        float: Value of the 2+3-body force/energy kernel.
+        float: Value of the 2+3-body energy/energy kernel.
     """
 
     sig2 = hyps[0]

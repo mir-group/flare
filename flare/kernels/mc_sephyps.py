@@ -1,22 +1,38 @@
-import numpy as np
-from numba import njit
-from math import exp
-import flare.kernels.cutoffs as cf
-from flare.kernels.kernels import force_helper, grad_constants, grad_helper, \
-    force_energy_helper, three_body_en_helper, three_body_helper_1, \
-    three_body_helper_2, three_body_grad_helper_1, three_body_grad_helper_2
-from flare.kernels.mc_3b_sepcut import three_body_mc_sepcut_jit, \
-    three_body_mc_grad_sepcut_jit, three_body_mc_force_en_sepcut_jit, \
-    three_body_mc_en_sepcut_jit
-from flare.kernels.mc_mb_sepcut import \
-    many_body_mc_sepcut_jit, many_body_mc_grad_sepcut_jit, \
-    many_body_mc_force_en_sepcut_jit, many_body_mc_en_sepcut_jit
 """
-Multicomponent kernels that restrict all signal variance hyperparameters to
-a single value.
-Masking hyperparameters allows you to have different sets of hyperparameters
-for different elements, and different groupings of elements.
-* hyps_mask is a dictionary with the following keys and values:
+Multicomponent kernels (simple) restrict all signal variance and length scale of hyperparameters
+to a single value. The kernels in this module allow you to have different sets of hyperparameters
+and cutoffs for different interactions, and have flexible groupings of elements. It also allows
+you to do partial hyper-parameter training, keeping some components fixed.
+
+To use this set of kernels, we need a hyps_mask dictionary for GaussianProcess, MappedGaussianProcess,
+and AtomicEnvironment (if you also set up different cutoffs).  A simple example is shown below.
+
+    from flare.utils.mask_helper import HyperParameterMasking
+    from flare.gp import GaussianProcess
+
+        pm = HyperParameterMasking(species=['O', 'C', 'H'],
+                              bonds=[['*', '*'], ['O','O']],
+                              triplets=[['*', '*', '*'], ['O','O', 'O']],
+                              parameters={'bond0':[1, 0.5, 1], 'bond1':[2, 0.2, 2],
+                                    'triplet0':[1, 0.5], 'triplet1':[2, 0.2],
+                                    'cutoff2b':2, 'cutoff3b':1, 'noise': 0.05},
+                              constraints={'bond0':[False, True]})
+        hyps_mask = pm1.generate_dict()
+        hyps = hyps_mask['hyps']
+        cutoffs = hyps_mask['cutoffs']
+        hyp_labels = hyps_mask['hyp_labels']
+        gp_model = GaussianProcess(kernel_name="2+3_mc",
+                                   hyps=hyps, cutoffs=cutoffs,
+                                   hyp_labels=hyp_labels,
+                                   parallel=True, per_atom_par=False,
+                                   n_cpus=n_cpus,
+                                   multihyps=True, hyps_mask=hm)
+
+
+In the example above, HyperParameterMasking class generates the arrays needed
+for these kernels and store all the grouping and mapping information in the
+hyps_mask dictionary.  It stores following keys and values:
+
 * spec_mask: 118-long integer array descirbing which elements belong to
              like groups for determining which bond hyperparameters to use. For
              instance, [0,0,1,1,0 ...] assigns H to group 0, He and Li to group 1,
@@ -66,7 +82,6 @@ map: np.array, array to map the hyper parameter back to the full set.
 map[i]=j means the i-th element in hyps should be the j-th element in
 hyps_mask['original']
 
-
 For example, the full set of hyper parmeters
 may include [ls21, ls22, sig21, sig22, ls3
 sg3, noise] but suppose you wanted only the set 21 optimized.
@@ -88,6 +103,23 @@ final hyperparameter value in hyps.
 
 """
 
+from math import exp
+import numpy as np
+
+from numba import njit
+
+import flare.kernels.cutoffs as cf
+
+from flare.kernels.kernels import force_helper, grad_constants, grad_helper, \
+    force_energy_helper, three_body_en_helper, three_body_helper_1, \
+    three_body_helper_2, three_body_grad_helper_1, three_body_grad_helper_2
+from flare.kernels.mc_3b_sepcut import three_body_mc_sepcut_jit, \
+    three_body_mc_grad_sepcut_jit, three_body_mc_force_en_sepcut_jit, \
+    three_body_mc_en_sepcut_jit
+from flare.kernels.mc_mb_sepcut import \
+    many_body_mc_sepcut_jit, many_body_mc_grad_sepcut_jit, \
+    many_body_mc_force_en_sepcut_jit, many_body_mc_en_sepcut_jit
+
 # -----------------------------------------------------------------------------
 #                        two plus three plus many body kernels
 # -----------------------------------------------------------------------------
@@ -100,6 +132,37 @@ def two_three_many_body_mc(env1, env2, d1, d2, cutoff_2b, cutoff_3b, cutoff_mb,
                            nmb, mb_mask,
                            sig2, ls2, sig3, ls3, sigm, lsm,
                            cutoff_func=cf.quadratic_cutoff):
+    """2+3+manybody multi-element kernel between two force components.
+
+    Args:
+        env1 (AtomicEnvironment): First local environment.
+        env2 (AtomicEnvironment): Second local environment.
+        d1 (int): Force component of the first environment.
+        d2 (int): Force component of the second environment.
+        cutoff_2b (float, np.ndarray): cutoff(s) for two-body interaction
+        cutoff_3b (float, np.ndarray): cutoff(s) for three-body interaction
+        cutoff_mb (float, np.ndarray): cutoff(s) for coordination-based manybody interaction
+        nspec (int): number of different species groups
+        spec_mask (np.ndarray): 118-long integer array that determines specie group
+        nbond (int): number of different hyperparameter sets to associate with two-body pairings
+        bond_mask (np.ndarray): nspec^2 long integer array
+        ntriplet (int): number of different hyperparameter sets to associate with 3-body pairings
+        triplet_mask (np.ndarray): nspec^3 long integer array
+        ncut3b (int): number of different 3-body cutoff sets to associate with 3-body pairings
+        cut3b_mask (np.ndarray): nspec^2 long integer array
+        nmb (int): number of different hyperparameter sets to associate with manybody pairings
+        mb_mask (np.ndarray): nspec^2 long integer array
+        sig2 (np.ndarray): signal variances associates with two-body term
+        ls2 (np.ndarray): length scales associates with two-body term
+        sig3 (np.ndarray): signal variances associates with three-body term
+        ls3 (np.ndarray): length scales associates with three-body term
+        sigm (np.ndarray): signal variances associates with manybody term
+        lsm (np.ndarray): length scales associates with manybody term
+        cutoff_func (Callable): Cutoff function of the kernel.
+
+    Return:
+        float: Value of the 2+3+many-body kernel.
+    """
 
     two_term = two_body_mc_jit(env1.bond_array_2, env1.ctype, env1.etypes,
                                env2.bond_array_2, env2.ctype, env2.etypes,
@@ -141,6 +204,40 @@ def two_three_many_body_mc_grad(env1, env2, d1, d2, cutoff_2b, cutoff_3b, cutoff
                                 nmb, mb_mask,
                                 sig2, ls2, sig3, ls3, sigm, lsm,
                                 cutoff_func=cf.quadratic_cutoff):
+    """2+3+manybody multi-element kernel between two force components and its
+    gradient with respect to the hyperparameters.
+
+    Args:
+        env1 (AtomicEnvironment): First local environment.
+        env2 (AtomicEnvironment): Second local environment.
+        d1 (int): Force component of the first environment.
+        d2 (int): Force component of the second environment.
+        cutoff_2b (float, np.ndarray): cutoff(s) for two-body interaction
+        cutoff_3b (float, np.ndarray): cutoff(s) for three-body interaction
+        cutoff_mb (float, np.ndarray): cutoff(s) for coordination-based manybody interaction
+        nspec (int): number of different species groups
+        spec_mask (np.ndarray): 118-long integer array that determines specie group
+        nbond (int): number of different hyperparameter sets to associate with two-body pairings
+        bond_mask (np.ndarray): nspec^2 long integer array
+        ntriplet (int): number of different hyperparameter sets to associate with 3-body pairings
+        triplet_mask (np.ndarray): nspec^3 long integer array
+        ncut3b (int): number of different 3-body cutoff sets to associate with 3-body pairings
+        cut3b_mask (np.ndarray): nspec^2 long integer array
+        nmb (int): number of different hyperparameter sets to associate with manybody pairings
+        mb_mask (np.ndarray): nspec^2 long integer array
+        sig2 (np.ndarray): signal variances associates with two-body term
+        ls2 (np.ndarray): length scales associates with two-body term
+        sig3 (np.ndarray): signal variances associates with three-body term
+        ls3 (np.ndarray): length scales associates with three-body term
+        sigm (np.ndarray): signal variances associates with manybody term
+        lsm (np.ndarray): length scales associates with manybody term
+        cutoff_func (Callable): Cutoff function of the kernel.
+
+    Return:
+        (float, np.ndarray):
+            Value of the 2+3+manybody kernel and its gradient
+            with respect to the hyperparameters.
+    """
 
     kern2, grad2 = \
         two_body_mc_grad_jit(env1.bond_array_2, env1.ctype, env1.etypes,
@@ -187,6 +284,38 @@ def two_three_many_mc_force_en(env1, env2, d1, cutoff_2b, cutoff_3b, cutoff_mb,
                                nmb, mb_mask,
                                sig2, ls2, sig3, ls3, sigm, lsm,
                                cutoff_func=cf.quadratic_cutoff):
+    """2+3+manybody multi-element kernel between a force component and a local
+    energy.
+
+    Args:
+        env1 (AtomicEnvironment): First local environment.
+        env2 (AtomicEnvironment): Second local environment.
+        d1 (int): Force component of the first environment.
+        d2 (int): Force component of the second environment.
+        cutoff_2b (float, np.ndarray): cutoff(s) for two-body interaction
+        cutoff_3b (float, np.ndarray): cutoff(s) for three-body interaction
+        cutoff_mb (float, np.ndarray): cutoff(s) for coordination-based manybody interaction
+        nspec (int): number of different species groups
+        spec_mask (np.ndarray): 118-long integer array that determines specie group
+        nbond (int): number of different hyperparameter sets to associate with two-body pairings
+        bond_mask (np.ndarray): nspec^2 long integer array
+        ntriplet (int): number of different hyperparameter sets to associate with 3-body pairings
+        triplet_mask (np.ndarray): nspec^3 long integer array
+        ncut3b (int): number of different 3-body cutoff sets to associate with 3-body pairings
+        cut3b_mask (np.ndarray): nspec^2 long integer array
+        nmb (int): number of different hyperparameter sets to associate with manybody pairings
+        mb_mask (np.ndarray): nspec^2 long integer array
+        sig2 (np.ndarray): signal variances associates with two-body term
+        ls2 (np.ndarray): length scales associates with two-body term
+        sig3 (np.ndarray): signal variances associates with three-body term
+        ls3 (np.ndarray): length scales associates with three-body term
+        sigm (np.ndarray): signal variances associates with manybody term
+        lsm (np.ndarray): length scales associates with manybody term
+        cutoff_func (Callable): Cutoff function of the kernel.
+
+    Return:
+        float: Value of the 2+3+many-body force/energy kernel.
+    """
 
     two_term = \
         two_body_mc_force_en_jit(env1.bond_array_2, env1.ctype, env1.etypes,
@@ -232,6 +361,37 @@ def two_three_many_mc_en(env1, env2, cutoff_2b, cutoff_3b, cutoff_mb,
                          nmb, mb_mask,
                          sig2, ls2, sig3, ls3, sigm, lsm,
                          cutoff_func=cf.quadratic_cutoff):
+    """2+3+many-body multi-element kernel between two local energies.
+
+    Args:
+        env1 (AtomicEnvironment): First local environment.
+        env2 (AtomicEnvironment): Second local environment.
+        d1 (int): Force component of the first environment.
+        d2 (int): Force component of the second environment.
+        cutoff_2b (float, np.ndarray): cutoff(s) for two-body interaction
+        cutoff_3b (float, np.ndarray): cutoff(s) for three-body interaction
+        cutoff_mb (float, np.ndarray): cutoff(s) for coordination-based manybody interaction
+        nspec (int): number of different species groups
+        spec_mask (np.ndarray): 118-long integer array that determines specie group
+        nbond (int): number of different hyperparameter sets to associate with two-body pairings
+        bond_mask (np.ndarray): nspec^2 long integer array
+        ntriplet (int): number of different hyperparameter sets to associate with 3-body pairings
+        triplet_mask (np.ndarray): nspec^3 long integer array
+        ncut3b (int): number of different 3-body cutoff sets to associate with 3-body pairings
+        cut3b_mask (np.ndarray): nspec^2 long integer array
+        nmb (int): number of different hyperparameter sets to associate with manybody pairings
+        mb_mask (np.ndarray): nspec^2 long integer array
+        sig2 (np.ndarray): signal variances associates with two-body term
+        ls2 (np.ndarray): length scales associates with two-body term
+        sig3 (np.ndarray): signal variances associates with three-body term
+        ls3 (np.ndarray): length scales associates with three-body term
+        sigm (np.ndarray): signal variances associates with manybody term
+        lsm (np.ndarray): length scales associates with manybody term
+        cutoff_func (Callable): Cutoff function of the kernel.
+
+    Return:
+        float: Value of the 2+3+many-body energy/energy kernel.
+    """
 
     two_term = two_body_mc_en_jit(env1.bond_array_2, env1.ctype, env1.etypes,
                                   env2.bond_array_2, env2.ctype, env2.etypes,
@@ -277,6 +437,33 @@ def two_plus_three_body_mc(env1, env2, d1, d2, cutoff_2b, cutoff_3b,
                            ncut3b, cut3b_mask,
                            sig2, ls2, sig3, ls3,
                            cutoff_func=cf.quadratic_cutoff):
+    """2+3-body multi-element kernel between two force components.
+
+    Args:
+        env1 (AtomicEnvironment): First local environment.
+        env2 (AtomicEnvironment): Second local environment.
+        d1 (int): Force component of the first environment.
+        d2 (int): Force component of the second environment.
+        cutoff_2b (float, np.ndarray): cutoff(s) for two-body interaction
+        cutoff_3b (float, np.ndarray): cutoff(s) for three-body interaction
+        cutoff_mb (float, np.ndarray): cutoff(s) for coordination-based manybody interaction
+        nspec (int): number of different species groups
+        spec_mask (np.ndarray): 118-long integer array that determines specie group
+        nbond (int): number of different hyperparameter sets to associate with two-body pairings
+        bond_mask (np.ndarray): nspec^2 long integer array
+        ntriplet (int): number of different hyperparameter sets to associate with 3-body pairings
+        triplet_mask (np.ndarray): nspec^3 long integer array
+        ncut3b (int): number of different 3-body cutoff sets to associate with 3-body pairings
+        cut3b_mask (np.ndarray): nspec^2 long integer array
+        sig2 (np.ndarray): signal variances associates with two-body term
+        ls2 (np.ndarray): length scales associates with two-body term
+        sig3 (np.ndarray): signal variances associates with three-body term
+        ls3 (np.ndarray): length scales associates with three-body term
+        cutoff_func (Callable): Cutoff function of the kernel.
+
+    Return:
+        float: Value of the 2+3-body force/force kernel.
+    """
 
     two_term = two_body_mc_jit(env1.bond_array_2, env1.ctype, env1.etypes,
                                env2.bond_array_2, env2.ctype, env2.etypes,
@@ -306,6 +493,35 @@ def two_plus_three_body_mc_grad(env1, env2, d1, d2, cutoff_2b, cutoff_3b,
                                 ncut3b, cut3b_mask,
                                 sig2, ls2, sig3, ls3,
                                 cutoff_func=cf.quadratic_cutoff):
+    """2+3-body multi-element kernel between two force components and its
+    gradient with respect to the hyperparameters.
+
+    Args:
+        env1 (AtomicEnvironment): First local environment.
+        env2 (AtomicEnvironment): Second local environment.
+        d1 (int): Force component of the first environment.
+        d2 (int): Force component of the second environment.
+        cutoff_2b (float, np.ndarray): cutoff(s) for two-body interaction
+        cutoff_3b (float, np.ndarray): cutoff(s) for three-body interaction
+        nspec (int): number of different species groups
+        spec_mask (np.ndarray): 118-long integer array that determines specie group
+        nbond (int): number of different hyperparameter sets to associate with two-body pairings
+        bond_mask (np.ndarray): nspec^2 long integer array
+        ntriplet (int): number of different hyperparameter sets to associate with 3-body pairings
+        triplet_mask (np.ndarray): nspec^3 long integer array
+        ncut3b (int): number of different 3-body cutoff sets to associate with 3-body pairings
+        cut3b_mask (np.ndarray): nspec^2 long integer array
+        sig2 (np.ndarray): signal variances associates with two-body term
+        ls2 (np.ndarray): length scales associates with two-body term
+        sig3 (np.ndarray): signal variances associates with three-body term
+        ls3 (np.ndarray): length scales associates with three-body term
+        cutoff_func (Callable): Cutoff function of the kernel.
+
+    Return:
+        (float, np.ndarray):
+            Value of the 2+3-body kernel and its gradient
+            with respect to the hyperparameters.
+    """
 
     kern2, grad2 = \
         two_body_mc_grad_jit(env1.bond_array_2, env1.ctype, env1.etypes,
@@ -341,6 +557,33 @@ def two_plus_three_mc_force_en(env1, env2, d1, cutoff_2b, cutoff_3b,
                                ncut3b, cut3b_mask,
                                sig2, ls2, sig3, ls3,
                                cutoff_func=cf.quadratic_cutoff):
+    """2+3-body multi-element kernel between force and local energy
+
+    Args:
+        env1 (AtomicEnvironment): First local environment.
+        env2 (AtomicEnvironment): Second local environment.
+        d1 (int): Force component of the first environment.
+        d2 (int): Force component of the second environment.
+        cutoff_2b (float, np.ndarray): cutoff(s) for two-body interaction
+        cutoff_3b (float, np.ndarray): cutoff(s) for three-body interaction
+        cutoff_mb (float, np.ndarray): cutoff(s) for coordination-based manybody interaction
+        nspec (int): number of different species groups
+        spec_mask (np.ndarray): 118-long integer array that determines specie group
+        nbond (int): number of different hyperparameter sets to associate with two-body pairings
+        bond_mask (np.ndarray): nspec^2 long integer array
+        ntriplet (int): number of different hyperparameter sets to associate with 3-body pairings
+        triplet_mask (np.ndarray): nspec^3 long integer array
+        ncut3b (int): number of different 3-body cutoff sets to associate with 3-body pairings
+        cut3b_mask (np.ndarray): nspec^2 long integer array
+        sig2 (np.ndarray): signal variances associates with two-body term
+        ls2 (np.ndarray): length scales associates with two-body term
+        sig3 (np.ndarray): signal variances associates with three-body term
+        ls3 (np.ndarray): length scales associates with three-body term
+        cutoff_func (Callable): Cutoff function of the kernel.
+
+    Return:
+        float: Value of the 2+3-body force/energy kernel.
+    """
 
     two_term = \
         two_body_mc_force_en_jit(env1.bond_array_2, env1.ctype, env1.etypes,
@@ -374,6 +617,33 @@ def two_plus_three_mc_en(env1, env2, cutoff_2b, cutoff_3b,
                          ncut3b, cut3b_mask,
                          sig2, ls2, sig3, ls3,
                          cutoff_func=cf.quadratic_cutoff):
+    """2+3-body multi-element kernel between two local energies
+
+    Args:
+        env1 (AtomicEnvironment): First local environment.
+        env2 (AtomicEnvironment): Second local environment.
+        d1 (int): Force component of the first environment.
+        d2 (int): Force component of the second environment.
+        cutoff_2b (float, np.ndarray): cutoff(s) for two-body interaction
+        cutoff_3b (float, np.ndarray): cutoff(s) for three-body interaction
+        cutoff_mb (float, np.ndarray): cutoff(s) for coordination-based manybody interaction
+        nspec (int): number of different species groups
+        spec_mask (np.ndarray): 118-long integer array that determines specie group
+        nbond (int): number of different hyperparameter sets to associate with two-body pairings
+        bond_mask (np.ndarray): nspec^2 long integer array
+        ntriplet (int): number of different hyperparameter sets to associate with 3-body pairings
+        triplet_mask (np.ndarray): nspec^3 long integer array
+        ncut3b (int): number of different 3-body cutoff sets to associate with 3-body pairings
+        cut3b_mask (np.ndarray): nspec^2 long integer array
+        sig2 (np.ndarray): signal variances associates with two-body term
+        ls2 (np.ndarray): length scales associates with two-body term
+        sig3 (np.ndarray): signal variances associates with three-body term
+        ls3 (np.ndarray): length scales associates with three-body term
+        cutoff_func (Callable): Cutoff function of the kernel.
+
+    Return:
+        float: Value of the 2+3-body energy/energy kernel.
+    """
 
     two_term = two_body_mc_en_jit(env1.bond_array_2, env1.ctype, env1.etypes,
                                   env2.bond_array_2, env2.ctype, env2.etypes,
@@ -411,6 +681,32 @@ def three_body_mc(env1, env2, d1, d2, cutoff_2b, cutoff_3b,
                   ncut3b, cut3b_mask,
                   sig2, ls2, sig3, ls3,
                   cutoff_func=cf.quadratic_cutoff):
+    """3-body multi-element kernel between two force components.
+
+    Args:
+        env1 (AtomicEnvironment): First local environment.
+        env2 (AtomicEnvironment): Second local environment.
+        d1 (int): Force component of the first environment.
+        d2 (int): Force component of the second environment.
+        cutoff_2b: dummy
+        cutoff_3b (float, np.ndarray): cutoff(s) for three-body interaction
+        nspec (int): number of different species groups
+        spec_mask (np.ndarray): 118-long integer array that determines specie group
+        nbond: dummy
+        bond_mask: dummy
+        ntriplet (int): number of different hyperparameter sets to associate with 3-body pairings
+        triplet_mask (np.ndarray): nspec^3 long integer array
+        ncut3b (int): number of different 3-body cutoff sets to associate with 3-body pairings
+        cut3b_mask (np.ndarray): nspec^2 long integer array
+        sig2: dummy
+        ls2: dummy
+        sig3 (np.ndarray): signal variances associates with three-body term
+        ls3 (np.ndarray): length scales associates with three-body term
+        cutoff_func (Callable): Cutoff function of the kernel.
+
+    Return:
+        float: Value of the 2+3-body force/force kernel.
+    """
 
     if (ncut3b == 0):
         tbmcj = three_body_mc_jit
@@ -433,6 +729,35 @@ def three_body_mc_grad(env1, env2, d1, d2, cutoff_2b, cutoff_3b,
                        ncut3b, cut3b_mask,
                        sig2, ls2, sig3, ls3,
                        cutoff_func=cf.quadratic_cutoff):
+    """3-body multi-element kernel between two force components and its
+    gradient with respect to the hyperparameters.
+
+    Args:
+        env1 (AtomicEnvironment): First local environment.
+        env2 (AtomicEnvironment): Second local environment.
+        d1 (int): Force component of the first environment.
+        d2 (int): Force component of the second environment.
+        cutoff_2b: dummy
+        cutoff_3b (float, np.ndarray): cutoff(s) for three-body interaction
+        nspec (int): number of different species groups
+        spec_mask (np.ndarray): 118-long integer array that determines specie group
+        nbond: dummy
+        bond_mask: dummy
+        ntriplet (int): number of different hyperparameter sets to associate with 3-body pairings
+        triplet_mask (np.ndarray): nspec^3 long integer array
+        ncut3b (int): number of different 3-body cutoff sets to associate with 3-body pairings
+        cut3b_mask (np.ndarray): nspec^2 long integer array
+        sig2: dummy
+        ls2: dummy
+        sig3 (np.ndarray): signal variances associates with three-body term
+        ls3 (np.ndarray): length scales associates with three-body term
+        cutoff_func (Callable): Cutoff function of the kernel.
+
+    Return:
+        (float, np.ndarray):
+            Value of the 2+3+manybody kernel and its gradient
+            with respect to the hyperparameters.
+    """
 
     if (ncut3b == 0):
         tbmcj = three_body_mc_grad_jit
@@ -455,6 +780,32 @@ def three_body_mc_force_en(
         ncut3b, cut3b_mask,
         sig2, ls2, sig3, ls3,
         cutoff_func=cf.quadratic_cutoff):
+    """3-body multi-element kernel between a force component and local energies
+
+    Args:
+        env1 (AtomicEnvironment): First local environment.
+        env2 (AtomicEnvironment): Second local environment.
+        d1 (int): Force component of the first environment.
+        d2 (int): Force component of the second environment.
+        cutoff_2b: dummy
+        cutoff_3b (float, np.ndarray): cutoff(s) for three-body interaction
+        nspec (int): number of different species groups
+        spec_mask (np.ndarray): 118-long integer array that determines specie group
+        nbond: dummy
+        bond_mask: dummy
+        ntriplet (int): number of different hyperparameter sets to associate with 3-body pairings
+        triplet_mask (np.ndarray): nspec^3 long integer array
+        ncut3b (int): number of different 3-body cutoff sets to associate with 3-body pairings
+        cut3b_mask (np.ndarray): nspec^2 long integer array
+        sig2: dummy
+        ls2: dummy
+        sig3 (np.ndarray): signal variances associates with three-body term
+        ls3 (np.ndarray): length scales associates with three-body term
+        cutoff_func (Callable): Cutoff function of the kernel.
+
+    Return:
+        float: Value of the 2+3-body force/energy kernel.
+    """
 
     if (ncut3b == 0):
         tbmcj = three_body_mc_force_en_jit
@@ -482,6 +833,32 @@ def three_body_mc_en(env1, env2, cutoff_2b, cutoff_3b, nspec, spec_mask,
                      nbond, bond_mask, ntriplet, triplet_mask,
                      ncut3b, cut3b_mask, sig2, ls2, sig3, ls3,
                      cutoff_func=cf.quadratic_cutoff):
+    """3-body multi-element kernel between two local energies
+
+    Args:
+        env1 (AtomicEnvironment): First local environment.
+        env2 (AtomicEnvironment): Second local environment.
+        d1 (int): Force component of the first environment.
+        d2 (int): Force component of the second environment.
+        cutoff_2b: dummy
+        cutoff_3b (float, np.ndarray): cutoff(s) for three-body interaction
+        nspec (int): number of different species groups
+        spec_mask (np.ndarray): 118-long integer array that determines specie group
+        nbond: dummy
+        bond_mask: dummy
+        ntriplet (int): number of different hyperparameter sets to associate with 3-body pairings
+        triplet_mask (np.ndarray): nspec^3 long integer array
+        ncut3b (int): number of different 3-body cutoff sets to associate with 3-body pairings
+        cut3b_mask (np.ndarray): nspec^2 long integer array
+        sig2: dummy
+        ls2: dummy
+        sig3 (np.ndarray): signal variances associates with three-body term
+        ls3 (np.ndarray): length scales associates with three-body term
+        cutoff_func (Callable): Cutoff function of the kernel.
+
+    Return:
+        float: Value of the 2+3-body energy/energy kernel.
+    """
 
     if (ncut3b == 0):
         tbmcj = three_body_mc_en_jit
@@ -508,6 +885,32 @@ def two_body_mc(
         nbond, bond_mask, ntriplet, triplet_mask, ncut3b, cut3b_mask,
         sig2, ls2, sig3, ls3,
         cutoff_func=cf.quadratic_cutoff):
+    """2-body multi-element kernel between two force components.
+
+    Args:
+        env1 (AtomicEnvironment): First local environment.
+        env2 (AtomicEnvironment): Second local environment.
+        d1 (int): Force component of the first environment.
+        d2 (int): Force component of the second environment.
+        cutoff_2b (float, np.ndarray): cutoff(s) for two-body interaction
+        cutoff_3b: dummy
+        nspec (int): number of different species groups
+        spec_mask (np.ndarray): 118-long integer array that determines specie group
+        nbond (int): number of different hyperparameter sets to associate with two-body pairings
+        bond_mask (np.ndarray): nspec^2 long integer array
+        ntriplet: dummy
+        triplet_mask: dummy
+        ncut3b: dummy
+        cut3b_mask: dummy
+        sig2: dummy
+        ls2: dummy
+        sig3: dummy
+        ls3: dummy
+        cutoff_func (Callable): Cutoff function of the kernel.
+
+    Return:
+        float: Value of the 2-body force/force kernel.
+    """
 
     return two_body_mc_jit(env1.bond_array_2, env1.ctype, env1.etypes,
                            env2.bond_array_2, env2.ctype, env2.etypes,
@@ -520,6 +923,35 @@ def two_body_mc_grad(
         nbond, bond_mask, ntriplet, triplet_mask,
         ncut3b, cut3b_mask, sig2, ls2, sig3, ls3,
         cutoff_func=cf.quadratic_cutoff):
+    """2-body multi-element kernel between two force components and its
+    gradient with respect to the hyperparameters.
+
+    Args:
+        env1 (AtomicEnvironment): First local environment.
+        env2 (AtomicEnvironment): Second local environment.
+        d1 (int): Force component of the first environment.
+        d2 (int): Force component of the second environment.
+        cutoff_2b (float, np.ndarray): cutoff(s) for two-body interaction
+        cutoff_3b: dummy
+        nspec (int): number of different species groups
+        spec_mask (np.ndarray): 118-long integer array that determines specie group
+        nbond (int): number of different hyperparameter sets to associate with two-body pairings
+        bond_mask (np.ndarray): nspec^2 long integer array
+        ntriplet: dummy
+        triplet_mask: dummy
+        ncut3b: dummy
+        cut3b_mask: dummy
+        sig2 (np.ndarray): signal variances associates with two-body term
+        ls2 (np.ndarray): length scales associates with two-body term
+        sig3: dummy
+        ls3: dummy
+        cutoff_func (Callable): Cutoff function of the kernel.
+
+    Return:
+        (float, np.ndarray):
+            Value of the 2-body kernel and its gradient
+            with respect to the hyperparameters.
+    """
 
     return two_body_mc_grad_jit(
         env1.bond_array_2, env1.ctype, env1.etypes,
@@ -532,6 +964,32 @@ def two_body_mc_force_en(env1, env2, d1, cutoff_2b, cutoff_3b,
                          nspec, spec_mask, nbond, bond_mask, ntriplet, triplet_mask,
                          ncut3b, cut3b_mask,
                          sig2, ls2, sig3, ls3, cutoff_func=cf.quadratic_cutoff):
+    """2-body multi-element kernel between a force components and local energy
+
+    Args:
+        env1 (AtomicEnvironment): First local environment.
+        env2 (AtomicEnvironment): Second local environment.
+        d1 (int): Force component of the first environment.
+        d2 (int): Force component of the second environment.
+        cutoff_2b (float, np.ndarray): cutoff(s) for two-body interaction
+        cutoff_3b: dummy
+        nspec (int): number of different species groups
+        spec_mask (np.ndarray): 118-long integer array that determines specie group
+        nbond (int): number of different hyperparameter sets to associate with two-body pairings
+        bond_mask (np.ndarray): nspec^2 long integer array
+        ntriplet: dummy
+        triplet_mask: dummy
+        ncut3b: dummy
+        cut3b_mask: dummy
+        sig2: dummy
+        ls2: dummy
+        sig3: dummy
+        ls3: dummy
+        cutoff_func (Callable): Cutoff function of the kernel.
+
+    Return:
+        float: Value of the 2-body force/energy kernel.
+    """
 
     return two_body_mc_force_en_jit(
         env1.bond_array_2, env1.ctype, env1.etypes,
@@ -544,6 +1002,32 @@ def two_body_mc_en(env1, env2, cutoff_2b, cutoff_3b, nspec, spec_mask,
                    nbond, bond_mask, ntriplet, triplet_mask,
                    ncut3b, cut3b_mask, sig2, ls2, sig3, ls3,
                    cutoff_func=cf.quadratic_cutoff):
+    """2-body multi-element kernel between two local energies
+
+    Args:
+        env1 (AtomicEnvironment): First local environment.
+        env2 (AtomicEnvironment): Second local environment.
+        d1 (int): Force component of the first environment.
+        d2 (int): Force component of the second environment.
+        cutoff_2b (float, np.ndarray): cutoff(s) for two-body interaction
+        cutoff_3b: dummy
+        nspec (int): number of different species groups
+        spec_mask (np.ndarray): 118-long integer array that determines specie group
+        nbond (int): number of different hyperparameter sets to associate with two-body pairings
+        bond_mask (np.ndarray): nspec^2 long integer array
+        ntriplet: dummy
+        triplet_mask: dummy
+        ncut3b: dummy
+        cut3b_mask: dummy
+        sig2: dummy
+        ls2: dummy
+        sig3: dummy
+        ls3: dummy
+        cutoff_func (Callable): Cutoff function of the kernel.
+
+    Return:
+        float: Value of the 2-body energy/energy kernel.
+    """
 
     return two_body_mc_en_jit(env1.bond_array_2, env1.ctype, env1.etypes,
                               env2.bond_array_2, env2.ctype, env2.etypes,
@@ -1337,13 +1821,29 @@ def many_body_mc(env1, env2, d1, d2, cutoff_2b, cutoff_3b, cutoff_mb,
         env2 (AtomicEnvironment): Second local environment.
         d1 (int): Force component of the first environment.
         d2 (int): Force component of the second environment.
-        hyps (np.ndarray): Hyperparameters of the kernel function (sig, ls).
-        cutoffs (np.ndarray): Two-element array containing the 2- and 3-body
-            cutoffs.
+        cutoff_2b: dummy
+        cutoff_3b: dummy
+        cutoff_mb (float, np.ndarray): cutoff(s) for coordination-based manybody interaction
+        nspec (int): number of different species groups
+        spec_mask (np.ndarray): 118-long integer array that determines specie group
+        nbond: dummy
+        bond_mask: dummy
+        ntriplet: dummy
+        triplet_mask: dummy
+        ncut3b: dummy
+        cut3b_mask: dummy
+        nmb (int): number of different hyperparameter sets to associate with manybody pairings
+        mb_mask (np.ndarray): nspec^2 long integer array
+        sig2: dummy
+        ls2: dummy
+        sig3: dummy
+        ls3: dummy
+        sigm (np.ndarray): signal variances associates with manybody term
+        lsm (np.ndarray): length scales associates with manybody term
         cutoff_func (Callable): Cutoff function of the kernel.
 
     Return:
-        float: Value of the 3-body kernel.
+        float: Value of the 2+3+many-body kernel.
     """
 
     return many_body_mc_sepcut_jit(env1.bond_array_mb, env2.bond_array_mb,
@@ -1365,8 +1865,39 @@ def many_body_mc_grad(env1, env2, d1, d2, cutoff_2b, cutoff_3b, cutoff_mb,
                       nmb, mb_mask,
                       sig2, ls2, sig3, ls3, sigm, lsm,
                       cutoff_func=cf.quadratic_cutoff):
-    """gradient manybody-body multi-element kernel between two force components.
+    """manybody multi-element kernel between two force components and its
+    gradient with respect to the hyperparameters.
 
+    Args:
+        env1 (AtomicEnvironment): First local environment.
+        env2 (AtomicEnvironment): Second local environment.
+        d1 (int): Force component of the first environment.
+        d2 (int): Force component of the second environment.
+        cutoff_2b: dummy
+        cutoff_3b: dummy
+        cutoff_mb (float, np.ndarray): cutoff(s) for coordination-based manybody interaction
+        nspec (int): number of different species groups
+        spec_mask (np.ndarray): 118-long integer array that determines specie group
+        nbond: dummy
+        bond_mask: dummy
+        ntriplet: dummy
+        triplet_mask: dummy
+        ncut3b: dummy
+        cut3b_mask: dummy
+        nmb (int): number of different hyperparameter sets to associate with manybody pairings
+        mb_mask (np.ndarray): nspec^2 long integer array
+        sig2: dummy
+        ls2: dummy
+        sig3: dummy
+        ls3: dummy
+        sigm (np.ndarray): signal variances associates with manybody term
+        lsm (np.ndarray): length scales associates with manybody term
+        cutoff_func (Callable): Cutoff function of the kernel.
+
+    Return:
+        (float, np.ndarray):
+            Value of the 2+3+manybody kernel and its gradient
+            with respect to the hyperparameters.
     """
 
     return many_body_mc_grad_sepcut_jit(env1.bond_array_mb, env2.bond_array_mb,

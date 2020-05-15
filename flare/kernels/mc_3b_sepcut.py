@@ -1,3 +1,9 @@
+"""
+Implementation of three-body kernels using different cutoffs.
+
+The kernels are slightly slower.
+"""
+
 import numpy as np
 from numba import njit
 from math import exp

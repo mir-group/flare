@@ -20,9 +20,10 @@ from flare.utils.element_coder import element_to_Z, Z_to_element
 class HyperParameterMasking():
     """
     A helper class to construct the hyps_mask dictionary for AtomicEnvironment
-    and GaussianProcess
+    , GaussianProcess and MappedGaussianProcess
 
-    examples:
+    Examples:
+
         pm = HyperParameterMasking(species=['C', 'H', 'O'],
                                    bonds=[['*', '*'], ['O','O']],
                                    triplets=[['*', '*', '*'],
@@ -60,7 +61,7 @@ class HyperParameterMasking():
     The constraints argument define which hyper-parameters will be optimized.
     True for optimized and false for being fixed.
 
-    There are more examples see tests/test_mask_helper.py
+    See more examples in tests/test_mask_helper.py
 
     """
 
