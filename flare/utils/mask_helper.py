@@ -1220,94 +1220,142 @@ class HyperParameterMasking():
 
         original_hyps = np.copy(hyps)
         if (multihyps is True):
-            o_hyps_mask = hyps_mask
-            if ('map' in o_hyps_mask.keys()):
-                ori_hyps = o_hyps_mask['original']
-                hm = o_hyps_mask['map']
-                for i, h in enumerate(original_hyps):
-                    ori_hyps[hm[i]]=h
-            else:
-                ori_hyps = original_hyps
-            n2b = o_hyps_mask['nbond']
-            hyps = np.hstack([ori_hyps[:n2b*2], ori_hyps[-1]])
-            hyps_mask = {'nbond': n2b, 'ntriplet': 0,
-                         'nspecie': o_hyps_mask['nspecie'],
-                         'specie_mask': o_hyps_mask['specie_mask'],
-                         'bond_mask': o_hyps_mask['bond_mask']}
-            if ('cutoff_2b' in o_hyps_mask):
-                hyps_mask['cutoff_2b'] = o_hyps_mask['cutoff_2b']
+            new_hyps = HyperParameterMasking.get_hyps(hyps_mask, hyps)
+            n2b = hyps_mask['nbond']
+            new_hyps = np.hstack([new_hyps[:n2b*2], new_hyps[-1]])
+            new_hyps_mask = {'nbond': n2b, 'ntriplet': 0,
+                             'nspecie': hyps_mask['nspecie'],
+                             'specie_mask': hyps_mask['specie_mask'],
+                             'bond_mask': hyps_mask['bond_mask']}
+            if ('cutoff_2b' in hyps_mask):
+                new_hyps_mask['cutoff_2b'] = hyps_mask['cutoff_2b']
         else:
-            hyps = [hyps[0], hyps[1], hyps[-1]]
-            hyps_mask = None
+            new_hyps = [hyps[0], hyps[1], hyps[-1]]
+            new_hyps_mask = None
 
-        return hyps, hyps_mask
+        return new_hyps, new_hyps_mask
 
     @staticmethod
     def get_3b_hyps(hyps, hyps_mask, multihyps=False):
 
-        original_hyps = np.copy(hyps)
         if (multihyps is True):
-            o_hyps_mask = hyps_mask
-            if ('map' in o_hyps_mask.keys()):
-                ori_hyps = o_hyps_mask['original']
-                hm = o_hyps_mask['map']
-                for i, h in enumerate(original_hyps):
-                    ori_hyps[hm[i]] = h
-            else:
-                ori_hyps = original_hyps
-            n2b = o_hyps_mask.get('nbond', 0)
-            n3b = o_hyps_mask['ntriplet']
-            hyps = np.hstack([ori_hyps[n2b*2:n2b*2+n3b*2], ori_hyps[-1]])
-            hyps_mask = {'ntriplet': n3b, 'nbond': 0,
-                         'nspecie': o_hyps_mask['nspecie'],
-                         'specie_mask': o_hyps_mask['specie_mask'],
-                         'triplet_mask': o_hyps_mask['triplet_mask']}
-            ncut3b = o_hyps_mask.get('ncut3b', 0)
+            new_hyps = HyperParameterMasking.get_hyps(hyps_mask, hyps)
+            n2b = hyps_mask.get('nbond', 0)
+            n3b = hyps_mask['ntriplet']
+            new_hyps = np.hstack([new_hyps[n2b*2:n2b*2+n3b*2], new_hyps[-1]])
+            new_hyps_mask = {'ntriplet': n3b, 'nbond': 0,
+                             'nspecie': hyps_mask['nspecie'],
+                             'specie_mask': hyps_mask['specie_mask'],
+                             'triplet_mask': hyps_mask['triplet_mask']}
+            ncut3b = hyps_mask.get('ncut3b', 0)
             if (ncut3b > 0):
-                hyps_mask['ncut3b'] = o_hyps_mask['cut3b_mask']
-                hyps_mask['cut3b_mask'] = o_hyps_mask['cut3b_mask']
-                hyps_mask['cutoff_3b'] = o_hyps_mask['cutoff_3b']
+                new_hyps_mask['ncut3b'] = hyps_mask['cut3b_mask']
+                new_hyps_mask['cut3b_mask'] = hyps_mask['cut3b_mask']
+                new_hyps_mask['cutoff_3b'] = hyps_mask['cutoff_3b']
         else:
             # kind of assuming that 2-body is there
             base = 2
-            hyps = [hyps[0+base], hyps[1+base], hyps[-1]]
-            hyps_mask = None
+            new_hyps = np.hstack([hyps[0+base], hyps[1+base], hyps[-1]])
+            new_hyps_mask = None
 
         return hyps, hyps_mask
 
     @staticmethod
     def get_mb_hyps(hyps, hyps_mask, multihyps=False):
 
-        original_hyps = np.copy(hyps)
         if (multihyps is True):
-            o_hyps_mask = hyps_mask
-
-            if ('map' in o_hyps_mask.keys()):
-                ori_hyps = o_hyps_mask['original']
-                hm = o_hyps_mask['map']
-                for i, h in enumerate(original_hyps):
-                    ori_hyps[hm[i]] = h
-            else:
-                ori_hyps = original_hyps
-
-            n2b = o_hyps_mask.get('n2b', 0)
-            n3b = o_hyps_mask.get('n3b', 0)
+            new_hyps = HyperParameterMasking.get_hyps(hyps_mask, hyps)
+            n2b = hyps_mask.get('n2b', 0)
+            n3b = hyps_mask.get('n3b', 0)
             n23b2 = (n2b+n3b)*2
-            nmb = o_hyps_mask['nmb']
+            nmb = hyps_mask['nmb']
 
-            hyps = np.hstack([ori_hyps[n23b2:n23b2+nmb*2], ori_hyps[-1]])
+            new_hyps = np.hstack([new_hyps[n23b2:n23b2+nmb*2], new_hyps[-1]])
 
-            hyps_mask = {'nmb': nmb, 'nbond': 0, 'ntriplet':0,
-                         'nspecie': o_hyps_mask['nspecie'],
-                         'specie_mask': o_hyps_mask['specie_mask'],
-                         'mb_mask': o_hyps_mask['mb_mask']}
+            new_hyps_mask = {'nmb': nmb, 'nbond': 0, 'ntriplet':0,
+                             'nspecie': hyps_mask['nspecie'],
+                             'specie_mask': hyps_mask['specie_mask'],
+                             'mb_mask': hyps_mask['mb_mask']}
 
-            if ('cutoff_mb' in o_hyps_mask):
-                hyps_mask['cutoff_mb'] = o_hyps_mask['cutoff_mb']
+            if ('cutoff_mb' in hyps_mask):
+                new_hyps_mask['cutoff_mb'] = hyps_mask['cutoff_mb']
         else:
             # kind of assuming that 2+3 are there
             base = 4
-            hyps = [hyps[0+base], hyps[1+base], hyps[-1]]
-            hyps_mask = None
+            new_hyps = np.hstack([hyps[0+base], hyps[1+base], hyps[-1]])
+            new_hyps_mask = None
 
-        return hyps, hyps_mask
+        return new_hyps, new_hyps_mask
+
+    @staticmethod
+    def get_cutoff(coded_species, cutoff, hyps_mask):
+
+        if (len(coded_species)==2):
+            if (hyps_mask is None):
+                return cutoff[0]
+            elif ('cutoff_2b' not in hyps_mask):
+                return cutoff[0]
+
+            ele1 = hyps_mask['species_mask'][coded_species[0]]
+            ele2 = hyps_mask['species_mask'][coded_species[1]]
+            bond_type = hyps_mask['bond_mask'][ \
+                    hyps_mask['nspecie']*ele1 + ele2]
+            return hyps_mask['cutoff_2b'][bond_type]
+
+        elif (len(coded_species)==3):
+            if (hyps_mask is None):
+                return np.ones(3)*cutoff[1]
+            elif ('cutoff_3b' not in hyps_mask):
+                return np.ones(3)*cutoff[1]
+
+            ele1 = hyps_mask['species_mask'][coded_species[0]]
+            ele2 = hyps_mask['species_mask'][coded_species[1]]
+            ele3 = hyps_mask['species_mask'][coded_species[2]]
+            bond1 = hyps_mask['cut3b_mask'][ \
+                        hyps_mask['nspecie']*ele1 + ele2]
+            bond2 = hyps_mask['cut3b_mask'][ \
+                        hyps_mask['nspecie']*ele1 + ele3]
+            bond12 = hyps_mask['cut3b_mask'][ \
+                        hyps_mask['nspecie']*ele2 + ele3]
+            return np.array([hyps_mask['cutoff_3b'][bond1],
+                             hyps_mask['cutoff_3b'][bond2],
+                             hyps_mask['cutoff_3b'][bond12]])
+        else:
+            raise NotImplementedError
+
+    @staticmethod
+    def get_hyps(hyps_mask, hyps):
+        if 'map' in hyps_mask:
+            newhyps = np.copy(hyps_mask['original'])
+            for i, ori in enumerate(hyps_mask['map']):
+                newhyps[ori] = hyps[i]
+            return newhyps
+        else:
+            return hyps
+
+    @staticmethod
+    def compare_dict(dict1, dict2):
+
+        if type(dict1) != type(dict2):
+            return False
+
+        if dict1 is None:
+            return True
+
+        for k in ['nspecie', 'specie_mask', 'nbond', 'bond_mask',
+                  'cutoff_2b', 'ntriplet', 'triplet_mask',
+                  'n3b', 'cut3b_mask', 'nmb', 'mb_mask',
+                  'cutoff_mb', 'map']: #, 'train_noise']:
+            if (k in dict1) != (k in dict2):
+                return False
+            elif (k in dict1):
+                if not (np.isclose(dict1[k], dict2[k]).all()):
+                    return False
+
+        for k in ['train_noise']:
+            if (k in dict1) != (k in dict2):
+                return False
+            elif (k in dict1):
+                if dict1[k] !=dict2[k]:
+                    return False
+        return True

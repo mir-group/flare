@@ -99,7 +99,7 @@ def test_init(bodies, multihyps, all_mgp, all_gp):
     struc_params = {'species': [1, 2],
                     'cube_lat': np.eye(3)*2,
                     'mass_dict': {'0': 27, '1': 16}}
-    mgp_model = MappedGaussianProcess(grid_params, struc_params, n_cpus=1,
+    mgp_model = MappedGaussianProcess(grid_params, struc_params, n_cpus=4,
                 lmp_file_name=lammps_location)
     all_mgp[f'{bodies}{multihyps}'] = mgp_model
 

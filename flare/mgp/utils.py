@@ -357,3 +357,4 @@ def self_three_body_mc_jit(bond_array, cross_bond_inds, cross_bond_dists,
                     kern += kern0 if m == p else 2 * kern0
 
     return kern
+

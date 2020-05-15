@@ -21,6 +21,7 @@ from flare.kernels.utils import from_mask_to_args, str_to_kernel_set, str_to_map
 from flare.kernels.cutoffs import quadratic_cutoff
 from flare.struc import Structure
 from flare.utils.element_coder import Z_to_element, NumpyEncoder
+from flare.utils.mask_helper import HyperParameterMasking as hpm
 
 from flare.mgp.utils import get_bonds, get_triplets, get_triplets_en, \
     get_2bkernel, get_3bkernel
@@ -89,6 +90,7 @@ class MappedGaussianProcess:
         self.grid_params = grid_params
         self.struc_params = struc_params
         self.hyps_mask = None
+        self.cutoffs = None
 
         # It would be helpful to define the attributes explicitly.
         self.__dict__.update(grid_params)
@@ -110,25 +112,37 @@ class MappedGaussianProcess:
         self.build_bond_struc(struc_params)
         self.maps_2 = []
         self.maps_3 = []
-        self.build_map_container()
+        self.build_map_container(GP)
         self.mean_only = mean_only
 
         if not container_only and (GP is not None) and \
                 (len(GP.training_data) > 0) and autorun:
             self.build_map(GP)
 
-    def build_map_container(self):
+    def build_map_container(self, GP=None):
         '''
         construct an empty spline container without coefficients.
         '''
+
+        if (GP is not None):
+            self.cutoffs = GP.cutoffs
+            self.hyps_mask = GP.hyps_mask
+
         if 2 in self.bodies:
             for b_struc in self.bond_struc[0]:
+                if (GP is not None):
+                    self.bounds_2[1][0] = hpm.get_cutoff(b_struc.coded_species,
+                            self.cutoffs, self.hyps_mask)
                 map_2 = Map2body(self.grid_num_2, self.bounds_2,
                                  b_struc, self.svd_rank_2,
                                  self.mean_only, self.n_cpus, self.n_sample)
                 self.maps_2.append(map_2)
+
         if 3 in self.bodies:
             for b_struc in self.bond_struc[1]:
+                if (GP is not None):
+                    self.bounds_3[1] = hpm.get_cutoff(b_struc.coded_species,
+                            self.cutoffs, self.hyps_mask)
                 map_3 = Map3body(self.grid_num_3, self.bounds_3,
                                  b_struc, self.svd_rank_3,
                                  self.mean_only,
@@ -140,6 +154,10 @@ class MappedGaussianProcess:
         '''
         generate/load grids and get spline coefficients
         '''
+
+        # double check the container and the GP is the consistent
+        if not hpm.compare_dict(GP.hyps_mask, self.hyps_mask):
+            self.build_map_container(GP)
 
         if 2 in self.bodies:
             self.kernel2b_info = get_2bkernel(GP)
@@ -159,7 +177,7 @@ class MappedGaussianProcess:
         build a bond structure, used in grid generating
         '''
 
-        cutoff = np.min(self.cutoffs)
+        cutoff = 0.1
         cell = struc_params['cube_lat']
         mass_dict = struc_params['mass_dict']
         species_list = struc_params['species']
@@ -732,7 +750,7 @@ class Map3body:
     def __init__(self, grid_num, bounds, bond_struc: Structure,
                  svd_rank: int = 0, mean_only: bool = False,
                  load_grid: str = '', update: bool = True, n_cpus=None,
-                 n_sample=100):
+                 n_sample: int = 10):
         '''
         Build 3-body MGP
 
@@ -783,7 +801,7 @@ class Map3body:
         # ------ construct grids ------
         n1, n2, n12 = self.grid_num
         bonds1 = np.linspace(self.bounds[0][0], self.bounds[1][0], n1)
-        bonds2 = np.linspace(self.bounds[0][0], self.bounds[1][0], n2)
+        bonds2 = np.linspace(self.bounds[0][1], self.bounds[1][1], n2)
         bonds12 = np.linspace(self.bounds[0][2], self.bounds[1][2], n12)
         grid_means = np.zeros([n1, n2, n12])
 
