@@ -9,4 +9,4 @@ Code Documentation
    mgp/mgp
    ase/ase
    gp_from_aimd
-   util
+   utils/utils
