@@ -5,7 +5,7 @@ import numpy as np
 from math import sqrt
 from numba import njit
 from flare.struc import Structure
-from flare.mask_helper import HyperParameterMasking
+from flare.utils.mask_helper import HyperParameterMasking
 
 
 class AtomicEnvironment:

@@ -3,9 +3,9 @@ import pytest
 import numpy as np
 
 import flare.gp_algebra
-from flare import gp
 from flare.env import AtomicEnvironment
 from flare.struc import Structure
+from flare.kernels import mc_sephyps
 from flare.kernels.mc_simple import two_plus_three_body_mc, \
         two_plus_three_body_mc_grad, two_plus_three_mc_en,\
         two_plus_three_mc_force_en
@@ -13,7 +13,6 @@ from flare.kernels.mc_sephyps import two_plus_three_body_mc \
         as two_plus_three_body_mc_multi
 from flare.kernels.mc_sephyps import two_plus_three_body_mc_grad \
         as two_plus_three_body_mc_grad_multi
-from flare.kernels import mc_sephyps
 
 from flare.gp_algebra import get_like_grad_from_mats, \
         get_force_block, get_force_energy_block, \

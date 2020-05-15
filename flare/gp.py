@@ -14,7 +14,6 @@ from typing import List, Callable, Union
 from scipy.linalg import solve_triangular
 from scipy.optimize import minimize
 
-from flare.util import Z_to_element
 from flare.env import AtomicEnvironment
 from flare.struc import Structure
 from flare.gp_algebra import get_like_from_mats, get_neg_like_grad, \
@@ -22,10 +21,10 @@ from flare.gp_algebra import get_like_from_mats, get_neg_like_grad, \
     get_ky_mat_update, _global_training_data, _global_training_labels, \
     _global_training_structures, _global_energy_labels, get_Ky_mat, \
     get_kernel_vector, en_kern_vec
-from flare.mask_helper import HyperParameterMasking
+from flare.utils.mask_helper import HyperParameterMasking
 
 from flare.kernels.utils import str_to_kernel_set, from_mask_to_args
-from flare.util import NumpyEncoder
+from flare.utils.element_coder import NumpyEncoder, Z_to_element
 from flare.output import Output
 
 

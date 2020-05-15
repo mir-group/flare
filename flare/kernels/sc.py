@@ -39,7 +39,7 @@ import numpy as np
 from math import exp
 from flare.env import AtomicEnvironment
 
-import flare.cutoffs as cf
+import flare.kernels.cutoffs as cf
 
 from numba import njit
 

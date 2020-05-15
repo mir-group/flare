@@ -1,7 +1,7 @@
 import pytest
 import numpy as np
 from flare.struc import Structure
-from flare.mask_helper import HyperParameterMasking
+from flare.utils.mask_helper import HyperParameterMasking
 from .test_gp import dumpcompare
 
 

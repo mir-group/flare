@@ -5,22 +5,24 @@ with little loss of accuracy. Refer to \
 `Vandermause et al. <https://www.nature.com/articles/s41524-020-0283-z>`_, \
 `Glielmo et al. <https://journals.aps.org/prb/abstract/10.1103/PhysRevB.97.184307>`_
 '''
-import time
 import math
-import numpy as np
-from scipy.linalg import solve_triangular
 import multiprocessing as mp
-import subprocess
+import numpy as np
 import os
+import subprocess
+import time
 
-from flare import gp, struc, gp_algebra
+from scipy.linalg import solve_triangular
+
+from flare import struc
 from flare.env import AtomicEnvironment
 from flare.gp import GaussianProcess
-from flare.gp_algebra import force_force_vector_unit, partition_vector
-from flare.cutoffs import quadratic_cutoff
+from flare.gp_algebra import force_force_vector_unit, partition_vector, \
+        _global_training_data
+from flare.kernels.cutoffs import quadratic_cutoff
 from flare.kernels.mc_simple import two_body_mc, three_body_mc
-from flare.util import Z_to_element
-import flare.mgp.utils as utils
+from flare.utils.element_coder import Z_to_element
+
 from flare.mgp.utils import get_bonds, get_triplets, self_two_body_mc_jit, \
     self_three_body_mc_jit, \
     get_2bkernel, get_3bkernel
@@ -702,7 +704,7 @@ class Map3body:
         '''
 
         kernel, ek, efk, cutoffs, hyps, hyps_mask = kernel_info
-        training_data = gp_algebra._global_training_data[name]
+        training_data = _global_training_data[name]
         # open saved k vector file, and write to new file
         size = (e-s)*3
         k12_v = np.zeros([len(bond_lengths), len(bond_lengths),

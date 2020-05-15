@@ -8,8 +8,8 @@ from numpy import isclose
 
 from flare.kernels.mc_sephyps import _str_to_kernel as stk
 from flare.kernels.utils import from_mask_to_args, str_to_kernel_set
-from flare.cutoffs import quadratic_cutoff_bound
-from flare.mask_helper import HyperParameterMasking
+from flare.kernels.cutoffs import quadratic_cutoff_bound
+from flare.utils.mask_helper import HyperParameterMasking
 
 from .fake_gp import generate_mb_envs, generate_mb_twin_envs
 

@@ -1,22 +1,16 @@
-import numpy as np
-from numpy import array
-from numba import njit
 import io, os, sys, time, random, math
 import multiprocessing as mp
+import numpy as np
 
-import flare.gp_algebra
-import flare.gp as gp
-import flare.env as env
-import flare.struc as struc
-import flare.kernels.mc_simple as mc_simple
-import flare.kernels.mc_sephyps as mc_sephyps
-import flare.kernels.sc as sc
+from numpy import array
+from numba import njit
+
 from flare.env import AtomicEnvironment
+from flare.kernels.cutoffs import quadratic_cutoff
 from flare.kernels.kernels import three_body_helper_1, \
     three_body_helper_2, force_helper
-from flare.cutoffs import quadratic_cutoff
 from flare.kernels.utils import str_to_kernel_set as stks
-from flare.mask_helper import HyperParameterMasking
+from flare.utils.mask_helper import HyperParameterMasking
 
 
 def get_2bkernel(GP):

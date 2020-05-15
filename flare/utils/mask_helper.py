@@ -14,7 +14,7 @@ from warnings import warn
 from sys import stdout
 from os import devnull
 
-from flare.util import element_to_Z, Z_to_element
+from flare.utils.element_coder import element_to_Z, Z_to_element
 
 
 class HyperParameterMasking():

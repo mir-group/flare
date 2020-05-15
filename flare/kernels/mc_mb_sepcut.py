@@ -6,7 +6,7 @@ from math import exp
 import sys
 import os
 from flare.env import AtomicEnvironment
-import flare.cutoffs as cf
+import flare.kernels.cutoffs as cf
 from flare.kernels.kernels import coordination_number, q_value, q_value_mc, \
     mb_grad_helper_ls_, mb_grad_helper_ls_, k_sq_exp_double_dev, k_sq_exp_dev
 from typing import Callable

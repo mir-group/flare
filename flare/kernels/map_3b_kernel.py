@@ -3,12 +3,12 @@ variance hyperparameters to a single value."""
 import numpy as np
 from numba import njit
 from math import exp, floor
-from flare.env import AtomicEnvironment
-import flare.cutoffs as cf
 from typing import Callable
 
-from flare.kernels.utils import from_mask_to_args, from_grad_to_mask
+from flare.env import AtomicEnvironment
 from flare.gp_algebra import _global_training_data, _global_training_labels
+import flare.kernels.cutoffs as cf
+from flare.kernels.utils import from_mask_to_args, from_grad_to_mask
 
 
 def three_body_mc_force_en(env1: AtomicEnvironment, r1, r2, r12, c2, etypes2,

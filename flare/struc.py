@@ -8,7 +8,7 @@ Energy, force, and stress information can be included which can then be
 used to train ML models.
 """
 import numpy as np
-from flare.util import element_to_Z, Z_to_element, NumpyEncoder
+from flare.utils.element_coder import element_to_Z, Z_to_element, NumpyEncoder
 from json import dumps, loads
 
 from typing import List, Union, Any
@@ -175,7 +175,7 @@ class Structure:
         into the unit cell. in_place flag controls if the wrapped positions
         are set in the class.
 
-        :param in_place: If true, set the current structure 
+        :param in_place: If true, set the current structure
 		positions to be the wrapped positions.
         :return: Cartesian coordinates of positions all in unit cell
 	:rtype: np.ndarray
@@ -300,7 +300,7 @@ class Structure:
         from ase import Atoms
         return Atoms(self.species_labels,
                      positions=self.positions,
-                     cell=self.cell, 
+                     cell=self.cell,
                      pbc=True)
 
     def to_pmg_structure(self):

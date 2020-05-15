@@ -1,20 +1,21 @@
-import time
 import multiprocessing as mp
-from typing import List
 import numpy as np
+import time
 
-from flare.mgp.mgp import MappedGaussianProcess
-from flare.otf import OTF
-import flare.gp as gp
-from flare.env import AtomicEnvironment
+from typing import List
 
 from flare import output
+
+from flare.env import AtomicEnvironment
+from flare.gp import GaussianProcess
+from flare.mgp.mgp import MappedGaussianProcess
+from flare.otf import OTF
 
 
 class MGPOTF(OTF):
 
     def __init__(self, qe_input: str, dt: float, number_of_steps: int,
-                 gp_model: gp.GaussianProcess, pw_loc: str,
+                 gp_model: GaussianProcess, pw_loc: str,
                  std_tolerance_factor: float = 1,
                  prev_pos_init: np.ndarray = None, par: bool = False,
                  skip: int = 0, init_atoms: List[int] = None,

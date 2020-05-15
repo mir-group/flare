@@ -3,12 +3,10 @@ import pytest
 import numpy as np
 from numpy.random import random, randint, permutation
 
-from flare import env, struc, gp
 from flare.gp import GaussianProcess
 from flare.env import AtomicEnvironment
 from flare.struc import Structure
-from flare.otf_parser import OtfAnalysis
-from flare.mask_helper import HyperParameterMasking
+from flare.utils.mask_helper import HyperParameterMasking
 
 
 def get_random_structure(cell, unique_species, noa):
@@ -238,13 +236,13 @@ def generate_mb_envs_pos(positions0, species_1, cutoffs, cell, delt, d1, mask=No
 
     test_struc = []
     for i in range(3):
-        test_struc += [struc.Structure(cell, species_1, positions[i])]
+        test_struc += [Structure(cell, species_1, positions[i])]
 
     env_0 = []
     env_p = []
     env_m = []
     for i in range(noa):
-        env_0 += [env.AtomicEnvironment(test_struc[0], i, cutoffs, cutoffs_mask=mask)]
-        env_p += [env.AtomicEnvironment(test_struc[1], i, cutoffs, cutoffs_mask=mask)]
-        env_m += [env.AtomicEnvironment(test_struc[2], i, cutoffs, cutoffs_mask=mask)]
+        env_0 += [AtomicEnvironment(test_struc[0], i, cutoffs, cutoffs_mask=mask)]
+        env_p += [AtomicEnvironment(test_struc[1], i, cutoffs, cutoffs_mask=mask)]
+        env_m += [AtomicEnvironment(test_struc[2], i, cutoffs, cutoffs_mask=mask)]
     return [env_0, env_p, env_m]

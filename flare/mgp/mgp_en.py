@@ -1,30 +1,30 @@
-import time
-import os
-import math
 import inspect
-import subprocess
-import numpy as np
-import multiprocessing as mp
 import json
+import math
+import multiprocessing as mp
+import numpy as np
+import os
+import pickle as pickle
+import subprocess
+import time
 import warnings
 
 from copy import deepcopy
-import pickle as pickle
 from scipy.linalg import solve_triangular
 from typing import List
 
-from flare.struc import Structure
 from flare.env import AtomicEnvironment
 from flare.gp import GaussianProcess
 from flare.gp_algebra import partition_vector, energy_force_vector_unit, \
     energy_energy_vector_unit
 from flare.kernels.utils import from_mask_to_args, str_to_kernel_set
-from flare.cutoffs import quadratic_cutoff
-from flare.util import Z_to_element
+from flare.kernels.cutoffs import quadratic_cutoff
+from flare.struc import Structure
+from flare.utils.element_coder import Z_to_element, NumpyEncoder
+
 from flare.mgp.utils import get_bonds, get_triplets, get_triplets_en, \
         get_2bkernel, get_3bkernel
 from flare.mgp.splines_methods import PCASplines, CubicSpline
-from flare.util import Z_to_element, NumpyEncoder
 
 
 class MappedGaussianProcess:
@@ -607,6 +607,7 @@ class Map2body:
             pool.join()
         k12_v_force = np.vstack(k12_slice)
         del k12_slice
+        print("k12_v_force", k12_v_force.shape)
 
         # --------- calculate energy kernels ---------------
         with mp.Pool(processes=processes) as pool:
@@ -624,8 +625,10 @@ class Map2body:
             pool.join()
         k12_v_energy = np.vstack(k12_slice)
         del k12_slice
+        print("k12_v_energy", k12_v_energy.shape)
 
         k12_v_all = np.vstack([k12_v_force, k12_v_energy])
+        print("k12_v_all", k12_v_all.shape)
         k12_v_all = np.moveaxis(k12_v_all, 0, -1)
 
         # ------- compute bond means and variances ---------------
@@ -864,6 +867,7 @@ class Map3body:
                 del k12_slice
 
         k12_v_all = np.vstack([k12_v_force, k12_v_energy])
+        print("k12_v_all", k12_v_all.shape, k12_v_force.shapee, k12_v_energy.shape)
         k12_v_all = np.moveaxis(k12_v_all, 0, -1)
         del k12_v_force
         del k12_v_energy
