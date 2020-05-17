@@ -58,7 +58,7 @@ class AtomicEnvironment:
 
         # if 3 cutoffs are given, create many-body arrays
         if len(self.cutoffs) > 2:
-            self.m2b_array, self.m2b_neigh_array, self.m2b_neigh_grads, \
+            self.m2b_array, self.m2b_neigh_array, self.m2b_grads, self.m2b_neigh_grads, \
                 self.m2b_unique_species, self.etypes_m2b = get_m2_body_arrays(
                     self.positions, self.atom, self.cell, self.cutoffs[2], 
                     self.species, cf.quadratic_cutoff)
@@ -326,7 +326,7 @@ def get_m2_body_arrays(positions, atom: int, cell, cutoff: float, species,
     n_specs = len(species_list)
     qs = np.zeros(n_specs, dtype=np.float64)
     qs_neigh = np.zeros((n_bonds, n_specs), dtype=np.float64)
-    q_grads = np.zeros((n_bonds, 3), dtype=np.float64)
+    q_neigh_grads = np.zeros((n_bonds, 3), dtype=np.float64)
 
     q_func = coordination_number
     # get coordination number of center atom for each species
@@ -347,9 +347,25 @@ def get_m2_body_arrays(positions, atom: int, cell, cutoff: float, species,
         ri = bond_array_mb[i, 0]
         for d in range(3):
             ci = bond_array_mb[i, d+1]
-            _, q_grads[i, d] = q_func(ri, ci, cutoff, cutoff_func)
+            _, q_neigh_grads[i, d] = q_func(ri, ci, cutoff, cutoff_func)
 
-    return qs, qs_neigh, q_grads, species_list, etypes 
+    # get grads of the center atom
+    q_grads =  q2_grads_mc(q_neigh_grads, species_list, etypes)
+
+    return qs, qs_neigh, q_grads, q_neigh_grads, species_list, etypes 
+
+@njit
+def q2_grads_mc(neigh_grads, species_list, etypes):
+    n_specs = len(species_list)
+    n_neigh = neigh_grads.shape[0]
+    grads = np.zeros((n_specs, 3))
+    for i in range(n_neigh):
+        si = np.where(species_list==etypes[i])[0][0]
+        grads[si, :] += neigh_grads[i, :]
+ 
+    return grads
+
+
 
 @njit
 def get_m3_body_arrays(positions, atom: int, cell, cutoff: float, species, 
@@ -395,6 +411,7 @@ def get_m3_body_arrays(positions, atom: int, cell, cutoff: float, species,
         cross_bond_dists, triplets, cutoff, species_list, etypes, 
         cutoff_func, q_func)
 
+    # get grads of the center atom
     m3b_grads = q3_grads_mc(m3b_neigh_grads, species_list, etypes)
 
     return m3b_array, m3b_neigh_array, m3b_grads, m3b_neigh_grads, species_list, etypes
