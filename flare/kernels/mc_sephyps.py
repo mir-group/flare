@@ -5,7 +5,11 @@ import flare.cutoffs as cf
 from flare.kernels.kernels import force_helper, grad_constants, grad_helper, \
     force_energy_helper, three_body_en_helper, three_body_helper_1, \
     three_body_helper_2, three_body_grad_helper_1, three_body_grad_helper_2
-from flare.kernels.mc_simple import many_body_mc_en_jit, many_body_mc_force_en_jit, many_body_mc_grad_jit, many_body_mc_jit
+from flare.kernels.mc_simple import many_2body_mc_en_jit, \
+    many_2body_mc_force_en_jit, many_2body_mc_grad_jit, many_2body_mc_jit, \
+    many_3body_mc_en_jit, many_3body_mc_force_en_jit, many_3body_mc_grad_jit, \
+    many_3body_mc_jit
+
 
 """
 Multicomponent kernels that restrict all signal variance hyperparameters to
@@ -94,7 +98,7 @@ def two_three_many_body_mc(env1, env2, d1, d2, cutoffs,
                           d1, d2, sig3, ls3, r_cut_3, cutoff_func,
                           nspec, spec_mask, triplet_mask)
 
-    many_term = many_body_mc_jit(env1.q_array, env2.q_array, 
+    many_term = many_2body_mc_jit(env1.q_array, env2.q_array, 
                             env1.q_neigh_array, env2.q_neigh_array, 
                             env1.q_neigh_grads, env2.q_neigh_grads,
                             env1.ctype, env2.ctype, 
@@ -133,7 +137,7 @@ def two_three_many_body_mc_grad(env1, env2, d1, d2, cutoffs,
                                nspec, spec_mask,
                                ntriplet, triplet_mask)
 
-    kern_many, gradm = many_body_mc_grad_jit(env1.q_array, env2.q_array, 
+    kern_many, gradm = many_2body_mc_grad_jit(env1.q_array, env2.q_array, 
                                  env1.q_neigh_array, env2.q_neigh_array, 
                                  env1.q_neigh_grads, env2.q_neigh_grads,
                                  env1.ctype, env2.ctype, 
@@ -172,7 +176,7 @@ def two_three_many_mc_force_en(env1, env2, d1, cutoffs,
                                    spec_mask,
                                    triplet_mask) / 3
 
-    many_term = many_body_mc_force_en_jit(env1.q_array, env2.q_array, 
+    many_term = many_2body_mc_force_en_jit(env1.q_array, env2.q_array, 
                               env1.q_neigh_array, env1.q_neigh_grads,
                               env1.ctype, env2.ctype, env1.etypes_mb,  
                               env1.unique_species, env2.unique_species, 
@@ -207,7 +211,7 @@ def two_three_many_mc_en(env1, env2, cutoffs,
                              nspec, spec_mask,
                              triplet_mask)
 
-    many_term = many_body_mc_en_jit(env1.q_array, env2.q_array, 
+    many_term = many_2body_mc_en_jit(env1.q_array, env2.q_array, 
                                     env1.ctype, env2.ctype, 
                                     env1.unique_species, env2.unique_species,
                                     sigm, lsm)

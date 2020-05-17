@@ -227,20 +227,9 @@ def two_plus_three_plus_many_body_mc(env1: AtomicEnvironment, env2: AtomicEnviro
         float: Value of the 2+3+many-body kernel.
     """
 
-    sig2 = hyps[0]
-    ls2 = hyps[1]
-    sig3 = hyps[2]
-    ls3 = hyps[3]
-    sigm = hyps[4]
-    lsm = hyps[5]
-
-    r_cut_2 = cutoffs[0]
-    r_cut_3 = cutoffs[1]
-    r_cut_m = cutoffs[2]
-
     two_term = two_body_mc_jit(env1.bond_array_2, env1.ctype, env1.etypes,
                                env2.bond_array_2, env2.ctype, env2.etypes,
-                               d1, d2, sig2, ls2, r_cut_2, cutoff_func)
+                               d1, d2, hyps[0], hyps[1], cutoffs[0], cutoff_func)
 
     three_term = \
         three_body_mc_jit(env1.bond_array_3, env1.ctype, env1.etypes,
@@ -248,17 +237,26 @@ def two_plus_three_plus_many_body_mc(env1: AtomicEnvironment, env2: AtomicEnviro
                           env1.cross_bond_inds, env2.cross_bond_inds,
                           env1.cross_bond_dists, env2.cross_bond_dists,
                           env1.triplet_counts, env2.triplet_counts,
-                          d1, d2, sig3, ls3, r_cut_3, cutoff_func)
+                          d1, d2, hyps[2], hyps[3], cutoffs[1], cutoff_func)
 
-    many_term = many_body_mc_jit(env1.q_array, env2.q_array, 
-                            env1.q_neigh_array, env2.q_neigh_array, 
-                            env1.q_neigh_grads, env2.q_neigh_grads,
+    many_2_term = many_2body_mc_jit(env1.m2b_array, env2.m2b_array, 
+                            env1.m2b_neigh_array, env2.m2b_neigh_array, 
+                            env1.m2b_neigh_grads, env2.m2b_neigh_grads,
                             env1.ctype, env2.ctype, 
-                            env1.etypes_mb, env2.etypes_mb, 
-                            env1.unique_species, env2.unique_species, 
-                            d1, d2, sigm, lsm)
+                            env1.etypes_m2b, env2.etypes_m2b, 
+                            env1.m2b_unique_species, env2.m2b_unique_species, 
+                            d1, d2, hyps[4], hyps[5])
 
-    return two_term + three_term + many_term
+    many_3_term = many_3body_mc_jit(env1.m3b_array, env2.m3b_array, 
+                             env1.m3b_grads, env2.m3b_grads,
+                             env1.m3b_neigh_array, env2.m3b_neigh_array, 
+                             env1.m3b_neigh_grads, env2.m3b_neigh_grads,
+                             env1.ctype, env2.ctype, 
+                             env1.etypes_m3b, env2.etypes_m3b, 
+                             env1.m3b_unique_species, env2.m3b_unique_species, 
+                             d1, d2, hyps[6], hyps[7])
+
+    return two_term + three_term + many_2_term + many_3_term
 
 
 def two_plus_three_plus_many_body_mc_grad(env1: AtomicEnvironment, env2: AtomicEnvironment,
@@ -281,20 +279,9 @@ def two_plus_three_plus_many_body_mc_grad(env1: AtomicEnvironment, env2: AtomicE
         float: Value of the 2+3+many-body kernel.
     """
 
-    sig2 = hyps[0]
-    ls2 = hyps[1]
-    sig3 = hyps[2]
-    ls3 = hyps[3]
-    sigm = hyps[4]
-    lsm = hyps[5]
-
-    r_cut_2 = cutoffs[0]
-    r_cut_3 = cutoffs[1]
-    r_cut_m = cutoffs[2]
-
     kern2, grad2 = two_body_mc_grad_jit(env1.bond_array_2, env1.ctype, env1.etypes,
                                         env2.bond_array_2, env2.ctype, env2.etypes,
-                                        d1, d2, sig2, ls2, r_cut_2, cutoff_func)
+                                        d1, d2, hyps[0], hyps[1], cutoffs[0], cutoff_func)
 
     kern3, grad3 = \
         three_body_mc_grad_jit(env1.bond_array_3, env1.ctype, env1.etypes,
@@ -302,17 +289,27 @@ def two_plus_three_plus_many_body_mc_grad(env1: AtomicEnvironment, env2: AtomicE
                                env1.cross_bond_inds, env2.cross_bond_inds,
                                env1.cross_bond_dists, env2.cross_bond_dists,
                                env1.triplet_counts, env2.triplet_counts,
-                               d1, d2, sig3, ls3, r_cut_3, cutoff_func)
+                               d1, d2, hyps[2], hyps[3], cutoffs[1], cutoff_func)
 
-    kern_many, gradm = many_body_mc_grad_jit(env1.q_array, env2.q_array, 
-                                 env1.q_neigh_array, env2.q_neigh_array, 
-                                 env1.q_neigh_grads, env2.q_neigh_grads,
+    kern_m2b, gradm2 = many_2body_mc_grad_jit(env1.m2b_array, env2.m2b_array, 
+                                 env1.m2b_neigh_array, env2.m2b_neigh_array, 
+                                 env1.m2b_neigh_grads, env2.m2b_neigh_grads,
                                  env1.ctype, env2.ctype, 
-                                 env1.etypes_mb, env2.etypes_mb,
-                                 env1.unique_species, env2.unique_species, 
-                                 d1, d2, sigm, lsm)
+                                 env1.etypes_m2b, env2.etypes_m2b,
+                                 env1.m2b_unique_species, env2.m2b_unique_species, 
+                                 d1, d2, hyps[4], hyps[5])
 
-    return kern2 + kern3 + kern_many, np.hstack([grad2, grad3, gradm])
+    kern_m3b, gradm3 = many_3body_mc_grad_jit(env1.m3b_array, env2.m3b_array, 
+                             env1.m3b_grads, env2.m3b_grads,
+                             env1.m3b_neigh_array, env2.m3b_neigh_array, 
+                             env1.m3b_neigh_grads, env2.m3b_neigh_grads,
+                             env1.ctype, env2.ctype, 
+                             env1.etypes_m3b, env2.etypes_m3b, 
+                             env1.m3b_unique_species, env2.m3b_unique_species, 
+                             d1, d2, hyps[6], hyps[7])
+
+
+    return kern2 + kern3 + kern_m2b + kern_m3b, np.hstack([grad2, grad3, gradm2, gradm3])
 
 
 def two_plus_three_plus_many_body_mc_force_en(env1: AtomicEnvironment, env2: AtomicEnvironment,
@@ -334,21 +331,10 @@ def two_plus_three_plus_many_body_mc_force_en(env1: AtomicEnvironment, env2: Ato
         float: Value of the 2+3+many-body kernel.
     """
 
-    sig2 = hyps[0]
-    ls2 = hyps[1]
-    sig3 = hyps[2]
-    ls3 = hyps[3]
-    sigm = hyps[4]
-    lsm = hyps[5]
-
-    r_cut_2 = cutoffs[0]
-    r_cut_3 = cutoffs[1]
-    r_cut_m = cutoffs[2]
-
     two_term = \
         two_body_mc_force_en_jit(env1.bond_array_2, env1.ctype, env1.etypes,
                                  env2.bond_array_2, env2.ctype, env2.etypes,
-                                 d1, sig2, ls2, r_cut_2, cutoff_func) / 2
+                                 d1, hyps[0], hyps[1], cutoffs[0], cutoff_func) / 2
 
     three_term = \
         three_body_mc_force_en_jit(env1.bond_array_3, env1.ctype, env1.etypes,
@@ -357,15 +343,27 @@ def two_plus_three_plus_many_body_mc_force_en(env1: AtomicEnvironment, env2: Ato
                                    env1.cross_bond_dists,
                                    env2.cross_bond_dists,
                                    env1.triplet_counts, env2.triplet_counts,
-                                   d1, sig3, ls3, r_cut_3, cutoff_func) / 3
+                                   d1, hyps[2], hyps[3], cutoffs[1], cutoff_func) / 3
 
-    many_term = many_body_mc_force_en_jit(env1.q_array, env2.q_array, 
-                              env1.q_neigh_array, env1.q_neigh_grads,
-                              env1.ctype, env2.ctype, env1.etypes_mb,  
-                              env1.unique_species, env2.unique_species, 
-                              d1, sigm, lsm)
+    m2b_term = many_2body_mc_force_en_jit(env1.m2b_array, env2.m2b_array, 
+                              env1.m2b_neigh_array, env1.m2b_neigh_grads,
+                              env1.ctype, env2.ctype, 
+                              env1.etypes_m2b,  
+                              env1.m2b_unique_species, env2.m2b_unique_species, 
+                              d1, hyps[4], hyps[5])
 
-    return two_term + three_term + many_term
+    m3b_term = many_3body_mc_force_en_jit(env1.m3b_array, env2.m3b_array, 
+                                      env1.m3b_grads, 
+                                      env1.m3b_neigh_array, 
+                                      env1.m3b_neigh_grads,
+                                      env1.ctype, env2.ctype, 
+                                      env1.etypes_m3b,
+                                      env1.m3b_unique_species, env2.m3b_unique_species, 
+                                      d1, hyps[6], hyps[7])
+
+    print('hyps4, hyps5', hyps[4], hyps[5])
+    print('two, three, m2b, m3b', two_term, three_term, m2b_term, m3b_term)
+    return two_term + three_term + m2b_term + m3b_term
 
 
 def two_plus_three_plus_many_body_mc_en(env1: AtomicEnvironment, env2: AtomicEnvironment,
@@ -385,20 +383,9 @@ def two_plus_three_plus_many_body_mc_en(env1: AtomicEnvironment, env2: AtomicEnv
         float: Value of the 2+3+many-body kernel.
     """
 
-    sig2 = hyps[0]
-    ls2 = hyps[1]
-    sig3 = hyps[2]
-    ls3 = hyps[3]
-    sigm = hyps[4]
-    lsm = hyps[5]
-
-    r_cut_2 = cutoffs[0]
-    r_cut_3 = cutoffs[1]
-    r_cut_m = cutoffs[2]
-
     two_term = two_body_mc_en_jit(env1.bond_array_2, env1.ctype, env1.etypes,
                                   env2.bond_array_2, env2.ctype, env2.etypes,
-                                  sig2, ls2, r_cut_2, cutoff_func)
+                                  hyps[0], hyps[1], cutoffs[0], cutoff_func)
 
     three_term = \
         three_body_mc_en_jit(env1.bond_array_3, env1.ctype, env1.etypes,
@@ -406,14 +393,19 @@ def two_plus_three_plus_many_body_mc_en(env1: AtomicEnvironment, env2: AtomicEnv
                              env1.cross_bond_inds, env2.cross_bond_inds,
                              env1.cross_bond_dists, env2.cross_bond_dists,
                              env1.triplet_counts, env2.triplet_counts,
-                             sig3, ls3, r_cut_3, cutoff_func)
+                             hyps[2], hyps[3], cutoffs[1], cutoff_func)
 
-    many_term = many_body_mc_en_jit(env1.q_array, env2.q_array, 
+    many_2_term = many_2body_mc_en_jit(env1.m2b_array, env2.m2b_array, 
                                     env1.ctype, env2.ctype, 
-                                    env1.unique_species, env2.unique_species,
-                                    sigm, lsm)
+                                    env1.m2b_unique_species, env2.m2b_unique_species,
+                                    hyps[4], hyps[5])
 
-    return two_term + three_term + many_term
+    many_3_term = many_3body_mc_en_jit(env1.m3b_array, env2.m3b_array, 
+                                env1.ctype, env2.ctype, 
+                                env1.m3b_unique_species, env2.m3b_unique_species, 
+                                hyps[6], hyps[7])
+
+    return two_term + three_term + many_2_term + many_3_term
 
 
 # -----------------------------------------------------------------------------
@@ -693,14 +685,24 @@ def many_body_mc(env1: AtomicEnvironment, env2: AtomicEnvironment,
     Return:
         float: Value of the 3-body kernel.
     """
-    return many_body_mc_jit(env1.q_array, env2.q_array, 
-                            env1.q_neigh_array, env2.q_neigh_array, 
-                            env1.q_neigh_grads, env2.q_neigh_grads,
+    m2b_term = many_2body_mc_jit(env1.m2b_array, env2.m2b_array, 
+                            env1.m2b_neigh_array, env2.m2b_neigh_array, 
+                            env1.m2b_neigh_grads, env2.m2b_neigh_grads,
                             env1.ctype, env2.ctype, 
-                            env1.etypes_mb, env2.etypes_mb, 
-                            env1.unique_species, env2.unique_species, 
+                            env1.etypes_m2b, env2.etypes_m2b, 
+                            env1.m2b_unique_species, env2.m2b_unique_species, 
                             d1, d2, hyps[0], hyps[1])
 
+    m3b_term = many_3body_mc_jit(env1.m3b_array, env2.m3b_array, 
+                             env1.m3b_grads, env2.m3b_grads,
+                             env1.m3b_neigh_array, env2.m3b_neigh_array, 
+                             env1.m3b_neigh_grads, env2.m3b_neigh_grads,
+                             env1.ctype, env2.ctype, 
+                             env1.etypes_m3b, env2.etypes_m3b, 
+                             env1.m3b_unique_species, env2.m3b_unique_species, 
+                             d1, d2, hyps[2], hyps[3])
+
+    return m2b_term + m3b_term
 
 
 def many_body_mc_grad(env1: AtomicEnvironment, env2: AtomicEnvironment,
@@ -709,14 +711,24 @@ def many_body_mc_grad(env1: AtomicEnvironment, env2: AtomicEnvironment,
     """gradient manybody-body multi-element kernel between two force components.
 
     """
-    return many_body_mc_grad_jit(env1.q_array, env2.q_array, 
-                                 env1.q_neigh_array, env2.q_neigh_array, 
-                                 env1.q_neigh_grads, env2.q_neigh_grads,
+    m2b_term, grad_2 = many_2body_mc_grad_jit(env1.m2b_array, env2.m2b_array, 
+                                 env1.m2b_neigh_array, env2.m2b_neigh_array, 
+                                 env1.m2b_neigh_grads, env2.m2b_neigh_grads,
                                  env1.ctype, env2.ctype, 
-                                 env1.etypes_mb, env2.etypes_mb,
-                                 env1.unique_species, env2.unique_species, 
+                                 env1.etypes_m2b, env2.etypes_m2b,
+                                 env1.m2b_unique_species, env2.m2b_unique_species, 
                                  d1, d2, hyps[0], hyps[1])
 
+    m3b_term, grad_3 = many_3body_mc_grad_jit(env1.m3b_array, env2.m3b_array, 
+                             env1.m3b_grads, env2.m3b_grads,
+                             env1.m3b_neigh_array, env2.m3b_neigh_array, 
+                             env1.m3b_neigh_grads, env2.m3b_neigh_grads,
+                             env1.ctype, env2.ctype, 
+                             env1.etypes_m3b, env2.etypes_m3b, 
+                             env1.m3b_unique_species, env2.m3b_unique_species, 
+                             d1, d2, hyps[2], hyps[3])
+
+    return m2b_term + m3b_term, np.hstack([grad_2, grad_3])
 
 
 def many_body_mc_force_en(env1, env2, d1, hyps, cutoffs,
@@ -735,11 +747,22 @@ def many_body_mc_force_en(env1, env2, d1, hyps, cutoffs,
         float: Value of the many-body force/energy kernel.
     """
     # divide by three to account for triple counting
-    return many_body_mc_force_en_jit(env1.q_array, env2.q_array, 
-                              env1.q_neigh_array, env1.q_neigh_grads,
-                              env1.ctype, env2.ctype, env1.etypes_mb,  
-                              env1.unique_species, env2.unique_species, 
+    m2b_term = many_2body_mc_force_en_jit(env1.m2b_array, env2.m2b_array, 
+                              env1.m2b_neigh_array, env1.m2b_neigh_grads,
+                              env1.ctype, env2.ctype, env1.etypes_m2b,  
+                              env1.m2b_unique_species, env2.m2b_unique_species, 
                               d1, hyps[0], hyps[1])
+
+    m3b_term = many_3body_mc_force_en_jit(env1.m3b_array, env2.m3b_array, 
+                                      env1.m3b_grads, 
+                                      env1.m3b_neigh_array, 
+                                      env1.m3b_neigh_grads,
+                                      env1.ctype, env2.ctype, 
+                                      env1.etypes_m3b,
+                                      env1.m3b_unique_species, env2.m3b_unique_species, 
+                                      d1, hyps[2], hyps[3])
+
+    return m2b_term + m3b_term
 
 
 def many_body_mc_en(env1: AtomicEnvironment, env2: AtomicEnvironment,
@@ -758,10 +781,162 @@ def many_body_mc_en(env1: AtomicEnvironment, env2: AtomicEnvironment,
     Return:
         float: Value of the 2-body force/energy kernel.
     """
-    return many_body_mc_en_jit(env1.q_array, env2.q_array, 
+    m2b_term = many_2body_mc_en_jit(env1.m2b_array, env2.m2b_array, 
                                env1.ctype, env2.ctype, 
-                               env1.unique_species, env2.unique_species,
+                               env1.m2b_unique_species, env2.m2b_unique_species,
                                hyps[0], hyps[1])
+
+    m3b_term = many_3body_mc_en_jit(env1.m3b_array, env2.m3b_array, 
+                                env1.ctype, env2.ctype, 
+                                env1.m3b_unique_species, env2.m3b_unique_species, 
+                                hyps[2], hyps[3])
+
+    print('hyps0, hyps1', hyps[0], hyps[1])
+    print('many', m2b_term, m3b_term)
+    return m2b_term + m3b_term
+
+
+def many_2body_mc(env1: AtomicEnvironment, env2: AtomicEnvironment,
+                 d1: int, d2: int, hyps: 'ndarray', cutoffs: 'ndarray',
+                 cutoff_func: Callable = cf.quadratic_cutoff) -> float:
+    """many-body multi-element kernel between two force components.
+
+    Args:
+        env1 (AtomicEnvironment): First local environment.
+        env2 (AtomicEnvironment): Second local environment.
+        d1 (int): Force component of the first environment.
+        d2 (int): Force component of the second environment.
+        hyps (np.ndarray): Hyperparameters of the kernel function (sig, ls).
+        cutoffs (np.ndarray): Two-element array containing the 2- and 3-body
+            cutoffs.
+        cutoff_func (Callable): Cutoff function of the kernel.
+
+    Return:
+        float: Value of the 3-body kernel.
+    """
+    return many_2body_mc_jit(env1.m2b_array, env2.m2b_array, 
+                            env1.m2b_neigh_array, env2.m2b_neigh_array, 
+                            env1.m2b_neigh_grads, env2.m2b_neigh_grads,
+                            env1.ctype, env2.ctype, 
+                            env1.etypes_m2b, env2.etypes_m2b, 
+                            env1.m2b_unique_species, env2.m2b_unique_species, 
+                            d1, d2, hyps[0], hyps[1])
+
+
+
+def many_2body_mc_grad(env1: AtomicEnvironment, env2: AtomicEnvironment,
+                      d1: int, d2: int, hyps: 'ndarray', cutoffs: 'ndarray',
+                      cutoff_func: Callable = cf.quadratic_cutoff) -> float:
+    """gradient manybody-body multi-element kernel between two force components.
+
+    """
+    return many_2body_mc_grad_jit(env1.m2b_array, env2.m2b_array, 
+                                 env1.m2b_neigh_array, env2.m2b_neigh_array, 
+                                 env1.m2b_neigh_grads, env2.m2b_neigh_grads,
+                                 env1.ctype, env2.ctype, 
+                                 env1.etypes_m2b, env2.etypes_m2b,
+                                 env1.m2b_unique_species, env2.m2b_unique_species, 
+                                 d1, d2, hyps[0], hyps[1])
+
+
+
+def many_2body_mc_force_en(env1, env2, d1, hyps, cutoffs,
+                          cutoff_func=cf.quadratic_cutoff):
+    """many-body single-element kernel between two local energies.
+
+    Args:
+        env1 (AtomicEnvironment): First local environment.
+        env2 (AtomicEnvironment): Second local environment.
+        hyps (np.ndarray): Hyperparameters of the kernel function (sig, ls).
+        cutoffs (np.ndarray): Two-element array containing the 2-, 3-, and
+            many-body cutoffs.
+        cutoff_func (Callable): Cutoff function of the kernel.
+
+    Return:
+        float: Value of the many-body force/energy kernel.
+    """
+    # divide by three to account for triple counting
+    return many_2body_mc_force_en_jit(env1.m2b_array, env2.m2b_array, 
+                              env1.m2b_neigh_array, env1.m2b_neigh_grads,
+                              env1.ctype, env2.ctype, env1.etypes_m2b,  
+                              env1.m2b_unique_species, env2.m2b_unique_species, 
+                              d1, hyps[0], hyps[1])
+
+
+def many_2body_mc_en(env1: AtomicEnvironment, env2: AtomicEnvironment,
+                    hyps: 'ndarray', cutoffs: 'ndarray',
+                    cutoff_func: Callable = cf.quadratic_cutoff) -> float:
+    """many-body multi-element kernel between two local energies.
+
+    Args:
+        env1 (AtomicEnvironment): First local environment.
+        env2 (AtomicEnvironment): Second local environment.
+        hyps (np.ndarray): Hyperparameters of the kernel function (sig, ls).
+        cutoffs (np.ndarray): One-element array containing the 2-body
+            cutoff.
+        cutoff_func (Callable): Cutoff function of the kernel.
+
+    Return:
+        float: Value of the 2-body force/energy kernel.
+    """
+    return many_2body_mc_en_jit(env1.m2b_array, env2.m2b_array, 
+                               env1.ctype, env2.ctype, 
+                               env1.m2b_unique_species, env2.m2b_unique_species,
+                               hyps[0], hyps[1])
+
+
+def many_3body_mc(env1: AtomicEnvironment, env2: AtomicEnvironment,
+                 d1: int, d2: int, hyps: 'ndarray', cutoffs: 'ndarray',
+                 cutoff_func: Callable = cf.quadratic_cutoff) -> float:
+
+    return many_3body_mc_jit(env1.m3b_array, env2.m3b_array, 
+                             env1.m3b_grads, env2.m3b_grads,
+                             env1.m3b_neigh_array, env2.m3b_neigh_array, 
+                             env1.m3b_neigh_grads, env2.m3b_neigh_grads,
+                             env1.ctype, env2.ctype, 
+                             env1.etypes_m3b, env2.etypes_m3b, 
+                             env1.m3b_unique_species, env2.m3b_unique_species, 
+                             d1, d2, hyps[0], hyps[1])
+
+def many_3body_mc_grad(env1: AtomicEnvironment, env2: AtomicEnvironment,
+                 d1: int, d2: int, hyps: 'ndarray', cutoffs: 'ndarray',
+                 cutoff_func: Callable = cf.quadratic_cutoff) -> float:
+
+    return many_3body_mc_grad_jit(env1.m3b_array, env2.m3b_array, 
+                             env1.m3b_grads, env2.m3b_grads,
+                             env1.m3b_neigh_array, env2.m3b_neigh_array, 
+                             env1.m3b_neigh_grads, env2.m3b_neigh_grads,
+                             env1.ctype, env2.ctype, 
+                             env1.etypes_m3b, env2.etypes_m3b, 
+                             env1.m3b_unique_species, env2.m3b_unique_species, 
+                             d1, d2, hyps[0], hyps[1])
+
+
+
+
+def many_3body_mc_force_en(env1: AtomicEnvironment, env2: AtomicEnvironment,
+                     d1, hyps: 'ndarray', cutoffs: 'ndarray',
+                     cutoff_func: Callable = cf.quadratic_cutoff) -> float:
+
+    return many_3body_mc_force_en_jit(env1.m3b_array, env2.m3b_array, 
+                                      env1.m3b_grads, 
+                                      env1.m3b_neigh_array, 
+                                      env1.m3b_neigh_grads,
+                                      env1.ctype, env2.ctype, 
+                                      env1.etypes_m3b,
+                                      env1.m3b_unique_species, env2.m3b_unique_species, 
+                                      d1, hyps[0], hyps[1])
+
+
+def many_3body_mc_en(env1: AtomicEnvironment, env2: AtomicEnvironment,
+                     hyps: 'ndarray', cutoffs: 'ndarray',
+                     cutoff_func: Callable = cf.quadratic_cutoff) -> float:
+
+    return many_3body_mc_en_jit(env1.m3b_array, env2.m3b_array, 
+                                env1.ctype, env2.ctype, 
+                                env1.m3b_unique_species, env2.m3b_unique_species, 
+                                hyps[0], hyps[1])
+
 
 
 # -----------------------------------------------------------------------------
@@ -1624,7 +1799,7 @@ def two_body_mc_en_jit(bond_array_1, c1, etypes1,
 # -----------------------------------------------------------------------------
 
 
-def many_body_mc_jit(q_array_1, q_array_2, 
+def many_2body_mc_jit(q_array_1, q_array_2, 
                      q_neigh_array_1, q_neigh_array_2, 
                      q_neigh_grads_1, q_neigh_grads_2,
                      c1, c2, etypes1, etypes2, 
@@ -1737,7 +1912,7 @@ def many_body_mc_jit(q_array_1, q_array_2,
 
 
 @njit
-def many_body_mc_grad_jit(q_array_1, q_array_2, 
+def many_2body_mc_grad_jit(q_array_1, q_array_2, 
                           q_neigh_array_1, q_neigh_array_2, 
                           q_neigh_grads_1, q_neigh_grads_2,
                           c1, c2, etypes1, etypes2,
@@ -1866,7 +2041,7 @@ def many_body_mc_grad_jit(q_array_1, q_array_2,
 
 
 @njit
-def many_body_mc_force_en_jit(q_array_1, q_array_2, 
+def many_2body_mc_force_en_jit(q_array_1, q_array_2, 
                               q_neigh_array_1, q_neigh_grads_1,
                               c1, c2, etypes1,  
                               species1, species2, d1, sig, ls):
@@ -1938,7 +2113,7 @@ def many_body_mc_force_en_jit(q_array_1, q_array_2,
 
 
 @njit
-def many_body_mc_en_jit(q_array_1, q_array_2, c1, c2, 
+def many_2body_mc_en_jit(q_array_1, q_array_2, c1, c2, 
                         species1, species2, sig, ls):
     """many-body many-element kernel between energy components accelerated
     with Numba.
@@ -1978,6 +2153,310 @@ def many_body_mc_en_jit(q_array_1, q_array_2, c1, c2,
 
 
 @njit
+def many_3body_mc_jit(array_1, array_2, 
+                      grads_1, grads_2,
+                      neigh_array_1, neigh_array_2,
+                      neigh_grads_1, neigh_grads_2,
+                      c1, c2, etypes1, etypes2,
+                      species1, species2, d1, d2, sig, ls):
+    """
+    Args:
+        To be filled.
+    Return:
+        float: Value of the many-body kernel.
+    """
+
+    kern = 0
+
+    # intersection not union? check
+    useful_species = np.array(
+        list(set(species1).intersection(set(species2))), dtype=np.int8)
+
+    specs_ind_1 = []
+    specs_ind_2 = []
+    for s in useful_species:
+        specs_ind_1.append(np.where(species1==s)[0][0])
+        specs_ind_2.append(np.where(species2==s)[0][0])
+
+    sc1 = np.where(species1==c1)[0][0]
+    sc2 = np.where(species2==c2)[0][0]
+    sc12 = np.where(species1==c2)[0][0]
+    sc21 = np.where(species2==c1)[0][0]
+
+    # contribution of env1's center & env2's center
+    if c1 == c2: # 2nd spec: si; 3rd spec: sj
+         for si in range(len(useful_species)):
+            si1 = specs_ind_1[si]
+            si2 = specs_ind_2[si]
+
+            for sj in range(si, len(useful_species)):
+                sj1 = specs_ind_1[sj]
+                sj2 = specs_ind_2[sj]            
+
+                q1 = array_1[si1, sj1]
+                q2 = array_2[si2, sj2]
+
+                k12 = k_sq_exp_double_dev(q1, q2, sig, ls)
+
+                qni_grad = grads_1[si1, sj1, d1-1]
+                qmj_grad = grads_2[si2, sj2, d2-1]
+
+                kern += k12 * qni_grad * qmj_grad
+
+    # contribution of env1's neighbors & env2's center
+    for n in range(neigh_array_1.shape[0]):
+        if etypes1[n] == c2: # 2nd spec: c1; 3rd spec: s
+            for s in range(len(useful_species)):
+                s1 = specs_ind_1[s]
+                s2 = specs_ind_2[s]
+                qn1s = neigh_array_1[n, sc1, s1]
+                q21s = array_2[sc21, s2]
+                kn2 = k_sq_exp_double_dev(qn1s, q21s, sig, ls)
+        
+                qn1s_grad = neigh_grads_1[n, s1, d1-1]
+                q21s_grad = grads_2[sc21, s2, d2-1]
+
+                kern += kn2 * qn1s_grad * q21s_grad
+
+    # contribution of env1's center & env2's neighbors
+    for m in range(neigh_array_2.shape[0]):
+        if etypes2[m] == c1: # 2nd spec: c2; 3rd spec: s
+            for s in range(len(useful_species)):
+                s1 = specs_ind_1[s]
+                s2 = specs_ind_2[s]
+                qm2s = neigh_array_2[m, sc2, s2]
+                q12s = array_1[sc12, s1]
+                km1 = k_sq_exp_double_dev(qm2s, q12s, sig, ls)
+
+                qm2s_grad = neigh_grads_2[m, s2, d2-1]
+                q12s_grad = grads_1[sc12, s1, d1-1] 
+
+                kern += km1 * qm2s_grad * q12s_grad
+
+    # contribution of env1's neighbors & env2's neighbors
+    for n in range(neigh_array_1.shape[0]): 
+        for m in range(neigh_array_2.shape[0]): 
+            if etypes1[n] == etypes2[m]:
+                if c1 == c2: # 3rd spec: s
+                    for s in range(len(useful_species)): 
+                        s1 = specs_ind_1[s]
+                        s2 = specs_ind_2[s]
+                        qn1s = neigh_array_1[n, sc1, s1]
+                        qm2s = neigh_array_2[m, sc2, s2]
+                        kmn = k_sq_exp_double_dev(qn1s, qm2s, sig, ls)
+
+                        qn1s_grad = neigh_grads_1[n, s1, d1-1] 
+                        qm2s_grad = neigh_grads_2[m, s2, d2-1] 
+
+                        kern += kmn * qn1s_grad * qm2s_grad
+
+                else: # 2nd spec: c1; 3rd spec: c2
+                    qn12 = neigh_array_1[n, sc1, sc12]
+                    qm21 = neigh_array_2[m, sc2, sc21]
+                    kmn = k_sq_exp_double_dev(qn12, qm21, sig, ls)
+
+                    qn12_grad = neigh_grads_1[n, sc12, d1-1] 
+                    qm21_grad = neigh_grads_2[m, sc21, d2-1] 
+                    kern += kmn * qn12_grad * qm21_grad
+
+    return kern
+
+@njit
+def many_3body_mc_grad_jit(array_1, array_2, 
+                      grads_1, grads_2,
+                      neigh_array_1, neigh_array_2,
+                      neigh_grads_1, neigh_grads_2,
+                      c1, c2, etypes1, etypes2,
+                      species1, species2, d1, d2, sig, ls):
+    """
+    Args:
+        To be filled.
+    Return:
+        float: Value of the many-body kernel.
+    """
+
+    kern = 0
+    sig_derv = 0.0
+    ls_derv = 0.0
+
+    # intersection not union? check
+    useful_species = np.array(
+        list(set(species1).intersection(set(species2))), dtype=np.int8)
+
+    specs_ind_1 = []
+    specs_ind_2 = []
+    for s in useful_species:
+        specs_ind_1.append(np.where(species1==s)[0][0])
+        specs_ind_2.append(np.where(species2==s)[0][0])
+
+    sc1 = np.where(species1==c1)[0][0]
+    sc2 = np.where(species2==c2)[0][0]
+    sc12 = np.where(species1==c2)[0][0]
+    sc21 = np.where(species2==c1)[0][0]
+
+    # contribution of env1's center & env2's center
+    if c1 == c2: # 2nd spec: si; 3rd spec: sj
+         for si in range(len(useful_species)):
+            si1 = specs_ind_1[si]
+            si2 = specs_ind_2[si]
+
+            for sj in range(si, len(useful_species)):
+                sj1 = specs_ind_1[sj]
+                sj2 = specs_ind_2[sj]            
+
+                q1 = array_1[si1, sj1]
+                q2 = array_2[si2, sj2]
+
+                k12 = k_sq_exp_double_dev(q1, q2, sig, ls)
+                q12diffsq = (q1 - q2) ** 2
+                dk12 = mb_grad_helper_ls_(q12diffsq, sig, ls)
+
+                qni_grad = grads_1[si1, sj1, d1-1]
+                qmj_grad = grads_2[si2, sj2, d2-1]
+                
+                kern += k12 * qni_grad * qmj_grad
+                ls_derv += dk12 * qni_grad * qmj_grad
+
+    # contribution of env1's neighbors & env2's center
+    for n in range(neigh_array_1.shape[0]):
+        if etypes1[n] == c2: # 2nd spec: c1; 3rd spec: s
+            for s in range(len(useful_species)):
+                s1 = specs_ind_1[s]
+                s2 = specs_ind_2[s]
+                qn1s = neigh_array_1[n, sc1, s1]
+                q21s = array_2[sc21, s2]
+                kn2 = k_sq_exp_double_dev(qn1s, q21s, sig, ls)
+                qn2diffsq = (qn1s - q21s) ** 2
+                dkn2 = mb_grad_helper_ls_(qn2diffsq, sig, ls)
+        
+                qn1s_grad = neigh_grads_1[n, s1, d1-1]
+                q21s_grad = grads_2[sc21, s2, d2-1]
+                
+                kern += kn2 * qn1s_grad * q21s_grad
+                ls_derv += dkn2 * qn1s_grad * q21s_grad
+
+    # contribution of env1's center & env2's neighbors
+    for m in range(neigh_array_2.shape[0]):
+        if etypes2[m] == c1: # 2nd spec: c2; 3rd spec: s
+            for s in range(len(useful_species)):
+                s1 = specs_ind_1[s]
+                s2 = specs_ind_2[s]
+                qm2s = neigh_array_2[m, sc2, s2]
+                q12s = array_1[sc12, s1]
+                km1 = k_sq_exp_double_dev(qm2s, q12s, sig, ls)
+                q1mdiffsq = (q12s - qm2s) ** 2
+                dkm1 = mb_grad_helper_ls_(q1mdiffsq, sig, ls)
+
+                qm2s_grad = neigh_grads_2[m, s2, d2-1]
+                q12s_grad = grads_1[sc12, s1, d1-1] 
+
+                kern += km1 * qm2s_grad * q12s_grad
+                ls_derv += dkm1 * qm2s_grad * q12s_grad
+
+    # contribution of env1's neighbors & env2's neighbors
+    for n in range(neigh_array_1.shape[0]): 
+        for m in range(neigh_array_2.shape[0]): 
+            if etypes1[n] == etypes2[m]:
+                if c1 == c2: # 3rd spec: s
+                    for s in range(len(useful_species)): 
+                        s1 = specs_ind_1[s]
+                        s2 = specs_ind_2[s]
+                        qn1s = neigh_array_1[n, sc1, s1]
+                        qm2s = neigh_array_2[m, sc2, s2]
+                        kmn = k_sq_exp_double_dev(qn1s, qm2s, sig, ls)
+                        qnmdiffsq = (qn1s - qm2s) ** 2
+                        dkmn = mb_grad_helper_ls_(qnmdiffsq, sig, ls)
+
+                        qn1s_grad = neigh_grads_1[n, s1, d1-1] 
+                        qm2s_grad = neigh_grads_2[m, s2, d2-1] 
+
+                        kern += kmn * qn1s_grad * qm2s_grad
+                        ls_derv += dkmn * qn1s_grad * qm2s_grad
+
+                else: # 2nd spec: c1; 3rd spec: c2
+                    qn12 = neigh_array_1[n, sc1, sc12]
+                    qm21 = neigh_array_2[m, sc2, sc21]
+                    kmn = k_sq_exp_double_dev(qn12, qm21, sig, ls)
+                    qnmdiffsq = (qn12 - qm21) ** 2
+                    dkmn = mb_grad_helper_ls_(qnmdiffsq, sig, ls)
+
+                    qn12_grad = neigh_grads_1[n, sc12, d1-1] 
+                    qm21_grad = neigh_grads_2[m, sc21, d2-1] 
+                    kern += kmn * qn12_grad * qm21_grad
+                    ls_derv += dkmn * qn12_grad * qm21_grad
+
+    sig_derv = 2. / sig * kern
+    grad = np.array([sig_derv, ls_derv])
+
+    return kern, grad
+
+
+
+@njit
+def many_3body_mc_force_en_jit(array_1, array_2, 
+                               grads_1,
+                               neigh_array_1, neigh_grads_1,
+                               c1, c2, etypes1,  
+                               species1, species2, d1, sig, ls):
+    """
+    Args:
+        To be filled.
+    Return:
+        float: Value of the many-body kernel.
+    """
+
+    kern = 0
+
+    # intersection not union? check
+    useful_species = np.array(
+        list(set(species1).intersection(set(species2))), dtype=np.int8)
+
+    specs_ind_1 = []
+    specs_ind_2 = []
+    for s in useful_species:
+        specs_ind_1.append(np.where(species1==s)[0][0])
+        specs_ind_2.append(np.where(species2==s)[0][0])
+
+    sc1 = np.where(species1==c1)[0][0]
+    sc2 = np.where(species2==c2)[0][0]
+    sc21 = np.where(species2==c1)[0][0]
+
+    # the derivative of k(qn, q2), n is the neighbor
+    for n in range(neigh_array_1.shape[0]):
+        if etypes1[n] == c2:
+            for s in range(len(useful_species)):
+                s1 = specs_ind_1[s]
+                s2 = specs_ind_2[s]
+                q2 = array_2[sc21, s2]
+
+                qi1_grads = neigh_grads_1[n, s1, d1-1]
+                qis = neigh_array_1[n, sc1, s1]
+                ki2s = k_sq_exp_dev(qis, q2, sig, ls)
+                
+                kern -= qi1_grads * ki2s
+                
+    # contribution of each neighbor to the derivative of k(q1, q2)
+    if c1 == c2:
+        for si in range(len(useful_species)):
+            si1 = specs_ind_1[si]
+            si2 = specs_ind_2[si]
+
+            for sj in range(si, len(useful_species)):
+                sj1 = specs_ind_1[sj]
+                sj2 = specs_ind_2[sj]            
+
+                q1 = array_1[si1, sj1]
+                q2 = array_2[si2, sj2]
+
+                k12 = k_sq_exp_dev(q1, q2, sig, ls)
+                q1i_grads = grads_1[si, sj, d1-1]
+    
+                kern -= k12 * q1i_grads
+
+    return kern
+
+
+@njit
 def many_3body_mc_en_jit(m3b_array_1, m3b_array_2, c1, c2, 
                          species1, species2, sig, ls):
     """many-body many-element kernel between energy components accelerated
@@ -1990,25 +2469,26 @@ def many_3body_mc_en_jit(m3b_array_1, m3b_array_2, c1, c2,
         float: Value of the many-body kernel.
     """
     useful_species = np.array(
-        list(set(species1).union(set(species2))), dtype=np.int8)
-    n_species = len(useful_species)
+        list(set(species1).intersection(set(species2))), dtype=np.int8)
     kern = 0
 
     if c1 == c2:
-        for s1 in range(n_species):
-            ind1_s1 = np.where(species1==useful_species[s1])[0][0]
-            ind2_s1 = np.where(species2==useful_species[s1])[0][0]
-            for s2 in range(s1, n_species):
-                ind1_s2 = np.where(species1==useful_species[s2])[0][0]
-                ind2_s2 = np.where(species2==useful_species[s2])[0][0]
+        for ind, si in enumerate(useful_species):
+            si1 = np.where(species1==si)[0][0]
+            si2 = np.where(species2==si)[0][0]
+    
+            for sj in useful_species[ind:]:
+                sj1 = np.where(species1==sj)[0][0]
+                sj2 = np.where(species2==sj)[0][0]
 
-                q1 = m3b_array_1[ind1_s1, ind1_s2]
-                q2 = m3b_array_2[ind2_s1, ind2_s2]
+                q1 = m3b_array_1[si1, sj1]
+                q2 = m3b_array_2[si2, sj2]
                 q1q2diff = q1 - q2
 
-            kern += sig * sig * exp(-q1q2diff * q1q2diff / (2 * ls * ls))
+                kern += sig * sig * exp(-q1q2diff * q1q2diff / (2 * ls * ls))
 
     return kern
+
 
 
 _str_to_kernel = {'two_body_mc': two_body_mc,
@@ -2035,10 +2515,14 @@ _str_to_kernel = {'two_body_mc': two_body_mc,
                   '2+3_grad': two_plus_three_body_mc_grad,
                   '2+3_en': two_plus_three_mc_en,
                   '2+3_force_en': two_plus_three_mc_force_en,
-                  'many_body_mc': many_body_mc,
-                  'many_body_mc_en': many_body_mc_en,
-                  'many_body_mc_grad': many_body_mc_grad,
-                  'many_body_mc_force_en': many_body_mc_force_en,
+                  'many_2body_mc': many_2body_mc,
+                  'many_2body_mc_en': many_2body_mc_en,
+                  'many_2body_mc_grad': many_2body_mc_grad,
+                  'many_2body_mc_force_en': many_2body_mc_force_en,
+                  'many_3body_mc': many_2body_mc,
+                  'many_3body_mc_en': many_2body_mc_en,
+                  'many_3body_mc_grad': many_2body_mc_grad,
+                  'many_3body_mc_force_en': many_2body_mc_force_en,
                   'many': many_body_mc,
                   'many_en': many_body_mc_en,
                   'many_grad': many_body_mc_grad,
