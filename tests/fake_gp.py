@@ -219,9 +219,9 @@ def generate_mb_envs(cutoffs, cell, delt, d1, mask=None, kern_type='mc'):
                            [0.0, 0., 0.3],
                            [1., 1., 0.]])
     positions0[1:] += 0.1*np.random.random([4, 3])
-    triplet = [1, 1, 2, 1]
+    triplet = [1, 2, 3]
     np.random.shuffle(triplet)
-    species_1 = np.hstack([triplet, randint(1, 2)])
+    species_1 = np.hstack([1,  triplet, randint(1, 2)])
     if kern_type == 'sc':
         species_1 = np.ones(species_1.shape)
     return generate_mb_envs_pos(positions0, species_1, cutoffs, cell, delt, d1, mask)
