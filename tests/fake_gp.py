@@ -186,7 +186,7 @@ def get_tstp(hm=None) -> AtomicEnvironment:
     return test_pt
 
 
-def generate_mb_envs(cutoffs, cell, delt, d1, mask=None):
+def generate_mb_envs(cutoffs, cell, delt, d1, mask=None, kern_type='mc'):
     positions0 = np.array([[0., 0., 0.],
                            [0., 0.3, 0.],
                            [0.3, 0., 0.],
@@ -196,6 +196,8 @@ def generate_mb_envs(cutoffs, cell, delt, d1, mask=None):
     triplet = [1, 1, 2, 1]
     np.random.shuffle(triplet)
     species_1 = np.hstack([triplet, randint(1, 2)])
+    if kern_type == 'sc':
+        species_1 = np.ones(species_1.shape)
     return generate_mb_envs_pos(positions0, species_1, cutoffs, cell, delt, d1, mask)
 
 
@@ -246,3 +248,106 @@ def generate_mb_envs_pos(positions0, species_1, cutoffs, cell, delt, d1, mask=No
         env_p += [AtomicEnvironment(test_struc[1], i, cutoffs, cutoffs_mask=mask)]
         env_m += [AtomicEnvironment(test_struc[2], i, cutoffs, cutoffs_mask=mask)]
     return [env_0, env_p, env_m]
+
+def generate_envs(cutoffs, delta):
+    """
+    create environment with perturbation on
+    direction i
+    """
+    # create env 1
+    # perturb the x direction of atom 0 for +- delta
+    cell = np.eye(3)*np.max(cutoffs+0.1)
+    atom_1 = 0
+    pos_1 = np.vstack([[0, 0, 0], random([3, 3])])
+    pos_2 = deepcopy(pos_1)
+    pos_2[0][0] = delta
+    pos_3 = deepcopy(pos_1)
+    pos_3[0][0] = -delta
+
+    species_1 = [1, 2, 1, 1] # , 1, 1, 2, 1, 2]
+    test_structure_1 = Structure(cell, species_1, pos_1)
+    test_structure_2 = Structure(cell, species_1, pos_2)
+    test_structure_3 = Structure(cell, species_1, pos_3)
+
+    env1_1 = AtomicEnvironment(test_structure_1, atom_1, cutoffs)
+    env1_2 = AtomicEnvironment(test_structure_2, atom_1, cutoffs)
+    env1_3 = AtomicEnvironment(test_structure_3, atom_1, cutoffs)
+
+
+    # create env 2
+    # perturb the y direction
+    pos_1 = np.vstack([[0, 0, 0], random([3, 3])])
+    pos_2 = deepcopy(pos_1)
+    pos_2[0][1] = delta
+    pos_3 = deepcopy(pos_1)
+    pos_3[0][1] = -delta
+
+    atom_2 = 0
+    species_2 = [1, 1, 2, 1] #, 2, 1, 2, 2, 2]
+
+    test_structure_1 = Structure(cell, species_2, pos_1)
+    test_structure_2 = Structure(cell, species_2, pos_2)
+    test_structure_3 = Structure(cell, species_2, pos_3)
+
+    env2_1 = AtomicEnvironment(test_structure_1, atom_2, cutoffs)
+    env2_2 = AtomicEnvironment(test_structure_2, atom_2, cutoffs)
+    env2_3 = AtomicEnvironment(test_structure_3, atom_2, cutoffs)
+
+    return env1_1, env1_2, env1_3, env2_1, env2_2, env2_3
+
+def another_env(cutoffs, delt):
+
+    cell = 10.0 * np.eye(3)
+
+    # atomic structure 1
+    pos_1 = np.vstack([[0, 0, 0], 0.1*random([3, 3])])
+    pos_1[1, 1] += 1
+    pos_1[2, 0] += 1
+    pos_1[3, :2] += 1
+    pos_2 = deepcopy(pos_1)
+    pos_2[0][0] = delt
+    pos_3 = deepcopy(pos_1)
+    pos_3[0][0] = -delt
+
+
+    species_1 = [1, 1, 1, 1]
+
+    test_structure_1 = Structure(cell, species_1, pos_1)
+    test_structure_2 = Structure(cell, species_1, pos_2)
+    test_structure_3 = Structure(cell, species_1, pos_3)
+
+    # atom 0, original position
+    env1_1_0 = AtomicEnvironment(test_structure_1, 0, cutoffs)
+    # atom 0, 0 perturbe along x
+    env1_2_0 = AtomicEnvironment(test_structure_2, 0, cutoffs)
+    # atom 1, 0 perturbe along x
+    env1_2_1 = AtomicEnvironment(test_structure_2, 1, cutoffs)
+    # atom 2, 0 perturbe along x
+    env1_2_2 = AtomicEnvironment(test_structure_2, 2, cutoffs)
+
+    # atom 0, 0 perturbe along -x
+    env1_3_0 = AtomicEnvironment(test_structure_3, 0, cutoffs)
+    # atom 1, 0 perturbe along -x
+    env1_3_1 = AtomicEnvironment(test_structure_3, 1, cutoffs)
+    # atom 2, 0 perturbe along -x
+    env1_3_2 = AtomicEnvironment(test_structure_3, 2, cutoffs)
+
+    # create env 2
+    pos_1 = np.vstack([[0, 0, 0], 0.1*random([3, 3])])
+    pos_1[1, 1] += 1
+    pos_1[2, 0] += 1
+    pos_1[3, :2] += 1
+    pos_2 = deepcopy(pos_1)
+    pos_2[0][0] = delt
+    pos_3 = deepcopy(pos_1)
+    pos_3[0][0] = -delt
+
+    species_2 = [1, 2, 2, 1]
+
+    test_structure_1 = Structure(cell, species_2, pos_1)
+
+    env2_1_0 = AtomicEnvironment(test_structure_1, 0, cutoffs)
+
+    return env1_1_0, env1_2_0, env1_3_0, \
+           env1_2_1, env1_3_1, env1_2_2, env1_3_2, env2_1_0
+

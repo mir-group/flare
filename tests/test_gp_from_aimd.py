@@ -8,7 +8,7 @@ from copy import deepcopy
 from flare.env import AtomicEnvironment
 from flare.struc import Structure
 from flare.gp import GaussianProcess
-from flare.mgp.mgp_en import MappedGaussianProcess
+from flare.mgp.mgp import MappedGaussianProcess
 from flare.gp_from_aimd import TrajectoryTrainer, subset_of_frame_by_element
 from json import loads
 from flare.env import AtomicEnvironment
@@ -137,7 +137,7 @@ def test_seed_and_run():
 
     test_env = envs[0]
 
-    for d in [0, 1, 2]:
+    for d in [1, 2, 3]:
         assert np.all(the_gp.predict(x_t=test_env, d=d) ==
                       new_gp.predict(x_t=test_env, d=d))
 

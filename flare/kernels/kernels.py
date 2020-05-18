@@ -1,6 +1,5 @@
 import numpy as np
 from math import exp
-from flare.env import AtomicEnvironment
 from numba import njit
 import flare.kernels.cutoffs as cf
 
@@ -249,8 +248,6 @@ def q_value(distances, r_cut, cutoff_func, q_func=coordination_number):
     return q
 
 @njit
-
-
 def q_value_mc(distances, r_cut, ref_species, species, cutoff_func, q_func=coordination_number):
     """Compute value of many-body many components descriptor based
     on distances of atoms in the local many-body environment.
@@ -267,7 +264,7 @@ def q_value_mc(distances, r_cut, ref_species, species, cutoff_func, q_func=coord
         float: the value of the many-body descriptor
     """
 
-    q = 0
+    q = 0.0
 
     for i in range(len(distances)):
         if species[i] == ref_species:

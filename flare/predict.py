@@ -363,3 +363,50 @@ def predict_on_structure_par_en(structure: Structure, gp: GaussianProcess,
             structure.stds[i] = stds[i]
 
     return forces, stds, local_energies
+
+
+def predict_on_atom_mgp(atom: int, structure, cutoffs, mgp,
+                        write_to_structure=False):
+    chemenv = AtomicEnvironment(structure, atom, cutoffs)
+    # predict force components and standard deviations
+    force, var, virial, local_energy = mgp.predict(chemenv)
+    comps = force
+    stds = np.sqrt(np.absolute(var))
+
+    if write_to_structure:
+        structure.forces[atom][:] = force
+        structure.stds[atom][:] = stds
+
+    return comps, stds, local_energy
+
+
+def predict_on_structure_mgp(structure, mgp, output=None,
+                             output_name=None, n_cpus=None,
+                             write_to_structure=True,
+                             selective_atoms: List[int] = None,
+                             skipped_atom_value=0):  # changed
+    """
+    Assign forces to structure based on an mgp
+    """
+    if output and output_name:
+        output.write_to_output('\npredict with mapping:\n', output_name)
+
+    forces = np.zeros(shape=(structure.nat, 3))
+    stds = np.zeros(shape=(structure.nat, 3))
+
+    if selective_atoms:
+        forces.fill(skipped_atom_value)
+        stds.fill(skipped_atom_value)
+    else:
+        selective_atoms = []
+
+
+    for n in range(structure.nat):
+
+        if n not in selective_atoms and selective_atoms:
+            continue
+
+        forces[n, :], stds[n, :], _ = predict_on_atom_mgp(n, structure, 
+                                      mgp.cutoffs, mgp, write_to_structure)
+
+    return forces, stds

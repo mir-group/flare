@@ -149,8 +149,10 @@ class FLARE_Calculator(Calculator):
         # set svd rank based on the training set, grid number and threshold 1000
         grid_params = self.mgp_model.grid_params
         struc_params = self.mgp_model.struc_params
+        map_force = self.mgp_model.map_force
         lmp_file_name = self.mgp_model.lmp_file_name
         mean_only = self.mgp_model.mean_only
+        n_cpus = self.mgp_model.n_cpus
         container_only = False
 
         train_size = len(self.gp_model.training_data)
@@ -158,10 +160,12 @@ class FLARE_Calculator(Calculator):
         rank_3 = np.min([1000, grid_params['grid_num_3'][0]**3, train_size*3])
         grid_params['svd_rank_2'] = rank_2
         grid_params['svd_rank_3'] = rank_3
-
-        hyps = self.gp_model.hyps
-        cutoffs = self.gp_model.cutoffs
-        self.mgp_model = MappedGaussianProcess(hyps, cutoffs,
-                        grid_params, struc_params, mean_only,
-                        container_only, self.gp_model, lmp_file_name)
-
+       
+        self.mgp_model = MappedGaussianProcess(grid_params,
+                                               struc_params,
+                                               map_force=map_force,
+                                               GP=self.gp_model,
+                                               mean_only=mean_only,
+                                               container_only=container_only,
+                                               lmp_file_name=lmp_file_name,
+                                               n_cpus=n_cpus)

@@ -84,7 +84,7 @@ def test_env_methods(structure, mask, cutoff, result):
     if (len(cutoff) > 1):
         assert np.array_equal(remade_env.bond_array_3, env_test.bond_array_3)
     if (len(cutoff) > 2):
-        assert np.array_equal(remade_env.bond_array_mb, env_test.bond_array_mb)
+        assert np.array_equal(remade_env.q_array, env_test.q_array)
 
 
 def generate_mask(cutoff):
@@ -133,3 +133,4 @@ def generate_mask(cutoff):
         mask['mb_mask'] = np.ones(4, dtype=int)
         mask['mb_mask'][0] = 0
     return mask
+

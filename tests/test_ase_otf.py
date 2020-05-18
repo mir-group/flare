@@ -73,11 +73,17 @@ def flare_calc():
                        'svd_rank_3': 0,
                        'bodies': [2, 3],
                        'load_grid': None,
-                       'update': True}
+                       'update': False}
 
-        mgp_model = MappedGaussianProcess(gp_model.hyps, gp_model.cutoffs,
-                    grid_params, struc_params, mean_only=False, container_only=False,
-                    GP=gp_model, lmp_file_name='lmp.mgp', n_cpus=1)
+        mgp_model = MappedGaussianProcess(grid_params,
+                                          struc_params,
+                                          map_force=True,
+                                          GP=gp_model,
+                                          mean_only=False,
+                                          container_only=False,
+                                          lmp_file_name='lmp.mgp',
+                                          n_cpus=1,
+                                          autorun=True)
 
         # ------------ create ASE's flare calculator -----------------------
         flare_calculator = FLARE_Calculator(gp_model, mgp_model,

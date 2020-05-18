@@ -265,7 +265,7 @@ class TestIO():
 
         dumpcompare(new_gp_dict, old_gp_dict)
 
-        for d in [0, 1, 2]:
+        for d in [1, 2, 3]:
             assert np.all(test_gp.predict(x_t=validation_env, d=d) ==
                           new_gp.predict(x_t=validation_env, d=d))
 
@@ -278,7 +278,7 @@ class TestIO():
 
         new_gp = GaussianProcess.from_file('test_gp_write.pickle')
 
-        for d in [0, 1, 2]:
+        for d in [1, 2, 3]:
             assert np.all(test_gp.predict(x_t=validation_env, d=d) ==
                           new_gp.predict(x_t=validation_env, d=d))
         os.remove('test_gp_write.pickle')
@@ -287,7 +287,7 @@ class TestIO():
 
         with open('test_gp_write.json', 'r') as f:
             new_gp = GaussianProcess.from_dict(json.loads(f.readline()))
-        for d in [0, 1, 2]:
+        for d in [1, 2, 3]:
             assert np.all(test_gp.predict(x_t=validation_env, d=d) ==
                           new_gp.predict(x_t=validation_env, d=d))
         os.remove('test_gp_write.json')
