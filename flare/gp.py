@@ -295,7 +295,8 @@ class GaussianProcess:
             structure_list = []  # Populate with all environments of the struc
             for atom in range(noa):
                 env_curr = \
-                    AtomicEnvironment(struc, atom, self.cutoffs, sweep=sweep)
+                    AtomicEnvironment(struc, atom, self.cutoffs, sweep=sweep,
+                                      cutoffs_mask=self.hyps_mask)
                 structure_list.append(env_curr)
 
             self.energy_labels.append(energy)
@@ -878,12 +879,13 @@ class GaussianProcess:
             raise ValueError("Warning: Format unspecieified or file is not "
                              ".json or .pickle format.")
 
-        if ('training_structure' not in gp_model.__dict__):
+        if ('training_structures' not in gp_model.__dict__):
             gp_model.training_structures = []  # Environments of each structure
             gp_model.energy_labels = []  # Energies of training structures
             gp_model.energy_labels_np = np.empty(0, )
             gp_model.energy_noise = 0.01
-            gp_model.all_labels = np.empty(0, )
+            gp_model.all_labels = np.concatenate((gp_model.training_labels_np,
+                                          gp_model.energy_labels_np))
 
         gp_model.check_instantiation()
 

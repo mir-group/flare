@@ -204,7 +204,7 @@ def three_body_mc_force_en_sephyps(env1, r1, r2, r12, c2, etypes2,
                                       d1, sig, ls, r_cut, cutoff_func) / 3
 
 
-@njit()
+@njit
 def three_body_mc_force_en_jit(bond_array_1, c1, etypes1,
                                cross_bond_inds_1, cross_bond_dists_1,
                                triplets_1,
