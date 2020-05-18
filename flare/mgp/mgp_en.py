@@ -831,8 +831,8 @@ class Map3body:
                                             n1, n2, n12, env12, mapped_kernel_info)
                 if (n_strucs > 0):
                     k12_v_energy = \
-                        self._GenGrid_energy(GP.name, 0, n_strucs, bonds1, bonds2,
-                                             bonds12, env12, kernel_info)
+                        self._GenGrid_energy_numba(GP.name, 0, n_strucs, self.bounds,
+                                             n1, n2, n12, env12, mapped_kernel_info)
         else:
 
             if (n_envs > 0):
