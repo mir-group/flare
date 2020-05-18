@@ -7,11 +7,13 @@ import datetime
 import os
 import shutil
 import time
-
 import multiprocessing
+
 import numpy as np
 
+from typing import Union
 from flare.util import Z_to_element
+from flare.struc import Structure
 
 
 class Output:
@@ -91,12 +93,13 @@ class Output:
             self.outfiles[name].flush()
 
     def write_header(self, cutoffs, kernel_name: str,
-                     hyps, algo: str, dt: float,
-                     Nsteps: int, structure,
-                     std_tolerance,
+                     hyps, algo: str, dt: float = None,
+                     Nsteps: int = None, structure: Structure= None,
+                     std_tolerance: Union[float, int] = None,
                      optional: dict = None):
         """
-        Write header to the log function
+        Write header to the log function. Designed for Trajectory Trainer and
+        OTF runs and can take flexible input for both.
 
         :param cutoffs: GP cutoffs
         :param kernel_name: Kernel names
@@ -104,7 +107,7 @@ class Output:
         :param algo: algorithm for hyper parameter optimization
         :param dt: timestep for OTF MD
         :param Nsteps: total number of steps for OTF MD
-        :param structure: the atomic structure
+        :param structure: initial structure
         :param std_tolerance: tolarence for active learning
         :param optional: a dictionary of all the other parameters
         """
@@ -114,7 +117,7 @@ class Output:
 
         if isinstance(std_tolerance, tuple):
             std_string = 'relative uncertainty tolerance: ' \
-                         f'{std_tolerance[0]} eV/A\n'
+                         f'{std_tolerance[0]} times noise hyperparameter \n'
             std_string += 'absolute uncertainty tolerance: ' \
                           f'{std_tolerance[1]} eV/A\n'
         elif std_tolerance < 0:
@@ -122,7 +125,8 @@ class Output:
                 f'uncertainty tolerance: {np.abs(std_tolerance)} eV/A\n'
         elif std_tolerance > 0:
             std_string = \
-                f'uncertainty tolerance: {np.abs(std_tolerance)} times noise \n'
+                f'uncertainty tolerance: {np.abs(std_tolerance)} ' \
+                                'times noise hyperparameter \n'
         else:
             std_string = ''
 
@@ -135,24 +139,27 @@ class Output:
         headerstring += f'hyperparameters: {str(hyps)}\n'
         headerstring += f'hyperparameter optimization algorithm: {algo}\n'
         headerstring += std_string
-        headerstring += f'timestep (ps): {dt}\n'
+        if dt is not None:
+            headerstring += f'timestep (ps): {dt}\n'
         headerstring += f'number of frames: {Nsteps}\n'
-        headerstring += f'number of atoms: {structure.nat}\n'
-        headerstring += f'system species: {set(structure.species_labels)}\n'
-        headerstring += 'periodic cell: \n'
-        headerstring += str(structure.cell)+'\n'
+        if structure is not None:
+            headerstring += f'number of atoms: {structure.nat}\n'
+            headerstring += f'system species: {set(structure.species_labels)}\n'
+            headerstring += 'periodic cell: \n'
+            headerstring += str(structure.cell)+'\n'
 
         if optional:
             for key, value in optional.items():
                 headerstring += f"{key}: {value} \n"
 
         # report previous positions
-        headerstring += '\nprevious positions (A):\n'
-        for i in range(len(structure.positions)):
-            headerstring += f'{structure.species_labels[i]:5}'
-            for j in range(3):
-                headerstring += f'{structure.prev_positions[i][j]:10.4f}'
-            headerstring += '\n'
+        if structure is not None:
+            headerstring += '\nprevious positions (A):\n'
+            for i in range(len(structure.positions)):
+                headerstring += f'{structure.species_labels[i]:5}'
+                for j in range(3):
+                    headerstring += f'{structure.prev_positions[i][j]:10.4f}'
+                headerstring += '\n'
         headerstring += '-' * 80 + '\n'
 
         f.write(headerstring)
