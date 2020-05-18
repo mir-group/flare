@@ -854,10 +854,6 @@ class GaussianProcess:
         if '.json' in filename or 'json' in format:
             with open(filename, 'r') as f:
                 gp_model = GaussianProcess.from_dict(json.loads(f.readline()))
-                gp_model.check_instantiation()
-                _global_training_data[gp_model.name] = gp_model.training_data
-                _global_training_labels[gp_model.name] = \
-                    gp_model.training_labels_np
 
         elif '.pickle' in filename or 'pickle' in format:
             with open(filename, 'rb') as f:
@@ -865,8 +861,6 @@ class GaussianProcess:
 
                 if ('name' not in gp_model.__dict__):
                     gp_model.name = 'default_gp'
-
-                gp_model.check_instantiation()
 
                 if len(gp_model.training_data) > 5000:
                     try:
@@ -884,8 +878,14 @@ class GaussianProcess:
             raise ValueError("Warning: Format unspecieified or file is not "
                              ".json or .pickle format.")
 
-        _global_training_data[gp_model.name] = gp_model.training_data
-        _global_training_labels[gp_model.name] = gp_model.training_labels_np
+        if ('training_structure' not in gp_model.__dict__):
+            gp_model.training_structures = []  # Environments of each structure
+            gp_model.energy_labels = []  # Energies of training structures
+            gp_model.energy_labels_np = np.empty(0, )
+            gp_model.energy_noise = 0.01
+            gp_model.all_labels = np.empty(0, )
+
+        gp_model.check_instantiation()
 
         return gp_model
 
