@@ -130,7 +130,7 @@ class TrajectoryTrainer:
                             train_checkpoint_interval
         :param train_checkpoint_interval: How often to write model after
                         trainings
-        :param checkpoint_interval: How often to write model after atoms are
+        :param atom_checkpoint_interval: How often to write model after atoms are
             added (since atoms may be added without training)
         :param model_format: Format to write GP model to
         """
