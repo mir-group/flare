@@ -929,7 +929,7 @@ class GaussianProcess:
                                                     env.atom]))
 
         # Summarize the relevant information
-        data['species'] = set(present_species)
+        data['species'] = list(set(present_species))
         data['envs_by_species'] = dict(Counter(present_species))
 
         return data

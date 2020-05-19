@@ -9,7 +9,9 @@ from flare.env import AtomicEnvironment
 from flare.struc import Structure
 from flare.gp import GaussianProcess
 from flare.mgp.mgp_en import MappedGaussianProcess
-from flare.gp_from_aimd import TrajectoryTrainer, subset_of_frame_by_element
+from flare.gp_from_aimd import TrajectoryTrainer,\
+                                    parse_trajectory_trainer_output
+from flare.util import subset_of_frame_by_element
 from json import loads
 from flare.env import AtomicEnvironment
 from .test_mgp_unit import all_mgp, all_gp, get_random_structure
@@ -255,3 +257,43 @@ def test_mgp_gpfa(all_mgp, all_gp):
                            abs_std_tolerance=0, abs_force_tolerance=0)
     assert tt.mgp is True
     tt.run()
+
+
+def test_parse_gpfa_output():
+    """
+    Compare parsing against known answers.
+    :return:
+    """
+    frames, gp_data = parse_trajectory_trainer_output(
+        './test_files/gpfa_parse_test.out', True)
+
+    assert len(frames) == 5
+    assert isinstance(frames[0], dict)
+    for frame in frames:
+        for key in ['species', 'positions', 'gp_forces', 'dft_forces',
+                    'gp_stds']:
+
+            assert len(frame[key]) == 6
+
+        assert len(frame['added_atoms']) == 0 or len(frame['added_atoms']) == 1
+
+        assert frame['maes_by_species']['C']
+        assert frame['maes_by_species'].get('H') is None
+
+
+    assert gp_data['init_stats']['N'] == 0
+    assert gp_data['init_stats']['species'] == []
+    assert gp_data['init_stats']['envs_by_species'] == {}
+
+    assert gp_data['cumulative_gp_size'][-1] > 2
+    assert len(gp_data['mae_by_elt']['C']) == 5
+
+    assert gp_data['pre_train_stats']['N'] == 9
+    assert gp_data['pre_train_stats']['envs_by_species']['C'] == 2
+    assert gp_data['pre_train_stats']['envs_by_species']['H'] == 5
+    assert gp_data['pre_train_stats']['envs_by_species']['O'] == 2
+    assert gp_data['pre_train_stats']['species'] == ['H', 'C', 'O']
+
+    assert gp_data['cumulative_gp_size'] == [0, 9, 9, 10, 11, 12, 13]
+
+
