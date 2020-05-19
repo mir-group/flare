@@ -8,9 +8,9 @@ Energy, force, and stress information can be included which can then be
 used to train ML models.
 """
 import numpy as np
-from flare.util import element_to_Z, Z_to_element, NumpyEncoder
+from flare.util import element_to_Z, Z_to_element, NumpyEncoder, \
+    get_max_cutoff
 from json import dumps, loads
-from util import get_max_cutoff
 
 from typing import List, Union, Any
 
@@ -63,7 +63,7 @@ class Structure:
 
         # Compute the max cutoff compatible with a 3x3x3 supercell of the
         # structure.
-        self.max_cutoff = self.get_max_cutoff()
+        self.max_cutoff = get_max_cutoff(self.cell)
 
         # get cell matrices for wrapping coordinates
         self.cell_transpose = self.cell.transpose()
