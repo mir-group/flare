@@ -17,7 +17,9 @@ from flare.struc import Structure
 from flare.env import AtomicEnvironment
 from flare.gp import GaussianProcess
 from flare.gp_algebra import partition_vector, energy_force_vector_unit, \
-    force_energy_vector_unit, energy_energy_vector_unit, force_force_vector_unit
+    force_energy_vector_unit, energy_energy_vector_unit, force_force_vector_unit, \
+    _global_training_data, _global_training_structures
+    get_kernel_vector, en_kern_vec
 from flare.kernels.utils import from_mask_to_args, str_to_kernel_set, str_to_mapped_kernel
 from flare.kernels.cutoffs import quadratic_cutoff
 from flare.utils.element_coder import Z_to_element, NumpyEncoder
@@ -1170,7 +1172,7 @@ class Map3body:
         kernel, en_kernel, en_force_kernel, cutoffs, hyps, hyps_mask = \
             kernel_info
 
-        training_data = _global_training_data[name]
+        training_structure = _global_training_structures[name]
 
         ds = [1, 2, 3]
         size = (e-s) * 3
