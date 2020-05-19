@@ -2070,10 +2070,6 @@ def many_2body_mc_en_jit(q_array_1, q_array_2, c1, c2,
     with Numba.
 
     Args:
-        bond_array_1 (np.ndarray): many-body bond array of the first local
-            environment.
-        bond_array_2 (np.ndarray): many-body bond array of the second local
-            environment.
         c1 (int): atomic species of the central atom in env 1
         c2 (int): atomic species of the central atom in env 2
         etypes1 (np.ndarray): atomic species of atoms in env 1
