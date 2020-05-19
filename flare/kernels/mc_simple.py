@@ -1947,7 +1947,6 @@ def many_body_mc_force_en_jit(q_array_1, q_array_2,
     useful_species = np.array(
         list(set(species1).union(set(species2))), dtype=np.int8)
 
-    k1 = k2 = 0
     for s in useful_species:
         s1 = np.where(species1==s)[0][0] 
         s2 = np.where(species2==s)[0][0] 
@@ -1976,10 +1975,6 @@ def many_body_mc_force_en_jit(q_array_1, q_array_2,
                 ki2s = k_sq_exp_dev(qis, q2, sig, ls)
 
             kern += - (q1i_grads * k12 + qi1_grads * ki2s)
-
-            k1 -= q1i_grads * k12
-            k2 -= qi1_grads * ki2s
-        print('k1 k2', s, k12, k1, k2)
 
     return kern
 
@@ -2019,7 +2014,6 @@ def many_body_mc_en_jit(q_array_1, q_array_2, c1, c2,
             q2 = q_array_2[np.where(species2==s)[0][0]]
             q1q2diff = q1 - q2
             kern += sig * sig * exp(-q1q2diff * q1q2diff / (2 * ls * ls))
-            print('simple', s, q1, q2)
     return kern
 
 

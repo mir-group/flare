@@ -82,8 +82,7 @@ def flare_calc():
                                           mean_only=False,
                                           container_only=False,
                                           lmp_file_name='lmp.mgp',
-                                          n_cpus=1,
-                                          autorun=True)
+                                          n_cpus=1)
 
         # ------------ create ASE's flare calculator -----------------------
         flare_calculator = FLARE_Calculator(gp_model, mgp_model,
