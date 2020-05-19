@@ -87,8 +87,8 @@ class MappedGaussianProcess:
                  mean_only: bool=False,
                  container_only: bool=True,
                  lmp_file_name: str='lmp.mgp',
-                 n_cpus: int =None,
-                 n_sample:int =100)
+                 n_cpus: int=None,
+                 n_sample: int=100):
 
         # load all arguments as attributes
         self.map_force = map_force
