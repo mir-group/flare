@@ -113,13 +113,15 @@ def str_to_mapped_kernel(name: str, multihyps: bool = False, energy=False):
     if (b3 == True and energy == False):
         if (multihyps is True):
             tbmfe = map_3b.three_body_mc_force_en_sephyps
+            tbme = map_3b.three_body_mc_en_sephyps
         else:
             tbmfe = map_3b.three_body_mc_force_en
+            tbme = map_3b.three_body_mc_en
     else:
         raise NotImplementedError("mapped kernel for two-body and manybody kernels "\
                 "are not implemented")
 
-    return tbmfe
+    return tbmfe, tbme
 
 
 def from_mask_to_args(hyps, hyps_mask: dict, cutoffs):

@@ -646,31 +646,29 @@ class Map2body:
         del k12_matrix
 
         # --------- calculate energy kernels ---------------
-        if not self.map_force:
-        # TODO: add force_energy_vector_unit??????
-            with mp.Pool(processes=processes) as pool:
-                block_id, nbatch = \
-                    partition_vector(self.n_sample, n_strucs, processes)
+        with mp.Pool(processes=processes) as pool:
+            block_id, nbatch = \
+                partition_vector(self.n_sample, n_strucs, processes)
     
-                k12_slice = []
-                for ibatch in range(nbatch):
-                    s, e = block_id[ibatch]
-                    k12_slice.append(pool.apply_async(
-                        self._GenGrid_energy,
-                        args=(GP.name, s, e, bond_lengths, env12, kernel_info)))
-                k12_matrix = []
-                for ibatch in range(nbatch):
-                    k12_matrix += [k12_slice[ibatch].get()]
-                pool.close()
-                pool.join()
-            del k12_slice
-            k12_v_energy = np.vstack(k12_matrix)
-            del k12_matrix
+            k12_slice = []
+            for ibatch in range(nbatch):
+                s, e = block_id[ibatch]
+                k12_slice.append(pool.apply_async(
+                    self._GenGrid_energy,
+                    args=(GP.name, s, e, bond_lengths, env12, kernel_info)))
+            k12_matrix = []
+            for ibatch in range(nbatch):
+                k12_matrix += [k12_slice[ibatch].get()]
+            pool.close()
+            pool.join()
+        del k12_slice
+        k12_v_energy = np.vstack(k12_matrix)
+        del k12_matrix
     
-            k12_v_all = np.vstack([k12_v_force, k12_v_energy])
-            k12_v_all = np.moveaxis(k12_v_all, 0, -1)
-            del k12_v_force
-            del k12_v_energy
+        k12_v_all = np.vstack([k12_v_force, k12_v_energy])
+        k12_v_all = np.moveaxis(k12_v_all, 0, -1)
+        del k12_v_force
+        del k12_v_energy
 
         # ------- compute bond means and variances ---------------
         for b, _ in enumerate(bond_lengths):
@@ -720,7 +718,7 @@ class Map2body:
             env12.bond_array_2 = np.array([[r, 1, 0, 0]])
             
             if self.map_force:
-                k12_v[b, :] = force_force_vector_unit(name, s, e, env12, kernel, 
+                k12_v[b, :] = force_energy_vector_unit(name, s, e, env12, efk, 
                     hyps, cutoffs, hyps_mask, 1)
             else:
                 k12_v[b, :] = energy_energy_vector_unit(name, s, e, 
@@ -843,87 +841,100 @@ class Map3body:
         n_strucs = len(GP.training_structures)
         n_kern = n_envs * 3 + n_strucs
 
+        mapk = str_to_mapped_kernel('3', GP.multihyps)
+        mapped_kernel_info = (kernel_info[0], kernel_info[1], mapk,
+                              kernel_info[3], kernel_info[4], kernel_info[5])
+
         if processes == 1:
             if self.update:
                 raise NotImplementedError("the update function is "
                                           "not yet implemented")
             else:
-                mapk = str_to_mapped_kernel('3', GP.multihyps)
-                mapped_kernel_info = (kernel_info[0], kernel_info[1], mapk,
-                                      kernel_info[3], kernel_info[4], kernel_info[5])
-                k12_v_force = \
-                    self._GenGrid_numba(GP.name, 0, n_envs, self.bounds,
+                if (n_envs > 0):
+                    k12_v_force = \
+                        self._GenGrid_numba(GP.name, 0, n_envs, self.bounds,
                                         n1, n2, n12, env12, mapped_kernel_info)
-                k12_v_energy = \
-                    self._GenGrid_energy(GP.name, 0, n_strucs, bonds1, bonds2,
+                if (n_strucs > 0):
+                    k12_v_energy = \
+                        self._GenGrid_energy(GP.name, 0, n_strucs, bonds1, bonds2,
                                          bonds12, env12, kernel_info)
         else:
 
             # ------------ force kernels -------------
-            if self.update:
-
-                self.UpdateGrid()
-
-
-
-            else:
-                block_id, nbatch = \
-                    partition_vector(self.n_sample, n_envs, processes)
-
-                k12_slice = []
-                with mp.Pool(processes=processes) as pool:
-                    for ibatch in range(nbatch):
-                        s, e = block_id[ibatch]
-                        k12_slice.append(pool.apply_async(
-                            self._GenGrid_inner,
-                            args=(GP.name, s, e, bonds1, bonds2, bonds12,
-                                  env12, kernel_info)))
-                    k12_matrix = []
-                    for ibatch in range(nbatch):
-                        k12_matrix += [k12_slice[ibatch].get()]
-                    pool.close()
-                    pool.join()
-
-                del k12_slice
-                k12_v_force = np.vstack(k12_matrix)
-                del k12_matrix
+            if (n_envs > 0):
+                if self.update:
+    
+                    self.UpdateGrid()
+    
+    
+    
+                else:
+                    block_id, nbatch = \
+                        partition_vector(self.n_sample, n_envs, processes)
+    
+                    k12_slice = []
+                    with mp.Pool(processes=processes) as pool:
+                        for ibatch in range(nbatch):
+                            s, e = block_id[ibatch]
+                            k12_slice.append(pool.apply_async(
+                                self._GenGrid_inner,
+                                args=(GP.name, s, e, bonds1, bonds2, bonds12,
+                                      env12, kernel_info)))
+                        k12_matrix = []
+                        for ibatch in range(nbatch):
+                            k12_matrix += [k12_slice[ibatch].get()]
+                        pool.close()
+                        pool.join()
+    
+                    del k12_slice
+                    k12_v_force = np.vstack(k12_matrix)
+                    del k12_matrix
 
             # set OMB_NUM_THREADS mkl threads number to # of logical cores, per_atom_par=False
             # ------------ force kernels -------------
-
-            if self.update:
-
-                self.UpdateGrid()
-
-
-
-            else:
-                block_id, nbatch = \
-                    partition_vector(self.n_sample, n_strucs, processes)
-
-                k12_slice = []
-                with mp.Pool(processes=processes) as pool:
-                    for ibatch in range(nbatch):
-                        s, e = block_id[ibatch]
-                        k12_slice.append(pool.apply_async(
-                            self._GenGrid_energy,
-                            args=(GP.name, s, e, bonds1, bonds2, bonds12,
-                                  env12, kernel_info)))
-                    k12_matrix = []
-                    for ibatch in range(nbatch):
-                        k12_matrix += [k12_slice[ibatch].get()]
-                    pool.close()
-                    pool.join()
-
-                del k12_slice
-                k12_v_energy = np.vstack(k12_matrix)
-                del k12_matrix
-
-        k12_v_all = np.vstack([k12_v_force, k12_v_energy])
-        k12_v_all = np.moveaxis(k12_v_all, 0, -1)
-        del k12_v_force
-        del k12_v_energy
-
+            if (n_strucs > 0):
+                if self.update:
+    
+                    self.UpdateGrid()
+    
+    
+    
+                else:
+                    block_id, nbatch = \
+                        partition_vector(self.n_sample, n_strucs, processes)
+    
+                    k12_slice = []
+                    with mp.Pool(processes=processes) as pool:
+                        for ibatch in range(nbatch):
+                            s, e = block_id[ibatch]
+                            k12_slice.append(pool.apply_async(
+                                self._GenGrid_energy,
+                                args=(GP.name, s, e, bonds1, bonds2, bonds12,
+                                      env12, kernel_info)))
+                        k12_matrix = []
+                        for ibatch in range(nbatch):
+                            k12_matrix += [k12_slice[ibatch].get()]
+                        pool.close()
+                        pool.join()
+    
+                    del k12_slice
+                    k12_v_energy = np.vstack(k12_matrix)
+                    del k12_matrix
+    
+        if (n_envs > 0 and n_strucs > 0):
+            k12_v_all = np.vstack([k12_v_force, k12_v_energy])
+            k12_v_all = np.moveaxis(k12_v_all, 0, -1)
+            del k12_v_force
+            del k12_v_energy
+        elif (n_envs > 0):
+            k12_v_all = np.moveaxis(k12_v_force, 0, -1)
+            del k12_v_force
+        elif (n_strucs > 0):
+            k12_v_all = np.moveaxis(k12_v_energy, 0, -1)
+            del k12_v_energy
+        else:
+            return np.zeros(n1, n2, n12), None        
+        
         for b12 in range(len(bonds12)):
             for b1 in range(len(bonds1)):
                 for b2 in range(len(bonds2)):
@@ -1020,7 +1031,7 @@ class Map3body:
                     env12.cross_bond_dists = np.array([[0, dist12], [dist12, 0]])
 
                     if self.map_force:
-                        k12_v[b1, b2, a12, :] = \
+                        k12_v[b1, b2, b12, :] = \
                             force_force_vector_unit(name, s, e, env12, kernel, hyps,
                                                cutoffs, hyps_mask, 1)
                     else:
@@ -1062,12 +1073,12 @@ class Map3body:
                     env12.cross_bond_dists = np.array([[0, dist12], [dist12, 0]])
 
                     if self.map_force:
-                        k12_v[b1, b2, a12, :] = \
-                            force_energy_vector_unit(name, s, e, env12, kernel, hyps,
+                        k12_v[b1, b2, b12, :] = \
+                            force_energy_vector_unit(name, s, e, env12, efk, hyps,
                                                cutoffs, hyps_mask, 1)
                     else:
                         k12_v[b1, b2, b12, :] = energy_energy_vector_unit(name, s, e,
-                                                        env12, efk,
+                                                        env12, ek,
                                                         hyps, cutoffs, hyps_mask)
 
         # open saved k vector file, and write to new file
@@ -1129,7 +1140,59 @@ class Map3body:
 
         return np.vstack(k_v)
 
+    def _GenGrid_energy_numba(self, name, s, e, bounds, nb1, nb2, nb12, env12, kernel_info):
+        """
+        Loop over different parts of the training set. from element s to element e
 
+        Args:
+            name: name of the gp instance
+            s: start index of the training data parition
+            e: end index of the training data parition
+            bonds1: list of bond to consider for edge center-1
+            bonds2: list of bond to consider for edge center-2
+            bonds12: list of bond to consider for edge 1-2
+            env12: AtomicEnvironment container of the triplet
+            kernel_info: return value of the get_3b_kernel
+        """
+
+        kernel, en_kernel, en_force_kernel, cutoffs, hyps, hyps_mask = \
+            kernel_info
+
+        training_data = _global_training_data[name]
+
+        ds = [1, 2, 3]
+        size = (e-s) * 3
+
+        bonds1 = np.linspace(bounds[0][0], bounds[1][0], nb1)
+        bonds2 = np.linspace(bounds[0][0], bounds[1][0], nb2)
+        bonds12 = np.linspace(bounds[0][2], bounds[1][2], nb12)
+
+        r1 = np.ones([nb1, nb2, nb12], dtype=np.float64)
+        r2 = np.ones([nb1, nb2, nb12], dtype=np.float64)
+        r12 = np.ones([nb1, nb2, nb12], dtype=np.float64)
+        for b12 in range(nb12):
+            for b1 in range(nb1):
+                for b2 in range(nb2):
+                    r1[b1, b2, b12] = bonds1[b1]
+                    r2[b1, b2, b12] = bonds2[b2]
+                    r12[b1, b2, b12] = bonds12[b12]
+        del bonds1
+        del bonds2
+        del bonds12
+
+        args = from_mask_to_args(hyps, hyps_mask, cutoffs)
+
+        k_v = []
+        for m_index in range(size):
+            structure = training_structures[m_index + s]
+            kern_curr = 0
+            for environment in structure:
+                kern_curr += en_kernel(x, environment, *args)
+            kv += [kern_curr]
+
+        return np.hstack(k_v)
+
+ 
     def UpdateGrid_inner(self):
         raise NotImplementedError("the update function is not yet"\
                 "implemented")
