@@ -17,7 +17,7 @@ from flare.struc import Structure
 from flare.env import AtomicEnvironment
 from flare.gp import GaussianProcess
 from flare.gp_algebra import partition_vector, energy_force_vector_unit, \
-    force_energy_vector_unit, energy_energy_vector_unit, force_force_vector_unit 
+    force_energy_vector_unit, energy_energy_vector_unit, force_force_vector_unit
 from flare.kernels.utils import from_mask_to_args, str_to_kernel_set, str_to_mapped_kernel
 from flare.kernels.cutoffs import quadratic_cutoff
 from flare.utils.element_coder import Z_to_element, NumpyEncoder
@@ -111,7 +111,7 @@ class MappedGaussianProcess:
                 (np.abs(self.bounds_3[1][2]) <= 1), \
                 'The force mapping needs to specify [bond, bond, cos_angle] for \
                 3-body, the 3rd dimension should be in range -1 to 1'
- 
+
         # if GP exists, the GP setup overrides the grid_params setup
         if GP is not None:
 
@@ -377,7 +377,7 @@ class MappedGaussianProcess:
                         * xyzs[:,vir_order[i][1]] * lengths[:,0]
                 vir[i] = np.sum(vir_i)
             vir *= 0.5
-              
+
         else: # energy mapping
             e_0, f_0 = mapping.mean(lengths, with_derivatives=True)
             e = np.sum(e_0) # energy
@@ -385,24 +385,24 @@ class MappedGaussianProcess:
             # predict forces and stress
             vir = np.zeros(6)
             vir_order = ((0,0), (1,1), (2,2), (1,2), (0,2), (0,1)) # match the ASE order
-    
+
             # two-body
             if lengths.shape[-1] == 1:
                 f_d = np.diag(f_0[:,0,0]) @ xyzs
                 f = 2 * np.sum(f_d, axis=0) # force: need to check prefactor 2
-    
+
                 for i in range(6):
                     vir_i = f_d[:,vir_order[i][0]]\
                             * xyzs[:,vir_order[i][1]] * lengths[:,0]
                     vir[i] = np.sum(vir_i)
-    
+
             # three-body
             if lengths.shape[-1] == 3:
                 f_d1 = np.diag(f_0[:,0,0]) @ xyzs[:,0,:]
                 f_d2 = np.diag(f_0[:,1,0]) @ xyzs[:,1,:]
                 f_d = f_d1 + f_d2
                 f = 3 * np.sum(f_d, axis=0) # force: need to check prefactor 3
-    
+
                 for i in range(6):
                     vir_i1 = f_d1[:,vir_order[i][0]]\
                            * xyzs[:,0,vir_order[i][1]] * lengths[:,0]
@@ -410,9 +410,9 @@ class MappedGaussianProcess:
                            * xyzs[:,1,vir_order[i][1]] * lengths[:,1]
                     vir[i] = np.sum(vir_i1 + vir_i2)
                 vir *= 1.5
-    
 
-        # predict var 
+
+        # predict var
         # TODO: implement energy var
         v = np.zeros(3)
         if not mean_only:
@@ -563,7 +563,7 @@ class MappedGaussianProcess:
 
 class Map2body:
     def __init__(self, grid_num: int, bounds, bond_struc: Structure,
-                 map_force=False, svd_rank=0, mean_only: bool=False, 
+                 map_force=False, svd_rank=0, mean_only: bool=False,
                  n_cpus: int=None, n_sample: int=100):
         '''
         Build 2-body MGP
@@ -613,64 +613,76 @@ class Map2body:
         # ------ construct grids ------
         nop = self.grid_num
         bond_lengths = np.linspace(self.bounds[0][0], self.bounds[1][0], nop)
+        env12 = AtomicEnvironment(
+            self.bond_struc, 0, GP.cutoffs, cutoffs_mask=GP.hyps_mask)
+
+        # --------- calculate force kernels ---------------
+        n_envs = len(GP.training_data)
+        n_strucs = len(GP.training_structures)
+        n_kern = n_envs * 3 + n_strucs
+
+        if (n_envs > 0):
+            with mp.Pool(processes=processes) as pool:
+
+                block_id, nbatch = \
+                    partition_vector(self.n_sample, n_envs, processes)
+
+                k12_slice = []
+                for ibatch in range(nbatch):
+                    s, e = block_id[ibatch]
+                    k12_slice.append(pool.apply_async(
+                        self._GenGrid_inner, args=(GP.name, s, e, bond_lengths,
+                                                   env12, kernel_info)))
+                k12_matrix = []
+                for ibatch in range(nbatch):
+                    k12_matrix += [k12_slice[ibatch].get()]
+                pool.close()
+                pool.join()
+            del k12_slice
+            k12_v_force = np.vstack(k12_matrix)
+            del k12_matrix
+
+        # --------- calculate energy kernels ---------------
+        if (n_strucs > 0):
+            with mp.Pool(processes=processes) as pool:
+                block_id, nbatch = \
+                    partition_vector(self.n_sample, n_strucs, processes)
+
+                k12_slice = []
+                for ibatch in range(nbatch):
+                    s, e = block_id[ibatch]
+                    k12_slice.append(pool.apply_async(
+                        self._GenGrid_energy,
+                        args=(GP.name, s, e, bond_lengths, env12, kernel_info)))
+                k12_matrix = []
+                for ibatch in range(nbatch):
+                    k12_matrix += [k12_slice[ibatch].get()]
+                pool.close()
+                pool.join()
+            del k12_slice
+            k12_v_energy = np.vstack(k12_matrix)
+            del k12_matrix
+
+        if (n_strucs > 0 and n_envs > 0):
+            k12_v_all = np.vstack([k12_v_force, k12_v_energy])
+            k12_v_all = np.moveaxis(k12_v_all, 0, -1)
+            del k12_v_force
+            del k12_v_energy
+        elif (n_strucs > 0):
+            k12_v_all = np.moveaxis(k12_v_energy, 0, -1)
+            del k12_v_energy
+        elif (n_envs > 0):
+            k12_v_all = np.moveaxis(k12_v_force, 0, -1)
+            del k12_v_force
+        else:
+            return np.zeros([nop]), None
+
+        # ------- compute bond means and variances ---------------
         bond_means = np.zeros([nop])
         if not self.mean_only:
             bond_vars = np.zeros([nop, len(GP.alpha)])
         else:
             bond_vars = None
-        env12 = AtomicEnvironment(
-            self.bond_struc, 0, GP.cutoffs, cutoffs_mask=GP.hyps_mask)
-
-        # --------- calculate force kernels ---------------
-        with mp.Pool(processes=processes) as pool:
-            n_envs = len(GP.training_data)
-            n_strucs = len(GP.training_structures)
-            n_kern = n_envs * 3 + n_strucs
-
-            block_id, nbatch = \
-                partition_vector(self.n_sample, n_envs, processes)
-
-            k12_slice = []
-            for ibatch in range(nbatch):
-                s, e = block_id[ibatch]
-                k12_slice.append(pool.apply_async(
-                    self._GenGrid_inner, args=(GP.name, s, e, bond_lengths,
-                                               env12, kernel_info)))
-            k12_matrix = []
-            for ibatch in range(nbatch):
-                k12_matrix += [k12_slice[ibatch].get()]
-            pool.close()
-            pool.join()
-        del k12_slice
-        k12_v_force = np.vstack(k12_matrix)
-        del k12_matrix
-
-        # --------- calculate energy kernels ---------------
-        with mp.Pool(processes=processes) as pool:
-            block_id, nbatch = \
-                partition_vector(self.n_sample, n_strucs, processes)
-    
-            k12_slice = []
-            for ibatch in range(nbatch):
-                s, e = block_id[ibatch]
-                k12_slice.append(pool.apply_async(
-                    self._GenGrid_energy,
-                    args=(GP.name, s, e, bond_lengths, env12, kernel_info)))
-            k12_matrix = []
-            for ibatch in range(nbatch):
-                k12_matrix += [k12_slice[ibatch].get()]
-            pool.close()
-            pool.join()
-        del k12_slice
-        k12_v_energy = np.vstack(k12_matrix)
-        del k12_matrix
-    
-        k12_v_all = np.vstack([k12_v_force, k12_v_energy])
-        k12_v_all = np.moveaxis(k12_v_all, 0, -1)
-        del k12_v_force
-        del k12_v_energy
-
-        # ------- compute bond means and variances ---------------
         for b, _ in enumerate(bond_lengths):
             k12_v = k12_v_all[b, :]
             bond_means[b] = np.matmul(k12_v, GP.alpha)
@@ -716,12 +728,12 @@ class Map2body:
         k12_v = np.zeros([len(bond_lengths), size])
         for b, r in enumerate(bond_lengths):
             env12.bond_array_2 = np.array([[r, 1, 0, 0]])
-            
+
             if self.map_force:
-                k12_v[b, :] = force_energy_vector_unit(name, s, e, env12, efk, 
+                k12_v[b, :] = force_energy_vector_unit(name, s, e, env12, efk,
                     hyps, cutoffs, hyps_mask, 1)
             else:
-                k12_v[b, :] = energy_energy_vector_unit(name, s, e, 
+                k12_v[b, :] = energy_energy_vector_unit(name, s, e,
                     env12, ek, hyps, cutoffs, hyps_mask)
         return np.moveaxis(k12_v, 0, -1)
 
@@ -772,7 +784,7 @@ class Map2body:
 class Map3body:
 
     def __init__(self, grid_num, bounds, bond_struc: Structure,
-                 map_force: bool = False, svd_rank: int = 0, mean_only: bool=False, 
+                 map_force: bool = False, svd_rank: int = 0, mean_only: bool=False,
                  load_grid: str = '', update: bool = True, n_cpus: int = None,
                  n_sample: int = 100):
         '''
@@ -835,7 +847,7 @@ class Map3body:
         else:
             grid_vars = None
 
-        env12 = AtomicEnvironment(self.bond_struc, 0, GP.cutoffs, 
+        env12 = AtomicEnvironment(self.bond_struc, 0, GP.cutoffs,
             cutoffs_mask=GP.hyps_mask)
         n_envs = len(GP.training_data)
         n_strucs = len(GP.training_structures)
@@ -863,15 +875,15 @@ class Map3body:
             # ------------ force kernels -------------
             if (n_envs > 0):
                 if self.update:
-    
+
                     self.UpdateGrid()
-    
-    
-    
+
+
+
                 else:
                     block_id, nbatch = \
                         partition_vector(self.n_sample, n_envs, processes)
-    
+
                     k12_slice = []
                     with mp.Pool(processes=processes) as pool:
                         for ibatch in range(nbatch):
@@ -885,7 +897,7 @@ class Map3body:
                             k12_matrix += [k12_slice[ibatch].get()]
                         pool.close()
                         pool.join()
-    
+
                     del k12_slice
                     k12_v_force = np.vstack(k12_matrix)
                     del k12_matrix
@@ -894,15 +906,15 @@ class Map3body:
             # ------------ force kernels -------------
             if (n_strucs > 0):
                 if self.update:
-    
+
                     self.UpdateGrid()
-    
-    
-    
+
+
+
                 else:
                     block_id, nbatch = \
                         partition_vector(self.n_sample, n_strucs, processes)
-    
+
                     k12_slice = []
                     with mp.Pool(processes=processes) as pool:
                         for ibatch in range(nbatch):
@@ -916,11 +928,11 @@ class Map3body:
                             k12_matrix += [k12_slice[ibatch].get()]
                         pool.close()
                         pool.join()
-    
+
                     del k12_slice
                     k12_v_energy = np.vstack(k12_matrix)
                     del k12_matrix
-    
+
         if (n_envs > 0 and n_strucs > 0):
             k12_v_all = np.vstack([k12_v_force, k12_v_energy])
             k12_v_all = np.moveaxis(k12_v_all, 0, -1)
@@ -933,8 +945,8 @@ class Map3body:
             k12_v_all = np.moveaxis(k12_v_energy, 0, -1)
             del k12_v_energy
         else:
-            return np.zeros(n1, n2, n12), None        
-        
+            return np.zeros(n1, n2, n12), None
+
         for b12 in range(len(bonds12)):
             for b1 in range(len(bonds1)):
                 for b2 in range(len(bonds2)):
@@ -1192,7 +1204,7 @@ class Map3body:
 
         return np.hstack(k_v)
 
- 
+
     def UpdateGrid_inner(self):
         raise NotImplementedError("the update function is not yet"\
                 "implemented")

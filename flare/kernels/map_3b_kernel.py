@@ -106,7 +106,7 @@ def three_body_mc_en_sephyps(env1, r1, r2, r12, c2, etypes2,
                                 sig, ls, r_cut, cutoff_func) / 9.
 
 
-def three_body_mc_force_en(env1: AtomicEnvironment, r1, r2, r12, c2, etypes2,
+def three_body_mc_en_force(env1: AtomicEnvironment, r1, r2, r12, c2, etypes2,
                            d1: int, hyps: 'ndarray', cutoffs: 'ndarray',
                            cutoff_func: Callable = cf.quadratic_cutoff) \
         -> float:
@@ -136,7 +136,7 @@ def three_body_mc_force_en(env1: AtomicEnvironment, r1, r2, r12, c2, etypes2,
     ls = hyps[1]
     r_cut = cutoffs[1]
 
-    return three_body_mc_force_en_jit(env1.bond_array_3, env1.ctype,
+    return three_body_mc_en_force_jit(env1.bond_array_3, env1.ctype,
                                       env1.etypes,
                                       env1.cross_bond_inds,
                                       env1.cross_bond_dists,
@@ -145,7 +145,7 @@ def three_body_mc_force_en(env1: AtomicEnvironment, r1, r2, r12, c2, etypes2,
                                       r1, r2, r12,
                                       d1, sig, ls, r_cut, cutoff_func) / 3
 
-def three_body_mc_force_en_sephyps(env1, r1, r2, r12, c2, etypes2,
+def three_body_mc_en_force_sephyps(env1, r1, r2, r12, c2, etypes2,
                                    d1, cutoff_2b, cutoff_3b, nspec, spec_mask,
                                    nbond, bond_mask, ntriplet, triplet_mask,
                                    ncut3b, cut3b_mask,
@@ -194,7 +194,7 @@ def three_body_mc_force_en_sephyps(env1, r1, r2, r12, c2, etypes2,
     sig = sig3[ttype]
     r_cut = cutoff_3b
 
-    return three_body_mc_force_en_jit(env1.bond_array_3, env1.ctype,
+    return three_body_mc_en_force_jit(env1.bond_array_3, env1.ctype,
                                       env1.etypes,
                                       env1.cross_bond_inds,
                                       env1.cross_bond_dists,
@@ -204,8 +204,157 @@ def three_body_mc_force_en_sephyps(env1, r1, r2, r12, c2, etypes2,
                                       d1, sig, ls, r_cut, cutoff_func) / 3
 
 
+# @njit
+# def three_body_mc_force_en_jit(bond_array_1, c1, etypes1,
+#                                cross_bond_inds_1, cross_bond_dists_1,
+#                                triplets_1,
+#                                c2, etypes2,
+#                                rj1, rj2, rj3,
+#                                d1, sig, ls, r_cut, cutoff_func):
+#     """3-body multi-element kernel between a force component and many local
+#     energies on the grid.
+#
+#     Args:
+#         bond_array_1 (np.ndarray): 3-body bond array of the first local
+#             environment.
+#         c1 (int): Species of the central atom of the first local environment.
+#         etypes1 (np.ndarray): Species of atoms in the first local
+#             environment.
+#         cross_bond_inds_1 (np.ndarray): Two dimensional array whose row m
+#             contains the indices of atoms n > m in the first local
+#             environment that are within a distance r_cut of both atom n and
+#             the central atom.
+#         cross_bond_dists_1 (np.ndarray): Two dimensional array whose row m
+#             contains the distances from atom m of atoms n > m in the first
+#             local environment that are within a distance r_cut of both atom
+#             n and the central atom.
+#         triplets_1 (np.ndarray): One dimensional array of integers whose entry
+#             m is the number of atoms in the first local environment that are
+#             within a distance r_cut of atom m.
+#         c2 (int): Species of the central atom of the second local environment.
+#         etypes2 (np.ndarray): Species of atoms in the second local
+#             environment.
+#         rj1 (np.ndarray): matrix of the first edge length
+#         rj2 (np.ndarray): matrix of the second edge length
+#         rj12 (np.ndarray): matrix of the third edge length
+#         d1 (int): Force component of the first environment (1=x, 2=y, 3=z).
+#         sig (float): 3-body signal variance hyperparameter.
+#         ls (float): 3-body length scale hyperparameter.
+#         r_cut (float): 3-body cutoff radius.
+#         cutoff_func (Callable): Cutoff function.
+#
+#     Returns:
+#         float:
+#             Value of the 3-body force/energy kernel.
+#     """
+#
+#     kern = np.zeros_like(rj1, dtype=np.float64)
+#
+#     ei1 = etypes2[0]
+#     ei2 = etypes2[1]
+#
+#     all_spec = [c2, ei1, ei2]
+#     if (c1 not in all_spec):
+#         return kern
+#     all_spec.remove(c1)
+#
+#     # pre-compute constants that appear in the inner loop
+#     sig2 = sig * sig
+#     ls1 = 1 / (2 * ls * ls)
+#     ls2 = 1 / (ls * ls)
+#
+#     f1, fdi1 = cutoff_func(r_cut, ri1, ci1)
+#
+#     f2, fdi2 = cutoff_func(r_cut, ri2, ci2)
+#     f3, fdi3 = cutoff_func(r_cut, ri3, ci3)
+#     fi = f1 * f2 * f3
+#     fdi = fdi1 * fi2 * fi3 + fi1 * fdi2 * fi3
+#     # del f1
+#     # del f2
+#     # del f3
+#
+#     for m in prange(bond_array_1.shape[0]):
+#         ei1 = etypes1[m]
+#
+#         two_spec = [all_spec[0], all_spec[1]]
+#         if (ei1 in two_spec):
+#             two_spec.remove(ei1)
+#             one_spec = two_spec[0]
+#
+#             rj1 = bond_array_1[m, 0]
+#             fj1, _ = cutoff_func(r_cut, rj1, 0)
+#
+#             for n in prange(triplets_1[m]):
+#
+#                 ind1 = cross_bond_inds_1[m, m + n + 1]
+#                 ej2 = etypes1[ind1]
+#
+#                 if (ej2 == one_spec):
+#
+#                     if (ei2 == ej2):
+#                         r11 = ri1 - rj1
+#                     if (ei2 == ej1):
+#                         r12 = ri1 - rj2
+#                     if (ei2 == c2):
+#                         r13 = ri1 - rj3
+#
+#                     rj2 = bond_array_1[ind1, 0]
+#                     if (ei1 == ej2):
+#                         r21 = ri2 - rj1
+#                     if (ei1 == ej1):
+#                         r22 = ri2 - rj2
+#                     if (ei1 == c2):
+#                         r23 = ri2 - rj3
+#                     cj2 = bond_array_1[ind1, d1]
+#                     fj2, _ = cutoff_func(r_cut, rj2, 0)
+#                     # del ri2
+#
+#                     rj3 = cross_bond_dists_1[m, m + n + 1]
+#                     if (c1 == ej2):
+#                         r31 = ri3 - rj1
+#                     if (c1 == ej1):
+#                         r32 = ri3 - rj2
+#                     if (c1 == c2):
+#                         r33 = ri3 - rj3
+#                     fj3, _ = cutoff_func(r_cut, rj3, 0)
+#                     # del ri3
+#
+#                     fj = fj1 * fj2 * fj3
+#                     # del fj1
+#                     # del fj2
+#                     # del fj3
+#
+#                     if (c1 == c2):
+#                         if (ei1 == ej1) and (ei2 == ej2):
+#                             kern += three_body_en_helper(ci1, ci2, r11, r22,
+#                                                          r33, fi, fj, fdi, ls1,
+#                                                          ls2, sig2)
+#                         if (ei1 == ej2) and (ei2 == ej1):
+#                             kern += three_body_en_helper(ci1, ci2, r12, r21,
+#                                                          r33, fi, fj, fdi, ls1,
+#                                                          ls2, sig2)
+#                     if (c1 == ej1):
+#                         if (ei1 == ej2) and (ei2 == c2):
+#                             kern += three_body_en_helper(ci1, ci2, r13, r21,
+#                                                          r32, fi, fj, fdi, ls1,
+#                                                          ls2, sig2)
+#                         if (ei1 == c2) and (ei2 == ej2):
+#                             kern += three_body_en_helper(ci1, ci2, r11, r23,
+#                                                          r32, fi, fj, fdi, ls1,
+#                                                          ls2, sig2)
+#                     if (c1 == ej2):
+#                         if (ei1 == ej1) and (ei2 == c2):
+#                             kern += three_body_en_helper(ci1, ci2, r13, r22,
+#                                                          r31, fi, fj, fdi, ls1,
+#                                                          ls2, sig2)
+#                         if (ei1 == c2) and (ei2 == ej1):
+#                             kern += three_body_en_helper(ci1, ci2, r12, r23,
+#                                                          r31, fi, fj, fdi, ls1,
+#                                                          ls2, sig2)
+#     return kern
+
 @njit
-def three_body_mc_force_en_jit(bond_array_1, c1, etypes1,
+def three_body_mc_en_force_jit(bond_array_1, c1, etypes1,
                                cross_bond_inds_1, cross_bond_dists_1,
                                triplets_1,
                                c2, etypes2,

@@ -112,10 +112,10 @@ def str_to_mapped_kernel(name: str, multihyps: bool = False, energy=False):
 
     if (b3 == True and energy == False):
         if (multihyps is True):
-            tbmfe = map_3b.three_body_mc_force_en_sephyps
+            tbmfe = map_3b.three_body_mc_en_force_sephyps
             tbme = map_3b.three_body_mc_en_sephyps
         else:
-            tbmfe = map_3b.three_body_mc_force_en
+            tbmfe = map_3b.three_body_mc_en_force
             tbme = map_3b.three_body_mc_en
     else:
         raise NotImplementedError("mapped kernel for two-body and manybody kernels "\
