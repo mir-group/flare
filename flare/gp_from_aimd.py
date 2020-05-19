@@ -43,7 +43,7 @@ from typing import List, Tuple, Union
 
 from flare.env import AtomicEnvironment
 from flare.gp import GaussianProcess
-from flare.mgp.mgp_en import MappedGaussianProcess
+from flare.mgp.mgp import MappedGaussianProcess
 from flare.mgp.otf import predict_on_structure_mgp
 from flare.output import Output
 from flare.predict import predict_on_atom, predict_on_atom_en, \
