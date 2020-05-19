@@ -20,10 +20,10 @@ from flare.gp_algebra import partition_vector, energy_force_vector_unit, \
     force_energy_vector_unit, energy_energy_vector_unit, force_force_vector_unit, \
     _global_training_data, _global_training_structures
     get_kernel_vector, en_kern_vec
+from flare.parameters import Parameters as hpm
 from flare.kernels.utils import from_mask_to_args, str_to_kernel_set, str_to_mapped_kernel
 from flare.kernels.cutoffs import quadratic_cutoff
 from flare.utils.element_coder import Z_to_element, NumpyEncoder
-from flare.utils.mask_helper import HyperParameterMasking as hpm
 
 
 from flare.mgp.utils import get_bonds, get_triplets, get_triplets_en, \

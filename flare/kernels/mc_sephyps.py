@@ -7,10 +7,10 @@ you to do partial hyper-parameter training, keeping some components fixed.
 To use this set of kernels, we need a hyps_mask dictionary for GaussianProcess, MappedGaussianProcess,
 and AtomicEnvironment (if you also set up different cutoffs).  A simple example is shown below.
 
-    from flare.utils.mask_helper import HyperParameterMasking
+    from flare.parameters import Parameters
     from flare.gp import GaussianProcess
 
-        pm = HyperParameterMasking(species=['O', 'C', 'H'],
+        pm = Parameters(species=['O', 'C', 'H'],
                               bonds=[['*', '*'], ['O','O']],
                               triplets=[['*', '*', '*'], ['O','O', 'O']],
                               parameters={'bond0':[1, 0.5, 1], 'bond1':[2, 0.2, 2],
@@ -29,7 +29,7 @@ and AtomicEnvironment (if you also set up different cutoffs).  A simple example 
                                    multihyps=True, hyps_mask=hm)
 
 
-In the example above, HyperParameterMasking class generates the arrays needed
+In the example above, Parameters class generates the arrays needed
 for these kernels and store all the grouping and mapping information in the
 hyps_mask dictionary.  It stores following keys and values:
 
@@ -184,12 +184,12 @@ def two_three_many_body_mc(env1, env2, d1, d2, cutoff_2b, cutoff_3b, cutoff_mb,
               nspec, spec_mask, triplet_mask, cut3b_mask)
 
     mbmcj = many_body_mc_sepcut_jit
-    many_term = mbmcj(env1.q_array, env2.q_array, 
-                      env1.q_neigh_array, env2.q_neigh_array, 
+    many_term = mbmcj(env1.q_array, env2.q_array,
+                      env1.q_neigh_array, env2.q_neigh_array,
                       env1.q_neigh_grads, env2.q_neigh_grads,
-                      env1.ctype, env2.ctype, 
-                      env1.etypes_mb, env2.etypes_mb, 
-                      env1.unique_species, env2.unique_species, 
+                      env1.ctype, env2.ctype,
+                      env1.etypes_mb, env2.etypes_mb,
+                      env1.unique_species, env2.unique_species,
                       d1, d2, sigm, lsm,
                       nspec, spec_mask, mb_mask)
 
@@ -262,12 +262,12 @@ def two_three_many_body_mc_grad(env1, env2, d1, d2, cutoff_2b, cutoff_3b, cutoff
               ntriplet, triplet_mask, cut3b_mask)
 
     mbmcj = many_body_mc_grad_sepcut_jit
-    kern_many, gradm = mbmcj(env1.q_array, env2.q_array, 
-                             env1.q_neigh_array, env2.q_neigh_array, 
+    kern_many, gradm = mbmcj(env1.q_array, env2.q_array,
+                             env1.q_neigh_array, env2.q_neigh_array,
                              env1.q_neigh_grads, env2.q_neigh_grads,
-                             env1.ctype, env2.ctype, 
+                             env1.ctype, env2.ctype,
                              env1.etypes_mb, env2.etypes_mb,
-                             env1.unique_species, env2.unique_species, 
+                             env1.unique_species, env2.unique_species,
                              d1, d2, sigm, lsm,
                              nspec, spec_mask, nmb, mb_mask)
 
@@ -338,10 +338,10 @@ def two_three_many_mc_force_en(env1, env2, d1, cutoff_2b, cutoff_3b, cutoff_mb,
               cut3b_mask) / 3
 
     mbmcj = many_body_mc_force_en_sepcut_jit
-    many_term = mbmcj(env1.q_array, env2.q_array, 
+    many_term = mbmcj(env1.q_array, env2.q_array,
                       env1.q_neigh_array, env1.q_neigh_grads,
-                      env1.ctype, env2.ctype, env1.etypes_mb,  
-                      env1.unique_species, env2.unique_species, 
+                      env1.ctype, env2.ctype, env1.etypes_mb,
+                      env1.unique_species, env2.unique_species,
                       d1, sigm, lsm,
                       nspec, spec_mask, mb_mask)
 
@@ -410,8 +410,8 @@ def two_three_many_mc_en(env1, env2, cutoff_2b, cutoff_3b, cutoff_mb,
               triplet_mask, cut3b_mask)/9.
 
     mbmcj = many_body_mc_en_sepcut_jit
-    many_term = mbmcj(env1.q_array, env2.q_array, 
-                      env1.ctype, env2.ctype, 
+    many_term = mbmcj(env1.q_array, env2.q_array,
+                      env1.ctype, env2.ctype,
                       env1.unique_species, env2.unique_species,
                       sigm, lsm,
                       nspec, spec_mask, mb_mask)
@@ -1838,10 +1838,10 @@ def many_body_mc(env1, env2, d1, d2, cutoff_2b, cutoff_3b, cutoff_mb,
     Return:
         float: Value of the 2+3+many-body kernel.
     """
-    return many_body_mc_sepcut_jit(env1.q_array, env2.q_array, 
-                            env1.q_neigh_array, env2.q_neigh_array, 
+    return many_body_mc_sepcut_jit(env1.q_array, env2.q_array,
+                            env1.q_neigh_array, env2.q_neigh_array,
                             env1.q_neigh_grads, env2.q_neigh_grads,
-                            env1.ctype, env2.ctype, 
+                            env1.ctype, env2.ctype,
                             env1.etypes_mb, env2.etypes_mb,
                             env1.unique_species, env2.unique_species,
                             d1, d2, sigm, lsm,
@@ -1891,10 +1891,10 @@ def many_body_mc_grad(env1, env2, d1, d2, cutoff_2b, cutoff_3b, cutoff_mb,
             with respect to the hyperparameters.
     """
 
-    return many_body_mc_grad_sepcut_jit(env1.q_array, env2.q_array, 
-                            env1.q_neigh_array, env2.q_neigh_array, 
+    return many_body_mc_grad_sepcut_jit(env1.q_array, env2.q_array,
+                            env1.q_neigh_array, env2.q_neigh_array,
                             env1.q_neigh_grads, env2.q_neigh_grads,
-                            env1.ctype, env2.ctype, 
+                            env1.ctype, env2.ctype,
                             env1.etypes_mb, env2.etypes_mb,
                             env1.unique_species, env2.unique_species,
                             d1, d2, sigm, lsm,
@@ -1922,11 +1922,11 @@ def many_body_mc_force_en(env1, env2, d1, cutoff_2b, cutoff_3b, cutoff_mb,
         float: Value of the many-body force/energy kernel.
     """
 
-    return many_body_mc_force_en_sepcut_jit(env1.q_array, env2.q_array, 
-                            env1.q_neigh_array, 
-                            env1.q_neigh_grads, 
-                            env1.ctype, env2.ctype, 
-                            env1.etypes_mb, 
+    return many_body_mc_force_en_sepcut_jit(env1.q_array, env2.q_array,
+                            env1.q_neigh_array,
+                            env1.q_neigh_grads,
+                            env1.ctype, env2.ctype,
+                            env1.etypes_mb,
                             env1.unique_species, env2.unique_species,
                             d1, sigm, lsm,
                             nspec, spec_mask, mb_mask)
@@ -1953,8 +1953,8 @@ def many_body_mc_en(env1, env2, cutoff_2b, cutoff_3b, cutoff_mb,
         float: Value of the 2-body force/energy kernel.
     """
 
-    return many_body_mc_en_sepcut_jit(env1.q_array, env2.q_array, 
-                            env1.ctype, env2.ctype, 
+    return many_body_mc_en_sepcut_jit(env1.q_array, env2.q_array,
+                            env1.ctype, env2.ctype,
                             env1.unique_species, env2.unique_species,
                             sigm, lsm,
                             nspec, spec_mask, mb_mask)

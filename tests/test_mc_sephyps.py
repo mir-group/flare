@@ -9,7 +9,7 @@ from numpy import isclose
 from flare.kernels.mc_sephyps import _str_to_kernel as stk
 from flare.kernels.utils import from_mask_to_args, str_to_kernel_set
 from flare.kernels.cutoffs import quadratic_cutoff_bound
-from flare.utils.mask_helper import HyperParameterMasking
+from flare.parameters import Parameters
 
 from .fake_gp import generate_mb_envs, generate_mb_twin_envs
 
@@ -358,7 +358,7 @@ def test_force(kernel_name, diff_cutoff):
     kern_finite_diff = 0
     if ('mb' == kernel_name):
         _, __, enm_kernel, ___ = str_to_kernel_set('mb', True)
-        mhyps, mhyps_mask = HyperParameterMasking.get_mb_hyps(
+        mhyps, mhyps_mask = Parameters.get_mb_hyps(
                 hyps, hm, True)
         margs = from_mask_to_args(mhyps, mhyps_mask, cutoffs)
         cal = 0
@@ -376,7 +376,7 @@ def test_force(kernel_name, diff_cutoff):
     if ('2' in kernel_name):
         nbond = 1
         _, __, en2_kernel, ___ = str_to_kernel_set('2', True)
-        bhyps, bhyps_mask = HyperParameterMasking.get_2b_hyps(
+        bhyps, bhyps_mask = Parameters.get_2b_hyps(
                 hyps, hm, True)
         args2 = from_mask_to_args(bhyps, bhyps_mask, cutoffs[:1])
 
@@ -391,7 +391,7 @@ def test_force(kernel_name, diff_cutoff):
     if ('3' in kernel_name):
         _, __, en3_kernel, ___ = str_to_kernel_set('3'+kernel_type, True)
 
-        thyps, thyps_mask = HyperParameterMasking.get_3b_hyps(
+        thyps, thyps_mask = Parameters.get_3b_hyps(
                 hyps, hm, True)
         args3 = from_mask_to_args(thyps, thyps_mask, cutoffs[:2])
 
@@ -461,10 +461,10 @@ def generate_same_hm(kernel_name, multi_cutoff=False):
     generate hyperparameter and masks that are effectively the same
     but with single or multi group expression
     """
-    pm1 = HyperParameterMasking(species=['H', 'He'],
+    pm1 = Parameters(species=['H', 'He'],
             parameters={'noise':0.05})
 
-    pm2 = HyperParameterMasking(species=['H', 'He'],
+    pm2 = Parameters(species=['H', 'He'],
             parameters={'noise':0.05})
 
     if ('2' in kernel_name):
@@ -521,7 +521,7 @@ def generate_same_hm(kernel_name, multi_cutoff=False):
 
 def generate_diff_hm(kernel_name, diff_cutoff=False, constraint=False):
 
-    pm = HyperParameterMasking(species=['H', 'He'],
+    pm = Parameters(species=['H', 'He'],
             parameters={'noise':0.05})
 
     if ('2' in kernel_name):

@@ -1,13 +1,13 @@
 import pytest
 import numpy as np
 from flare.struc import Structure
-from flare.utils.mask_helper import HyperParameterMasking
+from flare.parameters import Parameters
 from .test_gp import dumpcompare
 
 
 def test_generate_by_line():
 
-    pm = HyperParameterMasking()
+    pm = Parameters()
     pm.define_group('specie', 'O', ['O'])
     pm.define_group('specie', 'C', ['C'])
     pm.define_group('specie', 'H', ['H'])
@@ -33,12 +33,12 @@ def test_generate_by_line():
     pm.set_parameters('cutoffmb', 3)
     hm = pm.generate_dict()
     print(hm)
-    HyperParameterMasking.check_instantiation(hm)
-    HyperParameterMasking.check_matching(hm, hm['hyps'], hm['cutoffs'])
+    Parameters.check_instantiation(hm)
+    Parameters.check_matching(hm, hm['hyps'], hm['cutoffs'])
 
 def test_generate_by_line2():
 
-    pm = HyperParameterMasking()
+    pm = Parameters()
     pm.define_group('specie', 'O', ['O'])
     pm.define_group('specie', 'rest', ['C', 'H'])
     pm.define_group('bond', '**', ['*', '*'])
@@ -53,12 +53,12 @@ def test_generate_by_line2():
     pm.set_parameters('cutoff3b', 4)
     hm = pm.generate_dict()
     print(hm)
-    HyperParameterMasking.check_instantiation(hm)
-    HyperParameterMasking.check_matching(hm, hm['hyps'], hm['cutoffs'])
+    Parameters.check_instantiation(hm)
+    Parameters.check_matching(hm, hm['hyps'], hm['cutoffs'])
 
 def test_generate_by_list():
 
-    pm = HyperParameterMasking()
+    pm = Parameters()
     pm.list_groups('specie', ['O', 'C', 'H'])
     pm.list_groups('bond', [['*', '*'], ['O','O']])
     pm.list_groups('triplet', [['*', '*', '*'], ['O','O', 'O']])
@@ -67,11 +67,11 @@ def test_generate_by_list():
                         'cutoff2b':2, 'cutoff3b':1})
     hm = pm.generate_dict()
     print(hm)
-    HyperParameterMasking.check_instantiation(hm)
-    HyperParameterMasking.check_matching(hm, hm['hyps'], hm['cutoffs'])
+    Parameters.check_instantiation(hm)
+    Parameters.check_matching(hm, hm['hyps'], hm['cutoffs'])
 
 def test_initialization():
-    pm = HyperParameterMasking(species=['O', 'C', 'H'],
+    pm = Parameters(species=['O', 'C', 'H'],
                           bonds=[['*', '*'], ['O','O']],
                           triplets=[['*', '*', '*'], ['O','O', 'O']],
                           parameters={'bond0':[1, 0.5], 'bond1':[2, 0.2],
@@ -79,11 +79,11 @@ def test_initialization():
                                 'cutoff2b':2, 'cutoff3b':1})
     hm = pm.hyps_mask
     print(hm)
-    HyperParameterMasking.check_instantiation(hm)
-    HyperParameterMasking.check_matching(hm, hm['hyps'], hm['cutoffs'])
+    Parameters.check_instantiation(hm)
+    Parameters.check_matching(hm, hm['hyps'], hm['cutoffs'])
 
 def test_opt():
-    pm = HyperParameterMasking(species=['O', 'C', 'H'],
+    pm = Parameters(species=['O', 'C', 'H'],
                           bonds=[['*', '*'], ['O','O']],
                           triplets=[['*', '*', '*'], ['O','O', 'O']],
                           parameters={'bond0':[1, 0.5, 1], 'bond1':[2, 0.2, 2],
@@ -92,11 +92,11 @@ def test_opt():
                           constraints={'bond0':[False, True]})
     hm = pm.hyps_mask
     print(hm)
-    HyperParameterMasking.check_instantiation(hm)
-    HyperParameterMasking.check_matching(hm, hm['hyps'], hm['cutoffs'])
+    Parameters.check_instantiation(hm)
+    Parameters.check_matching(hm, hm['hyps'], hm['cutoffs'])
 
 def test_randomization():
-    pm = HyperParameterMasking(species=['O', 'C', 'H'],
+    pm = Parameters(species=['O', 'C', 'H'],
                           bonds=True, triplets=True,
                           mb=False, allseparate=True,
                           random=True,
@@ -106,15 +106,15 @@ def test_randomization():
                           verbose=True)
     hm = pm.hyps_mask
     print(hm)
-    HyperParameterMasking.check_instantiation(hm)
-    HyperParameterMasking.check_matching(hm, hm['hyps'], hm['cutoffs'])
+    Parameters.check_instantiation(hm)
+    Parameters.check_matching(hm, hm['hyps'], hm['cutoffs'])
     name = pm.find_group('specie', 'O')
     print("find group name for O", name)
     name = pm.find_group('bond', ['O', 'C'])
     print("find group name for O-C", name)
 
 def test_from_dict():
-    pm = HyperParameterMasking(species=['O', 'C', 'H'],
+    pm = Parameters(species=['O', 'C', 'H'],
                           bonds=True, triplets=True,
                           mb=False, allseparate=True,
                           random=True,
@@ -123,12 +123,12 @@ def test_from_dict():
                               'cutoffmb': 3},
                           verbose=True)
     hm = pm.hyps_mask
-    HyperParameterMasking.check_instantiation(hm)
-    HyperParameterMasking.check_matching(hm, hm['hyps'], hm['cutoffs'])
+    Parameters.check_instantiation(hm)
+    Parameters.check_matching(hm, hm['hyps'], hm['cutoffs'])
     print(hm['hyps'])
     print("obtain test hm", hm)
 
-    pm1 = HyperParameterMasking.from_dict(hm, verbose=True)
+    pm1 = Parameters.from_dict(hm, verbose=True)
     print("from_dict")
     hm1 = pm1.generate_dict()
     print(hm['hyps'])

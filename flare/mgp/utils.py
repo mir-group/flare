@@ -10,7 +10,7 @@ from flare.kernels.cutoffs import quadratic_cutoff
 from flare.kernels.kernels import three_body_helper_1, \
     three_body_helper_2, force_helper
 from flare.kernels.utils import str_to_kernel_set as stks
-from flare.utils.mask_helper import HyperParameterMasking
+from flare.parameters import Parameters
 
 
 def get_2bkernel(GP):
@@ -21,7 +21,7 @@ def get_2bkernel(GP):
 
     cutoffs = [GP.cutoffs[0]]
 
-    hyps, hyps_mask = HyperParameterMasking.get_2b_hyps(GP.hyps, GP.hyps_mask, GP.multihyps)
+    hyps, hyps_mask = Parameters.get_2b_hyps(GP.hyps, GP.hyps_mask, GP.multihyps)
 
     return (kernel, ek, efk, cutoffs, hyps, hyps_mask)
 
@@ -41,7 +41,7 @@ def get_3bkernel(GP):
     cutoffs = np.copy(GP.cutoffs)
 
     hyps, hyps_mask = \
-            HyperParameterMasking.get_3b_hyps(\
+            Parameters.get_3b_hyps(\
                 GP.hyps, GP.hyps_mask, GP.multihyps)
 
     return (kernel, ek, efk, cutoffs, hyps, hyps_mask)

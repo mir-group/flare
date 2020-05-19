@@ -17,14 +17,14 @@ from os import devnull
 from flare.utils.element_coder import element_to_Z, Z_to_element
 
 
-class HyperParameterMasking():
+class Parameters():
     """
     A helper class to construct the hyps_mask dictionary for AtomicEnvironment
     , GaussianProcess and MappedGaussianProcess
 
     Examples:
 
-        pm = HyperParameterMasking(species=['C', 'H', 'O'],
+        pm = Parameters(species=['C', 'H', 'O'],
                                    bonds=[['*', '*'], ['O','O']],
                                    triplets=[['*', '*', '*'],
                                        ['O','O', 'O']],
@@ -61,7 +61,7 @@ class HyperParameterMasking():
     The constraints argument define which hyper-parameters will be optimized.
     True for optimized and false for being fixed.
 
-    See more examples in tests/test_mask_helper.py
+    See more examples in tests/test_parameters.py
 
     """
 
@@ -863,9 +863,9 @@ class HyperParameterMasking():
         This function is not tested yet
         """
 
-        HyperParameterMasking.check_instantiation(hyps_mask)
+        Parameters.check_instantiation(hyps_mask)
 
-        pm = HyperParameterMasking(verbose=verbose)
+        pm = Parameters(verbose=verbose)
 
         hyps = hyps_mask['hyps']
 
@@ -1220,7 +1220,7 @@ class HyperParameterMasking():
 
         original_hyps = np.copy(hyps)
         if (multihyps is True):
-            new_hyps = HyperParameterMasking.get_hyps(hyps_mask, hyps)
+            new_hyps = Parameters.get_hyps(hyps_mask, hyps)
             n2b = hyps_mask['nbond']
             new_hyps = np.hstack([new_hyps[:n2b*2], new_hyps[-1]])
             new_hyps_mask = {'nbond': n2b, 'ntriplet': 0,
@@ -1239,7 +1239,7 @@ class HyperParameterMasking():
     def get_3b_hyps(hyps, hyps_mask, multihyps=False):
 
         if (multihyps is True):
-            new_hyps = HyperParameterMasking.get_hyps(hyps_mask, hyps)
+            new_hyps = Parameters.get_hyps(hyps_mask, hyps)
             n2b = hyps_mask.get('nbond', 0)
             n3b = hyps_mask['ntriplet']
             new_hyps = np.hstack([new_hyps[n2b*2:n2b*2+n3b*2], new_hyps[-1]])
@@ -1264,7 +1264,7 @@ class HyperParameterMasking():
     def get_mb_hyps(hyps, hyps_mask, multihyps=False):
 
         if (multihyps is True):
-            new_hyps = HyperParameterMasking.get_hyps(hyps_mask, hyps)
+            new_hyps = Parameters.get_hyps(hyps_mask, hyps)
             n2b = hyps_mask.get('n2b', 0)
             n3b = hyps_mask.get('n3b', 0)
             n23b2 = (n2b+n3b)*2

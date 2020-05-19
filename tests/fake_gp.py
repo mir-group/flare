@@ -6,7 +6,7 @@ from numpy.random import random, randint, permutation
 from flare.gp import GaussianProcess
 from flare.env import AtomicEnvironment
 from flare.struc import Structure
-from flare.utils.mask_helper import HyperParameterMasking
+from flare.parameters import Parameters
 
 
 def get_random_structure(cell, unique_species, noa):
@@ -42,7 +42,7 @@ def generate_hm(nbond, ntriplet, nmb=1, constraint=False, multihyps=True):
         hyps_label += ['Noise Var.']
         return random((nbond+ntriplet+1)*2+1), {'hyps_label': hyps_label}, np.ones(3, dtype=np.float)*0.8
 
-    pm = HyperParameterMasking(species=['H', 'He'], parameters={'cutoff2b': 0.8,
+    pm = Parameters(species=['H', 'He'], parameters={'cutoff2b': 0.8,
         'cutoff3b': 0.8, 'cutoffmb': 0.8, 'noise':0.05})
     pm.define_group('bond', 'b1', ['*', '*'], parameters=random(2))
     pm.define_group('triplet', 't1', ['*', '*', '*'], parameters=random(2))

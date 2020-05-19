@@ -21,7 +21,7 @@ from flare.gp_algebra import get_like_from_mats, get_neg_like_grad, \
     get_ky_mat_update, _global_training_data, _global_training_labels, \
     _global_training_structures, _global_energy_labels, get_Ky_mat, \
     get_kernel_vector, en_kern_vec
-from flare.utils.mask_helper import HyperParameterMasking
+from flare.parameters import Parameters
 
 from flare.kernels.utils import str_to_kernel_set, from_mask_to_args
 from flare.utils.element_coder import NumpyEncoder, Z_to_element
@@ -227,9 +227,9 @@ class GaussianProcess:
 
         if self.multihyps is True:
 
-            self.hyps_mask = HyperParameterMasking.check_instantiation(
+            self.hyps_mask = Parameters.check_instantiation(
                 self.hyps_mask)
-            HyperParameterMasking.check_matching(
+            Parameters.check_matching(
                 self.hyps_mask, self.hyps, self.cutoffs)
             self.bounds = deepcopy(self.hyps_mask.get('bounds', None))
 
