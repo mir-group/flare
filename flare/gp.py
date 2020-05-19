@@ -295,7 +295,8 @@ class GaussianProcess:
             structure_list = []  # Populate with all environments of the struc
             for atom in range(noa):
                 env_curr = \
-                    AtomicEnvironment(struc, atom, self.cutoffs, sweep=sweep)
+                    AtomicEnvironment(struc, atom, self.cutoffs, sweep=sweep,
+                                      cutoffs_mask=self.hyps_mask)
                 structure_list.append(env_curr)
 
             self.energy_labels.append(energy)
@@ -636,18 +637,24 @@ class GaussianProcess:
             thestr += f'specie_mask: \n'
             thestr += str(self.hyps_mask['specie_mask']) + '\n'
 
-            nbond = self.hyps_mask['nbond']
+            nbond = self.hyps_mask.get('nbond', 0)
             thestr += f'nbond: {nbond}\n'
 
-            if nbond > 0:
+            if nbond > 1:
                 thestr += f'bond_mask: \n'
                 thestr += str(self.hyps_mask['bond_mask']) + '\n'
 
-            ntriplet = self.hyps_mask['ntriplet']
+            ntriplet = self.hyps_mask.get('ntriplet', 0)
             thestr += f'ntriplet: {ntriplet}\n'
-            if ntriplet > 0:
+            if ntriplet > 1:
                 thestr += f'triplet_mask: \n'
                 thestr += str(self.hyps_mask['triplet_mask']) + '\n'
+
+            nmb = self.hyps_mask.get('nmb', 0)
+            thestr += f'nmb: {nmb}\n'
+            if nmb > 1:
+                thestr += f'mb_mask: \n'
+                thestr += str(self.hyps_mask['nmb_mask']) + '\n'
 
         return thestr
 
@@ -705,12 +712,18 @@ class GaussianProcess:
                                 dictionary['training_data']]
 
         # Reconstruct training structures.
-        new_gp.training_structures = []
-        for n, env_list in enumerate(dictionary['training_structures']):
-            new_gp.training_structures.append([])
-            for env_curr in env_list:
-                new_gp.training_structures[n].append(
-                    AtomicEnvironment.from_dict(env_curr))
+        if ('training_structures' in dictionary):
+            new_gp.training_structures = []
+            for n, env_list in enumerate(dictionary['training_structures']):
+                new_gp.training_structures.append([])
+                for env_curr in env_list:
+                    new_gp.training_structures[n].append(
+                        AtomicEnvironment.from_dict(env_curr))
+        else:
+            new_gp.training_structures = []  # Environments of each structure
+            new_gp.energy_labels = []  # Energies of training structures
+            new_gp.energy_labels_np = np.empty(0, )
+            new_gp.energy_noise = 0.01
 
         new_gp.training_labels = deepcopy(dictionary['training_labels'])
         new_gp.training_labels_np = deepcopy(dictionary['training_labels_np'])
@@ -880,12 +893,13 @@ class GaussianProcess:
             raise ValueError("Warning: Format unspecieified or file is not "
                              ".json or .pickle format.")
 
-        if ('training_structure' not in gp_model.__dict__):
+        if ('training_structures' not in gp_model.__dict__):
             gp_model.training_structures = []  # Environments of each structure
             gp_model.energy_labels = []  # Energies of training structures
             gp_model.energy_labels_np = np.empty(0, )
             gp_model.energy_noise = 0.01
-            gp_model.all_labels = np.empty(0, )
+            gp_model.all_labels = np.concatenate((gp_model.training_labels_np,
+                                          gp_model.energy_labels_np))
 
         gp_model.check_instantiation()
 
