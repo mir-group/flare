@@ -27,8 +27,8 @@ class AtomicEnvironment:
         self.cell = structure.cell
         self.species = structure.coded_species
 
-        # Set the sweep array based on the 2-body cutoff.
-        sweep_val = ceil(cutoffs[0] / structure.max_cutoff)
+        # Set the sweep array based on the max cutoff.
+        sweep_val = ceil(np.max(cutoffs) / structure.max_cutoff)
         self.sweep_val = sweep_val
         self.sweep_array = np.arange(-sweep_val, sweep_val + 1, 1)
 
