@@ -638,19 +638,19 @@ class GaussianProcess:
             nbond = self.hyps_mask.get('nbond', 0)
             thestr += f'nbond: {nbond}\n'
 
-            if nbond > 0:
+            if nbond > 1:
                 thestr += f'bond_mask: \n'
                 thestr += str(self.hyps_mask['bond_mask']) + '\n'
 
             ntriplet = self.hyps_mask.get('ntriplet', 0)
             thestr += f'ntriplet: {ntriplet}\n'
-            if ntriplet > 0:
+            if ntriplet > 1:
                 thestr += f'triplet_mask: \n'
                 thestr += str(self.hyps_mask['triplet_mask']) + '\n'
 
-            ntriplet = self.hyps_mask.get('nmb', 0)
+            nmb = self.hyps_mask.get('nmb', 0)
             thestr += f'nmb: {nmb}\n'
-            if nmb > 0:
+            if nmb > 1:
                 thestr += f'mb_mask: \n'
                 thestr += str(self.hyps_mask['nmb_mask']) + '\n'
 
