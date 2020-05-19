@@ -21,7 +21,7 @@ class AtomicEnvironment:
     :type cutoffs: np.ndarray
     """
 
-    def __init__(self, structure: Structure, atom: int, cutoffs, sweep=1):
+    def __init__(self, structure: Structure, atom: int, cutoffs):
         self.structure = structure
         self.positions = structure.wrapped_positions
         self.cell = structure.cell
