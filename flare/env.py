@@ -2,7 +2,7 @@
 environment of an atom. :class:`AtomicEnvironment` objects are inputs to the
 2-, 3-, and 2+3-body kernels."""
 import numpy as np
-from math import sqrt
+from math import sqrt, ceil
 from numba import njit
 from flare.struc import Structure
 
@@ -21,12 +21,15 @@ class AtomicEnvironment:
     :type cutoffs: np.ndarray
     """
 
-    def __init__(self, structure: Structure, atom: int, cutoffs, sweep=1):
+    def __init__(self, structure: Structure, atom: int, cutoffs):
         self.structure = structure
         self.positions = structure.wrapped_positions
         self.cell = structure.cell
         self.species = structure.coded_species
-        self.sweep_array = np.arange(-sweep, sweep+1, 1)
+
+        # Set the sweep array based on the 2-body cutoff.
+        sweep_val = ceil(cutoffs[0] / structure.max_cutoff)
+        self.sweep_array = np.arange(-sweep_val, sweep_val + 1, 1)
 
         self.atom = atom
         self.ctype = structure.coded_species[atom]
