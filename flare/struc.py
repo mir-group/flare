@@ -131,6 +131,12 @@ class Structure:
         return cell_dot
 
     def get_max_cutoff(self) -> float:
+        """Compute the maximum cutoff compatible with a 3x3x3 supercell of the
+            structure.
+
+        Returns:
+            float: maximum cutoff
+        """
         # Retrieve the lattice vectors.
         a_vec = self.cell[0]
         b_vec = self.cell[1]
