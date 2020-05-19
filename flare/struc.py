@@ -60,6 +60,9 @@ class Structure:
         self.vec2 = self.cell[1, :]
         self.vec3 = self.cell[2, :]
 
+        # Compute the max cutoff for sweep = 1.
+        self.max_cutoff = self.get_max_cutoff()
+
         # get cell matrices for wrapping coordinates
         self.cell_transpose = self.cell.transpose()
         self.cell_transpose_inverse = np.linalg.inv(self.cell_transpose)
@@ -127,7 +130,7 @@ class Structure:
 
         return cell_dot
 
-    def get_max_cutoff(self):
+    def get_max_cutoff(self) -> float:
         # Retrieve the lattice vectors.
         a_vec = self.cell[0]
         b_vec = self.cell[1]
