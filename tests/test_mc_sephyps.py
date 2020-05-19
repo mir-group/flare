@@ -14,9 +14,11 @@ from flare.utils.mask_helper import HyperParameterMasking
 from .fake_gp import generate_mb_envs, generate_mb_twin_envs
 
 list_to_test = ['2', '3', 'mb', '2+3', '2+3+mb']
+multi_cut = [False, True]
+
 
 @pytest.mark.parametrize('kernel_name', list_to_test)
-@pytest.mark.parametrize('multi_cutoff', [True, False])
+@pytest.mark.parametrize('multi_cutoff', multi_cut)
 def test_force_en_multi_vs_simple(kernel_name, multi_cutoff):
     """Check that the analytical kernel matches the one implemented
     in mc_simple.py"""
@@ -58,6 +60,24 @@ def test_force_en_multi_vs_simple(kernel_name, multi_cutoff):
 
     # compare whether mc_sephyps and mc_simple
     # yield the same values
+    i = 2
+    reference = funcs[0][i](env1, env2, *args0)
+    result = funcs[1][i](env1, env2, *args1)
+    print(kernel_name, i, reference, result)
+    assert(isclose(reference, result, rtol=tol))
+    result = funcs[1][i](env1, env2, *args2)
+    print(kernel_name, i, reference, result)
+    assert(isclose(reference, result, rtol=tol))
+
+    i = 3
+    reference = funcs[0][i](env1, env2, d1, *args0)
+    result = funcs[1][i](env1, env2, d1, *args1)
+    print(kernel_name, i, reference, result)
+    assert(isclose(reference, result, rtol=tol))
+    result = funcs[1][i](env1, env2, d1, *args2)
+    print(kernel_name, i, reference, result)
+    assert(isclose(reference, result, rtol=tol))
+
     i = 0
     reference = funcs[0][i](env1, env2, d1, d2, *args0)
     result = funcs[1][i](env1, env2, d1, d2, *args1)
@@ -82,27 +102,9 @@ def test_force_en_multi_vs_simple(kernel_name, multi_cutoff):
         joint_grad[i] = result[1][i*2] + result[1][i*2+1]
     assert(isclose(reference[1], joint_grad, rtol=tol).all())
 
-    i = 2
-    reference = funcs[0][i](env1, env2, *args0)
-    result = funcs[1][i](env1, env2, *args1)
-    print(kernel_name, i, reference, result)
-    assert(isclose(reference, result, rtol=tol))
-    result = funcs[1][i](env1, env2, *args2)
-    print(kernel_name, i, reference, result)
-    assert(isclose(reference, result, rtol=tol))
-
-    i = 3
-    reference = funcs[0][i](env1, env2, d1, *args0)
-    result = funcs[1][i](env1, env2, d1, *args1)
-    print(kernel_name, i, reference, result)
-    assert(isclose(reference, result, rtol=tol))
-    result = funcs[1][i](env1, env2, d1, *args2)
-    print(kernel_name, i, reference, result)
-    assert(isclose(reference, result, rtol=tol))
-
 
 @pytest.mark.parametrize('kernel_name', list_to_test)
-@pytest.mark.parametrize('diff_cutoff', [True, False])
+@pytest.mark.parametrize('diff_cutoff', multi_cut)
 def test_check_sig_scale(kernel_name, diff_cutoff):
     """Check whether the grouping is properly assign
     with four environments
@@ -147,6 +149,18 @@ def test_check_sig_scale(kernel_name, diff_cutoff):
     args0 = from_mask_to_args(hyps0, hm, cutoffs)
     args1 = from_mask_to_args(hyps1, hm, cutoffs)
 
+    reference = en_kernel(env1, env2, *args0)
+    result = en_kernel(env1_t, env2_t, *args1)
+    print(en_kernel.__name__, result, reference)
+    if (reference != 0):
+        assert isclose(result/reference, scale**2, rtol=tol)
+
+    reference = force_en_kernel(env1, env2, d1, *args0)
+    result = force_en_kernel(env1_t, env2_t, d1, *args1)
+    print(force_en_kernel.__name__, result, reference)
+    if (reference != 0):
+        assert isclose(result/reference, scale**2, rtol=tol)
+
     reference = kernel(env1, env2, d1, d2, *args0)
     result = kernel(env1_t, env2_t, d1, d2, *args1)
     print(kernel.__name__, result, reference)
@@ -167,21 +181,9 @@ def test_check_sig_scale(kernel_name, diff_cutoff):
             assert isclose(result[1][idx]/reference[1]
                            [idx], scale**2, rtol=tol)
 
-    reference = en_kernel(env1, env2, *args0)
-    result = en_kernel(env1_t, env2_t, *args1)
-    print(en_kernel.__name__, result, reference)
-    if (reference != 0):
-        assert isclose(result/reference, scale**2, rtol=tol)
-
-    reference = force_en_kernel(env1, env2, d1, *args0)
-    result = force_en_kernel(env1_t, env2_t, d1, *args1)
-    print(force_en_kernel.__name__, result, reference)
-    if (reference != 0):
-        assert isclose(result/reference, scale**2, rtol=tol)
-
 
 @pytest.mark.parametrize('kernel_name', list_to_test)
-@pytest.mark.parametrize('diff_cutoff', [True, False])
+@pytest.mark.parametrize('diff_cutoff', multi_cut)
 def test_force_bound_cutoff_compare(kernel_name, diff_cutoff):
     """Check that the analytical kernel matches the one implemented
     in mc_simple.py"""
@@ -223,7 +225,7 @@ def test_force_bound_cutoff_compare(kernel_name, diff_cutoff):
 
 
 @pytest.mark.parametrize('kernel_name', ['2+3'])
-@pytest.mark.parametrize('diff_cutoff', [True, False])
+@pytest.mark.parametrize('diff_cutoff', multi_cut)
 def test_constraint(kernel_name, diff_cutoff):
     """Check that the analytical force/en kernel matches finite difference of
     energy kernel."""
@@ -268,7 +270,7 @@ def test_constraint(kernel_name, diff_cutoff):
 
 
 @pytest.mark.parametrize('kernel_name', list_to_test)
-@pytest.mark.parametrize('diff_cutoff', [True, False])
+@pytest.mark.parametrize('diff_cutoff', multi_cut)
 def test_force_en(kernel_name, diff_cutoff):
     """Check that the analytical force/en kernel matches finite difference of
     energy kernel."""
@@ -326,7 +328,7 @@ def test_force_en(kernel_name, diff_cutoff):
 
 
 @pytest.mark.parametrize('kernel_name', list_to_test)
-@pytest.mark.parametrize('diff_cutoff', [True, False])
+@pytest.mark.parametrize('diff_cutoff', multi_cut)
 def test_force(kernel_name, diff_cutoff):
     """Check that the analytical force kernel matches finite difference of
     energy kernel."""
@@ -406,7 +408,7 @@ def test_force(kernel_name, diff_cutoff):
 
 
 @pytest.mark.parametrize('kernel_name', list_to_test)
-@pytest.mark.parametrize('diff_cutoff', [True, False])
+@pytest.mark.parametrize('diff_cutoff', multi_cut)
 @pytest.mark.parametrize('constraint', [True, False])
 def test_hyps_grad(kernel_name, diff_cutoff, constraint):
 

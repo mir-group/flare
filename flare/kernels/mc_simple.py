@@ -1745,10 +1745,9 @@ def many_body_mc_jit(q_array_1, q_array_2,
 
         # initialize arrays of many body descriptors and gradients for the 
         # neighbour atoms in the two configurations
-        qis = q1i_grads = qi1_grads = ki2s = 0
-        qjs = qj2_grads = q2j_grads = k1js = 0
         # Loop over neighbours i of 1st configuration
         for i in range(q_neigh_array_1.shape[0]):
+            qis = q1i_grads = qi1_grads = ki2s = 0
 
             if etypes1[i] == s:
                 # derivative of pairwise component of many body descriptor q1i
@@ -1766,6 +1765,7 @@ def many_body_mc_jit(q_array_1, q_array_2,
 
             # Loop over neighbours j of 2
             for j in range(q_neigh_array_2.shape[0]):
+                qjs = qj2_grads = q2j_grads = k1js = 0
     
                 if etypes2[j] == s:
                     q2j_grads = q_neigh_grads_2[j, d2-1]
@@ -1855,11 +1855,10 @@ def many_body_mc_grad_jit(q_array_1, q_array_2,
             k12 = 0
             dk12 = 0
 
-        qis = q1i_grads = qi1_grads = ki2s = dki2s = 0
-        qjs = qj2_grads = q2j_grads = k1js = dk1js = 0
 
         # Compute  ki2s, qi1_grads, and qis
         for i in range(q_neigh_array_1.shape[0]):
+            qis = q1i_grads = qi1_grads = ki2s = dki2s = 0
             if etypes1[i] == s:
                 q1i_grads = q_neigh_grads_1[i, d1-1]
 
@@ -1876,6 +1875,7 @@ def many_body_mc_grad_jit(q_array_1, q_array_2,
 
             # Loop over neighbours j of 2
             for j in range(q_neigh_array_2.shape[0]):
+                qjs = qj2_grads = q2j_grads = k1js = dk1js = 0
     
                 if etypes2[j] == s:
                     q2j_grads = q_neigh_grads_2[j, d2-1]
@@ -1947,6 +1947,7 @@ def many_body_mc_force_en_jit(q_array_1, q_array_2,
     useful_species = np.array(
         list(set(species1).union(set(species2))), dtype=np.int8)
 
+    k1 = k2 = 0
     for s in useful_species:
         s1 = np.where(species1==s)[0][0] 
         s2 = np.where(species2==s)[0][0] 
@@ -1958,10 +1959,10 @@ def many_body_mc_force_en_jit(q_array_1, q_array_2,
         else:
             k12 = 0
 
-        qi1_grads = q1i_grads = 0
-        ki2s = 0
         # Loop over neighbours i of 1
         for i in range(q_neigh_array_1.shape[0]):
+            qi1_grads = q1i_grads = 0
+            ki2s = 0
 
             if etypes1[i] == s:
                 q1i_grads = q_neigh_grads_1[i, d1-1]
@@ -1976,10 +1977,14 @@ def many_body_mc_force_en_jit(q_array_1, q_array_2,
 
             kern += - (q1i_grads * k12 + qi1_grads * ki2s)
 
+            k1 -= q1i_grads * k12
+            k2 -= qi1_grads * ki2s
+        print('k1 k2', s, k12, k1, k2)
+
     return kern
 
 
-@njit
+#@njit
 def many_body_mc_en_jit(q_array_1, q_array_2, c1, c2, 
                         species1, species2, sig, ls):
     """many-body many-element kernel between energy components accelerated
@@ -2013,9 +2018,8 @@ def many_body_mc_en_jit(q_array_1, q_array_2, c1, c2,
             q1 = q_array_1[np.where(species1==s)[0][0]]
             q2 = q_array_2[np.where(species2==s)[0][0]]
             q1q2diff = q1 - q2
-
             kern += sig * sig * exp(-q1q2diff * q1q2diff / (2 * ls * ls))
-
+            print('simple', s, q1, q2)
     return kern
 
 

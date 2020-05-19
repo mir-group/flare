@@ -145,12 +145,6 @@ class AtomicEnvironment:
                     self.unique_species, self.etypes_mb = get_m_body_arrays(\
                     self.positions, self.atom, self.cell, \
                     self.scalar_cutoff_mb, self.species, self.sweep_array, cf.quadratic_cutoff)
-        else:
-            self.q_array = None
-            self.q_neigh_array = None 
-            self.q_neigh_grads = None
-            self.etype_mb = None
-            self.bond_array_mb_etypes = None
 
     def as_dict(self):
         """
@@ -681,7 +675,7 @@ def get_m_body_arrays_sepcut(positions, atom: int, cell, cutoff_mb,
 
     # get coordination number of center atom for each species
     for s in range(n_specs):
-        bs = spec_mask[s]
+        bs = spec_mask[species_list[s]]
         mbtype = mb_mask[bcn + bs]
         r_cut = cutoff_mb[mbtype]
 
@@ -690,12 +684,15 @@ def get_m_body_arrays_sepcut(positions, atom: int, cell, cutoff_mb,
 
     # get coordination number of all neighbor atoms for each species
     for i in range(n_bonds):
+        be = spec_mask[etypes[i]]
+        ben = be * nspec
+
         neigh_bond_array, _, neigh_etypes, _ = \
             get_2_body_arrays_sepcut(positions, bond_inds[i], cell, 
                 cutoff_mb, species, sweep, nspec, spec_mask, mb_mask)
         for s in range(n_specs):
-            bs = spec_mask[s]
-            mbtype = mb_mask[bcn + bs]
+            bs = spec_mask[species_list[s]]
+            mbtype = mb_mask[bs + ben]
             r_cut = cutoff_mb[mbtype]
 
             qs_neigh[i, s] = q_value_mc(neigh_bond_array[:, 0], r_cut,
@@ -703,13 +700,13 @@ def get_m_body_arrays_sepcut(positions, atom: int, cell, cutoff_mb,
 
     # get grad from each neighbor atom
     for i in range(n_bonds):
+        be = spec_mask[etypes[i]]
+        mbtype = mb_mask[bcn + be]
+        r_cut = cutoff_mb[mbtype]
+
         ri = bond_array_mb[i, 0]
         for d in range(3):
             ci = bond_array_mb[i, d+1]
-
-            bs = spec_mask[etypes[i]]
-            mbtype = mb_mask[bcn + bs]
-            r_cut = cutoff_mb[mbtype]
 
             _, q_grads[i, d] = coordination_number(ri, ci, r_cut, 
                 cutoff_func)
