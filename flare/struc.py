@@ -127,6 +127,39 @@ class Structure:
 
         return cell_dot
 
+    def get_max_cutoff(self):
+        # Retrieve the lattice vectors.
+        a_vec = self.cell[0]
+        b_vec = self.cell[1]
+        c_vec = self.cell[2]
+
+        # Compute dot products and norms of lattice vectors.
+        a_dot_b = np.dot(a_vec, b_vec)
+        a_dot_c = np.dot(a_vec, c_vec)
+        b_dot_c = np.dot(b_vec, c_vec)
+
+        a_norm = np.linalg.norm(a_vec)
+        b_norm = np.linalg.norm(b_vec)
+        c_norm = np.linalg.norm(c_vec)
+
+        # Compute the six independent altitudes of the cell faces.
+        # The smallest is the maximum cutoff that can be used with sweep=1.
+        max_candidates = np.zeros(6)
+        max_candidates[0] = \
+            a_norm * np.sqrt(1 - (a_dot_b / (a_norm * b_norm))**2)
+        max_candidates[1] = \
+            b_norm * np.sqrt(1 - (a_dot_b / (a_norm * b_norm))**2)
+        max_candidates[2] = \
+            a_norm * np.sqrt(1 - (a_dot_c / (a_norm * c_norm))**2)
+        max_candidates[3] = \
+            c_norm * np.sqrt(1 - (a_dot_c / (a_norm * c_norm))**2)
+        max_candidates[4] = \
+            b_norm * np.sqrt(1 - (b_dot_c / (b_norm * c_norm))**2)
+        max_candidates[5] = \
+            c_norm * np.sqrt(1 - (b_dot_c / (b_norm * c_norm))**2)
+
+        return np.min(max_candidates)
+
     @staticmethod
     def raw_to_relative(positions: 'ndarray', cell_transpose: 'ndarray',
                         cell_dot_inverse: 'ndarray')-> 'ndarray':
@@ -175,10 +208,10 @@ class Structure:
         into the unit cell. in_place flag controls if the wrapped positions
         are set in the class.
 
-        :param in_place: If true, set the current structure 
-		positions to be the wrapped positions.
+        :param in_place: If true, set the current structure positions to be
+            the wrapped positions.
         :return: Cartesian coordinates of positions all in unit cell
-	:rtype: np.ndarray
+	    :rtype: np.ndarray
         """
         rel_pos = \
             self.raw_to_relative(self.positions, self.cell_transpose,
@@ -464,8 +497,6 @@ class Structure:
             raise ImportError("Pymatgen not imported; " \
                               "functionality requires pymatgen.")
 
-
-
 def get_unique_species(species: List[Any]) -> (List, List[int]):
     """
     Returns a list of the unique species passed in, and a list of
@@ -485,5 +516,3 @@ def get_unique_species(species: List[Any]) -> (List, List[int]):
     coded_species = np.array(coded_species)
 
     return unique_species, coded_species
-
-
