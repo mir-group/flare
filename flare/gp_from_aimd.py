@@ -19,8 +19,8 @@ There are a few reasons why you would want to pay special attention to an
 individual species.
 
 If you are studying a system where the dynamics of one species are
-particularly important and so you want a good representation in the training set,
-then you would want to include as many as possible in the training set
+particularly important and so you want a good representation in the training
+set, then you would want to include as many as possible in the training set
 during the seed part of the training.
 
 Inversely, if a system has high representation of a species well-described
@@ -32,25 +32,24 @@ atoms of a given species which are added in. You can also limit the number
 of atoms which are added from a given seed frame.
 
 """
+import json as json
 import time
+import warnings
 from copy import deepcopy
+from math import inf
 from typing import List, Tuple, Union
 
 import numpy as np
-from math import inf
-import warnings
-
 from flare.env import AtomicEnvironment
 from flare.gp import GaussianProcess
+from flare.mgp.mgp_en import MappedGaussianProcess
+from flare.mgp.otf import predict_on_structure_mgp
 from flare.output import Output
-from flare.predict import predict_on_atom, predict_on_atom_en, \
-    predict_on_structure_par, predict_on_structure_par_en
+from flare.predict import predict_on_structure_par, predict_on_structure_par_en
 from flare.struc import Structure
 from flare.util import element_to_Z, \
     is_std_in_bound_per_species, is_force_in_bound_per_species, \
-    Z_to_element, subset_of_frame_by_element
-from flare.mgp.otf import predict_on_structure_mgp
-from flare.mgp.mgp_en import MappedGaussianProcess
+    Z_to_element, subset_of_frame_by_element, NumpyEncoder
 
 
 class TrajectoryTrainer:
@@ -107,7 +106,8 @@ class TrajectoryTrainer:
         :param min_atoms_per_train: Only train when this many atoms have been
             added
         :param max_trains: Stop training GP after this many calls to train
-        :param n_cpus: Number of CPUs to parallelize over for parallelization over atoms
+        :param n_cpus: Number of CPUs to parallelize over for parallelization
+                over atoms
         :param shuffle_frames: Randomize order of frames for better training
         :param verbose: 0: Silent, NO output written or printed at all.
                         1: Minimal,
@@ -130,7 +130,7 @@ class TrajectoryTrainer:
                             train_checkpoint_interval
         :param train_checkpoint_interval: How often to write model after
                         trainings
-        :param checkpoint_interval: How often to write model after atoms are
+        :param atom_checkpoint_interval: How often to write model after atoms are
             added (since atoms may be added without training)
         :param model_format: Format to write GP model to
         """
@@ -182,7 +182,7 @@ class TrajectoryTrainer:
         assert (isinstance(skip, int) and skip >= 1), "Skip needs to be a " \
                                                       "positive integer."
         self.validate_ratio = validate_ratio
-        assert (validate_ratio >= 0 and validate_ratio <= 1), \
+        assert (0 <= validate_ratio <= 1), \
             "validate_ratio needs to be [0,1]"
 
         # Set up for pretraining
@@ -194,7 +194,7 @@ class TrajectoryTrainer:
             else pre_train_seed_frames
 
         self.pre_train_env_per_species = {} if pre_train_atoms_per_element \
-                                               is None else pre_train_atoms_per_element
+                                       is None else pre_train_atoms_per_element
         self.train_env_per_species = {} if train_atoms_per_element \
                                            is None else train_atoms_per_element
 
@@ -234,7 +234,7 @@ class TrajectoryTrainer:
         """
 
         if self.mgp:
-            raise NotImplementedError("Pre-running not" \
+            raise NotImplementedError("Pre-running not"
                                       "yet configured for MGP")
         if self.verbose:
             self.output.write_header(self.gp.cutoffs,
@@ -243,11 +243,16 @@ class TrajectoryTrainer:
                                      self.gp.opt_algorithm,
                                      dt=0,
                                      Nsteps=len(self.frames),
-                                     structure=self.frames[0],
+                                     structure=None,
                                      std_tolerance=(self.rel_std_tolerance,
                                                     self.abs_std_tolerance),
                                      optional={
-                                         'GP Statistics': self.gp.training_statistics})
+                                         'GP Statistics':
+                                             json.dumps(
+                                                 self.gp.training_statistics),
+                                         'GP Name': self.gp.name,
+                                         'GP Write Name':
+                             self.output_name + "_model." + self.model_format})
 
         self.start_time = time.time()
         if self.verbose >= 3:
@@ -299,9 +304,11 @@ class TrajectoryTrainer:
                                      train_atoms=train_atoms,
                                      uncertainties=[], train=False)
 
-        if self.verbose >= 3 and atom_count > 0:
-            self.output.write_to_log(f"Added {atom_count} atoms to pretrain\n" \
-                                     f"In total {len(self.gp.training_data)} atoms",
+        if self.verbose and atom_count > 0:
+            self.output.write_to_log(f"Added {atom_count} atoms to "
+                                     f"pretrain.\n"
+                                     f"Pre-run GP Statistics: "
+                             f"{json.dumps(self.gp.training_statistics)} \n",
                                      flush=True)
 
         if (self.seed_envs or atom_count or self.seed_frames) and \
@@ -338,13 +345,13 @@ class TrajectoryTrainer:
 
         # Past this frame, stop adding atoms to the training set
         #  (used for validation of model)
-        train_frame = int(len(self.frames[::self.skip]) * (1 -
-                                                           self.validate_ratio))
+        train_frame = int(len(self.frames[::self.skip])
+                          * (1 - self.validate_ratio))
 
         # Loop through trajectory.
-        cur_atoms_added_train = 0 # Track atoms added for training
-        cur_atoms_added_write = 0 # Track atoms added for writing
-        cur_trains_done_write = 0       # Track training done for writing
+        cur_atoms_added_train = 0  # Track atoms added for training
+        cur_atoms_added_write = 0  # Track atoms added for writing
+        cur_trains_done_write = 0  # Track training done for writing
 
         for i, cur_frame in enumerate(self.frames[::self.skip]):
 
@@ -354,7 +361,7 @@ class TrajectoryTrainer:
             # If no predict_atoms_per_element was specified, predict_atoms
             # will be equal to every atom in the frame.
             predict_atoms = subset_of_frame_by_element(cur_frame,
-                                                       self.predict_atoms_per_element)
+                                               self.predict_atoms_per_element)
             # Atoms which are skipped will have NaN as their force / std values
             local_energies = None
 
@@ -447,20 +454,20 @@ class TrajectoryTrainer:
                     else:
                         self.gp.update_L_alpha()
 
-
                     # Loop to decide of a model should be written this
                     # iteration
                     will_write = False
 
                     if self.train_checkpoint_interval and \
-                            cur_trains_done_write and\
+                            cur_trains_done_write and \
                             self.train_checkpoint_interval \
                             % cur_trains_done_write == 0:
                         will_write = True
                         cur_trains_done_write = 0
 
-                    if self.atom_checkpoint_interval and cur_atoms_added_write\
-                       and self.atom_checkpoint_interval \
+                    if self.atom_checkpoint_interval \
+                            and cur_atoms_added_write \
+                            and self.atom_checkpoint_interval \
                             % cur_atoms_added_write == 0:
                         will_write = True
                         cur_atoms_added_write = 0
@@ -480,7 +487,7 @@ class TrajectoryTrainer:
                                 self.model_format)
 
     def update_gp_and_print(self, frame: Structure, train_atoms: List[int],
-                            uncertainties: List[int]=None,
+                            uncertainties: List[int] = None,
                             train: bool = True):
         """
         Update the internal GP model training set with a list of training
@@ -488,12 +495,10 @@ class TrajectoryTrainer:
         the GP by optimizing hyperparameters.
         :param frame: Structure to train on
         :param train_atoms: Index atoms to train on
-        :param: uncertainties: Uncertainties to print, pass in [] to silence
+        :param uncertainties: Uncertainties to print, pass in [] to silence
         :param train: Train or not
         :return: None
         """
-
-
 
         # Group added atoms by species for easier output
         added_species = [Z_to_element(frame.coded_species[at]) for at in
@@ -503,12 +508,12 @@ class TrajectoryTrainer:
         for atom, spec in zip(train_atoms, added_species):
             added_atoms[spec].append(atom)
 
-
         if self.verbose:
-            self.output.write_to_log(f'\nAdding atom(s) {added_atoms}'
+            self.output.write_to_log('\nAdding atom(s) '
+                             f'{json.dumps(added_atoms,cls=NumpyEncoder)}'
                                      ' to the training set.\n')
 
-        if uncertainties is None or len(uncertainties)!=0:
+        if uncertainties is None or len(uncertainties) != 0:
             uncertainties = frame.stds[train_atoms]
 
         if self.verbose and len(uncertainties) != 0:
@@ -559,3 +564,139 @@ class TrajectoryTrainer:
                                    self.gp.likelihood_gradient,
                                    hyps_mask=self.gp.hyps_mask)
         self.train_count += 1
+
+
+def parse_trajectory_trainer_output(file: str, return_gp_data: bool = False) \
+        -> Union[List[dict], Tuple[List[dict], dict]]:
+    """
+    Reads output of a TrajectoryTrainer run by frame. return_gp_data returns
+    data about GP model growth useful for visualizing progress of model
+    training.
+
+    :param file: filename of output
+    :param return_gp_data: flag for returning extra GP data
+    :return: List of dictionaries with keys 'species', 'positions',
+        'gp_forces', 'dft_forces', 'gp_stds', 'added_atoms', and
+        'maes_by_species', optionally, gp_data dictionary
+    """
+
+    with open(file, 'r') as f:
+        lines = f.readlines()
+        num_lines = len(lines)
+
+    # Get indexes where frames begin, and include the index of the final line
+    frame_indexes = [i for i in range(num_lines) if '-Frame:' in
+                     lines[i]] + [num_lines]
+
+    frames = []
+
+    # Central parsing loop
+    for n in range(len(frame_indexes) - 1):
+        # Start at +2 to skip frame marker and header of table of data
+        # Set up values for current frame which will be populated
+
+        frame_atoms = []
+        frame_positions = []
+        gp_forces = []
+        dft_forces = []
+        stds = []
+        added_atoms = {}
+        frame_species_maes = {}
+
+        # i loops through individual atom's info
+        for i in range(frame_indexes[n] + 2, frame_indexes[n + 1]):
+
+            # Lines with data will be long; stop when at end of atom data
+            if len(lines[i]) > 10:
+                split = lines[i].split()
+
+                frame_atoms.append(split[0])
+
+                frame_positions.append([float(split[1]), float(split[2]),
+                                        float(split[3])])
+                gp_forces.append([float(split[4]), float(split[5]),
+                                  float(split[6])])
+                stds.append(
+                    [float(split[7]), float(split[8]), float(split[9])])
+
+                dft_forces.append([float(split[10]), float(split[11]),
+                                   float(split[12])])
+
+            # Terminate at blank line between results
+            else:
+                break
+        # Loop through information in frame after Data
+        for i in range(frame_indexes[n] + len(frame_positions) + 2,
+                       frame_indexes[n + 1]):
+
+            if 'Adding atom(s)' in lines[i]:
+                # Splitting to target the 'added atoms' substring
+                split_line = lines[i][15:-21]
+                added_atoms = json.loads(split_line.strip())
+
+            if 'type ' in lines[i]:
+                cur_line = lines[i].split()
+                frame_species_maes[cur_line[1]] = float(cur_line[3])
+
+        cur_frame_stats = {'species': frame_atoms,
+                           'positions': frame_positions,
+                           'gp_forces': gp_forces,
+                           'dft_forces': dft_forces,
+                           'gp_stds': stds,
+                           'added_atoms': added_atoms,
+                           'maes_by_species': frame_species_maes}
+
+        frames.append(cur_frame_stats)
+
+    if not return_gp_data:
+        return frames
+
+    # Compute information about GP training
+    # to study GP growth and performance over trajectory
+
+    gp_stats_line = [line for line in lines[:30] if 'GP Statistics' in
+                     line and 'Pre-run' not in line][0][15:].strip()
+
+    initial_gp_statistics = json.loads(gp_stats_line)
+
+    # Get pre_run statistics (if pre-run was done):
+    pre_run_gp_statistics = None
+    pre_run_gp_stats_line = [line for line in lines if 'Pre-run GP' in line]
+    if pre_run_gp_stats_line:
+        pre_run_gp_statistics = json.loads(pre_run_gp_stats_line[0][
+                                           22:].strip())
+
+    # Compute cumulative GP size
+    cumulative_gp_size = [int(initial_gp_statistics['N'])]
+
+    if pre_run_gp_stats_line:
+        cumulative_gp_size.append(int(pre_run_gp_statistics['N']))
+
+    running_total = cumulative_gp_size[-1]
+
+    for frame in frames:
+
+        added_atom_dict = frame['added_atoms']
+        for val in added_atom_dict.values():
+            running_total += len(val)
+        cumulative_gp_size.append(running_total)
+
+    # Compute MAEs for each element over time
+    all_species = set()
+    for frame in frames:
+        all_species = all_species.union(set(frame['species']))
+
+    all_species = list(all_species)
+    mae_by_elt = {elt: [] for elt in all_species}
+
+    for frame in frames:
+        for elt in all_species:
+            cur_mae = frame['maes_by_species'].get(elt, np.nan)
+            mae_by_elt[elt].append(cur_mae)
+
+    gp_data = {'init_stats': initial_gp_statistics,
+               'pre_train_stats': pre_run_gp_statistics,
+               'cumulative_gp_size': cumulative_gp_size,
+               'mae_by_elt': mae_by_elt}
+
+    return frames, gp_data
