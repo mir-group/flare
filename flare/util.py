@@ -19,15 +19,16 @@ def get_random_velocities(noa: int, temperature: float, mass: float):
         mass (float): Mass of each particle in amu.
 
     Returns:
-        np.ndarray: Particle velocities, corrected to give zero center of mass motion.
+        np.ndarray: Particle velocities, corrected to give zero center of mass
+            motion.
     """
-    
+
     # Use FLARE mass units (time = ps, length = A, energy = eV)
     mass_md = mass * 0.000103642695727
     kb = 0.0000861733034
     std = np.sqrt(kb * temperature / mass_md)
     velocities = np.random.normal(scale=std, size=(noa, 3))
-    
+
     # Remove center-of-mass motion
     vel_sum = np.sum(velocities, axis=0)
     corrected_velocities = velocities - vel_sum / noa
@@ -44,7 +45,8 @@ def multicomponent_velocities(temperature: float, masses: List[float]):
         masses (List[float]): Particle masses in amu.
 
     Returns:
-        np.ndarray: Particle velocities, corrected to give zero center of mass motion.
+        np.ndarray: Particle velocities, corrected to give zero center of mass
+            motion.
     """
 
     noa = len(masses)
@@ -294,7 +296,8 @@ class NumpyEncoder(JSONEncoder):
 
     json.dumps(... cls = NumpyEncoder)
 
-    Thanks to StackOverflow users karlB and fnunnari, who contributed this from:
+    Thanks to StackOverflow users karlB and fnunnari, who contributed this
+    from:
     `https://stackoverflow.com/a/47626762`
     """
 
@@ -333,7 +336,7 @@ def Z_to_element(Z: int) -> str:
 
 def is_std_in_bound(std_tolerance: float, noise: float,
                     structure: 'flare.struc.Structure',
-                    max_atoms_added: int = inf)-> (bool, List[int]):
+                    max_atoms_added: int = inf) -> (bool, List[int]):
     """
     Given an uncertainty tolerance and a structure decorated with atoms,
     species, and associated uncertainties, return those which are above a
@@ -383,7 +386,8 @@ def is_std_in_bound_per_species(rel_std_tolerance: float,
                                 abs_std_tolerance: float, noise: float,
                                 structure: 'flare.struc.Structure',
                                 max_atoms_added: int = inf,
-                                max_by_species: dict = {})-> (bool, List[int]):
+                                max_by_species: dict = {}) -> (bool,
+                                                               List[int]):
     """
     Checks the stds of GP prediction assigned to the structure, returns a
     list of atoms which either meet an absolute threshold or a relative
@@ -473,9 +477,9 @@ def is_force_in_bound_per_species(abs_force_tolerance: float,
                                   label_forces: 'ndarray',
                                   structure,
                                   max_atoms_added: int = inf,
-                                  max_by_species: dict ={},
+                                  max_by_species: dict = {},
                                   max_force_error: float
-                                  = inf)-> (bool, List[int]):
+                                  = inf) -> (bool, List[int]):
     """
     Checks the forces of GP prediction assigned to the structure against a
     DFT calculation, and return a list of atoms which meet an absolute
@@ -532,7 +536,7 @@ def is_force_in_bound_per_species(abs_force_tolerance: float,
         # conclude
         if len(target_atoms) == max_atoms_added or \
                 (max_error_components[i] < abs_force_tolerance and
-                        max_error_components[i] != np.nan):
+                 max_error_components[i] != np.nan):
             break
 
         cur_spec = structure.species_labels[i]
@@ -553,7 +557,7 @@ def is_force_in_bound_per_species(abs_force_tolerance: float,
 
 
 def subset_of_frame_by_element(frame: 'flare.Structure',
-                           predict_atoms_per_element: dict)->List[int]:
+                               predict_atoms_per_element: dict) -> List[int]:
     """
     Given a structure and a dictionary formatted as {"Symbol":int,
     ..} describing a number of atoms per element, return a sorted list of
