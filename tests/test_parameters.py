@@ -1,13 +1,14 @@
 import pytest
 import numpy as np
 from flare.struc import Structure
+from flare.utils.parameter_helper import ParameterHelper
 from flare.parameters import Parameters
 from .test_gp import dumpcompare
 
 
 def test_generate_by_line():
 
-    pm = Parameters()
+    pm = ParameterHelper()
     pm.define_group('specie', 'O', ['O'])
     pm.define_group('specie', 'C', ['C'])
     pm.define_group('specie', 'H', ['H'])
@@ -38,7 +39,7 @@ def test_generate_by_line():
 
 def test_generate_by_line2():
 
-    pm = Parameters()
+    pm = ParameterHelper()
     pm.define_group('specie', 'O', ['O'])
     pm.define_group('specie', 'rest', ['C', 'H'])
     pm.define_group('bond', '**', ['*', '*'])
@@ -58,7 +59,7 @@ def test_generate_by_line2():
 
 def test_generate_by_list():
 
-    pm = Parameters()
+    pm = ParameterHelper()
     pm.list_groups('specie', ['O', 'C', 'H'])
     pm.list_groups('bond', [['*', '*'], ['O','O']])
     pm.list_groups('triplet', [['*', '*', '*'], ['O','O', 'O']])
@@ -71,7 +72,7 @@ def test_generate_by_list():
     Parameters.check_matching(hm, hm['hyps'], hm['cutoffs'])
 
 def test_initialization():
-    pm = Parameters(species=['O', 'C', 'H'],
+    pm = ParameterHelper(species=['O', 'C', 'H'],
                           bonds=[['*', '*'], ['O','O']],
                           triplets=[['*', '*', '*'], ['O','O', 'O']],
                           parameters={'bond0':[1, 0.5], 'bond1':[2, 0.2],
@@ -83,7 +84,7 @@ def test_initialization():
     Parameters.check_matching(hm, hm['hyps'], hm['cutoffs'])
 
 def test_opt():
-    pm = Parameters(species=['O', 'C', 'H'],
+    pm = ParameterHelper(species=['O', 'C', 'H'],
                           bonds=[['*', '*'], ['O','O']],
                           triplets=[['*', '*', '*'], ['O','O', 'O']],
                           parameters={'bond0':[1, 0.5, 1], 'bond1':[2, 0.2, 2],
@@ -96,7 +97,7 @@ def test_opt():
     Parameters.check_matching(hm, hm['hyps'], hm['cutoffs'])
 
 def test_randomization():
-    pm = Parameters(species=['O', 'C', 'H'],
+    pm = ParameterHelper(species=['O', 'C', 'H'],
                           bonds=True, triplets=True,
                           mb=False, allseparate=True,
                           random=True,
@@ -114,7 +115,7 @@ def test_randomization():
     print("find group name for O-C", name)
 
 def test_from_dict():
-    pm = Parameters(species=['O', 'C', 'H'],
+    pm = ParameterHelper(species=['O', 'C', 'H'],
                           bonds=True, triplets=True,
                           mb=False, allseparate=True,
                           random=True,
@@ -128,7 +129,7 @@ def test_from_dict():
     print(hm['hyps'])
     print("obtain test hm", hm)
 
-    pm1 = Parameters.from_dict(hm, verbose=True)
+    pm1 = ParameterHelper.from_dict(hm, verbose=True)
     print("from_dict")
     hm1 = pm1.generate_dict()
     print(hm['hyps'])
