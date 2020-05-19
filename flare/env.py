@@ -110,7 +110,7 @@ class AtomicEnvironment:
             cutoffs = dictionary['cutoffs']
         else:
             cutoffs = []
-            for cutoff in ['cutoff_2','cutoff_3','cutoff_mb']:
+            for cutoff in ['cutoff_2', 'cutoff_3', 'cutoff_mb']:
                 if dictionary.get(cutoff):
                     cutoffs.append(dictionary[cutoff])
 
@@ -215,10 +215,12 @@ def get_2_body_arrays(positions: np.ndarray, atom: int, cell: np.ndarray,
 
 
 @njit
-def get_2_body_arrays_ind(positions, atom: int, cell, cutoff_2: float, species):
-    """Returns distances, coordinates, species of atoms, and indexes of neighbors
-    in the 2-body local environment. This method is implemented outside
-    the AtomicEnvironment class to allow for njit acceleration with Numba.
+def get_2_body_arrays_ind(positions, atom: int, cell, cutoff_2: float,
+                          species: np.ndarray):
+    """Returns distances, coordinates, species of atoms, and indexes of
+        neighbors in the 2-body local environment. This method is implemented
+        outside the AtomicEnvironment class to allow for njit acceleration
+        with Numba.
 
     :param positions: Positions of atoms in the structure.
     :type positions: np.ndarray
@@ -380,10 +382,11 @@ def get_3_body_arrays(bond_array_2, bond_positions_2, cutoff_3: float):
 @njit
 def get_m_body_arrays(positions, atom: int, cell, cutoff_mb: float, species,
                       sweep: np.ndarray):
-    """Returns distances, and species of atoms in the many-body
-    local environment, and returns distances and numbers of neighbours for atoms in the one
-    many-body local environment. This method is implemented outside the AtomicEnvironment
-    class to allow for njit acceleration with Numba.
+    """Returns distances, and species of atoms in the many-body local
+        environment, and returns distances and numbers of neighbours for atoms
+        in the one many-body local environment. This method is implemented
+        outside the AtomicEnvironment class to allow for njit acceleration
+        with Numba.
 
     :param positions: Positions of atoms in the structure.
     :type positions: np.ndarray
@@ -396,7 +399,8 @@ def get_m_body_arrays(positions, atom: int, cell, cutoff_mb: float, species,
     :type cutoff_mb: float
     :param species: Numpy array of species represented by their atomic numbers.
     :type species: np.ndarray
-    :param indexes: Boolean indicating whether indexes of neighbours are returned
+    :param indexes: Boolean indicating whether indexes of neighbours are
+        returned
     :type indexes: boolean
     :return: Tuple of arrays describing pairs of atoms in the 2-body local
      environment.
@@ -415,11 +419,13 @@ def get_m_body_arrays(positions, atom: int, cell, cutoff_mb: float, species,
 
      num_neighs_mb: number of neighbours of each atom in the local environment
 
-     etypes_mb_array: species of neighbours of each atom in the local environment
+     etypes_mb_array: species of neighbours of each atom in the local
+        environment
 
     :rtype: np.ndarray, np.ndarray, np.ndarray, np.ndarray
     """
-    # TODO: this can be probably improved using stored arrays, redundant calls to get_2_body_arrays
+    # TODO: this can be probably improved using stored arrays, redundant calls
+    #  to get_2_body_arrays
     # Get distances, positions, species and indexes of neighbouring atoms
     bond_array_mb, __, etypes, bond_inds = get_2_body_arrays_ind(
         positions, atom, cell, cutoff_mb, species)
@@ -446,7 +452,8 @@ def get_m_body_arrays(positions, atom: int, cell, cutoff_mb: float, species,
         neigh_dists_mb[i, :num_neighs_mb[i]] = neighbouring_dists[i]
         etypes_mb_array[i, :num_neighs_mb[i]] = neighbouring_etypes[i]
 
-    return bond_array_mb, neigh_dists_mb, num_neighs_mb, etypes_mb_array, etypes
+    return bond_array_mb, neigh_dists_mb, num_neighs_mb, etypes_mb_array, \
+        etypes
 
 
 if __name__ == '__main__':
