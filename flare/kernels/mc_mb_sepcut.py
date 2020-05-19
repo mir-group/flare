@@ -300,18 +300,12 @@ def many_body_mc_force_en_sepcut_jit(q_array_1, q_array_2,
     bc2 = spec_mask[c2]
     bc2n = bc2 * nspec
 
-#    print('c1 c2', c1, c2)
-#    print('sig ls', sig, ls)
-
-    k1 = k2 = 0
-    q3 = q4 = 0
     for s in useful_species:
 
         bs = spec_mask[s]
         bsn = bs * nspec
         mbtype1 = mb_mask[bc1n + bs]
         mbtype2 = mb_mask[bc2n + bs]
-#        print('mbtype', s, mbtype1, mbtype2)
 
         s1 = np.where(species1==s)[0][0] 
         s2 = np.where(species2==s)[0][0] 
@@ -320,7 +314,6 @@ def many_body_mc_force_en_sepcut_jit(q_array_1, q_array_2,
 
         if c1 == c2:
             k12 = k_sq_exp_dev(q1, q2, sig[mbtype1], ls[mbtype1])
-#            print('k12', s, q1, q2, sig[mbtype1], ls[mbtype1], k12)
         else:
             k12 = 0
 
@@ -336,16 +329,8 @@ def many_body_mc_force_en_sepcut_jit(q_array_1, q_array_2,
                 qi1_grads = q_neigh_grads_1[i, d1-1]
                 qis = q_neigh_array_1[i, s1]
                 ki2s = k_sq_exp_dev(qis, q2, sig[mbtype2], ls[mbtype2])
-#                print('ki2s', s, qis, q2, sig[mbtype2], ls[mbtype2], ki2s)
 
             kern -= q1i_grads * k12 + qi1_grads * ki2s
-#            print('q_grad', s, i, etypes1[i], q1i_grads, qi1_grads, sig[mbtype2])
-            k1 += k12
-            k2 += ki2s
-            q3 += q1i_grads
-            q4 += qi1_grads
-
-#        print('k1 k2 q3 q4', s, k1, k2, q3, q4)
     return kern
 
 
