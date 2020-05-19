@@ -143,7 +143,7 @@ class Parameters():
                 if (parameters is not None):
                     self.list_parameters(parameters, constraints)
                 try:
-                    self.hyps_mask = self.generate_dict()
+                    self.hyps_mask = self.as_dict()
                 except:
                     print("more parameters needed to generate the hypsmask",
                           file=self.fout)
@@ -174,7 +174,7 @@ class Parameters():
                    self.fill_in_parameters('triplet', random)
                 if mb:
                     self.fill_in_parameters('mb', random)
-                self.hyps_mask = self.generate_dict()
+                self.hyps_mask = self.as_dict()
 
     def list_parameters(self, parameter_dict, constraints={}):
         """Define many groups of parameters
@@ -761,7 +761,7 @@ class Parameters():
         else:
             pass
 
-    def generate_dict(self):
+    def as_dict(self):
         """Dictionary representation of the mask. The output can be used for AtomicEnvironment
         or the GaussianProcess
         """

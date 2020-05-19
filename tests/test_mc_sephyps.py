@@ -508,11 +508,11 @@ def generate_same_hm(kernel_name, multi_cutoff=False):
             pm2.set_parameters('mb0', para)
             pm2.set_parameters('mb1', para)
 
-    hm1 = pm1.generate_dict()
+    hm1 = pm1.as_dict()
     hyps1 = hm1['hyps']
     cut = hm1['cutoffs']
 
-    hm2 = pm2.generate_dict()
+    hm2 = pm2.as_dict()
     hyps2 = hm2['hyps']
     cut = hm2['cutoffs']
 
@@ -563,7 +563,7 @@ def generate_diff_hm(kernel_name, diff_cutoff=False, constraint=False):
             pm.set_parameters('mb0', para1, not constraint)
             pm.set_parameters('mb1', para2)
 
-    hm = pm.generate_dict()
+    hm = pm.as_dict()
     hyps = hm['hyps']
     cut = hm['cutoffs']
 

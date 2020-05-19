@@ -53,7 +53,7 @@ def generate_hm(nbond, ntriplet, nmb=1, constraint=False, multihyps=True):
     if (ntriplet > 1):
         pm.define_group('triplet', 't2', ['H', 'H', 'H'], parameters=random(2))
 
-    hm = pm.generate_dict()
+    hm = pm.as_dict()
     hyps = hm['hyps']
     cut = hm['cutoffs']
 
@@ -65,7 +65,7 @@ def generate_hm(nbond, ntriplet, nmb=1, constraint=False, multihyps=True):
 
     pm.set_parameters('b1', parameters=random(2), opt=[True, False])
     pm.set_parameters('t1', parameters=random(2), opt=[False, True])
-    hm = pm.generate_dict()
+    hm = pm.as_dict()
     hyps = hm['hyps']
     cut = hm['cutoffs']
     return hyps, hm, cut
