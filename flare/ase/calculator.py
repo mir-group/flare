@@ -138,6 +138,8 @@ class FLARE_Calculator(Calculator):
     def build_mgp(self, skip=True):
         """
         Construct :class:`MappedGaussianProcess` based on the current GP
+        TODO: change to the re-build method
+        
         :param skip: if `True`, then it will not construct MGP
         :type skip: Bool
         """
