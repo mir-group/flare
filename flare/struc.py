@@ -60,7 +60,8 @@ class Structure:
         self.vec2 = self.cell[1, :]
         self.vec3 = self.cell[2, :]
 
-        # Compute the max cutoff for sweep = 1.
+        # Compute the max cutoff compatible with a 3x3x3 supercell of the
+        # structure.
         self.max_cutoff = self.get_max_cutoff()
 
         # get cell matrices for wrapping coordinates
