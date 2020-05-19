@@ -44,13 +44,12 @@ from typing import List, Tuple, Union
 from flare.env import AtomicEnvironment
 from flare.gp import GaussianProcess
 from flare.mgp.mgp import MappedGaussianProcess
-from flare.mgp.otf import predict_on_structure_mgp
 from flare.output import Output
 from flare.predict import predict_on_atom, predict_on_atom_en, \
     predict_on_structure_par, predict_on_structure_par_en, \
     predict_on_structure_mgp
 from flare.struc import Structure
-from flare.utils.element_coder import element_to_Z, Z_to_element
+from flare.utils.element_coder import element_to_Z, Z_to_element, NumpyEncoder
 from flare.utils.learner import subset_of_frame_by_element, \
     is_std_in_bound_per_species, is_force_in_bound_per_species
 from flare.mgp.mgp import MappedGaussianProcess

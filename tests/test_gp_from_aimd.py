@@ -1,9 +1,11 @@
-import pytest
 import numpy as np
 import pickle
+import pytest
+
+from copy import deepcopy
+from json import loads
 from glob import glob
 from os import remove
-from copy import deepcopy
 
 from flare.env import AtomicEnvironment
 from flare.struc import Structure
@@ -11,9 +13,8 @@ from flare.gp import GaussianProcess
 from flare.mgp.mgp import MappedGaussianProcess
 from flare.gp_from_aimd import TrajectoryTrainer,\
                                     parse_trajectory_trainer_output
-from flare.util import subset_of_frame_by_element
-from json import loads
-from flare.env import AtomicEnvironment
+from flare.utils.learner import subset_of_frame_by_element
+
 from .test_mgp_unit import all_mgp, all_gp, get_random_structure
 from .fake_gp import get_gp
 
