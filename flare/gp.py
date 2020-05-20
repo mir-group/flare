@@ -843,12 +843,16 @@ class GaussianProcess:
         return new_gp
 
     def compute_matrices(self):
-
+        """
+        When covariance matrix is known, reconstruct other matrices.
+        Used in re-loading large GPs.
+        :return:
+        """
         ky_mat = self.ky_mat
         l_mat = np.linalg.cholesky(ky_mat)
         l_mat_inv = np.linalg.inv(l_mat)
         ky_mat_inv = l_mat_inv.T @ l_mat_inv
-        alpha = np.matmul(ky_mat_inv, self.training_labels_np)
+        alpha = np.matmul(ky_mat_inv, self.all_labels)
 
         self.l_mat = l_mat
         self.alpha = alpha
@@ -899,10 +903,17 @@ class GaussianProcess:
         if len(self.training_data) > 5000:
             np.save(f"{name}_ky_mat.npy", self.ky_mat)
             self.ky_mat_file = f"{name}_ky_mat.npy"
-            del self.ky_mat
-            del self.l_mat
-            del self.alpha
-            del self.ky_mat_inv
+
+            temp_ky_mat = self.ky_mat
+            temp_l_mat = self.l_mat
+            temp_alpha = self.alpha
+            temp_ky_mat_inv = self.ky_mat_inv
+
+            self.ky_mat = None
+            self.l_mat = None
+            self.alpha = None
+            self.ky_mat_inv = None
+
 
         supported_formats = ['json', 'pickle', 'binary']
 
@@ -919,8 +930,12 @@ class GaussianProcess:
                              "{}".format(supported_formats))
 
         if len(self.training_data) > 5000:
-            self.ky_mat = np.load(f"{name}_ky_mat.npy")
-            self.compute_matrices()
+            self.ky_mat = temp_ky_mat
+            self.l_mat = temp_l_mat
+            self.alpha = temp_alpha
+            self.ky_mat_inv = temp_ky_mat_inv
+
+
 
     @staticmethod
     def from_file(filename: str, format: str = ''):
@@ -953,7 +968,8 @@ class GaussianProcess:
 
                 if len(gp_model.training_data) > 5000:
                     try:
-                        gp_model.ky_mat = np.load(gp_model.ky_mat_file)
+                        gp_model.ky_mat = np.load(gp_model.ky_mat_file,
+                                                  allow_pickle=True)
                         gp_model.compute_matrices()
                     except FileNotFoundError:
                         gp_model.ky_mat = None
