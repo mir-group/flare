@@ -7,13 +7,13 @@ from flare.env import AtomicEnvironment
 np.random.seed(0)
 
 cutoff_mask_list = [# (True, np.array([1]), [10]),
-                    (False, np.array([1]), [16]),
-                    (False, np.array([1, 0.05]), [16, 0]),
-                    (False, np.array([1, 0.8]), [16, 1]),
-                    (False, np.array([1, 0.9]), [16, 21]),
-                    (True, np.array([1, 0.8]), [16, 9]),
-                    (True, np.array([1, 0.05, 0.4]), [16, 0]),
-                    (False, np.array([1, 0.05, 0.4]), [16, 0])]
+                    (False, {'bond':1}, [16]),
+                    (False, {'bond':1, 'triplet':0.05}, [16, 0]),
+                    (False, {'bond':1, 'triplet':0.8}, [16, 1]),
+                    (False, {'bond':1, 'triplet':0.9}, [16, 21]),
+                    (True, {'bond':1, 'triplet':0.8}, [16, 9]),
+                    (True, {'bond':1, 'triplet':0.05, 'mb':0.4}, [16, 0]),
+                    (False, {'bond':1, 'triplet':0.05, 'mb':0.4}, [16, 0])]
 
 
 @pytest.fixture(scope='module')
@@ -93,7 +93,7 @@ def generate_mask(cutoff):
         # (1, 1) uses 0.5 cutoff,  (1, 2) (1, 3) (2, 3) use 0.9 cutoff
         mask = {'nspecie': 2, 'specie_mask': np.ones(118, dtype=int)}
         mask['specie_mask'][1] = 0
-        mask['cutoff_2b'] = np.array([0.5, 0.9])
+        mask['bond_cutoff_list'] = np.array([0.5, 0.9])
         mask['nbond'] = 2
         mask['bond_mask'] = np.ones(4, dtype=int)
         mask['bond_mask'][0] = 0
@@ -120,7 +120,7 @@ def generate_mask(cutoff):
 
         mask = {'nspecie': nspecie,
                 'specie_mask': specie_mask,
-                'cutoff_3b': np.array([0.5, 0.9, 0.8, 0.9, 0.05]),
+                'triplet_cutoff_list': np.array([0.5, 0.9, 0.8, 0.9, 0.05]),
                 'ncut3b': ncut3b,
                 'cut3b_mask': tmask}
 
@@ -128,9 +128,10 @@ def generate_mask(cutoff):
         # (1, 1) uses 0.5 cutoff,  (1, 2) (1, 3) (2, 3) use 0.9 cutoff
         mask = {'nspecie': 2, 'specie_mask': np.ones(118, dtype=int)}
         mask['specie_mask'][1] = 0
-        mask['cutoff_mb'] = np.array([0.5, 0.9])
+        mask['mb_cutoff_list'] = np.array([0.5, 0.9])
         mask['nmb'] = 2
         mask['mb_mask'] = np.ones(4, dtype=int)
         mask['mb_mask'][0] = 0
+    mask['cutoffs'] = cutoff
     return mask
 
