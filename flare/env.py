@@ -103,9 +103,6 @@ class AtomicEnvironment:
 
         self.setup_mask(cutoffs_mask)
 
-        if (self.bond_cutoff == 0):
-            self.bond_cutoff = np.max([self.triplet_cutoff, self.mb_cutoff])
-
         assert self.triplet_cutoff <= self.bond_cutoff, \
             "2b cutoff has to be larger than 3b cutoff"
         # # TO DO, once the mb function is updated to use the bond_array_2
@@ -120,8 +117,17 @@ class AtomicEnvironment:
         self.cutoffs_mask = cutoffs_mask
         self.cutoffs = cutoffs_mask['cutoffs']
 
+        for kernel in AtomicEnvironment.all_kernel_types:
+            ndim = AtomicEnvironment.ndim[kernel]
+            if kernel in self.cutoffs:
+                setattr(self, kernel+'_cutoff', self.cutoffs[kernel])
+
+        if (self.bond_cutoff == 0):
+            self.bond_cutoff = np.max([self.triplet_cutoff, self.mb_cutoff])
+            self.cutoffs['bond'] = self.bond_cutoff
+
         self.nspecie = cutoffs_mask.get('nspecie', 1)
-        if ('specie_mask' in cutoffs_mask):
+        if 'specie_mask' in cutoffs_mask:
             self.specie_mask = cutoffs_mask['specie_mask']
 
         for kernel in AtomicEnvironment.all_kernel_types:
@@ -231,7 +237,7 @@ class AtomicEnvironment:
         return string
 
 
-# @njit
+@njit
 def get_2_body_arrays(positions, atom: int, cell, cutoff_2, species, sweep,
                       nspecie, specie_mask, bond_mask):
     """Returns distances, coordinates, species of atoms, and indices of neighbors
@@ -336,7 +342,7 @@ def get_2_body_arrays(positions, atom: int, cell, cutoff_2, species, sweep,
     return bond_array_2, bond_positions_2, etypes, bond_indices
 
 
-# @njit
+@njit
 def get_3_body_arrays(bond_array_2, bond_positions_2, ctype,
                       etypes, cutoff_3,
                       nspecie, specie_mask, cut3b_mask):
@@ -439,7 +445,7 @@ def get_3_body_arrays(bond_array_2, bond_positions_2, ctype,
     return bond_array_3, cross_bond_inds, cross_bond_dists, triplet_counts
 
 
-# @njit
+@njit
 def get_m_body_arrays(positions, atom: int, cell, mb_cutoff_list,
     species, sweep: np.ndarray, nspec, spec_mask, mb_mask,
     cutoff_func=cf.quadratic_cutoff):

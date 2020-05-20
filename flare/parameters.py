@@ -26,22 +26,29 @@ class Parameters():
 
     def __init__(self):
 
-        self.nspecie = 0
-        self.specie_mask = None
-
-        # if nxx > 1, the kernel array should also be there
-        self.nbond = 0
-        self.ntriplet = 0
-        self.nmb = 0
-
-        self.bond_mask = None
-        self.bond_start = 0
-
-        self.triplet_mask = None
-        self.triplet_start = 0
-
-        self.mb_mask = None
-        self.mb_start = 0
+        self.param = {'nspecie': 0,
+                      'nbond': 0,
+                      'ntriplet': 0,
+                      'ncut3b': 0,
+                      'nmb': 0,
+                      'specie_mask': None,
+                      'bond_mask': None,
+                      'triplet_mask': None,
+                      'cut3b_mask': None,
+                      'mb_mask': None,
+                      'bond_cutoff_list': None,
+                      'triplet_cutoff_list': None,
+                      'mb_cutoff_list': None,
+                      'hyps': [],
+                      'hyp_labels':[],
+                      'cutoffs': {},
+                      'kernels': [],
+                      'train_noise': True,
+                      'energy_noise': 0,
+                      'map': None,
+                      'original_hyps': [],
+                      'original_labels':[]
+                      }
 
     @staticmethod
     def check_instantiation(param_dict):
@@ -158,9 +165,15 @@ class Parameters():
 
         if kernel_name not in param_dict['kernels']:
             if constraint:
-                return [None, None, None], [None, None]
+                if noise:
+                    return [None, None, None], [None, None]
+                else:
+                    return [None, None], [None, None]
             else:
-                return [None, None, None]
+                if noise:
+                    return [None, None, None]
+                else:
+                    return [None, None]
 
         hyps, opt = Parameters.get_hyps(param_dict, hyps=hyps, constraint=True)
         s = param_dict[kernel_name+'_start']

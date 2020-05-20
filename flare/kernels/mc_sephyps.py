@@ -865,7 +865,7 @@ def three_body_mc_en(env1, env2, cutoff_2b, cutoff_3b,  cutoff_mb,  nspec, spec_
                  env1.cross_bond_inds, env2.cross_bond_inds,
                  env1.cross_bond_dists, env2.cross_bond_dists,
                  env1.triplet_counts, env2.triplet_counts,
-                 sig3, ls3, cutoff_3b,  cutoff_mb,  cutoff_func,
+                 sig3, ls3, cutoff_3b, cutoff_func,
                  nspec, spec_mask,
                  triplet_mask, cut3b_mask)/9
 

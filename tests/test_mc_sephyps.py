@@ -9,7 +9,7 @@ from numpy import isclose
 from flare.kernels.mc_sephyps import _str_to_kernel as stk
 from flare.kernels.utils import from_mask_to_args, str_to_kernel_set
 from flare.kernels.cutoffs import quadratic_cutoff_bound
-from flare.parameters import Parameters
+from flare.utils.parameter_helper import ParameterHelper
 
 from .fake_gp import generate_mb_envs, generate_mb_twin_envs
 
@@ -40,8 +40,8 @@ def test_force_en_multi_vs_simple(kernel_name, multi_cutoff):
 
     # mc_simple
     kernel0, kg0, en_kernel0, force_en_kernel0 = str_to_kernel_set(
-        kernel_name, False)
-    args0 = (hyps1, cutoffs)
+        kernel_name, None)
+    args0 = from_mask_to_args(hyps1, None, cutoffs)
     print("args0", args0)
 
     # mc_sephyps
@@ -49,7 +49,9 @@ def test_force_en_multi_vs_simple(kernel_name, multi_cutoff):
     # if (diff_cutoff), 1 or 2 group of cutoffs
     # but same value as in args0
     kernel, kg, en_kernel, force_en_kernel = str_to_kernel_set(
-        kernel_name, True)
+        kernel_name, hm2)
+    print("hello", hm1)
+    print("hello2", hm2)
     args1 = from_mask_to_args(hyps1, hm1, cutoffs)
     args2 = from_mask_to_args(hyps2, hm2, cutoffs)
     print("args1", args1)
@@ -144,7 +146,7 @@ def test_check_sig_scale(kernel_name, diff_cutoff):
     hyps1[1::4] *= scale
 
     kernel, kg, en_kernel, force_en_kernel = str_to_kernel_set(
-        kernel_name, True)
+        kernel_name, hm)
 
     args0 = from_mask_to_args(hyps0, hm, cutoffs)
     args1 = from_mask_to_args(hyps1, hm, cutoffs)
@@ -196,7 +198,7 @@ def test_force_bound_cutoff_compare(kernel_name, diff_cutoff):
 
     cutoffs, hyps, hm = generate_diff_hm(kernel_name, diff_cutoff)
     kernel, kg, en_kernel, force_en_kernel = str_to_kernel_set(
-        kernel_name, True)
+        kernel_name, hm)
     args = from_mask_to_args(hyps, hm, cutoffs)
 
     np.random.seed(10)
@@ -241,7 +243,7 @@ def test_constraint(kernel_name, diff_cutoff):
     cutoffs, hyps, hm = generate_diff_hm(
         kernel_name, diff_cutoff=diff_cutoff, constraint=True)
 
-    _, __, en_kernel, force_en_kernel = str_to_kernel_set(kernel_name, True)
+    _, __, en_kernel, force_en_kernel = str_to_kernel_set(kernel_name, hm)
 
     args0 = from_mask_to_args(hyps, hm, cutoffs)
 
@@ -252,13 +254,13 @@ def test_constraint(kernel_name, diff_cutoff):
     kern_finite_diff = 0
 
     if ('2' in kernel_name):
-        _, __, en2_kernel, fek2 = str_to_kernel_set('2', True)
+        _, __, en2_kernel, fek2 = str_to_kernel_set('2', hm)
         calc1 = en2_kernel(env1[1][0], env2[0][0], *args0)
         calc2 = en2_kernel(env1[0][0], env2[0][0], *args0)
         kern_finite_diff += 4*(calc1 - calc2) / 2.0 / delta
 
     if ('3' in kernel_name):
-        _, __, en3_kernel, fek3 = str_to_kernel_set('3', True)
+        _, __, en3_kernel, fek3 = str_to_kernel_set('3', hm)
         calc1 = en3_kernel(env1[1][0], env2[0][0], *args0)
         calc2 = en3_kernel(env1[0][0], env2[0][0], *args0)
         kern_finite_diff += 9*(calc1 - calc2) / 3.0 / delta
@@ -287,13 +289,13 @@ def test_force_en(kernel_name, diff_cutoff):
     env1 = generate_mb_envs(cutoffs, cell, delta, d1, hm)
     env2 = generate_mb_envs(cutoffs, cell, delta, d2, hm)
 
-    _, __, en_kernel, force_en_kernel = str_to_kernel_set(kernel_name, True)
+    _, __, en_kernel, force_en_kernel = str_to_kernel_set(kernel_name, hm)
 
     kern_analytical = force_en_kernel(env1[0][0], env2[0][0], d1, *args)
 
     kern_finite_diff = 0
     if ('mb' in kernel_name):
-        kernel, _, enm_kernel, efk = str_to_kernel_set('mb', True)
+        kernel, _, enm_kernel, efk = str_to_kernel_set('mb', hm)
 
         calc = 0
         for i in range(len(env1[0])):
@@ -306,7 +308,7 @@ def test_force_en(kernel_name, diff_cutoff):
         args23 = from_mask_to_args(hyps, hm, cutoffs[:2])
 
     if ('2' in kernel_name):
-        kernel, _, en2_kernel, efk = str_to_kernel_set('2b', True)
+        kernel, _, en2_kernel, efk = str_to_kernel_set('2b', hm)
         calc1 = en2_kernel(env1[1][0], env2[0][0], *args23)
         calc2 = en2_kernel(env1[2][0], env2[0][0], *args23)
         diff2b = 4 * (calc1 - calc2) / 2.0 / delta / 2.0
@@ -314,7 +316,7 @@ def test_force_en(kernel_name, diff_cutoff):
         kern_finite_diff += diff2b
 
     if ('3' in kernel_name):
-        kernel, _, en3_kernel, efk = str_to_kernel_set('3b', True)
+        kernel, _, en3_kernel, efk = str_to_kernel_set('3b', hm)
         calc1 = en3_kernel(env1[1][0], env2[0][0], *args23)
         calc2 = en3_kernel(env1[2][0], env2[0][0], *args23)
         diff3b = 9 * (calc1 - calc2) / 3.0 / delta / 2.0
@@ -343,7 +345,7 @@ def test_force(kernel_name, diff_cutoff):
     np.random.seed(10)
 
     cutoffs, hyps, hm = generate_diff_hm(kernel_name, diff_cutoff)
-    kernel, kg, en_kernel, fek = str_to_kernel_set(kernel_name, True)
+    kernel, kg, en_kernel, fek = str_to_kernel_set(kernel_name, hm)
 
     nterm = 0
     for term in ['2', '3', 'mb']:
@@ -357,8 +359,8 @@ def test_force(kernel_name, diff_cutoff):
     # check force kernel
     kern_finite_diff = 0
     if ('mb' == kernel_name):
-        _, __, enm_kernel, ___ = str_to_kernel_set('mb', True)
-        mhyps, mhyps_mask = Parameters.get_mb_hyps(
+        _, __, enm_kernel, ___ = str_to_kernel_set('mb', hm)
+        mhyps, mhyps_mask = ParameterHelper.get_mb_hyps(
                 hyps, hm, True)
         margs = from_mask_to_args(mhyps, mhyps_mask, cutoffs)
         cal = 0
@@ -375,8 +377,8 @@ def test_force(kernel_name, diff_cutoff):
 
     if ('2' in kernel_name):
         nbond = 1
-        _, __, en2_kernel, ___ = str_to_kernel_set('2', True)
-        bhyps, bhyps_mask = Parameters.get_2b_hyps(
+        _, __, en2_kernel, ___ = str_to_kernel_set('2', hm)
+        bhyps, bhyps_mask = ParameterHelper.get_2b_hyps(
                 hyps, hm, True)
         args2 = from_mask_to_args(bhyps, bhyps_mask, cutoffs[:1])
 
@@ -389,9 +391,9 @@ def test_force(kernel_name, diff_cutoff):
         nbond = 0
 
     if ('3' in kernel_name):
-        _, __, en3_kernel, ___ = str_to_kernel_set('3'+kernel_type, True)
+        _, __, en3_kernel, ___ = str_to_kernel_set('3'+kernel_type, hm)
 
-        thyps, thyps_mask = Parameters.get_3b_hyps(
+        thyps, thyps_mask = ParameterHelper.get_3b_hyps(
                 hyps, hm, True)
         args3 = from_mask_to_args(thyps, thyps_mask, cutoffs[:2])
 
@@ -419,7 +421,7 @@ def test_hyps_grad(kernel_name, diff_cutoff, constraint):
 
     cutoffs, hyps, hm = generate_diff_hm(kernel_name, diff_cutoff, constraint=constraint)
     args = from_mask_to_args(hyps, hm, cutoffs)
-    kernel, kernel_grad, _, __ = str_to_kernel_set(kernel_name, True)
+    kernel, kernel_grad, _, __ = str_to_kernel_set(kernel_name, hm)
 
     np.random.seed(0)
     env1 = generate_mb_envs(cutoffs, np.eye(3)*100, delta, d1)
@@ -461,18 +463,18 @@ def generate_same_hm(kernel_name, multi_cutoff=False):
     generate hyperparameter and masks that are effectively the same
     but with single or multi group expression
     """
-    pm1 = Parameters(species=['H', 'He'],
+    pm1 = ParameterHelper(species=['H', 'He'],
             parameters={'noise':0.05})
 
-    pm2 = Parameters(species=['H', 'He'],
+    pm2 = ParameterHelper(species=['H', 'He'],
             parameters={'noise':0.05})
 
     if ('2' in kernel_name):
         para = 2.5+0.1*random(3)
-        pm1.set_parameters('cutoff2b', para[-1])
+        pm1.set_parameters('cutoff_bond', para[-1])
         pm1.define_group('bond', 'bond0', ['*', '*'], para[:-1])
 
-        pm2.set_parameters('cutoff2b', para[-1])
+        pm2.set_parameters('cutoff_bond', para[-1])
         pm2.define_group('bond', 'bond0', ['*', '*'], para[:-1])
         pm2.define_group('bond', 'bond1', ['H', 'H'], para[:-1])
 
@@ -482,10 +484,10 @@ def generate_same_hm(kernel_name, multi_cutoff=False):
 
     if ('3' in kernel_name):
         para = 1.2+0.1*random(3)
-        pm1.set_parameters('cutoff3b', para[-1])
+        pm1.set_parameters('cutoff_triplet', para[-1])
         pm1.define_group('triplet', 'triplet0', ['*', '*', '*'], para[:-1])
 
-        pm2.set_parameters('cutoff3b', para[-1])
+        pm2.set_parameters('cutoff_triplet', para[-1])
         pm2.define_group('triplet', 'triplet0', ['*', '*', '*'], para[:-1])
         pm2.define_group('triplet', 'triplet1', ['H', 'H', 'H'], para[:-1])
 
@@ -497,10 +499,10 @@ def generate_same_hm(kernel_name, multi_cutoff=False):
     if ('mb' in kernel_name):
         para = 1.2+0.1*random(3)
 
-        pm1.set_parameters('cutoffmb', para[-1])
+        pm1.set_parameters('cutoff_mb', para[-1])
         pm1.define_group('mb', 'mb0', ['*', '*'], para[:-1])
 
-        pm2.set_parameters('cutoffmb', para[-1])
+        pm2.set_parameters('cutoff_mb', para[-1])
         pm2.define_group('mb', 'mb0', ['*', '*'], para[:-1])
         pm2.define_group('mb', 'mb1', ['H', 'H'], para[:-1])
 
@@ -521,13 +523,13 @@ def generate_same_hm(kernel_name, multi_cutoff=False):
 
 def generate_diff_hm(kernel_name, diff_cutoff=False, constraint=False):
 
-    pm = Parameters(species=['H', 'He'],
+    pm = ParameterHelper(species=['H', 'He'],
             parameters={'noise':0.05})
 
     if ('2' in kernel_name):
         para1 = 2.5+0.1*random(3)
         para2 = 2.5+0.1*random(3)
-        pm.set_parameters('cutoff2b', para1[-1])
+        pm.set_parameters('cutoff_bond', para1[-1])
         pm.define_group('bond', 'bond0', ['*', '*'])
         pm.set_parameters('bond0', para1[:-1], not constraint)
         pm.define_group('bond', 'bond1', ['H', 'H'], para2[:-1])
@@ -540,7 +542,7 @@ def generate_diff_hm(kernel_name, diff_cutoff=False, constraint=False):
     if ('3' in kernel_name):
         para1 = 1.2+0.1*random(3)
         para2 = 1.2+0.1*random(3)
-        pm.set_parameters('cutoff3b', para1[-1])
+        pm.set_parameters('cutoff_triplet', para1[-1])
         pm.define_group('triplet', 'triplet0', ['*', '*', '*'], para1[:-1])
         pm.set_parameters('triplet0', para1[:-1], not constraint)
         pm.define_group('triplet', 'triplet1', ['H', 'H', 'H'], para2[:-1])
@@ -554,7 +556,7 @@ def generate_diff_hm(kernel_name, diff_cutoff=False, constraint=False):
         para1 = 1.2+0.1*random(3)
         para2 = 1.2+0.1*random(3)
 
-        pm.set_parameters('cutoffmb', para1[-1])
+        pm.set_parameters('cutoff_mb', para1[-1])
         pm.define_group('mb', 'mb0', ['*', '*'])
         pm.set_parameters('mb0', para1[:-1], not constraint)
         pm.define_group('mb', 'mb1', ['H', 'H'], para2[:-1])

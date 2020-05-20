@@ -865,6 +865,7 @@ class ParameterHelper():
         hyps_mask = {}
         cutoff_dict = {}
 
+        nspecie = self.n['specie']
         hyps_mask['nspecie'] = self.n['specie']
         if (self.n['specie'] > 1):
             hyps_mask['specie_mask'] = self.specie_mask
@@ -878,6 +879,7 @@ class ParameterHelper():
             hyps_mask[group+'_start'] = len(hyps)
             hyps += [self.hyps_sig[group]]
             hyps += [self.hyps_ls[group]]
+            hyps = list(np.hstack(hyps))
             opt += [self.hyps_opt[group]]
             cutoff_dict[group] = self.universal['cutoff_'+group]
 
@@ -889,12 +891,13 @@ class ParameterHelper():
                     hyp_labels += ['Signal_Var._'+aeg[idt]]
                 for idt in range(self.n[group]):
                     hyp_labels += ['Length_Scale_'+group]
-                if group in self.cutoff_list:
-                    hyps_mask[group+'_cutoff_list'] = self.cutoff_list[group]
-
             else:
                 hyp_labels += ['Signal_Var._'+group]
                 hyp_labels += ['Length_Scale_'+group]
+
+            if group in self.cutoff_list:
+                hyps_mask[group+'_cutoff_list'] = self.cutoff_list[group]
+
 
 
         if (self.n['cut3b'] >= 1):
@@ -978,12 +981,12 @@ class ParameterHelper():
             n = hyps_mask.get('n'+kernel, 0)
             if n >= 0:
                 if kernel!='cut3b':
-                    hyps, opt = Parameters.get_component_hyps(hyps_mask, kernel,
+                    chyps, copt = Parameters.get_component_hyps(hyps_mask, kernel,
                                                               constraint=True, noise=False)
-                    sig = hyps[0]
-                    ls = hyps[1]
-                    csig = opt[0]
-                    cls = opt[1]
+                    sig = chyps[0]
+                    ls = chyps[1]
+                    csig = copt[0]
+                    cls = copt[1]
                     cutoff = hyps_mask['cutoffs'][kernel]
                     pm.set_parameters('cutoff_'+kernel, cutoff)
                     cutoff_list = hyps_mask.get(f'{kernel}_cutoff_list', np.ones(len(sig))*cutoff)
@@ -1011,7 +1014,7 @@ class ParameterHelper():
                             pm.set_parameters(f"{kernel}{ttype}", cutoff_list[ttype])
                 else:
                     pm.define_group(kernel, kernel, ['*']*ParameterHelper.ndim[kernel])
-                    pm.set_parameters(kernel, parameters=np.hstack([hyps, cutoff]), opt=opt)
+                    pm.set_parameters(kernel, parameters=np.hstack([sig, ls, cutoff]), opt=copt)
 
         hyps = Parameters.get_hyps(hyps_mask)
         pm.set_parameters('noise', hyps[-1])
