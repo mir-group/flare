@@ -431,12 +431,11 @@ class Structure:
         :param format:
         :return:
         """
-
-        try:
-            with open(file_name, 'r') as _:
-                pass
-        except FileNotFoundError:
-            raise FileNotFoundError
+           
+        # Ensure the file specified exists.
+        with open(file_name, 'r') as _:
+            pass
+        
 
         if 'xyz' in file_name or 'xyz' in format.lower():
             raise NotImplementedError
