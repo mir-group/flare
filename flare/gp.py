@@ -796,22 +796,26 @@ class GaussianProcess:
         new_gp.training_structures = []
         # Backwards compatibility with old 'training data' label
         train_structures = dictionary.get('training_structures', [])
-        
+
         for n, env_list in enumerate(train_structures):
             new_gp.training_structures.append([])
             for env_curr in env_list:
                 new_gp.training_structures[n].append(
                     AtomicEnvironment.from_dict(env_curr))
 
-        new_gp.training_labels = deepcopy(dictionary['training_labels'])
-        new_gp.training_labels_np = deepcopy(dictionary['training_labels_np'])
-        new_gp.energy_labels = deepcopy(dictionary['energy_labels'])
-        new_gp.energy_labels_np = deepcopy(dictionary['energy_labels_np'])
-        new_gp.all_labels = deepcopy(dictionary['all_labels'])
+        new_gp.training_labels = deepcopy(dictionary.get('training_labels',
+                                          []))
+        new_gp.training_labels_np = np.hstack(new_gp.training_labels)
+
+        new_gp.energy_labels = deepcopy(dictionary.get('energy_labels',
+                                                       np.empty(0,)))
+        new_gp.energy_labels_np = np.hstack(new_gp.energy_labels)
+
+        new_gp.all_labels = np.concatenate((new_gp.training_labels_np,
+                                          new_gp.energy_labels_np))
 
         new_gp.likelihood = dictionary['likelihood']
         new_gp.likelihood_gradient = dictionary['likelihood_gradient']
-        new_gp.training_labels_np = np.hstack(new_gp.training_labels)
         new_gp.n_envs_prev = dictionary['n_envs_prev']
 
         _global_training_data[new_gp.name] = new_gp.training_data
