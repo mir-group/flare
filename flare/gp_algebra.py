@@ -193,7 +193,7 @@ def obtain_noise_len(hyps, hyps_mask):
     if (hyps_mask is not None):
         train_noise = hyps_mask.get('train_noise', True)
         if (train_noise is False):
-            sigma_n = hyps_mask['original'][-1]
+            sigma_n = hyps_mask['original_hyps'][-1]
             non_noise_hyps = len(hyps)
 
     return sigma_n, non_noise_hyps, train_noise

@@ -133,7 +133,8 @@ class Output:
         headerstring = ''
         headerstring += \
             f'number of cpu cores: {multiprocessing.cpu_count()}\n'
-        headerstring += f'cutoffs: {cutoffs}\n'
+        for k in cutoffs:
+            headerstring += f'cutoffs_{k}: {cutoffs[k]}\n'
         headerstring += f'kernel_name: {kernel_name}\n'
         headerstring += f'number of hyperparameters: {len(hyps)}\n'
         headerstring += f'hyperparameters: {str(hyps)}\n'
@@ -337,7 +338,7 @@ class Output:
 
         if hyps_mask is not None:
             if 'map' in hyps_mask:
-                hyps = hyps_mask['original']
+                hyps = hyps_mask['original_hyps']
                 if len(hyp_labels)!=len(hyps):
                     hyp_labels = None
 

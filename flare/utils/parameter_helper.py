@@ -106,7 +106,8 @@ class ParameterHelper():
         self.all_types = ['specie'] + \
             ParameterHelper.all_kernel_types + ParameterHelper.additional_groups
 
-        self.all_group_types = ParameterHelper.all_kernel_types + ParameterHelper.additional_groups
+        self.all_group_types = ParameterHelper.all_kernel_types + \
+            ParameterHelper.additional_groups
 
         # number of groups {'bond': 1, 'triplet': 2}
         self.n = {}
@@ -237,7 +238,6 @@ class ParameterHelper():
         logger.addHandler(ch)
         self.logger = logger
 
-
     def list_parameters(self, parameter_dict, constraints={}):
         """Define many groups of parameters
 
@@ -354,7 +354,8 @@ class ParameterHelper():
             # generate all possible combination of group
             ele_grid = self.all_group_names['specie']
             grid = np.meshgrid(*[ele_grid]*ParameterHelper.ndim[group_type])
-            grid = np.array(grid).T.reshape(-1, ParameterHelper.ndim[group_type])
+            grid = np.array(grid).T.reshape(-1,
+                                            ParameterHelper.ndim[group_type])
 
             # remove the redundant groups
             allgroup = []
@@ -535,8 +536,8 @@ class ParameterHelper():
                             if (ele_name in self.groups['specie'][idx]):
                                 group_name_list += [group_name]
                                 self.logger.warning(f"Element {ele_name} is used for "
-                                      f"definition, but the whole group "
-                                      f"{group_name} is affected")
+                                                    f"definition, but the whole group "
+                                                    f"{group_name} is affected")
             else:
                 group_name_list = element_list
 
@@ -548,7 +549,7 @@ class ParameterHelper():
 
                 for ele in self.all_members[group_type]:
                     if set(gid) == set(ele):
-                        self.logger.warning(
+                        self.logger.debug(
                             f"the definition of {group_type} {ele} will be overriden")
                 self.groups[group_type][groupid].append(gid)
                 self.all_members[group_type].append(gid)
@@ -648,15 +649,15 @@ class ParameterHelper():
             self.opt[name+'sig'] = opt[0]
             self.opt[name+'ls'] = opt[1]
             self.logger.debug(f"ParameterHelper for group {name} will be set as "
-                  f"sig={parameters[0]} ({opt[0]}) "
-                  f"ls={parameters[1]} ({opt[1]})")
+                              f"sig={parameters[0]} ({opt[0]}) "
+                              f"ls={parameters[1]} ({opt[1]})")
             if (len(parameters) > 2):
                 if (name in self.all_cutoff):
                     self.logger.warning(
                         f"the cutoff of group {name} is overriden")
                 self.all_cutoff[name] = parameters[2]
                 self.logger.debug(f"Cutoff for group {name} will be set as "
-                      f"{parameters[2]}")
+                                  f"{parameters[2]}")
         else:
             self.all_cutoff[name] = parameters
 
@@ -692,8 +693,8 @@ class ParameterHelper():
             self.opt[name+'sig'] = opt[0]
             self.opt[name+'ls'] = opt[1]
             self.logger.debug(f"ParameterHelper for group {name} will be set as "
-                  f"sig {opt[0]} "
-                  f"ls {opt[1]}")
+                              f"sig {opt[0]} "
+                              f"ls {opt[1]}")
 
     def summarize_group(self, group_type):
         """Sort and combine all the previous definition to internal varialbes
@@ -713,7 +714,7 @@ class ParameterHelper():
                     atom_n = element_to_Z(ele)
                     self.specie_mask[atom_n] = idt
                     self.logger.debug(f"elemtn {ele} is defined as type {idt} with name "
-                          f"{aeg[idt]}")
+                                      f"{aeg[idt]}")
             self.logger.debug(
                 f"All the remaining elements are left as type {idt}")
 
@@ -747,7 +748,7 @@ class ParameterHelper():
                         self.mask[group_type][mask_id] = idt
                     def_str = "-".join(map(str, self.groups['specie']))
                     self.logger.debug(f"{group_type} {def_str} is defined as type {idt} "
-                          f"with name {name}")
+                                      f"with name {name}")
 
                 if group_type != 'cut3b':
                     sig = self.sigma.get(name, -1)
@@ -777,7 +778,7 @@ class ParameterHelper():
                     self.hyps_opt[group_type] += [opt_sig]
                     self.hyps_opt[group_type] += [opt_ls]
                     self.logger.debug(f"   using hyper-parameters of {sig:6.2g} "
-                          f"{ls:6.2g}")
+                                      f"{ls:6.2g}")
             self.logger.debug(
                 f"All the remaining elements are left as type {idt}")
 
@@ -795,7 +796,7 @@ class ParameterHelper():
                 else:
                     alldefine = False
                     self.logger.warning(f"{aeg[idt]} cutoff is not define. "
-                          "it's going to use the universal cutoff.")
+                                        "it's going to use the universal cutoff.")
 
             if (group_type != 'triplet'):
 
@@ -803,7 +804,7 @@ class ParameterHelper():
                     if (universal_cutoff <= 0):
                         universal_cutoff = np.max(allcut)
                         self.logger.warning(f"universal cutoffs {cutstr2index[group_type]}for "
-                              f"{group_type} is defined as zero! reset it to {universal_cutoff}")
+                                            f"{group_type} is defined as zero! reset it to {universal_cutoff}")
 
                     self.cutoff_list[group_type] = []
                     for idt in range(self.n[group_type]):
@@ -815,8 +816,8 @@ class ParameterHelper():
                     # update the universal cutoff to make it higher than
                     if (alldefine):
                         universal_cutoff = max_cutoff
-                        self.logger.warning(f"universal cutoff is updated to"\
-                              f"{universal_cutoff}")
+                        self.logger.warning(f"universal cutoff is updated to "
+                                            f"{universal_cutoff}")
                     elif (not np.any(self.cutoff_list[group_type]-max_cutoff)):
                         # if not all the cutoffs are defined separately
                         # and they are all the same value
@@ -824,15 +825,15 @@ class ParameterHelper():
                         universal_cutoff = max_cutoff
                         if (group_type == 'cut3b'):
                             self.n['cut3b'] = 0
-                        self.logger.warning(f"universal cutoff is updated to"\
-                              f"{universal_cutoff}")
+                        self.logger.warning(f"universal cutoff is updated to "
+                                            f"{universal_cutoff}")
 
             else:
                 if universal_cutoff <= 0 and len(allcut) > 0:
                     universal_cutoff = np.max(allcut)
                     self.logger.warning(f"triplet universal cutoff is updated to"
-                          f"{universal_cutoff}, but the separate definitions will"
-                          "be ignored")
+                                        f"{universal_cutoff}, but the separate definitions will"
+                                        "be ignored")
 
             if universal_cutoff > 0:
                 if group_type == 'cut_3b':
@@ -898,8 +899,6 @@ class ParameterHelper():
             if group in self.cutoff_list:
                 hyps_mask[group+'_cutoff_list'] = self.cutoff_list[group]
 
-
-
         if (self.n['cut3b'] >= 1):
             hyps_mask['ncut3b'] = self.n[group]
             hyps_mask['cut3b_mask'] = self.mask[group]
@@ -936,7 +935,8 @@ class ParameterHelper():
                                "should be allowed to be optimized. \n")
 
         if self.n['specie'] < 2:
-            self.logger.debug("only one type of elements was defined. Please use multihyps=False")
+            self.logger.debug(
+                "only one type of elements was defined. Please use multihyps=False")
 
         hyps_mask['kernels'] = self.kernel_array
         hyps_mask['cutoffs'] = cutoff_dict
@@ -980,22 +980,24 @@ class ParameterHelper():
         for kernel in hyps_mask['kernels']+['cut3b']:
             n = hyps_mask.get('n'+kernel, 0)
             if n >= 0:
-                if kernel!='cut3b':
+                if kernel != 'cut3b':
                     chyps, copt = Parameters.get_component_hyps(hyps_mask, kernel,
-                                                              constraint=True, noise=False)
+                                                                constraint=True, noise=False)
                     sig = chyps[0]
                     ls = chyps[1]
                     csig = copt[0]
                     cls = copt[1]
                     cutoff = hyps_mask['cutoffs'][kernel]
                     pm.set_parameters('cutoff_'+kernel, cutoff)
-                    cutoff_list = hyps_mask.get(f'{kernel}_cutoff_list', np.ones(len(sig))*cutoff)
-                elif kernel=='cut3b' and n > 1:
+                    cutoff_list = hyps_mask.get(
+                        f'{kernel}_cutoff_list', np.ones(len(sig))*cutoff)
+                elif kernel == 'cut3b' and n > 1:
                     cutoff_list = hyps_mask['triplet_cutoff_list']
 
                 if n > 1:
                     all_specie = np.arange(nspecie)
-                    all_comb = combinations_with_replacement(all_specie, ParameterHelper.ndim[kernel])
+                    all_comb = combinations_with_replacement(
+                        all_specie, ParameterHelper.ndim[kernel])
                     for comb in all_comb:
                         mask_id = 0
                         for ele in comb:
@@ -1006,15 +1008,18 @@ class ParameterHelper():
                         pm.define_group(f"{kernel}", f"{kernel}{ttype}", comb)
                         if kernel != 'cut3b' and kernel != 'triplet':
                             pm.set_parameters(f"{kernel}{ttype}", [sig[ttype], ls[ttype], cutoff_list[ttype]],
-                                                      opt=[csig[ttype], cls[ttype]])
+                                              opt=[csig[ttype], cls[ttype]])
                         elif kernel == 'triplet':
                             pm.set_parameters(f"{kernel}{ttype}", [sig[ttype], ls[ttype]],
-                                                      opt=[csig[ttype], cls[ttype]])
+                                              opt=[csig[ttype], cls[ttype]])
                         else:
-                            pm.set_parameters(f"{kernel}{ttype}", cutoff_list[ttype])
+                            pm.set_parameters(
+                                f"{kernel}{ttype}", cutoff_list[ttype])
                 else:
-                    pm.define_group(kernel, kernel, ['*']*ParameterHelper.ndim[kernel])
-                    pm.set_parameters(kernel, parameters=np.hstack([sig, ls, cutoff]), opt=copt)
+                    pm.define_group(kernel, kernel, [
+                                    '*']*ParameterHelper.ndim[kernel])
+                    pm.set_parameters(kernel, parameters=np.hstack(
+                        [sig, ls, cutoff]), opt=copt)
 
         hyps = Parameters.get_hyps(hyps_mask)
         pm.set_parameters('noise', hyps[-1])

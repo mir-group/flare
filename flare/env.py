@@ -9,6 +9,7 @@ from flare.parameters import Parameters
 from flare.kernels.kernels import coordination_number, q_value_mc
 import flare.kernels.cutoffs as cf
 
+
 class AtomicEnvironment:
     """Contains information about the local environment of an atom,
     including arrays of pair and triplet distances and the chemical
@@ -135,16 +136,20 @@ class AtomicEnvironment:
             if kernel in self.cutoffs:
                 setattr(self, kernel+'_cutoff', self.cutoffs[kernel])
                 setattr(self, 'n'+kernel, 1)
-                setattr(self, kernel+'_cutoff_list', np.ones(1)*self.cutoffs[kernel])
-                setattr(self, kernel+'_mask', np.zeros(self.nspecie**ndim, dtype=int))
+                setattr(self, kernel+'_cutoff_list',
+                        np.ones(self.nspecie**ndim)*self.cutoffs[kernel])
+                setattr(self, kernel+'_mask',
+                        np.zeros(self.nspecie**ndim, dtype=int))
                 if kernel != 'triplet':
-                    name_list = [kernel+'_cutoff_list', 'n'+kernel, kernel+'_mask']
+                    name_list = [kernel+'_cutoff_list',
+                                 'n'+kernel, kernel+'_mask']
                     for name in name_list:
                         if name in cutoffs_mask:
                             setattr(self, name, cutoffs_mask[name])
                 else:
                     self.ncut3b = cutoffs_mask.get('ncut3b', 1)
-                    self.cut3b_mask = cutoffs_mask.get('cut3b_mask', np.zeros(self.nspecie**2, dtype=int))
+                    self.cut3b_mask = cutoffs_mask.get(
+                        'cut3b_mask', np.zeros(self.nspecie**2, dtype=int))
                     if 'triplet_cutoff_list' in cutoffs_mask:
                         self.triplet_cutoff_list = cutoffs_mask['triplet_cutoff_list']
 
@@ -154,8 +159,8 @@ class AtomicEnvironment:
         if (self.nbond >= 1):
             bond_array_2, bond_positions_2, etypes, bond_inds = \
                 get_2_body_arrays(self.positions, self.atom, self.cell,
-                                         self.bond_cutoff_list, self.species, self.sweep_array,
-                                         self.nspecie, self.specie_mask, self.bond_mask)
+                                  self.bond_cutoff_list, self.species, self.sweep_array,
+                                  self.nspecie, self.specie_mask, self.bond_mask)
 
             self.bond_array_2 = bond_array_2
             self.etypes = etypes
@@ -176,9 +181,9 @@ class AtomicEnvironment:
         if self.nmb > 0:
             self.q_array, self.q_neigh_array, self.q_neigh_grads, \
                 self.unique_species, self.etypes_mb = \
-                get_m_body_arrays(self.positions, self.atom, self.cell, \
-                self.mb_cutoff_list, self.species, self.sweep_array, self.nspecie, self.specie_mask, self.mb_mask,\
-                cf.quadratic_cutoff)
+                get_m_body_arrays(self.positions, self.atom, self.cell,
+                                  self.mb_cutoff_list, self.species, self.sweep_array, self.nspecie, self.specie_mask, self.mb_mask,
+                                  cf.quadratic_cutoff)
 
     def as_dict(self):
         """
@@ -447,8 +452,8 @@ def get_3_body_arrays(bond_array_2, bond_positions_2, ctype,
 
 @njit
 def get_m_body_arrays(positions, atom: int, cell, mb_cutoff_list,
-    species, sweep: np.ndarray, nspec, spec_mask, mb_mask,
-    cutoff_func=cf.quadratic_cutoff):
+                      species, sweep: np.ndarray, nspec, spec_mask, mb_mask,
+                      cutoff_func=cf.quadratic_cutoff):
     # TODO:
     # 1. need to deal with the conflict of cutoff functions if other funcs are used
     # 2. complete the docs of "Return"
@@ -489,7 +494,7 @@ def get_m_body_arrays(positions, atom: int, cell, mb_cutoff_list,
         r_cut = mb_cutoff_list[mbtype]
 
         qs[s] = q_value_mc(bond_array_mb[:, 0], r_cut, species_list[s],
-            etypes, cutoff_func)
+                           etypes, cutoff_func)
 
     # get coordination number of all neighbor atoms for each species
     for i in range(n_bonds):
@@ -498,14 +503,14 @@ def get_m_body_arrays(positions, atom: int, cell, mb_cutoff_list,
 
         neigh_bond_array, _, neigh_etypes, _ = \
             get_2_body_arrays(positions, bond_inds[i], cell,
-                mb_cutoff_list, species, sweep, nspec, spec_mask, mb_mask)
+                              mb_cutoff_list, species, sweep, nspec, spec_mask, mb_mask)
         for s in range(n_specs):
             bs = spec_mask[species_list[s]]
             mbtype = mb_mask[bs + ben]
             r_cut = mb_cutoff_list[mbtype]
 
             qs_neigh[i, s] = q_value_mc(neigh_bond_array[:, 0], r_cut,
-                species_list[s], neigh_etypes, cutoff_func)
+                                        species_list[s], neigh_etypes, cutoff_func)
 
     # get grad from each neighbor atom
     for i in range(n_bonds):
@@ -518,9 +523,10 @@ def get_m_body_arrays(positions, atom: int, cell, mb_cutoff_list,
             ci = bond_array_mb[i, d+1]
 
             _, q_grads[i, d] = coordination_number(ri, ci, r_cut,
-                cutoff_func)
+                                                   cutoff_func)
 
     return qs, qs_neigh, q_grads, species_list, etypes
+
 
 if __name__ == '__main__':
     pass

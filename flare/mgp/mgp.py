@@ -504,14 +504,10 @@ class MappedGaussianProcess:
         for i in dictionary['bodies']:
             kern_info = f'kernel{i}b_info'
             hyps_mask = dictionary[kern_info][-1]
-            if (hyps_mask is None):
-                multihyps = False
-            else:
-                multihyps = True
 
             kernel_info = dictionary[kern_info]
             kernel_name = kernel_info[0]
-            kernel, _, ek, efk = str_to_kernel_set(kernel_name, multihyps)
+            kernel, _, ek, efk = str_to_kernel_set(kernel_name, hyps_mask)
             kernel_info[0] = kernel
             kernel_info[1] = ek
             kernel_info[2] = efk
@@ -855,7 +851,7 @@ class Map3body:
         n_strucs = len(GP.training_structures)
         n_kern = n_envs * 3 + n_strucs
 
-        mapk = str_to_mapped_kernel('3', GP.multihyps)
+        mapk = str_to_mapped_kernel('3', GP.hyps_mask)
         mapped_kernel_info = (kernel_info[0], kernel_info[1], mapk,
                               kernel_info[3], kernel_info[4], kernel_info[5])
 

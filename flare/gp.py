@@ -34,12 +34,10 @@ class GaussianProcess:
     Williams.
 
     Args:
-        kernel (Callable, optional): Name of the kernel to use, or the kernel
-            itself.
-        kernel_grad (Callable, optional): Function that returns the gradient
-            of the GP kernel with respect to the hyperparameters.
+        kernel_array (str, optional): Determine the type of kernels. Example:
+            2+3_mc, 2+3+mb_mc, 2_mc, 2_sc, 3_sc, ...
         hyps (np.ndarray, optional): Hyperparameters of the GP.
-        cutoffs (np.ndarray, optional): Cutoffs of the GP kernel.
+        cutoffs (Dict, optional): Cutoffs of the GP kernel.
         hyp_labels (List, optional): List of hyperparameter labels. Defaults
             to None.
         energy_force_kernel (Callable, optional): Energy/force kernel of the
@@ -58,43 +56,55 @@ class GaussianProcess:
             predictions.
         output (Output, optional): Output object used to dump hyperparameters
             during optimization. Defaults to None.
-        multihyps (bool, optional): If True, turn on multiple-group of hyper-
-            parameters.
-        hyps_mask (dict, optional): If multihyps is True, hyps_mask can set up
-            which hyper parameter is used for what interaction. Details see
-            kernels/mc_sephyps.py
-        kernel_name (str, optional): Determine the type of kernels. Example:
-            2+3_mc, 2+3+mb_mc, 2_mc, 2_sc, 3_sc, ...
+        hyps_mask (dict, optional): hyps_mask can set up which hyper parameter
+            is used for what interaction. Details see kernels/mc_sephyps.py
         name (str, optional): Name for the GP instance.
     """
 
-    def __init__(self, kernel: Callable = None, kernel_grad: Callable = None,
-                 hyps: 'ndarray' = None, cutoffs: 'ndarray' = None,
+    def __init__(self, kernel_name='2+3_mc',
+                 hyps: 'ndarray' = None, cutoffs: dict = {},
+                 hyps_mask: dict = {},
                  hyp_labels: List = None, opt_algorithm: str = 'L-BFGS-B',
                  maxiter: int = 10, parallel: bool = False,
                  per_atom_par: bool = True, n_cpus: int = 1,
                  n_sample: int = 100, output: Output = None,
-                 multihyps: bool = False, hyps_mask: dict = None,
-                 kernel_name="2+3_mc", name="default_gp",
+                 name="default_gp",
                  energy_noise: float = 0.01, **kwargs,):
+
         """Initialize GP parameters and training data."""
+
+        self.kernel_name = kernel_name
+        self.cutoffs = cutoffs
+        self.hyps = np.array(hyps, dtype=np.float64)
+        self.hyp_labels = hyp_labels
+
+        # # TO DO need to fix it
+        if hyps is None:
+            # If no hyperparameters are passed in, assume 2 hyps for each
+            # cutoff, plus one noise hyperparameter, and use a guess value
+            hyps = np.array([0.1]*(1+2*len(cutoffs)))
+
+        if (hyps_mask is None):
+            kernels = []
+            if '2' in kernel_name:
+                kernels += ['bond']
+            if '3' in kernel_name:
+                kernels += ['triplet']
+            if 'mb' in kernel_name:
+                kernels += ['mb']
+            self.hyps_mask = {'nspecie':1, 'cutoffs':cutoffs, 'hyps': hyps, 'kernels':kernels}
+
+        self.update_hyps(hyps, hyp_labels, hyps_mask)
 
         # load arguments into attributes
         self.name = name
 
-        self.cutoffs = np.array(cutoffs, dtype=np.float64)
         self.opt_algorithm = opt_algorithm
 
         self.output = output
         self.per_atom_par = per_atom_par
         self.maxiter = maxiter
 
-        if hyps is None:
-            # If no hyperparameters are passed in, assume 2 hyps for each
-            # cutoff, plus one noise hyperparameter, and use a guess value
-            hyps = np.array([0.1]*(1+2*len(cutoffs)))
-
-        self.update_hyps(hyps, hyp_labels, multihyps, hyps_mask)
 
         # set up parallelization
         self.n_cpus = n_cpus
@@ -110,23 +120,12 @@ class GaussianProcess:
             DeprecationWarning("no_cpus is being replaced with n_cpu")
             self.n_cpus = kwargs.get('no_cpus')
 
-        # TO DO, clean up all the other kernel arguments
-        if kernel is None:
-            kernel, grad, ek, efk = str_to_kernel_set(kernel_name, multihyps)
-            self.kernel = kernel
-            self.kernel_grad = grad
-            self.energy_force_kernel = efk
-            self.energy_kernel = ek
-            self.kernel_name = kernel.__name__
-        else:
-            DeprecationWarning("kernel, kernel_grad, energy_force_kernel "
-                               "and energy_kernel will be replaced by "
-                               "kernel_name")
-            self.kernel_name = kernel.__name__
-            self.kernel = kernel
-            self.kernel_grad = kernel_grad
-            self.energy_force_kernel = kwargs.get('energy_force_kernel')
-            self.energy_kernel = kwargs.get('energy_kernel')
+        kernel, grad, ek, efk = str_to_kernel_set(kernel_name, hyps_mask)
+        self.kernel = kernel
+        self.kernel_grad = grad
+        self.energy_force_kernel = efk
+        self.energy_kernel = ek
+        self.kernel_name = kernel.__name__
 
         self.name = name
 
@@ -201,55 +200,25 @@ class GaussianProcess:
         _global_training_labels[self.name] = self.training_labels_np
         _global_energy_labels[self.name] = self.energy_labels_np
 
-        assert (len(self.cutoffs) <= 3)
+        self.hyps_mask = Parameters.check_instantiation(self.hyps_mask)
 
-        if (len(self.cutoffs) > 1):
-            assert self.cutoffs[0] >= self.cutoffs[1], \
-                    "2b cutoff has to be larger than 3b cutoffs"
+        self.bounds = deepcopy(self.hyps_mask.get('bounds', None))
 
-        if ('three' in self.kernel_name):
-            assert len(self.cutoffs) >= 2, \
-                    "3b kernel needs two cutoffs, one for building"\
-                    " neighbor list and one for the 3b"
-        if ('many' in self.kernel_name):
-            assert len(self.cutoffs) >= 3, \
-                    "many-body kernel needs three cutoffs, one for building"\
-                    " neighbor list and one for the 3b"
 
-        if self.multihyps is True and self.hyps_mask is None:
-            raise ValueError("Warning! Multihyperparameter mode enabled,"
-                             "but no configuration hyperparameter mask was "
-                             "passed. Did you mean to set multihyps to False?")
-        elif self.multihyps is False and self.hyps_mask is not None:
-            raise ValueError("Warning! Multihyperparameter mode disabled,"
-                             "but a configuration hyperparameter mask was "
-                             "passed. Did you mean to set multihyps to True?")
-
-        if self.multihyps is True:
-
-            self.hyps_mask = Parameters.check_instantiation(
-                self.hyps_mask)
-            Parameters.check_matching(
-                self.hyps_mask, self.hyps, self.cutoffs)
-            self.bounds = deepcopy(self.hyps_mask.get('bounds', None))
-
-        else:
-            self.multihyps = False
-            self.hyps_mask = None
-
-    def update_kernel(self, kernel_name, multihyps=False):
-        kernel, grad, ek, efk = str_to_kernel_set(kernel_name, multihyps)
+    def update_kernel(self, kernel_name, hyps_mask):
+        kernel, grad, ek, efk = str_to_kernel_set(kernel_name, hpys_mask)
         self.kernel = kernel
         self.kernel_grad = grad
         self.energy_force_kernel = efk
         self.energy_kernel = ek
         self.kernel_name = kernel.__name__
 
-    def update_hyps(self, hyps=None, hyp_labels=None, multihyps=False, hyps_mask=None):
-        self.hyps = np.array(hyps, dtype=np.float64)
-        self.hyp_labels = hyp_labels
+    def update_hyps(self, hyps=None, hyp_labels=None, hyps_mask=None):
         self.hyps_mask = hyps_mask
-        self.multihyps = multihyps
+        self.cutoffs = hyps_mask['cutoff']
+        self.kernel_name = "+".join(hyps_mask['kernels'])
+        self.hyps = np.array(hyps_mask['hyps'], dtype=np.float64)
+        self.hyp_labels = hyps_mask['hyp_labels']
 
     def update_db(self, struc: Structure, forces: List,
                   custom_range: List[int] = (), energy: float = None,
@@ -470,7 +439,7 @@ class GaussianProcess:
 
         # get predictive variance without cholesky (possibly faster)
         # pass args to kernel based on if mult. hyperparameters in use
-        args = from_mask_to_args(self.hyps, self.hyps_mask, self.cutoffs)
+        args = from_mask_to_args(self.hyps, self.hyps_mask)
         self_kern = self.kernel(x_t, x_t, d, d, *args)
         pred_var = self_kern - np.matmul(np.matmul(k_v, self.ky_mat_inv), k_v)
 
@@ -621,7 +590,6 @@ class GaussianProcess:
         thestr += f'Cutoffs: {self.cutoffs}\n'
         thestr += f'Model Likelihood: {self.likelihood}\n'
 
-        thestr += f'MultiHyps: {self.multihyps}\n'
         thestr += 'Hyperparameters: \n'
         if self.hyp_labels is None:
             # Put unlabeled hyperparameters on one line
@@ -631,30 +599,8 @@ class GaussianProcess:
             for hyp, label in zip(self.hyps, self.hyp_labels):
                 thestr += f"{label}: {hyp}\n"
 
-        if self.multihyps:
-            nspecie = self.hyps_mask['nspecie']
-            thestr += f'nspecie: {nspecie}\n'
-            thestr += f'specie_mask: \n'
-            thestr += str(self.hyps_mask['specie_mask']) + '\n'
-
-            nbond = self.hyps_mask.get('nbond', 0)
-            thestr += f'nbond: {nbond}\n'
-
-            if nbond > 1:
-                thestr += f'bond_mask: \n'
-                thestr += str(self.hyps_mask['bond_mask']) + '\n'
-
-            ntriplet = self.hyps_mask.get('ntriplet', 0)
-            thestr += f'ntriplet: {ntriplet}\n'
-            if ntriplet > 1:
-                thestr += f'triplet_mask: \n'
-                thestr += str(self.hyps_mask['triplet_mask']) + '\n'
-
-            nmb = self.hyps_mask.get('nmb', 0)
-            thestr += f'nmb: {nmb}\n'
-            if nmb > 1:
-                thestr += f'mb_mask: \n'
-                thestr += str(self.hyps_mask['nmb_mask']) + '\n'
+        for k in self.hyps_mask:
+            thestr += f'{k}: {self.hyps_mask[k]}\n'
 
         return thestr
 
@@ -687,10 +633,8 @@ class GaussianProcess:
     def from_dict(dictionary):
         """Create GP object from dictionary representation."""
 
-        multihyps = dictionary.get('multihyps', False)
-
         new_gp = GaussianProcess(kernel_name=dictionary['kernel_name'],
-                                 cutoffs=np.array(dictionary['cutoffs']),
+                                 cutoffs=dictionary['cutoffs'],
                                  hyps=np.array(dictionary['hyps']),
                                  hyp_labels=dictionary['hyp_labels'],
                                  parallel=dictionary.get('parallel', False) or
@@ -702,7 +646,6 @@ class GaussianProcess:
                                  maxiter=dictionary['maxiter'],
                                  opt_algorithm=dictionary.get(
                                      'opt_algorithm', 'L-BFGS-B'),
-                                 multihyps=multihyps,
                                  hyps_mask=dictionary.get('hyps_mask', None),
                                  name=dictionary.get('name', 'default_gp')
                                  )
@@ -800,8 +743,7 @@ class GaussianProcess:
         # update environment
         nenv = len(self.training_data)
         for i in range(nenv):
-            self.training_data[i].cutoffs = np.array(
-                new_cutoffs, dtype=np.float)
+            self.training_data[i].cutoffs = new_cutoffs
             self.training_data[i].cutoffs_mask = hm
             self.training_data[i].setup_mask()
             self.training_data[i].compute_env()
@@ -810,7 +752,7 @@ class GaussianProcess:
         _global_training_data[self.name] = self.training_data
         _global_training_labels[self.name] = self.training_labels_np
 
-        self.cutoffs = np.array(new_cutoffs)
+        self.cutoffs = new_cutoffs
 
         if reset_L_alpha:
             del self.l_mat

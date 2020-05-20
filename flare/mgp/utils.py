@@ -21,7 +21,8 @@ def get_2bkernel(GP):
 
     cutoffs = [GP.cutoffs[0]]
 
-    hyps, hyps_mask = Parameters.get_2b_hyps(GP.hyps, GP.hyps_mask, GP.multihyps)
+    hyps_mask = Parameters.get_component_mask(GP.hyps_mask, 'bond', hyps=GP.hyps)
+    hyps = hyps_mask['hyps']
 
     return (kernel, ek, efk, cutoffs, hyps, hyps_mask)
 
@@ -40,9 +41,9 @@ def get_3bkernel(GP):
 
     cutoffs = np.copy(GP.cutoffs)
 
-    hyps, hyps_mask = \
-            Parameters.get_3b_hyps(\
-                GP.hyps, GP.hyps_mask, GP.multihyps)
+    hyps_mask = Parameters.get_component_mask(GP.hyps_mask, 'triplet', hyps=GP.hyps)
+    hyps = hyps_mask['hyps']
+
 
     return (kernel, ek, efk, cutoffs, hyps, hyps_mask)
 

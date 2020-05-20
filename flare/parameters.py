@@ -40,14 +40,14 @@ class Parameters():
                       'triplet_cutoff_list': None,
                       'mb_cutoff_list': None,
                       'hyps': [],
-                      'hyp_labels':[],
+                      'hyp_labels': [],
                       'cutoffs': {},
                       'kernels': [],
                       'train_noise': True,
                       'energy_noise': 0,
                       'map': None,
                       'original_hyps': [],
-                      'original_labels':[]
+                      'original_labels': []
                       }
 
     @staticmethod
@@ -107,7 +107,8 @@ class Parameters():
                     f"wrong dimension of bond_mask: " \
                     f" {len(mask)} != nspec ^ {dim} {nspecie**dim}"
 
-                all_comb=list(combinations_with_replacement(np.arange(nspecie), dim))
+                all_comb = list(combinations_with_replacement(
+                    np.arange(nspecie), dim))
                 for comb in all_comb:
                     mask_value = None
                     perm = list(permutations(comb))
@@ -121,7 +122,7 @@ class Parameters():
                             mask_value = mask[mask_id]
                         else:
                             assert mask[mask_id] == mask_value, \
-                                   'bond_mask has to be symmetrical'
+                                'bond_mask has to be symmetrical'
 
                 if kernel != 'cut3b':
                     if kernel+'_cutoff_list' in param_dict:
@@ -153,12 +154,11 @@ class Parameters():
 
         hyps_length += 1
         assert hyps_length == len(hyps), \
-                    "the hyperparmeter length is inconsistent with the mask"
+            "the hyperparmeter length is inconsistent with the mask"
         for var in hyps:
             assert var >= 0
 
         return param_dict
-
 
     @staticmethod
     def get_component_hyps(param_dict, kernel_name, hyps=None, constraint=False, noise=False):
@@ -191,17 +191,20 @@ class Parameters():
             return newhyps
 
     @staticmethod
-    def get_component_mask(param_dict, kernel_name):
+    def get_component_mask(param_dict, kernel_name, hyps=None):
 
         if kernel_name in param_dict['kernels']:
             new_dict = {}
-            new_dict['hyps'] = np.hstack(get_component_hyps(param_dict, kernel_name, noise=True))
+            new_dict['hyps'] = np.hstack(
+                Parameters.get_component_hyps(
+                    param_dict, kernel_name, hyps=hyps, noise=True))
             new_dict['kernels'] = [kernel_name]
-            new_dict['cutoffs'] = {kernel_name: param_dict['cutoffs'][kernel_name]}
+            new_dict['cutoffs'] = {
+                kernel_name: param_dict['cutoffs'][kernel_name]}
             new_dict[kernel_name+'_start'] = 0
 
             name_list = ['nspecie', 'specie_mask',
-                         n+kernel_name, kernel_name+'_mask',
+                         'n'+kernel_name, kernel_name+'_mask',
                          kernel_name+'_cutoff_list']
             if kernel_name == 'triplet':
                 name_list += ['ncut3b', 'cut3b_mask']
@@ -255,7 +258,6 @@ class Parameters():
         else:
             return universal_cutoff
 
-
     @staticmethod
     def get_hyps(param_dict, hyps=None, constraint=False):
 
@@ -306,14 +308,14 @@ class Parameters():
             if (k in dict1) != (k in dict2):
                 return False
             elif k in dict1:
-                if not (dict1[k]==dict2[k]).all():
+                if not (dict1[k] == dict2[k]).all():
                     return False
 
         for k in ['train_noise']:
             if (k in dict1) != (k in dict2):
                 return False
             elif k in dict1:
-                if dict1[k] !=dict2[k]:
+                if dict1[k] != dict2[k]:
                     return False
 
         return True

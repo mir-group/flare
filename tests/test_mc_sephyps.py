@@ -9,6 +9,7 @@ from numpy import isclose
 from flare.kernels.mc_sephyps import _str_to_kernel as stk
 from flare.kernels.utils import from_mask_to_args, str_to_kernel_set
 from flare.kernels.cutoffs import quadratic_cutoff_bound
+from flare.parameters import Parameters
 from flare.utils.parameter_helper import ParameterHelper
 
 from .fake_gp import generate_mb_envs, generate_mb_twin_envs
@@ -305,7 +306,7 @@ def test_force_en(kernel_name, diff_cutoff):
         kern_finite_diff += (calc)/(2*delta)
 
     if ('2' in kernel_name or '3' in kernel_name):
-        args23 = from_mask_to_args(hyps, hm, cutoffs[:2])
+        args23 = from_mask_to_args(hyps, hm, cutoffs)
 
     if ('2' in kernel_name):
         kernel, _, en2_kernel, efk = str_to_kernel_set('2b', hm)
@@ -360,8 +361,8 @@ def test_force(kernel_name, diff_cutoff):
     kern_finite_diff = 0
     if ('mb' == kernel_name):
         _, __, enm_kernel, ___ = str_to_kernel_set('mb', hm)
-        mhyps, mhyps_mask = ParameterHelper.get_mb_hyps(
-                hyps, hm, True)
+        mhyps_mask = Parameters.get_component_mask(hm, 'mb', hyps=hyps)
+        mhyps = mhyps_mask['hyps']
         margs = from_mask_to_args(mhyps, mhyps_mask, cutoffs)
         cal = 0
         for i in range(3):
@@ -378,8 +379,8 @@ def test_force(kernel_name, diff_cutoff):
     if ('2' in kernel_name):
         nbond = 1
         _, __, en2_kernel, ___ = str_to_kernel_set('2', hm)
-        bhyps, bhyps_mask = ParameterHelper.get_2b_hyps(
-                hyps, hm, True)
+        bhyps_mask = Parameters.get_component_mask(hm, 'bond', hyps=hyps)
+        bhyps = bhyps_mask['hyps']
         args2 = from_mask_to_args(bhyps, bhyps_mask, cutoffs[:1])
 
         calc1 = en2_kernel(env1[1][0], env2[1][0], *args2)
@@ -393,8 +394,9 @@ def test_force(kernel_name, diff_cutoff):
     if ('3' in kernel_name):
         _, __, en3_kernel, ___ = str_to_kernel_set('3'+kernel_type, hm)
 
-        thyps, thyps_mask = ParameterHelper.get_3b_hyps(
-                hyps, hm, True)
+        thyps_mask = Parameters.get_component_mask(hm, 'triplet', hyps=hyps)
+        thyps = bhyps_mask['hyps']
+
         args3 = from_mask_to_args(thyps, thyps_mask, cutoffs[:2])
 
         calc1 = en3_kernel(env1[1][0], env2[1][0], *args3)
@@ -419,6 +421,7 @@ def test_hyps_grad(kernel_name, diff_cutoff, constraint):
     d2 = 2
     tol = 1e-4
 
+    np.random.seed(10)
     cutoffs, hyps, hm = generate_diff_hm(kernel_name, diff_cutoff, constraint=constraint)
     args = from_mask_to_args(hyps, hm, cutoffs)
     kernel, kernel_grad, _, __ = str_to_kernel_set(kernel_name, hm)
@@ -429,28 +432,26 @@ def test_hyps_grad(kernel_name, diff_cutoff, constraint):
     env1 = env1[0][0]
     env2 = env2[0][0]
 
-    # compute analytical values
     k, grad = kernel_grad(env1, env2, d1, d2, *args)
 
     original = kernel(env1, env2, d1, d2, *args)
 
-    nhyps = len(hyps)-1
-    if ('map' in hm.keys()):
-        if (hm['map'][-1] != (len(hm['original'])-1)):
-            nhyps = len(hyps)
-        original_hyps = np.copy(hm['original'])
+    nhyps = len(hyps)
+    if hm['train_noise']:
+        nhyps -= 1
+    original_hyps = Parameters.get_hyps(hm, hyps=hyps)
 
     for i in range(nhyps):
         newhyps = np.copy(hyps)
         newhyps[i] += delta
         if ('map' in hm.keys()):
             newid = hm['map'][i]
-            hm['original'] = np.copy(original_hyps)
-            hm['original'][newid] += delta
+            hm['original_hyps'] = np.copy(original_hyps)
+            hm['original_hyps'][newid] += delta
         newargs = from_mask_to_args(newhyps, hm, cutoffs)
 
         hgrad = (kernel(env1, env2, d1, d2, *newargs) - original)/delta
-        if ('map' in hm.keys()):
+        if 'map' in hm:
             print(i, "hgrad", hgrad, grad[hm['map'][i]])
             assert(isclose(grad[hm['map'][i]], hgrad, rtol=tol))
         else:
