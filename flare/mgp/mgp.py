@@ -162,6 +162,8 @@ class MappedGaussianProcess:
                 if (GP is not None):
                     self.bounds_3[1] = hpm.get_cutoff(b_struc.coded_species,
                             self.cutoffs, self.hyps_mask)
+                    if self.map_force: # the force mapping use cos angle in the 3rd dim
+                        self.bounds_3[1][2] = 1
                 map_3 = Map3body(self.grid_num_3, self.bounds_3,
                                  b_struc, self.map_force, self.svd_rank_3,
                                  self.mean_only,
@@ -262,8 +264,8 @@ class MappedGaussianProcess:
         self.spcs = [spc_2, spc_3]
         self.spcs_set = [spc_2_set, spc_3]
 
-    def predict(self, atom_env: AtomicEnvironment, mean_only: bool = False)\
-            -> (float, 'ndarray', 'ndarray', float):
+    def predict(self, atom_env: AtomicEnvironment, mean_only: bool = False, 
+            rank_2: int = None, rank_3: int = None) -> (float, 'ndarray', 'ndarray', float):
         '''
         predict force, variance, stress and local energy for given
             atomic environment
@@ -285,8 +287,8 @@ class MappedGaussianProcess:
 
             f2, vir2, kern2, v2, e2 = \
                 self.predict_multicomponent(2, atom_env, self.kernel2b_info,
-                                            self.spcs_set[0],
-                                            self.maps_2, mean_only)
+                                            self.spcs_set[0], self.maps_2, 
+                                            mean_only, rank_2, rank_3)
 
         # ---------------- predict for three body -------------------
         f3 = vir3 = kern3 = v3 = e3 = 0
@@ -295,7 +297,7 @@ class MappedGaussianProcess:
             f3, vir3, kern3, v3, e3 = \
                 self.predict_multicomponent(3, atom_env, self.kernel3b_info,
                                             self.spcs[1], self.maps_3,
-                                            mean_only)
+                                            mean_only, rank_2, rank_3)
 
         force = f2 + f3
         variance = kern2 + kern3 - np.sum((v2 + v3)**2, axis=0)
@@ -305,7 +307,7 @@ class MappedGaussianProcess:
         return force, variance, virial, energy
 
     def predict_multicomponent(self, body, atom_env, kernel_info,
-                               spcs_list, mappings, mean_only):
+                               spcs_list, mappings, mean_only, rank_2, rank_3):
         '''
         Add up results from `predict_component` to get the total contribution
         of all species
@@ -317,11 +319,13 @@ class MappedGaussianProcess:
         args = from_mask_to_args(hyps, hyps_mask, cutoffs)
 
         kern = np.zeros(3)
-        for d in range(3):
-            kern[d] = \
-                kernel(atom_env, atom_env, d+1, d+1, *args)
+        if not mean_only:
+            for d in range(3):
+                kern[d] = \
+                    kernel(atom_env, atom_env, d+1, d+1, *args)
 
         if (body == 2):
+            rank = rank_2
             spcs, comp_r, comp_xyz = get_bonds(atom_env.ctype,
                     atom_env.etypes, atom_env.bond_array_2)
             set_spcs = []
@@ -329,6 +333,7 @@ class MappedGaussianProcess:
                 set_spcs += [set(spc)]
             spcs = set_spcs
         elif (body == 3):
+            rank = rank_3
             if self.map_force:
                 get_triplets_func = get_triplets
             else:
@@ -349,7 +354,7 @@ class MappedGaussianProcess:
             xyzs = np.array(comp_xyz[i])
             map_ind = spcs_list.index(spc)
             f, vir, v, e = self.predict_component(lengths, xyzs,
-                    mappings[map_ind],  mean_only)
+                    mappings[map_ind], mean_only, rank)
             f_spcs += f
             vir_spcs += vir
             v_spcs += v
@@ -357,7 +362,7 @@ class MappedGaussianProcess:
 
         return f_spcs, vir_spcs, kern, v_spcs, e_spcs
 
-    def predict_component(self, lengths, xyzs, mapping, mean_only):
+    def predict_component(self, lengths, xyzs, mapping, mean_only, rank):
         '''
         predict force and variance contribution of one component
         '''
@@ -418,9 +423,9 @@ class MappedGaussianProcess:
         # TODO: implement energy var
         v = np.zeros(3)
         if not mean_only:
-            v_0 = mapping.var(lengths)
+            v_0 = mapping.var(lengths, rank)
             v_d = v_0 @ xyzs
-            v = mapping.var.V @ v_d
+            v = mapping.var.V[:,:rank] @ v_d
         return f, vir, v, e
 
     def write_lmp_file(self, lammps_name):
