@@ -43,7 +43,6 @@ def test_force_en_multi_vs_simple(kernel_name, multi_cutoff):
     kernel0, kg0, en_kernel0, force_en_kernel0 = str_to_kernel_set(
         kernel_name, None)
     args0 = from_mask_to_args(hyps1, None, cutoffs)
-    print("args0", args0)
 
     # mc_sephyps
     # args1 and args 2 use 1 and 2 groups of hyper-parameters
@@ -51,12 +50,8 @@ def test_force_en_multi_vs_simple(kernel_name, multi_cutoff):
     # but same value as in args0
     kernel, kg, en_kernel, force_en_kernel = str_to_kernel_set(
         kernel_name, hm2)
-    print("hello", hm1)
-    print("hello2", hm2)
     args1 = from_mask_to_args(hyps1, hm1, cutoffs)
     args2 = from_mask_to_args(hyps2, hm2, cutoffs)
-    print("args1", args1)
-    print("args2", args2)
 
     funcs = [[kernel0, kg0, en_kernel0, force_en_kernel0],
              [kernel, kg, en_kernel, force_en_kernel]]
@@ -129,8 +124,6 @@ def test_check_sig_scale(kernel_name, diff_cutoff):
     scale = 2
 
     cutoffs, hyps0, hm = generate_diff_hm(kernel_name, diff_cutoff)
-    print(cutoffs)
-    print(hm)
 
     delta = 1e-8
     env1, env1_t = generate_mb_twin_envs(cutoffs, np.eye(3)*100, delta, d1, hm)
@@ -324,9 +317,9 @@ def test_force_en(kernel_name, diff_cutoff):
 
         kern_finite_diff += diff3b
 
-    print("\nforce_en", kernel_name, kern_finite_diff, kern_analytical)
 
     tol = 1e-3
+    print("\nforce_en", kernel_name, kern_finite_diff, kern_analytical)
     assert (isclose(-kern_finite_diff, kern_analytical, rtol=tol))
 
 

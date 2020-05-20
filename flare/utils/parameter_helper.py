@@ -724,7 +724,7 @@ class ParameterHelper():
                 self.logger.debug(f"{group_type} is not defined. Skipped")
                 return
 
-            if (group_type not in self.kernel_array):
+            if group_type not in self.kernel_array and group_type in ParameterHelper.all_kernel_types:
                 self.kernel_array.append(group_type)
 
             self.mask[group_type] = np.ones(
@@ -810,6 +810,7 @@ class ParameterHelper():
                     for idt in range(self.n[group_type]):
                         self.cutoff_list[group_type] += [
                             self.all_cutoff.get(aeg[idt], universal_cutoff)]
+                    self.cutoff_list[group_type] = np.array(self.cutoff_list[group_type], dtype=float)
 
                     max_cutoff = np.max(self.cutoff_list[group_type])
 
