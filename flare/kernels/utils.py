@@ -113,12 +113,11 @@ def str_to_mapped_kernel(name: str, hyps_mask: dict = None, energy=False):
 
     if hyps_mask is None:
         multihyps = False
+    # In the future, this should be ntwobody >1, use sephyps bond...
+    elif hyps_mask['nspecie'] == 1 and 'map' not in hyps_mask:
+        multihyps = False
     else:
-        # In the future, this should be nbond >1, use sephyps bond...
-        if hyps_mask['ntriplet'] > 1:
-            multihyps = True
-        else:
-            multihyps = False
+        multihyps = True
 
     # b2 = Two body in use, b3 = Three body in use
     b2 = False
@@ -157,60 +156,63 @@ def from_mask_to_args(hyps, hyps_mask: dict, cutoffs):
     """
 
     cutoffs_array = [0, 0, 0]
-    cutoffs_array[0] = cutoffs.get('bond', 0)
-    cutoffs_array[1] = cutoffs.get('triplet', 0)
-    cutoffs_array[2] = cutoffs.get('mb', 0)
+    cutoffs_array[0] = cutoffs.get('twobody', 0)
+    cutoffs_array[1] = cutoffs.get('threebody', 0)
+    cutoffs_array[2] = cutoffs.get('manybody', 0)
 
     # no special setting
+    print("lalala", hyps_mask)
     if (hyps_mask is None):
+        return (hyps, cutoffs_array)
+    if hyps_mask['nspecie'] == 1 and 'map' not in hyps_mask:
         return (hyps, cutoffs_array)
 
     # setting for mc_sephyps
     nspecie = hyps_mask['nspecie']
-    n2b = hyps_mask.get('nbond', 0)
+    n2b = hyps_mask.get('ntwobody', 0)
 
-    n3b = hyps_mask.get('ntriplet', 0)
-    nmb = hyps_mask.get('nmb', 0)
+    n3b = hyps_mask.get('nthreebody', 0)
+    nmanybody = hyps_mask.get('nmanybody', 0)
     ncut3b = hyps_mask.get('ncut3b', 0)
 
-    bond_mask = hyps_mask.get('bond_mask', None)
-    triplet_mask = hyps_mask.get('triplet_mask', None)
-    mb_mask = hyps_mask.get('mb_mask', None)
+    twobody_mask = hyps_mask.get('twobody_mask', None)
+    threebody_mask = hyps_mask.get('threebody_mask', None)
+    manybody_mask = hyps_mask.get('manybody_mask', None)
     cut3b_mask = hyps_mask.get('cut3b_mask', None)
 
     # TO DO , should instead use the non-sephyps kernel
     if (n2b == 1):
-        bond_mask = np.zeros(nspecie**2, dtype=int)
+        twobody_mask = np.zeros(nspecie**2, dtype=int)
     if (n3b == 1):
-        triplet_mask = np.zeros(nspecie**3, dtype=int)
-    if (nmb == 1):
-        mb_mask = np.zeros(nspecie**2, dtype=int)
+        threebody_mask = np.zeros(nspecie**3, dtype=int)
+    if (nmanybody == 1):
+        manybody_mask = np.zeros(nspecie**2, dtype=int)
 
-    cutoff_2b = cutoffs.get('bond', 0)
-    cutoff_3b = cutoffs.get('triplet', 0)
-    cutoff_mb = cutoffs.get('mb', 0)
+    cutoff_2b = cutoffs.get('twobody', 0)
+    cutoff_3b = cutoffs.get('threebody', 0)
+    cutoff_mb = cutoffs.get('manybody', 0)
 
     if 'bond_cutoff_list' in hyps_mask:
         cutoff_2b = hyps_mask['bond_cutoff_list']
     else:
         cutoff_2b = np.ones(nspecie**2, dtype=float)*cutoff_2b
 
-    if 'triplet_cutoff_list' in hyps_mask:
-        cutoff_3b = hyps_mask['triplet_cutoff_list']
-    if 'mb_cutoff_list' in hyps_mask:
-        cutoff_mb = hyps_mask['mb_cutoff_list']
+    if 'threebody_cutoff_list' in hyps_mask:
+        cutoff_3b = hyps_mask['threebody_cutoff_list']
+    if 'manybody_cutoff_list' in hyps_mask:
+        cutoff_mb = hyps_mask['manybody_cutoff_list']
 
-    (sig2, ls2) = Parameters.get_component_hyps(hyps_mask, 'bond', hyps=hyps)
-    (sig3, ls3) = Parameters.get_component_hyps(hyps_mask, 'triplet', hyps=hyps)
-    (sigm, lsm) = Parameters.get_component_hyps(hyps_mask, 'mb', hyps=hyps)
+    (sig2, ls2) = Parameters.get_component_hyps(hyps_mask, 'twobody', hyps=hyps)
+    (sig3, ls3) = Parameters.get_component_hyps(hyps_mask, 'threebody', hyps=hyps)
+    (sigm, lsm) = Parameters.get_component_hyps(hyps_mask, 'manybody', hyps=hyps)
 
     return (cutoff_2b, cutoff_3b, cutoff_mb,
             nspecie,
             np.array(hyps_mask['specie_mask']),
-            n2b, bond_mask,
-            n3b, triplet_mask,
+            n2b, twobody_mask,
+            n3b, threebody_mask,
             ncut3b, cut3b_mask,
-            nmb, mb_mask,
+            nmanybody, manybody_mask,
             sig2, ls2, sig3, ls3, sigm, lsm)
 
 

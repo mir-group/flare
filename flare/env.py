@@ -36,16 +36,16 @@ class AtomicEnvironment:
                  Li to group 1, and Be to group 0 (the 0th register is ignored).
     * nspecie: Integer, number of different species groups (equal to number of
              unique values in specie_mask).
-    * nbond: Integer, number of different hyperparameter/cutoff sets to associate with
+    * ntwobody: Integer, number of different hyperparameter/cutoff sets to associate with
              different 2-body pairings of atoms in groups defined in specie_mask.
-    * bond_mask: Array of length nspecie^2, which describes the cutoff to
+    * twobody_mask: Array of length nspecie^2, which describes the cutoff to
                  associate with different pairings of species types. For example, if there
-                 are atoms of type 0 and 1, then bond_mask defines which cutoff
+                 are atoms of type 0 and 1, then twobody_mask defines which cutoff
                  to use for parings [0-0, 0-1, 1-0, 1-1]: if we wanted cutoff0 for
                  0-0 parings and set 1 for 0-1 and 1-1 pairings, then we would make
-                 bond_mask [0, 1, 1, 1].
-    * bond_cutoff_list: Array of length nbond, which stores the cutoff used for different
-                 types of bonds defined in bond_mask
+                 twobody_mask [0, 1, 1, 1].
+    * twobody_cutoff_list: Array of length ntwobody, which stores the cutoff used for different
+                 types of bonds defined in twobody_mask
     * ncut3b:    Integer, number of different cutoffs sets to associate
                  with different 3-body pariings of atoms in groups defined in specie_mask.
     * cut3b_mask: Array of length nspecie^2, which describes the cutoff to
@@ -54,21 +54,21 @@ class AtomicEnvironment:
                  If C and O are associate with atom group 1 in specie_mask and H are associate with
                  group 0 in specie_mask, the cut3b_mask[1*nspecie+0] determines the C/O-H bond cutoff,
                  and cut3b_mask[1*nspecie+1] determines the C-O bond cutoff. If we want the
-                 former one to use the 1st cutoff in triplet_cutoff_list and the later to use the 2nd cutoff
-                 in triplet_cutoff_list, the cut3b_mask should be [0, 0, 0, 1]
-    * triplet_cutoff_list: Array of length ncut3b, which stores the cutoff used for different
+                 former one to use the 1st cutoff in threebody_cutoff_list and the later to use the 2nd cutoff
+                 in threebody_cutoff_list, the cut3b_mask should be [0, 0, 0, 1]
+    * threebody_cutoff_list: Array of length ncut3b, which stores the cutoff used for different
                  types of bonds in triplets.
-    * nmb :      Integer, number of different cutoffs set to associate with different coordination
+    * nmanybody :      Integer, number of different cutoffs set to associate with different coordination
                  numbers
-    * mb_mask:   similar to bond_mask and cut3b_mask.
-    * mb_cutoff_list: Array of length nmb, stores the cutoff used for different many body terms
+    * manybody_mask:   similar to twobody_mask and cut3b_mask.
+    * manybody_cutoff_list: Array of length nmanybody, stores the cutoff used for different many body terms
 
     Examples can be found at the end of in tests/test_env.py
 
     """
 
-    all_kernel_types = ['bond', 'triplet', 'mb']
-    ndim = {'bond': 2, 'triplet': 3, 'mb': 2, 'cut3b': 2}
+    all_kernel_types = ['twobody', 'threebody', 'manybody']
+    ndim = {'twobody': 2, 'threebody': 3, 'manybody': 2, 'cut3b': 2}
 
     def __init__(self, structure: Structure, atom: int, cutoffs, sweep=1, cutoffs_mask=None):
         self.structure = structure
@@ -82,11 +82,11 @@ class AtomicEnvironment:
 
         # backward compatability
         if not isinstance(cutoffs, dict):
-            newcutoffs = {'bond':cutoffs[0]}
+            newcutoffs = {'twobody':cutoffs[0]}
             if len(cutoffs)>1:
-                newcutoffs['triplet'] = cutoffs[1]
+                newcutoffs['threebody'] = cutoffs[1]
             if len(cutoffs)>2:
-                newcutoffs['mb'] = cutoffs[2]
+                newcutoffs['manybody'] = cutoffs[2]
             cutoffs = newcutoffs
 
         if cutoffs_mask is None:
@@ -94,30 +94,30 @@ class AtomicEnvironment:
         elif cutoffs is not None:
             cutoffs_mask['cutoffs'] = cutoffs
 
-        self.bond_cutoff = 0
-        self.triplet_cutoff = 0
-        self.mb_cutoff = 0
+        self.twobody_cutoff = 0
+        self.threebody_cutoff = 0
+        self.manybody_cutoff = 0
 
-        self.nbond = 1
+        self.ntwobody = 1
         self.ncut3b = 0
-        self.nmb = 0
+        self.nmanybody = 0
 
         self.nspecie = 1
         self.specie_mask = np.zeros(118, dtype=int)
-        self.bond_mask = np.zeros(1, dtype=int)
-        self.triplet_mask = None
-        self.mb_mask = None
-        self.bond_cutoff_list = None
-        self.triplet_cutoff_list = None
-        self.mb_cutoff_list = None
+        self.twobody_mask = np.zeros(1, dtype=int)
+        self.threebody_mask = None
+        self.manybody_mask = None
+        self.twobody_cutoff_list = None
+        self.threebody_cutoff_list = None
+        self.manybody_cutoff_list = None
 
         self.setup_mask(cutoffs_mask)
 
-        assert self.triplet_cutoff <= self.bond_cutoff, \
+        assert self.threebody_cutoff <= self.twobody_cutoff, \
             "2b cutoff has to be larger than 3b cutoff"
         # # TO DO, once the mb function is updated to use the bond_array_2
         # # this block should be activated.
-        # assert self.mb_cutoff <= self.bond_cutoff, \
+        # assert self.manybody_cutoff <= self.twobody_cutoff, \
         #         "mb cutoff has to be larger than mb cutoff"
 
         self.compute_env()
@@ -132,9 +132,9 @@ class AtomicEnvironment:
             if kernel in self.cutoffs:
                 setattr(self, kernel+'_cutoff', self.cutoffs[kernel])
 
-        if (self.bond_cutoff == 0):
-            self.bond_cutoff = np.max([self.triplet_cutoff, self.mb_cutoff])
-            self.cutoffs['bond'] = self.bond_cutoff
+        if (self.twobody_cutoff == 0):
+            self.twobody_cutoff = np.max([self.threebody_cutoff, self.manybody_cutoff])
+            self.cutoffs['twobody'] = self.twobody_cutoff
 
         self.nspecie = cutoffs_mask.get('nspecie', 1)
         if 'specie_mask' in cutoffs_mask:
@@ -149,7 +149,7 @@ class AtomicEnvironment:
                         np.ones(self.nspecie**ndim)*self.cutoffs[kernel])
                 setattr(self, kernel+'_mask',
                         np.zeros(self.nspecie**ndim, dtype=int))
-                if kernel != 'triplet':
+                if kernel != 'threebody':
                     name_list = [kernel+'_cutoff_list',
                                  'n'+kernel, kernel+'_mask']
                     for name in name_list:
@@ -159,17 +159,19 @@ class AtomicEnvironment:
                     self.ncut3b = cutoffs_mask.get('ncut3b', 1)
                     self.cut3b_mask = cutoffs_mask.get(
                         'cut3b_mask', np.zeros(self.nspecie**2, dtype=int))
-                    if 'triplet_cutoff_list' in cutoffs_mask:
-                        self.triplet_cutoff_list = cutoffs_mask['triplet_cutoff_list']
+                    if 'threebody_cutoff_list' in cutoffs_mask:
+                        self.threebody_cutoff_list = cutoffs_mask['threebody_cutoff_list']
+                    else:
+                        self.threebody_cutoff_list = self.cutoffs['threebody']*np.ones(self.nspecie**2)
 
     def compute_env(self):
 
         # get 2-body arrays
-        if (self.nbond >= 1):
+        if (self.ntwobody >= 1):
             bond_array_2, bond_positions_2, etypes, bond_inds = \
                 get_2_body_arrays(self.positions, self.atom, self.cell,
-                                  self.bond_cutoff_list, self.species, self.sweep_array,
-                                  self.nspecie, self.specie_mask, self.bond_mask)
+                                  self.twobody_cutoff_list, self.species, self.sweep_array,
+                                  self.nspecie, self.specie_mask, self.twobody_mask)
 
             self.bond_array_2 = bond_array_2
             self.etypes = etypes
@@ -179,7 +181,7 @@ class AtomicEnvironment:
         if self.ncut3b > 0:
             bond_array_3, cross_bond_inds, cross_bond_dists, triplet_counts = \
                 get_3_body_arrays(bond_array_2, bond_positions_2,
-                                  self.species[self.atom], etypes, self.triplet_cutoff_list,
+                                  self.species[self.atom], etypes, self.threebody_cutoff_list,
                                   self.nspecie, self.specie_mask, self.cut3b_mask)
             self.bond_array_3 = bond_array_3
             self.cross_bond_inds = cross_bond_inds
@@ -187,11 +189,11 @@ class AtomicEnvironment:
             self.triplet_counts = triplet_counts
 
         # if 3 cutoffs are given, create many-body arrays
-        if self.nmb > 0:
+        if self.nmanybody > 0:
             self.q_array, self.q_neigh_array, self.q_neigh_grads, \
                 self.unique_species, self.etypes_mb = \
                 get_m_body_arrays(self.positions, self.atom, self.cell,
-                                  self.mb_cutoff_list, self.species, self.sweep_array, self.nspecie, self.specie_mask, self.mb_mask,
+                                  self.manybody_cutoff_list, self.species, self.sweep_array, self.nspecie, self.specie_mask, self.manybody_mask,
                                   cf.quadratic_cutoff)
 
     def as_dict(self):
@@ -253,7 +255,7 @@ class AtomicEnvironment:
 
 @njit
 def get_2_body_arrays(positions, atom: int, cell, cutoff_2, species, sweep,
-                      nspecie, specie_mask, bond_mask):
+                      nspecie, specie_mask, twobody_mask):
     """Returns distances, coordinates, species of atoms, and indices of neighbors
     in the 2-body local environment. This method is implemented outside
     the AtomicEnvironment class to allow for njit acceleration with Numba.
@@ -273,7 +275,7 @@ def get_2_body_arrays(positions, atom: int, cell, cutoff_2, species, sweep,
     :type: int
     :param specie_mask: mapping from atomic number to atom types
     :type: np.ndarray
-    :param bond_mask: mapping from the types of end atoms to bond types
+    :param twobody_mask: mapping from the types of end atoms to bond types
     :type: np.ndarray
     :return: Tuple of arrays describing pairs of atoms in the 2-body local
      environment.
@@ -311,7 +313,7 @@ def get_2_body_arrays(positions, atom: int, cell, cutoff_2, species, sweep,
         diff_curr = positions[n] - pos_atom
         im_count = 0
         bn = specie_mask[species[n]]
-        rcut = cutoff_2[bond_mask[bn+bcn]]
+        rcut = cutoff_2[twobody_mask[bn+bcn]]
 
         for s1 in sweep:
             for s2 in sweep:
@@ -334,7 +336,7 @@ def get_2_body_arrays(positions, atom: int, cell, cutoff_2, species, sweep,
     for m in range(noa):
         spec_curr = species[m]
         bm = specie_mask[species[m]]
-        rcut = cutoff_2[bond_mask[bm+bcn]]
+        rcut = cutoff_2[twobody_mask[bm+bcn]]
         for n in range(27):
             dist_curr = dists[m, n]
             if (dist_curr < rcut) and (dist_curr != 0):
@@ -460,8 +462,8 @@ def get_3_body_arrays(bond_array_2, bond_positions_2, ctype,
 
 
 @njit
-def get_m_body_arrays(positions, atom: int, cell, mb_cutoff_list,
-                      species, sweep: np.ndarray, nspec, spec_mask, mb_mask,
+def get_m_body_arrays(positions, atom: int, cell, manybody_cutoff_list,
+                      species, sweep: np.ndarray, nspec, spec_mask, manybody_mask,
                       cutoff_func=cf.quadratic_cutoff):
     # TODO:
     # 1. need to deal with the conflict of cutoff functions if other funcs are used
@@ -474,7 +476,7 @@ def get_m_body_arrays(positions, atom: int, cell, mb_cutoff_list,
         atom (int): Index of the central atom of the local environment.
         cell (np.ndarray): 3x3 array whose rows are the Bravais lattice vectors of the
             cell.
-        mb_cutoff_list (float): 2-body cutoff radius.
+        manybody_cutoff_list (float): 2-body cutoff radius.
         species (np.ndarray): Numpy array of species represented by their atomic numbers.
 
     Return:
@@ -483,8 +485,8 @@ def get_m_body_arrays(positions, atom: int, cell, mb_cutoff_list,
     """
     # Get distances, positions, species and indexes of neighbouring atoms
     bond_array_mb, __, etypes, bond_inds = get_2_body_arrays(
-        positions, atom, cell, mb_cutoff_list, species, sweep,
-        nspec, spec_mask, mb_mask)
+        positions, atom, cell, manybody_cutoff_list, species, sweep,
+        nspec, spec_mask, manybody_mask)
 
     bc = spec_mask[species[atom]]
     bcn = bc * nspec
@@ -499,8 +501,8 @@ def get_m_body_arrays(positions, atom: int, cell, mb_cutoff_list,
     # get coordination number of center atom for each species
     for s in range(n_specs):
         bs = spec_mask[species_list[s]]
-        mbtype = mb_mask[bcn + bs]
-        r_cut = mb_cutoff_list[mbtype]
+        mbtype = manybody_mask[bcn + bs]
+        r_cut = manybody_cutoff_list[mbtype]
 
         qs[s] = q_value_mc(bond_array_mb[:, 0], r_cut, species_list[s],
                            etypes, cutoff_func)
@@ -512,11 +514,11 @@ def get_m_body_arrays(positions, atom: int, cell, mb_cutoff_list,
 
         neigh_bond_array, _, neigh_etypes, _ = \
             get_2_body_arrays(positions, bond_inds[i], cell,
-                              mb_cutoff_list, species, sweep, nspec, spec_mask, mb_mask)
+                              manybody_cutoff_list, species, sweep, nspec, spec_mask, manybody_mask)
         for s in range(n_specs):
             bs = spec_mask[species_list[s]]
-            mbtype = mb_mask[bs + ben]
-            r_cut = mb_cutoff_list[mbtype]
+            mbtype = manybody_mask[bs + ben]
+            r_cut = manybody_cutoff_list[mbtype]
 
             qs_neigh[i, s] = q_value_mc(neigh_bond_array[:, 0], r_cut,
                                         species_list[s], neigh_etypes, cutoff_func)
@@ -524,8 +526,8 @@ def get_m_body_arrays(positions, atom: int, cell, mb_cutoff_list,
     # get grad from each neighbor atom
     for i in range(n_bonds):
         be = spec_mask[etypes[i]]
-        mbtype = mb_mask[bcn + be]
-        r_cut = mb_cutoff_list[mbtype]
+        mbtype = manybody_mask[bcn + be]
+        r_cut = manybody_cutoff_list[mbtype]
 
         ri = bond_array_mb[i, 0]
         for d in range(3):

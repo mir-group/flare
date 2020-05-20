@@ -30,8 +30,6 @@ def all_gps() -> GaussianProcess:
     for multihyps in multihyps_list:
         hyps, hm, cutoffs = generate_hm(1, 1, multihyps=multihyps)
         hl = hm['hyp_labels']
-        if (multihyps is False):
-            hm = None
 
         # test update_db
         gpname = '2+3+mb_mc'
@@ -41,7 +39,7 @@ def all_gps() -> GaussianProcess:
                             hyps=hyps,
                             hyp_labels=hl,
                             cutoffs=cutoffs,
-                            multihyps=multihyps, hyps_mask=hm,
+                            param_dict=hm,
                             parallel=False, n_cpus=1)
 
         test_structure, forces = \
@@ -111,13 +109,14 @@ class TestTraining():
 
         # train gp
         test_gp.hyps = np.ones(len(test_gp.hyps))
-        hyp = list(test_gp.hyps)
+        hyps = tuple(test_gp.hyps)
+
         test_gp.train()
 
-        hyp_post = list(test_gp.hyps)
+        hyp_post = tuple(test_gp.hyps)
 
         # check if hyperparams have been updated
-        assert (hyp != hyp_post)
+        assert (hyps != hyp_post)
 
     def test_train_failure(self, all_gps, params, mocker):
         """
@@ -170,9 +169,13 @@ class TestConstraint():
 
         hyps, hm, cutoffs = generate_hm(1, 1, constraint=True, multihyps=True)
 
-        test_gp.hyps_mask = hm
+        test_gp.param_dict = hm
         test_gp.hyp_labels = hm['hyp_labels']
         test_gp.hyps = hyps
+        test_gp.update_kernel(hm['kernel_name'], hm)
+        test_gp.set_L_alpha()
+
+        hyp = list(test_gp.hyps)
 
         # Check that the hyperparameters were updated
         test_gp.maxiter = 1
@@ -241,7 +244,9 @@ class TestIO():
             assert 'Kernel: two_three_many_body_mc' in the_str
         else:
             assert 'Kernel: two_plus_three_plus_many_body_mc' in the_str
-        assert 'Cutoffs: [0.8 0.8 0.8]' in the_str
+        assert 'cutoff_twobody: 0.8' in the_str
+        assert 'cutoff_threebody: 0.8' in the_str
+        assert 'cutoff_manybody: 0.8' in the_str
         assert 'Model Likelihood: ' in the_str
         if not multihyps:
             assert 'Length: ' in the_str
@@ -308,8 +313,6 @@ def dumpcompare(obj1, obj2):
         for k1, k2 in zip(sorted(obj1.keys()), sorted(obj2.keys())):
 
             assert k1 == k2, f"key {k1} is not the same as {k2}"
-
-            print(k1)
 
             if (k1 != "name"):
                 if (obj1[k1] is None):

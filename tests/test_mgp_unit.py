@@ -70,8 +70,8 @@ def test_init(bodies, multihyps, map_force, all_mgp, all_gp):
     grid_num_2 = 64
     grid_num_3 = 25
     lower_cut = 0.01
-    two_cut = gp_model.cutoffs['bond']
-    three_cut = gp_model.cutoffs['triplet']
+    two_cut = gp_model.cutoffs['twobody']
+    three_cut = gp_model.cutoffs['threebody']
     if map_force:
         lower_cut_3 = -1
         three_cut_3 = 1

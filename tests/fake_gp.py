@@ -28,21 +28,21 @@ def get_random_structure(cell, unique_species, noa):
     return test_structure, forces
 
 
-def generate_hm(nbond, ntriplet, nmb=1, constraint=False, multihyps=True):
+def generate_hm(ntwobody, nthreebody, nmanybody=1, constraint=False, multihyps=True):
 
     if (multihyps is False):
         hyps_label = []
         kernels = []
         parameters = {}
-        if (nbond > 0):
-            kernels += ['bond']
-            parameters['cutoff_bond'] = 0.8
-        if (ntriplet > 0):
-            kernels += ['triplet']
-            parameters['cutoff_triplet'] = 0.8
-        if (nmb > 0):
-            kernels += ['mb']
-            parameters['cutoff_mb'] = 0.8
+        if (ntwobody > 0):
+            kernels += ['twobody']
+            parameters['cutoff_twobody'] = 0.8
+        if (nthreebody > 0):
+            kernels += ['threebody']
+            parameters['cutoff_threebody'] = 0.8
+        if (nmanybody > 0):
+            kernels += ['manybody']
+            parameters['cutoff_manybody'] = 0.8
         pm = ParameterHelper(kernels=kernels, random=True,
                 parameters=parameters)
         hm = pm.as_dict()
@@ -50,29 +50,25 @@ def generate_hm(nbond, ntriplet, nmb=1, constraint=False, multihyps=True):
         cut = hm['cutoffs']
         return hyps, hm, cut
 
-    pm = ParameterHelper(species=['H', 'He'], parameters={'cutoff_bond': 0.8,
-        'cutoff_triplet': 0.8, 'cutoff_mb': 0.8, 'noise':0.05})
-    pm.define_group('bond', 'b1', ['*', '*'], parameters=random(2))
-    pm.define_group('triplet', 't1', ['*', '*', '*'], parameters=random(2))
-    if (nmb>0):
-        pm.define_group('mb', 'mb1', ['*', '*'], parameters=random(2))
-    if (nbond > 1):
-        pm.define_group('bond', 'b2', ['H', 'H'], parameters=random(2))
-    if (ntriplet > 1):
-        pm.define_group('triplet', 't2', ['H', 'H', 'H'], parameters=random(2))
-
-    hm = pm.as_dict()
-    hyps = hm['hyps']
-    cut = hm['cutoffs']
+    pm = ParameterHelper(species=['H', 'He'], parameters={'cutoff_twobody': 0.8,
+        'cutoff_threebody': 0.8, 'cutoff_manybody': 0.8, 'noise':0.05})
+    pm.define_group('twobody', 'b1', ['*', '*'], parameters=random(2))
+    pm.define_group('threebody', 't1', ['*', '*', '*'], parameters=random(2))
+    if (nmanybody > 0):
+        pm.define_group('manybody', 'manybody1', ['*', '*'], parameters=random(2))
+    if (ntwobody > 1):
+        pm.define_group('twobody', 'b2', ['H', 'H'], parameters=random(2))
+    if (nthreebody > 1):
+        pm.define_group('threebody', 't2', ['H', 'H', 'H'], parameters=random(2))
 
     if (constraint is False):
-        print(hyps)
-        print(hm)
-        print(cut)
+        hm = pm.as_dict()
+        hyps = hm['hyps']
+        cut = hm['cutoffs']
         return hyps, hm, cut
 
-    pm.set_parameters('b1', parameters=random(2), opt=[True, False])
-    pm.set_parameters('t1', parameters=random(2), opt=[False, True])
+    pm.set_constraints('b1', opt=[True, False])
+    pm.set_constraints('t1', opt=[False, True])
     hm = pm.as_dict()
     hyps = hm['hyps']
     cut = hm['cutoffs']
@@ -86,18 +82,18 @@ def get_gp(bodies, kernel_type='mc', multihyps=True, cellabc=[1, 1, 1.5]) -> Gau
     # params
     cell = np.diag(cellabc)
     unique_species = [2, 1]
-    cutoffs = {'bond':0.8, 'triplet':0.8}
+    cutoffs = {'twobody':0.8, 'threebody':0.8}
     noa = 5
 
-    nbond = 0
-    ntriplet = 0
+    ntwobody = 0
+    nthreebody = 0
     prefix = bodies
     if ('2' in bodies or 'two' in bodies):
-        nbond = 1
+        ntwobody = 1
     if ('3' in bodies or 'three' in bodies):
-        ntriplet = 1
+        nthreebody = 1
 
-    hyps, hm, _ = generate_hm(nbond, ntriplet, nmb=0, multihyps=multihyps)
+    hyps, hm, _ = generate_hm(ntwobody, nthreebody, nmanybody=0, multihyps=multihyps)
 
     # create test structure
     test_structure, forces = get_random_structure(cell, unique_species,
@@ -131,18 +127,18 @@ def get_force_gp(bodies, kernel_type='mc', multihyps=True, cellabc=[1,1,1.5]) ->
     # params
     cell = np.diag(cellabc)
     unique_species = [2, 1]
-    cutoffs = {'bond':0.8, 'triplet':0.8}
+    cutoffs = {'twobody':0.8, 'threebody':0.8}
     noa = 5
 
-    nbond = 0
-    ntriplet = 0
+    ntwobody = 0
+    nthreebody = 0
     prefix = bodies
     if ('2' in bodies or 'two' in bodies):
-        nbond = 1
+        ntwobody = 1
     if ('3' in bodies or 'three' in bodies):
-        ntriplet = 1
+        nthreebody = 1
 
-    hyps, hm, _ = generate_hm(nbond, ntriplet, multihyps=multihyps)
+    hyps, hm, _ = generate_hm(ntwobody, nthreebody, multihyps=multihyps)
 
     # create test structure
     test_structure, forces = get_random_structure(cell, unique_species,
@@ -171,7 +167,7 @@ def get_force_gp(bodies, kernel_type='mc', multihyps=True, cellabc=[1,1,1.5]) ->
 
 def get_params():
     parameters = {'unique_species': [2, 1],
-                  'cutoffs': {'bond': 0.8},
+                  'cutoffs': {'twobody': 0.8},
                   'noa': 5,
                   'cell': np.eye(3),
                   'db_pts': 30}
@@ -183,7 +179,7 @@ def get_tstp(hm=None) -> AtomicEnvironment:
     # params
     cell = np.eye(3)
     unique_species = [2, 1]
-    cutoffs = {'bond':0.8, 'triplet': 0.8, 'mb': 0.8}
+    cutoffs = {'twobody':0.8, 'threebody': 0.8, 'manybody': 0.8}
     noa = 10
 
     test_structure_2, _ = get_random_structure(cell, unique_species,
@@ -201,9 +197,9 @@ def generate_mb_envs(cutoffs, cell, delt, d1, mask=None, kern_type='mc'):
                            [0.0, 0., 0.3],
                            [1., 1., 0.]])
     positions0[1:] += 0.1*np.random.random([4, 3])
-    triplet = [1, 1, 2, 1]
-    np.random.shuffle(triplet)
-    species_1 = np.hstack([triplet, randint(1, 2)])
+    threebody = [1, 1, 2, 1]
+    np.random.shuffle(threebody)
+    species_1 = np.hstack([threebody, randint(1, 2)])
     if kern_type == 'sc':
         species_1 = np.ones(species_1.shape)
     return generate_mb_envs_pos(positions0, species_1, cutoffs, cell, delt, d1, mask)

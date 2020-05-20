@@ -198,7 +198,7 @@ class GaussianProcess:
 
 
     def update_kernel(self, kernel_name, param_dict):
-        kernel, grad, ek, efk = str_to_kernel_set(kernel_name, hpys_mask)
+        kernel, grad, ek, efk = str_to_kernel_set(kernel_name, param_dict)
         self.kernel = kernel
         self.kernel_grad = grad
         self.energy_force_kernel = efk
@@ -413,7 +413,7 @@ class GaussianProcess:
         k_v = \
             get_kernel_vector(self.name, self.kernel, self.energy_force_kernel,
                               x_t, d, self.hyps, cutoffs=self.cutoffs,
-                              param_dict=self.param_dict, n_cpus=n_cpus,
+                              hyps_mask=self.param_dict, n_cpus=n_cpus,
                               n_sample=self.n_sample)
 
         # Guarantee that alpha is up to date with training set
@@ -424,7 +424,7 @@ class GaussianProcess:
 
         # get predictive variance without cholesky (possibly faster)
         # pass args to kernel based on if mult. hyperparameters in use
-        args = from_mask_to_args(self.hyps, self.param_dict)
+        args = from_mask_to_args(self.hyps, self.param_dict, self.cutoffs)
         self_kern = self.kernel(x_t, x_t, d, d, *args)
         pred_var = self_kern - np.matmul(np.matmul(k_v, self.ky_mat_inv), k_v)
 
@@ -451,7 +451,7 @@ class GaussianProcess:
         k_v = en_kern_vec(self.name, self.energy_force_kernel,
                           self.energy_kernel,
                           x_t, self.hyps, cutoffs=self.cutoffs,
-                          param_dict=self.param_dict, n_cpus=n_cpus,
+                          hyps_mask=self.param_dict, n_cpus=n_cpus,
                           n_sample=self.n_sample)
 
         pred_mean = np.matmul(k_v, self.alpha)
@@ -481,7 +481,7 @@ class GaussianProcess:
         k_v = en_kern_vec(self.name, self.energy_force_kernel,
                           self.energy_kernel,
                           x_t, self.hyps, cutoffs=self.cutoffs,
-                          param_dict=self.param_dict, n_cpus=n_cpus,
+                          hyps_mask=self.param_dict, n_cpus=n_cpus,
                           n_sample=self.n_sample)
 
         # get predictive mean
@@ -514,7 +514,7 @@ class GaussianProcess:
             get_Ky_mat(self.hyps, self.name, self.kernel,
                        self.energy_kernel, self.energy_force_kernel,
                        self.energy_noise,
-                       cutoffs=self.cutoffs, param_dict=self.param_dict,
+                       cutoffs=self.cutoffs, hyps_mask=self.param_dict,
                        n_cpus=self.n_cpus, n_sample=self.n_sample)
 
         l_mat = np.linalg.cholesky(ky_mat)
@@ -551,7 +551,7 @@ class GaussianProcess:
                                    self.name, self.kernel, self.energy_kernel,
                                    self.energy_force_kernel, self.energy_noise,
                                    cutoffs=self.cutoffs,
-                                   param_dict=self.param_dict,
+                                   hyps_mask=self.param_dict,
                                    n_cpus=self.n_cpus,
                                    n_sample=self.n_sample)
 
@@ -572,7 +572,8 @@ class GaussianProcess:
         thestr = "GaussianProcess Object\n"
         thestr += f'Kernel: {self.kernel_name}\n'
         thestr += f"Training points: {len(self.training_data)}\n"
-        thestr += f'Cutoffs: {self.cutoffs}\n'
+        for k in self.cutoffs:
+            thestr += f'cutoff_{k}: {self.cutoffs[k]}\n'
         thestr += f'Model Likelihood: {self.likelihood}\n'
 
         thestr += 'Hyperparameters: \n'

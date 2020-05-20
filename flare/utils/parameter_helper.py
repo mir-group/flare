@@ -24,39 +24,39 @@ class ParameterHelper():
     Examples:
 
         pm = ParameterHelper(species=['C', 'H', 'O'],
-                                   kernels={'bond':[['*', '*'], ['O','O']],
-                                   'triplet':[['*', '*', '*'],
+                                   kernels={'twobody':[['*', '*'], ['O','O']],
+                                   'threebody':[['*', '*', '*'],
                                        ['O','O', 'O']]},
-                                   parameters={'bond0':[1, 0.5, 1], 'bond1':[2, 0.2, 2],
-                                         'triplet0':[1, 0.5], 'triplet1':[2, 0.2],
-                                         'cutoff_triplet':1},
-                                   constraints={'bond0':[False, True]})
+                                   parameters={'twobody0':[1, 0.5, 1], 'twobody1':[2, 0.2, 2],
+                                         'threebody0':[1, 0.5], 'threebody1':[2, 0.2],
+                                         'cutoff_threebody':1},
+                                   constraints={'twobody0':[False, True]})
         hm = pm.hyps_mask
         hyps = hm['hyps']
         cutoffs = hm['cutoffs']
         kernel_name = hm['kernel_name']
 
     In this example, four atomic species are involved. There are many kinds
-    of bonds and triplets. But we only want to use eight different sigmas
+    of twobodys and threebodys. But we only want to use eight different sigmas
     and lengthscales.
 
-    In order to do so, we first define all the bonds to be group "bond0", by
-    listing "*-*" as the first element in the bond argument. The second
-    element O-O is then defined to be group "bond1". Note that the order
+    In order to do so, we first define all the twobodys to be group "twobody0", by
+    listing "*-*" as the first element in the twobody argument. The second
+    element O-O is then defined to be group "twobody1". Note that the order
     matters here. The later element overrides the ealier one. If
-    bonds=[['O', 'O'], ['*', '*']], then all bonds belong to group "bond1".
+    twobodys=[['O', 'O'], ['*', '*']], then all twobodys belong to group "twobody1".
 
-    Similarly, O-O-O is defined as triplet1, while all remaining ones
-    are left as triplet0.
+    Similarly, O-O-O is defined as threebody1, while all remaining ones
+    are left as threebody0.
 
     The hyperpameters for each group is listed in the order of
     [sig, ls, cutoff] in the parameters argument.  So in this example,
     O-O interaction will use [2, 0.2, 2] as its sigma, length scale, and
     cutoff.
 
-    For triplet, the parameter arrays only come with two elements. So there
-    is no cutoff associated with triplet0 or triplet1; instead, a universal
-    cutoff is used, which is defined as 'cutoff_triplet'.
+    For threebody, the parameter arrays only come with two elements. So there
+    is no cutoff associated with threebody0 or threebody1; instead, a universal
+    cutoff is used, which is defined as 'cutoff_threebody'.
 
     The constraints argument define which hyper-parameters will be optimized.
     True for optimized and false for being fixed.
@@ -66,10 +66,10 @@ class ParameterHelper():
     """
 
     # name of the kernels
-    all_kernel_types = ['bond', 'triplet', 'mb']
+    all_kernel_types = ['twobody', 'threebody', 'manybody']
     additional_groups = ['cut3b']
     # dimension of the kernels
-    ndim = {'bond': 2, 'triplet': 3, 'mb': 2, 'cut3b': 2}
+    ndim = {'twobody': 2, 'threebody': 3, 'manybody': 2, 'cut3b': 2}
 
     def __init__(self, hyps_mask=None, species=None, kernels={},
                  cutoff_groups={}, parameters=None,
@@ -87,12 +87,12 @@ class ParameterHelper():
         :type parameters: dict
         :param constraints: whether the hyperparmeters are optimized (True) or not (False)
         :constraints: dict
-        :param random: if True, define each single bond type into a separate group and randomized initial parameters
+        :param random: if True, define each single twobody type into a separate group and randomized initial parameters
         :type random: bool
         :param verbose: level to print with "INFO", "DEBUG"
         :type verbose: str
 
-        See format of species, bonds, triplets, cut3b, mb in list_groups() function.
+        See format of species, twobodys, threebodys, cut3b, manybody in list_groups() function.
 
         See format of parameters and constraints in list_parameters() function.
 
@@ -109,13 +109,13 @@ class ParameterHelper():
         self.all_group_types = ParameterHelper.all_kernel_types + \
             ParameterHelper.additional_groups
 
-        # number of groups {'bond': 1, 'triplet': 2}
+        # number of groups {'twobody': 1, 'threebody': 2}
         self.n = {}
-        # definition of groups {'specie': [['C', 'H'], ['O']], 'bond': [[['*', '*']], [[ele1, ele2]]]}
+        # definition of groups {'specie': [['C', 'H'], ['O']], 'twobody': [[['*', '*']], [[ele1, ele2]]]}
         self.groups = {}
-        # joint values of the groups {'specie': ['C', 'H', 'O'], 'bond': [['*', '*'], [ele1, ele2]]}
+        # joint values of the groups {'specie': ['C', 'H', 'O'], 'twobody': [['*', '*'], [ele1, ele2]]}
         self.all_members = {}
-        # names of each group {'specie': ['group1', 'group2'], 'bond': ['bond0', 'bond1']}
+        # names of each group {'specie': ['group1', 'group2'], 'twobody': ['twobody0', 'twobody1']}
         self.all_group_names = {}
         # joint list of all the keys in self.all_group_names
         self.all_names = []
@@ -251,7 +251,7 @@ class ParameterHelper():
 
         The name of parameters can be the group name previously defined in
         define_group or list_groups function. Aside from the group name,
-        "noise", "cutoff_bond", "cutoff_triplet", and "cutoff_mb" are reserved for
+        "noise", "cutoff_twobody", "cutoff_threebody", and "cutoff_mb" are reserved for
         noise parmater and universal cutoffs.
 
         For non-reserved keys, the value should be a list of 2-3 elements,
@@ -274,7 +274,7 @@ class ParameterHelper():
 
         Args:
 
-        group_type (str): "specie", "bond", "triplet", "cut3b", "mb"
+        group_type (str): "specie", "twobody", "threebody", "cut3b", "manybody"
         definition_list (list, dict): list of elements
 
         This function runs define_group in batch. Please first read
@@ -286,8 +286,8 @@ class ParameterHelper():
         | for all terms in the list:
         |     define_group(group_type, group_type+'n', the nth term in the list)
 
-        So the first bond defined will be group bond0, second one will be
-        group bond1. For specie, it will define all the listed elements as
+        So the first twobody defined will be group twobody0, second one will be
+        group twobody1. For specie, it will define all the listed elements as
         groups with only one element with their original name.
 
         If the definition_list is a dictionary, it is equivalent to
@@ -337,12 +337,12 @@ class ParameterHelper():
                                           definition_list[name])
 
     def all_separate_groups(self, group_type):
-        """Separate all possible types of bonds, triplets, mb.
+        """Separate all possible types of twobodys, threebodys, manybody.
         One type per group.
 
         Args:
 
-        group_type (str): "specie", "bond", "triplet", "cut3b", "mb"
+        group_type (str): "specie", "twobody", "threebody", "cut3b", "manybody"
 
         """
         nspec = len(self.all_group_names['specie'])
@@ -378,14 +378,14 @@ class ParameterHelper():
             logger.warning(f"{group_type} will be ignored")
 
     def fill_in_parameters(self, group_type, random=False, ones=False, universal=False):
-        """Separate all possible types of bonds, triplets, mb.
+        """Separate all possible types of twobodys, threebodys, manybody.
         One type per group. And fill in either universal ls and sigma from
         pre-defined parameters from set_parameters("sigma", ..) and set_parameters("ls", ..)
         or random parameters if random is True.
 
         Args:
 
-        group_type (str): "specie", "bond", "triplet", "cut3b", "mb"
+        group_type (str): "specie", "twobody", "threebody", "cut3b", "manybody"
         definition_list (list, dict): list of elements
 
         """
@@ -405,35 +405,35 @@ class ParameterHelper():
                                                 self.universal['lengthscale']])
 
     def define_group(self, group_type, name, element_list, parameters=None, atomic_str=False):
-        """Define specie/bond/triplet/3b cutoff/manybody group
+        """Define specie/twobody/threebody/3b cutoff/manybody group
 
         Args:
-        group_type (str): "specie", "bond", "triplet", "cut3b", "mb"
+        group_type (str): "specie", "twobody", "threebody", "cut3b", "manybody"
         name (str): the name use for indexing. can be anything but "*"
         element_list (list): list of elements
         parameters (list): corresponding parameters for this group
         atomic_str (bool): whether the element in element_list is
                            group name or periodic table element name.
 
-        The function is helped to define different groups for specie/bond/triplet
+        The function is helped to define different groups for specie/twobody/threebody
         /3b cutoff/manybody terms. This function can be used for many times.
         The later one always overrides the former one.
 
         The name of the group has to be unique string (but not "*"), that
-        define a group of species or bonds, etc. If the same name is used,
+        define a group of species or twobodys, etc. If the same name is used,
         in two function calls, the definitions of the group will be merged.
         Both calls will be effective.
 
         element_list has to be a list of atomic elements, or a list of
         specie group names (which should be defined in previous calls), or "*".
         "*" will loop the function over all previously defined species.
-        It has to be two elements for bond/3b cutoff/manybody term, or
-        three elements for triplet. For specie group definition, it can be
+        It has to be two elements for twobody/3b cutoff/manybody term, or
+        three elements for threebody. For specie group definition, it can be
         as many elements as you want.
 
         If multiple define_group calls have conflict with element, the later one
-        has higher priority. For example, bond 1-2 are defined as group1 in
-        the first call, and as group2 in the second call. In the end, the bond
+        has higher priority. For example, twobody 1-2 are defined as group1 in
+        the first call, and as group2 in the second call. In the end, the twobody
         will be left as group2.
 
         Example 1:
@@ -445,12 +445,12 @@ class ParameterHelper():
 
         Example 2.1:
 
-            define_group('bond', 'in-water', ['H', 'H'], atomic_str=True)
-            define_group('bond', 'in-water', ['H', 'O'], atomic_str=True)
-            define_group('bond', 'in-water', ['O', 'O'], atomic_str=True)
+            define_group('twobody', 'in-water', ['H', 'H'], atomic_str=True)
+            define_group('twobody', 'in-water', ['H', 'O'], atomic_str=True)
+            define_group('twobody', 'in-water', ['O', 'O'], atomic_str=True)
 
         Example 2.2:
-            define_group('bond', 'in-water', ['water', 'water'])
+            define_group('twobody', 'in-water', ['water', 'water'])
 
         The 2.1 is equivalent to 2.2.
 
@@ -458,28 +458,28 @@ class ParameterHelper():
 
             define_group('specie', '1', ['H'])
             define_group('specie', '2', ['O'])
-            define_group('bond', 'Hgroup', ['H', 'H'], atomic_str=True)
-            define_group('bond', 'Hgroup', ['H', 'O'], atomic_str=True)
-            define_group('bond', 'OO', ['O', 'O'], atomic_str=True)
+            define_group('twobody', 'Hgroup', ['H', 'H'], atomic_str=True)
+            define_group('twobody', 'Hgroup', ['H', 'O'], atomic_str=True)
+            define_group('twobody', 'OO', ['O', 'O'], atomic_str=True)
 
         Example 3.2:
 
             define_group('specie', '1', ['H'])
             define_group('specie', '2', ['O'])
-            define_group('bond', 'Hgroup', ['H', '*'], atomic_str=True)
-            define_group('bond', 'OO', ['O', 'O'], atomic_str=True)
+            define_group('twobody', 'Hgroup', ['H', '*'], atomic_str=True)
+            define_group('twobody', 'OO', ['O', 'O'], atomic_str=True)
 
         Example 3.3:
 
             list_groups('specie', ['H', 'O'])
-            define_group('bond', 'Hgroup', ['H', '*'])
-            define_group('bond', 'OO', ['O', 'O'])
+            define_group('twobody', 'Hgroup', ['H', '*'])
+            define_group('twobody', 'OO', ['O', 'O'])
 
         Example 3.4:
 
             list_groups('specie', ['H', 'O'])
-            define_group('bond', 'OO', ['*', '*'])
-            define_group('bond', 'Hgroup', ['H', '*'])
+            define_group('twobody', 'OO', ['*', '*'])
+            define_group('twobody', 'Hgroup', ['H', '*'])
 
         3.1 to 3.4 are all equivalent.
         """
@@ -612,7 +612,7 @@ class ParameterHelper():
 
         The name of parameters can be the group name previously defined in
         define_group or list_groups function. Aside from the group name,
-        "noise", "cutoff_bond", "cutoff_triplet", and "cutoff_mb" are reserved for
+        "noise", "cutoff_twobody", "cutoff_threebody", and "cutoff_manybody" are reserved for
         noise parmater and universal cutoffs.
 
         The parameter should be a list of 2-3 elements, for sigma,
@@ -671,7 +671,7 @@ class ParameterHelper():
 
         The name of parameters can be the group name previously defined in
         define_group or list_groups function. Aside from the group name,
-        "noise", "cutoff_bond", "cutoff_triplet", and "cutoffmb" are reserved for
+        "noise", "cutoff_twobody", "cutoff_threebody", and "cutoff_manybody" are reserved for
         noise parmater and universal cutoffs.
 
         The optimization flag can be a single bool, which apply to all
@@ -701,7 +701,7 @@ class ParameterHelper():
 
         Args:
 
-        group_type (str): species, bond, triplet, cut3b, mb
+        group_type (str): species, twobody, threebody, cut3b, manybody
         """
 
         aeg = self.all_group_names[group_type]
@@ -784,7 +784,7 @@ class ParameterHelper():
 
             # sort out the cutoffs
             if (group_type == 'cut3b'):
-                universal_cutoff = self.universal.get('cutoff_triplet', 0)
+                universal_cutoff = self.universal.get('cutoff_threebody', 0)
             else:
                 universal_cutoff = self.universal.get('cutoff_'+group_type, 0)
 
@@ -798,7 +798,7 @@ class ParameterHelper():
                     self.logger.warning(f"{aeg[idt]} cutoff is not define. "
                                         "it's going to use the universal cutoff.")
 
-            if (group_type != 'triplet'):
+            if (group_type != 'threebody'):
 
                 if len(allcut) > 0:
                     if (universal_cutoff <= 0):
@@ -832,13 +832,13 @@ class ParameterHelper():
             else:
                 if universal_cutoff <= 0 and len(allcut) > 0:
                     universal_cutoff = np.max(allcut)
-                    self.logger.warning(f"triplet universal cutoff is updated to"
+                    self.logger.warning(f"threebody universal cutoff is updated to"
                                         f"{universal_cutoff}, but the separate definitions will"
                                         "be ignored")
 
             if universal_cutoff > 0:
                 if group_type == 'cut_3b':
-                    self.universal['cutoff_triplet'] = universal_cutoff
+                    self.universal['cutoff_threebody'] = universal_cutoff
                 else:
                     self.universal['cutoff_'+group_type] = universal_cutoff
             else:
@@ -854,9 +854,9 @@ class ParameterHelper():
         """
 
         # sort out all the definitions and resolve conflicts
-        # cut3b has to be summarize before triplet
-        # because the universal triplet cutoff is checked
-        # at the end of triplet search
+        # cut3b has to be summarize before threebody
+        # because the universal threebody cutoff is checked
+        # at the end of threebody search
 
         self.summarize_group('specie')
         for ktype in ParameterHelper.additional_groups:
@@ -903,7 +903,7 @@ class ParameterHelper():
         if (self.n['cut3b'] >= 1):
             hyps_mask['ncut3b'] = self.n[group]
             hyps_mask['cut3b_mask'] = self.mask[group]
-            hyps_mask['triplet_cutoff_list'] = self.cutoff_list['cut3b']
+            hyps_mask['threebody_cutoff_list'] = self.cutoff_list['cut3b']
 
         hyps_mask['train_noise'] = self.opt['noise']
         hyps_mask['energy_noise'] = self.energy_noise
@@ -994,7 +994,7 @@ class ParameterHelper():
                     cutoff_list = hyps_mask.get(
                         f'{kernel}_cutoff_list', np.ones(len(sig))*cutoff)
                 elif kernel == 'cut3b' and n > 1:
-                    cutoff_list = hyps_mask['triplet_cutoff_list']
+                    cutoff_list = hyps_mask['threebody_cutoff_list']
 
                 if n > 1:
                     all_specie = np.arange(nspecie)
@@ -1008,10 +1008,10 @@ class ParameterHelper():
                         mask_id = mask_id // nspecie
                         ttype = hyps_mask[f'{kernel}_mask'][mask_id]
                         pm.define_group(f"{kernel}", f"{kernel}{ttype}", comb)
-                        if kernel != 'cut3b' and kernel != 'triplet':
+                        if kernel != 'cut3b' and kernel != 'threebody':
                             pm.set_parameters(f"{kernel}{ttype}", [sig[ttype], ls[ttype], cutoff_list[ttype]],
                                               opt=[csig[ttype], cls[ttype]])
-                        elif kernel == 'triplet':
+                        elif kernel == 'threebody':
                             pm.set_parameters(f"{kernel}{ttype}", [sig[ttype], ls[ttype]],
                                               opt=[csig[ttype], cls[ttype]])
                         else:

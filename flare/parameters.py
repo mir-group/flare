@@ -21,24 +21,24 @@ from flare.utils.element_coder import element_to_Z, Z_to_element
 
 class Parameters():
 
-    all_kernel_types = ['bond', 'triplet', 'mb']
-    ndim = {'bond': 2, 'triplet': 3, 'mb': 2, 'cut3b': 2}
+    all_kernel_types = ['twobody', 'threebody', 'manybody']
+    ndim = {'twobody': 2, 'threebody': 3, 'manybody': 2, 'cut3b': 2}
 
     def __init__(self):
 
         self.param = {'nspecie': 0,
-                      'nbond': 0,
-                      'ntriplet': 0,
+                      'ntwobody': 0,
+                      'nthreebody': 0,
                       'ncut3b': 0,
-                      'nmb': 0,
+                      'nmanybody': 0,
                       'specie_mask': None,
-                      'bond_mask': None,
-                      'triplet_mask': None,
+                      'twobody_mask': None,
+                      'threebody_mask': None,
                       'cut3b_mask': None,
-                      'mb_mask': None,
-                      'bond_cutoff_list': None,
-                      'triplet_cutoff_list': None,
-                      'mb_cutoff_list': None,
+                      'manybody_mask': None,
+                      'twobody_cutoff_list': None,
+                      'threebody_cutoff_list': None,
+                      'manybody_cutoff_list': None,
                       'hyps': [],
                       'hyp_labels': [],
                       'cutoffs': {},
@@ -53,40 +53,83 @@ class Parameters():
     @staticmethod
     def backward(hyps, hyp_labels, cutoffs, kernel_name, param_dict):
 
+
         if param_dict is None:
             param_dict = {}
 
+        replace_list = {'spec': 'specie', 'bond':'twobody',
+                        'triplet':'threebody', 'mb':'manybody'}
+        for key in param_dict:
+            for original in replace_list:
+                if original in key:
+                    newkey = key.replace(original, replace_list[original])
+                    param_dict[newkey] = param_dict[key]
+
+        if 'train_noise' not in param_dict:
+            param_dict['train_noise'] = True
+
         if 'nspecie' not in param_dict:
             param_dict['nspecie'] = 1
+        if 'specie_mask' not in param_dict:
+            param_dict['specie_mask'] = np.zeros(118, dtype=int)
 
         if (cutoffs is not None) and not isinstance(cutoffs, dict):
-            newcutoffs = {'bond':cutoffs[0]}
+            newcutoffs = {'twobody':cutoffs[0]}
             if len(cutoffs)>1:
-                newcutoffs['triplet'] = cutoffs[1]
+                newcutoffs['threebody'] = cutoffs[1]
             if len(cutoffs)>2:
-                newcutoffs['mb'] = cutoffs[2]
+                newcutoffs['manybody'] = cutoffs[2]
             param_dict['cutoffs'] = newcutoffs
         elif isinstance(cutoffs, dict):
             param_dict['cutoffs'] = cutoffs
 
+
+        # signal the real old style
+        if 'nspecie' not in param_dict:
+            param_dict['nspecie'] = 1
+
         if kernel_name is not None:
             kernels = []
-            if '2' in kernel_name:
-                kernels += ['bond']
-                param_dict['nbond'] = 1
-            if '3' in kernel_name:
-                kernels += ['triplet']
-                param_dict['ntriplet'] = 1
-            if 'mb' in kernel_name:
-                kernels += ['mb']
-                param_dict['nmb'] = 1
+            start = 0
+            b2 = False
+            b3 = False
+            many = False
+            for s in ['2', 'two', 'Two', 'TWO', 'bond']:
+                if s in name:
+                    b2 = True
+            for s in ['3', 'three', 'Three', 'THREE', 'triplet']:
+                if s in name:
+                    b3 = True
+            for s in ['mb', 'manybody', 'many', 'Many', 'ManyBody']:
+                if s in name:
+                    many = True
+            if b2:
+                kernels += ['twobody']
+                param_dict['ntwobody'] = 1
+                param_dict['twobody_start'] = 0
+                start += 2
+            if b3:
+                kernels += ['threebody']
+                param_dict['nthreebody'] = 1
+                param_dict['threebody_start'] = start
+                start += 2
+            if many:
+                kernels += ['manybody']
+                param_dict['nmanybody'] = 1
+                param_dict['manybody_start'] = start
+                start += 2
             param_dict['kernels'] = kernels
             param_dict['kernel_name'] = "+".join(param_dict['kernels'])
 
-        if hyps is not None:
+        if 'hyps' not in param_dict:
+            param_dict['hyps'] = hyps
+        elif hyps is not None:
             param_dict['hyps'] = hyps
 
-        if hyp_labels is not None:
+
+        if 'hyp_labels' not in param_dict:
+            param_dict['hyp_labels'] = hyp_labels
+        elif hyp_labels is not None:
             param_dict['hyp_labels'] = hyp_labels
 
         return param_dict
@@ -102,31 +145,6 @@ class Parameters():
 
         assert isinstance(param_dict, dict)
 
-        # backward compatability
-        if 'nspec' in param_dict:
-            param_dict['nspecie'] = param_dict['nspec']
-        if 'spec_mask' in param_dict:
-            param_dict['specie_mask'] = param_dict['spec_mask']
-        if 'train_noise' not in param_dict:
-            param_dict['train_noise'] = True
-
-        kernels = param_dict['kernels']
-
-        # signal the real old style
-        if 'nspecie' not in param_dict:
-            param_dict['nspecie'] = 1
-            for kernel in kernels:
-                param_dict[f'n{kernel}'] = 1
-                param_dict[f'{kernel}_start'] = 0
-            start = 0
-            if 'bond' in kernels:
-                param_dict['bond_start'] = 0
-                start += 2
-            if 'triplet' in kernels:
-                param_dict['triplet_start'] = start
-                start += 2
-            if 'mb' in kernels:
-                param_dict['mb_start'] = start
 
 
         nspecie = param_dict['nspecie']
@@ -140,6 +158,7 @@ class Parameters():
         cutoffs = param_dict['cutoffs']
 
         hyps_length = 0
+        kernels = param_dict['kernels']
         for kernel in kernels+['cut3b']:
 
             n = param_dict.get(f'n{kernel}', 0)
@@ -160,7 +179,7 @@ class Parameters():
 
                 dim = Parameters.ndim[kernel]
                 assert len(mask) == nspecie ** dim, \
-                    f"wrong dimension of bond_mask: " \
+                    f"wrong dimension of twobody_mask: " \
                     f" {len(mask)} != nspec ^ {dim} {nspecie**dim}"
 
                 all_comb = list(combinations_with_replacement(
@@ -178,7 +197,7 @@ class Parameters():
                             mask_value = mask[mask_id]
                         else:
                             assert mask[mask_id] == mask_value, \
-                                'bond_mask has to be symmetrical'
+                                'twobody_mask has to be symmetrical'
 
                 if kernel != 'cut3b':
                     if kernel+'_cutoff_list' in param_dict:
@@ -262,7 +281,7 @@ class Parameters():
             name_list = ['nspecie', 'specie_mask',
                          'n'+kernel_name, kernel_name+'_mask',
                          kernel_name+'_cutoff_list']
-            if kernel_name == 'triplet':
+            if kernel_name == 'threebody':
                 name_list += ['ncut3b', 'cut3b_mask']
 
             for name in name_list:
@@ -292,7 +311,7 @@ class Parameters():
             specie_mask = param_dict['species_mask']
             cutoff_list = param_dict[f'{kernel_name}_cutoff_list']
 
-            if kernel_name != 'triplet':
+            if kernel_name != 'threebody':
                 mask_id = 0
                 for ele in coded_specie:
                     mask_id += specie_mask[ele]
@@ -305,12 +324,12 @@ class Parameters():
                 ele1 = species_mask[coded_species[0]]
                 ele2 = species_mask[coded_species[1]]
                 ele3 = species_mask[coded_species[2]]
-                bond1 = cut3b_mask[param_dict['nspecie']*ele1 + ele2]
-                bond2 = cut3b_mask[param_dict['nspecie']*ele1 + ele3]
-                bond12 = cut3b_mask[param_dict['nspecie']*ele2 + ele3]
-                return np.array([cutoff_list[bond1],
-                                 cutoff_list[bond2],
-                                 cutoff_list[bond12]])
+                twobody1 = cut3b_mask[param_dict['nspecie']*ele1 + ele2]
+                twobody2 = cut3b_mask[param_dict['nspecie']*ele1 + ele3]
+                twobody12 = cut3b_mask[param_dict['nspecie']*ele2 + ele3]
+                return np.array([cutoff_list[twobody1],
+                                 cutoff_list[twobody2],
+                                 cutoff_list[twobody12]])
         else:
             return universal_cutoff
 

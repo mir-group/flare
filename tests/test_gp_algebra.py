@@ -37,7 +37,7 @@ def params():
 def get_random_training_set(nenv, nstruc):
     """Create a random training_set array with parameters
     And generate four different kinds of hyperparameter sets:
-    * multi hypper parameters with two bond type and two triplet type
+    * multi hypper parameters with two twobody type and two threebody type
     * constrained optimization, with noise parameter optimized
     * constrained optimization, without noise parameter optimized
     * simple hyper parameters without multihyps set up
@@ -57,20 +57,20 @@ def get_random_training_set(nenv, nstruc):
     # 9 different hyper-parameters
     hyps_mask1 = {'nspecie': 2,
                  'specie_mask': np.zeros(118, dtype=int),
-                 'nbond': 2,
-                 'bond_mask': np.array([0, 1, 1, 1]),
-                 'triplet_mask': np.array([0, 1, 1, 1, 1, 1, 1, 1]),
-                 'ntriplet': 2}
+                 'ntwobody': 2,
+                 'twobody_mask': np.array([0, 1, 1, 1]),
+                 'threebody_mask': np.array([0, 1, 1, 1, 1, 1, 1, 1]),
+                 'nthreebody': 2}
     hyps_mask1['specie_mask'][2] = 1
     hyps1 = np.ones(9, dtype=float)
 
     # 9 different hyper-parameters, onlye train the 0, 2, 4, 6, 8
     hyps_mask2 = {'nspecie': 2,
                  'specie_mask': np.zeros(118, dtype=int),
-                 'nbond': 2,
-                 'bond_mask': np.array([0, 1, 1, 1]),
-                 'ntriplet': 2,
-                 'triplet_mask': np.array([0, 1, 1, 1, 1, 1, 1, 1]),
+                 'ntwobody': 2,
+                 'twobody_mask': np.array([0, 1, 1, 1]),
+                 'nthreebody': 2,
+                 'threebody_mask': np.array([0, 1, 1, 1, 1, 1, 1, 1]),
                  'train_noise':True,
                  'map':[0,2,4,6,8],
                  'original':np.array([1, 1, 1, 1, 1, 1, 1, 1, 1])}
@@ -80,10 +80,10 @@ def get_random_training_set(nenv, nstruc):
     # 9 different hyper-parameters, only train the 0, 2, 4, 6
     hyps_mask3 = {'nspecie': 2,
                  'specie_mask': np.zeros(118, dtype=int),
-                 'nbond': 2,
-                 'bond_mask': np.array([0, 1, 1, 1]),
-                 'ntriplet': 2,
-                 'triplet_mask': np.array([0, 1, 1, 1, 1, 1, 1, 1]),
+                 'ntwobody': 2,
+                 'twobody_mask': np.array([0, 1, 1, 1]),
+                 'nthreebody': 2,
+                 'threebody_mask': np.array([0, 1, 1, 1, 1, 1, 1, 1]),
                  'train_noise':False,
                  'map':[0,2,4,6],
                  'original':np.array([1, 1, 1, 1, 1, 1, 1, 1, 1])}
@@ -93,10 +93,10 @@ def get_random_training_set(nenv, nstruc):
     # 5 different hyper-parameters, equivalent to no multihyps
     hyps_mask4 = {'nspecie': 1,
                  'specie_mask': np.zeros(118, dtype=int),
-                 'nbond': 1,
-                 'bond_mask': np.array([0]),
-                 'ntriplet': 1,
-                 'triplet_mask': np.array([0])}
+                 'ntwobody': 1,
+                 'twobody_mask': np.array([0]),
+                 'nthreebody': 1,
+                 'threebody_mask': np.array([0])}
     hyps4 = np.ones(5, dtype=float)
     hyps_list = [hyps1, hyps2, hyps3, hyps4, hyps]
     hyps_mask_list = [hyps_mask1, hyps_mask2, hyps_mask3, hyps_mask4, None]

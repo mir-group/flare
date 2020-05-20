@@ -64,20 +64,20 @@ def test_force_en(kernel_name, kernel_type):
         kern_finite_diff += mb_diff
 
     if ('2' in kernel_name):
-        nbond = 1
+        ntwobody = 1
         _, __, en2_kernel, ___ = str_to_kernel_set('2'+kernel_type)
-        calc1 = en2_kernel(env1[2][0], env2[0][0], hyps[0:nbond * 2], cutoffs)
-        calc2 = en2_kernel(env1[1][0], env2[0][0], hyps[0:nbond * 2], cutoffs)
+        calc1 = en2_kernel(env1[2][0], env2[0][0], hyps[0:ntwobody * 2], cutoffs)
+        calc2 = en2_kernel(env1[1][0], env2[0][0], hyps[0:ntwobody * 2], cutoffs)
         diff2b = 4 * (calc1 - calc2) / 2.0 / 2.0 / delta
 
         kern_finite_diff += diff2b
     else:
-        nbond = 0
+        ntwobody = 0
 
     if ('3' in kernel_name):
         _, __, en3_kernel, ___ = str_to_kernel_set('3'+kernel_type)
-        calc1 = en3_kernel(env1[2][0], env2[0][0], hyps[nbond * 2:], cutoffs)
-        calc2 = en3_kernel(env1[1][0], env2[0][0], hyps[nbond * 2:], cutoffs)
+        calc1 = en3_kernel(env1[2][0], env2[0][0], hyps[ntwobody * 2:], cutoffs)
+        calc2 = en3_kernel(env1[1][0], env2[0][0], hyps[ntwobody * 2:], cutoffs)
         diff3b = 9 * (calc1 - calc2) / 2.0 / 3.0 / delta
 
         kern_finite_diff += diff3b
@@ -138,25 +138,25 @@ def test_force(kernel_name, kernel_type):
         return
 
     if ('2' in kernel_name):
-        nbond = 1
+        ntwobody = 1
         _, __, en2_kernel, ___ = str_to_kernel_set('2'+kernel_type)
-        print(hyps[0:nbond * 2])
+        print(hyps[0:ntwobody * 2])
 
-        calc1 = en2_kernel(env1[1][0], env2[1][0], hyps[0:nbond * 2], cutoffs)
-        calc2 = en2_kernel(env1[2][0], env2[2][0], hyps[0:nbond * 2], cutoffs)
-        calc3 = en2_kernel(env1[1][0], env2[2][0], hyps[0:nbond * 2], cutoffs)
-        calc4 = en2_kernel(env1[2][0], env2[1][0], hyps[0:nbond * 2], cutoffs)
+        calc1 = en2_kernel(env1[1][0], env2[1][0], hyps[0:ntwobody * 2], cutoffs)
+        calc2 = en2_kernel(env1[2][0], env2[2][0], hyps[0:ntwobody * 2], cutoffs)
+        calc3 = en2_kernel(env1[1][0], env2[2][0], hyps[0:ntwobody * 2], cutoffs)
+        calc4 = en2_kernel(env1[2][0], env2[1][0], hyps[0:ntwobody * 2], cutoffs)
         kern_finite_diff += 4 * (calc1 + calc2 - calc3 - calc4) / (4*delta**2)
     else:
-        nbond = 0
+        ntwobody = 0
 
     if ('3' in kernel_name):
         _, __, en3_kernel, ___ = str_to_kernel_set('3'+kernel_type)
-        print(hyps[nbond * 2:])
-        calc1 = en3_kernel(env1[1][0], env2[1][0], hyps[nbond * 2:], cutoffs)
-        calc2 = en3_kernel(env1[2][0], env2[2][0], hyps[nbond * 2:], cutoffs)
-        calc3 = en3_kernel(env1[1][0], env2[2][0], hyps[nbond * 2:], cutoffs)
-        calc4 = en3_kernel(env1[2][0], env2[1][0], hyps[nbond * 2:], cutoffs)
+        print(hyps[ntwobody * 2:])
+        calc1 = en3_kernel(env1[1][0], env2[1][0], hyps[ntwobody * 2:], cutoffs)
+        calc2 = en3_kernel(env1[2][0], env2[2][0], hyps[ntwobody * 2:], cutoffs)
+        calc3 = en3_kernel(env1[1][0], env2[2][0], hyps[ntwobody * 2:], cutoffs)
+        calc4 = en3_kernel(env1[2][0], env2[1][0], hyps[ntwobody * 2:], cutoffs)
         kern_finite_diff += 9 * (calc1 + calc2 - calc3 - calc4) / (4*delta**2)
 
     kern_analytical = kernel(env1[0][0], env2[0][0], d1, d2, *args)

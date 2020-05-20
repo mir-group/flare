@@ -353,8 +353,8 @@ def test_force(kernel_name, diff_cutoff):
     # check force kernel
     kern_finite_diff = 0
     if ('mb' == kernel_name):
-        _, __, enm_kernel, ___ = str_to_kernel_set('mb', hm)
-        mhyps_mask = Parameters.get_component_mask(hm, 'mb', hyps=hyps)
+        _, __, enm_kernel, ___ = str_to_kernel_set('manybody', hm)
+        mhyps_mask = Parameters.get_component_mask(hm, 'manybody', hyps=hyps)
         mhyps = mhyps_mask['hyps']
         margs = from_mask_to_args(mhyps, mhyps_mask, cutoffs)
         cal = 0
@@ -370,9 +370,9 @@ def test_force(kernel_name, diff_cutoff):
         return
 
     if ('2' in kernel_name):
-        nbond = 1
+        ntwobody = 1
         _, __, en2_kernel, ___ = str_to_kernel_set('2', hm)
-        bhyps_mask = Parameters.get_component_mask(hm, 'bond', hyps=hyps)
+        bhyps_mask = Parameters.get_component_mask(hm, 'twobody', hyps=hyps)
         bhyps = bhyps_mask['hyps']
         args2 = from_mask_to_args(bhyps, bhyps_mask, cutoffs[:1])
 
@@ -382,12 +382,12 @@ def test_force(kernel_name, diff_cutoff):
         calc4 = en2_kernel(env1[2][0], env2[1][0], *args2)
         kern_finite_diff += 4 * (calc1 + calc2 - calc3 - calc4) / (4*delta**2)
     else:
-        nbond = 0
+        ntwobody = 0
 
     if ('3' in kernel_name):
         _, __, en3_kernel, ___ = str_to_kernel_set('3'+kernel_type, hm)
 
-        thyps_mask = Parameters.get_component_mask(hm, 'triplet', hyps=hyps)
+        thyps_mask = Parameters.get_component_mask(hm, 'threebody', hyps=hyps)
         thyps = bhyps_mask['hyps']
 
         args3 = from_mask_to_args(thyps, thyps_mask, cutoffs[:2])
@@ -465,25 +465,25 @@ def generate_same_hm(kernel_name, multi_cutoff=False):
 
     if ('2' in kernel_name):
         para = 2.5+0.1*random(3)
-        pm1.set_parameters('cutoff_bond', para[-1])
-        pm1.define_group('bond', 'bond0', ['*', '*'], para[:-1])
+        pm1.set_parameters('cutoff_twobody', para[-1])
+        pm1.define_group('twobody', 'twobody0', ['*', '*'], para[:-1])
 
-        pm2.set_parameters('cutoff_bond', para[-1])
-        pm2.define_group('bond', 'bond0', ['*', '*'], para[:-1])
-        pm2.define_group('bond', 'bond1', ['H', 'H'], para[:-1])
+        pm2.set_parameters('cutoff_twobody', para[-1])
+        pm2.define_group('twobody', 'twobody0', ['*', '*'], para[:-1])
+        pm2.define_group('twobody', 'twobody1', ['H', 'H'], para[:-1])
 
         if (multi_cutoff):
-            pm2.set_parameters('bond0', para)
-            pm2.set_parameters('bond1', para)
+            pm2.set_parameters('twobody0', para)
+            pm2.set_parameters('twobody1', para)
 
     if ('3' in kernel_name):
         para = 1.2+0.1*random(3)
-        pm1.set_parameters('cutoff_triplet', para[-1])
-        pm1.define_group('triplet', 'triplet0', ['*', '*', '*'], para[:-1])
+        pm1.set_parameters('cutoff_threebody', para[-1])
+        pm1.define_group('threebody', 'threebody0', ['*', '*', '*'], para[:-1])
 
-        pm2.set_parameters('cutoff_triplet', para[-1])
-        pm2.define_group('triplet', 'triplet0', ['*', '*', '*'], para[:-1])
-        pm2.define_group('triplet', 'triplet1', ['H', 'H', 'H'], para[:-1])
+        pm2.set_parameters('cutoff_threebody', para[-1])
+        pm2.define_group('threebody', 'threebody0', ['*', '*', '*'], para[:-1])
+        pm2.define_group('threebody', 'threebody1', ['H', 'H', 'H'], para[:-1])
 
 
         if (multi_cutoff):
@@ -493,16 +493,16 @@ def generate_same_hm(kernel_name, multi_cutoff=False):
     if ('mb' in kernel_name):
         para = 1.2+0.1*random(3)
 
-        pm1.set_parameters('cutoff_mb', para[-1])
-        pm1.define_group('mb', 'mb0', ['*', '*'], para[:-1])
+        pm1.set_parameters('cutoff_manybody', para[-1])
+        pm1.define_group('manybody', 'manybody0', ['*', '*'], para[:-1])
 
-        pm2.set_parameters('cutoff_mb', para[-1])
-        pm2.define_group('mb', 'mb0', ['*', '*'], para[:-1])
-        pm2.define_group('mb', 'mb1', ['H', 'H'], para[:-1])
+        pm2.set_parameters('cutoff_manybody', para[-1])
+        pm2.define_group('manybody', 'manybody0', ['*', '*'], para[:-1])
+        pm2.define_group('manybody', 'manybody1', ['H', 'H'], para[:-1])
 
         if (multi_cutoff):
-            pm2.set_parameters('mb0', para)
-            pm2.set_parameters('mb1', para)
+            pm2.set_parameters('manybody0', para)
+            pm2.set_parameters('manybody1', para)
 
     hm1 = pm1.as_dict()
     hyps1 = hm1['hyps']
@@ -523,23 +523,23 @@ def generate_diff_hm(kernel_name, diff_cutoff=False, constraint=False):
     if ('2' in kernel_name):
         para1 = 2.5+0.1*random(3)
         para2 = 2.5+0.1*random(3)
-        pm.set_parameters('cutoff_bond', para1[-1])
-        pm.define_group('bond', 'bond0', ['*', '*'])
-        pm.set_parameters('bond0', para1[:-1], not constraint)
-        pm.define_group('bond', 'bond1', ['H', 'H'], para2[:-1])
+        pm.set_parameters('cutoff_twobody', para1[-1])
+        pm.define_group('twobody', 'twobody0', ['*', '*'])
+        pm.set_parameters('twobody0', para1[:-1], not constraint)
+        pm.define_group('twobody', 'twobody1', ['H', 'H'], para2[:-1])
 
         if (diff_cutoff):
-            pm.set_parameters('bond0', para1, not constraint)
-            pm.set_parameters('bond1', para2)
+            pm.set_parameters('twobody0', para1, not constraint)
+            pm.set_parameters('twobody1', para2)
 
 
     if ('3' in kernel_name):
         para1 = 1.2+0.1*random(3)
         para2 = 1.2+0.1*random(3)
-        pm.set_parameters('cutoff_triplet', para1[-1])
-        pm.define_group('triplet', 'triplet0', ['*', '*', '*'], para1[:-1])
-        pm.set_parameters('triplet0', para1[:-1], not constraint)
-        pm.define_group('triplet', 'triplet1', ['H', 'H', 'H'], para2[:-1])
+        pm.set_parameters('cutoff_threebody', para1[-1])
+        pm.define_group('threebody', 'threebody0', ['*', '*', '*'], para1[:-1])
+        pm.set_parameters('threebody0', para1[:-1], not constraint)
+        pm.define_group('threebody', 'threebody1', ['H', 'H', 'H'], para2[:-1])
 
 
         if (diff_cutoff):
@@ -550,14 +550,14 @@ def generate_diff_hm(kernel_name, diff_cutoff=False, constraint=False):
         para1 = 1.2+0.1*random(3)
         para2 = 1.2+0.1*random(3)
 
-        pm.set_parameters('cutoff_mb', para1[-1])
-        pm.define_group('mb', 'mb0', ['*', '*'])
-        pm.set_parameters('mb0', para1[:-1], not constraint)
-        pm.define_group('mb', 'mb1', ['H', 'H'], para2[:-1])
+        pm.set_parameters('cutoff_manybody', para1[-1])
+        pm.define_group('manybody', 'manybody0', ['*', '*'])
+        pm.set_parameters('manybody0', para1[:-1], not constraint)
+        pm.define_group('manybody', 'manybody1', ['H', 'H'], para2[:-1])
 
         if (diff_cutoff):
-            pm.set_parameters('mb0', para1, not constraint)
-            pm.set_parameters('mb1', para2)
+            pm.set_parameters('manybody0', para1, not constraint)
+            pm.set_parameters('manybody1', para2)
 
     hm = pm.as_dict()
     hyps = hm['hyps']

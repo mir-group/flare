@@ -96,8 +96,8 @@ def test_init(bodies, multihyps, all_mgp, all_gp):
     grid_num_2 = 64
     grid_num_3 = 16
     lower_cut = 0.01
-    two_cut = gp_model.cutoffs['bond']
-    three_cut = gp_model.cutoffs['triplet']
+    two_cut = gp_model.cutoffs['twobody']
+    three_cut = gp_model.cutoffs['threebody']
     lammps_location = f'{bodies}{multihyps}.mgp'
 
     # set struc params. cell and masses arbitrary?

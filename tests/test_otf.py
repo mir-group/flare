@@ -18,7 +18,7 @@ def get_gp(par=False, per_atom_par=False, n_cpus=1):
     hyp_labels = ['Signal Std 2b', 'Length Scale 2b',
                   'Signal Std 3b', 'Length Scale 3b',
                   'Noise Std']
-    cutoffs = {'bond':4, 'triplet':4}
+    cutoffs = {'twobody':4, 'threebody':4}
     return GaussianProcess(\
             kernel_name='23mc', hyps=hyps, cutoffs=cutoffs,
             hyp_labels=hyp_labels, maxiter=50, par=par,
