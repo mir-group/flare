@@ -66,7 +66,7 @@ class AtomicEnvironment:
 
     """
 
-    def __init__(self, structure: Structure, atom: int, cutoffs, sweep=1, cutoffs_mask=None):
+    def __init__(self, structure: Structure, atom: int, cutoffs, cutoffs_mask=None):
         self.structure = structure
         self.positions = structure.wrapped_positions
         self.cell = structure.cell

@@ -277,7 +277,7 @@ class GaussianProcess:
         if forces is not None:
             for atom in update_indices:
                 env_curr = \
-                    AtomicEnvironment(struc, atom, self.cutoffs, sweep=sweep,
+                    AtomicEnvironment(struc, atom, self.cutoffs,
                             cutoffs_mask=self.hyps_mask)
                 forces_curr = np.array(forces[atom])
 
@@ -294,7 +294,7 @@ class GaussianProcess:
             structure_list = []  # Populate with all environments of the struc
             for atom in range(noa):
                 env_curr = \
-                    AtomicEnvironment(struc, atom, self.cutoffs, sweep=sweep,
+                    AtomicEnvironment(struc, atom, self.cutoffs,
                                       cutoffs_mask=self.hyps_mask)
                 structure_list.append(env_curr)
 

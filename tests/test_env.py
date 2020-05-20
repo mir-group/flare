@@ -6,7 +6,7 @@ from flare.env import AtomicEnvironment
 
 np.random.seed(0)
 
-cutoff_mask_list = [# (True, np.array([1]), [10]),
+cutoff_mask_list = [(True, np.array([1]), [10]),
                     (False, np.array([1]), [16]),
                     (False, np.array([1, 0.05]), [16, 0]),
                     (False, np.array([1, 0.8]), [16, 1]),
