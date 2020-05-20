@@ -805,19 +805,20 @@ class GaussianProcess:
 
         new_gp.training_labels = deepcopy(dictionary.get('training_labels',
                                           []))
-        new_gp.training_labels_np = np.hstack(new_gp.training_labels)
+        new_gp.training_labels_np = deepcopy(dictionary.get('training_labels_np',
+                                                       np.empty(0,)))
 
         new_gp.energy_labels = deepcopy(dictionary.get('energy_labels',
+                                                       []))
+        new_gp.energy_labels_np = deepcopy(dictionary.get('energy_labels_np',
                                                        np.empty(0,)))
-        new_gp.energy_labels_np = np.hstack(new_gp.energy_labels)
 
         new_gp.all_labels = np.concatenate((new_gp.training_labels_np,
                                           new_gp.energy_labels_np))
 
         new_gp.likelihood = dictionary['likelihood']
         new_gp.likelihood_gradient = dictionary['likelihood_gradient']
-        new_gp.n_envs_prev = dictionary['n_envs_prev']
-
+        new_gp.n_envs_prev = len(new_gp.training_data)
         _global_training_data[new_gp.name] = new_gp.training_data
         _global_training_structures[new_gp.name] = new_gp.training_structures
         _global_training_labels[new_gp.name] = new_gp.training_labels_np
