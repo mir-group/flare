@@ -2,7 +2,7 @@
 environment of an atom. :class:`AtomicEnvironment` objects are inputs to the
 2-, 3-, and 2+3-body kernels."""
 import numpy as np
-from math import sqrt
+from math import sqrt, ceil
 from numba import njit
 from flare.struc import Structure
 from flare.utils.mask_helper import HyperParameterMasking
@@ -71,7 +71,11 @@ class AtomicEnvironment:
         self.positions = structure.wrapped_positions
         self.cell = structure.cell
         self.species = structure.coded_species
-        self.sweep_array = np.arange(-sweep, sweep+1, 1)
+
+        # Set the sweep array based on the max cutoff.
+        sweep_val = ceil(np.max(cutoffs) / structure.max_cutoff)
+        self.sweep_val = sweep_val
+        self.sweep_array = np.arange(-sweep_val, sweep_val + 1, 1)
 
         self.atom = atom
         self.ctype = structure.coded_species[atom]
@@ -584,7 +588,7 @@ def get_3_body_arrays_sepcut(bond_array_2, bond_positions_2, ctype,
 @njit
 def get_m_body_arrays(positions, atom: int, cell, cutoff_mb: float, species,
                       sweep: np.ndarray, cutoff_func=cf.quadratic_cutoff):
-    # TODO: 
+    # TODO:
     # 1. need to deal with the conflict of cutoff functions if other funcs are used
     # 2. complete the docs of "Return"
     # TODO: this can be probably improved using stored arrays, redundant calls to get_2_body_arrays
@@ -615,12 +619,12 @@ def get_m_body_arrays(positions, atom: int, cell, cutoff_mb: float, species,
 
     # get coordination number of center atom for each species
     for s in range(n_specs):
-        qs[s] = q_value_mc(bond_array_mb[:, 0], cutoff_mb, species_list[s], 
+        qs[s] = q_value_mc(bond_array_mb[:, 0], cutoff_mb, species_list[s],
             etypes, cutoff_func)
 
     # get coordination number of all neighbor atoms for each species
     for i in range(n_bonds):
-        neigh_bond_array, _, neigh_etypes, _ = get_2_body_arrays(positions, 
+        neigh_bond_array, _, neigh_etypes, _ = get_2_body_arrays(positions,
             bond_inds[i], cell, cutoff_mb, species, sweep)
         for s in range(n_specs):
             qs_neigh[i, s] = q_value_mc(neigh_bond_array[:, 0], cutoff_mb,
@@ -631,16 +635,17 @@ def get_m_body_arrays(positions, atom: int, cell, cutoff_mb: float, species,
         ri = bond_array_mb[i, 0]
         for d in range(3):
             ci = bond_array_mb[i, d+1]
-            _, q_grads[i, d] = coordination_number(ri, ci, cutoff_mb, 
+            _, q_grads[i, d] = coordination_number(ri, ci, cutoff_mb,
                 cutoff_func)
 
-    return qs, qs_neigh, q_grads, species_list, etypes 
+    return qs, qs_neigh, q_grads, species_list, etypes
+
 
 @njit
-def get_m_body_arrays_sepcut(positions, atom: int, cell, cutoff_mb, 
-    species, sweep: np.ndarray, nspec, spec_mask, mb_mask, 
+def get_m_body_arrays_sepcut(positions, atom: int, cell, cutoff_mb,
+    species, sweep: np.ndarray, nspec, spec_mask, mb_mask,
     cutoff_func=cf.quadratic_cutoff):
-    # TODO: 
+    # TODO:
     # 1. need to deal with the conflict of cutoff functions if other funcs are used
     # 2. complete the docs of "Return"
     # TODO: this can be probably improved using stored arrays, redundant calls to get_2_body_arrays
@@ -679,7 +684,7 @@ def get_m_body_arrays_sepcut(positions, atom: int, cell, cutoff_mb,
         mbtype = mb_mask[bcn + bs]
         r_cut = cutoff_mb[mbtype]
 
-        qs[s] = q_value_mc(bond_array_mb[:, 0], r_cut, species_list[s], 
+        qs[s] = q_value_mc(bond_array_mb[:, 0], r_cut, species_list[s],
             etypes, cutoff_func)
 
     # get coordination number of all neighbor atoms for each species
@@ -688,7 +693,7 @@ def get_m_body_arrays_sepcut(positions, atom: int, cell, cutoff_mb,
         ben = be * nspec
 
         neigh_bond_array, _, neigh_etypes, _ = \
-            get_2_body_arrays_sepcut(positions, bond_inds[i], cell, 
+            get_2_body_arrays_sepcut(positions, bond_inds[i], cell,
                 cutoff_mb, species, sweep, nspec, spec_mask, mb_mask)
         for s in range(n_specs):
             bs = spec_mask[species_list[s]]
@@ -708,10 +713,7 @@ def get_m_body_arrays_sepcut(positions, atom: int, cell, cutoff_mb,
         for d in range(3):
             ci = bond_array_mb[i, d+1]
 
-            _, q_grads[i, d] = coordination_number(ri, ci, r_cut, 
+            _, q_grads[i, d] = coordination_number(ri, ci, r_cut,
                 cutoff_func)
 
-    return qs, qs_neigh, q_grads, species_list, etypes 
-
-if __name__ == '__main__':
-    pass
+    return qs, qs_neigh, q_grads, species_list, etypes

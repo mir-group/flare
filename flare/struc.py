@@ -9,6 +9,7 @@ used to train ML models.
 """
 import numpy as np
 from flare.utils.element_coder import element_to_Z, Z_to_element, NumpyEncoder
+from flare.utils.learner import get_max_cutoff
 from json import dumps, loads
 
 from typing import List, Union, Any
@@ -59,6 +60,10 @@ class Structure:
         self.vec1 = self.cell[0, :]
         self.vec2 = self.cell[1, :]
         self.vec3 = self.cell[2, :]
+
+        # Compute the max cutoff compatible with a 3x3x3 supercell of the
+        # structure.
+        self.max_cutoff = get_max_cutoff(self.cell)
 
         # get cell matrices for wrapping coordinates
         self.cell_transpose = self.cell.transpose()
@@ -129,7 +134,7 @@ class Structure:
 
     @staticmethod
     def raw_to_relative(positions: 'ndarray', cell_transpose: 'ndarray',
-                        cell_dot_inverse: 'ndarray')-> 'ndarray':
+                        cell_dot_inverse: 'ndarray') -> 'ndarray':
         """Convert Cartesian coordinates to relative (fractional) coordinates,
         expressed in terms of the cell vectors set in self.cell.
 
@@ -153,7 +158,7 @@ class Structure:
     @staticmethod
     def relative_to_raw(relative_positions: 'ndarray',
                         cell_transpose_inverse: 'ndarray',
-                        cell_dot: 'ndarray')-> 'ndarray':
+                        cell_dot: 'ndarray') -> 'ndarray':
         """Convert fractional coordinates to raw (Cartesian) coordinates.
 
         :param relative_positions: fractional coordinates.
@@ -169,16 +174,16 @@ class Structure:
         return np.matmul(np.matmul(relative_positions, cell_dot),
                          cell_transpose_inverse)
 
-    def wrap_positions(self, in_place: bool = True)-> 'ndarray':
+    def wrap_positions(self, in_place: bool = True) -> 'ndarray':
         """
         Convenience function which folds atoms outside of the unit cell back
         into the unit cell. in_place flag controls if the wrapped positions
         are set in the class.
 
-        :param in_place: If true, set the current structure
-		positions to be the wrapped positions.
+        :param in_place: If true, set the current structure positions to be
+            the wrapped positions.
         :return: Cartesian coordinates of positions all in unit cell
-	:rtype: np.ndarray
+        :rtype: np.ndarray
         """
         rel_pos = \
             self.raw_to_relative(self.positions, self.cell_transpose,
@@ -262,7 +267,7 @@ class Structure:
         return dumps(self.as_dict(), cls=NumpyEncoder)
 
     @staticmethod
-    def from_dict(dictionary: dict)-> 'flare.struc.Structure':
+    def from_dict(dictionary: dict) -> 'flare.struc.Structure':
         """
         Assembles a Structure object from a dictionary parameterizing one.
 
@@ -283,7 +288,7 @@ class Structure:
         return struc
 
     @staticmethod
-    def from_ase_atoms(atoms: 'ase.Atoms')-> 'flare.struc.Structure':
+    def from_ase_atoms(atoms: 'ase.Atoms') -> 'flare.struc.Structure':
         """
         From an ASE Atoms object, return a FLARE structure
 
@@ -296,12 +301,10 @@ class Structure:
                           species=atoms.get_chemical_symbols())
         return struc
 
-    def to_ase_atoms(self)-> 'ase.Atoms':
+    def to_ase_atoms(self) -> 'ase.Atoms':
         from ase import Atoms
-        return Atoms(self.species_labels,
-                     positions=self.positions,
-                     cell=self.cell,
-                     pbc=True)
+        return Atoms(self.species_labels, positions=self.positions,
+                     cell=self.cell, pbc=True)
 
     def to_pmg_structure(self):
         """
@@ -328,7 +331,7 @@ class Structure:
                                   )
 
     @staticmethod
-    def from_pmg_structure(structure: 'pymatgen Structure')-> \
+    def from_pmg_structure(structure: 'pymatgen Structure') -> \
             'flare Structure':
         """
         Returns Pymatgen structure as FLARE structure.
@@ -357,11 +360,9 @@ class Structure:
 
         return new_struc
 
-    def to_xyz(self, extended_xyz: bool = True,
-                     print_stds: bool = False,
-                     print_forces : bool = False,
-                     print_max_stds: bool = False,
-                     write_file: str = '')->str:
+    def to_xyz(self, extended_xyz: bool = True, print_stds: bool = False,
+               print_forces: bool = False, print_max_stds: bool = False,
+               write_file: str = '') -> str:
         """
         Convenience function which turns a structure into an extended .xyz
         file; useful for further input into visualization programs like VESTA
@@ -422,7 +423,8 @@ class Structure:
 
     @staticmethod
     def from_file(file_name, format='') -> Union['flare.struc.Structure',
-                                                List['flare.struc.Structure']]:
+                                                 List['flare.struc.Structure']
+                                                 ]:
         """
         Load a FLARE structure from a file or a series of FLARE structures
         :param file_name:
@@ -430,11 +432,10 @@ class Structure:
         :return:
         """
 
-        try:
-            with open(file_name, 'r') as _:
-                pass
-        except:
-            raise FileNotFoundError
+        # Ensure the file specified exists.
+        with open(file_name, 'r') as _:
+            pass
+
 
         if 'xyz' in file_name or 'xyz' in format.lower():
             raise NotImplementedError
@@ -456,14 +457,14 @@ class Structure:
             else:
                 return structures
 
-        is_poscar = 'POSCAR' in file_name or 'CONTCAR' in file_name or 'vasp' in format.lower()
+        is_poscar = 'POSCAR' in file_name or 'CONTCAR' in file_name \
+            or 'vasp' in format.lower()
         if is_poscar and _pmg_present:
             pmg_structure = pmgvaspio.Poscar.from_file(file_name).structure
             return Structure.from_pmg_structure(pmg_structure)
         elif is_poscar and not _pmg_present:
-            raise ImportError("Pymatgen not imported; " \
+            raise ImportError("Pymatgen not imported; "
                               "functionality requires pymatgen.")
-
 
 
 def get_unique_species(species: List[Any]) -> (List, List[int]):
@@ -485,5 +486,3 @@ def get_unique_species(species: List[Any]) -> (List, List[int]):
     coded_species = np.array(coded_species)
 
     return unique_species, coded_species
-
-

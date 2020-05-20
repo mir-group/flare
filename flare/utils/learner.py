@@ -8,10 +8,9 @@ from math import inf
 
 import numpy as np
 
-
 def is_std_in_bound(std_tolerance: float, noise: float,
                     structure: 'flare.struc.Structure',
-                    max_atoms_added: int = inf)-> (bool, List[int]):
+                    max_atoms_added: int = inf) -> (bool, List[int]):
     """
     Given an uncertainty tolerance and a structure decorated with atoms,
     species, and associated uncertainties, return those which are above a
@@ -61,7 +60,8 @@ def is_std_in_bound_per_species(rel_std_tolerance: float,
                                 abs_std_tolerance: float, noise: float,
                                 structure: 'flare.struc.Structure',
                                 max_atoms_added: int = inf,
-                                max_by_species: dict = {})-> (bool, List[int]):
+                                max_by_species: dict = {}) -> (bool,
+                                                               List[int]):
     """
     Checks the stds of GP prediction assigned to the structure, returns a
     list of atoms which either meet an absolute threshold or a relative
@@ -151,9 +151,9 @@ def is_force_in_bound_per_species(abs_force_tolerance: float,
                                   label_forces: 'ndarray',
                                   structure,
                                   max_atoms_added: int = inf,
-                                  max_by_species: dict ={},
+                                  max_by_species: dict = {},
                                   max_force_error: float
-                                  = inf)-> (bool, List[int]):
+                                  = inf) -> (bool, List[int]):
     """
     Checks the forces of GP prediction assigned to the structure against a
     DFT calculation, and return a list of atoms which meet an absolute
@@ -210,7 +210,7 @@ def is_force_in_bound_per_species(abs_force_tolerance: float,
         # conclude
         if len(target_atoms) == max_atoms_added or \
                 (max_error_components[i] < abs_force_tolerance and
-                        max_error_components[i] != np.nan):
+                 max_error_components[i] != np.nan):
             break
 
         cur_spec = structure.species_labels[i]
@@ -231,7 +231,7 @@ def is_force_in_bound_per_species(abs_force_tolerance: float,
 
 
 def subset_of_frame_by_element(frame: 'flare.Structure',
-                           predict_atoms_per_element: dict)->List[int]:
+                               predict_atoms_per_element: dict) -> List[int]:
     """
     Given a structure and a dictionary formatted as {"Symbol":int,
     ..} describing a number of atoms per element, return a sorted list of
@@ -262,7 +262,7 @@ def subset_of_frame_by_element(frame: 'flare.Structure',
         if len(matching_atoms) == 0:
             continue
         # Choose the atoms to add
-        to_add_atoms = np.random.choice(matching_atoms,replace=False,
+        to_add_atoms = np.random.choice(matching_atoms, replace=False,
                                         size=min(n, len(matching_atoms)))
         return_atoms += list(to_add_atoms)
 
@@ -271,3 +271,52 @@ def subset_of_frame_by_element(frame: 'flare.Structure',
     return_atoms.sort()
 
     return return_atoms
+
+
+def get_max_cutoff(cell: np.ndarray) -> float:
+    """Compute the maximum cutoff compatible with a 3x3x3 supercell of a
+        structure. Called in the Structure constructor when
+        setting the max_cutoff attribute, which is used to create local
+        environments with arbitrarily large cutoff radii.
+
+    Args:
+        cell (np.ndarray): Bravais lattice vectors of the structure stored as
+            rows of a 3x3 Numpy array.
+
+    Returns:
+        float: Maximum cutoff compatible with a 3x3x3 supercell of the
+            structure.
+    """
+
+    # Retrieve the lattice vectors.
+    a_vec = cell[0]
+    b_vec = cell[1]
+    c_vec = cell[2]
+
+    # Compute dot products and norms of lattice vectors.
+    a_dot_b = np.dot(a_vec, b_vec)
+    a_dot_c = np.dot(a_vec, c_vec)
+    b_dot_c = np.dot(b_vec, c_vec)
+
+    a_norm = np.linalg.norm(a_vec)
+    b_norm = np.linalg.norm(b_vec)
+    c_norm = np.linalg.norm(c_vec)
+
+    # Compute the six independent altitudes of the cell faces.
+    # The smallest is the maximum atomic environment cutoff that can be
+    # used with sweep=1.
+    max_candidates = np.zeros(6)
+    max_candidates[0] = \
+        a_norm * np.sqrt(1 - (a_dot_b / (a_norm * b_norm))**2)
+    max_candidates[1] = \
+        b_norm * np.sqrt(1 - (a_dot_b / (a_norm * b_norm))**2)
+    max_candidates[2] = \
+        a_norm * np.sqrt(1 - (a_dot_c / (a_norm * c_norm))**2)
+    max_candidates[3] = \
+        c_norm * np.sqrt(1 - (a_dot_c / (a_norm * c_norm))**2)
+    max_candidates[4] = \
+        b_norm * np.sqrt(1 - (b_dot_c / (b_norm * c_norm))**2)
+    max_candidates[5] = \
+        c_norm * np.sqrt(1 - (b_dot_c / (b_norm * c_norm))**2)
+
+    return np.min(max_candidates)
