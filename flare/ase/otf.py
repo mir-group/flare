@@ -12,7 +12,7 @@ from copy import deepcopy
 
 from flare.struc import Structure
 from flare.gp import GaussianProcess
-from flare.util import is_std_in_bound
+from flare.utils.learner import is_std_in_bound
 from flare.mgp.utils import get_l_bound
 
 import numpy as np

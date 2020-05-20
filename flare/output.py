@@ -11,7 +11,7 @@ import time
 import multiprocessing
 import numpy as np
 
-from flare.util import Z_to_element
+from flare.utils.element_coder import Z_to_element
 
 
 class Output:
