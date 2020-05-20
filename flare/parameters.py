@@ -51,6 +51,47 @@ class Parameters():
                       }
 
     @staticmethod
+    def backward(hyps, hyp_labels, cutoffs, kernel_name, param_dict):
+
+        if param_dict is None:
+            param_dict = {}
+
+        if 'nspecie' not in param_dict:
+            param_dict['nspecie'] = 1
+
+        if (cutoffs is not None) and not isinstance(cutoffs, dict):
+            newcutoffs = {'bond':cutoffs[0]}
+            if len(cutoffs)>1:
+                newcutoffs['triplet'] = cutoffs[1]
+            if len(cutoffs)>2:
+                newcutoffs['mb'] = cutoffs[2]
+            param_dict['cutoffs'] = newcutoffs
+        elif isinstance(cutoffs, dict):
+            param_dict['cutoffs'] = cutoffs
+
+        if kernel_name is not None:
+            kernels = []
+            if '2' in kernel_name:
+                kernels += ['bond']
+                param_dict['nbond'] = 1
+            if '3' in kernel_name:
+                kernels += ['triplet']
+                param_dict['ntriplet'] = 1
+            if 'mb' in kernel_name:
+                kernels += ['mb']
+                param_dict['nmb'] = 1
+            param_dict['kernels'] = kernels
+            param_dict['kernel_name'] = "+".join(param_dict['kernels'])
+
+        if hyps is not None:
+            param_dict['hyps'] = hyps
+
+        if hyp_labels is not None:
+            param_dict['hyp_labels'] = hyp_labels
+
+        return param_dict
+
+    @staticmethod
     def check_instantiation(param_dict):
         """
         Runs a series of checks to ensure that the user has not supplied
@@ -69,11 +110,26 @@ class Parameters():
         if 'train_noise' not in param_dict:
             param_dict['train_noise'] = True
 
-        assert 'nspecie' in param_dict, "nspecie key missing in " \
-            "param_dict dictionary"
+        kernels = param_dict['kernels']
+
+        # signal the real old style
+        if 'nspecie' not in param_dict:
+            param_dict['nspecie'] = 1
+            for kernel in kernels:
+                param_dict[f'n{kernel}'] = 1
+                param_dict[f'{kernel}_start'] = 0
+            start = 0
+            if 'bond' in kernels:
+                param_dict['bond_start'] = 0
+                start += 2
+            if 'triplet' in kernels:
+                param_dict['triplet_start'] = start
+                start += 2
+            if 'mb' in kernels:
+                param_dict['mb_start'] = start
+
 
         nspecie = param_dict['nspecie']
-        kernels = param_dict['kernels']
         if nspecie > 1:
             assert 'specie_mask' in param_dict, "specie_mask key " \
                 "missing " \
@@ -92,7 +148,7 @@ class Parameters():
             if kernel != 'cut3b':
                 hyps_length += 2*n
                 assert kernel in cutoffs
-                assert n > 0
+                assert n > 0, f"{kernel} has n 0"
 
             if n > 1:
                 assert f'{kernel}_mask' in param_dict, f"{kernel}_mask key " \

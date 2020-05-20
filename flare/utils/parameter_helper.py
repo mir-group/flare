@@ -939,6 +939,7 @@ class ParameterHelper():
                 "only one type of elements was defined. Please use multihyps=False")
 
         hyps_mask['kernels'] = self.kernel_array
+        hyps_mask['kernel_name'] = "+".join(hyps_mask['kernels'])
         hyps_mask['cutoffs'] = cutoff_dict
         hyps_mask['hyps'] = newhyps
         hyps_mask['hyp_labels'] = new_labels

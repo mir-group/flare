@@ -70,7 +70,7 @@ class AtomicEnvironment:
     all_kernel_types = ['bond', 'triplet', 'mb']
     ndim = {'bond': 2, 'triplet': 3, 'mb': 2, 'cut3b': 2}
 
-    def __init__(self, structure: Structure, atom: int, cutoffs: dict, sweep=1, cutoffs_mask=None):
+    def __init__(self, structure: Structure, atom: int, cutoffs, sweep=1, cutoffs_mask=None):
         self.structure = structure
         self.positions = structure.wrapped_positions
         self.cell = structure.cell
@@ -79,6 +79,15 @@ class AtomicEnvironment:
 
         self.atom = atom
         self.ctype = structure.coded_species[atom]
+
+        # backward compatability
+        if not isinstance(cutoffs, dict):
+            newcutoffs = {'bond':cutoffs[0]}
+            if len(cutoffs)>1:
+                newcutoffs['triplet'] = cutoffs[1]
+            if len(cutoffs)>2:
+                newcutoffs['mb'] = cutoffs[2]
+            cutoffs = newcutoffs
 
         if cutoffs_mask is None:
             cutoffs_mask = {'cutoffs': cutoffs}

@@ -56,14 +56,14 @@ class GaussianProcess:
             predictions.
         output (Output, optional): Output object used to dump hyperparameters
             during optimization. Defaults to None.
-        hyps_mask (dict, optional): hyps_mask can set up which hyper parameter
+        param_dict (dict, optional): param_dict can set up which hyper parameter
             is used for what interaction. Details see kernels/mc_sephyps.py
         name (str, optional): Name for the GP instance.
     """
 
     def __init__(self, kernel_name='2+3_mc',
-                 hyps: 'ndarray' = None, cutoffs: dict = {},
-                 hyps_mask: dict = {},
+                 hyps: 'ndarray' = None, cutoffs = {},
+                 param_dict: dict = {},
                  hyp_labels: List = None, opt_algorithm: str = 'L-BFGS-B',
                  maxiter: int = 10, parallel: bool = False,
                  per_atom_par: bool = True, n_cpus: int = 1,
@@ -73,29 +73,6 @@ class GaussianProcess:
 
         """Initialize GP parameters and training data."""
 
-        self.kernel_name = kernel_name
-        self.cutoffs = cutoffs
-        self.hyps = np.array(hyps, dtype=np.float64)
-        self.hyp_labels = hyp_labels
-
-        # # TO DO need to fix it
-        if hyps is None:
-            # If no hyperparameters are passed in, assume 2 hyps for each
-            # cutoff, plus one noise hyperparameter, and use a guess value
-            hyps = np.array([0.1]*(1+2*len(cutoffs)))
-
-        if (hyps_mask is None):
-            kernels = []
-            if '2' in kernel_name:
-                kernels += ['bond']
-            if '3' in kernel_name:
-                kernels += ['triplet']
-            if 'mb' in kernel_name:
-                kernels += ['mb']
-            self.hyps_mask = {'nspecie':1, 'cutoffs':cutoffs, 'hyps': hyps, 'kernels':kernels}
-
-        self.update_hyps(hyps, hyp_labels, hyps_mask)
-
         # load arguments into attributes
         self.name = name
 
@@ -104,7 +81,6 @@ class GaussianProcess:
         self.output = output
         self.per_atom_par = per_atom_par
         self.maxiter = maxiter
-
 
         # set up parallelization
         self.n_cpus = n_cpus
@@ -120,7 +96,23 @@ class GaussianProcess:
             DeprecationWarning("no_cpus is being replaced with n_cpu")
             self.n_cpus = kwargs.get('no_cpus')
 
-        kernel, grad, ek, efk = str_to_kernel_set(kernel_name, hyps_mask)
+        # backward compatability and sync the definitions in
+        param_dict = Parameters.backward(hyps, hyp_labels, cutoffs, kernel_name, param_dict)
+
+        print(param_dict)
+        self.kernel_name = param_dict['kernel_name']
+        self.cutoffs = param_dict['cutoffs']
+        self.hyps = np.array(param_dict['hyps'], dtype=np.float64)
+        self.hyp_labels = param_dict['hyp_labels']
+        self.param_dict = param_dict
+
+        # # TO DO need to fix it
+        if hyps is None:
+            # If no hyperparameters are passed in, assume 2 hyps for each
+            # cutoff, plus one noise hyperparameter, and use a guess value
+            hyps = np.array([0.1]*(1+2*len(cutoffs)))
+
+        kernel, grad, ek, efk = str_to_kernel_set(kernel_name, param_dict)
         self.kernel = kernel
         self.kernel_grad = grad
         self.energy_force_kernel = efk
@@ -200,25 +192,18 @@ class GaussianProcess:
         _global_training_labels[self.name] = self.training_labels_np
         _global_energy_labels[self.name] = self.energy_labels_np
 
-        self.hyps_mask = Parameters.check_instantiation(self.hyps_mask)
+        self.param_dict = Parameters.check_instantiation(self.param_dict)
 
-        self.bounds = deepcopy(self.hyps_mask.get('bounds', None))
+        self.bounds = deepcopy(self.param_dict.get('bounds', None))
 
 
-    def update_kernel(self, kernel_name, hyps_mask):
+    def update_kernel(self, kernel_name, param_dict):
         kernel, grad, ek, efk = str_to_kernel_set(kernel_name, hpys_mask)
         self.kernel = kernel
         self.kernel_grad = grad
         self.energy_force_kernel = efk
         self.energy_kernel = ek
         self.kernel_name = kernel.__name__
-
-    def update_hyps(self, hyps=None, hyp_labels=None, hyps_mask=None):
-        self.hyps_mask = hyps_mask
-        self.cutoffs = hyps_mask['cutoff']
-        self.kernel_name = "+".join(hyps_mask['kernels'])
-        self.hyps = np.array(hyps_mask['hyps'], dtype=np.float64)
-        self.hyp_labels = hyps_mask['hyp_labels']
 
     def update_db(self, struc: Structure, forces: List,
                   custom_range: List[int] = (), energy: float = None,
@@ -248,7 +233,7 @@ class GaussianProcess:
             for atom in update_indices:
                 env_curr = \
                     AtomicEnvironment(struc, atom, self.cutoffs, sweep=sweep,
-                            cutoffs_mask=self.hyps_mask)
+                            cutoffs_mask=self.param_dict)
                 forces_curr = np.array(forces[atom])
 
                 self.training_data.append(env_curr)
@@ -265,7 +250,7 @@ class GaussianProcess:
             for atom in range(noa):
                 env_curr = \
                     AtomicEnvironment(struc, atom, self.cutoffs, sweep=sweep,
-                                      cutoffs_mask=self.hyps_mask)
+                                      cutoffs_mask=self.param_dict)
                 structure_list.append(env_curr)
 
             self.energy_labels.append(energy)
@@ -333,7 +318,7 @@ class GaussianProcess:
         x_0 = self.hyps
 
         args = (self.name, self.kernel_grad, output,
-                self.cutoffs, self.hyps_mask,
+                self.cutoffs, self.param_dict,
                 self.n_cpus, self.n_sample, print_progress)
 
         res = None
@@ -428,7 +413,7 @@ class GaussianProcess:
         k_v = \
             get_kernel_vector(self.name, self.kernel, self.energy_force_kernel,
                               x_t, d, self.hyps, cutoffs=self.cutoffs,
-                              hyps_mask=self.hyps_mask, n_cpus=n_cpus,
+                              param_dict=self.param_dict, n_cpus=n_cpus,
                               n_sample=self.n_sample)
 
         # Guarantee that alpha is up to date with training set
@@ -439,7 +424,7 @@ class GaussianProcess:
 
         # get predictive variance without cholesky (possibly faster)
         # pass args to kernel based on if mult. hyperparameters in use
-        args = from_mask_to_args(self.hyps, self.hyps_mask)
+        args = from_mask_to_args(self.hyps, self.param_dict)
         self_kern = self.kernel(x_t, x_t, d, d, *args)
         pred_var = self_kern - np.matmul(np.matmul(k_v, self.ky_mat_inv), k_v)
 
@@ -466,7 +451,7 @@ class GaussianProcess:
         k_v = en_kern_vec(self.name, self.energy_force_kernel,
                           self.energy_kernel,
                           x_t, self.hyps, cutoffs=self.cutoffs,
-                          hyps_mask=self.hyps_mask, n_cpus=n_cpus,
+                          param_dict=self.param_dict, n_cpus=n_cpus,
                           n_sample=self.n_sample)
 
         pred_mean = np.matmul(k_v, self.alpha)
@@ -496,7 +481,7 @@ class GaussianProcess:
         k_v = en_kern_vec(self.name, self.energy_force_kernel,
                           self.energy_kernel,
                           x_t, self.hyps, cutoffs=self.cutoffs,
-                          hyps_mask=self.hyps_mask, n_cpus=n_cpus,
+                          param_dict=self.param_dict, n_cpus=n_cpus,
                           n_sample=self.n_sample)
 
         # get predictive mean
@@ -504,7 +489,7 @@ class GaussianProcess:
 
         # get predictive variance
         v_vec = solve_triangular(self.l_mat, k_v, lower=True)
-        args = from_mask_to_args(self.hyps, self.hyps_mask, self.cutoffs)
+        args = from_mask_to_args(self.hyps, self.param_dict, self.cutoffs)
 
         self_kern = self.energy_kernel(x_t, x_t, *args)
 
@@ -529,7 +514,7 @@ class GaussianProcess:
             get_Ky_mat(self.hyps, self.name, self.kernel,
                        self.energy_kernel, self.energy_force_kernel,
                        self.energy_noise,
-                       cutoffs=self.cutoffs, hyps_mask=self.hyps_mask,
+                       cutoffs=self.cutoffs, param_dict=self.param_dict,
                        n_cpus=self.n_cpus, n_sample=self.n_sample)
 
         l_mat = np.linalg.cholesky(ky_mat)
@@ -566,7 +551,7 @@ class GaussianProcess:
                                    self.name, self.kernel, self.energy_kernel,
                                    self.energy_force_kernel, self.energy_noise,
                                    cutoffs=self.cutoffs,
-                                   hyps_mask=self.hyps_mask,
+                                   param_dict=self.param_dict,
                                    n_cpus=self.n_cpus,
                                    n_sample=self.n_sample)
 
@@ -599,8 +584,8 @@ class GaussianProcess:
             for hyp, label in zip(self.hyps, self.hyp_labels):
                 thestr += f"{label}: {hyp}\n"
 
-        for k in self.hyps_mask:
-            thestr += f'{k}: {self.hyps_mask[k]}\n'
+        for k in self.param_dict:
+            thestr += f'{k}: {self.param_dict[k]}\n'
 
         return thestr
 
@@ -646,7 +631,7 @@ class GaussianProcess:
                                  maxiter=dictionary['maxiter'],
                                  opt_algorithm=dictionary.get(
                                      'opt_algorithm', 'L-BFGS-B'),
-                                 hyps_mask=dictionary.get('hyps_mask', None),
+                                 param_dict=dictionary.get('param_dict', None),
                                  name=dictionary.get('name', 'default_gp')
                                  )
 
@@ -722,7 +707,7 @@ class GaussianProcess:
         self.ky_mat_inv = ky_mat_inv
 
     def adjust_cutoffs(self, new_cutoffs: Union[list, tuple, 'np.ndarray'],
-                       reset_L_alpha=True, train=True, new_hyps_mask=None):
+                       reset_L_alpha=True, train=True, new_param_dict=None):
         """
         Loop through atomic environment objects stored in the training data,
         and re-compute cutoffs for each. Useful if you want to gauge the
@@ -735,10 +720,10 @@ class GaussianProcess:
         :return:
         """
 
-        if (new_hyps_mask is not None):
-            hm = new_hyps_mask
+        if (new_param_dict is not None):
+            hm = new_param_dict
         else:
-            hm = self.hyps_mask
+            hm = self.param_dict
 
         # update environment
         nenv = len(self.training_data)

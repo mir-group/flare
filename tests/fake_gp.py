@@ -32,18 +32,26 @@ def generate_hm(nbond, ntriplet, nmb=1, constraint=False, multihyps=True):
 
     if (multihyps is False):
         hyps_label = []
+        kernels = []
+        parameters = {}
         if (nbond > 0):
-            nbond = 1
-            hyps_label += ['Length', 'Signal Var.']
+            kernels += ['bond']
+            parameters['cutoff_bond'] = 0.8
         if (ntriplet > 0):
-            ntriplet = 1
-            hyps_label += ['Length', 'Signal Var.']
-        hyps_label += ['Length', 'Signal Var.']
-        hyps_label += ['Noise Var.']
-        return random((nbond+ntriplet+1)*2+1), {'hyps_label': hyps_label}, np.ones(3, dtype=np.float)*0.8
+            kernels += ['triplet']
+            parameters['cutoff_triplet'] = 0.8
+        if (nmb > 0):
+            kernels += ['mb']
+            parameters['cutoff_mb'] = 0.8
+        pm = ParameterHelper(kernels=kernels, random=True,
+                parameters=parameters)
+        hm = pm.as_dict()
+        hyps = hm['hyps']
+        cut = hm['cutoffs']
+        return hyps, hm, cut
 
-    pm = ParameterHelper(species=['H', 'He'], parameters={'cutoff2b': 0.8,
-        'cutoff3b': 0.8, 'cutoffmb': 0.8, 'noise':0.05})
+    pm = ParameterHelper(species=['H', 'He'], parameters={'cutoff_bond': 0.8,
+        'cutoff_triplet': 0.8, 'cutoff_mb': 0.8, 'noise':0.05})
     pm.define_group('bond', 'b1', ['*', '*'], parameters=random(2))
     pm.define_group('triplet', 't1', ['*', '*', '*'], parameters=random(2))
     if (nmb>0):
@@ -78,7 +86,7 @@ def get_gp(bodies, kernel_type='mc', multihyps=True, cellabc=[1, 1, 1.5]) -> Gau
     # params
     cell = np.diag(cellabc)
     unique_species = [2, 1]
-    cutoffs = np.array([0.8, 0.8])
+    cutoffs = {'bond':0.8, 'triplet':0.8}
     noa = 5
 
     nbond = 0
@@ -123,7 +131,7 @@ def get_force_gp(bodies, kernel_type='mc', multihyps=True, cellabc=[1,1,1.5]) ->
     # params
     cell = np.diag(cellabc)
     unique_species = [2, 1]
-    cutoffs = np.array([0.8, 0.8])
+    cutoffs = {'bond':0.8, 'triplet':0.8}
     noa = 5
 
     nbond = 0
@@ -163,7 +171,7 @@ def get_force_gp(bodies, kernel_type='mc', multihyps=True, cellabc=[1,1,1.5]) ->
 
 def get_params():
     parameters = {'unique_species': [2, 1],
-                  'cutoff': 0.8,
+                  'cutoffs': {'bond': 0.8},
                   'noa': 5,
                   'cell': np.eye(3),
                   'db_pts': 30}
@@ -175,7 +183,7 @@ def get_tstp(hm=None) -> AtomicEnvironment:
     # params
     cell = np.eye(3)
     unique_species = [2, 1]
-    cutoffs = np.ones(3)*0.8
+    cutoffs = {'bond':0.8, 'triplet': 0.8, 'mb': 0.8}
     noa = 10
 
     test_structure_2, _ = get_random_structure(cell, unique_species,
@@ -256,7 +264,7 @@ def generate_envs(cutoffs, delta):
     """
     # create env 1
     # perturb the x direction of atom 0 for +- delta
-    cell = np.eye(3)*np.max(cutoffs+0.1)
+    cell = np.eye(3)*(np.max(list(cutoffs.values()))+0.1)
     atom_1 = 0
     pos_1 = np.vstack([[0, 0, 0], random([3, 3])])
     pos_2 = deepcopy(pos_1)

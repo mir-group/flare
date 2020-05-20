@@ -70,8 +70,8 @@ def test_init(bodies, multihyps, map_force, all_mgp, all_gp):
     grid_num_2 = 64
     grid_num_3 = 25
     lower_cut = 0.01
-    two_cut = gp_model.cutoffs[0]
-    three_cut = gp_model.cutoffs[1]
+    two_cut = gp_model.cutoffs['bond']
+    three_cut = gp_model.cutoffs['triplet']
     if map_force:
         lower_cut_3 = -1
         three_cut_3 = 1
@@ -125,7 +125,7 @@ def test_build_map(all_gp, all_mgp, bodies, multihyps, map_force):
     mgp_model = all_mgp[f'{bodies}{multihyps}{map_force}']
     mgp_model.build_map(gp_model)
 
-  
+
 
 @pytest.mark.parametrize('bodies', body_list)
 @pytest.mark.parametrize('multihyps', multi_list)
@@ -244,7 +244,7 @@ def test_lmp_predict(all_gp, all_mgp, bodies, multihyps, map_force):
         by = 'yes'
     if '3' in bodies:
         ty = 'yes'
-    
+
     if map_force:
         style_string = 'mgpf'
     else:

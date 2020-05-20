@@ -107,7 +107,7 @@ def test_force(kernel_name, kernel_type):
 
     hyps = generate_hm(kernel_name)
     kernel, kg, en_kernel, fek = \
-        str_to_kernel_set(kernel_name+kernel_type, False)
+        str_to_kernel_set(kernel_name+kernel_type)
     args = (hyps, cutoffs)
 
     nterm = 0
@@ -180,7 +180,7 @@ def test_hyps_grad(kernel_name, kernel_type):
     env1 = generate_mb_envs(cutoffs, cell, 0, d1, kern_type=kernel_type)[0][0]
     env2 = generate_mb_envs(cutoffs, cell, 0, d2, kern_type=kernel_type)[0][0]
 
-    kernel, kernel_grad, _, _ = str_to_kernel_set(kernel_name+kernel_type, False)
+    kernel, kernel_grad, _, _ = str_to_kernel_set(kernel_name+kernel_type)
 
     grad_test = kernel_grad(env1, env2,
                             d1, d2, hyps, cutoffs)

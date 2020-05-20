@@ -29,7 +29,7 @@ def all_gps() -> GaussianProcess:
     gp_dict = {True: None, False: None}
     for multihyps in multihyps_list:
         hyps, hm, cutoffs = generate_hm(1, 1, multihyps=multihyps)
-        hl = hm['hyps_label']
+        hl = hm['hyp_labels']
         if (multihyps is False):
             hm = None
 
@@ -171,7 +171,7 @@ class TestConstraint():
         hyps, hm, cutoffs = generate_hm(1, 1, constraint=True, multihyps=True)
 
         test_gp.hyps_mask = hm
-        test_gp.hyp_labels = hm['hyps_label']
+        test_gp.hyp_labels = hm['hyp_labels']
         test_gp.hyps = hyps
 
         # Check that the hyperparameters were updated
@@ -218,7 +218,7 @@ class TestAlgebra():
 
         test_structure, forces = \
             get_random_structure(params['cell'], params['unique_species'], 2)
-        energy = 3.14                 
+        energy = 3.14
         test_gp.check_L_alpha()
         test_gp.update_db(test_structure, forces, energy=energy)
         test_gp.update_L_alpha()
