@@ -980,10 +980,10 @@ class ParameterHelper():
                 if kernel!='cut3b':
                     hyps, opt = Parameters.get_component_hyps(hyps_mask, kernel,
                                                               constraint=True, noise=False)
-                    sig = hyps[:n]
-                    ls = hyps[n:]
-                    csig = opt[:n]
-                    cls = opt[n:]
+                    sig = hyps[0]
+                    ls = hyps[1]
+                    csig = opt[0]
+                    cls = opt[1]
                     cutoff = hyps_mask['cutoffs'][kernel]
                     pm.set_parameters('cutoff_'+kernel, cutoff)
                     cutoff_list = hyps_mask.get(f'{kernel}_cutoff_list', np.ones(len(sig))*cutoff)

@@ -424,11 +424,12 @@ def two_three_many_mc_en(env1, env2, cutoff_2b, cutoff_3b, cutoff_mb,
 # -----------------------------------------------------------------------------
 
 
-def two_plus_three_body_mc(env1, env2, d1, d2, cutoff_2b, cutoff_3b,
+def two_plus_three_body_mc(env1, env2, d1, d2, cutoff_2b, cutoff_3b, cutoff_mb,
                            nspec, spec_mask,
                            nbond, bond_mask, ntriplet, triplet_mask,
                            ncut3b, cut3b_mask,
-                           sig2, ls2, sig3, ls3,
+                           nmb, mb_mask,
+                           sig2, ls2, sig3, ls3, sigm, lsm,
                            cutoff_func=cf.quadratic_cutoff):
     """2+3-body multi-element kernel between two force components.
 
@@ -480,11 +481,12 @@ def two_plus_three_body_mc(env1, env2, d1, d2, cutoff_2b, cutoff_3b,
     return two_term + three_term
 
 
-def two_plus_three_body_mc_grad(env1, env2, d1, d2, cutoff_2b, cutoff_3b,
+def two_plus_three_body_mc_grad(env1, env2, d1, d2, cutoff_2b, cutoff_3b, cutoff_mb,
                                 nspec, spec_mask,
                                 nbond, bond_mask, ntriplet, triplet_mask,
                                 ncut3b, cut3b_mask,
-                                sig2, ls2, sig3, ls3,
+                                nmb, mb_mask,
+                                sig2, ls2, sig3, ls3, sigm, lsm,
                                 cutoff_func=cf.quadratic_cutoff):
     """2+3-body multi-element kernel between two force components and its
     gradient with respect to the hyperparameters.
@@ -544,11 +546,11 @@ def two_plus_three_body_mc_grad(env1, env2, d1, d2, cutoff_2b, cutoff_3b,
     return kern2 + kern3, g
 
 
-def two_plus_three_mc_force_en(env1, env2, d1, cutoff_2b, cutoff_3b,
-                               nspec, spec_mask,
-                               nbond, bond_mask, ntriplet, triplet_mask,
-                               ncut3b, cut3b_mask,
-                               sig2, ls2, sig3, ls3,
+def two_plus_three_mc_force_en(env1, env2, d1, cutoff_2b, cutoff_3b, cutoff_mb,
+                               nspec, spec_mask, nbond, bond_mask,
+                               ntriplet, triplet_mask, ncut3b, cut3b_mask,
+                               nmb, mb_mask,
+                               sig2, ls2, sig3, ls3, sigm, lsm,
                                cutoff_func=cf.quadratic_cutoff):
     """2+3-body multi-element kernel between force and local energy
 
@@ -604,11 +606,11 @@ def two_plus_three_mc_force_en(env1, env2, d1, cutoff_2b, cutoff_3b,
     return two_term + three_term
 
 
-def two_plus_three_mc_en(env1, env2, cutoff_2b, cutoff_3b,
-                         nspec, spec_mask,
-                         nbond, bond_mask, ntriplet, triplet_mask,
-                         ncut3b, cut3b_mask,
-                         sig2, ls2, sig3, ls3,
+def two_plus_three_mc_en(env1, env2, cutoff_2b, cutoff_3b, cutoff_mb,
+                         nspec, spec_mask, nbond, bond_mask,
+                         ntriplet, triplet_mask, ncut3b, cut3b_mask,
+                         nmb, mb_mask,
+                         sig2, ls2, sig3, ls3, sigm, lsm,
                          cutoff_func=cf.quadratic_cutoff):
     """2+3-body multi-element kernel between two local energies
 
@@ -668,11 +670,11 @@ def two_plus_three_mc_en(env1, env2, cutoff_2b, cutoff_3b,
 # -----------------------------------------------------------------------------
 
 
-def three_body_mc(env1, env2, d1, d2, cutoff_2b, cutoff_3b,
-                  nspec, spec_mask,
-                  nbond, bond_mask, ntriplet, triplet_mask,
-                  ncut3b, cut3b_mask,
-                  sig2, ls2, sig3, ls3,
+def three_body_mc(env1, env2, d1, d2, cutoff_2b, cutoff_3b, cutoff_mb,
+                  nspec, spec_mask, nbond, bond_mask,
+                  ntriplet, triplet_mask, ncut3b, cut3b_mask,
+                  nmb, mb_mask,
+                  sig2, ls2, sig3, ls3, sigm, lsm,
                   cutoff_func=cf.quadratic_cutoff):
     """3-body multi-element kernel between two force components.
 
@@ -716,11 +718,11 @@ def three_body_mc(env1, env2, d1, d2, cutoff_2b, cutoff_3b,
                  triplet_mask, cut3b_mask)
 
 
-def three_body_mc_grad(env1, env2, d1, d2, cutoff_2b, cutoff_3b,
-                       nspec, spec_mask,
-                       nbond, bond_mask, ntriplet, triplet_mask,
-                       ncut3b, cut3b_mask,
-                       sig2, ls2, sig3, ls3,
+def three_body_mc_grad(env1, env2, d1, d2, cutoff_2b, cutoff_3b, cutoff_mb,
+                       nspec, spec_mask, nbond, bond_mask,
+                       ntriplet, triplet_mask, ncut3b, cut3b_mask,
+                       nmb, mb_mask,
+                       sig2, ls2, sig3, ls3, sigm, lsm,
                        cutoff_func=cf.quadratic_cutoff):
     """3-body multi-element kernel between two force components and its
     gradient with respect to the hyperparameters.
@@ -767,12 +769,11 @@ def three_body_mc_grad(env1, env2, d1, d2, cutoff_2b, cutoff_3b,
         nspec, spec_mask, ntriplet, triplet_mask, cut3b_mask)
 
 
-def three_body_mc_force_en(
-        env1, env2, d1, cutoff_2b, cutoff_3b, nspec, spec_mask,
-        nbond, bond_mask, ntriplet, triplet_mask,
-        ncut3b, cut3b_mask,
-        sig2, ls2, sig3, ls3,
-        cutoff_func=cf.quadratic_cutoff):
+def three_body_mc_force_en(env1, env2, d1, cutoff_2b, cutoff_3b, cutoff_mb,
+                           nspec, spec_mask, nbond, bond_mask, ntriplet, triplet_mask,
+                           ncut3b, cut3b_mask, nmb, mb_mask,
+                           sig2, ls2, sig3, ls3, sigm, lsm,
+                           cutoff_func=cf.quadratic_cutoff):
     """3-body multi-element kernel between a force component and local energies
 
     Args:
@@ -822,9 +823,10 @@ def three_body_mc_force_en(
                  triplet_mask, cut3b_mask) / 3
 
 
-def three_body_mc_en(env1, env2, cutoff_2b, cutoff_3b, nspec, spec_mask,
+def three_body_mc_en(env1, env2, cutoff_2b, cutoff_3b,  cutoff_mb,  nspec, spec_mask,
                      nbond, bond_mask, ntriplet, triplet_mask,
-                     ncut3b, cut3b_mask, sig2, ls2, sig3, ls3,
+                     ncut3b, cut3b_mask, nmb, mb_mask,
+                     sig2, ls2, sig3, ls3, sigm, lsm,
                      cutoff_func=cf.quadratic_cutoff):
     """3-body multi-element kernel between two local energies
 
@@ -863,7 +865,7 @@ def three_body_mc_en(env1, env2, cutoff_2b, cutoff_3b, nspec, spec_mask,
                  env1.cross_bond_inds, env2.cross_bond_inds,
                  env1.cross_bond_dists, env2.cross_bond_dists,
                  env1.triplet_counts, env2.triplet_counts,
-                 sig3, ls3, cutoff_3b, cutoff_func,
+                 sig3, ls3, cutoff_3b,  cutoff_mb,  cutoff_func,
                  nspec, spec_mask,
                  triplet_mask, cut3b_mask)/9
 
@@ -874,9 +876,9 @@ def three_body_mc_en(env1, env2, cutoff_2b, cutoff_3b, nspec, spec_mask,
 
 
 def two_body_mc(
-        env1, env2, d1, d2, cutoff_2b, cutoff_3b, nspec, spec_mask,
+        env1, env2, d1, d2, cutoff_2b, cutoff_3b,  cutoff_mb,  nspec, spec_mask,
         nbond, bond_mask, ntriplet, triplet_mask, ncut3b, cut3b_mask,
-        sig2, ls2, sig3, ls3,
+        nmb, mb_mask, sig2, ls2, sig3, ls3, sigm, lsm,
         cutoff_func=cf.quadratic_cutoff):
     """2-body multi-element kernel between two force components.
 
@@ -912,9 +914,10 @@ def two_body_mc(
 
 
 def two_body_mc_grad(
-        env1, env2, d1, d2, cutoff_2b, cutoff_3b, nspec, spec_mask,
+        env1, env2, d1, d2, cutoff_2b, cutoff_3b,  cutoff_mb,  nspec, spec_mask,
         nbond, bond_mask, ntriplet, triplet_mask,
-        ncut3b, cut3b_mask, sig2, ls2, sig3, ls3,
+        ncut3b, cut3b_mask, nmb, mb_mask,
+        sig2, ls2, sig3, ls3, sigm, lsm,
         cutoff_func=cf.quadratic_cutoff):
     """2-body multi-element kernel between two force components and its
     gradient with respect to the hyperparameters.
@@ -953,10 +956,11 @@ def two_body_mc_grad(
         nspec, spec_mask, nbond, bond_mask)
 
 
-def two_body_mc_force_en(env1, env2, d1, cutoff_2b, cutoff_3b,
+def two_body_mc_force_en(env1, env2, d1, cutoff_2b, cutoff_3b, cutoff_mb,
                          nspec, spec_mask, nbond, bond_mask, ntriplet, triplet_mask,
-                         ncut3b, cut3b_mask,
-                         sig2, ls2, sig3, ls3, cutoff_func=cf.quadratic_cutoff):
+                         ncut3b, cut3b_mask, nmb, mb_mask,
+                         sig2, ls2, sig3, ls3, sigm, lsm,
+                         cutoff_func=cf.quadratic_cutoff):
     """2-body multi-element kernel between a force components and local energy
 
     Args:
@@ -991,9 +995,11 @@ def two_body_mc_force_en(env1, env2, d1, cutoff_2b, cutoff_3b,
         nspec, spec_mask, bond_mask) / 2
 
 
-def two_body_mc_en(env1, env2, cutoff_2b, cutoff_3b, nspec, spec_mask,
+def two_body_mc_en(env1, env2, cutoff_2b, cutoff_3b, cutoff_mb,
+                   nspec, spec_mask,
                    nbond, bond_mask, ntriplet, triplet_mask,
-                   ncut3b, cut3b_mask, sig2, ls2, sig3, ls3,
+                   ncut3b, cut3b_mask, nmb, mb_mask,
+                   sig2, ls2, sig3, ls3, sigm, lsm,
                    cutoff_func=cf.quadratic_cutoff):
     """2-body multi-element kernel between two local energies
 

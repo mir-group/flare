@@ -154,22 +154,26 @@ class Parameters():
 
 
     @staticmethod
-    def get_component_hyps(param_dict, kernel_name, constraint=False, noise=False):
+    def get_component_hyps(param_dict, kernel_name, hyps=None, constraint=False, noise=False):
 
         if kernel_name not in param_dict['kernels']:
-            return None
+            if constraint:
+                return [None, None, None], [None, None]
+            else:
+                return [None, None, None]
 
-        hyps, opt = Parameters.get_hyps(param_dict, constraint=True)
+        hyps, opt = Parameters.get_hyps(param_dict, hyps=hyps, constraint=True)
         s = param_dict[kernel_name+'_start']
-        e = s + 2*param_dict[f'n{kernel_name}']
+        n = param_dict[f'n{kernel_name}']
 
-        newhyps = hyps[s:e]
+        newhyps = [hyps[s:s+n], hyps[s+n:s+2*n]]
+        newopt = [opt[s:s+n], opt[s+n:s+2*n]]
 
         if noise:
-            newhyps = np.hstack(newhyps, hyps[-1])
+            newhyps += [hyps[-1]]
 
         if constraint:
-            return newhyps, opt[s:e]
+            return newhyps, newopt
         else:
             return newhyps
 
@@ -178,7 +182,7 @@ class Parameters():
 
         if kernel_name in param_dict['kernels']:
             new_dict = {}
-            new_dict['hyps'] = get_component_hyps(param_dict, kernel_name, noise=True)
+            new_dict['hyps'] = np.hstack(get_component_hyps(param_dict, kernel_name, noise=True))
             new_dict['kernels'] = [kernel_name]
             new_dict['cutoffs'] = {kernel_name: param_dict['cutoffs'][kernel_name]}
             new_dict[kernel_name+'_start'] = 0
@@ -198,8 +202,8 @@ class Parameters():
             return {}
 
     @staticmethod
-    def get_noise(param_dict, constraint=False):
-        hyps = Parameters.get_hyps(param_dict)
+    def get_noise(param_dict, hyps=None, constraint=False):
+        hyps = Parameters.get_hyps(param_dict, hyps=hyps)
         if constraint:
             return hyps[-1], param_dict['train_noise']
         else:
@@ -240,9 +244,11 @@ class Parameters():
 
 
     @staticmethod
-    def get_hyps(param_dict, constraint=False):
+    def get_hyps(param_dict, hyps=None, constraint=False):
 
-        hyps = param_dict['hyps']
+        if hyps is None:
+            hyps = param_dict['hyps']
+
         if 'map' in param_dict:
             newhyps = np.copy(param_dict['original_hyps'])
             opt = np.zeros_like(newhyps, dtype=bool)
@@ -250,7 +256,7 @@ class Parameters():
                 newhyps[ori] = hyps[i]
                 opt[ori] = True
         else:
-            newhyps = hyps
+            newhyps = np.copy(hyps)
             opt = np.zeros_like(hyps, dtype=bool)
 
         if constraint:
