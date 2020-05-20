@@ -32,7 +32,7 @@ def test_generate_by_line():
     pm.set_parameters('cutoff2b', 5)
     pm.set_parameters('cutoff3b', 4)
     pm.set_parameters('cutoffmb', 3)
-    hm = pm.generate_dict()
+    hm = pm.as_dict()
     print(hm)
     Parameters.check_instantiation(hm)
     Parameters.check_matching(hm, hm['hyps'], hm['cutoffs'])
@@ -52,7 +52,7 @@ def test_generate_by_line2():
     pm.set_parameters('***', [1, 0.5])
     pm.set_parameters('cutoff2b', 5)
     pm.set_parameters('cutoff3b', 4)
-    hm = pm.generate_dict()
+    hm = pm.as_dict()
     print(hm)
     Parameters.check_instantiation(hm)
     Parameters.check_matching(hm, hm['hyps'], hm['cutoffs'])
@@ -66,15 +66,15 @@ def test_generate_by_list():
     pm.list_parameters({'bond0':[1, 0.5], 'bond1':[2, 0.2],
                         'triplet0':[1, 0.5], 'triplet1':[2, 0.2],
                         'cutoff2b':2, 'cutoff3b':1})
-    hm = pm.generate_dict()
+    hm = pm.as_dict()
     print(hm)
     Parameters.check_instantiation(hm)
     Parameters.check_matching(hm, hm['hyps'], hm['cutoffs'])
 
 def test_initialization():
     pm = ParameterHelper(species=['O', 'C', 'H'],
-                          bonds=[['*', '*'], ['O','O']],
-                          triplets=[['*', '*', '*'], ['O','O', 'O']],
+                         kernels={'bond':[['*', '*'], ['O','O']],
+                                  'triplet':[['*', '*', '*'], ['O','O', 'O']]},
                           parameters={'bond0':[1, 0.5], 'bond1':[2, 0.2],
                                 'triplet0':[1, 0.5], 'triplet1':[2, 0.2],
                                 'cutoff2b':2, 'cutoff3b':1})
@@ -85,8 +85,8 @@ def test_initialization():
 
 def test_opt():
     pm = ParameterHelper(species=['O', 'C', 'H'],
-                          bonds=[['*', '*'], ['O','O']],
-                          triplets=[['*', '*', '*'], ['O','O', 'O']],
+                          kernels={'bond':[['*', '*'], ['O','O']],
+                                   'triplet':[['*', '*', '*'], ['O','O', 'O']]},
                           parameters={'bond0':[1, 0.5, 1], 'bond1':[2, 0.2, 2],
                                 'triplet0':[1, 0.5], 'triplet1':[2, 0.2],
                                 'cutoff2b':2, 'cutoff3b':1},
@@ -98,13 +98,13 @@ def test_opt():
 
 def test_randomization():
     pm = ParameterHelper(species=['O', 'C', 'H'],
-                          bonds=True, triplets=True,
-                          mb=False, allseparate=True,
+                          kernels=['bond', 'triplet'],
+                          allseparate=True,
                           random=True,
                           parameters={'cutoff2b': 7,
                               'cutoff3b': 4.5,
                               'cutoffmb': 3},
-                          verbose=True)
+                          verbose="debug")
     hm = pm.hyps_mask
     print(hm)
     Parameters.check_instantiation(hm)
@@ -116,23 +116,23 @@ def test_randomization():
 
 def test_from_dict():
     pm = ParameterHelper(species=['O', 'C', 'H'],
-                          bonds=True, triplets=True,
-                          mb=False, allseparate=True,
-                          random=True,
-                          parameters={'cutoff2b': 7,
-                              'cutoff3b': 4.5,
-                              'cutoffmb': 3},
-                          verbose=True)
+                         kernels=['bond', 'triplet'],
+                         allseparate=True,
+                         random=True,
+                         parameters={'cutoff2b': 7,
+                             'cutoff3b': 4.5,
+                             'cutoffmb': 3},
+                         verbose="debug")
     hm = pm.hyps_mask
     Parameters.check_instantiation(hm)
     Parameters.check_matching(hm, hm['hyps'], hm['cutoffs'])
     print(hm['hyps'])
     print("obtain test hm", hm)
 
-    pm1 = ParameterHelper.from_dict(hm, verbose=True)
+    pm1 = ParameterHelper.from_dict(hm, verbose="debug", init_spec=['O', 'C', 'H'])
     print("from_dict")
-    hm1 = pm1.generate_dict()
+    hm1 = pm1.as_dict()
     print(hm['hyps'])
     print(hm1['hyps'][:33], hm1['hyps'][33:])
 
-    dumpcompare(hm, hm1)
+    Parameters.compare_dict(hm, hm1)
