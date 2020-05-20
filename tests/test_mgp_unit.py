@@ -13,6 +13,14 @@ from .fake_gp import get_gp, get_random_structure
 body_list = ['2', '3']
 multi_list = [False, True]
 
+def clean():
+    for f in os.listdir("./"):
+        if re.search(r"grid.*npy", f):
+            os.remove(f)
+        if re.search("kv3", f):
+            os.rmdir(f)
+
+
 # ASSUMPTION: You have a Lammps executable with the mgp pair style with $lmp
 # as the corresponding environment variable.
 @pytest.mark.skipif(not os.environ.get('lmp',
@@ -57,7 +65,7 @@ def test_init(bodies, multihyps, all_mgp, all_gp):
     gp_model = all_gp[f'{bodies}{multihyps}']
 
     grid_num_2 = 64
-    grid_num_3 = 20
+    grid_num_3 = 25
     lower_cut = 0.01
     two_cut = gp_model.cutoffs[0]
     three_cut = gp_model.cutoffs[1]
@@ -72,9 +80,9 @@ def test_init(bodies, multihyps, all_mgp, all_gp):
     # grid parameters
     blist = []
     if ('2' in bodies):
-        blist+= [2]
+        blist += [2]
     if ('3' in bodies):
-        blist+= [3]
+        blist += [3]
     train_size = len(gp_model.training_data)
     grid_params = {'bodies': blist,
                    'cutoffs':gp_model.cutoffs,
@@ -109,11 +117,44 @@ def test_build_map(all_gp, all_mgp, bodies, multihyps):
 
     mgp_model.build_map(gp_model)
 
-    for f in os.listdir("./"):
-        if re.search("grid3*.npy", f):
-            os.remove(f)
-        if re.search("kv3*", f):
-            os.rmdir(f)
+@pytest.mark.parametrize('bodies', body_list)
+@pytest.mark.parametrize('multihyps', multi_list)
+def test_write_model(all_mgp, bodies, multihyps):
+    """
+    test the mapping for mc_simple kernel
+    """
+
+    # multihyps = False
+    mgp_model = all_mgp[f'{bodies}{multihyps}']
+    mgp_model.mean_only = True
+    mgp_model.write_model(f'my_mgp_{bodies}_{multihyps}')
+
+    mgp_model.write_model(f'my_mgp_{bodies}_{multihyps}', format='pickle')
+
+    # Ensure that user is warned when a non-mean_only
+    # model is serialized into a Dictionary
+    with pytest.warns(Warning):
+        mgp_model.mean_only = False
+        mgp_model.as_dict()
+        mgp_model.mean_only = True
+
+
+@pytest.mark.parametrize('bodies', body_list)
+@pytest.mark.parametrize('multihyps', multi_list)
+def test_load_model(all_mgp, bodies, multihyps):
+    """
+    test the mapping for mc_simple kernel
+    """
+
+    # multihyps = False
+    name = f'my_mgp_{bodies}_{multihyps}.json'
+    all_mgp[f'{bodies}{multihyps}'] = MappedGaussianProcess.from_file(name)
+    os.remove(name)
+
+    name = f'my_mgp_{bodies}_{multihyps}.pickle'
+    all_mgp[f'{bodies}{multihyps}'] = MappedGaussianProcess.from_file(name)
+    os.remove(name)
+
 
 @pytest.mark.parametrize('bodies', body_list)
 @pytest.mark.parametrize('multihyps', multi_list)
@@ -137,17 +178,13 @@ def test_predict(all_gp, all_mgp, bodies, multihyps):
     gp_pred_x = gp_model.predict(test_envi, 1)
     mgp_pred = mgp_model.predict(test_envi, mean_only=True)
 
-    # check mgp is within 1 meV/A of the gp
-    assert(np.abs(mgp_pred[3] - gp_pred_en) < 1e-3), \
+    # check mgp is within 2 meV/A of the gp
+    assert(np.abs(mgp_pred[3] - gp_pred_en) < 2e-3), \
             f"{bodies} body energy mapping is wrong"
-    assert(np.abs(mgp_pred[0][0] - gp_pred_x[0]) < 1e-3), \
+    assert(np.abs(mgp_pred[0][0] - gp_pred_x[0]) < 2e-3), \
             f"{bodies} body mapping is wrong"
 
-    for f in os.listdir("./"):
-        if re.search("grid3*.npy", f):
-            os.remove(f)
-        if re.search("kv3*", f):
-            os.rmdir(f)
+    clean()
 
 @pytest.mark.skipif(not os.environ.get('lmp',
                           False), reason='lmp not found '
@@ -165,10 +202,7 @@ def test_lmp_predict(all_gp, all_mgp, bodies, multihyps):
         if f in [f'tmp{bodies}{multihyps}in', f'tmp{bodies}{multihyps}out', f'tmp{bodies}{multihyps}dump',
                  f'tmp{bodies}{multihyps}data', 'log.lammps']:
             os.remove(f)
-        if re.search("grid3*.npy", f):
-            os.remove(f)
-        if re.search("kv3*", f):
-            os.rmdir(f)
+    clean()
 
     mgp_model = all_mgp[f'{bodies}{multihyps}']
     gp_model = all_gp[f'{bodies}{multihyps}']
@@ -228,7 +262,4 @@ def test_lmp_predict(all_gp, all_mgp, bodies, multihyps):
         if f in [f'tmp{bodies}{multihyps}in', f'tmp{bodies}{multihyps}out', f'tmp{bodies}{multihyps}dump',
               f'tmp{bodies}{multihyps}data', 'log.lammps', lammps_location]:
             os.remove(f)
-        if re.search("grid3*.npy", f):
-            os.remove(f)
-        if re.search("kv3*", f):
-            os.rmdir(f)
+    clean()

@@ -19,5 +19,6 @@ def md_trajectory_from_file(filename: str):
     """
     with open(filename, 'r') as f:
         structure_list = load(f)
-        structures = [Structure.from_dict(dictionary) for dictionary in structure_list]
+        structures = \
+            [Structure.from_dict(dictionary) for dictionary in structure_list]
     return structures

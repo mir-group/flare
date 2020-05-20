@@ -9,9 +9,17 @@ from flare.mgp.mgp import MappedGaussianProcess
 from flare.kernels.utils import str_to_kernel_set
 from flare.lammps import lammps_calculator
 
-from .fake_gp import get_gp, get_random_structure
+from .fake_gp import get_force_gp, get_random_structure
 
 body_list = ['2', '3']
+
+def clean():
+    for f in os.listdir("./"):
+        if re.search(r"grid.*npy", f):
+            os.remove(f)
+        if re.search("kv3", f):
+            os.rmdir(f)
+
 
 # ASSUMPTION: You have a Lammps executable with the mgp pair style with $lmp
 # as the corresponding environment variable.
@@ -27,7 +35,7 @@ def all_gp():
     allgp_dict = {}
     np.random.seed(0)
     for bodies in ['2', '3', '2+3']:
-        gp_model = get_gp(bodies, 'mc', False)
+        gp_model = get_force_gp(bodies, 'mc', False)
         gp_model.parallel = True
         gp_model.n_cpus = 2
         gp_model.set_L_alpha()
@@ -107,11 +115,8 @@ def test_build_map(all_gp, all_mgp, bodies):
 
     mgp_model.build_map(gp_model)
 
-    for f in os.listdir("./"):
-        if re.search("grid3*.npy", f):
-            os.remove(f)
-        if re.search("kv3*", f):
-            os.rmdir(f)
+    clean()
+
 
 @pytest.mark.parametrize('bodies', body_list)
 def test_predict(all_gp, all_mgp, bodies):
@@ -139,11 +144,8 @@ def test_predict(all_gp, all_mgp, bodies):
         assert(np.abs(mgp_pred[0][s] - gp_pred_x[0]) < 1e-3), \
                 f"{bodies} body mapping is wrong"
 
-    for f in os.listdir("./"):
-        if re.search("grid3*.npy", f):
-            os.remove(f)
-        if re.search("kv3*", f):
-            os.rmdir(f)
+    clean()
+
 
 @pytest.mark.skipif(not os.environ.get('lmp',
                           False), reason='lmp not found '
@@ -215,7 +217,5 @@ def test_lmp_predict(all_gp, all_mgp, bodies):
         if f in [f'tmp{bodies}.in', f'tmp{bodies}.out', f'tmp{bodies}.dump',
               f'tmp{bodies}.data', 'log.lammps', lammps_location]:
             os.remove(f)
-        if re.search("grid3*.npy", f):
-            os.remove(f)
-        if re.search("kv3*", f):
-            os.rmdir(f)
+
+    clean()

@@ -35,7 +35,7 @@ Gaussian Processes and OTF
 
         * `maxiter`: maximal number of iterations, usually set to ~10 to prevent training for too long.
 
-        * `par`: if `True`, then parallelization is used in optimization. 
+        * `parallel`: if `True`, then parallelization is used in optimization. 
           The serial version could be very slow.
 
         * `output` (in `train` function): set up an output file for monitoring optimization iterations.

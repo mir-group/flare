@@ -19,15 +19,16 @@ def get_random_velocities(noa: int, temperature: float, mass: float):
         mass (float): Mass of each particle in amu.
 
     Returns:
-        np.ndarray: Particle velocities, corrected to give zero center of mass motion.
+        np.ndarray: Particle velocities, corrected to give zero center of mass
+            motion.
     """
-    
+
     # Use FLARE mass units (time = ps, length = A, energy = eV)
     mass_md = mass * 0.000103642695727
     kb = 0.0000861733034
     std = np.sqrt(kb * temperature / mass_md)
     velocities = np.random.normal(scale=std, size=(noa, 3))
-    
+
     # Remove center-of-mass motion
     vel_sum = np.sum(velocities, axis=0)
     corrected_velocities = velocities - vel_sum / noa
@@ -44,7 +45,8 @@ def multicomponent_velocities(temperature: float, masses: List[float]):
         masses (List[float]): Particle masses in amu.
 
     Returns:
-        np.ndarray: Particle velocities, corrected to give zero center of mass motion.
+        np.ndarray: Particle velocities, corrected to give zero center of mass
+            motion.
     """
 
     noa = len(masses)
@@ -294,7 +296,8 @@ class NumpyEncoder(JSONEncoder):
 
     json.dumps(... cls = NumpyEncoder)
 
-    Thanks to StackOverflow users karlB and fnunnari, who contributed this from:
+    Thanks to StackOverflow users karlB and fnunnari, who contributed this
+    from:
     `https://stackoverflow.com/a/47626762`
     """
 
@@ -333,7 +336,7 @@ def Z_to_element(Z: int) -> str:
 
 def is_std_in_bound(std_tolerance: float, noise: float,
                     structure: 'flare.struc.Structure',
-                    max_atoms_added: int = inf)-> (bool, List[int]):
+                    max_atoms_added: int = inf) -> (bool, List[int]):
     """
     Given an uncertainty tolerance and a structure decorated with atoms,
     species, and associated uncertainties, return those which are above a
@@ -383,7 +386,8 @@ def is_std_in_bound_per_species(rel_std_tolerance: float,
                                 abs_std_tolerance: float, noise: float,
                                 structure: 'flare.struc.Structure',
                                 max_atoms_added: int = inf,
-                                max_by_species: dict = {})-> (bool, List[int]):
+                                max_by_species: dict = {}) -> (bool,
+                                                               List[int]):
     """
     Checks the stds of GP prediction assigned to the structure, returns a
     list of atoms which either meet an absolute threshold or a relative
@@ -430,8 +434,8 @@ def is_std_in_bound_per_species(rel_std_tolerance: float,
 
     # Determine if any std component will trigger the threshold
     # before looking through individual species.
-    max_std_components = [np.max(std) for std in structure.stds]
-    if max(max_std_components) < threshold:
+    max_std_components = [np.nanmax(std) for std in structure.stds]
+    if np.nanmax(max_std_components) < threshold:
         return True, [-1]
 
     target_atoms = []
@@ -447,8 +451,12 @@ def is_std_in_bound_per_species(rel_std_tolerance: float,
         # If max atoms added reached or stds of atoms considered are now below
         # threshold, conclude
         if len(target_atoms) == max_atoms_added or \
-                max_std_components[i] < threshold:
+                (max_std_components[i] < threshold and max_std_components[i]
+                 != np.nan):
             break
+
+        if np.isnan(max_std_components[i]):
+            continue
 
         # Only add up to species allowance, if it exists
         cur_spec = structure.species_labels[i]
@@ -469,9 +477,9 @@ def is_force_in_bound_per_species(abs_force_tolerance: float,
                                   label_forces: 'ndarray',
                                   structure,
                                   max_atoms_added: int = inf,
-                                  max_by_species: dict ={},
+                                  max_by_species: dict = {},
                                   max_force_error: float
-                                  = inf)-> (bool, List[int]):
+                                  = inf) -> (bool, List[int]):
     """
     Checks the forces of GP prediction assigned to the structure against a
     DFT calculation, and return a list of atoms which meet an absolute
@@ -511,7 +519,7 @@ def is_force_in_bound_per_species(abs_force_tolerance: float,
 
     # Determine if any force component will trigger the threshold
     max_error_components = np.amax(errors, axis=1)
-    if np.max(max_error_components) < abs_force_tolerance:
+    if np.nanmax(max_error_components) < abs_force_tolerance:
         return True, [-1]
 
     target_atoms = []
@@ -527,7 +535,8 @@ def is_force_in_bound_per_species(abs_force_tolerance: float,
         # If max atoms added reached or force errors are now below threshold,
         # conclude
         if len(target_atoms) == max_atoms_added or \
-                max_error_components[i] < abs_force_tolerance:
+                (max_error_components[i] < abs_force_tolerance and
+                 max_error_components[i] != np.nan):
             break
 
         cur_spec = structure.species_labels[i]
@@ -545,3 +554,95 @@ def is_force_in_bound_per_species(abs_force_tolerance: float,
         return False, target_atoms
     else:
         return True, [-1]
+
+
+def subset_of_frame_by_element(frame: 'flare.Structure',
+                               predict_atoms_per_element: dict) -> List[int]:
+    """
+    Given a structure and a dictionary formatted as {"Symbol":int,
+    ..} describing a number of atoms per element, return a sorted list of
+    indices corresponding to a random subset of atoms by species
+    :param frame:
+    :param predict_atoms_by_species:
+    :return:
+    """
+
+    # Null case: No dictionary or empty dict passed in; just return all indices
+    if not predict_atoms_per_element:
+        return list(range(len(frame)))
+
+    # Keep track of atoms which were considered (dictionary may only cover a
+    #  subset of species of the whole frame)
+    all_atoms = set(range(len(frame)))
+    return_atoms = []
+    considered_atoms = set([])
+
+    species = frame.species_labels
+
+    # Main loop: Obtain the number of relevant atoms for each element
+    for elt, n in predict_atoms_per_element.items():
+
+        matching_atoms = [i for i in all_atoms if species[i] == elt]
+        considered_atoms.update(matching_atoms)
+
+        if len(matching_atoms) == 0:
+            continue
+        # Choose the atoms to add
+        to_add_atoms = np.random.choice(matching_atoms, replace=False,
+                                        size=min(n, len(matching_atoms)))
+        return_atoms += list(to_add_atoms)
+
+    return_atoms += list(all_atoms - considered_atoms)
+
+    return_atoms.sort()
+
+    return return_atoms
+
+
+def get_max_cutoff(cell: np.ndarray) -> float:
+    """Compute the maximum cutoff compatible with a 3x3x3 supercell of a
+        structure. Called in the Structure constructor when
+        setting the max_cutoff attribute, which is used to create local
+        environments with arbitrarily large cutoff radii.
+
+    Args:
+        cell (np.ndarray): Bravais lattice vectors of the structure stored as
+            rows of a 3x3 Numpy array.
+
+    Returns:
+        float: Maximum cutoff compatible with a 3x3x3 supercell of the
+            structure.
+    """
+
+    # Retrieve the lattice vectors.
+    a_vec = cell[0]
+    b_vec = cell[1]
+    c_vec = cell[2]
+
+    # Compute dot products and norms of lattice vectors.
+    a_dot_b = np.dot(a_vec, b_vec)
+    a_dot_c = np.dot(a_vec, c_vec)
+    b_dot_c = np.dot(b_vec, c_vec)
+
+    a_norm = np.linalg.norm(a_vec)
+    b_norm = np.linalg.norm(b_vec)
+    c_norm = np.linalg.norm(c_vec)
+
+    # Compute the six independent altitudes of the cell faces.
+    # The smallest is the maximum atomic environment cutoff that can be
+    # used with sweep=1.
+    max_candidates = np.zeros(6)
+    max_candidates[0] = \
+        a_norm * np.sqrt(1 - (a_dot_b / (a_norm * b_norm))**2)
+    max_candidates[1] = \
+        b_norm * np.sqrt(1 - (a_dot_b / (a_norm * b_norm))**2)
+    max_candidates[2] = \
+        a_norm * np.sqrt(1 - (a_dot_c / (a_norm * c_norm))**2)
+    max_candidates[3] = \
+        c_norm * np.sqrt(1 - (a_dot_c / (a_norm * c_norm))**2)
+    max_candidates[4] = \
+        b_norm * np.sqrt(1 - (b_dot_c / (b_norm * c_norm))**2)
+    max_candidates[5] = \
+        c_norm * np.sqrt(1 - (b_dot_c / (b_norm * c_norm))**2)
+
+    return np.min(max_candidates)

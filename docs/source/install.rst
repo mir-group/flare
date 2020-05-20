@@ -85,8 +85,8 @@ Second, in the initialization of the GP class and OTF class, turn on the GP para
 
 .. code-block:: python
 
-    gp_model = GaussianProcess(..., par=True, per_atom_par=False, n_cpus=2)
-    otf_instance = OTF(..., par=True, n_cpus=2)
+    gp_model = GaussianProcess(..., parallel=True, per_atom_par=False, n_cpus=2)
+    otf_instance = OTF(..., par, n_cpus=2)
 
 Third, set the number of threads for MKL before running your python script.
 

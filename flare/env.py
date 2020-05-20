@@ -2,23 +2,22 @@
 environment of an atom. :class:`AtomicEnvironment` objects are inputs to the
 2-, 3-, and 2+3-body kernels."""
 import numpy as np
-from math import sqrt
+from math import sqrt, ceil
 from numba import njit
 from flare.struc import Structure
 
 
 class AtomicEnvironment:
-    """
-    Contains information about the local environment of an atom, including
-    arrays of pair and triplet distances and the chemical species of atoms
-    in the environment.
+    """Contains information about the local environment of an atom,
+    including arrays of pair and triplet distances and the chemical
+    species of atoms in the environment.
 
     :param structure: Structure of atoms.
     :type structure: struc.Structure
     :param atom: Index of the atom in the structure.
     :type atom: int
     :param cutoffs: 2- and 3-body cutoff radii. 2-body if one cutoff is
-     given, 2+3-body if two are passed.
+    given, 2+3-body if two are passed.
     :type cutoffs: np.ndarray
     """
 
@@ -28,37 +27,49 @@ class AtomicEnvironment:
         self.cell = structure.cell
         self.species = structure.coded_species
 
+        # Set the sweep array based on the max cutoff.
+        sweep_val = ceil(np.max(cutoffs) / structure.max_cutoff)
+        self.sweep_val = sweep_val
+        self.sweep_array = np.arange(-sweep_val, sweep_val + 1, 1)
+
         self.atom = atom
         self.ctype = structure.coded_species[atom]
 
         self.cutoffs = np.copy(cutoffs)
 
+        self.compute_env()
+
+    def compute_env(self):
+
         # get 2-body arrays
         bond_array_2, bond_positions_2, etypes = \
             get_2_body_arrays(self.positions, self.atom, self.cell,
-                              self.cutoffs[0], self.species)
+                              self.cutoffs[0], self.species, self.sweep_array)
         self.bond_array_2 = bond_array_2
         self.etypes = etypes
 
         # if 2 cutoffs are given, create 3-body arrays
-        if len(cutoffs) > 1:
+        if len(self.cutoffs) > 1:
             bond_array_3, cross_bond_inds, cross_bond_dists, triplet_counts = \
-                get_3_body_arrays(bond_array_2, bond_positions_2, self.cutoffs[1])
+                get_3_body_arrays(bond_array_2, bond_positions_2,
+                                  self.cutoffs[1])
             self.bond_array_3 = bond_array_3
             self.cross_bond_inds = cross_bond_inds
             self.cross_bond_dists = cross_bond_dists
             self.triplet_counts = triplet_counts
 
         # if 3 cutoffs are given, create many-body arrays
-        if len(cutoffs) > 2:
-            self.bond_array_mb, self.neigh_dists_mb, self.num_neighs_mb, self.etype_mb = get_m_body_arrays(
-                self.positions, self.atom, self.cell, self.cutoffs[2], self.species)
+        if len(self.cutoffs) > 2:
+            self.bond_array_mb, self.neigh_dists_mb, self.num_neighs_mb, \
+                self.etype_mb, self.bond_array_mb_etypes = \
+                get_m_body_arrays(self.positions, self.atom,
+                                  self.cell, self.cutoffs[2],
+                                  self.species, self.sweep_array)
         else:
             self.bond_array_mb = None
             self.neigh_dists_mb = None
             self.num_neighs_mb = None
             self.etype_mb = None
-
 
     def as_dict(self):
         """
@@ -96,9 +107,15 @@ class AtomicEnvironment:
                           species=dictionary['species'])
         index = dictionary['atom']
 
-        cutoffs = dictionary['cutoffs']
+        if dictionary.get('cutoffs') is not None:
+            cutoffs = dictionary['cutoffs']
+        else:
+            cutoffs = []
+            for cutoff in ['cutoff_2', 'cutoff_3', 'cutoff_mb']:
+                if dictionary.get(cutoff):
+                    cutoffs.append(dictionary[cutoff])
 
-        return AtomicEnvironment(struc, index, cutoffs)
+        return AtomicEnvironment(struc, index, np.array(cutoffs))
 
     def __str__(self):
         atom_type = self.ctype
@@ -112,7 +129,8 @@ class AtomicEnvironment:
 
 
 @njit
-def get_2_body_arrays(positions, atom: int, cell, cutoff_2: float, species):
+def get_2_body_arrays(positions: np.ndarray, atom: int, cell: np.ndarray,
+                      cutoff_2: float, species: np.ndarray, sweep: np.ndarray):
     """Returns distances, coordinates, and species of atoms in the 2-body
     local environment. This method is implemented outside the AtomicEnvironment
     class to allow for njit acceleration with Numba.
@@ -143,12 +161,13 @@ def get_2_body_arrays(positions, atom: int, cell, cutoff_2: float, species):
      their atomic number.
     :rtype: np.ndarray, np.ndarray, np.ndarray
     """
+
     noa = len(positions)
     pos_atom = positions[atom]
-    coords = np.zeros((noa, 3, 27))
-    dists = np.zeros((noa, 27))
+    super_count = sweep.shape[0]**3
+    coords = np.zeros((noa, 3, super_count))
+    dists = np.zeros((noa, super_count))
     cutoff_count = 0
-    super_sweep = np.array([-1, 0, 1])
 
     vec1 = cell[0]
     vec2 = cell[1]
@@ -158,9 +177,9 @@ def get_2_body_arrays(positions, atom: int, cell, cutoff_2: float, species):
     for n in range(noa):
         diff_curr = positions[n] - pos_atom
         im_count = 0
-        for s1 in super_sweep:
-            for s2 in super_sweep:
-                for s3 in super_sweep:
+        for s1 in sweep:
+            for s2 in sweep:
+                for s3 in sweep:
                     im = diff_curr + s1 * vec1 + s2 * vec2 + s3 * vec3
                     dist = sqrt(im[0] * im[0] + im[1] * im[1] + im[2] * im[2])
                     if (dist < cutoff_2) and (dist != 0):
@@ -170,14 +189,14 @@ def get_2_body_arrays(positions, atom: int, cell, cutoff_2: float, species):
                     im_count += 1
 
     # create 2-body bond array
-    bond_array_2 = np.zeros((cutoff_count, 4))
-    bond_positions_2 = np.zeros((cutoff_count, 3))
+    bond_array_2 = np.zeros((cutoff_count, 4), dtype=np.float64)
+    bond_positions_2 = np.zeros((cutoff_count, 3), dtype=np.float64)
     etypes = np.zeros(cutoff_count, dtype=np.int8)
     bond_count = 0
 
     for m in range(noa):
         spec_curr = species[m]
-        for n in range(27):
+        for n in range(super_count):
             dist_curr = dists[m, n]
             if (dist_curr < cutoff_2) and (dist_curr != 0):
                 coord = coords[m, :, n]
@@ -197,10 +216,12 @@ def get_2_body_arrays(positions, atom: int, cell, cutoff_2: float, species):
 
 
 @njit
-def get_2_body_arrays_ind(positions, atom: int, cell, cutoff_2: float, species):
-    """Returns distances, coordinates, species of atoms, and indexes of neighbors
-    in the 2-body local environment. This method is implemented outside
-    the AtomicEnvironment class to allow for njit acceleration with Numba.
+def get_2_body_arrays_ind(positions, atom: int, cell, cutoff_2: float,
+                          species: np.ndarray):
+    """Returns distances, coordinates, species of atoms, and indexes of
+        neighbors in the 2-body local environment. This method is implemented
+        outside the AtomicEnvironment class to allow for njit acceleration
+        with Numba.
 
     :param positions: Positions of atoms in the structure.
     :type positions: np.ndarray
@@ -233,10 +254,10 @@ def get_2_body_arrays_ind(positions, atom: int, cell, cutoff_2: float, species):
     """
     noa = len(positions)
     pos_atom = positions[atom]
-    coords = np.zeros((noa, 3, 27))
-    dists = np.zeros((noa, 27))
+    coords = np.zeros((noa, 3, 27), dtype=np.float64)
+    dists = np.zeros((noa, 27), dtype=np.float64)
     cutoff_count = 0
-    super_sweep = np.array([-1, 0, 1])
+    super_sweep = np.array([-1, 0, 1], dtype=np.float64)
 
     vec1 = cell[0]
     vec2 = cell[1]
@@ -259,8 +280,8 @@ def get_2_body_arrays_ind(positions, atom: int, cell, cutoff_2: float, species):
 
     # create 2-body bond array
     bond_indexes = np.zeros(cutoff_count, dtype=np.int8)
-    bond_array_2 = np.zeros((cutoff_count, 4))
-    bond_positions_2 = np.zeros((cutoff_count, 3))
+    bond_array_2 = np.zeros((cutoff_count, 4), dtype=np.float64)
+    bond_positions_2 = np.zeros((cutoff_count, 3), dtype=np.float64)
     etypes = np.zeros(cutoff_count, dtype=np.int8)
     bond_count = 0
 
@@ -337,7 +358,7 @@ def get_3_body_arrays(bond_array_2, bond_positions_2, cutoff_3: float):
 
     # get cross bond array
     cross_bond_inds = np.zeros((ind_3, ind_3), dtype=np.int8) - 1
-    cross_bond_dists = np.zeros((ind_3, ind_3))
+    cross_bond_dists = np.zeros((ind_3, ind_3), dtype=np.float64)
     triplet_counts = np.zeros(ind_3, dtype=np.int8)
     for m in range(ind_3):
         pos1 = bond_positions_3[m]
@@ -360,11 +381,13 @@ def get_3_body_arrays(bond_array_2, bond_positions_2, cutoff_3: float):
 
 
 @njit
-def get_m_body_arrays(positions, atom: int, cell, cutoff_mb: float, species):
-    """Returns distances, and species of atoms in the many-body
-    local environment, and returns distances and numbers of neighbours for atoms in the one
-    many-body local environment. This method is implemented outside the AtomicEnvironment
-    class to allow for njit acceleration with Numba.
+def get_m_body_arrays(positions, atom: int, cell, cutoff_mb: float, species,
+                      sweep: np.ndarray):
+    """Returns distances, and species of atoms in the many-body local
+        environment, and returns distances and numbers of neighbours for atoms
+        in the one many-body local environment. This method is implemented
+        outside the AtomicEnvironment class to allow for njit acceleration
+        with Numba.
 
     :param positions: Positions of atoms in the structure.
     :type positions: np.ndarray
@@ -377,7 +400,8 @@ def get_m_body_arrays(positions, atom: int, cell, cutoff_mb: float, species):
     :type cutoff_mb: float
     :param species: Numpy array of species represented by their atomic numbers.
     :type species: np.ndarray
-    :param indexes: Boolean indicating whether indexes of neighbours are returned
+    :param indexes: Boolean indicating whether indexes of neighbours are
+        returned
     :type indexes: boolean
     :return: Tuple of arrays describing pairs of atoms in the 2-body local
      environment.
@@ -396,13 +420,15 @@ def get_m_body_arrays(positions, atom: int, cell, cutoff_mb: float, species):
 
      num_neighs_mb: number of neighbours of each atom in the local environment
 
-     etypes_mb_array: species of neighbours of each atom in the local environment
+     etypes_mb_array: species of neighbours of each atom in the local
+        environment
 
     :rtype: np.ndarray, np.ndarray, np.ndarray, np.ndarray
     """
-    # TODO: this can be probably improved using stored arrays, redundant calls to get_2_body_arrays
+    # TODO: this can be probably improved using stored arrays, redundant calls
+    #  to get_2_body_arrays
     # Get distances, positions, species and indexes of neighbouring atoms
-    bond_array_mb, __, _, bond_inds = get_2_body_arrays_ind(
+    bond_array_mb, __, etypes, bond_inds = get_2_body_arrays_ind(
         positions, atom, cell, cutoff_mb, species)
 
     # For each neighbouring atom, get distances in its neighbourhood
@@ -410,15 +436,16 @@ def get_m_body_arrays(positions, atom: int, cell, cutoff_mb: float, species):
     neighbouring_etypes = []
     max_neighbours = 0
     for m in bond_inds:
-        neighbour_bond_array_2, ___, etypes_mb = get_2_body_arrays(positions, m, cell,
-                                                         cutoff_mb, species)
+        neighbour_bond_array_2, ___, etypes_mb = \
+            get_2_body_arrays(positions, m, cell, cutoff_mb, species, sweep)
         neighbouring_dists.append(neighbour_bond_array_2[:, 0])
         neighbouring_etypes.append(etypes_mb)
         if len(neighbour_bond_array_2[:, 0]) > max_neighbours:
             max_neighbours = len(neighbour_bond_array_2[:, 0])
 
     # Transform list of distances into Numpy array
-    neigh_dists_mb = np.zeros((len(bond_inds), max_neighbours))
+    neigh_dists_mb = \
+        np.zeros((len(bond_inds), max_neighbours), dtype=np.float64)
     num_neighs_mb = np.zeros(len(bond_inds), dtype=np.int8)
     etypes_mb_array = np.zeros((len(bond_inds), max_neighbours), dtype=np.int8)
     for i in range(len(bond_inds)):
@@ -426,8 +453,8 @@ def get_m_body_arrays(positions, atom: int, cell, cutoff_mb: float, species):
         neigh_dists_mb[i, :num_neighs_mb[i]] = neighbouring_dists[i]
         etypes_mb_array[i, :num_neighs_mb[i]] = neighbouring_etypes[i]
 
-
-    return bond_array_mb, neigh_dists_mb, num_neighs_mb, etypes_mb_array
+    return bond_array_mb, neigh_dists_mb, num_neighs_mb, etypes_mb_array, \
+        etypes
 
 
 if __name__ == '__main__':
