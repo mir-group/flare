@@ -344,8 +344,7 @@ class GaussianProcess:
             self.hyps_mask = None
 
     def update_db(self, struc: Structure, forces: List,
-                  custom_range: List[int] = (), energy: float = None,
-                  sweep: int = 1):
+                  custom_range: List[int] = (), energy: float = None):
         """Given a structure and forces, add local environments from the
         structure to the training set of the GP. If energy is given, add the
         entire structure to the training set.
@@ -370,7 +369,7 @@ class GaussianProcess:
         if forces is not None:
             for atom in update_indices:
                 env_curr = \
-                    AtomicEnvironment(struc, atom, self.cutoffs, sweep=sweep)
+                    AtomicEnvironment(struc, atom, self.cutoffs)
                 forces_curr = np.array(forces[atom])
 
                 self.training_data.append(env_curr)
@@ -386,7 +385,7 @@ class GaussianProcess:
             structure_list = []  # Populate with all environments of the struc
             for atom in range(noa):
                 env_curr = \
-                    AtomicEnvironment(struc, atom, self.cutoffs, sweep=sweep)
+                    AtomicEnvironment(struc, atom, self.cutoffs)
                 structure_list.append(env_curr)
 
             self.energy_labels.append(energy)
