@@ -7,13 +7,11 @@ import datetime
 import os
 import shutil
 import time
+
 import multiprocessing
 import numpy as np
 
-from typing import Union
-
-from flare.struc import Structure
-from flare.utils.element_coder import Z_to_element
+from flare.util import Z_to_element
 
 
 class Output:
@@ -93,13 +91,12 @@ class Output:
             self.outfiles[name].flush()
 
     def write_header(self, cutoffs, kernel_name: str,
-                     hyps, algo: str, dt: float = None,
-                     Nsteps: int = None, structure: Structure= None,
-                     std_tolerance: Union[float, int] = None,
+                     hyps, algo: str, dt: float,
+                     Nsteps: int, structure,
+                     std_tolerance,
                      optional: dict = None):
         """
-        Write header to the log function. Designed for Trajectory Trainer and
-        OTF runs and can take flexible input for both.
+        Write header to the log function
 
         :param cutoffs: GP cutoffs
         :param kernel_name: Kernel names
@@ -107,7 +104,7 @@ class Output:
         :param algo: algorithm for hyper parameter optimization
         :param dt: timestep for OTF MD
         :param Nsteps: total number of steps for OTF MD
-        :param structure: initial structure
+        :param structure: the atomic structure
         :param std_tolerance: tolarence for active learning
         :param optional: a dictionary of all the other parameters
         """
@@ -117,7 +114,7 @@ class Output:
 
         if isinstance(std_tolerance, tuple):
             std_string = 'relative uncertainty tolerance: ' \
-                         f'{std_tolerance[0]} times noise hyperparameter \n'
+                         f'{std_tolerance[0]} eV/A\n'
             std_string += 'absolute uncertainty tolerance: ' \
                           f'{std_tolerance[1]} eV/A\n'
         elif std_tolerance < 0:
@@ -125,8 +122,7 @@ class Output:
                 f'uncertainty tolerance: {np.abs(std_tolerance)} eV/A\n'
         elif std_tolerance > 0:
             std_string = \
-                f'uncertainty tolerance: {np.abs(std_tolerance)} ' \
-                                'times noise hyperparameter \n'
+                f'uncertainty tolerance: {np.abs(std_tolerance)} times noise \n'
         else:
             std_string = ''
 
@@ -139,27 +135,24 @@ class Output:
         headerstring += f'hyperparameters: {str(hyps)}\n'
         headerstring += f'hyperparameter optimization algorithm: {algo}\n'
         headerstring += std_string
-        if dt is not None:
-            headerstring += f'timestep (ps): {dt}\n'
+        headerstring += f'timestep (ps): {dt}\n'
         headerstring += f'number of frames: {Nsteps}\n'
-        if structure is not None:
-            headerstring += f'number of atoms: {structure.nat}\n'
-            headerstring += f'system species: {set(structure.species_labels)}\n'
-            headerstring += 'periodic cell: \n'
-            headerstring += str(structure.cell)+'\n'
+        headerstring += f'number of atoms: {structure.nat}\n'
+        headerstring += f'system species: {set(structure.species_labels)}\n'
+        headerstring += 'periodic cell: \n'
+        headerstring += str(structure.cell)+'\n'
 
         if optional:
             for key, value in optional.items():
                 headerstring += f"{key}: {value} \n"
 
         # report previous positions
-        if structure is not None:
-            headerstring += '\nprevious positions (A):\n'
-            for i in range(len(structure.positions)):
-                headerstring += f'{structure.species_labels[i]:5}'
-                for j in range(3):
-                    headerstring += f'{structure.prev_positions[i][j]:10.4f}'
-                headerstring += '\n'
+        headerstring += '\nprevious positions (A):\n'
+        for i in range(len(structure.positions)):
+            headerstring += f'{structure.species_labels[i]:5}'
+            for j in range(3):
+                headerstring += f'{structure.prev_positions[i][j]:10.4f}'
+            headerstring += '\n'
         headerstring += '-' * 80 + '\n'
 
         f.write(headerstring)
@@ -169,64 +162,67 @@ class Output:
 
     def write_md_config(self, dt, curr_step, structure,
                         temperature, KE, local_energies,
-                        start_time, dft_step, velocities):
+                        start_time, dft_step, velocities,
+                        global_only=False):
         """ write md configuration in log file
 
-        :param dt: timestemp of OTF MD
-        :param curr_step: current timestep of OTF MD
-        :param structure: atomic structure
-        :param temperature: current temperature
-        :param KE: current total kinetic energy
-        :param local_energies: local energy
-        :param start_time: starting time for time profiling
-        :param dft_step: # of DFT calls
-        :param velocities: list of velocities
-
-        :return:
+        Args:
+            dt: timestemp of OTF MD
+            curr_step: current timestep of OTF MD
+            structure: atomic structure
+            temperature: current temperature
+            KE: current total kinetic energy
+            local_energies: local energy
+            start_time: starting time for time profiling
+            dft_step: # of DFT calls
+            velocities: list of velocities
+            global_only (bool): if True, only the global info will be written 
         """
 
         string = ''
-        tab = ' ' * 4
 
         # Mark if a frame had DFT forces with an asterisk
         if not dft_step:
             string += '-' * 80 + '\n'
             string += f"-Frame: {curr_step} "
+            header = "-"
         else:
             string += f"\n*-Frame: {curr_step} "
+            header = "*-"
 
         string += f'\nSimulation Time: {(dt * curr_step):.3} ps \n'
 
-        # Construct Header line
-        n_space = 30
-        string += str.ljust('El', 5)
-        string += str.center('Position (A)', n_space)
-        string += ' ' * 4
-        if not dft_step:
-            string += str.center('GP Force (ev/A)', n_space)
+        if not global_only:
+            # Construct Header line
+            n_space = 30
+            string += str.ljust('El', 5)
+            string += str.center('Position (A)', n_space)
             string += ' ' * 4
-        else:
-            string += str.center('DFT Force (ev/A)', n_space)
-            string += ' ' * 4
-        string += str.center('Std. Dev (ev/A)', n_space) + ' ' * 4
-        string += str.center('Velocities (A/ps)', n_space) + '\n'
-
-        # Construct atom-by-atom description
-        for i in range(len(structure.positions)):
-            string += f'{structure.species_labels[i]:5}'
-            # string += '\t'
-            for j in range(3):
-                string += f'{structure.positions[i][j]:10.4f}'
-            string += ' ' * 4
-            for j in range(3):
-                string += f'{structure.forces[i][j]:10.4f}'
-            string += ' ' * 4
-            for j in range(3):
-                string += f'{structure.stds[i][j]:10.4f}'
-            string += ' ' * 4
-            for j in range(3):
-                string += f'{velocities[i][j]:10.4f}'
-            string += '\n'
+            if not dft_step:
+                string += str.center('GP Force (ev/A)', n_space)
+                string += ' ' * 4
+            else:
+                string += str.center('DFT Force (ev/A)', n_space)
+                string += ' ' * 4
+            string += str.center('Std. Dev (ev/A)', n_space) + ' ' * 4
+            string += str.center('Velocities (A/ps)', n_space) + '\n'
+    
+            # Construct atom-by-atom description
+            for i in range(len(structure.positions)):
+                string += f'{structure.species_labels[i]:5}'
+                # string += '\t'
+                for j in range(3):
+                    string += f'{structure.positions[i][j]:10.4f}'
+                string += ' ' * 4
+                for j in range(3):
+                    string += f'{structure.forces[i][j]:10.4f}'
+                string += ' ' * 4
+                for j in range(3):
+                    string += f'{structure.stds[i][j]:10.4f}'
+                string += ' ' * 4
+                for j in range(3):
+                    string += f'{velocities[i][j]:10.4f}'
+                string += '\n'
 
         string += '\n'
         string += f'temperature: {temperature:.2f} K \n'
@@ -240,10 +236,8 @@ class Output:
                 f'potential energy: {pot_en:.6f} eV \n'
             string += f'total energy: {tot_en:.6f} eV \n'
 
-        string += 'wall time from start: '
-        string += f'{(time.time() - start_time):.2f} s \n'
-
         self.outfiles['log'].write(string)
+        self.write_wall_time(start_time)
 
         if self.always_flush:
             self.outfiles['log'].flush()
@@ -351,11 +345,25 @@ class Output:
         f.write(f'likelihood: {like:.4f}\n')
         f.write(f'likelihood gradient: {like_grad}\n')
         if start_time:
-            time_curr = time.time() - start_time
-            f.write(f'wall time from start: {time_curr:.2f} s \n')
+            self.write_wall_time(start_time)
 
         if self.always_flush:
             f.flush()
+
+    def write_wall_time(self, start_time):
+        time_curr = time.time() - start_time
+        self.outfiles['log'].write(f'wall time from start: {time_curr:.2f} s \n')
+
+    def conclude_dft(self, dft_count, start_time):
+        self.logfile.write_to_log('DFT run complete.\n') 
+        self.logfile.write_to_log('number of DFT calls: %i \n' % dft_count)
+        self.logfile.write_wall_time(start_time)
+
+    def add_atom_info(self, train_atoms, stds):
+        self.logfile.write_to_log('\nAdding atom {} to the training set.\n' 
+                                  .format(train_atoms))                     
+        self.logfile.write_to_log('Uncertainty: {}.\n'                      
+                                  .format(stds[train_atoms[0]]))   
 
     def write_gp_dft_comparison(self, curr_step, frame,
                                 start_time, dft_forces,
@@ -446,11 +454,8 @@ class Output:
             string += f'total energy: {tot_en:10.6} eV \n'
             stat += f' {pot_en:10.6} {tot_en:10.6}'
 
-        dt = time.time() - start_time
-        string += f'wall time from start: {dt:10.2}\n'
-        stat += f' {dt}\n'
-
         self.outfiles['log'].write(string)
+        self.write_wall_time(start_time)
         # self.outfiles['stat'].write(stat)
 
         if self.always_flush:
