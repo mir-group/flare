@@ -1,18 +1,16 @@
-import time
-import math
-import pickle
 import inspect
 import json
 import logging
-
+import math
 import numpy as np
+import pickle
+import time
+
 from copy import deepcopy
+from itertools import combinations_with_replacement, permutations
 from numpy import array as nparray
 from numpy import max as npmax
 from typing import List, Callable, Union
-from warnings import warn
-from sys import stdout
-from os import devnull
 
 from flare.parameters import Parameters
 from flare.utils.element_coder import element_to_Z, Z_to_element
@@ -26,12 +24,12 @@ class ParameterHelper():
     Examples:
 
         pm = ParameterHelper(species=['C', 'H', 'O'],
-                                   bonds=[['*', '*'], ['O','O']],
-                                   triplets=[['*', '*', '*'],
-                                       ['O','O', 'O']],
+                                   kernels={'bond':[['*', '*'], ['O','O']],
+                                   'triplet':[['*', '*', '*'],
+                                       ['O','O', 'O']]},
                                    parameters={'bond0':[1, 0.5, 1], 'bond1':[2, 0.2, 2],
                                          'triplet0':[1, 0.5], 'triplet1':[2, 0.2],
-                                         'cutoff3b':1},
+                                         'cutoff_triplet':1},
                                    constraints={'bond0':[False, True]})
         hm = pm.hyps_mask
         hyps = hm['hyps']
@@ -58,7 +56,7 @@ class ParameterHelper():
 
     For triplet, the parameter arrays only come with two elements. So there
     is no cutoff associated with triplet0 or triplet1; instead, a universal
-    cutoff is used, which is defined as 'cutoff3b'.
+    cutoff is used, which is defined as 'cutoff_triplet'.
 
     The constraints argument define which hyper-parameters will be optimized.
     True for optimized and false for being fixed.
@@ -67,8 +65,14 @@ class ParameterHelper():
 
     """
 
+    # name of the kernels
+    all_kernel_types = ['bond', 'triplet', 'mb']
+    additional_groups = ['cut3b']
+    # dimension of the kernels
+    ndim = {'bond': 2, 'triplet': 3, 'mb': 2, 'cut3b': 2}
+
     def __init__(self, hyps_mask=None, species=None, kernels={},
-                 cutoff_group={}, parameters=None,
+                 cutoff_groups={}, parameters=None,
                  constraints={}, allseparate=False, random=False, ones=False,
                  verbose="INFO"):
         """ Initialization function
@@ -98,12 +102,11 @@ class ParameterHelper():
 
         # TO DO, sync it to kernel class
         #  need to be synced with kernel class
-        self.all_kernel_types = ['bond', 'triplet', 'mb']
-        self.ndim = {'bond': 2, 'triplet': 3, 'mb': 2, 'cut3b': 2}
-        self.additional_groups = ['cut3b']
+
         self.all_types = ['specie'] + \
-            self.all_kernel_types + self.additional_groups
-        self.all_group_types = self.all_kernel_types + self.additional_groups
+            ParameterHelper.all_kernel_types + ParameterHelper.additional_groups
+
+        self.all_group_types = ParameterHelper.all_kernel_types + ParameterHelper.additional_groups
 
         # number of groups {'bond': 1, 'triplet': 2}
         self.n = {}
@@ -123,19 +126,28 @@ class ParameterHelper():
             self.all_members[group_type] = []
             self.all_group_names[group_type] = []
 
+        # store parameters, key should be the one used in
+        # all_group_names or kernel_name
         self.sigma = {}
         self.ls = {}
+        self.noise = 0.05
+        self.energy_noise = 0.1
+        self.opt = {'noise': True}
+
+        # key should be sigma, lengthscale
+        # cutoff_kernel_name
+        self.universal = {}
+
+        # key should be in all_group_names
         self.all_cutoff = {}
+
+        # used for as_dict
         self.hyps_sig = {}
         self.hyps_ls = {}
         self.hyps_opt = {}
-        self.opt = {'noise': True}
-        self.mask = {}
         self.cutoff_list = {}
-        self.noise = 0.05
-        self.universal = {}
+        self.mask = {}
 
-        self.cutoffs_array = np.array([0, 0, 0], dtype=np.float)
         self.hyps = None
 
         if isinstance(kernels, dict):
@@ -149,7 +161,7 @@ class ParameterHelper():
             # unless allseparate is defined
             self.kernel_dict = {}
             for ktype in kernels:
-                self.kernel_dict[ktype] = [['*']*self.ndim[ktype]]
+                self.kernel_dict[ktype] = [['*']*ParameterHelper.ndim[ktype]]
 
         if species is not None:
             self.list_groups('specie', species)
@@ -161,6 +173,10 @@ class ParameterHelper():
             else:
                 for ktype in self.kernel_array:
                     self.list_groups(ktype, self.kernel_dict[ktype])
+
+            # check for cut3b
+            for group in cutoff_groups:
+                self.list_groups(group, cutoff_groups[group])
 
             # define parameters
             if parameters is not None:
@@ -178,11 +194,33 @@ class ParameterHelper():
                 for ktype in self.kernel_array:
                     self.fill_in_parameters(
                         ktype, random=random, ones=ones, universal=universal)
+        elif len(self.kernel_array) > 0:
+            self.list_groups('specie', ['*'])
 
-            try:
-                self.hyps_mask = self.as_dict()
-            except:
-                self.logger.info("more parameters needed to generate the hypsmask")
+            # define groups
+            for ktype in self.kernel_array:
+                self.list_groups(ktype, self.kernel_dict[ktype])
+
+            # check for cut3b
+            for group in cutoff_groups:
+                self.list_groups(group, cutoff_groups[group])
+
+            # define parameters
+            if parameters is not None:
+                self.list_parameters(parameters, constraints)
+
+            if ('lengthscale' in self.universal and 'sigma' in self.universal):
+                universal = True
+            else:
+                universal = False
+
+            if (random+ones+universal) > 1:
+                raise RuntimeError(
+                    "random and ones cannot be simultaneously True")
+            elif random or ones or universal:
+                for ktype in self.kernel_array:
+                    self.fill_in_parameters(
+                        ktype, random=random, ones=ones, universal=universal)
 
     def set_logger(self, verbose):
 
@@ -213,7 +251,7 @@ class ParameterHelper():
 
         The name of parameters can be the group name previously defined in
         define_group or list_groups function. Aside from the group name,
-        "noise", "cutoff2b", "cutoff3b", and "cutoffmb" are reserved for
+        "noise", "cutoff_bond", "cutoff_triplet", and "cutoff_mb" are reserved for
         noise parmater and universal cutoffs.
 
         For non-reserved keys, the value should be a list of 2-3 elements,
@@ -265,23 +303,23 @@ class ParameterHelper():
         group_type, and not after any define_group calls.
 
         """
-        if (group_type == 'specie'):
-            if (len(self.all_group_names['specie']) > 0):
+        if group_type == 'specie':
+            if len(self.all_group_names['specie']) > 0:
                 raise RuntimeError("this function has to be run "
                                    "before any define_group")
-            if (isinstance(definition_list, list)):
+            if isinstance(definition_list, list):
                 for ele in definition_list:
                     if isinstance(ele, list):
                         self.define_group('specie', ele, ele)
                     else:
                         self.define_group('specie', ele, [ele])
-            elif (isinstance(elemnt_list, dict)):
+            elif isinstance(elemnt_list, dict):
                 for ele in definition_list:
                     self.define_group('specie', ele, definition_list[ele])
             else:
                 raise RuntimeError("type unknown")
         else:
-            if (len(self.all_group_names['specie']) == 0):
+            if self.n['specie'] == 0:
                 raise RuntimeError("this function has to be run "
                                    "before any define_group")
             if (isinstance(definition_list, list)):
@@ -315,8 +353,8 @@ class ParameterHelper():
 
             # generate all possible combination of group
             ele_grid = self.all_group_names['specie']
-            grid = np.meshgrid(*[ele_grid]*self.ndim[group_type])
-            grid = np.array(grid).T.reshape(-1, self.ndim[group_type])
+            grid = np.meshgrid(*[ele_grid]*ParameterHelper.ndim[group_type])
+            grid = np.array(grid).T.reshape(-1, ParameterHelper.ndim[group_type])
 
             # remove the redundant groups
             allgroup = []
@@ -445,11 +483,14 @@ class ParameterHelper():
         3.1 to 3.4 are all equivalent.
         """
 
-        if (name == '*'):
+        if name == '*' and group_type == 'specie':
+            name = 'allspecie'
+            element_list = ['H']
+        elif name == '*':
             raise ValueError("* is reserved for substitution, cannot be used "
                              "as a group name")
 
-        if (group_type != 'specie'):
+        if group_type != 'specie':
 
             # Check all the other group_type to
             exclude_list = deepcopy(self.all_types)
@@ -457,11 +498,11 @@ class ParameterHelper():
             exclude_list.pop(ide)
 
             for gt in exclude_list:
-                if (name in self.all_group_names[gt]):
+                if name in self.all_group_names[gt]:
                     raise ValueError("group name has to be unique across all types. "
                                      f"{name} is found in type {gt}")
 
-        if (name in self.all_group_names[group_type]):
+        if name in self.all_group_names[group_type]:
             groupid = self.all_group_names[group_type].index(name)
         else:
             groupid = self.n[group_type]
@@ -481,6 +522,7 @@ class ParameterHelper():
             if (len(self.all_group_names['specie']) == 0):
                 raise RuntimeError("The atomic species have to be"
                                    "defined in advance")
+
             # first translate element/group name to group name
             group_name_list = []
             if (atomic_str):
@@ -554,20 +596,8 @@ class ParameterHelper():
                 for ele in self.groups[group_type][igroup]:
                     if set(gid) == set(ele):
                         name = gname
+            self.logger.debug(f"find the group {name}")
             return name
-        #         self.groups[group_type][groupid].append(gid)
-        #         self.all_members[group_type].append(gid)
-        #         self.logger.debug(
-        #             f"{group_type} {gid} will be defined as group {name}")
-        #         if (parameters is not None):
-        #             self.set_parameters(name, parameters)
-        #     else:
-        #         one_star_less = deepcopy(element_list)
-        #         idstar = element_list.index('*')
-        #         one_star_less.pop(idstar)
-        #         for sub in self.all_group_names['specie']:
-        #             self.define_group(group_type, name,
-        #                               one_star_less + [sub], parameters=parameters, atomic_str=atomic_str)
 
     def set_parameters(self, name, parameters, opt=True):
         """Set the parameters for certain group
@@ -581,7 +611,7 @@ class ParameterHelper():
 
         The name of parameters can be the group name previously defined in
         define_group or list_groups function. Aside from the group name,
-        "noise", "cutoff2b", "cutoff3b", and "cutoffmb" are reserved for
+        "noise", "cutoff_bond", "cutoff_triplet", and "cutoff_mb" are reserved for
         noise parmater and universal cutoffs.
 
         The parameter should be a list of 2-3 elements, for sigma,
@@ -595,18 +625,19 @@ class ParameterHelper():
             self.noise = parameters
             self.opt['noise'] = opt
             return
-
-        if (name in ['cutoff2b', 'cutoff3b', 'cutoffmb']):
-            cutstr2index = {'cutoff2b': 0, 'cutoff3b': 1, 'cutoffmb': 2}
-            self.cutoffs_array[cutstr2index[name]] = parameters
+        elif (name == 'energy_noise'):
+            self.energy_noise = parameters
             return
-
-        if (name in ['sigma', 'lengthscale']):
+        elif 'cutoff' in name:
             self.universal[name] = parameters
+            return
+        elif (name in ['sigma', 'lengthscale']):
+            self.universal[name] = parameters
+            self.opt[name] = opt
             return
 
         if (isinstance(opt, bool)):
-            opt = [opt, opt, opt]
+            opt = [opt]*2
 
         if ('cut3b' not in name):
             if (name in self.sigma):
@@ -639,7 +670,7 @@ class ParameterHelper():
 
         The name of parameters can be the group name previously defined in
         define_group or list_groups function. Aside from the group name,
-        "noise", "cutoff2b", "cutoff3b", and "cutoffmb" are reserved for
+        "noise", "cutoff_bond", "cutoff_triplet", and "cutoffmb" are reserved for
         noise parmater and universal cutoffs.
 
         The optimization flag can be a single bool, which apply to all
@@ -649,10 +680,6 @@ class ParameterHelper():
 
         if (name == 'noise'):
             self.opt['noise'] = opt
-            return
-
-        if (name in ['cutoff2b', 'cutoff3b', 'cutoffmb']):
-            cutstr2index = {'cutoff2b': 0, 'cutoff3b': 1, 'cutoffmb': 2}
             return
 
         if (isinstance(opt, bool)):
@@ -675,6 +702,7 @@ class ParameterHelper():
 
         group_type (str): species, bond, triplet, cut3b, mb
         """
+
         aeg = self.all_group_names[group_type]
         nspecie = self.n['specie']
         if (group_type == "specie"):
@@ -688,41 +716,77 @@ class ParameterHelper():
                           f"{aeg[idt]}")
             self.logger.debug(
                 f"All the remaining elements are left as type {idt}")
-        elif (group_type in ['bond', 'cut3b', 'mb']):
+
+        elif group_type in self.all_group_types:
+
             if (self.n[group_type] == 0):
                 self.logger.debug(f"{group_type} is not defined. Skipped")
                 return
+
+            if (group_type not in self.kernel_array):
+                self.kernel_array.append(group_type)
+
             self.mask[group_type] = np.ones(
-                nspecie**2, dtype=np.int)*(self.n[group_type]-1)
+                nspecie**ParameterHelper.ndim[group_type], dtype=np.int)*(self.n[group_type]-1)
+
             self.hyps_sig[group_type] = []
             self.hyps_ls[group_type] = []
             self.hyps_opt[group_type] = []
+
             for idt in range(self.n[group_type]):
                 name = aeg[idt]
-                for bond in self.groups[group_type][idt]:
-                    g1 = bond[0]
-                    g2 = bond[1]
-                    self.mask[group_type][g1+g2*nspecie] = idt
-                    self.mask[group_type][g2+g1*nspecie] = idt
-                    s1 = self.groups['specie'][g1]
-                    s2 = self.groups['specie'][g2]
-                    self.logger.debug(f"{group_type} {s1} - {s2} is defined as type {idt} "
+                for ele_list in self.groups[group_type][idt]:
+                    # generate all possible permutation
+                    perms = list(permutations(ele_list))
+                    for ele_list in perms:
+                        mask_id = 0
+                        for ele in ele_list:
+                            mask_id += ele
+                            mask_id *= nspecie
+                        mask_id = mask_id // nspecie
+                        self.mask[group_type][mask_id] = idt
+                    def_str = "-".join(map(str, self.groups['specie']))
+                    self.logger.debug(f"{group_type} {def_str} is defined as type {idt} "
                           f"with name {name}")
-                if (group_type != 'cut3b'):
-                    sig = self.sigma[name]
-                    ls = self.ls[name]
+
+                if group_type != 'cut3b':
+                    sig = self.sigma.get(name, -1)
+                    opt_sig = self.opt.get(name+'sig', True)
+                    if sig == -1:
+                        sig = self.sigma.get(group_type, -1)
+                        opt_sig = self.opt.get(group_type+'sig', True)
+                    if sig == -1:
+                        sig = self.universal.get('sigma', -1)
+                        opt_sig = self.opt.get('sigma', True)
+
+                    ls = self.ls.get(name, -1)
+                    opt_ls = self.opt.get(name+'ls', True)
+                    if ls == -1:
+                        ls = self.ls.get(group_type, -1)
+                        opt_ls = self.opt.get(group_type+'ls', True)
+                    if ls == -1:
+                        ls = self.universal.get('lengthscale', -1)
+                        opt_ls = self.opt.get('lengthscale', True)
+
+                    if sig < 0 or ls < 0:
+                        self.logger.error(f"hyper parameters for group {name}"
+                                          "is not defined")
+                        raise RuntimeError
                     self.hyps_sig[group_type] += [sig]
                     self.hyps_ls[group_type] += [ls]
-                    self.hyps_opt[group_type] += [self.opt[name+'sig']]
-                    self.hyps_opt[group_type] += [self.opt[name+'ls']]
+                    self.hyps_opt[group_type] += [opt_sig]
+                    self.hyps_opt[group_type] += [opt_ls]
                     self.logger.debug(f"   using hyper-parameters of {sig:6.2g} "
                           f"{ls:6.2g}")
             self.logger.debug(
                 f"All the remaining elements are left as type {idt}")
 
-            cutstr2index = {'bond': 0, 'cut3b': 1, 'mb': 2}
-
             # sort out the cutoffs
+            if (group_type == 'cut3b'):
+                universal_cutoff = self.universal.get('cutoff_triplet', 0)
+            else:
+                universal_cutoff = self.universal.get('cutoff_'+group_type, 0)
+
             allcut = []
             alldefine = True
             for idt in range(self.n[group_type]):
@@ -733,85 +797,52 @@ class ParameterHelper():
                     self.logger.warning(f"{aeg[idt]} cutoff is not define. "
                           "it's going to use the universal cutoff.")
 
-            if len(allcut) > 0:
-                universal_cutoff = self.cutoffs_array[cutstr2index[group_type]]
-                if (universal_cutoff <= 0):
+            if (group_type != 'triplet'):
+
+                if len(allcut) > 0:
+                    if (universal_cutoff <= 0):
+                        universal_cutoff = np.max(allcut)
+                        self.logger.warning(f"universal cutoffs {cutstr2index[group_type]}for "
+                              f"{group_type} is defined as zero! reset it to {universal_cutoff}")
+
+                    self.cutoff_list[group_type] = []
+                    for idt in range(self.n[group_type]):
+                        self.cutoff_list[group_type] += [
+                            self.all_cutoff.get(aeg[idt], universal_cutoff)]
+
+                    max_cutoff = np.max(self.cutoff_list[group_type])
+
+                    # update the universal cutoff to make it higher than
+                    if (alldefine):
+                        universal_cutoff = max_cutoff
+                        self.logger.warning(f"universal cutoff is updated to"\
+                              f"{universal_cutoff}")
+                    elif (not np.any(self.cutoff_list[group_type]-max_cutoff)):
+                        # if not all the cutoffs are defined separately
+                        # and they are all the same value
+                        del self.cutoff_list[group_type]
+                        universal_cutoff = max_cutoff
+                        if (group_type == 'cut3b'):
+                            self.n['cut3b'] = 0
+                        self.logger.warning(f"universal cutoff is updated to"\
+                              f"{universal_cutoff}")
+
+            else:
+                if universal_cutoff <= 0 and len(allcut) > 0:
                     universal_cutoff = np.max(allcut)
-                    self.logger.warning(f"universal cutoffs {cutstr2index[group_type]}for "
-                          f"{group_type} is defined as zero! reset it to {universal_cutoff}")
+                    self.logger.warning(f"triplet universal cutoff is updated to"
+                          f"{universal_cutoff}, but the separate definitions will"
+                          "be ignored")
 
-                self.cutoff_list[group_type] = []
-                for idt in range(self.n[group_type]):
-                    self.cutoff_list[group_type] += [
-                        self.all_cutoff.get(aeg[idt], universal_cutoff)]
-
-                max_cutoff = np.max(self.cutoff_list[group_type])
-                # update the universal cutoff to make it higher than
-                if (alldefine):
-                    self.cutoffs_array[cutstr2index[group_type]] = \
-                        max_cutoff
-                elif (not np.any(self.cutoff_list[group_type]-max_cutoff)):
-                    # if not all the cutoffs are defined separately
-                    # and they are all the same value. so
-                    del self.cutoff_list[group_type]
-                    if (group_type == 'cut3b'):
-                        self.cutoffs_array[cutstr2index[group_type]
-                                           ] = max_cutoff
-                        self.n['cut3b'] = 0
-
-            if (self.cutoffs_array[cutstr2index[group_type]] <= 0):
-                raise RuntimeError(
-                    f"cutoffs for {group_type} is undefined")
-
-        elif (group_type == "triplet"):
-            self.ntriplet = self.n['triplet']
-            if (self.ntriplet == 0):
-                self.logger.debug(group_type, "is not defined. Skipped")
-                return
-            self.mask[group_type] = np.ones(
-                nspecie**3, dtype=np.int)*(self.ntriplet-1)
-            self.hyps_sig[group_type] = []
-            self.hyps_ls[group_type] = []
-            self.hyps_opt[group_type] = []
-            for idt in range(self.n['triplet']):
-                name = aeg[idt]
-                for triplet in self.groups['triplet'][idt]:
-                    g1 = triplet[0]
-                    g2 = triplet[1]
-                    g3 = triplet[2]
-                    self.mask[group_type][g1+g2*nspecie+g3*nspecie**2] = idt
-                    self.mask[group_type][g1+g3*nspecie+g2*nspecie**2] = idt
-                    self.mask[group_type][g2+g1*nspecie+g3*nspecie**2] = idt
-                    self.mask[group_type][g2+g3*nspecie+g1*nspecie**2] = idt
-                    self.mask[group_type][g3+g1*nspecie+g2*nspecie**2] = idt
-                    self.mask[group_type][g3+g2*nspecie+g1*nspecie**2] = idt
-                    s1 = self.groups['specie'][g1]
-                    s2 = self.groups['specie'][g2]
-                    s3 = self.groups['specie'][g3]
-                    self.logger.debug(f"triplet {s1} - {s2} - {s3} is defined as type {idt} with name "
-                          f"{name}")
-                sig = self.sigma[name]
-                ls = self.ls[name]
-                self.hyps_sig[group_type] += [sig]
-                self.hyps_ls[group_type] += [ls]
-                self.hyps_opt[group_type] += [self.opt[name+'sig']]
-                self.hyps_opt[group_type] += [self.opt[name+'ls']]
-                self.logger.debug(
-                    f"   using hyper-parameters of {sig} {ls}")
-            self.logger.debug(
-                f"all the remaining elements are left as type {idt}")
-            if (self.cutoffs_array[1] == 0):
-                allcut = []
-                for idt in range(self.n[group_type]):
-                    allcut += [self.all_cutoff.get(aeg[idt], 0)]
-                aeg_ = self.all_group_names['cut3b']
-                for idt in range(self.n['cut3b']):
-                    allcut += [self.all_cutoff.get(aeg_[idt], 0)]
-                if (len(allcut) > 0):
-                    self.cutoffs_array[1] = np.max(allcut)
+            if universal_cutoff > 0:
+                if group_type == 'cut_3b':
+                    self.universal['cutoff_triplet'] = universal_cutoff
                 else:
-                    raise RuntimeError(
-                        f"cutoffs for {group_type} is undefined")
+                    self.universal['cutoff_'+group_type] = universal_cutoff
+            else:
+                self.logger.error(f"cutoffs for {group_type} is undefined")
+                raise RuntimeError
+
         else:
             pass
 
@@ -824,89 +855,92 @@ class ParameterHelper():
         # cut3b has to be summarize before triplet
         # because the universal triplet cutoff is checked
         # at the end of triplet search
+
         self.summarize_group('specie')
-        self.summarize_group('bond')
-        self.summarize_group('cut3b')
-        self.summarize_group('triplet')
-        self.summarize_group('mb')
+        for ktype in ParameterHelper.additional_groups:
+            self.summarize_group(ktype)
+        for ktype in ParameterHelper.all_kernel_types:
+            self.summarize_group(ktype)
 
         hyps_mask = {}
+        cutoff_dict = {}
+
         hyps_mask['nspecie'] = self.n['specie']
-        hyps_mask['specie_mask'] = self.specie_mask
+        if (self.n['specie'] > 1):
+            hyps_mask['specie_mask'] = self.specie_mask
 
         hyps = []
-        hyps_label = []
+        hyp_labels = []
         opt = []
-        for group in ['bond', 'triplet', 'mb']:
-            if (self.n[group] >= 1):
-                # copy the mask
-                hyps_mask['n'+group] = self.n[group]
+        for group in self.kernel_array:
+
+            hyps_mask['n'+group] = self.n[group]
+            hyps_mask[group+'_start'] = len(hyps)
+            hyps += [self.hyps_sig[group]]
+            hyps += [self.hyps_ls[group]]
+            opt += [self.hyps_opt[group]]
+            cutoff_dict[group] = self.universal['cutoff_'+group]
+
+            if self.n[group] > 1:
                 hyps_mask[group+'_mask'] = self.mask[group]
-                hyps += [self.hyps_sig[group]]
-                hyps += [self.hyps_ls[group]]
                 # check parameters
-                opt += [self.hyps_opt[group]]
                 aeg = self.all_group_names[group]
                 for idt in range(self.n[group]):
-                    hyps_label += ['Signal_Var._'+aeg[idt]]
+                    hyp_labels += ['Signal_Var._'+aeg[idt]]
                 for idt in range(self.n[group]):
-                    hyps_label += ['Length_Scale_'+group]
+                    hyp_labels += ['Length_Scale_'+group]
+                if group in self.cutoff_list:
+                    hyps_mask[group+'_cutoff_list'] = self.cutoff_list[group]
+
+            else:
+                hyp_labels += ['Signal_Var._'+group]
+                hyp_labels += ['Length_Scale_'+group]
+
+
+        if (self.n['cut3b'] >= 1):
+            hyps_mask['ncut3b'] = self.n[group]
+            hyps_mask['cut3b_mask'] = self.mask[group]
+            hyps_mask['triplet_cutoff_list'] = self.cutoff_list['cut3b']
+
+        hyps_mask['train_noise'] = self.opt['noise']
+        hyps_mask['energy_noise'] = self.energy_noise
+
         opt += [self.opt['noise']]
-        hyps_label += ['Noise_Var.']
-        hyps_mask['hyps_label'] = hyps_label
+        hyp_labels += ['Noise_Var.']
         hyps += [self.noise]
+        hyps = np.hstack(hyps)
+        opt = np.hstack(opt)
 
         # handle partial optimization if any constraints are defined
-        hyps_mask['original'] = np.hstack(hyps)
-
-        opt = np.hstack(opt)
-        hyps_mask['train_noise'] = self.opt['noise']
         if (not opt.all()):
-            nhyps = len(hyps_mask['original'])
-            hyps_mask['original_labels'] = hyps_mask['hyps_label']
+            nhyps = len(hyps)
+            hyps_mask['original_hyps'] = hyps
+            hyps_mask['original_labels'] = hyp_labels
             mapping = []
-            hyps_mask['hyps_label'] = []
+            new_labels = []
             for i in range(nhyps):
                 if (opt[i]):
                     mapping += [i]
-                    hyps_mask['hyps_label'] += [hyps_label[i]]
-            newhyps = hyps_mask['original'][mapping]
+                    new_labels += [hyp_labels[i]]
+            newhyps = hyps[mapping]
             hyps_mask['map'] = np.array(mapping, dtype=np.int)
         elif (opt.any()):
-            newhyps = hyps_mask['original']
+            newhyps = hyps
+            new_labels = hyp_labels
         else:
             raise RuntimeError("hyps has length zero."
                                "at least one component of the hyper-parameters"
                                "should be allowed to be optimized. \n")
-        hyps_mask['hyps'] = newhyps
-
-        # checkout universal cutoffs and seperate cutoffs
-        nbond = hyps_mask.get('nbond', 0)
-        ntriplet = hyps_mask.get('ntriplet', 0)
-        nmb = hyps_mask.get('nmb', 0)
-        if len(self.cutoff_list.get('bond', [])) > 0 \
-                and nbond > 0:
-            hyps_mask['cutoff_2b'] = np.array(
-                self.cutoff_list['bond'], dtype=np.float)
-        if len(self.cutoff_list.get('cut3b', [])) > 0 \
-                and ntriplet > 0:
-            hyps_mask['cutoff_3b'] = np.array(
-                self.cutoff_list['cut3b'], dtype=np.float)
-            hyps_mask['ncut3b'] = self.n['cut3b']
-            hyps_mask['cut3b_mask'] = self.mask['cut3b']
-        if len(self.cutoff_list.get('mb', [])) > 0 \
-                and nmb > 0:
-            hyps_mask['cutoff_mb'] = np.array(
-                self.cutoff_list['mb'], dtype=np.float)
-
-        self.hyps_mask = hyps_mask
-        if (self.cutoffs_array[2] > 0) and nmb > 0:
-            hyps_mask['cutoffs'] = self.cutoffs_array
-        else:
-            hyps_mask['cutoffs'] = self.cutoffs_array[:2]
 
         if self.n['specie'] < 2:
             self.logger.debug("only one type of elements was defined. Please use multihyps=False")
+
+        hyps_mask['kernels'] = self.kernel_array
+        hyps_mask['cutoffs'] = cutoff_dict
+        hyps_mask['hyps'] = newhyps
+        hyps_mask['hyp_labels'] = new_labels
+
+        logging.debug(str(hyps_mask))
 
         return hyps_mask
 
@@ -920,99 +954,71 @@ class ParameterHelper():
 
         pm = ParameterHelper(verbose=verbose)
 
-        hyps = hyps_mask['hyps']
-
-        if 'map' in hyps_mask:
-            ihyps = hyps
-            hyps = hyps_mask['original']
-            constraints = np.zeros(len(hyps), dtype=bool)
-            for ele in hyps_mask['map']:
-                constraints[ele] = True
-            for i, ori in enumerate(hyps_mask['map']):
-                hyps[ori] = ihyps[i]
+        nspecie = hyps_mask['nspecie']
+        if (nspecie > 1):
+            nele = len(hyps_mask['specie_mask'])
+            max_species = np.max(hyps_mask['specie_mask'])
+            specie_mask = hyps_mask['specie_mask']
+            for i in range(max_species+1):
+                elelist = np.where(specie_mask == i)[0]
+                if len(elelist) > 0:
+                    for ele in elelist:
+                        if (ele != 0):
+                            elename = Z_to_element(ele)
+                            if (len(init_spec) > 0):
+                                if elename in init_spec:
+                                    pm.define_group(
+                                        "specie", i, [elename])
+                            else:
+                                pm.define_group("specie", i, [elename])
         else:
-            constraints = np.ones(len(hyps), dtype=bool)
+            pm.define_group("specie", i, ['*'])
 
-        pm.nspecie = hyps_mask['nspecie']
-        nele = len(hyps_mask['specie_mask'])
-        max_species = np.max(hyps_mask['specie_mask'])
-        specie_mask = hyps_mask['specie_mask']
-        for i in range(max_species+1):
-            elelist = np.where(specie_mask == i)[0]
-            if len(elelist) > 0:
-                for ele in elelist:
-                    if (ele != 0):
-                        elename = Z_to_element(ele)
-                        if (len(init_spec) > 0):
-                            if elename in init_spec:
-                                pm.define_group(
-                                    "specie", i, [elename])
+        for kernel in hyps_mask['kernels']+['cut3b']:
+            n = hyps_mask.get('n'+kernel, 0)
+            if n >= 0:
+                if kernel!='cut3b':
+                    hyps, opt = Parameters.get_component_hyps(hyps_mask, kernel,
+                                                              constraint=True, noise=False)
+                    sig = hyps[:n]
+                    ls = hyps[n:]
+                    csig = opt[:n]
+                    cls = opt[n:]
+                    cutoff = hyps_mask['cutoffs'][kernel]
+                    pm.set_parameters('cutoff_'+kernel, cutoff)
+                    cutoff_list = hyps_mask.get(f'{kernel}_cutoff_list', np.ones(len(sig))*cutoff)
+                elif kernel=='cut3b' and n > 1:
+                    cutoff_list = hyps_mask['triplet_cutoff_list']
+
+                if n > 1:
+                    all_specie = np.arange(nspecie)
+                    all_comb = combinations_with_replacement(all_specie, ParameterHelper.ndim[kernel])
+                    for comb in all_comb:
+                        mask_id = 0
+                        for ele in comb:
+                            mask_id += ele
+                            mask_id *= nspecie
+                        mask_id = mask_id // nspecie
+                        ttype = hyps_mask[f'{kernel}_mask'][mask_id]
+                        pm.define_group(f"{kernel}", f"{kernel}{ttype}", comb)
+                        if kernel != 'cut3b' and kernel != 'triplet':
+                            pm.set_parameters(f"{kernel}{ttype}", [sig[ttype], ls[ttype], cutoff_list[ttype]],
+                                                      opt=[csig[ttype], cls[ttype]])
+                        elif kernel == 'triplet':
+                            pm.set_parameters(f"{kernel}{ttype}", [sig[ttype], ls[ttype]],
+                                                      opt=[csig[ttype], cls[ttype]])
                         else:
-                            pm.define_group("specie", i, [elename])
-
-        nbond = hyps_mask.get('nbond', 0)
-        ntriplet = hyps_mask.get('ntriplet', 0)
-        nmb = hyps_mask.get('nmb', 0)
-        for t in ['bond', 'mb']:
-            if (f'n{t}' in hyps_mask):
-                if (t == 'bond'):
-                    cutoffname = 'cutoff_2b'
-                    sig = hyps[:nbond]
-                    ls = hyps[nbond:2*nbond]
-                    csig = constraints[:nbond]
-                    cls = constraints[nbond:2*nbond]
+                            pm.set_parameters(f"{kernel}{ttype}", cutoff_list[ttype])
                 else:
-                    cutoffname = 'cutoff_mb'
-                    sig = hyps[nbond*2+ntriplet*2:nbond*2+ntriplet*2+nmb]
-                    ls = hyps[nbond*2+ntriplet*2+nmb:nbond*2+ntriplet*2+nmb*2]
-                    csig = constraints[nbond*2+ntriplet*2:]
-                    cls = constraints[nbond*2+ntriplet*2+nmb:]
-                for i in range(pm.nspecie):
-                    for j in range(i, pm.nspecie):
-                        ttype = hyps_mask[f'{t}_mask'][i+j*pm.nspecie]
-                        pm.define_group(f"{t}", f"{t}{ttype}", [i, j])
-                for i in range(hyps_mask[f'n{t}']):
-                    if (cutoffname in hyps_mask):
-                        pm.set_parameters(f"{t}{i}", [sig[i], ls[i], hyps_mask[cutoffname][i]],
-                                          opt=[csig[i], cls[i]])
-                    else:
-                        pm.set_parameters(f"{t}{i}", [sig[i], ls[i]],
-                                          opt=[csig[i], cls[i]])
-        if ('ntriplet' in hyps_mask):
-            sig = hyps[nbond*2:nbond*2+ntriplet]
-            ls = hyps[nbond*2+ntriplet:nbond*2+ntriplet*2]
-            csig = constraints[nbond*2:nbond*2+ntriplet]
-            cls = constraints[nbond*2+ntriplet:nbond*2+ntriplet*2]
-            for i in range(pm.nspecie):
-                for j in range(i, pm.nspecie):
-                    for k in range(j, pm.nspecie):
-                        triplettype = hyps_mask[f'triplet_mask'][i +
-                                                                 j*pm.nspecie+k*pm.nspecie*pm.nspecie]
-                        pm.define_group(
-                            f"triplet", f"triplet{triplettype}", [i, j, k])
-            for i in range(hyps_mask[f'ntriplet']):
-                pm.set_parameters(f"triplet{i}", [sig[i], ls[i]],
-                                  opt=[csig[i], cls[i]])
-        if (f'ncut3b' in hyps_mask):
-            for i in range(pm.nspecie):
-                for j in range(i, pm.nspecie):
-                    ttype = hyps_mask[f'cut3b_mask'][i+j*pm.nspecie]
-                    pm.define_group("cut3b", f"cut3b{ttype}", [i, j])
-            for i in range(hyps_mask['ncut3b']):
-                pm.set_parameters(
-                    f"cut3b{i}", [0, 0, hyps_mask['cutoff_3b'][i]])
+                    pm.define_group(kernel, kernel, ['*']*ParameterHelper.ndim[kernel])
+                    pm.set_parameters(kernel, parameters=np.hstack([hyps, cutoff]), opt=opt)
 
+        hyps = Parameters.get_hyps(hyps_mask)
         pm.set_parameters('noise', hyps[-1])
+
         if 'cutoffs' in hyps_mask:
-            cut = hyps_mask['cutoffs']
-            pm.set_parameters(f"cutoff2b", cut[0])
-            try:
-                pm.set_parameters(f"cutoff3b", cut[1])
-            except:
-                pass
-            try:
-                pm.set_parameters(f"cutoffmb", cut[2])
-            except:
-                pass
+            cutoffs = hyps_mask['cutoffs']
+            for k in cutoffs:
+                pm.set_parameters(f"cutoff_{k}", cutoffs[k])
 
         return pm

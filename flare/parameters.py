@@ -1,12 +1,13 @@
-import time
-import math
-import pickle
 import inspect
 import json
 import logging
-
+import math
 import numpy as np
+import pickle
+import time
+
 from copy import deepcopy
+from itertools import combinations_with_replacement, permutations
 from numpy.random import random
 from numpy import array as nparray
 from numpy import max as npmax
@@ -20,31 +21,30 @@ from flare.utils.element_coder import element_to_Z, Z_to_element
 
 class Parameters():
 
-    def __init__(self, hyps_mask=None, species=None, kernels={},
-                 cutoff_group={}, parameters=None,
-                 constraints={}, allseparate=False, random=False, verbose=False):
+    all_kernel_types = ['bond', 'triplet', 'mb']
+    ndim = {'bond': 2, 'triplet': 3, 'mb': 2, 'cut3b': 2}
 
-        self.nspecies = 0
+    def __init__(self):
 
-        self.n = {}
-        for kernel_type in ['bonds', 'triplets', 'many2b', 'cut3b']:
-            self.n[kernel_type] = 0
+        self.nspecie = 0
+        self.specie_mask = None
 
-        self.mask = {}
-        for mask_type in ['bond_mask', 'triplet_mask', 'cut3b_mask', 'mb_mask']:
-            self.mask[mask_type] = None
+        # if nxx > 1, the kernel array should also be there
+        self.nbond = 0
+        self.ntriplet = 0
+        self.nmb = 0
 
-        self.hyps = []
-        self.hyps_label = []
+        self.bond_mask = None
+        self.bond_start = 0
 
-        self.cutoffs = {}
+        self.triplet_mask = None
+        self.triplet_start = 0
 
-        self.train_noise = True
-        self.map = None
-        self.original_hyps = None
+        self.mb_mask = None
+        self.mb_start = 0
 
     @staticmethod
-    def check_instantiation(hyps_mask):
+    def check_instantiation(param_dict):
         """
         Runs a series of checks to ensure that the user has not supplied
         contradictory arguments which will result in undefined behavior
@@ -52,365 +52,211 @@ class Parameters():
         :return:
         """
 
+        assert isinstance(param_dict, dict)
+
         # backward compatability
-        if ('nspec' in hyps_mask):
-            hyps_mask['nspecie'] = hyps_mask['nspec']
-        if ('spec_mask' in hyps_mask):
-            hyps_mask['specie_mask'] = hyps_mask['spec_mask']
-        if ('train_noise' not in hyps_mask):
-            hyps_mask['train_noise'] = True
+        if 'nspec' in param_dict:
+            param_dict['nspecie'] = param_dict['nspec']
+        if 'spec_mask' in param_dict:
+            param_dict['specie_mask'] = param_dict['spec_mask']
+        if 'train_noise' not in param_dict:
+            param_dict['train_noise'] = True
 
-        assert isinstance(hyps_mask, dict)
+        assert 'nspecie' in param_dict, "nspecie key missing in " \
+            "param_dict dictionary"
 
-        assert 'nspecie' in hyps_mask, "nspecie key missing in " \
-            "hyps_mask dictionary"
-        assert 'specie_mask' in hyps_mask, "specie_mask key " \
-            "missing " \
-            "in hyps_mask dicticnary"
+        nspecie = param_dict['nspecie']
+        kernels = param_dict['kernels']
+        if nspecie > 1:
+            assert 'specie_mask' in param_dict, "specie_mask key " \
+                "missing " \
+                "in param_dict dictionary"
+            param_dict['specie_mask'] = nparray(
+                param_dict['specie_mask'], dtype=np.int)
 
-        nspecie = hyps_mask['nspecie']
-        hyps_mask['specie_mask'] = nparray(
-            hyps_mask['specie_mask'], dtype=np.int)
+        cutoffs = param_dict['cutoffs']
 
-        if 'nbond' in hyps_mask:
-            n2b = hyps_mask['nbond']
-            assert n2b > 0
-            assert isinstance(n2b, int)
-            hyps_mask['bond_mask'] = nparray(
-                hyps_mask['bond_mask'], dtype=np.int)
-            if n2b > 0:
-                bmask = hyps_mask['bond_mask']
-                assert (npmax(bmask) < n2b)
-                assert len(bmask) == nspecie ** 2, \
+        hyps_length = 0
+        for kernel in kernels+['cut3b']:
+
+            n = param_dict.get(f'n{kernel}', 0)
+            assert isinstance(n, int)
+
+            if kernel != 'cut3b':
+                hyps_length += 2*n
+                assert kernel in cutoffs
+                assert n > 0
+
+            if n > 1:
+                assert f'{kernel}_mask' in param_dict, f"{kernel}_mask key " \
+                    "missing " \
+                    "in param_dict dictionary"
+                mask = param_dict[f'{kernel}_mask']
+                param_dict[f'{kernel}_mask'] = nparray(mask, dtype=np.int)
+                assert (npmax(mask) < n)
+
+                dim = Parameters.ndim[kernel]
+                assert len(mask) == nspecie ** dim, \
                     f"wrong dimension of bond_mask: " \
-                    f" {len(bmask)} != nspecie^2 {nspecie**2}"
-                for t2b in range(nspecie):
-                    for t2b_2 in range(t2b, nspecie):
-                        assert bmask[t2b*nspecie+t2b_2] == bmask[t2b_2*nspecie+t2b], \
-                            'bond_mask has to be symmetric'
-        else:
-            n2b = 0
+                    f" {len(mask)} != nspec ^ {dim} {nspecie**dim}"
 
-        if 'ntriplet' in hyps_mask:
-            n3b = hyps_mask['ntriplet']
-            assert n3b > 0
-            assert isinstance(n3b, int)
-            hyps_mask['triplet_mask'] = nparray(
-                hyps_mask['triplet_mask'], dtype=np.int)
-            if n3b > 0:
-                tmask = hyps_mask['triplet_mask']
-                assert (npmax(tmask) < n3b)
-                assert len(tmask) == nspecie ** 3, \
-                    f"wrong dimension of bond_mask: " \
-                    f" {len(tmask)} != nspecie^3 {nspecie**3}"
+                all_comb=list(combinations_with_replacement(np.arange(nspecie), dim))
+                for comb in all_comb:
+                    mask_value = None
+                    perm = list(permutations(comb))
+                    for ele_list in perm:
+                        mask_id = 0
+                        for ele in ele_list:
+                            mask_id += ele
+                            mask_id *= nspecie
+                        mask_id = mask_id // nspecie
+                        if mask_value == None:
+                            mask_value = mask[mask_id]
+                        else:
+                            assert mask[mask_id] == mask_value, \
+                                   'bond_mask has to be symmetrical'
 
-                for t3b in range(nspecie):
-                    for t3b_2 in range(t3b, nspecie):
-                        for t3b_3 in range(t3b_2, nspecie):
-                            assert tmask[t3b*nspecie*nspecie+t3b_2*nspecie+t3b_3] \
-                                == tmask[t3b*nspecie*nspecie+t3b_3*nspecie+t3b_2], \
-                                'bond_mask has to be symmetric'
-                            assert tmask[t3b*nspecie*nspecie+t3b_2*nspecie+t3b_3] \
-                                == tmask[t3b_2*nspecie*nspecie+t3b*nspecie+t3b_3], \
-                                'bond_mask has to be symmetric'
-                            assert tmask[t3b*nspecie*nspecie+t3b_2*nspecie+t3b_3] \
-                                == tmask[t3b_2*nspecie*nspecie+t3b_3*nspecie+t3b], \
-                                'bond_mask has to be symmetric'
-                            assert tmask[t3b*nspecie*nspecie+t3b_2*nspecie+t3b_3] \
-                                == tmask[t3b_3*nspecie*nspecie+t3b*nspecie+t3b_2], \
-                                'bond_mask has to be symmetric'
-                            assert tmask[t3b*nspecie*nspecie+t3b_2*nspecie+t3b_3] \
-                                == tmask[t3b_3*nspecie*nspecie+t3b_2*nspecie+t3b], \
-                                'bond_mask has to be symmetric'
-        else:
-            n3b = 0
+                if kernel != 'cut3b':
+                    if kernel+'_cutoff_list' in param_dict:
+                        cutoff_list = param_dict[kernel+'_cutoff_list']
+                        assert len(cutoff_list) == n, \
+                            f'number of cutoffs should be the same as n {n}'
+                        assert npmax(cutoff_list) <= cutoffs[kernel]
+            else:
+                assert f'{kernel}_mask' not in param_dict
+                assert f'{kernel}_cutof_list' not in param_dict
 
-        if 'nmb' in hyps_mask:
-            nmb = hyps_mask['nmb']
-            assert nmb > 0
-            assert isinstance(nmb, int)
-            hyps_mask['mb_mask'] = nparray(hyps_mask['mb_mask'], dtype=np.int)
-            if nmb > 0:
-                bmask = hyps_mask['mb_mask']
-                assert (npmax(bmask) < nmb)
-                assert len(bmask) == nspecie ** 2, \
-                    f"wrong dimension of mb_mask: " \
-                    f" {len(bmask)} != nspecie^2 {nspecie**2}"
-                for tmb in range(nspecie):
-                    for tmb_2 in range(tmb, nspecie):
-                        assert bmask[tmb*nspecie+tmb_2] == bmask[tmb_2*nspecie+tmb], \
-                            'mb_mask has to be symmetric'
-        # else:
-        #     nmb = 1
-        #     hyps_mask['mb_mask'] = np.zeros(nspecie**2, dtype=np.int)
-
-        if 'map' in hyps_mask:
-            assert ('original' in hyps_mask), \
+        hyps = param_dict['hyps']
+        if 'map' in param_dict:
+            assert ('original_hyps' in param_dict), \
                 "original hyper parameters have to be defined"
             # Ensure typed correctly as numpy array
-            hyps_mask['original'] = nparray(
-                hyps_mask['original'], dtype=np.float)
-
-            if (len(hyps_mask['original']) - 1) not in hyps_mask['map']:
-                assert hyps_mask['train_noise'] is False, \
+            param_dict['original_hyps'] = nparray(
+                param_dict['original_hyps'], dtype=np.float)
+            if (len(param_dict['original_hyps']) - 1) not in param_dict['map']:
+                assert param_dict['train_noise'] is False, \
                     "train_noise should be False when noise is not in hyps"
-        else:
-            assert hyps_mask['train_noise'] is True, \
-                "train_noise should be True when map is not used"
-
-        if 'cutoff_2b' in hyps_mask:
-            c2b = hyps_mask['cutoff_2b']
-            assert len(c2b) == n2b, \
-                f'number of 2b cutoff should be the same as n2b {n2b}'
-
-        if 'cutoff_3b' in hyps_mask:
-            c3b = hyps_mask['cutoff_3b']
-            assert nc3b > 0
-            assert isinstance(nc3b, int)
-            hyps_mask['cut3b_mask'] = nparray(
-                hyps_mask['cut3b_mask'], dtype=int)
-            assert len(c3b) == hyps_mask['ncut3b'], \
-                f'number of 3b cutoff should be the same as ncut3b {ncut3b}'
-            assert len(hyps_mask['cut3b_mask']) == nspecie ** 2, \
-                f"wrong dimension of cut3b_mask: " \
-                f" {len(bmask)} != nspecie^2 {nspecie**2}"
-            assert npmax(hyps_mask['cut3b_mask']) < hyps_mask['ncut3b'], \
-                f"wrong dimension of cut3b_mask: " \
-                f" {len(bmask)} != nspecie^2 {nspecie**2}"
-
-        if 'cutoff_mb' in hyps_mask:
-            cmb = hyps_mask['cutoff_mb']
-            assert len(cmb) == nmb, \
-                f'number of mb cutoff should be the same as nmb {nmb}'
-
-        return hyps_mask
-
-    @staticmethod
-    def check_matching(hyps_mask, hyps, cutoffs):
-        """
-        check whether hyps_mask, hyps and cutoffs are compatible
-        used in GaussianProcess
-        """
-
-        n2b = hyps_mask.get('nbond', 0)
-        n3b = hyps_mask.get('ntriplet', 0)
-        nmb = hyps_mask.get('nmb', 0)
-
-        if (len(cutoffs) <= 2):
-            assert ((n2b + n3b) > 0)
-        else:
-            assert ((n2b + n3b + nmb) > 0)
-
-        if 'map' in hyps_mask:
-            if (len(cutoffs) <= 2):
-                assert (n2b * 2 + n3b * 2 + 1) == len(hyps_mask['original']), \
-                    "the hyperparmeter length is inconsistent with the mask"
-            else:
-                if (nmb == 0):
-                    nmb = 1
-                    hyps_mask['mb_mask'] = np.zeros(hyps_mask['nspecie']**2, dtype=np.int)
-                assert (n2b * 2 + n3b * 2 + nmb * 2 + 1) == len(hyps_mask['original']), \
-                    "the hyperparmeter length is inconsistent with the mask"
-            assert len(hyps_mask['map']) == len(hyps), \
+            assert len(param_dict['map']) == len(hyps), \
                 "the hyperparmeter length is inconsistent with the mask"
+            assert npmax(param_dict['map']) < len(param_dict['original_hyps'])
         else:
-            if (len(cutoffs) <= 2):
-                assert (n2b * 2 + n3b * 2 + 1) == len(hyps), \
+            assert param_dict['train_noise'] is True, \
+                "train_noise should be True when map is not used"
+        hyps = Parameters.get_hyps(param_dict)
+
+        hyps_length += 1
+        assert hyps_length == len(hyps), \
                     "the hyperparmeter length is inconsistent with the mask"
-            else:
-                if (nmb == 0):
-                    nmb = 1
-                    hyps_mask['mb_mask'] = np.zeros(hyps_mask['nspecie']**2, dtype=np.int)
-                assert (n2b * 2 + n3b * 2 + nmb*2 + 1) == len(hyps), \
-                    "the hyperparmeter length is inconsistent with the mask"
+        for var in hyps:
+            assert var >= 0
 
-        if 'cutoff_2b' in hyps_mask:
-            assert cutoffs[0] >= npmax(hyps_mask['cutoff_2b']), \
-                'general cutoff should be larger than all cutoffs listed in hyps_mask'
+        return param_dict
 
-        if 'cutoff_3b' in hyps_mask:
-            assert cutoffs[0] >= npmax(hyps_mask['cutoff_3b']), \
-                'general cutoff should be larger than all cutoffs listed in hyps_mask'
-
-        if 'cutoff_mb' in hyps_mask:
-            assert cutoffs[0] >= npmax(hyps_mask['cutoff_mb']), \
-                'general cutoff should be larger than all cutoffs listed in hyps_mask'
 
     @staticmethod
-    def mask2cutoff(cutoffs, cutoffs_mask):
-        """use in flare.env AtomicEnvironment to resolve what cutoff to use"""
+    def get_component_hyps(param_dict, kernel_name, constraint=False, noise=False):
 
-        ncutoffs = len(cutoffs)
-        scalar_cutoff_2 = cutoffs[0]
-        scalar_cutoff_3 = 0
-        scalar_cutoff_mb = 0
-        if (ncutoffs > 1):
-            scalar_cutoff_3 = cutoffs[1]
-        if (ncutoffs > 2):
-            scalar_cutoff_mb = cutoffs[2]
+        if kernel_name not in param_dict['kernels']:
+            return None
 
-        if (scalar_cutoff_2 == 0):
-            scalar_cutoff_2 = np.max([scalar_cutoff_3, scalar_cutoff_mb])
+        hyps, opt = Parameters.get_hyps(param_dict, constraint=True)
+        s = param_dict[kernel_name+'_start']
+        e = s + 2*param_dict[f'n{kernel_name}']
 
-        if (cutoffs_mask is None):
-            return scalar_cutoff_2, scalar_cutoff_3, scalar_cutoff_mb, \
-                None, None, None, \
-                1, 1, 1, 1, None, None, None, None
+        newhyps = hyps[s:e]
 
-        nspecie = cutoffs_mask.get('nspecie', 1)
-        nspecie = nspecie
-        if (nspecie == 1):
-            return scalar_cutoff_2, scalar_cutoff_3, scalar_cutoff_mb, \
-                None, None, None, \
-                1, 1, 1, 1, None, None, None, None
+        if noise:
+            newhyps = np.hstack(newhyps, hyps[-1])
 
-        n2b = cutoffs_mask.get('nbond', 1)
-        n3b = cutoffs_mask.get('ncut3b', 1)
-        nmb = cutoffs_mask.get('nmb', 1)
-        specie_mask = cutoffs_mask.get('specie_mask', None)
-        bond_mask = cutoffs_mask.get('bond_mask', None)
-        cut3b_mask = cutoffs_mask.get('cut3b_mask', None)
-        mb_mask = cutoffs_mask.get('mb_mask', None)
-        cutoff_2b = cutoffs_mask.get('cutoff_2b', None)
-        cutoff_3b = cutoffs_mask.get('cutoff_3b', None)
-        cutoff_mb = cutoffs_mask.get('cutoff_mb', None)
-
-        if cutoff_2b is not None:
-            scalar_cutoff_2 = np.max(cutoff_2b)
+        if constraint:
+            return newhyps, opt[s:e]
         else:
-            n2b = 1
-
-        if cutoff_3b is not None:
-            scalar_cutoff_3 = np.max(cutoff_3b)
-        else:
-            n3b = 1
-
-        if cutoff_mb is not None:
-            scalar_cutoff_mb = np.max(cutoff_mb)
-        else:
-            nmb = 1
-
-        return scalar_cutoff_2, scalar_cutoff_3, scalar_cutoff_mb, \
-            cutoff_2b, cutoff_3b, cutoff_mb, \
-            nspecie, n2b, n3b, nmb, specie_mask, bond_mask, cut3b_mask, mb_mask
-
-    @staticmethod
-    def get_2b_hyps(hyps, hyps_mask, multihyps=False):
-
-        original_hyps = np.copy(hyps)
-        if (multihyps is True):
-            new_hyps = Parameters.get_hyps(hyps_mask, hyps)
-            n2b = hyps_mask['nbond']
-            new_hyps = np.hstack([new_hyps[:n2b*2], new_hyps[-1]])
-            new_hyps_mask = {'nbond': n2b, 'ntriplet': 0,
-                             'nspecie': hyps_mask['nspecie'],
-                             'specie_mask': hyps_mask['specie_mask'],
-                             'bond_mask': hyps_mask['bond_mask']}
-            if ('cutoff_2b' in hyps_mask):
-                new_hyps_mask['cutoff_2b'] = hyps_mask['cutoff_2b']
-        else:
-            new_hyps = [hyps[0], hyps[1], hyps[-1]]
-            new_hyps_mask = None
-
-        return new_hyps, new_hyps_mask
-
-    @staticmethod
-    def get_3b_hyps(hyps, hyps_mask, multihyps=False):
-
-        if (multihyps is True):
-            new_hyps = Parameters.get_hyps(hyps_mask, hyps)
-            n2b = hyps_mask.get('nbond', 0)
-            n3b = hyps_mask['ntriplet']
-            new_hyps = np.hstack([new_hyps[n2b*2:n2b*2+n3b*2], new_hyps[-1]])
-            new_hyps_mask = {'ntriplet': n3b, 'nbond': 0,
-                             'nspecie': hyps_mask['nspecie'],
-                             'specie_mask': hyps_mask['specie_mask'],
-                             'triplet_mask': hyps_mask['triplet_mask']}
-            ncut3b = hyps_mask.get('ncut3b', 0)
-            if (ncut3b > 0):
-                new_hyps_mask['ncut3b'] = hyps_mask['cut3b_mask']
-                new_hyps_mask['cut3b_mask'] = hyps_mask['cut3b_mask']
-                new_hyps_mask['cutoff_3b'] = hyps_mask['cutoff_3b']
-        else:
-            # kind of assuming that 2-body is there
-            base = 2
-            new_hyps = np.hstack([hyps[0+base], hyps[1+base], hyps[-1]])
-            new_hyps_mask = None
-
-        return hyps, hyps_mask
-
-    @staticmethod
-    def get_mb_hyps(hyps, hyps_mask, multihyps=False):
-
-        if (multihyps is True):
-            new_hyps = Parameters.get_hyps(hyps_mask, hyps)
-            n2b = hyps_mask.get('n2b', 0)
-            n3b = hyps_mask.get('n3b', 0)
-            n23b2 = (n2b+n3b)*2
-            nmb = hyps_mask['nmb']
-
-            new_hyps = np.hstack([new_hyps[n23b2:n23b2+nmb*2], new_hyps[-1]])
-
-            new_hyps_mask = {'nmb': nmb, 'nbond': 0, 'ntriplet':0,
-                             'nspecie': hyps_mask['nspecie'],
-                             'specie_mask': hyps_mask['specie_mask'],
-                             'mb_mask': hyps_mask['mb_mask']}
-
-            if ('cutoff_mb' in hyps_mask):
-                new_hyps_mask['cutoff_mb'] = hyps_mask['cutoff_mb']
-        else:
-            # kind of assuming that 2+3 are there
-            base = 4
-            new_hyps = np.hstack([hyps[0+base], hyps[1+base], hyps[-1]])
-            new_hyps_mask = None
-
-        return new_hyps, new_hyps_mask
-
-    @staticmethod
-    def get_cutoff(coded_species, cutoff, hyps_mask):
-
-        if (len(coded_species)==2):
-            if (hyps_mask is None):
-                return cutoff[0]
-            elif ('cutoff_2b' not in hyps_mask):
-                return cutoff[0]
-
-            ele1 = hyps_mask['species_mask'][coded_species[0]]
-            ele2 = hyps_mask['species_mask'][coded_species[1]]
-            bond_type = hyps_mask['bond_mask'][ \
-                    hyps_mask['nspecie']*ele1 + ele2]
-            return hyps_mask['cutoff_2b'][bond_type]
-
-        elif (len(coded_species)==3):
-            if (hyps_mask is None):
-                return np.ones(3)*cutoff[1]
-            elif ('cutoff_3b' not in hyps_mask):
-                return np.ones(3)*cutoff[1]
-
-            ele1 = hyps_mask['species_mask'][coded_species[0]]
-            ele2 = hyps_mask['species_mask'][coded_species[1]]
-            ele3 = hyps_mask['species_mask'][coded_species[2]]
-            bond1 = hyps_mask['cut3b_mask'][ \
-                        hyps_mask['nspecie']*ele1 + ele2]
-            bond2 = hyps_mask['cut3b_mask'][ \
-                        hyps_mask['nspecie']*ele1 + ele3]
-            bond12 = hyps_mask['cut3b_mask'][ \
-                        hyps_mask['nspecie']*ele2 + ele3]
-            return np.array([hyps_mask['cutoff_3b'][bond1],
-                             hyps_mask['cutoff_3b'][bond2],
-                             hyps_mask['cutoff_3b'][bond12]])
-        else:
-            raise NotImplementedError
-
-    @staticmethod
-    def get_hyps(hyps_mask, hyps):
-        if 'map' in hyps_mask:
-            newhyps = np.copy(hyps_mask['original'])
-            for i, ori in enumerate(hyps_mask['map']):
-                newhyps[ori] = hyps[i]
             return newhyps
+
+    @staticmethod
+    def get_component_mask(param_dict, kernel_name):
+
+        if kernel_name in param_dict['kernels']:
+            new_dict = {}
+            new_dict['hyps'] = get_component_hyps(param_dict, kernel_name, noise=True)
+            new_dict['kernels'] = [kernel_name]
+            new_dict['cutoffs'] = {kernel_name: param_dict['cutoffs'][kernel_name]}
+            new_dict[kernel_name+'_start'] = 0
+
+            name_list = ['nspecie', 'specie_mask',
+                         n+kernel_name, kernel_name+'_mask',
+                         kernel_name+'_cutoff_list']
+            if kernel_name == 'triplet':
+                name_list += ['ncut3b', 'cut3b_mask']
+
+            for name in name_list:
+                if name in param_dict:
+                    new_dict[name] = param_dict[name]
+
+            return new_dict
         else:
-            return hyps
+            return {}
+
+    @staticmethod
+    def get_noise(param_dict, constraint=False):
+        hyps = Parameters.get_hyps(param_dict)
+        if constraint:
+            return hyps[-1], param_dict['train_noise']
+        else:
+            return hyps[-1]
+
+    @staticmethod
+    def get_cutoff(kernel_name, coded_species, param_dict):
+
+        cutoffs = param_dict['cutoffs']
+        universal_cutoff = cutoffs[kernel_name]
+
+        if f'{kernel_name}_cutoff_list' in param_dict:
+
+            specie_mask = param_dict['species_mask']
+            cutoff_list = param_dict[f'{kernel_name}_cutoff_list']
+
+            if kernel_name != 'triplet':
+                mask_id = 0
+                for ele in coded_specie:
+                    mask_id += specie_mask[ele]
+                    mask_id *= nspecie
+                mask_id = mask_id // nspecie
+                mask_id = param_dict[kernel_name+'_mask'][mask_id]
+                return cutoff_list[mask_id]
+            else:
+                cut3b_mask = param_dict['cut3b_mask']
+                ele1 = species_mask[coded_species[0]]
+                ele2 = species_mask[coded_species[1]]
+                ele3 = species_mask[coded_species[2]]
+                bond1 = cut3b_mask[param_dict['nspecie']*ele1 + ele2]
+                bond2 = cut3b_mask[param_dict['nspecie']*ele1 + ele3]
+                bond12 = cut3b_mask[param_dict['nspecie']*ele2 + ele3]
+                return np.array([cutoff_list[bond1],
+                                 cutoff_list[bond2],
+                                 cutoff_list[bond12]])
+        else:
+            return universal_cutoff
+
+
+    @staticmethod
+    def get_hyps(param_dict, constraint=False):
+
+        hyps = param_dict['hyps']
+        if 'map' in param_dict:
+            newhyps = np.copy(param_dict['original_hyps'])
+            opt = np.zeros_like(newhyps, dtype=bool)
+            for i, ori in enumerate(param_dict['map']):
+                newhyps[ori] = hyps[i]
+                opt[ori] = True
+        else:
+            newhyps = hyps
+            opt = np.zeros_like(hyps, dtype=bool)
+
+        if constraint:
+            return newhyps, opt
+        else:
+            return newhyps
 
     @staticmethod
     def compare_dict(dict1, dict2):
@@ -421,20 +267,34 @@ class Parameters():
         if dict1 is None:
             return True
 
-        for k in ['nspecie', 'specie_mask', 'nbond', 'bond_mask',
-                  'cutoff_2b', 'ntriplet', 'triplet_mask',
-                  'n3b', 'cut3b_mask', 'nmb', 'mb_mask',
-                  'cutoff_mb', 'map']: #, 'train_noise']:
+        list_of_names = ['nspecie', 'specie_mask', 'map', 'original_hyps']
+        for k in Parameters.all_kernel_types:
+            list_of_names += ['n'+k]
+            list_of_names += [k+'_mask']
+            list_of_names += ['cutoff_'+k]
+            list_of_names += [k+'_cutoff_list']
+        list_of_names += ['ncut3b']
+        list_of_names += ['cut3b_mask']
+
+        for k in list_of_names:
             if (k in dict1) != (k in dict2):
                 return False
-            elif (k in dict1):
+            elif k in dict1:
                 if not (np.isclose(dict1[k], dict2[k]).all()):
+                    return False
+
+        for k in ['hyp_labels', 'original_labels']:
+            if (k in dict1) != (k in dict2):
+                return False
+            elif k in dict1:
+                if not (dict1[k]==dict2[k]).all():
                     return False
 
         for k in ['train_noise']:
             if (k in dict1) != (k in dict2):
                 return False
-            elif (k in dict1):
+            elif k in dict1:
                 if dict1[k] !=dict2[k]:
                     return False
+
         return True
