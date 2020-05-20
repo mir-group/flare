@@ -795,7 +795,11 @@ class GaussianProcess:
 
         # Reconstruct training structures.
         new_gp.training_structures = []
-        for n, env_list in enumerate(dictionary['training_structures']):
+        # Backwards compatibility with old 'training data' label
+        train_structures = dictionary.get('training_structures') or \
+                           dictionary.get('training_data')
+
+        for n, env_list in enumerate(train_structures):
             new_gp.training_structures.append([])
             for env_curr in env_list:
                 new_gp.training_structures[n].append(
