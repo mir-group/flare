@@ -39,7 +39,7 @@ def all_gps() -> GaussianProcess:
                             hyps=hyps,
                             hyp_labels=hl,
                             cutoffs=cutoffs,
-                            param_dict=hm,
+                            hyps_mask=hm,
                             parallel=False, n_cpus=1)
 
         test_structure, forces = \
@@ -169,7 +169,7 @@ class TestConstraint():
 
         hyps, hm, cutoffs = generate_hm(1, 1, constraint=True, multihyps=True)
 
-        test_gp.param_dict = hm
+        test_gp.hyps_mask = hm
         test_gp.hyp_labels = hm['hyp_labels']
         test_gp.hyps = hyps
         test_gp.update_kernel(hm['kernel_name'], hm)
@@ -249,9 +249,9 @@ class TestIO():
         assert 'cutoff_manybody: 0.8' in the_str
         assert 'Model Likelihood: ' in the_str
         if not multihyps:
-            assert 'Length: ' in the_str
-            assert 'Signal Var.: ' in the_str
-            assert "Noise Var.: " in the_str
+            assert 'Length ' in the_str
+            assert 'Signal Var. ' in the_str
+            assert "Noise Var." in the_str
 
     @pytest.mark.parametrize('multihyps', multihyps_list)
     def test_serialization_method(self, all_gps, validation_env, multihyps):
@@ -286,7 +286,11 @@ class TestIO():
         for d in [1, 2, 3]:
             assert np.all(test_gp.predict(x_t=validation_env, d=d) ==
                           new_gp.predict(x_t=validation_env, d=d))
-        os.remove('test_gp_write.pickle')
+
+        try:
+            os.remove('test_gp_write.pickle')
+        except:
+            pass
 
         test_gp.write_model('test_gp_write', 'json')
 
@@ -379,11 +383,15 @@ class TestHelper():
         # testing on the predictions made, just that the cutoffs in the
         # atomic environments are correctly re-created
 
-        old_cutoffs = np.copy(test_gp.cutoffs)
+        old_cutoffs = {}
+        new_cutoffs = {}
+        for k in test_gp.cutoffs:
+            old_cutoffs[k] = test_gp.cutoffs[k]
+            new_cutoffs[k] = 0.5+old_cutoffs[k]
+        test_gp.hyps_mask['cutoffs']=new_cutoffs
+        test_gp.adjust_cutoffs(new_cutoffs, train=False, new_hyps_mask=test_gp.hyps_mask)
 
-        test_gp.adjust_cutoffs(np.array(test_gp.cutoffs) + .5, train=False)
-
-        assert np.array_equal(test_gp.cutoffs, old_cutoffs + .5)
+        assert np.array_equal(list(test_gp.cutoffs.values()), np.array(list(old_cutoffs.values()), dtype=float) + .5)
 
         for env in test_gp.training_data:
-            assert np.array_equal(env.cutoffs, test_gp.cutoffs)
+            assert env.cutoffs == test_gp.cutoffs

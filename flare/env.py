@@ -2,6 +2,7 @@
 environment of an atom. :class:`AtomicEnvironment` objects are inputs to the
 2-, 3-, and 2+3-body kernels."""
 import numpy as np
+from copy import deepcopy
 from math import sqrt
 from numba import njit
 from flare.struc import Structure
@@ -92,7 +93,7 @@ class AtomicEnvironment:
         if cutoffs_mask is None:
             cutoffs_mask = {'cutoffs': cutoffs}
         elif cutoffs is not None:
-            cutoffs_mask['cutoffs'] = cutoffs
+            cutoffs_mask['cutoffs'] = deepcopy(cutoffs)
 
         self.twobody_cutoff = 0
         self.threebody_cutoff = 0
@@ -103,8 +104,8 @@ class AtomicEnvironment:
         self.nmanybody = 0
 
         self.nspecie = 1
-        self.specie_mask = np.zeros(118, dtype=int)
-        self.twobody_mask = np.zeros(1, dtype=int)
+        self.specie_mask = None
+        self.twobody_mask = None
         self.threebody_mask = None
         self.manybody_mask = None
         self.twobody_cutoff_list = None
@@ -124,7 +125,7 @@ class AtomicEnvironment:
 
     def setup_mask(self, cutoffs_mask):
 
-        self.cutoffs_mask = cutoffs_mask
+        self.cutoffs_mask = deepcopy(cutoffs_mask)
         self.cutoffs = cutoffs_mask['cutoffs']
 
         for kernel in AtomicEnvironment.all_kernel_types:
@@ -145,10 +146,6 @@ class AtomicEnvironment:
             if kernel in self.cutoffs:
                 setattr(self, kernel+'_cutoff', self.cutoffs[kernel])
                 setattr(self, 'n'+kernel, 1)
-                setattr(self, kernel+'_cutoff_list',
-                        np.ones(self.nspecie**ndim)*self.cutoffs[kernel])
-                setattr(self, kernel+'_mask',
-                        np.zeros(self.nspecie**ndim, dtype=int))
                 if kernel != 'threebody':
                     name_list = [kernel+'_cutoff_list',
                                  'n'+kernel, kernel+'_mask']
@@ -157,19 +154,16 @@ class AtomicEnvironment:
                             setattr(self, name, cutoffs_mask[name])
                 else:
                     self.ncut3b = cutoffs_mask.get('ncut3b', 1)
-                    self.cut3b_mask = cutoffs_mask.get(
-                        'cut3b_mask', np.zeros(self.nspecie**2, dtype=int))
+                    self.cut3b_mask = cutoffs_mask.get('cut3b_mask', None)
                     if 'threebody_cutoff_list' in cutoffs_mask:
                         self.threebody_cutoff_list = cutoffs_mask['threebody_cutoff_list']
-                    else:
-                        self.threebody_cutoff_list = self.cutoffs['threebody']*np.ones(self.nspecie**2)
 
     def compute_env(self):
 
         # get 2-body arrays
         if (self.ntwobody >= 1):
             bond_array_2, bond_positions_2, etypes, bond_inds = \
-                get_2_body_arrays(self.positions, self.atom, self.cell,
+                get_2_body_arrays(self.positions, self.atom, self.cell, self.twobody_cutoff,
                                   self.twobody_cutoff_list, self.species, self.sweep_array,
                                   self.nspecie, self.specie_mask, self.twobody_mask)
 
@@ -181,7 +175,8 @@ class AtomicEnvironment:
         if self.ncut3b > 0:
             bond_array_3, cross_bond_inds, cross_bond_dists, triplet_counts = \
                 get_3_body_arrays(bond_array_2, bond_positions_2,
-                                  self.species[self.atom], etypes, self.threebody_cutoff_list,
+                                  self.species[self.atom], etypes, self.threebody_cutoff,
+                                  self.threebody_cutoff_list,
                                   self.nspecie, self.specie_mask, self.cut3b_mask)
             self.bond_array_3 = bond_array_3
             self.cross_bond_inds = cross_bond_inds
@@ -193,8 +188,10 @@ class AtomicEnvironment:
             self.q_array, self.q_neigh_array, self.q_neigh_grads, \
                 self.unique_species, self.etypes_mb = \
                 get_m_body_arrays(self.positions, self.atom, self.cell,
-                                  self.manybody_cutoff_list, self.species, self.sweep_array, self.nspecie, self.specie_mask, self.manybody_mask,
-                                  cf.quadratic_cutoff)
+                                  self.manybody_cutoff, self.manybody_cutoff_list,
+                                  self.species, self.sweep_array,
+                                  self.nspecie, self.specie_mask,
+                                  self.manybody_mask, cf.quadratic_cutoff)
 
     def as_dict(self):
         """
@@ -254,7 +251,7 @@ class AtomicEnvironment:
 
 
 @njit
-def get_2_body_arrays(positions, atom: int, cell, cutoff_2, species, sweep,
+def get_2_body_arrays(positions, atom: int, cell, r_cut, cutoff_2, species, sweep,
                       nspecie, specie_mask, twobody_mask):
     """Returns distances, coordinates, species of atoms, and indices of neighbors
     in the 2-body local environment. This method is implemented outside
@@ -305,22 +302,26 @@ def get_2_body_arrays(positions, atom: int, cell, cutoff_2, species, sweep,
     vec2 = cell[1]
     vec3 = cell[2]
 
-    bc = specie_mask[species[atom]]
-    bcn = nspecie * bc
+    sepcut = False
+    if nspecie > 1 and cutoff_2 is not None:
+        sepcut = True
+        bc = specie_mask[species[atom]]
+        bcn = nspecie * bc
 
     # record distances and positions of images
     for n in range(noa):
         diff_curr = positions[n] - pos_atom
         im_count = 0
-        bn = specie_mask[species[n]]
-        rcut = cutoff_2[twobody_mask[bn+bcn]]
+        if sepcut:
+            bn = specie_mask[species[n]]
+            r_cut = cutoff_2[twobody_mask[bn+bcn]]
 
         for s1 in sweep:
             for s2 in sweep:
                 for s3 in sweep:
                     im = diff_curr + s1 * vec1 + s2 * vec2 + s3 * vec3
                     dist = sqrt(im[0] * im[0] + im[1] * im[1] + im[2] * im[2])
-                    if (dist < rcut) and (dist != 0):
+                    if (dist < r_cut) and (dist != 0):
                         dists[n, im_count] = dist
                         coords[n, :, im_count] = im
                         cutoff_count += 1
@@ -335,11 +336,12 @@ def get_2_body_arrays(positions, atom: int, cell, cutoff_2, species, sweep,
 
     for m in range(noa):
         spec_curr = species[m]
-        bm = specie_mask[species[m]]
-        rcut = cutoff_2[twobody_mask[bm+bcn]]
+        if sepcut:
+            bm = specie_mask[species[m]]
+            r_cut = cutoff_2[twobody_mask[bm+bcn]]
         for n in range(27):
             dist_curr = dists[m, n]
-            if (dist_curr < rcut) and (dist_curr != 0):
+            if (dist_curr < r_cut) and (dist_curr != 0):
                 coord = coords[m, :, n]
                 bond_array_2[bond_count, 0] = dist_curr
                 bond_array_2[bond_count, 1:4] = coord / dist_curr
@@ -360,7 +362,7 @@ def get_2_body_arrays(positions, atom: int, cell, cutoff_2, species, sweep,
 
 @njit
 def get_3_body_arrays(bond_array_2, bond_positions_2, ctype,
-                      etypes, cutoff_3,
+                      etypes, r_cut, cutoff_3,
                       nspecie, specie_mask, cut3b_mask):
     """Returns distances and coordinates of triplets of atoms in the
     3-body local environment.
@@ -403,13 +405,15 @@ def get_3_body_arrays(bond_array_2, bond_positions_2, ctype,
     :rtype: (np.ndarray, np.ndarray, np.ndarray, np.ndarray)
     """
 
-    bc = specie_mask[ctype]
-    bcn = nspecie * bc
-
-    cut3 = np.max(cutoff_3)
+    sepcut = False
+    if nspecie > 1 and cutoff_3 is not None:
+        bc = specie_mask[ctype]
+        bcn = nspecie * bc
+        r_cut = np.max(cutoff_3)
+        sepcut = True
 
     # get 3-body bond array
-    ind_3_l = np.where(bond_array_2[:, 0] > cut3)[0]
+    ind_3_l = np.where(bond_array_2[:, 0] > r_cut)[0]
     if (ind_3_l.shape[0] > 0):
         ind_3 = ind_3_l[0]
     else:
@@ -417,6 +421,10 @@ def get_3_body_arrays(bond_array_2, bond_positions_2, ctype,
 
     bond_array_3 = bond_array_2[0:ind_3, :]
     bond_positions_3 = bond_positions_2[0:ind_3, :]
+
+    cut_m = r_cut
+    cut_n = r_cut
+    cut_mn = r_cut
 
     # get cross bond array
     cross_bond_inds = np.zeros((ind_3, ind_3), dtype=np.int8) - 1
@@ -427,21 +435,23 @@ def get_3_body_arrays(bond_array_2, bond_positions_2, ctype,
         count = m + 1
         trips = 0
 
-        # choose bond dependent bond
-        bm = specie_mask[etypes[m]]
-        btype_m = cut3b_mask[bm + bcn]  # (m, c)
-        cut_m = cutoff_3[btype_m]
-        bmn = nspecie * bm  # for cross_dist usage
+        if sepcut:
+            # choose bond dependent bond
+            bm = specie_mask[etypes[m]]
+            btype_m = cut3b_mask[bm + bcn]  # (m, c)
+            cut_m = cutoff_3[btype_m]
+            bmn = nspecie * bm  # for cross_dist usage
 
         for n in range(m + 1, ind_3):
 
-            bn = specie_mask[etypes[n]]
-            btype_n = cut3b_mask[bn + bcn]  # (n, c)
-            cut_n = cutoff_3[btype_n]
+            if sepcut:
+                bn = specie_mask[etypes[n]]
+                btype_n = cut3b_mask[bn + bcn]  # (n, c)
+                cut_n = cutoff_3[btype_n]
 
-            # for cross_dist (m,n) pair
-            btype_mn = cut3b_mask[bn + bmn]
-            cut_mn = cutoff_3[btype_mn]
+                # for cross_dist (m,n) pair
+                btype_mn = cut3b_mask[bn + bmn]
+                cut_mn = cutoff_3[btype_mn]
 
             pos2 = bond_positions_3[n]
             diff = pos2 - pos1
@@ -462,7 +472,7 @@ def get_3_body_arrays(bond_array_2, bond_positions_2, ctype,
 
 
 @njit
-def get_m_body_arrays(positions, atom: int, cell, manybody_cutoff_list,
+def get_m_body_arrays(positions, atom: int, cell, r_cut, manybody_cutoff_list,
                       species, sweep: np.ndarray, nspec, spec_mask, manybody_mask,
                       cutoff_func=cf.quadratic_cutoff):
     # TODO:
@@ -485,11 +495,14 @@ def get_m_body_arrays(positions, atom: int, cell, manybody_cutoff_list,
     """
     # Get distances, positions, species and indexes of neighbouring atoms
     bond_array_mb, __, etypes, bond_inds = get_2_body_arrays(
-        positions, atom, cell, manybody_cutoff_list, species, sweep,
+        positions, atom, cell, r_cut, manybody_cutoff_list, species, sweep,
         nspec, spec_mask, manybody_mask)
 
-    bc = spec_mask[species[atom]]
-    bcn = bc * nspec
+    sepcut = False
+    if nspec > 1 and manybody_cutoff_list is not None:
+        bc = spec_mask[species[atom]]
+        bcn = bc * nspec
+        sepcut = True
 
     species_list = np.array(list(set(species)), dtype=np.int8)
     n_bonds = len(bond_inds)
@@ -500,34 +513,38 @@ def get_m_body_arrays(positions, atom: int, cell, manybody_cutoff_list,
 
     # get coordination number of center atom for each species
     for s in range(n_specs):
-        bs = spec_mask[species_list[s]]
-        mbtype = manybody_mask[bcn + bs]
-        r_cut = manybody_cutoff_list[mbtype]
+        if sepcut:
+            bs = spec_mask[species_list[s]]
+            mbtype = manybody_mask[bcn + bs]
+            r_cut = manybody_cutoff_list[mbtype]
 
         qs[s] = q_value_mc(bond_array_mb[:, 0], r_cut, species_list[s],
                            etypes, cutoff_func)
 
     # get coordination number of all neighbor atoms for each species
     for i in range(n_bonds):
-        be = spec_mask[etypes[i]]
-        ben = be * nspec
+        if sepcut:
+            be = spec_mask[etypes[i]]
+            ben = be * nspec
 
         neigh_bond_array, _, neigh_etypes, _ = \
-            get_2_body_arrays(positions, bond_inds[i], cell,
+            get_2_body_arrays(positions, bond_inds[i], cell, r_cut,
                               manybody_cutoff_list, species, sweep, nspec, spec_mask, manybody_mask)
         for s in range(n_specs):
-            bs = spec_mask[species_list[s]]
-            mbtype = manybody_mask[bs + ben]
-            r_cut = manybody_cutoff_list[mbtype]
+            if sepcut:
+                bs = spec_mask[species_list[s]]
+                mbtype = manybody_mask[bs + ben]
+                r_cut = manybody_cutoff_list[mbtype]
 
             qs_neigh[i, s] = q_value_mc(neigh_bond_array[:, 0], r_cut,
                                         species_list[s], neigh_etypes, cutoff_func)
 
     # get grad from each neighbor atom
     for i in range(n_bonds):
-        be = spec_mask[etypes[i]]
-        mbtype = manybody_mask[bcn + be]
-        r_cut = manybody_cutoff_list[mbtype]
+        if sepcut:
+            be = spec_mask[etypes[i]]
+            mbtype = manybody_mask[bcn + be]
+            r_cut = manybody_cutoff_list[mbtype]
 
         ri = bond_array_mb[i, 0]
         for d in range(3):

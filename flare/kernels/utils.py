@@ -114,7 +114,7 @@ def str_to_mapped_kernel(name: str, hyps_mask: dict = None, energy=False):
     if hyps_mask is None:
         multihyps = False
     # In the future, this should be ntwobody >1, use sephyps bond...
-    elif hyps_mask['nspecie'] == 1 and 'map' not in hyps_mask:
+    elif hyps_mask['nspecie'] == 1:
         multihyps = False
     else:
         multihyps = True
@@ -161,10 +161,9 @@ def from_mask_to_args(hyps, hyps_mask: dict, cutoffs):
     cutoffs_array[2] = cutoffs.get('manybody', 0)
 
     # no special setting
-    print("lalala", hyps_mask)
     if (hyps_mask is None):
         return (hyps, cutoffs_array)
-    if hyps_mask['nspecie'] == 1 and 'map' not in hyps_mask:
+    if hyps_mask['nspecie'] == 1 :
         return (hyps, cutoffs_array)
 
     # setting for mc_sephyps

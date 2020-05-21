@@ -57,9 +57,15 @@ class Parameters():
         if param_dict is None:
             param_dict = {}
 
-        replace_list = {'spec': 'specie', 'bond':'twobody',
+        replace_list = {'bond':'twobody',
                         'triplet':'threebody', 'mb':'manybody'}
-        for key in param_dict:
+        if 'nspec' in param_dict:
+            param_dict['nspecie'] = param_dict['nspec']
+        if 'spec_mask' in param_dict:
+            param_dict['specie_mask'] = np.array(param_dict['spec_mask'], dtype=int)
+
+        keys = list(param_dict.keys())
+        for key in keys:
             for original in replace_list:
                 if original in key:
                     newkey = key.replace(original, replace_list[original])
@@ -70,8 +76,6 @@ class Parameters():
 
         if 'nspecie' not in param_dict:
             param_dict['nspecie'] = 1
-        if 'specie_mask' not in param_dict:
-            param_dict['specie_mask'] = np.zeros(118, dtype=int)
 
         if (cutoffs is not None) and not isinstance(cutoffs, dict):
             newcutoffs = {'twobody':cutoffs[0]}
@@ -89,37 +93,40 @@ class Parameters():
             param_dict['nspecie'] = 1
 
         if kernel_name is not None:
-            kernels = []
-            start = 0
-            b2 = False
-            b3 = False
-            many = False
-            for s in ['2', 'two', 'Two', 'TWO', 'bond']:
-                if s in name:
-                    b2 = True
-            for s in ['3', 'three', 'Three', 'THREE', 'triplet']:
-                if s in name:
-                    b3 = True
-            for s in ['mb', 'manybody', 'many', 'Many', 'ManyBody']:
-                if s in name:
-                    many = True
-            if b2:
-                kernels += ['twobody']
-                param_dict['ntwobody'] = 1
-                param_dict['twobody_start'] = 0
-                start += 2
-            if b3:
-                kernels += ['threebody']
-                param_dict['nthreebody'] = 1
-                param_dict['threebody_start'] = start
-                start += 2
-            if many:
-                kernels += ['manybody']
-                param_dict['nmanybody'] = 1
-                param_dict['manybody_start'] = start
-                start += 2
-            param_dict['kernels'] = kernels
-            param_dict['kernel_name'] = "+".join(param_dict['kernels'])
+            if kernel_name != param_dict.get("kernel_name", ""):
+                kernels = []
+                start = 0
+                b2 = False
+                b3 = False
+                many = False
+                for s in ['2', 'two', 'Two', 'TWO', 'bond']:
+                    if s in kernel_name:
+                        b2 = True
+                for s in ['3', 'three', 'Three', 'THREE', 'triplet']:
+                    if s in kernel_name:
+                        b3 = True
+                for s in ['mb', 'manybody', 'many', 'Many', 'ManyBody']:
+                    if s in kernel_name:
+                        many = True
+                if b2:
+                    kernels += ['twobody']
+                    param_dict['ntwobody'] = 1
+                    param_dict['twobody_start'] = 0
+                    start += 2
+                if b3:
+                    kernels += ['threebody']
+                    param_dict['nthreebody'] = 1
+                    param_dict['threebody_start'] = start
+                    start += 2
+                if many:
+                    kernels += ['manybody']
+                    param_dict['nmanybody'] = 1
+                    param_dict['manybody_start'] = start
+                    start += 2
+                param_dict['kernels'] = kernels
+                param_dict['kernel_name'] = "+".join(param_dict['kernels'])
+                if "sc" in kernel_name:
+                    param_dict['kernel_name'] += "_sc"
 
         if 'hyps' not in param_dict:
             param_dict['hyps'] = hyps
@@ -144,8 +151,6 @@ class Parameters():
         """
 
         assert isinstance(param_dict, dict)
-
-
 
         nspecie = param_dict['nspecie']
         if nspecie > 1:
@@ -230,8 +235,6 @@ class Parameters():
         hyps_length += 1
         assert hyps_length == len(hyps), \
             "the hyperparmeter length is inconsistent with the mask"
-        for var in hyps:
-            assert var >= 0
 
         return param_dict
 
@@ -276,17 +279,21 @@ class Parameters():
             new_dict['kernels'] = [kernel_name]
             new_dict['cutoffs'] = {
                 kernel_name: param_dict['cutoffs'][kernel_name]}
+            if 'twobody' in param_dict['cutoffs']:
+                new_dict['cutoffs']['twobody'] = param_dict['cutoffs']['twobody']
+
             new_dict[kernel_name+'_start'] = 0
 
             name_list = ['nspecie', 'specie_mask',
                          'n'+kernel_name, kernel_name+'_mask',
                          kernel_name+'_cutoff_list']
+
             if kernel_name == 'threebody':
                 name_list += ['ncut3b', 'cut3b_mask']
 
             for name in name_list:
                 if name in param_dict:
-                    new_dict[name] = param_dict[name]
+                    new_dict[name] = deepcopy(param_dict[name])
 
             return new_dict
         else:
@@ -331,7 +338,10 @@ class Parameters():
                                  cutoff_list[twobody2],
                                  cutoff_list[twobody12]])
         else:
-            return universal_cutoff
+            if kernel_name != 'threebody':
+                return universal_cutoff
+            else:
+                return [universal_cutoff]*3
 
     @staticmethod
     def get_hyps(param_dict, hyps=None, constraint=False):

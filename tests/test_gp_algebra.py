@@ -45,7 +45,7 @@ def get_random_training_set(nenv, nstruc):
 
     np.random.seed(0)
 
-    cutoffs = np.array([0.8, 0.8])
+    cutoffs = {'twobody':0.8, 'threebody':0.8}
     hyps = np.ones(5, dtype=float)
     kernel = (two_plus_three_body_mc, two_plus_three_body_mc_grad,
               two_plus_three_mc_en, two_plus_three_mc_force_en)
@@ -55,7 +55,10 @@ def get_random_training_set(nenv, nstruc):
          mc_sephyps.two_plus_three_mc_force_en)
 
     # 9 different hyper-parameters
-    hyps_mask1 = {'nspecie': 2,
+    hyps_mask1 = {'kernels':['twobody', 'threebody'],
+                 'twobody_start': 0,
+                 'threebody_start': 4,
+                 'nspecie': 2,
                  'specie_mask': np.zeros(118, dtype=int),
                  'ntwobody': 2,
                  'twobody_mask': np.array([0, 1, 1, 1]),
@@ -65,7 +68,10 @@ def get_random_training_set(nenv, nstruc):
     hyps1 = np.ones(9, dtype=float)
 
     # 9 different hyper-parameters, onlye train the 0, 2, 4, 6, 8
-    hyps_mask2 = {'nspecie': 2,
+    hyps_mask2 = {'kernels':['twobody', 'threebody'],
+                 'twobody_start': 0,
+                 'threebody_start': 4,
+                 'nspecie': 2,
                  'specie_mask': np.zeros(118, dtype=int),
                  'ntwobody': 2,
                  'twobody_mask': np.array([0, 1, 1, 1]),
@@ -73,12 +79,15 @@ def get_random_training_set(nenv, nstruc):
                  'threebody_mask': np.array([0, 1, 1, 1, 1, 1, 1, 1]),
                  'train_noise':True,
                  'map':[0,2,4,6,8],
-                 'original':np.array([1, 1, 1, 1, 1, 1, 1, 1, 1])}
+                 'original_hyps':np.array([1, 1, 1, 1, 1, 1, 1, 1, 1])}
     hyps_mask2['specie_mask'][2] = 1
     hyps2 = np.ones(5, dtype=float)
 
     # 9 different hyper-parameters, only train the 0, 2, 4, 6
-    hyps_mask3 = {'nspecie': 2,
+    hyps_mask3 = {'kernels':['twobody', 'threebody'],
+                 'twobody_start': 0,
+                 'threebody_start': 4,
+                 'nspecie': 2,
                  'specie_mask': np.zeros(118, dtype=int),
                  'ntwobody': 2,
                  'twobody_mask': np.array([0, 1, 1, 1]),
@@ -86,12 +95,15 @@ def get_random_training_set(nenv, nstruc):
                  'threebody_mask': np.array([0, 1, 1, 1, 1, 1, 1, 1]),
                  'train_noise':False,
                  'map':[0,2,4,6],
-                 'original':np.array([1, 1, 1, 1, 1, 1, 1, 1, 1])}
+                 'original_hyps':np.array([1, 1, 1, 1, 1, 1, 1, 1, 1])}
     hyps_mask3['specie_mask'][2] = 1
     hyps3 = np.ones(4, dtype=float)
 
     # 5 different hyper-parameters, equivalent to no multihyps
-    hyps_mask4 = {'nspecie': 1,
+    hyps_mask4 = {'kernels':['twobody', 'threebody'],
+                 'twobody_start': 0,
+                 'threebody_start': 4,
+                 'nspecie': 1,
                  'specie_mask': np.zeros(118, dtype=int),
                  'ntwobody': 1,
                  'twobody_mask': np.array([0]),
@@ -169,7 +181,13 @@ def test_ky_mat(params):
         hyps = hyps_list[i]
         hyps_mask = hyps_mask_list[i]
 
+        multihyps = True
         if hyps_mask is None:
+            multihyps = False
+        elif hyps_mask['nspecie'] == 1:
+            multihyps = False
+
+        if not multihyps:
             ker1 = kernel[0]
             ker2 = kernel[2]
             ker3 = kernel[3]
@@ -244,7 +262,13 @@ def test_ky_mat_update(params):
         hyps = hyps_list[i]
         hyps_mask = hyps_mask_list[i]
 
+        multihyps = True
         if hyps_mask is None:
+            multihyps = False
+        elif hyps_mask['nspecie'] == 1:
+            multihyps = False
+
+        if not multihyps:
             ker1 = kernel[0]
             ker2 = kernel[2]
             ker3 = kernel[3]
@@ -326,7 +350,13 @@ def test_ky_and_hyp(params):
         hyps = hyps_list[i]
         hyps_mask = hyps_mask_list[i]
 
+        multihyps = True
         if hyps_mask is None:
+            multihyps = False
+        elif hyps_mask['nspecie'] == 1:
+            multihyps = False
+
+        if not multihyps:
             ker = kernel[1]
         else:
             ker = kernel_m[1]
@@ -391,7 +421,13 @@ def test_grad(params):
         hyps = hyps_list[i]
         hyps_mask = hyps_mask_list[i]
 
+        multihyps = True
         if hyps_mask is None:
+            multihyps = False
+        elif hyps_mask['nspecie'] == 1:
+            multihyps = False
+
+        if not multihyps:
             ker = kernel[1]
         else:
             ker = kernel_m[1]

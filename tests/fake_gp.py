@@ -52,8 +52,10 @@ def generate_hm(ntwobody, nthreebody, nmanybody=1, constraint=False, multihyps=T
 
     pm = ParameterHelper(species=['H', 'He'], parameters={'cutoff_twobody': 0.8,
         'cutoff_threebody': 0.8, 'cutoff_manybody': 0.8, 'noise':0.05})
-    pm.define_group('twobody', 'b1', ['*', '*'], parameters=random(2))
-    pm.define_group('threebody', 't1', ['*', '*', '*'], parameters=random(2))
+    if (ntwobody > 0):
+        pm.define_group('twobody', 'b1', ['*', '*'], parameters=random(2))
+    if (nthreebody > 0):
+        pm.define_group('threebody', 't1', ['*', '*', '*'], parameters=random(2))
     if (nmanybody > 0):
         pm.define_group('manybody', 'manybody1', ['*', '*'], parameters=random(2))
     if (ntwobody > 1):
@@ -82,7 +84,6 @@ def get_gp(bodies, kernel_type='mc', multihyps=True, cellabc=[1, 1, 1.5]) -> Gau
     # params
     cell = np.diag(cellabc)
     unique_species = [2, 1]
-    cutoffs = {'twobody':0.8, 'threebody':0.8}
     noa = 5
 
     ntwobody = 0
@@ -94,13 +95,14 @@ def get_gp(bodies, kernel_type='mc', multihyps=True, cellabc=[1, 1, 1.5]) -> Gau
         nthreebody = 1
 
     hyps, hm, _ = generate_hm(ntwobody, nthreebody, nmanybody=0, multihyps=multihyps)
+    cutoffs = hm['cutoffs']
 
     # create test structure
     test_structure, forces = get_random_structure(cell, unique_species,
                                                   noa)
     energy = 3.14
 
-    hl = hm['hyps_label']
+    hl = hm['hyp_labels']
     if (multihyps is False):
         hm = None
 
@@ -127,7 +129,6 @@ def get_force_gp(bodies, kernel_type='mc', multihyps=True, cellabc=[1,1,1.5]) ->
     # params
     cell = np.diag(cellabc)
     unique_species = [2, 1]
-    cutoffs = {'twobody':0.8, 'threebody':0.8}
     noa = 5
 
     ntwobody = 0
@@ -139,13 +140,14 @@ def get_force_gp(bodies, kernel_type='mc', multihyps=True, cellabc=[1,1,1.5]) ->
         nthreebody = 1
 
     hyps, hm, _ = generate_hm(ntwobody, nthreebody, multihyps=multihyps)
+    cutoffs = hm['cutoffs']
 
     # create test structure
     test_structure, forces = get_random_structure(cell, unique_species,
                                                   noa)
     energy = 3.14
 
-    hl = hm['hyps_label']
+    hl = hm['hyp_labels']
     if (multihyps is False):
         hm = None
 

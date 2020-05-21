@@ -406,7 +406,7 @@ def predict_on_structure_mgp(structure, mgp, output=None,
         if n not in selective_atoms and selective_atoms:
             continue
 
-        forces[n, :], stds[n, :], _ = predict_on_atom_mgp(n, structure, 
+        forces[n, :], stds[n, :], _ = predict_on_atom_mgp(n, structure,
                                       mgp.cutoffs, mgp, write_to_structure)
 
     return forces, stds

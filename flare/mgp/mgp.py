@@ -117,8 +117,8 @@ class MappedGaussianProcess:
         # if GP exists, the GP setup overrides the grid_params setup
         if GP is not None:
 
-            self.cutoffs = GP.cutoffs
-            self.hyps_mask = GP.hyps_mask
+            self.cutoffs = deepcopy(GP.cutoffs)
+            self.hyps_mask = deepcopy(GP.hyps_mask)
 
             self.bodies = []
             if "two" in GP.kernel_name:
@@ -144,15 +144,24 @@ class MappedGaussianProcess:
         '''
 
         if (GP is not None):
-            self.cutoffs = GP.cutoffs
-            self.hyps_mask = GP.hyps_mask
+            self.cutoffs = deepcopy(GP.cutoffs)
+            self.hyps_mask = deepcopy(GP.hyps_mask)
+            if 2 in self.bodies and \
+                    'twobody' not in self.hyps_mask['kernels']:
+                self.bodies.remove(2)
+            if 3 in self.bodies and \
+                    'threebody' not in self.hyps_mask['kernels']:
+                self.bodies.remove(3)
 
+        self.maps_2 = []
+        self.maps_3 = []
 
         if 2 in self.bodies:
             for b_struc in self.bond_struc[0]:
                 if (GP is not None):
-                    self.bounds_2[1][0] = hpm.get_cutoff(b_struc.coded_species,
-                            self.cutoffs, self.hyps_mask)
+                    self.bounds_2[1][0] = hpm.get_cutoff('twobody',
+                                                         b_struc.coded_species,
+                                                         self.hyps_mask)
                 map_2 = Map2body(self.grid_num_2, self.bounds_2,
                                  b_struc, self.map_force, self.svd_rank_2,
                                  self.mean_only, self.n_cpus, self.n_sample)
@@ -160,8 +169,9 @@ class MappedGaussianProcess:
         if 3 in self.bodies:
             for b_struc in self.bond_struc[1]:
                 if (GP is not None):
-                    self.bounds_3[1] = hpm.get_cutoff(b_struc.coded_species,
-                            self.cutoffs, self.hyps_mask)
+                    self.bounds_3[1] = hpm.get_cutoff('threebody',
+                                                      b_struc.coded_species,
+                                                      self.hyps_mask)
                 map_3 = Map3body(self.grid_num_3, self.bounds_3,
                                  b_struc, self.map_force, self.svd_rank_3,
                                  self.mean_only,
@@ -435,8 +445,8 @@ class MappedGaussianProcess:
         '''
         f.write(header_comment)
 
-        twobodyarray = len(self.spcs[0])
-        threebodyarray = len(self.spcs[1])
+        twobodyarray = len(self.maps_2)
+        threebodyarray = len(self.maps_3)
         header = '\n{} {}\n'.format(twobodyarray, threebodyarray)
         f.write(header)
 

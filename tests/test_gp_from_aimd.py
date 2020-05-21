@@ -44,7 +44,7 @@ def methanol_gp():
 @pytest.fixture
 def fake_gp():
     return GaussianProcess(kernel_name="2+3",
-                           hyps=np.array([1]),
+                           hyps=np.array([1, 1, 1, 1, 1]),
                            cutoffs=np.array([4, 3]))
 
 
@@ -216,8 +216,8 @@ def test_mgp_gpfa(all_mgp, all_gp):
     grid_num_2 = 5
     grid_num_3 = 3
     lower_cut = 0.01
-    two_cut = gp_model.cutoffs[0]
-    three_cut = gp_model.cutoffs[1]
+    two_cut = gp_model.cutoffs.get('twobody', 0)
+    three_cut = gp_model.cutoffs.get('threebody', 0)
     # set struc params. cell and masses arbitrary?
     mapped_cell = np.eye(3) * 2
     struc_params = {'species': [1, 2],
@@ -226,7 +226,7 @@ def test_mgp_gpfa(all_mgp, all_gp):
 
     # grid parameters
     train_size = len(gp_model.training_data)
-    grid_params = {'bodies': [2],
+    grid_params = {'bodies': [2, 3],
                    'cutoffs': gp_model.cutoffs,
                    'bounds_2': [[lower_cut], [two_cut]],
                    'bounds_3': [[lower_cut, lower_cut, lower_cut],
