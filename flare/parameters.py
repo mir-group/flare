@@ -57,17 +57,12 @@ class Parameters():
         if param_dict is None:
             param_dict = {}
 
-        replace_list = {'bond':'twobody',
+        replace_list = {'spec':'specie', 'bond':'twobody',
                         'triplet':'threebody', 'mb':'manybody'}
-        if 'nspec' in param_dict:
-            param_dict['nspecie'] = param_dict['nspec']
-        if 'spec_mask' in param_dict:
-            param_dict['specie_mask'] = np.array(param_dict['spec_mask'], dtype=int)
-
         keys = list(param_dict.keys())
         for key in keys:
             for original in replace_list:
-                if original in key:
+                if original in key and replace_list[original] not in key:
                     newkey = key.replace(original, replace_list[original])
                     param_dict[newkey] = param_dict[key]
 
