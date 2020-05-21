@@ -306,10 +306,7 @@ class OTF:
 
         # write wall time of DFT calculation
         self.dft_count += 1
-        self.output.write_to_log('DFT run complete.\n')
-        time_curr = time.time() - self.start_time
-        self.output.write_to_log('number of DFT calls: %i \n' % self.dft_count)
-        self.output.write_to_log('wall time from start: %.2f s \n' % time_curr)
+        self.output.conclude_dft(self.dft_count, self.start_time)
 
         # Store DFT outputs in another folder if desired
         # specified in self.store_dft_output
@@ -335,10 +332,7 @@ class OTF:
                 will be added to the training set.
             dft_frcs (np.ndarray): DFT forces on all atoms in the structure.
         """
-        self.output.write_to_log('\nAdding atom {} to the training set.\n'
-                                 .format(train_atoms))
-        self.output.write_to_log('Uncertainty: {}.\n'
-                                 .format(self.structure.stds[train_atoms[0]]))
+        self.output.add_atom_info(train_atoms, self.structure.stds)
 
         # update gp model
         self.gp.update_db(self.structure, dft_frcs,
