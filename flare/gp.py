@@ -728,7 +728,6 @@ class GaussianProcess:
                                           []))
         new_gp.training_labels_np = deepcopy(dictionary.get('training_labels_np',
                                                        np.empty(0,)))
-
         new_gp.energy_labels = deepcopy(dictionary.get('energy_labels',
                                                        []))
         new_gp.energy_labels_np = deepcopy(dictionary.get('energy_labels_np',
