@@ -10,7 +10,7 @@ from subprocess import call
 from flare.struc import Structure
 from typing import List, Union
 from json import dump, load
-from flare.util import NumpyEncoder
+from flare.utils.element_coder import NumpyEncoder
 
 name="VASP"
 

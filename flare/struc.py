@@ -8,8 +8,8 @@ Energy, force, and stress information can be included which can then be
 used to train ML models.
 """
 import numpy as np
-from flare.util import element_to_Z, Z_to_element, NumpyEncoder, \
-    get_max_cutoff
+from flare.utils.element_coder import element_to_Z, Z_to_element, NumpyEncoder
+from flare.utils.learner import get_max_cutoff
 from json import dumps, loads
 
 from typing import List, Union, Any
@@ -431,11 +431,11 @@ class Structure:
         :param format:
         :return:
         """
-           
+
         # Ensure the file specified exists.
         with open(file_name, 'r') as _:
             pass
-        
+
 
         if 'xyz' in file_name or 'xyz' in format.lower():
             raise NotImplementedError

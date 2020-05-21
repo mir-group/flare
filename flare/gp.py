@@ -14,7 +14,6 @@ from typing import List, Callable, Union
 from scipy.linalg import solve_triangular
 from scipy.optimize import minimize
 
-from flare.util import Z_to_element
 from flare.env import AtomicEnvironment
 from flare.struc import Structure
 from flare.gp_algebra import get_like_from_mats, get_neg_like_grad, \
@@ -22,9 +21,10 @@ from flare.gp_algebra import get_like_from_mats, get_neg_like_grad, \
     get_ky_mat_update, _global_training_data, _global_training_labels, \
     _global_training_structures, _global_energy_labels, get_Ky_mat, \
     get_kernel_vector, en_kern_vec
+from flare.utils.mask_helper import HyperParameterMasking
 
 from flare.kernels.utils import str_to_kernel_set, from_mask_to_args
-from flare.util import NumpyEncoder
+from flare.utils.element_coder import NumpyEncoder, Z_to_element
 from flare.output import Output
 
 
@@ -80,25 +80,26 @@ class GaussianProcess:
         """Initialize GP parameters and training data."""
 
         # load arguments into attributes
+        self.name = name
 
-        self.hyp_labels = hyp_labels
         self.cutoffs = np.array(cutoffs, dtype=np.float64)
         self.opt_algorithm = opt_algorithm
-
-        if hyps is None:
-            # If no hyperparameters are passed in, assume 2 hyps for each
-            # cutoff, plus one noise hyperparameter, and use a guess value
-            self.hyps = np.array([0.1]*(1+2*len(cutoffs)))
-        else:
-            self.hyps = np.array(hyps, dtype=np.float64)
 
         self.output = output
         self.per_atom_par = per_atom_par
         self.maxiter = maxiter
+
+        if hyps is None:
+            # If no hyperparameters are passed in, assume 2 hyps for each
+            # cutoff, plus one noise hyperparameter, and use a guess value
+            hyps = np.array([0.1]*(1+2*len(cutoffs)))
+
+        self.update_hyps(hyps, hyp_labels, multihyps, hyps_mask)
+
+        # set up parallelization
         self.n_cpus = n_cpus
         self.n_sample = n_sample
         self.parallel = parallel
-
         if 'nsample' in kwargs:
             DeprecationWarning("nsample is being replaced with n_sample")
             self.n_sample = kwargs.get('nsample')
@@ -140,6 +141,7 @@ class GaussianProcess:
 
         self.training_data = []   # Atomic environments
         self.training_labels = []  # Forces acting on central atoms
+
         self.training_labels_np = np.empty(0, )
         self.n_envs_prev = len(self.training_data)
 
@@ -162,8 +164,6 @@ class GaussianProcess:
         self.likelihood_gradient = None
         self.bounds = None
 
-        self.hyps_mask = hyps_mask
-        self.multihyps = multihyps
         self.check_instantiation()
 
     def check_instantiation(self):
@@ -224,124 +224,32 @@ class GaussianProcess:
             raise ValueError("Warning! Multihyperparameter mode disabled,"
                              "but a configuration hyperparameter mask was "
                              "passed. Did you mean to set multihyps to True?")
-        if isinstance(self.hyps_mask, dict) and self.multihyps is True:
-            self.multihyps = True
 
-            assert 'nspec' in self.hyps_mask, \
-                "nspec key missing in hyps_mask dictionary"
-            assert 'spec_mask' in self.hyps_mask, \
-                "spec_mask key missingbin hyps_mask dicticnary"
+        if self.multihyps is True:
 
-            hyps_mask = deepcopy(self.hyps_mask)
-
-            nspec = hyps_mask['nspec']
-            self.hyps_mask['spec_mask'] = \
-                np.array(hyps_mask['spec_mask'], dtype=int)
-
-            if 'nbond' in hyps_mask:
-                n2b = self.hyps_mask['nbond']
-                self.hyps_mask['bond_mask'] = \
-                    np.array(hyps_mask['bond_mask'], dtype=int)
-                if n2b > 0:
-                    bmask = hyps_mask['bond_mask']
-                    assert (np.max(bmask) < n2b)
-                    assert len(bmask) == nspec ** 2, \
-                        f"wrong dimension of bond_mask: " \
-                        f" {len(bmask)} != nspec^2 {nspec**2}"
-                    for t2b in range(nspec):
-                        for t2b_2 in range(t2b, nspec):
-                            assert bmask[t2b*nspec+t2b_2] == \
-                                bmask[t2b_2*nspec+t2b], \
-                                'bond_mask has to be symmetric'
-            else:
-                n2b = 0
-
-            if 'ntriplet' in hyps_mask:
-                n3b = self.hyps_mask['ntriplet']
-                self.hyps_mask['triplet_mask'] = \
-                    np.array(hyps_mask['triplet_mask'], dtype=int)
-                if n3b > 0:
-                    tmask = hyps_mask['triplet_mask']
-                    assert (np.max(tmask) < n3b)
-                    assert len(tmask) == nspec ** 3, \
-                        f"wrong dimension of bond_mask: " \
-                        f" {len(tmask)} != nspec^3 {nspec**3}"
-
-                    for t3b in range(nspec):
-                        for t3b_2 in range(t3b, nspec):
-                            for t3b_3 in range(t3b_2, nspec):
-                                assert tmask[t3b * nspec * nspec +
-                                             t3b_2*nspec+t3b_3] \
-                                    == tmask[t3b * nspec * nspec +
-                                             t3b_3 * nspec + t3b_2], \
-                                    'bond_mask has to be symmetric'
-                                assert tmask[t3b * nspec * nspec +
-                                             t3b_2 * nspec + t3b_3] \
-                                    == tmask[t3b_2 * nspec * nspec +
-                                             t3b * nspec + t3b_3], \
-                                    'bond_mask has to be symmetric'
-                                assert tmask[t3b * nspec * nspec +
-                                             t3b_2 * nspec + t3b_3] \
-                                    == tmask[t3b_2 * nspec * nspec +
-                                             t3b_3*nspec+t3b], \
-                                    'bond_mask has to be symmetric'
-                                assert tmask[t3b * nspec * nspec +
-                                             t3b_2 * nspec + t3b_3] \
-                                    == tmask[t3b_3 * nspec * nspec +
-                                             t3b * nspec + t3b_2], \
-                                    'bond_mask has to be symmetric'
-                                assert tmask[t3b * nspec * nspec +
-                                             t3b_2 * nspec + t3b_3] \
-                                    == tmask[t3b_3 * nspec * nspec +
-                                             t3b_2 * nspec+t3b], \
-                                    'bond_mask has to be symmetric'
-            else:
-                n3b = 0
-
-            if (len(self.cutoffs) <= 2):
-                assert ((n2b + n3b) > 0)
-            else:
-                assert ((n2b + n3b + 1) > 0)
-
-            if 'map' in hyps_mask:
-                assert ('original' in hyps_mask), \
-                    "original hyper parameters have to be defined"
-                # Ensure typed correctly as numpy array
-                self.hyps_mask['original'] = np.array(hyps_mask['original'])
-
-                if (len(self.cutoffs) <= 2):
-                    assert (n2b * 2 + n3b * 2 + 1) == \
-                        len(hyps_mask['original']), \
-                        "the hyperparmeter length is inconsistent with the "\
-                        "mask"
-                else:
-                    assert (n2b * 2 + n3b * 2 + 1 * 2 + 1) ==\
-                        len(hyps_mask['original']), \
-                        "the hyperparmeter length is inconsistent with the "\
-                        "mask"
-                assert len(hyps_mask['map']) == len(self.hyps), \
-                    "the hyperparmeter length is inconsistent with the mask"
-                if (len(hyps_mask['original']) - 1) not in hyps_mask['map']:
-                    assert hyps_mask['train_noise'] is False, \
-                        "train_noise should be False when noise is not in hyps"
-            else:
-                assert hyps_mask['train_noise'] is True, \
-                    "train_noise should be True when map is not used"
-                if (len(self.cutoffs) <= 2):
-                    assert (n2b * 2 + n3b * 2 + 1) == len(self.hyps), \
-                        "the hyperparmeter length is inconsistent with the "\
-                        "mask"
-                else:
-                    assert (n2b * 2 + n3b * 2 + 1 * 2 + 1) == len(self.hyps), \
-                        "the hyperparmeter length is inconsistent with the "\
-                        "mask"
-
-            if 'bounds' in hyps_mask:
-                self.bounds = deepcopy(hyps_mask['bounds'])
+            self.hyps_mask = HyperParameterMasking.check_instantiation(
+                self.hyps_mask)
+            HyperParameterMasking.check_matching(
+                self.hyps_mask, self.hyps, self.cutoffs)
+            self.bounds = deepcopy(self.hyps_mask.get('bounds', None))
 
         else:
             self.multihyps = False
             self.hyps_mask = None
+
+    def update_kernel(self, kernel_name, multihyps=False):
+        kernel, grad, ek, efk = str_to_kernel_set(kernel_name, multihyps)
+        self.kernel = kernel
+        self.kernel_grad = grad
+        self.energy_force_kernel = efk
+        self.energy_kernel = ek
+        self.kernel_name = kernel.__name__
+
+    def update_hyps(self, hyps=None, hyp_labels=None, multihyps=False, hyps_mask=None):
+        self.hyps = np.array(hyps, dtype=np.float64)
+        self.hyp_labels = hyp_labels
+        self.hyps_mask = hyps_mask
+        self.multihyps = multihyps
 
     def update_db(self, struc: Structure, forces: List,
                   custom_range: List[int] = (), energy: float = None):
@@ -369,7 +277,8 @@ class GaussianProcess:
         if forces is not None:
             for atom in update_indices:
                 env_curr = \
-                    AtomicEnvironment(struc, atom, self.cutoffs)
+                    AtomicEnvironment(struc, atom, self.cutoffs,
+                            cutoffs_mask=self.hyps_mask)
                 forces_curr = np.array(forces[atom])
 
                 self.training_data.append(env_curr)
@@ -385,7 +294,8 @@ class GaussianProcess:
             structure_list = []  # Populate with all environments of the struc
             for atom in range(noa):
                 env_curr = \
-                    AtomicEnvironment(struc, atom, self.cutoffs)
+                    AtomicEnvironment(struc, atom, self.cutoffs,
+                                      cutoffs_mask=self.hyps_mask)
                 structure_list.append(env_curr)
 
             self.energy_labels.append(energy)
@@ -533,6 +443,8 @@ class GaussianProcess:
         Return:
             (float, float): Mean and epistemic variance of the prediction.
         """
+
+        assert (d in [1, 2, 3]), "d should be 1, 2, or 3"
 
         # Kernel vector allows for evaluation of atomic environments.
         if self.parallel and not self.per_atom_par:
@@ -719,23 +631,29 @@ class GaussianProcess:
                 thestr += f"{label}: {hyp}\n"
 
         if self.multihyps:
-            nspec = self.hyps_mask['nspec']
-            thestr += f'nspec: {nspec}\n'
-            thestr += f'spec_mask: \n'
-            thestr += str(self.hyps_mask['spec_mask']) + '\n'
+            nspecie = self.hyps_mask['nspecie']
+            thestr += f'nspecie: {nspecie}\n'
+            thestr += f'specie_mask: \n'
+            thestr += str(self.hyps_mask['specie_mask']) + '\n'
 
-            nbond = self.hyps_mask['nbond']
+            nbond = self.hyps_mask.get('nbond', 0)
             thestr += f'nbond: {nbond}\n'
 
-            if nbond > 0:
+            if nbond > 1:
                 thestr += f'bond_mask: \n'
                 thestr += str(self.hyps_mask['bond_mask']) + '\n'
 
-            ntriplet = self.hyps_mask['ntriplet']
+            ntriplet = self.hyps_mask.get('ntriplet', 0)
             thestr += f'ntriplet: {ntriplet}\n'
-            if ntriplet > 0:
+            if ntriplet > 1:
                 thestr += f'triplet_mask: \n'
                 thestr += str(self.hyps_mask['triplet_mask']) + '\n'
+
+            nmb = self.hyps_mask.get('nmb', 0)
+            thestr += f'nmb: {nmb}\n'
+            if nmb > 1:
+                thestr += f'mb_mask: \n'
+                thestr += str(self.hyps_mask['nmb_mask']) + '\n'
 
         return thestr
 
@@ -793,21 +711,23 @@ class GaussianProcess:
                                 dictionary['training_data']]
 
         # Reconstruct training structures.
-        new_gp.training_structures = []
-        # Backwards compatibility with old 'training data' label
-        train_structures = dictionary.get('training_structures', [])
-
-        for n, env_list in enumerate(train_structures):
-            new_gp.training_structures.append([])
-            for env_curr in env_list:
-                new_gp.training_structures[n].append(
-                    AtomicEnvironment.from_dict(env_curr))
+        if ('training_structures' in dictionary):
+            new_gp.training_structures = []
+            for n, env_list in enumerate(dictionary['training_structures']):
+                new_gp.training_structures.append([])
+                for env_curr in env_list:
+                    new_gp.training_structures[n].append(
+                        AtomicEnvironment.from_dict(env_curr))
+        else:
+            new_gp.training_structures = []  # Environments of each structure
+            new_gp.energy_labels = []  # Energies of training structures
+            new_gp.energy_labels_np = np.empty(0, )
+            new_gp.energy_noise = 0.01
 
         new_gp.training_labels = deepcopy(dictionary.get('training_labels',
                                           []))
         new_gp.training_labels_np = deepcopy(dictionary.get('training_labels_np',
                                                        np.empty(0,)))
-
         new_gp.energy_labels = deepcopy(dictionary.get('energy_labels',
                                                        []))
         new_gp.energy_labels_np = deepcopy(dictionary.get('energy_labels_np',
@@ -866,7 +786,7 @@ class GaussianProcess:
         self.ky_mat_inv = ky_mat_inv
 
     def adjust_cutoffs(self, new_cutoffs: Union[list, tuple, 'np.ndarray'],
-                       reset_L_alpha=True, train=True):
+                       reset_L_alpha=True, train=True, new_hyps_mask=None):
         """
         Loop through atomic environment objects stored in the training data,
         and re-compute cutoffs for each. Useful if you want to gauge the
@@ -879,12 +799,20 @@ class GaussianProcess:
         :return:
         """
 
-        old_structures = [env.structure for env in self.training_data]
-        old_atoms = [env.atom for env in self.training_data]
-        new_environments = [AtomicEnvironment(struc, atom, new_cutoffs) for
-                            struc, atom in zip(old_structures, old_atoms)]
+        if (new_hyps_mask is not None):
+            hm = new_hyps_mask
+        else:
+            hm = self.hyps_mask
 
-        self.training_data = new_environments
+        # update environment
+        nenv = len(self.training_data)
+        for i in range(nenv):
+            self.training_data[i].cutoffs = np.array(
+                new_cutoffs, dtype=np.float)
+            self.training_data[i].cutoffs_mask = hm
+            self.training_data[i].setup_mask()
+            self.training_data[i].compute_env()
+
         # Ensure that training data and labels are still consistent
         _global_training_data[self.name] = self.training_data
         _global_training_labels[self.name] = self.training_labels_np
@@ -959,19 +887,13 @@ class GaussianProcess:
         if '.json' in filename or 'json' in format:
             with open(filename, 'r') as f:
                 gp_model = GaussianProcess.from_dict(json.loads(f.readline()))
-                gp_model.check_instantiation()
-                _global_training_data[gp_model.name] = gp_model.training_data
-                _global_training_labels[gp_model.name] = \
-                    gp_model.training_labels_np
 
         elif '.pickle' in filename or 'pickle' in format:
             with open(filename, 'rb') as f:
                 gp_model = pickle.load(f)
-                gp_model.check_instantiation()
 
-                _global_training_data[gp_model.name] = gp_model.training_data
-                _global_training_labels[gp_model.name] = \
-                    gp_model.training_labels_np
+                if ('name' not in gp_model.__dict__):
+                    gp_model.name = 'default_gp'
 
                 if len(gp_model.training_data) > 5000:
                     try:
@@ -987,8 +909,18 @@ class GaussianProcess:
                                 f"it can take extra long time to recompute")
 
         else:
-            raise ValueError("Warning: Format unspecified or file is not "
+            raise ValueError("Warning: Format unspecieified or file is not "
                              ".json or .pickle format.")
+
+        if ('training_structures' not in gp_model.__dict__):
+            gp_model.training_structures = []  # Environments of each structure
+            gp_model.energy_labels = []  # Energies of training structures
+            gp_model.energy_labels_np = np.empty(0, )
+            gp_model.energy_noise = 0.01
+            gp_model.all_labels = np.concatenate((gp_model.training_labels_np,
+                                          gp_model.energy_labels_np))
+
+        gp_model.check_instantiation()
 
         return gp_model
 
@@ -1008,7 +940,7 @@ class GaussianProcess:
         present_species = []
         for env, _ in zip(self.training_data, self.training_labels):
             present_species.append(Z_to_element(env.structure.coded_species[
-                                                    env.atom]))
+                env.atom]))
 
         # Summarize the relevant information
         data['species'] = list(set(present_species))
@@ -1025,5 +957,8 @@ class GaussianProcess:
         return self.parallel
 
     def __del__(self):
-        _global_training_labels.pop(self.name, None)
-        _global_training_data.pop(self.name, None)
+        if (self is None):
+            return
+        if (self.name in _global_training_labels):
+            _global_training_labels.pop(self.name, None)
+            _global_training_data.pop(self.name, None)

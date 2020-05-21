@@ -37,8 +37,8 @@ def test_force_en(kernel_name, kernel_type):
     d1 = 1
 
     np.random.seed(10)
-    env1 = generate_mb_envs(cutoffs, cell, delta, d1)
-    env2 = generate_mb_envs(cutoffs, cell, delta, d1)
+    env1 = generate_mb_envs(cutoffs, cell, delta, d1, kern_type=kernel_type)
+    env2 = generate_mb_envs(cutoffs, cell, delta, d1, kern_type=kernel_type)
 
     hyps = generate_hm(kernel_name)
 
@@ -56,7 +56,8 @@ def test_force_en(kernel_name, kernel_type):
         _, __, enm_kernel, ___ = str_to_kernel_set('mb'+kernel_type)
         mhyps = hyps[(nterm-1)*2:]
         calc = 0
-        for i in range(len(env1[0])):
+        nat = len(env1[0])
+        for i in range(nat):
             calc += enm_kernel(env1[2][i], env2[0][0], mhyps, cutoffs)
             calc -= enm_kernel(env1[1][i], env2[0][0], mhyps, cutoffs)
         mb_diff = calc / (2 * delta)
@@ -114,8 +115,8 @@ def test_force(kernel_name, kernel_type):
         if (term in kernel_name):
             nterm += 1
 
-    env1 = generate_mb_envs(cutoffs, cell, delta, d1)
-    env2 = generate_mb_envs(cutoffs, cell, delta, d2)
+    env1 = generate_mb_envs(cutoffs, cell, delta, d1, kern_type=kernel_type)
+    env2 = generate_mb_envs(cutoffs, cell, delta, d2, kern_type=kernel_type)
 
     # check force kernel
     kern_finite_diff = 0
@@ -176,8 +177,8 @@ def test_hyps_grad(kernel_name, kernel_type):
 
     np.random.seed(10)
     hyps = generate_hm(kernel_name)
-    env1 = generate_mb_envs(cutoffs, cell, 0, d1)[0][0]
-    env2 = generate_mb_envs(cutoffs, cell, 0, d2)[0][0]
+    env1 = generate_mb_envs(cutoffs, cell, 0, d1, kern_type=kernel_type)[0][0]
+    env2 = generate_mb_envs(cutoffs, cell, 0, d2, kern_type=kernel_type)[0][0]
 
     kernel, kernel_grad, _, _ = str_to_kernel_set(kernel_name+kernel_type, False)
 
@@ -186,6 +187,8 @@ def test_hyps_grad(kernel_name, kernel_type):
 
     original = kernel(env1, env2, d1, d2,
                       hyps, cutoffs)
+    assert(isclose(grad_test[0], original, rtol=tol))
+
     for i in range(len(hyps)-1):
         newhyps = np.copy(hyps)
         newhyps[i] += delta

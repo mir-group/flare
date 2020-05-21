@@ -8,12 +8,12 @@ import os
 import shutil
 import time
 import multiprocessing
-
 import numpy as np
 
 from typing import Union
-from flare.util import Z_to_element
+
 from flare.struc import Structure
+from flare.utils.element_coder import Z_to_element
 
 
 class Output:

@@ -20,6 +20,29 @@ def hard_cutoff(r_cut: float, ri: float, ci: float):
     """
     return 1, 0
 
+@njit
+def quadratic_cutoff_bound(r_cut: float, ri: float, ci: float):
+    """A quadratic cutoff that goes to zero smoothly at the cutoff boundary.
+
+    Args:
+        r_cut (float): Cutoff value (in angstrom).
+        ri (float): Interatomic distance.
+        ci (float): Cartesian coordinate divided by the distance.
+
+    Returns:
+        (float, float): Cutoff value and its derivative.
+    """
+
+    if (r_cut > ri):
+        rdiff = r_cut - ri
+        fi = rdiff * rdiff
+        fdi = 2 * rdiff * ci
+    else:
+        fi = 0
+        fdi = 0
+
+    return fi, fdi
+
 
 @njit
 def quadratic_cutoff(r_cut: float, ri: float, ci: float):
