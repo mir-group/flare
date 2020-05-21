@@ -93,8 +93,8 @@ class Output:
         """
         self.logger[name].info(logstring)
 
-        # if flush or self.always_flush:
-        #     self.logger[name].flush()
+        if flush or self.always_flush:
+            self.logger[name].handlers[0].flush()
 
     def write_header(self, cutoffs, kernel_name: str,
                      hyps, algo: str, dt: float = None,
@@ -169,7 +169,7 @@ class Output:
         f.info(headerstring)
 
         if self.always_flush:
-            f.flush()
+            f.handlers[0].flush()
 
     def write_md_config(self, dt, curr_step, structure,
                         temperature, KE, local_energies,
@@ -250,7 +250,7 @@ class Output:
         self.logger['log'].info(string)
 
         if self.always_flush:
-            self.logger['log'].flush()
+            self.logger['log'].handlers[0].flush()
 
     def write_xyz(self, curr_step: int, pos: np.array, species: list,
                   filename: str,
@@ -296,7 +296,7 @@ class Output:
         self.logger[filename].info(string)
 
         if self.always_flush:
-            self.logger[filename].flush()
+            self.logger[filename].handlers[0].flush()
 
     def write_xyz_config(self, curr_step, structure, dft_step,
                          forces: np.array = None, stds: np.array = None,
@@ -359,7 +359,7 @@ class Output:
             f.info(f'wall time from start: {time_curr:.2f} s \n')
 
         if self.always_flush:
-            f.flush()
+            f.handlers[0].flush()
 
     def write_gp_dft_comparison(self, curr_step, frame,
                                 start_time, dft_forces,
