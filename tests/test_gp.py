@@ -305,6 +305,31 @@ class TestIO():
             test_gp.write_model('test_gp_write', 'cucumber')
 
 
+    def test_load_reload_huge(self, all_gps):
+        """
+        Unit tests that loading and reloading a huge GP works.
+        :param all_gps:
+        :return:
+        """
+        test_gp = deepcopy(all_gps[False])
+        test_gp.set_L_alpha()
+        dummy_gp = deepcopy(test_gp)
+        dummy_gp.training_data = [1]*5001
+
+        prev_ky_mat = deepcopy(dummy_gp.ky_mat)
+        prev_l_mat = deepcopy(dummy_gp.l_mat)
+
+        dummy_gp.training_data = [1]*5001
+        test_gp.write_model('test_gp_write', 'json')
+        new_gp = GaussianProcess.from_file('test_gp_write.json')
+        assert np.array_equal(prev_ky_mat, new_gp.ky_mat)
+        assert np.array_equal(prev_l_mat, new_gp.l_mat)
+
+        os.remove('test_gp_write.json')
+
+
+
+
 def dumpcompare(obj1, obj2):
     '''this source code comes from
     http://stackoverflow.com/questions/15785719/how-to-print-a-dictionary-line-by-line-in-python'''

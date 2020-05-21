@@ -3,7 +3,7 @@ environment of an atom. :class:`AtomicEnvironment` objects are inputs to the
 2-, 3-, and 2+3-body kernels."""
 import numpy as np
 from copy import deepcopy
-from math import sqrt
+from math import sqrt, ceil
 from numba import njit
 from flare.struc import Structure
 from flare.parameters import Parameters
@@ -71,12 +71,17 @@ class AtomicEnvironment:
     all_kernel_types = ['twobody', 'threebody', 'manybody']
     ndim = {'twobody': 2, 'threebody': 3, 'manybody': 2, 'cut3b': 2}
 
-    def __init__(self, structure: Structure, atom: int, cutoffs, sweep=1, cutoffs_mask=None):
+    def __init__(self, structure: Structure, atom: int, cutoffs, cutoffs_mask=None):
+
         self.structure = structure
         self.positions = structure.wrapped_positions
         self.cell = structure.cell
         self.species = structure.coded_species
-        self.sweep_array = np.arange(-sweep, sweep+1, 1)
+
+        # Set the sweep array based on the max cutoff.
+        sweep_val = ceil(np.max(cutoffs) / structure.max_cutoff)
+        self.sweep_val = sweep_val
+        self.sweep_array = np.arange(-sweep_val, sweep_val + 1, 1)
 
         self.atom = atom
         self.ctype = structure.coded_species[atom]
@@ -472,7 +477,7 @@ def get_3_body_arrays(bond_array_2, bond_positions_2, ctype,
 
 
 @njit
-def get_m_body_arrays(positions, atom: int, cell, r_cut, manybody_cutoff_list,
+def get_m_body_arrays(positions, atom: int, cell, r_cut: float, manybody_cutoff_list,
                       species, sweep: np.ndarray, nspec, spec_mask, manybody_mask,
                       cutoff_func=cf.quadratic_cutoff):
     # TODO:
@@ -497,6 +502,65 @@ def get_m_body_arrays(positions, atom: int, cell, r_cut, manybody_cutoff_list,
     bond_array_mb, __, etypes, bond_inds = get_2_body_arrays(
         positions, atom, cell, r_cut, manybody_cutoff_list, species, sweep,
         nspec, spec_mask, manybody_mask)
+
+    species_list = np.array(list(set(species)), dtype=np.int8)
+    n_bonds = len(bond_inds)
+    n_specs = len(species_list)
+    qs = np.zeros(n_specs, dtype=np.float64)
+    qs_neigh = np.zeros((n_bonds, n_specs), dtype=np.float64)
+    q_grads = np.zeros((n_bonds, 3), dtype=np.float64)
+
+    # get coordination number of center atom for each species
+    for s in range(n_specs):
+        qs[s] = q_value_mc(bond_array_mb[:, 0], cutoff_mb, species_list[s],
+            etypes, cutoff_func)
+
+    # get coordination number of all neighbor atoms for each species
+    for i in range(n_bonds):
+        neigh_bond_array, _, neigh_etypes, _ = get_2_body_arrays(positions,
+            bond_inds[i], cell, cutoff_mb, species, sweep)
+        for s in range(n_specs):
+            qs_neigh[i, s] = q_value_mc(neigh_bond_array[:, 0], cutoff_mb,
+                species_list[s], neigh_etypes, cutoff_func)
+
+    # get grad from each neighbor atom
+    for i in range(n_bonds):
+        ri = bond_array_mb[i, 0]
+        for d in range(3):
+            ci = bond_array_mb[i, d+1]
+            _, q_grads[i, d] = coordination_number(ri, ci, cutoff_mb,
+                cutoff_func)
+
+    return qs, qs_neigh, q_grads, species_list, etypes
+
+
+@njit
+def get_m_body_arrays_sepcut(positions, atom: int, cell, cutoff_mb,
+    species, sweep: np.ndarray, nspec, spec_mask, mb_mask,
+    cutoff_func=cf.quadratic_cutoff):
+    # TODO:
+    # 1. need to deal with the conflict of cutoff functions if other funcs are used
+    # 2. complete the docs of "Return"
+    # TODO: this can be probably improved using stored arrays, redundant calls to get_2_body_arrays
+    # Get distances, positions, species and indices of neighbouring atoms
+    """
+    Args:
+        positions (np.ndarray): Positions of atoms in the structure.
+        atom (int): Index of the central atom of the local environment.
+        cell (np.ndarray): 3x3 array whose rows are the Bravais lattice vectors of the
+            cell.
+        cutoff_mb (float): 2-body cutoff radius.
+        species (np.ndarray): Numpy array of species represented by their atomic numbers.
+
+    Return:
+        Tuple of arrays describing pairs of atoms in the 2-body local
+        environment.
+    """
+    # Get distances, positions, species and indexes of neighbouring atoms
+    bond_array_mb, __, etypes, bond_inds = get_2_body_arrays_sepcut(
+        positions, atom, cell, cutoff_mb, species, sweep,
+        nspec, spec_mask, mb_mask)
+>>>>>>> 2d3c759dc16cf2b9eb69cf4fecc289957b9d8952
 
     sepcut = False
     if nspec > 1 and manybody_cutoff_list is not None:
@@ -554,7 +618,3 @@ def get_m_body_arrays(positions, atom: int, cell, r_cut, manybody_cutoff_list,
                                                    cutoff_func)
 
     return qs, qs_neigh, q_grads, species_list, etypes
-
-
-if __name__ == '__main__':
-    pass

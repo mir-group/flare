@@ -138,7 +138,7 @@ def str_to_mapped_kernel(name: str, hyps_mask: dict = None, energy=False):
         raise NotImplementedError("mapped kernel for two-body and manybody kernels "
                                   "are not implemented")
 
-    return tbmfe, tbme
+    return tbme, tbmfe
 
 
 def from_mask_to_args(hyps, hyps_mask: dict, cutoffs):
