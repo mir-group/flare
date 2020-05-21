@@ -139,7 +139,7 @@ class AtomicEnvironment:
 
         self.nspecie = cutoffs_mask.get('nspecie', 1)
         if 'specie_mask' in cutoffs_mask:
-            self.specie_mask = cutoffs_mask['specie_mask']
+            self.specie_mask = np.array(cutoffs_mask['specie_mask'], dtype=np.int)
 
         for kernel in AtomicEnvironment.all_kernel_types:
             ndim = AtomicEnvironment.ndim[kernel]
@@ -156,7 +156,7 @@ class AtomicEnvironment:
                     self.ncut3b = cutoffs_mask.get('ncut3b', 1)
                     self.cut3b_mask = cutoffs_mask.get('cut3b_mask', None)
                     if 'threebody_cutoff_list' in cutoffs_mask:
-                        self.threebody_cutoff_list = cutoffs_mask['threebody_cutoff_list']
+                        self.threebody_cutoff_list = np.array(cutoffs_mask['threebody_cutoff_list'], dtype=np.float)
 
     def compute_env(self):
 
