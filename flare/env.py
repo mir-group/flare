@@ -78,14 +78,6 @@ class AtomicEnvironment:
         self.cell = structure.cell
         self.species = structure.coded_species
 
-        # Set the sweep array based on the max cutoff.
-        sweep_val = ceil(np.max(list(cutoffs.values())) / structure.max_cutoff)
-        self.sweep_val = sweep_val
-        self.sweep_array = np.arange(-sweep_val, sweep_val + 1, 1)
-
-        self.atom = atom
-        self.ctype = structure.coded_species[atom]
-
         # backward compatability
         if not isinstance(cutoffs, dict):
             newcutoffs = {'twobody':cutoffs[0]}
@@ -99,6 +91,15 @@ class AtomicEnvironment:
             cutoffs_mask = {'cutoffs': cutoffs}
         elif cutoffs is not None:
             cutoffs_mask['cutoffs'] = deepcopy(cutoffs)
+
+        # Set the sweep array based on the max cutoff.
+        sweep_val = ceil(np.max(list(cutoffs.values())) / structure.max_cutoff)
+        self.sweep_val = sweep_val
+        self.sweep_array = np.arange(-sweep_val, sweep_val + 1, 1)
+
+        self.atom = atom
+        self.ctype = structure.coded_species[atom]
+
 
         self.twobody_cutoff = 0
         self.threebody_cutoff = 0
