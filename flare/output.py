@@ -54,8 +54,9 @@ class Output:
         self.logger['log'].info('-' * 20)
         self.logger['log'].info('Run complete.')
         for (k, v) in self.logger.items():
-            v.close()
+            del v
         del self.logger
+        logging.shutdown()
         self.logger = {}
 
     def open_new_log(self, filetype: str, suffix: str, verbose='info'):

@@ -867,7 +867,7 @@ class Map3body:
         n_strucs = len(GP.training_structures)
         n_kern = n_envs * 3 + n_strucs
 
-        mapk = str_to_mapped_kernel('3', GP.multihyps)
+        mapk = str_to_mapped_kernel('3', GP.hyps_mask)
         mapped_kernel_info = (kernel_info[0], mapk[0], mapk[1],
                               kernel_info[3], kernel_info[4], kernel_info[5])
 

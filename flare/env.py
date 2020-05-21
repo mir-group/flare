@@ -300,8 +300,9 @@ def get_2_body_arrays(positions, atom: int, cell, r_cut, cutoff_2, species, swee
     """
     noa = len(positions)
     pos_atom = positions[atom]
-    coords = np.zeros((noa, 3, 27), dtype=np.float64)
-    dists = np.zeros((noa, 27), dtype=np.float64)
+    super_count = sweep.shape[0]**3
+    coords = np.zeros((noa, 3, super_count), dtype=np.float64)
+    dists = np.zeros((noa, super_count), dtype=np.float64)
     cutoff_count = 0
 
     vec1 = cell[0]
@@ -345,10 +346,10 @@ def get_2_body_arrays(positions, atom: int, cell, r_cut, cutoff_2, species, swee
         if sepcut:
             bm = specie_mask[species[m]]
             r_cut = cutoff_2[twobody_mask[bm+bcn]]
-        for n in range(27):
-            dist_curr = dists[m, n]
+        for im_count in range(super_count):
+            dist_curr = dists[m, im_count]
             if (dist_curr < r_cut) and (dist_curr != 0):
-                coord = coords[m, :, n]
+                coord = coords[m, :, im_count]
                 bond_array_2[bond_count, 0] = dist_curr
                 bond_array_2[bond_count, 1:4] = coord / dist_curr
                 bond_positions_2[bond_count, :] = coord
