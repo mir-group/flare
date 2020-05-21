@@ -10,6 +10,7 @@ import numpy as np
 import multiprocessing as mp
 
 from copy import deepcopy
+from math import ceil, floor
 from scipy.linalg import solve_triangular
 from typing import List
 
@@ -855,7 +856,7 @@ class Map3body:
         n_kern = n_envs * 3 + n_strucs
 
         mapk = str_to_mapped_kernel('3', GP.multihyps)
-        mapped_kernel_info = (kernel_info[0], kernel_info[1], mapk,
+        mapped_kernel_info = (kernel_info[0], mapk[0], mapk[1],
                               kernel_info[3], kernel_info[4], kernel_info[5])
 
         if processes == 1:
@@ -995,8 +996,8 @@ class Map3body:
 
             # parallelize based on grids, since usually the number of
             # the added training points are small
-            ngrids = int(math.ceil(n12 / processes))
-            nbatch = int(math.ceil(n12 / ngrids))
+            ngrids = int(ceil(n12 / processes))
+            nbatch = int(ceil(n12 / ngrids))
 
             block_id = []
             for ibatch in range(nbatch):
