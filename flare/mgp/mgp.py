@@ -28,7 +28,7 @@ from flare.utils.element_coder import Z_to_element, NumpyEncoder
 
 
 from flare.mgp.utils import get_bonds, get_triplets, get_triplets_en, \
-    get_2bkernel, get_3bkernel
+    get_kernel_term
 from flare.mgp.splines_methods import PCASplines, CubicSpline
 
 class MappedGaussianProcess:
@@ -124,10 +124,10 @@ class MappedGaussianProcess:
             self.bodies = []
             if "two" in GP.kernel_name:
                 self.bodies.append(2)
-                self.kernel2b_info = get_2bkernel(GP)
+                self.kernel2b_info = get_kernel_term(GP, 'twobody')
             if "three" in GP.kernel_name:
                 self.bodies.append(3)
-                self.kernel3b_info = get_3bkernel(GP)
+                self.kernel3b_info = get_kernel_term(GP, 'threebody')
 
         self.build_bond_struc(struc_params)
         self.maps_2 = []
@@ -192,9 +192,9 @@ class MappedGaussianProcess:
             self.build_map_container(GP)
 
         if 2 in self.bodies:
-            self.kernel2b_info = get_2bkernel(GP)
+            self.kernel2b_info = get_kernel_term(GP, 'twobody')
         if 3 in self.bodies:
-            self.kernel3b_info = get_3bkernel(GP)
+            self.kernel3b_info = get_kernel_term(GP, 'threebody')
 
         for map_2 in self.maps_2:
             map_2.build_map(GP)
@@ -523,7 +523,7 @@ class MappedGaussianProcess:
 
             kernel_info = dictionary[kern_info]
             kernel_name = kernel_info[0]
-            kernel, _, ek, efk = str_to_kernel_set(kernel_name, hyps_mask)
+            kernel, _, ek, efk = str_to_kernel_set([kernel_name], 'mc', hyps_mask['nspecie'])
             kernel_info[0] = kernel
             kernel_info[1] = ek
             kernel_info[2] = efk
@@ -617,7 +617,7 @@ class Map2body:
            with GP.alpha
         '''
 
-        kernel_info = get_2bkernel(GP)
+        kernel_info = get_kernel_term(GP, 'twobody')
 
         if (self.n_cpus is None):
             processes = mp.cpu_count()

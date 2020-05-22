@@ -19,7 +19,9 @@ from_grad_to_mask(grad, hyps_mask) converts the gradient matrix to the actual
 """
 
 
-def str_to_kernel_set(name: str, hyps_mask: dict = None):
+def str_to_kernel_set(kernel_array: list = ['twobody', 'threebody'],
+                      component : str = "sc",
+                      nspecie: int = 1):
     """
     return kernels and kernel gradient function base on a string.
     If it contains 'sc', it will use the kernel in sc module;
@@ -40,40 +42,30 @@ def str_to_kernel_set(name: str, hyps_mask: dict = None):
 
     #  kernel name should be replace with kernel array
 
-    if 'sc' in name:
+    if component == 'sc':
         stk = sc._str_to_kernel
     else:
-        if hyps_mask is None:
-            stk = mc_simple._str_to_kernel
+        if nspecie > 1:
+            stk = mc_sephyps._str_to_kernel
         else:
-            # In the future, this should be nbond >1, use sephyps bond...
-            if hyps_mask['nspecie'] > 1:
-                stk = mc_sephyps._str_to_kernel
-            else:
-                stk = mc_simple._str_to_kernel
+            stk = mc_simple._str_to_kernel
 
     # b2 = Two body in use, b3 = Three body in use
-    b2 = False
-    b3 = False
-    many = False
-
-    for s in ['2', 'two', 'Two', 'TWO']:
-        if s in name:
-            b2 = True
-    for s in ['3', 'three', 'Three', 'THREE']:
-        if s in name:
-            b3 = True
-    for s in ['mb', 'manybody', 'many', 'Many', 'ManyBody']:
-        if s in name:
-            many = True
+    str_terms = {'2': ['2', 'two', 'Two', 'TWO', 'twobody'],
+                 '3': ['3', 'three', 'Three', 'THREE', 'threebody'],
+                 'mb': ['mb', 'manybody', 'many', 'Many', 'ManyBody', 'manybody']}
 
     prefix = ''
-    str_term = {'2': b2, '3': b3, 'many': many}
-    for term in str_term:
-        if str_term[term]:
+    for term in str_terms:
+        add = False
+        for s in str_terms[term]:
+            if s in kernel_array:
+                add = True
+        if add:
             if len(prefix) > 0:
                 prefix += '+'
             prefix += term
+
     if len(prefix) == 0:
         raise RuntimeError(
             f"the name has to include at least one number {name}")
@@ -87,7 +79,8 @@ def str_to_kernel_set(name: str, hyps_mask: dict = None):
         stk[prefix+'_force_en']
 
 
-def str_to_mapped_kernel(name: str, hyps_mask: dict = None, energy=False):
+def str_to_mapped_kernel(name: str, component: str = "sc",
+                         nspecie: int = 1):
     """
     return kernels and kernel gradient function base on a string.
     If it contains 'sc', it will use the kernel in sc module;
@@ -100,23 +93,14 @@ def str_to_mapped_kernel(name: str, hyps_mask: dict = None, energy=False):
 
     name (str): name for kernels. example: "2+3mc"
     multihyps (bool, optional): True for using multiple hyperparameter groups
-    energy (bool, optional): True for mapping energy/energy kernel
 
     :return: mapped kernel function, kernel gradient, energy kernel,
              energy_and_force kernel
 
     """
 
-    if 'sc' in name:
-        raise NotImplementedError("mapped kernel for single component "
-                                  "is not implemented")
-
-    if hyps_mask is None:
-        multihyps = False
-    # In the future, this should be ntwobody >1, use sephyps bond...
-    elif hyps_mask['nspecie'] == 1:
-        multihyps = False
-    else:
+    multihyps = False
+    if nspecie > 1:
         multihyps = True
 
     # b2 = Two body in use, b3 = Three body in use
@@ -127,7 +111,7 @@ def str_to_mapped_kernel(name: str, hyps_mask: dict = None, energy=False):
         if s in name:
             b3 = True
 
-    if b3 == True and energy == False:
+    if b3:
         if multihyps:
             tbmfe = map_3b.three_body_mc_en_force_sephyps
             tbme = map_3b.three_body_mc_en_sephyps
@@ -141,7 +125,7 @@ def str_to_mapped_kernel(name: str, hyps_mask: dict = None, energy=False):
     return tbme, tbmfe
 
 
-def from_mask_to_args(hyps, hyps_mask: dict, cutoffs):
+def from_mask_to_args(hyps, kernel_array, nspecie, cutoffs, hyps_mask=None):
     """ Return the tuple of arguments needed for kernel function.
     The order of the tuple has to be exactly the same as the one taken by
         the kernel function.
@@ -155,15 +139,13 @@ def from_mask_to_args(hyps, hyps_mask: dict, cutoffs):
     :return: args
     """
 
-    cutoffs_array = [0, 0, 0]
-    cutoffs_array[0] = cutoffs.get('twobody', 0)
-    cutoffs_array[1] = cutoffs.get('threebody', 0)
-    cutoffs_array[2] = cutoffs.get('manybody', 0)
-
     # no special setting
-    if (hyps_mask is None):
-        return (hyps, cutoffs_array)
-    if hyps_mask['nspecie'] == 1 :
+    if nspecie == 1:
+
+        cutoffs_array = [0, 0, 0]
+        cutoffs_array[0] = cutoffs.get('twobody', 0)
+        cutoffs_array[1] = cutoffs.get('threebody', 0)
+        cutoffs_array[2] = cutoffs.get('manybody', 0)
         return (hyps, cutoffs_array)
 
     # setting for mc_sephyps
@@ -215,7 +197,7 @@ def from_mask_to_args(hyps, hyps_mask: dict, cutoffs):
             sig2, ls2, sig3, ls3, sigm, lsm)
 
 
-def from_grad_to_mask(grad, hyps_mask):
+def from_grad_to_mask(grad, hyp_index=None):
     """
     Return gradient which only includes hyperparameters
     which are meant to vary
@@ -227,22 +209,43 @@ def from_grad_to_mask(grad, hyps_mask):
     """
 
     # no special setting
-    if hyps_mask is None:
-        return grad
-
-    # setting for mc_sephyps
-    # no constrained optimization
-    if 'map' not in hyps_mask:
+    if hyp_index is None:
         return grad
 
     # setting for mc_sephyps
     # if the last element is not sigma_noise
-    if hyps_mask['map'][-1] == len(grad):
-        hm = hyps_mask['map'][:-1]
+    if hyps_index[-1] == len(grad):
+        hm = hyps_index[:-1]
     else:
-        hm = hyps_mask['map']
+        hm = hyps_index
 
     newgrad = np.zeros(len(hm), dtype=np.float64)
     for i, mapid in enumerate(hm):
         newgrad[i] = grad[mapid]
+
     return newgrad
+
+def kernel_str_to_array(kernel_name: str):
+    """
+    Args:
+
+    name (str): name for kernels. example: "2+3mc"
+
+    :return: kernel function, kernel gradient, energy kernel,
+             energy_and_force kernel
+    """
+
+    #  kernel name should be replace with kernel array
+    str_terms = {'twobody': ['2', 'two', 'Two', 'TWO', 'twobody'],
+                 'threebody': ['3', 'three', 'Three', 'THREE', 'threebody'],
+                 'manybody': ['mb', 'manybody', 'many', 'Many', 'ManyBody', 'manybody']}
+
+    array = []
+    for term in str_terms:
+        add = False
+        for s in str_terms[term]:
+            if s in kernel_name:
+                add = True
+        if add:
+            array += [term]
+    return

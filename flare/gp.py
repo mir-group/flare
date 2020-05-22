@@ -23,7 +23,7 @@ from flare.gp_algebra import get_like_from_mats, get_neg_like_grad, \
     get_kernel_vector, en_kern_vec
 from flare.parameters import Parameters
 
-from flare.kernels.utils import str_to_kernel_set, from_mask_to_args
+from flare.kernels.utils import str_to_kernel_set, from_mask_to_args, from_kernel_str_to_array
 from flare.utils.element_coder import NumpyEncoder, Z_to_element
 from flare.output import Output
 
@@ -61,7 +61,8 @@ class GaussianProcess:
         name (str, optional): Name for the GP instance.
     """
 
-    def __init__(self, kernel_name='2+3_mc',
+    def __init__(self, kernel_array: list =['two', 'three'],
+                 component: str ='mc',
                  hyps: 'ndarray' = None, cutoffs = {},
                  hyps_mask: dict = {},
                  hyp_labels: List = None, opt_algorithm: str = 'L-BFGS-B',
@@ -87,6 +88,9 @@ class GaussianProcess:
         self.n_sample = n_sample
         self.parallel = parallel
 
+        if 'kernel_name' in kwargs:
+            DeprecationWarning("kernel_name is being replaced with kernel_array")
+            kernel_array = from_kernel_str_to_array(kwargs.get('kernel_name'))
         if 'nsample' in kwargs:
             DeprecationWarning("nsample is being replaced with n_sample")
             self.n_sample = kwargs.get('nsample')
@@ -104,20 +108,20 @@ class GaussianProcess:
             hyps = np.array([0.1]*(1+2*len(cutoffs)))
 
         # backward compatability and sync the definitions in
-        hyps_mask = Parameters.backward(hyps, hyp_labels, cutoffs, kernel_name, deepcopy(hyps_mask))
+        hyps, hyp_labels, cutoffs, hyps_mask = Parameters.backward(hyps, hyp_labels, cutoffs, kernel_array, deepcopy(hyps_mask))
 
-        self.kernel_name = hyps_mask['kernel_name']
-        self.cutoffs = hyps_mask['cutoffs']
+        self.cutoffs = cutoffs
         self.hyps = np.array(hyps_mask['hyps'], dtype=np.float64)
         self.hyp_labels = hyps_mask['hyp_labels']
         self.hyps_mask = hyps_mask
+        self.nspecie = hyps_mask['nspecie']
 
-        kernel, grad, ek, efk = str_to_kernel_set(kernel_name, hyps_mask)
+        kernel, grad, ek, efk = str_to_kernel_set(kernel_array, component, self.nspecie)
         self.kernel = kernel
         self.kernel_grad = grad
         self.energy_force_kernel = efk
         self.energy_kernel = ek
-        self.kernel_name = kernel.__name__
+        self.kernel_array = from_kernel_str_to_array(kernel.__name__)
 
         self.name = name
 
@@ -197,13 +201,13 @@ class GaussianProcess:
         self.bounds = deepcopy(self.hyps_mask.get('bounds', None))
 
 
-    def update_kernel(self, kernel_name, hyps_mask):
-        kernel, grad, ek, efk = str_to_kernel_set(kernel_name, hyps_mask)
+    def update_kernel(self, kernel_array, component="mc", nspecie=1):
+        kernel, grad, ek, efk = str_to_kernel_set(kernel_array, component, nspecie)
         self.kernel = kernel
         self.kernel_grad = grad
         self.energy_force_kernel = efk
         self.energy_kernel = ek
-        self.kernel_name = kernel.__name__
+        self.kernel_array = from_kernel_str_to_array(kernel.__name__)
 
     def update_db(self, struc: Structure, forces: List,
                   custom_range: List[int] = (), energy: float = None):
@@ -569,7 +573,7 @@ class GaussianProcess:
         """String representation of the GP model."""
 
         thestr = "GaussianProcess Object\n"
-        thestr += f'Kernel: {self.kernel_name}\n'
+        thestr += f'Kernel: {self.kernel_array}\n'
         thestr += f"Training points: {len(self.training_data)}\n"
         for k in self.cutoffs:
             thestr += f'cutoff_{k}: {self.cutoffs[k]}\n'
@@ -618,7 +622,7 @@ class GaussianProcess:
     def from_dict(dictionary):
         """Create GP object from dictionary representation."""
 
-        new_gp = GaussianProcess(kernel_name=dictionary['kernel_name'],
+        new_gp = GaussianProcess(kernel_array=dictionary['kernel_array'],
                                  cutoffs=dictionary['cutoffs'],
                                  hyps=np.array(dictionary['hyps']),
                                  hyp_labels=dictionary['hyp_labels'],
@@ -820,6 +824,14 @@ class GaussianProcess:
         elif '.pickle' in filename or 'pickle' in format:
             with open(filename, 'rb') as f:
                 gp_model = pickle.load(f)
+                hyps_mask = Parameters.backward(gp_model.hyps, gp_model.hyp_labels,
+                                                gp_model.cutoffs, gp_model.kernel_name,
+                                                deepcopy(gp_model.hyps_mask))
+                gp_model.hyps_mask = hyps_mask
+                gp_model.hyps = hyps_mask['hyps']
+                gp_model.kernel_name = hyps_mask['kernel_name']
+                gp_model.hyp_labels = hyps_mask['hyp_labels']
+                gp_model.cutoffs = hyps_mask['cutoffs']
 
                 if ('name' not in gp_model.__dict__):
                     gp_model.name = 'default_gp'

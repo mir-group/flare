@@ -283,12 +283,7 @@ class Parameters():
 
         if kernel_name in param_dict['kernels']:
             new_dict = {}
-            new_dict['hyps'] = np.hstack(
-                Parameters.get_component_hyps(
-                    param_dict, kernel_name, hyps=hyps, noise=True))
             new_dict['kernels'] = [kernel_name]
-            new_dict['cutoffs'] = {
-                kernel_name: param_dict['cutoffs'][kernel_name]}
             if 'twobody' in param_dict['cutoffs']:
                 new_dict['cutoffs']['twobody'] = param_dict['cutoffs']['twobody']
 
@@ -305,9 +300,14 @@ class Parameters():
                 if name in param_dict:
                     new_dict[name] = deepcopy(param_dict[name])
 
-            return new_dict
+            hyps = np.hstack(Parameters.get_component_hyps(
+                    param_dict, kernel_name, hyps=hyps, noise=True))
+
+            cutoffs = {kernel_name: param_dict['cutoffs'][kernel_name]}
+
+            return hyps, cutoffs, new_dict
         else:
-            return {}
+            return [], {}, {}
 
     @staticmethod
     def get_noise(param_dict, hyps=None, constraint=False):

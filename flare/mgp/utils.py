@@ -13,35 +13,14 @@ from flare.kernels.utils import str_to_kernel_set as stks
 from flare.parameters import Parameters
 
 
-def get_2bkernel(GP):
-    if 'mc' in GP.kernel_name:
-        kernel, _, ek, efk = stks('2', GP.hyps_mask)
-    else:
-        kernel, _, ek, efk = stks('2sc', GP.hyps_mask)
+def get_kernel_term(GP, term):
+    """
+    Args
+        term (str): 'twobody' or 'threebody'
+    """
+    kernel, _, ek, efk = stks([term], GP.component, GP.nspecie)
 
-
-    hyps_mask = Parameters.get_component_mask(GP.hyps_mask, 'twobody', hyps=GP.hyps)
-    hyps = hyps_mask['hyps']
-    cutoffs = hyps_mask['cutoffs']
-
-    return (kernel, ek, efk, cutoffs, hyps, hyps_mask)
-
-
-def get_3bkernel(GP):
-
-    if 'mc' in GP.kernel_name:
-        kernel, _, ek, efk = stks('3', GP.hyps_mask)
-    else:
-        kernel, _, ek, efk = stks('3sc', GP.hyps_mask)
-
-    base = 0
-    for t in ['two', '2']:
-        if t in GP.kernel_name:
-            base = 2
-
-    hyps_mask = Parameters.get_component_mask(GP.hyps_mask, 'threebody', hyps=GP.hyps)
-    hyps = hyps_mask['hyps']
-    cutoffs = hyps_mask['cutoffs']
+    hyps, cutoffs, hyps_mask = Parameters.get_component_mask(GP.hyps_mask, term, hyps=GP.hyps)
 
     return (kernel, ek, efk, cutoffs, hyps, hyps_mask)
 
