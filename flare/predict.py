@@ -29,7 +29,8 @@ def predict_on_atom(param: Tuple[Structure, int, GaussianProcess]) -> (
     # Unpack the input tuple, convert a chemical environment
     structure, atom, gp = param
     # Obtain the associated chemical environment
-    chemenv = AtomicEnvironment(structure, atom, gp.cutoffs, cutoffs_mask=gp.hyps_mask)
+    chemenv = AtomicEnvironment(structure, atom, gp.cutoffs,
+                                cutoffs_mask=gp.hyps_mask)
     components = []
     stds = []
     # predict force components and standard deviations
@@ -58,7 +59,8 @@ def predict_on_atom_en(param: Tuple[Structure, int, GaussianProcess]) -> (
     # Unpack the input tuple, convert a chemical environment
     structure, atom, gp = param
     # Obtain the associated chemical environment
-    chemenv = AtomicEnvironment(structure, atom, gp.cutoffs, cutoffs_mask=gp.hyps_mask)
+    chemenv = AtomicEnvironment(structure, atom, gp.cutoffs,
+                                cutoffs_mask=gp.hyps_mask)
     comps = []
     stds = []
     # predict force components and standard deviations
@@ -77,7 +79,8 @@ def predict_on_atom_en_std(param):
     """Predict local energy and predictive std of a chemical environment."""
 
     structure, atom, gp = param
-    chemenv = AtomicEnvironment(structure, atom, gp.cutoffs, cutoffs_mask=gp.hyps_mask)
+    chemenv = AtomicEnvironment(structure, atom, gp.cutoffs,
+                                cutoffs_mask=gp.hyps_mask)
 
     # predict local energy
     loc_en, loc_en_var = gp.predict_local_energy_and_var(chemenv)
@@ -87,9 +90,9 @@ def predict_on_atom_en_std(param):
 
 
 def predict_on_structure(structure: Structure, gp: GaussianProcess,
-                         n_cpus: int=None, write_to_structure: bool = True,
+                         n_cpus: int = None, write_to_structure: bool = True,
                          selective_atoms: List[int] = None,
-                         skipped_atom_value = 0) \
+                         skipped_atom_value=0) \
         -> ('np.ndarray', 'np.ndarray'):
     """
     Return the forces/std. dev. uncertainty associated with each
@@ -131,7 +134,8 @@ def predict_on_structure(structure: Structure, gp: GaussianProcess,
         if n not in selective_atoms and selective_atoms:
             continue
 
-        chemenv = AtomicEnvironment(structure, n, gp.cutoffs, cutoffs_mask=gp.hyps_mask)
+        chemenv = AtomicEnvironment(structure, n, gp.cutoffs,
+                                    cutoffs_mask=gp.hyps_mask)
 
         for i in range(3):
             force, var = gp.predict(chemenv, i + 1)
@@ -150,7 +154,7 @@ def predict_on_structure_par(structure: Structure,
                              n_cpus: int = None,
                              write_to_structure: bool = True,
                              selective_atoms: List[int] = None,
-                             skipped_atom_value = 0
+                             skipped_atom_value=0
                              ) -> (
         'np.ndarray', 'np.ndarray'):
     """
@@ -211,7 +215,6 @@ def predict_on_structure_par(structure: Structure,
     pool.close()
     pool.join()
 
-
     for i in range(structure.nat):
         if i not in selective_atoms:
             continue
@@ -227,9 +230,9 @@ def predict_on_structure_par(structure: Structure,
 
 def predict_on_structure_en(structure: Structure, gp: GaussianProcess,
                             n_cpus: int = None,
-                            write_to_structure: bool=True,
+                            write_to_structure: bool = True,
                             selective_atoms: List[int] = None,
-                            skipped_atom_value = 0 ) -> (
+                            skipped_atom_value=0) -> (
         'np.ndarray', 'np.ndarray', 'np.ndarray'):
     """
     Return the forces/std. dev. uncertainty / local energy associated with each
@@ -268,7 +271,8 @@ def predict_on_structure_en(structure: Structure, gp: GaussianProcess,
         if selective_atoms and n not in selective_atoms:
             continue
 
-        chemenv = AtomicEnvironment(structure, n, gp.cutoffs, cutoffs_mask=gp.hyps_mask)
+        chemenv = AtomicEnvironment(structure, n, gp.cutoffs,
+                                    cutoffs_mask=gp.hyps_mask)
 
         for i in range(3):
             force, var = gp.predict(chemenv, i + 1)
@@ -288,7 +292,7 @@ def predict_on_structure_par_en(structure: Structure, gp: GaussianProcess,
                                 n_cpus: int = None,
                                 write_to_structure: bool = True,
                                 selective_atoms: List[int] = None,
-                                skipped_atom_value = 0) -> (
+                                skipped_atom_value=0) -> (
         'np.ndarray', 'np.ndarray', 'np.ndarray'):
     """
     Return the forces/std. dev. uncertainty / local energy associated with each
@@ -354,7 +358,7 @@ def predict_on_structure_par_en(structure: Structure, gp: GaussianProcess,
             continue
 
         r = results[i].get()
-        forces[i][:] =r[0]
+        forces[i][:] = r[0]
         stds[i][:] = r[1]
         local_energies[i] = r[2]
 
@@ -400,13 +404,13 @@ def predict_on_structure_mgp(structure, mgp, output=None,
     else:
         selective_atoms = []
 
-
     for n in range(structure.nat):
 
         if n not in selective_atoms and selective_atoms:
             continue
 
-        forces[n, :], stds[n, :], _ = predict_on_atom_mgp(n, structure, 
-                                      mgp.cutoffs, mgp, write_to_structure)
+        forces[n, :], stds[n, :], _ = \
+            predict_on_atom_mgp(n, structure, mgp.cutoffs, mgp,
+                                write_to_structure)
 
     return forces, stds
