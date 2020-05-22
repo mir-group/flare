@@ -56,10 +56,10 @@ class Parameters():
             return cutoffs
 
         if (cutoffs is not None) and not isinstance(cutoffs, dict):
-            newcutoffs = {'twobody':cutoffs[0]}
-            if len(cutoffs)>1:
+            newcutoffs = {'twobody': cutoffs[0]}
+            if len(cutoffs) > 1:
                 newcutoffs['threebody'] = cutoffs[1]
-            if len(cutoffs)>2:
+            if len(cutoffs) > 2:
                 newcutoffs['manybody'] = cutoffs[2]
             param_dict['cutoffs'] = newcutoffs
             print("Convert cutoffs array to cutoffs dict")
@@ -75,8 +75,8 @@ class Parameters():
         if param_dict is None:
             param_dict = {}
 
-        replace_list = {'spec':'specie', 'bond':'twobody',
-                        'triplet':'threebody', 'mb':'manybody'}
+        replace_list = {'spec': 'specie', 'bond': 'twobody',
+                        'triplet': 'threebody', 'mb': 'manybody'}
         keys = list(param_dict.keys())
         for key in keys:
             for original in replace_list:
@@ -106,7 +106,6 @@ class Parameters():
             print("Replace kernel array in param_dict")
             param_dict['kernels'] = deepcopy(kernel_array)
             param_dict['kernel_name'] = "+".join(param_dict['kernels'])
-
 
         return param_dict
 
@@ -260,7 +259,7 @@ class Parameters():
                     new_dict[name] = deepcopy(param_dict[name])
 
             hyps = np.hstack(Parameters.get_component_hyps(
-                    param_dict, kernel_name, hyps=hyps, noise=True))
+                param_dict, kernel_name, hyps=hyps, noise=True))
 
             cutoffs = {kernel_name: param_dict['cutoffs'][kernel_name]}
 

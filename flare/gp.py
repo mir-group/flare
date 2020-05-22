@@ -61,9 +61,9 @@ class GaussianProcess:
         name (str, optional): Name for the GP instance.
     """
 
-    def __init__(self, kernel_array: list =['two', 'three'],
-                 component: str ='mc',
-                 hyps: 'ndarray' = None, cutoffs = {},
+    def __init__(self, kernel_array: list = ['two', 'three'],
+                 component: str = 'mc',
+                 hyps: 'ndarray' = None, cutoffs={},
                  hyps_mask: dict = {},
                  hyp_labels: List = None, opt_algorithm: str = 'L-BFGS-B',
                  maxiter: int = 10, parallel: bool = False,
@@ -71,7 +71,6 @@ class GaussianProcess:
                  n_sample: int = 100, output: Output = None,
                  name="default_gp",
                  energy_noise: float = 0.01, **kwargs,):
-
         """Initialize GP parameters and training data."""
 
         # load arguments into attributes
@@ -107,7 +106,8 @@ class GaussianProcess:
             self.hyps = np.array(self.hyps, dtype=np.float64)
 
         self.nspecie = hyps_mask['nspecie']
-        kernel, grad, ek, efk = str_to_kernel_set(kernel_array, component, self.nspecie)
+        kernel, grad, ek, efk = str_to_kernel_set(
+            kernel_array, component, self.nspecie)
         self.kernel = kernel
         self.kernel_grad = grad
         self.energy_force_kernel = efk
@@ -188,9 +188,9 @@ class GaussianProcess:
 
         self.bounds = deepcopy(self.hyps_mask.get('bounds', None))
 
-
     def update_kernel(self, kernel_array, component="mc", nspecie=1):
-        kernel, grad, ek, efk = str_to_kernel_set(kernel_array, component, nspecie)
+        kernel, grad, ek, efk = str_to_kernel_set(
+            kernel_array, component, nspecie)
         self.kernel = kernel
         self.kernel_grad = grad
         self.energy_force_kernel = efk
@@ -224,7 +224,7 @@ class GaussianProcess:
             for atom in update_indices:
                 env_curr = \
                     AtomicEnvironment(struc, atom, self.cutoffs,
-                            cutoffs_mask=self.hyps_mask)
+                                      cutoffs_mask=self.hyps_mask)
                 forces_curr = np.array(forces[atom])
 
                 self.training_data.append(env_curr)
@@ -650,7 +650,7 @@ class GaussianProcess:
         new_gp.energy_labels_np = deepcopy(dictionary['energy_labels_np'])
 
         new_gp.all_labels = np.concatenate((new_gp.training_labels_np,
-                                          new_gp.energy_labels_np))
+                                            new_gp.energy_labels_np))
 
         new_gp.likelihood = dictionary['likelihood']
         new_gp.likelihood_gradient = dictionary['likelihood_gradient']
@@ -765,7 +765,6 @@ class GaussianProcess:
             self.alpha = None
             self.ky_mat_inv = None
 
-
         supported_formats = ['json', 'pickle', 'binary']
 
         if format.lower() == 'json':
@@ -785,8 +784,6 @@ class GaussianProcess:
             self.l_mat = temp_l_mat
             self.alpha = temp_alpha
             self.ky_mat_inv = temp_ky_mat_inv
-
-
 
     @staticmethod
     def from_file(filename: str, format: str = ''):
@@ -809,7 +806,8 @@ class GaussianProcess:
 
                 gp_model = pickle.load(f)
 
-                GaussianProcess.backward_arguments(gp_model.__dict__, gp_model.__dict)
+                GaussianProcess.backward_arguments(
+                    gp_model.__dict__, gp_model.__dict)
 
                 GaussianProcess.backward_attributes(gp_model.__dict__)
 
@@ -880,8 +878,10 @@ class GaussianProcess:
         """
 
         if 'kernel_name' in kwargs:
-            DeprecationWarning("kernel_name is being replaced with kernel_array")
-            new_args['kernel_array'] = kernel_str_to_array(kwargs.get('kernel_name'))
+            DeprecationWarning(
+                "kernel_name is being replaced with kernel_array")
+            new_args['kernel_array'] = kernel_str_to_array(
+                kwargs.get('kernel_name'))
         if 'nsample' in kwargs:
             DeprecationWarning("nsample is being replaced with n_sample")
             new_args['n_sample'] = kwargs.get('nsample')
@@ -913,7 +913,8 @@ class GaussianProcess:
             dictionary['parallel'] = False
 
         if ('training_structures' not in dictionary):
-            dictionary['training_structures'] = []  # Environments of each structure
+            # Environments of each structure
+            dictionary['training_structures'] = []
             dictionary['energy_labels'] = []  # Energies of training structures
             dictionary['energy_labels_np'] = np.empty(0, )
 
@@ -926,5 +927,5 @@ class GaussianProcess:
 
         if not isinstance(dictionary['cutoffs'], dict):
             dictionary['cutoffs'] = cutoff_array_to_dict(cutoffs)
-        dictionary['hyps_mask'] = Parameters.backward(dictionary['kernel_array'], deepcopy(dictionary['hyps_mask']))
-
+        dictionary['hyps_mask'] = Parameters.backward(
+            dictionary['kernel_array'], deepcopy(dictionary['hyps_mask']))

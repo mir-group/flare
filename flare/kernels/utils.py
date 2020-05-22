@@ -20,7 +20,7 @@ from_grad_to_mask(grad, hyps_mask) converts the gradient matrix to the actual
 
 
 def str_to_kernel_set(kernel_array: list = ['twobody', 'threebody'],
-                      component : str = "sc",
+                      component: str = "sc",
                       nspecie: int = 1):
     """
     return kernels and kernel gradient function base on a string.
@@ -109,7 +109,7 @@ def str_to_mapped_kernel(name: str, component: str = "sc",
     many = False
     b3 = False
     for s in ['3', 'three']:
-        if s in name.lower() or s==name.lower():
+        if s in name.lower() or s == name.lower():
             b3 = True
 
     if b3:
@@ -191,8 +191,10 @@ def from_mask_to_args(hyps, cutoffs, hyps_mask=None):
         cutoff_mb = hyps_mask['manybody_cutoff_list']
 
     (sig2, ls2) = Parameters.get_component_hyps(hyps_mask, 'twobody', hyps=hyps)
-    (sig3, ls3) = Parameters.get_component_hyps(hyps_mask, 'threebody', hyps=hyps)
-    (sigm, lsm) = Parameters.get_component_hyps(hyps_mask, 'manybody', hyps=hyps)
+    (sig3, ls3) = Parameters.get_component_hyps(
+        hyps_mask, 'threebody', hyps=hyps)
+    (sigm, lsm) = Parameters.get_component_hyps(
+        hyps_mask, 'manybody', hyps=hyps)
 
     return (cutoff_2b, cutoff_3b, cutoff_mb,
             nspecie,
@@ -231,6 +233,7 @@ def from_grad_to_mask(grad, hyp_index=None):
         newgrad[i] = grad[mapid]
 
     return newgrad
+
 
 def kernel_str_to_array(kernel_name: str):
     """

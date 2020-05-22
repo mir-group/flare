@@ -241,7 +241,7 @@ class TrajectoryTrainer:
                                       "yet configured for MGP")
         if self.verbose:
             self.output.write_header(self.gp.cutoffs,
-                                     self.gp.kernel_name,
+                                     self.gp.kernel_array,
                                      self.gp.hyps,
                                      self.gp.opt_algorithm,
                                      dt=0,

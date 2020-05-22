@@ -796,7 +796,7 @@ class ParameterHelper():
                 else:
                     alldefine = False
                     self.logger.info(f"{aeg[idt]} cutoff is not define. "
-                                      "it's going to use the universal cutoff.")
+                                     "it's going to use the universal cutoff.")
 
             if group_type != 'threebody':
 
@@ -810,7 +810,8 @@ class ParameterHelper():
                     for idt in range(self.n[group_type]):
                         self.cutoff_list[group_type] += [
                             self.all_cutoff.get(aeg[idt], universal_cutoff)]
-                    self.cutoff_list[group_type] = np.array(self.cutoff_list[group_type], dtype=float)
+                    self.cutoff_list[group_type] = np.array(
+                        self.cutoff_list[group_type], dtype=float)
 
                     max_cutoff = np.max(self.cutoff_list[group_type])
 
@@ -834,7 +835,7 @@ class ParameterHelper():
                     universal_cutoff = np.max(allcut)
                     self.logger.info(f"threebody universal cutoff is updated to"
                                      f"{universal_cutoff}, but the separate definitions will"
-                                      "be ignored")
+                                     "be ignored")
 
             if universal_cutoff > 0:
                 if group_type == 'cut_3b':
