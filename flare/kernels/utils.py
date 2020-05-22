@@ -223,14 +223,16 @@ def from_grad_to_mask(grad, hyp_index=None):
 
     # setting for mc_sephyps
     # if the last element is not sigma_noise
-    if hyps_index[-1] == len(grad):
-        hm = hyps_index[:-1]
+    if hyp_index[-1] == len(grad):
+        hm = hyp_index[:-1]
     else:
-        hm = hyps_index
+        hm = hyp_index
 
     newgrad = np.zeros(len(hm), dtype=np.float64)
     for i, mapid in enumerate(hm):
         newgrad[i] = grad[mapid]
+
+    print(hyp_index, newgrad)
 
     return newgrad
 

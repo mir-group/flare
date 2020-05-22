@@ -106,7 +106,7 @@ class GaussianProcess:
         else:
             self.hyps = np.array(self.hyps, dtype=np.float64)
 
-        self.nspecie = hyps_mask['nspecie']
+        self.nspecie = self.hyps_mask['nspecie']
         kernel, grad, ek, efk = str_to_kernel_set(
             kernel_array, component, self.nspecie)
         self.kernel = kernel
@@ -185,7 +185,8 @@ class GaussianProcess:
         _global_training_labels[self.name] = self.training_labels_np
         _global_energy_labels[self.name] = self.energy_labels_np
 
-        self.hyps_mask = Parameters.check_instantiation(self.hyps_mask)
+        self.hyps_mask = Parameters.check_instantiation(self.hyps, self.cutoffs,
+                                                        self.kernel_array, self.hyps_mask)
 
         self.bounds = deepcopy(self.hyps_mask.get('bounds', None))
 
@@ -615,22 +616,30 @@ class GaussianProcess:
         GaussianProcess.backward_arguments(dictionary, dictionary)
         GaussianProcess.backward_attributes(dictionary)
 
-        new_gp = GaussianProcess(kernel_array=dictionary['kernel_array'],
-                                 cutoffs=dictionary['cutoffs'],
-                                 hyps=dictionary['hyps'],
-                                 hyp_labels=dictionary['hyp_labels'],
-                                 parallel=dictionary['parallel'],
-                                 per_atom_par=dictionary['per_atom_par'],
-                                 n_cpus=dictionary['n_cpus'],
-                                 maxiter=dictionary['maxiter'],
-                                 opt_algorithm=dictionary['opt_algorithm'],
-                                 hyps_mask=dictionary['hyps_mask'],
-                                 name=dictionary['name']
-                                 )
+        new_gp = GaussianProcess(**dictionary)
+        # new_gp = GaussianProcess(kernel_array=dictionary['kernel_array'],
+        #                          cutoffs=dictionary['cutoffs'],
+        #                          hyps=dictionary['hyps'],
+        #                          hyp_labels=dictionary['hyp_labels'],
+        #                          parallel=dictionary['parallel'],
+        #                          per_atom_par=dictionary['per_atom_par'],
+        #                          n_cpus=dictionary['n_cpus'],
+        #                          maxiter=dictionary['maxiter'],
+        #                          opt_algorithm=dictionary['opt_algorithm'],
+        #                          hyps_mask=dictionary['hyps_mask'],
+        #                          name=dictionary['name']
+        #                          )
 
         # Save time by attempting to load in computed attributes
-        new_gp.training_data = [AtomicEnvironment.from_dict(env) for env in
-                                dictionary['training_data']]
+        if ('training_data' in dictionary):
+            new_gp.training_data = [AtomicEnvironment.from_dict(env) for env in
+                                    dictionary['training_data']]
+            new_gp.training_labels = deepcopy(dictionary['training_labels'])
+            new_gp.training_labels_np = deepcopy(dictionary['training_labels_np'])
+        else:
+            new_gp.training_data = []
+            new_gp.training_labels = []
+            new_gp.training_labels_np = np.empty(0, )
 
         # Reconstruct training structures.
         if ('training_structures' in dictionary):
@@ -640,21 +649,19 @@ class GaussianProcess:
                 for env_curr in env_list:
                     new_gp.training_structures[n].append(
                         AtomicEnvironment.from_dict(env_curr))
+            new_gp.energy_labels = deepcopy(dictionary['energy_labels'])
+            new_gp.energy_labels_np = deepcopy(dictionary['energy_labels_np'])
         else:
             new_gp.training_structures = []  # Environments of each structure
             new_gp.energy_labels = []  # Energies of training structures
             new_gp.energy_labels_np = np.empty(0, )
 
-        new_gp.training_labels = deepcopy(dictionary['training_labels'])
-        new_gp.training_labels_np = deepcopy(dictionary['training_labels_np'])
-        new_gp.energy_labels = deepcopy(dictionary['energy_labels'])
-        new_gp.energy_labels_np = deepcopy(dictionary['energy_labels_np'])
-
         new_gp.all_labels = np.concatenate((new_gp.training_labels_np,
                                             new_gp.energy_labels_np))
 
-        new_gp.likelihood = dictionary['likelihood']
-        new_gp.likelihood_gradient = dictionary['likelihood_gradient']
+        new_gp.likelihood = dictionary.get('likelihood', None)
+        new_gp.likelihood_gradient = dictionary.get('likelihood_gradient', None)
+
         new_gp.n_envs_prev = len(new_gp.training_data)
         _global_training_data[new_gp.name] = new_gp.training_data
         _global_training_structures[new_gp.name] = new_gp.training_structures
@@ -894,7 +901,6 @@ class GaussianProcess:
             new_args['n_cpus'] = kwargs.get('no_cpus')
         if 'multihyps' in kwargs:
             DeprecationWarning("multihyps is removed")
-        print("hello", kwargs, new_args)
 
         return new_args
 

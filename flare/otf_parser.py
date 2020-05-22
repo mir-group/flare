@@ -1,7 +1,10 @@
 import sys
 import numpy as np
+
+from copy import deepcopy
 from typing import List, Tuple
 from flare import gp, env, struc, otf
+from flare.gp import GaussianProcess
 
 
 class OtfAnalysis:
@@ -42,7 +45,7 @@ class OtfAnalysis:
         self.gp_species_list = gp_species_list
         self.gp_atom_count = gp_atom_count
 
-    def make_gp(self, call_no=None, hyps=None, init_gp=None,
+    def make_gp(self, cell=None, call_no=None, hyps=None, init_gp=None,
                 hyp_no=None, **kwargs,):
 
         if call_no is None:
@@ -55,6 +58,8 @@ class OtfAnalysis:
                 if len(self.gp_hyp_list[icall]) > 0:
                     hyps = self.gp_hyp_list[icall][-1]
                     break
+        if cell is None:
+            cell = self.header['cell']
 
 
         if init_gp is None:

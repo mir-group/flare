@@ -113,7 +113,7 @@ class Parameters():
         return param_dict
 
     @staticmethod
-    def check_instantiation(param_dict):
+    def check_instantiation(hyps, cutoffs, kernel_array, param_dict):
         """
         Runs a series of checks to ensure that the user has not supplied
         contradictory arguments which will result in undefined behavior
@@ -130,8 +130,6 @@ class Parameters():
                 "in param_dict dictionary"
             param_dict['specie_mask'] = nparray(
                 param_dict['specie_mask'], dtype=np.int)
-
-        cutoffs = param_dict['cutoffs']
 
         hyps_length = 0
         kernels = param_dict['kernels']
@@ -185,7 +183,6 @@ class Parameters():
                 assert f'{kernel}_mask' not in param_dict
                 assert f'{kernel}_cutof_list' not in param_dict
 
-        hyps = param_dict['hyps']
         if 'map' in param_dict:
             assert ('original_hyps' in param_dict), \
                 "original hyper parameters have to be defined"
@@ -201,7 +198,7 @@ class Parameters():
         else:
             assert param_dict['train_noise'] is True, \
                 "train_noise should be True when map is not used"
-        hyps = Parameters.get_hyps(param_dict)
+        hyps = Parameters.get_hyps(param_dict, hyps)
 
         hyps_length += 1
         assert hyps_length == len(hyps), \
