@@ -221,7 +221,7 @@ def predict_on_structure_par(structure: Structure,
         r = results[i].get()
         forces[i] = r[0]
         stds[i] = r[1]
-        if write_to_structure and structure.forces is not None:
+        if write_to_structure:
             structure.forces[i] = r[0]
             structure.stds[i] = r[1]
 
@@ -279,7 +279,7 @@ def predict_on_structure_en(structure: Structure, gp: GaussianProcess,
             forces[n][i] = float(force)
             stds[n][i] = np.sqrt(np.abs(var))
 
-        if write_to_structure and structure.forces is not None:
+        if write_to_structure:
             structure.forces[n][i] = float(force)
             structure.stds[n][i] = np.sqrt(np.abs(var))
 
