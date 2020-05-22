@@ -319,8 +319,6 @@ class TestIO():
         os.remove('test_gp_write.json')
 
 
-
-
 def dumpcompare(obj1, obj2):
     '''this source code comes from
     http://stackoverflow.com/questions/15785719/how-to-print-a-dictionary-line-by-line-in-python'''
