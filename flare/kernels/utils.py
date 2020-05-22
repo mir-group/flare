@@ -258,4 +258,4 @@ def kernel_str_to_array(kernel_name: str):
                 add = True
         if add:
             array += [term]
-    return
+    return array

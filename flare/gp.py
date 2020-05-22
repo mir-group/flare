@@ -34,22 +34,23 @@ class GaussianProcess:
     Williams.
 
     Args:
-        kernel_array (str, optional): Determine the type of kernels. Example:
-            2+3_mc, 2+3+mb_mc, 2_mc, 2_sc, 3_sc, ...
+        kernel_array (list, optional): Determine the type of kernels. Example:
+            ['2', '3'], ['2', '3', 'mb'], ['2']. Defaults to ['2', '3']
+        component (str, optional): Determine single- ("sc") or multi-
+            component ("mc") kernel to use. Defaults to "mc"
         hyps (np.ndarray, optional): Hyperparameters of the GP.
         cutoffs (Dict, optional): Cutoffs of the GP kernel.
         hyp_labels (List, optional): List of hyperparameter labels. Defaults
             to None.
-        energy_force_kernel (Callable, optional): Energy/force kernel of the
-            GP used to make energy predictions. Defaults to None.
-        energy_kernel (Callable, optional): Energy/energy kernel of the GP.
-            Defaults to None.
         opt_algorithm (str, optional): Hyperparameter optimization algorithm.
             Defaults to 'L-BFGS-B'.
         maxiter (int, optional): Maximum number of iterations of the
             hyperparameter optimization algorithm. Defaults to 10.
         parallel (bool, optional): If True, the covariance matrix K of the GP
             is computed in parallel. Defaults to False.
+        per_atom_par (bool, optional): If True, each processor computes one
+            atom for prediction. Otherwise, it parallelizes over the training_data.
+            Defaults to True
         n_cpus (int, optional): Number of cpus used for parallel calculations.
             Defaults to 1 (serial)
         n_samples (int, optional): Size of submatrix to use when parallelizing
@@ -93,8 +94,8 @@ class GaussianProcess:
         self.hyps_mask = hyps_mask
         self.hyps = hyps
 
-        backward_arguments(kwargs, self.__dict__)
-        backward_attributes(self.__dict__)
+        GaussianProcess.backward_arguments(kwargs, self.__dict__)
+        GaussianProcess.backward_attributes(self.__dict__)
 
         # ------------  "computed" attributes ------------
 
@@ -112,7 +113,7 @@ class GaussianProcess:
         self.kernel_grad = grad
         self.energy_force_kernel = efk
         self.energy_kernel = ek
-        self.kernel_array = from_kernel_str_to_array(kernel.__name__)
+        self.kernel_array = kernel_str_to_array(kernel.__name__)
 
         # parallelization
         if self.parallel:
@@ -195,7 +196,7 @@ class GaussianProcess:
         self.kernel_grad = grad
         self.energy_force_kernel = efk
         self.energy_kernel = ek
-        self.kernel_array = from_kernel_str_to_array(kernel.__name__)
+        self.kernel_array = kernel_str_to_array(kernel.__name__)
 
     def update_db(self, struc: Structure, forces: List,
                   custom_range: List[int] = (), energy: float = None):
@@ -891,6 +892,9 @@ class GaussianProcess:
         if 'no_cpus' in kwargs:
             DeprecationWarning("no_cpus is being replaced with n_cpu")
             new_args['n_cpus'] = kwargs.get('no_cpus')
+        if 'multihyps' in kwargs:
+            DeprecationWarning("multihyps is removed")
+        print("hello", kwargs, new_args)
 
         return new_args
 
@@ -906,7 +910,7 @@ class GaussianProcess:
         if ('per_atom_par' not in dictionary):
             dictionary['per_atom_par'] = True
         if ('optimization_algorithm' not in dictionary):
-            dictionary['opt_algorithm'] = opt_algorithm
+            dictionary['opt_algorithm'] = 'L-BFGS-B'
         if ('hyps_mask' not in dictionary):
             dictionary['hyps_mask'] = None
         if ('parallel' not in dictionary):
@@ -926,6 +930,7 @@ class GaussianProcess:
             dictionary['energy_noise'] = 0.01
 
         if not isinstance(dictionary['cutoffs'], dict):
-            dictionary['cutoffs'] = cutoff_array_to_dict(cutoffs)
+            dictionary['cutoffs'] = Parameters.cutoff_array_to_dict(dictionary['cutoffs'])
+
         dictionary['hyps_mask'] = Parameters.backward(
             dictionary['kernel_array'], deepcopy(dictionary['hyps_mask']))

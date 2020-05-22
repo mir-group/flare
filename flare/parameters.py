@@ -56,12 +56,12 @@ class Parameters():
             return cutoffs
 
         if (cutoffs is not None) and not isinstance(cutoffs, dict):
+            DeprecationWarning("cutoffs is replace by dictionary")
             newcutoffs = {'twobody': cutoffs[0]}
             if len(cutoffs) > 1:
                 newcutoffs['threebody'] = cutoffs[1]
             if len(cutoffs) > 2:
                 newcutoffs['manybody'] = cutoffs[2]
-            param_dict['cutoffs'] = newcutoffs
             print("Convert cutoffs array to cutoffs dict")
             print("Original", cutoffs)
             print("Now", newcutoffs)
@@ -83,13 +83,17 @@ class Parameters():
                 if original in key and replace_list[original] not in key:
                     newkey = key.replace(original, replace_list[original])
                     param_dict[newkey] = param_dict[key]
+                    DeprecationWarning(
+                        "{key} is being replaced with {newkey}")
 
         if 'train_noise' not in param_dict:
             param_dict['train_noise'] = True
+            DeprecationWarning("train_noise has to be in hyps_mask, set to True")
 
         if 'nspecie' not in param_dict:
             param_dict['nspecie'] = 1
 
+        print(kernel_array, param_dict)
         if set(kernel_array) != set(param_dict.get("kernels", [])):
 
             start = 0
@@ -105,7 +109,6 @@ class Parameters():
 
             print("Replace kernel array in param_dict")
             param_dict['kernels'] = deepcopy(kernel_array)
-            param_dict['kernel_name'] = "+".join(param_dict['kernels'])
 
         return param_dict
 
