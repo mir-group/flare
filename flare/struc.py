@@ -90,8 +90,10 @@ class Structure:
                                                           'same length'
             self.prev_positions = prev_positions
 
-        # assign structure labels
-        self.forces = forces
+        if forces is not None:
+            self.forces = np.array(forces)
+        else:
+            self.forces = np.zeros((len(positions), 3))
 
         if stds is not None:
             self.stds = np.array(stds)
