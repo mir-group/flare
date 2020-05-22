@@ -115,12 +115,6 @@ def predict_on_structure(structure: Structure, gp: GaussianProcess,
     forces = np.zeros((structure.nat, 3))
     stds = np.zeros((structure.nat, 3))
 
-    if write_to_structure and structure.forces is None:
-        structure.forces = np.zeros((structure.nat, 3))
-
-    forces = np.zeros(shape=(structure.nat, 3))
-    stds = np.zeros(shape=(structure.nat, 3))
-
     if selective_atoms:
         forces.fill(skipped_atom_value)
         stds.fill(skipped_atom_value)
@@ -187,9 +181,6 @@ def predict_on_structure_par(structure: Structure,
     forces = np.zeros(shape=(structure.nat, 3))
     stds = np.zeros(shape=(structure.nat, 3))
 
-    if write_to_structure and structure.forces is None:
-        structure.forces = np.zeros((structure.nat, 3))
-
     if selective_atoms:
         forces.fill(skipped_atom_value)
         stds.fill(skipped_atom_value)
@@ -216,7 +207,7 @@ def predict_on_structure_par(structure: Structure,
     pool.join()
 
     for i in range(structure.nat):
-        if i not in selective_atoms:
+        if i not in selective_atoms and selective_atoms:
             continue
         r = results[i].get()
         forces[i] = r[0]
@@ -254,9 +245,6 @@ def predict_on_structure_en(structure: Structure, gp: GaussianProcess,
     forces = np.zeros(shape=(structure.nat, 3))
     stds = np.zeros(shape=(structure.nat, 3))
 
-    if write_to_structure and structure.forces is None:
-        structure.forces = np.zeros((structure.nat, 3))
-
     if selective_atoms:
         forces.fill(skipped_atom_value)
         stds.fill(skipped_atom_value)
@@ -279,9 +267,9 @@ def predict_on_structure_en(structure: Structure, gp: GaussianProcess,
             forces[n][i] = float(force)
             stds[n][i] = np.sqrt(np.abs(var))
 
-        if write_to_structure:
-            structure.forces[n][i] = float(force)
-            structure.stds[n][i] = np.sqrt(np.abs(var))
+            if write_to_structure:
+                structure.forces[n][i] = float(force)
+                structure.stds[n][i] = np.sqrt(np.abs(var))
 
         local_energies[n] = gp.predict_local_energy(chemenv)
 

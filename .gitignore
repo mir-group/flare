@@ -5,6 +5,7 @@
 __pycache__/
 build/
 dist/
+test_outputs_qe
 flare.egg-info/
 mir_flare.egg-info/
 tags
