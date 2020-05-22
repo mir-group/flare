@@ -23,7 +23,7 @@ from flare.gp_algebra import get_like_from_mats, get_neg_like_grad, \
     get_kernel_vector, en_kern_vec
 from flare.parameters import Parameters
 
-from flare.kernels.utils import str_to_kernel_set, from_mask_to_args, from_kernel_str_to_array
+from flare.kernels.utils import str_to_kernel_set, from_mask_to_args, kernel_str_to_array
 from flare.utils.element_coder import NumpyEncoder, Z_to_element
 from flare.output import Output
 
@@ -88,42 +88,31 @@ class GaussianProcess:
         self.n_sample = n_sample
         self.parallel = parallel
 
-        if 'kernel_name' in kwargs:
-            DeprecationWarning("kernel_name is being replaced with kernel_array")
-            kernel_array = from_kernel_str_to_array(kwargs.get('kernel_name'))
-        if 'nsample' in kwargs:
-            DeprecationWarning("nsample is being replaced with n_sample")
-            self.n_sample = kwargs.get('nsample')
-        if 'par' in kwargs:
-            DeprecationWarning("par is being replaced with parallel")
-            self.parallel = kwargs.get('par')
-        if 'no_cpus' in kwargs:
-            DeprecationWarning("no_cpus is being replaced with n_cpu")
-            self.n_cpus = kwargs.get('no_cpus')
+        self.kernel_array = kernel_array
+        self.cutoffs = cutoffs
+        self.hyp_labels = hyp_labels
+        self.hyps_mask = hyps_mask
+        self.hyps = hyps
 
-        # # TO DO need to fix it
-        if hyps is None:
+        backward_arguments(kwargs, self.__dict__)
+        backward_attributes(self.__dict__)
+
+        # ------------  "computed" attributes ------------
+
+        if self.hyps is None:
             # If no hyperparameters are passed in, assume 2 hyps for each
             # cutoff, plus one noise hyperparameter, and use a guess value
-            hyps = np.array([0.1]*(1+2*len(cutoffs)))
+            self.hyps = np.array([0.1]*(1+2*len(self.kernel_array)))
+        else:
+            self.hyps = np.array(self.hyps, dtype=np.float64)
 
-        # backward compatability and sync the definitions in
-        hyps, hyp_labels, cutoffs, hyps_mask = Parameters.backward(hyps, hyp_labels, cutoffs, kernel_array, deepcopy(hyps_mask))
-
-        self.cutoffs = cutoffs
-        self.hyps = np.array(hyps_mask['hyps'], dtype=np.float64)
-        self.hyp_labels = hyps_mask['hyp_labels']
-        self.hyps_mask = hyps_mask
         self.nspecie = hyps_mask['nspecie']
-
         kernel, grad, ek, efk = str_to_kernel_set(kernel_array, component, self.nspecie)
         self.kernel = kernel
         self.kernel_grad = grad
         self.energy_force_kernel = efk
         self.energy_kernel = ek
         self.kernel_array = from_kernel_str_to_array(kernel.__name__)
-
-        self.name = name
 
         # parallelization
         if self.parallel:
@@ -136,7 +125,6 @@ class GaussianProcess:
 
         self.training_data = []   # Atomic environments
         self.training_labels = []  # Forces acting on central atoms
-
         self.training_labels_np = np.empty(0, )
         self.n_envs_prev = len(self.training_data)
 
@@ -427,7 +415,8 @@ class GaussianProcess:
 
         # get predictive variance without cholesky (possibly faster)
         # pass args to kernel based on if mult. hyperparameters in use
-        args = from_mask_to_args(self.hyps, self.hyps_mask, self.cutoffs)
+        args = from_mask_to_args(self.hyps, self.cutoffs, self.hyps_mask)
+
         self_kern = self.kernel(x_t, x_t, d, d, *args)
         pred_var = self_kern - np.matmul(np.matmul(k_v, self.ky_mat_inv), k_v)
 
@@ -492,7 +481,7 @@ class GaussianProcess:
 
         # get predictive variance
         v_vec = solve_triangular(self.l_mat, k_v, lower=True)
-        args = from_mask_to_args(self.hyps, self.hyps_mask, self.cutoffs)
+        args = from_mask_to_args(self.hyps, self.cutoffs, self.hyps_mask)
 
         self_kern = self.energy_kernel(x_t, x_t, *args)
 
@@ -622,21 +611,20 @@ class GaussianProcess:
     def from_dict(dictionary):
         """Create GP object from dictionary representation."""
 
+        GaussianProcess.backward_arguments(dictionary, dictionary)
+        GaussianProcess.backward_attributes(dictionary)
+
         new_gp = GaussianProcess(kernel_array=dictionary['kernel_array'],
                                  cutoffs=dictionary['cutoffs'],
-                                 hyps=np.array(dictionary['hyps']),
+                                 hyps=dictionary['hyps'],
                                  hyp_labels=dictionary['hyp_labels'],
-                                 parallel=dictionary.get('parallel', False) or
-                                 dictionary.get('par', False),
-                                 per_atom_par=dictionary.get('per_atom_par',
-                                                             True),
-                                 n_cpus=dictionary.get('n_cpus') or
-                                 dictionary.get('no_cpus'),
+                                 parallel=dictionary['parallel'],
+                                 per_atom_par=dictionary['per_atom_par'],
+                                 n_cpus=dictionary['n_cpus'],
                                  maxiter=dictionary['maxiter'],
-                                 opt_algorithm=dictionary.get(
-                                     'opt_algorithm', 'L-BFGS-B'),
-                                 hyps_mask=dictionary.get('hyps_mask', None),
-                                 name=dictionary.get('name', 'default_gp')
+                                 opt_algorithm=dictionary['opt_algorithm'],
+                                 hyps_mask=dictionary['hyps_mask'],
+                                 name=dictionary['name']
                                  )
 
         # Save time by attempting to load in computed attributes
@@ -655,16 +643,11 @@ class GaussianProcess:
             new_gp.training_structures = []  # Environments of each structure
             new_gp.energy_labels = []  # Energies of training structures
             new_gp.energy_labels_np = np.empty(0, )
-            new_gp.energy_noise = 0.01
 
-        new_gp.training_labels = deepcopy(dictionary.get('training_labels',
-                                          []))
-        new_gp.training_labels_np = deepcopy(dictionary.get('training_labels_np',
-                                                       np.empty(0,)))
-        new_gp.energy_labels = deepcopy(dictionary.get('energy_labels',
-                                                       []))
-        new_gp.energy_labels_np = deepcopy(dictionary.get('energy_labels_np',
-                                                       np.empty(0,)))
+        new_gp.training_labels = deepcopy(dictionary['training_labels'])
+        new_gp.training_labels_np = deepcopy(dictionary['training_labels_np'])
+        new_gp.energy_labels = deepcopy(dictionary['energy_labels'])
+        new_gp.energy_labels_np = deepcopy(dictionary['energy_labels_np'])
 
         new_gp.all_labels = np.concatenate((new_gp.training_labels_np,
                                           new_gp.energy_labels_np))
@@ -823,18 +806,12 @@ class GaussianProcess:
 
         elif '.pickle' in filename or 'pickle' in format:
             with open(filename, 'rb') as f:
-                gp_model = pickle.load(f)
-                hyps_mask = Parameters.backward(gp_model.hyps, gp_model.hyp_labels,
-                                                gp_model.cutoffs, gp_model.kernel_name,
-                                                deepcopy(gp_model.hyps_mask))
-                gp_model.hyps_mask = hyps_mask
-                gp_model.hyps = hyps_mask['hyps']
-                gp_model.kernel_name = hyps_mask['kernel_name']
-                gp_model.hyp_labels = hyps_mask['hyp_labels']
-                gp_model.cutoffs = hyps_mask['cutoffs']
 
-                if ('name' not in gp_model.__dict__):
-                    gp_model.name = 'default_gp'
+                gp_model = pickle.load(f)
+
+                GaussianProcess.backward_arguments(gp_model.__dict__, gp_model.__dict)
+
+                GaussianProcess.backward_attributes(gp_model.__dict__)
 
                 if len(gp_model.training_data) > 5000:
                     try:
@@ -852,14 +829,6 @@ class GaussianProcess:
         else:
             raise ValueError("Warning: Format unspecieified or file is not "
                              ".json or .pickle format.")
-
-        if ('training_structures' not in gp_model.__dict__):
-            gp_model.training_structures = []  # Environments of each structure
-            gp_model.energy_labels = []  # Energies of training structures
-            gp_model.energy_labels_np = np.empty(0, )
-            gp_model.energy_noise = 0.01
-            gp_model.all_labels = np.concatenate((gp_model.training_labels_np,
-                                          gp_model.energy_labels_np))
 
         gp_model.check_instantiation()
 
@@ -903,3 +872,59 @@ class GaussianProcess:
         if (self.name in _global_training_labels):
             _global_training_labels.pop(self.name, None)
             _global_training_data.pop(self.name, None)
+
+    @staticmethod
+    def backward_arguments(kwargs, new_args={}):
+        """
+        update the initialize arguments that were renamed
+        """
+
+        if 'kernel_name' in kwargs:
+            DeprecationWarning("kernel_name is being replaced with kernel_array")
+            new_args['kernel_array'] = kernel_str_to_array(kwargs.get('kernel_name'))
+        if 'nsample' in kwargs:
+            DeprecationWarning("nsample is being replaced with n_sample")
+            new_args['n_sample'] = kwargs.get('nsample')
+        if 'par' in kwargs:
+            DeprecationWarning("par is being replaced with parallel")
+            new_args['parallel'] = kwargs.get('par')
+        if 'no_cpus' in kwargs:
+            DeprecationWarning("no_cpus is being replaced with n_cpu")
+            new_args['n_cpus'] = kwargs.get('no_cpus')
+
+        return new_args
+
+    @staticmethod
+    def backward_attributes(dictionary):
+        """
+        add new attributes to old instance
+        or update attribute types
+        """
+
+        if ('name' not in dictionary):
+            dictionary['name'] = 'default_gp'
+        if ('per_atom_par' not in dictionary):
+            dictionary['per_atom_par'] = True
+        if ('optimization_algorithm' not in dictionary):
+            dictionary['opt_algorithm'] = opt_algorithm
+        if ('hyps_mask' not in dictionary):
+            dictionary['hyps_mask'] = None
+        if ('parallel' not in dictionary):
+            dictionary['parallel'] = False
+
+        if ('training_structures' not in dictionary):
+            dictionary['training_structures'] = []  # Environments of each structure
+            dictionary['energy_labels'] = []  # Energies of training structures
+            dictionary['energy_labels_np'] = np.empty(0, )
+
+        if ('training_labels' not in dictionary):
+            dictionary['training_labels'] = []
+            dictionary['training_labels_np'] = np.empty(0,)
+
+        if ('energy_noise' not in dictionary):
+            dictionary['energy_noise'] = 0.01
+
+        if not isinstance(dictionary['cutoffs'], dict):
+            dictionary['cutoffs'] = cutoff_array_to_dict(cutoffs)
+        dictionary['hyps_mask'] = Parameters.backward(dictionary['kernel_array'], deepcopy(dictionary['hyps_mask']))
+

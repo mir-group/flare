@@ -53,7 +53,7 @@ def str_to_kernel_set(kernel_array: list = ['twobody', 'threebody'],
     # b2 = Two body in use, b3 = Three body in use
     str_terms = {'2': ['2', 'two', 'Two', 'TWO', 'twobody'],
                  '3': ['3', 'three', 'Three', 'THREE', 'threebody'],
-                 'mb': ['mb', 'manybody', 'many', 'Many', 'ManyBody', 'manybody']}
+                 'many': ['mb', 'manybody', 'many', 'Many', 'ManyBody', 'manybody']}
 
     prefix = ''
     for term in str_terms:
@@ -125,7 +125,7 @@ def str_to_mapped_kernel(name: str, component: str = "sc",
     return tbme, tbmfe
 
 
-def from_mask_to_args(hyps, kernel_array, nspecie, cutoffs, hyps_mask=None):
+def from_mask_to_args(hyps, cutoffs, hyps_mask=None):
     """ Return the tuple of arguments needed for kernel function.
     The order of the tuple has to be exactly the same as the one taken by
         the kernel function.
@@ -140,7 +140,13 @@ def from_mask_to_args(hyps, kernel_array, nspecie, cutoffs, hyps_mask=None):
     """
 
     # no special setting
-    if nspecie == 1:
+    multihyps = True
+    if hyps_mask is None:
+        multihyps = False
+    elif hyps_mask['nspecie'] == 1:
+        multihyps = False
+
+    if not multihyps:
 
         cutoffs_array = [0, 0, 0]
         cutoffs_array[0] = cutoffs.get('twobody', 0)

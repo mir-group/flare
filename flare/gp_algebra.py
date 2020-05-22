@@ -301,7 +301,7 @@ def get_force_block_pack(hyps: np.ndarray, name: str, s1: int, e1: int,
     ds = [1, 2, 3]
 
     # calculate elements
-    args = from_mask_to_args(hyps, hyps_mask, cutoffs)
+    args = from_mask_to_args(hyps, cutoffs, hyps_mask)
 
     for m_index in range(size1):
         x_1 = training_data[int(math.floor(m_index / 3))+s1]
@@ -333,7 +333,7 @@ def get_energy_block_pack(hyps: np.ndarray, name: str, s1: int, e1: int,
     energy_block = np.zeros([size1, size2])
 
     # calculate elements
-    args = from_mask_to_args(hyps, hyps_mask, cutoffs)
+    args = from_mask_to_args(hyps, cutoffs, hyps_mask)
 
     for m_index in range(size1):
         struc_1 = training_structures[m_index + s1]
@@ -373,7 +373,7 @@ def get_force_energy_block_pack(hyps: np.ndarray, name: str, s1: int,
     ds = [1, 2, 3]
 
     # calculate elements
-    args = from_mask_to_args(hyps, hyps_mask, cutoffs)
+    args = from_mask_to_args(hyps, cutoffs, hyps_mask)
 
     for m_index in range(size1):
         environment_1 = training_data[int(math.floor(m_index / 3)) + s1]
@@ -728,7 +728,7 @@ def energy_energy_vector_unit(name, s, e, x, kernel, hyps, cutoffs=None,
     size = e - s
     energy_energy_unit = np.zeros(size, )
 
-    args = from_mask_to_args(hyps, hyps_mask, cutoffs)
+    args = from_mask_to_args(hyps, cutoffs, hyps_mask)
 
     for m_index in range(size):
         structure = training_structures[m_index + s]
@@ -753,7 +753,7 @@ def energy_force_vector_unit(name, s, e, x, kernel, hyps, cutoffs=None,
     size = (e - s) * 3
     k_v = np.zeros(size, )
 
-    args = from_mask_to_args(hyps, hyps_mask, cutoffs)
+    args = from_mask_to_args(hyps, cutoffs, hyps_mask)
 
     for m_index in range(size):
         x_2 = training_data[int(math.floor(m_index / 3))+s]
@@ -770,7 +770,7 @@ def force_energy_vector_unit(name, s, e, x, kernel, hyps, cutoffs, hyps_mask,
     """
 
     size = e - s
-    args = from_mask_to_args(hyps, hyps_mask, cutoffs)
+    args = from_mask_to_args(hyps, cutoffs, hyps_mask)
     force_energy_unit = np.zeros(size,)
 
     for m_index in range(size):
@@ -793,7 +793,7 @@ def force_force_vector_unit(name, s, e, x, kernel, hyps, cutoffs, hyps_mask,
     size = (e - s)
     ds = [1, 2, 3]
 
-    args = from_mask_to_args(hyps, hyps_mask, cutoffs)
+    args = from_mask_to_args(hyps, cutoffs, hyps_mask)
 
     k_v = np.zeros(size * 3)
 
@@ -982,7 +982,7 @@ def get_ky_and_hyp_pack(name, s1, e1, s2, e2, same: bool, hyps: np.ndarray,
     k_mat = np.zeros([size1, size2])
     hyp_mat = np.zeros([non_noise_hyps, size1, size2])
 
-    args = from_mask_to_args(hyps, hyps_mask, cutoffs)
+    args = from_mask_to_args(hyps, cutoffs, hyps_mask)
 
     ds = [1, 2, 3]
 

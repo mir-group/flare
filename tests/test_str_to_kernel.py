@@ -19,4 +19,4 @@ def test_stk(kernel_array, component, nspecie):
     try:
         k, kg, ek, efk = stks(kernel_array, component, nspecie)
     except:
-        raise RuntimeError(f"fail to return kernel {kernel_name}")
+        raise RuntimeError(f"fail to return kernel {kernel_array} {component} {nspecie}")

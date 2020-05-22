@@ -51,8 +51,26 @@ class Parameters():
                       }
 
     @staticmethod
-    def backward(hyps, hyp_labels, cutoffs, kernel_name, param_dict):
+    def cutoff_array_to_dict(cutoffs):
+        if isinstance(cutoffs, dict):
+            return cutoffs
 
+        if (cutoffs is not None) and not isinstance(cutoffs, dict):
+            newcutoffs = {'twobody':cutoffs[0]}
+            if len(cutoffs)>1:
+                newcutoffs['threebody'] = cutoffs[1]
+            if len(cutoffs)>2:
+                newcutoffs['manybody'] = cutoffs[2]
+            param_dict['cutoffs'] = newcutoffs
+            print("Convert cutoffs array to cutoffs dict")
+            print("Original", cutoffs)
+            print("Now", newcutoffs)
+            return newcutoffs
+        else:
+            raise TypeError("cannot handle cutoffs with {type(cutoffs)} type")
+
+    @staticmethod
+    def backward(kernel_array, param_dict):
 
         if param_dict is None:
             param_dict = {}
@@ -72,82 +90,23 @@ class Parameters():
         if 'nspecie' not in param_dict:
             param_dict['nspecie'] = 1
 
-        if (cutoffs is not None) and not isinstance(cutoffs, dict):
-            newcutoffs = {'twobody':cutoffs[0]}
-            if len(cutoffs)>1:
-                newcutoffs['threebody'] = cutoffs[1]
-            if len(cutoffs)>2:
-                newcutoffs['manybody'] = cutoffs[2]
-            param_dict['cutoffs'] = newcutoffs
-            print("Convert cutoffs array to cutoffs dict")
-            print("Original", cutoffs)
-            print("Now", newcutoffs)
-        elif isinstance(cutoffs, dict):
-            param_dict['cutoffs'] = cutoffs
+        if set(kernel_array) != set(param_dict.get("kernels", [])):
 
-
-        # signal the real old style
-        if 'nspecie' not in param_dict:
-
-            param_dict['nspecie'] = 1
-
-        if kernel_name is not None:
-
-            if kernel_name != param_dict.get("kernel_name", ""):
-                kernels = []
-                start = 0
-                b2 = False
-                b3 = False
-                many = False
-                new_para = {}
-                for s in ['2', 'two', 'Two', 'TWO', 'bond']:
-                    if s in kernel_name:
-                        b2 = True
-                for s in ['3', 'three', 'Three', 'THREE', 'triplet']:
-                    if s in kernel_name:
-                        b3 = True
-                for s in ['mb', 'manybody', 'many', 'Many', 'ManyBody']:
-                    if s in kernel_name:
-                        many = True
-                if b2:
-                    kernels += ['twobody']
-                    new_para['ntwobody'] = 1
-                    new_para['twobody_start'] = 0
-                    start += 2
-                if b3:
-                    kernels += ['threebody']
-                    new_para['nthreebody'] = 1
-                    new_para['threebody_start'] = start
-                    start += 2
-                if many:
-                    kernels += ['manybody']
-                    new_para['nmanybody'] = 1
-                    new_para['manybody_start'] = start
-                    start += 2
-
-                print("Replace kernel name and kernel array")
-                param_dict['kernels'] = kernels
-                param_dict['kernel_name'] = "+".join(param_dict['kernels'])
-                if "sc" in kernel_name:
-                    param_dict['kernel_name'] += "_sc"
-
-                for k in Parameters.all_kernel_types:
-                    if 'n'+k not in param_dict and 'n'+k in new_para:
+            start = 0
+            for k in Parameters.all_kernel_types:
+                if k in kernel_array:
+                    if 'n'+k not in param_dict:
                         print("add in hyper parameter separators for", k)
-                        param_dict['n'+k] = new_para['n'+k]
-                        param_dict[k+'_start'] = new_para[k+'_start']
+                        param_dict['n'+k] = 1
+                        param_dict[k+'_start'] = start
+                        start += 2
+                    else:
+                        start += param_dict['n'+k]*2
 
+            print("Replace kernel array in param_dict")
+            param_dict['kernels'] = deepcopy(kernel_array)
+            param_dict['kernel_name'] = "+".join(param_dict['kernels'])
 
-        if 'hyps' not in param_dict:
-            param_dict['hyps'] = hyps
-        elif hyps is not None:
-            param_dict['hyps'] = hyps
-
-
-        if 'hyp_labels' not in param_dict:
-            param_dict['hyp_labels'] = hyp_labels
-        elif hyp_labels is not None:
-            param_dict['hyp_labels'] = hyp_labels
 
         return param_dict
 
