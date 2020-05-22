@@ -4,8 +4,6 @@ The mandatory inputs are the cell vectors of the box and the chemical species
 and *Cartesian coordinates* of the atoms.
 The atoms are automatically folded back into the primary cell, so the
 input coordinates don't need to lie inside the box.
-Energy, force, and stress information can be included which can then be
-used to train ML models.
 """
 import numpy as np
 from flare.utils.element_coder import element_to_Z, Z_to_element, NumpyEncoder
@@ -53,8 +51,7 @@ class Structure:
     def __init__(self, cell: 'ndarray', species: Union[List[str], List[int]],
                  positions: 'ndarray', mass_dict: dict = None,
                  prev_positions: 'ndarray' = None,
-                 species_labels: List[str] = None, energy=None,
-                 forces=None, stress=None, stds=None):
+                 species_labels: List[str] = None, forces=None, stds=None):
         # Set up individual Bravais lattice vectors
         self.cell = np.array(cell)
         self.vec1 = self.cell[0, :]
@@ -94,10 +91,7 @@ class Structure:
             self.prev_positions = prev_positions
 
         # assign structure labels
-        self.energy = energy
-        self.stress = stress
         self.forces = forces
-        self.labels = self.get_labels()
 
         if stds is not None:
             self.stds = np.array(stds)
@@ -198,23 +192,6 @@ class Structure:
             self.wrapped_positions = pos_wrap
 
         return pos_wrap
-
-    def get_labels(self):
-        labels = []
-        if self.energy is not None:
-            labels.append(self.energy)
-        if self.forces is not None:
-            unrolled_forces = self.forces.reshape(-1)
-            for force_comp in unrolled_forces:
-                labels.append(force_comp)
-        if self.stress is not None:
-            labels.extend([self.stress[0, 0], self.stress[0, 1],
-                           self.stress[0, 2], self.stress[1, 1],
-                           self.stress[1, 2], self.stress[2, 2]])
-
-        labels = np.array(labels)
-
-        return labels
 
     def indices_of_specie(self, specie: Union[int, str]) -> List[int]:
         """
@@ -435,7 +412,6 @@ class Structure:
         # Ensure the file specified exists.
         with open(file_name, 'r') as _:
             pass
-
 
         if 'xyz' in file_name or 'xyz' in format.lower():
             raise NotImplementedError
