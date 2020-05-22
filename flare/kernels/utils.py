@@ -51,16 +51,17 @@ def str_to_kernel_set(kernel_array: list = ['twobody', 'threebody'],
             stk = mc_simple._str_to_kernel
 
     # b2 = Two body in use, b3 = Three body in use
-    str_terms = {'2': ['2', 'two', 'Two', 'TWO', 'twobody'],
-                 '3': ['3', 'three', 'Three', 'THREE', 'threebody'],
-                 'many': ['mb', 'manybody', 'many', 'Many', 'ManyBody', 'manybody']}
+    str_terms = {'2': ['2', 'two', 'twobody'],
+                 '3': ['3', 'three', 'threebody'],
+                 'many': ['mb', 'manybody', 'many']}
 
     prefix = ''
     for term in str_terms:
         add = False
         for s in str_terms[term]:
-            if s in kernel_array:
-                add = True
+            for k in kernel_array:
+                if s in k.lower():
+                    add = True
         if add:
             if len(prefix) > 0:
                 prefix += '+'
@@ -68,7 +69,7 @@ def str_to_kernel_set(kernel_array: list = ['twobody', 'threebody'],
 
     if len(prefix) == 0:
         raise RuntimeError(
-            f"the name has to include at least one number {name}")
+            f"the name has to include at least one number {kernel_array}")
 
     for suffix in ['', '_grad', '_en', '_force_en']:
         if prefix+suffix not in stk:
@@ -107,8 +108,8 @@ def str_to_mapped_kernel(name: str, component: str = "sc",
     b2 = False
     many = False
     b3 = False
-    for s in ['3', 'three', 'Three', 'THREE']:
-        if s in name:
+    for s in ['3', 'three']:
+        if s in name.lower() or s==name.lower():
             b3 = True
 
     if b3:

@@ -10,14 +10,14 @@ from flare.kernels.utils import str_to_kernel_set
 
 from .fake_gp import generate_mb_envs
 
-list_to_test = [['twobody'], ['threebody'],
-                ['twobody', 'threebody'],
-                ['twobody', 'threebody', 'manybody']]
+list_to_test = [['2'], ['3'],
+                ['2', '3'],
+                ['2', '3', 'many']]
 list_type = ['sc', 'mc']
 
 def generate_hm(kernel_array):
     hyps = []
-    for term in ['twobody', 'threebody', 'manybody']:
+    for term in ['2', '3', 'many']:
         if (term in kernel_array):
             hyps += [random(2)]
     hyps += [random()]
@@ -49,13 +49,13 @@ def test_force_en(kernel_array, kernel_type):
     print(force_en_kernel.__name__)
 
     nterm = 0
-    for term in ['2', '3', 'mb']:
+    for term in ['2', '3', 'many']:
         if (term in kernel_array):
             nterm += 1
 
     kern_finite_diff = 0
-    if ('mb' in kernel_array):
-        _, __, enm_kernel, ___ = str_to_kernel_set(['mb'], kernel_type)
+    if ('many' in kernel_array):
+        _, __, enm_kernel, ___ = str_to_kernel_set(['many'], kernel_type)
         mhyps = hyps[(nterm-1)*2:]
         calc = 0
         nat = len(env1[0])
@@ -113,7 +113,7 @@ def test_force(kernel_array, kernel_type):
     args = (hyps, cutoffs)
 
     nterm = 0
-    for term in ['2', '3', 'mb']:
+    for term in ['2', '3', 'many']:
         if (term in kernel_array):
             nterm += 1
 
@@ -122,8 +122,8 @@ def test_force(kernel_array, kernel_type):
 
     # check force kernel
     kern_finite_diff = 0
-    if ('mb' == kernel_array):
-        _, __, enm_kernel, ___ = str_to_kernel_set('mb', kernel_type)
+    if ('many' == kernel_array):
+        _, __, enm_kernel, ___ = str_to_kernel_set('many', kernel_type)
         mhyps = hyps[(nterm-1)*2:]
         print(hyps)
         print(mhyps)
@@ -141,7 +141,7 @@ def test_force(kernel_array, kernel_type):
 
     if ('2' in kernel_array):
         ntwobody = 1
-        _, __, en2_kernel, ___ = str_to_kernel_set('2', kernel_type)
+        _, __, en2_kernel, ___ = str_to_kernel_set(['2'], kernel_type)
         print(hyps[0:ntwobody * 2])
 
         calc1 = en2_kernel(env1[1][0], env2[1][0], hyps[0:ntwobody * 2], cutoffs)
@@ -153,7 +153,7 @@ def test_force(kernel_array, kernel_type):
         ntwobody = 0
 
     if ('3' in kernel_array):
-        _, __, en3_kernel, ___ = str_to_kernel_set('3', kernel_type)
+        _, __, en3_kernel, ___ = str_to_kernel_set(['3'], kernel_type)
         print(hyps[ntwobody * 2:])
         calc1 = en3_kernel(env1[1][0], env2[1][0], hyps[ntwobody * 2:], cutoffs)
         calc2 = en3_kernel(env1[2][0], env2[2][0], hyps[ntwobody * 2:], cutoffs)

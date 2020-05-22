@@ -183,7 +183,7 @@ class ParameterHelper():
             if parameters is not None:
                 self.list_parameters(parameters, constraints)
 
-            if ('lengthscale' in self.universal and 'sigma' in self.universal):
+            if 'lengthscale' in self.universal and 'sigma' in self.universal:
                 universal = True
             else:
                 universal = False
@@ -210,7 +210,7 @@ class ParameterHelper():
             if parameters is not None:
                 self.list_parameters(parameters, constraints)
 
-            if ('lengthscale' in self.universal and 'sigma' in self.universal):
+            if 'lengthscale' in self.universal and 'sigma' in self.universal:
                 universal = True
             else:
                 universal = False
@@ -322,14 +322,14 @@ class ParameterHelper():
             if self.n['specie'] == 0:
                 raise RuntimeError("this function has to be run "
                                    "before any define_group")
-            if (isinstance(definition_list, list)):
+            if isinstance(definition_list, list):
                 ngroup = len(definition_list)
                 for idg in range(ngroup):
                     self.define_group(group_type, f"{group_type}{idg}",
                                       definition_list[idg])
-            elif (isinstance(definition_list, dict)):
+            elif isinstance(definition_list, dict):
                 for name in definition_list:
-                    if (isinstance(definition_list[name][0], list)):
+                    if isinstance(definition_list[name][0], list):
                         for ele in definition_list[name]:
                             self.define_group(group_type, name, ele)
                     else:
@@ -346,9 +346,9 @@ class ParameterHelper():
 
         """
         nspec = len(self.all_group_names['specie'])
-        if (nspec < 1):
+        if nspec < 1:
             raise RuntimeError("the specie group has to be defined in advance")
-        if (group_type in self.all_group_types):
+        if group_type in self.all_group_types:
             # TO DO: the two blocks below can be replace by some upper triangle operation
 
             # generate all possible combination of group
@@ -365,7 +365,7 @@ class ParameterHelper():
                 for prev_group in allgroup:
                     if set(prev_group) == set_list_group:
                         exist = True
-                if (not exist):
+                if not exist:
                     allgroup += [list(group)]
 
             # define the group
@@ -375,7 +375,7 @@ class ParameterHelper():
                                   group)
                 tid += 1
         else:
-            logger.warning(f"{group_type} will be ignored")
+            logger.info(f"{group_type} will be ignored")
 
     def fill_in_parameters(self, group_type, random=False, ones=False, universal=False):
         """Separate all possible types of twobodys, threebodys, manybody.
@@ -390,7 +390,7 @@ class ParameterHelper():
 
         """
         nspec = len(self.all_group_names['specie'])
-        if (nspec < 1):
+        if nspec < 1:
             raise RuntimeError("the specie group has to be defined in advance")
         if random:
             for group_name in self.all_group_names[group_type]:
@@ -511,7 +511,7 @@ class ParameterHelper():
             self.groups[group_type].append([])
             self.n[group_type] += 1
 
-        if (group_type == 'specie'):
+        if group_type == 'specie':
             for ele in element_list:
                 assert ele not in self.all_members['specie'], \
                     "The element has already been defined"
@@ -520,28 +520,28 @@ class ParameterHelper():
                 self.logger.debug(
                     f"Element {ele} will be defined as group {name}")
         else:
-            if (len(self.all_group_names['specie']) == 0):
+            if len(self.all_group_names['specie']) == 0:
                 raise RuntimeError("The atomic species have to be"
                                    "defined in advance")
 
             # first translate element/group name to group name
             group_name_list = []
-            if (atomic_str):
+            if atomic_str:
                 for ele_name in element_list:
-                    if (ele_name == "*"):
+                    if ele_name == "*":
                         gid += ["*"]
                     else:
                         for idx in range(self.n['specie']):
                             group_name = self.all_group_names['species'][idx]
-                            if (ele_name in self.groups['specie'][idx]):
+                            if ele_name in self.groups['specie'][idx]:
                                 group_name_list += [group_name]
-                                self.logger.warning(f"Element {ele_name} is used for "
-                                                    f"definition, but the whole group "
-                                                    f"{group_name} is affected")
+                                self.logger.debug(f"Element {ele_name} is used for "
+                                                  f"definition, but the whole group "
+                                                  f"{group_name} is affected")
             else:
                 group_name_list = element_list
 
-            if ("*" not in group_name_list):
+            if "*" not in group_name_list:
 
                 gid = []
                 for ele_name in group_name_list:
@@ -555,7 +555,7 @@ class ParameterHelper():
                 self.all_members[group_type].append(gid)
                 self.logger.debug(
                     f"{group_type} {gid} will be defined as group {name}")
-                if (parameters is not None):
+                if parameters is not None:
                     self.set_parameters(name, parameters)
             else:
                 one_star_less = deepcopy(group_name_list)
@@ -570,21 +570,21 @@ class ParameterHelper():
     def find_group(self, group_type, element_list, atomic_str=False):
 
         # remember the later command override the earlier ones
-        if (group_type == 'specie'):
-            if (not isinstance(element_list, str)):
+        if group_type == 'specie':
+            if not isinstance(element_list, str):
                 self.logger.debug("for element, it has to be a string")
                 return None
             name = None
             for igroup in range(self.n['specie']):
                 gname = self.all_group_names[group_type][igroup]
                 allspec = self.groups[group_type][igroup]
-                if (element_list in allspec):
+                if element_list in allspec:
                     name = gname
             return name
             self.logger.debug("cannot find the group")
             return None
         else:
-            if ("*" in element_list):
+            if "*" in element_list:
                 self.logger.debug("* cannot be used for find")
                 return None
             gid = []
@@ -622,27 +622,27 @@ class ParameterHelper():
         parameters, or list of bools that apply to each parameter.
         """
 
-        if (name == 'noise'):
+        if name == 'noise':
             self.noise = parameters
             self.opt['noise'] = opt
             return
-        elif (name == 'energy_noise'):
+        elif name == 'energy_noise':
             self.energy_noise = parameters
             return
         elif 'cutoff' in name:
             self.universal[name] = parameters
             return
-        elif (name in ['sigma', 'lengthscale']):
+        elif name in ['sigma', 'lengthscale']:
             self.universal[name] = parameters
             self.opt[name] = opt
             return
 
-        if (isinstance(opt, bool)):
+        if isinstance(opt, bool):
             opt = [opt]*2
 
-        if ('cut3b' not in name):
-            if (name in self.sigma):
-                self.logger.warning(
+        if 'cut3b' not in name:
+            if name in self.sigma:
+                self.logger.debug(
                     f"the sig, ls of group {name} is overriden")
             self.sigma[name] = parameters[0]
             self.ls[name] = parameters[1]
@@ -651,9 +651,9 @@ class ParameterHelper():
             self.logger.debug(f"ParameterHelper for group {name} will be set as "
                               f"sig={parameters[0]} ({opt[0]}) "
                               f"ls={parameters[1]} ({opt[1]})")
-            if (len(parameters) > 2):
-                if (name in self.all_cutoff):
-                    self.logger.warning(
+            if len(parameters) > 2:
+                if name in self.all_cutoff:
+                    self.logger.debug(
                         f"the cutoff of group {name} is overriden")
                 self.all_cutoff[name] = parameters[2]
                 self.logger.debug(f"Cutoff for group {name} will be set as "
@@ -679,16 +679,16 @@ class ParameterHelper():
         parameter.
         """
 
-        if (name == 'noise'):
+        if name == 'noise':
             self.opt['noise'] = opt
             return
 
-        if (isinstance(opt, bool)):
+        if isinstance(opt, bool):
             opt = [opt, opt, opt]
 
-        if ('cut3b' not in name):
-            if (name in self.sigma):
-                self.logger.warning(
+        if 'cut3b' not in name:
+            if name in self.sigma:
+                self.logger.debug(
                     f"the sig, ls of group {name} is overriden")
             self.opt[name+'sig'] = opt[0]
             self.opt[name+'ls'] = opt[1]
@@ -706,7 +706,7 @@ class ParameterHelper():
 
         aeg = self.all_group_names[group_type]
         nspecie = self.n['specie']
-        if (group_type == "specie"):
+        if group_type == "specie":
             self.nspecie = nspecie
             self.specie_mask = np.ones(118, dtype=np.int)*(nspecie-1)
             for idt in range(self.nspecie):
@@ -720,7 +720,7 @@ class ParameterHelper():
 
         elif group_type in self.all_group_types:
 
-            if (self.n[group_type] == 0):
+            if self.n[group_type] == 0:
                 self.logger.debug(f"{group_type} is not defined. Skipped")
                 return
 
@@ -783,7 +783,7 @@ class ParameterHelper():
                 f"All the remaining elements are left as type {idt}")
 
             # sort out the cutoffs
-            if (group_type == 'cut3b'):
+            if group_type == 'cut3b':
                 universal_cutoff = self.universal.get('cutoff_threebody', 0)
             else:
                 universal_cutoff = self.universal.get('cutoff_'+group_type, 0)
@@ -791,20 +791,20 @@ class ParameterHelper():
             allcut = []
             alldefine = True
             for idt in range(self.n[group_type]):
-                if (aeg[idt] in self.all_cutoff):
+                if aeg[idt] in self.all_cutoff:
                     allcut += [self.all_cutoff[aeg[idt]]]
                 else:
                     alldefine = False
-                    self.logger.warning(f"{aeg[idt]} cutoff is not define. "
-                                        "it's going to use the universal cutoff.")
+                    self.logger.info(f"{aeg[idt]} cutoff is not define. "
+                                      "it's going to use the universal cutoff.")
 
-            if (group_type != 'threebody'):
+            if group_type != 'threebody':
 
                 if len(allcut) > 0:
-                    if (universal_cutoff <= 0):
+                    if universal_cutoff <= 0:
                         universal_cutoff = np.max(allcut)
-                        self.logger.warning(f"universal cutoffs {cutstr2index[group_type]}for "
-                                            f"{group_type} is defined as zero! reset it to {universal_cutoff}")
+                        self.logger.info(f"universal cutoffs {cutstr2index[group_type]}for "
+                                         f"{group_type} is defined as zero! reset it to {universal_cutoff}")
 
                     self.cutoff_list[group_type] = []
                     for idt in range(self.n[group_type]):
@@ -815,26 +815,26 @@ class ParameterHelper():
                     max_cutoff = np.max(self.cutoff_list[group_type])
 
                     # update the universal cutoff to make it higher than
-                    if (alldefine):
+                    if alldefine:
                         universal_cutoff = max_cutoff
-                        self.logger.warning(f"universal cutoff is updated to "
-                                            f"{universal_cutoff}")
-                    elif (not np.any(self.cutoff_list[group_type]-max_cutoff)):
+                        self.logger.info(f"universal cutoff is updated to "
+                                         f"{universal_cutoff}")
+                    elif not np.any(self.cutoff_list[group_type]-max_cutoff):
                         # if not all the cutoffs are defined separately
                         # and they are all the same value
                         del self.cutoff_list[group_type]
                         universal_cutoff = max_cutoff
-                        if (group_type == 'cut3b'):
+                        if group_type == 'cut3b':
                             self.n['cut3b'] = 0
-                        self.logger.warning(f"universal cutoff is updated to "
-                                            f"{universal_cutoff}")
+                        self.logger.info(f"universal cutoff is updated to "
+                                         f"{universal_cutoff}")
 
             else:
                 if universal_cutoff <= 0 and len(allcut) > 0:
                     universal_cutoff = np.max(allcut)
-                    self.logger.warning(f"threebody universal cutoff is updated to"
-                                        f"{universal_cutoff}, but the separate definitions will"
-                                        "be ignored")
+                    self.logger.info(f"threebody universal cutoff is updated to"
+                                     f"{universal_cutoff}, but the separate definitions will"
+                                      "be ignored")
 
             if universal_cutoff > 0:
                 if group_type == 'cut_3b':
@@ -869,7 +869,7 @@ class ParameterHelper():
 
         nspecie = self.n['specie']
         hyps_mask['nspecie'] = self.n['specie']
-        if (self.n['specie'] > 1):
+        if self.n['specie'] > 1:
             hyps_mask['specie_mask'] = self.specie_mask
 
         hyps = []
@@ -900,7 +900,7 @@ class ParameterHelper():
             if group in self.cutoff_list:
                 hyps_mask[group+'_cutoff_list'] = self.cutoff_list[group]
 
-        if (self.n['cut3b'] >= 1):
+        if self.n['cut3b'] >= 1:
             hyps_mask['ncut3b'] = self.n[group]
             hyps_mask['cut3b_mask'] = self.mask[group]
             hyps_mask['threebody_cutoff_list'] = self.cutoff_list['cut3b']
@@ -915,19 +915,19 @@ class ParameterHelper():
         opt = np.hstack(opt)
 
         # handle partial optimization if any constraints are defined
-        if (not opt.all()):
+        if not opt.all():
             nhyps = len(hyps)
             hyps_mask['original_hyps'] = hyps
             hyps_mask['original_labels'] = hyp_labels
             mapping = []
             new_labels = []
             for i in range(nhyps):
-                if (opt[i]):
+                if opt[i]:
                     mapping += [i]
                     new_labels += [hyp_labels[i]]
             newhyps = hyps[mapping]
             hyps_mask['map'] = np.array(mapping, dtype=np.int)
-        elif (opt.any()):
+        elif opt.any():
             newhyps = hyps
             new_labels = hyp_labels
         else:
@@ -960,7 +960,7 @@ class ParameterHelper():
         pm = ParameterHelper(verbose=verbose)
 
         nspecie = hyps_mask['nspecie']
-        if (nspecie > 1):
+        if nspecie > 1:
             nele = len(hyps_mask['specie_mask'])
             max_species = np.max(hyps_mask['specie_mask'])
             specie_mask = hyps_mask['specie_mask']
@@ -968,9 +968,9 @@ class ParameterHelper():
                 elelist = np.where(specie_mask == i)[0]
                 if len(elelist) > 0:
                     for ele in elelist:
-                        if (ele != 0):
+                        if ele != 0:
                             elename = Z_to_element(ele)
-                            if (len(init_spec) > 0):
+                            if len(init_spec) > 0:
                                 if elename in init_spec:
                                     pm.define_group(
                                         "specie", i, [elename])
