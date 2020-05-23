@@ -396,6 +396,13 @@ class MappedGaussianProcess:
                 vir[i] = np.sum(vir_i)
             vir *= 0.5
 
+            # predict var
+            v = np.zeros(3)
+            if not mean_only:
+                v_0 = mapping.var(lengths, rank)
+                v_d = v_0 @ xyzs
+                v = mapping.var.V[:,:rank] @ v_d
+
         else: # energy mapping
             e_0, f_0 = mapping.mean(lengths, with_derivatives=True)
             e = np.sum(e_0) # energy
@@ -429,14 +436,12 @@ class MappedGaussianProcess:
                     vir[i] = np.sum(vir_i1 + vir_i2)
                 vir *= 1.5
 
+            # predict var
+            v = 0
+            if not mean_only:
+                v_0 = mapping.var(lengths, rank)
+                v = mapping.var.V[:,:rank] @ v_0
 
-        # predict var
-        # TODO: implement energy var
-        v = np.zeros(3)
-        if not mean_only:
-            v_0 = mapping.var(lengths, rank)
-            v_d = v_0 @ xyzs
-            v = mapping.var.V[:,:rank] @ v_d
         return f, vir, v, e
 
     def write_lmp_file(self, lammps_name):
