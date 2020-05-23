@@ -3,7 +3,6 @@ import numpy as np
 from flare.struc import Structure
 from flare.utils.parameter_helper import ParameterHelper
 from flare.parameters import Parameters
-from .test_gp import dumpcompare
 
 def test_initialization():
     '''
@@ -20,7 +19,7 @@ def test_initialization():
     Parameters.check_instantiation(hm)
 
 @pytest.mark.parametrize('ones', [True, False])
-def test_initialization(ones):
+def test_initialization2(ones):
     '''
     simplest senario
     '''
@@ -34,7 +33,7 @@ def test_initialization(ones):
     hm = pm.as_dict()
     Parameters.check_instantiation(hm)
 
-def test_initialization2():
+def test_initialization3():
     pm = ParameterHelper(species=['O', 'C', 'H'],
                          kernels={'twobody':[['*', '*'], ['O','O']],
                                   'threebody':[['*', '*', '*'], ['O','O', 'O']]},

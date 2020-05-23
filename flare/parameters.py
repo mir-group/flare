@@ -52,6 +52,7 @@ class Parameters():
 
     @staticmethod
     def cutoff_array_to_dict(cutoffs):
+
         if isinstance(cutoffs, dict):
             return cutoffs
 
@@ -93,7 +94,6 @@ class Parameters():
         if 'nspecie' not in param_dict:
             param_dict['nspecie'] = 1
 
-        print(kernels, param_dict)
         if set(kernels) != set(param_dict.get("kernels", [])):
 
             start = 0
@@ -118,6 +118,7 @@ class Parameters():
         Runs a series of checks to ensure that the user has not supplied
         contradictory arguments which will result in undefined behavior
         with multiple hyperparameters.
+
         :return:
         """
 
