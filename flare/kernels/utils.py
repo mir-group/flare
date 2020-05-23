@@ -19,7 +19,7 @@ from_grad_to_mask(grad, hyps_mask) converts the gradient matrix to the actual
 """
 
 
-def str_to_kernel_set(kernel_array: list = ['twobody', 'threebody'],
+def str_to_kernel_set(kernels: list = ['twobody', 'threebody'],
                       component: str = "sc",
                       hyps_mask: dict = None):
     """
@@ -59,14 +59,14 @@ def str_to_kernel_set(kernel_array: list = ['twobody', 'threebody'],
                  '3': ['3', 'three', 'threebody'],
                  'many': ['mb', 'manybody', 'many']}
 
-    if isinstance(kernel_array, str):
-        kernel_array = [kernel_array]
+    if isinstance(kernels, str):
+        kernels = [kernels]
 
     prefix = ''
     for term in str_terms:
         add = False
         for s in str_terms[term]:
-            for k in kernel_array:
+            for k in kernels:
                 if s in k.lower():
                     add = True
         if add:
@@ -76,7 +76,7 @@ def str_to_kernel_set(kernel_array: list = ['twobody', 'threebody'],
 
     if len(prefix) == 0:
         raise RuntimeError(
-            f"the name has to include at least one number {kernel_array}")
+            f"the name has to include at least one number {kernels}")
 
     for suffix in ['', '_grad', '_en', '_force_en']:
         if prefix+suffix not in stk:

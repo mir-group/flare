@@ -35,7 +35,7 @@ def all_gps() -> GaussianProcess:
         # test update_db
 
         gp_dict[multihyps] = \
-            GaussianProcess(kernel_array=hm['kernels'],
+            GaussianProcess(kernels=hm['kernels'],
                             hyps=hyps,
                             hyp_labels=hl,
                             cutoffs=cutoffs,

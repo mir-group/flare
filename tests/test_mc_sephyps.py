@@ -18,9 +18,9 @@ list_to_test = [['twobody'], ['threebody'],
                 ['twobody', 'threebody', 'manybody']]
 multi_cut = [False, True]
 
-@pytest.mark.parametrize('kernel_array', list_to_test)
+@pytest.mark.parametrize('kernels', list_to_test)
 @pytest.mark.parametrize('multi_cutoff', multi_cut)
-def test_force_en_multi_vs_simple(kernel_array, multi_cutoff):
+def test_force_en_multi_vs_simple(kernels, multi_cutoff):
     """Check that the analytical kernel matches the one implemented
     in mc_simple.py"""
 
@@ -31,7 +31,7 @@ def test_force_en_multi_vs_simple(kernel_array, multi_cutoff):
 
     # set hyperparameters
     cutoffs, hyps1, hyps2, hm1, hm2 = generate_same_hm(
-        kernel_array, multi_cutoff)
+        kernels, multi_cutoff)
 
     delta = 1e-8
     env1 = generate_mb_envs(cutoffs, cell, delta, d1)
@@ -41,7 +41,7 @@ def test_force_en_multi_vs_simple(kernel_array, multi_cutoff):
 
     # mc_simple
     kernel0, kg0, en_kernel0, force_en_kernel0 = str_to_kernel_set(
-        kernel_array, "mc", None)
+        kernels, "mc", None)
     args0 = from_mask_to_args(hyps1, cutoffs)
 
     # mc_sephyps
@@ -49,7 +49,7 @@ def test_force_en_multi_vs_simple(kernel_array, multi_cutoff):
     # if (diff_cutoff), 1 or 2 group of cutoffs
     # but same value as in args0
     kernel, kg, en_kernel, force_en_kernel = str_to_kernel_set(
-        kernel_array, "mc", hm2)
+        kernels, "mc", hm2)
     args1 = from_mask_to_args(hyps1, cutoffs, hm1)
     args2 = from_mask_to_args(hyps2, cutoffs, hm2)
 
@@ -61,39 +61,39 @@ def test_force_en_multi_vs_simple(kernel_array, multi_cutoff):
     i = 2
     reference = funcs[0][i](env1, env2, *args0)
     result = funcs[1][i](env1, env2, *args1)
-    print(kernel_array, i, reference, result)
+    print(kernels, i, reference, result)
     assert(isclose(reference, result, rtol=tol))
     result = funcs[1][i](env1, env2, *args2)
-    print(kernel_array, i, reference, result)
+    print(kernels, i, reference, result)
     assert(isclose(reference, result, rtol=tol))
 
     i = 3
     reference = funcs[0][i](env1, env2, d1, *args0)
     result = funcs[1][i](env1, env2, d1, *args1)
-    print(kernel_array, i, reference, result)
+    print(kernels, i, reference, result)
     assert(isclose(reference, result, rtol=tol))
     result = funcs[1][i](env1, env2, d1, *args2)
-    print(kernel_array, i, reference, result)
+    print(kernels, i, reference, result)
     assert(isclose(reference, result, rtol=tol))
 
     i = 0
     reference = funcs[0][i](env1, env2, d1, d2, *args0)
     result = funcs[1][i](env1, env2, d1, d2, *args1)
     assert(isclose(reference, result, rtol=tol))
-    print(kernel_array, i, reference, result)
+    print(kernels, i, reference, result)
     result = funcs[1][i](env1, env2, d1, d2, *args2)
     assert(isclose(reference, result, rtol=tol))
-    print(kernel_array, i, reference, result)
+    print(kernels, i, reference, result)
 
     i = 1
     reference = funcs[0][i](env1, env2, d1, d2, *args0)
     result = funcs[1][i](env1, env2, d1, d2, *args1)
-    print(kernel_array, i, reference, result)
+    print(kernels, i, reference, result)
     assert(isclose(reference[0], result[0], rtol=tol))
     assert(isclose(reference[1], result[1], rtol=tol).all())
 
     result = funcs[1][i](env1, env2, d1, d2, *args2)
-    print(kernel_array, i, reference, result)
+    print(kernels, i, reference, result)
     assert(isclose(reference[0], result[0], rtol=tol))
     joint_grad = np.zeros(len(result[1])//2)
     for i in range(joint_grad.shape[0]):
@@ -101,9 +101,9 @@ def test_force_en_multi_vs_simple(kernel_array, multi_cutoff):
     assert(isclose(reference[1], joint_grad, rtol=tol).all())
 
 
-@pytest.mark.parametrize('kernel_array', list_to_test)
+@pytest.mark.parametrize('kernels', list_to_test)
 @pytest.mark.parametrize('diff_cutoff', multi_cut)
-def test_check_sig_scale(kernel_array, diff_cutoff):
+def test_check_sig_scale(kernels, diff_cutoff):
     """Check whether the grouping is properly assign
     with four environments
 
@@ -123,7 +123,7 @@ def test_check_sig_scale(kernel_array, diff_cutoff):
     tol = 1e-4
     scale = 2
 
-    cutoffs, hyps0, hm = generate_diff_hm(kernel_array, diff_cutoff)
+    cutoffs, hyps0, hm = generate_diff_hm(kernels, diff_cutoff)
 
     delta = 1e-8
     env1, env1_t = generate_mb_twin_envs(cutoffs, np.eye(3)*100, delta, d1, hm)
@@ -140,7 +140,7 @@ def test_check_sig_scale(kernel_array, diff_cutoff):
     hyps1[1::4] *= scale
 
     kernel, kg, en_kernel, force_en_kernel = str_to_kernel_set(
-        kernel_array, 'mc', hm)
+        kernels, 'mc', hm)
 
     args0 = from_mask_to_args(hyps0, cutoffs, hm)
     args1 = from_mask_to_args(hyps1, cutoffs, hm)
@@ -178,9 +178,9 @@ def test_check_sig_scale(kernel_array, diff_cutoff):
                            [idx], scale**2, rtol=tol)
 
 
-@pytest.mark.parametrize('kernel_array', list_to_test)
+@pytest.mark.parametrize('kernels', list_to_test)
 @pytest.mark.parametrize('diff_cutoff', multi_cut)
-def test_force_bound_cutoff_compare(kernel_array, diff_cutoff):
+def test_force_bound_cutoff_compare(kernels, diff_cutoff):
     """Check that the analytical kernel matches the one implemented
     in mc_simple.py"""
 
@@ -190,9 +190,9 @@ def test_force_bound_cutoff_compare(kernel_array, diff_cutoff):
     cell = 1e7 * np.eye(3)
     delta = 1e-8
 
-    cutoffs, hyps, hm = generate_diff_hm(kernel_array, diff_cutoff)
+    cutoffs, hyps, hm = generate_diff_hm(kernels, diff_cutoff)
     kernel, kg, en_kernel, force_en_kernel = str_to_kernel_set(
-        kernel_array, "mc", hm)
+        kernels, "mc", hm)
     args = from_mask_to_args(hyps, cutoffs, hm)
 
     np.random.seed(10)
@@ -220,13 +220,13 @@ def test_force_bound_cutoff_compare(kernel_array, diff_cutoff):
     assert(isclose(reference, result, rtol=tol))
 
 
-@pytest.mark.parametrize('kernel_array', [['twobody', 'threebody']])
+@pytest.mark.parametrize('kernels', [['twobody', 'threebody']])
 @pytest.mark.parametrize('diff_cutoff', multi_cut)
-def test_constraint(kernel_array, diff_cutoff):
+def test_constraint(kernels, diff_cutoff):
     """Check that the analytical force/en kernel matches finite difference of
     energy kernel."""
 
-    if ('manybody' in kernel_array):
+    if ('manybody' in kernels):
         return
 
     d1 = 1
@@ -235,9 +235,9 @@ def test_constraint(kernel_array, diff_cutoff):
     delta = 1e-8
 
     cutoffs, hyps, hm = generate_diff_hm(
-        kernel_array, diff_cutoff=diff_cutoff, constraint=True)
+        kernels, diff_cutoff=diff_cutoff, constraint=True)
 
-    _, __, en_kernel, force_en_kernel = str_to_kernel_set(kernel_array, "mc", hm)
+    _, __, en_kernel, force_en_kernel = str_to_kernel_set(kernels, "mc", hm)
 
     args0 = from_mask_to_args(hyps, cutoffs, hm)
 
@@ -247,13 +247,13 @@ def test_constraint(kernel_array, diff_cutoff):
 
     kern_finite_diff = 0
 
-    if ('twobody' in kernel_array):
+    if ('twobody' in kernels):
         _, __, en2_kernel, fek2 = str_to_kernel_set(['twobody'], "mc", hm)
         calc1 = en2_kernel(env1[1][0], env2[0][0], *args0)
         calc2 = en2_kernel(env1[0][0], env2[0][0], *args0)
         kern_finite_diff += 4*(calc1 - calc2) / 2.0 / delta
 
-    if ('threebody' in kernel_array):
+    if ('threebody' in kernels):
         _, __, en3_kernel, fek3 = str_to_kernel_set(['threebody'], "mc", hm)
         calc1 = en3_kernel(env1[1][0], env2[0][0], *args0)
         calc2 = en3_kernel(env1[0][0], env2[0][0], *args0)
@@ -266,9 +266,9 @@ def test_constraint(kernel_array, diff_cutoff):
     assert(isclose(-kern_finite_diff, kern_analytical, rtol=tol))
 
 
-@pytest.mark.parametrize('kernel_array', list_to_test)
+@pytest.mark.parametrize('kernels', list_to_test)
 @pytest.mark.parametrize('diff_cutoff', multi_cut)
-def test_force_en(kernel_array, diff_cutoff):
+def test_force_en(kernels, diff_cutoff):
     """Check that the analytical force/en kernel matches finite difference of
     energy kernel."""
 
@@ -278,18 +278,18 @@ def test_force_en(kernel_array, diff_cutoff):
     cell = 1e7 * np.eye(3)
     np.random.seed(0)
 
-    cutoffs, hyps, hm = generate_diff_hm(kernel_array, diff_cutoff)
+    cutoffs, hyps, hm = generate_diff_hm(kernels, diff_cutoff)
     args = from_mask_to_args(hyps, cutoffs, hm)
 
     env1 = generate_mb_envs(cutoffs, cell, delta, d1, hm)
     env2 = generate_mb_envs(cutoffs, cell, delta, d2, hm)
 
-    _, __, en_kernel, force_en_kernel = str_to_kernel_set(kernel_array, "mc", hm)
+    _, __, en_kernel, force_en_kernel = str_to_kernel_set(kernels, "mc", hm)
 
     kern_analytical = force_en_kernel(env1[0][0], env2[0][0], d1, *args)
 
     kern_finite_diff = 0
-    if ('manybody' in kernel_array):
+    if ('manybody' in kernels):
         kernel, _, enm_kernel, efk = str_to_kernel_set(['manybody'], "mc", hm)
 
         calc = 0
@@ -299,10 +299,10 @@ def test_force_en(kernel_array, diff_cutoff):
 
         kern_finite_diff += (calc)/(2*delta)
 
-    if ('twobody' in kernel_array or 'threebody' in kernel_array):
+    if ('twobody' in kernels or 'threebody' in kernels):
         args23 = from_mask_to_args(hyps, cutoffs, hm)
 
-    if ('twobody' in kernel_array):
+    if ('twobody' in kernels):
         kernel, _, en2_kernel, efk = str_to_kernel_set(['2b'], 'mc', hm)
         calc1 = en2_kernel(env1[1][0], env2[0][0], *args23)
         calc2 = en2_kernel(env1[2][0], env2[0][0], *args23)
@@ -310,7 +310,7 @@ def test_force_en(kernel_array, diff_cutoff):
 
         kern_finite_diff += diff2b
 
-    if ('threebody' in kernel_array):
+    if ('threebody' in kernels):
         kernel, _, en3_kernel, efk = str_to_kernel_set(['3b'], 'mc', hm)
         calc1 = en3_kernel(env1[1][0], env2[0][0], *args23)
         calc2 = en3_kernel(env1[2][0], env2[0][0], *args23)
@@ -320,13 +320,13 @@ def test_force_en(kernel_array, diff_cutoff):
 
 
     tol = 1e-3
-    print("\nforce_en", kernel_array, kern_finite_diff, kern_analytical)
+    print("\nforce_en", kernels, kern_finite_diff, kern_analytical)
     assert (isclose(-kern_finite_diff, kern_analytical, rtol=tol))
 
 
-@pytest.mark.parametrize('kernel_array', list_to_test)
+@pytest.mark.parametrize('kernels', list_to_test)
 @pytest.mark.parametrize('diff_cutoff', multi_cut)
-def test_force(kernel_array, diff_cutoff):
+def test_force(kernels, diff_cutoff):
     """Check that the analytical force kernel matches finite difference of
     energy kernel."""
 
@@ -339,12 +339,12 @@ def test_force(kernel_array, diff_cutoff):
 
     np.random.seed(10)
 
-    cutoffs, hyps, hm = generate_diff_hm(kernel_array, diff_cutoff)
-    kernel, kg, en_kernel, fek = str_to_kernel_set(kernel_array, 'mc', hm)
+    cutoffs, hyps, hm = generate_diff_hm(kernels, diff_cutoff)
+    kernel, kg, en_kernel, fek = str_to_kernel_set(kernels, 'mc', hm)
 
     nterm = 0
     for term in ['twobody', 'threebody', 'manybody']:
-        if (term in kernel_array):
+        if (term in kernels):
             nterm += 1
 
     np.random.seed(10)
@@ -353,7 +353,7 @@ def test_force(kernel_array, diff_cutoff):
 
     # check force kernel
     kern_finite_diff = 0
-    if ('manybody' == kernel_array):
+    if ('manybody' == kernels):
         _, __, enm_kernel, ___ = str_to_kernel_set(['manybody'], 'mc', hm)
         mhyps_mask = Parameters.get_component_mask(hm, 'manybody', hyps=hyps)
         mhyps = mhyps_mask['hyps']
@@ -370,7 +370,7 @@ def test_force(kernel_array, diff_cutoff):
         # TODO: Establish why 2+3+MB fails (numerical error?)
         return
 
-    if ('twobody' in kernel_array):
+    if ('twobody' in kernels):
         ntwobody = 1
         _, __, en2_kernel, ___ = str_to_kernel_set(['twobody'], 'mc', hm)
         bhyps_mask = Parameters.get_component_mask(hm, 'twobody', hyps=hyps)
@@ -385,7 +385,7 @@ def test_force(kernel_array, diff_cutoff):
     else:
         ntwobody = 0
 
-    if ('threebody' in kernel_array):
+    if ('threebody' in kernels):
         _, __, en3_kernel, ___ = str_to_kernel_set(['threebody'], 'mc', hm)
 
         thyps_mask = Parameters.get_component_mask(hm, 'threebody', hyps=hyps)
@@ -405,10 +405,10 @@ def test_force(kernel_array, diff_cutoff):
     assert(isclose(kern_finite_diff, kern_analytical, rtol=tol))
 
 
-@pytest.mark.parametrize('kernel_array', list_to_test)
+@pytest.mark.parametrize('kernels', list_to_test)
 @pytest.mark.parametrize('diff_cutoff', multi_cut)
 @pytest.mark.parametrize('constraint', [True, False])
-def test_hyps_grad(kernel_array, diff_cutoff, constraint):
+def test_hyps_grad(kernels, diff_cutoff, constraint):
 
     delta = 1e-8
     d1 = 1
@@ -416,9 +416,9 @@ def test_hyps_grad(kernel_array, diff_cutoff, constraint):
     tol = 1e-4
 
     np.random.seed(10)
-    cutoffs, hyps, hm = generate_diff_hm(kernel_array, diff_cutoff, constraint=constraint)
+    cutoffs, hyps, hm = generate_diff_hm(kernels, diff_cutoff, constraint=constraint)
     args = from_mask_to_args(hyps, cutoffs, hm)
-    kernel, kernel_grad, _, __ = str_to_kernel_set(kernel_array, "mc", hm)
+    kernel, kernel_grad, _, __ = str_to_kernel_set(kernels, "mc", hm)
 
     np.random.seed(0)
     env1 = generate_mb_envs(cutoffs, np.eye(3)*100, delta, d1)
@@ -453,7 +453,7 @@ def test_hyps_grad(kernel_array, diff_cutoff, constraint):
             assert(isclose(grad[i], hgrad, rtol=tol))
 
 
-def generate_same_hm(kernel_array, multi_cutoff=False):
+def generate_same_hm(kernels, multi_cutoff=False):
     """
     generate hyperparameter and masks that are effectively the same
     but with single or multi group expression
@@ -464,7 +464,7 @@ def generate_same_hm(kernel_array, multi_cutoff=False):
     pm2 = ParameterHelper(species=['H', 'He'],
             parameters={'noise':0.05})
 
-    if ('twobody' in kernel_array):
+    if ('twobody' in kernels):
         para = 2.5+0.1*random(3)
         pm1.set_parameters('cutoff_twobody', para[-1])
         pm1.define_group('twobody', 'twobody0', ['*', '*'], para[:-1])
@@ -477,7 +477,7 @@ def generate_same_hm(kernel_array, multi_cutoff=False):
             pm2.set_parameters('twobody0', para)
             pm2.set_parameters('twobody1', para)
 
-    if ('threebody' in kernel_array):
+    if ('threebody' in kernels):
         para = 1.2+0.1*random(3)
         pm1.set_parameters('cutoff_threebody', para[-1])
         pm1.define_group('threebody', 'threebody0', ['*', '*', '*'], para[:-1])
@@ -491,7 +491,7 @@ def generate_same_hm(kernel_array, multi_cutoff=False):
             pm2.define_group('cut3b', 'c1', ['*', '*'], parameters=para)
             pm2.define_group('cut3b', 'c2', ['H', 'H'], parameters=para)
 
-    if ('manybody' in kernel_array):
+    if ('manybody' in kernels):
         para = 1.2+0.1*random(3)
 
         pm1.set_parameters('cutoff_manybody', para[-1])
@@ -516,12 +516,12 @@ def generate_same_hm(kernel_array, multi_cutoff=False):
     return cut, hyps1, hyps2, hm1, hm2
 
 
-def generate_diff_hm(kernel_array, diff_cutoff=False, constraint=False):
+def generate_diff_hm(kernels, diff_cutoff=False, constraint=False):
 
     pm = ParameterHelper(species=['H', 'He'],
             parameters={'noise':0.05})
 
-    if ('twobody' in kernel_array):
+    if ('twobody' in kernels):
         para1 = 2.5+0.1*random(3)
         para2 = 2.5+0.1*random(3)
         pm.set_parameters('cutoff_twobody', para1[-1])
@@ -534,7 +534,7 @@ def generate_diff_hm(kernel_array, diff_cutoff=False, constraint=False):
             pm.set_parameters('twobody1', para2)
 
 
-    if ('threebody' in kernel_array):
+    if ('threebody' in kernels):
         para1 = 1.2+0.1*random(3)
         para2 = 1.2+0.1*random(3)
         pm.set_parameters('cutoff_threebody', para1[-1])
@@ -547,7 +547,7 @@ def generate_diff_hm(kernel_array, diff_cutoff=False, constraint=False):
             pm.define_group('cut3b', 'c1', ['*', '*'], parameters=para1)
             pm.define_group('cut3b', 'c2', ['H', 'H'], parameters=para2)
 
-    if ('manybody' in kernel_array):
+    if ('manybody' in kernels):
         para1 = 1.2+0.1*random(3)
         para2 = 1.2+0.1*random(3)
 

@@ -153,10 +153,10 @@ class ParameterHelper():
 
         if isinstance(kernels, dict):
             self.kernel_dict = kernels
-            self.kernel_array = list(kernels.keys())
+            self.kernels = list(kernels.keys())
             assert (not allseparate)
         elif isinstance(kernels, list):
-            self.kernel_array = kernels
+            self.kernels = kernels
             # by default, there is only one group of hyperparameters
             # for each type of the kernel
             # unless allseparate is defined
@@ -169,10 +169,10 @@ class ParameterHelper():
 
             # define groups
             if allseparate:
-                for ktype in self.kernel_array:
+                for ktype in self.kernels:
                     self.all_separate_groups(ktype)
             else:
-                for ktype in self.kernel_array:
+                for ktype in self.kernels:
                     self.list_groups(ktype, self.kernel_dict[ktype])
 
             # check for cut3b
@@ -192,14 +192,14 @@ class ParameterHelper():
                 raise RuntimeError(
                     "random and ones cannot be simultaneously True")
             elif random or ones or universal:
-                for ktype in self.kernel_array:
+                for ktype in self.kernels:
                     self.fill_in_parameters(
                         ktype, random=random, ones=ones, universal=universal)
-        elif len(self.kernel_array) > 0:
+        elif len(self.kernels) > 0:
             self.list_groups('specie', ['*'])
 
             # define groups
-            for ktype in self.kernel_array:
+            for ktype in self.kernels:
                 self.list_groups(ktype, self.kernel_dict[ktype])
 
             # check for cut3b
@@ -219,7 +219,7 @@ class ParameterHelper():
                 raise RuntimeError(
                     "random and ones cannot be simultaneously True")
             elif random or ones or universal:
-                for ktype in self.kernel_array:
+                for ktype in self.kernels:
                     self.fill_in_parameters(
                         ktype, random=random, ones=ones, universal=universal)
 
@@ -724,8 +724,8 @@ class ParameterHelper():
                 self.logger.debug(f"{group_type} is not defined. Skipped")
                 return
 
-            if group_type not in self.kernel_array and group_type in ParameterHelper.all_kernel_types:
-                self.kernel_array.append(group_type)
+            if group_type not in self.kernels and group_type in ParameterHelper.all_kernel_types:
+                self.kernels.append(group_type)
 
             self.mask[group_type] = np.ones(
                 nspecie**ParameterHelper.ndim[group_type], dtype=np.int)*(self.n[group_type]-1)
@@ -876,7 +876,7 @@ class ParameterHelper():
         hyps = []
         hyp_labels = []
         opt = []
-        for group in self.kernel_array:
+        for group in self.kernels:
 
             hyps_mask['n'+group] = self.n[group]
             hyps_mask[group+'_start'] = len(hyps)
@@ -940,7 +940,7 @@ class ParameterHelper():
             self.logger.debug(
                 "only one type of elements was defined. Please use multihyps=False")
 
-        hyps_mask['kernels'] = self.kernel_array
+        hyps_mask['kernels'] = self.kernels
         hyps_mask['kernel_name'] = "+".join(hyps_mask['kernels'])
         hyps_mask['cutoffs'] = cutoff_dict
         hyps_mask['hyps'] = newhyps

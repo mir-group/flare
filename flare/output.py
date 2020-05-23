@@ -97,7 +97,7 @@ class Output:
         if flush or self.always_flush:
             self.logger[name].handlers[0].flush()
 
-    def write_header(self, cutoffs, kernel_array: [list],
+    def write_header(self, cutoffs, kernels: [list],
                      hyps, algo: str, dt: float = None,
                      Nsteps: int = None, structure: Structure= None,
                      std_tolerance: Union[float, int] = None,
@@ -107,7 +107,7 @@ class Output:
         OTF runs and can take flexible input for both.
 
         :param cutoffs: GP cutoffs
-        :param kernel_array: Kernel names
+        :param kernels: Kernel names
         :param hyps: list of hyper-parameters
         :param algo: algorithm for hyper parameter optimization
         :param dt: timestep for OTF MD
@@ -139,7 +139,7 @@ class Output:
         headerstring += \
             f'number of cpu cores: {multiprocessing.cpu_count()}\n'
         headerstring += f'cutoffs: {cutoffs}\n'
-        headerstring += f'kernel_array: {kernel_array}\n'
+        headerstring += f'kernels: {kernels}\n'
         headerstring += f'number of hyperparameters: {len(hyps)}\n'
         headerstring += f'hyperparameters: {str(hyps)}\n'
         headerstring += f'hyperparameter optimization algorithm: {algo}\n'

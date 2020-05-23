@@ -327,7 +327,7 @@ class MappedGaussianProcess:
         kernel, en_kernel, en_force_kernel, cutoffs, hyps, hyps_mask = \
             kernel_info
 
-        args = from_mask_to_args(hyps, hyps_mask, cutoffs)
+        args = from_mask_to_args(hyps, cutoffs, hyps_mask)
 
         kern = np.zeros(3)
         if not mean_only:
@@ -847,7 +847,7 @@ class Map3body:
             processes = self.n_cpus
 
         # ------ get 3body kernel info ------
-        kernel_info = get_3bkernel(GP)
+        kernel_info = get_kernel_term(GP, 'threebody')
 
         # ------ construct grids ------
         n1, n2, n12 = self.grid_num
@@ -1154,7 +1154,7 @@ class Map3body:
         del bonds2
         del bonds12
 
-        args = from_mask_to_args(hyps, hyps_mask, cutoffs)
+        args = from_mask_to_args(hyps, cutoffs, hyps_mask)
 
         k_v = []
         for m_index in range(size):
@@ -1206,7 +1206,7 @@ class Map3body:
         del bonds2
         del bonds12
 
-        args = from_mask_to_args(hyps, hyps_mask, cutoffs)
+        args = from_mask_to_args(hyps, cutoffs, hyps_mask)
 
         k_v = []
         for m_index in range(size):

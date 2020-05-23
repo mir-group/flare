@@ -9,6 +9,7 @@ from flare.env import AtomicEnvironment
 from flare.kernels.cutoffs import quadratic_cutoff
 from flare.kernels.kernels import three_body_helper_1, \
     three_body_helper_2, force_helper
+from flare.kernels.utils import str_to_kernel_set as stks
 from flare.parameters import Parameters
 
 
@@ -17,7 +18,7 @@ def get_kernel_term(GP, term):
     Args
         term (str): 'twobody' or 'threebody'
     """
-    kernel, _, ek, efk = stks([term], GP.component, GP.nspecie)
+    kernel, _, ek, efk = stks([term], GP.component, GP.hyps_mask)
 
     hyps, cutoffs, hyps_mask = Parameters.get_component_mask(GP.hyps_mask, term, hyps=GP.hyps)
 

@@ -180,7 +180,7 @@ class OTF:
         'Year.Month.Day:Hour:Minute:Second:'.
         """
 
-        self.output.write_header(self.gp.cutoffs, self.gp.kernel_array,
+        self.output.write_header(self.gp.cutoffs, self.gp.kernels,
                                  self.gp.hyps, self.gp.opt_algorithm,
                                  self.dt, self.number_of_steps,
                                  self.structure,

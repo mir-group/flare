@@ -70,7 +70,7 @@ class Parameters():
             raise TypeError("cannot handle cutoffs with {type(cutoffs)} type")
 
     @staticmethod
-    def backward(kernel_array, param_dict):
+    def backward(kernels, param_dict):
 
         if param_dict is None:
             param_dict = {}
@@ -93,12 +93,12 @@ class Parameters():
         if 'nspecie' not in param_dict:
             param_dict['nspecie'] = 1
 
-        print(kernel_array, param_dict)
-        if set(kernel_array) != set(param_dict.get("kernels", [])):
+        print(kernels, param_dict)
+        if set(kernels) != set(param_dict.get("kernels", [])):
 
             start = 0
             for k in Parameters.all_kernel_types:
-                if k in kernel_array:
+                if k in kernels:
                     if 'n'+k not in param_dict:
                         print("add in hyper parameter separators for", k)
                         param_dict['n'+k] = 1
@@ -108,12 +108,12 @@ class Parameters():
                         start += param_dict['n'+k]*2
 
             print("Replace kernel array in param_dict")
-            param_dict['kernels'] = deepcopy(kernel_array)
+            param_dict['kernels'] = deepcopy(kernels)
 
         return param_dict
 
     @staticmethod
-    def check_instantiation(hyps, cutoffs, kernel_array, param_dict):
+    def check_instantiation(hyps, cutoffs, kernels, param_dict):
         """
         Runs a series of checks to ensure that the user has not supplied
         contradictory arguments which will result in undefined behavior
@@ -242,8 +242,6 @@ class Parameters():
         if kernel_name in param_dict['kernels']:
             new_dict = {}
             new_dict['kernels'] = [kernel_name]
-            if 'twobody' in param_dict['cutoffs']:
-                new_dict['cutoffs']['twobody'] = param_dict['cutoffs']['twobody']
 
             new_dict[kernel_name+'_start'] = 0
 
@@ -261,7 +259,10 @@ class Parameters():
             hyps = np.hstack(Parameters.get_component_hyps(
                 param_dict, kernel_name, hyps=hyps, noise=True))
 
-            cutoffs = {kernel_name: param_dict['cutoffs'][kernel_name]}
+            cutoffs = {}
+            if 'twobody' in param_dict['cutoffs']:
+                cutoffs['twobody'] = param_dict['cutoffs']['twobody']
+            cutoffs[kernel_name] = param_dict['cutoffs'][kernel_name]
 
             return hyps, cutoffs, new_dict
         else:

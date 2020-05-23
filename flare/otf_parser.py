@@ -367,11 +367,11 @@ def parse_header_information(outfile: str = 'otf_run.out') -> dict:
             header_info['frames'] = int(line.split(':')[1])
         if 'kernel_name' in line:
             header_info['kernel_name'] = line.split(':')[1].strip()
-        if 'kernel_array' in line:
+        if 'kernels' in line:
             line = line.split(':')[1].strip()
             line = line.strip('[').strip(']')
             line = line.split()
-            header_info['kernel_array'] = line
+            header_info['kernels'] = line
         if 'kernel' in line:
             header_info['kernel_name'] = line.split(':')[1].strip()
         if 'number of hyperparameters:' in line:

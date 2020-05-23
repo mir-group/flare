@@ -98,7 +98,7 @@ def get_gp(bodies, kernel_type='mc', multihyps=True, cellabc=[1, 1, 1.5]) -> Gau
 
     hyps, hm, _ = generate_hm(ntwobody, nthreebody, nmanybody=0, multihyps=multihyps)
     cutoffs = hm['cutoffs']
-    kernel_array = hm['kernel_array']
+    kernels = hm['kernels']
     hl = hm['hyp_labels']
 
     # create test structure
@@ -108,7 +108,7 @@ def get_gp(bodies, kernel_type='mc', multihyps=True, cellabc=[1, 1, 1.5]) -> Gau
 
     # test update_db
     gaussian = \
-        GaussianProcess(kernel_array=kernel_array,
+        GaussianProcess(kernels=kernels,
                         component=kernel_type,
                         hyps=hyps,
                         hyp_labels=hl,
@@ -153,7 +153,7 @@ def get_force_gp(bodies, kernel_type='mc', multihyps=True, cellabc=[1,1,1.5]) ->
 
     # test update_db
     gaussian = \
-        GaussianProcess(kernel_array=hm['kernel_array'],
+        GaussianProcess(kernels=hm['kernels'],
                         component=kernel_type,
                         hyps=hyps,
                         hyp_labels=hl,
