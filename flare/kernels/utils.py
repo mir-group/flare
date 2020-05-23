@@ -215,7 +215,7 @@ def from_mask_to_args(hyps, cutoffs, hyps_mask=None):
             sig2, ls2, sig3, ls3, sigm, lsm)
 
 
-def from_grad_to_mask(grad, hyp_index=None):
+def from_grad_to_mask(grad, hyps_mask=None):
     """
     Return gradient which only includes hyperparameters
     which are meant to vary
@@ -226,9 +226,15 @@ def from_grad_to_mask(grad, hyp_index=None):
     :return: newgrad
     """
 
-    # no special setting
-    if hyp_index is None:
+    constrain = True
+    if hyps_mask is None:
+        constrain = False
+    elif 'map' not in hyps_mask:
+        constrain = False
+    if not constrain:
         return grad
+
+    hyp_index = hyps_mask['map']
 
     # setting for mc_sephyps
     # if the last element is not sigma_noise

@@ -1005,7 +1005,7 @@ def get_ky_and_hyp_pack(name, s1, e1, s2, e2, same: bool, hyps: np.ndarray,
 
             # store kernel value
             k_mat[m_index, n_index] = cov[0]
-            grad = from_grad_to_mask(cov[1], hyps_mask.get('map', None))
+            grad = from_grad_to_mask(cov[1], hyps_mask)
 
             hyp_mat[:, m_index, n_index] = grad
             if (same):
