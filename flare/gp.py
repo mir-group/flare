@@ -106,9 +106,8 @@ class GaussianProcess:
         else:
             self.hyps = np.array(self.hyps, dtype=np.float64)
 
-        self.nspecie = self.hyps_mask['nspecie']
         kernel, grad, ek, efk = str_to_kernel_set(
-            kernel_array, component, self.nspecie)
+            kernel_array, component, self.hyps_mask)
         self.kernel = kernel
         self.kernel_grad = grad
         self.energy_force_kernel = efk
@@ -190,9 +189,9 @@ class GaussianProcess:
 
         self.bounds = deepcopy(self.hyps_mask.get('bounds', None))
 
-    def update_kernel(self, kernel_array, component="mc", nspecie=1):
+    def update_kernel(self, kernel_array, component="mc", hyps_mask=None):
         kernel, grad, ek, efk = str_to_kernel_set(
-            kernel_array, component, nspecie)
+            kernel_array, component, hyps_mask)
         self.kernel = kernel
         self.kernel_grad = grad
         self.energy_force_kernel = efk
@@ -815,7 +814,7 @@ class GaussianProcess:
                 gp_model = pickle.load(f)
 
                 GaussianProcess.backward_arguments(
-                    gp_model.__dict__, gp_model.__dict)
+                    gp_model.__dict__, gp_model.__dict__)
 
                 GaussianProcess.backward_attributes(gp_model.__dict__)
 

@@ -144,9 +144,6 @@ def test_build_map(all_gp, all_mgp, all_ase_calc, bodies, multihyps):
     gp_model = all_gp[f'{bodies}{multihyps}']
     mgp_model = all_mgp[f'{bodies}{multihyps}']
 
-    print("hello1", gp_model.hyps_mask)
-    print("hello2", mgp_model.hyps_mask)
-
     mgp_model.build_map(gp_model)
 
     all_ase_calc[f'{bodies}{multihyps}'] = FLARE_Calculator(gp_model,

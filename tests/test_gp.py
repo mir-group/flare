@@ -28,14 +28,14 @@ def all_gps() -> GaussianProcess:
 
     gp_dict = {True: None, False: None}
     for multihyps in multihyps_list:
+
         hyps, hm, cutoffs = generate_hm(1, 1, multihyps=multihyps)
         hl = hm['hyp_labels']
 
         # test update_db
-        gpname = '2+3+mb_mc'
 
         gp_dict[multihyps] = \
-            GaussianProcess(kernel_name=gpname,
+            GaussianProcess(kernel_array=hm['kernels'],
                             hyps=hyps,
                             hyp_labels=hl,
                             cutoffs=cutoffs,
@@ -172,7 +172,7 @@ class TestConstraint():
         test_gp.hyps_mask = hm
         test_gp.hyp_labels = hm['hyp_labels']
         test_gp.hyps = hyps
-        test_gp.update_kernel(hm['kernel_name'], hm)
+        test_gp.update_kernel(hm['kernel_name'], "mc", hm)
         test_gp.set_L_alpha()
 
         hyp = list(test_gp.hyps)
@@ -240,10 +240,7 @@ class TestIO():
         test_gp = all_gps[multihyps]
         the_str = str(test_gp)
         assert 'GaussianProcess Object' in the_str
-        if (multihyps):
-            assert 'Kernel: two_three_many_body_mc' in the_str
-        else:
-            assert 'Kernel: two_plus_three_plus_many_body_mc' in the_str
+        assert 'Kernel: [\'twobody\', \'threebody\', \'manybody\']' in the_str
         assert 'cutoff_twobody: 0.8' in the_str
         assert 'cutoff_threebody: 0.8' in the_str
         assert 'cutoff_manybody: 0.8' in the_str

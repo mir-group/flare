@@ -21,7 +21,7 @@ from_grad_to_mask(grad, hyps_mask) converts the gradient matrix to the actual
 
 def str_to_kernel_set(kernel_array: list = ['twobody', 'threebody'],
                       component: str = "sc",
-                      nspecie: int = 1):
+                      hyps_mask: dict = None):
     """
     return kernels and kernel gradient function base on a string.
     If it contains 'sc', it will use the kernel in sc module;
@@ -41,11 +41,15 @@ def str_to_kernel_set(kernel_array: list = ['twobody', 'threebody'],
     """
 
     #  kernel name should be replace with kernel array
-
     if component == 'sc':
         stk = sc._str_to_kernel
     else:
-        if nspecie > 1:
+        multihyps = True
+        if hyps_mask is None:
+            multihyps = False
+        elif hyps_mask['nspecie'] == 1:
+            multihyps = False
+        if multihyps:
             stk = mc_sephyps._str_to_kernel
         else:
             stk = mc_simple._str_to_kernel
@@ -54,6 +58,9 @@ def str_to_kernel_set(kernel_array: list = ['twobody', 'threebody'],
     str_terms = {'2': ['2', 'two', 'twobody'],
                  '3': ['3', 'three', 'threebody'],
                  'many': ['mb', 'manybody', 'many']}
+
+    if isinstance(kernel_array, str):
+        kernel_array = [kernel_array]
 
     prefix = ''
     for term in str_terms:
@@ -81,7 +88,7 @@ def str_to_kernel_set(kernel_array: list = ['twobody', 'threebody'],
 
 
 def str_to_mapped_kernel(name: str, component: str = "sc",
-                         nspecie: int = 1):
+                         hyps_mask: dict = None):
     """
     return kernels and kernel gradient function base on a string.
     If it contains 'sc', it will use the kernel in sc module;
@@ -100,9 +107,11 @@ def str_to_mapped_kernel(name: str, component: str = "sc",
 
     """
 
-    multihyps = False
-    if nspecie > 1:
-        multihyps = True
+    multihyps = True
+    if hyps_mask is None:
+        multihyps = False
+    elif hyps_mask['nspecie'] == 1:
+        multihyps = False
 
     # b2 = Two body in use, b3 = Three body in use
     b2 = False
@@ -232,8 +241,6 @@ def from_grad_to_mask(grad, hyp_index=None):
     for i, mapid in enumerate(hm):
         newgrad[i] = grad[mapid]
 
-    print(hyp_index, newgrad)
-
     return newgrad
 
 
@@ -248,15 +255,15 @@ def kernel_str_to_array(kernel_name: str):
     """
 
     #  kernel name should be replace with kernel array
-    str_terms = {'twobody': ['2', 'two', 'Two', 'TWO', 'twobody'],
-                 'threebody': ['3', 'three', 'Three', 'THREE', 'threebody'],
-                 'manybody': ['mb', 'manybody', 'many', 'Many', 'ManyBody', 'manybody']}
+    str_terms = {'twobody': ['2', 'two', 'twobody'],
+                 'threebody': ['3', 'three', 'threebody'],
+                 'manybody': ['mb', 'manybody', 'many']}
 
     array = []
     for term in str_terms:
         add = False
         for s in str_terms[term]:
-            if s in kernel_name:
+            if s in kernel_name.lower():
                 add = True
         if add:
             array += [term]

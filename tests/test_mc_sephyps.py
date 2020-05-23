@@ -41,7 +41,7 @@ def test_force_en_multi_vs_simple(kernel_array, multi_cutoff):
 
     # mc_simple
     kernel0, kg0, en_kernel0, force_en_kernel0 = str_to_kernel_set(
-        kernel_array, "mc", 1)
+        kernel_array, "mc", None)
     args0 = from_mask_to_args(hyps1, cutoffs)
 
     # mc_sephyps
@@ -49,7 +49,7 @@ def test_force_en_multi_vs_simple(kernel_array, multi_cutoff):
     # if (diff_cutoff), 1 or 2 group of cutoffs
     # but same value as in args0
     kernel, kg, en_kernel, force_en_kernel = str_to_kernel_set(
-        kernel_array, "mc", hm2['nspecie'])
+        kernel_array, "mc", hm2)
     args1 = from_mask_to_args(hyps1, cutoffs, hm1)
     args2 = from_mask_to_args(hyps2, cutoffs, hm2)
 
@@ -140,7 +140,7 @@ def test_check_sig_scale(kernel_array, diff_cutoff):
     hyps1[1::4] *= scale
 
     kernel, kg, en_kernel, force_en_kernel = str_to_kernel_set(
-        kernel_array, 'mc', hm['nspecie'])
+        kernel_array, 'mc', hm)
 
     args0 = from_mask_to_args(hyps0, cutoffs, hm)
     args1 = from_mask_to_args(hyps1, cutoffs, hm)
@@ -192,7 +192,7 @@ def test_force_bound_cutoff_compare(kernel_array, diff_cutoff):
 
     cutoffs, hyps, hm = generate_diff_hm(kernel_array, diff_cutoff)
     kernel, kg, en_kernel, force_en_kernel = str_to_kernel_set(
-        kernel_array, "mc", hm['nspecie'])
+        kernel_array, "mc", hm)
     args = from_mask_to_args(hyps, cutoffs, hm)
 
     np.random.seed(10)
@@ -237,7 +237,7 @@ def test_constraint(kernel_array, diff_cutoff):
     cutoffs, hyps, hm = generate_diff_hm(
         kernel_array, diff_cutoff=diff_cutoff, constraint=True)
 
-    _, __, en_kernel, force_en_kernel = str_to_kernel_set(kernel_array, "mc", hm['nspecie'])
+    _, __, en_kernel, force_en_kernel = str_to_kernel_set(kernel_array, "mc", hm)
 
     args0 = from_mask_to_args(hyps, cutoffs, hm)
 
@@ -248,13 +248,13 @@ def test_constraint(kernel_array, diff_cutoff):
     kern_finite_diff = 0
 
     if ('twobody' in kernel_array):
-        _, __, en2_kernel, fek2 = str_to_kernel_set(['twobody'], "mc", hm['nspecie'])
+        _, __, en2_kernel, fek2 = str_to_kernel_set(['twobody'], "mc", hm)
         calc1 = en2_kernel(env1[1][0], env2[0][0], *args0)
         calc2 = en2_kernel(env1[0][0], env2[0][0], *args0)
         kern_finite_diff += 4*(calc1 - calc2) / 2.0 / delta
 
     if ('threebody' in kernel_array):
-        _, __, en3_kernel, fek3 = str_to_kernel_set(['threebody'], "mc", hm['nspecie'])
+        _, __, en3_kernel, fek3 = str_to_kernel_set(['threebody'], "mc", hm)
         calc1 = en3_kernel(env1[1][0], env2[0][0], *args0)
         calc2 = en3_kernel(env1[0][0], env2[0][0], *args0)
         kern_finite_diff += 9*(calc1 - calc2) / 3.0 / delta
@@ -284,13 +284,13 @@ def test_force_en(kernel_array, diff_cutoff):
     env1 = generate_mb_envs(cutoffs, cell, delta, d1, hm)
     env2 = generate_mb_envs(cutoffs, cell, delta, d2, hm)
 
-    _, __, en_kernel, force_en_kernel = str_to_kernel_set(kernel_array, "mc", hm['nspecie'])
+    _, __, en_kernel, force_en_kernel = str_to_kernel_set(kernel_array, "mc", hm)
 
     kern_analytical = force_en_kernel(env1[0][0], env2[0][0], d1, *args)
 
     kern_finite_diff = 0
     if ('manybody' in kernel_array):
-        kernel, _, enm_kernel, efk = str_to_kernel_set(['manybody'], "mc", hm['nspecie'])
+        kernel, _, enm_kernel, efk = str_to_kernel_set(['manybody'], "mc", hm)
 
         calc = 0
         for i in range(len(env1[0])):
@@ -303,7 +303,7 @@ def test_force_en(kernel_array, diff_cutoff):
         args23 = from_mask_to_args(hyps, cutoffs, hm)
 
     if ('twobody' in kernel_array):
-        kernel, _, en2_kernel, efk = str_to_kernel_set(['2b'], 'mc', hm['nspecie'])
+        kernel, _, en2_kernel, efk = str_to_kernel_set(['2b'], 'mc', hm)
         calc1 = en2_kernel(env1[1][0], env2[0][0], *args23)
         calc2 = en2_kernel(env1[2][0], env2[0][0], *args23)
         diff2b = 4 * (calc1 - calc2) / 2.0 / delta / 2.0
@@ -311,7 +311,7 @@ def test_force_en(kernel_array, diff_cutoff):
         kern_finite_diff += diff2b
 
     if ('threebody' in kernel_array):
-        kernel, _, en3_kernel, efk = str_to_kernel_set(['3b'], 'mc', hm['nspecie'])
+        kernel, _, en3_kernel, efk = str_to_kernel_set(['3b'], 'mc', hm)
         calc1 = en3_kernel(env1[1][0], env2[0][0], *args23)
         calc2 = en3_kernel(env1[2][0], env2[0][0], *args23)
         diff3b = 9 * (calc1 - calc2) / 3.0 / delta / 2.0
@@ -340,7 +340,7 @@ def test_force(kernel_array, diff_cutoff):
     np.random.seed(10)
 
     cutoffs, hyps, hm = generate_diff_hm(kernel_array, diff_cutoff)
-    kernel, kg, en_kernel, fek = str_to_kernel_set(kernel_array, 'mc', hm['nspecie'])
+    kernel, kg, en_kernel, fek = str_to_kernel_set(kernel_array, 'mc', hm)
 
     nterm = 0
     for term in ['twobody', 'threebody', 'manybody']:
@@ -354,7 +354,7 @@ def test_force(kernel_array, diff_cutoff):
     # check force kernel
     kern_finite_diff = 0
     if ('manybody' == kernel_array):
-        _, __, enm_kernel, ___ = str_to_kernel_set(['manybody'], 'mc', hm['nspecie'])
+        _, __, enm_kernel, ___ = str_to_kernel_set(['manybody'], 'mc', hm)
         mhyps_mask = Parameters.get_component_mask(hm, 'manybody', hyps=hyps)
         mhyps = mhyps_mask['hyps']
         margs = from_mask_to_args(mhyps, mhyps_mask, cutoffs)
@@ -372,7 +372,7 @@ def test_force(kernel_array, diff_cutoff):
 
     if ('twobody' in kernel_array):
         ntwobody = 1
-        _, __, en2_kernel, ___ = str_to_kernel_set(['twobody'], 'mc', hm['nspecie'])
+        _, __, en2_kernel, ___ = str_to_kernel_set(['twobody'], 'mc', hm)
         bhyps_mask = Parameters.get_component_mask(hm, 'twobody', hyps=hyps)
         bhyps = bhyps_mask['hyps']
         args2 = from_mask_to_args(bhyps, bhyps_mask, cutoffs[:1])
@@ -386,7 +386,7 @@ def test_force(kernel_array, diff_cutoff):
         ntwobody = 0
 
     if ('threebody' in kernel_array):
-        _, __, en3_kernel, ___ = str_to_kernel_set(['threebody'], 'mc', hm['nspecie'])
+        _, __, en3_kernel, ___ = str_to_kernel_set(['threebody'], 'mc', hm)
 
         thyps_mask = Parameters.get_component_mask(hm, 'threebody', hyps=hyps)
         thyps = bhyps_mask['hyps']
@@ -418,7 +418,7 @@ def test_hyps_grad(kernel_array, diff_cutoff, constraint):
     np.random.seed(10)
     cutoffs, hyps, hm = generate_diff_hm(kernel_array, diff_cutoff, constraint=constraint)
     args = from_mask_to_args(hyps, cutoffs, hm)
-    kernel, kernel_grad, _, __ = str_to_kernel_set(kernel_array, "mc", hm['nspecie'])
+    kernel, kernel_grad, _, __ = str_to_kernel_set(kernel_array, "mc", hm)
 
     np.random.seed(0)
     env1 = generate_mb_envs(cutoffs, np.eye(3)*100, delta, d1)
@@ -563,7 +563,5 @@ def generate_diff_hm(kernel_array, diff_cutoff=False, constraint=False):
     hm = pm.as_dict()
     hyps = hm['hyps']
     cut = hm['cutoffs']
-
-    print("hello", cut, hyps, hm)
 
     return cut, hyps, hm

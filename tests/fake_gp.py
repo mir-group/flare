@@ -50,14 +50,16 @@ def generate_hm(ntwobody, nthreebody, nmanybody=1, constraint=False, multihyps=T
         cut = hm['cutoffs']
         return hyps, hm, cut
 
-    pm = ParameterHelper(species=['H', 'He'], parameters={'cutoff_twobody': 0.8,
-        'cutoff_threebody': 0.8, 'cutoff_manybody': 0.8, 'noise':0.05})
+    pm = ParameterHelper(species=['H', 'He'], parameters={'noise':0.05})
     if (ntwobody > 0):
         pm.define_group('twobody', 'b1', ['*', '*'], parameters=random(2))
+        pm.set_parameters('cutoff_twobody', 0.8)
     if (nthreebody > 0):
         pm.define_group('threebody', 't1', ['*', '*', '*'], parameters=random(2))
+        pm.set_parameters('cutoff_threebody', 0.8)
     if (nmanybody > 0):
         pm.define_group('manybody', 'manybody1', ['*', '*'], parameters=random(2))
+        pm.set_parameters('cutoff_manybody', 0.8)
     if (ntwobody > 1):
         pm.define_group('twobody', 'b2', ['H', 'H'], parameters=random(2))
     if (nthreebody > 1):
@@ -96,27 +98,25 @@ def get_gp(bodies, kernel_type='mc', multihyps=True, cellabc=[1, 1, 1.5]) -> Gau
 
     hyps, hm, _ = generate_hm(ntwobody, nthreebody, nmanybody=0, multihyps=multihyps)
     cutoffs = hm['cutoffs']
+    kernel_array = hm['kernel_array']
+    hl = hm['hyp_labels']
 
     # create test structure
     test_structure, forces = get_random_structure(cell, unique_species,
                                                   noa)
     energy = 3.14
 
-    hl = hm['hyp_labels']
-    if (multihyps is False):
-        hm = None
-
     # test update_db
     gaussian = \
-        GaussianProcess(kernel_name=f'{prefix}{kernel_type}',
+        GaussianProcess(kernel_array=kernel_array,
+                        component=kernel_type,
                         hyps=hyps,
                         hyp_labels=hl,
-                        cutoffs=cutoffs, multihyps=multihyps, hyps_mask=hm,
+                        cutoffs=cutoffs, hyps_mask=hm,
                         parallel=False, n_cpus=1)
     gaussian.update_db(test_structure, forces, energy=energy)
     gaussian.check_L_alpha()
 
-    print('alpha:')
     print(gaussian.alpha)
 
     return gaussian
@@ -139,7 +139,7 @@ def get_force_gp(bodies, kernel_type='mc', multihyps=True, cellabc=[1,1,1.5]) ->
     if ('3' in bodies or 'three' in bodies):
         nthreebody = 1
 
-    hyps, hm, _ = generate_hm(ntwobody, nthreebody, multihyps=multihyps)
+    hyps, hm, _ = generate_hm(ntwobody, nthreebody, 0, multihyps=multihyps)
     cutoffs = hm['cutoffs']
 
     # create test structure
@@ -153,7 +153,8 @@ def get_force_gp(bodies, kernel_type='mc', multihyps=True, cellabc=[1,1,1.5]) ->
 
     # test update_db
     gaussian = \
-        GaussianProcess(kernel_name=f'{prefix}{kernel_type}',
+        GaussianProcess(kernel_array=hm['kernel_array'],
+                        component=kernel_type,
                         hyps=hyps,
                         hyp_labels=hl,
                         cutoffs=cutoffs, multihyps=multihyps, hyps_mask=hm,
