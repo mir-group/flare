@@ -1,15 +1,18 @@
 import pytest
 import numpy as np
-import sys
+import os
+
 from tests.test_gp import get_random_structure
 from flare.struc import Structure
-from json import loads
-
+from json import loads, dumps
+from flare.util import Z_to_element, NumpyEncoder
 try:
     import pymatgen.core.structure as pmgstruc
     _test_pmg = True
 except ImportError:
     _test_pmg = False
+
+from .test_gp import dumpcompare
 
 
 def test_random_structure_setup():
@@ -191,3 +194,81 @@ def test_to_pmg_structure(varied_test_struc):
     assert len(varied_test_struc) == len(varied_test_struc)
     assert np.equal(new_struc.cart_coords, varied_test_struc.positions).all()
     assert (new_struc.atomic_numbers == varied_test_struc.coded_species).all()
+
+def test_to_xyz(varied_test_struc):
+
+    simple_str = varied_test_struc.to_xyz(extended_xyz=False,
+                print_stds=False, print_forces=False, print_max_stds=False)
+
+    simple_str_by_line = simple_str.split('\n')
+
+    assert len(simple_str_by_line)-3 == len(varied_test_struc)
+
+    for i, atom_line in enumerate(simple_str_by_line[2:-1]):
+        split_line = atom_line.split()
+        assert split_line[0] == \
+               Z_to_element(int(varied_test_struc.species_labels[i]))
+        for j in range(3):
+            assert float(split_line[1+j]) == varied_test_struc.positions[i][j]
+
+
+    complex_str = varied_test_struc.to_xyz(True,True,True,True)
+    complex_str_by_line = complex_str.split('\n')
+
+    assert len(complex_str_by_line)-3 == len(varied_test_struc)
+
+    for i, atom_line in enumerate(complex_str_by_line[2:-1]):
+        split_line = atom_line.split()
+        assert split_line[0] == \
+               Z_to_element(int(varied_test_struc.species_labels[i]))
+        for j in range(1,4):
+            assert float(split_line[j]) == varied_test_struc.positions[i][j-1]
+        for j in range(4,7):
+            assert float(split_line[j]) == varied_test_struc.stds[i][j-4]
+        for j in range(7,10):
+            assert float(split_line[j]) == varied_test_struc.forces[i][j-7]
+        assert float(split_line[10]) == np.max(varied_test_struc.stds[i])
+
+
+def test_file_load():
+
+    struct1, forces = get_random_structure(cell=np.eye(3),
+                                          unique_species=[1, 2],
+                                          noa=2)
+
+    struct2, forces = get_random_structure(cell=np.eye(3),
+                                          unique_species=[1, 2],
+                                          noa=2)
+
+    with open("test_write.json",'w') as f:
+        f.write(dumps(struct1.as_dict(),cls=NumpyEncoder))
+
+    with pytest.raises(NotImplementedError):
+        Structure.from_file(file_name='test_write.json', format='xyz')
+
+    struct1a = Structure.from_file('test_write.json')
+    assert dumpcompare(struct1.as_dict() , struct1a.as_dict())
+    os.remove('test_write.json')
+
+    with open("test_write_set.json", 'w') as f:
+        f.write(dumps(struct1.as_dict(), cls=NumpyEncoder)+'\n')
+        f.write(dumps(struct2.as_dict(), cls=NumpyEncoder)+'\n')
+
+    structs = Structure.from_file('test_write_set.json')
+    for struc in structs:
+        assert isinstance(struc, Structure)
+    assert len(structs) == 2
+    assert dumpcompare(structs[0].as_dict(), struct1.as_dict())
+    assert dumpcompare(structs[1].as_dict(), struct2.as_dict())
+
+    os.remove('test_write_set.json')
+
+    with pytest.raises(FileNotFoundError):
+        Structure.from_file('fhqwhgads')
+
+    vasp_struct = Structure.from_file('./test_files/test_POSCAR')
+    assert isinstance(vasp_struct, Structure)
+    assert len(vasp_struct) == 6
+
+
+

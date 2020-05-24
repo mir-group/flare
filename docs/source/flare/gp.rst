@@ -6,7 +6,7 @@ Gaussian Process Force Fields
 
    struc
    env
-   kernels/kernels
+   kernels/sc
    kernels/mc_simple
    kernels/mc_sephyps
    cutoffs

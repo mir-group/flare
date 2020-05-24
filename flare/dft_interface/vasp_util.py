@@ -187,8 +187,8 @@ def md_trajectory_from_vasprun(vasprun: Union[str, Vasprun],
         structure = Structure.from_pmg_structure(step["structure"])
         structure.energy = step["electronic_steps"][-1]["e_0_energy"]
         # TODO should choose e_wo_entrp or e_fr_energy?
-        structure.forces = np.array(step["forces"])
-        structure.stress = np.array(step["stress"])
+        structure.forces = np.array(step.get("forces"))
+        structure.stress = np.array(step.get("stress"))
         struc_lst.append(structure)
 
     return struc_lst

@@ -80,7 +80,11 @@ class OTF:
             single file name, or a list of several. Copied files will be
             prepended with the date and time with the format
             'Year.Month.Day:Hour:Minute:Second:'.
+        write_model (int, optional): If 0, write never. If 1, write at
+            end of run. If 2, write after each training and end of run.
+            If 3, write after each time atoms are added and end of run.
     """
+
     def __init__(self, dft_input: str, dt: float, number_of_steps: int,
                  gp: gp.GaussianProcess, dft_loc: str,
                  std_tolerance_factor: float = 1,
@@ -89,11 +93,14 @@ class OTF:
                  calculate_energy: bool = False, output_name: str = 'otf_run',
                  max_atoms_added: int = 1, freeze_hyps: int = 10,
                  rescale_steps: List[int] = [], rescale_temps: List[int] = [],
-                 force_source: Union[str, object] = "qe", n_cpus: int = 1,
-                 npool: int = None, mpi: str = "srun", dft_kwargs=None,
-                 store_dft_output: Tuple[Union[str, List[str]], str] = None):
+                 force_source: str = "qe",
+                 n_cpus: int = 1, npool: int = None, mpi: str = "srun",
+                 dft_kwargs=None, dft_output='dft.out',
+                 store_dft_output: Tuple[Union[str, List[str]],str] = None,
+                 write_model: int = 0):
 
         self.dft_input = dft_input
+        self.dft_output = dft_output
         self.dt = dt
         self.number_of_steps = number_of_steps
         self.gp = gp
@@ -154,7 +161,7 @@ class OTF:
         self.rescale_temps = rescale_temps
 
         self.output = Output(output_name, always_flush=True)
-
+        self.output_name = output_name
         # set number of cpus and npool for DFT runs
         self.n_cpus = n_cpus
         self.npool = npool
@@ -162,6 +169,7 @@ class OTF:
 
         self.dft_kwargs = dft_kwargs
         self.store_dft_output = store_dft_output
+        self.write_model = write_model
 
     def run(self):
         """
@@ -173,7 +181,7 @@ class OTF:
         """
 
         self.output.write_header(self.gp.cutoffs, self.gp.kernel_name,
-                                 self.gp.hyps, self.gp.algo,
+                                 self.gp.hyps, self.gp.opt_algorithm,
                                  self.dt, self.number_of_steps,
                                  self.structure,
                                  self.std_tolerance)
@@ -195,6 +203,8 @@ class OTF:
                 self.update_gp(self.init_atoms, dft_frcs)
                 if (self.dft_count-1) < self.freeze_hyps:
                     self.train_gp()
+                    if self.write_model >= 2:
+                        self.gp.write_model(self.output_name+"_model")
 
             # after step 1, try predicting with GP model
             else:
@@ -236,22 +246,13 @@ class OTF:
 
                     # add max uncertainty atoms to training set
                     self.update_gp(target_atoms, dft_frcs)
+
                     if (self.dft_count-1) < self.freeze_hyps:
                         self.train_gp()
-
-                    # Store DFT outputs in another folder if desired
-                    # specified in self.store_dft_output
-                    if self.store_dft_output is not None:
-                        dest = self.store_dft_output[1]
-                        target_files = self.store_dft_output[0]
-                        now = datetime.now()
-                        dt_string = now.strftime("%Y.%m.%d:%H:%M:%S:")
-                        if isinstance(target_files, str):
-                            to_copy = [target_files]
-                        else:
-                            to_copy = target_files
-                        for file in to_copy:
-                            copyfile(file, dest+'/'+dt_string+file)
+                        if self.write_model == 2:
+                            self.gp.write_model(self.output_name+"_model")
+                    if self.write_model == 3:
+                        self.gp.write_model(self.output_name+'_model')
 
             # write gp forces
             if counter >= self.skip and not self.dft_step:
@@ -264,6 +265,9 @@ class OTF:
             self.curr_step += 1
 
         self.output.conclude_run()
+
+        if self.write_model >= 1:
+            self.gp.write_model(self.output_name+"_model")
 
     def run_dft(self):
         """Calculates DFT forces on atoms in the current structure.
@@ -280,6 +284,7 @@ class OTF:
         forces = self.dft_module.run_dft_par(self.dft_input, self.structure,
                                              self.dft_loc,
                                              n_cpus=self.n_cpus,
+                                             dft_out=self.dft_output,
                                              npool=self.npool,
                                              mpi=self.mpi,
                                              dft_kwargs=self.dft_kwargs)
@@ -303,8 +308,8 @@ class OTF:
                 to_copy = [target_files]
             else:
                 to_copy = target_files
-            for file in to_copy:
-                copyfile(file, dest+'/'+dt_string+file)
+            for ofile in to_copy:
+                copyfile(ofile, dest+'/'+dt_string+ofile)
 
     def update_gp(self, train_atoms: List[int], dft_frcs: 'ndarray'):
         """
@@ -333,7 +338,8 @@ class OTF:
         self.gp.train(self.output)
         self.output.write_hyps(self.gp.hyp_labels, self.gp.hyps,
                                self.start_time,
-                               self.gp.likelihood, self.gp.likelihood_gradient)
+                               self.gp.likelihood, self.gp.likelihood_gradient,
+                               hyps_mask=self.gp.hyps_mask)
 
     def update_positions(self, new_pos: 'ndarray'):
         """Performs a Verlet update of the atomic positions.

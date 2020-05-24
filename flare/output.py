@@ -7,11 +7,13 @@ import datetime
 import os
 import shutil
 import time
-
 import multiprocessing
+
 import numpy as np
 
+from typing import Union
 from flare.util import Z_to_element
+from flare.struc import Structure
 
 
 class Output:
@@ -91,12 +93,13 @@ class Output:
             self.outfiles[name].flush()
 
     def write_header(self, cutoffs, kernel_name: str,
-                     hyps, algo: str, dt: float,
-                     Nsteps: int, structure,
-                     std_tolerance,
+                     hyps, algo: str, dt: float = None,
+                     Nsteps: int = None, structure: Structure= None,
+                     std_tolerance: Union[float, int] = None,
                      optional: dict = None):
         """
-        Write header to the log function
+        Write header to the log function. Designed for Trajectory Trainer and
+        OTF runs and can take flexible input for both.
 
         :param cutoffs: GP cutoffs
         :param kernel_name: Kernel names
@@ -104,7 +107,7 @@ class Output:
         :param algo: algorithm for hyper parameter optimization
         :param dt: timestep for OTF MD
         :param Nsteps: total number of steps for OTF MD
-        :param structure: the atomic structure
+        :param structure: initial structure
         :param std_tolerance: tolarence for active learning
         :param optional: a dictionary of all the other parameters
         """
@@ -114,7 +117,7 @@ class Output:
 
         if isinstance(std_tolerance, tuple):
             std_string = 'relative uncertainty tolerance: ' \
-                         f'{std_tolerance[0]} eV/A\n'
+                         f'{std_tolerance[0]} times noise hyperparameter \n'
             std_string += 'absolute uncertainty tolerance: ' \
                           f'{std_tolerance[1]} eV/A\n'
         elif std_tolerance < 0:
@@ -122,7 +125,8 @@ class Output:
                 f'uncertainty tolerance: {np.abs(std_tolerance)} eV/A\n'
         elif std_tolerance > 0:
             std_string = \
-                f'uncertainty tolerance: {np.abs(std_tolerance)} times noise \n'
+                f'uncertainty tolerance: {np.abs(std_tolerance)} ' \
+                                'times noise hyperparameter \n'
         else:
             std_string = ''
 
@@ -130,29 +134,32 @@ class Output:
         headerstring += \
             f'number of cpu cores: {multiprocessing.cpu_count()}\n'
         headerstring += f'cutoffs: {cutoffs}\n'
-        headerstring += f'kernel: {kernel_name}\n'
+        headerstring += f'kernel_name: {kernel_name}\n'
         headerstring += f'number of hyperparameters: {len(hyps)}\n'
-        headerstring += f'hyperparameters: {hyps}\n'
+        headerstring += f'hyperparameters: {str(hyps)}\n'
         headerstring += f'hyperparameter optimization algorithm: {algo}\n'
         headerstring += std_string
-        headerstring += f'timestep (ps): {dt}\n'
+        if dt is not None:
+            headerstring += f'timestep (ps): {dt}\n'
         headerstring += f'number of frames: {Nsteps}\n'
-        headerstring += f'number of atoms: {structure.nat}\n'
-        headerstring += f'system species: {set(structure.species_labels)}\n'
-        headerstring += 'periodic cell: \n'
-        headerstring += str(structure.cell)
+        if structure is not None:
+            headerstring += f'number of atoms: {structure.nat}\n'
+            headerstring += f'system species: {set(structure.species_labels)}\n'
+            headerstring += 'periodic cell: \n'
+            headerstring += str(structure.cell)+'\n'
 
         if optional:
             for key, value in optional.items():
                 headerstring += f"{key}: {value} \n"
 
         # report previous positions
-        headerstring += '\nprevious positions (A):\n'
-        for i in range(len(structure.positions)):
-            headerstring += f'{structure.species_labels[i]:5}'
-            for j in range(3):
-                headerstring += f'{structure.prev_positions[i][j]:10.4f}'
-            headerstring += '\n'
+        if structure is not None:
+            headerstring += '\nprevious positions (A):\n'
+            for i in range(len(structure.positions)):
+                headerstring += f'{structure.species_labels[i]:5}'
+                for j in range(3):
+                    headerstring += f'{structure.prev_positions[i][j]:10.4f}'
+                headerstring += '\n'
         headerstring += '-' * 80 + '\n'
 
         f.write(headerstring)
@@ -314,7 +321,7 @@ class Output:
                        forces=forces, stds=stds, forces_2=forces_2)
 
     def write_hyps(self, hyp_labels, hyps, start_time, like, like_grad,
-                   name='log'):
+                   name='log', hyps_mask=None):
         """ write hyperparameters to logfile
 
         :param name:
@@ -328,6 +335,12 @@ class Output:
         """
         f = self.outfiles[name]
         f.write('\nGP hyperparameters: \n')
+
+        if hyps_mask is not None:
+            if 'map' in hyps_mask:
+                hyps = hyps_mask['original']
+                if len(hyp_labels)!=len(hyps):
+                    hyp_labels = None
 
         if hyp_labels is not None:
             for i, label in enumerate(hyp_labels):
@@ -347,7 +360,8 @@ class Output:
 
     def write_gp_dft_comparison(self, curr_step, frame,
                                 start_time, dft_forces,
-                                error, local_energies=None, KE=None):
+                                error, local_energies=None, KE=None,
+                                mgp= False):
         """ write the comparison to logfile
 
         :param curr_step: current timestep
@@ -368,6 +382,8 @@ class Output:
 
         # Construct Header line
         string += '\nEl  Position (A) \t\t\t\t '
+        if mgp:
+            string += 'M'
         string += 'GP Force (ev/A)  \t\t\t\t'
         string += 'Std. Dev (ev/A) \t\t\t\t'
         string += 'DFT Force (ev/A)  \t\t\t\t \n'
@@ -394,31 +410,34 @@ class Output:
         #                       stds=frame.stds, forces_2=dft_forces,
         #                       dft_step=True)
 
-        mae = np.mean(error) * 1000
+        mae = np.nanmean(error) * 1000
         mac = np.mean(np.abs(dft_forces)) * 1000
         string += f'mean absolute error: {mae:.2f} meV/A\n'
         string += f'mean absolute dft component: {mac:.2f} meV/A\n'
         stat = f'{curr_step} {mae:.2} {mac:.2}'
 
-        mae_ps = {}
-        count_ps = {}
+        mae_per_species = {}
+        count_per_species = {}
         species = [Z_to_element(Z) for Z in set(frame.coded_species)]
         for ele in species:
-            mae_ps[ele] = 0
-            count_ps[ele] = 0
+            mae_per_species[ele] = 0
+            count_per_species[ele] = 0
+
         for atom in range(frame.nat):
             Z = frame.coded_species[atom]
             ele = Z_to_element(Z)
-            mae_ps[ele] += np.sum(error[atom, :])
-            count_ps[ele] += 1
+            if np.isnan(np.sum(error[atom, :])):
+                continue
+            mae_per_species[ele] += np.sum(error[atom, :])
+            count_per_species[ele] += 1
 
         string += "mae per species\n"
         for ele in species:
-            if count_ps[ele] > 0:
-                mae_ps[ele] /= (count_ps[ele] * 3)
-                mae_ps[ele] *= 1000  # Put in meV/A
-                string += f"type {ele} mae: {mae_ps[ele]:.2f} meV/A\n"
-            stat += f' {mae_ps[ele]:.2f}'
+            if count_per_species[ele] > 0:
+                mae_per_species[ele] /= (count_per_species[ele] * 3)
+                mae_per_species[ele] *= 1000  # Put in meV/A
+                string += f"type {ele} mae: {mae_per_species[ele]:.2f} meV/A\n"
+            stat += f' {mae_per_species[ele]:.2f}'
 
         # calculate potential and total energy
         if local_energies is not None:
