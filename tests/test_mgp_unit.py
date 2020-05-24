@@ -100,7 +100,7 @@ def test_init(bodies, multihyps, map_force, all_mgp, all_gp):
                                 [three_cut, three_cut, three_cut_3]],
                    'grid_num_2': grid_num_2,
                    'grid_num_3': [grid_num_3, grid_num_3, grid_num_3],
-                   'svd_rank_2': 14,
+                   'svd_rank_2': np.min((14, grid_num_2)),
                    'svd_rank_3': 14,
                    'load_grid': None,
                    'update': False}
@@ -109,7 +109,7 @@ def test_init(bodies, multihyps, map_force, all_mgp, all_gp):
                     'cube_lat': np.eye(3)*2,
                     'mass_dict': {'0': 27, '1': 16}}
     mgp_model = MappedGaussianProcess(grid_params, struc_params, n_cpus=4,
-                map_force=map_force, lmp_file_name=lammps_location)
+                map_force=map_force, lmp_file_name=lammps_location)#, mean_only=False)
     all_mgp[f'{bodies}{multihyps}{map_force}'] = mgp_model
 
 
@@ -181,16 +181,24 @@ def test_predict(all_gp, all_mgp, bodies, multihyps, map_force):
     struc_test, f = get_random_structure(cell, unique_species, nenv)
     test_envi = env.AtomicEnvironment(struc_test, 1, cutoffs)
 
-    gp_pred_en = gp_model.predict_local_energy(test_envi)
-    gp_pred_f = [gp_model.predict(test_envi, d+1)[0] for d in range(3)]
+    gp_pred_en, gp_pred_envar = gp_model.predict_local_energy_and_var(test_envi)
+    gp_pred = np.array([gp_model.predict(test_envi, d+1) for d in range(3)]).T
     mgp_pred = mgp_model.predict(test_envi, mean_only=True)
 
     # check mgp is within 2 meV/A of the gp
-    if not map_force:
+    if map_force:
+        map_str = 'force'
+        gp_pred_var = gp_pred[1]
+    else:
+        map_str = 'energy'
+        gp_pred_var = gp_pred_envar
         assert(np.abs(mgp_pred[3] - gp_pred_en) < 2e-3), \
-                f"{bodies} body energy mapping is wrong"
-    assert(np.abs(mgp_pred[0][0] - gp_pred_f[0]) < 2e-3), \
-            f"{bodies} body mapping is wrong"
+                f"{bodies} body {map_str} mapping is wrong"
+
+    assert(np.abs(mgp_pred[0][0] - gp_pred[0][0]) < 2e-3), \
+            f"{bodies} body {map_str} mapping is wrong"
+#    assert(np.abs(mgp_pred[1] - gp_pred_var) < 2e-3), \
+#            f"{bodies} body {map_str} mapping var is wrong"
 
     clean()
 
