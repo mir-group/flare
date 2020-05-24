@@ -53,7 +53,7 @@ class GaussianProcess:
             computed in parallel. Defaults to False.
         n_cpus (int, optional): Number of cpus used for parallel
             calculations. Defaults to 1 (serial)
-        n_samples (int, optional): Size of submatrix to use when parallelizing
+        n_sample (int, optional): Size of submatrix to use when parallelizing
             predictions.
         output (Output, optional): Output object used to dump hyperparameters
             during optimization. Defaults to None.
