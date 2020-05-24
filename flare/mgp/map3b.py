@@ -85,44 +85,6 @@ class Map3body(MapXbody):
         return spcs, comp_r, comp_xyz
 
 
-#    def predict_single_e_map(self, lengths, xyzs, mapping, mean_only, rank):
-#        '''
-#        predict force and variance contribution of one component
-#        '''
-#        lengths = np.array(lengths)
-#        xyzs = np.array(xyzs)
-#        print(lengths.shape, xyzs.shape)
-#        raise Exception
-#
-#        e_0, f_0 = mapping.mean(lengths, with_derivatives=True)
-#        e = np.sum(e_0) # energy
-#
-#        # predict forces and stress
-#        vir = np.zeros(6)
-#        vir_order = ((0,0), (1,1), (2,2), (1,2), (0,2), (0,1)) # match the ASE order
-#        f_d1 = np.diag(f_0[:,0,0]) @ xyzs[:,0,:]
-#        f_d2 = np.diag(f_0[:,1,0]) @ xyzs[:,1,:]
-#        f_d = f_d1 + f_d2
-#        f = 3 * np.sum(f_d, axis=0) 
-#
-#        for i in range(6):
-#            vir_i1 = f_d1[:,vir_order[i][0]]\
-#                   * xyzs[:,0,vir_order[i][1]] * lengths[:,0]
-#            vir_i2 = f_d2[:,vir_order[i][0]]\
-#                   * xyzs[:,1,vir_order[i][1]] * lengths[:,1]
-#            vir[i] = np.sum(vir_i1 + vir_i2)
-#        vir *= 1.5
-#
-#        # predict var
-#        v = 0
-#        if not mean_only:
-#            v_0 = np.expand_dims(np.sum(mapping.var(lengths, rank), axis=1),
-#                                 axis=1)
-#            v = mapping.var.V[:,:rank] @ v_0
-#
-#        return f, vir, v, e
-
-
 
 
 class SingleMap3body:
