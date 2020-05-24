@@ -263,7 +263,7 @@ class GaussianProcess:
                                options={'disp': False, 'gtol': grad_tol,
                                         'maxls': line_steps,
                                         'maxiter': self.maxiter})
-            except np.linalg.LinAlgError:
+            except:
                 print("Warning! Algorithm for L-BFGS-B failed. Changing to "
                       "BFGS for remainder of run.")
                 self.algo = 'BFGS'
