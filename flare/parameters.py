@@ -309,7 +309,7 @@ class Parameters():
                                  cutoff_list[twobody12]])
         else:
             if kernel_name != 'threebody':
-                return universal_cutoff
+                return [universal_cutoff]
             else:
                 return [universal_cutoff]*3
 

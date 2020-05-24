@@ -10,26 +10,16 @@ import numpy as np
 import multiprocessing as mp
 
 from copy import deepcopy
-from math import ceil, floor
-from scipy.linalg import solve_triangular
 from typing import List
 
-from flare.struc import Structure
 from flare.env import AtomicEnvironment
 from flare.gp import GaussianProcess
-from flare.gp_algebra import partition_vector, energy_force_vector_unit, \
-    force_energy_vector_unit, energy_energy_vector_unit, force_force_vector_unit, \
-    _global_training_data, _global_training_structures, \
-    get_kernel_vector, en_kern_vec
 from flare.parameters import Parameters
 from flare.kernels.utils import from_mask_to_args, str_to_kernel_set, str_to_mapped_kernel
-from flare.kernels.cutoffs import quadratic_cutoff
-from flare.utils.element_coder import Z_to_element, NumpyEncoder
+from flare.utils.element_coder import NumpyEncoder
 
-
-from flare.mgp.utils import get_bonds, get_triplets, get_triplets_en, \
-    get_kernel_term
-from flare.mgp.splines_methods import PCASplines, CubicSpline
+from flare.mgp.map2b import Map2body
+from flare.mgp.map3b import Map3body
 
 class MappedGaussianProcess:
     '''
@@ -105,39 +95,24 @@ class MappedGaussianProcess:
 
         self.__dict__.update(grid_params)
 
-        if self.map_force and (3 in self.bodies):
-            assert (np.abs(self.bounds_3[0][2]) <= 1) or \
-                (np.abs(self.bounds_3[1][2]) <= 1), \
-                'The force mapping needs to specify [bond, bond, cos_angle] for \
-                3-body, the 3rd dimension should be in range -1 to 1'
-
-        # if GP exists, the GP setup overrides the grid_params setup
-        if GP is not None:
-
-            self.cutoffs = deepcopy(GP.cutoffs)
-            self.hyps_mask = deepcopy(GP.hyps_mask)
-
-            self.bodies = []
-            if "two" in GP.kernel_name:
-                self.bodies.append(2)
-            if "three" in GP.kernel_name:
-                self.bodies.append(3)
-
         self.maps = {}
-        args = (struc_params, map_force, GP, mean_only,\
-                container_only, lmp_file_name, n_cpus, n_sample) 
+        args = [struc_params, map_force, GP, mean_only,\
+                container_only, lmp_file_name, n_cpus, n_sample]
 
         if 2 in self.bodies:
-            maps_2 = Map2body_MC(grid_num_2, self.bounds_2[0][0],
-                self.svd_rank_2, *args)            
+            args_2 = [self.grid_num_2, self.bounds_2[0][0], self.svd_rank_2] + args
+            maps_2 = Map2body(args_2)
             self.maps['twobody'] = maps_2
         if 3 in self.bodies:
-            maps_3 = Map3body_MC(grid_num_3, self.bounds_3[0][0],
-                self.svd_rank_3, *args)
+            args_3 = [self.grid_num_3, self.bounds_3[0][0], self.svd_rank_3] + args
+            maps_3 = Map3body(args_3)
             self.maps['threebody'] = maps_3
 
         self.mean_only = mean_only
 
+    def build_map(self, GP):
+        for xb in self.maps.keys():
+            self.maps[xb].build_map(GP)
 
     def predict(self, atom_env: AtomicEnvironment, mean_only: bool = False,
             rank: dict = {}) -> (float, 'ndarray', 'ndarray', float):
@@ -158,8 +133,8 @@ class MappedGaussianProcess:
             mean_only = True
 
         force = virial = kern = v = energy = 0
-        for key in self.maps.keys():
-            pred = self.maps[key].predict(atom_env, mean_only, rank=None) #TODO: deal with rank
+        for xb in self.maps.keys():
+            pred = self.maps[xb].predict(atom_env, mean_only, rank=None) #TODO: deal with rank
             force += pred[0]
             virial += pred[1]
             kern += pred[2]
@@ -169,6 +144,7 @@ class MappedGaussianProcess:
         variance = kern - np.sum(v**2, axis=0)
 
         return force, variance, virial, energy
+
 
     def write_lmp_file(self, lammps_name):
         '''

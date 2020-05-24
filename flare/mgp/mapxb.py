@@ -30,7 +30,7 @@ class MapXbody:
                  grid_num: List,
                  lower_bound: List,
                  svd_rank: int=0,
-                 struc_params: dict,
+                 struc_params: dict={},
                  map_force: bool=False,
                  GP: GaussianProcess=None,
                  mean_only: bool=False,
@@ -52,7 +52,11 @@ class MapXbody:
 
         self.hyps_mask = None
         self.cutoffs = None
-        self.kernel_name = "twobody"
+
+        # to be replaced in subclass
+        # self.kernel_name = "xbody"
+        # self.singlexbody = SingleMapXbody
+        # self.bounds = 0
 
         # if GP exists, the GP setup overrides the grid_params setup
         if GP is not None:
@@ -60,18 +64,16 @@ class MapXbody:
             self.cutoffs = deepcopy(GP.cutoffs)
             self.hyps_mask = deepcopy(GP.hyps_mask)
 
-        self.build_bond_struc(struc_params)
-        self.build_map_container(GP)
-        self.mean_only = mean_only
+        # build_bond_struc is defined in subclass
+        self.build_bond_struc(struc_params) 
 
+        # build map
+        self.build_map_container(GP)
         if not container_only and (GP is not None) and \
                 (len(GP.training_data) > 0):
             self.build_map(GP)
 
-    def build_bond_struc(self):
-        raise NotImplementedError, "should be replaced by subclass method."
-
-    def build_map_container(self, singlexbody, GP=None):
+    def build_map_container(self, GP=None):
         '''
         construct an empty spline container without coefficients.
         '''
@@ -86,11 +88,11 @@ class MapXbody:
 
         for b_struc in self.bond_struc:
             if (GP is not None):
-                self.bounds[1][0] = Parameters.get_cutoff(self.kernel_name,
-                                    b_struc.coded_species, self.hyps_mask)
-            m = singlexbody(self.grid_num, self.bounds,
-                            b_struc, self.map_force, self.svd_rank,
-                            self.mean_only, None, None, self.n_cpus, self.n_sample)
+                self.bounds[1] = Parameters.get_cutoff(self.kernel_name,
+                                 b_struc.coded_species, self.hyps_mask)
+            m = self.singlexbody(self.grid_num, self.bounds,
+                                 b_struc, self.map_force, self.svd_rank,
+                                 self.mean_only, None, None, self.n_cpus, self.n_sample)
             self.maps.append(m)
 
 
@@ -112,9 +114,6 @@ class MapXbody:
         # TODO
         # self.write_lmp_file(self.lmp_file_name)
 
-    def get_arrays(self, atom_env):
-        raise NotImplementedError, "should be replaced by subclass method."
-
 
     def predict(self, atom_env, mean_only, rank):
         
@@ -128,6 +127,7 @@ class MapXbody:
 
         args = from_mask_to_args(hyps, cutoffs, hyps_mask)
 
+        kern = 0
         if self.map_force:
             predict_comp = self.predict_single_f_map
             if not mean_only:
@@ -146,12 +146,12 @@ class MapXbody:
         vir_spcs = 0
         v_spcs = 0
         e_spcs = 0
-        for i, spc in enumerate(self.spc_set):
+        for i, spc in enumerate(spcs):
             lengths = np.array(comp_r[i])
             xyzs = np.array(comp_xyz[i])
             map_ind = self.spc.index(spc)
             f, vir, v, e = predict_comp(lengths, xyzs,
-                    mappings[map_ind], mean_only, rank)
+                    self.maps[map_ind], mean_only, rank)
             f_spcs += f
             vir_spcs += vir
             v_spcs += v
@@ -189,9 +189,40 @@ class MapXbody:
 
         return f, vir, v, e
 
-
     def predict_single_e_map(self, lengths, xyzs, mapping, mean_only, rank):
-        raise NotImplementedError, "should be replaced by subclass method."
+        '''
+        predict force and variance contribution of one component
+        '''
+        lengths = np.array(lengths)
+        xyzs = np.array(xyzs)
+
+        e_0, f_0 = mapping.mean(lengths, with_derivatives=True)
+        e = np.sum(e_0) # energy
+
+        # predict forces and stress
+        vir = np.zeros(6)
+        vir_order = ((0,0), (1,1), (2,2), (1,2), (0,2), (0,1)) # match the ASE order
+
+        f_d = np.diag(f_0[:,0,0]) @ xyzs
+        f = self.bodies * np.sum(f_d, axis=0) 
+
+        for i in range(6):
+            vir_i = f_d[:,vir_order[i][0]]\
+                    * xyzs[:,vir_order[i][1]] * lengths[:,0]
+            vir[i] = np.sum(vir_i)
+
+        vir *= self.bodies / 2
+
+        # predict var
+        v = 0
+        if not mean_only:
+            v_0 = np.expand_dims(np.sum(mapping.var(lengths, rank), axis=1),
+                                 axis=1)
+            v = mapping.var.V[:,:rank] @ v_0
+
+        return f, vir, v, e
+
+
 
 
 
@@ -414,6 +445,4 @@ class SingleMapXbody:
                 f.write('\n')
 
         f.write('\n')
-
-
 

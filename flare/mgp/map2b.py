@@ -19,55 +19,18 @@ from flare.kernels.utils import from_mask_to_args, str_to_kernel_set, str_to_map
 from flare.kernels.cutoffs import quadratic_cutoff
 from flare.utils.element_coder import Z_to_element, NumpyEncoder
 
-
-from flare.mgp.utils import get_bonds, get_triplets, get_triplets_en, \
-    get_kernel_term
+from flare.mgp.mapxb import MapXbody, SingleMapXbody
+from flare.mgp.utils import get_bonds, get_kernel_term
 from flare.mgp.splines_methods import PCASplines, CubicSpline
 
 
-class Map2body_MC:
-    def __init__(self,
-                 grid_num: List,
-                 lower_bound: float=0.1,
-                 svd_rank: int=0,
-                 struc_params: dict,
-                 map_force: bool=False,
-                 GP: GaussianProcess=None,
-                 mean_only: bool=False,
-                 container_only: bool=True,
-                 lmp_file_name: str='lmp.mgp',
-                 n_cpus: int=None,
-                 n_sample: int=100):
+class Map2body(MapXbody):
+    def __init__(self, args):
 
-        # load all arguments as attributes
-        self.grid_num = grid_num
-        self.lower_bound = lower_bound
-        self.svd_rank = svd_rank
-        self.struc_params = struc_params
-        self.map_force = map_force
-        self.mean_only = mean_only
-        self.lmp_file_name = lmp_file_name
-        self.n_cpus = n_cpus
-        self.n_sample = n_sample
-
-        self.hyps_mask = None
-        self.cutoffs = None
         self.kernel_name = "twobody"
-
-        # if GP exists, the GP setup overrides the grid_params setup
-        if GP is not None:
-
-            self.cutoffs = deepcopy(GP.cutoffs)
-            self.hyps_mask = deepcopy(GP.hyps_mask)
-
-        self.build_bond_struc(struc_params)
-        self.build_map_container(GP)
-        self.mean_only = mean_only
-
-        if not container_only and (GP is not None) and \
-                (len(GP.training_data) > 0):
-            self.build_map(GP)
-
+        self.singlexbody = SingleMap2body
+        self.bodies = 2
+        super().__init__(*args)
 
     def build_bond_struc(self, struc_params):
         '''
@@ -79,173 +42,36 @@ class Map2body_MC:
         species_list = struc_params['species']
         N_spc = len(species_list)
 
+        # initialize bounds
+        self.bounds = np.ones((2, 1)) * self.lower_bound
+
         # 2 body (2 atoms (1 bond) config)
         self.bond_struc = []
         self.spc = []
         self.spc_set = []
-        bodies = 2
         for spc1_ind, spc1 in enumerate(species_list):
             for spc2 in species_list[spc1_ind:]:
                 species = [spc1, spc2]
                 self.spc.append(species)
                 self.spc_set.append(set(species))
-                positions = [[(i+1)/(bodies+1)*cutoff, 0, 0]
-                             for i in range(bodies)]
+                positions = [[(i+1)/(self.bodies+1)*cutoff, 0, 0]
+                             for i in range(self.bodies)]
                 spc_struc = Structure(cell, species, positions)
                 spc_struc.coded_species = np.array(species)
                 self.bond_struc.append(spc_struc)
 
 
-    def build_map_container(self, GP=None):
-        '''
-        construct an empty spline container without coefficients.
-        '''
+    def get_arrays(self, atom_env):
 
-        if (GP is not None):
-            self.cutoffs = deepcopy(GP.cutoffs)
-            self.hyps_mask = deepcopy(GP.hyps_mask)
-            if self.kernel_name not in self.hyps_mask['kernels']:
-                raise Exception #TODO: deal with this
-
-        self.maps = []
-
-        # initialize the bounds
-        self.bounds = np.ones((2, 1)) * self.lower_bound
-
-        for b_struc in self.bond_struc:
-            if (GP is not None):
-                self.bounds[1][0] = Parameters.get_cutoff(self.kernel_name,
-                                    b_struc.coded_species, self.hyps_mask)
-            map_2 = Map2body(self.grid_num, self.bounds,
-                             b_struc, self.map_force, self.svd_rank,
-                             self.mean_only, self.n_cpus, self.n_sample)
-            self.maps.append(map_2)
-
-
-    def build_map(self, GP):
-        '''
-        generate/load grids and get spline coefficients
-        '''
-
-        # double check the container and the GP is the consistent
-        if not Parameters.compare_dict(GP.hyps_mask, self.hyps_mask):
-            self.build_map_container(GP)
-
-        self.kernel_info = get_kernel_term(GP, self.kernel_name)
-
-        for m in self.maps:
-            m.build_map(GP)
-
-        # write to lammps pair style coefficient file
-        # TODO
-        # self.write_lmp_file(self.lmp_file_name)
-
-
-    def predict(self, atom_env, mean_only, rank):
-        
-        if self.mean_only:  # if not build mapping for var
-            mean_only = True
-
-        if rank is None:
-            rank = self.maps[0].svd_rank
-
-        force_kernel, en_kernel, _, cutoffs, hyps, hyps_mask = self.kernel_info
-
-        args = from_mask_to_args(hyps, cutoffs, hyps_mask)
-
-        if not mean_only:
-            if self.map_force:
-                kern = np.zeros(3)
-                for d in range(3):
-                    kern[d] = force_kernel(atom_env, atom_env, d+1, d+1, *args)
-            else:
-                kern = en_kernel(atom_env, atom_env, *args)
-
-        spcs, comp_r, comp_xyz = get_bonds(atom_env.ctype,
-                atom_env.etypes, atom_env.bond_array_2)
-
-        # predict for each species
-        f_spcs = 0
-        vir_spcs = 0
-        v_spcs = 0
-        e_spcs = 0
-        for i, spc in enumerate(self.spc_set):
-            lengths = np.array(comp_r[i])
-            xyzs = np.array(comp_xyz[i])
-            map_ind = self.spc.index(spc)
-            f, vir, v, e = self.predict_component(lengths, xyzs,
-                    mappings[map_ind], mean_only, rank)
-            f_spcs += f
-            vir_spcs += vir
-            v_spcs += v
-            e_spcs += e
-
-        return f_spcs, vir_spcs, kern, v_spcs, e_spcs
-
-
-    def predict_component(self, lengths, xyzs, mapping, mean_only, rank):
-        '''
-        predict force and variance contribution of one component
-        '''
-        lengths = np.array(lengths)
-        xyzs = np.array(xyzs)
-
-        # predict mean
-        if self.map_force: # force mapping
-            e = 0
-            f_0 = mapping.mean(lengths)
-            f_d = np.diag(f_0) @ xyzs
-            f = np.sum(f_d, axis=0)
-
-            # predict stress from force components
-            vir = np.zeros(6)
-            vir_order = ((0,0), (1,1), (2,2), (0,1), (0,2), (1,2))
-            for i in range(6):
-                vir_i = f_d[:,vir_order[i][0]]\
-                        * xyzs[:,vir_order[i][1]] * lengths[:,0]
-                vir[i] = np.sum(vir_i)
-            vir *= 0.5
-
-            # predict var
-            v = np.zeros(3)
-            if not mean_only:
-                v_0 = mapping.var(lengths, rank)
-                v_d = v_0 @ xyzs
-                v = mapping.var.V[:,:rank] @ v_d
-
-        else: # energy mapping
-            e_0, f_0 = mapping.mean(lengths, with_derivatives=True)
-            e = np.sum(e_0) # energy
-
-            # predict forces and stress
-            vir = np.zeros(6)
-            vir_order = ((0,0), (1,1), (2,2), (1,2), (0,2), (0,1)) # match the ASE order
-
-            f_d = np.diag(f_0[:,0,0]) @ xyzs
-            f = 2 * np.sum(f_d, axis=0) # force: need to check prefactor 2
-
-            for i in range(6):
-                vir_i = f_d[:,vir_order[i][0]]\
-                        * xyzs[:,vir_order[i][1]] * lengths[:,0]
-                vir[i] = np.sum(vir_i)
-
-            # predict var
-            v = 0
-            if not mean_only:
-                v_0 = np.expand_dims(np.sum(mapping.var(lengths, rank), axis=1),
-                                     axis=1)
-                v = mapping.var.V[:,:rank] @ v_0
-
-        return f, vir, v, e
+        return get_bonds(atom_env.ctype, atom_env.etypes, atom_env.bond_array_2)
 
 
 
 
-
-class Map2body:
+class SingleMap2body:
     def __init__(self, grid_num: int, bounds, bond_struc: Structure,
                  map_force=False, svd_rank=0, mean_only: bool=False,
-                 n_cpus: int=None, n_sample: int=100):
+                 load_grid=None, update=None, n_cpus: int=None, n_sample: int=100):
         '''
         Build 2-body MGP
 
@@ -450,8 +276,7 @@ class Map2body:
 
         elem1 = Z_to_element(spc[0])
         elem2 = Z_to_element(spc[1])
-        header_2 = '{elem1} {elem2} {a} {b} {order}\n'\
-            .format(elem1=elem1, elem2=elem2, a=a, b=b, order=order)
+        header_2 = f'{elem1} {elem2} {a} {b} {order}\n'
         f.write(header_2)
 
         for c, coef in enumerate(coefs_2):
@@ -460,6 +285,3 @@ class Map2body:
                 f.write('\n')
 
         f.write('\n')
-
-
-
