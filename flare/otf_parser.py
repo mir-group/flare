@@ -62,7 +62,11 @@ class OtfAnalysis:
             if hyp_no is None:
                 hyp_no = call_no
             if hyps is None:
-                gp_hyps = self.gp_hyp_list[hyp_no-1][-1]
+                # check out the last non-empty element from the list
+                for icall in reversed(range(hyp_no)):
+                    if len(self.gp_hyp_list[icall]) > 0:
+                        gp_hyps = self.gp_hyp_list[icall][-1]
+                        break
             else:
                 gp_hyps = hyps
 

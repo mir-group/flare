@@ -33,23 +33,26 @@ of atoms which are added from a given seed frame.
 
 """
 import json as json
+import numpy as np
 import time
 import warnings
+
 from copy import deepcopy
 from math import inf
 from typing import List, Tuple, Union
 
-import numpy as np
 from flare.env import AtomicEnvironment
 from flare.gp import GaussianProcess
-from flare.mgp.mgp_en import MappedGaussianProcess
-from flare.mgp.otf import predict_on_structure_mgp
+from flare.mgp.mgp import MappedGaussianProcess
 from flare.output import Output
-from flare.predict import predict_on_structure_par, predict_on_structure_par_en
+from flare.predict import predict_on_atom, predict_on_atom_en, \
+    predict_on_structure_par, predict_on_structure_par_en, \
+    predict_on_structure_mgp
 from flare.struc import Structure
-from flare.util import element_to_Z, \
-    is_std_in_bound_per_species, is_force_in_bound_per_species, \
-    Z_to_element, subset_of_frame_by_element, NumpyEncoder
+from flare.utils.element_coder import element_to_Z, Z_to_element, NumpyEncoder
+from flare.utils.learner import subset_of_frame_by_element, \
+    is_std_in_bound_per_species, is_force_in_bound_per_species
+from flare.mgp.mgp import MappedGaussianProcess
 
 
 class TrajectoryTrainer:
@@ -461,14 +464,14 @@ class TrajectoryTrainer:
                     if self.train_checkpoint_interval and \
                             cur_trains_done_write and \
                             self.train_checkpoint_interval \
-                            % cur_trains_done_write == 0:
+                                <= cur_trains_done_write:
                         will_write = True
                         cur_trains_done_write = 0
 
                     if self.atom_checkpoint_interval \
                             and cur_atoms_added_write \
                             and self.atom_checkpoint_interval \
-                            % cur_atoms_added_write == 0:
+                                <= cur_atoms_added_write:
                         will_write = True
                         cur_atoms_added_write = 0
 

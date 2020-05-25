@@ -1,4 +1,4 @@
-Kernel interface (for developer)
+Kernel Interface (for developers)
 ======================
 
 .. automodule:: flare.kernels.utils

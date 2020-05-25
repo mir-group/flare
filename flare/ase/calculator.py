@@ -14,7 +14,7 @@ class FLARE_Calculator(Calculator):
     :type gp_model: GaussianProcess
     :param mgp_model: FLARE's Mapped Gaussian Process object. `None` by default. MGP will only be used if `use_mapping` is set to True
     :type mgp_model: MappedGaussianProcess
-    :param par: set to `True` if parallelize the prediction. `False` by default. 
+    :param par: set to `True` if parallelize the prediction. `False` by default.
     :type par: Bool
     :param use_mapping: set to `True` if use MGP for prediction. `False` by default.
     :type use_mapping: Bool
@@ -38,9 +38,9 @@ class FLARE_Calculator(Calculator):
 
     def get_potential_energy(self, atoms=None, force_consistent=False):
         return self.get_property('energy', atoms)
-                                                 
-                                                 
-    def get_forces(self, atoms):                 
+
+
+    def get_forces(self, atoms):
         return self.get_property('forces', atoms)
 
 
@@ -72,7 +72,7 @@ class FLARE_Calculator(Calculator):
 
     def calculate_gp(self, atoms):
         nat = len(atoms)
-        struc_curr = Structure(np.array(atoms.cell), 
+        struc_curr = Structure(np.array(atoms.cell),
                                atoms.get_atomic_numbers(),
                                atoms.positions)
 
@@ -93,7 +93,7 @@ class FLARE_Calculator(Calculator):
 
     def calculate_mgp_serial(self, atoms):
         nat = len(atoms)
-        struc_curr = Structure(np.array(atoms.cell), 
+        struc_curr = Structure(np.array(atoms.cell),
                                atoms.get_atomic_numbers(),
                                atoms.positions)
 
@@ -103,7 +103,8 @@ class FLARE_Calculator(Calculator):
         self.results['local_energies'] = np.zeros(nat)
         for n in range(nat):
             chemenv = AtomicEnvironment(struc_curr, n,
-                                        self.mgp_model.cutoffs)
+                                        self.mgp_model.cutoffs,
+                                        cutoffs_mask = self.mgp_model.hyps_mask)
             f, v, vir, e = self.mgp_model.predict(chemenv, mean_only=False)
             self.results['forces'][n] = f
             self.results['stresses'][n] = vir
@@ -111,7 +112,7 @@ class FLARE_Calculator(Calculator):
             self.results['local_energies'][n] = e
 
         volume = atoms.get_volume()
-        total_stress = np.sum(self.results['stresses'], axis=0) 
+        total_stress = np.sum(self.results['stresses'], axis=0)
         self.results['stress'] = total_stress / volume
         self.results['energy'] = np.sum(self.results['local_energies'])
 
@@ -137,6 +138,8 @@ class FLARE_Calculator(Calculator):
     def build_mgp(self, skip=True):
         """
         Construct :class:`MappedGaussianProcess` based on the current GP
+        TODO: change to the re-build method
+        
         :param skip: if `True`, then it will not construct MGP
         :type skip: Bool
         """
@@ -148,8 +151,10 @@ class FLARE_Calculator(Calculator):
         # set svd rank based on the training set, grid number and threshold 1000
         grid_params = self.mgp_model.grid_params
         struc_params = self.mgp_model.struc_params
+        map_force = self.mgp_model.map_force
         lmp_file_name = self.mgp_model.lmp_file_name
         mean_only = self.mgp_model.mean_only
+        n_cpus = self.mgp_model.n_cpus
         container_only = False
 
         train_size = len(self.gp_model.training_data)
@@ -158,9 +163,11 @@ class FLARE_Calculator(Calculator):
         grid_params['svd_rank_2'] = rank_2
         grid_params['svd_rank_3'] = rank_3
        
-        hyps = self.gp_model.hyps
-        cutoffs = self.gp_model.cutoffs
-        self.mgp_model = MappedGaussianProcess(hyps, cutoffs,
-                        grid_params, struc_params, mean_only,
-                        container_only, self.gp_model, lmp_file_name)
-
+        self.mgp_model = MappedGaussianProcess(grid_params,
+                                               struc_params,
+                                               map_force=map_force,
+                                               GP=self.gp_model,
+                                               mean_only=mean_only,
+                                               container_only=container_only,
+                                               lmp_file_name=lmp_file_name,
+                                               n_cpus=n_cpus)

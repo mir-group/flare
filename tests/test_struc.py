@@ -5,7 +5,7 @@ import os
 from tests.test_gp import get_random_structure
 from flare.struc import Structure
 from json import loads, dumps
-from flare.util import Z_to_element, NumpyEncoder
+from flare.utils.element_coder import Z_to_element, NumpyEncoder
 try:
     import pymatgen.core.structure as pmgstruc
     _test_pmg = True
@@ -147,7 +147,7 @@ def test_struc_to_ase():
     assert np.all(uc.positions == new_atoms.get_positions())
     assert np.all(uc.cell == new_atoms.get_cell())
 
-   
+
 @pytest.mark.skipif(not _test_pmg,reason='Pymatgen not present in available '
                                         'packages.')
 def test_from_pmg_structure():
@@ -231,23 +231,21 @@ def test_to_xyz(varied_test_struc):
 
 
 def test_file_load():
-
     struct1, forces = get_random_structure(cell=np.eye(3),
-                                          unique_species=[1, 2],
-                                          noa=2)
-
+                                           unique_species=[1, 2],
+                                           noa=2)
     struct2, forces = get_random_structure(cell=np.eye(3),
-                                          unique_species=[1, 2],
-                                          noa=2)
+                                           unique_species=[1, 2],
+                                           noa=2)
 
     with open("test_write.json",'w') as f:
-        f.write(dumps(struct1.as_dict(),cls=NumpyEncoder))
+        f.write(dumps(struct1.as_dict(), cls=NumpyEncoder))
 
     with pytest.raises(NotImplementedError):
         Structure.from_file(file_name='test_write.json', format='xyz')
 
     struct1a = Structure.from_file('test_write.json')
-    assert dumpcompare(struct1.as_dict() , struct1a.as_dict())
+    assert dumpcompare(struct1.as_dict(), struct1a.as_dict())
     os.remove('test_write.json')
 
     with open("test_write_set.json", 'w') as f:
@@ -269,6 +267,3 @@ def test_file_load():
     vasp_struct = Structure.from_file('./test_files/test_POSCAR')
     assert isinstance(vasp_struct, Structure)
     assert len(vasp_struct) == 6
-
-
-
