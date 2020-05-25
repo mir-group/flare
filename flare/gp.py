@@ -29,6 +29,7 @@ from flare.utils.element_coder import NumpyEncoder, Z_to_element
 
 logger = logging.getLogger("gp.py")
 
+
 class GaussianProcess:
     """Gaussian process force field. Implementation is based on Algorithm 2.1
     (pg. 19) of "Gaussian Processes for Machine Learning" by Rasmussen and
@@ -167,14 +168,14 @@ class GaussianProcess:
                 time.sleep(random())
                 self.name = f'{base}_{count}'
                 logger.info("Specified GP name is present in global memory; "
-                                 "Attempting to rename the "
-                                 f"GP instance to {self.name}")
+                            "Attempting to rename the "
+                            f"GP instance to {self.name}")
                 count += 1
             if (self.name in _global_training_labels):
                 milliseconds = int(round(time.time() * 1000) % 10000000)
                 self.name = f"{base}_{milliseconds}"
                 logger.info("Specified GP name still present in global memory: "
-                      f"renaming the gp instance to {self.name}")
+                            f"renaming the gp instance to {self.name}")
             logger.info(f"Final name of the gp instance is {self.name}")
 
         assert (self.name not in _global_training_labels), \
@@ -345,7 +346,7 @@ class GaussianProcess:
                                         'maxiter': self.maxiter})
             except np.linalg.LinAlgError:
                 logger.warning("Algorithm for L-BFGS-B failed. Changing to "
-                      "BFGS for remainder of run.")
+                               "BFGS for remainder of run.")
                 self.opt_algorithm = 'BFGS'
 
         if custom_bounds is not None:

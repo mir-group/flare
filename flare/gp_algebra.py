@@ -114,7 +114,6 @@ def partition_vector(n_sample, size, n_cpus):
 
 def partition_force_energy_block(n_sample: int, size1: int, size2: int,
                                  n_cpus: int):
-
     """Special partition method for the force/energy block. Because the number
     of environments in a structure can vary, we only split up the environment
     list, which has length size1.
@@ -212,9 +211,9 @@ def parallel_matrix_construction(pack_function, hyps, name, kernel, cutoffs,
     for wid in range(nbatch):
         s1, e1, s2, e2 = block_id[wid]
         children.append(mp.Process(target=queue_wrapper,
-                        args=(result_queue, wid, pack_function,
-                              (hyps, name, s1, e1, s2, e2, s1 == s2,
-                               kernel, cutoffs, hyps_mask))))
+                                   args=(result_queue, wid, pack_function,
+                                         (hyps, name, s1, e1, s2, e2, s1 == s2,
+                                          kernel, cutoffs, hyps_mask))))
 
     # Run child processes.
     for c in children:
@@ -1043,8 +1042,8 @@ def get_ky_and_hyp(hyps: np.ndarray, name, kernel_grad, cutoffs=None,
         n_cpus = mp.cpu_count()
     if (n_cpus == 1):
         hyp_mat0, k_mat = get_ky_and_hyp_pack(
-                name, 0, size, 0, size, True,
-                hyps, kernel_grad, cutoffs, hyps_mask)
+            name, 0, size, 0, size, True,
+            hyps, kernel_grad, cutoffs, hyps_mask)
     else:
 
         block_id, nbatch = partition_matrix(n_sample, size, n_cpus)
@@ -1157,9 +1156,10 @@ def get_neg_like_grad(hyps: np.ndarray, name: str,
 
     logger.debug(f"get_like_grad_from_mats {time.time()-time0}")
 
-    logger.debug('\nHyperparameters: ', list(hyps))
-    logger.debug('Likelihood: ' + str(like))
-    logger.debug('Likelihood Gradient: ', list(like_grad))
+    logger.debug('')
+    logger.debug(f'Hyperparameters: {list(hyps)}')
+    logger.debug(f'Likelihood: {like}')
+    logger.debug(f'Likelihood Gradient: {list(like_grad)}')
 
     return -like, -like_grad
 

@@ -300,7 +300,7 @@ class TrajectoryTrainer:
             self.logger.info(f"Added {atom_count} atoms to "
                              f"pretrain.\n"
                              f"Pre-run GP Statistics: "
-                             f"{json.dumps(self.gp.training_statistics)} \n")
+                             f"{json.dumps(self.gp.training_statistics)} ")
 
         if (self.seed_envs or atom_count or self.seed_frames) and \
                 (self.pre_train_max_iter or self.max_trains):
@@ -492,16 +492,16 @@ class TrajectoryTrainer:
         for atom, spec in zip(train_atoms, added_species):
             added_atoms[spec].append(atom)
 
-        self.logger.info('\nAdding atom(s) '
+        self.logger.info('Adding atom(s) '
                          f'{json.dumps(added_atoms,cls=NumpyEncoder)}'
-                         ' to the training set.\n')
+                         ' to the training set.')
 
         if uncertainties is None or len(uncertainties) != 0:
             uncertainties = frame.stds[train_atoms]
 
         if len(uncertainties) != 0:
             self.logger.info(f'Uncertainties: '
-                             f'{uncertainties}.\n')
+                             f'{uncertainties}.')
 
         # update gp model; handling differently if it's an MGP
         if not self.mgp:
@@ -522,7 +522,7 @@ class TrajectoryTrainer:
         :type max_iter: int
         """
 
-        self.logger.debug('Train GP\n')
+        self.logger.debug('Train GP')
 
         # TODO: Improve flexibility in GP training to make this next step
         # unnecessary, so maxiter can be passed as an argument
