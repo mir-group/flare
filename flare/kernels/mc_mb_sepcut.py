@@ -20,11 +20,11 @@ from typing import Callable
 
 
 @njit
-def many_body_mc_sepcut_jit(q_array_1, q_array_2, 
-                            q_neigh_array_1, q_neigh_array_2, 
+def many_body_mc_sepcut_jit(q_array_1, q_array_2,
+                            q_neigh_array_1, q_neigh_array_2,
                             q_neigh_grads_1, q_neigh_grads_2,
-                            c1, c2, etypes1, etypes2, 
-                            species1, species2, 
+                            c1, c2, etypes1, etypes2,
+                            species1, species2,
                             d1, d2, sig, ls,
                             nspec, spec_mask, mb_mask):
     """many-body multi-element kernel between two force components accelerated
@@ -65,8 +65,8 @@ def many_body_mc_sepcut_jit(q_array_1, q_array_2,
         mbtype2 = mb_mask[bc2n + bs]
 
         # Calculate many-body descriptor values for central atoms 1 and 2
-        s1 = np.where(species1==s)[0][0] 
-        s2 = np.where(species2==s)[0][0] 
+        s1 = np.where(species1==s)[0][0]
+        s2 = np.where(species2==s)[0][0]
         q1 = q_array_1[s1]
         q2 = q_array_2[s2]
 
@@ -99,19 +99,19 @@ def many_body_mc_sepcut_jit(q_array_1, q_array_2,
 
                 if etypes2[j] == s:
                     q2j_grads = q_neigh_grads_2[j, d2-1]
-    
+
                 if c2 == s:
                     qj2_grads = q_neigh_grads_2[j, d2-1]
-    
+
                 # Calculate many-body descriptor value for j
                 qjs = q_neigh_array_2[j, s2]
-    
+
                 if c1 == etypes2[j]:
                     k1js = k_sq_exp_double_dev(q1, qjs, sig[mbtype1], ls[mbtype1])
 
+                be = spec_mask[etypes1[i]]
+                mbtype = mb_mask[be+bsn]
                 if etypes1[i] == etypes2[j]:
-                    be = spec_mask[etypes1[i]]
-                    mbtype = mb_mask[be+bsn]
                     kij = k_sq_exp_double_dev(qis, qjs, sig[mbtype], ls[mbtype])
                 else:
                     kij = 0
@@ -123,11 +123,11 @@ def many_body_mc_sepcut_jit(q_array_1, q_array_2,
     return kern
 
 @njit
-def many_body_mc_grad_sepcut_jit(q_array_1, q_array_2, 
-                            q_neigh_array_1, q_neigh_array_2, 
+def many_body_mc_grad_sepcut_jit(q_array_1, q_array_2,
+                            q_neigh_array_1, q_neigh_array_2,
                             q_neigh_grads_1, q_neigh_grads_2,
-                            c1, c2, etypes1, etypes2, 
-                            species1, species2, 
+                            c1, c2, etypes1, etypes2,
+                            species1, species2,
                             d1, d2, sig, ls,
                             nspec, spec_mask, nmb, mb_mask):
     """gradient of many-body multi-element kernel between two force components
@@ -169,8 +169,8 @@ def many_body_mc_grad_sepcut_jit(q_array_1, q_array_2,
         mbtype2 = mb_mask[bc2n + bs]
 
         # Calculate many-body descriptor values for central atoms 1 and 2
-        s1 = np.where(species1==s)[0][0] 
-        s2 = np.where(species2==s)[0][0] 
+        s1 = np.where(species1==s)[0][0]
+        s2 = np.where(species2==s)[0][0]
         q1 = q_array_1[s1]
         q2 = q_array_2[s2]
 
@@ -205,22 +205,21 @@ def many_body_mc_grad_sepcut_jit(q_array_1, q_array_2,
                 qjs = qj2_grads = q2j_grads = k1js = dk1js = 0
                 if etypes2[j] == s:
                     q2j_grads = q_neigh_grads_2[j, d2-1]
-    
+
                 if c2 == s:
                     qj2_grads = q_neigh_grads_2[j, d2-1]
-    
+
                 # Calculate many-body descriptor value for j
                 qjs = q_neigh_array_2[j, s2]
-    
+
                 if c1 == etypes2[j]:
                     k1js = k_sq_exp_double_dev(q1, qjs, sig[mbtype1], ls[mbtype1])
                     q1jdiffsq = (q1 - qjs) * (q1 - qjs)
                     dk1js = mb_grad_helper_ls_(q1jdiffsq, sig[mbtype1], ls[mbtype1])
 
+                be = spec_mask[etypes2[j]]
+                mbtype = mb_mask[bsn + be]
                 if etypes1[i] == etypes2[j]:
-                    be = spec_mask[etypes2[j]]
-                    mbtype = mb_mask[bsn + be]
-
                     kij = k_sq_exp_double_dev(
                         qis, qjs, sig[mbtype], ls[mbtype])
                     qijdiffsq = (qis - qjs) * (qis - qjs)
@@ -267,10 +266,10 @@ def many_body_mc_grad_sepcut_jit(q_array_1, q_array_2,
 
 
 @njit
-def many_body_mc_force_en_sepcut_jit(q_array_1, q_array_2, 
+def many_body_mc_force_en_sepcut_jit(q_array_1, q_array_2,
                                      q_neigh_array_1, q_neigh_grads_1,
-                                     c1, c2, etypes1, 
-                                     species1, species2, d1, sig, ls, 
+                                     c1, c2, etypes1,
+                                     species1, species2, d1, sig, ls,
                                      nspec, spec_mask, mb_mask):
     """many-body many-element kernel between force and energy components accelerated
     with Numba.
@@ -307,8 +306,8 @@ def many_body_mc_force_en_sepcut_jit(q_array_1, q_array_2,
         mbtype1 = mb_mask[bc1n + bs]
         mbtype2 = mb_mask[bc2n + bs]
 
-        s1 = np.where(species1==s)[0][0] 
-        s2 = np.where(species2==s)[0][0] 
+        s1 = np.where(species1==s)[0][0]
+        s2 = np.where(species2==s)[0][0]
         q1 = q_array_1[s1]
         q2 = q_array_2[s2]
 
@@ -335,9 +334,9 @@ def many_body_mc_force_en_sepcut_jit(q_array_1, q_array_2,
 
 
 @njit
-def many_body_mc_en_sepcut_jit(q_array_1, q_array_2, c1, c2, 
+def many_body_mc_en_sepcut_jit(q_array_1, q_array_2, c1, c2,
                                species1, species2,
-                               sig, ls, 
+                               sig, ls,
                                nspec, spec_mask, mb_mask):
     """many-body many-element kernel between energy components accelerated
     with Numba.
