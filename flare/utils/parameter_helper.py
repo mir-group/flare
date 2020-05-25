@@ -960,7 +960,10 @@ class ParameterHelper():
         This function is not tested yet
         """
 
-        Parameters.check_instantiation(hyps_mask)
+        Parameters.check_instantiation(hyps_mask['hyps'],
+                                       hyps_mask['cutoffs'],
+                                       hyps_mask['kernels'],
+                                       hyps_mask)
 
         pm = ParameterHelper(verbose=verbose)
 

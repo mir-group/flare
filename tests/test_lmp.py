@@ -93,7 +93,7 @@ def test_init(bodies, multihyps, all_mgp, all_gp):
 
     gp_model = all_gp[f'{bodies}{multihyps}']
 
-    grid_num_2 = 64
+    grid_num_2 = [64]
     grid_num_3 = 16
     lower_cut = 0.01
     two_cut = gp_model.cutoffs.get('twobody', 0)

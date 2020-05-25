@@ -4,19 +4,22 @@ from flare.struc import Structure
 from flare.utils.parameter_helper import ParameterHelper
 from flare.parameters import Parameters
 
+
 def test_initialization():
     '''
     simplest senario
     '''
     pm = ParameterHelper(kernels=['twobody', 'threebody'],
-                         parameters={'twobody':[1, 0.5],
-                                     'threebody':[1, 0.5],
-                                     'cutoff_twobody':2,
-                                     'cutoff_threebody':1,
-                                     'noise':0.05},
+                         parameters={'twobody': [1, 0.5],
+                                     'threebody': [1, 0.5],
+                                     'cutoff_twobody': 2,
+                                     'cutoff_threebody': 1,
+                                     'noise': 0.05},
                          verbose="DEBUG")
     hm = pm.as_dict()
-    Parameters.check_instantiation(hm)
+    Parameters.check_instantiation(
+        hm['hyps'], hm['cutoffs'], hm['kernels'], hm)
+
 
 @pytest.mark.parametrize('ones', [True, False])
 def test_initialization2(ones):
@@ -24,25 +27,29 @@ def test_initialization2(ones):
     simplest senario
     '''
     pm = ParameterHelper(kernels=['twobody', 'threebody'],
-                         parameters={'cutoff_twobody':2,
-                                     'cutoff_threebody':1,
-                                     'noise':0.05},
+                         parameters={'cutoff_twobody': 2,
+                                     'cutoff_threebody': 1,
+                                     'noise': 0.05},
                          ones=ones,
                          random=not ones,
                          verbose="DEBUG")
     hm = pm.as_dict()
-    Parameters.check_instantiation(hm)
+    Parameters.check_instantiation(
+        hm['hyps'], hm['cutoffs'], hm['kernels'], hm)
+
 
 def test_initialization3():
     pm = ParameterHelper(species=['O', 'C', 'H'],
-                         kernels={'twobody':[['*', '*'], ['O','O']],
-                                  'threebody':[['*', '*', '*'], ['O','O', 'O']]},
-                          parameters={'twobody0':[1, 0.5], 'twobody1':[2, 0.2],
-                                'threebody0':[1, 0.5], 'threebody1':[2, 0.2],
-                                'cutoff_twobody':2, 'cutoff_threebody':1},
-                          verbose="DEBUG")
+                         kernels={'twobody': [['*', '*'], ['O', 'O']],
+                                  'threebody': [['*', '*', '*'], ['O', 'O', 'O']]},
+                         parameters={'twobody0': [1, 0.5], 'twobody1': [2, 0.2],
+                                     'threebody0': [1, 0.5], 'threebody1': [2, 0.2],
+                                     'cutoff_twobody': 2, 'cutoff_threebody': 1},
+                         verbose="DEBUG")
     hm = pm.as_dict()
-    Parameters.check_instantiation(hm)
+    Parameters.check_instantiation(
+        hm['hyps'], hm['cutoffs'], hm['kernels'], hm)
+
 
 def test_generate_by_line():
 
@@ -71,7 +78,9 @@ def test_generate_by_line():
     pm.set_parameters('cutoff_threebody', 4)
     pm.set_parameters('cutoff_manybody', 3)
     hm = pm.as_dict()
-    Parameters.check_instantiation(hm)
+    Parameters.check_instantiation(
+        hm['hyps'], hm['cutoffs'], hm['kernels'], hm)
+
 
 def test_generate_by_line2():
 
@@ -89,46 +98,53 @@ def test_generate_by_line2():
     pm.set_parameters('cutoff_twobody', 5)
     pm.set_parameters('cutoff_threebody', 4)
     hm = pm.as_dict()
-    Parameters.check_instantiation(hm)
+    Parameters.check_instantiation(
+        hm['hyps'], hm['cutoffs'], hm['kernels'], hm)
+
 
 def test_generate_by_list():
 
     pm = ParameterHelper(verbose="DEBUG")
     pm.list_groups('specie', ['O', 'C', 'H'])
-    pm.list_groups('twobody', [['*', '*'], ['O','O']])
-    pm.list_groups('threebody', [['*', '*', '*'], ['O','O', 'O']])
-    pm.list_parameters({'twobody0':[1, 0.5], 'twobody1':[2, 0.2],
-                        'threebody0':[1, 0.5], 'threebody1':[2, 0.2],
-                        'cutoff_twobody':2, 'cutoff_threebody':1})
+    pm.list_groups('twobody', [['*', '*'], ['O', 'O']])
+    pm.list_groups('threebody', [['*', '*', '*'], ['O', 'O', 'O']])
+    pm.list_parameters({'twobody0': [1, 0.5], 'twobody1': [2, 0.2],
+                        'threebody0': [1, 0.5], 'threebody1': [2, 0.2],
+                        'cutoff_twobody': 2, 'cutoff_threebody': 1})
     hm = pm.as_dict()
-    Parameters.check_instantiation(hm)
+    Parameters.check_instantiation(
+        hm['hyps'], hm['cutoffs'], hm['kernels'], hm)
 
 
 def test_opt():
     pm = ParameterHelper(species=['O', 'C', 'H'],
-                          kernels={'twobody':[['*', '*'], ['O','O']],
-                                   'threebody':[['*', '*', '*'], ['O','O', 'O']]},
-                          parameters={'twobody0':[1, 0.5, 1], 'twobody1':[2, 0.2, 2],
-                                'threebody0':[1, 0.5], 'threebody1':[2, 0.2],
-                                'cutoff_twobody':2, 'cutoff_threebody':1},
-                          constraints={'twobody0':[False, True]},
-                          verbose="DEBUG")
+                         kernels={'twobody': [['*', '*'], ['O', 'O']],
+                                  'threebody': [['*', '*', '*'], ['O', 'O', 'O']]},
+                         parameters={'twobody0': [1, 0.5, 1], 'twobody1': [2, 0.2, 2],
+                                     'threebody0': [1, 0.5], 'threebody1': [2, 0.2],
+                                     'cutoff_twobody': 2, 'cutoff_threebody': 1},
+                         constraints={'twobody0': [False, True]},
+                         verbose="DEBUG")
     hm = pm.as_dict()
-    Parameters.check_instantiation(hm)
+    Parameters.check_instantiation(
+        hm['hyps'], hm['cutoffs'], hm['kernels'], hm)
+
 
 def test_randomization():
     pm = ParameterHelper(species=['O', 'C', 'H'],
-                          kernels=['twobody', 'threebody'],
-                          allseparate=True,
-                          random=True,
-                          parameters={'cutoff_twobody': 7,
-                              'cutoff_threebody': 4.5,
-                              'cutoff_manybody': 3},
-                          verbose="debug")
+                         kernels=['twobody', 'threebody'],
+                         allseparate=True,
+                         random=True,
+                         parameters={'cutoff_twobody': 7,
+                                     'cutoff_threebody': 4.5,
+                                     'cutoff_manybody': 3},
+                         verbose="debug")
     hm = pm.as_dict()
-    Parameters.check_instantiation(hm)
+    Parameters.check_instantiation(
+        hm['hyps'], hm['cutoffs'], hm['kernels'], hm)
     name = pm.find_group('specie', 'O')
     name = pm.find_group('twobody', ['O', 'C'])
+
 
 def test_from_dict():
     pm = ParameterHelper(species=['O', 'C', 'H'],
@@ -136,13 +152,15 @@ def test_from_dict():
                          allseparate=True,
                          random=True,
                          parameters={'cutoff_twobody': 7,
-                             'cutoff_threebody': 4.5,
-                             'cutoff_manybody': 3},
+                                     'cutoff_threebody': 4.5,
+                                     'cutoff_manybody': 3},
                          verbose="debug")
     hm = pm.as_dict()
-    Parameters.check_instantiation(hm)
+    Parameters.check_instantiation(
+        hm['hyps'], hm['cutoffs'], hm['kernels'], hm)
 
-    pm1 = ParameterHelper.from_dict(hm, verbose="debug", init_spec=['O', 'C', 'H'])
+    pm1 = ParameterHelper.from_dict(
+        hm, verbose="debug", init_spec=['O', 'C', 'H'])
     print("from_dict")
     hm1 = pm1.as_dict()
     print(hm['hyps'])
