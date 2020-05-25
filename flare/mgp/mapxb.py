@@ -40,7 +40,7 @@ class MapXbody:
                  n_sample: int=100):
 
         # load all arguments as attributes
-        self.grid_num = grid_num
+        self.grid_num = np.array(grid_num)
         self.lower_bound = lower_bound
         self.svd_rank = svd_rank
         self.struc_params = struc_params
@@ -90,9 +90,9 @@ class MapXbody:
             if (GP is not None):
                 self.bounds[1] = Parameters.get_cutoff(self.kernel_name,
                                  b_struc.coded_species, self.hyps_mask)
-            m = self.singlexbody(self.grid_num, self.bounds,
-                                 b_struc, self.map_force, self.svd_rank,
-                                 self.mean_only, None, None, self.n_cpus, self.n_sample)
+            m = self.singlexbody((self.grid_num, self.bounds, b_struc, 
+                                  self.map_force, self.svd_rank, self.mean_only,
+                                  None, None, self.n_cpus, self.n_sample))
             self.maps.append(m)
 
 
@@ -230,6 +230,7 @@ class MapXbody:
 class SingleMapXbody:
     def __init__(self, grid_num: int, bounds, bond_struc: Structure,
                  map_force=False, svd_rank=0, mean_only: bool=False,
+                 load_grid=None, update=None, 
                  n_cpus: int=None, n_sample: int=100):
         '''
         Build 2-body MGP
@@ -243,15 +244,10 @@ class SingleMapXbody:
         self.map_force = map_force
         self.svd_rank = svd_rank
         self.mean_only = mean_only
+        self.load_grid = load_grid
+        self.update = update
         self.n_cpus = n_cpus
         self.n_sample = n_sample
-
-        spc = bond_struc.coded_species
-        self.species_code = Z_to_element(spc[0]) + '_' + Z_to_element(spc[1])
-
-#        arg_dict = inspect.getargvalues(inspect.currentframe())[3]
-#        del arg_dict['self']
-#        self.__dict__.update(arg_dict)
 
         self.build_map_container()
 
@@ -270,7 +266,7 @@ class SingleMapXbody:
            with GP.alpha
         '''
 
-        kernel_info = get_kernel_term(GP, 'twobody')
+        kernel_info = get_kernel_term(GP, self.kernel_name)
 
         if (self.n_cpus is None):
             processes = mp.cpu_count()
@@ -278,131 +274,132 @@ class SingleMapXbody:
             processes = self.n_cpus
 
         # ------ construct grids ------
-        nop = self.grid_num
-        bond_lengths = np.linspace(self.bounds[0][0], self.bounds[1][0], nop)
-        env12 = AtomicEnvironment(
-            self.bond_struc, 0, GP.cutoffs, cutoffs_mask=GP.hyps_mask)
+        n_grid = np.prod(self.grid_num)
+        grid_env = AtomicEnvironment(self.bond_struc, 0, GP.cutoffs,
+            cutoffs_mask=GP.hyps_mask)
 
-        # --------- calculate force kernels ---------------
+        grid_mean = np.zeros([n_grid])
+        if not self.mean_only:
+            grid_vars = np.zeros([n_grid, len(GP.alpha)])
+        else:
+            grid_vars = None
+
+        # -------- get training data info ----------
         n_envs = len(GP.training_data)
         n_strucs = len(GP.training_structures)
         n_kern = n_envs * 3 + n_strucs
 
-        if (n_envs > 0):
-            with mp.Pool(processes=processes) as pool:
+        if (n_envs == 0) and (n_strucs == 0):
+            return np.zeros([n_grid]), None
 
-                block_id, nbatch = \
-                    partition_vector(self.n_sample, n_envs, processes)
+        if self.kernel_name == "threebody":
+            mapk = str_to_mapped_kernel(self.kernel_name, GP.component, GP.hyps_mask)
+            mapped_kernel_info = (kernel_info[0], mapk[0], mapk[1],
+                                  kernel_info[3], kernel_info[4], kernel_info[5])
 
-                k12_slice = []
-                for ibatch in range(nbatch):
-                    s, e = block_id[ibatch]
-                    k12_slice.append(pool.apply_async(
-                        self._GenGrid_inner, args=(GP.name, s, e, bond_lengths,
-                                                   env12, kernel_info)))
-                k12_matrix = []
-                for ibatch in range(nbatch):
-                    k12_matrix += [k12_slice[ibatch].get()]
-                pool.close()
-                pool.join()
-            del k12_slice
-            k12_v_force = np.vstack(k12_matrix)
-            del k12_matrix
+        # ------- call gengrid functions ---------------
+        args = [GP.name, grid_env, kernel_info]
+        if processes == 1:
+            k12_v_force = self._gengrid_serial(args, True, n_envs)
+#            k12_v_force = \
+#                self._GenGrid_numba(GP.name, 0, n_envs, self.bounds,
+#                                n1, n2, n12, env12, mapped_kernel_info)
+            k12_v_energy = self._gengrid_serial(args, False, n_strucs)
 
-        # --------- calculate energy kernels ---------------
-        if (n_strucs > 0):
-            with mp.Pool(processes=processes) as pool:
-                block_id, nbatch = \
-                    partition_vector(self.n_sample, n_strucs, processes)
-
-                k12_slice = []
-                for ibatch in range(nbatch):
-                    s, e = block_id[ibatch]
-                    k12_slice.append(pool.apply_async(
-                        self._GenGrid_energy,
-                        args=(GP.name, s, e, bond_lengths, env12, kernel_info)))
-                k12_matrix = []
-                for ibatch in range(nbatch):
-                    k12_matrix += [k12_slice[ibatch].get()]
-                pool.close()
-                pool.join()
-            del k12_slice
-            k12_v_energy = np.vstack(k12_matrix)
-            del k12_matrix
-
-        if (n_strucs > 0 and n_envs > 0):
-            k12_v_all = np.vstack([k12_v_force, k12_v_energy])
-            k12_v_all = np.moveaxis(k12_v_all, 0, -1)
-            del k12_v_force
-            del k12_v_energy
-        elif (n_strucs > 0):
-            k12_v_all = np.moveaxis(k12_v_energy, 0, -1)
-            del k12_v_energy
-        elif (n_envs > 0):
-            k12_v_all = np.moveaxis(k12_v_force, 0, -1)
-            del k12_v_force
         else:
-            return np.zeros([nop]), None
+            k12_v_force = self._gengrid_par(args, True, n_envs, processes)
+            k12_v_energy = self._gengrid_par(args, False, n_strucs, processes)
+
+        k12_v_all = np.hstack([k12_v_force, k12_v_energy])
+        del k12_v_force
+        del k12_v_energy
 
         # ------- compute bond means and variances ---------------
-        bond_means = np.zeros([nop])
+        grid_mean = k12_v_all @ GP.alpha
+        grid_mean = np.reshape(grid_mean, self.grid_num)
+
         if not self.mean_only:
-            bond_vars = np.zeros([nop, len(GP.alpha)])
-        else:
-            bond_vars = None
-        for b, _ in enumerate(bond_lengths):
-            k12_v = k12_v_all[b, :]
-            bond_means[b] = np.matmul(k12_v, GP.alpha)
-            if not self.mean_only:
-                bond_vars[b, :] = solve_triangular(GP.l_mat, k12_v, lower=True)
+            grid_vars = solve_triangular(GP.l_mat, k12_v_all.T, lower=True).T
+            tensor_shape = np.array([*self.grid_num, grid_vars.shape[1]])
+            grid_vars = np.reshape(grid_vars, tensor_shape)
 
-        write_species_name = ''
-        for x in self.bond_struc.coded_species:
-            write_species_name += "_" + Z_to_element(x)
         # ------ save mean and var to file -------
-        np.save('grid2_mean' + write_species_name, bond_means)
-        np.save('grid2_var' + write_species_name, bond_vars)
+        np.save(f'grid{self.bodies}_mean{self.species_code}', grid_mean)
+        np.save(f'grid{self.bodies}_var{self.species_code}', grid_vars)
 
-        return bond_means, bond_vars
+        return grid_mean, grid_vars
 
-    def _GenGrid_inner(self, name, s, e, bond_lengths,
-                       env12, kernel_info):
+
+    def _gengrid_serial(self, args, force_block, n_envs):
+        if n_envs == 0:
+            n_grid = len(args[1])
+            return np.empty((n_grid, 0))
+
+        k12_v = self._gengrid_inner(*args, force_block, 0, n_envs)
+        return k12_v
+
+
+    def _gengrid_par(self, args, force_block, n_envs, processes):
+        if n_envs == 0:
+            n_grid = len(args[1])
+            return np.empty((n_grid, 0))
+
+        with mp.Pool(processes=processes) as pool:
+
+            block_id, nbatch = \
+                partition_vector(self.n_sample, n_envs, processes)
+
+            k12_slice = []
+            for ibatch in range(nbatch):
+                s, e = block_id[ibatch]
+                k12_slice.append(pool.apply_async(self._gengrid_inner, 
+                    args = args + [force_block, s, e]))
+            k12_matrix = []
+            for ibatch in range(nbatch):
+                k12_matrix += [k12_slice[ibatch].get()]
+            pool.close()
+            pool.join()
+        del k12_slice
+        k12_v_force = np.vstack(k12_matrix)
+        del k12_matrix
+
+        return k12_v_force
+
+
+    def _gengrid_inner(self, name, grid_env, kern_info, force_block, s, e):
         '''
         Calculate kv segments of the given batch of training data for all grids
         '''
 
-        kernel, ek, efk, cutoffs, hyps, hyps_mask = kernel_info
-        size = e - s
-        k12_v = np.zeros([len(bond_lengths), size*3])
-        for b, r in enumerate(bond_lengths):
-            env12.bond_array_2 = np.array([[r, 1, 0, 0]])
-            if self.map_force:
-                k12_v[b, :] = force_force_vector_unit(name, s, e, env12, kernel, hyps,
-                                               cutoffs, hyps_mask, 1)
+        kernel, ek, efk, cutoffs, hyps, hyps_mask = kern_info
+        if force_block:
+            size = (e - s) * 3
+            force_x_vector_unit = force_force_vector_unit
+            force_x_kern = kernel
+            energy_x_vector_unit = energy_force_vector_unit
+            energy_x_kern = efk
+        else:
+            size = e - s
+            force_x_vector_unit = force_energy_vector_unit
+            force_x_kern = efk
+            energy_x_vector_unit = energy_energy_vector_unit
+            energy_x_kern = ek
+           
+        grids = self.construct_grids()
+        k12_v = np.zeros([len(grids), size])
 
-            else:
-                k12_v[b, :] = energy_force_vector_unit(name, s, e,
-                        env12, efk, hyps, cutoffs, hyps_mask)
-        return np.moveaxis(k12_v, 0, -1)
-
-    def _GenGrid_energy(self, name, s, e, bond_lengths, env12, kernel_info):
-        '''
-        Calculate kv segments of the given batch of training data for all grids
-        '''
-
-        kernel, ek, efk, cutoffs, hyps, hyps_mask = kernel_info
-        size = e - s
-        k12_v = np.zeros([len(bond_lengths), size])
-        for b, r in enumerate(bond_lengths):
-            env12.bond_array_2 = np.array([[r, 1, 0, 0]])
+        for b in range(grids.shape[0]):
+            grid_pt = grids[b]
+            grid_env = self.set_env(grid_env, grid_pt)
 
             if self.map_force:
-                k12_v[b, :] = force_energy_vector_unit(name, s, e, env12, efk,
-                    hyps, cutoffs, hyps_mask, 1)
+                k12_v[b, :] = force_x_vector_unit(name, s, e, grid_env, 
+                    force_x_kern, hyps, cutoffs, hyps_mask, 1)
             else:
-                k12_v[b, :] = energy_energy_vector_unit(name, s, e,
-                    env12, ek, hyps, cutoffs, hyps_mask)
-        return np.moveaxis(k12_v, 0, -1)
+                k12_v[b, :] = energy_x_vector_unit(name, s, e, grid_env,
+                    energy_x_kern, hyps, cutoffs, hyps_mask)
+
+        return k12_v 
 
 
     def build_map_container(self):
@@ -410,15 +407,24 @@ class SingleMapXbody:
         build 1-d spline function for mean, 2-d for var
         '''
         self.mean = CubicSpline(self.bounds[0], self.bounds[1],
-                                orders=[self.grid_num])
+                                orders=self.grid_num)
 
         if not self.mean_only:
             self.var = PCASplines(self.bounds[0], self.bounds[1],
-                                  orders=[self.grid_num],
+                                  orders=self.grid_num,
                                   svd_rank=self.svd_rank)
 
     def build_map(self, GP):
+        if not self.load_grid:
+            y_mean, y_var = self.GenGrid(GP)
+        # If load grid is blank string '' or pre-fix, load in
+        else:
+            y_mean = np.load(f'{self.load_grid}grid{self.bodies}_mean_{self.species_code}.npy')
+            y_var = np.load(f'{self.load_grid}grid{self.bodies}_var_{self.species_code}.npy')
+
         y_mean, y_var = self.GenGrid(GP)
+        print(y_mean.shape)
+        print(y_var.shape)
         self.mean.set_values(y_mean)
         if not self.mean_only:
             self.var.set_values(y_var)
