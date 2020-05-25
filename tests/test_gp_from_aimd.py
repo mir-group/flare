@@ -231,7 +231,7 @@ def test_mgp_gpfa(all_mgp, all_gp):
                    'bounds_2': [[lower_cut], [two_cut]],
                    'bounds_3': [[lower_cut, lower_cut, lower_cut],
                                 [three_cut, three_cut, three_cut]],
-                   'grid_num_2': grid_num_2,
+                   'grid_num_2': [grid_num_2],
                    'grid_num_3': [grid_num_3, grid_num_3, grid_num_3],
                    'svd_rank_2': np.min((grid_num_2, 3 * train_size)),
                    'svd_rank_3': np.min((grid_num_3 ** 3, 3 * train_size)),

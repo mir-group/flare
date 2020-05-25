@@ -70,6 +70,8 @@ class ParameterHelper():
     additional_groups = ['cut3b']
     # dimension of the kernels
     ndim = {'twobody': 2, 'threebody': 3, 'manybody': 2, 'cut3b': 2}
+    n_kernel_parameters = {'twobody': 2,
+                           'threebody': 2, 'manybody': 2, 'cut3b': 0}
 
     def __init__(self, hyps_mask=None, species=None, kernels={},
                  cutoff_groups={}, parameters=None,
@@ -492,6 +494,8 @@ class ParameterHelper():
                              "as a group name")
 
         if group_type != 'specie':
+
+            assert len(element_list) == ParameterHelper.ndim[group_type]
 
             # Check all the other group_type to
             exclude_list = deepcopy(self.all_types)

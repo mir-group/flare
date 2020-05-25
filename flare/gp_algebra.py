@@ -12,7 +12,6 @@ _global_training_labels = {}
 _global_training_structures = {}
 _global_energy_labels = {}
 
-logger = logging.getLogger("gp_algebra")
 
 def queue_wrapper(result_queue, wid,
                   func, args):
@@ -1122,7 +1121,7 @@ def get_like_from_mats(ky_mat, l_mat, alpha, name):
 
 
 def get_neg_like_grad(hyps: np.ndarray, name: str,
-                      kernel_grad, output=None,
+                      kernel_grad, logger=None,
                       cutoffs=None, hyps_mask=None,
                       n_cpus=1, n_sample=100):
     """compute the log likelihood and its gradients
@@ -1133,7 +1132,7 @@ def get_neg_like_grad(hyps: np.ndarray, name: str,
     :param kernel_grad: function object of the kernel gradient
     :param output: Output object for dumping every hyper-parameter
                    sets computed
-    :type output: class Output
+    :type output: logger
     :param cutoffs: The cutoff values used for the atomic environments
     :type cutoffs: list of 2 float numbers
     :param hyps_mask: dictionary used for multi-group hyperparmeters
@@ -1144,41 +1143,23 @@ def get_neg_like_grad(hyps: np.ndarray, name: str,
     """
 
     time0 = time.time()
-    if output is not None:
-        ostring = "hyps:"
-        for hyp in hyps:
-            ostring += f" {hyp}"
-        ostring += "\n"
-        output.write_to_log(ostring, name="hyps")
 
     hyp_mat, ky_mat = \
         get_ky_and_hyp(hyps, name, kernel_grad, cutoffs=cutoffs,
                        hyps_mask=hyps_mask, n_cpus=n_cpus, n_sample=n_sample)
 
-    if output is not None:
-        output.write_to_log(f"get_ky_and_hyp {time.time()-time0}\n",
-                            name="hyps")
+    logger.debug(f"get_ky_and_hyp {time.time()-time0}")
 
     time0 = time.time()
 
     like, like_grad = \
         get_like_grad_from_mats(ky_mat, hyp_mat, name)
 
-    if output is not None:
-        output.write_to_log(f"get_like_grad_from_mats {time.time()-time0}\n",
-                            name="hyps")
+    logger.debug(f"get_like_grad_from_mats {time.time()-time0}")
 
-    if output is not None:
-        ostring = "like grad:"
-        for lg in like_grad:
-            ostring += f" {lg}"
-        ostring += "\n"
-        output.write_to_log(ostring, name="hyps")
-        output.write_to_log('like: ' + str(like)+'\n', name="hyps")
-
-    logger.info('\nHyperparameters: ', list(hyps))
-    logger.info('Likelihood: ' + str(like))
-    logger.info('Likelihood Gradient: ', list(like_grad))
+    logger.debug('\nHyperparameters: ', list(hyps))
+    logger.debug('Likelihood: ' + str(like))
+    logger.debug('Likelihood Gradient: ', list(like_grad))
 
     return -like, -like_grad
 

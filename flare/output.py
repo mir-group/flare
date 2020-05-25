@@ -33,7 +33,7 @@ class Output:
     :type always_flus: bool, optional
     """
 
-    def __init__(self, basename: str = 'otf_run',
+    def __init__(self, basename: str = 'otf_run', verbose: str = 'INFO',
                  always_flush: bool = False):
         """
         Construction. Open files.
@@ -43,7 +43,7 @@ class Output:
         filesuffix = {'log': '.out', 'hyps': '-hyps.dat'}
 
         for filetype in filesuffix:
-            self.open_new_log(filetype, filesuffix[filetype])
+            self.open_new_log(filetype, filesuffix[filetype], verbose)
 
         self.always_flush = always_flush
 
@@ -100,7 +100,7 @@ class Output:
 
     def write_header(self, gp_str: str,
                      dt: float = None,
-                     Nsteps: int = None, structure: Structure= None,
+                     Nsteps: int = None, structure: Structure = None,
                      std_tolerance: Union[float, int] = None,
                      optional: dict = None):
         """
@@ -134,7 +134,7 @@ class Output:
         elif std_tolerance > 0:
             std_string = \
                 f'uncertainty tolerance: {np.abs(std_tolerance)} ' \
-                                'times noise hyperparameter \n'
+                'times noise hyperparameter \n'
         else:
             std_string = ''
 
@@ -340,7 +340,7 @@ class Output:
 
         if hyps_mask is not None:
             hyps = Parameters.get_hyps(hyps_mask, hyps)
-            if len(hyp_labels)!=len(hyps):
+            if len(hyp_labels) != len(hyps):
                 hyp_labels = None
 
         if hyp_labels is not None:
@@ -362,7 +362,7 @@ class Output:
     def write_gp_dft_comparison(self, curr_step, frame,
                                 start_time, dft_forces,
                                 error, local_energies=None, KE=None,
-                                mgp= False):
+                                mgp=False):
         """ write the comparison to logfile
 
         :param curr_step: current timestep
