@@ -98,12 +98,14 @@ class Output:
         if flush or self.always_flush:
             self.logger[name].handlers[0].flush()
 
-    def write_header(self, cutoffs, kernels: [list],
-                     hyps, algo: str, dt: float = None,
+    def write_header(self, gp_str: str,
+                     dt: float = None,
                      Nsteps: int = None, structure: Structure= None,
                      std_tolerance: Union[float, int] = None,
                      optional: dict = None):
         """
+        TO DO: this should be replace by the string method of GP and OTF, GPFA
+
         Write header to the log function. Designed for Trajectory Trainer and
         OTF runs and can take flexible input for both.
 
@@ -119,7 +121,7 @@ class Output:
         """
 
         f = self.logger['log']
-        f.info(f'{datetime.datetime.now()} \n')
+        f.info(f'{datetime.datetime.now()}')
 
         if isinstance(std_tolerance, tuple):
             std_string = 'relative uncertainty tolerance: ' \
@@ -137,13 +139,8 @@ class Output:
             std_string = ''
 
         headerstring = ''
-        headerstring += \
-            f'number of cpu cores: {multiprocessing.cpu_count()}\n'
-        headerstring += f'cutoffs: {cutoffs}\n'
-        headerstring += f'kernels: {kernels}\n'
-        headerstring += f'number of hyperparameters: {len(hyps)}\n'
-        headerstring += f'hyperparameters: {str(hyps)}\n'
-        headerstring += f'hyperparameter optimization algorithm: {algo}\n'
+        headerstring += gp_str
+        headerstring += ''
         headerstring += std_string
         if dt is not None:
             headerstring += f'timestep (ps): {dt}\n'
@@ -339,7 +336,7 @@ class Output:
         :return:
         """
         f = self.logger[name]
-        f.info('\nGP hyperparameters: \n')
+        f.info('\n GP hyperparameters: ')
 
         if hyps_mask is not None:
             hyps = Parameters.get_hyps(hyps_mask, hyps)
@@ -348,16 +345,16 @@ class Output:
 
         if hyp_labels is not None:
             for i, label in enumerate(hyp_labels):
-                f.info(f'Hyp{i} : {label} = {hyps[i]:.4f}\n')
+                f.info(f'Hyp{i} : {label} = {hyps[i]:.4f}')
         else:
             for i, hyp in enumerate(hyps):
-                f.info(f'Hyp{i} : {hyp:.4f}\n')
+                f.info(f'Hyp{i} : {hyp:.4f}')
 
-        f.info(f'likelihood: {like:.4f}\n')
-        f.info(f'likelihood gradient: {like_grad}\n')
+        f.info(f'likelihood: {like:.4f}')
+        f.info(f'likelihood gradient: {like_grad}')
         if start_time:
             time_curr = time.time() - start_time
-            f.info(f'wall time from start: {time_curr:.2f} s \n')
+            f.info(f'wall time from start: {time_curr:.2f} s')
 
         if self.always_flush:
             f.handlers[0].flush()

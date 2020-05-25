@@ -240,10 +240,7 @@ class TrajectoryTrainer:
             raise NotImplementedError("Pre-running not"
                                       "yet configured for MGP")
         if self.verbose:
-            self.output.write_header(self.gp.cutoffs,
-                                     self.gp.kernels,
-                                     self.gp.hyps,
-                                     self.gp.opt_algorithm,
+            self.output.write_header(str(self.gp),
                                      dt=0,
                                      Nsteps=len(self.frames),
                                      structure=None,

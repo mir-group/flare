@@ -301,6 +301,13 @@ class GaussianProcess:
                 hyperparameter optimization.
         """
 
+        logger = logging.getLogger("gp_algebra")
+        if print_progress:
+            logger.setLevel(logging.INFO)
+        else:
+            logger.setLevel(logging.WARNING)
+
+
         if len(self.training_data) == 0 or len(self.training_labels) == 0:
             raise Warning("You are attempting to train a GP with no "
                           "training data. Add environments and forces "
@@ -310,7 +317,7 @@ class GaussianProcess:
 
         args = (self.name, self.kernel_grad, output,
                 self.cutoffs, self.hyps_mask,
-                self.n_cpus, self.n_sample, print_progress)
+                self.n_cpus, self.n_sample)
 
         res = None
 
@@ -562,12 +569,14 @@ class GaussianProcess:
         """String representation of the GP model."""
 
         thestr = "GaussianProcess Object\n"
+        thestr += f'Number of cpu cores: {self.n_cpus}\n'
         thestr += f'Kernel: {self.kernels}\n'
         thestr += f"Training points: {len(self.training_data)}\n"
-        for k in self.cutoffs:
-            thestr += f'cutoff_{k}: {self.cutoffs[k]}\n'
+        thestr += f'Cutoffs: {self.cutoffs}\n'
         thestr += f'Model Likelihood: {self.likelihood}\n'
 
+        thestr += f'Number of hyperparameters: {len(self.hyps)}\n'
+        thestr += f'Hyperparameters_array: {str(self.hyps)}\n'
         thestr += 'Hyperparameters: \n'
         if self.hyp_labels is None:
             # Put unlabeled hyperparameters on one line
@@ -575,10 +584,10 @@ class GaussianProcess:
             thestr += str(self.hyps) + '\n'
         else:
             for hyp, label in zip(self.hyps, self.hyp_labels):
-                thestr += f"{label}: {hyp}\n"
+                thestr += f"{label}: {hyp} \n"
 
         for k in self.hyps_mask:
-            thestr += f'{k}: {self.hyps_mask[k]}\n'
+            thestr += f'Hyps_mask {k}: {self.hyps_mask[k]} \n'
 
         return thestr
 

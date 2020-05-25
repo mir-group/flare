@@ -1,3 +1,4 @@
+import logging
 import math
 import time
 import numpy as np
@@ -11,6 +12,7 @@ _global_training_labels = {}
 _global_training_structures = {}
 _global_energy_labels = {}
 
+logger = logging.getLogger("gp_algebra")
 
 def queue_wrapper(result_queue, wid,
                   func, args):
@@ -1122,7 +1124,7 @@ def get_like_from_mats(ky_mat, l_mat, alpha, name):
 def get_neg_like_grad(hyps: np.ndarray, name: str,
                       kernel_grad, output=None,
                       cutoffs=None, hyps_mask=None,
-                      n_cpus=1, n_sample=100, print_progress=False):
+                      n_cpus=1, n_sample=100):
     """compute the log likelihood and its gradients
 
     :param hyps: list of hyper-parameters
@@ -1174,10 +1176,9 @@ def get_neg_like_grad(hyps: np.ndarray, name: str,
         output.write_to_log(ostring, name="hyps")
         output.write_to_log('like: ' + str(like)+'\n', name="hyps")
 
-    if print_progress:
-        print('\nHyperparameters: ', list(hyps))
-        print('Likelihood: ' + str(like))
-        print('Likelihood Gradient: ', list(like_grad))
+    logger.info('\nHyperparameters: ', list(hyps))
+    logger.info('Likelihood: ' + str(like))
+    logger.info('Likelihood Gradient: ', list(like_grad))
 
     return -like, -like_grad
 
