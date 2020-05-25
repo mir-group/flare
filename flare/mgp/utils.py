@@ -99,15 +99,6 @@ def get_triplets(ctype, etypes, bond_array, cross_bond_inds,
                 c12 = -1
             spc2 = etypes[ind1]
 
-#            if spc1 == spc2:
-#                spcs_list = [[ctype, spc1, spc2], [ctype, spc1, spc2]]
-#            elif ctype == spc1: # spc1 != spc2
-#                spcs_list = [[ctype, spc1, spc2], [spc2, ctype, spc1]]
-#            elif ctype == spc2: # spc1 != spc2
-#                spcs_list = [[spc1, spc2, ctype], [spc2, ctype, spc1]]
-#            else: # all different
-#                spcs_list = [[ctype, spc1, spc2], [ctype, spc2, spc1]]
-
             spcs_list = [[ctype, spc1, spc2], [ctype, spc2, spc1]]
             for i in range(2):
                 spcs = spcs_list[i]
@@ -144,33 +135,26 @@ def get_triplets_en(ctype, etypes, bond_array, cross_bond_inds,
             r12 = np.sqrt(r1**2 + r2**2 - 2*r1*r2*c12)
 
             spc2 = etypes[ind1]
-
-#            if spc1 == spc2:
-#                spcs_list = [[ctype, spc1, spc2], [ctype, spc1, spc2]]
-#            elif ctype == spc1: # spc1 != spc2
-#                spcs_list = [[ctype, spc1, spc2], [spc2, ctype, spc1]]
-#            elif ctype == spc2: # spc1 != spc2
-#                spcs_list = [[spc1, spc2, ctype], [spc2, ctype, spc1]]
-#            else: # all different
-#                spcs_list = [[ctype, spc1, spc2], [ctype, spc2, spc1]]
+            triplet1 = array([r1, r2, r12])
+            triplet2 = array([r2, r1, r12])
 
             if spc1 <= spc2:
                 spcs = [ctype, spc1, spc2]
-                triplet = array([r1, r2, r12])
+                triplet = [triplet1, triplet2]
                 coord = [c1, c2]
             else:
                 spcs = [ctype, spc2, spc1]
-                triplet = array([r2, r1, r12])
+                triplet = [triplet2, triplet1]
                 coord = [c2, c1]
 
             if spcs not in exist_species:
                 exist_species.append(spcs)
-                tris.append([triplet])
-                tri_dir.append([coord])
+                tris.append(triplet)
+                tri_dir.append(coord)
             else:
                 k = exist_species.index(spcs)
-                tris[k].append(triplet)
-                tri_dir[k].append(coord)
+                tris[k] += triplet
+                tri_dir[k] += coord
 
     return exist_species, tris, tri_dir
 
