@@ -46,14 +46,11 @@ class GaussianProcess:
             Defaults to 'L-BFGS-B'.
         maxiter (int, optional): Maximum number of iterations of the
             hyperparameter optimization algorithm. Defaults to 10.
-        parallel (bool, optional): If True, the covariance matrix K of the GP
-            is computed in parallel. Defaults to False.
-        per_atom_par (bool, optional): If True, each processor computes one
-            atom for prediction. Otherwise, it parallelizes over the training_data.
-            Defaults to True
-        n_cpus (int, optional): Number of cpus used for parallel calculations.
-            Defaults to 1 (serial)
-        n_samples (int, optional): Size of submatrix to use when parallelizing
+        parallel (bool, optional): If True, the covariance matrix K of the GP is
+            computed in parallel. Defaults to False.
+        n_cpus (int, optional): Number of cpus used for parallel
+            calculations. Defaults to 1 (serial)
+        n_sample (int, optional): Size of submatrix to use when parallelizing
             predictions.
         output (Output, optional): Output object used to dump hyperparameters
             during optimization. Defaults to None.

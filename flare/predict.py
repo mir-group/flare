@@ -213,7 +213,7 @@ def predict_on_structure_par(structure: Structure,
 
 
     for i in range(structure.nat):
-        if i not in selective_atoms:
+        if i not in selective_atoms and selective_atoms:
             continue
         r = results[i].get()
         forces[i] = r[0]

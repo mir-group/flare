@@ -254,20 +254,6 @@ class OTF:
                     if self.write_model == 3:
                         self.gp.write_model(self.output_name+'_model')
 
-                    # Store DFT outputs in another folder if desired
-                    # specified in self.store_dft_output
-                    if self.store_dft_output is not None:
-                        dest = self.store_dft_output[1]
-                        target_files = self.store_dft_output[0]
-                        now = datetime.now()
-                        dt_string = now.strftime("%Y.%m.%d:%H:%M:%S:")
-                        if isinstance(target_files, str):
-                            to_copy = [target_files]
-                        else:
-                            to_copy = target_files
-                        for file in to_copy:
-                            copyfile(file, dest+'/'+dt_string+file)
-
             # write gp forces
             if counter >= self.skip and not self.dft_step:
                 self.update_temperature(new_pos)
