@@ -69,6 +69,7 @@ class GaussianProcess:
                  n_sample: int = 100, output: Output = None,
                  name="default_gp",
                  energy_noise: float = 0.01, **kwargs,):
+
         """Initialize GP parameters and training data."""
 
         # load arguments into attributes
