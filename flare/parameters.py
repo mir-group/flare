@@ -100,13 +100,14 @@ class Parameters():
             start = 0
             for k in Parameters.all_kernel_types:
                 if k in kernels:
+                    if k+'_start' not in param_dict:
+                        param_dict[k+'_start'] = start
                     if 'n'+k not in param_dict:
                         print("add in hyper parameter separators for", k)
                         param_dict['n'+k] = 1
-                        param_dict[k+'_start'] = start
-                        start += 2
+                        start += Parameters.n_kernel_parameters[k]
                     else:
-                        start += param_dict['n'+k]*2
+                        start += param_dict['n'+k] * Parameters.n_kernel_parameters[k]
 
             print("Replace kernel array in param_dict")
             param_dict['kernels'] = deepcopy(kernels)
