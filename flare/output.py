@@ -13,6 +13,7 @@ import numpy as np
 
 from typing import Union
 
+from flare.parameters import Parameters
 from flare.struc import Structure
 from flare.utils.element_coder import Z_to_element
 
@@ -341,10 +342,9 @@ class Output:
         f.info('\nGP hyperparameters: \n')
 
         if hyps_mask is not None:
-            if 'map' in hyps_mask:
-                hyps = hyps_mask['original']
-                if len(hyp_labels)!=len(hyps):
-                    hyp_labels = None
+            hyps = Parameters.get_hyps(hyps_mask, hyps)
+            if len(hyp_labels)!=len(hyps):
+                hyp_labels = None
 
         if hyp_labels is not None:
             for i, label in enumerate(hyp_labels):

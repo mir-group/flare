@@ -23,7 +23,7 @@ class Parameters():
 
     all_kernel_types = ['twobody', 'threebody', 'manybody']
     ndim = {'twobody': 2, 'threebody': 3, 'manybody': 2, 'cut3b': 2}
-    n_kernel_parameters = {'twobody': 2, 'threebody': 2, 'manybody': 2, 'cut3b': 2}
+    n_kernel_parameters = {'twobody': 2, 'threebody': 2, 'manybody': 2, 'cut3b': 0}
 
     def __init__(self):
 
@@ -40,10 +40,6 @@ class Parameters():
                            'twobody_cutoff_list': None,
                            'threebody_cutoff_list': None,
                            'manybody_cutoff_list': None,
-                           'hyps': [],
-                           'hyp_labels': [],
-                           'cutoffs': {},
-                           'kernels': [],
                            'train_noise': True,
                            'energy_noise': 0,
                            'map': None,
@@ -51,6 +47,7 @@ class Parameters():
                            'original_labels': []
                           }
         self.hyps = None
+        self.hyp_labels = None
         self.cutoffs = {}
         self.kernels = []
 
@@ -176,7 +173,7 @@ class Parameters():
                 assert (npmax(mask) < n)
                 dim = Parameters.ndim[kernel]
                 assert len(mask) == nspecie ** dim, \
-                    f"wrong dimension of twobody_mask: " \
+                    f"wrong dimension of {kernel}_mask: " \
                     f" {len(mask)} != nspec ^ {dim} {nspecie**dim}"
 
                 # check whether the mask array is symmetrical
@@ -196,7 +193,7 @@ class Parameters():
                             mask_value = mask[mask_id]
                         else:
                             assert mask[mask_id] == mask_value, \
-                                'twobody_mask has to be symmetrical'
+                                f'{kernel}_mask has to be symmetrical'
 
                 if kernel != 'cut3b':
                     if kernel+'_cutoff_list' in param_dict:
