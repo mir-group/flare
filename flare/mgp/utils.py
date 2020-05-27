@@ -24,6 +24,24 @@ def get_kernel_term(GP, term):
 
     return (kernel, ek, efk, cutoffs, hyps, hyps_mask)
 
+def get_permutations(c2, ej1, ej2):
+    perm_list = [[0, 1, 2]]
+    if c2 == ej1:
+        perm_list += [[0, 2, 1]]
+
+    if c2 == ej2:
+        perm_list += [[2, 1, 0]]
+
+    if ej1 == ej2:
+        perm_list += [[1, 0, 2]]
+
+    if (c2 == ej1) and (ej1 == ej2):
+        perm_list += [[1, 2, 0]]
+        perm_list += [[2, 0, 1]]
+
+    return np.array(perm_list)
+
+
 
 def get_l_bound(curr_l_bound, structure, two_d=False):
     positions = structure.positions
