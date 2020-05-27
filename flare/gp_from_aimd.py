@@ -310,7 +310,7 @@ class TrajectoryTrainer:
         else:
             self.logger.debug("Now commencing pre-run set up of GP (which has "
                               "non-empty training set)")
-            self.gp.set_L_alpha()
+            self.gp.check_L_alpha()
 
         if self.model_format and not self.mgp:
             self.gp.write_model(f'{self.output_name}_prerun',
