@@ -277,6 +277,46 @@ def parallel_vector_construction(pack_function, name, x, kernel, hyps,
 #                            Ky construction
 # --------------------------------------------------------------------------
 
+def get_distance_mat_pack(hyps: np.ndarray, name: str, s1: int, e1: int,
+                          s2: int, e2: int, same: bool, kernel, cutoffs,
+                          hyps_mask):
+    """ Compute covariance matrix element between set1 and set2
+    :param hyps: list of hyper-parameters
+    :param name: name of the gp instance.
+    :param same: whether the row and column are the same
+    :param kernel: function object of the kernel
+    :param cutoffs: The cutoff values used for the atomic environments
+    :type cutoffs: list of 2 float numbers
+    :param hyps_mask: dictionary used for multi-group hyperparmeters
+
+    :return: covariance matrix
+    """
+
+    # initialize matrices
+    training_data = _global_training_data[name]
+    size1 = (e1-s1)
+    size2 = (e2-s2)
+    dist_mat = np.zeros([size1, size2])
+
+    # calculate elements
+    args = from_mask_to_args(hyps, cutoffs, hyps_mask)
+
+    for m_index in range(size1):
+        x_1 = training_data[m_index+s1]
+        if (same):
+            lowbound = m_index
+        else:
+            lowbound = 0
+        for n_index in range(lowbound, size2):
+            x_2 = training_data[n_index+s2]
+            kern_curr = kernel(x_1, x_2, *args)
+            # store kernel value
+            dist_mat[m_index, n_index] = kern_curr
+            if (same):
+                dist_mat[n_index, m_index] = kern_curr
+
+    return dist_mat
+
 def get_force_block_pack(hyps: np.ndarray, name: str, s1: int, e1: int,
                          s2: int, e2: int, same: bool, kernel, cutoffs,
                          hyps_mask):
@@ -391,6 +431,41 @@ def get_force_energy_block_pack(hyps: np.ndarray, name: str, s1: int,
             force_energy_block[m_index, n_index] = kern_curr
 
     return force_energy_block
+
+def kernel_distance_mat(hyps: np.ndarray, name: str, kernel, cutoffs=None,
+                    hyps_mask=None, n_cpus=1, n_sample=100):
+    """ parallel version of get_ky_mat
+    :param hyps: list of hyper-parameters
+    :param name: name of the gp instance.
+    :param kernel: function object of the kernel
+    :param cutoffs: The cutoff values used for the atomic environments
+    :type cutoffs: list of 2 float numbers
+    :param hyps_mask: dictionary used for multi-group hyperparmeters
+
+    :return: covariance matrix
+    """
+
+    training_data = _global_training_data[name]
+    size = len(training_data)
+
+    if (n_cpus is None):
+        n_cpus = mp.cpu_count()
+    if (n_cpus == 1):
+        k_mat = \
+            get_distance_mat_pack(hyps, name, 0, size, 0, size, True, kernel,
+                                  cutoffs, hyps_mask)
+    else:
+        # initialize matrices
+        block_id, nbatch = partition_matrix(n_sample, size, n_cpus)
+        mult = 1
+
+        k_mat = \
+            parallel_matrix_construction(get_distance_mat_pack, hyps, name,
+                                         kernel, cutoffs, hyps_mask,
+                                         block_id, nbatch, size, size,
+                                         mult, mult)
+
+    return k_mat
 
 
 def get_force_block(hyps: np.ndarray, name: str, kernel, cutoffs=None,
