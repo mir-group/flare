@@ -142,9 +142,9 @@ class MapXbody:
         spcs, comp_r, comp_xyz = self.get_arrays(atom_env)
 
         # predict for each species
-        f_spcs = 0
-        vir_spcs = 0
-        v_spcs = 0
+        f_spcs = np.zeros(3)
+        vir_spcs = np.zeros(6)
+        v_spcs = np.zeros(3) if self.map_force else 0
         e_spcs = 0
         for i, spc in enumerate(spcs):
             lengths = np.array(comp_r[i])
@@ -232,11 +232,6 @@ class SingleMapXbody:
                  map_force=False, svd_rank=0, mean_only: bool=False,
                  load_grid=None, update=None, 
                  n_cpus: int=None, n_sample: int=100):
-        '''
-        Build 2-body MGP
-
-        bond_struc: Mock structure used to sample 2-body forces on 2 atoms
-        '''
 
         self.grid_num = grid_num
         self.bounds = bounds
@@ -300,10 +295,11 @@ class SingleMapXbody:
         # ------- call gengrid functions ---------------
         args = [GP.name, grid_env, kernel_info]
         if processes == 1:
-            k12_v_force = self._gengrid_serial(args, True, n_envs)
-#            k12_v_force = \
-#                self._GenGrid_numba(GP.name, 0, n_envs, self.bounds,
-#                                n1, n2, n12, env12, mapped_kernel_info)
+            if self.kernel_name == "threebody":
+                k12_v_force = self._gengrid_numba(GP.name, 0, n_envs, grid_env, 
+                                                  mapped_kernel_info)
+            else:
+                k12_v_force = self._gengrid_serial(args, True, n_envs)
             k12_v_energy = self._gengrid_serial(args, False, n_strucs)
 
         else:
@@ -332,7 +328,7 @@ class SingleMapXbody:
 
     def _gengrid_serial(self, args, force_block, n_envs):
         if n_envs == 0:
-            n_grid = len(args[1])
+            n_grid = np.prod(self.grid_num)
             return np.empty((n_grid, 0))
 
         k12_v = self._gengrid_inner(*args, force_block, 0, n_envs)
@@ -341,7 +337,7 @@ class SingleMapXbody:
 
     def _gengrid_par(self, args, force_block, n_envs, processes):
         if n_envs == 0:
-            n_grid = len(args[1])
+            n_grid = np.prod(self.grid_num)
             return np.empty((n_grid, 0))
 
         with mp.Pool(processes=processes) as pool:
@@ -392,12 +388,13 @@ class SingleMapXbody:
             grid_pt = grids[b]
             grid_env = self.set_env(grid_env, grid_pt)
 
-            if self.map_force:
-                k12_v[b, :] = force_x_vector_unit(name, s, e, grid_env, 
-                    force_x_kern, hyps, cutoffs, hyps_mask, 1)
-            else:
-                k12_v[b, :] = energy_x_vector_unit(name, s, e, grid_env,
-                    energy_x_kern, hyps, cutoffs, hyps_mask)
+            if not self.skip_grid(grid_pt):                
+                if self.map_force:
+                    k12_v[b, :] = force_x_vector_unit(name, s, e, grid_env, 
+                        force_x_kern, hyps, cutoffs, hyps_mask, 1)
+                else:
+                    k12_v[b, :] = energy_x_vector_unit(name, s, e, grid_env,
+                        energy_x_kern, hyps, cutoffs, hyps_mask)
 
         return k12_v 
 
@@ -423,8 +420,6 @@ class SingleMapXbody:
             y_var = np.load(f'{self.load_grid}grid{self.bodies}_var_{self.species_code}.npy')
 
         y_mean, y_var = self.GenGrid(GP)
-        print(y_mean.shape)
-        print(y_var.shape)
         self.mean.set_values(y_mean)
         if not self.mean_only:
             self.var.set_values(y_var)
@@ -451,4 +446,3 @@ class SingleMapXbody:
                 f.write('\n')
 
         f.write('\n')
-

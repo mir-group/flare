@@ -84,6 +84,9 @@ class SingleMap2body(SingleMapXbody):
         grid_env.bond_array_2 = np.array([[r, 1, 0, 0]]) 
         return grid_env
 
+    def skip_grid(self, r):
+        return False
+
 
     def write(self, f, spc):
         '''
