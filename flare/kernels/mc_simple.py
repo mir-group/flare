@@ -145,11 +145,13 @@ def two_plus_three_mc_force_en(env1: AtomicEnvironment,
     r_cut_2 = cutoffs[0]
     r_cut_3 = cutoffs[1]
 
+    # TODO: Move fractional factor to the njit function.
     two_term = \
         two_body_mc_force_en_jit(env1.bond_array_2, env1.ctype, env1.etypes,
                                  env2.bond_array_2, env2.ctype, env2.etypes,
                                  d1, sig2, ls2, r_cut_2, cutoff_func) / 2
 
+    # TODO: Move fractional factor to the njit function.
     three_term = \
         three_body_mc_force_en_jit(env1.bond_array_3, env1.ctype, env1.etypes,
                                    env2.bond_array_3, env2.ctype, env2.etypes,
@@ -188,10 +190,12 @@ def two_plus_three_mc_en(env1: AtomicEnvironment, env2: AtomicEnvironment,
     r_cut_2 = cutoffs[0]
     r_cut_3 = cutoffs[1]
 
+    # TODO: Move fractional factor to the njit function.
     two_term = two_body_mc_en_jit(env1.bond_array_2, env1.ctype, env1.etypes,
                                   env2.bond_array_2, env2.ctype, env2.etypes,
                                   sig2, ls2, r_cut_2, cutoff_func)/4
 
+    # TODO: Move fractional factor to the njit function.
     three_term = \
         three_body_mc_en_jit(env1.bond_array_3, env1.ctype, env1.etypes,
                              env2.bond_array_3, env2.ctype, env2.etypes,
@@ -1624,6 +1628,209 @@ def two_body_mc_force_en_jit(bond_array_1, c1, etypes1,
                 B = r11 * ci
                 D = r11 * r11
                 kern += force_energy_helper(B, D, fi, fj, fdi, ls1, ls2, sig2)
+
+    return kern
+
+
+@njit
+def two_body_mc_stress_en_jit(bond_array_1, c1, etypes1,
+                              bond_array_2, c2, etypes2,
+                              d1, d2, sig, ls, r_cut, cutoff_func):
+    """2-body multi-element kernel between a partial stress component and a 
+    local energy accelerated with Numba.
+
+    Args:
+        bond_array_1 (np.ndarray): 2-body bond array of the first local
+            environment.
+        c1 (int): Species of the central atom of the first local environment.
+        etypes1 (np.ndarray): Species of atoms in the first local
+            environment.
+        bond_array_2 (np.ndarray): 2-body bond array of the second local
+            environment.
+        c2 (int): Species of the central atom of the second local environment.
+        etypes2 (np.ndarray): Species of atoms in the second local
+            environment.
+        d1 (int): First stress component of the first environment (1=x, 2=y,
+            3=z).
+        d2 (int): Second stress component of the first environment (1=x, 2=y,
+            3=z).
+        sig (float): 2-body signal variance hyperparameter.
+        ls (float): 2-body length scale hyperparameter.
+        r_cut (float): 2-body cutoff radius.
+        cutoff_func (Callable): Cutoff function.
+
+    Returns:
+        float:
+            Value of the 2-body partial-stress/energy kernel.
+    """
+
+    kern = 0
+
+    ls1 = 1 / (2 * ls * ls)
+    ls2 = 1 / (ls * ls)
+    sig2 = sig * sig
+
+    for m in range(bond_array_1.shape[0]):
+        ri = bond_array_1[m, 0]
+        ci = bond_array_1[m, d1]
+        coordinate = bond_array_1[m, d2] * ri
+
+        fi, fdi = cutoff_func(r_cut, ri, ci)
+        e1 = etypes1[m]
+
+        for n in range(bond_array_2.shape[0]):
+            e2 = etypes2[n]
+
+            # check if bonds agree
+            if (c1 == c2 and e1 == e2) or (c1 == e2 and c2 == e1):
+                rj = bond_array_2[n, 0]
+                fj, _ = cutoff_func(r_cut, rj, 0)
+
+                r11 = ri - rj
+                B = r11 * ci
+                D = r11 * r11
+                force_kern = \
+                    force_energy_helper(B, D, fi, fj, fdi, ls1, ls2, sig2) / 2
+                kern -= force_kern * coordinate / 2
+
+    return kern
+
+
+@njit
+def two_body_mc_stress_force_jit(bond_array_1, c1, etypes1,
+                                 bond_array_2, c2, etypes2,
+                                 d1, d2, d3, sig, ls, r_cut, cutoff_func):
+    """2-body multi-element kernel between two force components accelerated
+    with Numba.
+
+    Args:
+        bond_array_1 (np.ndarray): 2-body bond array of the first local
+            environment.
+        c1 (int): Species of the central atom of the first local environment.
+        etypes1 (np.ndarray): Species of atoms in the first local
+            environment.
+        bond_array_2 (np.ndarray): 2-body bond array of the second local
+            environment.
+        c2 (int): Species of the central atom of the second local environment.
+        etypes2 (np.ndarray): Species of atoms in the second local
+            environment.
+        d1 (int): First stress component of the first environment (1=x, 2=y,
+            3=z).
+        d2 (int): Second stress component of the first environment (1=x, 2=y,
+            3=z).
+        d3 (int): Force component of the second environment (1=x, 2=y, 3=z).
+        sig (float): 2-body signal variance hyperparameter.
+        ls (float): 2-body length scale hyperparameter.
+        r_cut (float): 2-body cutoff radius.
+        cutoff_func (Callable): Cutoff function.
+
+    Return:
+        float: Value of the 2-body kernel.
+    """
+    kern = 0
+
+    ls1 = 1 / (2 * ls * ls)
+    ls2 = 1 / (ls * ls)
+    ls3 = ls2 * ls2
+    sig2 = sig * sig
+
+    for m in range(bond_array_1.shape[0]):
+        ri = bond_array_1[m, 0]
+        ci = bond_array_1[m, d1]
+        coordinate = bond_array_1[m, d2] * ri
+        fi, fdi = cutoff_func(r_cut, ri, ci)
+        e1 = etypes1[m]
+
+        for n in range(bond_array_2.shape[0]):
+            e2 = etypes2[n]
+
+            # check if bonds agree
+            if (c1 == c2 and e1 == e2) or (c1 == e2 and c2 == e1):
+                rj = bond_array_2[n, 0]
+                cj = bond_array_2[n, d3]
+                fj, fdj = cutoff_func(r_cut, rj, cj)
+                r11 = ri - rj
+
+                A = ci * cj
+                B = r11 * ci
+                C = r11 * cj
+                D = r11 * r11
+
+                force_kern = force_helper(A, B, C, D, fi, fj, fdi, fdj,
+                                          ls1, ls2, ls3, sig2)
+                kern -= force_kern * coordinate / 2
+
+    return kern
+
+
+@njit
+def two_body_mc_stress_stress_jit(bond_array_1, c1, etypes1,
+                                  bond_array_2, c2, etypes2,
+                                  d1, d2, d3, d4, sig, ls, r_cut,
+                                  cutoff_func):
+    """2-body multi-element kernel between two partial stress components
+        accelerated with Numba.
+
+    Args:
+        bond_array_1 (np.ndarray): 2-body bond array of the first local
+            environment.
+        c1 (int): Species of the central atom of the first local environment.
+        etypes1 (np.ndarray): Species of atoms in the first local
+            environment.
+        bond_array_2 (np.ndarray): 2-body bond array of the second local
+            environment.
+        c2 (int): Species of the central atom of the second local environment.
+        etypes2 (np.ndarray): Species of atoms in the second local
+            environment.
+        d1 (int): First stress component of the first environment (1=x, 2=y,
+            3=z).
+        d2 (int): Second stress component of the first environment (1=x, 2=y,
+            3=z).
+        d3 (int): First stress component of the second environment (1=x, 2=y,
+            3=z).
+        d4 (int): Second stress component of the second environment (1=x, 2=y,
+            3=z).
+        sig (float): 2-body signal variance hyperparameter.
+        ls (float): 2-body length scale hyperparameter.
+        r_cut (float): 2-body cutoff radius.
+        cutoff_func (Callable): Cutoff function.
+
+    Return:
+        float: Value of the 2-body kernel.
+    """
+    kern = 0
+
+    ls1 = 1 / (2 * ls * ls)
+    ls2 = 1 / (ls * ls)
+    ls3 = ls2 * ls2
+    sig2 = sig * sig
+
+    for m in range(bond_array_1.shape[0]):
+        ri = bond_array_1[m, 0]
+        ci = bond_array_1[m, d1]
+        coordinate_1 = bond_array_1[m, d2] * ri
+        fi, fdi = cutoff_func(r_cut, ri, ci)
+        e1 = etypes1[m]
+
+        for n in range(bond_array_2.shape[0]):
+            e2 = etypes2[n]
+
+            # check if bonds agree
+            if (c1 == c2 and e1 == e2) or (c1 == e2 and c2 == e1):
+                rj = bond_array_2[n, 0]
+                cj = bond_array_2[n, d3]
+                coordinate_2 = bond_array_2[n, d4] * rj
+                fj, fdj = cutoff_func(r_cut, rj, cj)
+                r11 = ri - rj
+
+                A = ci * cj
+                B = r11 * ci
+                C = r11 * cj
+                D = r11 * r11
+
+                force_kern = force_helper(A, B, C, D, fi, fj, fdi, fdj,
+                                          ls1, ls2, ls3, sig2)
+                kern += force_kern * coordinate_1 * coordinate_2 / 4
 
     return kern
 

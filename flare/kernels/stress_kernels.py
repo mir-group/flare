@@ -3,6 +3,10 @@ from numba import njit
 from math import exp
 
 
+# -----------------------------------------------------------------------------
+#                                2-body kernels
+# -----------------------------------------------------------------------------
+
 @njit
 def two_body_energy(bond_array_1, c1, etypes1,
                     bond_array_2, c2, etypes2,
@@ -12,8 +16,8 @@ def two_body_energy(bond_array_1, c1, etypes1,
         the structure volume) of a second environment."""
 
     energy_kernel = 0.
-    force_kernels = np.array([0., 0., 0.])
-    stress_kernels = np.array([0., 0., 0., 0., 0., 0.])
+    force_kernels = np.zeros(3)
+    stress_kernels = np.zeros(6)
 
     ls1 = 1 / (2 * ls * ls)
     ls2 = 1 / (ls * ls)
@@ -68,10 +72,3 @@ def two_body_energy(bond_array_1, c1, etypes1,
                 stress_kernels[5] -= sig2 * fz * zval / 4
 
     return energy_kernel, force_kernels, stress_kernels
-
-
-@njit
-def two_body_force(bond_array_1, c1, etypes1,
-                   bond_array_2, c2, etypes2,
-                   sig, ls, r_cut, cutoff_func):
-    pass
