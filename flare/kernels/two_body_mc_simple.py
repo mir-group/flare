@@ -43,10 +43,13 @@ class TwoBodyKernel:
                            self.signal_variance, self.length_scale,
                            self.cutoff, self.cutoff_func)
 
-    def stress_force_kernel(self):
-        pass
+    def stress_force(self, env1: AtomicEnvironment, env2: AtomicEnvironment):
+        return stress_force(env1.bond_array_2, env1.ctype, env1.etypes,
+                            env2.bond_array_2, env2.ctype, env2.etypes,
+                            self.signal_variance, self.length_scale,
+                            self.cutoff, self.cutoff_func)
 
-    def stress_stress_kernel(self):
+    def stress_stress(self):
         pass
 
     def force_force_gradient(self):
@@ -299,7 +302,7 @@ def stress_energy(bond_array_1, c1, etypes1, bond_array_2, c2, etypes2,
 
 @njit
 def stress_force(bond_array_1, c1, etypes1, bond_array_2, c2, etypes2,
-                 d1, d2, d3, sig, ls, r_cut, cutoff_func):
+                 sig, ls, r_cut, cutoff_func):
     """2-body multi-element kernel between two force components accelerated
     with Numba.
 
@@ -322,7 +325,7 @@ def stress_force(bond_array_1, c1, etypes1, bond_array_2, c2, etypes2,
     Return:
         float: Value of the 2-body kernel.
     """
-    kern = 0
+    kernel_matrix = np.zeros((6, 3))
 
     ls1 = 1 / (2 * ls * ls)
     ls2 = 1 / (ls * ls)
@@ -331,9 +334,6 @@ def stress_force(bond_array_1, c1, etypes1, bond_array_2, c2, etypes2,
 
     for m in range(bond_array_1.shape[0]):
         ri = bond_array_1[m, 0]
-        ci = bond_array_1[m, d1]
-        coordinate = bond_array_1[m, d2] * ri
-        fi, fdi = cutoff_func(r_cut, ri, ci)
         e1 = etypes1[m]
 
         for n in range(bond_array_2.shape[0]):
@@ -342,20 +342,32 @@ def stress_force(bond_array_1, c1, etypes1, bond_array_2, c2, etypes2,
             # check if bonds agree
             if (c1 == c2 and e1 == e2) or (c1 == e2 and c2 == e1):
                 rj = bond_array_2[n, 0]
-                cj = bond_array_2[n, d3]
-                fj, fdj = cutoff_func(r_cut, rj, cj)
                 r11 = ri - rj
 
-                A = ci * cj
-                B = r11 * ci
-                C = r11 * cj
-                D = r11 * r11
+                stress_count = 0
+                for d1 in range(3):
+                    ci = bond_array_1[m, d1 + 1]
+                    fi, fdi = cutoff_func(r_cut, ri, ci)
+                    for d2 in range(d1, 3):
+                        coordinate = bond_array_1[m, d2 + 1] * ri
+                        for d3 in range(3):
+                            cj = bond_array_2[n, d3 + 1]
+                            fj, fdj = cutoff_func(r_cut, rj, cj)
 
-                force_kern = force_helper(A, B, C, D, fi, fj, fdi, fdj,
-                                          ls1, ls2, ls3, sig2)
-                kern -= force_kern * coordinate / 2
+                            A = ci * cj
+                            B = r11 * ci
+                            C = r11 * cj
+                            D = r11 * r11
 
-    return kern
+                            force_kern = \
+                                force_helper(A, B, C, D, fi, fj, fdi, fdj,
+                                             ls1, ls2, ls3, sig2)
+                            kernel_matrix[stress_count, d3] -= \
+                                force_kern * coordinate / 2
+
+                        stress_count += 1
+
+    return kernel_matrix
 
 
 @njit
