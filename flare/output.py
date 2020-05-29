@@ -72,17 +72,7 @@ class Output:
         filename = self.basename + suffix
 
         if filetype not in self.logger:
-
-            logger = logging.getLogger(filetype)
-            fh = logging.FileHandler(filename)
-
-            verbose = getattr(logging, verbose.upper())
-            logger.setLevel(verbose)
-            fh.setLevel(verbose)
-
-            logger.addHandler(fh)
-
-            self.logger[filetype] = logger
+            self.logger[filetype] = Output.set_logger(filename, stream=False, fileout=True, verbose=verbose)
 
     def write_to_log(self, logstring: str, name: str = "log",
                      flush: bool = False):
@@ -457,3 +447,30 @@ class Output:
 
         # if self.always_flush:
         #     self.logger['log'].flush()
+
+    @staticmethod
+    def add_stream(logger, verbose: str = "info"):
+        ch = logging.StreamHandler()
+        ch.setLevel(getattr(logging, verbose.upper()))
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        ch.setFormatter(formatter)
+        logger.addHandler(ch)
+
+    @staticmethod
+    def add_file(logger, filename, verbose: str = "info"):
+        fh = logging.FileHandler(filename)
+        verbose = getattr(logging, verbose.upper())
+        logger.setLevel(verbose)
+        fh.setLevel(verbose)
+        logger.addHandler(fh)
+
+    @staticmethod
+    def set_logger(name, stream, fileout, verbose: str = "info"):
+        logger = logging.getLogger(name)
+        logger.setLevel(getattr(logging, verbose.upper()))
+        if stream:
+            Output.add_stream(logger, verbose)
+        if fileout:
+            Output.add_file(logger, name, verbose)
+        return logger
+

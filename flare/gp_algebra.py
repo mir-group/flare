@@ -1157,9 +1157,9 @@ def get_neg_like_grad(hyps: np.ndarray, name: str,
     logger.debug(f"get_like_grad_from_mats {time.time()-time0}")
 
     logger.debug('')
-    logger.debug(f'Hyperparameters: {list(hyps)}')
-    logger.debug(f'Likelihood: {like}')
-    logger.debug(f'Likelihood Gradient: {list(like_grad)}')
+    logger.info(f'Hyperparameters: {list(hyps)}')
+    logger.info(f'Likelihood: {like}')
+    logger.info(f'Likelihood Gradient: {list(like_grad)}')
 
     return -like, -like_grad
 
