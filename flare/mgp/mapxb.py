@@ -89,15 +89,9 @@ class MapXbody:
         for spc in self.spc:
             bounds = np.copy(self.bounds)
             if (GP is not None):
-<<<<<<< HEAD
-                self.bounds[1] = Parameters.get_cutoff(self.kernel_name,
-                                 b_struc.coded_species, self.hyps_mask)
-            m = self.singlexbody((self.grid_num, self.bounds, b_struc,
-=======
                 bounds[1] = Parameters.get_cutoff(self.kernel_name,
                             spc, self.hyps_mask)
             m = self.singlexbody((self.grid_num, bounds, spc,
->>>>>>> 164100c59598e232f0d8823d95cd08c728a7eaa0
                                   self.map_force, self.svd_rank, self.mean_only,
                                   None, None, self.n_cpus, self.n_sample))
             self.maps.append(m)
@@ -118,13 +112,8 @@ class MapXbody:
             m.build_map(GP)
 
 
-<<<<<<< HEAD
-    def predict(self, atom_env, mean_only, rank):
-
-=======
     def predict(self, atom_env, mean_only):
 
->>>>>>> 164100c59598e232f0d8823d95cd08c728a7eaa0
         if self.mean_only:  # if not build mapping for var
             mean_only = True
 
@@ -163,76 +152,9 @@ class MapXbody:
         return f_spcs, vir_spcs, kern, v_spcs, e_spcs
 
 
-<<<<<<< HEAD
-    def predict_single_f_map(self, lengths, xyzs, mapping, mean_only, rank):
-
-        lengths = np.array(lengths)
-        xyzs = np.array(xyzs)
-
-        # predict mean
-        e = 0
-        f_0 = mapping.mean(lengths)
-        f_d = np.diag(f_0) @ xyzs
-        f = np.sum(f_d, axis=0)
-
-        # predict stress from force components
-        vir = np.zeros(6)
-        vir_order = ((0,0), (1,1), (2,2), (0,1), (0,2), (1,2))
-        for i in range(6):
-            vir_i = f_d[:,vir_order[i][0]]\
-                    * xyzs[:,vir_order[i][1]] * lengths[:,0]
-            vir[i] = np.sum(vir_i)
-        vir *= 0.5
-
-        # predict var
-        v = np.zeros(3)
-        if not mean_only:
-            v_0 = mapping.var(lengths, rank)
-            v_d = v_0 @ xyzs
-            v = mapping.var.V[:,:rank] @ v_d
-
-        return f, vir, v, e
-
-    def predict_single_e_map(self, lengths, xyzs, mapping, mean_only, rank):
-        '''
-        predict force and variance contribution of one component
-        '''
-        lengths = np.array(lengths)
-        xyzs = np.array(xyzs)
-
-        e_0, f_0 = mapping.mean(lengths, with_derivatives=True)
-        e = np.sum(e_0) # energy
-
-        # predict forces and stress
-        vir = np.zeros(6)
-        vir_order = ((0,0), (1,1), (2,2), (1,2), (0,2), (0,1)) # match the ASE order
-
-        f_d = np.diag(f_0[:,0,0]) @ xyzs
-        f = self.bodies * np.sum(f_d, axis=0)
-
-        for i in range(6):
-            vir_i = f_d[:,vir_order[i][0]]\
-                    * xyzs[:,vir_order[i][1]] * lengths[:,0]
-            vir[i] = np.sum(vir_i)
-
-        vir *= self.bodies / 2
-
-        # predict var
-        v = 0
-        if not mean_only:
-            v_0 = np.expand_dims(np.sum(mapping.var(lengths, rank), axis=1),
-                                 axis=1)
-            v = mapping.var.V[:,:rank] @ v_0
-
-        return f, vir, v, e
-
-
-
-=======
     def write(self, f):
         for m in self.maps:
             m.write(f)
->>>>>>> 164100c59598e232f0d8823d95cd08c728a7eaa0
 
 
 
@@ -316,6 +238,7 @@ class SingleMapXbody:
 
         # ------- call gengrid functions ---------------
         if processes == 1:
+            args = [GP.name, grid_env, kernel_info]
             if self.kernel_name == "threebody":
                 k12_v_force = self._gengrid_numba(GP.name, 0, n_envs, grid_env,
                                                   mapped_kernel_info)
