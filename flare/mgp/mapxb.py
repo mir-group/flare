@@ -65,7 +65,7 @@ class MapXbody:
             self.hyps_mask = deepcopy(GP.hyps_mask)
 
         # build_bond_struc is defined in subclass
-        self.build_bond_struc(struc_params) 
+        self.build_bond_struc(struc_params)
 
         # build map
         self.build_map_container(GP)
@@ -90,7 +90,7 @@ class MapXbody:
             if (GP is not None):
                 self.bounds[1] = Parameters.get_cutoff(self.kernel_name,
                                  b_struc.coded_species, self.hyps_mask)
-            m = self.singlexbody((self.grid_num, self.bounds, b_struc, 
+            m = self.singlexbody((self.grid_num, self.bounds, b_struc,
                                   self.map_force, self.svd_rank, self.mean_only,
                                   None, None, self.n_cpus, self.n_sample))
             self.maps.append(m)
@@ -116,7 +116,7 @@ class MapXbody:
 
 
     def predict(self, atom_env, mean_only, rank):
-        
+
         if self.mean_only:  # if not build mapping for var
             mean_only = True
 
@@ -204,7 +204,7 @@ class MapXbody:
         vir_order = ((0,0), (1,1), (2,2), (1,2), (0,2), (0,1)) # match the ASE order
 
         f_d = np.diag(f_0[:,0,0]) @ xyzs
-        f = self.bodies * np.sum(f_d, axis=0) 
+        f = self.bodies * np.sum(f_d, axis=0)
 
         for i in range(6):
             vir_i = f_d[:,vir_order[i][0]]\
@@ -230,7 +230,7 @@ class MapXbody:
 class SingleMapXbody:
     def __init__(self, grid_num: int, bounds, bond_struc: Structure,
                  map_force=False, svd_rank=0, mean_only: bool=False,
-                 load_grid=None, update=None, 
+                 load_grid=None, update=None,
                  n_cpus: int=None, n_sample: int=100):
 
         self.grid_num = grid_num
@@ -293,18 +293,19 @@ class SingleMapXbody:
                                   kernel_info[3], kernel_info[4], kernel_info[5])
 
         # ------- call gengrid functions ---------------
-        args = [GP.name, grid_env, kernel_info]
         if processes == 1:
             if self.kernel_name == "threebody":
-                k12_v_force = self._gengrid_numba(GP.name, 0, n_envs, grid_env, 
+                k12_v_force = self._gengrid_numba(GP.name, 0, n_envs, grid_env,
                                                   mapped_kernel_info)
             else:
                 k12_v_force = self._gengrid_serial(args, True, n_envs)
             k12_v_energy = self._gengrid_serial(args, False, n_strucs)
 
         else:
-            k12_v_force = self._gengrid_par(args, True, n_envs, processes)
-            k12_v_energy = self._gengrid_par(args, False, n_strucs, processes)
+            args = [GP.name, grid_env, mapped_kernel_info]
+            k12_v_force = self._gengrid_par(args, True, n_envs, processes, self.kernel_name)
+            args = [GP.name, grid_env, kernel_info]
+            k12_v_energy = self._gengrid_par(args, False, n_strucs, processes, self.kernel_name)
 
         k12_v_all = np.hstack([k12_v_force, k12_v_energy])
         del k12_v_force
@@ -335,7 +336,8 @@ class SingleMapXbody:
         return k12_v
 
 
-    def _gengrid_par(self, args, force_block, n_envs, processes):
+    def _gengrid_par(self, args, force_block, n_envs, processes, kernel_name):
+
         if n_envs == 0:
             n_grid = np.prod(self.grid_num)
             return np.empty((n_grid, 0))
@@ -345,18 +347,27 @@ class SingleMapXbody:
             block_id, nbatch = \
                 partition_vector(self.n_sample, n_envs, processes)
 
+            threebody = False
+            if kernel_name == "threebody":
+                GP_name, grid_env, mapped_kernel_info = args
+                threebody = True
+
             k12_slice = []
             for ibatch in range(nbatch):
                 s, e = block_id[ibatch]
-                k12_slice.append(pool.apply_async(self._gengrid_inner, 
-                    args = args + [force_block, s, e]))
+                if threebody:
+                    k12_slice.append(pool.apply_async(self._gengrid_numba,
+                        args = (GP_name, s, e, grid_env, mapped_kernel_info)))
+                else:
+                    k12_slice.append(pool.apply_async(self._gengrid_inner,
+                        args = args + [force_block, s, e]))
             k12_matrix = []
             for ibatch in range(nbatch):
                 k12_matrix += [k12_slice[ibatch].get()]
             pool.close()
             pool.join()
         del k12_slice
-        k12_v_force = np.vstack(k12_matrix)
+        k12_v_force = np.hstack(k12_matrix)
         del k12_matrix
 
         return k12_v_force
@@ -380,7 +391,7 @@ class SingleMapXbody:
             force_x_kern = efk
             energy_x_vector_unit = energy_energy_vector_unit
             energy_x_kern = ek
-           
+
         grids = self.construct_grids()
         k12_v = np.zeros([len(grids), size])
 
@@ -388,15 +399,15 @@ class SingleMapXbody:
             grid_pt = grids[b]
             grid_env = self.set_env(grid_env, grid_pt)
 
-            if not self.skip_grid(grid_pt):                
+            if not self.skip_grid(grid_pt):
                 if self.map_force:
-                    k12_v[b, :] = force_x_vector_unit(name, s, e, grid_env, 
+                    k12_v[b, :] = force_x_vector_unit(name, s, e, grid_env,
                         force_x_kern, hyps, cutoffs, hyps_mask, 1)
                 else:
                     k12_v[b, :] = energy_x_vector_unit(name, s, e, grid_env,
                         energy_x_kern, hyps, cutoffs, hyps_mask)
 
-        return k12_v 
+        return k12_v
 
 
     def build_map_container(self):

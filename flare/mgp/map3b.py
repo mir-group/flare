@@ -109,7 +109,7 @@ class SingleMap3body(SingleMapXbody):
         # build grids in each dimension
         bonds_list = []
         for d in range(3):
-            bonds = np.linspace(self.bounds[0][d], self.bounds[1][d], 
+            bonds = np.linspace(self.bounds[0][d], self.bounds[1][d],
                 self.grid_num[d], dtype=np.float64)
             bonds_list.append(bonds)
 
@@ -181,7 +181,7 @@ class SingleMap3body(SingleMapXbody):
         size = (e-s) * 3
 
         args = from_mask_to_args(hyps, cutoffs, hyps_mask)
-        r_cut = args[1][1]
+        r_cut = cutoffs['threebody']
 
         grids = self.construct_grids()
         fj = triplet_cutoff(grids, r_cut) # move this fj out of kernel
