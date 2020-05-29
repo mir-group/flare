@@ -23,104 +23,73 @@ def perturbed_envs():
     environments = [test_env_1, test_env_2]
 
     # Perturb the central atoms.
-    force_environments = [[], []]
-    delta = 1e-8
+    force_environments = [[], [], [], []]
+    delta = 1e-4
     for n in range(3):
-        positions_pert = np.copy(positions)
-        positions_pert[3, n] += delta
+        positions_pert0 = np.copy(positions)
+        positions_pert0_down = np.copy(positions)
+        positions_pert3 = np.copy(positions)
+        positions_pert3_down = np.copy(positions)
 
-        test_struc_pert = struc.Structure(cell, species, positions_pert)
-        env_pert_1 = env.AtomicEnvironment(test_struc_pert, 0, cutoffs)
-        env_pert_2 = env.AtomicEnvironment(test_struc_pert, 3, cutoffs)
+        positions_pert0[0, n] += delta
+        positions_pert0_down[0, n] -= delta
+        positions_pert3[3, n] += delta
+        positions_pert3_down[3, n] -= delta
+
+        test_struc0_pert = struc.Structure(cell, species, positions_pert0)
+        test_struc0_down = struc.Structure(cell, species,
+                                           positions_pert0_down)
+        test_struc3_pert = struc.Structure(cell, species, positions_pert3)
+        test_struc3_down = struc.Structure(cell, species,
+                                           positions_pert3_down)
+
+        env_pert_1 = env.AtomicEnvironment(test_struc0_pert, 0, cutoffs)
+        env_pert_2 = env.AtomicEnvironment(test_struc3_pert, 3, cutoffs)
+        env_pert_3 = env.AtomicEnvironment(test_struc0_down, 0, cutoffs)
+        env_pert_4 = env.AtomicEnvironment(test_struc3_down, 3, cutoffs)
 
         force_environments[0].append(env_pert_1)
         force_environments[1].append(env_pert_2)
+        force_environments[2].append(env_pert_3)
+        force_environments[3].append(env_pert_4)
 
     # Strain the environments.
-    stress_environments = [[], []]
+    stress_environments = [[], [], [], []]
     for m in range(3):
         for n in range(m, 3):
             cell_pert = np.copy(cell)
+            cell_pert_down = np.copy(cell)
             positions_pert = np.copy(positions)
+            positions_pert_down = np.copy(positions)
 
             # Strain the cell.
-            cell_pert[0, m] += cell[0, n] * delta
-            cell_pert[1, m] += cell[1, n] * delta
-            cell_pert[2, m] += cell[2, n] * delta
+            for p in range(3):
+                cell_pert[p, m] += cell[p, n] * delta
+                cell_pert_down[p, m] -= cell[p, n] * delta
 
             # Strain the positions.
             for k in range(n_atoms):
                 positions_pert[k, m] += positions[k, n] * delta
+                positions_pert_down[k, m] -= positions[k, n] * delta
 
             test_struc_pert = \
                 struc.Structure(cell_pert, species, positions_pert)
+            test_struc_down = \
+                struc.Structure(cell_pert_down, species, positions_pert_down)
             env_pert_1 = env.AtomicEnvironment(test_struc_pert, 0, cutoffs)
             env_pert_2 = env.AtomicEnvironment(test_struc_pert, 3, cutoffs)
+            env_pert_3 = env.AtomicEnvironment(test_struc_down, 0, cutoffs)
+            env_pert_4 = env.AtomicEnvironment(test_struc_down, 3, cutoffs)
 
             stress_environments[0].append(env_pert_1)
             stress_environments[1].append(env_pert_2)
+            stress_environments[2].append(env_pert_3)
+            stress_environments[3].append(env_pert_4)
 
-    yield environments, force_environments, stress_environments
-
-
-def test_stress_energy(perturbed_envs):
-    # Retrieve perturbed environments.
-    environments = perturbed_envs[0]
-    force_environments = perturbed_envs[1]
-    stress_environments = perturbed_envs[2]
-
-    test_env_1 = environments[0]
-    test_env_2 = environments[1]
-
-    # Compute energy, force, and stress kernels.
-    sig = 1.
-    ls = 1.
-    r_cut = 5.
-    cutoff_func = quadratic_cutoff
-
-    energy_kernel, force_kernels, stress_kernels = \
-        two_body_energy(test_env_1.bond_array_2, test_env_1.ctype,
-                        test_env_1.etypes, test_env_2.bond_array_2,
-                        test_env_2.ctype, test_env_2.etypes,
-                        sig, ls, r_cut, cutoff_func)
-
-    # Check force kernels by finite difference.
-    delta = 1e-8
-    stress_count = 0
-    for n in range(3):
-        env_pert = force_environments[1][n]
-
-        kern_pert, _, _ = \
-            two_body_energy(test_env_1.bond_array_2, test_env_1.ctype,
-                            test_env_1.etypes, env_pert.bond_array_2,
-                            env_pert.ctype, env_pert.etypes,
-                            sig, ls, r_cut, cutoff_func)
-        finite_diff_val = -(kern_pert - energy_kernel) / delta
-
-        assert(kern_pert != 0)
-        assert(np.abs(finite_diff_val - force_kernels[n] / 2) < 1e-3)
-
-    # Check stress kernels by finite difference.
-    delta = 1e-8
-    stress_count = 0
-    for m in range(3):
-        for n in range(m, 3):
-            env_pert = stress_environments[1][stress_count]
-
-            kern_pert, _, _ = \
-                two_body_energy(test_env_1.bond_array_2, test_env_1.ctype,
-                                test_env_1.etypes, env_pert.bond_array_2,
-                                env_pert.ctype, env_pert.etypes,
-                                sig, ls, r_cut, cutoff_func)
-            finite_diff_val = -(kern_pert - energy_kernel) / delta
-
-            assert(kern_pert != 0)
-            assert(np.abs(finite_diff_val - stress_kernels[stress_count])
-                   < 1e-3)
-            stress_count += 1
+    yield environments, force_environments, stress_environments, delta
 
 
-def test_force_energy(perturbed_envs):
+def test_kernel(perturbed_envs):
     # Define kernel. (Generalize this later.)
     signal_variance = 1.
     length_scale = 1.
@@ -128,23 +97,23 @@ def test_force_energy(perturbed_envs):
 
     kernel = TwoBodyKernel(signal_variance, length_scale, cutoff)
 
+    # Set the test threshold.
+    threshold = 1e-4
+
     # Retrieve perturbed environments.
     environments = perturbed_envs[0]
     force_environments = perturbed_envs[1]
     stress_environments = perturbed_envs[2]
+    delta = perturbed_envs[3]
 
     test_env_1 = environments[0]
     test_env_2 = environments[1]
 
-    # Compute force energy kernel.
-    sig = 1.
-    ls = 1.
-    r_cut = 5.
-    cutoff_func = quadratic_cutoff
-
+    # Compute all seven kernels.
     energy_energy_kernel = kernel.energy_energy(test_env_1, test_env_2)
     force_energy_kernel = kernel.force_energy(test_env_2, test_env_1)
     stress_energy_kernel = kernel.stress_energy(test_env_2, test_env_1)
+    force_force_kernel = kernel.force_force(test_env_1, test_env_2)
 
     # Check that the unit test isn't trivial.
     passive_aggressive_string = 'This unit test is trivial.'
@@ -152,23 +121,103 @@ def test_force_energy(perturbed_envs):
     assert (force_energy_kernel != 0).all(), passive_aggressive_string
 
     # Check force/energy kernel by finite difference.
-    delta = 1e-8
     for n in range(3):
-        env_pert = force_environments[1][n]
+        env_pert_up = force_environments[1][n]
+        env_pert_down = force_environments[3][n]
 
-        kern_pert = \
-            kernel.energy_energy(test_env_1, env_pert)
-        finite_diff_val = -(kern_pert - energy_energy_kernel) / delta
+        kern_pert_up = \
+            kernel.energy_energy(test_env_1, env_pert_up)
+        kern_pert_down = \
+            kernel.energy_energy(test_env_1, env_pert_down)
+        finite_diff_val = -(kern_pert_up - kern_pert_down) / (2 * delta)
 
-        assert np.abs(finite_diff_val - force_energy_kernel[n] / 2) < 1e-3,\
-            'Your force/energy kernel is wrong.'
+        assert np.abs(finite_diff_val - force_energy_kernel[n] / 2) < \
+            threshold, 'Your force/energy kernel is wrong.'
 
     # Check stress/energy kernel by finite difference.
     for n in range(6):
-        stress_pert = stress_environments[1][n]
-        kern_pert = \
-            kernel.energy_energy(test_env_1, stress_pert)
-        finite_diff_val = -(kern_pert - energy_energy_kernel) / delta
+        env_pert_up = stress_environments[1][n]
+        env_pert_down = stress_environments[3][n]
+        kern_pert_up = \
+            kernel.energy_energy(test_env_1, env_pert_up)
+        kern_pert_down = \
+            kernel.energy_energy(test_env_1, env_pert_down)
+        finite_diff_val = -(kern_pert_up - kern_pert_down) / (2 * delta)
 
-        assert np.abs(finite_diff_val - stress_energy_kernel[n]) < 1e-3,\
-            'Your stress/energy kernel is wrong.'
+        assert np.abs(finite_diff_val - stress_energy_kernel[n]) < \
+            threshold, 'The stress/energy kernel is wrong.'
+
+    # Check force/force kernel by finite difference.
+    for m in range(3):
+        pert1_up = force_environments[0][m]
+        pert1_down = force_environments[2][m]
+        for n in range(3):
+            pert2_up = force_environments[1][n]
+            pert2_down = force_environments[3][n]
+            kern1 = kernel.energy_energy(pert1_up, pert2_up)
+            kern2 = kernel.energy_energy(pert1_up, pert2_down)
+            kern3 = kernel.energy_energy(pert1_down, pert2_up)
+            kern4 = kernel.energy_energy(pert1_down, pert2_down)
+
+            finite_diff_val = \
+                (kern1 - kern2 - kern3 + kern4) / (4 * delta * delta)
+
+            assert np.abs(finite_diff_val * 4 - force_force_kernel[m, n]) < \
+                threshold, 'The force/force kernel is wrong.'
+
+
+# def test_stress_energy(perturbed_envs):
+#     # Retrieve perturbed environments.
+#     environments = perturbed_envs[0]
+#     force_environments = perturbed_envs[1]
+#     stress_environments = perturbed_envs[2]
+
+#     test_env_1 = environments[0]
+#     test_env_2 = environments[1]
+
+#     # Compute energy, force, and stress kernels.
+#     sig = 1.
+#     ls = 1.
+#     r_cut = 5.
+#     cutoff_func = quadratic_cutoff
+
+#     energy_kernel, force_kernels, stress_kernels = \
+#         two_body_energy(test_env_1.bond_array_2, test_env_1.ctype,
+#                         test_env_1.etypes, test_env_2.bond_array_2,
+#                         test_env_2.ctype, test_env_2.etypes,
+#                         sig, ls, r_cut, cutoff_func)
+
+#     # Check force kernels by finite difference.
+#     delta = 1e-4
+#     stress_count = 0
+#     for n in range(3):
+#         env_pert = force_environments[1][n]
+
+#         kern_pert, _, _ = \
+#             two_body_energy(test_env_1.bond_array_2, test_env_1.ctype,
+#                             test_env_1.etypes, env_pert.bond_array_2,
+#                             env_pert.ctype, env_pert.etypes,
+#                             sig, ls, r_cut, cutoff_func)
+#         finite_diff_val = -(kern_pert - energy_kernel) / delta
+
+#         assert(kern_pert != 0)
+#         assert(np.abs(finite_diff_val - force_kernels[n] / 2) < 1e-3)
+
+#     # Check stress kernels by finite difference.
+#     delta = 1e-4
+#     stress_count = 0
+#     for m in range(3):
+#         for n in range(m, 3):
+#             env_pert = stress_environments[1][stress_count]
+
+#             kern_pert, _, _ = \
+#                 two_body_energy(test_env_1.bond_array_2, test_env_1.ctype,
+#                                 test_env_1.etypes, env_pert.bond_array_2,
+#                                 env_pert.ctype, env_pert.etypes,
+#                                 sig, ls, r_cut, cutoff_func)
+#             finite_diff_val = -(kern_pert - energy_kernel) / delta
+
+#             assert(kern_pert != 0)
+#             assert(np.abs(finite_diff_val - stress_kernels[stress_count])
+#                    < 1e-3)
+#             stress_count += 1
