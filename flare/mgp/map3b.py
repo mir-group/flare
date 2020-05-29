@@ -23,15 +23,10 @@ class Map3body(MapXbody):
         super().__init__(*args)
 
 
-    def build_bond_struc(self, struc_params):
+    def build_bond_struc(self, species_list):
         '''
         build a bond structure, used in grid generating
         '''
-
-        cutoff = 0.1
-        cell = struc_params['cube_lat']
-        species_list = struc_params['species']
-        N_spc = len(species_list)
 
         # initialize bounds
         self.bounds = np.ones((2, 3)) * self.lower_bound
@@ -40,9 +35,9 @@ class Map3body(MapXbody):
             self.bounds[1][2] = 1
 
         # 2 body (2 atoms (1 bond) config)
-        self.bond_struc = []
         self.spc = []
         self.spc_set = []
+        N_spc = len(species_list)
         for spc1_ind in range(N_spc):
             spc1 = species_list[spc1_ind]
             for spc2_ind in range(N_spc):  # (spc1_ind, N_spc):
@@ -52,12 +47,6 @@ class Map3body(MapXbody):
                     species = [spc1, spc2, spc3]
                     self.spc.append(species)
                     self.spc_set.append(set(species))
-                    positions = [[(i+1)/(self.bodies+1)*cutoff, 0, 0]
-                                 for i in range(self.bodies)]
-                    spc_struc = Structure(cell, species, positions)
-                    spc_struc.coded_species = np.array(species)
-                    self.bond_struc.append(spc_struc)
-
 
     def get_arrays(self, atom_env):
 
@@ -81,7 +70,6 @@ class SingleMap3body(SingleMapXbody):
         '''
         Build 3-body MGP
 
-        bond_struc: Mock structure used to sample 3-body forces on 3 atoms
         '''
 
         self.bodies = 3
@@ -95,7 +83,7 @@ class SingleMap3body(SingleMapXbody):
             self.bounds[1][2] = 1
             self.bounds[0][2] = -1
 
-        spc = self.bond_struc.coded_species
+        spc = self.species
         self.species_code = Z_to_element(spc[0]) + '_' + \
             Z_to_element(spc[1]) + '_' + Z_to_element(spc[2])
         self.kv3name = f'kv3_{self.species_code}'
@@ -249,35 +237,3 @@ class SingleMap3body(SingleMapXbody):
             kv += [kern_curr]
 
         return np.hstack(k_v)
-
-
-    def write(self, f, spc):
-        a = self.bounds[0]
-        b = self.bounds[1]
-        order = self.grid_num
-
-        coefs_3 = self.mean.__coeffs__
-
-        elem1 = Z_to_element(spc[0])
-        elem2 = Z_to_element(spc[1])
-        elem3 = Z_to_element(spc[2])
-
-        header_3 = '{elem1} {elem2} {elem3} {a1} {a2} {a3} {b1}'\
-                   ' {b2} {b3:.10e} {order1} {order2} {order3}\n'\
-            .format(elem1=elem1, elem2=elem2, elem3=elem3,
-                    a1=a[0], a2=a[1], a3=a[2],
-                    b1=b[0], b2=b[1], b3=b[2],
-                    order1=order[0], order2=order[1], order3=order[2])
-        f.write(header_3)
-
-        n = 0
-        for i in range(coefs_3.shape[0]):
-            for j in range(coefs_3.shape[1]):
-                for k in range(coefs_3.shape[2]):
-                    coef = coefs_3[i, j, k]
-                    f.write('{:.10e} '.format(coef))
-                    if n % 5 == 4:
-                        f.write('\n')
-                    n += 1
-
-        f.write('\n')

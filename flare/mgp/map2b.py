@@ -21,21 +21,15 @@ class Map2body(MapXbody):
         self.bodies = 2
         super().__init__(*args)
 
-    def build_bond_struc(self, struc_params):
+    def build_bond_struc(self, species_list):
         '''
         build a bond structure, used in grid generating
         '''
-
-        cutoff = 0.1
-        cell = struc_params['cube_lat']
-        species_list = struc_params['species']
-        N_spc = len(species_list)
 
         # initialize bounds
         self.bounds = np.ones((2, 1)) * self.lower_bound
 
         # 2 body (2 atoms (1 bond) config)
-        self.bond_struc = []
         self.spc = []
         self.spc_set = []
         for spc1_ind, spc1 in enumerate(species_list):
@@ -43,11 +37,6 @@ class Map2body(MapXbody):
                 species = [spc1, spc2]
                 self.spc.append(species)
                 self.spc_set.append(set(species))
-                positions = [[(i+1)/(self.bodies+1)*cutoff, 0, 0]
-                             for i in range(self.bodies)]
-                spc_struc = Structure(cell, species, positions)
-                spc_struc.coded_species = np.array(species)
-                self.bond_struc.append(spc_struc)
 
 
     def get_arrays(self, atom_env):
@@ -70,7 +59,7 @@ class SingleMap2body(SingleMapXbody):
 
         super().__init__(*args)
 
-        spc = self.bond_struc.coded_species
+        spc = self.species
         self.species_code = Z_to_element(spc[0]) + '_' + Z_to_element(spc[1])
 
 
@@ -87,25 +76,3 @@ class SingleMap2body(SingleMapXbody):
     def skip_grid(self, r):
         return False
 
-
-    def write(self, f, spc):
-        '''
-        Write LAMMPS coefficient file
-        '''
-        a = self.bounds[0][0]
-        b = self.bounds[1][0]
-        order = self.grid_num
-
-        coefs_2 = self.mean.__coeffs__
-
-        elem1 = Z_to_element(spc[0])
-        elem2 = Z_to_element(spc[1])
-        header_2 = f'{elem1} {elem2} {a} {b} {order}\n'
-        f.write(header_2)
-
-        for c, coef in enumerate(coefs_2):
-            f.write('{:.10e} '.format(coef))
-            if c % 5 == 4 and c != len(coefs_2)-1:
-                f.write('\n')
-
-        f.write('\n')

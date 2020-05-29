@@ -29,8 +29,8 @@ class MapXbody:
     def __init__(self,
                  grid_num: List,
                  lower_bound: List,
-                 svd_rank: int=0,
-                 struc_params: dict={},
+                 svd_rank: 'auto',
+                 species_list: list=[],
                  map_force: bool=False,
                  GP: GaussianProcess=None,
                  mean_only: bool=False,
@@ -43,7 +43,7 @@ class MapXbody:
         self.grid_num = np.array(grid_num)
         self.lower_bound = lower_bound
         self.svd_rank = svd_rank
-        self.struc_params = struc_params
+        self.species_list = species_list
         self.map_force = map_force
         self.mean_only = mean_only
         self.lmp_file_name = lmp_file_name
@@ -65,7 +65,7 @@ class MapXbody:
             self.hyps_mask = deepcopy(GP.hyps_mask)
 
         # build_bond_struc is defined in subclass
-        self.build_bond_struc(struc_params) 
+        self.build_bond_struc(species_list) 
 
         # build map
         self.build_map_container(GP)
@@ -81,16 +81,17 @@ class MapXbody:
         if (GP is not None):
             self.cutoffs = deepcopy(GP.cutoffs)
             self.hyps_mask = deepcopy(GP.hyps_mask)
+            print('kernel_name', self.kernel_name)
             if self.kernel_name not in self.hyps_mask['kernels']:
                 raise Exception #TODO: deal with this
 
         self.maps = []
-
-        for b_struc in self.bond_struc:
+        for spc in self.spc:
+            bounds = np.copy(self.bounds) 
             if (GP is not None):
-                self.bounds[1] = Parameters.get_cutoff(self.kernel_name,
-                                 b_struc.coded_species, self.hyps_mask)
-            m = self.singlexbody((self.grid_num, self.bounds, b_struc, 
+                bounds[1] = Parameters.get_cutoff(self.kernel_name,
+                            spc, self.hyps_mask)
+            m = self.singlexbody((self.grid_num, bounds, spc, 
                                   self.map_force, self.svd_rank, self.mean_only,
                                   None, None, self.n_cpus, self.n_sample))
             self.maps.append(m)
@@ -110,18 +111,11 @@ class MapXbody:
         for m in self.maps:
             m.build_map(GP)
 
-        # write to lammps pair style coefficient file
-        # TODO
-        # self.write_lmp_file(self.lmp_file_name)
 
-
-    def predict(self, atom_env, mean_only, rank):
+    def predict(self, atom_env, mean_only):
         
         if self.mean_only:  # if not build mapping for var
             mean_only = True
-
-        if rank is None:
-            rank = self.maps[0].svd_rank
 
         force_kernel, en_kernel, _, cutoffs, hyps, hyps_mask = self.kernel_info
 
@@ -129,13 +123,11 @@ class MapXbody:
 
         kern = 0
         if self.map_force:
-            predict_comp = self.predict_single_f_map
             if not mean_only:
                 kern = np.zeros(3)
                 for d in range(3):
                     kern[d] = force_kernel(atom_env, atom_env, d+1, d+1, *args)
         else:
-            predict_comp = self.predict_single_e_map
             if not mean_only:
                 kern = en_kernel(atom_env, atom_env, *args)
 
@@ -150,8 +142,8 @@ class MapXbody:
             lengths = np.array(comp_r[i])
             xyzs = np.array(comp_xyz[i])
             map_ind = self.spc.index(spc)
-            f, vir, v, e = predict_comp(lengths, xyzs,
-                    self.maps[map_ind], mean_only, rank)
+            f, vir, v, e = self.maps[map_ind].predict(lengths, xyzs, 
+                self.map_force, mean_only)
             f_spcs += f
             vir_spcs += vir
             v_spcs += v
@@ -160,82 +152,21 @@ class MapXbody:
         return f_spcs, vir_spcs, kern, v_spcs, e_spcs
 
 
-    def predict_single_f_map(self, lengths, xyzs, mapping, mean_only, rank):
-
-        lengths = np.array(lengths)
-        xyzs = np.array(xyzs)
-
-        # predict mean
-        e = 0
-        f_0 = mapping.mean(lengths)
-        f_d = np.diag(f_0) @ xyzs
-        f = np.sum(f_d, axis=0)
-
-        # predict stress from force components
-        vir = np.zeros(6)
-        vir_order = ((0,0), (1,1), (2,2), (0,1), (0,2), (1,2))
-        for i in range(6):
-            vir_i = f_d[:,vir_order[i][0]]\
-                    * xyzs[:,vir_order[i][1]] * lengths[:,0]
-            vir[i] = np.sum(vir_i)
-        vir *= 0.5
-
-        # predict var
-        v = np.zeros(3)
-        if not mean_only:
-            v_0 = mapping.var(lengths, rank)
-            v_d = v_0 @ xyzs
-            v = mapping.var.V[:,:rank] @ v_d
-
-        return f, vir, v, e
-
-    def predict_single_e_map(self, lengths, xyzs, mapping, mean_only, rank):
-        '''
-        predict force and variance contribution of one component
-        '''
-        lengths = np.array(lengths)
-        xyzs = np.array(xyzs)
-
-        e_0, f_0 = mapping.mean(lengths, with_derivatives=True)
-        e = np.sum(e_0) # energy
-
-        # predict forces and stress
-        vir = np.zeros(6)
-        vir_order = ((0,0), (1,1), (2,2), (1,2), (0,2), (0,1)) # match the ASE order
-
-        f_d = np.diag(f_0[:,0,0]) @ xyzs
-        f = self.bodies * np.sum(f_d, axis=0) 
-
-        for i in range(6):
-            vir_i = f_d[:,vir_order[i][0]]\
-                    * xyzs[:,vir_order[i][1]] * lengths[:,0]
-            vir[i] = np.sum(vir_i)
-
-        vir *= self.bodies / 2
-
-        # predict var
-        v = 0
-        if not mean_only:
-            v_0 = np.expand_dims(np.sum(mapping.var(lengths, rank), axis=1),
-                                 axis=1)
-            v = mapping.var.V[:,:rank] @ v_0
-
-        return f, vir, v, e
-
-
-
+    def write(self, f):
+        for m in self.maps:
+            m.write(f)
 
 
 
 class SingleMapXbody:
-    def __init__(self, grid_num: int, bounds, bond_struc: Structure,
+    def __init__(self, grid_num: int, bounds, species: str,
                  map_force=False, svd_rank=0, mean_only: bool=False,
                  load_grid=None, update=None, 
                  n_cpus: int=None, n_sample: int=100):
 
         self.grid_num = grid_num
         self.bounds = bounds
-        self.bond_struc = bond_struc
+        self.species = species
         self.map_force = map_force
         self.svd_rank = svd_rank
         self.mean_only = mean_only
@@ -245,6 +176,20 @@ class SingleMapXbody:
         self.n_sample = n_sample
 
         self.build_map_container()
+
+    def get_grid_env(self, GP):
+        if isinstance(GP.cutoffs, dict):
+            max_cut = np.max(list(GP.cutoffs.values()))
+        else:
+            max_cut = np.max(GP.cutoffs)
+        big_cell = np.eye(3) * (2 * max_cut + 1)
+        positions = [[(i+1)/(self.bodies+1)*0.1, 0, 0]
+                     for i in range(self.bodies)]
+        grid_struc = Structure(big_cell, self.species, positions)
+        grid_env = AtomicEnvironment(grid_struc, 0, GP.cutoffs,
+            cutoffs_mask=GP.hyps_mask)
+
+        return grid_env
 
 
     def GenGrid(self, GP):
@@ -270,14 +215,13 @@ class SingleMapXbody:
 
         # ------ construct grids ------
         n_grid = np.prod(self.grid_num)
-        grid_env = AtomicEnvironment(self.bond_struc, 0, GP.cutoffs,
-            cutoffs_mask=GP.hyps_mask)
-
         grid_mean = np.zeros([n_grid])
         if not self.mean_only:
             grid_vars = np.zeros([n_grid, len(GP.alpha)])
         else:
             grid_vars = None
+
+        grid_env = self.get_grid_env(GP)
 
         # -------- get training data info ----------
         n_envs = len(GP.training_data)
@@ -356,7 +300,7 @@ class SingleMapXbody:
             pool.close()
             pool.join()
         del k12_slice
-        k12_v_force = np.vstack(k12_matrix)
+        k12_v_force = np.hstack(k12_matrix)
         del k12_matrix
 
         return k12_v_force
@@ -407,9 +351,12 @@ class SingleMapXbody:
                                 orders=self.grid_num)
 
         if not self.mean_only:
-            self.var = PCASplines(self.bounds[0], self.bounds[1],
-                                  orders=self.grid_num,
-                                  svd_rank=self.svd_rank)
+            if self.svd_rank == 'auto':
+                warnings.warn("The containers for variance are not built because svd_rank='auto'")
+            if isinstance(self.svd_rank, int):
+                self.var = PCASplines(self.bounds[0], self.bounds[1],
+                                      orders=self.grid_num,
+                                      svd_rank=self.svd_rank)
 
     def build_map(self, GP):
         if not self.load_grid:
@@ -422,27 +369,108 @@ class SingleMapXbody:
         y_mean, y_var = self.GenGrid(GP)
         self.mean.set_values(y_mean)
         if not self.mean_only:
-            self.var.set_values(y_var)
+            if self.svd_rank == 'auto':
+                self.var = PCASplines(self.bounds[0], self.bounds[1],
+                                      orders=self.grid_num,
+                                      svd_rank=np.min(y_var.shape))
+            if isinstance(self.svd_rank, int):
+                self.var.set_values(y_var)
 
-    def write(self, f, spc):
+    def predict(self, lengths, xyzs, map_force, mean_only):
+        assert map_force == self.map_force, f'The mapping is built for'\
+            'map_force={self.map_force}, can not predict for map_force={map_force}'
+        if map_force:
+            return self.predict_single_f_map(lengths, xyzs, mean_only)
+        else:
+            return self.predict_single_e_map(lengths, xyzs, mean_only)
+
+    def predict_single_f_map(self, lengths, xyzs, mean_only):
+
+        lengths = np.array(lengths)
+        xyzs = np.array(xyzs)
+
+        # predict mean
+        e = 0
+        f_0 = self.mean(lengths)
+        f_d = np.diag(f_0) @ xyzs
+        f = np.sum(f_d, axis=0)
+
+        # predict stress from force components
+        vir = np.zeros(6)
+        vir_order = ((0,0), (1,1), (2,2), (0,1), (0,2), (1,2))
+        for i in range(6):
+            vir_i = f_d[:,vir_order[i][0]]\
+                    * xyzs[:,vir_order[i][1]] * lengths[:,0]
+            vir[i] = np.sum(vir_i)
+        vir *= 0.5
+
+        # predict var
+        v = np.zeros(3)
+        if not mean_only:
+            v_0 = self.var(lengths)
+            v_d = v_0 @ xyzs
+            v = self.var.V @ v_d
+
+        return f, vir, v, e
+
+    def predict_single_e_map(self, lengths, xyzs, mean_only):
+        '''
+        predict force and variance contribution of one component
+        '''
+        lengths = np.array(lengths)
+        xyzs = np.array(xyzs)
+
+        e_0, f_0 = self.mean(lengths, with_derivatives=True)
+        e = np.sum(e_0) # energy
+
+        # predict forces and stress
+        vir = np.zeros(6)
+        vir_order = ((0,0), (1,1), (2,2), (1,2), (0,2), (0,1)) # match the ASE order
+
+        f_d = np.diag(f_0[:,0,0]) @ xyzs
+        f = self.bodies * np.sum(f_d, axis=0) 
+
+        for i in range(6):
+            vir_i = f_d[:,vir_order[i][0]]\
+                    * xyzs[:,vir_order[i][1]] * lengths[:,0]
+            vir[i] = np.sum(vir_i)
+
+        vir *= self.bodies / 2
+
+        # predict var
+        v = 0
+        if not mean_only:
+            v_0 = np.expand_dims(np.sum(self.var(lengths), axis=1),
+                                 axis=1)
+            v = self.var.V @ v_0
+
+        return f, vir, v, e
+
+    def write(self, f):
         '''
         Write LAMMPS coefficient file
         '''
-        a = self.bounds[0][0]
-        b = self.bounds[1][0]
+
+        # write header
+        elems = self.species_code.split('_')
+        a = self.bounds[0]
+        b = self.bounds[1]
         order = self.grid_num
 
-        coefs_2 = self.mean.__coeffs__
+        header = ''
+        for term in [elems, a, b, order]:
+            for s in range(len(term)):
+                header += f'{term[s]} '
+        f.write(header + '\n')
 
-        elem1 = Z_to_element(spc[0])
-        elem2 = Z_to_element(spc[1])
-        header_2 = '{elem1} {elem2} {a} {b} {order}\n'\
-            .format(elem1=elem1, elem2=elem2, a=a, b=b, order=order)
-        f.write(header_2)
-
-        for c, coef in enumerate(coefs_2):
+        # write coefficients
+        coefs = self.mean.__coeffs__
+        if len(coefs.shape) == 3:
+            print(coefs[0,0,:3])
+        coefs = np.reshape(coefs, np.prod(coefs.shape))
+        for c, coef in enumerate(coefs):
             f.write('{:.10e} '.format(coef))
-            if c % 5 == 4 and c != len(coefs_2)-1:
+            if c % 5 == 4 and c != len(coefs)-1:
                 f.write('\n')
 
         f.write('\n')
