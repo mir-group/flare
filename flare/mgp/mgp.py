@@ -111,7 +111,7 @@ class MappedGaussianProcess:
         self.mean_only = mean_only
 
     def build_map(self, GP):
-        for xb in self.maps.keys():
+        for xb in self.maps:
             self.maps[xb].build_map(GP)
 
     def predict(self, atom_env: AtomicEnvironment, mean_only: bool = False,
@@ -133,14 +133,14 @@ class MappedGaussianProcess:
             mean_only = True
 
         force = virial = kern = v = energy = 0
-        for xb in self.maps.keys():
+        for xb in self.maps:
             pred = self.maps[xb].predict(atom_env, mean_only, rank=None) #TODO: deal with rank
             force += pred[0]
             virial += pred[1]
             kern += pred[2]
             v += pred[3]
             energy += pred[4]
-        
+
         variance = kern - np.sum(v**2, axis=0)
 
         return force, variance, virial, energy
