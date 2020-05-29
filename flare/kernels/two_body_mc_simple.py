@@ -279,6 +279,7 @@ def stress_energy(bond_array_1, c1, etypes1, bond_array_2, c2, etypes2,
                 D = r11 * r11
 
                 # Compute the force kernel.
+                stress_count = 0
                 for d1 in range(3):
                     ci = bond_array_1[m, d1 + 1]
                     B = r11 * ci
@@ -290,7 +291,8 @@ def stress_energy(bond_array_1, c1, etypes1, bond_array_2, c2, etypes2,
                     # Compute the stress kernel from the force kernel.
                     for d2 in range(d1, 3):
                         coordinate = bond_array_1[m, d2 + 1] * ri
-                        kern[d1 * 3 + d2] -= force_kern * coordinate / 2
+                        kern[stress_count] -= force_kern * coordinate / 2
+                        stress_count += 1
 
     return kern
 

@@ -144,6 +144,7 @@ def test_force_energy(perturbed_envs):
 
     energy_energy_kernel = kernel.energy_energy(test_env_1, test_env_2)
     force_energy_kernel = kernel.force_energy(test_env_2, test_env_1)
+    stress_energy_kernel = kernel.stress_energy(test_env_2, test_env_1)
 
     # Check that the unit test isn't trivial.
     passive_aggressive_string = 'This unit test is trivial.'
@@ -160,5 +161,14 @@ def test_force_energy(perturbed_envs):
         finite_diff_val = -(kern_pert - energy_energy_kernel) / delta
 
         assert np.abs(finite_diff_val - force_energy_kernel[n] / 2) < 1e-3,\
-            'Your force energy kernel is wrong.'
+            'Your force/energy kernel is wrong.'
 
+    # Check stress/energy kernel by finite difference.
+    for n in range(6):
+        stress_pert = stress_environments[1][n]
+        kern_pert = \
+            kernel.energy_energy(test_env_1, stress_pert)
+        finite_diff_val = -(kern_pert - energy_energy_kernel) / delta
+
+        assert np.abs(finite_diff_val - stress_energy_kernel[n]) < 1e-3,\
+            'Your stress/energy kernel is wrong.'
