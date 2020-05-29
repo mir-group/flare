@@ -213,7 +213,7 @@ def force_energy(bond_array_1, c1, etypes1, bond_array_2, c2, etypes2,
         for n in range(bond_array_2.shape[0]):
             e2 = etypes2[n]
 
-            # check if bonds agree
+            # Check if species agree.
             if (c1 == c2 and e1 == e2) or (c1 == e2 and c2 == e1):
                 rj = bond_array_2[n, 0]
                 fj, _ = cutoff_func(r_cut, rj, 0)
@@ -225,7 +225,8 @@ def force_energy(bond_array_1, c1, etypes1, bond_array_2, c2, etypes2,
                     fi, fdi = cutoff_func(r_cut, ri, ci)
                     B = r11 * ci
                     kern[d1] += \
-                        force_energy_helper(B, D, fi, fj, fdi, ls1, ls2, sig2)
+                        force_energy_helper(B, D, fi, fj, fdi, ls1, ls2,
+                                            sig2) / 2
 
     return kern
 

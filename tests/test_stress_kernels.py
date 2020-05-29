@@ -1,5 +1,6 @@
 import pytest
 from flare.kernels.stress_kernels import two_body_energy
+from flare.kernels.two_body_mc_simple import TwoBodyKernel
 from flare.cutoffs import quadratic_cutoff
 from flare import struc, env
 import numpy as np
@@ -117,3 +118,47 @@ def test_stress_energy(perturbed_envs):
             assert(np.abs(finite_diff_val - stress_kernels[stress_count])
                    < 1e-3)
             stress_count += 1
+
+
+def test_force_energy(perturbed_envs):
+    # Define kernel. (Generalize this later.)
+    signal_variance = 1.
+    length_scale = 1.
+    cutoff = 5.
+
+    kernel = TwoBodyKernel(signal_variance, length_scale, cutoff)
+
+    # Retrieve perturbed environments.
+    environments = perturbed_envs[0]
+    force_environments = perturbed_envs[1]
+    stress_environments = perturbed_envs[2]
+
+    test_env_1 = environments[0]
+    test_env_2 = environments[1]
+
+    # Compute force energy kernel.
+    sig = 1.
+    ls = 1.
+    r_cut = 5.
+    cutoff_func = quadratic_cutoff
+
+    energy_energy_kernel = kernel.energy_energy(test_env_1, test_env_2)
+    force_energy_kernel = kernel.force_energy(test_env_2, test_env_1)
+
+    # Check that the unit test isn't trivial.
+    passive_aggressive_string = 'This unit test is trivial.'
+    assert energy_energy_kernel != 1, passive_aggressive_string
+    assert (force_energy_kernel != 0).all(), passive_aggressive_string
+
+    # Check force/energy kernel by finite difference.
+    delta = 1e-8
+    for n in range(3):
+        env_pert = force_environments[1][n]
+
+        kern_pert = \
+            kernel.energy_energy(test_env_1, env_pert)
+        finite_diff_val = -(kern_pert - energy_energy_kernel) / delta
+
+        assert np.abs(finite_diff_val - force_energy_kernel[n] / 2) < 1e-3,\
+            'Your force energy kernel is wrong.'
+
