@@ -115,6 +115,7 @@ def test_kernel(perturbed_envs):
     stress_energy_kernel = kernel.stress_energy(test_env_2, test_env_1)
     force_force_kernel = kernel.force_force(test_env_1, test_env_2)
     stress_force_kernel = kernel.stress_force(test_env_1, test_env_2)
+    stress_stress_kernel = kernel.stress_stress(test_env_1, test_env_2)
 
     # Check that the unit test isn't trivial.
     passive_aggressive_string = 'This unit test is trivial.'
@@ -185,6 +186,23 @@ def test_kernel(perturbed_envs):
                 threshold, 'The stress/force kernel is wrong.'
 
     # Check stress/stress kernel by finite difference.
+    print(stress_stress_kernel)
+    for m in range(6):
+        pert1_up = stress_environments[0][m]
+        pert1_down = stress_environments[2][m]
+        for n in range(6):
+            pert2_up = stress_environments[1][n]
+            pert2_down = stress_environments[3][n]
+            kern1 = kernel.energy_energy(pert1_up, pert2_up)
+            kern2 = kernel.energy_energy(pert1_up, pert2_down)
+            kern3 = kernel.energy_energy(pert1_down, pert2_up)
+            kern4 = kernel.energy_energy(pert1_down, pert2_down)
+
+            finite_diff_val = \
+                (kern1 - kern2 - kern3 + kern4) / (4 * delta * delta)
+
+            assert np.abs(finite_diff_val - stress_stress_kernel[m, n]) < \
+                threshold, 'The stress/stress kernel is wrong.'
 
 
 # def test_stress_energy(perturbed_envs):
