@@ -27,11 +27,10 @@ class MappedGaussianProcess:
     and automatically save coefficients for LAMMPS pair style.
 
     Args:
-        struc_params (dict): Parameters for a dummy structure which will be
-            internally used to probe/store forces associated with different atomic
-            configurations
         grid_params (dict): Parameters for the mapping itself, such as
             grid size of spline fit, etc.
+        species_list (dict): List of all the (unique) species included during
+            the training that need to be mapped
         map_force (bool): if True, do force mapping; otherwise do energy mapping,
             default is False
         mean_only (bool): if True: only build mapping for mean (force)
@@ -44,36 +43,40 @@ class MappedGaussianProcess:
 
     Examples:
 
-    >>> struc_params = {'species': [0, 1],
-                        'cube_lat': cell} # should input the cell matrix
-    >>> grid_params =  {'bounds_2': [[1.2], [3.5]],
-                                    # [[lower_bound], [upper_bound]]
-                                    # These describe the lower and upper
-                                    # bounds used to specify the 2-body spline
-                                    # fits.
-                        'bounds_3': [[1.2, 1.2, 1.2], [3.5, 3.5, 3.5]],
-                                    # [[lower,lower,lower],[upper,upper,upper]]
-                                    # Values describe lower and upper bounds
-                                    # for the bondlength-bondlength-bondlength
-                                    # grid used to construct and fit 3-body
-                                    # kernels; note that for force MGPs
-                                    # bondlength-bondlength-costheta
-                                    # are the bounds used instead.
-                        'bodies':   [2, 3] # use 2+3 body
-                        'grid_num_2': 64,# Fidelity of the grid
-                        'grid_num_3': [16, 16, 16],# Fidelity of the grid
-                        'svd_rank_2': 64, #Fidelity of uncertainty estimation
-                        'svd_rank_3': 16**3,
-                        'update': True, # if True: accelerating grids
+    >>> grid_params_2body = {'lower_bound': [1.2],
+                                            # the lower bounds used
+                                            # in the 2-body spline fits.
+                                            # the upper bounds are determined
+                                            # from GP's cutoffs, same for 3-body
+                             'grid_num': [64], # number of grids used in spline
+                             'svd_rank': 'auto'}
+                                         # rank of the variance map, can be set
+                                         # as an interger or 'auto'
+    >>> grid_params_3body = {'lower_bound': [1.2, 1.2, 1.2],
+                                            # Values describe lower bounds
+                                            # for the bondlength-bondlength-bondlength
+                                            # grid used to construct and fit 3-body
+                                            # kernels; note that for force MGPs
+                                            # bondlength-bondlength-costheta
+                                            # are the bounds used instead.
+                             'grid_num': [32, 32, 32],
+                             'svd_rank': 'auto'}
+    >>> grid_params = {'twobody': grid_params_2body,
+                       'threebody': grid_params_3body,
+                       'update': False, # if True: accelerating grids
                                         # generating by saving intermediate
-                                        # coeff when generating grids
-                        'load_grid': None  # Used to load from file
-                        }
+                                        # coeff when generating grids,
+                                        # currently NOT implemented
+                       'load_grid': None, # A string of path where the `grid_mean.npy`
+                                          # and `grid_var.npy` are stored. if not None,
+                                          # then the grids won't be generated, but
+                                          # directly loaded from file
+                       }
     '''
 
     def __init__(self,
                  grid_params: dict,
-                 struc_params: dict,
+                 species_list: list=[],
                  map_force: bool=False,
                  GP: GaussianProcess=None,
                  mean_only: bool=False,
@@ -89,24 +92,27 @@ class MappedGaussianProcess:
         self.n_cpus = n_cpus
         self.n_sample = n_sample
         self.grid_params = grid_params
-        self.struc_params = struc_params
+        self.species_list = species_list
         self.hyps_mask = None
         self.cutoffs = None
 
-        self.__dict__.update(grid_params)
-
         self.maps = {}
-        args = [struc_params, map_force, GP, mean_only,\
+        args = [species_list, map_force, GP, mean_only,\
                 container_only, lmp_file_name, n_cpus, n_sample]
 
-        if 2 in self.bodies:
-            args_2 = [self.grid_num_2, self.bounds_2[0][0], self.svd_rank_2] + args
-            maps_2 = Map2body(args_2)
-            self.maps['twobody'] = maps_2
-        if 3 in self.bodies:
-            args_3 = [self.grid_num_3, self.bounds_3[0][0], self.svd_rank_3] + args
-            maps_3 = Map3body(args_3)
-            self.maps['threebody'] = maps_3
+        for key in grid_params.keys():
+            if 'body' in key:
+                if 'twobody' == key:
+                    mapxbody = Map2body
+                elif 'threebody' == key:
+                    mapxbody = Map3body
+                else:
+                    raise KeyError("Only 'twobody' & 'threebody' are allowed")
+
+                xb_dict = grid_params[key]
+                xb_args = [xb_dict['grid_num'], xb_dict['lower_bound'], xb_dict['svd_rank']]
+                xb_maps = mapxbody(xb_args + args)
+                self.maps[key] = xb_maps
 
         self.mean_only = mean_only
 
@@ -114,8 +120,12 @@ class MappedGaussianProcess:
         for xb in self.maps:
             self.maps[xb].build_map(GP)
 
+        # write to lammps pair style coefficient file
+        self.write_lmp_file(self.lmp_file_name)
+
+
     def predict(self, atom_env: AtomicEnvironment, mean_only: bool = False,
-            rank: dict = {}) -> (float, 'ndarray', 'ndarray', float):
+            ) -> (float, 'ndarray', 'ndarray', float):
         '''
         predict force, variance, stress and local energy for given
             atomic environment
@@ -134,7 +144,7 @@ class MappedGaussianProcess:
 
         force = virial = kern = v = energy = 0
         for xb in self.maps:
-            pred = self.maps[xb].predict(atom_env, mean_only, rank=None) #TODO: deal with rank
+            pred = self.maps[xb].predict(atom_env, mean_only)
             force += pred[0]
             virial += pred[1]
             kern += pred[2]
@@ -151,27 +161,24 @@ class MappedGaussianProcess:
         write the coefficients to a file that can be used by lammps pair style
         '''
 
-        # write header
         f = open(lammps_name, 'w')
 
-        header_comment = '''# #2bodyarray #3bodyarray\n# elem1 elem2 a b order
-        '''
+        # write header
+        header_comment = '''# #2bodyarray #3bodyarray\n# elem1 elem2 a b order\n\n'''
         f.write(header_comment)
+        header = ''
+        xbodies = ['twobody', 'threebody']
+        for xb in xbodies:
+            if xb in self.maps.keys():
+                num = len(self.maps[xb].maps)
+            else:
+                num = 0
+            header += f'{num} '
+        f.write(header + '\n')
 
-        twobodyarray = len(self.maps_2)
-        threebodyarray = len(self.maps_3)
-        header = '\n{} {}\n'.format(twobodyarray, threebodyarray)
-        f.write(header)
-
-        # write two body
-        if twobodyarray > 0:
-            for ind, spc in enumerate(self.spcs[0]):
-                self.maps_2[ind].write(f, spc)
-
-        # write three body
-        if threebodyarray > 0:
-            for ind, spc in enumerate(self.spcs[1]):
-                self.maps_3[ind].write(f, spc)
+        # write coefficients
+        for xb in self.maps.keys():
+            self.maps[xb].write(f)
 
         f.close()
 
@@ -201,7 +208,7 @@ class MappedGaussianProcess:
         out_dict['maps_3'] = [map_3.mean.__coeffs__ for map_3 in self.maps_3]
 
         # don't need these since they are built in the __init__ function
-        key_list = ['bond_struc', 'spcs_set', ]
+        key_list = ['spcs_set', ]
         for key in key_list:
             if out_dict.get(key) is not None:
                 del out_dict[key]
@@ -214,7 +221,7 @@ class MappedGaussianProcess:
         Create MGP object from dictionary representation.
         """
         new_mgp = MappedGaussianProcess(grid_params=dictionary['grid_params'],
-                                        struc_params=dictionary['struc_params'],
+                                        species_list=dictionary['species_list'],
                                         map_force=dictionary['map_force'],
                                         GP=None,
                                         mean_only=dictionary['mean_only'],
