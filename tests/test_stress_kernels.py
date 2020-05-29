@@ -1,6 +1,7 @@
 import pytest
 from flare.kernels.stress_kernels import two_body_energy
 from flare.kernels.two_body_mc_simple import TwoBodyKernel
+from flare.kernels.three_body_mc_simple import ThreeBodyKernel
 from flare.cutoffs import quadratic_cutoff
 from flare import struc, env
 import numpy as np
@@ -17,7 +18,7 @@ def perturbed_envs():
     structure = struc.Structure(cell, species, positions)
 
     # Take two environments from the structure.
-    cutoffs = np.array([5., 5.])
+    cutoffs = np.array([1.5, 1.5])
     test_env_1 = env.AtomicEnvironment(structure, 0, cutoffs)
     test_env_2 = env.AtomicEnvironment(structure, 3, cutoffs)
     environments = [test_env_1, test_env_2]
@@ -103,9 +104,10 @@ def test_kernel(perturbed_envs):
     signal_variance = 1.
     length_scale = 1.
     hyperparameters = np.array([signal_variance, length_scale])
-    cutoff = 5.
+    cutoff = 1.5
 
-    kernel = TwoBodyKernel(hyperparameters, cutoff)
+    kernel = ThreeBodyKernel(hyperparameters, cutoff)
+    mult_fac = 3
 
     # Set the test threshold.
     threshold = 1e-4
@@ -113,11 +115,11 @@ def test_kernel(perturbed_envs):
     # Compute kernels.
     energy_energy_kernel = kernel.energy_energy(test_env_1, test_env_2)
     force_energy_kernel = kernel.force_energy(test_env_2, test_env_1)
-    stress_energy_kernel = kernel.stress_energy(test_env_2, test_env_1)
-    force_force_kernel = kernel.force_force(test_env_1, test_env_2)
-    stress_force_kernel = kernel.stress_force(test_env_1, test_env_2)
-    stress_stress_kernel = kernel.stress_stress(test_env_1, test_env_2)
-    force_force_gradient = kernel.force_force_gradient(test_env_1, test_env_2)
+    # stress_energy_kernel = kernel.stress_energy(test_env_2, test_env_1)
+    # force_force_kernel = kernel.force_force(test_env_1, test_env_2)
+    # stress_force_kernel = kernel.stress_force(test_env_1, test_env_2)
+    # stress_stress_kernel = kernel.stress_stress(test_env_1, test_env_2)
+    # force_force_gradient = kernel.force_force_gradient(test_env_1, test_env_2)
 
     # Check that the unit test isn't trivial.
     passive_aggressive_string = 'This unit test is trivial.'
@@ -135,106 +137,106 @@ def test_kernel(perturbed_envs):
             kernel.energy_energy(test_env_1, env_pert_down)
         finite_diff_val = -(kern_pert_up - kern_pert_down) / (2 * delta)
 
-        assert np.abs(finite_diff_val - force_energy_kernel[n] / 2) < \
+        assert np.abs(finite_diff_val - force_energy_kernel[n] / mult_fac) < \
             threshold, 'Your force/energy kernel is wrong.'
 
-    # Check stress/energy kernel by finite difference.
-    for n in range(6):
-        env_pert_up = stress_environments[1][n]
-        env_pert_down = stress_environments[3][n]
-        kern_pert_up = \
-            kernel.energy_energy(test_env_1, env_pert_up)
-        kern_pert_down = \
-            kernel.energy_energy(test_env_1, env_pert_down)
-        finite_diff_val = -(kern_pert_up - kern_pert_down) / (2 * delta)
+    # # Check stress/energy kernel by finite difference.
+    # for n in range(6):
+    #     env_pert_up = stress_environments[1][n]
+    #     env_pert_down = stress_environments[3][n]
+    #     kern_pert_up = \
+    #         kernel.energy_energy(test_env_1, env_pert_up)
+    #     kern_pert_down = \
+    #         kernel.energy_energy(test_env_1, env_pert_down)
+    #     finite_diff_val = -(kern_pert_up - kern_pert_down) / (2 * delta)
 
-        assert np.abs(finite_diff_val - stress_energy_kernel[n]) < \
-            threshold, 'The stress/energy kernel is wrong.'
+    #     assert np.abs(finite_diff_val - stress_energy_kernel[n]) < \
+    #         threshold, 'The stress/energy kernel is wrong.'
 
-    # Check force/force kernel by finite difference.
-    for m in range(3):
-        pert1_up = force_environments[0][m]
-        pert1_down = force_environments[2][m]
-        for n in range(3):
-            pert2_up = force_environments[1][n]
-            pert2_down = force_environments[3][n]
-            kern1 = kernel.energy_energy(pert1_up, pert2_up)
-            kern2 = kernel.energy_energy(pert1_up, pert2_down)
-            kern3 = kernel.energy_energy(pert1_down, pert2_up)
-            kern4 = kernel.energy_energy(pert1_down, pert2_down)
+    # # Check force/force kernel by finite difference.
+    # for m in range(3):
+    #     pert1_up = force_environments[0][m]
+    #     pert1_down = force_environments[2][m]
+    #     for n in range(3):
+    #         pert2_up = force_environments[1][n]
+    #         pert2_down = force_environments[3][n]
+    #         kern1 = kernel.energy_energy(pert1_up, pert2_up)
+    #         kern2 = kernel.energy_energy(pert1_up, pert2_down)
+    #         kern3 = kernel.energy_energy(pert1_down, pert2_up)
+    #         kern4 = kernel.energy_energy(pert1_down, pert2_down)
 
-            finite_diff_val = \
-                (kern1 - kern2 - kern3 + kern4) / (4 * delta * delta)
+    #         finite_diff_val = \
+    #             (kern1 - kern2 - kern3 + kern4) / (4 * delta * delta)
 
-            assert np.abs(finite_diff_val * 4 - force_force_kernel[m, n]) < \
-                threshold, 'The force/force kernel is wrong.'
+    #         assert np.abs(finite_diff_val * 4 - force_force_kernel[m, n]) < \
+    #             threshold, 'The force/force kernel is wrong.'
 
-    # Check stress/force kernel by finite difference.
-    for m in range(6):
-        pert1_up = stress_environments[0][m]
-        pert1_down = stress_environments[2][m]
-        for n in range(3):
-            pert2_up = force_environments[1][n]
-            pert2_down = force_environments[3][n]
-            kern1 = kernel.energy_energy(pert1_up, pert2_up)
-            kern2 = kernel.energy_energy(pert1_up, pert2_down)
-            kern3 = kernel.energy_energy(pert1_down, pert2_up)
-            kern4 = kernel.energy_energy(pert1_down, pert2_down)
+    # # Check stress/force kernel by finite difference.
+    # for m in range(6):
+    #     pert1_up = stress_environments[0][m]
+    #     pert1_down = stress_environments[2][m]
+    #     for n in range(3):
+    #         pert2_up = force_environments[1][n]
+    #         pert2_down = force_environments[3][n]
+    #         kern1 = kernel.energy_energy(pert1_up, pert2_up)
+    #         kern2 = kernel.energy_energy(pert1_up, pert2_down)
+    #         kern3 = kernel.energy_energy(pert1_down, pert2_up)
+    #         kern4 = kernel.energy_energy(pert1_down, pert2_down)
 
-            finite_diff_val = \
-                (kern1 - kern2 - kern3 + kern4) / (4 * delta * delta)
+    #         finite_diff_val = \
+    #             (kern1 - kern2 - kern3 + kern4) / (4 * delta * delta)
 
-            assert np.abs(finite_diff_val * 2 - stress_force_kernel[m, n]) < \
-                threshold, 'The stress/force kernel is wrong.'
+    #         assert np.abs(finite_diff_val * 2 - stress_force_kernel[m, n]) < \
+    #             threshold, 'The stress/force kernel is wrong.'
 
-    # Check stress/stress kernel by finite difference.
-    for m in range(6):
-        pert1_up = stress_environments[0][m]
-        pert1_down = stress_environments[2][m]
-        for n in range(6):
-            pert2_up = stress_environments[1][n]
-            pert2_down = stress_environments[3][n]
-            kern1 = kernel.energy_energy(pert1_up, pert2_up)
-            kern2 = kernel.energy_energy(pert1_up, pert2_down)
-            kern3 = kernel.energy_energy(pert1_down, pert2_up)
-            kern4 = kernel.energy_energy(pert1_down, pert2_down)
+    # # Check stress/stress kernel by finite difference.
+    # for m in range(6):
+    #     pert1_up = stress_environments[0][m]
+    #     pert1_down = stress_environments[2][m]
+    #     for n in range(6):
+    #         pert2_up = stress_environments[1][n]
+    #         pert2_down = stress_environments[3][n]
+    #         kern1 = kernel.energy_energy(pert1_up, pert2_up)
+    #         kern2 = kernel.energy_energy(pert1_up, pert2_down)
+    #         kern3 = kernel.energy_energy(pert1_down, pert2_up)
+    #         kern4 = kernel.energy_energy(pert1_down, pert2_down)
 
-            finite_diff_val = \
-                (kern1 - kern2 - kern3 + kern4) / (4 * delta * delta)
+    #         finite_diff_val = \
+    #             (kern1 - kern2 - kern3 + kern4) / (4 * delta * delta)
 
-            assert np.abs(finite_diff_val - stress_stress_kernel[m, n]) < \
-                threshold, 'The stress/stress kernel is wrong.'
+    #         assert np.abs(finite_diff_val - stress_stress_kernel[m, n]) < \
+    #             threshold, 'The stress/stress kernel is wrong.'
 
-    # Check force/force gradient.
-    print(force_force_gradient[1])
-    kernel.signal_variance = signal_variance + delta
-    force_sig_up = kernel.force_force(test_env_1, test_env_2)
+    # # Check force/force gradient.
+    # print(force_force_gradient[1])
+    # kernel.signal_variance = signal_variance + delta
+    # force_sig_up = kernel.force_force(test_env_1, test_env_2)
 
-    kernel.signal_variance = signal_variance - delta
-    force_sig_down = kernel.force_force(test_env_1, test_env_2)
+    # kernel.signal_variance = signal_variance - delta
+    # force_sig_down = kernel.force_force(test_env_1, test_env_2)
 
-    kernel.signal_variance = signal_variance
-    kernel.length_scale = length_scale + delta
-    force_ls_up = kernel.force_force(test_env_1, test_env_2)
+    # kernel.signal_variance = signal_variance
+    # kernel.length_scale = length_scale + delta
+    # force_ls_up = kernel.force_force(test_env_1, test_env_2)
 
-    kernel.length_scale = length_scale - delta
-    force_ls_down = kernel.force_force(test_env_1, test_env_2)
+    # kernel.length_scale = length_scale - delta
+    # force_ls_down = kernel.force_force(test_env_1, test_env_2)
 
-    for m in range(3):
-        for n in range(3):
-            sig_val = \
-                (force_sig_up[m, n] - force_sig_down[m, n]) / (2 * delta)
+    # for m in range(3):
+    #     for n in range(3):
+    #         sig_val = \
+    #             (force_sig_up[m, n] - force_sig_down[m, n]) / (2 * delta)
 
-            ls_val = \
-                (force_ls_up[m, n] - force_ls_down[m, n]) / (2 * delta)
+    #         ls_val = \
+    #             (force_ls_up[m, n] - force_ls_down[m, n]) / (2 * delta)
 
-            assert np.abs(sig_val -
-                          force_force_gradient[1][0, m, n]) < \
-                threshold, 'The force/force gradient is wrong.'
+    #         assert np.abs(sig_val -
+    #                       force_force_gradient[1][0, m, n]) < \
+    #             threshold, 'The force/force gradient is wrong.'
 
-            assert np.abs(ls_val -
-                          force_force_gradient[1][1, m, n]) < \
-                threshold, 'The force/force gradient is wrong.'
+    #         assert np.abs(ls_val -
+    #                       force_force_gradient[1][1, m, n]) < \
+    #             threshold, 'The force/force gradient is wrong.'
 
 
 # def test_stress_energy(perturbed_envs):

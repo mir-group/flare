@@ -109,12 +109,11 @@ def energy_energy(bond_array_1, c1, etypes1, bond_array_2, c2, etypes2,
                 fj, _ = cutoff_func(r_cut, rj, 0)
                 r11 = ri - rj
 
-                # Divide by 4 to eliminate double counting (each pair will be
-                # counted twice when summing over all environments in the
-                # structures)
-                kern += fi * fj * sig2 * exp(-r11 * r11 * ls1) / 4
+                kern += fi * fj * sig2 * exp(-r11 * r11 * ls1)
 
-    return kern
+    # Divide by 4 to eliminate double counting (each pair will be counted
+    # twice when summing over all environments in the structures).
+    return kern / 4
 
 
 @njit
@@ -238,9 +237,9 @@ def force_energy(bond_array_1, c1, etypes1, bond_array_2, c2, etypes2,
                     B = r11 * ci
                     kern[d1] += \
                         force_energy_helper(B, D, fi, fj, fdi, ls1, ls2,
-                                            sig2) / 2
+                                            sig2)
 
-    return kern
+    return kern / 2
 
 
 @njit
@@ -298,15 +297,15 @@ def stress_energy(bond_array_1, c1, etypes1, bond_array_2, c2, etypes2,
                     fi, fdi = cutoff_func(r_cut, ri, ci)
                     force_kern = \
                         force_energy_helper(B, D, fi, fj, fdi, ls1, ls2,
-                                            sig2) / 2
+                                            sig2)
 
                     # Compute the stress kernel from the force kernel.
                     for d2 in range(d1, 3):
                         coordinate = bond_array_1[m, d2 + 1] * ri
-                        kern[stress_count] -= force_kern * coordinate / 2
+                        kern[stress_count] -= force_kern * coordinate
                         stress_count += 1
 
-    return kern
+    return kern / 4
 
 
 @njit
@@ -372,11 +371,11 @@ def stress_force(bond_array_1, c1, etypes1, bond_array_2, c2, etypes2,
                                 force_helper(A, B, C, D, fi, fj, fdi, fdj,
                                              ls1, ls2, ls3, sig2)
                             kernel_matrix[stress_count, d3] -= \
-                                force_kern * coordinate / 2
+                                force_kern * coordinate
 
                         stress_count += 1
 
-    return kernel_matrix
+    return kernel_matrix / 2
 
 
 @njit
@@ -444,12 +443,12 @@ def stress_stress(bond_array_1, c1, etypes1, bond_array_2, c2, etypes2,
                                                  ls1, ls2, ls3, sig2)
                                 kernel_matrix[s1, s2] += \
                                     force_kern * coordinate_1 * \
-                                    coordinate_2 / 4
+                                    coordinate_2
 
                                 s2 += 1
                         s1 += 1
 
-    return kernel_matrix
+    return kernel_matrix / 4
 
 
 @njit
