@@ -102,9 +102,10 @@ def test_kernel(perturbed_envs):
     # Define kernel. (Generalize this later.)
     signal_variance = 1.
     length_scale = 1.
+    hyperparameters = np.array([signal_variance, length_scale])
     cutoff = 5.
 
-    kernel = TwoBodyKernel(signal_variance, length_scale, cutoff)
+    kernel = TwoBodyKernel(hyperparameters, cutoff)
 
     # Set the test threshold.
     threshold = 1e-4
