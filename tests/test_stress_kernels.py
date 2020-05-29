@@ -90,6 +90,15 @@ def perturbed_envs():
 
 
 def test_kernel(perturbed_envs):
+    # Retrieve perturbed environments.
+    environments = perturbed_envs[0]
+    force_environments = perturbed_envs[1]
+    stress_environments = perturbed_envs[2]
+    delta = perturbed_envs[3]
+
+    test_env_1 = environments[0]
+    test_env_2 = environments[1]
+
     # Define kernel. (Generalize this later.)
     signal_variance = 1.
     length_scale = 1.
@@ -100,15 +109,6 @@ def test_kernel(perturbed_envs):
     # Set the test threshold.
     threshold = 1e-4
 
-    # Retrieve perturbed environments.
-    environments = perturbed_envs[0]
-    force_environments = perturbed_envs[1]
-    stress_environments = perturbed_envs[2]
-    delta = perturbed_envs[3]
-
-    test_env_1 = environments[0]
-    test_env_2 = environments[1]
-
     # Compute kernels.
     energy_energy_kernel = kernel.energy_energy(test_env_1, test_env_2)
     force_energy_kernel = kernel.force_energy(test_env_2, test_env_1)
@@ -116,6 +116,7 @@ def test_kernel(perturbed_envs):
     force_force_kernel = kernel.force_force(test_env_1, test_env_2)
     stress_force_kernel = kernel.stress_force(test_env_1, test_env_2)
     stress_stress_kernel = kernel.stress_stress(test_env_1, test_env_2)
+    force_force_gradient = kernel.force_force_gradient(test_env_1, test_env_2)
 
     # Check that the unit test isn't trivial.
     passive_aggressive_string = 'This unit test is trivial.'
@@ -186,7 +187,6 @@ def test_kernel(perturbed_envs):
                 threshold, 'The stress/force kernel is wrong.'
 
     # Check stress/stress kernel by finite difference.
-    print(stress_stress_kernel)
     for m in range(6):
         pert1_up = stress_environments[0][m]
         pert1_down = stress_environments[2][m]
@@ -203,6 +203,37 @@ def test_kernel(perturbed_envs):
 
             assert np.abs(finite_diff_val - stress_stress_kernel[m, n]) < \
                 threshold, 'The stress/stress kernel is wrong.'
+
+    # Check force/force gradient.
+    print(force_force_gradient[1])
+    kernel.signal_variance = signal_variance + delta
+    force_sig_up = kernel.force_force(test_env_1, test_env_2)
+
+    kernel.signal_variance = signal_variance - delta
+    force_sig_down = kernel.force_force(test_env_1, test_env_2)
+
+    kernel.signal_variance = signal_variance
+    kernel.length_scale = length_scale + delta
+    force_ls_up = kernel.force_force(test_env_1, test_env_2)
+
+    kernel.length_scale = length_scale - delta
+    force_ls_down = kernel.force_force(test_env_1, test_env_2)
+
+    for m in range(3):
+        for n in range(3):
+            sig_val = \
+                (force_sig_up[m, n] - force_sig_down[m, n]) / (2 * delta)
+
+            ls_val = \
+                (force_ls_up[m, n] - force_ls_down[m, n]) / (2 * delta)
+
+            assert np.abs(sig_val -
+                          force_force_gradient[1][0, m, n]) < \
+                threshold, 'The force/force gradient is wrong.'
+
+            assert np.abs(ls_val -
+                          force_force_gradient[1][1, m, n]) < \
+                threshold, 'The force/force gradient is wrong.'
 
 
 # def test_stress_energy(perturbed_envs):

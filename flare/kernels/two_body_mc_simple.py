@@ -1,5 +1,6 @@
 import numpy as np
-from flare.kernels.kernels import force_helper, force_energy_helper
+from flare.kernels.kernels import force_helper, force_energy_helper, \
+    grad_helper
 from numba import njit
 from flare.env import AtomicEnvironment
 from typing import Callable
@@ -55,8 +56,12 @@ class TwoBodyKernel:
                              self.signal_variance, self.length_scale,
                              self.cutoff, self.cutoff_func)
 
-    def force_force_gradient(self):
-        pass
+    def force_force_gradient(self, env1: AtomicEnvironment,
+                             env2: AtomicEnvironment):
+        return force_force_gradient(env1.bond_array_2, env1.ctype, env1.etypes,
+                                    env2.bond_array_2, env2.ctype, env2.etypes,
+                                    self.signal_variance, self.length_scale,
+                                    self.cutoff, self.cutoff_func)
 
 
 @njit
@@ -240,7 +245,7 @@ def force_energy(bond_array_1, c1, etypes1, bond_array_2, c2, etypes2,
 @njit
 def stress_energy(bond_array_1, c1, etypes1, bond_array_2, c2, etypes2,
                   sig, ls, r_cut, cutoff_func):
-    """2-body multi-element kernel between a partial stress component and a 
+    """2-body multi-element kernel between a partial stress component and a
     local energy accelerated with Numba.
 
     Args:
@@ -421,20 +426,18 @@ def stress_stress(bond_array_1, c1, etypes1, bond_array_2, c2, etypes2,
                 s1 = 0
                 for d1 in range(3):
                     ci = bond_array_1[m, d1 + 1]
+                    B = r11 * ci
                     fi, fdi = cutoff_func(r_cut, ri, ci)
                     for d2 in range(d1, 3):
                         coordinate_1 = bond_array_1[m, d2 + 1] * ri
                         s2 = 0
                         for d3 in range(3):
                             cj = bond_array_2[n, d3 + 1]
+                            A = ci * cj
+                            C = r11 * cj
                             fj, fdj = cutoff_func(r_cut, rj, cj)
                             for d4 in range(d3, 3):
                                 coordinate_2 = bond_array_2[n, d4 + 1] * rj
-
-                                A = ci * cj
-                                B = r11 * ci
-                                C = r11 * cj
-
                                 force_kern = \
                                     force_helper(A, B, C, D, fi, fj, fdi, fdj,
                                                  ls1, ls2, ls3, sig2)
@@ -446,3 +449,80 @@ def stress_stress(bond_array_1, c1, etypes1, bond_array_2, c2, etypes2,
                         s1 += 1
 
     return kernel_matrix
+
+
+@njit
+def force_force_gradient(bond_array_1, c1, etypes1, bond_array_2, c2, etypes2,
+                         sig, ls, r_cut, cutoff_func):
+    """2-body multi-element kernel between two force components and its
+    gradient with respect to the hyperparameters.
+
+    Args:
+        bond_array_1 (np.ndarray): 2-body bond array of the first local
+            environment.
+        c1 (int): Species of the central atom of the first local environment.
+        etypes1 (np.ndarray): Species of atoms in the first local
+            environment.
+        bond_array_2 (np.ndarray): 2-body bond array of the second local
+            environment.
+        c2 (int): Species of the central atom of the second local environment.
+        etypes2 (np.ndarray): Species of atoms in the second local
+            environment.
+        sig (float): 2-body signal variance hyperparameter.
+        ls (float): 2-body length scale hyperparameter.
+        r_cut (float): 2-body cutoff radius.
+        cutoff_func (Callable): Cutoff function.
+
+    Returns:
+        (float, float):
+            Value of the 2-body kernel and its gradient with respect to the
+            hyperparameters.
+    """
+
+    kernel_matrix = np.zeros((3, 3))
+    kernel_grad = np.zeros((2, 3, 3))
+
+    ls1 = 1 / (2 * ls * ls)
+    ls2 = 1 / (ls * ls)
+    ls3 = ls2 * ls2
+    ls4 = 1 / (ls * ls * ls)
+    ls5 = ls * ls
+    ls6 = ls2 * ls4
+
+    sig2 = sig * sig
+    sig3 = 2 * sig
+
+    for m in range(bond_array_1.shape[0]):
+        ri = bond_array_1[m, 0]
+        e1 = etypes1[m]
+
+        for n in range(bond_array_2.shape[0]):
+            e2 = etypes2[n]
+
+            # check if bonds agree
+            if (c1 == c2 and e1 == e2) or (c1 == e2 and c2 == e1):
+                rj = bond_array_2[n, 0]
+                r11 = ri - rj
+                D = r11 * r11
+
+                for d1 in range(3):
+                    ci = bond_array_1[m, d1 + 1]
+                    B = r11 * ci
+                    fi, fdi = cutoff_func(r_cut, ri, ci)
+
+                    for d2 in range(3):
+                        cj = bond_array_2[n, d2 + 1]
+                        fj, fdj = cutoff_func(r_cut, rj, cj)
+
+                        A = ci * cj
+                        C = r11 * cj
+
+                        kern_term, sig_term, ls_term = \
+                            grad_helper(A, B, C, D, fi, fj, fdi, fdj, ls1,
+                                        ls2, ls3, ls4, ls5, ls6, sig2, sig3)
+
+                        kernel_matrix[d1, d2] += kern_term
+                        kernel_grad[0, d1, d2] += sig_term
+                        kernel_grad[1, d1, d2] += ls_term
+
+    return kernel_matrix, kernel_grad
