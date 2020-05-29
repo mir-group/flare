@@ -43,11 +43,11 @@ def three_body_mc_en(env1: AtomicEnvironment, grids, fj, c2, etypes2, perm_list,
                                 env1.cross_bond_inds,
                                 env1.cross_bond_dists,
                                 env1.triplet_counts,
-                                c2, etypes2, perm_list, 
+                                c2, etypes2, perm_list,
                                 grids, fj,
                                 sig, ls, r_cut, cutoff_func) / 9.
 
-def three_body_mc_en_sephyps(env1, grids, fj, c2, etypes2, perm_list, 
+def three_body_mc_en_sephyps(env1, grids, fj, c2, etypes2, perm_list,
                              cutoff_2b, cutoff_3b, nspec, spec_mask,
                              nbond, bond_mask, ntriplet, triplet_mask,
                              ncut3b, cut3b_mask,
@@ -101,12 +101,12 @@ def three_body_mc_en_sephyps(env1, grids, fj, c2, etypes2, perm_list,
                                 env1.cross_bond_inds,
                                 env1.cross_bond_dists,
                                 env1.triplet_counts,
-                                c2, etypes2, perm_list, 
+                                c2, etypes2, perm_list,
                                 grids, fj,
                                 sig, ls, r_cut, cutoff_func) / 9.
 
 
-def three_body_mc_en_force(env1: AtomicEnvironment, grids, fj, c2, etypes2, perm_list, 
+def three_body_mc_en_force(env1: AtomicEnvironment, grids, fj, c2, etypes2, perm_list,
                            d1: int, hyps: 'ndarray', cutoffs: 'ndarray',
                            cutoff_func: Callable = cf.quadratic_cutoff) \
         -> float:
@@ -146,10 +146,13 @@ def three_body_mc_en_force(env1: AtomicEnvironment, grids, fj, c2, etypes2, perm
                                       d1, sig, ls, r_cut, cutoff_func) / 3
 
 def three_body_mc_en_force_sephyps(env1, grids, fj, c2, etypes2, perm_list,
-                                   d1, cutoff_2b, cutoff_3b, nspec, spec_mask,
-                                   nbond, bond_mask, ntriplet, triplet_mask,
+                                   d1, cutoff_2b, cutoff_3b, cutoff_mb,
+                                   nspec, spec_mask,
+                                   nbond, bond_mask,
+                                   ntriplet, triplet_mask,
                                    ncut3b, cut3b_mask,
-                                   sig2, ls2, sig3, ls3,
+                                   nmb, mb_mask,
+                                   sig2, ls2, sig3, ls3, sigm, lsm,
                                    cutoff_func=cf.quadratic_cutoff) -> float:
     """3-body multi-element kernel between a force component and many local
     energies on the grid.
@@ -208,7 +211,7 @@ def three_body_mc_en_force_jit(bond_array_1, c1, etypes1,
                                cross_bond_inds_1, cross_bond_dists_1,
                                triplets_1,
                                c2, etypes2, perm_list,
-                               grids, fj, 
+                               grids, fj,
                                d1, sig, ls, r_cut, cutoff_func):
 
     kern = np.zeros(grids.shape[0], dtype=np.float64)
@@ -224,7 +227,7 @@ def three_body_mc_en_force_jit(bond_array_1, c1, etypes1,
 
     if len(triplet_coord_list) == 0: # no triplets
         return kern
-              
+
     triplet_list = triplet_coord_list[:, :3] # (n_triplets, 3)
     coord_list = triplet_coord_list[:, 3:]
 
@@ -239,9 +242,9 @@ def three_body_mc_en_force_jit(bond_array_1, c1, etypes1,
         rij = ri - rj
         D += rij * rij # (n_triplets, n_grids)
 
-        # column-wise multiplication 
+        # column-wise multiplication
         # coord_list[:, [d]].shape = (n_triplets, 1)
-        B += rij * coord_list[:, [d]] # (n_triplets, n_grids) 
+        B += rij * coord_list[:, [d]] # (n_triplets, n_grids)
 
     kern = - np.sum(sig2 * np.exp(- D * ls1) * (B * ls2 * fifj + fdij), axis=0) # (n_grids,)
 
@@ -254,7 +257,7 @@ def three_body_mc_en_jit(bond_array_1, c1, etypes1,
                          cross_bond_dists_1,
                          triplets_1,
                          c2, etypes2, perm_list,
-                         grids, fj, 
+                         grids, fj,
                          sig, ls, r_cut, cutoff_func):
 
     kern = np.zeros(grids.shape[0], dtype=np.float64)
@@ -269,7 +272,7 @@ def three_body_mc_en_jit(bond_array_1, c1, etypes1,
 
     if len(triplet_coord_list) == 0: # no triplets
         return kern
-              
+
     triplet_list = triplet_coord_list[:, :3] # (n_triplets, 3)
 
     fi = triplet_cutoff(triplet_list, r_cut) # (n_triplets, 1)
@@ -291,7 +294,7 @@ def triplet_cutoff(triplets, r_cut, cutoff_func=cf.quadratic_cutoff):
     f0, _ = cutoff_func(r_cut, triplets, 0) # (n_grid, 3)
     fj = f0[:, 0] * f0[:, 1] * f0[:, 2] # (n_grid,)
     return np.expand_dims(fj, axis=1) # (n_grid, 1)
-    
+
 @njit
 def triplet_cutoff_grad(triplets, r_cut, coords, cutoff_func=cf.quadratic_cutoff):
     f0, df0 = cutoff_func(r_cut, triplets, coords) # (n_grid, 3)
@@ -331,7 +334,7 @@ def get_triplets_for_kern(bond_array_1, c1, etypes1,
 
         two_spec = [all_spec[0], all_spec[1]]
         if (ei1 in two_spec):
-            
+
             ei1_ind = ind_list[0] if ei1 == two_spec[0] else ind_list[1]
             two_spec.remove(ei1)
             two_inds.remove(ei1_ind)
@@ -348,7 +351,7 @@ def get_triplets_for_kern(bond_array_1, c1, etypes1,
                     ci2 = bond_array_1[ind1, d1]
 
                     ri3 = cross_bond_dists_1[m, m + n + 1]
-                    
+
                     # align this triplet to the same species order as r1, r2, r12
                     tri = np.take(np.array([ri1, ri2, ri3]), order)
                     crd = np.take(np.array([ci1, ci2,   0]), order)
