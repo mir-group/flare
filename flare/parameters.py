@@ -128,6 +128,8 @@ class Parameters():
         assert isinstance(cutoffs, dict)
         assert isinstance(kernels, (list))
 
+        param_dict['cutoffs'] = cutoffs
+
         # double check nspecie is there
         nspecie = param_dict['nspecie']
         if nspecie > 1:
