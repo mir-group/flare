@@ -7,31 +7,60 @@ from flare import struc, env
 import numpy as np
 
 
+# Choose parameters for the random structures.
+n_atoms = 5
+cell = np.eye(3) * 10
+species = [0, 1, 1, 0, 0]
+
+# Define kernels to test.
+signal_variance = 1.
+length_scale = 1.
+hyperparameters = np.array([signal_variance, length_scale])
+cutoff = 1.5
+cutoffs = np.array([cutoff, cutoff])
+
+kernel_2b = TwoBodyKernel(hyperparameters, cutoff)
+kernel_3b = ThreeBodyKernel(hyperparameters, cutoff)
+kernel_list = [kernel_2b, kernel_3b]
+
+# Set the perturbation size and test threshold.
+delta = 1e-4
+threshold = 1e-4
+
+
 @pytest.fixture(scope='module')
-def perturbed_envs():
-    # Create two random structures.
-    n_atoms = 4
-    cell = np.eye(3) * 10
+def strucs():
+    """Create two random structures."""
+
     np.random.seed(0)
     positions_1 = np.random.rand(n_atoms, 3)
     positions_2 = np.random.rand(n_atoms, 3)
-    species = [0, 1, 1, 0]
     structure_1 = struc.Structure(cell, species, positions_1)
     structure_2 = struc.Structure(cell, species, positions_2)
     strucs = [structure_1, structure_2]
 
-    # Record the environments of the structures.
-    cutoffs = np.array([1.5, 1.5])
+    yield strucs
+
+
+@pytest.fixture(scope='module')
+def struc_envs(strucs):
+    """Store the environments of the random structures."""
+
     struc_envs = []
     for structure in strucs:
         envs_curr = []
-        for n in range(n_atoms):
+        for n in range(structure.nat):
             env_curr = env.AtomicEnvironment(structure, n, cutoffs)
             envs_curr.append(env_curr)
         struc_envs.append(envs_curr)
 
-    # Perturb atom 0 in both structures up and down and in all directions.
-    delta = 1e-4
+    yield struc_envs
+
+
+@pytest.fixture(scope='module')
+def force_envs(strucs):
+    """Perturb atom 0 in both structures up and down and in all directions."""
+
     signs = [1, -1]
     dims = [0, 1, 2]
     force_envs = []
@@ -42,18 +71,26 @@ def perturbed_envs():
             for dim in dims:
                 positions_pert = np.copy(structure.positions)
                 positions_pert[0, dim] += delta * sign
-                struc_pert = struc.Structure(cell, species, positions_pert)
+                struc_pert = \
+                    struc.Structure(structure.cell, structure.coded_species,
+                                    positions_pert)
                 atom_envs = []
-                for n in range(n_atoms):
+                for n in range(structure.nat):
                     env_curr = env.AtomicEnvironment(struc_pert, n, cutoffs)
                     atom_envs.append(env_curr)
                 dim_envs_curr.append(atom_envs)
             sign_envs_curr.append(dim_envs_curr)
         force_envs.append(sign_envs_curr)
 
-    # Strain both structures up and down and in all directions.
-    stress_envs = []
+    yield force_envs
 
+
+@pytest.fixture(scope='module')
+def stress_envs(strucs):
+    """Strain both structures up and down and in all directions."""
+
+    stress_envs = []
+    signs = [1, -1]
     for structure in strucs:
         sign_envs_curr = []
         for sign in signs:
@@ -68,15 +105,16 @@ def perturbed_envs():
                         cell_pert[p, m] += structure.cell[p, n] * delta * sign
 
                     # Strain the positions.
-                    for k in range(n_atoms):
+                    for k in range(structure.nat):
                         positions_pert[k, m] += \
                             structure.positions[k, n] * delta * sign
 
                     struc_pert = \
-                        struc.Structure(cell_pert, species, positions_pert)
+                        struc.Structure(cell_pert, structure.coded_species,
+                                        positions_pert)
 
                     atom_envs = []
-                    for q in range(n_atoms):
+                    for q in range(structure.nat):
                         env_curr = \
                             env.AtomicEnvironment(struc_pert, q, cutoffs)
                         atom_envs.append(env_curr)
@@ -84,29 +122,12 @@ def perturbed_envs():
             sign_envs_curr.append(strain_envs_curr)
         stress_envs.append(sign_envs_curr)
 
-    yield struc_envs, force_envs, stress_envs, delta
+    yield stress_envs
 
 
-def test_kernel(perturbed_envs):
-    """Check that kernel derivatives are implemented correctly."""
-
-    # Retrieve perturbed environments.
-    struc_envs = perturbed_envs[0]
-    force_envs = perturbed_envs[1]
-    stress_envs = perturbed_envs[2]
-    delta = perturbed_envs[3]
-
-    # Define kernel. (Generalize this later.)
-    signal_variance = 1.
-    length_scale = 1.
-    hyperparameters = np.array([signal_variance, length_scale])
-    cutoff = 1.5
-
-    # kernel = TwoBodyKernel(hyperparameters, cutoff)
-    kernel = ThreeBodyKernel(hyperparameters, cutoff)
-
-    # Set the test threshold.
-    threshold = 1e-4
+@pytest.mark.parametrize('kernel', kernel_list)
+def test_force_energy(struc_envs, force_envs, kernel):
+    """Check that the force/energy kernel is implemented correctly."""
 
     # Check force/energy kernel.
     force_en_exact = np.zeros(3)
@@ -115,6 +136,7 @@ def test_kernel(perturbed_envs):
     for m in range(len(struc_envs[1])):
         force_en_exact += kernel.force_energy(perturbed_env, struc_envs[1][m])
 
+        # Compute kernel by finite difference.
         for n in range(3):
             for p in range(len(struc_envs[0])):
                 env_pert_up = force_envs[0][0][n][p]
@@ -130,15 +152,20 @@ def test_kernel(perturbed_envs):
     assert (np.abs(force_en_exact - force_en_finite) < threshold).all(), \
         'Your force/energy kernel is wrong.'
 
+
+@pytest.mark.parametrize('kernel', kernel_list)
+def test_stress_energy(struc_envs, stress_envs, kernel):
+    """Check that the stress/energy kernel is implemented correctly."""
+
     # Check stress/energy kernel.
     stress_en_exact = np.zeros(6)
     stress_en_finite = np.zeros(6)
-    perturbed_env = struc_envs[0][0]
     for m in range(len(struc_envs[0])):
         for n in range(len(struc_envs[1])):
             stress_en_exact += \
                 kernel.stress_energy(struc_envs[0][m], struc_envs[1][n])
 
+            # Compute kernel by finite difference.
             for p in range(6):
                 env_pert_up = stress_envs[0][0][p][m]
                 env_pert_down = stress_envs[0][1][p][m]
