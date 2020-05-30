@@ -405,4 +405,4 @@ def stress_energy(bond_array_1, c1, etypes1, bond_array_2, c2, etypes2,
 
                             stress_count += 1
 
-    return kern / 9
+    return kern / 6

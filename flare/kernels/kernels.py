@@ -222,7 +222,7 @@ def three_body_se_helper(ci1, ci2, r11, r22, r33, fi, fj, fdi, ls1, ls2, sig2,
     f1 = -p3 * r11 * ci1 - p4 * fdi1
     f2 = -p3 * r22 * ci2 - p4 * fdi2
 
-    s_val = sig2 * (f1 * coord1 + f2 * coord2)
+    s_val = -sig2 * (f1 * coord1 + f2 * coord2)
 
     return s_val
 
