@@ -1,6 +1,7 @@
 import numpy as np
 from flare.kernels.kernels import force_helper, force_energy_helper, \
-    grad_helper, three_body_fe_perm, three_body_ee_perm
+    grad_helper, three_body_fe_perm, three_body_ee_perm, \
+    three_body_se_perm
 from numba import njit
 from flare.env import AtomicEnvironment
 from typing import Callable
@@ -39,8 +40,11 @@ class ThreeBodyKernel:
 
     def stress_energy(self, env1: AtomicEnvironment, env2: AtomicEnvironment):
 
-        return stress_energy(env1.bond_array_2, env1.ctype, env1.etypes,
-                             env2.bond_array_2, env2.ctype, env2.etypes,
+        return stress_energy(env1.bond_array_3, env1.ctype, env1.etypes,
+                             env2.bond_array_3, env2.ctype, env2.etypes,
+                             env1.cross_bond_inds, env2.cross_bond_inds,
+                             env1.cross_bond_dists, env2.cross_bond_dists,
+                             env1.triplet_counts, env2.triplet_counts,
                              self.signal_variance, self.length_scale,
                              self.cutoff, self.cutoff_func)
 
@@ -282,3 +286,123 @@ def force_energy(bond_array_1, c1, etypes1, bond_array_2, c2, etypes2,
                                                ls1, ls2, sig2)
 
     return kern / 3
+
+
+@njit
+def stress_energy(bond_array_1, c1, etypes1, bond_array_2, c2, etypes2,
+                  cross_bond_inds_1, cross_bond_inds_2,
+                  cross_bond_dists_1, cross_bond_dists_2,
+                  triplets_1, triplets_2, sig, ls, r_cut, cutoff_func):
+    """3-body multi-element kernel between a force component and a local
+    energy accelerated with Numba.
+
+    Args:
+        bond_array_1 (np.ndarray): 3-body bond array of the first local
+            environment.
+        c1 (int): Species of the central atom of the first local environment.
+        etypes1 (np.ndarray): Species of atoms in the first local
+            environment.
+        bond_array_2 (np.ndarray): 3-body bond array of the second local
+            environment.
+        c2 (int): Species of the central atom of the second local environment.
+        etypes2 (np.ndarray): Species of atoms in the second local
+            environment.
+        cross_bond_inds_1 (np.ndarray): Two dimensional array whose row m
+            contains the indices of atoms n > m in the first local
+            environment that are within a distance r_cut of both atom n and
+            the central atom.
+        cross_bond_inds_2 (np.ndarray): Two dimensional array whose row m
+            contains the indices of atoms n > m in the second local
+            environment that are within a distance r_cut of both atom n and
+            the central atom.
+        cross_bond_dists_1 (np.ndarray): Two dimensional array whose row m
+            contains the distances from atom m of atoms n > m in the first
+            local environment that are within a distance r_cut of both atom
+            n and the central atom.
+        cross_bond_dists_2 (np.ndarray): Two dimensional array whose row m
+            contains the distances from atom m of atoms n > m in the second
+            local environment that are within a distance r_cut of both atom
+            n and the central atom.
+        triplets_1 (np.ndarray): One dimensional array of integers whose entry
+            m is the number of atoms in the first local environment that are
+            within a distance r_cut of atom m.
+        triplets_2 (np.ndarray): One dimensional array of integers whose entry
+            m is the number of atoms in the second local environment that are
+            within a distance r_cut of atom m.
+        sig (float): 3-body signal variance hyperparameter.
+        ls (float): 3-body length scale hyperparameter.
+        r_cut (float): 3-body cutoff radius.
+        cutoff_func (Callable): Cutoff function.
+
+    Returns:
+        float:
+            Value of the 3-body force/energy kernel.
+    """
+    kern = np.zeros(6)
+
+    sig2 = sig * sig
+    ls1 = 1 / (2 * ls * ls)
+    ls2 = 1 / (ls * ls)
+
+    for m in range(bond_array_1.shape[0]):
+        ri1 = bond_array_1[m, 0]
+        ei1 = etypes1[m]
+
+        for n in range(triplets_1[m]):
+            ind1 = cross_bond_inds_1[m, m + n + 1]
+            ri2 = bond_array_1[ind1, 0]
+            ei2 = etypes1[ind1]
+
+            ri3 = cross_bond_dists_1[m, m + n + 1]
+            fi3, _ = cutoff_func(r_cut, ri3, 0)
+
+            for p in range(bond_array_2.shape[0]):
+                rj1 = bond_array_2[p, 0]
+                fj1, _ = cutoff_func(r_cut, rj1, 0)
+                ej1 = etypes2[p]
+
+                for q in range(triplets_2[p]):
+                    ind2 = cross_bond_inds_2[p, p + q + 1]
+                    rj2 = bond_array_2[ind2, 0]
+                    fj2, _ = cutoff_func(r_cut, rj2, 0)
+                    ej2 = etypes2[ind2]
+                    rj3 = cross_bond_dists_2[p, p + q + 1]
+                    fj3, _ = cutoff_func(r_cut, rj3, 0)
+                    fj = fj1 * fj2 * fj3
+
+                    r11 = ri1 - rj1
+                    r12 = ri1 - rj2
+                    r13 = ri1 - rj3
+                    r21 = ri2 - rj1
+                    r22 = ri2 - rj2
+                    r23 = ri2 - rj3
+                    r31 = ri3 - rj1
+                    r32 = ri3 - rj2
+                    r33 = ri3 - rj3
+
+                    stress_count = 0
+                    for d1 in range(3):
+                        ci1 = bond_array_1[m, d1 + 1]
+                        fi1, fdi1 = cutoff_func(r_cut, ri1, ci1)
+                        ci2 = bond_array_1[ind1, d1 + 1]
+                        fi2, fdi2 = cutoff_func(r_cut, ri2, ci2)
+                        fi = fi1 * fi2 * fi3
+                        fdi_p1 = fdi1 * fi2 * fi3
+                        fdi_p2 = fi1 * fdi2 * fi3
+                        fdi = fdi_p1 + fdi_p2
+
+                        for d2 in range(d1, 3):
+                            coord1 = bond_array_1[m, d2 + 1] * ri1
+                            coord2 = bond_array_1[ind1, d2 + 1] * ri2
+
+                            kern[stress_count] += \
+                                three_body_se_perm(r11, r12, r13, r21, r22,
+                                                   r23, r31, r32, r33, c1, c2,
+                                                   ci1, ci2, ei1, ei2, ej1,
+                                                   ej2, fi, fj, fdi, ls1, ls2,
+                                                   sig2, coord1, coord2,
+                                                   fdi_p1, fdi_p2)
+
+                            stress_count += 1
+
+    return kern / 9

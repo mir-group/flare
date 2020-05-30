@@ -211,6 +211,59 @@ def three_body_fe_perm(r11, r12, r13, r21, r22, r23, r31, r32, r33, c1, c2,
 
     return kern
 
+
+@njit
+def three_body_se_helper(ci1, ci2, r11, r22, r33, fi, fj, fdi, ls1, ls2, sig2,
+                         coord1, coord2, fdi1, fdi2):
+    p1 = r11 * r11 + r22 * r22 + r33 * r33
+    p2 = exp(-p1 * ls1)
+    p3 = p2 * ls2 * fi * fj
+    p4 = p2 * fj
+    f1 = -p3 * r11 * ci1 - p4 * fdi1
+    f2 = -p3 * r22 * ci2 - p4 * fdi2
+
+    s_val = sig2 * (f1 * coord1 + f2 * coord2)
+
+    return s_val
+
+
+@njit
+def three_body_se_perm(r11, r12, r13, r21, r22, r23, r31, r32, r33, c1, c2,
+                       ci1, ci2, ei1, ei2, ej1, ej2, fi, fj, fdi, ls1, ls2,
+                       sig2, coord1, coord2, fdi1, fdi2):
+    kern = 0
+
+    if (c1 == c2):
+        if (ei1 == ej1) and (ei2 == ej2):
+            kern += three_body_se_helper(ci1, ci2, r11, r22, r33, fi, fj, fdi,
+                                         ls1, ls2, sig2, coord1, coord2,
+                                         fdi1, fdi2)
+        if (ei1 == ej2) and (ei2 == ej1):
+            kern += three_body_se_helper(ci1, ci2, r12, r21, r33, fi, fj, fdi,
+                                         ls1, ls2, sig2, coord1, coord2,
+                                         fdi1, fdi2)
+    if (c1 == ej1):
+        if (ei1 == ej2) and (ei2 == c2):
+            kern += three_body_se_helper(ci1, ci2, r13, r21, r32, fi, fj, fdi,
+                                         ls1, ls2, sig2, coord1, coord2,
+                                         fdi1, fdi2)
+        if (ei1 == c2) and (ei2 == ej2):
+            kern += three_body_se_helper(ci1, ci2, r11, r23, r32, fi, fj, fdi,
+                                         ls1, ls2, sig2, coord1, coord2,
+                                         fdi1, fdi2)
+    if (c1 == ej2):
+        if (ei1 == ej1) and (ei2 == c2):
+            kern += three_body_se_helper(ci1, ci2, r13, r22, r31, fi, fj, fdi,
+                                         ls1, ls2, sig2, coord1, coord2,
+                                         fdi1, fdi2)
+        if (ei1 == c2) and (ei2 == ej1):
+            kern += three_body_se_helper(ci1, ci2, r12, r23, r31, fi, fj, fdi,
+                                         ls1, ls2, sig2, coord1, coord2,
+                                         fdi1, fdi2)
+
+    return kern
+
+
 # -----------------------------------------------------------------------------
 #                        many body helper functions
 # -----------------------------------------------------------------------------
