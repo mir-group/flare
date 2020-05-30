@@ -10,7 +10,7 @@ import numpy as np
 # Choose parameters for the random structures.
 n_atoms = 5
 cell = np.eye(3) * 10
-species = [0, 1, 1, 0, 0]
+species = [1, 3, 3, 1, 7]
 
 # Define kernels to test.
 signal_variance = 1.
@@ -180,39 +180,36 @@ def test_stress_energy(struc_envs, stress_envs, kernel):
     assert (np.abs(stress_en_exact - stress_en_finite) < threshold).all(), \
         'Your stress/energy kernel is wrong.'
 
-    # assert np.abs(force_en_exact - force_en_finite).all() < threshold, \
-    #     'Your force/energy kernel is wrong.'
 
-    # # Check stress/energy kernel by finite difference.
-    # for n in range(6):
-    #     env_pert_up = stress_environments[1][n]
-    #     env_pert_down = stress_environments[3][n]
-    #     kern_pert_up = \
-    #         kernel.energy_energy(test_env_1, env_pert_up)
-    #     kern_pert_down = \
-    #         kernel.energy_energy(test_env_1, env_pert_down)
-    #     finite_diff_val = -(kern_pert_up - kern_pert_down) / (2 * delta)
+@pytest.mark.parametrize('kernel', kernel_list)
+def test_force_force(struc_envs, force_envs, kernel):
+    """Check that the force/force kernel is implemented correctly."""
 
-    #     assert np.abs(finite_diff_val - stress_energy_kernel[n]) < \
-    #         threshold, 'The stress/energy kernel is wrong.'
+    force_force_exact = \
+        kernel.force_force(struc_envs[0][0], struc_envs[1][0])
 
-    # # Check force/force kernel by finite difference.
-    # for m in range(3):
-    #     pert1_up = force_environments[0][m]
-    #     pert1_down = force_environments[2][m]
-    #     for n in range(3):
-    #         pert2_up = force_environments[1][n]
-    #         pert2_down = force_environments[3][n]
-    #         kern1 = kernel.energy_energy(pert1_up, pert2_up)
-    #         kern2 = kernel.energy_energy(pert1_up, pert2_down)
-    #         kern3 = kernel.energy_energy(pert1_down, pert2_up)
-    #         kern4 = kernel.energy_energy(pert1_down, pert2_down)
+    # Compute force/force kernels by finite difference.
+    force_force_finite = np.zeros((3, 3))
+    for m in range(len(struc_envs[0])):
+        for n in range(len(struc_envs[1])):
+            for p in range(3):
+                for q in range(3):
+                    pert1_up = force_envs[0][0][p][m]
+                    pert1_down = force_envs[0][1][p][m]
+                    pert2_up = force_envs[1][0][q][n]
+                    pert2_down = force_envs[1][1][q][n]
 
-    #         finite_diff_val = \
-    #             (kern1 - kern2 - kern3 + kern4) / (4 * delta * delta)
+                    kern1 = kernel.energy_energy(pert1_up, pert2_up)
+                    kern2 = kernel.energy_energy(pert1_up, pert2_down)
+                    kern3 = kernel.energy_energy(pert1_down, pert2_up)
+                    kern4 = kernel.energy_energy(pert1_down, pert2_down)
 
-    #         assert np.abs(finite_diff_val * 4 - force_force_kernel[m, n]) < \
-    #             threshold, 'The force/force kernel is wrong.'
+                    force_force_finite[p, q] += \
+                        (kern1 - kern2 - kern3 + kern4) / (4 * delta * delta)
+
+    assert (np.abs(force_force_exact - force_force_finite)
+            < threshold).all(), \
+        'Your force/force kernel is wrong.'
 
     # # Check stress/force kernel by finite difference.
     # for m in range(6):
