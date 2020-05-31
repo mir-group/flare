@@ -96,7 +96,7 @@ class OTF:
                  # flare args
                  gp: gp.GaussianProcess=None, 
                  calculate_energy: bool = False, 
-                 write_model: int = 0
+                 write_model: int = 0,
                  # otf args
                  std_tolerance_factor: float = 1,
                  skip: int = 0, init_atoms: List[int] = None,
@@ -158,11 +158,11 @@ class OTF:
         self.dft_count = 0
 
         # set pred function
-        if (par and gp.per_atom_par and gp.par) and not calculate_energy:
+        if (n_cpus>1 and gp.per_atom_par and gp.parallel) and not calculate_energy:
             self.pred_func = predict.predict_on_structure_par
         elif not calculate_energy:
             self.pred_func = predict.predict_on_structure
-        elif (par and gp.per_atom_par and gp.par):
+        elif (n_cpus>1 and gp.per_atom_par and gp.parallel):
             self.pred_func = predict.predict_on_structure_par_en
         else:
             self.pred_func = predict.predict_on_structure_en
@@ -171,8 +171,10 @@ class OTF:
         self.rescale_steps = rescale_steps
         self.rescale_temps = rescale_temps
 
+        # set logger
         self.output = Output(output_name, always_flush=True)
         self.output_name = output_name
+
         # set number of cpus and npool for DFT runs
         self.n_cpus = n_cpus
         self.npool = npool
@@ -203,6 +205,9 @@ class OTF:
             if self.curr_step == 0 and self.std_tolerance != 0 and len(self.gp.training_data)==0:
 
                 self.initialize_train()
+                new_pos = self.md_step()
+                self.update_temperature(new_pos)
+                self.record_state()
 
             # after step 1, try predicting with GP model
             else:
@@ -266,13 +271,10 @@ class OTF:
             self.gp.write_model(self.output_name+"_model")
 
 
-    def initialize_train():
+    def initialize_train(self):
         # call dft and update positions
         self.run_dft()
         dft_frcs = deepcopy(self.structure.forces)
-        new_pos = self.md_step()
-        self.update_temperature(new_pos)
-        self.record_state()
 
         # make initial gp model and predict forces
         self.update_gp(self.init_atoms, dft_frcs)
@@ -307,7 +309,7 @@ class OTF:
 
         Calculates DFT forces on atoms in the current structure."""
 
-        self.output.write_to_log('\nCalling DFT...\n')
+        self.output.logger['log'].info('\nCalling DFT...\n')
 
         # calculate DFT forces
         forces = self.dft_module.run_dft_par(self.dft_input, self.structure,
@@ -358,7 +360,7 @@ class OTF:
     def train_gp(self):
         """Optimizes the hyperparameters of the current GP model."""
 
-        self.gp.train(self.output)
+        self.gp.train()
         self.output.write_hyps(self.gp.hyp_labels, self.gp.hyps,
                                self.start_time,
                                self.gp.likelihood, self.gp.likelihood_gradient,
@@ -369,10 +371,9 @@ class OTF:
         mae = np.mean(np.abs(gp_frcs - dft_frcs))
         mac = np.mean(np.abs(dft_frcs))
 
-        self.output.write_to_log('\nmean absolute error:'
-                                 ' %.4f eV/A \n' % mae)
-        self.output.write_to_log('mean absolute dft component:'
-                                 ' %.4f eV/A \n' % mac)
+        f = self.output.logger['log']
+        f.info(f'mean absolute error: {mae:.4f} eV/A')
+        f.info(f'mean absolute dft component: {mac:.4f} eV/A')
 
 
     def update_positions(self, new_pos: 'ndarray'):

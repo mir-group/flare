@@ -23,7 +23,8 @@ from flare.otf import OTF
 from flare.utils.learner import is_std_in_bound
 from flare.mgp.utils import get_l_bound
 
-import flare.ase.dft as force_source
+from flare.ase.calculator import FLARE_Calculator
+import flare.ase.dft as dft_source 
 
 
 
@@ -33,9 +34,6 @@ class ASE_OTF(OTF):
     On-the-fly training module using ASE MD engine, a subclass of OTF.
 
     Args:
-    def __init__(self, atoms, timestep, number_of_steps, dft_calc,
-                 md_engine, trajectory=None, md_kwargs={}, **otf_kwargs):
-
         atoms (ASE Atoms): the ASE Atoms object for the on-the-fly MD run, 
             with calculator set as FLARE_Calculator.
         timestep: the timestep in MD. Please use ASE units, e.g. if the timestep
@@ -50,7 +48,8 @@ class ASE_OTF(OTF):
         trajectory (ASE Trajectory): default `None`, not recommended, currently 
             in experiment.
 
-    The following arguments are for on-the-fly training:
+    The following arguments are for on-the-fly training, the user can also 
+    refer to :class:`OTF`
         prev_pos_init ([type], optional): Previous positions. Defaults
             to None.
         rescale_steps (List[int], optional): List of frames for which the
@@ -112,10 +111,10 @@ class ASE_OTF(OTF):
                      **md_kwargs)
 
         self.atoms = atoms
-        force_source = force_source
+        force_source = dft_source
         self.flare_calc = self.atoms.calc
 
-        super().__init__(dt = dt, 
+        super().__init__(dt = timestep, 
                          number_of_steps = number_of_steps,
                          gp = self.flare_calc.gp_model,  
                          force_source = force_source,  
@@ -124,15 +123,32 @@ class ASE_OTF(OTF):
                          **otf_kwargs)
 
 
+    def initialize_train(self):
+
+        super().initialize_train()
+
+        if self.md_engine == 'NPT':
+            if not self.md.initialized:
+                self.md.initialize()
+            else:
+                if self.md.have_the_atoms_been_changed():
+                    raise NotImplementedError(
+                        "You have modified the atoms since the last timestep.")
+        
+
     def compute_properties(self):
         '''
         compute forces and stds with FLARE_Calculator
         '''
+        if not isinstance(self.atoms.calc, FLARE_Calculator):
+            self.atoms.set_calculator(self.flare_calc)
+
         self.atoms.calc.results = {}
         f = self.atoms.get_forces(self.atoms)
         stds = self.atoms.get_uncertainties(self.atoms)
         self.structure.forces = deepcopy(f) 
         self.structure.stds = deepcopy(stds)
+
 
     def md_step(self): 
         '''
@@ -142,9 +158,10 @@ class ASE_OTF(OTF):
         self.md.step()
         return self.atoms.positions
 
-    def update_positions(self):
+
+    def update_positions(self, new_pos):
         # call OTF method
-        super().update_positions()
+        super().update_positions(new_pos)
 
         # update ASE atoms
         if self.curr_step in self.rescale_steps:

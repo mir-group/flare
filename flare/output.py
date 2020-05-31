@@ -233,10 +233,8 @@ class Output:
                 f'potential energy: {pot_en:.6f} eV \n'
             string += f'total energy: {tot_en:.6f} eV \n'
 
-        string += 'wall time from start: '
-        string += f'{(time.time() - start_time):.2f} s \n'
-
         self.logger['log'].info(string)
+        self.write_wall_time(start_time)
 
         if self.always_flush:
             self.logger['log'].handlers[0].flush()
@@ -326,8 +324,8 @@ class Output:
         :return:
         """
         f = self.logger[name]
-        f.info('\n GP hyperparameters: ')
 
+        f.info('\nGP hyperparameters: ')
         if hyps_mask is not None:
             hyps = Parameters.get_hyps(hyps_mask, hyps)
             if len(hyp_labels) != len(hyps):
@@ -342,12 +340,27 @@ class Output:
 
         f.info(f'likelihood: {like:.4f}')
         f.info(f'likelihood gradient: {like_grad}')
+
         if start_time:
-            time_curr = time.time() - start_time
-            f.info(f'wall time from start: {time_curr:.2f} s')
+            self.write_wall_time(start_time)
 
         if self.always_flush:
             f.handlers[0].flush()
+
+    def write_wall_time(self, start_time):
+        time_curr = time.time() - start_time
+        self.logger['log'].info(f'wall time from start: {time_curr:.2f} s')
+
+    def conclude_dft(self, dft_count, start_time):
+        f = self.logger['log']
+        f.info('DFT run complete.')
+        f.info(f'number of DFT calls: {dft_count}')
+        self.write_wall_time(start_time)
+
+    def add_atom_info(self, train_atoms, stds):
+        f = self.logger['log']
+        f.info(f'Adding atom {train_atoms} to the training set.')
+        f.info(f'Uncertainty: {stds[train_atoms[0]]}')
 
     def write_gp_dft_comparison(self, curr_step, frame,
                                 start_time, dft_forces,
@@ -438,11 +451,10 @@ class Output:
             string += f'total energy: {tot_en:10.6} eV \n'
             stat += f' {pot_en:10.6} {tot_en:10.6}'
 
-        dt = time.time() - start_time
-        string += f'wall time from start: {dt:10.2}\n'
-        stat += f' {dt}\n'
-
         self.logger['log'].info(string)
+        self.write_wall_time(start_time)
+
+        # stat += f' {dt}\n'
         # self.logger['stat'].write(stat)
 
         # if self.always_flush:

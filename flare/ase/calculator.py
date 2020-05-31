@@ -1,4 +1,5 @@
 """:class:`FLARE_Calculator` is a calculator compatible with `ASE`. You can build up `ASE Atoms` for your atomic structure, and use `get_forces`, `get_potential_energy` as general `ASE Calculators`, and use it in `ASE Molecular Dynamics` and our `ASE OTF` training module."""
+import warnings
 import numpy as np
 import multiprocessing as mp
 from flare.env import AtomicEnvironment
@@ -46,7 +47,7 @@ class FLARE_Calculator(Calculator):
 
     def get_stress(self, atoms):
         if not self.use_mapping:
-            raise NotImplementedError("Stress is only supported in MGP")
+            warnings.warn('Stress is only implemented in MGP, not in GP. Will return zeros.')
         return self.get_property('stress', atoms)
 
 
@@ -88,6 +89,13 @@ class FLARE_Calculator(Calculator):
         self.results['local_energies'] = local_energies
         self.results['energy'] = np.sum(local_energies)
         atoms.get_uncertainties = self.get_uncertainties
+
+        # GP stress not implemented yet
+        self.results['stresses'] = np.zeros((nat, 6))
+        volume = atoms.get_volume()
+        total_stress = np.sum(self.results['stresses'], axis=0)
+        self.results['stress'] = total_stress / volume
+
         return forces
 
 

@@ -15,7 +15,24 @@ from ase.md.velocitydistribution import (MaxwellBoltzmannDistribution,
                                          Stationary, ZeroRotation)
 
 
-md_list = ['VelocityVerlet'] #, 'NVTBerendsen', 'NPTBerendsen', 'NPT', 'Langevin']
+md_list = ['VelocityVerlet', 'NVTBerendsen', 'NPTBerendsen', 'NPT', 'Langevin']
+
+@pytest.fixture(scope='module')
+def md_params():
+    
+    md_dict = {'temperature': 500}
+    for md_engine in md_list:
+        if md_engine == 'VelocityVerlet':
+            md_dict[md_engine] = {}
+        else:
+            md_dict[md_engine] = {'temperature': md_dict['temperature']}
+
+    md_dict['NVTBerendsen'].update({'taut': 0.5e3 * units.fs})
+    md_dict['NPT'].update({'externalstress': 0, 'ttime': 25, 'pfactor': 3375})
+    md_dict['Langevin'].update({'friction': 0.02})
+
+    yield md_dict
+    del md_dict
 
 
 @pytest.fixture(scope='module')
@@ -83,7 +100,7 @@ def flare_calc():
 #                                          n_cpus=1)
 
         # ------------ create ASE's flare calculator -----------------------
-        flare_calculator = FLARE_Calculator(gp_model, mgp_model,
+        flare_calculator = FLARE_Calculator(gp_model, mgp_model=None,
                                             par=True, use_mapping=False)
 
 
@@ -93,72 +110,30 @@ def flare_calc():
     del flare_calc_dict
 
 
-@pytest.mark.skipif(not os.environ.get('PWSCF_COMMAND',
-                          False), reason='PWSCF_COMMAND not found '
-                                  'in environment: Please install Quantum '
-                                  'ESPRESSO and set the PWSCF_COMMAND env. '
-                                  'variable to point to pw.x.')
 @pytest.fixture(scope='module')
 def qe_calc():
 
-    from ase.calculators.espresso import Espresso
-    # set up executable
-    label = 'scf'
-    input_file = label+'.pwi'
-    output_file = label+'.pwo'
-    no_cpus = 1
-    pw = os.environ.get('PWSCF_COMMAND')
-    os.environ['ASE_ESPRESSO_COMMAND'] = f'{pw} < {input_file} > {output_file}'
-
-    # set up input parameters
-    input_data = {'control':   {'prefix': label,
-                                'pseudo_dir': 'test_files/pseudos/',
-                                'outdir': './out',
-                                'calculation': 'scf'},
-                  'system':    {'ibrav': 0,
-                                'ecutwfc': 20,
-                                'ecutrho': 40,
-                                'smearing': 'gauss',
-                                'degauss': 0.02,
-                                'occupations': 'smearing'},
-                  'electrons': {'conv_thr': 1.0e-02,
-                                'electron_maxstep': 100,
-                                'mixing_beta': 0.7}}
-
-    # pseudo-potentials
-    ion_pseudo = {'H': 'H.pbe-kjpaw.UPF',
-                  'He': 'He.pbe-kjpaw_psl.1.0.0.UPF'}
-
-    # create ASE calculator
-    dft_calculator = Espresso(pseudopotentials=ion_pseudo, label=label,
-                              tstress=True, tprnfor=True, nosym=True,
-                              input_data=input_data, kpts=(1,1,1))
+    from ase.calculators.lj import LennardJones
+    dft_calculator = LennardJones() 
 
     yield dft_calculator
     del dft_calculator
 
 
-@pytest.mark.skipif(not os.environ.get('PWSCF_COMMAND',
-                          False), reason='PWSCF_COMMAND not found '
-                                  'in environment: Please install Quantum '
-                                  'ESPRESSO and set the PWSCF_COMMAND env. '
-                                  'variable to point to pw.x.')
 @pytest.mark.parametrize('md_engine', md_list)
-def test_otf_md(md_engine, super_cell, flare_calc, qe_calc):
+def test_otf_md(md_engine, md_params, super_cell, flare_calc, qe_calc):
     np.random.seed(12345)
 
     flare_calculator = flare_calc[md_engine]
     # set up OTF MD engine
-    md_params = {'externalstress': 0, 'ttime': 25, 'pfactor': 3375,
-                 'mask': None, 'temperature': 500, 'taut': 1, 'taup': 1,
-                 'pressure': 0, 'compressibility': 0, 'fixcm': 1,
-                 'friction': 0.02}
-
     otf_params = {'init_atoms': [0, 1, 2, 3],
+                  'output_name': md_engine,
                   'std_tolerance_factor': 2,
                   'max_atoms_added' : len(super_cell.positions),
                   'freeze_hyps': 10}
 #                  'use_mapping': flare_calculator.use_mapping}
+
+    md_kwargs = md_params[md_engine]
 
     # intialize velocity
     temperature = md_params['temperature']
@@ -172,7 +147,7 @@ def test_otf_md(md_engine, super_cell, flare_calc, qe_calc):
                        number_of_steps = 3,
                        dft_calc = qe_calc,
                        md_engine = md_engine,
-                       md_kwargs = {},
+                       md_kwargs = md_kwargs,
                        **otf_params)
 
     # set up logger
@@ -182,15 +157,15 @@ def test_otf_md(md_engine, super_cell, flare_calc, qe_calc):
 
     test_otf.run()
 
-    for f in glob.glob("scf.pw*"):
-        os.remove(f)
-    for f in glob.glob("*.npy"):
-        os.remove(f)
-    for f in glob.glob("kv3*"):
-        shutil.rmtree(f)
-
-    for f in os.listdir("./"):
-        if f in [f'{md_engine}.log', 'lmp.mgp']:
-            os.remove(f)
-        if f in ['out', 'otf_data']:
-            shutil.rmtree(f)
+#    for f in glob.glob("scf.pw*"):
+#        os.remove(f)
+#    for f in glob.glob("*.npy"):
+#        os.remove(f)
+#    for f in glob.glob("kv3*"):
+#        shutil.rmtree(f)
+#
+#    for f in os.listdir("./"):
+#        if f in [f'{md_engine}.log', 'lmp.mgp']:
+#            os.remove(f)
+#        if f in ['out', 'otf_data']:
+#            shutil.rmtree(f)

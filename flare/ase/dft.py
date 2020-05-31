@@ -9,8 +9,15 @@ def parse_dft_input(atoms):
     pos = atoms.positions
     spc = atoms.get_chemical_symbols()
     cell = np.array(atoms.get_cell())
+
+    # build mass dict
     mass = atoms.get_masses()
-    return pos, spc, cell, mass
+    mass_dict = {}
+    for i in range(len(spc)):
+        spec_ind = str(spc[i])
+        if spec_ind not in mass_dict.keys():
+            mass_dict[spec_ind] = mass[i]
+    return pos, spc, cell, mass_dict
 
 def run_dft_par(atoms, structure, dft_calc, **dft_kwargs):
     '''
