@@ -1,8 +1,6 @@
 '''
 :class:`OTF` is the on-the-fly training module for ASE, WITHOUT molecular dynamics engine. 
-It needs to be used adjointly with ASE MD engine. Please refer to our 
-`OTF MD module <https://flare.readthedocs.io/en/latest/flare/ase/otf_md.html>`_ for the
-complete training module with OTF and MD.
+It needs to be used adjointly with ASE MD engine. 
 '''
 import os
 import sys
@@ -158,6 +156,8 @@ class ASE_OTF(OTF):
         self.md.step()
         return self.atoms.positions
 
+    # TODO: fix the temperature output in the log file
+
 
     def update_positions(self, new_pos):
         # call OTF method
@@ -171,4 +171,11 @@ class ASE_OTF(OTF):
             curr_velocities = self.atoms.get_velocities()
             self.atoms.set_velocities(curr_velocities * vel_fac)
 
+
+    def update_gp(self, train_atoms, dft_frcs):
+
+        super().update_gp(train_atoms, dft_frcs)
+
+        if self.flare_calc.use_mapping:
+            self.flare_calc.mgp_model.build_map(self.flare_calc.gp_model)
 

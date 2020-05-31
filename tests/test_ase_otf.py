@@ -70,39 +70,29 @@ def flare_calc():
                                    par=False)
 
         # ----------- create mapped gaussian process ------------------
-#        struc_params = {'species': [1, 2],
-#                        'cube_lat': np.eye(3) * 100,
-#                        'mass_dict': {'0': 2, '1': 4}}
-#
-#        # grid parameters
-#        lower_cut = 2.5
-#        two_cut, three_cut = gp_model.cutoffs
-#        grid_num_2 = 8
-#        grid_num_3 = 8
-#        grid_params = {'bounds_2': [[lower_cut], [two_cut]],
-#                       'bounds_3': [[lower_cut, lower_cut, -1],
-#                                    [three_cut, three_cut,  1]],
-#                       'grid_num_2': grid_num_2,
-#                       'grid_num_3': [grid_num_3, grid_num_3, grid_num_3],
-#                       'svd_rank_2': 0,
-#                       'svd_rank_3': 0,
-#                       'bodies': [2, 3],
-#                       'load_grid': None,
-#                       'update': False}
-#
-#        mgp_model = MappedGaussianProcess(grid_params,
-#                                          struc_params,
-#                                          map_force=True,
-#                                          GP=gp_model,
-#                                          mean_only=False,
-#                                          container_only=False,
-#                                          lmp_file_name='lmp.mgp',
-#                                          n_cpus=1)
+        grid_num_2 = 64 
+        grid_num_3 = 16
+        lower_cut = 0.1
+
+        grid_params = {'load_grid': None,
+                       'update': False}
+ 
+        grid_params['twobody'] = {'lower_bound': [lower_cut],
+                                  'grid_num': [grid_num_2],
+                                  'svd_rank': 'auto'}
+
+        grid_params['threebody'] = {'lower_bound': [lower_cut for d in range(3)],
+                                    'grid_num': [grid_num_3 for d in range(3)],
+                                    'svd_rank': 'auto'}
+    
+        species_list = [1, 2]
+    
+        mgp_model = MappedGaussianProcess(grid_params, species_list, n_cpus=1,
+             map_force=False, mean_only=False)
 
         # ------------ create ASE's flare calculator -----------------------
-        flare_calculator = FLARE_Calculator(gp_model, mgp_model=None,
-                                            par=True, use_mapping=False)
-
+        flare_calculator = FLARE_Calculator(gp_model, mgp_model=mgp_model,
+                                            par=True, use_mapping=True)
 
         flare_calc_dict[md_engine] = flare_calculator
         print(md_engine)
@@ -157,15 +147,15 @@ def test_otf_md(md_engine, md_params, super_cell, flare_calc, qe_calc):
 
     test_otf.run()
 
-#    for f in glob.glob("scf.pw*"):
-#        os.remove(f)
-#    for f in glob.glob("*.npy"):
-#        os.remove(f)
-#    for f in glob.glob("kv3*"):
-#        shutil.rmtree(f)
-#
-#    for f in os.listdir("./"):
-#        if f in [f'{md_engine}.log', 'lmp.mgp']:
-#            os.remove(f)
-#        if f in ['out', 'otf_data']:
-#            shutil.rmtree(f)
+    for f in glob.glob("scf.pw*"):
+        os.remove(f)
+    for f in glob.glob("*.npy"):
+        os.remove(f)
+    for f in glob.glob("kv3*"):
+        shutil.rmtree(f)
+
+    for f in os.listdir("./"):
+        if f in [f'{md_engine}.out', f'{md_engine}-hyps.dat', 'lmp.mgp']:
+            os.remove(f)
+        if f in ['out', 'otf_data']:
+            shutil.rmtree(f)

@@ -246,14 +246,6 @@ class OTF:
 
                     # add max uncertainty atoms to training set
                     self.update_gp(target_atoms, dft_frcs)
-                    
-                    # train hyps and write model
-                    if (self.dft_count-1) < self.freeze_hyps:
-                        self.train_gp()
-                        if self.write_model == 2:
-                            self.gp.write_model(self.output_name+"_model")
-                    if self.write_model == 3:
-                        self.gp.write_model(self.output_name+'_model')
 
             # write gp forces
             if counter >= self.skip and not self.dft_step:
@@ -278,10 +270,6 @@ class OTF:
 
         # make initial gp model and predict forces
         self.update_gp(self.init_atoms, dft_frcs)
-        if (self.dft_count-1) < self.freeze_hyps:
-            self.train_gp()
-            if self.write_model >= 2:
-                self.gp.write_model(self.output_name+"_model")
 
 
     def compute_properties(self):
@@ -356,6 +344,15 @@ class OTF:
                           custom_range=train_atoms)
 
         self.gp.set_L_alpha()
+
+        # write model
+        if (self.dft_count-1) < self.freeze_hyps:
+            self.train_gp()
+            if self.write_model == 2:
+                self.gp.write_model(self.output_name+"_model")
+        if self.write_model == 3:
+            self.gp.write_model(self.output_name+'_model')
+
 
     def train_gp(self):
         """Optimizes the hyperparameters of the current GP model."""

@@ -385,7 +385,6 @@ class SingleMapXbody:
                 self.var = PCASplines(self.bounds[0], self.bounds[1],
                                       orders=self.grid_num,
                                       svd_rank=np.min(y_var.shape))
-            if isinstance(self.svd_rank, int):
                 self.var.set_values(y_var)
 
     def predict(self, lengths, xyzs, map_force, mean_only):

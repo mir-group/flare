@@ -109,9 +109,10 @@ class FLARE_Calculator(Calculator):
         self.results['stresses'] = np.zeros((nat, 6))
         self.results['stds'] = np.zeros((nat, 3))
         self.results['local_energies'] = np.zeros(nat)
+
         for n in range(nat):
             chemenv = AtomicEnvironment(struc_curr, n,
-                                        self.mgp_model.cutoffs,
+                                        self.gp_model.cutoffs,
                                         cutoffs_mask = self.mgp_model.hyps_mask)
             f, v, vir, e = self.mgp_model.predict(chemenv, mean_only=False)
             self.results['forces'][n] = f
@@ -135,47 +136,3 @@ class FLARE_Calculator(Calculator):
     def calculation_required(self, atoms, quantities):
         return True
 
-
-    def train_gp(self, **kwargs):
-        """
-        The same function of training GP hyperparameters as `train()` in :class:`GaussianProcess`
-        """
-        self.gp_model.train(**kwargs)
-
-
-    def build_mgp(self, skip=True):
-        """
-        Construct :class:`MappedGaussianProcess` based on the current GP
-        TODO: change to the re-build method
-        
-        :param skip: if `True`, then it will not construct MGP
-        :type skip: Bool
-        """
-        # l_bound not implemented
-
-        if skip:
-            return 1
-
-        # set svd rank based on the training set, grid number and threshold 1000
-        grid_params = self.mgp_model.grid_params
-        struc_params = self.mgp_model.struc_params
-        map_force = self.mgp_model.map_force
-        lmp_file_name = self.mgp_model.lmp_file_name
-        mean_only = self.mgp_model.mean_only
-        n_cpus = self.mgp_model.n_cpus
-        container_only = False
-
-        train_size = len(self.gp_model.training_data)
-        rank_2 = np.min([1000, grid_params['grid_num_2'], train_size*3])
-        rank_3 = np.min([1000, grid_params['grid_num_3'][0]**3, train_size*3])
-        grid_params['svd_rank_2'] = rank_2
-        grid_params['svd_rank_3'] = rank_3
-       
-        self.mgp_model = MappedGaussianProcess(grid_params,
-                                               struc_params,
-                                               map_force=map_force,
-                                               GP=self.gp_model,
-                                               mean_only=mean_only,
-                                               container_only=container_only,
-                                               lmp_file_name=lmp_file_name,
-                                               n_cpus=n_cpus)
