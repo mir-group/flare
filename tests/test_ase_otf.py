@@ -7,26 +7,24 @@ from flare import otf, kernels
 from flare.gp import GaussianProcess
 from flare.mgp.mgp import MappedGaussianProcess
 from flare.ase.calculator import FLARE_Calculator
-from flare.ase.otf_md import otf_md
+from flare.ase.otf import ASE_OTF
 from flare.ase.logger import OTFLogger
 
 from ase import units
 from ase.md.velocitydistribution import (MaxwellBoltzmannDistribution,
                                          Stationary, ZeroRotation)
-from ase.spacegroup import crystal
-from ase.calculators.espresso import Espresso
 
 
-md_list = ['VelocityVerlet', 'NVTBerendsen', 'NPTBerendsen', 'NPT', 'Langevin']
+md_list = ['VelocityVerlet'] #, 'NVTBerendsen', 'NPTBerendsen', 'NPT', 'Langevin']
+
 
 @pytest.fixture(scope='module')
 def super_cell():
 
-    # create primitive cell based on materials project
-    # url: https://materialsproject.org/materials/mp-22915/
+    from ase.spacegroup import crystal
     a = 3.855
     alpha = 90
-    atoms = crystal(['H', 'He'], # Ag, I
+    atoms = crystal(['H', 'He'], 
                     basis=[(0, 0, 0), (0.5, 0.5, 0.5)],
                     size=(2, 1, 1),
                     cellpar=[a, a, a, alpha, alpha, alpha])
@@ -55,38 +53,38 @@ def flare_calc():
                                    par=False)
 
         # ----------- create mapped gaussian process ------------------
-        struc_params = {'species': [1, 2],
-                        'cube_lat': np.eye(3) * 100,
-                        'mass_dict': {'0': 2, '1': 4}}
-
-        # grid parameters
-        lower_cut = 2.5
-        two_cut, three_cut = gp_model.cutoffs
-        grid_num_2 = 8
-        grid_num_3 = 8
-        grid_params = {'bounds_2': [[lower_cut], [two_cut]],
-                       'bounds_3': [[lower_cut, lower_cut, -1],
-                                    [three_cut, three_cut,  1]],
-                       'grid_num_2': grid_num_2,
-                       'grid_num_3': [grid_num_3, grid_num_3, grid_num_3],
-                       'svd_rank_2': 0,
-                       'svd_rank_3': 0,
-                       'bodies': [2, 3],
-                       'load_grid': None,
-                       'update': False}
-
-        mgp_model = MappedGaussianProcess(grid_params,
-                                          struc_params,
-                                          map_force=True,
-                                          GP=gp_model,
-                                          mean_only=False,
-                                          container_only=False,
-                                          lmp_file_name='lmp.mgp',
-                                          n_cpus=1)
+#        struc_params = {'species': [1, 2],
+#                        'cube_lat': np.eye(3) * 100,
+#                        'mass_dict': {'0': 2, '1': 4}}
+#
+#        # grid parameters
+#        lower_cut = 2.5
+#        two_cut, three_cut = gp_model.cutoffs
+#        grid_num_2 = 8
+#        grid_num_3 = 8
+#        grid_params = {'bounds_2': [[lower_cut], [two_cut]],
+#                       'bounds_3': [[lower_cut, lower_cut, -1],
+#                                    [three_cut, three_cut,  1]],
+#                       'grid_num_2': grid_num_2,
+#                       'grid_num_3': [grid_num_3, grid_num_3, grid_num_3],
+#                       'svd_rank_2': 0,
+#                       'svd_rank_3': 0,
+#                       'bodies': [2, 3],
+#                       'load_grid': None,
+#                       'update': False}
+#
+#        mgp_model = MappedGaussianProcess(grid_params,
+#                                          struc_params,
+#                                          map_force=True,
+#                                          GP=gp_model,
+#                                          mean_only=False,
+#                                          container_only=False,
+#                                          lmp_file_name='lmp.mgp',
+#                                          n_cpus=1)
 
         # ------------ create ASE's flare calculator -----------------------
         flare_calculator = FLARE_Calculator(gp_model, mgp_model,
-                                            par=True, use_mapping=True)
+                                            par=True, use_mapping=False)
 
 
         flare_calc_dict[md_engine] = flare_calculator
@@ -102,6 +100,8 @@ def flare_calc():
                                   'variable to point to pw.x.')
 @pytest.fixture(scope='module')
 def qe_calc():
+
+    from ase.calculators.espresso import Espresso
     # set up executable
     label = 'scf'
     input_file = label+'.pwi'
@@ -149,19 +149,16 @@ def test_otf_md(md_engine, super_cell, flare_calc, qe_calc):
 
     flare_calculator = flare_calc[md_engine]
     # set up OTF MD engine
-    md_params = {'timestep': 1 * units.fs, 'trajectory': None, 'dt': 1*
-                                                                     units.fs,
-                 'externalstress': 0, 'ttime': 25, 'pfactor': 3375,
+    md_params = {'externalstress': 0, 'ttime': 25, 'pfactor': 3375,
                  'mask': None, 'temperature': 500, 'taut': 1, 'taup': 1,
                  'pressure': 0, 'compressibility': 0, 'fixcm': 1,
                  'friction': 0.02}
 
-    otf_params = {'dft_calc': qe_calc,
-                  'init_atoms': [0, 1, 2, 3],
+    otf_params = {'init_atoms': [0, 1, 2, 3],
                   'std_tolerance_factor': 2,
                   'max_atoms_added' : len(super_cell.positions),
-                  'freeze_hyps': 10,
-                  'use_mapping': flare_calculator.use_mapping}
+                  'freeze_hyps': 10}
+#                  'use_mapping': flare_calculator.use_mapping}
 
     # intialize velocity
     temperature = md_params['temperature']
@@ -170,16 +167,20 @@ def test_otf_md(md_engine, super_cell, flare_calc, qe_calc):
     ZeroRotation(super_cell)  # zero angular momentum
 
     super_cell.set_calculator(flare_calculator)
-    test_otf = otf_md(md_engine, super_cell, md_params, otf_params)
+    test_otf = ASE_OTF(super_cell, 
+                       timestep = 1 * units.fs,
+                       number_of_steps = 3,
+                       dft_calc = qe_calc,
+                       md_engine = md_engine,
+                       md_kwargs = {},
+                       **otf_params)
 
     # set up logger
-    otf_logger = OTFLogger(test_otf, super_cell,
-        logfile=md_engine+'.log', mode="w", data_in_logfile=True)
-    test_otf.attach(otf_logger, interval=1)
+#    otf_logger = OTFLogger(test_otf, super_cell,
+#        logfile=md_engine+'.log', mode="w", data_in_logfile=True)
+#    test_otf.attach(otf_logger, interval=1)
 
-    # run otf
-    number_of_steps = 3
-    test_otf.otf_run(number_of_steps)
+    test_otf.run()
 
     for f in glob.glob("scf.pw*"):
         os.remove(f)
