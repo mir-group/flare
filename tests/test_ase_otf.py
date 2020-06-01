@@ -140,6 +140,9 @@ def test_otf_md(md_engine, md_params, super_cell, flare_calc, qe_calc):
                        md_kwargs = md_kwargs,
                        **otf_params)
 
+    # TODO: test if mgp matches gp
+    # TODO: see if there's difference between MD timestep & OTF timestep
+
     # set up logger
 #    otf_logger = OTFLogger(test_otf, super_cell,
 #        logfile=md_engine+'.log', mode="w", data_in_logfile=True)

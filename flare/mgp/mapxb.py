@@ -81,7 +81,6 @@ class MapXbody:
         if (GP is not None):
             self.cutoffs = deepcopy(GP.cutoffs)
             self.hyps_mask = deepcopy(GP.hyps_mask)
-            print('kernel_name', self.kernel_name)
             if self.kernel_name not in self.hyps_mask['kernels']:
                 raise Exception #TODO: deal with this
 
@@ -476,8 +475,6 @@ class SingleMapXbody:
 
         # write coefficients
         coefs = self.mean.__coeffs__
-        if len(coefs.shape) == 3:
-            print(coefs[0,0,:3])
         coefs = np.reshape(coefs, np.prod(coefs.shape))
         for c, coef in enumerate(coefs):
             f.write('{:.10e} '.format(coef))
