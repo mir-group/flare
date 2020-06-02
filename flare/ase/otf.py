@@ -48,6 +48,8 @@ class ASE_OTF(OTF):
 
     The following arguments are for on-the-fly training, the user can also 
     refer to :class:`OTF`
+
+    Args:
         prev_pos_init ([type], optional): Previous positions. Defaults
             to None.
         rescale_steps (List[int], optional): List of frames for which the

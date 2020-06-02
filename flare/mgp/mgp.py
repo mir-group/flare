@@ -44,34 +44,34 @@ class MappedGaussianProcess:
     Examples:
 
     >>> grid_params_2body = {'lower_bound': [1.2],
-                                            # the lower bounds used
-                                            # in the 2-body spline fits.
-                                            # the upper bounds are determined
-                                            # from GP's cutoffs, same for 3-body
-                             'grid_num': [64], # number of grids used in spline
-                             'svd_rank': 'auto'}
-                                         # rank of the variance map, can be set
-                                         # as an interger or 'auto'
+    ...                                     # the lower bounds used
+    ...                                     # in the 2-body spline fits.
+    ...                                     # the upper bounds are determined
+    ...                                     # from GP's cutoffs, same for 3-body
+    ...                      'grid_num': [64], # number of grids used in spline
+    ...                      'svd_rank': 'auto'}
+    ...                                  # rank of the variance map, can be set
+    ...                                  # as an interger or 'auto'
     >>> grid_params_3body = {'lower_bound': [1.2, 1.2, 1.2],
-                                            # Values describe lower bounds
-                                            # for the bondlength-bondlength-bondlength
-                                            # grid used to construct and fit 3-body
-                                            # kernels; note that for force MGPs
-                                            # bondlength-bondlength-costheta
-                                            # are the bounds used instead.
-                             'grid_num': [32, 32, 32],
-                             'svd_rank': 'auto'}
+    ...                                     # Values describe lower bounds
+    ...                                     # for the bondlength-bondlength-bondlength
+    ...                                     # grid used to construct and fit 3-body
+    ...                                     # kernels; note that for force MGPs
+    ...                                     # bondlength-bondlength-costheta
+    ...                                     # are the bounds used instead.
+    ...                      'grid_num': [32, 32, 32],
+    ...                      'svd_rank': 'auto'}
     >>> grid_params = {'twobody': grid_params_2body,
-                       'threebody': grid_params_3body,
-                       'update': False, # if True: accelerating grids
-                                        # generating by saving intermediate
-                                        # coeff when generating grids,
-                                        # currently NOT implemented
-                       'load_grid': None, # A string of path where the `grid_mean.npy`
-                                          # and `grid_var.npy` are stored. if not None,
-                                          # then the grids won't be generated, but
-                                          # directly loaded from file
-                       }
+    ...                'threebody': grid_params_3body,
+    ...                'update': False, # if True: accelerating grids
+    ...                                 # generating by saving intermediate
+    ...                                 # coeff when generating grids,
+    ...                                 # currently NOT implemented
+    ...                'load_grid': None, # A string of path where the `grid_mean.npy`
+    ...                                   # and `grid_var.npy` are stored. if not None,
+    ...                                   # then the grids won't be generated, but
+    ...                                   # directly loaded from file
+    ...                }
     '''
 
     def __init__(self,
@@ -128,10 +128,12 @@ class MappedGaussianProcess:
             ) -> (float, 'ndarray', 'ndarray', float):
         '''
         predict force, variance, stress and local energy for given
-            atomic environment
+        atomic environment
+
         Args:
             atom_env: atomic environment (with a center atom and its neighbors)
             mean_only: if True: only predict force (variance is always 0)
+
         Return:
             force: 3d array of atomic force
             variance: 3d array of the predictive variance

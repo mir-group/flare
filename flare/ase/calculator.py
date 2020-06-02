@@ -1,4 +1,10 @@
-""":class:`FLARE_Calculator` is a calculator compatible with `ASE`. You can build up `ASE Atoms` for your atomic structure, and use `get_forces`, `get_potential_energy` as general `ASE Calculators`, and use it in `ASE Molecular Dynamics` and our `ASE OTF` training module."""
+''':class:`FLARE_Calculator` is a calculator compatible with `ASE`. 
+You can build up `ASE Atoms` for your atomic structure, and use `get_forces`, 
+`get_potential_energy` as general `ASE Calculators`, and use it in 
+`ASE Molecular Dynamics` and our `ASE OTF` training module. For the usage 
+users can refer to `ASE Calculator module <https://wiki.fysik.dtu.dk/ase/ase/calculators/calculators.html>`_ 
+and `ASE Calculator tutorial <https://wiki.fysik.dtu.dk/ase/ase/atoms.html#adding-a-calculator>`_.'''
+
 import warnings
 import numpy as np
 import multiprocessing as mp
@@ -9,16 +15,15 @@ from flare.predict import predict_on_structure_par_en, predict_on_structure_en
 from ase.calculators.calculator import Calculator
 
 class FLARE_Calculator(Calculator):
-    """Build FLARE as an ASE Calculator, which is compatible with ASE Atoms and Molecular Dynamics.
-
-    :param gp_model: FLARE's Gaussian process object
-    :type gp_model: GaussianProcess
-    :param mgp_model: FLARE's Mapped Gaussian Process object. `None` by default. MGP will only be used if `use_mapping` is set to True
-    :type mgp_model: MappedGaussianProcess
-    :param par: set to `True` if parallelize the prediction. `False` by default.
-    :type par: Bool
-    :param use_mapping: set to `True` if use MGP for prediction. `False` by default.
-    :type use_mapping: Bool
+    """
+    Build FLARE as an ASE Calculator, which is compatible with ASE Atoms and
+    Molecular Dynamics. 
+    Args:
+        gp_model (GaussianProcess): FLARE's Gaussian process object
+        mgp_model (MappedGaussianProcess): FLARE's Mapped Gaussian Process object. 
+            `None` by default. MGP will only be used if `use_mapping` is set to True
+        par (Bool): set to `True` if parallelize the prediction. `False` by default.
+        use_mapping (Bool): set to `True` if use MGP for prediction. `False` by default.
     """
 
     def __init__(self, gp_model, mgp_model=None, par=False, use_mapping=False):
@@ -96,7 +101,6 @@ class FLARE_Calculator(Calculator):
         total_stress = np.sum(self.results['stresses'], axis=0)
         self.results['stress'] = total_stress / volume
 
-        return forces
 
 
     def calculate_mgp_serial(self, atoms):
