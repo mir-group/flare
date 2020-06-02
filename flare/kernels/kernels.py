@@ -154,6 +154,50 @@ def three_body_sf_2(ci1, ci2, cj1, cj2, r12, r23, r31, fi, fj, fdi, fdj,
 
 
 @njit
+def three_body_ss_1(ci1, ci2, cj1, cj2, r11, r22, r33, fi, fj, fdi, fdj,
+                    ls1, ls2, ls3, sig2, coord1, coord2, coord3, coord4,
+                    fdi_p1, fdi_p2, fdj_p1, fdj_p2):
+    A = ci1 * cj1 * coord1 * coord3 + ci2 * cj2 * coord2 * coord4
+    B = r11 * ci1 * coord1 + r22 * ci2 * coord2
+    C = r11 * cj1 * coord3 + r22 * cj2 * coord4
+    D = r11 * r11 + r22 * r22 + r33 * r33
+    E = exp(-D * ls1)
+    F = E * B * ls2
+    G = -E * C * ls2
+    H = A * E * ls2 - B * C * E * ls3
+    I = E * (fdi_p1 * coord1 + fdi_p2 * coord2) * \
+        (fdj_p1 * coord3 + fdj_p2 * coord4)
+    J = F * fi * (fdj_p1 * coord3 + fdj_p2 * coord4)
+    K = G * (fdi_p1 * coord1 + fdi_p2 * coord2) * fj
+    L = H * fi * fj
+    M = sig2 * (I + J + K + L)
+
+    return M
+
+
+@njit
+def three_body_ss_2(ci1, ci2, cj1, cj2, r12, r23, r31, fi, fj, fdi, fdj,
+                    ls1, ls2, ls3, sig2, coord1, coord2, coord3, coord4,
+                    fdi_p1, fdi_p2, fdj_p1, fdj_p2):
+    A = ci1 * cj2 * coord1 * coord4
+    B = r12 * ci1 * coord1 + r23 * ci2 * coord2
+    C = r12 * cj2 * coord4 + r31 * cj1 * coord3
+    D = r12 * r12 + r23 * r23 + r31 * r31
+    E = exp(-D * ls1)
+    F = E * B * ls2
+    G = -E * C * ls2
+    H = A * E * ls2 - B * C * E * ls3
+    I = E * (fdi_p1 * coord1 + fdi_p2 * coord2) * \
+        (fdj_p1 * coord3 + fdj_p2 * coord4)
+    J = F * fi * (fdj_p1 * coord3 + fdj_p2 * coord4)
+    K = G * (fdi_p1 * coord1 + fdi_p2 * coord2) * fj
+    L = H * fi * fj
+    M = sig2 * (I + J + K + L)
+
+    return M
+
+
+@njit
 def three_body_grad_helper_1(ci1, ci2, cj1, cj2, r11, r22, r33, fi, fj, fdi,
                              fdj, ls1, ls2, ls3, ls4, ls5, ls6, sig2, sig3):
     A = ci1 * cj1 + ci2 * cj2
@@ -328,6 +372,57 @@ def three_body_sf_perm(r11, r12, r13, r21, r22, r23, r31, r32, r33, c1, c2,
                 three_body_sf_2(ci1, ci2, cj1, cj2, r12, r23, r31, fi,
                                 fj, fdi, fdj, ls1, ls2, ls3, sig2,
                                 coord1, coord2, fdi1, fdi2)
+
+    return kern
+
+
+@njit
+def three_body_ss_perm(r11, r12, r13, r21, r22, r23, r31, r32, r33, c1, c2,
+                       ci1, ci2, cj1, cj2, ei1, ei2, ej1, ej2, fi, fj, fdi,
+                       fdj, ls1, ls2, ls3, sig2, coord1, coord2, coord3,
+                       coord4, fdi_p1, fdi_p2, fdj_p1, fdj_p2):
+
+    kern = 0
+
+    if (c1 == c2):
+        if (ei1 == ej1) and (ei2 == ej2):
+            kern += \
+                three_body_ss_1(ci1, ci2, cj1, cj2, r11, r22, r33, fi,
+                                fj, fdi, fdj, ls1, ls2, ls3, sig2,
+                                coord1, coord2, coord3, coord4, fdi_p1,
+                                fdi_p2, fdj_p1, fdj_p2)
+        if (ei1 == ej2) and (ei2 == ej1):
+            kern += \
+                three_body_ss_1(ci1, ci2, cj2, cj1, r12, r21, r33, fi,
+                                fj, fdi, fdj, ls1, ls2, ls3, sig2,
+                                coord1, coord2, coord4, coord3, fdi_p1,
+                                fdi_p2, fdj_p2, fdj_p1)
+    if (c1 == ej1):
+        if (ei1 == ej2) and (ei2 == c2):
+            kern += \
+                three_body_ss_2(ci2, ci1, cj2, cj1, r21, r13, r32, fi,
+                                fj, fdi, fdj, ls1, ls2, ls3, sig2,
+                                coord2, coord1, coord4, coord3, fdi_p2,
+                                fdi_p1, fdj_p2, fdj_p1)
+        if (ei1 == c2) and (ei2 == ej2):
+            kern += \
+                three_body_ss_2(ci1, ci2, cj2, cj1, r11, r23, r32, fi,
+                                fj, fdi, fdj, ls1, ls2, ls3, sig2,
+                                coord1, coord2, coord4, coord3, fdi_p1,
+                                fdi_p2, fdj_p2, fdj_p1)
+    if (c1 == ej2):
+        if (ei1 == ej1) and (ei2 == c2):
+            kern += \
+                three_body_ss_2(ci2, ci1, cj1, cj2, r22, r13, r31, fi,
+                                fj, fdi, fdj, ls1, ls2, ls3, sig2,
+                                coord2, coord1, coord3, coord4, fdi_p2,
+                                fdi_p1, fdj_p1, fdj_p2)
+        if (ei1 == c2) and (ei2 == ej1):
+            kern += \
+                three_body_ss_2(ci1, ci2, cj1, cj2, r12, r23, r31, fi,
+                                fj, fdi, fdj, ls1, ls2, ls3, sig2,
+                                coord1, coord2, coord3, coord4, fdi_p1,
+                                fdi_p2, fdj_p1, fdj_p2)
 
     return kern
 

@@ -241,25 +241,41 @@ def test_stress_force(struc_envs, stress_envs, force_envs, kernel):
 
     assert (np.abs(stress_force_exact - stress_force_finite)
             < threshold).all(), \
-        'Your force/force kernel is wrong.'
+        'Your stress/force kernel is wrong.'
 
-    # # Check stress/stress kernel by finite difference.
-    # for m in range(6):
-    #     pert1_up = stress_environments[0][m]
-    #     pert1_down = stress_environments[2][m]
-    #     for n in range(6):
-    #         pert2_up = stress_environments[1][n]
-    #         pert2_down = stress_environments[3][n]
-    #         kern1 = kernel.energy_energy(pert1_up, pert2_up)
-    #         kern2 = kernel.energy_energy(pert1_up, pert2_down)
-    #         kern3 = kernel.energy_energy(pert1_down, pert2_up)
-    #         kern4 = kernel.energy_energy(pert1_down, pert2_down)
 
-    #         finite_diff_val = \
-    #             (kern1 - kern2 - kern3 + kern4) / (4 * delta * delta)
+@pytest.mark.parametrize('kernel', kernel_list)
+def test_stress_stress(struc_envs, stress_envs, force_envs, kernel):
 
-    #         assert np.abs(finite_diff_val - stress_stress_kernel[m, n]) < \
-    #             threshold, 'The stress/stress kernel is wrong.'
+    stress_stress_exact = np.zeros((6, 6))
+    stress_stress_finite = np.zeros((6, 6))
+
+    for m in range(len(struc_envs[0])):
+        for n in range(len(struc_envs[1])):
+            stress_stress_exact += \
+                kernel.stress_stress(struc_envs[0][m], struc_envs[1][n])
+            for p in range(6):
+                pert1_up = stress_envs[0][0][p][m]
+                pert1_down = stress_envs[0][1][p][m]
+
+                for q in range(6):
+                    pert2_up = stress_envs[1][0][q][n]
+                    pert2_down = stress_envs[1][1][q][n]
+
+                    kern1 = kernel.energy_energy(pert1_up, pert2_up)
+                    kern2 = kernel.energy_energy(pert1_up, pert2_down)
+                    kern3 = kernel.energy_energy(pert1_down, pert2_up)
+                    kern4 = kernel.energy_energy(pert1_down, pert2_down)
+
+                    stress_stress_finite[p, q] += \
+                        (kern1 - kern2 - kern3 + kern4) / (4 * delta * delta)
+
+    print(stress_stress_exact)
+    print(stress_stress_finite)
+
+    assert (np.abs(stress_stress_exact - stress_stress_finite)
+            < threshold).all(), \
+        'Your stress/stress kernel is wrong.'
 
     # # Check force/force gradient.
     # print(force_force_gradient[1])
