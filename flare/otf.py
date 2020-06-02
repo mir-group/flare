@@ -213,6 +213,7 @@ class OTF:
             else:
 
                 # compute forces and stds with GP
+                self.dft_step = False
                 self.compute_properties()
 
                 # get max uncertainty atoms
@@ -223,7 +224,6 @@ class OTF:
 
                 if std_in_bound:
                     new_pos = self.md_step()
-                    self.dft_step = False
 
                 else:
                     # record GP forces
