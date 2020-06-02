@@ -23,7 +23,7 @@ from typing import Callable
 def many_body_mc_sepcut_jit(q_array_1, q_array_2,
                             q_neigh_array_1, q_neigh_array_2,
                             q_neigh_grads_1, q_neigh_grads_2,
-                            c1, c2, etypes1, etypes2,
+                            ctype_1, ctype_2, etypes_1, etypes_2,
                             species1, species2,
                             d1, d2, sig, ls,
                             nspec, spec_mask, mb_mask):
@@ -31,10 +31,10 @@ def many_body_mc_sepcut_jit(q_array_1, q_array_2,
     with Numba.
 
     Args:
-        c1 (int): atomic species of the central atom in env 1
-        c2 (int): atomic species of the central atom in env 2
-        etypes1 (np.ndarray): atomic species of atoms in env 1
-        etypes2 (np.ndarray): atomic species of atoms in env 2
+        ctype_1 (int): atomic species of the central atom in env 1
+        ctype_2 (int): atomic species of the central atom in env 2
+        etypes_1 (np.ndarray): atomic species of atoms in env 1
+        etypes_2 (np.ndarray): atomic species of atoms in env 2
         species1 (np.ndarray): all the atomic species present in trajectory 1
         species2 (np.ndarray): all the atomic species present in trajectory 2
         d1 (int): Force component of the first environment.
@@ -51,9 +51,9 @@ def many_body_mc_sepcut_jit(q_array_1, q_array_2,
     useful_species = np.array(
         list(set(species1).union(set(species2))), dtype=np.int8)
 
-    bc1 = spec_mask[c1]
+    bc1 = spec_mask[ctype_1]
     bc1n = bc1 * nspec
-    bc2 = spec_mask[c2]
+    bc2 = spec_mask[ctype_2]
     bc2n = bc2 * nspec
 
     # loop over all possible species
@@ -71,7 +71,7 @@ def many_body_mc_sepcut_jit(q_array_1, q_array_2,
         q2 = q_array_2[s2]
 
         # compute kernel only if central atoms are of the same species
-        if c1 == c2:
+        if ctype_1 == ctype_2:
             k12 = k_sq_exp_double_dev(q1, q2, sig[mbtype1], ls[mbtype1])
         else:
             k12 = 0
@@ -81,36 +81,36 @@ def many_body_mc_sepcut_jit(q_array_1, q_array_2,
         # Loop over neighbours i of 1st configuration
         for i in range(q_neigh_array_1.shape[0]):
             qis = q1i_grads = qi1_grads = ki2s = 0
-            if etypes1[i] == s:
+            if etypes_1[i] == s:
                 q1i_grads = q_neigh_grads_1[i, d1-1]
 
-            if c1 == s:
+            if ctype_1 == s:
                 qi1_grads = q_neigh_grads_1[i, d1-1]
 
             # Calculate many-body descriptor value for i
             qis = q_neigh_array_1[i, s1]
 
-            if c2 == etypes1[i]:
+            if ctype_2 == etypes_1[i]:
                 ki2s = k_sq_exp_double_dev(qis, q2, sig[mbtype2], ls[mbtype2])
 
             # Loop over neighbours j of 2
             for j in range(q_neigh_array_2.shape[0]):
                 qjs = qj2_grads = q2j_grads = k1js = 0
 
-                if etypes2[j] == s:
+                if etypes_2[j] == s:
                     q2j_grads = q_neigh_grads_2[j, d2-1]
 
-                if c2 == s:
+                if ctype_2 == s:
                     qj2_grads = q_neigh_grads_2[j, d2-1]
 
                 # Calculate many-body descriptor value for j
                 qjs = q_neigh_array_2[j, s2]
 
-                if c1 == etypes2[j]:
+                if ctype_1 == etypes_2[j]:
                     k1js = k_sq_exp_double_dev(q1, qjs, sig[mbtype1], ls[mbtype1])
 
-                if etypes1[i] == etypes2[j]:
-                    be = spec_mask[etypes1[i]]
+                if etypes_1[i] == etypes_2[j]:
+                    be = spec_mask[etypes_1[i]]
                     mbtype = mb_mask[be+bsn]
                     kij = k_sq_exp_double_dev(qis, qjs, sig[mbtype], ls[mbtype])
                 else:
@@ -126,7 +126,7 @@ def many_body_mc_sepcut_jit(q_array_1, q_array_2,
 def many_body_mc_grad_sepcut_jit(q_array_1, q_array_2,
                             q_neigh_array_1, q_neigh_array_2,
                             q_neigh_grads_1, q_neigh_grads_2,
-                            c1, c2, etypes1, etypes2,
+                            c1, c2, etypes_1, etypes_2,
                             species1, species2,
                             d1, d2, sig, ls,
                             nspec, spec_mask, nmb, mb_mask):
@@ -136,8 +136,8 @@ def many_body_mc_grad_sepcut_jit(q_array_1, q_array_2,
     Args:
         c1 (int): atomic species of the central atom in env 1
         c2 (int): atomic species of the central atom in env 2
-        etypes1 (np.ndarray): atomic species of atoms in env 1
-        etypes2 (np.ndarray): atomic species of atoms in env 2
+        etypes_1 (np.ndarray): atomic species of atoms in env 1
+        etypes_2 (np.ndarray): atomic species of atoms in env 2
         species1 (np.ndarray): all the atomic species present in trajectory 1
         species2 (np.ndarray): all the atomic species present in trajectory 2
         d1 (int): Force component of the first environment.
@@ -186,7 +186,7 @@ def many_body_mc_grad_sepcut_jit(q_array_1, q_array_2,
         # Compute  ki2s, qi1_grads, and qis
         for i in range(q_neigh_array_1.shape[0]):
             qis = q1i_grads = qi1_grads = ki2s = dki2s = 0
-            if etypes1[i] == s:
+            if etypes_1[i] == s:
                 q1i_grads = q_neigh_grads_1[i, d1-1]
 
             if c1 == s:
@@ -195,7 +195,7 @@ def many_body_mc_grad_sepcut_jit(q_array_1, q_array_2,
             # Calculate many-body descriptor value for i
             qis = q_neigh_array_1[i, s1]
 
-            if c2 == etypes1[i]:
+            if c2 == etypes_1[i]:
                 ki2s = k_sq_exp_double_dev(qis, q2, sig[mbtype2], ls[mbtype2])
                 qi2diffsq = (qis - q2) * (qis - q2)
                 dki2s = mb_grad_helper_ls_(qi2diffsq, sig[mbtype2], ls[mbtype2])
@@ -203,7 +203,7 @@ def many_body_mc_grad_sepcut_jit(q_array_1, q_array_2,
             # Compute k1js, qj2_grads and qjs
             for j in range(q_neigh_array_2.shape[0]):
                 qjs = qj2_grads = q2j_grads = k1js = dk1js = 0
-                if etypes2[j] == s:
+                if etypes_2[j] == s:
                     q2j_grads = q_neigh_grads_2[j, d2-1]
 
                 if c2 == s:
@@ -212,13 +212,13 @@ def many_body_mc_grad_sepcut_jit(q_array_1, q_array_2,
                 # Calculate many-body descriptor value for j
                 qjs = q_neigh_array_2[j, s2]
 
-                if c1 == etypes2[j]:
+                if c1 == etypes_2[j]:
                     k1js = k_sq_exp_double_dev(q1, qjs, sig[mbtype1], ls[mbtype1])
                     q1jdiffsq = (q1 - qjs) * (q1 - qjs)
                     dk1js = mb_grad_helper_ls_(q1jdiffsq, sig[mbtype1], ls[mbtype1])
 
-                if etypes1[i] == etypes2[j]:
-                    be = spec_mask[etypes2[j]]
+                if etypes_1[i] == etypes_2[j]:
+                    be = spec_mask[etypes_2[j]]
                     mbtype = mb_mask[bsn + be]
 
                     kij = k_sq_exp_double_dev(
@@ -273,7 +273,7 @@ def many_body_mc_grad_sepcut_jit(q_array_1, q_array_2,
 @njit
 def many_body_mc_force_en_sepcut_jit(q_array_1, q_array_2,
                                      q_neigh_array_1, q_neigh_grads_1,
-                                     c1, c2, etypes1,
+                                     ctype_1, ctype_2, etypes_1,
                                      species1, species2, d1, sig, ls,
                                      nspec, spec_mask, mb_mask):
     """many-body many-element kernel between force and energy components accelerated
@@ -281,9 +281,9 @@ def many_body_mc_force_en_sepcut_jit(q_array_1, q_array_2,
 
     Args:
         To be complete
-        c1 (int): atomic species of the central atom in env 1
-        c2 (int): atomic species of the central atom in env 2
-        etypes1 (np.ndarray): atomic species of atoms in env 1
+        ctype_1 (int): atomic species of the central atom in env 1
+        ctype_2 (int): atomic species of the central atom in env 2
+        etypes_1 (np.ndarray): atomic species of atoms in env 1
         species1 (np.ndarray): all the atomic species present in trajectory 1
         species2 (np.ndarray): all the atomic species present in trajectory 2
         d1 (int): Force component of the first environment.
@@ -299,9 +299,9 @@ def many_body_mc_force_en_sepcut_jit(q_array_1, q_array_2,
     useful_species = np.array(
         list(set(species1).union(set(species2))), dtype=np.int8)
 
-    bc1 = spec_mask[c1]
+    bc1 = spec_mask[ctype_1]
     bc1n = bc1 * nspec
-    bc2 = spec_mask[c2]
+    bc2 = spec_mask[ctype_2]
     bc2n = bc2 * nspec
 
     for s in useful_species:
@@ -316,7 +316,7 @@ def many_body_mc_force_en_sepcut_jit(q_array_1, q_array_2,
         q1 = q_array_1[s1]
         q2 = q_array_2[s2]
 
-        if c1 == c2:
+        if ctype_1 == ctype_2:
             k12 = k_sq_exp_dev(q1, q2, sig[mbtype1], ls[mbtype1])
         else:
             k12 = 0
@@ -326,10 +326,10 @@ def many_body_mc_force_en_sepcut_jit(q_array_1, q_array_2,
             qi1_grads = q1i_grads = 0
             ki2s = 0
 
-            if etypes1[i] == s:
+            if etypes_1[i] == s:
                 q1i_grads = q_neigh_grads_1[i, d1-1]
 
-            if (c1 == s) and (c2 == etypes1[i]):
+            if (ctype_1 == s) and (ctype_2 == etypes_1[i]):
                 qi1_grads = q_neigh_grads_1[i, d1-1]
                 qis = q_neigh_array_1[i, s1]
                 ki2s = k_sq_exp_dev(qis, q2, sig[mbtype2], ls[mbtype2])
@@ -339,7 +339,7 @@ def many_body_mc_force_en_sepcut_jit(q_array_1, q_array_2,
 
 
 @njit
-def many_body_mc_en_sepcut_jit(q_array_1, q_array_2, c1, c2,
+def many_body_mc_en_sepcut_jit(q_array_1, q_array_2, ctype_1, ctype_2,
                                species1, species2,
                                sig, ls,
                                nspec, spec_mask, mb_mask):
@@ -351,10 +351,10 @@ def many_body_mc_en_sepcut_jit(q_array_1, q_array_2, c1, c2,
             environment.
         bond_array_2 (np.ndarray): many-body bond array of the second local
             environment.
-        c1 (int): atomic species of the central atom in env 1
-        c2 (int): atomic species of the central atom in env 2
-        etypes1 (np.ndarray): atomic species of atoms in env 1
-        etypes2 (np.ndarray): atomic species of atoms in env 2
+        ctype_1 (int): atomic species of the central atom in env 1
+        ctype_2 (int): atomic species of the central atom in env 2
+        etypes_1 (np.ndarray): atomic species of atoms in env 1
+        etypes_2 (np.ndarray): atomic species of atoms in env 2
         species1 (np.ndarray): all the atomic species present in trajectory 1
         species2 (np.ndarray): all the atomic species present in trajectory 2
         sig (float): many-body signal variance hyperparameter.
@@ -370,11 +370,11 @@ def many_body_mc_en_sepcut_jit(q_array_1, q_array_2, c1, c2,
 
     kern = 0
 
-    if c1 == c2:
+    if ctype_1 == ctype_2:
         ls2 = ls*ls
         sig2 = sig*sig
 
-        bc1 = spec_mask[c1]
+        bc1 = spec_mask[ctype_1]
         bc1n = bc1 * nspec
 
         for s in useful_species:

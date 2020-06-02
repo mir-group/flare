@@ -3,6 +3,7 @@ from math import exp
 from numba import njit
 import flare.kernels.cutoffs as cf
 
+
 # -----------------------------------------------------------------------------
 #                            general helper functions
 # -----------------------------------------------------------------------------

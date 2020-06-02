@@ -772,8 +772,8 @@ def many_body_mc_en(env1: AtomicEnvironment, env2: AtomicEnvironment,
 
 
 @njit
-def three_body_mc_jit(bond_array_1, c1, etypes1,
-                      bond_array_2, c2, etypes2,
+def three_body_mc_jit(bond_array_1, ctype_1, etypes_1,
+                      bond_array_2, ctype_2, etypes_2,
                       cross_bond_inds_1, cross_bond_inds_2,
                       cross_bond_dists_1, cross_bond_dists_2,
                       triplets_1, triplets_2,
@@ -784,13 +784,13 @@ def three_body_mc_jit(bond_array_1, c1, etypes1,
     Args:
         bond_array_1 (np.ndarray): 3-body bond array of the first local
             environment.
-        c1 (int): Species of the central atom of the first local environment.
-        etypes1 (np.ndarray): Species of atoms in the first local
+        ctype_1 (int): Species of the central atom of the first local environment.
+        etypes_1 (np.ndarray): Species of atoms in the first local
             environment.
         bond_array_2 (np.ndarray): 3-body bond array of the second local
             environment.
-        c2 (int): Species of the central atom of the second local environment.
-        etypes2 (np.ndarray): Species of atoms in the second local
+        ctype_2 (int): Species of the central atom of the second local environment.
+        etypes_2 (np.ndarray): Species of atoms in the second local
             environment.
         cross_bond_inds_1 (np.ndarray): Two dimensional array whose row m
             contains the indices of atoms n > m in the first local
@@ -837,18 +837,18 @@ def three_body_mc_jit(bond_array_1, c1, etypes1,
         ri1 = bond_array_1[m, 0]
         ci1 = bond_array_1[m, d1]
         fi1, fdi1 = cutoff_func(r_cut, ri1, ci1)
-        ei1 = etypes1[m]
+        ei1 = etypes_1[m]
 
         # second loop over the first 3-body environment
         for n in range(triplets_1[m]):
 
             # skip if species does not match
             ind1 = cross_bond_inds_1[m, m + n + 1]
-            ei2 = etypes1[ind1]
-            tr_spec = [c1, ei1, ei2]
-            c2_ind = tr_spec
-            if c2 in tr_spec:
-                tr_spec.remove(c2)
+            ei2 = etypes_1[ind1]
+            tr_spec = [ctype_1, ei1, ei2]
+            ctype_2_ind = tr_spec
+            if ctype_2 in tr_spec:
+                tr_spec.remove(ctype_2)
 
                 ri2 = bond_array_1[ind1, 0]
                 ci2 = bond_array_1[ind1, d1]
@@ -863,11 +863,11 @@ def three_body_mc_jit(bond_array_1, c1, etypes1,
                 # first loop over the second 3-body environment
                 for p in range(bond_array_2.shape[0]):
 
-                    ej1 = etypes2[p]
+                    ej1 = etypes_2[p]
 
-                    tr_spec1 = [tr_spec[0], tr_spec[1]]
-                    if ej1 in tr_spec1:
-                        tr_spec1.remove(ej1)
+                    tr_spectype_1 = [tr_spec[0], tr_spec[1]]
+                    if ej1 in tr_spectype_1:
+                        tr_spectype_1.remove(ej1)
 
                         rj1 = bond_array_2[p, 0]
                         cj1 = bond_array_2[p, d2]
@@ -877,8 +877,8 @@ def three_body_mc_jit(bond_array_1, c1, etypes1,
                         for q in range(triplets_2[p]):
 
                             ind2 = cross_bond_inds_2[p, p + 1 + q]
-                            ej2 = etypes2[ind2]
-                            if ej2 == tr_spec1[0]:
+                            ej2 = etypes_2[ind2]
+                            if ej2 == tr_spectype_1[0]:
 
                                 rj2 = bond_array_2[ind2, 0]
                                 cj2 = bond_array_2[ind2, d2]
@@ -901,7 +901,7 @@ def three_body_mc_jit(bond_array_1, c1, etypes1,
                                 r33 = ri3 - rj3
 
                                 # consider six permutations
-                                if (c1 == c2):
+                                if (ctype_1 == ctype_2):
                                     if (ei1 == ej1) and (ei2 == ej2):
                                         kern += \
                                             three_body_helper_1(ci1, ci2, cj1, cj2, r11,
@@ -912,24 +912,24 @@ def three_body_mc_jit(bond_array_1, c1, etypes1,
                                             three_body_helper_1(ci1, ci2, cj2, cj1, r12,
                                                                 r21, r33, fi, fj, fdi, fdj,
                                                                 ls1, ls2, ls3, sig2)
-                                if (c1 == ej1):
-                                    if (ei1 == ej2) and (ei2 == c2):
+                                if (ctype_1 == ej1):
+                                    if (ei1 == ej2) and (ei2 == ctype_2):
                                         kern += \
                                             three_body_helper_2(ci2, ci1, cj2, cj1, r21,
                                                                 r13, r32, fi, fj, fdi,
                                                                 fdj, ls1, ls2, ls3, sig2)
-                                    if (ei1 == c2) and (ei2 == ej2):
+                                    if (ei1 == ctype_2) and (ei2 == ej2):
                                         kern += \
                                             three_body_helper_2(ci1, ci2, cj2, cj1, r11,
                                                                 r23, r32, fi, fj, fdi,
                                                                 fdj, ls1, ls2, ls3, sig2)
-                                if (c1 == ej2):
-                                    if (ei1 == ej1) and (ei2 == c2):
+                                if (ctype_1 == ej2):
+                                    if (ei1 == ej1) and (ei2 == ctype_2):
                                         kern += \
                                             three_body_helper_2(ci2, ci1, cj1, cj2, r22,
                                                                 r13, r31, fi, fj, fdi,
                                                                 fdj, ls1, ls2, ls3, sig2)
-                                    if (ei1 == c2) and (ei2 == ej1):
+                                    if (ei1 == ctype_2) and (ei2 == ej1):
                                         kern += \
                                             three_body_helper_2(ci1, ci2, cj1, cj2, r12,
                                                                 r23, r31, fi, fj, fdi,
@@ -939,8 +939,8 @@ def three_body_mc_jit(bond_array_1, c1, etypes1,
 
 
 @njit
-def three_body_mc_grad_jit(bond_array_1, c1, etypes1,
-                           bond_array_2, c2, etypes2,
+def three_body_mc_grad_jit(bond_array_1, ctype_1, etypes_1,
+                           bond_array_2, ctype_2, etypes_2,
                            cross_bond_inds_1, cross_bond_inds_2,
                            cross_bond_dists_1, cross_bond_dists_2,
                            triplets_1, triplets_2,
@@ -951,13 +951,13 @@ def three_body_mc_grad_jit(bond_array_1, c1, etypes1,
     Args:
         bond_array_1 (np.ndarray): 3-body bond array of the first local
             environment.
-        c1 (int): Species of the central atom of the first local environment.
-        etypes1 (np.ndarray): Species of atoms in the first local
+        ctype_1 (int): Species of the central atom of the first local environment.
+        etypes_1 (np.ndarray): Species of atoms in the first local
             environment.
         bond_array_2 (np.ndarray): 3-body bond array of the second local
             environment.
-        c2 (int): Species of the central atom of the second local environment.
-        etypes2 (np.ndarray): Species of atoms in the second local
+        ctype_2 (int): Species of the central atom of the second local environment.
+        etypes_2 (np.ndarray): Species of atoms in the second local
             environment.
         cross_bond_inds_1 (np.ndarray): Two dimensional array whose row m
             contains the indices of atoms n > m in the first local
@@ -1005,19 +1005,19 @@ def three_body_mc_grad_jit(bond_array_1, c1, etypes1,
         ri1 = bond_array_1[m, 0]
         ci1 = bond_array_1[m, d1]
         fi1, fdi1 = cutoff_func(r_cut, ri1, ci1)
-        ei1 = etypes1[m]
+        ei1 = etypes_1[m]
 
         for n in range(triplets_1[m]):
             ind1 = cross_bond_inds_1[m, m + n + 1]
             ri3 = cross_bond_dists_1[m, m + n + 1]
             ri2 = bond_array_1[ind1, 0]
             ci2 = bond_array_1[ind1, d1]
-            ei2 = etypes1[ind1]
+            ei2 = etypes_1[ind1]
 
-            tr_spec = [c1, ei1, ei2]
-            c2_ind = tr_spec
-            if c2 in tr_spec:
-                tr_spec.remove(c2)
+            tr_spec = [ctype_1, ei1, ei2]
+            ctype_2_ind = tr_spec
+            if ctype_2 in tr_spec:
+                tr_spec.remove(ctype_2)
 
                 fi2, fdi2 = cutoff_func(r_cut, ri2, ci2)
                 fi3, _ = cutoff_func(r_cut, ri3, 0)
@@ -1029,17 +1029,17 @@ def three_body_mc_grad_jit(bond_array_1, c1, etypes1,
                     rj1 = bond_array_2[p, 0]
                     cj1 = bond_array_2[p, d2]
                     fj1, fdj1 = cutoff_func(r_cut, rj1, cj1)
-                    ej1 = etypes2[p]
+                    ej1 = etypes_2[p]
 
-                    tr_spec1 = [tr_spec[0], tr_spec[1]]
-                    if ej1 in tr_spec1:
-                        tr_spec1.remove(ej1)
+                    tr_spectype_1 = [tr_spec[0], tr_spec[1]]
+                    if ej1 in tr_spectype_1:
+                        tr_spectype_1.remove(ej1)
 
                         for q in range(triplets_2[p]):
                             ind2 = cross_bond_inds_2[p, p + q + 1]
-                            ej2 = etypes2[ind2]
+                            ej2 = etypes_2[ind2]
 
-                            if ej2 == tr_spec1[0]:
+                            if ej2 == tr_spectype_1[0]:
 
                                 rj3 = cross_bond_dists_2[p, p + q + 1]
                                 rj2 = bond_array_2[ind2, 0]
@@ -1061,7 +1061,7 @@ def three_body_mc_grad_jit(bond_array_1, c1, etypes1,
                                 r32 = ri3 - rj2
                                 r33 = ri3 - rj3
 
-                                if (c1 == c2):
+                                if (ctype_1 == ctype_2):
                                     if (ei1 == ej1) and (ei2 == ej2):
                                         kern_term, sig_term, ls_term = \
                                             three_body_grad_helper_1(ci1, ci2, cj1, cj2,
@@ -1084,8 +1084,8 @@ def three_body_mc_grad_jit(bond_array_1, c1, etypes1,
                                         sig_derv += sig_term
                                         ls_derv += ls_term
 
-                                if (c1 == ej1):
-                                    if (ei1 == ej2) and (ei2 == c2):
+                                if (ctype_1 == ej1):
+                                    if (ei1 == ej2) and (ei2 == ctype_2):
                                         kern_term, sig_term, ls_term = \
                                             three_body_grad_helper_2(ci2, ci1, cj2, cj1,
                                                                      r21, r13, r32, fi, fj,
@@ -1096,7 +1096,7 @@ def three_body_mc_grad_jit(bond_array_1, c1, etypes1,
                                         sig_derv += sig_term
                                         ls_derv += ls_term
 
-                                    if (ei1 == c2) and (ei2 == ej2):
+                                    if (ei1 == ctype_2) and (ei2 == ej2):
                                         kern_term, sig_term, ls_term = \
                                             three_body_grad_helper_2(ci1, ci2, cj2, cj1,
                                                                      r11, r23, r32, fi, fj,
@@ -1107,8 +1107,8 @@ def three_body_mc_grad_jit(bond_array_1, c1, etypes1,
                                         sig_derv += sig_term
                                         ls_derv += ls_term
 
-                                if (c1 == ej2):
-                                    if (ei1 == ej1) and (ei2 == c2):
+                                if (ctype_1 == ej2):
+                                    if (ei1 == ej1) and (ei2 == ctype_2):
                                         kern_term, sig_term, ls_term = \
                                             three_body_grad_helper_2(ci2, ci1, cj1, cj2,
                                                                      r22, r13, r31, fi, fj,
@@ -1119,7 +1119,7 @@ def three_body_mc_grad_jit(bond_array_1, c1, etypes1,
                                         sig_derv += sig_term
                                         ls_derv += ls_term
 
-                                    if (ei1 == c2) and (ei2 == ej1):
+                                    if (ei1 == ctype_2) and (ei2 == ej1):
                                         kern_term, sig_term, ls_term = \
                                             three_body_grad_helper_2(ci1, ci2, cj1, cj2,
                                                                      r12, r23, r31, fi, fj,
@@ -1138,8 +1138,8 @@ def three_body_mc_grad_jit(bond_array_1, c1, etypes1,
 
 
 @njit
-def three_body_mc_force_en_jit(bond_array_1, c1, etypes1,
-                               bond_array_2, c2, etypes2,
+def three_body_mc_force_en_jit(bond_array_1, ctype_1, etypes_1,
+                               bond_array_2, ctype_2, etypes_2,
                                cross_bond_inds_1, cross_bond_inds_2,
                                cross_bond_dists_1, cross_bond_dists_2,
                                triplets_1, triplets_2,
@@ -1150,13 +1150,13 @@ def three_body_mc_force_en_jit(bond_array_1, c1, etypes1,
     Args:
         bond_array_1 (np.ndarray): 3-body bond array of the first local
             environment.
-        c1 (int): Species of the central atom of the first local environment.
-        etypes1 (np.ndarray): Species of atoms in the first local
+        ctype_1 (int): Species of the central atom of the first local environment.
+        etypes_1 (np.ndarray): Species of atoms in the first local
             environment.
         bond_array_2 (np.ndarray): 3-body bond array of the second local
             environment.
-        c2 (int): Species of the central atom of the second local environment.
-        etypes2 (np.ndarray): Species of atoms in the second local
+        ctype_2 (int): Species of the central atom of the second local environment.
+        etypes_2 (np.ndarray): Species of atoms in the second local
             environment.
         cross_bond_inds_1 (np.ndarray): Two dimensional array whose row m
             contains the indices of atoms n > m in the first local
@@ -1201,19 +1201,19 @@ def three_body_mc_force_en_jit(bond_array_1, c1, etypes1,
         ri1 = bond_array_1[m, 0]
         ci1 = bond_array_1[m, d1]
         fi1, fdi1 = cutoff_func(r_cut, ri1, ci1)
-        ei1 = etypes1[m]
+        ei1 = etypes_1[m]
 
         for n in range(triplets_1[m]):
             ind1 = cross_bond_inds_1[m, m + n + 1]
             ri2 = bond_array_1[ind1, 0]
             ci2 = bond_array_1[ind1, d1]
             fi2, fdi2 = cutoff_func(r_cut, ri2, ci2)
-            ei2 = etypes1[ind1]
+            ei2 = etypes_1[ind1]
 
-            tr_spec = [c1, ei1, ei2]
-            c2_ind = tr_spec
-            if c2 in tr_spec:
-                tr_spec.remove(c2)
+            tr_spec = [ctype_1, ei1, ei2]
+            ctype_2_ind = tr_spec
+            if ctype_2 in tr_spec:
+                tr_spec.remove(ctype_2)
 
                 ri3 = cross_bond_dists_1[m, m + n + 1]
                 fi3, _ = cutoff_func(r_cut, ri3, 0)
@@ -1222,11 +1222,11 @@ def three_body_mc_force_en_jit(bond_array_1, c1, etypes1,
                 fdi = fdi1 * fi2 * fi3 + fi1 * fdi2 * fi3
 
                 for p in range(bond_array_2.shape[0]):
-                    ej1 = etypes2[p]
+                    ej1 = etypes_2[p]
 
-                    tr_spec1 = [tr_spec[0], tr_spec[1]]
-                    if ej1 in tr_spec1:
-                        tr_spec1.remove(ej1)
+                    tr_spectype_1 = [tr_spec[0], tr_spec[1]]
+                    if ej1 in tr_spectype_1:
+                        tr_spectype_1.remove(ej1)
 
                         rj1 = bond_array_2[p, 0]
                         fj1, _ = cutoff_func(r_cut, rj1, 0)
@@ -1234,8 +1234,8 @@ def three_body_mc_force_en_jit(bond_array_1, c1, etypes1,
                         for q in range(triplets_2[p]):
 
                             ind2 = cross_bond_inds_2[p, p + q + 1]
-                            ej2 = etypes2[ind2]
-                            if ej2 == tr_spec1[0]:
+                            ej2 = etypes_2[ind2]
+                            if ej2 == tr_spectype_1[0]:
 
                                 rj2 = bond_array_2[ind2, 0]
                                 fj2, _ = cutoff_func(r_cut, rj2, 0)
@@ -1254,7 +1254,7 @@ def three_body_mc_force_en_jit(bond_array_1, c1, etypes1,
                                 r32 = ri3 - rj2
                                 r33 = ri3 - rj3
 
-                                if (c1 == c2):
+                                if (ctype_1 == ctype_2):
                                     if (ei1 == ej1) and (ei2 == ej2):
                                         kern += three_body_en_helper(ci1, ci2, r11, r22,
                                                                      r33, fi, fj, fdi, ls1,
@@ -1263,21 +1263,21 @@ def three_body_mc_force_en_jit(bond_array_1, c1, etypes1,
                                         kern += three_body_en_helper(ci1, ci2, r12, r21,
                                                                      r33, fi, fj, fdi, ls1,
                                                                      ls2, sig2)
-                                if (c1 == ej1):
-                                    if (ei1 == ej2) and (ei2 == c2):
+                                if (ctype_1 == ej1):
+                                    if (ei1 == ej2) and (ei2 == ctype_2):
                                         kern += three_body_en_helper(ci1, ci2, r13, r21,
                                                                      r32, fi, fj, fdi, ls1,
                                                                      ls2, sig2)
-                                    if (ei1 == c2) and (ei2 == ej2):
+                                    if (ei1 == ctype_2) and (ei2 == ej2):
                                         kern += three_body_en_helper(ci1, ci2, r11, r23,
                                                                      r32, fi, fj, fdi, ls1,
                                                                      ls2, sig2)
-                                if (c1 == ej2):
-                                    if (ei1 == ej1) and (ei2 == c2):
+                                if (ctype_1 == ej2):
+                                    if (ei1 == ej1) and (ei2 == ctype_2):
                                         kern += three_body_en_helper(ci1, ci2, r13, r22,
                                                                      r31, fi, fj, fdi, ls1,
                                                                      ls2, sig2)
-                                    if (ei1 == c2) and (ei2 == ej1):
+                                    if (ei1 == ctype_2) and (ei2 == ej1):
                                         kern += three_body_en_helper(ci1, ci2, r12, r23,
                                                                      r31, fi, fj, fdi, ls1,
                                                                      ls2, sig2)
@@ -1286,8 +1286,8 @@ def three_body_mc_force_en_jit(bond_array_1, c1, etypes1,
 
 
 @njit
-def three_body_mc_en_jit(bond_array_1, c1, etypes1,
-                         bond_array_2, c2, etypes2,
+def three_body_mc_en_jit(bond_array_1, ctype_1, etypes_1,
+                         bond_array_2, ctype_2, etypes_2,
                          cross_bond_inds_1, cross_bond_inds_2,
                          cross_bond_dists_1, cross_bond_dists_2,
                          triplets_1, triplets_2,
@@ -1298,13 +1298,13 @@ def three_body_mc_en_jit(bond_array_1, c1, etypes1,
     Args:
         bond_array_1 (np.ndarray): 3-body bond array of the first local
             environment.
-        c1 (int): Species of the central atom of the first local environment.
-        etypes1 (np.ndarray): Species of atoms in the first local
+        ctype_1 (int): Species of the central atom of the first local environment.
+        etypes_1 (np.ndarray): Species of atoms in the first local
             environment.
         bond_array_2 (np.ndarray): 3-body bond array of the second local
             environment.
-        c2 (int): Species of the central atom of the second local environment.
-        etypes2 (np.ndarray): Species of atoms in the second local
+        ctype_2 (int): Species of the central atom of the second local environment.
+        etypes_2 (np.ndarray): Species of atoms in the second local
             environment.
         cross_bond_inds_1 (np.ndarray): Two dimensional array whose row m
             contains the indices of atoms n > m in the first local
@@ -1346,18 +1346,18 @@ def three_body_mc_en_jit(bond_array_1, c1, etypes1,
     for m in range(bond_array_1.shape[0]):
         ri1 = bond_array_1[m, 0]
         fi1, _ = cutoff_func(r_cut, ri1, 0)
-        ei1 = etypes1[m]
+        ei1 = etypes_1[m]
 
         for n in range(triplets_1[m]):
             ind1 = cross_bond_inds_1[m, m + n + 1]
             ri2 = bond_array_1[ind1, 0]
             fi2, _ = cutoff_func(r_cut, ri2, 0)
-            ei2 = etypes1[ind1]
+            ei2 = etypes_1[ind1]
 
-            tr_spec = [c1, ei1, ei2]
-            c2_ind = tr_spec
-            if c2 in tr_spec:
-                tr_spec.remove(c2)
+            tr_spec = [ctype_1, ei1, ei2]
+            ctype_2_ind = tr_spec
+            if ctype_2 in tr_spec:
+                tr_spec.remove(ctype_2)
 
                 ri3 = cross_bond_dists_1[m, m + n + 1]
                 fi3, _ = cutoff_func(r_cut, ri3, 0)
@@ -1366,16 +1366,16 @@ def three_body_mc_en_jit(bond_array_1, c1, etypes1,
                 for p in range(bond_array_2.shape[0]):
                     rj1 = bond_array_2[p, 0]
                     fj1, _ = cutoff_func(r_cut, rj1, 0)
-                    ej1 = etypes2[p]
+                    ej1 = etypes_2[p]
 
-                    tr_spec1 = [tr_spec[0], tr_spec[1]]
-                    if ej1 in tr_spec1:
-                        tr_spec1.remove(ej1)
+                    tr_spectype_1 = [tr_spec[0], tr_spec[1]]
+                    if ej1 in tr_spectype_1:
+                        tr_spectype_1.remove(ej1)
 
                         for q in range(triplets_2[p]):
                             ind2 = cross_bond_inds_2[p, p + q + 1]
-                            ej2 = etypes2[ind2]
-                            if ej2 == tr_spec1[0]:
+                            ej2 = etypes_2[ind2]
+                            if ej2 == tr_spectype_1[0]:
 
                                 rj2 = bond_array_2[ind2, 0]
                                 fj2, _ = cutoff_func(r_cut, rj2, 0)
@@ -1394,25 +1394,25 @@ def three_body_mc_en_jit(bond_array_1, c1, etypes1,
                                 r32 = ri3 - rj2
                                 r33 = ri3 - rj3
 
-                                if (c1 == c2):
+                                if (ctype_1 == ctype_2):
                                     if (ei1 == ej1) and (ei2 == ej2):
                                         C1 = r11 * r11 + r22 * r22 + r33 * r33
                                         kern += sig2 * exp(-C1 * ls2) * fi * fj
                                     if (ei1 == ej2) and (ei2 == ej1):
                                         C3 = r12 * r12 + r21 * r21 + r33 * r33
                                         kern += sig2 * exp(-C3 * ls2) * fi * fj
-                                if (c1 == ej1):
-                                    if (ei1 == ej2) and (ei2 == c2):
+                                if (ctype_1 == ej1):
+                                    if (ei1 == ej2) and (ei2 == ctype_2):
                                         C5 = r13 * r13 + r21 * r21 + r32 * r32
                                         kern += sig2 * exp(-C5 * ls2) * fi * fj
-                                    if (ei1 == c2) and (ei2 == ej2):
+                                    if (ei1 == ctype_2) and (ei2 == ej2):
                                         C2 = r11 * r11 + r23 * r23 + r32 * r32
                                         kern += sig2 * exp(-C2 * ls2) * fi * fj
-                                if (c1 == ej2):
-                                    if (ei1 == ej1) and (ei2 == c2):
+                                if (ctype_1 == ej2):
+                                    if (ei1 == ej1) and (ei2 == ctype_2):
                                         C6 = r13 * r13 + r22 * r22 + r31 * r31
                                         kern += sig2 * exp(-C6 * ls2) * fi * fj
-                                    if (ei1 == c2) and (ei2 == ej1):
+                                    if (ei1 == ctype_2) and (ei2 == ej1):
                                         C4 = r12 * r12 + r23 * r23 + r31 * r31
                                         kern += sig2 * exp(-C4 * ls2) * fi * fj
 
@@ -1425,8 +1425,8 @@ def three_body_mc_en_jit(bond_array_1, c1, etypes1,
 
 
 @njit
-def two_body_mc_jit(bond_array_1, c1, etypes1,
-                    bond_array_2, c2, etypes2,
+def two_body_mc_jit(bond_array_1, ctype_1, etypes_1,
+                    bond_array_2, ctype_2, etypes_2,
                     d1, d2, sig, ls, r_cut, cutoff_func):
     """2-body multi-element kernel between two force components accelerated
     with Numba.
@@ -1434,13 +1434,13 @@ def two_body_mc_jit(bond_array_1, c1, etypes1,
     Args:
         bond_array_1 (np.ndarray): 2-body bond array of the first local
             environment.
-        c1 (int): Species of the central atom of the first local environment.
-        etypes1 (np.ndarray): Species of atoms in the first local
+        ctype_1 (int): Species of the central atom of the first local environment.
+        etypes_1 (np.ndarray): Species of atoms in the first local
             environment.
         bond_array_2 (np.ndarray): 2-body bond array of the second local
             environment.
-        c2 (int): Species of the central atom of the second local environment.
-        etypes2 (np.ndarray): Species of atoms in the second local
+        ctype_2 (int): Species of the central atom of the second local environment.
+        etypes_2 (np.ndarray): Species of atoms in the second local
             environment.
         d1 (int): Force component of the first environment (1=x, 2=y, 3=z).
         d2 (int): Force component of the second environment (1=x, 2=y, 3=z).
@@ -1463,13 +1463,13 @@ def two_body_mc_jit(bond_array_1, c1, etypes1,
         ri = bond_array_1[m, 0]
         ci = bond_array_1[m, d1]
         fi, fdi = cutoff_func(r_cut, ri, ci)
-        e1 = etypes1[m]
+        e1 = etypes_1[m]
 
         for n in range(bond_array_2.shape[0]):
-            e2 = etypes2[n]
+            e2 = etypes_2[n]
 
             # check if bonds agree
-            if (c1 == c2 and e1 == e2) or (c1 == e2 and c2 == e1):
+            if (ctype_1 == ctype_2 and e1 == e2) or (ctype_1 == e2 and ctype_2 == e1):
                 rj = bond_array_2[n, 0]
                 cj = bond_array_2[n, d2]
                 fj, fdj = cutoff_func(r_cut, rj, cj)
@@ -1487,8 +1487,8 @@ def two_body_mc_jit(bond_array_1, c1, etypes1,
 
 
 @njit
-def two_body_mc_grad_jit(bond_array_1, c1, etypes1,
-                         bond_array_2, c2, etypes2,
+def two_body_mc_grad_jit(bond_array_1, ctype_1, etypes_1,
+                         bond_array_2, ctype_2, etypes_2,
                          d1, d2, sig, ls, r_cut, cutoff_func):
     """2-body multi-element kernel between two force components and its
     gradient with respect to the hyperparameters.
@@ -1496,13 +1496,13 @@ def two_body_mc_grad_jit(bond_array_1, c1, etypes1,
     Args:
         bond_array_1 (np.ndarray): 2-body bond array of the first local
             environment.
-        c1 (int): Species of the central atom of the first local environment.
-        etypes1 (np.ndarray): Species of atoms in the first local
+        ctype_1 (int): Species of the central atom of the first local environment.
+        etypes_1 (np.ndarray): Species of atoms in the first local
             environment.
         bond_array_2 (np.ndarray): 2-body bond array of the second local
             environment.
-        c2 (int): Species of the central atom of the second local environment.
-        etypes2 (np.ndarray): Species of atoms in the second local
+        ctype_2 (int): Species of the central atom of the second local environment.
+        etypes_2 (np.ndarray): Species of atoms in the second local
             environment.
         d1 (int): Force component of the first environment (1=x, 2=y, 3=z).
         d2 (int): Force component of the second environment (1=x, 2=y, 3=z).
@@ -1536,13 +1536,13 @@ def two_body_mc_grad_jit(bond_array_1, c1, etypes1,
         ri = bond_array_1[m, 0]
         ci = bond_array_1[m, d1]
         fi, fdi = cutoff_func(r_cut, ri, ci)
-        e1 = etypes1[m]
+        e1 = etypes_1[m]
 
         for n in range(bond_array_2.shape[0]):
-            e2 = etypes2[n]
+            e2 = etypes_2[n]
 
             # check if bonds agree
-            if (c1 == c2 and e1 == e2) or (c1 == e2 and c2 == e1):
+            if (ctype_1 == ctype_2 and e1 == e2) or (ctype_1 == e2 and ctype_2 == e1):
                 rj = bond_array_2[n, 0]
                 cj = bond_array_2[n, d2]
                 fj, fdj = cutoff_func(r_cut, rj, cj)
@@ -1569,8 +1569,8 @@ def two_body_mc_grad_jit(bond_array_1, c1, etypes1,
 
 
 @njit
-def two_body_mc_force_en_jit(bond_array_1, c1, etypes1,
-                             bond_array_2, c2, etypes2,
+def two_body_mc_force_en_jit(bond_array_1, ctype_1, etypes_1,
+                             bond_array_2, ctype_2, etypes_2,
                              d1, sig, ls, r_cut, cutoff_func):
     """2-body multi-element kernel between a force component and a local
     energy accelerated with Numba.
@@ -1578,13 +1578,13 @@ def two_body_mc_force_en_jit(bond_array_1, c1, etypes1,
     Args:
         bond_array_1 (np.ndarray): 2-body bond array of the first local
             environment.
-        c1 (int): Species of the central atom of the first local environment.
-        etypes1 (np.ndarray): Species of atoms in the first local
+        ctype_1 (int): Species of the central atom of the first local environment.
+        etypes_1 (np.ndarray): Species of atoms in the first local
             environment.
         bond_array_2 (np.ndarray): 2-body bond array of the second local
             environment.
-        c2 (int): Species of the central atom of the second local environment.
-        etypes2 (np.ndarray): Species of atoms in the second local
+        ctype_2 (int): Species of the central atom of the second local environment.
+        etypes_2 (np.ndarray): Species of atoms in the second local
             environment.
         d1 (int): Force component of the first environment (1=x, 2=y, 3=z).
         sig (float): 2-body signal variance hyperparameter.
@@ -1607,13 +1607,13 @@ def two_body_mc_force_en_jit(bond_array_1, c1, etypes1,
         ri = bond_array_1[m, 0]
         ci = bond_array_1[m, d1]
         fi, fdi = cutoff_func(r_cut, ri, ci)
-        e1 = etypes1[m]
+        e1 = etypes_1[m]
 
         for n in range(bond_array_2.shape[0]):
-            e2 = etypes2[n]
+            e2 = etypes_2[n]
 
             # check if bonds agree
-            if (c1 == c2 and e1 == e2) or (c1 == e2 and c2 == e1):
+            if (ctype_1 == ctype_2 and e1 == e2) or (ctype_1 == e2 and ctype_2 == e1):
                 rj = bond_array_2[n, 0]
                 fj, _ = cutoff_func(r_cut, rj, 0)
 
@@ -1626,8 +1626,8 @@ def two_body_mc_force_en_jit(bond_array_1, c1, etypes1,
 
 
 @njit
-def two_body_mc_en_jit(bond_array_1, c1, etypes1,
-                       bond_array_2, c2, etypes2,
+def two_body_mc_en_jit(bond_array_1, ctype_1, etypes_1,
+                       bond_array_2, ctype_2, etypes_2,
                        sig, ls, r_cut, cutoff_func):
     """2-body multi-element kernel between two local energies accelerated
     with Numba.
@@ -1635,13 +1635,15 @@ def two_body_mc_en_jit(bond_array_1, c1, etypes1,
     Args:
         bond_array_1 (np.ndarray): 2-body bond array of the first local
             environment.
-        c1 (int): Species of the central atom of the first local environment.
-        etypes1 (np.ndarray): Species of atoms in the first local
+        ctype_1 (int): Species of the central atom of the first local
+            environment.
+        etypes_1 (np.ndarray): Species of atoms in the first local
             environment.
         bond_array_2 (np.ndarray): 2-body bond array of the second local
             environment.
-        c2 (int): Species of the central atom of the second local environment.
-        etypes2 (np.ndarray): Species of atoms in the second local
+        ctype_2 (int): Species of the central atom of the second local
+            environment.
+        etypes_2 (np.ndarray): Species of atoms in the second local
             environment.
         sig (float): 2-body signal variance hyperparameter.
         ls (float): 2-body length scale hyperparameter.
@@ -1660,12 +1662,13 @@ def two_body_mc_en_jit(bond_array_1, c1, etypes1,
     for m in range(bond_array_1.shape[0]):
         ri = bond_array_1[m, 0]
         fi, _ = cutoff_func(r_cut, ri, 0)
-        e1 = etypes1[m]
+        e1 = etypes_1[m]
 
         for n in range(bond_array_2.shape[0]):
-            e2 = etypes2[n]
+            e2 = etypes_2[n]
 
-            if (c1 == c2 and e1 == e2) or (c1 == e2 and c2 == e1):
+            if (ctype_1 == ctype_2 and e1 == e2) or \
+                    (ctype_1 == e2 and ctype_2 == e1):
                 rj = bond_array_2[n, 0]
                 fj, _ = cutoff_func(r_cut, rj, 0)
                 r11 = ri - rj
@@ -1682,7 +1685,7 @@ def two_body_mc_en_jit(bond_array_1, c1, etypes1,
 def many_body_mc_jit(q_array_1, q_array_2, 
                      q_neigh_array_1, q_neigh_array_2, 
                      q_neigh_grads_1, q_neigh_grads_2,
-                     c1, c2, etypes1, etypes2, 
+                     ctype_1, ctype_2, etypes_1, etypes_2, 
                      species1, species2, 
                      d1, d2, sig, ls):
     """many-body multi-element kernel between two force components accelerated
@@ -1701,10 +1704,10 @@ def many_body_mc_jit(q_array_1, q_array_2,
             local environment
         num_neigh_2 (np.ndarray): number of neighbours of each atom in the second
             local environment
-        c1 (int): atomic species of the central atom in env 1
-        c2 (int): atomic species of the central atom in env 2
-        etypes1 (np.ndarray): atomic species of atoms in env 1
-        etypes2 (np.ndarray): atomic species of atoms in env 2
+        ctype_1 (int): atomic species of the central atom in env 1
+        ctype_2 (int): atomic species of the central atom in env 2
+        etypes_1 (np.ndarray): atomic species of atoms in env 1
+        etypes_2 (np.ndarray): atomic species of atoms in env 2
         etypes_neigh_1 (np.ndarray): atomic species of atoms in the neighbourhoods
             of atoms in env 1
         etypes_neigh_2 (np.ndarray): atomic species of atoms in the neighbourhoods
@@ -1738,7 +1741,7 @@ def many_body_mc_jit(q_array_1, q_array_2,
 
         # compute kernel between central atoms only if central atoms are of 
         # the same species
-        if c1 == c2:
+        if ctype_1 == ctype_2:
             k12 = k_sq_exp_double_dev(q1, q2, sig, ls)
         else:
             k12 = 0
@@ -1749,37 +1752,37 @@ def many_body_mc_jit(q_array_1, q_array_2,
         for i in range(q_neigh_array_1.shape[0]):
             qis = q1i_grads = qi1_grads = ki2s = 0
 
-            if etypes1[i] == s:
+            if etypes_1[i] == s:
                 # derivative of pairwise component of many body descriptor q1i
                 q1i_grads = q_neigh_grads_1[i, d1-1]
 
-            if c1 == s:
+            if ctype_1 == s:
                 # derivative of pairwise component of many body descriptor qi1
                 qi1_grads = q_neigh_grads_1[i, d1-1]
 
             # Calculate many-body descriptor value for i
             qis = q_neigh_array_1[i, s1]
 
-            if c2 == etypes1[i]:
+            if ctype_2 == etypes_1[i]:
                 ki2s = k_sq_exp_double_dev(qis, q2, sig, ls)
 
             # Loop over neighbours j of 2
             for j in range(q_neigh_array_2.shape[0]):
                 qjs = qj2_grads = q2j_grads = k1js = 0
     
-                if etypes2[j] == s:
+                if etypes_2[j] == s:
                     q2j_grads = q_neigh_grads_2[j, d2-1]
     
-                if c2 == s:
+                if ctype_2 == s:
                     qj2_grads = q_neigh_grads_2[j, d2-1]
     
                 # Calculate many-body descriptor value for j
                 qjs = q_neigh_array_2[j, s2]
     
-                if c1 == etypes2[j]:
+                if ctype_1 == etypes_2[j]:
                     k1js = k_sq_exp_double_dev(q1, qjs, sig, ls)
 
-                if etypes1[i] == etypes2[j]:
+                if etypes_1[i] == etypes_2[j]:
                     kij = k_sq_exp_double_dev(qis, qjs, sig, ls)
                 else:
                     kij = 0
@@ -1795,7 +1798,7 @@ def many_body_mc_jit(q_array_1, q_array_2,
 def many_body_mc_grad_jit(q_array_1, q_array_2, 
                           q_neigh_array_1, q_neigh_array_2, 
                           q_neigh_grads_1, q_neigh_grads_2,
-                          c1, c2, etypes1, etypes2,
+                          ctype_1, ctype_2, etypes_1, etypes_2,
                           species1, species2, d1, d2, sig, ls):
     """gradient of many-body multi-element kernel between two force components
     w.r.t. the hyperparameters, accelerated with Numba.
@@ -1813,10 +1816,10 @@ def many_body_mc_grad_jit(q_array_1, q_array_2,
             local environment
         num_neigh_2 (np.ndarray): number of neighbours of each atom in the second
             local environment
-        c1 (int): atomic species of the central atom in env 1
-        c2 (int): atomic species of the central atom in env 2
-        etypes1 (np.ndarray): atomic species of atoms in env 1
-        etypes2 (np.ndarray): atomic species of atoms in env 2
+        ctype_1 (int): atomic species of the central atom in env 1
+        ctype_2 (int): atomic species of the central atom in env 2
+        etypes_1 (np.ndarray): atomic species of atoms in env 1
+        etypes_2 (np.ndarray): atomic species of atoms in env 2
         etypes_neigh_1 (np.ndarray): atomic species of atoms in the neighbourhoods
             of atoms in env 1
         etypes_neigh_2 (np.ndarray): atomic species of atoms in the neighbourhoods
@@ -1847,7 +1850,7 @@ def many_body_mc_grad_jit(q_array_1, q_array_2,
         q1 = q_array_1[s1]
         q2 = q_array_2[s2]
 
-        if c1 == c2:
+        if ctype_1 == ctype_2:
             k12 = k_sq_exp_double_dev(q1, q2, sig, ls)
             q12diffsq = (q1 - q2) ** 2  # * (q1 - q2)
             dk12 = mb_grad_helper_ls_(q12diffsq, sig, ls)
@@ -1859,16 +1862,16 @@ def many_body_mc_grad_jit(q_array_1, q_array_2,
         # Compute  ki2s, qi1_grads, and qis
         for i in range(q_neigh_array_1.shape[0]):
             qis = q1i_grads = qi1_grads = ki2s = dki2s = 0
-            if etypes1[i] == s:
+            if etypes_1[i] == s:
                 q1i_grads = q_neigh_grads_1[i, d1-1]
 
-            if c1 == s:
+            if ctype_1 == s:
                 qi1_grads = q_neigh_grads_1[i, d1-1]
 
             # Calculate many-body descriptor value for i
             qis = q_neigh_array_1[i, s1]
 
-            if c2 == etypes1[i]:
+            if ctype_2 == etypes_1[i]:
                 ki2s = k_sq_exp_double_dev(qis, q2, sig, ls)
                 qi2diffsq = (qis - q2) * (qis - q2)
                 dki2s = mb_grad_helper_ls_(qi2diffsq, sig, ls)
@@ -1877,21 +1880,21 @@ def many_body_mc_grad_jit(q_array_1, q_array_2,
             for j in range(q_neigh_array_2.shape[0]):
                 qjs = qj2_grads = q2j_grads = k1js = dk1js = 0
     
-                if etypes2[j] == s:
+                if etypes_2[j] == s:
                     q2j_grads = q_neigh_grads_2[j, d2-1]
     
-                if c2 == s:
+                if ctype_2 == s:
                     qj2_grads = q_neigh_grads_2[j, d2-1]
     
                 # Calculate many-body descriptor value for j
                 qjs = q_neigh_array_2[j, s2]
     
-                if c1 == etypes2[j]:
+                if ctype_1 == etypes_2[j]:
                     k1js = k_sq_exp_double_dev(q1, qjs, sig, ls)
                     q1jdiffsq = (q1 - qjs) * (q1 - qjs)
                     dk1js = mb_grad_helper_ls_(q1jdiffsq, sig, ls)
 
-                if etypes1[i] == etypes2[j]:
+                if etypes_1[i] == etypes_2[j]:
                     kij = k_sq_exp_double_dev(qis, qjs, sig, ls)
                     qijdiffsq = (qis - qjs) * (qis - qjs)
                     dkij = mb_grad_helper_ls_(qijdiffsq, sig, ls)
@@ -1923,15 +1926,15 @@ def many_body_mc_grad_jit(q_array_1, q_array_2,
 @njit
 def many_body_mc_force_en_jit(q_array_1, q_array_2, 
                               q_neigh_array_1, q_neigh_grads_1,
-                              c1, c2, etypes1,  
+                              ctype_1, ctype_2, etypes_1,  
                               species1, species2, d1, sig, ls):
     """many-body many-element kernel between force and energy components accelerated
     with Numba.
 
     Args:
-        c1 (int): atomic species of the central atom in env 1
-        c2 (int): atomic species of the central atom in env 2
-        etypes1 (np.ndarray): atomic species of atoms in env 1
+        ctype_1 (int): atomic species of the central atom in env 1
+        ctype_2 (int): atomic species of the central atom in env 2
+        etypes_1 (np.ndarray): atomic species of atoms in env 1
         species1 (np.ndarray): all the atomic species present in trajectory 1
         species2 (np.ndarray): all the atomic species present in trajectory 2
         d1 (int): Force component of the first environment.
@@ -1953,7 +1956,7 @@ def many_body_mc_force_en_jit(q_array_1, q_array_2,
         q1 = q_array_1[s1]
         q2 = q_array_2[s2]
 
-        if c1 == c2:
+        if ctype_1 == ctype_2:
             k12 = k_sq_exp_dev(q1, q2, sig, ls)
         else:
             k12 = 0
@@ -1963,13 +1966,13 @@ def many_body_mc_force_en_jit(q_array_1, q_array_2,
             qi1_grads = q1i_grads = 0
             ki2s = 0
 
-            if etypes1[i] == s:
+            if etypes_1[i] == s:
                 q1i_grads = q_neigh_grads_1[i, d1-1]
 
-            if c1 == s:
+            if ctype_1 == s:
                 qi1_grads = q_neigh_grads_1[i, d1-1]
 
-            if c2 == etypes1[i]:
+            if ctype_2 == etypes_1[i]:
                 # Calculate many-body descriptor value for i
                 qis = q_neigh_array_1[i, s1]
                 ki2s = k_sq_exp_dev(qis, q2, sig, ls)
@@ -1980,7 +1983,7 @@ def many_body_mc_force_en_jit(q_array_1, q_array_2,
 
 
 #@njit
-def many_body_mc_en_jit(q_array_1, q_array_2, c1, c2, 
+def many_body_mc_en_jit(q_array_1, q_array_2, ctype_1, ctype_2, 
                         species1, species2, sig, ls):
     """many-body many-element kernel between energy components accelerated
     with Numba.
@@ -1990,10 +1993,10 @@ def many_body_mc_en_jit(q_array_1, q_array_2, c1, c2,
             environment.
         bond_array_2 (np.ndarray): many-body bond array of the second local
             environment.
-        c1 (int): atomic species of the central atom in env 1
-        c2 (int): atomic species of the central atom in env 2
-        etypes1 (np.ndarray): atomic species of atoms in env 1
-        etypes2 (np.ndarray): atomic species of atoms in env 2
+        ctype_1 (int): atomic species of the central atom in env 1
+        ctype_2 (int): atomic species of the central atom in env 2
+        etypes_1 (np.ndarray): atomic species of atoms in env 1
+        etypes_2 (np.ndarray): atomic species of atoms in env 2
         species1 (np.ndarray): all the atomic species present in trajectory 1
         species2 (np.ndarray): all the atomic species present in trajectory 2
         sig (float): many-body signal variance hyperparameter.
@@ -2008,7 +2011,7 @@ def many_body_mc_en_jit(q_array_1, q_array_2, c1, c2,
         list(set(species1).union(set(species2))), dtype=np.int8)
     kern = 0
 
-    if c1 == c2:
+    if ctype_1 == ctype_2:
         for s in useful_species:
             q1 = q_array_1[np.where(species1==s)[0][0]]
             q2 = q_array_2[np.where(species2==s)[0][0]]

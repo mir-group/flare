@@ -20,7 +20,7 @@ from_grad_to_mask(grad, hyps_mask) converts the gradient matrix to the actual
 
 
 def str_to_kernel_set(kernels: list = ['twobody', 'threebody'],
-                      component: str = "sc",
+                      component: str = "mc",
                       hyps_mask: dict = None):
     """
     return kernels and kernel gradient function base on a string.
@@ -87,7 +87,7 @@ def str_to_kernel_set(kernels: list = ['twobody', 'threebody'],
         stk[prefix+'_force_en']
 
 
-def str_to_mapped_kernel(name: str, component: str = "sc",
+def str_to_mapped_kernel(name: str, component: str = "mc",
                          hyps_mask: dict = None):
     """
     return kernels and kernel gradient function base on a string.

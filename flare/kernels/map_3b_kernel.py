@@ -8,7 +8,7 @@ from typing import Callable
 from flare.env import AtomicEnvironment
 import flare.kernels.cutoffs as cf
 
-def three_body_mc_en(env1: AtomicEnvironment, r1, r2, r12, c2, etypes2,
+def three_body_mc_en(env1: AtomicEnvironment, r1, r2, r12, ctype_2, etypes_2,
                      hyps: 'ndarray', cutoffs: 'ndarray',
                      cutoff_func: Callable = cf.quadratic_cutoff) \
         -> float:
@@ -20,8 +20,8 @@ def three_body_mc_en(env1: AtomicEnvironment, r1, r2, r12, c2, etypes2,
         rj1 (np.ndarray): matrix of the first edge length
         rj2 (np.ndarray): matrix of the second edge length
         rj12 (np.ndarray): matrix of the third edge length
-        c2 (int): Species of the central atom of the second local environment.
-        etypes2 (np.ndarray): Species of atoms in the second local
+        ctype_2 (int): Species of the central atom of the second local environment.
+        etypes_2 (np.ndarray): Species of atoms in the second local
             environment.
         d1 (int): Force component of the first environment (1=x, 2=y, 3=z).
         hyps (np.ndarray): Hyperparameters of the kernel function (sig1, ls1,
@@ -43,11 +43,11 @@ def three_body_mc_en(env1: AtomicEnvironment, r1, r2, r12, c2, etypes2,
                                 env1.cross_bond_inds,
                                 env1.cross_bond_dists,
                                 env1.triplet_counts,
-                                c2, etypes2,
+                                ctype_2, etypes_2,
                                 r1, r2, r12,
                                 sig, ls, r_cut, cutoff_func) / 9.
 
-def three_body_mc_en_sephyps(env1, r1, r2, r12, c2, etypes2,
+def three_body_mc_en_sephyps(env1, r1, r2, r12, ctype_2, etypes_2,
                              cutoff_2b, cutoff_3b, nspec, spec_mask,
                              nbond, bond_mask, ntriplet, triplet_mask,
                              ncut3b, cut3b_mask,
@@ -61,8 +61,8 @@ def three_body_mc_en_sephyps(env1, r1, r2, r12, c2, etypes2,
         rj1 (np.ndarray): matrix of the first edge length
         rj2 (np.ndarray): matrix of the second edge length
         rj12 (np.ndarray): matrix of the third edge length
-        c2 (int): Species of the central atom of the second local environment.
-        etypes2 (np.ndarray): Species of atoms in the second local
+        ctype_2 (int): Species of the central atom of the second local environment.
+        etypes_2 (np.ndarray): Species of atoms in the second local
             environment.
         d1 (int): Force component of the first environment (1=x, 2=y, 3=z).
         cutoff_2b: dummy
@@ -86,12 +86,12 @@ def three_body_mc_en_sephyps(env1, r1, r2, r12, c2, etypes2,
             Value of the 3-body force/energy kernel.
     """
 
-    ej1 = etypes2[0]
-    ej2 = etypes2[1]
-    bc1 = spec_mask[c2]
-    bc2 = spec_mask[ej1]
+    ej1 = etypes_2[0]
+    ej2 = etypes_2[1]
+    bctype_1 = spec_mask[ctype_2]
+    bctype_2 = spec_mask[ej1]
     bc3 = spec_mask[ej2]
-    ttype = triplet_mask[nspec * nspec * bc1 + nspec*bc2 + bc3]
+    ttype = triplet_mask[nspec * nspec * bctype_1 + nspec*bctype_2 + bc3]
     ls = ls3[ttype]
     sig = sig3[ttype]
     r_cut = cutoff_3b
@@ -101,12 +101,12 @@ def three_body_mc_en_sephyps(env1, r1, r2, r12, c2, etypes2,
                                 env1.cross_bond_inds,
                                 env1.cross_bond_dists,
                                 env1.triplet_counts,
-                                c2, etypes2,
+                                ctype_2, etypes_2,
                                 r1, r2, r12,
                                 sig, ls, r_cut, cutoff_func) / 9.
 
 
-def three_body_mc_en_force(env1: AtomicEnvironment, r1, r2, r12, c2, etypes2,
+def three_body_mc_en_force(env1: AtomicEnvironment, r1, r2, r12, ctype_2, etypes_2,
                            d1: int, hyps: 'ndarray', cutoffs: 'ndarray',
                            cutoff_func: Callable = cf.quadratic_cutoff) \
         -> float:
@@ -118,8 +118,8 @@ def three_body_mc_en_force(env1: AtomicEnvironment, r1, r2, r12, c2, etypes2,
         rj1 (np.ndarray): matrix of the first edge length
         rj2 (np.ndarray): matrix of the second edge length
         rj12 (np.ndarray): matrix of the third edge length
-        c2 (int): Species of the central atom of the second local environment.
-        etypes2 (np.ndarray): Species of atoms in the second local
+        ctype_2 (int): Species of the central atom of the second local environment.
+        etypes_2 (np.ndarray): Species of atoms in the second local
             environment.
         d1 (int): Force component of the first environment (1=x, 2=y, 3=z).
         hyps (np.ndarray): Hyperparameters of the kernel function (sig1, ls1,
@@ -141,11 +141,11 @@ def three_body_mc_en_force(env1: AtomicEnvironment, r1, r2, r12, c2, etypes2,
                                       env1.cross_bond_inds,
                                       env1.cross_bond_dists,
                                       env1.triplet_counts,
-                                      c2, etypes2,
+                                      ctype_2, etypes_2,
                                       r1, r2, r12,
                                       d1, sig, ls, r_cut, cutoff_func) / 3
 
-def three_body_mc_en_force_sephyps(env1, r1, r2, r12, c2, etypes2,
+def three_body_mc_en_force_sephyps(env1, r1, r2, r12, ctype_2, etypes_2,
                                    d1, cutoff_2b, cutoff_3b, nspec, spec_mask,
                                    nbond, bond_mask, ntriplet, triplet_mask,
                                    ncut3b, cut3b_mask,
@@ -159,8 +159,8 @@ def three_body_mc_en_force_sephyps(env1, r1, r2, r12, c2, etypes2,
         rj1 (np.ndarray): matrix of the first edge length
         rj2 (np.ndarray): matrix of the second edge length
         rj12 (np.ndarray): matrix of the third edge length
-        c2 (int): Species of the central atom of the second local environment.
-        etypes2 (np.ndarray): Species of atoms in the second local
+        ctype_2 (int): Species of the central atom of the second local environment.
+        etypes_2 (np.ndarray): Species of atoms in the second local
             environment.
         d1 (int): Force component of the first environment (1=x, 2=y, 3=z).
         cutoff_2b: dummy
@@ -184,12 +184,12 @@ def three_body_mc_en_force_sephyps(env1, r1, r2, r12, c2, etypes2,
             Value of the 3-body force/energy kernel.
     """
 
-    ej1 = etypes2[0]
-    ej2 = etypes2[1]
-    bc1 = spec_mask[c2]
-    bc2 = spec_mask[ej1]
+    ej1 = etypes_2[0]
+    ej2 = etypes_2[1]
+    bctype_1 = spec_mask[ctype_2]
+    bctype_2 = spec_mask[ej1]
     bc3 = spec_mask[ej2]
-    ttype = triplet_mask[nspec * nspec * bc1 + nspec*bc2 + bc3]
+    ttype = triplet_mask[nspec * nspec * bctype_1 + nspec*bctype_2 + bc3]
     ls = ls3[ttype]
     sig = sig3[ttype]
     r_cut = cutoff_3b
@@ -199,16 +199,16 @@ def three_body_mc_en_force_sephyps(env1, r1, r2, r12, c2, etypes2,
                                       env1.cross_bond_inds,
                                       env1.cross_bond_dists,
                                       env1.triplet_counts,
-                                      c2, etypes2,
+                                      ctype_2, etypes_2,
                                       r1, r2, r12,
                                       d1, sig, ls, r_cut, cutoff_func) / 3
 
 
 # @njit
-# def three_body_mc_force_en_jit(bond_array_1, c1, etypes1,
+# def three_body_mc_force_en_jit(bond_array_1, ctype_1, etypes_1,
 #                                cross_bond_inds_1, cross_bond_dists_1,
 #                                triplets_1,
-#                                c2, etypes2,
+#                                ctype_2, etypes_2,
 #                                rj1, rj2, rj3,
 #                                d1, sig, ls, r_cut, cutoff_func):
 #     """3-body multi-element kernel between a force component and many local
@@ -217,8 +217,8 @@ def three_body_mc_en_force_sephyps(env1, r1, r2, r12, c2, etypes2,
 #     Args:
 #         bond_array_1 (np.ndarray): 3-body bond array of the first local
 #             environment.
-#         c1 (int): Species of the central atom of the first local environment.
-#         etypes1 (np.ndarray): Species of atoms in the first local
+#         ctype_1 (int): Species of the central atom of the first local environment.
+#         etypes_1 (np.ndarray): Species of atoms in the first local
 #             environment.
 #         cross_bond_inds_1 (np.ndarray): Two dimensional array whose row m
 #             contains the indices of atoms n > m in the first local
@@ -231,8 +231,8 @@ def three_body_mc_en_force_sephyps(env1, r1, r2, r12, c2, etypes2,
 #         triplets_1 (np.ndarray): One dimensional array of integers whose entry
 #             m is the number of atoms in the first local environment that are
 #             within a distance r_cut of atom m.
-#         c2 (int): Species of the central atom of the second local environment.
-#         etypes2 (np.ndarray): Species of atoms in the second local
+#         ctype_2 (int): Species of the central atom of the second local environment.
+#         etypes_2 (np.ndarray): Species of atoms in the second local
 #             environment.
 #         rj1 (np.ndarray): matrix of the first edge length
 #         rj2 (np.ndarray): matrix of the second edge length
@@ -250,13 +250,13 @@ def three_body_mc_en_force_sephyps(env1, r1, r2, r12, c2, etypes2,
 #
 #     kern = np.zeros_like(rj1, dtype=np.float64)
 #
-#     ei1 = etypes2[0]
-#     ei2 = etypes2[1]
+#     ei1 = etypes_2[0]
+#     ei2 = etypes_2[1]
 #
-#     all_spec = [c2, ei1, ei2]
-#     if (c1 not in all_spec):
+#     all_spec = [ctype_2, ei1, ei2]
+#     if (ctype_1 not in all_spec):
 #         return kern
-#     all_spec.remove(c1)
+#     all_spec.remove(ctype_1)
 #
 #     # pre-compute constants that appear in the inner loop
 #     sig2 = sig * sig
@@ -274,7 +274,7 @@ def three_body_mc_en_force_sephyps(env1, r1, r2, r12, c2, etypes2,
 #     # del f3
 #
 #     for m in prange(bond_array_1.shape[0]):
-#         ei1 = etypes1[m]
+#         ei1 = etypes_1[m]
 #
 #         two_spec = [all_spec[0], all_spec[1]]
 #         if (ei1 in two_spec):
@@ -287,7 +287,7 @@ def three_body_mc_en_force_sephyps(env1, r1, r2, r12, c2, etypes2,
 #             for n in prange(triplets_1[m]):
 #
 #                 ind1 = cross_bond_inds_1[m, m + n + 1]
-#                 ej2 = etypes1[ind1]
+#                 ej2 = etypes_1[ind1]
 #
 #                 if (ej2 == one_spec):
 #
@@ -295,7 +295,7 @@ def three_body_mc_en_force_sephyps(env1, r1, r2, r12, c2, etypes2,
 #                         r11 = ri1 - rj1
 #                     if (ei2 == ej1):
 #                         r12 = ri1 - rj2
-#                     if (ei2 == c2):
+#                     if (ei2 == ctype_2):
 #                         r13 = ri1 - rj3
 #
 #                     rj2 = bond_array_1[ind1, 0]
@@ -303,18 +303,18 @@ def three_body_mc_en_force_sephyps(env1, r1, r2, r12, c2, etypes2,
 #                         r21 = ri2 - rj1
 #                     if (ei1 == ej1):
 #                         r22 = ri2 - rj2
-#                     if (ei1 == c2):
+#                     if (ei1 == ctype_2):
 #                         r23 = ri2 - rj3
 #                     cj2 = bond_array_1[ind1, d1]
 #                     fj2, _ = cutoff_func(r_cut, rj2, 0)
 #                     # del ri2
 #
 #                     rj3 = cross_bond_dists_1[m, m + n + 1]
-#                     if (c1 == ej2):
+#                     if (ctype_1 == ej2):
 #                         r31 = ri3 - rj1
-#                     if (c1 == ej1):
+#                     if (ctype_1 == ej1):
 #                         r32 = ri3 - rj2
-#                     if (c1 == c2):
+#                     if (ctype_1 == ctype_2):
 #                         r33 = ri3 - rj3
 #                     fj3, _ = cutoff_func(r_cut, rj3, 0)
 #                     # del ri3
@@ -324,7 +324,7 @@ def three_body_mc_en_force_sephyps(env1, r1, r2, r12, c2, etypes2,
 #                     # del fj2
 #                     # del fj3
 #
-#                     if (c1 == c2):
+#                     if (ctype_1 == ctype_2):
 #                         if (ei1 == ej1) and (ei2 == ej2):
 #                             kern += three_body_en_helper(ci1, ci2, r11, r22,
 #                                                          r33, fi, fj, fdi, ls1,
@@ -333,31 +333,31 @@ def three_body_mc_en_force_sephyps(env1, r1, r2, r12, c2, etypes2,
 #                             kern += three_body_en_helper(ci1, ci2, r12, r21,
 #                                                          r33, fi, fj, fdi, ls1,
 #                                                          ls2, sig2)
-#                     if (c1 == ej1):
-#                         if (ei1 == ej2) and (ei2 == c2):
+#                     if (ctype_1 == ej1):
+#                         if (ei1 == ej2) and (ei2 == ctype_2):
 #                             kern += three_body_en_helper(ci1, ci2, r13, r21,
 #                                                          r32, fi, fj, fdi, ls1,
 #                                                          ls2, sig2)
-#                         if (ei1 == c2) and (ei2 == ej2):
+#                         if (ei1 == ctype_2) and (ei2 == ej2):
 #                             kern += three_body_en_helper(ci1, ci2, r11, r23,
 #                                                          r32, fi, fj, fdi, ls1,
 #                                                          ls2, sig2)
-#                     if (c1 == ej2):
-#                         if (ei1 == ej1) and (ei2 == c2):
+#                     if (ctype_1 == ej2):
+#                         if (ei1 == ej1) and (ei2 == ctype_2):
 #                             kern += three_body_en_helper(ci1, ci2, r13, r22,
 #                                                          r31, fi, fj, fdi, ls1,
 #                                                          ls2, sig2)
-#                         if (ei1 == c2) and (ei2 == ej1):
+#                         if (ei1 == ctype_2) and (ei2 == ej1):
 #                             kern += three_body_en_helper(ci1, ci2, r12, r23,
 #                                                          r31, fi, fj, fdi, ls1,
 #                                                          ls2, sig2)
 #     return kern
 
 @njit
-def three_body_mc_en_force_jit(bond_array_1, c1, etypes1,
+def three_body_mc_en_force_jit(bond_array_1, ctype_1, etypes_1,
                                cross_bond_inds_1, cross_bond_dists_1,
                                triplets_1,
-                               c2, etypes2,
+                               ctype_2, etypes_2,
                                rj1, rj2, rj3,
                                d1, sig, ls, r_cut, cutoff_func):
     """3-body multi-element kernel between a force component and many local
@@ -366,8 +366,8 @@ def three_body_mc_en_force_jit(bond_array_1, c1, etypes1,
     Args:
         bond_array_1 (np.ndarray): 3-body bond array of the first local
             environment.
-        c1 (int): Species of the central atom of the first local environment.
-        etypes1 (np.ndarray): Species of atoms in the first local
+        ctype_1 (int): Species of the central atom of the first local environment.
+        etypes_1 (np.ndarray): Species of atoms in the first local
             environment.
         cross_bond_inds_1 (np.ndarray): Two dimensional array whose row m
             contains the indices of atoms n > m in the first local
@@ -380,8 +380,8 @@ def three_body_mc_en_force_jit(bond_array_1, c1, etypes1,
         triplets_1 (np.ndarray): One dimensional array of integers whose entry
             m is the number of atoms in the first local environment that are
             within a distance r_cut of atom m.
-        c2 (int): Species of the central atom of the second local environment.
-        etypes2 (np.ndarray): Species of atoms in the second local
+        ctype_2 (int): Species of the central atom of the second local environment.
+        etypes_2 (np.ndarray): Species of atoms in the second local
             environment.
         rj1 (np.ndarray): matrix of the first edge length
         rj2 (np.ndarray): matrix of the second edge length
@@ -399,13 +399,13 @@ def three_body_mc_en_force_jit(bond_array_1, c1, etypes1,
 
     kern = np.zeros_like(rj1, dtype=np.float64)
 
-    ej1 = etypes2[0]
-    ej2 = etypes2[1]
+    ej1 = etypes_2[0]
+    ej2 = etypes_2[1]
 
-    all_spec = [c2, ej1, ej2]
-    if (c1 not in all_spec):
+    all_spec = [ctype_2, ej1, ej2]
+    if (ctype_1 not in all_spec):
         return kern
-    all_spec.remove(c1)
+    all_spec.remove(ctype_1)
 
     # pre-compute constants that appear in the inner loop
     sig2 = sig * sig
@@ -421,7 +421,7 @@ def three_body_mc_en_force_jit(bond_array_1, c1, etypes1,
     # del f3
 
     for m in prange(bond_array_1.shape[0]):
-        ei1 = etypes1[m]
+        ei1 = etypes_1[m]
 
         two_spec = [all_spec[0], all_spec[1]]
         if (ei1 in two_spec):
@@ -435,7 +435,7 @@ def three_body_mc_en_force_jit(bond_array_1, c1, etypes1,
             for n in prange(triplets_1[m]):
 
                 ind1 = cross_bond_inds_1[m, m + n + 1]
-                ei2 = etypes1[ind1]
+                ei2 = etypes_1[ind1]
 
                 if (ei2 == one_spec):
 
@@ -443,7 +443,7 @@ def three_body_mc_en_force_jit(bond_array_1, c1, etypes1,
                         r11 = ri1 - rj1
                     if (ei2 == ej1):
                         r12 = ri1 - rj2
-                    if (ei2 == c2):
+                    if (ei2 == ctype_2):
                         r13 = ri1 - rj3
 
                     ri2 = bond_array_1[ind1, 0]
@@ -451,18 +451,18 @@ def three_body_mc_en_force_jit(bond_array_1, c1, etypes1,
                         r21 = ri2 - rj1
                     if (ei1 == ej1):
                         r22 = ri2 - rj2
-                    if (ei1 == c2):
+                    if (ei1 == ctype_2):
                         r23 = ri2 - rj3
                     ci2 = bond_array_1[ind1, d1]
                     fi2, fdi2 = cutoff_func(r_cut, ri2, ci2)
                     # del ri2
 
                     ri3 = cross_bond_dists_1[m, m + n + 1]
-                    if (c1 == ej2):
+                    if (ctype_1 == ej2):
                         r31 = ri3 - rj1
-                    if (c1 == ej1):
+                    if (ctype_1 == ej1):
                         r32 = ri3 - rj2
-                    if (c1 == c2):
+                    if (ctype_1 == ctype_2):
                         r33 = ri3 - rj3
                     fi3, _ = cutoff_func(r_cut, ri3, 0)
                     # del ri3
@@ -475,7 +475,7 @@ def three_body_mc_en_force_jit(bond_array_1, c1, etypes1,
                     # del fdi1
                     # del fdi2
 
-                    if (c1 == c2):
+                    if (ctype_1 == ctype_2):
                         if (ei1 == ej1) and (ei2 == ej2):
                             kern += three_body_en_helper(ci1, ci2, r11, r22,
                                                          r33, fi, fj, fdi, ls1,
@@ -484,32 +484,32 @@ def three_body_mc_en_force_jit(bond_array_1, c1, etypes1,
                             kern += three_body_en_helper(ci1, ci2, r12, r21,
                                                          r33, fi, fj, fdi, ls1,
                                                          ls2, sig2)
-                    if (c1 == ej1):
-                        if (ei1 == ej2) and (ei2 == c2):
+                    if (ctype_1 == ej1):
+                        if (ei1 == ej2) and (ei2 == ctype_2):
                             kern += three_body_en_helper(ci1, ci2, r13, r21,
                                                          r32, fi, fj, fdi, ls1,
                                                          ls2, sig2)
-                        if (ei1 == c2) and (ei2 == ej2):
+                        if (ei1 == ctype_2) and (ei2 == ej2):
                             kern += three_body_en_helper(ci1, ci2, r11, r23,
                                                          r32, fi, fj, fdi, ls1,
                                                          ls2, sig2)
-                    if (c1 == ej2):
-                        if (ei1 == ej1) and (ei2 == c2):
+                    if (ctype_1 == ej2):
+                        if (ei1 == ej1) and (ei2 == ctype_2):
                             kern += three_body_en_helper(ci1, ci2, r13, r22,
                                                          r31, fi, fj, fdi, ls1,
                                                          ls2, sig2)
-                        if (ei1 == c2) and (ei2 == ej1):
+                        if (ei1 == ctype_2) and (ei2 == ej1):
                             kern += three_body_en_helper(ci1, ci2, r12, r23,
                                                          r31, fi, fj, fdi, ls1,
                                                          ls2, sig2)
     return kern
 
 @njit
-def three_body_mc_en_jit(bond_array_1, c1, etypes1,
+def three_body_mc_en_jit(bond_array_1, ctype_1, etypes_1,
                          cross_bond_inds_1,
                          cross_bond_dists_1,
                          triplets_1,
-                         c2, etypes2,
+                         ctype_2, etypes_2,
                          rj1, rj2, rj3,
                          sig, ls, r_cut, cutoff_func):
     """3-body multi-element kernel between two local energies accelerated
@@ -518,13 +518,13 @@ def three_body_mc_en_jit(bond_array_1, c1, etypes1,
     Args:
         bond_array_1 (np.ndarray): 3-body bond array of the first local
             environment.
-        c1 (int): Species of the central atom of the first local environment.
-        etypes1 (np.ndarray): Species of atoms in the first local
+        ctype_1 (int): Species of the central atom of the first local environment.
+        etypes_1 (np.ndarray): Species of atoms in the first local
             environment.
         bond_array_2 (np.ndarray): 3-body bond array of the second local
             environment.
-        c2 (int): Species of the central atom of the second local environment.
-        etypes2 (np.ndarray): Species of atoms in the second local
+        ctype_2 (int): Species of the central atom of the second local environment.
+        etypes_2 (np.ndarray): Species of atoms in the second local
             environment.
         cross_bond_inds_1 (np.ndarray): Two dimensional array whose row m
             contains the indices of atoms n > m in the first local
@@ -560,13 +560,13 @@ def three_body_mc_en_jit(bond_array_1, c1, etypes1,
 
     kern = np.zeros_like(rj1, dtype=np.float64)
 
-    ej1 = etypes2[0]
-    ej2 = etypes2[1]
+    ej1 = etypes_2[0]
+    ej2 = etypes_2[1]
 
-    all_spec = [c2, ej1, ej2]
-    if (c1 not in all_spec):
+    all_spec = [ctype_2, ej1, ej2]
+    if (ctype_1 not in all_spec):
         return kern
-    all_spec.remove(c1)
+    all_spec.remove(ctype_1)
 
     # pre-compute constants that appear in the inner loop
     sig2 = sig * sig
@@ -581,7 +581,7 @@ def three_body_mc_en_jit(bond_array_1, c1, etypes1,
     for m in prange(bond_array_1.shape[0]):
         ri1 = bond_array_1[m, 0]
         fi1, _ = cutoff_func(r_cut, ri1, 0)
-        ei1 = etypes1[m]
+        ei1 = etypes_1[m]
 
         two_spec = [all_spec[0], all_spec[1]]
         if (ei1 in two_spec):
@@ -589,14 +589,14 @@ def three_body_mc_en_jit(bond_array_1, c1, etypes1,
             one_spec = two_spec[0]
 
             for n in prange(triplets_1[m]):
-                ei2 = etypes1[ind1]
+                ei2 = etypes_1[ind1]
                 if (ei2 == one_spec):
 
                     if (ei2 == ej2):
                         r11 = ri1 - rj1
                     if (ei2 == ej1):
                         r12 = ri1 - rj2
-                    if (ei2 == c2):
+                    if (ei2 == ctype_2):
                         r13 = ri1 - rj3
 
                     ri2 = bond_array_1[ind1, 0]
@@ -604,42 +604,42 @@ def three_body_mc_en_jit(bond_array_1, c1, etypes1,
                         r21 = ri2 - rj1
                     if (ei1 == ej1):
                         r22 = ri2 - rj2
-                    if (ei1 == c2):
+                    if (ei1 == ctype_2):
                         r23 = ri2 - rj3
                     ci2 = bond_array_1[ind1, d1]
                     fi2, _ = cutoff_func(r_cut, ri2, ci2)
                     # del ri2
 
                     ri3 = cross_bond_dists_1[m, m + n + 1]
-                    if (c1 == ej2):
+                    if (ctype_1 == ej2):
                         r31 = ri3 - rj1
-                    if (c1 == ej1):
+                    if (ctype_1 == ej1):
                         r32 = ri3 - rj2
-                    if (c1 == c2):
+                    if (ctype_1 == ctype_2):
                         r33 = ri3 - rj3
                     fi3, _ = cutoff_func(r_cut, ri3, 0)
 
                     fi = fi1 * fi2 * fi3
 
-                    if (c1 == c2):
+                    if (ctype_1 == ctype_2):
                         if (ei1 == ej1) and (ei2 == ej2):
                             C1 = r11 * r11 + r22 * r22 + r33 * r33
                             kern += sig2 * np.exp(-C1 * ls2) * fi * fj
                         if (ei1 == ej2) and (ei2 == ej1):
                             C3 = r12 * r12 + r21 * r21 + r33 * r33
                             kern += sig2 * np.exp(-C3 * ls2) * fi * fj
-                    if (c1 == ej1):
-                        if (ei1 == ej2) and (ei2 == c2):
+                    if (ctype_1 == ej1):
+                        if (ei1 == ej2) and (ei2 == ctype_2):
                             C5 = r13 * r13 + r21 * r21 + r32 * r32
                             kern += sig2 * np.exp(-C5 * ls2) * fi * fj
-                        if (ei1 == c2) and (ei2 == ej2):
+                        if (ei1 == ctype_2) and (ei2 == ej2):
                             C2 = r11 * r11 + r23 * r23 + r32 * r32
                             kern += sig2 * np.exp(-C2 * ls2) * fi * fj
-                    if (c1 == ej2):
-                        if (ei1 == ej1) and (ei2 == c2):
+                    if (ctype_1 == ej2):
+                        if (ei1 == ej1) and (ei2 == ctype_2):
                             C6 = r13 * r13 + r22 * r22 + r31 * r31
                             kern += sig2 * np.exp(-C6 * ls2) * fi * fj
-                        if (ei1 == c2) and (ei2 == ej1):
+                        if (ei1 == ctype_2) and (ei2 == ej1):
                             C4 = r12 * r12 + r23 * r23 + r31 * r31
                             kern += sig2 * np.exp(-C4 * ls2) * fi * fj
 

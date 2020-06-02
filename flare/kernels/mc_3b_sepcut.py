@@ -13,8 +13,8 @@ from flare.kernels.kernels import force_helper, grad_constants, grad_helper, \
     three_body_helper_2, three_body_grad_helper_1, three_body_grad_helper_2
 
 @njit
-def three_body_mc_sepcut_jit(bond_array_1, c1, etypes1,
-                             bond_array_2, c2, etypes2,
+def three_body_mc_sepcut_jit(bond_array_1, ctype_1, etypes_1,
+                             bond_array_2, ctype_2, etypes_2,
                              cross_bond_inds_1, cross_bond_inds_2,
                              cross_bond_dists_1, cross_bond_dists_2,
                              triplets_1, triplets_2,
@@ -29,15 +29,15 @@ def three_body_mc_sepcut_jit(bond_array_1, c1, etypes1,
     ls2 = 1 / (ls * ls)
     ls3 = ls2 * ls2
 
-    bci = spec_mask[c1]
+    bci = spec_mask[ctype_1]
     bcin = bci * nspec
-    bcj = spec_mask[c2]
+    bcj = spec_mask[ctype_2]
     bcjn = bcj * nspec
 
     for m in range(bond_array_1.shape[0]):
         ri1 = bond_array_1[m, 0]
         ci1 = bond_array_1[m, d1]
-        ei1 = etypes1[m]
+        ei1 = etypes_1[m]
 
         # determine cutoff1 based on the end points
         bei1 = spec_mask[ei1]
@@ -51,13 +51,13 @@ def three_body_mc_sepcut_jit(bond_array_1, c1, etypes1,
             ind1 = cross_bond_inds_1[m, m + n + 1]
             ri2 = bond_array_1[ind1, 0]
             ci2 = bond_array_1[ind1, d1]
-            ei2 = etypes1[ind1]
+            ei2 = etypes_1[ind1]
 
             # skip if species does not match
-            tr_spec = [c1, ei1, ei2]
+            tr_spec = [ctype_1, ei1, ei2]
             c2_ind = tr_spec
-            if c2 in tr_spec:
-                tr_spec.remove(c2)
+            if ctype_2 in tr_spec:
+                tr_spec.remove(ctype_2)
 
                 bei2 = spec_mask[ei2]
                 btype_ei2 = cut3b_mask[bei2 + bcin]
@@ -79,7 +79,7 @@ def three_body_mc_sepcut_jit(bond_array_1, c1, etypes1,
                 fdi = fdi1 * fi2 * fi3 + fi1 * fdi2 * fi3
 
                 for p in range(bond_array_2.shape[0]):
-                    ej1 = etypes2[p]
+                    ej1 = etypes_2[p]
 
                     tr_spec1 = [tr_spec[0], tr_spec[1]]
                     if ej1 in tr_spec1:
@@ -96,7 +96,7 @@ def three_body_mc_sepcut_jit(bond_array_1, c1, etypes1,
 
                         for q in range(triplets_2[p]):
                             ind2 = cross_bond_inds_2[p, p + 1 + q]
-                            ej2 = etypes2[ind2]
+                            ej2 = etypes_2[ind2]
                             if ej2 == tr_spec1[0]:
                                 rj2 = bond_array_2[ind2, 0]
                                 cj2 = bond_array_2[ind2, d2]
@@ -125,7 +125,7 @@ def three_body_mc_sepcut_jit(bond_array_1, c1, etypes1,
                                 r32 = ri3 - rj2
                                 r33 = ri3 - rj3
 
-                                if (c1 == c2):
+                                if (ctype_1 == ctype_2):
                                     if (ei1 == ej1) and (ei2 == ej2):
                                         kern += \
                                             three_body_helper_1(ci1, ci2, cj1, cj2, r11,
@@ -138,30 +138,30 @@ def three_body_mc_sepcut_jit(bond_array_1, c1, etypes1,
                                                                 r21, r33, fi, fj, fdi, fdj,
                                                                 tls1, tls2, tls3,
                                                                 tsig2)
-                                if (c1 == ej1):
-                                    if (ei1 == ej2) and (ei2 == c2):
+                                if (ctype_1 == ej1):
+                                    if (ei1 == ej2) and (ei2 == ctype_2):
                                         kern += \
                                             three_body_helper_2(ci2, ci1, cj2, cj1, r21,
                                                                 r13, r32, fi, fj, fdi,
                                                                 fdj,
                                                                 tls1, tls2, tls3,
                                                                 tsig2)
-                                    if (ei1 == c2) and (ei2 == ej2):
+                                    if (ei1 == ctype_2) and (ei2 == ej2):
                                         kern += \
                                             three_body_helper_2(ci1, ci2, cj2, cj1, r11,
                                                                 r23, r32, fi, fj, fdi,
                                                                 fdj,
                                                                 tls1, tls2, tls3,
                                                                 tsig2)
-                                if (c1 == ej2):
-                                    if (ei1 == ej1) and (ei2 == c2):
+                                if (ctype_1 == ej2):
+                                    if (ei1 == ej1) and (ei2 == ctype_2):
                                         kern += \
                                             three_body_helper_2(ci2, ci1, cj1, cj2, r22,
                                                                 r13, r31, fi, fj, fdi,
                                                                 fdj,
                                                                 tls1, tls2, tls3,
                                                                 tsig2)
-                                    if (ei1 == c2) and (ei2 == ej1):
+                                    if (ei1 == ctype_2) and (ei2 == ej1):
                                         kern += \
                                             three_body_helper_2(ci1, ci2, cj1, cj2, r12,
                                                                 r23, r31, fi, fj, fdi,
@@ -173,8 +173,8 @@ def three_body_mc_sepcut_jit(bond_array_1, c1, etypes1,
 
 
 @njit
-def three_body_mc_grad_sepcut_jit(bond_array_1, c1, etypes1,
-                                  bond_array_2, c2, etypes2,
+def three_body_mc_grad_sepcut_jit(bond_array_1, c1, etypes_1,
+                                  bond_array_2, c2, etypes_2,
                                   cross_bond_inds_1, cross_bond_inds_2,
                                   cross_bond_dists_1, cross_bond_dists_2,
                                   triplets_1, triplets_2,
@@ -196,7 +196,7 @@ def three_body_mc_grad_sepcut_jit(bond_array_1, c1, etypes1,
     for m in range(bond_array_1.shape[0]):
         ri1 = bond_array_1[m, 0]
         ci1 = bond_array_1[m, d1]
-        ei1 = etypes1[m]
+        ei1 = etypes_1[m]
 
         bei1 = spec_mask[ei1]
         bei1n = bei1 * nspec
@@ -208,7 +208,7 @@ def three_body_mc_grad_sepcut_jit(bond_array_1, c1, etypes1,
             ri3 = cross_bond_dists_1[m, m + n + 1]
             ri2 = bond_array_1[ind1, 0]
             ci2 = bond_array_1[ind1, d1]
-            ei2 = etypes1[ind1]
+            ei2 = etypes_1[ind1]
 
             # skip if species does not match
             tr_spec = [c1, ei1, ei2]
@@ -239,7 +239,7 @@ def three_body_mc_grad_sepcut_jit(bond_array_1, c1, etypes1,
                 fdi = fdi1 * fi2 * fi3 + fi1 * fdi2 * fi3
 
                 for p in range(bond_array_2.shape[0]):
-                    ej1 = etypes2[p]
+                    ej1 = etypes_2[p]
 
                     tr_spec1 = [tr_spec[0], tr_spec[1]]
                     if ej1 in tr_spec1:
@@ -256,7 +256,7 @@ def three_body_mc_grad_sepcut_jit(bond_array_1, c1, etypes1,
 
                         for q in range(triplets_2[p]):
                             ind2 = cross_bond_inds_2[p, p + q + 1]
-                            ej2 = etypes2[ind2]
+                            ej2 = etypes_2[ind2]
                             if ej2 == tr_spec1[0]:
                                 rj3 = cross_bond_dists_2[p, p + q + 1]
                                 rj2 = bond_array_2[ind2, 0]
@@ -367,8 +367,8 @@ def three_body_mc_grad_sepcut_jit(bond_array_1, c1, etypes1,
 
 
 @njit
-def three_body_mc_force_en_sepcut_jit(bond_array_1, c1, etypes1,
-                                      bond_array_2, c2, etypes2,
+def three_body_mc_force_en_sepcut_jit(bond_array_1, c1, etypes_1,
+                                      bond_array_2, c2, etypes_2,
                                       cross_bond_inds_1, cross_bond_inds_2,
                                       cross_bond_dists_1, cross_bond_dists_2,
                                       triplets_1, triplets_2,
@@ -390,7 +390,7 @@ def three_body_mc_force_en_sepcut_jit(bond_array_1, c1, etypes1,
     for m in range(bond_array_1.shape[0]):
         ri1 = bond_array_1[m, 0]
         ci1 = bond_array_1[m, d1]
-        ei1 = etypes1[m]
+        ei1 = etypes_1[m]
 
         bei1 = spec_mask[ei1]
         bei1n = nspec * bei1
@@ -401,7 +401,7 @@ def three_body_mc_force_en_sepcut_jit(bond_array_1, c1, etypes1,
 
         for n in range(triplets_1[m]):
             ind1 = cross_bond_inds_1[m, m + n + 1]
-            ei2 = etypes1[ind1]
+            ei2 = etypes_1[ind1]
 
             # skip if species does not match
             tr_spec = [c1, ei1, ei2]
@@ -431,7 +431,7 @@ def three_body_mc_force_en_sepcut_jit(bond_array_1, c1, etypes1,
 
                 for p in range(bond_array_2.shape[0]):
 
-                    ej1 = etypes2[p]
+                    ej1 = etypes_2[p]
                     tr_spec1 = [tr_spec[0], tr_spec[1]]
                     if ej1 in tr_spec1:
                         tr_spec1.remove(ej1)
@@ -450,7 +450,7 @@ def three_body_mc_force_en_sepcut_jit(bond_array_1, c1, etypes1,
 
                             for q in range(triplets_2[p]):
                                 ind2 = cross_bond_inds_2[p, p + q + 1]
-                                ej2 = etypes2[ind2]
+                                ej2 = etypes_2[ind2]
                                 if ej2 == tr_spec1[0]:
                                     rj2 = bond_array_2[ind2, 0]
                                     rj3 = cross_bond_dists_2[p, p + q + 1]
@@ -512,8 +512,8 @@ def three_body_mc_force_en_sepcut_jit(bond_array_1, c1, etypes1,
 
 
 @njit
-def three_body_mc_en_sepcut_jit(bond_array_1, c1, etypes1,
-                                bond_array_2, c2, etypes2,
+def three_body_mc_en_sepcut_jit(bond_array_1, c1, etypes_1,
+                                bond_array_2, c2, etypes_2,
                                 cross_bond_inds_1, cross_bond_inds_2,
                                 cross_bond_dists_1, cross_bond_dists_2,
                                 triplets_1, triplets_2,
@@ -530,7 +530,7 @@ def three_body_mc_en_sepcut_jit(bond_array_1, c1, etypes1,
 
     for m in range(bond_array_1.shape[0]):
         ri1 = bond_array_1[m, 0]
-        ei1 = etypes1[m]
+        ei1 = etypes_1[m]
 
         bei1 = spec_mask[ei1]
         bei1n = nspec * bei1
@@ -542,7 +542,7 @@ def three_body_mc_en_sepcut_jit(bond_array_1, c1, etypes1,
         for n in range(triplets_1[m]):
             ind1 = cross_bond_inds_1[m, m + n + 1]
             ri2 = bond_array_1[ind1, 0]
-            ei2 = etypes1[ind1]
+            ei2 = etypes_1[ind1]
 
             # skip if species does not match
             tr_spec = [c1, ei1, ei2]
@@ -569,7 +569,7 @@ def three_body_mc_en_sepcut_jit(bond_array_1, c1, etypes1,
 
                 for p in range(bond_array_2.shape[0]):
 
-                    ej1 = etypes2[p]
+                    ej1 = etypes_2[p]
                     tr_spec1 = [tr_spec[0], tr_spec[1]]
                     if ej1 in tr_spec1:
                         tr_spec1.remove(ej1)
@@ -581,7 +581,7 @@ def three_body_mc_en_sepcut_jit(bond_array_1, c1, etypes1,
 
                         for q in range(triplets_2[p]):
                             ind2 = cross_bond_inds_2[p, p + q + 1]
-                            ej2 = etypes2[ind2]
+                            ej2 = etypes_2[ind2]
                             if ej2 == tr_spec1[0]:
                                 rj2 = bond_array_2[ind2, 0]
 
