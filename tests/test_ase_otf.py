@@ -8,7 +8,7 @@ from flare.gp import GaussianProcess
 from flare.mgp.mgp import MappedGaussianProcess
 from flare.ase.calculator import FLARE_Calculator
 from flare.ase.otf_md import otf_md
-# from flare.ase.logger import OTFLogger
+from flare.ase.logger import OTFLogger
 
 from ase import units
 from ase.md.velocitydistribution import (MaxwellBoltzmannDistribution,
