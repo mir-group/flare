@@ -212,6 +212,7 @@ def test_force_force(struc_envs, force_envs, kernel):
             < threshold).all(), \
         'Your force/force kernel is wrong.'
 
+
 @pytest.mark.parametrize('kernel', kernel_list)
 def test_stress_force(struc_envs, stress_envs, force_envs, kernel):
     """Check that the stress/force kernel is implemented correctly."""
