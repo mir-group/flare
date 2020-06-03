@@ -270,43 +270,50 @@ def test_stress_stress(struc_envs, stress_envs, force_envs, kernel):
                     stress_stress_finite[p, q] += \
                         (kern1 - kern2 - kern3 + kern4) / (4 * delta * delta)
 
-    print(stress_stress_exact)
-    print(stress_stress_finite)
-
     assert (np.abs(stress_stress_exact - stress_stress_finite)
             < threshold).all(), \
         'Your stress/stress kernel is wrong.'
 
-    # # Check force/force gradient.
-    # print(force_force_gradient[1])
-    # kernel.signal_variance = signal_variance + delta
-    # force_sig_up = kernel.force_force(test_env_1, test_env_2)
 
-    # kernel.signal_variance = signal_variance - delta
-    # force_sig_down = kernel.force_force(test_env_1, test_env_2)
+@pytest.mark.parametrize('kernel', kernel_list)
+def test_force_grad(struc_envs, stress_envs, force_envs, kernel):
 
-    # kernel.signal_variance = signal_variance
-    # kernel.length_scale = length_scale + delta
-    # force_ls_up = kernel.force_force(test_env_1, test_env_2)
+    test_env_1 = struc_envs[0][0]
+    test_env_2 = struc_envs[1][0]
 
-    # kernel.length_scale = length_scale - delta
-    # force_ls_down = kernel.force_force(test_env_1, test_env_2)
+    # Check force/force gradient.
+    force_force_gradient = \
+        kernel.force_force_gradient(test_env_1, test_env_2)
+    # print(force_force_gradient)
 
-    # for m in range(3):
-    #     for n in range(3):
-    #         sig_val = \
-    #             (force_sig_up[m, n] - force_sig_down[m, n]) / (2 * delta)
+    # Perturb signal variance.
+    kernel.signal_variance = signal_variance + delta
+    force_sig_up = kernel.force_force(test_env_1, test_env_2)
 
-    #         ls_val = \
-    #             (force_ls_up[m, n] - force_ls_down[m, n]) / (2 * delta)
+    kernel.signal_variance = signal_variance - delta
+    force_sig_down = kernel.force_force(test_env_1, test_env_2)
 
-    #         assert np.abs(sig_val -
-    #                       force_force_gradient[1][0, m, n]) < \
-    #             threshold, 'The force/force gradient is wrong.'
+    # Perturb length scale.
+    kernel.signal_variance = signal_variance
+    kernel.length_scale = length_scale + delta
+    force_ls_up = kernel.force_force(test_env_1, test_env_2)
 
-    #         assert np.abs(ls_val -
-    #                       force_force_gradient[1][1, m, n]) < \
-    #             threshold, 'The force/force gradient is wrong.'
+    kernel.length_scale = length_scale - delta
+    force_ls_down = kernel.force_force(test_env_1, test_env_2)
+
+    for m in range(3):
+        for n in range(3):
+            sig_val = \
+                (force_sig_up[m, n] - force_sig_down[m, n]) / (2 * delta)
+
+            ls_val = \
+                (force_ls_up[m, n] - force_ls_down[m, n]) / (2 * delta)
+
+            assert np.abs(sig_val - force_force_gradient[1][0, m, n]) < \
+                threshold, 'The force/force gradient is wrong.'
+
+            assert np.abs(ls_val - force_force_gradient[1][1, m, n]) < \
+                threshold, 'The force/force gradient is wrong.'
 
 
 # def test_stress_energy(perturbed_envs):
