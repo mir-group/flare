@@ -14,7 +14,6 @@ before_install:
     - pwd
     - wget http://folk.uio.no/anjohan/lmp
     - chmod u+x lmp
-    - chmod u+x cp2k-6.1-Linux-x86_64.sopt
     - pip install -r requirements.txt
 
 script:
