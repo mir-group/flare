@@ -2,7 +2,7 @@ import numpy as np
 from numba import njit
 from flare.env import AtomicEnvironment
 from typing import Callable
-import flare.cutoffs as cf
+import flare.kernels.cutoffs as cf
 from math import exp
 
 
