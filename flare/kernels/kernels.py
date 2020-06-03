@@ -1,8 +1,7 @@
 import numpy as np
 from math import exp
-from flare.env import AtomicEnvironment
 from numba import njit
-import flare.cutoffs as cf
+import flare.kernels.cutoffs as cf
 
 # -----------------------------------------------------------------------------
 #                            general helper functions
@@ -648,8 +647,33 @@ def q_value(distances, r_cut, cutoff_func, q_func=coordination_number):
     return q
 
 @njit
+def q_value_mc(distances, r_cut, ref_species, species, cutoff_func, q_func=coordination_number):
+    """Compute value of many-body many components descriptor based
+    on distances of atoms in the local many-body environment.
+
+    Args:
+        distances (np.ndarray): distances between atoms i and j
+        r_cut (float): cutoff hyperparameter
+        ref_species (int): species to consider to compute the contribution
+        species (np.ndarray): atomic species of neighbours
+        cutoff_func (callable): cutoff function
+        q_func (callable): many-body pairwise descrptor function
+
+    Return:
+        float: the value of the many-body descriptor
+    """
+
+    q = 0.0
+
+    for i in range(len(distances)):
+        if species[i] == ref_species:
+            q_, _ = q_func(distances[i], 0, r_cut, cutoff_func)
+            q += q_
+
+    return q
 
 
+@njit
 def q_value_mc(distances, r_cut, ref_species, species, cutoff_func, q_func=coordination_number):
     """Compute value of many-body many components descriptor based
     on distances of atoms in the local many-body environment.
@@ -691,8 +715,6 @@ def mb_grad_helper_ls_(qdiffsq, sig, ls):
     return ret
 
 @njit
-
-
 def mb_grad_helper_ls(q1, q2, qi, qj, sig, ls):
     """
     Helper function for many body gradient collecting all the derivatives

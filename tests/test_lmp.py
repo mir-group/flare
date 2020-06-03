@@ -5,7 +5,7 @@ import os, pickle, re, shutil
 
 from flare import struc, env, gp
 from flare import otf_parser
-from flare.mgp.mgp_en import MappedGaussianProcess
+from flare.mgp.mgp import MappedGaussianProcess
 from flare.lammps import lammps_calculator
 from flare.ase.calculator import FLARE_Calculator
 from ase.calculators.lammpsrun import LAMMPS
@@ -93,11 +93,11 @@ def test_init(bodies, multihyps, all_mgp, all_gp):
 
     gp_model = all_gp[f'{bodies}{multihyps}']
 
-    grid_num_2 = 64
+    grid_num_2 = [64]
     grid_num_3 = 16
     lower_cut = 0.01
-    two_cut = gp_model.cutoffs[0]
-    three_cut = gp_model.cutoffs[1]
+    two_cut = gp_model.cutoffs.get('twobody', 0)
+    three_cut = gp_model.cutoffs.get('threebody', 0)
     lammps_location = f'{bodies}{multihyps}.mgp'
 
     # set struc params. cell and masses arbitrary?
@@ -174,7 +174,7 @@ def test_lmp_calc(bodies, multihyps, all_lmp_calc):
 
 
     # create ASE calc
-    lmp_calc = LAMMPS(label=f'tmp{label}', keep_tmp_files=True, tmp_dir='./tmp/', 
+    lmp_calc = LAMMPS(label=f'tmp{label}', keep_tmp_files=True, tmp_dir='./tmp/',
             parameters=parameters, files=files)
 
     all_lmp_calc[label] = lmp_calc
