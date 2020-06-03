@@ -5,7 +5,7 @@ import os
 from tests.test_gp import get_random_structure
 from flare.struc import Structure
 from json import loads, dumps
-from flare.utils.element_coder import Z_to_element, NumpyEncoder
+from flare.util import Z_to_element, NumpyEncoder
 try:
     import pymatgen.core.structure as pmgstruc
     _test_pmg = True
@@ -147,7 +147,7 @@ def test_struc_to_ase():
     assert np.all(uc.positions == new_atoms.get_positions())
     assert np.all(uc.cell == new_atoms.get_cell())
 
-
+   
 @pytest.mark.skipif(not _test_pmg,reason='Pymatgen not present in available '
                                         'packages.')
 def test_from_pmg_structure():

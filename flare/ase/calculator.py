@@ -1,11 +1,4 @@
-''':class:`FLARE_Calculator` is a calculator compatible with `ASE`. 
-You can build up `ASE Atoms` for your atomic structure, and use `get_forces`, 
-`get_potential_energy` as general `ASE Calculators`, and use it in 
-`ASE Molecular Dynamics` and our `ASE OTF` training module. For the usage 
-users can refer to `ASE Calculator module <https://wiki.fysik.dtu.dk/ase/ase/calculators/calculators.html>`_ 
-and `ASE Calculator tutorial <https://wiki.fysik.dtu.dk/ase/ase/atoms.html#adding-a-calculator>`_.'''
-
-import warnings
+""":class:`FLARE_Calculator` is a calculator compatible with `ASE`. You can build up `ASE Atoms` for your atomic structure, and use `get_forces`, `get_potential_energy` as general `ASE Calculators`, and use it in `ASE Molecular Dynamics` and our `ASE OTF` training module."""
 import numpy as np
 import multiprocessing as mp
 from flare.env import AtomicEnvironment
@@ -15,15 +8,16 @@ from flare.predict import predict_on_structure_par_en, predict_on_structure_en
 from ase.calculators.calculator import Calculator
 
 class FLARE_Calculator(Calculator):
-    """
-    Build FLARE as an ASE Calculator, which is compatible with ASE Atoms and
-    Molecular Dynamics. 
-    Args:
-        gp_model (GaussianProcess): FLARE's Gaussian process object
-        mgp_model (MappedGaussianProcess): FLARE's Mapped Gaussian Process object. 
-            `None` by default. MGP will only be used if `use_mapping` is set to True
-        par (Bool): set to `True` if parallelize the prediction. `False` by default.
-        use_mapping (Bool): set to `True` if use MGP for prediction. `False` by default.
+    """Build FLARE as an ASE Calculator, which is compatible with ASE Atoms and Molecular Dynamics.
+
+    :param gp_model: FLARE's Gaussian process object
+    :type gp_model: GaussianProcess
+    :param mgp_model: FLARE's Mapped Gaussian Process object. `None` by default. MGP will only be used if `use_mapping` is set to True
+    :type mgp_model: MappedGaussianProcess
+    :param par: set to `True` if parallelize the prediction. `False` by default. 
+    :type par: Bool
+    :param use_mapping: set to `True` if use MGP for prediction. `False` by default.
+    :type use_mapping: Bool
     """
 
     def __init__(self, gp_model, mgp_model=None, par=False, use_mapping=False):
@@ -44,15 +38,15 @@ class FLARE_Calculator(Calculator):
 
     def get_potential_energy(self, atoms=None, force_consistent=False):
         return self.get_property('energy', atoms)
-
-
-    def get_forces(self, atoms):
+                                                 
+                                                 
+    def get_forces(self, atoms):                 
         return self.get_property('forces', atoms)
 
 
     def get_stress(self, atoms):
         if not self.use_mapping:
-            warnings.warn('Stress is only implemented in MGP, not in GP. Will return zeros.')
+            raise NotImplementedError("Stress is only supported in MGP")
         return self.get_property('stress', atoms)
 
 
@@ -78,7 +72,7 @@ class FLARE_Calculator(Calculator):
 
     def calculate_gp(self, atoms):
         nat = len(atoms)
-        struc_curr = Structure(np.array(atoms.cell),
+        struc_curr = Structure(np.array(atoms.cell), 
                                atoms.get_atomic_numbers(),
                                atoms.positions)
 
@@ -94,18 +88,12 @@ class FLARE_Calculator(Calculator):
         self.results['local_energies'] = local_energies
         self.results['energy'] = np.sum(local_energies)
         atoms.get_uncertainties = self.get_uncertainties
-
-        # GP stress not implemented yet
-        self.results['stresses'] = np.zeros((nat, 6))
-        volume = atoms.get_volume()
-        total_stress = np.sum(self.results['stresses'], axis=0)
-        self.results['stress'] = total_stress / volume
-
+        return forces
 
 
     def calculate_mgp_serial(self, atoms):
         nat = len(atoms)
-        struc_curr = Structure(np.array(atoms.cell),
+        struc_curr = Structure(np.array(atoms.cell), 
                                atoms.get_atomic_numbers(),
                                atoms.positions)
 
@@ -113,11 +101,9 @@ class FLARE_Calculator(Calculator):
         self.results['stresses'] = np.zeros((nat, 6))
         self.results['stds'] = np.zeros((nat, 3))
         self.results['local_energies'] = np.zeros(nat)
-
         for n in range(nat):
             chemenv = AtomicEnvironment(struc_curr, n,
-                                        self.gp_model.cutoffs,
-                                        cutoffs_mask = self.mgp_model.hyps_mask)
+                                        self.mgp_model.cutoffs)
             f, v, vir, e = self.mgp_model.predict(chemenv, mean_only=False)
             self.results['forces'][n] = f
             self.results['stresses'][n] = vir
@@ -125,7 +111,7 @@ class FLARE_Calculator(Calculator):
             self.results['local_energies'][n] = e
 
         volume = atoms.get_volume()
-        total_stress = np.sum(self.results['stresses'], axis=0)
+        total_stress = np.sum(self.results['stresses'], axis=0) 
         self.results['stress'] = total_stress / volume
         self.results['energy'] = np.sum(self.results['local_energies'])
 
@@ -139,4 +125,42 @@ class FLARE_Calculator(Calculator):
 
     def calculation_required(self, atoms, quantities):
         return True
+
+
+    def train_gp(self, **kwargs):
+        """
+        The same function of training GP hyperparameters as `train()` in :class:`GaussianProcess`
+        """
+        self.gp_model.train(**kwargs)
+
+
+    def build_mgp(self, skip=True):
+        """
+        Construct :class:`MappedGaussianProcess` based on the current GP
+        :param skip: if `True`, then it will not construct MGP
+        :type skip: Bool
+        """
+        # l_bound not implemented
+
+        if skip:
+            return 1
+
+        # set svd rank based on the training set, grid number and threshold 1000
+        grid_params = self.mgp_model.grid_params
+        struc_params = self.mgp_model.struc_params
+        lmp_file_name = self.mgp_model.lmp_file_name
+        mean_only = self.mgp_model.mean_only
+        container_only = False
+
+        train_size = len(self.gp_model.training_data)
+        rank_2 = np.min([1000, grid_params['grid_num_2'], train_size*3])
+        rank_3 = np.min([1000, grid_params['grid_num_3'][0]**3, train_size*3])
+        grid_params['svd_rank_2'] = rank_2
+        grid_params['svd_rank_3'] = rank_3
+       
+        hyps = self.gp_model.hyps
+        cutoffs = self.gp_model.cutoffs
+        self.mgp_model = MappedGaussianProcess(hyps, cutoffs,
+                        grid_params, struc_params, mean_only,
+                        container_only, self.gp_model, lmp_file_name)
 

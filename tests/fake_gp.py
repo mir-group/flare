@@ -3,10 +3,11 @@ import pytest
 import numpy as np
 from numpy.random import random, randint, permutation
 
+from flare import env, struc, gp
 from flare.gp import GaussianProcess
 from flare.env import AtomicEnvironment
 from flare.struc import Structure
-from flare.utils.parameter_helper import ParameterHelper
+from flare.otf_parser import OtfAnalysis
 
 
 def get_random_structure(cell, unique_species, noa):
@@ -28,134 +29,200 @@ def get_random_structure(cell, unique_species, noa):
     return test_structure, forces
 
 
-def generate_hm(ntwobody, nthreebody, nmanybody=1, constraint=False, multihyps=True):
+def generate_hm(nbond, ntriplet, cutoffs=[1, 1], constraint=False, multihyps=True):
 
-    cutoff = 0.8
     if (multihyps is False):
         hyps_label = []
-        kernels = []
-        parameters = {}
-        if (ntwobody > 0):
-            kernels += ['twobody']
-            parameters['cutoff_twobody'] = cutoff
-        if (nthreebody > 0):
-            kernels += ['threebody']
-            parameters['cutoff_threebody'] = cutoff
-        if (nmanybody > 0):
-            kernels += ['manybody']
-            parameters['cutoff_manybody'] = cutoff
-        pm = ParameterHelper(kernels=kernels, random=True,
-                parameters=parameters)
-        hm = pm.as_dict()
-        hyps = hm['hyps']
-        cut = hm['cutoffs']
-        return hyps, hm, cut
+        if (nbond > 0):
+            nbond = 1
+            hyps_label += ['Length', 'Signal Var.']
+        if (ntriplet > 0):
+            ntriplet = 1
+            hyps_label += ['Length', 'Signal Var.']
+        hyps_label += ['Noise Var.']
+        return random((nbond+ntriplet)*2+1), {'hyps_label': hyps_label}, deepcopy(cutoffs)
 
-    pm = ParameterHelper(species=['H', 'He'], parameters={'noise':0.05})
-    if (ntwobody > 0):
-        pm.define_group('twobody', 'b1', ['*', '*'], parameters=random(2))
-        pm.set_parameters('cutoff_twobody', cutoff)
-    if (nthreebody > 0):
-        pm.define_group('threebody', 't1', ['*', '*', '*'], parameters=random(2))
-        pm.set_parameters('cutoff_threebody', cutoff)
-    if (nmanybody > 0):
-        pm.define_group('manybody', 'manybody1', ['*', '*'], parameters=random(2))
-        pm.set_parameters('cutoff_manybody', cutoff)
-    if (ntwobody > 1):
-        pm.define_group('twobody', 'b2', ['H', 'H'], parameters=random(2))
-    if (nthreebody > 1):
-        pm.define_group('threebody', 't2', ['H', 'H', 'H'], parameters=random(2))
+    specs_mask = np.zeros(118, dtype=int)
+    specs_mask[1] = 0
+    specs_mask[2] = 1
+    nspecs = 2
 
+    specs_mask = np.zeros(118, dtype=int)
+    specs_mask[1] = 0
+    specs_mask[2] = 1
+    nspecs = 2
+
+    cut = []
+    cut += [cutoffs[0]]
+    cut += [cutoffs[1]]
+
+    if (nbond > 1):
+        sig1 = random(nbond)
+        ls1 = random(nbond)
+        bond_mask = np.ones(nspecs**2, dtype=int)
+        bond_mask[0] = 0
+        bond_name = ["sig2"]*nbond+["ls2"]*nbond
+    else:
+        sig1 = [random()]
+        ls1 = [random()]
+        bond_mask = np.zeros(nspecs**2, dtype=int)
+        bond_name = ["sig2"]+["ls2"]
+
+    if (ntriplet > 1):
+        sig2 = random(ntriplet)
+        ls2 = random(ntriplet)
+        triplet_mask = np.ones(nspecs**3, dtype=int)
+        triplet_mask[0] = 0
+        triplet_name = ["sig3"]*ntriplet+["ls3"]*ntriplet
+    else:
+        sig2 = [random()]
+        ls2 = [random()]
+        triplet_mask = np.zeros(nspecs**3, dtype=int)
+        triplet_name = ["sig3"]+["ls3"]
+
+    sigman = [0.05]
+
+    if (nbond > 0 and ntriplet > 0):
+        hyps = np.hstack([sig1, ls1, sig2, ls2, sigman])
+        hyps_label = np.hstack([bond_name, triplet_name, ['noise']])
+    elif (nbond > 0):
+        hyps = np.hstack([sig1, ls1, sigman])
+        hyps_label = np.hstack([bond_name, ['noise']])
+    else:
+        hyps = np.hstack([sig2, ls2, sigman])
+        hyps_label = np.hstack([triplet_name, ['noise']])
+
+    hyps_mask = {'nspec': nspecs,
+                 'spec_mask': specs_mask,
+                 'nbond': nbond,
+                 'bond_mask': bond_mask,
+                 'ntriplet': ntriplet,
+                 'triplet_mask': triplet_mask,
+                 'hyps_label': hyps_label,
+                 'train_noise': True}
     if (constraint is False):
-        hm = pm.as_dict()
-        hyps = hm['hyps']
-        cut = hm['cutoffs']
-        return hyps, hm, cut
+        return hyps, hyps_mask, cut
 
-    pm.set_constraints('b1', opt=[True, False])
-    pm.set_constraints('t1', opt=[False, True])
-    hm = pm.as_dict()
-    hyps = hm['hyps']
-    cut = hm['cutoffs']
-    return hyps, hm, cut
+    hyps_mask['map'] = []
+    hyps_mask['original'] = hyps
+    hm = hyps_mask['map']
+    count = 0
+    newhyps = []
+    newlabel = []
+    if (nbond > 1):
+        # fix type 0, and only compute type 1 of bonds
+        hm += [1]
+        newhyps += [hyps[1]]
+        newlabel += [hyps_label[1]]
+        hm += [3]
+        newhyps += [hyps[3]]
+        newlabel += [hyps_label[3]]
+        count += 4
+    elif (nbond > 0):
+        # fix sigma, and only vary ls
+        hm += [1]
+        newhyps += [hyps[1]]
+        newlabel += [hyps_label[1]]
+        count += 2
+    if (ntriplet > 1):
+        # fix type 0, and only compute type 1 of triplets
+        hm += [1+count]
+        newhyps += [hyps[1+count]]
+        newlabel += [hyps_label[1+count]]
+        hm += [3+count]
+        newhyps += [hyps[3+count]]
+        newlabel += [hyps_label[3+count]]
+    elif (ntriplet > 0):
+        # fix sigma, and only vary ls
+        hm += [1+count]
+        newhyps += [hyps[1+count]]
+        newlabel += [hyps_label[1+count]]
+    hm += [len(hyps)-1]
+    newhyps += [hyps[-1]]
+    newlabel += ['noise']
+    hyps = np.hstack(newhyps)
+    hyps_mask['hyps_label'] = np.hstack(hyps_label)
+
+    return hyps, hyps_mask, cut
 
 
-def get_gp(bodies, kernel_type='mc', multihyps=True, cellabc=[1, 1, 1.5]) -> GaussianProcess:
+def get_gp(bodies, kernel_type='mc', multihyps=True) -> GaussianProcess:
     """Returns a GP instance with a two-body numba-based kernel"""
     print("\nSetting up...\n")
 
     # params
-    cell = np.diag(cellabc)
+    cell = np.diag(np.array([1, 1, 1.5]))
     unique_species = [2, 1]
+    cutoffs = np.array([0.8, 0.8])
     noa = 5
 
-    ntwobody = 0
-    nthreebody = 0
+    nbond = 0
+    ntriplet = 0
     prefix = bodies
     if ('2' in bodies or 'two' in bodies):
-        ntwobody = 1
+        nbond = 1
     if ('3' in bodies or 'three' in bodies):
-        nthreebody = 1
+        ntriplet = 1
 
-    hyps, hm, _ = generate_hm(ntwobody, nthreebody, nmanybody=0, multihyps=multihyps)
-    cutoffs = hm['cutoffs']
-    kernels = hm['kernels']
-    hl = hm['hyp_labels']
+    hyps, hm, _ = generate_hm(nbond, ntriplet, multihyps=multihyps)
 
     # create test structure
     test_structure, forces = get_random_structure(cell, unique_species,
                                                   noa)
     energy = 3.14
 
-    # test update_db
-    gaussian = \
-        GaussianProcess(kernels=kernels,
-                        component=kernel_type,
-                        hyps=hyps,
-                        hyp_labels=hl,
-                        cutoffs=cutoffs, hyps_mask=hm,
-                        parallel=False, n_cpus=1)
-    gaussian.update_db(test_structure, forces, energy=energy)
-    gaussian.check_L_alpha()
-
-    print(gaussian.alpha)
-
-    return gaussian
-
-
-def get_force_gp(bodies, kernel_type='mc', multihyps=True, cellabc=[1,1,1.5]) -> GaussianProcess:
-    """Returns a GP instance with a two-body numba-based kernel"""
-    print("\nSetting up...\n")
-
-    # params
-    cell = np.diag(cellabc)
-    unique_species = [2, 1]
-    noa = 5
-
-    ntwobody = 0
-    nthreebody = 0
-    prefix = bodies
-    if ('2' in bodies or 'two' in bodies):
-        ntwobody = 1
-    if ('3' in bodies or 'three' in bodies):
-        nthreebody = 1
-
-    hyps, hm, _ = generate_hm(ntwobody, nthreebody, 0, multihyps=multihyps)
-    cutoffs = hm['cutoffs']
-
-    # create test structure
-    test_structure, forces = get_random_structure(cell, unique_species,
-                                                  noa)
-    energy = 3.14
-
-    hl = hm['hyp_labels']
+    hl = hm['hyps_label']
     if (multihyps is False):
         hm = None
 
     # test update_db
     gaussian = \
-        GaussianProcess(kernels=hm['kernels'],
-                        component=kernel_type,
+        GaussianProcess(kernel_name=f'{prefix}{kernel_type}',
+                        hyps=hyps,
+                        hyp_labels=hl,
+                        cutoffs=cutoffs, multihyps=multihyps, hyps_mask=hm,
+                        parallel=False, n_cpus=1)
+    gaussian.update_db(test_structure, forces, energy=energy)
+    gaussian.check_L_alpha()
+
+    print('alpha:')
+    print(gaussian.alpha)
+
+    return gaussian
+
+
+def get_force_gp(bodies, kernel_type='mc', multihyps=True) -> GaussianProcess:
+    """Returns a GP instance with a two-body numba-based kernel"""
+    print("\nSetting up...\n")
+
+    # params
+    cell = np.diag(np.array([1, 1, 1.5]))
+    unique_species = [2, 1]
+    cutoffs = np.array([0.8, 0.8])
+    noa = 5
+
+    nbond = 0
+    ntriplet = 0
+    prefix = bodies
+    if ('2' in bodies or 'two' in bodies):
+        nbond = 1
+    if ('3' in bodies or 'three' in bodies):
+        ntriplet = 1
+
+    hyps, hm, _ = generate_hm(nbond, ntriplet, multihyps=multihyps)
+
+    # create test structure
+    test_structure, forces = get_random_structure(cell, unique_species,
+                                                  noa)
+    energy = 3.14
+
+    hl = hm['hyps_label']
+    if (multihyps is False):
+        hm = None
+
+    # test update_db
+    gaussian = \
+        GaussianProcess(kernel_name=f'{prefix}{kernel_type}',
                         hyps=hyps,
                         hyp_labels=hl,
                         cutoffs=cutoffs, multihyps=multihyps, hyps_mask=hm,
@@ -171,41 +238,38 @@ def get_force_gp(bodies, kernel_type='mc', multihyps=True, cellabc=[1,1,1.5]) ->
 
 def get_params():
     parameters = {'unique_species': [2, 1],
-                  'cutoffs': {'twobody': 0.8},
+                  'cutoff': 0.8,
                   'noa': 5,
                   'cell': np.eye(3),
                   'db_pts': 30}
     return parameters
 
 
-def get_tstp(hm=None) -> AtomicEnvironment:
+def get_tstp() -> AtomicEnvironment:
     """Create test point for kernel to compare against"""
     # params
     cell = np.eye(3)
     unique_species = [2, 1]
-    cutoffs = {'twobody':0.8, 'threebody': 0.8, 'manybody': 0.8}
+    cutoffs = np.ones(3)*0.8
     noa = 10
 
     test_structure_2, _ = get_random_structure(cell, unique_species,
                                                noa)
 
-    test_pt = AtomicEnvironment(test_structure_2, 0,
-                                cutoffs, cutoffs_mask=hm)
+    test_pt = AtomicEnvironment(test_structure_2, 0, cutoffs)
     return test_pt
 
 
-def generate_mb_envs(cutoffs, cell, delt, d1, mask=None, kern_type='mc'):
+def generate_mb_envs(cutoffs, cell, delt, d1, mask=None):
     positions0 = np.array([[0., 0., 0.],
                            [0., 0.3, 0.],
                            [0.3, 0., 0.],
                            [0.0, 0., 0.3],
                            [1., 1., 0.]])
     positions0[1:] += 0.1*np.random.random([4, 3])
-    threebody = [1, 1, 2, 1]
-    np.random.shuffle(threebody)
-    species_1 = np.hstack([threebody, randint(1, 2)])
-    if kern_type == 'sc':
-        species_1 = np.ones(species_1.shape)
+    triplet = [1, 1, 2, 1]
+    np.random.shuffle(triplet)
+    species_1 = np.hstack([triplet, randint(1, 2)])
     return generate_mb_envs_pos(positions0, species_1, cutoffs, cell, delt, d1, mask)
 
 
@@ -246,17 +310,17 @@ def generate_mb_envs_pos(positions0, species_1, cutoffs, cell, delt, d1, mask=No
 
     test_struc = []
     for i in range(3):
-        test_struc += [Structure(cell, species_1, positions[i])]
+        test_struc += [struc.Structure(cell, species_1, positions[i])]
 
     env_0 = []
     env_p = []
     env_m = []
     for i in range(noa):
-        env_0 += [AtomicEnvironment(test_struc[0], i, cutoffs, cutoffs_mask=mask)]
-        env_p += [AtomicEnvironment(test_struc[1], i, cutoffs, cutoffs_mask=mask)]
-        env_m += [AtomicEnvironment(test_struc[2], i, cutoffs, cutoffs_mask=mask)]
-    return [env_0, env_p, env_m]
+        env_0 += [env.AtomicEnvironment(test_struc[0], i, cutoffs)]
+        env_p += [env.AtomicEnvironment(test_struc[1], i, cutoffs)]
+        env_m += [env.AtomicEnvironment(test_struc[2], i, cutoffs)]
 
+    return [env_0, env_p, env_m]
 def generate_envs(cutoffs, delta):
     """
     create environment with perturbation on
@@ -264,7 +328,7 @@ def generate_envs(cutoffs, delta):
     """
     # create env 1
     # perturb the x direction of atom 0 for +- delta
-    cell = np.eye(3)*(np.max(list(cutoffs.values()))+0.1)
+    cell = np.eye(3)*np.max(cutoffs+0.1)
     atom_1 = 0
     pos_1 = np.vstack([[0, 0, 0], random([3, 3])])
     pos_2 = deepcopy(pos_1)
@@ -273,13 +337,13 @@ def generate_envs(cutoffs, delta):
     pos_3[0][0] = -delta
 
     species_1 = [1, 2, 1, 1] # , 1, 1, 2, 1, 2]
-    test_structure_1 = Structure(cell, species_1, pos_1)
-    test_structure_2 = Structure(cell, species_1, pos_2)
-    test_structure_3 = Structure(cell, species_1, pos_3)
+    test_structure_1 = struc.Structure(cell, species_1, pos_1)
+    test_structure_2 = struc.Structure(cell, species_1, pos_2)
+    test_structure_3 = struc.Structure(cell, species_1, pos_3)
 
-    env1_1 = AtomicEnvironment(test_structure_1, atom_1, cutoffs)
-    env1_2 = AtomicEnvironment(test_structure_2, atom_1, cutoffs)
-    env1_3 = AtomicEnvironment(test_structure_3, atom_1, cutoffs)
+    env1_1 = env.AtomicEnvironment(test_structure_1, atom_1, cutoffs)
+    env1_2 = env.AtomicEnvironment(test_structure_2, atom_1, cutoffs)
+    env1_3 = env.AtomicEnvironment(test_structure_3, atom_1, cutoffs)
 
 
     # create env 2
@@ -293,13 +357,13 @@ def generate_envs(cutoffs, delta):
     atom_2 = 0
     species_2 = [1, 1, 2, 1] #, 2, 1, 2, 2, 2]
 
-    test_structure_1 = Structure(cell, species_2, pos_1)
-    test_structure_2 = Structure(cell, species_2, pos_2)
-    test_structure_3 = Structure(cell, species_2, pos_3)
+    test_structure_1 = struc.Structure(cell, species_2, pos_1)
+    test_structure_2 = struc.Structure(cell, species_2, pos_2)
+    test_structure_3 = struc.Structure(cell, species_2, pos_3)
 
-    env2_1 = AtomicEnvironment(test_structure_1, atom_2, cutoffs)
-    env2_2 = AtomicEnvironment(test_structure_2, atom_2, cutoffs)
-    env2_3 = AtomicEnvironment(test_structure_3, atom_2, cutoffs)
+    env2_1 = env.AtomicEnvironment(test_structure_1, atom_2, cutoffs)
+    env2_2 = env.AtomicEnvironment(test_structure_2, atom_2, cutoffs)
+    env2_3 = env.AtomicEnvironment(test_structure_3, atom_2, cutoffs)
 
     return env1_1, env1_2, env1_3, env2_1, env2_2, env2_3
 
@@ -320,25 +384,25 @@ def another_env(cutoffs, delt):
 
     species_1 = [1, 1, 1, 1]
 
-    test_structure_1 = Structure(cell, species_1, pos_1)
-    test_structure_2 = Structure(cell, species_1, pos_2)
-    test_structure_3 = Structure(cell, species_1, pos_3)
+    test_structure_1 = struc.Structure(cell, species_1, pos_1)
+    test_structure_2 = struc.Structure(cell, species_1, pos_2)
+    test_structure_3 = struc.Structure(cell, species_1, pos_3)
 
     # atom 0, original position
-    env1_1_0 = AtomicEnvironment(test_structure_1, 0, cutoffs)
+    env1_1_0 = env.AtomicEnvironment(test_structure_1, 0, cutoffs)
     # atom 0, 0 perturbe along x
-    env1_2_0 = AtomicEnvironment(test_structure_2, 0, cutoffs)
+    env1_2_0 = env.AtomicEnvironment(test_structure_2, 0, cutoffs)
     # atom 1, 0 perturbe along x
-    env1_2_1 = AtomicEnvironment(test_structure_2, 1, cutoffs)
+    env1_2_1 = env.AtomicEnvironment(test_structure_2, 1, cutoffs)
     # atom 2, 0 perturbe along x
-    env1_2_2 = AtomicEnvironment(test_structure_2, 2, cutoffs)
+    env1_2_2 = env.AtomicEnvironment(test_structure_2, 2, cutoffs)
 
     # atom 0, 0 perturbe along -x
-    env1_3_0 = AtomicEnvironment(test_structure_3, 0, cutoffs)
+    env1_3_0 = env.AtomicEnvironment(test_structure_3, 0, cutoffs)
     # atom 1, 0 perturbe along -x
-    env1_3_1 = AtomicEnvironment(test_structure_3, 1, cutoffs)
+    env1_3_1 = env.AtomicEnvironment(test_structure_3, 1, cutoffs)
     # atom 2, 0 perturbe along -x
-    env1_3_2 = AtomicEnvironment(test_structure_3, 2, cutoffs)
+    env1_3_2 = env.AtomicEnvironment(test_structure_3, 2, cutoffs)
 
     # create env 2
     pos_1 = np.vstack([[0, 0, 0], 0.1*random([3, 3])])
@@ -352,9 +416,9 @@ def another_env(cutoffs, delt):
 
     species_2 = [1, 2, 2, 1]
 
-    test_structure_1 = Structure(cell, species_2, pos_1)
+    test_structure_1 = struc.Structure(cell, species_2, pos_1)
 
-    env2_1_0 = AtomicEnvironment(test_structure_1, 0, cutoffs)
+    env2_1_0 = env.AtomicEnvironment(test_structure_1, 0, cutoffs)
 
     return env1_1_0, env1_2_0, env1_3_0, \
            env1_2_1, env1_3_1, env1_2_2, env1_3_2, env2_1_0

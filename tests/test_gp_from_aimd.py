@@ -1,20 +1,19 @@
+import pytest
 import numpy as np
 import pickle
-import pytest
-
-from copy import deepcopy
-from json import loads
 from glob import glob
 from os import remove
+from copy import deepcopy
 
 from flare.env import AtomicEnvironment
 from flare.struc import Structure
 from flare.gp import GaussianProcess
-from flare.mgp.mgp import MappedGaussianProcess
+from flare.mgp.mgp_en import MappedGaussianProcess
 from flare.gp_from_aimd import TrajectoryTrainer,\
                                     parse_trajectory_trainer_output
-from flare.utils.learner import subset_of_frame_by_element
-
+from flare.util import subset_of_frame_by_element
+from json import loads
+from flare.env import AtomicEnvironment
 from .test_mgp_unit import all_mgp, all_gp, get_random_structure
 from .fake_gp import get_gp
 
@@ -44,7 +43,7 @@ def methanol_gp():
 @pytest.fixture
 def fake_gp():
     return GaussianProcess(kernel_name="2+3",
-                           hyps=np.array([1, 1, 1, 1, 1]),
+                           hyps=np.array([1]),
                            cutoffs=np.array([4, 3]))
 
 
@@ -140,7 +139,7 @@ def test_seed_and_run():
 
     test_env = envs[0]
 
-    for d in [1, 2, 3]:
+    for d in [0, 1, 2]:
         assert np.all(the_gp.predict(x_t=test_env, d=d) ==
                       new_gp.predict(x_t=test_env, d=d))
 
@@ -216,8 +215,8 @@ def test_mgp_gpfa(all_mgp, all_gp):
     grid_num_2 = 5
     grid_num_3 = 3
     lower_cut = 0.01
-    two_cut = gp_model.cutoffs.get('twobody', 0)
-    three_cut = gp_model.cutoffs.get('threebody', 0)
+    two_cut = gp_model.cutoffs[0]
+    three_cut = gp_model.cutoffs[1]
     # set struc params. cell and masses arbitrary?
     mapped_cell = np.eye(3) * 2
     struc_params = {'species': [1, 2],
@@ -226,12 +225,12 @@ def test_mgp_gpfa(all_mgp, all_gp):
 
     # grid parameters
     train_size = len(gp_model.training_data)
-    grid_params = {'bodies': [2, 3],
+    grid_params = {'bodies': [2],
                    'cutoffs': gp_model.cutoffs,
                    'bounds_2': [[lower_cut], [two_cut]],
                    'bounds_3': [[lower_cut, lower_cut, lower_cut],
                                 [three_cut, three_cut, three_cut]],
-                   'grid_num_2': [grid_num_2],
+                   'grid_num_2': grid_num_2,
                    'grid_num_3': [grid_num_3, grid_num_3, grid_num_3],
                    'svd_rank_2': np.min((grid_num_2, 3 * train_size)),
                    'svd_rank_3': np.min((grid_num_3 ** 3, 3 * train_size)),

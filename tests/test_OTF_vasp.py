@@ -22,7 +22,7 @@ def test_otf_h2():
     vasp_input = './POSCAR'
     dt = 0.0001
     number_of_steps = 5
-    cutoffs = {'twobody':5}
+    cutoffs = np.array([5])
     dft_loc = 'cp ./test_files/test_vasprun_h2.xml vasprun.xml'
     std_tolerance_factor = -0.1
 

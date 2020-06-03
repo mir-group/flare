@@ -5,7 +5,6 @@
 __pycache__/
 build/
 dist/
-test_outputs_qe
 flare.egg-info/
 mir_flare.egg-info/
 tags
@@ -30,7 +29,7 @@ test_files/qe_output_*.out
 /tests/h2_otf.out-f.xyz-bak
 /tests/pwscf.wfc*
 /tests/pwscf.in
-/tests/*.xml
+/tests/pwscf.xml
 /tests/*-RESTART.kp*
 /tests/*.wfn*
 /tests/*.pwi*
@@ -47,4 +46,3 @@ test_files/qe_output_*.out
 /tests/*.log
 /tests/POSCAR*
 .idea/
-.coverage
