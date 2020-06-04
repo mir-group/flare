@@ -8,8 +8,16 @@ Molecular  Dynamics (AIMD) trajectory can be used to train a Gaussian Process mo
 We can use a very short trajectory for a very simple molecule which is already 
 included in the test files in order to demonstrate how to set up and run the code.
 The trajectory this tutorial focuses on  involves a few frames of the 
-molecule Methanol vibrating about it's equilibrium configuration ran in VASP. 
+molecule Methanol vibrating about its equilibrium configuration ran in VASP. 
 
+Roadmap Figure
+--------------
+In this tutorial, we will walk through the first two steps contained in the below figure. the GP from AIMD module is designed to give you the tools necessary to extract FLARE structures from a previously existing molecular dynamics run.
+
+
+<p align="center">
+  <img src="https://github.com/mir-group/flare/blob/master/docs/images/GPFA_tutorial.png?raw=true">
+</p>
 
 
 Step 1: Setting up a Gaussian Process Object
@@ -93,7 +101,7 @@ You can open it via the command
 	from json import loads
 	from flare.struc import Structure
 	with open('path-to-methanol-frames','r') as f:
-	loaded_dicts = [loads(line) for line in f.readlines()]
+		loaded_dicts = [loads(line) for line in f.readlines()]
 	trajectory = [Structure.from_dict(d) for d in loaded_dicts]
 
 Our trajectory is a list of FLARE structures, each of which is decorated with 
