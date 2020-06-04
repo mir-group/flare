@@ -66,6 +66,9 @@ class ParameterHelper():
 
     """
 
+    # TO DO, sync it to kernel class
+    #  need to be synced with kernel class
+
     # name of the kernels
     all_kernel_types = ['twobody', 'threebody', 'manybody']
     additional_groups = ['cut3b']
@@ -101,11 +104,8 @@ class ParameterHelper():
 
         """
 
-        self.logger = set_logger("flare.utils.parameter_helper", stream=True,
-                                 fileout=True, verbose="info")
-
-        # TO DO, sync it to kernel class
-        #  need to be synced with kernel class
+        self.logger = set_logger("log.flare.utils.parameter_helper", stream=True,
+                                 fileout=False, verbose="info")
 
         self.all_types = ['specie'] + \
             ParameterHelper.all_kernel_types + ParameterHelper.additional_groups

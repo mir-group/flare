@@ -25,7 +25,7 @@ class Parameters():
     ndim = {'twobody': 2, 'threebody': 3, 'manybody': 2, 'cut3b': 2}
     n_kernel_parameters = {'twobody': 2, 'threebody': 2, 'manybody': 2, 'cut3b': 0}
 
-    logger = set_logger("flare.parameter", stream=True,
+    logger = set_logger("log.flare.parameter", stream=True,
                         fileout=False, verbose="info")
 
     def __init__(self):

@@ -100,8 +100,8 @@ class GaussianProcess:
         if self.output is not None:
             logger = self.output.logger['log']
         else:
-            logger = set_logger("flare.gp", stream=True,
-                                fileout=True, verbose="info")
+            logger = set_logger("log.flare.gp", stream=True,
+                                fileout=False, verbose="info")
         self.logger = logger
 
 
