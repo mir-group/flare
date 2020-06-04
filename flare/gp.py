@@ -22,7 +22,7 @@ from flare.gp_algebra import get_like_from_mats, get_neg_like_grad, \
     _global_training_structures, _global_energy_labels, get_Ky_mat, \
     get_kernel_vector, en_kern_vec
 from flare.kernels.utils import str_to_kernel_set, from_mask_to_args, kernel_str_to_array
-from flare.output import Output
+from flare.output import Output, set_logger
 from flare.parameters import Parameters
 from flare.struc import Structure
 from flare.utils.element_coder import NumpyEncoder, Z_to_element
@@ -100,8 +100,8 @@ class GaussianProcess:
         if self.output is not None:
             logger = self.output.logger['log']
         else:
-            logger = Output.set_logger("gp.py", stream=True,
-                                       fileout=True, verbose="info")
+            logger = set_logger("flare.gp", stream=True,
+                                fileout=True, verbose="info")
         self.logger = logger
 
 
@@ -167,24 +167,24 @@ class GaussianProcess:
             if self.output is not None:
                 logger = self.output.logger['log']
             else:
-                logger = Output.set_logger("gp.py", stream=True,
-                                           fileout=True, verbose="info")
+                logger = set_logger("gp.py", stream=True,
+                                    fileout=True, verbose="info")
             self.logger = logger
 
-        if (self.name in _global_training_labels):
+        if (self.name in _global_training_labels) and (_global_training_labels[self.name] is not self.training_labels_np):
             base = f'{self.name}'
             count = 2
             while (self.name in _global_training_labels and count < 100):
                 time.sleep(random())
                 self.name = f'{base}_{count}'
-                self.logger.info("Specified GP name is present in global memory; "
+                self.logger.debug("Specified GP name is present in global memory; "
                             "Attempting to rename the "
                             f"GP instance to {self.name}")
                 count += 1
             if (self.name in _global_training_labels):
                 milliseconds = int(round(time.time() * 1000) % 10000000)
                 self.name = f"{base}_{milliseconds}"
-                self.logger.info("Specified GP name still present in global memory: "
+                self.logger.debug("Specified GP name still present in global memory: "
                             f"renaming the gp instance to {self.name}")
             self.logger.info(f"Final name of the gp instance is {self.name}")
 
@@ -313,8 +313,8 @@ class GaussianProcess:
         if print_progress:
             verbose = "info"
         if logger is None:
-            logger = Output.set_logger("gp_algebra", stream=True,
-                                       fileout=True, verbose=verbose)
+            logger = set_logger("gp_algebra", stream=True,
+                                fileout=True, verbose=verbose)
 
         disp = print_progress
 

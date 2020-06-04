@@ -357,9 +357,10 @@ def predict_on_structure_par_en(structure: Structure, gp: GaussianProcess,
     return forces, stds, local_energies
 
 
-def predict_on_atom_mgp(atom: int, structure, cutoffs, mgp,
+def predict_on_atom_mgp(atom: int, structure, mgp,
                         write_to_structure=False):
-    chemenv = AtomicEnvironment(structure, atom, cutoffs)
+    chemenv = AtomicEnvironment(structure, atom, mgp.cutoffs,
+                                cutoffs_mask=mgp.hyps_mask)
     # predict force components and standard deviations
     force, var, virial, local_energy = mgp.predict(chemenv)
     comps = force
@@ -398,7 +399,7 @@ def predict_on_structure_mgp(structure, mgp, output=None,
             continue
 
         forces[n, :], stds[n, :], _ = \
-            predict_on_atom_mgp(n, structure, mgp.cutoffs, mgp,
+            predict_on_atom_mgp(n, structure, mgp,
                                 write_to_structure)
 
     return forces, stds
