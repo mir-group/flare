@@ -950,3 +950,6 @@ class GaussianProcess:
 
         dictionary['hyps_mask'] = Parameters.backward(
             dictionary['kernels'], deepcopy(dictionary['hyps_mask']))
+
+        if 'logger' not in dictionary:
+            dictionary['logger'] = None
