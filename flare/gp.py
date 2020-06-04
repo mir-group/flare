@@ -113,7 +113,7 @@ class GaussianProcess:
             self.hyps = np.array(self.hyps, dtype=np.float64)
 
         kernel, grad, ek, efk = str_to_kernel_set(
-            kernels, component, self.hyps_mask)
+            self.kernels, self.component, self.hyps_mask)
         self.kernel = kernel
         self.kernel_grad = grad
         self.energy_force_kernel = efk
@@ -122,7 +122,7 @@ class GaussianProcess:
 
         # parallelization
         if self.parallel:
-            if n_cpus is None:
+            if self.n_cpus is None:
                 self.n_cpus = mp.cpu_count()
             else:
                 self.n_cpus = n_cpus
@@ -896,19 +896,19 @@ class GaussianProcess:
             DeprecationWarning(
                 "kernel_name is being replaced with kernels")
             new_args['kernels'] = kernel_str_to_array(
-                kwargs.get('kernel_name'))
+                kwargs['kernel_name'])
             kwargs.pop('kernel_name')
         if 'nsample' in kwargs:
             DeprecationWarning("nsample is being replaced with n_sample")
-            new_args['n_sample'] = kwargs.get('nsample')
+            new_args['n_sample'] = kwargs['nsample']
             kwargs.pop('nsample')
         if 'par' in kwargs:
             DeprecationWarning("par is being replaced with parallel")
-            new_args['parallel'] = kwargs.get('par')
+            new_args['parallel'] = kwargs['par']
             kwargs.pop('par')
         if 'no_cpus' in kwargs:
             DeprecationWarning("no_cpus is being replaced with n_cpu")
-            new_args['n_cpus'] = kwargs.get('no_cpus')
+            new_args['n_cpus'] = kwargs['no_cpus']
             kwargs.pop('no_cpus')
         if 'multihyps' in kwargs:
             DeprecationWarning("multihyps is removed")

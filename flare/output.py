@@ -128,9 +128,9 @@ class Output:
         else:
             std_string = ''
 
-        headerstring = ''
+        headerstring = '\n'
         headerstring += gp_str
-        headerstring += ''
+        headerstring += '\n'
         headerstring += std_string
         if dt is not None:
             headerstring += f'timestep (ps): {dt}\n'
@@ -465,7 +465,7 @@ def add_stream(logger, verbose: str = "info"):
 
     if not stream_defined:
         ch = StreamHandler()
-        ch.setLevel(getattr(logging, verbose.upper()))
+        ch.setLevel(logging.DEBUG)
         # formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         # ch.setFormatter(formatter)
         logger.addHandler(ch)
@@ -481,7 +481,7 @@ def add_file(logger, filename, verbose: str = "info"):
         fh = FileHandler(filename)
         verbose = getattr(logging, verbose.upper())
         logger.setLevel(verbose)
-        fh.setLevel(verbose)
+        fh.setLevel(logging.DEBUG)
         logger.addHandler(fh)
 
 def set_logger(name, stream, fileout, verbose: str = "info"):

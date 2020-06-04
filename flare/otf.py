@@ -88,14 +88,14 @@ class OTF:
             Defaults to 1.
     """
 
-    def __init__(self, 
+    def __init__(self,
                  # md args
                  dt: float, number_of_steps: int,
                  prev_pos_init: 'ndarray' = None,
                  rescale_steps: List[int] = [], rescale_temps: List[int] = [],
                  # flare args
-                 gp: gp.GaussianProcess=None, 
-                 calculate_energy: bool = False, 
+                 gp: gp.GaussianProcess=None,
+                 calculate_energy: bool = False,
                  write_model: int = 0,
                  # otf args
                  std_tolerance_factor: float = 1,
@@ -105,10 +105,10 @@ class OTF:
                  # dft args
                  force_source: str = "qe",
                  npool: int = None, mpi: str = "srun", dft_loc: str=None,
-                 dft_input: str=None, dft_output='dft.out', dft_kwargs=None, 
+                 dft_input: str=None, dft_output='dft.out', dft_kwargs=None,
                  store_dft_output: Tuple[Union[str, List[str]],str] = None,
                  # par args
-                 n_cpus: int = 1, 
+                 n_cpus: int = 1,
                  ):
 
         self.dft_input = dft_input
@@ -193,7 +193,7 @@ class OTF:
         'Year.Month.Day:Hour:Minute:Second:'.
         """
 
-        self.output.write_header(str(self.gp.cutoffs),
+        self.output.write_header(str(self.gp),
                                  self.dt, self.number_of_steps,
                                  self.structure,
                                  self.std_tolerance)

@@ -21,7 +21,7 @@ before_install:
 script:
     - pwd
     - cd tests
-    - ls tests/test_files
+    - ls test_files
     - PWSCF_COMMAND=pw.x
       lmp=$(pwd)/../lmp
       CP2K_COMMAND=../cp2k-7.1-Linux-x86_64.sopt

@@ -145,7 +145,6 @@ class Parameters():
         # for each kernel, check whether it is defined
         # and the length of corresponding hyper-parameters
         hyps_length = 0
-        kernels = param_dict['kernels']
         used_parameters = np.zeros_like(hyps, dtype=bool)
         for kernel in kernels+['cut3b']:
 
