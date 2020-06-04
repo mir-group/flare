@@ -103,11 +103,12 @@ def run_dft_par(dft_input: str, structure: Structure,
                 dft_out="vasprun.xml",
                 parallel_prefix="mpi",
                 mpi = None, npool = None,
+                screen_out='vasp.out',
                 **dft_kwargs):
     # TODO Incorporate Custodian.
     edit_dft_input_positions(dft_input, structure)
 
-    if dft_command is None and not os.environ.get('VASP_COMMAND'):
+    if dft_command is None or not os.environ.get('VASP_COMMAND'):
         raise FileNotFoundError\
             ("Warning: No VASP Command passed, or stored in "
             "environment as VASP_COMMAND. ")
@@ -123,7 +124,8 @@ def run_dft_par(dft_input: str, structure: Structure,
         serial_prefix = dft_kwargs.get('serial_prefix', '')
         dft_command = f'{serial_prefix} {dft_command}'
 
-    call(dft_command, shell=True)
+    with open(screen_out, "w+") as fout:
+        call(dft_command.split(), stdout=fout)
 
     return parse_dft_forces(dft_out)
 
