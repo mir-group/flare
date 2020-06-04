@@ -11,6 +11,7 @@ import time
 import multiprocessing
 import numpy as np
 
+from logging import FileHandler, StreamHandler
 from typing import Union
 
 from flare.struc import Structure
@@ -455,17 +456,29 @@ class Output:
         # if self.always_flush:
         #     self.logger['log'].flush()
 
-    @staticmethod
-    def add_stream(logger, verbose: str = "info"):
-        ch = logging.StreamHandler()
+def add_stream(logger, verbose: str = "info"):
+
+    stream_defined = False
+    for handler in logger.handlers:
+        if isinstance(handler, StreamHandler):
+            stream_defined = True
+
+    if not stream_defined:
+        ch = StreamHandler()
         ch.setLevel(getattr(logging, verbose.upper()))
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         ch.setFormatter(formatter)
         logger.addHandler(ch)
 
-    @staticmethod
-    def add_file(logger, filename, verbose: str = "info"):
-        fh = logging.FileHandler(filename)
+def add_file(logger, filename, verbose: str = "info"):
+
+    file_defined = False
+    for handler in logger.handlers:
+        if isinstance(handler, FileHandler):
+            file_defined = True
+
+    if not file_defined:
+        fh = FileHandler(filename)
         verbose = getattr(logging, verbose.upper())
         logger.setLevel(verbose)
         fh.setLevel(verbose)
@@ -475,8 +488,8 @@ def set_logger(name, stream, fileout, verbose: str = "info"):
     logger = logging.getLogger(name)
     logger.setLevel(getattr(logging, verbose.upper()))
     if stream:
-        Output.add_stream(logger, verbose)
+        add_stream(logger, verbose)
     if fileout:
-        Output.add_file(logger, name, verbose)
+        add_file(logger, name, verbose)
     return logger
 
