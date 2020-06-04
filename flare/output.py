@@ -13,7 +13,6 @@ import numpy as np
 
 from typing import Union
 
-from flare.parameters import Parameters
 from flare.struc import Structure
 from flare.utils.element_coder import Z_to_element
 
@@ -72,7 +71,7 @@ class Output:
         filename = self.basename + suffix
 
         if filetype not in self.logger:
-            self.logger[filetype] = Output.set_logger(filename, stream=False, fileout=True, verbose=verbose)
+            self.logger[filetype] = set_logger(filename, stream=False, fileout=True, verbose=verbose)
 
     def write_to_log(self, logstring: str, name: str = "log",
                      flush: bool = False):
@@ -326,10 +325,6 @@ class Output:
         f = self.logger[name]
 
         f.info('\nGP hyperparameters: ')
-        if hyps_mask is not None:
-            hyps = Parameters.get_hyps(hyps_mask, hyps)
-            if len(hyp_labels) != len(hyps):
-                hyp_labels = None
 
         if hyp_labels is not None:
             for i, label in enumerate(hyp_labels):
@@ -476,13 +471,12 @@ class Output:
         fh.setLevel(verbose)
         logger.addHandler(fh)
 
-    @staticmethod
-    def set_logger(name, stream, fileout, verbose: str = "info"):
-        logger = logging.getLogger(name)
-        logger.setLevel(getattr(logging, verbose.upper()))
-        if stream:
-            Output.add_stream(logger, verbose)
-        if fileout:
-            Output.add_file(logger, name, verbose)
-        return logger
+def set_logger(name, stream, fileout, verbose: str = "info"):
+    logger = logging.getLogger(name)
+    logger.setLevel(getattr(logging, verbose.upper()))
+    if stream:
+        Output.add_stream(logger, verbose)
+    if fileout:
+        Output.add_file(logger, name, verbose)
+    return logger
 
