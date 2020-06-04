@@ -27,8 +27,6 @@ from flare.parameters import Parameters
 from flare.struc import Structure
 from flare.utils.element_coder import NumpyEncoder, Z_to_element
 
-logger = logging.getLogger("gp.py")
-
 
 class GaussianProcess:
     """Gaussian process force field. Implementation is based on Algorithm 2.1
@@ -99,9 +97,10 @@ class GaussianProcess:
 
         # ------------  "computed" attributes ------------
 
-        if self.output is not None:
-            logger = self.output.logger['log']
-            logger.setLevel(logging.INFO)
+        if self.output is None:
+            self.output = Output(f"{name}", verbose='INFO')
+        self.logger = self.output.logger['log']
+
 
         if self.hyps is None:
             # If no hyperparameters are passed in, assume 2 hyps for each
@@ -167,16 +166,16 @@ class GaussianProcess:
             while (self.name in _global_training_labels and count < 100):
                 time.sleep(random())
                 self.name = f'{base}_{count}'
-                logger.info("Specified GP name is present in global memory; "
+                self.logger.info("Specified GP name is present in global memory; "
                             "Attempting to rename the "
                             f"GP instance to {self.name}")
                 count += 1
             if (self.name in _global_training_labels):
                 milliseconds = int(round(time.time() * 1000) % 10000000)
                 self.name = f"{base}_{milliseconds}"
-                logger.info("Specified GP name still present in global memory: "
+                self.logger.info("Specified GP name still present in global memory: "
                             f"renaming the gp instance to {self.name}")
-            logger.info(f"Final name of the gp instance is {self.name}")
+            self.logger.info(f"Final name of the gp instance is {self.name}")
 
         assert (self.name not in _global_training_labels), \
             f"the gp instance name, {self.name} is used"
@@ -306,12 +305,12 @@ class GaussianProcess:
                 hyperparameter optimization.
         """
 
-        if print_progress and logger is None:
-            logger = logging.getLogger("gp_algebra")
-            logger.setLevel(logging.DEBUG)
-        elif logger is None:
-            logger = logging.getLogger("gp_algebra")
-            logger.setLevel(logging.INFO)
+        verbose = "warning"
+        if print_progress:
+            verbose = "info"
+
+        if logger is None:
+            logger = self.output.logger['hyps']
 
         disp = print_progress
 
@@ -345,7 +344,7 @@ class GaussianProcess:
                                         'maxls': line_steps,
                                         'maxiter': self.maxiter})
             except np.linalg.LinAlgError:
-                logger.warning("Algorithm for L-BFGS-B failed. Changing to "
+                self.logger.warning("Algorithm for L-BFGS-B failed. Changing to "
                                "BFGS for remainder of run.")
                 self.opt_algorithm = 'BFGS'
 
