@@ -370,6 +370,14 @@ class SingleMapXbody:
                                       svd_rank=self.svd_rank)
 
     def build_map(self, GP):
+
+        # check if upper bounds are updated
+        upper_bounds = Parameters.get_cutoff(self.kernel_name,
+                    self.species, GP.hyps_mask)
+        if not np.allclose(upper_bounds, self.bounds[1], atol=1e-6):
+            self.bounds[1] = upper_bounds
+            self.build_map_container()
+
         if not self.load_grid:
             y_mean, y_var = self.GenGrid(GP)
         # If load grid is blank string '' or pre-fix, load in
