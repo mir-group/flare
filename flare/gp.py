@@ -185,10 +185,7 @@ class GaussianProcess:
         assert (self.name not in _global_training_data),  \
             f"the gp instance name, {self.name} is used"
 
-        _global_training_data[self.name] = self.training_data
-        _global_training_structures[self.name] = self.training_structures
-        _global_training_labels[self.name] = self.training_labels_np
-        _global_energy_labels[self.name] = self.energy_labels_np
+        self.sync_data()
 
         self.hyps_mask = Parameters.check_instantiation(self.hyps, self.cutoffs,
                                                         self.kernels, self.hyps_mask)
@@ -239,8 +236,6 @@ class GaussianProcess:
 
             # create numpy array of training labels
             self.training_labels_np = np.hstack(self.training_labels)
-            _global_training_data[self.name] = self.training_data
-            _global_training_labels[self.name] = self.training_labels_np
 
         # If an energy is given, update the structure list.
         if energy is not None:
@@ -254,12 +249,11 @@ class GaussianProcess:
             self.energy_labels.append(energy)
             self.training_structures.append(structure_list)
             self.energy_labels_np = np.array(self.energy_labels)
-            _global_training_structures[self.name] = self.training_structures
-            _global_energy_labels[self.name] = self.energy_labels_np
 
         # update list of all labels
         self.all_labels = np.concatenate((self.training_labels_np,
                                           self.energy_labels_np))
+        self.sync_data()
 
     def add_one_env(self, env: AtomicEnvironment,
                     force, train: bool = False, **kwargs):
@@ -277,8 +271,7 @@ class GaussianProcess:
         self.training_data.append(env)
         self.training_labels.append(force)
         self.training_labels_np = np.hstack(self.training_labels)
-        _global_training_data[self.name] = self.training_data
-        _global_training_labels[self.name] = self.training_labels_np
+        self.sync_data()
 
         # update list of all labels
         self.all_labels = np.concatenate((self.training_labels_np,
@@ -414,8 +407,7 @@ class GaussianProcess:
         else:
             n_cpus = 1
 
-        _global_training_data[self.name] = self.training_data
-        _global_training_labels[self.name] = self.training_labels_np
+        self.sync_data()
 
         k_v = \
             get_kernel_vector(self.name, self.kernel, self.energy_force_kernel,
@@ -453,8 +445,7 @@ class GaussianProcess:
         else:
             n_cpus = 1
 
-        _global_training_data[self.name] = self.training_data
-        _global_training_labels[self.name] = self.training_labels_np
+        self.sync_data()
 
         k_v = en_kern_vec(self.name, self.energy_force_kernel,
                           self.energy_kernel,
@@ -482,8 +473,7 @@ class GaussianProcess:
         else:
             n_cpus = 1
 
-        _global_training_data[self.name] = self.training_data
-        _global_training_labels[self.name] = self.training_labels_np
+        self.sync_data()
 
         # get kernel vector
         k_v = en_kern_vec(self.name, self.energy_force_kernel,
@@ -513,10 +503,7 @@ class GaussianProcess:
         The forces and variances are later obtained using alpha.
         """
 
-        _global_training_data[self.name] = self.training_data
-        _global_training_structures[self.name] = self.training_structures
-        _global_training_labels[self.name] = self.training_labels_np
-        _global_energy_labels[self.name] = self.energy_labels_np
+        self.sync_data()
 
         ky_mat = \
             get_Ky_mat(self.hyps, self.name, self.kernel,
@@ -550,10 +537,7 @@ class GaussianProcess:
             return
 
         # Reset global variables.
-        _global_training_data[self.name] = self.training_data
-        _global_training_structures[self.name] = self.training_structures
-        _global_training_labels[self.name] = self.training_labels_np
-        _global_energy_labels[self.name] = self.energy_labels_np
+        self.sync_data()
 
         ky_mat = get_ky_mat_update(self.ky_mat, self.n_envs_prev, self.hyps,
                                    self.name, self.kernel, self.energy_kernel,
@@ -625,6 +609,12 @@ class GaussianProcess:
 
         return out_dict
 
+    def sync_data(self):
+        _global_training_data[self.name] = self.training_data
+        _global_training_labels[self.name] = self.training_labels_np
+        _global_training_structures[self.name] = self.training_structures
+        _global_energy_labels[self.name] = self.energy_labels_np
+
     @staticmethod
     def from_dict(dictionary):
         """Create GP object from dictionary representation."""
@@ -641,6 +631,7 @@ class GaussianProcess:
             new_gp.training_labels = deepcopy(dictionary['training_labels'])
             new_gp.training_labels_np = deepcopy(
                 dictionary['training_labels_np'])
+            new_gp.sync_data()
 
         # Reconstruct training structures.
         if ('training_structures' in dictionary):
@@ -661,10 +652,6 @@ class GaussianProcess:
             'likelihood_gradient', None)
 
         new_gp.n_envs_prev = len(new_gp.training_data)
-        _global_training_data[new_gp.name] = new_gp.training_data
-        _global_training_structures[new_gp.name] = new_gp.training_structures
-        _global_training_labels[new_gp.name] = new_gp.training_labels_np
-        _global_energy_labels[new_gp.name] = new_gp.energy_labels_np
 
         # Save time by attempting to load in computed attributes
         if len(new_gp.training_data) > 5000:
@@ -736,8 +723,7 @@ class GaussianProcess:
             self.training_data[i].compute_env()
 
         # Ensure that training data and labels are still consistent
-        _global_training_data[self.name] = self.training_data
-        _global_training_labels[self.name] = self.training_labels_np
+        self.sync_data()
 
         self.cutoffs = new_cutoffs
 
