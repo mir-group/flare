@@ -22,7 +22,7 @@ from flare.gp_algebra import get_like_from_mats, get_neg_like_grad, \
     _global_training_structures, _global_energy_labels, get_Ky_mat, \
     get_kernel_vector, en_kern_vec
 from flare.kernels.utils import str_to_kernel_set, from_mask_to_args, kernel_str_to_array
-from flare.output import Output
+from flare.output import Output, set_logger
 from flare.parameters import Parameters
 from flare.struc import Structure
 from flare.utils.element_coder import NumpyEncoder, Z_to_element
@@ -100,8 +100,8 @@ class GaussianProcess:
         if self.output is not None:
             logger = self.output.logger['log']
         else:
-            logger = Output.set_logger("gp.py", stream=True,
-                                       fileout=True, verbose="info")
+            logger = set_logger("log.flare.gp", stream=True,
+                                fileout=False, verbose="info")
         self.logger = logger
 
 
@@ -163,20 +163,28 @@ class GaussianProcess:
         :return:
         """
 
-        if (self.name in _global_training_labels):
+        if self.logger is None:
+            if self.output is not None:
+                logger = self.output.logger['log']
+            else:
+                logger = set_logger("gp.py", stream=True,
+                                    fileout=True, verbose="info")
+            self.logger = logger
+
+        if (self.name in _global_training_labels) and (_global_training_labels[self.name] is not self.training_labels_np):
             base = f'{self.name}'
             count = 2
             while (self.name in _global_training_labels and count < 100):
                 time.sleep(random())
                 self.name = f'{base}_{count}'
-                self.logger.info("Specified GP name is present in global memory; "
+                self.logger.debug("Specified GP name is present in global memory; "
                             "Attempting to rename the "
                             f"GP instance to {self.name}")
                 count += 1
             if (self.name in _global_training_labels):
                 milliseconds = int(round(time.time() * 1000) % 10000000)
                 self.name = f"{base}_{milliseconds}"
-                self.logger.info("Specified GP name still present in global memory: "
+                self.logger.debug("Specified GP name still present in global memory: "
                             f"renaming the gp instance to {self.name}")
             self.logger.info(f"Final name of the gp instance is {self.name}")
 
@@ -185,10 +193,7 @@ class GaussianProcess:
         assert (self.name not in _global_training_data),  \
             f"the gp instance name, {self.name} is used"
 
-        _global_training_data[self.name] = self.training_data
-        _global_training_structures[self.name] = self.training_structures
-        _global_training_labels[self.name] = self.training_labels_np
-        _global_energy_labels[self.name] = self.energy_labels_np
+        self.sync_data()
 
         self.hyps_mask = Parameters.check_instantiation(self.hyps, self.cutoffs,
                                                         self.kernels, self.hyps_mask)
@@ -239,8 +244,6 @@ class GaussianProcess:
 
             # create numpy array of training labels
             self.training_labels_np = np.hstack(self.training_labels)
-            _global_training_data[self.name] = self.training_data
-            _global_training_labels[self.name] = self.training_labels_np
 
         # If an energy is given, update the structure list.
         if energy is not None:
@@ -254,12 +257,11 @@ class GaussianProcess:
             self.energy_labels.append(energy)
             self.training_structures.append(structure_list)
             self.energy_labels_np = np.array(self.energy_labels)
-            _global_training_structures[self.name] = self.training_structures
-            _global_energy_labels[self.name] = self.energy_labels_np
 
         # update list of all labels
         self.all_labels = np.concatenate((self.training_labels_np,
                                           self.energy_labels_np))
+        self.sync_data()
 
     def add_one_env(self, env: AtomicEnvironment,
                     force, train: bool = False, **kwargs):
@@ -277,8 +279,7 @@ class GaussianProcess:
         self.training_data.append(env)
         self.training_labels.append(force)
         self.training_labels_np = np.hstack(self.training_labels)
-        _global_training_data[self.name] = self.training_data
-        _global_training_labels[self.name] = self.training_labels_np
+        self.sync_data()
 
         # update list of all labels
         self.all_labels = np.concatenate((self.training_labels_np,
@@ -312,8 +313,8 @@ class GaussianProcess:
         if print_progress:
             verbose = "info"
         if logger is None:
-            logger = Output.set_logger("gp_algebra", stream=True,
-                                       fileout=True, verbose=verbose)
+            logger = set_logger("gp_algebra", stream=True,
+                                fileout=True, verbose=verbose)
 
         disp = print_progress
 
@@ -414,8 +415,7 @@ class GaussianProcess:
         else:
             n_cpus = 1
 
-        _global_training_data[self.name] = self.training_data
-        _global_training_labels[self.name] = self.training_labels_np
+        self.sync_data()
 
         k_v = \
             get_kernel_vector(self.name, self.kernel, self.energy_force_kernel,
@@ -453,8 +453,7 @@ class GaussianProcess:
         else:
             n_cpus = 1
 
-        _global_training_data[self.name] = self.training_data
-        _global_training_labels[self.name] = self.training_labels_np
+        self.sync_data()
 
         k_v = en_kern_vec(self.name, self.energy_force_kernel,
                           self.energy_kernel,
@@ -482,8 +481,7 @@ class GaussianProcess:
         else:
             n_cpus = 1
 
-        _global_training_data[self.name] = self.training_data
-        _global_training_labels[self.name] = self.training_labels_np
+        self.sync_data()
 
         # get kernel vector
         k_v = en_kern_vec(self.name, self.energy_force_kernel,
@@ -513,10 +511,7 @@ class GaussianProcess:
         The forces and variances are later obtained using alpha.
         """
 
-        _global_training_data[self.name] = self.training_data
-        _global_training_structures[self.name] = self.training_structures
-        _global_training_labels[self.name] = self.training_labels_np
-        _global_energy_labels[self.name] = self.energy_labels_np
+        self.sync_data()
 
         ky_mat = \
             get_Ky_mat(self.hyps, self.name, self.kernel,
@@ -550,10 +545,7 @@ class GaussianProcess:
             return
 
         # Reset global variables.
-        _global_training_data[self.name] = self.training_data
-        _global_training_structures[self.name] = self.training_structures
-        _global_training_labels[self.name] = self.training_labels_np
-        _global_energy_labels[self.name] = self.energy_labels_np
+        self.sync_data()
 
         ky_mat = get_ky_mat_update(self.ky_mat, self.n_envs_prev, self.hyps,
                                    self.name, self.kernel, self.energy_kernel,
@@ -605,7 +597,12 @@ class GaussianProcess:
 
         self.check_L_alpha()
 
+        logger = self.logger
+        self.logger = None
+
         out_dict = deepcopy(dict(vars(self)))
+
+        self.logger = logger
 
         out_dict['training_data'] = [env.as_dict() for env in
                                      self.training_data]
@@ -625,6 +622,12 @@ class GaussianProcess:
 
         return out_dict
 
+    def sync_data(self):
+        _global_training_data[self.name] = self.training_data
+        _global_training_labels[self.name] = self.training_labels_np
+        _global_training_structures[self.name] = self.training_structures
+        _global_energy_labels[self.name] = self.energy_labels_np
+
     @staticmethod
     def from_dict(dictionary):
         """Create GP object from dictionary representation."""
@@ -641,6 +644,7 @@ class GaussianProcess:
             new_gp.training_labels = deepcopy(dictionary['training_labels'])
             new_gp.training_labels_np = deepcopy(
                 dictionary['training_labels_np'])
+            new_gp.sync_data()
 
         # Reconstruct training structures.
         if ('training_structures' in dictionary):
@@ -661,10 +665,6 @@ class GaussianProcess:
             'likelihood_gradient', None)
 
         new_gp.n_envs_prev = len(new_gp.training_data)
-        _global_training_data[new_gp.name] = new_gp.training_data
-        _global_training_structures[new_gp.name] = new_gp.training_structures
-        _global_training_labels[new_gp.name] = new_gp.training_labels_np
-        _global_energy_labels[new_gp.name] = new_gp.energy_labels_np
 
         # Save time by attempting to load in computed attributes
         if len(new_gp.training_data) > 5000:
@@ -736,8 +736,7 @@ class GaussianProcess:
             self.training_data[i].compute_env()
 
         # Ensure that training data and labels are still consistent
-        _global_training_data[self.name] = self.training_data
-        _global_training_labels[self.name] = self.training_labels_np
+        self.sync_data()
 
         self.cutoffs = new_cutoffs
 
@@ -773,6 +772,9 @@ class GaussianProcess:
 
         supported_formats = ['json', 'pickle', 'binary']
 
+        logger = self.logger
+        self.logger = None
+
         if format.lower() == 'json':
             with open(f'{name}.json', 'w') as f:
                 json.dump(self.as_dict(), f, cls=NumpyEncoder)
@@ -790,6 +792,8 @@ class GaussianProcess:
             self.l_mat = temp_l_mat
             self.alpha = temp_alpha
             self.ky_mat_inv = temp_ky_mat_inv
+
+        self.logger = logger
 
     @staticmethod
     def from_file(filename: str, format: str = ''):
@@ -946,3 +950,6 @@ class GaussianProcess:
 
         dictionary['hyps_mask'] = Parameters.backward(
             dictionary['kernels'], deepcopy(dictionary['hyps_mask']))
+
+        if 'logger' not in dictionary:
+            dictionary['logger'] = None

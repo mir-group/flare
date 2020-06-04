@@ -193,6 +193,9 @@ def predict_on_structure_par(structure: Structure,
     else:
         pool = mp.Pool(processes=n_cpus)
 
+    logger = gp.logger
+    gp.logger = None
+
     # Parallelize over atoms in structure
     results = []
     for atom in range(structure.nat):
@@ -205,6 +208,8 @@ def predict_on_structure_par(structure: Structure,
                                         args=[(structure, atom, gp)]))
     pool.close()
     pool.join()
+
+    gp.logger = logger
 
     for i in range(structure.nat):
         if i not in selective_atoms and selective_atoms:
@@ -326,8 +331,11 @@ def predict_on_structure_par_en(structure: Structure, gp: GaussianProcess,
     else:
         pool = mp.Pool(processes=n_cpus)
 
-    results = []
+    logger = gp.logger
+    gp.logger = None
+
     # Parallelize over atoms in structure
+    results = []
     for atom_i in range(structure.nat):
 
         if atom_i not in selective_atoms and selective_atoms:
@@ -338,6 +346,8 @@ def predict_on_structure_par_en(structure: Structure, gp: GaussianProcess,
                                         args=[(structure, atom_i, gp)]))
     pool.close()
     pool.join()
+
+    gp.logger = logger
 
     # Compile results
     for i in range(structure.nat):
@@ -357,9 +367,10 @@ def predict_on_structure_par_en(structure: Structure, gp: GaussianProcess,
     return forces, stds, local_energies
 
 
-def predict_on_atom_mgp(atom: int, structure, cutoffs, mgp,
+def predict_on_atom_mgp(atom: int, structure, mgp,
                         write_to_structure=False):
-    chemenv = AtomicEnvironment(structure, atom, cutoffs)
+    chemenv = AtomicEnvironment(structure, atom, mgp.cutoffs,
+                                cutoffs_mask=mgp.hyps_mask)
     # predict force components and standard deviations
     force, var, virial, local_energy = mgp.predict(chemenv)
     comps = force
@@ -398,7 +409,7 @@ def predict_on_structure_mgp(structure, mgp, output=None,
             continue
 
         forces[n, :], stds[n, :], _ = \
-            predict_on_atom_mgp(n, structure, mgp.cutoffs, mgp,
+            predict_on_atom_mgp(n, structure, mgp,
                                 write_to_structure)
 
     return forces, stds

@@ -16,14 +16,17 @@ from warnings import warn
 from sys import stdout
 from os import devnull
 
+from flare.output import set_logger
 from flare.utils.element_coder import element_to_Z, Z_to_element
-
 
 class Parameters():
 
     all_kernel_types = ['twobody', 'threebody', 'manybody']
     ndim = {'twobody': 2, 'threebody': 3, 'manybody': 2, 'cut3b': 2}
     n_kernel_parameters = {'twobody': 2, 'threebody': 2, 'manybody': 2, 'cut3b': 0}
+
+    logger = set_logger("log.flare.parameter", stream=True,
+                        fileout=False, verbose="info")
 
     def __init__(self):
 
@@ -64,9 +67,9 @@ class Parameters():
                 newcutoffs['threebody'] = cutoffs[1]
             if len(cutoffs) > 2:
                 newcutoffs['manybody'] = cutoffs[2]
-            print("Convert cutoffs array to cutoffs dict")
-            print("Original", cutoffs)
-            print("Now", newcutoffs)
+            Parameters.logger.debug("Convert cutoffs array to cutoffs dict")
+            Parameters.logger.debug("Original", cutoffs)
+            Parameters.logger.debug("Now", newcutoffs)
             return newcutoffs
         else:
             raise TypeError("cannot handle cutoffs with {type(cutoffs)} type")
@@ -103,13 +106,13 @@ class Parameters():
                     if k+'_start' not in param_dict:
                         param_dict[k+'_start'] = start
                     if 'n'+k not in param_dict:
-                        print("add in hyper parameter separators for", k)
+                        Parameters.logger.debug("add in hyper parameter separators for", k)
                         param_dict['n'+k] = 1
                         start += Parameters.n_kernel_parameters[k]
                     else:
                         start += param_dict['n'+k] * Parameters.n_kernel_parameters[k]
 
-            print("Replace kernel array in param_dict")
+            Parameters.logger.debug("Replace kernel array in param_dict")
             param_dict['kernels'] = deepcopy(kernels)
 
         return param_dict
