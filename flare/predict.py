@@ -193,6 +193,9 @@ def predict_on_structure_par(structure: Structure,
     else:
         pool = mp.Pool(processes=n_cpus)
 
+    logger = gp.logger
+    gp.logger = None
+
     # Parallelize over atoms in structure
     results = []
     for atom in range(structure.nat):
@@ -205,6 +208,8 @@ def predict_on_structure_par(structure: Structure,
                                         args=[(structure, atom, gp)]))
     pool.close()
     pool.join()
+
+    gp.logger = logger
 
     for i in range(structure.nat):
         if i not in selective_atoms and selective_atoms:
@@ -326,8 +331,11 @@ def predict_on_structure_par_en(structure: Structure, gp: GaussianProcess,
     else:
         pool = mp.Pool(processes=n_cpus)
 
-    results = []
+    logger = gp.logger
+    gp.logger = None
+
     # Parallelize over atoms in structure
+    results = []
     for atom_i in range(structure.nat):
 
         if atom_i not in selective_atoms and selective_atoms:
@@ -338,6 +346,8 @@ def predict_on_structure_par_en(structure: Structure, gp: GaussianProcess,
                                         args=[(structure, atom_i, gp)]))
     pool.close()
     pool.join()
+
+    gp.logger = logger
 
     # Compile results
     for i in range(structure.nat):
