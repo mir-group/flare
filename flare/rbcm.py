@@ -28,9 +28,6 @@ from flare.parameters import Parameters
 from flare.struc import Structure
 from flare.utils.element_coder import NumpyEncoder, Z_to_element
 
-logger = logging.getLogger("gp.py")
-logger.setLevel(logging.DEBUG)
-
 
 class RobustBayesianCommitteMachine(GaussianProcess):
     """Gaussian process force field. Implementation is based on Algorithm 2.1
@@ -63,7 +60,7 @@ class RobustBayesianCommitteMachine(GaussianProcess):
         name (str, optional): Name for the GP instance.
     """
 
-    def __init__(self, nexpert, ndata_per_expert, prior_variance,
+    def __init__(self, n_experts, ndata_per_expert, prior_variance,
                  kernels: list = ['two', 'three'],
                  component: str = 'mc',
                  hyps: 'ndarray' = None, cutoffs={},
@@ -80,7 +77,7 @@ class RobustBayesianCommitteMachine(GaussianProcess):
                      maxiter, parallel, per_atom_par, n_cpus, n_sample, output,
                      name, energy_noise, **kwargs,)
 
-        self.nexpert = nexpert
+        self.n_experts = n_experts
         self.prior_variance = prior_variance
         self.log_prior_var = np.log(prior_variance)
         self.ndata_per_expert = ndata_per_expert
@@ -105,8 +102,9 @@ class RobustBayesianCommitteMachine(GaussianProcess):
         self.l_mat = []
         self.alpha = []
         self.ky_mat_inv = []
+        self.likelihood = []
 
-        for i in range(self.nexpert):
+        for i in range(self.n_experts):
             self.add_container()
 
 
@@ -117,10 +115,6 @@ class RobustBayesianCommitteMachine(GaussianProcess):
             self.current_expert += 1
             expert_id = self.current_expert
 
-        if expert_id >= self.nexpert:
-            self.add_container()
-            self.nexpert += 1
-
         return expert_id
 
     def add_container(self):
@@ -130,8 +124,8 @@ class RobustBayesianCommitteMachine(GaussianProcess):
         self.training_labels_np += [np.empty(0, )]
         self.n_envs_prev += [0]
 
-        self.training_structures += []  # Environments of each structure
-        self.energy_labels += []  # Energies of training structures
+        self.training_structures += [[]]  # Environments of each structure
+        self.energy_labels += [[]]  # Energies of training structures
         self.energy_labels_np += [np.empty(0, )]
         self.all_labels += [np.empty(0, )]
 
@@ -142,6 +136,8 @@ class RobustBayesianCommitteMachine(GaussianProcess):
         self.l_mat += [None]
         self.alpha += [None]
         self.ky_mat_inv += [None]
+
+        self.likelihood += [None]
 
 
     def update_db(self, struc: Structure, forces: List,
@@ -165,6 +161,10 @@ class RobustBayesianCommitteMachine(GaussianProcess):
 
         if expert_id is None:
             expert_id = self.find_expert_to_add()
+
+        if expert_id >= self.n_experts:
+            self.add_container()
+            self.n_experts += 1
 
         # By default, use all atoms in the structure
         noa = len(struc.positions)
@@ -217,7 +217,12 @@ class RobustBayesianCommitteMachine(GaussianProcess):
 
         if expert_id is None:
             expert_id = self.find_expert_to_add()
-        logger.debug(f"add environment to Expert {expert_id}")
+
+        if expert_id >= self.n_experts:
+            self.add_container()
+            self.n_experts += 1
+
+        self.logger.debug(f"add environment to Expert {expert_id}")
 
         self.training_data[expert_id].append(env)
         self.training_labels[expert_id].append(force)
@@ -252,12 +257,11 @@ class RobustBayesianCommitteMachine(GaussianProcess):
                 hyperparameter optimization.
         """
 
-        if print_progress and logger is None:
-            _logger = logging.getLogger("gp_algebra")
-            _logger.setLevel(logging.DEBUG)
-        elif logger is None:
-            _logger = logging.getLogger("gp_algebra")
-            _logger.setLevel(logging.INFO)
+        verbose = "warning"
+        if print_progress:
+            verbose = "info"
+        if logger is None:
+            logger = self.output.logger['hyps']
 
         disp = print_progress
 
@@ -270,8 +274,8 @@ class RobustBayesianCommitteMachine(GaussianProcess):
 
         x_0 = self.hyps
 
-        args = (self.nexepert, self.name, self.kernel_grad,
-                _logger, self.cutoffs, self.hyps_mask,
+        args = (self.n_experts, self.name, self.kernel_grad,
+                logger, self.cutoffs, self.hyps_mask,
                 self.n_cpus, self.n_sample)
 
         func = rbcm_get_neg_like_grad
@@ -296,7 +300,7 @@ class RobustBayesianCommitteMachine(GaussianProcess):
                                         'maxls': line_steps,
                                         'maxiter': self.maxiter})
             except np.linalg.LinAlgError:
-                _logger.warning("Algorithm for L-BFGS-B failed. Changing to "
+                self.logger.warning("Algorithm for L-BFGS-B failed. Changing to "
                                "BFGS for remainder of run.")
                 self.opt_algorithm = 'BFGS'
 
@@ -317,8 +321,8 @@ class RobustBayesianCommitteMachine(GaussianProcess):
             raise RuntimeError("Optimization failed for some reason.")
         self.hyps = res.x
         self.set_L_alpha()
-        self.likelihood = -res.fun
-        self.likelihood_gradient = -res.jac
+        self.total_likelihood = -res.fun
+        self.total_likelihood_gradient = -res.jac
 
         return res
 
@@ -331,7 +335,7 @@ class RobustBayesianCommitteMachine(GaussianProcess):
         self.sync_all_data()
 
         # Check that alpha is up to date with training set
-        for i in range(self.nexpert):
+        for i in range(self.n_experts):
             size3 = len(self.training_data[i])*3
 
             # If model is empty, then just return
@@ -343,7 +347,7 @@ class RobustBayesianCommitteMachine(GaussianProcess):
             elif (size3 > self.alpha[i].shape[0]):
                 self.update_L_alpha(i)
             elif (size3 != self.alpha[i].shape[0]):
-                self.set_L_alpha(i)
+                self.set_L_alpha_part(i)
 
     def predict(self, x_t: AtomicEnvironment, d: int) -> [float, float]:
         """
@@ -366,10 +370,10 @@ class RobustBayesianCommitteMachine(GaussianProcess):
         else:
             n_cpus = 1
 
-        self.sync_data(expert_id)
+        self.sync_all_data()
 
         k_v = []
-        for i in range(self.nexpert):
+        for i in range(self.n_experts):
             k_v += \
                 [get_kernel_vector(f"{self.name}_{i}", self.kernel,
                                    self.energy_force_kernel,
@@ -385,7 +389,7 @@ class RobustBayesianCommitteMachine(GaussianProcess):
         mean = 0
         var = 0
         beta = 0
-        for i in range(self.nexpert):
+        for i in range(self.n_experts):
             mean_k = np.matmul(k_v[i], self.alpha[i])
 
             # get predictive variance without cholesky (possibly faster)
@@ -400,7 +404,7 @@ class RobustBayesianCommitteMachine(GaussianProcess):
             var += beta_k / var_k
             beta += beta_k
 
-        var += (1-beta)/self.prior_variance2
+        var += (1-beta)/self.prior_variance
         pred_var = 1.0/var
         pred_mean = pred_var * mean
 
@@ -470,12 +474,26 @@ class RobustBayesianCommitteMachine(GaussianProcess):
 
     #     return pred_mean, pred_var
 
-    def set_all_L_alpha(self):
+    def set_L_alpha(self):
 
-        for i in range(self.nexpert):
-            self.set_L_alpha(i)
+        self.sync_all_data()
 
-    def set_L_alpha(self, expert_id):
+        for expert_id in range(self.n_experts):
+
+            ky_mat = get_Ky_mat(self.hyps, f"{self.name}_{expert_id}", self.kernel,
+                       self.energy_kernel, self.energy_force_kernel,
+                       self.energy_noise,
+                       self.cutoffs, self.hyps_mask,
+                       self.n_cpus, self.n_sample)
+
+            self.compute_matrices(ky_mat, expert_id)
+
+            self.likelihood[expert_id] = get_like_from_mats(self.ky_mat[expert_id],
+                                                            self.l_mat[expert_id],
+                                                            self.alpha[expert_id],
+                                                            f"{self.name}_{expert_id}")
+
+    def set_L_alpha_part(self, expert_id):
         """
         Invert the covariance matrix, setting L (a lower triangular
         matrix s.t. L L^T = (K + sig_n^2 I)) and alpha, the inverse
@@ -501,7 +519,7 @@ class RobustBayesianCommitteMachine(GaussianProcess):
 
     def sync_all_data(self):
 
-        for i in range(self.nexpert):
+        for i in range(self.n_experts):
             self.sync_data(i)
 
     def sync_data(self, expert_id):
@@ -512,6 +530,29 @@ class RobustBayesianCommitteMachine(GaussianProcess):
         _global_training_structures[f"{self.name}_{expert_id}"] = self.training_structures[expert_id]
         _global_energy_labels[f"{self.name}_{expert_id}"] = self.energy_labels_np[expert_id]
 
+    def write_model(self, name: str, format: str = 'json'):
+
+        if np.sum(self.n_envs_prev) > 5000:
+
+            np.savez(f"{name}_ky_mat.npz", self.ky_mat)
+            self.ky_mat_file = f"{name}_ky_mat.npz"
+
+            temp_ky_mat = self.ky_mat
+            temp_l_mat = self.l_mat
+            temp_alpha = self.alpha
+            temp_ky_mat_inv = self.ky_mat_inv
+
+            self.ky_mat = None
+            self.l_mat = None
+            self.alpha = None
+            self.ky_mat_inv = None
+
+        GaussianProcess.write_model(self, name, format)
+
+        self.ky_mat = temp_ky_mat
+        self.l_mat = temp_l_mat
+        self.alpha = temp_alpha
+        self.ky_mat_inv = temp_ky_mat_inv
 
     def update_L_alpha(self, expert_id):
         """
@@ -521,7 +562,7 @@ class RobustBayesianCommitteMachine(GaussianProcess):
 
         # Set L matrix and alpha if set_L_alpha has not been called yet
         if self.l_mat[expert_id] is None or np.array(self.ky_mat[expert_id]) is np.array(None):
-            self.set_L_alpha(expert_id)
+            self.set_L_alpha_part(expert_id)
             return
 
         self.sync_data(expert_id)
@@ -559,7 +600,31 @@ class RobustBayesianCommitteMachine(GaussianProcess):
         self.ky_mat_inv[expert_id] = ky_mat_inv
         self.n_envs_prev[expert_id] = len(self.training_data[expert_id])
 
-        logger.debug("compute_matrices {time.time()-time0}")
+        self.logger.debug("compute_matrices {time.time()-time0}")
+
+    @property
+    def training_statistics(self) -> dict:
+        """
+        Return a dictionary with statistics about the current training data.
+        Useful for quickly summarizing info about the GP.
+        :return:
+        """
+
+        data = {}
+
+        # Count all of the present species in the atomic env. data
+        present_species = []
+        for i in range(self.n_experts):
+            data[f'N_{i}'] = self.n_envs_prev[i]
+            for env, _ in zip(self.training_data[i], self.training_labels[i]):
+                present_species.append(Z_to_element(env.structure.coded_species[
+                    env.atom]))
+
+        # Summarize the relevant information
+        data['species'] = list(set(present_species))
+        data['envs_by_species'] = dict(Counter(present_species))
+
+        return data
 
 
     def write_model(self, name: str, format: str = 'json'):
@@ -571,6 +636,9 @@ class RobustBayesianCommitteMachine(GaussianProcess):
         """
 
         supported_formats = ['json', 'pickle', 'binary']
+
+        logger = self.logger
+        self.logger = None
 
         if format.lower() == 'json':
             raise ValueError("Output format not supported: try from "
@@ -585,6 +653,7 @@ class RobustBayesianCommitteMachine(GaussianProcess):
         else:
             raise ValueError("Output format not supported: try from "
                              "{}".format(supported_formats))
+        self.logger = logger
 
     @staticmethod
     def from_file(filename: str, format: str = ''):
@@ -623,44 +692,24 @@ class RobustBayesianCommitteMachine(GaussianProcess):
         return gp_model
 
 
-def rbcm_get_neg_like_grad(hyps, nexpert, name, kernel_grad, logger, cutoffs, hyps_mask, n_cpus, n_sample):
+def rbcm_get_neg_like_grad(hyps, n_experts, name, kernel_grad, logger, cutoffs, hyps_mask, n_cpus, n_sample):
 
 
-    if n_cpus == 1:
-        like = 0
-        like_grad = None
-        for i in range(nexpert):
+    like = 0
+    like_grad = None
 
-            like_, like_grad_ = get_neg_like_grad(hyps, f"{self.name}_{i}", kernel_grad, logger,
-                                                  cutoffs, hyps_mask, 1,
-                                                  n_sample)
-            like += like_
-            if (like_grad is None):
-                like_grad = like_grad_
-            else:
-                like_grad += like_grad_
-    else:
+    time0 = time.time()
+    for i in range(n_experts):
+        like_, like_grad_ = get_neg_like_grad(hyps, f"{name}_{i}", kernel_grad, logger,
+                                              cutoffs, hyps_mask, n_cpus,
+                                              n_sample)
+        like += like_
+        if (like_grad is None):
+            like_grad = like_grad_
+        else:
+            like_grad += like_grad_
 
-        with mp.Pool(processes=n_cpus) as pool:
-
-            results = []
-            for i in range(nexpert):
-                args = (hyps, f"{self.name}_{i}", kernel_grad, logger,
-                        cutoffs, hyps_mask, 1, n_sample)
-                results.append(pool.apply_async(get_neg_like_grad,
-                    args = args))
-            like = 0
-            like_grad = None
-            for i in range(nexpert):
-                like_, like_grad_ = results[i].get()
-                like += like_
-                if (like_grad is None):
-                    like_grad = like_grad_
-                else:
-                    like_grad += like_grad_
-            pool.close()
-            pool.join()
-            del results
+    logger.debug(f"one step {time.time()-time0}")
 
     return like, like_grad
 
