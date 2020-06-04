@@ -30,19 +30,20 @@ def get_random_structure(cell, unique_species, noa):
 
 def generate_hm(ntwobody, nthreebody, nmanybody=1, constraint=False, multihyps=True):
 
+    cutoff = 0.8
     if (multihyps is False):
         hyps_label = []
         kernels = []
         parameters = {}
         if (ntwobody > 0):
             kernels += ['twobody']
-            parameters['cutoff_twobody'] = 0.8
+            parameters['cutoff_twobody'] = cutoff
         if (nthreebody > 0):
             kernels += ['threebody']
-            parameters['cutoff_threebody'] = 0.8
+            parameters['cutoff_threebody'] = cutoff
         if (nmanybody > 0):
             kernels += ['manybody']
-            parameters['cutoff_manybody'] = 0.8
+            parameters['cutoff_manybody'] = cutoff
         pm = ParameterHelper(kernels=kernels, random=True,
                 parameters=parameters)
         hm = pm.as_dict()
@@ -53,13 +54,13 @@ def generate_hm(ntwobody, nthreebody, nmanybody=1, constraint=False, multihyps=T
     pm = ParameterHelper(species=['H', 'He'], parameters={'noise':0.05})
     if (ntwobody > 0):
         pm.define_group('twobody', 'b1', ['*', '*'], parameters=random(2))
-        pm.set_parameters('cutoff_twobody', 0.8)
+        pm.set_parameters('cutoff_twobody', cutoff)
     if (nthreebody > 0):
         pm.define_group('threebody', 't1', ['*', '*', '*'], parameters=random(2))
-        pm.set_parameters('cutoff_threebody', 0.8)
+        pm.set_parameters('cutoff_threebody', cutoff)
     if (nmanybody > 0):
         pm.define_group('manybody', 'manybody1', ['*', '*'], parameters=random(2))
-        pm.set_parameters('cutoff_manybody', 0.8)
+        pm.set_parameters('cutoff_manybody', cutoff)
     if (ntwobody > 1):
         pm.define_group('twobody', 'b2', ['H', 'H'], parameters=random(2))
     if (nthreebody > 1):

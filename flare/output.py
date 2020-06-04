@@ -13,6 +13,7 @@ import numpy as np
 
 from typing import Union
 
+from flare.parameters import Parameters
 from flare.struc import Structure
 from flare.utils.element_coder import Z_to_element
 
@@ -32,7 +33,7 @@ class Output:
     :type always_flus: bool, optional
     """
 
-    def __init__(self, basename: str = 'otf_run',
+    def __init__(self, basename: str = 'otf_run', verbose: str = 'INFO',
                  always_flush: bool = False):
         """
         Construction. Open files.
@@ -42,7 +43,7 @@ class Output:
         filesuffix = {'log': '.out', 'hyps': '-hyps.dat'}
 
         for filetype in filesuffix:
-            self.open_new_log(filetype, filesuffix[filetype])
+            self.open_new_log(filetype, filesuffix[filetype], verbose)
 
         self.always_flush = always_flush
 
@@ -71,17 +72,7 @@ class Output:
         filename = self.basename + suffix
 
         if filetype not in self.logger:
-
-            logger = logging.getLogger(filetype)
-            fh = logging.FileHandler(filename)
-
-            verbose = getattr(logging, verbose.upper())
-            logger.setLevel(verbose)
-            fh.setLevel(verbose)
-
-            logger.addHandler(fh)
-
-            self.logger[filetype] = logger
+            self.logger[filetype] = Output.set_logger(filename, stream=False, fileout=True, verbose=verbose)
 
     def write_to_log(self, logstring: str, name: str = "log",
                      flush: bool = False):
@@ -97,12 +88,14 @@ class Output:
         if flush or self.always_flush:
             self.logger[name].handlers[0].flush()
 
-    def write_header(self, cutoffs, kernels: [list],
-                     hyps, algo: str, dt: float = None,
-                     Nsteps: int = None, structure: Structure= None,
+    def write_header(self, gp_str: str,
+                     dt: float = None,
+                     Nsteps: int = None, structure: Structure = None,
                      std_tolerance: Union[float, int] = None,
                      optional: dict = None):
         """
+        TO DO: this should be replace by the string method of GP and OTF, GPFA
+
         Write header to the log function. Designed for Trajectory Trainer and
         OTF runs and can take flexible input for both.
 
@@ -118,7 +111,7 @@ class Output:
         """
 
         f = self.logger['log']
-        f.info(f'{datetime.datetime.now()} \n')
+        f.info(f'{datetime.datetime.now()}')
 
         if isinstance(std_tolerance, tuple):
             std_string = 'relative uncertainty tolerance: ' \
@@ -131,18 +124,13 @@ class Output:
         elif std_tolerance > 0:
             std_string = \
                 f'uncertainty tolerance: {np.abs(std_tolerance)} ' \
-                                'times noise hyperparameter \n'
+                'times noise hyperparameter \n'
         else:
             std_string = ''
 
         headerstring = ''
-        headerstring += \
-            f'number of cpu cores: {multiprocessing.cpu_count()}\n'
-        headerstring += f'cutoffs: {cutoffs}\n'
-        headerstring += f'kernels: {kernels}\n'
-        headerstring += f'number of hyperparameters: {len(hyps)}\n'
-        headerstring += f'hyperparameters: {str(hyps)}\n'
-        headerstring += f'hyperparameter optimization algorithm: {algo}\n'
+        headerstring += gp_str
+        headerstring += ''
         headerstring += std_string
         if dt is not None:
             headerstring += f'timestep (ps): {dt}\n'
@@ -245,10 +233,8 @@ class Output:
                 f'potential energy: {pot_en:.6f} eV \n'
             string += f'total energy: {tot_en:.6f} eV \n'
 
-        string += 'wall time from start: '
-        string += f'{(time.time() - start_time):.2f} s \n'
-
         self.logger['log'].info(string)
+        self.write_wall_time(start_time)
 
         if self.always_flush:
             self.logger['log'].handlers[0].flush()
@@ -338,34 +324,48 @@ class Output:
         :return:
         """
         f = self.logger[name]
-        f.info('\nGP hyperparameters: \n')
 
+        f.info('\nGP hyperparameters: ')
         if hyps_mask is not None:
-            if 'map' in hyps_mask:
-                hyps = hyps_mask['original']
-                if len(hyp_labels)!=len(hyps):
-                    hyp_labels = None
+            hyps = Parameters.get_hyps(hyps_mask, hyps)
+            if len(hyp_labels) != len(hyps):
+                hyp_labels = None
 
         if hyp_labels is not None:
             for i, label in enumerate(hyp_labels):
-                f.info(f'Hyp{i} : {label} = {hyps[i]:.4f}\n')
+                f.info(f'Hyp{i} : {label} = {hyps[i]:.4f}')
         else:
             for i, hyp in enumerate(hyps):
-                f.info(f'Hyp{i} : {hyp:.4f}\n')
+                f.info(f'Hyp{i} : {hyp:.4f}')
 
-        f.info(f'likelihood: {like:.4f}\n')
-        f.info(f'likelihood gradient: {like_grad}\n')
+        f.info(f'likelihood: {like:.4f}')
+        f.info(f'likelihood gradient: {like_grad}')
+
         if start_time:
-            time_curr = time.time() - start_time
-            f.info(f'wall time from start: {time_curr:.2f} s \n')
+            self.write_wall_time(start_time)
 
         if self.always_flush:
             f.handlers[0].flush()
 
+    def write_wall_time(self, start_time):
+        time_curr = time.time() - start_time
+        self.logger['log'].info(f'wall time from start: {time_curr:.2f} s')
+
+    def conclude_dft(self, dft_count, start_time):
+        f = self.logger['log']
+        f.info('DFT run complete.')
+        f.info(f'number of DFT calls: {dft_count}')
+        self.write_wall_time(start_time)
+
+    def add_atom_info(self, train_atoms, stds):
+        f = self.logger['log']
+        f.info(f'Adding atom {train_atoms} to the training set.')
+        f.info(f'Uncertainty: {stds[train_atoms[0]]}')
+
     def write_gp_dft_comparison(self, curr_step, frame,
                                 start_time, dft_forces,
                                 error, local_energies=None, KE=None,
-                                mgp= False):
+                                mgp=False):
         """ write the comparison to logfile
 
         :param curr_step: current timestep
@@ -451,12 +451,38 @@ class Output:
             string += f'total energy: {tot_en:10.6} eV \n'
             stat += f' {pot_en:10.6} {tot_en:10.6}'
 
-        dt = time.time() - start_time
-        string += f'wall time from start: {dt:10.2}\n'
-        stat += f' {dt}\n'
-
         self.logger['log'].info(string)
+        self.write_wall_time(start_time)
+
+        # stat += f' {dt}\n'
         # self.logger['stat'].write(stat)
 
         # if self.always_flush:
         #     self.logger['log'].flush()
+
+    @staticmethod
+    def add_stream(logger, verbose: str = "info"):
+        ch = logging.StreamHandler()
+        ch.setLevel(getattr(logging, verbose.upper()))
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        ch.setFormatter(formatter)
+        logger.addHandler(ch)
+
+    @staticmethod
+    def add_file(logger, filename, verbose: str = "info"):
+        fh = logging.FileHandler(filename)
+        verbose = getattr(logging, verbose.upper())
+        logger.setLevel(verbose)
+        fh.setLevel(verbose)
+        logger.addHandler(fh)
+
+    @staticmethod
+    def set_logger(name, stream, fileout, verbose: str = "info"):
+        logger = logging.getLogger(name)
+        logger.setLevel(getattr(logging, verbose.upper()))
+        if stream:
+            Output.add_stream(logger, verbose)
+        if fileout:
+            Output.add_file(logger, name, verbose)
+        return logger
+

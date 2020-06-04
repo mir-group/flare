@@ -345,8 +345,10 @@ def parse_header_information(outfile: str = 'otf_run.out') -> dict:
 
     cutoffs_dict = {}
     for i, line in enumerate(lines[:stopreading]):
-        # TODO Update this in full
-        if 'cutoffs' in line:
+        line_lower = line.lower()
+
+        # gp related
+        if 'cutoffs' in line_lower:
             line = line.split(':')[1].strip()
             line = line.strip('[').strip(']')
             line = line.split()
@@ -357,39 +359,43 @@ def parse_header_information(outfile: str = 'otf_run.out') -> dict:
                 except:
                     cutoffs.append(float(val[:-1]))
             header_info['cutoffs'] = cutoffs
-        elif 'cutoff' in line:
+        elif 'cutoff' in line_lower:
             line = line.split(':')
             name = line[0][7:]
             value = float(line[1])
             cutoffs_dict[name] = value
             header_info['cutoffs'] = cutoffs_dict
-        if 'frames' in line:
-            header_info['frames'] = int(line.split(':')[1])
-        if 'kernel_name' in line:
+
+        if 'kernel_name' in line_lower:
             header_info['kernel_name'] = line.split(':')[1].strip()
-        if 'kernels' in line:
+        elif 'kernels' in line_lower:
             line = line.split(':')[1].strip()
             line = line.strip('[').strip(']')
             line = line.split()
             header_info['kernels'] = line
-        if 'kernel' in line:
+        elif 'kernel' in line_lower:
             header_info['kernel_name'] = line.split(':')[1].strip()
-        if 'number of hyperparameters:' in line:
+
+        if 'number of hyperparameters:' in line_lower:
             header_info['n_hyps'] = int(line.split(':')[1])
-        if 'optimization algorithm' in line:
+        if 'optimization algorithm' in line_lower:
             header_info['algo'] = line.split(':')[1].strip()
-        if 'number of atoms' in line:
+
+        # otf related
+        if 'frames' in line_lower:
+            header_info['frames'] = int(line.split(':')[1])
+        if 'number of atoms' in line_lower:
             header_info['atoms'] = int(line.split(':')[1])
-        if 'timestep' in line:
+        if 'timestep' in line_lower:
             header_info['dt'] = float(line.split(':')[1])
-        if 'system species' in line:
+        if 'system species' in line_lower:
             line = line.split(':')[1]
             line = line.split("'")
 
             species = [item for item in line if item.isalpha()]
 
             header_info['species_set'] = set(species)
-        if 'periodic cell' in line:
+        if 'periodic cell' in line_lower:
             vectors = []
             for cell_line in lines[i+1:i+4]:
                 cell_line = \
@@ -398,7 +404,7 @@ def parse_header_information(outfile: str = 'otf_run.out') -> dict:
                 vector = [float(vec[0]), float(vec[1]), float(vec[2])]
                 vectors.append(vector)
             header_info['cell'] = np.array(vectors)
-        if 'previous positions' in line:
+        if 'previous positions' in line_lower:
             struc_spec = []
             prev_positions = []
             for pos_line in lines[i+1:i+1+header_info.get('atoms', 0)]:

@@ -211,8 +211,6 @@ class AtomicEnvironment:
         dictionary = dict(vars(self))
         dictionary['object'] = 'AtomicEnvironment'
         dictionary['forces'] = self.structure.forces
-        dictionary['energy'] = self.structure.energy
-        dictionary['stress'] = self.structure.stress
         dictionary['cutoffs_mask'] = self.cutoffs_mask
 
         del dictionary['structure']

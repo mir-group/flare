@@ -1,12 +1,17 @@
 import numpy as np
+from math import floor
 
 from typing import List
 
 from flare.struc import Structure
 from flare.utils.element_coder import Z_to_element
+from flare.gp_algebra import _global_training_data, _global_training_structures
+from flare.kernels.map_3b_kernel_new import triplet_cutoff
+from flare.kernels.utils import from_mask_to_args, str_to_kernel_set, str_to_mapped_kernel
 
 from flare.mgp.mapxb import MapXbody, SingleMapXbody
-from flare.mgp.utils import get_triplets, get_triplets_en, get_kernel_term
+from flare.mgp.utils import get_triplets, get_triplets_en, get_kernel_term,\
+    get_permutations
 
 
 class Map3body(MapXbody):
@@ -18,15 +23,10 @@ class Map3body(MapXbody):
         super().__init__(*args)
 
 
-    def build_bond_struc(self, struc_params):
+    def build_bond_struc(self, species_list):
         '''
         build a bond structure, used in grid generating
         '''
-
-        cutoff = 0.1
-        cell = struc_params['cube_lat']
-        species_list = struc_params['species']
-        N_spc = len(species_list)
 
         # initialize bounds
         self.bounds = np.ones((2, 3)) * self.lower_bound
@@ -35,9 +35,9 @@ class Map3body(MapXbody):
             self.bounds[1][2] = 1
 
         # 2 body (2 atoms (1 bond) config)
-        self.bond_struc = []
         self.spc = []
         self.spc_set = []
+        N_spc = len(species_list)
         for spc1_ind in range(N_spc):
             spc1 = species_list[spc1_ind]
             for spc2_ind in range(N_spc):  # (spc1_ind, N_spc):
@@ -47,12 +47,6 @@ class Map3body(MapXbody):
                     species = [spc1, spc2, spc3]
                     self.spc.append(species)
                     self.spc_set.append(set(species))
-                    positions = [[(i+1)/(self.bodies+1)*cutoff, 0, 0]
-                                 for i in range(self.bodies)]
-                    spc_struc = Structure(cell, species, positions)
-                    spc_struc.coded_species = np.array(species)
-                    self.bond_struc.append(spc_struc)
-
 
     def get_arrays(self, atom_env):
 
@@ -76,7 +70,6 @@ class SingleMap3body(SingleMapXbody):
         '''
         Build 3-body MGP
 
-        bond_struc: Mock structure used to sample 3-body forces on 3 atoms
         '''
 
         self.bodies = 3
@@ -84,22 +77,28 @@ class SingleMap3body(SingleMapXbody):
 
         super().__init__(*args)
 
+        self.grid_interval = np.min((self.bounds[1]-self.bounds[0])/self.grid_num)
+
         if self.map_force: # the force mapping use cos angle in the 3rd dim
             self.bounds[1][2] = 1
             self.bounds[0][2] = -1
 
-        spc = self.bond_struc.coded_species
+        spc = self.species
         self.species_code = Z_to_element(spc[0]) + '_' + \
             Z_to_element(spc[1]) + '_' + Z_to_element(spc[2])
         self.kv3name = f'kv3_{self.species_code}'
 
 
     def construct_grids(self):
+        '''
+        Return:
+            An array of shape (n_grid, 3)
+        '''
         # build grids in each dimension
         bonds_list = []
         for d in range(3):
-            bonds = np.linspace(self.bounds[0][d], self.bounds[1][d], 
-                self.grid_num[d])
+            bonds = np.linspace(self.bounds[0][d], self.bounds[1][d],
+                self.grid_num[d], dtype=np.float64)
             bonds_list.append(bonds)
 
         # concatenate into one array: n_grid x 3
@@ -131,7 +130,22 @@ class SingleMap3body(SingleMapXbody):
         return grid_env
 
 
-    def _GenGrid_numba(self, name, s, e, bounds, nb1, nb2, nb12, env12, kernel_info):
+    def skip_grid(self, grid_pt):
+        r1, r2, r12 = grid_pt
+
+        if not self.map_force:
+            relaxation = 1/2 * np.max(self.grid_num) * self.grid_interval
+            if r1 + r2 < r12 - relaxation:
+                return True
+            if r1 + r12 < r2 - relaxation:
+                return True
+            if r12 + r2 < r1 - relaxation:
+                return True
+
+        return False
+
+
+    def _gengrid_numba(self, name, s, e, env12, kernel_info):
         """
         Loop over different parts of the training set. from element s to element e
 
@@ -154,36 +168,24 @@ class SingleMap3body(SingleMapXbody):
         ds = [1, 2, 3]
         size = (e-s) * 3
 
-        bonds1 = np.linspace(bounds[0][0], bounds[1][0], nb1)
-        bonds2 = np.linspace(bounds[0][0], bounds[1][0], nb2)
-        bonds12 = np.linspace(bounds[0][2], bounds[1][2], nb12)
-
-        r1 = np.ones([nb1, nb2, nb12], dtype=np.float64)
-        r2 = np.ones([nb1, nb2, nb12], dtype=np.float64)
-        r12 = np.ones([nb1, nb2, nb12], dtype=np.float64)
-        for b12 in range(nb12):
-            for b1 in range(nb1):
-                for b2 in range(nb2):
-                    r1[b1, b2, b12] = bonds1[b1]
-                    r2[b1, b2, b12] = bonds2[b2]
-                    r12[b1, b2, b12] = bonds12[b12]
-        del bonds1
-        del bonds2
-        del bonds12
-
         args = from_mask_to_args(hyps, cutoffs, hyps_mask)
+        r_cut = cutoffs['threebody']
+
+        grids = self.construct_grids()
+        fj = triplet_cutoff(grids, r_cut) # move this fj out of kernel
+        perm_list = get_permutations(env12.ctype, env12.etypes[0], env12.etypes[1])
 
         k_v = []
         for m_index in range(size):
             x_2 = training_data[int(floor(m_index / 3))+s]
             d_2 = ds[m_index % 3]
-            k_v += [[en_force_kernel(x_2, r1, r2, r12,
-                                     env12.ctype, env12.etypes,
-                                     d_2, *args)]]
+            k_v += [en_force_kernel(x_2, grids, fj,
+                                    env12.ctype, env12.etypes, perm_list,
+                                    d_2, *args)]
 
-        return np.vstack(k_v)
+        return np.array(k_v).T
 
-    def _GenGrid_energy_numba(self, name, s, e, bounds, nb1, nb2, nb12, env12, kernel_info):
+    def _gengrid_energy_numba(self, name, s, e, bounds, nb1, nb2, nb12, env12, kernel_info):
         """
         Loop over different parts of the training set. from element s to element e
 
@@ -206,22 +208,23 @@ class SingleMap3body(SingleMapXbody):
         ds = [1, 2, 3]
         size = (e-s) * 3
 
-        bonds1 = np.linspace(bounds[0][0], bounds[1][0], nb1)
-        bonds2 = np.linspace(bounds[0][0], bounds[1][0], nb2)
-        bonds12 = np.linspace(bounds[0][2], bounds[1][2], nb12)
-
-        r1 = np.ones([nb1, nb2, nb12], dtype=np.float64)
-        r2 = np.ones([nb1, nb2, nb12], dtype=np.float64)
-        r12 = np.ones([nb1, nb2, nb12], dtype=np.float64)
-        for b12 in range(nb12):
-            for b1 in range(nb1):
-                for b2 in range(nb2):
-                    r1[b1, b2, b12] = bonds1[b1]
-                    r2[b1, b2, b12] = bonds2[b2]
-                    r12[b1, b2, b12] = bonds12[b12]
-        del bonds1
-        del bonds2
-        del bonds12
+        grids = self.construct_grids()
+#        bonds1 = np.linspace(bounds[0][0], bounds[1][0], nb1)
+#        bonds2 = np.linspace(bounds[0][0], bounds[1][0], nb2)
+#        bonds12 = np.linspace(bounds[0][2], bounds[1][2], nb12)
+#
+#        r1 = np.ones([nb1, nb2, nb12], dtype=np.float64)
+#        r2 = np.ones([nb1, nb2, nb12], dtype=np.float64)
+#        r12 = np.ones([nb1, nb2, nb12], dtype=np.float64)
+#        for b12 in range(nb12):
+#            for b1 in range(nb1):
+#                for b2 in range(nb2):
+#                    r1[b1, b2, b12] = bonds1[b1]
+#                    r2[b1, b2, b12] = bonds2[b2]
+#                    r12[b1, b2, b12] = bonds12[b12]
+#        del bonds1
+#        del bonds2
+#        del bonds12
 
         args = from_mask_to_args(hyps, cutoffs, hyps_mask)
 
@@ -234,35 +237,3 @@ class SingleMap3body(SingleMapXbody):
             kv += [kern_curr]
 
         return np.hstack(k_v)
-
-
-    def write(self, f, spc):
-        a = self.bounds[0]
-        b = self.bounds[1]
-        order = self.grid_num
-
-        coefs_3 = self.mean.__coeffs__
-
-        elem1 = Z_to_element(spc[0])
-        elem2 = Z_to_element(spc[1])
-        elem3 = Z_to_element(spc[2])
-
-        header_3 = '{elem1} {elem2} {elem3} {a1} {a2} {a3} {b1}'\
-                   ' {b2} {b3:.10e} {order1} {order2} {order3}\n'\
-            .format(elem1=elem1, elem2=elem2, elem3=elem3,
-                    a1=a[0], a2=a[1], a3=a[2],
-                    b1=b[0], b2=b[1], b3=b[2],
-                    order1=order[0], order2=order[1], order3=order[2])
-        f.write(header_3)
-
-        n = 0
-        for i in range(coefs_3.shape[0]):
-            for j in range(coefs_3.shape[1]):
-                for k in range(coefs_3.shape[2]):
-                    coef = coefs_3[i, j, k]
-                    f.write('{:.10e} '.format(coef))
-                    if n % 5 == 4:
-                        f.write('\n')
-                    n += 1
-
-        f.write('\n')

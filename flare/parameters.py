@@ -23,32 +23,33 @@ class Parameters():
 
     all_kernel_types = ['twobody', 'threebody', 'manybody']
     ndim = {'twobody': 2, 'threebody': 3, 'manybody': 2, 'cut3b': 2}
+    n_kernel_parameters = {'twobody': 2, 'threebody': 2, 'manybody': 2, 'cut3b': 0}
 
     def __init__(self):
 
-        self.param = {'nspecie': 0,
-                      'ntwobody': 0,
-                      'nthreebody': 0,
-                      'ncut3b': 0,
-                      'nmanybody': 0,
-                      'specie_mask': None,
-                      'twobody_mask': None,
-                      'threebody_mask': None,
-                      'cut3b_mask': None,
-                      'manybody_mask': None,
-                      'twobody_cutoff_list': None,
-                      'threebody_cutoff_list': None,
-                      'manybody_cutoff_list': None,
-                      'hyps': [],
-                      'hyp_labels': [],
-                      'cutoffs': {},
-                      'kernels': [],
-                      'train_noise': True,
-                      'energy_noise': 0,
-                      'map': None,
-                      'original_hyps': [],
-                      'original_labels': []
-                      }
+        self.param_dict = {'nspecie': 0,
+                           'ntwobody': 0,
+                           'nthreebody': 0,
+                           'ncut3b': 0,
+                           'nmanybody': 0,
+                           'specie_mask': None,
+                           'twobody_mask': None,
+                           'threebody_mask': None,
+                           'cut3b_mask': None,
+                           'manybody_mask': None,
+                           'twobody_cutoff_list': None,
+                           'threebody_cutoff_list': None,
+                           'manybody_cutoff_list': None,
+                           'train_noise': True,
+                           'energy_noise': 0,
+                           'map': None,
+                           'original_hyps': [],
+                           'original_labels': []
+                          }
+        self.hyps = None
+        self.hyp_labels = None
+        self.cutoffs = {}
+        self.kernels = []
 
     @staticmethod
     def cutoff_array_to_dict(cutoffs):
@@ -99,13 +100,14 @@ class Parameters():
             start = 0
             for k in Parameters.all_kernel_types:
                 if k in kernels:
+                    if k+'_start' not in param_dict:
+                        param_dict[k+'_start'] = start
                     if 'n'+k not in param_dict:
                         print("add in hyper parameter separators for", k)
                         param_dict['n'+k] = 1
-                        param_dict[k+'_start'] = start
-                        start += 2
+                        start += Parameters.n_kernel_parameters[k]
                     else:
-                        start += param_dict['n'+k]*2
+                        start += param_dict['n'+k] * Parameters.n_kernel_parameters[k]
 
             print("Replace kernel array in param_dict")
             param_dict['kernels'] = deepcopy(kernels)
@@ -123,7 +125,12 @@ class Parameters():
         """
 
         assert isinstance(param_dict, dict)
+        assert isinstance(cutoffs, dict)
+        assert isinstance(kernels, (list))
 
+        param_dict['cutoffs'] = cutoffs
+
+        # double check nspecie is there
         nspecie = param_dict['nspecie']
         if nspecie > 1:
             assert 'specie_mask' in param_dict, "specie_mask key " \
@@ -132,31 +139,48 @@ class Parameters():
             param_dict['specie_mask'] = nparray(
                 param_dict['specie_mask'], dtype=np.int)
 
+        # for each kernel, check whether it is defined
+        # and the length of corresponding hyper-parameters
         hyps_length = 0
         kernels = param_dict['kernels']
+        used_parameters = np.zeros_like(hyps, dtype=bool)
         for kernel in kernels+['cut3b']:
 
             n = param_dict.get(f'n{kernel}', 0)
             assert isinstance(n, int)
 
             if kernel != 'cut3b':
-                hyps_length += 2*n
-                assert kernel in cutoffs
+                hyps_length += Parameters.n_kernel_parameters[kernel]*n
                 assert n > 0, f"{kernel} has n 0"
 
+                # check all corresponding keys exist
+                assert kernel in cutoffs
+                assert kernel+"_start" in param_dict
+
+                # check the partition of hyperparameters are not used
+                start = param_dict[kernel+"_start"]
+                length = Parameters.n_kernel_parameters[kernel]*n
+                assert not used_parameters[start:start+length].any()
+                used_parameters[start:start+length] = True
+
             if n > 1:
+
                 assert f'{kernel}_mask' in param_dict, f"{kernel}_mask key " \
                     "missing " \
                     "in param_dict dictionary"
+
+                # check mask has the right dimension and values
                 mask = param_dict[f'{kernel}_mask']
                 param_dict[f'{kernel}_mask'] = nparray(mask, dtype=np.int)
-                assert (npmax(mask) < n)
 
+                assert (npmax(mask) < n)
                 dim = Parameters.ndim[kernel]
                 assert len(mask) == nspecie ** dim, \
-                    f"wrong dimension of twobody_mask: " \
+                    f"wrong dimension of {kernel}_mask: " \
                     f" {len(mask)} != nspec ^ {dim} {nspecie**dim}"
 
+                # check whether the mask array is symmetrical
+                # enumerate all possible combinations
                 all_comb = list(combinations_with_replacement(
                     np.arange(nspecie), dim))
                 for comb in all_comb:
@@ -172,7 +196,7 @@ class Parameters():
                             mask_value = mask[mask_id]
                         else:
                             assert mask[mask_id] == mask_value, \
-                                'twobody_mask has to be symmetrical'
+                                f'{kernel}_mask has to be symmetrical'
 
                 if kernel != 'cut3b':
                     if kernel+'_cutoff_list' in param_dict:
@@ -185,20 +209,25 @@ class Parameters():
                 assert f'{kernel}_cutof_list' not in param_dict
 
         if 'map' in param_dict:
+
             assert ('original_hyps' in param_dict), \
                 "original hyper parameters have to be defined"
+
             # Ensure typed correctly as numpy array
             param_dict['original_hyps'] = nparray(
                 param_dict['original_hyps'], dtype=np.float)
             if (len(param_dict['original_hyps']) - 1) not in param_dict['map']:
                 assert param_dict['train_noise'] is False, \
                     "train_noise should be False when noise is not in hyps"
+
             assert len(param_dict['map']) == len(hyps), \
                 "the hyperparmeter length is inconsistent with the mask"
             assert npmax(param_dict['map']) < len(param_dict['original_hyps'])
+
         else:
             assert param_dict['train_noise'] is True, \
                 "train_noise should be True when map is not used"
+
         hyps = Parameters.get_hyps(param_dict, hyps)
 
         hyps_length += 1

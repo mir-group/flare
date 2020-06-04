@@ -239,11 +239,10 @@ class TestIO():
     def test_representation_method(self, all_gps, multihyps):
         test_gp = all_gps[multihyps]
         the_str = str(test_gp)
+        print(the_str)
         assert 'GaussianProcess Object' in the_str
         assert 'Kernel: [\'twobody\', \'threebody\', \'manybody\']' in the_str
-        assert 'cutoff_twobody: 0.8' in the_str
-        assert 'cutoff_threebody: 0.8' in the_str
-        assert 'cutoff_manybody: 0.8' in the_str
+        assert 'Cutoffs: {\'twobody\': 0.8, \'threebody\': 0.8, \'manybody\': 0.8}' in the_str
         assert 'Model Likelihood: ' in the_str
         if not multihyps:
             assert 'Length ' in the_str
@@ -323,8 +322,6 @@ class TestIO():
         assert np.array_equal(prev_l_mat, new_gp.l_mat)
 
         os.remove('test_gp_write.json')
-
-
 
 
 def dumpcompare(obj1, obj2):

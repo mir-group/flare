@@ -16,6 +16,5 @@ def test_read_write_trajectory():
     fstructures = md_trajectory_from_file(fname)
     for s, f in zip(structures, fstructures):
         assert np.isclose(s.forces, f.forces).all()
-        assert np.isclose(s.energy, f.energy).all()
         assert np.isclose(s.positions, f.positions).all()
     os.system('rm tst_traj.json')

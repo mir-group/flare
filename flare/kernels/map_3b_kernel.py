@@ -51,8 +51,10 @@ def three_body_mc_en_sephyps(env1, r1, r2, r12, ctype_2, etypes_2,
                              cutoff_2b, cutoff_3b, nspec, spec_mask,
                              nbond, bond_mask, ntriplet, triplet_mask,
                              ncut3b, cut3b_mask,
-                             sig2, ls2, sig3, ls3,
+                             nmanybody, manybody_mask,
+                             sig2, ls2, sig3, ls3, sigm, lsm,
                              cutoff_func=cf.quadratic_cutoff) -> float:
+
     """3-body multi-element kernel between a force component and many local
     energies on the grid.
 
