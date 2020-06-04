@@ -163,6 +163,14 @@ class GaussianProcess:
         :return:
         """
 
+        if self.logger is None:
+            if self.output is not None:
+                logger = self.output.logger['log']
+            else:
+                logger = Output.set_logger("gp.py", stream=True,
+                                           fileout=True, verbose="info")
+            self.logger = logger
+
         if (self.name in _global_training_labels):
             base = f'{self.name}'
             count = 2
@@ -589,7 +597,12 @@ class GaussianProcess:
 
         self.check_L_alpha()
 
+        logger = self.logger
+        self.logger = None
+
         out_dict = deepcopy(dict(vars(self)))
+
+        self.logger = logger
 
         out_dict['training_data'] = [env.as_dict() for env in
                                      self.training_data]
@@ -759,6 +772,9 @@ class GaussianProcess:
 
         supported_formats = ['json', 'pickle', 'binary']
 
+        logger = self.logger
+        self.logger = None
+
         if format.lower() == 'json':
             with open(f'{name}.json', 'w') as f:
                 json.dump(self.as_dict(), f, cls=NumpyEncoder)
@@ -776,6 +792,8 @@ class GaussianProcess:
             self.l_mat = temp_l_mat
             self.alpha = temp_alpha
             self.ky_mat_inv = temp_ky_mat_inv
+
+        self.logger = logger
 
     @staticmethod
     def from_file(filename: str, format: str = ''):
