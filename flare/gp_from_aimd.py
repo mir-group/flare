@@ -282,6 +282,13 @@ class TrajectoryTrainer:
                 # Get a randomized set of atoms of species i from the frame
                 # So that it is not always the lowest-indexed atoms chosen
                 atoms_of_specie = frame.indices_of_specie(species_i)
+
+                # remove fixed/zero-forces atoms
+                new_list = []
+                for atom in atoms_of_specie:
+                    if all(frame.forces[atom, :]):
+                        new_list += [atom]
+                atoms_of_specie = new_list
                 np.random.shuffle(atoms_of_specie)
                 n_at = len(atoms_of_specie)
                 # Determine how many to add based on user defined cutoffs
