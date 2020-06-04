@@ -100,7 +100,7 @@ class GaussianProcess:
         if self.output is not None:
             logger = self.output.logger['log']
         else:
-            logger = set_logger("log.flare.gp", stream=True,
+            logger = set_logger("GaussianProcess", stream=True,
                                 fileout=False, verbose="info")
         self.logger = logger
 
@@ -171,7 +171,17 @@ class GaussianProcess:
                                     fileout=True, verbose="info")
             self.logger = logger
 
-        if (self.name in _global_training_labels) and (_global_training_labels[self.name] is not self.training_labels_np):
+        # check whether it's be loaded before
+        loaded = False
+        if self.name in _global_training_labels:
+            if _global_training_labels.get(self.name, None) is not self.training_labels_np:
+                loaded = True
+        if self.name in _global_energy_labels:
+            if _global_energy_labels.get(self.name, None) is not self.energy_labels_np:
+                loaded = True
+
+        if loaded:
+
             base = f'{self.name}'
             count = 2
             while (self.name in _global_training_labels and count < 100):
@@ -187,11 +197,6 @@ class GaussianProcess:
                 self.logger.debug("Specified GP name still present in global memory: "
                             f"renaming the gp instance to {self.name}")
             self.logger.info(f"Final name of the gp instance is {self.name}")
-
-        assert (self.name not in _global_training_labels), \
-            f"the gp instance name, {self.name} is used"
-        assert (self.name not in _global_training_data),  \
-            f"the gp instance name, {self.name} is used"
 
         self.sync_data()
 

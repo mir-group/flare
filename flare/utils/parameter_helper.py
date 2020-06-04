@@ -104,7 +104,7 @@ class ParameterHelper():
 
         """
 
-        self.logger = set_logger("log.flare.utils.parameter_helper", stream=True,
+        self.logger = set_logger("ParameterHelper", stream=True,
                                  fileout=False, verbose="info")
 
         self.all_types = ['specie'] + \

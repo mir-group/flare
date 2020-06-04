@@ -269,6 +269,7 @@ class TestIO():
         for d in [1, 2, 3]:
             assert np.all(test_gp.predict(x_t=validation_env, d=d) ==
                           new_gp.predict(x_t=validation_env, d=d))
+        assert new_gp.training_data is not test_gp.training_data
 
     @pytest.mark.parametrize('multihyps', multihyps_list)
     def test_load_and_reload(self, all_gps, validation_env, multihyps):
@@ -320,6 +321,7 @@ class TestIO():
         new_gp = GaussianProcess.from_file('test_gp_write.json')
         assert np.array_equal(prev_ky_mat, new_gp.ky_mat)
         assert np.array_equal(prev_l_mat, new_gp.l_mat)
+        assert new_gp.training_data is not test_gp.training_data
 
         os.remove('test_gp_write.json')
 

@@ -466,8 +466,8 @@ def add_stream(logger, verbose: str = "info"):
     if not stream_defined:
         ch = StreamHandler()
         ch.setLevel(getattr(logging, verbose.upper()))
-        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-        ch.setFormatter(formatter)
+        # formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        # ch.setFormatter(formatter)
         logger.addHandler(ch)
 
 def add_file(logger, filename, verbose: str = "info"):
