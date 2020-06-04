@@ -551,8 +551,6 @@ def filter_coeffs_2d(dinv, data):
 
     # First, solve in the X-direction
     for iy in range(My):
-        # print(data[:,iy].size)
-        # print(spline.coefs[:,iy].size)
         find_coefs_1d(dinv[0], Mx, data[:, iy], coefs[:, iy])
 
     # Now, solve in the Y-direction
