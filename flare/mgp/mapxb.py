@@ -261,8 +261,11 @@ class SingleMapXbody:
 
         if not self.mean_only:
             grid_vars = solve_triangular(GP.l_mat, k12_v_all.T, lower=True).T
-            tensor_shape = np.array([*self.grid_num, grid_vars.shape[1]])
-            grid_vars = np.reshape(grid_vars, tensor_shape)
+            if self.svd_rank == 'simple':
+                self_kern = self._gengrid_var_simple()        
+            else:
+                tensor_shape = np.array([*self.grid_num, grid_vars.shape[1]])
+                grid_vars = np.reshape(grid_vars, tensor_shape)
 
         # ------ save mean and var to file -------
         np.save(f'grid{self.bodies}_mean{self.species_code}', grid_mean)
@@ -364,6 +367,11 @@ class SingleMapXbody:
         if not self.mean_only:
             if self.svd_rank == 'auto':
                 warnings.warn("The containers for variance are not built because svd_rank='auto'")
+
+            if self.svd_rank == 'simple':
+                self.mean = CubicSpline(self.bounds[0], self.bounds[1],
+                                        orders=self.grid_num)
+
             if isinstance(self.svd_rank, int):
                 self.var = PCASplines(self.bounds[0], self.bounds[1],
                                       orders=self.grid_num,
@@ -384,7 +392,8 @@ class SingleMapXbody:
                 self.var = PCASplines(self.bounds[0], self.bounds[1],
                                       orders=self.grid_num,
                                       svd_rank=np.min(y_var.shape))
-                self.var.set_values(y_var)
+            self.var.set_values(y_var)
+
 
     def predict(self, lengths, xyzs, map_force, mean_only):
         assert map_force == self.map_force, f'The mapping is built for'\
