@@ -1,6 +1,6 @@
 import numpy as np
 
-import flare.kernels.map_3b_kernel as map_3b
+import flare.kernels.map_3b_kernel_new as map_3b
 
 from flare.kernels import sc, mc_simple, mc_sephyps
 from flare.parameters import Parameters

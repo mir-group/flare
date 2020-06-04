@@ -9,11 +9,11 @@ import time
 import multiprocessing
 import numpy as np
 
-from shutil import move as movefile
+from logging import FileHandler, StreamHandler
 from os.path import isfile
+from shutil import move as movefile
 from typing import Union
 
-from flare.parameters import Parameters
 from flare.struc import Structure
 from flare.utils.element_coder import Z_to_element
 
@@ -72,9 +72,7 @@ class Output:
         filename = self.basename + suffix
 
         if filetype not in self.logger:
-            if isfile(filename):
-                movefile(filename, filename+"-bak")
-            self.logger[filetype] = Output.set_logger(filename, stream=False, fileout=True, verbose=verbose)
+            self.logger[filetype] = set_logger(filename, stream=False, fileout=True, verbose=verbose)
 
     def write_to_log(self, logstring: str, name: str = "log",
                      flush: bool = False):
@@ -130,9 +128,9 @@ class Output:
         else:
             std_string = ''
 
-        headerstring = ''
+        headerstring = '\n'
         headerstring += gp_str
-        headerstring += ''
+        headerstring += '\n'
         headerstring += std_string
         if dt is not None:
             headerstring += f'timestep (ps): {dt}\n'
@@ -235,10 +233,8 @@ class Output:
                 f'potential energy: {pot_en:.6f} eV \n'
             string += f'total energy: {tot_en:.6f} eV \n'
 
-        string += 'wall time from start: '
-        string += f'{(time.time() - start_time):.2f} s \n'
-
         self.logger['log'].info(string)
+        self.write_wall_time(start_time)
 
         if self.always_flush:
             self.logger['log'].handlers[0].flush()
@@ -328,12 +324,8 @@ class Output:
         :return:
         """
         f = self.logger[name]
-        f.info('\n GP hyperparameters: ')
 
-        if hyps_mask is not None:
-            hyps = Parameters.get_hyps(hyps_mask, hyps)
-            if len(hyp_labels) != len(hyps):
-                hyp_labels = None
+        f.info('\nGP hyperparameters: ')
 
         if hyp_labels is not None:
             for i, label in enumerate(hyp_labels):
@@ -344,12 +336,27 @@ class Output:
 
         f.info(f'likelihood: {like:.4f}')
         f.info(f'likelihood gradient: {like_grad}')
+
         if start_time:
-            time_curr = time.time() - start_time
-            f.info(f'wall time from start: {time_curr:.2f} s')
+            self.write_wall_time(start_time)
 
         if self.always_flush:
             f.handlers[0].flush()
+
+    def write_wall_time(self, start_time):
+        time_curr = time.time() - start_time
+        self.logger['log'].info(f'wall time from start: {time_curr:.2f} s')
+
+    def conclude_dft(self, dft_count, start_time):
+        f = self.logger['log']
+        f.info('DFT run complete.')
+        f.info(f'number of DFT calls: {dft_count}')
+        self.write_wall_time(start_time)
+
+    def add_atom_info(self, train_atoms, stds):
+        f = self.logger['log']
+        f.info(f'Adding atom {train_atoms} to the training set.')
+        f.info(f'Uncertainty: {stds[train_atoms[0]]}')
 
     def write_gp_dft_comparison(self, curr_step, frame,
                                 start_time, dft_forces,
@@ -440,39 +447,55 @@ class Output:
             string += f'total energy: {tot_en:10.6} eV \n'
             stat += f' {pot_en:10.6} {tot_en:10.6}'
 
-        dt = time.time() - start_time
-        string += f'wall time from start: {dt:10.2}\n'
-        stat += f' {dt}\n'
-
         self.logger['log'].info(string)
+        self.write_wall_time(start_time)
+
+        # stat += f' {dt}\n'
         # self.logger['stat'].write(stat)
 
         # if self.always_flush:
         #     self.logger['log'].flush()
 
-    @staticmethod
-    def add_stream(logger, verbose: str = "info"):
-        ch = logging.StreamHandler()
-        ch.setLevel(getattr(logging, verbose.upper()))
-        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-        ch.setFormatter(formatter)
+def add_stream(logger, verbose: str = "info"):
+
+    stream_defined = False
+    for handler in logger.handlers:
+        if isinstance(handler, StreamHandler):
+            stream_defined = True
+
+    if not stream_defined:
+        ch = StreamHandler()
+        ch.setLevel(logging.DEBUG)
+        # formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        # ch.setFormatter(formatter)
         logger.addHandler(ch)
 
-    @staticmethod
-    def add_file(logger, filename, verbose: str = "info"):
-        fh = logging.FileHandler(filename)
+def add_file(logger, filename, verbose: str = "info"):
+
+    file_defined = False
+    for handler in logger.handlers:
+        if isinstance(handler, FileHandler):
+            file_defined = True
+
+    if not file_defined:
+
+        # back up
+        if isfile(filename):
+            movefile(filename, filename+"-bak")
+
+        fh = FileHandler(filename)
         verbose = getattr(logging, verbose.upper())
         logger.setLevel(verbose)
-        fh.setLevel(verbose)
+        fh.setLevel(logging.DEBUG)
         logger.addHandler(fh)
 
-    @staticmethod
-    def set_logger(name, stream, fileout, verbose: str = "info"):
-        logger = logging.getLogger(name)
-        logger.setLevel(getattr(logging, verbose.upper()))
-        if stream:
-            Output.add_stream(logger, verbose)
-        if fileout:
-            Output.add_file(logger, name, verbose)
-        return logger
+def set_logger(name, stream, fileout, verbose: str = "info"):
+    logger = logging.getLogger(name)
+    logger.setLevel(getattr(logging, verbose.upper()))
+    if stream:
+        add_stream(logger, verbose)
+    if fileout:
+        add_file(logger, name, verbose)
+    return logger
+>>>>>>> 94ec35126b7c2cb69dfc0a6f0bbcd05ba5db3d30
 

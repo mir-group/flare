@@ -36,12 +36,16 @@ def test_otf_h2():
                          hyp_labels=hyp_labels,
                          maxiter=50)
 
-    otf = OTF(vasp_input, dt, number_of_steps, gp, dft_loc,
-              std_tolerance_factor, init_atoms=[0],
-              calculate_energy=True, max_atoms_added=1,
-              n_cpus=1, force_source='vasp',
+    otf = OTF(dt=dt, number_of_steps=number_of_steps,
+              gp=gp, calculate_energy=True,
+              std_tolerance_factor=std_tolerance_factor,
+              init_atoms=[0],
+              output_name='h2_otf_vasp',
+              max_atoms_added=1,
+              force_source='vasp',
+              dft_input=vasp_input, dft_loc=dft_loc,
               dft_output="vasprun.xml",
-              output_name='h2_otf_vasp')
+              n_cpus=1)
 
     otf.run()
 

@@ -134,11 +134,11 @@ def test_run_dft_par():
             run_dft_par('POSCAR',test_structure,dft_command=dft_command,
                         n_cpus=2)
 
-    call_string = "echo 'testing_call' > TEST_CALL_OUT"
+    call_string = "echo 'testing_call'"
 
     forces = run_dft_par('POSCAR', test_structure, dft_command=call_string,
-                n_cpus=1, serial_prefix=' ',
-                         dft_out='test_files/test_vasprun.xml')
+                n_cpus=1, serial_prefix=' ', dft_out='test_files/test_vasprun.xml',
+                         screen_out='TEST_CALL_OUT')
 
     with open("TEST_CALL_OUT", 'r') as f:
         assert 'testing_call' in f.readline()

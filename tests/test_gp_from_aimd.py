@@ -216,35 +216,19 @@ def test_mgp_gpfa(all_mgp, all_gp):
     grid_num_2 = 5
     grid_num_3 = 3
     lower_cut = 0.01
-    two_cut = gp_model.cutoffs.get('twobody', 0)
-    three_cut = gp_model.cutoffs.get('threebody', 0)
-    # set struc params. cell and masses arbitrary?
-    mapped_cell = np.eye(3) * 2
-    struc_params = {'species': [1, 2],
-                    'cube_lat': mapped_cell,
-                    'mass_dict': {'0': 27, '1': 16}}
-
-    # grid parameters
-    train_size = len(gp_model.training_data)
-    grid_params = {'bodies': [2, 3],
-                   'cutoffs': gp_model.cutoffs,
-                   'bounds_2': [[lower_cut], [two_cut]],
-                   'bounds_3': [[lower_cut, lower_cut, lower_cut],
-                                [three_cut, three_cut, three_cut]],
-                   'grid_num_2': [grid_num_2],
-                   'grid_num_3': [grid_num_3, grid_num_3, grid_num_3],
-                   'svd_rank_2': np.min((grid_num_2, 3 * train_size)),
-                   'svd_rank_3': np.min((grid_num_3 ** 3, 3 * train_size)),
-                   'load_grid': None,
+    grid_params_3b = {'lower_bound': [lower_cut for d in range(3)],
+                      'grid_num': [grid_num_3 for d in range(3)],
+                      'svd_rank': 'auto'}
+    grid_params = {'load_grid': None,
                    'update': False}
+    grid_params['threebody'] = grid_params_3b
+    species_list = [1, 2]
 
-    struc_params = {'species': [1, 2],
-                    'cube_lat': np.eye(3) * 2,
-                    'mass_dict': {'0': 27, '1': 16}}
-
-    mgp_model = MappedGaussianProcess(grid_params, struc_params)
+    mgp_model = MappedGaussianProcess(grid_params, species_list, n_cpus=1,
+                map_force=False)
 
     mgp_model.build_map(gp_model)
+
     nenv = 10
     cell = np.eye(3)
     unique_species = gp_model.training_data[0].species

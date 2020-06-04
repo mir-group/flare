@@ -109,9 +109,9 @@ def many_body_mc_sepcut_jit(q_array_1, q_array_2,
                 if c1 == etypes2[j]:
                     k1js = k_sq_exp_double_dev(q1, qjs, sig[mbtype1], ls[mbtype1])
 
+                be = spec_mask[etypes1[i]]
+                mbtype = mb_mask[be+bsn]
                 if etypes1[i] == etypes2[j]:
-                    be = spec_mask[etypes1[i]]
-                    mbtype = mb_mask[be+bsn]
                     kij = k_sq_exp_double_dev(qis, qjs, sig[mbtype], ls[mbtype])
                 else:
                     kij = 0
@@ -217,10 +217,9 @@ def many_body_mc_grad_sepcut_jit(q_array_1, q_array_2,
                     q1jdiffsq = (q1 - qjs) * (q1 - qjs)
                     dk1js = mb_grad_helper_ls_(q1jdiffsq, sig[mbtype1], ls[mbtype1])
 
+                be = spec_mask[etypes2[j]]
+                mbtype = mb_mask[bsn + be]
                 if etypes1[i] == etypes2[j]:
-                    be = spec_mask[etypes2[j]]
-                    mbtype = mb_mask[bsn + be]
-
                     kij = k_sq_exp_double_dev(
                         qis, qjs, sig[mbtype], ls[mbtype])
                     qijdiffsq = (qis - qjs) * (qis - qjs)

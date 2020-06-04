@@ -16,14 +16,17 @@ from warnings import warn
 from sys import stdout
 from os import devnull
 
+from flare.output import set_logger
 from flare.utils.element_coder import element_to_Z, Z_to_element
-
 
 class Parameters():
 
     all_kernel_types = ['twobody', 'threebody', 'manybody']
     ndim = {'twobody': 2, 'threebody': 3, 'manybody': 2, 'cut3b': 2}
     n_kernel_parameters = {'twobody': 2, 'threebody': 2, 'manybody': 2, 'cut3b': 0}
+
+    logger = set_logger("Parameters", stream=True,
+                        fileout=False, verbose="info")
 
     def __init__(self):
 
@@ -64,9 +67,9 @@ class Parameters():
                 newcutoffs['threebody'] = cutoffs[1]
             if len(cutoffs) > 2:
                 newcutoffs['manybody'] = cutoffs[2]
-            print("Convert cutoffs array to cutoffs dict")
-            print("Original", cutoffs)
-            print("Now", newcutoffs)
+            Parameters.logger.debug("Convert cutoffs array to cutoffs dict")
+            Parameters.logger.debug("Original", cutoffs)
+            Parameters.logger.debug("Now", newcutoffs)
             return newcutoffs
         else:
             raise TypeError("cannot handle cutoffs with {type(cutoffs)} type")
@@ -100,15 +103,17 @@ class Parameters():
             start = 0
             for k in Parameters.all_kernel_types:
                 if k in kernels:
-                    param_dict[k+'_start'] = start
-                    if 'n'+k not in param_dict:
-                        print("add in hyper parameter separators for", k)
-                        param_dict['n'+k] = 1
-                        start += 2
-                    else:
-                        start += param_dict['n'+k]*2
 
-            print("Replace kernel array in param_dict")
+                    param_dict[k+'_start'] = start
+
+                    if 'n'+k not in param_dict:
+                        Parameters.logger.debug("add in hyper parameter separators for", k)
+                        param_dict['n'+k] = 1
+                        start += Parameters.n_kernel_parameters[k]
+                    else:
+                        start += param_dict['n'+k] * Parameters.n_kernel_parameters[k]
+
+            Parameters.logger.debug("Replace kernel array in param_dict")
             param_dict['kernels'] = deepcopy(kernels)
 
         return param_dict
@@ -127,6 +132,8 @@ class Parameters():
         assert isinstance(cutoffs, dict)
         assert isinstance(kernels, (list))
 
+        param_dict['cutoffs'] = cutoffs
+
         # double check nspecie is there
         nspecie = param_dict['nspecie']
         if nspecie > 1:
@@ -139,7 +146,6 @@ class Parameters():
         # for each kernel, check whether it is defined
         # and the length of corresponding hyper-parameters
         hyps_length = 0
-        kernels = param_dict['kernels']
         used_parameters = np.zeros_like(hyps, dtype=bool)
         for kernel in kernels+['cut3b']:
 

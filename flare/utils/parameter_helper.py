@@ -12,6 +12,7 @@ from numpy import array as nparray
 from numpy import max as npmax
 from typing import List, Callable, Union
 
+from flare.output import set_logger
 from flare.parameters import Parameters
 from flare.utils.element_coder import element_to_Z, Z_to_element
 
@@ -65,6 +66,9 @@ class ParameterHelper():
 
     """
 
+    # TO DO, sync it to kernel class
+    #  need to be synced with kernel class
+
     # name of the kernels
     all_kernel_types = ['twobody', 'threebody', 'manybody']
     additional_groups = ['cut3b']
@@ -100,10 +104,8 @@ class ParameterHelper():
 
         """
 
-        self.set_logger(verbose)
-
-        # TO DO, sync it to kernel class
-        #  need to be synced with kernel class
+        self.logger = set_logger("ParameterHelper", stream=True,
+                                 fileout=False, verbose="info")
 
         self.all_types = ['specie'] + \
             ParameterHelper.all_kernel_types + ParameterHelper.additional_groups
@@ -225,20 +227,6 @@ class ParameterHelper():
                     self.fill_in_parameters(
                         ktype, random=random, ones=ones, universal=universal)
 
-    def set_logger(self, verbose):
-
-        verbose = getattr(logging, verbose.upper())
-        logger = logging.getLogger('parameter_helper')
-        logger.setLevel(verbose)
-        # create console handler with a higher log level
-        ch = logging.StreamHandler()
-        ch.setLevel(verbose)
-        # create formatter and add it to the handlers
-        formatter = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
-        ch.setFormatter(formatter)
-        # add the handlers to the logger
-        logger.addHandler(ch)
-        self.logger = logger
 
     def list_parameters(self, parameter_dict, constraints={}):
         """Define many groups of parameters
