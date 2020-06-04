@@ -5,13 +5,13 @@ or running an MD simulation updated on-the-fly.
 """
 import datetime
 import logging
-import os
 import shutil
 import time
 import multiprocessing
 import numpy as np
 
 from logging import FileHandler, StreamHandler
+from shutil import move as movefile
 from typing import Union
 
 from flare.struc import Structure
@@ -72,6 +72,8 @@ class Output:
         filename = self.basename + suffix
 
         if filetype not in self.logger:
+            if isfile(filename):
+                movefile(filename, filename+"-bak")
             self.logger[filetype] = set_logger(filename, stream=False, fileout=True, verbose=verbose)
 
     def write_to_log(self, logstring: str, name: str = "log",
