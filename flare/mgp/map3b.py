@@ -6,12 +6,11 @@ from typing import List
 from flare.struc import Structure
 from flare.utils.element_coder import Z_to_element
 from flare.gp_algebra import _global_training_data, _global_training_structures
-from flare.kernels.map_3b_kernel_new import triplet_cutoff
 from flare.kernels.utils import from_mask_to_args, str_to_kernel_set, str_to_mapped_kernel
 
 from flare.mgp.mapxb import MapXbody, SingleMapXbody
 from flare.mgp.utils import get_triplets, get_triplets_en, get_kernel_term,\
-    get_permutations
+    get_permutations, triplet_cutoff
 
 
 class Map3body(MapXbody):
