@@ -104,7 +104,8 @@ class Parameters():
             for k in Parameters.all_kernel_types:
                 if k in kernels:
 
-                    param_dict[k+'_start'] = start
+                    if k+'_start' not in param_dict:
+                        param_dict[k+'_start'] = start
 
                     if 'n'+k not in param_dict:
                         Parameters.logger.debug("add in hyper parameter separators for", k)

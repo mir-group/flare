@@ -497,5 +497,3 @@ def set_logger(name, stream, fileout, verbose: str = "info"):
     if fileout:
         add_file(logger, name, verbose)
     return logger
->>>>>>> 94ec35126b7c2cb69dfc0a6f0bbcd05ba5db3d30
-

@@ -29,7 +29,7 @@ from flare.struc import Structure
 from flare.utils.element_coder import NumpyEncoder, Z_to_element
 
 
-class RobustBayesianCommitteMachine(GaussianProcess):
+class RobustBayesianCommitteeMachine(GaussianProcess):
     """Gaussian process force field. Implementation is based on Algorithm 2.1
     (pg. 19) of "Gaussian Processes for Machine Learning" by Rasmussen and
     Williams.
