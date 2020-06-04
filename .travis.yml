@@ -13,7 +13,7 @@ before_install:
     - pip install codecov pytest pytest-cov pytest_mock
     - pwd
     - wget http://folk.uio.no/anjohan/lmp
-    - "wget https://github.com/cp2k/cp2k/releases/download/
+    - "wget https://github.com/cp2k/cp2k/releases/download/\
       v7.1.0/cp2k-7.1-Linux-x86_64.sopt"
     - chmod u+x lmp
     - pip install -r requirements.txt
