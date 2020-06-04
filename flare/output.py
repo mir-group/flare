@@ -5,7 +5,6 @@ or running an MD simulation updated on-the-fly.
 """
 import datetime
 import logging
-import shutil
 import time
 import multiprocessing
 import numpy as np
