@@ -117,9 +117,9 @@ def test_vasp_input_edit():
 
     final_structure = dft_input_to_structure(new_file)
 
-    assert np.isclose(final_structure.vec1, structure.vec1).all()
+    assert np.isclose(final_structure.vec1, structure.vec1, atol=1e-4).all()
     assert np.isclose(final_structure.positions[0],
-                      structure.positions[0]).all()
+                      structure.positions[0], atol=1e-4).all()
 
     os.system('rm ./POSCAR')
     os.system('rm ./POSCAR.bak')

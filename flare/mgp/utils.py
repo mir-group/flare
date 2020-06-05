@@ -8,8 +8,8 @@ from typing import Callable
 from flare.env import AtomicEnvironment
 from flare.kernels.cutoffs import quadratic_cutoff
 from flare.kernels.utils import str_to_kernel_set as stks
+import flare.mgp.utils_3b as map_3b
 from flare.parameters import Parameters
-
 
 def get_kernel_term(GP, term):
     """
@@ -91,3 +91,52 @@ def get_bonds(ctype, etypes, bond_array):
             bond_lengths.append([[bond[0]]])
             bond_dirs.append([b_dir])
     return exist_species, bond_lengths, bond_dirs
+
+
+def str_to_mapped_kernel(name: str, component: str = "sc",
+                         hyps_mask: dict = None):
+    """
+    return kernels and kernel gradient function base on a string.
+    If it contains 'sc', it will use the kernel in sc module;
+    otherwise, it uses the kernel in mc_simple;
+    if sc is not included and multihyps is True,
+    it will use the kernel in mc_sephyps module
+    otherwise, it will use the kernel in the sc module
+
+    Args:
+
+    name (str): name for kernels. example: "2+3mc"
+    multihyps (bool, optional): True for using multiple hyperparameter groups
+
+    :return: mapped kernel function, kernel gradient, energy kernel,
+             energy_and_force kernel
+
+    """
+
+    multihyps = True
+    if hyps_mask is None:
+        multihyps = False
+    elif hyps_mask['nspecie'] == 1:
+        multihyps = False
+
+    # b2 = Two body in use, b3 = Three body in use
+    b2 = False
+    many = False
+    b3 = False
+    for s in ['3', 'three']:
+        if s in name.lower() or s == name.lower():
+            b3 = True
+
+    if b3:
+        if multihyps:
+            tbmfe = map_3b.three_body_mc_en_force_sephyps
+            tbme = map_3b.three_body_mc_en_sephyps
+        else:
+            tbmfe = map_3b.three_body_mc_en_force
+            tbme = map_3b.three_body_mc_en
+    else:
+        raise NotImplementedError("mapped kernel for two-body and manybody kernels "
+                                  "are not implemented")
+
+    return tbme, tbmfe
+
