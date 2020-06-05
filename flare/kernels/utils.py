@@ -1,6 +1,6 @@
 import numpy as np
 
-import flare.mgp.utils as map_3b
+import flare.mgp.grid_kernels as map_3b
 
 from flare.kernels import sc, mc_simple, mc_sephyps
 from flare.parameters import Parameters
