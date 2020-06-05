@@ -1,6 +1,6 @@
 import numpy as np
 
-import flare.mgp.utils as map_3b
+# import flare.mgp.utils as map_3b
 
 from flare.kernels import sc, mc_simple, mc_sephyps
 from flare.parameters import Parameters
@@ -122,12 +122,13 @@ def str_to_mapped_kernel(name: str, component: str = "sc",
             b3 = True
 
     if b3:
-        if multihyps:
-            tbmfe = map_3b.three_body_mc_en_force_sephyps
-            tbme = map_3b.three_body_mc_en_sephyps
-        else:
-            tbmfe = map_3b.three_body_mc_en_force
-            tbme = map_3b.three_body_mc_en
+        pass
+    #     if multihyps:
+    #         tbmfe = map_3b.three_body_mc_en_force_sephyps
+    #         tbme = map_3b.three_body_mc_en_sephyps
+    #     else:
+    #         tbmfe = map_3b.three_body_mc_en_force
+    #         tbme = map_3b.three_body_mc_en
     else:
         raise NotImplementedError("mapped kernel for two-body and manybody kernels "
                                   "are not implemented")
