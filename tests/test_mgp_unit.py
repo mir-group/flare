@@ -6,14 +6,14 @@ import os, pickle, re
 
 from flare import struc, env, gp
 from flare import otf_parser
-from flare.mgp.mgp import MappedGaussianProcess
+from flare.mgp import MappedGaussianProcess
 from flare.lammps import lammps_calculator
 
 from .fake_gp import get_gp, get_random_structure
 
-body_list = ['2', '3']
-multi_list = [False, True]
-map_force_list = [False, True]
+body_list = ['3'] #['2', '3']
+multi_list = [False] #, True]
+map_force_list = [False] #, True]
 
 def clean():
     for f in os.listdir("./"):

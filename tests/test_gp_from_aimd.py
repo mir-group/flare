@@ -10,7 +10,7 @@ from os import remove
 from flare.env import AtomicEnvironment
 from flare.struc import Structure
 from flare.gp import GaussianProcess
-from flare.mgp.mgp import MappedGaussianProcess
+from flare.mgp import MappedGaussianProcess
 from flare.gp_from_aimd import TrajectoryTrainer,\
                                     parse_trajectory_trainer_output
 from flare.utils.learner import subset_of_frame_by_element
