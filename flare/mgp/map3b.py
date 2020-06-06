@@ -6,11 +6,12 @@ from typing import List
 from flare.struc import Structure
 from flare.utils.element_coder import Z_to_element
 from flare.gp_algebra import _global_training_data, _global_training_structures
-from flare.kernels.utils import from_mask_to_args, str_to_kernel_set, str_to_mapped_kernel
+from flare.kernels.utils import from_mask_to_args
 
 from flare.mgp.mapxb import MapXbody, SingleMapXbody
 from flare.mgp.utils import get_triplets, get_triplets_en, get_kernel_term,\
-    get_permutations, triplet_cutoff
+    get_permutations
+from flare.mgp.grid_kernels import triplet_cutoff
 
 
 class Map3body(MapXbody):
@@ -144,7 +145,7 @@ class SingleMap3body(SingleMapXbody):
         return False
 
 
-    def _gengrid_numba(self, name, s, e, env12, kernel_info):
+    def _gengrid_numba(self, name, force_block, s, e, env12, kernel_info):
         """
         Loop over different parts of the training set. from element s to element e
 
@@ -159,60 +160,36 @@ class SingleMap3body(SingleMapXbody):
         kernel, en_kernel, en_force_kernel, cutoffs, hyps, hyps_mask = \
             kernel_info
 
-        training_data = _global_training_data[name]
-
-        size = e - s
+        if self.map_force:
+            prefix = 'force'
+            raise NotImplementedError
+        else:
+            prefix = 'energy'
 
         args = from_mask_to_args(hyps, cutoffs, hyps_mask)
         r_cut = cutoffs['threebody']
 
         grids = self.construct_grids()
-        fj = triplet_cutoff(grids, r_cut) # move this fj out of kernel
+        coords = np.zeros((grids.shape[0], 9), dtype=np.float64) # padding 0
+        coords[:, 0] = np.ones_like(coords[:, 0])
+        fj, fdj = triplet_cutoff(grids, r_cut, coords, derivative=True) # TODO: add cutoff func 
+        fdj = fdj[0]
+
         perm_list = get_permutations(env12.ctype, env12.etypes[0], env12.etypes[1])
 
-        k_v = []
-        for m_index in range(size):
-            x_2 = training_data[m_index]
-            k_v += [en_force_kernel(kern_type, x_2, grids, fj,
-                                    env12.ctype, env12.etypes, perm_list,
-                                    *args)]
+        if force_block:
+            training_data = _global_training_data[name]
+            kern_type = f'{prefix}_force'
+        else:
+            training_data = _global_training_structures[name]
+            kern_type = f'{prefix}_energy'
 
-        return np.array(k_v).T
+        k_v = np.empty((0, grids.shape[0]))
+        for m_index in range(s, e):
+            data = training_data[m_index]
+            kern_vec = en_kernel(kern_type, data, grids, fj, fdj,
+                                 env12.ctype, env12.etypes, perm_list,
+                                 *args)
+            k_v = np.vstack((k_v, kern_vec))
 
-
-    def _gengrid_energy_numba(self, name, s, e, bounds, nb1, nb2, nb12, env12, kernel_info):
-        """
-        Loop over different parts of the training set. from element s to element e
-
-        Args:
-            name: name of the gp instance
-            s: start index of the training data parition
-            e: end index of the training data parition
-            bonds1: list of bond to consider for edge center-1
-            bonds2: list of bond to consider for edge center-2
-            bonds12: list of bond to consider for edge 1-2
-            env12: AtomicEnvironment container of the triplet
-            kernel_info: return value of the get_3b_kernel
-        """
-
-        kernel, en_kernel, en_force_kernel, cutoffs, hyps, hyps_mask = \
-            kernel_info
-
-        training_structure = _global_training_structures[name]
-
-        ds = [1, 2, 3]
-        size = (e-s) * 3
-
-        grids = self.construct_grids()
-
-        args = from_mask_to_args(hyps, cutoffs, hyps_mask)
-
-        k_v = []
-        for m_index in range(size):
-            structure = training_structures[m_index + s]
-            kern_curr = 0
-            for environment in structure:
-                kern_curr += en_kernel(x, environment, *args)
-            kv += [kern_curr]
-
-        return np.hstack(k_v)
+        return k_v.T

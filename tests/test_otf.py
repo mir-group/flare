@@ -1,4 +1,5 @@
 import pytest
+import os
 
 import glob, os, re, shutil
 import numpy as np
@@ -12,6 +13,10 @@ cmd = {'cp2k':'CP2K_COMMAND', 'qe':'PWSCF_COMMAND'}
 software_list = ['cp2k', 'qe']
 example_list = [1, 2]
 name_list = {1:'h2', 2:'al'}
+
+print('running test_otf.py')
+print('current working directory:')
+print(os.getcwd())
 
 def get_gp(par=False, per_atom_par=False, n_cpus=1):
     hyps = np.array([1, 1, 1, 1, 1])
@@ -54,6 +59,10 @@ def test_otf(software, example):
     Test that an otf run can survive going for more steps
     :return:
     """
+
+    print('running test_otf.py')
+    print('current working directory:')
+    print(os.getcwd())
 
     outdir = f'test_outputs_{software}'
     if os.path.isdir(outdir):
@@ -105,10 +114,15 @@ def test_otf_par(software, per_atom_par, n_cpus):
     Test that an otf run can survive going for more steps
     :return:
     """
+
     example = 1
     outdir = f'test_outputs_{software}'
     if os.path.isdir(outdir):
         shutil.rmtree(outdir)
+
+    print('running test_otf.py')
+    print('current working directory:')
+    print(os.getcwd())
 
     if (not os.environ.get(cmd[software], False)):
         pytest.skip(f'{cmd[software]} not found in environment:'

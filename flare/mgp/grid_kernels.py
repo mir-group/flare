@@ -1,98 +1,23 @@
-from numpy import array
+import numpy as np
 from numba import njit
 from math import exp, floor
 from typing import Callable
 
-from flare.env import AtomicEnvironment
 from flare.kernels.cutoffs import quadratic_cutoff
 
 
-def get_3b_args(env1):
-    return [env1.bond_array_3, 
-            env1.ctype, env1.etypes,
-            env1.cross_bond_inds, 
-            env1.cross_bond_dists, 
-            env1.triplet_counts]
 
-
-def grid_kernel_3b(kern_type,
-                   env1: AtomicEnvironment, grids, fj, 
-                   c2, etypes2, perm_list,
-                   hyps: 'ndarray', r_cut: float,
-                   cutoff_func: Callable = quadratic_cutoff):
-
-    sig = hyps[0]
-    ls = hyps[1]
-
-    bond_array_1, c1, etypes1, cross_bond_inds_1, cross_bond_dists_1, triplets_1\
-         = get_3b_args(env1)
-
-    kern = np.zeros((3, grids.shape[0]), dtype=np.float64)
-
-    # pre-compute constants that appear in the inner loop
-    sig2 = sig * sig
-    ls1 = 1 / (2 * ls * ls)
-    ls2 = 1 / (ls * ls)
-
-
-    # -------- 1. collect all the triplets in this training env --------
-    triplet_coord_list = get_triplets_for_kern(bond_array_1, c1, etypes1,
-        cross_bond_inds_1, cross_bond_dists_1, triplets_1,
-        c2, etypes2, perm_list)
-
-    if len(triplet_coord_list) == 0: # no triplets
-        return kern
-
-    triplet_coord_list = np.array(triplet_coord_list)
-    triplet_list = triplet_coord_list[:, :3] # (n_triplets, 3)
-    coord_list = triplet_coord_list[:, 3:] # ((n_triplets, 9)
-
-
-    # ---------------- 2. calculate cutoff of the triplets ----------------
-    fi, fdi = triplet_cutoff_grad(triplet_list, r_cut, coord_list) # (n_triplets, 1)
-    fifj = fi @ fj.T # (n_triplets, n_grids)
-
-
-    # -------- 3. calculate distance difference & exponential part --------
-    D = 0
-    for r in range(3):
-        rj, ri = np.meshgrid(grids[:, r], triplet_list[:, r])
-        rij = ri - rj
-        D += rij * rij # (n_triplets, n_grids)
-    kern_exp = sig2 * np.exp(- D * ls1)
-
-
-    # ---------------- 4. calculate the derivative part ----------------
-    if kern_type == 'energy_energy':
-        kern_exp = np.sum(kern_exp * fifj, axis=0) / 9 # (n_grids,)
-        for d in range(3):
-            kern[d, :] = kern_exp    
-
-    elif kern_type == 'energy_force':
-        for d in range(3):
-            B = 0
-            fdij = fdi[d] @ fj.T
-            for r in range(3):
-                rj, ri = np.meshgrid(grids[:, r], triplet_list[:, r])
-                rij = ri - rj
-                # column-wise multiplication
-                # coord_list[:, [r]].shape = (n_triplets, 1)
-                B += rij * coord_list[:, [3*d+r]] # (n_triplets, n_grids)
-   
-            kern[d,:] = - np.sum(kern_exp * (B * ls2 * fifj + fdij), axis=0) / 3 # (n_grids,)
-
-    return kern
-
-
-
-
-def grid_kernel_3b_sephyps(kern_type,
-                  env1, grids, fj, c2, etypes2, perm_list,
+def grid_kernel_sephyps(kern_type,
+                  data, grids, fj, c2, etypes2, perm_list,
                   cutoff_2b, cutoff_3b, nspec, spec_mask,
                   nbond, bond_mask, ntriplet, triplet_mask,
                   ncut3b, cut3b_mask,
                   sig2, ls2, sig3, ls3,
                   cutoff_func=quadratic_cutoff):
+    '''
+    Args:
+        data: a single env of a list of envs
+    '''
 
     bc1 = spec_mask[c2]
     bc2 = spec_mask[etypes2[0]]
@@ -100,42 +25,186 @@ def grid_kernel_3b_sephyps(kern_type,
     ttype = triplet_mask[nspec * nspec * bc1 + nspec*bc2 + bc3]
     ls = ls3[ttype]
     sig = sig3[ttype]
-    r_cut = cutoff_3b
+    cutoffs = [cutoff_2b, cutoff_3b]
 
     args = get_3b_args(env1)
 
     hyps = [sig, ls]
-    return grid_kernel_3b(kern_type,
-                   env1, grids, fj, 
+    return grid_kernel(kern_type,
+                   data, grids, fj, 
                    c2, etypes2, perm_list,
-                   hyps, r_cut,
-                   cutoff_func)
+                   hyps, cutoffs, cutoff_func)
+
+
+def grid_kernel(kern_type, 
+                struc, grids, fj, fdj, 
+                c2, etypes2, perm_list,
+                hyps: 'ndarray', cutoffs,
+                cutoff_func: Callable = quadratic_cutoff):
+
+    r_cut = cutoffs[1]
+
+    if not isinstance(struc, list):
+        struc = [struc]
+
+    kern = 0
+    for env in struc:
+        kern += grid_kernel_env(kern_type, 
+                    env, grids, fj, fdj, 
+                    c2, etypes2, perm_list,
+                    hyps, r_cut, cutoff_func)
+
+    return kern
+
+
+def grid_kernel_env(kern_type, 
+                env1, grids, fj, fdj, 
+                c2, etypes2, perm_list,
+                hyps: 'ndarray', r_cut: float,
+                cutoff_func: Callable = quadratic_cutoff):
+
+    # pre-compute constants that appear in the inner loop
+    sig = hyps[0]
+    ls = hyps[1]
+    derivative = derv_dict[kern_type] 
+
+
+    # collect all the triplets in this training env
+    triplet_coord_list = get_triplets_for_kern(env1.bond_array_3, env1.ctype, env1.etypes,
+        env1.cross_bond_inds, env1.cross_bond_dists, env1.triplet_counts,
+        c2, etypes2, perm_list)
+
+    if len(triplet_coord_list) == 0: # no triplets
+        if derivative:
+            return np.zeros((3, grids.shape[0]), dtype=np.float64)
+        else:
+            return np.zeros(grids.shape[0], dtype=np.float64)
+
+    triplet_coord_list = np.array(triplet_coord_list)
+    triplet_list = triplet_coord_list[:, :3] # (n_triplets, 3)
+    coord_list = triplet_coord_list[:, 3:] # ((n_triplets, 9)
+
+
+    # calculate distance difference & exponential part
+    ls1 = 1 / (2 * ls * ls)
+    D = 0
+    for r in range(3):
+        rj, ri = np.meshgrid(grids[:, r], triplet_list[:, r])
+        rij = ri - rj
+        D += rij * rij # (n_triplets, n_grids)
+    kern_exp = (sig * sig) * np.exp(- D * ls1)
+
+
+    # calculate cutoff of the triplets
+    fi, fdi = triplet_cutoff(triplet_list, r_cut, coord_list, derivative, 
+        cutoff_func) # (n_triplets, 1)
+
+
+    # calculate the derivative part
+    kern_func = kern_dict[kern_type]
+    kern = kern_func(kern_exp, fi, fj, fdi, fdj, 
+             grids, triplet_list, coord_list, ls)
+
+    return kern
 
 
 @njit
-def triplet_cutoff(triplets, r_cut, cutoff_func=quadratic_cutoff):
-    f0, _ = cutoff_func(r_cut, triplets, 0) # (n_grid, 3)
-    fj = f0[:, 0] * f0[:, 1] * f0[:, 2] # (n_grid,)
-    return np.expand_dims(fj, axis=1) # (n_grid, 1)
+def en_en(kern_exp, fi, fj, *args):
+    '''energy map + energy block'''
+    fifj = fi @ fj.T # (n_triplets, n_grids)
+    kern = np.sum(kern_exp * fifj, axis=0) / 9 # (n_grids,)
+    return kern
+
 
 @njit
-def triplet_cutoff_grad(triplets, r_cut, coords, cutoff_func=quadratic_cutoff):
-
-    dfj_list = []
+def en_force(kern_exp, fi, fj, fdi, fdj, 
+             grids, triplet_list, coord_list, ls):
+    '''energy map + force block'''
+    fifj = fi @ fj.T # (n_triplets, n_grids)
+    ls2 = 1 / (ls * ls)
+    n_grids = grids.shape[0]
+    n_trplt = triplet_list.shape[0]
+    kern = np.zeros((3, n_grids), dtype=np.float64)
     for d in range(3):
-        s = 3 * d
-        e = 3 * (d + 1)
-        f0, df0 = cutoff_func(r_cut, triplets, coords[:, s:e]) # (n_grid, 3)
-        dfj = df0[:, 0] *  f0[:, 1] *  f0[:, 2] + \
-               f0[:, 0] * df0[:, 1] *  f0[:, 2] + \
-               f0[:, 0] *  f0[:, 1] * df0[:, 2]
-        dfj = np.expand_dims(dfj, axis=1)
-        dfj_list.append(dfj_list)
+        B = np.zeros((n_trplt, n_grids), dtype=np.float64)
+        fdid = np.expand_dims(fdi[:, d], axis=1)
+#        fdij = fdi[:, [d]] @ fj.T
+        fdij = fdid @ fj.T
+        for r in range(3):
+            # one day when numba supports np.meshgrid, we can replace the block below
+            # rj, ri = np.meshgrid(grids[:, r], triplet_list[:, r])
+            rj = np.repeat(grids[:, r], n_trplt) 
+            rj = np.reshape(rj, (n_grids, n_trplt)).T
+            ri = np.repeat(triplet_list[:, r], n_grids)
+            ri = np.reshape(ri, (n_trplt, n_grids))
+            rij = ri - rj
+            # column-wise multiplication
+            # coord_list[:, [r]].shape = (n_triplets, 1)
+            coord = np.diag(coord_list[:, 3*d+r])
+            B += coord @ rij
+#            B += rij * coord_list[:, [3*d+r]] # (n_triplets, n_grids)
+   
+        kern[d, :] = - np.sum(kern_exp * (B * ls2 * fifj + fdij), axis=0) / 3 # (n_grids,)
+    return kern
+
+
+@njit
+def force_en(kern_exp, fi, fj, fdi, fdj, 
+             grids, triplet_list, coord_list, ls):
+    '''force map + energy block'''
+    fifj = fi @ fj.T # (n_triplets, n_grids)
+    fdji = fi @ fdj.T
+    # only r = 0 is non zero, since the grid coords are all (1, 0, 0)
+    rj, ri = np.meshgrid(grids[:, 0], triplet_list[:, 0])
+    rji = rj - ri
+    B = rji # (n_triplets, n_grids)
+    kern = - np.sum(kern_exp * (B * ls2 * fifj + fdji), axis=0) / 3 # (n_grids,)
+    return kern
+
+
+@njit
+def force_force(kern_exp, fi, fj, fdi, fdj, 
+             grids, triplet_list, coord_list, ls):
+    '''force map + force block'''
+    kern = np.zeros((3, grids.shape[0]), dtype=np.float64)
+
+    fifj = fi @ fj.T # (n_triplets, n_grids)
+    fdji = fi @ fdj.T
+    # only r = 0 is non zero, since the grid coords are all (1, 0, 0)
+    rj, ri = np.meshgrid(grids[:, 0], triplet_list[:, 0])
+    rji = rj - ri
+    B = rji # (n_triplets, n_grids)
+    kern = - np.sum(kern_exp * (B * ls2 * fifj + fdji), axis=0) / 3 # (n_grids,)
+
+    for d in range(3):
+        pass
+
+    return kern
+
+
+
+def triplet_cutoff(triplets, r_cut, coords, derivative=False, cutoff_func=quadratic_cutoff):
+
+    dfj_list = np.zeros((len(triplets), 3), dtype=np.float64) 
+
+    if derivative:
+        for d in range(3):
+            s = 3 * d
+            e = 3 * (d + 1)
+            f0, df0 = cutoff_func(r_cut, triplets, coords[:, s:e]) 
+            dfj = df0[:, 0] *  f0[:, 1] *  f0[:, 2] + \
+                   f0[:, 0] * df0[:, 1] *  f0[:, 2] + \
+                   f0[:, 0] *  f0[:, 1] * df0[:, 2]
+#            dfj = np.expand_dims(dfj, axis=1)
+            dfj_list[:, d] = dfj 
+    else:
+        f0, _ = cutoff_func(r_cut, triplets, 0) # (n_grid, 3)
 
     fj = f0[:, 0] * f0[:, 1] * f0[:, 2] # (n_grid,)
     fj = np.expand_dims(fj, axis=1)
 
-    return fj, dfj
+    return fj, dfj_list
+
 
 @njit
 def get_triplets_for_kern(bond_array_1, c1, etypes1,
@@ -186,13 +255,30 @@ def get_triplets_for_kern(bond_array_1, c1, etypes1,
     
                         # align this triplet to the same species order as r1, r2, r12
                         tri = np.take(np.array([ri1, ri2, ri3]), order)
-                        crd = np.take(np.array([ci1, ci2, ci3]), order, axis=0)
+                        crd1 = np.take(np.array([ci1[0], ci2[0], ci3[0]]), order)
+                        crd2 = np.take(np.array([ci1[1], ci2[1], ci3[1]]), order)
+                        crd3 = np.take(np.array([ci1[2], ci2[2], ci3[2]]), order)
     
                         # append permutations
                         for perm in perm_list:
                             tricrd = np.take(tri, perm)
-                            for d in range(3):
-                                tricrd = np.hstack((tricrd, np.take(crd[:, d], perm)))
+                            crd1_p = np.take(crd1, perm)
+                            crd2_p = np.take(crd2, perm)
+                            crd3_p = np.take(crd3, perm)
+                            tricrd = np.hstack((tricrd, crd1_p, crd2_p, crd3_p))
                             triplet_list.append(tricrd)
 
     return triplet_list
+
+
+
+kern_dict = {'energy_energy': en_en,
+             'energy_force': en_force,
+             'force_energy': force_en,
+             'force_force': force_force}
+
+derv_dict = {'energy_energy': False,
+             'energy_force': True,
+             'force_energy': False,
+             'force_force': True}
+

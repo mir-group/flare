@@ -15,13 +15,12 @@ from flare.gp_algebra import partition_vector, energy_force_vector_unit, \
     _global_training_data, _global_training_structures, \
     get_kernel_vector, en_kern_vec
 from flare.parameters import Parameters
-from flare.kernels.utils import from_mask_to_args, str_to_kernel_set, str_to_mapped_kernel
+from flare.kernels.utils import from_mask_to_args, str_to_kernel_set
 from flare.kernels.cutoffs import quadratic_cutoff
 from flare.utils.element_coder import Z_to_element, NumpyEncoder
 
-
 from flare.mgp.utils import get_bonds, get_triplets, get_triplets_en, \
-    get_kernel_term
+    get_kernel_term, str_to_mapped_kernel
 from flare.mgp.splines_methods import PCASplines, CubicSpline
 
 
@@ -239,7 +238,7 @@ class SingleMapXbody:
         if processes == 1:
             args = [GP.name, grid_env, kernel_info]
             if self.kernel_name == "threebody":
-                k12_v_force = self._gengrid_numba(GP.name, 0, n_envs, grid_env,
+                k12_v_force = self._gengrid_numba(GP.name, True, 0, n_envs, grid_env,
                                                   mapped_kernel_info)
             else:
                 k12_v_force = self._gengrid_serial(args, True, n_envs)
@@ -301,7 +300,7 @@ class SingleMapXbody:
                 s, e = block_id[ibatch]
                 if threebody:
                     k12_slice.append(pool.apply_async(self._gengrid_numba,
-                        args = (GP_name, s, e, grid_env, mapped_kernel_info)))
+                        args = (GP_name, True, s, e, grid_env, mapped_kernel_info)))
                 else:
                     k12_slice.append(pool.apply_async(self._gengrid_inner,
                         args = args + [force_block, s, e]))

@@ -12,6 +12,57 @@ from flare.kernels.kernels import three_body_helper_1, \
 from flare.kernels.utils import str_to_kernel_set as stks
 from flare.parameters import Parameters
 
+import flare.mgp.grid_kernels as map_3b
+
+
+def str_to_mapped_kernel(name: str, component: str = "sc",
+                         hyps_mask: dict = None):
+    """
+    return kernels and kernel gradient function base on a string.
+    If it contains 'sc', it will use the kernel in sc module;
+    otherwise, it uses the kernel in mc_simple;
+    if sc is not included and multihyps is True,
+    it will use the kernel in mc_sephyps module
+    otherwise, it will use the kernel in the sc module
+
+    Args:
+
+    name (str): name for kernels. example: "2+3mc"
+    multihyps (bool, optional): True for using multiple hyperparameter groups
+
+    :return: mapped kernel function, kernel gradient, energy kernel,
+             energy_and_force kernel
+
+    """
+
+    multihyps = True
+    if hyps_mask is None:
+        multihyps = False
+    elif hyps_mask['nspecie'] == 1:
+        multihyps = False
+
+    # b2 = Two body in use, b3 = Three body in use
+    b2 = False
+    many = False
+    b3 = False
+    for s in ['3', 'three']:
+        if s in name.lower() or s == name.lower():
+            b3 = True
+
+    if b3:
+         if multihyps:
+             tbmfe = map_3b.grid_kernel_sephyps
+             tbme = map_3b.grid_kernel_sephyps
+         else:
+             tbmfe = map_3b.grid_kernel
+             tbme = map_3b.grid_kernel
+    else:
+        raise NotImplementedError("mapped kernel for two-body and manybody kernels "
+                                  "are not implemented")
+
+    return tbme, tbmfe
+
+
 
 def get_kernel_term(GP, term):
     """

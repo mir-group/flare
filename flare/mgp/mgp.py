@@ -15,11 +15,12 @@ from typing import List
 from flare.env import AtomicEnvironment
 from flare.gp import GaussianProcess
 from flare.parameters import Parameters
-from flare.kernels.utils import from_mask_to_args, str_to_kernel_set, str_to_mapped_kernel
+from flare.kernels.utils import from_mask_to_args, str_to_kernel_set
 from flare.utils.element_coder import NumpyEncoder
 
 from flare.mgp.map2b import Map2body
 from flare.mgp.map3b import Map3body
+from flare.mgp.utils import str_to_mapped_kernel
 
 class MappedGaussianProcess:
     '''
