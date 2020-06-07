@@ -58,9 +58,9 @@ class SingleMap2body(SingleMapXbody):
 
         # initialize bounds
         if self.auto_lower:
-            self.bounds[0] = [0]
+            self.bounds[0] = np.array([0])
         if self.auto_upper:
-            self.bounds[1] = [1]
+            self.bounds[1] = np.array([1])
 
         spc = self.species
         self.species_code = Z_to_element(spc[0]) + '_' + Z_to_element(spc[1])
@@ -69,7 +69,7 @@ class SingleMap2body(SingleMapXbody):
         if self.auto_lower:
             self.bounds[0] = [lower_bound]
         if self.auto_upper:
-            self.bounds[1] = [upper_bound]
+            self.bounds[1] = upper_bound
 
 
     def construct_grids(self):
