@@ -36,6 +36,8 @@ class MapXbody:
                  mean_only: bool=False,
                  container_only: bool=True,
                  lmp_file_name: str='lmp.mgp',
+                 load_grid: str=None,
+                 update: bool=False,
                  n_cpus: int=None,
                  n_sample: int=100):
 
@@ -48,6 +50,8 @@ class MapXbody:
         self.map_force = map_force
         self.mean_only = mean_only
         self.lmp_file_name = lmp_file_name
+        self.load_grid = load_grid
+        self.update = update
         self.n_cpus = n_cpus
         self.n_sample = n_sample
 
@@ -72,7 +76,7 @@ class MapXbody:
         for spc in self.spc:
             m = self.singlexbody((self.grid_num, bounds, spc,
                                   self.map_force, self.svd_rank, self.mean_only,
-                                  None, None, self.n_cpus, self.n_sample))
+                                  self.load_grid, self.update, self.n_cpus, self.n_sample))
             self.maps.append(m)
 
 
@@ -282,7 +286,7 @@ class SingleMapXbody:
             k12_slice = []
             for ibatch in range(nbatch):
                 s, e = block_id[ibatch]
-                if threebody:
+                if threebody: #TODO: energy block tested?
                     k12_slice.append(pool.apply_async(self._gengrid_numba,
                         args = (GP_name, True, s, e, grid_env, mapped_kernel_info)))
                 else:
@@ -415,7 +419,7 @@ class SingleMapXbody:
                 if min_dist < lower_bound:
                     lower_bound = min_dist
                
-        return np.max(lower_bound - 0.1, 0)
+        return np.max(lower_bound - 0.1, 0) #TODO: change 0.1 to a user defined value
 
 
     def predict(self, lengths, xyzs, map_force, mean_only):

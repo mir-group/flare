@@ -44,35 +44,8 @@ class MappedGaussianProcess:
 
     Examples:
 
-    >>> grid_params_2body = {'lower_bound': [1.2],
-    ...                                     # the lower bounds used
-    ...                                     # in the 2-body spline fits.
-    ...                                     # the upper bounds are determined
-    ...                                     # from GP's cutoffs, same for 3-body
-    ...                      'grid_num': [64], # number of grids used in spline
-    ...                      'svd_rank': 'auto'}
-    ...                                  # rank of the variance map, can be set
-    ...                                  # as an interger or 'auto'
-    >>> grid_params_3body = {'lower_bound': [1.2, 1.2, 1.2],
-    ...                                     # Values describe lower bounds
-    ...                                     # for the bondlength-bondlength-bondlength
-    ...                                     # grid used to construct and fit 3-body
-    ...                                     # kernels; note that for force MGPs
-    ...                                     # bondlength-bondlength-costheta
-    ...                                     # are the bounds used instead.
-    ...                      'grid_num': [32, 32, 32],
-    ...                      'svd_rank': 'auto'}
-    >>> grid_params = {'twobody': grid_params_2body,
-    ...                'threebody': grid_params_3body,
-    ...                'update': False, # if True: accelerating grids
-    ...                                 # generating by saving intermediate
-    ...                                 # coeff when generating grids,
-    ...                                 # currently NOT implemented
-    ...                'load_grid': None, # A string of path where the `grid_mean.npy`
-    ...                                   # and `grid_var.npy` are stored. if not None,
-    ...                                   # then the grids won't be generated, but
-    ...                                   # directly loaded from file
-    ...                }
+    >>> grid_params = {'twobody': {'grid_num': [64]},
+    ...                'threebody': {'grid_num': [64, 64, 64]}}
     '''
 
     def __init__(self,
@@ -101,10 +74,18 @@ class MappedGaussianProcess:
             self.hyps_mask = GP.hyps_mask
             self.cutoffs = GP.cutoffs
 
+        if 'load_grid' not in grid_params.keys():
+            grid_params['load_grid'] = None
+        if 'update' not in grid_params.keys():
+            grid_params['update'] = False
+
         self.maps = {}
         args = [species_list, map_force, GP, mean_only,\
-                container_only, lmp_file_name, n_cpus, n_sample]
+                container_only, lmp_file_name, \
+                grid_params['load_grid'], grid_params['update'],\
+                n_cpus, n_sample]
 
+        optional_xb_params = ['lower_bound', 'upper_bound', 'svd_rank']
         for key in grid_params.keys():
             if 'body' in key:
                 if 'twobody' == key:
@@ -115,6 +96,12 @@ class MappedGaussianProcess:
                     raise KeyError("Only 'twobody' & 'threebody' are allowed")
 
                 xb_dict = grid_params[key]
+
+                # set to 'auto' if the param is not given
+                for oxp in optional_xb_params:
+                    if oxp not in xb_dict.keys():
+                        xb_dict[oxp] = 'auto'
+
                 xb_args = [xb_dict['grid_num'], xb_dict['lower_bound'], 
                            xb_dict['upper_bound'], xb_dict['svd_rank']]
                 xb_maps = mapxbody(xb_args + args)
