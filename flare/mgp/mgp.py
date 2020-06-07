@@ -78,11 +78,14 @@ class MappedGaussianProcess:
             grid_params['load_grid'] = None
         if 'update' not in grid_params.keys():
             grid_params['update'] = False
+        if 'lower_bound_relax' not in grid_params.keys():
+            grid_params['lower_bound_relax'] = 0.1
 
         self.maps = {}
         args = [species_list, map_force, GP, mean_only,\
                 container_only, lmp_file_name, \
                 grid_params['load_grid'], grid_params['update'],\
+                grid_params['lower_bound_relax'],
                 n_cpus, n_sample]
 
         optional_xb_params = ['lower_bound', 'upper_bound', 'svd_rank']

@@ -38,6 +38,7 @@ class MapXbody:
                  lmp_file_name: str='lmp.mgp',
                  load_grid: str=None,
                  update: bool=False,
+                 lower_bound_relax: float=0.1,
                  n_cpus: int=None,
                  n_sample: int=100):
 
@@ -52,6 +53,7 @@ class MapXbody:
         self.lmp_file_name = lmp_file_name
         self.load_grid = load_grid
         self.update = update
+        self.lower_bound_relax = lower_bound_relax
         self.n_cpus = n_cpus
         self.n_sample = n_sample
 
@@ -76,7 +78,8 @@ class MapXbody:
         for spc in self.spc:
             m = self.singlexbody((self.grid_num, bounds, spc,
                                   self.map_force, self.svd_rank, self.mean_only,
-                                  self.load_grid, self.update, self.n_cpus, self.n_sample))
+                                  self.load_grid, self.update, self.lower_bound_relax,
+                                  self.n_cpus, self.n_sample))
             self.maps.append(m)
 
 
@@ -140,7 +143,7 @@ class MapXbody:
 class SingleMapXbody:
     def __init__(self, grid_num: int, bounds, species: str,
                  map_force=False, svd_rank=0, mean_only: bool=False,
-                 load_grid=None, update=None,
+                 load_grid=None, update=None, lower_bound_relax=0.1,
                  n_cpus: int=None, n_sample: int=100):
 
         self.grid_num = grid_num
@@ -151,6 +154,7 @@ class SingleMapXbody:
         self.mean_only = mean_only
         self.load_grid = load_grid
         self.update = update
+        self.lower_bound_relax = lower_bound_relax
         self.n_cpus = n_cpus
         self.n_sample = n_sample
 
@@ -419,7 +423,7 @@ class SingleMapXbody:
                 if min_dist < lower_bound:
                     lower_bound = min_dist
                
-        return np.max(lower_bound - 0.1, 0) #TODO: change 0.1 to a user defined value
+        return np.max(lower_bound - self.lower_bound_relax, 0) 
 
 
     def predict(self, lengths, xyzs, map_force, mean_only):
