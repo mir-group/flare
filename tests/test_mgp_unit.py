@@ -11,7 +11,7 @@ from flare.lammps import lammps_calculator
 
 from .fake_gp import get_gp, get_random_structure
 
-body_list = ['3'] #['2', '3']
+body_list = ['2'] #['2', '3']
 multi_list = [False] #, True]
 map_force_list = [False] #, True]
 
@@ -69,11 +69,12 @@ def test_init(bodies, multihyps, map_force, all_mgp, all_gp):
 
     grid_num_2 = 128 
     grid_num_3 = 16
-    lower_cut = 0.01
-    grid_params_2b = {'lower_bound': [lower_cut],
+    grid_params_2b = {'lower_bound': 'auto',
+                      'upper_bound': 'auto',
                       'grid_num': [grid_num_2],
                       'svd_rank': 'auto'}
-    grid_params_3b = {'lower_bound': [lower_cut for d in range(3)],
+    grid_params_3b = {'lower_bound': 'auto',
+                      'upper_bound': 'auto',
                       'grid_num': [grid_num_3 for d in range(3)],
                       'svd_rank': 'auto'}
 
@@ -181,7 +182,7 @@ def test_predict(all_gp, all_mgp, bodies, multihyps, map_force):
 #                f"{bodies} body {map_str} mapping is wrong"
 
     print(mgp_pred, gp_pred)
-    assert(np.abs(mgp_pred[0][0] - gp_pred[0][0]) < 2e-3), \
+    assert(np.isclose(mgp_pred[0][0], gp_pred[0][0], rtol=2e-3)), \
             f"{bodies} body {map_str} mapping is wrong"
 #    assert(np.abs(mgp_pred[1] - gp_pred_var) < 2e-3), \
 #            f"{bodies} body {map_str} mapping var is wrong"

@@ -115,7 +115,8 @@ class MappedGaussianProcess:
                     raise KeyError("Only 'twobody' & 'threebody' are allowed")
 
                 xb_dict = grid_params[key]
-                xb_args = [xb_dict['grid_num'], xb_dict['lower_bound'], xb_dict['svd_rank']]
+                xb_args = [xb_dict['grid_num'], xb_dict['lower_bound'], 
+                           xb_dict['upper_bound'], xb_dict['svd_rank']]
                 xb_maps = mapxbody(xb_args + args)
                 self.maps[key] = xb_maps
 

@@ -26,9 +26,6 @@ class Map2body(MapXbody):
         build a bond structure, used in grid generating
         '''
 
-        # initialize bounds
-        self.bounds = np.ones((2, 1)) * self.lower_bound
-
         # 2 body (2 atoms (1 bond) config)
         self.spc = []
         self.spc_set = []
@@ -59,8 +56,20 @@ class SingleMap2body(SingleMapXbody):
 
         super().__init__(*args)
 
+        # initialize bounds
+        if self.auto_lower:
+            self.bounds[0] = [0]
+        if self.auto_upper:
+            self.bounds[1] = [1]
+
         spc = self.species
         self.species_code = Z_to_element(spc[0]) + '_' + Z_to_element(spc[1])
+
+    def set_bounds(self, lower_bound, upper_bound):
+        if self.auto_lower:
+            self.bounds[0] = [lower_bound]
+        if self.auto_upper:
+            self.bounds[1] = [upper_bound]
 
 
     def construct_grids(self):

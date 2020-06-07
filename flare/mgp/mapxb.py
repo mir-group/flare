@@ -27,8 +27,9 @@ from flare.mgp.splines_methods import PCASplines, CubicSpline
 class MapXbody:
     def __init__(self,
                  grid_num: List,
-                 lower_bound: List,
-                 svd_rank: 'auto',
+                 lower_bound: List or str='auto',
+                 upper_bound: List or str='auto',
+                 svd_rank = 'auto',
                  species_list: list=[],
                  map_force: bool=False,
                  GP: GaussianProcess=None,
@@ -41,6 +42,7 @@ class MapXbody:
         # load all arguments as attributes
         self.grid_num = np.array(grid_num)
         self.lower_bound = lower_bound
+        self.upper_bound = upper_bound
         self.svd_rank = svd_rank
         self.species_list = species_list
         self.map_force = map_force
@@ -49,46 +51,25 @@ class MapXbody:
         self.n_cpus = n_cpus
         self.n_sample = n_sample
 
-        self.hyps_mask = None
-        self.cutoffs = None
-
-        # to be replaced in subclass
-        # self.kernel_name = "xbody"
-        # self.singlexbody = SingleMapXbody
-        # self.bounds = 0
-
-        # if GP exists, the GP setup overrides the grid_params setup
-        if GP is not None:
-
-            self.cutoffs = deepcopy(GP.cutoffs)
-            self.hyps_mask = deepcopy(GP.hyps_mask)
-
         # build_bond_struc is defined in subclass
         self.build_bond_struc(species_list)
 
-        # build map
-        self.build_map_container(GP)
-        if not container_only and (GP is not None) and \
+        # build map container only when the bounds are specified
+        bounds = [self.lower_bound, self.upper_bound]
+        self.build_map_container(bounds)
+
+        if (not container_only) and (GP is not None) and \
                 (len(GP.training_data) > 0):
             self.build_map(GP)
 
-    def build_map_container(self, GP=None):
+
+    def build_map_container(self, bounds):
         '''
         construct an empty spline container without coefficients.
         '''
 
-        if (GP is not None):
-            self.cutoffs = deepcopy(GP.cutoffs)
-            self.hyps_mask = deepcopy(GP.hyps_mask)
-            if self.kernel_name not in self.hyps_mask['kernels']:
-                raise Exception #TODO: deal with this
-
         self.maps = []
         for spc in self.spc:
-            bounds = np.copy(self.bounds)
-            if (GP is not None):
-                bounds[1] = Parameters.get_cutoff(self.kernel_name,
-                            spc, self.hyps_mask)
             m = self.singlexbody((self.grid_num, bounds, spc,
                                   self.map_force, self.svd_rank, self.mean_only,
                                   None, None, self.n_cpus, self.n_sample))
@@ -99,10 +80,6 @@ class MapXbody:
         '''
         generate/load grids and get spline coefficients
         '''
-
-        # double check the container and the GP is the consistent
-        if not Parameters.compare_dict(GP.hyps_mask, self.hyps_mask):
-            self.build_map_container(GP)
 
         self.kernel_info = get_kernel_term(GP, self.kernel_name)
 
@@ -173,7 +150,14 @@ class SingleMapXbody:
         self.n_cpus = n_cpus
         self.n_sample = n_sample
 
-        self.build_map_container()
+        self.auto_lower = (bounds[0] == 'auto')
+        self.auto_upper = (bounds[1] == 'auto')
+
+        self.hyps_mask = None
+           
+        if not self.auto_lower and not self.auto_upper: 
+            self.build_map_container()
+
 
     def get_grid_env(self, GP):
         if isinstance(GP.cutoffs, dict):
@@ -264,8 +248,8 @@ class SingleMapXbody:
             grid_vars = np.reshape(grid_vars, tensor_shape)
 
         # ------ save mean and var to file -------
-        np.save(f'grid{self.bodies}_mean{self.species_code}', grid_mean)
-        np.save(f'grid{self.bodies}_var{self.species_code}', grid_vars)
+        np.save(f'grid{self.bodies}_mean_{self.species_code}', grid_mean)
+        np.save(f'grid{self.bodies}_var_{self.species_code}', grid_vars)
 
         return grid_mean, grid_vars
 
@@ -370,16 +354,31 @@ class SingleMapXbody:
 
     def build_map(self, GP):
 
-        # check if upper bounds are updated
-        upper_bounds = Parameters.get_cutoff(self.kernel_name,
-                    self.species, GP.hyps_mask)
-        if not np.allclose(upper_bounds, self.bounds[1], atol=1e-6):
-            self.bounds[1] = upper_bounds
+        rebuild_container = False
+
+        # double check the container and the GP is consistent
+        if not Parameters.compare_dict(GP.hyps_mask, self.hyps_mask):
+            rebuild_container = True
+
+        # check if bounds are updated
+        lower_bound = self.bounds[0]
+        if self.auto_lower:
+            lower_bound = self.search_lower_bound(GP)
+            rebuild_container = True
+
+        upper_bound = self.bounds[1]
+        if self.auto_upper:
+            upper_bound = Parameters.get_cutoff(self.kernel_name,
+                self.species, GP.hyps_mask)
+            rebuild_container = True
+
+        self.set_bounds(lower_bound, upper_bound)
+
+        if rebuild_container:
             self.build_map_container()
 
         if not self.load_grid:
             y_mean, y_var = self.GenGrid(GP)
-        # If load grid is blank string '' or pre-fix, load in
         else:
             y_mean = np.load(f'{self.load_grid}grid{self.bodies}_mean_{self.species_code}.npy')
             y_var = np.load(f'{self.load_grid}grid{self.bodies}_var_{self.species_code}.npy')
@@ -392,6 +391,32 @@ class SingleMapXbody:
                                       orders=self.grid_num,
                                       svd_rank=np.min(y_var.shape))
                 self.var.set_values(y_var)
+
+        self.hyps_mask = deepcopy(GP.hyps_mask)
+
+
+    def search_lower_bound(self, GP):
+        '''
+        If the lower bound is set to be 'auto', search the minimal interatomic
+        distances in the training set of GP.
+        '''
+        upper_bound = Parameters.get_cutoff(self.kernel_name,
+                self.species, GP.hyps_mask)
+
+        lower_bound = np.min(upper_bound)
+        for env in _global_training_data[GP.name]:
+            min_dist = env.bond_array_2[0][0]
+            if min_dist < lower_bound:
+                lower_bound = min_dist
+
+        for struc in _global_training_structures[GP.name]:
+            for env in struc:
+                min_dist = env.bond_array_2[0][0]
+                if min_dist < lower_bound:
+                    lower_bound = min_dist
+               
+        return np.max(lower_bound - 0.1, 0)
+
 
     def predict(self, lengths, xyzs, map_force, mean_only):
         assert map_force == self.map_force, f'The mapping is built for'\

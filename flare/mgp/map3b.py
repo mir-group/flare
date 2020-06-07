@@ -28,12 +28,6 @@ class Map3body(MapXbody):
         build a bond structure, used in grid generating
         '''
 
-        # initialize bounds
-        self.bounds = np.ones((2, 3)) * self.lower_bound
-        if self.map_force:
-            self.bounds[0][2] = -1
-            self.bounds[1][2] = 1
-
         # 2 body (2 atoms (1 bond) config)
         self.spc = []
         self.spc_set = []
@@ -47,6 +41,7 @@ class Map3body(MapXbody):
                     species = [spc1, spc2, spc3]
                     self.spc.append(species)
                     self.spc_set.append(set(species))
+
 
     def get_arrays(self, atom_env):
 
@@ -77,16 +72,33 @@ class SingleMap3body(SingleMapXbody):
 
         super().__init__(*args)
 
+        # initialize bounds
+        if self.auto_lower:
+            self.bounds[0] = np.zeros(3) 
+        if self.auto_upper:
+            self.bounds[1] = np.ones(3)
+
         self.grid_interval = np.min((self.bounds[1]-self.bounds[0])/self.grid_num)
 
-        if self.map_force: # the force mapping use cos angle in the 3rd dim
-            self.bounds[1][2] = 1
+        if self.map_force:
             self.bounds[0][2] = -1
+            self.bounds[1][2] = 1
 
         spc = self.species
         self.species_code = Z_to_element(spc[0]) + '_' + \
             Z_to_element(spc[1]) + '_' + Z_to_element(spc[2])
         self.kv3name = f'kv3_{self.species_code}'
+
+
+    def set_bounds(self, lower_bound, upper_bound):
+        if self.auto_lower:
+            self.bounds[0] = np.ones(3) * lower_bound
+        if self.auto_upper:
+            self.bounds[1] = upper_bound
+        if self.map_force:
+            self.bounds[0][2] = -1
+            self.bounds[1][2] = 1
+
 
 
     def construct_grids(self):
