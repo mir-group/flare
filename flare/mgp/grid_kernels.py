@@ -5,14 +5,18 @@ from typing import Callable
 
 from flare.kernels.cutoffs import quadratic_cutoff
 
-
+from time import time
 
 def grid_kernel_sephyps(kern_type,
-                  data, grids, fj, c2, etypes2, perm_list,
-                  cutoff_2b, cutoff_3b, nspec, spec_mask,
-                  nbond, bond_mask, ntriplet, triplet_mask,
-                  ncut3b, cut3b_mask,
-                  sig2, ls2, sig3, ls3,
+                  data, grids, fj, fdj,
+                  c2, etypes2, perm_list,
+                  cutoff_2b, cutoff_3b, cutoff_mb,
+                  nspec, spec_mask,
+                  nbond, bond_mask, 
+                  ntriplet, triplet_mask,
+                  ncut3b, cut3b_mask, 
+                  nmb, mb_mask,
+                  sig2, ls2, sig3, ls3, sigm, lsm,
                   cutoff_func=quadratic_cutoff):
     '''
     Args:
@@ -27,11 +31,9 @@ def grid_kernel_sephyps(kern_type,
     sig = sig3[ttype]
     cutoffs = [cutoff_2b, cutoff_3b]
 
-    args = get_3b_args(env1)
-
     hyps = [sig, ls]
     return grid_kernel(kern_type,
-                   data, grids, fj, 
+                   data, grids, fj, fdj, 
                    c2, etypes2, perm_list,
                    hyps, cutoffs, cutoff_func)
 
@@ -84,26 +86,25 @@ def grid_kernel_env(kern_type,
     triplet_list = triplet_coord_list[:, :3] # (n_triplets, 3)
     coord_list = triplet_coord_list[:, 3:] # ((n_triplets, 9)
 
-
     # calculate distance difference & exponential part
     ls1 = 1 / (2 * ls * ls)
     D = 0
+    rij_list = []
     for r in range(3):
         rj, ri = np.meshgrid(grids[:, r], triplet_list[:, r])
         rij = ri - rj
         D += rij * rij # (n_triplets, n_grids)
+        rij_list.append(rij)
     kern_exp = (sig * sig) * np.exp(- D * ls1)
-
 
     # calculate cutoff of the triplets
     fi, fdi = triplet_cutoff(triplet_list, r_cut, coord_list, derivative, 
         cutoff_func) # (n_triplets, 1)
 
-
     # calculate the derivative part
     kern_func = kern_dict[kern_type]
     kern = kern_func(kern_exp, fi, fj, fdi, fdj, 
-             grids, triplet_list, coord_list, ls)
+             rij_list, coord_list, ls)
 
     return kern
 
@@ -116,33 +117,23 @@ def en_en(kern_exp, fi, fj, *args):
     return kern
 
 
-@njit
+#@njit
 def en_force(kern_exp, fi, fj, fdi, fdj, 
-             grids, triplet_list, coord_list, ls):
+             rij_list, coord_list, ls):
     '''energy map + force block'''
     fifj = fi @ fj.T # (n_triplets, n_grids)
     ls2 = 1 / (ls * ls)
-    n_grids = grids.shape[0]
-    n_trplt = triplet_list.shape[0]
+    n_trplt, n_grids = kern_exp.shape
     kern = np.zeros((3, n_grids), dtype=np.float64)
     for d in range(3):
-        B = np.zeros((n_trplt, n_grids), dtype=np.float64)
-        fdid = np.expand_dims(fdi[:, d], axis=1)
-#        fdij = fdi[:, [d]] @ fj.T
-        fdij = fdid @ fj.T
+        B = 0
+        fdij = fdi[:, [d]] @ fj.T
         for r in range(3):
             # one day when numba supports np.meshgrid, we can replace the block below
-            # rj, ri = np.meshgrid(grids[:, r], triplet_list[:, r])
-            rj = np.repeat(grids[:, r], n_trplt) 
-            rj = np.reshape(rj, (n_grids, n_trplt)).T
-            ri = np.repeat(triplet_list[:, r], n_grids)
-            ri = np.reshape(ri, (n_trplt, n_grids))
-            rij = ri - rj
+            rij = rij_list[r]
             # column-wise multiplication
             # coord_list[:, [r]].shape = (n_triplets, 1)
-            coord = np.diag(coord_list[:, 3*d+r])
-            B += coord @ rij
-#            B += rij * coord_list[:, [3*d+r]] # (n_triplets, n_grids)
+            B += rij * coord_list[:, [3*d+r]] # (n_triplets, n_grids)
    
         kern[d, :] = - np.sum(kern_exp * (B * ls2 * fifj + fdij), axis=0) / 3 # (n_grids,)
     return kern

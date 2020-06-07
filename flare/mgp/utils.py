@@ -12,7 +12,7 @@ from flare.kernels.kernels import three_body_helper_1, \
 from flare.kernels.utils import str_to_kernel_set as stks
 from flare.parameters import Parameters
 
-import flare.mgp.grid_kernels as map_3b
+from flare.mgp.grid_kernels import grid_kernel, grid_kernel_sephyps
 
 
 def str_to_mapped_kernel(name: str, component: str = "sc",
@@ -51,11 +51,11 @@ def str_to_mapped_kernel(name: str, component: str = "sc",
 
     if b3:
          if multihyps:
-             tbmfe = map_3b.grid_kernel_sephyps
-             tbme = map_3b.grid_kernel_sephyps
+             tbmfe = grid_kernel_sephyps
+             tbme = grid_kernel_sephyps
          else:
-             tbmfe = map_3b.grid_kernel
-             tbme = map_3b.grid_kernel
+             tbmfe = grid_kernel
+             tbme = grid_kernel
     else:
         raise NotImplementedError("mapped kernel for two-body and manybody kernels "
                                   "are not implemented")

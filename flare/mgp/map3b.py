@@ -184,12 +184,13 @@ class SingleMap3body(SingleMapXbody):
             training_data = _global_training_structures[name]
             kern_type = f'{prefix}_energy'
 
-        k_v = np.empty((0, grids.shape[0]))
+        k_v = [] 
         for m_index in range(s, e):
             data = training_data[m_index]
             kern_vec = en_kernel(kern_type, data, grids, fj, fdj,
                                  env12.ctype, env12.etypes, perm_list,
                                  *args)
-            k_v = np.vstack((k_v, kern_vec))
+            k_v.append(kern_vec)
 
-        return k_v.T
+        k_v = np.vstack(k_v).T
+        return k_v
