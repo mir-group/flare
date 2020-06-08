@@ -8,7 +8,6 @@ from typing import Callable
 from flare.env import AtomicEnvironment
 from flare.kernels.cutoffs import quadratic_cutoff
 from flare.kernels.utils import str_to_kernel_set as stks
-import flare.mgp.utils_3b as map_3b
 from flare.parameters import Parameters
 
 from flare.mgp.grid_kernels import grid_kernel, grid_kernel_sephyps
@@ -87,7 +86,7 @@ def get_permutations(c2, ej1, ej2):
         perm_list += [[1, 2, 0]]
         perm_list += [[2, 0, 1]]
 
-    return np.array(perm_list)
+    return np.array(perm_list, dtype=np.int)
 
 
 
