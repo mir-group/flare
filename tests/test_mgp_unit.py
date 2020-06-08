@@ -11,9 +11,9 @@ from flare.lammps import lammps_calculator
 
 from .fake_gp import get_gp, get_random_structure
 
-body_list = ['3'] #['2', '3']
-multi_list = [True] # [False, True]
-map_force_list = [True] #[False, True]
+body_list = ['2', '3']
+multi_list = [False, True]
+map_force_list = [False, True]
 
 def clean():
     for f in os.listdir("./"):
@@ -79,7 +79,7 @@ def test_init(bodies, multihyps, map_force, all_mgp, all_gp):
     lammps_location = f'{bodies}{multihyps}{map_force}.mgp'
     species_list = [1, 2]
 
-    mgp_model = MappedGaussianProcess(grid_params, species_list, n_cpus=1,
+    mgp_model = MappedGaussianProcess(grid_params, species_list, n_cpus=4,
                 map_force=map_force, lmp_file_name=lammps_location)#, mean_only=False)
     all_mgp[f'{bodies}{multihyps}{map_force}'] = mgp_model
 

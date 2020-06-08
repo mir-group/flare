@@ -221,7 +221,7 @@ class SingleMapXbody:
 
         # ------- call gengrid functions ---------------
         args = [GP.name, grid_env, kernel_info]
-        if self.kernel_name == "threebody":
+        if self.kernel_name == "threebody" and (not self.map_force):
             mapk = str_to_mapped_kernel(self.kernel_name, GP.component, GP.hyps_mask)
             mapped_kernel_info = (mapk,
                                   kernel_info[3], kernel_info[4], kernel_info[5])
