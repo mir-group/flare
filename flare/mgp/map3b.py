@@ -174,7 +174,6 @@ class SingleMap3body(SingleMapXbody):
 
         if self.map_force:
             prefix = 'force'
-            raise NotImplementedError
         else:
             prefix = 'energy'
 
@@ -185,7 +184,7 @@ class SingleMap3body(SingleMapXbody):
         coords = np.zeros((grids.shape[0], 9), dtype=np.float64) # padding 0
         coords[:, 0] = np.ones_like(coords[:, 0])
         fj, fdj = triplet_cutoff(grids, r_cut, coords, derivative=True) # TODO: add cutoff func 
-        fdj = fdj[0]
+        fdj = fdj[:, [0]]
 
         perm_list = get_permutations(env12.ctype, env12.etypes[0], env12.etypes[1])
 
@@ -204,5 +203,9 @@ class SingleMap3body(SingleMapXbody):
                                  *args)
             k_v.append(kern_vec)
 
-        k_v = np.vstack(k_v).T
+        if len(k_v) > 0:
+            k_v = np.vstack(k_v).T
+        else:
+            k_v = np.zeros((grids.shape[0], 0))
+
         return k_v

@@ -229,17 +229,21 @@ class SingleMapXbody:
         # ------- call gengrid functions ---------------
         if processes == 1:
             args = [GP.name, grid_env, kernel_info]
-            if self.kernel_name == "threebody":
+            if self.kernel_name == "threebody" and (not self.map_force): # TODO: finish force mapping
                 k12_v_force = self._gengrid_numba(GP.name, True, 0, n_envs, grid_env,
+                                                  mapped_kernel_info)
+                k12_v_energy = self._gengrid_numba(GP.name, False, 0, n_strucs, grid_env,
                                                   mapped_kernel_info)
             else:
                 k12_v_force = self._gengrid_serial(args, True, n_envs)
-            k12_v_energy = self._gengrid_serial(args, False, n_strucs)
+                k12_v_energy = self._gengrid_serial(args, False, n_strucs)
 
         else:
-            args = [GP.name, grid_env, mapped_kernel_info]
+            if self.kernel_name == "threebody" and (not self.map_force):
+                args = [GP.name, grid_env, mapped_kernel_info]
+            else:
+                args = [GP.name, grid_env, kernel_info]
             k12_v_force = self._gengrid_par(args, True, n_envs, processes, self.kernel_name)
-            args = [GP.name, grid_env, kernel_info]
             k12_v_energy = self._gengrid_par(args, False, n_strucs, processes, self.kernel_name)
 
         k12_v_all = np.hstack([k12_v_force, k12_v_energy])
@@ -283,16 +287,16 @@ class SingleMapXbody:
                 partition_vector(self.n_sample, n_envs, processes)
 
             threebody = False
-            if kernel_name == "threebody":
+            if kernel_name == "threebody" and (not self.map_force):
                 GP_name, grid_env, mapped_kernel_info = args
                 threebody = True
 
             k12_slice = []
             for ibatch in range(nbatch):
                 s, e = block_id[ibatch]
-                if threebody: #TODO: energy block tested?
+                if threebody: 
                     k12_slice.append(pool.apply_async(self._gengrid_numba,
-                        args = (GP_name, True, s, e, grid_env, mapped_kernel_info)))
+                        args = (GP_name, force_block, s, e, grid_env, mapped_kernel_info)))
                 else:
                     k12_slice.append(pool.apply_async(self._gengrid_inner,
                         args = args + [force_block, s, e]))

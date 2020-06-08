@@ -109,7 +109,6 @@ def grid_kernel_env(kern_type,
     return kern
 
 
-@njit
 def en_en(kern_exp, fi, fj, *args):
     '''energy map + energy block'''
     fifj = fi @ fj.T # (n_triplets, n_grids)
@@ -117,7 +116,6 @@ def en_en(kern_exp, fi, fj, *args):
     return kern
 
 
-#@njit
 def en_force(kern_exp, fi, fj, fdi, fdj, 
              rij_list, coord_list, ls):
     '''energy map + force block'''
@@ -129,7 +127,6 @@ def en_force(kern_exp, fi, fj, fdi, fdj,
         B = 0
         fdij = fdi[:, [d]] @ fj.T
         for r in range(3):
-            # one day when numba supports np.meshgrid, we can replace the block below
             rij = rij_list[r]
             # column-wise multiplication
             # coord_list[:, [r]].shape = (n_triplets, 1)
@@ -139,38 +136,61 @@ def en_force(kern_exp, fi, fj, fdi, fdj,
     return kern
 
 
-@njit
 def force_en(kern_exp, fi, fj, fdi, fdj, 
-             grids, triplet_list, coord_list, ls):
+             rij_list, coord_list, ls):
     '''force map + energy block'''
+    ls2 = 1 / (ls * ls)
     fifj = fi @ fj.T # (n_triplets, n_grids)
     fdji = fi @ fdj.T
     # only r = 0 is non zero, since the grid coords are all (1, 0, 0)
-    rj, ri = np.meshgrid(grids[:, 0], triplet_list[:, 0])
-    rji = rj - ri
-    B = rji # (n_triplets, n_grids)
-    kern = - np.sum(kern_exp * (B * ls2 * fifj + fdji), axis=0) / 3 # (n_grids,)
+    B = rij_list[0] # (n_triplets, n_grids)
+    kern = np.sum(kern_exp * (B * ls2 * fifj + fdji), axis=0) / 3 # (n_grids,)
+    return kern
+
+
+def force_force(kern_exp, fi, fj, fdi, fdj, 
+                rij_list, coord_list, ls):
+    '''force map + force block'''
+    ls2 = 1 / (ls * ls)
+    ls3 = ls2 * ls2 
+    
+    n_trplt, n_grids = kern_exp.shape
+    kern = np.zeros((3, n_grids), dtype=np.float64)
+
+    fifj = fi @ fj.T # (n_triplets, n_grids)
+    fdji = (fi * ls2) @ fdj.T
+
+    B = rij_list[0] * ls3
+    J = rij_list[0] * fdji # (n_triplets, n_grids)
+    
+    for d in range(3):
+        fdij = (fdi[:, [d]] * ls2) @ fj.T
+        I = fdi[:, [d]] @ fdj.T
+
+        A = np.repeat(ls2 * coord_list[:, [3*d]], n_grids, axis=1)
+        C = 0
+        for r in range(3):
+            rij = rij_list[r]
+            # column-wise multiplication
+            # coord_list[:, [r]].shape = (n_triplets, 1)
+            C += rij * coord_list[:, [3*d+r]] # (n_triplets, n_grids)
+        
+        IJKL = I + J - C * fdij + (A - B * C) * fifj
+        kern[d, :] = np.sum(kern_exp * IJKL, axis=0)
+
     return kern
 
 
 @njit
-def force_force(kern_exp, fi, fj, fdi, fdj, 
-             grids, triplet_list, coord_list, ls):
-    '''force map + force block'''
-    kern = np.zeros((3, grids.shape[0]), dtype=np.float64)
+def force_helper(A, B, C, D, fi, fj, fdi, fdj, ls1, ls2, ls3, sig2):
+    E = exp(-D * ls1)
+    I = fdi * fdj
+    J = B * ls2 * fi * fdj
+    K = - C * ls2 * fdi * fj
+    L = (A * ls2 - B * C * ls3) * fi * fj
+    M = sig2 * (I + J + K + L) * E
+    return M
 
-    fifj = fi @ fj.T # (n_triplets, n_grids)
-    fdji = fi @ fdj.T
-    # only r = 0 is non zero, since the grid coords are all (1, 0, 0)
-    rj, ri = np.meshgrid(grids[:, 0], triplet_list[:, 0])
-    rji = rj - ri
-    B = rji # (n_triplets, n_grids)
-    kern = - np.sum(kern_exp * (B * ls2 * fifj + fdji), axis=0) / 3 # (n_grids,)
-
-    for d in range(3):
-        pass
-
-    return kern
 
 
 
