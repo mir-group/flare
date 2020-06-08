@@ -14,8 +14,7 @@ from typing import List
 
 from flare.env import AtomicEnvironment
 from flare.gp import GaussianProcess
-from flare.parameters import Parameters
-from flare.kernels.utils import from_mask_to_args, str_to_kernel_set
+from flare.kernels.utils import str_to_kernel_set
 from flare.utils.element_coder import NumpyEncoder
 
 from flare.mgp.map2b import Map2body
@@ -110,7 +109,7 @@ class MappedGaussianProcess:
                     if oxp not in xb_dict.keys():
                         xb_dict[oxp] = 'auto'
 
-                xb_args = [xb_dict['grid_num'], xb_dict['lower_bound'], 
+                xb_args = [xb_dict['grid_num'], xb_dict['lower_bound'],
                            xb_dict['upper_bound'], xb_dict['svd_rank']]
                 xb_maps = mapxbody(xb_args + args)
                 self.maps[key] = xb_maps

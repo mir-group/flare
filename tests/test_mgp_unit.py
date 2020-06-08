@@ -253,7 +253,7 @@ def test_lmp_predict(all_gp, all_mgp, bodies, multihyps, map_force):
 
     # check that lammps agrees with gp to within 1 meV/A
     for i in range(3):
-        assert (np.abs(lammps_forces[atom_num, i] - mgp_forces[0][i]) < 1e-3)
+        assert np.isclose(lammps_forces[atom_num, i], mgp_forces[0][i], rtol=1e-2)
 
     for f in os.listdir("./"):
         if prefix in f:

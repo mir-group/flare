@@ -12,9 +12,9 @@ def grid_kernel_sephyps(kern_type,
                   c2, etypes2, perm_list,
                   cutoff_2b, cutoff_3b, cutoff_mb,
                   nspec, spec_mask,
-                  nbond, bond_mask, 
+                  nbond, bond_mask,
                   ntriplet, triplet_mask,
-                  ncut3b, cut3b_mask, 
+                  ncut3b, cut3b_mask,
                   nmb, mb_mask,
                   sig2, ls2, sig3, ls3, sigm, lsm,
                   cutoff_func=quadratic_cutoff):
@@ -33,13 +33,13 @@ def grid_kernel_sephyps(kern_type,
 
     hyps = [sig, ls]
     return grid_kernel(kern_type,
-                   data, grids, fj, fdj, 
+                   data, grids, fj, fdj,
                    c2, etypes2, perm_list,
                    hyps, cutoffs, cutoff_func)
 
 
-def grid_kernel(kern_type, 
-                struc, grids, fj, fdj, 
+def grid_kernel(kern_type,
+                struc, grids, fj, fdj,
                 c2, etypes2, perm_list,
                 hyps: 'ndarray', cutoffs,
                 cutoff_func: Callable = quadratic_cutoff):
@@ -51,16 +51,16 @@ def grid_kernel(kern_type,
 
     kern = 0
     for env in struc:
-        kern += grid_kernel_env(kern_type, 
-                    env, grids, fj, fdj, 
+        kern += grid_kernel_env(kern_type,
+                    env, grids, fj, fdj,
                     c2, etypes2, perm_list,
                     hyps, r_cut, cutoff_func)
 
     return kern
 
 
-def grid_kernel_env(kern_type, 
-                env1, grids, fj, fdj, 
+def grid_kernel_env(kern_type,
+                env1, grids, fj, fdj,
                 c2, etypes2, perm_list,
                 hyps: 'ndarray', r_cut: float,
                 cutoff_func: Callable = quadratic_cutoff):
@@ -68,7 +68,7 @@ def grid_kernel_env(kern_type,
     # pre-compute constants that appear in the inner loop
     sig = hyps[0]
     ls = hyps[1]
-    derivative = derv_dict[kern_type] 
+    derivative = derv_dict[kern_type]
 
 
     # collect all the triplets in this training env
@@ -98,12 +98,12 @@ def grid_kernel_env(kern_type,
     kern_exp = (sig * sig) * np.exp(- D * ls1)
 
     # calculate cutoff of the triplets
-    fi, fdi = triplet_cutoff(triplet_list, r_cut, coord_list, derivative, 
+    fi, fdi = triplet_cutoff(triplet_list, r_cut, coord_list, derivative,
         cutoff_func) # (n_triplets, 1)
 
     # calculate the derivative part
     kern_func = kern_dict[kern_type]
-    kern = kern_func(kern_exp, fi, fj, fdi, fdj, 
+    kern = kern_func(kern_exp, fi, fj, fdi, fdj,
              rij_list, coord_list, ls)
 
     return kern
@@ -131,7 +131,7 @@ def en_force(kern_exp, fi, fj, fdi, fdj,
             # column-wise multiplication
             # coord_list[:, [r]].shape = (n_triplets, 1)
             B += rij * coord_list[:, [3*d+r]] # (n_triplets, n_grids)
-   
+
         kern[d, :] = - np.sum(kern_exp * (B * ls2 * fifj + fdij), axis=0) / 3 # (n_grids,)
     return kern
 
@@ -196,18 +196,18 @@ def force_helper(A, B, C, D, fi, fj, fdi, fdj, ls1, ls2, ls3, sig2):
 
 def triplet_cutoff(triplets, r_cut, coords, derivative=False, cutoff_func=quadratic_cutoff):
 
-    dfj_list = np.zeros((len(triplets), 3), dtype=np.float64) 
+    dfj_list = np.zeros((len(triplets), 3), dtype=np.float64)
 
     if derivative:
         for d in range(3):
             s = 3 * d
             e = 3 * (d + 1)
-            f0, df0 = cutoff_func(r_cut, triplets, coords[:, s:e]) 
+            f0, df0 = cutoff_func(r_cut, triplets, coords[:, s:e])
             dfj = df0[:, 0] *  f0[:, 1] *  f0[:, 2] + \
                    f0[:, 0] * df0[:, 1] *  f0[:, 2] + \
                    f0[:, 0] *  f0[:, 1] * df0[:, 2]
 #            dfj = np.expand_dims(dfj, axis=1)
-            dfj_list[:, d] = dfj 
+            dfj_list[:, d] = dfj
     else:
         f0, _ = cutoff_func(r_cut, triplets, 0) # (n_grid, 3)
 
@@ -235,43 +235,45 @@ def get_triplets_for_kern(bond_array_1, c1, etypes1,
         ind_list = [0, 1, 2]
         ind_list.remove(c1_ind)
         all_spec.remove(c1)
-    
+
         for m in range(bond_array_1.shape[0]):
             two_inds = ind_list.copy()
-    
+
             ri1 = bond_array_1[m, 0]
             ci1 = bond_array_1[m, 1:]
             ei1 = etypes1[m]
-    
+
             two_spec = [all_spec[0], all_spec[1]]
             if (ei1 in two_spec):
-    
+
                 ei1_ind = ind_list[0] if ei1 == two_spec[0] else ind_list[1]
                 two_spec.remove(ei1)
                 two_inds.remove(ei1_ind)
                 one_spec = two_spec[0]
                 ei2_ind = two_inds[0]
-    
+
                 for n in range(triplets_1[m]):
                     ind1 = cross_bond_inds_1[m, m + n + 1]
                     ei2 = etypes1[ind1]
                     if (ei2 == one_spec):
-    
+
                         order = [c1_ind, ei1_ind, ei2_ind]
                         ri2 = bond_array_1[ind1, 0]
                         ci2 = bond_array_1[ind1, 1:]
-    
+
                         ri3 = cross_bond_dists_1[m, m + n + 1]
                         ci3 = np.zeros(3)
-    
+
                         # align this triplet to the same species order as r1, r2, r12
                         tri = np.take(np.array([ri1, ri2, ri3]), order)
                         crd1 = np.take(np.array([ci1[0], ci2[0], ci3[0]]), order)
                         crd2 = np.take(np.array([ci1[1], ci2[1], ci3[1]]), order)
                         crd3 = np.take(np.array([ci1[2], ci2[2], ci3[2]]), order)
-    
+
                         # append permutations
-                        for perm in perm_list:
+                        nperm = perm_list.shape[0]
+                        for iperm in range(nperm):
+                            perm = perm_list[iperm]
                             tricrd = np.take(tri, perm)
                             crd1_p = np.take(crd1, perm)
                             crd2_p = np.take(crd2, perm)

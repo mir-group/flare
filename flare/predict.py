@@ -272,9 +272,9 @@ def predict_on_structure_en(structure: Structure, gp: GaussianProcess,
             forces[n][i] = float(force)
             stds[n][i] = np.sqrt(np.abs(var))
 
-        if write_to_structure and structure.forces is not None:
-            structure.forces[n][i] = float(force)
-            structure.stds[n][i] = np.sqrt(np.abs(var))
+            if write_to_structure and structure.forces is not None:
+                structure.forces[n][i] = float(force)
+                structure.stds[n][i] = np.sqrt(np.abs(var))
 
         local_energies[n] = gp.predict_local_energy(chemenv)
 

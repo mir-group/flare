@@ -1,4 +1,4 @@
-import time, os, math, inspect, subprocess, json, warnings, pickle
+import warnings
 import numpy as np
 import multiprocessing as mp
 
@@ -7,17 +7,14 @@ from math import ceil, floor
 from scipy.linalg import solve_triangular
 from typing import List
 
-from flare.struc import Structure
 from flare.env import AtomicEnvironment
+from flare.kernels.utils import from_mask_to_args
 from flare.gp import GaussianProcess
 from flare.gp_algebra import partition_vector, energy_force_vector_unit, \
-    force_energy_vector_unit, energy_energy_vector_unit, force_force_vector_unit, \
-    _global_training_data, _global_training_structures, \
-    get_kernel_vector, en_kern_vec
+    force_energy_vector_unit, energy_energy_vector_unit, force_force_vector_unit,\
+    _global_training_data, _global_training_structures
 from flare.parameters import Parameters
-from flare.kernels.utils import from_mask_to_args, str_to_kernel_set
-from flare.kernels.cutoffs import quadratic_cutoff
-from flare.utils.element_coder import Z_to_element, NumpyEncoder
+from flare.struc import Structure
 
 from flare.mgp.utils import get_bonds, get_triplets, get_triplets_en, \
     get_kernel_term, str_to_mapped_kernel
@@ -162,8 +159,8 @@ class SingleMapXbody:
         self.auto_upper = (bounds[1] == 'auto')
 
         self.hyps_mask = None
-           
-        if not self.auto_lower and not self.auto_upper: 
+
+        if not self.auto_lower and not self.auto_upper:
             self.build_map_container()
 
 
@@ -221,12 +218,15 @@ class SingleMapXbody:
         if (n_envs == 0) and (n_strucs == 0):
             return np.zeros([n_grid]), None
 
-        if self.kernel_name == "threebody":
-            mapk = str_to_mapped_kernel(self.kernel_name, GP.component, GP.hyps_mask)
-            mapped_kernel_info = (kernel_info[0], mapk[0], mapk[1],
-                                  kernel_info[3], kernel_info[4], kernel_info[5])
 
         # ------- call gengrid functions ---------------
+        args = [GP.name, grid_env, kernel_info]
+        if self.kernel_name == "threebody":
+            mapk = str_to_mapped_kernel(self.kernel_name, GP.component, GP.hyps_mask)
+            mapped_kernel_info = (mapk,
+                                  kernel_info[3], kernel_info[4], kernel_info[5])
+            args = [GP.name, grid_env, mapped_kernel_info]
+
         if processes == 1:
             args = [GP.name, grid_env, kernel_info]
             if self.kernel_name == "threebody" and (not self.map_force): # TODO: finish force mapping
@@ -426,8 +426,8 @@ class SingleMapXbody:
                 min_dist = env.bond_array_2[0][0]
                 if min_dist < lower_bound:
                     lower_bound = min_dist
-               
-        return np.max(lower_bound - self.lower_bound_relax, 0) 
+
+        return np.max(lower_bound - self.lower_bound_relax, 0)
 
 
     def predict(self, lengths, xyzs, map_force, mean_only):

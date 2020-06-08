@@ -74,7 +74,7 @@ class SingleMap3body(SingleMapXbody):
 
         # initialize bounds
         if self.auto_lower:
-            self.bounds[0] = np.zeros(3) 
+            self.bounds[0] = np.zeros(3)
         if self.auto_upper:
             self.bounds[1] = np.ones(3)
 
@@ -169,8 +169,7 @@ class SingleMap3body(SingleMapXbody):
             kernel_info: return value of the get_3b_kernel
         """
 
-        kernel, en_kernel, en_force_kernel, cutoffs, hyps, hyps_mask = \
-            kernel_info
+        grid_kernel, cutoffs, hyps, hyps_mask = kernel_info
 
         if self.map_force:
             prefix = 'force'
@@ -181,6 +180,8 @@ class SingleMap3body(SingleMapXbody):
         r_cut = cutoffs['threebody']
 
         grids = self.construct_grids()
+        if (e-s) == 0:
+            return np.empty((grids.shape[0], 0), dtype=np.float64)
         coords = np.zeros((grids.shape[0], 9), dtype=np.float64) # padding 0
         coords[:, 0] = np.ones_like(coords[:, 0])
         fj, fdj = triplet_cutoff(grids, r_cut, coords, derivative=True) # TODO: add cutoff func 
@@ -195,12 +196,12 @@ class SingleMap3body(SingleMapXbody):
             training_data = _global_training_structures[name]
             kern_type = f'{prefix}_energy'
 
-        k_v = [] 
+        k_v = []
         for m_index in range(s, e):
             data = training_data[m_index]
-            kern_vec = en_kernel(kern_type, data, grids, fj, fdj,
-                                 env12.ctype, env12.etypes, perm_list,
-                                 *args)
+            kern_vec = grid_kernel(kern_type, data, grids, fj, fdj,
+                                   env12.ctype, env12.etypes, perm_list,
+                                   *args)
             k_v.append(kern_vec)
 
         if len(k_v) > 0:

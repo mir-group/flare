@@ -7,8 +7,6 @@ from typing import Callable
 
 from flare.env import AtomicEnvironment
 from flare.kernels.cutoffs import quadratic_cutoff
-from flare.kernels.kernels import three_body_helper_1, \
-    three_body_helper_2, force_helper
 from flare.kernels.utils import str_to_kernel_set as stks
 from flare.parameters import Parameters
 
@@ -51,18 +49,12 @@ def str_to_mapped_kernel(name: str, component: str = "sc",
 
     if b3:
          if multihyps:
-             tbmfe = grid_kernel_sephyps
-             tbme = grid_kernel_sephyps
+             return grid_kernel_sephyps
          else:
-             tbmfe = grid_kernel
-             tbme = grid_kernel
+             return grid_kernel
     else:
         raise NotImplementedError("mapped kernel for two-body and manybody kernels "
                                   "are not implemented")
-
-    return tbme, tbmfe
-
-
 
 def get_kernel_term(GP, term):
     """
@@ -90,7 +82,7 @@ def get_permutations(c2, ej1, ej2):
         perm_list += [[1, 2, 0]]
         perm_list += [[2, 0, 1]]
 
-    return np.array(perm_list)
+    return np.array(perm_list, dtype=np.int)
 
 
 
@@ -226,6 +218,4 @@ def get_triplets_en(ctype, etypes, bond_array, cross_bond_inds,
                 tri_dir[k] += coord
 
     return exist_species, tris, tri_dir
-
-
 

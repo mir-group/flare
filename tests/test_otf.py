@@ -87,15 +87,17 @@ def test_otf(software, example):
 
     gp = get_gp()
 
-    otf = OTF(dft_input, dt, number_of_steps, gp, dft_loc,
-              std_tolerance_factor, init_atoms=[0],
+    otf = OTF(dt=dt, number_of_steps=number_of_steps,
+              gp=gp, write_model=3,
+              std_tolerance_factor=std_tolerance_factor,
+              init_atoms=[0],
               calculate_energy=True, max_atoms_added=1,
               freeze_hyps=1, skip=1,
               force_source=software,
+              dft_input=dft_input, dft_loc=dft_loc,
               dft_output=dft_output,
               output_name=f'{casename}_otf_{software}',
-              store_dft_output=([dft_output, dft_input], '.'),
-              write_model=3)
+              store_dft_output=([dft_output, dft_input], '.'))
 
     otf.run()
 
@@ -147,12 +149,13 @@ def test_otf_par(software, per_atom_par, n_cpus):
 
     gp = get_gp(par=True, n_cpus=n_cpus, per_atom_par=per_atom_par)
 
-    otf = OTF(dft_input, dt, number_of_steps, gp, dft_loc,
-              std_tolerance_factor, init_atoms=[0],
+    otf = OTF(dt=dt, number_of_steps=number_of_steps, gp=gp,
+              std_tolerance_factor=std_tolerance_factor, init_atoms=[0],
               calculate_energy=True, max_atoms_added=1,
-              par=True, n_cpus=n_cpus,
+              n_cpus=n_cpus,
               freeze_hyps=1, skip=1,
               mpi="mpi", force_source=software,
+              dft_input=dft_input, dft_loc=dft_loc,
               dft_output=dft_output,
               output_name=f'{casename}_otf_{software}',
               store_dft_output=([dft_output, dft_input], '.'))

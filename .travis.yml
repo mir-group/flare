@@ -16,6 +16,7 @@ before_install:
     - "wget https://github.com/cp2k/cp2k/releases/download/\
       v7.1.0/cp2k-7.1-Linux-x86_64.sopt"
     - chmod u+x lmp
+    - chmod u+x cp2k-7.1-Linux-x86_64.sopt
     - pip install -r requirements.txt
 
 script:
@@ -25,7 +26,7 @@ script:
     - PWSCF_COMMAND=pw.x
       lmp=$(pwd)/../lmp
       CP2K_COMMAND=../cp2k-7.1-Linux-x86_64.sopt
-      pytest --show-capture=all -vv --durations=0 --cov=../flare/
+      pytest -vv --durations=0 --cov=../flare/
     - coverage xml
 
 after_success:
