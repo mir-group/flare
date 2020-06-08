@@ -36,15 +36,21 @@ def force_helper(A, B, C, D, fi, fj, fdi, fdj, ls1, ls2, ls3, sig2):
             the same type.
     """
     E = exp(-D * ls1)
-    F = E * B * ls2
-    G = -E * C * ls2
-    H = A * E * ls2 - B * C * E * ls3
-    I = E * fdi * fdj
-    J = F * fi * fdj
-    K = G * fdi * fj
-    L = H * fi * fj
-    M = sig2 * (I + J + K + L)
+    I = fdi * fdj
+    J = B * ls2 * fi * fdj
+    K = - C * ls2 * fdi * fj
+    L = (A * ls2 - B * C * ls3) * fi * fj
+    M = sig2 * (I + J + K + L) * E
 
+#    E = exp(-D * ls1)
+#    F = E * B * ls2
+#    G = -E * C * ls2
+#    H = A * E * ls2 - B * C * E * ls3
+#    I = E * fdi * fdj
+#    J = F * fi * fdj
+#    K = G * fdi * fj
+#    L = H * fi * fj
+#    M = sig2 * (I + J + K + L)
     return M
 
 
