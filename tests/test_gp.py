@@ -339,7 +339,7 @@ def dumpcompare(obj1, obj2):
 
             assert k1 == k2, f"key {k1} is not the same as {k2}"
 
-            if (k1 != "name"):
+            if 'name' not in k1:
                 if (obj1[k1] is None):
                     continue
                 else:
