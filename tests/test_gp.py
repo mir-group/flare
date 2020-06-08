@@ -28,17 +28,13 @@ def all_gps() -> GaussianProcess:
 
     gp_dict = {True: None, False: None}
     for multihyps in multihyps_list:
-        cutoffs = np.ones(2)*0.8
-        hyps, hm, _ = generate_hm(1, 1, multihyps=multihyps)
+        hyps, hm, cutoffs = generate_hm(1, 1, multihyps=multihyps)
         hl = hm['hyps_label']
         if (multihyps is False):
             hm = None
 
         # test update_db
         gpname = '2+3+mb_mc'
-        hyps = np.hstack([hyps, [1, 1]])
-        hl = np.hstack([hl[:-1], ['sigm', 'lsm'], hl[-1]])
-        cutoffs = np.ones(3)*0.8
 
         gp_dict[multihyps] = \
             GaussianProcess(kernel_name=gpname,
@@ -71,7 +67,7 @@ def params():
 
 @pytest.fixture(scope='module')
 def validation_env() -> AtomicEnvironment:
-    test_pt = get_tstp()
+    test_pt = get_tstp(None)
     yield test_pt
     del test_pt
 
@@ -171,15 +167,12 @@ class TestConstraint():
         """
 
         test_gp = all_gps[True]
-        orig_hyp_labels = test_gp.hyp_labels
-        orig_hyps = np.copy(test_gp.hyps)
 
-        test_gp.hyps_mask['map'] = np.array([1, 3, 5], dtype=int)
-        test_gp.hyps_mask['train_noise'] = False
-        test_gp.hyps_mask['original'] = orig_hyps
+        hyps, hm, cutoffs = generate_hm(1, 1, constraint=True, multihyps=True)
 
-        test_gp.hyp_labels = orig_hyp_labels[test_gp.hyps_mask['map']]
-        test_gp.hyps = orig_hyps[test_gp.hyps_mask['map']]
+        test_gp.hyps_mask = hm
+        test_gp.hyp_labels = hm['hyps_label']
+        test_gp.hyps = hyps
 
         # Check that the hyperparameters were updated
         test_gp.maxiter = 1
@@ -324,8 +317,6 @@ class TestIO():
         assert np.array_equal(prev_l_mat, new_gp.l_mat)
 
         os.remove('test_gp_write.json')
-
-
 
 
 def dumpcompare(obj1, obj2):

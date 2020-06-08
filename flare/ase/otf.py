@@ -1,6 +1,6 @@
 '''
-:class:`OTF` is the on-the-fly training module for ASE, WITHOUT molecular dynamics engine. 
-It needs to be used adjointly with ASE MD engine. Please refer to our 
+:class:`OTF` is the on-the-fly training module for ASE, WITHOUT molecular dynamics engine.
+It needs to be used adjointly with ASE MD engine. Please refer to our
 `OTF MD module <https://flare.readthedocs.io/en/latest/flare/ase/otf_md.html>`_ for the
 complete training module with OTF and MD.
 '''
@@ -11,7 +11,7 @@ from copy import deepcopy
 
 from flare.struc import Structure
 from flare.gp import GaussianProcess
-from flare.util import is_std_in_bound
+from flare.utils.learner import is_std_in_bound
 from flare.mgp.utils import get_l_bound
 
 import numpy as np
@@ -21,21 +21,21 @@ from ase.calculators.espresso import Espresso
 
 class OTF:
     """
-    OTF (on-the-fly) training with the ASE interface. 
-    
-    Note: Dft calculator is set outside of the otf module, and input as 
+    OTF (on-the-fly) training with the ASE interface.
+
+    Note: Dft calculator is set outside of the otf module, and input as
         dft_calc, so that different calculators can be used
 
     Args:
         dft_calc (ASE Calculator): the ASE DFT calculator (see ASE documentaion)
         dft_count (int): initial number of DFT calls
-        std_tolerance_factor (float): the threshold of calling DFT = noise * 
+        std_tolerance_factor (float): the threshold of calling DFT = noise *
             std_tolerance_factor
         init_atoms (list): the list of atoms in the first DFT call to add to
             the training set, since there's no uncertainty prediction initially
         calculate_energy (bool): if True, the energy will be calculated;
             otherwise, only forces will be predicted
-        max_atoms_added (int): the maximal number of atoms to add to the 
+        max_atoms_added (int): the maximal number of atoms to add to the
             training set after each DFT calculation
         freeze_hyps (int or None): the hyperparameters will only be trained for
             the first `freeze_hyps` DFT calls, and will be fixed after that
@@ -44,25 +44,25 @@ class OTF:
 
     Other Parameters:
         use_mapping (bool): if True, the MGP will be used
-        non_mapping_steps (list): a list of steps that MGP will not be 
+        non_mapping_steps (list): a list of steps that MGP will not be
             constructed and used
-        l_bound (float): the lower bound of the interatomic distance, used for 
+        l_bound (float): the lower bound of the interatomic distance, used for
             MGP construction
-        two_d (bool): used in the calculation of l_bound. If 2-D material is 
-            considered, set to True, then the atomic environment construction 
+        two_d (bool): used in the calculation of l_bound. If 2-D material is
+            considered, set to True, then the atomic environment construction
             will only search the x & y periodic boundaries to save time
     """
 
-    def __init__(self, 
+    def __init__(self,
             # on-the-fly parameters
-            dft_calc=None, dft_count=None, std_tolerance_factor: float=1, 
-            skip: int=0, init_atoms: list=[], calculate_energy=False, 
+            dft_calc=None, dft_count=None, std_tolerance_factor: float=1,
+            skip: int=0, init_atoms: list=[], calculate_energy=False,
             max_atoms_added=1, freeze_hyps=1, restart_from=None,
             # mgp parameters
             use_mapping: bool=False, non_mapping_steps: list=[],
             l_bound: float=None, two_d: bool=False):
 
-        # get all arguments as attributes 
+        # get all arguments as attributes
         arg_dict = inspect.getargvalues(inspect.currentframe())[3]
         del arg_dict['self']
         self.__dict__.update(arg_dict)
@@ -119,7 +119,7 @@ class OTF:
             self.stds = np.zeros((self.noa, 3))
             dft_forces = self.call_DFT()
             f = dft_forces
-   
+
             # update gp model
             curr_struc = Structure.from_ase_atoms(self.atoms)
             self.l_bound = get_l_bound(100, curr_struc, self.two_d)
@@ -131,7 +131,7 @@ class OTF:
             # train calculator
             for atom in self.init_atoms:
                 # the observers[0][0] is the logger
-                self.observers[self.logger_ind][0].add_atom_info(atom, 
+                self.observers[self.logger_ind][0].add_atom_info(atom,
                     self.stds[atom])
             self.train()
 
@@ -139,7 +139,7 @@ class OTF:
                 self.build_mgp()
 
             self.observers[self.logger_ind][0].write_wall_time()
-  
+
         if self.md_engine == 'NPT':
             if not self.initialized:
                 self.initialize()
@@ -171,14 +171,14 @@ class OTF:
             self.stds = self.atoms.get_uncertainties(self.atoms)
 
             # figure out if std above the threshold
-            self.call_observers() 
+            self.call_observers()
             curr_struc = Structure.from_ase_atoms(self.atoms)
             self.l_bound = get_l_bound(self.l_bound, curr_struc, self.two_d)
             print('l_bound:', self.l_bound)
             curr_struc.stds = np.copy(self.stds)
             noise = calc.gp_model.hyps[-1]
             self.std_in_bound, self.target_atoms = is_std_in_bound(\
-                    noise, self.std_tolerance_factor, curr_struc, self.max_atoms_added)
+                    self.std_tolerance_factor, noise, curr_struc, self.max_atoms_added)
 
             print('std in bound:', self.std_in_bound, self.target_atoms)
 
@@ -197,14 +197,14 @@ class OTF:
 
         self.observers[self.logger_ind][0].run_complete()
 
-    
+
     def build_mgp(self):
         # build mgp
         calc = self.atoms.calc
         if self.nsteps in self.non_mapping_steps:
             calc.use_mapping = False
             skip = True
-        else: 
+        else:
             calc.use_mapping = True
 
             if calc.mgp_updated:
@@ -243,7 +243,7 @@ class OTF:
             # update gp model
             gp_model.update_db(atom_struc, dft_forces,
                                custom_range=[target_atom])
-    
+
             if gp_model.alpha is None:
                 gp_model.set_L_alpha()
             else:
@@ -251,14 +251,14 @@ class OTF:
 
             # atom_list.append(target_atom)
             ## force calculation needed before get_uncertainties
-            # forces = self.atoms.calc.get_forces_gp(self.atoms) 
+            # forces = self.atoms.calc.get_forces_gp(self.atoms)
             # self.stds = self.atoms.get_uncertainties()
 
-            # write added atom to the log file, 
+            # write added atom to the log file,
             # refer to ase.optimize.optimize.Dynamics
-            self.observers[self.logger_ind][0].add_atom_info(target_atom, 
+            self.observers[self.logger_ind][0].add_atom_info(target_atom,
                                                self.stds[target_atom])
-           
+
             #self.is_std_in_bound(atom_list)
             atom_count += 1
 
@@ -271,8 +271,8 @@ class OTF:
         if (self.dft_count-1) < self.freeze_hyps:
             #TODO: add other args to train()
             calc.gp_model.train(output=output)
-            self.observers[self.logger_ind][0].write_hyps(calc.gp_model.hyp_labels, 
-                            calc.gp_model.hyps, calc.gp_model.likelihood, 
+            self.observers[self.logger_ind][0].write_hyps(calc.gp_model.hyp_labels,
+                            calc.gp_model.hyps, calc.gp_model.likelihood,
                             calc.gp_model.likelihood_gradient)
         else:
             #TODO: change to update_L_alpha()

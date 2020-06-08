@@ -6,14 +6,10 @@ Gaussian Process Force Fields
 
    struc
    env
-   kernels/sc
-   kernels/mc_simple
-   kernels/mc_sephyps
-   cutoffs
+   kernels/kernels
    predict
    gp_algebra
    output
-   util
 
 .. automodule:: flare.gp
     :members:
