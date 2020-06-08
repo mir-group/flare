@@ -5,7 +5,7 @@ import os, pickle, re, shutil
 
 from flare import struc, env, gp
 from flare import otf_parser
-from flare.mgp.mgp import MappedGaussianProcess
+from flare.mgp import MappedGaussianProcess
 from flare.lammps import lammps_calculator
 from flare.ase.calculator import FLARE_Calculator
 from ase.calculators.lammpsrun import LAMMPS

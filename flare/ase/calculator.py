@@ -10,7 +10,7 @@ import numpy as np
 import multiprocessing as mp
 from flare.env import AtomicEnvironment
 from flare.struc import Structure
-from flare.mgp.mgp import MappedGaussianProcess
+from flare.mgp import MappedGaussianProcess
 from flare.predict import predict_on_structure_par_en, predict_on_structure_en
 from ase.calculators.calculator import Calculator
 

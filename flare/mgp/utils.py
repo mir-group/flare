@@ -11,6 +11,56 @@ from flare.kernels.utils import str_to_kernel_set as stks
 import flare.mgp.utils_3b as map_3b
 from flare.parameters import Parameters
 
+from flare.mgp.grid_kernels import grid_kernel, grid_kernel_sephyps
+
+
+def str_to_mapped_kernel(name: str, component: str = "sc",
+                         hyps_mask: dict = None):
+    """
+    return kernels and kernel gradient function base on a string.
+    If it contains 'sc', it will use the kernel in sc module;
+    otherwise, it uses the kernel in mc_simple;
+    if sc is not included and multihyps is True,
+    it will use the kernel in mc_sephyps module
+    otherwise, it will use the kernel in the sc module
+
+    Args:
+
+    name (str): name for kernels. example: "2+3mc"
+    multihyps (bool, optional): True for using multiple hyperparameter groups
+
+    :return: mapped kernel function, kernel gradient, energy kernel,
+             energy_and_force kernel
+
+    """
+
+    multihyps = True
+    if hyps_mask is None:
+        multihyps = False
+    elif hyps_mask['nspecie'] == 1:
+        multihyps = False
+
+    # b2 = Two body in use, b3 = Three body in use
+    b2 = False
+    many = False
+    b3 = False
+    for s in ['3', 'three']:
+        if s in name.lower() or s == name.lower():
+            b3 = True
+
+    if b3:
+         if multihyps:
+             tbmfe = grid_kernel_sephyps
+             tbme = grid_kernel_sephyps
+         else:
+             tbmfe = grid_kernel
+             tbme = grid_kernel
+    else:
+        raise NotImplementedError("mapped kernel for two-body and manybody kernels "
+                                  "are not implemented")
+
+    return tbme, tbmfe
+
 def get_kernel_term(GP, term):
     """
     Args
@@ -92,51 +142,85 @@ def get_bonds(ctype, etypes, bond_array):
             bond_dirs.append([b_dir])
     return exist_species, bond_lengths, bond_dirs
 
+@njit
+def get_triplets(ctype, etypes, bond_array, cross_bond_inds,
+                 cross_bond_dists, triplets):
+    exist_species = []
+    tris = []
+    tri_dir = []
 
-def str_to_mapped_kernel(name: str, component: str = "sc",
-                         hyps_mask: dict = None):
-    """
-    return kernels and kernel gradient function base on a string.
-    If it contains 'sc', it will use the kernel in sc module;
-    otherwise, it uses the kernel in mc_simple;
-    if sc is not included and multihyps is True,
-    it will use the kernel in mc_sephyps module
-    otherwise, it will use the kernel in the sc module
+    for m in range(bond_array.shape[0]):
+        r1 = bond_array[m, 0]
+        c1 = bond_array[m, 1:]
+        spc1 = etypes[m]
 
-    Args:
+        for n in range(triplets[m]):
+            ind1 = cross_bond_inds[m, m+n+1]
+            r2 = bond_array[ind1, 0]
+            c2 = bond_array[ind1, 1:]
+            c12 = np.sum(c1*c2)
+            if c12 > 1: # to prevent numerical error
+                c12 = 1
+            elif c12 < -1:
+                c12 = -1
+            spc2 = etypes[ind1]
 
-    name (str): name for kernels. example: "2+3mc"
-    multihyps (bool, optional): True for using multiple hyperparameter groups
+            spcs_list = [[ctype, spc1, spc2], [ctype, spc2, spc1]]
+            for i in range(2):
+                spcs = spcs_list[i]
+                triplet = array([r2, r1, c12]) if i else array([r1, r2, c12])
+                coord = c2 if i else c1
+                if spcs not in exist_species:
+                    exist_species.append(spcs)
+                    tris.append([triplet])
+                    tri_dir.append([coord])
+                else:
+                    k = exist_species.index(spcs)
+                    tris[k].append(triplet)
+                    tri_dir[k].append(coord)
 
-    :return: mapped kernel function, kernel gradient, energy kernel,
-             energy_and_force kernel
+    return exist_species, tris, tri_dir
 
-    """
+@njit
+def get_triplets_en(ctype, etypes, bond_array, cross_bond_inds,
+                    cross_bond_dists, triplets):
+    exist_species = []
+    tris = []
+    tri_dir = []
 
-    multihyps = True
-    if hyps_mask is None:
-        multihyps = False
-    elif hyps_mask['nspecie'] == 1:
-        multihyps = False
+    for m in range(bond_array.shape[0]):
+        r1 = bond_array[m, 0]
+        c1 = bond_array[m, 1:]
+        spc1 = etypes[m]
 
-    # b2 = Two body in use, b3 = Three body in use
-    b2 = False
-    many = False
-    b3 = False
-    for s in ['3', 'three']:
-        if s in name.lower() or s == name.lower():
-            b3 = True
+        for n in range(triplets[m]):
+            ind1 = cross_bond_inds[m, m+n+1]
+            r2 = bond_array[ind1, 0]
+            c2 = bond_array[ind1, 1:]
+            c12 = np.sum(c1*c2)
+            r12 = np.sqrt(r1**2 + r2**2 - 2*r1*r2*c12)
 
-    if b3:
-        if multihyps:
-            tbmfe = map_3b.three_body_mc_en_force_sephyps
-            tbme = map_3b.three_body_mc_en_sephyps
-        else:
-            tbmfe = map_3b.three_body_mc_en_force
-            tbme = map_3b.three_body_mc_en
-    else:
-        raise NotImplementedError("mapped kernel for two-body and manybody kernels "
-                                  "are not implemented")
+            spc2 = etypes[ind1]
+            triplet1 = array([r1, r2, r12])
+            triplet2 = array([r2, r1, r12])
 
-    return tbme, tbmfe
+            if spc1 <= spc2:
+                spcs = [ctype, spc1, spc2]
+                triplet = [triplet1, triplet2]
+                coord = [c1, c2]
+            else:
+                spcs = [ctype, spc2, spc1]
+                triplet = [triplet2, triplet1]
+                coord = [c2, c1]
+
+            if spcs not in exist_species:
+                exist_species.append(spcs)
+                tris.append(triplet)
+                tri_dir.append(coord)
+            else:
+                k = exist_species.index(spcs)
+                tris[k] += triplet
+                tri_dir[k] += coord
+
+    return exist_species, tris, tri_dir
 

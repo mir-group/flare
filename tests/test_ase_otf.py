@@ -5,7 +5,7 @@ import numpy as np
 
 from flare import otf, kernels
 from flare.gp import GaussianProcess
-from flare.mgp.mgp import MappedGaussianProcess
+from flare.mgp import MappedGaussianProcess
 from flare.ase.calculator import FLARE_Calculator
 from flare.ase.otf import ASE_OTF
 # from flare.ase.logger import OTFLogger
