@@ -11,17 +11,13 @@ from flare.struc import Structure
 from flare.env import AtomicEnvironment
 from flare.gp import GaussianProcess
 from flare.gp_algebra import partition_vector, energy_force_vector_unit, \
-    force_energy_vector_unit, energy_energy_vector_unit, force_force_vector_unit, \
-    _global_training_data, _global_training_structures, \
-    get_kernel_vector, en_kern_vec
+    force_energy_vector_unit, energy_energy_vector_unit, force_force_vector_unit
 from flare.parameters import Parameters
-from flare.kernels.utils import from_mask_to_args, str_to_kernel_set, str_to_mapped_kernel
-from flare.kernels.cutoffs import quadratic_cutoff
-from flare.utils.element_coder import Z_to_element, NumpyEncoder
+from flare.kernels.utils import from_mask_to_args,
 
 
 from flare.mgp.utils import get_bonds, get_triplets, get_triplets_en, \
-    get_kernel_term
+    get_kernel_term, str_to_mapped_kernel
 from flare.mgp.splines_methods import PCASplines, CubicSpline
 
 
