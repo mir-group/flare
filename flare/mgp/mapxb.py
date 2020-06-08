@@ -1,4 +1,4 @@
-import time, os, math, inspect, subprocess, json, warnings, pickle
+import warnings
 import numpy as np
 import multiprocessing as mp
 
@@ -7,13 +7,14 @@ from math import ceil, floor
 from scipy.linalg import solve_triangular
 from typing import List
 
-from flare.struc import Structure
 from flare.env import AtomicEnvironment
+from flare.kernels.utils import from_mask_to_args
 from flare.gp import GaussianProcess
 from flare.gp_algebra import partition_vector, energy_force_vector_unit, \
-    force_energy_vector_unit, energy_energy_vector_unit, force_force_vector_unit
+    force_energy_vector_unit, energy_energy_vector_unit, force_force_vector_unit,\
+    _global_training_data, _global_training_structures
 from flare.parameters import Parameters
-from flare.kernels.utils import from_mask_to_args,
+from flare.struc import Structure
 
 from flare.mgp.utils import get_bonds, get_triplets, get_triplets_en, \
     get_kernel_term, str_to_mapped_kernel
