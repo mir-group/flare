@@ -169,8 +169,7 @@ class SingleMap3body(SingleMapXbody):
             kernel_info: return value of the get_3b_kernel
         """
 
-        kernel, en_kernel, en_force_kernel, cutoffs, hyps, hyps_mask = \
-            kernel_info
+        grid_kernel, cutoffs, hyps, hyps_mask = kernel_info
 
         if self.map_force:
             prefix = 'force'
@@ -199,9 +198,9 @@ class SingleMap3body(SingleMapXbody):
         k_v = []
         for m_index in range(s, e):
             data = training_data[m_index]
-            kern_vec = en_kernel(kern_type, data, grids, fj, fdj,
-                                 env12.ctype, env12.etypes, perm_list,
-                                 *args)
+            kern_vec = grid_kernel(kern_type, data, grids, fj, fdj,
+                                   env12.ctype, env12.etypes, perm_list,
+                                   *args)
             k_v.append(kern_vec)
 
         k_v = np.vstack(k_v).T

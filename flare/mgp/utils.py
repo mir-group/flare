@@ -49,16 +49,12 @@ def str_to_mapped_kernel(name: str, component: str = "sc",
 
     if b3:
          if multihyps:
-             tbmfe = grid_kernel_sephyps
-             tbme = grid_kernel_sephyps
+             return grid_kernel_sephyps
          else:
-             tbmfe = grid_kernel
-             tbme = grid_kernel
+             return grid_kernel
     else:
         raise NotImplementedError("mapped kernel for two-body and manybody kernels "
                                   "are not implemented")
-
-    return tbme, tbmfe
 
 def get_kernel_term(GP, term):
     """

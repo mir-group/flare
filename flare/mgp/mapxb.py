@@ -220,12 +220,14 @@ class SingleMapXbody:
 
         if self.kernel_name == "threebody":
             mapk = str_to_mapped_kernel(self.kernel_name, GP.component, GP.hyps_mask)
-            mapped_kernel_info = (kernel_info[0], mapk[0], mapk[1],
+            mapped_kernel_info = (mapk,
                                   kernel_info[3], kernel_info[4], kernel_info[5])
 
         # ------- call gengrid functions ---------------
+        args = [GP.name, grid_env, kernel_info]
+        if self.kernel_name == "threebody":
+            args = [GP.name, grid_env, mapped_kernel_info]
         if processes == 1:
-            args = [GP.name, grid_env, kernel_info]
             if self.kernel_name == "threebody":
                 k12_v_force = self._gengrid_numba(GP.name, True, 0, n_envs, grid_env,
                                                   mapped_kernel_info)
@@ -234,9 +236,7 @@ class SingleMapXbody:
             k12_v_energy = self._gengrid_serial(args, False, n_strucs)
 
         else:
-            args = [GP.name, grid_env, mapped_kernel_info]
             k12_v_force = self._gengrid_par(args, True, n_envs, processes, self.kernel_name)
-            args = [GP.name, grid_env, kernel_info]
             k12_v_energy = self._gengrid_par(args, False, n_strucs, processes, self.kernel_name)
 
         k12_v_all = np.hstack([k12_v_force, k12_v_energy])
@@ -289,7 +289,7 @@ class SingleMapXbody:
                 s, e = block_id[ibatch]
                 if threebody: #TODO: energy block tested?
                     k12_slice.append(pool.apply_async(self._gengrid_numba,
-                        args = (GP_name, True, s, e, grid_env, mapped_kernel_info)))
+                        args = (GP_name, force_block, s, e, grid_env, mapped_kernel_info)))
                 else:
                     k12_slice.append(pool.apply_async(self._gengrid_inner,
                         args = args + [force_block, s, e]))
