@@ -373,6 +373,12 @@ def test_training_statistics():
 
 
 def test_delete_force_data():
+    """
+    Train a GP on one fake structure. Store forces from prediction.
+    Add a new fake structure and ensure predictions change; then remove
+    the structure and ensure predictions go back to normal.
+    :return:
+    """
 
     test_structure, forces = get_random_structure(np.eye(3),
                                                   ['H', 'Be'],
@@ -386,10 +392,11 @@ def test_delete_force_data():
 
     gp.update_db(test_structure, forces)
 
+    with raises(ValueError):
+        gp.remove_force_data(1000000)
+
     init_forces, init_stds = predict_on_structure(test_structure, gp,
                                                  write_to_structure=False)
-
-
     init_forces_2, init_stds_2 = predict_on_structure(test_structure_2, gp,
                                                  write_to_structure=False)
     for custom_range in [None,[0]]:
@@ -407,10 +414,10 @@ def test_delete_force_data():
         assert not np.array_equal(init_stds, new_stds)
         assert not np.array_equal(init_stds_2, new_stds_2)
 
-        if custom_range==[0]:
+        if custom_range == [0]:
             gp.remove_force_data(5)
         else:
-            gp.remove_force_data([5,6,7,8,9])
+            gp.remove_force_data([5, 6, 7, 8, 9])
 
         final_forces, final_stds = predict_on_structure(test_structure, gp,
                                                      write_to_structure=False)

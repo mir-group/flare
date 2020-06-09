@@ -18,10 +18,10 @@ from flare.util import Z_to_element
 from flare.env import AtomicEnvironment
 from flare.struc import Structure
 from flare.gp_algebra import get_neg_likelihood, \
-        get_like_from_mats, get_neg_like_grad, \
-        get_kernel_vector, en_kern_vec, \
-        get_ky_mat, get_ky_mat_update, \
-        _global_training_data, _global_training_labels
+    get_like_from_mats, get_neg_like_grad, \
+    get_kernel_vector, en_kern_vec, \
+    get_ky_mat, get_ky_mat_update, \
+    _global_training_data, _global_training_labels
 
 from flare.kernels.utils import str_to_kernel_set, from_mask_to_args
 from flare.util import NumpyEncoder
@@ -90,10 +90,9 @@ class GaussianProcess:
         if hyps is None:
             # If no hyperparameters are passed in, assume 2 hyps for each
             # cutoff, plus one noise hyperparameter, and use a guess value
-            self.hyps = np.array([0.1]*(1+2*len(cutoffs)))
+            self.hyps = np.array([0.1] * (1 + 2 * len(cutoffs)))
         else:
             self.hyps = np.array(hyps, dtype=np.float64)
-
 
         self.output = output
         self.per_atom_par = per_atom_par
@@ -104,7 +103,7 @@ class GaussianProcess:
 
         if 'nsample' in kwargs:
             DeprecationWarning("nsample is being replaced with n_sample")
-            self.n_sample =kwargs.get('nsample')
+            self.n_sample = kwargs.get('nsample')
         if 'par' in kwargs:
             DeprecationWarning("par is being replaced with parallel")
             self.parallel = kwargs.get('par')
@@ -122,7 +121,7 @@ class GaussianProcess:
             self.kernel_name = kernel.__name__
         else:
             DeprecationWarning("kernel, kernel_grad, energy_force_kernel "
-                    "and energy_kernel will be replaced by kernel_name")
+                               "and energy_kernel will be replaced by kernel_name")
             self.kernel_name = kernel.__name__
             self.kernel = kernel
             self.kernel_grad = kernel_grad
@@ -140,9 +139,8 @@ class GaussianProcess:
         else:
             self.n_cpus = 1
 
-
-        self.training_data = []   # Atomic environments
-        self.training_labels = [] # Forces acting on central atoms of at. envs.
+        self.training_data = []  # Atomic environments
+        self.training_labels = []  # Forces acting on central atoms of at. envs.
         self.training_labels_np = np.empty(0, )
 
         # Parameters set during training
@@ -169,7 +167,7 @@ class GaussianProcess:
         if (self.name in _global_training_labels):
             base = f'{self.name}'
             count = 2
-            while (self.name in _global_training_labels and count<100):
+            while (self.name in _global_training_labels and count < 100):
                 time.sleep(random())
                 self.name = f'{base}_{count}'
                 print("Specified GP name is present in global memory; "
@@ -177,34 +175,34 @@ class GaussianProcess:
                       f"GP instance to {self.name}")
                 count += 1
             if (self.name in _global_training_labels):
-                milliseconds = int(round(time.time() * 1000)%10000000)
+                milliseconds = int(round(time.time() * 1000) % 10000000)
                 self.name = f"{base}_{milliseconds}"
                 print("Specified GP name still present in global memory: "
                       f"renaming the gp instance to {self.name}")
             print(f"Final name of the gp instance is {self.name}")
 
         assert (self.name not in _global_training_labels), \
-                f"the gp instance name, {self.name} is used"
-        assert (self.name not in _global_training_data),  \
-                f"the gp instance name, {self.name} is used"
+            f"the gp instance name, {self.name} is used"
+        assert (self.name not in _global_training_data), \
+            f"the gp instance name, {self.name} is used"
 
         _global_training_data[self.name] = self.training_data
         _global_training_labels[self.name] = self.training_labels_np
 
-        assert (len(self.cutoffs)<=3)
+        assert (len(self.cutoffs) <= 3)
 
-        if (len(self.cutoffs)>1):
-            assert self.cutoffs[0]>=self.cutoffs[1], \
-                    "2b cutoff has to be larger than 3b cutoffs"
+        if (len(self.cutoffs) > 1):
+            assert self.cutoffs[0] >= self.cutoffs[1], \
+                "2b cutoff has to be larger than 3b cutoffs"
 
         if ('three' in self.kernel_name):
-            assert len(self.cutoffs)>=2, \
-                    "3b kernel needs two cutoffs, one for building"\
-                    " neighbor list and one for the 3b"
+            assert len(self.cutoffs) >= 2, \
+                "3b kernel needs two cutoffs, one for building" \
+                " neighbor list and one for the 3b"
         if ('many' in self.kernel_name):
-            assert len(self.cutoffs)>=3, \
-                    "many-body kernel needs three cutoffs, one for building"\
-                    " neighbor list and one for the 3b"
+            assert len(self.cutoffs) >= 3, \
+                "many-body kernel needs three cutoffs, one for building" \
+                " neighbor list and one for the 3b"
 
         if self.multihyps is True and self.hyps_mask is None:
             raise ValueError("Warning! Multihyperparameter mode enabled,"
@@ -218,19 +216,21 @@ class GaussianProcess:
             self.multihyps = True
 
             assert 'nspec' in self.hyps_mask, "nspec key missing in " \
-                                                     "hyps_mask dictionary"
+                                              "hyps_mask dictionary"
             assert 'spec_mask' in self.hyps_mask, "spec_mask key " \
-                                                         "missing " \
-                                                         "in hyps_mask dicticnary"
+                                                  "missing " \
+                                                  "in hyps_mask dicticnary"
 
             hyps_mask = deepcopy(self.hyps_mask)
 
             nspec = hyps_mask['nspec']
-            self.hyps_mask['spec_mask'] = np.array(hyps_mask['spec_mask'], dtype=int)
+            self.hyps_mask['spec_mask'] = np.array(hyps_mask['spec_mask'],
+                                                   dtype=int)
 
             if 'nbond' in hyps_mask:
                 n2b = self.hyps_mask['nbond']
-                self.hyps_mask['bond_mask'] = np.array(hyps_mask['bond_mask'], dtype=int)
+                self.hyps_mask['bond_mask'] = np.array(hyps_mask['bond_mask'],
+                                                       dtype=int)
                 if n2b > 0:
                     bmask = hyps_mask['bond_mask']
                     assert (np.max(bmask) < n2b)
@@ -239,14 +239,16 @@ class GaussianProcess:
                         f" {len(bmask)} != nspec^2 {nspec**2}"
                     for t2b in range(nspec):
                         for t2b_2 in range(t2b, nspec):
-                            assert bmask[t2b*nspec+t2b_2] == bmask[t2b_2*nspec+t2b], \
-                                    'bond_mask has to be symmetric'
+                            assert bmask[t2b * nspec + t2b_2] == bmask[
+                                t2b_2 * nspec + t2b], \
+                                'bond_mask has to be symmetric'
             else:
                 n2b = 0
 
             if 'ntriplet' in hyps_mask:
                 n3b = self.hyps_mask['ntriplet']
-                self.hyps_mask['triplet_mask'] = np.array(hyps_mask['triplet_mask'], dtype=int)
+                self.hyps_mask['triplet_mask'] = np.array(
+                    hyps_mask['triplet_mask'], dtype=int)
                 if n3b > 0:
                     tmask = hyps_mask['triplet_mask']
                     assert (np.max(tmask) < n3b)
@@ -257,25 +259,35 @@ class GaussianProcess:
                     for t3b in range(nspec):
                         for t3b_2 in range(t3b, nspec):
                             for t3b_3 in range(t3b_2, nspec):
-                                assert tmask[t3b*nspec*nspec+t3b_2*nspec+t3b_3] \
-                                        == tmask[t3b*nspec*nspec+t3b_3*nspec+t3b_2], \
-                                        'bond_mask has to be symmetric'
-                                assert tmask[t3b*nspec*nspec+t3b_2*nspec+t3b_3] \
-                                        == tmask[t3b_2*nspec*nspec+t3b*nspec+t3b_3], \
-                                        'bond_mask has to be symmetric'
-                                assert tmask[t3b*nspec*nspec+t3b_2*nspec+t3b_3] \
-                                        == tmask[t3b_2*nspec*nspec+t3b_3*nspec+t3b], \
-                                        'bond_mask has to be symmetric'
-                                assert tmask[t3b*nspec*nspec+t3b_2*nspec+t3b_3] \
-                                        == tmask[t3b_3*nspec*nspec+t3b*nspec+t3b_2], \
-                                        'bond_mask has to be symmetric'
-                                assert tmask[t3b*nspec*nspec+t3b_2*nspec+t3b_3] \
-                                        == tmask[t3b_3*nspec*nspec+t3b_2*nspec+t3b], \
-                                        'bond_mask has to be symmetric'
+                                assert tmask[
+                                           t3b * nspec * nspec + t3b_2 * nspec + t3b_3] \
+                                       == tmask[
+                                           t3b * nspec * nspec + t3b_3 * nspec + t3b_2], \
+                                    'bond_mask has to be symmetric'
+                                assert tmask[
+                                           t3b * nspec * nspec + t3b_2 * nspec + t3b_3] \
+                                       == tmask[
+                                           t3b_2 * nspec * nspec + t3b * nspec + t3b_3], \
+                                    'bond_mask has to be symmetric'
+                                assert tmask[
+                                           t3b * nspec * nspec + t3b_2 * nspec + t3b_3] \
+                                       == tmask[
+                                           t3b_2 * nspec * nspec + t3b_3 * nspec + t3b], \
+                                    'bond_mask has to be symmetric'
+                                assert tmask[
+                                           t3b * nspec * nspec + t3b_2 * nspec + t3b_3] \
+                                       == tmask[
+                                           t3b_3 * nspec * nspec + t3b * nspec + t3b_2], \
+                                    'bond_mask has to be symmetric'
+                                assert tmask[
+                                           t3b * nspec * nspec + t3b_2 * nspec + t3b_3] \
+                                       == tmask[
+                                           t3b_3 * nspec * nspec + t3b_2 * nspec + t3b], \
+                                    'bond_mask has to be symmetric'
             else:
                 n3b = 0
 
-            if (len(self.cutoffs)<=2):
+            if (len(self.cutoffs) <= 2):
                 assert ((n2b + n3b) > 0)
             else:
                 assert ((n2b + n3b + 1) > 0)
@@ -286,11 +298,13 @@ class GaussianProcess:
                 # Ensure typed correctly as numpy array
                 self.hyps_mask['original'] = np.array(hyps_mask['original'])
 
-                if (len(self.cutoffs)<=2):
-                    assert (n2b * 2 + n3b * 2 + 1) == len(hyps_mask['original']), \
+                if (len(self.cutoffs) <= 2):
+                    assert (n2b * 2 + n3b * 2 + 1) == len(
+                        hyps_mask['original']), \
                         "the hyperparmeter length is inconsistent with the mask"
                 else:
-                    assert (n2b * 2 + n3b * 2 + 1 * 2 + 1) == len(hyps_mask['original']), \
+                    assert (n2b * 2 + n3b * 2 + 1 * 2 + 1) == len(
+                        hyps_mask['original']), \
                         "the hyperparmeter length is inconsistent with the mask"
                 assert len(hyps_mask['map']) == len(self.hyps), \
                     "the hyperparmeter length is inconsistent with the mask"
@@ -300,11 +314,11 @@ class GaussianProcess:
             else:
                 assert hyps_mask['train_noise'] is True, \
                     "train_noise should be True when map is not used"
-                if (len(self.cutoffs)<=2):
+                if (len(self.cutoffs) <= 2):
                     assert (n2b * 2 + n3b * 2 + 1) == len(self.hyps), \
                         "the hyperparmeter length is inconsistent with the mask"
                 else:
-                    assert (n2b * 2 + n3b * 2 + 1*2 + 1) == len(self.hyps), \
+                    assert (n2b * 2 + n3b * 2 + 1 * 2 + 1) == len(self.hyps), \
                         "the hyperparmeter length is inconsistent with the mask"
 
             if 'bounds' in hyps_mask:
@@ -389,10 +403,10 @@ class GaussianProcess:
                 hyperparameter optimization.
         """
 
-        if len(self.training_data)==0 or len(self.training_labels) ==0:
-            raise Warning ("You are attempting to train a GP with no "
-                           "training data. Add environments and forces "
-                           "to the GP and try again.")
+        if len(self.training_data) == 0 or len(self.training_labels) == 0:
+            raise Warning("You are attempting to train a GP with no "
+                          "training data. Add environments and forces "
+                          "to the GP and try again.")
             return None
 
         x_0 = self.hyps
@@ -459,7 +473,7 @@ class GaussianProcess:
         """
 
         # Check that alpha is up to date with training set
-        size3 = len(self.training_data)*3
+        size3 = len(self.training_data) * 3
 
         # If model is empty, then just return
         if size3 == 0:
@@ -471,7 +485,6 @@ class GaussianProcess:
             self.update_L_alpha()
         elif (size3 != self.alpha.shape[0]):
             self.set_L_alpha()
-
 
     def predict(self, x_t: AtomicEnvironment, d: int) -> [float, float]:
         """
@@ -722,20 +735,19 @@ class GaussianProcess:
                                  cutoffs=np.array(dictionary['cutoffs']),
                                  hyps=np.array(dictionary['hyps']),
                                  hyp_labels=dictionary['hyp_labels'],
-                                 parallel=dictionary.get('parallel',False) or
-                                          dictionary.get('par',False),
+                                 parallel=dictionary.get('parallel', False) or
+                                          dictionary.get('par', False),
                                  per_atom_par=dictionary.get('per_atom_par',
                                                              True),
                                  n_cpus=dictionary.get(
                                      'n_cpus') or dictionary.get('no_cpus'),
                                  maxiter=dictionary['maxiter'],
                                  opt_algorithm=dictionary.get(
-                                     'opt_algorithm','L-BFGS-B'),
+                                     'opt_algorithm', 'L-BFGS-B'),
                                  multihyps=multihyps,
                                  hyps_mask=dictionary.get('hyps_mask', None),
-                                 name=dictionary.get('name','default_gp')
+                                 name=dictionary.get('name', 'default_gp')
                                  )
-
 
         # Save time by attempting to load in computed attributes
         new_gp.training_data = [AtomicEnvironment.from_dict(env) for env in
@@ -761,7 +773,7 @@ class GaussianProcess:
                 new_gp.alpha = None
                 new_gp.ky_mat_inv = None
                 filename = dictionary['ky_mat_file']
-                Warning("the covariance matrices are not loaded"\
+                Warning("the covariance matrices are not loaded" \
                         f"because {filename} cannot be found")
         else:
             new_gp.ky_mat_inv = np.array(dictionary['ky_mat_inv']) \
@@ -788,8 +800,8 @@ class GaussianProcess:
         self.ky_mat_inv = ky_mat_inv
 
     def adjust_cutoffs(self, new_cutoffs: Union[list, tuple, 'np.ndarray'],
-                       reset_L_alpha = True,
-                       train = True):
+                       reset_L_alpha=True,
+                       train=True):
         """
         Loop through atomic environment objects stored in the training data,
         and re-compute cutoffs for each. Useful if you want to gauge the
@@ -812,7 +824,6 @@ class GaussianProcess:
         _global_training_data[self.name] = self.training_data
         _global_training_labels[self.name] = self.training_labels_np
 
-
         self.cutoffs = np.array(new_cutoffs)
 
         if reset_L_alpha:
@@ -823,25 +834,30 @@ class GaussianProcess:
         if train:
             self.train()
 
-
-
-    def remove_force_data(self, indexes: Union[int,List[int]],
-                    update_matrices: bool = True):
+    def remove_force_data(self, indexes: Union[int, List[int]],
+                          update_matrices: bool = True):
         """
         Remove force components from the model. Convenience function which
         deletes individual data points.
 
         Matrices should *always* be updated if you intend to use the GP to make
-        predictions afterwards. Only do not update the matrices if you know
-        exactly what you are doing.
-        :param indexes:
+        predictions afterwards. This might be time consuming for large GPs,
+        so, it is provided as an option, but, only do so with extreme caution.
+        (Undefined behavior may result if you try to make predictions and/or
+        add to the training set afterwards).
+
+        :param indexes: Indexes of envs in training data to remove.
+        :param update_matrices: If false, will not update the GP's matrices
+            afterwards (which can be time consuming for large models).
+            This should essentially always be true except for niche development
+            applications.
         :return:
         """
 
         # Listify input even if one integer
         if isinstance(indexes, int):
             indexes = [indexes]
-            
+
         if max(indexes) > len(self.training_data):
             raise ValueError("Index out of range of data")
 
@@ -853,7 +869,6 @@ class GaussianProcess:
             del self.training_data[i]
             del self.training_labels[i]
 
-
         self.training_labels_np = np.hstack(self.training_labels)
         _global_training_data[self.name] = self.training_data
         _global_training_labels[self.name] = self.training_labels_np
@@ -861,9 +876,6 @@ class GaussianProcess:
         if update_matrices:
             self.set_L_alpha()
             self.compute_matrices()
-
-
-
 
     def write_model(self, name: str, format: str = 'json'):
         """
@@ -916,9 +928,9 @@ class GaussianProcess:
                 gp_model = GaussianProcess.from_dict(json.loads(f.readline()))
                 gp_model.check_instantiation()
                 _global_training_data[gp_model.name] \
-                        = gp_model.training_data
+                    = gp_model.training_data
                 _global_training_labels[gp_model.name] \
-                        = gp_model.training_labels_np
+                    = gp_model.training_labels_np
 
 
         elif '.pickle' in filename or 'pickle' in format:
@@ -927,9 +939,9 @@ class GaussianProcess:
                 gp_model.check_instantiation()
 
                 _global_training_data[gp_model.name] \
-                        = gp_model.training_data
+                    = gp_model.training_data
                 _global_training_labels[gp_model.name] \
-                        = gp_model.training_labels_np
+                    = gp_model.training_labels_np
 
                 if len(gp_model.training_data) > 5000:
                     try:
@@ -940,7 +952,7 @@ class GaussianProcess:
                         gp_model.l_mat = None
                         gp_model.alpha = None
                         gp_model.ky_mat_inv = None
-                        Warning("the covariance matrices are not loaded"\
+                        Warning("the covariance matrices are not loaded" \
                                 f"it can take extra long time to recompute")
 
         else:
@@ -948,7 +960,6 @@ class GaussianProcess:
                              ".json or .pickle format.")
 
         return gp_model
-
 
     @property
     def training_statistics(self) -> dict:
@@ -964,7 +975,7 @@ class GaussianProcess:
 
         # Count all of the present species in the atomic env. data
         present_species = []
-        for env,force in zip(self.training_data,self.training_labels):
+        for env, force in zip(self.training_data, self.training_labels):
             present_species.append(Z_to_element(env.structure.coded_species[
                                                     env.atom]))
 
@@ -973,7 +984,6 @@ class GaussianProcess:
         data['envs_by_species'] = dict(Counter(present_species))
 
         return data
-
 
     @property
     def par(self):
