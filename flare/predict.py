@@ -319,13 +319,6 @@ def predict_on_structure_par_en(structure: Structure, gp: GaussianProcess,
     else:
         selective_atoms = []
 
-    # Work in serial if the number of cpus is 1
-    if n_cpus is 1:
-        return predict_on_structure_en(structure, gp,
-                                       write_to_structure=write_to_structure,
-                                       selective_atoms=selective_atoms,
-                                       skipped_atom_value=skipped_atom_value)
-
     if n_cpus is None:
         pool = mp.Pool(processes=mp.cpu_count())
     else:
