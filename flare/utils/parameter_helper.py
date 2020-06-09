@@ -10,7 +10,7 @@ from copy import deepcopy
 from itertools import combinations_with_replacement, permutations
 from numpy import array as nparray
 from numpy import max as npmax
-from typing import List, Callable, Union
+from typing import List, Callable, Union, Dict, Sequence
 
 from flare.output import set_logger
 from flare.parameters import Parameters
@@ -77,7 +77,8 @@ class ParameterHelper():
     n_kernel_parameters = {'twobody': 2,
                            'threebody': 2, 'manybody': 2, 'cut3b': 0}
 
-    def __init__(self, hyps_mask=None, species=None, kernels={},
+    def __init__(self, hyps_mask:dict =None, species: Sequence=None, kernels:
+    dict = Union[Dict[str:list], list],
                  cutoff_groups={}, parameters=None,
                  constraints={}, allseparate=False, random=False, ones=False,
                  verbose="INFO"):
@@ -842,7 +843,8 @@ class ParameterHelper():
             pass
 
     def as_dict(self):
-        """Dictionary representation of the mask. The output can be used for AtomicEnvironment
+        """Dictionary representation of the mask. T
+        he output can be used for AtomicEnvironment
         or the GaussianProcess
         """
 
