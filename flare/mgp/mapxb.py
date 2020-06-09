@@ -243,8 +243,8 @@ class SingleMapXbody:
                 args = [GP.name, grid_env, mapped_kernel_info]
             else:
                 args = [GP.name, grid_env, kernel_info]
-            k12_v_force = self._gengrid_par(args, True, n_envs, processes, self.kernel_name)
-            k12_v_energy = self._gengrid_par(args, False, n_strucs, processes, self.kernel_name)
+            k12_v_force = self._gengrid_par(args, True, n_envs, processes)
+            k12_v_energy = self._gengrid_par(args, False, n_strucs, processes)
 
         k12_v_all = np.hstack([k12_v_force, k12_v_energy])
         del k12_v_force
@@ -275,7 +275,7 @@ class SingleMapXbody:
         return k12_v
 
 
-    def _gengrid_par(self, args, force_block, n_envs, processes, kernel_name):
+    def _gengrid_par(self, args, force_block, n_envs, processes):
 
         if n_envs == 0:
             n_grid = np.prod(self.grid_num)
@@ -287,7 +287,7 @@ class SingleMapXbody:
                 partition_vector(self.n_sample, n_envs, processes)
 
             threebody = False
-            if kernel_name == "threebody" and (not self.map_force):
+            if self.kernel_name == "threebody" and (not self.map_force):
                 GP_name, grid_env, mapped_kernel_info = args
                 threebody = True
 
