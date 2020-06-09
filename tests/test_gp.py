@@ -1,20 +1,14 @@
 import pytest
-import pickle
 import os
 import json
 import numpy as np
 
-from typing import List
 from pytest import raises
 from scipy.optimize import OptimizeResult
 
 import flare
 from flare.gp import GaussianProcess
 from flare.env import AtomicEnvironment
-from flare.struc import Structure
-import flare.kernels.sc as en
-import flare.kernels.mc_simple as mc_simple
-from flare.otf_parser import OtfAnalysis
 
 from .fake_gp import generate_hm, get_tstp, get_random_structure
 from copy import deepcopy

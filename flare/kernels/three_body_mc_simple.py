@@ -6,20 +6,22 @@ from flare.kernels.kernels import force_helper, force_energy_helper, \
 from numba import njit
 from flare.env import AtomicEnvironment
 from typing import Callable
-import flare.cutoffs as cf
+import flare.kernels.cutoffs as cf
 from math import exp
 
 
 class ThreeBodyKernel:
     def __init__(self, hyperparameters: 'ndarray', cutoff: float,
-                 cutoff_func: Callable = cf.quadratic_cutoff):
+                 cutoff_func: Callable = cf.quadratic_cutoff,
+                 seperate_hyperparameters: bool = False,
+                 separate_cutoffs: bool = False):
         self.hyperparameters = hyperparameters
         self.signal_variance = hyperparameters[0]
         self.length_scale = hyperparameters[1]
         self.cutoff = cutoff
         self.cutoff_func = cutoff_func
-
-    def energy_energy(self, env1: AtomicEnvironment, env2: AtomicEnvironment):
+        self.seperate_hyperparameters = seperate_hyperparameters
+        self.separate_cutoffs = separate_cutoffs):
 
         return energy_energy(env1.bond_array_2, env1.ctype, env1.etypes,
                              env2.bond_array_2, env2.ctype, env2.etypes,

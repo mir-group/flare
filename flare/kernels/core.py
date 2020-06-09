@@ -19,13 +19,52 @@ from typing import Union
 from flare.parameters import Parameters
 import inspect
 from typing import List, Set
+from flare.utils.parameter_helper import ParameterHelper
 
 # -----------------------------------------------------------------------------
 #                            master kernel class
 # -----------------------------------------------------------------------------
 
 
-class Kernel_third_draft:
+
+class KernelBase(object):
+
+    def __init__(self):
+        pass
+
+    def energy_energy(self, env1:AtomicEnvironment, env2:AtomicEnvironment):
+        pass
+
+    def force_energy(self, env1: AtomicEnvironment,env2:AtomicEnvironment):
+        pass
+
+    def stress_energy(self, env1: AtomicEnvironment, env2: AtomicEnvironment):
+        pass
+
+    def force_force(self, env1: AtomicEnvironment, env2: AtomicEnvironment):
+        pass
+
+    def stress_force(self, env1: AtomicEnvironment, env2: AtomicEnvironment):
+        pass
+
+    def stress_stress(self, env1: AtomicEnvironment, env2: AtomicEnvironment):
+        pass
+
+    def force_force_gradient(self, env1: AtomicEnvironment,
+                             env2: AtomicEnvironment):
+        pass
+
+    def energy_all(self, env1: AtomicEnvironment, env2: AtomicEnvironment):
+        pass
+
+    def force_all(self, env1: AtomicEnvironment, env2: AtomicEnvironment):
+        pass
+
+
+
+
+
+class CoreKernel(object):
 
     # Aarguments to Numba functions which mirror the attribute
     # names in AtomicEnvironments
@@ -53,11 +92,14 @@ class Kernel_third_draft:
                  use_stress: bool = False
                  ):
 
+
+
         self.call_arg_sets = []
         self.force_callables = []
         self.force_energy_callables = []
         self.energy_callables = []
         self.grad_callables = []
+
 
         # Set what attribtutes will need to be extracted from envs, hyps,
         # cutoffs
@@ -70,31 +112,39 @@ class Kernel_third_draft:
         self.attr_set_from_hyps = []
         self.attr_set_from_cutoffs = []
 
-        if init_string:
-            if 'two' in init_string.lower() or '2' in init_string:
-                two_body = True
-            if 'three' in init_string.lower() or '3' in init_string:
-                three_body = True
-            if 'mc' in init_string.lower():
-                multicomponent = True
-            if 'sc' in init_string.lower():
-                multicomponent = False
-            #TODO ADD MORE HERE
+        # Set up internal kernel
+        init_two_body, init_three_body, init_many_body = \
+            self.parse_init_string(init_string)
+        self.two_body = init_two_body or two_body
+        self.three_body = init_three_body or three_body
+        self.many_body = init_many_body or many_body
+
+        kernel_string_list = []
+        if self.two_body: kernel_string_list.append('two_body')
+        if self.three_body: kernel_string_list.append('three_body')
+        if self.many_body: kernel_string_list.append('many_body')
+
+
+
+        #TODO line
+        # TODO SEP HYP SETUP HERE
+        self.hyp_helper = ParameterHelper(kernels=kernel_string_list)
+
+        if multicomponent and not separate_hyps:
+            self.elements_to_hyp_index =
+        else:
+            None
+
 
         # Add a callable and argument set for the two-body term
         if two_body:
 
-            if not multicomponent:
+            if separate_hyps:
+                self.two_body_hyps = hyp_helper.n_terms
+            else:
+                self.two_body_hyps = 2
 
-                if two_body:
-                    self.force_callables.append(two_body_jit)
-                    self.force_energy_callables.append(two_body_force_en_jit)
-                    self.energy_callables.append(two_body_en_jit)
-                    self.grad_callables.append(two_body_grad_jit)
-
-            elif multicomponent:
-
-                pass
+            self.two_body_kernel = TwoBodyKernel()
 
         if three_body:
             if not multicomponent:
@@ -112,10 +162,11 @@ class Kernel_third_draft:
         if many_body:
             raise NotImplementedError
 
+    self.two_body_kernel()
 
 
-    def evaluate_kernel(self,
-                        env1: AtomicEnvironment,
+
+    def evaluate(self,env1: AtomicEnvironment,
                         env2: AtomicEnvironment,
                         d1: int, d2: int,
                         hyps, cutoffs, parameters, kernel,
@@ -325,6 +376,20 @@ class Kernel_third_draft:
                                      cutoffs=cutoffs, parameters=parameters,
                                      **kwargs)
         return value
+
+    @staticmethod
+    def parse_init_string(init_string: str = None):
+
+        if 'two' in init_string.lower() or '2' in init_string:
+            two_body = True
+        if 'three' in init_string.lower() or '3' in init_string:
+            three_body = True
+        if 'mc' in init_string.lower():
+            multicomponent = True
+        if 'sc' in init_string.lower():
+            multicomponent = False
+
+        return two_body, three_body, multicomponent
 
 
 
@@ -791,3 +856,4 @@ def strip_trailing_number(string:str)->str:
         copy = copy[:-1]
 
     return copy.strip('_')
+
