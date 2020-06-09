@@ -186,15 +186,14 @@ class Output:
         """
 
         string = ''
+        tab = ' ' * 4
 
         # Mark if a frame had DFT forces with an asterisk
         if not dft_step:
             string += '-' * 80 + '\n'
             string += f"-Frame: {curr_step} "
-            header = "-"
         else:
             string += f"\n*-Frame: {curr_step} "
-            header = "*-"
 
         string += f'\nSimulation Time: {(dt * curr_step):.3} ps \n'
 

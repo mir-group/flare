@@ -5,14 +5,14 @@ from flare.kernels import sc, mc_simple, mc_sephyps
 """
 This module includes interface functions between kernels and gp/gp_algebra
 
-str_to_kernel_set is used in GaussianProcess class to search for a kernel function
-based on a string name.
+str_to_kernel_set is used in GaussianProcess class to search for a kernel
+    function based on a string name.
 
-from_mask_to_args converts the hyperparameter vector and the dictionary of hyps_mask
-to the list of arguments needed by the kernel function.
+from_mask_to_args converts the hyperparameter vector and the dictionary of
+    hyps_mask to the list of arguments needed by the kernel function.
 
-from_grad_to_mask(grad, hyps_mask) converts the gradient matrix to the actual gradient
-matrix by removing the fixed dimensions.
+from_grad_to_mask(grad, hyps_mask) converts the gradient matrix to the actual
+    gradient matrix by removing the fixed dimensions.
 """
 
 
@@ -79,9 +79,9 @@ def str_to_kernel_set(name: str, multihyps: bool = False):
 
 
 def from_mask_to_args(hyps, hyps_mask: dict, cutoffs):
-    """ return the tuple of arguments needed for kernel function
-    the order of the tuple has to be exactly the same as the one
-    taken by the kernel function
+    """ Return the tuple of arguments needed for kernel function.
+    The order of the tuple has to be exactly the same as the one taken by
+        the kernel function.
 
     :param hyps: list of hyperparmeter values
     :type hyps: nd.array
@@ -126,14 +126,13 @@ def from_mask_to_args(hyps, hyps_mask: dict, cutoffs):
             ls2 = np.array(orig_hyps[n2b:n2b * 2], dtype=np.float64)
         if (n3b != 0):
             sig3 = np.array(orig_hyps[n2b * 2:n2b * 2 + n3b], dtype=np.float64)
-            ls3 = np.array(orig_hyps[n2b * 2 + n3b:n2b * 2 + n3b * 2], dtype=np.float64)
+            ls3 = np.array(orig_hyps[n2b * 2 + n3b:n2b * 2 + n3b * 2],
+                           dtype=np.float64)
         if (n2b == 0) and (n3b == 0):
-            raise NameError("Hyperparameter mask missing nbond and/or"
+            raise NameError("Hyperparameter mask missing nbond and/or "
                             "ntriplet key")
-        return (cutoffs,
-                hyps_mask['nspec'], hyps_mask['spec_mask'],
-                n2b, bond_mask, n3b, triplet_mask,
-                sig2, ls2, sig3, ls3)
+        return (cutoffs, hyps_mask['nspec'], hyps_mask['spec_mask'],
+                n2b, bond_mask, n3b, triplet_mask, sig2, ls2, sig3, ls3)
 
     elif (ncutoff == 3):
 
@@ -143,15 +142,13 @@ def from_mask_to_args(hyps, hyps_mask: dict, cutoffs):
         if (n3b != 0):
             start = n2b*2
             sig3 = np.array(orig_hyps[start:start + n3b], dtype=np.float64)
-            ls3 = np.array(orig_hyps[start + n3b:start + n3b * 2], dtype=np.float64)
+            ls3 = np.array(orig_hyps[start + n3b:start + n3b * 2],
+                           dtype=np.float64)
         sigm = orig_hyps[n2b*2+n3b*2]
         lsm = orig_hyps[n2b*2+n3b*2+1]
 
-        return (cutoffs,
-                hyps_mask['nspec'],
-                np.array(hyps_mask['spec_mask'], dtype=np.int8),
-                n2b, bond_mask,
-                n3b, triplet_mask,
+        return (cutoffs, hyps_mask['nspec'], np.array(hyps_mask['spec_mask'],
+                dtype=np.int8), n2b, bond_mask, n3b, triplet_mask,
                 sig2, ls2, sig3, ls3, sigm, lsm)
     else:
         raise RuntimeError("only support up to 3 cutoffs")

@@ -2,7 +2,7 @@
 :class:`MappedGaussianProcess` uses splines to build up interpolation\
 function of the low-dimensional decomposition of Gaussian Process, \
 with little loss of accuracy. Refer to \
-`Vandermause et al. <https://arxiv.org/abs/1904.02042>`_, \
+`Vandermause et al. <https://www.nature.com/articles/s41524-020-0283-z>`_, \
 `Glielmo et al. <https://journals.aps.org/prb/abstract/10.1103/PhysRevB.97.184307>`_
 '''
 import time
@@ -16,11 +16,10 @@ import os
 from flare import gp, struc, gp_algebra
 from flare.env import AtomicEnvironment
 from flare.gp import GaussianProcess
-from flare.gp_algebra import get_kernel_vector_unit, partition_c
+from flare.gp_algebra import force_force_vector_unit, partition_vector
 from flare.cutoffs import quadratic_cutoff
 from flare.kernels.mc_simple import two_body_mc, three_body_mc
 from flare.util import Z_to_element
-
 import flare.mgp.utils as utils
 from flare.mgp.utils import get_bonds, get_triplets, self_two_body_mc_jit, \
     self_three_body_mc_jit, \
@@ -90,7 +89,7 @@ class MappedGaussianProcess:
         self.maps_3 = []
         self.build_map_container()
 
-        if not container_only and (GP is not None) and (len(GP.training_data) > 0):
+        if ((not container_only) and (GP is not None) and (len(GP.training_labels_np) > 0)):
             self.build_map(GP)
 
     def build_map_container(self):
@@ -412,7 +411,7 @@ class Map2body:
         else:
             with mp.Pool(processes=processes) as pool:
                 size = len(GP.training_data)
-                block_id, nbatch = partition_c(self.n_sample, size, processes)
+                block_id, nbatch = partition_vector(self.n_sample, size, processes)
 
                 k12_slice = []
                 k12_v_all = np.zeros([len(bond_lengths), size*3])
@@ -461,14 +460,14 @@ class Map2body:
         generate grid for each cos angle, used to parallelize grid generation
         '''
 
-        kernel, efk, cutoffs, hyps, hyps_mask = kernel_info
+        kernel, ek, efk, cutoffs, hyps, hyps_mask = kernel_info
         size = e - s
         k12_v = np.zeros([len(bond_lengths), size*3])
         for b, r in enumerate(bond_lengths):
             env12.bond_array_2 = np.array([[r, 1, 0, 0]])
-            k12_v[b, :] = get_kernel_vector_unit(
-                    name, s, e, env12, 1,
-                    kernel, hyps, cutoffs, hyps_mask)
+            k12_v[b, :] = \
+                force_force_vector_unit(name, s, e, env12, kernel, hyps,
+                                       cutoffs, hyps_mask, 1)
         return k12_v
 
     def build_map_container(self):
@@ -577,7 +576,7 @@ class Map3body:
                 os.mkdir('kv3')
 
             size = len(GP.training_data)
-            block_id, nbatch = partition_c(self.n_sample, size, processes)
+            block_id, nbatch = partition_vector(self.n_sample, size, processes)
 
             k12_slice = []
             if (size>5000):
@@ -636,7 +635,7 @@ class Map3body:
         '''
         
         # ------ get 3body kernel info ------
-        kernel, efk, cutoffs, hyps, hyps_mask = get_3bkernel(GP)
+        kernel, ek, efk, cutoffs, hyps, hyps_mask = get_3bkernel(GP)
 
         # ------ construct grids ------
         nop = self.grid_num[0]
@@ -690,13 +689,14 @@ class Map3body:
 
         return bond_means, bond_vars
 
-    def _GenGrid_inner_most(self, name, s, e, cos_angles, bond_lengths, env12, kernel_info):
+    def _GenGrid_inner_most(self, name, s, e, cos_angles, bond_lengths, env12,
+                            kernel_info):
 
         '''
         generate grid for each cos_angle, used to parallelize grid generation
         '''
 
-        kernel, efk, cutoffs, hyps, hyps_mask = kernel_info
+        kernel, ek, efk, cutoffs, hyps, hyps_mask = kernel_info
         training_data = gp_algebra._global_training_data[name]
         # open saved k vector file, and write to new file
         size = (e-s)*3
@@ -715,8 +715,8 @@ class Map3body:
                     env12.cross_bond_dists = np.array([[0, r12], [r12, 0]])
 
                     k12_v[b1, b2, a12, :] = \
-                            get_kernel_vector_unit(name, s, e, env12, 1,
-                                    kernel, hyps, cutoffs, hyps_mask)
+                        force_force_vector_unit(name, s, e, env12, kernel, hyps,
+                                               cutoffs, hyps_mask, 1)
 
         return k12_v
 
