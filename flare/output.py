@@ -1,28 +1,30 @@
 """
-Class which contains various methods to print the output of different
+Class which contains various methods to self.logger['log'].info the output of different
 ways of using FLARE, such as training a GP from an AIMD run,
 or running an MD simulation updated on-the-fly.
 """
 import datetime
+import logging
 import os
 import shutil
 import time
 import multiprocessing
-
 import numpy as np
 
+from logging import FileHandler, StreamHandler
 from typing import Union
-from flare.util import Z_to_element
+
 from flare.struc import Structure
+from flare.utils.element_coder import Z_to_element
 
 
 class Output:
     """
     This is an I/O class that hosts the log files for OTF and Trajectories
     class. It is also used in get_neg_like_grad and get_neg_likelihood in
-    gp_algebra to print intermediate results.
+    gp_algebra to self.logger['log'].info intermediate results.
 
-    It opens and prints files with the basename prefix and different
+    It opens and self.logger['log'].infos files with the basename prefix and different
     suffixes corresponding to different kinds of output data.
 
     :param basename: Base output file name, suffixes will be added
@@ -31,17 +33,17 @@ class Output:
     :type always_flus: bool, optional
     """
 
-    def __init__(self, basename: str = 'otf_run',
+    def __init__(self, basename: str = 'otf_run', verbose: str = 'INFO',
                  always_flush: bool = False):
         """
         Construction. Open files.
         """
         self.basename = f"{basename}"
-        self.outfiles = {}
+        self.logger = {}
         filesuffix = {'log': '.out', 'hyps': '-hyps.dat'}
 
-        for filetype in filesuffix.keys():
-            self.open_new_log(filetype, filesuffix[filetype])
+        for filetype in filesuffix:
+            self.open_new_log(filetype, filesuffix[filetype], verbose)
 
         self.always_flush = always_flush
 
@@ -50,33 +52,27 @@ class Output:
         destruction function that closes all files
         """
 
-        print('-' * 20, file=self.outfiles['log'])
-        print('Run complete.', file=self.outfiles['log'])
-        for (k, v) in self.outfiles.items():
-            v.close()
-        del self.outfiles
-        self.outfiles = {}
+        self.logger['log'].info('-' * 20)
+        self.logger['log'].info('Run complete.')
+        for (k, v) in self.logger.items():
+            del v
+        del self.logger
+        logging.shutdown()
+        self.logger = {}
 
-    def open_new_log(self, filetype: str, suffix: str):
+    def open_new_log(self, filetype: str, suffix: str, verbose='info'):
         """
         Open files.  If files with the same
         name are exist, they are backed up with a suffix "-bak".
 
-        :param filetype: the key name in self.outfiles
+        :param filetype: the key name in self.logger
         :param suffix: the suffix of the file to be opened
         """
 
         filename = self.basename + suffix
 
-        # if the file exists, back up
-        if os.path.isfile(filename):
-            shutil.copy(filename, filename + "-bak")
-
-        if filetype in self.outfiles.keys():
-            if self.outfiles[filetype].closed:
-                self.outfiles[filetype] = open(filename, "w+")
-        else:
-            self.outfiles[filetype] = open(filename, "w+")
+        if filetype not in self.logger:
+            self.logger[filetype] = set_logger(filename, stream=False, fileout=True, verbose=verbose)
 
     def write_to_log(self, logstring: str, name: str = "log",
                      flush: bool = False):
@@ -84,25 +80,27 @@ class Output:
         Write any string to logfile
 
         :param logstring: the string to write
-        :param name: the key name of the file to print
+        :param name: the key name of the file to self.logger['log'].info
         :param flush: whether it should be flushed
         """
-        self.outfiles[name].write(logstring)
+        self.logger[name].info(logstring)
 
         if flush or self.always_flush:
-            self.outfiles[name].flush()
+            self.logger[name].handlers[0].flush()
 
-    def write_header(self, cutoffs, kernel_name: str,
-                     hyps, algo: str, dt: float = None,
-                     Nsteps: int = None, structure: Structure= None,
+    def write_header(self, gp_str: str,
+                     dt: float = None,
+                     Nsteps: int = None, structure: Structure = None,
                      std_tolerance: Union[float, int] = None,
                      optional: dict = None):
         """
+        TO DO: this should be replace by the string method of GP and OTF, GPFA
+
         Write header to the log function. Designed for Trajectory Trainer and
         OTF runs and can take flexible input for both.
 
         :param cutoffs: GP cutoffs
-        :param kernel_name: Kernel names
+        :param kernels: Kernel names
         :param hyps: list of hyper-parameters
         :param algo: algorithm for hyper parameter optimization
         :param dt: timestep for OTF MD
@@ -112,8 +110,8 @@ class Output:
         :param optional: a dictionary of all the other parameters
         """
 
-        f = self.outfiles['log']
-        f.write(f'{datetime.datetime.now()} \n')
+        f = self.logger['log']
+        f.info(f'{datetime.datetime.now()}')
 
         if isinstance(std_tolerance, tuple):
             std_string = 'relative uncertainty tolerance: ' \
@@ -126,18 +124,13 @@ class Output:
         elif std_tolerance > 0:
             std_string = \
                 f'uncertainty tolerance: {np.abs(std_tolerance)} ' \
-                                'times noise hyperparameter \n'
+                'times noise hyperparameter \n'
         else:
             std_string = ''
 
         headerstring = ''
-        headerstring += \
-            f'number of cpu cores: {multiprocessing.cpu_count()}\n'
-        headerstring += f'cutoffs: {cutoffs}\n'
-        headerstring += f'kernel_name: {kernel_name}\n'
-        headerstring += f'number of hyperparameters: {len(hyps)}\n'
-        headerstring += f'hyperparameters: {str(hyps)}\n'
-        headerstring += f'hyperparameter optimization algorithm: {algo}\n'
+        headerstring += gp_str
+        headerstring += ''
         headerstring += std_string
         if dt is not None:
             headerstring += f'timestep (ps): {dt}\n'
@@ -162,10 +155,10 @@ class Output:
                 headerstring += '\n'
         headerstring += '-' * 80 + '\n'
 
-        f.write(headerstring)
+        f.info(headerstring)
 
         if self.always_flush:
-            f.flush()
+            f.handlers[0].flush()
 
     def write_md_config(self, dt, curr_step, structure,
                         temperature, KE, local_energies,
@@ -240,13 +233,11 @@ class Output:
                 f'potential energy: {pot_en:.6f} eV \n'
             string += f'total energy: {tot_en:.6f} eV \n'
 
-        string += 'wall time from start: '
-        string += f'{(time.time() - start_time):.2f} s \n'
-
-        self.outfiles['log'].write(string)
+        self.logger['log'].info(string)
+        self.write_wall_time(start_time)
 
         if self.always_flush:
-            self.outfiles['log'].flush()
+            self.logger['log'].handlers[0].flush()
 
     def write_xyz(self, curr_step: int, pos: np.array, species: list,
                   filename: str,
@@ -258,8 +249,8 @@ class Output:
         :param curr_step: Int, number of frames to note in the comment line
         :param pos:       nx3 matrix of forces, positions, or nything
         :param species:   n element list of symbols
-        :param filename:  file to print
-        :param header:    header printed in comments
+        :param filename:  file to self.logger['log'].info
+        :param header:    header self.logger['log'].infoed in comments
         :param forces: list of forces on atoms predicted by GP
         :param stds: uncertainties predicted by GP
         :param forces_2: true forces from ab initio source
@@ -289,10 +280,10 @@ class Output:
 
             else:
                 string += '\n'
-        self.outfiles[filename].write(string)
+        self.logger[filename].info(string)
 
         if self.always_flush:
-            self.outfiles[filename].flush()
+            self.logger[filename].handlers[0].flush()
 
     def write_xyz_config(self, curr_step, structure, dft_step,
                          forces: np.array = None, stds: np.array = None,
@@ -302,8 +293,8 @@ class Output:
         :param curr_step: Int, number of frames to note in the comment line
         :param structure: Structure, contain positions and forces
         :param dft_step:  Boolean, whether this is a DFT call.
-        :param forces: Optional list of forces to print in xyz file
-        :param stds: Optional list of uncertanties to print in xyz file
+        :param forces: Optional list of forces to self.logger['log'].info in xyz file
+        :param stds: Optional list of uncertanties to self.logger['log'].info in xyz file
         :param forces_2: Optional second list of forces (e.g. DFT forces)
 
         :return:
@@ -332,35 +323,45 @@ class Output:
 
         :return:
         """
-        f = self.outfiles[name]
-        f.write('\nGP hyperparameters: \n')
+        f = self.logger[name]
 
-        if hyps_mask is not None:
-            if 'map' in hyps_mask:
-                hyps = hyps_mask['original']
-                if len(hyp_labels)!=len(hyps):
-                    hyp_labels = None
+        f.info('\nGP hyperparameters: ')
 
         if hyp_labels is not None:
             for i, label in enumerate(hyp_labels):
-                f.write(f'Hyp{i} : {label} = {hyps[i]:.4f}\n')
+                f.info(f'Hyp{i} : {label} = {hyps[i]:.4f}')
         else:
             for i, hyp in enumerate(hyps):
-                f.write(f'Hyp{i} : {hyp:.4f}\n')
+                f.info(f'Hyp{i} : {hyp:.4f}')
 
-        f.write(f'likelihood: {like:.4f}\n')
-        f.write(f'likelihood gradient: {like_grad}\n')
+        f.info(f'likelihood: {like:.4f}')
+        f.info(f'likelihood gradient: {like_grad}')
+
         if start_time:
-            time_curr = time.time() - start_time
-            f.write(f'wall time from start: {time_curr:.2f} s \n')
+            self.write_wall_time(start_time)
 
         if self.always_flush:
-            f.flush()
+            f.handlers[0].flush()
+
+    def write_wall_time(self, start_time):
+        time_curr = time.time() - start_time
+        self.logger['log'].info(f'wall time from start: {time_curr:.2f} s')
+
+    def conclude_dft(self, dft_count, start_time):
+        f = self.logger['log']
+        f.info('DFT run complete.')
+        f.info(f'number of DFT calls: {dft_count}')
+        self.write_wall_time(start_time)
+
+    def add_atom_info(self, train_atoms, stds):
+        f = self.logger['log']
+        f.info(f'Adding atom {train_atoms} to the training set.')
+        f.info(f'Uncertainty: {stds[train_atoms[0]]}')
 
     def write_gp_dft_comparison(self, curr_step, frame,
                                 start_time, dft_forces,
                                 error, local_energies=None, KE=None,
-                                mgp= False):
+                                mgp=False):
         """ write the comparison to logfile
 
         :param curr_step: current timestep
@@ -446,12 +447,49 @@ class Output:
             string += f'total energy: {tot_en:10.6} eV \n'
             stat += f' {pot_en:10.6} {tot_en:10.6}'
 
-        dt = time.time() - start_time
-        string += f'wall time from start: {dt:10.2}\n'
-        stat += f' {dt}\n'
+        self.logger['log'].info(string)
+        self.write_wall_time(start_time)
 
-        self.outfiles['log'].write(string)
-        # self.outfiles['stat'].write(stat)
+        # stat += f' {dt}\n'
+        # self.logger['stat'].write(stat)
 
-        if self.always_flush:
-            self.outfiles['log'].flush()
+        # if self.always_flush:
+        #     self.logger['log'].flush()
+
+def add_stream(logger, verbose: str = "info"):
+
+    stream_defined = False
+    for handler in logger.handlers:
+        if isinstance(handler, StreamHandler):
+            stream_defined = True
+
+    if not stream_defined:
+        ch = StreamHandler()
+        ch.setLevel(getattr(logging, verbose.upper()))
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        ch.setFormatter(formatter)
+        logger.addHandler(ch)
+
+def add_file(logger, filename, verbose: str = "info"):
+
+    file_defined = False
+    for handler in logger.handlers:
+        if isinstance(handler, FileHandler):
+            file_defined = True
+
+    if not file_defined:
+        fh = FileHandler(filename)
+        verbose = getattr(logging, verbose.upper())
+        logger.setLevel(verbose)
+        fh.setLevel(verbose)
+        logger.addHandler(fh)
+
+def set_logger(name, stream, fileout, verbose: str = "info"):
+    logger = logging.getLogger(name)
+    logger.setLevel(getattr(logging, verbose.upper()))
+    if stream:
+        add_stream(logger, verbose)
+    if fileout:
+        add_file(logger, name, verbose)
+    return logger
+

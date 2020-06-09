@@ -1,14 +1,14 @@
-from flare.util import element_to_Z, Z_to_element, \
-    is_std_in_bound_per_species, is_force_in_bound_per_species ,\
-    subset_of_frame_by_element
-from flare.struc import Structure
-
-import pytest
 import numpy as np
-
-from tests.test_gp import get_random_structure
+import pytest
 
 from pytest import raises
+
+from flare.struc import Structure
+from flare.utils.element_coder import element_to_Z, Z_to_element
+from flare.utils.learner import is_std_in_bound_per_species, is_force_in_bound_per_species ,\
+    subset_of_frame_by_element
+
+from tests.test_gp import get_random_structure
 
 
 def test_element_to_Z():

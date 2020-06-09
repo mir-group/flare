@@ -1,3 +1,4 @@
+import logging
 import math
 import time
 import numpy as np
@@ -113,7 +114,6 @@ def partition_vector(n_sample, size, n_cpus):
 
 def partition_force_energy_block(n_sample: int, size1: int, size2: int,
                                  n_cpus: int):
-
     """Special partition method for the force/energy block. Because the number
     of environments in a structure can vary, we only split up the environment
     list, which has length size1.
@@ -193,7 +193,7 @@ def obtain_noise_len(hyps, hyps_mask):
     if (hyps_mask is not None):
         train_noise = hyps_mask.get('train_noise', True)
         if (train_noise is False):
-            sigma_n = hyps_mask['original'][-1]
+            sigma_n = hyps_mask['original_hyps'][-1]
             non_noise_hyps = len(hyps)
 
     return sigma_n, non_noise_hyps, train_noise
@@ -211,9 +211,9 @@ def parallel_matrix_construction(pack_function, hyps, name, kernel, cutoffs,
     for wid in range(nbatch):
         s1, e1, s2, e2 = block_id[wid]
         children.append(mp.Process(target=queue_wrapper,
-                        args=(result_queue, wid, pack_function,
-                              (hyps, name, s1, e1, s2, e2, s1 == s2,
-                               kernel, cutoffs, hyps_mask))))
+                                   args=(result_queue, wid, pack_function,
+                                         (hyps, name, s1, e1, s2, e2, s1 == s2,
+                                          kernel, cutoffs, hyps_mask))))
 
     # Run child processes.
     for c in children:
@@ -301,7 +301,7 @@ def get_force_block_pack(hyps: np.ndarray, name: str, s1: int, e1: int,
     ds = [1, 2, 3]
 
     # calculate elements
-    args = from_mask_to_args(hyps, hyps_mask, cutoffs)
+    args = from_mask_to_args(hyps, cutoffs, hyps_mask)
 
     for m_index in range(size1):
         x_1 = training_data[int(math.floor(m_index / 3))+s1]
@@ -333,7 +333,7 @@ def get_energy_block_pack(hyps: np.ndarray, name: str, s1: int, e1: int,
     energy_block = np.zeros([size1, size2])
 
     # calculate elements
-    args = from_mask_to_args(hyps, hyps_mask, cutoffs)
+    args = from_mask_to_args(hyps, cutoffs, hyps_mask)
 
     for m_index in range(size1):
         struc_1 = training_structures[m_index + s1]
@@ -373,7 +373,7 @@ def get_force_energy_block_pack(hyps: np.ndarray, name: str, s1: int,
     ds = [1, 2, 3]
 
     # calculate elements
-    args = from_mask_to_args(hyps, hyps_mask, cutoffs)
+    args = from_mask_to_args(hyps, cutoffs, hyps_mask)
 
     for m_index in range(size1):
         environment_1 = training_data[int(math.floor(m_index / 3)) + s1]
@@ -728,7 +728,7 @@ def energy_energy_vector_unit(name, s, e, x, kernel, hyps, cutoffs=None,
     size = e - s
     energy_energy_unit = np.zeros(size, )
 
-    args = from_mask_to_args(hyps, hyps_mask, cutoffs)
+    args = from_mask_to_args(hyps, cutoffs, hyps_mask)
 
     for m_index in range(size):
         structure = training_structures[m_index + s]
@@ -753,7 +753,7 @@ def energy_force_vector_unit(name, s, e, x, kernel, hyps, cutoffs=None,
     size = (e - s) * 3
     k_v = np.zeros(size, )
 
-    args = from_mask_to_args(hyps, hyps_mask, cutoffs)
+    args = from_mask_to_args(hyps, cutoffs, hyps_mask)
 
     for m_index in range(size):
         x_2 = training_data[int(math.floor(m_index / 3))+s]
@@ -770,7 +770,7 @@ def force_energy_vector_unit(name, s, e, x, kernel, hyps, cutoffs, hyps_mask,
     """
 
     size = e - s
-    args = from_mask_to_args(hyps, hyps_mask, cutoffs)
+    args = from_mask_to_args(hyps, cutoffs, hyps_mask)
     force_energy_unit = np.zeros(size,)
 
     for m_index in range(size):
@@ -793,7 +793,7 @@ def force_force_vector_unit(name, s, e, x, kernel, hyps, cutoffs, hyps_mask,
     size = (e - s)
     ds = [1, 2, 3]
 
-    args = from_mask_to_args(hyps, hyps_mask, cutoffs)
+    args = from_mask_to_args(hyps, cutoffs, hyps_mask)
 
     k_v = np.zeros(size * 3)
 
@@ -982,7 +982,7 @@ def get_ky_and_hyp_pack(name, s1, e1, s2, e2, same: bool, hyps: np.ndarray,
     k_mat = np.zeros([size1, size2])
     hyp_mat = np.zeros([non_noise_hyps, size1, size2])
 
-    args = from_mask_to_args(hyps, hyps_mask, cutoffs)
+    args = from_mask_to_args(hyps, cutoffs, hyps_mask)
 
     ds = [1, 2, 3]
 
@@ -1006,6 +1006,7 @@ def get_ky_and_hyp_pack(name, s1, e1, s2, e2, same: bool, hyps: np.ndarray,
             # store kernel value
             k_mat[m_index, n_index] = cov[0]
             grad = from_grad_to_mask(cov[1], hyps_mask)
+
             hyp_mat[:, m_index, n_index] = grad
             if (same):
                 k_mat[n_index, m_index] = cov[0]
@@ -1041,8 +1042,8 @@ def get_ky_and_hyp(hyps: np.ndarray, name, kernel_grad, cutoffs=None,
         n_cpus = mp.cpu_count()
     if (n_cpus == 1):
         hyp_mat0, k_mat = get_ky_and_hyp_pack(
-                name, 0, size, 0, size, True,
-                hyps, kernel_grad, cutoffs, hyps_mask)
+            name, 0, size, 0, size, True,
+            hyps, kernel_grad, cutoffs, hyps_mask)
     else:
 
         block_id, nbatch = partition_matrix(n_sample, size, n_cpus)
@@ -1119,9 +1120,9 @@ def get_like_from_mats(ky_mat, l_mat, alpha, name):
 
 
 def get_neg_like_grad(hyps: np.ndarray, name: str,
-                      kernel_grad, output=None,
+                      kernel_grad, logger=None,
                       cutoffs=None, hyps_mask=None,
-                      n_cpus=1, n_sample=100, print_progress=False):
+                      n_cpus=1, n_sample=100):
     """compute the log likelihood and its gradients
 
     :param hyps: list of hyper-parameters
@@ -1130,7 +1131,7 @@ def get_neg_like_grad(hyps: np.ndarray, name: str,
     :param kernel_grad: function object of the kernel gradient
     :param output: Output object for dumping every hyper-parameter
                    sets computed
-    :type output: class Output
+    :type output: logger
     :param cutoffs: The cutoff values used for the atomic environments
     :type cutoffs: list of 2 float numbers
     :param hyps_mask: dictionary used for multi-group hyperparmeters
@@ -1141,42 +1142,24 @@ def get_neg_like_grad(hyps: np.ndarray, name: str,
     """
 
     time0 = time.time()
-    if output is not None:
-        ostring = "hyps:"
-        for hyp in hyps:
-            ostring += f" {hyp}"
-        ostring += "\n"
-        output.write_to_log(ostring, name="hyps")
 
     hyp_mat, ky_mat = \
         get_ky_and_hyp(hyps, name, kernel_grad, cutoffs=cutoffs,
                        hyps_mask=hyps_mask, n_cpus=n_cpus, n_sample=n_sample)
 
-    if output is not None:
-        output.write_to_log(f"get_ky_and_hyp {time.time()-time0}\n",
-                            name="hyps")
+    logger.debug(f"get_ky_and_hyp {time.time()-time0}")
 
     time0 = time.time()
 
     like, like_grad = \
         get_like_grad_from_mats(ky_mat, hyp_mat, name)
 
-    if output is not None:
-        output.write_to_log(f"get_like_grad_from_mats {time.time()-time0}\n",
-                            name="hyps")
+    logger.debug(f"get_like_grad_from_mats {time.time()-time0}")
 
-    if output is not None:
-        ostring = "like grad:"
-        for lg in like_grad:
-            ostring += f" {lg}"
-        ostring += "\n"
-        output.write_to_log(ostring, name="hyps")
-        output.write_to_log('like: ' + str(like)+'\n', name="hyps")
-
-    if print_progress:
-        print('\nHyperparameters: ', list(hyps))
-        print('Likelihood: ' + str(like))
-        print('Likelihood Gradient: ', list(like_grad))
+    logger.debug('')
+    logger.info(f'Hyperparameters: {list(hyps)}')
+    logger.info(f'Likelihood: {like}')
+    logger.info(f'Likelihood Gradient: {list(like_grad)}')
 
     return -like, -like_grad
 

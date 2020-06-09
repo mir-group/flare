@@ -18,7 +18,7 @@ def get_gp(par=False, per_atom_par=False, n_cpus=1):
     hyp_labels = ['Signal Std 2b', 'Length Scale 2b',
                   'Signal Std 3b', 'Length Scale 3b',
                   'Noise Std']
-    cutoffs = np.array([4, 4])
+    cutoffs = {'twobody':4, 'threebody':4}
     return GaussianProcess(\
             kernel_name='23mc', hyps=hyps, cutoffs=cutoffs,
             hyp_labels=hyp_labels, maxiter=50, par=par,
@@ -33,7 +33,7 @@ def cleanup(software="qe", casename="h2_otf_cp2k"):
     for f in glob.glob(f"*{software}.out"):
         os.remove(f)
 
-    if (software is 'qe'):
+    if (software == 'qe'):
         for f in glob.glob(f"pwscf.wfc*"):
             os.remove(f)
         for f in glob.glob(f"*pwscf.out"):
@@ -115,7 +115,7 @@ def test_otf_par(software, per_atom_par, n_cpus):
                     f' Please install the code '
                     f' and set the {cmd[software]} env. '
                     'variable to point to the executable.')
-    if (software is 'cp2k'):
+    if (software == 'cp2k'):
         if (not "popt" in os.environ.get(cmd[software])):
             pytest.skip(f'cp2k is serial version'
                         f' skipping the parallel test')
