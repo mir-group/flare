@@ -825,6 +825,46 @@ class GaussianProcess:
 
 
 
+    def remove_force_data(self, indexes: Union[int,List[int]],
+                    update_matrices: bool = True):
+        """
+        Remove force components from the model. Convenience function which
+        deletes individual data points.
+
+        Matrices should *always* be updated if you intend to use the GP to make
+        predictions afterwards. Only do not update the matrices if you know
+        exactly what you are doing.
+        :param indexes:
+        :return:
+        """
+
+        # Listify input even if one integer
+        if isinstance(indexes, int):
+            indexes = [indexes]
+            
+        if max(indexes) > len(self.training_data):
+            raise ValueError("Index out of range of data")
+
+        # Get in reverse order so that modifying higher indexes doesn't affect
+        # lower indexes
+        indexes.sort(reverse=True)
+
+        for i in indexes:
+            del self.training_data[i]
+            del self.training_labels[i]
+
+
+        self.training_labels_np = np.hstack(self.training_labels)
+        _global_training_data[self.name] = self.training_data
+        _global_training_labels[self.name] = self.training_labels_np
+
+        if update_matrices:
+            self.set_L_alpha()
+            self.compute_matrices()
+
+
+
+
     def write_model(self, name: str, format: str = 'json'):
         """
         Write model in a variety of formats to a file for later re-use.

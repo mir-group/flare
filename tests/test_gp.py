@@ -9,6 +9,7 @@ from pytest import raises
 from scipy.optimize import OptimizeResult
 
 import flare
+from flare.predict import predict_on_structure
 from flare.gp import GaussianProcess
 from flare.env import AtomicEnvironment
 from flare.struc import Structure
@@ -18,7 +19,6 @@ from flare.otf_parser import OtfAnalysis
 
 from .fake_gp import generate_hm, get_tstp, get_random_structure
 from copy import deepcopy
-
 multihyps_list = [True, False]
 
 
@@ -370,6 +370,58 @@ def test_training_statistics():
     assert len(data['species']) == len(set(test_structure.coded_species))
     assert len(data['envs_by_species']) == len(set(
         test_structure.coded_species))
+
+
+def test_delete_force_data():
+
+    test_structure, forces = get_random_structure(np.eye(3),
+                                                  ['H', 'Be'],
+                                                  5)
+
+    test_structure_2, forces_2 = get_random_structure(np.eye(3),
+                                                  ['H', 'Be'],
+                                                  5)
+
+    gp = GaussianProcess(kernel_name='2', cutoffs=[7])
+
+    gp.update_db(test_structure, forces)
+
+    init_forces, init_stds = predict_on_structure(test_structure, gp,
+                                                 write_to_structure=False)
+
+
+    init_forces_2, init_stds_2 = predict_on_structure(test_structure_2, gp,
+                                                 write_to_structure=False)
+    for custom_range in [None,[0]]:
+
+        gp.update_db(test_structure_2, forces_2, custom_range=custom_range)
+
+        new_forces, new_stds = predict_on_structure(test_structure, gp,
+                                                    write_to_structure=False)
+
+        new_forces_2, new_stds_2 = predict_on_structure(test_structure_2, gp,
+                                                     write_to_structure=False)
+
+        assert not np.array_equal(init_forces, new_forces)
+        assert not np.array_equal(init_forces_2, new_forces_2)
+        assert not np.array_equal(init_stds, new_stds)
+        assert not np.array_equal(init_stds_2, new_stds_2)
+
+        if custom_range==[0]:
+            gp.remove_force_data(5)
+        else:
+            gp.remove_force_data([5,6,7,8,9])
+
+        final_forces, final_stds = predict_on_structure(test_structure, gp,
+                                                     write_to_structure=False)
+        final_forces_2, final_stds_2 = predict_on_structure(test_structure_2, gp,
+                                                     write_to_structure=False)
+
+        assert np.array_equal(init_forces, final_forces)
+        assert np.array_equal(init_stds, final_stds)
+
+        assert np.array_equal(init_forces_2, final_forces_2)
+        assert np.array_equal(init_stds_2, final_stds_2)
 
 
 class TestHelper():
