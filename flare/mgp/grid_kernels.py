@@ -139,6 +139,7 @@ def en_force(kern_exp, fi, fj, fdi, fdj,
 def force_en(kern_exp, fi, fj, fdi, fdj, 
              rij_list, coord_list, ls):
     '''force map + energy block'''
+    raise NotImplementedError
     ls2 = 1 / (ls * ls)
     fifj = fi @ fj.T # (n_triplets, n_grids)
     fdji = fi @ fdj.T
@@ -151,6 +152,7 @@ def force_en(kern_exp, fi, fj, fdi, fdj,
 def force_force(kern_exp, fi, fj, fdi, fdj, 
                 rij_list, coord_list, ls):
     '''force map + force block'''
+    raise NotImplementedError
     ls2 = 1 / (ls * ls)
     ls3 = ls2 * ls2 
     

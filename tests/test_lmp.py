@@ -238,8 +238,11 @@ def test_lmp_predict(all_ase_calc, all_lmp_calc, bodies, multihyps):
     flare_forces = ase_atoms_flare.get_forces()
 
     # check that lammps agrees with gp to within 1 meV/A
+    print(lmp_en, flare_en)
     assert np.isclose(lmp_en, flare_en, atol=1e-4).all()
+    print(lmp_forces, flare_forces)
     assert np.isclose(lmp_forces, flare_forces, atol=1e-4).all()
+    print(lmp_stress, flare_stress)
     assert np.isclose(lmp_stress, flare_stress, atol=1e-3).all()
 
     for f in os.listdir('./'):
