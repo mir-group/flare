@@ -97,12 +97,13 @@ class GaussianProcess:
 
         # ------------  "computed" attributes ------------
 
-        if self.output is not None:
-            logger = self.output.logger['log']
+        if self.output is None:
+            self.logger_name = self.name+"GaussianProcess"
+            set_logger(self.logger_name, stream=True,
+                       fileout_name=None, verbose="info")
         else:
-            logger = set_logger("GaussianProcess", stream=True,
-                                fileout=False, verbose="info")
-        self.logger = logger
+            self.logger_name = self.output.basename+'log'
+
 
 
         if self.hyps is None:
@@ -163,13 +164,15 @@ class GaussianProcess:
         :return:
         """
 
-        if self.logger is None:
-            if self.output is not None:
-                logger = self.output.logger['log']
+        if self.logger_name is None:
+            if self.output is None:
+                self.logger_name = self.name+"GaussianProcess"
+                set_logger(self.logger_name, stream=True,
+                           fileout_name=None, verbose="info")
             else:
-                logger = set_logger("gp.py", stream=True,
-                                    fileout=True, verbose="info")
-            self.logger = logger
+                self.logger_name = self.output.basename+'log'
+        logger_name = logging.getLogger(self.logger_name)
+
 
         # check whether it's be loaded before
         loaded = False
@@ -187,16 +190,16 @@ class GaussianProcess:
             while (self.name in _global_training_labels and count < 100):
                 time.sleep(random())
                 self.name = f'{base}_{count}'
-                self.logger.debug("Specified GP name is present in global memory; "
-                            "Attempting to rename the "
+                logger_name.debug("Specified GP name is present in global memory; "
+                       "Attempting to rename the "
                             f"GP instance to {self.name}")
                 count += 1
             if (self.name in _global_training_labels):
                 milliseconds = int(round(time.time() * 1000) % 10000000)
                 self.name = f"{base}_{milliseconds}"
-                self.logger.debug("Specified GP name still present in global memory: "
-                            f"renaming the gp instance to {self.name}")
-            self.logger.info(f"Final name of the gp instance is {self.name}")
+                logger_name.debug("Specified GP name still present in global memory: "
+                       f"renaming the gp instance to {self.name}")
+            logger_name.info(f"Final name of the gp instance is {self.name}")
 
         self.sync_data()
 
@@ -303,7 +306,7 @@ class GaussianProcess:
         (related to the covariance matrix of the training set).
 
         Args:
-            logger (logging.Logger): logger object specifying where to write the
+            logger (logging.logger): logger object specifying where to write the
                 progress of the optimization.
             custom_bounds (np.ndarray): Custom bounds on the hyperparameters.
             grad_tol (float): Tolerance of the hyperparameter gradient that
@@ -319,7 +322,8 @@ class GaussianProcess:
             verbose = "info"
         if logger is None:
             logger = set_logger("gp_algebra", stream=True,
-                                fileout=True, verbose=verbose)
+                                fileout_name="log.gp_algebra",
+                                verbose=verbose)
 
         disp = print_progress
 
@@ -353,8 +357,8 @@ class GaussianProcess:
                                         'maxls': line_steps,
                                         'maxiter': self.maxiter})
             except np.linalg.LinAlgError:
-                self.logger.warning("Algorithm for L-BFGS-B failed. Changing to "
-                               "BFGS for remainder of run.")
+                logger.warning("Algorithm for L-BFGS-B failed. Changing to "
+                          "BFGS for remainder of run.")
                 self.opt_algorithm = 'BFGS'
 
         if custom_bounds is not None:
@@ -602,12 +606,7 @@ class GaussianProcess:
 
         self.check_L_alpha()
 
-        logger = self.logger
-        self.logger = None
-
         out_dict = deepcopy(dict(vars(self)))
-
-        self.logger = logger
 
         out_dict['training_data'] = [env.as_dict() for env in
                                      self.training_data]
@@ -777,9 +776,6 @@ class GaussianProcess:
 
         supported_formats = ['json', 'pickle', 'binary']
 
-        logger = self.logger
-        self.logger = None
-
         if format.lower() == 'json':
             with open(f'{name}.json', 'w') as f:
                 json.dump(self.as_dict(), f, cls=NumpyEncoder)
@@ -797,8 +793,6 @@ class GaussianProcess:
             self.l_mat = temp_l_mat
             self.alpha = temp_alpha
             self.ky_mat_inv = temp_ky_mat_inv
-
-        self.logger = logger
 
     @staticmethod
     def from_file(filename: str, format: str = ''):
@@ -956,5 +950,5 @@ class GaussianProcess:
         dictionary['hyps_mask'] = Parameters.backward(
             dictionary['kernels'], deepcopy(dictionary['hyps_mask']))
 
-        if 'logger' not in dictionary:
-            dictionary['logger'] = None
+        if 'logger_name' not in dictionary:
+            dictionary['logger_name'] = None

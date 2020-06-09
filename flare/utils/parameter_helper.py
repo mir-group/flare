@@ -105,7 +105,7 @@ class ParameterHelper():
         """
 
         self.logger = set_logger("ParameterHelper", stream=True,
-                                 fileout=False, verbose="info")
+                                 fileout_name=None, verbose="info")
 
         self.all_types = ['specie'] + \
             ParameterHelper.all_kernel_types + ParameterHelper.additional_groups

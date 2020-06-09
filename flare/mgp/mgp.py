@@ -28,7 +28,7 @@ class MappedGaussianProcess:
 
     Args:
         grid_params (dict): Parameters for the mapping itself, such as
-            grid size of spline fit, etc.
+            grid size of spline fit, etc. As described below.
         species_list (dict): List of all the (unique) species included during
             the training that need to be mapped
         map_force (bool): if True, do force mapping; otherwise do energy mapping,
@@ -40,6 +40,11 @@ class MappedGaussianProcess:
             and container_only is False, automatically build a mapping corresponding
             to the GaussianProcess.
         lmp_file_name (str): LAMMPS coefficient file name
+
+    For `grid_params`, please set up the following keys and values
+    Args:
+        'two_body': if 2-body is present, set as a dictionary of parameters 
+                    for 2-body mapping
 
     Examples:
 
