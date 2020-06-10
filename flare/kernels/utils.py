@@ -69,13 +69,15 @@ def str_to_kernel_set(name: str, multihyps: bool = False):
         raise RuntimeError(
             f"the name has to include at least one number {name}")
 
-    for suffix in ['', '_grad', '_en', '_force_en']:
+    for suffix in ['', '_grad', '_en', '_force_en', '_efs_energy',
+                   '_efs_force']:
         if prefix+suffix not in stk:
             raise RuntimeError(
                 f"cannot find kernel function of {prefix}{suffix}")
 
-    return stk[prefix], stk[prefix+'_grad'], stk[prefix+'_en'], \
-        stk[prefix+'_force_en']
+    return stk[prefix], stk[prefix + '_grad'], stk[prefix + '_en'], \
+        stk[prefix + '_force_en'], stk[prefix+'_efs_energy'], \
+        stk[prefix + '_efs_force']
 
 
 def from_mask_to_args(hyps, hyps_mask: dict, cutoffs):

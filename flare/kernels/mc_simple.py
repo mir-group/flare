@@ -3268,6 +3268,8 @@ _str_to_kernel = {'two_body_mc': two_body_mc,
                   '2_en': two_body_mc_en,
                   '2_grad': two_body_mc_grad,
                   '2_force_en': two_body_mc_force_en,
+                  '2_efs_energy': two_body_efs_energy,
+                  '2_efs_force': two_body_efs_force,
                   '3': three_body_mc,
                   '3_grad': three_body_mc_grad,
                   '3_en': three_body_mc_en,
@@ -3276,6 +3278,8 @@ _str_to_kernel = {'two_body_mc': two_body_mc,
                   '2+3_grad': two_plus_three_body_mc_grad,
                   '2+3_en': two_plus_three_mc_en,
                   '2+3_force_en': two_plus_three_mc_force_en,
+                  '2+3_efs_energy': two_plus_three_efs_energy,
+                  '2+3_efs_force': two_plus_three_efs_force,
                   'many_body_mc': many_body_mc,
                   'many_body_mc_en': many_body_mc_en,
                   'many_body_mc_grad': many_body_mc_grad,
@@ -3284,12 +3288,19 @@ _str_to_kernel = {'two_body_mc': two_body_mc,
                   'many_en': many_body_mc_en,
                   'many_grad': many_body_mc_grad,
                   'many_force_en': many_body_mc_force_en,
-                  'two_plus_three_plus_many_body_mc': two_plus_three_plus_many_body_mc,
-                  'two_plus_three_plus_many_body_mc_grad': two_plus_three_plus_many_body_mc_grad,
-                  'two_plus_three_plus_many_body_mc_en': two_plus_three_plus_many_body_mc_en,
-                  'two_plus_three_plus_many_body_mc_force_en': two_plus_three_plus_many_body_mc_force_en,
+                  'two_plus_three_plus_many_body_mc':
+                  two_plus_three_plus_many_body_mc,
+                  'two_plus_three_plus_many_body_mc_grad':
+                  two_plus_three_plus_many_body_mc_grad,
+                  'two_plus_three_plus_many_body_mc_en':
+                  two_plus_three_plus_many_body_mc_en,
+                  'two_plus_three_plus_many_body_mc_force_en':
+                  two_plus_three_plus_many_body_mc_force_en,
                   '2+3+many': two_plus_three_plus_many_body_mc,
                   '2+3+many_grad': two_plus_three_plus_many_body_mc_grad,
                   '2+3+many_en': two_plus_three_plus_many_body_mc_en,
-                  '2+3+many_force_en': two_plus_three_plus_many_body_mc_force_en
+                  '2+3+many_force_en':
+                  two_plus_three_plus_many_body_mc_force_en,
+                  '2+3+many_efs_energy': None,
+                  '2+3+many_efs_force': None
                   }
