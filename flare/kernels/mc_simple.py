@@ -3290,8 +3290,8 @@ _str_to_kernel = {'two_body_mc': two_body_mc,
                   'many_en': many_body_mc_en,
                   'many_grad': many_body_mc_grad,
                   'many_force_en': many_body_mc_force_en,
-                  'many_efs_energy': None,
-                  'many_efs_force': None,
+                  'many_efs_energy': 'not implemented',
+                  'many_efs_force': 'not implemented',
                   'two_plus_three_plus_many_body_mc':
                   two_plus_three_plus_many_body_mc,
                   'two_plus_three_plus_many_body_mc_grad':
@@ -3305,6 +3305,6 @@ _str_to_kernel = {'two_body_mc': two_body_mc,
                   '2+3+many_en': two_plus_three_plus_many_body_mc_en,
                   '2+3+many_force_en':
                   two_plus_three_plus_many_body_mc_force_en,
-                  '2+3+many_efs_energy': None,
-                  '2+3+many_efs_force': None
+                  '2+3+many_efs_energy': 'not implemented',
+                  '2+3+many_efs_force': 'not implemented'
                   }

@@ -15,6 +15,6 @@ def test_stk(kernel_name):
     properly"""
 
     try:
-        k, kg, ek, efk = stks(kernel_name)
+        k, kg, ek, efk, _, _ = stks(kernel_name)
     except:
         raise RuntimeError(f"fail to return kernel {kernel_name}")
