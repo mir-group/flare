@@ -394,7 +394,7 @@ class Parameters():
             if (k in dict1) != (k in dict2):
                 return False
             elif k in dict1:
-                if not (dict1[k] == dict2[k]).all():
+                if not (dict1[k] == dict2[k]):
                     return False
 
         for k in ['train_noise']:
