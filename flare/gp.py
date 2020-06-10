@@ -111,11 +111,14 @@ class GaussianProcess:
 
         # TO DO, clean up all the other kernel arguments
         if kernel is None:
-            kernel, grad, ek, efk = str_to_kernel_set(kernel_name, multihyps)
+            kernel, grad, ek, efk, efs_e, efs_f = \
+                str_to_kernel_set(kernel_name, multihyps)
             self.kernel = kernel
             self.kernel_grad = grad
             self.energy_force_kernel = efk
             self.energy_kernel = ek
+            self.efs_energy_kernel = efs_e
+            self.efs_force_kernel = efs_f
             self.kernel_name = kernel.__name__
         else:
             DeprecationWarning("kernel, kernel_grad, energy_force_kernel "
