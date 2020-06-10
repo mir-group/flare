@@ -170,6 +170,15 @@ def get_triplets(ctype, etypes, bond_array, cross_bond_inds,
 #
 #            triplet = [triplet1, triplet2]
 #            coord = [c1, c2] 
+#
+#            if spcs not in exist_species:
+#                exist_species.append(spcs)
+#                tris += [triplet]
+#                tri_dir += [coord]
+#            else:
+#                k = exist_species.index(spcs)
+#                tris[k] += triplet
+#                tri_dir[k] += coord
 
             spcs_list = [[ctype, spc1, spc2], [ctype, spc2, spc1]]
             for i in range(2):

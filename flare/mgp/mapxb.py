@@ -116,6 +116,8 @@ class MapXbody:
         for i, spc in enumerate(spcs):
             lengths = np.array(comp_r[i])
             xyzs = np.array(comp_xyz[i])
+
+            print('spcs lengths, xyzs', spc, lengths, xyzs)
             map_ind = self.spc.index(spc)
             f, vir, v, e = self.maps[map_ind].predict(lengths, xyzs,
                 self.map_force, mean_only)
