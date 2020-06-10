@@ -3290,6 +3290,8 @@ _str_to_kernel = {'two_body_mc': two_body_mc,
                   'many_en': many_body_mc_en,
                   'many_grad': many_body_mc_grad,
                   'many_force_en': many_body_mc_force_en,
+                  'many_efs_energy': None,
+                  'many_efs_force': None,
                   'two_plus_three_plus_many_body_mc':
                   two_plus_three_plus_many_body_mc,
                   'two_plus_three_plus_many_body_mc_grad':
