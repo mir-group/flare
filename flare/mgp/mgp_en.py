@@ -456,7 +456,8 @@ class MappedGaussianProcess:
 
             kernel_info = dictionary[kern_info]
             kernel_name = kernel_info[0]
-            kernel, _, ek, efk = str_to_kernel_set(kernel_name, multihyps)
+            kernel, _, ek, efk, _, _ = \
+                str_to_kernel_set(kernel_name, multihyps)
             kernel_info[0] = kernel
             kernel_info[1] = ek
             kernel_info[2] = efk
