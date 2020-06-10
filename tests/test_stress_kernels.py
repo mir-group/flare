@@ -1,5 +1,4 @@
 import pytest
-from flare.kernels.stress_kernels import two_body_energy
 from flare.kernels.two_body_mc_simple import TwoBodyKernel
 from flare.kernels.three_body_mc_simple import ThreeBodyKernel
 from flare.cutoffs import quadratic_cutoff

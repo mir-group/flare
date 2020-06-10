@@ -13,6 +13,7 @@ from flare.kernels.kernels import force_helper, grad_constants, grad_helper, \
     k_sq_exp_double_dev, k_sq_exp_dev, coordination_number, q_value, \
     q_value_mc, mb_grad_helper_ls_, mb_grad_helper_ls_, three_body_se_perm, \
     three_body_sf_perm, three_body_ss_perm
+from flare.kernels import two_body_mc_simple, three_body_mc_simple
 from typing import Callable
 
 
@@ -284,6 +285,70 @@ def two_plus_three_ss(env1: AtomicEnvironment, env2: AtomicEnvironment,
                           sig3, ls3, r_cut_3, cutoff_func)
 
     return two_term + three_term
+
+
+def two_plus_three_efs_energy(env1: AtomicEnvironment, env2: AtomicEnvironment,
+                              hyps: 'ndarray', cutoffs: 'ndarray',
+                              cutoff_func: Callable = cf.quadratic_cutoff):
+
+    sig2 = hyps[0]
+    ls2 = hyps[1]
+    sig3 = hyps[2]
+    ls3 = hyps[3]
+    r_cut_2 = cutoffs[0]
+    r_cut_3 = cutoffs[1]
+
+    two_e, two_f, two_s = \
+        two_body_mc_simple.efs_energy(env1.bond_array_2, env1.ctype,
+                                      env1.etypes, env2.bond_array_2,
+                                      env2.ctype, env2.etypes,
+                                      sig2, ls2, r_cut_2, cutoff_func)
+
+    three_e, three_f, three_s = \
+        three_body_mc_simple.efs_energy(env1.bond_array_3, env1.ctype,
+                                        env1.etypes, env2.bond_array_3,
+                                        env2.ctype, env2.etypes,
+                                        env1.cross_bond_inds,
+                                        env2.cross_bond_inds,
+                                        env1.cross_bond_dists,
+                                        env2.cross_bond_dists,
+                                        env1.triplet_counts,
+                                        env2.triplet_counts,
+                                        sig3, ls3, r_cut_3, cutoff_func)
+
+    return two_e + three_e, two_f + three_f, two_s + three_s
+
+
+def two_plus_three_efs_force(env1: AtomicEnvironment, env2: AtomicEnvironment,
+                             hyps: 'ndarray', cutoffs: 'ndarray',
+                             cutoff_func: Callable = cf.quadratic_cutoff):
+
+    sig2 = hyps[0]
+    ls2 = hyps[1]
+    sig3 = hyps[2]
+    ls3 = hyps[3]
+    r_cut_2 = cutoffs[0]
+    r_cut_3 = cutoffs[1]
+
+    two_e, two_f, two_s = \
+        two_body_mc_simple.efs_force(env1.bond_array_2, env1.ctype,
+                                     env1.etypes, env2.bond_array_2,
+                                     env2.ctype, env2.etypes,
+                                     sig2, ls2, r_cut_2, cutoff_func)
+
+    three_e, three_f, three_s = \
+        three_body_mc_simple.efs_force(env1.bond_array_3, env1.ctype,
+                                       env1.etypes, env2.bond_array_3,
+                                       env2.ctype, env2.etypes,
+                                       env1.cross_bond_inds,
+                                       env2.cross_bond_inds,
+                                       env1.cross_bond_dists,
+                                       env2.cross_bond_dists,
+                                       env1.triplet_counts,
+                                       env2.triplet_counts,
+                                       sig3, ls3, r_cut_3, cutoff_func)
+
+    return two_e + three_e, two_f + three_f, two_s + three_s
 
 
 # -----------------------------------------------------------------------------
@@ -696,6 +761,46 @@ def three_body_ss(env1: AtomicEnvironment, env2: AtomicEnvironment,
                              sig, ls, r_cut, cutoff_func)
 
 
+def three_body_efs_energy(env1: AtomicEnvironment, env2: AtomicEnvironment,
+                          hyps: 'ndarray', cutoffs: 'ndarray',
+                          cutoff_func: Callable = cf.quadratic_cutoff):
+
+    sig = hyps[0]
+    ls = hyps[1]
+    r_cut = cutoffs[1]
+
+    return three_body_mc_simple.efs_energy(env1.bond_array_3, env1.ctype,
+                                           env1.etypes, env2.bond_array_3,
+                                           env2.ctype, env2.etypes,
+                                           env1.cross_bond_inds,
+                                           env2.cross_bond_inds,
+                                           env1.cross_bond_dists,
+                                           env2.cross_bond_dists,
+                                           env1.triplet_counts,
+                                           env2.triplet_counts,
+                                           sig, ls, r_cut, cutoff_func)
+
+
+def three_body_efs_force(env1: AtomicEnvironment, env2: AtomicEnvironment,
+                         hyps: 'ndarray', cutoffs: 'ndarray',
+                         cutoff_func: Callable = cf.quadratic_cutoff):
+
+    sig = hyps[0]
+    ls = hyps[1]
+    r_cut = cutoffs[1]
+
+    return three_body_mc_simple.efs_force(env1.bond_array_3, env1.ctype,
+                                          env1.etypes, env2.bond_array_3,
+                                          env2.ctype, env2.etypes,
+                                          env1.cross_bond_inds,
+                                          env2.cross_bond_inds,
+                                          env1.cross_bond_dists,
+                                          env2.cross_bond_dists,
+                                          env1.triplet_counts,
+                                          env2.triplet_counts,
+                                          sig, ls, r_cut, cutoff_func)
+
+
 # -----------------------------------------------------------------------------
 #                       two body multicomponent kernel
 # -----------------------------------------------------------------------------
@@ -852,6 +957,34 @@ def two_body_ss(env1: AtomicEnvironment, env2: AtomicEnvironment,
     return two_body_ss_jit(env1.bond_array_2, env1.ctype, env1.etypes,
                            env2.bond_array_2, env2.ctype, env2.etypes,
                            sig, ls, r_cut, cutoff_func)
+
+
+def two_body_efs_energy(env1: AtomicEnvironment, env2: AtomicEnvironment,
+                        hyps: 'ndarray', cutoffs: 'ndarray',
+                        cutoff_func: Callable = cf.quadratic_cutoff):
+
+    sig = hyps[0]
+    ls = hyps[1]
+    r_cut = cutoffs[0]
+
+    return two_body_mc_simple.efs_energy(env1.bond_array_2, env1.ctype,
+                                         env1.etypes, env2.bond_array_2,
+                                         env2.ctype, env2.etypes,
+                                         sig, ls, r_cut, cutoff_func)
+
+
+def two_body_efs_force(env1: AtomicEnvironment, env2: AtomicEnvironment,
+                       hyps: 'ndarray', cutoffs: 'ndarray',
+                       cutoff_func: Callable = cf.quadratic_cutoff):
+
+    sig = hyps[0]
+    ls = hyps[1]
+    r_cut = cutoffs[0]
+
+    return two_body_mc_simple.efs_force(env1.bond_array_2, env1.ctype,
+                                        env1.etypes, env2.bond_array_2,
+                                        env2.ctype, env2.etypes,
+                                        sig, ls, r_cut, cutoff_func)
 
 
 # -----------------------------------------------------------------------------
