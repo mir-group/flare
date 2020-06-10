@@ -216,22 +216,15 @@ class SingleMapXbody:
             warnings.warn("No training data, will return 0")
             return np.zeros([n_grid]), None
 
-        # TO DO, this part should be rewritten
-        if self.kernel_name == "threebody":
-            try:
-                import flare.mgp.grid_kernels_3b
-                self.use_grid_kern = True and self.use_grid_kern
-            except:
-                self.use_grid_kern = False and self.use_grid_kern
-        else:
-            self.use_grid_kern = False and self.use_grid_kern
-
         # ------- call gengrid functions ---------------
         args = [GP.name, grid_env, kernel_info]
         if self.use_grid_kern:
-            mapk = str_to_mapped_kernel(self.kernel_name, GP.component, GP.hyps_mask)
-            mapped_kernel_info = (mapk,
-                                  kernel_info[3], kernel_info[4], kernel_info[5])
+            try:
+                mapk = str_to_mapped_kernel(self.kernel_name, GP.component, GP.hyps_mask)
+                mapped_kernel_info = (mapk,
+                                      kernel_info[3], kernel_info[4], kernel_info[5])
+            except:
+                self.use_grid_kern = False
 
         if processes == 1:
             args = [GP.name, grid_env, kernel_info]
