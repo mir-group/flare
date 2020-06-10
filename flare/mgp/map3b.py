@@ -9,8 +9,7 @@ from flare.gp_algebra import _global_training_data, _global_training_structures
 from flare.kernels.utils import from_mask_to_args
 
 from flare.mgp.mapxb import MapXbody, SingleMapXbody
-from flare.mgp.utils import get_triplets, get_triplets_en, get_kernel_term,\
-    get_permutations
+from flare.mgp.utils import get_triplets, get_kernel_term, get_permutations
 from flare.mgp.grid_kernels import triplet_cutoff
 
 
@@ -45,13 +44,8 @@ class Map3body(MapXbody):
 
     def get_arrays(self, atom_env):
 
-        if self.map_force:
-            get_triplets_func = get_triplets
-        else:
-            get_triplets_func = get_triplets_en
-
         spcs, comp_r, comp_xyz = \
-            get_triplets_func(atom_env.ctype, atom_env.etypes,
+            get_triplets(atom_env.ctype, atom_env.etypes,
                     atom_env.bond_array_3, atom_env.cross_bond_inds,
                     atom_env.cross_bond_dists, atom_env.triplet_counts)
 
@@ -73,16 +67,9 @@ class SingleMap3body(SingleMapXbody):
         super().__init__(*args)
 
         # initialize bounds
-        if self.auto_lower:
-            self.bounds[0] = np.zeros(3)
-        if self.auto_upper:
-            self.bounds[1] = np.ones(3)
+        self.set_bounds(0, np.ones(3))
 
         self.grid_interval = np.min((self.bounds[1]-self.bounds[0])/self.grid_num)
-
-        if self.map_force:
-            self.bounds[0][2] = -1
-            self.bounds[1][2] = 1
 
         spc = self.species
         self.species_code = Z_to_element(spc[0]) + '_' + \
@@ -95,10 +82,6 @@ class SingleMap3body(SingleMapXbody):
             self.bounds[0] = np.ones(3) * lower_bound
         if self.auto_upper:
             self.bounds[1] = upper_bound
-        if self.map_force:
-            self.bounds[0][2] = -1
-            self.bounds[1][2] = 1
-
 
 
     def construct_grids(self):
@@ -107,34 +90,27 @@ class SingleMap3body(SingleMapXbody):
             An array of shape (n_grid, 3)
         '''
         # build grids in each dimension
-        bonds_list = []
+        triplets = []
         for d in range(3):
             bonds = np.linspace(self.bounds[0][d], self.bounds[1][d],
                 self.grid_num[d], dtype=np.float64)
-            bonds_list.append(bonds)
+            triplets.append(bonds)
 
         # concatenate into one array: n_grid x 3
-        mesh = np.meshgrid(*bonds_list)
+        mesh = np.meshgrid(*triplets)
+        del triplets 
+
         mesh_list = []
         n_grid = np.prod(self.grid_num)
         for d in range(3):
             mesh_list.append(np.reshape(mesh[d], n_grid))
 
-        del bonds_list
         return np.array(mesh_list).T
 
 
     def set_env(self, grid_env, grid_pt):
         r1, r2, r12 = grid_pt
-
-        if self.map_force:
-            cos_angle12 = r12
-            x2 = r2 * cos_angle12
-            y2 = r2 * np.sqrt(1-cos_angle12**2)
-            dist12 = np.linalg.norm(np.array([x2-r1, y2, 0]))
-        else:
-            dist12 = r12
-
+        dist12 = r12
         grid_env.bond_array_3 = np.array([[r1, 1, 0, 0],
                                        [r2, 0, 0, 0]])
         grid_env.cross_bond_dists = np.array([[0, dist12], [dist12, 0]])
@@ -171,23 +147,25 @@ class SingleMap3body(SingleMapXbody):
 
         grid_kernel, cutoffs, hyps, hyps_mask = kernel_info
 
-        if self.map_force:
-            prefix = 'force'
-        else:
-            prefix = 'energy'
-
         args = from_mask_to_args(hyps, cutoffs, hyps_mask)
         r_cut = cutoffs['threebody']
 
         grids = self.construct_grids()
+
         if (e-s) == 0:
             return np.empty((grids.shape[0], 0), dtype=np.float64)
         coords = np.zeros((grids.shape[0], 9), dtype=np.float64) # padding 0
         coords[:, 0] = np.ones_like(coords[:, 0])
+
         fj, fdj = triplet_cutoff(grids, r_cut, coords, derivative=True) # TODO: add cutoff func 
         fdj = fdj[:, [0]]
 
         perm_list = get_permutations(env12.ctype, env12.etypes[0], env12.etypes[1])
+
+        if self.map_force:
+            prefix = 'force'
+        else:
+            prefix = 'energy'
 
         if force_block:
             training_data = _global_training_data[name]

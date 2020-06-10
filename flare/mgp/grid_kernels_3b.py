@@ -70,7 +70,6 @@ def grid_kernel_env(kern_type,
     ls = hyps[1]
     derivative = derv_dict[kern_type]
 
-
     # collect all the triplets in this training env
     triplet_coord_list = get_triplets_for_kern(env1.bond_array_3, env1.ctype, env1.etypes,
         env1.cross_bond_inds, env1.cross_bond_dists, env1.triplet_counts,
@@ -139,20 +138,18 @@ def en_force(kern_exp, fi, fj, fdi, fdj,
 def force_en(kern_exp, fi, fj, fdi, fdj, 
              rij_list, coord_list, ls):
     '''force map + energy block'''
-    raise NotImplementedError
     ls2 = 1 / (ls * ls)
     fifj = fi @ fj.T # (n_triplets, n_grids)
     fdji = fi @ fdj.T
     # only r = 0 is non zero, since the grid coords are all (1, 0, 0)
     B = rij_list[0] # (n_triplets, n_grids)
-    kern = np.sum(kern_exp * (B * ls2 * fifj + fdji), axis=0) / 3 # (n_grids,)
+    kern = np.sum(kern_exp * (B * ls2 * fifj - fdji), axis=0) / 3 # (n_grids,)
     return kern
 
 
 def force_force(kern_exp, fi, fj, fdi, fdj, 
                 rij_list, coord_list, ls):
     '''force map + force block'''
-    raise NotImplementedError
     ls2 = 1 / (ls * ls)
     ls3 = ls2 * ls2 
     
@@ -162,12 +159,12 @@ def force_force(kern_exp, fi, fj, fdi, fdj,
     fifj = fi @ fj.T # (n_triplets, n_grids)
     fdji = (fi * ls2) @ fdj.T
 
-    B = rij_list[0] * ls3
-    J = rij_list[0] * fdji # (n_triplets, n_grids)
+    B = rij_list[0] * ls3 # B and C both have opposite signs with that in the three_body_helper_1
     
     for d in range(3):
         fdij = (fdi[:, [d]] * ls2) @ fj.T
         I = fdi[:, [d]] @ fdj.T
+        J = rij_list[0] * fdij # (n_triplets, n_grids)
 
         A = np.repeat(ls2 * coord_list[:, [3*d]], n_grids, axis=1)
         C = 0
@@ -176,23 +173,11 @@ def force_force(kern_exp, fi, fj, fdi, fdj,
             # column-wise multiplication
             # coord_list[:, [r]].shape = (n_triplets, 1)
             C += rij * coord_list[:, [3*d+r]] # (n_triplets, n_grids)
-        
-        IJKL = I + J - C * fdij + (A - B * C) * fifj
+
+        IJKL = I - J + C * fdji + (A - B * C) * fifj
         kern[d, :] = np.sum(kern_exp * IJKL, axis=0)
 
     return kern
-
-
-@njit
-def force_helper(A, B, C, D, fi, fj, fdi, fdj, ls1, ls2, ls3, sig2):
-    E = exp(-D * ls1)
-    I = fdi * fdj
-    J = B * ls2 * fi * fdj
-    K = - C * ls2 * fdi * fj
-    L = (A * ls2 - B * C * ls3) * fi * fj
-    M = sig2 * (I + J + K + L) * E
-    return M
-
 
 
 
