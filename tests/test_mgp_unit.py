@@ -40,7 +40,7 @@ def all_gp():
     np.random.seed(0)
     for bodies in ['2', '3', '2+3']:
         for multihyps in [False, True]:
-            gp_model = get_gp(bodies, 'mc', multihyps, cellabc=[1, 1, 1], 
+            gp_model = get_gp(bodies, 'mc', multihyps, cellabc=[1, 1, 1],
                               force_only=force_block_only)
             gp_model.parallel = True
             gp_model.n_cpus = 2
@@ -71,7 +71,7 @@ def test_init(bodies, multihyps, map_force, all_mgp, all_gp):
     gp_model = all_gp[f'{bodies}{multihyps}']
 
     # grid parameters
-    grid_num_2 = 128 
+    grid_num_2 = 128
     grid_num_3 = 32
     grid_params = {}
     if ('2' in bodies):
@@ -98,7 +98,8 @@ def test_build_map(all_gp, all_mgp, bodies, multihyps, map_force):
     gp_model = all_gp[f'{bodies}{multihyps}']
     mgp_model = all_mgp[f'{bodies}{multihyps}{map_force}']
     mgp_model.build_map(gp_model)
-
+    with open(f'grid_{bodies}_{multihyps}_{map_force}.pickle', 'wb') as f:
+        pickle.dump(mgp_model, f)
 
 
 #@pytest.mark.parametrize('bodies', body_list)
@@ -147,7 +148,10 @@ def test_predict(all_gp, all_mgp, bodies, multihyps, map_force):
     """
 
     gp_model = all_gp[f'{bodies}{multihyps}']
-    mgp_model = all_mgp[f'{bodies}{multihyps}{map_force}']
+    # mgp_model = all_mgp[f'{bodies}{multihyps}{map_force}']
+    filename = f'grid_{bodies}_{multihyps}_{map_force}.pickle'
+    with open(filename, 'rb') as f:
+        mgp_model = pickle.load(f)
 
     np.random.seed(10)
     nenv= 10
@@ -214,6 +218,7 @@ def test_predict(all_gp, all_mgp, bodies, multihyps, map_force):
         pytest.skip()
 
     # TODO: energy block accuracy
+    print("isclose?", mgp_pred[0]-gp_pred[0], gp_pred[0])
     assert(np.allclose(mgp_pred[0], gp_pred[0], atol=2e-3)), \
             f"{bodies} body {map_str} mapping is wrong"
 #    assert(np.abs(mgp_pred[1] - gp_pred_var) < 2e-3), \
@@ -296,6 +301,7 @@ def test_lmp_predict(all_gp, all_mgp, bodies, multihyps, map_force):
 
     # check that lammps agrees with gp to within 1 meV/A
     for i in range(3):
+        print("isclose?", lammps_forces[atom_num, i]-mgp_forces[0][i], mgp_forces[0][i])
         assert np.isclose(lammps_forces[atom_num, i], mgp_forces[0][i], rtol=1e-2)
 
     for f in os.listdir("./"):

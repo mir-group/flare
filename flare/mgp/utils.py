@@ -10,7 +10,7 @@ from flare.kernels.cutoffs import quadratic_cutoff
 from flare.kernels.utils import str_to_kernel_set as stks
 from flare.parameters import Parameters
 
-from flare.mgp.grid_kernels import grid_kernel, grid_kernel_sephyps
+from flare.mgp.grid_kernels_3b import grid_kernel, grid_kernel_sephyps
 
 
 def str_to_mapped_kernel(name: str, component: str = "sc",
@@ -169,7 +169,7 @@ def get_triplets(ctype, etypes, bond_array, cross_bond_inds,
 #                spcs = [ctype, spc2, spc1]
 #
 #            triplet = [triplet1, triplet2]
-#            coord = [c1, c2] 
+#            coord = [c1, c2]
 
             spcs_list = [[ctype, spc1, spc2], [ctype, spc2, spc1]]
             for i in range(2):

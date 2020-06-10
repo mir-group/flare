@@ -19,6 +19,7 @@ from flare.struc import Structure
 from flare.mgp.utils import get_kernel_term, str_to_mapped_kernel
 from flare.mgp.splines_methods import PCASplines, CubicSpline
 
+global_use_grid_kern = True
 
 class MapXbody:
     def __init__(self,
@@ -154,7 +155,7 @@ class SingleMapXbody:
         self.auto_upper = (bounds[1] == 'auto')
 
         self.hyps_mask = None
-        self.use_grid_kern = True
+        self.use_grid_kern = global_use_grid_kern
 
         if not self.auto_lower and not self.auto_upper:
             self.build_map_container()
@@ -215,9 +216,15 @@ class SingleMapXbody:
             warnings.warn("No training data, will return 0")
             return np.zeros([n_grid]), None
 
-#        self.use_grid_kern = (self.kernel_name == "threebody" and (not self.map_force))
-#        self.use_grid_kern = False
-        self.use_grid_kern = ((self.kernel_name == "threebody") and self.use_grid_kern)
+        # TO DO, this part should be rewritten
+        if self.kernel_name == "threebody":
+            try:
+                import flare.mgp.grid_kernels_3b
+                self.use_grid_kern = True and self.use_grid_kern
+            except:
+                self.use_grid_kern = False and self.use_grid_kern
+        else:
+            self.use_grid_kern = False and self.use_grid_kern
 
         # ------- call gengrid functions ---------------
         args = [GP.name, grid_env, kernel_info]

@@ -10,7 +10,7 @@ from flare.kernels.utils import from_mask_to_args
 
 from flare.mgp.mapxb import MapXbody, SingleMapXbody
 from flare.mgp.utils import get_triplets, get_kernel_term, get_permutations
-from flare.mgp.grid_kernels import triplet_cutoff
+from flare.mgp.grid_kernels_3b import triplet_cutoff
 
 
 class Map3body(MapXbody):
@@ -98,7 +98,7 @@ class SingleMap3body(SingleMapXbody):
 
         # concatenate into one array: n_grid x 3
         mesh = np.meshgrid(*triplets)
-        del triplets 
+        del triplets
 
         mesh_list = []
         n_grid = np.prod(self.grid_num)
@@ -157,7 +157,7 @@ class SingleMap3body(SingleMapXbody):
         coords = np.zeros((grids.shape[0], 9), dtype=np.float64) # padding 0
         coords[:, 0] = np.ones_like(coords[:, 0])
 
-        fj, fdj = triplet_cutoff(grids, r_cut, coords, derivative=True) # TODO: add cutoff func 
+        fj, fdj = triplet_cutoff(grids, r_cut, coords, derivative=True) # TODO: add cutoff func
         fdj = fdj[:, [0]]
 
         perm_list = get_permutations(env12.ctype, env12.etypes[0], env12.etypes[1])
