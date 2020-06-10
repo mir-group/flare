@@ -316,7 +316,7 @@ def test_force_grad(struc_envs, stress_envs, force_envs, kernel):
                 threshold, 'The force/force gradient is wrong.'
 
 
-def test_all(struc_envs):
+def test_2b_all(struc_envs):
     test_env_1 = struc_envs[0][0]
     test_env_2 = struc_envs[1][0]
 
@@ -339,6 +339,29 @@ def test_all(struc_envs):
     assert((np.abs(e3 - e4) < threshold).all())
     assert((np.abs(f3 - f4) < threshold).all())
     assert((np.abs(s3 - s4.transpose()) < threshold).all())
+
+
+def test_3b_all(struc_envs):
+    test_env_1 = struc_envs[0][0]
+    test_env_2 = struc_envs[1][0]
+
+    e1, f1, s1 = kernel_3b.energy_all(test_env_2, test_env_1)
+
+    e2 = kernel_3b.energy_energy(test_env_2, test_env_1)
+    f2 = kernel_3b.force_energy(test_env_2, test_env_1)
+    s2 = kernel_3b.stress_energy(test_env_2, test_env_1)
+
+    print(e1)
+    print(f1)
+    print(s1)
+
+    print(e2)
+    print(f2)
+    print(s2)
+
+    assert(np.abs(e1 - e2) < threshold)
+    assert((np.abs(f1 - f2) < threshold).all())
+    assert((np.abs(s1 - s2) < threshold).all())
 
 
 # def test_stress_energy(perturbed_envs):
