@@ -33,23 +33,60 @@ class MappedGaussianProcess:
             the training that need to be mapped
         map_force (bool): if True, do force mapping; otherwise do energy mapping,
             default is False
-        mean_only (bool): if True: only build mapping for mean (force)
-        container_only (bool): if True: only build splines container
-            (with no coefficients); if False: Attempt to build map immediately
         GP (GaussianProcess): None or a GaussianProcess object. If a GP is input,
             and container_only is False, automatically build a mapping corresponding
             to the GaussianProcess.
+        mean_only (bool): if True: only build mapping for mean (force)
+        container_only (bool): if True: only build splines container
+            (with no coefficients); if False: Attempt to build map immediately
         lmp_file_name (str): LAMMPS coefficient file name
-
-    For `grid_params`, please set up the following keys and values
-    Args:
-        'two_body': if 2-body is present, set as a dictionary of parameters 
-                    for 2-body mapping
+        n_cpus (int): Default None. Set to the number of cores needed for 
+            parallelization. Used in the construction of the map.
+        n_sample (int): Default 100. The batch size for building map. Not used now.
 
     Examples:
 
+    >>> # build 2 + 3 body map
     >>> grid_params = {'twobody': {'grid_num': [64]},
     ...                'threebody': {'grid_num': [64, 64, 64]}}
+
+    For `grid_params`, the following keys and values are allowed
+
+    Args:
+        'two_body' (dict, optional): if 2-body is present, set as a dictionary 
+            of parameters for 2-body mapping. Parameters see below.
+        'three_body' (dict, optional): if 3-body is present, set as a dictionary
+            of parameters for 3-body mapping. Parameters see below.
+        'load_grid' (str, optional): Default None. the path to the directory 
+            where the previously generated grids (``grid_*.npy``) are stored. 
+            If no path is specified, MGP will construct grids from scratch.
+        'lower_bound_relax' (float, optional): Default 0.1. if 'lower_bound' is
+            set to 'auto' this value will be used as a relaxation of lower 
+            bound. (see below the description of 'lower_bound')
+ 
+    For two/three body parameter dictionary, the following keys and values are allowed
+
+    Args:
+        'grid_num' (list): a list of integers, the number of grid points for 
+            interpolation. The larger the number, the better the approximation 
+            of MGP is compared with GP. 
+        'lower_bound' (str or list, optional): Default 'auto', the lower bound 
+            of the spline interpolation will be searched. First, search the 
+            training set of GP and find the minimal interatomic distance r_min.
+            Then, the ``lower_bound = r_min - lower_bound_relax``. The user 
+            can set their own lower_bound, of the same shape as 'grid_num'.
+            E.g. for threebody, the customized lower bound can be set as
+            [1.2, 1.2, 1.2].
+        'upper_bound' (str or list, optional): Default 'auto', the upper bound
+            of the spline interpolation will be the cutoffs of GP. The user 
+            can set their own upper_bound, of the same shape as 'grid_num'.
+            E.g. for threebody, the customized lower bound can be set as
+            [3.5, 3.5, 3.5].
+        'svd_rank' (int, optional): Default 'auto'. If the variance mapping is
+            needed, it is set as the rank of the mapping. 'auto' uses full
+            rank, which is the smaller one between the total number of grid 
+            points and training set size. i.e. 
+            ``full_rank = min(np.prod(grid_num), 3 * N_train)``
     '''
 
     def __init__(self,
@@ -57,7 +94,7 @@ class MappedGaussianProcess:
                  species_list: list=[],
                  map_force: bool=False,
                  GP: GaussianProcess=None,
-                 mean_only: bool=False,
+                 mean_only: bool=True,
                  container_only: bool=True,
                  lmp_file_name: str='lmp.mgp',
                  n_cpus: int=None,
@@ -80,15 +117,13 @@ class MappedGaussianProcess:
 
         if 'load_grid' not in grid_params.keys():
             grid_params['load_grid'] = None
-        if 'update' not in grid_params.keys():
-            grid_params['update'] = False
         if 'lower_bound_relax' not in grid_params.keys():
             grid_params['lower_bound_relax'] = 0.1
 
         self.maps = {}
         args = [species_list, map_force, GP, mean_only,\
                 container_only, lmp_file_name, \
-                grid_params['load_grid'], grid_params['update'],\
+                grid_params['load_grid'],\
                 grid_params['lower_bound_relax'],
                 n_cpus, n_sample]
 

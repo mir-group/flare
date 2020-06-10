@@ -16,8 +16,7 @@ from flare.gp_algebra import partition_vector, energy_force_vector_unit, \
 from flare.parameters import Parameters
 from flare.struc import Structure
 
-from flare.mgp.utils import get_bonds, get_triplets, get_triplets_en, \
-    get_kernel_term, str_to_mapped_kernel
+from flare.mgp.utils import get_kernel_term, str_to_mapped_kernel
 from flare.mgp.splines_methods import PCASplines, CubicSpline
 
 
@@ -30,11 +29,10 @@ class MapXbody:
                  species_list: list=[],
                  map_force: bool=False,
                  GP: GaussianProcess=None,
-                 mean_only: bool=False,
+                 mean_only: bool=True,
                  container_only: bool=True,
                  lmp_file_name: str='lmp.mgp',
                  load_grid: str=None,
-                 update: bool=False,
                  lower_bound_relax: float=0.1,
                  n_cpus: int=None,
                  n_sample: int=100):
@@ -49,7 +47,6 @@ class MapXbody:
         self.mean_only = mean_only
         self.lmp_file_name = lmp_file_name
         self.load_grid = load_grid
-        self.update = update
         self.lower_bound_relax = lower_bound_relax
         self.n_cpus = n_cpus
         self.n_sample = n_sample
@@ -75,7 +72,7 @@ class MapXbody:
         for spc in self.spc:
             m = self.singlexbody((self.grid_num, bounds, spc,
                                   self.map_force, self.svd_rank, self.mean_only,
-                                  self.load_grid, self.update, self.lower_bound_relax,
+                                  self.load_grid, self.lower_bound_relax,
                                   self.n_cpus, self.n_sample))
             self.maps.append(m)
 
@@ -101,13 +98,12 @@ class MapXbody:
         args = from_mask_to_args(hyps, cutoffs, hyps_mask)
 
         kern = 0
-        if self.map_force:
-            if not mean_only:
+        if not mean_only:
+            if self.map_force:
                 kern = np.zeros(3)
                 for d in range(3):
                     kern[d] = force_kernel(atom_env, atom_env, d+1, d+1, *args)
-        else:
-            if not mean_only:
+            else:
                 kern = en_kernel(atom_env, atom_env, *args)
 
         spcs, comp_r, comp_xyz = self.get_arrays(atom_env)
@@ -140,17 +136,16 @@ class MapXbody:
 class SingleMapXbody:
     def __init__(self, grid_num: int, bounds, species: str,
                  map_force=False, svd_rank=0, mean_only: bool=False,
-                 load_grid=None, update=None, lower_bound_relax=0.1,
+                 load_grid=None, lower_bound_relax=0.1,
                  n_cpus: int=None, n_sample: int=100):
 
         self.grid_num = grid_num
-        self.bounds = bounds
+        self.bounds = deepcopy(bounds)
         self.species = species
         self.map_force = map_force
         self.svd_rank = svd_rank
         self.mean_only = mean_only
         self.load_grid = load_grid
-        self.update = update
         self.lower_bound_relax = lower_bound_relax
         self.n_cpus = n_cpus
         self.n_sample = n_sample
@@ -213,23 +208,25 @@ class SingleMapXbody:
         # -------- get training data info ----------
         n_envs = len(GP.training_data)
         n_strucs = len(GP.training_structures)
-        n_kern = n_envs * 3 + n_strucs
 
         if (n_envs == 0) and (n_strucs == 0):
+            warnings.warn("No training data, will return 0")
             return np.zeros([n_grid]), None
 
+#        self.use_grid_kern = (self.kernel_name == "threebody" and (not self.map_force))
+#        self.use_grid_kern = False
+        self.use_grid_kern = (self.kernel_name == "threebody")
 
         # ------- call gengrid functions ---------------
         args = [GP.name, grid_env, kernel_info]
-        if self.kernel_name == "threebody" and (not self.map_force):
+        if self.use_grid_kern:
             mapk = str_to_mapped_kernel(self.kernel_name, GP.component, GP.hyps_mask)
             mapped_kernel_info = (mapk,
                                   kernel_info[3], kernel_info[4], kernel_info[5])
-            args = [GP.name, grid_env, mapped_kernel_info]
 
         if processes == 1:
             args = [GP.name, grid_env, kernel_info]
-            if self.kernel_name == "threebody" and (not self.map_force): # TODO: finish force mapping
+            if self.use_grid_kern: # TODO: finish force mapping
                 k12_v_force = self._gengrid_numba(GP.name, True, 0, n_envs, grid_env,
                                                   mapped_kernel_info)
                 k12_v_energy = self._gengrid_numba(GP.name, False, 0, n_strucs, grid_env,
@@ -237,9 +234,8 @@ class SingleMapXbody:
             else:
                 k12_v_force = self._gengrid_serial(args, True, n_envs)
                 k12_v_energy = self._gengrid_serial(args, False, n_strucs)
-
         else:
-            if self.kernel_name == "threebody" and (not self.map_force):
+            if self.use_grid_kern:
                 args = [GP.name, grid_env, mapped_kernel_info]
             else:
                 args = [GP.name, grid_env, kernel_info]
@@ -287,7 +283,7 @@ class SingleMapXbody:
                 partition_vector(self.n_sample, n_envs, processes)
 
             threebody = False
-            if self.kernel_name == "threebody" and (not self.map_force):
+            if self.use_grid_kern:
                 GP_name, grid_env, mapped_kernel_info = args
                 threebody = True
 
@@ -431,74 +427,55 @@ class SingleMapXbody:
 
 
     def predict(self, lengths, xyzs, map_force, mean_only):
-        assert map_force == self.map_force, f'The mapping is built for'\
-            'map_force={self.map_force}, can not predict for map_force={map_force}'
-        if map_force:
-            return self.predict_single_f_map(lengths, xyzs, mean_only)
-        else:
-            return self.predict_single_e_map(lengths, xyzs, mean_only)
-
-    def predict_single_f_map(self, lengths, xyzs, mean_only):
-
-        lengths = np.array(lengths)
-        xyzs = np.array(xyzs)
-
-        # predict mean
-        e = 0
-        f_0 = self.mean(lengths)
-        f_d = np.diag(f_0) @ xyzs
-        f = np.sum(f_d, axis=0)
-
-        # predict stress from force components
-        vir = np.zeros(6)
-        vir_order = ((0,0), (1,1), (2,2), (0,1), (0,2), (1,2))
-        for i in range(6):
-            vir_i = f_d[:,vir_order[i][0]]\
-                    * xyzs[:,vir_order[i][1]] * lengths[:,0]
-            vir[i] = np.sum(vir_i)
-        vir *= 0.5
-
-        # predict var
-        v = np.zeros(3)
-        if not mean_only:
-            v_0 = self.var(lengths)
-            v_d = v_0 @ xyzs
-            v = self.var.V @ v_d
-
-        return f, vir, v, e
-
-    def predict_single_e_map(self, lengths, xyzs, mean_only):
         '''
         predict force and variance contribution of one component
         '''
+
+        assert map_force == self.map_force, f'The mapping is built for'\
+            'map_force={self.map_force}, can not predict for map_force={map_force}'
+
         lengths = np.array(lengths)
         xyzs = np.array(xyzs)
 
-        e_0, f_0 = self.mean(lengths, with_derivatives=True)
-        e = np.sum(e_0) # energy
+        if self.map_force:
+            # predict forces and energy
+            e = 0
+            f_0 = self.mean(lengths)
+            f_d = np.diag(f_0) @ xyzs
+            f = np.sum(f_d, axis=0)
 
-        # predict forces and stress
+            # predict var
+            v = np.zeros(3)
+            if not mean_only:
+                v_0 = self.var(lengths)
+                v_d = v_0 @ xyzs
+                v = self.var.V @ v_d
+
+        else:
+            # predict forces and energy
+            e_0, f_0 = self.mean(lengths, with_derivatives=True)
+            e = np.sum(e_0) # energy
+            f_d = np.diag(f_0[:,1,0]) @ xyzs
+            f = self.bodies * np.sum(f_d, axis=0)
+
+            # predict var
+            v = 0
+            if not mean_only:
+                v_0 = np.expand_dims(np.sum(self.var(lengths), axis=1),
+                                     axis=1)
+                v = self.var.V @ v_0
+
+        # predict virial stress
         vir = np.zeros(6)
         vir_order = ((0,0), (1,1), (2,2), (1,2), (0,2), (0,1)) # match the ASE order
-
-        f_d = np.diag(f_0[:,0,0]) @ xyzs
-        f = self.bodies * np.sum(f_d, axis=0)
-
         for i in range(6):
             vir_i = f_d[:,vir_order[i][0]]\
                     * xyzs[:,vir_order[i][1]] * lengths[:,0]
             vir[i] = np.sum(vir_i)
 
         vir *= self.bodies / 2
-
-        # predict var
-        v = 0
-        if not mean_only:
-            v_0 = np.expand_dims(np.sum(self.var(lengths), axis=1),
-                                 axis=1)
-            v = self.var.V @ v_0
-
         return f, vir, v, e
+
 
     def write(self, f):
         '''
