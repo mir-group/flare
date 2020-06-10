@@ -366,6 +366,7 @@ class SingleMapXbody:
 
         # double check the container and the GP is consistent
         if not Parameters.compare_dict(GP.hyps_mask, self.hyps_mask):
+            self.hyps_mask = GP.hyps_mask
             rebuild_container = True
 
         # check if bounds are updated

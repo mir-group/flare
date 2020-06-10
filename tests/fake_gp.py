@@ -87,7 +87,7 @@ def get_gp(bodies, kernel_type='mc', multihyps=True, cellabc=[1, 1, 1.5],
 
     # params
     cell = np.diag(cellabc)
-    unique_species = [2, 1]
+    unique_species = [2, 1, 3]
     noa = 5
 
     ntwobody = 0

@@ -5,15 +5,17 @@ import pytest
 import os, pickle, re
 
 from flare import struc, env, gp
-from flare import otf_parser
+from flare.parameters import Parameters
 from flare.mgp import MappedGaussianProcess
 from flare.lammps import lammps_calculator
 
 from .fake_gp import get_gp, get_random_structure
 
+
 body_list = ['2', '3']
-multi_list = [False, True]
+multi_list = [False] #[False, True]
 map_force_list = [False, True]
+force_block_only = True
 
 def clean():
     for f in os.listdir("./"):
@@ -38,7 +40,8 @@ def all_gp():
     np.random.seed(0)
     for bodies in ['2', '3', '2+3']:
         for multihyps in [False, True]:
-            gp_model = get_gp(bodies, 'mc', multihyps, cellabc=[1, 1, 1])
+            gp_model = get_gp(bodies, 'mc', multihyps, cellabc=[1, 1, 1], 
+                              force_only=force_block_only)
             gp_model.parallel = True
             gp_model.n_cpus = 2
             allgp_dict[f'{bodies}{multihyps}'] = gp_model
@@ -77,9 +80,9 @@ def test_init(bodies, multihyps, map_force, all_mgp, all_gp):
         grid_params['threebody'] = {'grid_num': [grid_num_3 for d in range(3)]}
 
     lammps_location = f'{bodies}{multihyps}{map_force}.mgp'
-    species_list = [1, 2]
+    species_list = [1, 2, 3]
 
-    mgp_model = MappedGaussianProcess(grid_params, species_list, n_cpus=4,
+    mgp_model = MappedGaussianProcess(grid_params, species_list, n_cpus=1,
                 map_force=map_force, lmp_file_name=lammps_location)#, mean_only=False)
     all_mgp[f'{bodies}{multihyps}{map_force}'] = mgp_model
 
@@ -147,18 +150,52 @@ def test_predict(all_gp, all_mgp, bodies, multihyps, map_force):
 
     np.random.seed(10)
     nenv= 10
-    cell = 0.8 * np.eye(3)
+    cell = 1.0 * np.eye(3)
     cutoffs = gp_model.cutoffs
     unique_species = gp_model.training_data[0].species
     struc_test, f = get_random_structure(cell, unique_species, nenv)
     test_envi = env.AtomicEnvironment(struc_test, 0, cutoffs)
-#    test_envi = gp_model.training_data[0]
-    print(test_envi.species)
-    print(unique_species)
+
+#    cell = np.eye(3) * 2
+#    struc_test = struc.Structure(cell, [1,1,1], np.array([[0, 0, 0], [0.3, 0, 0], [0, 0, 0.4]]))
+#    test_envi = env.AtomicEnvironment(struc_test, 0, cutoffs)
+    assert Parameters.compare_dict(gp_model.hyps_mask, mgp_model.hyps_mask)
 
     gp_pred_en, gp_pred_envar = gp_model.predict_local_energy_and_var(test_envi)
     gp_pred = np.array([gp_model.predict(test_envi, d+1) for d in range(3)]).T
     mgp_pred = mgp_model.predict(test_envi, mean_only=True)
+
+    delta = 1e-4
+    if '3' in bodies:
+        body_name = 'threebody'
+        a_pt = np.array([[0.3+delta, 0.4, 0.5]])
+        b_pt = np.array([[0.3-delta, 0.4, 0.5]])
+        c_pt = np.array([[0.3, 0.4, 0.5]])
+
+        a = mgp_model.maps[body_name].maps[0].mean(a_pt)
+        b = mgp_model.maps[body_name].maps[0].mean(b_pt)
+        c = mgp_model.maps[body_name].maps[0].mean(c_pt, with_derivatives=True)
+        print(a, b, (a-b)/(2*delta), c)
+
+        a_pt = np.array([[0.3, 0.4+delta, 0.5]])
+        b_pt = np.array([[0.3, 0.4-delta, 0.5]])
+
+        a = mgp_model.maps[body_name].maps[0].mean(a_pt)
+        b = mgp_model.maps[body_name].maps[0].mean(b_pt)
+        print(a, b, (a-b)/(2*delta))
+
+        a_pt = np.array([[0.4+delta, 0.3, 0.5]])
+        b_pt = np.array([[0.4-delta, 0.3, 0.5]])
+
+        a = mgp_model.maps[body_name].maps[0].mean(a_pt)
+        b = mgp_model.maps[body_name].maps[0].mean(b_pt)
+        print(a, b, (a-b)/(2*delta))
+
+
+    if '2' in bodies:
+        body_name = 'twobody'
+        a_pt = np.array([[0.3+delta]])
+        b_pt = np.array([[0.3-delta]])
 
     # check mgp is within 2 meV/A of the gp
     if map_force:
@@ -171,7 +208,8 @@ def test_predict(all_gp, all_mgp, bodies, multihyps, map_force):
 #                f"{bodies} body {map_str} mapping is wrong"
 
     print(mgp_pred, gp_pred)
-    assert(np.isclose(mgp_pred[0][0], gp_pred[0][0], atol=2e-3)), \
+    # TODO: energy block accuracy
+    assert(np.allclose(mgp_pred[0], gp_pred[0], atol=2e-3)), \
             f"{bodies} body {map_str} mapping is wrong"
 #    assert(np.abs(mgp_pred[1] - gp_pred_var) < 2e-3), \
 #            f"{bodies} body {map_str} mapping var is wrong"
