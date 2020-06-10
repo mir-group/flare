@@ -164,6 +164,7 @@ class SingleMapXbody:
             self.build_map_container()
 
 
+
     def get_grid_env(self, GP):
         if isinstance(GP.cutoffs, dict):
             max_cut = np.max(list(GP.cutoffs.values()))
@@ -221,28 +222,29 @@ class SingleMapXbody:
 
         # ------- call gengrid functions ---------------
         args = [GP.name, grid_env, kernel_info]
-        if self.kernel_name == "threebody" and (not self.map_force):
-            mapk = str_to_mapped_kernel(self.kernel_name, GP.component, GP.hyps_mask)
-            mapped_kernel_info = (mapk,
-                                  kernel_info[3], kernel_info[4], kernel_info[5])
-            args = [GP.name, grid_env, mapped_kernel_info]
+        # if self.kernel_name == "threebody" and (not self.map_force):
+        #     mapk = str_to_mapped_kernel(self.kernel_name, GP.component, GP.hyps_mask)
+        #     mapped_kernel_info = (mapk,
+        #                           kernel_info[3], kernel_info[4], kernel_info[5])
+        #     args = [GP.name, grid_env, mapped_kernel_info]
 
         if processes == 1:
             args = [GP.name, grid_env, kernel_info]
-            if self.kernel_name == "threebody" and (not self.map_force): # TODO: finish force mapping
-                k12_v_force = self._gengrid_numba(GP.name, True, 0, n_envs, grid_env,
-                                                  mapped_kernel_info)
-                k12_v_energy = self._gengrid_numba(GP.name, False, 0, n_strucs, grid_env,
-                                                  mapped_kernel_info)
-            else:
-                k12_v_force = self._gengrid_serial(args, True, n_envs)
-                k12_v_energy = self._gengrid_serial(args, False, n_strucs)
+            # if self.kernel_name == "threebody" and (not self.map_force): # TODO: finish force mapping
+            #     k12_v_force = self._gengrid_numba(GP.name, True, 0, n_envs, grid_env,
+            #                                       mapped_kernel_info)
+            #     k12_v_energy = self._gengrid_numba(GP.name, False, 0, n_strucs, grid_env,
+            #                                       mapped_kernel_info)
+            # else:
+            k12_v_force = self._gengrid_serial(args, True, n_envs)
+            k12_v_energy = self._gengrid_serial(args, False, n_strucs)
 
         else:
-            if self.kernel_name == "threebody" and (not self.map_force):
-                args = [GP.name, grid_env, mapped_kernel_info]
-            else:
-                args = [GP.name, grid_env, kernel_info]
+            # if self.kernel_name == "threebody" and (not self.map_force):
+            #     args = [GP.name, grid_env, mapped_kernel_info]
+            # else:
+            #    args = [GP.name, grid_env, kernel_info]
+            args = [GP.name, grid_env, kernel_info]
             k12_v_force = self._gengrid_par(args, True, n_envs, processes, self.kernel_name)
             k12_v_energy = self._gengrid_par(args, False, n_strucs, processes, self.kernel_name)
 
@@ -294,12 +296,12 @@ class SingleMapXbody:
             k12_slice = []
             for ibatch in range(nbatch):
                 s, e = block_id[ibatch]
-                if threebody: 
-                    k12_slice.append(pool.apply_async(self._gengrid_numba,
-                        args = (GP_name, force_block, s, e, grid_env, mapped_kernel_info)))
-                else:
-                    k12_slice.append(pool.apply_async(self._gengrid_inner,
-                        args = args + [force_block, s, e]))
+                # if threebody:
+                #     k12_slice.append(pool.apply_async(self._gengrid_numba,
+                #         args = (GP_name, force_block, s, e, grid_env, mapped_kernel_info)))
+                # else:
+                k12_slice.append(pool.apply_async(self._gengrid_inner,
+                    args = args + [force_block, s, e]))
             k12_matrix = []
             for ibatch in range(nbatch):
                 k12_matrix += [k12_slice[ibatch].get()]
@@ -503,6 +505,13 @@ class SingleMapXbody:
     def write(self, f):
         '''
         Write LAMMPS coefficient file
+
+        This implementation only works for 2b and 3b. User should
+        implement overload in the actual class if the new kernel
+        has different coefficient format
+
+        In the future, it should be changed to writing in bin/hex
+        instead of decimal
         '''
 
         # write header
@@ -511,18 +520,25 @@ class SingleMapXbody:
         b = self.bounds[1]
         order = self.grid_num
 
-        header = ''
-        for term in [elems, a, b, order]:
-            for s in range(len(term)):
-                header += f'{term[s]} '
+        header = ' '.join(elems)
+        header += ' '+' '.join(map(repr, a))
+        header += ' '+' '.join(map(repr, b))
+        header += ' '+' '.join(map(str, order))
         f.write(header + '\n')
 
         # write coefficients
         coefs = self.mean.__coeffs__
-        coefs = np.reshape(coefs, np.prod(coefs.shape))
+        self.write_flatten_coeff(f, coefs)
+
+    def write_flatten_coeff(self, f, coefs):
+        """
+        flatten the coefficient and write it as
+        a block. each line has no more than 5 element.
+        the accuracy is restricted to .10
+        """
+        coefs = coefs.reshape([-1])
         for c, coef in enumerate(coefs):
-            f.write('{:.10e} '.format(coef))
+            f.write(' '+repr(coef))
             if c % 5 == 4 and c != len(coefs)-1:
                 f.write('\n')
-
         f.write('\n')

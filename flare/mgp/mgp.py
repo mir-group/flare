@@ -43,7 +43,7 @@ class MappedGaussianProcess:
 
     For `grid_params`, please set up the following keys and values
     Args:
-        'two_body': if 2-body is present, set as a dictionary of parameters 
+        'two_body': if 2-body is present, set as a dictionary of parameters
                     for 2-body mapping
 
     Examples:
@@ -78,11 +78,11 @@ class MappedGaussianProcess:
             self.hyps_mask = GP.hyps_mask
             self.cutoffs = GP.cutoffs
 
-        if 'load_grid' not in grid_params.keys():
-            grid_params['load_grid'] = None
-        if 'update' not in grid_params.keys():
+        if 'load_grid' not in grid_params:
+            grid_params['load_grid']= None
+        if 'update' not in grid_params:
             grid_params['update'] = False
-        if 'lower_bound_relax' not in grid_params.keys():
+        if 'lower_bound_relax' not in grid_params:
             grid_params['lower_bound_relax'] = 0.1
 
         self.maps = {}

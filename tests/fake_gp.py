@@ -32,7 +32,6 @@ def generate_hm(ntwobody, nthreebody, nmanybody=1, constraint=False, multihyps=T
 
     cutoff = 0.8
     if (multihyps is False):
-        hyps_label = []
         kernels = []
         parameters = {}
         if (ntwobody > 0):
