@@ -171,8 +171,8 @@ def test_lmp_calc(bodies, multihyps, all_lmp_calc):
     parameters = {'command': os.environ.get('lmp'), # set up executable for ASE
                   'newton': 'off',
                   'pair_style': 'mgp',
-                  'pair_coeff': [f'* * {label}.mgp H He {by} {ty}'],
-                  'mass': ['1 2', '2 4']}
+                  'pair_coeff': [f'* * {label}.mgp H He Li {by} {ty}'],
+                  'mass': ['1 2', '2 4', '3 6']}
     files = [f'{label}.mgp']
 
 

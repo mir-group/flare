@@ -223,7 +223,7 @@ def test_mgp_gpfa(all_mgp, all_gp):
     grid_params = {'load_grid': None,
                    'update': False}
     grid_params['threebody'] = grid_params_3b
-    unique_species = gp_model.training_statistics('species')
+    unique_species = gp_model.training_statistics['species']
 
     mgp_model = MappedGaussianProcess(grid_params, unique_species, n_cpus=1,
                 map_force=False)
