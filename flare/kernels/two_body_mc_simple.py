@@ -10,12 +10,18 @@ from math import exp
 
 class TwoBodyKernel:
     def __init__(self, hyperparameters: 'ndarray', cutoff: float,
+                 separate_hyperparameters: bool = False,
+                 separate_cutoffs: bool = False,
                  cutoff_func: Callable = cf.quadratic_cutoff):
         self.hyperparameters = hyperparameters
         self.signal_variance = hyperparameters[0]
         self.length_scale = hyperparameters[1]
-        self.cutoff = cutoff
-        self.cutoff_func = cutoff_func
+
+        super().__init__(self,
+                       separate_hyperparameters=separate_hyperparameters,
+                       seperate_cutoffs=separate_cutoffs,
+                       cutoff=cutoff,
+                       cutoff_func=cutoff_func)
 
     def energy_energy(self, env1: AtomicEnvironment, env2: AtomicEnvironment):
 

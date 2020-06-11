@@ -3,6 +3,8 @@ from math import exp
 from numba import njit
 import flare.kernels.cutoffs as cf
 
+from abc import abstractmethod
+
 from flare.kernels.cutoffs import quadratic_cutoff
 
 from flare.kernels.sc import two_body_jit, two_body_grad_jit,\
@@ -20,6 +22,8 @@ from flare.parameters import Parameters
 import inspect
 from typing import List, Set
 from flare.utils.parameter_helper import ParameterHelper
+from flare.kernels.two_body_mc_simple import TwoBodyKernel
+from flare.kernels.three_body_mc_simple import ThreeBodyKernel
 
 # -----------------------------------------------------------------------------
 #                            master kernel class
@@ -29,34 +33,50 @@ from flare.utils.parameter_helper import ParameterHelper
 
 class KernelBase(object):
 
-    def __init__(self):
-        pass
+    def __init__(self, separate_cutoffs = None, separate_hyperparameters =
+    None, cutoff=None, cutoff_func: callable = quadratic_cutoff):
 
+        self.separate_cutoffs = separate_cutoffs
+        self.separate_hyperparameters = separate_hyperparameters
+        self.cutoff = cutoff
+        self.cutoff_func = cutoff_func
+
+
+
+    @abstractmethod
     def energy_energy(self, env1:AtomicEnvironment, env2:AtomicEnvironment):
         pass
 
+    @abstractmethod
     def force_energy(self, env1: AtomicEnvironment,env2:AtomicEnvironment):
         pass
 
+    @abstractmethod
     def stress_energy(self, env1: AtomicEnvironment, env2: AtomicEnvironment):
         pass
 
+    @abstractmethod
     def force_force(self, env1: AtomicEnvironment, env2: AtomicEnvironment):
         pass
 
+    @abstractmethod
     def stress_force(self, env1: AtomicEnvironment, env2: AtomicEnvironment):
         pass
 
+    @abstractmethod
     def stress_stress(self, env1: AtomicEnvironment, env2: AtomicEnvironment):
         pass
 
+    @abstractmethod
     def force_force_gradient(self, env1: AtomicEnvironment,
                              env2: AtomicEnvironment):
         pass
 
+    @abstractmethod
     def energy_all(self, env1: AtomicEnvironment, env2: AtomicEnvironment):
         pass
 
+    @abstractmethod
     def force_all(self, env1: AtomicEnvironment, env2: AtomicEnvironment):
         pass
 
@@ -86,19 +106,12 @@ class CoreKernel(object):
                  two_body: bool = False,
                  three_body: bool = False,
                  many_body: bool = False,
-                 separate_cutoffs: bool =False,
+                 separate_cutoffs: bool = False,
                  separate_hyps: bool = False,
-                 multicomponent: bool = True,
+                 use_force: bool = True,
+                 use_energy: bool = False,
                  use_stress: bool = False
                  ):
-
-
-
-        self.call_arg_sets = []
-        self.force_callables = []
-        self.force_energy_callables = []
-        self.energy_callables = []
-        self.grad_callables = []
 
 
         # Set what attribtutes will need to be extracted from envs, hyps,
@@ -125,44 +138,21 @@ class CoreKernel(object):
         if self.many_body: kernel_string_list.append('many_body')
 
 
-
         #TODO line
         # TODO SEP HYP SETUP HERE
         self.hyp_helper = ParameterHelper(kernels=kernel_string_list)
-
-        if multicomponent and not separate_hyps:
-            self.elements_to_hyp_index =
-        else:
-            None
 
 
         # Add a callable and argument set for the two-body term
         if two_body:
 
             if separate_hyps:
-                self.two_body_hyps = hyp_helper.n_terms
+                self.two_body_hyps = self.hyp_helper.n_terms
             else:
                 self.two_body_hyps = 2
 
             self.two_body_kernel = TwoBodyKernel()
 
-        if three_body:
-            if not multicomponent:
-                self.force_callables.append(three_body_jit)
-                self.force_energy_callables.append(three_body_force_en_jit)
-                self.energy_callables.append(three_body_en_jit)
-                self.grad_callables.append(three_body_grad_jit)
-
-            elif multicomponent:
-
-                if two_body:
-                    self.force_callables.append(two_body_mc_jit)
-                    self.grad_callables.append(two_body_mc_grad_jit)
-
-        if many_body:
-            raise NotImplementedError
-
-    self.two_body_kernel()
 
 
 
@@ -296,8 +286,6 @@ class CoreKernel(object):
 
 
 
-
-
     def force_eval(self,
                  env1: AtomicEnvironment,
                  env2: AtomicEnvironment,
@@ -309,6 +297,11 @@ class CoreKernel(object):
                  **kwargs):
 
         value = 0
+
+        if self.two_body:
+            value += self.two_body_kernel.force_all()
+            if self.us
+            value += self.two_body_kernel()
 
         for i, kernel in enumerate(self.force_callables):
             value += self.evaluate_kernel(kernel=kernel, env1=env1,

@@ -9,27 +9,37 @@ from typing import Callable
 import flare.kernels.cutoffs as cf
 from math import exp
 
+from flare.kernels.core import KernelBase
 
-class ThreeBodyKernel:
+class ThreeBodyKernel(KernelBase):
+
     def __init__(self, hyperparameters: 'ndarray', cutoff: float,
                  cutoff_func: Callable = cf.quadratic_cutoff,
-                 seperate_hyperparameters: bool = False,
+                 separate_hyperparameters: bool = False,
                  separate_cutoffs: bool = False):
+
         self.hyperparameters = hyperparameters
         self.signal_variance = hyperparameters[0]
         self.length_scale = hyperparameters[1]
-        self.cutoff = cutoff
-        self.cutoff_func = cutoff_func
-        self.seperate_hyperparameters = seperate_hyperparameters
-        self.separate_cutoffs = separate_cutoffs):
 
-        return energy_energy(env1.bond_array_2, env1.ctype, env1.etypes,
-                             env2.bond_array_2, env2.ctype, env2.etypes,
-                             env1.cross_bond_inds, env2.cross_bond_inds,
-                             env1.cross_bond_dists, env2.cross_bond_dists,
-                             env1.triplet_counts, env2.triplet_counts,
-                             self.signal_variance, self.length_scale,
-                             self.cutoff, self.cutoff_func)
+        super().__init__(self,
+                       separate_hyperparameters=separate_hyperparameters,
+                       separate_cutoffs=separate_cutoffs,
+                       cutoff=cutoff,
+                       cutoff_func=cutoff_func)
+
+
+
+    def energy_energy(self, env1: AtomicEnvironment,
+                          env2: AtomicEnvironment):
+
+            return energy_energy(env1.bond_array_2, env1.ctype, env1.etypes,
+                                 env2.bond_array_2, env2.ctype, env2.etypes,
+                                 env1.cross_bond_inds, env2.cross_bond_inds,
+                                 env1.cross_bond_dists, env2.cross_bond_dists,
+                                 env1.triplet_counts, env2.triplet_counts,
+                                 self.signal_variance, self.length_scale,
+                                 self.cutoff, self.cutoff_func)
 
     def force_energy(self, env1: AtomicEnvironment, env2: AtomicEnvironment):
 
