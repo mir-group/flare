@@ -65,6 +65,7 @@ def params():
 
 @pytest.fixture(scope='module')
 def validation_env() -> AtomicEnvironment:
+    np.random.seed(0)
     test_pt = get_tstp(None)
     yield test_pt
     del test_pt

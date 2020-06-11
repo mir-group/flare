@@ -96,7 +96,6 @@ def get_gp(bodies, kernel_type='mc', multihyps=True, cellabc=[1, 1, 1.5],
     hl = hm['hyp_labels']
 
     # create test structure
-    np.random.seed(0)
     test_structure, forces = get_random_structure(cell, unique_species,
                                                   noa)
     energy = 3.14
@@ -137,7 +136,6 @@ def get_tstp(hm=None) -> AtomicEnvironment:
     cutoffs = {'twobody':0.8, 'threebody': 0.8, 'manybody': 0.8}
     noa = 10
 
-    np.random.seed(10)
     test_structure_2, _ = get_random_structure(cell, unique_species,
                                                noa)
 

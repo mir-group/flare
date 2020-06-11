@@ -42,7 +42,7 @@ def all_gp():
     for bodies in body_list:
         for multihyps in multi_list:
             gp_model = get_gp(bodies, 'mc', multihyps, cellabc=[2, 2, 2],
-                              force_only=force_block_only, noa=10)
+                              force_only=force_block_only, noa=2*int(bodies)*int(bodies))
             gp_model.parallel = True
             gp_model.n_cpus = 2
 
@@ -153,7 +153,7 @@ def test_cubic_spline(all_gp, all_mgp, bodies, multihyps, map_force):
 
     if '3' in bodies:
         body_name = 'threebody'
-    else:
+    elif '2' in bodies:
         body_name = 'twobody'
 
     nmap = len(mgp_model.maps[body_name].maps)
@@ -172,12 +172,13 @@ def test_cubic_spline(all_gp, all_mgp, bodies, multihyps, map_force):
                     b_pt = deepcopy(c_pt)
                     a_pt[0][j]+=delta
                     b_pt[0][j]-=delta
-                    a = mgp_model.maps[body_name].maps[i].mean(a_pt)
-                    b = mgp_model.maps[body_name].maps[i].mean(b_pt)
-                    print("spline", comp_code, i, a, b, (a-b)/(2*delta), c, cderv)
+                    a = mgp_model.maps[body_name].maps[i].mean(a_pt)[0]
+                    b = mgp_model.maps[body_name].maps[i].mean(b_pt)[0]
+                    num_derv = (a-b)/(2*delta)
+                    print("spline", comp_code, num_derv, cderv[0][0][j])
                     assert np.isclose(num_derv, cderv[0][0][j], rtol=1e-2)
 
-            if '2' in bodies:
+            elif '2' in bodies:
                 center = np.sum(mgp_model.maps[body_name].maps[i].bounds)/2.
                 a_pt = np.array([[center+delta]])
                 b_pt = np.array([[center-delta]])
@@ -324,7 +325,7 @@ def test_lmp_predict(all_gp, all_mgp, bodies, multihyps, map_force):
 
     # check that lammps agrees with gp to within 1 meV/A
     for i in range(3):
-        print("isclose?", lammps_forces[atom_num, i]-mgp_forces[0][i], mgp_forces[0][i])
+        print("isclose? diff:", lammps_forces[atom_num, i]-mgp_forces[0][i], "mgp value", mgp_forces[0][i])
         assert np.isclose(lammps_forces[atom_num, i], mgp_forces[0][i], rtol=1e-2)
 
     # for f in os.listdir("./"):

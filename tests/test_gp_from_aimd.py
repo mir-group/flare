@@ -210,6 +210,7 @@ def test_mgp_gpfa(all_mgp, all_gp):
     :return:
     '''
 
+    np.random.seed(10)
     gp_model  = get_gp('3', 'mc', False)
     gp_model.set_L_alpha()
 
