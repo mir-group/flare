@@ -403,15 +403,15 @@ def test_delete_force_data():
     :return:
     """
 
-    test_structure, forces = get_random_structure(np.eye(3),
+    test_structure, forces = get_random_structure(5.0*np.eye(3),
                                                   ['H', 'Be'],
                                                   5)
 
-    test_structure_2, forces_2 = get_random_structure(np.eye(3),
+    test_structure_2, forces_2 = get_random_structure(5.0*np.eye(3),
                                                   ['H', 'Be'],
                                                   5)
 
-    gp = GaussianProcess(kernels=['twobody'], cutoffs={'twobody':7})
+    gp = GaussianProcess(kernels=['twobody'], cutoffs={'twobody':0.8})
 
     gp.update_db(test_structure, forces)
 
