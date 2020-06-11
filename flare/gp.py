@@ -104,8 +104,6 @@ class GaussianProcess:
         else:
             self.logger_name = self.output.basename+'log'
 
-
-
         if self.hyps is None:
             # If no hyperparameters are passed in, assume 2 hyps for each
             # cutoff, plus one noise hyperparameter, and use a guess value
@@ -171,7 +169,7 @@ class GaussianProcess:
                            fileout_name=None, verbose="info")
             else:
                 self.logger_name = self.output.basename+'log'
-        logger_name = logging.getLogger(self.logger_name)
+        logger = logging.getLogger(self.logger_name)
 
 
         # check whether it's be loaded before
@@ -190,16 +188,16 @@ class GaussianProcess:
             while (self.name in _global_training_labels and count < 100):
                 time.sleep(random())
                 self.name = f'{base}_{count}'
-                logger_name.debug("Specified GP name is present in global memory; "
+                logger.debug("Specified GP name is present in global memory; "
                        "Attempting to rename the "
                             f"GP instance to {self.name}")
                 count += 1
             if (self.name in _global_training_labels):
                 milliseconds = int(round(time.time() * 1000) % 10000000)
                 self.name = f"{base}_{milliseconds}"
-                logger_name.debug("Specified GP name still present in global memory: "
+                logger.debug("Specified GP name still present in global memory: "
                        f"renaming the gp instance to {self.name}")
-            logger_name.info(f"Final name of the gp instance is {self.name}")
+            logger.info(f"Final name of the gp instance is {self.name}")
 
         self.sync_data()
 
@@ -357,6 +355,7 @@ class GaussianProcess:
                                         'maxls': line_steps,
                                         'maxiter': self.maxiter})
             except np.linalg.LinAlgError:
+                logger = logging.getLogger(self.logger_name)
                 logger.warning("Algorithm for L-BFGS-B failed. Changing to "
                           "BFGS for remainder of run.")
                 self.opt_algorithm = 'BFGS'
@@ -390,7 +389,7 @@ class GaussianProcess:
         """
 
         # Check that alpha is up to date with training set
-        size3 = len(self.training_data)*3
+        size3 = len(self.training_data) * 3 + len(self.training_structures)
 
         # If model is empty, then just return
         if size3 == 0:
@@ -681,8 +680,9 @@ class GaussianProcess:
                 new_gp.alpha = None
                 new_gp.ky_mat_inv = None
                 filename = dictionary['ky_mat_file']
-                Warning("the covariance matrices are not loaded"
-                        f"because {filename} cannot be found")
+                logger = logging.getLogger(self.logger_name)
+                logger.warning("the covariance matrices are not loaded"
+                               f"because {filename} cannot be found")
         else:
             new_gp.ky_mat_inv = np.array(dictionary['ky_mat_inv']) \
                 if dictionary.get('ky_mat_inv') is not None else None
@@ -751,6 +751,50 @@ class GaussianProcess:
 
         if train:
             self.train()
+
+    def remove_force_data(self, indexes: Union[int, List[int]],
+                          update_matrices: bool = True):
+        """
+        Remove force components from the model. Convenience function which
+        deletes individual data points.
+
+        Matrices should *always* be updated if you intend to use the GP to make
+        predictions afterwards. This might be time consuming for large GPs,
+        so, it is provided as an option, but, only do so with extreme caution.
+        (Undefined behavior may result if you try to make predictions and/or
+        add to the training set afterwards).
+
+        :param indexes: Indexes of envs in training data to remove.
+        :param update_matrices: If false, will not update the GP's matrices
+            afterwards (which can be time consuming for large models).
+            This should essentially always be true except for niche development
+            applications.
+        :return:
+        """
+
+        # Listify input even if one integer
+        if isinstance(indexes, int):
+            indexes = [indexes]
+
+        if max(indexes) > len(self.training_data):
+            raise ValueError("Index out of range of data")
+
+        # Get in reverse order so that modifying higher indexes doesn't affect
+        # lower indexes
+        indexes.sort(reverse=True)
+
+        for i in indexes:
+            del self.training_data[i]
+            del self.training_labels[i]
+
+        self.training_labels_np = np.hstack(self.training_labels)
+        self.all_labels = np.concatenate((self.training_labels_np,
+                                          self.energy_labels_np))
+        self.sync_data()
+
+        if update_matrices:
+            self.set_L_alpha()
+            self.compute_matrices()
 
     def write_model(self, name: str, format: str = 'json'):
         """
@@ -830,7 +874,7 @@ class GaussianProcess:
                         gp_model.l_mat = None
                         gp_model.alpha = None
                         gp_model.ky_mat_inv = None
-                        Warning("the covariance matrices are not loaded"
+                        Warning("the covariance matrices are not loaded" \
                                 f"it can take extra long time to recompute")
 
         else:
@@ -838,7 +882,6 @@ class GaussianProcess:
                              ".json or .pickle format.")
 
         gp_model.check_instantiation()
-
         return gp_model
 
     @property
