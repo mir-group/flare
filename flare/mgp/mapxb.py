@@ -368,7 +368,6 @@ class SingleMapXbody:
 
         # double check the container and the GP is consistent
         if not Parameters.compare_dict(GP.hyps_mask, self.hyps_mask):
-            self.hyps_mask = GP.hyps_mask
             rebuild_container = True
 
         # check if bounds are updated
@@ -394,7 +393,6 @@ class SingleMapXbody:
             y_mean = np.load(f'{self.load_grid}grid{self.bodies}_mean_{self.species_code}.npy')
             y_var = np.load(f'{self.load_grid}grid{self.bodies}_var_{self.species_code}.npy')
 
-        y_mean, y_var = self.GenGrid(GP)
         self.mean.set_values(y_mean)
         if not self.mean_only:
             if self.svd_rank == 'auto':
