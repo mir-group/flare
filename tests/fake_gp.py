@@ -13,7 +13,7 @@ def get_random_structure(cell, unique_species, noa):
     """Create a random test structure """
 
     forces = (np.random.random([noa, 3])-0.5)*2
-    positions = (np.random.random([noa, 3])-0.5)*2
+    positions = np.random.random([noa, 3])
     species = [unique_species[np.random.randint(0, len(unique_species))] \
             for i in range(noa)]
 

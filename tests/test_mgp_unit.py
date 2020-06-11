@@ -166,6 +166,7 @@ def test_cubic_spline(all_gp, all_mgp, bodies, multihyps, map_force):
 
                 c_pt = np.array([[0.3, 0.4, 0.5]])
                 c, cderv = mgp_model.maps[body_name].maps[i].mean(c_pt, with_derivatives=True)
+                cderv = cderv.reshape([-1])
 
                 for j in range(3):
                     a_pt = deepcopy(c_pt)
@@ -175,21 +176,21 @@ def test_cubic_spline(all_gp, all_mgp, bodies, multihyps, map_force):
                     a = mgp_model.maps[body_name].maps[i].mean(a_pt)[0]
                     b = mgp_model.maps[body_name].maps[i].mean(b_pt)[0]
                     num_derv = (a-b)/(2*delta)
-                    print("spline", comp_code, num_derv, cderv[0][0][j])
-                    assert np.isclose(num_derv, cderv[0][0][j], rtol=1e-2)
+                    print("spline", comp_code, num_derv, cderv[j])
+                    assert np.isclose(num_derv, cderv[j], rtol=1e-2)
 
             elif '2' in bodies:
                 center = np.sum(mgp_model.maps[body_name].maps[i].bounds)/2.
                 a_pt = np.array([[center+delta]])
                 b_pt = np.array([[center-delta]])
                 c_pt = np.array([[center]])
-                # print(mgp_model.maps[body_name].maps[i].mean.__coeffs__)
                 a = mgp_model.maps[body_name].maps[i].mean(a_pt)[0]
                 b = mgp_model.maps[body_name].maps[i].mean(b_pt)[0]
                 c, cderv = mgp_model.maps[body_name].maps[i].mean(c_pt, with_derivatives=True)
+                cderv = cderv.reshape([-1])[0]
                 num_derv = (a-b)/(2*delta)
-                print("spline", num_derv, cderv[0][0][0])
-                assert np.isclose(num_derv, cderv[0][0][0], rtol=1e-2)
+                print("spline", num_derv, cderv)
+                assert np.isclose(num_derv, cderv, rtol=1e-2)
 
 
 @pytest.mark.parametrize('bodies', body_list)
