@@ -211,28 +211,28 @@ class TestAlgebra():
        test_gp.n_cpus = n_cpus
        test_gp.set_L_alpha()
 
-    @pytest.mark.parametrize('par, n_cpus', [  #(True, 2),
-                                             (False, 1)])
-    @pytest.mark.parametrize('multihyps', multihyps_list)
-    def test_update_L_alpha(self, all_gps, params, par, n_cpus, multihyps):
-        # set up gp model
-        test_gp = all_gps[multihyps]
-        test_gp.parallel = par
-        test_gp.n_cpus = n_cpus
+   @pytest.mark.parametrize('par, n_cpus', [(True, 2),
+                                            (False, 1)])
+   @pytest.mark.parametrize('multihyps', multihyps_list)
+   def test_update_L_alpha(self, all_gps, params, par, n_cpus, multihyps):
+       # set up gp model
+       test_gp = all_gps[multihyps]
+       test_gp.parallel = par
+       test_gp.n_cpus = n_cpus
 
-        test_structure, forces = \
-            get_random_structure(params['cell'], params['unique_species'], 2)
-        energy = 3.14
-        test_gp.check_L_alpha()
-        test_gp.update_db(test_structure, forces, energy=energy)
-        test_gp.update_L_alpha()
+       test_structure, forces = \
+           get_random_structure(params['cell'], params['unique_species'], 2)
+       energy = 3.14
+       test_gp.check_L_alpha()
+       test_gp.update_db(test_structure, forces, energy=energy)
+       test_gp.update_L_alpha()
 
-        # compare results with set_L_alpha
-        ky_mat_from_update = np.copy(test_gp.ky_mat)
-        test_gp.set_L_alpha()
-        ky_mat_from_set = np.copy(test_gp.ky_mat)
+       # compare results with set_L_alpha
+       ky_mat_from_update = np.copy(test_gp.ky_mat)
+       test_gp.set_L_alpha()
+       ky_mat_from_set = np.copy(test_gp.ky_mat)
 
-        assert (np.all(np.absolute(ky_mat_from_update - ky_mat_from_set)) < 1e-6)
+       assert (np.all(np.absolute(ky_mat_from_update - ky_mat_from_set)) < 1e-6)
 
 
 class TestIO():

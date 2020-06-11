@@ -184,26 +184,6 @@ def two_three_many_body_mc(env1, env2, d1, d2, cutoff_2b, cutoff_3b, cutoff_mb,
               nspec, spec_mask, triplet_mask, cut3b_mask)
 
     mbmcj = many_body_mc_sepcut_jit
-    # print("1", env1.q_array)
-    # print("2", env2.q_array)
-    # print("3", env1.q_neigh_array)
-    # print("4", env2.q_neigh_array)
-    # print("5", env1.q_neigh_grads)
-    # print("6", env2.q_neigh_grads)
-    # print("7", env1.ctype)
-    # print("8", env2.ctype)
-    # print("9", env1.etypes_mb)
-    # print("10", env2.etypes_mb)
-    # print("11", env1.unique_species)
-    # print("12", env2.unique_species)
-    # print("13", d1)
-    # print("14", d2)
-    # print("15", sigm)
-    # print("16", lsm)
-    # print("17", nspec)
-    # print("18", spec_mask)
-    # print("19", mb_mask)
-
     many_term = mbmcj(env1.q_array, env2.q_array,
                       env1.q_neigh_array, env2.q_neigh_array,
                       env1.q_neigh_grads, env2.q_neigh_grads,
@@ -430,17 +410,6 @@ def two_three_many_mc_en(env1, env2, cutoff_2b, cutoff_3b, cutoff_mb,
               triplet_mask, cut3b_mask)/9.
 
     mbmcj = many_body_mc_en_sepcut_jit
-    # print("1", env1.q_array)
-    # print("2", env2.q_array)
-    # print("7", env1.ctype)
-    # print("8", env2.ctype)
-    # print("11", env1.unique_species)
-    # print("12", env2.unique_species)
-    # print("15", sigm)
-    # print("16", lsm)
-    # print("17", nspec)
-    # print("18", spec_mask)
-    # print("19", mb_mask)
     many_term = mbmcj(env1.q_array, env2.q_array,
                       env1.ctype, env2.ctype,
                       env1.unique_species, env2.unique_species,
