@@ -953,6 +953,14 @@ def en_kern_vec(name, energy_force_kernel, energy_energy_kernel, x, hyps,
     return kernel_vector
 
 
+def efs_kern_vec(name, efs_force_kernel, efs_energy_kernel, x, hyps,
+                 cutoffs=None, hyps_mask=None, n_cpus=1, n_sample=100):
+
+    size1 = len(_global_training_data[name])
+    size2 = len(_global_training_structures[name])
+    pass
+
+
 # --------------------------------------------------------------------------
 #                      Ky hyperparameter gradient
 # --------------------------------------------------------------------------

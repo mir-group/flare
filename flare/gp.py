@@ -633,6 +633,9 @@ class GaussianProcess:
 
         return pred_mean, pred_var
 
+    def predict_efs(self, x_t: AtomicEnvironment):
+        pass
+
     def set_L_alpha(self):
         """
         Invert the covariance matrix, setting L (a lower triangular
@@ -761,7 +764,8 @@ class GaussianProcess:
 
         # Remove the callables
         for key in ['kernel', 'kernel_grad', 'energy_kernel',
-                    'energy_force_kernel']:
+                    'energy_force_kernel', 'efs_energy_kernel',
+                    'efs_force_kernel']:
             if out_dict.get(key) is not None:
                 del out_dict[key]
 
@@ -916,7 +920,6 @@ class GaussianProcess:
             self.alpha = None
             self.ky_mat_inv = None
 
-
         supported_formats = ['json', 'pickle', 'binary']
 
         if format.lower() == 'json':
@@ -936,8 +939,6 @@ class GaussianProcess:
             self.l_mat = temp_l_mat
             self.alpha = temp_alpha
             self.ky_mat_inv = temp_ky_mat_inv
-
-
 
     @staticmethod
     def from_file(filename: str, format: str = ''):
