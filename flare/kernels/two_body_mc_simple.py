@@ -548,8 +548,9 @@ def efs_energy(bond_array_1, c1, etypes1, bond_array_2, c2, etypes2,
                sig, ls, r_cut, cutoff_func):
 
     energy_kernel = 0
-    force_kernels = np.zeros(3)
-    stress_kernels = np.zeros(6)
+    # TODO: add dtype to other zeros
+    force_kernels = np.zeros(3, dtype=np.float)
+    stress_kernels = np.zeros(6, dtype=np.float)
 
     ls1 = 1 / (2 * ls * ls)
     ls2 = 1 / (ls * ls)

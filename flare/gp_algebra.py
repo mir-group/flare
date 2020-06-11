@@ -273,6 +273,43 @@ def parallel_vector_construction(pack_function, name, x, kernel, hyps,
     return vector
 
 
+def multiple_array_construction(pack_function, name, x, kernel, hyps,
+                                cutoffs, hyps_mask, block_id, nbatch, size,
+                                mult, array_sizes):
+    result_queue = mp.Queue()
+    children = []
+    for wid in range(nbatch):
+        s, e = block_id[wid]
+        children.append(
+            mp.Process(
+                target=queue_wrapper,
+                args=(result_queue, wid, pack_function,
+                      (name, s, e, x, kernel, hyps, cutoffs, hyps_mask))))
+
+    # Run child processes.
+    for c in children:
+        c.start()
+
+    # Initialize arrays.
+    n_arrays = len(array_sizes)
+    arrays = []
+    for n in range(n_arrays):
+        arrays.append(np.zeros(array_sizes[n]))
+
+    # Wait for all results to arrive.
+    for _ in range(nbatch):
+        wid, result_chunk = result_queue.get(block=True)
+        s, e = block_id[wid]
+        for n in range(n_arrays):
+            arrays[n][:, s * mult:e * mult] = result_chunk
+
+    # Join child processes (clean up zombies).
+    for c in children:
+        c.join()
+
+    return arrays
+
+
 # --------------------------------------------------------------------------
 #                            Ky construction
 # --------------------------------------------------------------------------
@@ -809,7 +846,7 @@ def efs_force_vector_unit(name, s, e, x, efs_force_kernel, hyps, cutoffs,
                           hyps_mask):
     size = e - s
 
-    k_ef = np.zeros(size * 3)
+    k_ef = np.zeros((1, size * 3))
     k_ff = np.zeros((3, size * 3))
     k_sf = np.zeros((6, size * 3))
 
@@ -822,7 +859,7 @@ def efs_force_vector_unit(name, s, e, x, efs_force_kernel, hyps, cutoffs,
         ind1 = m_index * 3
         ind2 = (m_index + 1) * 3
 
-        k_ef[ind1:ind2] = ef
+        k_ef[:, ind1:ind2] = ef
         k_ff[:, ind1:ind2] = ff
         k_sf[:, ind1:ind2] = sf
 
@@ -835,7 +872,7 @@ def efs_energy_vector_unit(name, s, e, x, efs_energy_kernel, hyps, cutoffs,
     size = e - s
     args = from_mask_to_args(hyps, hyps_mask, cutoffs)
 
-    k_ee = np.zeros(size)
+    k_ee = np.zeros((1, size))
     k_fe = np.zeros((3, size))
     k_se = np.zeros((6, size))
 
@@ -852,7 +889,7 @@ def efs_energy_vector_unit(name, s, e, x, efs_energy_kernel, hyps, cutoffs,
             fe_curr += fe
             se_curr += se
 
-        k_ee[m_index] = ee_curr
+        k_ee[:, m_index] = ee_curr
         k_fe[:, m_index] = fe_curr
         k_se[:, m_index] = se_curr
 
@@ -966,26 +1003,69 @@ def force_force_vector(name, kernel, x, d_1, hyps, cutoffs=None,
     return k12_v
 
 
-def efs_force_vector(name, kernel, x, hyps, cutoffs=None, hyps_mask=None,
-                     n_cpus=1, n_sample=100):
+def efs_force_vector(name, efs_force_kernel, x, hyps, cutoffs=None,
+                     hyps_mask=None, n_cpus=1, n_sample=100):
     """
     Returns covariances between the local eneregy, force components, and
     partial stresses of a test environment and the force labels in the
     training set.
     """
 
-    pass
+    size = len(_global_training_data[name])
+
+    if (n_cpus is None):
+        n_cpus = mp.cpu_count()
+
+    # Perform serial calculation if n_cpus = 1.
+    if (n_cpus == 1):
+        return efs_force_vector_unit(name, 0, size, x, efs_force_kernel, hyps,
+                                     cutoffs, hyps_mask)
+
+    # Otherwise, perform parallel calculation.
+    block_id, nbatch = partition_vector(n_sample, size, n_cpus)
+    pack_function = efs_force_vector_unit
+    mult = 3
+    n_comps = size * mult
+    array_sizes = [(1, n_comps), (3, n_comps), (6, n_comps)]
+
+    efs_arrays = \
+        multiple_array_construction(pack_function, name, x, efs_force_kernel,
+                                    hyps, cutoffs, hyps_mask, block_id, nbatch,
+                                    size, mult, array_sizes)
+
+    return efs_arrays
 
 
-def efs_energy_vector(name, kernel, x, hyps, cutoffs=None, hyps_mask=None,
-                      n_cpu=1, n_sample=100):
+def efs_energy_vector(name, efs_energy_kernel, x, hyps, cutoffs=None,
+                      hyps_mask=None, n_cpu=1, n_sample=100):
     """
     Returns covariances between the local eneregy, force components, and
     partial stresses of a test environment and the total energy labels in the
     training set.
     """
 
-    pass
+    size = len(_global_training_structures[name])
+
+    if (n_cpus is None):
+        n_cpus = mp.cpu_count()
+
+    # Perform serial calculation if n_cpus = 1.
+    if (n_cpus == 1):
+        return efs_energy_vector_unit(name, 0, size, x, efs_energy_kernel,
+                                      hyps, cutoffs, hyps_mask)
+
+    # Otherwise, perform parallel calculation.
+    block_id, nbatch = partition_vector(n_sample, size, n_cpus)
+    pack_function = efs_energy_vector_unit
+    mult = 1
+    array_sizes = [(1, size), (3, size), (6, size)]
+
+    efs_arrays = \
+        multiple_array_construction(pack_function, name, x, efs_energy_kernel,
+                                    hyps, cutoffs, hyps_mask, block_id, nbatch,
+                                    size, mult, array_sizes)
+
+    return efs_arrays
 
 
 def get_kernel_vector(name, force_force_kernel: Callable,
