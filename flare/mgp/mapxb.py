@@ -51,8 +51,9 @@ class MapXbody:
         self.lower_bound_relax = lower_bound_relax
         self.n_cpus = n_cpus
         self.n_sample = n_sample
+        self.spc = []
+        self.spc_set = []
 
-        # build_bond_struc is defined in subclass
         self.build_bond_struc(species_list)
 
         # build map container only when the bounds are specified
@@ -62,6 +63,12 @@ class MapXbody:
         if (not container_only) and (GP is not None) and \
                 (len(GP.training_data) > 0):
             self.build_map(GP)
+
+    def build_bond_struc(self, species_list):
+        raise NotImplementedError("need to be implemented in child class")
+
+    def get_arrays(self, atom_env):
+        raise NotImplementedError("need to be implemented in child class")
 
 
     def build_map_container(self, bounds):
@@ -117,7 +124,7 @@ class MapXbody:
         for i, spc in enumerate(spcs):
             lengths = np.array(comp_r[i])
             xyzs = np.array(comp_xyz[i])
-            map_ind = self.spc.index(spc)
+            map_ind = self.find_map_index(spc)
             f, vir, v, e = self.maps[map_ind].predict(lengths, xyzs,
                 self.map_force, mean_only)
             f_spcs += f
@@ -160,7 +167,17 @@ class SingleMapXbody:
         if not self.auto_lower and not self.auto_upper:
             self.build_map_container()
 
+    def set_bounds(self, lower_bound, upper_bound):
+        raise NotImplementedError("need to be implemented in child class")
 
+    def construct_grids(self):
+        raise NotImplementedError("need to be implemented in child class")
+
+    def set_env(self, grid_env, r):
+        raise NotImplementedError("need to be implemented in child class")
+
+    def skip_grid(self, r):
+        raise NotImplementedError("need to be implemented in child class")
 
     def get_grid_env(self, GP):
         if isinstance(GP.cutoffs, dict):
