@@ -829,25 +829,34 @@ def efs_force_vector_unit(name, s, e, x, efs_force_kernel, hyps, cutoffs,
     return k_ef, k_ff, k_sf
 
 
-# def efs_energy_vector_unit(name, s, e, x, kernel, hyps, cutoffs, hyps_mask):
-#     size = e - s
-#     args = from_mask_to_args(hyps, hyps_mask, cutoffs)
+def efs_energy_vector_unit(name, s, e, x, efs_energy_kernel, hyps, cutoffs,
+                           hyps_mask):
 
-#     k_ee =
-#     k_fe =
-#     k_se =
+    size = e - s
+    args = from_mask_to_args(hyps, hyps_mask, cutoffs)
 
-#     force_energy_unit = np.zeros(size,)
+    k_ee = np.zeros(size)
+    k_fe = np.zeros((3, size))
+    k_se = np.zeros((6, size))
 
-#     for m_index in range(size):
-#         training_structure = _global_training_structures[name][m_index+s]
-#         kern_curr = 0
-#         for environment in training_structure:
-#             kern_curr += kernel(x, environment, d_1, *args)
+    for m_index in range(size):
+        training_structure = _global_training_structures[name][m_index + s]
 
-#         force_energy_unit[m_index] = kern_curr
+        ee_curr = 0
+        fe_curr = np.zeros(3)
+        se_curr = np.zeros(6)
 
-#     return force_energy_unit
+        for environment in training_structure:
+            ee, fe, se = efs_energy_kernel(x, environment, *args)
+            ee_curr += ee
+            fe_curr += fe
+            se_curr += se
+
+        k_ee[m_index] = ee_curr
+        k_fe[:, m_index] = fe_curr
+        k_se[:, m_index] = se_curr
+
+    return k_ee, k_fe, k_se
 
 
 def energy_energy_vector(name, kernel, x, hyps, cutoffs=None,
