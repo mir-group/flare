@@ -16,7 +16,7 @@ from flare.utils.element_coder import _Z_to_mass, _Z_to_element
 
 from .fake_gp import get_gp, get_random_structure
 
-body_list = ['2'] #, '3']
+body_list = ['2', '3']
 multi_list = [False, True]
 map_force_list = [False, True]
 force_block_only = True
@@ -41,8 +41,8 @@ def all_gp():
     np.random.seed(0)
     for bodies in body_list:
         for multihyps in multi_list:
-            gp_model = get_gp(bodies, 'mc', multihyps, cellabc=[1, 1, 1],
-                              force_only=force_block_only)
+            gp_model = get_gp(bodies, 'mc', multihyps, cellabc=[2, 2, 2],
+                              force_only=force_block_only, noa=10)
             gp_model.parallel = True
             gp_model.n_cpus = 2
 
@@ -77,9 +77,9 @@ def test_init(bodies, multihyps, map_force, all_mgp, all_gp):
     grid_num_3 = 32
     grid_params = {}
     if ('2' in bodies):
-        grid_params['twobody'] = {'grid_num': [grid_num_2]}
+        grid_params['twobody'] = {'grid_num': [grid_num_2], 'lower_bound': [0.1]}
     if ('3' in bodies):
-        grid_params['threebody'] = {'grid_num': [grid_num_3 for d in range(3)]}
+        grid_params['threebody'] = {'grid_num': [grid_num_3]*3, 'lower_bound':[0.1]*3}
 
     lammps_location = f'{bodies}{multihyps}{map_force}.mgp'
     data = gp_model.training_statistics
@@ -157,38 +157,38 @@ def test_cubic_spline(all_gp, all_mgp, bodies, multihyps, map_force):
         body_name = 'twobody'
 
     nmap = len(mgp_model.maps[body_name].maps)
-    test_comp = 0
-    maxv = 0
     for i in range(nmap):
-        maxvalue = np.max(np.abs(mgp_model.maps[body_name].maps[0].mean.__coeffs__))
-        if maxvalue > maxv:
-            test_comp = i
-            maxv = maxvalue
+        maxvalue = np.max(np.abs(mgp_model.maps[body_name].maps[i].mean.__coeffs__))
+        if maxvalue >0:
+            comp_code = mgp_model.maps[body_name].maps[i].species_code
 
-    if '3' in bodies:
+            if '3' in bodies:
 
-        c_pt = np.array([[0.3, 0.4, 0.5]])
-        c, cderv = mgp_model.maps[body_name].maps[test_comp].mean(c_pt, with_derivatives=True)
+                c_pt = np.array([[0.3, 0.4, 0.5]])
+                c, cderv = mgp_model.maps[body_name].maps[i].mean(c_pt, with_derivatives=True)
 
-        for i in range(3):
-            a_pt = deepcopy(c_pt)
-            b_pt = deepcopy(c_pt)
-            a_pt[0][i]+=delta
-            b_pt[0][i]-=delta
-            a = mgp_model.maps[body_name].maps[test_comp].mean(a_pt)
-            b = mgp_model.maps[body_name].maps[test_comp].mean(b_pt)
-            print("spline", i, a, b, (a-b)/(2*delta), c, cderv)
+                for j in range(3):
+                    a_pt = deepcopy(c_pt)
+                    b_pt = deepcopy(c_pt)
+                    a_pt[0][j]+=delta
+                    b_pt[0][j]-=delta
+                    a = mgp_model.maps[body_name].maps[i].mean(a_pt)
+                    b = mgp_model.maps[body_name].maps[i].mean(b_pt)
+                    print("spline", comp_code, i, a, b, (a-b)/(2*delta), c, cderv)
+                    assert np.isclose(num_derv, cderv[0][0][j], rtol=1e-2)
 
-    if '2' in bodies:
-        a_pt = np.array([[0.3+delta]])
-        b_pt = np.array([[0.3-delta]])
-        c_pt = np.array([[0.3]])
-        a = mgp_model.maps[body_name].maps[test_comp].mean(a_pt)[0]
-        b = mgp_model.maps[body_name].maps[test_comp].mean(b_pt)[0]
-        c, cderv = mgp_model.maps[body_name].maps[test_comp].mean(c_pt, with_derivatives=True)
-        num_derv = (a-b)/(2*delta)
-        print("spline", num_derv, cderv[0][0][0])
-        assert np.isclose(num_derv, cderv[0][0][0], rtol=1e-2)
+            if '2' in bodies:
+                center = np.sum(mgp_model.maps[body_name].maps[i].bounds)/2.
+                a_pt = np.array([[center+delta]])
+                b_pt = np.array([[center-delta]])
+                c_pt = np.array([[center]])
+                # print(mgp_model.maps[body_name].maps[i].mean.__coeffs__)
+                a = mgp_model.maps[body_name].maps[i].mean(a_pt)[0]
+                b = mgp_model.maps[body_name].maps[i].mean(b_pt)[0]
+                c, cderv = mgp_model.maps[body_name].maps[i].mean(c_pt, with_derivatives=True)
+                num_derv = (a-b)/(2*delta)
+                print("spline", num_derv, cderv[0][0][0])
+                assert np.isclose(num_derv, cderv[0][0][0], rtol=1e-2)
 
 
 @pytest.mark.parametrize('bodies', body_list)
@@ -229,16 +229,18 @@ def test_predict(all_gp, all_mgp, bodies, multihyps, map_force):
     else:
         map_str = 'energy'
         gp_pred_var = gp_pred_envar
+    # TODO: energy block accuracy
 #        assert(np.abs(mgp_pred[3] - gp_pred_en) < 2e-3), \
 #                f"{bodies} body {map_str} mapping is wrong"
 
     if multihyps and ('3' in bodies):
         pytest.skip()
 
-    # TODO: energy block accuracy
     print("isclose?", mgp_pred[0]-gp_pred[0], gp_pred[0])
     assert(np.allclose(mgp_pred[0], gp_pred[0], atol=4e-3)), \
             f"{bodies} body {map_str} mapping is wrong"
+
+    # TODO: energy block accuracy
 #    assert(np.abs(mgp_pred[1] - gp_pred_var) < 2e-3), \
 #            f"{bodies} body {map_str} mapping var is wrong"
 

@@ -74,14 +74,13 @@ def generate_hm(ntwobody, nthreebody, nmanybody=1, constraint=False, multihyps=T
 
 
 def get_gp(bodies, kernel_type='mc', multihyps=True, cellabc=[1, 1, 1.5],
-           force_only=False) -> GaussianProcess:
+           force_only=False, noa=5) -> GaussianProcess:
     """Returns a GP instance with a two-body numba-based kernel"""
     print("\nSetting up...\n")
 
     # params
     cell = np.diag(cellabc)
     unique_species = [2, 1, 3]
-    noa = 5
 
     ntwobody = 0
     nthreebody = 0
