@@ -29,12 +29,14 @@ def test_force_en_multi_vs_simple():
     hyps, hm, cut = generate_hm(1, 1, cutoffs, False)
 
     # mc_simple
-    kernel0, kg0, en_kernel0, force_en_kernel0 = str_to_kernel_set("2+3+mb+mc", False)
+    kernel0, kg0, en_kernel0, force_en_kernel0, _, _ = \
+        str_to_kernel_set("2+3+mb+mc", False)
     hyps = np.ones(7, dtype=np.float64)
     args0 = (hyps, cutoffs)
 
     # mc_sephyps
-    kernel, kg, en_kernel, force_en_kernel = str_to_kernel_set("2+3+mb+mc", True)
+    kernel, kg, en_kernel, force_en_kernel, _, _ = \
+        str_to_kernel_set("2+3+mb+mc", True)
     args1 = from_mask_to_args(hyps, hm, cutoffs)
 
     funcs = [[kernel0, kg0, en_kernel0, force_en_kernel0],
