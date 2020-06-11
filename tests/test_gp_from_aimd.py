@@ -223,16 +223,15 @@ def test_mgp_gpfa(all_mgp, all_gp):
     grid_params = {'load_grid': None,
                    'update': False}
     grid_params['threebody'] = grid_params_3b
-    species_list = [1, 2]
+    unique_species = gp_model.training_statistics('species')
 
-    mgp_model = MappedGaussianProcess(grid_params, species_list, n_cpus=1,
+    mgp_model = MappedGaussianProcess(grid_params, unique_species, n_cpus=1,
                 map_force=False)
 
     mgp_model.build_map(gp_model)
 
     nenv = 10
     cell = np.eye(3)
-    unique_species = gp_model.training_data[0].species
     struc, f = get_random_structure(cell, unique_species, nenv)
 
     struc.forces = np.array(f)

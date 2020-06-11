@@ -15,6 +15,7 @@ from tests.fake_gp import get_gp, get_random_structure
 body_list = ['2', '3']
 multi_list = [False, True]
 curr_path = os.getcwd()
+force_block_only = True
 
 def clean():
     for f in os.listdir("./"):
@@ -37,9 +38,10 @@ def all_gp():
 
     allgp_dict = {}
     np.random.seed(0)
-    for bodies in ['2', '3', '2+3']:
-        for multihyps in [False, True]:
-            gp_model = get_gp(bodies, 'mc', multihyps)
+    for bodies in body_list:
+        for multihyps in multi_list:
+            gp_model = get_gp(bodies, 'mc', multihyps, cellabc=[2, 2, 2],
+                              force_only=force_block_only, noa=2*int(bodies)*int(bodies))
             gp_model.parallel = True
             gp_model.n_cpus = 2
             allgp_dict[f'{bodies}{multihyps}'] = gp_model
@@ -51,8 +53,8 @@ def all_gp():
 def all_mgp():
 
     allmgp_dict = {}
-    for bodies in ['2', '3', '2+3']:
-        for multihyps in [False, True]:
+    for bodies in body_list:
+        for multihyps in multi_list:
             allmgp_dict[f'{bodies}{multihyps}'] = None
 
     yield allmgp_dict
@@ -62,8 +64,8 @@ def all_mgp():
 def all_ase_calc():
 
     all_ase_calc_dict = {}
-    for bodies in ['2', '3', '2+3']:
-        for multihyps in [False, True]:
+    for bodies in body_list:
+        for multihyps in multi_list:
             all_ase_calc_dict[f'{bodies}{multihyps}'] = None
 
     yield all_ase_calc_dict
@@ -76,8 +78,8 @@ def all_lmp_calc():
         os.mkdir('tmp')
 
     all_lmp_calc_dict = {}
-    for bodies in ['2', '3', '2+3']:
-        for multihyps in [False, True]:
+    for bodies in body_list:
+        for multihyps in multi_list:
             all_lmp_calc_dict[f'{bodies}{multihyps}'] = None
 
     yield all_lmp_calc_dict
@@ -127,7 +129,7 @@ def test_init(bodies, multihyps, all_mgp, all_gp):
                                     'svd_rank': 14,
                                     }
 
-    species_list = [1, 2]
+    species_list = [1, 2, 3]
     mgp_model = MappedGaussianProcess(grid_params, species_list, n_cpus=1,
                 map_force=False, lmp_file_name=lammps_location, mean_only=True)
 
@@ -194,6 +196,7 @@ def test_lmp_predict(all_ase_calc, all_lmp_calc, bodies, multihyps):
     """
 
     currdir = os.getcwd()
+    print("currdir", currdir)
 
     label = f'{bodies}{multihyps}'
 
@@ -228,14 +231,21 @@ def test_lmp_predict(all_ase_calc, all_lmp_calc, bodies, multihyps):
     ase_atoms_lmp = struc_test.to_ase_atoms()
     ase_atoms_lmp.set_calculator(lmp_calc)
 
-    lmp_en = ase_atoms_lmp.get_potential_energy()
-    flare_en = ase_atoms_flare.get_potential_energy()
+    try:
+        lmp_en = ase_atoms_lmp.get_potential_energy()
+        flare_en = ase_atoms_flare.get_potential_energy()
 
-    lmp_stress = ase_atoms_lmp.get_stress()
-    flare_stress = ase_atoms_flare.get_stress()
+        lmp_stress = ase_atoms_lmp.get_stress()
+        flare_stress = ase_atoms_flare.get_stress()
 
-    lmp_forces = ase_atoms_lmp.get_forces()
-    flare_forces = ase_atoms_flare.get_forces()
+        lmp_forces = ase_atoms_lmp.get_forces()
+        flare_forces = ase_atoms_flare.get_forces()
+    except Exception as e:
+        os.chdir(currdir)
+        print(e)
+        raise e
+
+    os.chdir(currdir)
 
     # check that lammps agrees with gp to within 1 meV/A
     print(lmp_en, flare_en)
@@ -249,4 +259,3 @@ def test_lmp_predict(all_ase_calc, all_lmp_calc, bodies, multihyps):
         if (label in f) or (f in ['log.lammps']):
             os.remove(f)
 
-    os.chdir(currdir)
