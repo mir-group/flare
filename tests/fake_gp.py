@@ -11,17 +11,11 @@ from flare.utils.parameter_helper import ParameterHelper
 
 def get_random_structure(cell, unique_species, noa):
     """Create a random test structure """
-    np.random.seed(0)
 
-    positions = []
-    forces = []
-    species = []
-
-    for n in range(noa):
-        positions.append(np.random.uniform(-1, 1, 3))
-        forces.append(np.random.uniform(-1, 1, 3))
-        species.append(unique_species[np.random.randint(0,
-                                                        len(unique_species))])
+    forces = (np.random.random([noa, 3])-0.5)*2
+    positions = (np.random.random([noa, 3])-0.5)*2
+    species = [unique_species[np.random.randint(0, len(unique_species))] \
+            for i in range(noa)]
 
     test_structure = Structure(cell, species, positions)
 
@@ -79,7 +73,7 @@ def generate_hm(ntwobody, nthreebody, nmanybody=1, constraint=False, multihyps=T
     return hyps, hm, cut
 
 
-def get_gp(bodies, kernel_type='mc', multihyps=True, cellabc=[1, 1, 1.5], 
+def get_gp(bodies, kernel_type='mc', multihyps=True, cellabc=[1, 1, 1.5],
            force_only=False) -> GaussianProcess:
     """Returns a GP instance with a two-body numba-based kernel"""
     print("\nSetting up...\n")
@@ -103,6 +97,7 @@ def get_gp(bodies, kernel_type='mc', multihyps=True, cellabc=[1, 1, 1.5],
     hl = hm['hyp_labels']
 
     # create test structure
+    np.random.seed(0)
     test_structure, forces = get_random_structure(cell, unique_species,
                                                   noa)
     energy = 3.14
@@ -143,6 +138,7 @@ def get_tstp(hm=None) -> AtomicEnvironment:
     cutoffs = {'twobody':0.8, 'threebody': 0.8, 'manybody': 0.8}
     noa = 10
 
+    np.random.seed(10)
     test_structure_2, _ = get_random_structure(cell, unique_species,
                                                noa)
 
