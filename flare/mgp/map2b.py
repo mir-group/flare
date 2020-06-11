@@ -12,7 +12,7 @@ from flare.mgp.utils import get_bonds
 class Map2body(MapXbody):
     def __init__(self, args):
         '''
-        args: the same arguments as MapXbody, to guarantee they have the same 
+        args: the same arguments as MapXbody, to guarantee they have the same
             input parameters
         '''
 
@@ -39,6 +39,10 @@ class Map2body(MapXbody):
     def get_arrays(self, atom_env):
 
         return get_bonds(atom_env.ctype, atom_env.etypes, atom_env.bond_array_2)
+
+    def find_map_index(self, spc):
+        # use set because of permutational symmetry
+        return self.spc_set.index(set(spc))
 
 
 
@@ -79,7 +83,7 @@ class SingleMap2body(SingleMapXbody):
 
 
     def set_env(self, grid_env, r):
-        grid_env.bond_array_2 = np.array([[r, 1, 0, 0]]) 
+        grid_env.bond_array_2 = np.array([[r, 1, 0, 0]])
         return grid_env
 
     def skip_grid(self, r):
