@@ -388,7 +388,7 @@ def test_delete_force_data():
                                                   ['H', 'Be'],
                                                   5)
 
-    gp = GaussianProcess(kernel_name='2', cutoffs=[7])
+    gp = GaussianProcess(kernel_name='2', cutoffs=[2.5])
 
     gp.update_db(test_structure, forces)
 
