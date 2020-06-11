@@ -49,7 +49,7 @@ def many_body_mc_sepcut_jit(q_array_1, q_array_2,
     kern = 0
 
     useful_species = np.array(
-        list(set(species1).union(set(species2))), dtype=np.int8)
+        list(set(species1).intersection(set(species2))), dtype=np.int8)
 
     bc1 = spec_mask[c1]
     bc1n = bc1 * nspec
@@ -154,7 +154,7 @@ def many_body_mc_grad_sepcut_jit(q_array_1, q_array_2,
     ls_derv = np.zeros(nmb, dtype=np.float64)
 
     useful_species = np.array(
-        list(set(species1).union(set(species2))), dtype=np.int8)
+        list(set(species1).intersection(set(species2))), dtype=np.int8)
 
     bc1 = spec_mask[c1]
     bc1n = bc1 * nspec
@@ -296,7 +296,7 @@ def many_body_mc_force_en_sepcut_jit(q_array_1, q_array_2,
     kern = 0
 
     useful_species = np.array(
-        list(set(species1).union(set(species2))), dtype=np.int8)
+        list(set(species1).intersection(set(species2))), dtype=np.int8)
 
     bc1 = spec_mask[c1]
     bc1n = bc1 * nspec
@@ -365,7 +365,7 @@ def many_body_mc_en_sepcut_jit(q_array_1, q_array_2, c1, c2,
         float: Value of the many-body kernel.
     """
     useful_species = np.array(
-        list(set(species1).union(set(species2))), dtype=np.int8)
+        list(set(species1).intersection(set(species2))), dtype=np.int8)
 
     kern = 0
 
