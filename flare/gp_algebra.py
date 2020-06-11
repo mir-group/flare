@@ -790,7 +790,7 @@ def force_force_vector_unit(name, s, e, x, kernel, hyps, cutoffs, hyps_mask,
     Gets part of the force/force vector.
     """
 
-    size = (e - s)
+    size = e - s
     ds = [1, 2, 3]
 
     args = from_mask_to_args(hyps, hyps_mask, cutoffs)
@@ -803,6 +803,51 @@ def force_force_vector_unit(name, s, e, x, kernel, hyps, cutoffs, hyps_mask,
             k_v[m_index * 3 + d_2 - 1] = kernel(x, x_2, d_1, d_2, *args)
 
     return k_v
+
+
+def efs_force_vector_unit(name, s, e, x, efs_force_kernel, hyps, cutoffs,
+                          hyps_mask):
+    size = e - s
+
+    k_ef = np.zeros(size * 3)
+    k_ff = np.zeros((3, size * 3))
+    k_sf = np.zeros((6, size * 3))
+
+    args = from_mask_to_args(hyps, hyps_mask, cutoffs)
+
+    for m_index in range(size):
+        x_2 = _global_training_data[name][m_index + s]
+        ef, ff, sf = efs_force_kernel(x, x_2, *args)
+
+        ind1 = m_index * 3
+        ind2 = (m_index + 1) * 3
+
+        k_ef[ind1:ind2] = ef
+        k_ff[:, ind1:ind2] = ff
+        k_sf[:, ind1:ind2] = sf
+
+    return k_ef, k_ff, k_sf
+
+
+# def efs_energy_vector_unit(name, s, e, x, kernel, hyps, cutoffs, hyps_mask):
+#     size = e - s
+#     args = from_mask_to_args(hyps, hyps_mask, cutoffs)
+
+#     k_ee =
+#     k_fe =
+#     k_se =
+
+#     force_energy_unit = np.zeros(size,)
+
+#     for m_index in range(size):
+#         training_structure = _global_training_structures[name][m_index+s]
+#         kern_curr = 0
+#         for environment in training_structure:
+#             kern_curr += kernel(x, environment, d_1, *args)
+
+#         force_energy_unit[m_index] = kern_curr
+
+#     return force_energy_unit
 
 
 def energy_energy_vector(name, kernel, x, hyps, cutoffs=None,
@@ -912,6 +957,28 @@ def force_force_vector(name, kernel, x, d_1, hyps, cutoffs=None,
     return k12_v
 
 
+def efs_force_vector(name, kernel, x, hyps, cutoffs=None, hyps_mask=None,
+                     n_cpus=1, n_sample=100):
+    """
+    Returns covariances between the local eneregy, force components, and
+    partial stresses of a test environment and the force labels in the
+    training set.
+    """
+
+    pass
+
+
+def efs_energy_vector(name, kernel, x, hyps, cutoffs=None, hyps_mask=None,
+                      n_cpu=1, n_sample=100):
+    """
+    Returns covariances between the local eneregy, force components, and
+    partial stresses of a test environment and the total energy labels in the
+    training set.
+    """
+
+    pass
+
+
 def get_kernel_vector(name, force_force_kernel: Callable,
                       force_energy_kernel: Callable, x, d_1, hyps,
                       cutoffs=None, hyps_mask=None, n_cpus=1, n_sample=100):
@@ -958,6 +1025,7 @@ def efs_kern_vec(name, efs_force_kernel, efs_energy_kernel, x, hyps,
 
     size1 = len(_global_training_data[name])
     size2 = len(_global_training_structures[name])
+
     pass
 
 

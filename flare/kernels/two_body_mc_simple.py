@@ -76,6 +76,9 @@ class TwoBodyKernel:
                          self.signal_variance, self.length_scale,
                          self.cutoff, self.cutoff_func)
 
+    def efs_self(self, env1: AtomicEnvironment):
+        pass
+
 
 @njit
 def energy_energy(bond_array_1, c1, etypes1, bond_array_2, c2, etypes2,
