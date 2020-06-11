@@ -105,7 +105,9 @@ class SingleMap3body(SingleMapXbody):
         for d in range(3):
             mesh_list.append(np.reshape(mesh[d], n_grid))
 
-        return np.array(mesh_list).T
+        mesh_list = np.array(mesh_list).T
+
+        return mesh_list
 
 
     def set_env(self, grid_env, grid_pt):
@@ -120,6 +122,8 @@ class SingleMap3body(SingleMapXbody):
 
     def skip_grid(self, grid_pt):
         r1, r2, r12 = grid_pt
+
+        return False
 
         if not self.map_force:
             relaxation = 1/2 * np.max(self.grid_num) * self.grid_interval

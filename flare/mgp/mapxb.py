@@ -218,6 +218,7 @@ class SingleMapXbody:
 
         # ------- call gengrid functions ---------------
         args = [GP.name, grid_env, kernel_info]
+        self.use_grid_kern = True
         if self.use_grid_kern:
             try:
                 mapk = str_to_mapped_kernel(self.kernel_name, GP.component, GP.hyps_mask)
@@ -236,6 +237,17 @@ class SingleMapXbody:
             else:
                 k12_v_force = self._gengrid_serial(args, True, n_envs)
                 k12_v_energy = self._gengrid_serial(args, False, n_strucs)
+
+            k12_v_force_inner = self._gengrid_serial(args, True, n_envs)
+
+            try:
+                assert np.allclose(k12_v_force, k12_v_force_inner)
+            except:
+                print(k12_v_force)
+                print(k12_v_force_inner)
+
+                print(np.array(np.isclose(k12_v_force, k12_v_force_inner), dtype=int))
+                raise Exception
         else:
             if self.use_grid_kern:
                 args = [GP.name, grid_env, mapped_kernel_info]
@@ -424,7 +436,7 @@ class SingleMapXbody:
                 if min_dist < lower_bound:
                     lower_bound = min_dist
 
-        return np.max(lower_bound - self.lower_bound_relax, 0)
+        return np.max((lower_bound - self.lower_bound_relax, 0))
 
 
     def predict(self, lengths, xyzs, map_force, mean_only):
