@@ -107,10 +107,10 @@ class ThreeBodyKernel:
                          self.cutoff, self.cutoff_func)
 
     def efs_self(self, env1: AtomicEnvironment):
-        return efs_self(env1.bond_array_1, env1.ctype, env1.etypes,
+        return efs_self(env1.bond_array_3, env1.ctype, env1.etypes,
                         env1.cross_bond_inds, env1.cross_bond_dists,
-                        env1.triplets, self.signal_variance, self.length_scale,
-                        self.cutoff, self.cutoff_func)
+                        env1.triplet_counts, self.signal_variance,
+                        self.length_scale, self.cutoff, self.cutoff_func)
 
 
 @njit
@@ -1199,6 +1199,7 @@ def efs_self(bond_array_1, c1, etypes1, cross_bond_inds_1, cross_bond_dists_1,
                     fj2, _ = cutoff_func(r_cut, rj2, 0)
                     rj3 = cross_bond_dists_1[p, p + 1 + q]
                     fj3, _ = cutoff_func(r_cut, rj3, 0)
+                    fj = fj1 * fj2 * fj3
                     ej2 = etypes1[ind2]
 
                     r11 = ri1 - rj1
@@ -1222,7 +1223,6 @@ def efs_self(bond_array_1, c1, etypes1, cross_bond_inds_1, cross_bond_dists_1,
                         fj1, fdj1 = cutoff_func(r_cut, rj1, cj1)
                         cj2 = bond_array_1[ind2, d3 + 1]
                         fj2, fdj2 = cutoff_func(r_cut, rj2, cj2)
-                        fj = fj1 * fj2 * fj3
                         fdj_p1 = fdj1 * fj2 * fj3
                         fdj_p2 = fj1 * fdj2 * fj3
                         fdj = fdj_p1 + fdj_p2

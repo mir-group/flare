@@ -339,3 +339,17 @@ def test_efs(struc_envs, kernel):
     assert((np.abs(e3 - e4) < threshold).all())
     assert((np.abs(f3 - f4) < threshold).all())
     assert((np.abs(s3 - s4) < threshold).all())
+
+
+def test_efs_self(struc_envs):
+    test_env_1 = struc_envs[0][0]
+
+    e1, f1, s1 = kernel_3b.efs_self(test_env_1)
+
+    e2 = kernel_3b.energy_energy(test_env_1, test_env_1)
+    f2 = kernel_3b.force_force(test_env_1, test_env_1)
+    s2 = kernel_3b.stress_stress(test_env_1, test_env_1)
+
+    assert(np.abs(e1 - e2) < threshold)
+    assert((np.abs(f1 - np.diag(f2)) < threshold).all())
+    assert((np.abs(s1 - np.diag(s2)) < threshold).all())
