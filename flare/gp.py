@@ -13,7 +13,7 @@ from copy import deepcopy
 from numpy.random import random
 from scipy.linalg import solve_triangular
 from scipy.optimize import minimize
-from typing import List, Callable, Union
+from typing import List, Callable, Union, Tuple
 
 from flare.env import AtomicEnvironment
 from flare.gp_algebra import get_like_from_mats, get_neg_like_grad, \
@@ -753,7 +753,8 @@ class GaussianProcess:
             self.train()
 
     def remove_force_data(self, indexes: Union[int, List[int]],
-                          update_matrices: bool = True):
+                          update_matrices: bool = True)->Tuple[List[Structure],
+                                                              List['ndarray']]:
         """
         Remove force components from the model. Convenience function which
         deletes individual data points.
@@ -763,6 +764,9 @@ class GaussianProcess:
         so, it is provided as an option, but, only do so with extreme caution.
         (Undefined behavior may result if you try to make predictions and/or
         add to the training set afterwards).
+
+        Returns training data which was removed akin to a pop method, in order
+        of lowest to highest index passed in.
 
         :param indexes: Indexes of envs in training data to remove.
         :param update_matrices: If false, will not update the GP's matrices
@@ -782,10 +786,11 @@ class GaussianProcess:
         # Get in reverse order so that modifying higher indexes doesn't affect
         # lower indexes
         indexes.sort(reverse=True)
-
+        removed_data = []
+        removed_labels = []
         for i in indexes:
-            del self.training_data[i]
-            del self.training_labels[i]
+            removed_data.append(self.training_data.pop(i))
+            removed_labels.append(self.training_labels.pop(i))
 
         self.training_labels_np = np.hstack(self.training_labels)
         self.all_labels = np.concatenate((self.training_labels_np,
@@ -795,6 +800,12 @@ class GaussianProcess:
         if update_matrices:
             self.set_L_alpha()
             self.compute_matrices()
+
+        # Put removed data in order of lowest to highest index
+        removed_data.reverse()
+        removed_labels.reverse()
+
+        return removed_data, removed_labels
 
     def write_model(self, name: str, format: str = 'json'):
         """

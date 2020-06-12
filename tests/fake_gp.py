@@ -9,8 +9,10 @@ from flare.struc import Structure
 from flare.utils.parameter_helper import ParameterHelper
 
 
-def get_random_structure(cell, unique_species, noa):
+def get_random_structure(cell, unique_species, noa, set_seed:int = None):
     """Create a random test structure """
+    if set_seed:
+        np.random.seed(set_seed)
 
     forces = (np.random.random([noa, 3])-0.5)*2
     positions = np.random.random([noa, 3])
