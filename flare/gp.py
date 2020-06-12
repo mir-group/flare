@@ -111,7 +111,7 @@ class GaussianProcess:
 
         # TO DO, clean up all the other kernel arguments
         if kernel is None:
-            kernel, grad, ek, efk, efs_e, efs_f = \
+            kernel, grad, ek, efk, efs_e, efs_f, efs_self = \
                 str_to_kernel_set(kernel_name, multihyps)
             self.kernel = kernel
             self.kernel_grad = grad
@@ -119,6 +119,7 @@ class GaussianProcess:
             self.energy_kernel = ek
             self.efs_energy_kernel = efs_e
             self.efs_force_kernel = efs_f
+            self.efs_self_kernel = efs_self
             self.kernel_name = kernel.__name__
         else:
             DeprecationWarning("kernel, kernel_grad, energy_force_kernel "
@@ -765,7 +766,7 @@ class GaussianProcess:
         # Remove the callables
         for key in ['kernel', 'kernel_grad', 'energy_kernel',
                     'energy_force_kernel', 'efs_energy_kernel',
-                    'efs_force_kernel']:
+                    'efs_force_kernel', 'efs_self_kernel']:
             if out_dict.get(key) is not None:
                 del out_dict[key]
 

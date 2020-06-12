@@ -1284,4 +1284,3 @@ def str_to_mc_kernel(string: str, include_grad: bool = False):
         else:
             raise ValueError("Gradient callable for {} not found".format(
                 string))
-

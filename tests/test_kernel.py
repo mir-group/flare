@@ -13,6 +13,7 @@ from .fake_gp import generate_mb_envs
 list_to_test = ['2', '3', '2+3', 'mb', '2+3+mb']
 list_type = ['sc', 'mc']
 
+
 def generate_hm(kernel_name):
     hyps = []
     for term in ['2', '3', 'mb']:
@@ -42,7 +43,7 @@ def test_force_en(kernel_name, kernel_type):
 
     hyps = generate_hm(kernel_name)
 
-    _, _, en_kernel, force_en_kernel, _, _ = \
+    _, _, en_kernel, force_en_kernel, _, _, _ = \
         str_to_kernel_set(kernel_name+kernel_type)
     print(force_en_kernel.__name__)
 
@@ -53,7 +54,7 @@ def test_force_en(kernel_name, kernel_type):
 
     kern_finite_diff = 0
     if ('mb' in kernel_name):
-        _, _, enm_kernel, _, _, _ = str_to_kernel_set('mb'+kernel_type)
+        _, _, enm_kernel, _, _, _, _ = str_to_kernel_set('mb'+kernel_type)
         mhyps = hyps[(nterm-1)*2:]
         calc = 0
         for i in range(len(env1[0])):
@@ -64,7 +65,7 @@ def test_force_en(kernel_name, kernel_type):
 
     if ('2' in kernel_name):
         nbond = 1
-        _, _, en2_kernel, _, _, _ = str_to_kernel_set('2'+kernel_type)
+        _, _, en2_kernel, _, _, _, _ = str_to_kernel_set('2'+kernel_type)
         calc1 = en2_kernel(env1[2][0], env2[0][0], hyps[0:nbond * 2], cutoffs)
         calc2 = en2_kernel(env1[1][0], env2[0][0], hyps[0:nbond * 2], cutoffs)
         diff2b = 4 * (calc1 - calc2) / 2.0 / 2.0 / delta
@@ -74,7 +75,7 @@ def test_force_en(kernel_name, kernel_type):
         nbond = 0
 
     if ('3' in kernel_name):
-        _, _, en3_kernel, _, _, _ = str_to_kernel_set('3'+kernel_type)
+        _, _, en3_kernel, _, _, _, _ = str_to_kernel_set('3'+kernel_type)
         calc1 = en3_kernel(env1[2][0], env2[0][0], hyps[nbond * 2:], cutoffs)
         calc2 = en3_kernel(env1[1][0], env2[0][0], hyps[nbond * 2:], cutoffs)
         diff3b = 9 * (calc1 - calc2) / 2.0 / 3.0 / delta
@@ -105,7 +106,7 @@ def test_force(kernel_name, kernel_type):
     np.random.seed(10)
 
     hyps = generate_hm(kernel_name)
-    kernel, kg, en_kernel, fek, _, _ = \
+    kernel, kg, en_kernel, fek, _, _, _ = \
         str_to_kernel_set(kernel_name+kernel_type, False)
     args = (hyps, cutoffs)
 
@@ -120,7 +121,7 @@ def test_force(kernel_name, kernel_type):
     # check force kernel
     kern_finite_diff = 0
     if ('mb' == kernel_name):
-        _, _, enm_kernel, _, _, _ = str_to_kernel_set('mb'+kernel_type)
+        _, _, enm_kernel, _, _, _, _ = str_to_kernel_set('mb'+kernel_type)
         mhyps = hyps[(nterm-1)*2:]
         print(hyps)
         print(mhyps)
@@ -138,7 +139,7 @@ def test_force(kernel_name, kernel_type):
 
     if ('2' in kernel_name):
         nbond = 1
-        _, _, en2_kernel, _, _, _ = str_to_kernel_set('2'+kernel_type)
+        _, _, en2_kernel, _, _, _, _ = str_to_kernel_set('2'+kernel_type)
         print(hyps[0:nbond * 2])
 
         calc1 = en2_kernel(env1[1][0], env2[1][0], hyps[0:nbond * 2], cutoffs)
@@ -150,7 +151,7 @@ def test_force(kernel_name, kernel_type):
         nbond = 0
 
     if ('3' in kernel_name):
-        _, _, en3_kernel, _, _, _ = str_to_kernel_set('3'+kernel_type)
+        _, _, en3_kernel, _, _, _, _ = str_to_kernel_set('3'+kernel_type)
         print(hyps[nbond * 2:])
         calc1 = en3_kernel(env1[1][0], env2[1][0], hyps[nbond * 2:], cutoffs)
         calc2 = en3_kernel(env1[2][0], env2[2][0], hyps[nbond * 2:], cutoffs)
@@ -179,7 +180,7 @@ def test_hyps_grad(kernel_name, kernel_type):
     env1 = generate_mb_envs(cutoffs, cell, 0, d1)[0][0]
     env2 = generate_mb_envs(cutoffs, cell, 0, d2)[0][0]
 
-    kernel, kernel_grad, _, _, _, _ = \
+    kernel, kernel_grad, _, _, _, _, _ = \
         str_to_kernel_set(kernel_name+kernel_type, False)
 
     grad_test = kernel_grad(env1, env2,
