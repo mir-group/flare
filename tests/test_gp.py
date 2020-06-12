@@ -41,11 +41,8 @@ def all_gps() -> GaussianProcess:
         cutoffs = np.ones(3)*0.8
 
         gp_dict[multihyps] = \
-            GaussianProcess(kernel_name=gpname,
-                            hyps=hyps,
-                            hyp_labels=hl,
-                            cutoffs=cutoffs,
-                            multihyps=multihyps, hyps_mask=hm,
+            GaussianProcess(kernel_name=gpname, hyps=hyps, hyp_labels=hl,
+                            cutoffs=cutoffs, multihyps=multihyps, hyps_mask=hm,
                             parallel=False, n_cpus=1)
 
         test_structure, forces = \

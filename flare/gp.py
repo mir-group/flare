@@ -635,6 +635,9 @@ class GaussianProcess:
         return pred_mean, pred_var
 
     def predict_efs(self, x_t: AtomicEnvironment):
+        """Predict the local energy, forces, and partial stresses of an
+            atomic environment and their predictive variances."""
+
         # Kernel vector allows for evaluation of atomic environments.
         if self.parallel and not self.per_atom_par:
             n_cpus = self.n_cpus
