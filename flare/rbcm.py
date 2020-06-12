@@ -23,7 +23,7 @@ from flare.gp_algebra import get_like_from_mats, get_neg_like_grad, \
     _global_training_structures, _global_energy_labels, get_Ky_mat, \
     get_kernel_vector, en_kern_vec
 from flare.kernels.utils import str_to_kernel_set, from_mask_to_args, kernel_str_to_array
-from flare.output import Output
+from flare.output import Output, set_logger
 from flare.parameters import Parameters
 from flare.struc import Structure
 from flare.utils.element_coder import NumpyEncoder, Z_to_element
@@ -72,16 +72,16 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
                  name="default_gp",
                  energy_noise: float = 0.01, **kwargs,):
 
-        GaussianProcess.__init__(self, kernels, component,
-                     hyps, cutoffs, hyps_mask, hyp_labels, opt_algorithm,
-                     maxiter, parallel, per_atom_par, n_cpus, n_sample, output,
-                     name, energy_noise, **kwargs,)
-
         self.n_experts = n_experts
         self.prior_variance = prior_variance
         self.log_prior_var = np.log(prior_variance)
         self.ndata_per_expert = ndata_per_expert
         self.current_expert = 0
+
+        GaussianProcess.__init__(self, kernels, component,
+                     hyps, cutoffs, hyps_mask, hyp_labels, opt_algorithm,
+                     maxiter, parallel, per_atom_par, n_cpus, n_sample, output,
+                     name, energy_noise, **kwargs,)
 
         self.training_data = []
         self.training_labels = []  # Forces acting on central atoms
@@ -261,16 +261,19 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
         if print_progress:
             verbose = "info"
         if logger is None:
-            logger = self.output.logger['hyps']
+            logger = set_logger("gp_algebra", stream=True,
+                                fileout=True, verbose=verbose)
+        else:
+            logger.setlevel(getattr(logging, verbose.upper()))
 
-        disp = print_progress
+        disp = False # print_progress
 
         if len(self.training_data) == 0 or len(self.training_labels) == 0:
             raise Warning("You are attempting to train a GP with no "
                           "training data. Add environments and forces "
                           "to the GP and try again.")
 
-        self.sync_all_data()
+        self.sync_data()
 
         x_0 = self.hyps
 
@@ -332,7 +335,7 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
         not, update_L_alpha is called.
         """
 
-        self.sync_all_data()
+        self.sync_data()
 
         # Check that alpha is up to date with training set
         for i in range(self.n_experts):
@@ -370,7 +373,7 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
         else:
             n_cpus = 1
 
-        self.sync_all_data()
+        self.sync_data()
 
         k_v = []
         for i in range(self.n_experts):
@@ -476,9 +479,12 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
 
     def set_L_alpha(self):
 
-        self.sync_all_data()
+        self.sync_data()
 
         for expert_id in range(self.n_experts):
+
+            self.logger.debug(f"compute L_alpha for {expert_id}")
+            time0 = time.time()
 
             ky_mat = get_Ky_mat(self.hyps, f"{self.name}_{expert_id}", self.kernel,
                        self.energy_kernel, self.energy_force_kernel,
@@ -486,12 +492,15 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
                        self.cutoffs, self.hyps_mask,
                        self.n_cpus, self.n_sample)
 
-            self.compute_matrices(ky_mat, expert_id)
+            self.compute_one_matrices(ky_mat, expert_id)
 
             self.likelihood[expert_id] = get_like_from_mats(self.ky_mat[expert_id],
                                                             self.l_mat[expert_id],
                                                             self.alpha[expert_id],
                                                             f"{self.name}_{expert_id}")
+            self.logger.debug(f"compute_L_alpha {time.time()-time0}")
+
+        self.total_likelihood = np.sum(self.likelihood)
 
     def set_L_alpha_part(self, expert_id):
         """
@@ -501,7 +510,7 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
         The forces and variances are later obtained using alpha.
         """
 
-        self.sync_data(expert_id)
+        self.sync_one_data(expert_id)
 
         ky_mat = \
             get_Ky_mat(self.hyps, f"{self.name}_{expert_id}", self.kernel,
@@ -510,25 +519,25 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
                        cutoffs=self.cutoffs, hyps_mask=self.hyps_mask,
                        n_cpus=self.n_cpus, n_sample=self.n_sample)
 
-        self.compute_matrices(ky_mat, expert_id)
+        self.compute_one_matrices(ky_mat, expert_id)
 
         self.likelihood[expert_id] = get_like_from_mats(self.ky_mat[expert_id],
                                                         self.l_mat[expert_id],
                                                         self.alpha[expert_id],
                                                         f"{self.name}_{expert_id}")
 
-    def sync_all_data(self):
-
+    def sync_data(self):
         for i in range(self.n_experts):
-            self.sync_data(i)
+            self.sync_one_data(i)
 
-    def sync_data(self, expert_id):
-        # Reset global variables.
+    def sync_one_data(self, expert_id):
 
-        _global_training_data[f"{self.name}_{expert_id}"] = self.training_data[expert_id]
-        _global_training_labels[f"{self.name}_{expert_id}"] = self.training_labels_np[expert_id]
-        _global_training_structures[f"{self.name}_{expert_id}"] = self.training_structures[expert_id]
-        _global_energy_labels[f"{self.name}_{expert_id}"] = self.energy_labels_np[expert_id]
+        """ Reset global variables. """
+        if len(self.training_data) > expert_id:
+            _global_training_data[f"{self.name}_{expert_id}"] = self.training_data[expert_id]
+            _global_training_labels[f"{self.name}_{expert_id}"] = self.training_labels_np[expert_id]
+            _global_training_structures[f"{self.name}_{expert_id}"] = self.training_structures[expert_id]
+            _global_energy_labels[f"{self.name}_{expert_id}"] = self.energy_labels_np[expert_id]
 
     def write_model(self, name: str, format: str = 'json'):
 
@@ -579,15 +588,14 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
                                    n_cpus=self.n_cpus,
                                    n_sample=self.n_sample)
 
-        self.compute_matrices(ky_mat, expert_id)
+        self.compute_one_matrices(ky_mat, expert_id)
 
-    def compute_matrices(self, ky_mat, expert_id):
+    def compute_one_matrices(self, ky_mat, expert_id):
         """
         When covariance matrix is known, reconstruct other matrices.
         Used in re-loading large GPs.
         :return:
         """
-        time0 = time.time()
 
         l_mat = np.linalg.cholesky(ky_mat)
         l_mat_inv = np.linalg.inv(l_mat)
@@ -599,8 +607,6 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
         self.alpha[expert_id] = alpha
         self.ky_mat_inv[expert_id] = ky_mat_inv
         self.n_envs_prev[expert_id] = len(self.training_data[expert_id])
-
-        self.logger.debug("compute_matrices {time.time()-time0}")
 
     @property
     def training_statistics(self) -> dict:
@@ -687,7 +693,8 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
             raise ValueError("Warning: Format unspecieified or file is not "
                              ".json or .pickle format.")
 
-        gp_model.check_instantiation()
+        # # TO DO, be careful of this one
+        # gp_model.check_instantiation()
 
         return gp_model
 
@@ -709,7 +716,11 @@ def rbcm_get_neg_like_grad(hyps, n_experts, name, kernel_grad, logger, cutoffs, 
         else:
             like_grad += like_grad_
 
-    logger.debug(f"one step {time.time()-time0}")
+    logger.info('')
+    logger.info(f'Hyperparameters: {list(hyps)}')
+    logger.info(f'Total Likelihood: {-like}')
+    logger.info(f'Total Likelihood Gradient: {list(like_grad)}')
+    logger.info(f"one step {time.time()-time0}")
 
     return like, like_grad
 

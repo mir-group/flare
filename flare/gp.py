@@ -313,12 +313,14 @@ class GaussianProcess:
                 hyperparameter optimization.
         """
 
-        verbose = "warning"
+        verbose = "info"
         if print_progress:
-            verbose = "info"
+            verbose = "debug"
         if logger is None:
             logger = set_logger("gp_algebra", stream=True,
                                 fileout=True, verbose=verbose)
+        else:
+            logger.setlevel(getattr(logging, verbose.upper()))
 
         disp = print_progress
 
