@@ -15,7 +15,7 @@ from flare.gp_from_aimd import TrajectoryTrainer,\
                                     parse_trajectory_trainer_output
 from flare.utils.learner import subset_of_frame_by_element
 
-from .test_mgp_unit import all_mgp, all_gp, get_random_structure
+from .test_mgp import all_mgp, all_gp, get_random_structure
 from .fake_gp import get_gp
 
 @pytest.fixture
