@@ -44,6 +44,10 @@ class Map3body(MapXbody):
 
     def get_arrays(self, atom_env):
 
+        print(atom_env.ctype, atom_env.etypes,\
+              atom_env.bond_array_3, atom_env.cross_bond_inds,\
+              atom_env.cross_bond_dists, atom_env.triplet_counts)
+
         spcs, comp_r, comp_xyz = \
             get_triplets(atom_env.ctype, atom_env.etypes,
                     atom_env.bond_array_3, atom_env.cross_bond_inds,
@@ -52,6 +56,7 @@ class Map3body(MapXbody):
         return spcs, comp_r, comp_xyz
 
     def find_map_index(self, spc):
+        #spc.sort()
         return self.spc.index(spc)
 
 class SingleMap3body(SingleMapXbody):

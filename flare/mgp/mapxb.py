@@ -125,6 +125,9 @@ class MapXbody:
             lengths = np.array(comp_r[i])
             xyzs = np.array(comp_xyz[i])
             map_ind = self.find_map_index(spc)
+
+            print('spc, lengths, xyz', spc)
+            print(np.hstack([lengths, xyzs]))
             f, vir, v, e = self.maps[map_ind].predict(lengths, xyzs,
                 self.map_force, mean_only)
             f_spcs += f
@@ -258,7 +261,7 @@ class SingleMapXbody:
             k12_v_force_inner = self._gengrid_serial(args, True, n_envs)
 
             try:
-                assert np.allclose(k12_v_force, k12_v_force_inner)
+                assert np.allclose(k12_v_force, k12_v_force_inner, rtol=1e-3)
             except:
                 print(k12_v_force)
                 print(k12_v_force_inner)
@@ -401,8 +404,13 @@ class SingleMapXbody:
 
         # check if bounds are updated
         lower_bound = self.bounds[0]
-        if self.auto_lower:
-            lower_bound = self.search_lower_bound(GP)
+        min_dist = self.search_lower_bound(GP)
+        if min_dist < np.max(lower_bound): # change lower bound
+            warnings.warn('The minimal distance in training data is lower than \
+                    the current lower bound, will reset lower bound')
+
+        if self.auto_lower or (min_dist < np.max(lower_bound)):
+            lower_bound = np.max((min_dist - self.lower_bound_relax, 0))
             rebuild_container = True
 
         upper_bound = self.bounds[1]
@@ -411,9 +419,8 @@ class SingleMapXbody:
                 self.species, GP.hyps_mask)
             rebuild_container = True
 
-        self.set_bounds(lower_bound, upper_bound)
-
         if rebuild_container:
+            self.set_bounds(lower_bound, upper_bound)
             self.build_map_container()
 
         if not self.load_grid:
@@ -453,7 +460,7 @@ class SingleMapXbody:
                 if min_dist < lower_bound:
                     lower_bound = min_dist
 
-        return np.max((lower_bound - self.lower_bound_relax, 0))
+        return lower_bound
 
 
     def predict(self, lengths, xyzs, map_force, mean_only):
@@ -484,11 +491,13 @@ class SingleMapXbody:
         else:
             # predict forces and energy
             e_0, f_0 = self.mean(lengths, with_derivatives=True)
+            print('f_0')
+            print(f_0)
             e = np.sum(e_0) # energy
             if lengths.shape[1] == 1:
                 f_d = np.diag(f_0[:,0,0]) @ xyzs
             else:
-                f_d = np.diag(f_0[:,1,0]) @ xyzs
+                f_d = np.diag(f_0[:,0,0]) @ xyzs
             f = self.bodies * np.sum(f_d, axis=0)
 
             # predict var

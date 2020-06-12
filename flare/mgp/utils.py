@@ -175,7 +175,7 @@ def get_triplets(ctype, etypes, bond_array, cross_bond_inds,
             for i in range(2):
                 spcs = spcs_list[i]
                 triplet = array([r2, r1, r12]) if i else array([r1, r2, r12])
-                coord = c1 if i else c2 # TODO: figure out what's wrong. why not [c1, c2] for force map
+                coord = c2 if i else c1 # TODO: figure out what's wrong. why not [c1, c2] for force map
                 if spcs not in exist_species:
                     exist_species.append(spcs)
                     tris.append([triplet])
@@ -186,4 +186,49 @@ def get_triplets(ctype, etypes, bond_array, cross_bond_inds,
                     tri_dir[k].append(coord)
 
     return exist_species, tris, tri_dir
+
+@njit
+def get_triplets_en(ctype, etypes, bond_array, cross_bond_inds,
+                    cross_bond_dists, triplets):
+    exist_species = []
+    tris = []
+    tri_dir = []
+
+    for m in range(bond_array.shape[0]):
+        r1 = bond_array[m, 0]
+        c1 = bond_array[m, 1:]
+        spc1 = etypes[m]
+
+        for n in range(triplets[m]):
+            ind1 = cross_bond_inds[m, m+n+1]
+            r2 = bond_array[ind1, 0]
+            c2 = bond_array[ind1, 1:]
+            spc2 = etypes[ind1]
+
+            c12 = np.sum(c1*c2)
+            r12 = np.sqrt(r1**2 + r2**2 - 2*r1*r2*c12)
+
+            triplet1 = array([r1, r2, r12])
+            triplet2 = array([r2, r1, r12])
+
+            if spc1 <= spc2:
+                spcs = [ctype, spc1, spc2]
+            else:
+                spcs = [ctype, spc2, spc1]
+
+            triplet = [triplet1, triplet2]
+            coord = [c1, c2]
+
+            if spcs not in exist_species:
+                exist_species.append(spcs)
+                tris.append(triplet)
+                tri_dir.append(coord)
+            else:
+                k = exist_species.index(spcs)
+                tris[k] += triplet
+                tri_dir[k] += coord
+
+
+    return exist_species, tris, tri_dir
+
 

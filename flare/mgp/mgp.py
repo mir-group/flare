@@ -29,7 +29,7 @@ class MappedGaussianProcess:
     Args:
         grid_params (dict): Parameters for the mapping itself, such as
             grid size of spline fit, etc. As described below.
-        species_labels (dict): List of all the (unique) species included during
+        unique_species (dict): List of all the (unique) species included during
             the training that need to be mapped
         map_force (bool): if True, do force mapping; otherwise do energy mapping,
             default is False
@@ -91,7 +91,7 @@ class MappedGaussianProcess:
 
     def __init__(self,
                  grid_params: dict,
-                 species_labels: list=[],
+                 unique_species: list=[],
                  map_force: bool=False,
                  GP: GaussianProcess=None,
                  mean_only: bool=True,
@@ -112,7 +112,7 @@ class MappedGaussianProcess:
         self.hyps_mask = None
         self.cutoffs = None
 
-        for i, ele in enumerate(species_list):
+        for i, ele in enumerate(unique_species):
             if isinstance(ele, str):
                 self.species_labels.append(ele)
                 self.coded_species.append(element_to_Z(ele))
