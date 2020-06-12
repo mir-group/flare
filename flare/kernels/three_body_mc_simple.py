@@ -107,7 +107,10 @@ class ThreeBodyKernel:
                          self.cutoff, self.cutoff_func)
 
     def efs_self(self, env1: AtomicEnvironment):
-        pass
+        return efs_self(env1.bond_array_1, env1.ctype, env1.etypes,
+                        env1.cross_bond_inds, env1.cross_bond_dists,
+                        env1.triplets, self.signal_variance, self.length_scale,
+                        self.cutoff, self.cutoff_func)
 
 
 @njit
@@ -1154,3 +1157,107 @@ def efs_force(bond_array_1, c1, etypes1, bond_array_2, c2, etypes2,
                                 stress_count += 1
 
     return energy_kernels, force_kernels, stress_kernels
+
+
+@njit
+def efs_self(bond_array_1, c1, etypes1, cross_bond_inds_1, cross_bond_dists_1,
+             triplets_1, sig, ls, r_cut, cutoff_func):
+
+    energy_kernel = 0
+    force_kernels = np.zeros(3)
+    stress_kernels = np.zeros(6)
+
+    # pre-compute constants that appear in the inner loop
+    sig2 = sig * sig
+    ls1 = 1 / (2 * ls * ls)
+    ls2 = 1 / (ls * ls)
+    ls3 = ls2 * ls2
+
+    for m in range(bond_array_1.shape[0]):
+        ri1 = bond_array_1[m, 0]
+        fi1, _ = cutoff_func(r_cut, ri1, 0)
+        ei1 = etypes1[m]
+
+        for n in range(triplets_1[m]):
+            ind1 = cross_bond_inds_1[m, m + n + 1]
+            ri2 = bond_array_1[ind1, 0]
+            fi2, _ = cutoff_func(r_cut, ri2, 0)
+            ei2 = etypes1[ind1]
+
+            ri3 = cross_bond_dists_1[m, m + n + 1]
+            fi3, _ = cutoff_func(r_cut, ri3, 0)
+            fi = fi1 * fi2 * fi3
+
+            for p in range(bond_array_1.shape[0]):
+                rj1 = bond_array_1[p, 0]
+                fj1, _ = cutoff_func(r_cut, rj1, 0)
+                ej1 = etypes1[p]
+
+                for q in range(triplets_1[p]):
+                    ind2 = cross_bond_inds_1[p, p + 1 + q]
+                    rj2 = bond_array_1[ind2, 0]
+                    fj2, _ = cutoff_func(r_cut, rj2, 0)
+                    rj3 = cross_bond_dists_1[p, p + 1 + q]
+                    fj3, _ = cutoff_func(r_cut, rj3, 0)
+                    ej2 = etypes1[ind2]
+
+                    r11 = ri1 - rj1
+                    r12 = ri1 - rj2
+                    r13 = ri1 - rj3
+                    r21 = ri2 - rj1
+                    r22 = ri2 - rj2
+                    r23 = ri2 - rj3
+                    r31 = ri3 - rj1
+                    r32 = ri3 - rj2
+                    r33 = ri3 - rj3
+
+                    energy_kernel += \
+                        three_body_ee_perm(r11, r12, r13, r21, r22, r23, r31,
+                                           r32, r33, c1, c1, ei1, ei2, ej1,
+                                           ej2, fi, fj, ls1, sig2) / 9
+
+                    stress_count = 0
+                    for d3 in range(3):
+                        cj1 = bond_array_1[p, d3 + 1]
+                        fj1, fdj1 = cutoff_func(r_cut, rj1, cj1)
+                        cj2 = bond_array_1[ind2, d3 + 1]
+                        fj2, fdj2 = cutoff_func(r_cut, rj2, cj2)
+                        fj = fj1 * fj2 * fj3
+                        fdj_p1 = fdj1 * fj2 * fj3
+                        fdj_p2 = fj1 * fdj2 * fj3
+                        fdj = fdj_p1 + fdj_p2
+
+                        ci1 = bond_array_1[m, d3 + 1]
+                        fi1, fdi1 = cutoff_func(r_cut, ri1, ci1)
+                        ci2 = bond_array_1[ind1, d3 + 1]
+                        fi2, fdi2 = cutoff_func(r_cut, ri2, ci2)
+                        fi = fi1 * fi2 * fi3
+                        fdi_p1 = fdi1 * fi2 * fi3
+                        fdi_p2 = fi1 * fdi2 * fi3
+                        fdi = fdi_p1 + fdi_p2
+
+                        force_kernels[d3] += \
+                            three_body_ff_perm(r11, r12, r13, r21, r22,
+                                               r23, r31, r32, r33, c1, c1,
+                                               ci1, ci2, cj1, cj2, ei1,
+                                               ei2, ej1, ej2, fi, fj, fdi,
+                                               fdj, ls1, ls2, ls3, sig2)
+
+                        for d2 in range(d3, 3):
+                            coord1 = bond_array_1[m, d2 + 1] * ri1
+                            coord2 = bond_array_1[ind1, d2 + 1] * ri2
+                            coord3 = bond_array_1[p, d2 + 1] * rj1
+                            coord4 = bond_array_1[ind2, d2 + 1] * rj2
+
+                            stress_kernels[stress_count] += \
+                                three_body_ss_perm(r11, r12, r13, r21, r22,
+                                                   r23, r31, r32, r33, c1, c1,
+                                                   ci1, ci2, cj1, cj2, ei1,
+                                                   ei2, ej1, ej2, fi, fj, fdi,
+                                                   fdj, ls1, ls2, ls3, sig2,
+                                                   coord1, coord2, coord3,
+                                                   coord4, fdi_p1, fdi_p2,
+                                                   fdj_p1, fdj_p2) / 4
+                            stress_count += 1
+
+    return energy_kernel, force_kernels, stress_kernels
