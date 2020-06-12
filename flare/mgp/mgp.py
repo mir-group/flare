@@ -15,7 +15,7 @@ from typing import List
 from flare.env import AtomicEnvironment
 from flare.gp import GaussianProcess
 from flare.kernels.utils import str_to_kernel_set
-from flare.utils.element_coder import NumpyEncoder, element_to_Z
+from flare.utils.element_coder import NumpyEncoder, element_to_Z, Z_to_element
 
 from flare.mgp.map2b import Map2body
 from flare.mgp.map3b import Map3body
@@ -29,7 +29,7 @@ class MappedGaussianProcess:
     Args:
         grid_params (dict): Parameters for the mapping itself, such as
             grid size of spline fit, etc. As described below.
-        species_list (dict): List of all the (unique) species included during
+        species_labels (dict): List of all the (unique) species included during
             the training that need to be mapped
         map_force (bool): if True, do force mapping; otherwise do energy mapping,
             default is False
@@ -91,7 +91,7 @@ class MappedGaussianProcess:
 
     def __init__(self,
                  grid_params: dict,
-                 species_list: list=[],
+                 species_labels: list=[],
                  map_force: bool=False,
                  GP: GaussianProcess=None,
                  mean_only: bool=True,
@@ -107,13 +107,18 @@ class MappedGaussianProcess:
         self.n_cpus = n_cpus
         self.n_sample = n_sample
         self.grid_params = grid_params
-        self.species_list = species_list
+        self.species_labels = []
+        self.coded_species = []
         self.hyps_mask = None
         self.cutoffs = None
 
         for i, ele in enumerate(species_list):
             if isinstance(ele, str):
-                self.species_list[i] = element_to_Z(ele)
+                self.species_labels.append(ele)
+                self.coded_species.append(element_to_Z(ele))
+            elif isinstance(ele, int):
+                self.coded_species.append(ele)
+                self.species_labels.append(Z_to_element(ele))
 
         if (GP is not None):
             self.hyps_mask = GP.hyps_mask
@@ -127,7 +132,7 @@ class MappedGaussianProcess:
             grid_params['lower_bound_relax'] = 0.1
 
         self.maps = {}
-        args = [species_list, map_force, GP, mean_only,\
+        args = [self.coded_species, map_force, GP, mean_only,\
                 container_only, lmp_file_name, \
                 grid_params['load_grid'],\
                 grid_params['lower_bound_relax'],
@@ -268,7 +273,7 @@ class MappedGaussianProcess:
         Create MGP object from dictionary representation.
         """
         new_mgp = MappedGaussianProcess(grid_params=dictionary['grid_params'],
-                                        species_list=dictionary['species_list'],
+                                        species_labels=dictionary['species_labels'],
                                         map_force=dictionary['map_force'],
                                         GP=None,
                                         mean_only=dictionary['mean_only'],
