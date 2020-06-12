@@ -58,6 +58,31 @@ def all_gps() -> GaussianProcess:
     del gp_dict
 
 
+@pytest.fixture(scope='class')
+def two_plus_three_gp() -> GaussianProcess:
+    """Returns a GP instance with a 2+3-body kernel."""
+
+    cutoffs = np.array([0.8, 0.8])
+    hyps = np.array([1., 1., 1., 1., 1.])
+
+    # test update_db
+    gpname = '2+3_mc'
+    cutoffs = np.ones(2)*0.8
+
+    gp_model = \
+        GaussianProcess(kernel_name=gpname, hyps=hyps, cutoffs=cutoffs,
+                        multihyps=False, parallel=False, n_cpus=1)
+
+    test_structure, forces = \
+        get_random_structure(np.eye(3), [1, 2], 3)
+    energy = 3.14
+
+    gp_model.update_db(test_structure, forces, energy=energy)
+
+    yield gp_model
+    del gp_model
+
+
 @pytest.fixture(scope='module')
 def params():
     parameters = {'unique_species': [2, 1],
@@ -204,6 +229,32 @@ class TestAlgebra():
         assert (len(pred) == 2)
         assert (isinstance(pred[0], float))
         assert (isinstance(pred[1], float))
+
+    @pytest.mark.parametrize('par, per_atom_par, n_cpus',
+                             [(False, False, 1),
+                              (True, True, 2),
+                              (True, False, 2)])
+    def test_predict_efs(self, two_plus_three_gp, validation_env,
+                         par, per_atom_par, n_cpus):
+        """Check that energy, force, and stress prediction matches the other
+        GP prediction methods."""
+
+        test_gp = two_plus_three_gp
+        test_gp.parallel = par
+        test_gp.per_atom_par = per_atom_par
+        en_pred, force_pred, stress_pred, en_var, force_var, stress_var = \
+            test_gp.predict_efs(validation_env)
+
+        en_pred_2, en_var_2 = \
+            test_gp.predict_local_energy_and_var(validation_env)
+
+        force_pred_2, force_var_2 = \
+            test_gp.predict(validation_env, 1)
+
+        assert(np.isclose(en_pred, en_pred_2))
+        assert(np.isclose(en_var, en_var_2))
+        assert(np.isclose(force_pred[0], force_pred_2))
+        assert(np.isclose(force_var[0], force_var_2))
 
     @pytest.mark.parametrize('par, n_cpus', [(True, 2),
                                              (False, 1)])

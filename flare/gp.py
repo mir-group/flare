@@ -646,7 +646,7 @@ class GaussianProcess:
 
         energy_vector, force_array, stress_array = \
             efs_kern_vec(self.name, self.efs_force_kernel,
-                         self.energy_force_kernel,
+                         self.efs_energy_kernel,
                          x_t, self.hyps, cutoffs=self.cutoffs,
                          hyps_mask=self.hyps_mask, n_cpus=n_cpus,
                          n_sample=self.n_sample)
@@ -655,7 +655,7 @@ class GaussianProcess:
         self.check_L_alpha()
 
         # Compute mean predictions.
-        en_pred = np.matmul(energy_vector, self.alpha)[0]
+        en_pred = np.matmul(energy_vector, self.alpha)
         force_pred = np.matmul(force_array, self.alpha)
         stress_pred = np.matmul(stress_array, self.alpha)
 
@@ -664,14 +664,13 @@ class GaussianProcess:
         self_en, self_force, self_stress = self.efs_self_kernel(x_t, *args)
 
         en_var = self_en - \
-            np.matmul(np.matmul(energy_vector, self.ky_mat_inv),
-                      energy_vector.transpose())[0]
+            np.matmul(np.matmul(energy_vector, self.ky_mat_inv), energy_vector)
         force_var = self_force - \
             np.diag(np.matmul(np.matmul(force_array, self.ky_mat_inv),
                               force_array.transpose()))
         stress_var = self_stress - \
-            np.diag(np.matmul(np.matmul(force_array, self.ky_mat_inv),
-                              force_array.transpose()))
+            np.diag(np.matmul(np.matmul(stress_array, self.ky_mat_inv),
+                              stress_array.transpose()))
 
         return en_pred, force_pred, stress_pred, en_var, force_var, stress_var
 
