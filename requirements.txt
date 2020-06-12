@@ -5,3 +5,4 @@ numba
 ase
 pymatgen
 nptyping
+pytest>=4.6
