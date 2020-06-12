@@ -1114,8 +1114,31 @@ def efs_kern_vec(name, efs_force_kernel, efs_energy_kernel, x, hyps,
 
     size1 = len(_global_training_data[name])
     size2 = len(_global_training_structures[name])
+    tot_size = size1 * 3 + size2
 
-    pass
+    # Initialize arrays.
+    energy_vector = np.zeros(tot_size)
+    force_array = np.zeros((3, tot_size))
+    stress_array = np.zeros((6, tot_size))
+
+    # Compute force and energy arrays.
+    force_arrays = \
+        efs_force_vector(name, efs_force_kernel, x, hyps, cutoffs,
+                         hyps_mask, n_cpus, n_sample)
+
+    energy_arrays = \
+        efs_energy_vector(name, efs_energy_kernel, x, hyps, cutoffs,
+                          hyps_mask, n_cpus, n_sample)
+
+    # Populate arrays.
+    energy_vector[0:size1 * 3] = force_arrays[0]
+    energy_vector[size1 * 3:] = energy_arrays[0]
+    force_array[:, 0:size1 * 3] = force_arrays[1]
+    force_array[:, size1 * 3:] = energy_arrays[1]
+    stress_array[:, 0:size1 * 3] = force_arrays[2]
+    stress_array[:, size1 * 3:] = energy_arrays[2]
+
+    return energy_vector, force_array, stress_array
 
 
 # --------------------------------------------------------------------------
