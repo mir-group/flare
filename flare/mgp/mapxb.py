@@ -70,7 +70,6 @@ class MapXbody:
     def get_arrays(self, atom_env):
         raise NotImplementedError("need to be implemented in child class")
 
-
     def build_map_container(self, bounds):
         '''
         construct an empty spline container without coefficients.
