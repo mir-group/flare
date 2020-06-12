@@ -10,11 +10,9 @@ from flare.struc import Structure
 from flare.otf_parser import OtfAnalysis
 
 
-def get_random_structure(cell, unique_species, noa, set_seed:int = None):
+def get_random_structure(cell, unique_species, noa):
     """Create a random test structure """
-    
-    if set_seed:
-        np.random.seed(set_seed)
+    np.random.seed(0)
 
     positions = []
     forces = []
