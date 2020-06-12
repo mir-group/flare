@@ -21,7 +21,7 @@ from flare.gp_algebra import get_like_from_mats, get_neg_like_grad, \
     force_force_vector, energy_force_vector, get_force_block, \
     get_ky_mat_update, _global_training_data, _global_training_labels, \
     _global_training_structures, _global_energy_labels, get_Ky_mat, \
-    get_kernel_vector, en_kern_vec
+    get_kernel_vector, en_kern_vec, efs_kern_vec
 
 from flare.kernels.utils import str_to_kernel_set, from_mask_to_args
 from flare.util import NumpyEncoder
@@ -635,7 +635,45 @@ class GaussianProcess:
         return pred_mean, pred_var
 
     def predict_efs(self, x_t: AtomicEnvironment):
-        pass
+        # Kernel vector allows for evaluation of atomic environments.
+        if self.parallel and not self.per_atom_par:
+            n_cpus = self.n_cpus
+        else:
+            n_cpus = 1
+
+        _global_training_data[self.name] = self.training_data
+        _global_training_labels[self.name] = self.training_labels_np
+
+        energy_vector, force_array, stress_array = \
+            efs_kern_vec(self.name, self.efs_force_kernel,
+                         self.energy_force_kernel,
+                         x_t, self.hyps, cutoffs=self.cutoffs,
+                         hyps_mask=self.hyps_mask, n_cpus=n_cpus,
+                         n_sample=self.n_sample)
+
+        # Check that alpha is up to date with training set.
+        self.check_L_alpha()
+
+        # Compute mean predictions.
+        en_pred = np.matmul(energy_vector, self.alpha)[0]
+        force_pred = np.matmul(force_array, self.alpha)
+        stress_pred = np.matmul(stress_array, self.alpha)
+
+        # Compute uncertainties.
+        args = from_mask_to_args(self.hyps, self.hyps_mask, self.cutoffs)
+        self_en, self_force, self_stress = self.efs_self_kernel(x_t, *args)
+
+        en_var = self_en - \
+            np.matmul(np.matmul(energy_vector, self.ky_mat_inv),
+                      energy_vector.transpose())[0]
+        force_var = self_force - \
+            np.diag(np.matmul(np.matmul(force_array, self.ky_mat_inv),
+                              force_array.transpose()))
+        stress_var = self_stress - \
+            np.diag(np.matmul(np.matmul(force_array, self.ky_mat_inv),
+                              force_array.transpose()))
+
+        return en_pred, force_pred, stress_pred, en_var, force_var, stress_var
 
     def set_L_alpha(self):
         """
