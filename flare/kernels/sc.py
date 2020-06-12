@@ -1842,24 +1842,28 @@ _str_to_kernel = {'two_body': two_body,
                   '2_force_en': two_body_force_en,
                   '2_efs_energy': 'not implemented',
                   '2_efs_force': 'not implemented',
+                  '2_efs_self': 'not implemented',
                   '3': three_body,
                   '3_grad': three_body_grad,
                   '3_en': three_body_en,
                   '3_force_en': three_body_force_en,
                   '3_efs_energy': 'not implemented',
                   '3_efs_force': 'not implemented',
+                  '3_efs_self': 'not implemented',
                   '2+3': two_plus_three_body,
                   '2+3_grad': two_plus_three_body_grad,
                   '2+3_en': two_plus_three_en,
                   '2+3_force_en': two_plus_three_force_en,
                   '2+3_efs_energy': 'not implemented',
                   '2+3_efs_force': 'not implemented',
+                  '2+3_efs_self': 'not implemented',
                   'many': many_body,
                   'many_en': many_body_en,
                   'many_grad': many_body_grad,
                   'many_force_en': many_body_force_en,
                   'many_efs_energy': 'not implemented',
                   'many_efs_force': 'not implemented',
+                  'many_efs_self': 'not implemented',
                   'two_plus_three_plus_many_body':
                   two_plus_three_plus_many_body,
                   'two_plus_three_plus_many_body_grad':
@@ -1873,7 +1877,8 @@ _str_to_kernel = {'two_body': two_body,
                   '2+3+many_en': two_plus_three_plus_many_body_en,
                   '2+3+many_force_en': two_plus_three_plus_many_body_force_en,
                   '2+3+many_efs_energy': 'not implemented',
-                  '2+3+many_efs_force': 'not implemented'
+                  '2+3+many_efs_force': 'not implemented',
+                  '2+3+many_efs_self': 'not implemented'
                   }
 
 
