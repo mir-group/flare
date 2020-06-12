@@ -76,9 +76,9 @@ def test_init(bodies, multihyps, map_force, all_mgp, all_gp):
     # grid parameters
     grid_params = {}
     if ('2' in bodies):
-        grid_params['twobody'] = {'grid_num': [64], 'lower_bound': [0.1]}
+        grid_params['twobody'] = {'grid_num': [64], 'lower_bound': [0.05]}
     if ('3' in bodies):
-        grid_params['threebody'] = {'grid_num': [19, 20, 21], 'lower_bound':[0.1]*3}
+        grid_params['threebody'] = {'grid_num': [24, 25, 26], 'lower_bound':[0.05]*3}
 
     lammps_location = f'{bodies}{multihyps}{map_force}.mgp'
     data = gp_model.training_statistics
@@ -271,7 +271,7 @@ def test_predict(all_gp, all_mgp, bodies, multihyps, map_force):
     cell = 1.0 * np.eye(3)
     cutoffs = gp_model.cutoffs
     unique_species = gp_model.training_statistics['species']
-    struc_test, f = get_random_structure(cell, unique_species, nenv, seed=12345)
+    struc_test, f = get_random_structure(cell, unique_species, nenv)
     test_envi = env.AtomicEnvironment(struc_test, 0, cutoffs, cutoffs_mask=gp_model.hyps_mask)
 
     assert Parameters.compare_dict(gp_model.hyps_mask, mgp_model.hyps_mask)
