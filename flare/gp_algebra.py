@@ -301,7 +301,7 @@ def multiple_array_construction(pack_function, name, x, kernel, hyps,
         wid, result_chunk = result_queue.get(block=True)
         s, e = block_id[wid]
         for n in range(n_arrays):
-            arrays[n][:, s * mult:e * mult] = result_chunk
+            arrays[n][:, s * mult:e * mult] = result_chunk[n]
 
     # Join child processes (clean up zombies).
     for c in children:
@@ -1037,7 +1037,7 @@ def efs_force_vector(name, efs_force_kernel, x, hyps, cutoffs=None,
 
 
 def efs_energy_vector(name, efs_energy_kernel, x, hyps, cutoffs=None,
-                      hyps_mask=None, n_cpu=1, n_sample=100):
+                      hyps_mask=None, n_cpus=1, n_sample=100):
     """
     Returns covariances between the local eneregy, force components, and
     partial stresses of a test environment and the total energy labels in the

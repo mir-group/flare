@@ -8,7 +8,8 @@ from flare.env import AtomicEnvironment
 from flare.struc import Structure
 from flare.kernels.mc_simple import two_plus_three_body_mc, \
         two_plus_three_body_mc_grad, two_plus_three_mc_en,\
-        two_plus_three_mc_force_en
+        two_plus_three_mc_force_en, two_plus_three_efs_energy, \
+        two_plus_three_efs_force
 from flare.kernels.mc_sephyps import two_plus_three_body_mc \
         as two_plus_three_body_mc_multi
 from flare.kernels.mc_sephyps import two_plus_three_body_mc_grad \
@@ -21,7 +22,7 @@ from flare.gp_algebra import get_like_grad_from_mats, \
         force_energy_vector, get_kernel_vector, en_kern_vec, \
         get_ky_mat_update, get_ky_and_hyp, get_energy_block, \
         get_Ky_mat, update_force_block, update_energy_block, \
-        update_force_energy_block
+        update_force_energy_block, efs_kern_vec
 
 from .fake_gp import get_tstp
 
@@ -49,7 +50,8 @@ def get_random_training_set(nenv, nstruc):
     cutoffs = np.array([0.8, 0.8])
     hyps = np.ones(5, dtype=float)
     kernel = (two_plus_three_body_mc, two_plus_three_body_mc_grad,
-              two_plus_three_mc_en, two_plus_three_mc_force_en)
+              two_plus_three_mc_en, two_plus_three_mc_force_en,
+              two_plus_three_efs_force, two_plus_three_efs_energy)
     kernel_m = \
         (two_plus_three_body_mc_multi, two_plus_three_body_mc_grad_multi,
          mc_sephyps.two_plus_three_mc_en,
@@ -297,6 +299,24 @@ def test_en_kern_vec(params):
 
     assert (all(np.equal(vec, vec_par))), "parallel implementation is wrong"
     assert (vec.shape[0] == size1 * 3 + size2)
+
+
+def test_efs_kern_vec(params):
+
+    hyps, name, kernel, cutoffs, _, _, _, _ = params
+
+    test_point = get_tstp()
+
+    energy_vector, force_array, stress_array = \
+        efs_kern_vec(name, kernel[4], kernel[5], test_point, hyps, cutoffs)
+
+    energy_vector_par, force_array_par, stress_array_par = \
+        efs_kern_vec(name, kernel[4], kernel[5], test_point, hyps, cutoffs,
+                     n_cpus=2, n_sample=100)
+
+    assert (np.equal(energy_vector, energy_vector_par).all())
+    assert (np.equal(force_array, force_array_par).all())
+    assert (np.equal(stress_array, stress_array_par).all())
 
 
 def test_ky_and_hyp(params):
