@@ -77,7 +77,9 @@ class TwoBodyKernel:
                          self.cutoff, self.cutoff_func)
 
     def efs_self(self, env1: AtomicEnvironment):
-        pass
+        return efs_self(env1.bond_array_2, env1.ctype, env1.etypes,
+                        self.signal_variance, self.length_scale,
+                        self.cutoff, self.cutoff_func)
 
 
 @njit
@@ -652,3 +654,59 @@ def efs_force(bond_array_1, c1, etypes1, bond_array_2, c2, etypes2,
                             stress_count += 1
 
     return energy_kernels, force_kernels, stress_kernels
+
+
+@njit
+def efs_self(bond_array_1, c1, etypes1, sig, ls, r_cut, cutoff_func):
+
+    energy_kernel = 0
+    force_kernels = np.zeros(3)
+    stress_kernels = np.zeros(6)
+
+    ls1 = 1 / (2 * ls * ls)
+    ls2 = 1 / (ls * ls)
+    ls3 = ls2 * ls2
+    sig2 = sig * sig
+
+    for m in range(bond_array_1.shape[0]):
+        ri = bond_array_1[m, 0]
+        fi, _ = cutoff_func(r_cut, ri, 0)
+        e1 = etypes1[m]
+
+        for n in range(bond_array_1.shape[0]):
+            e2 = etypes1[n]
+
+            # check if bonds agree
+            if (e1 == e2) or (c1 == e2 and c1 == e1):
+                rj = bond_array_1[n, 0]
+                fj, _ = cutoff_func(r_cut, rj, 0)
+                r11 = ri - rj
+                D = r11 * r11
+
+                energy_kernel += fi * fj * sig2 * exp(-D * ls1) / 4
+
+                stress_count = 0
+                for d1 in range(3):
+                    cj = bond_array_1[n, d1 + 1]
+                    _, fdj = cutoff_func(r_cut, rj, cj)
+                    C = r11 * cj
+
+                    ci = bond_array_1[m, d1 + 1]
+                    _, fdi = cutoff_func(r_cut, ri, ci)
+                    A = ci * cj
+                    B = r11 * ci
+
+                    force_kern = \
+                        force_helper(A, B, C, D, fi, fj, fdi, fdj,
+                                     ls1, ls2, ls3, sig2)
+                    force_kernels[d1] += force_kern
+
+                    for d2 in range(d1, 3):
+                        coord1 = bond_array_1[m, d2 + 1] * ri
+                        coord2 = bond_array_1[n, d2 + 1] * rj
+                        stress_kernels[stress_count] += \
+                            force_kern * coord1 * coord2 / 4
+
+                        stress_count += 1
+
+    return energy_kernel, force_kernels, stress_kernels

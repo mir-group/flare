@@ -341,14 +341,24 @@ def test_efs(struc_envs, kernel):
     assert((np.abs(s3 - s4) < threshold).all())
 
 
-def test_efs_self(struc_envs):
+@pytest.mark.parametrize('kernel', kernel_list)
+def test_efs_self(struc_envs, kernel):
     test_env_1 = struc_envs[0][0]
 
-    e1, f1, s1 = kernel_3b.efs_self(test_env_1)
+    e1, f1, s1 = kernel.efs_self(test_env_1)
 
-    e2 = kernel_3b.energy_energy(test_env_1, test_env_1)
-    f2 = kernel_3b.force_force(test_env_1, test_env_1)
-    s2 = kernel_3b.stress_stress(test_env_1, test_env_1)
+    e2 = kernel.energy_energy(test_env_1, test_env_1)
+    f2 = kernel.force_force(test_env_1, test_env_1)
+    s2 = kernel.stress_stress(test_env_1, test_env_1)
+
+    print(e1)
+    print(e2)
+
+    print(f1)
+    print(f2)
+
+    print(s1)
+    print(s2)
 
     assert(np.abs(e1 - e2) < threshold)
     assert((np.abs(f1 - np.diag(f2)) < threshold).all())
