@@ -351,6 +351,32 @@ def two_plus_three_efs_force(env1: AtomicEnvironment, env2: AtomicEnvironment,
     return two_e + three_e, two_f + three_f, two_s + three_s
 
 
+def two_plus_three_efs_self(env1: AtomicEnvironment, hyps: 'ndarray',
+                            cutoffs: 'ndarray',
+                            cutoff_func: Callable = cf.quadratic_cutoff):
+
+    sig2 = hyps[0]
+    ls2 = hyps[1]
+    sig3 = hyps[2]
+    ls3 = hyps[3]
+    r_cut_2 = cutoffs[0]
+    r_cut_3 = cutoffs[1]
+
+    two_e, two_f, two_s = \
+        two_body_mc_simple.efs_self(env1.bond_array_2, env1.ctype,
+                                    env1.etypes, sig2, ls2, r_cut_2,
+                                    cutoff_func)
+
+    three_e, three_f, three_s = \
+        three_body_mc_simple.efs_self(env1.bond_array_3, env1.ctype,
+                                      env1.etypes, env1.cross_bond_inds,
+                                      env1.cross_bond_dists,
+                                      env1.triplet_counts, sig3, ls3, r_cut_3,
+                                      cutoff_func)
+
+    return two_e + three_e, two_f + three_f, two_s + three_s
+
+
 # -----------------------------------------------------------------------------
 #                     two plus three plus many body kernels
 # -----------------------------------------------------------------------------
@@ -411,7 +437,8 @@ def two_plus_three_plus_many_body_mc(env1: AtomicEnvironment,
     return two_term + three_term + many_term
 
 
-def two_plus_three_plus_many_body_mc_grad(env1: AtomicEnvironment, env2: AtomicEnvironment,
+def two_plus_three_plus_many_body_mc_grad(env1: AtomicEnvironment,
+                                          env2: AtomicEnvironment,
                                           d1: int, d2: int, hyps, cutoffs,
                                           cutoff_func=cf.quadratic_cutoff):
     """2+3+many-body single-element kernel between two force components.
@@ -442,9 +469,10 @@ def two_plus_three_plus_many_body_mc_grad(env1: AtomicEnvironment, env2: AtomicE
     r_cut_3 = cutoffs[1]
     r_cut_m = cutoffs[2]
 
-    kern2, grad2 = two_body_mc_grad_jit(env1.bond_array_2, env1.ctype, env1.etypes,
-                                        env2.bond_array_2, env2.ctype, env2.etypes,
-                                        d1, d2, sig2, ls2, r_cut_2, cutoff_func)
+    kern2, grad2 = two_body_mc_grad_jit(env1.bond_array_2, env1.ctype,
+                                        env1.etypes, env2.bond_array_2,
+                                        env2.ctype, env2.etypes, d1, d2, sig2,
+                                        ls2, r_cut_2, cutoff_func)
 
     kern3, grad3 = \
         three_body_mc_grad_jit(env1.bond_array_3, env1.ctype, env1.etypes,
@@ -454,22 +482,30 @@ def two_plus_three_plus_many_body_mc_grad(env1: AtomicEnvironment, env2: AtomicE
                                env1.triplet_counts, env2.triplet_counts,
                                d1, d2, sig3, ls3, r_cut_3, cutoff_func)
 
-    kern_many, gradm = many_body_mc_grad_jit(env1.bond_array_mb, env2.bond_array_mb,
-                                             env1.neigh_dists_mb, env2.neigh_dists_mb,
-                                             env1.num_neighs_mb, env2.num_neighs_mb, env1.ctype,
-                                             env2.ctype, env1.bond_array_mb_etypes,
+    kern_many, gradm = many_body_mc_grad_jit(env1.bond_array_mb,
+                                             env2.bond_array_mb,
+                                             env1.neigh_dists_mb,
+                                             env2.neigh_dists_mb,
+                                             env1.num_neighs_mb,
+                                             env2.num_neighs_mb,
+                                             env1.ctype, env2.ctype,
+                                             env1.bond_array_mb_etypes,
                                              env2.bond_array_mb_etypes,
                                              env1.etype_mb, env2.etype_mb,
-                                             env1.species, env2.species, d1, d2, sigm,
-                                             lsm, r_cut_m, cutoff_func)
+                                             env1.species, env2.species, d1,
+                                             d2, sigm, lsm, r_cut_m,
+                                             cutoff_func)
 
     return kern2 + kern3 + kern_many, np.hstack([grad2, grad3, gradm])
 
 
-def two_plus_three_plus_many_body_mc_force_en(env1: AtomicEnvironment, env2: AtomicEnvironment,
+def two_plus_three_plus_many_body_mc_force_en(env1: AtomicEnvironment,
+                                              env2: AtomicEnvironment,
                                               d1: int, hyps, cutoffs,
                                               cutoff_func=cf.quadratic_cutoff):
-    """2+3+many-body single-element kernel between two force and energy components.
+
+    """2+3+many-body single-element kernel between two force and energy
+    components.
 
     Args:
         env1 (AtomicEnvironment): First local environment.
@@ -569,7 +605,8 @@ def two_plus_three_plus_many_body_mc_en(env1: AtomicEnvironment,
                              env1.triplet_counts, env2.triplet_counts,
                              sig3, ls3, r_cut_3, cutoff_func)/9
 
-    many_term = many_body_mc_en_jit(env1.bond_array_mb, env2.bond_array_mb, env1.ctype,
+    many_term = many_body_mc_en_jit(env1.bond_array_mb,
+                                    env2.bond_array_mb, env1.ctype,
                                     env2.ctype, env1.bond_array_mb_etypes,
                                     env2.bond_array_mb_etypes, env1.species,
                                     env2.species,
@@ -686,8 +723,7 @@ def three_body_mc_force_en(env1: AtomicEnvironment, env2: AtomicEnvironment,
 
 def three_body_mc_en(env1: AtomicEnvironment, env2: AtomicEnvironment,
                      hyps: 'ndarray', cutoffs: 'ndarray',
-                     cutoff_func: Callable = cf.quadratic_cutoff) \
-        -> float:
+                     cutoff_func: Callable = cf.quadratic_cutoff) -> float:
     """3-body multi-element kernel between two local energies.
 
     Args:
@@ -715,7 +751,7 @@ def three_body_mc_en(env1: AtomicEnvironment, env2: AtomicEnvironment,
 
 def three_body_se(env1: AtomicEnvironment, env2: AtomicEnvironment,
                   hyps: 'ndarray', cutoffs: 'ndarray',
-                  cutoff_func: Callable = cf.quadratic_cutoff)-> float:
+                  cutoff_func: Callable = cf.quadratic_cutoff) -> float:
 
     sig = hyps[0]
     ls = hyps[1]
@@ -731,7 +767,7 @@ def three_body_se(env1: AtomicEnvironment, env2: AtomicEnvironment,
 
 def three_body_sf(env1: AtomicEnvironment, env2: AtomicEnvironment,
                   hyps: 'ndarray', cutoffs: 'ndarray',
-                  cutoff_func: Callable = cf.quadratic_cutoff)-> float:
+                  cutoff_func: Callable = cf.quadratic_cutoff) -> float:
 
     sig = hyps[0]
     ls = hyps[1]
@@ -747,7 +783,7 @@ def three_body_sf(env1: AtomicEnvironment, env2: AtomicEnvironment,
 
 def three_body_ss(env1: AtomicEnvironment, env2: AtomicEnvironment,
                   hyps: 'ndarray', cutoffs: 'ndarray',
-                  cutoff_func: Callable = cf.quadratic_cutoff)-> float:
+                  cutoff_func: Callable = cf.quadratic_cutoff) -> float:
 
     sig = hyps[0]
     ls = hyps[1]
@@ -799,6 +835,21 @@ def three_body_efs_force(env1: AtomicEnvironment, env2: AtomicEnvironment,
                                           env1.triplet_counts,
                                           env2.triplet_counts,
                                           sig, ls, r_cut, cutoff_func)
+
+
+def three_body_efs_self(env1: AtomicEnvironment, hyps: 'ndarray',
+                        cutoffs: 'ndarray',
+                        cutoff_func: Callable = cf.quadratic_cutoff):
+
+    sig = hyps[0]
+    ls = hyps[1]
+    r_cut = cutoffs[1]
+
+    return three_body_mc_simple.efs_self(env1.bond_array_3, env1.ctype,
+                                         env1.etypes, env1.cross_bond_inds,
+                                         env1.cross_bond_dists,
+                                         env1.triplet_counts,
+                                         sig, ls, r_cut, cutoff_func)
 
 
 # -----------------------------------------------------------------------------
@@ -987,6 +1038,19 @@ def two_body_efs_force(env1: AtomicEnvironment, env2: AtomicEnvironment,
                                         sig, ls, r_cut, cutoff_func)
 
 
+def two_body_efs_self(env1: AtomicEnvironment, hyps: 'ndarray',
+                      cutoffs: 'ndarray',
+                      cutoff_func: Callable = cf.quadratic_cutoff):
+
+    sig = hyps[0]
+    ls = hyps[1]
+    r_cut = cutoffs[0]
+
+    return two_body_mc_simple.efs_self(env1.bond_array_2, env1.ctype,
+                                       env1.etypes, sig, ls, r_cut,
+                                       cutoff_func)
+
+
 # -----------------------------------------------------------------------------
 #                       many body multicomponent kernel
 # -----------------------------------------------------------------------------
@@ -1036,9 +1100,10 @@ def many_body_mc(env1: AtomicEnvironment, env2: AtomicEnvironment,
 def many_body_mc_grad(env1: AtomicEnvironment, env2: AtomicEnvironment,
                       d1: int, d2: int, hyps: 'ndarray', cutoffs: 'ndarray',
                       cutoff_func: Callable = cf.quadratic_cutoff) -> float:
-    """gradient manybody-body multi-element kernel between two force components.
-
+    """gradient manybody-body multi-element kernel between two force
+    components.
     """
+
     sig = hyps[0]
     ls = hyps[1]
     r_cut = cutoffs[2]
@@ -1056,11 +1121,16 @@ def many_body_mc_grad(env1: AtomicEnvironment, env2: AtomicEnvironment,
     etypes1, etypes2 = env1.bond_array_mb_etypes, env2.bond_array_mb_etypes
     etypes_neigh_1, etypes_neigh_2 = env1.etype_mb, env2.etype_mb
 
-    kernel, kernel_grad = many_body_mc_grad_jit(bond_array_1, bond_array_2, neigh_dists_1,
-                                                neigh_dists_2, num_neigh_1, num_neigh_2, c1,
-                                                c2, etypes1, etypes2, etypes_neigh_1,
-                                                etypes_neigh_2, env1.species, env2.species,
-                                                d1, d2, sig, ls, r_cut, cutoff_func)
+    kernel, kernel_grad = many_body_mc_grad_jit(bond_array_1, bond_array_2,
+                                                neigh_dists_1,
+                                                neigh_dists_2, num_neigh_1,
+                                                num_neigh_2, c1,
+                                                c2, etypes1, etypes2,
+                                                etypes_neigh_1,
+                                                etypes_neigh_2, env1.species,
+                                                env2.species,
+                                                d1, d2, sig, ls, r_cut,
+                                                cutoff_func)
 
     return kernel, kernel_grad
 
