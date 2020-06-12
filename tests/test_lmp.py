@@ -5,9 +5,10 @@ import os, pickle, re, shutil
 
 from flare import struc, env, gp
 from flare import otf_parser
+from flare.ase.calculator import FLARE_Calculator
 from flare.mgp import MappedGaussianProcess
 from flare.lammps import lammps_calculator
-from flare.ase.calculator import FLARE_Calculator
+from flare.utils.element_coder import _Z_to_mass, _element_to_Z
 from ase.calculators.lammpsrun import LAMMPS
 
 from tests.fake_gp import get_gp, get_random_structure
@@ -55,12 +56,16 @@ def mgp_model(gp_model):
                                 'svd_rank': 14}
     if 'threebody' in gp_model.kernels:
         grid_params['threebody']={'grid_num': [16]*3,
-                                  'lower_bound':[0.1, 0.1, 0.1],
+                                  'lower_bound':[0.1]*3,
                                   'svd_rank': 14}
     species_list = [1, 2, 3]
     lammps_location = f'test_lmp.mgp'
     mapped_model = MappedGaussianProcess(grid_params, species_list, n_cpus=1,
                 map_force=False, lmp_file_name=lammps_location, mean_only=True)
+
+    # import flare.mgp.mapxb
+    # flare.mgp.mapxb.global_use_grid_kern = False
+
     mapped_model.build_map(gp_model)
 
     yield mapped_model
@@ -79,21 +84,25 @@ def ase_calculator(gp_model, mgp_model):
 
 @pytest.fixture(scope='module')
 def lmp_calculator(gp_model, mgp_model):
+
+    species = gp_model.training_statistics['species']
+    specie_symbol_list = " ".join(species)
+    masses=[f"{i} {_Z_to_mass[_element_to_Z[species[i]]]}" for i in range(len(species))]
+
     # set up input params
     label = 'test_lmp'
-    by = 'twobody' in gp_model.kernels
-    ty = 'threebody' in gp_model.kernels
+    by = 'yes' if 'twobody' in gp_model.kernels else 'no'
+    ty = 'yes' if 'threebody' in gp_model.kernels else 'no'
     parameters = {'command': os.environ.get('lmp'), # set up executable for ASE
                   'newton': 'off',
                   'pair_style': 'mgp',
-                  'pair_coeff': [f'* * {label}.mgp H He Li {by} {ty}'],
-                  'mass': ['1 2', '2 4', '3 6']}
+                  'pair_coeff': [f'* * {label}.mgp {specie_symbol_list} {by} {ty}'],
+                  'mass': masses}
     files = [f'{label}.mgp']
 
     # create ASE calc
-    unique_species = gp_model.training_statistics['species']
     lmp_calc = LAMMPS(label=f'tmp{label}', keep_tmp_files=True, tmp_dir='./tmp/',
-            parameters=parameters, files=files, specorder=unique_species)
+            parameters=parameters, files=files, specorder=species)
     yield lmp_calc
     del lmp_calc
 
