@@ -44,10 +44,6 @@ class Map3body(MapXbody):
 
     def get_arrays(self, atom_env):
 
-        print(atom_env.ctype, atom_env.etypes,\
-              atom_env.bond_array_3, atom_env.cross_bond_inds,\
-              atom_env.cross_bond_dists, atom_env.triplet_counts)
-
         spcs, comp_r, comp_xyz = \
             get_triplets(atom_env.ctype, atom_env.etypes,
                     atom_env.bond_array_3, atom_env.cross_bond_inds,
@@ -56,7 +52,6 @@ class Map3body(MapXbody):
         return spcs, comp_r, comp_xyz
 
     def find_map_index(self, spc):
-        #spc.sort()
         return self.spc.index(spc)
 
 class SingleMap3body(SingleMapXbody):
@@ -101,8 +96,14 @@ class SingleMap3body(SingleMapXbody):
                 self.grid_num[d], dtype=np.float64)
             triplets.append(bonds)
 
+#        r1 = np.tile(bonds1, (nb12, nb2, 1))
+#        r1 = np.moveaxis(r1, -1, 0)
+#        r2 = np.tile(bonds2, (nb1, nb12, 1))
+#        r2 = np.moveaxis(r2, -1, 1)
+#        r12 = np.tile(bonds12, (nb1, nb2, 1))
+
         # concatenate into one array: n_grid x 3
-        mesh = np.meshgrid(*triplets)
+        mesh = np.meshgrid(*triplets, indexing='ij')
         del triplets
 
         mesh_list = []
@@ -118,8 +119,7 @@ class SingleMap3body(SingleMapXbody):
     def set_env(self, grid_env, grid_pt):
         r1, r2, r12 = grid_pt
         dist12 = r12
-        grid_env.bond_array_3 = np.array([[r1, 1, 0, 0],
-                                       [r2, 0, 0, 0]])
+        grid_env.bond_array_3 = np.array([[r1, 1, 0, 0], [r2, 0, 0, 0]])
         grid_env.cross_bond_dists = np.array([[0, dist12], [dist12, 0]])
 
         return grid_env
@@ -169,7 +169,7 @@ class SingleMap3body(SingleMapXbody):
         fj, fdj = triplet_cutoff(grids, r_cut, coords, derivative=True) # TODO: add cutoff func
         fdj = fdj[:, [0]]
 
-        perm_list = get_permutations(env12.ctype, env12.etypes[0], env12.etypes[1])
+        #perm_list = get_permutations(env12.ctype, env12.etypes[0], env12.etypes[1])
 
         if self.map_force:
             prefix = 'force'
@@ -187,7 +187,7 @@ class SingleMap3body(SingleMapXbody):
         for m_index in range(s, e):
             data = training_data[m_index]
             kern_vec = grid_kernel(kern_type, data, grids, fj, fdj,
-                                   env12.ctype, env12.etypes, perm_list,
+                                   env12.ctype, env12.etypes, #perm_list,
                                    *args)
             k_v.append(kern_vec)
 
