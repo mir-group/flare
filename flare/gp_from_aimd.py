@@ -33,6 +33,7 @@ of atoms which are added from a given seed frame.
 
 """
 import json as json
+import logging
 import numpy as np
 import time
 import warnings
@@ -52,7 +53,7 @@ from flare.struc import Structure
 from flare.utils.element_coder import element_to_Z, Z_to_element, NumpyEncoder
 from flare.utils.learner import subset_of_frame_by_element, \
     is_std_in_bound_per_species, is_force_in_bound_per_species
-from flare.mgp.mgp import MappedGaussianProcess
+from flare.mgp import MappedGaussianProcess
 
 
 class TrajectoryTrainer:
@@ -207,7 +208,7 @@ class TrajectoryTrainer:
 
         # Output parameters
         self.output = Output(output_name, verbose, always_flush=True)
-        self.logger = self.output.logger['log']
+        self.logger_name = self.output.basename+'log'
         self.train_checkpoint_interval = train_checkpoint_interval or \
             checkpoint_interval
         self.atom_checkpoint_interval = atom_checkpoint_interval
@@ -248,7 +249,8 @@ class TrajectoryTrainer:
             self.output_name + "_model." + self.model_format})
 
         self.start_time = time.time()
-        self.logger.debug("Now beginning pre-run activity.")
+        logger = logging.getLogger(self.logger_name)
+        logger.debug("Now beginning pre-run activity.")
         # If seed environments were passed in, add them to the GP.
 
         for point in self.seed_envs:
@@ -303,20 +305,21 @@ class TrajectoryTrainer:
                                      train_atoms=train_atoms,
                                      uncertainties=[], train=False)
 
+        logger = logging.getLogger(self.logger_name)
         if atom_count > 0:
-            self.logger.info(f"Added {atom_count} atoms to "
-                             f"pretrain.\n"
-                             f"Pre-run GP Statistics: "
-                             f"{json.dumps(self.gp.training_statistics)} ")
+            logger.info(f"Added {atom_count} atoms to "
+                        f"pretrain.\n"
+                        f"Pre-run GP Statistics: "
+                        f"{json.dumps(self.gp.training_statistics)} ")
 
         if (self.seed_envs or atom_count or self.seed_frames) and \
                 (self.pre_train_max_iter or self.max_trains):
-            self.logger.debug("Now commencing pre-run training of GP (which has "
-                              "non-empty training set)")
+            logger.debug("Now commencing pre-run training of GP (which has "
+                         "non-empty training set)")
             self.train_gp(max_iter=self.pre_train_max_iter)
         else:
-            self.logger.debug("Now commencing pre-run set up of GP (which has "
-                              "non-empty training set)")
+            logger.debug("Now commencing pre-run set up of GP (which has "
+                         "non-empty training set)")
             self.gp.check_L_alpha()
 
         if self.model_format and not self.mgp:
@@ -334,7 +337,8 @@ class TrajectoryTrainer:
         """
 
         # Perform pre-run, in which seed trames are used.
-        self.logger.debug("Commencing run with pre-run...")
+        logger = logging.getLogger(self.logger_name)
+        logger.debug("Commencing run with pre-run...")
         if not self.mgp:
             self.pre_run()
 
@@ -350,7 +354,7 @@ class TrajectoryTrainer:
 
         for i, cur_frame in enumerate(self.frames[::self.skip]):
 
-            self.logger.info(f"=====NOW ON FRAME {i}=====")
+            logger.info(f"=====NOW ON FRAME {i}=====")
 
             # If no predict_atoms_per_element was specified, predict_atoms
             # will be equal to every atom in the frame.
@@ -499,16 +503,17 @@ class TrajectoryTrainer:
         for atom, spec in zip(train_atoms, added_species):
             added_atoms[spec].append(atom)
 
-        self.logger.info('Adding atom(s) '
-                         f'{json.dumps(added_atoms,cls=NumpyEncoder)}'
-                         ' to the training set.')
+        logger = logging.getLogger(self.logger_name)
+        logger.info('Adding atom(s) '
+                    f'{json.dumps(added_atoms,cls=NumpyEncoder)}'
+                    ' to the training set.')
 
         if uncertainties is None or len(uncertainties) != 0:
             uncertainties = frame.stds[train_atoms]
 
         if len(uncertainties) != 0:
-            self.logger.info(f'Uncertainties: '
-                             f'{uncertainties}.')
+            logger.info(f'Uncertainties: '
+                        f'{uncertainties}.')
 
         # update gp model; handling differently if it's an MGP
         if not self.mgp:
@@ -529,7 +534,10 @@ class TrajectoryTrainer:
         :type max_iter: int
         """
 
-        self.logger.debug('Train GP')
+        logger = logging.getLogger(self.logger_name)
+        logger.debug('Train GP')
+
+        logger_train = logging.getLogger(self.output.basename+'hyps')
 
         # TODO: Improve flexibility in GP training to make this next step
         # unnecessary, so maxiter can be passed as an argument
@@ -540,10 +548,10 @@ class TrajectoryTrainer:
         elif max_iter is not None:
             temp_maxiter = self.gp.maxiter
             self.gp.maxiter = max_iter
-            self.gp.train(logger=self.output.logger['hyps'])
+            self.gp.train(logger=logger_train)
             self.gp.maxiter = temp_maxiter
         else:
-            self.gp.train(logger=self.output.logger['hyps'])
+            self.gp.train(logger=logger_train)
 
         self.output.write_hyps(self.gp.hyp_labels, self.gp.hyps,
                                self.start_time,

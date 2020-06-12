@@ -193,9 +193,6 @@ def predict_on_structure_par(structure: Structure,
     else:
         pool = mp.Pool(processes=n_cpus)
 
-    logger = gp.logger
-    gp.logger = None
-
     # Parallelize over atoms in structure
     results = []
     for atom in range(structure.nat):
@@ -208,8 +205,6 @@ def predict_on_structure_par(structure: Structure,
                                         args=[(structure, atom, gp)]))
     pool.close()
     pool.join()
-
-    gp.logger = logger
 
     for i in range(structure.nat):
         if i not in selective_atoms and selective_atoms:
@@ -272,9 +267,9 @@ def predict_on_structure_en(structure: Structure, gp: GaussianProcess,
             forces[n][i] = float(force)
             stds[n][i] = np.sqrt(np.abs(var))
 
-        if write_to_structure and structure.forces is not None:
-            structure.forces[n][i] = float(force)
-            structure.stds[n][i] = np.sqrt(np.abs(var))
+            if write_to_structure and structure.forces is not None:
+                structure.forces[n][i] = float(force)
+                structure.stds[n][i] = np.sqrt(np.abs(var))
 
         local_energies[n] = gp.predict_local_energy(chemenv)
 
@@ -319,20 +314,10 @@ def predict_on_structure_par_en(structure: Structure, gp: GaussianProcess,
     else:
         selective_atoms = []
 
-    # Work in serial if the number of cpus is 1
-    if n_cpus is 1:
-        return predict_on_structure_en(structure, gp,
-                                       write_to_structure=write_to_structure,
-                                       selective_atoms=selective_atoms,
-                                       skipped_atom_value=skipped_atom_value)
-
     if n_cpus is None:
         pool = mp.Pool(processes=mp.cpu_count())
     else:
         pool = mp.Pool(processes=n_cpus)
-
-    logger = gp.logger
-    gp.logger = None
 
     # Parallelize over atoms in structure
     results = []
@@ -346,8 +331,6 @@ def predict_on_structure_par_en(structure: Structure, gp: GaussianProcess,
                                         args=[(structure, atom_i, gp)]))
     pool.close()
     pool.join()
-
-    gp.logger = logger
 
     # Compile results
     for i in range(structure.nat):

@@ -1,8 +1,7 @@
-import logging
 import math
-import time
-import numpy as np
 import multiprocessing as mp
+import numpy as np
+import time
 
 from typing import List, Callable
 from flare.kernels.utils import from_mask_to_args, from_grad_to_mask

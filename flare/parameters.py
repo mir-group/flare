@@ -26,7 +26,7 @@ class Parameters():
     n_kernel_parameters = {'twobody': 2, 'threebody': 2, 'manybody': 2, 'cut3b': 0}
 
     logger = set_logger("Parameters", stream=True,
-                        fileout=False, verbose="info")
+                        fileout_name=None, verbose="info")
 
     def __init__(self):
 
@@ -396,7 +396,7 @@ class Parameters():
             if (k in dict1) != (k in dict2):
                 return False
             elif k in dict1:
-                if not (dict1[k] == dict2[k]).all():
+                if not (dict1[k] == dict2[k]):
                     return False
 
         for k in ['train_noise']:

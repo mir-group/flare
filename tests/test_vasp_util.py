@@ -117,14 +117,18 @@ def test_vasp_input_edit():
 
     final_structure = dft_input_to_structure(new_file)
 
-    assert np.isclose(final_structure.vec1, structure.vec1).all()
+    assert np.isclose(final_structure.vec1, structure.vec1, atol=1e-4).all()
     assert np.isclose(final_structure.positions[0],
-                      structure.positions[0]).all()
+                      structure.positions[0], atol=1e-4).all()
 
     os.system('rm ./POSCAR')
     os.system('rm ./POSCAR.bak')
 
-
+@pytest.mark.skipif(not os.environ.get('VASP_COMMAND',
+                                    False), reason='VASP_COMMAND not found '
+                    'in environment: Please install VASP '
+                    ' and set the VASP_COMMAND env. '
+                    'variable to point to cp2k.popt')
 def test_run_dft_par():
     os.system('cp test_files/test_POSCAR ./POSCAR')
     test_structure = dft_input_to_structure('./POSCAR')

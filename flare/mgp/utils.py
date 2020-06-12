@@ -1,17 +1,60 @@
-import io, os, sys, time, random, math
-import multiprocessing as mp
 import numpy as np
 
 from numpy import array
 from numba import njit
+from math import exp, floor
+from typing import Callable
 
 from flare.env import AtomicEnvironment
 from flare.kernels.cutoffs import quadratic_cutoff
-from flare.kernels.kernels import three_body_helper_1, \
-    three_body_helper_2, force_helper
 from flare.kernels.utils import str_to_kernel_set as stks
 from flare.parameters import Parameters
 
+from flare.mgp.grid_kernels_3b import grid_kernel, grid_kernel_sephyps
+
+
+def str_to_mapped_kernel(name: str, component: str = "sc",
+                         hyps_mask: dict = None):
+    """
+    return kernels and kernel gradient function base on a string.
+    If it contains 'sc', it will use the kernel in sc module;
+    otherwise, it uses the kernel in mc_simple;
+    if sc is not included and multihyps is True,
+    it will use the kernel in mc_sephyps module
+    otherwise, it will use the kernel in the sc module
+
+    Args:
+
+    name (str): name for kernels. example: "2+3mc"
+    multihyps (bool, optional): True for using multiple hyperparameter groups
+
+    :return: mapped kernel function, kernel gradient, energy kernel,
+             energy_and_force kernel
+
+    """
+
+    multihyps = True
+    if hyps_mask is None:
+        multihyps = False
+    elif hyps_mask['nspecie'] == 1:
+        multihyps = False
+
+    # b2 = Two body in use, b3 = Three body in use
+    b2 = False
+    many = False
+    b3 = False
+    for s in ['3', 'three']:
+        if s in name.lower() or s == name.lower():
+            b3 = True
+
+    if b3:
+         if multihyps:
+             return grid_kernel_sephyps
+         else:
+             return grid_kernel
+    else:
+        raise NotImplementedError("mapped kernel for two-body and manybody kernels "
+                                  "are not implemented")
 
 def get_kernel_term(GP, term):
     """
@@ -23,6 +66,7 @@ def get_kernel_term(GP, term):
     hyps, cutoffs, hyps_mask = Parameters.get_component_mask(GP.hyps_mask, term, hyps=GP.hyps)
 
     return (kernel, ek, efk, cutoffs, hyps, hyps_mask)
+
 
 def get_permutations(c2, ej1, ej2):
     perm_list = [[0, 1, 2]]
@@ -39,7 +83,7 @@ def get_permutations(c2, ej1, ej2):
         perm_list += [[1, 2, 0]]
         perm_list += [[2, 0, 1]]
 
-    return np.array(perm_list)
+    return np.array(perm_list, dtype=np.int)
 
 
 
@@ -94,6 +138,7 @@ def get_bonds(ctype, etypes, bond_array):
             bond_dirs.append([b_dir])
     return exist_species, bond_lengths, bond_dirs
 
+
 @njit
 def get_triplets(ctype, etypes, bond_array, cross_bond_inds,
                  cross_bond_dists, triplets):
@@ -110,18 +155,27 @@ def get_triplets(ctype, etypes, bond_array, cross_bond_inds,
             ind1 = cross_bond_inds[m, m+n+1]
             r2 = bond_array[ind1, 0]
             c2 = bond_array[ind1, 1:]
-            c12 = np.sum(c1*c2)
-            if c12 > 1: # to prevent numerical error
-                c12 = 1
-            elif c12 < -1:
-                c12 = -1
             spc2 = etypes[ind1]
+
+            c12 = np.sum(c1*c2)
+            r12 = np.sqrt(r1**2 + r2**2 - 2*r1*r2*c12)
+
+#            triplet1 = array([r1, r2, r12])
+#            triplet2 = array([r2, r1, r12])
+#
+#            if spc1 <= spc2:
+#                spcs = [ctype, spc1, spc2]
+#            else:
+#                spcs = [ctype, spc2, spc1]
+#
+#            triplet = [triplet1, triplet2]
+#            coord = [c1, c2]
 
             spcs_list = [[ctype, spc1, spc2], [ctype, spc2, spc1]]
             for i in range(2):
                 spcs = spcs_list[i]
-                triplet = array([r2, r1, c12]) if i else array([r1, r2, c12])
-                coord = c2 if i else c1
+                triplet = array([r2, r1, r12]) if i else array([r1, r2, r12])
+                coord = c2 if i else c1 # TODO: figure out what's wrong. why not [c1, c2] for force map
                 if spcs not in exist_species:
                     exist_species.append(spcs)
                     tris.append([triplet])
@@ -149,21 +203,21 @@ def get_triplets_en(ctype, etypes, bond_array, cross_bond_inds,
             ind1 = cross_bond_inds[m, m+n+1]
             r2 = bond_array[ind1, 0]
             c2 = bond_array[ind1, 1:]
+            spc2 = etypes[ind1]
+
             c12 = np.sum(c1*c2)
             r12 = np.sqrt(r1**2 + r2**2 - 2*r1*r2*c12)
 
-            spc2 = etypes[ind1]
             triplet1 = array([r1, r2, r12])
             triplet2 = array([r2, r1, r12])
 
             if spc1 <= spc2:
                 spcs = [ctype, spc1, spc2]
-                triplet = [triplet1, triplet2]
-                coord = [c1, c2]
             else:
                 spcs = [ctype, spc2, spc1]
-                triplet = [triplet2, triplet1]
-                coord = [c2, c1]
+
+            triplet = [triplet1, triplet2]
+            coord = [c1, c2]
 
             if spcs not in exist_species:
                 exist_species.append(spcs)
@@ -174,5 +228,7 @@ def get_triplets_en(ctype, etypes, bond_array, cross_bond_inds,
                 tris[k] += triplet
                 tri_dir[k] += coord
 
+
     return exist_species, tris, tri_dir
+
 

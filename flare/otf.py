@@ -1,12 +1,11 @@
-import sys
+import logging
 import numpy as np
 import time
+
 from copy import deepcopy
-import multiprocessing as mp
-import subprocess
+from datetime import datetime
 from shutil import copyfile
 from typing import List, Tuple, Union
-from datetime import datetime
 
 import flare.predict as predict
 from flare import struc, gp, env, md
@@ -297,7 +296,8 @@ class OTF:
 
         Calculates DFT forces on atoms in the current structure."""
 
-        self.output.logger['log'].info('\nCalling DFT...\n')
+        f = logging.getLogger(self.output.basename+'log')
+        f.info('\nCalling DFT...\n')
 
         # calculate DFT forces
         forces = self.dft_module.run_dft_par(self.dft_input, self.structure,
@@ -368,7 +368,7 @@ class OTF:
         mae = np.mean(np.abs(gp_frcs - dft_frcs))
         mac = np.mean(np.abs(dft_frcs))
 
-        f = self.output.logger['log']
+        f = logging.getLogger(self.output.basename+'log')
         f.info(f'mean absolute error: {mae:.4f} eV/A')
         f.info(f'mean absolute dft component: {mac:.4f} eV/A')
 

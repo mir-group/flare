@@ -5,9 +5,10 @@ import numpy as np
 
 from flare import otf, kernels
 from flare.gp import GaussianProcess
-from flare.mgp.mgp import MappedGaussianProcess
+from flare.mgp import MappedGaussianProcess
 from flare.ase.calculator import FLARE_Calculator
 from flare.ase.otf import ASE_OTF
+from flare.utils.parameter_helper import ParameterHelper
 # from flare.ase.logger import OTFLogger
 
 from ase import units
@@ -61,34 +62,41 @@ def flare_calc():
     for md_engine in md_list:
 
         # ---------- create gaussian process model -------------------
-        gp_model = GaussianProcess(kernel_name='2+3_mc',
-                                   hyps=[0.1, 1., 0.001, 1, 0.06],
-                                   cutoffs=(5.0, 5.0),
-                                   hyp_labels=['sig2', 'ls2', 'sig3',
-                                               'ls3', 'noise'],
-                                   opt_algorithm='BFGS',
-                                   par=False)
+
+        # set up GP hyperparameters
+        kernels = ['twobody', 'threebody'] # use 2+3 body kernel
+        parameters = {'cutoff_twobody': 5.0,
+                      'cutoff_threebody': 3.5}
+        pm = ParameterHelper(
+            kernels = kernels,
+            random = True,
+            parameters=parameters
+        )
+        
+        hm = pm.as_dict()
+        hyps = hm['hyps']
+        cut = hm['cutoffs']
+        print('hyps', hyps)
+        
+        gp_model = GaussianProcess(
+            kernels = kernels,
+            component = 'sc', # single-component. For multi-comp, use 'mc'
+            hyps = hyps,
+            cutoffs = cut,
+            hyp_labels = ['sig2','ls2','sig3','ls3','noise'],
+            opt_algorithm = 'L-BFGS-B',
+            n_cpus = 1
+        )
 
         # ----------- create mapped gaussian process ------------------
-        grid_num_2 = 64 
-        grid_num_3 = 16
-        lower_cut = 0.1
-
-        grid_params = {'load_grid': None,
-                       'update': False}
- 
-        grid_params['twobody'] = {'lower_bound': [lower_cut],
-                                  'grid_num': [grid_num_2],
-                                  'svd_rank': 'auto'}
-
-        grid_params['threebody'] = {'lower_bound': [lower_cut for d in range(3)],
-                                    'grid_num': [grid_num_3 for d in range(3)],
-                                    'svd_rank': 'auto'}
-    
-        species_list = [1, 2]
-    
-        mgp_model = MappedGaussianProcess(grid_params, species_list, n_cpus=1,
-             map_force=False, mean_only=False)
+        grid_params = {'twobody':   {'grid_num': [64]},
+                       'threebody': {'grid_num': [16, 16, 16]}}
+        
+        mgp_model = MappedGaussianProcess(grid_params,
+                                          species_list = [1, 2],
+                                          n_cpus = 1,
+                                          map_force = False,
+                                          mean_only = False)
 
         # ------------ create ASE's flare calculator -----------------------
         flare_calculator = FLARE_Calculator(gp_model, mgp_model=mgp_model,
