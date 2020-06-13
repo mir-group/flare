@@ -329,8 +329,8 @@ def test_lmp_predict(all_gp, all_mgp, bodies, multihyps, map_force):
             os.remove(f)
     clean()
 
-    if map_force and ('3' in bodies):
-        pytest.skip()
+#    if map_force and ('3' in bodies):
+#        pytest.skip()
 
     mgp_model = all_mgp[f'{bodies}{multihyps}{map_force}']
     gp_model = all_gp[f'{bodies}{multihyps}']
