@@ -485,10 +485,7 @@ class SingleMapXbody:
             # predict forces and energy
             e_0, f_0 = self.mean(lengths, with_derivatives=True)
             e = np.sum(e_0) # energy
-            if lengths.shape[1] == 1:
-                f_d = np.diag(f_0[:,0,0]) @ xyzs
-            else:
-                f_d = np.diag(f_0[:,0,0]) @ xyzs
+            f_d = np.diag(f_0[:,0,0]) @ xyzs
             f = self.bodies * np.sum(f_d, axis=0)
 
             # predict var

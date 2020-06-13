@@ -19,7 +19,7 @@ from .fake_gp import get_gp, get_random_structure
 body_list = ['2', '3']
 multi_list = [False, True]
 map_force_list = [False, True]
-force_block_only = True
+force_block_only = False
 
 def clean():
     for f in os.listdir("./"):
@@ -329,8 +329,8 @@ def test_lmp_predict(all_gp, all_mgp, bodies, multihyps, map_force):
             os.remove(f)
     clean()
 
-    if map_force and ('3' in bodies):
-        pytest.skip()
+#    if map_force and ('3' in bodies):
+#        pytest.skip()
 
     mgp_model = all_mgp[f'{bodies}{multihyps}{map_force}']
     gp_model = all_gp[f'{bodies}{multihyps}']
