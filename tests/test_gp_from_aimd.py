@@ -15,7 +15,7 @@ from flare.gp_from_aimd import TrajectoryTrainer,\
                                     parse_trajectory_trainer_output
 from flare.utils.learner import subset_of_frame_by_element
 
-from .test_mgp_unit import all_mgp, all_gp, get_random_structure
+from .test_mgp import all_mgp, all_gp, get_random_structure
 from .fake_gp import get_gp
 
 @pytest.fixture
@@ -210,6 +210,7 @@ def test_mgp_gpfa(all_mgp, all_gp):
     :return:
     '''
 
+    np.random.seed(10)
     gp_model  = get_gp('3', 'mc', False)
     gp_model.set_L_alpha()
 
@@ -222,16 +223,15 @@ def test_mgp_gpfa(all_mgp, all_gp):
     grid_params = {'load_grid': None,
                    'update': False}
     grid_params['threebody'] = grid_params_3b
-    species_list = [1, 2]
+    unique_species = gp_model.training_statistics['species']
 
-    mgp_model = MappedGaussianProcess(grid_params, species_list, n_cpus=1,
+    mgp_model = MappedGaussianProcess(grid_params, unique_species, n_cpus=1,
                 map_force=False)
 
     mgp_model.build_map(gp_model)
 
     nenv = 10
     cell = np.eye(3)
-    unique_species = gp_model.training_data[0].species
     struc, f = get_random_structure(cell, unique_species, nenv)
 
     struc.forces = np.array(f)

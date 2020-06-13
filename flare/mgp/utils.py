@@ -10,7 +10,7 @@ from flare.kernels.cutoffs import quadratic_cutoff
 from flare.kernels.utils import str_to_kernel_set as stks
 from flare.parameters import Parameters
 
-from flare.mgp.grid_kernels import grid_kernel, grid_kernel_sephyps
+from flare.mgp.grid_kernels_3b import grid_kernel, grid_kernel_sephyps
 
 
 def str_to_mapped_kernel(name: str, component: str = "sc",
@@ -184,7 +184,7 @@ def get_triplets(ctype, etypes, bond_array, cross_bond_inds,
             for i in range(2):
                 spcs = spcs_list[i]
                 triplet = array([r2, r1, r12]) if i else array([r1, r2, r12])
-                coord = c1 if i else c2 # TODO: figure out what's wrong. why not [c1, c2] for force map
+                coord = c2 if i else c1 # TODO: figure out what's wrong. why not [c1, c2] for force map
                 if spcs not in exist_species:
                     exist_species.append(spcs)
                     tris.append([triplet])
@@ -195,4 +195,3 @@ def get_triplets(ctype, etypes, bond_array, cross_bond_inds,
                     tri_dir[k].append(coord)
 
     return exist_species, tris, tri_dir
-

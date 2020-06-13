@@ -11,17 +11,11 @@ from flare.utils.parameter_helper import ParameterHelper
 
 def get_random_structure(cell, unique_species, noa):
     """Create a random test structure """
-    np.random.seed(0)
 
-    positions = []
-    forces = []
-    species = []
-
-    for n in range(noa):
-        positions.append(np.random.uniform(-1, 1, 3))
-        forces.append(np.random.uniform(-1, 1, 3))
-        species.append(unique_species[np.random.randint(0,
-                                                        len(unique_species))])
+    forces = (np.random.random([noa, 3])-0.5)*2
+    positions = np.random.random([noa, 3])
+    species = [unique_species[np.random.randint(0, len(unique_species))] \
+            for i in range(noa)]
 
     test_structure = Structure(cell, species, positions)
 
@@ -32,7 +26,6 @@ def generate_hm(ntwobody, nthreebody, nmanybody=1, constraint=False, multihyps=T
 
     cutoff = 0.8
     if (multihyps is False):
-        hyps_label = []
         kernels = []
         parameters = {}
         if (ntwobody > 0):
@@ -80,15 +73,14 @@ def generate_hm(ntwobody, nthreebody, nmanybody=1, constraint=False, multihyps=T
     return hyps, hm, cut
 
 
-def get_gp(bodies, kernel_type='mc', multihyps=True, cellabc=[1, 1, 1.5], 
-           force_only=False) -> GaussianProcess:
+def get_gp(bodies, kernel_type='mc', multihyps=True, cellabc=[1, 1, 1.5],
+           force_only=False, noa=5) -> GaussianProcess:
     """Returns a GP instance with a two-body numba-based kernel"""
     print("\nSetting up...\n")
 
     # params
     cell = np.diag(cellabc)
     unique_species = [2, 1, 3]
-    noa = 5
 
     ntwobody = 0
     nthreebody = 0

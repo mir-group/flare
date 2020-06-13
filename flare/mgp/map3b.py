@@ -10,7 +10,7 @@ from flare.kernels.utils import from_mask_to_args
 
 from flare.mgp.mapxb import MapXbody, SingleMapXbody
 from flare.mgp.utils import get_triplets, get_kernel_term, get_permutations
-from flare.mgp.grid_kernels import triplet_cutoff
+from flare.mgp.grid_kernels_3b import triplet_cutoff
 
 
 class Map3body(MapXbody):
@@ -51,8 +51,8 @@ class Map3body(MapXbody):
 
         return spcs, comp_r, comp_xyz
 
-
-
+    def find_map_index(self, spc):
+        return self.spc.index(spc)
 
 class SingleMap3body(SingleMapXbody):
     def __init__(self, args):
@@ -96,23 +96,30 @@ class SingleMap3body(SingleMapXbody):
                 self.grid_num[d], dtype=np.float64)
             triplets.append(bonds)
 
+#        r1 = np.tile(bonds1, (nb12, nb2, 1))
+#        r1 = np.moveaxis(r1, -1, 0)
+#        r2 = np.tile(bonds2, (nb1, nb12, 1))
+#        r2 = np.moveaxis(r2, -1, 1)
+#        r12 = np.tile(bonds12, (nb1, nb2, 1))
+
         # concatenate into one array: n_grid x 3
-        mesh = np.meshgrid(*triplets)
-        del triplets 
+        mesh = np.meshgrid(*triplets, indexing='ij')
+        del triplets
 
         mesh_list = []
         n_grid = np.prod(self.grid_num)
         for d in range(3):
             mesh_list.append(np.reshape(mesh[d], n_grid))
 
-        return np.array(mesh_list).T
+        mesh_list = np.array(mesh_list).T
+
+        return mesh_list
 
 
     def set_env(self, grid_env, grid_pt):
         r1, r2, r12 = grid_pt
         dist12 = r12
-        grid_env.bond_array_3 = np.array([[r1, 1, 0, 0],
-                                       [r2, 0, 0, 0]])
+        grid_env.bond_array_3 = np.array([[r1, 1, 0, 0], [r2, 0, 0, 0]])
         grid_env.cross_bond_dists = np.array([[0, dist12], [dist12, 0]])
 
         return grid_env
@@ -120,6 +127,8 @@ class SingleMap3body(SingleMapXbody):
 
     def skip_grid(self, grid_pt):
         r1, r2, r12 = grid_pt
+
+        return False
 
         if not self.map_force:
             relaxation = 1/2 * np.max(self.grid_num) * self.grid_interval
@@ -157,10 +166,10 @@ class SingleMap3body(SingleMapXbody):
         coords = np.zeros((grids.shape[0], 9), dtype=np.float64) # padding 0
         coords[:, 0] = np.ones_like(coords[:, 0])
 
-        fj, fdj = triplet_cutoff(grids, r_cut, coords, derivative=True) # TODO: add cutoff func 
+        fj, fdj = triplet_cutoff(grids, r_cut, coords, derivative=True) # TODO: add cutoff func
         fdj = fdj[:, [0]]
 
-        perm_list = get_permutations(env12.ctype, env12.etypes[0], env12.etypes[1])
+        #perm_list = get_permutations(env12.ctype, env12.etypes[0], env12.etypes[1])
 
         if self.map_force:
             prefix = 'force'
@@ -178,7 +187,7 @@ class SingleMap3body(SingleMapXbody):
         for m_index in range(s, e):
             data = training_data[m_index]
             kern_vec = grid_kernel(kern_type, data, grids, fj, fdj,
-                                   env12.ctype, env12.etypes, perm_list,
+                                   env12.ctype, env12.etypes, #perm_list,
                                    *args)
             k_v.append(kern_vec)
 

@@ -9,7 +9,7 @@ from time import time
 
 def grid_kernel_sephyps(kern_type,
                   data, grids, fj, fdj,
-                  c2, etypes2, perm_list,
+                  c2, etypes2, 
                   cutoff_2b, cutoff_3b, cutoff_mb,
                   nspec, spec_mask,
                   nbond, bond_mask,
@@ -34,13 +34,13 @@ def grid_kernel_sephyps(kern_type,
     hyps = [sig, ls]
     return grid_kernel(kern_type,
                    data, grids, fj, fdj,
-                   c2, etypes2, perm_list,
+                   c2, etypes2, 
                    hyps, cutoffs, cutoff_func)
 
 
 def grid_kernel(kern_type,
                 struc, grids, fj, fdj,
-                c2, etypes2, perm_list,
+                c2, etypes2, 
                 hyps: 'ndarray', cutoffs,
                 cutoff_func: Callable = quadratic_cutoff):
 
@@ -53,7 +53,7 @@ def grid_kernel(kern_type,
     for env in struc:
         kern += grid_kernel_env(kern_type,
                     env, grids, fj, fdj,
-                    c2, etypes2, perm_list,
+                    c2, etypes2, 
                     hyps, r_cut, cutoff_func)
 
     return kern
@@ -61,7 +61,7 @@ def grid_kernel(kern_type,
 
 def grid_kernel_env(kern_type,
                 env1, grids, fj, fdj,
-                c2, etypes2, perm_list,
+                c2, etypes2, 
                 hyps: 'ndarray', r_cut: float,
                 cutoff_func: Callable = quadratic_cutoff):
 
@@ -73,7 +73,7 @@ def grid_kernel_env(kern_type,
     # collect all the triplets in this training env
     triplet_coord_list = get_triplets_for_kern(env1.bond_array_3, env1.ctype, env1.etypes,
         env1.cross_bond_inds, env1.cross_bond_dists, env1.triplet_counts,
-        c2, etypes2, perm_list)
+        c2, etypes2)
 
     if len(triplet_coord_list) == 0: # no triplets
         if derivative:
@@ -94,6 +94,7 @@ def grid_kernel_env(kern_type,
         rij = ri - rj
         D += rij * rij # (n_triplets, n_grids)
         rij_list.append(rij)
+
     kern_exp = (sig * sig) * np.exp(- D * ls1)
 
     # calculate cutoff of the triplets
@@ -208,7 +209,7 @@ def triplet_cutoff(triplets, r_cut, coords, derivative=False, cutoff_func=quadra
 def get_triplets_for_kern(bond_array_1, c1, etypes1,
                           cross_bond_inds_1, cross_bond_dists_1,
                           triplets_1,
-                          c2, etypes2, perm_list):
+                          c2, etypes2):
 
     #triplet_list = np.empty((0, 6), dtype=np.float64)
     triplet_list = []
@@ -244,7 +245,6 @@ def get_triplets_for_kern(bond_array_1, c1, etypes1,
                     ei2 = etypes1[ind1]
                     if (ei2 == one_spec):
 
-                        order = [c1_ind, ei1_ind, ei2_ind]
                         ri2 = bond_array_1[ind1, 0]
                         ci2 = bond_array_1[ind1, 1:]
 
@@ -252,15 +252,27 @@ def get_triplets_for_kern(bond_array_1, c1, etypes1,
                         ci3 = np.zeros(3)
 
                         # align this triplet to the same species order as r1, r2, r12
-                        tri = np.take(np.array([ri1, ri2, ri3]), order)
-                        crd1 = np.take(np.array([ci1[0], ci2[0], ci3[0]]), order)
-                        crd2 = np.take(np.array([ci1[1], ci2[1], ci3[1]]), order)
-                        crd3 = np.take(np.array([ci1[2], ci2[2], ci3[2]]), order)
+
+                        perms = []
+                        if (c1 == c2):
+                            if (ei1 == ej1) and (ei2 == ej2): perms.append([0, 1, 2])
+                            if (ei1 == ej2) and (ei2 == ej1): perms.append([1, 0, 2])
+                        if (c1 == ej1):
+                            if (ei1 == ej2) and (ei2 == c2):  perms.append([1, 2, 0])
+                            if (ei1 == c2) and (ei2 == ej2):  perms.append([0, 2, 1])
+                        if (c1 == ej2):
+                            if (ei1 == ej1) and (ei2 == c2):  perms.append([2, 1, 0])
+                            if (ei1 == c2) and (ei2 == ej1):  perms.append([2, 0, 1])
+
+                        tri  = np.array([ri1, ri2, ri3])
+                        crd1 = np.array([ci1[0], ci2[0], ci3[0]])
+                        crd2 = np.array([ci1[1], ci2[1], ci3[1]])
+                        crd3 = np.array([ci1[2], ci2[2], ci3[2]])
 
                         # append permutations
-                        nperm = perm_list.shape[0]
+                        nperm = len(perms)
                         for iperm in range(nperm):
-                            perm = perm_list[iperm]
+                            perm = perms[iperm]
                             tricrd = np.take(tri, perm)
                             crd1_p = np.take(crd1, perm)
                             crd2_p = np.take(crd2, perm)

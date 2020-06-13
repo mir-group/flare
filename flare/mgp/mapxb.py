@@ -19,6 +19,7 @@ from flare.struc import Structure
 from flare.mgp.utils import get_kernel_term, str_to_mapped_kernel
 from flare.mgp.splines_methods import PCASplines, CubicSpline
 
+global_use_grid_kern = True
 
 class MapXbody:
     def __init__(self,
@@ -50,8 +51,9 @@ class MapXbody:
         self.lower_bound_relax = lower_bound_relax
         self.n_cpus = n_cpus
         self.n_sample = n_sample
+        self.spc = []
+        self.spc_set = []
 
-        # build_bond_struc is defined in subclass
         self.build_bond_struc(species_list)
 
         # build map container only when the bounds are specified
@@ -62,6 +64,11 @@ class MapXbody:
                 (len(GP.training_data) > 0):
             self.build_map(GP)
 
+    def build_bond_struc(self, species_list):
+        raise NotImplementedError("need to be implemented in child class")
+
+    def get_arrays(self, atom_env):
+        raise NotImplementedError("need to be implemented in child class")
 
     def build_map_container(self, bounds):
         '''
@@ -90,6 +97,11 @@ class MapXbody:
 
     def predict(self, atom_env, mean_only):
 
+        min_dist = atom_env.bond_array_2[0][0]
+        lower_bound = np.max(self.maps[0].bounds[0][0])
+        assert min_dist >= lower_bound,\
+                f'The minimal distance {min_dist:.3f} is below the mgp lower bound {lower_bound:.3f}'
+
         if self.mean_only:  # if not build mapping for var
             mean_only = True
 
@@ -116,9 +128,8 @@ class MapXbody:
         for i, spc in enumerate(spcs):
             lengths = np.array(comp_r[i])
             xyzs = np.array(comp_xyz[i])
+            map_ind = self.find_map_index(spc)
 
-            print('spcs lengths, xyzs', spc, lengths, xyzs)
-            map_ind = self.spc.index(spc)
             f, vir, v, e = self.maps[map_ind].predict(lengths, xyzs,
                 self.map_force, mean_only)
             f_spcs += f
@@ -138,6 +149,7 @@ class MapXbody:
 class SingleMapXbody:
     def __init__(self, grid_num: int, bounds, species: str,
                  map_force=False, svd_rank=0, mean_only: bool=False,
+
                  load_grid=None, lower_bound_relax=0.1,
                  n_cpus: int=None, n_sample: int=100):
 
@@ -156,10 +168,22 @@ class SingleMapXbody:
         self.auto_upper = (bounds[1] == 'auto')
 
         self.hyps_mask = None
+        self.use_grid_kern = global_use_grid_kern
 
         if not self.auto_lower and not self.auto_upper:
             self.build_map_container()
 
+    def set_bounds(self, lower_bound, upper_bound):
+        raise NotImplementedError("need to be implemented in child class")
+
+    def construct_grids(self):
+        raise NotImplementedError("need to be implemented in child class")
+
+    def set_env(self, grid_env, r):
+        raise NotImplementedError("need to be implemented in child class")
+
+    def skip_grid(self, r):
+        raise NotImplementedError("need to be implemented in child class")
 
     def get_grid_env(self, GP):
         if isinstance(GP.cutoffs, dict):
@@ -215,16 +239,16 @@ class SingleMapXbody:
             warnings.warn("No training data, will return 0")
             return np.zeros([n_grid]), None
 
-#        self.use_grid_kern = (self.kernel_name == "threebody" and (not self.map_force))
-#        self.use_grid_kern = False
-        self.use_grid_kern = (self.kernel_name == "threebody")
-
         # ------- call gengrid functions ---------------
         args = [GP.name, grid_env, kernel_info]
+        self.use_grid_kern = True
         if self.use_grid_kern:
-            mapk = str_to_mapped_kernel(self.kernel_name, GP.component, GP.hyps_mask)
-            mapped_kernel_info = (mapk,
-                                  kernel_info[3], kernel_info[4], kernel_info[5])
+            try:
+                mapk = str_to_mapped_kernel(self.kernel_name, GP.component, GP.hyps_mask)
+                mapped_kernel_info = (mapk,
+                                      kernel_info[3], kernel_info[4], kernel_info[5])
+            except:
+                self.use_grid_kern = False
 
         if processes == 1:
             args = [GP.name, grid_env, kernel_info]
@@ -236,6 +260,7 @@ class SingleMapXbody:
             else:
                 k12_v_force = self._gengrid_serial(args, True, n_envs)
                 k12_v_energy = self._gengrid_serial(args, False, n_strucs)
+
         else:
             if self.use_grid_kern:
                 args = [GP.name, grid_env, mapped_kernel_info]
@@ -292,12 +317,12 @@ class SingleMapXbody:
             k12_slice = []
             for ibatch in range(nbatch):
                 s, e = block_id[ibatch]
-                if threebody: 
-                    k12_slice.append(pool.apply_async(self._gengrid_numba,
-                        args = (GP_name, force_block, s, e, grid_env, mapped_kernel_info)))
-                else:
-                    k12_slice.append(pool.apply_async(self._gengrid_inner,
-                        args = args + [force_block, s, e]))
+                # if threebody:
+                #     k12_slice.append(pool.apply_async(self._gengrid_numba,
+                #         args = (GP_name, force_block, s, e, grid_env, mapped_kernel_info)))
+                # else:
+                k12_slice.append(pool.apply_async(self._gengrid_inner,
+                    args = args + [force_block, s, e]))
             k12_matrix = []
             for ibatch in range(nbatch):
                 k12_matrix += [k12_slice[ibatch].get()]
@@ -368,13 +393,17 @@ class SingleMapXbody:
 
         # double check the container and the GP is consistent
         if not Parameters.compare_dict(GP.hyps_mask, self.hyps_mask):
-            self.hyps_mask = GP.hyps_mask
             rebuild_container = True
 
         # check if bounds are updated
         lower_bound = self.bounds[0]
-        if self.auto_lower:
-            lower_bound = self.search_lower_bound(GP)
+        min_dist = self.search_lower_bound(GP)
+        if min_dist < np.max(lower_bound): # change lower bound
+            warnings.warn('The minimal distance in training data is lower than \
+                    the current lower bound, will reset lower bound')
+
+        if self.auto_lower or (min_dist < np.max(lower_bound)):
+            lower_bound = np.max((min_dist - self.lower_bound_relax, 0))
             rebuild_container = True
 
         upper_bound = self.bounds[1]
@@ -383,9 +412,8 @@ class SingleMapXbody:
                 self.species, GP.hyps_mask)
             rebuild_container = True
 
-        self.set_bounds(lower_bound, upper_bound)
-
         if rebuild_container:
+            self.set_bounds(lower_bound, upper_bound)
             self.build_map_container()
 
         if not self.load_grid:
@@ -394,7 +422,6 @@ class SingleMapXbody:
             y_mean = np.load(f'{self.load_grid}grid{self.bodies}_mean_{self.species_code}.npy')
             y_var = np.load(f'{self.load_grid}grid{self.bodies}_var_{self.species_code}.npy')
 
-        y_mean, y_var = self.GenGrid(GP)
         self.mean.set_values(y_mean)
         if not self.mean_only:
             if self.svd_rank == 'auto':
@@ -426,7 +453,7 @@ class SingleMapXbody:
                 if min_dist < lower_bound:
                     lower_bound = min_dist
 
-        return np.max(lower_bound - self.lower_bound_relax, 0)
+        return lower_bound
 
 
     def predict(self, lengths, xyzs, map_force, mean_only):
@@ -461,7 +488,7 @@ class SingleMapXbody:
             if lengths.shape[1] == 1:
                 f_d = np.diag(f_0[:,0,0]) @ xyzs
             else:
-                f_d = np.diag(f_0[:,1,0]) @ xyzs
+                f_d = np.diag(f_0[:,0,0]) @ xyzs
             f = self.bodies * np.sum(f_d, axis=0)
 
             # predict var
@@ -486,6 +513,13 @@ class SingleMapXbody:
     def write(self, f):
         '''
         Write LAMMPS coefficient file
+
+        This implementation only works for 2b and 3b. User should
+        implement overload in the actual class if the new kernel
+        has different coefficient format
+
+        In the future, it should be changed to writing in bin/hex
+        instead of decimal
         '''
 
         # write header
@@ -494,18 +528,25 @@ class SingleMapXbody:
         b = self.bounds[1]
         order = self.grid_num
 
-        header = ''
-        for term in [elems, a, b, order]:
-            for s in range(len(term)):
-                header += f'{term[s]} '
+        header = ' '.join(elems)
+        header += ' '+' '.join(map(repr, a))
+        header += ' '+' '.join(map(repr, b))
+        header += ' '+' '.join(map(str, order))
         f.write(header + '\n')
 
         # write coefficients
         coefs = self.mean.__coeffs__
-        coefs = np.reshape(coefs, np.prod(coefs.shape))
+        self.write_flatten_coeff(f, coefs)
+
+    def write_flatten_coeff(self, f, coefs):
+        """
+        flatten the coefficient and write it as
+        a block. each line has no more than 5 element.
+        the accuracy is restricted to .10
+        """
+        coefs = coefs.reshape([-1])
         for c, coef in enumerate(coefs):
-            f.write('{:.10e} '.format(coef))
+            f.write(' '+repr(coef))
             if c % 5 == 4 and c != len(coefs)-1:
                 f.write('\n')
-
         f.write('\n')

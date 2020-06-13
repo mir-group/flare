@@ -1,7 +1,8 @@
-numpy
+numpy>=1.16.0
 scipy
 memory_profiler
 numba
 ase
 pymatgen
 nptyping
+pytest>=4.6

@@ -296,6 +296,7 @@ def test_kernel_vector(params):
 
     hyps, name, kernel, cutoffs, _, _, _, _ = params
 
+    np.random.seed(10)
     test_point = get_tstp()
 
     size1 = len(flare.gp_algebra._global_training_data[name])
@@ -317,6 +318,7 @@ def test_en_kern_vec(params):
 
     hyps, name, kernel, cutoffs, _, _, _, _ = params
 
+    np.random.seed(10)
     test_point = get_tstp()
 
     size1 = len(flare.gp_algebra._global_training_data[name])
