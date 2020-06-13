@@ -19,7 +19,7 @@ from .fake_gp import get_gp, get_random_structure
 body_list = ['2', '3']
 multi_list = [False, True]
 map_force_list = [False, True]
-force_block_only = True
+force_block_only = False
 
 def clean():
     for f in os.listdir("./"):
