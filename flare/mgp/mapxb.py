@@ -1,4 +1,4 @@
-import warnings
+import logging, warnings
 import numpy as np
 import multiprocessing as mp
 
@@ -8,7 +8,7 @@ from scipy.linalg import solve_triangular
 from typing import List
 
 from flare.env import AtomicEnvironment
-from flare.kernels.utils import from_mask_to_args
+from flare.kernels.utils import from_mask_to_args, str_to_kernel_set
 from flare.gp import GaussianProcess
 from flare.gp_algebra import partition_vector, energy_force_vector_unit, \
     force_energy_vector_unit, energy_energy_vector_unit, force_force_vector_unit,\
@@ -56,7 +56,7 @@ class MapXbody:
 
         self.build_bond_struc(species_list)
 
-        # build map container only when the bounds are specified
+
         bounds = [self.lower_bound, self.upper_bound]
         self.build_map_container(bounds)
 
@@ -139,6 +139,76 @@ class MapXbody:
 
         return f_spcs, vir_spcs, kern, v_spcs, e_spcs
 
+    def as_dict(self) -> dict:
+        """
+        Dictionary representation of the MGP model.
+        """
+
+        out_dict = deepcopy(dict(vars(self)))
+
+        # Uncertainty mappings currently not serializable;
+        if not self.mean_only:
+            out_dict['mean_only'] = True
+
+        # save the kernel name instead of callables
+        kernel, ek, efk, cutoffs, hyps, hyps_mask = self.kernel_info
+        out_dict['kernel_info'] = (kernel.__name__, ek.__name__, efk.__name__,
+                               cutoffs, hyps, hyps_mask)
+
+        # only save the mean coefficients
+        out_dict['maps'] = [m.mean.__coeffs__ for m in self.maps]
+        out_dict['bounds'] = [m.bounds for m in self.maps]
+
+        # rm keys since they are built in the __init__ function
+        key_list = ['singlexbody', 'spc_set']
+        for key in key_list:
+            if out_dict.get(key) is not None:
+                del out_dict[key]        
+
+        return out_dict
+
+    @staticmethod
+    def from_dict(dictionary: dict, mapxbody):
+        """
+        Create MGP object from dictionary representation.
+        """
+
+        # Set GP
+        if dictionary.get('GP'):
+            GP = GaussianProcess.from_dict(dictionary.get("GP"))
+        else:
+            dictionary['GP'] = None
+
+        if 'container_only' not in dictionary:
+            dictionary['container_only'] = True
+
+        # initialize
+        init_args_name = ['grid_num', 'lower_bound', 'upper_bound', 'svd_rank',
+            'species_list', 'map_force', 'GP', 'mean_only', 'container_only', 
+            'lmp_file_name', 'load_grid', 'lower_bound_relax', 'n_cpus', 'n_sample']
+        args = [dictionary[name] for name in init_args_name]
+        new_mgp = mapxbody(args)
+
+        # Restore kernel_info
+        kernel_info = dictionary['kernel_info']
+        kernel_name = kernel_info[0]
+        hyps_mask = kernel_info[-1]
+        kernel, _, ek, efk = str_to_kernel_set([kernel_name], 'mc', hyps_mask)
+        kernel_info[0] = kernel
+        kernel_info[1] = ek
+        kernel_info[2] = efk
+        new_mgp.kernel_info = kernel_info
+
+        # Fill up the model with the saved coeffs
+        for m in range(len(new_mgp.maps)):
+            singlexb = new_mgp.maps[m]
+            bounds = dictionary['bounds'][m]
+            singlexb.set_bounds(bounds[0], bounds[1])
+            singlexb.build_map_container()
+            singlexb.mean.__coeffs__ = np.array(dictionary['maps'][m])
+
+        return new_mgp
+
 
     def write(self, f):
         for m in self.maps:
@@ -149,7 +219,6 @@ class MapXbody:
 class SingleMapXbody:
     def __init__(self, grid_num: int, bounds, species: str,
                  map_force=False, svd_rank=0, mean_only: bool=False,
-
                  load_grid=None, lower_bound_relax=0.1,
                  n_cpus: int=None, n_sample: int=100):
 
@@ -165,7 +234,18 @@ class SingleMapXbody:
         self.n_sample = n_sample
 
         self.auto_lower = (bounds[0] == 'auto')
+        if self.auto_lower: 
+            lower_bound = 0
+        else:
+            lower_bound = bounds[0]
+
         self.auto_upper = (bounds[1] == 'auto')
+        if self.auto_upper: 
+            upper_bound = 1
+        else:
+            upper_bound = bounds[1]
+
+        self.set_bounds(lower_bound, upper_bound)
 
         self.hyps_mask = None
         self.use_grid_kern = global_use_grid_kern
@@ -387,15 +467,13 @@ class SingleMapXbody:
                                       orders=self.grid_num,
                                       svd_rank=self.svd_rank)
 
-    def build_map(self, GP):
-
+    def update_bounds(self, GP):
         rebuild_container = False
 
         # double check the container and the GP is consistent
         if not Parameters.compare_dict(GP.hyps_mask, self.hyps_mask):
             rebuild_container = True
 
-        # check if bounds are updated
         lower_bound = self.bounds[0]
         min_dist = self.search_lower_bound(GP)
         if min_dist < np.max(lower_bound): # change lower bound
@@ -416,6 +494,12 @@ class SingleMapXbody:
             self.set_bounds(lower_bound, upper_bound)
             self.build_map_container()
 
+
+    def build_map(self, GP):
+
+        self.update_bounds(GP)
+        print(self) 
+
         if not self.load_grid:
             y_mean, y_var = self.GenGrid(GP)
         else:
@@ -431,6 +515,28 @@ class SingleMapXbody:
                 self.var.set_values(y_var)
 
         self.hyps_mask = deepcopy(GP.hyps_mask)
+
+
+    def __str__(self):
+        info = f'''{self.__class__.__name__}
+        species: {self.species}
+        lower bound: {self.bounds[0]}, auto_lower = {self.auto_lower}
+        upper bound: {self.bounds[1]}, auto_upper = {self.auto_upper}
+        grid num: {self.grid_num}
+        lower bound relaxation: {self.lower_bound_relax}
+        load grid from: {self.load_grid}\n'''
+
+        if self.map_force:
+            info += f'        build force mapping\n'
+        else:
+            info += f'        build energy mapping\n'
+
+        if self.mean_only:
+            info += f'        without variance\n'
+        else:
+            info += f'        with variance, svd_rank = {self.svd_rank}\n'
+
+        return info
 
 
     def search_lower_bound(self, GP):

@@ -68,51 +68,6 @@ def get_kernel_term(GP, term):
     return (kernel, ek, efk, cutoffs, hyps, hyps_mask)
 
 
-def get_permutations(c2, ej1, ej2):
-    perm_list = [[0, 1, 2]]
-    if c2 == ej1:
-        perm_list += [[0, 2, 1]]
-
-    if c2 == ej2:
-        perm_list += [[2, 1, 0]]
-
-    if ej1 == ej2:
-        perm_list += [[1, 0, 2]]
-
-    if (c2 == ej1) and (ej1 == ej2):
-        perm_list += [[1, 2, 0]]
-        perm_list += [[2, 0, 1]]
-
-    return np.array(perm_list, dtype=np.int)
-
-
-
-def get_l_bound(curr_l_bound, structure, two_d=False):
-    positions = structure.positions
-    if two_d:
-        cell = structure.cell[:2]
-    else:
-        cell = structure.cell
-
-    min_dist = curr_l_bound
-    for ind1, pos01 in enumerate(positions):
-        for i1 in range(2):
-            for vec1 in cell:
-                pos1 = pos01 + i1 * vec1
-
-                for ind2, pos02 in enumerate(positions):
-                    for i2 in range(2):
-                        for vec2 in cell:
-                            pos2 = pos02 + i2 * vec2
-
-                            if np.all(pos1 == pos2):
-                                continue
-                            dist12 = np.linalg.norm(pos1-pos2)
-                            if dist12 < min_dist:
-                                min_dist = dist12
-                                min_atoms = (ind1, ind2)
-    return min_dist
-
 
 @njit
 def get_bonds(ctype, etypes, bond_array):

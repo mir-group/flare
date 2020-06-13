@@ -103,41 +103,41 @@ def test_build_map(all_gp, all_mgp, bodies, multihyps, map_force):
         pickle.dump(mgp_model, f)
 
 
-#@pytest.mark.parametrize('bodies', body_list)
-#@pytest.mark.parametrize('multihyps', multi_list)
-#@pytest.mark.parametrize('map_force', map_force_list)
-#def test_write_model(all_mgp, bodies, multihyps, map_force):
-#    """
-#    test the mapping for mc_simple kernel
-#    """
-#    mgp_model = all_mgp[f'{bodies}{multihyps}{map_force}']
-#    mgp_model.mean_only = True
-#    mgp_model.write_model(f'my_mgp_{bodies}_{multihyps}_{map_force}')
-#
-#    mgp_model.write_model(f'my_mgp_{bodies}_{multihyps}_{map_force}', format='pickle')
-#
-#    # Ensure that user is warned when a non-mean_only
-#    # model is serialized into a Dictionary
-#    with pytest.warns(Warning):
-#        mgp_model.mean_only = False
-#        mgp_model.as_dict()
-#        mgp_model.mean_only = True
-#
-#
-#@pytest.mark.parametrize('bodies', body_list)
-#@pytest.mark.parametrize('multihyps', multi_list)
-#@pytest.mark.parametrize('map_force', map_force_list)
-#def test_load_model(all_mgp, bodies, multihyps, map_force):
-#    """
-#    test the mapping for mc_simple kernel
-#    """
-#    name = f'my_mgp_{bodies}_{multihyps}_{map_force}.json'
-#    all_mgp[f'{bodies}{multihyps}'] = MappedGaussianProcess.from_file(name)
-#    os.remove(name)
-#
-#    name = f'my_mgp_{bodies}_{multihyps}_{map_force}.pickle'
-#    all_mgp[f'{bodies}{multihyps}'] = MappedGaussianProcess.from_file(name)
-#    os.remove(name)
+@pytest.mark.parametrize('bodies', body_list)
+@pytest.mark.parametrize('multihyps', multi_list)
+@pytest.mark.parametrize('map_force', map_force_list)
+def test_write_model(all_mgp, bodies, multihyps, map_force):
+    """
+    test the mapping for mc_simple kernel
+    """
+    mgp_model = all_mgp[f'{bodies}{multihyps}{map_force}']
+    mgp_model.mean_only = True
+    mgp_model.write_model(f'my_mgp_{bodies}_{multihyps}_{map_force}')
+
+    mgp_model.write_model(f'my_mgp_{bodies}_{multihyps}_{map_force}', format='pickle')
+
+    # Ensure that user is warned when a non-mean_only
+    # model is serialized into a Dictionary
+    with pytest.warns(Warning):
+        mgp_model.mean_only = False
+        mgp_model.as_dict()
+        mgp_model.mean_only = True
+
+
+@pytest.mark.parametrize('bodies', body_list)
+@pytest.mark.parametrize('multihyps', multi_list)
+@pytest.mark.parametrize('map_force', map_force_list)
+def test_load_model(all_mgp, bodies, multihyps, map_force):
+    """
+    test the mapping for mc_simple kernel
+    """
+    name = f'my_mgp_{bodies}_{multihyps}_{map_force}.json'
+    all_mgp[f'{bodies}{multihyps}'] = MappedGaussianProcess.from_file(name)
+    os.remove(name)
+
+    name = f'my_mgp_{bodies}_{multihyps}_{map_force}.pickle'
+    all_mgp[f'{bodies}{multihyps}'] = MappedGaussianProcess.from_file(name)
+    os.remove(name)
 
 @pytest.mark.parametrize('bodies', body_list)
 @pytest.mark.parametrize('multihyps', multi_list)
@@ -329,8 +329,8 @@ def test_lmp_predict(all_gp, all_mgp, bodies, multihyps, map_force):
             os.remove(f)
     clean()
 
-#    if map_force and ('3' in bodies):
-#        pytest.skip()
+    if map_force and ('3' in bodies):
+        pytest.skip()
 
     mgp_model = all_mgp[f'{bodies}{multihyps}{map_force}']
     gp_model = all_gp[f'{bodies}{multihyps}']

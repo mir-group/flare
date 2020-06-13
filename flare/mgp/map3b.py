@@ -9,7 +9,7 @@ from flare.gp_algebra import _global_training_data, _global_training_structures
 from flare.kernels.utils import from_mask_to_args
 
 from flare.mgp.mapxb import MapXbody, SingleMapXbody
-from flare.mgp.utils import get_triplets, get_kernel_term, get_permutations
+from flare.mgp.utils import get_triplets, get_kernel_term
 from flare.mgp.grid_kernels_3b import triplet_cutoff
 
 
@@ -54,6 +54,7 @@ class Map3body(MapXbody):
     def find_map_index(self, spc):
         return self.spc.index(spc)
 
+
 class SingleMap3body(SingleMapXbody):
     def __init__(self, args):
         '''
@@ -79,9 +80,15 @@ class SingleMap3body(SingleMapXbody):
 
     def set_bounds(self, lower_bound, upper_bound):
         if self.auto_lower:
-            self.bounds[0] = np.ones(3) * lower_bound
+            if isinstance(lower_bound, float):
+                self.bounds[0] = np.ones(3) * lower_bound
+            else:
+                self.bounds[0] = lower_bound
         if self.auto_upper:
-            self.bounds[1] = upper_bound
+            if isinstance(upper_bound, float):
+                self.bounds[1] = np.ones(3) * upper_bound
+            else:
+                self.bounds[1] = upper_bound
 
 
     def construct_grids(self):
@@ -169,8 +176,6 @@ class SingleMap3body(SingleMapXbody):
         fj, fdj = triplet_cutoff(grids, r_cut, coords, derivative=True) # TODO: add cutoff func
         fdj = fdj[:, [0]]
 
-        #perm_list = get_permutations(env12.ctype, env12.etypes[0], env12.etypes[1])
-
         if self.map_force:
             prefix = 'force'
         else:
@@ -187,7 +192,7 @@ class SingleMap3body(SingleMapXbody):
         for m_index in range(s, e):
             data = training_data[m_index]
             kern_vec = grid_kernel(kern_type, data, grids, fj, fdj,
-                                   env12.ctype, env12.etypes, #perm_list,
+                                   env12.ctype, env12.etypes,
                                    *args)
             k_v.append(kern_vec)
 
