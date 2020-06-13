@@ -8,3 +8,4 @@ Tutorials
    ase
    gpfa
    after_training
+   lammps
