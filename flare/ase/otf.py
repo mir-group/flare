@@ -19,7 +19,6 @@ from flare.struc import Structure
 from flare.gp import GaussianProcess
 from flare.otf import OTF
 from flare.utils.learner import is_std_in_bound
-from flare.mgp.utils import get_l_bound
 
 from flare.ase.calculator import FLARE_Calculator
 import flare.ase.dft as dft_source 
