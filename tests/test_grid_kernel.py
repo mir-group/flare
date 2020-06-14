@@ -16,7 +16,7 @@ from flare.utils.parameter_helper import ParameterHelper
 
 from tests.fake_gp import generate_mb_envs, generate_mb_twin_envs
 from tests.test_mc_sephyps import generate_same_hm, generate_diff_hm
-from flare.mgp.utils import get_triplets, get_kernel_term, get_permutations
+from flare.mgp.utils import get_triplets, get_kernel_term
 from flare.mgp.grid_kernels_3b import triplet_cutoff, grid_kernel_sephyps, \
         grid_kernel, get_triplets_for_kern
 
