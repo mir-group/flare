@@ -231,49 +231,50 @@ def predict_on_structure_par(structure: Structure,
     return forces, stds
 
 
-# def predict_on_structure_efs(structure: Structure, gp: GaussianProcess,
-#                              n_cpus: int = None,
-#                              write_to_structure: bool = True,
-#                              selective_atoms: List[int] = None,
-#                              skipped_atom_value=0):
+def predict_on_structure_efs(structure: Structure, gp: GaussianProcess,
+                             n_cpus: int = None,
+                             write_to_structure: bool = True,
+                             selective_atoms: List[int] = None,
+                             skipped_atom_value=0):
 
-#     energy = 0
-#     local_energies = np.zeros(structure.nat)
-#     forces = np.zeros((structure.nat, 3))
-#     stress = np.zeros(6)
+    local_energies = np.zeros(structure.nat)
+    forces = np.zeros((structure.nat, 3))
+    partial_stresses = np.zeros((structure.nat, 6))
 
-#     local_energy_stds = np.zeros(structure.nat)
-#     force_stds = np.zeros((structure.nat, 3))
+    local_energy_stds = np.zeros(structure.nat)
+    force_stds = np.zeros((structure.nat, 3))
+    partial_stress_stds = np.zeros((structure.nat, 6))
 
-#     if selective_atoms:
-#         forces.fill(skipped_atom_value)
-#         stds.fill(skipped_atom_value)
-#     else:
-#         selective_atoms = []
+    for n in range(structure.nat):
+        chemenv = AtomicEnvironment(structure, n, gp.cutoffs)
 
-#     for n in range(structure.nat):
+        en_pred, force_pred, stress_pred, en_var, force_var, stress_var = \
+            gp.predict_efs(chemenv)
 
-#         # Skip the atoms which we aren't predicting on if
-#         # selective atoms is on.
-#         if n not in selective_atoms and selective_atoms:
-#             continue
+        local_energies[n] = en_pred
+        forces[n] = force_pred
+        partial_stresses[n] = stress_pred
 
-#         chemenv = AtomicEnvironment(structure, n, gp.cutoffs)
+        local_energy_stds[n] = en_var
+        force_stds[n] = force_var
+        partial_stress_stds[n] = stress_var
 
-#         en_pred, force_pred, stress_pred, en_var, force_var, stress_var = \
-#             gp.predict_efs(chemenv)
+    # Convert variances to standard deviations.
+    local_energy_stds = np.sqrt(np.abs(local_energies))
+    force_stds = np.sqrt(np.abs(force_stds))
+    partial_stress_stds = np.sqrt(np.abs(partial_stress_stds))
 
-#         stress += 
-#         local_energies[n] = en_pred
-#         forces[n] = force_pred
-#         force_stds[n] = force_var
-#         stds[n] = float(np.sqrt(np.absolute(var)))
+    if write_to_structure:
+        structure.local_energies = local_energies
+        structure.forces = forces
+        structure.partial_stresses = partial_stresses
 
-#     if write_to_structure:
-#         structure.forces[n][i] = force
-#         structure.stds[n][i] = np.sqrt(np.abs(var))
+        structure.local_energy_stds = local_energy_stds
+        structure.stds = force_stds
+        structure.partial_stresses = partial_stress_stds
 
-#     return forces, stds
+    return local_energies, forces, partial_stresses, local_energy_stds, \
+        force_stds, partial_stress_stds
 
 
 def predict_on_structure_en(structure: Structure, gp: GaussianProcess,
