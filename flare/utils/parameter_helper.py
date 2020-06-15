@@ -84,7 +84,7 @@ class ParameterHelper():
     def __init__(self, hyps_mask=None, species=None, kernels={},
                  cutoff_groups={}, parameters=None,
                  constraints={}, allseparate=False, random=False, ones=False,
-                 verbose="INFO"):
+                 verbose="WARNING"):
         """ Initialization function
 
         :param hyps_mask: Not implemented yet
