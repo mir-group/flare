@@ -1,23 +1,35 @@
 """
-A helper class to construct the hyps_mask dictionary for AtomicEnvironment
-, GaussianProcess and MappedGaussianProcess
+For multi-component systems, the configurational space can be highly complicated.
+One may want to use different hyper-parameters and cutoffs for different interactions,
+or do constraint optimisation for hyper-parameters.
 
-Examples:
+To use more hyper-parameters, we need special kernel function that differentiate different
+pairs, triplets and other descriptors as well as your input to specify which number to use
+for what interaction.
 
-    pm = ParameterHelper(species=['C', 'H', 'O'],
-                               kernels={'twobody':[['*', '*'], ['O','O']],
-                               'threebody':[['*', '*', '*'],
-                                   ['O','O', 'O']]},
-                               parameters={'twobody0':[1, 0.5, 1], 'twobody1':[2, 0.2, 2],
-                                     'threebody0':[1, 0.5], 'threebody1':[2, 0.2],
-                                     'cutoff_threebody':1},
-                               constraints={'twobody0':[False, True]})
-    hm = pm.hyps_mask
-    hyps = hm['hyps']
-    cutoffs = hm['cutoffs']
-    kernels = hm['kernels']
-    gp_model = GaussianProcess(kernels=kernels, cutoffs=cutoffs,
-                               hyps=hyps, hyps_mask=hm)
+This kernel can be enabled by using the ``hyps_mask`` argument of the GaussianProcess class.
+It contains multiple arrays to describe how to break down the array of hyper-parameters and
+apply them when computing the kernel. Detail descriptions of this argument can be seen in
+kernel/mc_sephyps.py.
+
+The ParameterHelper class is to generate the hyps_mask with more human readable functions.
+
+Example:
+
+>>> pm = ParameterHelper(species=['C', 'H', 'O'],
+...                      kernels={'twobody':[['*', '*'], ['O','O']],
+...                      'threebody':[['*', '*', '*'],
+...                          ['O','O', 'O']]},
+...                      parameters={'twobody0':[1, 0.5, 1], 'twobody1':[2, 0.2, 2],
+...                            'threebody0':[1, 0.5], 'threebody1':[2, 0.2],
+...                            'cutoff_threebody':1},
+...                      constraints={'twobody0':[False, True]})
+>>> hm = pm.hyps_mask
+>>> hyps = hm['hyps']
+>>> cutoffs = hm['cutoffs']
+>>> kernels = hm['kernels']
+>>> gp_model = GaussianProcess(kernels=kernels, cutoffs=cutoffs,
+...                            hyps=hyps, hyps_mask=hm)
 
 In this example, four atomic species are involved. There are many kinds
 of twobodys and threebodys. But we only want to use eight different signal variance
@@ -44,7 +56,8 @@ cutoff is used, which is defined as 'cutoff_threebody'.
 The constraints argument define which hyper-parameters will be optimized.
 True for optimized and false for being fixed.
 
-See more examples in tests/test_parameters.py
+See more examples in ParameterHelper.define_group , ParameterHelper.set_parameters,
+and tests/test_parameters.py
 
 """
 
@@ -68,14 +81,18 @@ from flare.utils.element_coder import element_to_Z, Z_to_element
 
 
 class ParameterHelper():
+    """
+    A helper class to construct the hyps_mask dictionary for AtomicEnvironment
+    , GaussianProcess and MappedGaussianProcess
+    """
 
     # TO DO, sync it to kernel class
     #  need to be synced with kernel class
 
     # name of the kernels
-
     all_kernel_types = ['twobody', 'threebody', 'manybody']
     additional_groups = ['cut3b']
+
     # dimension of the kernels
     ndim = {'twobody': 2, 'threebody': 3, 'manybody': 2, 'cut3b': 2}
     n_kernel_parameters = {'twobody': 2,
@@ -276,8 +293,8 @@ class ParameterHelper():
         If the definition_list is a list, it is equivalent to
         executing define_group through the definition_list.
 
-        | for all terms in the list:
-        |     define_group(group_type, group_type+'n', the nth term in the list)
+        >>> for all terms in the list:
+        >>>     define_group(group_type, group_type+'n', the nth term in the list)
 
         So the first twobody defined will be group twobody0, second one will be
         group twobody1. For specie, it will define all the listed elements as
@@ -285,8 +302,8 @@ class ParameterHelper():
 
         If the definition_list is a dictionary, it is equivalent to
 
-        | for k, v in the dict:
-        |     define_group(group_type, k, v)
+        >>> for k, v in the dict:
+        >>>     define_group(group_type, k, v)
 
         It is not recommended to use the dictionary mode, especially when
         the group definitions are conflicting with each other. There is no
@@ -431,48 +448,49 @@ class ParameterHelper():
 
         Example 1:
 
-            define_group('specie', 'water', ['H', 'O'])
-            define_group('specie', 'salt', ['Cl', 'Na'])
+        >>> define_group('specie', 'water', ['H', 'O'])
+        >>> define_group('specie', 'salt', ['Cl', 'Na'])
 
         They define H and O to be group water, and Na and Cl to be group salt.
 
         Example 2.1:
 
-            define_group('twobody', 'in-water', ['H', 'H'], atomic_str=True)
-            define_group('twobody', 'in-water', ['H', 'O'], atomic_str=True)
-            define_group('twobody', 'in-water', ['O', 'O'], atomic_str=True)
+        >>> define_group('twobody', 'in-water', ['H', 'H'], atomic_str=True)
+        >>> define_group('twobody', 'in-water', ['H', 'O'], atomic_str=True)
+        >>> define_group('twobody', 'in-water', ['O', 'O'], atomic_str=True)
 
         Example 2.2:
-            define_group('twobody', 'in-water', ['water', 'water'])
+
+        >>> define_group('twobody', 'in-water', ['water', 'water'])
 
         The 2.1 is equivalent to 2.2.
 
         Example 3.1:
 
-            define_group('specie', '1', ['H'])
-            define_group('specie', '2', ['O'])
-            define_group('twobody', 'Hgroup', ['H', 'H'], atomic_str=True)
-            define_group('twobody', 'Hgroup', ['H', 'O'], atomic_str=True)
-            define_group('twobody', 'OO', ['O', 'O'], atomic_str=True)
+        >>> define_group('specie', '1', ['H'])
+        >>> define_group('specie', '2', ['O'])
+        >>> define_group('twobody', 'Hgroup', ['H', 'H'], atomic_str=True)
+        >>> define_group('twobody', 'Hgroup', ['H', 'O'], atomic_str=True)
+        >>> define_group('twobody', 'OO', ['O', 'O'], atomic_str=True)
 
         Example 3.2:
 
-            define_group('specie', '1', ['H'])
-            define_group('specie', '2', ['O'])
-            define_group('twobody', 'Hgroup', ['H', '*'], atomic_str=True)
-            define_group('twobody', 'OO', ['O', 'O'], atomic_str=True)
+        >>> define_group('specie', '1', ['H'])
+        >>> define_group('specie', '2', ['O'])
+        >>> define_group('twobody', 'Hgroup', ['H', '*'], atomic_str=True)
+        >>> define_group('twobody', 'OO', ['O', 'O'], atomic_str=True)
 
         Example 3.3:
 
-            list_groups('specie', ['H', 'O'])
-            define_group('twobody', 'Hgroup', ['H', '*'])
-            define_group('twobody', 'OO', ['O', 'O'])
+        >>> list_groups('specie', ['H', 'O'])
+        >>> define_group('twobody', 'Hgroup', ['H', '*'])
+        >>> define_group('twobody', 'OO', ['O', 'O'])
 
         Example 3.4:
 
-            list_groups('specie', ['H', 'O'])
-            define_group('twobody', 'OO', ['*', '*'])
-            define_group('twobody', 'Hgroup', ['H', '*'])
+        >>> list_groups('specie', ['H', 'O'])
+        >>> define_group('twobody', 'OO', ['*', '*'])
+        >>> define_group('twobody', 'Hgroup', ['H', '*'])
 
         3.1 to 3.4 are all equivalent.
         """
@@ -607,7 +625,7 @@ class ParameterHelper():
 
         The name of parameters can be the group name previously defined in
         define_group or list_groups function. Aside from the group name,
-        "noise", "cutoff_twobody", "cutoff_threebody", and "cutoff_manybody" are reserved for
+        ``noise``, ``cutoff_twobody``, ``cutoff_threebody``, and ``cutoff_manybody`` are reserved for
         noise parmater and universal cutoffs.
 
         The parameter should be a list of 2-3 elements, for sigma,
