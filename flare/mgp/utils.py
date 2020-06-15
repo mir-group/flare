@@ -56,14 +56,14 @@ def str_to_mapped_kernel(name: str, component: str = "sc",
         raise NotImplementedError("mapped kernel for two-body and manybody kernels "
                                   "are not implemented")
 
-def get_kernel_term(GP, term):
+def get_kernel_term(component, hyps_mask, hyps, term):
     """
     Args
         term (str): 'twobody' or 'threebody'
     """
-    kernel, _, ek, efk = stks([term], GP.component, GP.hyps_mask)
+    kernel, _, ek, efk = stks([term], component, hyps_mask)
 
-    hyps, cutoffs, hyps_mask = Parameters.get_component_mask(GP.hyps_mask, term, hyps=GP.hyps)
+    hyps, cutoffs, hyps_mask = Parameters.get_component_mask(hyps_mask, term, hyps=hyps)
 
     return (kernel, ek, efk, cutoffs, hyps, hyps_mask)
 

@@ -51,9 +51,11 @@ class MapXbody:
         self.lower_bound_relax = lower_bound_relax
         self.n_cpus = n_cpus
         self.n_sample = n_sample
+
         self.spc = []
         self.spc_set = []
         self.maps = []
+        self.kernel_info = None
 
         self.build_bond_struc(species_list)
 
@@ -98,7 +100,8 @@ class MapXbody:
         generate/load grids and get spline coefficients
         '''
 
-        self.kernel_info = get_kernel_term(GP, self.kernel_name)
+        self.kernel_info = get_kernel_term(GP.component, GP.hyps_mask, GP.hyps, 
+                                           self.kernel_name)
 
         for m in self.maps:
             m.build_map(GP)
@@ -199,14 +202,8 @@ class MapXbody:
         new_mgp = mapxbody(kwargs)
 
         # Restore kernel_info
-        kernel_info = dictionary['kernel_info']
-        kernel_name = kernel_info[0]
-        hyps_mask = kernel_info[-1]
-        kernel, _, ek, efk = str_to_kernel_set([kernel_name], 'mc', hyps_mask)
-        kernel_info[0] = kernel
-        kernel_info[1] = ek
-        kernel_info[2] = efk
-        new_mgp.kernel_info = kernel_info
+        kernel_name, _, _, _, hyps, hyps_mask = dictionary['kernel_info']
+        new_mgp.kernel_info = get_kernel_term('mc', hyps_mask, hyps, kernel_name)
 
         # Fill up the model with the saved coeffs
         for m in range(len(new_mgp.maps)):
