@@ -120,8 +120,6 @@ class TestDataUpdating():
         assert (len(test_gp.training_data) == params['noa']+oldsize)
         assert (len(test_gp.training_labels_np) == (params['noa']+oldsize)*3)
 
-#
-
 
 class TestTraining():
     @pytest.mark.parametrize('par, n_cpus', [(False, 1),

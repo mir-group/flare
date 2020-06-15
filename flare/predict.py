@@ -260,7 +260,7 @@ def predict_on_structure_efs(structure: Structure, gp: GaussianProcess,
         partial_stress_stds[n] = stress_var
 
     # Convert variances to standard deviations.
-    local_energy_stds = np.sqrt(np.abs(local_energies))
+    local_energy_stds = np.sqrt(np.abs(local_energy_stds))
     force_stds = np.sqrt(np.abs(force_stds))
     partial_stress_stds = np.sqrt(np.abs(partial_stress_stds))
 
@@ -271,7 +271,7 @@ def predict_on_structure_efs(structure: Structure, gp: GaussianProcess,
 
         structure.local_energy_stds = local_energy_stds
         structure.stds = force_stds
-        structure.partial_stresses = partial_stress_stds
+        structure.partial_stress_stds = partial_stress_stds
 
     return local_energies, forces, partial_stresses, local_energy_stds, \
         force_stds, partial_stress_stds
@@ -321,13 +321,18 @@ def predict_on_structure_efs_par(structure: Structure, gp: GaussianProcess,
         force_stds[i] = r[4]
         partial_stress_stds[i] = r[5]
 
+    # Convert variances to standard deviations.
+    local_energy_stds = np.sqrt(np.abs(local_energy_stds))
+    force_stds = np.sqrt(np.abs(force_stds))
+    partial_stress_stds = np.sqrt(np.abs(partial_stress_stds))
+
     if write_to_structure:
         structure.local_energies = local_energies
         structure.forces = forces
         structure.partial_stresses = partial_stresses
         structure.local_energy_stds = local_energy_stds
         structure.stds = force_stds
-        structure.partial_stresses = partial_stress_stds
+        structure.partial_stress_stds = partial_stress_stds
 
     return local_energies, forces, partial_stresses, local_energy_stds, \
         force_stds, partial_stress_stds
