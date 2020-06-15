@@ -763,7 +763,7 @@ class ParameterHelper():
 
                     if sig < 0 or ls < 0:
                         self.logger.error(f"hyper parameters for group {name}"
-                                          "is not defined")
+                                          " is not defined")
                         raise RuntimeError
                     self.hyps_sig[group_type] += [sig]
                     self.hyps_ls[group_type] += [ls]
