@@ -57,7 +57,7 @@ def test_start(parameter, same_hyps, prefix):
 
 
             coords = np.zeros((1, 9), dtype=np.float64)
-            coords[:, 0] = np.ones_like(coords[:, 0])
+            coords[:, 0] += 1.0
 
             perm_list = get_permutations(grid_env.ctype, grid_env.etypes[0], grid_env.etypes[1])
             fj, fdj = triplet_cutoff(grid, hm['cutoffs']['threebody'],
@@ -126,7 +126,7 @@ def get_reference(grid_env, species, parameter, same_hyps):
     # force_energy = np.zeros(3, dtype=np.float)
     # energy_energy = np.zeros(3, dtype=np.float)
     for i in range(3):
-        energy_force[i] = force_en_kernel(grid_env, env, i, *args)
+        energy_force[i] = force_en_kernel(env, grid_env, i, *args)
         # force_energy[i] = force_en_kernel(env, grid_env, i, *args)
         # force_force[i] = kernel(grid_env, env, 0, i, *args)
 #     result = funcs[1][i](env1, env2, d1, *args1)
