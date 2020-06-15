@@ -1,4 +1,4 @@
-import logging, warnings
+import os, logging, warnings
 import numpy as np
 import multiprocessing as mp
 
@@ -369,8 +369,12 @@ class SingleMapXbody:
             grid_vars = np.reshape(grid_vars, tensor_shape)
 
         # ------ save mean and var to file -------
-        np.save(f'grid{self.bodies}_mean_{self.species_code}', grid_mean)
-        np.save(f'grid{self.bodies}_var_{self.species_code}', grid_vars)
+        if 'mgp_grids' not in os.listdir('./'):
+            os.mkdir('mgp_grids')
+
+        grid_path = f'mgp_grids/{self.bodies}_{self.species_code}'
+        np.save(f'{grid_path}_mean', grid_mean)
+        np.save(f'{grid_path}_var', grid_vars)
 
         return grid_mean, grid_vars
 
@@ -509,8 +513,12 @@ class SingleMapXbody:
         if not self.load_grid:
             y_mean, y_var = self.GenGrid(GP)
         else:
-            y_mean = np.load(f'{self.load_grid}grid{self.bodies}_mean_{self.species_code}.npy')
-            y_var = np.load(f'{self.load_grid}grid{self.bodies}_var_{self.species_code}.npy')
+            if 'mgp_grids' not in os.listdir(self.load_grid):
+                raise FileNotFoundError("Please set 'load_grid' as the location of mgp_grids folder")
+
+            grid_path = f'{self.load_grid}/mgp_grids/{self.bodies}_{self.species_code}'
+            y_mean = np.load(f'{grid_path}_mean.npy')
+            y_var = np.load(f'{grid_path}_var.npy')
 
         self.mean.set_values(y_mean)
         if not self.mean_only:

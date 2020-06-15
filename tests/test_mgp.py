@@ -23,11 +23,12 @@ force_block_only = False
 
 def clean():
     for f in os.listdir("./"):
-        if re.search(r"grid.*npy", f):
-            os.remove(f)
+        if re.search("mgp_grids", f):
+            os.rmdir(f)
         if re.search("kv3", f):
             os.rmdir(f)
-
+        if 'tmp' in f:
+            os.remove(f)
 
 
 @pytest.mark.skipif(not os.environ.get('lmp',
@@ -323,10 +324,6 @@ def test_lmp_predict(all_gp, all_mgp, bodies, multihyps, map_force):
     """
     test the lammps implementation
     """
-    prefix = f'tmp{bodies}{multihyps}{map_force}'
-    for f in os.listdir("./"):
-        if prefix in f:
-            os.remove(f)
     clean()
 
     if ('3' in bodies) and map_force:
@@ -395,7 +392,4 @@ def test_lmp_predict(all_gp, all_mgp, bodies, multihyps, map_force):
         print("isclose? diff:", lammps_forces[atom_num, i]-mgp_forces[0][i], "mgp value", mgp_forces[0][i])
         assert np.isclose(lammps_forces[atom_num, i], mgp_forces[0][i], rtol=1e-2)
 
-    # for f in os.listdir("./"):
-    #     if prefix in f:
-    #         os.remove(f)
-    # clean()
+    clean()
