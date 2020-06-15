@@ -787,7 +787,7 @@ class ParameterHelper():
                     allcut += [self.all_cutoff[aeg[idt]]]
                 else:
                     alldefine = False
-                    self.logger.info(f"{aeg[idt]} cutoff is not define. "
+                    self.logger.info(f"{aeg[idt]} cutoff is not defined. "
                                      "it's going to use the universal cutoff.")
 
             if group_type != 'threebody':
