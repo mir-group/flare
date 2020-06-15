@@ -277,6 +277,62 @@ def predict_on_structure_efs(structure: Structure, gp: GaussianProcess,
         force_stds, partial_stress_stds
 
 
+def predict_on_structure_efs_par(structure: Structure, gp: GaussianProcess,
+                                 n_cpus: int = None,
+                                 write_to_structure: bool = True,
+                                 selective_atoms: List[int] = None,
+                                 skipped_atom_value=0):
+
+    # Just work in serial in the number of cpus is 1
+    if n_cpus is 1:
+        return predict_on_structure_efs(structure=structure, gp=gp,
+                                        n_cpus=n_cpus,
+                                        write_to_structure=write_to_structure,
+                                        selective_atoms=selective_atoms,
+                                        skipped_atom_value=skipped_atom_value)
+
+    local_energies = np.zeros(structure.nat)
+    forces = np.zeros((structure.nat, 3))
+    partial_stresses = np.zeros((structure.nat, 6))
+    local_energy_stds = np.zeros(structure.nat)
+    force_stds = np.zeros((structure.nat, 3))
+    partial_stress_stds = np.zeros((structure.nat, 6))
+
+    # Set the number of cpus.
+    if n_cpus is None:
+        pool = mp.Pool(processes=mp.cpu_count())
+    else:
+        pool = mp.Pool(processes=n_cpus)
+
+    # Parallelize over atoms in structure.
+    results = []
+    for atom in range(structure.nat):
+        results.append(pool.apply_async(predict_on_atom_efs,
+                                        args=[(structure, atom, gp)]))
+    pool.close()
+    pool.join()
+
+    for i in range(structure.nat):
+        r = results[i].get()
+        local_energies[i] = r[0]
+        forces[i] = r[1]
+        partial_stresses[i] = r[2]
+        local_energy_stds[i] = r[3]
+        force_stds[i] = r[4]
+        partial_stress_stds[i] = r[5]
+
+    if write_to_structure:
+        structure.local_energies = local_energies
+        structure.forces = forces
+        structure.partial_stresses = partial_stresses
+        structure.local_energy_stds = local_energy_stds
+        structure.stds = force_stds
+        structure.partial_stresses = partial_stress_stds
+
+    return local_energies, forces, partial_stresses, local_energy_stds, \
+        force_stds, partial_stress_stds
+
+
 def predict_on_structure_en(structure: Structure, gp: GaussianProcess,
                             n_cpus: int = None,
                             write_to_structure: bool = True,
@@ -339,7 +395,7 @@ def predict_on_structure_par_en(structure: Structure, gp: GaussianProcess,
                                 n_cpus: int = None,
                                 write_to_structure: bool = True,
                                 selective_atoms: List[int] = None,
-                                skipped_atom_value = 0) -> (
+                                skipped_atom_value=0) -> (
         'np.ndarray', 'np.ndarray', 'np.ndarray'):
     """
     Return the forces/std. dev. uncertainty / local energy associated with each
