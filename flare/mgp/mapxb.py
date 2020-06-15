@@ -53,6 +53,7 @@ class MapXbody:
         self.n_sample = n_sample
         self.spc = []
         self.spc_set = []
+        self.maps = []
 
         self.build_bond_struc(species_list)
 
@@ -75,12 +76,20 @@ class MapXbody:
         construct an empty spline container without coefficients.
         '''
 
+        kwargs = {'grid_num': self.grid_num, 
+                  'bounds': bounds, 
+                  'species': spc, 
+                  'map_force': self.map_force,
+                  'svd_rank': self.svd_rank, 
+                  'mean_only': self.mean_only,
+                  'load_grid': self.load_grid, 
+                  'lower_bound_relax': self.lower_bound_relax,
+                  'n_cpus': self.n_cpus, 
+                  'n_sample': self.n_sample}
+
         self.maps = []
         for spc in self.spc:
-            m = self.singlexbody((self.grid_num, bounds, spc,
-                                  self.map_force, self.svd_rank, self.mean_only,
-                                  self.load_grid, self.lower_bound_relax,
-                                  self.n_cpus, self.n_sample))
+            m = self.singlexbody(kwargs)
             self.maps.append(m)
 
 
@@ -186,8 +195,8 @@ class MapXbody:
         init_args_name = ['grid_num', 'lower_bound', 'upper_bound', 'svd_rank',
             'species_list', 'map_force', 'GP', 'mean_only', 'container_only', 
             'lmp_file_name', 'load_grid', 'lower_bound_relax', 'n_cpus', 'n_sample']
-        args = [dictionary[name] for name in init_args_name]
-        new_mgp = mapxbody(args)
+        kwargs = {name: dictionary[name] for name in init_args_name}
+        new_mgp = mapxbody(kwargs)
 
         # Restore kernel_info
         kernel_info = dictionary['kernel_info']

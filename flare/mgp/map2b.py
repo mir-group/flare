@@ -10,7 +10,7 @@ from flare.mgp.utils import get_bonds
 
 
 class Map2body(MapXbody):
-    def __init__(self, args):
+    def __init__(self, kwargs):
         '''
         args: the same arguments as MapXbody, to guarantee they have the same
             input parameters
@@ -19,7 +19,7 @@ class Map2body(MapXbody):
         self.kernel_name = "twobody"
         self.singlexbody = SingleMap2body
         self.bodies = 2
-        super().__init__(*args)
+        super().__init__(**kwargs)
 
     def build_bond_struc(self, species_list):
         '''
@@ -48,7 +48,7 @@ class Map2body(MapXbody):
 
 
 class SingleMap2body(SingleMapXbody):
-    def __init__(self, args):
+    def __init__(self, kwargs):
         '''
         Build 2-body MGP
 
@@ -58,7 +58,7 @@ class SingleMap2body(SingleMapXbody):
         self.bodies = 2
         self.kernel_name = 'twobody'
 
-        super().__init__(*args)
+        super().__init__(**kwargs)
 
         # initialize bounds
         if self.auto_lower:
