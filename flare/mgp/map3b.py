@@ -14,12 +14,12 @@ from flare.mgp.grid_kernels_3b import triplet_cutoff
 
 
 class Map3body(MapXbody):
-    def __init__(self, args):
+    def __init__(self, **kwargs):
 
         self.kernel_name = "threebody"
         self.singlexbody = SingleMap3body
         self.bodies = 3
-        super().__init__(*args)
+        super().__init__(**kwargs)
 
 
     def build_bond_struc(self, species_list):
@@ -56,7 +56,7 @@ class Map3body(MapXbody):
 
 
 class SingleMap3body(SingleMapXbody):
-    def __init__(self, args):
+    def __init__(self, **kwargs):
         '''
         Build 3-body MGP
 
@@ -65,7 +65,7 @@ class SingleMap3body(SingleMapXbody):
         self.bodies = 3
         self.kernel_name = 'threebody'
 
-        super().__init__(*args)
+        super().__init__(**kwargs)
 
         # initialize bounds
         self.set_bounds(0, np.ones(3))

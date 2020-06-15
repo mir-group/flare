@@ -1,3 +1,6 @@
+import json
+from flare.utils.element_coder import NumpyEncoder, element_to_Z, Z_to_element
+
 import logging, warnings
 import numpy as np
 import multiprocessing as mp
@@ -27,23 +30,30 @@ class MapXbody:
                  lower_bound: List or str='auto',
                  upper_bound: List or str='auto',
                  svd_rank = 'auto',
-                 species_list: list=[],
+                 coded_species: list=[],
                  map_force: bool=False,
-                 GP: GaussianProcess=None,
                  mean_only: bool=True,
                  container_only: bool=True,
                  lmp_file_name: str='lmp.mgp',
                  load_grid: str=None,
                  lower_bound_relax: float=0.1,
+                 GP: GaussianProcess=None,
+                 kernel_info: tuple=None,
+                 kernel_name: str=None,
+                 multi_component: str = 'mc',
+                 hyps = None,
+                 cutoffs: dict={},
+                 hyps_mask: dict=None,
                  n_cpus: int=None,
-                 n_sample: int=100):
+                 n_sample: int=100,
+                 **kwargs):
 
         # load all arguments as attributes
         self.grid_num = np.array(grid_num)
         self.lower_bound = lower_bound
         self.upper_bound = upper_bound
         self.svd_rank = svd_rank
-        self.species_list = species_list
+        self.coded_species = coded_species
         self.map_force = map_force
         self.mean_only = mean_only
         self.lmp_file_name = lmp_file_name
@@ -51,10 +61,24 @@ class MapXbody:
         self.lower_bound_relax = lower_bound_relax
         self.n_cpus = n_cpus
         self.n_sample = n_sample
+
+        self.hyps_mask = hyps_mask
+        self.multi_component = multi_component
+        self.cutoffs = cutoffs
+        self.hyps = hyps
+        self.kernel_info = kernel_info
+
         self.spc = []
         self.spc_set = []
+        self.maps = []
 
-        self.build_bond_struc(species_list)
+        # --------- computed attributes -------- #
+
+        if kernel_name is not None:
+            kernel, _, ek, efk = str_to_kernel_set([self.kernel_name], self.multi_component, self.hyps_mask)
+            self.kernel_info = (kernel, ek, efk, self.cutoffs, self.hyps, self.hyps_mask)
+
+        self.build_bond_struc(coded_species)
 
 
         bounds = [self.lower_bound, self.upper_bound]
@@ -64,7 +88,7 @@ class MapXbody:
                 (len(GP.training_data) > 0):
             self.build_map(GP)
 
-    def build_bond_struc(self, species_list):
+    def build_bond_struc(self, coded_species):
         raise NotImplementedError("need to be implemented in child class")
 
     def get_arrays(self, atom_env):
@@ -77,10 +101,9 @@ class MapXbody:
 
         self.maps = []
         for spc in self.spc:
-            m = self.singlexbody((self.grid_num, bounds, spc,
-                                  self.map_force, self.svd_rank, self.mean_only,
-                                  self.load_grid, self.lower_bound_relax,
-                                  self.n_cpus, self.n_sample))
+            self.bounds = bounds
+            self.species = spc
+            m = self.singlexbody(**self.__dict__)
             self.maps.append(m)
 
 
@@ -90,6 +113,9 @@ class MapXbody:
         '''
 
         self.kernel_info = get_kernel_term(GP, self.kernel_name)
+        self.cutoffs = self.kernel_info[3]
+        self.hyps = self.kernel_info[4]
+        self.hyps_mask = self.kernel_info[5]
 
         for m in self.maps:
             m.build_map(GP)
@@ -106,6 +132,7 @@ class MapXbody:
             mean_only = True
 
         force_kernel, en_kernel, _, cutoffs, hyps, hyps_mask = self.kernel_info
+
 
         args = from_mask_to_args(hyps, cutoffs, hyps_mask)
 
@@ -150,11 +177,6 @@ class MapXbody:
         if not self.mean_only:
             out_dict['mean_only'] = True
 
-        # save the kernel name instead of callables
-        kernel, ek, efk, cutoffs, hyps, hyps_mask = self.kernel_info
-        out_dict['kernel_info'] = (kernel.__name__, ek.__name__, efk.__name__,
-                               cutoffs, hyps, hyps_mask)
-
         # only save the mean coefficients
         out_dict['maps'] = [m.mean.__coeffs__ for m in self.maps]
         out_dict['bounds'] = [m.bounds for m in self.maps]
@@ -163,7 +185,17 @@ class MapXbody:
         key_list = ['singlexbody', 'spc_set']
         for key in key_list:
             if out_dict.get(key) is not None:
-                del out_dict[key]        
+                del out_dict[key]
+
+        print("as_dict")
+        for k in out_dict:
+            print(k, type(out_dict[k]), out_dict[k])
+            try:
+                with open(f'test.json', 'w') as f:
+                    json.dump({k:out_dict[k]}, f, cls=NumpyEncoder)
+            except Exception as e:
+                print("fail")
+                print(e)
 
         return out_dict
 
@@ -174,30 +206,16 @@ class MapXbody:
         """
 
         # Set GP
-        if dictionary.get('GP'):
-            GP = GaussianProcess.from_dict(dictionary.get("GP"))
+        if 'GP' in dictionary:
+            GP = GaussianProcess.from_dict(dictionary['GP'])
         else:
             dictionary['GP'] = None
 
         if 'container_only' not in dictionary:
             dictionary['container_only'] = True
 
-        # initialize
-        init_args_name = ['grid_num', 'lower_bound', 'upper_bound', 'svd_rank',
-            'species_list', 'map_force', 'GP', 'mean_only', 'container_only', 
-            'lmp_file_name', 'load_grid', 'lower_bound_relax', 'n_cpus', 'n_sample']
-        args = [dictionary[name] for name in init_args_name]
-        new_mgp = mapxbody(args)
+        new_mgp = mapxbody(**dictionary)
 
-        # Restore kernel_info
-        kernel_info = dictionary['kernel_info']
-        kernel_name = kernel_info[0]
-        hyps_mask = kernel_info[-1]
-        kernel, _, ek, efk = str_to_kernel_set([kernel_name], 'mc', hyps_mask)
-        kernel_info[0] = kernel
-        kernel_info[1] = ek
-        kernel_info[2] = efk
-        new_mgp.kernel_info = kernel_info
 
         # Fill up the model with the saved coeffs
         for m in range(len(new_mgp.maps)):
@@ -217,10 +235,10 @@ class MapXbody:
 
 
 class SingleMapXbody:
-    def __init__(self, grid_num: int, bounds, species: str,
+    def __init__(self, grid_num: int=1, bounds='auto', species: list=[],
                  map_force=False, svd_rank=0, mean_only: bool=False,
                  load_grid=None, lower_bound_relax=0.1,
-                 n_cpus: int=None, n_sample: int=100):
+                 n_cpus: int=None, n_sample: int=100, **kwargs):
 
         self.grid_num = grid_num
         self.bounds = deepcopy(bounds)
@@ -234,13 +252,13 @@ class SingleMapXbody:
         self.n_sample = n_sample
 
         self.auto_lower = (bounds[0] == 'auto')
-        if self.auto_lower: 
+        if self.auto_lower:
             lower_bound = 0
         else:
             lower_bound = bounds[0]
 
         self.auto_upper = (bounds[1] == 'auto')
-        if self.auto_upper: 
+        if self.auto_upper:
             upper_bound = 1
         else:
             upper_bound = bounds[1]
@@ -294,8 +312,6 @@ class SingleMapXbody:
            with GP.alpha
         '''
 
-        kernel_info = get_kernel_term(GP, self.kernel_name)
-
         if (self.n_cpus is None):
             processes = mp.cpu_count()
         else:
@@ -320,32 +336,28 @@ class SingleMapXbody:
             return np.zeros([n_grid]), None
 
         # ------- call gengrid functions ---------------
-        args = [GP.name, grid_env, kernel_info]
+        kernel_info = get_kernel_term(GP, self.kernel_name)
         self.use_grid_kern = True
         if self.use_grid_kern:
             try:
                 mapk = str_to_mapped_kernel(self.kernel_name, GP.component, GP.hyps_mask)
-                mapped_kernel_info = (mapk,
-                                      kernel_info[3], kernel_info[4], kernel_info[5])
+                kernel_info = (mapk,
+                               kernel_info[3], kernel_info[4], kernel_info[5])
             except:
                 self.use_grid_kern = False
+        args = [GP.name, grid_env, kernel_info]
 
         if processes == 1:
-            args = [GP.name, grid_env, kernel_info]
             if self.use_grid_kern: # TODO: finish force mapping
                 k12_v_force = self._gengrid_numba(GP.name, True, 0, n_envs, grid_env,
-                                                  mapped_kernel_info)
+                                                  kernel_info)
                 k12_v_energy = self._gengrid_numba(GP.name, False, 0, n_strucs, grid_env,
-                                                  mapped_kernel_info)
+                                                  kernel_info)
             else:
                 k12_v_force = self._gengrid_serial(args, True, n_envs)
                 k12_v_energy = self._gengrid_serial(args, False, n_strucs)
 
         else:
-            if self.use_grid_kern:
-                args = [GP.name, grid_env, mapped_kernel_info]
-            else:
-                args = [GP.name, grid_env, kernel_info]
             k12_v_force = self._gengrid_par(args, True, n_envs, processes)
             k12_v_energy = self._gengrid_par(args, False, n_strucs, processes)
 
@@ -384,25 +396,23 @@ class SingleMapXbody:
             n_grid = np.prod(self.grid_num)
             return np.empty((n_grid, 0))
 
+        if self.use_grid_kern: # TODO: finish force mapping
+            GP_name, grid_env, mapped_kernel_info = args
+
         with mp.Pool(processes=processes) as pool:
 
             block_id, nbatch = \
                 partition_vector(self.n_sample, n_envs, processes)
 
-            threebody = False
-            if self.use_grid_kern:
-                GP_name, grid_env, mapped_kernel_info = args
-                threebody = True
-
             k12_slice = []
             for ibatch in range(nbatch):
                 s, e = block_id[ibatch]
-                # if threebody:
-                #     k12_slice.append(pool.apply_async(self._gengrid_numba,
-                #         args = (GP_name, force_block, s, e, grid_env, mapped_kernel_info)))
-                # else:
-                k12_slice.append(pool.apply_async(self._gengrid_inner,
-                    args = args + [force_block, s, e]))
+                if self.use_grid_kern: # TODO: finish force mapping
+                    k12_slice.append(pool.apply_async(self._gengrid_numba,
+                        args = (GP_name, force_block, s, e, grid_env, mapped_kernel_info)))
+                else:
+                    k12_slice.append(pool.apply_async(self._gengrid_inner,
+                        args = args + [force_block, s, e]))
             k12_matrix = []
             for ibatch in range(nbatch):
                 k12_matrix += [k12_slice[ibatch].get()]
@@ -498,7 +508,7 @@ class SingleMapXbody:
     def build_map(self, GP):
 
         self.update_bounds(GP)
-        print(self) 
+        print(self)
 
         if not self.load_grid:
             y_mean, y_var = self.GenGrid(GP)

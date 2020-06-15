@@ -131,13 +131,16 @@ class MappedGaussianProcess:
             grid_params['lower_bound_relax'] = 0.1
 
         self.maps = {}
-        args = [self.coded_species, map_force, GP, mean_only,\
-                container_only, lmp_file_name, \
-                grid_params['load_grid'],\
-                grid_params['lower_bound_relax'],
-                n_cpus, n_sample]
 
-        optional_xb_params = ['lower_bound', 'upper_bound', 'svd_rank']
+        args = {'coded_species':self.coded_species,
+                'map_force':map_force,
+                'GP':GP,
+                'mean_only':mean_only,
+                'container_only':container_only,
+                'lmp_file_name':lmp_file_name,
+                'n_cpus':n_cpus, 'n_sample':n_sample}
+
+        optional_xb_params = ['lower_bound', 'upper_bound', 'svd_rank', 'lower_bound_relax']
         for key in grid_params.keys():
             if 'body' in key:
                 if 'twobody' == key:
@@ -151,12 +154,13 @@ class MappedGaussianProcess:
 
                 # set to 'auto' if the param is not given
                 for oxp in optional_xb_params:
-                    if oxp not in xb_dict.keys():
-                        xb_dict[oxp] = 'auto'
+                    args[oxp] = xb_dict.get(oxp, 'auto')
+                args['grid_num'] = xb_dict.get('grid_num', None)
 
-                xb_args = [xb_dict['grid_num'], xb_dict['lower_bound'],
-                           xb_dict['upper_bound'], xb_dict['svd_rank']]
-                xb_maps = mapxbody(xb_args + args)
+                for k in xb_dict:
+                    args[k] = xb_dict[k]
+
+                xb_maps = mapxbody(**args)
                 self.maps[key] = xb_maps
 
     def build_map(self, GP):
@@ -241,6 +245,16 @@ class MappedGaussianProcess:
                           "and so the MGP dict outputted will not have "
                           "them.", Warning)
             out_dict['mean_only'] = True
+
+        print("as_dict")
+        for k in out_dict:
+            print(k, type(out_dict[k]), out_dict[k])
+            try:
+                with open(f'test.json', 'w') as f:
+                    json.dump({k:out_dict[k]}, f, cls=NumpyEncoder)
+            except Exception as e:
+                print("fail")
+                print(e)
 
         # only save the coefficients
         maps_dict = {}
