@@ -395,7 +395,7 @@ def test_training_statistics():
         test_structure.coded_species))
 
 
-def test_delete_force_data():
+def test_remove_force_data():
     """
     Train a GP on one fake structure. Store forces from prediction.
     Add a new fake structure and ensure predictions change; then remove
@@ -422,8 +422,11 @@ def test_delete_force_data():
                                                  write_to_structure=False)
     init_forces_2, init_stds_2 = predict_on_structure(test_structure_2, gp,
                                                  write_to_structure=False)
-    for custom_range in [None,[0]]:
 
+    # Alternate adding in the entire structure and adding in only one atom.
+    for custom_range in [None, [0]]:
+
+        # Add in data and ensure the predictions change in reponse
         gp.update_db(test_structure_2, forces_2, custom_range=custom_range)
 
         new_forces, new_stds = predict_on_structure(test_structure, gp,
@@ -437,10 +440,18 @@ def test_delete_force_data():
         assert not np.array_equal(init_stds, new_stds)
         assert not np.array_equal(init_stds_2, new_stds_2)
 
+        # Remove that data and test to see that the predictions revert to
+        # what they were previously
         if custom_range == [0]:
-            gp.remove_force_data(5)
+            popped_strucs, popped_forces = gp.remove_force_data(5)
         else:
-            gp.remove_force_data([5, 6, 7, 8, 9])
+            popped_strucs, popped_forces = gp.remove_force_data([5, 6, 7, 8,
+                                                                 9])
+
+        for i in range(len(popped_forces)):
+            assert np.array_equal(popped_forces[i],forces_2[i])
+            assert np.array_equal(popped_strucs[i].structure.positions,
+                              test_structure_2.positions)
 
         final_forces, final_stds = predict_on_structure(test_structure, gp,
                                                      write_to_structure=False)

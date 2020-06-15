@@ -20,6 +20,8 @@ from flare.output import set_logger
 from flare.utils.element_coder import element_to_Z, Z_to_element
 
 class Parameters():
+    '''
+    '''
 
     all_kernel_types = ['twobody', 'threebody', 'manybody']
     ndim = {'twobody': 2, 'threebody': 3, 'manybody': 2, 'cut3b': 2}
@@ -29,8 +31,11 @@ class Parameters():
                         fileout_name=None, verbose="info")
 
     def __init__(self):
+        '''
+        Enumerate all keys and  their default values that hyps_mask should store
+        '''
 
-        self.param_dict = {'nspecie': 0,
+        self.param_dict = {'nspecie': 1,
                            'ntwobody': 0,
                            'nthreebody': 0,
                            'ncut3b': 0,
@@ -56,6 +61,9 @@ class Parameters():
 
     @staticmethod
     def cutoff_array_to_dict(cutoffs):
+        '''
+        Convert old cutoffs array to the new dictionary format
+        '''
 
         if isinstance(cutoffs, dict):
             return cutoffs
@@ -80,6 +88,7 @@ class Parameters():
         if param_dict is None:
             param_dict = {}
 
+        # update old keys to new keys. for example nspec to nspecies
         replace_list = {'spec': 'specie', 'bond': 'twobody',
                         'triplet': 'threebody', 'mb': 'manybody'}
         keys = list(param_dict.keys())
@@ -91,13 +100,15 @@ class Parameters():
                     DeprecationWarning(
                         "{key} is being replaced with {newkey}")
 
+        # add a couple new keys that was not there previously
         if 'train_noise' not in param_dict:
             param_dict['train_noise'] = True
             DeprecationWarning("train_noise has to be in hyps_mask, set to True")
-
         if 'nspecie' not in param_dict:
             param_dict['nspecie'] = 1
 
+        # sort the kernels dictionary again. but this can result in
+        # wrong results...
         if set(kernels) != set(param_dict.get("kernels", [])):
 
             start = 0
@@ -108,11 +119,15 @@ class Parameters():
                         param_dict[k+'_start'] = start
 
                     if 'n'+k not in param_dict:
-                        Parameters.logger.debug("add in hyper parameter separators for", k)
+                        Parameters.logger.debug("add in hyper parameter separators"\
+                                                "for", k)
                         param_dict['n'+k] = 1
                         start += Parameters.n_kernel_parameters[k]
                     else:
                         start += param_dict['n'+k] * Parameters.n_kernel_parameters[k]
+                else:
+                    Warning("inconsistency between input kernel and kernel list"\
+                            "stored in hyps_mask")
 
             Parameters.logger.debug("Replace kernel array in param_dict")
             param_dict['kernels'] = deepcopy(kernels)
@@ -242,6 +257,21 @@ class Parameters():
 
     @staticmethod
     def get_component_hyps(param_dict, kernel_name, hyps=None, constraint=False, noise=False):
+        '''
+        return the hyper-parameters correspond to the kernel specified by kernel_name
+
+        Args:
+
+        param_dict (dict): the hyps_mask dictionary used/stored in GaussianProcess
+        kernel_name (str): the name of the kernel.
+        hyps (np.array): if hyps is None, use the one stored in param_dict
+        constraint (bool): if True, return one additional list that shows whether the
+                           hyper-parmaeters can be trained
+        noise (bool): if True, the last element of returned hyper-parameters is
+                      the noise variance.
+
+        return: hyper-parameters, and whether they can be optimized
+        '''
 
         if kernel_name not in param_dict['kernels']:
             if constraint:
@@ -272,6 +302,17 @@ class Parameters():
 
     @staticmethod
     def get_component_mask(param_dict, kernel_name, hyps=None):
+        '''
+        return the hyper-parameter masking correspond to the kernel specified by kernel_name
+
+        Args:
+
+        param_dict (dict): the hyps_mask dictionary used/stored in GaussianProcess
+        kernel_name (str): the name of the kernel.
+        hyps (np.array): if hyps is None, use the one stored in param_dict
+
+        return: hyper-parameters, cutoffs, and new hyps_mask
+        '''
 
         if kernel_name in param_dict['kernels']:
             new_dict = {}
@@ -304,6 +345,16 @@ class Parameters():
 
     @staticmethod
     def get_noise(param_dict, hyps=None, constraint=False):
+        '''
+        get the noise parameters
+
+        Args:
+
+        constraint (bool): if True, return one additional list that shows whether the
+                           hyper-parmaeters can be trained
+        noise (bool): if True, the last element of returned hyper-parameters is
+                      the noise variance.
+        '''
         hyps = Parameters.get_hyps(param_dict, hyps=hyps)
         if constraint:
             return hyps[-1], param_dict['train_noise']
@@ -312,6 +363,16 @@ class Parameters():
 
     @staticmethod
     def get_cutoff(kernel_name, coded_species, param_dict):
+        '''
+        get the cutoff
+
+        Args:
+
+        kernel_name (str): name of the kernel
+        coded_species (list): list of element names
+        param_dict (dict): hyps_mask
+
+        '''
 
         cutoffs = param_dict['cutoffs']
         universal_cutoff = cutoffs[kernel_name]
@@ -348,6 +409,16 @@ class Parameters():
 
     @staticmethod
     def get_hyps(param_dict, hyps=None, constraint=False):
+        '''
+        get the cutoff
+
+        Args:
+
+        kernel_name (str): name of the kernel
+        coded_species (list): list of element names
+        param_dict (dict): hyps_mask
+
+        '''
 
         if hyps is None:
             hyps = param_dict['hyps']
@@ -369,6 +440,9 @@ class Parameters():
 
     @staticmethod
     def compare_dict(dict1, dict2):
+        '''
+        compare whether two hyps_masks are the same
+        '''
 
         if type(dict1) != type(dict2):
             return False

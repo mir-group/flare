@@ -14,7 +14,6 @@ from typing import List
 
 from flare.env import AtomicEnvironment
 from flare.gp import GaussianProcess
-from flare.kernels.utils import str_to_kernel_set
 from flare.utils.element_coder import NumpyEncoder, element_to_Z, Z_to_element
 
 from flare.mgp.map2b import Map2body
@@ -111,6 +110,7 @@ class MappedGaussianProcess:
         self.coded_species = []
         self.hyps_mask = None
         self.cutoffs = None
+        self.GP = GP
 
         for i, ele in enumerate(unique_species):
             if isinstance(ele, str):
@@ -124,22 +124,14 @@ class MappedGaussianProcess:
             self.hyps_mask = GP.hyps_mask
             self.cutoffs = GP.cutoffs
 
-        if 'load_grid' not in grid_params:
-            grid_params['load_grid']= None
-        if 'update' not in grid_params:
-            grid_params['update'] = False
-        if 'lower_bound_relax' not in grid_params:
-            grid_params['lower_bound_relax'] = 0.1
+        self.load_grid = grid_params.get('load_grid', None)
+        self.update = grid_params.get('update', False)
+        self.lower_bound_relax = grid_params.get('lower_bound_relax', 0.1)
 
         self.maps = {}
-        args = [self.coded_species, map_force, GP, mean_only,\
-                container_only, lmp_file_name, \
-                grid_params['load_grid'],\
-                grid_params['lower_bound_relax'],
-                n_cpus, n_sample]
 
         optional_xb_params = ['lower_bound', 'upper_bound', 'svd_rank']
-        for key in grid_params.keys():
+        for key in grid_params:
             if 'body' in key:
                 if 'twobody' == key:
                     mapxbody = Map2body
@@ -151,16 +143,16 @@ class MappedGaussianProcess:
                 xb_dict = grid_params[key]
 
                 # set to 'auto' if the param is not given
+                args = {}
                 for oxp in optional_xb_params:
-                    if oxp not in xb_dict.keys():
-                        xb_dict[oxp] = 'auto'
+                    args[oxp] = xb_dict.get(oxp, 'auto')
+                args['grid_num'] = xb_dict.get('grid_num', None)
 
-                xb_args = [xb_dict['grid_num'], xb_dict['lower_bound'],
-                           xb_dict['upper_bound'], xb_dict['svd_rank']]
-                xb_maps = mapxbody(xb_args + args)
+                for k in xb_dict:
+                    args[k] = xb_dict[k]
+
+                xb_maps = mapxbody(**args, **self.__dict__)
                 self.maps[key] = xb_maps
-
-        self.mean_only = mean_only
 
     def build_map(self, GP):
 
@@ -191,9 +183,6 @@ class MappedGaussianProcess:
             energy: the local energy (atomic energy)
         '''
 
-        if self.mean_only:  # if not build mapping for var
-            mean_only = True
-
         force = virial = kern = v = energy = 0
         for xb in self.maps:
             pred = self.maps[xb].predict(atom_env, mean_only)
@@ -221,7 +210,7 @@ class MappedGaussianProcess:
         header = ''
         xbodies = ['twobody', 'threebody']
         for xb in xbodies:
-            if xb in self.maps.keys():
+            if xb in self.maps:
                 num = len(self.maps[xb].maps)
             else:
                 num = 0
@@ -229,7 +218,7 @@ class MappedGaussianProcess:
         f.write(header + '\n')
 
         # write coefficients
-        for xb in self.maps.keys():
+        for xb in self.maps:
             self.maps[xb].write(f)
 
         f.close()
@@ -240,6 +229,7 @@ class MappedGaussianProcess:
         """
 
         out_dict = deepcopy(dict(vars(self)))
+        out_dict.pop('maps')
 
         # Uncertainty mappings currently not serializable;
         if not self.mean_only:
@@ -248,22 +238,11 @@ class MappedGaussianProcess:
                           "them.", Warning)
             out_dict['mean_only'] = True
 
-        # Iterate through the mappings for various bodies
-        for i in self.bodies:
-            kern_info = f'kernel{i}b_info'
-            kernel, ek, efk, cutoffs, hyps, hyps_mask = out_dict[kern_info]
-            out_dict[kern_info] = (kernel.__name__, efk.__name__,
-                                   cutoffs, hyps, hyps_mask)
-
         # only save the coefficients
-        out_dict['maps_2'] = [map_2.mean.__coeffs__ for map_2 in self.maps_2]
-        out_dict['maps_3'] = [map_3.mean.__coeffs__ for map_3 in self.maps_3]
-
-        # don't need these since they are built in the __init__ function
-        key_list = ['spcs_set', ]
-        for key in key_list:
-            if out_dict.get(key) is not None:
-                del out_dict[key]
+        maps_dict = {}
+        for m in self.maps:
+            maps_dict[m] = self.maps[m].as_dict()
+        out_dict['maps'] = maps_dict
 
         return out_dict
 
@@ -272,38 +251,27 @@ class MappedGaussianProcess:
         """
         Create MGP object from dictionary representation.
         """
-        new_mgp = MappedGaussianProcess(grid_params=dictionary['grid_params'],
-                                        species_labels=dictionary['species_labels'],
-                                        map_force=dictionary['map_force'],
-                                        GP=None,
-                                        mean_only=dictionary['mean_only'],
-                                        container_only=True,
-                                        lmp_file_name=dictionary['lmp_file_name'],
-                                        n_cpus=dictionary['n_cpus'],
-                                        n_sample=dictionary['n_sample'])
-
-        # Restore kernel_info
-        for i in dictionary['bodies']:
-            kern_info = f'kernel{i}b_info'
-            hyps_mask = dictionary[kern_info][-1]
-
-            kernel_info = dictionary[kern_info]
-            kernel_name = kernel_info[0]
-            kernel, _, ek, efk = str_to_kernel_set([kernel_name], 'mc', hyps_mask)
-            kernel_info[0] = kernel
-            kernel_info[1] = ek
-            kernel_info[2] = efk
-            setattr(new_mgp, kern_info, kernel_info)
-
-        # Fill up the model with the saved coeffs
-        for m, map_2 in enumerate(new_mgp.maps_2):
-            map_2.mean.__coeffs__ = np.array(dictionary['maps_2'][m])
-        for m, map_3 in enumerate(new_mgp.maps_3):
-            map_3.mean.__coeffs__ = np.array(dictionary['maps_3'][m])
 
         # Set GP
         if dictionary.get('GP'):
-            new_mgp.GP = GaussianProcess.from_dict(dictionary.get("GP"))
+            GP = GaussianProcess.from_dict(dictionary.get("GP"))
+        else:
+            dictionary['GP'] = None
+
+        dictionary['unique_species'] = list(set(dictionary['species_labels']))
+        if 'container_only' not in dictionary:
+            dictionary['container_only'] = True
+
+        init_arg_name = ['grid_params', 'unique_species', 'map_force', 'GP',
+            'mean_only', 'container_only', 'lmp_file_name', 'n_cpus', 'n_sample']
+        kwargs = {key: dictionary[key] for key in init_arg_name}
+        new_mgp = MappedGaussianProcess(**kwargs)
+
+        # Fill up the model with the saved coeffs
+        if 'twobody' in new_mgp.maps:
+            new_mgp.maps['twobody'] = Map2body.from_dict(dictionary['maps']['twobody'], Map2body)
+        if 'threebody' in new_mgp.maps:
+            new_mgp.maps['threebody'] = Map3body.from_dict(dictionary['maps']['threebody'], Map3body)
 
         return new_mgp
 

@@ -5,3 +5,6 @@ numba
 ase
 pymatgen
 nptyping
+nbsphinx
+IPython
+pytest>=4.6

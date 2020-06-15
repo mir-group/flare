@@ -1,3 +1,53 @@
+"""
+A helper class to construct the hyps_mask dictionary for AtomicEnvironment
+, GaussianProcess and MappedGaussianProcess
+
+Examples:
+
+    pm = ParameterHelper(species=['C', 'H', 'O'],
+                               kernels={'twobody':[['*', '*'], ['O','O']],
+                               'threebody':[['*', '*', '*'],
+                                   ['O','O', 'O']]},
+                               parameters={'twobody0':[1, 0.5, 1], 'twobody1':[2, 0.2, 2],
+                                     'threebody0':[1, 0.5], 'threebody1':[2, 0.2],
+                                     'cutoff_threebody':1},
+                               constraints={'twobody0':[False, True]})
+    hm = pm.hyps_mask
+    hyps = hm['hyps']
+    cutoffs = hm['cutoffs']
+    kernels = hm['kernels']
+    gp_model = GaussianProcess(kernels=kernels, cutoffs=cutoffs,
+                               hyps=hyps, hyps_mask=hm)
+
+In this example, four atomic species are involved. There are many kinds
+of twobodys and threebodys. But we only want to use eight different signal variance
+and length-scales.
+
+In order to do so, we first define all the twobodys to be group "twobody0", by
+listing "*-*" as the first element in the twobody argument. The second
+element O-O is then defined to be group "twobody1". Note that the order
+matters here. The later element overrides the ealier one. If
+twobodys=[['O', 'O'], ['*', '*']], then all twobodys belong to group "twobody1".
+
+Similarly, O-O-O is defined as threebody1, while all remaining ones
+are left as threebody0.
+
+The hyperpameters for each group is listed in the order of
+[sig, ls, cutoff] in the parameters argument.  So in this example,
+O-O interaction will use [2, 0.2, 2] as its sigma, length scale, and
+cutoff.
+
+For threebody, the parameter arrays only come with two elements. So there
+is no cutoff associated with threebody0 or threebody1; instead, a universal
+cutoff is used, which is defined as 'cutoff_threebody'.
+
+The constraints argument define which hyper-parameters will be optimized.
+True for optimized and false for being fixed.
+
+See more examples in tests/test_parameters.py
+
+"""
+
 import inspect
 import json
 import logging
@@ -18,58 +68,12 @@ from flare.utils.element_coder import element_to_Z, Z_to_element
 
 
 class ParameterHelper():
-    """
-    A helper class to construct the hyps_mask dictionary for AtomicEnvironment
-    , GaussianProcess and MappedGaussianProcess
-
-    Examples:
-
-        pm = ParameterHelper(species=['C', 'H', 'O'],
-                                   kernels={'twobody':[['*', '*'], ['O','O']],
-                                   'threebody':[['*', '*', '*'],
-                                       ['O','O', 'O']]},
-                                   parameters={'twobody0':[1, 0.5, 1], 'twobody1':[2, 0.2, 2],
-                                         'threebody0':[1, 0.5], 'threebody1':[2, 0.2],
-                                         'cutoff_threebody':1},
-                                   constraints={'twobody0':[False, True]})
-        hm = pm.hyps_mask
-        hyps = hm['hyps']
-        cutoffs = hm['cutoffs']
-        kernel_name = hm['kernel_name']
-
-    In this example, four atomic species are involved. There are many kinds
-    of twobodys and threebodys. But we only want to use eight different sigmas
-    and lengthscales.
-
-    In order to do so, we first define all the twobodys to be group "twobody0", by
-    listing "*-*" as the first element in the twobody argument. The second
-    element O-O is then defined to be group "twobody1". Note that the order
-    matters here. The later element overrides the ealier one. If
-    twobodys=[['O', 'O'], ['*', '*']], then all twobodys belong to group "twobody1".
-
-    Similarly, O-O-O is defined as threebody1, while all remaining ones
-    are left as threebody0.
-
-    The hyperpameters for each group is listed in the order of
-    [sig, ls, cutoff] in the parameters argument.  So in this example,
-    O-O interaction will use [2, 0.2, 2] as its sigma, length scale, and
-    cutoff.
-
-    For threebody, the parameter arrays only come with two elements. So there
-    is no cutoff associated with threebody0 or threebody1; instead, a universal
-    cutoff is used, which is defined as 'cutoff_threebody'.
-
-    The constraints argument define which hyper-parameters will be optimized.
-    True for optimized and false for being fixed.
-
-    See more examples in tests/test_parameters.py
-
-    """
 
     # TO DO, sync it to kernel class
     #  need to be synced with kernel class
 
     # name of the kernels
+
     all_kernel_types = ['twobody', 'threebody', 'manybody']
     additional_groups = ['cut3b']
     # dimension of the kernels
@@ -80,7 +84,7 @@ class ParameterHelper():
     def __init__(self, hyps_mask=None, species=None, kernels={},
                  cutoff_groups={}, parameters=None,
                  constraints={}, allseparate=False, random=False, ones=False,
-                 verbose="INFO"):
+                 verbose="WARNING"):
         """ Initialization function
 
         :param hyps_mask: Not implemented yet
@@ -226,7 +230,6 @@ class ParameterHelper():
                 for ktype in self.kernels:
                     self.fill_in_parameters(
                         ktype, random=random, ones=ones, universal=universal)
-
 
     def list_parameters(self, parameter_dict, constraints={}):
         """Define many groups of parameters
@@ -763,7 +766,7 @@ class ParameterHelper():
 
                     if sig < 0 or ls < 0:
                         self.logger.error(f"hyper parameters for group {name}"
-                                          "is not defined")
+                                          " is not defined")
                         raise RuntimeError
                     self.hyps_sig[group_type] += [sig]
                     self.hyps_ls[group_type] += [ls]
@@ -787,7 +790,7 @@ class ParameterHelper():
                     allcut += [self.all_cutoff[aeg[idt]]]
                 else:
                     alldefine = False
-                    self.logger.info(f"{aeg[idt]} cutoff is not define. "
+                    self.logger.info(f"{aeg[idt]} cutoff is not defined. "
                                      "it's going to use the universal cutoff.")
 
             if group_type != 'threebody':

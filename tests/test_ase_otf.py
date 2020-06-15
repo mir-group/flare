@@ -20,7 +20,7 @@ md_list = ['VelocityVerlet', 'NVTBerendsen', 'NPTBerendsen', 'NPT', 'Langevin']
 
 @pytest.fixture(scope='module')
 def md_params():
-    
+
     md_dict = {'temperature': 500}
     for md_engine in md_list:
         if md_engine == 'VelocityVerlet':
@@ -42,7 +42,7 @@ def super_cell():
     from ase.spacegroup import crystal
     a = 3.855
     alpha = 90
-    atoms = crystal(['H', 'He'], 
+    atoms = crystal(['H', 'He'],
                     basis=[(0, 0, 0), (0.5, 0.5, 0.5)],
                     size=(2, 1, 1),
                     cellpar=[a, a, a, alpha, alpha, alpha])
@@ -72,12 +72,12 @@ def flare_calc():
             random = True,
             parameters=parameters
         )
-        
+
         hm = pm.as_dict()
         hyps = hm['hyps']
         cut = hm['cutoffs']
         print('hyps', hyps)
-        
+
         gp_model = GaussianProcess(
             kernels = kernels,
             component = 'sc', # single-component. For multi-comp, use 'mc'
@@ -91,9 +91,9 @@ def flare_calc():
         # ----------- create mapped gaussian process ------------------
         grid_params = {'twobody':   {'grid_num': [64]},
                        'threebody': {'grid_num': [16, 16, 16]}}
-        
-        mgp_model = MappedGaussianProcess(grid_params,
-                                          species_list = [1, 2],
+
+        mgp_model = MappedGaussianProcess(grid_params = grid_params,
+                                          unique_species = [1, 2],
                                           n_cpus = 1,
                                           map_force = False,
                                           mean_only = False)
@@ -112,7 +112,7 @@ def flare_calc():
 def qe_calc():
 
     from ase.calculators.lj import LennardJones
-    dft_calculator = LennardJones() 
+    dft_calculator = LennardJones()
 
     yield dft_calculator
     del dft_calculator
@@ -140,7 +140,7 @@ def test_otf_md(md_engine, md_params, super_cell, flare_calc, qe_calc):
     ZeroRotation(super_cell)  # zero angular momentum
 
     super_cell.set_calculator(flare_calculator)
-    test_otf = ASE_OTF(super_cell, 
+    test_otf = ASE_OTF(super_cell,
                        timestep = 1 * units.fs,
                        number_of_steps = 3,
                        dft_calc = qe_calc,
