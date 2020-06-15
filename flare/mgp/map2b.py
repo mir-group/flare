@@ -10,7 +10,8 @@ from flare.mgp.utils import get_bonds
 
 
 class Map2body(MapXbody):
-    def __init__(self, kwargs):
+
+    def __init__(self, **kwargs,):
         '''
         args: the same arguments as MapXbody, to guarantee they have the same
             input parameters
@@ -48,7 +49,8 @@ class Map2body(MapXbody):
 
 
 class SingleMap2body(SingleMapXbody):
-    def __init__(self, kwargs):
+
+    def __init__(self, **kwargs):
         '''
         Build 2-body MGP
 

@@ -18,7 +18,6 @@ from flare.utils.element_coder import NumpyEncoder, element_to_Z, Z_to_element
 
 from flare.mgp.map2b import Map2body
 from flare.mgp.map3b import Map3body
-from flare.mgp.utils import str_to_mapped_kernel
 
 class MappedGaussianProcess:
     '''
@@ -108,8 +107,6 @@ class MappedGaussianProcess:
         self.grid_params = grid_params
         self.species_labels = []
         self.coded_species = []
-        self.hyps_mask = None
-        self.cutoffs = None
 
         for i, ele in enumerate(unique_species):
             if isinstance(ele, str):
@@ -119,10 +116,6 @@ class MappedGaussianProcess:
                 self.coded_species.append(ele)
                 self.species_labels.append(Z_to_element(ele))
 
-        if (GP is not None):
-            self.hyps_mask = GP.hyps_mask
-            self.cutoffs = GP.cutoffs
-
         if 'load_grid' not in grid_params:
             grid_params['load_grid']= None
         if 'update' not in grid_params:
@@ -131,14 +124,9 @@ class MappedGaussianProcess:
             grid_params['lower_bound_relax'] = 0.1
 
         self.maps = {}
-        args = [self.coded_species, map_force, GP, mean_only,\
-                container_only, lmp_file_name, \
-                grid_params['load_grid'],\
-                grid_params['lower_bound_relax'],
-                n_cpus, n_sample]
 
-        optional_xb_params = ['lower_bound', 'upper_bound', 'svd_rank']
-        for key in grid_params.keys():
+        optional_xb_params = ['lower_bound', 'upper_bound', 'svd_rank', 'lower_bound_relax']
+        for key in grid_params:
             if 'body' in key:
                 if 'twobody' == key:
                     mapxbody = Map2body
@@ -150,19 +138,18 @@ class MappedGaussianProcess:
                 xb_dict = grid_params[key]
 
                 # set to 'auto' if the param is not given
+                args = {}
                 for oxp in optional_xb_params:
-                    if oxp not in xb_dict.keys():
-                        xb_dict[oxp] = 'auto'
+                    args[oxp] = xb_dict.get(oxp, 'auto')
+                args['grid_num'] = xb_dict.get('grid_num', None)
 
-                xb_args = [xb_dict['grid_num'], xb_dict['lower_bound'],
-                           xb_dict['upper_bound'], xb_dict['svd_rank']]
-                xb_maps = mapxbody(xb_args + args)
+                for k in xb_dict:
+                    args[k] = xb_dict[k]
+
+                xb_maps = mapxbody(**args, **self.__dict__)
                 self.maps[key] = xb_maps
 
     def build_map(self, GP):
-
-        self.hyps_mask = GP.hyps_mask
-        self.cutoffs = GP.cutoffs
 
         for xb in self.maps:
             self.maps[xb].build_map(GP)
@@ -215,7 +202,7 @@ class MappedGaussianProcess:
         header = ''
         xbodies = ['twobody', 'threebody']
         for xb in xbodies:
-            if xb in self.maps.keys():
+            if xb in self.maps:
                 num = len(self.maps[xb].maps)
             else:
                 num = 0
@@ -223,7 +210,7 @@ class MappedGaussianProcess:
         f.write(header + '\n')
 
         # write coefficients
-        for xb in self.maps.keys():
+        for xb in self.maps:
             self.maps[xb].write(f)
 
         f.close()
@@ -234,6 +221,7 @@ class MappedGaussianProcess:
         """
 
         out_dict = deepcopy(dict(vars(self)))
+        out_dict.pop('maps')
 
         # Uncertainty mappings currently not serializable;
         if not self.mean_only:
