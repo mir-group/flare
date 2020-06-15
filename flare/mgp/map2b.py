@@ -70,10 +70,20 @@ class SingleMap2body(SingleMapXbody):
         self.species_code = Z_to_element(spc[0]) + '_' + Z_to_element(spc[1])
 
     def set_bounds(self, lower_bound, upper_bound):
+        '''
+        lower_bound: scalar or array
+        upper_bound: scalar or array
+        '''
         if self.auto_lower:
-            self.bounds[0] = [lower_bound]
+            if isinstance(lower_bound, float):
+                self.bounds[0] = [lower_bound]
+            else:
+                self.bounds[0] = lower_bound
         if self.auto_upper:
-            self.bounds[1] = upper_bound
+            if isinstance(upper_bound, float):
+                self.bounds[1] = [upper_bound]
+            else:
+                self.bounds[1] = upper_bound
 
 
     def construct_grids(self):

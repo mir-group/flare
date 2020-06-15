@@ -14,7 +14,6 @@ from typing import List
 
 from flare.env import AtomicEnvironment
 from flare.gp import GaussianProcess
-from flare.kernels.utils import str_to_kernel_set
 from flare.utils.element_coder import NumpyEncoder, element_to_Z, Z_to_element
 
 from flare.mgp.map2b import Map2body
@@ -160,8 +159,6 @@ class MappedGaussianProcess:
                 xb_maps = mapxbody(xb_args + args)
                 self.maps[key] = xb_maps
 
-        self.mean_only = mean_only
-
     def build_map(self, GP):
 
         self.hyps_mask = GP.hyps_mask
@@ -190,9 +187,6 @@ class MappedGaussianProcess:
             stress: 6d array of the virial stress
             energy: the local energy (atomic energy)
         '''
-
-        if self.mean_only:  # if not build mapping for var
-            mean_only = True
 
         force = virial = kern = v = energy = 0
         for xb in self.maps:
@@ -248,22 +242,11 @@ class MappedGaussianProcess:
                           "them.", Warning)
             out_dict['mean_only'] = True
 
-        # Iterate through the mappings for various bodies
-        for i in self.bodies:
-            kern_info = f'kernel{i}b_info'
-            kernel, ek, efk, cutoffs, hyps, hyps_mask = out_dict[kern_info]
-            out_dict[kern_info] = (kernel.__name__, efk.__name__,
-                                   cutoffs, hyps, hyps_mask)
-
         # only save the coefficients
-        out_dict['maps_2'] = [map_2.mean.__coeffs__ for map_2 in self.maps_2]
-        out_dict['maps_3'] = [map_3.mean.__coeffs__ for map_3 in self.maps_3]
-
-        # don't need these since they are built in the __init__ function
-        key_list = ['spcs_set', ]
-        for key in key_list:
-            if out_dict.get(key) is not None:
-                del out_dict[key]
+        maps_dict = {}
+        for m in self.maps:
+            maps_dict[m] = self.maps[m].as_dict()
+        out_dict['maps'] = maps_dict
 
         return out_dict
 
@@ -272,38 +255,27 @@ class MappedGaussianProcess:
         """
         Create MGP object from dictionary representation.
         """
-        new_mgp = MappedGaussianProcess(grid_params=dictionary['grid_params'],
-                                        species_labels=dictionary['species_labels'],
-                                        map_force=dictionary['map_force'],
-                                        GP=None,
-                                        mean_only=dictionary['mean_only'],
-                                        container_only=True,
-                                        lmp_file_name=dictionary['lmp_file_name'],
-                                        n_cpus=dictionary['n_cpus'],
-                                        n_sample=dictionary['n_sample'])
-
-        # Restore kernel_info
-        for i in dictionary['bodies']:
-            kern_info = f'kernel{i}b_info'
-            hyps_mask = dictionary[kern_info][-1]
-
-            kernel_info = dictionary[kern_info]
-            kernel_name = kernel_info[0]
-            kernel, _, ek, efk = str_to_kernel_set([kernel_name], 'mc', hyps_mask)
-            kernel_info[0] = kernel
-            kernel_info[1] = ek
-            kernel_info[2] = efk
-            setattr(new_mgp, kern_info, kernel_info)
-
-        # Fill up the model with the saved coeffs
-        for m, map_2 in enumerate(new_mgp.maps_2):
-            map_2.mean.__coeffs__ = np.array(dictionary['maps_2'][m])
-        for m, map_3 in enumerate(new_mgp.maps_3):
-            map_3.mean.__coeffs__ = np.array(dictionary['maps_3'][m])
 
         # Set GP
         if dictionary.get('GP'):
-            new_mgp.GP = GaussianProcess.from_dict(dictionary.get("GP"))
+            GP = GaussianProcess.from_dict(dictionary.get("GP"))
+        else:
+            dictionary['GP'] = None
+
+        dictionary['unique_species'] = list(set(dictionary['species_labels']))
+        if 'container_only' not in dictionary:
+            dictionary['container_only'] = True
+
+        init_arg_name = ['grid_params', 'unique_species', 'map_force', 'GP',
+            'mean_only', 'container_only', 'lmp_file_name', 'n_cpus', 'n_sample']
+        kwargs = {key: dictionary[key] for key in init_arg_name}
+        new_mgp = MappedGaussianProcess(**kwargs)
+
+        # Fill up the model with the saved coeffs
+        if 'twobody' in new_mgp.maps:
+            new_mgp.maps['twobody'] = Map2body.from_dict(dictionary['maps']['twobody'], Map2body)
+        if 'threebody' in new_mgp.maps:
+            new_mgp.maps['threebody'] = Map3body.from_dict(dictionary['maps']['threebody'], Map3body)
 
         return new_mgp
 

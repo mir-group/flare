@@ -16,13 +16,14 @@ from flare.utils.parameter_helper import ParameterHelper
 
 from tests.fake_gp import generate_mb_envs, generate_mb_twin_envs
 from tests.test_mc_sephyps import generate_same_hm, generate_diff_hm
-from flare.mgp.utils import get_triplets, get_kernel_term, get_permutations
+from flare.mgp.utils import get_triplets, get_kernel_term
 from flare.mgp.grid_kernels_3b import triplet_cutoff, grid_kernel_sephyps, \
         grid_kernel, get_triplets_for_kern
 
 # multi_cut = [False, True]
+hyps_list = [True, False]
 
-@pytest.mark.parametrize('same_hyps', [True, False])
+@pytest.mark.parametrize('same_hyps', hyps_list)
 @pytest.mark.parametrize('prefix', ['energy']) #, 'force'])
 def test_start(parameter, same_hyps, prefix):
 
@@ -59,16 +60,16 @@ def test_start(parameter, same_hyps, prefix):
             coords = np.zeros((1, 9), dtype=np.float64)
             coords[:, 0] += 1.0
 
-            perm_list = get_permutations(grid_env.ctype, grid_env.etypes[0], grid_env.etypes[1])
             fj, fdj = triplet_cutoff(grid, hm['cutoffs']['threebody'],
                                      coords, derivative=True)
             fdj = fdj[:, [0]]
 
             kern_type = f'{prefix}_force'
             kern_vec = kernel(kern_type, env, grid, fj, fdj,
-                              grid_env.ctype, grid_env.etypes, perm_list,
+                              grid_env.ctype, grid_env.etypes,
                               *args)
             kern_vec = np.hstack(kern_vec)
+            print('species, reference, kern_vec, reference-kern_vec')
             print(species, reference, kern_vec, reference-kern_vec)
 
 @pytest.fixture(scope='module')
@@ -108,6 +109,9 @@ def get_grid_env(species, parameter, same_hyps):
         env = AtomicEnvironment(grid_struc, 0, hm1['cutoffs'], hm1)
     else:
         env = AtomicEnvironment(grid_struc, 0, hm2['cutoffs'], hm2)
+
+    env.bond_array_3 = np.array([[r1, 1, 0, 0], [r2, 0, 0, 0]])
+
     grid = np.array([[r1, r2, np.sqrt(r1**2+r2**2)]])
     return env, grid
 
@@ -126,7 +130,7 @@ def get_reference(grid_env, species, parameter, same_hyps):
     # force_energy = np.zeros(3, dtype=np.float)
     # energy_energy = np.zeros(3, dtype=np.float)
     for i in range(3):
-        energy_force[i] = force_en_kernel(env, grid_env, i, *args)
+        energy_force[i] = force_en_kernel(env, grid_env, i+1, *args)
         # force_energy[i] = force_en_kernel(env, grid_env, i, *args)
         # force_force[i] = kernel(grid_env, env, 0, i, *args)
 #     result = funcs[1][i](env1, env2, d1, *args1)

@@ -16,10 +16,10 @@ from flare.utils.element_coder import _Z_to_mass, _Z_to_element
 
 from .fake_gp import get_gp, get_random_structure
 
-body_list = ['3'] #['2', '3']
+body_list = ['2', '3']
 multi_list = [False, True]
-map_force_list = [False] #[False, True]
-force_block_only = True
+map_force_list = [False, True]
+force_block_only = False
 
 def clean():
     for f in os.listdir("./"):
@@ -74,13 +74,11 @@ def test_init(bodies, multihyps, map_force, all_mgp, all_gp):
     gp_model = all_gp[f'{bodies}{multihyps}']
 
     # grid parameters
-    grid_num_2 = 128
-    grid_num_3 = 32
     grid_params = {}
     if ('2' in bodies):
-        grid_params['twobody'] = {'grid_num': [grid_num_2]}# 'lower_bound': [0.05]}
+        grid_params['twobody'] = {'grid_num': [64], 'lower_bound': [0.05]}
     if ('3' in bodies):
-        grid_params['threebody'] = {'grid_num': [grid_num_3]*3, 'lower_bound':[0.1]*3}
+        grid_params['threebody'] = {'grid_num': [24, 25, 26], 'lower_bound':[0.05]*3}
 
     lammps_location = f'{bodies}{multihyps}{map_force}.mgp'
     data = gp_model.training_statistics
@@ -105,41 +103,41 @@ def test_build_map(all_gp, all_mgp, bodies, multihyps, map_force):
         pickle.dump(mgp_model, f)
 
 
-#@pytest.mark.parametrize('bodies', body_list)
-#@pytest.mark.parametrize('multihyps', multi_list)
-#@pytest.mark.parametrize('map_force', map_force_list)
-#def test_write_model(all_mgp, bodies, multihyps, map_force):
-#    """
-#    test the mapping for mc_simple kernel
-#    """
-#    mgp_model = all_mgp[f'{bodies}{multihyps}{map_force}']
-#    mgp_model.mean_only = True
-#    mgp_model.write_model(f'my_mgp_{bodies}_{multihyps}_{map_force}')
-#
-#    mgp_model.write_model(f'my_mgp_{bodies}_{multihyps}_{map_force}', format='pickle')
-#
-#    # Ensure that user is warned when a non-mean_only
-#    # model is serialized into a Dictionary
-#    with pytest.warns(Warning):
-#        mgp_model.mean_only = False
-#        mgp_model.as_dict()
-#        mgp_model.mean_only = True
-#
-#
-#@pytest.mark.parametrize('bodies', body_list)
-#@pytest.mark.parametrize('multihyps', multi_list)
-#@pytest.mark.parametrize('map_force', map_force_list)
-#def test_load_model(all_mgp, bodies, multihyps, map_force):
-#    """
-#    test the mapping for mc_simple kernel
-#    """
-#    name = f'my_mgp_{bodies}_{multihyps}_{map_force}.json'
-#    all_mgp[f'{bodies}{multihyps}'] = MappedGaussianProcess.from_file(name)
-#    os.remove(name)
-#
-#    name = f'my_mgp_{bodies}_{multihyps}_{map_force}.pickle'
-#    all_mgp[f'{bodies}{multihyps}'] = MappedGaussianProcess.from_file(name)
-#    os.remove(name)
+@pytest.mark.parametrize('bodies', body_list)
+@pytest.mark.parametrize('multihyps', multi_list)
+@pytest.mark.parametrize('map_force', map_force_list)
+def test_write_model(all_mgp, bodies, multihyps, map_force):
+    """
+    test the mapping for mc_simple kernel
+    """
+    mgp_model = all_mgp[f'{bodies}{multihyps}{map_force}']
+    mgp_model.mean_only = True
+    mgp_model.write_model(f'my_mgp_{bodies}_{multihyps}_{map_force}')
+
+    mgp_model.write_model(f'my_mgp_{bodies}_{multihyps}_{map_force}', format='pickle')
+
+    # Ensure that user is warned when a non-mean_only
+    # model is serialized into a Dictionary
+    with pytest.warns(Warning):
+        mgp_model.mean_only = False
+        mgp_model.as_dict()
+        mgp_model.mean_only = True
+
+
+@pytest.mark.parametrize('bodies', body_list)
+@pytest.mark.parametrize('multihyps', multi_list)
+@pytest.mark.parametrize('map_force', map_force_list)
+def test_load_model(all_mgp, bodies, multihyps, map_force):
+    """
+    test the mapping for mc_simple kernel
+    """
+    name = f'my_mgp_{bodies}_{multihyps}_{map_force}.json'
+    all_mgp[f'{bodies}{multihyps}'] = MappedGaussianProcess.from_file(name)
+    os.remove(name)
+
+    name = f'my_mgp_{bodies}_{multihyps}_{map_force}.pickle'
+    all_mgp[f'{bodies}{multihyps}'] = MappedGaussianProcess.from_file(name)
+    os.remove(name)
 
 @pytest.mark.parametrize('bodies', body_list)
 @pytest.mark.parametrize('multihyps', multi_list)
@@ -149,7 +147,6 @@ def test_cubic_spline(all_gp, all_mgp, bodies, multihyps, map_force):
     test the predict for mc_simple kernel
     """
 
-#    pytest.skip()
     mgp_model = all_mgp[f'{bodies}{multihyps}{map_force}']
     delta = 1e-4
 
@@ -195,6 +192,64 @@ def test_cubic_spline(all_gp, all_mgp, bodies, multihyps, map_force):
                 print("spline", num_derv, cderv)
                 assert np.isclose(num_derv, cderv, rtol=1e-2)
 
+def compare_triplet(mgp_model, gp_model, atom_env):
+    spcs, comp_r, comp_xyz = mgp_model.get_arrays(atom_env)
+    for i, spc in enumerate(spcs):
+        lengths = np.array(comp_r[i])
+        xyzs = np.array(comp_xyz[i])
+
+        print('compare triplet spc, lengths, xyz', spc)
+        print(np.hstack([lengths, xyzs]))
+
+        gp_f = []
+        gp_e = []
+        grid_env = get_grid_env(gp_model, spc, 3)
+        for l in range(lengths.shape[0]):
+            r1, r2, r12 = lengths[l, :]
+            grid_env = get_triplet_env(r1, r2, r12, grid_env)
+            gp_pred = np.array([gp_model.predict(grid_env, d+1) for d in range(3)]).T
+            gp_en, _ = gp_model.predict_local_energy_and_var(grid_env)
+            gp_f.append(gp_pred[0])
+            gp_e.append(gp_en)
+        gp_force = np.sum(gp_f, axis=0)
+        gp_energy = np.sum(gp_e, axis=0)
+        print('gp_e', gp_e)
+        print('gp_f')
+        print(gp_f)
+
+        map_ind = mgp_model.find_map_index(spc)
+        xyzs = np.zeros_like(xyzs)
+        xyzs[:, 0] = np.ones_like(xyzs[:, 0])
+        f, _, _, e = mgp_model.maps[map_ind].predict(lengths, xyzs,
+            mgp_model.map_force, mean_only=True)
+
+        assert np.allclose(gp_force, f, rtol=1e-2)
+        if not mgp_model.map_force:
+            assert np.allclose(gp_energy, e, rtol=1e-2)
+        
+
+def get_triplet_env(r1, r2, r12, grid_env):
+    grid_env.bond_array_3 = np.array([[r1, 1, 0, 0], [r2, 0, 0, 0]])
+    grid_env.cross_bond_dists = np.array([[0, r12], [r12, 0]])
+    print(grid_env.ctype, grid_env.etypes)
+
+    return grid_env
+
+
+def get_grid_env(GP, species, bodies):
+    if isinstance(GP.cutoffs, dict):
+        max_cut = np.max(list(GP.cutoffs.values()))
+    else:
+        max_cut = np.max(GP.cutoffs)
+    big_cell = np.eye(3) * 100
+    positions = [[(i+1)/(bodies+1)*0.1, 0, 0]
+                 for i in range(bodies)]
+    grid_struc = struc.Structure(big_cell, species, positions)
+    grid_env = env.AtomicEnvironment(grid_struc, 0, GP.cutoffs,
+        cutoffs_mask=GP.hyps_mask)
+
+    return grid_env
+
 
 @pytest.mark.parametrize('bodies', body_list)
 @pytest.mark.parametrize('multihyps', multi_list)
@@ -216,13 +271,13 @@ def test_predict(all_gp, all_mgp, bodies, multihyps, map_force):
     cell = 1.0 * np.eye(3)
     cutoffs = gp_model.cutoffs
     unique_species = gp_model.training_statistics['species']
-    struc_test, f = get_random_structure(cell, unique_species, nenv, seed=12345)
+    struc_test, f = get_random_structure(cell, unique_species, nenv)
     test_envi = env.AtomicEnvironment(struc_test, 0, cutoffs, cutoffs_mask=gp_model.hyps_mask)
 
-    #test_envi = gp_model.training_data[0]
-
     assert Parameters.compare_dict(gp_model.hyps_mask, mgp_model.hyps_mask)
-    assert test_envi.bond_array_2[0][0] >= mgp_model.maps['threebody'].maps[0].bounds[0][0]
+
+    if '3' in bodies:
+        compare_triplet(mgp_model.maps['threebody'], gp_model, test_envi)
 
     gp_pred_en, gp_pred_envar = gp_model.predict_local_energy_and_var(test_envi)
     gp_pred = np.array([gp_model.predict(test_envi, d+1) for d in range(3)]).T
@@ -273,6 +328,9 @@ def test_lmp_predict(all_gp, all_mgp, bodies, multihyps, map_force):
         if prefix in f:
             os.remove(f)
     clean()
+
+    if ('3' in bodies) and map_force:
+        pytest.skip()
 
     mgp_model = all_mgp[f'{bodies}{multihyps}{map_force}']
     gp_model = all_gp[f'{bodies}{multihyps}']

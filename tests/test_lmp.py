@@ -59,7 +59,7 @@ def mgp_model(gp_model):
                                   'lower_bound':[0.1]*3,
                                   'svd_rank': 14}
     species_list = [1, 2, 3]
-    lammps_location = f'test_lmp.mgp'
+    lammps_location = f'tmp_lmp.mgp'
     mapped_model = MappedGaussianProcess(grid_params, species_list, n_cpus=1,
                 map_force=False, lmp_file_name=lammps_location, mean_only=True)
 
@@ -90,7 +90,7 @@ def lmp_calculator(gp_model, mgp_model):
     masses=[f"{i} {_Z_to_mass[_element_to_Z[species[i]]]}" for i in range(len(species))]
 
     # set up input params
-    label = 'test_lmp'
+    label = 'tmp_lmp'
     by = 'yes' if 'twobody' in gp_model.kernels else 'no'
     ty = 'yes' if 'threebody' in gp_model.kernels else 'no'
     parameters = {'command': os.environ.get('lmp'), # set up executable for ASE
@@ -119,7 +119,7 @@ def test_lmp_predict(gp_model, mgp_model, ase_calculator, lmp_calculator):
 
     currdir = os.getcwd()
 
-    label = 'test_lmp'
+    label = 'tmp_lmp'
 
     for f in os.listdir("./"):
         if label in f:
