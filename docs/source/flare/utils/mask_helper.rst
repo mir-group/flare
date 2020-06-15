@@ -1,5 +1,5 @@
 Advanced Hyperparameters Set Up
 ===================
 
-.. automodule:: flare.utils.mask_helper
+.. automodule:: flare.utils.parameter_helper
     :members:

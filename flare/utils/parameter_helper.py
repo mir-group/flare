@@ -35,7 +35,9 @@ class ParameterHelper():
         hm = pm.hyps_mask
         hyps = hm['hyps']
         cutoffs = hm['cutoffs']
-        kernel_name = hm['kernel_name']
+        kernels = hm['kernels']
+        gp_model = GaussianProcess(kernels=kernels, cutoffs=cutoffs,
+                                   hyps=hyps, hyps_mask=hm)
 
     In this example, four atomic species are involved. There are many kinds
     of twobodys and threebodys. But we only want to use eight different sigmas
