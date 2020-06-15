@@ -4,8 +4,9 @@ Tutorials
 .. toctree::
    :maxdepth: 3
 
+   prepare_data
+   gpfa
    otf_al
    ase
-   gpfa
    after_training
    lammps
