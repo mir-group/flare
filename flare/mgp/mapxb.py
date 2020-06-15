@@ -66,7 +66,6 @@ class MapXbody:
         self.multi_component = multi_component
         self.cutoffs = cutoffs
         self.hyps = hyps
-        self.kernel_info = kernel_info
 
         self.spc = []
         self.spc_set = []
@@ -172,6 +171,7 @@ class MapXbody:
         """
 
         out_dict = deepcopy(dict(vars(self)))
+        out_dict.pop('kernel_info')
 
         # Uncertainty mappings currently not serializable;
         if not self.mean_only:
@@ -205,7 +205,6 @@ class MapXbody:
             dictionary['container_only'] = True
 
         new_mgp = mapxbody(**dictionary)
-
 
         # Fill up the model with the saved coeffs
         for m in range(len(new_mgp.maps)):

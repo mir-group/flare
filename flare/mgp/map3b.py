@@ -14,6 +14,7 @@ from flare.mgp.grid_kernels_3b import triplet_cutoff
 
 
 class Map3body(MapXbody):
+
     def __init__(self, **kwargs):
 
         self.kernel_name = "threebody"
@@ -56,6 +57,7 @@ class Map3body(MapXbody):
 
 
 class SingleMap3body(SingleMapXbody):
+
     def __init__(self, **kwargs):
         '''
         Build 3-body MGP

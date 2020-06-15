@@ -11,7 +11,6 @@ Compiling
 *********
 
 .. code-block:: bash
-    :linenos:
 
     cp lammps_plugin/pair_mgp.* /path/to/lammps/src
     cd /path/to/lammps/src
@@ -24,7 +23,6 @@ Running
 *******
 
 .. code-block:: bash
-    :linenos:
 
     mpirun /path/to/lammps/src/lmp_mpi -in in.lammps
 
@@ -39,7 +37,6 @@ Compiling
 *********
 
 .. code-block:: bash
-    :linenos:
 
     cp lammps_plugin/pair_mgp*.* /path/to/lammps/src
     cd /path/to/lammps/src
@@ -55,14 +52,12 @@ Running
 With ``newton on`` in your LAMMPS script:
 
 .. code-block:: bash
-    :linenos:
 
     mpirun /path/to/lammps/src/lmp_kokkos_omp -k on t 4 -sf kk -package kokkos newton on neigh half -in in.lammps
 
 With ``newton off`` in your LAMMPS script:
 
 .. code-block:: bash
-    :linenos:
 
     mpirun /path/to/lammps/src/lmp_kokkos_omp -k on t 4 -sf kk -package kokkos newton off neigh full -in in.lammps
 
@@ -73,7 +68,6 @@ and then set the number of threads equal to the number of cores (or hyperthreads
 A sample SLURM job script for 4 nodes, each with 48 cores, may look something like this:
 
 .. code-block:: bash
-    :linenos:
 
     #SBATCH --nodes=4
     #SBATCH --ntasks-per-node=1
@@ -91,7 +85,6 @@ Compiling
 *********
 
 .. code-block:: bash
-    :linenos:
 
     cp lammps_plugin/pair_mgp*.* /path/to/lammps/src
     cd /path/to/lammps/src
@@ -109,14 +102,12 @@ Running
 With ``newton on`` in your LAMMPS script:
 
 .. code-block:: bash
-    :linenos:
 
     mpirun /path/to/lammps/src/lmp_kokkos_cuda_mpi -k on g 4 -sf kk -package kokkos newton on neigh half -in in.lammps
 
 With ``newton off`` in your LAMMPS script:
 
 .. code-block:: bash
-    :linenos:
 
     mpirun /path/to/lammps/src/lmp_kokkos_cuda_mpi -k on g 4 -sf kk -package kokkos newton off neigh full -in in.lammps
 
@@ -127,7 +118,6 @@ If you are running on multiple nodes on a cluster, you would typically launch on
 A sample SLURM job script for 4 nodes, each with 2 GPUs, may look something like this:
 
 .. code-block:: bash
-    :linenos:
 
     #SBATCH --nodes=4
     #SBATCH --ntasks-per-node=2

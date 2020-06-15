@@ -110,6 +110,7 @@ class MappedGaussianProcess:
         self.coded_species = []
         self.hyps_mask = None
         self.cutoffs = None
+        self.GP = GP
 
         for i, ele in enumerate(unique_species):
             if isinstance(ele, str):
@@ -132,16 +133,8 @@ class MappedGaussianProcess:
 
         self.maps = {}
 
-        args = {'coded_species':self.coded_species,
-                'map_force':map_force,
-                'GP':GP,
-                'mean_only':mean_only,
-                'container_only':container_only,
-                'lmp_file_name':lmp_file_name,
-                'n_cpus':n_cpus, 'n_sample':n_sample}
-
         optional_xb_params = ['lower_bound', 'upper_bound', 'svd_rank', 'lower_bound_relax']
-        for key in grid_params.keys():
+        for key in grid_params:
             if 'body' in key:
                 if 'twobody' == key:
                     mapxbody = Map2body
@@ -153,6 +146,7 @@ class MappedGaussianProcess:
                 xb_dict = grid_params[key]
 
                 # set to 'auto' if the param is not given
+                args = {}
                 for oxp in optional_xb_params:
                     args[oxp] = xb_dict.get(oxp, 'auto')
                 args['grid_num'] = xb_dict.get('grid_num', None)
@@ -160,7 +154,7 @@ class MappedGaussianProcess:
                 for k in xb_dict:
                     args[k] = xb_dict[k]
 
-                xb_maps = mapxbody(**args)
+                xb_maps = mapxbody(**args, **self.__dict__)
                 self.maps[key] = xb_maps
 
     def build_map(self, GP):
@@ -219,7 +213,7 @@ class MappedGaussianProcess:
         header = ''
         xbodies = ['twobody', 'threebody']
         for xb in xbodies:
-            if xb in self.maps.keys():
+            if xb in self.maps:
                 num = len(self.maps[xb].maps)
             else:
                 num = 0
@@ -227,7 +221,7 @@ class MappedGaussianProcess:
         f.write(header + '\n')
 
         # write coefficients
-        for xb in self.maps.keys():
+        for xb in self.maps:
             self.maps[xb].write(f)
 
         f.close()
@@ -246,20 +240,6 @@ class MappedGaussianProcess:
                           "and so the MGP dict outputted will not have "
                           "them.", Warning)
             out_dict['mean_only'] = True
-
-        print("as_dict")
-        for k in out_dict:
-            print(k, type(out_dict[k]), out_dict[k])
-
-        print("as_dict")
-        for k in out_dict:
-            print(k, type(out_dict[k]), out_dict[k])
-            try:
-                with open(f'test.json', 'w') as f:
-                    json.dump({k:out_dict[k]}, f, cls=NumpyEncoder)
-            except Exception as e:
-                print("fail")
-                print(e)
 
         # only save the coefficients
         maps_dict = {}
