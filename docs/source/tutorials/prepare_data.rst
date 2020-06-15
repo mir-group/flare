@@ -11,7 +11,7 @@ VASP data
 
 If you have AIMD data from VASP, you can follow 
 `the step 2 of this instruction <https://flare.readthedocs.io/en/latest/tutorials/gpfa.html>`_
-to generate ``Structure``s with the ``vasprun.xml`` file. 
+to generate ``Structure`` with the ``vasprun.xml`` file. 
 
 
 Data from Quantum Espresso, LAMMPS, etc.
@@ -39,6 +39,7 @@ you can parse it with ASE, and convert ASE ``Atoms`` into ``Structure``.
 
 
 If the data is from the LAMMPS dump file, use
+
 .. code-block:: python
     
     # if it's text file
@@ -65,3 +66,40 @@ how the GP is constructed from the data.
 
     from flare.gp import GaussianProcess
     from flare.parameters import Parameters
+
+    # set up hyperparameters, cutoffs
+    kernels = ['twobody', 'threebody']
+    parameters = {'cutoff_twobody': 4.0, 'cutoff_threebody': 3.0}
+    pm = ParameterHelper(kernels=kernels, 
+                         random=True,
+                         parameters=parameters)
+    hm = pm.as_dict()
+    hyps = hm['hyps']
+    cutoffs = hm['cutoffs']
+    hl = hm['hyp_labels']
+
+    kernel_type = 'mc' # multi-component. use 'sc' for single component system
+
+    # build up GP model
+    gp_model = \
+        GaussianProcess(kernels=kernels,
+                        component=kernel_type,
+                        hyps=hyps,
+                        hyp_labels=hl,
+                        cutoffs=cutoffs, 
+                        hyps_mask=hm,
+                        parallel=False, 
+                        n_cpus=1)
+
+    # feed training data into GP
+    # use the "trajectory" as from above, a list of Structure objects
+    for train_struc in trajectory: 
+        gp_model.update_db(train_struc, forces)
+    gp_model.check_L_alpha() # build kernel matrix from training data
+
+    # make a prediction with gp, test on a training data
+    test_env = gp_model.training_data[0]
+    gp_pred = gp_model.predict(test_env, 1) # obtain the x-component 
+                                            # (force_x, var_x)
+                                            # x: 1, y: 2, z: 3
+    print(gp_pred)
