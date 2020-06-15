@@ -83,7 +83,7 @@ def test_init(bodies, multihyps, map_force, all_mgp, all_gp):
     lammps_location = f'{bodies}{multihyps}{map_force}.mgp'
     data = gp_model.training_statistics
 
-    mgp_model = MappedGaussianProcess(grid_params, data['species'], n_cpus=1,
+    mgp_model = MappedGaussianProcess(grid_params=grid_params, unique_species=data['species'], n_cpus=1,
                 map_force=map_force, lmp_file_name=lammps_location)#, mean_only=False)
     all_mgp[f'{bodies}{multihyps}{map_force}'] = mgp_model
 
@@ -226,7 +226,7 @@ def compare_triplet(mgp_model, gp_model, atom_env):
         assert np.allclose(gp_force, f, rtol=1e-2)
         if not mgp_model.map_force:
             assert np.allclose(gp_energy, e, rtol=1e-2)
-        
+
 
 def get_triplet_env(r1, r2, r12, grid_env):
     grid_env.bond_array_3 = np.array([[r1, 1, 0, 0], [r2, 0, 0, 0]])
@@ -267,7 +267,7 @@ def test_predict(all_gp, all_mgp, bodies, multihyps, map_force):
     # with open(filename, 'rb') as f:
     #     mgp_model = pickle.load(f)
 
-    nenv = 3 
+    nenv = 3
     cell = 1.0 * np.eye(3)
     cutoffs = gp_model.cutoffs
     unique_species = gp_model.training_statistics['species']

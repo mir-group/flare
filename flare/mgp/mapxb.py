@@ -497,7 +497,6 @@ class SingleMapXbody:
     def build_map(self, GP):
 
         self.update_bounds(GP)
-        print(self)
 
         if not self.load_grid:
             y_mean, y_var = self.GenGrid(GP)
