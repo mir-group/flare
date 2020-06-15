@@ -187,16 +187,6 @@ class MapXbody:
             if out_dict.get(key) is not None:
                 del out_dict[key]
 
-        print("as_dict")
-        for k in out_dict:
-            print(k, type(out_dict[k]), out_dict[k])
-            try:
-                with open(f'test.json', 'w') as f:
-                    json.dump({k:out_dict[k]}, f, cls=NumpyEncoder)
-            except Exception as e:
-                print("fail")
-                print(e)
-
         return out_dict
 
     @staticmethod

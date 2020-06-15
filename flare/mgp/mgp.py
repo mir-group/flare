@@ -238,6 +238,7 @@ class MappedGaussianProcess:
         """
 
         out_dict = deepcopy(dict(vars(self)))
+        out_dict.pop('maps')
 
         # Uncertainty mappings currently not serializable;
         if not self.mean_only:
@@ -245,6 +246,10 @@ class MappedGaussianProcess:
                           "and so the MGP dict outputted will not have "
                           "them.", Warning)
             out_dict['mean_only'] = True
+
+        print("as_dict")
+        for k in out_dict:
+            print(k, type(out_dict[k]), out_dict[k])
 
         print("as_dict")
         for k in out_dict:
