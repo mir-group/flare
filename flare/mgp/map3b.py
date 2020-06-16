@@ -151,7 +151,7 @@ class SingleMap3body(SingleMapXbody):
         return False
 
 
-    def _gengrid_numba(self, name, force_block, s, e, env12, kernel_info):
+    def _gengrid_numba(self, name, env12, kernel_info, force_block, s, e):
         """
         Loop over different parts of the training set. from element s to element e
 
@@ -163,7 +163,7 @@ class SingleMap3body(SingleMapXbody):
             kernel_info: return value of the get_3b_kernel
         """
 
-        grid_kernel, cutoffs, hyps, hyps_mask = kernel_info
+        grid_kernel, _, _, cutoffs, hyps, hyps_mask = kernel_info
 
         args = from_mask_to_args(hyps, cutoffs, hyps_mask)
         r_cut = cutoffs['threebody']

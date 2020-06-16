@@ -18,7 +18,6 @@ from flare.utils.element_coder import NumpyEncoder, element_to_Z, Z_to_element
 
 from flare.mgp.map2b import Map2body
 from flare.mgp.map3b import Map3body
-from flare.mgp.utils import str_to_mapped_kernel
 
 class MappedGaussianProcess:
     '''
@@ -108,9 +107,9 @@ class MappedGaussianProcess:
         self.grid_params = grid_params
         self.species_labels = []
         self.coded_species = []
+
         self.hyps_mask = None
         self.cutoffs = None
-        self.GP = GP
 
         for i, ele in enumerate(unique_species):
             if isinstance(ele, str):
@@ -119,10 +118,6 @@ class MappedGaussianProcess:
             elif isinstance(ele, int):
                 self.coded_species.append(ele)
                 self.species_labels.append(Z_to_element(ele))
-
-        if (GP is not None):
-            self.hyps_mask = GP.hyps_mask
-            self.cutoffs = GP.cutoffs
 
         self.load_grid = grid_params.get('load_grid', None)
         self.update = grid_params.get('update', False)
@@ -155,7 +150,6 @@ class MappedGaussianProcess:
                 self.maps[key] = xb_maps
 
     def build_map(self, GP):
-
         self.hyps_mask = GP.hyps_mask
         self.cutoffs = GP.cutoffs
 

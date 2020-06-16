@@ -1,3 +1,4 @@
+import warnings
 import numpy as np
 
 from numpy import array
@@ -7,13 +8,13 @@ from typing import Callable
 
 from flare.env import AtomicEnvironment
 from flare.kernels.cutoffs import quadratic_cutoff
-from flare.kernels.utils import str_to_kernel_set as stks
+from flare.kernels.utils import str_to_kernel_set
 from flare.parameters import Parameters
 
 from flare.mgp.grid_kernels_3b import grid_kernel, grid_kernel_sephyps
 
 
-def str_to_mapped_kernel(name: str, component: str = "sc",
+def str_to_mapped_kernel(name: str, component: str = "mc",
                          hyps_mask: dict = None):
     """
     return kernels and kernel gradient function base on a string.
@@ -49,21 +50,30 @@ def str_to_mapped_kernel(name: str, component: str = "sc",
 
     if b3:
          if multihyps:
-             return grid_kernel_sephyps
+             return grid_kernel_sephyps, None, None, None
          else:
-             return grid_kernel
+             return grid_kernel, None, None, None
     else:
-        raise NotImplementedError("mapped kernel for two-body and manybody kernels "
-                                  "are not implemented")
+        warnings.Warn(NotImplemented("mapped kernel for two-body and manybody kernels "
+                                  "are not implemented"))
+        return None
 
-def get_kernel_term(GP, term):
+def get_kernel_term(kernel_name, component, hyps_mask, hyps, grid_kernel=False):
     """
     Args
         term (str): 'twobody' or 'threebody'
     """
-    kernel, _, ek, efk = stks([term], GP.component, GP.hyps_mask)
+    if grid_kernel:
+        stks = str_to_mapped_kernel
+        kernel_name_list = kernel_name
+    else:
+        stks = str_to_kernel_set
+        kernel_name_list = [kernel_name] 
 
-    hyps, cutoffs, hyps_mask = Parameters.get_component_mask(GP.hyps_mask, term, hyps=GP.hyps)
+    kernel, _, ek, efk = stks(kernel_name_list, component, hyps_mask)
+
+    # hyps_mask is modified here
+    hyps, cutoffs, hyps_mask = Parameters.get_component_mask(hyps_mask, kernel_name, hyps=hyps)
 
     return (kernel, ek, efk, cutoffs, hyps, hyps_mask)
 

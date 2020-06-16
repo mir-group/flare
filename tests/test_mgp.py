@@ -4,6 +4,7 @@ import pickle
 import pytest
 import re
 import time
+import shutil
 
 from copy import deepcopy
 from numpy import allclose, isclose
@@ -23,11 +24,15 @@ force_block_only = False
 
 def clean():
     for f in os.listdir("./"):
-        if re.search(r"grid.*npy", f):
-            os.remove(f)
+        if re.search("mgp_grids", f):
+            shutil.rmtree(f)
         if re.search("kv3", f):
             os.rmdir(f)
-
+        if 'tmp' in f:
+            if os.path.isdir(f):
+                shutil.rmtree(f)
+            else:
+                os.remove(f)
 
 
 @pytest.mark.skipif(not os.environ.get('lmp',
@@ -99,8 +104,8 @@ def test_build_map(all_gp, all_mgp, bodies, multihyps, map_force):
     gp_model = all_gp[f'{bodies}{multihyps}']
     mgp_model = all_mgp[f'{bodies}{multihyps}{map_force}']
     mgp_model.build_map(gp_model)
-    with open(f'grid_{bodies}_{multihyps}_{map_force}.pickle', 'wb') as f:
-        pickle.dump(mgp_model, f)
+#    with open(f'grid_{bodies}_{multihyps}_{map_force}.pickle', 'wb') as f:
+#        pickle.dump(mgp_model, f)
 
 
 @pytest.mark.parametrize('bodies', body_list)
@@ -274,10 +279,13 @@ def test_predict(all_gp, all_mgp, bodies, multihyps, map_force):
     struc_test, f = get_random_structure(cell, unique_species, nenv)
     test_envi = env.AtomicEnvironment(struc_test, 0, cutoffs, cutoffs_mask=gp_model.hyps_mask)
 
-    assert Parameters.compare_dict(gp_model.hyps_mask, mgp_model.hyps_mask)
-
-    if '3' in bodies:
+    if '2' in bodies:
+        kernel_name = 'twobody'
+    elif '3' in bodies:
+        kernel_name = 'threebody'
         compare_triplet(mgp_model.maps['threebody'], gp_model, test_envi)
+
+    assert Parameters.compare_dict(gp_model.hyps_mask, mgp_model.maps[kernel_name].hyps_mask)
 
     gp_pred_en, gp_pred_envar = gp_model.predict_local_energy_and_var(test_envi)
     gp_pred = np.array([gp_model.predict(test_envi, d+1) for d in range(3)]).T
@@ -323,11 +331,8 @@ def test_lmp_predict(all_gp, all_mgp, bodies, multihyps, map_force):
     """
     test the lammps implementation
     """
-    prefix = f'tmp{bodies}{multihyps}{map_force}'
-    for f in os.listdir("./"):
-        if prefix in f:
-            os.remove(f)
     clean()
+    prefix = f'tmp{bodies}{multihyps}{map_force}'
 
     if ('3' in bodies) and map_force:
         pytest.skip()
@@ -395,7 +400,4 @@ def test_lmp_predict(all_gp, all_mgp, bodies, multihyps, map_force):
         print("isclose? diff:", lammps_forces[atom_num, i]-mgp_forces[0][i], "mgp value", mgp_forces[0][i])
         assert np.isclose(lammps_forces[atom_num, i], mgp_forces[0][i], rtol=1e-2)
 
-    # for f in os.listdir("./"):
-    #     if prefix in f:
-    #         os.remove(f)
-    # clean()
+    clean()

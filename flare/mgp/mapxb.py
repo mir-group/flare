@@ -1,7 +1,7 @@
 import json
 from flare.utils.element_coder import NumpyEncoder, element_to_Z, Z_to_element
 
-import logging, warnings
+import os, logging, warnings
 import numpy as np
 import multiprocessing as mp
 
@@ -11,7 +11,7 @@ from scipy.linalg import solve_triangular
 from typing import List
 
 from flare.env import AtomicEnvironment
-from flare.kernels.utils import from_mask_to_args, str_to_kernel_set
+from flare.kernels.utils import from_mask_to_args
 from flare.gp import GaussianProcess
 from flare.gp_algebra import partition_vector, energy_force_vector_unit, \
     force_energy_vector_unit, energy_energy_vector_unit, force_force_vector_unit,\
@@ -19,7 +19,7 @@ from flare.gp_algebra import partition_vector, energy_force_vector_unit, \
 from flare.parameters import Parameters
 from flare.struc import Structure
 
-from flare.mgp.utils import get_kernel_term, str_to_mapped_kernel
+from flare.mgp.utils import get_kernel_term
 from flare.mgp.splines_methods import PCASplines, CubicSpline
 
 global_use_grid_kern = True
@@ -38,14 +38,10 @@ class MapXbody:
                  load_grid: str=None,
                  lower_bound_relax: float=0.1,
                  GP: GaussianProcess=None,
-                 kernel_info: tuple=None,
-                 kernel_name: str=None,
-                 multi_component: str = 'mc',
-                 hyps = None,
-                 cutoffs: dict={},
-                 hyps_mask: dict=None,
                  n_cpus: int=None,
                  n_sample: int=100,
+                 hyps_mask: dict=None,
+                 hyps: list=None,
                  **kwargs):
 
         # load all arguments as attributes
@@ -62,23 +58,14 @@ class MapXbody:
         self.n_cpus = n_cpus
         self.n_sample = n_sample
 
-        self.hyps_mask = hyps_mask
-        self.multi_component = multi_component
-        self.cutoffs = cutoffs
-        self.hyps = hyps
-
         self.spc = []
         self.spc_set = []
         self.maps = []
-
-        # --------- computed attributes -------- #
-
-        if kernel_name is not None:
-            kernel, _, ek, efk = str_to_kernel_set([self.kernel_name], self.multi_component, self.hyps_mask)
-            self.kernel_info = (kernel, ek, efk, self.cutoffs, self.hyps, self.hyps_mask)
+        self.kernel_info = None
+        self.hyps_mask = hyps_mask
+        self.hyps = hyps
 
         self.build_bond_struc(coded_species)
-
 
         bounds = [self.lower_bound, self.upper_bound]
         self.build_map_container(bounds)
@@ -100,9 +87,7 @@ class MapXbody:
 
         self.maps = []
         for spc in self.spc:
-            self.bounds = bounds
-            self.species = spc
-            m = self.singlexbody(**self.__dict__)
+            m = self.singlexbody(bounds=bounds, species=spc, **self.__dict__)
             self.maps.append(m)
 
 
@@ -111,10 +96,10 @@ class MapXbody:
         generate/load grids and get spline coefficients
         '''
 
-        self.kernel_info = get_kernel_term(GP, self.kernel_name)
-        self.cutoffs = self.kernel_info[3]
-        self.hyps = self.kernel_info[4]
-        self.hyps_mask = self.kernel_info[5]
+        self.kernel_info = get_kernel_term(self.kernel_name, 
+            GP.component, GP.hyps_mask, GP.hyps)
+        self.hyps_mask = GP.hyps_mask
+        self.hyps = GP.hyps
 
         for m in self.maps:
             m.build_map(GP)
@@ -122,16 +107,19 @@ class MapXbody:
 
     def predict(self, atom_env, mean_only):
 
+        assert Parameters.compare_dict(self.hyps_mask, atom_env.cutoffs_mask),\
+            'GP.hyps_mask is not the same as atom_env.cutoffs_mask'
+
         min_dist = atom_env.bond_array_2[0][0]
         lower_bound = np.max(self.maps[0].bounds[0][0])
-        assert min_dist >= lower_bound,\
-                f'The minimal distance {min_dist:.3f} is below the mgp lower bound {lower_bound:.3f}'
+        if min_dist < lower_bound:
+            raise ValueError(f'The minimal distance {min_dist:.3f} is below the'
+                f' mgp lower bound {lower_bound:.3f}')
 
         if self.mean_only:  # if not build mapping for var
             mean_only = True
 
         force_kernel, en_kernel, _, cutoffs, hyps, hyps_mask = self.kernel_info
-
 
         args = from_mask_to_args(hyps, cutoffs, hyps_mask)
 
@@ -195,16 +183,14 @@ class MapXbody:
         Create MGP object from dictionary representation.
         """
 
-        # Set GP
-        if 'GP' in dictionary:
-            GP = GaussianProcess.from_dict(dictionary['GP'])
-        else:
-            dictionary['GP'] = None
-
         if 'container_only' not in dictionary:
             dictionary['container_only'] = True
 
         new_mgp = mapxbody(**dictionary)
+
+        # Restore kernel_info
+        new_mgp.kernel_info = get_kernel_term(dictionary['kernel_name'], 
+            'mc', dictionary['hyps_mask'], dictionary['hyps'])
 
         # Fill up the model with the saved coeffs
         for m in range(len(new_mgp.maps)):
@@ -325,30 +311,19 @@ class SingleMapXbody:
             return np.zeros([n_grid]), None
 
         # ------- call gengrid functions ---------------
-        kernel_info = get_kernel_term(GP, self.kernel_name)
-        self.use_grid_kern = True
+        kernel_info = get_kernel_term(self.kernel_name, GP.component,
+                GP.hyps_mask, GP.hyps)
         if self.use_grid_kern:
             try:
-                mapk = str_to_mapped_kernel(self.kernel_name, GP.component, GP.hyps_mask)
-                kernel_info = (mapk,
-                               kernel_info[3], kernel_info[4], kernel_info[5])
+                kernel_info = get_kernel_term(self.kernel_name, GP.component, 
+                    GP.hyps_mask, GP.hyps, grid_kernel=True)
             except:
                 self.use_grid_kern = False
+
         args = [GP.name, grid_env, kernel_info]
 
-        if processes == 1:
-            if self.use_grid_kern: # TODO: finish force mapping
-                k12_v_force = self._gengrid_numba(GP.name, True, 0, n_envs, grid_env,
-                                                  kernel_info)
-                k12_v_energy = self._gengrid_numba(GP.name, False, 0, n_strucs, grid_env,
-                                                  kernel_info)
-            else:
-                k12_v_force = self._gengrid_serial(args, True, n_envs)
-                k12_v_energy = self._gengrid_serial(args, False, n_strucs)
-
-        else:
-            k12_v_force = self._gengrid_par(args, True, n_envs, processes)
-            k12_v_energy = self._gengrid_par(args, False, n_strucs, processes)
+        k12_v_force = self._gengrid_par(args, True, n_envs, processes)
+        k12_v_energy = self._gengrid_par(args, False, n_strucs, processes)
 
         k12_v_all = np.hstack([k12_v_force, k12_v_energy])
         del k12_v_force
@@ -364,19 +339,14 @@ class SingleMapXbody:
             grid_vars = np.reshape(grid_vars, tensor_shape)
 
         # ------ save mean and var to file -------
-        np.save(f'grid{self.bodies}_mean_{self.species_code}', grid_mean)
-        np.save(f'grid{self.bodies}_var_{self.species_code}', grid_vars)
+        if 'mgp_grids' not in os.listdir('./'):
+            os.mkdir('mgp_grids')
+
+        grid_path = f'mgp_grids/{self.bodies}_{self.species_code}'
+        np.save(f'{grid_path}_mean', grid_mean)
+        np.save(f'{grid_path}_var', grid_vars)
 
         return grid_mean, grid_vars
-
-
-    def _gengrid_serial(self, args, force_block, n_envs):
-        if n_envs == 0:
-            n_grid = np.prod(self.grid_num)
-            return np.empty((n_grid, 0))
-
-        k12_v = self._gengrid_inner(*args, force_block, 0, n_envs)
-        return k12_v
 
 
     def _gengrid_par(self, args, force_block, n_envs, processes):
@@ -385,8 +355,13 @@ class SingleMapXbody:
             n_grid = np.prod(self.grid_num)
             return np.empty((n_grid, 0))
 
-        if self.use_grid_kern: # TODO: finish force mapping
-            GP_name, grid_env, mapped_kernel_info = args
+        if self.use_grid_kern: 
+            gengrid_func = self._gengrid_numba
+        else:
+            gengrid_func = self._gengrid_inner
+
+        if processes == 1:
+            return gengrid_func(*args, force_block, 0, n_envs)
 
         with mp.Pool(processes=processes) as pool:
 
@@ -396,11 +371,7 @@ class SingleMapXbody:
             k12_slice = []
             for ibatch in range(nbatch):
                 s, e = block_id[ibatch]
-                if self.use_grid_kern: # TODO: finish force mapping
-                    k12_slice.append(pool.apply_async(self._gengrid_numba,
-                        args = (GP_name, force_block, s, e, grid_env, mapped_kernel_info)))
-                else:
-                    k12_slice.append(pool.apply_async(self._gengrid_inner,
+                k12_slice.append(pool.apply_async(gengrid_func,
                         args = args + [force_block, s, e]))
             k12_matrix = []
             for ibatch in range(nbatch):
@@ -501,8 +472,12 @@ class SingleMapXbody:
         if not self.load_grid:
             y_mean, y_var = self.GenGrid(GP)
         else:
-            y_mean = np.load(f'{self.load_grid}grid{self.bodies}_mean_{self.species_code}.npy')
-            y_var = np.load(f'{self.load_grid}grid{self.bodies}_var_{self.species_code}.npy')
+            if 'mgp_grids' not in os.listdir(self.load_grid):
+                raise FileNotFoundError("Please set 'load_grid' as the location of mgp_grids folder")
+
+            grid_path = f'{self.load_grid}/mgp_grids/{self.bodies}_{self.species_code}'
+            y_mean = np.load(f'{grid_path}_mean.npy')
+            y_var = np.load(f'{grid_path}_var.npy')
 
         self.mean.set_values(y_mean)
         if not self.mean_only:
