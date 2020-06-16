@@ -29,12 +29,10 @@ class Map2body(MapXbody):
 
         # 2 body (2 atoms (1 bond) config)
         self.spc = []
-        self.spc_set = []
         for spc1_ind, spc1 in enumerate(species_list):
             for spc2 in species_list[spc1_ind:]:
                 species = [spc1, spc2]
-                self.spc.append(species)
-                self.spc_set.append(set(species))
+                self.spc.append(sorted(species))
 
 
     def get_arrays(self, atom_env):
@@ -43,7 +41,7 @@ class Map2body(MapXbody):
 
     def find_map_index(self, spc):
         # use set because of permutational symmetry
-        return self.spc_set.index(set(spc))
+        return self.spc.index(sorted(spc))
 
 
 
