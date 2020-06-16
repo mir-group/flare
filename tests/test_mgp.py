@@ -4,6 +4,7 @@ import pickle
 import pytest
 import re
 import time
+import shutil
 
 from copy import deepcopy
 from numpy import allclose, isclose
@@ -24,7 +25,7 @@ force_block_only = False
 def clean():
     for f in os.listdir("./"):
         if re.search("mgp_grids", f):
-            os.rmdir(f)
+            shutil.rmtree(f)
         if re.search("kv3", f):
             os.rmdir(f)
         if 'tmp' in f:
@@ -84,7 +85,7 @@ def test_init(bodies, multihyps, map_force, all_mgp, all_gp):
     lammps_location = f'{bodies}{multihyps}{map_force}.mgp'
     data = gp_model.training_statistics
 
-    mgp_model = MappedGaussianProcess(grid_params, data['species'], n_cpus=1,
+    mgp_model = MappedGaussianProcess(grid_params=grid_params, unique_species=data['species'], n_cpus=1,
                 map_force=map_force, lmp_file_name=lammps_location)#, mean_only=False)
     all_mgp[f'{bodies}{multihyps}{map_force}'] = mgp_model
 
@@ -100,8 +101,8 @@ def test_build_map(all_gp, all_mgp, bodies, multihyps, map_force):
     gp_model = all_gp[f'{bodies}{multihyps}']
     mgp_model = all_mgp[f'{bodies}{multihyps}{map_force}']
     mgp_model.build_map(gp_model)
-    with open(f'grid_{bodies}_{multihyps}_{map_force}.pickle', 'wb') as f:
-        pickle.dump(mgp_model, f)
+#    with open(f'grid_{bodies}_{multihyps}_{map_force}.pickle', 'wb') as f:
+#        pickle.dump(mgp_model, f)
 
 
 @pytest.mark.parametrize('bodies', body_list)
@@ -227,7 +228,7 @@ def compare_triplet(mgp_model, gp_model, atom_env):
         assert np.allclose(gp_force, f, rtol=1e-2)
         if not mgp_model.map_force:
             assert np.allclose(gp_energy, e, rtol=1e-2)
-        
+
 
 def get_triplet_env(r1, r2, r12, grid_env):
     grid_env.bond_array_3 = np.array([[r1, 1, 0, 0], [r2, 0, 0, 0]])
@@ -268,17 +269,20 @@ def test_predict(all_gp, all_mgp, bodies, multihyps, map_force):
     # with open(filename, 'rb') as f:
     #     mgp_model = pickle.load(f)
 
-    nenv = 3 
+    nenv = 3
     cell = 1.0 * np.eye(3)
     cutoffs = gp_model.cutoffs
     unique_species = gp_model.training_statistics['species']
     struc_test, f = get_random_structure(cell, unique_species, nenv)
     test_envi = env.AtomicEnvironment(struc_test, 0, cutoffs, cutoffs_mask=gp_model.hyps_mask)
 
-    assert Parameters.compare_dict(gp_model.hyps_mask, mgp_model.hyps_mask)
-
-    if '3' in bodies:
+    if '2' in bodies:
+        kernel_name = 'twobody'
+    elif '3' in bodies:
+        kernel_name = 'threebody'
         compare_triplet(mgp_model.maps['threebody'], gp_model, test_envi)
+
+    assert Parameters.compare_dict(gp_model.hyps_mask, mgp_model.maps[kernel_name].hyps_mask)
 
     gp_pred_en, gp_pred_envar = gp_model.predict_local_energy_and_var(test_envi)
     gp_pred = np.array([gp_model.predict(test_envi, d+1) for d in range(3)]).T

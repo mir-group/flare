@@ -92,7 +92,7 @@ def flare_calc():
         grid_params = {'twobody':   {'grid_num': [64]},
                        'threebody': {'grid_num': [16, 16, 16]}}
 
-        mgp_model = MappedGaussianProcess(grid_params,
+        mgp_model = MappedGaussianProcess(grid_params = grid_params,
                                           unique_species = [1, 2],
                                           n_cpus = 1,
                                           map_force = False,

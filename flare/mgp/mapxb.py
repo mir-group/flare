@@ -96,12 +96,17 @@ class MapXbody:
 
         self.kernel_info = get_kernel_term(self.kernel_name, 
             GP.component, GP.hyps_mask, GP.hyps)
+        self.hyps_mask = GP.hyps_mask
+        self.hyps = GP.hyps
 
         for m in self.maps:
             m.build_map(GP)
 
 
     def predict(self, atom_env, mean_only):
+
+        assert Parameters.compare_dict(self.hyps_mask, atom_env.cutoffs_mask),\
+            'GP.hyps_mask is not the same as atom_env.cutoffs_mask'
 
         min_dist = atom_env.bond_array_2[0][0]
         lower_bound = np.max(self.maps[0].bounds[0][0])
@@ -151,11 +156,7 @@ class MapXbody:
         """
 
         out_dict = deepcopy(dict(vars(self)))
-
-        # only save hyps_mask and hyps in kernel_info
         out_dict.pop('kernel_info')
-        out_dict['hyps_mask'] = self.kernel_info[-1]
-        out_dict['hyps'] = self.kernel_info[-2]
 
         # Uncertainty mappings currently not serializable;
         if not self.mean_only:
@@ -307,15 +308,14 @@ class SingleMapXbody:
             return np.zeros([n_grid]), None
 
         # ------- call gengrid functions ---------------
+        kernel_info = get_kernel_term(self.kernel_name, GP.component,
+                GP.hyps_mask, GP.hyps)
         if self.use_grid_kern:
             try:
                 kernel_info = get_kernel_term(self.kernel_name, GP.component, 
                     GP.hyps_mask, GP.hyps, grid_kernel=True)
             except:
                 self.use_grid_kern = False
-                kernel_info = self.kernel_info
-        else:
-            kernel_info = self.kernel_info
 
         args = [GP.name, grid_env, kernel_info]
 
@@ -340,7 +340,7 @@ class SingleMapXbody:
             os.mkdir('mgp_grids')
 
         grid_path = f'mgp_grids/{self.bodies}_{self.species_code}'
-0       np.save(f'{grid_path}_mean', grid_mean)
+        np.save(f'{grid_path}_mean', grid_mean)
         np.save(f'{grid_path}_var', grid_vars)
 
         return grid_mean, grid_vars
@@ -352,13 +352,13 @@ class SingleMapXbody:
             n_grid = np.prod(self.grid_num)
             return np.empty((n_grid, 0))
 
-        if self.use_grid_kern: # TODO: finish force mapping
+        if self.use_grid_kern: 
             gengrid_func = self._gengrid_numba
         else:
             gengrid_func = self._gengrid_inner
 
         if processes == 1:
-            return self._gengrid_inner(*args, force_block, 0, n_envs)
+            return gengrid_func(*args, force_block, 0, n_envs)
 
         with mp.Pool(processes=processes) as pool:
 
@@ -465,7 +465,6 @@ class SingleMapXbody:
     def build_map(self, GP):
 
         self.update_bounds(GP)
-        print(self)
 
         if not self.load_grid:
             y_mean, y_var = self.GenGrid(GP)

@@ -116,16 +116,13 @@ class MappedGaussianProcess:
                 self.coded_species.append(ele)
                 self.species_labels.append(Z_to_element(ele))
 
-        if 'load_grid' not in grid_params:
-            grid_params['load_grid']= None
-        if 'update' not in grid_params:
-            grid_params['update'] = False
-        if 'lower_bound_relax' not in grid_params:
-            grid_params['lower_bound_relax'] = 0.1
+        self.load_grid = grid_params.get('load_grid', None)
+        self.update = grid_params.get('update', False)
+        self.lower_bound_relax = grid_params.get('lower_bound_relax', 0.1)
 
         self.maps = {}
 
-        optional_xb_params = ['lower_bound', 'upper_bound', 'svd_rank', 'lower_bound_relax']
+        optional_xb_params = ['lower_bound', 'upper_bound', 'svd_rank']
         for key in grid_params:
             if 'body' in key:
                 if 'twobody' == key:

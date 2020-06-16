@@ -8,7 +8,7 @@ import logging
 import time
 import numpy as np
 
-from logging import FileHandler, StreamHandler
+from logging import FileHandler, StreamHandler, Logger
 from os.path import isfile
 from shutil import move as movefile
 from typing import Union
@@ -28,11 +28,15 @@ class Output:
 
     :param basename: Base output file name, suffixes will be added
     :type basename: str, optional
+    :param verbose: print level. The same as logging level. It can be
+                    CRITICAL, ERROR, WARNING, INFO, DEBUG, NOTSET
+    :type verbose: str, optional
     :param always_flush: Always write to file instantly
     :type always_flus: bool, optional
     """
 
-    def __init__(self, basename: str = 'otf_run', verbose: str = 'INFO',
+    def __init__(self, basename: str = 'otf_run',
+                 verbose: str = 'INFO',
                  always_flush: bool = False):
         """
         Construction. Open files.
@@ -64,6 +68,7 @@ class Output:
 
         :param filetype: the key name for logging
         :param suffix: the suffix of the file to be opened
+        :param verbose: the verbose level for the logger
         """
 
         if filetype not in self.logger:
@@ -98,10 +103,7 @@ class Output:
         Write header to the log function. Designed for Trajectory Trainer and
         OTF runs and can take flexible input for both.
 
-        :param cutoffs: GP cutoffs
-        :param kernels: Kernel names
-        :param hyps: list of hyper-parameters
-        :param algo: algorithm for hyper parameter optimization
+        :param gp_str: string representation of the GP
         :param dt: timestep for OTF MD
         :param Nsteps: total number of steps for OTF MD
         :param structure: initial structure
@@ -459,7 +461,15 @@ class Output:
         if self.always_flush:
             f.handlers[0].flush()
 
-def add_stream(logger, verbose: str = "info"):
+
+def add_stream(logger: Logger, verbose: str = "info"):
+    '''
+    set up screen sctream handler to the logger with handlers
+
+    :param logger: the logger
+    :param verbose: verbose level
+    :type verbose: str
+    '''
 
     stream_defined = False
     for handler in logger.handlers:
@@ -473,7 +483,17 @@ def add_stream(logger, verbose: str = "info"):
         # ch.setFormatter(formatter)
         logger.addHandler(ch)
 
-def add_file(logger, filename, verbose: str = "info"):
+
+def add_file(logger: Logger, filename: str, verbose: str = "info"):
+    '''
+    set up file handler to the logger with handlers
+
+    :param logger: the logger
+    :param filename: name of the logfile
+    :type filename: str
+    :param verbose: verbose level
+    :type verbose: str
+    '''
 
     file_defined = False
     for handler in logger.handlers:
@@ -492,12 +512,27 @@ def add_file(logger, filename, verbose: str = "info"):
         fh.setLevel(logging.DEBUG)
         logger.addHandler(fh)
 
-def set_logger(name, stream, fileout_name=None, verbose: str = "info"):
+
+def set_logger(name: str, stream: bool, fileout_name: str = None,
+               verbose: str = "info"):
+    '''
+    set up a logger with handlers
+
+    :param name: unique name of the logger in logging module
+    :type name: str
+    :param stream: if True, set up a screen output
+    :type stream: bool
+    :param fileout_name: name for log file
+    :type fileout_name: str
+    :param verbose: verbose level
+    :type verbose: str
+    '''
     logger = logging.getLogger(name)
+    logger.propagate = False
+    logger.handlers = []
     logger.setLevel(getattr(logging, verbose.upper()))
     if stream:
         add_stream(logger, verbose)
     if fileout_name is not None:
         add_file(logger, fileout_name, verbose)
     return logger
-

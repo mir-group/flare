@@ -163,7 +163,7 @@ class SingleMap3body(SingleMapXbody):
             kernel_info: return value of the get_3b_kernel
         """
 
-        grid_kernel, _, _, _, cutoffs, hyps, hyps_mask = kernel_info
+        grid_kernel, _, _, cutoffs, hyps, hyps_mask = kernel_info
 
         args = from_mask_to_args(hyps, cutoffs, hyps_mask)
         r_cut = cutoffs['threebody']

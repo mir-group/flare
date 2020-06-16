@@ -1,3 +1,4 @@
+import warnings
 import numpy as np
 
 from numpy import array
@@ -53,8 +54,9 @@ def str_to_mapped_kernel(name: str, component: str = "mc",
          else:
              return grid_kernel, None, None, None
     else:
-        raise NotImplementedError("mapped kernel for two-body and manybody kernels "
-                                  "are not implemented")
+        warnings.Warn(NotImplemented("mapped kernel for two-body and manybody kernels "
+                                  "are not implemented"))
+        return None
 
 def get_kernel_term(kernel_name, component, hyps_mask, hyps, grid_kernel=False):
     """
@@ -63,12 +65,14 @@ def get_kernel_term(kernel_name, component, hyps_mask, hyps, grid_kernel=False):
     """
     if grid_kernel:
         stks = str_to_mapped_kernel
+        kernel_name_list = kernel_name
     else:
         stks = str_to_kernel_set
-        kernel_name = [kernel_name] 
+        kernel_name_list = [kernel_name] 
 
-    kernel, _, ek, efk = stks(kernel_name, component, hyps_mask)
+    kernel, _, ek, efk = stks(kernel_name_list, component, hyps_mask)
 
+    # hyps_mask is modified here
     hyps, cutoffs, hyps_mask = Parameters.get_component_mask(hyps_mask, kernel_name, hyps=hyps)
 
     return (kernel, ek, efk, cutoffs, hyps, hyps_mask)
