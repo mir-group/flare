@@ -234,8 +234,8 @@ class OTF:
                     dft_frcs = deepcopy(self.structure.forces)
 
                     # run MD step & record the state
-                    new_pos = self.md_step()
-                    self.update_temperature(new_pos)
+                    # new_pos = self.md_step()
+                    # self.update_temperature(new_pos)
                     self.record_state()
 
                     # compute mae and write to output
@@ -347,7 +347,6 @@ class OTF:
         if self.write_model == 3:
             self.gp.write_model(self.output_name+'_model')
 
-
     def train_gp(self):
         """Optimizes the hyperparameters of the current GP model."""
 
@@ -357,7 +356,6 @@ class OTF:
                                self.gp.likelihood, self.gp.likelihood_gradient,
                                hyps_mask=self.gp.hyps_mask)
 
-
     def compute_mae(self, gp_frcs, dft_frcs):
         mae = np.mean(np.abs(gp_frcs - dft_frcs))
         mac = np.mean(np.abs(dft_frcs))
@@ -365,7 +363,6 @@ class OTF:
         f = logging.getLogger(self.output.basename+'log')
         f.info(f'mean absolute error: {mae:.4f} eV/A')
         f.info(f'mean absolute dft component: {mac:.4f} eV/A')
-
 
     def update_positions(self, new_pos: 'ndarray'):
         """Performs a Verlet update of the atomic positions.
