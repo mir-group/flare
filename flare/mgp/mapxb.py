@@ -40,6 +40,8 @@ class MapXbody:
                  GP: GaussianProcess=None,
                  n_cpus: int=None,
                  n_sample: int=100,
+                 hyps_mask: dict=None,
+                 hyps: list=None,
                  **kwargs):
 
         # load all arguments as attributes
@@ -60,6 +62,8 @@ class MapXbody:
         self.spc_set = []
         self.maps = []
         self.kernel_info = None
+        self.hyps_mask = hyps_mask
+        self.hyps = hyps
 
         self.build_bond_struc(coded_species)
 
@@ -83,9 +87,7 @@ class MapXbody:
 
         self.maps = []
         for spc in self.spc:
-            self.bounds = bounds
-            self.species = spc
-            m = self.singlexbody(**self.__dict__)
+            m = self.singlexbody(bounds=bounds, species=spc, **self.__dict__)
             self.maps.append(m)
 
 
@@ -110,8 +112,9 @@ class MapXbody:
 
         min_dist = atom_env.bond_array_2[0][0]
         lower_bound = np.max(self.maps[0].bounds[0][0])
-        assert min_dist >= lower_bound,\
-                f'The minimal distance {min_dist:.3f} is below the mgp lower bound {lower_bound:.3f}'
+        if min_dist < lower_bound:
+            raise ValueError(f'The minimal distance {min_dist:.3f} is below the'
+                f' mgp lower bound {lower_bound:.3f}')
 
         if self.mean_only:  # if not build mapping for var
             mean_only = True

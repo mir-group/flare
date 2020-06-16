@@ -118,7 +118,14 @@ class FLARE_Calculator(Calculator):
             chemenv = AtomicEnvironment(struc_curr, n,
                                         self.gp_model.cutoffs,
                                         cutoffs_mask = self.mgp_model.hyps_mask)
-            f, v, vir, e = self.mgp_model.predict(chemenv, mean_only=False)
+
+            try:
+                f, v, vir, e = self.mgp_model.predict(chemenv, mean_only=False)
+            except ValueError: # if lower_bound error is raised
+                warnings.warn('Re-build map with a new lower bound')
+                self.mgp_model.build_map(self.gp_model)
+                f, v, vir, e = self.mgp_model.predict(chemenv, mean_only=False)
+
             self.results['forces'][n] = f
             self.results['stresses'][n] = vir
             self.results['stds'][n] = np.sqrt(np.absolute(v))

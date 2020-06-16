@@ -108,6 +108,9 @@ class MappedGaussianProcess:
         self.species_labels = []
         self.coded_species = []
 
+        self.hyps_mask = None
+        self.cutoffs = None
+
         for i, ele in enumerate(unique_species):
             if isinstance(ele, str):
                 self.species_labels.append(ele)
@@ -147,6 +150,8 @@ class MappedGaussianProcess:
                 self.maps[key] = xb_maps
 
     def build_map(self, GP):
+        self.hyps_mask = GP.hyps_mask
+        self.cutoffs = GP.cutoffs
 
         for xb in self.maps:
             self.maps[xb].build_map(GP)

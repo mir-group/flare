@@ -29,7 +29,7 @@ def clean():
         if re.search("kv3", f):
             os.rmdir(f)
         if 'tmp' in f:
-            os.remove(f)
+            shutil.rmtree(f)
 
 
 @pytest.mark.skipif(not os.environ.get('lmp',
