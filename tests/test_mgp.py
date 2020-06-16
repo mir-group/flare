@@ -332,6 +332,7 @@ def test_lmp_predict(all_gp, all_mgp, bodies, multihyps, map_force):
     test the lammps implementation
     """
     clean()
+    prefix = f'tmp{bodies}{multihyps}{map_force}'
 
     if ('3' in bodies) and map_force:
         pytest.skip()
