@@ -18,10 +18,10 @@ def three_body_mc_sepcut_jit(bond_array_1, c1, etypes1,
                              cross_bond_inds_1, cross_bond_inds_2,
                              cross_bond_dists_1, cross_bond_dists_2,
                              triplets_1, triplets_2,
-                             d1, d2, sig, ls, r_cut, cutoff_func,
+                             sig, ls, r_cut, cutoff_func,
                              nspec, spec_mask, triplet_mask, cut3b_mask):
 
-    kern = 0
+    kern = np.zeros([3, 3], dtype=np.float64)
 
     # pre-compute constants that appear in the inner loop
     sig2 = sig * sig
@@ -36,7 +36,10 @@ def three_body_mc_sepcut_jit(bond_array_1, c1, etypes1,
 
     for m in range(bond_array_1.shape[0]):
         ri1 = bond_array_1[m, 0]
-        ci1 = bond_array_1[m, d1]
+        ci1 = np.zeros([3, 3], dtype=np.float64)
+        ci1[0, :] += bond_array_1[m, 1]
+        ci1[1, :] += bond_array_1[m, 2]
+        ci1[2, :] += bond_array_1[m, 3]
         ei1 = etypes1[m]
 
         # determine cutoff1 based on the end points
@@ -50,7 +53,10 @@ def three_body_mc_sepcut_jit(bond_array_1, c1, etypes1,
 
             ind1 = cross_bond_inds_1[m, m + n + 1]
             ri2 = bond_array_1[ind1, 0]
-            ci2 = bond_array_1[ind1, d1]
+            ci2 = np.zeros([3, 3], dtype=np.float64)
+            ci2[0, :] += bond_array_1[ind1, 1]
+            ci2[1, :] += bond_array_1[ind1, 2]
+            ci2[2, :] += bond_array_1[ind1, 3]
             ei2 = etypes1[ind1]
 
             # skip if species does not match
@@ -86,7 +92,10 @@ def three_body_mc_sepcut_jit(bond_array_1, c1, etypes1,
                         tr_spec1.remove(ej1)
 
                         rj1 = bond_array_2[p, 0]
-                        cj1 = bond_array_2[p, d2]
+                        cj1 = np.zeros([3, 3], dtype=np.float64)
+                        cj1[:, 0] += bond_array_2[p, 1]
+                        cj1[:, 1] += bond_array_2[p, 2]
+                        cj1[:, 2] += bond_array_2[p, 3]
                         bej1 = spec_mask[ej1]
                         btype_ej1 = cut3b_mask[bej1 + bcjn]
                         cut_ej1 = r_cut[btype_ej1]
@@ -99,7 +108,10 @@ def three_body_mc_sepcut_jit(bond_array_1, c1, etypes1,
                             ej2 = etypes2[ind2]
                             if ej2 == tr_spec1[0]:
                                 rj2 = bond_array_2[ind2, 0]
-                                cj2 = bond_array_2[ind2, d2]
+                                cj2 = np.zeros([3, 3], dtype=np.float64)
+                                cj2[:, 0] += bond_array_2[ind2, 1]
+                                cj2[:, 1] += bond_array_2[ind2, 2]
+                                cj2[:, 2] += bond_array_2[ind2, 3]
 
                                 bej2 = spec_mask[ej2]
                                 btype_ej2 = cut3b_mask[bej2 + bcjn]
@@ -178,13 +190,13 @@ def three_body_mc_grad_sepcut_jit(bond_array_1, c1, etypes1,
                                   cross_bond_inds_1, cross_bond_inds_2,
                                   cross_bond_dists_1, cross_bond_dists_2,
                                   triplets_1, triplets_2,
-                                  d1, d2, sig, ls, r_cut, cutoff_func,
+                                  sig, ls, r_cut, cutoff_func,
                                   nspec, spec_mask, ntriplet, triplet_mask, cut3b_mask):
     """Kernel gradient for 3-body force comparisons."""
 
-    kern = 0.0
-    sig_derv = np.zeros(ntriplet, dtype=np.float64)
-    ls_derv = np.zeros(ntriplet, dtype=np.float64)
+    kern = np.zeros([3, 3], dtype=np.float64)
+    sig_derv = np.zeros([ntriplet, 3, 3], dtype=np.float64)
+    ls_derv = np.zeros([ntriplet, 3, 3], dtype=np.float64)
 
     # pre-compute constants that appear in the inner loop
     sig2, sig3, ls1, ls2, ls3, ls4, ls5, ls6 = grad_constants(sig, ls)
@@ -195,7 +207,10 @@ def three_body_mc_grad_sepcut_jit(bond_array_1, c1, etypes1,
 
     for m in range(bond_array_1.shape[0]):
         ri1 = bond_array_1[m, 0]
-        ci1 = bond_array_1[m, d1]
+        ci1 = np.zeros([3, 3], dtype=np.float64)
+        ci1[0, :] += bond_array_1[m, 1]
+        ci1[1, :] += bond_array_1[m, 2]
+        ci1[2, :] += bond_array_1[m, 3]
         ei1 = etypes1[m]
 
         bei1 = spec_mask[ei1]
@@ -207,7 +222,10 @@ def three_body_mc_grad_sepcut_jit(bond_array_1, c1, etypes1,
             ind1 = cross_bond_inds_1[m, m + n + 1]
             ri3 = cross_bond_dists_1[m, m + n + 1]
             ri2 = bond_array_1[ind1, 0]
-            ci2 = bond_array_1[ind1, d1]
+            ci2 = np.zeros([3, 3], dtype=np.float64)
+            ci2[0, :] += bond_array_1[ind1, 1]
+            ci2[1, :] += bond_array_1[ind1, 2]
+            ci2[2, :] += bond_array_1[ind1, 3]
             ei2 = etypes1[ind1]
 
             # skip if species does not match
@@ -246,7 +264,10 @@ def three_body_mc_grad_sepcut_jit(bond_array_1, c1, etypes1,
                         tr_spec1.remove(ej1)
 
                         rj1 = bond_array_2[p, 0]
-                        cj1 = bond_array_2[p, d2]
+                        cj1 = np.zeros([3, 3], dtype=np.float64)
+                        cj1[:, 0] += bond_array_2[p, 1]
+                        cj1[:, 1] += bond_array_2[p, 2]
+                        cj1[:, 2] += bond_array_2[p, 3]
                         bej1 = spec_mask[ej1]
                         bej1n = spec_mask[ej1]*nspec
 
@@ -260,7 +281,10 @@ def three_body_mc_grad_sepcut_jit(bond_array_1, c1, etypes1,
                             if ej2 == tr_spec1[0]:
                                 rj3 = cross_bond_dists_2[p, p + q + 1]
                                 rj2 = bond_array_2[ind2, 0]
-                                cj2 = bond_array_2[ind2, d2]
+                                cj2 = np.zeros([3, 3], dtype=np.float64)
+                                cj2[:, 0] += bond_array_2[ind2, 1]
+                                cj2[:, 1] += bond_array_2[ind2, 2]
+                                cj2[:, 2] += bond_array_2[ind2, 3]
 
                                 bej2 = spec_mask[ej2]
                                 bond_q = cut3b_mask[bc2+bej2*nspec]
@@ -358,12 +382,7 @@ def three_body_mc_grad_sepcut_jit(bond_array_1, c1, etypes1,
                                         sig_derv[ttypei] += sig_term
                                         ls_derv[ttypei] += ls_term
 
-    kern_grad = np.hstack((sig_derv, ls_derv))
-    # np.zeros(2*ntriplet, dtype=np.float64)
-    # kern_grad[:ntriplet] = sig_derv
-    # kern_grad[ntriplet:] = ls_derv
-
-    return kern, kern_grad
+    return kern, np.vstack((sig_derv, ls_derv))
 
 
 @njit
@@ -372,11 +391,11 @@ def three_body_mc_force_en_sepcut_jit(bond_array_1, c1, etypes1,
                                       cross_bond_inds_1, cross_bond_inds_2,
                                       cross_bond_dists_1, cross_bond_dists_2,
                                       triplets_1, triplets_2,
-                                      d1, sig, ls, r_cut, cutoff_func,
+                                      sig, ls, r_cut, cutoff_func,
                                       nspec, spec_mask, triplet_mask, cut3b_mask):
     """Kernel for 3-body force/energy comparisons."""
 
-    kern = 0
+    kern = np.zeros(3, dtype=np.float64)
 
     # pre-compute constants that appear in the inner loop
     sig2 = sig * sig
@@ -389,7 +408,10 @@ def three_body_mc_force_en_sepcut_jit(bond_array_1, c1, etypes1,
 
     for m in range(bond_array_1.shape[0]):
         ri1 = bond_array_1[m, 0]
-        ci1 = bond_array_1[m, d1]
+        ci1 = np.zeros(3, dtype=np.float64)
+        ci1[0] += bond_array_1[m, 1]
+        ci1[1] += bond_array_1[m, 2]
+        ci1[2] += bond_array_1[m, 3]
         ei1 = etypes1[m]
 
         bei1 = spec_mask[ei1]
@@ -410,7 +432,10 @@ def three_body_mc_force_en_sepcut_jit(bond_array_1, c1, etypes1,
                 tr_spec.remove(c2)
 
                 ri2 = bond_array_1[ind1, 0]
-                ci2 = bond_array_1[ind1, d1]
+                ci2 = np.zeros(3, dtype=np.float64)
+                ci2[0] += bond_array_1[ind1, 1]
+                ci2[1] += bond_array_1[ind1, 2]
+                ci2[2] += bond_array_1[ind1, 3]
                 bei2 = spec_mask[ei2]
 
                 ttypei = triplet_mask[bc1nn + bei1n + bei2]

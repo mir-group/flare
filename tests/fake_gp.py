@@ -78,7 +78,6 @@ def generate_hm(ntwobody, nthreebody, nmanybody=1, constraint=False, multihyps=T
 def get_gp(bodies, kernel_type='mc', multihyps=True, cellabc=[1, 1, 1.5],
            force_only=False, noa=5) -> GaussianProcess:
     """Returns a GP instance with a two-body numba-based kernel"""
-    print("\nSetting up...\n")
 
     # params
     cell = np.diag(cellabc)
@@ -115,8 +114,6 @@ def get_gp(bodies, kernel_type='mc', multihyps=True, cellabc=[1, 1, 1.5],
     else:
         gaussian.update_db(test_structure, forces, energy=energy)
     gaussian.check_L_alpha()
-
-    #print(gaussian.alpha)
 
     return gaussian
 
@@ -156,8 +153,9 @@ def generate_mb_envs(cutoffs, cell, delt, d1, mask=None, kern_type='mc'):
     threebody = [1, 1, 2, 1]
     np.random.shuffle(threebody)
     species_1 = np.hstack([threebody, randint(1, 2)])
+    species_1 = np.array(species_1, dtype=np.int)
     if kern_type == 'sc':
-        species_1 = np.ones(species_1.shape)
+        species_1 = np.ones(species_1.shape, dtype=np.int)
     return generate_mb_envs_pos(positions0, species_1, cutoffs, cell, delt, d1, mask)
 
 

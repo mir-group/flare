@@ -194,11 +194,11 @@ def from_grad_to_mask(grad, hyps_mask=None):
     else:
         hm = hyp_index
 
-    newgrad = np.zeros(len(hm), dtype=np.float64)
+    newgrad = [None]*len(hm)
     for i, mapid in enumerate(hm):
-        newgrad[i] = grad[mapid]
+        newgrad[i] = [grad[mapid]]
 
-    return newgrad
+    return np.vstack(newgrad)
 
 
 def kernel_str_to_array(kernel_name: str):

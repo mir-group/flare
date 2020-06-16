@@ -7,7 +7,7 @@ from numba import njit
 
 
 @njit
-def hard_cutoff(r_cut: float, ri: float, ci: float):
+def hard_cutoff(r_cut: float, ri: float, ci):
     """A hard cutoff that assigns a value of 1 to all interatomic distances.
 
     Args:
@@ -45,7 +45,7 @@ def quadratic_cutoff_bound(r_cut: float, ri: float, ci: float):
 
 
 @njit
-def quadratic_cutoff(r_cut: float, ri: float, ci: float):
+def quadratic_cutoff(r_cut: float, ri: float, ci):
     """A quadratic cutoff that goes to zero smoothly at the cutoff boundary.
 
     Args:

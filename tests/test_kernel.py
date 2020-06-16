@@ -10,7 +10,7 @@ from flare.kernels.utils import str_to_kernel_set
 
 from .fake_gp import generate_mb_envs
 
-list_to_test = [['2'], ['3'],
+list_to_test = [['2'], ['3'], ['many'],
                 ['2', '3'],
                 ['2', '3', 'many']]
 list_type = ['sc', 'mc']
@@ -85,10 +85,10 @@ def test_force_en(kernels, kernel_type):
         kern_finite_diff += diff3b
 
     kern_analytical = \
-        force_en_kernel(env1[0][0], env2[0][0], d1, hyps, cutoffs)
+        force_en_kernel(env1[0][0], env2[0][0], hyps, cutoffs)
+    kern_analytical = kern_analytical[d1-1]
 
     print("\nforce_en", kernels, kern_finite_diff, kern_analytical)
-
     assert (isclose(kern_finite_diff, kern_analytical, rtol=tol))
 
 
@@ -161,7 +161,8 @@ def test_force(kernels, kernel_type):
         calc4 = en3_kernel(env1[2][0], env2[1][0], hyps[ntwobody * 2:], cutoffs)
         kern_finite_diff += 9 * (calc1 + calc2 - calc3 - calc4) / (4*delta**2)
 
-    kern_analytical = kernel(env1[0][0], env2[0][0], d1, d2, *args)
+    kern_analytical = kernel(env1[0][0], env2[0][0], *args)
+    kern_analytical = kern_analytical[d1-1][d2-1]
 
     assert(isclose(kern_finite_diff, kern_analytical, rtol=tol))
 
@@ -184,19 +185,19 @@ def test_hyps_grad(kernels, kernel_type):
 
     kernel, kernel_grad, _, _ = str_to_kernel_set(kernels, kernel_type)
 
-    grad_test = kernel_grad(env1, env2,
-                            d1, d2, hyps, cutoffs)
+    k, grad = kernel_grad(env1, env2, hyps, cutoffs)
+    grad = grad[:, d1-1, d2-1]
 
-    original = kernel(env1, env2, d1, d2,
-                      hyps, cutoffs)
-    assert(isclose(grad_test[0], original, rtol=tol))
+    original = kernel(env1, env2, hyps, cutoffs)
+    assert(isclose(k, original, rtol=tol).all())
 
     for i in range(len(hyps)-1):
         newhyps = np.copy(hyps)
         newhyps[i] += delta
-        hgrad = (kernel(env1, env2, d1, d2, newhyps,
+        hgrad = (kernel(env1, env2, newhyps,
                         cutoffs) -
                  original)/delta
+        hgrad = hgrad[d1-1][d2-1]
         print("numerical gradients", hgrad)
-        print("analytical gradients", grad_test[1][i])
-        assert(isclose(grad_test[1][i], hgrad, rtol=tol))
+        print("analytical gradients", grad[i])
+        assert(isclose(grad[i], hgrad, rtol=tol))
