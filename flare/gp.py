@@ -197,7 +197,7 @@ class GaussianProcess:
                 self.name = f"{base}_{milliseconds}"
                 logger.debug("Specified GP name still present in global memory: "
                        f"renaming the gp instance to {self.name}")
-            logger.info(f"Final name of the gp instance is {self.name}")
+            logger.debug(f"Final name of the gp instance is {self.name}")
 
         self.sync_data()
 
