@@ -213,13 +213,7 @@ class OTF:
                 # compute forces and stds with GP
                 self.dft_step = False
                 self.compute_properties()
-                # print('positions pre:')
-                # print(self.structure.positions)
                 new_pos = self.md_step()
-                # print('positions post:')
-                # print(self.structure.positions)
-                # print('new pos:')
-                # print(new_pos)
 
                 # get max uncertainty atoms
                 std_in_bound, target_atoms = \
@@ -239,8 +233,6 @@ class OTF:
                     dft_frcs = deepcopy(self.structure.forces)
 
                     # run MD step & record the state
-                    # new_pos = self.md_step()
-                    # self.update_temperature(new_pos)
                     self.record_state()
 
                     # compute mae and write to output

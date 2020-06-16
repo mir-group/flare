@@ -144,10 +144,11 @@ class ASE_OTF(OTF):
         Get new position in molecular dynamics based on the forces predicted by
         FLARE_Calculator or DFT calculator
         '''
-        pos = np.copy(self.structure.positions)
         self.md.step()
-        self.structure.positions = pos
-        return self.atoms.positions
+
+        # Return a copy so that future updates to atoms.positions doesn't also
+        # update structure.positions.
+        return np.copy(self.atoms.positions)
 
     # TODO: fix the temperature output in the log file
 
