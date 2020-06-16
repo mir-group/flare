@@ -105,7 +105,7 @@ class OTF:
                  force_source: str = "qe",
                  npool: int = None, mpi: str = "srun", dft_loc: str = None,
                  dft_input: str = None, dft_output='dft.out', dft_kwargs=None,
-                 store_dft_output: Tuple[Union[str, List[str]],str] = None,
+                 store_dft_output: Tuple[Union[str, List[str]], str] = None,
                  # par args
                  n_cpus: int = 1,
                  ):
@@ -201,8 +201,7 @@ class OTF:
 
         while self.curr_step < self.number_of_steps:
             # run DFT and train initial model if first step and DFT is on
-            if self.curr_step == 0 and self.std_tolerance != 0 and \
-             len(self.gp.training_data) == 0:
+            if self.curr_step == 0 and self.std_tolerance != 0 and len(self.gp.training_data) == 0:
 
                 self.initialize_train()
                 new_pos = self.md_step()
@@ -214,7 +213,13 @@ class OTF:
                 # compute forces and stds with GP
                 self.dft_step = False
                 self.compute_properties()
+                # print('positions pre:')
+                # print(self.structure.positions)
                 new_pos = self.md_step()
+                # print('positions post:')
+                # print(self.structure.positions)
+                # print('new pos:')
+                # print(new_pos)
 
                 # get max uncertainty atoms
                 std_in_bound, target_atoms = \
@@ -278,8 +283,7 @@ class OTF:
         '''
         In ASE-OTF, it will be replaced by subclass method
         '''
-        return md.update_positions(self.dt, self.noa,
-                                   self.structure)
+        return md.update_positions(self.dt, self.noa, self.structure)
 
     def run_dft(self):
         """Calculates DFT forces on atoms in the current structure.
@@ -294,13 +298,11 @@ class OTF:
         f.info('\nCalling DFT...\n')
 
         # calculate DFT forces
-        forces = self.dft_module.run_dft_par(self.dft_input, self.structure,
-                                             self.dft_loc,
-                                             n_cpus=self.n_cpus,
-                                             dft_out=self.dft_output,
-                                             npool=self.npool,
-                                             mpi=self.mpi,
-                                             dft_kwargs=self.dft_kwargs)
+        forces = self.dft_module.run_dft_par(
+            self.dft_input, self.structure, self.dft_loc, n_cpus=self.n_cpus,
+            dft_out=self.dft_output, npool=self.npool, mpi=self.mpi,
+            dft_kwargs=self.dft_kwargs)
+
         self.structure.forces = forces
 
         # write wall time of DFT calculation
@@ -395,8 +397,7 @@ class OTF:
         self.velocities = velocities
 
     def record_state(self):
-        self.output.write_md_config(self.dt, self.curr_step, self.structure,
-                                    self.temperature, self.KE,
-                                    self.local_energies, self.start_time,
-                                    self.dft_step,
-                                    self.velocities)
+        self.output.write_md_config(
+            self.dt, self.curr_step, self.structure, self.temperature,
+            self.KE, self.local_energies, self.start_time, self.dft_step,
+            self.velocities)
