@@ -160,7 +160,7 @@ class MappedGaussianProcess:
         self.write_lmp_file(self.lmp_file_name)
 
 
-    def predict(self, atom_env: AtomicEnvironment, mean_only: bool = False,
+    def predict(self, atom_env: AtomicEnvironment, mean_only: bool = True,
             ) -> (float, 'ndarray', 'ndarray', float):
         '''
         predict force, variance, stress and local energy for given
