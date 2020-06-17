@@ -54,7 +54,7 @@ def test_force_en(kernels, kernel_type):
             nterm += 1
 
     kern_finite_diff = 0
-    if ('mb' in kernel_name):
+    if ('many' in kernels):
         _, _, enm_kernel, _, _, _, _ = \
             str_to_kernel_set(['many'], kernel_type)
         mhyps = hyps[(nterm-1)*2:]
