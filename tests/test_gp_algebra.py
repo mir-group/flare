@@ -280,18 +280,29 @@ def test_en_kern_vec(params, ihyps):
     assert (vec.shape[0] == size1 * 3 + size2)
 
 
-def test_efs_kern_vec(params):
+@pytest.mark.parametrize('ihyps', [4])
+def test_efs_kern_vec(params, ihyps):
+    name, cutoffs, hyps_mask_list, _ = params
 
-    hyps, name, kernel, cutoffs, _, _, _, _ = params
+    np.random.seed(10)
+    test_point = get_tstp()
+
+    size1 = len(flare.gp_algebra._global_training_data[name])
+    size2 = len(flare.gp_algebra._global_training_structures[name])
+
+    hyps_mask = hyps_mask_list[ihyps]
+    hyps = hyps_mask['hyps']
+    kernel = str_to_kernel_set(hyps_mask['kernels'], 'mc', hyps_mask)
 
     test_point = get_tstp()
 
     energy_vector, force_array, stress_array = \
-        efs_kern_vec(name, kernel[4], kernel[5], test_point, hyps, cutoffs)
+        efs_kern_vec(name, kernel[5], kernel[4], test_point, hyps, cutoffs,
+                     hyps_mask)
 
     energy_vector_par, force_array_par, stress_array_par = \
-        efs_kern_vec(name, kernel[4], kernel[5], test_point, hyps, cutoffs,
-                     n_cpus=2, n_sample=100)
+        efs_kern_vec(name, kernel[5], kernel[4], test_point, hyps, cutoffs,
+                     hyps_mask, n_cpus=2, n_sample=100)
 
     assert (np.equal(energy_vector, energy_vector_par).all())
     assert (np.equal(force_array, force_array_par).all())
