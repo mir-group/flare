@@ -71,7 +71,7 @@ def get_kernel_term(kernel_name, component, hyps_mask, hyps, grid_kernel=False):
         stks = str_to_kernel_set
         kernel_name_list = [kernel_name] 
 
-    kernel, _, ek, efk = stks(kernel_name_list, component, hyps_mask)
+    kernel, _, ek, efk, _, _, _ = stks(kernel_name_list, component, hyps_mask)
 
     # hyps_mask is modified here
     hyps, cutoffs, hyps_mask = Parameters.get_component_mask(hyps_mask, kernel_name, hyps=hyps)
