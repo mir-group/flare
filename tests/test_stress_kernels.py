@@ -1,7 +1,7 @@
 import pytest
 from flare.kernels.two_body_mc_simple import TwoBodyKernel
 from flare.kernels.three_body_mc_simple import ThreeBodyKernel
-from flare.cutoffs import quadratic_cutoff
+from flare.kernels.cutoffs import quadratic_cutoff
 from flare import struc, env
 import numpy as np
 
