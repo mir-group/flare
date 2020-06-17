@@ -65,7 +65,7 @@ how the GP is constructed from the data.
 .. code-block:: python
 
     from flare.gp import GaussianProcess
-    from flare.parameters import Parameters
+    from flare.utils.parameter_helper import ParameterHelper
 
     # set up hyperparameters, cutoffs
     kernels = ['twobody', 'threebody']
