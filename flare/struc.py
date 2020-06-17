@@ -265,7 +265,7 @@ class Structure:
         return struc
 
     @staticmethod
-    def from_ase_atoms(atoms: 'ase.Atoms') -> 'flare.struc.Structure':
+    def from_ase_atoms(atoms: 'ase.Atoms', cell=None) -> 'flare.struc.Structure':
         """
         From an ASE Atoms object, return a FLARE structure
 
@@ -273,7 +273,10 @@ class Structure:
         :type atoms: ASE Atoms object
         :return: A FLARE structure from an ASE atoms object
         """
-        struc = Structure(cell=np.array(atoms.cell),
+
+        if cell is None:
+            cell = np.array(atoms.cell)
+        struc = Structure(cell=cell,
                           positions=atoms.positions,
                           species=atoms.get_chemical_symbols())
         return struc

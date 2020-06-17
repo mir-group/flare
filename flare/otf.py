@@ -93,7 +93,7 @@ class OTF:
                  prev_pos_init: 'ndarray' = None,
                  rescale_steps: List[int] = [], rescale_temps: List[int] = [],
                  # flare args
-                 gp: gp.GaussianProcess=None,
+                 gp: gp.GaussianProcess = None,
                  calculate_energy: bool = False,
                  write_model: int = 0,
                  # otf args
@@ -103,9 +103,9 @@ class OTF:
                  max_atoms_added: int = 1, freeze_hyps: int = 10,
                  # dft args
                  force_source: str = "qe",
-                 npool: int = None, mpi: str = "srun", dft_loc: str=None,
-                 dft_input: str=None, dft_output='dft.out', dft_kwargs=None,
-                 store_dft_output: Tuple[Union[str, List[str]],str] = None,
+                 npool: int = None, mpi: str = "srun", dft_loc: str = None,
+                 dft_input: str = None, dft_output='dft.out', dft_kwargs=None,
+                 store_dft_output: Tuple[Union[str, List[str]], str] = None,
                  # par args
                  n_cpus: int = 1,
                  ):
@@ -157,11 +157,11 @@ class OTF:
         self.dft_count = 0
 
         # set pred function
-        if (n_cpus>1 and gp.per_atom_par and gp.parallel) and not calculate_energy:
+        if (n_cpus > 1 and gp.per_atom_par and gp.parallel) and not calculate_energy:
             self.pred_func = predict.predict_on_structure_par
         elif not calculate_energy:
             self.pred_func = predict.predict_on_structure
-        elif (n_cpus>1 and gp.per_atom_par and gp.parallel):
+        elif (n_cpus > 1 and gp.per_atom_par and gp.parallel):
             self.pred_func = predict.predict_on_structure_par_en
         else:
             self.pred_func = predict.predict_on_structure_en
@@ -201,7 +201,7 @@ class OTF:
 
         while self.curr_step < self.number_of_steps:
             # run DFT and train initial model if first step and DFT is on
-            if self.curr_step == 0 and self.std_tolerance != 0 and len(self.gp.training_data)==0:
+            if self.curr_step == 0 and self.std_tolerance != 0 and len(self.gp.training_data) == 0:
 
                 self.initialize_train()
                 new_pos = self.md_step()
@@ -210,10 +210,10 @@ class OTF:
 
             # after step 1, try predicting with GP model
             else:
-
                 # compute forces and stds with GP
                 self.dft_step = False
                 self.compute_properties()
+                new_pos = self.md_step()
 
                 # get max uncertainty atoms
                 std_in_bound, target_atoms = \
@@ -221,10 +221,7 @@ class OTF:
                                     self.gp.hyps[-1], self.structure,
                                     self.max_atoms_added)
 
-                if std_in_bound:
-                    new_pos = self.md_step()
-
-                else:
+                if not std_in_bound:
                     # record GP forces
                     self.update_temperature(new_pos)
                     self.record_state()
@@ -236,8 +233,6 @@ class OTF:
                     dft_frcs = deepcopy(self.structure.forces)
 
                     # run MD step & record the state
-                    new_pos = self.md_step()
-                    self.update_temperature(new_pos)
                     self.record_state()
 
                     # compute mae and write to output
@@ -261,7 +256,6 @@ class OTF:
         if self.write_model >= 1:
             self.gp.write_model(self.output_name+"_model")
 
-
     def initialize_train(self):
         # call dft and update positions
         self.run_dft()
@@ -270,7 +264,6 @@ class OTF:
         # make initial gp model and predict forces
         self.update_gp(self.init_atoms, dft_frcs)
 
-
     def compute_properties(self):
         '''
         In ASE-OTF, it will be replaced by subclass method
@@ -278,14 +271,11 @@ class OTF:
         self.gp.check_L_alpha()
         self.pred_func(self.structure, self.gp, self.n_cpus)
 
-
     def md_step(self):
         '''
         In ASE-OTF, it will be replaced by subclass method
         '''
-        return md.update_positions(self.dt, self.noa,
-                                   self.structure)
-
+        return md.update_positions(self.dt, self.noa, self.structure)
 
     def run_dft(self):
         """Calculates DFT forces on atoms in the current structure.
@@ -300,13 +290,11 @@ class OTF:
         f.info('\nCalling DFT...\n')
 
         # calculate DFT forces
-        forces = self.dft_module.run_dft_par(self.dft_input, self.structure,
-                                             self.dft_loc,
-                                             n_cpus=self.n_cpus,
-                                             dft_out=self.dft_output,
-                                             npool=self.npool,
-                                             mpi=self.mpi,
-                                             dft_kwargs=self.dft_kwargs)
+        forces = self.dft_module.run_dft_par(
+            self.dft_input, self.structure, self.dft_loc, n_cpus=self.n_cpus,
+            dft_out=self.dft_output, npool=self.npool, mpi=self.mpi,
+            dft_kwargs=self.dft_kwargs)
+
         self.structure.forces = forces
 
         # write wall time of DFT calculation
@@ -353,7 +341,6 @@ class OTF:
         if self.write_model == 3:
             self.gp.write_model(self.output_name+'_model')
 
-
     def train_gp(self):
         """Optimizes the hyperparameters of the current GP model."""
 
@@ -363,7 +350,6 @@ class OTF:
                                self.gp.likelihood, self.gp.likelihood_gradient,
                                hyps_mask=self.gp.hyps_mask)
 
-
     def compute_mae(self, gp_frcs, dft_frcs):
         mae = np.mean(np.abs(gp_frcs - dft_frcs))
         mac = np.mean(np.abs(dft_frcs))
@@ -371,7 +357,6 @@ class OTF:
         f = logging.getLogger(self.output.basename+'log')
         f.info(f'mean absolute error: {mae:.4f} eV/A')
         f.info(f'mean absolute dft component: {mac:.4f} eV/A')
-
 
     def update_positions(self, new_pos: 'ndarray'):
         """Performs a Verlet update of the atomic positions.
@@ -404,8 +389,7 @@ class OTF:
         self.velocities = velocities
 
     def record_state(self):
-        self.output.write_md_config(self.dt, self.curr_step, self.structure,
-                                    self.temperature, self.KE,
-                                    self.local_energies, self.start_time,
-                                    self.dft_step,
-                                    self.velocities)
+        self.output.write_md_config(
+            self.dt, self.curr_step, self.structure, self.temperature,
+            self.KE, self.local_energies, self.start_time, self.dft_step,
+            self.velocities)
