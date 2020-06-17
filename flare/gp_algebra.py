@@ -849,7 +849,7 @@ def efs_force_vector_unit(name, s, e, x, efs_force_kernel, hyps, cutoffs,
     k_ff = np.zeros((3, size * 3))
     k_sf = np.zeros((6, size * 3))
 
-    args = from_mask_to_args(hyps, hyps_mask, cutoffs)
+    args = from_mask_to_args(hyps, cutoffs, hyps_mask)
 
     for m_index in range(size):
         x_2 = _global_training_data[name][m_index + s]
@@ -869,7 +869,7 @@ def efs_energy_vector_unit(name, s, e, x, efs_energy_kernel, hyps, cutoffs,
                            hyps_mask):
 
     size = e - s
-    args = from_mask_to_args(hyps, hyps_mask, cutoffs)
+    args = from_mask_to_args(hyps, cutoffs, hyps_mask)
 
     k_ee = np.zeros((1, size))
     k_fe = np.zeros((3, size))

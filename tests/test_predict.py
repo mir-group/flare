@@ -29,15 +29,12 @@ def fake_predict_local_energy(_):
 @pytest.fixture(scope='class')
 def two_plus_three_gp() -> GaussianProcess:
     """Returns a GP instance with a 2+3-body kernel."""
-    cutoffs = np.array([0.8, 0.8])
+    cutoffs = {'twobody': 0.8, 'threebody': 0.8}
     hyps = np.array([1., 1., 1., 1., 1.])
 
-    # test update_db
-    gpname = '2+3_mc'
-    cutoffs = np.ones(2)*0.8
-
     gp_model = \
-        GaussianProcess(kernel_name=gpname, hyps=hyps, cutoffs=cutoffs,
+        GaussianProcess(kernels=['twobody', 'threebody'],
+                        hyps=hyps, cutoffs=cutoffs,
                         multihyps=False, parallel=False, n_cpus=1)
 
     test_structure, forces = \
@@ -48,10 +45,6 @@ def two_plus_three_gp() -> GaussianProcess:
 
     yield gp_model
     del gp_model
-
-
-def fake_predict(x, d):
-    return np.random.uniform(-1, 1), np.random.uniform(-1, 1)
 
 
 _fake_gp = GaussianProcess(kernel_name='2+3', cutoffs=[5., 5.],
@@ -72,11 +65,10 @@ def test_predict_on_structure_par(n_cpu):
 
     skipped_atom_value = np.nan
 
-    forces, stds = \
-        predict_on_structure_par(_fake_structure, _fake_gp, n_cpus=n_cpu,
-                                 write_to_structure=False,
-                                 selective_atoms=selective_atoms,
-                                 skipped_atom_value=skipped_atom_value)
+    forces, stds = predict_on_structure_par(
+        _fake_structure, _fake_gp, n_cpus=n_cpu, write_to_structure=False,
+        selective_atoms=selective_atoms,
+        skipped_atom_value=skipped_atom_value)
 
     for x in forces[0][:]:
         assert isinstance(x, float)
@@ -87,11 +79,10 @@ def test_predict_on_structure_par(n_cpu):
     selective_atoms = [1, 2]
     skipped_atom_value = 0
 
-    forces, stds = \
-        predict_on_structure_par(_fake_structure, _fake_gp,
-                                 write_to_structure=False, n_cpus=n_cpu,
-                                 selective_atoms=selective_atoms,
-                                 skipped_atom_value=skipped_atom_value)
+    forces, stds = predict_on_structure_par(
+        _fake_structure, _fake_gp, write_to_structure=False, n_cpus=n_cpu,
+        selective_atoms=selective_atoms,
+        skipped_atom_value=skipped_atom_value)
 
     for x in forces[1]:
         assert isinstance(x, float)
@@ -104,10 +95,10 @@ def test_predict_on_structure_par(n_cpu):
     selective_atoms = [0, 1, 2]
 
     forces, stds = \
-        predict_on_structure_par(_fake_structure, _fake_gp,
-                                 write_to_structure=True, n_cpus=n_cpu,
-                                 selective_atoms=selective_atoms,
-                                 skipped_atom_value=skipped_atom_value)
+        predict_on_structure_par(
+            _fake_structure, _fake_gp, write_to_structure=True, n_cpus=n_cpu,
+            selective_atoms=selective_atoms,
+            skipped_atom_value=skipped_atom_value)
 
     for x in forces.flatten():
         assert isinstance(x, float)
@@ -119,12 +110,10 @@ def test_predict_on_structure_par(n_cpu):
 
     # Make selective atoms be nothing and ensure results are normal
 
-    forces, stds = predict_on_structure_par(_fake_structure,
-                                            _fake_gp,
-                                            write_to_structure=True,
-                                            n_cpus=n_cpu,
-                                            selective_atoms=None,
-                                            skipped_atom_value=skipped_atom_value)
+    forces, stds = predict_on_structure_par(
+        _fake_structure, _fake_gp, write_to_structure=True,
+        n_cpus=n_cpu, selective_atoms=None,
+        skipped_atom_value=skipped_atom_value)
 
     for x in forces.flatten():
         assert isinstance(x, float)
@@ -139,12 +128,10 @@ def test_predict_on_structure_par(n_cpu):
 
     selective_atoms = [0, 1]
 
-    forces, stds = predict_on_structure_par(_fake_structure,
-                                            _fake_gp,
-                                            write_to_structure=True,
-                                            n_cpus=n_cpu,
-                                            selective_atoms=selective_atoms,
-                                            skipped_atom_value=skipped_atom_value)
+    forces, stds = predict_on_structure_par(
+        _fake_structure, _fake_gp, write_to_structure=True,
+        n_cpus=n_cpu, selective_atoms=selective_atoms,
+        skipped_atom_value=skipped_atom_value)
 
     for x in forces.flatten():
         assert isinstance(x, float)

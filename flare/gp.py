@@ -21,7 +21,8 @@ from flare.gp_algebra import get_like_from_mats, get_neg_like_grad, \
     get_ky_mat_update, _global_training_data, _global_training_labels, \
     _global_training_structures, _global_energy_labels, get_Ky_mat, \
     get_kernel_vector, en_kern_vec, efs_kern_vec
-from flare.kernels.utils import str_to_kernel_set, from_mask_to_args, kernel_str_to_array
+from flare.kernels.utils import str_to_kernel_set, from_mask_to_args, \
+    kernel_str_to_array
 from flare.output import Output, set_logger
 from flare.parameters import Parameters
 from flare.struc import Structure
@@ -117,6 +118,9 @@ class GaussianProcess:
         self.kernel_grad = grad
         self.energy_force_kernel = efk
         self.energy_kernel = ek
+        self.efs_energy_kernel = efs_e
+        self.efs_force_kernel = efs_f
+        self.efs_self_kernel = efs_self
         self.kernels = kernel_str_to_array(kernel.__name__)
 
         # parallelization
@@ -201,13 +205,13 @@ class GaussianProcess:
 
         self.sync_data()
 
-        self.hyps_mask = Parameters.check_instantiation(self.hyps, self.cutoffs,
-                                                        self.kernels, self.hyps_mask)
+        self.hyps_mask = Parameters.check_instantiation(
+            self.hyps, self.cutoffs, self.kernels, self.hyps_mask)
 
         self.bounds = deepcopy(self.hyps_mask.get('bounds', None))
 
     def update_kernel(self, kernels, component="mc", hyps_mask=None):
-        kernel, grad, ek, efk = str_to_kernel_set(
+        kernel, grad, ek, efk, _, _, _ = str_to_kernel_set(
             kernels, component, hyps_mask)
         self.kernel = kernel
         self.kernel_grad = grad
@@ -540,7 +544,7 @@ class GaussianProcess:
         stress_pred = np.matmul(stress_array, self.alpha)
 
         # Compute uncertainties.
-        args = from_mask_to_args(self.hyps, self.hyps_mask, self.cutoffs)
+        args = from_mask_to_args(self.hyps, self.cutoffs, self.hyps_mask)
         self_en, self_force, self_stress = self.efs_self_kernel(x_t, *args)
 
         en_var = self_en - \
