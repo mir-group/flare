@@ -1,6 +1,5 @@
 import pytest
 import os
-import sys
 import numpy as np
 from flare.otf import OTF
 from flare.gp import GaussianProcess
@@ -13,6 +12,11 @@ from flare.dft_interface.vasp_util import *
 #                   test  otf runs
 # ------------------------------------------------------
 
+@pytest.mark.skipif(not os.environ.get('VASP_COMMAND',
+                                    False), reason='VASP_COMMAND not found '
+                    'in environment: Please install VASP '
+                    ' and set the VASP_COMMAND env. '
+                    'variable to point to cp2k.popt')
 def test_otf_h2():
     """
     :return:
@@ -22,7 +26,7 @@ def test_otf_h2():
     vasp_input = './POSCAR'
     dt = 0.0001
     number_of_steps = 5
-    cutoffs = np.array([5])
+    cutoffs = {'twobody':5}
     dft_loc = 'cp ./test_files/test_vasprun_h2.xml vasprun.xml'
     std_tolerance_factor = -0.1
 
@@ -36,12 +40,16 @@ def test_otf_h2():
                          hyp_labels=hyp_labels,
                          maxiter=50)
 
-    otf = OTF(vasp_input, dt, number_of_steps, gp, dft_loc,
-              std_tolerance_factor, init_atoms=[0],
-              calculate_energy=True, max_atoms_added=1,
-              n_cpus=1, force_source='vasp',
+    otf = OTF(dt=dt, number_of_steps=number_of_steps,
+              gp=gp, calculate_energy=True,
+              std_tolerance_factor=std_tolerance_factor,
+              init_atoms=[0],
+              output_name='h2_otf_vasp',
+              max_atoms_added=1,
+              force_source='vasp',
+              dft_input=vasp_input, dft_loc=dft_loc,
               dft_output="vasprun.xml",
-              output_name='h2_otf_vasp')
+              n_cpus=1)
 
     otf.run()
 

@@ -4,12 +4,10 @@ The mandatory inputs are the cell vectors of the box and the chemical species
 and *Cartesian coordinates* of the atoms.
 The atoms are automatically folded back into the primary cell, so the
 input coordinates don't need to lie inside the box.
-Energy, force, and stress information can be included which can then be
-used to train ML models.
 """
 import numpy as np
-from flare.util import element_to_Z, Z_to_element, NumpyEncoder, \
-    get_max_cutoff
+from flare.utils.element_coder import element_to_Z, Z_to_element, NumpyEncoder
+from flare.utils.learner import get_max_cutoff
 from json import dumps, loads
 
 from typing import List, Union, Any
@@ -53,8 +51,7 @@ class Structure:
     def __init__(self, cell: 'ndarray', species: Union[List[str], List[int]],
                  positions: 'ndarray', mass_dict: dict = None,
                  prev_positions: 'ndarray' = None,
-                 species_labels: List[str] = None, energy=None,
-                 forces=None, stress=None, stds=None):
+                 species_labels: List[str] = None, forces=None, stds=None):
         # Set up individual Bravais lattice vectors
         self.cell = np.array(cell)
         self.vec1 = self.cell[0, :]
@@ -93,11 +90,10 @@ class Structure:
                                                           'same length'
             self.prev_positions = prev_positions
 
-        # assign structure labels
-        self.energy = energy
-        self.stress = stress
-        self.forces = forces
-        self.labels = self.get_labels()
+        if forces is not None:
+            self.forces = np.array(forces)
+        else:
+            self.forces = np.zeros((len(positions), 3))
 
         if stds is not None:
             self.stds = np.array(stds)
@@ -199,23 +195,6 @@ class Structure:
 
         return pos_wrap
 
-    def get_labels(self):
-        labels = []
-        if self.energy is not None:
-            labels.append(self.energy)
-        if self.forces is not None:
-            unrolled_forces = self.forces.reshape(-1)
-            for force_comp in unrolled_forces:
-                labels.append(force_comp)
-        if self.stress is not None:
-            labels.extend([self.stress[0, 0], self.stress[0, 1],
-                           self.stress[0, 2], self.stress[1, 1],
-                           self.stress[1, 2], self.stress[2, 2]])
-
-        labels = np.array(labels)
-
-        return labels
-
     def indices_of_specie(self, specie: Union[int, str]) -> List[int]:
         """
         Return the indices of a given species within atoms of the structure.
@@ -281,14 +260,12 @@ class Structure:
                           mass_dict=dictionary.get('mass_dict'),
                           species_labels=dictionary.get('species_labels'))
 
-        struc.energy = dictionary.get('energy')
-        struc.stress = dictionary.get('stress')
         struc.stds = np.array(dictionary.get('stds'))
 
         return struc
 
     @staticmethod
-    def from_ase_atoms(atoms: 'ase.Atoms') -> 'flare.struc.Structure':
+    def from_ase_atoms(atoms: 'ase.Atoms', cell=None) -> 'flare.struc.Structure':
         """
         From an ASE Atoms object, return a FLARE structure
 
@@ -296,7 +273,10 @@ class Structure:
         :type atoms: ASE Atoms object
         :return: A FLARE structure from an ASE atoms object
         """
-        struc = Structure(cell=np.array(atoms.cell),
+
+        if cell is None:
+            cell = np.array(atoms.cell)
+        struc = Structure(cell=cell,
                           positions=atoms.positions,
                           species=atoms.get_chemical_symbols())
         return struc
@@ -431,11 +411,10 @@ class Structure:
         :param format:
         :return:
         """
-           
+
         # Ensure the file specified exists.
         with open(file_name, 'r') as _:
             pass
-        
 
         if 'xyz' in file_name or 'xyz' in format.lower():
             raise NotImplementedError

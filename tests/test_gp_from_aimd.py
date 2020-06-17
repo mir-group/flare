@@ -1,20 +1,21 @@
-import pytest
 import numpy as np
 import pickle
+import pytest
+
+from copy import deepcopy
+from json import loads
 from glob import glob
 from os import remove
-from copy import deepcopy
 
 from flare.env import AtomicEnvironment
 from flare.struc import Structure
 from flare.gp import GaussianProcess
-from flare.mgp.mgp_en import MappedGaussianProcess
+from flare.mgp import MappedGaussianProcess
 from flare.gp_from_aimd import TrajectoryTrainer,\
                                     parse_trajectory_trainer_output
-from flare.util import subset_of_frame_by_element
-from json import loads
-from flare.env import AtomicEnvironment
-from .test_mgp_unit import all_mgp, all_gp, get_random_structure
+from flare.utils.learner import subset_of_frame_by_element
+
+from tests.test_mgp import all_mgp, all_gp, get_random_structure
 from .fake_gp import get_gp
 
 @pytest.fixture
@@ -43,7 +44,7 @@ def methanol_gp():
 @pytest.fixture
 def fake_gp():
     return GaussianProcess(kernel_name="2+3",
-                           hyps=np.array([1]),
+                           hyps=np.array([1, 1, 1, 1, 1]),
                            cutoffs=np.array([4, 3]))
 
 
@@ -139,7 +140,7 @@ def test_seed_and_run():
 
     test_env = envs[0]
 
-    for d in [0, 1, 2]:
+    for d in [1, 2, 3]:
         assert np.all(the_gp.predict(x_t=test_env, d=d) ==
                       new_gp.predict(x_t=test_env, d=d))
 
@@ -209,44 +210,28 @@ def test_mgp_gpfa(all_mgp, all_gp):
     :return:
     '''
 
+    np.random.seed(10)
     gp_model  = get_gp('3', 'mc', False)
     gp_model.set_L_alpha()
 
     grid_num_2 = 5
     grid_num_3 = 3
     lower_cut = 0.01
-    two_cut = gp_model.cutoffs[0]
-    three_cut = gp_model.cutoffs[1]
-    # set struc params. cell and masses arbitrary?
-    mapped_cell = np.eye(3) * 2
-    struc_params = {'species': [1, 2],
-                    'cube_lat': mapped_cell,
-                    'mass_dict': {'0': 27, '1': 16}}
-
-    # grid parameters
-    train_size = len(gp_model.training_data)
-    grid_params = {'bodies': [2],
-                   'cutoffs': gp_model.cutoffs,
-                   'bounds_2': [[lower_cut], [two_cut]],
-                   'bounds_3': [[lower_cut, lower_cut, lower_cut],
-                                [three_cut, three_cut, three_cut]],
-                   'grid_num_2': grid_num_2,
-                   'grid_num_3': [grid_num_3, grid_num_3, grid_num_3],
-                   'svd_rank_2': np.min((grid_num_2, 3 * train_size)),
-                   'svd_rank_3': np.min((grid_num_3 ** 3, 3 * train_size)),
-                   'load_grid': None,
+    grid_params_3b = {'lower_bound': [lower_cut for d in range(3)],
+                      'grid_num': [grid_num_3 for d in range(3)],
+                      'svd_rank': 'auto'}
+    grid_params = {'load_grid': None,
                    'update': False}
+    grid_params['threebody'] = grid_params_3b
+    unique_species = gp_model.training_statistics['species']
 
-    struc_params = {'species': [1, 2],
-                    'cube_lat': np.eye(3) * 2,
-                    'mass_dict': {'0': 27, '1': 16}}
-
-    mgp_model = MappedGaussianProcess(grid_params, struc_params)
+    mgp_model = MappedGaussianProcess(grid_params=grid_params, unique_species=unique_species, n_cpus=1,
+                map_force=False)
 
     mgp_model.build_map(gp_model)
+
     nenv = 10
     cell = np.eye(3)
-    unique_species = gp_model.training_data[0].species
     struc, f = get_random_structure(cell, unique_species, nenv)
 
     struc.forces = np.array(f)

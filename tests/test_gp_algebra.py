@@ -3,18 +3,19 @@ import pytest
 import numpy as np
 
 import flare.gp_algebra
-from flare import gp
 from flare.env import AtomicEnvironment
+from flare.kernels.utils import str_to_kernel_set
 from flare.struc import Structure
 from flare.kernels.mc_simple import two_plus_three_body_mc, \
-        two_plus_three_body_mc_grad, two_plus_three_mc_en,\
-        two_plus_three_mc_force_en, two_plus_three_efs_energy, \
-        two_plus_three_efs_force
+    two_plus_three_body_mc_grad, two_plus_three_mc_en,\
+    two_plus_three_mc_force_en, two_plus_three_efs_energy, \
+    two_plus_three_efs_force
 from flare.kernels.mc_sephyps import two_plus_three_body_mc \
         as two_plus_three_body_mc_multi
 from flare.kernels.mc_sephyps import two_plus_three_body_mc_grad \
         as two_plus_three_body_mc_grad_multi
 from flare.kernels import mc_sephyps
+from flare.utils.parameter_helper import ParameterHelper
 
 from flare.gp_algebra import get_like_grad_from_mats, \
         get_force_block, get_force_energy_block, \
@@ -24,7 +25,7 @@ from flare.gp_algebra import get_like_grad_from_mats, \
         get_Ky_mat, update_force_block, update_energy_block, \
         update_force_energy_block, efs_kern_vec
 
-from .fake_gp import get_tstp
+from tests.fake_gp import get_tstp
 
 
 @pytest.fixture(scope='module')
@@ -39,7 +40,7 @@ def params():
 def get_random_training_set(nenv, nstruc):
     """Create a random training_set array with parameters
     And generate four different kinds of hyperparameter sets:
-    * multi hypper parameters with two bond type and two triplet type
+    * multi hypper parameters with two twobody type and two threebody type
     * constrained optimization, with noise parameter optimized
     * constrained optimization, without noise parameter optimized
     * simple hyper parameters without multihyps set up
@@ -47,51 +48,49 @@ def get_random_training_set(nenv, nstruc):
 
     np.random.seed(0)
 
-    cutoffs = np.array([0.8, 0.8])
-    hyps = np.ones(5, dtype=float)
-    kernel = (two_plus_three_body_mc, two_plus_three_body_mc_grad,
-              two_plus_three_mc_en, two_plus_three_mc_force_en,
-              two_plus_three_efs_force, two_plus_three_efs_energy)
-    kernel_m = \
-        (two_plus_three_body_mc_multi, two_plus_three_body_mc_grad_multi,
-         mc_sephyps.two_plus_three_mc_en,
-         mc_sephyps.two_plus_three_mc_force_en)
+    cutoffs = {'twobody':0.8, 'threebody':0.8}
+    parameters={'cutoff_twobody': 0.8,
+                'cutoff_threebody': 0.8,
+                'noise': 0.05}
 
     # 9 different hyper-parameters
-    hyps_mask1 = {'nspec': 2, 'spec_mask': np.zeros(118, dtype=int),
-                  'nbond': 2, 'bond_mask': np.array([0, 1, 1, 1]),
-                  'triplet_mask': np.array([0, 1, 1, 1, 1, 1, 1, 1]),
-                  'ntriplet': 2}
-    hyps_mask1['spec_mask'][2] = 1
-    hyps1 = np.ones(9, dtype=float)
+    pm = ParameterHelper(species=['H', 'He'],
+                         kernels={'twobody':[['*', '*'], ['H', 'H']],
+                                  'threebody':[['*', '*', '*'],
+                                               ['H', 'H', 'H']]},
+                         parameters=parameters,
+                         ones=True, random=False,
+                         verbose="DEBUG")
+    hyps_mask1 = pm.as_dict()
 
-    # 9 different hyper-parameters, only train the 0, 2, 4, 6, 8
-    hyps_mask2 = {'nspec': 2, 'spec_mask': np.zeros(118, dtype=int),
-                  'nbond': 2, 'bond_mask': np.array([0, 1, 1, 1]),
-                  'ntriplet': 2,
-                  'triplet_mask': np.array([0, 1, 1, 1, 1, 1, 1, 1]),
-                  'train_noise': True, 'map': [0, 2, 4, 6, 8],
-                  'original': np.array([1, 1, 1, 1, 1, 1, 1, 1, 1])}
-    hyps_mask2['spec_mask'][2] = 1
-    hyps2 = np.ones(5, dtype=float)
+    # 9 different hyper-parameters, onlye train the 0, 2, 4, 6, 8
+    pm.set_constraints('twobody0', [True, True])
+    pm.set_constraints('twobody1', [False, False])
+    pm.set_constraints('threebody0', [True, True])
+    pm.set_constraints('threebody1', [False, False])
+    hyps_mask2 = pm.as_dict()
 
     # 9 different hyper-parameters, only train the 0, 2, 4, 6
-    hyps_mask3 = {'nspec': 2, 'spec_mask': np.zeros(118, dtype=int),
-                  'nbond': 2, 'bond_mask': np.array([0, 1, 1, 1]),
-                  'ntriplet': 2,
-                  'triplet_mask': np.array([0, 1, 1, 1, 1, 1, 1, 1]),
-                  'train_noise': False, 'map': [0, 2, 4, 6],
-                  'original': np.array([1, 1, 1, 1, 1, 1, 1, 1, 1])}
-    hyps_mask3['spec_mask'][2] = 1
-    hyps3 = np.ones(4, dtype=float)
+    pm.set_constraints('noise', False)
+    hyps_mask3 = pm.as_dict()
 
     # 5 different hyper-parameters, equivalent to no multihyps
-    hyps_mask4 = {'nspec': 1, 'spec_mask': np.zeros(118, dtype=int),
-                  'nbond': 1, 'bond_mask': np.array([0]),
-                  'ntriplet': 1, 'triplet_mask': np.array([0])}
-    hyps4 = np.ones(5, dtype=float)
-    hyps_list = [hyps1, hyps2, hyps3, hyps4, hyps]
-    hyps_mask_list = [hyps_mask1, hyps_mask2, hyps_mask3, hyps_mask4, None]
+    pm = ParameterHelper(species=['H', 'He'],
+                         kernels={'twobody':[['*', '*']],
+                                  'threebody':[['*', '*', '*']]},
+                         parameters=parameters,
+                         ones=True, random=False,
+                         verbose="DEBUG")
+    hyps_mask4 = pm.as_dict()
+
+    # 5 different hyper-parameters, no multihyps
+    pm = ParameterHelper(kernels=['twobody', 'threebody'],
+                         parameters=parameters,
+                         ones=True, random=False,
+                         verbose="DEBUG")
+    hyps_mask5 = pm.as_dict()
+
+    hyps_mask_list = [hyps_mask1, hyps_mask2, hyps_mask3, hyps_mask4, hyps_mask5]
 
     # create training environments and forces
     cell = np.eye(3)
@@ -130,15 +129,18 @@ def get_random_training_set(nenv, nstruc):
 
     energy_noise = 0.01
 
-    return hyps, name, kernel, cutoffs, kernel_m, hyps_list, hyps_mask_list, \
-        energy_noise
+    return name, cutoffs, hyps_mask_list, energy_noise
 
 
-def test_ky_mat(params):
-    hyps, name, kernel, cutoffs, kernel_m, hyps_list, hyps_mask_list, \
-        energy_noise = params
+@pytest.fixture(scope='module')
+def ky_mat_ref(params):
+    name, cutoffs, hyps_mask_list, energy_noise = params
 
     # get the reference without multi hyps
+    hyps_mask = hyps_mask_list[-1]
+    hyps = hyps_mask['hyps']
+    kernel = str_to_kernel_set(hyps_mask['kernels'], 'mc', hyps_mask)
+
     time0 = time.time()
     ky_mat0 = get_Ky_mat(hyps, name, kernel[0], kernel[2], kernel[3],
                          energy_noise, cutoffs)
@@ -151,54 +153,49 @@ def test_ky_mat(params):
                    energy_noise, cutoffs, n_cpus=2, n_sample=5)
     print("compute ky_mat parallel", time.time()-time0)
 
-    print(ky_mat)
-    diff = (np.max(np.abs(ky_mat-ky_mat0)))
-    assert (diff == 0), "parallel implementation is wrong"
+    assert np.isclose(ky_mat, ky_mat0, rtol=1e-3).all(), \
+            "parallel implementation is wrong"
 
-    # compute the ky_mat with different parameters
-    for i in range(len(hyps_list)):
-
-        hyps = hyps_list[i]
-        hyps_mask = hyps_mask_list[i]
-
-        if hyps_mask is None:
-            ker1 = kernel[0]
-            ker2 = kernel[2]
-            ker3 = kernel[3]
-        else:
-            ker1 = kernel_m[0]
-            ker2 = kernel_m[2]
-            ker3 = kernel_m[3]
-
-        # serial implementation
-        time0 = time.time()
-        ky_mat = get_Ky_mat(hyps, name, ker1, ker2, ker3,
-                            energy_noise, cutoffs, hyps_mask)
-        print(f"compute ky_mat with multihyps, test {i}, n_cpus=1",
-              time.time()-time0)
-        diff = (np.max(np.abs(ky_mat-ky_mat0)))
-        assert (diff == 0), "multi hyps implementation is wrong"\
-            f"with case {i}"
-
-        # parallel implementation
-        time0 = time.time()
-        ky_mat = get_Ky_mat(hyps, name, ker1, ker2, ker3,
-                            energy_noise, cutoffs, hyps_mask, n_cpus=2,
-                            n_sample=20)
-        print(f"compute ky_mat with multihyps, test {i}, n_cpus=2",
-              time.time()-time0)
-        diff = (np.max(np.abs(ky_mat-ky_mat0)))
-        assert (diff == 0), "multi hyps  parallel "\
-            "implementation is wrong with case {i}"
+    yield ky_mat0
+    del ky_mat0
 
 
-def test_ky_mat_update(params):
-    """
-    check ky_mat_update function
-    """
+@pytest.mark.parametrize('ihyps', [0, 1])
+def test_ky_mat(params, ihyps, ky_mat_ref):
 
-    hyps, name, kernel, cutoffs, \
-        kernel_m, hyps_list, hyps_mask_list, energy_noise = params
+    name, cutoffs, hyps_mask_list, energy_noise = params
+    hyps_mask = hyps_mask_list[ihyps]
+    hyps = hyps_mask['hyps']
+    kernel = str_to_kernel_set(hyps_mask['kernels'], 'mc', hyps_mask)
+
+    # serial implementation
+    time0 = time.time()
+    ky_mat = get_Ky_mat(hyps, name, kernel[0], kernel[2], kernel[3],
+                        energy_noise, cutoffs, hyps_mask)
+    print(f"compute ky_mat with multihyps, test {ihyps}, n_cpus=1",
+          time.time()-time0)
+    assert np.isclose(ky_mat, ky_mat_ref, rtol=1e-3).all(), \
+            "multi hyps implementation is wrong"\
+            f"with case {ihyps}"
+
+    # parallel implementation
+    time0 = time.time()
+    ky_mat = get_Ky_mat(hyps, name, kernel[0], kernel[2], kernel[3],
+                        energy_noise, cutoffs, hyps_mask, n_cpus=2,
+                        n_sample=20)
+    print(f"compute ky_mat with multihyps, test {ihyps}, n_cpus=2",
+          time.time()-time0)
+    assert np.isclose(ky_mat, ky_mat_ref, rtol=1e-3).all(), \
+            f"multi hyps  parallel implementation is wrong with case {ihyps}"
+
+
+@pytest.mark.parametrize('ihyps', [0, 1, -1])
+def test_ky_mat_update(params, ihyps):
+
+    name, cutoffs, hyps_mask_list, energy_noise = params
+    hyps_mask = hyps_mask_list[ihyps]
+    hyps = hyps_mask['hyps']
+    kernel = str_to_kernel_set(hyps_mask['kernels'], 'mc', hyps_mask)
 
     # prepare old data set as the starting point
     n = 5
@@ -210,91 +207,73 @@ def test_ky_mat_update(params):
         training_structures[:s]
     func = [get_Ky_mat, get_ky_mat_update]
 
+
     # get the reference
-    ky_mat0 = func[0](hyps, name, kernel[0], kernel[2], kernel[3],
-                      energy_noise, cutoffs)
-    ky_mat_old = func[0](hyps, 'old', kernel[0], kernel[2], kernel[3],
-                         energy_noise, cutoffs)
+    ky_mat0 = func[0](hyps, name, kernel[0], kernel[2],
+                      kernel[3], energy_noise, cutoffs, hyps_mask)
+    ky_mat_old = func[0](hyps, 'old', kernel[0], kernel[2],
+                         kernel[3], energy_noise, cutoffs, hyps_mask)
 
     # update
     ky_mat = func[1](ky_mat_old, n, hyps, name, kernel[0], kernel[2],
-                     kernel[3], energy_noise, cutoffs)
-    diff = (np.max(np.abs(ky_mat-ky_mat0)))
-
-    assert (diff <= 1e-15), "update function is wrong"
+                     kernel[3], energy_noise, cutoffs, hyps_mask)
+    assert np.isclose(ky_mat, ky_mat0, rtol=1e-10).all(), \
+            "update function is wrong"
 
     # parallel version
     ky_mat = func[1](ky_mat_old, n, hyps, name, kernel[0], kernel[2],
-                     kernel[3], energy_noise, cutoffs, n_cpus=2, n_sample=20)
-    diff = (np.max(np.abs(ky_mat-ky_mat0)))
-
-    assert (diff == 0), "parallel implementation is wrong"
-
-    # check multi hyps implementation
-    for i in range(len(hyps_list)):
-
-        hyps = hyps_list[i]
-        hyps_mask = hyps_mask_list[i]
-
-        if hyps_mask is None:
-            ker1 = kernel[0]
-            ker2 = kernel[2]
-            ker3 = kernel[3]
-        else:
-            ker1 = kernel_m[0]
-            ker2 = kernel_m[2]
-            ker3 = kernel_m[3]
-
-        # serial implementation
-        ky_mat = func[1](ky_mat_old, n, hyps, name, ker1, ker2, ker3,
-                         energy_noise, cutoffs, hyps_mask)
-        diff = (np.max(np.abs(ky_mat-ky_mat0)))
-        assert (diff < 1e-12), "multi hyps parameter implementation is wrong"
-
-        # parallel implementation
-        ky_mat = func[1](ky_mat_old, n, hyps, name, ker1, ker2, ker3,
-                         energy_noise, cutoffs, hyps_mask, n_cpus=2,
-                         n_sample=20)
-        diff = (np.max(np.abs(ky_mat-ky_mat0)))
-        assert (diff < 1e-12), "multi hyps parameter parallel "\
-            "implementation is wrong"
+                     kernel[3], energy_noise, cutoffs, hyps_mask, n_cpus=2,
+                     n_sample=20)
+    assert np.isclose(ky_mat, ky_mat0, rtol=1e-10).all(), \
+            "update function is wrong"
 
 
-def test_kernel_vector(params):
+@pytest.mark.parametrize('ihyps', [0, 1, -1])
+def test_kernel_vector(params, ihyps):
 
-    hyps, name, kernel, cutoffs, _, _, _, _ = params
+    name, cutoffs, hyps_mask_list, _ = params
 
+    np.random.seed(10)
     test_point = get_tstp()
 
     size1 = len(flare.gp_algebra._global_training_data[name])
     size2 = len(flare.gp_algebra._global_training_structures[name])
+
+    hyps_mask = hyps_mask_list[ihyps]
+    hyps = hyps_mask['hyps']
+    kernel = str_to_kernel_set(hyps_mask['kernels'], 'mc', hyps_mask)
 
     # test the parallel implementation for multihyps
     vec = get_kernel_vector(name, kernel[0], kernel[3], test_point, 1,
-                            hyps, cutoffs)
+                            hyps, cutoffs, hyps_mask)
 
     vec_par = \
         get_kernel_vector(name, kernel[0], kernel[3], test_point, 1, hyps,
-                          cutoffs, n_cpus=2, n_sample=100)
+                          cutoffs, hyps_mask, n_cpus=2, n_sample=100)
 
-    assert (all(np.equal(vec, vec_par))), "parallel implementation is wrong"
+    assert (np.isclose(vec, vec_par, rtol=1e-4).all()), "parallel implementation is wrong"
     assert (vec.shape[0] == size1 * 3 + size2)
 
 
-def test_en_kern_vec(params):
+@pytest.mark.parametrize('ihyps', [0, 1, -1])
+def test_en_kern_vec(params, ihyps):
 
-    hyps, name, kernel, cutoffs, _, _, _, _ = params
+    name, cutoffs, hyps_mask_list, _ = params
+    hyps_mask = hyps_mask_list[ihyps]
+    hyps = hyps_mask['hyps']
+    kernel = str_to_kernel_set(hyps_mask['kernels'], 'mc', hyps_mask)
 
+    np.random.seed(10)
     test_point = get_tstp()
 
     size1 = len(flare.gp_algebra._global_training_data[name])
     size2 = len(flare.gp_algebra._global_training_structures[name])
 
     # test the parallel implementation for multihyps
-    vec = en_kern_vec(name, kernel[3], kernel[2], test_point, hyps, cutoffs)
+    vec = en_kern_vec(name, kernel[3], kernel[2], test_point, hyps, cutoffs, hyps_mask)
 
     vec_par = \
-        en_kern_vec(name, kernel[3], kernel[2], test_point, hyps, cutoffs,
+        en_kern_vec(name, kernel[3], kernel[2], test_point, hyps, cutoffs, hyps_mask,
                     n_cpus=2, n_sample=100)
 
     assert (all(np.equal(vec, vec_par))), "parallel implementation is wrong"
@@ -319,131 +298,62 @@ def test_efs_kern_vec(params):
     assert (np.equal(stress_array, stress_array_par).all())
 
 
-def test_ky_and_hyp(params):
+@pytest.mark.parametrize('ihyps', [0, 1, 2, 3, 4])
+def test_ky_and_hyp(params, ihyps, ky_mat_ref):
 
-    hyps, name, kernel, cutoffs, \
-            kernel_m, hyps_list, hyps_mask_list, _ = params
+    name, cutoffs, hyps_mask_list, _ = params
+    hyps_mask = hyps_mask_list[ihyps]
+    hyps = hyps_mask['hyps']
+    kernel = str_to_kernel_set(hyps_mask['kernels'], 'mc', hyps_mask)
 
-    hypmat_0, ky_mat0 = get_ky_and_hyp(hyps, name, kernel[1], cutoffs)
+    func = get_ky_and_hyp
 
+    # serial version
+    hypmat_ser, ky_mat_ser = func(hyps, name, kernel[1], cutoffs,
+                                  hyps_mask)
     # parallel version
-    hypmat, ky_mat = get_ky_and_hyp(hyps, name, kernel[1], cutoffs, n_cpus=2)
-    diff = (np.max(np.abs(ky_mat-ky_mat0)))
-    assert (diff == 0), "parallel implementation is wrong"
+    hypmat_par, ky_mat_par = func(hyps, name, kernel[1], cutoffs,
+                                  hyps_mask, n_cpus=2)
 
-    # check all cases
-    for i in range(len(hyps_list)):
-        hyps = hyps_list[i]
-        hyps_mask = hyps_mask_list[i]
+    ref = ky_mat_ref[:ky_mat_ser.shape[0], :ky_mat_ser.shape[1]]
 
-        if hyps_mask is None:
-            ker = kernel[1]
-        else:
-            ker = kernel_m[1]
-
-        # serial implementation
-        hypmat, ky_mat = get_ky_and_hyp(hyps, name, ker, cutoffs, hyps_mask)
-
-        if (i == 0):
-            hypmat9 = hypmat
-        diff = (np.max(np.abs(ky_mat-ky_mat0)))
-        assert (diff == 0), "multi hyps parameter implementation is wrong"
-
-        # compare to no hyps_mask version
-        diff = 0
-        if (i == 1):
-            diff = (np.max(np.abs(hypmat-hypmat9[[0, 2, 4, 6, 8], :, :])))
-        elif (i == 2):
-            diff = (np.max(np.abs(hypmat-hypmat9[[0, 2, 4, 6], :, :])))
-        elif (i == 3):
-            diff = (np.max(np.abs(hypmat-hypmat_0)))
-        elif (i == 4):
-            diff = (np.max(np.abs(hypmat-hypmat_0)))
-        assert (diff == 0), "multi hyps implementation is wrong"\
-            f"in case {i}"
-
-        # parallel implementation
-        hypmat_par, ky_mat_par = \
-            get_ky_and_hyp(hyps, name, ker, cutoffs, hyps_mask,
-                           n_cpus=2, n_sample=2)
-
-        # compare to serial implementation
-        diff = (np.max(np.abs(ky_mat-ky_mat_par)))
-        assert (diff == 0), f"multi hyps parallel "\
-            f"implementation is wrong in case {i}"
-
-        diff = (np.max(np.abs(hypmat_par-hypmat)))
-        assert (diff == 0), f"multi hyps parallel implementation is wrong"\
-            f" in case{i}"
+    assert np.isclose(ky_mat_ser, ref, rtol=1e-5).all(), \
+            "serial implementation is not consistent with get_Ky_mat"
+    assert np.isclose(ky_mat_par, ref, rtol=1e-5).all(), \
+            "parallel implementation is not consistent with get_Ky_mat"
+    assert np.isclose(hypmat_ser, hypmat_par, rtol=1e-5).all(), \
+            "serial implementation is not consistent with parallel implementation"
 
 
-def test_grad(params):
-    hyps, name, kernel, cutoffs, \
-            kernel_m, hyps_list, hyps_mask_list, _ = params
-
-    # obtain reference
-    func = get_ky_and_hyp
-    hyp_mat, ky_mat = func(hyps, name, kernel[1], cutoffs)
-    like0, like_grad0 = \
-        get_like_grad_from_mats(ky_mat, hyp_mat, name)
-
-    # serial implementation
-    func = get_ky_and_hyp
-    hyp_mat, ky_mat = func(hyps, name, kernel[1], cutoffs)
-    like, like_grad = \
-        get_like_grad_from_mats(ky_mat, hyp_mat, name)
-
-    assert (like == like0), "wrong likelihood"
-    assert np.max(np.abs(like_grad-like_grad0)) == 0, "wrong likelihood"
-
-    func = get_ky_and_hyp
-    for i in range(len(hyps_list)):
-        hyps = hyps_list[i]
-        hyps_mask = hyps_mask_list[i]
-
-        if hyps_mask is None:
-            ker = kernel[1]
-        else:
-            ker = kernel_m[1]
-
-        hyp_mat, ky_mat = func(hyps, name, ker, cutoffs, hyps_mask)
-        like, like_grad = get_like_grad_from_mats(ky_mat, hyp_mat, name)
-        assert (like == like0), "wrong likelihood"
-
-        if (i == 0):
-            like_grad9 = like_grad
-
-        diff = 0
-        if (i == 1):
-            diff = (np.max(np.abs(like_grad-like_grad9[[0, 2, 4, 6, 8]])))
-        elif (i == 2):
-            diff = (np.max(np.abs(like_grad-like_grad9[[0, 2, 4, 6]])))
-        elif (i == 3):
-            diff = (np.max(np.abs(like_grad-like_grad0)))
-        elif (i == 4):
-            diff = (np.max(np.abs(like_grad-like_grad0)))
-        assert (diff == 0), "multi hyps implementation is wrong"\
-            f"in case {i}"
-
-
-def test_ky_hyp_grad(params):
-    hyps, name, kernel, cutoffs, _, _, _, _ = params
-
-    func = get_ky_and_hyp
-
-    hyp_mat, ky_mat = func(hyps, name, kernel[1], cutoffs)
-
+    # analytical form
+    hyp_mat, ky_mat = func(hyps, name, kernel[1], cutoffs, hyps_mask)
     _, like_grad = get_like_grad_from_mats(ky_mat, hyp_mat, name)
+
     delta = 0.001
     for i in range(len(hyps)):
+
         newhyps = np.copy(hyps)
+
         newhyps[i] += delta
-        hyp_mat_p, ky_mat_p = func(newhyps, name, kernel[1], cutoffs)
+        hyp_mat_p, ky_mat_p = func(newhyps, name, kernel[1],
+                                   cutoffs, hyps_mask)
         like_p, _ = \
             get_like_grad_from_mats(ky_mat_p, hyp_mat_p, name)
+
         newhyps[i] -= 2*delta
-        hyp_mat_m, ky_mat_m = func(newhyps, name, kernel[1], cutoffs)
+        hyp_mat_m, ky_mat_m = func(newhyps, name, kernel[1],
+                                   cutoffs, hyps_mask)
         like_m, _ = \
             get_like_grad_from_mats(ky_mat_m, hyp_mat_m, name)
-        diff = np.abs(like_grad[i]-(like_p-like_m)/2./delta)
-        assert (diff < 1e-3), "wrong calculation of hyp_mat"
+
+        # numerical form
+        numeric = (like_p-like_m)/2./delta
+        assert np.isclose(like_grad[i], numeric, rtol=1e-3 ), \
+                f"wrong calculation of hyp_mat {i}"
+
+if __name__ == "__main__":
+
+    import cProfile
+    import re
+    params = get_random_training_set(10, 2)
+    cProfile.run('test_ky_and_hyp(params)')

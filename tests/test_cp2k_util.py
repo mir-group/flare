@@ -118,8 +118,8 @@ def test_cp2k_input_edit():
 
     positions, species, cell, masses = parse_dft_input(newfilename)
 
-    assert np.equal(positions[0], structure.positions[0]).all()
-    assert np.equal(structure.vec1, cell[0, :]).all()
+    assert np.isclose(positions[0], structure.positions[0]).all()
+    assert np.isclose(structure.vec1, cell[0, :]).all()
 
     remove(newfilename)
     cleanup()
