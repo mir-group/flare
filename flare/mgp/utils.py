@@ -50,9 +50,9 @@ def str_to_mapped_kernel(name: str, component: str = "mc",
 
     if b3:
         if multihyps:
-            return grid_kernel_sephyps, None, None, None
+            return grid_kernel_sephyps, None, None, None, None, None, None
         else:
-            return grid_kernel, None, None, None
+            return grid_kernel, None, None, None, None, None, None
     else:
         warnings.Warn(
             NotImplemented("mapped kernel for two-body and manybody kernels "
