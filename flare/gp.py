@@ -402,20 +402,16 @@ class GaussianProcess:
         elif (size3 != self.alpha.shape[0]):
             self.set_L_alpha()
 
-    def predict(self, x_t: AtomicEnvironment, d: int) -> [float, float]:
+    def predict(self, x_t: AtomicEnvironment) -> [float, float]:
         """
         Predict a force component of the central atom of a local environment.
 
         Args:
             x_t (AtomicEnvironment): Input local environment.
-            d (int): Force component to be predicted (1 is x, 2 is y, and
-                3 is z).
 
         Return:
             (float, float): Mean and epistemic variance of the prediction.
         """
-
-        assert (d in [1, 2, 3]), "d should be 1, 2, or 3"
 
         # Kernel vector allows for evaluation of atomic environments.
         if self.parallel and not self.per_atom_par:
@@ -427,7 +423,7 @@ class GaussianProcess:
 
         k_v = \
             get_kernel_vector(self.name, self.kernel, self.energy_force_kernel,
-                              x_t, d, self.hyps, cutoffs=self.cutoffs,
+                              x_t, self.hyps, cutoffs=self.cutoffs,
                               hyps_mask=self.hyps_mask, n_cpus=n_cpus,
                               n_sample=self.n_sample)
 
@@ -435,16 +431,16 @@ class GaussianProcess:
         self.check_L_alpha()
 
         # get predictive mean
-        pred_mean = np.matmul(k_v, self.alpha)
+        pred_mean = np.matmul(self.alpha, k_v)
 
         # get predictive variance without cholesky (possibly faster)
         # pass args to kernel based on if mult. hyperparameters in use
         args = from_mask_to_args(self.hyps, self.cutoffs, self.hyps_mask)
 
-        self_kern = self.kernel(x_t, x_t, d, d, *args)
-        pred_var = self_kern - np.matmul(np.matmul(k_v, self.ky_mat_inv), k_v)
+        self_kern = self.kernel(x_t, x_t, *args)
+        pred_var = self_kern - np.matmul(np.matmul(k_v.T, self.ky_mat_inv), k_v)
 
-        return pred_mean, pred_var
+        return pred_mean, np.diagonal(pred_var)
 
     def predict_local_energy(self, x_t: AtomicEnvironment) -> float:
         """Predict the local energy of a local environment.

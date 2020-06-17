@@ -44,7 +44,7 @@ def many_body_mc_sepcut_jit(q_array_1, q_array_2,
         float: Value of the many-body kernel.
     """
 
-    kern = np.zeros([3, 3], dtype=np.float64)
+    kern = np.zeros((3, 3), dtype=np.float64)
 
     useful_species = np.array(
         list(set(species1).intersection(set(species2))), dtype=np.int8)
@@ -78,15 +78,16 @@ def many_body_mc_sepcut_jit(q_array_1, q_array_2,
         # the two configurations
         # Loop over neighbours i of 1st configuration
         for i in range(q_neigh_array_1.shape[0]):
-            qis = q1i_grads = qi1_grads = ki2s = 0
+            qis = ki2s = 0
+            q1i_grads = np.zeros((3, 3), dtype=np.float64)
+            qi1_grads = np.zeros((3, 3), dtype=np.float64)
+
             if etypes1[i] == s:
-                q1i_grads = np.zeros([3, 3], dtype=np.float64)
                 q1i_grads[0, :] += q_neigh_grads_1[i, 0]
                 q1i_grads[1, :] += q_neigh_grads_1[i, 1]
                 q1i_grads[2, :] += q_neigh_grads_1[i, 2]
 
             if c1 == s:
-                qi1_grads = np.zeros([3, 3], dtype=np.float64)
                 qi1_grads[0, :] += q_neigh_grads_1[i, 0]
                 qi1_grads[1, :] += q_neigh_grads_1[i, 1]
                 qi1_grads[2, :] += q_neigh_grads_1[i, 2]
@@ -99,16 +100,16 @@ def many_body_mc_sepcut_jit(q_array_1, q_array_2,
 
             # Loop over neighbours j of 2
             for j in range(q_neigh_array_2.shape[0]):
-                qjs = qj2_grads = q2j_grads = k1js = 0
+                qjs = k1js = 0
+                q2j_grads = np.zeros((3, 3), dtype=np.float64)
+                qj2_grads = np.zeros((3, 3), dtype=np.float64)
 
                 if etypes2[j] == s:
-                    q2j_grads = np.zeros([3, 3], dtype=np.float64)
                     q2j_grads[:, 0] += q_neigh_grads_2[j, 0]
                     q2j_grads[:, 1] += q_neigh_grads_2[j, 1]
                     q2j_grads[:, 2] += q_neigh_grads_2[j, 2]
 
                 if c2 == s:
-                    qj2_grads = np.zeros([3, 3], dtype=np.float64)
                     qj2_grads[:, 0] += q_neigh_grads_2[j, 0]
                     qj2_grads[:, 1] += q_neigh_grads_2[j, 1]
                     qj2_grads[:, 2] += q_neigh_grads_2[j, 2]
@@ -157,9 +158,9 @@ def many_body_mc_grad_sepcut_jit(q_array_1, q_array_2,
         array: Value of the many-body kernel and its gradient w.r.t. sig and ls
     """
 
-    kern = np.zeros([3, 3], dtype=np.float64)
-    sig_derv = np.zeros([nmb, 3, 3], dtype=np.float64)
-    ls_derv = np.zeros([nmb, 3, 3], dtype=np.float64)
+    kern = np.zeros((3, 3), dtype=np.float64)
+    sig_derv = np.zeros((nmb, 3, 3), dtype=np.float64)
+    ls_derv = np.zeros((nmb, 3, 3), dtype=np.float64)
 
     useful_species = np.array(
         list(set(species1).intersection(set(species2))), dtype=np.int8)
@@ -193,15 +194,16 @@ def many_body_mc_grad_sepcut_jit(q_array_1, q_array_2,
 
         # Compute  ki2s, qi1_grads, and qis
         for i in range(q_neigh_array_1.shape[0]):
-            qis = q1i_grads = qi1_grads = ki2s = dki2s = 0
+            qis = ki2s = dki2s = 0
+            q1i_grads = np.zeros((3, 3), dtype=np.float64)
+            qi1_grads = np.zeros((3, 3), dtype=np.float64)
+
             if etypes1[i] == s:
-                q1i_grads = np.zeros([3, 3], dtype=np.float64)
                 q1i_grads[0, :] += q_neigh_grads_1[i, 0]
                 q1i_grads[1, :] += q_neigh_grads_1[i, 1]
                 q1i_grads[2, :] += q_neigh_grads_1[i, 2]
 
             if c1 == s:
-                qi1_grads = np.zeros([3, 3], dtype=np.float64)
                 qi1_grads[0, :] += q_neigh_grads_1[i, 0]
                 qi1_grads[1, :] += q_neigh_grads_1[i, 1]
                 qi1_grads[2, :] += q_neigh_grads_1[i, 2]
@@ -216,15 +218,16 @@ def many_body_mc_grad_sepcut_jit(q_array_1, q_array_2,
 
             # Compute k1js, qj2_grads and qjs
             for j in range(q_neigh_array_2.shape[0]):
-                qjs = qj2_grads = q2j_grads = k1js = dk1js = 0
+                qjs = k1js = dk1js = 0
+                q2j_grads = np.zeros((3, 3), dtype=np.float64)
+                qj2_grads = np.zeros((3, 3), dtype=np.float64)
+
                 if etypes2[j] == s:
-                    q2j_grads = np.zeros([3, 3], dtype=np.float64)
                     q2j_grads[:, 0] += q_neigh_grads_2[j, 0]
                     q2j_grads[:, 1] += q_neigh_grads_2[j, 1]
                     q2j_grads[:, 2] += q_neigh_grads_2[j, 2]
 
                 if c2 == s:
-                    qj2_grads = np.zeros([3, 3], dtype=np.float64)
                     qj2_grads[:, 0] += q_neigh_grads_2[j, 0]
                     qj2_grads[:, 1] += q_neigh_grads_2[j, 1]
                     qj2_grads[:, 2] += q_neigh_grads_2[j, 2]
@@ -281,12 +284,7 @@ def many_body_mc_grad_sepcut_jit(q_array_1, q_array_2,
                     kern += kern_term_se
                     ls_derv[mbtype]  += qi1_grads * qj2_grads * dkij
 
-
-    grad = np.zeros(nmb*2, dtype=np.float64)
-    grad[:nmb] = sig_derv
-    grad[nmb:] = ls_derv
-
-    return kern, grad
+    return kern, np.vstack((sig_derv, ls_derv))
 
 
 @njit
@@ -312,7 +310,7 @@ def many_body_mc_force_en_sepcut_jit(q_array_1, q_array_2,
         float: Value of the many-body kernel.
     """
 
-    kern = 0
+    kern = np.zeros(3, dtype=np.float64)
 
     useful_species = np.array(
         list(set(species1).intersection(set(species2))), dtype=np.int8)
@@ -341,20 +339,15 @@ def many_body_mc_force_en_sepcut_jit(q_array_1, q_array_2,
 
         # Loop over neighbours i of 1
         for i in range(q_neigh_array_1.shape[0]):
-            qi1_grads = q1i_grads = 0
+            q1i_grads = np.zeros(3, dtype=np.float64)
+            qi1_grads = np.zeros(3, dtype=np.float64)
             ki2s = 0
 
             if etypes1[i] == s:
-                q1i_grads = np.zeros([3, 3], dtype=np.float64)
-                q1i_grads[0, :] += q_neigh_grads_1[i, 0]
-                q1i_grads[1, :] += q_neigh_grads_1[i, 1]
-                q1i_grads[2, :] += q_neigh_grads_1[i, 2]
+                q1i_grads = q_neigh_grads_1[i]
 
             if (c1 == s) and (c2 == etypes1[i]):
-                qi1_grads = np.zeros([3, 3], dtype=np.float64)
-                qi1_grads[0, :] += q_neigh_grads_1[i, 0]
-                qi1_grads[1, :] += q_neigh_grads_1[i, 1]
-                qi1_grads[2, :] += q_neigh_grads_1[i, 2]
+                qi1_grads = q_neigh_grads_1[i]
                 qis = q_neigh_array_1[i, s1]
                 ki2s = k_sq_exp_dev(qis, q2, sig[mbtype2], ls[mbtype2])
 

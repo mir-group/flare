@@ -21,7 +21,7 @@ def three_body_mc_sepcut_jit(bond_array_1, c1, etypes1,
                              sig, ls, r_cut, cutoff_func,
                              nspec, spec_mask, triplet_mask, cut3b_mask):
 
-    kern = np.zeros([3, 3], dtype=np.float64)
+    kern = np.zeros((3, 3), dtype=np.float64)
 
     # pre-compute constants that appear in the inner loop
     sig2 = sig * sig
@@ -36,7 +36,7 @@ def three_body_mc_sepcut_jit(bond_array_1, c1, etypes1,
 
     for m in range(bond_array_1.shape[0]):
         ri1 = bond_array_1[m, 0]
-        ci1 = np.zeros([3, 3], dtype=np.float64)
+        ci1 = np.zeros((3, 3), dtype=np.float64)
         ci1[0, :] += bond_array_1[m, 1]
         ci1[1, :] += bond_array_1[m, 2]
         ci1[2, :] += bond_array_1[m, 3]
@@ -53,7 +53,7 @@ def three_body_mc_sepcut_jit(bond_array_1, c1, etypes1,
 
             ind1 = cross_bond_inds_1[m, m + n + 1]
             ri2 = bond_array_1[ind1, 0]
-            ci2 = np.zeros([3, 3], dtype=np.float64)
+            ci2 = np.zeros((3, 3), dtype=np.float64)
             ci2[0, :] += bond_array_1[ind1, 1]
             ci2[1, :] += bond_array_1[ind1, 2]
             ci2[2, :] += bond_array_1[ind1, 3]
@@ -92,7 +92,7 @@ def three_body_mc_sepcut_jit(bond_array_1, c1, etypes1,
                         tr_spec1.remove(ej1)
 
                         rj1 = bond_array_2[p, 0]
-                        cj1 = np.zeros([3, 3], dtype=np.float64)
+                        cj1 = np.zeros((3, 3), dtype=np.float64)
                         cj1[:, 0] += bond_array_2[p, 1]
                         cj1[:, 1] += bond_array_2[p, 2]
                         cj1[:, 2] += bond_array_2[p, 3]
@@ -108,7 +108,7 @@ def three_body_mc_sepcut_jit(bond_array_1, c1, etypes1,
                             ej2 = etypes2[ind2]
                             if ej2 == tr_spec1[0]:
                                 rj2 = bond_array_2[ind2, 0]
-                                cj2 = np.zeros([3, 3], dtype=np.float64)
+                                cj2 = np.zeros((3, 3), dtype=np.float64)
                                 cj2[:, 0] += bond_array_2[ind2, 1]
                                 cj2[:, 1] += bond_array_2[ind2, 2]
                                 cj2[:, 2] += bond_array_2[ind2, 3]
@@ -194,9 +194,9 @@ def three_body_mc_grad_sepcut_jit(bond_array_1, c1, etypes1,
                                   nspec, spec_mask, ntriplet, triplet_mask, cut3b_mask):
     """Kernel gradient for 3-body force comparisons."""
 
-    kern = np.zeros([3, 3], dtype=np.float64)
-    sig_derv = np.zeros([ntriplet, 3, 3], dtype=np.float64)
-    ls_derv = np.zeros([ntriplet, 3, 3], dtype=np.float64)
+    kern = np.zeros((3, 3), dtype=np.float64)
+    sig_derv = np.zeros((ntriplet, 3, 3), dtype=np.float64)
+    ls_derv = np.zeros((ntriplet, 3, 3), dtype=np.float64)
 
     # pre-compute constants that appear in the inner loop
     sig2, sig3, ls1, ls2, ls3, ls4, ls5, ls6 = grad_constants(sig, ls)
@@ -207,7 +207,7 @@ def three_body_mc_grad_sepcut_jit(bond_array_1, c1, etypes1,
 
     for m in range(bond_array_1.shape[0]):
         ri1 = bond_array_1[m, 0]
-        ci1 = np.zeros([3, 3], dtype=np.float64)
+        ci1 = np.zeros((3, 3), dtype=np.float64)
         ci1[0, :] += bond_array_1[m, 1]
         ci1[1, :] += bond_array_1[m, 2]
         ci1[2, :] += bond_array_1[m, 3]
@@ -222,7 +222,7 @@ def three_body_mc_grad_sepcut_jit(bond_array_1, c1, etypes1,
             ind1 = cross_bond_inds_1[m, m + n + 1]
             ri3 = cross_bond_dists_1[m, m + n + 1]
             ri2 = bond_array_1[ind1, 0]
-            ci2 = np.zeros([3, 3], dtype=np.float64)
+            ci2 = np.zeros((3, 3), dtype=np.float64)
             ci2[0, :] += bond_array_1[ind1, 1]
             ci2[1, :] += bond_array_1[ind1, 2]
             ci2[2, :] += bond_array_1[ind1, 3]
@@ -264,7 +264,7 @@ def three_body_mc_grad_sepcut_jit(bond_array_1, c1, etypes1,
                         tr_spec1.remove(ej1)
 
                         rj1 = bond_array_2[p, 0]
-                        cj1 = np.zeros([3, 3], dtype=np.float64)
+                        cj1 = np.zeros((3, 3), dtype=np.float64)
                         cj1[:, 0] += bond_array_2[p, 1]
                         cj1[:, 1] += bond_array_2[p, 2]
                         cj1[:, 2] += bond_array_2[p, 3]
@@ -281,7 +281,7 @@ def three_body_mc_grad_sepcut_jit(bond_array_1, c1, etypes1,
                             if ej2 == tr_spec1[0]:
                                 rj3 = cross_bond_dists_2[p, p + q + 1]
                                 rj2 = bond_array_2[ind2, 0]
-                                cj2 = np.zeros([3, 3], dtype=np.float64)
+                                cj2 = np.zeros((3, 3), dtype=np.float64)
                                 cj2[:, 0] += bond_array_2[ind2, 1]
                                 cj2[:, 1] += bond_array_2[ind2, 2]
                                 cj2[:, 2] += bond_array_2[ind2, 3]

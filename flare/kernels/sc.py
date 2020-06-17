@@ -700,6 +700,7 @@ def two_body_jit(bond_array_1, bond_array_2, sig, ls,
             cj[:, 1] += bond_array_2[n, 2]
             cj[:, 2] += bond_array_2[n, 3]
             fj, fdj = cutoff_func(r_cut, rj, cj)
+
             r11 = ri - rj
 
             A = ci * cj

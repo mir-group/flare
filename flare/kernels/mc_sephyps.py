@@ -1228,6 +1228,15 @@ def three_body_mc_grad_jit(bond_array_1, c1, etypes1,
                 fi = fi1 * fi2 * fi3
                 fdi = fdi1 * fi2 * fi3 + fi1 * fdi2 * fi3
 
+                lcj1 = []
+                lcj2 = []
+                lr11 = []
+                lr22 = []
+                lr33 = []
+                lfj = []
+                f
+                r11, r22, r33, fi, fj,
+                fdi, fdj, tls1, tls2,
                 for p in range(bond_array_2.shape[0]):
                     ej1 = etypes2[p]
                     tr_spec1 = [tr_spec[0], tr_spec[1]]

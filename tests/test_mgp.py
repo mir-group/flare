@@ -212,7 +212,7 @@ def compare_triplet(mgp_model, gp_model, atom_env):
         for l in range(lengths.shape[0]):
             r1, r2, r12 = lengths[l, :]
             grid_env = get_triplet_env(r1, r2, r12, grid_env)
-            gp_pred = np.array([gp_model.predict(grid_env, d+1) for d in range(3)]).T
+            gp_pred = gp_model.predict(grid_env)
             gp_en, _ = gp_model.predict_local_energy_and_var(grid_env)
             gp_f.append(gp_pred[0])
             gp_e.append(gp_en)
@@ -288,7 +288,7 @@ def test_predict(all_gp, all_mgp, bodies, multihyps, map_force):
     assert Parameters.compare_dict(gp_model.hyps_mask, mgp_model.maps[kernel_name].hyps_mask)
 
     gp_pred_en, gp_pred_envar = gp_model.predict_local_energy_and_var(test_envi)
-    gp_pred = np.array([gp_model.predict(test_envi, d+1) for d in range(3)]).T
+    gp_pred = gp_model.predict(test_envi)
     mgp_pred = mgp_model.predict(test_envi, mean_only=True)
 
 

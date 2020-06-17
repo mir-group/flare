@@ -10,6 +10,7 @@ from flare.kernels.utils import from_mask_to_args, str_to_kernel_set
 from flare.kernels.cutoffs import quadratic_cutoff_bound
 from flare.parameters import Parameters
 from flare.utils.parameter_helper import ParameterHelper
+from flare_o.kernels.utils import str_to_kernel_set as str_to_kernel_set_o
 
 from .fake_gp import generate_mb_envs, generate_mb_twin_envs
 
@@ -407,6 +408,10 @@ def test_force(kernels, diff_cutoff):
     kern_analytical = kernel(env1[0][0], env2[0][0], *args)
     kern_analytical = kern_analytical[d1-1][d2-1]
 
+    kernel, kg, en_kernel, fek = str_to_kernel_set_o(kernels, 'mc', hm)
+    kern_analytical_o = kernel(env1[0][0], env2[0][0], d1, d2, *args)
+    assert np.isclose(kern_analytical, kern_analytical_o, rtol=tol)
+
     assert(isclose(kern_finite_diff, kern_analytical, rtol=tol))
 
 
@@ -432,6 +437,11 @@ def test_hyps_grad(kernels, diff_cutoff, constraint):
     env2 = env2[0][0]
 
     k, grad = kernel_grad(env1, env2, *args)
+
+    _, kg, __, ___ = str_to_kernel_set_o(kernels, 'mc', hm)
+    k_o, grad_o = kg(env1, env2, d1, d2, *args)
+    assert np.isclose(k[d1-1, d2-1], k_o, rtol=tol)
+    assert np.isclose(grad[:, d1-1, d2-1], grad_o, rtol=tol).all()
 
     original = kernel(env1, env2, *args)
 

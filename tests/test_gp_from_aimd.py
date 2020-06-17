@@ -140,9 +140,9 @@ def test_seed_and_run():
 
     test_env = envs[0]
 
-    for d in [1, 2, 3]:
-        assert np.all(the_gp.predict(x_t=test_env, d=d) ==
-                      new_gp.predict(x_t=test_env, d=d))
+    test_predict = np.hstack(the_gp.predict(x_t=test_env))
+    new_predict = np.hstack(new_gp.predict(x_t=test_env))
+    assert np.isclose(test_predict, new_predict, rtol=1e-5).all()
 
     for f in glob(f"meth_test*"):
         remove(f)

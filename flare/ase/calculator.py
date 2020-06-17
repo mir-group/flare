@@ -1,8 +1,8 @@
-''':class:`FLARE_Calculator` is a calculator compatible with `ASE`. 
-You can build up `ASE Atoms` for your atomic structure, and use `get_forces`, 
-`get_potential_energy` as general `ASE Calculators`, and use it in 
-`ASE Molecular Dynamics` and our `ASE OTF` training module. For the usage 
-users can refer to `ASE Calculator module <https://wiki.fysik.dtu.dk/ase/ase/calculators/calculators.html>`_ 
+''':class:`FLARE_Calculator` is a calculator compatible with `ASE`.
+You can build up `ASE Atoms` for your atomic structure, and use `get_forces`,
+`get_potential_energy` as general `ASE Calculators`, and use it in
+`ASE Molecular Dynamics` and our `ASE OTF` training module. For the usage
+users can refer to `ASE Calculator module <https://wiki.fysik.dtu.dk/ase/ase/calculators/calculators.html>`_
 and `ASE Calculator tutorial <https://wiki.fysik.dtu.dk/ase/ase/atoms.html#adding-a-calculator>`_.'''
 
 import warnings
@@ -11,16 +11,16 @@ import multiprocessing as mp
 from flare.env import AtomicEnvironment
 from flare.struc import Structure
 from flare.mgp import MappedGaussianProcess
-from flare.predict import predict_on_structure_par_en, predict_on_structure_en
+from flare.predict import predict_on_structure_par, predict_on_structure
 from ase.calculators.calculator import Calculator
 
 class FLARE_Calculator(Calculator):
     """
     Build FLARE as an ASE Calculator, which is compatible with ASE Atoms and
-    Molecular Dynamics. 
+    Molecular Dynamics.
     Args:
         gp_model (GaussianProcess): FLARE's Gaussian process object
-        mgp_model (MappedGaussianProcess): FLARE's Mapped Gaussian Process object. 
+        mgp_model (MappedGaussianProcess): FLARE's Mapped Gaussian Process object.
             `None` by default. MGP will only be used if `use_mapping` is set to True
         par (Bool): set to `True` if parallelize the prediction. `False` by default.
         use_mapping (Bool): set to `True` if use MGP for prediction. `False` by default.
@@ -84,10 +84,10 @@ class FLARE_Calculator(Calculator):
 
         if self.par:
             forces, stds, local_energies = \
-                    predict_on_structure_par_en(struc_curr, self.gp_model)
+                    predict_on_structure_par(struc_curr, self.gp_model, energy=True)
         else:
             forces, stds, local_energies = \
-                    predict_on_structure_en(struc_curr, self.gp_model)
+                    predict_on_structure(struc_curr, self.gp_model, energy=True)
 
         self.results['forces'] = forces
         self.results['stds'] = stds

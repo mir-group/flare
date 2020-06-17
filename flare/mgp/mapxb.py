@@ -96,7 +96,7 @@ class MapXbody:
         generate/load grids and get spline coefficients
         '''
 
-        self.kernel_info = get_kernel_term(self.kernel_name, 
+        self.kernel_info = get_kernel_term(self.kernel_name,
             GP.component, GP.hyps_mask, GP.hyps)
         self.hyps_mask = GP.hyps_mask
         self.hyps = GP.hyps
@@ -189,7 +189,7 @@ class MapXbody:
         new_mgp = mapxbody(**dictionary)
 
         # Restore kernel_info
-        new_mgp.kernel_info = get_kernel_term(dictionary['kernel_name'], 
+        new_mgp.kernel_info = get_kernel_term(dictionary['kernel_name'],
             'mc', dictionary['hyps_mask'], dictionary['hyps'])
 
         # Fill up the model with the saved coeffs
@@ -315,7 +315,7 @@ class SingleMapXbody:
                 GP.hyps_mask, GP.hyps)
         if self.use_grid_kern:
             try:
-                kernel_info = get_kernel_term(self.kernel_name, GP.component, 
+                kernel_info = get_kernel_term(self.kernel_name, GP.component,
                     GP.hyps_mask, GP.hyps, grid_kernel=True)
             except:
                 self.use_grid_kern = False
@@ -355,7 +355,7 @@ class SingleMapXbody:
             n_grid = np.prod(self.grid_num)
             return np.empty((n_grid, 0))
 
-        if self.use_grid_kern: 
+        if self.use_grid_kern:
             gengrid_func = self._gengrid_numba
         else:
             gengrid_func = self._gengrid_inner
@@ -414,7 +414,8 @@ class SingleMapXbody:
             if not self.skip_grid(grid_pt):
                 if self.map_force:
                     k12_v[b, :] = force_x_vector_unit(name, s, e, grid_env,
-                        force_x_kern, hyps, cutoffs, hyps_mask, 1)
+                                                      force_x_kern, hyps,
+                                                      cutoffs, hyps_mask)[:, 0]
                 else:
                     k12_v[b, :] = energy_x_vector_unit(name, s, e, grid_env,
                         energy_x_kern, hyps, cutoffs, hyps_mask)

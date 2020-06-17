@@ -107,7 +107,7 @@ def two_plus_three_body_mc_grad(env1: AtomicEnvironment,
                                sig3, ls3, r_cut_3,
                                cutoff_func)
 
-    return kern2 + kern3, np.array([grad2[0], grad2[1], grad3[0], grad3[1]])
+    return kern2 + kern3, np.vstack((grad2, grad3))
 
 
 def two_plus_three_mc_force_en(env1: AtomicEnvironment,
@@ -1702,7 +1702,7 @@ def two_body_mc_en_jit(bond_array_1, c1, etypes1,
 #                 many body multicomponent kernel (numba)
 # -----------------------------------------------------------------------------
 
-
+@njit
 def many_body_mc_jit(q_array_1, q_array_2,
                      q_neigh_array_1, q_neigh_array_2,
                      q_neigh_grads_1, q_neigh_grads_2,
@@ -1867,8 +1867,8 @@ def many_body_mc_grad_jit(q_array_1, q_array_2,
     """
 
     kern = np.zeros((3, 3), dtype=np.float64)
-    sig_derv = 0.0
-    ls_derv = 0.0
+    sig_derv = np.zeros((3, 3), dtype=np.float64)
+    ls_derv = np.zeros((3, 3), dtype=np.float64)
 
     useful_species = np.array(
         list(set(species1).intersection(set(species2))), dtype=np.int8)
@@ -1960,9 +1960,7 @@ def many_body_mc_grad_jit(q_array_1, q_array_2,
                 sig_derv += sig_term
                 ls_derv += ls_term
 
-    grad = np.array([sig_derv, ls_derv])
-
-    return kern, grad
+    return kern, np.stack((sig_derv, ls_derv))
 
 
 @njit
