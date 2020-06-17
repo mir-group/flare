@@ -353,11 +353,10 @@ def test_force(kernels, diff_cutoff):
 
     # check force kernel
     kern_finite_diff = 0
-    if ('manybody' == kernels):
+    if 'manybody' in kernels and len(kernels)==1:
         _, __, enm_kernel, ___ = str_to_kernel_set(['manybody'], 'mc', hm)
-        mhyps_mask = Parameters.get_component_mask(hm, 'manybody', hyps=hyps)
-        mhyps = mhyps_mask['hyps']
-        margs = from_mask_to_args(mhyps, mhyps_mask, cutoffs)
+        mhyps, mcutoffs, mhyps_mask = Parameters.get_component_mask(hm, 'manybody', hyps=hyps)
+        margs = from_mask_to_args(mhyps, mcutoffs, mhyps_mask)
         cal = 0
         for i in range(3):
             for j in range(len(env1[0])):
@@ -366,16 +365,15 @@ def test_force(kernels, diff_cutoff):
                 cal -= enm_kernel(env1[1][i], env2[2][j], *margs)
                 cal -= enm_kernel(env1[2][i], env2[1][j], *margs)
         kern_finite_diff += cal / (4 * delta ** 2)
-    else:
+    elif 'manybody' in kernels:
         # TODO: Establish why 2+3+MB fails (numerical error?)
         return
 
     if ('twobody' in kernels):
         ntwobody = 1
         _, __, en2_kernel, ___ = str_to_kernel_set(['twobody'], 'mc', hm)
-        bhyps_mask = Parameters.get_component_mask(hm, 'twobody', hyps=hyps)
-        bhyps = bhyps_mask['hyps']
-        args2 = from_mask_to_args(bhyps, bhyps_mask, cutoffs[:1])
+        bhyps, bcutoffs, bhyps_mask = Parameters.get_component_mask(hm, 'twobody', hyps=hyps)
+        args2 = from_mask_to_args(bhyps, bcutoffs, bhyps_mask)
 
         calc1 = en2_kernel(env1[1][0], env2[1][0], *args2)
         calc2 = en2_kernel(env1[2][0], env2[2][0], *args2)
@@ -388,10 +386,8 @@ def test_force(kernels, diff_cutoff):
     if ('threebody' in kernels):
         _, __, en3_kernel, ___ = str_to_kernel_set(['threebody'], 'mc', hm)
 
-        thyps_mask = Parameters.get_component_mask(hm, 'threebody', hyps=hyps)
-        thyps = bhyps_mask['hyps']
-
-        args3 = from_mask_to_args(thyps, thyps_mask, cutoffs[:2])
+        thyps, tcutoffs, thyps_mask = Parameters.get_component_mask(hm, 'threebody', hyps=hyps)
+        args3 = from_mask_to_args(thyps, tcutoffs, thyps_mask)
 
         calc1 = en3_kernel(env1[1][0], env2[1][0], *args3)
         calc2 = en3_kernel(env1[2][0], env2[2][0], *args3)
