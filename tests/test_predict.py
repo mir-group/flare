@@ -55,7 +55,7 @@ def fake_predict(x, d):
 
 
 _fake_gp = GaussianProcess(kernel_name='2+3', cutoffs=[5., 5.],
-                           hyps=[1, 1, 1])
+                           hyps=[1., 1., 1., 1., 1.])
 _fake_structure = Structure(cell=np.eye(3), species=[1, 1, 1],
                             positions=np.random.uniform(0, 1, size=(3, 3)))
 _fake_gp.predict = fake_predict
