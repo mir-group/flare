@@ -17,12 +17,12 @@ from flare.mgp.grid_kernels_3b import grid_kernel, grid_kernel_sephyps
 def str_to_mapped_kernel(name: str, component: str = "mc",
                          hyps_mask: dict = None):
     """
-    return kernels and kernel gradient function base on a string.
+    Return kernels and kernel gradient function based on a string.
     If it contains 'sc', it will use the kernel in sc module;
     otherwise, it uses the kernel in mc_simple;
     if sc is not included and multihyps is True,
-    it will use the kernel in mc_sephyps module
-    otherwise, it will use the kernel in the sc module
+    it will use the kernel in mc_sephyps module.
+    Otherwise, it will use the kernel in the sc module.
 
     Args:
 
