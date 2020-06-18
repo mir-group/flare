@@ -304,6 +304,9 @@ class TestIO():
         # Test logic for auto-detecting format in write command
         for format in ['json', 'pickle']:
             write_string = 'format_write_test.'+format
+            if os.path.exists(write_string):
+                os.remove(write_string)
+
             test_gp.write_model(write_string)
             assert os.path.exists(write_string)
             os.remove(write_string)
