@@ -705,14 +705,21 @@ class GaussianProcess:
         :return:
         """
         ky_mat = self.ky_mat
-        l_mat = np.linalg.cholesky(ky_mat)
-        l_mat_inv = np.linalg.inv(l_mat)
-        ky_mat_inv = l_mat_inv.T @ l_mat_inv
-        alpha = np.matmul(ky_mat_inv, self.all_labels)
 
-        self.l_mat = l_mat
-        self.alpha = alpha
-        self.ky_mat_inv = ky_mat_inv
+        if ky_mat is None or \
+                (isinstance(ky_mat, np.ndarray) and not np.any(
+                ky_mat)):
+            Warning("Warning: Covariance matrix was not loaded but "
+                    "compute_matrices was called. Computing covariance "
+                    "matrix and proceeding...")
+            self.set_L_alpha()
+
+        else:
+            self.l_mat = np.linalg.cholesky(ky_mat)
+            self.l_mat_inv = np.linalg.inv(self.l_mat)
+            self.ky_mat_inv = self.l_mat_inv.T @ self.l_mat_inv
+            self.alpha = np.matmul(self.ky_mat_inv, self.all_labels)
+
 
     def adjust_cutoffs(self, new_cutoffs: Union[list, tuple, 'np.ndarray'],
                        reset_L_alpha=True, train=True, new_hyps_mask=None):
