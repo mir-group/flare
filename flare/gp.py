@@ -797,6 +797,9 @@ class GaussianProcess:
         if max(indexes) > len(self.training_data):
             raise ValueError("Index out of range of data")
 
+        if len(indexes) == 0:
+            return [], []
+
         # Get in reverse order so that modifying higher indexes doesn't affect
         # lower indexes
         indexes.sort(reverse=True)
