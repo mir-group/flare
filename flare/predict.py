@@ -153,13 +153,11 @@ def predict_on_structure(structure: Structure, gp: GaussianProcess,
     return forces, stds
 
 
-def predict_on_structure_par(structure: Structure,
-                             gp: GaussianProcess,
-                             n_cpus: int = None,
-                             write_to_structure: bool = True,
-                             selective_atoms: List[int] = None,
-                             skipped_atom_value=0
-                             ) -> ('np.ndarray', 'np.ndarray'):
+def predict_on_structure_par(
+ structure: Structure, gp: GaussianProcess, n_cpus: int = None,
+ write_to_structure: bool = True, selective_atoms: List[int] = None,
+ skipped_atom_value=0) -> ('np.ndarray', 'np.ndarray'):
+
     """
     Return the forces/std. dev. uncertainty associated with each
     individual atom in a structure. Forces are stored directly to the
@@ -273,19 +271,18 @@ def predict_on_structure_efs(structure: Structure, gp: GaussianProcess,
         force_stds, partial_stress_stds
 
 
-def predict_on_structure_efs_par(structure: Structure, gp: GaussianProcess,
-                                 n_cpus: int = None,
-                                 write_to_structure: bool = True,
-                                 selective_atoms: List[int] = None,
-                                 skipped_atom_value=0):
+def predict_on_structure_efs_par(
+ structure: Structure, gp: GaussianProcess, n_cpus: int = None,
+ write_to_structure: bool = True, selective_atoms: List[int] = None,
+ skipped_atom_value=0):
 
     # Just work in serial in the number of cpus is 1
     if n_cpus is 1:
-        return predict_on_structure_efs(structure=structure, gp=gp,
-                                        n_cpus=n_cpus,
-                                        write_to_structure=write_to_structure,
-                                        selective_atoms=selective_atoms,
-                                        skipped_atom_value=skipped_atom_value)
+        return predict_on_structure_efs(
+            structure=structure, gp=gp, n_cpus=n_cpus,
+            write_to_structure=write_to_structure,
+            selective_atoms=selective_atoms,
+            skipped_atom_value=skipped_atom_value)
 
     local_energies = np.zeros(structure.nat)
     forces = np.zeros((structure.nat, 3))
@@ -303,8 +300,10 @@ def predict_on_structure_efs_par(structure: Structure, gp: GaussianProcess,
     # Parallelize over atoms in structure.
     results = []
     for atom in range(structure.nat):
-        results.append(pool.apply_async(predict_on_atom_efs,
-                                        args=[(structure, atom, gp)]))
+        results.append(
+            pool.apply_async(
+                predict_on_atom_efs, args=[(structure, atom, gp)]))
+
     pool.close()
     pool.join()
 

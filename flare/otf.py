@@ -198,16 +198,17 @@ class OTF:
         'Year.Month.Day:Hour:Minute:Second:'.
         """
 
-        self.output.write_header(str(self.gp),
-                                 self.dt, self.number_of_steps,
-                                 self.structure,
-                                 self.std_tolerance)
+        self.output.write_header(
+            str(self.gp), self.dt, self.number_of_steps, self.structure,
+            self.std_tolerance)
+
         counter = 0
         self.start_time = time.time()
 
         while self.curr_step < self.number_of_steps:
             # run DFT and train initial model if first step and DFT is on
-            if self.curr_step == 0 and self.std_tolerance != 0 and len(self.gp.training_data) == 0:
+            if (self.curr_step == 0) and (self.std_tolerance != 0) and \
+               (len(self.gp.training_data) == 0):
 
                 self.initialize_train()
                 new_pos = self.md_step()
@@ -223,9 +224,9 @@ class OTF:
 
                 # get max uncertainty atoms
                 std_in_bound, target_atoms = \
-                    is_std_in_bound(self.std_tolerance,
-                                    self.gp.hyps[-1], self.structure,
-                                    self.max_atoms_added)
+                    is_std_in_bound(
+                        self.std_tolerance, self.gp.hyps[-1], self.structure,
+                        self.max_atoms_added)
 
                 if not std_in_bound:
                     # record GP forces
@@ -397,5 +398,4 @@ class OTF:
     def record_state(self):
         self.output.write_md_config(
             self.dt, self.curr_step, self.structure, self.temperature,
-            self.KE, self.local_energies, self.start_time, self.dft_step,
-            self.velocities)
+            self.KE, self.start_time, self.dft_step, self.velocities)

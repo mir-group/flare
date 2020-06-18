@@ -161,9 +161,10 @@ class Output:
         if self.always_flush:
             f.handlers[0].flush()
 
-    def write_md_config(self, dt, curr_step, structure,
-                        temperature, KE, local_energies,
-                        start_time, dft_step, velocities):
+    def write_md_config(
+     self, dt, curr_step, structure, temperature, KE, start_time, dft_step,
+     velocities):
+
         """ write md configuration in log file
 
         :param dt: timestemp of OTF MD
@@ -226,13 +227,35 @@ class Output:
         string += f'temperature: {temperature:.2f} K \n'
         string += f'kinetic energy: {KE:.6f} eV \n'
 
-        # calculate potential and total energy
-        if local_energies is not None:
-            pot_en = np.sum(local_energies)
+        # Report potential energy.
+        tot_en = None
+        if structure.local_energies is not None:
+            pot_en = np.sum(structure.local_energies)
+            string += f'Potential energy: {pot_en:.6f} eV \n'
+
+        # Report potential energy uncertainty.
+        if structure.local_energy_stds is not None:
+            pot_en_std = np.sqrt(np.sum(structure.local_energy_std**2))
+            string += f'Uncertainty: {pot_en_std:.6f} eV \n'
+
+        # Report total energy.
+        if tot_en is not None:
             tot_en = KE + pot_en
-            string += \
-                f'potential energy: {pot_en:.6f} eV \n'
-            string += f'total energy: {tot_en:.6f} eV \n'
+            string += f'Total energy: {tot_en:.6f} eV \n'
+
+        # Report stress tensor.
+        if structure.partial_stresses is not None:
+            current_volume = np.linalg.det(structure.cell)
+            stress_tensor = \
+                np.sum(structure.partial_stresses, 0) / current_volume
+            string += f'Stress tensor (eV/A^3): {stress_tensor:.6f} \n'
+
+        # Report stress tensor uncertainties:
+        if structure.partial_stress_stds is not None:
+            stress_stds = \
+                (np.sqrt(np.sum(structure.partial_stress_stds**2, 0)) /
+                 current_volume)
+            string += f'Stress tensor uncertainties (eV/A^3): {stress_stds:.6f} \n'
 
         logger = logging.getLogger(self.basename+'log')
         logger.info(string)
@@ -362,14 +385,14 @@ class Output:
         f.info(f'Adding atom {train_atoms} to the training set.')
         f.info(f'Uncertainty: {stds[train_atoms[0]]}')
 
-    def write_gp_dft_comparison(self, curr_step, frame,
-                                start_time, dft_forces,
-                                error, local_energies=None, KE=None,
-                                mgp=False):
-        """ write the comparison to logfile
+    def write_gp_dft_comparison(
+     self, curr_step, frame, start_time, dft_forces, error,
+     local_energies=None, KE=None, mgp=False):
+        """Write the comparison to logfile.
 
         :param curr_step: current timestep
-        :param frame: Structure object that contain the current GP calculation results
+        :param frame: Structure object that contains the current GP calculation
+            results.
         :param start_time: start time for time profiling
         :param dft_forces: list of forces computed by DFT
         :param error: list of force differences between DFT and GP prediction
