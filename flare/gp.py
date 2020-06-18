@@ -673,20 +673,24 @@ class GaussianProcess:
         new_gp.n_envs_prev = len(new_gp.training_data)
 
         # Save time by attempting to load in computed attributes
-        if len(new_gp.training_data) > 5000:
+        if dictionary.get('ky_mat_file'):
             try:
                 new_gp.ky_mat = np.load(dictionary['ky_mat_file'])
                 new_gp.compute_matrices()
+                new_gp.ky_mat_file = None
+
             except FileNotFoundError:
                 new_gp.ky_mat = None
                 new_gp.l_mat = None
                 new_gp.alpha = None
                 new_gp.ky_mat_inv = None
-                filename = dictionary['ky_mat_file']
-                logger = logging.getLogger(self.logger_name)
+                filename = dictionary.get('ky_mat_file')
+                logger = logging.getLogger(new_gp.logger_name)
                 logger.warning("the covariance matrices are not loaded"
                                f"because {filename} cannot be found")
         else:
+            new_gp.ky_mat = np.array(dictionary['ky_mat']) \
+                if dictionary.get('ky_mat') is not None else None
             new_gp.ky_mat_inv = np.array(dictionary['ky_mat_inv']) \
                 if dictionary.get('ky_mat_inv') is not None else None
             new_gp.ky_mat = np.array(dictionary['ky_mat']) \
