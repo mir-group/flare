@@ -56,7 +56,8 @@ class PCASplines:
         
     def __call__(self, x):
         y_pred = []
-        for r in range(self.svd_rank):
+        rank = self.svd_rank
+        for r in range(rank):
             y_pred.append(self.models[r](x))
         return np.array(y_pred)
 

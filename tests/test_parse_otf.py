@@ -95,7 +95,7 @@ def test_replicate_gp():
     positions = parsed.position_list
     forces = parsed.force_list
 
-    gp_model = parsed.make_gp(kernel_name='2+3')
+    gp_model = parsed.make_gp()
 
     structures = parsed.output_md_structures()
 

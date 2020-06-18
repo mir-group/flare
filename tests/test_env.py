@@ -6,14 +6,14 @@ from flare.env import AtomicEnvironment
 
 np.random.seed(0)
 
-cutoff_mask_list = [(True, np.array([1]), [10]),
-                    (False, np.array([1]), [16]),
-                    (False, np.array([1, 0.05]), [16, 0]),
-                    (False, np.array([1, 0.8]), [16, 1]),
-                    (False, np.array([1, 0.9]), [16, 21]),
-                    (True, np.array([1, 0.8]), [16, 9]),
-                    (True, np.array([1, 0.05, 0.4]), [16, 0]),
-                    (False, np.array([1, 0.05, 0.4]), [16, 0])]
+cutoff_mask_list = [# (True, np.array([1]), [10]),
+                    (False, {'twobody':1}, [16]),
+                    (False, {'twobody':1, 'threebody':0.05}, [16, 0]),
+                    (False, {'twobody':1, 'threebody':0.8}, [16, 1]),
+                    (False, {'twobody':1, 'threebody':0.9}, [16, 21]),
+                    (True, {'twobody':1, 'threebody':0.8}, [16, 9]),
+                    (True, {'twobody':1, 'threebody':0.05, 'manybody':0.4}, [16, 0]),
+                    (False, {'twobody':1, 'threebody':0.05, 'manybody':0.4}, [16, 0])]
 
 
 @pytest.fixture(scope='module')
@@ -22,7 +22,7 @@ def structure() -> Structure:
     Returns a GP instance with a two-body numba-based kernel
     """
 
-    # list of all bonds and triplets can be found in test_files/test_env_list
+    # list of all twobodys and threebodys can be found in test_files/test_env_list
     cell = np.eye(3)
     species = [1, 2, 3, 1]
     positions = np.array([[0, 0, 0], [0.5, 0.5, 0.5],
@@ -93,10 +93,10 @@ def generate_mask(cutoff):
         # (1, 1) uses 0.5 cutoff,  (1, 2) (1, 3) (2, 3) use 0.9 cutoff
         mask = {'nspecie': 2, 'specie_mask': np.ones(118, dtype=int)}
         mask['specie_mask'][1] = 0
-        mask['cutoff_2b'] = np.array([0.5, 0.9])
-        mask['nbond'] = 2
-        mask['bond_mask'] = np.ones(4, dtype=int)
-        mask['bond_mask'][0] = 0
+        mask['twobody_cutoff_list'] = np.array([0.5, 0.9])
+        mask['ntwobody'] = 2
+        mask['twobody_mask'] = np.ones(4, dtype=int)
+        mask['twobody_mask'][0] = 0
 
     elif (ncutoff == 2):
         # the 3b mask is the same structure as 2b
@@ -120,7 +120,7 @@ def generate_mask(cutoff):
 
         mask = {'nspecie': nspecie,
                 'specie_mask': specie_mask,
-                'cutoff_3b': np.array([0.5, 0.9, 0.8, 0.9, 0.05]),
+                'threebody_cutoff_list': np.array([0.5, 0.9, 0.8, 0.9, 0.05]),
                 'ncut3b': ncut3b,
                 'cut3b_mask': tmask}
 
@@ -128,10 +128,11 @@ def generate_mask(cutoff):
         # (1, 1) uses 0.5 cutoff,  (1, 2) (1, 3) (2, 3) use 0.9 cutoff
         mask = {'nspecie': 2, 'specie_mask': np.ones(118, dtype=int)}
         mask['specie_mask'][1] = 0
-        mask['cutoff_mb'] = np.array([0.5, 0.9])
-        mask['nmb'] = 2
-        mask['mb_mask'] = np.ones(4, dtype=int)
-        mask['mb_mask'][0] = 0
+        mask['manybody_cutoff_list'] = np.array([0.5, 0.9])
+        mask['nmanybody'] = 2
+        mask['manybody_mask'] = np.ones(4, dtype=int)
+        mask['manybody_mask'][0] = 0
+    mask['cutoffs'] = cutoff
     return mask
 
 

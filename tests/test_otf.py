@@ -1,4 +1,5 @@
 import pytest
+import os
 
 import glob, os, re, shutil
 import numpy as np
@@ -13,12 +14,16 @@ software_list = ['cp2k', 'qe']
 example_list = [1, 2]
 name_list = {1:'h2', 2:'al'}
 
+print('running test_otf.py')
+print('current working directory:')
+print(os.getcwd())
+
 def get_gp(par=False, per_atom_par=False, n_cpus=1):
     hyps = np.array([1, 1, 1, 1, 1])
     hyp_labels = ['Signal Std 2b', 'Length Scale 2b',
                   'Signal Std 3b', 'Length Scale 3b',
                   'Noise Std']
-    cutoffs = np.array([4, 4])
+    cutoffs = {'twobody':4, 'threebody':4}
     return GaussianProcess(\
             kernel_name='23mc', hyps=hyps, cutoffs=cutoffs,
             hyp_labels=hyp_labels, maxiter=50, par=par,
@@ -55,6 +60,10 @@ def test_otf(software, example):
     :return:
     """
 
+    print('running test_otf.py')
+    print('current working directory:')
+    print(os.getcwd())
+
     outdir = f'test_outputs_{software}'
     if os.path.isdir(outdir):
         shutil.rmtree(outdir)
@@ -78,15 +87,17 @@ def test_otf(software, example):
 
     gp = get_gp()
 
-    otf = OTF(dft_input, dt, number_of_steps, gp, dft_loc,
-              std_tolerance_factor, init_atoms=[0],
+    otf = OTF(dt=dt, number_of_steps=number_of_steps,
+              gp=gp, write_model=3,
+              std_tolerance_factor=std_tolerance_factor,
+              init_atoms=[0],
               calculate_energy=True, max_atoms_added=1,
               freeze_hyps=1, skip=1,
               force_source=software,
+              dft_input=dft_input, dft_loc=dft_loc,
               dft_output=dft_output,
               output_name=f'{casename}_otf_{software}',
-              store_dft_output=([dft_output, dft_input], '.'),
-              write_model=3)
+              store_dft_output=([dft_output, dft_input], '.'))
 
     otf.run()
 
@@ -105,10 +116,15 @@ def test_otf_par(software, per_atom_par, n_cpus):
     Test that an otf run can survive going for more steps
     :return:
     """
+
     example = 1
     outdir = f'test_outputs_{software}'
     if os.path.isdir(outdir):
         shutil.rmtree(outdir)
+
+    print('running test_otf.py')
+    print('current working directory:')
+    print(os.getcwd())
 
     if (not os.environ.get(cmd[software], False)):
         pytest.skip(f'{cmd[software]} not found in environment:'
@@ -133,12 +149,13 @@ def test_otf_par(software, per_atom_par, n_cpus):
 
     gp = get_gp(par=True, n_cpus=n_cpus, per_atom_par=per_atom_par)
 
-    otf = OTF(dft_input, dt, number_of_steps, gp, dft_loc,
-              std_tolerance_factor, init_atoms=[0],
+    otf = OTF(dt=dt, number_of_steps=number_of_steps, gp=gp,
+              std_tolerance_factor=std_tolerance_factor, init_atoms=[0],
               calculate_energy=True, max_atoms_added=1,
-              par=True, n_cpus=n_cpus,
+              n_cpus=n_cpus,
               freeze_hyps=1, skip=1,
               mpi="mpi", force_source=software,
+              dft_input=dft_input, dft_loc=dft_loc,
               dft_output=dft_output,
               output_name=f'{casename}_otf_{software}',
               store_dft_output=([dft_output, dft_input], '.'))

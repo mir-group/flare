@@ -17,10 +17,10 @@ or :doc:`mc_simple.py <../flare/kernels/mc_simple>` (multi-component) for more o
     # make gp model
     hyps = np.array([0.1, 1, 0.01])
     hyp_labels = ['Signal Std', 'Length Scale', 'Noise Std']
-    cutoffs = np.array([3.9, 3.9])
+    cutoffs = {'threebody':3.9}
 
     gp = \
-        GaussianProcess(kernel_name='3b',
+        GaussianProcess(kernels=['threebody'],
                         hyps=hyps,
                         cutoffs=cutoffs,
                         hyp_labels=hyp_labels,
@@ -29,22 +29,20 @@ or :doc:`mc_simple.py <../flare/kernels/mc_simple>` (multi-component) for more o
 
 **Some Explanation about the parameters:**
 
-* ``kernel_name``: set to be the name of kernel functions
+* ``kernels``: set to be the name list of kernel functions to use
 
-    * import from :doc:`sc.py <../flare/kernels/sc>` (single-component system) 
-      or :doc:`mc_simple.py <../flare/kernels/mc_simple>` (multi-component system). 
-    * Currently we have the choices of two-body, three-body and two-plus-three-body kernel functions.
-    * Two-plus-three-body kernel function is simply the summation of two-body and three-body kernels,
-      and is tested to have best performance.
+    * Currently we have the choices of ``twobody``, ``threebody`` and ``manybody`` kernel functions.
+    * If multiple kernels are listed, the resulted kernel is simply the summation of all listed kernels,
 
 * ``hyps``: the array of hyperparameters, whose names are shown in ``hyp_labels``.
 
     * For two-body kernel function, an array of length 3 is needed, ``hyps=[sigma_2, ls_2, sigma_n]``;
     * For three-body, ``hyps=[sigma_3, ls_3, sigma_n]``;
-    * For two-plus-three-body, ``hyps=[sigma_2, ls_2, sigma_3, ls_3, sigma_n]``.
+    * For twobody plus threebody, ``hyps=[sigma_2, ls_2, sigma_3, ls_3, sigma_n]``.
+    * For twobody, threebody plus manybody, ``hyps=[sigma_2, ls_2, sigma_3, ls_3, sigma_m, ls_m, sigma_n]``.
 
-* ``cutoffs``: consists of two values. The 1st is the cutoff of two-body and the 2nd is for three-body kernel. 
-  Usually we will set a larger one for two-body.
+* ``cutoffs``: a dictionary consists of corresponding cutoff values for each kernel. 
+  Usually we will set a larger one for two-body, and smaller one for threebody and manybody
 
 * ``maxiter``: set to constrain the number of steps in training hyperparameters. 
 
@@ -52,6 +50,7 @@ or :doc:`mc_simple.py <../flare/kernels/mc_simple>` (multi-component) for more o
 **Note:**
 
 1. See :doc:`GaussianProcess <../flare/gp>` for complete description of arguments of ``GaussianProcess`` class.
+2. See :doc:`AdvancedHyperparametersSetUp <../flare/utils/mask_helper>` for more complicated hyper-parameters set up.
 
 
 Step 2: Set up DFT Calculator

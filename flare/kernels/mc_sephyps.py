@@ -7,29 +7,32 @@ you to do partial hyper-parameter training, keeping some components fixed.
 To use this set of kernels, we need a hyps_mask dictionary for GaussianProcess, MappedGaussianProcess,
 and AtomicEnvironment (if you also set up different cutoffs).  A simple example is shown below.
 
-    from flare.utils.mask_helper import HyperParameterMasking
-    from flare.gp import GaussianProcess
+Examples:
 
-        pm = HyperParameterMasking(species=['O', 'C', 'H'],
-                              bonds=[['*', '*'], ['O','O']],
-                              triplets=[['*', '*', '*'], ['O','O', 'O']],
-                              parameters={'bond0':[1, 0.5, 1], 'bond1':[2, 0.2, 2],
-                                    'triplet0':[1, 0.5], 'triplet1':[2, 0.2],
-                                    'cutoff2b':2, 'cutoff3b':1, 'noise': 0.05},
-                              constraints={'bond0':[False, True]})
-        hyps_mask = pm1.generate_dict()
-        hyps = hyps_mask['hyps']
-        cutoffs = hyps_mask['cutoffs']
-        hyp_labels = hyps_mask['hyp_labels']
-        gp_model = GaussianProcess(kernel_name="2+3_mc",
-                                   hyps=hyps, cutoffs=cutoffs,
-                                   hyp_labels=hyp_labels,
-                                   parallel=True, per_atom_par=False,
-                                   n_cpus=n_cpus,
-                                   multihyps=True, hyps_mask=hm)
+    >>> from flare.util.parameter_helper import ParameterHelper
+    >>> from flare.gp import GaussianProcess
+
+    >>> pm = ParameterHelper(species=['O', 'C', 'H'],
+    ...                      kernels={'twobody':[['*', '*'], ['O','O']],
+    ...                               'threebody':[['*', '*', '*'], ['O','O', 'O']]},
+    ...                      parameters={'twobody0':[1, 0.5, 1], 'twobody1':[2, 0.2, 2],
+    ...                            'triplet0':[1, 0.5], 'triplet1':[2, 0.2],
+    ...                            'cutoff_twobody':2, 'cutoff_threebody':1, 'noise': 0.05},
+    ...                      constraints={'twobody0':[False, True]})
+    >>> hyps_mask = pm1.as_dict()
+    >>> hyps = hyps_mask.pop('hyps')
+    >>> cutoffs = hyps_mask.pop('cutoffs')
+    >>> hyp_labels = hyps_mask.pop('hyp_labels')
+    >>> kernels = hyps_mask['kernels']
+    >>> gp_model = GaussianProcess(kernels=kernels,
+    ...                            hyps=hyps, cutoffs=cutoffs,
+    ...                            hyp_labels=hyp_labels,
+    ...                            parallel=True, per_atom_par=False,
+    ...                            n_cpus=n_cpus,
+    ...                            multihyps=True, hyps_mask=hm)
 
 
-In the example above, HyperParameterMasking class generates the arrays needed
+In the example above, Parameters class generates the arrays needed
 for these kernels and store all the grouping and mapping information in the
 hyps_mask dictionary.  It stores following keys and values:
 
@@ -184,12 +187,12 @@ def two_three_many_body_mc(env1, env2, d1, d2, cutoff_2b, cutoff_3b, cutoff_mb,
               nspec, spec_mask, triplet_mask, cut3b_mask)
 
     mbmcj = many_body_mc_sepcut_jit
-    many_term = mbmcj(env1.q_array, env2.q_array, 
-                      env1.q_neigh_array, env2.q_neigh_array, 
+    many_term = mbmcj(env1.q_array, env2.q_array,
+                      env1.q_neigh_array, env2.q_neigh_array,
                       env1.q_neigh_grads, env2.q_neigh_grads,
-                      env1.ctype, env2.ctype, 
-                      env1.etypes_mb, env2.etypes_mb, 
-                      env1.unique_species, env2.unique_species, 
+                      env1.ctype, env2.ctype,
+                      env1.etypes_mb, env2.etypes_mb,
+                      env1.unique_species, env2.unique_species,
                       d1, d2, sigm, lsm,
                       nspec, spec_mask, mb_mask)
 
@@ -262,12 +265,12 @@ def two_three_many_body_mc_grad(env1, env2, d1, d2, cutoff_2b, cutoff_3b, cutoff
               ntriplet, triplet_mask, cut3b_mask)
 
     mbmcj = many_body_mc_grad_sepcut_jit
-    kern_many, gradm = mbmcj(env1.q_array, env2.q_array, 
-                             env1.q_neigh_array, env2.q_neigh_array, 
+    kern_many, gradm = mbmcj(env1.q_array, env2.q_array,
+                             env1.q_neigh_array, env2.q_neigh_array,
                              env1.q_neigh_grads, env2.q_neigh_grads,
-                             env1.ctype, env2.ctype, 
+                             env1.ctype, env2.ctype,
                              env1.etypes_mb, env2.etypes_mb,
-                             env1.unique_species, env2.unique_species, 
+                             env1.unique_species, env2.unique_species,
                              d1, d2, sigm, lsm,
                              nspec, spec_mask, nmb, mb_mask)
 
@@ -338,10 +341,10 @@ def two_three_many_mc_force_en(env1, env2, d1, cutoff_2b, cutoff_3b, cutoff_mb,
               cut3b_mask) / 3
 
     mbmcj = many_body_mc_force_en_sepcut_jit
-    many_term = mbmcj(env1.q_array, env2.q_array, 
+    many_term = mbmcj(env1.q_array, env2.q_array,
                       env1.q_neigh_array, env1.q_neigh_grads,
-                      env1.ctype, env2.ctype, env1.etypes_mb,  
-                      env1.unique_species, env2.unique_species, 
+                      env1.ctype, env2.ctype, env1.etypes_mb,
+                      env1.unique_species, env2.unique_species,
                       d1, sigm, lsm,
                       nspec, spec_mask, mb_mask)
 
@@ -410,8 +413,8 @@ def two_three_many_mc_en(env1, env2, cutoff_2b, cutoff_3b, cutoff_mb,
               triplet_mask, cut3b_mask)/9.
 
     mbmcj = many_body_mc_en_sepcut_jit
-    many_term = mbmcj(env1.q_array, env2.q_array, 
-                      env1.ctype, env2.ctype, 
+    many_term = mbmcj(env1.q_array, env2.q_array,
+                      env1.ctype, env2.ctype,
                       env1.unique_species, env2.unique_species,
                       sigm, lsm,
                       nspec, spec_mask, mb_mask)
@@ -424,11 +427,12 @@ def two_three_many_mc_en(env1, env2, cutoff_2b, cutoff_3b, cutoff_mb,
 # -----------------------------------------------------------------------------
 
 
-def two_plus_three_body_mc(env1, env2, d1, d2, cutoff_2b, cutoff_3b,
+def two_plus_three_body_mc(env1, env2, d1, d2, cutoff_2b, cutoff_3b, cutoff_mb,
                            nspec, spec_mask,
                            nbond, bond_mask, ntriplet, triplet_mask,
                            ncut3b, cut3b_mask,
-                           sig2, ls2, sig3, ls3,
+                           nmb, mb_mask,
+                           sig2, ls2, sig3, ls3, sigm, lsm,
                            cutoff_func=cf.quadratic_cutoff):
     """2+3-body multi-element kernel between two force components.
 
@@ -480,11 +484,12 @@ def two_plus_three_body_mc(env1, env2, d1, d2, cutoff_2b, cutoff_3b,
     return two_term + three_term
 
 
-def two_plus_three_body_mc_grad(env1, env2, d1, d2, cutoff_2b, cutoff_3b,
+def two_plus_three_body_mc_grad(env1, env2, d1, d2, cutoff_2b, cutoff_3b, cutoff_mb,
                                 nspec, spec_mask,
                                 nbond, bond_mask, ntriplet, triplet_mask,
                                 ncut3b, cut3b_mask,
-                                sig2, ls2, sig3, ls3,
+                                nmb, mb_mask,
+                                sig2, ls2, sig3, ls3, sigm, lsm,
                                 cutoff_func=cf.quadratic_cutoff):
     """2+3-body multi-element kernel between two force components and its
     gradient with respect to the hyperparameters.
@@ -544,11 +549,11 @@ def two_plus_three_body_mc_grad(env1, env2, d1, d2, cutoff_2b, cutoff_3b,
     return kern2 + kern3, g
 
 
-def two_plus_three_mc_force_en(env1, env2, d1, cutoff_2b, cutoff_3b,
-                               nspec, spec_mask,
-                               nbond, bond_mask, ntriplet, triplet_mask,
-                               ncut3b, cut3b_mask,
-                               sig2, ls2, sig3, ls3,
+def two_plus_three_mc_force_en(env1, env2, d1, cutoff_2b, cutoff_3b, cutoff_mb,
+                               nspec, spec_mask, nbond, bond_mask,
+                               ntriplet, triplet_mask, ncut3b, cut3b_mask,
+                               nmb, mb_mask,
+                               sig2, ls2, sig3, ls3, sigm, lsm,
                                cutoff_func=cf.quadratic_cutoff):
     """2+3-body multi-element kernel between force and local energy
 
@@ -604,11 +609,11 @@ def two_plus_three_mc_force_en(env1, env2, d1, cutoff_2b, cutoff_3b,
     return two_term + three_term
 
 
-def two_plus_three_mc_en(env1, env2, cutoff_2b, cutoff_3b,
-                         nspec, spec_mask,
-                         nbond, bond_mask, ntriplet, triplet_mask,
-                         ncut3b, cut3b_mask,
-                         sig2, ls2, sig3, ls3,
+def two_plus_three_mc_en(env1, env2, cutoff_2b, cutoff_3b, cutoff_mb,
+                         nspec, spec_mask, nbond, bond_mask,
+                         ntriplet, triplet_mask, ncut3b, cut3b_mask,
+                         nmb, mb_mask,
+                         sig2, ls2, sig3, ls3, sigm, lsm,
                          cutoff_func=cf.quadratic_cutoff):
     """2+3-body multi-element kernel between two local energies
 
@@ -668,11 +673,11 @@ def two_plus_three_mc_en(env1, env2, cutoff_2b, cutoff_3b,
 # -----------------------------------------------------------------------------
 
 
-def three_body_mc(env1, env2, d1, d2, cutoff_2b, cutoff_3b,
-                  nspec, spec_mask,
-                  nbond, bond_mask, ntriplet, triplet_mask,
-                  ncut3b, cut3b_mask,
-                  sig2, ls2, sig3, ls3,
+def three_body_mc(env1, env2, d1, d2, cutoff_2b, cutoff_3b, cutoff_mb,
+                  nspec, spec_mask, nbond, bond_mask,
+                  ntriplet, triplet_mask, ncut3b, cut3b_mask,
+                  nmb, mb_mask,
+                  sig2, ls2, sig3, ls3, sigm, lsm,
                   cutoff_func=cf.quadratic_cutoff):
     """3-body multi-element kernel between two force components.
 
@@ -716,11 +721,11 @@ def three_body_mc(env1, env2, d1, d2, cutoff_2b, cutoff_3b,
                  triplet_mask, cut3b_mask)
 
 
-def three_body_mc_grad(env1, env2, d1, d2, cutoff_2b, cutoff_3b,
-                       nspec, spec_mask,
-                       nbond, bond_mask, ntriplet, triplet_mask,
-                       ncut3b, cut3b_mask,
-                       sig2, ls2, sig3, ls3,
+def three_body_mc_grad(env1, env2, d1, d2, cutoff_2b, cutoff_3b, cutoff_mb,
+                       nspec, spec_mask, nbond, bond_mask,
+                       ntriplet, triplet_mask, ncut3b, cut3b_mask,
+                       nmb, mb_mask,
+                       sig2, ls2, sig3, ls3, sigm, lsm,
                        cutoff_func=cf.quadratic_cutoff):
     """3-body multi-element kernel between two force components and its
     gradient with respect to the hyperparameters.
@@ -767,12 +772,11 @@ def three_body_mc_grad(env1, env2, d1, d2, cutoff_2b, cutoff_3b,
         nspec, spec_mask, ntriplet, triplet_mask, cut3b_mask)
 
 
-def three_body_mc_force_en(
-        env1, env2, d1, cutoff_2b, cutoff_3b, nspec, spec_mask,
-        nbond, bond_mask, ntriplet, triplet_mask,
-        ncut3b, cut3b_mask,
-        sig2, ls2, sig3, ls3,
-        cutoff_func=cf.quadratic_cutoff):
+def three_body_mc_force_en(env1, env2, d1, cutoff_2b, cutoff_3b, cutoff_mb,
+                           nspec, spec_mask, nbond, bond_mask, ntriplet, triplet_mask,
+                           ncut3b, cut3b_mask, nmb, mb_mask,
+                           sig2, ls2, sig3, ls3, sigm, lsm,
+                           cutoff_func=cf.quadratic_cutoff):
     """3-body multi-element kernel between a force component and local energies
 
     Args:
@@ -822,9 +826,10 @@ def three_body_mc_force_en(
                  triplet_mask, cut3b_mask) / 3
 
 
-def three_body_mc_en(env1, env2, cutoff_2b, cutoff_3b, nspec, spec_mask,
+def three_body_mc_en(env1, env2, cutoff_2b, cutoff_3b,  cutoff_mb,  nspec, spec_mask,
                      nbond, bond_mask, ntriplet, triplet_mask,
-                     ncut3b, cut3b_mask, sig2, ls2, sig3, ls3,
+                     ncut3b, cut3b_mask, nmb, mb_mask,
+                     sig2, ls2, sig3, ls3, sigm, lsm,
                      cutoff_func=cf.quadratic_cutoff):
     """3-body multi-element kernel between two local energies
 
@@ -874,9 +879,9 @@ def three_body_mc_en(env1, env2, cutoff_2b, cutoff_3b, nspec, spec_mask,
 
 
 def two_body_mc(
-        env1, env2, d1, d2, cutoff_2b, cutoff_3b, nspec, spec_mask,
+        env1, env2, d1, d2, cutoff_2b, cutoff_3b,  cutoff_mb,  nspec, spec_mask,
         nbond, bond_mask, ntriplet, triplet_mask, ncut3b, cut3b_mask,
-        sig2, ls2, sig3, ls3,
+        nmb, mb_mask, sig2, ls2, sig3, ls3, sigm, lsm,
         cutoff_func=cf.quadratic_cutoff):
     """2-body multi-element kernel between two force components.
 
@@ -912,9 +917,10 @@ def two_body_mc(
 
 
 def two_body_mc_grad(
-        env1, env2, d1, d2, cutoff_2b, cutoff_3b, nspec, spec_mask,
+        env1, env2, d1, d2, cutoff_2b, cutoff_3b,  cutoff_mb,  nspec, spec_mask,
         nbond, bond_mask, ntriplet, triplet_mask,
-        ncut3b, cut3b_mask, sig2, ls2, sig3, ls3,
+        ncut3b, cut3b_mask, nmb, mb_mask,
+        sig2, ls2, sig3, ls3, sigm, lsm,
         cutoff_func=cf.quadratic_cutoff):
     """2-body multi-element kernel between two force components and its
     gradient with respect to the hyperparameters.
@@ -953,10 +959,11 @@ def two_body_mc_grad(
         nspec, spec_mask, nbond, bond_mask)
 
 
-def two_body_mc_force_en(env1, env2, d1, cutoff_2b, cutoff_3b,
+def two_body_mc_force_en(env1, env2, d1, cutoff_2b, cutoff_3b, cutoff_mb,
                          nspec, spec_mask, nbond, bond_mask, ntriplet, triplet_mask,
-                         ncut3b, cut3b_mask,
-                         sig2, ls2, sig3, ls3, cutoff_func=cf.quadratic_cutoff):
+                         ncut3b, cut3b_mask, nmb, mb_mask,
+                         sig2, ls2, sig3, ls3, sigm, lsm,
+                         cutoff_func=cf.quadratic_cutoff):
     """2-body multi-element kernel between a force components and local energy
 
     Args:
@@ -991,9 +998,11 @@ def two_body_mc_force_en(env1, env2, d1, cutoff_2b, cutoff_3b,
         nspec, spec_mask, bond_mask) / 2
 
 
-def two_body_mc_en(env1, env2, cutoff_2b, cutoff_3b, nspec, spec_mask,
+def two_body_mc_en(env1, env2, cutoff_2b, cutoff_3b, cutoff_mb,
+                   nspec, spec_mask,
                    nbond, bond_mask, ntriplet, triplet_mask,
-                   ncut3b, cut3b_mask, sig2, ls2, sig3, ls3,
+                   ncut3b, cut3b_mask, nmb, mb_mask,
+                   sig2, ls2, sig3, ls3, sigm, lsm,
                    cutoff_func=cf.quadratic_cutoff):
     """2-body multi-element kernel between two local energies
 
@@ -1469,6 +1478,7 @@ def three_body_mc_force_en_jit(bond_array_1, c1, etypes1,
 
     return kern
 
+
 @njit
 def three_body_mc_en_jit(bond_array_1, c1, etypes1,
                          bond_array_2, c2, etypes2,
@@ -1546,24 +1556,30 @@ def three_body_mc_en_jit(bond_array_1, c1, etypes1,
                                 if (c1 == c2):
                                     if (ei1 == ej1) and (ei2 == ej2):
                                         C1 = r11 * r11 + r22 * r22 + r33 * r33
-                                        kern += tsig2 * exp(-C1 * tls2) * fi * fj
+                                        kern += tsig2 * \
+                                            exp(-C1 * tls2) * fi * fj
                                     if (ei1 == ej2) and (ei2 == ej1):
                                         C3 = r12 * r12 + r21 * r21 + r33 * r33
-                                        kern += tsig2 * exp(-C3 * tls2) * fi * fj
+                                        kern += tsig2 * \
+                                            exp(-C3 * tls2) * fi * fj
                                 if (c1 == ej1):
                                     if (ei1 == ej2) and (ei2 == c2):
                                         C5 = r13 * r13 + r21 * r21 + r32 * r32
-                                        kern += tsig2 * exp(-C5 * tls2) * fi * fj
+                                        kern += tsig2 * \
+                                            exp(-C5 * tls2) * fi * fj
                                     if (ei1 == c2) and (ei2 == ej2):
                                         C2 = r11 * r11 + r23 * r23 + r32 * r32
-                                        kern += tsig2 * exp(-C2 * tls2) * fi * fj
+                                        kern += tsig2 * \
+                                            exp(-C2 * tls2) * fi * fj
                                 if (c1 == ej2):
                                     if (ei1 == ej1) and (ei2 == c2):
                                         C6 = r13 * r13 + r22 * r22 + r31 * r31
-                                        kern += tsig2 * exp(-C6 * tls2) * fi * fj
+                                        kern += tsig2 * \
+                                            exp(-C6 * tls2) * fi * fj
                                     if (ei1 == c2) and (ei2 == ej1):
                                         C4 = r12 * r12 + r23 * r23 + r31 * r31
-                                        kern += tsig2 * exp(-C4 * tls2) * fi * fj
+                                        kern += tsig2 * \
+                                            exp(-C4 * tls2) * fi * fj
 
     return kern
 
@@ -1800,6 +1816,7 @@ def two_body_mc_en_jit(bond_array_1, c1, etypes1,
 
     return kern
 
+
 def many_body_mc(env1, env2, d1, d2, cutoff_2b, cutoff_3b, cutoff_mb,
                  nspec, spec_mask,
                  nbond, bond_mask, ntriplet, triplet_mask,
@@ -1838,15 +1855,14 @@ def many_body_mc(env1, env2, d1, d2, cutoff_2b, cutoff_3b, cutoff_mb,
     Return:
         float: Value of the 2+3+many-body kernel.
     """
-    return many_body_mc_sepcut_jit(env1.q_array, env2.q_array, 
-                            env1.q_neigh_array, env2.q_neigh_array, 
-                            env1.q_neigh_grads, env2.q_neigh_grads,
-                            env1.ctype, env2.ctype, 
-                            env1.etypes_mb, env2.etypes_mb,
-                            env1.unique_species, env2.unique_species,
-                            d1, d2, sigm, lsm,
-                            nspec, spec_mask, mb_mask)
-
+    return many_body_mc_sepcut_jit(env1.q_array, env2.q_array,
+                                   env1.q_neigh_array, env2.q_neigh_array,
+                                   env1.q_neigh_grads, env2.q_neigh_grads,
+                                   env1.ctype, env2.ctype,
+                                   env1.etypes_mb, env2.etypes_mb,
+                                   env1.unique_species, env2.unique_species,
+                                   d1, d2, sigm, lsm,
+                                   nspec, spec_mask, mb_mask)
 
 
 def many_body_mc_grad(env1, env2, d1, d2, cutoff_2b, cutoff_3b, cutoff_mb,
@@ -1891,14 +1907,14 @@ def many_body_mc_grad(env1, env2, d1, d2, cutoff_2b, cutoff_3b, cutoff_mb,
             with respect to the hyperparameters.
     """
 
-    return many_body_mc_grad_sepcut_jit(env1.q_array, env2.q_array, 
-                            env1.q_neigh_array, env2.q_neigh_array, 
-                            env1.q_neigh_grads, env2.q_neigh_grads,
-                            env1.ctype, env2.ctype, 
-                            env1.etypes_mb, env2.etypes_mb,
-                            env1.unique_species, env2.unique_species,
-                            d1, d2, sigm, lsm,
-                            nspec, spec_mask, nmb, mb_mask)
+    return many_body_mc_grad_sepcut_jit(env1.q_array, env2.q_array,
+                                        env1.q_neigh_array, env2.q_neigh_array,
+                                        env1.q_neigh_grads, env2.q_neigh_grads,
+                                        env1.ctype, env2.ctype,
+                                        env1.etypes_mb, env2.etypes_mb,
+                                        env1.unique_species, env2.unique_species,
+                                        d1, d2, sigm, lsm,
+                                        nspec, spec_mask, nmb, mb_mask)
 
 
 def many_body_mc_force_en(env1, env2, d1, cutoff_2b, cutoff_3b, cutoff_mb,
@@ -1922,14 +1938,14 @@ def many_body_mc_force_en(env1, env2, d1, cutoff_2b, cutoff_3b, cutoff_mb,
         float: Value of the many-body force/energy kernel.
     """
 
-    return many_body_mc_force_en_sepcut_jit(env1.q_array, env2.q_array, 
-                            env1.q_neigh_array, 
-                            env1.q_neigh_grads, 
-                            env1.ctype, env2.ctype, 
-                            env1.etypes_mb, 
-                            env1.unique_species, env2.unique_species,
-                            d1, sigm, lsm,
-                            nspec, spec_mask, mb_mask)
+    return many_body_mc_force_en_sepcut_jit(env1.q_array, env2.q_array,
+                                            env1.q_neigh_array,
+                                            env1.q_neigh_grads,
+                                            env1.ctype, env2.ctype,
+                                            env1.etypes_mb,
+                                            env1.unique_species, env2.unique_species,
+                                            d1, sigm, lsm,
+                                            nspec, spec_mask, mb_mask)
 
 
 def many_body_mc_en(env1, env2, cutoff_2b, cutoff_3b, cutoff_mb,
@@ -1953,11 +1969,11 @@ def many_body_mc_en(env1, env2, cutoff_2b, cutoff_3b, cutoff_mb,
         float: Value of the 2-body force/energy kernel.
     """
 
-    return many_body_mc_en_sepcut_jit(env1.q_array, env2.q_array, 
-                            env1.ctype, env2.ctype, 
-                            env1.unique_species, env2.unique_species,
-                            sigm, lsm,
-                            nspec, spec_mask, mb_mask)
+    return many_body_mc_en_sepcut_jit(env1.q_array, env2.q_array,
+                                      env1.ctype, env2.ctype,
+                                      env1.unique_species, env2.unique_species,
+                                      sigm, lsm,
+                                      nspec, spec_mask, mb_mask)
 
 
 _str_to_kernel = {'2': two_body_mc,
