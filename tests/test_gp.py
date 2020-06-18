@@ -312,19 +312,21 @@ class TestIO():
         test_gp = deepcopy(all_gps[False])
         test_gp.set_L_alpha()
         dummy_gp = deepcopy(test_gp)
-        dummy_gp.training_data = [1]*5001
+
+        N_data = len(dummy_gp.training_data)
 
         prev_ky_mat = deepcopy(dummy_gp.ky_mat)
         prev_l_mat = deepcopy(dummy_gp.l_mat)
 
-        dummy_gp.training_data = [1]*5001
-        test_gp.write_model('test_gp_write', 'json')
-        new_gp = GaussianProcess.from_file('test_gp_write.json')
-        assert np.array_equal(prev_ky_mat, new_gp.ky_mat)
-        assert np.array_equal(prev_l_mat, new_gp.l_mat)
-        assert new_gp.training_data is not test_gp.training_data
+        for format in ['json', 'pickle']:
 
-        os.remove('test_gp_write.json')
+            test_gp.write_model('test_gp_write', format, N_data-1)
+            new_gp = GaussianProcess.from_file(f'test_gp_write.{format}')
+            assert np.array_equal(prev_ky_mat, new_gp.ky_mat)
+            assert np.array_equal(prev_l_mat, new_gp.l_mat)
+            assert new_gp.training_data is not test_gp.training_data
+
+            os.remove(f'test_gp_write.{format}')
 
 
 def dumpcompare(obj1, obj2):

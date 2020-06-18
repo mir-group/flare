@@ -152,6 +152,9 @@ class GaussianProcess:
         self.likelihood_gradient = None
         self.bounds = None
 
+        # File used for reading / writing model if model is large
+        self.ky_mat_file = None
+
         self.check_instantiation()
 
     def check_instantiation(self):
@@ -807,15 +810,18 @@ class GaussianProcess:
 
         return removed_data, removed_labels
 
-    def write_model(self, name: str, format: str = 'json'):
+    def write_model(self, name: str, format: str = 'json',
+                    split_matrix_size_cutoff: int = 5000):
         """
         Write model in a variety of formats to a file for later re-use.
         Args:
             name (str): Output name.
             format (str): Output format.
+            split_matrix_size_cutoff (int): If there are more than this
+            number of training points in the set, save the matrices seperately.
         """
 
-        if len(self.training_data) > 5000:
+        if len(self.training_data) > split_matrix_size_cutoff:
             np.save(f"{name}_ky_mat.npy", self.ky_mat)
             self.ky_mat_file = f"{name}_ky_mat.npy"
 
@@ -843,7 +849,7 @@ class GaussianProcess:
             raise ValueError("Output format not supported: try from "
                              "{}".format(supported_formats))
 
-        if len(self.training_data) > 5000:
+        if len(self.training_data) > split_matrix_size_cutoff:
             self.ky_mat = temp_ky_mat
             self.l_mat = temp_l_mat
             self.alpha = temp_alpha
@@ -875,7 +881,7 @@ class GaussianProcess:
 
                 GaussianProcess.backward_attributes(gp_model.__dict__)
 
-                if len(gp_model.training_data) > 5000:
+                if hasattr(gp_model, 'ky_mat_file') and gp_model.ky_mat_file:
                     try:
                         gp_model.ky_mat = np.load(gp_model.ky_mat_file,
                                                   allow_pickle=True)
