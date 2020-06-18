@@ -15,9 +15,7 @@ Roadmap Figure
 In this tutorial, we will walk through the first two steps contained in the below figure. the GP from AIMD module is designed to give you the tools necessary to extract FLARE structures from a previously existing molecular dynamics run.
 
 .. figure:: ../../images/GPFA_tutorial.png
-    :figwidth: 800 %
     :align: center
-
 
 Step 1: Setting up a Gaussian Process Object
 --------------------------------------------
