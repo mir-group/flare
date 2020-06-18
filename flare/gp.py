@@ -825,6 +825,12 @@ class GaussianProcess:
                     split_matrix_size_cutoff: int = 5000):
         """
         Write model in a variety of formats to a file for later re-use.
+        JSON files are open to visual inspection and are easier to use 
+        across different versions of FLARE or GP implementations. However,
+        they are larger and loading them in takes longer (by setting up a
+        new GP from the specifications). Pickled files can be faster to
+        read & write, and they take up less memory.
+        
         Args:
             name (str): Output name.
             format (str): Output format.
