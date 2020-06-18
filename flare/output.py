@@ -1,19 +1,18 @@
 """
-Class which contains various methods to self.logger['log'].info the output of different
+Class which contains various methods to print the output of different
 ways of using FLARE, such as training a GP from an AIMD run,
 or running an MD simulation updated on-the-fly.
 """
 import datetime
 import logging
-import os
-import shutil
 import time
-import multiprocessing
 import numpy as np
 
+from logging import FileHandler, StreamHandler, Logger
+from os.path import isfile
+from shutil import move as movefile
 from typing import Union
 
-from flare.parameters import Parameters
 from flare.struc import Structure
 from flare.utils.element_coder import Z_to_element
 
@@ -22,25 +21,29 @@ class Output:
     """
     This is an I/O class that hosts the log files for OTF and Trajectories
     class. It is also used in get_neg_like_grad and get_neg_likelihood in
-    gp_algebra to self.logger['log'].info intermediate results.
+    gp_algebra to print intermediate results.
 
-    It opens and self.logger['log'].infos files with the basename prefix and different
+    It opens and print files with the basename prefix and different
     suffixes corresponding to different kinds of output data.
 
     :param basename: Base output file name, suffixes will be added
     :type basename: str, optional
+    :param verbose: print level. The same as logging level. It can be
+                    CRITICAL, ERROR, WARNING, INFO, DEBUG, NOTSET
+    :type verbose: str, optional
     :param always_flush: Always write to file instantly
     :type always_flus: bool, optional
     """
 
-    def __init__(self, basename: str = 'otf_run', verbose: str = 'INFO',
+    def __init__(self, basename: str = 'otf_run',
+                 verbose: str = 'INFO',
                  always_flush: bool = False):
         """
         Construction. Open files.
         """
         self.basename = f"{basename}"
-        self.logger = {}
         filesuffix = {'log': '.out', 'hyps': '-hyps.dat'}
+        self.logger = []
 
         for filetype in filesuffix:
             self.open_new_log(filetype, filesuffix[filetype], verbose)
@@ -52,27 +55,27 @@ class Output:
         destruction function that closes all files
         """
 
-        self.logger['log'].info('-' * 20)
-        self.logger['log'].info('Run complete.')
-        for (k, v) in self.logger.items():
-            del v
-        del self.logger
+        logger = logging.getLogger(self.basename+'log')
+        logger.info('-' * 20)
+        logger.info('Run complete.')
         logging.shutdown()
-        self.logger = {}
+        self.logger = []
 
     def open_new_log(self, filetype: str, suffix: str, verbose='info'):
         """
         Open files.  If files with the same
         name are exist, they are backed up with a suffix "-bak".
 
-        :param filetype: the key name in self.logger
+        :param filetype: the key name for logging
         :param suffix: the suffix of the file to be opened
+        :param verbose: the verbose level for the logger
         """
 
-        filename = self.basename + suffix
-
         if filetype not in self.logger:
-            self.logger[filetype] = Output.set_logger(filename, stream=False, fileout=True, verbose=verbose)
+            set_logger(self.basename+filetype, stream=False,
+                       fileout_name=self.basename+suffix,
+                       verbose=verbose)
+            self.logger += [filetype]
 
     def write_to_log(self, logstring: str, name: str = "log",
                      flush: bool = False):
@@ -80,13 +83,14 @@ class Output:
         Write any string to logfile
 
         :param logstring: the string to write
-        :param name: the key name of the file to self.logger['log'].info
+        :param name: the key name of the file to logger named 'log'
         :param flush: whether it should be flushed
         """
-        self.logger[name].info(logstring)
+        logger = logging.getLogger(self.basename+name)
+        logger.info(logstring)
 
         if flush or self.always_flush:
-            self.logger[name].handlers[0].flush()
+            logger.handlers[0].flush()
 
     def write_header(self, gp_str: str,
                      dt: float = None,
@@ -99,10 +103,7 @@ class Output:
         Write header to the log function. Designed for Trajectory Trainer and
         OTF runs and can take flexible input for both.
 
-        :param cutoffs: GP cutoffs
-        :param kernels: Kernel names
-        :param hyps: list of hyper-parameters
-        :param algo: algorithm for hyper parameter optimization
+        :param gp_str: string representation of the GP
         :param dt: timestep for OTF MD
         :param Nsteps: total number of steps for OTF MD
         :param structure: initial structure
@@ -110,7 +111,7 @@ class Output:
         :param optional: a dictionary of all the other parameters
         """
 
-        f = self.logger['log']
+        f = logging.getLogger(self.basename+'log')
         f.info(f'{datetime.datetime.now()}')
 
         if isinstance(std_tolerance, tuple):
@@ -128,9 +129,9 @@ class Output:
         else:
             std_string = ''
 
-        headerstring = ''
+        headerstring = '\n'
         headerstring += gp_str
-        headerstring += ''
+        headerstring += '\n'
         headerstring += std_string
         if dt is not None:
             headerstring += f'timestep (ps): {dt}\n'
@@ -233,11 +234,12 @@ class Output:
                 f'potential energy: {pot_en:.6f} eV \n'
             string += f'total energy: {tot_en:.6f} eV \n'
 
-        self.logger['log'].info(string)
+        logger = logging.getLogger(self.basename+'log')
+        logger.info(string)
         self.write_wall_time(start_time)
 
         if self.always_flush:
-            self.logger['log'].handlers[0].flush()
+            logger.handlers[0].flush()
 
     def write_xyz(self, curr_step: int, pos: np.array, species: list,
                   filename: str,
@@ -249,8 +251,8 @@ class Output:
         :param curr_step: Int, number of frames to note in the comment line
         :param pos:       nx3 matrix of forces, positions, or nything
         :param species:   n element list of symbols
-        :param filename:  file to self.logger['log'].info
-        :param header:    header self.logger['log'].infoed in comments
+        :param filename:  key of logger
+        :param header:    header in comments
         :param forces: list of forces on atoms predicted by GP
         :param stds: uncertainties predicted by GP
         :param forces_2: true forces from ab initio source
@@ -280,10 +282,11 @@ class Output:
 
             else:
                 string += '\n'
-        self.logger[filename].info(string)
+        logger = logging.getLogger(self.basename+filename)
+        logger.info(string)
 
         if self.always_flush:
-            self.logger[filename].handlers[0].flush()
+            logger.handlers[0].flush()
 
     def write_xyz_config(self, curr_step, structure, dft_step,
                          forces: np.array = None, stds: np.array = None,
@@ -293,8 +296,8 @@ class Output:
         :param curr_step: Int, number of frames to note in the comment line
         :param structure: Structure, contain positions and forces
         :param dft_step:  Boolean, whether this is a DFT call.
-        :param forces: Optional list of forces to self.logger['log'].info in xyz file
-        :param stds: Optional list of uncertanties to self.logger['log'].info in xyz file
+        :param forces: Optional list of forces to xyz file
+        :param stds: Optional list of uncertanties to xyz file
         :param forces_2: Optional second list of forces (e.g. DFT forces)
 
         :return:
@@ -323,13 +326,9 @@ class Output:
 
         :return:
         """
-        f = self.logger[name]
+        f = logging.getLogger(self.basename+name)
 
         f.info('\nGP hyperparameters: ')
-        if hyps_mask is not None:
-            hyps = Parameters.get_hyps(hyps_mask, hyps)
-            if len(hyp_labels) != len(hyps):
-                hyp_labels = None
 
         if hyp_labels is not None:
             for i, label in enumerate(hyp_labels):
@@ -349,16 +348,17 @@ class Output:
 
     def write_wall_time(self, start_time):
         time_curr = time.time() - start_time
-        self.logger['log'].info(f'wall time from start: {time_curr:.2f} s')
+        f = logging.getLogger(self.basename+'log')
+        f.info(f'wall time from start: {time_curr:.2f} s')
 
     def conclude_dft(self, dft_count, start_time):
-        f = self.logger['log']
+        f = logging.getLogger(self.basename+'log')
         f.info('DFT run complete.')
         f.info(f'number of DFT calls: {dft_count}')
         self.write_wall_time(start_time)
 
     def add_atom_info(self, train_atoms, stds):
-        f = self.logger['log']
+        f = logging.getLogger(self.basename+'log')
         f.info(f'Adding atom {train_atoms} to the training set.')
         f.info(f'Uncertainty: {stds[train_atoms[0]]}')
 
@@ -451,38 +451,88 @@ class Output:
             string += f'total energy: {tot_en:10.6} eV \n'
             stat += f' {pot_en:10.6} {tot_en:10.6}'
 
-        self.logger['log'].info(string)
+        f = logging.getLogger(self.basename+'log')
+        f.info(string)
         self.write_wall_time(start_time)
 
         # stat += f' {dt}\n'
-        # self.logger['stat'].write(stat)
+        # logging.getLogger('stat').write(stat)
 
-        # if self.always_flush:
-        #     self.logger['log'].flush()
+        if self.always_flush:
+            f.handlers[0].flush()
 
-    @staticmethod
-    def add_stream(logger, verbose: str = "info"):
-        ch = logging.StreamHandler()
-        ch.setLevel(getattr(logging, verbose.upper()))
-        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-        ch.setFormatter(formatter)
+
+def add_stream(logger: Logger, verbose: str = "info"):
+    '''
+    set up screen sctream handler to the logger with handlers
+
+    :param logger: the logger
+    :param verbose: verbose level
+    :type verbose: str
+    '''
+
+    stream_defined = False
+    for handler in logger.handlers:
+        if isinstance(handler, StreamHandler):
+            stream_defined = True
+
+    if not stream_defined:
+        ch = StreamHandler()
+        ch.setLevel(logging.DEBUG)
+        # formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        # ch.setFormatter(formatter)
         logger.addHandler(ch)
 
-    @staticmethod
-    def add_file(logger, filename, verbose: str = "info"):
-        fh = logging.FileHandler(filename)
+
+def add_file(logger: Logger, filename: str, verbose: str = "info"):
+    '''
+    set up file handler to the logger with handlers
+
+    :param logger: the logger
+    :param filename: name of the logfile
+    :type filename: str
+    :param verbose: verbose level
+    :type verbose: str
+    '''
+
+    file_defined = False
+    for handler in logger.handlers:
+        if isinstance(handler, FileHandler):
+            file_defined = True
+
+    if not file_defined:
+
+        # back up
+        if isfile(filename):
+            movefile(filename, filename+"-bak")
+
+        fh = FileHandler(filename)
         verbose = getattr(logging, verbose.upper())
         logger.setLevel(verbose)
-        fh.setLevel(verbose)
+        fh.setLevel(logging.DEBUG)
         logger.addHandler(fh)
 
-    @staticmethod
-    def set_logger(name, stream, fileout, verbose: str = "info"):
-        logger = logging.getLogger(name)
-        logger.setLevel(getattr(logging, verbose.upper()))
-        if stream:
-            Output.add_stream(logger, verbose)
-        if fileout:
-            Output.add_file(logger, name, verbose)
-        return logger
 
+def set_logger(name: str, stream: bool, fileout_name: str = None,
+               verbose: str = "info"):
+    '''
+    set up a logger with handlers
+
+    :param name: unique name of the logger in logging module
+    :type name: str
+    :param stream: if True, set up a screen output
+    :type stream: bool
+    :param fileout_name: name for log file
+    :type fileout_name: str
+    :param verbose: verbose level
+    :type verbose: str
+    '''
+    logger = logging.getLogger(name)
+    logger.propagate = False
+    logger.handlers = []
+    logger.setLevel(getattr(logging, verbose.upper()))
+    if stream:
+        add_stream(logger, verbose)
+    if fileout_name is not None:
+        add_file(logger, fileout_name, verbose)
+    return logger

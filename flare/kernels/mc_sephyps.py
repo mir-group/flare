@@ -7,26 +7,29 @@ you to do partial hyper-parameter training, keeping some components fixed.
 To use this set of kernels, we need a hyps_mask dictionary for GaussianProcess, MappedGaussianProcess,
 and AtomicEnvironment (if you also set up different cutoffs).  A simple example is shown below.
 
-    from flare.parameters import Parameters
-    from flare.gp import GaussianProcess
+Examples:
 
-        pm = Parameters(species=['O', 'C', 'H'],
-                              bonds=[['*', '*'], ['O','O']],
-                              triplets=[['*', '*', '*'], ['O','O', 'O']],
-                              parameters={'bond0':[1, 0.5, 1], 'bond1':[2, 0.2, 2],
-                                    'triplet0':[1, 0.5], 'triplet1':[2, 0.2],
-                                    'cutoff2b':2, 'cutoff3b':1, 'noise': 0.05},
-                              constraints={'bond0':[False, True]})
-        hyps_mask = pm1.generate_dict()
-        hyps = hyps_mask['hyps']
-        cutoffs = hyps_mask['cutoffs']
-        hyp_labels = hyps_mask['hyp_labels']
-        gp_model = GaussianProcess(kernel_name="2+3_mc",
-                                   hyps=hyps, cutoffs=cutoffs,
-                                   hyp_labels=hyp_labels,
-                                   parallel=True, per_atom_par=False,
-                                   n_cpus=n_cpus,
-                                   multihyps=True, hyps_mask=hm)
+    >>> from flare.util.parameter_helper import ParameterHelper
+    >>> from flare.gp import GaussianProcess
+
+    >>> pm = ParameterHelper(species=['O', 'C', 'H'],
+    ...                      kernels={'twobody':[['*', '*'], ['O','O']],
+    ...                               'threebody':[['*', '*', '*'], ['O','O', 'O']]},
+    ...                      parameters={'twobody0':[1, 0.5, 1], 'twobody1':[2, 0.2, 2],
+    ...                            'triplet0':[1, 0.5], 'triplet1':[2, 0.2],
+    ...                            'cutoff_twobody':2, 'cutoff_threebody':1, 'noise': 0.05},
+    ...                      constraints={'twobody0':[False, True]})
+    >>> hyps_mask = pm1.as_dict()
+    >>> hyps = hyps_mask.pop('hyps')
+    >>> cutoffs = hyps_mask.pop('cutoffs')
+    >>> hyp_labels = hyps_mask.pop('hyp_labels')
+    >>> kernels = hyps_mask['kernels']
+    >>> gp_model = GaussianProcess(kernels=kernels,
+    ...                            hyps=hyps, cutoffs=cutoffs,
+    ...                            hyp_labels=hyp_labels,
+    ...                            parallel=True, per_atom_par=False,
+    ...                            n_cpus=n_cpus,
+    ...                            multihyps=True, hyps_mask=hm)
 
 
 In the example above, Parameters class generates the arrays needed

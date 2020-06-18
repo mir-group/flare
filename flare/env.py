@@ -126,6 +126,20 @@ class AtomicEnvironment:
         # assert self.manybody_cutoff <= self.twobody_cutoff, \
         #         "mb cutoff has to be larger than mb cutoff"
 
+        self.bond_array_2 = None
+        self.etypes = None
+        self.bond_inds = None
+        self.bond_array_3 = None
+        self.cross_bond_inds = None
+        self.cross_bond_dists = None
+        self.triplet_counts = None
+        self.q_array = None
+        self.q_neigh_array = None
+        self.q_grads = None
+        self.q_neigh_grads = None
+        self.unique_species = None
+        self.etypes_mb = None
+
         self.compute_env()
 
     def setup_mask(self, cutoffs_mask):

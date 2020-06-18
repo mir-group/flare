@@ -10,7 +10,7 @@ import numpy as np
 import multiprocessing as mp
 from flare.env import AtomicEnvironment
 from flare.struc import Structure
-from flare.mgp.mgp import MappedGaussianProcess
+from flare.mgp import MappedGaussianProcess
 from flare.predict import predict_on_structure_par_en, predict_on_structure_en
 from ase.calculators.calculator import Calculator
 
@@ -118,7 +118,14 @@ class FLARE_Calculator(Calculator):
             chemenv = AtomicEnvironment(struc_curr, n,
                                         self.gp_model.cutoffs,
                                         cutoffs_mask = self.mgp_model.hyps_mask)
-            f, v, vir, e = self.mgp_model.predict(chemenv, mean_only=False)
+
+            try:
+                f, v, vir, e = self.mgp_model.predict(chemenv, mean_only=False)
+            except ValueError: # if lower_bound error is raised
+                warnings.warn('Re-build map with a new lower bound')
+                self.mgp_model.build_map(self.gp_model)
+                f, v, vir, e = self.mgp_model.predict(chemenv, mean_only=False)
+
             self.results['forces'][n] = f
             self.results['stresses'][n] = vir
             self.results['stds'][n] = np.sqrt(np.absolute(v))

@@ -5,10 +5,11 @@ import numpy as np
 
 from flare import otf, kernels
 from flare.gp import GaussianProcess
-from flare.mgp.mgp import MappedGaussianProcess
+from flare.mgp import MappedGaussianProcess
 from flare.ase.calculator import FLARE_Calculator
 from flare.ase.otf import ASE_OTF
-from flare.ase.logger import OTFLogger
+from flare.utils.parameter_helper import ParameterHelper
+# from flare.ase.logger import OTFLogger
 
 from ase import units
 from ase.md.velocitydistribution import (MaxwellBoltzmannDistribution,
@@ -19,7 +20,7 @@ md_list = ['VelocityVerlet', 'NVTBerendsen', 'NPTBerendsen', 'NPT', 'Langevin']
 
 @pytest.fixture(scope='module')
 def md_params():
-    
+
     md_dict = {'temperature': 500}
     for md_engine in md_list:
         if md_engine == 'VelocityVerlet':
@@ -41,7 +42,7 @@ def super_cell():
     from ase.spacegroup import crystal
     a = 3.855
     alpha = 90
-    atoms = crystal(['H', 'He'], 
+    atoms = crystal(['H', 'He'],
                     basis=[(0, 0, 0), (0.5, 0.5, 0.5)],
                     size=(2, 1, 1),
                     cellpar=[a, a, a, alpha, alpha, alpha])
@@ -61,34 +62,41 @@ def flare_calc():
     for md_engine in md_list:
 
         # ---------- create gaussian process model -------------------
-        gp_model = GaussianProcess(kernel_name='2+3_mc',
-                                   hyps=[0.1, 1., 0.001, 1, 0.06],
-                                   cutoffs=(5.0, 5.0),
-                                   hyp_labels=['sig2', 'ls2', 'sig3',
-                                               'ls3', 'noise'],
-                                   opt_algorithm='BFGS',
-                                   par=False)
+
+        # set up GP hyperparameters
+        kernels = ['twobody', 'threebody'] # use 2+3 body kernel
+        parameters = {'cutoff_twobody': 5.0,
+                      'cutoff_threebody': 3.5}
+        pm = ParameterHelper(
+            kernels = kernels,
+            random = True,
+            parameters=parameters
+        )
+
+        hm = pm.as_dict()
+        hyps = hm['hyps']
+        cut = hm['cutoffs']
+        print('hyps', hyps)
+
+        gp_model = GaussianProcess(
+            kernels = kernels,
+            component = 'sc', # single-component. For multi-comp, use 'mc'
+            hyps = hyps,
+            cutoffs = cut,
+            hyp_labels = ['sig2','ls2','sig3','ls3','noise'],
+            opt_algorithm = 'L-BFGS-B',
+            n_cpus = 1
+        )
 
         # ----------- create mapped gaussian process ------------------
-        grid_num_2 = 64 
-        grid_num_3 = 16
-        lower_cut = 0.1
+        grid_params = {'twobody':   {'grid_num': [64]},
+                       'threebody': {'grid_num': [16, 16, 16]}}
 
-        grid_params = {'load_grid': None,
-                       'update': False}
- 
-        grid_params['twobody'] = {'lower_bound': [lower_cut],
-                                  'grid_num': [grid_num_2],
-                                  'svd_rank': 'auto'}
-
-        grid_params['threebody'] = {'lower_bound': [lower_cut for d in range(3)],
-                                    'grid_num': [grid_num_3 for d in range(3)],
-                                    'svd_rank': 'auto'}
-    
-        species_list = [1, 2]
-    
-        mgp_model = MappedGaussianProcess(grid_params, species_list, n_cpus=1,
-             map_force=False, mean_only=False)
+        mgp_model = MappedGaussianProcess(grid_params = grid_params,
+                                          unique_species = [1, 2],
+                                          n_cpus = 1,
+                                          map_force = False,
+                                          mean_only = False)
 
         # ------------ create ASE's flare calculator -----------------------
         flare_calculator = FLARE_Calculator(gp_model, mgp_model=mgp_model,
@@ -104,7 +112,7 @@ def flare_calc():
 def qe_calc():
 
     from ase.calculators.lj import LennardJones
-    dft_calculator = LennardJones() 
+    dft_calculator = LennardJones()
 
     yield dft_calculator
     del dft_calculator
@@ -132,7 +140,7 @@ def test_otf_md(md_engine, md_params, super_cell, flare_calc, qe_calc):
     ZeroRotation(super_cell)  # zero angular momentum
 
     super_cell.set_calculator(flare_calculator)
-    test_otf = ASE_OTF(super_cell, 
+    test_otf = ASE_OTF(super_cell,
                        timestep = 1 * units.fs,
                        number_of_steps = 3,
                        dft_calc = qe_calc,
