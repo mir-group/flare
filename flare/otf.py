@@ -32,6 +32,8 @@ class OTF:
         gp (gp.GaussianProcess): Initial GP model.
         calculate_energy (bool, optional): If True, the energy of each
             frame is calculated with the GP. Defaults to False.
+        calculate_efs (bool, optional): If True, the energy and stress of each
+            frame is calculated with the GP. Defaults to False.
         write_model (int, optional): If 0, write never. If 1, write at
             end of run. If 2, write after each training and end of run.
             If 3, write after each time atoms are added and end of run.
@@ -87,28 +89,25 @@ class OTF:
             Defaults to 1.
     """
 
-    def __init__(self,
-                 # md args
-                 dt: float, number_of_steps: int,
-                 prev_pos_init: 'ndarray' = None,
-                 rescale_steps: List[int] = [], rescale_temps: List[int] = [],
-                 # flare args
-                 gp: gp.GaussianProcess = None,
-                 calculate_energy: bool = False,
-                 write_model: int = 0,
-                 # otf args
-                 std_tolerance_factor: float = 1,
-                 skip: int = 0, init_atoms: List[int] = None,
-                 output_name: str = 'otf_run',
-                 max_atoms_added: int = 1, freeze_hyps: int = 10,
-                 # dft args
-                 force_source: str = "qe",
-                 npool: int = None, mpi: str = "srun", dft_loc: str = None,
-                 dft_input: str = None, dft_output='dft.out', dft_kwargs=None,
-                 store_dft_output: Tuple[Union[str, List[str]], str] = None,
-                 # par args
-                 n_cpus: int = 1,
-                 ):
+    def __init__(
+     self,
+     # md args
+     dt: float, number_of_steps: int, prev_pos_init: 'ndarray' = None,
+     rescale_steps: List[int] = [], rescale_temps: List[int] = [],
+     # flare args
+     gp: gp.GaussianProcess = None, calculate_energy: bool = False,
+     calculate_efs: bool = False, write_model: int = 0,
+     # otf args
+     std_tolerance_factor: float = 1, skip: int = 0,
+     init_atoms: List[int] = None, output_name: str = 'otf_run',
+     max_atoms_added: int = 1, freeze_hyps: int = 10,
+     # dft args
+     force_source: str = "qe", npool: int = None, mpi: str = "srun",
+     dft_loc: str = None, dft_input: str = None, dft_output='dft.out',
+     dft_kwargs=None,
+     store_dft_output: Tuple[Union[str, List[str]], str] = None,
+     # par args
+     n_cpus: int = 1):
 
         self.dft_input = dft_input
         self.dft_output = dft_output
@@ -130,11 +129,9 @@ class OTF:
         positions, species, cell, masses = \
             self.dft_module.parse_dft_input(self.dft_input)
 
-        self.structure = struc.Structure(cell=cell, species=species,
-                                         positions=positions,
-                                         mass_dict=masses,
-                                         prev_positions=prev_pos_init,
-                                         species_labels=species)
+        self.structure = struc.Structure(
+            cell=cell, species=species, positions=positions, mass_dict=masses,
+            prev_positions=prev_pos_init, species_labels=species)
 
         self.noa = self.structure.positions.shape[0]
         self.atom_list = list(range(self.noa))
@@ -156,15 +153,24 @@ class OTF:
 
         self.dft_count = 0
 
-        # set pred function
-        if (n_cpus > 1 and gp.per_atom_par and gp.parallel) and not calculate_energy:
+        # Set the prediction function based on user inputs.
+        # Force only prediction.
+        if (n_cpus > 1 and gp.per_atom_par and gp.parallel) and not \
+           (calculate_energy or calculate_efs):
             self.pred_func = predict.predict_on_structure_par
-        elif not calculate_energy:
+        elif not (calculate_energy or calculate_efs):
             self.pred_func = predict.predict_on_structure
-        elif (n_cpus > 1 and gp.per_atom_par and gp.parallel):
+        # Energy and force prediction.
+        elif (n_cpus > 1 and gp.per_atom_par and gp.parallel) and not \
+             (calculate_efs):
             self.pred_func = predict.predict_on_structure_par_en
-        else:
+        elif not calculate_efs:
             self.pred_func = predict.predict_on_structure_en
+        # Energy, force, and stress prediction.
+        elif (n_cpus > 1 and gp.per_atom_par and gp.parallel):
+            self.pred_func = predict.predict_on_structure_efs_par
+        else:
+            self.pred_func = predict.predict_on_structure_efs
 
         # set rescale attributes
         self.rescale_steps = rescale_steps
