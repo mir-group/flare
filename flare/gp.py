@@ -13,7 +13,7 @@ from copy import deepcopy
 from numpy.random import random
 from scipy.linalg import solve_triangular
 from scipy.optimize import minimize
-from typing import List, Callable, Union, Tuple
+from typing import List, Callable, Union, Tuple, Sequence
 
 from flare.env import AtomicEnvironment
 from flare.gp_algebra import get_like_from_mats, get_neg_like_grad, \
@@ -59,7 +59,7 @@ class GaussianProcess:
         name (str, optional): Name for the GP instance.
     """
 
-    def __init__(self, kernels: list = ['two', 'three'],
+    def __init__(self, kernels: List[str] = ['two', 'three'],
                  component: str = 'mc',
                  hyps: 'ndarray' = None, cutoffs={},
                  hyps_mask: dict = {},
@@ -810,7 +810,7 @@ class GaussianProcess:
 
         return removed_data, removed_labels
 
-    def write_model(self, name: str, format: str = 'json',
+    def write_model(self, name: str, format: str = None,
                     split_matrix_size_cutoff: int = 5000):
         """
         Write model in a variety of formats to a file for later re-use.
@@ -835,14 +835,28 @@ class GaussianProcess:
             self.alpha = None
             self.ky_mat_inv = None
 
+        # Automatically detect output format from name variable
+
+        for detect in ['json','pickle','binary']:
+            if detect in name.lower():
+                format = detect
+                break
+
+        if format is None:
+            format = 'json'
+
         supported_formats = ['json', 'pickle', 'binary']
 
         if format.lower() == 'json':
-            with open(f'{name}.json', 'w') as f:
+            if '.json' != name[-5:]:
+                name += '.json'
+            with open(name, 'w') as f:
                 json.dump(self.as_dict(), f, cls=NumpyEncoder)
 
         elif format.lower() == 'pickle' or format.lower() == 'binary':
-            with open(f'{name}.pickle', 'wb') as f:
+            if '.pickle' != name[-7:]:
+                name += '.pickle'
+            with open(name, 'wb') as f:
                 pickle.dump(self, f)
 
         else:

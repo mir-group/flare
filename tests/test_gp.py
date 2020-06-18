@@ -240,7 +240,6 @@ class TestIO():
     def test_representation_method(self, all_gps, multihyps):
         test_gp = all_gps[multihyps]
         the_str = str(test_gp)
-        print(the_str)
         assert 'GaussianProcess Object' in the_str
         assert 'Kernel: [\'twobody\', \'threebody\', \'manybody\']' in the_str
         assert 'Cutoffs: {\'twobody\': 0.8, \'threebody\': 0.8, \'manybody\': 0.8}' in the_str
@@ -301,6 +300,13 @@ class TestIO():
 
         with raises(ValueError):
             test_gp.write_model('test_gp_write', 'cucumber')
+
+        # Test logic for auto-detecting format in write command
+        for format in ['json', 'pickle']:
+            write_string = 'format_write_test.'+format
+            test_gp.write_model(write_string)
+            assert os.path.exists(write_string)
+            os.remove(write_string)
 
 
     def test_load_reload_huge(self, all_gps):
