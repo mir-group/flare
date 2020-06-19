@@ -218,7 +218,7 @@ class OTF:
                 # get updated.
                 self.initialize_train()
                 new_pos = self.md_step()
-                self.update_temperature(new_pos)
+                self.update_temperature()
                 self.record_state()
 
             # after step 1, try predicting with GP model
@@ -237,7 +237,7 @@ class OTF:
 
                 if not std_in_bound:
                     # record GP forces
-                    self.update_temperature(new_pos)
+                    self.update_temperature()
                     self.record_state()
                     gp_frcs = deepcopy(self.structure.forces)
 
@@ -257,7 +257,7 @@ class OTF:
 
             # write gp forces
             if counter >= self.skip and not self.dft_step:
-                self.update_temperature(new_pos)
+                self.update_temperature()
                 self.record_state()
                 counter = 0
 
@@ -309,6 +309,8 @@ class OTF:
             dft_out=self.dft_output, npool=self.npool, mpi=self.mpi,
             dft_kwargs=self.dft_kwargs)
 
+        # Note: also need to update stresses when performing a simulation
+        # in the NPT ensemble.
         self.structure.forces = forces
 
         # write wall time of DFT calculation
@@ -389,15 +391,14 @@ class OTF:
         self.structure.positions = new_pos
         self.structure.wrap_positions()
 
-    def update_temperature(self, new_pos: 'ndarray'):
+    def update_temperature(self):
         """Updates the instantaneous temperatures of the system.
 
         Args:
             new_pos (np.ndarray): Positions of atoms in the next MD frame.
         """
         KE, temperature, velocities = \
-            md.calculate_temperature(new_pos, self.structure, self.dt,
-                                     self.noa)
+            md.calculate_temperature(self.structure, self.dt, self.noa)
         self.KE = KE
         self.temperature = temperature
         self.velocities = velocities

@@ -17,10 +17,9 @@ def update_positions(dt, noa, structure):
     return new_pos
 
 
-def calculate_temperature(new_pos, structure, dt, noa):
-    # set velocity and temperature information
-    velocities = (new_pos -
-                  structure.prev_positions) / (2 * dt)
+def calculate_temperature(structure, dt, noa):
+    # Set velocity and temperature information.
+    velocities = (structure.positions - structure.prev_positions) / dt
 
     KE = 0
     for i in range(len(structure.positions)):
