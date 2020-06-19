@@ -77,7 +77,6 @@ def test_input_to_structure(cp2k_input):
                     ' and set the CP2K_COMMAND env. '
                     'variable to point to cp2k.popt')
 def test_cp2k_calling(cp2k_input, cp2k_output):
-
     dft_loc = environ.get('CP2K_COMMAND')
     copyfile(cp2k_input, 'cp2k.in')
     positions, species, cell, masses = parse_dft_input(cp2k_input)
@@ -119,8 +118,8 @@ def test_cp2k_input_edit():
 
     positions, species, cell, masses = parse_dft_input(newfilename)
 
-    assert np.equal(positions[0], structure.positions[0]).all()
-    assert np.equal(structure.vec1, cell[0, :]).all()
+    assert np.isclose(positions[0], structure.positions[0]).all()
+    assert np.isclose(structure.vec1, cell[0, :]).all()
 
     remove(newfilename)
     cleanup()

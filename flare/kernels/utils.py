@@ -1,22 +1,25 @@
 import numpy as np
 
 from flare.kernels import sc, mc_simple, mc_sephyps
+from flare.parameters import Parameters
 
 """
 This module includes interface functions between kernels and gp/gp_algebra
 
-str_to_kernel_set is used in GaussianProcess class to search for a kernel function
-based on a string name.
+str_to_kernel_set is used in GaussianProcess class to search for a kernel
+    function based on a string name.
 
-from_mask_to_args converts the hyperparameter vector and the dictionary of hyps_mask
-to the list of arguments needed by the kernel function.
+from_mask_to_args converts the hyperparameter vector and the dictionary of
+    hyps_mask to the list of arguments needed by the kernel function.
 
-from_grad_to_mask(grad, hyps_mask) converts the gradient matrix to the actual gradient
-matrix by removing the fixed dimensions.
+from_grad_to_mask(grad, hyps_mask) converts the gradient matrix to the actual
+    gradient matrix by removing the fixed dimensions.
 """
 
 
-def str_to_kernel_set(name: str, multihyps: bool = False):
+def str_to_kernel_set(kernels: list = ['twobody', 'threebody'],
+                      component: str = "sc",
+                      hyps_mask: dict = None):
     """
     return kernels and kernel gradient function base on a string.
     If it contains 'sc', it will use the kernel in sc module;
@@ -35,39 +38,43 @@ def str_to_kernel_set(name: str, multihyps: bool = False):
 
     """
 
-    if 'sc' in name:
+    #  kernel name should be replace with kernel array
+    if component == 'sc':
         stk = sc._str_to_kernel
     else:
-        if (multihyps is False):
-            stk = mc_simple._str_to_kernel
-        else:
+        multihyps = True
+        if hyps_mask is None:
+            multihyps = False
+        elif hyps_mask['nspecie'] == 1:
+            multihyps = False
+        if multihyps:
             stk = mc_sephyps._str_to_kernel
+        else:
+            stk = mc_simple._str_to_kernel
 
     # b2 = Two body in use, b3 = Three body in use
-    b2 = False
-    b3 = False
-    many = False
+    str_terms = {'2': ['2', 'two', 'twobody'],
+                 '3': ['3', 'three', 'threebody'],
+                 'many': ['mb', 'manybody', 'many']}
 
-    for s in ['2', 'two', 'Two', 'TWO']:
-        if (s in name):
-            b2 = True
-    for s in ['3', 'three', 'Three', 'THREE']:
-        if (s in name):
-            b3 = True
-    for s in ['mb', 'manybody', 'many', 'Many', 'ManyBody']:
-        if (s in name):
-            many = True
+    if isinstance(kernels, str):
+        kernels = [kernels]
 
     prefix = ''
-    str_term = {'2': b2, '3': b3, 'many': many}
-    for term in str_term:
-        if str_term[term]:
-            if (len(prefix) > 0):
+    for term in str_terms:
+        add = False
+        for s in str_terms[term]:
+            for k in kernels:
+                if s in k.lower():
+                    add = True
+        if add:
+            if len(prefix) > 0:
                 prefix += '+'
             prefix += term
+
     if len(prefix) == 0:
         raise RuntimeError(
-            f"the name has to include at least one number {name}")
+            f"the name has to include at least one number {kernels}")
 
     for suffix in ['', '_grad', '_en', '_force_en']:
         if prefix+suffix not in stk:
@@ -78,10 +85,11 @@ def str_to_kernel_set(name: str, multihyps: bool = False):
         stk[prefix+'_force_en']
 
 
-def from_mask_to_args(hyps, hyps_mask: dict, cutoffs):
-    """ return the tuple of arguments needed for kernel function
-    the order of the tuple has to be exactly the same as the one
-    taken by the kernel function
+
+def from_mask_to_args(hyps, cutoffs, hyps_mask=None):
+    """ Return the tuple of arguments needed for kernel function.
+    The order of the tuple has to be exactly the same as the one taken by
+        the kernel function.
 
     :param hyps: list of hyperparmeter values
     :type hyps: nd.array
@@ -93,71 +101,72 @@ def from_mask_to_args(hyps, hyps_mask: dict, cutoffs):
     """
 
     # no special setting
-    if (hyps_mask is None):
-        return (hyps, cutoffs)
+    multihyps = True
+    if hyps_mask is None:
+        multihyps = False
+    elif hyps_mask['nspecie'] == 1:
+        multihyps = False
+
+    if not multihyps:
+
+        cutoffs_array = [0, 0, 0]
+        cutoffs_array[0] = cutoffs.get('twobody', 0)
+        cutoffs_array[1] = cutoffs.get('threebody', 0)
+        cutoffs_array[2] = cutoffs.get('manybody', 0)
+        return (hyps, cutoffs_array)
 
     # setting for mc_sephyps
-    n2b = hyps_mask.get('nbond', 0)
-    n3b = hyps_mask.get('ntriplet', 0)
+    nspecie = hyps_mask['nspecie']
+    n2b = hyps_mask.get('ntwobody', 0)
 
-    bond_mask = hyps_mask.get('bond_mask', None)
-    triplet_mask = hyps_mask.get('triplet_mask', None)
+    n3b = hyps_mask.get('nthreebody', 0)
+    nmanybody = hyps_mask.get('nmanybody', 0)
+    ncut3b = hyps_mask.get('ncut3b', 0)
 
-    sig2 = None
-    ls2 = None
-    sig3 = None
-    ls3 = None
-    sigm = None
-    lsm = None
+    twobody_mask = hyps_mask.get('twobody_mask', None)
+    threebody_mask = hyps_mask.get('threebody_mask', None)
+    manybody_mask = hyps_mask.get('manybody_mask', None)
+    cut3b_mask = hyps_mask.get('cut3b_mask', None)
 
-    if ('map' in hyps_mask):
-        orig_hyps = hyps_mask['original']
-        hm = hyps_mask['map']
-        for i, h in enumerate(hyps):
-            orig_hyps[hm[i]] = h
+    # TO DO , should instead use the non-sephyps kernel
+    if (n2b == 1):
+        twobody_mask = np.zeros(nspecie**2, dtype=int)
+    if (n3b == 1):
+        threebody_mask = np.zeros(nspecie**3, dtype=int)
+    if (nmanybody == 1):
+        manybody_mask = np.zeros(nspecie**2, dtype=int)
+
+    cutoff_2b = cutoffs.get('twobody', 0)
+    cutoff_3b = cutoffs.get('threebody', 0)
+    cutoff_mb = cutoffs.get('manybody', 0)
+
+    if 'bond_cutoff_list' in hyps_mask:
+        cutoff_2b = hyps_mask['bond_cutoff_list']
     else:
-        orig_hyps = hyps
+        cutoff_2b = np.ones(nspecie**2, dtype=float)*cutoff_2b
 
-    ncutoff = len(cutoffs)
+    if 'threebody_cutoff_list' in hyps_mask:
+        cutoff_3b = hyps_mask['threebody_cutoff_list']
+    if 'manybody_cutoff_list' in hyps_mask:
+        cutoff_mb = hyps_mask['manybody_cutoff_list']
 
-    if (ncutoff <= 2):
-        if (n2b != 0):
-            sig2 = np.array(orig_hyps[:n2b], dtype=np.float64)
-            ls2 = np.array(orig_hyps[n2b:n2b * 2], dtype=np.float64)
-        if (n3b != 0):
-            sig3 = np.array(orig_hyps[n2b * 2:n2b * 2 + n3b], dtype=np.float64)
-            ls3 = np.array(orig_hyps[n2b * 2 + n3b:n2b * 2 + n3b * 2], dtype=np.float64)
-        if (n2b == 0) and (n3b == 0):
-            raise NameError("Hyperparameter mask missing nbond and/or"
-                            "ntriplet key")
-        return (cutoffs,
-                hyps_mask['nspec'], hyps_mask['spec_mask'],
-                n2b, bond_mask, n3b, triplet_mask,
-                sig2, ls2, sig3, ls3)
+    (sig2, ls2) = Parameters.get_component_hyps(hyps_mask, 'twobody', hyps=hyps)
+    (sig3, ls3) = Parameters.get_component_hyps(
+        hyps_mask, 'threebody', hyps=hyps)
+    (sigm, lsm) = Parameters.get_component_hyps(
+        hyps_mask, 'manybody', hyps=hyps)
 
-    elif (ncutoff == 3):
-
-        if (n2b != 0):
-            sig2 = np.array(orig_hyps[:n2b], dtype=np.float64)
-            ls2 = np.array(orig_hyps[n2b:n2b * 2], dtype=np.float64)
-        if (n3b != 0):
-            start = n2b*2
-            sig3 = np.array(orig_hyps[start:start + n3b], dtype=np.float64)
-            ls3 = np.array(orig_hyps[start + n3b:start + n3b * 2], dtype=np.float64)
-        sigm = orig_hyps[n2b*2+n3b*2]
-        lsm = orig_hyps[n2b*2+n3b*2+1]
-
-        return (cutoffs,
-                hyps_mask['nspec'],
-                np.array(hyps_mask['spec_mask'], dtype=np.int8),
-                n2b, bond_mask,
-                n3b, triplet_mask,
-                sig2, ls2, sig3, ls3, sigm, lsm)
-    else:
-        raise RuntimeError("only support up to 3 cutoffs")
+    return (cutoff_2b, cutoff_3b, cutoff_mb,
+            nspecie,
+            np.array(hyps_mask['specie_mask']),
+            n2b, twobody_mask,
+            n3b, threebody_mask,
+            ncut3b, cut3b_mask,
+            nmanybody, manybody_mask,
+            sig2, ls2, sig3, ls3, sigm, lsm)
 
 
-def from_grad_to_mask(grad, hyps_mask):
+def from_grad_to_mask(grad, hyps_mask=None):
     """
     Return gradient which only includes hyperparameters
     which are meant to vary
@@ -168,23 +177,51 @@ def from_grad_to_mask(grad, hyps_mask):
     :return: newgrad
     """
 
-    # no special setting
-    if (hyps_mask is None):
+    constrain = True
+    if hyps_mask is None:
+        constrain = False
+    elif 'map' not in hyps_mask:
+        constrain = False
+    if not constrain:
         return grad
 
-    # setting for mc_sephyps
-    # no constrained optimization
-    if 'map' not in hyps_mask:
-        return grad
+    hyp_index = hyps_mask['map']
 
     # setting for mc_sephyps
     # if the last element is not sigma_noise
-    if (hyps_mask['map'][-1] == len(grad)):
-        hm = hyps_mask['map'][:-1]
+    if hyp_index[-1] == len(grad):
+        hm = hyp_index[:-1]
     else:
-        hm = hyps_mask['map']
+        hm = hyp_index
 
     newgrad = np.zeros(len(hm), dtype=np.float64)
     for i, mapid in enumerate(hm):
         newgrad[i] = grad[mapid]
+
     return newgrad
+
+
+def kernel_str_to_array(kernel_name: str):
+    """
+    Args:
+
+    name (str): name for kernels. example: "2+3mc"
+
+    :return: kernel function, kernel gradient, energy kernel,
+             energy_and_force kernel
+    """
+
+    #  kernel name should be replace with kernel array
+    str_terms = {'twobody': ['2', 'two', 'twobody'],
+                 'threebody': ['3', 'three', 'threebody'],
+                 'manybody': ['mb', 'manybody', 'many']}
+
+    array = []
+    for term in str_terms:
+        add = False
+        for s in str_terms[term]:
+            if s in kernel_name.lower():
+                add = True
+        if add:
+            array += [term]
+    return array

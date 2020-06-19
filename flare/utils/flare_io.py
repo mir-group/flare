@@ -1,7 +1,7 @@
 from flare.struc import Structure
 from typing import List
 from json import dump, load
-from flare.util import NumpyEncoder
+from flare.utils.element_coder import NumpyEncoder
 
 def md_trajectory_to_file(filename: str, structures: List[Structure]):
     """
@@ -19,5 +19,6 @@ def md_trajectory_from_file(filename: str):
     """
     with open(filename, 'r') as f:
         structure_list = load(f)
-        structures = [Structure.from_dict(dictionary) for dictionary in structure_list]
+        structures = \
+            [Structure.from_dict(dictionary) for dictionary in structure_list]
     return structures
