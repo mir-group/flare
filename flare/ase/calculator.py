@@ -1,8 +1,8 @@
 ''':class:`FLARE_Calculator` is a calculator compatible with `ASE`. 
-You can build up `ASE Atoms` for your atomic structure, and use `get_forces`, 
-`get_potential_energy` as general `ASE Calculators`, and use it in 
-`ASE Molecular Dynamics` and our `ASE OTF` training module. For the usage 
-users can refer to `ASE Calculator module <https://wiki.fysik.dtu.dk/ase/ase/calculators/calculators.html>`_ 
+You can build up `ASE Atoms` for your atomic structure, and use `get_forces`,
+`get_potential_energy` as general `ASE Calculators`, and use it in
+`ASE Molecular Dynamics` and our `ASE OTF` training module. For the usage
+users can refer to `ASE Calculator module <https://wiki.fysik.dtu.dk/ase/ase/calculators/calculators.html>`_
 and `ASE Calculator tutorial <https://wiki.fysik.dtu.dk/ase/ase/atoms.html#adding-a-calculator>`_.'''
 
 import warnings
@@ -11,23 +11,29 @@ import multiprocessing as mp
 from flare.env import AtomicEnvironment
 from flare.struc import Structure
 from flare.mgp import MappedGaussianProcess
-from flare.predict import predict_on_structure_par_en, predict_on_structure_en
+from flare.predict import predict_on_structure_par_en, \
+    predict_on_structure_en, predict_on_structure_efs, \
+    predict_on_structure_efs_par
 from ase.calculators.calculator import Calculator
+
 
 class FLARE_Calculator(Calculator):
     """
     Build FLARE as an ASE Calculator, which is compatible with ASE Atoms and
-    Molecular Dynamics. 
+    Molecular Dynamics.
     Args:
         gp_model (GaussianProcess): FLARE's Gaussian process object
-        mgp_model (MappedGaussianProcess): FLARE's Mapped Gaussian Process object. 
-            `None` by default. MGP will only be used if `use_mapping` is set to True
-        par (Bool): set to `True` if parallelize the prediction. `False` by default.
-        use_mapping (Bool): set to `True` if use MGP for prediction. `False` by default.
+        mgp_model (MappedGaussianProcess): FLARE's Mapped Gaussian Process
+            object. `None` by default. MGP will only be used if `use_mapping`
+            is set to True.
+        par (Bool): set to `True` if parallelize the prediction. `False` by
+            default.
+        use_mapping (Bool): set to `True` if use MGP for prediction. `False`
+            by default.
     """
 
     def __init__(self, gp_model, mgp_model=None, par=False, use_mapping=False):
-        super().__init__() # all set to default values, TODO: change
+        super().__init__()  # all set to default values, TODO: change
         self.mgp_model = mgp_model
         self.gp_model = gp_model
         self.use_mapping = use_mapping
@@ -41,28 +47,26 @@ class FLARE_Calculator(Calculator):
             self.calculate(atoms)
         return self.results[name]
 
-
     def get_potential_energy(self, atoms=None, force_consistent=False):
         return self.get_property('energy', atoms)
-
 
     def get_forces(self, atoms):
         return self.get_property('forces', atoms)
 
-
     def get_stress(self, atoms):
         if not self.use_mapping:
-            warnings.warn('Stress is only implemented in MGP, not in GP. Will return zeros.')
+            warnings.warn(
+                'Stress is only implemented in MGP, not in GP. Will return '
+                'zeros.')
         return self.get_property('stress', atoms)
-
 
     def get_uncertainties(self, atoms):
         return self.get_property('stds', atoms)
 
-
     def calculate(self, atoms):
         '''
-        calculate properties including: energy, local energies, forces, stress, uncertainties
+        Calculate properties including: energy, local energies, forces,
+            stress, uncertainties.
 
         :param atoms: ASE Atoms object
         :type atoms: Atoms
@@ -75,12 +79,10 @@ class FLARE_Calculator(Calculator):
         else:
             self.calculate_gp(atoms)
 
-
     def calculate_gp(self, atoms):
         nat = len(atoms)
-        struc_curr = Structure(np.array(atoms.cell),
-                               atoms.get_atomic_numbers(),
-                               atoms.positions)
+        struc_curr = Structure(
+            np.array(atoms.cell), atoms.get_atomic_numbers(), atoms.positions)
 
         if self.par:
             forces, stds, local_energies = \
@@ -101,8 +103,6 @@ class FLARE_Calculator(Calculator):
         total_stress = np.sum(self.results['stresses'], axis=0)
         self.results['stress'] = total_stress / volume
 
-
-
     def calculate_mgp_serial(self, atoms):
         nat = len(atoms)
         struc_curr = Structure(np.array(atoms.cell),
@@ -115,13 +115,13 @@ class FLARE_Calculator(Calculator):
         self.results['local_energies'] = np.zeros(nat)
 
         for n in range(nat):
-            chemenv = AtomicEnvironment(struc_curr, n,
-                                        self.gp_model.cutoffs,
-                                        cutoffs_mask = self.mgp_model.hyps_mask)
+            chemenv = AtomicEnvironment(
+                struc_curr, n, self.gp_model.cutoffs,
+                cutoffs_mask=self.mgp_model.hyps_mask)
 
             try:
                 f, v, vir, e = self.mgp_model.predict(chemenv, mean_only=False)
-            except ValueError: # if lower_bound error is raised
+            except ValueError:  # if lower_bound error is raised
                 warnings.warn('Re-build map with a new lower bound')
                 self.mgp_model.build_map(self.gp_model)
                 f, v, vir, e = self.mgp_model.predict(chemenv, mean_only=False)
@@ -138,12 +138,9 @@ class FLARE_Calculator(Calculator):
 
         atoms.get_uncertainties = self.get_uncertainties
 
-
     def calculate_mgp_par(self, atoms):
         # TODO: to be done
         self.calculate_mgp_serial(atoms)
 
-
     def calculation_required(self, atoms, quantities):
         return True
-

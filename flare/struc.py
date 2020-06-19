@@ -280,8 +280,7 @@ class Structure:
 
         if cell is None:
             cell = np.array(atoms.cell)
-        struc = Structure(cell=cell,
-                          positions=atoms.positions,
+        struc = Structure(cell=cell, positions=atoms.positions,
                           species=atoms.get_chemical_symbols())
         return struc
 
