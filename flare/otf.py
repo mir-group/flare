@@ -210,6 +210,10 @@ class OTF:
             if (self.curr_step == 0) and (self.std_tolerance != 0) and \
                (len(self.gp.training_data) == 0):
 
+                # Are the recorded forces from the GP or DFT in ASE OTF?
+                # In ASE OTF, md_step computes forces if they haven't been
+                # computed yet, and then updates the positions.
+                # Should make the two OTF versions as parallel as possible.
                 self.initialize_train()
                 new_pos = self.md_step()
                 self.update_temperature(new_pos)
@@ -218,15 +222,16 @@ class OTF:
             # after step 1, try predicting with GP model
             else:
                 # compute forces and stds with GP
+                # Some confusing logic here: shouldn't update the positions
+                # unless the uncertainties are under the treshold.
                 self.dft_step = False
                 self.compute_properties()
                 new_pos = self.md_step()
 
                 # get max uncertainty atoms
-                std_in_bound, target_atoms = \
-                    is_std_in_bound(
-                        self.std_tolerance, self.gp.hyps[-1], self.structure,
-                        self.max_atoms_added)
+                std_in_bound, target_atoms = is_std_in_bound(
+                    self.std_tolerance, self.gp.hyps[-1], self.structure,
+                    self.max_atoms_added)
 
                 if not std_in_bound:
                     # record GP forces

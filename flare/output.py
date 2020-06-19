@@ -248,14 +248,20 @@ class Output:
             current_volume = np.linalg.det(structure.cell)
             stress_tensor = \
                 np.sum(structure.partial_stresses, 0) / current_volume
-            string += f'Stress tensor (eV/A^3): {stress_tensor:.6f} \n'
+            string += 'Stress tensor (eV/A^3): '
+            for p in range(6):
+                string += f'{stress_tensor[p]:10.4f}'
+            string += '\n'
 
         # Report stress tensor uncertainties:
         if structure.partial_stress_stds is not None:
             stress_stds = \
                 (np.sqrt(np.sum(structure.partial_stress_stds**2, 0)) /
                  current_volume)
-            string += f'Stress tensor uncertainties (eV/A^3): {stress_stds:.6f} \n'
+            string += 'Stress tensor uncertainties (eV/A^3): '
+            for p in range(6):
+                string += f'{stress_stds[p]:10.4f}'
+            string += '\n'
 
         logger = logging.getLogger(self.basename+'log')
         logger.info(string)
