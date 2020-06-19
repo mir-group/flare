@@ -84,8 +84,8 @@ class Structure:
         if prev_positions is None:
             self.prev_positions = np.copy(self.positions)
         else:
-            assert (len(positions) == len(prev_positions),
-                    'Previous positions and positions are not same length')
+            assert len(positions) == len(prev_positions), \
+                'Previous positions and positions are not same length'
             self.prev_positions = prev_positions
 
         # Set forces, energies, and stresses and their uncertainties.

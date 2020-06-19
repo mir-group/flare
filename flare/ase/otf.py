@@ -32,8 +32,8 @@ class ASE_OTF(OTF):
     Args:
         atoms (ASE Atoms): the ASE Atoms object for the on-the-fly MD run, 
             with calculator set as FLARE_Calculator.
-        timestep: the timestep in MD. Please use ASE units, e.g. if the timestep
-            is 1 fs, then set `timestep = 1 * units.fs`
+        timestep: the timestep in MD. Please use ASE units, e.g. if the
+            timestep is 1 fs, then set `timestep = 1 * units.fs`
         number_of_steps (int): the total number of steps for MD.
         dft_calc (ASE Calculator): any ASE calculator is supported, 
             e.g. Espresso, VASP etc.
@@ -41,10 +41,10 @@ class ASE_OTF(OTF):
             `NVTBerendsen`, `NPTBerendsen`, `NPT` and `Langevin` are supported.
         md_kwargs (dict): Specify the args for MD as a dictionary, the args are
             as required by the ASE MD modules consistent with the `md_engine`.
-        trajectory (ASE Trajectory): default `None`, not recommended, currently 
-            in experiment.
+        trajectory (ASE Trajectory): default `None`, not recommended,
+            currently in experiment.
 
-    The following arguments are for on-the-fly training, the user can also 
+    The following arguments are for on-the-fly training, the user can also
     refer to :class:`OTF`
 
     Args:
@@ -128,16 +128,20 @@ class ASE_OTF(OTF):
 
     def compute_properties(self):
         '''
-        compute forces and stds with FLARE_Calculator
+        Compute energies, forces, stresses, and their uncertainties with
+            the FLARE ASE calcuator, and write the results to the
+            OTF structure object.
         '''
         if not isinstance(self.atoms.calc, FLARE_Calculator):
             self.atoms.set_calculator(self.flare_calc)
 
-        self.atoms.calc.results = {}
-        f = self.atoms.get_forces(self.atoms)
-        stds = self.atoms.get_uncertainties(self.atoms)
-        self.structure.forces = deepcopy(f)
-        self.structure.stds = deepcopy(stds)
+        # self.atoms.calc.results = {}
+        # f = self.atoms.get_forces(self.atoms)
+        # stds = self.atoms.get_uncertainties(self.atoms)
+        # self.structure.forces = deepcopy(f)
+        # self.structure.stds = deepcopy(stds)
+
+        self.atoms.calc.calculate(self.atoms, self.structure)
 
     def md_step(self):
         '''

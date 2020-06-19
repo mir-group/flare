@@ -1,4 +1,4 @@
-''':class:`FLARE_Calculator` is a calculator compatible with `ASE`. 
+''':class:`FLARE_Calculator` is a calculator compatible with `ASE`.
 You can build up `ASE Atoms` for your atomic structure, and use `get_forces`,
 `get_potential_energy` as general `ASE Calculators`, and use it in
 `ASE Molecular Dynamics` and our `ASE OTF` training module. For the usage
@@ -40,11 +40,12 @@ class FLARE_Calculator(Calculator):
         self.par = par
         self.results = {}
 
-    def get_property(self, name, atoms=None, allow_calculation=True):
+    def get_property(self, name, atoms=None, allow_calculation=True,
+                     structure=None):
         if name not in self.results.keys():
             if not allow_calculation:
                 return None
-            self.calculate(atoms)
+            self.calculate(atoms, structure)
         return self.results[name]
 
     def get_potential_energy(self, atoms=None, force_consistent=False):
@@ -54,16 +55,9 @@ class FLARE_Calculator(Calculator):
         return self.get_property('forces', atoms)
 
     def get_stress(self, atoms):
-        if not self.use_mapping:
-            warnings.warn(
-                'Stress is only implemented in MGP, not in GP. Will return '
-                'zeros.')
         return self.get_property('stress', atoms)
 
-    def get_uncertainties(self, atoms):
-        return self.get_property('stds', atoms)
-
-    def calculate(self, atoms):
+    def calculate(self, atoms, structure):
         '''
         Calculate properties including: energy, local energies, forces,
             stress, uncertainties.
@@ -73,50 +67,40 @@ class FLARE_Calculator(Calculator):
         '''
         if self.use_mapping:
             if self.par:
-                self.calculate_mgp_par(atoms)
+                self.calculate_mgp_par(atoms, structure)
             else:
-                self.calculate_mgp_serial(atoms)
+                self.calculate_mgp_serial(atoms, structure)
         else:
-            self.calculate_gp(atoms)
+            self.calculate_gp(atoms, structure)
 
-    def calculate_gp(self, atoms):
-        nat = len(atoms)
-        struc_curr = Structure(
-            np.array(atoms.cell), atoms.get_atomic_numbers(), atoms.positions)
-
+    def calculate_gp(self, atoms, structure):
+        # Compute energy, forces, and stresses and their uncertainties, and
+        # write them to the structure object.
         if self.par:
-            forces, stds, local_energies = \
-                    predict_on_structure_par_en(struc_curr, self.gp_model)
+            local_energies, forces, partial_stresses, _, _, _ = \
+                predict_on_structure_efs_par(structure, self.gp_model)
         else:
-            forces, stds, local_energies = \
-                    predict_on_structure_en(struc_curr, self.gp_model)
+            local_energies, forces, partial_stresses, _, _, _ = \
+                predict_on_structure_efs(structure, self.gp_model)
 
-        self.results['forces'] = forces
-        self.results['stds'] = stds
-        self.results['local_energies'] = local_energies
+        # Set the energy, force, and stress attributes of the calculator.
         self.results['energy'] = np.sum(local_energies)
-        atoms.get_uncertainties = self.get_uncertainties
-
-        # GP stress not implemented yet
-        self.results['stresses'] = np.zeros((nat, 6))
+        self.results['forces'] = forces
         volume = atoms.get_volume()
-        total_stress = np.sum(self.results['stresses'], axis=0)
+        total_stress = np.sum(partial_stresses, axis=0)
         self.results['stress'] = total_stress / volume
 
-    def calculate_mgp_serial(self, atoms):
+    def calculate_mgp_serial(self, atoms, structure):
         nat = len(atoms)
-        struc_curr = Structure(np.array(atoms.cell),
-                               atoms.get_atomic_numbers(),
-                               atoms.positions)
 
         self.results['forces'] = np.zeros((nat, 3))
-        self.results['stresses'] = np.zeros((nat, 6))
-        self.results['stds'] = np.zeros((nat, 3))
-        self.results['local_energies'] = np.zeros(nat)
+        partial_stresses = np.zeros((nat, 6))
+        stds = np.zeros((nat, 3))
+        local_energies = np.zeros(nat)
 
         for n in range(nat):
             chemenv = AtomicEnvironment(
-                struc_curr, n, self.gp_model.cutoffs,
+                structure, n, self.gp_model.cutoffs,
                 cutoffs_mask=self.mgp_model.hyps_mask)
 
             try:
@@ -127,20 +111,24 @@ class FLARE_Calculator(Calculator):
                 f, v, vir, e = self.mgp_model.predict(chemenv, mean_only=False)
 
             self.results['forces'][n] = f
-            self.results['stresses'][n] = vir
-            self.results['stds'][n] = np.sqrt(np.absolute(v))
-            self.results['local_energies'][n] = e
+            partial_stresses[n] = vir
+            stds[n] = np.sqrt(np.absolute(v))
+            local_energies[n] = e
 
         volume = atoms.get_volume()
-        total_stress = np.sum(self.results['stresses'], axis=0)
+        total_stress = np.sum(partial_stresses, axis=0)
         self.results['stress'] = total_stress / volume
-        self.results['energy'] = np.sum(self.results['local_energies'])
+        self.results['energy'] = np.sum(local_energies)
 
-        atoms.get_uncertainties = self.get_uncertainties
+        # Record structure attributes.
+        structure.local_energies = local_energies
+        structure.forces = np.copy(self.results['forces'])
+        structure.partial_stresses = partial_stresses
+        structure.stds = stds
 
-    def calculate_mgp_par(self, atoms):
+    def calculate_mgp_par(self, atoms, structure):
         # TODO: to be done
-        self.calculate_mgp_serial(atoms)
+        self.calculate_mgp_serial(atoms, structure)
 
     def calculation_required(self, atoms, quantities):
         return True
