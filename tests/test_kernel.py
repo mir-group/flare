@@ -1,4 +1,5 @@
 import sys
+from time import time
 from copy import deepcopy
 import pytest
 import numpy as np
@@ -10,10 +11,10 @@ from flare.kernels.utils import str_to_kernel_set
 from flare_o.kernels.utils import str_to_kernel_set as str_to_kernel_set_o
 from .fake_gp import generate_mb_envs
 
-list_to_test = [['2'], ['3'], #['many'],
-                ['2', '3']] #,
-                # ['2', '3', 'many']]
-list_type = ['sc', 'mc']
+list_to_test = [['2'], ['3'], # ['many'],
+                ['2', '3'],
+                ['2', '3', 'many']]
+list_type = ['mc'] #, 'mc']
 
 def generate_hm(kernels):
     hyps = []
@@ -87,13 +88,20 @@ def test_force_en(kernels, kernel_type):
 
         kern_finite_diff += diff3b
 
+    time0 = time()
     kern_analytical = \
         force_en_kernel(env1[0][0], env2[0][0], hyps, cutoffs)
     kern_analytical = kern_analytical[d1-1]
+    newtime=time()-time0
 
     kern_analytical_o = \
         force_en_kernel_o(env1[0][0], env2[0][0], d1, hyps, cutoffs)
     assert isclose(kern_analytical_o, kern_analytical, rtol=tol)
+    time0 = time()
+    for i in range(1,4):
+        kern_analytical_o = \
+            force_en_kernel_o(env1[0][0], env2[0][0], i, hyps, cutoffs)
+    print("acceleration", (time()-time0)/newtime)
 
     print("\nforce_en", kernels, kern_finite_diff, kern_analytical)
     assert (isclose(kern_finite_diff, kern_analytical, rtol=tol))
@@ -165,15 +173,24 @@ def test_force(kernels, kernel_type):
                 calc4 = en3_kernel(env1[2][0], env2[1][0], hyps[ntwobody * 2:], cutoffs)
                 kern_finite_diff += 9 * (calc1 + calc2 - calc3 - calc4) / (4*delta**2)
 
+            time0 = time()
             kern_analytical = kernel(env1[0][0], env2[0][0], *args)
+            newtime=time()-time0
             kern_analytical = kern_analytical[d1-1][d2-1]
 
+            # old
             kernel_o, _, __, ___ = \
                 str_to_kernel_set_o(kernels, kernel_type)
             kern_analytical_o = kernel_o(env1[0][0], env2[0][0], d1, d2, *args)
             print(kern_analytical, kern_analytical_o)
             assert isclose(kern_analytical_o, kern_analytical, rtol=tol)
+            time0 = time()
+            for d1 in [1, 2, 3]:
+                for d2 in [1, 2, 3]:
+                       kern_analytical_o = kernel_o(env1[0][0], env2[0][0], d1, d2, *args)
+            print("acceleration", (time()-time0)/newtime)
 
+            print(d1, d2, kern_finite_diff, kern_analytical)
             assert(isclose(kern_finite_diff, kern_analytical, rtol=tol))
 
 
@@ -195,14 +212,22 @@ def test_hyps_grad(kernels, kernel_type):
 
     kernel, kernel_grad, _, _ = str_to_kernel_set(kernels, kernel_type)
 
+    time0 = time()
     k, grad = kernel_grad(env1, env2, hyps, cutoffs)
+    newtime=time()-time0
     grad = grad[:, d1-1, d2-1]
 
     _, kernel_grad_o, __, ___ = \
         str_to_kernel_set_o(kernels, kernel_type)
+    time0 = time()
     k_o, grad_o = kernel_grad_o(env1, env2, d1, d2, hyps, cutoffs)
-    print(grad_o, grad)
     assert isclose(grad_o, grad, rtol=tol).all()
+
+    time0 = time()
+    for i in range(1, 4):
+        for j in range(1, 4):
+            k_o, grad_o = kernel_grad_o(env1, env2, i, j, hyps, cutoffs)
+    print("acceleration", (time()-time0)/newtime)
 
     original = kernel(env1, env2, hyps, cutoffs)
     assert(isclose(k, original, rtol=tol).all())

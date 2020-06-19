@@ -1,4 +1,5 @@
 import sys
+from time import time
 from copy import deepcopy
 
 import pytest
@@ -14,10 +15,10 @@ from flare_o.kernels.utils import str_to_kernel_set as str_to_kernel_set_o
 
 from .fake_gp import generate_mb_envs, generate_mb_twin_envs
 
-list_to_test = [['twobody']] # , ['threebody'],
-               #  ['twobody', 'threebody'],
+list_to_test = [['twobody'], ['threebody'],#['manybody'],
+                ['twobody', 'threebody']]
                #  ['twobody', 'threebody', 'manybody']]
-multi_cut = [False, True]
+multi_cut = [False] #, True]
 
 @pytest.mark.parametrize('kernels', list_to_test)
 @pytest.mark.parametrize('multi_cutoff', multi_cut)
@@ -78,6 +79,11 @@ def test_force_en_multi_vs_simple(kernels, multi_cutoff):
     assert(isclose(reference, result, rtol=tol).all())
 
     i = 0
+
+    kernel_o, kg_o, en_kernel_o, fek_o = str_to_kernel_set_o(kernels, 'mc', hm1)
+    kern_analytical_o = kernel_o(env1, env2, 1, 1, *args1)
+    print(kernels, "original", kern_analytical_o)
+
     reference = funcs[0][i](env1, env2, *args0)
     result = funcs[1][i](env1, env2, *args1)
     assert(isclose(reference, result, rtol=tol).all())
@@ -358,11 +364,10 @@ def test_force(kernels, diff_cutoff):
 
     # check force kernel
     kern_finite_diff = 0
-    if ('manybody' == kernels):
+    if ('manybody' in kernels) and len(kernels)==1:
         _, __, enm_kernel, ___ = str_to_kernel_set(['manybody'], 'mc', hm)
-        mhyps_mask = Parameters.get_component_mask(hm, 'manybody', hyps=hyps)
-        mhyps = mhyps_mask['hyps']
-        margs = from_mask_to_args(mhyps, mhyps_mask, cutoffs)
+        mhyps, mcutoffs, mhyps_mask = Parameters.get_component_mask(hm, 'manybody', hyps=hyps)
+        margs = from_mask_to_args(mhyps, mcutoffs, mhyps_mask)
         cal = 0
         for i in range(3):
             for j in range(len(env1[0])):
@@ -371,16 +376,15 @@ def test_force(kernels, diff_cutoff):
                 cal -= enm_kernel(env1[1][i], env2[2][j], *margs)
                 cal -= enm_kernel(env1[2][i], env2[1][j], *margs)
         kern_finite_diff += cal / (4 * delta ** 2)
-    else:
+    elif 'manybody' in kernels:
         # TODO: Establish why 2+3+MB fails (numerical error?)
         return
 
     if ('twobody' in kernels):
         ntwobody = 1
         _, __, en2_kernel, ___ = str_to_kernel_set(['twobody'], 'mc', hm)
-        bhyps_mask = Parameters.get_component_mask(hm, 'twobody', hyps=hyps)
-        bhyps = bhyps_mask['hyps']
-        args2 = from_mask_to_args(bhyps, bhyps_mask, cutoffs[:1])
+        bhyps, bcutoffs, bhyps_mask = Parameters.get_component_mask(hm, 'twobody', hyps=hyps)
+        args2 = from_mask_to_args(bhyps, bcutoffs, bhyps_mask)
 
         calc1 = en2_kernel(env1[1][0], env2[1][0], *args2)
         calc2 = en2_kernel(env1[2][0], env2[2][0], *args2)
@@ -394,9 +398,9 @@ def test_force(kernels, diff_cutoff):
         _, __, en3_kernel, ___ = str_to_kernel_set(['threebody'], 'mc', hm)
 
         thyps_mask = Parameters.get_component_mask(hm, 'threebody', hyps=hyps)
-        thyps = bhyps_mask['hyps']
+        thyps, tcutoffs, thyps_mask = Parameters.get_component_mask(hm, 'threebody', hyps=hyps)
 
-        args3 = from_mask_to_args(thyps, thyps_mask, cutoffs[:2])
+        args3 = from_mask_to_args(thyps, tcutoffs, thyps_mask)
 
         calc1 = en3_kernel(env1[1][0], env2[1][0], *args3)
         calc2 = en3_kernel(env1[2][0], env2[2][0], *args3)
@@ -405,11 +409,22 @@ def test_force(kernels, diff_cutoff):
         kern_finite_diff += 9 * (calc1 + calc2 - calc3 - calc4) / (4*delta**2)
 
     args = from_mask_to_args(hyps, cutoffs, hm)
+    time0 = time()
     kern_analytical = kernel(env1[0][0], env2[0][0], *args)
+    newtime=time()-time0
+
     kern_analytical = kern_analytical[d1-1][d2-1]
 
     kernel, kg, en_kernel, fek = str_to_kernel_set_o(kernels, 'mc', hm)
     kern_analytical_o = kernel(env1[0][0], env2[0][0], d1, d2, *args)
+    print(kernels, "kernel", kern_analytical, kern_analytical_o)
+
+    time0 = time()
+    for d1 in range(1, 4):
+        for d2 in range(1, 4):
+            o = kernel(env1[0][0], env2[0][0], d1, d2, *args)
+    print("acceleration", (time()-time0)/newtime)
+
     assert np.isclose(kern_analytical, kern_analytical_o, rtol=tol)
 
     assert(isclose(kern_finite_diff, kern_analytical, rtol=tol))
@@ -429,6 +444,7 @@ def test_hyps_grad(kernels, diff_cutoff, constraint):
     cutoffs, hyps, hm = generate_diff_hm(kernels, diff_cutoff, constraint=constraint)
     args = from_mask_to_args(hyps, cutoffs, hm)
     kernel, kernel_grad, _, __ = str_to_kernel_set(kernels, "mc", hm)
+    _, kg, __, ___ = str_to_kernel_set_o(kernels, 'mc', hm)
 
     np.random.seed(0)
     env1 = generate_mb_envs(cutoffs, np.eye(3)*100, delta, d1)
@@ -436,10 +452,21 @@ def test_hyps_grad(kernels, diff_cutoff, constraint):
     env1 = env1[0][0]
     env2 = env2[0][0]
 
+    time0 = time()
     k, grad = kernel_grad(env1, env2, *args)
+    newtime=time()-time0
 
-    _, kg, __, ___ = str_to_kernel_set_o(kernels, 'mc', hm)
+    k_only = kernel(env1, env2, *args)
+
+    time0 = time()
+    for i in range(1, 4):
+        for j in range(1, 4):
+            k_o, grad_o = kg(env1, env2, i, j, *args)
+    print("acceleration", (time()-time0)/newtime)
+
     k_o, grad_o = kg(env1, env2, d1, d2, *args)
+
+    assert np.isclose(k, k_only, rtol=tol).all()
     assert np.isclose(k[d1-1, d2-1], k_o, rtol=tol)
     assert np.isclose(grad[:, d1-1, d2-1], grad_o, rtol=tol).all()
 
