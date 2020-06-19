@@ -185,59 +185,6 @@ class SingleMap3body(SingleMapXbody):
 
         return np.array(k_v).T
 
-    def _gengrid_energy_numba(self, name, s, e, bounds, nb1, nb2, nb12, env12, kernel_info):
-        """
-        Loop over different parts of the training set. from element s to element e
-
-        Args:
-            name: name of the gp instance
-            s: start index of the training data parition
-            e: end index of the training data parition
-            bonds1: list of bond to consider for edge center-1
-            bonds2: list of bond to consider for edge center-2
-            bonds12: list of bond to consider for edge 1-2
-            env12: AtomicEnvironment container of the triplet
-            kernel_info: return value of the get_3b_kernel
-        """
-
-        kernel, en_kernel, en_force_kernel, cutoffs, hyps, hyps_mask = \
-            kernel_info
-
-        training_structure = _global_training_structures[name]
-
-        ds = [1, 2, 3]
-        size = (e-s) * 3
-
-        grids = self.construct_grids()
-#        bonds1 = np.linspace(bounds[0][0], bounds[1][0], nb1)
-#        bonds2 = np.linspace(bounds[0][0], bounds[1][0], nb2)
-#        bonds12 = np.linspace(bounds[0][2], bounds[1][2], nb12)
-#
-#        r1 = np.ones([nb1, nb2, nb12], dtype=np.float64)
-#        r2 = np.ones([nb1, nb2, nb12], dtype=np.float64)
-#        r12 = np.ones([nb1, nb2, nb12], dtype=np.float64)
-#        for b12 in range(nb12):
-#            for b1 in range(nb1):
-#                for b2 in range(nb2):
-#                    r1[b1, b2, b12] = bonds1[b1]
-#                    r2[b1, b2, b12] = bonds2[b2]
-#                    r12[b1, b2, b12] = bonds12[b12]
-#        del bonds1
-#        del bonds2
-#        del bonds12
-
-        args = from_mask_to_args(hyps, cutoffs, hyps_mask)
-
-        k_v = []
-        for m_index in range(size):
-            structure = training_structures[m_index + s]
-            kern_curr = 0
-            for environment in structure:
-                kern_curr += en_kernel(x, environment, *args)
-            kv += [kern_curr]
-
-        return np.hstack(k_v)
-
     def _gengrid_var_simple(self, env12, kernel_info):
         '''
         Generate 3D grids for variance upper bound, based on the inequality:
