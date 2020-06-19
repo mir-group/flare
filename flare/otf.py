@@ -214,6 +214,8 @@ class OTF:
                 # In ASE OTF, md_step computes forces if they haven't been
                 # computed yet, and then updates the positions.
                 # Should make the two OTF versions as parallel as possible.
+                # When DFT is called, ASE energy, forces, and stresses should
+                # get updated.
                 self.initialize_train()
                 new_pos = self.md_step()
                 self.update_temperature(new_pos)

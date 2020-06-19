@@ -65,6 +65,13 @@ class FLARE_Calculator(Calculator):
         :param atoms: ASE Atoms object
         :type atoms: Atoms
         '''
+
+        # If a structure isn't given, create one based on the atoms object.
+        if structure is None:
+            structure = Structure(
+                np.array(atoms.cell), atoms.get_atomic_numbers(),
+                atoms.positions)
+
         if self.use_mapping:
             if self.par:
                 self.calculate_mgp_par(atoms, structure)
