@@ -211,24 +211,17 @@ class OTF:
                (len(self.gp.training_data) == 0):
 
                 # Are the recorded forces from the GP or DFT in ASE OTF?
-                # In ASE OTF, md_step computes forces if they haven't been
-                # computed yet, and then updates the positions.
-                # Should make the two OTF versions as parallel as possible.
                 # When DFT is called, ASE energy, forces, and stresses should
                 # get updated.
                 self.initialize_train()
-                new_pos = self.md_step()
                 self.update_temperature()
                 self.record_state()
 
             # after step 1, try predicting with GP model
             else:
                 # compute forces and stds with GP
-                # Some confusing logic here: shouldn't update the positions
-                # unless the uncertainties are under the treshold.
                 self.dft_step = False
                 self.compute_properties()
-                new_pos = self.md_step()
 
                 # get max uncertainty atoms
                 std_in_bound, target_atoms = is_std_in_bound(
@@ -262,7 +255,8 @@ class OTF:
                 counter = 0
 
             counter += 1
-            self.update_positions(new_pos)
+            # TODO: Reinstate velocity rescaling.
+            self.md_step()
             self.curr_step += 1
 
         self.output.conclude_run()
@@ -287,9 +281,9 @@ class OTF:
 
     def md_step(self):
         '''
-        In ASE-OTF, it will be replaced by subclass method
+        Take an MD step. This updates the positions of the structure.
         '''
-        return md.update_positions(self.dt, self.noa, self.structure)
+        md.update_positions(self.dt, self.noa, self.structure)
 
     def run_dft(self):
         """Calculates DFT forces on atoms in the current structure.

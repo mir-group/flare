@@ -13,8 +13,9 @@ def update_positions(dt, noa, structure):
         forces = structure.forces[i]
 
         new_pos[i] = 2 * pos - pre_pos + dtdt * forces / mass
+        structure.positions[i] = 2 * pos - pre_pos + dtdt * forces / mass
 
-    return new_pos
+    structure.wrap_positions()
 
 
 def calculate_temperature(structure, dt, noa):

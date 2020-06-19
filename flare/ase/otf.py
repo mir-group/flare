@@ -150,11 +150,9 @@ class ASE_OTF(OTF):
         '''
         self.md.step()
 
-        # Return a copy so that future updates to atoms.positions doesn't also
-        # update structure.positions.
-        return np.copy(self.atoms.positions)
-
-    # TODO: fix the temperature output in the log file
+        # Update the positions and cell of the structure object.
+        self.structure.positions = np.copy(self.atoms.positions)
+        self.structure.cell = np.copy(self.atoms.cell)
 
     def update_positions(self, new_pos):
         # call OTF method
