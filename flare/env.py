@@ -240,7 +240,6 @@ class AtomicEnvironment:
         cutoffs_mask = getattr(self, 'cutoffs_mask', {'cutoffs': self.cutoffs})
         if not hasattr(self, 'cutoffs_mask'):
             self.cutoffs_mask = cutoffs_mask
-            self.setup_mask(cutoffs_mask)
         dictionary['cutoffs_mask'] = cutoffs_mask
 
         if not include_structure:

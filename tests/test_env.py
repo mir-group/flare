@@ -114,6 +114,12 @@ def test_backwards_compatibility(structure, mask, cutoff, result):
 
     assert pre_test_dict['cutoffs_mask'] == test_dict['cutoffs_mask']
 
+    new_env = AtomicEnvironment.from_dict(test_dict)
+
+    assert isinstance(new_env, AtomicEnvironment)
+
+    assert str(new_env) == str(env_test)
+
 
 def generate_mask(cutoff):
     ncutoff = len(cutoff)
