@@ -13,8 +13,10 @@ def update_positions(dt, noa, structure):
         forces = structure.forces[i]
 
         new_pos[i] = 2 * pos - pre_pos + dtdt * forces / mass
-        structure.positions[i] = 2 * pos - pre_pos + dtdt * forces / mass
 
+    # Update previous and current positions.
+    structure.prev_positions = np.copy(structure.positions)
+    structure.positions = new_pos
     structure.wrap_positions()
 
 
