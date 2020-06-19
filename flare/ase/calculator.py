@@ -110,11 +110,13 @@ class FLARE_Calculator(Calculator):
                 structure, n, self.gp_model.cutoffs,
                 cutoffs_mask=self.mgp_model.hyps_mask)
 
+            # TODO: Check that stress is being calculated correctly.
             try:
                 f, v, vir, e = self.mgp_model.predict(chemenv, mean_only=False)
             except ValueError:  # if lower_bound error is raised
                 warnings.warn('Re-build map with a new lower bound')
                 self.mgp_model.build_map(self.gp_model)
+
                 f, v, vir, e = self.mgp_model.predict(chemenv, mean_only=False)
 
             self.results['forces'][n] = f

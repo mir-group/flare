@@ -256,7 +256,7 @@ class Output:
             stress_tensor *= eva_to_gpa  # Convert to GPa
             string += 'Stress tensor (GPa): '
             for p in range(6):
-                string += f'{stress_tensor[p]:.6f}'
+                string += f'{stress_tensor[p]:10.6f}'
             string += '\n'
             pressure = \
                 (stress_tensor[0] + stress_tensor[3] + stress_tensor[5]) / 3
@@ -269,7 +269,7 @@ class Output:
             stress_stds *= eva_to_gpa  # Convert to GPa
             string += 'Stress tensor uncertainties (GPa): '
             for p in range(6):
-                string += f'{stress_stds[p]:.6f}'
+                string += f'{stress_stds[p]:10.6f}'
             string += '\n'
 
         # Report pressure.

@@ -5,6 +5,7 @@ This module is to provide the same interface as the module `dft_interface`, so w
 import numpy as np
 from copy import deepcopy
 
+
 def parse_dft_input(atoms):
     pos = np.copy(atoms.positions)
     spc = atoms.get_chemical_symbols()
@@ -19,6 +20,7 @@ def parse_dft_input(atoms):
             mass_dict[spec_ind] = mass[i]
     return pos, spc, cell, mass_dict
 
+
 def run_dft_par(atoms, structure, dft_calc, **dft_kwargs):
     '''
     Assume that the atoms have been updated
@@ -27,7 +29,7 @@ def run_dft_par(atoms, structure, dft_calc, **dft_kwargs):
     calc = deepcopy(dft_calc)
     atoms.set_calculator(calc)
 
-    # calculate DFT forces 
+    # calculate DFT forces
     forces = atoms.get_forces()
 
     return forces

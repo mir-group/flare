@@ -132,6 +132,8 @@ class ASE_OTF(OTF):
             the FLARE ASE calcuator, and write the results to the
             OTF structure object.
         '''
+
+        # Reset FLARE calculator if necessary.
         if not isinstance(self.atoms.calc, FLARE_Calculator):
             self.atoms.set_calculator(self.flare_calc)
 
@@ -172,10 +174,6 @@ class ASE_OTF(OTF):
 
     def run_dft(self):
         super().run_dft()
-
-        # Update forces of the atoms object.
-        # Note: should also update stresses.
-        self.atoms.calc.results['forces'] = np.copy(self.structure.forces)
 
     def update_gp(self, train_atoms, dft_frcs):
 

@@ -298,6 +298,7 @@ class OTF:
         f.info('\nCalling DFT...\n')
 
         # calculate DFT forces
+        # TODO: Return stress and energy
         forces = self.dft_module.run_dft_par(
             self.dft_input, self.structure, self.dft_loc, n_cpus=self.n_cpus,
             dft_out=self.dft_output, npool=self.npool, mpi=self.mpi,
