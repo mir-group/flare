@@ -17,6 +17,10 @@ from flare.struc import Structure
 from flare.utils.element_coder import Z_to_element
 
 
+# Unit conversions.
+eva_to_gpa = 160.21766208
+
+
 class Output:
     """
     This is an I/O class that hosts the log files for OTF and Trajectories
@@ -224,8 +228,8 @@ class Output:
             string += '\n'
 
         string += '\n'
-        string += f'temperature: {temperature:.2f} K \n'
-        string += f'kinetic energy: {KE:.6f} eV \n'
+        string += f'Temperature: {temperature:.2f} K \n'
+        string += f'Kinetic energy: {KE:.6f} eV \n'
 
         # Report potential energy.
         tot_en = None
@@ -244,24 +248,33 @@ class Output:
             string += f'Total energy: {tot_en:.6f} eV \n'
 
         # Report stress tensor.
+        pressure = None
         if structure.partial_stresses is not None:
             current_volume = np.linalg.det(structure.cell)
             stress_tensor = \
                 np.sum(structure.partial_stresses, 0) / current_volume
-            string += 'Stress tensor (eV/A^3): '
+            stress_tensor *= eva_to_gpa  # Convert to GPa
+            string += 'Stress tensor (GPa): '
             for p in range(6):
-                string += f'{stress_tensor[p]:10.4f}'
+                string += f'{stress_tensor[p]:.6f}'
             string += '\n'
+            pressure = \
+                (stress_tensor[0] + stress_tensor[3] + stress_tensor[5]) / 3
 
-        # Report stress tensor uncertainties:
+        # Report stress tensor uncertainties.
         if structure.partial_stress_stds is not None:
             stress_stds = \
                 (np.sqrt(np.sum(structure.partial_stress_stds**2, 0)) /
                  current_volume)
-            string += 'Stress tensor uncertainties (eV/A^3): '
+            stress_stds *= eva_to_gpa  # Convert to GPa
+            string += 'Stress tensor uncertainties (GPa): '
             for p in range(6):
-                string += f'{stress_stds[p]:10.4f}'
+                string += f'{stress_stds[p]:.6f}'
             string += '\n'
+
+        # Report pressure.
+        if pressure is not None:
+            string += f'Pressure (GPa): {pressure:.6f} \n'
 
         logger = logging.getLogger(self.basename+'log')
         logger.info(string)
