@@ -1314,24 +1314,20 @@ def many_body_jit(q_array_1, q_array_2,
     k12 = k_sq_exp_double_dev(q1, q2, sig, ls)
 
     for i in range(q_neigh_array_1.shape[0]):
-        qi_grad = np.zeros((3, 3), dtype=np.float64)
-        qi_grad[0, :] += q_neigh_grads_1[i, 0]
-        qi_grad[1, :] += q_neigh_grads_1[i, 1]
-        qi_grad[2, :] += q_neigh_grads_1[i, 2]
+        qi_grad = q_neigh_grads_1[i, :]
         qis = np.sum(q_neigh_array_1[i, :])
         ki2s = k_sq_exp_double_dev(qis, q2, sig, ls)
 
         for j in range(q_neigh_array_2.shape[0]):
-            qj_grad = np.zeros((3, 3), dtype=np.float64)
-            qj_grad[0, :] += q_neigh_grads_2[j, 0]
-            qj_grad[1, :] += q_neigh_grads_2[j, 1]
-            qj_grad[2, :] += q_neigh_grads_2[j, 2]
+            qj_grad = q_neigh_grads_2[j, :]
             qjs = np.sum(q_neigh_array_2[j, :])
             k1js = k_sq_exp_double_dev(q1, qjs, sig, ls)
 
             kij = k_sq_exp_double_dev(qis, qjs, sig, ls)
 
-            kern += qi_grad * qj_grad * (k12 + ki2s + k1js + kij)
+            for d1 in range(3):
+                for d2 in range(3):
+                    kern[d1,d2] += qi_grad[d1] * qj_grad[d2] * (k12 + ki2s + k1js + kij)
 
     return kern
 
