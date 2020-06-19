@@ -1,7 +1,10 @@
 import sys
 import numpy as np
+
+from copy import deepcopy
 from typing import List, Tuple
 from flare import gp, env, struc, otf
+from flare.gp import GaussianProcess
 
 
 class OtfAnalysis:
@@ -42,48 +45,38 @@ class OtfAnalysis:
         self.gp_species_list = gp_species_list
         self.gp_atom_count = gp_atom_count
 
-    def make_gp(self, cell=None, kernel_name=None, algo=None,
-                call_no=None, cutoffs=None, hyps=None, init_gp=None,
-                hyp_no=None, par=True, kernel=None):
+    def make_gp(self, cell=None, call_no=None, hyps=None, init_gp=None,
+                hyp_no=None, **kwargs,):
+
+        if call_no is None:
+            call_no = len(self.gp_position_list)
+        if hyp_no is None:
+            hyp_no = call_no
+        if hyps is None:
+            # check out the last non-empty element from the list
+            for icall in reversed(range(hyp_no)):
+                if len(self.gp_hyp_list[icall]) > 0:
+                    hyps = self.gp_hyp_list[icall][-1]
+                    break
+        if cell is None:
+            cell = self.header['cell']
+
 
         if init_gp is None:
             # Use run's values as extracted from header
             # TODO Allow for kernel gradient in header
-            if cell is None:
-                cell = self.header['cell']
-            if kernel_name is None:
-                kernel_name = self.header['kernel_name']
-            if algo is None:
-                algo = self.header['algo']
-            if cutoffs is None:
-                cutoffs = self.header['cutoffs']
-            if call_no is None:
-                call_no = len(self.gp_position_list)
-            if hyp_no is None:
-                hyp_no = call_no
-            if hyps is None:
-                # check out the last non-empty element from the list
-                for icall in reversed(range(hyp_no)):
-                    if len(self.gp_hyp_list[icall]) > 0:
-                        gp_hyps = self.gp_hyp_list[icall][-1]
-                        break
-            else:
-                gp_hyps = hyps
 
-            if (kernel is not None) and (kernel_name is None):
-                DeprecationWarning("kernel replaced with kernel_name")
-                kernel_name = kernel.__name__
+            dictionary = deepcopy(self.header)
+            dictionary['hyps'] = hyps
+            for k in kwargs:
+                if kwargs[k] is not None:
+                    dictionary[k] = kwargs[k]
 
             gp_model = \
-                gp.GaussianProcess(kernel_name=kernel_name,
-                                   hyps=gp_hyps,
-                                   cutoffs=cutoffs, opt_algorithm=algo,
-                                   par=par)
+                GaussianProcess.from_dict(dictionary)
         else:
             gp_model = init_gp
-            call_no = len(self.gp_position_list)
-            gp_hyps = self.gp_hyp_list[hyp_no-1][-1]
-            gp_model.hyps = gp_hyps
+            gp_model.hyps = hyps
 
         for (positions, forces, atoms, _, species) in \
             zip(self.gp_position_list[:call_no],
@@ -350,9 +343,12 @@ def parse_header_information(outfile: str = 'otf_run.out') -> dict:
     if stopreading is None:
         raise Exception("OTF File is malformed")
 
+    cutoffs_dict = {}
     for i, line in enumerate(lines[:stopreading]):
-        # TODO Update this in full
-        if 'cutoffs' in line:
+        line_lower = line.lower()
+
+        # gp related
+        if 'cutoffs' in line_lower:
             line = line.split(':')[1].strip()
             line = line.strip('[').strip(']')
             line = line.split()
@@ -363,28 +359,43 @@ def parse_header_information(outfile: str = 'otf_run.out') -> dict:
                 except:
                     cutoffs.append(float(val[:-1]))
             header_info['cutoffs'] = cutoffs
-        if 'frames' in line:
-            header_info['frames'] = int(line.split(':')[1])
-        if 'kernel_name' in line:
+        elif 'cutoff' in line_lower:
+            line = line.split(':')
+            name = line[0][7:]
+            value = float(line[1])
+            cutoffs_dict[name] = value
+            header_info['cutoffs'] = cutoffs_dict
+
+        if 'kernel_name' in line_lower:
             header_info['kernel_name'] = line.split(':')[1].strip()
-        if 'kernel' in line:
+        elif 'kernels' in line_lower:
+            line = line.split(':')[1].strip()
+            line = line.strip('[').strip(']')
+            line = line.split()
+            header_info['kernels'] = line
+        elif 'kernel' in line_lower:
             header_info['kernel_name'] = line.split(':')[1].strip()
-        if 'number of hyperparameters:' in line:
+
+        if 'number of hyperparameters:' in line_lower:
             header_info['n_hyps'] = int(line.split(':')[1])
-        if 'optimization algorithm' in line:
+        if 'optimization algorithm' in line_lower:
             header_info['algo'] = line.split(':')[1].strip()
-        if 'number of atoms' in line:
+
+        # otf related
+        if 'frames' in line_lower:
+            header_info['frames'] = int(line.split(':')[1])
+        if 'number of atoms' in line_lower:
             header_info['atoms'] = int(line.split(':')[1])
-        if 'timestep' in line:
+        if 'timestep' in line_lower:
             header_info['dt'] = float(line.split(':')[1])
-        if 'system species' in line:
+        if 'system species' in line_lower:
             line = line.split(':')[1]
             line = line.split("'")
 
             species = [item for item in line if item.isalpha()]
 
             header_info['species_set'] = set(species)
-        if 'periodic cell' in line:
+        if 'periodic cell' in line_lower:
             vectors = []
             for cell_line in lines[i+1:i+4]:
                 cell_line = \
@@ -393,7 +404,7 @@ def parse_header_information(outfile: str = 'otf_run.out') -> dict:
                 vector = [float(vec[0]), float(vec[1]), float(vec[2])]
                 vectors.append(vector)
             header_info['cell'] = np.array(vectors)
-        if 'previous positions' in line:
+        if 'previous positions' in line_lower:
             struc_spec = []
             prev_positions = []
             for pos_line in lines[i+1:i+1+header_info.get('atoms', 0)]:

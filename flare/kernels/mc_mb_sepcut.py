@@ -49,7 +49,7 @@ def many_body_mc_sepcut_jit(q_array_1, q_array_2,
     kern = 0
 
     useful_species = np.array(
-        list(set(species1).union(set(species2))), dtype=np.int8)
+        list(set(species1).intersection(set(species2))), dtype=np.int8)
 
     bc1 = spec_mask[c1]
     bc1n = bc1 * nspec
@@ -154,7 +154,7 @@ def many_body_mc_grad_sepcut_jit(q_array_1, q_array_2,
     ls_derv = np.zeros(nmb, dtype=np.float64)
 
     useful_species = np.array(
-        list(set(species1).union(set(species2))), dtype=np.int8)
+        list(set(species1).intersection(set(species2))), dtype=np.int8)
 
     bc1 = spec_mask[c1]
     bc1n = bc1 * nspec
@@ -230,33 +230,37 @@ def many_body_mc_grad_sepcut_jit(q_array_1, q_array_2,
                     dkij = 0
 
                 # c1 s and c2 s and if c1==c2 --> c1 s
-                kern_term_c1s = q1i_grads * q2j_grads * k12
-                if (sig[mbtype1] !=0):
-                    sig_derv[mbtype1] += kern_term_c1s * 2. / sig[mbtype1]
-                kern += kern_term_c1s
+                if k12 != 0:
+                    kern_term_c1s = q1i_grads * q2j_grads * k12
+                    if sig[mbtype1] !=0:
+                        sig_derv[mbtype1] += kern_term_c1s * 2. / sig[mbtype1]
+                    kern += kern_term_c1s
+                    ls_derv[mbtype1] += q1i_grads * q2j_grads * dk12
 
                 # s e1 and c2 s and c2==e1 --> c2 s
-                kern_term_c2s = qi1_grads * q2j_grads * ki2s
-                if (sig[mbtype2] !=0):
-                    sig_derv[mbtype2] += kern_term_c2s * 2. / sig[mbtype2]
-                kern += kern_term_c2s
+                if ki2s != 0:
+                    kern_term_c2s = qi1_grads * q2j_grads * ki2s
+                    if sig[mbtype2] !=0:
+                        sig_derv[mbtype2] += kern_term_c2s * 2. / sig[mbtype2]
+                    kern += kern_term_c2s
+                    ls_derv[mbtype2] += qi1_grads * q2j_grads * dki2s
 
                 # c1 s and s e2 and  c1==e2 --> c1 s
-                kern_term_c1s = q1i_grads * qj2_grads * k1js
-                if (sig[mbtype1] !=0):
-                    sig_derv[mbtype1] += kern_term_c1s * 2. / sig[mbtype1]
-                kern += kern_term_c1s
+                if k1js != 0:
+                    kern_term_c1s = q1i_grads * qj2_grads * k1js
+                    if sig[mbtype1] !=0:
+                        sig_derv[mbtype1] += kern_term_c1s * 2. / sig[mbtype1]
+                    kern += kern_term_c1s
+                    ls_derv[mbtype1] += q1i_grads * qj2_grads * dk1js
 
                 # s e1 and s e2 and e1 == e2 -> s e
-                kern_term_se = qi1_grads * qj2_grads * kij
-                if (sig[mbtype] !=0):
-                    sig_derv[mbtype] += kern_term_se * 2. / sig[mbtype]
-                kern += kern_term_se
+                if kij != 0:
+                    kern_term_se = qi1_grads * qj2_grads * kij
+                    if sig[mbtype] !=0:
+                        sig_derv[mbtype] += kern_term_se * 2. / sig[mbtype]
+                    kern += kern_term_se
+                    ls_derv[mbtype]  += qi1_grads * qj2_grads * dkij
 
-                ls_derv[mbtype1] += q1i_grads * q2j_grads * dk12
-                ls_derv[mbtype2] += qi1_grads * q2j_grads * dki2s
-                ls_derv[mbtype1] += q1i_grads * qj2_grads * dk1js
-                ls_derv[mbtype]  += qi1_grads * qj2_grads * dkij
 
     grad = np.zeros(nmb*2, dtype=np.float64)
     grad[:nmb] = sig_derv
@@ -292,7 +296,7 @@ def many_body_mc_force_en_sepcut_jit(q_array_1, q_array_2,
     kern = 0
 
     useful_species = np.array(
-        list(set(species1).union(set(species2))), dtype=np.int8)
+        list(set(species1).intersection(set(species2))), dtype=np.int8)
 
     bc1 = spec_mask[c1]
     bc1n = bc1 * nspec
@@ -361,7 +365,7 @@ def many_body_mc_en_sepcut_jit(q_array_1, q_array_2, c1, c2,
         float: Value of the many-body kernel.
     """
     useful_species = np.array(
-        list(set(species1).union(set(species2))), dtype=np.int8)
+        list(set(species1).intersection(set(species2))), dtype=np.int8)
 
     kern = 0
 

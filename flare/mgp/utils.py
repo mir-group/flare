@@ -1,77 +1,82 @@
-import io, os, sys, time, random, math
-import multiprocessing as mp
+import warnings
 import numpy as np
 
 from numpy import array
 from numba import njit
+from math import exp, floor
+from typing import Callable
 
 from flare.env import AtomicEnvironment
 from flare.kernels.cutoffs import quadratic_cutoff
-from flare.kernels.kernels import three_body_helper_1, \
-    three_body_helper_2, force_helper
-from flare.kernels.utils import str_to_kernel_set as stks
-from flare.utils.mask_helper import HyperParameterMasking
+from flare.kernels.utils import str_to_kernel_set
+from flare.parameters import Parameters
+
+from flare.mgp.grid_kernels_3b import grid_kernel, grid_kernel_sephyps
 
 
-def get_2bkernel(GP):
-    if 'mc' in GP.kernel_name:
-        kernel, _, ek, efk = stks('2', GP.multihyps)
+def str_to_mapped_kernel(name: str, component: str = "mc",
+                         hyps_mask: dict = None):
+    """
+    Return kernels and kernel gradient function based on a string.
+    If it contains 'sc', it will use the kernel in sc module;
+    otherwise, it uses the kernel in mc_simple;
+    if sc is not included and multihyps is True,
+    it will use the kernel in mc_sephyps module.
+    Otherwise, it will use the kernel in the sc module.
+
+    Args:
+
+    name (str): name for kernels. example: "2+3mc"
+    multihyps (bool, optional): True for using multiple hyperparameter groups
+
+    :return: mapped kernel function, kernel gradient, energy kernel,
+             energy_and_force kernel
+
+    """
+
+    multihyps = True
+    if hyps_mask is None:
+        multihyps = False
+    elif hyps_mask['nspecie'] == 1:
+        multihyps = False
+
+    # b2 = Two body in use, b3 = Three body in use
+    b2 = False
+    many = False
+    b3 = False
+    for s in ['3', 'three']:
+        if s in name.lower() or s == name.lower():
+            b3 = True
+
+    if b3:
+         if multihyps:
+             return grid_kernel_sephyps, None, None, None
+         else:
+             return grid_kernel, None, None, None
     else:
-        kernel, _, ek, efk = stks('2sc', GP.multihyps)
+        warnings.Warn(NotImplemented("mapped kernel for two-body and manybody kernels "
+                                  "are not implemented"))
+        return None
 
-    cutoffs = [GP.cutoffs[0]]
+def get_kernel_term(kernel_name, component, hyps_mask, hyps, grid_kernel=False):
+    """
+    Args
+        term (str): 'twobody' or 'threebody'
+    """
+    if grid_kernel:
+        stks = str_to_mapped_kernel
+        kernel_name_list = kernel_name
+    else:
+        stks = str_to_kernel_set
+        kernel_name_list = [kernel_name] 
 
-    hyps, hyps_mask = HyperParameterMasking.get_2b_hyps(GP.hyps, GP.hyps_mask, GP.multihyps)
+    kernel, _, ek, efk = stks(kernel_name_list, component, hyps_mask)
+
+    # hyps_mask is modified here
+    hyps, cutoffs, hyps_mask = Parameters.get_component_mask(hyps_mask, kernel_name, hyps=hyps)
 
     return (kernel, ek, efk, cutoffs, hyps, hyps_mask)
 
-
-def get_3bkernel(GP):
-
-    if 'mc' in GP.kernel_name:
-        kernel, _, ek, efk = stks('3', GP.multihyps)
-    else:
-        kernel, _, ek, efk = stks('3sc', GP.multihyps)
-
-    base = 0
-    for t in ['two', '2']:
-        if t in GP.kernel_name:
-            base = 2
-
-    cutoffs = np.copy(GP.cutoffs)
-
-    hyps, hyps_mask = \
-            HyperParameterMasking.get_3b_hyps(\
-                GP.hyps, GP.hyps_mask, GP.multihyps)
-
-    return (kernel, ek, efk, cutoffs, hyps, hyps_mask)
-
-
-def get_l_bound(curr_l_bound, structure, two_d=False):
-    positions = structure.positions
-    if two_d:
-        cell = structure.cell[:2]
-    else:
-        cell = structure.cell
-
-    min_dist = curr_l_bound
-    for ind1, pos01 in enumerate(positions):
-        for i1 in range(2):
-            for vec1 in cell:
-                pos1 = pos01 + i1 * vec1
-
-                for ind2, pos02 in enumerate(positions):
-                    for i2 in range(2):
-                        for vec2 in cell:
-                            pos2 = pos02 + i2 * vec2
-
-                            if np.all(pos1 == pos2):
-                                continue
-                            dist12 = np.linalg.norm(pos1-pos2)
-                            if dist12 < min_dist:
-                                min_dist = dist12
-                                min_atoms = (ind1, ind2)
-    return min_dist
 
 
 @njit
@@ -98,6 +103,7 @@ def get_bonds(ctype, etypes, bond_array):
             bond_dirs.append([b_dir])
     return exist_species, bond_lengths, bond_dirs
 
+
 @njit
 def get_triplets(ctype, etypes, bond_array, cross_bond_inds,
                  cross_bond_dists, triplets):
@@ -114,27 +120,16 @@ def get_triplets(ctype, etypes, bond_array, cross_bond_inds,
             ind1 = cross_bond_inds[m, m+n+1]
             r2 = bond_array[ind1, 0]
             c2 = bond_array[ind1, 1:]
-            c12 = np.sum(c1*c2)
-            if c12 > 1: # to prevent numerical error
-                c12 = 1
-            elif c12 < -1:
-                c12 = -1
             spc2 = etypes[ind1]
 
-#            if spc1 == spc2:
-#                spcs_list = [[ctype, spc1, spc2], [ctype, spc1, spc2]]
-#            elif ctype == spc1: # spc1 != spc2
-#                spcs_list = [[ctype, spc1, spc2], [spc2, ctype, spc1]]
-#            elif ctype == spc2: # spc1 != spc2
-#                spcs_list = [[spc1, spc2, ctype], [spc2, ctype, spc1]]
-#            else: # all different
-#                spcs_list = [[ctype, spc1, spc2], [ctype, spc2, spc1]]
+            c12 = np.sum(c1*c2)
+            r12 = np.sqrt(r1**2 + r2**2 - 2*r1*r2*c12)
 
             spcs_list = [[ctype, spc1, spc2], [ctype, spc2, spc1]]
             for i in range(2):
                 spcs = spcs_list[i]
-                triplet = array([r2, r1, c12]) if i else array([r1, r2, c12])
-                coord = c2 if i else c1
+                triplet = array([r2, r1, r12]) if i else array([r1, r2, r12])
+                coord = c2 if i else c1 # TODO: figure out what's wrong. why not [c1, c2] for force map
                 if spcs not in exist_species:
                     exist_species.append(spcs)
                     tris.append([triplet])
@@ -145,54 +140,3 @@ def get_triplets(ctype, etypes, bond_array, cross_bond_inds,
                     tri_dir[k].append(coord)
 
     return exist_species, tris, tri_dir
-
-@njit
-def get_triplets_en(ctype, etypes, bond_array, cross_bond_inds,
-                    cross_bond_dists, triplets):
-    exist_species = []
-    tris = []
-    tri_dir = []
-
-    for m in range(bond_array.shape[0]):
-        r1 = bond_array[m, 0]
-        c1 = bond_array[m, 1:]
-        spc1 = etypes[m]
-
-        for n in range(triplets[m]):
-            ind1 = cross_bond_inds[m, m+n+1]
-            r2 = bond_array[ind1, 0]
-            c2 = bond_array[ind1, 1:]
-            c12 = np.sum(c1*c2)
-            r12 = np.sqrt(r1**2 + r2**2 - 2*r1*r2*c12)
-
-            spc2 = etypes[ind1]
-
-#            if spc1 == spc2:
-#                spcs_list = [[ctype, spc1, spc2], [ctype, spc1, spc2]]
-#            elif ctype == spc1: # spc1 != spc2
-#                spcs_list = [[ctype, spc1, spc2], [spc2, ctype, spc1]]
-#            elif ctype == spc2: # spc1 != spc2
-#                spcs_list = [[spc1, spc2, ctype], [spc2, ctype, spc1]]
-#            else: # all different
-#                spcs_list = [[ctype, spc1, spc2], [ctype, spc2, spc1]]
-
-            if spc1 <= spc2:
-                spcs = [ctype, spc1, spc2]
-                triplet = array([r1, r2, r12])
-                coord = [c1, c2]
-            else:
-                spcs = [ctype, spc2, spc1]
-                triplet = array([r2, r1, r12])
-                coord = [c2, c1]
-
-            if spcs not in exist_species:
-                exist_species.append(spcs)
-                tris.append([triplet])
-                tri_dir.append([coord])
-            else:
-                k = exist_species.index(spcs)
-                tris[k].append(triplet)
-                tri_dir[k].append(coord)
-
-    return exist_species, tris, tri_dir
-

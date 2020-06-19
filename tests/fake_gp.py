@@ -6,164 +6,124 @@ from numpy.random import random, randint, permutation
 from flare.gp import GaussianProcess
 from flare.env import AtomicEnvironment
 from flare.struc import Structure
-from flare.utils.mask_helper import HyperParameterMasking
+from flare.utils.parameter_helper import ParameterHelper
 
 
-def get_random_structure(cell, unique_species, noa):
+def get_random_structure(cell, unique_species, noa, set_seed:int = None):
     """Create a random test structure """
-    np.random.seed(0)
+    if set_seed:
+        np.random.seed(set_seed)
 
-    positions = []
-    forces = []
-    species = []
-
-    for n in range(noa):
-        positions.append(np.random.uniform(-1, 1, 3))
-        forces.append(np.random.uniform(-1, 1, 3))
-        species.append(unique_species[np.random.randint(0,
-                                                        len(unique_species))])
+    forces = (np.random.random([noa, 3])-0.5)*2
+    positions = np.random.random([noa, 3])
+    species = [unique_species[np.random.randint(0, len(unique_species))] \
+            for i in range(noa)]
 
     test_structure = Structure(cell, species, positions)
 
     return test_structure, forces
 
 
-def generate_hm(nbond, ntriplet, nmb=1, constraint=False, multihyps=True):
+def generate_hm(ntwobody, nthreebody, nmanybody=1, constraint=False, multihyps=True):
 
+    cutoff = 0.8
     if (multihyps is False):
-        hyps_label = []
-        if (nbond > 0):
-            nbond = 1
-            hyps_label += ['Length', 'Signal Var.']
-        if (ntriplet > 0):
-            ntriplet = 1
-            hyps_label += ['Length', 'Signal Var.']
-        hyps_label += ['Length', 'Signal Var.']
-        hyps_label += ['Noise Var.']
-        return random((nbond+ntriplet+1)*2+1), {'hyps_label': hyps_label}, np.ones(3, dtype=np.float)*0.8
-
-    pm = HyperParameterMasking(species=['H', 'He'], parameters={'cutoff2b': 0.8,
-        'cutoff3b': 0.8, 'cutoffmb': 0.8, 'noise':0.05})
-    pm.define_group('bond', 'b1', ['*', '*'], parameters=random(2))
-    pm.define_group('triplet', 't1', ['*', '*', '*'], parameters=random(2))
-    if (nmb>0):
-        pm.define_group('mb', 'mb1', ['*', '*'], parameters=random(2))
-    if (nbond > 1):
-        pm.define_group('bond', 'b2', ['H', 'H'], parameters=random(2))
-    if (ntriplet > 1):
-        pm.define_group('triplet', 't2', ['H', 'H', 'H'], parameters=random(2))
-
-    hm = pm.generate_dict()
-    hyps = hm['hyps']
-    cut = hm['cutoffs']
-
-    if (constraint is False):
-        print(hyps)
-        print(hm)
-        print(cut)
+        kernels = []
+        parameters = {}
+        if (ntwobody > 0):
+            kernels += ['twobody']
+            parameters['cutoff_twobody'] = cutoff
+        if (nthreebody > 0):
+            kernels += ['threebody']
+            parameters['cutoff_threebody'] = cutoff
+        if (nmanybody > 0):
+            kernels += ['manybody']
+            parameters['cutoff_manybody'] = cutoff
+        pm = ParameterHelper(kernels=kernels, random=True,
+                parameters=parameters)
+        hm = pm.as_dict()
+        hyps = hm['hyps']
+        cut = hm['cutoffs']
         return hyps, hm, cut
 
-    pm.set_parameters('b1', parameters=random(2), opt=[True, False])
-    pm.set_parameters('t1', parameters=random(2), opt=[False, True])
-    hm = pm.generate_dict()
+    pm = ParameterHelper(species=['H', 'He'], parameters={'noise':0.05})
+    if (ntwobody > 0):
+        pm.define_group('twobody', 'b1', ['*', '*'], parameters=random(2))
+        pm.set_parameters('cutoff_twobody', cutoff)
+    if (nthreebody > 0):
+        pm.define_group('threebody', 't1', ['*', '*', '*'], parameters=random(2))
+        pm.set_parameters('cutoff_threebody', cutoff)
+    if (nmanybody > 0):
+        pm.define_group('manybody', 'manybody1', ['*', '*'], parameters=random(2))
+        pm.set_parameters('cutoff_manybody', cutoff)
+    if (ntwobody > 1):
+        pm.define_group('twobody', 'b2', ['H', 'H'], parameters=random(2))
+    if (nthreebody > 1):
+        pm.define_group('threebody', 't2', ['H', 'H', 'H'], parameters=random(2))
+
+    if (constraint is False):
+        hm = pm.as_dict()
+        hyps = hm['hyps']
+        cut = hm['cutoffs']
+        return hyps, hm, cut
+
+    pm.set_constraints('b1', opt=[True, False])
+    pm.set_constraints('t1', opt=[False, True])
+    hm = pm.as_dict()
     hyps = hm['hyps']
     cut = hm['cutoffs']
     return hyps, hm, cut
 
 
-def get_gp(bodies, kernel_type='mc', multihyps=True, cellabc=[1, 1, 1.5]) -> GaussianProcess:
+def get_gp(bodies, kernel_type='mc', multihyps=True, cellabc=[1, 1, 1.5],
+           force_only=False, noa=5) -> GaussianProcess:
     """Returns a GP instance with a two-body numba-based kernel"""
     print("\nSetting up...\n")
 
     # params
     cell = np.diag(cellabc)
-    unique_species = [2, 1]
-    cutoffs = np.array([0.8, 0.8])
-    noa = 5
+    unique_species = [2, 1, 3]
 
-    nbond = 0
-    ntriplet = 0
+    ntwobody = 0
+    nthreebody = 0
     prefix = bodies
     if ('2' in bodies or 'two' in bodies):
-        nbond = 1
+        ntwobody = 1
     if ('3' in bodies or 'three' in bodies):
-        ntriplet = 1
+        nthreebody = 1
 
-    hyps, hm, _ = generate_hm(nbond, ntriplet, nmb=0, multihyps=multihyps)
+    hyps, hm, _ = generate_hm(ntwobody, nthreebody, nmanybody=0, multihyps=multihyps)
+    cutoffs = hm['cutoffs']
+    kernels = hm['kernels']
+    hl = hm['hyp_labels']
 
     # create test structure
     test_structure, forces = get_random_structure(cell, unique_species,
                                                   noa)
     energy = 3.14
 
-    hl = hm['hyps_label']
-    if (multihyps is False):
-        hm = None
-
     # test update_db
     gaussian = \
-        GaussianProcess(kernel_name=f'{prefix}{kernel_type}',
+        GaussianProcess(kernels=kernels,
+                        component=kernel_type,
                         hyps=hyps,
                         hyp_labels=hl,
-                        cutoffs=cutoffs, multihyps=multihyps, hyps_mask=hm,
+                        cutoffs=cutoffs, hyps_mask=hm,
                         parallel=False, n_cpus=1)
-    gaussian.update_db(test_structure, forces, energy=energy)
+    if force_only:
+        gaussian.update_db(test_structure, forces)
+    else:
+        gaussian.update_db(test_structure, forces, energy=energy)
     gaussian.check_L_alpha()
 
-    print('alpha:')
-    print(gaussian.alpha)
-
-    return gaussian
-
-
-def get_force_gp(bodies, kernel_type='mc', multihyps=True, cellabc=[1,1,1.5]) -> GaussianProcess:
-    """Returns a GP instance with a two-body numba-based kernel"""
-    print("\nSetting up...\n")
-
-    # params
-    cell = np.diag(cellabc)
-    unique_species = [2, 1]
-    cutoffs = np.array([0.8, 0.8])
-    noa = 5
-
-    nbond = 0
-    ntriplet = 0
-    prefix = bodies
-    if ('2' in bodies or 'two' in bodies):
-        nbond = 1
-    if ('3' in bodies or 'three' in bodies):
-        ntriplet = 1
-
-    hyps, hm, _ = generate_hm(nbond, ntriplet, multihyps=multihyps)
-
-    # create test structure
-    test_structure, forces = get_random_structure(cell, unique_species,
-                                                  noa)
-    energy = 3.14
-
-    hl = hm['hyps_label']
-    if (multihyps is False):
-        hm = None
-
-    # test update_db
-    gaussian = \
-        GaussianProcess(kernel_name=f'{prefix}{kernel_type}',
-                        hyps=hyps,
-                        hyp_labels=hl,
-                        cutoffs=cutoffs, multihyps=multihyps, hyps_mask=hm,
-                        parallel=False, n_cpus=1)
-    gaussian.update_db(test_structure, forces)
-    gaussian.check_L_alpha()
-
-    print('alpha:')
-    print(gaussian.alpha)
+    #print(gaussian.alpha)
 
     return gaussian
 
 
 def get_params():
     parameters = {'unique_species': [2, 1],
-                  'cutoff': 0.8,
+                  'cutoffs': {'twobody': 0.8},
                   'noa': 5,
                   'cell': np.eye(3),
                   'db_pts': 30}
@@ -175,7 +135,7 @@ def get_tstp(hm=None) -> AtomicEnvironment:
     # params
     cell = np.eye(3)
     unique_species = [2, 1]
-    cutoffs = np.ones(3)*0.8
+    cutoffs = {'twobody':0.8, 'threebody': 0.8, 'manybody': 0.8}
     noa = 10
 
     test_structure_2, _ = get_random_structure(cell, unique_species,
@@ -193,9 +153,9 @@ def generate_mb_envs(cutoffs, cell, delt, d1, mask=None, kern_type='mc'):
                            [0.0, 0., 0.3],
                            [1., 1., 0.]])
     positions0[1:] += 0.1*np.random.random([4, 3])
-    triplet = [1, 1, 2, 1]
-    np.random.shuffle(triplet)
-    species_1 = np.hstack([triplet, randint(1, 2)])
+    threebody = [1, 1, 2, 1]
+    np.random.shuffle(threebody)
+    species_1 = np.hstack([threebody, randint(1, 2)])
     if kern_type == 'sc':
         species_1 = np.ones(species_1.shape)
     return generate_mb_envs_pos(positions0, species_1, cutoffs, cell, delt, d1, mask)
@@ -256,7 +216,7 @@ def generate_envs(cutoffs, delta):
     """
     # create env 1
     # perturb the x direction of atom 0 for +- delta
-    cell = np.eye(3)*np.max(cutoffs+0.1)
+    cell = np.eye(3)*(np.max(list(cutoffs.values()))+0.1)
     atom_1 = 0
     pos_1 = np.vstack([[0, 0, 0], random([3, 3])])
     pos_2 = deepcopy(pos_1)
