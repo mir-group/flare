@@ -9,6 +9,7 @@ from pytest import raises
 from scipy.optimize import OptimizeResult
 
 import flare
+from flare.predict import predict_on_structure
 from flare.gp import GaussianProcess
 from flare.env import AtomicEnvironment
 from flare.struc import Structure
@@ -18,7 +19,6 @@ from flare.otf_parser import OtfAnalysis
 
 from .fake_gp import generate_hm, get_tstp, get_random_structure
 from copy import deepcopy
-
 multihyps_list = [True, False]
 
 
@@ -65,6 +65,7 @@ def params():
 
 @pytest.fixture(scope='module')
 def validation_env() -> AtomicEnvironment:
+    np.random.seed(0)
     test_pt = get_tstp(None)
     yield test_pt
     del test_pt
@@ -186,52 +187,52 @@ class TestConstraint():
 
 class TestAlgebra():
 
-    @pytest.mark.parametrize('par, per_atom_par, n_cpus',
-                             [(False, False, 1),
-                              (True, True, 2),
-                              (True, False, 2)])
-    @pytest.mark.parametrize('multihyps', multihyps_list)
-    def test_predict(self, all_gps, validation_env,
-                     par, per_atom_par, n_cpus, multihyps):
-        test_gp = all_gps[multihyps]
-        test_gp.parallel = par
-        test_gp.per_atom_par = per_atom_par
-        pred = test_gp.predict(x_t=validation_env, d=1)
-        assert (len(pred) == 2)
-        assert (isinstance(pred[0], float))
-        assert (isinstance(pred[1], float))
+   @pytest.mark.parametrize('par, per_atom_par, n_cpus',
+                            [(False, False, 1),
+                             (True, True, 2),
+                             (True, False, 2)])
+   @pytest.mark.parametrize('multihyps', multihyps_list)
+   def test_predict(self, all_gps, validation_env,
+                    par, per_atom_par, n_cpus, multihyps):
+       test_gp = all_gps[multihyps]
+       test_gp.parallel = par
+       test_gp.per_atom_par = per_atom_par
+       pred = test_gp.predict(x_t=validation_env, d=1)
+       assert (len(pred) == 2)
+       assert (isinstance(pred[0], float))
+       assert (isinstance(pred[1], float))
 
-    @pytest.mark.parametrize('par, n_cpus', [(True, 2),
-                                             (False, 1)])
-    @pytest.mark.parametrize('multihyps', multihyps_list)
-    def test_set_L_alpha(self, all_gps, params, par, n_cpus, multihyps):
-        test_gp = all_gps[multihyps]
-        test_gp.parallel = par
-        test_gp.n_cpus = n_cpus
-        test_gp.set_L_alpha()
+   @pytest.mark.parametrize('par, n_cpus', [(True, 2),
+                                            (False, 1)])
+   @pytest.mark.parametrize('multihyps', multihyps_list)
+   def test_set_L_alpha(self, all_gps, params, par, n_cpus, multihyps):
+       test_gp = all_gps[multihyps]
+       test_gp.parallel = par
+       test_gp.n_cpus = n_cpus
+       test_gp.set_L_alpha()
 
-    @pytest.mark.parametrize('par, n_cpus', [(True, 2),
-                                             (False, 1)])
-    @pytest.mark.parametrize('multihyps', multihyps_list)
-    def test_update_L_alpha(self, all_gps, params, par, n_cpus, multihyps):
-        # set up gp model
-        test_gp = all_gps[multihyps]
-        test_gp.parallel = par
-        test_gp.n_cpus = n_cpus
+   @pytest.mark.parametrize('par, n_cpus', [(True, 2),
+                                            (False, 1)])
+   @pytest.mark.parametrize('multihyps', multihyps_list)
+   def test_update_L_alpha(self, all_gps, params, par, n_cpus, multihyps):
+       # set up gp model
+       test_gp = all_gps[multihyps]
+       test_gp.parallel = par
+       test_gp.n_cpus = n_cpus
 
-        test_structure, forces = \
-            get_random_structure(params['cell'], params['unique_species'], 2)
-        energy = 3.14
-        test_gp.check_L_alpha()
-        test_gp.update_db(test_structure, forces, energy=energy)
-        test_gp.update_L_alpha()
+       test_structure, forces = \
+           get_random_structure(params['cell'], params['unique_species'], 2)
+       energy = 3.14
+       test_gp.check_L_alpha()
+       test_gp.update_db(test_structure, forces, energy=energy)
+       test_gp.update_L_alpha()
 
-        # compare results with set_L_alpha
-        ky_mat_from_update = np.copy(test_gp.ky_mat)
-        test_gp.set_L_alpha()
-        ky_mat_from_set = np.copy(test_gp.ky_mat)
+       # compare results with set_L_alpha
+       ky_mat_from_update = np.copy(test_gp.ky_mat)
+       test_gp.set_L_alpha()
+       ky_mat_from_set = np.copy(test_gp.ky_mat)
 
-        assert (np.all(np.absolute(ky_mat_from_update - ky_mat_from_set)) < 1e-6)
+       assert (np.all(np.absolute(ky_mat_from_update - ky_mat_from_set)) < 1e-6)
 
 
 class TestIO():
@@ -239,7 +240,6 @@ class TestIO():
     def test_representation_method(self, all_gps, multihyps):
         test_gp = all_gps[multihyps]
         the_str = str(test_gp)
-        print(the_str)
         assert 'GaussianProcess Object' in the_str
         assert 'Kernel: [\'twobody\', \'threebody\', \'manybody\']' in the_str
         assert 'Cutoffs: {\'twobody\': 0.8, \'threebody\': 0.8, \'manybody\': 0.8}' in the_str
@@ -269,6 +269,7 @@ class TestIO():
         for d in [1, 2, 3]:
             assert np.all(test_gp.predict(x_t=validation_env, d=d) ==
                           new_gp.predict(x_t=validation_env, d=d))
+        assert new_gp.training_data is not test_gp.training_data
 
     @pytest.mark.parametrize('multihyps', multihyps_list)
     def test_load_and_reload(self, all_gps, validation_env, multihyps):
@@ -300,6 +301,15 @@ class TestIO():
         with raises(ValueError):
             test_gp.write_model('test_gp_write', 'cucumber')
 
+        # Test logic for auto-detecting format in write command
+        for format in ['json', 'pickle']:
+            write_string = 'format_write_test.'+format
+            if os.path.exists(write_string):
+                os.remove(write_string)
+
+            test_gp.write_model(write_string)
+            assert os.path.exists(write_string)
+            os.remove(write_string)
 
     def test_load_reload_huge(self, all_gps):
         """
@@ -310,18 +320,22 @@ class TestIO():
         test_gp = deepcopy(all_gps[False])
         test_gp.set_L_alpha()
         dummy_gp = deepcopy(test_gp)
-        dummy_gp.training_data = [1]*5001
 
+        N_data = len(dummy_gp.training_data)
         prev_ky_mat = deepcopy(dummy_gp.ky_mat)
         prev_l_mat = deepcopy(dummy_gp.l_mat)
 
-        dummy_gp.training_data = [1]*5001
-        test_gp.write_model('test_gp_write', 'json')
-        new_gp = GaussianProcess.from_file('test_gp_write.json')
-        assert np.array_equal(prev_ky_mat, new_gp.ky_mat)
-        assert np.array_equal(prev_l_mat, new_gp.l_mat)
+        for model_format in ['pickle','json']:
+            dummy_gp.write_model('test_gp_write', model_format, N_data-1)
+            new_gp = GaussianProcess.from_file(f'test_gp_write.{model_format}')
+            assert np.allclose(prev_ky_mat, new_gp.ky_mat)
+            assert np.allclose(prev_l_mat, new_gp.l_mat)
+            assert new_gp.training_data is not test_gp.training_data
 
-        os.remove('test_gp_write.json')
+            os.remove(f'test_gp_write.{model_format}')
+            dummy_gp = deepcopy(test_gp)
+
+        os.remove(f'test_gp_write_ky_mat.npy')
 
 
 def dumpcompare(obj1, obj2):
@@ -337,7 +351,7 @@ def dumpcompare(obj1, obj2):
 
             assert k1 == k2, f"key {k1} is not the same as {k2}"
 
-            if (k1 != "name"):
+            if 'name' not in k1:
                 if (obj1[k1] is None):
                     continue
                 else:
@@ -390,6 +404,76 @@ def test_training_statistics():
     assert len(data['species']) == len(set(test_structure.coded_species))
     assert len(data['envs_by_species']) == len(set(
         test_structure.coded_species))
+
+
+def test_remove_force_data():
+    """
+    Train a GP on one fake structure. Store forces from prediction.
+    Add a new fake structure and ensure predictions change; then remove
+    the structure and ensure predictions go back to normal.
+    :return:
+    """
+
+    test_structure, forces = get_random_structure(5.0*np.eye(3),
+                                                  ['H', 'Be'],
+                                                  5)
+
+    test_structure_2, forces_2 = get_random_structure(5.0*np.eye(3),
+                                                  ['H', 'Be'],
+                                                  5)
+
+    gp = GaussianProcess(kernels=['twobody'], cutoffs={'twobody':0.8})
+
+    gp.update_db(test_structure, forces)
+
+    with raises(ValueError):
+        gp.remove_force_data(1000000)
+
+    init_forces, init_stds = predict_on_structure(test_structure, gp,
+                                                 write_to_structure=False)
+    init_forces_2, init_stds_2 = predict_on_structure(test_structure_2, gp,
+                                                 write_to_structure=False)
+
+    # Alternate adding in the entire structure and adding in only one atom.
+    for custom_range in [None, [0]]:
+
+        # Add in data and ensure the predictions change in reponse
+        gp.update_db(test_structure_2, forces_2, custom_range=custom_range)
+
+        new_forces, new_stds = predict_on_structure(test_structure, gp,
+                                                    write_to_structure=False)
+
+        new_forces_2, new_stds_2 = predict_on_structure(test_structure_2, gp,
+                                                     write_to_structure=False)
+
+        assert not np.array_equal(init_forces, new_forces)
+        assert not np.array_equal(init_forces_2, new_forces_2)
+        assert not np.array_equal(init_stds, new_stds)
+        assert not np.array_equal(init_stds_2, new_stds_2)
+
+        # Remove that data and test to see that the predictions revert to
+        # what they were previously
+        if custom_range == [0]:
+            popped_strucs, popped_forces = gp.remove_force_data(5)
+        else:
+            popped_strucs, popped_forces = gp.remove_force_data([5, 6, 7, 8,
+                                                                 9])
+
+        for i in range(len(popped_forces)):
+            assert np.array_equal(popped_forces[i],forces_2[i])
+            assert np.array_equal(popped_strucs[i].structure.positions,
+                              test_structure_2.positions)
+
+        final_forces, final_stds = predict_on_structure(test_structure, gp,
+                                                     write_to_structure=False)
+        final_forces_2, final_stds_2 = predict_on_structure(test_structure_2, gp,
+                                                     write_to_structure=False)
+
+        assert np.array_equal(init_forces, final_forces)
+        assert np.array_equal(init_stds, final_stds)
+
+        assert np.array_equal(init_forces_2, final_forces_2)
+        assert np.array_equal(init_stds_2, final_stds_2)
 
 
 class TestHelper():

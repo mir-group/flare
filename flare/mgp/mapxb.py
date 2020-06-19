@@ -1,4 +1,7 @@
-import time, os, math, inspect, subprocess, json, warnings, pickle
+import json
+from flare.utils.element_coder import NumpyEncoder, element_to_Z, Z_to_element
+
+import os, logging, warnings
 import numpy as np
 import multiprocessing as mp
 
@@ -7,92 +10,83 @@ from math import ceil, floor
 from scipy.linalg import solve_triangular
 from typing import List
 
-from flare.struc import Structure
 from flare.env import AtomicEnvironment
+from flare.kernels.utils import from_mask_to_args
 from flare.gp import GaussianProcess
 from flare.gp_algebra import partition_vector, energy_force_vector_unit, \
-    force_energy_vector_unit, energy_energy_vector_unit, force_force_vector_unit, \
-    _global_training_data, _global_training_structures, \
-    get_kernel_vector, en_kern_vec
+    force_energy_vector_unit, energy_energy_vector_unit, force_force_vector_unit,\
+    _global_training_data, _global_training_structures
 from flare.parameters import Parameters
-from flare.kernels.utils import from_mask_to_args, str_to_kernel_set, str_to_mapped_kernel
-from flare.kernels.cutoffs import quadratic_cutoff
-from flare.utils.element_coder import Z_to_element, NumpyEncoder
+from flare.struc import Structure
 
-
-from flare.mgp.utils import get_bonds, get_triplets, get_triplets_en, \
-    get_kernel_term
+from flare.mgp.utils import get_kernel_term
 from flare.mgp.splines_methods import PCASplines, CubicSpline
 
+global_use_grid_kern = True
 
 class MapXbody:
     def __init__(self,
                  grid_num: List,
-                 lower_bound: List,
-                 svd_rank: 'auto',
-                 species_list: list=[],
+                 lower_bound: List or str='auto',
+                 upper_bound: List or str='auto',
+                 svd_rank = 'auto',
+                 coded_species: list=[],
                  map_force: bool=False,
-                 GP: GaussianProcess=None,
-                 mean_only: bool=False,
+                 mean_only: bool=True,
                  container_only: bool=True,
                  lmp_file_name: str='lmp.mgp',
+                 load_grid: str=None,
+                 lower_bound_relax: float=0.1,
+                 GP: GaussianProcess=None,
                  n_cpus: int=None,
-                 n_sample: int=100):
+                 n_sample: int=100,
+                 hyps_mask: dict=None,
+                 hyps: list=None,
+                 **kwargs):
 
         # load all arguments as attributes
         self.grid_num = np.array(grid_num)
         self.lower_bound = lower_bound
+        self.upper_bound = upper_bound
         self.svd_rank = svd_rank
-        self.species_list = species_list
+        self.coded_species = coded_species
         self.map_force = map_force
         self.mean_only = mean_only
         self.lmp_file_name = lmp_file_name
+        self.load_grid = load_grid
+        self.lower_bound_relax = lower_bound_relax
         self.n_cpus = n_cpus
         self.n_sample = n_sample
 
-        self.hyps_mask = None
-        self.cutoffs = None
+        self.spc = []
+        self.maps = []
+        self.kernel_info = None
+        self.hyps_mask = hyps_mask
+        self.hyps = hyps
 
-        # to be replaced in subclass
-        # self.kernel_name = "xbody"
-        # self.singlexbody = SingleMapXbody
-        # self.bounds = 0
+        self.build_bond_struc(coded_species)
 
-        # if GP exists, the GP setup overrides the grid_params setup
-        if GP is not None:
+        bounds = [self.lower_bound, self.upper_bound]
+        self.build_map_container(bounds)
 
-            self.cutoffs = deepcopy(GP.cutoffs)
-            self.hyps_mask = deepcopy(GP.hyps_mask)
-
-        # build_bond_struc is defined in subclass
-        self.build_bond_struc(species_list)
-
-        # build map
-        self.build_map_container(GP)
-        if not container_only and (GP is not None) and \
+        if (not container_only) and (GP is not None) and \
                 (len(GP.training_data) > 0):
             self.build_map(GP)
 
-    def build_map_container(self, GP=None):
+    def build_bond_struc(self, coded_species):
+        raise NotImplementedError("need to be implemented in child class")
+
+    def get_arrays(self, atom_env):
+        raise NotImplementedError("need to be implemented in child class")
+
+    def build_map_container(self, bounds):
         '''
         construct an empty spline container without coefficients.
         '''
 
-        if (GP is not None):
-            self.cutoffs = deepcopy(GP.cutoffs)
-            self.hyps_mask = deepcopy(GP.hyps_mask)
-            if self.kernel_name not in self.hyps_mask['kernels']:
-                raise Exception #TODO: deal with this
-
         self.maps = []
         for spc in self.spc:
-            bounds = np.copy(self.bounds)
-            if (GP is not None):
-                bounds[1] = Parameters.get_cutoff(self.kernel_name,
-                            spc, self.hyps_mask)
-            m = self.singlexbody((self.grid_num, bounds, spc,
-                                  self.map_force, self.svd_rank, self.mean_only,
-                                  None, None, self.n_cpus, self.n_sample))
+            m = self.singlexbody(bounds=bounds, species=spc, **self.__dict__)
             self.maps.append(m)
 
 
@@ -101,17 +95,25 @@ class MapXbody:
         generate/load grids and get spline coefficients
         '''
 
-        # double check the container and the GP is the consistent
-        if not Parameters.compare_dict(GP.hyps_mask, self.hyps_mask):
-            self.build_map_container(GP)
-
-        self.kernel_info = get_kernel_term(GP, self.kernel_name)
+        self.kernel_info = get_kernel_term(self.kernel_name, 
+            GP.component, GP.hyps_mask, GP.hyps)
+        self.hyps_mask = GP.hyps_mask
+        self.hyps = GP.hyps
 
         for m in self.maps:
             m.build_map(GP)
 
 
     def predict(self, atom_env, mean_only):
+
+        assert Parameters.compare_dict(self.hyps_mask, atom_env.cutoffs_mask),\
+            'GP.hyps_mask is not the same as atom_env.cutoffs_mask'
+
+        min_dist = atom_env.bond_array_2[0][0]
+        lower_bound = np.max(self.maps[0].bounds[0][0])
+        if min_dist < lower_bound:
+            raise ValueError(f'The minimal distance {min_dist:.3f} is below the'
+                f' mgp lower bound {lower_bound:.3f}')
 
         if self.mean_only:  # if not build mapping for var
             mean_only = True
@@ -121,13 +123,12 @@ class MapXbody:
         args = from_mask_to_args(hyps, cutoffs, hyps_mask)
 
         kern = 0
-        if self.map_force:
-            if not mean_only:
+        if not mean_only:
+            if self.map_force:
                 kern = np.zeros(3)
                 for d in range(3):
                     kern[d] = force_kernel(atom_env, atom_env, d+1, d+1, *args)
-        else:
-            if not mean_only:
+            else:
                 kern = en_kernel(atom_env, atom_env, *args)
 
         spcs, comp_r, comp_xyz = self.get_arrays(atom_env)
@@ -140,7 +141,8 @@ class MapXbody:
         for i, spc in enumerate(spcs):
             lengths = np.array(comp_r[i])
             xyzs = np.array(comp_xyz[i])
-            map_ind = self.spc.index(spc)
+            map_ind = self.find_map_index(spc)
+
             f, vir, v, e = self.maps[map_ind].predict(lengths, xyzs,
                 self.map_force, mean_only)
             f_spcs += f
@@ -150,6 +152,55 @@ class MapXbody:
 
         return f_spcs, vir_spcs, kern, v_spcs, e_spcs
 
+    def as_dict(self) -> dict:
+        """
+        Dictionary representation of the MGP model.
+        """
+
+        out_dict = deepcopy(dict(vars(self)))
+        out_dict.pop('kernel_info')
+
+        # Uncertainty mappings currently not serializable;
+        if not self.mean_only:
+            out_dict['mean_only'] = True
+
+        # only save the mean coefficients
+        out_dict['maps'] = [m.mean.__coeffs__ for m in self.maps]
+        out_dict['bounds'] = [m.bounds for m in self.maps]
+
+        # rm keys since they are built in the __init__ function
+        key_list = ['singlexbody', 'spc']
+        for key in key_list:
+            if out_dict.get(key) is not None:
+                del out_dict[key]
+
+        return out_dict
+
+    @staticmethod
+    def from_dict(dictionary: dict, mapxbody):
+        """
+        Create MGP object from dictionary representation.
+        """
+
+        if 'container_only' not in dictionary:
+            dictionary['container_only'] = True
+
+        new_mgp = mapxbody(**dictionary)
+
+        # Restore kernel_info
+        new_mgp.kernel_info = get_kernel_term(dictionary['kernel_name'], 
+            'mc', dictionary['hyps_mask'], dictionary['hyps'])
+
+        # Fill up the model with the saved coeffs
+        for m in range(len(new_mgp.maps)):
+            singlexb = new_mgp.maps[m]
+            bounds = dictionary['bounds'][m]
+            singlexb.set_bounds(bounds[0], bounds[1])
+            singlexb.build_map_container()
+            singlexb.mean.__coeffs__ = np.array(dictionary['maps'][m])
+
+        return new_mgp
+
 
     def write(self, f):
         for m in self.maps:
@@ -158,23 +209,53 @@ class MapXbody:
 
 
 class SingleMapXbody:
-    def __init__(self, grid_num: int, bounds, species: str,
+    def __init__(self, grid_num: int=1, bounds='auto', species: list=[],
                  map_force=False, svd_rank=0, mean_only: bool=False,
-                 load_grid=None, update=None,
-                 n_cpus: int=None, n_sample: int=100):
+                 load_grid=None, lower_bound_relax=0.1,
+                 n_cpus: int=None, n_sample: int=100, **kwargs):
 
         self.grid_num = grid_num
-        self.bounds = bounds
+        self.bounds = deepcopy(bounds)
         self.species = species
         self.map_force = map_force
         self.svd_rank = svd_rank
         self.mean_only = mean_only
         self.load_grid = load_grid
-        self.update = update
+        self.lower_bound_relax = lower_bound_relax
         self.n_cpus = n_cpus
         self.n_sample = n_sample
 
-        self.build_map_container()
+        self.auto_lower = (bounds[0] == 'auto')
+        if self.auto_lower:
+            lower_bound = 0
+        else:
+            lower_bound = bounds[0]
+
+        self.auto_upper = (bounds[1] == 'auto')
+        if self.auto_upper:
+            upper_bound = 1
+        else:
+            upper_bound = bounds[1]
+
+        self.set_bounds(lower_bound, upper_bound)
+
+        self.hyps_mask = None
+        self.use_grid_kern = global_use_grid_kern
+
+        if not self.auto_lower and not self.auto_upper:
+            self.build_map_container()
+
+    def set_bounds(self, lower_bound, upper_bound):
+        raise NotImplementedError("need to be implemented in child class")
+
+    def construct_grids(self):
+        raise NotImplementedError("need to be implemented in child class")
+
+    def set_env(self, grid_env, r):
+        raise NotImplementedError("need to be implemented in child class")
+
+    def skip_grid(self, r):
+        raise NotImplementedError("need to be implemented in child class")
 
     def get_grid_env(self, GP):
         if isinstance(GP.cutoffs, dict):
@@ -205,8 +286,6 @@ class SingleMapXbody:
            with GP.alpha
         '''
 
-        kernel_info = get_kernel_term(GP, self.kernel_name)
-
         if (self.n_cpus is None):
             processes = mp.cpu_count()
         else:
@@ -225,31 +304,25 @@ class SingleMapXbody:
         # -------- get training data info ----------
         n_envs = len(GP.training_data)
         n_strucs = len(GP.training_structures)
-        n_kern = n_envs * 3 + n_strucs
 
         if (n_envs == 0) and (n_strucs == 0):
+            warnings.warn("No training data, will return 0")
             return np.zeros([n_grid]), None
 
-        if self.kernel_name == "threebody":
-            mapk = str_to_mapped_kernel(self.kernel_name, GP.component, GP.hyps_mask)
-            mapped_kernel_info = (kernel_info[0], mapk[0], mapk[1],
-                                  kernel_info[3], kernel_info[4], kernel_info[5])
-
         # ------- call gengrid functions ---------------
-        if processes == 1:
-            args = [GP.name, grid_env, kernel_info]
-            if self.kernel_name == "threebody":
-                k12_v_force = self._gengrid_numba(GP.name, 0, n_envs, grid_env,
-                                                  mapped_kernel_info)
-            else:
-                k12_v_force = self._gengrid_serial(args, True, n_envs)
-            k12_v_energy = self._gengrid_serial(args, False, n_strucs)
+        kernel_info = get_kernel_term(self.kernel_name, GP.component,
+                GP.hyps_mask, GP.hyps)
+        if self.use_grid_kern:
+            try:
+                kernel_info = get_kernel_term(self.kernel_name, GP.component, 
+                    GP.hyps_mask, GP.hyps, grid_kernel=True)
+            except:
+                self.use_grid_kern = False
 
-        else:
-            args = [GP.name, grid_env, mapped_kernel_info]
-            k12_v_force = self._gengrid_par(args, True, n_envs, processes, self.kernel_name)
-            args = [GP.name, grid_env, kernel_info]
-            k12_v_energy = self._gengrid_par(args, False, n_strucs, processes, self.kernel_name)
+        args = [GP.name, grid_env, kernel_info]
+
+        k12_v_force = self._gengrid_par(args, True, n_envs, processes)
+        k12_v_energy = self._gengrid_par(args, False, n_strucs, processes)
 
         k12_v_all = np.hstack([k12_v_force, k12_v_energy])
         del k12_v_force
@@ -268,45 +341,39 @@ class SingleMapXbody:
                 grid_vars = np.reshape(grid_vars, tensor_shape)
 
         # ------ save mean and var to file -------
-        np.save(f'grid{self.bodies}_mean{self.species_code}', grid_mean)
-        np.save(f'grid{self.bodies}_var{self.species_code}', grid_vars)
+        if 'mgp_grids' not in os.listdir('./'):
+            os.mkdir('mgp_grids')
+
+        grid_path = f'mgp_grids/{self.bodies}_{self.species_code}'
+        np.save(f'{grid_path}_mean', grid_mean)
+        np.save(f'{grid_path}_var', grid_vars)
 
         return grid_mean, grid_vars
 
 
-    def _gengrid_serial(self, args, force_block, n_envs):
-        if n_envs == 0:
-            n_grid = np.prod(self.grid_num)
-            return np.empty((n_grid, 0))
-
-        k12_v = self._gengrid_inner(*args, force_block, 0, n_envs)
-        return k12_v
-
-
-    def _gengrid_par(self, args, force_block, n_envs, processes, kernel_name):
+    def _gengrid_par(self, args, force_block, n_envs, processes):
 
         if n_envs == 0:
             n_grid = np.prod(self.grid_num)
             return np.empty((n_grid, 0))
+
+        if self.use_grid_kern: 
+            gengrid_func = self._gengrid_numba
+        else:
+            gengrid_func = self._gengrid_inner
+
+        if processes == 1:
+            return gengrid_func(*args, force_block, 0, n_envs)
 
         with mp.Pool(processes=processes) as pool:
 
             block_id, nbatch = \
                 partition_vector(self.n_sample, n_envs, processes)
 
-            threebody = False
-            if kernel_name == "threebody":
-                GP_name, grid_env, mapped_kernel_info = args
-                threebody = True
-
             k12_slice = []
             for ibatch in range(nbatch):
                 s, e = block_id[ibatch]
-                if threebody:
-                    k12_slice.append(pool.apply_async(self._gengrid_numba,
-                        args = (GP_name, s, e, grid_env, mapped_kernel_info)))
-                else:
-                    k12_slice.append(pool.apply_async(self._gengrid_inner,
+                k12_slice.append(pool.apply_async(gengrid_func,
                         args = args + [force_block, s, e]))
             k12_matrix = []
             for ibatch in range(nbatch):
@@ -377,15 +444,48 @@ class SingleMapXbody:
                                       orders=self.grid_num,
                                       svd_rank=self.svd_rank)
 
+    def update_bounds(self, GP):
+        rebuild_container = False
+
+        # double check the container and the GP is consistent
+        if not Parameters.compare_dict(GP.hyps_mask, self.hyps_mask):
+            rebuild_container = True
+
+        lower_bound = self.bounds[0]
+        min_dist = self.search_lower_bound(GP)
+        if min_dist < np.max(lower_bound): # change lower bound
+            warnings.warn('The minimal distance in training data is lower than \
+                    the current lower bound, will reset lower bound')
+
+        if self.auto_lower or (min_dist < np.max(lower_bound)):
+            lower_bound = np.max((min_dist - self.lower_bound_relax, 0))
+            rebuild_container = True
+
+        upper_bound = self.bounds[1]
+        if self.auto_upper:
+            upper_bound = Parameters.get_cutoff(self.kernel_name,
+                self.species, GP.hyps_mask)
+            rebuild_container = True
+
+        if rebuild_container:
+            self.set_bounds(lower_bound, upper_bound)
+            self.build_map_container()
+
+
     def build_map(self, GP):
+
+        self.update_bounds(GP)
+
         if not self.load_grid:
             y_mean, y_var = self.GenGrid(GP)
-        # If load grid is blank string '' or pre-fix, load in
         else:
-            y_mean = np.load(f'{self.load_grid}grid{self.bodies}_mean_{self.species_code}.npy')
-            y_var = np.load(f'{self.load_grid}grid{self.bodies}_var_{self.species_code}.npy')
+            if 'mgp_grids' not in os.listdir(self.load_grid):
+                raise FileNotFoundError("Please set 'load_grid' as the location of mgp_grids folder")
 
-        y_mean, y_var = self.GenGrid(GP)
+            grid_path = f'{self.load_grid}/mgp_grids/{self.bodies}_{self.species_code}'
+            y_mean = np.load(f'{grid_path}_mean.npy')
+            y_var = np.load(f'{grid_path}_var.npy', allow_pickle=True)
+
         self.mean.set_values(y_mean)
         if not self.mean_only:
             if self.svd_rank == 'auto':
@@ -395,79 +495,115 @@ class SingleMapXbody:
             self.var.set_values(y_var)
 
 
-    def predict(self, lengths, xyzs, map_force, mean_only):
-        assert map_force == self.map_force, f'The mapping is built for'\
-            'map_force={self.map_force}, can not predict for map_force={map_force}'
-        if map_force:
-            return self.predict_single_f_map(lengths, xyzs, mean_only)
+        self.hyps_mask = deepcopy(GP.hyps_mask)
+
+
+    def __str__(self):
+        info = f'''{self.__class__.__name__}
+        species: {self.species}
+        lower bound: {self.bounds[0]}, auto_lower = {self.auto_lower}
+        upper bound: {self.bounds[1]}, auto_upper = {self.auto_upper}
+        grid num: {self.grid_num}
+        lower bound relaxation: {self.lower_bound_relax}
+        load grid from: {self.load_grid}\n'''
+
+        if self.map_force:
+            info += f'        build force mapping\n'
         else:
-            return self.predict_single_e_map(lengths, xyzs, mean_only)
+            info += f'        build energy mapping\n'
 
-    def predict_single_f_map(self, lengths, xyzs, mean_only):
+        if self.mean_only:
+            info += f'        without variance\n'
+        else:
+            info += f'        with variance, svd_rank = {self.svd_rank}\n'
 
-        lengths = np.array(lengths)
-        xyzs = np.array(xyzs)
+        return info
 
-        # predict mean
-        e = 0
-        f_0 = self.mean(lengths)
-        f_d = np.diag(f_0) @ xyzs
-        f = np.sum(f_d, axis=0)
 
-        # predict stress from force components
-        vir = np.zeros(6)
-        vir_order = ((0,0), (1,1), (2,2), (0,1), (0,2), (1,2))
-        for i in range(6):
-            vir_i = f_d[:,vir_order[i][0]]\
-                    * xyzs[:,vir_order[i][1]] * lengths[:,0]
-            vir[i] = np.sum(vir_i)
-        vir *= 0.5
+    def search_lower_bound(self, GP):
+        '''
+        If the lower bound is set to be 'auto', search the minimal interatomic
+        distances in the training set of GP.
+        '''
+        upper_bound = Parameters.get_cutoff(self.kernel_name,
+                self.species, GP.hyps_mask)
 
-        # predict var
-        v = np.zeros(3)
-        if not mean_only:
-            v_0 = self.var(lengths)
-            v_d = v_0 @ xyzs
-            v = self.var.V @ v_d
+        lower_bound = np.min(upper_bound)
+        for env in _global_training_data[GP.name]:
+            min_dist = env.bond_array_2[0][0]
+            if min_dist < lower_bound:
+                lower_bound = min_dist
 
-        return f, vir, v, e
+        for struc in _global_training_structures[GP.name]:
+            for env in struc:
+                min_dist = env.bond_array_2[0][0]
+                if min_dist < lower_bound:
+                    lower_bound = min_dist
 
-    def predict_single_e_map(self, lengths, xyzs, mean_only):
+        return lower_bound
+
+
+    def predict(self, lengths, xyzs, map_force, mean_only):
         '''
         predict force and variance contribution of one component
         '''
+
+        assert map_force == self.map_force, f'The mapping is built for'\
+            'map_force={self.map_force}, can not predict for map_force={map_force}'
+
         lengths = np.array(lengths)
         xyzs = np.array(xyzs)
 
-        e_0, f_0 = self.mean(lengths, with_derivatives=True)
-        e = np.sum(e_0) # energy
+        if self.map_force:
+            # predict forces and energy
+            e = 0
+            f_0 = self.mean(lengths)
+            f_d = np.diag(f_0) @ xyzs
+            f = np.sum(f_d, axis=0)
 
-        # predict forces and stress
+            # predict var
+            v = np.zeros(3)
+            if not mean_only:
+                v_0 = self.var(lengths)
+                v_d = v_0 @ xyzs
+                v = self.var.V @ v_d
+
+        else:
+            # predict forces and energy
+            e_0, f_0 = self.mean(lengths, with_derivatives=True)
+            e = np.sum(e_0) # energy
+            f_d = np.diag(f_0[:,0,0]) @ xyzs
+            f = self.bodies * np.sum(f_d, axis=0)
+
+            # predict var
+            v = 0
+            if not mean_only:
+                v_0 = np.expand_dims(np.sum(self.var(lengths), axis=1),
+                                     axis=1)
+                v = self.var.V @ v_0
+
+        # predict virial stress
         vir = np.zeros(6)
         vir_order = ((0,0), (1,1), (2,2), (1,2), (0,2), (0,1)) # match the ASE order
-
-        f_d = np.diag(f_0[:,0,0]) @ xyzs
-        f = self.bodies * np.sum(f_d, axis=0)
-
         for i in range(6):
             vir_i = f_d[:,vir_order[i][0]]\
                     * xyzs[:,vir_order[i][1]] * lengths[:,0]
             vir[i] = np.sum(vir_i)
 
         vir *= self.bodies / 2
-
-        # predict var
-        v = 0
-        if not mean_only:
-            v_0 = np.expand_dims(np.sum(self.var(lengths), axis=1),
-                                 axis=1)
-            v = self.var.V @ v_0
-
         return f, vir, v, e
+
 
     def write(self, f):
         '''
         Write LAMMPS coefficient file
+
+        This implementation only works for 2b and 3b. User should
+        implement overload in the actual class if the new kernel
+        has different coefficient format
+
+        In the future, it should be changed to writing in bin/hex
+        instead of decimal
         '''
 
         # write header
@@ -476,18 +612,25 @@ class SingleMapXbody:
         b = self.bounds[1]
         order = self.grid_num
 
-        header = ''
-        for term in [elems, a, b, order]:
-            for s in range(len(term)):
-                header += f'{term[s]} '
+        header = ' '.join(elems)
+        header += ' '+' '.join(map(repr, a))
+        header += ' '+' '.join(map(repr, b))
+        header += ' '+' '.join(map(str, order))
         f.write(header + '\n')
 
         # write coefficients
         coefs = self.mean.__coeffs__
-        coefs = np.reshape(coefs, np.prod(coefs.shape))
+        self.write_flatten_coeff(f, coefs)
+
+    def write_flatten_coeff(self, f, coefs):
+        """
+        flatten the coefficient and write it as
+        a block. each line has no more than 5 element.
+        the accuracy is restricted to .10
+        """
+        coefs = coefs.reshape([-1])
         for c, coef in enumerate(coefs):
-            f.write('{:.10e} '.format(coef))
+            f.write(' '+repr(coef))
             if c % 5 == 4 and c != len(coefs)-1:
                 f.write('\n')
-
         f.write('\n')

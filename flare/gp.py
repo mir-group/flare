@@ -13,7 +13,7 @@ from copy import deepcopy
 from numpy.random import random
 from scipy.linalg import solve_triangular
 from scipy.optimize import minimize
-from typing import List, Callable, Union
+from typing import List, Callable, Union, Tuple, Sequence
 
 from flare.env import AtomicEnvironment
 from flare.gp_algebra import get_like_from_mats, get_neg_like_grad, \
@@ -22,7 +22,7 @@ from flare.gp_algebra import get_like_from_mats, get_neg_like_grad, \
     _global_training_structures, _global_energy_labels, get_Ky_mat, \
     get_kernel_vector, en_kern_vec
 from flare.kernels.utils import str_to_kernel_set, from_mask_to_args, kernel_str_to_array
-from flare.output import Output
+from flare.output import Output, set_logger
 from flare.parameters import Parameters
 from flare.struc import Structure
 from flare.utils.element_coder import NumpyEncoder, Z_to_element
@@ -59,7 +59,7 @@ class GaussianProcess:
         name (str, optional): Name for the GP instance.
     """
 
-    def __init__(self, kernels: list = ['two', 'three'],
+    def __init__(self, kernels: List[str] = ['two', 'three'],
                  component: str = 'mc',
                  hyps: 'ndarray' = None, cutoffs={},
                  hyps_mask: dict = {},
@@ -97,13 +97,12 @@ class GaussianProcess:
 
         # ------------  "computed" attributes ------------
 
-        if self.output is not None:
-            logger = self.output.logger['log']
+        if self.output is None:
+            self.logger_name = self.name+"GaussianProcess"
+            set_logger(self.logger_name, stream=True,
+                       fileout_name=None, verbose="info")
         else:
-            logger = Output.set_logger("gp.py", stream=True,
-                                       fileout=True, verbose="info")
-        self.logger = logger
-
+            self.logger_name = self.output.basename+'log'
 
         if self.hyps is None:
             # If no hyperparameters are passed in, assume 2 hyps for each
@@ -113,7 +112,7 @@ class GaussianProcess:
             self.hyps = np.array(self.hyps, dtype=np.float64)
 
         kernel, grad, ek, efk = str_to_kernel_set(
-            kernels, component, self.hyps_mask)
+            self.kernels, self.component, self.hyps_mask)
         self.kernel = kernel
         self.kernel_grad = grad
         self.energy_force_kernel = efk
@@ -122,7 +121,7 @@ class GaussianProcess:
 
         # parallelization
         if self.parallel:
-            if n_cpus is None:
+            if self.n_cpus is None:
                 self.n_cpus = mp.cpu_count()
             else:
                 self.n_cpus = n_cpus
@@ -153,6 +152,9 @@ class GaussianProcess:
         self.likelihood_gradient = None
         self.bounds = None
 
+        # File used for reading / writing model if model is large
+        self.ky_mat_file = None
+
         self.check_instantiation()
 
     def check_instantiation(self):
@@ -163,32 +165,44 @@ class GaussianProcess:
         :return:
         """
 
-        if (self.name in _global_training_labels):
+        if self.logger_name is None:
+            if self.output is None:
+                self.logger_name = self.name+"GaussianProcess"
+                set_logger(self.logger_name, stream=True,
+                           fileout_name=None, verbose="info")
+            else:
+                self.logger_name = self.output.basename+'log'
+        logger = logging.getLogger(self.logger_name)
+
+
+        # check whether it's be loaded before
+        loaded = False
+        if self.name in _global_training_labels:
+            if _global_training_labels.get(self.name, None) is not self.training_labels_np:
+                loaded = True
+        if self.name in _global_energy_labels:
+            if _global_energy_labels.get(self.name, None) is not self.energy_labels_np:
+                loaded = True
+
+        if loaded:
+
             base = f'{self.name}'
             count = 2
             while (self.name in _global_training_labels and count < 100):
                 time.sleep(random())
                 self.name = f'{base}_{count}'
-                self.logger.info("Specified GP name is present in global memory; "
-                            "Attempting to rename the "
+                logger.debug("Specified GP name is present in global memory; "
+                       "Attempting to rename the "
                             f"GP instance to {self.name}")
                 count += 1
             if (self.name in _global_training_labels):
                 milliseconds = int(round(time.time() * 1000) % 10000000)
                 self.name = f"{base}_{milliseconds}"
-                self.logger.info("Specified GP name still present in global memory: "
-                            f"renaming the gp instance to {self.name}")
-            self.logger.info(f"Final name of the gp instance is {self.name}")
+                logger.debug("Specified GP name still present in global memory: "
+                       f"renaming the gp instance to {self.name}")
+            logger.debug(f"Final name of the gp instance is {self.name}")
 
-        assert (self.name not in _global_training_labels), \
-            f"the gp instance name, {self.name} is used"
-        assert (self.name not in _global_training_data),  \
-            f"the gp instance name, {self.name} is used"
-
-        _global_training_data[self.name] = self.training_data
-        _global_training_structures[self.name] = self.training_structures
-        _global_training_labels[self.name] = self.training_labels_np
-        _global_energy_labels[self.name] = self.energy_labels_np
+        self.sync_data()
 
         self.hyps_mask = Parameters.check_instantiation(self.hyps, self.cutoffs,
                                                         self.kernels, self.hyps_mask)
@@ -239,8 +253,6 @@ class GaussianProcess:
 
             # create numpy array of training labels
             self.training_labels_np = np.hstack(self.training_labels)
-            _global_training_data[self.name] = self.training_data
-            _global_training_labels[self.name] = self.training_labels_np
 
         # If an energy is given, update the structure list.
         if energy is not None:
@@ -254,12 +266,11 @@ class GaussianProcess:
             self.energy_labels.append(energy)
             self.training_structures.append(structure_list)
             self.energy_labels_np = np.array(self.energy_labels)
-            _global_training_structures[self.name] = self.training_structures
-            _global_energy_labels[self.name] = self.energy_labels_np
 
         # update list of all labels
         self.all_labels = np.concatenate((self.training_labels_np,
                                           self.energy_labels_np))
+        self.sync_data()
 
     def add_one_env(self, env: AtomicEnvironment,
                     force, train: bool = False, **kwargs):
@@ -277,8 +288,7 @@ class GaussianProcess:
         self.training_data.append(env)
         self.training_labels.append(force)
         self.training_labels_np = np.hstack(self.training_labels)
-        _global_training_data[self.name] = self.training_data
-        _global_training_labels[self.name] = self.training_labels_np
+        self.sync_data()
 
         # update list of all labels
         self.all_labels = np.concatenate((self.training_labels_np,
@@ -297,7 +307,7 @@ class GaussianProcess:
         (related to the covariance matrix of the training set).
 
         Args:
-            logger (logging.Logger): logger object specifying where to write the
+            logger (logging.logger): logger object specifying where to write the
                 progress of the optimization.
             custom_bounds (np.ndarray): Custom bounds on the hyperparameters.
             grad_tol (float): Tolerance of the hyperparameter gradient that
@@ -312,8 +322,9 @@ class GaussianProcess:
         if print_progress:
             verbose = "info"
         if logger is None:
-            logger = Output.set_logger("gp_algebra", stream=True,
-                                       fileout=True, verbose=verbose)
+            logger = set_logger("gp_algebra", stream=True,
+                                fileout_name="log.gp_algebra",
+                                verbose=verbose)
 
         disp = print_progress
 
@@ -347,8 +358,9 @@ class GaussianProcess:
                                         'maxls': line_steps,
                                         'maxiter': self.maxiter})
             except np.linalg.LinAlgError:
-                self.logger.warning("Algorithm for L-BFGS-B failed. Changing to "
-                               "BFGS for remainder of run.")
+                logger = logging.getLogger(self.logger_name)
+                logger.warning("Algorithm for L-BFGS-B failed. Changing to "
+                          "BFGS for remainder of run.")
                 self.opt_algorithm = 'BFGS'
 
         if custom_bounds is not None:
@@ -380,7 +392,7 @@ class GaussianProcess:
         """
 
         # Check that alpha is up to date with training set
-        size3 = len(self.training_data)*3
+        size3 = len(self.training_data) * 3 + len(self.training_structures)
 
         # If model is empty, then just return
         if size3 == 0:
@@ -414,8 +426,7 @@ class GaussianProcess:
         else:
             n_cpus = 1
 
-        _global_training_data[self.name] = self.training_data
-        _global_training_labels[self.name] = self.training_labels_np
+        self.sync_data()
 
         k_v = \
             get_kernel_vector(self.name, self.kernel, self.energy_force_kernel,
@@ -453,8 +464,7 @@ class GaussianProcess:
         else:
             n_cpus = 1
 
-        _global_training_data[self.name] = self.training_data
-        _global_training_labels[self.name] = self.training_labels_np
+        self.sync_data()
 
         k_v = en_kern_vec(self.name, self.energy_force_kernel,
                           self.energy_kernel,
@@ -482,8 +492,7 @@ class GaussianProcess:
         else:
             n_cpus = 1
 
-        _global_training_data[self.name] = self.training_data
-        _global_training_labels[self.name] = self.training_labels_np
+        self.sync_data()
 
         # get kernel vector
         k_v = en_kern_vec(self.name, self.energy_force_kernel,
@@ -513,10 +522,7 @@ class GaussianProcess:
         The forces and variances are later obtained using alpha.
         """
 
-        _global_training_data[self.name] = self.training_data
-        _global_training_structures[self.name] = self.training_structures
-        _global_training_labels[self.name] = self.training_labels_np
-        _global_energy_labels[self.name] = self.energy_labels_np
+        self.sync_data()
 
         ky_mat = \
             get_Ky_mat(self.hyps, self.name, self.kernel,
@@ -550,10 +556,7 @@ class GaussianProcess:
             return
 
         # Reset global variables.
-        _global_training_data[self.name] = self.training_data
-        _global_training_structures[self.name] = self.training_structures
-        _global_training_labels[self.name] = self.training_labels_np
-        _global_energy_labels[self.name] = self.energy_labels_np
+        self.sync_data()
 
         ky_mat = get_ky_mat_update(self.ky_mat, self.n_envs_prev, self.hyps,
                                    self.name, self.kernel, self.energy_kernel,
@@ -625,6 +628,12 @@ class GaussianProcess:
 
         return out_dict
 
+    def sync_data(self):
+        _global_training_data[self.name] = self.training_data
+        _global_training_labels[self.name] = self.training_labels_np
+        _global_training_structures[self.name] = self.training_structures
+        _global_energy_labels[self.name] = self.energy_labels_np
+
     @staticmethod
     def from_dict(dictionary):
         """Create GP object from dictionary representation."""
@@ -641,6 +650,7 @@ class GaussianProcess:
             new_gp.training_labels = deepcopy(dictionary['training_labels'])
             new_gp.training_labels_np = deepcopy(
                 dictionary['training_labels_np'])
+            new_gp.sync_data()
 
         # Reconstruct training structures.
         if ('training_structures' in dictionary):
@@ -661,25 +671,26 @@ class GaussianProcess:
             'likelihood_gradient', None)
 
         new_gp.n_envs_prev = len(new_gp.training_data)
-        _global_training_data[new_gp.name] = new_gp.training_data
-        _global_training_structures[new_gp.name] = new_gp.training_structures
-        _global_training_labels[new_gp.name] = new_gp.training_labels_np
-        _global_energy_labels[new_gp.name] = new_gp.energy_labels_np
 
         # Save time by attempting to load in computed attributes
-        if len(new_gp.training_data) > 5000:
+        if dictionary.get('ky_mat_file'):
             try:
                 new_gp.ky_mat = np.load(dictionary['ky_mat_file'])
                 new_gp.compute_matrices()
+                new_gp.ky_mat_file = None
+
             except FileNotFoundError:
                 new_gp.ky_mat = None
                 new_gp.l_mat = None
                 new_gp.alpha = None
                 new_gp.ky_mat_inv = None
-                filename = dictionary['ky_mat_file']
-                Warning("the covariance matrices are not loaded"
-                        f"because {filename} cannot be found")
+                filename = dictionary.get('ky_mat_file')
+                logger = logging.getLogger(new_gp.logger_name)
+                logger.warning("the covariance matrices are not loaded"
+                               f"because {filename} cannot be found")
         else:
+            new_gp.ky_mat = np.array(dictionary['ky_mat']) \
+                if dictionary.get('ky_mat') is not None else None
             new_gp.ky_mat_inv = np.array(dictionary['ky_mat_inv']) \
                 if dictionary.get('ky_mat_inv') is not None else None
             new_gp.ky_mat = np.array(dictionary['ky_mat']) \
@@ -698,14 +709,21 @@ class GaussianProcess:
         :return:
         """
         ky_mat = self.ky_mat
-        l_mat = np.linalg.cholesky(ky_mat)
-        l_mat_inv = np.linalg.inv(l_mat)
-        ky_mat_inv = l_mat_inv.T @ l_mat_inv
-        alpha = np.matmul(ky_mat_inv, self.all_labels)
 
-        self.l_mat = l_mat
-        self.alpha = alpha
-        self.ky_mat_inv = ky_mat_inv
+        if ky_mat is None or \
+                (isinstance(ky_mat, np.ndarray) and not np.any(
+                ky_mat)):
+            Warning("Warning: Covariance matrix was not loaded but "
+                    "compute_matrices was called. Computing covariance "
+                    "matrix and proceeding...")
+            self.set_L_alpha()
+
+        else:
+            self.l_mat = np.linalg.cholesky(ky_mat)
+            self.l_mat_inv = np.linalg.inv(self.l_mat)
+            self.ky_mat_inv = self.l_mat_inv.T @ self.l_mat_inv
+            self.alpha = np.matmul(self.ky_mat_inv, self.all_labels)
+
 
     def adjust_cutoffs(self, new_cutoffs: Union[list, tuple, 'np.ndarray'],
                        reset_L_alpha=True, train=True, new_hyps_mask=None):
@@ -736,8 +754,7 @@ class GaussianProcess:
             self.training_data[i].compute_env()
 
         # Ensure that training data and labels are still consistent
-        _global_training_data[self.name] = self.training_data
-        _global_training_labels[self.name] = self.training_labels_np
+        self.sync_data()
 
         self.cutoffs = new_cutoffs
 
@@ -749,15 +766,82 @@ class GaussianProcess:
         if train:
             self.train()
 
-    def write_model(self, name: str, format: str = 'json'):
+    def remove_force_data(self, indexes: Union[int, List[int]],
+                          update_matrices: bool = True)->Tuple[List[Structure],
+                                                              List['ndarray']]:
+        """
+        Remove force components from the model. Convenience function which
+        deletes individual data points.
+
+        Matrices should *always* be updated if you intend to use the GP to make
+        predictions afterwards. This might be time consuming for large GPs,
+        so, it is provided as an option, but, only do so with extreme caution.
+        (Undefined behavior may result if you try to make predictions and/or
+        add to the training set afterwards).
+
+        Returns training data which was removed akin to a pop method, in order
+        of lowest to highest index passed in.
+
+        :param indexes: Indexes of envs in training data to remove.
+        :param update_matrices: If false, will not update the GP's matrices
+            afterwards (which can be time consuming for large models).
+            This should essentially always be true except for niche development
+            applications.
+        :return:
+        """
+
+        # Listify input even if one integer
+        if isinstance(indexes, int):
+            indexes = [indexes]
+
+        if max(indexes) > len(self.training_data):
+            raise ValueError("Index out of range of data")
+
+        if len(indexes) == 0:
+            return [], []
+
+        # Get in reverse order so that modifying higher indexes doesn't affect
+        # lower indexes
+        indexes.sort(reverse=True)
+        removed_data = []
+        removed_labels = []
+        for i in indexes:
+            removed_data.append(self.training_data.pop(i))
+            removed_labels.append(self.training_labels.pop(i))
+
+        self.training_labels_np = np.hstack(self.training_labels)
+        self.all_labels = np.concatenate((self.training_labels_np,
+                                          self.energy_labels_np))
+        self.sync_data()
+
+        if update_matrices:
+            self.set_L_alpha()
+            self.compute_matrices()
+
+        # Put removed data in order of lowest to highest index
+        removed_data.reverse()
+        removed_labels.reverse()
+
+        return removed_data, removed_labels
+
+    def write_model(self, name: str, format: str = None,
+                    split_matrix_size_cutoff: int = 5000):
         """
         Write model in a variety of formats to a file for later re-use.
+        JSON files are open to visual inspection and are easier to use 
+        across different versions of FLARE or GP implementations. However,
+        they are larger and loading them in takes longer (by setting up a
+        new GP from the specifications). Pickled files can be faster to
+        read & write, and they take up less memory.
+        
         Args:
             name (str): Output name.
             format (str): Output format.
+            split_matrix_size_cutoff (int): If there are more than this
+            number of training points in the set, save the matrices seperately.
         """
 
-        if len(self.training_data) > 5000:
+        if len(self.training_data) > split_matrix_size_cutoff:
             np.save(f"{name}_ky_mat.npy", self.ky_mat)
             self.ky_mat_file = f"{name}_ky_mat.npy"
 
@@ -771,21 +855,35 @@ class GaussianProcess:
             self.alpha = None
             self.ky_mat_inv = None
 
+        # Automatically detect output format from name variable
+
+        for detect in ['json','pickle','binary']:
+            if detect in name.lower():
+                format = detect
+                break
+
+        if format is None:
+            format = 'json'
+
         supported_formats = ['json', 'pickle', 'binary']
 
         if format.lower() == 'json':
-            with open(f'{name}.json', 'w') as f:
+            if '.json' != name[-5:]:
+                name += '.json'
+            with open(name, 'w') as f:
                 json.dump(self.as_dict(), f, cls=NumpyEncoder)
 
         elif format.lower() == 'pickle' or format.lower() == 'binary':
-            with open(f'{name}.pickle', 'wb') as f:
+            if '.pickle' != name[-7:]:
+                name += '.pickle'
+            with open(name, 'wb') as f:
                 pickle.dump(self, f)
 
         else:
             raise ValueError("Output format not supported: try from "
                              "{}".format(supported_formats))
 
-        if len(self.training_data) > 5000:
+        if len(self.training_data) > split_matrix_size_cutoff:
             self.ky_mat = temp_ky_mat
             self.l_mat = temp_l_mat
             self.alpha = temp_alpha
@@ -817,7 +915,7 @@ class GaussianProcess:
 
                 GaussianProcess.backward_attributes(gp_model.__dict__)
 
-                if len(gp_model.training_data) > 5000:
+                if hasattr(gp_model, 'ky_mat_file') and gp_model.ky_mat_file:
                     try:
                         gp_model.ky_mat = np.load(gp_model.ky_mat_file,
                                                   allow_pickle=True)
@@ -827,7 +925,7 @@ class GaussianProcess:
                         gp_model.l_mat = None
                         gp_model.alpha = None
                         gp_model.ky_mat_inv = None
-                        Warning("the covariance matrices are not loaded"
+                        Warning("the covariance matrices are not loaded" \
                                 f"it can take extra long time to recompute")
 
         else:
@@ -835,7 +933,6 @@ class GaussianProcess:
                              ".json or .pickle format.")
 
         gp_model.check_instantiation()
-
         return gp_model
 
     @property
@@ -887,19 +984,19 @@ class GaussianProcess:
             DeprecationWarning(
                 "kernel_name is being replaced with kernels")
             new_args['kernels'] = kernel_str_to_array(
-                kwargs.get('kernel_name'))
+                kwargs['kernel_name'])
             kwargs.pop('kernel_name')
         if 'nsample' in kwargs:
             DeprecationWarning("nsample is being replaced with n_sample")
-            new_args['n_sample'] = kwargs.get('nsample')
+            new_args['n_sample'] = kwargs['nsample']
             kwargs.pop('nsample')
         if 'par' in kwargs:
             DeprecationWarning("par is being replaced with parallel")
-            new_args['parallel'] = kwargs.get('par')
+            new_args['parallel'] = kwargs['par']
             kwargs.pop('par')
         if 'no_cpus' in kwargs:
             DeprecationWarning("no_cpus is being replaced with n_cpu")
-            new_args['n_cpus'] = kwargs.get('no_cpus')
+            new_args['n_cpus'] = kwargs['no_cpus']
             kwargs.pop('no_cpus')
         if 'multihyps' in kwargs:
             DeprecationWarning("multihyps is removed")
@@ -946,3 +1043,6 @@ class GaussianProcess:
 
         dictionary['hyps_mask'] = Parameters.backward(
             dictionary['kernels'], deepcopy(dictionary['hyps_mask']))
+
+        if 'logger_name' not in dictionary:
+            dictionary['logger_name'] = None

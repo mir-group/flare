@@ -1,3 +1,100 @@
+"""
+For multi-component systems, the configurational space can be highly complicated.
+One may want to use different hyper-parameters and cutoffs for different interactions,
+or do constraint optimisation for hyper-parameters.
+
+To use more hyper-parameters, we need special kernel function that can differentiate different
+pairs, triplets and other descriptors and determine which number to use for what interaction.
+
+This kernel can be enabled by using the ``hyps_mask`` argument of the GaussianProcess class.
+It contains multiple arrays to describe how to break down the array of hyper-parameters and
+apply them when computing the kernel. Detail descriptions of this argument can be seen in
+kernel/mc_sephyps.py.
+
+The ParameterHelper class is to generate the hyps_mask with a more human readable interface.
+
+Example:
+
+>>> pm = ParameterHelper(species=['C', 'H', 'O'],
+...                      kernels={'twobody':[['*', '*'], ['O','O']],
+...                      'threebody':[['*', '*', '*'],
+...                          ['O','O', 'O']]},
+...                      parameters={'twobody0':[1, 0.5, 1], 'twobody1':[2, 0.2, 2],
+...                            'threebody0':[1, 0.5], 'threebody1':[2, 0.2],
+...                            'cutoff_threebody':1},
+...                      constraints={'twobody0':[False, True]})
+>>> hm = pm.hyps_mask
+>>> hyps = hm['hyps']
+>>> cutoffs = hm['cutoffs']
+>>> kernels = hm['kernels']
+>>> gp_model = GaussianProcess(kernels=kernels, cutoffs=cutoffs,
+...                            hyps=hyps, hyps_mask=hm)
+
+In this example, four atomic species are involved. There are many kinds
+of twobodys and threebodys. But we only want to use eight different signal variance
+and length-scales.
+
+In order to do so, we first define all the twobodys to be group "twobody0", by
+listing "*-*" as the first element in the twobody argument. The second
+element O-O is then defined to be group "twobody1". Note that the order
+matters here. The later element overrides the ealier one. If
+twobodys=[['O', 'O'], ['*', '*']], then all twobodys belong to group "twobody1".
+
+Similarly, O-O-O is defined as threebody1, while all remaining ones
+are left as threebody0.
+
+The hyperpameters for each group is listed in the order of
+[sig, ls, cutoff] in the parameters argument.  So in this example,
+O-O interaction will use [2, 0.2, 2] as its sigma, length scale, and
+cutoff.
+
+For threebody, the parameter arrays only come with two elements. So there
+is no cutoff associated with threebody0 or threebody1; instead, a universal
+cutoff is used, which is defined as 'cutoff_threebody'.
+
+The constraints argument define which hyper-parameters will be optimized.
+True for optimized and false for being fixed.
+
+Here are a couple more simple examples.
+
+Define a 5-parameter 2+3 kernel (1, 0.5, 1, 0.5, 0.05)
+
+>>> pm = ParameterHelper(kernels=['twobody', 'threebody'],
+...                     parameters={'sigma': 1,
+...                                 'lengthscale': 0.5,
+...                                 'cutoff_twobody': 2,
+...                                 'cutoff_threebody': 1,
+...                                 'noise': 0.05})
+
+Define a 5-parameter 2+3 kernel (1, 1, 1, 1, 0.05)
+
+>>> pm = ParameterHelper(kernels=['twobody', 'threebody'],
+...                      parameters={'cutoff_twobody': 2,
+...                                  'cutoff_threebody': 1,
+...                                  'noise': 0.05},
+...                      ones=ones,
+...                      random=not ones)
+
+Define a 9-parameter 2+3 kernel
+
+>>> pm = ParameterHelper()
+>>> pm.define_group('specie', 'O', ['O'])
+>>> pm.define_group('specie', 'rest', ['C', 'H'])
+>>> pm.define_group('twobody', '**', ['*', '*'])
+>>> pm.define_group('twobody', 'OO', ['O', 'O'])
+>>> pm.define_group('threebody', '***', ['*', '*', '*'])
+>>> pm.define_group('threebody', 'Oall', ['O', 'O', 'O'])
+>>> pm.set_parameters('**', [1, 0.5])
+>>> pm.set_parameters('OO', [1, 0.5])
+>>> pm.set_parameters('Oall', [1, 0.5])
+>>> pm.set_parameters('***', [1, 0.5])
+>>> pm.set_parameters('cutoff_twobody', 5)
+>>> pm.set_parameters('cutoff_threebody', 4)
+
+See more examples in functions ``ParameterHelper.define_group`` , ``ParameterHelper.set_parameters``,
+and in the tests ``tests/test_parameters.py``
+"""
+
 import inspect
 import json
 import logging
@@ -12,6 +109,7 @@ from numpy import array as nparray
 from numpy import max as npmax
 from typing import List, Callable, Union
 
+from flare.output import set_logger
 from flare.parameters import Parameters
 from flare.utils.element_coder import element_to_Z, Z_to_element
 
@@ -21,53 +119,45 @@ class ParameterHelper():
     A helper class to construct the hyps_mask dictionary for AtomicEnvironment
     , GaussianProcess and MappedGaussianProcess
 
-    Examples:
+    Args:
+        hyps_mask (dict): Not implemented yet
+        species (dict, list): Define specie groups
+        kernels (dict, list): Define kernels and groups for the kernels
+        cutoff_groups (dict): Define different cutoffs for different species
+        parameters (dict): Define signal variance, length scales, and cutoffs
+        constraints (dict): If listed as False, the cooresponding hyperparmeters
+            will not be trained
+        allseparate (bool): If True, define each type pair/triplet into a
+            separate group.
+        random (bool): If True, randomized all signal variances and lengthscales
+        one (bool): If True, set all signal variances and lengthscales to one
+        verbose (str): Level to print with "ERROR", "WARNING", "INFO", "DEBUG"
 
-        pm = ParameterHelper(species=['C', 'H', 'O'],
-                                   kernels={'twobody':[['*', '*'], ['O','O']],
-                                   'threebody':[['*', '*', '*'],
-                                       ['O','O', 'O']]},
-                                   parameters={'twobody0':[1, 0.5, 1], 'twobody1':[2, 0.2, 2],
-                                         'threebody0':[1, 0.5], 'threebody1':[2, 0.2],
-                                         'cutoff_threebody':1},
-                                   constraints={'twobody0':[False, True]})
-        hm = pm.hyps_mask
-        hyps = hm['hyps']
-        cutoffs = hm['cutoffs']
-        kernel_name = hm['kernel_name']
+    * the ``species`` is an optional input. It can be left as None if the user only wants
+      to set up one group of hyper-parameters for each kernel.
+    * the ``kernels`` can be defined along with or without groups. But the later mode
+      is not compatible with the ``allseparate`` flag.
 
-    In this example, four atomic species are involved. There are many kinds
-    of twobodys and threebodys. But we only want to use eight different sigmas
-    and lengthscales.
+      >>> kernels=['twobody', 'threebody'],
 
-    In order to do so, we first define all the twobodys to be group "twobody0", by
-    listing "*-*" as the first element in the twobody argument. The second
-    element O-O is then defined to be group "twobody1". Note that the order
-    matters here. The later element overrides the ealier one. If
-    twobodys=[['O', 'O'], ['*', '*']], then all twobodys belong to group "twobody1".
+      or
 
-    Similarly, O-O-O is defined as threebody1, while all remaining ones
-    are left as threebody0.
+      >>> kernels={'twobody':[['*', '*'], ['O','O']],
+      ...          'threebody':[['*', '*', '*'],
+      ...                       ['O','O', 'O']]},
 
-    The hyperpameters for each group is listed in the order of
-    [sig, ls, cutoff] in the parameters argument.  So in this example,
-    O-O interaction will use [2, 0.2, 2] as its sigma, length scale, and
-    cutoff.
-
-    For threebody, the parameter arrays only come with two elements. So there
-    is no cutoff associated with threebody0 or threebody1; instead, a universal
-    cutoff is used, which is defined as 'cutoff_threebody'.
-
-    The constraints argument define which hyper-parameters will be optimized.
-    True for optimized and false for being fixed.
-
-    See more examples in tests/test_parameters.py
-
+      Current options for the kernels are twobody, threebody and manybody (based on coordination number).
+    * See format of ``species``, ``kernels`` (dict), and ``cutoff_groups`` in ``list_groups()`` function.
+    * See format of ``parameters`` and ``constraints`` in ``list_parameters()`` function.
     """
+
+    # TO DO, sync it to kernel class
+    #  need to be synced with kernel class
 
     # name of the kernels
     all_kernel_types = ['twobody', 'threebody', 'manybody']
     additional_groups = ['cut3b']
+
     # dimension of the kernels
     ndim = {'twobody': 2, 'threebody': 3, 'manybody': 2, 'cut3b': 2}
     n_kernel_parameters = {'twobody': 2,
@@ -76,34 +166,10 @@ class ParameterHelper():
     def __init__(self, hyps_mask=None, species=None, kernels={},
                  cutoff_groups={}, parameters=None,
                  constraints={}, allseparate=False, random=False, ones=False,
-                 verbose="INFO"):
-        """ Initialization function
+                 verbose="WARNING"):
 
-        :param hyps_mask: Not implemented yet
-        :type hyps_mask: dict
-        :param species: list or dictionary that define specie groups
-        :type species: [dict, list]
-        :param kernels: list or dictionary that define kernels and groups for the kernels
-        :type kernels: [dict, list]
-        :param parameters: dictionary of parameters
-        :type parameters: dict
-        :param constraints: whether the hyperparmeters are optimized (True) or not (False)
-        :constraints: dict
-        :param random: if True, define each single twobody type into a separate group and randomized initial parameters
-        :type random: bool
-        :param verbose: level to print with "INFO", "DEBUG"
-        :type verbose: str
-
-        See format of species, twobodys, threebodys, cut3b, manybody in list_groups() function.
-
-        See format of parameters and constraints in list_parameters() function.
-
-        """
-
-        self.set_logger(verbose)
-
-        # TO DO, sync it to kernel class
-        #  need to be synced with kernel class
+        self.logger = set_logger("ParameterHelper", stream=True,
+                                 fileout_name=None, verbose="info")
 
         self.all_types = ['specie'] + \
             ParameterHelper.all_kernel_types + ParameterHelper.additional_groups
@@ -197,6 +263,7 @@ class ParameterHelper():
                 for ktype in self.kernels:
                     self.fill_in_parameters(
                         ktype, random=random, ones=ones, universal=universal)
+
         elif len(self.kernels) > 0:
             self.list_groups('specie', ['*'])
 
@@ -225,43 +292,31 @@ class ParameterHelper():
                     self.fill_in_parameters(
                         ktype, random=random, ones=ones, universal=universal)
 
-    def set_logger(self, verbose):
-
-        verbose = getattr(logging, verbose.upper())
-        logger = logging.getLogger('parameter_helper')
-        logger.setLevel(verbose)
-        # create console handler with a higher log level
-        ch = logging.StreamHandler()
-        ch.setLevel(verbose)
-        # create formatter and add it to the handlers
-        formatter = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
-        ch.setFormatter(formatter)
-        # add the handlers to the logger
-        logger.addHandler(ch)
-        self.logger = logger
-
-    def list_parameters(self, parameter_dict, constraints={}):
+    def list_parameters(self, parameter_dict:dict, constraints:dict={}):
         """Define many groups of parameters
 
-        :param parameter_dict: dictionary of all parameters
-        :type parameter_dict: dict
-        :param constraints: dictionary of all constraints
-        :type constraints: dict
+        Args:
+            parameter_dict (dict): dictionary of all parameters
+            constraints (dict): dictionary of all constraints
 
-        example: parameter_dict={"name":[sig, ls, cutoffs], ...}
-                 constraints={"name":[True, False, False], ...}
+        Example:
+
+        >>> parameter_dict={"group_name":[sig, ls, cutoffs], ...}
+        >>> constraints={"group_name":[True, False, False], ...}
 
         The name of parameters can be the group name previously defined in
         define_group or list_groups function. Aside from the group name,
-        "noise", "cutoff_twobody", "cutoff_threebody", and "cutoff_mb" are reserved for
-        noise parmater and universal cutoffs.
+        ``noise``, ``cutoff_twobody``, ``cutoff_threebody``, and
+        ``cutoff_manybody`` are reserved for noise parmater
+        and universal cutoffs, while ``sigma`` and ``lengthscale`` are
+        reserved for universal signal variances and length scales.
 
-        For non-reserved keys, the value should be a list of 2-3 elements,
-        correspond to the sigma, lengthscale (and cutoff if the third one
-        is defined). For reserved keys, the value should be a scalar.
+        For non-reserved keys, the value should be a list of 2 to 3 elements,
+        corresponding to the sigma, lengthscale and cutoff (if the third one
+        is defined). For reserved keys, the value should be a float number.
 
-        The parameter_dict and constraints should uses the same set of keys.
-        The keys in constraints but not in parameter_dict will be ignored.
+        The parameter_dict and constraints should use the same set of keys.
+        If a key in constraints is not used in parameter_dict, it will be ignored.
 
         The value in the constraints can be either a single bool, which apply
         to all parameters, or list of bools that apply to each parameter.
@@ -275,9 +330,8 @@ class ParameterHelper():
         """define groups in batches.
 
         Args:
-
-        group_type (str): "specie", "twobody", "threebody", "cut3b", "manybody"
-        definition_list (list, dict): list of elements
+            group_type (str): "specie", "twobody", "threebody", "cut3b", "manybody"
+            definition_list (list, dict): list of elements
 
         This function runs define_group in batch. Please first read
         the manual of define_group.
@@ -285,8 +339,8 @@ class ParameterHelper():
         If the definition_list is a list, it is equivalent to
         executing define_group through the definition_list.
 
-        | for all terms in the list:
-        |     define_group(group_type, group_type+'n', the nth term in the list)
+        >>> for all terms in the list:
+        >>>     define_group(group_type, group_type+'n', the nth term in the list)
 
         So the first twobody defined will be group twobody0, second one will be
         group twobody1. For specie, it will define all the listed elements as
@@ -294,17 +348,18 @@ class ParameterHelper():
 
         If the definition_list is a dictionary, it is equivalent to
 
-        | for k, v in the dict:
-        |     define_group(group_type, k, v)
+        >>> for k, v in the dict:
+        >>>     define_group(group_type, k, v)
 
         It is not recommended to use the dictionary mode, especially when
         the group definitions are conflicting with each other. There is no
-        guarantee that the looping order is the same as you want.
+        guarantee that the priority order is the same as you want.
 
-        Unlike define_group, it can only be called once for each
-        group_type, and not after any define_group calls.
+        Unlike ParameterHelper.define_group(), it can only be called once for each
+        group_type, and not after any ParameterHelper.define_group() calls.
 
         """
+
         if group_type == 'specie':
             if len(self.all_group_names['specie']) > 0:
                 raise RuntimeError("this function has to be run "
@@ -343,8 +398,7 @@ class ParameterHelper():
         One type per group.
 
         Args:
-
-        group_type (str): "specie", "twobody", "threebody", "cut3b", "manybody"
+            group_type (str): "specie", "twobody", "threebody", "cut3b", "manybody"
 
         """
         nspec = len(self.all_group_names['specie'])
@@ -386,9 +440,8 @@ class ParameterHelper():
         or random parameters if random is True.
 
         Args:
-
-        group_type (str): "specie", "twobody", "threebody", "cut3b", "manybody"
-        definition_list (list, dict): list of elements
+            group_type (str): "specie", "twobody", "threebody", "cut3b", "manybody"
+            definition_list (list, dict): list of elements
 
         """
         nspec = len(self.all_group_names['specie'])
@@ -410,12 +463,12 @@ class ParameterHelper():
         """Define specie/twobody/threebody/3b cutoff/manybody group
 
         Args:
-        group_type (str): "specie", "twobody", "threebody", "cut3b", "manybody"
-        name (str): the name use for indexing. can be anything but "*"
-        element_list (list): list of elements
-        parameters (list): corresponding parameters for this group
-        atomic_str (bool): whether the element in element_list is
-                           group name or periodic table element name.
+            group_type (str): "specie", "twobody", "threebody", "cut3b", "manybody"
+            name (str): the name use for indexing. can be anything but "*"
+            element_list (list): list of elements
+            parameters (list): corresponding parameters for this group
+            atomic_str (bool): whether the elements in element_list are
+                specified by group names or periodic table element names.
 
         The function is helped to define different groups for specie/twobody/threebody
         /3b cutoff/manybody terms. This function can be used for many times.
@@ -440,48 +493,49 @@ class ParameterHelper():
 
         Example 1:
 
-            define_group('specie', 'water', ['H', 'O'])
-            define_group('specie', 'salt', ['Cl', 'Na'])
+        >>> define_group('specie', 'water', ['H', 'O'])
+        >>> define_group('specie', 'salt', ['Cl', 'Na'])
 
         They define H and O to be group water, and Na and Cl to be group salt.
 
         Example 2.1:
 
-            define_group('twobody', 'in-water', ['H', 'H'], atomic_str=True)
-            define_group('twobody', 'in-water', ['H', 'O'], atomic_str=True)
-            define_group('twobody', 'in-water', ['O', 'O'], atomic_str=True)
+        >>> define_group('twobody', 'in-water', ['H', 'H'], atomic_str=True)
+        >>> define_group('twobody', 'in-water', ['H', 'O'], atomic_str=True)
+        >>> define_group('twobody', 'in-water', ['O', 'O'], atomic_str=True)
 
         Example 2.2:
-            define_group('twobody', 'in-water', ['water', 'water'])
+
+        >>> define_group('twobody', 'in-water', ['water', 'water'])
 
         The 2.1 is equivalent to 2.2.
 
         Example 3.1:
 
-            define_group('specie', '1', ['H'])
-            define_group('specie', '2', ['O'])
-            define_group('twobody', 'Hgroup', ['H', 'H'], atomic_str=True)
-            define_group('twobody', 'Hgroup', ['H', 'O'], atomic_str=True)
-            define_group('twobody', 'OO', ['O', 'O'], atomic_str=True)
+        >>> define_group('specie', '1', ['H'])
+        >>> define_group('specie', '2', ['O'])
+        >>> define_group('twobody', 'Hgroup', ['H', 'H'], atomic_str=True)
+        >>> define_group('twobody', 'Hgroup', ['H', 'O'], atomic_str=True)
+        >>> define_group('twobody', 'OO', ['O', 'O'], atomic_str=True)
 
         Example 3.2:
 
-            define_group('specie', '1', ['H'])
-            define_group('specie', '2', ['O'])
-            define_group('twobody', 'Hgroup', ['H', '*'], atomic_str=True)
-            define_group('twobody', 'OO', ['O', 'O'], atomic_str=True)
+        >>> define_group('specie', '1', ['H'])
+        >>> define_group('specie', '2', ['O'])
+        >>> define_group('twobody', 'Hgroup', ['H', '*'], atomic_str=True)
+        >>> define_group('twobody', 'OO', ['O', 'O'], atomic_str=True)
 
         Example 3.3:
 
-            list_groups('specie', ['H', 'O'])
-            define_group('twobody', 'Hgroup', ['H', '*'])
-            define_group('twobody', 'OO', ['O', 'O'])
+        >>> list_groups('specie', ['H', 'O'])
+        >>> define_group('twobody', 'Hgroup', ['H', '*'])
+        >>> define_group('twobody', 'OO', ['O', 'O'])
 
         Example 3.4:
 
-            list_groups('specie', ['H', 'O'])
-            define_group('twobody', 'OO', ['*', '*'])
-            define_group('twobody', 'Hgroup', ['H', '*'])
+        >>> list_groups('specie', ['H', 'O'])
+        >>> define_group('twobody', 'OO', ['*', '*'])
+        >>> define_group('twobody', 'Hgroup', ['H', '*'])
 
         3.1 to 3.4 are all equivalent.
         """
@@ -572,6 +626,17 @@ class ParameterHelper():
                                       atomic_str=False)
 
     def find_group(self, group_type, element_list, atomic_str=False):
+        """ find the group that contains the input pair
+
+        Args:
+            group_type (str): species, twobody, threebody, cut3b, manybody
+            element_list (list): list of elements for a pair/triplet/coordination-pair
+            atomic_str (bool): whether the elements in element_list are
+                specified by group names or periodic table element names.
+
+        Return:
+            name (str):
+        """
 
         # remember the later command override the earlier ones
         if group_type == 'specie':
@@ -607,17 +672,17 @@ class ParameterHelper():
     def set_parameters(self, name, parameters, opt=True):
         """Set the parameters for certain group
 
-        :param name: name of the patermeters
-        :type name: str
-        :param parameters: the sigma, lengthscale, and cutoff of each group.
-        :type parameters: list
-        :param opt: whether to optimize the parameter or not
-        :type opt: bool, list
+        Args:
+            name (str): name of the patermeters
+            parameters (list): the sigma, lengthscale, and cutoff of each group.
+            opt (bool, list): whether to optimize the parameter or not
 
         The name of parameters can be the group name previously defined in
         define_group or list_groups function. Aside from the group name,
-        "noise", "cutoff_twobody", "cutoff_threebody", and "cutoff_manybody" are reserved for
-        noise parmater and universal cutoffs.
+        ``noise``, ``cutoff_twobody``, ``cutoff_threebody``, and
+        ``cutoff_manybody`` are reserved for noise parmater
+        and universal cutoffs, while ``sigma`` and ``lengthscale`` are
+        reserved for universal signal variances and length scales.
 
         The parameter should be a list of 2-3 elements, for sigma,
         lengthscale (and cutoff if the third one is defined).
@@ -668,15 +733,16 @@ class ParameterHelper():
     def set_constraints(self, name, opt):
         """Set the parameters for certain group
 
-        :param name: name of the patermeters
-        :type name: str
-        :param opt: whether to optimize the parameter or not
-        :type opt: bool, list
+        Args:
+            name (str): name of the patermeters
+            opt (bool, list): whether to optimize the parameter or not
 
         The name of parameters can be the group name previously defined in
         define_group or list_groups function. Aside from the group name,
-        "noise", "cutoff_twobody", "cutoff_threebody", and "cutoff_manybody" are reserved for
-        noise parmater and universal cutoffs.
+        ``noise``, ``cutoff_twobody``, ``cutoff_threebody``, and
+        ``cutoff_manybody`` are reserved for noise parmater
+        and universal cutoffs, while ``sigma`` and ``lengthscale`` are
+        reserved for universal signal variances and length scales.
 
         The optimization flag can be a single bool, which apply to all
         parameters under that name, or list of bools that apply to each
@@ -704,8 +770,7 @@ class ParameterHelper():
         """Sort and combine all the previous definition to internal varialbes
 
         Args:
-
-        group_type (str): species, twobody, threebody, cut3b, manybody
+            group_type (str): species, twobody, threebody, cut3b, manybody
         """
 
         aeg = self.all_group_names[group_type]
@@ -775,7 +840,7 @@ class ParameterHelper():
 
                     if sig < 0 or ls < 0:
                         self.logger.error(f"hyper parameters for group {name}"
-                                          "is not defined")
+                                          " is not defined")
                         raise RuntimeError
                     self.hyps_sig[group_type] += [sig]
                     self.hyps_ls[group_type] += [ls]
@@ -799,7 +864,7 @@ class ParameterHelper():
                     allcut += [self.all_cutoff[aeg[idt]]]
                 else:
                     alldefine = False
-                    self.logger.info(f"{aeg[idt]} cutoff is not define. "
+                    self.logger.info(f"{aeg[idt]} cutoff is not defined. "
                                      "it's going to use the universal cutoff.")
 
             if group_type != 'threebody':

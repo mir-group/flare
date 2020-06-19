@@ -6,7 +6,7 @@ import numpy as np
 from copy import deepcopy
 
 def parse_dft_input(atoms):
-    pos = atoms.positions
+    pos = np.copy(atoms.positions)
     spc = atoms.get_chemical_symbols()
     cell = np.array(atoms.get_cell())
 

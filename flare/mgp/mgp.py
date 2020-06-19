@@ -14,9 +14,7 @@ from typing import List
 
 from flare.env import AtomicEnvironment
 from flare.gp import GaussianProcess
-from flare.parameters import Parameters
-from flare.kernels.utils import from_mask_to_args, str_to_kernel_set, str_to_mapped_kernel
-from flare.utils.element_coder import NumpyEncoder
+from flare.utils.element_coder import NumpyEncoder, element_to_Z, Z_to_element
 
 from flare.mgp.map2b import Map2body
 from flare.mgp.map3b import Map3body
@@ -28,58 +26,73 @@ class MappedGaussianProcess:
 
     Args:
         grid_params (dict): Parameters for the mapping itself, such as
-            grid size of spline fit, etc.
-        species_list (dict): List of all the (unique) species included during
+            grid size of spline fit, etc. As described below.
+        unique_species (dict): List of all the (unique) species included during
             the training that need to be mapped
         map_force (bool): if True, do force mapping; otherwise do energy mapping,
             default is False
-        mean_only (bool): if True: only build mapping for mean (force)
-        container_only (bool): if True: only build splines container
-            (with no coefficients); if False: Attempt to build map immediately
         GP (GaussianProcess): None or a GaussianProcess object. If a GP is input,
             and container_only is False, automatically build a mapping corresponding
             to the GaussianProcess.
+        mean_only (bool): if True: only build mapping for mean (force)
+        container_only (bool): if True: only build splines container
+            (with no coefficients); if False: Attempt to build map immediately
         lmp_file_name (str): LAMMPS coefficient file name
+        n_cpus (int): Default None. Set to the number of cores needed for
+            parallelization. Used in the construction of the map.
+        n_sample (int): Default 100. The batch size for building map. Not used now.
 
     Examples:
 
-    >>> grid_params_2body = {'lower_bound': [1.2],
-    ...                                     # the lower bounds used
-    ...                                     # in the 2-body spline fits.
-    ...                                     # the upper bounds are determined
-    ...                                     # from GP's cutoffs, same for 3-body
-    ...                      'grid_num': [64], # number of grids used in spline
-    ...                      'svd_rank': 'auto'}
-    ...                                  # rank of the variance map, can be set
-    ...                                  # as an interger or 'auto'
-    >>> grid_params_3body = {'lower_bound': [1.2, 1.2, 1.2],
-    ...                                     # Values describe lower bounds
-    ...                                     # for the bondlength-bondlength-bondlength
-    ...                                     # grid used to construct and fit 3-body
-    ...                                     # kernels; note that for force MGPs
-    ...                                     # bondlength-bondlength-costheta
-    ...                                     # are the bounds used instead.
-    ...                      'grid_num': [32, 32, 32],
-    ...                      'svd_rank': 'auto'}
-    >>> grid_params = {'twobody': grid_params_2body,
-    ...                'threebody': grid_params_3body,
-    ...                'update': False, # if True: accelerating grids
-    ...                                 # generating by saving intermediate
-    ...                                 # coeff when generating grids,
-    ...                                 # currently NOT implemented
-    ...                'load_grid': None, # A string of path where the `grid_mean.npy`
-    ...                                   # and `grid_var.npy` are stored. if not None,
-    ...                                   # then the grids won't be generated, but
-    ...                                   # directly loaded from file
-    ...                }
+    >>> # build 2 + 3 body map
+    >>> grid_params = {'twobody': {'grid_num': [64]},
+    ...                'threebody': {'grid_num': [64, 64, 64]}}
+
+    For `grid_params`, the following keys and values are allowed
+
+    Args:
+        'two_body' (dict, optional): if 2-body is present, set as a dictionary
+            of parameters for 2-body mapping. Parameters see below.
+        'three_body' (dict, optional): if 3-body is present, set as a dictionary
+            of parameters for 3-body mapping. Parameters see below.
+        'load_grid' (str, optional): Default None. the path to the directory
+            where the previously generated grids (``grid_*.npy``) are stored.
+            If no path is specified, MGP will construct grids from scratch.
+        'lower_bound_relax' (float, optional): Default 0.1. if 'lower_bound' is
+            set to 'auto' this value will be used as a relaxation of lower
+            bound. (see below the description of 'lower_bound')
+
+    For two/three body parameter dictionary, the following keys and values are allowed
+
+    Args:
+        'grid_num' (list): a list of integers, the number of grid points for
+            interpolation. The larger the number, the better the approximation
+            of MGP is compared with GP.
+        'lower_bound' (str or list, optional): Default 'auto', the lower bound
+            of the spline interpolation will be searched. First, search the
+            training set of GP and find the minimal interatomic distance r_min.
+            Then, the ``lower_bound = r_min - lower_bound_relax``. The user
+            can set their own lower_bound, of the same shape as 'grid_num'.
+            E.g. for threebody, the customized lower bound can be set as
+            [1.2, 1.2, 1.2].
+        'upper_bound' (str or list, optional): Default 'auto', the upper bound
+            of the spline interpolation will be the cutoffs of GP. The user
+            can set their own upper_bound, of the same shape as 'grid_num'.
+            E.g. for threebody, the customized lower bound can be set as
+            [3.5, 3.5, 3.5].
+        'svd_rank' (int, optional): Default 'auto'. If the variance mapping is
+            needed, it is set as the rank of the mapping. 'auto' uses full
+            rank, which is the smaller one between the total number of grid
+            points and training set size. i.e.
+            ``full_rank = min(np.prod(grid_num), 3 * N_train)``
     '''
 
     def __init__(self,
                  grid_params: dict,
-                 species_list: list=[],
+                 unique_species: list=[],
                  map_force: bool=False,
                  GP: GaussianProcess=None,
-                 mean_only: bool=False,
+                 mean_only: bool=True,
                  container_only: bool=True,
                  lmp_file_name: str='lmp.mgp',
                  n_cpus: int=None,
@@ -92,15 +105,28 @@ class MappedGaussianProcess:
         self.n_cpus = n_cpus
         self.n_sample = n_sample
         self.grid_params = grid_params
-        self.species_list = species_list
+        self.species_labels = []
+        self.coded_species = []
+
         self.hyps_mask = None
         self.cutoffs = None
 
-        self.maps = {}
-        args = [species_list, map_force, GP, mean_only,\
-                container_only, lmp_file_name, n_cpus, n_sample]
+        for i, ele in enumerate(unique_species):
+            if isinstance(ele, str):
+                self.species_labels.append(ele)
+                self.coded_species.append(element_to_Z(ele))
+            elif isinstance(ele, int):
+                self.coded_species.append(ele)
+                self.species_labels.append(Z_to_element(ele))
 
-        for key in grid_params.keys():
+        self.load_grid = grid_params.get('load_grid', None)
+        self.update = grid_params.get('update', False)
+        self.lower_bound_relax = grid_params.get('lower_bound_relax', 0.1)
+
+        self.maps = {}
+
+        optional_xb_params = ['lower_bound', 'upper_bound', 'svd_rank']
+        for key in grid_params:
             if 'body' in key:
                 if 'twobody' == key:
                     mapxbody = Map2body
@@ -110,13 +136,23 @@ class MappedGaussianProcess:
                     raise KeyError("Only 'twobody' & 'threebody' are allowed")
 
                 xb_dict = grid_params[key]
-                xb_args = [xb_dict['grid_num'], xb_dict['lower_bound'], xb_dict['svd_rank']]
-                xb_maps = mapxbody(xb_args + args)
+
+                # set to 'auto' if the param is not given
+                args = {}
+                for oxp in optional_xb_params:
+                    args[oxp] = xb_dict.get(oxp, 'auto')
+                args['grid_num'] = xb_dict.get('grid_num', None)
+
+                for k in xb_dict:
+                    args[k] = xb_dict[k]
+
+                xb_maps = mapxbody(**args, **self.__dict__)
                 self.maps[key] = xb_maps
 
-        self.mean_only = mean_only
-
     def build_map(self, GP):
+        self.hyps_mask = GP.hyps_mask
+        self.cutoffs = GP.cutoffs
+
         for xb in self.maps:
             self.maps[xb].build_map(GP)
 
@@ -124,7 +160,7 @@ class MappedGaussianProcess:
         self.write_lmp_file(self.lmp_file_name)
 
 
-    def predict(self, atom_env: AtomicEnvironment, mean_only: bool = False,
+    def predict(self, atom_env: AtomicEnvironment, mean_only: bool = True,
             ) -> (float, 'ndarray', 'ndarray', float):
         '''
         predict force, variance, stress and local energy for given
@@ -140,9 +176,6 @@ class MappedGaussianProcess:
             stress: 6d array of the virial stress
             energy: the local energy (atomic energy)
         '''
-
-        if self.mean_only:  # if not build mapping for var
-            mean_only = True
 
         force = virial = kern = v = energy = 0
         for xb in self.maps:
@@ -171,7 +204,7 @@ class MappedGaussianProcess:
         header = ''
         xbodies = ['twobody', 'threebody']
         for xb in xbodies:
-            if xb in self.maps.keys():
+            if xb in self.maps:
                 num = len(self.maps[xb].maps)
             else:
                 num = 0
@@ -179,7 +212,7 @@ class MappedGaussianProcess:
         f.write(header + '\n')
 
         # write coefficients
-        for xb in self.maps.keys():
+        for xb in self.maps:
             self.maps[xb].write(f)
 
         f.close()
@@ -190,6 +223,7 @@ class MappedGaussianProcess:
         """
 
         out_dict = deepcopy(dict(vars(self)))
+        out_dict.pop('maps')
 
         # Uncertainty mappings currently not serializable;
         if not self.mean_only:
@@ -198,22 +232,11 @@ class MappedGaussianProcess:
                           "them.", Warning)
             out_dict['mean_only'] = True
 
-        # Iterate through the mappings for various bodies
-        for i in self.bodies:
-            kern_info = f'kernel{i}b_info'
-            kernel, ek, efk, cutoffs, hyps, hyps_mask = out_dict[kern_info]
-            out_dict[kern_info] = (kernel.__name__, efk.__name__,
-                                   cutoffs, hyps, hyps_mask)
-
         # only save the coefficients
-        out_dict['maps_2'] = [map_2.mean.__coeffs__ for map_2 in self.maps_2]
-        out_dict['maps_3'] = [map_3.mean.__coeffs__ for map_3 in self.maps_3]
-
-        # don't need these since they are built in the __init__ function
-        key_list = ['spcs_set', ]
-        for key in key_list:
-            if out_dict.get(key) is not None:
-                del out_dict[key]
+        maps_dict = {}
+        for m in self.maps:
+            maps_dict[m] = self.maps[m].as_dict()
+        out_dict['maps'] = maps_dict
 
         return out_dict
 
@@ -222,38 +245,27 @@ class MappedGaussianProcess:
         """
         Create MGP object from dictionary representation.
         """
-        new_mgp = MappedGaussianProcess(grid_params=dictionary['grid_params'],
-                                        species_list=dictionary['species_list'],
-                                        map_force=dictionary['map_force'],
-                                        GP=None,
-                                        mean_only=dictionary['mean_only'],
-                                        container_only=True,
-                                        lmp_file_name=dictionary['lmp_file_name'],
-                                        n_cpus=dictionary['n_cpus'],
-                                        n_sample=dictionary['n_sample'])
-
-        # Restore kernel_info
-        for i in dictionary['bodies']:
-            kern_info = f'kernel{i}b_info'
-            hyps_mask = dictionary[kern_info][-1]
-
-            kernel_info = dictionary[kern_info]
-            kernel_name = kernel_info[0]
-            kernel, _, ek, efk = str_to_kernel_set([kernel_name], 'mc', hyps_mask)
-            kernel_info[0] = kernel
-            kernel_info[1] = ek
-            kernel_info[2] = efk
-            setattr(new_mgp, kern_info, kernel_info)
-
-        # Fill up the model with the saved coeffs
-        for m, map_2 in enumerate(new_mgp.maps_2):
-            map_2.mean.__coeffs__ = np.array(dictionary['maps_2'][m])
-        for m, map_3 in enumerate(new_mgp.maps_3):
-            map_3.mean.__coeffs__ = np.array(dictionary['maps_3'][m])
 
         # Set GP
         if dictionary.get('GP'):
-            new_mgp.GP = GaussianProcess.from_dict(dictionary.get("GP"))
+            GP = GaussianProcess.from_dict(dictionary.get("GP"))
+        else:
+            dictionary['GP'] = None
+
+        dictionary['unique_species'] = list(set(dictionary['species_labels']))
+        if 'container_only' not in dictionary:
+            dictionary['container_only'] = True
+
+        init_arg_name = ['grid_params', 'unique_species', 'map_force', 'GP',
+            'mean_only', 'container_only', 'lmp_file_name', 'n_cpus', 'n_sample']
+        kwargs = {key: dictionary[key] for key in init_arg_name}
+        new_mgp = MappedGaussianProcess(**kwargs)
+
+        # Fill up the model with the saved coeffs
+        if 'twobody' in new_mgp.maps:
+            new_mgp.maps['twobody'] = Map2body.from_dict(dictionary['maps']['twobody'], Map2body)
+        if 'threebody' in new_mgp.maps:
+            new_mgp.maps['threebody'] = Map3body.from_dict(dictionary['maps']['threebody'], Map3body)
 
         return new_mgp
 

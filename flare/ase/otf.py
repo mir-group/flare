@@ -19,11 +19,9 @@ from flare.struc import Structure
 from flare.gp import GaussianProcess
 from flare.otf import OTF
 from flare.utils.learner import is_std_in_bound
-from flare.mgp.utils import get_l_bound
 
 from flare.ase.calculator import FLARE_Calculator
 import flare.ase.dft as dft_source 
-
 
 
 class ASE_OTF(OTF):
@@ -105,26 +103,19 @@ class ASE_OTF(OTF):
         else:
             raise NotImplementedError(md_engine+' is not implemented in ASE')
 
-        self.md = MD(atoms = atoms,
-                     timestep = timestep, 
-                     trajectory = trajectory,
+        self.md = MD(atoms=atoms, timestep=timestep, trajectory=trajectory,
                      **md_kwargs)
 
         self.atoms = atoms
         force_source = dft_source
         self.flare_calc = self.atoms.calc
 
-        super().__init__(dt = timestep, 
-                         number_of_steps = number_of_steps,
-                         gp = self.flare_calc.gp_model,  
-                         force_source = force_source,  
-                         dft_loc = dft_calc, 
-                         dft_input = self.atoms, 
-                         **otf_kwargs)
-
+        super().__init__(
+            dt=timestep, number_of_steps=number_of_steps,
+            gp=self.flare_calc.gp_model, force_source=force_source,
+            dft_loc=dft_calc, dft_input=self.atoms, **otf_kwargs)
 
     def initialize_train(self):
-
         super().initialize_train()
 
         if self.md_engine == 'NPT':
@@ -134,7 +125,6 @@ class ASE_OTF(OTF):
                 if self.md.have_the_atoms_been_changed():
                     raise NotImplementedError(
                         "You have modified the atoms since the last timestep.")
-        
 
     def compute_properties(self):
         '''
@@ -146,20 +136,21 @@ class ASE_OTF(OTF):
         self.atoms.calc.results = {}
         f = self.atoms.get_forces(self.atoms)
         stds = self.atoms.get_uncertainties(self.atoms)
-        self.structure.forces = deepcopy(f) 
+        self.structure.forces = deepcopy(f)
         self.structure.stds = deepcopy(stds)
 
-
-    def md_step(self): 
+    def md_step(self):
         '''
         Get new position in molecular dynamics based on the forces predicted by
         FLARE_Calculator or DFT calculator
         '''
         self.md.step()
-        return self.atoms.positions
+
+        # Return a copy so that future updates to atoms.positions doesn't also
+        # update structure.positions.
+        return np.copy(self.atoms.positions)
 
     # TODO: fix the temperature output in the log file
-
 
     def update_positions(self, new_pos):
         # call OTF method
@@ -173,11 +164,9 @@ class ASE_OTF(OTF):
             curr_velocities = self.atoms.get_velocities()
             self.atoms.set_velocities(curr_velocities * vel_fac)
 
-
     def update_gp(self, train_atoms, dft_frcs):
 
         super().update_gp(train_atoms, dft_frcs)
 
         if self.flare_calc.use_mapping:
             self.flare_calc.mgp_model.build_map(self.flare_calc.gp_model)
-

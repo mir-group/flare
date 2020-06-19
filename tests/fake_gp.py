@@ -9,19 +9,15 @@ from flare.struc import Structure
 from flare.utils.parameter_helper import ParameterHelper
 
 
-def get_random_structure(cell, unique_species, noa):
+def get_random_structure(cell, unique_species, noa, set_seed:int = None):
     """Create a random test structure """
-    np.random.seed(0)
+    if set_seed:
+        np.random.seed(set_seed)
 
-    positions = []
-    forces = []
-    species = []
-
-    for n in range(noa):
-        positions.append(np.random.uniform(-1, 1, 3))
-        forces.append(np.random.uniform(-1, 1, 3))
-        species.append(unique_species[np.random.randint(0,
-                                                        len(unique_species))])
+    forces = (np.random.random([noa, 3])-0.5)*2
+    positions = np.random.random([noa, 3])
+    species = [unique_species[np.random.randint(0, len(unique_species))] \
+            for i in range(noa)]
 
     test_structure = Structure(cell, species, positions)
 
@@ -32,7 +28,6 @@ def generate_hm(ntwobody, nthreebody, nmanybody=1, constraint=False, multihyps=T
 
     cutoff = 0.8
     if (multihyps is False):
-        hyps_label = []
         kernels = []
         parameters = {}
         if (ntwobody > 0):
@@ -80,14 +75,14 @@ def generate_hm(ntwobody, nthreebody, nmanybody=1, constraint=False, multihyps=T
     return hyps, hm, cut
 
 
-def get_gp(bodies, kernel_type='mc', multihyps=True, cellabc=[1, 1, 1.5]) -> GaussianProcess:
+def get_gp(bodies, kernel_type='mc', multihyps=True, cellabc=[1, 1, 1.5],
+           force_only=False, noa=5) -> GaussianProcess:
     """Returns a GP instance with a two-body numba-based kernel"""
     print("\nSetting up...\n")
 
     # params
     cell = np.diag(cellabc)
-    unique_species = [2, 1]
-    noa = 5
+    unique_species = [2, 1, 3]
 
     ntwobody = 0
     nthreebody = 0
@@ -115,56 +110,13 @@ def get_gp(bodies, kernel_type='mc', multihyps=True, cellabc=[1, 1, 1.5]) -> Gau
                         hyp_labels=hl,
                         cutoffs=cutoffs, hyps_mask=hm,
                         parallel=False, n_cpus=1)
-    gaussian.update_db(test_structure, forces, energy=energy)
+    if force_only:
+        gaussian.update_db(test_structure, forces)
+    else:
+        gaussian.update_db(test_structure, forces, energy=energy)
     gaussian.check_L_alpha()
 
-    print(gaussian.alpha)
-
-    return gaussian
-
-
-def get_force_gp(bodies, kernel_type='mc', multihyps=True, cellabc=[1,1,1.5]) -> GaussianProcess:
-    """Returns a GP instance with a two-body numba-based kernel"""
-    print("\nSetting up...\n")
-
-    # params
-    cell = np.diag(cellabc)
-    unique_species = [2, 1]
-    noa = 5
-
-    ntwobody = 0
-    nthreebody = 0
-    prefix = bodies
-    if ('2' in bodies or 'two' in bodies):
-        ntwobody = 1
-    if ('3' in bodies or 'three' in bodies):
-        nthreebody = 1
-
-    hyps, hm, _ = generate_hm(ntwobody, nthreebody, 0, multihyps=multihyps)
-    cutoffs = hm['cutoffs']
-
-    # create test structure
-    test_structure, forces = get_random_structure(cell, unique_species,
-                                                  noa)
-    energy = 3.14
-
-    hl = hm['hyp_labels']
-    if (multihyps is False):
-        hm = None
-
-    # test update_db
-    gaussian = \
-        GaussianProcess(kernels=hm['kernels'],
-                        component=kernel_type,
-                        hyps=hyps,
-                        hyp_labels=hl,
-                        cutoffs=cutoffs, multihyps=multihyps, hyps_mask=hm,
-                        parallel=False, n_cpus=1)
-    gaussian.update_db(test_structure, forces)
-    gaussian.check_L_alpha()
-
-    print('alpha:')
-    print(gaussian.alpha)
+    #print(gaussian.alpha)
 
     return gaussian
 
