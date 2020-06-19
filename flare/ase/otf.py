@@ -168,6 +168,13 @@ class ASE_OTF(OTF):
             curr_velocities = self.atoms.get_velocities()
             self.atoms.set_velocities(curr_velocities * vel_fac)
 
+    def run_dft(self):
+        super().run_dft()
+
+        # Update forces of the atoms object.
+        # Note: should also update stresses.
+        self.atoms.calc.results['forces'] = np.copy(self.structure.forces)
+
     def update_gp(self, train_atoms, dft_frcs):
 
         super().update_gp(train_atoms, dft_frcs)
