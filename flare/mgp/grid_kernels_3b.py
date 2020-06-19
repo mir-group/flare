@@ -84,6 +84,7 @@ def grid_kernel_env(kern_type,
     triplet_coord_list = np.array(triplet_coord_list)
     triplet_list = triplet_coord_list[:, :3] # (n_triplets, 3)
     coord_list = triplet_coord_list[:, 3:] # ((n_triplets, 9)
+    del triplet_coord_list
 
     # calculate distance difference & exponential part
     ls1 = 1 / (2 * ls * ls)
@@ -96,10 +97,12 @@ def grid_kernel_env(kern_type,
         rij_list.append(rij)
 
     kern_exp = (sig * sig) * np.exp(- D * ls1)
+    del D
 
     # calculate cutoff of the triplets
     fi, fdi = triplet_cutoff(triplet_list, r_cut, coord_list, derivative,
         cutoff_func) # (n_triplets, 1)
+    del triplet_list
 
     # calculate the derivative part
     kern_func = kern_dict[kern_type]
@@ -194,7 +197,6 @@ def triplet_cutoff(triplets, r_cut, coords, derivative=False, cutoff_func=quadra
             dfj = df0[:, 0] *  f0[:, 1] *  f0[:, 2] + \
                    f0[:, 0] * df0[:, 1] *  f0[:, 2] + \
                    f0[:, 0] *  f0[:, 1] * df0[:, 2]
-#            dfj = np.expand_dims(dfj, axis=1)
             dfj_list[:, d] = dfj
     else:
         f0, _ = cutoff_func(r_cut, triplets, 0) # (n_grid, 3)
