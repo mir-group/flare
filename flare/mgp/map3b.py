@@ -196,7 +196,6 @@ class SingleMap3body(SingleMapXbody):
         else:
             n_chunk = 1
 
-        print('n_chun', n_chunk)
         for m_index in range(s, e):
             data = training_data[m_index]
             kern_vec = []
