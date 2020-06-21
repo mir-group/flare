@@ -167,6 +167,8 @@ class SingleMap3body(SingleMapXbody):
         r_cut = cutoffs['threebody']
 
         grids = self.construct_grids()
+        coords = np.zeros((grids.shape[0], 9), dtype=np.float64) # padding 0
+        coords[:, 0] = np.ones_like(coords[:, 0])
 
         fj, fdj = triplet_cutoff(grids, r_cut, coords, derivative=True) # TODO: add cutoff func
         fdj = fdj[:, [0]]
