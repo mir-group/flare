@@ -16,23 +16,12 @@ from flare.lammps import lammps_calculator
 from flare.utils.element_coder import _Z_to_mass, _Z_to_element
 
 from .fake_gp import get_gp, get_random_structure
+from .mgp_test import clean, compare_triplet
 
 body_list = ['2', '3']
 multi_list = [False, True]
 map_force_list = [False, True]
 force_block_only = False
-
-def clean():
-    for f in os.listdir("./"):
-        if re.search("mgp_grids", f):
-            shutil.rmtree(f)
-        if re.search("kv3", f):
-            os.rmdir(f)
-        if 'tmp' in f:
-            if os.path.isdir(f):
-                shutil.rmtree(f)
-            else:
-                os.remove(f)
 
 
 @pytest.mark.skipif(not os.environ.get('lmp',
@@ -81,15 +70,15 @@ def test_init(bodies, multihyps, map_force, all_mgp, all_gp):
     # grid parameters
     grid_params = {}
     if ('2' in bodies):
-        grid_params['twobody'] = {'grid_num': [64], 'lower_bound': [0.05]}
+        grid_params['twobody'] = {'grid_num': [64], 'lower_bound': [0.01]}
     if ('3' in bodies):
-        grid_params['threebody'] = {'grid_num': [24, 25, 26], 'lower_bound':[0.05]*3}
+        grid_params['threebody'] = {'grid_num': [24, 25, 26], 'lower_bound':[0.01]*3}
 
     lammps_location = f'{bodies}{multihyps}{map_force}.mgp'
     data = gp_model.training_statistics
 
     mgp_model = MappedGaussianProcess(grid_params=grid_params, unique_species=data['species'], n_cpus=1,
-                map_force=map_force, lmp_file_name=lammps_location)#, mean_only=False)
+                map_force=map_force, lmp_file_name=lammps_location)
     all_mgp[f'{bodies}{multihyps}{map_force}'] = mgp_model
 
 
@@ -197,64 +186,6 @@ def test_cubic_spline(all_gp, all_mgp, bodies, multihyps, map_force):
                 print("spline", num_derv, cderv)
                 assert np.isclose(num_derv, cderv, rtol=1e-2)
 
-def compare_triplet(mgp_model, gp_model, atom_env):
-    spcs, comp_r, comp_xyz = mgp_model.get_arrays(atom_env)
-    for i, spc in enumerate(spcs):
-        lengths = np.array(comp_r[i])
-        xyzs = np.array(comp_xyz[i])
-
-        print('compare triplet spc, lengths, xyz', spc)
-        print(np.hstack([lengths, xyzs]))
-
-        gp_f = []
-        gp_e = []
-        grid_env = get_grid_env(gp_model, spc, 3)
-        for l in range(lengths.shape[0]):
-            r1, r2, r12 = lengths[l, :]
-            grid_env = get_triplet_env(r1, r2, r12, grid_env)
-            gp_pred = np.array([gp_model.predict(grid_env, d+1) for d in range(3)]).T
-            gp_en, _ = gp_model.predict_local_energy_and_var(grid_env)
-            gp_f.append(gp_pred[0])
-            gp_e.append(gp_en)
-        gp_force = np.sum(gp_f, axis=0)
-        gp_energy = np.sum(gp_e, axis=0)
-        print('gp_e', gp_e)
-        print('gp_f')
-        print(gp_f)
-
-        map_ind = mgp_model.find_map_index(spc)
-        xyzs = np.zeros_like(xyzs)
-        xyzs[:, 0] = np.ones_like(xyzs[:, 0])
-        f, _, _, e = mgp_model.maps[map_ind].predict(lengths, xyzs,
-            mgp_model.map_force, mean_only=True)
-
-        assert np.allclose(gp_force, f, rtol=1e-2)
-        if not mgp_model.map_force:
-            assert np.allclose(gp_energy, e, rtol=1e-2)
-
-
-def get_triplet_env(r1, r2, r12, grid_env):
-    grid_env.bond_array_3 = np.array([[r1, 1, 0, 0], [r2, 0, 0, 0]])
-    grid_env.cross_bond_dists = np.array([[0, r12], [r12, 0]])
-    print(grid_env.ctype, grid_env.etypes)
-
-    return grid_env
-
-
-def get_grid_env(GP, species, bodies):
-    if isinstance(GP.cutoffs, dict):
-        max_cut = np.max(list(GP.cutoffs.values()))
-    else:
-        max_cut = np.max(GP.cutoffs)
-    big_cell = np.eye(3) * 100
-    positions = [[(i+1)/(bodies+1)*0.1, 0, 0]
-                 for i in range(bodies)]
-    grid_struc = struc.Structure(big_cell, species, positions)
-    grid_env = env.AtomicEnvironment(grid_struc, 0, GP.cutoffs,
-        cutoffs_mask=GP.hyps_mask)
-
-    return grid_env
-
 
 @pytest.mark.parametrize('bodies', body_list)
 @pytest.mark.parametrize('multihyps', multi_list)
@@ -318,6 +249,8 @@ def test_predict(all_gp, all_mgp, bodies, multihyps, map_force):
 #            f"{bodies} body {map_str} mapping var is wrong"
 
     clean()
+
+
 
 @pytest.mark.skipif(not os.environ.get('lmp',
                           False), reason='lmp not found '

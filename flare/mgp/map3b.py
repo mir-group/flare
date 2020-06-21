@@ -1,5 +1,5 @@
 import numpy as np
-from math import floor
+from math import floor, ceil
 
 from typing import List
 
@@ -167,9 +167,6 @@ class SingleMap3body(SingleMapXbody):
         r_cut = cutoffs['threebody']
 
         grids = self.construct_grids()
-
-        if (e-s) == 0:
-            return np.empty((grids.shape[0], 0), dtype=np.float64)
         coords = np.zeros((grids.shape[0], 9), dtype=np.float64) # padding 0
         coords[:, 0] = np.ones_like(coords[:, 0])
 
@@ -189,11 +186,26 @@ class SingleMap3body(SingleMapXbody):
             kern_type = f'{prefix}_energy'
 
         k_v = []
+        chunk_size = 32 ** 3
+        n_grids = grids.shape[0]
+        if n_grids > chunk_size:
+            n_chunk = ceil(n_grids / chunk_size)
+        else:
+            n_chunk = 1
+
         for m_index in range(s, e):
             data = training_data[m_index]
-            kern_vec = grid_kernel(kern_type, data, grids, fj, fdj,
-                                   env12.ctype, env12.etypes,
-                                   *args)
+            kern_vec = []
+            for g in range(n_chunk):
+                gs = chunk_size * g
+                ge = np.min((chunk_size * (g + 1), n_grids))
+                grid_chunk = grids[gs:ge, :]
+                fj_chunk = fj[gs:ge, :]
+                fdj_chunk = fdj[gs:ge, :]
+                kv_chunk = grid_kernel(kern_type, data, grid_chunk, fj_chunk, fdj_chunk,
+                                       env12.ctype, env12.etypes, *args)
+                kern_vec.append(kv_chunk)
+            kern_vec = np.hstack(kern_vec)
             k_v.append(kern_vec)
 
         if len(k_v) > 0:
@@ -211,9 +223,10 @@ class SingleMap3body(SingleMapXbody):
         where c, p are two triplets or environments
         '''
 
-        kernel, en_kernel, en_force_kernel, cutoffs, hyps, hyps_mask = \
-            kernel_info
-
+        if (e-s) == 0:
+            return np.empty((grids.shape[0], 0), dtype=np.float64)
+        coords = np.zeros((grids.shape[0], 9), dtype=np.float64) # padding 0
+        coords[:, 0] = np.ones_like(coords[:, 0])
 
         args = from_mask_to_args(hyps, cutoffs, hyps_mask)
         r_cut = cutoffs['threebody']
@@ -238,4 +251,3 @@ class SingleMap3body(SingleMapXbody):
         else:
             return self_three_body_mc_en_jit(env12.ctype, env12.etypes,
                 grids, sig, ls, r_cut)
-

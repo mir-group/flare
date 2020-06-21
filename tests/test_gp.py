@@ -240,7 +240,6 @@ class TestIO():
     def test_representation_method(self, all_gps, multihyps):
         test_gp = all_gps[multihyps]
         the_str = str(test_gp)
-        print(the_str)
         assert 'GaussianProcess Object' in the_str
         assert 'Kernel: [\'twobody\', \'threebody\', \'manybody\']' in the_str
         assert 'Cutoffs: {\'twobody\': 0.8, \'threebody\': 0.8, \'manybody\': 0.8}' in the_str
@@ -302,6 +301,15 @@ class TestIO():
         with raises(ValueError):
             test_gp.write_model('test_gp_write', 'cucumber')
 
+        # Test logic for auto-detecting format in write command
+        for format in ['json', 'pickle']:
+            write_string = 'format_write_test.'+format
+            if os.path.exists(write_string):
+                os.remove(write_string)
+
+            test_gp.write_model(write_string)
+            assert os.path.exists(write_string)
+            os.remove(write_string)
 
     def test_load_reload_huge(self, all_gps):
         """
@@ -312,19 +320,22 @@ class TestIO():
         test_gp = deepcopy(all_gps[False])
         test_gp.set_L_alpha()
         dummy_gp = deepcopy(test_gp)
-        dummy_gp.training_data = [1]*5001
 
+        N_data = len(dummy_gp.training_data)
         prev_ky_mat = deepcopy(dummy_gp.ky_mat)
         prev_l_mat = deepcopy(dummy_gp.l_mat)
 
-        dummy_gp.training_data = [1]*5001
-        test_gp.write_model('test_gp_write', 'json')
-        new_gp = GaussianProcess.from_file('test_gp_write.json')
-        assert np.array_equal(prev_ky_mat, new_gp.ky_mat)
-        assert np.array_equal(prev_l_mat, new_gp.l_mat)
-        assert new_gp.training_data is not test_gp.training_data
+        for model_format in ['pickle','json']:
+            dummy_gp.write_model('test_gp_write', model_format, N_data-1)
+            new_gp = GaussianProcess.from_file(f'test_gp_write.{model_format}')
+            assert np.allclose(prev_ky_mat, new_gp.ky_mat)
+            assert np.allclose(prev_l_mat, new_gp.l_mat)
+            assert new_gp.training_data is not test_gp.training_data
 
-        os.remove('test_gp_write.json')
+            os.remove(f'test_gp_write.{model_format}')
+            dummy_gp = deepcopy(test_gp)
+
+        os.remove(f'test_gp_write_ky_mat.npy')
 
 
 def dumpcompare(obj1, obj2):

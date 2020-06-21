@@ -129,7 +129,7 @@ def get_triplets(ctype, etypes, bond_array, cross_bond_inds,
             for i in range(2):
                 spcs = spcs_list[i]
                 triplet = array([r2, r1, r12]) if i else array([r1, r2, r12])
-                coord = c2 if i else c1 # TODO: figure out what's wrong. why not [c1, c2] for force map
+                coord = c2 if i else c1 
                 if spcs not in exist_species:
                     exist_species.append(spcs)
                     tris.append([triplet])
@@ -141,3 +141,52 @@ def get_triplets(ctype, etypes, bond_array, cross_bond_inds,
 
     return exist_species, tris, tri_dir
 
+@njit
+def self_two_body_mc_en_jit(c2, etypes2,
+                         grids, # (n_grids, 1)
+                         sig, ls, r_cut, cutoff_func=quadratic_cutoff):
+
+    kern = np.zeros(len(grids), dtype=np.float64)
+
+    # pre-compute constants that appear in the inner loop
+    sig2 = sig * sig
+    # ls2 = 1 / (2 * ls * ls)
+
+    fj, _ = cutoff_func(r_cut, grids[:, 0], 0)
+
+    # C = 0
+    kern += sig2 * fj ** 2 # (n_grids,)
+
+    return kern
+ 
+
+@njit
+def self_three_body_mc_en_jit(c2, etypes2,
+                         grids, # (n_grids, 3)
+                         sig, ls, r_cut, cutoff_func=quadratic_cutoff):
+
+    kern = np.zeros(len(grids), dtype=np.float64)
+
+    ej1 = etypes2[0]
+    ej2 = etypes2[1]
+
+    # pre-compute constants that appear in the inner loop
+    sig2 = sig * sig
+    ls2 = 1 / (2 * ls * ls)
+
+    f1, _ = cutoff_func(r_cut, grids[:, 0], 0)
+    f2, _ = cutoff_func(r_cut, grids[:, 1], 0)
+    f3, _ = cutoff_func(r_cut, grids[:, 2], 0)
+    fj = f1 * f2 * f3 # (n_grids, )
+
+    perm_list = get_permutations(c2, ej1, ej2)
+    C = 0
+    for perm in perm_list:
+        perm_grids = np.take(grids, perm, axis=1)
+        rij = grids - perm_grids
+        C += np.sum(rij * rij, axis=1) # (n_grids, ) adding up three bonds
+
+    kern += sig2 * np.exp(-C * ls2) * fj ** 2 # (n_grids,)
+
+    return kern
+       
