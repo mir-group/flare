@@ -2,7 +2,6 @@ import os, shutil, re
 import numpy as np
 from flare import env, struc
 
-
 def clean():
     for f in os.listdir("./"):
         if re.search("mgp_grids", f):
@@ -77,4 +76,76 @@ def get_grid_env(GP, species, bodies):
     return grid_env
 
 
-def diag_var():
+def predict_struc_diag_var(struc, gp_model):
+    variance = np.zeros((struc.nat, 3))
+    for atom in range(struc.nat):
+        atom_env = env.AtomicEnvironment(struc, atom, gp_model.cutoffs) 
+        var = predict_atom_diag_var(atom_env, gp_model)
+        variance[atom, :] = var
+    return variance
+
+def predict_atom_diag_var_2b(atom_env, gp_model):
+    bond_array = atom_env.bond_array_2
+    ctype = atom_env.ctype
+
+    var = 0 
+    for m in range(bond_array.shape[0]):
+        ri1 = bond_array[m, 0]
+        ci1 = bond_array[m, 1:]
+        etype1 = atom_env.etypes[m]
+
+        # build up a struc of triplet for prediction
+        cell = np.eye(3) * 100
+        positions = np.array([np.zeros(3), ri1*ci1])
+        species = np.array([ctype, etype1])
+        spc_struc = struc.Structure(cell, species, positions)
+        spc_struc.coded_species = np.array(species)
+        env12 = env.AtomicEnvironment(spc_struc, 0, gp_model.cutoffs)
+
+        _, v12 = gp_model.predict_local_energy_and_var(env12)
+        var += np.sqrt(v12)
+
+    var = var ** 2 
+    return var       
+
+ 
+def predict_atom_diag_var_3b(atom_env, gp_model):
+    bond_array = atom_env.bond_array_3
+    triplets = atom_env.triplet_counts
+    cross_bond_inds = atom_env.cross_bond_inds
+    cross_bond_dists = atom_env.cross_bond_dists
+    ctype = atom_env.ctype
+
+    var = 0
+    for m in range(bond_array.shape[0]):
+        ri1 = bond_array[m, 0]
+        ci1 = bond_array[m, 1:]
+        etype1 = atom_env.etypes[m]
+
+        for n in range(triplets[m]):
+            ind1 = cross_bond_inds[m, m+n+1]
+            ri2 = bond_array[ind1, 0]
+            ci2 = bond_array[ind1, 1:]
+            etype2 = atom_env.etypes[ind1]
+
+            ri3 = cross_bond_dists[m, m+n+1]
+
+            # build up a struc of triplet for prediction
+            cell = np.eye(3) * 100
+            positions = np.array([np.zeros(3), ri1*ci1, ri2*ci2])
+            species = np.array([ctype, etype1, etype2])
+            spc_struc = struc.Structure(cell, species, positions)
+            spc_struc.coded_species = np.array(species)
+            env12 = env.AtomicEnvironment(spc_struc, 0, gp_model.cutoffs)
+
+            _, v12 = gp_model.predict_local_energy_and_var(env12)
+            var += np.sqrt(v12)
+    var = var ** 2 
+    return var       
+
+
+def predict_atom_diag_var(atom_env, gp_model, kernel_name):
+    if kernel_name == 'twobody':
+        return predict_atom_diag_var_2b(atom_env, gp_model)
+    elif kernel_name == 'threebody':
+        return predict_atom_diag_var_3b(atom_env, gp_model)

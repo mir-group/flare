@@ -11,7 +11,9 @@ from flare.kernels.cutoffs import quadratic_cutoff
 from flare.kernels.utils import str_to_kernel_set
 from flare.parameters import Parameters
 
-from flare.mgp.grid_kernels_3b import grid_kernel, grid_kernel_sephyps
+import flare.mgp.grid_kernels_2b as gk2b
+import flare.mgp.grid_kernels_3b as gk3b
+
 
 
 def str_to_mapped_kernel(name: str, component: str = "mc",
@@ -44,18 +46,27 @@ def str_to_mapped_kernel(name: str, component: str = "mc",
     b2 = False
     many = False
     b3 = False
+    for s in ['2', 'two']:
+        if s in name.lower() or s == name.lower():
+            b2 = True
+
     for s in ['3', 'three']:
         if s in name.lower() or s == name.lower():
             b3 = True
 
     if b3:
          if multihyps:
-             return grid_kernel_sephyps, None, None, None
+             return gk3b.grid_kernel_sephyps, None, gk3b.self_kernel_sephyps, None
          else:
-             return grid_kernel, None, None, None
+             return gk3b.grid_kernel, None, gk3b.self_kernel, None
+    elif b2:
+        warnings.warn('The mapped kernel for 2-body is not implemented.')
+        if multihyps:
+            return None, None, gk2b.self_kernel_sephyps, None
+        else:
+            return None, None, gk2b.self_kernel, None
     else:
-        warnings.Warn(NotImplemented("mapped kernel for two-body and manybody kernels "
-                                  "are not implemented"))
+        warnings.warn('The mapped kernel for many-body is not implemented.')
         return None
 
 def get_kernel_term(kernel_name, component, hyps_mask, hyps, grid_kernel=False):
@@ -141,52 +152,4 @@ def get_triplets(ctype, etypes, bond_array, cross_bond_inds,
 
     return exist_species, tris, tri_dir
 
-@njit
-def self_two_body_mc_en_jit(c2, etypes2,
-                         grids, # (n_grids, 1)
-                         sig, ls, r_cut, cutoff_func=quadratic_cutoff):
-
-    kern = np.zeros(len(grids), dtype=np.float64)
-
-    # pre-compute constants that appear in the inner loop
-    sig2 = sig * sig
-    # ls2 = 1 / (2 * ls * ls)
-
-    fj, _ = cutoff_func(r_cut, grids[:, 0], 0)
-
-    # C = 0
-    kern += sig2 * fj ** 2 # (n_grids,)
-
-    return kern
- 
-
-@njit
-def self_three_body_mc_en_jit(c2, etypes2,
-                         grids, # (n_grids, 3)
-                         sig, ls, r_cut, cutoff_func=quadratic_cutoff):
-
-    kern = np.zeros(len(grids), dtype=np.float64)
-
-    ej1 = etypes2[0]
-    ej2 = etypes2[1]
-
-    # pre-compute constants that appear in the inner loop
-    sig2 = sig * sig
-    ls2 = 1 / (2 * ls * ls)
-
-    f1, _ = cutoff_func(r_cut, grids[:, 0], 0)
-    f2, _ = cutoff_func(r_cut, grids[:, 1], 0)
-    f3, _ = cutoff_func(r_cut, grids[:, 2], 0)
-    fj = f1 * f2 * f3 # (n_grids, )
-
-    perm_list = get_permutations(c2, ej1, ej2)
-    C = 0
-    for perm in perm_list:
-        perm_grids = np.take(grids, perm, axis=1)
-        rij = grids - perm_grids
-        C += np.sum(rij * rij, axis=1) # (n_grids, ) adding up three bonds
-
-    kern += sig2 * np.exp(-C * ls2) * fj ** 2 # (n_grids,)
-
-    return kern
-       
+      

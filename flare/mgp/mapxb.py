@@ -311,15 +311,22 @@ class SingleMapXbody:
 
         # ------- call gengrid functions ---------------
         kernel_info = get_kernel_term(self.kernel_name, GP.component,
-                GP.hyps_mask, GP.hyps)
+                GP.hyps_mask, GP.hyps, grid_kernel=False)
         if self.use_grid_kern:
             try:
-                kernel_info = get_kernel_term(self.kernel_name, GP.component, 
-                    GP.hyps_mask, GP.hyps, grid_kernel=True)
+                if self.kernel_name != 'twobody':
+                    kernel_info = get_kernel_term(self.kernel_name, GP.component, 
+                        GP.hyps_mask, GP.hyps, grid_kernel=True)
+                else:
+                    raise Exception
             except:
                 self.use_grid_kern = False
 
+        kernel_var = get_kernel_term(self.kernel_name, GP.component,
+            GP.hyps_mask, GP.hyps, grid_kernel=True)
+
         args = [GP.name, grid_env, kernel_info]
+        args_var = [GP.name, grid_env, kernel_var]
 
         k12_v_force = self._gengrid_par(args, True, n_envs, processes)
         k12_v_energy = self._gengrid_par(args, False, n_strucs, processes)
@@ -334,8 +341,9 @@ class SingleMapXbody:
 
         if not self.mean_only:
             grid_vars = solve_triangular(GP.l_mat, k12_v_all.T, lower=True).T
-            if self.svd_rank == 'simple':
-                self_kern = self._gengrid_var_simple()        
+            if self.svd_rank == 'simple': #TODO: not use svd_rank, but change mean_only to var_option or whatever
+                self_kern = self._gengrid_var_simple(*args_var) 
+                grid_vars = np.sqrt(self_kern - np.sum(grid_vars**2, axis=1))
             else:
                 tensor_shape = np.array([*self.grid_num, grid_vars.shape[1]])
                 grid_vars = np.reshape(grid_vars, tensor_shape)
@@ -424,6 +432,21 @@ class SingleMapXbody:
         return k12_v
 
 
+    def _gengrid_var_simple(self, name, grid_env, kernel_info):
+        '''
+        Generate grids for variance upper bound, based on the inequality:
+        V(c, p)^2 <= V(c, c) V(p, p)
+        where c, p are two bonds/triplets or environments
+        '''
+
+        _, self_kernel, _, cutoffs, hyps, hyps_mask = kernel_info
+
+        args = from_mask_to_args(hyps, cutoffs, hyps_mask)
+        grids = self.construct_grids()
+
+        return self_kernel(self.map_force, grids, grid_env.ctype, grid_env.etypes, *args)
+
+
     def build_map_container(self):
         '''
         build 1-d spline function for mean, 2-d for var
@@ -436,7 +459,7 @@ class SingleMapXbody:
                 warnings.warn("The containers for variance are not built because svd_rank='auto'")
 
             if self.svd_rank == 'simple':
-                self.mean = CubicSpline(self.bounds[0], self.bounds[1],
+                self.var = CubicSpline(self.bounds[0], self.bounds[1],
                                         orders=self.grid_num)
 
             if isinstance(self.svd_rank, int):
@@ -578,9 +601,14 @@ class SingleMapXbody:
             # predict var
             v = 0
             if not mean_only:
-                v_0 = np.expand_dims(np.sum(self.var(lengths), axis=1),
-                                     axis=1)
-                v = self.var.V @ v_0
+                v_0 = self.var(lengths)
+                if self.svd_rank == 'simple':
+                    v_0 = np.sum(v_0)
+                    v = v_0 ** 2
+                else:
+                    v_0 = np.sum(v_0, axis=1)
+                    v_0 = np.expand_dims(v_0, axis=1)
+                    v = self.var.V @ v_0
 
         # predict virial stress
         vir = np.zeros(6)

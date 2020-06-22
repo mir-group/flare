@@ -6,7 +6,7 @@ from flare.struc import Structure
 from flare.utils.element_coder import Z_to_element
 
 from flare.mgp.mapxb import MapXbody, SingleMapXbody
-from flare.mgp.utils import get_bonds, self_two_body_mc_en_jit, self_three_body_mc_en_jit
+from flare.mgp.utils import get_bonds
 
 
 class Map2body(MapXbody):
@@ -98,30 +98,5 @@ class SingleMap2body(SingleMapXbody):
 
     def skip_grid(self, r):
         return False
-
-    def _gengrid_var_simple(self, env12, kernel_info):
-        '''
-        Generate 1D grids for variance without SVD
-        '''
-        
-        kernel, en_kernel, en_force_kernel, cutoffs, hyps, hyps_mask = \
-            kernel_info
-
-        args = from_mask_to_args(hyps, cutoffs, hyps_mask)
-        r_cut = cutoffs['twobody']
-
-        if hyps_mask is not None:
-            raise NotImplementedError
-        else:
-            sig = hyps[0]
-            ls = hyps[1]
-
-        grids = self.construct_grids()
-
-        if self.map_force:
-            raise NotImplementedError
-        else:
-            return self_two_body_mc_en_jit(env12.ctype, env12.etypes,
-                grids, sig, ls, r_cut)
 
 

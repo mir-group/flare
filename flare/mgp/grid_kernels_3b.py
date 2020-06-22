@@ -29,7 +29,7 @@ def grid_kernel_sephyps(kern_type,
     ttype = triplet_mask[nspec * nspec * bc1 + nspec*bc2 + bc3]
     ls = ls3[ttype]
     sig = sig3[ttype]
-    cutoffs = [cutoff_2b, cutoff_3b]
+    cutoffs = [cutoff_2b, cutoff_3b] # TODO: check if this is correct
 
     hyps = [sig, ls]
     return grid_kernel(kern_type,
@@ -208,6 +208,21 @@ def triplet_cutoff(triplets, r_cut, coords, derivative=False, cutoff_func=quadra
 
 
 @njit
+def get_permutations(c1, ei1, ei2, c2, ej1, ej2):
+    perms = []
+    if (c1 == c2):
+        if (ei1 == ej1) and (ei2 == ej2): perms.append([0, 1, 2])
+        if (ei1 == ej2) and (ei2 == ej1): perms.append([1, 0, 2])
+    if (c1 == ej1):
+        if (ei1 == ej2) and (ei2 == c2):  perms.append([1, 2, 0])
+        if (ei1 == c2) and (ei2 == ej2):  perms.append([0, 2, 1])
+    if (c1 == ej2):
+        if (ei1 == ej1) and (ei2 == c2):  perms.append([2, 1, 0])
+        if (ei1 == c2) and (ei2 == ej1):  perms.append([2, 0, 1])
+    return perms
+
+
+@njit
 def get_triplets_for_kern(bond_array_1, c1, etypes1,
                           cross_bond_inds_1, cross_bond_dists_1,
                           triplets_1,
@@ -253,18 +268,7 @@ def get_triplets_for_kern(bond_array_1, c1, etypes1,
                         ri3 = cross_bond_dists_1[m, m + n + 1]
                         ci3 = np.zeros(3)
 
-                        # align this triplet to the same species order as r1, r2, r12
-
-                        perms = []
-                        if (c1 == c2):
-                            if (ei1 == ej1) and (ei2 == ej2): perms.append([0, 1, 2])
-                            if (ei1 == ej2) and (ei2 == ej1): perms.append([1, 0, 2])
-                        if (c1 == ej1):
-                            if (ei1 == ej2) and (ei2 == c2):  perms.append([1, 2, 0])
-                            if (ei1 == c2) and (ei2 == ej2):  perms.append([0, 2, 1])
-                        if (c1 == ej2):
-                            if (ei1 == ej1) and (ei2 == c2):  perms.append([2, 1, 0])
-                            if (ei1 == c2) and (ei2 == ej1):  perms.append([2, 0, 1])
+                        perms = get_permutations(c1, ei1, ei2, c2, ej1, ej2)
 
                         tri  = np.array([ri1, ri2, ri3])
                         crd1 = np.array([ci1[0], ci2[0], ci3[0]])
@@ -285,6 +289,76 @@ def get_triplets_for_kern(bond_array_1, c1, etypes1,
     return triplet_list
 
 
+def self_kernel_sephyps(map_force,
+                  grids,
+                  c2, etypes2, 
+                  cutoff_2b, cutoff_3b, cutoff_mb,
+                  nspec, spec_mask,
+                  nbond, bond_mask,
+                  ntriplet, triplet_mask,
+                  ncut3b, cut3b_mask,
+                  nmb, mb_mask,
+                  sig2, ls2, sig3, ls3, sigm, lsm,
+                  cutoff_func=quadratic_cutoff):
+    '''
+    Args:
+        data: a single env of a list of envs
+    '''
+
+    if map_force:
+        raise NotImplementedError
+
+
+    bc1 = spec_mask[c2]
+    bc2 = spec_mask[etypes2[0]]
+    bc3 = spec_mask[etypes2[1]]
+    ttype = triplet_mask[nspec * nspec * bc1 + nspec*bc2 + bc3]
+    ls = ls3[ttype]
+    sig = sig3[ttype]
+    cutoffs = [cutoff_2b, cutoff_3b]
+
+    hyps = [sig, ls]
+    return self_kernel(map_force, grids, c2, etypes2, hyps, 
+                       cutoffs, cutoff_func)
+
+
+def self_kernel(map_force,
+             grids, 
+             c2, etypes2, 
+             hyps: 'ndarray', cutoffs,
+             cutoff_func: Callable = quadratic_cutoff):
+
+    if map_force:
+        raise NotImplementedError
+
+
+    # pre-compute constants
+    r_cut = cutoffs[1]
+    sig = hyps[0]
+    ls = hyps[1]
+    sig2 = sig * sig
+    ls2 = 1 / (2 * ls * ls)
+
+    ej1 = etypes2[0]
+    ej2 = etypes2[1]
+
+    f1, _ = cutoff_func(r_cut, grids[:, 0], 0)
+    f2, _ = cutoff_func(r_cut, grids[:, 1], 0)
+    f3, _ = cutoff_func(r_cut, grids[:, 2], 0)
+    fj = f1 * f2 * f3 # (n_grids, )
+
+    perm_list = get_permutations(c2, ej1, ej2, c2, ej1, ej2)
+
+    C = 0
+    for perm in perm_list:
+        perm_grids = np.take(grids, perm, axis=1)
+        rij = grids - perm_grids
+        C += np.sum(rij * rij, axis=1) # (n_grids, ) adding up three bonds
+
+    kern = sig2 * np.exp(-C * ls2) * fj ** 2 # (n_grids,)
+
+    return kern
+ 
 
 kern_dict = {'energy_energy': en_en,
              'energy_force': en_force,

@@ -215,39 +215,3 @@ class SingleMap3body(SingleMapXbody):
 
         return k_v
 
-
-    def _gengrid_var_simple(self, env12, kernel_info):
-        '''
-        Generate 3D grids for variance upper bound, based on the inequality:
-        V(c, p)^2 <= V(c, c) V(p, p)
-        where c, p are two triplets or environments
-        '''
-
-        if (e-s) == 0:
-            return np.empty((grids.shape[0], 0), dtype=np.float64)
-        coords = np.zeros((grids.shape[0], 9), dtype=np.float64) # padding 0
-        coords[:, 0] = np.ones_like(coords[:, 0])
-
-        args = from_mask_to_args(hyps, cutoffs, hyps_mask)
-        r_cut = cutoffs['threebody']
-
-        if hyps_mask is not None:
-            _, _, nspec, spec_mask, _, _, _, triplet_mask, _, _, _, _, sig3, ls3 = args 
-            bc1 = spec_mask[env12.ctype]
-            bc2 = spec_mask[env12.etypes[0]]
-            bc3 = spec_mask[env12.etypes[1]]
-            ttype = triplet_mask[nspec * nspec * bc1 + nspec * bc2 + bc3]
-            ls = ls3[ttype]
-            sig = sig3[ttype]
-#            raise NotImplementedError
-        else:
-            sig = hyps[0]
-            ls = hyps[1]
-
-        grids = self.construct_grids()
-
-        if self.map_force:
-            raise NotImplementedError
-        else:
-            return self_three_body_mc_en_jit(env12.ctype, env12.etypes,
-                grids, sig, ls, r_cut)
