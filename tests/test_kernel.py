@@ -11,10 +11,10 @@ from flare.kernels.utils import str_to_kernel_set
 from flare_o.kernels.utils import str_to_kernel_set as str_to_kernel_set_o
 from .fake_gp import generate_mb_envs
 
-list_to_test = [['2'], ['3'], ['many'],
-                ['2', '3'],
-                ['2', '3', 'many']]
-list_type = ['mc', 'mc']
+list_to_test = [['2'], ['3'], ['2', '3']] # ['many'],
+                # ['2', '3'],
+                # ['2', '3', 'many']]
+list_type = ['sc', 'mc']
 
 def generate_hm(kernels):
     hyps = []
@@ -139,6 +139,7 @@ def test_force(kernels, kernel_type):
 
             # check force kernel
             kern_finite_diff = 0
+            kern_finite_diff_o = 0
             if ('many' in kernels) and len(kernels)==1:
                 _, __, enm_kernel, ___ = str_to_kernel_set('many', kernel_type)
                 mhyps = hyps[(nterm-1)*2:]
@@ -150,6 +151,22 @@ def test_force(kernels, kernel_type):
                         cal -= enm_kernel(env1[1][i], env2[2][j], mhyps, cutoffs)
                         cal -= enm_kernel(env1[2][i], env2[1][j], mhyps, cutoffs)
                 kern_finite_diff += cal / (4 * delta ** 2)
+
+                _, __, enm_kernel, ___ = str_to_kernel_set_o('many', kernel_type)
+                mhyps = hyps[(nterm-1)*2:]
+                cal = 0
+                for i in range(3):
+                    for j in range(len(env1[0])):
+                        cal += enm_kernel(env1[1][i], env2[1][j], mhyps, cutoffs)
+                        cal += enm_kernel(env1[2][i], env2[2][j], mhyps, cutoffs)
+                        cal -= enm_kernel(env1[1][i], env2[2][j], mhyps, cutoffs)
+                        cal -= enm_kernel(env1[2][i], env2[1][j], mhyps, cutoffs)
+                kern_finite_diff_o += cal / (4 * delta ** 2)
+
+                print("old and new numerical", kern_finite_diff_o, kern_finite_diff)
+
+                assert np.isclose(kern_finite_diff_o, kern_finite_diff, rtol=1e-4)
+
             elif 'many' in kernels:
                 # TODO: Establish why 2+3+MB fails (numerical error?)
                 return
@@ -182,7 +199,7 @@ def test_force(kernels, kernel_type):
             kernel_o, _, __, ___ = \
                 str_to_kernel_set_o(kernels, kernel_type)
             kern_analytical_o = kernel_o(env1[0][0], env2[0][0], d1, d2, *args)
-            print(kern_analytical, kern_analytical_o)
+            print("new and old analytical", kern_analytical, kern_analytical_o)
             assert isclose(kern_analytical_o, kern_analytical, rtol=tol)
             time0 = time()
             for d1 in [1, 2, 3]:

@@ -261,15 +261,16 @@ def parallel_vector_construction(pack_function, name, x, kernel, hyps,
         c.start()
 
     # Wait for all results to arrive.
-    # vector = np.zeros(size * mult)
     for _ in range(nbatch):
         wid, result_chunk = result_queue.get(block=True)
         containers[wid] = result_chunk
 
     if nbatch > 1:
        vector = np.vstack(containers)
-    else:
+    elif nbatch > 0:
        vector = containers[0]
+    else:
+       vector = np.empty((0, dim))
 
     # vector[s * mult:e * mult] = result_chunk
 
@@ -891,12 +892,12 @@ def energy_energy_vector(name, kernel, x, hyps, cutoffs=None,
 
     block_id, nbatch = partition_vector(n_sample, size, n_cpus)
     pack_function = energy_energy_vector_unit
-    mult = 1
+    dim = 3
 
     force_energy_vector = \
         parallel_vector_construction(pack_function, name, x, kernel,
                                      hyps, cutoffs, hyps_mask, block_id,
-                                     nbatch, size, mult)
+                                     nbatch, size, dim)
 
     return force_energy_vector
 
@@ -1009,15 +1010,17 @@ def en_kern_vec(name, energy_force_kernel, energy_energy_kernel, x, hyps,
     size2 = len(_global_training_structures[name])
     kernel_vector = np.zeros(size1 * 3 + size2)
 
-    force_vector = \
-        energy_force_vector(name, energy_force_kernel, x, hyps, cutoffs,
-                            hyps_mask, n_cpus, n_sample)
-    energy_vector = \
-        energy_energy_vector(name, energy_energy_kernel, x, hyps, cutoffs,
-                             hyps_mask, n_cpus, n_sample)
+    if size1 > 0:
+        force_vector = \
+            energy_force_vector(name, energy_force_kernel, x, hyps, cutoffs,
+                                hyps_mask, n_cpus, n_sample)
+        kernel_vector[0:size1*3] = force_vector
+    if size2 > 0:
+        energy_vector = \
+            energy_energy_vector(name, energy_energy_kernel, x, hyps, cutoffs,
+                                 hyps_mask, n_cpus, n_sample)
+        kernel_vector[size1*3:] = energy_vector
 
-    kernel_vector[0:size1*3] = force_vector
-    kernel_vector[size1*3:] = energy_vector
 
     return kernel_vector
 
