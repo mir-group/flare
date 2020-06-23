@@ -287,14 +287,12 @@ class TestIO():
         test_gp = all_gps[multihyps]
         the_str = str(test_gp)
         print(the_str)
-        assert 'GaussianProcess Object' in the_str
         assert 'Kernel: [\'twobody\', \'threebody\', \'manybody\']' in the_str
         assert 'Cutoffs: {\'twobody\': 0.8, \'threebody\': 0.8, \'manybody\': 0.8}' in the_str
-        assert 'Model Likelihood: ' in the_str
         if not multihyps:
-            assert 'Length ' in the_str
-            assert 'Signal Var. ' in the_str
-            assert "Noise Var." in the_str
+            assert 'Length' in the_str
+            assert 'Signal' in the_str
+            assert 'Noise' in the_str
 
     @pytest.mark.parametrize('multihyps', multihyps_list)
     def test_serialization_method(self, all_gps, validation_env, multihyps):
