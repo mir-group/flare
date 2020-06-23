@@ -624,16 +624,15 @@ class GaussianProcess:
     def __str__(self):
         """String representation of the GP model."""
 
-        thestr = "GaussianProcess Object\n"
+        thestr = ''
         thestr += f'Number of cpu cores: {self.n_cpus}\n'
         thestr += f'Kernel: {self.kernels}\n'
         thestr += f"Training points: {len(self.training_data)}\n"
         thestr += f'Cutoffs: {self.cutoffs}\n'
-        thestr += f'Model Likelihood: {self.likelihood}\n'
 
         thestr += f'Number of hyperparameters: {len(self.hyps)}\n'
-        thestr += f'Hyperparameters_array: {str(self.hyps)}\n'
-        thestr += 'Hyperparameters: \n'
+        thestr += f'Hyperparameter array: {str(self.hyps)}\n'
+
         if self.hyp_labels is None:
             # Put unlabeled hyperparameters on one line
             thestr = thestr[:-1]
@@ -641,9 +640,6 @@ class GaussianProcess:
         else:
             for hyp, label in zip(self.hyps, self.hyp_labels):
                 thestr += f"{label}: {hyp} \n"
-
-        for k in self.hyps_mask:
-            thestr += f'Hyps_mask {k}: {self.hyps_mask[k]} \n'
 
         return thestr
 
