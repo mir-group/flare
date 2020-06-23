@@ -158,7 +158,7 @@ class Output:
                 for j in range(3):
                     headerstring += f'{structure.prev_positions[i][j]:10.4f}'
                 headerstring += '\n'
-        headerstring += '-' * 80 + '\n'
+        headerstring += '-' * 80
 
         f.info(headerstring)
 
@@ -239,7 +239,7 @@ class Output:
 
         # Report potential energy uncertainty.
         if structure.local_energy_stds is not None:
-            pot_en_std = np.sqrt(np.sum(structure.local_energy_std**2))
+            pot_en_std = np.sqrt(np.sum(structure.local_energy_stds**2))
             string += f'Uncertainty: {pot_en_std:.6f} eV \n'
 
         # Report total energy.
@@ -391,12 +391,12 @@ class Output:
     def write_wall_time(self, start_time):
         time_curr = time.time() - start_time
         f = logging.getLogger(self.basename+'log')
-        f.info(f'wall time from start: {time_curr:.2f} s')
+        f.info(f'Wall time from start: {time_curr:.2f} s')
 
     def conclude_dft(self, dft_count, start_time):
         f = logging.getLogger(self.basename+'log')
         f.info('DFT run complete.')
-        f.info(f'number of DFT calls: {dft_count}')
+        f.info(f'Number of DFT calls: {dft_count}')
         self.write_wall_time(start_time)
 
     def add_atom_info(self, train_atoms, stds):
