@@ -51,6 +51,7 @@ def test_initialization3():
         hm['hyps'], hm['cutoffs'], hm['kernels'], hm)
 
 def test_initialization4():
+    """check cut3b"""
     pm = ParameterHelper(species=['O', 'C', 'H'],
                          kernels={'twobody': [['*', '*'], ['O', 'O']],
                                   'threebody': [['*', '*', '*'], ['O', 'O', 'O']]},
@@ -58,6 +59,20 @@ def test_initialization4():
                          parameters={'twobody0': [1, 0.5], 'twobody1': [2, 0.2],
                                      'threebody0': [1, 0.5], 'threebody1': [2, 0.2],
                                      'cut3b0': 5, 'cut3b1': 6,
+                                     'cutoff_twobody': 2},
+                         verbose="DEBUG")
+    hm = pm.as_dict()
+    for k in hm:
+        print(k, hm[k])
+    Parameters.check_instantiation(
+        hm['hyps'], hm['cutoffs'], hm['kernels'], hm)
+
+def test_initialization5():
+    """check universal"""
+    pm = ParameterHelper(species=['O', 'C', 'H'],
+                         kernels={'twobody': [['*', '*'], ['O', 'O']],
+                                  'threebody': [['*', '*', '*'], ['O', 'O', 'O']]},
+                         parameters={'sigma': 1, 'lengthscale':0.5, 'cutoff_threebody':3,
                                      'cutoff_twobody': 2},
                          verbose="DEBUG")
     hm = pm.as_dict()
@@ -184,7 +199,36 @@ def test_from_dict():
 
     Parameters.compare_dict(hm, hm1)
 
-def test_constraints():
+def test_constraints1():
+    '''
+    simplest senario
+    '''
+    pm = ParameterHelper(species=['O', 'C', 'H'],
+                         kernels={'twobody': [['*', '*'], ['O', 'O']],
+                                  'threebody': [['*', '*', '*'], ['O', 'O', 'O']]},
+                         parameters={'twobody0': [1, 0.5], 'twobody1': [2, 0.2],
+                                     'threebody0': [1, 0.5], 'threebody1': [2, 0.2],
+                                     'cutoff_twobody': 2, 'cutoff_threebody': 1},
+                         constraints={'twobody0': [True, False],
+                                     'threebody0': [False,True],
+                                      'noise': False},
+                         verbose="DEBUG")
+    hm = pm.as_dict()
+    Parameters.check_instantiation(
+        hm['hyps'], hm['cutoffs'], hm['kernels'], hm)
+    hyps = hm['hyps']
+    print(hm)
+    print(hm['hyps'])
+    assert len(hyps)==7
+    assert hyps[0]==1
+    assert hyps[1]==2
+    assert hyps[2]==0.2
+    assert hyps[3]==2
+    assert hyps[4]==0.5
+    assert hyps[5]==0.2
+
+
+def test_constraints2():
     '''
     simplest senario
     '''
@@ -197,8 +241,11 @@ def test_constraints():
                          constraints={'twobody0': [True, False]},
                          verbose="DEBUG")
     hm = pm.as_dict()
-    print(hm)
-    print(hm['hyps'])
     Parameters.check_instantiation(
         hm['hyps'], hm['cutoffs'], hm['kernels'], hm)
+    hyps = hm['hyps']
+    print(hm)
+    print(hm['hyps'])
+    assert hyps[0]==1
+    assert hyps[1]==1
 

@@ -769,20 +769,25 @@ class ParameterHelper():
 
         if name == 'noise':
             self.opt['noise'] = opt
+            self.logger.debug(f"noise opt is set to"
+                              f"{opt}")
             return
 
         if isinstance(opt, bool):
             opt = [opt, opt, opt]
 
-        if 'cut3b' not in name:
-            if name in self.sigma:
-                self.logger.debug(
-                    f"the sig, ls of group {name} is overriden")
-            self.opt[name+'sig'] = opt[0]
-            self.opt[name+'ls'] = opt[1]
-            self.logger.debug(f"ParameterHelper for group {name} will be set as "
-                              f"sig {opt[0]} "
-                              f"ls {opt[1]}")
+        for cutname in self.cutoff_types:
+            if cutname in name:
+                return
+
+        if name in self.sigma:
+            self.logger.debug(
+                f"the opt setting of group {name} is overriden")
+        self.opt[name+'sig'] = opt[0]
+        self.opt[name+'ls'] = opt[1]
+        self.logger.debug(f"ParameterHelper for group {name} will be set as "
+                          f"sig {opt[0]} "
+                          f"ls {opt[1]}")
 
     def summarize_group(self, group_type):
         """Sort and combine all the previous definition to internal varialbes
