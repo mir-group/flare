@@ -397,9 +397,7 @@ def test_force(kernels, diff_cutoff):
     if ('threebody' in kernels):
         _, __, en3_kernel, ___ = str_to_kernel_set(['threebody'], 'mc', hm)
 
-        thyps_mask = Parameters.get_component_mask(hm, 'threebody', hyps=hyps)
         thyps, tcutoffs, thyps_mask = Parameters.get_component_mask(hm, 'threebody', hyps=hyps)
-
         args3 = from_mask_to_args(thyps, tcutoffs, thyps_mask)
 
         calc1 = en3_kernel(env1[1][0], env2[1][0], *args3)

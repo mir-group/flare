@@ -7,7 +7,6 @@ from flare.env import AtomicEnvironment
 from flare.kernels.utils import str_to_kernel_set
 from flare.struc import Structure
 from flare.utils.parameter_helper import ParameterHelper
-
 from flare_o.kernels.utils import str_to_kernel_set as str_to_kernel_set_o
 import flare_o.gp_algebra as gpao
 
@@ -170,7 +169,6 @@ def ky_mat_ref(params):
     yield ky_mat0
     del ky_mat0
 
-
 @pytest.mark.parametrize('ihyps', [0, 1])
 def test_ky_mat(params, ihyps, ky_mat_ref):
 
@@ -200,7 +198,6 @@ def test_ky_mat(params, ihyps, ky_mat_ref):
     assert np.isclose(ky_mat, ky_mat_ref, rtol=1e-3).all(), \
             "multi hyps implementation is wrong"\
             f"with case {ihyps}"
-
 
     # parallel implementation
     time0 = time.time()
@@ -383,13 +380,13 @@ def test_ky_and_hyp(params, ihyps, ky_mat_ref):
 
         newhyps[i] += delta
         hyp_mat_p, ky_mat_p = func(newhyps, name, kernel[1],
-                                             cutoffs, hyps_mask)
+                                   cutoffs, hyps_mask)
         like_p, _ = \
             get_like_grad_from_mats(ky_mat_p, hyp_mat_p, name)
 
         newhyps[i] -= 2*delta
         hyp_mat_m, ky_mat_m = func(newhyps, name, kernel[1],
-                                             cutoffs, hyps_mask)
+                                   cutoffs, hyps_mask)
         like_m, _ = \
             get_like_grad_from_mats(ky_mat_m, hyp_mat_m, name)
 

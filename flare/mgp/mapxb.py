@@ -59,7 +59,6 @@ class MapXbody:
         self.n_sample = n_sample
 
         self.spc = []
-        self.spc_set = []
         self.maps = []
         self.kernel_info = None
         self.hyps_mask = hyps_mask
@@ -170,7 +169,7 @@ class MapXbody:
         out_dict['bounds'] = [m.bounds for m in self.maps]
 
         # rm keys since they are built in the __init__ function
-        key_list = ['singlexbody', 'spc_set']
+        key_list = ['singlexbody', 'spc']
         for key in key_list:
             if out_dict.get(key) is not None:
                 del out_dict[key]
@@ -478,7 +477,7 @@ class SingleMapXbody:
 
             grid_path = f'{self.load_grid}/mgp_grids/{self.bodies}_{self.species_code}'
             y_mean = np.load(f'{grid_path}_mean.npy')
-            y_var = np.load(f'{grid_path}_var.npy')
+            y_var = np.load(f'{grid_path}_var.npy', allow_pickle=True)
 
         self.mean.set_values(y_mean)
         if not self.mean_only:
