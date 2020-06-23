@@ -24,8 +24,12 @@ class Parameters():
     '''
 
     all_kernel_types = ['twobody', 'threebody', 'manybody']
+    cutoff_types = {'cut3b': 'threebody'}
     ndim = {'twobody': 2, 'threebody': 3, 'manybody': 2, 'cut3b': 2}
     n_kernel_parameters = {'twobody': 2, 'threebody': 2, 'manybody': 2, 'cut3b': 0}
+
+    cutoff_types_keys = list(cutoff_types.keys())
+    cutoff_types_values = list(cutoff_types.values())
 
     logger = set_logger("Parameters", stream=True,
                         fileout_name=None, verbose="info")
@@ -161,12 +165,12 @@ class Parameters():
         # and the length of corresponding hyper-parameters
         hyps_length = 0
         used_parameters = np.zeros_like(hyps, dtype=bool)
-        for kernel in kernels+['cut3b']:
+        for kernel in kernels+list(Parameters.cutoff_types.keys()):
 
             n = param_dict.get(f'n{kernel}', 0)
             assert isinstance(n, int)
 
-            if kernel != 'cut3b':
+            if kernel not in list(Parameters.cutoff_types.keys()):
                 hyps_length += Parameters.n_kernel_parameters[kernel]*n
                 assert n > 0, f"{kernel} has n 0"
 
@@ -215,7 +219,7 @@ class Parameters():
                             assert mask[mask_id] == mask_value, \
                                 f'{kernel}_mask has to be symmetrical'
 
-                if kernel != 'cut3b':
+                if kernel not in list(Parameters.cutoff_types.keys()):
                     if kernel+'_cutoff_list' in param_dict:
                         cutoff_list = param_dict[kernel+'_cutoff_list']
                         assert len(cutoff_list) == n, \
@@ -322,8 +326,11 @@ class Parameters():
                          'n'+kernel_name, kernel_name+'_mask',
                          kernel_name+'_cutoff_list']
 
-            if kernel_name == 'threebody':
-                name_list += ['ncut3b', 'cut3b_mask']
+            if kernel_name in Parameters.cutoff_types_values:
+
+                key_ind = Parameters.cutoff_types_values.index(kernel_name)
+                cutoff_key = Parameters.cutoff_types_keys[cutoff_key]
+                name_list += ['n'+cutoff_key, cutoff_key+'_mask']
 
             for name in name_list:
                 if name in param_dict:
@@ -380,7 +387,7 @@ class Parameters():
             specie_mask = param_dict['species_mask']
             cutoff_list = param_dict[f'{kernel_name}_cutoff_list']
 
-            if kernel_name != 'threebody':
+            if kernel_name not in Parameters.cutoff_types_values:
                 mask_id = 0
                 for ele in coded_specie:
                     mask_id += specie_mask[ele]
@@ -389,13 +396,17 @@ class Parameters():
                 mask_id = param_dict[kernel_name+'_mask'][mask_id]
                 return cutoff_list[mask_id]
             else:
-                cut3b_mask = param_dict['cut3b_mask']
+
+                key_ind = Parameters.cutoff_types_values.index(kernel_name)
+                cutoff_key = Parameters.cutoff_types_keys[cutoff_key]
+
+                cut_mask = param_dict[cutoff_key+'_mask']
                 ele1 = species_mask[coded_species[0]]
                 ele2 = species_mask[coded_species[1]]
                 ele3 = species_mask[coded_species[2]]
-                twobody1 = cut3b_mask[param_dict['nspecie']*ele1 + ele2]
-                twobody2 = cut3b_mask[param_dict['nspecie']*ele1 + ele3]
-                twobody12 = cut3b_mask[param_dict['nspecie']*ele2 + ele3]
+                twobody1 = cut_mask[param_dict['nspecie']*ele1 + ele2]
+                twobody2 = cut_mask[param_dict['nspecie']*ele1 + ele3]
+                twobody12 = cut_mask[param_dict['nspecie']*ele2 + ele3]
                 return np.array([cutoff_list[twobody1],
                                  cutoff_list[twobody2],
                                  cutoff_list[twobody12]])
@@ -454,8 +465,9 @@ class Parameters():
             list_of_names += [k+'_mask']
             list_of_names += ['cutoff_'+k]
             list_of_names += [k+'_cutoff_list']
-        list_of_names += ['ncut3b']
-        list_of_names += ['cut3b_mask']
+        for k in Parameters.cutoff_types:
+            list_of_names += ['n'+k]
+            list_of_names += [k+'_mask']
 
         for k in list_of_names:
             if (k in dict1) != (k in dict2):

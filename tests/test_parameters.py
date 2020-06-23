@@ -50,6 +50,22 @@ def test_initialization3():
     Parameters.check_instantiation(
         hm['hyps'], hm['cutoffs'], hm['kernels'], hm)
 
+def test_initialization4():
+    pm = ParameterHelper(species=['O', 'C', 'H'],
+                         kernels={'twobody': [['*', '*'], ['O', 'O']],
+                                  'threebody': [['*', '*', '*'], ['O', 'O', 'O']]},
+                         cutoff_groups={'cut3b':[['*', '*'], ['O', 'O']]},
+                         parameters={'twobody0': [1, 0.5], 'twobody1': [2, 0.2],
+                                     'threebody0': [1, 0.5], 'threebody1': [2, 0.2],
+                                     'cut3b0': 5, 'cut3b1': 6,
+                                     'cutoff_twobody': 2},
+                         verbose="DEBUG")
+    hm = pm.as_dict()
+    for k in hm:
+        print(k, hm[k])
+    Parameters.check_instantiation(
+        hm['hyps'], hm['cutoffs'], hm['kernels'], hm)
+
 
 def test_generate_by_line():
 
@@ -167,3 +183,22 @@ def test_from_dict():
     print(hm1['hyps'][:33], hm1['hyps'][33:])
 
     Parameters.compare_dict(hm, hm1)
+
+def test_constraints():
+    '''
+    simplest senario
+    '''
+    pm = ParameterHelper(kernels=['twobody', 'threebody'],
+                         parameters={'twobody': [1, 0.5],
+                                     'threebody': [1, 0.5],
+                                     'cutoff_twobody': 2,
+                                     'cutoff_threebody': 1,
+                                     'noise': 0.05},
+                         constraints={'twobody0': [True, False]},
+                         verbose="DEBUG")
+    hm = pm.as_dict()
+    print(hm)
+    print(hm['hyps'])
+    Parameters.check_instantiation(
+        hm['hyps'], hm['cutoffs'], hm['kernels'], hm)
+
