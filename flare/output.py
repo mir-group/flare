@@ -250,12 +250,12 @@ class Output:
         pressure = None
         if structure.stress is not None:
             stress_tensor = structure.stress * eva_to_gpa  # Convert to GPa
-            string += 'Stress tensor (GPa): '
+            string += 'Stress tensor (GPa):\n'
             for p in range(6):
-                string += f'{stress_tensor[p]:10.6f}'
+                string += f'{stress_tensor[p]:10.3f}'
             string += '\n'
             pressure = \
-                (stress_tensor[0] + stress_tensor[3] + stress_tensor[5]) / 3
+                (stress_tensor[0] + stress_tensor[1] + stress_tensor[2]) / 3
 
         # Report stress tensor uncertainties.
         if structure.partial_stress_stds is not None:
@@ -264,9 +264,9 @@ class Output:
                 (np.sqrt(np.sum(structure.partial_stress_stds**2, 0)) /
                  current_volume)
             stress_stds *= eva_to_gpa  # Convert to GPa
-            string += 'Stress tensor uncertainties (GPa): '
+            string += 'Stress tensor uncertainties (GPa):\n'
             for p in range(6):
-                string += f'{stress_stds[p]:10.6f}'
+                string += f'{stress_stds[p]:10.3f}'
             string += '\n'
 
         # Report pressure.
