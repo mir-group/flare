@@ -68,11 +68,13 @@ class GaussianProcess:
                  per_atom_par: bool = True, n_cpus: int = 1,
                  n_sample: int = 100, output: Output = None,
                  name="default_gp",
-                 energy_noise: float = 0.01, **kwargs,):
+                 energy_noise: float = 0.01, verbose = "INFO",
+                 **kwargs,):
         """Initialize GP parameters and training data."""
 
         # load arguments into attributes
         self.name = name
+        self.verbose = verbose
 
         self.output = output
         self.opt_algorithm = opt_algorithm
@@ -100,7 +102,7 @@ class GaussianProcess:
         if self.output is None:
             self.logger_name = self.name+"GaussianProcess"
             set_logger(self.logger_name, stream=True,
-                       fileout_name=None, verbose="info")
+                       fileout_name=None, verbose=verbose)
         else:
             self.logger_name = self.output.basename+'log'
 

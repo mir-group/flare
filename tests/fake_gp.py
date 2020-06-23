@@ -24,7 +24,7 @@ def get_random_structure(cell, unique_species, noa, set_seed:int = None):
     return test_structure, forces
 
 
-def generate_hm(ntwobody, nthreebody, nmanybody=1, constraint=False, multihyps=True):
+def generate_hm(ntwobody, nthreebody, nmanybody=0, constraint=False, multihyps=True):
 
     cutoff = 0.8
     if (multihyps is False):
@@ -132,7 +132,7 @@ def get_tstp(hm=None) -> AtomicEnvironment:
     # params
     cell = np.eye(3)
     unique_species = [2, 1]
-    cutoffs = {'twobody':0.8, 'threebody': 0.8, 'manybody': 0.8}
+    cutoffs = {'twobody':0.8, 'threebody': 0.8} #, 'manybody': 0.8}
     noa = 10
 
     test_structure_2, _ = get_random_structure(cell, unique_species,

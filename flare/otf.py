@@ -355,7 +355,7 @@ class OTF:
     def train_gp(self):
         """Optimizes the hyperparameters of the current GP model."""
 
-        self.gp.train()
+        self.gp.train(logger_name=self.output.basename+'hyps')
         self.output.write_hyps(self.gp.hyp_labels, self.gp.hyps,
                                self.start_time,
                                self.gp.likelihood, self.gp.likelihood_gradient,

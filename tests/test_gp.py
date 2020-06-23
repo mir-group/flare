@@ -242,8 +242,8 @@ class TestIO():
         the_str = str(test_gp)
         print(the_str)
         assert 'GaussianProcess Object' in the_str
-        assert 'Kernel: [\'twobody\', \'threebody\', \'manybody\']' in the_str
-        assert 'Cutoffs: {\'twobody\': 0.8, \'threebody\': 0.8, \'manybody\': 0.8}' in the_str
+        assert 'Kernel: [\'twobody\', \'threebody\']' in the_str #, \'manybody\']' in the_str
+        assert 'Cutoffs: {\'twobody\': 0.8, \'threebody\': 0.8}' in the_str #, \'manybody\': 0.8}' in the_str
         assert 'Model Likelihood: ' in the_str
         if not multihyps:
             assert 'Length ' in the_str

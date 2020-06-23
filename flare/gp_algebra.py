@@ -2,6 +2,7 @@ import math
 import multiprocessing as mp
 import numpy as np
 import time
+import logging
 
 from typing import List, Callable
 from flare.kernels.utils import from_mask_to_args, from_grad_to_mask
@@ -52,7 +53,6 @@ def partition_matrix(n_sample, size, n_cpus):
             block_id += [(s1, e1, s2, e2)]
             nbatch2 += 1
             nbatch += 1
-
     return block_id, nbatch
 
 
@@ -1192,7 +1192,7 @@ def get_like_from_mats(ky_mat, l_mat, alpha, name):
 
 
 def get_neg_like_grad(hyps: np.ndarray, name: str,
-                      kernel_grad, logger=None,
+                      kernel_grad, logger_name=None,
                       cutoffs=None, hyps_mask=None,
                       n_cpus=1, n_sample=100):
     """compute the log likelihood and its gradients
@@ -1203,7 +1203,7 @@ def get_neg_like_grad(hyps: np.ndarray, name: str,
     :param kernel_grad: function object of the kernel gradient
     :param output: Output object for dumping every hyper-parameter
                    sets computed
-    :type output: logger
+    :type output: logger_name
     :param cutoffs: The cutoff values used for the atomic environments
     :type cutoffs: list of 2 float numbers
     :param hyps_mask: dictionary used for multi-group hyperparmeters
@@ -1215,11 +1215,15 @@ def get_neg_like_grad(hyps: np.ndarray, name: str,
 
     time0 = time.time()
 
+    print(list(_global_training_data.keys()))
+    print(f"{name}", len(_global_training_data[name]))
     hyp_mat, ky_mat = \
         get_ky_and_hyp(hyps, name, kernel_grad, cutoffs=cutoffs,
                        hyps_mask=hyps_mask, n_cpus=n_cpus, n_sample=n_sample)
 
-    logger.debug(f"get_ky_and_hyp {time.time()-time0}")
+    logger = logging.getLogger(logger_name)
+    logger.debug(f"{name} get_ky_and_hyp {time.time()-time0}")
+    print(f"{name} get_ky_and_hyp {time.time()-time0}")
 
     time0 = time.time()
 
@@ -1228,10 +1232,9 @@ def get_neg_like_grad(hyps: np.ndarray, name: str,
 
     logger.debug(f"get_like_grad_from_mats {time.time()-time0}")
 
-    logger.debug('')
-    logger.debug(f'Hyperparameters: {list(hyps)}')
-    logger.debug(f'Likelihood: {like}')
-    logger.debug(f'Likelihood Gradient: {list(like_grad)}')
+    logger.debug(f'{name} Hyperparameters: {list(hyps)}')
+    logger.debug(f'{name} Likelihood: {like}')
+    logger.debug(f'{name} Likelihood Gradient: {list(like_grad)}')
 
     return -like, -like_grad
 

@@ -169,7 +169,7 @@ class ParameterHelper():
                  verbose="WARNING"):
 
         self.logger = set_logger("ParameterHelper", stream=True,
-                                 fileout_name=None, verbose="info")
+                                 fileout_name=None, verbose=verbose)
 
         self.all_types = ['specie'] + \
             ParameterHelper.all_kernel_types + ParameterHelper.additional_groups
@@ -801,7 +801,8 @@ class ParameterHelper():
 
             self.hyps_sig[group_type] = []
             self.hyps_ls[group_type] = []
-            self.hyps_opt[group_type] = []
+            all_opt_sig = []
+            all_opt_ls = []
 
             for idt in range(self.n[group_type]):
                 name = aeg[idt]
@@ -844,10 +845,11 @@ class ParameterHelper():
                         raise RuntimeError
                     self.hyps_sig[group_type] += [sig]
                     self.hyps_ls[group_type] += [ls]
-                    self.hyps_opt[group_type] += [opt_sig]
-                    self.hyps_opt[group_type] += [opt_ls]
+                    all_opt_sig += [opt_sig]
+                    all_opt_ls += [opt_ls]
                     self.logger.debug(f"   using hyper-parameters of {sig:6.2g} "
-                                      f"{ls:6.2g}")
+                                      f"{ls:6.2g} {opt_sig} {opt_ls}")
+            self.hyps_opt[group_type] = all_opt_sig + all_opt_ls
             self.logger.debug(
                 f"All the remaining elements are left as type {idt}")
 
