@@ -84,18 +84,14 @@ class FLARE_Calculator(Calculator):
         # Compute energy, forces, and stresses and their uncertainties, and
         # write them to the structure object.
         if self.par:
-            local_energies, forces, partial_stresses, _, _, _ = \
-                predict_on_structure_efs_par(structure, self.gp_model)
+            _ = predict_on_structure_efs_par(structure, self.gp_model)
         else:
-            local_energies, forces, partial_stresses, _, _, _ = \
-                predict_on_structure_efs(structure, self.gp_model)
+            _ = predict_on_structure_efs(structure, self.gp_model)
 
         # Set the energy, force, and stress attributes of the calculator.
-        self.results['energy'] = np.sum(local_energies)
-        self.results['forces'] = forces
-        volume = atoms.get_volume()
-        total_stress = np.sum(partial_stresses, axis=0)
-        self.results['stress'] = total_stress / volume
+        self.results['energy'] = structure.potential_energy
+        self.results['forces'] = structure.forces
+        self.results['stress'] = structure.stress
 
     def calculate_mgp_serial(self, atoms, structure):
         nat = len(atoms)

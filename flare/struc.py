@@ -104,6 +104,7 @@ class Structure:
         self.partial_stresses = None
         self.partial_stress_stds = None
         self.stress = None
+        self.stress_stds = None
         self.potential_energy = None
 
         self.mass_dict = mass_dict

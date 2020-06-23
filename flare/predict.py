@@ -338,11 +338,25 @@ def write_efs_to_structure(
     structure.stds = force_stds
     structure.partial_stress_stds = partial_stress_stds
 
-    # Record potential energy and stress tensor.
+    # Record potential energy
     structure.potential_energy = np.sum(structure.local_energies)
+
+    # Compute stress tensor.
+    # FLARE format: xx, xy, xz, yy, yz, zz
     current_volume = np.linalg.det(structure.cell)
+    flare_stress = np.sum(partial_stresses, 0) / current_volume
+
+    # Convert stress tensor to ASE format: xx yy zz yz xz xy
     structure.stress = \
-        np.sum(partial_stresses, 0) / current_volume
+        -np.array([flare_stress[0], flare_stress[3], flare_stress[5],
+                   flare_stress[4], flare_stress[2], flare_stress[1]])
+
+    # Record stress uncertainties.
+    stress_stds = \
+        (np.sqrt(np.sum(structure.partial_stress_stds**2, 0)) / current_volume)
+    structure.stress_stds = \
+        np.array([stress_stds[0], stress_stds[3], stress_stds[5],
+                  stress_stds[4], stress_stds[2], stress_stds[1]])
 
 
 def predict_on_structure_en(structure: Structure, gp: GaussianProcess,

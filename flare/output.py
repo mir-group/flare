@@ -250,7 +250,10 @@ class Output:
         pressure = None
         if structure.stress is not None:
             stress_tensor = structure.stress * eva_to_gpa  # Convert to GPa
+            s8 = ' ' * 8
             string += 'Stress tensor (GPa):\n'
+            string += ' ' * 7 + 'xx' + s8 + 'yy' + s8 + 'zz' + s8 + 'yz' + \
+                s8 + 'xz' + s8 + 'xy\n'
             for p in range(6):
                 string += f'{stress_tensor[p]:10.3f}'
             string += '\n'
@@ -258,12 +261,8 @@ class Output:
                 (stress_tensor[0] + stress_tensor[1] + stress_tensor[2]) / 3
 
         # Report stress tensor uncertainties.
-        if structure.partial_stress_stds is not None:
-            current_volume = np.linalg.det(structure.cell)
-            stress_stds = \
-                (np.sqrt(np.sum(structure.partial_stress_stds**2, 0)) /
-                 current_volume)
-            stress_stds *= eva_to_gpa  # Convert to GPa
+        if structure.stress_stds is not None:
+            stress_stds = structure.stress_stds * eva_to_gpa  # Convert to GPa
             string += 'Stress tensor uncertainties (GPa):\n'
             for p in range(6):
                 string += f'{stress_stds[p]:10.3f}'
