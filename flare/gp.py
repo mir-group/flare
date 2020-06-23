@@ -816,7 +816,6 @@ class GaussianProcess:
 
         if update_matrices:
             self.set_L_alpha()
-            self.compute_matrices()
 
         # Put removed data in order of lowest to highest index
         removed_data.reverse()

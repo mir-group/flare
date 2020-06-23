@@ -1,4 +1,4 @@
-import os, shutil, glob
+import time, os, shutil, glob, subprocess
 from copy import deepcopy
 import pytest
 import numpy as np
@@ -14,7 +14,31 @@ from flare.utils.parameter_helper import ParameterHelper
 from ase import units
 from ase.md.velocitydistribution import (MaxwellBoltzmannDistribution,
                                          Stationary, ZeroRotation)
+from ase.spacegroup import crystal
+from ase.calculators.espresso import Espresso
+from ase import io
 
+def read_qe_results(self):
+
+    out_file = self.label + '.pwo'
+
+    # find out slurm job id
+    qe_slurm_dat = open('qe_slurm.dat').readlines()[0].split()
+    qe_slurm_id = qe_slurm_dat[3]
+
+    # mv scf.pwo to scp+nsteps.pwo
+    if ('forces' not in self.results.keys()) and (out_file in os.listdir()):
+        subprocess.call(['mv', out_file, f'{self.label}{self.nsteps}.pwo'])
+    
+    # sleep until the job is finished
+    job_list = subprocess.check_output(['showq', '-p', 'kozinsky']).decode('utf-8')
+    while qe_slurm_id in job_list:
+        time.sleep(10)
+        job_list = subprocess.check_output(['showq', '-p', 'kozinsky']).decode('utf-8')
+
+    output = io.read(out_file)
+    self.calc = output.calc
+    self.results = output.calc.results
 
 md_list = ['VelocityVerlet', 'NVTBerendsen', 'NPTBerendsen', 'NPT', 'Langevin']
 
@@ -110,7 +134,6 @@ def flare_calc():
 
 @pytest.fixture(scope='module')
 def qe_calc():
-
     from ase.calculators.lj import LennardJones
     dft_calculator = LennardJones()
 
@@ -158,15 +181,19 @@ def test_otf_md(md_engine, md_params, super_cell, flare_calc, qe_calc):
 
     test_otf.run()
 
-    for f in glob.glob("scf.pw*"):
+    for f in glob.glob("scf*.pw*"):
         os.remove(f)
     for f in glob.glob("*.npy"):
         os.remove(f)
     for f in glob.glob("kv3*"):
         shutil.rmtree(f)
+    for f in glob.glob("otf_data"):
+        shutil.rmtree(f, ignore_errors=True)
+    for f in glob.glob("out"):
+        shutil.rmtree(f, ignore_errors=True)
 
     for f in os.listdir("./"):
         if f in [f'{md_engine}.out', f'{md_engine}-hyps.dat', 'lmp.mgp']:
             os.remove(f)
-        if f in ['out', 'otf_data']:
-            shutil.rmtree(f)
+        if 'slurm' in f:
+            os.remove(f)

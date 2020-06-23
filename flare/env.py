@@ -234,11 +234,12 @@ class AtomicEnvironment:
         dictionary['object'] = 'AtomicEnvironment'
         dictionary['forces'] = self.structure.forces
 
-        # Backward compatibility for older models: CUtoffs mask
+        # Backward compatibility for older models: Cutoffs mask.
+        # Can be deleted one day if support is dropped for older (Pre June
+        # 2020) pickled environment objects.
         cutoffs_mask = getattr(self, 'cutoffs_mask', {'cutoffs': self.cutoffs})
         if not hasattr(self, 'cutoffs_mask'):
             self.cutoffs_mask = cutoffs_mask
-            self.setup_mask(cutoffs_mask)
         dictionary['cutoffs_mask'] = cutoffs_mask
 
         if not include_structure:
