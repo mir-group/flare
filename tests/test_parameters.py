@@ -238,7 +238,7 @@ def test_constraints2():
                                      'cutoff_twobody': 2,
                                      'cutoff_threebody': 1,
                                      'noise': 0.05},
-                         constraints={'twobody0': [True, False]},
+                         constraints={'twobody': [True, False]},
                          verbose="DEBUG")
     hm = pm.as_dict()
     Parameters.check_instantiation(
