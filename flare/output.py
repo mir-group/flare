@@ -119,16 +119,16 @@ class Output:
         f.info(f'{datetime.datetime.now()}')
 
         if isinstance(std_tolerance, tuple):
-            std_string = 'relative uncertainty tolerance: ' \
+            std_string = 'Relative uncertainty tolerance: ' \
                          f'{std_tolerance[0]} times noise hyperparameter \n'
-            std_string += 'absolute uncertainty tolerance: ' \
+            std_string += 'Absolute uncertainty tolerance: ' \
                           f'{std_tolerance[1]} eV/A\n'
         elif std_tolerance < 0:
             std_string = \
-                f'uncertainty tolerance: {np.abs(std_tolerance)} eV/A\n'
+                f'Uncertainty tolerance: {np.abs(std_tolerance)} eV/A\n'
         elif std_tolerance > 0:
             std_string = \
-                f'uncertainty tolerance: {np.abs(std_tolerance)} ' \
+                f'Uncertainty tolerance: {np.abs(std_tolerance)} ' \
                 'times noise hyperparameter \n'
         else:
             std_string = ''
@@ -138,12 +138,12 @@ class Output:
         headerstring += '\n'
         headerstring += std_string
         if dt is not None:
-            headerstring += f'timestep (ps): {dt}\n'
-        headerstring += f'number of frames: {Nsteps}\n'
+            headerstring += f'Timestep (ps): {dt}\n'
+        headerstring += f'Number of frames: {Nsteps}\n'
         if structure is not None:
-            headerstring += f'number of atoms: {structure.nat}\n'
-            headerstring += f'system species: {set(structure.species_labels)}\n'
-            headerstring += 'periodic cell: \n'
+            headerstring += f'Number of atoms: {structure.nat}\n'
+            headerstring += f'System species: {set(structure.species_labels)}\n'
+            headerstring += 'Periodic cell: \n'
             headerstring += str(structure.cell)+'\n'
 
         if optional:
@@ -152,7 +152,7 @@ class Output:
 
         # report previous positions
         if structure is not None:
-            headerstring += '\nprevious positions (A):\n'
+            headerstring += '\nPrevious positions (A):\n'
             for i in range(len(structure.positions)):
                 headerstring += f'{structure.species_labels[i]:5}'
                 for j in range(3):
