@@ -232,10 +232,9 @@ class Output:
         string += f'Kinetic energy: {KE:.6f} eV \n'
 
         # Report potential energy.
-        tot_en = None
-        if structure.local_energies is not None:
-            pot_en = np.sum(structure.local_energies)
-            string += f'Potential energy: {pot_en:.6f} eV \n'
+        if structure.potential_energy is not None:
+            string += \
+                f'Potential energy: {structure.potential_energy:.6f} eV \n'
 
         # Report potential energy uncertainty.
         if structure.local_energy_stds is not None:
@@ -243,17 +242,14 @@ class Output:
             string += f'Uncertainty: {pot_en_std:.6f} eV \n'
 
         # Report total energy.
-        if tot_en is not None:
-            tot_en = KE + pot_en
+        if structure.potential_energy is not None:
+            tot_en = KE + structure.potential_energy
             string += f'Total energy: {tot_en:.6f} eV \n'
 
         # Report stress tensor.
         pressure = None
-        if structure.partial_stresses is not None:
-            current_volume = np.linalg.det(structure.cell)
-            stress_tensor = \
-                np.sum(structure.partial_stresses, 0) / current_volume
-            stress_tensor *= eva_to_gpa  # Convert to GPa
+        if structure.stress is not None:
+            stress_tensor = structure.stress * eva_to_gpa  # Convert to GPa
             string += 'Stress tensor (GPa): '
             for p in range(6):
                 string += f'{stress_tensor[p]:10.6f}'
@@ -263,6 +259,7 @@ class Output:
 
         # Report stress tensor uncertainties.
         if structure.partial_stress_stds is not None:
+            current_volume = np.linalg.det(structure.cell)
             stress_stds = \
                 (np.sqrt(np.sum(structure.partial_stress_stds**2, 0)) /
                  current_volume)

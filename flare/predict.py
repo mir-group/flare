@@ -267,6 +267,12 @@ def predict_on_structure_efs(structure: Structure, gp: GaussianProcess,
         structure.stds = force_stds
         structure.partial_stress_stds = partial_stress_stds
 
+        # Record potential energy and stress tensor.
+        structure.potential_energy = np.sum(structure.local_energies)
+        current_volume = np.linalg.det(structure.cell)
+        structure.stress = \
+            np.sum(partial_stresses, 0) / current_volume
+
     return local_energies, forces, partial_stresses, local_energy_stds, \
         force_stds, partial_stress_stds
 
