@@ -46,9 +46,7 @@ from flare.env import AtomicEnvironment
 from flare.gp import GaussianProcess
 from flare.mgp.mgp import MappedGaussianProcess
 from flare.output import Output
-from flare.predict import predict_on_atom, predict_on_atom_en, \
-    predict_on_structure_par, predict_on_structure_par_en, \
-    predict_on_structure_mgp
+from flare.predict import predict_on_structure_par, predict_on_structure_mgp
 from flare.struc import Structure
 from flare.utils.element_coder import element_to_Z, Z_to_element, NumpyEncoder
 from flare.utils.learner import subset_of_frame_by_element, \
@@ -165,14 +163,11 @@ class TrajectoryTrainer:
 
         # Set prediction function based on if forces or energies are
         # desired, and parallelization accordingly
-        if not self.mgp:
-            if calculate_energy:
-                self.pred_func = predict_on_structure_par_en
-            else:
-                self.pred_func = predict_on_structure_par
-
-        elif self.mgp:
+        self.calculate_energy = calculate_energy
+        if self.mgp:
             self.pred_func = predict_on_structure_mgp
+        else:
+            self.pred_func = predict_on_structure_par
 
         # Parameters for negotiating with the training frames
 
@@ -284,6 +279,13 @@ class TrajectoryTrainer:
                 # Get a randomized set of atoms of species i from the frame
                 # So that it is not always the lowest-indexed atoms chosen
                 atoms_of_specie = frame.indices_of_specie(species_i)
+
+                # remove fixed/zero-forces atoms
+                new_list = []
+                for atom in atoms_of_specie:
+                    if all(frame.forces[atom, :]):
+                        new_list += [atom]
+                atoms_of_specie = new_list
                 np.random.shuffle(atoms_of_specie)
                 n_at = len(atoms_of_specie)
                 # Determine how many to add based on user defined cutoffs
@@ -366,7 +368,7 @@ class TrajectoryTrainer:
                 pred_forces, pred_stds, local_energies = self.pred_func(
                     structure=cur_frame, gp=self.gp, n_cpus=self.n_cpus,
                     write_to_structure=False, selective_atoms=predict_atoms,
-                    skipped_atom_value=np.nan)
+                    skipped_atom_value=np.nan, energy=self.calculate_energy)
             else:
                 pred_forces, pred_stds = self.pred_func(structure=cur_frame,
                                                         gp=self.gp,
@@ -530,7 +532,7 @@ class TrajectoryTrainer:
         logger = logging.getLogger(self.logger_name)
         logger.debug('Train GP')
 
-        logger_train = logging.getLogger(self.output.basename+'hyps')
+        logger_train = self.output.basename+'hyps'
 
         # TODO: Improve flexibility in GP training to make this next step
         # unnecessary, so maxiter can be passed as an argument
@@ -541,10 +543,10 @@ class TrajectoryTrainer:
         elif max_iter is not None:
             temp_maxiter = self.gp.maxiter
             self.gp.maxiter = max_iter
-            self.gp.train(logger=logger_train)
+            self.gp.train(logger_name=logger_train)
             self.gp.maxiter = temp_maxiter
         else:
-            self.gp.train(logger=logger_train)
+            self.gp.train(logger_name=logger_train)
 
         self.output.write_hyps(self.gp.hyp_labels, self.gp.hyps,
                                self.start_time,

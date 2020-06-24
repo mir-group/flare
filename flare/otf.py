@@ -143,6 +143,7 @@ class OTF:
         self.max_atoms_added = max_atoms_added
 
         # initialize local energies
+        self.calculate_energy = calculate_energy
         if calculate_energy:
             self.local_energies = np.zeros(self.noa)
         else:
@@ -157,14 +158,10 @@ class OTF:
         self.dft_count = 0
 
         # set pred function
-        if (n_cpus > 1 and gp.per_atom_par and gp.parallel) and not calculate_energy:
+        if n_cpus>1 and gp.per_atom_par and gp.parallel:
             self.pred_func = predict.predict_on_structure_par
-        elif not calculate_energy:
-            self.pred_func = predict.predict_on_structure
-        elif (n_cpus > 1 and gp.per_atom_par and gp.parallel):
-            self.pred_func = predict.predict_on_structure_par_en
         else:
-            self.pred_func = predict.predict_on_structure_en
+            self.pred_func = predict.predict_on_structure
 
         # set rescale attributes
         self.rescale_steps = rescale_steps
@@ -269,7 +266,8 @@ class OTF:
         In ASE-OTF, it will be replaced by subclass method
         '''
         self.gp.check_L_alpha()
-        self.pred_func(self.structure, self.gp, self.n_cpus)
+        self.pred_func(self.structure, self.gp, self.n_cpus,
+                       energy=self.calculate_energy)
 
     def md_step(self):
         '''
@@ -344,7 +342,7 @@ class OTF:
     def train_gp(self):
         """Optimizes the hyperparameters of the current GP model."""
 
-        self.gp.train()
+        self.gp.train(logger_name=self.output.basename+'hyps')
         self.output.write_hyps(self.gp.hyp_labels, self.gp.hyps,
                                self.start_time,
                                self.gp.likelihood, self.gp.likelihood_gradient,

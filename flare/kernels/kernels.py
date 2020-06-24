@@ -1,5 +1,5 @@
 import numpy as np
-from math import exp
+from numpy import exp
 from numba import njit
 import flare.kernels.cutoffs as cf
 
