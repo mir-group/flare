@@ -440,10 +440,10 @@ def test_hyps_grad(kernels, diff_cutoff, constraint, d1, d2):
         hgrad = (kernel(env1, env2, *newargs) - original)/delta
         if 'map' in hm:
             print(i, "hgrad", hgrad, grad[hm['map'][i]])
-            assert(isclose(grad[hm['map'][i]][d1-1, d2-1], hgrad, rtol=tol))
+            assert(isclose(grad[hm['map'][i]], hgrad, rtol=tol).all())
         else:
             print(i, "hgrad", hgrad, grad[i])
-            assert(isclose(grad[i][d1-1, d2-1], hgrad, rtol=tol))
+            assert(isclose(grad[i], hgrad, rtol=tol).all())
 
 
 def generate_same_hm(kernels, multi_cutoff=False):

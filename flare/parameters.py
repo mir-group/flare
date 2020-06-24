@@ -333,7 +333,7 @@ class Parameters():
             if kernel_name in Parameters.cutoff_types_values:
 
                 key_ind = Parameters.cutoff_types_values.index(kernel_name)
-                cutoff_key = Parameters.cutoff_types_keys[cutoff_key]
+                cutoff_key = Parameters.cutoff_types_keys[key_ind]
                 name_list += ['n'+cutoff_key, cutoff_key+'_mask']
 
             for name in name_list:
