@@ -216,10 +216,10 @@ def two_plus_three_plus_many_body(env1: AtomicEnvironment, env2: AtomicEnvironme
                        env1.triplet_counts, env2.triplet_counts,
                        hyps[2], hyps[3], cutoffs[1], cutoff_func)
 
-    many_term =  many_body_jit(env1.q_array, env2.q_array,
-                         env1.q_neigh_array, env2.q_neigh_array,
-                         env1.q_neigh_grads, env2.q_neigh_grads,
-                         hyps[4], hyps[5])
+    many_term = many_body_jit(env1.q_array, env2.q_array,
+                              env1.q_neigh_array, env2.q_neigh_array,
+                              env1.q_neigh_grads, env2.q_neigh_grads,
+                              hyps[4], hyps[5])
 
     return two_term + three_term + many_term
 
@@ -254,9 +254,9 @@ def two_plus_three_plus_many_body_grad(env1: AtomicEnvironment, env2: AtomicEnvi
                             hyps[2], hyps[3], cutoffs[1], cutoff_func)
 
     kern_many, sigm, lsm = many_body_grad_jit(env1.q_array, env2.q_array,
-                                       env1.q_neigh_array, env2.q_neigh_array,
-                                       env1.q_neigh_grads, env2.q_neigh_grads,
-                                       hyps[4], hyps[5])
+                                              env1.q_neigh_array, env2.q_neigh_array,
+                                              env1.q_neigh_grads, env2.q_neigh_grads,
+                                              hyps[4], hyps[5])
 
     return kern2 + kern3 + kern_many, np.stack((sig2, ls2, sig3, ls3, sigm, lsm))
 
@@ -293,8 +293,8 @@ def two_plus_three_plus_many_body_force_en(env1: AtomicEnvironment, env2: Atomic
                                 cutoff_func) / 3
 
     many_term = many_body_force_en_jit(env1.q_array, env2.q_array,
-                                  env1.q_neigh_array, env1.q_neigh_grads,
-                                  hyps[4], hyps[5])
+                                       env1.q_neigh_array, env1.q_neigh_grads,
+                                       hyps[4], hyps[5])
 
     return two_term + three_term + many_term
 
@@ -498,7 +498,6 @@ def three_body_grad(env1, env2, hyps, cutoffs,
                                                     env1.triplet_counts, env2.triplet_counts,
                                                     sig, ls, r_cut, cutoff_func)
 
-
     return kernel, np.stack((sig_derv, ls_derv))
 
 
@@ -606,9 +605,9 @@ def many_body_grad(env1, env2, hyps, cutoffs,
     """
 
     kernel, sig_derv, ls_derv = many_body_grad_jit(env1.q_array, env2.q_array,
-                                       env1.q_neigh_array, env2.q_neigh_array,
-                                       env1.q_neigh_grads, env2.q_neigh_grads,
-                                       hyps[0], hyps[1])
+                                                   env1.q_neigh_array, env2.q_neigh_array,
+                                                   env1.q_neigh_grads, env2.q_neigh_grads,
+                                                   hyps[0], hyps[1])
 
     return kernel, np.stack((sig_derv, ls_derv))
 
@@ -754,16 +753,16 @@ def two_body_grad_jit(bond_array_1, bond_array_2, sig, ls,
 
             for d1 in range(3):
                 for d2 in range(3):
-                     A = ci[d1] * cj[d2]
-                     B = r11 * ci[d1]
-                     C = r11 * cj[d2]
-                     kern_term, sig_term, ls_term = \
-                         grad_helper(A, B, C, D, fi, fj, fdi[d1], fdj[d2],
-                                     ls1, ls2, ls3, ls4, ls5, ls6, sig2, sig3)
+                    A = ci[d1] * cj[d2]
+                    B = r11 * ci[d1]
+                    C = r11 * cj[d2]
+                    kern_term, sig_term, ls_term = \
+                        grad_helper(A, B, C, D, fi, fj, fdi[d1], fdj[d2],
+                                    ls1, ls2, ls3, ls4, ls5, ls6, sig2, sig3)
 
-                     kern[d1, d2] += kern_term
-                     sig_derv[d1, d2] += sig_term
-                     ls_derv[d1, d2] += ls_term
+                    kern[d1, d2] += kern_term
+                    sig_derv[d1, d2] += sig_term
+                    ls_derv[d1, d2] += ls_term
 
     return kern, ls_derv, sig_derv
 
@@ -941,12 +940,12 @@ def three_body_jit(bond_array_1, bond_array_2,
 
                     for d1 in range(3):
                         for d2 in range(3):
-                             kern[d1, d2] += triplet_kernel(ci1[d1], ci2[d1],
-                                                            cj1[d2], cj2[d2],
-                                                            ri1, ri2, ri3,
-                                                            rj1, rj2, rj3,
-                                                            fi, fj, fdi[d1], fdj[d2],
-                                                            ls1, ls2, ls3, sig2)
+                            kern[d1, d2] += triplet_kernel(ci1[d1], ci2[d1],
+                                                           cj1[d2], cj2[d2],
+                                                           ri1, ri2, ri3,
+                                                           rj1, rj2, rj3,
+                                                           fi, fj, fdi[d1], fdj[d2],
+                                                           ls1, ls2, ls3, sig2)
     return kern
 
 
@@ -1310,6 +1309,7 @@ def many_body_jit(q_array_1, q_array_2,
 
     return kern
 
+
 @njit
 def many_body_grad_jit(q_array_1, q_array_2,
                        q_neigh_array_1, q_neigh_array_2,
@@ -1428,7 +1428,7 @@ def many_body_en_jit(q_array_1, q_array_2, sig, ls):
     Return:
         float: Value of the many-body kernel.
     """
-    q1 = np.sum(q_array_1) # use sum to be compatible with mc
+    q1 = np.sum(q_array_1)  # use sum to be compatible with mc
     q2 = np.sum(q_array_2)
     q1q2diff = q1 - q2
     kern = sig * sig * exp(-q1q2diff * q1q2diff / (2 * ls * ls))
@@ -1512,9 +1512,8 @@ def triplet_kernel_grad(ci1, ci2, cj1, cj2, ri1, ri2, ri3, rj1, rj2, rj3, fi,
     X = X1 + X2 + X3 + X4 + X5 + X6
     return N, O, X
 
+
 @njit
-
-
 def triplet_force_en_kernel(ci1, ci2, ri1, ri2, ri3, rj1, rj2, rj3,
                             fi, fj, fdi, ls1, ls2, sig2):
     r11 = ri1 - rj1

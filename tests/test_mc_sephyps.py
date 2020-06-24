@@ -163,12 +163,16 @@ def test_check_sig_scale(kernels, diff_cutoff, d1, d2):
     assert isclose(result[0]/reference[0], scale**2, rtol=tol).all()
     for idx in range(reference[1].shape[0]):
         # check sig0
-        if (idx % 4) == 0:
-            assert isclose(result[1][idx]/reference[1][idx], scale, rtol=tol).all()
-        # check the rest, but skip sig 1
-        elif (idx % 4) != 1:
-            assert isclose(result[1][idx]/reference[1]
-                           [idx], scale**2, rtol=tol).all()
+        if np.min(np.abs(reference[1][idx]))>0:
+            if  and (idx % 4) == 0:
+                print(result[1][idx])
+                print(reference[1][idx])
+                assert isclose(result[1][idx]/reference[1][idx],
+                        scale, rtol=tol).all()
+            # check the rest, but skip sig 1
+            elif (idx % 4) != 1:
+                assert isclose(result[1][idx]/reference[1][idx],
+                        scale**2, rtol=tol).all()
 
 
 @pytest.mark.parametrize('kernels', list_to_test)

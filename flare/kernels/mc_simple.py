@@ -722,10 +722,10 @@ def many_body_mc_force_en(env1, env2, hyps, cutoffs,
     """
     # divide by three to account for triple counting
     return many_body_mc_force_en_jit(env1.q_array, env2.q_array,
-                              env1.q_neigh_array, env1.q_neigh_grads,
-                              env1.ctype, env2.ctype, env1.etypes_mb,
-                              env1.unique_species, env2.unique_species,
-                              hyps[0], hyps[1])
+                                     env1.q_neigh_array, env1.q_neigh_grads,
+                                     env1.ctype, env2.ctype, env1.etypes_mb,
+                                     env1.unique_species, env2.unique_species,
+                                     hyps[0], hyps[1])
 
 
 def many_body_mc_en(env1: AtomicEnvironment, env2: AtomicEnvironment,
@@ -879,27 +879,27 @@ def three_body_mc_jit(bond_array_1, c1, etypes1,
                                     for d2 in range(3):
                                         if (c1 == c2):
                                             if (ei1 == ej1) and (ei2 == ej2):
-                                                kern[d1,d2] += \
+                                                kern[d1, d2] += \
                                                     three_body_helper_1(ci1[d1], ci2[d1], cj1[d2], cj2[d2], r11,
                                                                         r22, r33, fi, fj, fdi[d1], fdj[d2],
                                                                         ls1, ls2, ls3,
                                                                         sig2)
                                             if (ei1 == ej2) and (ei2 == ej1):
-                                                kern[d1,d2] += \
+                                                kern[d1, d2] += \
                                                     three_body_helper_1(ci1[d1], ci2[d1], cj2[d2], cj1[d2], r12,
                                                                         r21, r33, fi, fj, fdi[d1], fdj[d2],
                                                                         ls1, ls2, ls3,
                                                                         sig2)
                                         if (c1 == ej1):
                                             if (ei1 == ej2) and (ei2 == c2):
-                                                kern[d1,d2] += \
+                                                kern[d1, d2] += \
                                                     three_body_helper_2(ci2[d1], ci1[d1], cj2[d2], cj1[d2], r21,
                                                                         r13, r32, fi, fj, fdi[d1],
                                                                         fdj[d2],
                                                                         ls1, ls2, ls3,
                                                                         sig2)
                                             if (ei1 == c2) and (ei2 == ej2):
-                                                kern[d1,d2] += \
+                                                kern[d1, d2] += \
                                                     three_body_helper_2(ci1[d1], ci2[d1], cj2[d2], cj1[d2], r11,
                                                                         r23, r32, fi, fj, fdi[d1],
                                                                         fdj[d2],
@@ -907,14 +907,14 @@ def three_body_mc_jit(bond_array_1, c1, etypes1,
                                                                         sig2)
                                         if (c1 == ej2):
                                             if (ei1 == ej1) and (ei2 == c2):
-                                                kern[d1,d2] += \
+                                                kern[d1, d2] += \
                                                     three_body_helper_2(ci2[d1], ci1[d1], cj1[d2], cj2[d2], r22,
                                                                         r13, r31, fi, fj, fdi[d1],
                                                                         fdj[d2],
                                                                         ls1, ls2, ls3,
                                                                         sig2)
                                             if (ei1 == c2) and (ei2 == ej1):
-                                                kern[d1,d2] += \
+                                                kern[d1, d2] += \
                                                     three_body_helper_2(ci1[d1], ci2[d1], cj1[d2], cj2[d2], r12,
                                                                         r23, r31, fi, fj, fdi[d1],
                                                                         fdj[d2],
@@ -1251,32 +1251,32 @@ def three_body_mc_force_en_jit(bond_array_1, c1, etypes1,
                                     if (c1 == c2):
                                         if (ei1 == ej1) and (ei2 == ej2):
                                             kern[d1] += three_body_en_helper(ci1[d1], ci2[d1], r11, r22,
-                                                                         r33, fi, fj, fdi[d1],
-                                                                         ls1, ls2, sig2)
+                                                                             r33, fi, fj, fdi[d1],
+                                                                             ls1, ls2, sig2)
                                         if (ei1 == ej2) and (ei2 == ej1):
                                             kern[d1] += three_body_en_helper(ci1[d1], ci2[d1], r12, r21,
-                                                                         r33, fi, fj, fdi[d1],
-                                                                         ls1, ls2, sig2)
+                                                                             r33, fi, fj, fdi[d1],
+                                                                             ls1, ls2, sig2)
                                     if (c1 == ej1):
                                         if (ei1 == ej2) and (ei2 == c2):
                                             kern[d1] += three_body_en_helper(ci1[d1], ci2[d1], r13, r21,
-                                                                         r32, fi, fj, fdi[d1],
-                                                                         ls1, ls2, sig2)
+                                                                             r32, fi, fj, fdi[d1],
+                                                                             ls1, ls2, sig2)
                                         if (ei1 == c2) and (ei2 == ej2):
                                             kern[d1] += three_body_en_helper(ci1[d1], ci2[d1], r11, r23,
-                                                                         r32, fi, fj, fdi[d1],
-                                                                         ls1, ls2, sig2)
+                                                                             r32, fi, fj, fdi[d1],
+                                                                             ls1, ls2, sig2)
                                     if (c1 == ej2):
                                         if (ei1 == ej1) and (ei2 == c2):
                                             kern[d1] += three_body_en_helper(ci1[d1], ci2[d1], r13, r22,
-                                                                         r31, fi, fj, fdi[d1],
-                                                                         ls1,
-                                                                         ls2, sig2)
+                                                                             r31, fi, fj, fdi[d1],
+                                                                             ls1,
+                                                                             ls2, sig2)
                                         if (ei1 == c2) and (ei2 == ej1):
                                             kern[d1] += three_body_en_helper(ci1[d1], ci2[d1], r12, r23,
-                                                                         r31, fi, fj, fdi[d1],
-                                                                         ls1,
-                                                                         ls2, sig2)
+                                                                             r31, fi, fj, fdi[d1],
+                                                                             ls1,
+                                                                             ls2, sig2)
 
     return kern
 
@@ -1547,7 +1547,6 @@ def two_body_mc_grad_jit(bond_array_1, c1, etypes1,
 
                     r11 = ri - rj
 
-
                     D = r11 * r11
                     for d1 in range(3):
                         B = r11 * ci[d1]
@@ -1623,8 +1622,8 @@ def two_body_mc_force_en_jit(bond_array_1, c1, etypes1,
                     for d1 in range(3):
                         B = r11 * ci[d1]
                         kern[d1] += force_energy_helper(B, D, fi, fj, fdi[d1],
-                                                    ls1, ls2,
-                                                    sig2)
+                                                        ls1, ls2,
+                                                        sig2)
 
     return kern
 
@@ -1733,8 +1732,8 @@ def many_body_mc_jit(q_array_1, q_array_2,
     for s in useful_species:
 
         # Calculate many-body descriptor values for central atoms 1 and 2
-        s1 = np.where(species1==s)[0][0]
-        s2 = np.where(species2==s)[0][0]
+        s1 = np.where(species1 == s)[0][0]
+        s2 = np.where(species2 == s)[0][0]
         q1 = q_array_1[s1]
         q2 = q_array_2[s2]
 
@@ -1848,8 +1847,8 @@ def many_body_mc_grad_jit(q_array_1, q_array_2,
         list(set(species1).intersection(set(species2))), dtype=np.int8)
 
     for s in useful_species:
-        s1 = np.where(species1==s)[0][0]
-        s2 = np.where(species2==s)[0][0]
+        s1 = np.where(species1 == s)[0][0]
+        s2 = np.where(species2 == s)[0][0]
         q1 = q_array_1[s1]
         q2 = q_array_2[s2]
 
@@ -1860,7 +1859,6 @@ def many_body_mc_grad_jit(q_array_1, q_array_2,
         else:
             k12 = 0
             dk12 = 0
-
 
         # Compute  ki2s, qi1_grads, and qis
         for i in range(q_neigh_array_1.shape[0]):
@@ -1912,21 +1910,21 @@ def many_body_mc_grad_jit(q_array_1, q_array_2,
 
                 for d1 in range(3):
                     for d2 in range(3):
-                         kern_term  = q1i_grads[d1] * q2j_grads[d2] * k12
-                         kern_term += qi1_grads[d1] * q2j_grads[d2] * ki2s
-                         kern_term += q1i_grads[d1] * qj2_grads[d2] * k1js
-                         kern_term += qi1_grads[d1] * qj2_grads[d2] * kij
+                        kern_term = q1i_grads[d1] * q2j_grads[d2] * k12
+                        kern_term += qi1_grads[d1] * q2j_grads[d2] * ki2s
+                        kern_term += q1i_grads[d1] * qj2_grads[d2] * k1js
+                        kern_term += qi1_grads[d1] * qj2_grads[d2] * kij
 
-                         sig_term = 2. / sig * kern_term
+                        sig_term = 2. / sig * kern_term
 
-                         ls_term  = q1i_grads[d1] * q2j_grads[d2] * dk12
-                         ls_term += qi1_grads[d1] * q2j_grads[d2] * dki2s
-                         ls_term += q1i_grads[d1] * qj2_grads[d2] * dk1js
-                         ls_term += qi1_grads[d1] * qj2_grads[d2] * dkij
+                        ls_term = q1i_grads[d1] * q2j_grads[d2] * dk12
+                        ls_term += qi1_grads[d1] * q2j_grads[d2] * dki2s
+                        ls_term += q1i_grads[d1] * qj2_grads[d2] * dk1js
+                        ls_term += qi1_grads[d1] * qj2_grads[d2] * dkij
 
-                         kern[d1, d2] += kern_term
-                         sig_derv[d1, d2] += sig_term
-                         ls_derv[d1, d2] += ls_term
+                        kern[d1, d2] += kern_term
+                        sig_derv[d1, d2] += sig_term
+                        ls_derv[d1, d2] += ls_term
 
     return kern, np.stack((sig_derv, ls_derv))
 
@@ -1958,8 +1956,8 @@ def many_body_mc_force_en_jit(q_array_1, q_array_2,
         list(set(species1).intersection(set(species2))), dtype=np.int8)
 
     for s in useful_species:
-        s1 = np.where(species1==s)[0][0]
-        s2 = np.where(species2==s)[0][0]
+        s1 = np.where(species1 == s)[0][0]
+        s2 = np.where(species2 == s)[0][0]
         q1 = q_array_1[s1]
         q2 = q_array_2[s2]
 
@@ -2025,8 +2023,8 @@ def many_body_mc_en_jit(q_array_1, q_array_2, c1, c2,
 
     if c1 == c2:
         for s in useful_species:
-            q1 = q_array_1[np.where(species1==s)[0][0]]
-            q2 = q_array_2[np.where(species2==s)[0][0]]
+            q1 = q_array_1[np.where(species1 == s)[0][0]]
+            q2 = q_array_2[np.where(species2 == s)[0][0]]
             q1q2diff = q1 - q2
             kern += sig * sig * exp(-q1q2diff * q1q2diff / (2 * ls * ls))
     return kern

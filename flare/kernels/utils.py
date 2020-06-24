@@ -85,7 +85,6 @@ def str_to_kernel_set(kernels: list = ['twobody', 'threebody'],
         stk[prefix+'_force_en']
 
 
-
 def from_mask_to_args(hyps, cutoffs, hyps_mask=None):
     """ Return the tuple of arguments needed for kernel function.
     The order of the tuple has to be exactly the same as the one taken by

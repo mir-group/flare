@@ -21,6 +21,7 @@ def hard_cutoff(r_cut: float, ri: float, ci):
     """
     return 1, 0
 
+
 @njit
 def quadratic_cutoff_bound(r_cut: float, ri: float, ci):
     """A quadratic cutoff that goes to zero smoothly at the cutoff boundary.
