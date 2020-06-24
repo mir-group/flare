@@ -1,24 +1,21 @@
-import pytest
-import pickle
-import os
 import json
 import numpy as np
+import os
+import pickle
+import pytest
 
-from typing import List
+from copy import deepcopy
 from pytest import raises
 from scipy.optimize import OptimizeResult
+from typing import List
 
 import flare
 from flare.predict import predict_on_structure
 from flare.gp import GaussianProcess
 from flare.env import AtomicEnvironment
 from flare.struc import Structure
-import flare.kernels.sc as en
-import flare.kernels.mc_simple as mc_simple
-from flare.otf_parser import OtfAnalysis
 
-from .fake_gp import generate_hm, get_tstp, get_random_structure
-from copy import deepcopy
+from tests.fake_gp import generate_hm, get_tstp, get_random_structure
 multihyps_list = [True, False]
 
 
@@ -93,7 +90,7 @@ class TestDataUpdating():
         assert (len(test_gp.training_data) == params['noa']+oldsize)
         assert (len(test_gp.training_labels_np) == (params['noa']+oldsize)*3)
 
-#
+
 
 
 class TestTraining():

@@ -126,7 +126,8 @@ def get_reference(grid_env, species, parameter, same_hyps):
     args = from_mask_to_args(hm['hyps'], hm['cutoffs'], None if same_hyps else hm)
 
     energy_force = force_en_kernel(env, grid_env, *args)
-    # force_energy = force_en_kernel(grid_env, env, *args)
-    # force_force = kernel(grid_env, env, *args)[0, :]
+        # force_energy[i] = force_en_kernel(env, grid_env, i, *args)
+        # force_force[i] = kernel(grid_env, env, 0, i, *args)
+#     result = funcs[1][i](env1, env2, *args1)
     return energy_force # , force_energy, force_force, energy_energy
 

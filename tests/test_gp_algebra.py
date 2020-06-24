@@ -146,16 +146,6 @@ def ky_mat_ref(params):
                          energy_noise, cutoffs)
     print("time ky_mat serial", time.time()-time0)
 
-    # old
-    kernel_o = str_to_kernel_set_o(hyps_mask['kernels'], 'mc', hyps_mask)
-    time0 = time.time()
-    ky_mat_o = gpao.get_Ky_mat(hyps, name, kernel_o[0], kernel_o[2], kernel_o[3],
-                               energy_noise, cutoffs)
-    print("time old ky_mat ser. ", time.time()-time0)
-
-    print(np.max(np.abs(ky_mat0-ky_mat_o)))
-    assert np.isclose(ky_mat0, ky_mat_o, rtol=1e-5).all()
-
     # parallel version
     time0 = time.time()
     ky_mat = \
@@ -184,17 +174,6 @@ def test_ky_mat(params, ihyps, ky_mat_ref):
     print(f"compute ky_mat with multihyps, test {ihyps}, n_cpus=1",
           time.time()-time0)
 
-    # old
-    newtime = time.time()-time0
-    kernel_o = str_to_kernel_set_o(hyps_mask['kernels'], 'mc', hyps_mask)
-    time0 = time.time()
-    ky_mat_o = gpao.get_Ky_mat(hyps, name, kernel_o[0], kernel_o[2], kernel_o[3],
-                               energy_noise, cutoffs, hyps_mask)
-    print(f"! acceleration {ihyps}, n_cpus=1", (time.time()-time0)/newtime)
-    print("old", ky_mat_o)
-    print("new", ky_mat)
-    assert np.isclose(ky_mat, ky_mat_o, rtol=1e-5).all()
-
     assert np.isclose(ky_mat, ky_mat_ref, rtol=1e-3).all(), \
             "multi hyps implementation is wrong"\
             f"with case {ihyps}"
@@ -209,14 +188,6 @@ def test_ky_mat(params, ihyps, ky_mat_ref):
           newtime)
     assert np.isclose(ky_mat, ky_mat_ref, rtol=1e-3).all(), \
             f"multi hyps  parallel implementation is wrong with case {ihyps}"
-
-    # old
-    kernel_o = str_to_kernel_set_o(hyps_mask['kernels'], 'mc', hyps_mask)
-    time0 = time.time()
-    ky_mat_o = gpao.get_Ky_mat(hyps, name, kernel_o[0], kernel_o[2], kernel_o[3],
-                               energy_noise, cutoffs, hyps_mask, n_cpus=2, n_sample=1)
-    print(f"! acceleration {ihyps}, n_cpus=1", (time.time()-time0)/newtime)
-
 
 @pytest.mark.parametrize('ihyps', [0, 1, -1])
 def test_ky_mat_update(params, ihyps):
@@ -233,11 +204,6 @@ def test_ky_mat_update(params, ihyps):
     training_structures = flare.gp_algebra._global_training_structures[name]
     flare.gp_algebra._global_training_data['old'] = training_data[:n]
     flare.gp_algebra._global_training_structures['old'] = \
-        training_structures[:s]
-
-    # old
-    gpao._global_training_data['old'] = training_data[:n]
-    gpao._global_training_structures['old'] = \
         training_structures[:s]
 
     func = [get_Ky_mat, get_ky_mat_update]
@@ -346,14 +312,6 @@ def test_ky_and_hyp(params, ihyps, ky_mat_ref):
     time0=time.time()
     hypmat_ser, ky_mat_ser = func(hyps, name, kernel[1], cutoffs,
                                             hyps_mask)
-    newtime=time.time()-time0
-
-    kernel_o = str_to_kernel_set_o(hyps_mask['kernels'], 'mc', hyps_mask)
-    time0 = time.time()
-    hypmat_o, ky_mat_o = gpao.get_ky_and_hyp(hyps, name, kernel_o[1], cutoffs, hyps_mask)
-    assert np.isclose(hypmat_ser, hypmat_o, rtol=1e-5).all()
-    oldtime = time.time()-time0
-    print("! acceleration", oldtime/newtime)
 
     # parallel version
     hypmat_par, ky_mat_par = func(hyps, name, kernel[1], cutoffs,

@@ -15,19 +15,19 @@ from flare_o.kernels.utils import str_to_kernel_set as str_to_kernel_set_o
 
 from .fake_gp import generate_mb_envs, generate_mb_twin_envs
 
-list_to_test = [['twobody'], ['threebody'],#['manybody'],
-                ['twobody', 'threebody']]
-               #  ['twobody', 'threebody', 'manybody']]
-multi_cut = [False] #, True]
+list_to_test = [['twobody'], ['threebody'],
+                ['twobody', 'threebody'],
+                ['twobody', 'threebody', 'manybody']]
+short_list_to_test = [['twobody'], ['threebody'], ['manybody']]
+multi_cut = [False, True]
 
-@pytest.mark.parametrize('kernels', list_to_test)
+@pytest.mark.parametrize('kernels', short_list_to_test)
 @pytest.mark.parametrize('multi_cutoff', multi_cut)
-def test_force_en_multi_vs_simple(kernels, multi_cutoff):
+@pytest.mark.parametrize('d1, d2', [[1,1], [1, 2]])
+def test_force_en_multi_vs_simple(kernels, multi_cutoff, d1, d2):
     """Check that the analytical kernel matches the one implemented
     in mc_simple.py"""
 
-    d1 = 1
-    d2 = 2
     tol = 1e-4
     cell = 1e7 * np.eye(3)
 
@@ -79,11 +79,6 @@ def test_force_en_multi_vs_simple(kernels, multi_cutoff):
     assert(isclose(reference, result, rtol=tol).all())
 
     i = 0
-
-    kernel_o, kg_o, en_kernel_o, fek_o = str_to_kernel_set_o(kernels, 'mc', hm1)
-    kern_analytical_o = kernel_o(env1, env2, 1, 1, *args1)
-    print(kernels, "original", kern_analytical_o)
-
     reference = funcs[0][i](env1, env2, *args0)
     result = funcs[1][i](env1, env2, *args1)
     assert(isclose(reference, result, rtol=tol).all())
@@ -102,15 +97,15 @@ def test_force_en_multi_vs_simple(kernels, multi_cutoff):
     result = funcs[1][i](env1, env2, *args2)
     print(kernels, i, reference, result)
     assert(isclose(reference[0], result[0], rtol=tol).all())
-    joint_grad = np.zeros([len(result[1])//2, 3, 3])
-    for i in range(joint_grad.shape[0]):
-        joint_grad[i] = result[1][i*2] + result[1][i*2+1]
-    assert(isclose(reference[1], joint_grad, rtol=tol).all())
+    for i in range(len(reference[1])):
+        joint_grad = result[1][i*2] + result[1][i*2+1]
+        assert(isclose(reference[1][i], joint_grad, rtol=tol).all())
 
 
-@pytest.mark.parametrize('kernels', list_to_test)
+@pytest.mark.parametrize('kernels', short_list_to_test)
 @pytest.mark.parametrize('diff_cutoff', multi_cut)
-def test_check_sig_scale(kernels, diff_cutoff):
+@pytest.mark.parametrize('d1, d2', [[1,1], [1, 2]])
+def test_check_sig_scale(kernels, diff_cutoff, d1, d2):
     """Check whether the grouping is properly assign
     with four environments
 
@@ -125,8 +120,6 @@ def test_check_sig_scale(kernels, diff_cutoff):
       the reference
     """
 
-    d1 = 1
-    d2 = 2
     tol = 1e-4
     scale = 3
 
@@ -155,20 +148,17 @@ def test_check_sig_scale(kernels, diff_cutoff):
     reference = en_kernel(env1, env2, *args0)
     result = en_kernel(env1_t, env2_t, *args1)
     print(en_kernel.__name__, result, reference)
-    if (reference != 0):
-        assert isclose(result/reference, scale**2, rtol=tol)
+    assert isclose(result/reference, scale**2, rtol=tol).all()
 
     reference = force_en_kernel(env1, env2, *args0)
     result = force_en_kernel(env1_t, env2_t, *args1)
     print(force_en_kernel.__name__, result, reference)
-    if reference.all():
-        assert isclose(result/reference, scale**2, rtol=tol).all()
+    assert isclose(result/reference, scale**2, rtol=tol).all()
 
     reference = kernel(env1, env2, *args0)
     result = kernel(env1_t, env2_t, *args1)
     print(kernel.__name__, result, reference)
-    if reference.all():
-        assert isclose(result/reference, scale**2, rtol=tol).all()
+    assert isclose(result/reference, scale**2, rtol=tol).all()
 
     reference = kg(env1, env2, *args0)
     result = kg(env1_t, env2_t, *args1)
@@ -189,12 +179,11 @@ def test_check_sig_scale(kernels, diff_cutoff):
 
 @pytest.mark.parametrize('kernels', list_to_test)
 @pytest.mark.parametrize('diff_cutoff', multi_cut)
-def test_force_bound_cutoff_compare(kernels, diff_cutoff):
+@pytest.mark.parametrize('d1, d2', [[1,1], [1, 2]])
+def test_force_bound_cutoff_compare(kernels, diff_cutoff, d1, d2):
     """Check that the analytical kernel matches the one implemented
     in mc_simple.py"""
 
-    d1 = 1
-    d2 = 2
     tol = 1e-4
     cell = 1e7 * np.eye(3)
     delta = 1e-8
@@ -221,7 +210,7 @@ def test_force_bound_cutoff_compare(kernels, diff_cutoff):
 
     reference = en_kernel(env1, env2, *args, quadratic_cutoff_bound)
     result = en_kernel(env1, env2, *args)
-    assert(isclose(reference, result, rtol=tol))
+    assert(isclose(reference, result, rtol=tol).all())
 
     reference = force_en_kernel(
         env1, env2, *args, quadratic_cutoff_bound)
@@ -231,15 +220,14 @@ def test_force_bound_cutoff_compare(kernels, diff_cutoff):
 
 @pytest.mark.parametrize('kernels', [['twobody', 'threebody']])
 @pytest.mark.parametrize('diff_cutoff', multi_cut)
-def test_constraint(kernels, diff_cutoff):
+@pytest.mark.parametrize('d1, d2', [[1,1], [1, 2]])
+def test_constraint(kernels, diff_cutoff, d1, d2):
     """Check that the analytical force/en kernel matches finite difference of
     energy kernel."""
 
     if ('manybody' in kernels):
         return
 
-    d1 = 1
-    d2 = 2
     cell = 1e7 * np.eye(3)
     delta = 1e-8
 
@@ -278,15 +266,15 @@ def test_constraint(kernels, diff_cutoff):
 
 @pytest.mark.parametrize('kernels', list_to_test)
 @pytest.mark.parametrize('diff_cutoff', multi_cut)
-def test_force_en(kernels, diff_cutoff):
+@pytest.mark.parametrize('d1', [1, 2])
+def test_force_en(kernels, diff_cutoff, d1):
     """Check that the analytical force/en kernel matches finite difference of
     energy kernel."""
 
     delta = 1e-5
-    d1 = 1
-    d2 = 2
     cell = 1e7 * np.eye(3)
     np.random.seed(0)
+    d2 = 1
 
     cutoffs, hyps, hm = generate_diff_hm(kernels, diff_cutoff)
     args = from_mask_to_args(hyps, cutoffs, hm)
@@ -337,12 +325,11 @@ def test_force_en(kernels, diff_cutoff):
 
 @pytest.mark.parametrize('kernels', list_to_test)
 @pytest.mark.parametrize('diff_cutoff', multi_cut)
-def test_force(kernels, diff_cutoff):
+@pytest.mark.parametrize('d1, d2', [[1,1], [1, 2]])
+def test_force(kernels, diff_cutoff, d1, d2):
     """Check that the analytical force kernel matches finite difference of
     energy kernel."""
 
-    d1 = 1
-    d2 = 2
     tol = 1e-3
     cell = 1e7 * np.eye(3)
     delta = 1e-4
@@ -407,23 +394,8 @@ def test_force(kernels, diff_cutoff):
         kern_finite_diff += 9 * (calc1 + calc2 - calc3 - calc4) / (4*delta**2)
 
     args = from_mask_to_args(hyps, cutoffs, hm)
-    time0 = time()
     kern_analytical = kernel(env1[0][0], env2[0][0], *args)
-    newtime=time()-time0
-
-    kern_analytical = kern_analytical[d1-1][d2-1]
-
-    kernel, kg, en_kernel, fek = str_to_kernel_set_o(kernels, 'mc', hm)
-    kern_analytical_o = kernel(env1[0][0], env2[0][0], d1, d2, *args)
-    print(kernels, "kernel", kern_analytical, kern_analytical_o)
-
-    time0 = time()
-    for d1 in range(1, 4):
-        for d2 in range(1, 4):
-            o = kernel(env1[0][0], env2[0][0], d1, d2, *args)
-    print("acceleration", (time()-time0)/newtime)
-
-    assert np.isclose(kern_analytical, kern_analytical_o, rtol=tol)
+    kern_analytical = kern_analytical[d1-1, d2-1]
 
     assert(isclose(kern_finite_diff, kern_analytical, rtol=tol))
 
@@ -431,11 +403,10 @@ def test_force(kernels, diff_cutoff):
 @pytest.mark.parametrize('kernels', list_to_test)
 @pytest.mark.parametrize('diff_cutoff', multi_cut)
 @pytest.mark.parametrize('constraint', [True, False])
-def test_hyps_grad(kernels, diff_cutoff, constraint):
+@pytest.mark.parametrize('d1, d2', [[1,1], [1, 2]])
+def test_hyps_grad(kernels, diff_cutoff, constraint, d1, d2):
 
     delta = 1e-8
-    d1 = 1
-    d2 = 2
     tol = 1e-4
 
     np.random.seed(10)
@@ -450,23 +421,7 @@ def test_hyps_grad(kernels, diff_cutoff, constraint):
     env1 = env1[0][0]
     env2 = env2[0][0]
 
-    time0 = time()
     k, grad = kernel_grad(env1, env2, *args)
-    newtime=time()-time0
-
-    k_only = kernel(env1, env2, *args)
-
-    time0 = time()
-    for i in range(1, 4):
-        for j in range(1, 4):
-            k_o, grad_o = kg(env1, env2, i, j, *args)
-    print("acceleration", (time()-time0)/newtime)
-
-    k_o, grad_o = kg(env1, env2, d1, d2, *args)
-
-    assert np.isclose(k, k_only, rtol=tol).all()
-    assert np.isclose(k[d1-1, d2-1], k_o, rtol=tol)
-    assert np.isclose(grad[:, d1-1, d2-1], grad_o, rtol=tol).all()
 
     original = kernel(env1, env2, *args)
 
