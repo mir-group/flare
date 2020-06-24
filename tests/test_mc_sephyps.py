@@ -16,9 +16,10 @@ from .fake_gp import generate_mb_envs, generate_mb_twin_envs
 list_to_test = [['twobody'], ['threebody'],
                 ['twobody', 'threebody'],
                 ['twobody', 'threebody', 'manybody']]
+short_list_to_test = [['twobody'], ['threebody'], ['manybody']]
 multi_cut = [False, True]
 
-@pytest.mark.parametrize('kernels', list_to_test)
+@pytest.mark.parametrize('kernels', short_list_to_test)
 @pytest.mark.parametrize('multi_cutoff', multi_cut)
 @pytest.mark.parametrize('d1, d2', [[1,1], [1, 2]])
 def test_force_en_multi_vs_simple(kernels, multi_cutoff, d1, d2):
@@ -99,7 +100,7 @@ def test_force_en_multi_vs_simple(kernels, multi_cutoff, d1, d2):
         assert(isclose(reference[1][i], joint_grad, rtol=tol).all())
 
 
-@pytest.mark.parametrize('kernels', list_to_test)
+@pytest.mark.parametrize('kernels', short_list_to_test)
 @pytest.mark.parametrize('diff_cutoff', multi_cut)
 @pytest.mark.parametrize('d1, d2', [[1,1], [1, 2]])
 def test_check_sig_scale(kernels, diff_cutoff, d1, d2):
@@ -164,7 +165,7 @@ def test_check_sig_scale(kernels, diff_cutoff, d1, d2):
     for idx in range(reference[1].shape[0]):
         # check sig0
         if np.min(np.abs(reference[1][idx]))>0:
-            if  and (idx % 4) == 0:
+            if (idx % 4) == 0:
                 print(result[1][idx])
                 print(reference[1][idx])
                 assert isclose(result[1][idx]/reference[1][idx],
@@ -175,7 +176,7 @@ def test_check_sig_scale(kernels, diff_cutoff, d1, d2):
                         scale**2, rtol=tol).all()
 
 
-@pytest.mark.parametrize('kernels', list_to_test)
+@pytest.mark.parametrize('kernels', short_list_to_test)
 @pytest.mark.parametrize('diff_cutoff', multi_cut)
 @pytest.mark.parametrize('d1, d2', [[1,1], [1, 2]])
 def test_force_bound_cutoff_compare(kernels, diff_cutoff, d1, d2):
@@ -255,7 +256,7 @@ def test_constraint(kernels, diff_cutoff, d1, d2):
         kern_finite_diff += 9*(calc1 - calc2) / 3.0 / delta
 
     kern_analytical = force_en_kernel(env1[0][0], env2[0][0], *args0)
-    kern_analytical = kern_analytical[d1-1, d2-1]
+    kern_analytical = kern_analytical[d1-1]
 
     tol = 1e-4
     print(kern_finite_diff, kern_analytical)
@@ -283,7 +284,7 @@ def test_force_en(kernels, diff_cutoff, d1):
     _, __, en_kernel, force_en_kernel = str_to_kernel_set(kernels, "mc", hm)
 
     kern_analytical = force_en_kernel(env1[0][0], env2[0][0], *args)
-    kern_analytical = kernel_analytical[d1-1]
+    kern_analytical = kern_analytical[d1-1]
 
     kern_finite_diff = 0
     if ('manybody' in kernels):
@@ -393,7 +394,7 @@ def test_force(kernels, diff_cutoff, d1, d2):
 
     args = from_mask_to_args(hyps, cutoffs, hm)
     kern_analytical = kernel(env1[0][0], env2[0][0], *args)
-    kern_analytical = kernel_analytical[d1-1, d2-1]
+    kern_analytical = kern_analytical[d1-1, d2-1]
 
     assert(isclose(kern_finite_diff, kern_analytical, rtol=tol))
 
