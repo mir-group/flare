@@ -1,19 +1,20 @@
 import pytest
 import numpy as np
+
+from copy import deepcopy
 from flare.struc import Structure
 from flare.env import AtomicEnvironment
 
-
 np.random.seed(0)
 
-cutoff_mask_list = [# (True, np.array([1]), [10]),
-                    (False, {'twobody':1}, [16]),
-                    (False, {'twobody':1, 'threebody':0.05}, [16, 0]),
-                    (False, {'twobody':1, 'threebody':0.8}, [16, 1]),
-                    (False, {'twobody':1, 'threebody':0.9}, [16, 21]),
-                    (True, {'twobody':1, 'threebody':0.8}, [16, 9]),
-                    (True, {'twobody':1, 'threebody':0.05, 'manybody':0.4}, [16, 0]),
-                    (False, {'twobody':1, 'threebody':0.05, 'manybody':0.4}, [16, 0])]
+cutoff_mask_list = [  # (True, np.array([1]), [10]),
+    (False, {'twobody': 1}, [16]),
+    (False, {'twobody': 1, 'threebody': 0.05}, [16, 0]),
+    (False, {'twobody': 1, 'threebody': 0.8}, [16, 1]),
+    (False, {'twobody': 1, 'threebody': 0.9}, [16, 21]),
+    (True, {'twobody': 1, 'threebody': 0.8}, [16, 9]),
+    (True, {'twobody': 1, 'threebody': 0.05, 'manybody': 0.4}, [16, 0]),
+    (False, {'twobody': 1, 'threebody': 0.05, 'manybody': 0.4}, [16, 0])]
 
 
 @pytest.fixture(scope='module')
@@ -35,8 +36,7 @@ def structure() -> Structure:
 
 @pytest.mark.parametrize('mask, cutoff, result', cutoff_mask_list)
 def test_2bspecies_count(structure, mask, cutoff, result):
-
-    if (mask is True):
+    if mask is True:
         mask = generate_mask(cutoff)
     else:
         mask = None
@@ -52,14 +52,13 @@ def test_2bspecies_count(structure, mask, cutoff, result):
     assert (isinstance(env_test.etypes[0], np.int8))
     assert (len(env_test.bond_array_2) == result[0])
 
-    if (len(cutoff) > 1):
+    if len(cutoff) > 1:
         assert (np.sum(env_test.triplet_counts) == result[1])
 
 
 @pytest.mark.parametrize('mask, cutoff, result', cutoff_mask_list)
 def test_env_methods(structure, mask, cutoff, result):
-
-    if (mask is True):
+    if mask is True:
         mask = generate_mask(cutoff)
     else:
         mask = None
@@ -80,15 +79,49 @@ def test_env_methods(structure, mask, cutoff, result):
     assert isinstance(remade_env, AtomicEnvironment)
 
     assert np.array_equal(remade_env.bond_array_2, env_test.bond_array_2)
-    if (len(cutoff) > 1):
+    if len(cutoff) > 1:
         assert np.array_equal(remade_env.bond_array_3, env_test.bond_array_3)
-    if (len(cutoff) > 2):
+    if len(cutoff) > 2:
         assert np.array_equal(remade_env.q_array, env_test.q_array)
+
+# Only run on the first four tests, namely, the ones which have
+# False as a parameter.
+@pytest.mark.parametrize('mask, cutoff, result', cutoff_mask_list[:4])
+def test_backwards_compatibility(structure, mask, cutoff, result):
+    """
+    This test can be deleted if backwards compatibility is dropped for the
+    sake of code cleanup. (This test executes in about 5 milliseconds). Tests a
+    particular branch of code within the Environment's as_dict() method for
+    older pickled environments without a cutoffs mask.
+    :return:
+    """
+    if mask is True:
+        mask = generate_mask(cutoff)
+    else:
+        mask = None
+
+    env_test = deepcopy(AtomicEnvironment(structure,
+                                 atom=0,
+                                 cutoffs=cutoff,
+                                 cutoffs_mask=mask))
+    pre_test_dict = env_test.as_dict()
+
+    delattr(env_test, 'cutoffs_mask')
+
+    test_dict = env_test.as_dict()
+
+    assert pre_test_dict['cutoffs_mask'] == test_dict['cutoffs_mask']
+
+    new_env = AtomicEnvironment.from_dict(test_dict)
+
+    assert isinstance(new_env, AtomicEnvironment)
+
+    assert str(new_env) == str(env_test)
 
 
 def generate_mask(cutoff):
     ncutoff = len(cutoff)
-    if (ncutoff == 1):
+    if ncutoff == 1:
         # (1, 1) uses 0.5 cutoff,  (1, 2) (1, 3) (2, 3) use 0.9 cutoff
         mask = {'nspecie': 2, 'specie_mask': np.ones(118, dtype=int)}
         mask['specie_mask'][1] = 0
@@ -97,7 +130,7 @@ def generate_mask(cutoff):
         mask['twobody_mask'] = np.ones(4, dtype=int)
         mask['twobody_mask'][0] = 0
 
-    elif (ncutoff == 2):
+    elif ncutoff == 2:
         # the 3b mask is the same structure as 2b
         nspecie = 3
         specie_mask = np.zeros(118, dtype=int)
@@ -108,13 +141,13 @@ def generate_mask(cutoff):
         # (1, 1) (1, 2) (1, 3) (2, 3) (*, *)
         # correspond to cutoff 0.5, 0.9, 0.8, 0.9, 0.05
         ncut3b = 5
-        tmask = np.ones(nspecie**2, dtype=int)*(ncut3b-1)
+        tmask = np.ones(nspecie ** 2, dtype=int) * (ncut3b - 1)
         count = 0
         for i, j in [(1, 1), (1, 2), (1, 3), (2, 3)]:
             cs1 = specie_mask[i]
             cs2 = specie_mask[j]
-            tmask[cs1*nspecie+cs2] = count
-            tmask[cs2*nspecie+cs1] = count
+            tmask[cs1 * nspecie + cs2] = count
+            tmask[cs2 * nspecie + cs1] = count
             count += 1
 
         mask = {'nspecie': nspecie,
@@ -123,7 +156,7 @@ def generate_mask(cutoff):
                 'ncut3b': ncut3b,
                 'cut3b_mask': tmask}
 
-    elif (ncutoff == 3):
+    elif ncutoff == 3:
         # (1, 1) uses 0.5 cutoff,  (1, 2) (1, 3) (2, 3) use 0.9 cutoff
         mask = {'nspecie': 2, 'specie_mask': np.ones(118, dtype=int)}
         mask['specie_mask'][1] = 0
@@ -165,11 +198,11 @@ def test_auto_sweep():
         np.arange(-sweep_val + 1, sweep_val, 1)
     arbitrary_environment.compute_env()
     n_neighbors_2 = len(arbitrary_environment.etypes)
-    assert(n_neighbors_1 > n_neighbors_2)
+    assert (n_neighbors_1 > n_neighbors_2)
 
     # Increase the sweep value, and check that the count is the same.
     arbitrary_environment.sweep_array = \
         np.arange(-sweep_val - 1, sweep_val + 2, 1)
     arbitrary_environment.compute_env()
     n_neighbors_3 = len(arbitrary_environment.etypes)
-    assert(n_neighbors_1 == n_neighbors_3)
+    assert (n_neighbors_1 == n_neighbors_3)

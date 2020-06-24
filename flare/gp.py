@@ -13,7 +13,7 @@ from copy import deepcopy
 from numpy.random import random
 from scipy.linalg import solve_triangular
 from scipy.optimize import minimize
-from typing import List, Callable, Union, Tuple
+from typing import List, Callable, Union, Tuple, Sequence
 
 from flare.env import AtomicEnvironment
 from flare.gp_algebra import get_like_from_mats, get_neg_like_grad, \
@@ -60,7 +60,7 @@ class GaussianProcess:
         name (str, optional): Name for the GP instance.
     """
 
-    def __init__(self, kernels: list = ['two', 'three'],
+    def __init__(self, kernels: List[str] = ['two', 'three'],
                  component: str = 'mc',
                  hyps: 'ndarray' = None, cutoffs={},
                  hyps_mask: dict = {},
@@ -155,6 +155,9 @@ class GaussianProcess:
         self.likelihood = None
         self.likelihood_gradient = None
         self.bounds = None
+
+        # File used for reading / writing model if model is large
+        self.ky_mat_file = None
 
         self.check_instantiation()
 
@@ -714,20 +717,24 @@ class GaussianProcess:
         new_gp.n_envs_prev = len(new_gp.training_data)
 
         # Save time by attempting to load in computed attributes
-        if len(new_gp.training_data) > 5000:
+        if dictionary.get('ky_mat_file'):
             try:
                 new_gp.ky_mat = np.load(dictionary['ky_mat_file'])
                 new_gp.compute_matrices()
+                new_gp.ky_mat_file = None
+
             except FileNotFoundError:
                 new_gp.ky_mat = None
                 new_gp.l_mat = None
                 new_gp.alpha = None
                 new_gp.ky_mat_inv = None
-                filename = dictionary['ky_mat_file']
-                logger = logging.getLogger(self.logger_name)
+                filename = dictionary.get('ky_mat_file')
+                logger = logging.getLogger(new_gp.logger_name)
                 logger.warning("the covariance matrices are not loaded"
                                f"because {filename} cannot be found")
         else:
+            new_gp.ky_mat = np.array(dictionary['ky_mat']) \
+                if dictionary.get('ky_mat') is not None else None
             new_gp.ky_mat_inv = np.array(dictionary['ky_mat_inv']) \
                 if dictionary.get('ky_mat_inv') is not None else None
             new_gp.ky_mat = np.array(dictionary['ky_mat']) \
@@ -746,14 +753,21 @@ class GaussianProcess:
         :return:
         """
         ky_mat = self.ky_mat
-        l_mat = np.linalg.cholesky(ky_mat)
-        l_mat_inv = np.linalg.inv(l_mat)
-        ky_mat_inv = l_mat_inv.T @ l_mat_inv
-        alpha = np.matmul(ky_mat_inv, self.all_labels)
 
-        self.l_mat = l_mat
-        self.alpha = alpha
-        self.ky_mat_inv = ky_mat_inv
+        if ky_mat is None or \
+                (isinstance(ky_mat, np.ndarray) and not np.any(
+                ky_mat)):
+            Warning("Warning: Covariance matrix was not loaded but "
+                    "compute_matrices was called. Computing covariance "
+                    "matrix and proceeding...")
+            self.set_L_alpha()
+
+        else:
+            self.l_mat = np.linalg.cholesky(ky_mat)
+            self.l_mat_inv = np.linalg.inv(self.l_mat)
+            self.ky_mat_inv = self.l_mat_inv.T @ self.l_mat_inv
+            self.alpha = np.matmul(self.ky_mat_inv, self.all_labels)
+
 
     def adjust_cutoffs(self, new_cutoffs: Union[list, tuple, 'np.ndarray'],
                        reset_L_alpha=True, train=True, new_hyps_mask=None):
@@ -827,6 +841,9 @@ class GaussianProcess:
         if max(indexes) > len(self.training_data):
             raise ValueError("Index out of range of data")
 
+        if len(indexes) == 0:
+            return [], []
+
         # Get in reverse order so that modifying higher indexes doesn't affect
         # lower indexes
         indexes.sort(reverse=True)
@@ -843,7 +860,6 @@ class GaussianProcess:
 
         if update_matrices:
             self.set_L_alpha()
-            self.compute_matrices()
 
         # Put removed data in order of lowest to highest index
         removed_data.reverse()
@@ -851,15 +867,24 @@ class GaussianProcess:
 
         return removed_data, removed_labels
 
-    def write_model(self, name: str, format: str = 'json'):
+    def write_model(self, name: str, format: str = None,
+                    split_matrix_size_cutoff: int = 5000):
         """
         Write model in a variety of formats to a file for later re-use.
+        JSON files are open to visual inspection and are easier to use 
+        across different versions of FLARE or GP implementations. However,
+        they are larger and loading them in takes longer (by setting up a
+        new GP from the specifications). Pickled files can be faster to
+        read & write, and they take up less memory.
+        
         Args:
             name (str): Output name.
             format (str): Output format.
+            split_matrix_size_cutoff (int): If there are more than this
+            number of training points in the set, save the matrices seperately.
         """
 
-        if len(self.training_data) > 5000:
+        if len(self.training_data) > split_matrix_size_cutoff:
             np.save(f"{name}_ky_mat.npy", self.ky_mat)
             self.ky_mat_file = f"{name}_ky_mat.npy"
 
@@ -873,21 +898,35 @@ class GaussianProcess:
             self.alpha = None
             self.ky_mat_inv = None
 
+        # Automatically detect output format from name variable
+
+        for detect in ['json','pickle','binary']:
+            if detect in name.lower():
+                format = detect
+                break
+
+        if format is None:
+            format = 'json'
+
         supported_formats = ['json', 'pickle', 'binary']
 
         if format.lower() == 'json':
-            with open(f'{name}.json', 'w') as f:
+            if '.json' != name[-5:]:
+                name += '.json'
+            with open(name, 'w') as f:
                 json.dump(self.as_dict(), f, cls=NumpyEncoder)
 
         elif format.lower() == 'pickle' or format.lower() == 'binary':
-            with open(f'{name}.pickle', 'wb') as f:
+            if '.pickle' != name[-7:]:
+                name += '.pickle'
+            with open(name, 'wb') as f:
                 pickle.dump(self, f)
 
         else:
             raise ValueError("Output format not supported: try from "
                              "{}".format(supported_formats))
 
-        if len(self.training_data) > 5000:
+        if len(self.training_data) > split_matrix_size_cutoff:
             self.ky_mat = temp_ky_mat
             self.l_mat = temp_l_mat
             self.alpha = temp_alpha
@@ -919,7 +958,7 @@ class GaussianProcess:
 
                 GaussianProcess.backward_attributes(gp_model.__dict__)
 
-                if len(gp_model.training_data) > 5000:
+                if hasattr(gp_model, 'ky_mat_file') and gp_model.ky_mat_file:
                     try:
                         gp_model.ky_mat = np.load(gp_model.ky_mat_file,
                                                   allow_pickle=True)

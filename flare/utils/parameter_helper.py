@@ -107,6 +107,7 @@ from copy import deepcopy
 from itertools import combinations_with_replacement, permutations
 from numpy import array as nparray
 from numpy import max as npmax
+from numpy.random import random as nprandom
 from typing import List, Callable, Union
 
 from flare.output import set_logger
@@ -156,7 +157,10 @@ class ParameterHelper():
 
     # name of the kernels
     all_kernel_types = ['twobody', 'threebody', 'manybody']
-    additional_groups = ['cut3b']
+    cutoff_types = {'cut3b': 'threebody'}
+    cutoff_types_keys = list(cutoff_types.keys())
+    cutoff_types_values = list(cutoff_types.values())
+    additional_groups = []
 
     # dimension of the kernels
     ndim = {'twobody': 2, 'threebody': 3, 'manybody': 2, 'cut3b': 2}
@@ -169,21 +173,24 @@ class ParameterHelper():
                  verbose="WARNING"):
 
         self.logger = set_logger("ParameterHelper", stream=True,
-                                 fileout_name=None, verbose="info")
-
-        self.all_types = ['specie'] + \
-            ParameterHelper.all_kernel_types + ParameterHelper.additional_groups
+                                 fileout_name=None, verbose=verbose)
 
         self.all_group_types = ParameterHelper.all_kernel_types + \
-            ParameterHelper.additional_groups
+            self.cutoff_types_keys + \
+            self.additional_groups
+
+        self.all_types = ['specie'] + self.all_group_types
 
         # number of groups {'twobody': 1, 'threebody': 2}
         self.n = {}
-        # definition of groups {'specie': [['C', 'H'], ['O']], 'twobody': [[['*', '*']], [[ele1, ele2]]]}
+        # definition of groups {'specie': [['C', 'H'], ['O']],
+        # 'twobody': [[['*', '*']], [[ele1, ele2]]]}
         self.groups = {}
-        # joint values of the groups {'specie': ['C', 'H', 'O'], 'twobody': [['*', '*'], [ele1, ele2]]}
+        # joint values of the groups {'specie': ['C', 'H', 'O'],
+        # 'twobody': [['*', '*'], [ele1, ele2]]}
         self.all_members = {}
-        # names of each group {'specie': ['group1', 'group2'], 'twobody': ['twobody0', 'twobody1']}
+        # names of each group {'specie': ['group1', 'group2'], 'twobody':
+        # ['twobody0', 'twobody1']}
         self.all_group_names = {}
         # joint list of all the keys in self.all_group_names
         self.all_names = []
@@ -251,7 +258,7 @@ class ParameterHelper():
             if parameters is not None:
                 self.list_parameters(parameters, constraints)
 
-            if 'lengthscale' in self.universal and 'sigma' in self.universal:
+            if 'lengthscale' in self.universal or 'sigma' in self.universal:
                 universal = True
             else:
                 universal = False
@@ -279,7 +286,7 @@ class ParameterHelper():
             if parameters is not None:
                 self.list_parameters(parameters, constraints)
 
-            if 'lengthscale' in self.universal and 'sigma' in self.universal:
+            if 'lengthscale' in self.universal or 'sigma' in self.universal:
                 universal = True
             else:
                 universal = False
@@ -292,7 +299,7 @@ class ParameterHelper():
                     self.fill_in_parameters(
                         ktype, random=random, ones=ones, universal=universal)
 
-    def list_parameters(self, parameter_dict:dict, constraints:dict={}):
+    def list_parameters(self, parameter_dict: dict, constraints: dict = {}):
         """Define many groups of parameters
 
         Args:
@@ -325,6 +332,10 @@ class ParameterHelper():
         for name in parameter_dict:
             self.set_parameters(
                 name, parameter_dict[name], constraints.get(name, True))
+        for name in constraints:
+            if name not in parameter_dict:
+                self.set_constraints(
+                    name, constraints[name])
 
     def list_groups(self, group_type, definition_list):
         """define groups in batches.
@@ -370,7 +381,7 @@ class ParameterHelper():
                         self.define_group('specie', ele, ele)
                     else:
                         self.define_group('specie', ele, [ele])
-            elif isinstance(elemnt_list, dict):
+            elif isinstance(definition_list, dict):
                 for ele in definition_list:
                     self.define_group('specie', ele, definition_list[ele])
             else:
@@ -431,7 +442,7 @@ class ParameterHelper():
                                   group)
                 tid += 1
         else:
-            logger.info(f"{group_type} will be ignored")
+            self.logger.info(f"{group_type} will be ignored")
 
     def fill_in_parameters(self, group_type, random=False, ones=False, universal=False):
         """Separate all possible types of twobodys, threebodys, manybody.
@@ -449,7 +460,7 @@ class ParameterHelper():
             raise RuntimeError("the specie group has to be defined in advance")
         if random:
             for group_name in self.all_group_names[group_type]:
-                self.set_parameters(group_name, parameters=np.random.random(2))
+                self.set_parameters(group_name, parameters=nprandom(2))
         elif ones:
             for group_name in self.all_group_names[group_type]:
                 self.set_parameters(group_name, parameters=np.ones(2))
@@ -590,7 +601,7 @@ class ParameterHelper():
                         gid += ["*"]
                     else:
                         for idx in range(self.n['specie']):
-                            group_name = self.all_group_names['species'][idx]
+                            group_name = self.all_group_names['specie'][idx]
                             if ele_name in self.groups['specie'][idx]:
                                 group_name_list += [group_name]
                                 self.logger.debug(f"Element {ele_name} is used for "
@@ -649,9 +660,9 @@ class ParameterHelper():
                 allspec = self.groups[group_type][igroup]
                 if element_list in allspec:
                     name = gname
+            if name is None:
+                self.logger.debug("cannot find the group")
             return name
-            self.logger.debug("cannot find the group")
-            return None
         else:
             if "*" in element_list:
                 self.logger.debug("* cannot be used for find")
@@ -659,7 +670,6 @@ class ParameterHelper():
             gid = []
             for ele_name in element_list:
                 gid += [self.all_group_names['specie'].index(ele_name)]
-            setlist = set(gid)
             name = None
             for igroup in range(self.n[group_type]):
                 gname = self.all_group_names[group_type][igroup]
@@ -694,41 +704,54 @@ class ParameterHelper():
         if name == 'noise':
             self.noise = parameters
             self.opt['noise'] = opt
+            self.logger.debug(f"noise will be set as "
+                              f"{parameters} and opt {opt}")
             return
         elif name == 'energy_noise':
             self.energy_noise = parameters
+            self.opt['energy_noise'] = opt
+            self.logger.debug(f"energy_noise will be set as "
+                              f"{parameters} and opt {opt}")
             return
         elif 'cutoff' in name:
             self.universal[name] = parameters
+            self.logger.debug(f"universal cutoff {name} will be set as "
+                              f"{parameters}")
             return
         elif name in ['sigma', 'lengthscale']:
             self.universal[name] = parameters
             self.opt[name] = opt
+            self.logger.debug(f"universal {name} will be set as "
+                              f"{parameters} and optimized {opt}")
             return
 
         if isinstance(opt, bool):
             opt = [opt]*2
 
-        if 'cut3b' not in name:
-            if name in self.sigma:
-                self.logger.debug(
-                    f"the sig, ls of group {name} is overriden")
-            self.sigma[name] = parameters[0]
-            self.ls[name] = parameters[1]
-            self.opt[name+'sig'] = opt[0]
-            self.opt[name+'ls'] = opt[1]
-            self.logger.debug(f"ParameterHelper for group {name} will be set as "
-                              f"sig={parameters[0]} ({opt[0]}) "
-                              f"ls={parameters[1]} ({opt[1]})")
-            if len(parameters) > 2:
-                if name in self.all_cutoff:
-                    self.logger.debug(
-                        f"the cutoff of group {name} is overriden")
-                self.all_cutoff[name] = parameters[2]
+        for cut_name in self.cutoff_types:
+            if cut_name in name:
+                self.all_cutoff[name] = float(parameters)
                 self.logger.debug(f"Cutoff for group {name} will be set as "
-                                  f"{parameters[2]}")
-        else:
-            self.all_cutoff[name] = parameters
+                                  f"{parameters}")
+                return
+
+        if name in self.sigma:
+            self.logger.debug(
+                f"the sig, ls of group {name} is overriden")
+        self.sigma[name] = parameters[0]
+        self.ls[name] = parameters[1]
+        self.opt[name+'sig'] = opt[0]
+        self.opt[name+'ls'] = opt[1]
+        self.logger.debug(f"ParameterHelper for group {name} will be set as "
+                          f"sig={parameters[0]} ({opt[0]}) "
+                          f"ls={parameters[1]} ({opt[1]})")
+        if len(parameters) > 2:
+            if name in self.all_cutoff:
+                self.logger.debug(
+                    f"the cutoff of group {name} is overriden")
+            self.all_cutoff[name] = parameters[2]
+            self.logger.debug(f"Cutoff for group {name} will be set as "
+                              f"{parameters[2]}")
 
     def set_constraints(self, name, opt):
         """Set the parameters for certain group
@@ -751,20 +774,25 @@ class ParameterHelper():
 
         if name == 'noise':
             self.opt['noise'] = opt
+            self.logger.debug(f"noise opt is set to"
+                              f"{opt}")
             return
 
         if isinstance(opt, bool):
             opt = [opt, opt, opt]
 
-        if 'cut3b' not in name:
-            if name in self.sigma:
-                self.logger.debug(
-                    f"the sig, ls of group {name} is overriden")
-            self.opt[name+'sig'] = opt[0]
-            self.opt[name+'ls'] = opt[1]
-            self.logger.debug(f"ParameterHelper for group {name} will be set as "
-                              f"sig {opt[0]} "
-                              f"ls {opt[1]}")
+        for cutname in self.cutoff_types:
+            if cutname in name:
+                return
+
+        if name in self.sigma:
+            self.logger.debug(
+                f"the opt setting of group {name} is overriden")
+        self.opt[name+'sig'] = opt[0]
+        self.opt[name+'ls'] = opt[1]
+        self.logger.debug(f"ParameterHelper for group {name} will be set as "
+                          f"sig {opt[0]} "
+                          f"ls {opt[1]}")
 
     def summarize_group(self, group_type):
         """Sort and combine all the previous definition to internal varialbes
@@ -775,12 +803,22 @@ class ParameterHelper():
 
         aeg = self.all_group_names[group_type]
         nspecie = self.n['specie']
+
+        # specie need special sorting
         if group_type == "specie":
+
             self.nspecie = nspecie
             self.specie_mask = np.ones(118, dtype=np.int)*(nspecie-1)
+
+            # mark the species_mask with atom type
+            # default is nspecie-1
             for idt in range(self.nspecie):
                 for ele in self.groups['specie'][idt]:
                     atom_n = element_to_Z(ele)
+                    if atom_n >= len(self.specie_mask):
+                        new_mask = np.ones(atom_n, dtype=np.int)*(nspecie-1)
+                        new_mask[:len(self.specie_mask)] = self.specie_mask
+                        self.species_mask = new_mask
                     self.specie_mask[atom_n] = idt
                     self.logger.debug(f"elemtn {ele} is defined as type {idt} with name "
                                       f"{aeg[idt]}")
@@ -793,15 +831,18 @@ class ParameterHelper():
                 self.logger.debug(f"{group_type} is not defined. Skipped")
                 return
 
-            if group_type not in self.kernels and group_type in ParameterHelper.all_kernel_types:
+            if (group_type not in self.kernels) and \
+                    (group_type in ParameterHelper.all_kernel_types):
                 self.kernels.append(group_type)
 
             self.mask[group_type] = np.ones(
-                nspecie**ParameterHelper.ndim[group_type], dtype=np.int)*(self.n[group_type]-1)
+                nspecie**ParameterHelper.ndim[group_type], dtype=np.int) *\
+                (self.n[group_type]-1)
 
             self.hyps_sig[group_type] = []
             self.hyps_ls[group_type] = []
-            self.hyps_opt[group_type] = []
+            all_opt_sig = []
+            all_opt_ls = []
 
             for idt in range(self.n[group_type]):
                 name = aeg[idt]
@@ -819,7 +860,7 @@ class ParameterHelper():
                     self.logger.debug(f"{group_type} {def_str} is defined as type {idt} "
                                       f"with name {name}")
 
-                if group_type != 'cut3b':
+                if group_type not in self.cutoff_types:
                     sig = self.sigma.get(name, -1)
                     opt_sig = self.opt.get(name+'sig', True)
                     if sig == -1:
@@ -844,16 +885,18 @@ class ParameterHelper():
                         raise RuntimeError
                     self.hyps_sig[group_type] += [sig]
                     self.hyps_ls[group_type] += [ls]
-                    self.hyps_opt[group_type] += [opt_sig]
-                    self.hyps_opt[group_type] += [opt_ls]
+                    all_opt_sig += [opt_sig]
+                    all_opt_ls += [opt_ls]
                     self.logger.debug(f"   using hyper-parameters of {sig:6.2g} "
-                                      f"{ls:6.2g}")
+                                      f"{ls:6.2g} {opt_sig} {opt_ls}")
+            self.hyps_opt[group_type] = all_opt_sig + all_opt_ls
             self.logger.debug(
                 f"All the remaining elements are left as type {idt}")
 
             # sort out the cutoffs
-            if group_type == 'cut3b':
-                universal_cutoff = self.universal.get('cutoff_threebody', 0)
+            if group_type in self.cutoff_types:
+                universal_cutoff = self.universal.get(
+                    'cutoff_'+self.cutoff_types[group_type], 0)
             else:
                 universal_cutoff = self.universal.get('cutoff_'+group_type, 0)
 
@@ -866,13 +909,12 @@ class ParameterHelper():
                     alldefine = False
                     self.logger.info(f"{aeg[idt]} cutoff is not defined. "
                                      "it's going to use the universal cutoff.")
-
-            if group_type != 'threebody':
+            if group_type not in self.cutoff_types_values:
 
                 if len(allcut) > 0:
                     if universal_cutoff <= 0:
                         universal_cutoff = np.max(allcut)
-                        self.logger.info(f"universal cutoffs {cutstr2index[group_type]}for "
+                        self.logger.info(f"universal cutoff for "
                                          f"{group_type} is defined as zero! reset it to {universal_cutoff}")
 
                     self.cutoff_list[group_type] = []
@@ -894,8 +936,8 @@ class ParameterHelper():
                         # and they are all the same value
                         del self.cutoff_list[group_type]
                         universal_cutoff = max_cutoff
-                        if group_type == 'cut3b':
-                            self.n['cut3b'] = 0
+                        if group_type in self.cutoff_types:
+                            self.n[group_type] = 0
                         self.logger.info(f"universal cutoff is updated to "
                                          f"{universal_cutoff}")
 
@@ -907,10 +949,11 @@ class ParameterHelper():
                                      "be ignored")
 
             if universal_cutoff > 0:
-                if group_type == 'cut_3b':
-                    self.universal['cutoff_threebody'] = universal_cutoff
+                if group_type in self.cutoff_types:
+                    keyname = 'cutoff_'+self.cutoff_types[group_type]
                 else:
-                    self.universal['cutoff_'+group_type] = universal_cutoff
+                    keyname = 'cutoff_'+group_type
+                self.universal[keyname] = universal_cutoff
             else:
                 self.logger.error(f"cutoffs for {group_type} is undefined")
                 raise RuntimeError
@@ -929,6 +972,8 @@ class ParameterHelper():
         # at the end of threebody search
 
         self.summarize_group('specie')
+        for ktype in self.cutoff_types:
+            self.summarize_group(ktype)
         for ktype in ParameterHelper.additional_groups:
             self.summarize_group(ktype)
         for ktype in ParameterHelper.all_kernel_types:
@@ -937,7 +982,6 @@ class ParameterHelper():
         hyps_mask = {}
         cutoff_dict = {}
 
-        nspecie = self.n['specie']
         hyps_mask['nspecie'] = self.n['specie']
         if self.n['specie'] > 1:
             hyps_mask['specie_mask'] = self.specie_mask
@@ -970,10 +1014,12 @@ class ParameterHelper():
             if group in self.cutoff_list:
                 hyps_mask[group+'_cutoff_list'] = self.cutoff_list[group]
 
-        if self.n['cut3b'] >= 1:
-            hyps_mask['ncut3b'] = self.n[group]
-            hyps_mask['cut3b_mask'] = self.mask[group]
-            hyps_mask['threebody_cutoff_list'] = self.cutoff_list['cut3b']
+        for cutoff_name in self.cutoff_types:
+            if self.n.get(cutoff_name, 0) >= 1:
+                hyps_mask['n'+cutoff_name] = self.n[cutoff_name]
+                hyps_mask[cutoff_name+'_mask'] = self.mask[cutoff_name]
+                hyps_mask[self.cutoff_types[cutoff_name] +
+                          '_cutoff_list'] = self.cutoff_list[cutoff_name]
 
         hyps_mask['train_noise'] = self.opt['noise']
         hyps_mask['energy_noise'] = self.energy_noise
@@ -1034,7 +1080,6 @@ class ParameterHelper():
 
         nspecie = hyps_mask['nspecie']
         if nspecie > 1:
-            nele = len(hyps_mask['specie_mask'])
             max_species = np.max(hyps_mask['specie_mask'])
             specie_mask = hyps_mask['specie_mask']
             for i in range(max_species+1):
@@ -1052,10 +1097,10 @@ class ParameterHelper():
         else:
             pm.define_group("specie", i, ['*'])
 
-        for kernel in hyps_mask['kernels']+['cut3b']:
+        for kernel in hyps_mask['kernels']+ParameterHelper.cutoff_types_keys:
             n = hyps_mask.get('n'+kernel, 0)
             if n >= 0:
-                if kernel != 'cut3b':
+                if kernel not in ParameterHelper.cutoff_types:
                     chyps, copt = Parameters.get_component_hyps(hyps_mask, kernel,
                                                                 constraint=True, noise=False)
                     sig = chyps[0]
@@ -1066,8 +1111,8 @@ class ParameterHelper():
                     pm.set_parameters('cutoff_'+kernel, cutoff)
                     cutoff_list = hyps_mask.get(
                         f'{kernel}_cutoff_list', np.ones(len(sig))*cutoff)
-                elif kernel == 'cut3b' and n > 1:
-                    cutoff_list = hyps_mask['threebody_cutoff_list']
+                elif kernel in ParameterHelper.cutoff_types and n > 1:
+                    cutoff_list = hyps_mask[ParameterHelper.cutoff_types[kernel]+'_cutoff_list']
 
                 if n > 1:
                     all_specie = np.arange(nspecie)
@@ -1081,10 +1126,12 @@ class ParameterHelper():
                         mask_id = mask_id // nspecie
                         ttype = hyps_mask[f'{kernel}_mask'][mask_id]
                         pm.define_group(f"{kernel}", f"{kernel}{ttype}", comb)
-                        if kernel != 'cut3b' and kernel != 'threebody':
+
+                        if (kernel not in ParameterHelper.cutoff_types) and \
+                                (kernel not in ParameterHelper.cutoff_types_values):
                             pm.set_parameters(f"{kernel}{ttype}", [sig[ttype], ls[ttype], cutoff_list[ttype]],
                                               opt=[csig[ttype], cls[ttype]])
-                        elif kernel == 'threebody':
+                        elif kernel in ParameterHelper.cutoff_types_values:
                             pm.set_parameters(f"{kernel}{ttype}", [sig[ttype], ls[ttype]],
                                               opt=[csig[ttype], cls[ttype]])
                         else:
@@ -1093,8 +1140,11 @@ class ParameterHelper():
                 else:
                     pm.define_group(kernel, kernel, [
                                     '*']*ParameterHelper.ndim[kernel])
-                    pm.set_parameters(kernel, parameters=np.hstack(
-                        [sig, ls, cutoff]), opt=copt)
+                    if kernel not in ParameterHelper.cutoff_types_keys:
+                        pm.set_parameters(kernel, parameters=np.hstack(
+                            [sig, ls, cutoff]), opt=copt)
+                    else:
+                        pm.set_parameters(kernel, parameters=cutoff)
 
         hyps = Parameters.get_hyps(hyps_mask)
         pm.set_parameters('noise', hyps[-1])
