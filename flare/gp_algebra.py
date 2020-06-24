@@ -1215,15 +1215,12 @@ def get_neg_like_grad(hyps: np.ndarray, name: str,
 
     time0 = time.time()
 
-    print(list(_global_training_data.keys()))
-    print(f"{name}", len(_global_training_data[name]))
     hyp_mat, ky_mat = \
         get_ky_and_hyp(hyps, name, kernel_grad, cutoffs=cutoffs,
                        hyps_mask=hyps_mask, n_cpus=n_cpus, n_sample=n_sample)
 
     logger = logging.getLogger(logger_name)
     logger.debug(f"{name} get_ky_and_hyp {time.time()-time0}")
-    print(f"{name} get_ky_and_hyp {time.time()-time0}")
 
     time0 = time.time()
 

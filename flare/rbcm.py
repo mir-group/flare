@@ -308,7 +308,7 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
         if self.verbose.lower() == "debug":
             verbose = "debug"
         if logger_name is None:
-            set_logger("gp_algebra", stream=True,
+            set_logger("gp_algebra", stream=False,
                        fileout_name="log.gp_algebra",
                        verbose=verbose)
             logger_name = "gp_algebra"
@@ -533,7 +533,7 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
         logger = logging.getLogger(self.logger_name)
         logger.debug("set_L_alpha")
 
-        if self.per_expert_parallel:
+        if self.per_expert_parallel and self.n_cpus > 1:
 
             time0 = time.time()
             with mp.Pool(processes=self.n_cpus) as pool:
@@ -590,7 +590,7 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
 
         self.sync_one_data(expert_id)
 
-        if self.per_expert_parallel:
+        if self.per_expert_parallel and self.n_cpus > 1:
             n_cpus = 1
         else:
             n_cpus = self.n_cpus
@@ -829,7 +829,7 @@ def rbcm_get_neg_like_grad(hyps, n_experts, name, kernel_grad, logger_name, cuto
 
     logger = logging.getLogger(logger_name)
     time0 = time.time()
-    if per_expert_parallel:
+    if per_expert_parallel and n_cpus > 1:
 
         with mp.Pool(processes=n_cpus) as pool:
 
@@ -853,7 +853,7 @@ def rbcm_get_neg_like_grad(hyps, n_experts, name, kernel_grad, logger_name, cuto
             pool.join()
     else:
         for i in range(n_experts):
-            neg_like_, neg_like_grad_ = get_neg_like_grad(hyps, f"{name}_{i}", kernel_grad, logger,
+            neg_like_, neg_like_grad_ = get_neg_like_grad(hyps, f"{name}_{i}", kernel_grad, logger_name,
                                                   cutoffs, hyps_mask, n_cpus,
                                                   n_sample)
             neg_like += neg_like_

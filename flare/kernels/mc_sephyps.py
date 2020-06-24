@@ -1106,47 +1106,55 @@ def three_body_mc_jit(bond_array_1, c1, etypes1,
                                     for d2 in range(3):
                                         if (c1 == c2):
                                             if (ei1 == ej1) and (ei2 == ej2):
-                                                kern[d1,d2] += \
-                                                    three_body_helper_1(ci1[d1], ci2[d1], cj1[d2], cj2[d2], r11,
-                                                                        r22, r33, fi, fj, fdi[d1], fdj[d2],
-                                                                        tls1, tls2, tls3,
-                                                                        tsig2)
+                                                kern[d1, d2] += \
+                                                    three_body_helper_1(
+                                                    ci1[d1], ci2[d1],
+                                                    cj1[d2], cj2[d2],
+                                                    r11, r22, r33, fi, fj,
+                                                    fdi[d1], fdj[d2],
+                                                    tls1, tls2, tls3, tsig2)
                                             if (ei1 == ej2) and (ei2 == ej1):
-                                                kern[d1,d2] += \
-                                                    three_body_helper_1(ci1[d1], ci2[d1], cj2[d2], cj1[d2], r12,
-                                                                        r21, r33, fi, fj, fdi[d1], fdj[d2],
-                                                                        tls1, tls2, tls3,
-                                                                        tsig2)
+                                                kern[d1, d2] += \
+                                                    three_body_helper_1(
+                                                    ci1[d1], ci2[d1],
+                                                    cj2[d2], cj1[d2],
+                                                    r12, r21, r33, fi, fj,
+                                                    fdi[d1], fdj[d2],
+                                                    tls1, tls2, tls3, tsig2)
                                         if (c1 == ej1):
                                             if (ei1 == ej2) and (ei2 == c2):
-                                                kern[d1,d2] += \
-                                                    three_body_helper_2(ci2[d1], ci1[d1], cj2[d2], cj1[d2], r21,
-                                                                        r13, r32, fi, fj, fdi[d1],
-                                                                        fdj[d2],
-                                                                        tls1, tls2, tls3,
-                                                                        tsig2)
+                                                kern[d1, d2] += \
+                                                    three_body_helper_2(
+                                                    ci2[d1], ci1[d1],
+                                                    cj2[d2], cj1[d2],
+                                                    r21, r13, r32, fi, fj,
+                                                    fdi[d1], fdj[d2],
+                                                    tls1, tls2, tls3, tsig2)
                                             if (ei1 == c2) and (ei2 == ej2):
-                                                kern[d1,d2] += \
-                                                    three_body_helper_2(ci1[d1], ci2[d1], cj2[d2], cj1[d2], r11,
-                                                                        r23, r32, fi, fj, fdi[d1],
-                                                                        fdj[d2],
-                                                                        tls1, tls2, tls3,
-                                                                        tsig2)
+                                                kern[d1, d2] += \
+                                                    three_body_helper_2(
+                                                    ci1[d1], ci2[d1],
+                                                    cj2[d2], cj1[d2],
+                                                    r11, r23, r32, fi, fj,
+                                                    fdi[d1], fdj[d2],
+                                                    tls1, tls2, tls3, tsig2)
                                         if (c1 == ej2):
                                             if (ei1 == ej1) and (ei2 == c2):
-                                                kern[d1,d2] += \
-                                                    three_body_helper_2(ci2[d1], ci1[d1], cj1[d2], cj2[d2], r22,
-                                                                        r13, r31, fi, fj, fdi[d1],
-                                                                        fdj[d2],
-                                                                        tls1, tls2, tls3,
-                                                                        tsig2)
+                                                kern[d1, d2] += \
+                                                    three_body_helper_2(
+                                                    ci2[d1], ci1[d1],
+                                                    cj1[d2], cj2[d2],
+                                                    r22, r13, r31, fi, fj,
+                                                    fdi[d1], fdj[d2],
+                                                    tls1, tls2, tls3, tsig2)
                                             if (ei1 == c2) and (ei2 == ej1):
-                                                kern[d1,d2] += \
-                                                    three_body_helper_2(ci1[d1], ci2[d1], cj1[d2], cj2[d2], r12,
-                                                                        r23, r31, fi, fj, fdi[d1],
-                                                                        fdj[d2],
-                                                                        tls1, tls2, tls3,
-                                                                        tsig2)
+                                                kern[d1, d2] += \
+                                                    three_body_helper_2(
+                                                    ci1[d1], ci2[d1],
+                                                    cj1[d2], cj2[d2],
+                                                    r12, r23, r31, fi, fj,
+                                                    fdi[d1], fdj[d2],
+                                                    tls1, tls2, tls3, tsig2)
 
     return kern
 
@@ -1252,40 +1260,52 @@ def three_body_mc_grad_jit(bond_array_1, c1, etypes1,
                                         if (c1 == c2):
                                             if (ei1 == ej1) and (ei2 == ej2):
                                                 kern_term, sig_term, ls_term = \
-                                                    three_body_grad_helper_1(ci1[d1], ci2[d1], cj1[d2], cj2[d2],
-                                                                             r11, r22, r33, fi, fj,
-                                                                             fdi[d1], fdj[d2], tls1, tls2,
-                                                                             tls3, tls4, tls5,
-                                                                             tls6,
-                                                                             tsig2, tsig3)
+                                                    three_body_grad_helper_1(
+                                                        ci1[d1], ci2[d1],
+                                                        cj1[d2], cj2[d2],
+                                                        r11, r22, r33, fi, fj,
+                                                        fdi[d1], fdj[d2],
+                                                        tls1, tls2, tls3,
+                                                        tls4, tls5, tls6,
+                                                        tsig2, tsig3)
                                                 kern[d1, d2] += kern_term
-                                                sig_derv[ttypei, d1, d2] += sig_term
-                                                ls_derv[ttypei, d1, d2] += ls_term
+                                                sig_derv[ttypei, d1,
+                                                         d2] += sig_term
+                                                ls_derv[ttypei, d1,
+                                                        d2] += ls_term
 
                                             if (ei1 == ej2) and (ei2 == ej1):
                                                 kern_term, sig_term, ls_term = \
-                                                    three_body_grad_helper_1(ci1[d1], ci2[d1], cj2[d2], cj1[d2],
-                                                                             r12, r21, r33, fi, fj,
-                                                                             fdi[d1], fdj[d2], tls1, tls2,
-                                                                             tls3, tls4, tls5,
-                                                                             tls6,
-                                                                             tsig2, tsig3)
+                                                    three_body_grad_helper_1(
+                                                        ci1[d1], ci2[d1],
+                                                        cj2[d2], cj1[d2],
+                                                        r12, r21, r33, fi, fj,
+                                                        fdi[d1], fdj[d2],
+                                                        tls1, tls2,
+                                                        tls3, tls4, tls5, tls6,
+                                                        tsig2, tsig3)
                                                 kern[d1, d2] += kern_term
-                                                sig_derv[ttypei, d1, d2] += sig_term
-                                                ls_derv[ttypei, d1, d2] += ls_term
+                                                sig_derv[ttypei, d1,
+                                                         d2] += sig_term
+                                                ls_derv[ttypei, d1,
+                                                        d2] += ls_term
 
                                         if (c1 == ej1):
                                             if (ei1 == ej2) and (ei2 == c2):
                                                 kern_term, sig_term, ls_term = \
-                                                    three_body_grad_helper_2(ci2[d1], ci1[d1], cj2[d2], cj1[d2],
-                                                                             r21, r13, r32, fi, fj,
-                                                                             fdi[d1], fdj[d2], tls1, tls2,
-                                                                             tls3, tls4, tls5,
-                                                                             tls6,
-                                                                             tsig2, tsig3)
+                                                    three_body_grad_helper_2(
+                                                            ci2[d1], ci1[d1],
+                                                            cj2[d2], cj1[d2],
+                                                            r21, r13, r32, fi, fj,
+                                                            fdi[d1], fdj[d2],
+                                                            tls1, tls2, tls3,
+                                                            tls4, tls5, tls6,
+                                                            tsig2, tsig3)
                                                 kern[d1, d2] += kern_term
-                                                sig_derv[ttypei, d1, d2] += sig_term
-                                                ls_derv[ttypei, d1, d2] += ls_term
+                                                sig_derv[ttypei, d1,
+                                                         d2] += sig_term
+                                                ls_derv[ttypei, d1,
+                                                        d2] += ls_term
 
                                             if (ei1 == c2) and (ei2 == ej2):
                                                 kern_term, sig_term, ls_term = \
@@ -1296,8 +1316,10 @@ def three_body_mc_grad_jit(bond_array_1, c1, etypes1,
                                                                              tls6,
                                                                              tsig2, tsig3)
                                                 kern[d1, d2] += kern_term
-                                                sig_derv[ttypei, d1, d2] += sig_term
-                                                ls_derv[ttypei, d1, d2] += ls_term
+                                                sig_derv[ttypei, d1,
+                                                         d2] += sig_term
+                                                ls_derv[ttypei, d1,
+                                                        d2] += ls_term
 
                                         if (c1 == ej2):
                                             if (ei1 == ej1) and (ei2 == c2):
@@ -1309,8 +1331,10 @@ def three_body_mc_grad_jit(bond_array_1, c1, etypes1,
                                                                              tls6,
                                                                              tsig2, tsig3)
                                                 kern[d1, d2] += kern_term
-                                                sig_derv[ttypei, d1, d2] += sig_term
-                                                ls_derv[ttypei, d1, d2] += ls_term
+                                                sig_derv[ttypei, d1,
+                                                         d2] += sig_term
+                                                ls_derv[ttypei, d1,
+                                                        d2] += ls_term
 
                                             if (ei1 == c2) and (ei2 == ej1):
                                                 kern_term, sig_term, ls_term = \
@@ -1322,8 +1346,10 @@ def three_body_mc_grad_jit(bond_array_1, c1, etypes1,
                                                                              tsig2, tsig3)
 
                                                 kern[d1, d2] += kern_term
-                                                sig_derv[ttypei, d1, d2] += sig_term
-                                                ls_derv[ttypei, d1, d2] += ls_term
+                                                sig_derv[ttypei, d1,
+                                                         d2] += sig_term
+                                                ls_derv[ttypei, d1,
+                                                        d2] += ls_term
 
     return kern, np.vstack((sig_derv, ls_derv))
 
@@ -1420,32 +1446,32 @@ def three_body_mc_force_en_jit(bond_array_1, c1, etypes1,
                                     if (c1 == c2):
                                         if (ei1 == ej1) and (ei2 == ej2):
                                             kern[d1] += three_body_en_helper(ci1[d1], ci2[d1], r11, r22,
-                                                                         r33, fi, fj, fdi[d1],
-                                                                         tls1, tls2, tsig2)
+                                                                             r33, fi, fj, fdi[d1],
+                                                                             tls1, tls2, tsig2)
                                         if (ei1 == ej2) and (ei2 == ej1):
                                             kern[d1] += three_body_en_helper(ci1[d1], ci2[d1], r12, r21,
-                                                                         r33, fi, fj, fdi[d1],
-                                                                         tls1, tls2, tsig2)
+                                                                             r33, fi, fj, fdi[d1],
+                                                                             tls1, tls2, tsig2)
                                     if (c1 == ej1):
                                         if (ei1 == ej2) and (ei2 == c2):
                                             kern[d1] += three_body_en_helper(ci1[d1], ci2[d1], r13, r21,
-                                                                         r32, fi, fj, fdi[d1],
-                                                                         tls1, tls2, tsig2)
+                                                                             r32, fi, fj, fdi[d1],
+                                                                             tls1, tls2, tsig2)
                                         if (ei1 == c2) and (ei2 == ej2):
                                             kern[d1] += three_body_en_helper(ci1[d1], ci2[d1], r11, r23,
-                                                                         r32, fi, fj, fdi[d1],
-                                                                         tls1, tls2, tsig2)
+                                                                             r32, fi, fj, fdi[d1],
+                                                                             tls1, tls2, tsig2)
                                     if (c1 == ej2):
                                         if (ei1 == ej1) and (ei2 == c2):
                                             kern[d1] += three_body_en_helper(ci1[d1], ci2[d1], r13, r22,
-                                                                         r31, fi, fj, fdi[d1],
-                                                                         tls1,
-                                                                         tls2, tsig2)
+                                                                             r31, fi, fj, fdi[d1],
+                                                                             tls1,
+                                                                             tls2, tsig2)
                                         if (ei1 == c2) and (ei2 == ej1):
                                             kern[d1] += three_body_en_helper(ci1[d1], ci2[d1], r12, r23,
-                                                                         r31, fi, fj, fdi[d1],
-                                                                         tls1,
-                                                                         tls2, tsig2)
+                                                                             r31, fi, fj, fdi[d1],
+                                                                             tls1,
+                                                                             tls2, tsig2)
 
     return kern
 
@@ -1678,7 +1704,6 @@ def two_body_mc_grad_jit(bond_array_1, c1, etypes1,
 
                     r11 = ri - rj
 
-
                     D = r11 * r11
                     for d1 in range(3):
                         B = r11 * ci[d1]
@@ -1745,8 +1770,8 @@ def two_body_mc_force_en_jit(bond_array_1, c1, etypes1,
                     for d1 in range(3):
                         B = r11 * ci[d1]
                         kern[d1] += force_energy_helper(B, D, fi, fj, fdi[d1],
-                                                    tls1, tls2,
-                                                    tsig2)
+                                                        tls1, tls2,
+                                                        tsig2)
 
     return kern
 
@@ -1790,6 +1815,7 @@ def two_body_mc_en_jit(bond_array_1, c1, etypes1,
                     kern += fi * fj * tsig2 * exp(-r11 * r11 * tls1)
 
     return kern
+
 
 def many_body_mc(env1, env2, cutoff_2b, cutoff_3b, cutoff_mb,
                  nspec, spec_mask,
