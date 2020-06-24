@@ -109,7 +109,7 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
             if self.output is None:
                 self.logger_name = self.name+"GaussianProcess"
                 set_logger(self.logger_name, stream=True,
-                           fileout_name=None, verbose="info")
+                           fileout_name=None, verbose=self.verbose)
             else:
                 self.logger_name = self.output.basename+'log'
         logger = logging.getLogger(self.logger_name)
@@ -340,6 +340,7 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
             if self.bounds is None:
                 bounds = np.array([(1e-6, np.inf)] * len(x_0))
                 bounds[-1, 0] = 1e-3
+                bounds[-1, 1] = self.prior_variance
             else:
                 bounds = self.bounds
 
@@ -401,20 +402,16 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
             elif size3 != self.alpha[i].shape[0]:
                 self.set_L_alpha_part(i)
 
-    def predict(self, x_t: AtomicEnvironment, d: int) -> [float, float]:
+    def predict(self, x_t: AtomicEnvironment) -> [float, float]:
         """
         Predict a force component of the central atom of a local environment.
 
         Args:
             x_t (AtomicEnvironment): Input local environment.
-            d (int): Force component to be predicted (1 is x, 2 is y, and
-                3 is z).
 
         Return:
             (float, float): Mean and epistemic variance of the prediction.
         """
-
-        assert (d in [1, 2, 3]), "d should be 1, 2, or 3"
 
         # Kernel vector allows for evaluation of atomic environments.
         if self.parallel and not self.per_atom_par:
@@ -429,7 +426,7 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
             k_v += \
                 [get_kernel_vector(f"{self.name}_{i}", self.kernel,
                                    self.energy_force_kernel,
-                                   x_t, d, self.hyps, cutoffs=self.cutoffs,
+                                   x_t, self.hyps, cutoffs=self.cutoffs,
                                    hyps_mask=self.hyps_mask, n_cpus=n_cpus,
                                    n_sample=self.n_sample)]
 
@@ -438,29 +435,38 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
 
         # get predictive mean
         variance_rbcm = 0
-        mean = 0
-        var = 0
-        beta = 0
+        mean = 0.0
+        var = 0.0
+        beta = 0.0
+
+        args = from_mask_to_args(self.hyps, self.cutoffs, self.hyps_mask)
+
         for i in range(self.n_experts):
-            mean_k = np.matmul(k_v[i], self.alpha[i])
+
+            mean_i = np.matmul(self.alpha[i], k_v[i])
 
             # get predictive variance without cholesky (possibly faster)
             # pass args to kernel based on if mult. hyperparameters in use
-            args = from_mask_to_args(self.hyps, self.cutoffs, self.hyps_mask)
 
-            self_kern = self.kernel(x_t, x_t, d, d, *args)
-            var_k = self_kern - np.matmul(np.matmul(k_v[i], self.ky_mat_inv[i]), k_v[i])
-            beta_k = 0.5*(self.log_prior_var - np.log(var_k))
+            self_kern = self.kernel(x_t, x_t, *args)
+            var_i = np.diagonal(self_kern - np.matmul(np.matmul(k_v[i].T, self.ky_mat_inv[i]), k_v[i]))
 
-            mean += beta_k / var_k * mean_k
-            var += beta_k / var_k
-            beta += beta_k
+            print(i, mean_i, self_kern, var_i)
+            if not all(var_i>log_prior_var):
+                raise RuntimeError
+
+            beta_i = 0.5*(self.log_prior_var - np.log(var_i))
+
+            mean += beta_i / var_i * mean_i
+            var += beta_i / var_i
+            beta += beta_i
 
         var += (1-beta)/self.prior_variance
         pred_var = 1.0/var
         pred_mean = pred_var * mean
 
         return pred_mean, pred_var
+
 
     # def predict_local_energy(self, x_t: AtomicEnvironment) -> float:
     #     """Predict the local energy of a local environment.
@@ -757,6 +763,20 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
         else:
             raise ValueError("Output format not supported: try from "
                              "{}".format(supported_formats))
+
+    def get_full_GP(self):
+
+        gp_model = GaussianProcess(self.__dict__)
+        gp_model.training_data = []
+        gp_model.training_labels = []
+        for i in range(self.n_experts):
+            gp_model.training_data += self.training_data[i]
+            gp_model.training_labels += self.training_labels[i]
+            gp_model.training_labels_np = np.hstack(gp_model.training_labels)
+            gp_model.all_labels_np = np.hstack(gp_model.training_labels,
+                                               gp_model.energy_labels_np)
+        return gp_model
+
 
     @staticmethod
     def from_file(filename: str, format: str = ''):
