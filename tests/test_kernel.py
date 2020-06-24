@@ -47,9 +47,6 @@ def test_force_en(kernels, kernel_type, d1):
     _, __, en_kernel, force_en_kernel = \
         str_to_kernel_set(kernels, kernel_type)
 
-    _, __, en_kernel_o, force_en_kernel_o = \
-        str_to_kernel_set_o(kernels, kernel_type)
-
     nterm = 0
     for term in ['2', '3', 'many']:
         if (term in kernels):
