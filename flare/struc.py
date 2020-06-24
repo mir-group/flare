@@ -52,23 +52,15 @@ class Structure:
                  positions: 'ndarray', mass_dict: dict = None,
                  prev_positions: 'ndarray' = None,
                  species_labels: List[str] = None, forces=None, stds=None):
-        # Set up individual Bravais lattice vectors
+
+        # Define cell (each row is a Bravais lattice vector).
         self.cell = np.array(cell)
-        self.vec1 = self.cell[0, :]
-        self.vec2 = self.cell[1, :]
-        self.vec3 = self.cell[2, :]
 
         # Compute the max cutoff compatible with a 3x3x3 supercell of the
         # structure.
         self.max_cutoff = get_max_cutoff(self.cell)
 
-        # get cell matrices for wrapping coordinates
-        self.cell_transpose = self.cell.transpose()
-        self.cell_transpose_inverse = np.linalg.inv(self.cell_transpose)
-        self.cell_dot = self.get_cell_dot()
-        self.cell_dot_inverse = np.linalg.inv(self.cell_dot)
-
-        # set positions
+        # Set positions.
         self.positions = np.array(positions)
         self.wrapped_positions = self.wrap_positions(in_place=False)
 
@@ -118,7 +110,52 @@ class Structure:
                     if elt.isnumeric():
                         mass_dict[int(elt)] = mass_dict[elt]
 
-    def get_cell_dot(self):
+    @property
+    def cell(self):
+        return self._cell
+
+    @property
+    def vec1(self):
+        return self._vec1
+
+    @property
+    def vec2(self):
+        return self._vec2
+
+    @property
+    def vec3(self):
+        return self._vec3
+
+    @property
+    def cell_transpose(self):
+        return self._cell_transpose
+
+    @property
+    def cell_transpose_inverse(self):
+        return self._cell_transpose_inverse
+
+    @property
+    def cell_dot(self):
+        return self._cell_dot
+
+    @property
+    def cell_dot_inverse(self):
+        return self._cell_dot_inverse
+
+    @cell.setter
+    def cell(self, cell_array):
+        """Set the cell and related properties."""
+        self._cell = cell_array
+        self._vec1 = cell_array[0, :]
+        self._vec2 = cell_array[1, :]
+        self._vec3 = cell_array[2, :]
+        self._cell_transpose = cell_array.transpose()
+        self._cell_transpose_inverse = np.linalg.inv(self._cell_transpose)
+        self._cell_dot = self.get_cell_dot(cell_array)
+        self._cell_dot_inverse = np.linalg.inv(self._cell_dot)
+
+    @staticmethod
+    def get_cell_dot(cell_array):
         """
         Compute 3x3 array of dot products of cell vectors used to
         fold atoms back to the unit cell.
@@ -131,7 +168,7 @@ class Structure:
 
         for m in range(3):
             for n in range(3):
-                cell_dot[m, n] = np.dot(self.cell[m], self.cell[n])
+                cell_dot[m, n] = np.dot(cell_array[m], cell_array[n])
 
         return cell_dot
 
@@ -260,7 +297,7 @@ class Structure:
         :param dictionary: dict describing structure parameters.
         :return: FLARE structure assembled from dictionary
         """
-        struc = Structure(cell=np.array(dictionary['cell']),
+        struc = Structure(cell=np.array(dictionary['_cell']),
                           positions=np.array(dictionary['positions']),
                           species=dictionary['coded_species'],
                           forces=np.array(dictionary.get('forces')),
