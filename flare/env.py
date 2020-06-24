@@ -254,8 +254,8 @@ class AtomicEnvironment:
         # TODO Instead of re-computing 2 and 3 body environment,
         # directly load in, this would be much more efficient
 
-        struc = Structure(cell=np.array(dictionary['_cell']),
-                          positions=dictionary['_positions'],
+        struc = Structure(cell=np.array(dictionary['cell']),
+                          positions=dictionary['positions'],
                           species=dictionary['species'])
         index = dictionary['atom']
 

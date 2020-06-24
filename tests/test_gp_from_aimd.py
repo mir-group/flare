@@ -20,14 +20,13 @@ from .fake_gp import get_gp
 
 @pytest.fixture
 def methanol_gp():
-    the_gp = GaussianProcess(kernel_name="2+3_mc",
-                             hyps=np.array([3.75996759e-06, 1.53990678e-02,
-                                            2.50624782e-05, 5.07884426e-01,
-                                            1.70172923e-03]),
-                             cutoffs=np.array([7, 7]),
-                             hyp_labels=['l2', 's2', 'l3', 's3', 'n0'],
-                             maxiter=1,
-                             opt_algorithm='L-BFGS-B')
+    the_gp = GaussianProcess(
+        kernel_name="2+3_mc",
+        hyps=np.array([3.75996759e-06, 1.53990678e-02, 2.50624782e-05,
+                       5.07884426e-01, 1.70172923e-03]),
+        cutoffs=np.array([7, 7]), hyp_labels=['l2', 's2', 'l3', 's3', 'n0'],
+        maxiter=1, opt_algorithm='L-BFGS-B')
+
     with open('./test_files/methanol_envs.json') as f:
         dicts = [loads(s) for s in f.readlines()]
 
@@ -146,8 +145,6 @@ def test_seed_and_run():
 
     for f in glob(f"meth_test*"):
         remove(f)
-
-
 
 def test_pred_on_elements():
     the_gp = GaussianProcess(kernel_name="2+3_mc",
