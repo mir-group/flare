@@ -185,7 +185,6 @@ class Output:
         """
 
         string = ''
-        tab = ' ' * 4
 
         # Mark if a frame had DFT forces with an asterisk
         if not dft_step:

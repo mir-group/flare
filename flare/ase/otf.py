@@ -14,6 +14,7 @@ from ase.md.nvtberendsen import NVTBerendsen
 from ase.md.nptberendsen import NPTBerendsen
 from ase.md.verlet import VelocityVerlet
 from ase.md.langevin import Langevin
+from ase import units
 
 from flare.struc import Structure
 from flare.gp import GaussianProcess
@@ -110,8 +111,11 @@ class ASE_OTF(OTF):
         force_source = dft_source
         self.flare_calc = self.atoms.calc
 
+        # Convert ASE timestep to ps for the output file.
+        flare_dt = timestep / (units.fs * 1e3)
+
         super().__init__(
-            dt=timestep, number_of_steps=number_of_steps,
+            dt=flare_dt, number_of_steps=number_of_steps,
             gp=self.flare_calc.gp_model, force_source=force_source,
             dft_loc=dft_calc, dft_input=self.atoms, **otf_kwargs)
 
@@ -166,11 +170,17 @@ class ASE_OTF(OTF):
             curr_velocities = self.atoms.get_velocities()
             self.atoms.set_velocities(curr_velocities * vel_fac)
 
+    def update_temperature(self):
+        self.KE = self.atoms.get_kinetic_energy()
+        self.temperature = self.atoms.get_temperature()
+
+        # Convert velocities to Angstrom / ps.
+        self.velocities = self.atoms.get_velocities() * units.fs * 1e3
+
     def run_dft(self):
         super().run_dft()
 
     def update_gp(self, train_atoms, dft_frcs):
-
         super().update_gp(train_atoms, dft_frcs)
 
         if self.flare_calc.use_mapping:
