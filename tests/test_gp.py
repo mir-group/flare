@@ -197,10 +197,10 @@ class TestAlgebra():
        test_gp = all_gps[multihyps]
        test_gp.parallel = par
        test_gp.per_atom_par = per_atom_par
-       pred = test_gp.predict(x_t=validation_env, d=1)
+       pred = test_gp.predict(x_t=validation_env)
        assert (len(pred) == 2)
-       assert (isinstance(pred[0], float))
-       assert (isinstance(pred[1], float))
+       assert (isinstance(pred[0][0], float))
+       assert (isinstance(pred[1][0], float))
 
    @pytest.mark.parametrize('par, n_cpus', [(True, 2),
                                             (False, 1)])
@@ -241,8 +241,8 @@ class TestIO():
         test_gp = all_gps[multihyps]
         the_str = str(test_gp)
         assert 'GaussianProcess Object' in the_str
-        assert 'Kernel: [\'twobody\', \'threebody\', \'manybody\']' in the_str
-        assert 'Cutoffs: {\'twobody\': 0.8, \'threebody\': 0.8, \'manybody\': 0.8}' in the_str
+        assert 'Kernel: [\'twobody\', \'threebody\']' in the_str #, \'manybody\']' in the_str
+        assert 'Cutoffs: {\'twobody\': 0.8, \'threebody\': 0.8}' in the_str #, \'manybody\': 0.8}' in the_str
         assert 'Model Likelihood: ' in the_str
         if not multihyps:
             assert 'Length ' in the_str
@@ -266,9 +266,9 @@ class TestIO():
 
         dumpcompare(new_gp_dict, old_gp_dict)
 
-        for d in [1, 2, 3]:
-            assert np.all(test_gp.predict(x_t=validation_env, d=d) ==
-                          new_gp.predict(x_t=validation_env, d=d))
+        test_predict = np.hstack(test_gp.predict(x_t=validation_env))
+        new_predict = np.hstack(new_gp.predict(x_t=validation_env))
+        assert np.array_equal(test_predict, new_predict)
         assert new_gp.training_data is not test_gp.training_data
 
     @pytest.mark.parametrize('multihyps', multihyps_list)
@@ -280,9 +280,9 @@ class TestIO():
 
         new_gp = GaussianProcess.from_file('test_gp_write.pickle')
 
-        for d in [1, 2, 3]:
-            assert np.all(test_gp.predict(x_t=validation_env, d=d) ==
-                          new_gp.predict(x_t=validation_env, d=d))
+        test_predict = np.hstack(test_gp.predict(x_t=validation_env))
+        new_predict = np.hstack(new_gp.predict(x_t=validation_env))
+        assert np.array_equal(test_predict, new_predict)
 
         try:
             os.remove('test_gp_write.pickle')
@@ -293,9 +293,10 @@ class TestIO():
 
         with open('test_gp_write.json', 'r') as f:
             new_gp = GaussianProcess.from_dict(json.loads(f.readline()))
-        for d in [1, 2, 3]:
-            assert np.all(test_gp.predict(x_t=validation_env, d=d) ==
-                          new_gp.predict(x_t=validation_env, d=d))
+
+        test_predict = np.hstack(test_gp.predict(x_t=validation_env))
+        new_predict = np.hstack(new_gp.predict(x_t=validation_env))
+        assert np.array_equal(test_predict, new_predict)
         os.remove('test_gp_write.json')
 
         with raises(ValueError):

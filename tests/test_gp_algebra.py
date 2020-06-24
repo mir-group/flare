@@ -51,7 +51,7 @@ def get_random_training_set(nenv, nstruc):
                                                ['H', 'H', 'H']]},
                          parameters=parameters,
                          ones=True, random=False,
-                         verbose="DEBUG")
+                         verbose="INFO")
     hyps_mask1 = pm.as_dict()
 
     # 9 different hyper-parameters, onlye train the 0, 2, 4, 6, 8
@@ -71,22 +71,22 @@ def get_random_training_set(nenv, nstruc):
                                   'threebody':[['*', '*', '*']]},
                          parameters=parameters,
                          ones=True, random=False,
-                         verbose="DEBUG")
+                         verbose="INFO")
     hyps_mask4 = pm.as_dict()
 
     # 5 different hyper-parameters, no multihyps
     pm = ParameterHelper(kernels=['twobody', 'threebody'],
                          parameters=parameters,
                          ones=True, random=False,
-                         verbose="DEBUG")
+                         verbose="INFO")
     hyps_mask5 = pm.as_dict()
 
     hyps_mask_list = [hyps_mask1, hyps_mask2, hyps_mask3, hyps_mask4, hyps_mask5]
 
     # create training environments and forces
     cell = np.eye(3)
-    unique_species = [0, 1]
-    noa = 5
+    unique_species = [0, 1, 2, 3]
+    noa = 20
     training_data = []
     training_labels = []
     for _ in range(nenv):
@@ -135,21 +135,20 @@ def ky_mat_ref(params):
     time0 = time.time()
     ky_mat0 = get_Ky_mat(hyps, name, kernel[0], kernel[2], kernel[3],
                          energy_noise, cutoffs)
-    print("compute ky_mat serial", time.time()-time0)
+    print("time ky_mat serial", time.time()-time0)
 
     # parallel version
     time0 = time.time()
     ky_mat = \
         get_Ky_mat(hyps, name, kernel[0], kernel[2], kernel[3],
                    energy_noise, cutoffs, n_cpus=2, n_sample=5)
-    print("compute ky_mat parallel", time.time()-time0)
+    print("time ky_mat parallel ", time.time()-time0)
 
     assert np.isclose(ky_mat, ky_mat0, rtol=1e-3).all(), \
             "parallel implementation is wrong"
 
     yield ky_mat0
     del ky_mat0
-
 
 @pytest.mark.parametrize('ihyps', [0, 1])
 def test_ky_mat(params, ihyps, ky_mat_ref):
@@ -165,6 +164,7 @@ def test_ky_mat(params, ihyps, ky_mat_ref):
                         energy_noise, cutoffs, hyps_mask)
     print(f"compute ky_mat with multihyps, test {ihyps}, n_cpus=1",
           time.time()-time0)
+
     assert np.isclose(ky_mat, ky_mat_ref, rtol=1e-3).all(), \
             "multi hyps implementation is wrong"\
             f"with case {ihyps}"
@@ -173,12 +173,12 @@ def test_ky_mat(params, ihyps, ky_mat_ref):
     time0 = time.time()
     ky_mat = get_Ky_mat(hyps, name, kernel[0], kernel[2], kernel[3],
                         energy_noise, cutoffs, hyps_mask, n_cpus=2,
-                        n_sample=20)
+                        n_sample=1)
+    newtime = time.time()-time0
     print(f"compute ky_mat with multihyps, test {ihyps}, n_cpus=2",
-          time.time()-time0)
+          newtime)
     assert np.isclose(ky_mat, ky_mat_ref, rtol=1e-3).all(), \
             f"multi hyps  parallel implementation is wrong with case {ihyps}"
-
 
 @pytest.mark.parametrize('ihyps', [0, 1, -1])
 def test_ky_mat_update(params, ihyps):
@@ -196,6 +196,7 @@ def test_ky_mat_update(params, ihyps):
     flare.gp_algebra._global_training_data['old'] = training_data[:n]
     flare.gp_algebra._global_training_structures['old'] = \
         training_structures[:s]
+
     func = [get_Ky_mat, get_ky_mat_update]
 
 
@@ -235,11 +236,11 @@ def test_kernel_vector(params, ihyps):
     kernel = str_to_kernel_set(hyps_mask['kernels'], 'mc', hyps_mask)
 
     # test the parallel implementation for multihyps
-    vec = get_kernel_vector(name, kernel[0], kernel[3], test_point, 1,
+    vec = get_kernel_vector(name, kernel[0], kernel[3], test_point,
                             hyps, cutoffs, hyps_mask)
 
     vec_par = \
-        get_kernel_vector(name, kernel[0], kernel[3], test_point, 1, hyps,
+        get_kernel_vector(name, kernel[0], kernel[3], test_point, hyps,
                           cutoffs, hyps_mask, n_cpus=2, n_sample=100)
 
     assert (np.isclose(vec, vec_par, rtol=1e-4).all()), "parallel implementation is wrong"
@@ -281,13 +282,18 @@ def test_ky_and_hyp(params, ihyps, ky_mat_ref):
 
     func = get_ky_and_hyp
 
+    # first check consistency
+
     # serial version
     hypmat_ser, ky_mat_ser = func(hyps, name, kernel[1], cutoffs,
-                                  hyps_mask)
+                                            hyps_mask)
+
     # parallel version
     hypmat_par, ky_mat_par = func(hyps, name, kernel[1], cutoffs,
-                                  hyps_mask, n_cpus=2)
-
+                                            hyps_mask, n_cpus=2)
+    # # get_Ky_mat version
+    # ky_mat_all = get_Ky_mat(hyps, name, kernel[0], kernel[2],
+    #                         kernel[3], 0, cutoffs, hyps_mask)
     ref = ky_mat_ref[:ky_mat_ser.shape[0], :ky_mat_ser.shape[1]]
 
     assert np.isclose(ky_mat_ser, ref, rtol=1e-5).all(), \
@@ -297,10 +303,8 @@ def test_ky_and_hyp(params, ihyps, ky_mat_ref):
     assert np.isclose(hypmat_ser, hypmat_par, rtol=1e-5).all(), \
             "serial implementation is not consistent with parallel implementation"
 
-
-    # analytical form
-    hyp_mat, ky_mat = func(hyps, name, kernel[1], cutoffs, hyps_mask)
-    _, like_grad = get_like_grad_from_mats(ky_mat, hyp_mat, name)
+    # compare analytical gradient to numerical gradients
+    _, like_grad = get_like_grad_from_mats(ky_mat_ser, hypmat_ser, name)
 
     delta = 0.001
     for i in range(len(hyps)):
@@ -321,6 +325,7 @@ def test_ky_and_hyp(params, ihyps, ky_mat_ref):
 
         # numerical form
         numeric = (like_p-like_m)/2./delta
+        print(like_grad[i], numeric)
         assert np.isclose(like_grad[i], numeric, rtol=1e-3 ), \
                 f"wrong calculation of hyp_mat {i}"
 

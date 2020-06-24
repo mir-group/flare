@@ -1,5 +1,6 @@
 import numpy as np
 from math import floor, ceil
+from time import time
 
 from typing import List
 
@@ -161,6 +162,10 @@ class SingleMap3body(SingleMapXbody):
             kernel_info: return value of the get_3b_kernel
         """
 
+        filename=f"{name}_{self.species_code}_{s}_{e}"
+        with open(filename, "a") as f:
+            print("open", time(), file=f)
+
         grid_kernel, _, _, cutoffs, hyps, hyps_mask = kernel_info
 
         args = from_mask_to_args(hyps, cutoffs, hyps_mask)
@@ -196,10 +201,12 @@ class SingleMap3body(SingleMapXbody):
         else:
             n_chunk = 1
 
+        timeloop = time()
         for m_index in range(s, e):
             data = training_data[m_index]
             kern_vec = []
             for g in range(n_chunk):
+                time0 = time()
                 gs = chunk_size * g
                 ge = np.min((chunk_size * (g + 1), n_grids))
                 grid_chunk = grids[gs:ge, :]
@@ -208,12 +215,20 @@ class SingleMap3body(SingleMapXbody):
                 kv_chunk = grid_kernel(kern_type, data, grid_chunk, fj_chunk, fdj_chunk,
                                        env12.ctype, env12.etypes, *args)
                 kern_vec.append(kv_chunk)
+                with open(filename, "a") as f:
+                    print("compute", m_index, g, time()-time0, file=f)
             kern_vec = np.hstack(kern_vec)
             k_v.append(kern_vec)
+        with open(filename, "a") as f:
+            print("end", time()-timeloop, file=f)
 
+        time0 = time()
         if len(k_v) > 0:
             k_v = np.vstack(k_v).T
         else:
             k_v = np.zeros((grids.shape[0], 0))
+
+        with open(filename, "a") as f:
+            print("done", time()-time0, file=f)
 
         return k_v

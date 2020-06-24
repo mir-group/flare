@@ -687,29 +687,25 @@ def two_body_jit(bond_array_1, bond_array_2, sig, ls,
 
     for m in range(bond_array_1.shape[0]):
         ri = bond_array_1[m, 0]
-        ci = np.zeros((3, 3), dtype=np.float64)
-        ci[0, :] += bond_array_1[m, 1]
-        ci[1, :] += bond_array_1[m, 2]
-        ci[2, :] += bond_array_1[m, 3]
+        ci = bond_array_1[m, 1:]
         fi, fdi = cutoff_func(r_cut, ri, ci)
 
         for n in range(bond_array_2.shape[0]):
             rj = bond_array_2[n, 0]
-            cj = np.zeros((3, 3), dtype=np.float64)
-            cj[:, 0] += bond_array_2[n, 1]
-            cj[:, 1] += bond_array_2[n, 2]
-            cj[:, 2] += bond_array_2[n, 3]
+            cj = bond_array_2[n, 1:]
             fj, fdj = cutoff_func(r_cut, rj, cj)
 
             r11 = ri - rj
 
-            A = ci * cj
-            B = r11 * ci
-            C = r11 * cj
             D = r11 * r11
-
-            kern += force_helper(A, B, C, D, fi, fj, fdi, fdj, ls1, ls2,
-                                 ls3, sig2)
+            for d1 in range(3):
+                for d2 in range(3):
+                    A = ci[d1] * cj[d2]
+                    B = r11 * ci[d1]
+                    C = r11 * cj[d2]
+                    kern[d1, d2] += force_helper(A, B, C, D, fi, fj,
+                                                 fdi[d1], fdj[d2], ls1,
+                                                 ls2, ls3, sig2)
 
     return kern
 
@@ -744,34 +740,30 @@ def two_body_grad_jit(bond_array_1, bond_array_2, sig, ls,
 
     for m in range(bond_array_1.shape[0]):
         ri = bond_array_1[m, 0]
-        ci = np.zeros((3, 3), dtype=np.float64)
-        ci[0, :] += bond_array_1[m, 1]
-        ci[1, :] += bond_array_1[m, 2]
-        ci[2, :] += bond_array_1[m, 3]
+        ci = bond_array_1[m, 1:]
         fi, fdi = cutoff_func(r_cut, ri, ci)
 
         for n in range(bond_array_2.shape[0]):
             rj = bond_array_2[n, 0]
-            cj = np.zeros((3, 3), dtype=np.float64)
-            cj[:, 0] += bond_array_2[n, 1]
-            cj[:, 1] += bond_array_2[n, 2]
-            cj[:, 2] += bond_array_2[n, 3]
+            cj = bond_array_2[n, 1:]
             fj, fdj = cutoff_func(r_cut, rj, cj)
 
             r11 = ri - rj
 
-            A = ci * cj
-            B = r11 * ci
-            C = r11 * cj
             D = r11 * r11
 
-            kern_term, sig_term, ls_term = \
-                grad_helper(A, B, C, D, fi, fj, fdi, fdj, ls1, ls2, ls3, ls4,
-                            ls5, ls6, sig2, sig3)
+            for d1 in range(3):
+                for d2 in range(3):
+                     A = ci[d1] * cj[d2]
+                     B = r11 * ci[d1]
+                     C = r11 * cj[d2]
+                     kern_term, sig_term, ls_term = \
+                         grad_helper(A, B, C, D, fi, fj, fdi[d1], fdj[d2],
+                                     ls1, ls2, ls3, ls4, ls5, ls6, sig2, sig3)
 
-            kern += kern_term
-            sig_derv += sig_term
-            ls_derv += ls_term
+                     kern[d1, d2] += kern_term
+                     sig_derv[d1, d2] += sig_term
+                     ls_derv[d1, d2] += ls_term
 
     return kern, ls_derv, sig_derv
 
@@ -915,19 +907,13 @@ def three_body_jit(bond_array_1, bond_array_2,
 
     for m in range(bond_array_1.shape[0]):
         ri1 = bond_array_1[m, 0]
-        ci1 = np.zeros((3, 3), dtype=np.float64)
-        ci1[0, :] += bond_array_1[m, 1]
-        ci1[1, :] += bond_array_1[m, 2]
-        ci1[2, :] += bond_array_1[m, 3]
+        ci1 = bond_array_1[m, 1:]
         fi1, fdi1 = cutoff_func(r_cut, ri1, ci1)
 
         for n in range(triplets_1[m]):
             ind1 = cross_bond_inds_1[m, m + n + 1]
             ri2 = bond_array_1[ind1, 0]
-            ci2 = np.zeros((3, 3), dtype=np.float64)
-            ci2[0, :] += bond_array_1[ind1, 1]
-            ci2[1, :] += bond_array_1[ind1, 2]
-            ci2[2, :] += bond_array_1[ind1, 3]
+            ci2 = bond_array_1[ind1, 1:]
             fi2, fdi2 = cutoff_func(r_cut, ri2, ci2)
 
             ri3 = cross_bond_dists_1[m, m + n + 1]
@@ -938,19 +924,13 @@ def three_body_jit(bond_array_1, bond_array_2,
 
             for p in range(bond_array_2.shape[0]):
                 rj1 = bond_array_2[p, 0]
-                cj1 = np.zeros((3, 3), dtype=np.float64)
-                cj1[:, 0] += bond_array_2[p, 1]
-                cj1[:, 1] += bond_array_2[p, 2]
-                cj1[:, 2] += bond_array_2[p, 3]
+                cj1 = bond_array_2[p, 1:]
                 fj1, fdj1 = cutoff_func(r_cut, rj1, cj1)
 
                 for q in range(triplets_2[p]):
                     ind2 = cross_bond_inds_2[p, p + 1 + q]
                     rj2 = bond_array_2[ind2, 0]
-                    cj2 = np.zeros((3, 3), dtype=np.float64)
-                    cj2[:, 0] += bond_array_2[ind2, 1]
-                    cj2[:, 1] += bond_array_2[ind2, 2]
-                    cj2[:, 2] += bond_array_2[ind2, 3]
+                    cj2 = bond_array_2[ind2, 1:]
                     fj2, fdj2 = cutoff_func(r_cut, rj2, cj2)
 
                     rj3 = cross_bond_dists_2[p, p + 1 + q]
@@ -959,9 +939,14 @@ def three_body_jit(bond_array_1, bond_array_2,
                     fj = fj1 * fj2 * fj3
                     fdj = fdj1 * fj2 * fj3 + fj1 * fdj2 * fj3
 
-                    kern += triplet_kernel(ci1, ci2, cj1, cj2, ri1, ri2, ri3,
-                                           rj1, rj2, rj3, fi, fj, fdi, fdj,
-                                           ls1, ls2, ls3, sig2)
+                    for d1 in range(3):
+                        for d2 in range(3):
+                             kern[d1, d2] += triplet_kernel(ci1[d1], ci2[d1],
+                                                            cj1[d2], cj2[d2],
+                                                            ri1, ri2, ri3,
+                                                            rj1, rj2, rj3,
+                                                            fi, fj, fdi[d1], fdj[d2],
+                                                            ls1, ls2, ls3, sig2)
     return kern
 
 
@@ -1021,20 +1006,14 @@ def three_body_grad_jit(bond_array_1, bond_array_2,
 
     for m in range(bond_array_1.shape[0]):
         ri1 = bond_array_1[m, 0]
-        ci1 = np.zeros((3, 3), dtype=np.float64)
-        ci1[0, :] += bond_array_1[m, 1]
-        ci1[1, :] += bond_array_1[m, 2]
-        ci1[2, :] += bond_array_1[m, 3]
+        ci1 = bond_array_1[m, 1:]
         fi1, fdi1 = cutoff_func(r_cut, ri1, ci1)
 
         for n in range(triplets_1[m]):
             ind1 = cross_bond_inds_1[m, m + n + 1]
             ri3 = cross_bond_dists_1[m, m + n + 1]
             ri2 = bond_array_1[ind1, 0]
-            ci2 = np.zeros((3, 3), dtype=np.float64)
-            ci2[0, :] += bond_array_1[ind1, 1]
-            ci2[1, :] += bond_array_1[ind1, 2]
-            ci2[2, :] += bond_array_1[ind1, 3]
+            ci2 = bond_array_1[ind1, 1:]
 
             fi2, fdi2 = cutoff_func(r_cut, ri2, ci2)
             fi3, _ = cutoff_func(r_cut, ri3, 0)
@@ -1044,20 +1023,14 @@ def three_body_grad_jit(bond_array_1, bond_array_2,
 
             for p in range(bond_array_2.shape[0]):
                 rj1 = bond_array_2[p, 0]
-                cj1 = np.zeros((3, 3), dtype=np.float64)
-                cj1[:, 0] += bond_array_2[p, 1]
-                cj1[:, 1] += bond_array_2[p, 2]
-                cj1[:, 2] += bond_array_2[p, 3]
+                cj1 = bond_array_2[p, 1:]
                 fj1, fdj1 = cutoff_func(r_cut, rj1, cj1)
 
                 for q in range(triplets_2[p]):
                     ind2 = cross_bond_inds_2[p, p + q + 1]
                     rj3 = cross_bond_dists_2[p, p + q + 1]
                     rj2 = bond_array_2[ind2, 0]
-                    cj2 = np.zeros((3, 3), dtype=np.float64)
-                    cj2[:, 0] += bond_array_2[ind2, 1]
-                    cj2[:, 1] += bond_array_2[ind2, 2]
-                    cj2[:, 2] += bond_array_2[ind2, 3]
+                    cj2 = bond_array_2[ind2, 1:]
 
                     fj2, fdj2 = cutoff_func(r_cut, rj2, cj2)
                     fj3, _ = cutoff_func(r_cut, rj3, 0)
@@ -1065,15 +1038,20 @@ def three_body_grad_jit(bond_array_1, bond_array_2,
                     fj = fj1 * fj2 * fj3
                     fdj = fdj1 * fj2 * fj3 + fj1 * fdj2 * fj3
 
-                    N, O, X = \
-                        triplet_kernel_grad(ci1, ci2, cj1, cj2, ri1, ri2, ri3,
-                                            rj1, rj2, rj3, fi, fj, fdi, fdj,
-                                            ls1, ls2, ls3, ls4, ls5, ls6, sig2,
-                                            sig3)
+                    for d1 in range(3):
+                        for d2 in range(3):
+                            N, O, X = \
+                                triplet_kernel_grad(ci1[d1], ci2[d1],
+                                                    cj1[d2], cj2[d2],
+                                                    ri1, ri2, ri3,
+                                                    rj1, rj2, rj3,
+                                                    fi, fj, fdi[d1], fdj[d2],
+                                                    ls1, ls2, ls3, ls4, ls5,
+                                                    ls6, sig2, sig3)
 
-                    kern += N
-                    sig_derv += O
-                    ls_derv += X
+                            kern[d1, d2] += N
+                            sig_derv[d1, d2] += O
+                            ls_derv[d1, d2] += X
 
     return kern, sig_derv, ls_derv
 
@@ -1325,9 +1303,10 @@ def many_body_jit(q_array_1, q_array_2,
 
             kij = k_sq_exp_double_dev(qis, qjs, sig, ls)
 
+            k12ij = (k12 + ki2s + k1js + kij)
             for d1 in range(3):
                 for d2 in range(3):
-                    kern[d1,d2] += qi_grad[d1] * qj_grad[d2] * (k12 + ki2s + k1js + kij)
+                    kern[d1, d2] += qi_grad[d1] * qj_grad[d2] * k12ij
 
     return kern
 
@@ -1372,28 +1351,24 @@ def many_body_grad_jit(q_array_1, q_array_2,
     k12 = k_sq_exp_double_dev(q1, q2, sig, ls)
 
     for i in range(q_neigh_array_1.shape[0]):
-        qi_grad = np.zeros((3, 3), dtype=np.float64)
-        qi_grad[0, :] += q_neigh_grads_1[i, 0]
-        qi_grad[1, :] += q_neigh_grads_1[i, 1]
-        qi_grad[2, :] += q_neigh_grads_1[i, 2]
+        qi_grad = q_neigh_grads_1[i, :]
         qis = np.sum(q_neigh_array_1[i, :])
         ki2s = k_sq_exp_double_dev(qis, q2, sig, ls)
 
         for j in range(q_neigh_array_2.shape[0]):
-            qj_grad = np.zeros((3, 3), dtype=np.float64)
-            qj_grad[0, :] += q_neigh_grads_2[j, 0]
-            qj_grad[1, :] += q_neigh_grads_2[j, 1]
-            qj_grad[2, :] += q_neigh_grads_2[j, 2]
+            qj_grad = q_neigh_grads_2[j, :]
             qjs = np.sum(q_neigh_array_2[j, :])
             k1js = k_sq_exp_double_dev(q1, qjs, sig, ls)
 
             kij = k_sq_exp_double_dev(qis, qjs, sig, ls)
-
-            kern_term = qi_grad * qj_grad * (k12 + ki2s + k1js + kij)
-            sig_derv += 2. / sig * kern_term
-            ls_derv += qi_grad * qj_grad * \
-                mb_grad_helper_ls(q1, q2, qis, qjs, sig, ls)
-            kern += kern_term
+            mgh = mb_grad_helper_ls(q1, q2, qis, qjs, sig, ls)
+            k12ij = (k12 + ki2s + k1js + kij)
+            for d1 in range(3):
+                for d2 in range(3):
+                    kern_term = qi_grad[d1] * qj_grad[d2] * k12ij
+                    sig_derv[d1, d2] += 2. / sig * kern_term
+                    ls_derv[d1, d2] += qi_grad[d1] * qj_grad[d2] * mgh
+                    kern[d1, d2] += kern_term
 
     return kern, sig_derv, ls_derv
 
