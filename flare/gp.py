@@ -299,7 +299,7 @@ class GaussianProcess:
         if train:
             self.train(**kwargs)
 
-    def train(self, logger=None, custom_bounds=None,
+    def train(self, logger_name=None, custom_bounds=None,
               grad_tol: float = 1e-4,
               x_tol: float = 1e-5,
               line_steps: int = 20,
@@ -309,7 +309,7 @@ class GaussianProcess:
         (related to the covariance matrix of the training set).
 
         Args:
-            logger (logging.logger): logger object specifying where to write the
+            logger_name (str): name of logger object specifying where to write the
                 progress of the optimization.
             custom_bounds (np.ndarray): Custom bounds on the hyperparameters.
             grad_tol (float): Tolerance of the hyperparameter gradient that
@@ -323,10 +323,11 @@ class GaussianProcess:
         verbose = "info"
         if print_progress:
             verbose = "debug"
-        if logger is None:
-            logger = set_logger("gp_algebra", stream=True,
-                                fileout_name="log.gp_algebra",
-                                verbose=verbose)
+        if logger_name is None:
+            set_logger("gp_algebra", stream=False,
+                       fileout_name="log.gp_algebra",
+                       verbose=verbose)
+            logger_name = "gp_algebra"
 
         disp = print_progress
 
@@ -337,7 +338,7 @@ class GaussianProcess:
 
         x_0 = self.hyps
 
-        args = (self.name, self.kernel_grad, logger,
+        args = (self.name, self.kernel_grad, logger_name,
                 self.cutoffs, self.hyps_mask,
                 self.n_cpus, self.n_sample)
 
@@ -825,12 +826,12 @@ class GaussianProcess:
                     split_matrix_size_cutoff: int = 5000):
         """
         Write model in a variety of formats to a file for later re-use.
-        JSON files are open to visual inspection and are easier to use 
+        JSON files are open to visual inspection and are easier to use
         across different versions of FLARE or GP implementations. However,
         they are larger and loading them in takes longer (by setting up a
         new GP from the specifications). Pickled files can be faster to
         read & write, and they take up less memory.
-        
+
         Args:
             name (str): Output name.
             format (str): Output format.
