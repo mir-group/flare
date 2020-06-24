@@ -46,7 +46,7 @@ def compare_triplet(mgp_model, gp_model, atom_env):
         xyzs = np.zeros_like(xyzs)
         xyzs[:, 0] = np.ones_like(xyzs[:, 0])
         f, _, _, e = mgp_model.maps[map_ind].predict(lengths, xyzs,
-            mgp_model.map_force, mean_only=True)
+            mgp_model.map_force, var_map=None)
 
         assert np.allclose(gp_force, f, rtol=1e-2)
         if not mgp_model.map_force:

@@ -32,7 +32,7 @@ class MapXbody:
                  svd_rank = 'auto',
                  coded_species: list=[],
                  map_force: bool=False,
-                 mean_only: bool=True,
+                 var_map: str=None,
                  container_only: bool=True,
                  lmp_file_name: str='lmp.mgp',
                  load_grid: str=None,
@@ -51,7 +51,7 @@ class MapXbody:
         self.svd_rank = svd_rank
         self.coded_species = coded_species
         self.map_force = map_force
-        self.mean_only = mean_only
+        self.var_map = var_map
         self.lmp_file_name = lmp_file_name
         self.load_grid = load_grid
         self.lower_bound_relax = lower_bound_relax
@@ -104,7 +104,7 @@ class MapXbody:
             m.build_map(GP)
 
 
-    def predict(self, atom_env, mean_only):
+    def predict(self, atom_env):
 
         assert Parameters.compare_dict(self.hyps_mask, atom_env.cutoffs_mask),\
             'GP.hyps_mask is not the same as atom_env.cutoffs_mask'
@@ -115,15 +115,12 @@ class MapXbody:
             raise ValueError(f'The minimal distance {min_dist:.3f} is below the'
                 f' mgp lower bound {lower_bound:.3f}')
 
-        if self.mean_only:  # if not build mapping for var
-            mean_only = True
-
         force_kernel, en_kernel, _, cutoffs, hyps, hyps_mask = self.kernel_info
 
         args = from_mask_to_args(hyps, cutoffs, hyps_mask)
 
         kern = 0
-        if not mean_only:
+        if self.var_map == 'pca':
             if self.map_force:
                 kern = np.zeros(3)
                 for d in range(3):
@@ -144,7 +141,7 @@ class MapXbody:
             map_ind = self.find_map_index(spc)
 
             f, vir, v, e = self.maps[map_ind].predict(lengths, xyzs,
-                self.map_force, mean_only)
+                self.map_force)
             f_spcs += f
             vir_spcs += vir
             v_spcs += v
@@ -161,8 +158,8 @@ class MapXbody:
         out_dict.pop('kernel_info')
 
         # Uncertainty mappings currently not serializable;
-        if not self.mean_only:
-            out_dict['mean_only'] = True
+        if self.var_map is not None:
+            out_dict['var_map'] = None
 
         # only save the mean coefficients
         out_dict['maps'] = [m.mean.__coeffs__ for m in self.maps]
@@ -210,7 +207,7 @@ class MapXbody:
 
 class SingleMapXbody:
     def __init__(self, grid_num: int=1, bounds='auto', species: list=[],
-                 map_force=False, svd_rank=0, mean_only: bool=False,
+                 map_force=False, svd_rank=0, var_map: str=None,
                  load_grid=None, lower_bound_relax=0.1,
                  n_cpus: int=None, n_sample: int=100, **kwargs):
 
@@ -219,7 +216,7 @@ class SingleMapXbody:
         self.species = species
         self.map_force = map_force
         self.svd_rank = svd_rank
-        self.mean_only = mean_only
+        self.var_map = var_map
         self.load_grid = load_grid
         self.lower_bound_relax = lower_bound_relax
         self.n_cpus = n_cpus
@@ -294,7 +291,7 @@ class SingleMapXbody:
         # ------ construct grids ------
         n_grid = np.prod(self.grid_num)
         grid_mean = np.zeros([n_grid])
-        if not self.mean_only:
+        if self.var_map is not None:
             grid_vars = np.zeros([n_grid, len(GP.alpha)])
         else:
             grid_vars = None
@@ -339,14 +336,14 @@ class SingleMapXbody:
         grid_mean = k12_v_all @ GP.alpha
         grid_mean = np.reshape(grid_mean, self.grid_num)
 
-        if not self.mean_only:
+        if self.var_map == 'simple': 
             grid_vars = solve_triangular(GP.l_mat, k12_v_all.T, lower=True).T
-            if self.svd_rank == 'simple': #TODO: not use svd_rank, but change mean_only to var_option or whatever
-                self_kern = self._gengrid_var_simple(*args_var) 
-                grid_vars = np.sqrt(self_kern - np.sum(grid_vars**2, axis=1))
-            else:
-                tensor_shape = np.array([*self.grid_num, grid_vars.shape[1]])
-                grid_vars = np.reshape(grid_vars, tensor_shape)
+            self_kern = self._gengrid_var_simple(*args_var) 
+            grid_vars = np.sqrt(self_kern - np.sum(grid_vars**2, axis=1))
+        elif self.var_map == 'pca':
+            grid_vars = solve_triangular(GP.l_mat, k12_v_all.T, lower=True).T
+            tensor_shape = np.array([*self.grid_num, grid_vars.shape[1]])
+            grid_vars = np.reshape(grid_vars, tensor_shape)
 
         # ------ save mean and var to file -------
         if 'mgp_grids' not in os.listdir('./'):
@@ -454,18 +451,20 @@ class SingleMapXbody:
         self.mean = CubicSpline(self.bounds[0], self.bounds[1],
                                 orders=self.grid_num)
 
-        if not self.mean_only:
+        if self.var_map == 'pca':
             if self.svd_rank == 'auto':
                 warnings.warn("The containers for variance are not built because svd_rank='auto'")
 
-            if self.svd_rank == 'simple':
-                self.var = CubicSpline(self.bounds[0], self.bounds[1],
-                                        orders=self.grid_num)
-
-            if isinstance(self.svd_rank, int):
+            elif isinstance(self.svd_rank, int):
                 self.var = PCASplines(self.bounds[0], self.bounds[1],
                                       orders=self.grid_num,
                                       svd_rank=self.svd_rank)
+
+        if self.var_map == 'simple':
+            self.var = CubicSpline(self.bounds[0], self.bounds[1],
+                                    orders=self.grid_num)
+
+
 
     def update_bounds(self, GP):
         rebuild_container = False
@@ -510,13 +509,14 @@ class SingleMapXbody:
             y_var = np.load(f'{grid_path}_var.npy', allow_pickle=True)
 
         self.mean.set_values(y_mean)
-        if not self.mean_only:
-            if self.svd_rank == 'auto':
-                self.var = PCASplines(self.bounds[0], self.bounds[1],
-                                      orders=self.grid_num,
-                                      svd_rank=np.min(y_var.shape))
-            self.var.set_values(y_var)
 
+        if self.var_map == 'pca' and self.svd_rank == 'auto':
+            self.var = PCASplines(self.bounds[0], self.bounds[1],
+                                  orders=self.grid_num,
+                                  svd_rank=np.min(y_var.shape))
+
+        if self.var_map is not None:
+            self.var.set_values(y_var)
 
         self.hyps_mask = deepcopy(GP.hyps_mask)
 
@@ -535,10 +535,12 @@ class SingleMapXbody:
         else:
             info += f'        build energy mapping\n'
 
-        if self.mean_only:
+        if self.var_map is None:
             info += f'        without variance\n'
-        else:
-            info += f'        with variance, svd_rank = {self.svd_rank}\n'
+        elif self.var_map == 'pca':
+            info += f'        with PCA variance, svd_rank = {self.svd_rank}\n'
+        elif self.var_map == 'simple':
+            info += f'        with simple variance'
 
         return info
 
@@ -566,7 +568,7 @@ class SingleMapXbody:
         return lower_bound
 
 
-    def predict(self, lengths, xyzs, map_force, mean_only):
+    def predict(self, lengths, xyzs, map_force):
         '''
         predict force and variance contribution of one component
         '''
@@ -586,7 +588,7 @@ class SingleMapXbody:
 
             # predict var
             v = np.zeros(3)
-            if not mean_only:
+            if self.var_map is not None:
                 v_0 = self.var(lengths)
                 v_d = v_0 @ xyzs
                 v = self.var.V @ v_d
@@ -600,15 +602,15 @@ class SingleMapXbody:
 
             # predict var
             v = 0
-            if not mean_only:
+            if self.var_map == 'simple':
                 v_0 = self.var(lengths)
-                if self.svd_rank == 'simple':
-                    v_0 = np.sum(v_0)
-                    v = v_0 ** 2
-                else:
-                    v_0 = np.sum(v_0, axis=1)
-                    v_0 = np.expand_dims(v_0, axis=1)
-                    v = self.var.V @ v_0
+                v_0 = np.sum(v_0)
+                v = v_0 ** 2
+            elif self.var_map == 'pca':
+                v_0 = self.var(lengths)
+                v_0 = np.sum(v_0, axis=1)
+                v_0 = np.expand_dims(v_0, axis=1)
+                v = self.var.V @ v_0
 
         # predict virial stress
         vir = np.zeros(6)

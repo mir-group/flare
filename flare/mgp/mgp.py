@@ -34,7 +34,11 @@ class MappedGaussianProcess:
         GP (GaussianProcess): None or a GaussianProcess object. If a GP is input,
             and container_only is False, automatically build a mapping corresponding
             to the GaussianProcess.
-        mean_only (bool): if True: only build mapping for mean (force)
+        var_map (str): if None: only build mapping for mean (force). If 'pca', then 
+            use PCA to map the variance, based on `grid_params['xxbody']['svd_rank']`.
+            If 'simple', then only map the diagonal of covariance, and predict the 
+            upper bound of variance. The 'pca' mode is much heavier in terms of 
+            memory, but its prediction is much closer to GP variance.
         container_only (bool): if True: only build splines container
             (with no coefficients); if False: Attempt to build map immediately
         lmp_file_name (str): LAMMPS coefficient file name
@@ -92,7 +96,7 @@ class MappedGaussianProcess:
                  unique_species: list=[],
                  map_force: bool=False,
                  GP: GaussianProcess=None,
-                 mean_only: bool=True,
+                 var_map: str=None,
                  container_only: bool=True,
                  lmp_file_name: str='lmp.mgp',
                  n_cpus: int=None,
@@ -100,7 +104,7 @@ class MappedGaussianProcess:
 
         # load all arguments as attributes
         self.map_force = map_force
-        self.mean_only = mean_only
+        self.var_map = var_map
         self.lmp_file_name = lmp_file_name
         self.n_cpus = n_cpus
         self.n_sample = n_sample
@@ -160,15 +164,14 @@ class MappedGaussianProcess:
         self.write_lmp_file(self.lmp_file_name)
 
 
-    def predict(self, atom_env: AtomicEnvironment, mean_only: bool = True,
-            ) -> (float, 'ndarray', 'ndarray', float):
+    def predict(self, atom_env: AtomicEnvironment) \
+                -> ('ndarray', 'ndarray', 'ndarray', float):
         '''
         predict force, variance, stress and local energy for given
         atomic environment
 
         Args:
             atom_env: atomic environment (with a center atom and its neighbors)
-            mean_only: if True: only predict force (variance is always 0)
 
         Return:
             force: 3d array of atomic force
@@ -179,14 +182,17 @@ class MappedGaussianProcess:
 
         force = virial = kern = v = energy = 0
         for xb in self.maps:
-            pred = self.maps[xb].predict(atom_env, mean_only)
+            pred = self.maps[xb].predict(atom_env)
             force += pred[0]
             virial += pred[1]
             kern += pred[2]
             v += pred[3]
             energy += pred[4]
 
-        variance = kern - np.sum(v**2, axis=0)
+        if self.var_map == 'simple':
+            variance = v
+        else:
+            variance = kern - np.sum(v**2, axis=0)
 
         return force, variance, virial, energy
 
@@ -226,11 +232,11 @@ class MappedGaussianProcess:
         out_dict.pop('maps')
 
         # Uncertainty mappings currently not serializable;
-        if not self.mean_only:
+        if self.var_map is not None:
             warnings.warn("Uncertainty mappings cannot be serialized, "
                           "and so the MGP dict outputted will not have "
                           "them.", Warning)
-            out_dict['mean_only'] = True
+            out_dict['var_map'] = None
 
         # only save the coefficients
         maps_dict = {}
@@ -257,7 +263,7 @@ class MappedGaussianProcess:
             dictionary['container_only'] = True
 
         init_arg_name = ['grid_params', 'unique_species', 'map_force', 'GP',
-            'mean_only', 'container_only', 'lmp_file_name', 'n_cpus', 'n_sample']
+            'var_map', 'container_only', 'lmp_file_name', 'n_cpus', 'n_sample']
         kwargs = {key: dictionary[key] for key in init_arg_name}
         new_mgp = MappedGaussianProcess(**kwargs)
 

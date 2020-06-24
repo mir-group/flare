@@ -120,7 +120,7 @@ def flare_calc():
                                           unique_species = [1, 2],
                                           n_cpus = 1,
                                           map_force = False,
-                                          mean_only = False)
+                                          var_map = 'pca')
 
         # ------------ create ASE's flare calculator -----------------------
         flare_calculator = FLARE_Calculator(gp_model, mgp_model=mgp_model,

@@ -70,9 +70,9 @@ def test_init(bodies, multihyps, map_force, all_mgp, all_gp):
     # grid parameters
     grid_params = {}
     if ('2' in bodies):
-        grid_params['twobody'] = {'grid_num': [64], 'lower_bound': [0.01], 'svd_rank': 'simple'}
+        grid_params['twobody'] = {'grid_num': [64], 'lower_bound': [0.01]}
     if ('3' in bodies):
-        grid_params['threebody'] = {'grid_num': [24, 25, 26], 'lower_bound':[0.01]*3, 'svd_rank': 'simple'}
+        grid_params['threebody'] = {'grid_num': [24, 25, 26], 'lower_bound':[0.01]*3}
 
     lammps_location = f'{bodies}{multihyps}{map_force}.mgp'
     data = gp_model.training_statistics
@@ -81,7 +81,7 @@ def test_init(bodies, multihyps, map_force, all_mgp, all_gp):
                                       unique_species=data['species'], n_cpus=1,
                                       map_force=map_force, 
                                       lmp_file_name=lammps_location,
-                                      mean_only=False)
+                                      var_map='simple')
     all_mgp[f'{bodies}{multihyps}{map_force}'] = mgp_model
 
 
