@@ -62,7 +62,6 @@ class Structure:
 
         # Set positions.
         self.positions = np.array(positions)
-        self.wrapped_positions = self.wrap_positions(in_place=False)
 
         # If species are strings, convert species to integers by atomic number
         if species_labels is None:
@@ -109,6 +108,19 @@ class Structure:
                     mass_dict[element_to_Z(elt)] = mass_dict[elt]
                     if elt.isnumeric():
                         mass_dict[int(elt)] = mass_dict[elt]
+
+    @property
+    def positions(self):
+        return self._positions
+    
+    @property
+    def wrapped_positions(self):
+        return self._wrapped_positions
+
+    @positions.setter
+    def positions(self, position_array):
+        self._positions = position_array
+        self._wrapped_positions = self.wrap_positions()
 
     @property
     def cell(self):
@@ -214,14 +226,12 @@ class Structure:
         return np.matmul(np.matmul(relative_positions, cell_dot),
                          cell_transpose_inverse)
 
-    def wrap_positions(self, in_place: bool = True) -> 'ndarray':
+    def wrap_positions(self) -> 'ndarray':
         """
         Convenience function which folds atoms outside of the unit cell back
         into the unit cell. in_place flag controls if the wrapped positions
         are set in the class.
 
-        :param in_place: If true, set the current structure positions to be
-            the wrapped positions.
         :return: Cartesian coordinates of positions all in unit cell
         :rtype: np.ndarray
         """
@@ -233,9 +243,6 @@ class Structure:
 
         pos_wrap = self.relative_to_raw(rel_wrap, self.cell_transpose_inverse,
                                         self.cell_dot)
-
-        if in_place:
-            self.wrapped_positions = pos_wrap
 
         return pos_wrap
 
@@ -298,7 +305,7 @@ class Structure:
         :return: FLARE structure assembled from dictionary
         """
         struc = Structure(cell=np.array(dictionary['_cell']),
-                          positions=np.array(dictionary['positions']),
+                          positions=np.array(dictionary['_positions']),
                           species=dictionary['coded_species'],
                           forces=np.array(dictionary.get('forces')),
                           mass_dict=dictionary.get('mass_dict'),
