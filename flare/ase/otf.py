@@ -137,12 +137,6 @@ class ASE_OTF(OTF):
         if not isinstance(self.atoms.calc, FLARE_Calculator):
             self.atoms.set_calculator(self.flare_calc)
 
-        # self.atoms.calc.results = {}
-        # f = self.atoms.get_forces(self.atoms)
-        # stds = self.atoms.get_uncertainties(self.atoms)
-        # self.structure.forces = deepcopy(f)
-        # self.structure.stds = deepcopy(stds)
-
         self.atoms.calc.calculate(self.atoms, self.structure)
 
     def md_step(self):
