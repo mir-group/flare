@@ -142,8 +142,9 @@ class Output:
         headerstring += f'Number of frames: {Nsteps}\n'
         if structure is not None:
             headerstring += f'Number of atoms: {structure.nat}\n'
-            headerstring += f'System species: {set(structure.species_labels)}\n'
-            headerstring += 'Periodic cell: \n'
+            headerstring += \
+                f'System species: {set(structure.species_labels)}\n'
+            headerstring += 'Periodic cell (A): \n'
             headerstring += str(structure.cell)+'\n'
 
         if optional:
@@ -224,9 +225,39 @@ class Output:
             string += ' ' * 4
             for j in range(3):
                 string += f'{velocities[i][j]:10.4f}'
-            string += '\n'
+            string += '\n\n'
 
-        string += '\n'
+        # Report cell if stress attribute is present.
+        if structure.stress is not None:
+            string += 'Periodic cell (A): \n'
+            string += str(structure.cell)+'\n\n'
+
+        # Report stress tensor.
+        pressure = None
+        if structure.stress is not None:
+            stress_tensor = structure.stress * eva_to_gpa  # Convert to GPa
+            s8 = ' ' * 8
+            string += 'Stress tensor (GPa):\n'
+            string += ' ' * 7 + 'xx' + s8 + 'yy' + s8 + 'zz' + s8 + 'yz' + \
+                s8 + 'xz' + s8 + 'xy\n'
+            for p in range(6):
+                string += f'{stress_tensor[p]:10.3f}'
+            string += '\n\n'
+            pressure = \
+                (stress_tensor[0] + stress_tensor[1] + stress_tensor[2]) / 3
+
+        # Report stress tensor uncertainties.
+        if structure.stress_stds is not None:
+            stress_stds = structure.stress_stds * eva_to_gpa  # Convert to GPa
+            string += 'Stress tensor uncertainties (GPa):\n'
+            for p in range(6):
+                string += f'{stress_stds[p]:10.3f}'
+            string += '\n\n'
+
+        # Report pressure.
+        if pressure is not None:
+            string += f'Pressure (GPa): {pressure:.6f} \n'
+
         string += f'Temperature: {temperature:.2f} K \n'
         string += f'Kinetic energy: {KE:.6f} eV \n'
 
@@ -244,32 +275,6 @@ class Output:
         if structure.potential_energy is not None:
             tot_en = KE + structure.potential_energy
             string += f'Total energy: {tot_en:.6f} eV \n'
-
-        # Report stress tensor.
-        pressure = None
-        if structure.stress is not None:
-            stress_tensor = structure.stress * eva_to_gpa  # Convert to GPa
-            s8 = ' ' * 8
-            string += 'Stress tensor (GPa):\n'
-            string += ' ' * 7 + 'xx' + s8 + 'yy' + s8 + 'zz' + s8 + 'yz' + \
-                s8 + 'xz' + s8 + 'xy\n'
-            for p in range(6):
-                string += f'{stress_tensor[p]:10.3f}'
-            string += '\n'
-            pressure = \
-                (stress_tensor[0] + stress_tensor[1] + stress_tensor[2]) / 3
-
-        # Report stress tensor uncertainties.
-        if structure.stress_stds is not None:
-            stress_stds = structure.stress_stds * eva_to_gpa  # Convert to GPa
-            string += 'Stress tensor uncertainties (GPa):\n'
-            for p in range(6):
-                string += f'{stress_stds[p]:10.3f}'
-            string += '\n'
-
-        # Report pressure.
-        if pressure is not None:
-            string += f'Pressure (GPa): {pressure:.6f} \n'
 
         logger = logging.getLogger(self.basename+'log')
         logger.info(string)
