@@ -602,13 +602,13 @@ def compute_const():
     ])
     
     global dAd
-    dAd = zeros((4,4))
+    dAd = zeros((4,4), dtype=np.double)
     for i in range(1,4):
         Ad_i = Ad[:, i-1]
         dAd[:,i] = (4-i) * Ad_i
     
     global d2Ad
-    d2Ad = zeros((4,4))
+    d2Ad = zeros((4,4), dtype=np.double)
     for i in range(1,4):
         dAd_i = dAd[:, i-1]
         d2Ad[:,i] = (4-i) * dAd_i
@@ -631,3 +631,4 @@ def filter_data(dinv, data):
     elif len(dinv) == 3:
         return filter_coeffs_3d(dinv, data)
 
+compute_const()
