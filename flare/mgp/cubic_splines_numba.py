@@ -13,15 +13,26 @@ _Ad = array([
     [1.0 / 6.0, 0.0 / 6.0, 0.0 / 6.0, 0.0 / 6.0]
 ])
 
-_dAd = zeros((4, 4), dtype=np.double)
-for i in range(1, 4):
-    Ad_i = _Ad[:, i - 1]
-    _dAd[:, i] = (4 - i) * Ad_i
+_dAd = array([[ 0.,  -0.5,  1.,  -0.5], 
+              [ 0.,   1.5, -2.,   0. ],
+              [ 0.,  -1.5,  1.,   0.5],
+              [ 0.,   0.5,  0.,   0. ]])
 
-_d2Ad = zeros((4, 4), dtype=np.double)
-for i in range(1, 4):
-    dAd_i = _dAd[:, i - 1]
-    _d2Ad[:, i] = (4 - i) * dAd_i
+_d2Ad = array([[ 0.,  0., -1.,  1.],
+               [ 0.,  0.,  3., -2.],
+               [ 0.,  0., -3.,  1.],
+               [ 0.,  0.,  1.,  0.]])
+
+# The dAd and d2Ad are computed from the code below
+# _dAd = zeros((4, 4), dtype=np.double)
+# for i in range(1, 4):
+#     Ad_i = _Ad[:, i - 1]
+#     _dAd[:, i] = (4 - i) * Ad_i
+# 
+# _d2Ad = zeros((4, 4), dtype=np.double)
+# for i in range(1, 4):
+#     dAd_i = _dAd[:, i - 1]
+#     _d2Ad[:, i] = (4 - i) * dAd_i
 
 
 @njit(cache=True)
