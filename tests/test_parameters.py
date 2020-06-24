@@ -40,6 +40,7 @@ def test_initialization2(ones):
     Parameters.check_instantiation(
         hm['hyps'], hm['cutoffs'], hm['kernels'], hm)
 
+
 @pytest.mark.parametrize('ones', [True, False])
 def test_initialization_allsep(ones):
     '''
@@ -80,6 +81,7 @@ def test_initialization_allsep(ones):
                              ones=ones,
                              random=not ones)
 
+
 def test_initialization3():
     """check group definition"""
     pm = ParameterHelper(species=['O', 'C', 'H'],
@@ -99,7 +101,7 @@ def test_initialization4():
     pm = ParameterHelper(species=['O', 'C', 'H'],
                          kernels={'twobody': [['*', '*'], ['O', 'O']],
                                   'threebody': [['*', '*', '*'], ['O', 'O', 'O']]},
-                         cutoff_groups={'cut3b':[['*', '*'], ['O', 'O']]},
+                         cutoff_groups={'cut3b': [['*', '*'], ['O', 'O']]},
                          parameters={'twobody0': [1, 0.5], 'twobody1': [2, 0.2],
                                      'threebody0': [1, 0.5], 'threebody1': [2, 0.2],
                                      'cut3b0': 5,
@@ -109,12 +111,13 @@ def test_initialization4():
     Parameters.check_instantiation(
         hm['hyps'], hm['cutoffs'], hm['kernels'], hm)
 
+
 def test_initialization5():
     """check universal"""
     pm = ParameterHelper(species=['O', 'C', 'H'],
                          kernels={'twobody': [['*', '*'], ['O', 'O']],
                                   'threebody': [['*', '*', '*'], ['O', 'O', 'O']]},
-                         parameters={'sigma': 1, 'lengthscale':0.5, 'cutoff_threebody':3,
+                         parameters={'sigma': 1, 'lengthscale': 0.5, 'cutoff_threebody': 3,
                                      'cutoff_twobody': 2},
                          verbose="DEBUG")
     hm = pm.as_dict()
@@ -122,7 +125,7 @@ def test_initialization5():
         hm['hyps'], hm['cutoffs'], hm['kernels'], hm)
 
     pm = ParameterHelper(kernels=['twobody', 'threebody'],
-                         parameters={'sigma':1.0, 'lengthscale':0.5,
+                         parameters={'sigma': 1.0, 'lengthscale': 0.5,
                                      'cutoff_twobody': 2,
                                      'cutoff_threebody': 1,
                                      'noise': 0.05},
@@ -130,7 +133,6 @@ def test_initialization5():
     hm = pm.as_dict()
     Parameters.check_instantiation(
         hm['hyps'], hm['cutoffs'], hm['kernels'], hm)
-
 
 
 def test_generate_by_line():
@@ -199,11 +201,13 @@ def test_generate_by_list():
     Parameters.check_instantiation(
         hm['hyps'], hm['cutoffs'], hm['kernels'], hm)
 
+
 def test_generate_by_list2():
 
     pm = ParameterHelper(verbose="DEBUG")
-    pm.list_groups('specie', {'s1':'O', 's2':['C', 'N'], 's3':'H'})
-    pm.list_groups('twobody', {'t0':['*', '*'], 't1':[['s1', 's1'], ['s1', 's3']]})
+    pm.list_groups('specie', {'s1': 'O', 's2': ['C', 'N'], 's3': 'H'})
+    pm.list_groups(
+        'twobody', {'t0': ['*', '*'], 't1': [['s1', 's1'], ['s1', 's3']]})
     pm.list_groups('threebody', [['*', '*', '*'], ['s1', 's1', 's1']])
     pm.list_parameters({'t0': [1, 0.5], 't1': [2, 0.2],
                         'threebody0': [1, 0.5], 'threebody1': [2, 0.2],
@@ -211,6 +215,7 @@ def test_generate_by_list2():
     hm = pm.as_dict()
     Parameters.check_instantiation(
         hm['hyps'], hm['cutoffs'], hm['kernels'], hm)
+
 
 def test_generate_by_list_error():
 
@@ -226,7 +231,6 @@ def test_generate_by_list_error():
     pm = ParameterHelper(verbose="DEBUG")
     with raises(RuntimeError):
         pm.list_groups('specie', 'O')
-
 
 
 def test_opt():
@@ -261,6 +265,7 @@ def test_from_dict():
     hm1 = pm1.as_dict()
     Parameters.compare_dict(hm, hm1)
 
+
 def test_constraints1():
     '''
     simplest senario
@@ -272,7 +277,7 @@ def test_constraints1():
                                      'threebody0': [1, 0.5], 'threebody1': [2, 0.2],
                                      'cutoff_twobody': 2, 'cutoff_threebody': 1},
                          constraints={'twobody0': [True, False],
-                                     'threebody0': [False,True],
+                                      'threebody0': [False, True],
                                       'noise': False},
                          verbose="DEBUG")
     hm = pm.as_dict()
@@ -280,13 +285,13 @@ def test_constraints1():
         hm['hyps'], hm['cutoffs'], hm['kernels'], hm)
     assert hm['train_noise'] is False
     hyps = hm['hyps']
-    assert len(hyps)==6
-    assert hyps[0]==1
-    assert hyps[1]==2
-    assert hyps[2]==0.2
-    assert hyps[3]==2
-    assert hyps[4]==0.5
-    assert hyps[5]==0.2
+    assert len(hyps) == 6
+    assert hyps[0] == 1
+    assert hyps[1] == 2
+    assert hyps[2] == 0.2
+    assert hyps[3] == 2
+    assert hyps[4] == 0.5
+    assert hyps[5] == 0.2
 
 
 def test_constraints2():
@@ -305,8 +310,8 @@ def test_constraints2():
     Parameters.check_instantiation(
         hm['hyps'], hm['cutoffs'], hm['kernels'], hm)
     hyps = hm['hyps']
-    assert hyps[0]==1
-    assert hyps[1]==1
+    assert hyps[0] == 1
+    assert hyps[1] == 1
 
 
 def test_check_one_conflict():
@@ -315,19 +320,19 @@ def test_check_one_conflict():
     '''
     with raises(RuntimeError):
         pm = ParameterHelper(kernels=['twobody', 'threebody'],
-                         parameters={'cutoff_twobody': 2,
-                                     'cutoff_threebody': 1,
-                                     'noise': 0.05},
-                         ones=True,
-                         random=True,
-                         verbose="DEBUG")
+                             parameters={'cutoff_twobody': 2,
+                                         'cutoff_threebody': 1,
+                                         'noise': 0.05},
+                             ones=True,
+                             random=True,
+                             verbose="DEBUG")
 
     with raises(RuntimeError):
         pm = ParameterHelper(kernels=['twobody', 'threebody'],
-                             parameters={'sigma':0.5, 'lengthscale':1.0,
-                                     'cutoff_twobody': 2,
-                                     'cutoff_threebody': 1,
-                                     'noise': 0.05},
-                         ones=True,
-                         random=False,
-                         verbose="DEBUG")
+                             parameters={'sigma': 0.5, 'lengthscale': 1.0,
+                                         'cutoff_twobody': 2,
+                                         'cutoff_threebody': 1,
+                                         'noise': 0.05},
+                             ones=True,
+                             random=False,
+                             verbose="DEBUG")

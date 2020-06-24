@@ -19,6 +19,7 @@ from os import devnull
 from flare.output import set_logger
 from flare.utils.element_coder import element_to_Z, Z_to_element
 
+
 class Parameters():
     '''
     '''
@@ -26,7 +27,8 @@ class Parameters():
     all_kernel_types = ['twobody', 'threebody', 'manybody']
     cutoff_types = {'cut3b': 'threebody'}
     ndim = {'twobody': 2, 'threebody': 3, 'manybody': 2, 'cut3b': 2}
-    n_kernel_parameters = {'twobody': 2, 'threebody': 2, 'manybody': 2, 'cut3b': 0}
+    n_kernel_parameters = {'twobody': 2,
+                           'threebody': 2, 'manybody': 2, 'cut3b': 0}
 
     cutoff_types_keys = list(cutoff_types.keys())
     cutoff_types_values = list(cutoff_types.values())
@@ -57,7 +59,7 @@ class Parameters():
                            'map': None,
                            'original_hyps': [],
                            'original_labels': []
-                          }
+                           }
         self.hyps = None
         self.hyp_labels = None
         self.cutoffs = {}
@@ -107,7 +109,8 @@ class Parameters():
         # add a couple new keys that was not there previously
         if 'train_noise' not in param_dict:
             param_dict['train_noise'] = True
-            DeprecationWarning("train_noise has to be in hyps_mask, set to True")
+            DeprecationWarning(
+                "train_noise has to be in hyps_mask, set to True")
         if 'nspecie' not in param_dict:
             param_dict['nspecie'] = 1
 
@@ -121,14 +124,15 @@ class Parameters():
                     if k+'_start' not in param_dict:
                         param_dict[k+'_start'] = start
                     if 'n'+k not in param_dict:
-                        Parameters.logger.debug("add in hyper parameter separators"\
+                        Parameters.logger.debug("add in hyper parameter separators"
                                                 "for", k)
                         param_dict['n'+k] = 1
                         start += Parameters.n_kernel_parameters[k]
                     else:
-                        start += param_dict['n'+k] * Parameters.n_kernel_parameters[k]
+                        start += param_dict['n'+k] * \
+                            Parameters.n_kernel_parameters[k]
                 else:
-                    Warning("inconsistency between input kernel and kernel list"\
+                    Warning("inconsistency between input kernel and kernel list"
                             "stored in hyps_mask")
 
             Parameters.logger.debug("Replace kernel array in param_dict")

@@ -290,7 +290,7 @@ class ParameterHelper():
                 universal = True
             else:
                 universal = False
-            
+
             if (random+ones+universal) > 1:
                 raise RuntimeError(
                     "random and ones cannot be simultaneously True")
@@ -336,7 +336,6 @@ class ParameterHelper():
             if name not in parameter_dict:
                 self.set_constraints(
                     name, constraints[name])
-
 
     def list_groups(self, group_type, definition_list):
         """define groups in batches.
