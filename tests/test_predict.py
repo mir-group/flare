@@ -7,15 +7,13 @@ import numpy as np
 from flare.gp import GaussianProcess
 from flare.struc import Structure
 from copy import deepcopy
-from flare.predict import predict_on_structure_par, \
-    predict_on_atom, predict_on_atom_en, \
-    predict_on_structure_par_en
+from flare.predict import predict_on_structure_par, predict_on_atom
 
 import pytest
 
 
-def fake_predict(_, __):
-    return np.random.uniform(-1, 1), np.random.uniform(-1, 1)
+def fake_predict(_):
+    return np.random.random(3)*2.0-1, np.random.random(3)*2.0-1
 
 
 def fake_predict_local_energy(_):
@@ -30,7 +28,7 @@ _fake_structure = Structure(cell=np.eye(3), species=[1, 1, 1],
 _fake_gp.predict = fake_predict
 _fake_gp.predict_local_energy = fake_predict_local_energy
 
-assert isinstance(_fake_gp.predict(1, 1), tuple)
+assert isinstance(_fake_gp.predict(1), tuple)
 assert isinstance(_fake_gp.predict_local_energy(1), float)
 
 
@@ -138,7 +136,7 @@ def test_predict_on_atoms():
     assert len(pred_at_result[0]) == len(pred_at_result[1]) == 3
 
     # Test results are correctly compiled into np arrays
-    pred_at_en_result = predict_on_atom_en((_fake_structure, 0, _fake_gp))
+    pred_at_en_result = predict_on_atom((_fake_structure, 0, _fake_gp), energy=True)
     assert isinstance(pred_at_en_result[0], np.ndarray)
     assert isinstance(pred_at_en_result[1], np.ndarray)
 
@@ -162,13 +160,14 @@ def test_predict_on_structure_en(n_cpus, write_to_structure,
 
     used_structure = deepcopy(old_structure)
 
-    forces, stds, energies = predict_on_structure_par_en(
+    forces, stds, energies = predict_on_structure_par(
         structure=used_structure,
         gp=_fake_gp,
         n_cpus=n_cpus,
         write_to_structure=write_to_structure,
         selective_atoms=selective_atoms,
-        skipped_atom_value=0)
+        skipped_atom_value=0,
+        energy=True)
 
     assert np.array_equal(forces.shape, old_structure.positions.shape)
     assert np.array_equal(stds.shape, old_structure.positions.shape)
