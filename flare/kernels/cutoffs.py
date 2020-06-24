@@ -4,10 +4,11 @@ kernel to zero near the boundary of the cutoff sphere.
 """
 from math import cos, sin, pi
 from numba import njit
+import numpy as np
 
 
 @njit
-def hard_cutoff(r_cut: float, ri: float, ci: float):
+def hard_cutoff(r_cut: float, ri: float, ci):
     """A hard cutoff that assigns a value of 1 to all interatomic distances.
 
     Args:
@@ -21,7 +22,7 @@ def hard_cutoff(r_cut: float, ri: float, ci: float):
     return 1, 0
 
 @njit
-def quadratic_cutoff_bound(r_cut: float, ri: float, ci: float):
+def quadratic_cutoff_bound(r_cut: float, ri: float, ci):
     """A quadratic cutoff that goes to zero smoothly at the cutoff boundary.
 
     Args:
@@ -33,19 +34,18 @@ def quadratic_cutoff_bound(r_cut: float, ri: float, ci: float):
         (float, float): Cutoff value and its derivative.
     """
 
-    if (r_cut > ri):
-        rdiff = r_cut - ri
-        fi = rdiff * rdiff
-        fdi = 2 * rdiff * ci
-    else:
-        fi = 0
-        fdi = 0
+    rdiff = r_cut - ri
+    fi = rdiff * rdiff
+    fdi = 2 * rdiff * ci
+    if (r_cut < ri):
+        fi *= 0.0
+        fdi *= 0.0
 
     return fi, fdi
 
 
 @njit
-def quadratic_cutoff(r_cut: float, ri: float, ci: float):
+def quadratic_cutoff(r_cut: float, ri: float, ci):
     """A quadratic cutoff that goes to zero smoothly at the cutoff boundary.
 
     Args:

@@ -128,7 +128,7 @@ from flare.kernels.mc_mb_sepcut import \
 # -----------------------------------------------------------------------------
 
 
-def two_three_many_body_mc(env1, env2, d1, d2, cutoff_2b, cutoff_3b, cutoff_mb,
+def two_three_many_body_mc(env1, env2, cutoff_2b, cutoff_3b, cutoff_mb,
                            nspec, spec_mask,
                            nbond, bond_mask, ntriplet, triplet_mask,
                            ncut3b, cut3b_mask,
@@ -140,8 +140,6 @@ def two_three_many_body_mc(env1, env2, d1, d2, cutoff_2b, cutoff_3b, cutoff_mb,
     Args:
         env1 (AtomicEnvironment): First local environment.
         env2 (AtomicEnvironment): Second local environment.
-        d1 (int): Force component of the first environment.
-        d2 (int): Force component of the second environment.
         cutoff_2b (float, np.ndarray): cutoff(s) for two-body interaction
         cutoff_3b (float, np.ndarray): cutoff(s) for three-body interaction
         cutoff_mb (float, np.ndarray): cutoff(s) for coordination-based manybody interaction
@@ -169,7 +167,7 @@ def two_three_many_body_mc(env1, env2, d1, d2, cutoff_2b, cutoff_3b, cutoff_mb,
 
     two_term = two_body_mc_jit(env1.bond_array_2, env1.ctype, env1.etypes,
                                env2.bond_array_2, env2.ctype, env2.etypes,
-                               d1, d2, sig2, ls2, cutoff_2b, cutoff_func,
+                               sig2, ls2, cutoff_2b, cutoff_func,
                                nspec, spec_mask, bond_mask)
 
     if (ncut3b == 0):
@@ -183,7 +181,7 @@ def two_three_many_body_mc(env1, env2, d1, d2, cutoff_2b, cutoff_3b, cutoff_mb,
               env1.cross_bond_inds, env2.cross_bond_inds,
               env1.cross_bond_dists, env2.cross_bond_dists,
               env1.triplet_counts, env2.triplet_counts,
-              d1, d2, sig3, ls3, cutoff_3b, cutoff_func,
+              sig3, ls3, cutoff_3b, cutoff_func,
               nspec, spec_mask, triplet_mask, cut3b_mask)
 
     mbmcj = many_body_mc_sepcut_jit
@@ -193,13 +191,13 @@ def two_three_many_body_mc(env1, env2, d1, d2, cutoff_2b, cutoff_3b, cutoff_mb,
                       env1.ctype, env2.ctype,
                       env1.etypes_mb, env2.etypes_mb,
                       env1.unique_species, env2.unique_species,
-                      d1, d2, sigm, lsm,
+                      sigm, lsm,
                       nspec, spec_mask, mb_mask)
 
     return two_term + three_term + many_term
 
 
-def two_three_many_body_mc_grad(env1, env2, d1, d2, cutoff_2b, cutoff_3b, cutoff_mb,
+def two_three_many_body_mc_grad(env1, env2, cutoff_2b, cutoff_3b, cutoff_mb,
                                 nspec, spec_mask,
                                 nbond, bond_mask, ntriplet, triplet_mask,
                                 ncut3b, cut3b_mask,
@@ -212,8 +210,6 @@ def two_three_many_body_mc_grad(env1, env2, d1, d2, cutoff_2b, cutoff_3b, cutoff
     Args:
         env1 (AtomicEnvironment): First local environment.
         env2 (AtomicEnvironment): Second local environment.
-        d1 (int): Force component of the first environment.
-        d2 (int): Force component of the second environment.
         cutoff_2b (float, np.ndarray): cutoff(s) for two-body interaction
         cutoff_3b (float, np.ndarray): cutoff(s) for three-body interaction
         cutoff_mb (float, np.ndarray): cutoff(s) for coordination-based manybody interaction
@@ -244,7 +240,7 @@ def two_three_many_body_mc_grad(env1, env2, d1, d2, cutoff_2b, cutoff_3b, cutoff
     kern2, grad2 = \
         two_body_mc_grad_jit(env1.bond_array_2, env1.ctype, env1.etypes,
                              env2.bond_array_2, env2.ctype, env2.etypes,
-                             d1, d2, sig2, ls2, cutoff_2b, cutoff_func,
+                             sig2, ls2, cutoff_2b, cutoff_func,
                              nspec, spec_mask,
                              nbond, bond_mask)
 
@@ -259,7 +255,7 @@ def two_three_many_body_mc_grad(env1, env2, d1, d2, cutoff_2b, cutoff_3b, cutoff
               env1.cross_bond_inds, env2.cross_bond_inds,
               env1.cross_bond_dists, env2.cross_bond_dists,
               env1.triplet_counts, env2.triplet_counts,
-              d1, d2, sig3, ls3, cutoff_3b,
+              sig3, ls3, cutoff_3b,
               cutoff_func,
               nspec, spec_mask,
               ntriplet, triplet_mask, cut3b_mask)
@@ -271,13 +267,13 @@ def two_three_many_body_mc_grad(env1, env2, d1, d2, cutoff_2b, cutoff_3b, cutoff
                              env1.ctype, env2.ctype,
                              env1.etypes_mb, env2.etypes_mb,
                              env1.unique_species, env2.unique_species,
-                             d1, d2, sigm, lsm,
+                             sigm, lsm,
                              nspec, spec_mask, nmb, mb_mask)
 
-    return kern2 + kern3 + kern_many, np.hstack([grad2, grad3, gradm])
+    return kern2 + kern3 + kern_many, np.vstack((grad2, grad3, gradm))
 
 
-def two_three_many_mc_force_en(env1, env2, d1, cutoff_2b, cutoff_3b, cutoff_mb,
+def two_three_many_mc_force_en(env1, env2, cutoff_2b, cutoff_3b, cutoff_mb,
                                nspec, spec_mask,
                                nbond, bond_mask, ntriplet, triplet_mask,
                                ncut3b, cut3b_mask,
@@ -290,8 +286,6 @@ def two_three_many_mc_force_en(env1, env2, d1, cutoff_2b, cutoff_3b, cutoff_mb,
     Args:
         env1 (AtomicEnvironment): First local environment.
         env2 (AtomicEnvironment): Second local environment.
-        d1 (int): Force component of the first environment.
-        d2 (int): Force component of the second environment.
         cutoff_2b (float, np.ndarray): cutoff(s) for two-body interaction
         cutoff_3b (float, np.ndarray): cutoff(s) for three-body interaction
         cutoff_mb (float, np.ndarray): cutoff(s) for coordination-based manybody interaction
@@ -320,7 +314,7 @@ def two_three_many_mc_force_en(env1, env2, d1, cutoff_2b, cutoff_3b, cutoff_mb,
     two_term = \
         two_body_mc_force_en_jit(env1.bond_array_2, env1.ctype, env1.etypes,
                                  env2.bond_array_2, env2.ctype, env2.etypes,
-                                 d1, sig2, ls2, cutoff_2b, cutoff_func,
+                                 sig2, ls2, cutoff_2b, cutoff_func,
                                  nspec, spec_mask,
                                  bond_mask) / 2
 
@@ -336,7 +330,7 @@ def two_three_many_mc_force_en(env1, env2, d1, cutoff_2b, cutoff_3b, cutoff_mb,
               env1.cross_bond_dists,
               env2.cross_bond_dists,
               env1.triplet_counts, env2.triplet_counts,
-              d1, sig3, ls3, cutoff_3b, cutoff_func,
+              sig3, ls3, cutoff_3b, cutoff_func,
               nspec, spec_mask, triplet_mask,
               cut3b_mask) / 3
 
@@ -345,7 +339,7 @@ def two_three_many_mc_force_en(env1, env2, d1, cutoff_2b, cutoff_3b, cutoff_mb,
                       env1.q_neigh_array, env1.q_neigh_grads,
                       env1.ctype, env2.ctype, env1.etypes_mb,
                       env1.unique_species, env2.unique_species,
-                      d1, sigm, lsm,
+                      sigm, lsm,
                       nspec, spec_mask, mb_mask)
 
     return two_term + three_term + many_term
@@ -363,8 +357,6 @@ def two_three_many_mc_en(env1, env2, cutoff_2b, cutoff_3b, cutoff_mb,
     Args:
         env1 (AtomicEnvironment): First local environment.
         env2 (AtomicEnvironment): Second local environment.
-        d1 (int): Force component of the first environment.
-        d2 (int): Force component of the second environment.
         cutoff_2b (float, np.ndarray): cutoff(s) for two-body interaction
         cutoff_3b (float, np.ndarray): cutoff(s) for three-body interaction
         cutoff_mb (float, np.ndarray): cutoff(s) for coordination-based manybody interaction
@@ -427,7 +419,7 @@ def two_three_many_mc_en(env1, env2, cutoff_2b, cutoff_3b, cutoff_mb,
 # -----------------------------------------------------------------------------
 
 
-def two_plus_three_body_mc(env1, env2, d1, d2, cutoff_2b, cutoff_3b, cutoff_mb,
+def two_plus_three_body_mc(env1, env2, cutoff_2b, cutoff_3b, cutoff_mb,
                            nspec, spec_mask,
                            nbond, bond_mask, ntriplet, triplet_mask,
                            ncut3b, cut3b_mask,
@@ -439,8 +431,6 @@ def two_plus_three_body_mc(env1, env2, d1, d2, cutoff_2b, cutoff_3b, cutoff_mb,
     Args:
         env1 (AtomicEnvironment): First local environment.
         env2 (AtomicEnvironment): Second local environment.
-        d1 (int): Force component of the first environment.
-        d2 (int): Force component of the second environment.
         cutoff_2b (float, np.ndarray): cutoff(s) for two-body interaction
         cutoff_3b (float, np.ndarray): cutoff(s) for three-body interaction
         cutoff_mb (float, np.ndarray): cutoff(s) for coordination-based manybody interaction
@@ -464,7 +454,7 @@ def two_plus_three_body_mc(env1, env2, d1, d2, cutoff_2b, cutoff_3b, cutoff_mb,
 
     two_term = two_body_mc_jit(env1.bond_array_2, env1.ctype, env1.etypes,
                                env2.bond_array_2, env2.ctype, env2.etypes,
-                               d1, d2, sig2, ls2, cutoff_2b, cutoff_func,
+                               sig2, ls2, cutoff_2b, cutoff_func,
                                nspec, spec_mask, bond_mask)
 
     if (ncut3b <= 1):
@@ -478,13 +468,13 @@ def two_plus_three_body_mc(env1, env2, d1, d2, cutoff_2b, cutoff_3b, cutoff_mb,
               env1.cross_bond_inds, env2.cross_bond_inds,
               env1.cross_bond_dists, env2.cross_bond_dists,
               env1.triplet_counts, env2.triplet_counts,
-              d1, d2, sig3, ls3, cutoff_3b, cutoff_func,
+              sig3, ls3, cutoff_3b, cutoff_func,
               nspec, spec_mask, triplet_mask, cut3b_mask)
 
     return two_term + three_term
 
 
-def two_plus_three_body_mc_grad(env1, env2, d1, d2, cutoff_2b, cutoff_3b, cutoff_mb,
+def two_plus_three_body_mc_grad(env1, env2, cutoff_2b, cutoff_3b, cutoff_mb,
                                 nspec, spec_mask,
                                 nbond, bond_mask, ntriplet, triplet_mask,
                                 ncut3b, cut3b_mask,
@@ -497,8 +487,6 @@ def two_plus_three_body_mc_grad(env1, env2, d1, d2, cutoff_2b, cutoff_3b, cutoff
     Args:
         env1 (AtomicEnvironment): First local environment.
         env2 (AtomicEnvironment): Second local environment.
-        d1 (int): Force component of the first environment.
-        d2 (int): Force component of the second environment.
         cutoff_2b (float, np.ndarray): cutoff(s) for two-body interaction
         cutoff_3b (float, np.ndarray): cutoff(s) for three-body interaction
         nspec (int): number of different species groups
@@ -524,7 +512,7 @@ def two_plus_three_body_mc_grad(env1, env2, d1, d2, cutoff_2b, cutoff_3b, cutoff
     kern2, grad2 = \
         two_body_mc_grad_jit(env1.bond_array_2, env1.ctype, env1.etypes,
                              env2.bond_array_2, env2.ctype, env2.etypes,
-                             d1, d2, sig2, ls2, cutoff_2b, cutoff_func,
+                             sig2, ls2, cutoff_2b, cutoff_func,
                              nspec, spec_mask,
                              nbond, bond_mask)
 
@@ -539,17 +527,17 @@ def two_plus_three_body_mc_grad(env1, env2, d1, d2, cutoff_2b, cutoff_3b, cutoff
               env1.cross_bond_inds, env2.cross_bond_inds,
               env1.cross_bond_dists, env2.cross_bond_dists,
               env1.triplet_counts, env2.triplet_counts,
-              d1, d2, sig3, ls3, cutoff_3b,
+              sig3, ls3, cutoff_3b,
               cutoff_func,
               nspec, spec_mask,
               ntriplet, triplet_mask, cut3b_mask)
 
-    g = np.hstack([grad2, grad3])
+    g = np.vstack((grad2, grad3))
 
     return kern2 + kern3, g
 
 
-def two_plus_three_mc_force_en(env1, env2, d1, cutoff_2b, cutoff_3b, cutoff_mb,
+def two_plus_three_mc_force_en(env1, env2, cutoff_2b, cutoff_3b, cutoff_mb,
                                nspec, spec_mask, nbond, bond_mask,
                                ntriplet, triplet_mask, ncut3b, cut3b_mask,
                                nmb, mb_mask,
@@ -560,8 +548,6 @@ def two_plus_three_mc_force_en(env1, env2, d1, cutoff_2b, cutoff_3b, cutoff_mb,
     Args:
         env1 (AtomicEnvironment): First local environment.
         env2 (AtomicEnvironment): Second local environment.
-        d1 (int): Force component of the first environment.
-        d2 (int): Force component of the second environment.
         cutoff_2b (float, np.ndarray): cutoff(s) for two-body interaction
         cutoff_3b (float, np.ndarray): cutoff(s) for three-body interaction
         cutoff_mb (float, np.ndarray): cutoff(s) for coordination-based manybody interaction
@@ -586,7 +572,7 @@ def two_plus_three_mc_force_en(env1, env2, d1, cutoff_2b, cutoff_3b, cutoff_mb,
     two_term = \
         two_body_mc_force_en_jit(env1.bond_array_2, env1.ctype, env1.etypes,
                                  env2.bond_array_2, env2.ctype, env2.etypes,
-                                 d1, sig2, ls2, cutoff_2b, cutoff_func,
+                                 sig2, ls2, cutoff_2b, cutoff_func,
                                  nspec, spec_mask,
                                  bond_mask) / 2
 
@@ -602,7 +588,7 @@ def two_plus_three_mc_force_en(env1, env2, d1, cutoff_2b, cutoff_3b, cutoff_mb,
               env1.cross_bond_dists,
               env2.cross_bond_dists,
               env1.triplet_counts, env2.triplet_counts,
-              d1, sig3, ls3, cutoff_3b, cutoff_func,
+              sig3, ls3, cutoff_3b, cutoff_func,
               nspec, spec_mask,
               triplet_mask, cut3b_mask) / 3
 
@@ -620,8 +606,6 @@ def two_plus_three_mc_en(env1, env2, cutoff_2b, cutoff_3b, cutoff_mb,
     Args:
         env1 (AtomicEnvironment): First local environment.
         env2 (AtomicEnvironment): Second local environment.
-        d1 (int): Force component of the first environment.
-        d2 (int): Force component of the second environment.
         cutoff_2b (float, np.ndarray): cutoff(s) for two-body interaction
         cutoff_3b (float, np.ndarray): cutoff(s) for three-body interaction
         cutoff_mb (float, np.ndarray): cutoff(s) for coordination-based manybody interaction
@@ -673,7 +657,7 @@ def two_plus_three_mc_en(env1, env2, cutoff_2b, cutoff_3b, cutoff_mb,
 # -----------------------------------------------------------------------------
 
 
-def three_body_mc(env1, env2, d1, d2, cutoff_2b, cutoff_3b, cutoff_mb,
+def three_body_mc(env1, env2, cutoff_2b, cutoff_3b, cutoff_mb,
                   nspec, spec_mask, nbond, bond_mask,
                   ntriplet, triplet_mask, ncut3b, cut3b_mask,
                   nmb, mb_mask,
@@ -684,8 +668,6 @@ def three_body_mc(env1, env2, d1, d2, cutoff_2b, cutoff_3b, cutoff_mb,
     Args:
         env1 (AtomicEnvironment): First local environment.
         env2 (AtomicEnvironment): Second local environment.
-        d1 (int): Force component of the first environment.
-        d2 (int): Force component of the second environment.
         cutoff_2b: dummy
         cutoff_3b (float, np.ndarray): cutoff(s) for three-body interaction
         nspec (int): number of different species groups
@@ -716,12 +698,12 @@ def three_body_mc(env1, env2, d1, d2, cutoff_2b, cutoff_3b, cutoff_mb,
                  env1.cross_bond_inds, env2.cross_bond_inds,
                  env1.cross_bond_dists, env2.cross_bond_dists,
                  env1.triplet_counts, env2.triplet_counts,
-                 d1, d2, sig3, ls3, cutoff_3b, cutoff_func,
+                 sig3, ls3, cutoff_3b, cutoff_func,
                  nspec, spec_mask,
                  triplet_mask, cut3b_mask)
 
 
-def three_body_mc_grad(env1, env2, d1, d2, cutoff_2b, cutoff_3b, cutoff_mb,
+def three_body_mc_grad(env1, env2, cutoff_2b, cutoff_3b, cutoff_mb,
                        nspec, spec_mask, nbond, bond_mask,
                        ntriplet, triplet_mask, ncut3b, cut3b_mask,
                        nmb, mb_mask,
@@ -733,8 +715,6 @@ def three_body_mc_grad(env1, env2, d1, d2, cutoff_2b, cutoff_3b, cutoff_mb,
     Args:
         env1 (AtomicEnvironment): First local environment.
         env2 (AtomicEnvironment): Second local environment.
-        d1 (int): Force component of the first environment.
-        d2 (int): Force component of the second environment.
         cutoff_2b: dummy
         cutoff_3b (float, np.ndarray): cutoff(s) for three-body interaction
         nspec (int): number of different species groups
@@ -768,11 +748,11 @@ def three_body_mc_grad(env1, env2, d1, d2, cutoff_2b, cutoff_3b, cutoff_mb,
         env1.cross_bond_inds, env2.cross_bond_inds,
         env1.cross_bond_dists, env2.cross_bond_dists,
         env1.triplet_counts, env2.triplet_counts,
-        d1, d2, sig3, ls3, cutoff_3b, cutoff_func,
+        sig3, ls3, cutoff_3b, cutoff_func,
         nspec, spec_mask, ntriplet, triplet_mask, cut3b_mask)
 
 
-def three_body_mc_force_en(env1, env2, d1, cutoff_2b, cutoff_3b, cutoff_mb,
+def three_body_mc_force_en(env1, env2, cutoff_2b, cutoff_3b, cutoff_mb,
                            nspec, spec_mask, nbond, bond_mask, ntriplet, triplet_mask,
                            ncut3b, cut3b_mask, nmb, mb_mask,
                            sig2, ls2, sig3, ls3, sigm, lsm,
@@ -782,8 +762,6 @@ def three_body_mc_force_en(env1, env2, d1, cutoff_2b, cutoff_3b, cutoff_mb,
     Args:
         env1 (AtomicEnvironment): First local environment.
         env2 (AtomicEnvironment): Second local environment.
-        d1 (int): Force component of the first environment.
-        d2 (int): Force component of the second environment.
         cutoff_2b: dummy
         cutoff_3b (float, np.ndarray): cutoff(s) for three-body interaction
         nspec (int): number of different species groups
@@ -819,7 +797,7 @@ def three_body_mc_force_en(env1, env2, d1, cutoff_2b, cutoff_3b, cutoff_mb,
                  env2.cross_bond_dists,
                  env1.triplet_counts,
                  env2.triplet_counts,
-                 d1, sig3, ls3, cutoff_3b,
+                 sig3, ls3, cutoff_3b,
                  cutoff_func,
                  nspec,
                  spec_mask,
@@ -836,8 +814,6 @@ def three_body_mc_en(env1, env2, cutoff_2b, cutoff_3b,  cutoff_mb,  nspec, spec_
     Args:
         env1 (AtomicEnvironment): First local environment.
         env2 (AtomicEnvironment): Second local environment.
-        d1 (int): Force component of the first environment.
-        d2 (int): Force component of the second environment.
         cutoff_2b: dummy
         cutoff_3b (float, np.ndarray): cutoff(s) for three-body interaction
         nspec (int): number of different species groups
@@ -879,7 +855,7 @@ def three_body_mc_en(env1, env2, cutoff_2b, cutoff_3b,  cutoff_mb,  nspec, spec_
 
 
 def two_body_mc(
-        env1, env2, d1, d2, cutoff_2b, cutoff_3b,  cutoff_mb,  nspec, spec_mask,
+        env1, env2, cutoff_2b, cutoff_3b,  cutoff_mb,  nspec, spec_mask,
         nbond, bond_mask, ntriplet, triplet_mask, ncut3b, cut3b_mask,
         nmb, mb_mask, sig2, ls2, sig3, ls3, sigm, lsm,
         cutoff_func=cf.quadratic_cutoff):
@@ -888,8 +864,6 @@ def two_body_mc(
     Args:
         env1 (AtomicEnvironment): First local environment.
         env2 (AtomicEnvironment): Second local environment.
-        d1 (int): Force component of the first environment.
-        d2 (int): Force component of the second environment.
         cutoff_2b (float, np.ndarray): cutoff(s) for two-body interaction
         cutoff_3b: dummy
         nspec (int): number of different species groups
@@ -912,12 +886,12 @@ def two_body_mc(
 
     return two_body_mc_jit(env1.bond_array_2, env1.ctype, env1.etypes,
                            env2.bond_array_2, env2.ctype, env2.etypes,
-                           d1, d2, sig2, ls2, cutoff_2b, cutoff_func,
+                           sig2, ls2, cutoff_2b, cutoff_func,
                            nspec, spec_mask, bond_mask)
 
 
 def two_body_mc_grad(
-        env1, env2, d1, d2, cutoff_2b, cutoff_3b,  cutoff_mb,  nspec, spec_mask,
+        env1, env2, cutoff_2b, cutoff_3b,  cutoff_mb,  nspec, spec_mask,
         nbond, bond_mask, ntriplet, triplet_mask,
         ncut3b, cut3b_mask, nmb, mb_mask,
         sig2, ls2, sig3, ls3, sigm, lsm,
@@ -928,8 +902,6 @@ def two_body_mc_grad(
     Args:
         env1 (AtomicEnvironment): First local environment.
         env2 (AtomicEnvironment): Second local environment.
-        d1 (int): Force component of the first environment.
-        d2 (int): Force component of the second environment.
         cutoff_2b (float, np.ndarray): cutoff(s) for two-body interaction
         cutoff_3b: dummy
         nspec (int): number of different species groups
@@ -955,11 +927,11 @@ def two_body_mc_grad(
     return two_body_mc_grad_jit(
         env1.bond_array_2, env1.ctype, env1.etypes,
         env2.bond_array_2, env2.ctype, env2.etypes,
-        d1, d2, sig2, ls2, cutoff_2b, cutoff_func,
+        sig2, ls2, cutoff_2b, cutoff_func,
         nspec, spec_mask, nbond, bond_mask)
 
 
-def two_body_mc_force_en(env1, env2, d1, cutoff_2b, cutoff_3b, cutoff_mb,
+def two_body_mc_force_en(env1, env2, cutoff_2b, cutoff_3b, cutoff_mb,
                          nspec, spec_mask, nbond, bond_mask, ntriplet, triplet_mask,
                          ncut3b, cut3b_mask, nmb, mb_mask,
                          sig2, ls2, sig3, ls3, sigm, lsm,
@@ -969,8 +941,6 @@ def two_body_mc_force_en(env1, env2, d1, cutoff_2b, cutoff_3b, cutoff_mb,
     Args:
         env1 (AtomicEnvironment): First local environment.
         env2 (AtomicEnvironment): Second local environment.
-        d1 (int): Force component of the first environment.
-        d2 (int): Force component of the second environment.
         cutoff_2b (float, np.ndarray): cutoff(s) for two-body interaction
         cutoff_3b: dummy
         nspec (int): number of different species groups
@@ -994,7 +964,7 @@ def two_body_mc_force_en(env1, env2, d1, cutoff_2b, cutoff_3b, cutoff_mb,
     return two_body_mc_force_en_jit(
         env1.bond_array_2, env1.ctype, env1.etypes,
         env2.bond_array_2, env2.ctype, env2.etypes,
-        d1, sig2, ls2, cutoff_2b, cutoff_func,
+        sig2, ls2, cutoff_2b, cutoff_func,
         nspec, spec_mask, bond_mask) / 2
 
 
@@ -1009,8 +979,6 @@ def two_body_mc_en(env1, env2, cutoff_2b, cutoff_3b, cutoff_mb,
     Args:
         env1 (AtomicEnvironment): First local environment.
         env2 (AtomicEnvironment): Second local environment.
-        d1 (int): Force component of the first environment.
-        d2 (int): Force component of the second environment.
         cutoff_2b (float, np.ndarray): cutoff(s) for two-body interaction
         cutoff_3b: dummy
         nspec (int): number of different species groups
@@ -1047,9 +1015,10 @@ def three_body_mc_jit(bond_array_1, c1, etypes1,
                       cross_bond_inds_1, cross_bond_inds_2,
                       cross_bond_dists_1, cross_bond_dists_2,
                       triplets_1, triplets_2,
-                      d1, d2, sig, ls, r_cut, cutoff_func,
+                      sig, ls, r_cut, cutoff_func,
                       nspec, spec_mask, triplet_mask, cut3b_mask):
-    kern = 0
+
+    kern = np.zeros((3, 3), dtype=np.float64)
 
     # pre-compute constants that appear in the inner loop
     sig2 = sig * sig
@@ -1062,7 +1031,7 @@ def three_body_mc_jit(bond_array_1, c1, etypes1,
 
     for m in range(bond_array_1.shape[0]):
         ri1 = bond_array_1[m, 0]
-        ci1 = bond_array_1[m, d1]
+        ci1 = bond_array_1[m, 1:4]
         ei1 = etypes1[m]
 
         bei1 = spec_mask[ei1]
@@ -1080,7 +1049,7 @@ def three_body_mc_jit(bond_array_1, c1, etypes1,
                 tr_spec.remove(c2)
 
                 ri2 = bond_array_1[ind1, 0]
-                ci2 = bond_array_1[ind1, d1]
+                ci2 = bond_array_1[ind1, 1:4]
                 fi2, fdi2 = cutoff_func(r_cut, ri2, ci2)
 
                 bei2 = spec_mask[ei2]
@@ -1104,7 +1073,7 @@ def three_body_mc_jit(bond_array_1, c1, etypes1,
                     if ej1 in tr_spec1:
                         tr_spec1.remove(ej1)
                         rj1 = bond_array_2[p, 0]
-                        cj1 = bond_array_2[p, d2]
+                        cj1 = bond_array_2[p, 1:4]
                         fj1, fdj1 = cutoff_func(r_cut, rj1, cj1)
 
                         for q in range(triplets_2[p]):
@@ -1113,7 +1082,7 @@ def three_body_mc_jit(bond_array_1, c1, etypes1,
                             if ej2 == tr_spec1[0]:
                                 ind2 = cross_bond_inds_2[p, p + 1 + q]
                                 rj2 = bond_array_2[ind2, 0]
-                                cj2 = bond_array_2[ind2, d2]
+                                cj2 = bond_array_2[ind2, 1:4]
                                 fj2, fdj2 = cutoff_func(r_cut, rj2, cj2)
                                 ej2 = etypes2[ind2]
 
@@ -1133,49 +1102,51 @@ def three_body_mc_jit(bond_array_1, c1, etypes1,
                                 r32 = ri3 - rj2
                                 r33 = ri3 - rj3
 
-                                if (c1 == c2):
-                                    if (ei1 == ej1) and (ei2 == ej2):
-                                        kern += \
-                                            three_body_helper_1(ci1, ci2, cj1, cj2, r11,
-                                                                r22, r33, fi, fj, fdi, fdj,
-                                                                tls1, tls2, tls3,
-                                                                tsig2)
-                                    if (ei1 == ej2) and (ei2 == ej1):
-                                        kern += \
-                                            three_body_helper_1(ci1, ci2, cj2, cj1, r12,
-                                                                r21, r33, fi, fj, fdi, fdj,
-                                                                tls1, tls2, tls3,
-                                                                tsig2)
-                                if (c1 == ej1):
-                                    if (ei1 == ej2) and (ei2 == c2):
-                                        kern += \
-                                            three_body_helper_2(ci2, ci1, cj2, cj1, r21,
-                                                                r13, r32, fi, fj, fdi,
-                                                                fdj,
-                                                                tls1, tls2, tls3,
-                                                                tsig2)
-                                    if (ei1 == c2) and (ei2 == ej2):
-                                        kern += \
-                                            three_body_helper_2(ci1, ci2, cj2, cj1, r11,
-                                                                r23, r32, fi, fj, fdi,
-                                                                fdj,
-                                                                tls1, tls2, tls3,
-                                                                tsig2)
-                                if (c1 == ej2):
-                                    if (ei1 == ej1) and (ei2 == c2):
-                                        kern += \
-                                            three_body_helper_2(ci2, ci1, cj1, cj2, r22,
-                                                                r13, r31, fi, fj, fdi,
-                                                                fdj,
-                                                                tls1, tls2, tls3,
-                                                                tsig2)
-                                    if (ei1 == c2) and (ei2 == ej1):
-                                        kern += \
-                                            three_body_helper_2(ci1, ci2, cj1, cj2, r12,
-                                                                r23, r31, fi, fj, fdi,
-                                                                fdj,
-                                                                tls1, tls2, tls3,
-                                                                tsig2)
+                                for d1 in range(3):
+                                    for d2 in range(3):
+                                        if (c1 == c2):
+                                            if (ei1 == ej1) and (ei2 == ej2):
+                                                kern[d1,d2] += \
+                                                    three_body_helper_1(ci1[d1], ci2[d1], cj1[d2], cj2[d2], r11,
+                                                                        r22, r33, fi, fj, fdi[d1], fdj[d2],
+                                                                        tls1, tls2, tls3,
+                                                                        tsig2)
+                                            if (ei1 == ej2) and (ei2 == ej1):
+                                                kern[d1,d2] += \
+                                                    three_body_helper_1(ci1[d1], ci2[d1], cj2[d2], cj1[d2], r12,
+                                                                        r21, r33, fi, fj, fdi[d1], fdj[d2],
+                                                                        tls1, tls2, tls3,
+                                                                        tsig2)
+                                        if (c1 == ej1):
+                                            if (ei1 == ej2) and (ei2 == c2):
+                                                kern[d1,d2] += \
+                                                    three_body_helper_2(ci2[d1], ci1[d1], cj2[d2], cj1[d2], r21,
+                                                                        r13, r32, fi, fj, fdi[d1],
+                                                                        fdj[d2],
+                                                                        tls1, tls2, tls3,
+                                                                        tsig2)
+                                            if (ei1 == c2) and (ei2 == ej2):
+                                                kern[d1,d2] += \
+                                                    three_body_helper_2(ci1[d1], ci2[d1], cj2[d2], cj1[d2], r11,
+                                                                        r23, r32, fi, fj, fdi[d1],
+                                                                        fdj[d2],
+                                                                        tls1, tls2, tls3,
+                                                                        tsig2)
+                                        if (c1 == ej2):
+                                            if (ei1 == ej1) and (ei2 == c2):
+                                                kern[d1,d2] += \
+                                                    three_body_helper_2(ci2[d1], ci1[d1], cj1[d2], cj2[d2], r22,
+                                                                        r13, r31, fi, fj, fdi[d1],
+                                                                        fdj[d2],
+                                                                        tls1, tls2, tls3,
+                                                                        tsig2)
+                                            if (ei1 == c2) and (ei2 == ej1):
+                                                kern[d1,d2] += \
+                                                    three_body_helper_2(ci1[d1], ci2[d1], cj1[d2], cj2[d2], r12,
+                                                                        r23, r31, fi, fj, fdi[d1],
+                                                                        fdj[d2],
+                                                                        tls1, tls2, tls3,
+                                                                        tsig2)
 
     return kern
 
@@ -1186,14 +1157,14 @@ def three_body_mc_grad_jit(bond_array_1, c1, etypes1,
                            cross_bond_inds_1, cross_bond_inds_2,
                            cross_bond_dists_1, cross_bond_dists_2,
                            triplets_1, triplets_2,
-                           d1, d2, sig, ls, r_cut, cutoff_func,
+                           sig, ls, r_cut, cutoff_func,
                            nspec, spec_mask, ntriplet, triplet_mask,
                            cut3b_mask):
     """Kernel gradient for 3-body force comparisons."""
 
-    kern = 0
-    sig_derv = np.zeros(ntriplet, dtype=np.float64)
-    ls_derv = np.zeros(ntriplet, dtype=np.float64)
+    kern = np.zeros((3, 3), dtype=np.float64)
+    sig_derv = np.zeros((ntriplet, 3, 3), dtype=np.float64)
+    ls_derv = np.zeros((ntriplet, 3, 3), dtype=np.float64)
 
     # pre-compute constants that appear in the inner loop
     sig2, sig3, ls1, ls2, ls3, ls4, ls5, ls6 = grad_constants(sig, ls)
@@ -1203,7 +1174,7 @@ def three_body_mc_grad_jit(bond_array_1, c1, etypes1,
 
     for m in range(bond_array_1.shape[0]):
         ri1 = bond_array_1[m, 0]
-        ci1 = bond_array_1[m, d1]
+        ci1 = bond_array_1[m, 1:4]
         fi1, fdi1 = cutoff_func(r_cut, ri1, ci1)
         ei1 = etypes1[m]
 
@@ -1220,7 +1191,7 @@ def three_body_mc_grad_jit(bond_array_1, c1, etypes1,
 
                 ri3 = cross_bond_dists_1[m, m + n + 1]
                 ri2 = bond_array_1[ind1, 0]
-                ci2 = bond_array_1[ind1, d1]
+                ci2 = bond_array_1[ind1, 1:4]
 
                 bei2 = spec_mask[ei2]
 
@@ -1247,7 +1218,7 @@ def three_body_mc_grad_jit(bond_array_1, c1, etypes1,
                     if ej1 in tr_spec1:
                         tr_spec1.remove(ej1)
                         rj1 = bond_array_2[p, 0]
-                        cj1 = bond_array_2[p, d2]
+                        cj1 = bond_array_2[p, 1:4]
                         fj1, fdj1 = cutoff_func(r_cut, rj1, cj1)
 
                         for q in range(triplets_2[p]):
@@ -1257,7 +1228,7 @@ def three_body_mc_grad_jit(bond_array_1, c1, etypes1,
                                 ind2 = cross_bond_inds_2[p, p + q + 1]
                                 rj3 = cross_bond_dists_2[p, p + q + 1]
                                 rj2 = bond_array_2[ind2, 0]
-                                cj2 = bond_array_2[ind2, d2]
+                                cj2 = bond_array_2[ind2, 1:4]
                                 ej2 = etypes2[ind2]
 
                                 fj2, fdj2 = cutoff_func(r_cut, rj2, cj2)
@@ -1276,83 +1247,85 @@ def three_body_mc_grad_jit(bond_array_1, c1, etypes1,
                                 r32 = ri3 - rj2
                                 r33 = ri3 - rj3
 
-                                if (c1 == c2):
-                                    if (ei1 == ej1) and (ei2 == ej2):
-                                        kern_term, sig_term, ls_term = \
-                                            three_body_grad_helper_1(ci1, ci2, cj1, cj2,
-                                                                     r11, r22, r33, fi, fj,
-                                                                     fdi, fdj, tls1, tls2,
-                                                                     tls3, tls4, tls5,
-                                                                     tls6,
-                                                                     tsig2, tsig3)
-                                        kern += kern_term
-                                        sig_derv[ttypei] += sig_term
-                                        ls_derv[ttypei] += ls_term
+                                for d1 in range(3):
+                                    for d2 in range(3):
+                                        if (c1 == c2):
+                                            if (ei1 == ej1) and (ei2 == ej2):
+                                                kern_term, sig_term, ls_term = \
+                                                    three_body_grad_helper_1(ci1[d1], ci2[d1], cj1[d2], cj2[d2],
+                                                                             r11, r22, r33, fi, fj,
+                                                                             fdi[d1], fdj[d2], tls1, tls2,
+                                                                             tls3, tls4, tls5,
+                                                                             tls6,
+                                                                             tsig2, tsig3)
+                                                kern[d1, d2] += kern_term
+                                                sig_derv[ttypei, d1, d2] += sig_term
+                                                ls_derv[ttypei, d1, d2] += ls_term
 
-                                    if (ei1 == ej2) and (ei2 == ej1):
-                                        kern_term, sig_term, ls_term = \
-                                            three_body_grad_helper_1(ci1, ci2, cj2, cj1,
-                                                                     r12, r21, r33, fi, fj,
-                                                                     fdi, fdj, tls1, tls2,
-                                                                     tls3, tls4, tls5,
-                                                                     tls6,
-                                                                     tsig2, tsig3)
-                                        kern += kern_term
-                                        sig_derv[ttypei] += sig_term
-                                        ls_derv[ttypei] += ls_term
+                                            if (ei1 == ej2) and (ei2 == ej1):
+                                                kern_term, sig_term, ls_term = \
+                                                    three_body_grad_helper_1(ci1[d1], ci2[d1], cj2[d2], cj1[d2],
+                                                                             r12, r21, r33, fi, fj,
+                                                                             fdi[d1], fdj[d2], tls1, tls2,
+                                                                             tls3, tls4, tls5,
+                                                                             tls6,
+                                                                             tsig2, tsig3)
+                                                kern[d1, d2] += kern_term
+                                                sig_derv[ttypei, d1, d2] += sig_term
+                                                ls_derv[ttypei, d1, d2] += ls_term
 
-                                if (c1 == ej1):
-                                    if (ei1 == ej2) and (ei2 == c2):
-                                        kern_term, sig_term, ls_term = \
-                                            three_body_grad_helper_2(ci2, ci1, cj2, cj1,
-                                                                     r21, r13, r32, fi, fj,
-                                                                     fdi, fdj, tls1, tls2,
-                                                                     tls3, tls4, tls5,
-                                                                     tls6,
-                                                                     tsig2, tsig3)
-                                        kern += kern_term
-                                        sig_derv[ttypei] += sig_term
-                                        ls_derv[ttypei] += ls_term
+                                        if (c1 == ej1):
+                                            if (ei1 == ej2) and (ei2 == c2):
+                                                kern_term, sig_term, ls_term = \
+                                                    three_body_grad_helper_2(ci2[d1], ci1[d1], cj2[d2], cj1[d2],
+                                                                             r21, r13, r32, fi, fj,
+                                                                             fdi[d1], fdj[d2], tls1, tls2,
+                                                                             tls3, tls4, tls5,
+                                                                             tls6,
+                                                                             tsig2, tsig3)
+                                                kern[d1, d2] += kern_term
+                                                sig_derv[ttypei, d1, d2] += sig_term
+                                                ls_derv[ttypei, d1, d2] += ls_term
 
-                                    if (ei1 == c2) and (ei2 == ej2):
-                                        kern_term, sig_term, ls_term = \
-                                            three_body_grad_helper_2(ci1, ci2, cj2, cj1,
-                                                                     r11, r23, r32, fi, fj,
-                                                                     fdi, fdj, tls1, tls2,
-                                                                     tls3, tls4, tls5,
-                                                                     tls6,
-                                                                     tsig2, tsig3)
-                                        kern += kern_term
-                                        sig_derv[ttypei] += sig_term
-                                        ls_derv[ttypei] += ls_term
+                                            if (ei1 == c2) and (ei2 == ej2):
+                                                kern_term, sig_term, ls_term = \
+                                                    three_body_grad_helper_2(ci1[d1], ci2[d1], cj2[d2], cj1[d2],
+                                                                             r11, r23, r32, fi, fj,
+                                                                             fdi[d1], fdj[d2], tls1, tls2,
+                                                                             tls3, tls4, tls5,
+                                                                             tls6,
+                                                                             tsig2, tsig3)
+                                                kern[d1, d2] += kern_term
+                                                sig_derv[ttypei, d1, d2] += sig_term
+                                                ls_derv[ttypei, d1, d2] += ls_term
 
-                                if (c1 == ej2):
-                                    if (ei1 == ej1) and (ei2 == c2):
-                                        kern_term, sig_term, ls_term = \
-                                            three_body_grad_helper_2(ci2, ci1, cj1, cj2,
-                                                                     r22, r13, r31, fi, fj,
-                                                                     fdi, fdj, tls1, tls2,
-                                                                     tls3, tls4, tls5,
-                                                                     tls6,
-                                                                     tsig2, tsig3)
-                                        kern += kern_term
-                                        sig_derv[ttypei] += sig_term
-                                        ls_derv[ttypei] += ls_term
+                                        if (c1 == ej2):
+                                            if (ei1 == ej1) and (ei2 == c2):
+                                                kern_term, sig_term, ls_term = \
+                                                    three_body_grad_helper_2(ci2[d1], ci1[d1], cj1[d2], cj2[d2],
+                                                                             r22, r13, r31, fi, fj,
+                                                                             fdi[d1], fdj[d2], tls1, tls2,
+                                                                             tls3, tls4, tls5,
+                                                                             tls6,
+                                                                             tsig2, tsig3)
+                                                kern[d1, d2] += kern_term
+                                                sig_derv[ttypei, d1, d2] += sig_term
+                                                ls_derv[ttypei, d1, d2] += ls_term
 
-                                    if (ei1 == c2) and (ei2 == ej1):
-                                        kern_term, sig_term, ls_term = \
-                                            three_body_grad_helper_2(ci1, ci2, cj1, cj2,
-                                                                     r12, r23, r31, fi, fj,
-                                                                     fdi, fdj, tls1, tls2,
-                                                                     tls3, tls4, tls5,
-                                                                     tls6,
-                                                                     tsig2, tsig3)
+                                            if (ei1 == c2) and (ei2 == ej1):
+                                                kern_term, sig_term, ls_term = \
+                                                    three_body_grad_helper_2(ci1[d1], ci2[d1], cj1[d2], cj2[d2],
+                                                                             r12, r23, r31, fi, fj,
+                                                                             fdi[d1], fdj[d2], tls1, tls2,
+                                                                             tls3, tls4, tls5,
+                                                                             tls6,
+                                                                             tsig2, tsig3)
 
-                                        kern += kern_term
-                                        sig_derv[ttypei] += sig_term
-                                        ls_derv[ttypei] += ls_term
+                                                kern[d1, d2] += kern_term
+                                                sig_derv[ttypei, d1, d2] += sig_term
+                                                ls_derv[ttypei, d1, d2] += ls_term
 
-    return kern, np.hstack((sig_derv, ls_derv))
+    return kern, np.vstack((sig_derv, ls_derv))
 
 
 @njit
@@ -1361,11 +1334,11 @@ def three_body_mc_force_en_jit(bond_array_1, c1, etypes1,
                                cross_bond_inds_1, cross_bond_inds_2,
                                cross_bond_dists_1, cross_bond_dists_2,
                                triplets_1, triplets_2,
-                               d1, sig, ls, r_cut, cutoff_func,
+                               sig, ls, r_cut, cutoff_func,
                                nspec, spec_mask, triplet_mask, cut3b_mask):
     """Kernel for 3-body force/energy comparisons."""
 
-    kern = 0
+    kern = np.zeros(3, dtype=np.float64)
 
     # pre-compute constants that appear in the inner loop
     sig2 = sig * sig
@@ -1377,7 +1350,7 @@ def three_body_mc_force_en_jit(bond_array_1, c1, etypes1,
 
     for m in range(bond_array_1.shape[0]):
         ri1 = bond_array_1[m, 0]
-        ci1 = bond_array_1[m, d1]
+        ci1 = bond_array_1[m, 1:4]
         fi1, fdi1 = cutoff_func(r_cut, ri1, ci1)
         ei1 = etypes1[m]
 
@@ -1392,7 +1365,7 @@ def three_body_mc_force_en_jit(bond_array_1, c1, etypes1,
             if c2 in tr_spec:
                 tr_spec.remove(c2)
                 ri2 = bond_array_1[ind1, 0]
-                ci2 = bond_array_1[ind1, d1]
+                ci2 = bond_array_1[ind1, 1:4]
                 fi2, fdi2 = cutoff_func(r_cut, ri2, ci2)
 
                 bei2 = spec_mask[ei2]
@@ -1442,39 +1415,37 @@ def three_body_mc_force_en_jit(bond_array_1, c1, etypes1,
                                 r32 = ri3 - rj2
                                 r33 = ri3 - rj3
 
-                                if (c1 == c2):
-                                    if (ei1 == ej1) and (ei2 == ej2):
-                                        kern += three_body_en_helper(ci1, ci2, r11, r22,
-                                                                     r33, fi, fj, fdi,
-                                                                     tls1,
-                                                                     tls2, tsig2)
-                                    if (ei1 == ej2) and (ei2 == ej1):
-                                        kern += three_body_en_helper(ci1, ci2, r12, r21,
-                                                                     r33, fi, fj, fdi,
-                                                                     tls1,
-                                                                     tls2, tsig2)
-                                if (c1 == ej1):
-                                    if (ei1 == ej2) and (ei2 == c2):
-                                        kern += three_body_en_helper(ci1, ci2, r13, r21,
-                                                                     r32, fi, fj, fdi,
-                                                                     tls1,
-                                                                     tls2, tsig2)
-                                    if (ei1 == c2) and (ei2 == ej2):
-                                        kern += three_body_en_helper(ci1, ci2, r11, r23,
-                                                                     r32, fi, fj, fdi,
-                                                                     tls1,
-                                                                     tls2, tsig2)
-                                if (c1 == ej2):
-                                    if (ei1 == ej1) and (ei2 == c2):
-                                        kern += three_body_en_helper(ci1, ci2, r13, r22,
-                                                                     r31, fi, fj, fdi,
-                                                                     tls1,
-                                                                     tls2, tsig2)
-                                    if (ei1 == c2) and (ei2 == ej1):
-                                        kern += three_body_en_helper(ci1, ci2, r12, r23,
-                                                                     r31, fi, fj, fdi,
-                                                                     tls1,
-                                                                     tls2, tsig2)
+                                for d1 in range(3):
+
+                                    if (c1 == c2):
+                                        if (ei1 == ej1) and (ei2 == ej2):
+                                            kern[d1] += three_body_en_helper(ci1[d1], ci2[d1], r11, r22,
+                                                                         r33, fi, fj, fdi[d1],
+                                                                         tls1, tls2, tsig2)
+                                        if (ei1 == ej2) and (ei2 == ej1):
+                                            kern[d1] += three_body_en_helper(ci1[d1], ci2[d1], r12, r21,
+                                                                         r33, fi, fj, fdi[d1],
+                                                                         tls1, tls2, tsig2)
+                                    if (c1 == ej1):
+                                        if (ei1 == ej2) and (ei2 == c2):
+                                            kern[d1] += three_body_en_helper(ci1[d1], ci2[d1], r13, r21,
+                                                                         r32, fi, fj, fdi[d1],
+                                                                         tls1, tls2, tsig2)
+                                        if (ei1 == c2) and (ei2 == ej2):
+                                            kern[d1] += three_body_en_helper(ci1[d1], ci2[d1], r11, r23,
+                                                                         r32, fi, fj, fdi[d1],
+                                                                         tls1, tls2, tsig2)
+                                    if (c1 == ej2):
+                                        if (ei1 == ej1) and (ei2 == c2):
+                                            kern[d1] += three_body_en_helper(ci1[d1], ci2[d1], r13, r22,
+                                                                         r31, fi, fj, fdi[d1],
+                                                                         tls1,
+                                                                         tls2, tsig2)
+                                        if (ei1 == c2) and (ei2 == ej1):
+                                            kern[d1] += three_body_en_helper(ci1[d1], ci2[d1], r12, r23,
+                                                                         r31, fi, fj, fdi[d1],
+                                                                         tls1,
+                                                                         tls2, tsig2)
 
     return kern
 
@@ -1591,7 +1562,7 @@ def three_body_mc_en_jit(bond_array_1, c1, etypes1,
 
 @njit
 def two_body_mc_jit(bond_array_1, c1, etypes1, bond_array_2, c2, etypes2,
-                    d1, d2, sig, ls, r_cut, cutoff_func,
+                    sig, ls, r_cut, cutoff_func,
                     nspec, spec_mask, bond_mask):
     """Multicomponent two-body force/force kernel accelerated with Numba's
     njit decorator.
@@ -1599,7 +1570,7 @@ def two_body_mc_jit(bond_array_1, c1, etypes1, bond_array_2, c2, etypes2,
     of the same type.
     """
 
-    kern = 0
+    kern = np.zeros((3, 3), dtype=np.float64)
 
     ls1 = 1 / (2 * ls * ls)
     ls2 = 1 / (ls * ls)
@@ -1614,7 +1585,7 @@ def two_body_mc_jit(bond_array_1, c1, etypes1, bond_array_2, c2, etypes2,
 
         if ((c2 == e1) or (c2 == c1)):
             ri = bond_array_1[m, 0]
-            ci = bond_array_1[m, d1]
+            ci = bond_array_1[m, 1:4]
 
             be1 = spec_mask[e1]
             btype = bond_mask[bc1n + be1]
@@ -1633,17 +1604,19 @@ def two_body_mc_jit(bond_array_1, c1, etypes1, bond_array_2, c2, etypes2,
                 # check if bonds agree
                 if (c1 == c2 and e1 == e2) or (c1 == e2 and c2 == e1):
                     rj = bond_array_2[n, 0]
-                    cj = bond_array_2[n, d2]
+                    cj = bond_array_2[n, 1:4]
                     fj, fdj = cutoff_func(tr_cut, rj, cj)
                     r11 = ri - rj
 
-                    A = ci * cj
-                    B = r11 * ci
-                    C = r11 * cj
                     D = r11 * r11
+                    for d1 in range(3):
+                        B = r11 * ci[d1]
+                        for d2 in range(3):
+                            A = ci[d1] * cj[d2]
+                            C = r11 * cj[d2]
 
-                    kern += force_helper(A, B, C, D, fi, fj, fdi, fdj,
-                                         tls1, tls2, tls3, tsig2)
+                            kern[d1, d2] += force_helper(A, B, C, D, fi, fj, fdi[d1], fdj[d2],
+                                                         tls1, tls2, tls3, tsig2)
 
     return kern
 
@@ -1651,14 +1624,14 @@ def two_body_mc_jit(bond_array_1, c1, etypes1, bond_array_2, c2, etypes2,
 @njit
 def two_body_mc_grad_jit(bond_array_1, c1, etypes1,
                          bond_array_2, c2, etypes2,
-                         d1, d2, sig, ls, r_cut, cutoff_func,
+                         sig, ls, r_cut, cutoff_func,
                          nspec, spec_mask, nbond, bond_mask):
     """Multicomponent two-body force/force kernel gradient accelerated with
     Numba's njit decorator."""
 
-    kern = 0
-    sig_derv = np.zeros(nbond, dtype=np.float64)
-    ls_derv = np.zeros(nbond, dtype=np.float64)
+    kern = np.zeros((3, 3), dtype=np.float64)
+    sig_derv = np.zeros((nbond, 3, 3), dtype=np.float64)
+    ls_derv = np.zeros((nbond, 3, 3), dtype=np.float64)
 
     ls1 = 1 / (2 * ls * ls)
     ls2 = 1 / (ls * ls)
@@ -1677,7 +1650,7 @@ def two_body_mc_grad_jit(bond_array_1, c1, etypes1,
         e1 = etypes1[m]
         if ((c2 == e1) or (c2 == c1)):
             ri = bond_array_1[m, 0]
-            ci = bond_array_1[m, d1]
+            ci = bond_array_1[m, 1:4]
 
             be1 = spec_mask[e1]
             btype = bond_mask[bc1n + be1]
@@ -1700,40 +1673,41 @@ def two_body_mc_grad_jit(bond_array_1, c1, etypes1,
                 # check if bonds agree
                 if (c1 == c2 and e1 == e2) or (c1 == e2 and c2 == e1):
                     rj = bond_array_2[n, 0]
-                    cj = bond_array_2[n, d2]
+                    cj = bond_array_2[n, 1:4]
                     fj, fdj = cutoff_func(tr_cut, rj, cj)
 
                     r11 = ri - rj
 
-                    A = ci * cj
-                    B = r11 * ci
-                    C = r11 * cj
+
                     D = r11 * r11
+                    for d1 in range(3):
+                        B = r11 * ci[d1]
+                        for d2 in range(3):
+                            A = ci[d1] * cj[d2]
+                            C = r11 * cj[d2]
 
-                    kern_term, sig_term, ls_term = \
-                        grad_helper(A, B, C, D, fi, fj, fdi, fdj,
-                                    tls1, tls2, tls3,
-                                    tls4, tls5, tls6,
-                                    tsig2, tsig3)
+                            kern_term, sig_term, ls_term = \
+                                grad_helper(A, B, C, D, fi, fj, fdi[d1], fdj[d2],
+                                            tls1, tls2, tls3,
+                                            tls4, tls5, tls6,
+                                            tsig2, tsig3)
 
-                    kern += kern_term
-                    sig_derv[btype] += sig_term
-                    ls_derv[btype] += ls_term
+                            kern[d1, d2] += kern_term
+                            sig_derv[btype, d1, d2] += sig_term
+                            ls_derv[btype, d1, d2] += ls_term
 
-    kern_grad = np.hstack((sig_derv, ls_derv))
-
-    return kern, kern_grad
+    return kern, np.vstack((sig_derv, ls_derv))
 
 
 @njit
 def two_body_mc_force_en_jit(bond_array_1, c1, etypes1,
                              bond_array_2, c2, etypes2,
-                             d1, sig, ls, r_cut, cutoff_func,
+                             sig, ls, r_cut, cutoff_func,
                              nspec, spec_mask, bond_mask):
     """Multicomponent two-body force/energy kernel accelerated with
     Numba's njit decorator."""
 
-    kern = 0
+    kern = np.zeros(3, dtype=np.float64)
 
     ls1 = 1 / (2 * ls * ls)
     ls2 = 1 / (ls * ls)
@@ -1746,7 +1720,7 @@ def two_body_mc_force_en_jit(bond_array_1, c1, etypes1,
         e1 = etypes1[m]
         if ((c2 == e1) or (c2 == c1)):
             ri = bond_array_1[m, 0]
-            ci = bond_array_1[m, d1]
+            ci = bond_array_1[m, 1:4]
 
             be1 = spec_mask[e1]
             btype = bond_mask[bc1n + be1]
@@ -1767,11 +1741,12 @@ def two_body_mc_force_en_jit(bond_array_1, c1, etypes1,
                     fj, _ = cutoff_func(tr_cut, rj, 0)
 
                     r11 = ri - rj
-                    B = r11 * ci
                     D = r11 * r11
-                    kern += force_energy_helper(B, D, fi, fj, fdi,
-                                                tls1, tls2,
-                                                tsig2)
+                    for d1 in range(3):
+                        B = r11 * ci[d1]
+                        kern[d1] += force_energy_helper(B, D, fi, fj, fdi[d1],
+                                                    tls1, tls2,
+                                                    tsig2)
 
     return kern
 
@@ -1816,8 +1791,7 @@ def two_body_mc_en_jit(bond_array_1, c1, etypes1,
 
     return kern
 
-
-def many_body_mc(env1, env2, d1, d2, cutoff_2b, cutoff_3b, cutoff_mb,
+def many_body_mc(env1, env2, cutoff_2b, cutoff_3b, cutoff_mb,
                  nspec, spec_mask,
                  nbond, bond_mask, ntriplet, triplet_mask,
                  ncut3b, cut3b_mask,
@@ -1861,11 +1835,11 @@ def many_body_mc(env1, env2, d1, d2, cutoff_2b, cutoff_3b, cutoff_mb,
                                    env1.ctype, env2.ctype,
                                    env1.etypes_mb, env2.etypes_mb,
                                    env1.unique_species, env2.unique_species,
-                                   d1, d2, sigm, lsm,
+                                   sigm, lsm,
                                    nspec, spec_mask, mb_mask)
 
 
-def many_body_mc_grad(env1, env2, d1, d2, cutoff_2b, cutoff_3b, cutoff_mb,
+def many_body_mc_grad(env1, env2, cutoff_2b, cutoff_3b, cutoff_mb,
                       nspec, spec_mask,
                       nbond, bond_mask, ntriplet, triplet_mask,
                       ncut3b, cut3b_mask,
@@ -1913,11 +1887,11 @@ def many_body_mc_grad(env1, env2, d1, d2, cutoff_2b, cutoff_3b, cutoff_mb,
                                         env1.ctype, env2.ctype,
                                         env1.etypes_mb, env2.etypes_mb,
                                         env1.unique_species, env2.unique_species,
-                                        d1, d2, sigm, lsm,
+                                        sigm, lsm,
                                         nspec, spec_mask, nmb, mb_mask)
 
 
-def many_body_mc_force_en(env1, env2, d1, cutoff_2b, cutoff_3b, cutoff_mb,
+def many_body_mc_force_en(env1, env2, cutoff_2b, cutoff_3b, cutoff_mb,
                           nspec, spec_mask,
                           nbond, bond_mask, ntriplet, triplet_mask,
                           ncut3b, cut3b_mask,
@@ -1944,7 +1918,7 @@ def many_body_mc_force_en(env1, env2, d1, cutoff_2b, cutoff_3b, cutoff_mb,
                                             env1.ctype, env2.ctype,
                                             env1.etypes_mb,
                                             env1.unique_species, env2.unique_species,
-                                            d1, sigm, lsm,
+                                            sigm, lsm,
                                             nspec, spec_mask, mb_mask)
 
 
