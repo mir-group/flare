@@ -258,7 +258,7 @@ class ParameterHelper():
             if parameters is not None:
                 self.list_parameters(parameters, constraints)
 
-            if 'lengthscale' in self.universal and 'sigma' in self.universal:
+            if 'lengthscale' in self.universal or 'sigma' in self.universal:
                 universal = True
             else:
                 universal = False
@@ -286,11 +286,11 @@ class ParameterHelper():
             if parameters is not None:
                 self.list_parameters(parameters, constraints)
 
-            if 'lengthscale' in self.universal and 'sigma' in self.universal:
+            if 'lengthscale' in self.universal or 'sigma' in self.universal:
                 universal = True
             else:
                 universal = False
-
+            
             if (random+ones+universal) > 1:
                 raise RuntimeError(
                     "random and ones cannot be simultaneously True")
@@ -332,6 +332,11 @@ class ParameterHelper():
         for name in parameter_dict:
             self.set_parameters(
                 name, parameter_dict[name], constraints.get(name, True))
+        for name in constraints:
+            if name not in parameter_dict:
+                self.set_constraints(
+                    name, constraints[name])
+
 
     def list_groups(self, group_type, definition_list):
         """define groups in batches.
@@ -597,7 +602,7 @@ class ParameterHelper():
                         gid += ["*"]
                     else:
                         for idx in range(self.n['specie']):
-                            group_name = self.all_group_names['species'][idx]
+                            group_name = self.all_group_names['specie'][idx]
                             if ele_name in self.groups['specie'][idx]:
                                 group_name_list += [group_name]
                                 self.logger.debug(f"Element {ele_name} is used for "
@@ -932,8 +937,8 @@ class ParameterHelper():
                         # and they are all the same value
                         del self.cutoff_list[group_type]
                         universal_cutoff = max_cutoff
-                        if group_type == 'cut3b':
-                            self.n['cut3b'] = 0
+                        if group_type in self.cutoff_types:
+                            self.n[group_type] = 0
                         self.logger.info(f"universal cutoff is updated to "
                                          f"{universal_cutoff}")
 
