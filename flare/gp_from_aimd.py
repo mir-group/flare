@@ -68,6 +68,7 @@ class TrajectoryTrainer:
                  validate_ratio: float = 0.0,
                  calculate_energy: bool = False,
                  output_name: str = 'gp_from_aimd',
+                 print_xyz: bool = False,
                  pre_train_max_iter: int = 50,
                  max_atoms_from_frame: int = np.inf,
                  max_trains: int = np.inf,
@@ -202,7 +203,9 @@ class TrajectoryTrainer:
                     self.pre_train_env_per_species[key]
 
         # Output parameters
-        self.output = Output(output_name, verbose, always_flush=True)
+        self.output = Output(output_name, verbose,
+                             print_xyz=print_xyz,
+                             always_flush=True)
         self.logger_name = self.output.basename+'log'
         self.train_checkpoint_interval = train_checkpoint_interval or \
             checkpoint_interval
@@ -214,7 +217,7 @@ class TrajectoryTrainer:
         # Defining variables to be used later
         self.curr_step = 0
         self.train_count = 0
-        self.start_time = None
+        self.start_time = time.time()
 
     def pre_run(self):
         """
@@ -311,11 +314,15 @@ class TrajectoryTrainer:
                 (self.pre_train_max_iter or self.max_trains):
             logger.debug("Now commencing pre-run training of GP (which has "
                          "non-empty training set)")
+            time0 = time.time()
             self.train_gp(max_iter=self.pre_train_max_iter)
+            logger.debug(f"Done {time.time()-time0}")
         else:
             logger.debug("Now commencing pre-run set up of GP (which has "
                          "non-empty training set)")
+            time0 = time.time()
             self.gp.check_L_alpha()
+            logger.debug(f"Done {time.time()-time0}")
 
         if self.model_format and not self.mgp:
             self.gp.write_model(f'{self.output_name}_prerun',
@@ -349,6 +356,8 @@ class TrajectoryTrainer:
 
         for i, cur_frame in enumerate(self.frames[::self.skip]):
 
+            frame_start_time = time.time()
+
             logger.info(f"=====NOW ON FRAME {i}=====")
 
             # If no predict_atoms_per_element was specified, predict_atoms
@@ -361,7 +370,7 @@ class TrajectoryTrainer:
             # Three different predictions: Either MGP, GP with energy,
             # or GP without
             if self.mgp:
-                pred_forces, pred_stds = self.pred_func(
+                pred_forces, pred_stds, local_energies = self.pred_func(
                     structure=cur_frame, mgp=self.gp, write_to_structure=False,
                     selective_atoms=predict_atoms, skipped_atom_value=np.nan)
             elif self.calculate_energy:
@@ -379,6 +388,7 @@ class TrajectoryTrainer:
 
             # Get Error
             dft_forces = cur_frame.forces
+            dft_energy = cur_frame.energy
             error = np.abs(pred_forces - dft_forces)
 
             # Create dummy frame with the predicted forces written
@@ -388,10 +398,13 @@ class TrajectoryTrainer:
 
             self.output.write_gp_dft_comparison(
                 curr_step=i, frame=dummy_frame,
-                start_time=time.time(),
+                start_time=self.start_time,
                 dft_forces=dft_forces,
+                dft_energy=dft_energy,
                 error=error,
                 local_energies=local_energies)
+
+            logger.debug(f'Single frame calculation time {time.time()-frame_start_time}')
 
             if i < train_frame:
                 # Noise hyperparameter & relative std tolerance is not for mgp.

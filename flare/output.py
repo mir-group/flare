@@ -37,18 +37,22 @@ class Output:
 
     def __init__(self, basename: str = 'otf_run',
                  verbose: str = 'INFO',
+                 print_xyz: bool = False,
                  always_flush: bool = False):
         """
         Construction. Open files.
         """
         self.basename = f"{basename}"
-        filesuffix = {'log': '.out', 'hyps': '-hyps.dat'}
-        self.logger = []
+        self.print_xyz = print_xyz
+        self.always_flush = always_flush
 
+        filesuffix = {'log': '.out', 'hyps': '-hyps.dat'}
+        if print_xyz:
+            filesuffix['xyz'] = '.xyz'
+
+        self.logger = []
         for filetype in filesuffix:
             self.open_new_log(filetype, filesuffix[filetype], verbose)
-
-        self.always_flush = always_flush
 
     def conclude_run(self):
         """
@@ -245,7 +249,8 @@ class Output:
                   filename: str,
                   header="",
                   forces: np.array = None, stds: np.array = None,
-                  forces_2: np.array = None):
+                  forces_2: np.array = None, dft_energy: float = 0,
+                  predict_energy: float = 0):
         """ write atomic configuration in xyz file
 
         :param curr_step: Int, number of frames to note in the comment line
@@ -258,16 +263,19 @@ class Output:
         :param forces_2: true forces from ab initio source
         """
 
+        logger = logging.getLogger(self.basename+filename)
+
         natom = len(species)
-        string = f'{natom}\n'
+        logger.info(f'{natom}')
 
         # comment line
         # Mark if a frame had DFT forces with an asterisk
-        string += f"{header} Frame: {curr_step}\n"
+        logger.info(f"{header} Frame: {curr_step} "
+                    f"Pot: {predict_energy} DFT: {dft_energy}")
 
         # Construct atom-by-atom description
         for i in range(natom):
-            string += f'{species[i]} '
+            string = f'{species[i]} '
             string += f'{pos[i, 0]:10.3} {pos[i, 1]:10.3} {pos[i, 2]:10.3}'
 
             if forces is not None and stds is not None and forces_2 is not \
@@ -278,19 +286,17 @@ class Output:
                 string += f' {stds[i, 0]:10.3} {stds[i, 1]:10.3} ' \
                           f'{stds[i, 2]:10.3}'
                 string += f' {forces_2[i, 0]:10.3} {forces_2[i,1]:10.3} ' \
-                          f'{forces_2[i, 2]:10.3}\n'
+                          f'{forces_2[i, 2]:10.3}'
+            logger.info(string)
 
-            else:
-                string += '\n'
-        logger = logging.getLogger(self.basename+filename)
-        logger.info(string)
 
         if self.always_flush:
             logger.handlers[0].flush()
 
     def write_xyz_config(self, curr_step, structure, dft_step,
                          forces: np.array = None, stds: np.array = None,
-                         forces_2: np.array = None):
+                         forces_2: np.array = None, dft_energy = 0,
+                         predict_energy = 0):
         """ write atomic configuration in xyz file
 
         :param curr_step: Int, number of frames to note in the comment line
@@ -311,7 +317,8 @@ class Output:
         self.write_xyz(curr_step=curr_step, pos=structure.positions,
                        species=structure.species_labels, filename='xyz',
                        header=header,
-                       forces=forces, stds=stds, forces_2=forces_2)
+                       forces=forces, stds=stds, forces_2=forces_2,
+                       dft_energy = dft_energy, predict_energy = predict_energy)
 
     def write_hyps(self, hyp_labels, hyps, start_time, like, like_grad,
                    name='log', hyps_mask=None):
@@ -364,7 +371,8 @@ class Output:
 
     def write_gp_dft_comparison(self, curr_step, frame,
                                 start_time, dft_forces,
-                                error, local_energies=None, KE=None,
+                                dft_energy,
+                                error, local_energies=None, KE=0,
                                 mgp=False):
         """ write the comparison to logfile
 
@@ -372,6 +380,7 @@ class Output:
         :param frame: Structure object that contain the current GP calculation results
         :param start_time: start time for time profiling
         :param dft_forces: list of forces computed by DFT
+        :param dft_energy: total energy computed by DFT
         :param error: list of force differences between DFT and GP prediction
         :param local_energies: local atomic energy
         :param KE: total kinetic energy
@@ -410,10 +419,6 @@ class Output:
 
         string += '\n'
 
-        # self.write_xyz_config(curr_step, frame, forces=frame.forces,
-        #                       stds=frame.stds, forces_2=dft_forces,
-        #                       dft_step=True)
-
         mae = np.nanmean(error) * 1000
         mac = np.mean(np.abs(dft_forces)) * 1000
         string += f'mean absolute error: {mae:.2f} meV/A\n'
@@ -444,12 +449,19 @@ class Output:
             stat += f' {mae_per_species[ele]:.2f}'
 
         # calculate potential and total energy
+        pot_en = 0
         if local_energies is not None:
             pot_en = np.sum(local_energies)
             tot_en = KE + pot_en
-            string += f'potential energy: {pot_en:10.6} eV\n'
+            string += f'potential energy: {pot_en:10.6} eV (DFT: {dft_energy} eV\n'
             string += f'total energy: {tot_en:10.6} eV \n'
             stat += f' {pot_en:10.6} {tot_en:10.6}'
+
+        if self.print_xyz:
+            self.write_xyz_config(curr_step, frame, forces=frame.forces,
+                                  stds=frame.stds, forces_2=dft_forces,
+                                  dft_step=True, dft_energy=dft_energy,
+                                  predict_energy=pot_en)
 
         f = logging.getLogger(self.basename+'log')
         f.info(string)

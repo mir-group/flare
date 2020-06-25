@@ -51,7 +51,7 @@ class Structure:
     def __init__(self, cell: 'ndarray', species: Union[List[str], List[int]],
                  positions: 'ndarray', mass_dict: dict = None,
                  prev_positions: 'ndarray' = None,
-                 species_labels: List[str] = None, forces=None, stds=None):
+                 species_labels: List[str] = None, forces=None, stds=None, energy=0):
         # Set up individual Bravais lattice vectors
         self.cell = np.array(cell)
         self.vec1 = self.cell[0, :]
@@ -99,6 +99,8 @@ class Structure:
             self.stds = np.array(stds)
         else:
             self.stds = np.zeros((len(positions), 3))
+
+        self.energy = energy
 
         self.mass_dict = mass_dict
 

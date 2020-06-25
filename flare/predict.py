@@ -224,6 +224,7 @@ def predict_on_structure_mgp(structure, mgp, output=None,
 
     forces = np.zeros(shape=(structure.nat, 3))
     stds = np.zeros(shape=(structure.nat, 3))
+    energy = np.zeros(shape=(structure.nat))
 
     if selective_atoms:
         forces.fill(skipped_atom_value)
@@ -236,8 +237,8 @@ def predict_on_structure_mgp(structure, mgp, output=None,
         if n not in selective_atoms and selective_atoms:
             continue
 
-        forces[n, :], stds[n, :], _ = \
+        forces[n, :], stds[n, :], energy[n] = \
             predict_on_atom_mgp(n, structure, mgp,
                                 write_to_structure)
 
-    return forces, stds
+    return forces, stds, energy
