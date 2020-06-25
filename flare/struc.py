@@ -377,6 +377,7 @@ class Structure:
                 forces = self.forces
             if print_max_stds:
                 xyz_str += ':max_std:R:1'
+                stds = self.stds
             xyz_str += '\n'
         else:
             xyz_str += '\n'
