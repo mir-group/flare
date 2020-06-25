@@ -136,11 +136,11 @@ def predict_on_structure_par(structure: Structure, gp: GaussianProcess,
     """
     # Work in serial if the number of cpus is 1
     if n_cpus == 1:
-        predict_on_structure(structure, gp,
-                             n_cpus, write_to_structure,
-                             selective_atoms,
-                             skipped_atom_value,
-                             energy)
+        return predict_on_structure(structure, gp,
+                                    n_cpus, write_to_structure,
+                                    selective_atoms,
+                                    skipped_atom_value,
+                                    energy)
 
     forces = np.zeros((structure.nat, 3))
     stds = np.zeros((structure.nat, 3))
