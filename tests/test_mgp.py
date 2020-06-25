@@ -108,7 +108,7 @@ def test_build_map(all_gp, all_mgp, bodies, multihyps, map_force):
 #    test the mapping for mc_simple kernel
 #    """
 #    mgp_model = all_mgp[f'{bodies}{multihyps}{map_force}']
-#    mgp_model.mean_only = True
+#    mgp_model.var_map = None
 #    mgp_model.write_model(f'my_mgp_{bodies}_{multihyps}_{map_force}')
 #
 #    mgp_model.write_model(f'my_mgp_{bodies}_{multihyps}_{map_force}', format='pickle')
@@ -116,9 +116,9 @@ def test_build_map(all_gp, all_mgp, bodies, multihyps, map_force):
 #    # Ensure that user is warned when a non-mean_only
 #    # model is serialized into a Dictionary
 #    with pytest.warns(Warning):
-#        mgp_model.mean_only = False
+#        mgp_model.var_map = 'simple'
 #        mgp_model.as_dict()
-#        mgp_model.mean_only = True
+#        mgp_model.var_map = None
 #
 #
 #@pytest.mark.parametrize('bodies', body_list)
@@ -223,7 +223,7 @@ def test_predict(all_gp, all_mgp, bodies, multihyps, map_force):
 
     gp_pred_en, gp_pred_envar = gp_model.predict_local_energy_and_var(test_envi)
     gp_pred = np.array([gp_model.predict(test_envi, d+1) for d in range(3)]).T
-    mgp_pred = mgp_model.predict(test_envi, mean_only=False)
+    mgp_pred = mgp_model.predict(test_envi)
 
 
     # check mgp is within 2 meV/A of the gp
@@ -240,7 +240,7 @@ def test_predict(all_gp, all_mgp, bodies, multihyps, map_force):
 #    if multihyps and ('3' in bodies):
 #        pytest.skip()
 
-    if mgp_model.grid_params[kernel_name]['svd_rank'] == 'simple':
+    if mgp_model.var_map == 'simple':
         mgp_var = mgp_pred[1]
         gp_var = predict_atom_diag_var(test_envi, gp_model, kernel_name)
         print('mgp_var, gp_var', mgp_var, gp_var)
@@ -335,7 +335,7 @@ def test_lmp_predict(all_gp, all_mgp, bodies, multihyps, map_force):
                                  output_file_name)
 
     lammps_forces = lammps_calculator.lammps_parser(dump_file_name)
-    mgp_forces = mgp_model.predict(test_envi, mean_only=True)
+    mgp_forces = mgp_model.predict(test_envi)
 
     # check that lammps agrees with gp to within 1 meV/A
     for i in range(3):
