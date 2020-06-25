@@ -384,15 +384,18 @@ def stress_energy(bond_array_1, c1, etypes1, bond_array_2, c2, etypes2,
 
     for m in range(bond_array_1.shape[0]):
         ri1 = bond_array_1[m, 0]
+        fi1, _ = cutoff_func(r_cut, ri1, 0)
         ei1 = etypes1[m]
 
         for n in range(triplets_1[m]):
             ind1 = cross_bond_inds_1[m, m + n + 1]
             ri2 = bond_array_1[ind1, 0]
+            fi2, _ = cutoff_func(r_cut, ri2, 0)
             ei2 = etypes1[ind1]
 
             ri3 = cross_bond_dists_1[m, m + n + 1]
             fi3, _ = cutoff_func(r_cut, ri3, 0)
+            fi = fi1 * fi2 * fi3
 
             for p in range(bond_array_2.shape[0]):
                 rj1 = bond_array_2[p, 0]
@@ -424,7 +427,6 @@ def stress_energy(bond_array_1, c1, etypes1, bond_array_2, c2, etypes2,
                         fi1, fdi1 = cutoff_func(r_cut, ri1, ci1)
                         ci2 = bond_array_1[ind1, d1 + 1]
                         fi2, fdi2 = cutoff_func(r_cut, ri2, ci2)
-                        fi = fi1 * fi2 * fi3
                         fdi_p1 = fdi1 * fi2 * fi3
                         fdi_p2 = fi1 * fdi2 * fi3
                         fdi = fdi_p1 + fdi_p2
