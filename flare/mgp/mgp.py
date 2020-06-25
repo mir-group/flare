@@ -190,7 +190,7 @@ class MappedGaussianProcess:
             energy += pred[4]
 
         if self.var_map == 'simple':
-            variance = v
+            variance = v ** 2
         else:
             variance = kern - np.sum(v**2, axis=0)
 

@@ -140,6 +140,7 @@ class MapXbody:
             xyzs = np.array(comp_xyz[i])
             map_ind = self.find_map_index(spc)
 
+            print('n_lengths', len(lengths))
             f, vir, v, e = self.maps[map_ind].predict(lengths, xyzs,
                 self.map_force)
             f_spcs += f
@@ -604,8 +605,9 @@ class SingleMapXbody:
             v = 0
             if self.var_map == 'simple':
                 v_0 = self.var(lengths)
-                v_0 = np.sum(v_0)
-                v = v_0 ** 2
+                print('v_0', v_0)
+                v = np.sum(v_0)
+                #v = v_0 ** 2
             elif self.var_map == 'pca':
                 v_0 = self.var(lengths)
                 v_0 = np.sum(v_0, axis=1)

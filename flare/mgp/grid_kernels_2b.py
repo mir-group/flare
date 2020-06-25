@@ -50,7 +50,7 @@ def self_kernel(map_force, grids, c2, etypes2, hyps, cutoffs,
     
     fj, _ = cutoff_func(r_cut, grids, 0)
 
-    kern = sig2 * fj ** 2 # (n_grids,)
+    kern = (sig2 / 4) * fj ** 2 # (n_grids,)
 
     return kern
  

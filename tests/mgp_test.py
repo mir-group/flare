@@ -102,9 +102,11 @@ def predict_atom_diag_var_2b(atom_env, gp_model):
         spc_struc.coded_species = np.array(species)
         env12 = env.AtomicEnvironment(spc_struc, 0, gp_model.cutoffs)
 
+        print('env12', env12.bond_array_2)
         _, v12 = gp_model.predict_local_energy_and_var(env12)
         var += np.sqrt(v12)
 
+        print('v12', np.sqrt(v12))
     var = var ** 2 
     return var       
 
@@ -145,6 +147,7 @@ def predict_atom_diag_var_3b(atom_env, gp_model):
 
 
 def predict_atom_diag_var(atom_env, gp_model, kernel_name):
+    print('predict diag var')
     if kernel_name == 'twobody':
         return predict_atom_diag_var_2b(atom_env, gp_model)
     elif kernel_name == 'threebody':
