@@ -5,10 +5,10 @@ import numpy as np
 from copy import deepcopy
 from math import ceil
 from flare.struc import Structure
-from flare.parameters import Parameters
 import flare.kernels.cutoffs as cf
-from flare.utils.env_getarray import get_2_body_arrays, get_3_body_arrays,\
-    get_m2_body_arrays, get_m3_body_arrays
+from flare.utils.env_getarray import get_2_body_arrays, get_3_body_arrays, \
+    get_m2_body_arrays
+
 
 
 class AtomicEnvironment:
@@ -156,11 +156,12 @@ class AtomicEnvironment:
         for kernel in AtomicEnvironment.all_kernel_types:
             ndim = AtomicEnvironment.ndim[kernel]
             if kernel in self.cutoffs:
-                setattr(self, kernel+'_cutoff', self.cutoffs[kernel])
+                setattr(self, kernel + '_cutoff', self.cutoffs[kernel])
 
         if (self.twobody_cutoff == 0):
             self.twobody_cutoff = \
                 np.max([self.threebody_cutoff, self.manybody_cutoff])
+
             self.cutoffs['twobody'] = self.twobody_cutoff
 
         self.nspecie = cutoffs_mask.get('nspecie', 1)
@@ -171,11 +172,11 @@ class AtomicEnvironment:
         for kernel in AtomicEnvironment.all_kernel_types:
             ndim = AtomicEnvironment.ndim[kernel]
             if kernel in self.cutoffs:
-                setattr(self, kernel+'_cutoff', self.cutoffs[kernel])
-                setattr(self, 'n'+kernel, 1)
+                setattr(self, kernel + '_cutoff', self.cutoffs[kernel])
+                setattr(self, 'n' + kernel, 1)
                 if kernel != 'threebody':
-                    name_list = [kernel+'_cutoff_list',
-                                 'n'+kernel, kernel+'_mask']
+                    name_list = [kernel + '_cutoff_list',
+                                 'n' + kernel, kernel + '_mask']
                     for name in name_list:
                         if name in cutoffs_mask:
                             setattr(self, name, cutoffs_mask[name])
@@ -187,10 +188,11 @@ class AtomicEnvironment:
                             np.array(cutoffs_mask['threebody_cutoff_list'],
                                      dtype=np.float)
 
+
     def compute_env(self):
 
         # get 2-body arrays
-        if (self.ntwobody >= 1):
+        if self.ntwobody >= 1:
             bond_array_2, bond_positions_2, etypes, bond_inds = \
                 get_2_body_arrays(
                     self.positions, self.atom, self.cell, self.twobody_cutoff,
@@ -224,22 +226,30 @@ class AtomicEnvironment:
                     self.nspecie, self.specie_mask, self.manybody_mask,
                     cf.quadratic_cutoff)
 
-    def as_dict(self):
+    def as_dict(self, include_structure: bool = False):
         """
         Returns Atomic Environment object as a dictionary for serialization
-        purposes. Does not include the structure to avoid redundant
+        purposes. Optional to not include the structure to avoid redundant
         information.
         :return:
         """
-        # TODO write serialization method for structure
-        # so that the removal of the structure is not messed up
-        # by JSON serialization
+
         dictionary = dict(vars(self))
         dictionary['object'] = 'AtomicEnvironment'
         dictionary['forces'] = self.structure.forces
-        dictionary['cutoffs_mask'] = self.cutoffs_mask
 
-        del dictionary['structure']
+        # Backward compatibility for older models: Cutoffs mask.
+        # Can be deleted one day if support is dropped for older (Pre June
+        # 2020) pickled environment objects.
+        cutoffs_mask = getattr(self, 'cutoffs_mask', {'cutoffs': self.cutoffs})
+        if not hasattr(self, 'cutoffs_mask'):
+            self.cutoffs_mask = cutoffs_mask
+        dictionary['cutoffs_mask'] = cutoffs_mask
+
+        if not include_structure:
+            del dictionary['structure']
+        else:
+            dictionary['structure'] = dictionary['structure'].as_dict()
 
         return dictionary
 
@@ -273,7 +283,7 @@ class AtomicEnvironment:
         atom_type = self.ctype
         neighbor_types = self.etypes
         n_neighbors = len(self.bond_array_2)
-        string = 'Atomic Env. of Type {} surrounded by {} atoms '\
+        string = 'Atomic Env. of Type {} surrounded by {} atoms ' \
                  'of Types {}'.format(atom_type, n_neighbors,
                                       sorted(list(set(neighbor_types))))
 
