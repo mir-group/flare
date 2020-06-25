@@ -155,8 +155,8 @@ class ASE_OTF(OTF):
         self.md.step()
 
         # Update the positions and cell of the structure object.
-        self.structure.positions = np.copy(self.atoms.positions)
         self.structure.cell = np.copy(self.atoms.cell)
+        self.structure.positions = np.copy(self.atoms.positions)
 
     def update_positions(self, new_pos):
         # call OTF method

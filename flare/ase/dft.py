@@ -40,6 +40,8 @@ def run_dft_par(atoms, structure, dft_calc, **dft_kwargs):
     # Write energy, forces, and stress to structure.
     structure.potential_energy = energy
     structure.stress = stress
+    structure.stds = np.zeros((structure.nat, 3))
+    structure.stress_stds = None
     structure.partial_stress_stds = None
     structure.local_energy_stds = None
 

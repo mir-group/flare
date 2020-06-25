@@ -225,7 +225,9 @@ class Output:
             string += ' ' * 4
             for j in range(3):
                 string += f'{velocities[i][j]:10.4f}'
-            string += '\n\n'
+            string += '\n'
+
+        string += '\n'
 
         # Report cell if stress attribute is present.
         if structure.stress is not None:
@@ -379,8 +381,8 @@ class Output:
             for i, hyp in enumerate(hyps):
                 f.info(f'Hyp{i} : {hyp:.4f}')
 
-        f.info(f'likelihood: {like:.4f}')
-        f.info(f'likelihood gradient: {like_grad}')
+        f.info(f'Likelihood: {like:.4f}')
+        f.info(f'Likelihood gradient: {like_grad}')
 
         if start_time:
             self.write_wall_time(start_time)
