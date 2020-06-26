@@ -276,17 +276,17 @@ class Output:
         # Construct atom-by-atom description
         for i in range(natom):
             string = f'{species[i]} '
-            string += f'{pos[i, 0]:10.3} {pos[i, 1]:10.3} {pos[i, 2]:10.3}'
+            string += f'{pos[i, 0]} {pos[i, 1]} {pos[i, 2]}'
 
             if forces is not None and stds is not None and forces_2 is not \
                     None:
 
-                string += f' {forces[i, 0]:10.3} {forces[i, 1]:10.3} ' \
-                          f'{forces[i, 2]:10.3}'
-                string += f' {stds[i, 0]:10.3} {stds[i, 1]:10.3} ' \
-                          f'{stds[i, 2]:10.3}'
-                string += f' {forces_2[i, 0]:10.3} {forces_2[i,1]:10.3} ' \
-                          f'{forces_2[i, 2]:10.3}'
+                string += f' {forces[i, 0]} {forces[i, 1]} ' \
+                          f'{forces[i, 2]}'
+                string += f' {stds[i, 0]} {stds[i, 1]} ' \
+                          f'{stds[i, 2]}'
+                string += f' {forces_2[i, 0]} {forces_2[i,1]} ' \
+                          f'{forces_2[i, 2]}'
             logger.info(string)
 
 

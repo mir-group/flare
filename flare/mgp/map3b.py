@@ -189,7 +189,7 @@ class SingleMap3body(SingleMapXbody):
             kern_type = f'{prefix}_energy'
 
         k_v = []
-        chunk_size = 32 ** 3
+        chunk_size = 16 ** 3
         n_grids = grids.shape[0]
         if n_grids > chunk_size:
             n_chunk = ceil(n_grids / chunk_size)
