@@ -20,7 +20,7 @@ from flare.gp_algebra import get_like_from_mats, get_neg_like_grad, \
     force_force_vector, energy_force_vector, get_force_block, \
     get_ky_mat_update, _global_training_data, _global_training_labels, \
     _global_training_structures, _global_energy_labels, get_Ky_mat, \
-    get_kernel_vector, en_kern_vec
+    get_kernel_vector, en_kern_vec, kernel_distance_mat
 from flare.kernels.utils import str_to_kernel_set, from_mask_to_args, kernel_str_to_array
 from flare.output import Output, set_logger
 from flare.parameters import Parameters
@@ -407,6 +407,13 @@ class GaussianProcess:
             self.update_L_alpha()
         elif (size3 != self.alpha.shape[0]):
             self.set_L_alpha()
+
+    def compute_dist_mat(self):
+        """ Reset global variables. """
+        kmat = kernel_distance_mat(self.hyps, self.name,
+                                   self.energy_kernel, self.cutoffs,
+                                   self.hyps_mask, self.n_cpus, self.n_sample)
+        return kmat
 
     def predict(self, x_t: AtomicEnvironment) -> [float, float]:
         """
@@ -932,6 +939,7 @@ class GaussianProcess:
 
         gp_model.check_instantiation()
         return gp_model
+
 
     @property
     def training_statistics(self) -> dict:

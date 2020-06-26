@@ -705,7 +705,7 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
         _global_training_structures[f"{self.name}_join"] = self.training_structures[expert_id]
         kmat = kernel_distance_mat(self.hyps, self.name+"_join",
                                    self.energy_kernel, self.cutoffs,
-                                   selfhyps_mask, self.n_cpus, self.n_sample)
+                                   self.hyps_mask, self.n_cpus, self.n_sample)
         del _global_training_data[f"{self.name}_join"]
         del _global_training_structures[f"{self.name}_join"]
         del joint_data
@@ -724,7 +724,9 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
 
         # Count all of the present species in the atomic env. data
         present_species = []
+        data['N'] = 0
         for i in range(self.n_experts):
+            data['N'] += self.n_envs_prev[i]
             data[f'N_{i}'] = self.n_envs_prev[i]
             for env, _ in zip(self.training_data[i], self.training_labels[i]):
                 present_species.append(Z_to_element(env.structure.coded_species[
@@ -761,17 +763,19 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
             raise ValueError("Output format not supported: try from "
                              "{}".format(supported_formats))
 
-    def get_full_GP(self):
+    def get_full_gp(self):
 
-        gp_model = GaussianProcess(self.__dict__)
+        gp_model = GaussianProcess(**self.__dict__)
         gp_model.training_data = []
         gp_model.training_labels = []
+        gp_model.name = "rbcm_derived_gp"
         for i in range(self.n_experts):
             gp_model.training_data += self.training_data[i]
             gp_model.training_labels += self.training_labels[i]
             gp_model.training_labels_np = np.hstack(gp_model.training_labels)
-            gp_model.all_labels_np = np.hstack(gp_model.training_labels,
-                                               gp_model.energy_labels_np)
+            gp_model.all_labels = np.hstack((gp_model.training_labels_np,
+                                            gp_model.energy_labels_np))
+        gp_model.sync_data()
         return gp_model
 
 
