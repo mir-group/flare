@@ -58,15 +58,15 @@ def grad_helper(A, B, C, D, fi, fj, fdi, fdj, ls1, ls2, ls3, ls4, ls5, ls6,
     M = I + J + K + L
     N = sig2 * M
     O = sig3 * M
-    P = E * D * ls4
-    Q = B * (ls2 * P - 2 * E * ls4)
-    R = -C * (ls2 * P - 2 * E * ls4)
-    S = (A * ls5 - B * C) * (P * ls3 - 4 * E * ls6) + 2 * E * A * ls4
+    P = D * ls4
+    Q = B * (ls2 * P - 2 * ls4)
+    R = -C * (ls2 * P - 2 * ls4)
+    S = (A * ls5 - B * C) * (P * ls3 - 4 * ls6) + 2 * A * ls4
     T = P * fdi * fdj
     U = Q * fi * fdj
     V = R * fdi * fj
     W = S * fi * fj
-    X = sig2 * (T + U + V + W)
+    X = sig2 * (T + U + V + W) * E
 
     return N, O, X
 
@@ -74,10 +74,10 @@ def grad_helper(A, B, C, D, fi, fj, fdi, fdj, ls1, ls2, ls3, ls4, ls5, ls6,
 @njit
 def force_energy_helper(B, D, fi, fj, fdi, ls1, ls2, sig2):
     E = exp(-D * ls1)
-    F = E * B * ls2
+    F = B * ls2
     G = -F * fi * fj
-    H = -E * fdi * fj
-    I = sig2 * (G + H)
+    H = -fdi * fj
+    I = sig2 * (G + H) * E
 
     return I
 
@@ -116,14 +116,14 @@ def three_body_sf_1(ci1, ci2, cj1, cj2, r11, r22, r33, fi, fj, fdi, fdj,
     C = r11 * cj1 + r22 * cj2
     D = r11 * r11 + r22 * r22 + r33 * r33
     E = exp(-D * ls1)
-    F = E * B * ls2
-    G = -E * C * ls2
-    H = A * E * ls2 - B * C * E * ls3
-    I = E * (fdi1 * coord1 + fdi2 * coord2) * fdj
+    F = B * ls2
+    G = -C * ls2
+    H = A * ls2 - B * C * ls3
+    I = (fdi1 * coord1 + fdi2 * coord2) * fdj
     J = F * fi * fdj
     K = G * (fdi1 * coord1 + fdi2 * coord2) * fj
     L = H * fi * fj
-    M = -sig2 * (I + J + K + L)
+    M = -sig2 * (I + J + K + L) * E
 
     return M
 
@@ -136,14 +136,14 @@ def three_body_sf_2(ci1, ci2, cj1, cj2, r12, r23, r31, fi, fj, fdi, fdj,
     C = r12 * cj2 + r31 * cj1
     D = r12 * r12 + r23 * r23 + r31 * r31
     E = exp(-D * ls1)
-    F = E * B * ls2
-    G = -E * C * ls2
-    H = A * E * ls2 - B * C * E * ls3
-    I = E * (fdi1 * coord1 + fdi2 * coord2) * fdj
+    F = B * ls2
+    G = -C * ls2
+    H = A * ls2 - B * C * ls3
+    I = (fdi1 * coord1 + fdi2 * coord2) * fdj
     J = F * fi * fdj
     K = G * (fdi1 * coord1 + fdi2 * coord2) * fj
     L = H * fi * fj
-    M = -sig2 * (I + J + K + L)
+    M = -sig2 * (I + J + K + L) * E
 
     return M
 
@@ -157,15 +157,15 @@ def three_body_ss_1(ci1, ci2, cj1, cj2, r11, r22, r33, fi, fj, fdi, fdj,
     C = r11 * cj1 * coord3 + r22 * cj2 * coord4
     D = r11 * r11 + r22 * r22 + r33 * r33
     E = exp(-D * ls1)
-    F = E * B * ls2
-    G = -E * C * ls2
-    H = A * E * ls2 - B * C * E * ls3
-    I = E * (fdi_p1 * coord1 + fdi_p2 * coord2) * \
+    F = B * ls2
+    G = -C * ls2
+    H = A * ls2 - B * C * ls3
+    I = (fdi_p1 * coord1 + fdi_p2 * coord2) * \
         (fdj_p1 * coord3 + fdj_p2 * coord4)
     J = F * fi * (fdj_p1 * coord3 + fdj_p2 * coord4)
     K = G * (fdi_p1 * coord1 + fdi_p2 * coord2) * fj
     L = H * fi * fj
-    M = sig2 * (I + J + K + L)
+    M = sig2 * (I + J + K + L) * E
 
     return M
 
@@ -179,15 +179,15 @@ def three_body_ss_2(ci1, ci2, cj1, cj2, r12, r23, r31, fi, fj, fdi, fdj,
     C = r12 * cj2 * coord4 + r31 * cj1 * coord3
     D = r12 * r12 + r23 * r23 + r31 * r31
     E = exp(-D * ls1)
-    F = E * B * ls2
-    G = -E * C * ls2
-    H = A * E * ls2 - B * C * E * ls3
-    I = E * (fdi_p1 * coord1 + fdi_p2 * coord2) * \
+    F = B * ls2
+    G = -C * ls2
+    H = A * ls2 - B * C * ls3
+    I = (fdi_p1 * coord1 + fdi_p2 * coord2) * \
         (fdj_p1 * coord3 + fdj_p2 * coord4)
     J = F * fi * (fdj_p1 * coord3 + fdj_p2 * coord4)
     K = G * (fdi_p1 * coord1 + fdi_p2 * coord2) * fj
     L = H * fi * fj
-    M = sig2 * (I + J + K + L)
+    M = sig2 * (I + J + K + L) * E
 
     return M
 
