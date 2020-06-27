@@ -322,15 +322,13 @@ def self_kernel_sephyps(map_force,
                        cutoffs, cutoff_func)
 
 
-def self_kernel(map_force,
-             grids, 
-             c2, etypes2, 
-             hyps: 'ndarray', cutoffs,
-             cutoff_func: Callable = quadratic_cutoff):
+def self_kernel(map_force, grids, c2, etypes2, hyps, cutoffs,
+                cutoff_func: Callable = quadratic_cutoff):
 
     if map_force:
         raise NotImplementedError
 
+    kern = 0
 
     # pre-compute constants
     r_cut = cutoffs[1]
@@ -349,13 +347,11 @@ def self_kernel(map_force,
 
     perm_list = get_permutations(c2, ej1, ej2, c2, ej1, ej2)
 
-    C = 0
     for perm in perm_list:
         perm_grids = np.take(grids, perm, axis=1)
         rij = grids - perm_grids
-        C += np.sum(rij * rij, axis=1) # (n_grids, ) adding up three bonds
-
-    kern = sig2 * np.exp(-C * ls2) * fj ** 2 # (n_grids,)
+        C = np.sum(rij * rij, axis=1) # (n_grids, ) adding up three bonds
+        kern += (sig2 / 9) * np.exp(-C * ls2) * fj ** 2 # (n_grids,)
 
     return kern
  

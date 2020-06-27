@@ -20,6 +20,7 @@ class Map2body(MapXbody):
         self.kernel_name = "twobody"
         self.singlexbody = SingleMap2body
         self.bodies = 2
+        self.pred_perm = [0]
         super().__init__(**kwargs)
 
     def build_bond_struc(self, species_list):

@@ -20,6 +20,7 @@ class Map3body(MapXbody):
         self.kernel_name = "threebody"
         self.singlexbody = SingleMap3body
         self.bodies = 3
+        self.pred_perm = [[0, 1, 2], [1, 0, 2]]
         super().__init__(**kwargs)
 
 

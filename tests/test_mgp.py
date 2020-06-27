@@ -18,7 +18,7 @@ from flare.utils.element_coder import _Z_to_mass, _Z_to_element
 from .fake_gp import get_gp, get_random_structure
 from .mgp_test import clean, compare_triplet, predict_atom_diag_var
 
-body_list = ['2'] #, '3']
+body_list = ['3'] #, '3']
 multi_list = [False, True]
 map_force_list = [False] #, True]
 force_block_only = False
@@ -70,9 +70,9 @@ def test_init(bodies, multihyps, map_force, all_mgp, all_gp):
     # grid parameters
     grid_params = {}
     if ('2' in bodies):
-        grid_params['twobody'] = {'grid_num': [64], 'lower_bound': [0.01]}
+        grid_params['twobody'] = {'grid_num': [128], 'lower_bound': [0.01]}
     if ('3' in bodies):
-        grid_params['threebody'] = {'grid_num': [24, 25, 26], 'lower_bound':[0.01]*3}
+        grid_params['threebody'] = {'grid_num': [31, 32, 33], 'lower_bound':[0.01]*3}
 
     lammps_location = f'{bodies}{multihyps}{map_force}.mgp'
     data = gp_model.training_statistics
@@ -206,8 +206,8 @@ def test_predict(all_gp, all_mgp, bodies, multihyps, map_force):
     # with open(filename, 'rb') as f:
     #     mgp_model = pickle.load(f)
 
-    nenv = 3
-    cell = 1.0 * np.eye(3)
+    nenv = 5
+    cell = 0.8 * np.eye(3)
     cutoffs = gp_model.cutoffs
     unique_species = gp_model.training_statistics['species']
     struc_test, f = get_random_structure(cell, unique_species, nenv)
@@ -217,12 +217,13 @@ def test_predict(all_gp, all_mgp, bodies, multihyps, map_force):
         kernel_name = 'twobody'
     elif '3' in bodies:
         kernel_name = 'threebody'
-        compare_triplet(mgp_model.maps['threebody'], gp_model, test_envi)
+        #compare_triplet(mgp_model.maps['threebody'], gp_model, test_envi)
 
     assert Parameters.compare_dict(gp_model.hyps_mask, mgp_model.maps[kernel_name].hyps_mask)
 
     gp_pred_en, gp_pred_envar = gp_model.predict_local_energy_and_var(test_envi)
     gp_pred = np.array([gp_model.predict(test_envi, d+1) for d in range(3)]).T
+    print('mgp pred')
     mgp_pred = mgp_model.predict(test_envi)
 
 
@@ -233,9 +234,9 @@ def test_predict(all_gp, all_mgp, bodies, multihyps, map_force):
     else:
         map_str = 'energy'
         gp_pred_var = gp_pred_envar
-    # TODO: energy block accuracy
-#        assert(np.abs(mgp_pred[3] - gp_pred_en) < 2e-3), \
-#                f"{bodies} body {map_str} mapping is wrong"
+        print('mgp_en, gp_en', mgp_pred[3], gp_pred_en)
+        assert(np.allclose(mgp_pred[3], gp_pred_en, rtol=2e-3), \
+                f"{bodies} body {map_str} mapping is wrong")
 
 #    if multihyps and ('3' in bodies):
 #        pytest.skip()
@@ -252,10 +253,6 @@ def test_predict(all_gp, all_mgp, bodies, multihyps, map_force):
     print("isclose?", mgp_pred[0]-gp_pred[0], gp_pred[0])
     assert(np.allclose(mgp_pred[0], gp_pred[0], atol=5e-3)), \
             f"{bodies} body {map_str} mapping is wrong"
-
-    # TODO: energy block accuracy
-#    assert(np.abs(mgp_pred[1] - gp_pred_var) < 2e-3), \
-#            f"{bodies} body {map_str} mapping var is wrong"
 
     clean()
 

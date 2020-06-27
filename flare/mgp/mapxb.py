@@ -140,7 +140,6 @@ class MapXbody:
             xyzs = np.array(comp_xyz[i])
             map_ind = self.find_map_index(spc)
 
-            print('n_lengths', len(lengths))
             f, vir, v, e = self.maps[map_ind].predict(lengths, xyzs,
                 self.map_force)
             f_spcs += f
@@ -337,12 +336,14 @@ class SingleMapXbody:
         grid_mean = k12_v_all @ GP.alpha
         grid_mean = np.reshape(grid_mean, self.grid_num)
 
-        if self.var_map == 'simple': 
+        if self.var_map is not None: 
             grid_vars = solve_triangular(GP.l_mat, k12_v_all.T, lower=True).T
-            self_kern = self._gengrid_var_simple(*args_var) 
-            grid_vars = np.sqrt(self_kern - np.sum(grid_vars**2, axis=1))
-        elif self.var_map == 'pca':
-            grid_vars = solve_triangular(GP.l_mat, k12_v_all.T, lower=True).T
+
+            if self.var_map == 'simple': 
+                self_kern = self._gengrid_var_simple(*args_var) 
+                grid_vars = np.sqrt(self_kern - np.sum(grid_vars**2, axis=1))
+                grid_vars = np.expand_dims(grid_vars, axis=1)
+
             tensor_shape = np.array([*self.grid_num, grid_vars.shape[1]])
             grid_vars = np.reshape(grid_vars, tensor_shape)
 
@@ -579,13 +580,16 @@ class SingleMapXbody:
 
         lengths = np.array(lengths)
         xyzs = np.array(xyzs)
+        n_neigh = self.bodies - 1
 
         if self.map_force:
             # predict forces and energy
             e = 0
-            f_0 = self.mean(lengths)
-            f_d = np.diag(f_0) @ xyzs
-            f = np.sum(f_d, axis=0)
+            f_d = np.zeros((lengths.shape[0], n_neigh, 3))
+            for b in range(n_neigh):
+                f_0 = self.mean(lengths[:, self.pred_perm[b]])
+                f_d[:, b, :] = np.diag(f_0) @ xyzs[:, b]
+            f = np.sum(f_d, axis=(0, 1))
 
             # predict var
             v = np.zeros(3)
@@ -598,16 +602,16 @@ class SingleMapXbody:
             # predict forces and energy
             e_0, f_0 = self.mean(lengths, with_derivatives=True)
             e = np.sum(e_0) # energy
-            f_d = np.diag(f_0[:,0,0]) @ xyzs
-            f = self.bodies * np.sum(f_d, axis=0)
+            f_d = np.zeros((lengths.shape[0], n_neigh, 3))
+            for b in range(n_neigh):
+                f_d[:, b, :] = np.diag(f_0[:,b,0]) @ xyzs[:, b]
+            f = self.bodies * np.sum(f_d, axis=(0, 1))
 
             # predict var
             v = 0
             if self.var_map == 'simple':
                 v_0 = self.var(lengths)
-                print('v_0', v_0)
                 v = np.sum(v_0)
-                #v = v_0 ** 2
             elif self.var_map == 'pca':
                 v_0 = self.var(lengths)
                 v_0 = np.sum(v_0, axis=1)
@@ -618,9 +622,10 @@ class SingleMapXbody:
         vir = np.zeros(6)
         vir_order = ((0,0), (1,1), (2,2), (1,2), (0,2), (0,1)) # match the ASE order
         for i in range(6):
-            vir_i = f_d[:,vir_order[i][0]]\
-                    * xyzs[:,vir_order[i][1]] * lengths[:,0]
-            vir[i] = np.sum(vir_i)
+            for b in range(n_neigh):
+                vir_i = f_d[:,b,vir_order[i][0]]\
+                        * xyzs[:,b,vir_order[i][1]] * lengths[:,0]
+                vir[i] += np.sum(vir_i)
 
         vir *= self.bodies / 2
         return f, vir, v, e

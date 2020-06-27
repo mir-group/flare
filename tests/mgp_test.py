@@ -46,7 +46,7 @@ def compare_triplet(mgp_model, gp_model, atom_env):
         xyzs = np.zeros_like(xyzs)
         xyzs[:, 0] = np.ones_like(xyzs[:, 0])
         f, _, _, e = mgp_model.maps[map_ind].predict(lengths, xyzs,
-            mgp_model.map_force, var_map=None)
+            mgp_model.map_force)
 
         assert np.allclose(gp_force, f, rtol=1e-2)
         if not mgp_model.map_force:
@@ -102,11 +102,9 @@ def predict_atom_diag_var_2b(atom_env, gp_model):
         spc_struc.coded_species = np.array(species)
         env12 = env.AtomicEnvironment(spc_struc, 0, gp_model.cutoffs)
 
-        print('env12', env12.bond_array_2)
         _, v12 = gp_model.predict_local_energy_and_var(env12)
         var += np.sqrt(v12)
 
-        print('v12', np.sqrt(v12))
     var = var ** 2 
     return var       
 
