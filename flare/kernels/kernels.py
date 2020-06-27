@@ -236,26 +236,26 @@ def three_body_ee_perm(r11, r12, r13, r21, r22, r23, r31, r32, r33, c1, c2,
     if (c1 == c2):
         if (ei1 == ej1) and (ei2 == ej2):
             C1 = r11 * r11 + r22 * r22 + r33 * r33
-            kern += sig2 * exp(-C1 * ls2) * fi * fj
+            kern += exp(-C1 * ls2)
         if (ei1 == ej2) and (ei2 == ej1):
             C3 = r12 * r12 + r21 * r21 + r33 * r33
-            kern += sig2 * exp(-C3 * ls2) * fi * fj
+            kern += exp(-C3 * ls2)
     if (c1 == ej1):
         if (ei1 == ej2) and (ei2 == c2):
             C5 = r13 * r13 + r21 * r21 + r32 * r32
-            kern += sig2 * exp(-C5 * ls2) * fi * fj
+            kern += exp(-C5 * ls2)
         if (ei1 == c2) and (ei2 == ej2):
             C2 = r11 * r11 + r23 * r23 + r32 * r32
-            kern += sig2 * exp(-C2 * ls2) * fi * fj
+            kern += exp(-C2 * ls2)
     if (c1 == ej2):
         if (ei1 == ej1) and (ei2 == c2):
             C6 = r13 * r13 + r22 * r22 + r31 * r31
-            kern += sig2 * exp(-C6 * ls2) * fi * fj
+            kern += exp(-C6 * ls2)
         if (ei1 == c2) and (ei2 == ej1):
             C4 = r12 * r12 + r23 * r23 + r31 * r31
-            kern += sig2 * exp(-C4 * ls2) * fi * fj
+            kern += exp(-C4 * ls2)
 
-    return kern
+    return kern * sig2 * fi * fj
 
 
 @njit
@@ -266,25 +266,25 @@ def three_body_fe_perm(r11, r12, r13, r21, r22, r23, r31, r32, r33, c1, c2,
 
     if (c1 == c2):
         if (ei1 == ej1) and (ei2 == ej2):
-            kern += three_body_en_helper(ci1, ci2, r11, r22, r33, fi, fj, fdi,
-                                         ls1, ls2, sig2)
+            kern += three_body_en_helper(
+                ci1, ci2, r11, r22, r33, fi, fj, fdi, ls1, ls2, sig2)
         if (ei1 == ej2) and (ei2 == ej1):
-            kern += three_body_en_helper(ci1, ci2, r12, r21, r33, fi, fj, fdi,
-                                         ls1, ls2, sig2)
+            kern += three_body_en_helper(
+                ci1, ci2, r12, r21, r33, fi, fj, fdi, ls1, ls2, sig2)
     if (c1 == ej1):
         if (ei1 == ej2) and (ei2 == c2):
-            kern += three_body_en_helper(ci1, ci2, r13, r21, r32, fi, fj, fdi,
-                                         ls1, ls2, sig2)
+            kern += three_body_en_helper(
+                ci1, ci2, r13, r21, r32, fi, fj, fdi, ls1, ls2, sig2)
         if (ei1 == c2) and (ei2 == ej2):
-            kern += three_body_en_helper(ci1, ci2, r11, r23, r32, fi, fj, fdi,
-                                         ls1, ls2, sig2)
+            kern += three_body_en_helper(
+                ci1, ci2, r11, r23, r32, fi, fj, fdi, ls1, ls2, sig2)
     if (c1 == ej2):
         if (ei1 == ej1) and (ei2 == c2):
-            kern += three_body_en_helper(ci1, ci2, r13, r22, r31, fi, fj, fdi,
-                                         ls1, ls2, sig2)
+            kern += three_body_en_helper(
+                ci1, ci2, r13, r22, r31, fi, fj, fdi, ls1, ls2, sig2)
         if (ei1 == c2) and (ei2 == ej1):
-            kern += three_body_en_helper(ci1, ci2, r12, r23, r31, fi, fj, fdi,
-                                         ls1, ls2, sig2)
+            kern += three_body_en_helper(
+                ci1, ci2, r12, r23, r31, fi, fj, fdi, ls1, ls2, sig2)
 
     return kern
 
