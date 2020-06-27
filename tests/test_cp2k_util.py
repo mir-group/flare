@@ -110,7 +110,6 @@ def test_cp2k_input_edit():
     structure = Structure(cell, coded_species, positions, masses,
                           species_labels=species)
 
-    structure.vec1 += np.random.randn(3)
     structure.positions[0] += np.random.randn(3)
 
     newfilename = edit_dft_input_positions(

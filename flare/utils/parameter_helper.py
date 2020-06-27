@@ -1004,12 +1004,12 @@ class ParameterHelper():
                 # check parameters
                 aeg = self.all_group_names[group]
                 for idt in range(self.n[group]):
-                    hyp_labels += ['Signal Var. '+aeg[idt]]
+                    hyp_labels += ['Signal std '+aeg[idt]]
                 for idt in range(self.n[group]):
-                    hyp_labels += ['Length '+group]
+                    hyp_labels += ['Length scale '+group]
             else:
-                hyp_labels += ['Signal Var. '+group]
-                hyp_labels += ['Length '+group]
+                hyp_labels += ['Signal std '+group]
+                hyp_labels += ['Length scale '+group]
 
             if group in self.cutoff_list:
                 hyps_mask[group+'_cutoff_list'] = self.cutoff_list[group]
@@ -1025,7 +1025,7 @@ class ParameterHelper():
         hyps_mask['energy_noise'] = self.energy_noise
 
         opt += [self.opt['noise']]
-        hyp_labels += ['Noise Var.']
+        hyp_labels += ['Noise std']
         hyps += [self.noise]
         hyps = np.hstack(hyps)
         opt = np.hstack(opt)

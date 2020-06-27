@@ -32,6 +32,8 @@ class OTF:
         gp (gp.GaussianProcess): Initial GP model.
         calculate_energy (bool, optional): If True, the energy of each
             frame is calculated with the GP. Defaults to False.
+        calculate_efs (bool, optional): If True, the energy and stress of each
+            frame is calculated with the GP. Defaults to False.
         write_model (int, optional): If 0, write never. If 1, write at
             end of run. If 2, write after each training and end of run.
             If 3, write after each time atoms are added and end of run.
@@ -87,28 +89,25 @@ class OTF:
             Defaults to 1.
     """
 
-    def __init__(self,
-                 # md args
-                 dt: float, number_of_steps: int,
-                 prev_pos_init: 'ndarray' = None,
-                 rescale_steps: List[int] = [], rescale_temps: List[int] = [],
-                 # flare args
-                 gp: gp.GaussianProcess = None,
-                 calculate_energy: bool = False,
-                 write_model: int = 0,
-                 # otf args
-                 std_tolerance_factor: float = 1,
-                 skip: int = 0, init_atoms: List[int] = None,
-                 output_name: str = 'otf_run',
-                 max_atoms_added: int = 1, freeze_hyps: int = 10,
-                 # dft args
-                 force_source: str = "qe",
-                 npool: int = None, mpi: str = "srun", dft_loc: str = None,
-                 dft_input: str = None, dft_output='dft.out', dft_kwargs=None,
-                 store_dft_output: Tuple[Union[str, List[str]], str] = None,
-                 # par args
-                 n_cpus: int = 1,
-                 ):
+    def __init__(
+     self,
+     # md args
+     dt: float, number_of_steps: int, prev_pos_init: 'ndarray' = None,
+     rescale_steps: List[int] = [], rescale_temps: List[int] = [],
+     # flare args
+     gp: gp.GaussianProcess = None, calculate_energy: bool = False,
+     calculate_efs: bool = False, write_model: int = 0,
+     # otf args
+     std_tolerance_factor: float = 1, skip: int = 0,
+     init_atoms: List[int] = None, output_name: str = 'otf_run',
+     max_atoms_added: int = 1, freeze_hyps: int = 10,
+     # dft args
+     force_source: str = "qe", npool: int = None, mpi: str = "srun",
+     dft_loc: str = None, dft_input: str = None, dft_output='dft.out',
+     dft_kwargs=None,
+     store_dft_output: Tuple[Union[str, List[str]], str] = None,
+     # par args
+     n_cpus: int = 1):
 
         self.dft_input = dft_input
         self.dft_output = dft_output
@@ -130,11 +129,9 @@ class OTF:
         positions, species, cell, masses = \
             self.dft_module.parse_dft_input(self.dft_input)
 
-        self.structure = struc.Structure(cell=cell, species=species,
-                                         positions=positions,
-                                         mass_dict=masses,
-                                         prev_positions=prev_pos_init,
-                                         species_labels=species)
+        self.structure = struc.Structure(
+            cell=cell, species=species, positions=positions, mass_dict=masses,
+            prev_positions=prev_pos_init, species_labels=species)
 
         self.noa = self.structure.positions.shape[0]
         self.atom_list = list(range(self.noa))
@@ -156,15 +153,24 @@ class OTF:
 
         self.dft_count = 0
 
-        # set pred function
-        if (n_cpus > 1 and gp.per_atom_par and gp.parallel) and not calculate_energy:
+        # Set the prediction function based on user inputs.
+        # Force only prediction.
+        if (n_cpus > 1 and gp.per_atom_par and gp.parallel) and not \
+           (calculate_energy or calculate_efs):
             self.pred_func = predict.predict_on_structure_par
-        elif not calculate_energy:
+        elif not (calculate_energy or calculate_efs):
             self.pred_func = predict.predict_on_structure
-        elif (n_cpus > 1 and gp.per_atom_par and gp.parallel):
+        # Energy and force prediction.
+        elif (n_cpus > 1 and gp.per_atom_par and gp.parallel) and not \
+             (calculate_efs):
             self.pred_func = predict.predict_on_structure_par_en
-        else:
+        elif not calculate_efs:
             self.pred_func = predict.predict_on_structure_en
+        # Energy, force, and stress prediction.
+        elif (n_cpus > 1 and gp.per_atom_par and gp.parallel):
+            self.pred_func = predict.predict_on_structure_efs_par
+        else:
+            self.pred_func = predict.predict_on_structure_efs
 
         # set rescale attributes
         self.rescale_steps = rescale_steps
@@ -192,20 +198,23 @@ class OTF:
         'Year.Month.Day:Hour:Minute:Second:'.
         """
 
-        self.output.write_header(str(self.gp),
-                                 self.dt, self.number_of_steps,
-                                 self.structure,
-                                 self.std_tolerance)
+        self.output.write_header(
+            str(self.gp), self.dt, self.number_of_steps, self.structure,
+            self.std_tolerance)
+
         counter = 0
         self.start_time = time.time()
 
         while self.curr_step < self.number_of_steps:
             # run DFT and train initial model if first step and DFT is on
-            if self.curr_step == 0 and self.std_tolerance != 0 and len(self.gp.training_data) == 0:
+            if (self.curr_step == 0) and (self.std_tolerance != 0) and \
+               (len(self.gp.training_data) == 0):
 
+                # Are the recorded forces from the GP or DFT in ASE OTF?
+                # When DFT is called, ASE energy, forces, and stresses should
+                # get updated.
                 self.initialize_train()
-                new_pos = self.md_step()
-                self.update_temperature(new_pos)
+                self.update_temperature()
                 self.record_state()
 
             # after step 1, try predicting with GP model
@@ -213,17 +222,15 @@ class OTF:
                 # compute forces and stds with GP
                 self.dft_step = False
                 self.compute_properties()
-                new_pos = self.md_step()
 
                 # get max uncertainty atoms
-                std_in_bound, target_atoms = \
-                    is_std_in_bound(self.std_tolerance,
-                                    self.gp.hyps[-1], self.structure,
-                                    self.max_atoms_added)
+                std_in_bound, target_atoms = is_std_in_bound(
+                    self.std_tolerance, self.gp.hyps[-1], self.structure,
+                    self.max_atoms_added)
 
                 if not std_in_bound:
                     # record GP forces
-                    self.update_temperature(new_pos)
+                    self.update_temperature()
                     self.record_state()
                     gp_frcs = deepcopy(self.structure.forces)
 
@@ -243,12 +250,13 @@ class OTF:
 
             # write gp forces
             if counter >= self.skip and not self.dft_step:
-                self.update_temperature(new_pos)
+                self.update_temperature()
                 self.record_state()
                 counter = 0
 
             counter += 1
-            self.update_positions(new_pos)
+            # TODO: Reinstate velocity rescaling.
+            self.md_step()
             self.curr_step += 1
 
         self.output.conclude_run()
@@ -273,9 +281,9 @@ class OTF:
 
     def md_step(self):
         '''
-        In ASE-OTF, it will be replaced by subclass method
+        Take an MD step. This updates the positions of the structure.
         '''
-        return md.update_positions(self.dt, self.noa, self.structure)
+        md.update_positions(self.dt, self.noa, self.structure)
 
     def run_dft(self):
         """Calculates DFT forces on atoms in the current structure.
@@ -290,11 +298,14 @@ class OTF:
         f.info('\nCalling DFT...\n')
 
         # calculate DFT forces
+        # TODO: Return stress and energy
         forces = self.dft_module.run_dft_par(
             self.dft_input, self.structure, self.dft_loc, n_cpus=self.n_cpus,
             dft_out=self.dft_output, npool=self.npool, mpi=self.mpi,
             dft_kwargs=self.dft_kwargs)
 
+        # Note: also need to update stresses when performing a simulation
+        # in the NPT ensemble.
         self.structure.forces = forces
 
         # write wall time of DFT calculation
@@ -375,15 +386,14 @@ class OTF:
         self.structure.positions = new_pos
         self.structure.wrap_positions()
 
-    def update_temperature(self, new_pos: 'ndarray'):
+    def update_temperature(self):
         """Updates the instantaneous temperatures of the system.
 
         Args:
             new_pos (np.ndarray): Positions of atoms in the next MD frame.
         """
         KE, temperature, velocities = \
-            md.calculate_temperature(new_pos, self.structure, self.dt,
-                                     self.noa)
+            md.calculate_temperature(self.structure, self.dt, self.noa)
         self.KE = KE
         self.temperature = temperature
         self.velocities = velocities
@@ -391,5 +401,4 @@ class OTF:
     def record_state(self):
         self.output.write_md_config(
             self.dt, self.curr_step, self.structure, self.temperature,
-            self.KE, self.local_energies, self.start_time, self.dft_step,
-            self.velocities)
+            self.KE, self.start_time, self.dft_step, self.velocities)

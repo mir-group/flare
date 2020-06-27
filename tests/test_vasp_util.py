@@ -110,7 +110,6 @@ def test_vasp_input_edit():
     os.system('cp test_files/test_POSCAR ./POSCAR')
     structure = dft_input_to_structure('./test_files/test_POSCAR')
 
-    structure.vec1 += np.random.randn(3)
     structure.positions[0] += np.random.randn(3)
 
     new_file = edit_dft_input_positions('./POSCAR', structure=structure)

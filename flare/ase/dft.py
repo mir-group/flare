@@ -5,6 +5,7 @@ This module is to provide the same interface as the module `dft_interface`, so w
 import numpy as np
 from copy import deepcopy
 
+
 def parse_dft_input(atoms):
     pos = np.copy(atoms.positions)
     spc = atoms.get_chemical_symbols()
@@ -19,6 +20,7 @@ def parse_dft_input(atoms):
             mass_dict[spec_ind] = mass[i]
     return pos, spc, cell, mass_dict
 
+
 def run_dft_par(atoms, structure, dft_calc, **dft_kwargs):
     '''
     Assume that the atoms have been updated
@@ -27,7 +29,20 @@ def run_dft_par(atoms, structure, dft_calc, **dft_kwargs):
     calc = deepcopy(dft_calc)
     atoms.set_calculator(calc)
 
-    # calculate DFT forces 
+    # Calculate DFT energy, forces, and stress.
+    # Source code for DFT parser:
+    # https://wiki.fysik.dtu.dk/ase/_modules/ase/io/espresso.html#read_espresso_out
+    # Note that ASE and QE stresses differ by a minus sign.
     forces = atoms.get_forces()
+    stress = atoms.get_stress()
+    energy = atoms.get_potential_energy()
+
+    # Write energy, forces, and stress to structure.
+    structure.potential_energy = energy
+    structure.stress = stress
+    structure.stds = np.zeros((structure.nat, 3))
+    structure.stress_stds = None
+    structure.partial_stress_stds = None
+    structure.local_energy_stds = None
 
     return forces

@@ -17,6 +17,10 @@ from flare.struc import Structure
 from flare.utils.element_coder import Z_to_element
 
 
+# Unit conversions.
+eva_to_gpa = 160.21766208
+
+
 class Output:
     """
     This is an I/O class that hosts the log files for OTF and Trajectories
@@ -115,16 +119,16 @@ class Output:
         f.info(f'{datetime.datetime.now()}')
 
         if isinstance(std_tolerance, tuple):
-            std_string = 'relative uncertainty tolerance: ' \
+            std_string = 'Relative uncertainty tolerance: ' \
                          f'{std_tolerance[0]} times noise hyperparameter \n'
-            std_string += 'absolute uncertainty tolerance: ' \
+            std_string += 'Absolute uncertainty tolerance: ' \
                           f'{std_tolerance[1]} eV/A\n'
         elif std_tolerance < 0:
             std_string = \
-                f'uncertainty tolerance: {np.abs(std_tolerance)} eV/A\n'
+                f'Uncertainty tolerance: {np.abs(std_tolerance)} eV/A\n'
         elif std_tolerance > 0:
             std_string = \
-                f'uncertainty tolerance: {np.abs(std_tolerance)} ' \
+                f'Uncertainty tolerance: {np.abs(std_tolerance)} ' \
                 'times noise hyperparameter \n'
         else:
             std_string = ''
@@ -134,12 +138,13 @@ class Output:
         headerstring += '\n'
         headerstring += std_string
         if dt is not None:
-            headerstring += f'timestep (ps): {dt}\n'
-        headerstring += f'number of frames: {Nsteps}\n'
+            headerstring += f'Timestep (ps): {dt}\n'
+        headerstring += f'Number of frames: {Nsteps}\n'
         if structure is not None:
-            headerstring += f'number of atoms: {structure.nat}\n'
-            headerstring += f'system species: {set(structure.species_labels)}\n'
-            headerstring += 'periodic cell: \n'
+            headerstring += f'Number of atoms: {structure.nat}\n'
+            headerstring += \
+                f'System species: {set(structure.species_labels)}\n'
+            headerstring += 'Periodic cell (A): \n'
             headerstring += str(structure.cell)+'\n'
 
         if optional:
@@ -148,22 +153,23 @@ class Output:
 
         # report previous positions
         if structure is not None:
-            headerstring += '\nprevious positions (A):\n'
+            headerstring += '\nPrevious positions (A):\n'
             for i in range(len(structure.positions)):
                 headerstring += f'{structure.species_labels[i]:5}'
                 for j in range(3):
                     headerstring += f'{structure.prev_positions[i][j]:10.4f}'
                 headerstring += '\n'
-        headerstring += '-' * 80 + '\n'
+        headerstring += '-' * 80
 
         f.info(headerstring)
 
         if self.always_flush:
             f.handlers[0].flush()
 
-    def write_md_config(self, dt, curr_step, structure,
-                        temperature, KE, local_energies,
-                        start_time, dft_step, velocities):
+    def write_md_config(
+     self, dt, curr_step, structure, temperature, KE, start_time, dft_step,
+     velocities):
+
         """ write md configuration in log file
 
         :param dt: timestemp of OTF MD
@@ -180,7 +186,6 @@ class Output:
         """
 
         string = ''
-        tab = ' ' * 4
 
         # Mark if a frame had DFT forces with an asterisk
         if not dft_step:
@@ -223,16 +228,55 @@ class Output:
             string += '\n'
 
         string += '\n'
-        string += f'temperature: {temperature:.2f} K \n'
-        string += f'kinetic energy: {KE:.6f} eV \n'
 
-        # calculate potential and total energy
-        if local_energies is not None:
-            pot_en = np.sum(local_energies)
-            tot_en = KE + pot_en
+        # Report cell if stress attribute is present.
+        if structure.stress is not None:
+            string += 'Periodic cell (A): \n'
+            string += str(structure.cell)+'\n\n'
+
+        # Report stress tensor.
+        pressure = None
+        if structure.stress is not None:
+            stress_tensor = structure.stress * eva_to_gpa  # Convert to GPa
+            s8 = ' ' * 8
+            string += 'Stress tensor (GPa):\n'
+            string += ' ' * 7 + 'xx' + s8 + 'yy' + s8 + 'zz' + s8 + 'yz' + \
+                s8 + 'xz' + s8 + 'xy\n'
+            for p in range(6):
+                string += f'{stress_tensor[p]:10.3f}'
+            string += '\n\n'
+            pressure = \
+                (stress_tensor[0] + stress_tensor[1] + stress_tensor[2]) / 3
+
+        # Report stress tensor uncertainties.
+        if structure.stress_stds is not None:
+            stress_stds = structure.stress_stds * eva_to_gpa  # Convert to GPa
+            string += 'Stress tensor uncertainties (GPa):\n'
+            for p in range(6):
+                string += f'{stress_stds[p]:10.3f}'
+            string += '\n\n'
+
+        # Report pressure.
+        if pressure is not None:
+            string += f'Pressure (GPa): {pressure:.6f} \n'
+
+        string += f'Temperature: {temperature:.2f} K \n'
+        string += f'Kinetic energy: {KE:.6f} eV \n'
+
+        # Report potential energy.
+        if structure.potential_energy is not None:
             string += \
-                f'potential energy: {pot_en:.6f} eV \n'
-            string += f'total energy: {tot_en:.6f} eV \n'
+                f'Potential energy: {structure.potential_energy:.6f} eV \n'
+
+        # Report potential energy uncertainty.
+        if structure.local_energy_stds is not None:
+            pot_en_std = np.sqrt(np.sum(structure.local_energy_stds**2))
+            string += f'Uncertainty: {pot_en_std:.6f} eV \n'
+
+        # Report total energy.
+        if structure.potential_energy is not None:
+            tot_en = KE + structure.potential_energy
+            string += f'Total energy: {tot_en:.6f} eV \n'
 
         logger = logging.getLogger(self.basename+'log')
         logger.info(string)
@@ -337,8 +381,8 @@ class Output:
             for i, hyp in enumerate(hyps):
                 f.info(f'Hyp{i} : {hyp:.4f}')
 
-        f.info(f'likelihood: {like:.4f}')
-        f.info(f'likelihood gradient: {like_grad}')
+        f.info(f'Likelihood: {like:.4f}')
+        f.info(f'Likelihood gradient: {like_grad}')
 
         if start_time:
             self.write_wall_time(start_time)
@@ -349,12 +393,12 @@ class Output:
     def write_wall_time(self, start_time):
         time_curr = time.time() - start_time
         f = logging.getLogger(self.basename+'log')
-        f.info(f'wall time from start: {time_curr:.2f} s')
+        f.info(f'Wall time from start: {time_curr:.2f} s')
 
     def conclude_dft(self, dft_count, start_time):
         f = logging.getLogger(self.basename+'log')
         f.info('DFT run complete.')
-        f.info(f'number of DFT calls: {dft_count}')
+        f.info(f'Number of DFT calls: {dft_count}')
         self.write_wall_time(start_time)
 
     def add_atom_info(self, train_atoms, stds):
@@ -362,14 +406,14 @@ class Output:
         f.info(f'Adding atom {train_atoms} to the training set.')
         f.info(f'Uncertainty: {stds[train_atoms[0]]}')
 
-    def write_gp_dft_comparison(self, curr_step, frame,
-                                start_time, dft_forces,
-                                error, local_energies=None, KE=None,
-                                mgp=False):
-        """ write the comparison to logfile
+    def write_gp_dft_comparison(
+     self, curr_step, frame, start_time, dft_forces, error,
+     local_energies=None, KE=None, mgp=False):
+        """Write the comparison to logfile.
 
         :param curr_step: current timestep
-        :param frame: Structure object that contain the current GP calculation results
+        :param frame: Structure object that contains the current GP calculation
+            results.
         :param start_time: start time for time profiling
         :param dft_forces: list of forces computed by DFT
         :param error: list of force differences between DFT and GP prediction

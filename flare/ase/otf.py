@@ -14,6 +14,7 @@ from ase.md.nvtberendsen import NVTBerendsen
 from ase.md.nptberendsen import NPTBerendsen
 from ase.md.verlet import VelocityVerlet
 from ase.md.langevin import Langevin
+from ase import units
 
 from flare.struc import Structure
 from flare.gp import GaussianProcess
@@ -32,8 +33,8 @@ class ASE_OTF(OTF):
     Args:
         atoms (ASE Atoms): the ASE Atoms object for the on-the-fly MD run, 
             with calculator set as FLARE_Calculator.
-        timestep: the timestep in MD. Please use ASE units, e.g. if the timestep
-            is 1 fs, then set `timestep = 1 * units.fs`
+        timestep: the timestep in MD. Please use ASE units, e.g. if the
+            timestep is 1 fs, then set `timestep = 1 * units.fs`
         number_of_steps (int): the total number of steps for MD.
         dft_calc (ASE Calculator): any ASE calculator is supported, 
             e.g. Espresso, VASP etc.
@@ -41,10 +42,10 @@ class ASE_OTF(OTF):
             `NVTBerendsen`, `NPTBerendsen`, `NPT` and `Langevin` are supported.
         md_kwargs (dict): Specify the args for MD as a dictionary, the args are
             as required by the ASE MD modules consistent with the `md_engine`.
-        trajectory (ASE Trajectory): default `None`, not recommended, currently 
-            in experiment.
+        trajectory (ASE Trajectory): default `None`, not recommended,
+            currently in experiment.
 
-    The following arguments are for on-the-fly training, the user can also 
+    The following arguments are for on-the-fly training, the user can also
     refer to :class:`OTF`
 
     Args:
@@ -110,8 +111,11 @@ class ASE_OTF(OTF):
         force_source = dft_source
         self.flare_calc = self.atoms.calc
 
+        # Convert ASE timestep to ps for the output file.
+        flare_dt = timestep / (units.fs * 1e3)
+
         super().__init__(
-            dt=timestep, number_of_steps=number_of_steps,
+            dt=flare_dt, number_of_steps=number_of_steps,
             gp=self.flare_calc.gp_model, force_source=force_source,
             dft_loc=dft_calc, dft_input=self.atoms, **otf_kwargs)
 
@@ -128,29 +132,31 @@ class ASE_OTF(OTF):
 
     def compute_properties(self):
         '''
-        compute forces and stds with FLARE_Calculator
+        Compute energies, forces, stresses, and their uncertainties with
+            the FLARE ASE calcuator, and write the results to the
+            OTF structure object.
         '''
+
+        # Reset FLARE calculator if necessary.
         if not isinstance(self.atoms.calc, FLARE_Calculator):
             self.atoms.set_calculator(self.flare_calc)
 
-        self.atoms.calc.results = {}
-        f = self.atoms.get_forces(self.atoms)
-        stds = self.atoms.get_uncertainties(self.atoms)
-        self.structure.forces = deepcopy(f)
-        self.structure.stds = deepcopy(stds)
+        self.atoms.calc.calculate(self.atoms, self.structure)
 
     def md_step(self):
         '''
         Get new position in molecular dynamics based on the forces predicted by
         FLARE_Calculator or DFT calculator
         '''
+        # Update previous positions.
+        self.structure.prev_positions = np.copy(self.structure.positions)
+
+        # Take MD step.
         self.md.step()
 
-        # Return a copy so that future updates to atoms.positions doesn't also
-        # update structure.positions.
-        return np.copy(self.atoms.positions)
-
-    # TODO: fix the temperature output in the log file
+        # Update the positions and cell of the structure object.
+        self.structure.cell = np.copy(self.atoms.cell)
+        self.structure.positions = np.copy(self.atoms.positions)
 
     def update_positions(self, new_pos):
         # call OTF method
@@ -164,8 +170,14 @@ class ASE_OTF(OTF):
             curr_velocities = self.atoms.get_velocities()
             self.atoms.set_velocities(curr_velocities * vel_fac)
 
-    def update_gp(self, train_atoms, dft_frcs):
+    def update_temperature(self):
+        self.KE = self.atoms.get_kinetic_energy()
+        self.temperature = self.atoms.get_temperature()
 
+        # Convert velocities to Angstrom / ps.
+        self.velocities = self.atoms.get_velocities() * units.fs * 1e3
+
+    def update_gp(self, train_atoms, dft_frcs):
         super().update_gp(train_atoms, dft_frcs)
 
         if self.flare_calc.use_mapping:

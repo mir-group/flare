@@ -63,14 +63,12 @@ def test_env_methods(structure, mask, cutoff, result):
     else:
         mask = None
 
-    env_test = AtomicEnvironment(structure,
-                                 atom=0,
-                                 cutoffs=cutoff,
-                                 cutoffs_mask=mask)
+    env_test = AtomicEnvironment(
+        structure, atom=0, cutoffs=cutoff, cutoffs_mask=mask)
 
-    assert str(
-        env_test) == f'Atomic Env. of Type 1 surrounded by {result[0]} atoms' \
-                     ' of Types [1, 2, 3]'
+    assert str(env_test) == \
+        f'Atomic Env. of Type 1 surrounded by {result[0]} atoms' \
+        ' of Types [1, 2, 3]'
 
     the_dict = env_test.as_dict()
     assert isinstance(the_dict, dict)

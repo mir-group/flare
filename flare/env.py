@@ -10,6 +10,7 @@ from flare.utils.env_getarray import get_2_body_arrays, get_3_body_arrays, \
     get_m2_body_arrays
 
 
+
 class AtomicEnvironment:
     """Contains information about the local environment of an atom,
     including arrays of pair and triplet distances and the chemical
@@ -31,37 +32,42 @@ class AtomicEnvironment:
     consistent with the hyps_mask used in the GuassianProcess object.
 
     * specie_mask: 118-long integer array descirbing which elements belong to
-                 like groups for determining which bond hyperparameters to use.
-                 For instance, [0,0,1,1,0 ...] assigns H to group 0, He and
-                 Li to group 1, and Be to group 0 (the 0th register is ignored).
+        like groups for determining which bond hyperparameters to use.
+        For instance, [0,0,1,1,0 ...] assigns H to group 0, He and
+        Li to group 1, and Be to group 0 (the 0th register is ignored).
     * nspecie: Integer, number of different species groups (equal to number of
-             unique values in specie_mask).
-    * ntwobody: Integer, number of different hyperparameter/cutoff sets to associate with
-             different 2-body pairings of atoms in groups defined in specie_mask.
+        unique values in specie_mask).
+    * ntwobody: Integer, number of different hyperparameter/cutoff sets to
+        associate with different 2-body pairings of atoms in groups defined in
+        specie_mask.
     * twobody_mask: Array of length nspecie^2, which describes the cutoff to
-                 associate with different pairings of species types. For example, if there
-                 are atoms of type 0 and 1, then twobody_mask defines which cutoff
-                 to use for parings [0-0, 0-1, 1-0, 1-1]: if we wanted cutoff0 for
-                 0-0 parings and set 1 for 0-1 and 1-1 pairings, then we would make
-                 twobody_mask [0, 1, 1, 1].
-    * twobody_cutoff_list: Array of length ntwobody, which stores the cutoff used for different
-                 types of bonds defined in twobody_mask
-    * ncut3b:    Integer, number of different cutoffs sets to associate
-                 with different 3-body pariings of atoms in groups defined in specie_mask.
+        associate with different pairings of species types. For example, if
+        there are atoms of type 0 and 1, then twobody_mask defines which cutoff
+        to use for parings [0-0, 0-1, 1-0, 1-1]: if we wanted cutoff0 for
+        0-0 parings and set 1 for 0-1 and 1-1 pairings, then we would make
+        twobody_mask [0, 1, 1, 1].
+    * twobody_cutoff_list: Array of length ntwobody, which stores the cutoff
+        used for different types of bonds defined in twobody_mask
+    * ncut3b: Integer, number of different cutoffs sets to associate
+        with different 3-body pariings of atoms in groups defined in
+        specie_mask.
     * cut3b_mask: Array of length nspecie^2, which describes the cutoff to
-                 associate with different bond types in triplets. For example, in a triplet
-                 (C, O, H) , there are three cutoffs. Cutoffs for CH bond, CO bond and OH bond.
-                 If C and O are associate with atom group 1 in specie_mask and H are associate with
-                 group 0 in specie_mask, the cut3b_mask[1*nspecie+0] determines the C/O-H bond cutoff,
-                 and cut3b_mask[1*nspecie+1] determines the C-O bond cutoff. If we want the
-                 former one to use the 1st cutoff in threebody_cutoff_list and the later to use the 2nd cutoff
-                 in threebody_cutoff_list, the cut3b_mask should be [0, 0, 0, 1]
-    * threebody_cutoff_list: Array of length ncut3b, which stores the cutoff used for different
-                 types of bonds in triplets.
-    * nmanybody :      Integer, number of different cutoffs set to associate with different coordination
-                 numbers
-    * manybody_mask:   similar to twobody_mask and cut3b_mask.
-    * manybody_cutoff_list: Array of length nmanybody, stores the cutoff used for different many body terms
+        associate with different bond types in triplets. For example, in a
+        triplet (C, O, H) , there are three cutoffs. Cutoffs for CH bond, CO
+        bond and OH bond. If C and O are associate with atom group 1 in
+        specie_mask and H are associate with group 0 in specie_mask, the
+        cut3b_mask[1*nspecie+0] determines the C/O-H bond cutoff, and
+        cut3b_mask[1*nspecie+1] determines the C-O bond cutoff. If we want the
+        former one to use the 1st cutoff in threebody_cutoff_list and the later
+        to use the 2nd cutoff in threebody_cutoff_list, the cut3b_mask should
+        be [0, 0, 0, 1].
+    * threebody_cutoff_list: Array of length ncut3b, which stores the cutoff
+        used for different types of bonds in triplets.
+    * nmanybody: Integer, number of different cutoffs set to associate with
+        different coordination numbers.
+    * manybody_mask: Similar to twobody_mask and cut3b_mask.
+    * manybody_cutoff_list: Array of length nmanybody, stores the cutoff used
+        for different many body terms
 
     Examples can be found at the end of in tests/test_env.py
 
@@ -152,9 +158,10 @@ class AtomicEnvironment:
             if kernel in self.cutoffs:
                 setattr(self, kernel + '_cutoff', self.cutoffs[kernel])
 
-        if self.twobody_cutoff == 0:
-            self.twobody_cutoff = np.max(
-                [self.threebody_cutoff, self.manybody_cutoff])
+        if (self.twobody_cutoff == 0):
+            self.twobody_cutoff = \
+                np.max([self.threebody_cutoff, self.manybody_cutoff])
+
             self.cutoffs['twobody'] = self.twobody_cutoff
 
         self.nspecie = cutoffs_mask.get('nspecie', 1)
@@ -177,21 +184,20 @@ class AtomicEnvironment:
                     self.ncut3b = cutoffs_mask.get('ncut3b', 1)
                     self.cut3b_mask = cutoffs_mask.get('cut3b_mask', None)
                     if 'threebody_cutoff_list' in cutoffs_mask:
-                        self.threebody_cutoff_list = np.array(
-                            cutoffs_mask['threebody_cutoff_list'],
-                            dtype=np.float)
+                        self.threebody_cutoff_list = \
+                            np.array(cutoffs_mask['threebody_cutoff_list'],
+                                     dtype=np.float)
+
 
     def compute_env(self):
 
         # get 2-body arrays
         if self.ntwobody >= 1:
             bond_array_2, bond_positions_2, etypes, bond_inds = \
-                get_2_body_arrays(self.positions, self.atom, self.cell,
-                                  self.twobody_cutoff,
-                                  self.twobody_cutoff_list, self.species,
-                                  self.sweep_array,
-                                  self.nspecie, self.specie_mask,
-                                  self.twobody_mask)
+                get_2_body_arrays(
+                    self.positions, self.atom, self.cell, self.twobody_cutoff,
+                    self.twobody_cutoff_list, self.species, self.sweep_array,
+                    self.nspecie, self.specie_mask, self.twobody_mask)
 
             self.bond_array_2 = bond_array_2
             self.etypes = etypes
@@ -200,12 +206,11 @@ class AtomicEnvironment:
         # if 2 cutoffs are given, create 3-body arrays
         if self.ncut3b > 0:
             bond_array_3, cross_bond_inds, cross_bond_dists, triplet_counts = \
-                get_3_body_arrays(bond_array_2, bond_positions_2,
-                                  self.species[self.atom], etypes,
-                                  self.threebody_cutoff,
-                                  self.threebody_cutoff_list,
-                                  self.nspecie, self.specie_mask,
-                                  self.cut3b_mask)
+                get_3_body_arrays(
+                    bond_array_2, bond_positions_2, self.species[self.atom],
+                    etypes, self.threebody_cutoff, self.threebody_cutoff_list,
+                    self.nspecie, self.specie_mask, self.cut3b_mask)
+
             self.bond_array_3 = bond_array_3
             self.cross_bond_inds = cross_bond_inds
             self.cross_bond_dists = cross_bond_dists
@@ -213,14 +218,13 @@ class AtomicEnvironment:
 
         # if 3 cutoffs are given, create many-body arrays
         if self.nmanybody > 0:
-            self.q_array, self.q_neigh_array, self.q_grads, self.q_neigh_grads, \
-            self.unique_species, self.etypes_mb = \
-                get_m2_body_arrays(self.positions, self.atom, self.cell,
-                                   self.manybody_cutoff,
-                                   self.manybody_cutoff_list,
-                                   self.species, self.sweep_array,
-                                   self.nspecie, self.specie_mask,
-                                   self.manybody_mask, cf.quadratic_cutoff)
+            self.q_array, self.q_neigh_array, self.q_grads, \
+                self.q_neigh_grads, self.unique_species, self.etypes_mb = \
+                get_m2_body_arrays(
+                    self.positions, self.atom, self.cell, self.manybody_cutoff,
+                    self.manybody_cutoff_list, self.species, self.sweep_array,
+                    self.nspecie, self.specie_mask, self.manybody_mask,
+                    cf.quadratic_cutoff)
 
     def as_dict(self, include_structure: bool = False):
         """
@@ -272,8 +276,8 @@ class AtomicEnvironment:
 
         cutoffs_mask = dictionary.get('cutoffs_mask', None)
 
-        return AtomicEnvironment(struc, index, cutoffs,
-                                 cutoffs_mask=cutoffs_mask)
+        return AtomicEnvironment(
+            struc, index, cutoffs, cutoffs_mask=cutoffs_mask)
 
     def __str__(self):
         atom_type = self.ctype
