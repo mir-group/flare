@@ -20,97 +20,56 @@ class ThreeBodyKernel:
         self.cutoff_func = cutoff_func
 
     def energy_energy(self, env1: AtomicEnvironment, env2: AtomicEnvironment):
-
-        return energy_energy(env1.bond_array_2, env1.ctype, env1.etypes,
-                             env2.bond_array_2, env2.ctype, env2.etypes,
-                             env1.cross_bond_inds, env2.cross_bond_inds,
-                             env1.cross_bond_dists, env2.cross_bond_dists,
-                             env1.triplet_counts, env2.triplet_counts,
-                             self.signal_variance, self.length_scale,
-                             self.cutoff, self.cutoff_func)
+        args = self.get_args(env1, env2)
+        return energy_energy(*args)
 
     def force_energy(self, env1: AtomicEnvironment, env2: AtomicEnvironment):
-
-        return force_energy(env1.bond_array_3, env1.ctype, env1.etypes,
-                            env2.bond_array_3, env2.ctype, env2.etypes,
-                            env1.cross_bond_inds, env2.cross_bond_inds,
-                            env1.cross_bond_dists, env2.cross_bond_dists,
-                            env1.triplet_counts, env2.triplet_counts,
-                            self.signal_variance, self.length_scale,
-                            self.cutoff, self.cutoff_func)
+        args = self.get_args(env1, env2)
+        return force_energy(*args)
 
     def stress_energy(self, env1: AtomicEnvironment, env2: AtomicEnvironment):
-
-        return stress_energy(env1.bond_array_3, env1.ctype, env1.etypes,
-                             env2.bond_array_3, env2.ctype, env2.etypes,
-                             env1.cross_bond_inds, env2.cross_bond_inds,
-                             env1.cross_bond_dists, env2.cross_bond_dists,
-                             env1.triplet_counts, env2.triplet_counts,
-                             self.signal_variance, self.length_scale,
-                             self.cutoff, self.cutoff_func)
+        args = self.get_args(env1, env2)
+        return stress_energy(*args)
 
     def force_force(self, env1: AtomicEnvironment, env2: AtomicEnvironment):
-
-        return force_force(env1.bond_array_3, env1.ctype, env1.etypes,
-                           env2.bond_array_3, env2.ctype, env2.etypes,
-                           env1.cross_bond_inds, env2.cross_bond_inds,
-                           env1.cross_bond_dists, env2.cross_bond_dists,
-                           env1.triplet_counts, env2.triplet_counts,
-                           self.signal_variance, self.length_scale,
-                           self.cutoff, self.cutoff_func)
+        args = self.get_args(env1, env2)
+        return force_force(*args)
 
     def stress_force(self, env1: AtomicEnvironment, env2: AtomicEnvironment):
-        return stress_force(env1.bond_array_3, env1.ctype, env1.etypes,
-                            env2.bond_array_3, env2.ctype, env2.etypes,
-                            env1.cross_bond_inds, env2.cross_bond_inds,
-                            env1.cross_bond_dists, env2.cross_bond_dists,
-                            env1.triplet_counts, env2.triplet_counts,
-                            self.signal_variance, self.length_scale,
-                            self.cutoff, self.cutoff_func)
+        args = self.get_args(env1, env2)
+        return stress_force(*args)
 
     def stress_stress(self, env1: AtomicEnvironment, env2: AtomicEnvironment):
-        return stress_stress(env1.bond_array_3, env1.ctype, env1.etypes,
-                             env2.bond_array_3, env2.ctype, env2.etypes,
-                             env1.cross_bond_inds, env2.cross_bond_inds,
-                             env1.cross_bond_dists, env2.cross_bond_dists,
-                             env1.triplet_counts, env2.triplet_counts,
-                             self.signal_variance, self.length_scale,
-                             self.cutoff, self.cutoff_func)
+        args = self.get_args(env1, env2)
+        return stress_stress(*args)
 
     def force_force_gradient(self, env1: AtomicEnvironment,
                              env2: AtomicEnvironment):
-        return force_force_gradient(env1.bond_array_3, env1.ctype, env1.etypes,
-                                    env2.bond_array_3, env2.ctype, env2.etypes,
-                                    env1.cross_bond_inds, env2.cross_bond_inds,
-                                    env1.cross_bond_dists,
-                                    env2.cross_bond_dists,
-                                    env1.triplet_counts, env2.triplet_counts,
-                                    self.signal_variance, self.length_scale,
-                                    self.cutoff, self.cutoff_func)
+        args = self.get_args(env1, env2)
+        return force_force_gradient(*args)
 
     def efs_energy(self, env1: AtomicEnvironment, env2: AtomicEnvironment):
-        return efs_energy(env1.bond_array_3, env1.ctype, env1.etypes,
-                          env2.bond_array_3, env2.ctype, env2.etypes,
-                          env1.cross_bond_inds, env2.cross_bond_inds,
-                          env1.cross_bond_dists, env2.cross_bond_dists,
-                          env1.triplet_counts, env2.triplet_counts,
-                          self.signal_variance, self.length_scale,
-                          self.cutoff, self.cutoff_func)
+        args = self.get_args(env1, env2)
+        return efs_energy(*args)
 
     def efs_force(self, env1: AtomicEnvironment, env2: AtomicEnvironment):
-        return efs_force(env1.bond_array_3, env1.ctype, env1.etypes,
-                         env2.bond_array_3, env2.ctype, env2.etypes,
-                         env1.cross_bond_inds, env2.cross_bond_inds,
-                         env1.cross_bond_dists, env2.cross_bond_dists,
-                         env1.triplet_counts, env2.triplet_counts,
-                         self.signal_variance, self.length_scale,
-                         self.cutoff, self.cutoff_func)
+        args = self.get_args(env1, env2)
+        return efs_force(*args)
 
     def efs_self(self, env1: AtomicEnvironment):
         return efs_self(env1.bond_array_3, env1.ctype, env1.etypes,
                         env1.cross_bond_inds, env1.cross_bond_dists,
                         env1.triplet_counts, self.signal_variance,
                         self.length_scale, self.cutoff, self.cutoff_func)
+    
+    def get_args(self, env1, env2):
+        return (env1.bond_array_3, env1.ctype, env1.etypes,
+                env2.bond_array_3, env2.ctype, env2.etypes,
+                env1.cross_bond_inds, env2.cross_bond_inds,
+                env1.cross_bond_dists, env2.cross_bond_dists,
+                env1.triplet_counts, env2.triplet_counts,
+                self.signal_variance, self.length_scale,
+                self.cutoff, self.cutoff_func)
 
 
 @njit
