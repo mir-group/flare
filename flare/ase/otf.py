@@ -177,9 +177,6 @@ class ASE_OTF(OTF):
         # Convert velocities to Angstrom / ps.
         self.velocities = self.atoms.get_velocities() * units.fs * 1e3
 
-    def run_dft(self):
-        super().run_dft()
-
     def update_gp(self, train_atoms, dft_frcs):
         super().update_gp(train_atoms, dft_frcs)
 
