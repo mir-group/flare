@@ -7,7 +7,9 @@ from flare.utils.element_coder import Z_to_element
 
 from flare.mgp.mapxb import MapXbody, SingleMapXbody
 from flare.mgp.utils import get_bonds
+from flare.mgp.grid_kernels_2b import bond_cutoff
 
+from flare.kernels.utils import from_mask_to_args
 
 class Map2body(MapXbody):
 
@@ -20,7 +22,6 @@ class Map2body(MapXbody):
         self.kernel_name = "twobody"
         self.singlexbody = SingleMap2body
         self.bodies = 2
-        self.pred_perm = [0]
         super().__init__(**kwargs)
 
     def build_bond_struc(self, species_list):
@@ -57,7 +58,9 @@ class SingleMap2body(SingleMapXbody):
         '''
 
         self.bodies = 2
+        self.grid_dim = 1
         self.kernel_name = 'twobody'
+        self.pred_perm = [[0]]
 
         super().__init__(**kwargs)
 
@@ -90,14 +93,16 @@ class SingleMap2body(SingleMapXbody):
     def construct_grids(self):
         nop = self.grid_num[0]
         bond_lengths = np.linspace(self.bounds[0][0], self.bounds[1][0], nop)
+        bond_lengths = np.expand_dims(bond_lengths, axis=1)
         return bond_lengths
 
 
-    def set_env(self, grid_env, r):
-        grid_env.bond_array_2 = np.array([[r, 1, 0, 0]])
+    def set_env(self, grid_env, grid_pt):
+        grid_env.bond_array_2 = np.array([[grid_pt[0], 1., 0., 0.]])
         return grid_env
 
     def skip_grid(self, r):
         return False
 
-
+    def grid_cutoff(self, bonds, r_cut, coords, derivative, cutoff_func):
+        return bond_cutoff(bonds, r_cut, coords, derivative, cutoff_func)

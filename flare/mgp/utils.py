@@ -60,11 +60,10 @@ def str_to_mapped_kernel(name: str, component: str = "mc",
          else:
              return gk3b.grid_kernel, None, gk3b.self_kernel, None
     elif b2:
-        warnings.warn('The mapped kernel for 2-body is not implemented.')
         if multihyps:
-            return None, None, gk2b.self_kernel_sephyps, None
+            return gk2b.grid_kernel_sephyps, None, gk2b.self_kernel_sephyps, None
         else:
-            return None, None, gk2b.self_kernel, None
+            return gk2b.grid_kernel, None, gk2b.self_kernel, None
     else:
         warnings.warn('The mapped kernel for many-body is not implemented.')
         return None

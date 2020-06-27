@@ -12,6 +12,7 @@ from typing import List
 
 from flare.env import AtomicEnvironment
 from flare.kernels.utils import from_mask_to_args
+import flare.kernels.cutoffs as cf
 from flare.gp import GaussianProcess
 from flare.gp_algebra import partition_vector, energy_force_vector_unit, \
     force_energy_vector_unit, energy_energy_vector_unit, force_force_vector_unit,\
@@ -311,11 +312,8 @@ class SingleMapXbody:
                 GP.hyps_mask, GP.hyps, grid_kernel=False)
         if self.use_grid_kern:
             try:
-                if self.kernel_name != 'twobody':
-                    kernel_info = get_kernel_term(self.kernel_name, GP.component, 
+                kernel_info = get_kernel_term(self.kernel_name, GP.component, 
                         GP.hyps_mask, GP.hyps, grid_kernel=True)
-                else:
-                    raise Exception
             except:
                 self.use_grid_kern = False
 
@@ -343,6 +341,14 @@ class SingleMapXbody:
                 self_kern = self._gengrid_var_simple(*args_var) 
                 grid_vars = np.sqrt(self_kern - np.sum(grid_vars**2, axis=1))
                 grid_vars = np.expand_dims(grid_vars, axis=1)
+
+                grid_pt = self.bounds[0]
+                grid_env = self.set_env(grid_env, grid_pt)
+                print('GP cutoffs', GP.cutoffs)
+                args = from_mask_to_args(GP.hyps, GP.cutoffs, GP.hyps_mask)
+                gp_kern = GP.kernel(grid_env, grid_env, 1, 1, *args)
+                print('gp_kern', gp_kern)
+                print('mgp self_kern', self_kern)
 
             tensor_shape = np.array([*self.grid_num, grid_vars.shape[1]])
             grid_vars = np.reshape(grid_vars, tensor_shape)
@@ -393,6 +399,72 @@ class SingleMapXbody:
 
         return k12_v_force
 
+    def _gengrid_numba(self, name, env12, kernel_info, force_block, s, e):
+        """
+        Loop over different parts of the training set. from element s to element e
+
+        Args:
+            name: name of the gp instance
+            s: start index of the training data parition
+            e: end index of the training data parition
+            env12: AtomicEnvironment container of the triplet
+            kernel_info: return value of the get_3b_kernel
+        """
+
+        grid_kernel, _, _, cutoffs, hyps, hyps_mask = kernel_info
+
+        args = from_mask_to_args(hyps, cutoffs, hyps_mask)
+        r_cut = cutoffs[self.kernel_name]
+
+        grids = self.construct_grids()
+        coords = np.zeros((grids.shape[0], self.grid_dim * 3), dtype=np.float64) # padding 0
+        coords[:, 0] = np.ones_like(coords[:, 0])
+
+        fj, fdj = self.grid_cutoff(grids, r_cut, coords, derivative=True, 
+            cutoff_func=cf.quadratic_cutoff) 
+        fdj = fdj[:, [0]]
+
+        if self.map_force:
+            prefix = 'force'
+        else:
+            prefix = 'energy'
+
+        if force_block:
+            training_data = _global_training_data[name]
+            kern_type = f'{prefix}_force'
+        else:
+            training_data = _global_training_structures[name]
+            kern_type = f'{prefix}_energy'
+
+        k_v = []
+        chunk_size = 32 ** 3
+        n_grids = grids.shape[0]
+        if n_grids > chunk_size:
+            n_chunk = ceil(n_grids / chunk_size)
+        else:
+            n_chunk = 1
+
+        for m_index in range(s, e):
+            data = training_data[m_index]
+            kern_vec = []
+            for g in range(n_chunk):
+                gs = chunk_size * g
+                ge = np.min((chunk_size * (g + 1), n_grids))
+                grid_chunk = grids[gs:ge, :]
+                fj_chunk = fj[gs:ge, :]
+                fdj_chunk = fdj[gs:ge, :]
+                kv_chunk = grid_kernel(kern_type, data, grid_chunk, fj_chunk, fdj_chunk,
+                                       env12.ctype, env12.etypes, *args)
+                kern_vec.append(kv_chunk)
+            kern_vec = np.hstack(kern_vec)
+            k_v.append(kern_vec)
+
+        if len(k_v) > 0:
+            k_v = np.vstack(k_v).T
+        else:
+            k_v = np.zeros((grids.shape[0], 0))
+
+        return k_v
 
     def _gengrid_inner(self, name, grid_env, kern_info, force_block, s, e):
         '''
@@ -593,9 +665,16 @@ class SingleMapXbody:
 
             # predict var
             v = np.zeros(3)
-            if self.var_map is not None:
-                v_0 = self.var(lengths)
-                v_d = v_0 @ xyzs
+            if self.var_map == 'simple':
+                for b in range(n_neigh):
+                    # v_0 = sqrt(d^2k/dr^2), v = sqrt(d^2k/dr^2 * coord * coord)
+                    v_0 = self.var(lengths[:, self.pred_perm[b]])
+                    v += v_0 @ np.abs(xyzs[:, b, d])
+            elif self.var_map == 'pca':
+                v_d = np.zeros((lengths.shape[0], 3))
+                for b in range(n_neigh):
+                    v_0 = self.var(lengths[:, self.pred_perm[b]])
+                    v_d += v_0 @ xyzs[:, b]
                 v = self.var.V @ v_d
 
         else:
