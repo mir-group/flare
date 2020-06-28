@@ -289,6 +289,14 @@ class SingleMapXbody:
         else:
             processes = self.n_cpus
 
+        # -------- get training data info ----------
+        n_envs = len(GP.training_data)
+        n_strucs = len(GP.training_structures)
+
+        if (n_envs == 0) and (n_strucs == 0):
+            warnings.warn("No training data, will return 0")
+            return np.zeros([n_grid]), None
+
         # ------ construct grids ------
         n_grid = np.prod(self.grid_num)
         grid_mean = np.zeros([n_grid])
@@ -298,14 +306,6 @@ class SingleMapXbody:
             grid_vars = None
 
         grid_env = self.get_grid_env(GP)
-
-        # -------- get training data info ----------
-        n_envs = len(GP.training_data)
-        n_strucs = len(GP.training_structures)
-
-        if (n_envs == 0) and (n_strucs == 0):
-            warnings.warn("No training data, will return 0")
-            return np.zeros([n_grid]), None
 
         # ------- call gengrid functions ---------------
         kernel_info = get_kernel_term(self.kernel_name, GP.component,
@@ -339,6 +339,27 @@ class SingleMapXbody:
 
             if self.var_map == 'simple': 
                 self_kern = self._gengrid_var_simple(*args_var) 
+                var = self_kern - np.sum(grid_vars**2, axis=1)
+                if np.any(var < 0):
+                    neg_ind = np.argwhere(var < 0)
+                    print('neg ind', neg_ind.shape)
+                    neg_ind = neg_ind[0][0]
+
+                    pred_vars = np.sqrt(np.abs(var))
+                    grids = self.construct_grids()
+                    grid_pt = grids[neg_ind, :]
+                    grid_env = self.set_env(grid_env, grid_pt)
+                    print('GP cutoffs', GP.cutoffs)
+                    args = from_mask_to_args(GP.hyps, GP.cutoffs, GP.hyps_mask)
+                    gp_kern = GP.kernel(grid_env, grid_env, 1, 1, *args)
+                    print('gp_kern', gp_kern)
+                    print('mgp self_kern', self_kern)
+                    _, gp_pred = GP.predict(grid_env, 1)
+                    gp_pred = np.sqrt(gp_pred)
+                    print('* gp_pred', gp_pred)
+                    print('* mgp grid_var', pred_vars[neg_ind])
+
+
                 grid_vars = np.sqrt(self_kern - np.sum(grid_vars**2, axis=1))
                 grid_vars = np.expand_dims(grid_vars, axis=1)
 
@@ -349,6 +370,10 @@ class SingleMapXbody:
                 gp_kern = GP.kernel(grid_env, grid_env, 1, 1, *args)
                 print('gp_kern', gp_kern)
                 print('mgp self_kern', self_kern)
+                _, gp_pred = GP.predict(grid_env, 1)
+                gp_pred = np.sqrt(gp_pred)
+                print('* gp_pred', gp_pred)
+                print('* mgp grid_var', grid_vars[:, 0])
 
             tensor_shape = np.array([*self.grid_num, grid_vars.shape[1]])
             grid_vars = np.reshape(grid_vars, tensor_shape)
@@ -513,9 +538,17 @@ class SingleMapXbody:
         _, self_kernel, _, cutoffs, hyps, hyps_mask = kernel_info
 
         args = from_mask_to_args(hyps, cutoffs, hyps_mask)
-        grids = self.construct_grids()
+        r_cut = cutoffs[self.kernel_name]
 
-        return self_kernel(self.map_force, grids, grid_env.ctype, grid_env.etypes, *args)
+        grids = self.construct_grids()
+        coords = np.zeros((grids.shape[0], self.grid_dim * 3), dtype=np.float64) # padding 0
+        coords[:, 0] = np.ones_like(coords[:, 0])
+
+        fj, fdj = self.grid_cutoff(grids, r_cut, coords, derivative=True, 
+            cutoff_func=cf.quadratic_cutoff) 
+        fdj = fdj[:, [0]]
+
+        return self_kernel(self.map_force, grids, fj, fdj, grid_env.ctype, grid_env.etypes, *args)
 
 
     def build_map_container(self):
@@ -669,7 +702,7 @@ class SingleMapXbody:
                 for b in range(n_neigh):
                     # v_0 = sqrt(d^2k/dr^2), v = sqrt(d^2k/dr^2 * coord * coord)
                     v_0 = self.var(lengths[:, self.pred_perm[b]])
-                    v += v_0 @ np.abs(xyzs[:, b, d])
+                    v += v_0 @ np.abs(xyzs[:, b])
             elif self.var_map == 'pca':
                 v_d = np.zeros((lengths.shape[0], 3))
                 for b in range(n_neigh):

@@ -24,7 +24,6 @@ def compare_triplet(mgp_model, gp_model, atom_env):
         xyzs = np.array(comp_xyz[i])
 
         print('compare triplet spc, lengths, xyz', spc)
-        print(np.hstack([lengths, xyzs]))
 
         gp_f = []
         gp_e = []
@@ -84,7 +83,7 @@ def predict_struc_diag_var(struc, gp_model):
         variance[atom, :] = var
     return variance
 
-def predict_atom_diag_var_2b(atom_env, gp_model):
+def predict_atom_diag_var_2b(atom_env, gp_model, force_kernel):
     bond_array = atom_env.bond_array_2
     ctype = atom_env.ctype
 
@@ -102,14 +101,23 @@ def predict_atom_diag_var_2b(atom_env, gp_model):
         spc_struc.coded_species = np.array(species)
         env12 = env.AtomicEnvironment(spc_struc, 0, gp_model.cutoffs)
 
-        _, v12 = gp_model.predict_local_energy_and_var(env12)
+        coord = np.copy(env12.bond_array_2[0, 1:])
+        #env12.bond_array_2[0, 1:] = np.array([1., 0., 0.])
+        if force_kernel:
+            v12 = np.zeros(3)
+            for d in range(3):
+                _, v12[d] = gp_model.predict(env12, d+1)
+            print('v12', np.sqrt(v12), coord)
+        else:
+            _, v12 = gp_model.predict_local_energy_and_var(env12)
+
         var += np.sqrt(v12)
 
     var = var ** 2 
     return var       
 
  
-def predict_atom_diag_var_3b(atom_env, gp_model):
+def predict_atom_diag_var_3b(atom_env, gp_model, force_kernel):
     bond_array = atom_env.bond_array_3
     triplets = atom_env.triplet_counts
     cross_bond_inds = atom_env.cross_bond_inds
@@ -138,15 +146,21 @@ def predict_atom_diag_var_3b(atom_env, gp_model):
             spc_struc.coded_species = np.array(species)
             env12 = env.AtomicEnvironment(spc_struc, 0, gp_model.cutoffs)
 
-            _, v12 = gp_model.predict_local_energy_and_var(env12)
+            if force_kernel:
+                v12 = np.zeros(3)
+                for d in range(3):
+                    _, v12[d] = gp_model.predict(env12, d+1)
+                print('v12', np.sqrt(v12))
+            else:
+                _, v12 = gp_model.predict_local_energy_and_var(env12)
             var += np.sqrt(v12)
     var = var ** 2 
     return var       
 
 
-def predict_atom_diag_var(atom_env, gp_model, kernel_name):
+def predict_atom_diag_var(atom_env, gp_model, kernel_name, force_kernel):
     print('predict diag var')
     if kernel_name == 'twobody':
-        return predict_atom_diag_var_2b(atom_env, gp_model)
+        return predict_atom_diag_var_2b(atom_env, gp_model, force_kernel)
     elif kernel_name == 'threebody':
-        return predict_atom_diag_var_3b(atom_env, gp_model)
+        return predict_atom_diag_var_3b(atom_env, gp_model, force_kernel)

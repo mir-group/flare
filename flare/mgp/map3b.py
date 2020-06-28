@@ -217,3 +217,5 @@ class SingleMap3body(SingleMapXbody):
 
         return k_v
 
+    def grid_cutoff(self, bonds, r_cut, coords, derivative, cutoff_func):
+        return triplet_cutoff(bonds, r_cut, coords, derivative, cutoff_func)

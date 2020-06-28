@@ -190,7 +190,7 @@ def get_bonds_for_kern(bond_array_1, c1, etypes1, c2, etypes2):
 
 
 
-def self_kernel_sephyps(map_force, grids, c2, etypes2, 
+def self_kernel_sephyps(map_force, grids, fj, fdj, c2, etypes2, 
                       cutoff_2b, cutoff_3b, cutoff_mb,
                       nspec, spec_mask,
                       nbond, bond_mask,
@@ -212,11 +212,11 @@ def self_kernel_sephyps(map_force, grids, c2, etypes2,
     cutoffs = [cutoff_2b[btype]]
     hyps = [sig, ls]
 
-    return self_kernel(map_force, grids, c2, etypes2, 
+    return self_kernel(map_force, grids, fj, fdj, c2, etypes2, 
                        hyps, cutoffs, cutoff_func)
 
 
-def self_kernel(map_force, grids, c2, etypes2, hyps, cutoffs, 
+def self_kernel(map_force, grids, fj, fdj, c2, etypes2, hyps, cutoffs, 
               cutoff_func: Callable = quadratic_cutoff):
 
     # pre-compute constants
@@ -224,12 +224,10 @@ def self_kernel(map_force, grids, c2, etypes2, hyps, cutoffs,
     sig = hyps[0]
     ls = hyps[1]
     sig2 = sig * sig
-    
-    fj, fdj = cutoff_func(r_cut, grids, 1)
-
+    ls2 = 1 / (ls * ls)
+    ls3 = ls2 * ls2
+   
     if map_force:
-        ls2 = 1 / (ls * ls)
-        ls3 = ls2 * ls2
         I = fdj ** 2
         L = ls2 * fj ** 2
         kern = sig2 * (I + L)

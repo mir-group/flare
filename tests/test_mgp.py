@@ -19,8 +19,8 @@ from .fake_gp import get_gp, get_random_structure
 from .mgp_test import clean, compare_triplet, predict_atom_diag_var
 
 body_list = ['3'] #, '3']
-multi_list = [False, True]
-map_force_list = [False] #, True]
+multi_list = [False] #, True]
+map_force_list = [True] #, True]
 force_block_only = False
 
 
@@ -243,7 +243,7 @@ def test_predict(all_gp, all_mgp, bodies, multihyps, map_force):
 
     if mgp_model.var_map == 'simple':
         mgp_var = mgp_pred[1]
-        gp_var = predict_atom_diag_var(test_envi, gp_model, kernel_name)
+        gp_var = predict_atom_diag_var(test_envi, gp_model, kernel_name, map_force)
         print('mgp_var, gp_var', mgp_var, gp_var)
         assert np.allclose(mgp_var, gp_var, rtol=1e-2)
 

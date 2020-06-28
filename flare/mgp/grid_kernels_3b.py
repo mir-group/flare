@@ -290,7 +290,7 @@ def get_triplets_for_kern(bond_array_1, c1, etypes1,
 
 
 def self_kernel_sephyps(map_force,
-                  grids,
+                  grids, fj, fdj,
                   c2, etypes2, 
                   cutoff_2b, cutoff_3b, cutoff_mb,
                   nspec, spec_mask,
@@ -305,10 +305,6 @@ def self_kernel_sephyps(map_force,
         data: a single env of a list of envs
     '''
 
-    if map_force:
-        raise NotImplementedError
-
-
     bc1 = spec_mask[c2]
     bc2 = spec_mask[etypes2[0]]
     bc3 = spec_mask[etypes2[1]]
@@ -322,11 +318,8 @@ def self_kernel_sephyps(map_force,
                        cutoffs, cutoff_func)
 
 
-def self_kernel(map_force, grids, c2, etypes2, hyps, cutoffs,
+def self_kernel(map_force, grids, fj, fdj, c2, etypes2, hyps, cutoffs,
                 cutoff_func: Callable = quadratic_cutoff):
-
-    if map_force:
-        raise NotImplementedError
 
     kern = 0
 
@@ -335,26 +328,40 @@ def self_kernel(map_force, grids, c2, etypes2, hyps, cutoffs,
     sig = hyps[0]
     ls = hyps[1]
     sig2 = sig * sig
-    ls2 = 1 / (2 * ls * ls)
-
+    ls1 = 1 / (2 * ls * ls)
+    ls2 = 1 / (ls * ls)
+    ls3 = ls2 * ls2
+ 
     ej1 = etypes2[0]
     ej2 = etypes2[1]
 
-    f1, _ = cutoff_func(r_cut, grids[:, 0], 0)
-    f2, _ = cutoff_func(r_cut, grids[:, 1], 0)
-    f3, _ = cutoff_func(r_cut, grids[:, 2], 0)
-    fj = f1 * f2 * f3 # (n_grids, )
-
     perm_list = get_permutations(c2, ej1, ej2, c2, ej1, ej2)
+    coord = np.array([1., 0., 0.])
 
     for perm in perm_list:
         perm_grids = np.take(grids, perm, axis=1)
         rij = grids - perm_grids
-        C = np.sum(rij * rij, axis=1) # (n_grids, ) adding up three bonds
-        kern += (sig2 / 9) * np.exp(-C * ls2) * fj ** 2 # (n_grids,)
+        D = np.sum(rij * rij, axis=1) # (n_grids, ) adding up three bonds
+        kern_exp = np.exp(-D * ls1) * sig2
+        fjfj = fj ** 2
+        if map_force:
+            crd = np.take(coord, perm)
+            A = ls2 * crd[0]
+            B = rij[:, [0]]
+            C = rij[:, [0]] * crd[0]
+
+            I = fdj ** 2
+            J = B * ls2 * fj * fdj
+            K = - C * ls2 * fdj * fj
+            L = (A - B * C * ls3) * fjfj
+            IJKL = np.sum(I + J + K + L, axis=1)
+            kern += IJKL * kern_exp
+        else:
+            kern += kern_exp * fjfj / 9 # (n_grids,)
 
     return kern
  
+
 
 kern_dict = {'energy_energy': en_en,
              'energy_force': en_force,
