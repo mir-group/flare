@@ -108,3 +108,5 @@ set_target_properties(flare_module PROPERTIES OUTPUT_NAME "_C_flare")
 
 # Add test directory.
 add_subdirectory(CTests)
+add_subdirectory("${CMAKE_BINARY_DIR}/External/googletest-src"
+                 "${CMAKE_BINARY_DIR}/External/googletest-build")
