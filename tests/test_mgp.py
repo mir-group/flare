@@ -18,9 +18,9 @@ from flare.utils.element_coder import _Z_to_mass, _Z_to_element
 from .fake_gp import get_gp, get_random_structure
 from .mgp_test import clean, compare_triplet, predict_atom_diag_var
 
-body_list = ['3'] #, '3']
-multi_list = [False] #, True]
-map_force_list = [True] #, True]
+body_list = ['2', '3']
+multi_list = [False, True]
+map_force_list = [False, True]
 force_block_only = False
 
 
@@ -77,11 +77,15 @@ def test_init(bodies, multihyps, map_force, all_mgp, all_gp):
     lammps_location = f'{bodies}{multihyps}{map_force}.mgp'
     data = gp_model.training_statistics
 
-    mgp_model = MappedGaussianProcess(grid_params=grid_params, 
-                                      unique_species=data['species'], n_cpus=1,
-                                      map_force=map_force, 
-                                      lmp_file_name=lammps_location,
-                                      var_map='simple')
+    try:       
+        mgp_model = MappedGaussianProcess(grid_params=grid_params, 
+            unique_species=data['species'], n_cpus=1, map_force=map_force, 
+            lmp_file_name=lammps_location, var_map='simple')
+    except:
+        mgp_model = MappedGaussianProcess(grid_params=grid_params, 
+            unique_species=data['species'], n_cpus=1, map_force=map_force, 
+            lmp_file_name=lammps_location, var_map=None)
+       
     all_mgp[f'{bodies}{multihyps}{map_force}'] = mgp_model
 
 
@@ -207,7 +211,7 @@ def test_predict(all_gp, all_mgp, bodies, multihyps, map_force):
     #     mgp_model = pickle.load(f)
 
     nenv = 5
-    cell = 0.8 * np.eye(3)
+    cell = 1.0 * np.eye(3)
     cutoffs = gp_model.cutoffs
     unique_species = gp_model.training_statistics['species']
     struc_test, f = get_random_structure(cell, unique_species, nenv)
@@ -241,18 +245,20 @@ def test_predict(all_gp, all_mgp, bodies, multihyps, map_force):
 #    if multihyps and ('3' in bodies):
 #        pytest.skip()
 
+    print('mgp_pred', mgp_pred[0])
+    print('gp_pred', gp_pred[0])
+
+    print("isclose?", mgp_pred[0]-gp_pred[0], gp_pred[0])
+    assert(np.allclose(mgp_pred[0], gp_pred[0], rtol=5e-3)), \
+            f"{bodies} body {map_str} mapping is wrong"
+
+
     if mgp_model.var_map == 'simple':
         mgp_var = mgp_pred[1]
         gp_var = predict_atom_diag_var(test_envi, gp_model, kernel_name, map_force)
         print('mgp_var, gp_var', mgp_var, gp_var)
         assert np.allclose(mgp_var, gp_var, rtol=1e-2)
 
-    print('mgp_pred', mgp_pred[0])
-    print('gp_pred', gp_pred[0])
-
-    print("isclose?", mgp_pred[0]-gp_pred[0], gp_pred[0])
-    assert(np.allclose(mgp_pred[0], gp_pred[0], atol=5e-3)), \
-            f"{bodies} body {map_str} mapping is wrong"
 
     clean()
 

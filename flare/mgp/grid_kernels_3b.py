@@ -314,7 +314,7 @@ def self_kernel_sephyps(map_force,
     cutoffs = [cutoff_2b, cutoff_3b]
 
     hyps = [sig, ls]
-    return self_kernel(map_force, grids, c2, etypes2, hyps, 
+    return self_kernel(map_force, grids, fj, fdj, c2, etypes2, hyps, 
                        cutoffs, cutoff_func)
 
 
@@ -359,7 +359,7 @@ def self_kernel(map_force, grids, fj, fdj, c2, etypes2, hyps, cutoffs,
             IJKL = np.sum(I + J + K + L, axis=1)
             kern += IJKL * kern_exp
         else:
-            kern += kern_exp * fjfj / 9 # (n_grids,)
+            kern += kern_exp * np.sum(fjfj, axis=1) / 9 # (n_grids,)
 
     return kern
  

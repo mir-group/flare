@@ -138,11 +138,11 @@ def get_triplets(ctype, etypes, bond_array, cross_bond_inds,
             if spc1 <= spc2:
                 spcs = [ctype, spc1, spc2]
                 triplet = array([r1, r2, r12])
-                coord = [c1, c2]
+                coord = [c1, c2, np.zeros(3)]
             else:
                 spcs = [ctype, spc2, spc1]
                 triplet = array([r2, r1, r12])
-                coord = [c2, c1]
+                coord = [c2, c1, np.zeros(3)]
 
             if spcs not in exist_species:
                 exist_species.append(spcs)

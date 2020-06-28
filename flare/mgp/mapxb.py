@@ -110,6 +110,15 @@ class MapXbody:
         assert Parameters.compare_dict(self.hyps_mask, atom_env.cutoffs_mask),\
             'GP.hyps_mask is not the same as atom_env.cutoffs_mask'
 
+        f_spcs = np.zeros(3)
+        vir_spcs = np.zeros(6)
+        v_spcs = np.zeros(3) if self.map_force else 0
+        e_spcs = 0
+        kern = 0
+
+        if len(atom_env.bond_array_2) == 0:
+            return f_spcs, vir_spcs, kern, v_spcs, e_spcs   
+
         min_dist = atom_env.bond_array_2[0][0]
         lower_bound = np.max(self.maps[0].bounds[0][0])
         if min_dist < lower_bound:
@@ -120,7 +129,6 @@ class MapXbody:
 
         args = from_mask_to_args(hyps, cutoffs, hyps_mask)
 
-        kern = 0
         if self.var_map == 'pca':
             if self.map_force:
                 kern = np.zeros(3)
@@ -132,20 +140,31 @@ class MapXbody:
         spcs, comp_r, comp_xyz = self.get_arrays(atom_env)
 
         # predict for each species
-        f_spcs = np.zeros(3)
-        vir_spcs = np.zeros(6)
-        v_spcs = np.zeros(3) if self.map_force else 0
-        e_spcs = 0
         for i, spc in enumerate(spcs):
             lengths = np.array(comp_r[i])
             xyzs = np.array(comp_xyz[i])
             map_ind = self.find_map_index(spc)
-
             f, vir, v, e = self.maps[map_ind].predict(lengths, xyzs,
                 self.map_force)
+
+            # the force mapping is not symmetric, need to permute and use 
+            # another map
+            if self.map_force:
+                for b in range(1, self.bodies-1):
+                    spc = np.array(spc)
+                    spc_perm = spc[self.spc_perm[b]].tolist()
+                    map_ind = self.find_map_index(spc_perm)
+                    f_b, vir_b, v_b, e_b = self.maps[map_ind].predict(\
+                        lengths[:, self.pred_perm[b]], xyzs[:, self.pred_perm[b]],
+                        self.map_force)
+                    f += f_b
+                    vir += vir_b
+                    v += v_b
+                    e += e_b
+
             f_spcs += f
             vir_spcs += vir
-            v_spcs += v
+            v_spcs += v 
             e_spcs += e
 
         return f_spcs, vir_spcs, kern, v_spcs, e_spcs
@@ -222,6 +241,11 @@ class SingleMapXbody:
         self.lower_bound_relax = lower_bound_relax
         self.n_cpus = n_cpus
         self.n_sample = n_sample
+
+        if (self.bodies == 3) and self.map_force and (self.var_map == 'simple'):
+            raise NotImplementedError(
+                "var_map='simple' is not implemented for 3b force map, "\
+                "please set to None or 'pca'")
 
         self.auto_lower = (bounds[0] == 'auto')
         if self.auto_lower:
@@ -339,41 +363,8 @@ class SingleMapXbody:
 
             if self.var_map == 'simple': 
                 self_kern = self._gengrid_var_simple(*args_var) 
-                var = self_kern - np.sum(grid_vars**2, axis=1)
-                if np.any(var < 0):
-                    neg_ind = np.argwhere(var < 0)
-                    print('neg ind', neg_ind.shape)
-                    neg_ind = neg_ind[0][0]
-
-                    pred_vars = np.sqrt(np.abs(var))
-                    grids = self.construct_grids()
-                    grid_pt = grids[neg_ind, :]
-                    grid_env = self.set_env(grid_env, grid_pt)
-                    print('GP cutoffs', GP.cutoffs)
-                    args = from_mask_to_args(GP.hyps, GP.cutoffs, GP.hyps_mask)
-                    gp_kern = GP.kernel(grid_env, grid_env, 1, 1, *args)
-                    print('gp_kern', gp_kern)
-                    print('mgp self_kern', self_kern)
-                    _, gp_pred = GP.predict(grid_env, 1)
-                    gp_pred = np.sqrt(gp_pred)
-                    print('* gp_pred', gp_pred)
-                    print('* mgp grid_var', pred_vars[neg_ind])
-
-
                 grid_vars = np.sqrt(self_kern - np.sum(grid_vars**2, axis=1))
                 grid_vars = np.expand_dims(grid_vars, axis=1)
-
-                grid_pt = self.bounds[0]
-                grid_env = self.set_env(grid_env, grid_pt)
-                print('GP cutoffs', GP.cutoffs)
-                args = from_mask_to_args(GP.hyps, GP.cutoffs, GP.hyps_mask)
-                gp_kern = GP.kernel(grid_env, grid_env, 1, 1, *args)
-                print('gp_kern', gp_kern)
-                print('mgp self_kern', self_kern)
-                _, gp_pred = GP.predict(grid_env, 1)
-                gp_pred = np.sqrt(gp_pred)
-                print('* gp_pred', gp_pred)
-                print('* mgp grid_var', grid_vars[:, 0])
 
             tensor_shape = np.array([*self.grid_num, grid_vars.shape[1]])
             grid_vars = np.reshape(grid_vars, tensor_shape)
@@ -685,9 +676,9 @@ class SingleMapXbody:
 
         lengths = np.array(lengths)
         xyzs = np.array(xyzs)
-        n_neigh = self.bodies - 1
 
         if self.map_force:
+            n_neigh = 1
             # predict forces and energy
             e = 0
             f_d = np.zeros((lengths.shape[0], n_neigh, 3))
@@ -697,12 +688,16 @@ class SingleMapXbody:
             f = np.sum(f_d, axis=(0, 1))
 
             # predict var
+            #v = np.zeros((lengths.shape[0], 3))
             v = np.zeros(3)
             if self.var_map == 'simple':
                 for b in range(n_neigh):
                     # v_0 = sqrt(d^2k/dr^2), v = sqrt(d^2k/dr^2 * coord * coord)
                     v_0 = self.var(lengths[:, self.pred_perm[b]])
                     v += v_0 @ np.abs(xyzs[:, b])
+                    #for d in range(3):
+                    #    v[:, d] = v_0 * xyzs[:, b, d]
+                
             elif self.var_map == 'pca':
                 v_d = np.zeros((lengths.shape[0], 3))
                 for b in range(n_neigh):
@@ -711,12 +706,13 @@ class SingleMapXbody:
                 v = self.var.V @ v_d
 
         else:
+            n_neigh = self.bodies - 1
             # predict forces and energy
             e_0, f_0 = self.mean(lengths, with_derivatives=True)
             e = np.sum(e_0) # energy
             f_d = np.zeros((lengths.shape[0], n_neigh, 3))
             for b in range(n_neigh):
-                f_d[:, b, :] = np.diag(f_0[:,b,0]) @ xyzs[:, b]
+                f_d[:, b, :] = np.diag(f_0[:, b, 0]) @ xyzs[:, b]
             f = self.bodies * np.sum(f_d, axis=(0, 1))
 
             # predict var

@@ -125,6 +125,7 @@ def predict_atom_diag_var_3b(atom_env, gp_model, force_kernel):
     ctype = atom_env.ctype
 
     var = 0
+    pred_dict = {}
     for m in range(bond_array.shape[0]):
         ri1 = bond_array[m, 0]
         ci1 = bond_array[m, 1:]
@@ -146,15 +147,25 @@ def predict_atom_diag_var_3b(atom_env, gp_model, force_kernel):
             spc_struc.coded_species = np.array(species)
             env12 = env.AtomicEnvironment(spc_struc, 0, gp_model.cutoffs)
 
+#            env12.bond_array_3[0, 1:] = np.array([1., 0., 0.])
+#            env12.bond_array_3[1, 1:] = np.array([0., 0., 0.])
             if force_kernel:
                 v12 = np.zeros(3)
                 for d in range(3):
                     _, v12[d] = gp_model.predict(env12, d+1)
-                print('v12', np.sqrt(v12))
+                print('v12', np.sqrt(v12), env12.ctype, env12.etypes)
             else:
                 _, v12 = gp_model.predict_local_energy_and_var(env12)
+
+            spc = f'{env12.ctype}_{env12.etypes[0]}_{env12.etypes[1]}'
+            if spc in pred_dict:
+                pred_dict[spc] += np.sqrt(v12)
+            else:
+                pred_dict[spc] = np.sqrt(v12)
+
             var += np.sqrt(v12)
     var = var ** 2 
+    print(pred_dict)
     return var       
 
 
