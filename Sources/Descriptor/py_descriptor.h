@@ -3,6 +3,6 @@
 
 #include <pybind11/pybind11.h>
 
-void AddHarmonicsModule(pybind11::module m);
+void AddDescriptorModule(pybind11::module m);
 
 #endif

@@ -111,10 +111,12 @@ target_compile_options(pybind11 INTERFACE "-fvisibility=hidden")
 
 # Specify source files.
 set(FLARE_SOURCES
-    Sources/Harmonics/y_grad.cpp)
+    Sources/Descriptor/y_grad.cpp
+    Sources/Descriptor/radial.cpp
+    Sources/Descriptor/cutoffs.cpp)
 
 set(PYBIND_SOURCES
-    Sources/Harmonics/py_y_grad.cpp
+    Sources/Descriptor/py_descriptor.cpp
     Sources/pyflare.cpp)
 
 # Create shared library for unit tests.

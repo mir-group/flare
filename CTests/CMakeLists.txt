@@ -1,3 +1,3 @@
-add_executable(test test_y_grad.cpp test_simple.cpp)
+add_executable(test Descriptor/test_y_grad.cpp Descriptor/test_radial.cpp)
 include_directories(../Sources/)
 target_link_libraries(test PUBLIC gtest gtest_main flare)

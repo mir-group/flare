@@ -1,5 +1,5 @@
 #include "gtest/gtest.h"
-#include "Harmonics/y_grad.h"
+#include "Descriptor/y_grad.h"
 #include <chrono>
 #include <iostream>
 #include <cmath>
