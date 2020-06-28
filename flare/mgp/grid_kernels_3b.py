@@ -336,7 +336,7 @@ def self_kernel(map_force, grids, fj, fdj, c2, etypes2, hyps, cutoffs,
     ej2 = etypes2[1]
 
     perm_list = get_permutations(c2, ej1, ej2, c2, ej1, ej2)
-    coord = np.array([1., 0., 0.])
+    ci = np.array([1., 0., 0.])
 
     for perm in perm_list:
         perm_grids = np.take(grids, perm, axis=1)
@@ -345,15 +345,17 @@ def self_kernel(map_force, grids, fj, fdj, c2, etypes2, hyps, cutoffs,
         kern_exp = np.exp(-D * ls1) * sig2
         fjfj = fj ** 2
         if map_force:
-            crd = np.take(coord, perm)
-            A = ls2 * crd[0]
-            B = rij[:, [0]]
-            C = rij[:, [0]] * crd[0]
+            cj = np.take(ci, perm)
+            A = ci[0] * cj[0]
+            B = rij[:, [0]] * ci[0]
+            C = 0
+            for d in range(3):
+                C += rij[:, [d]] * cj[d]
 
             I = fdj ** 2
             J = B * ls2 * fj * fdj
             K = - C * ls2 * fdj * fj
-            L = (A - B * C * ls3) * fjfj
+            L = (A * ls2 - B * C * ls3) * fjfj
             IJKL = np.sum(I + J + K + L, axis=1)
             kern += IJKL * kern_exp
         else:
