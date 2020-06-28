@@ -10,11 +10,14 @@ import shlex
 import sys
 
 
+on_rtd = os.environ.get('READTHEDOCS') == 'True'
+
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
 with open("requirements.txt", "r") as fh:
     dependencies = fh.readlines()
+
 
 # Poor man's command-line options parsing
 def steal_cmake_flags(args):
@@ -89,8 +92,8 @@ def _generator_specified(args):
 
 class CMakeBuild(build_ext):
     """
-    We extend setuptools to support building extensions with CMake. An extension
-    is built with CMake if it inherits from ``CMakeExtension``.
+    We extend setuptools to support building extensions with CMake. An
+    extension is built with CMake if it inherits from ``CMakeExtension``.
     """
 
     def build_extension(self, ext):
@@ -159,25 +162,49 @@ class CMakeBuild(build_ext):
                 super(build_ext, self).build_extension(ext)
 
 
-setuptools.setup(
-    name="mir-flare",
-    packages=setuptools.find_packages(exclude=["tests"]),
-    version="0.0.10",
-    author="Materials Intelligence Research",
-    author_email="mir@g.harvard.edu",
-    description="Fast Learning of Atomistic Rare Events",
-    ext_modules=[CMakeExtension("flare._C_flare")],
-    cmdclass=dict(build_ext=CMakeBuild),
-    long_description=long_description,
-    long_description_content_type="text/markdown",
-    url="https://github.com/mir-group/flare",
-    python_requires=">=3.6",
-    install_requires=dependencies,
-    license="MIT",
-    classifiers=[
-        "License :: OSI Approved :: MIT License",
-        "Topic :: Scientific/Engineering :: Physics",
-        "Topic :: Scientific/Engineering :: Artificial Intelligence",
-        "Development Status :: 4 - Beta",
-    ],
-)
+# Read the Docs does not support C extensions, so we only build _C_flare
+# if the RTD environment variable is not present.
+if on_rtd:
+    setuptools.setup(
+        name="mir-flare",
+        packages=setuptools.find_packages(exclude=["tests"]),
+        version="0.0.10",
+        author="Materials Intelligence Research",
+        author_email="mir@g.harvard.edu",
+        description="Fast Learning of Atomistic Rare Events",
+        long_description=long_description,
+        long_description_content_type="text/markdown",
+        url="https://github.com/mir-group/flare",
+        python_requires=">=3.6",
+        install_requires=dependencies,
+        license="MIT",
+        classifiers=[
+            "License :: OSI Approved :: MIT License",
+            "Topic :: Scientific/Engineering :: Physics",
+            "Topic :: Scientific/Engineering :: Artificial Intelligence",
+            "Development Status :: 4 - Beta",
+        ],
+    )
+else:
+    setuptools.setup(
+        name="mir-flare",
+        packages=setuptools.find_packages(exclude=["tests"]),
+        version="0.0.10",
+        author="Materials Intelligence Research",
+        author_email="mir@g.harvard.edu",
+        description="Fast Learning of Atomistic Rare Events",
+        ext_modules=[CMakeExtension("flare._C_flare")],
+        cmdclass=dict(build_ext=CMakeBuild),
+        long_description=long_description,
+        long_description_content_type="text/markdown",
+        url="https://github.com/mir-group/flare",
+        python_requires=">=3.6",
+        install_requires=dependencies,
+        license="MIT",
+        classifiers=[
+            "License :: OSI Approved :: MIT License",
+            "Topic :: Scientific/Engineering :: Physics",
+            "Topic :: Scientific/Engineering :: Artificial Intelligence",
+            "Development Status :: 4 - Beta",
+        ],
+    )
