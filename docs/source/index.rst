@@ -14,6 +14,7 @@ Contents
    install
    tutorials/tutorials
    flare/flare
+   cflare/cflare
    FAQs/FAQs
    related
    contribute/contribute
