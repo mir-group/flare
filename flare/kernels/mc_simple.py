@@ -567,7 +567,7 @@ def three_body_mc_en(env1: AtomicEnvironment, env2: AtomicEnvironment,
 
 
 def two_body_mc(env1: AtomicEnvironment, env2: AtomicEnvironment,
-                d1: float, d2: float, hyps: 'ndarray', cutoffs: 'ndarray',
+                d1: int, d2: int, hyps: 'ndarray', cutoffs: 'ndarray',
                 cutoff_func: Callable = cf.quadratic_cutoff) -> float:
     """2-body multi-element kernel between two force components.
 
