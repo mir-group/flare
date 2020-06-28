@@ -16,7 +16,6 @@ with open("README.md", "r") as fh:
 with open("requirements.txt", "r") as fh:
     dependencies = fh.readlines()
 
-
 # Poor man's command-line options parsing
 def steal_cmake_flags(args):
     """
@@ -43,7 +42,7 @@ def steal_cmake_flags(args):
 
     if len(stolen_args) > 0:
         cmake_args = sum(
-            (shlex.split(_unquote(x[len(_ARG_PREFIX):])) for x in stolen_args), []
+            (shlex.split(_unquote(x[len(_ARG_PREFIX) :])) for x in stolen_args), []
         )
     else:
         try:
@@ -65,10 +64,33 @@ class CMakeExtension(Extension):
         self.sourcedir = os.path.abspath(sourcedir)
 
 
+def _have_ninja():
+    """
+    Returns `True` if the [ninja](https://ninja-build.org/) build system is
+    available on the system.
+    """
+    with open(os.devnull, "wb") as devnull:
+        try:
+            subprocess.check_call("ninja --version".split(), stdout=devnull)
+        except OSError:
+            return False
+        else:
+            return True
+
+
+def _generator_specified(args):
+    """
+    Returns `True` if `-G` flag was given to CMake.
+    """
+    for _ in filter(lambda f: f.startswith("-G"), args):
+        return True
+    return False
+
+
 class CMakeBuild(build_ext):
     """
-    We extend setuptools to support building extensions with CMake. An
-        extension is built with CMake if it inherits from ``CMakeExtension``.
+    We extend setuptools to support building extensions with CMake. An extension
+    is built with CMake if it inherits from ``CMakeExtension``.
     """
 
     def build_extension(self, ext):
@@ -80,8 +102,7 @@ class CMakeBuild(build_ext):
             # lib_dir is the directory, where the shared libraries will be
             # stored (it will probably be different from the build_temp
             # directory so that setuptools find the libraries)
-            lib_dir = os.path.abspath(
-                os.path.dirname(self.get_ext_fullpath(ext.name)))
+            lib_dir = os.path.abspath(os.path.dirname(self.get_ext_fullpath(ext.name)))
             if not os.path.exists(lib_dir):
                 os.makedirs(lib_dir)
             # Options to pass to CMake during configuration
@@ -89,8 +110,9 @@ class CMakeBuild(build_ext):
             cmake_args.append(
                 "-DNETKET_PYTHON_VERSION={}.{}.{}".format(*sys.version_info[:3])
             )
-            cmake_args.append(
-                "-DCMAKE_LIBRARY_OUTPUT_DIRECTORY={}".format(lib_dir))
+            cmake_args.append("-DCMAKE_LIBRARY_OUTPUT_DIRECTORY={}".format(lib_dir))
+            if not _generator_specified(cmake_args) and _have_ninja():
+                cmake_args.append("-GNinja")
 
             def _decode(x):
                 if sys.version_info >= (3, 0):
@@ -103,7 +125,8 @@ class CMakeBuild(build_ext):
             try:
                 # Configuration step
                 output = subprocess.check_output(
-                    ["cmake", ext.sourcedir], stderr=subprocess.STDOUT)
+                    ["cmake", ext.sourcedir] + cmake_args, stderr=subprocess.STDOUT
+                )
                 if self.distribution.verbose:
                     log.info(_decode(output))
                 if not self.distribution.dry_run:
