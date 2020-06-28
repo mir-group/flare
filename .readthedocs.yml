@@ -1,2 +1,3 @@
 python:
-  -method: pip
+  install:
+    -method: pip
