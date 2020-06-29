@@ -1,8 +1,8 @@
 #ifndef LOCAL_ENVIRONMENT_H
 #define LOCAL_ENVIRONMENT_H
 
-#include "structure.h"
-#include "descriptor.h"
+#include "Structure/structure.h"
+#include "Descriptor/descriptor.h"
 
 // Local environment class.
 class LocalEnvironment{

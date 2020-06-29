@@ -113,11 +113,20 @@ target_compile_options(pybind11 INTERFACE "-fvisibility=hidden")
 set(FLARE_SOURCES
     Sources/Descriptor/y_grad.cpp
     Sources/Descriptor/radial.cpp
-    Sources/Descriptor/cutoffs.cpp)
+    Sources/Descriptor/cutoffs.cpp
+    Sources/Descriptor/single_bond.cpp
+    Sources/Descriptor/descriptor.cpp
+    Sources/Structure/structure.cpp
+    Sources/Environment/local_environment.cpp
+    Sources/Kernels/kernels.cpp
+    Sources/Sparse_GP/sparse_gp.cpp)
 
 set(PYBIND_SOURCES
     Sources/Descriptor/py_descriptor.cpp
     Sources/pyflare.cpp)
+
+# Include sources.
+include_directories(Sources)
 
 # Create shared library for unit tests.
 add_library(flare SHARED ${FLARE_SOURCES})

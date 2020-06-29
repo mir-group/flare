@@ -1,8 +1,8 @@
-#include "descriptor.h"
-#include "radial.h"
-#include "cutoffs.h"
-#include "local_environment.h"
-#include "single_bond.h"
+#include "Descriptor/descriptor.h"
+#include "Descriptor/radial.h"
+#include "Descriptor/cutoffs.h"
+#include "Descriptor/single_bond.h"
+#include "Environment/local_environment.h"
 #include <cmath>
 #include <iostream>
 

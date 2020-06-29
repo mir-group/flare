@@ -1,6 +1,6 @@
-#include "kernels.h"
-#include "cutoffs.h"
-#include "local_environment.h"
+#include "Kernels/kernels.h"
+#include "Descriptor/cutoffs.h"
+#include "Environment/local_environment.h"
 #include <cmath>
 #include <iostream>
 

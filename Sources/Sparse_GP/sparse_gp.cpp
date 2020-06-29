@@ -1,4 +1,4 @@
-#include "sparse_gp.h"
+#include "Sparse_GP/sparse_gp.h"
 #include <cmath>
 #include <iostream>
 #include <fstream>

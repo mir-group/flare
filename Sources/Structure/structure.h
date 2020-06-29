@@ -4,7 +4,7 @@
 #include <vector>
 #include <Eigen/Dense>
 
-#include "descriptor.h"
+#include "Descriptor/descriptor.h"
 
 // Structure class.
 class Structure{

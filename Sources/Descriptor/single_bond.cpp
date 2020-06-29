@@ -1,7 +1,7 @@
-#include "single_bond.h"
-#include "radial.h"
-#include "y_grad.h"
-#include "local_environment.h"
+#include "Descriptor/single_bond.h"
+#include "Descriptor/radial.h"
+#include "Descriptor/y_grad.h"
+#include "Environment/local_environment.h"
 #include <cmath>
 #include <iostream>
 using namespace std;

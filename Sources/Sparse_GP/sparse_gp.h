@@ -5,9 +5,9 @@
 #include <Eigen/Dense>
 #include <Eigen/IterativeLinearSolvers>
 
-#include "local_environment.h"
-#include "structure.h"
-#include "kernels.h"
+#include "Environment/local_environment.h"
+#include "Structure/structure.h"
+#include "Kernels/kernels.h"
 
 class SparseGP{
     public:

@@ -1,5 +1,5 @@
-#include "structure.h"
-#include "local_environment.h"
+#include "Structure/structure.h"
+#include "Environment/local_environment.h"
 #include <cmath>
 #include <iostream>
 
