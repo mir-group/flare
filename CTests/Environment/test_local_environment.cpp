@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
-#include "local_environment.h"
-#include "structure.h"
+#include "Environment/local_environment.h"
+#include "Structure/structure.h"
 #include <iostream>
 #include <Eigen/Dense>
 #include <cmath>

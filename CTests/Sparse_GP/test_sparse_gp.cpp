@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
-#include "sparse_gp.h"
-#include "descriptor.h"
-#include "omp.h"
+#include "Sparse_GP/sparse_gp.h"
+#include "Descriptor/descriptor.h"
+// #include "omp.h"
 #include <chrono>
 #include <stdio.h>
 
@@ -244,11 +244,11 @@ TEST_F(SparseTest, TestBeta){
 
 }
 
-TEST(CountThreads, CountThreads){
-    int test = omp_get_max_threads();
-    std::cout << test << std::endl;
-    EXPECT_EQ(1, 1);
-}
+// TEST(CountThreads, CountThreads){
+//     int test = omp_get_max_threads();
+//     std::cout << test << std::endl;
+//     EXPECT_EQ(1, 1);
+// }
 
 TEST(BetaParse, BetaParse){
     FILE *fp;

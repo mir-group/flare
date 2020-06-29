@@ -1,9 +1,9 @@
 #include "gtest/gtest.h"
-#include "kernels.h"
-#include "structure.h"
-#include "local_environment.h"
-#include "cutoffs.h"
-#include "radial.h"
+#include "Kernels/kernels.h"
+#include "Structure/structure.h"
+#include "Environment/local_environment.h"
+#include "Descriptor/cutoffs.h"
+#include "Descriptor/radial.h"
 #include <iostream>
 #include <Eigen/Dense>
 #include <cmath>
