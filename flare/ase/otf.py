@@ -25,7 +25,7 @@ from flare.ase.calculator import FLARE_Calculator
 import flare.ase.dft as dft_source 
 
 
-class OTF_ASE(OTF):
+class ASE_OTF(OTF):
 
     '''
     On-the-fly training module using ASE MD engine, a subclass of OTF.

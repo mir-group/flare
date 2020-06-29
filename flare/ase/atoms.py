@@ -7,7 +7,7 @@ from copy import deepcopy
 import numpy as np
 from ase import Atoms
 
-class OTF_Atoms(Atoms):
+class AtomsStruc(Atoms):
     '''
     The `OTF_Atoms` class is a child class of ASE `Atoms`, 
     in the meanwhile mimic `Structure` class. It is used in the `OTF` module
