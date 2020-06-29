@@ -33,14 +33,19 @@ class Map3body(MapXbody):
         # 2 body (2 atoms (1 bond) config)
         self.spc = []
         N_spc = len(species_list)
-        for spc1_ind in range(N_spc):
-            spc1 = species_list[spc1_ind]
-            for spc2_ind in range(N_spc):  # (spc1_ind, N_spc):
-                spc2 = species_list[spc2_ind]
-                for spc3_ind in range(N_spc):  # (spc2_ind, N_spc):
-                    spc3 = species_list[spc3_ind]
-                    species = [spc1, spc2, spc3]
-                    self.spc.append(species)
+        if self.map_force:
+            for spc1 in species_list:
+                for spc2 in species_list:
+                    for spc3 in species_list:
+                        species = [spc1, spc2, spc3]
+                        self.spc.append(species)
+        else:
+            for spc1 in species_list:
+                for spc2_ind in range(N_spc):  
+                    spc2 = species_list[spc2_ind]
+                    for spc3 in species_list[spc2_ind:]: 
+                        species = [spc1, spc2, spc3]
+                        self.spc.append(species)
 
 
     def get_arrays(self, atom_env):
