@@ -451,8 +451,6 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
             self_kern = self.kernel(x_t, x_t, *args)
             var_i = np.diagonal(self_kern - np.matmul(np.matmul(k_v[i].T, self.ky_mat_inv[i]), k_v[i]))
 
-            print(i, mean_i, var_i)
-
             beta_i = 0.5*(self.log_prior_var - np.log(var_i))
             mean += beta_i / var_i * mean_i
             var += beta_i / var_i
