@@ -13,7 +13,7 @@ def clean():
                 shutil.rmtree(f)
             else:
                 os.remove(f)
-        if '.mgp' in f:
+        if '.mgp' in f and 'tmp' not in f:
             os.remove(f)
 
 
