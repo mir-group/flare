@@ -230,8 +230,10 @@ class Parameters():
                             f'number of cutoffs should be the same as n {n}'
                         assert npmax(cutoff_list) <= cutoffs[kernel]
             else:
-                assert f'{kernel}_mask' not in param_dict
-                assert f'{kernel}_cutof_list' not in param_dict
+                assert f'{kernel}_mask' not in param_dict,\
+                        f'{kernel}_mask should not be in param_dict'
+                assert f'{kernel}_cutoff_list' not in param_dict, \
+                        f'{kernel}_cutoff_list should not be in param_dict'
 
         if 'map' in param_dict:
 
