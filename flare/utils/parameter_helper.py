@@ -1006,7 +1006,7 @@ class ParameterHelper():
                 for idt in range(self.n[group]):
                     hyp_labels += ['Signal Std '+aeg[idt]]
                 for idt in range(self.n[group]):
-                    hyp_labels += ['Length Scale '+group]
+                    hyp_labels += ['Length Scale '+aeg[idt]]
             else:
                 hyp_labels += ['Signal Std '+group]
                 hyp_labels += ['Length Scale '+group]
