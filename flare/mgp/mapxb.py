@@ -386,10 +386,7 @@ class SingleMapXbody:
             n_grid = np.prod(self.grid_num)
             return np.empty((n_grid, 0))
 
-        if self.use_grid_kern: 
-            gengrid_func = self._gengrid_numba
-        else:
-            gengrid_func = self._gengrid_inner
+        gengrid_func = self._gengrid_inner
 
         if processes == 1:
             return gengrid_func(*args, force_block, 0, n_envs)
@@ -415,7 +412,7 @@ class SingleMapXbody:
 
         return k12_v_force
 
-    def _gengrid_numba(self, name, env12, kernel_info, force_block, s, e):
+    def _gengrid_inner(self, name, env12, kernel_info, force_block, s, e):
         """
         Loop over different parts of the training set. from element s to element e
 
@@ -481,42 +478,6 @@ class SingleMapXbody:
             k_v = np.zeros((grids.shape[0], 0))
 
         return k_v
-
-    def _gengrid_inner(self, name, grid_env, kern_info, force_block, s, e):
-        '''
-        Calculate kv segments of the given batch of training data for all grids
-        '''
-
-        kernel, ek, efk, cutoffs, hyps, hyps_mask = kern_info
-        if force_block:
-            size = (e - s) * 3
-            force_x_vector_unit = force_force_vector_unit
-            force_x_kern = kernel
-            energy_x_vector_unit = energy_force_vector_unit
-            energy_x_kern = efk
-        else:
-            size = e - s
-            force_x_vector_unit = force_energy_vector_unit
-            force_x_kern = efk
-            energy_x_vector_unit = energy_energy_vector_unit
-            energy_x_kern = ek
-
-        grids = self.construct_grids()
-        k12_v = np.zeros([len(grids), size])
-
-        for b in range(grids.shape[0]):
-            grid_pt = grids[b]
-            grid_env = self.set_env(grid_env, grid_pt)
-
-            if not self.skip_grid(grid_pt):
-                if self.map_force:
-                    k12_v[b, :] = force_x_vector_unit(name, s, e, grid_env,
-                        force_x_kern, hyps, cutoffs, hyps_mask, 1)
-                else:
-                    k12_v[b, :] = energy_x_vector_unit(name, s, e, grid_env,
-                        energy_x_kern, hyps, cutoffs, hyps_mask)
-
-        return k12_v
 
 
     def _gengrid_var_simple(self, name, grid_env, kernel_info):
