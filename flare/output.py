@@ -58,7 +58,6 @@ class Output:
         for filetype in filesuffix:
             self.open_new_log(filetype, filesuffix[filetype], verbose)
 
-
     def conclude_run(self):
         """
         destruction function that closes all files
@@ -172,9 +171,8 @@ class Output:
             f.handlers[0].flush()
 
     def write_md_config(
-     self, dt, curr_step, structure, temperature, KE, start_time, dft_step,
-     velocities):
-
+            self, dt, curr_step, structure, temperature, KE, start_time, dft_step,
+            velocities):
         """ write md configuration in log file
 
         :param dt: timestemp of OTF MD
@@ -334,14 +332,13 @@ class Output:
                           f'{forces_2[i, 2]}'
             logger.info(string)
 
-
         if self.always_flush:
             logger.handlers[0].flush()
 
     def write_xyz_config(self, curr_step, structure, dft_step,
                          forces: np.array = None, stds: np.array = None,
-                         forces_2: np.array = None, dft_energy = 0,
-                         predict_energy = 0):
+                         forces_2: np.array = None, dft_energy=0,
+                         predict_energy=0):
         """ write atomic configuration in xyz file
 
         :param curr_step: Int, number of frames to note in the comment line
@@ -363,7 +360,7 @@ class Output:
                        species=structure.species_labels, filename='xyz',
                        header=header,
                        forces=forces, stds=stds, forces_2=forces_2,
-                       dft_energy = dft_energy, predict_energy = predict_energy)
+                       dft_energy=dft_energy, predict_energy=predict_energy)
 
     def write_hyps(self, hyp_labels, hyps, start_time, like, like_grad,
                    name='log', hyps_mask=None):
@@ -415,8 +412,8 @@ class Output:
         f.info(f'Uncertainty: {stds[train_atoms[0]]}')
 
     def write_gp_dft_comparison(
-     self, curr_step, frame, start_time, dft_forces, dft_energy, error,
-     local_energies=None, KE=None, mgp=False):
+            self, curr_step, frame, start_time, dft_forces, dft_energy, error,
+            local_energies=None, KE=None, mgp=False):
         """Write the comparison to logfile.
 
         :param curr_step: current timestep
