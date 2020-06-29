@@ -73,6 +73,8 @@ class MapXbody:
                 (len(GP.training_data) > 0):
             self.build_map(GP)
 
+        self.debug = False
+
     def build_bond_struc(self, coded_species):
         raise NotImplementedError("need to be implemented in child class")
 
@@ -109,6 +111,10 @@ class MapXbody:
         assert Parameters.compare_dict(self.hyps_mask, atom_env.cutoffs_mask),\
             'GP.hyps_mask is not the same as atom_env.cutoffs_mask'
 
+        if not len(self.maps):
+            v_spcs = np.zeros(3) if self.map_force else 0
+            return np.zeros(3), np.zeros(6), 0, v_spcs, 0
+
         min_dist = atom_env.bond_array_2[0][0]
         lower_bound = np.max(self.maps[0].bounds[0][0])
         if min_dist < lower_bound:
@@ -143,12 +149,16 @@ class MapXbody:
             xyzs = np.array(comp_xyz[i])
             map_ind = self.find_map_index(spc)
 
-            f, vir, v, e = self.maps[map_ind].predict(lengths, xyzs,
-                self.map_force, mean_only)
-            f_spcs += f
-            vir_spcs += vir
-            v_spcs += v
-            e_spcs += e
+            if map_ind is not None:
+                f, vir, v, e = self.maps[map_ind].predict(lengths, xyzs,
+                    self.map_force, mean_only)
+                f_spcs += f
+                vir_spcs += vir
+                v_spcs += v
+                e_spcs += e
+            else:
+                if not self.debug:
+                    raise RuntimeError(f"Component {spc} not found")
 
         return f_spcs, vir_spcs, kern, v_spcs, e_spcs
 
@@ -465,7 +475,7 @@ class SingleMapXbody:
             self.build_map_container()
 
 
-    def build_map(self, GP):
+    def build_map(self, GP, debug=False):
 
         self.update_bounds(GP)
 

@@ -41,7 +41,10 @@ class Map2body(MapXbody):
 
     def find_map_index(self, spc):
         # use set because of permutational symmetry
-        return self.spc.index(sorted(spc))
+        try:
+            return self.spc.index(sorted(spc))
+        except:
+            return None
 
 
 

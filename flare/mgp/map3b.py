@@ -51,7 +51,10 @@ class Map3body(MapXbody):
         return spcs, comp_r, comp_xyz
 
     def find_map_index(self, spc):
-        return self.spc.index(spc)
+        try:
+            return self.spc.index(spc)
+        except:
+            return None
 
 
 class SingleMap3body(SingleMapXbody):
