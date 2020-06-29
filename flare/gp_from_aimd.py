@@ -107,6 +107,7 @@ class TrajectoryTrainer:
         :param skip: Skip through frames
         :param calculate_energy: Use local energy kernel or not
         :param output_name: Write output of training to this file
+        :param print_xyz: If True, print the configurations in xyz format
         :param max_atoms_from_frame: Largest # of atoms added from one frame
         :param min_atoms_per_train: Only train when this many atoms have been
             added

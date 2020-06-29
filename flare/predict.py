@@ -510,7 +510,7 @@ def predict_on_structure_mgp(structure, mgp, output=None,
                              output_name=None, n_cpus=None,
                              write_to_structure=True,
                              selective_atoms: List[int] = None,
-                             skipped_atom_value=0, energy=False):  # changed
+                             skipped_atom_value=0, energy=False):
     """
     Assign forces to structure based on an mgp
     """

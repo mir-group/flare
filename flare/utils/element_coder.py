@@ -12,7 +12,29 @@ _user_element_to_Z = {}
 _user_Z_to_element = {}
 
 
-def inject_user_definition(ele: str, Z: int):
+def inject_user_definition(element: str, Z: int):
+    """ Allow user-defined element. The definition
+    will override the default ones from the periodic table.
+
+    Example:
+
+    >>> import flare.utils
+    >>> import flare.utils.element_coder as ec
+    >>> ec.inject_user_definition('C1', 6)
+    >>> ec.inject_user_definition('C2', 7)
+    >>> ec.inject_user_definition('H1', 1)
+    >>> ec.inject_user_definition('H2', 2)
+
+    This block should be executed before any other
+    flare modules are imported. And user has to
+    be very careful to not let Z overlap with other
+    elements in the system
+
+    :param element: string symbol of the element
+    :type element: str
+    :param Z: corresponding Z
+    :type Z: int
+    """
     _user_element_to_Z[ele] = Z
     _user_Z_to_element[Z] = ele
 
