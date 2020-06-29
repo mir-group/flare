@@ -167,6 +167,22 @@ class MappedGaussianProcess:
         # write to lammps pair style coefficient file
         self.write_lmp_file(self.lmp_file_name)
 
+    def set_kernel_info(self, hyps, component='mc', hyps_mask=None):
+        for xb in self.maps:
+            self.maps[xb].kernel_info = \
+                    get_kernel_xb(self.maps[xb].kernel_name,
+                         component, hyps_mask, hyps)
+
+    def set_hyps_mask(self, hyps_mask):
+        self.hyps_mask = hyps_mask
+        for xb in self.maps:
+            self.maps[xb].hyps_mask = hyps_mask
+
+    def set_cutoffs(self, cutoffs):
+        self.cutoffs = cutoffs
+        for xb in self.maps:
+            self.maps[xb].cutoffs = cutoffs
+
 
     def predict(self, atom_env: AtomicEnvironment, mean_only: bool = True,
             ) -> (float, 'ndarray', 'ndarray', float):
