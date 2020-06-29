@@ -266,7 +266,10 @@ def parallel_vector_construction(pack_function, name, x, kernel, hyps,
         containers[wid] = result_chunk
 
     if nbatch > 1:
-       vector = np.vstack(containers)
+       if dim > 1:
+           vector = np.vstack(containers)
+       else:
+           vector = np.hstack(containers)
     elif nbatch > 0:
        vector = containers[0]
     else:
@@ -358,12 +361,12 @@ def get_force_block_pack(hyps: np.ndarray, name: str, s1: int, e1: int,
         for n_index in range(lowbound, size2):
             x_2 = training_data[n_index+s2]
             kern_curr = kernel(x_1, x_2, *args)
-            # store kernel value
             m_index_x3 = m_index*3
             n_index_x3 = n_index*3
             force_block[m_index_x3:m_index_x3+3, n_index_x3:n_index_x3+3] = kern_curr
             if (same):
                 force_block[n_index_x3:n_index_x3+3, m_index_x3:m_index_x3+3] = kern_curr.T
+
     return force_block
 
 
@@ -920,7 +923,7 @@ def energy_force_vector(name, kernel, x, hyps, cutoffs=None, hyps_mask=None,
 
     block_id, nbatch = partition_vector(n_sample, size, n_cpus)
     pack_function = energy_force_vector_unit
-    mult = 3
+    mult = 1
 
     k12_v = parallel_vector_construction(pack_function, name, x, kernel,
                                          hyps, cutoffs, hyps_mask, block_id,

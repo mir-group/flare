@@ -12,7 +12,7 @@ from flare import struc, gp, env, md
 from flare.dft_interface import dft_software
 from flare.output import Output
 from flare.utils.learner import is_std_in_bound
-
+from flare.parameters import Parameters
 
 class OTF:
     """Trains a Gaussian process force field on the fly during
@@ -213,9 +213,12 @@ class OTF:
                 new_pos = self.md_step()
 
                 # get max uncertainty atoms
+                noise_sig = Parameters.get_noise(
+                        self.gp.hyps_mask, self.gp.hyps, constraint=False)
+
                 std_in_bound, target_atoms = \
                     is_std_in_bound(self.std_tolerance,
-                                    self.gp.hyps[-1], self.structure,
+                                    noise_sig, self.structure,
                                     self.max_atoms_added)
 
                 if not std_in_bound:
@@ -343,7 +346,12 @@ class OTF:
         """Optimizes the hyperparameters of the current GP model."""
 
         self.gp.train(logger_name=self.output.basename+'hyps')
-        self.output.write_hyps(self.gp.hyp_labels, self.gp.hyps,
+        hyps, labels = Parameters.get_hyps(
+                self.gp.hyps_mask, self.gp.hyps, constraint=False,
+                label=True)
+        if labels is None:
+            labels = self.gp.hyp_labels
+        self.output.write_hyps(labels, hyps,
                                self.start_time,
                                self.gp.likelihood, self.gp.likelihood_gradient,
                                hyps_mask=self.gp.hyps_mask)

@@ -423,7 +423,7 @@ class Parameters():
                 return [universal_cutoff]*3
 
     @staticmethod
-    def get_hyps(param_dict, hyps=None, constraint=False):
+    def get_hyps(param_dict, hyps=None, constraint=False, label=False):
         '''
         get the cutoff
 
@@ -439,19 +439,27 @@ class Parameters():
             hyps = param_dict['hyps']
 
         if 'map' in param_dict:
+            label_key = 'original_labels'
             newhyps = np.copy(param_dict['original_hyps'])
             opt = np.zeros_like(newhyps, dtype=bool)
             for i, ori in enumerate(param_dict['map']):
                 newhyps[ori] = hyps[i]
                 opt[ori] = True
         else:
+            label_key = 'hyp_labels'
             newhyps = np.copy(hyps)
             opt = np.zeros_like(hyps, dtype=bool)
 
         if constraint:
-            return newhyps, opt
+            if label:
+                return newhyps, opt, param_dict.get(label_key, None)
+            else:
+                return newhyps, opt
         else:
-            return newhyps
+            if label:
+                return newhyps, param_dict.get(label_key, None)
+            else:
+                return newhyps
 
     @staticmethod
     def compare_dict(dict1, dict2):
