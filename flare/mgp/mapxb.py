@@ -115,11 +115,12 @@ class MapXbody:
             v_spcs = np.zeros(3) if self.map_force else 0
             return np.zeros(3), np.zeros(6), 0, v_spcs, 0
 
-        min_dist = atom_env.bond_array_2[0][0]
         lower_bound = np.max(self.maps[0].bounds[0][0])
-        if min_dist < lower_bound:
-            raise ValueError(f'The minimal distance {min_dist:.3f} is below the'
-                f' mgp lower bound {lower_bound:.3f}')
+        if len(atom_env.bond_array_2)>0:
+            min_dist = atom_env.bond_array_2[0][0]
+            if min_dist < lower_bound:
+                raise ValueError(f'The minimal distance {min_dist:.3f} is below the'
+                    f' mgp lower bound {lower_bound:.3f}')
 
         if self.mean_only:  # if not build mapping for var
             mean_only = True
@@ -574,6 +575,8 @@ class SingleMapXbody:
             # predict forces and energy
             e_0, f_0 = self.mean(lengths, with_derivatives=True)
             e = np.sum(e_0) # energy
+            if self.bodies == 3:
+                e = e*0.5
             f_d = np.diag(f_0[:,0,0]) @ xyzs
             f = self.bodies * np.sum(f_d, axis=0)
 
