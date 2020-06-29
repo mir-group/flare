@@ -54,6 +54,7 @@ from flare.utils.element_coder import element_to_Z, Z_to_element, NumpyEncoder
 from flare.utils.learner import subset_of_frame_by_element, \
     is_std_in_bound_per_species, is_force_in_bound_per_species
 from flare.mgp import MappedGaussianProcess
+from flare.parameters import Parameters
 
 
 class TrajectoryTrainer:
@@ -405,7 +406,8 @@ class TrajectoryTrainer:
                 if self.mgp:
                     noise = 0
                 else:
-                    noise = self.gp.hyps[-1]
+                    noise = Parameters.get_noise(
+                        self.gp.hyps_mask, self.gp.hyps, constraint=False)
                 std_in_bound, std_train_atoms = is_std_in_bound_per_species(
                     rel_std_tolerance=self.rel_std_tolerance,
                     abs_std_tolerance=self.abs_std_tolerance,
@@ -555,7 +557,11 @@ class TrajectoryTrainer:
         else:
             self.gp.train(logger_name=logger_train)
 
-        self.output.write_hyps(self.gp.hyp_labels, self.gp.hyps,
+        hyps, labels = Parameters.get_hyps(self.gp.hyps_mask, self.gp.hyps, constraint=False,
+                        label=True)
+        if labels is None:
+            labels = self.gp.hyp_labels
+        self.output.write_hyps(labels, hyps,
                                self.start_time,
                                self.gp.likelihood,
                                self.gp.likelihood_gradient,

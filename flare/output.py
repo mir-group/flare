@@ -381,7 +381,7 @@ class Output:
 
         if hyp_labels is not None:
             for i, label in enumerate(hyp_labels):
-                f.info(f'Hyp{i} : {label} = {hyps[i]:.4f}')
+                f.info(f'Hyp{i} : {label:30s} = {hyps[i]:.4f}')
         else:
             for i, hyp in enumerate(hyps):
                 f.info(f'Hyp{i} : {hyp:.4f}')
