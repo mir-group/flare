@@ -14,13 +14,15 @@ def update_positions(dt, noa, structure):
 
         new_pos[i] = 2 * pos - pre_pos + dtdt * forces / mass
 
-    return new_pos
+    # Update previous and current positions.
+    structure.prev_positions = np.copy(structure.positions)
+    structure.positions = new_pos
+    structure.wrap_positions()
 
 
-def calculate_temperature(new_pos, structure, dt, noa):
-    # set velocity and temperature information
-    velocities = (new_pos -
-                  structure.prev_positions) / (2 * dt)
+def calculate_temperature(structure, dt, noa):
+    # Set velocity and temperature information.
+    velocities = (structure.positions - structure.prev_positions) / dt
 
     KE = 0
     for i in range(len(structure.positions)):

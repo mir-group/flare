@@ -20,8 +20,9 @@ from flare.gp_algebra import get_like_from_mats, get_neg_like_grad, \
     force_force_vector, energy_force_vector, get_force_block, \
     get_ky_mat_update, _global_training_data, _global_training_labels, \
     _global_training_structures, _global_energy_labels, get_Ky_mat, \
-    get_kernel_vector, en_kern_vec
-from flare.kernels.utils import str_to_kernel_set, from_mask_to_args, kernel_str_to_array
+    get_kernel_vector, en_kern_vec, efs_kern_vec
+from flare.kernels.utils import str_to_kernel_set, from_mask_to_args, \
+    kernel_str_to_array
 from flare.output import Output, set_logger
 from flare.parameters import Parameters
 from flare.struc import Structure
@@ -111,12 +112,15 @@ class GaussianProcess:
         else:
             self.hyps = np.array(self.hyps, dtype=np.float64)
 
-        kernel, grad, ek, efk = str_to_kernel_set(
-            self.kernels, self.component, self.hyps_mask)
+        kernel, grad, ek, efk, efs_e, efs_f, efs_self = \
+            str_to_kernel_set(self.kernels, self.component, self.hyps_mask)
         self.kernel = kernel
         self.kernel_grad = grad
         self.energy_force_kernel = efk
         self.energy_kernel = ek
+        self.efs_energy_kernel = efs_e
+        self.efs_force_kernel = efs_f
+        self.efs_self_kernel = efs_self
         self.kernels = kernel_str_to_array(kernel.__name__)
 
         # parallelization
@@ -204,13 +208,13 @@ class GaussianProcess:
 
         self.sync_data()
 
-        self.hyps_mask = Parameters.check_instantiation(self.hyps, self.cutoffs,
-                                                        self.kernels, self.hyps_mask)
+        self.hyps_mask = Parameters.check_instantiation(
+            self.hyps, self.cutoffs, self.kernels, self.hyps_mask)
 
         self.bounds = deepcopy(self.hyps_mask.get('bounds', None))
 
     def update_kernel(self, kernels, component="mc", hyps_mask=None):
-        kernel, grad, ek, efk = str_to_kernel_set(
+        kernel, grad, ek, efk, _, _, _ = str_to_kernel_set(
             kernels, component, hyps_mask)
         self.kernel = kernel
         self.kernel_grad = grad
@@ -514,6 +518,49 @@ class GaussianProcess:
 
         return pred_mean, pred_var
 
+    def predict_efs(self, x_t: AtomicEnvironment):
+        """Predict the local energy, forces, and partial stresses of an
+            atomic environment and their predictive variances."""
+
+        # Kernel vector allows for evaluation of atomic environments.
+        if self.parallel and not self.per_atom_par:
+            n_cpus = self.n_cpus
+        else:
+            n_cpus = 1
+
+        _global_training_data[self.name] = self.training_data
+        _global_training_labels[self.name] = self.training_labels_np
+
+        energy_vector, force_array, stress_array = \
+            efs_kern_vec(self.name, self.efs_force_kernel,
+                         self.efs_energy_kernel,
+                         x_t, self.hyps, cutoffs=self.cutoffs,
+                         hyps_mask=self.hyps_mask, n_cpus=n_cpus,
+                         n_sample=self.n_sample)
+
+        # Check that alpha is up to date with training set.
+        self.check_L_alpha()
+
+        # Compute mean predictions.
+        en_pred = np.matmul(energy_vector, self.alpha)
+        force_pred = np.matmul(force_array, self.alpha)
+        stress_pred = np.matmul(stress_array, self.alpha)
+
+        # Compute uncertainties.
+        args = from_mask_to_args(self.hyps, self.cutoffs, self.hyps_mask)
+        self_en, self_force, self_stress = self.efs_self_kernel(x_t, *args)
+
+        en_var = self_en - \
+            np.matmul(np.matmul(energy_vector, self.ky_mat_inv), energy_vector)
+        force_var = self_force - \
+            np.diag(np.matmul(np.matmul(force_array, self.ky_mat_inv),
+                              force_array.transpose()))
+        stress_var = self_stress - \
+            np.diag(np.matmul(np.matmul(stress_array, self.ky_mat_inv),
+                              stress_array.transpose()))
+
+        return en_pred, force_pred, stress_pred, en_var, force_var, stress_var
+
     def set_L_alpha(self):
         """
         Invert the covariance matrix, setting L (a lower triangular
@@ -580,16 +627,15 @@ class GaussianProcess:
     def __str__(self):
         """String representation of the GP model."""
 
-        thestr = "GaussianProcess Object\n"
+        thestr = ''
         thestr += f'Number of cpu cores: {self.n_cpus}\n'
         thestr += f'Kernel: {self.kernels}\n'
         thestr += f"Training points: {len(self.training_data)}\n"
         thestr += f'Cutoffs: {self.cutoffs}\n'
-        thestr += f'Model Likelihood: {self.likelihood}\n'
 
         thestr += f'Number of hyperparameters: {len(self.hyps)}\n'
-        thestr += f'Hyperparameters_array: {str(self.hyps)}\n'
-        thestr += 'Hyperparameters: \n'
+        thestr += f'Hyperparameter array: {str(self.hyps)}\n'
+
         if self.hyp_labels is None:
             # Put unlabeled hyperparameters on one line
             thestr = thestr[:-1]
@@ -597,9 +643,6 @@ class GaussianProcess:
         else:
             for hyp, label in zip(self.hyps, self.hyp_labels):
                 thestr += f"{label}: {hyp} \n"
-
-        for k in self.hyps_mask:
-            thestr += f'Hyps_mask {k}: {self.hyps_mask[k]} \n'
 
         return thestr
 
@@ -622,7 +665,8 @@ class GaussianProcess:
 
         # Remove the callables
         for key in ['kernel', 'kernel_grad', 'energy_kernel',
-                    'energy_force_kernel']:
+                    'energy_force_kernel', 'efs_energy_kernel',
+                    'efs_force_kernel', 'efs_self_kernel']:
             if out_dict.get(key) is not None:
                 del out_dict[key]
 
@@ -816,7 +860,6 @@ class GaussianProcess:
 
         if update_matrices:
             self.set_L_alpha()
-            self.compute_matrices()
 
         # Put removed data in order of lowest to highest index
         removed_data.reverse()

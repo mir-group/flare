@@ -103,13 +103,10 @@ def get_gp(bodies, kernel_type='mc', multihyps=True, cellabc=[1, 1, 1.5],
     energy = 3.14
 
     # test update_db
-    gaussian = \
-        GaussianProcess(kernels=kernels,
-                        component=kernel_type,
-                        hyps=hyps,
-                        hyp_labels=hl,
-                        cutoffs=cutoffs, hyps_mask=hm,
-                        parallel=False, n_cpus=1)
+    gaussian = GaussianProcess(
+        kernels=kernels, component=kernel_type, hyps=hyps, hyp_labels=hl,
+        cutoffs=cutoffs, hyps_mask=hm, parallel=False, n_cpus=1)
+
     if force_only:
         gaussian.update_db(test_structure, forces)
     else:

@@ -351,8 +351,9 @@ class TrajectoryTrainer:
 
             # If no predict_atoms_per_element was specified, predict_atoms
             # will be equal to every atom in the frame.
-            predict_atoms = subset_of_frame_by_element(cur_frame,
-                                                       self.predict_atoms_per_element)
+            predict_atoms = subset_of_frame_by_element(
+                cur_frame, self.predict_atoms_per_element)
+
             # Atoms which are skipped will have NaN as their force / std values
             local_energies = None
 
@@ -368,12 +369,10 @@ class TrajectoryTrainer:
                     write_to_structure=False, selective_atoms=predict_atoms,
                     skipped_atom_value=np.nan)
             else:
-                pred_forces, pred_stds = self.pred_func(structure=cur_frame,
-                                                        gp=self.gp,
-                                                        n_cpus=self.n_cpus,
-                                                        write_to_structure=False,
-                                                        selective_atoms=predict_atoms,
-                                                        skipped_atom_value=np.nan)
+                pred_forces, pred_stds = self.pred_func(
+                    structure=cur_frame, gp=self.gp, n_cpus=self.n_cpus,
+                    write_to_structure=False, selective_atoms=predict_atoms,
+                    skipped_atom_value=np.nan)
 
             # Get Error
             dft_forces = cur_frame.forces
@@ -385,10 +384,8 @@ class TrajectoryTrainer:
             dummy_frame.stds = pred_stds
 
             self.output.write_gp_dft_comparison(
-                curr_step=i, frame=dummy_frame,
-                start_time=time.time(),
-                dft_forces=dft_forces,
-                error=error,
+                curr_step=i, frame=dummy_frame, start_time=time.time(),
+                dft_forces=dft_forces, error=error,
                 local_energies=local_energies)
 
             if i < train_frame:

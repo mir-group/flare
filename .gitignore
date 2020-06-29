@@ -48,6 +48,7 @@ test_files/qe_output_*.out
 /tests/*.txt
 /tests/*.mgp
 /tests/*.log
+/tests/mgp_grids/
 /tests/POSCAR*
 .idea/
 .coverage

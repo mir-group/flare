@@ -1,10 +1,38 @@
-from numba import jit, njit
-import time
+from numba import njit
 import numpy as np
 from numpy import zeros, array
 
 from math import floor
-from numpy import empty
+
+
+_Ad = array([
+    #      t^3       t^2        t        1
+    [-1.0 / 6.0, 3.0 / 6.0, -3.0 / 6.0, 1.0 / 6.0],
+    [3.0 / 6.0, -6.0 / 6.0, 0.0 / 6.0, 4.0 / 6.0],
+    [-3.0 / 6.0, 3.0 / 6.0, 3.0 / 6.0, 1.0 / 6.0],
+    [1.0 / 6.0, 0.0 / 6.0, 0.0 / 6.0, 0.0 / 6.0]
+])
+
+_dAd = array([[ 0.,  -0.5,  1.,  -0.5], 
+              [ 0.,   1.5, -2.,   0. ],
+              [ 0.,  -1.5,  1.,   0.5],
+              [ 0.,   0.5,  0.,   0. ]])
+
+_d2Ad = array([[ 0.,  0., -1.,  1.],
+               [ 0.,  0.,  3., -2.],
+               [ 0.,  0., -3.,  1.],
+               [ 0.,  0.,  1.,  0.]])
+
+# The dAd and d2Ad are computed from the code below
+# _dAd = zeros((4, 4), dtype=np.double)
+# for i in range(1, 4):
+#     Ad_i = _Ad[:, i - 1]
+#     _dAd[:, i] = (4 - i) * Ad_i
+# 
+# _d2Ad = zeros((4, 4), dtype=np.double)
+# for i in range(1, 4):
+#     dAd_i = _dAd[:, i - 1]
+#     _d2Ad[:, i] = (4 - i) * dAd_i
 
 
 @njit(cache=True)
@@ -29,20 +57,20 @@ def vec_eval_cubic_spline_1(a, b, orders, coefs, points, out):
         Phi0_2 = 0
         Phi0_3 = 0
         if t0 < 0:
-            Phi0_0 = dAd[0,3]*t0 + Ad[0,3]
-            Phi0_1 = dAd[1,3]*t0 + Ad[1,3]
-            Phi0_2 = dAd[2,3]*t0 + Ad[2,3]
-            Phi0_3 = dAd[3,3]*t0 + Ad[3,3]
+            Phi0_0 = _dAd[0, 3] * t0 + _Ad[0, 3]
+            Phi0_1 = _dAd[1, 3] * t0 + _Ad[1, 3]
+            Phi0_2 = _dAd[2, 3] * t0 + _Ad[2, 3]
+            Phi0_3 = _dAd[3, 3] * t0 + _Ad[3, 3]
         elif t0 > 1:
-            Phi0_0 = (3*Ad[0,0] + 2*Ad[0,1] + Ad[0,2])*(t0-1) + (Ad[0,0]+Ad[0,1]+Ad[0,2]+Ad[0,3])
-            Phi0_1 = (3*Ad[1,0] + 2*Ad[1,1] + Ad[1,2])*(t0-1) + (Ad[1,0]+Ad[1,1]+Ad[1,2]+Ad[1,3])
-            Phi0_2 = (3*Ad[2,0] + 2*Ad[2,1] + Ad[2,2])*(t0-1) + (Ad[2,0]+Ad[2,1]+Ad[2,2]+Ad[2,3])
-            Phi0_3 = (3*Ad[3,0] + 2*Ad[3,1] + Ad[3,2])*(t0-1) + (Ad[3,0]+Ad[3,1]+Ad[3,2]+Ad[3,3])
+            Phi0_0 = (3 * _Ad[0, 0] + 2 * _Ad[0, 1] + _Ad[0, 2]) * (t0 - 1) + (_Ad[0, 0] + _Ad[0, 1] + _Ad[0, 2] + _Ad[0, 3])
+            Phi0_1 = (3 * _Ad[1, 0] + 2 * _Ad[1, 1] + _Ad[1, 2]) * (t0 - 1) + (_Ad[1, 0] + _Ad[1, 1] + _Ad[1, 2] + _Ad[1, 3])
+            Phi0_2 = (3 * _Ad[2, 0] + 2 * _Ad[2, 1] + _Ad[2, 2]) * (t0 - 1) + (_Ad[2, 0] + _Ad[2, 1] + _Ad[2, 2] + _Ad[2, 3])
+            Phi0_3 = (3 * _Ad[3, 0] + 2 * _Ad[3, 1] + _Ad[3, 2]) * (t0 - 1) + (_Ad[3, 0] + _Ad[3, 1] + _Ad[3, 2] + _Ad[3, 3])
         else:
-            Phi0_0 = (Ad[0,0]*tp0_0 + Ad[0,1]*tp0_1 + Ad[0,2]*tp0_2 + Ad[0,3]*tp0_3)
-            Phi0_1 = (Ad[1,0]*tp0_0 + Ad[1,1]*tp0_1 + Ad[1,2]*tp0_2 + Ad[1,3]*tp0_3)
-            Phi0_2 = (Ad[2,0]*tp0_0 + Ad[2,1]*tp0_1 + Ad[2,2]*tp0_2 + Ad[2,3]*tp0_3)
-            Phi0_3 = (Ad[3,0]*tp0_0 + Ad[3,1]*tp0_1 + Ad[3,2]*tp0_2 + Ad[3,3]*tp0_3)
+            Phi0_0 = (_Ad[0, 0] * tp0_0 + _Ad[0, 1] * tp0_1 + _Ad[0, 2] * tp0_2 + _Ad[0, 3] * tp0_3)
+            Phi0_1 = (_Ad[1, 0] * tp0_0 + _Ad[1, 1] * tp0_1 + _Ad[1, 2] * tp0_2 + _Ad[1, 3] * tp0_3)
+            Phi0_2 = (_Ad[2, 0] * tp0_0 + _Ad[2, 1] * tp0_1 + _Ad[2, 2] * tp0_2 + _Ad[2, 3] * tp0_3)
+            Phi0_3 = (_Ad[3, 0] * tp0_0 + _Ad[3, 1] * tp0_1 + _Ad[3, 2] * tp0_2 + _Ad[3, 3] * tp0_3)
 
 
         out[n] = Phi0_0*(coefs[i0+0]) + Phi0_1*(coefs[i0+1]) + Phi0_2*(coefs[i0+2]) + Phi0_3*(coefs[i0+3])
@@ -78,40 +106,40 @@ def vec_eval_cubic_spline_2(a, b, orders, coefs, points, out):
         Phi0_2 = 0
         Phi0_3 = 0
         if t0 < 0:
-            Phi0_0 = dAd[0,3]*t0 + Ad[0,3]
-            Phi0_1 = dAd[1,3]*t0 + Ad[1,3]
-            Phi0_2 = dAd[2,3]*t0 + Ad[2,3]
-            Phi0_3 = dAd[3,3]*t0 + Ad[3,3]
+            Phi0_0 = _dAd[0, 3] * t0 + _Ad[0, 3]
+            Phi0_1 = _dAd[1, 3] * t0 + _Ad[1, 3]
+            Phi0_2 = _dAd[2, 3] * t0 + _Ad[2, 3]
+            Phi0_3 = _dAd[3, 3] * t0 + _Ad[3, 3]
         elif t0 > 1:
-            Phi0_0 = (3*Ad[0,0] + 2*Ad[0,1] + Ad[0,2])*(t0-1) + (Ad[0,0]+Ad[0,1]+Ad[0,2]+Ad[0,3])
-            Phi0_1 = (3*Ad[1,0] + 2*Ad[1,1] + Ad[1,2])*(t0-1) + (Ad[1,0]+Ad[1,1]+Ad[1,2]+Ad[1,3])
-            Phi0_2 = (3*Ad[2,0] + 2*Ad[2,1] + Ad[2,2])*(t0-1) + (Ad[2,0]+Ad[2,1]+Ad[2,2]+Ad[2,3])
-            Phi0_3 = (3*Ad[3,0] + 2*Ad[3,1] + Ad[3,2])*(t0-1) + (Ad[3,0]+Ad[3,1]+Ad[3,2]+Ad[3,3])
+            Phi0_0 = (3 * _Ad[0, 0] + 2 * _Ad[0, 1] + _Ad[0, 2]) * (t0 - 1) + (_Ad[0, 0] + _Ad[0, 1] + _Ad[0, 2] + _Ad[0, 3])
+            Phi0_1 = (3 * _Ad[1, 0] + 2 * _Ad[1, 1] + _Ad[1, 2]) * (t0 - 1) + (_Ad[1, 0] + _Ad[1, 1] + _Ad[1, 2] + _Ad[1, 3])
+            Phi0_2 = (3 * _Ad[2, 0] + 2 * _Ad[2, 1] + _Ad[2, 2]) * (t0 - 1) + (_Ad[2, 0] + _Ad[2, 1] + _Ad[2, 2] + _Ad[2, 3])
+            Phi0_3 = (3 * _Ad[3, 0] + 2 * _Ad[3, 1] + _Ad[3, 2]) * (t0 - 1) + (_Ad[3, 0] + _Ad[3, 1] + _Ad[3, 2] + _Ad[3, 3])
         else:
-            Phi0_0 = (Ad[0,0]*tp0_0 + Ad[0,1]*tp0_1 + Ad[0,2]*tp0_2 + Ad[0,3]*tp0_3)
-            Phi0_1 = (Ad[1,0]*tp0_0 + Ad[1,1]*tp0_1 + Ad[1,2]*tp0_2 + Ad[1,3]*tp0_3)
-            Phi0_2 = (Ad[2,0]*tp0_0 + Ad[2,1]*tp0_1 + Ad[2,2]*tp0_2 + Ad[2,3]*tp0_3)
-            Phi0_3 = (Ad[3,0]*tp0_0 + Ad[3,1]*tp0_1 + Ad[3,2]*tp0_2 + Ad[3,3]*tp0_3)
+            Phi0_0 = (_Ad[0, 0] * tp0_0 + _Ad[0, 1] * tp0_1 + _Ad[0, 2] * tp0_2 + _Ad[0, 3] * tp0_3)
+            Phi0_1 = (_Ad[1, 0] * tp0_0 + _Ad[1, 1] * tp0_1 + _Ad[1, 2] * tp0_2 + _Ad[1, 3] * tp0_3)
+            Phi0_2 = (_Ad[2, 0] * tp0_0 + _Ad[2, 1] * tp0_1 + _Ad[2, 2] * tp0_2 + _Ad[2, 3] * tp0_3)
+            Phi0_3 = (_Ad[3, 0] * tp0_0 + _Ad[3, 1] * tp0_1 + _Ad[3, 2] * tp0_2 + _Ad[3, 3] * tp0_3)
 
         Phi1_0 = 0
         Phi1_1 = 0
         Phi1_2 = 0
         Phi1_3 = 0
         if t1 < 0:
-            Phi1_0 = dAd[0,3]*t1 + Ad[0,3]
-            Phi1_1 = dAd[1,3]*t1 + Ad[1,3]
-            Phi1_2 = dAd[2,3]*t1 + Ad[2,3]
-            Phi1_3 = dAd[3,3]*t1 + Ad[3,3]
+            Phi1_0 = _dAd[0, 3] * t1 + _Ad[0, 3]
+            Phi1_1 = _dAd[1, 3] * t1 + _Ad[1, 3]
+            Phi1_2 = _dAd[2, 3] * t1 + _Ad[2, 3]
+            Phi1_3 = _dAd[3, 3] * t1 + _Ad[3, 3]
         elif t1 > 1:
-            Phi1_0 = (3*Ad[0,0] + 2*Ad[0,1] + Ad[0,2])*(t1-1) + (Ad[0,0]+Ad[0,1]+Ad[0,2]+Ad[0,3])
-            Phi1_1 = (3*Ad[1,0] + 2*Ad[1,1] + Ad[1,2])*(t1-1) + (Ad[1,0]+Ad[1,1]+Ad[1,2]+Ad[1,3])
-            Phi1_2 = (3*Ad[2,0] + 2*Ad[2,1] + Ad[2,2])*(t1-1) + (Ad[2,0]+Ad[2,1]+Ad[2,2]+Ad[2,3])
-            Phi1_3 = (3*Ad[3,0] + 2*Ad[3,1] + Ad[3,2])*(t1-1) + (Ad[3,0]+Ad[3,1]+Ad[3,2]+Ad[3,3])
+            Phi1_0 = (3 * _Ad[0, 0] + 2 * _Ad[0, 1] + _Ad[0, 2]) * (t1 - 1) + (_Ad[0, 0] + _Ad[0, 1] + _Ad[0, 2] + _Ad[0, 3])
+            Phi1_1 = (3 * _Ad[1, 0] + 2 * _Ad[1, 1] + _Ad[1, 2]) * (t1 - 1) + (_Ad[1, 0] + _Ad[1, 1] + _Ad[1, 2] + _Ad[1, 3])
+            Phi1_2 = (3 * _Ad[2, 0] + 2 * _Ad[2, 1] + _Ad[2, 2]) * (t1 - 1) + (_Ad[2, 0] + _Ad[2, 1] + _Ad[2, 2] + _Ad[2, 3])
+            Phi1_3 = (3 * _Ad[3, 0] + 2 * _Ad[3, 1] + _Ad[3, 2]) * (t1 - 1) + (_Ad[3, 0] + _Ad[3, 1] + _Ad[3, 2] + _Ad[3, 3])
         else:
-            Phi1_0 = (Ad[0,0]*tp1_0 + Ad[0,1]*tp1_1 + Ad[0,2]*tp1_2 + Ad[0,3]*tp1_3)
-            Phi1_1 = (Ad[1,0]*tp1_0 + Ad[1,1]*tp1_1 + Ad[1,2]*tp1_2 + Ad[1,3]*tp1_3)
-            Phi1_2 = (Ad[2,0]*tp1_0 + Ad[2,1]*tp1_1 + Ad[2,2]*tp1_2 + Ad[2,3]*tp1_3)
-            Phi1_3 = (Ad[3,0]*tp1_0 + Ad[3,1]*tp1_1 + Ad[3,2]*tp1_2 + Ad[3,3]*tp1_3)
+            Phi1_0 = (_Ad[0, 0] * tp1_0 + _Ad[0, 1] * tp1_1 + _Ad[0, 2] * tp1_2 + _Ad[0, 3] * tp1_3)
+            Phi1_1 = (_Ad[1, 0] * tp1_0 + _Ad[1, 1] * tp1_1 + _Ad[1, 2] * tp1_2 + _Ad[1, 3] * tp1_3)
+            Phi1_2 = (_Ad[2, 0] * tp1_0 + _Ad[2, 1] * tp1_1 + _Ad[2, 2] * tp1_2 + _Ad[2, 3] * tp1_3)
+            Phi1_3 = (_Ad[3, 0] * tp1_0 + _Ad[3, 1] * tp1_1 + _Ad[3, 2] * tp1_2 + _Ad[3, 3] * tp1_3)
 
 
         out[n] = Phi0_0*(Phi1_0*(coefs[i0+0,i1+0]) + Phi1_1*(coefs[i0+0,i1+1]) + Phi1_2*(coefs[i0+0,i1+2]) + Phi1_3*(coefs[i0+0,i1+3])) + Phi0_1*(Phi1_0*(coefs[i0+1,i1+0]) + Phi1_1*(coefs[i0+1,i1+1]) + Phi1_2*(coefs[i0+1,i1+2]) + Phi1_3*(coefs[i0+1,i1+3])) + Phi0_2*(Phi1_0*(coefs[i0+2,i1+0]) + Phi1_1*(coefs[i0+2,i1+1]) + Phi1_2*(coefs[i0+2,i1+2]) + Phi1_3*(coefs[i0+2,i1+3])) + Phi0_3*(Phi1_0*(coefs[i0+3,i1+0]) + Phi1_1*(coefs[i0+3,i1+1]) + Phi1_2*(coefs[i0+3,i1+2]) + Phi1_3*(coefs[i0+3,i1+3]))
@@ -156,60 +184,60 @@ def vec_eval_cubic_spline_3(a, b, orders, coefs, points, out):
         Phi0_2 = 0
         Phi0_3 = 0
         if t0 < 0:
-            Phi0_0 = dAd[0,3]*t0 + Ad[0,3]
-            Phi0_1 = dAd[1,3]*t0 + Ad[1,3]
-            Phi0_2 = dAd[2,3]*t0 + Ad[2,3]
-            Phi0_3 = dAd[3,3]*t0 + Ad[3,3]
+            Phi0_0 = _dAd[0, 3] * t0 + _Ad[0, 3]
+            Phi0_1 = _dAd[1, 3] * t0 + _Ad[1, 3]
+            Phi0_2 = _dAd[2, 3] * t0 + _Ad[2, 3]
+            Phi0_3 = _dAd[3, 3] * t0 + _Ad[3, 3]
         elif t0 > 1:
-            Phi0_0 = (3*Ad[0,0] + 2*Ad[0,1] + Ad[0,2])*(t0-1) + (Ad[0,0]+Ad[0,1]+Ad[0,2]+Ad[0,3])
-            Phi0_1 = (3*Ad[1,0] + 2*Ad[1,1] + Ad[1,2])*(t0-1) + (Ad[1,0]+Ad[1,1]+Ad[1,2]+Ad[1,3])
-            Phi0_2 = (3*Ad[2,0] + 2*Ad[2,1] + Ad[2,2])*(t0-1) + (Ad[2,0]+Ad[2,1]+Ad[2,2]+Ad[2,3])
-            Phi0_3 = (3*Ad[3,0] + 2*Ad[3,1] + Ad[3,2])*(t0-1) + (Ad[3,0]+Ad[3,1]+Ad[3,2]+Ad[3,3])
+            Phi0_0 = (3 * _Ad[0, 0] + 2 * _Ad[0, 1] + _Ad[0, 2]) * (t0 - 1) + (_Ad[0, 0] + _Ad[0, 1] + _Ad[0, 2] + _Ad[0, 3])
+            Phi0_1 = (3 * _Ad[1, 0] + 2 * _Ad[1, 1] + _Ad[1, 2]) * (t0 - 1) + (_Ad[1, 0] + _Ad[1, 1] + _Ad[1, 2] + _Ad[1, 3])
+            Phi0_2 = (3 * _Ad[2, 0] + 2 * _Ad[2, 1] + _Ad[2, 2]) * (t0 - 1) + (_Ad[2, 0] + _Ad[2, 1] + _Ad[2, 2] + _Ad[2, 3])
+            Phi0_3 = (3 * _Ad[3, 0] + 2 * _Ad[3, 1] + _Ad[3, 2]) * (t0 - 1) + (_Ad[3, 0] + _Ad[3, 1] + _Ad[3, 2] + _Ad[3, 3])
         else:
-            Phi0_0 = (Ad[0,0]*tp0_0 + Ad[0,1]*tp0_1 + Ad[0,2]*tp0_2 + Ad[0,3]*tp0_3)
-            Phi0_1 = (Ad[1,0]*tp0_0 + Ad[1,1]*tp0_1 + Ad[1,2]*tp0_2 + Ad[1,3]*tp0_3)
-            Phi0_2 = (Ad[2,0]*tp0_0 + Ad[2,1]*tp0_1 + Ad[2,2]*tp0_2 + Ad[2,3]*tp0_3)
-            Phi0_3 = (Ad[3,0]*tp0_0 + Ad[3,1]*tp0_1 + Ad[3,2]*tp0_2 + Ad[3,3]*tp0_3)
+            Phi0_0 = (_Ad[0, 0] * tp0_0 + _Ad[0, 1] * tp0_1 + _Ad[0, 2] * tp0_2 + _Ad[0, 3] * tp0_3)
+            Phi0_1 = (_Ad[1, 0] * tp0_0 + _Ad[1, 1] * tp0_1 + _Ad[1, 2] * tp0_2 + _Ad[1, 3] * tp0_3)
+            Phi0_2 = (_Ad[2, 0] * tp0_0 + _Ad[2, 1] * tp0_1 + _Ad[2, 2] * tp0_2 + _Ad[2, 3] * tp0_3)
+            Phi0_3 = (_Ad[3, 0] * tp0_0 + _Ad[3, 1] * tp0_1 + _Ad[3, 2] * tp0_2 + _Ad[3, 3] * tp0_3)
 
         Phi1_0 = 0
         Phi1_1 = 0
         Phi1_2 = 0
         Phi1_3 = 0
         if t1 < 0:
-            Phi1_0 = dAd[0,3]*t1 + Ad[0,3]
-            Phi1_1 = dAd[1,3]*t1 + Ad[1,3]
-            Phi1_2 = dAd[2,3]*t1 + Ad[2,3]
-            Phi1_3 = dAd[3,3]*t1 + Ad[3,3]
+            Phi1_0 = _dAd[0, 3] * t1 + _Ad[0, 3]
+            Phi1_1 = _dAd[1, 3] * t1 + _Ad[1, 3]
+            Phi1_2 = _dAd[2, 3] * t1 + _Ad[2, 3]
+            Phi1_3 = _dAd[3, 3] * t1 + _Ad[3, 3]
         elif t1 > 1:
-            Phi1_0 = (3*Ad[0,0] + 2*Ad[0,1] + Ad[0,2])*(t1-1) + (Ad[0,0]+Ad[0,1]+Ad[0,2]+Ad[0,3])
-            Phi1_1 = (3*Ad[1,0] + 2*Ad[1,1] + Ad[1,2])*(t1-1) + (Ad[1,0]+Ad[1,1]+Ad[1,2]+Ad[1,3])
-            Phi1_2 = (3*Ad[2,0] + 2*Ad[2,1] + Ad[2,2])*(t1-1) + (Ad[2,0]+Ad[2,1]+Ad[2,2]+Ad[2,3])
-            Phi1_3 = (3*Ad[3,0] + 2*Ad[3,1] + Ad[3,2])*(t1-1) + (Ad[3,0]+Ad[3,1]+Ad[3,2]+Ad[3,3])
+            Phi1_0 = (3 * _Ad[0, 0] + 2 * _Ad[0, 1] + _Ad[0, 2]) * (t1 - 1) + (_Ad[0, 0] + _Ad[0, 1] + _Ad[0, 2] + _Ad[0, 3])
+            Phi1_1 = (3 * _Ad[1, 0] + 2 * _Ad[1, 1] + _Ad[1, 2]) * (t1 - 1) + (_Ad[1, 0] + _Ad[1, 1] + _Ad[1, 2] + _Ad[1, 3])
+            Phi1_2 = (3 * _Ad[2, 0] + 2 * _Ad[2, 1] + _Ad[2, 2]) * (t1 - 1) + (_Ad[2, 0] + _Ad[2, 1] + _Ad[2, 2] + _Ad[2, 3])
+            Phi1_3 = (3 * _Ad[3, 0] + 2 * _Ad[3, 1] + _Ad[3, 2]) * (t1 - 1) + (_Ad[3, 0] + _Ad[3, 1] + _Ad[3, 2] + _Ad[3, 3])
         else:
-            Phi1_0 = (Ad[0,0]*tp1_0 + Ad[0,1]*tp1_1 + Ad[0,2]*tp1_2 + Ad[0,3]*tp1_3)
-            Phi1_1 = (Ad[1,0]*tp1_0 + Ad[1,1]*tp1_1 + Ad[1,2]*tp1_2 + Ad[1,3]*tp1_3)
-            Phi1_2 = (Ad[2,0]*tp1_0 + Ad[2,1]*tp1_1 + Ad[2,2]*tp1_2 + Ad[2,3]*tp1_3)
-            Phi1_3 = (Ad[3,0]*tp1_0 + Ad[3,1]*tp1_1 + Ad[3,2]*tp1_2 + Ad[3,3]*tp1_3)
+            Phi1_0 = (_Ad[0, 0] * tp1_0 + _Ad[0, 1] * tp1_1 + _Ad[0, 2] * tp1_2 + _Ad[0, 3] * tp1_3)
+            Phi1_1 = (_Ad[1, 0] * tp1_0 + _Ad[1, 1] * tp1_1 + _Ad[1, 2] * tp1_2 + _Ad[1, 3] * tp1_3)
+            Phi1_2 = (_Ad[2, 0] * tp1_0 + _Ad[2, 1] * tp1_1 + _Ad[2, 2] * tp1_2 + _Ad[2, 3] * tp1_3)
+            Phi1_3 = (_Ad[3, 0] * tp1_0 + _Ad[3, 1] * tp1_1 + _Ad[3, 2] * tp1_2 + _Ad[3, 3] * tp1_3)
 
         Phi2_0 = 0
         Phi2_1 = 0
         Phi2_2 = 0
         Phi2_3 = 0
         if t2 < 0:
-            Phi2_0 = dAd[0,3]*t2 + Ad[0,3]
-            Phi2_1 = dAd[1,3]*t2 + Ad[1,3]
-            Phi2_2 = dAd[2,3]*t2 + Ad[2,3]
-            Phi2_3 = dAd[3,3]*t2 + Ad[3,3]
+            Phi2_0 = _dAd[0, 3] * t2 + _Ad[0, 3]
+            Phi2_1 = _dAd[1, 3] * t2 + _Ad[1, 3]
+            Phi2_2 = _dAd[2, 3] * t2 + _Ad[2, 3]
+            Phi2_3 = _dAd[3, 3] * t2 + _Ad[3, 3]
         elif t2 > 1:
-            Phi2_0 = (3*Ad[0,0] + 2*Ad[0,1] + Ad[0,2])*(t2-1) + (Ad[0,0]+Ad[0,1]+Ad[0,2]+Ad[0,3])
-            Phi2_1 = (3*Ad[1,0] + 2*Ad[1,1] + Ad[1,2])*(t2-1) + (Ad[1,0]+Ad[1,1]+Ad[1,2]+Ad[1,3])
-            Phi2_2 = (3*Ad[2,0] + 2*Ad[2,1] + Ad[2,2])*(t2-1) + (Ad[2,0]+Ad[2,1]+Ad[2,2]+Ad[2,3])
-            Phi2_3 = (3*Ad[3,0] + 2*Ad[3,1] + Ad[3,2])*(t2-1) + (Ad[3,0]+Ad[3,1]+Ad[3,2]+Ad[3,3])
+            Phi2_0 = (3 * _Ad[0, 0] + 2 * _Ad[0, 1] + _Ad[0, 2]) * (t2 - 1) + (_Ad[0, 0] + _Ad[0, 1] + _Ad[0, 2] + _Ad[0, 3])
+            Phi2_1 = (3 * _Ad[1, 0] + 2 * _Ad[1, 1] + _Ad[1, 2]) * (t2 - 1) + (_Ad[1, 0] + _Ad[1, 1] + _Ad[1, 2] + _Ad[1, 3])
+            Phi2_2 = (3 * _Ad[2, 0] + 2 * _Ad[2, 1] + _Ad[2, 2]) * (t2 - 1) + (_Ad[2, 0] + _Ad[2, 1] + _Ad[2, 2] + _Ad[2, 3])
+            Phi2_3 = (3 * _Ad[3, 0] + 2 * _Ad[3, 1] + _Ad[3, 2]) * (t2 - 1) + (_Ad[3, 0] + _Ad[3, 1] + _Ad[3, 2] + _Ad[3, 3])
         else:
-            Phi2_0 = (Ad[0,0]*tp2_0 + Ad[0,1]*tp2_1 + Ad[0,2]*tp2_2 + Ad[0,3]*tp2_3)
-            Phi2_1 = (Ad[1,0]*tp2_0 + Ad[1,1]*tp2_1 + Ad[1,2]*tp2_2 + Ad[1,3]*tp2_3)
-            Phi2_2 = (Ad[2,0]*tp2_0 + Ad[2,1]*tp2_1 + Ad[2,2]*tp2_2 + Ad[2,3]*tp2_3)
-            Phi2_3 = (Ad[3,0]*tp2_0 + Ad[3,1]*tp2_1 + Ad[3,2]*tp2_2 + Ad[3,3]*tp2_3)
+            Phi2_0 = (_Ad[0, 0] * tp2_0 + _Ad[0, 1] * tp2_1 + _Ad[0, 2] * tp2_2 + _Ad[0, 3] * tp2_3)
+            Phi2_1 = (_Ad[1, 0] * tp2_0 + _Ad[1, 1] * tp2_1 + _Ad[1, 2] * tp2_2 + _Ad[1, 3] * tp2_3)
+            Phi2_2 = (_Ad[2, 0] * tp2_0 + _Ad[2, 1] * tp2_1 + _Ad[2, 2] * tp2_2 + _Ad[2, 3] * tp2_3)
+            Phi2_3 = (_Ad[3, 0] * tp2_0 + _Ad[3, 1] * tp2_1 + _Ad[3, 2] * tp2_2 + _Ad[3, 3] * tp2_3)
 
 
         out[n] = Phi0_0*(Phi1_0*(Phi2_0*(coefs[i0+0,i1+0,i2+0]) + Phi2_1*(coefs[i0+0,i1+0,i2+1]) + Phi2_2*(coefs[i0+0,i1+0,i2+2]) + Phi2_3*(coefs[i0+0,i1+0,i2+3])) + Phi1_1*(Phi2_0*(coefs[i0+0,i1+1,i2+0]) + Phi2_1*(coefs[i0+0,i1+1,i2+1]) + Phi2_2*(coefs[i0+0,i1+1,i2+2]) + Phi2_3*(coefs[i0+0,i1+1,i2+3])) + Phi1_2*(Phi2_0*(coefs[i0+0,i1+2,i2+0]) + Phi2_1*(coefs[i0+0,i1+2,i2+1]) + Phi2_2*(coefs[i0+0,i1+2,i2+2]) + Phi2_3*(coefs[i0+0,i1+2,i2+3])) + Phi1_3*(Phi2_0*(coefs[i0+0,i1+3,i2+0]) + Phi2_1*(coefs[i0+0,i1+3,i2+1]) + Phi2_2*(coefs[i0+0,i1+3,i2+2]) + Phi2_3*(coefs[i0+0,i1+3,i2+3]))) + Phi0_1*(Phi1_0*(Phi2_0*(coefs[i0+1,i1+0,i2+0]) + Phi2_1*(coefs[i0+1,i1+0,i2+1]) + Phi2_2*(coefs[i0+1,i1+0,i2+2]) + Phi2_3*(coefs[i0+1,i1+0,i2+3])) + Phi1_1*(Phi2_0*(coefs[i0+1,i1+1,i2+0]) + Phi2_1*(coefs[i0+1,i1+1,i2+1]) + Phi2_2*(coefs[i0+1,i1+1,i2+2]) + Phi2_3*(coefs[i0+1,i1+1,i2+3])) + Phi1_2*(Phi2_0*(coefs[i0+1,i1+2,i2+0]) + Phi2_1*(coefs[i0+1,i1+2,i2+1]) + Phi2_2*(coefs[i0+1,i1+2,i2+2]) + Phi2_3*(coefs[i0+1,i1+2,i2+3])) + Phi1_3*(Phi2_0*(coefs[i0+1,i1+3,i2+0]) + Phi2_1*(coefs[i0+1,i1+3,i2+1]) + Phi2_2*(coefs[i0+1,i1+3,i2+2]) + Phi2_3*(coefs[i0+1,i1+3,i2+3]))) + Phi0_2*(Phi1_0*(Phi2_0*(coefs[i0+2,i1+0,i2+0]) + Phi2_1*(coefs[i0+2,i1+0,i2+1]) + Phi2_2*(coefs[i0+2,i1+0,i2+2]) + Phi2_3*(coefs[i0+2,i1+0,i2+3])) + Phi1_1*(Phi2_0*(coefs[i0+2,i1+1,i2+0]) + Phi2_1*(coefs[i0+2,i1+1,i2+1]) + Phi2_2*(coefs[i0+2,i1+1,i2+2]) + Phi2_3*(coefs[i0+2,i1+1,i2+3])) + Phi1_2*(Phi2_0*(coefs[i0+2,i1+2,i2+0]) + Phi2_1*(coefs[i0+2,i1+2,i2+1]) + Phi2_2*(coefs[i0+2,i1+2,i2+2]) + Phi2_3*(coefs[i0+2,i1+2,i2+3])) + Phi1_3*(Phi2_0*(coefs[i0+2,i1+3,i2+0]) + Phi2_1*(coefs[i0+2,i1+3,i2+1]) + Phi2_2*(coefs[i0+2,i1+3,i2+2]) + Phi2_3*(coefs[i0+2,i1+3,i2+3]))) + Phi0_3*(Phi1_0*(Phi2_0*(coefs[i0+3,i1+0,i2+0]) + Phi2_1*(coefs[i0+3,i1+0,i2+1]) + Phi2_2*(coefs[i0+3,i1+0,i2+2]) + Phi2_3*(coefs[i0+3,i1+0,i2+3])) + Phi1_1*(Phi2_0*(coefs[i0+3,i1+1,i2+0]) + Phi2_1*(coefs[i0+3,i1+1,i2+1]) + Phi2_2*(coefs[i0+3,i1+1,i2+2]) + Phi2_3*(coefs[i0+3,i1+1,i2+3])) + Phi1_2*(Phi2_0*(coefs[i0+3,i1+2,i2+0]) + Phi2_1*(coefs[i0+3,i1+2,i2+1]) + Phi2_2*(coefs[i0+3,i1+2,i2+2]) + Phi2_3*(coefs[i0+3,i1+2,i2+3])) + Phi1_3*(Phi2_0*(coefs[i0+3,i1+3,i2+0]) + Phi2_1*(coefs[i0+3,i1+3,i2+1]) + Phi2_2*(coefs[i0+3,i1+3,i2+2]) + Phi2_3*(coefs[i0+3,i1+3,i2+3])))
@@ -239,24 +267,24 @@ def vec_eval_cubic_splines_G_1(a, b, orders, coefs, points, vals, dvals):
         Phi0_2 = 0
         Phi0_3 = 0
         if t0 < 0:
-            Phi0_0 = dAd[0,3]*t0 + Ad[0,3]
-            Phi0_1 = dAd[1,3]*t0 + Ad[1,3]
-            Phi0_2 = dAd[2,3]*t0 + Ad[2,3]
-            Phi0_3 = dAd[3,3]*t0 + Ad[3,3]
+            Phi0_0 = _dAd[0, 3] * t0 + _Ad[0, 3]
+            Phi0_1 = _dAd[1, 3] * t0 + _Ad[1, 3]
+            Phi0_2 = _dAd[2, 3] * t0 + _Ad[2, 3]
+            Phi0_3 = _dAd[3, 3] * t0 + _Ad[3, 3]
         elif t0 > 1:
-            Phi0_0 = (3*Ad[0,0] + 2*Ad[0,1] + Ad[0,2])*(t0-1) + (Ad[0,0]+Ad[0,1]+Ad[0,2]+Ad[0,3])
-            Phi0_1 = (3*Ad[1,0] + 2*Ad[1,1] + Ad[1,2])*(t0-1) + (Ad[1,0]+Ad[1,1]+Ad[1,2]+Ad[1,3])
-            Phi0_2 = (3*Ad[2,0] + 2*Ad[2,1] + Ad[2,2])*(t0-1) + (Ad[2,0]+Ad[2,1]+Ad[2,2]+Ad[2,3])
-            Phi0_3 = (3*Ad[3,0] + 2*Ad[3,1] + Ad[3,2])*(t0-1) + (Ad[3,0]+Ad[3,1]+Ad[3,2]+Ad[3,3])
+            Phi0_0 = (3 * _Ad[0, 0] + 2 * _Ad[0, 1] + _Ad[0, 2]) * (t0 - 1) + (_Ad[0, 0] + _Ad[0, 1] + _Ad[0, 2] + _Ad[0, 3])
+            Phi0_1 = (3 * _Ad[1, 0] + 2 * _Ad[1, 1] + _Ad[1, 2]) * (t0 - 1) + (_Ad[1, 0] + _Ad[1, 1] + _Ad[1, 2] + _Ad[1, 3])
+            Phi0_2 = (3 * _Ad[2, 0] + 2 * _Ad[2, 1] + _Ad[2, 2]) * (t0 - 1) + (_Ad[2, 0] + _Ad[2, 1] + _Ad[2, 2] + _Ad[2, 3])
+            Phi0_3 = (3 * _Ad[3, 0] + 2 * _Ad[3, 1] + _Ad[3, 2]) * (t0 - 1) + (_Ad[3, 0] + _Ad[3, 1] + _Ad[3, 2] + _Ad[3, 3])
         else:
-            Phi0_0 = (Ad[0,0]*tp0_0 + Ad[0,1]*tp0_1 + Ad[0,2]*tp0_2 + Ad[0,3]*tp0_3)
-            Phi0_1 = (Ad[1,0]*tp0_0 + Ad[1,1]*tp0_1 + Ad[1,2]*tp0_2 + Ad[1,3]*tp0_3)
-            Phi0_2 = (Ad[2,0]*tp0_0 + Ad[2,1]*tp0_1 + Ad[2,2]*tp0_2 + Ad[2,3]*tp0_3)
-            Phi0_3 = (Ad[3,0]*tp0_0 + Ad[3,1]*tp0_1 + Ad[3,2]*tp0_2 + Ad[3,3]*tp0_3)
-        dPhi0_0 = (dAd[0,0]*tp0_0 + dAd[0,1]*tp0_1 + dAd[0,2]*tp0_2 + dAd[0,3]*tp0_3)*dinv0
-        dPhi0_1 = (dAd[1,0]*tp0_0 + dAd[1,1]*tp0_1 + dAd[1,2]*tp0_2 + dAd[1,3]*tp0_3)*dinv0
-        dPhi0_2 = (dAd[2,0]*tp0_0 + dAd[2,1]*tp0_1 + dAd[2,2]*tp0_2 + dAd[2,3]*tp0_3)*dinv0
-        dPhi0_3 = (dAd[3,0]*tp0_0 + dAd[3,1]*tp0_1 + dAd[3,2]*tp0_2 + dAd[3,3]*tp0_3)*dinv0
+            Phi0_0 = (_Ad[0, 0] * tp0_0 + _Ad[0, 1] * tp0_1 + _Ad[0, 2] * tp0_2 + _Ad[0, 3] * tp0_3)
+            Phi0_1 = (_Ad[1, 0] * tp0_0 + _Ad[1, 1] * tp0_1 + _Ad[1, 2] * tp0_2 + _Ad[1, 3] * tp0_3)
+            Phi0_2 = (_Ad[2, 0] * tp0_0 + _Ad[2, 1] * tp0_1 + _Ad[2, 2] * tp0_2 + _Ad[2, 3] * tp0_3)
+            Phi0_3 = (_Ad[3, 0] * tp0_0 + _Ad[3, 1] * tp0_1 + _Ad[3, 2] * tp0_2 + _Ad[3, 3] * tp0_3)
+        dPhi0_0 = (_dAd[0, 0] * tp0_0 + _dAd[0, 1] * tp0_1 + _dAd[0, 2] * tp0_2 + _dAd[0, 3] * tp0_3) * dinv0
+        dPhi0_1 = (_dAd[1, 0] * tp0_0 + _dAd[1, 1] * tp0_1 + _dAd[1, 2] * tp0_2 + _dAd[1, 3] * tp0_3) * dinv0
+        dPhi0_2 = (_dAd[2, 0] * tp0_0 + _dAd[2, 1] * tp0_1 + _dAd[2, 2] * tp0_2 + _dAd[2, 3] * tp0_3) * dinv0
+        dPhi0_3 = (_dAd[3, 0] * tp0_0 + _dAd[3, 1] * tp0_1 + _dAd[3, 2] * tp0_2 + _dAd[3, 3] * tp0_3) * dinv0
 
         vals[n, 0] = Phi0_0*(coefs[i0+0]) + Phi0_1*(coefs[i0+1]) + Phi0_2*(coefs[i0+2]) + Phi0_3*(coefs[i0+3])
         dvals[n, 0, 0] = dPhi0_0*(coefs[i0+0]) + dPhi0_1*(coefs[i0+1]) + dPhi0_2*(coefs[i0+2]) + dPhi0_3*(coefs[i0+3])
@@ -306,70 +334,70 @@ def vec_eval_cubic_splines_G_3(a, b, orders, coefs, points, vals, dvals):
         Phi0_2 = 0
         Phi0_3 = 0
         if t0 < 0:
-            Phi0_0 = dAd[0,3]*t0 + Ad[0,3]
-            Phi0_1 = dAd[1,3]*t0 + Ad[1,3]
-            Phi0_2 = dAd[2,3]*t0 + Ad[2,3]
-            Phi0_3 = dAd[3,3]*t0 + Ad[3,3]
+            Phi0_0 = _dAd[0, 3] * t0 + _Ad[0, 3]
+            Phi0_1 = _dAd[1, 3] * t0 + _Ad[1, 3]
+            Phi0_2 = _dAd[2, 3] * t0 + _Ad[2, 3]
+            Phi0_3 = _dAd[3, 3] * t0 + _Ad[3, 3]
         elif t0 > 1:
-            Phi0_0 = (3*Ad[0,0] + 2*Ad[0,1] + Ad[0,2])*(t0-1) + (Ad[0,0]+Ad[0,1]+Ad[0,2]+Ad[0,3])
-            Phi0_1 = (3*Ad[1,0] + 2*Ad[1,1] + Ad[1,2])*(t0-1) + (Ad[1,0]+Ad[1,1]+Ad[1,2]+Ad[1,3])
-            Phi0_2 = (3*Ad[2,0] + 2*Ad[2,1] + Ad[2,2])*(t0-1) + (Ad[2,0]+Ad[2,1]+Ad[2,2]+Ad[2,3])
-            Phi0_3 = (3*Ad[3,0] + 2*Ad[3,1] + Ad[3,2])*(t0-1) + (Ad[3,0]+Ad[3,1]+Ad[3,2]+Ad[3,3])
+            Phi0_0 = (3 * _Ad[0, 0] + 2 * _Ad[0, 1] + _Ad[0, 2]) * (t0 - 1) + (_Ad[0, 0] + _Ad[0, 1] + _Ad[0, 2] + _Ad[0, 3])
+            Phi0_1 = (3 * _Ad[1, 0] + 2 * _Ad[1, 1] + _Ad[1, 2]) * (t0 - 1) + (_Ad[1, 0] + _Ad[1, 1] + _Ad[1, 2] + _Ad[1, 3])
+            Phi0_2 = (3 * _Ad[2, 0] + 2 * _Ad[2, 1] + _Ad[2, 2]) * (t0 - 1) + (_Ad[2, 0] + _Ad[2, 1] + _Ad[2, 2] + _Ad[2, 3])
+            Phi0_3 = (3 * _Ad[3, 0] + 2 * _Ad[3, 1] + _Ad[3, 2]) * (t0 - 1) + (_Ad[3, 0] + _Ad[3, 1] + _Ad[3, 2] + _Ad[3, 3])
         else:
-            Phi0_0 = (Ad[0,0]*tp0_0 + Ad[0,1]*tp0_1 + Ad[0,2]*tp0_2 + Ad[0,3]*tp0_3)
-            Phi0_1 = (Ad[1,0]*tp0_0 + Ad[1,1]*tp0_1 + Ad[1,2]*tp0_2 + Ad[1,3]*tp0_3)
-            Phi0_2 = (Ad[2,0]*tp0_0 + Ad[2,1]*tp0_1 + Ad[2,2]*tp0_2 + Ad[2,3]*tp0_3)
-            Phi0_3 = (Ad[3,0]*tp0_0 + Ad[3,1]*tp0_1 + Ad[3,2]*tp0_2 + Ad[3,3]*tp0_3)
+            Phi0_0 = (_Ad[0, 0] * tp0_0 + _Ad[0, 1] * tp0_1 + _Ad[0, 2] * tp0_2 + _Ad[0, 3] * tp0_3)
+            Phi0_1 = (_Ad[1, 0] * tp0_0 + _Ad[1, 1] * tp0_1 + _Ad[1, 2] * tp0_2 + _Ad[1, 3] * tp0_3)
+            Phi0_2 = (_Ad[2, 0] * tp0_0 + _Ad[2, 1] * tp0_1 + _Ad[2, 2] * tp0_2 + _Ad[2, 3] * tp0_3)
+            Phi0_3 = (_Ad[3, 0] * tp0_0 + _Ad[3, 1] * tp0_1 + _Ad[3, 2] * tp0_2 + _Ad[3, 3] * tp0_3)
         Phi1_0 = 0
         Phi1_1 = 0
         Phi1_2 = 0
         Phi1_3 = 0
         if t1 < 0:
-            Phi1_0 = dAd[0,3]*t1 + Ad[0,3]
-            Phi1_1 = dAd[1,3]*t1 + Ad[1,3]
-            Phi1_2 = dAd[2,3]*t1 + Ad[2,3]
-            Phi1_3 = dAd[3,3]*t1 + Ad[3,3]
+            Phi1_0 = _dAd[0, 3] * t1 + _Ad[0, 3]
+            Phi1_1 = _dAd[1, 3] * t1 + _Ad[1, 3]
+            Phi1_2 = _dAd[2, 3] * t1 + _Ad[2, 3]
+            Phi1_3 = _dAd[3, 3] * t1 + _Ad[3, 3]
         elif t1 > 1:
-            Phi1_0 = (3*Ad[0,0] + 2*Ad[0,1] + Ad[0,2])*(t1-1) + (Ad[0,0]+Ad[0,1]+Ad[0,2]+Ad[0,3])
-            Phi1_1 = (3*Ad[1,0] + 2*Ad[1,1] + Ad[1,2])*(t1-1) + (Ad[1,0]+Ad[1,1]+Ad[1,2]+Ad[1,3])
-            Phi1_2 = (3*Ad[2,0] + 2*Ad[2,1] + Ad[2,2])*(t1-1) + (Ad[2,0]+Ad[2,1]+Ad[2,2]+Ad[2,3])
-            Phi1_3 = (3*Ad[3,0] + 2*Ad[3,1] + Ad[3,2])*(t1-1) + (Ad[3,0]+Ad[3,1]+Ad[3,2]+Ad[3,3])
+            Phi1_0 = (3 * _Ad[0, 0] + 2 * _Ad[0, 1] + _Ad[0, 2]) * (t1 - 1) + (_Ad[0, 0] + _Ad[0, 1] + _Ad[0, 2] + _Ad[0, 3])
+            Phi1_1 = (3 * _Ad[1, 0] + 2 * _Ad[1, 1] + _Ad[1, 2]) * (t1 - 1) + (_Ad[1, 0] + _Ad[1, 1] + _Ad[1, 2] + _Ad[1, 3])
+            Phi1_2 = (3 * _Ad[2, 0] + 2 * _Ad[2, 1] + _Ad[2, 2]) * (t1 - 1) + (_Ad[2, 0] + _Ad[2, 1] + _Ad[2, 2] + _Ad[2, 3])
+            Phi1_3 = (3 * _Ad[3, 0] + 2 * _Ad[3, 1] + _Ad[3, 2]) * (t1 - 1) + (_Ad[3, 0] + _Ad[3, 1] + _Ad[3, 2] + _Ad[3, 3])
         else:
-            Phi1_0 = (Ad[0,0]*tp1_0 + Ad[0,1]*tp1_1 + Ad[0,2]*tp1_2 + Ad[0,3]*tp1_3)
-            Phi1_1 = (Ad[1,0]*tp1_0 + Ad[1,1]*tp1_1 + Ad[1,2]*tp1_2 + Ad[1,3]*tp1_3)
-            Phi1_2 = (Ad[2,0]*tp1_0 + Ad[2,1]*tp1_1 + Ad[2,2]*tp1_2 + Ad[2,3]*tp1_3)
-            Phi1_3 = (Ad[3,0]*tp1_0 + Ad[3,1]*tp1_1 + Ad[3,2]*tp1_2 + Ad[3,3]*tp1_3)
+            Phi1_0 = (_Ad[0, 0] * tp1_0 + _Ad[0, 1] * tp1_1 + _Ad[0, 2] * tp1_2 + _Ad[0, 3] * tp1_3)
+            Phi1_1 = (_Ad[1, 0] * tp1_0 + _Ad[1, 1] * tp1_1 + _Ad[1, 2] * tp1_2 + _Ad[1, 3] * tp1_3)
+            Phi1_2 = (_Ad[2, 0] * tp1_0 + _Ad[2, 1] * tp1_1 + _Ad[2, 2] * tp1_2 + _Ad[2, 3] * tp1_3)
+            Phi1_3 = (_Ad[3, 0] * tp1_0 + _Ad[3, 1] * tp1_1 + _Ad[3, 2] * tp1_2 + _Ad[3, 3] * tp1_3)
         Phi2_0 = 0
         Phi2_1 = 0
         Phi2_2 = 0
         Phi2_3 = 0
         if t2 < 0:
-            Phi2_0 = dAd[0,3]*t2 + Ad[0,3]
-            Phi2_1 = dAd[1,3]*t2 + Ad[1,3]
-            Phi2_2 = dAd[2,3]*t2 + Ad[2,3]
-            Phi2_3 = dAd[3,3]*t2 + Ad[3,3]
+            Phi2_0 = _dAd[0, 3] * t2 + _Ad[0, 3]
+            Phi2_1 = _dAd[1, 3] * t2 + _Ad[1, 3]
+            Phi2_2 = _dAd[2, 3] * t2 + _Ad[2, 3]
+            Phi2_3 = _dAd[3, 3] * t2 + _Ad[3, 3]
         elif t2 > 1:
-            Phi2_0 = (3*Ad[0,0] + 2*Ad[0,1] + Ad[0,2])*(t2-1) + (Ad[0,0]+Ad[0,1]+Ad[0,2]+Ad[0,3])
-            Phi2_1 = (3*Ad[1,0] + 2*Ad[1,1] + Ad[1,2])*(t2-1) + (Ad[1,0]+Ad[1,1]+Ad[1,2]+Ad[1,3])
-            Phi2_2 = (3*Ad[2,0] + 2*Ad[2,1] + Ad[2,2])*(t2-1) + (Ad[2,0]+Ad[2,1]+Ad[2,2]+Ad[2,3])
-            Phi2_3 = (3*Ad[3,0] + 2*Ad[3,1] + Ad[3,2])*(t2-1) + (Ad[3,0]+Ad[3,1]+Ad[3,2]+Ad[3,3])
+            Phi2_0 = (3 * _Ad[0, 0] + 2 * _Ad[0, 1] + _Ad[0, 2]) * (t2 - 1) + (_Ad[0, 0] + _Ad[0, 1] + _Ad[0, 2] + _Ad[0, 3])
+            Phi2_1 = (3 * _Ad[1, 0] + 2 * _Ad[1, 1] + _Ad[1, 2]) * (t2 - 1) + (_Ad[1, 0] + _Ad[1, 1] + _Ad[1, 2] + _Ad[1, 3])
+            Phi2_2 = (3 * _Ad[2, 0] + 2 * _Ad[2, 1] + _Ad[2, 2]) * (t2 - 1) + (_Ad[2, 0] + _Ad[2, 1] + _Ad[2, 2] + _Ad[2, 3])
+            Phi2_3 = (3 * _Ad[3, 0] + 2 * _Ad[3, 1] + _Ad[3, 2]) * (t2 - 1) + (_Ad[3, 0] + _Ad[3, 1] + _Ad[3, 2] + _Ad[3, 3])
         else:
-            Phi2_0 = (Ad[0,0]*tp2_0 + Ad[0,1]*tp2_1 + Ad[0,2]*tp2_2 + Ad[0,3]*tp2_3)
-            Phi2_1 = (Ad[1,0]*tp2_0 + Ad[1,1]*tp2_1 + Ad[1,2]*tp2_2 + Ad[1,3]*tp2_3)
-            Phi2_2 = (Ad[2,0]*tp2_0 + Ad[2,1]*tp2_1 + Ad[2,2]*tp2_2 + Ad[2,3]*tp2_3)
-            Phi2_3 = (Ad[3,0]*tp2_0 + Ad[3,1]*tp2_1 + Ad[3,2]*tp2_2 + Ad[3,3]*tp2_3)
-        dPhi0_0 = (dAd[0,0]*tp0_0 + dAd[0,1]*tp0_1 + dAd[0,2]*tp0_2 + dAd[0,3]*tp0_3)*dinv0
-        dPhi0_1 = (dAd[1,0]*tp0_0 + dAd[1,1]*tp0_1 + dAd[1,2]*tp0_2 + dAd[1,3]*tp0_3)*dinv0
-        dPhi0_2 = (dAd[2,0]*tp0_0 + dAd[2,1]*tp0_1 + dAd[2,2]*tp0_2 + dAd[2,3]*tp0_3)*dinv0
-        dPhi0_3 = (dAd[3,0]*tp0_0 + dAd[3,1]*tp0_1 + dAd[3,2]*tp0_2 + dAd[3,3]*tp0_3)*dinv0
-        dPhi1_0 = (dAd[0,0]*tp1_0 + dAd[0,1]*tp1_1 + dAd[0,2]*tp1_2 + dAd[0,3]*tp1_3)*dinv1
-        dPhi1_1 = (dAd[1,0]*tp1_0 + dAd[1,1]*tp1_1 + dAd[1,2]*tp1_2 + dAd[1,3]*tp1_3)*dinv1
-        dPhi1_2 = (dAd[2,0]*tp1_0 + dAd[2,1]*tp1_1 + dAd[2,2]*tp1_2 + dAd[2,3]*tp1_3)*dinv1
-        dPhi1_3 = (dAd[3,0]*tp1_0 + dAd[3,1]*tp1_1 + dAd[3,2]*tp1_2 + dAd[3,3]*tp1_3)*dinv1
-        dPhi2_0 = (dAd[0,0]*tp2_0 + dAd[0,1]*tp2_1 + dAd[0,2]*tp2_2 + dAd[0,3]*tp2_3)*dinv2
-        dPhi2_1 = (dAd[1,0]*tp2_0 + dAd[1,1]*tp2_1 + dAd[1,2]*tp2_2 + dAd[1,3]*tp2_3)*dinv2
-        dPhi2_2 = (dAd[2,0]*tp2_0 + dAd[2,1]*tp2_1 + dAd[2,2]*tp2_2 + dAd[2,3]*tp2_3)*dinv2
-        dPhi2_3 = (dAd[3,0]*tp2_0 + dAd[3,1]*tp2_1 + dAd[3,2]*tp2_2 + dAd[3,3]*tp2_3)*dinv2
+            Phi2_0 = (_Ad[0, 0] * tp2_0 + _Ad[0, 1] * tp2_1 + _Ad[0, 2] * tp2_2 + _Ad[0, 3] * tp2_3)
+            Phi2_1 = (_Ad[1, 0] * tp2_0 + _Ad[1, 1] * tp2_1 + _Ad[1, 2] * tp2_2 + _Ad[1, 3] * tp2_3)
+            Phi2_2 = (_Ad[2, 0] * tp2_0 + _Ad[2, 1] * tp2_1 + _Ad[2, 2] * tp2_2 + _Ad[2, 3] * tp2_3)
+            Phi2_3 = (_Ad[3, 0] * tp2_0 + _Ad[3, 1] * tp2_1 + _Ad[3, 2] * tp2_2 + _Ad[3, 3] * tp2_3)
+        dPhi0_0 = (_dAd[0, 0] * tp0_0 + _dAd[0, 1] * tp0_1 + _dAd[0, 2] * tp0_2 + _dAd[0, 3] * tp0_3) * dinv0
+        dPhi0_1 = (_dAd[1, 0] * tp0_0 + _dAd[1, 1] * tp0_1 + _dAd[1, 2] * tp0_2 + _dAd[1, 3] * tp0_3) * dinv0
+        dPhi0_2 = (_dAd[2, 0] * tp0_0 + _dAd[2, 1] * tp0_1 + _dAd[2, 2] * tp0_2 + _dAd[2, 3] * tp0_3) * dinv0
+        dPhi0_3 = (_dAd[3, 0] * tp0_0 + _dAd[3, 1] * tp0_1 + _dAd[3, 2] * tp0_2 + _dAd[3, 3] * tp0_3) * dinv0
+        dPhi1_0 = (_dAd[0, 0] * tp1_0 + _dAd[0, 1] * tp1_1 + _dAd[0, 2] * tp1_2 + _dAd[0, 3] * tp1_3) * dinv1
+        dPhi1_1 = (_dAd[1, 0] * tp1_0 + _dAd[1, 1] * tp1_1 + _dAd[1, 2] * tp1_2 + _dAd[1, 3] * tp1_3) * dinv1
+        dPhi1_2 = (_dAd[2, 0] * tp1_0 + _dAd[2, 1] * tp1_1 + _dAd[2, 2] * tp1_2 + _dAd[2, 3] * tp1_3) * dinv1
+        dPhi1_3 = (_dAd[3, 0] * tp1_0 + _dAd[3, 1] * tp1_1 + _dAd[3, 2] * tp1_2 + _dAd[3, 3] * tp1_3) * dinv1
+        dPhi2_0 = (_dAd[0, 0] * tp2_0 + _dAd[0, 1] * tp2_1 + _dAd[0, 2] * tp2_2 + _dAd[0, 3] * tp2_3) * dinv2
+        dPhi2_1 = (_dAd[1, 0] * tp2_0 + _dAd[1, 1] * tp2_1 + _dAd[1, 2] * tp2_2 + _dAd[1, 3] * tp2_3) * dinv2
+        dPhi2_2 = (_dAd[2, 0] * tp2_0 + _dAd[2, 1] * tp2_1 + _dAd[2, 2] * tp2_2 + _dAd[2, 3] * tp2_3) * dinv2
+        dPhi2_3 = (_dAd[3, 0] * tp2_0 + _dAd[3, 1] * tp2_1 + _dAd[3, 2] * tp2_2 + _dAd[3, 3] * tp2_3) * dinv2
 
         for k in range(n_vals):
             vals[n,k] = Phi0_0*(Phi1_0*(Phi2_0*(coefs[i0+0,i1+0,i2+0,k]) + Phi2_1*(coefs[i0+0,i1+0,i2+1,k]) + Phi2_2*(coefs[i0+0,i1+0,i2+2,k]) + Phi2_3*(coefs[i0+0,i1+0,i2+3,k])) + \
@@ -591,31 +619,7 @@ def filter_coeffs_3d(dinv, data):
 
 
 
-def compute_const():
-    global Ad
-    Ad = array([
-    #      t^3       t^2        t        1
-       [-1.0/6.0,  3.0/6.0, -3.0/6.0, 1.0/6.0],
-       [ 3.0/6.0, -6.0/6.0,  0.0/6.0, 4.0/6.0],
-       [-3.0/6.0,  3.0/6.0,  3.0/6.0, 1.0/6.0],
-       [ 1.0/6.0,  0.0/6.0,  0.0/6.0, 0.0/6.0]
-    ])
-    
-    global dAd
-    dAd = zeros((4,4))
-    for i in range(1,4):
-        Ad_i = Ad[:, i-1]
-        dAd[:,i] = (4-i) * Ad_i
-    
-    global d2Ad
-    d2Ad = zeros((4,4))
-    for i in range(1,4):
-        dAd_i = dAd[:, i-1]
-        d2Ad[:,i] = (4-i) * dAd_i
-
-
 def filter_coeffs(smin, smax, orders, data):
-    compute_const()
     smin = np.array(smin, dtype=float)
     smax = np.array(smax, dtype=float)
     dinv = (smax - smin) / orders
@@ -630,4 +634,3 @@ def filter_data(dinv, data):
         return filter_coeffs_2d(dinv, data)
     elif len(dinv) == 3:
         return filter_coeffs_3d(dinv, data)
-

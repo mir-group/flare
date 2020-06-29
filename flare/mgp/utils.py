@@ -56,14 +56,14 @@ def str_to_mapped_kernel(name: str, component: str = "mc",
 
     if b3:
          if multihyps:
-             return gk3b.grid_kernel_sephyps, None, gk3b.self_kernel_sephyps, None
+             return gk3b.grid_kernel_sephyps, None, gk3b.self_kernel_sephyps, None, None, None, None
          else:
-             return gk3b.grid_kernel, None, gk3b.self_kernel, None
+             return gk3b.grid_kernel, None, gk3b.self_kernel, None, None, None, None
     elif b2:
         if multihyps:
-            return gk2b.grid_kernel_sephyps, None, gk2b.self_kernel_sephyps, None
+            return gk2b.grid_kernel_sephyps, None, gk2b.self_kernel_sephyps, None, None, None, None
         else:
-            return gk2b.grid_kernel, None, gk2b.self_kernel, None
+            return gk2b.grid_kernel, None, gk2b.self_kernel, None, None, None, None
     else:
         warnings.warn('The mapped kernel for many-body is not implemented.')
         return None
@@ -80,7 +80,7 @@ def get_kernel_term(kernel_name, component, hyps_mask, hyps, grid_kernel=False):
         stks = str_to_kernel_set
         kernel_name_list = [kernel_name] 
 
-    kernel, _, ek, efk = stks(kernel_name_list, component, hyps_mask)
+    kernel, _, ek, efk, _, _, _ = stks(kernel_name_list, component, hyps_mask)
 
     # hyps_mask is modified here
     hyps, cutoffs, hyps_mask = Parameters.get_component_mask(hyps_mask, kernel_name, hyps=hyps)

@@ -121,7 +121,7 @@ def get_reference(grid_env, species, parameter, same_hyps):
     env = env1 if same_hyps else env2
     hm = hm1 if same_hyps else hm2
 
-    kernel, kg, en_kernel, force_en_kernel = str_to_kernel_set(
+    kernel, kg, en_kernel, force_en_kernel, _, _, _ = str_to_kernel_set(
             hm['kernels'], "mc", None if same_hyps else hm)
     args = from_mask_to_args(hm['hyps'], hm['cutoffs'], None if same_hyps else hm)
 

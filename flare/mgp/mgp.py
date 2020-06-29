@@ -115,13 +115,21 @@ class MappedGaussianProcess:
         self.hyps_mask = None
         self.cutoffs = None
 
+        species_labels = []
+        coded_species = []
         for i, ele in enumerate(unique_species):
             if isinstance(ele, str):
-                self.species_labels.append(ele)
-                self.coded_species.append(element_to_Z(ele))
+                species_labels.append(ele)
+                coded_species.append(element_to_Z(ele))
             elif isinstance(ele, int):
-                self.coded_species.append(ele)
-                self.species_labels.append(Z_to_element(ele))
+                coded_species.append(ele)
+                species_labels.append(Z_to_element(ele))
+            else:
+                print("element type not accepted", ele, type(ele))
+        sort_id = np.argsort(coded_species)
+        for i in sort_id:
+            self.coded_species.append(coded_species[i])
+            self.species_labels.append(species_labels[i])
 
         self.load_grid = grid_params.get('load_grid', None)
         self.update = grid_params.get('update', False)

@@ -52,25 +52,16 @@ class Structure:
                  positions: 'ndarray', mass_dict: dict = None,
                  prev_positions: 'ndarray' = None,
                  species_labels: List[str] = None, forces=None, stds=None):
-        # Set up individual Bravais lattice vectors
+
+        # Define cell (each row is a Bravais lattice vector).
         self.cell = np.array(cell)
-        self.vec1 = self.cell[0, :]
-        self.vec2 = self.cell[1, :]
-        self.vec3 = self.cell[2, :]
 
         # Compute the max cutoff compatible with a 3x3x3 supercell of the
         # structure.
         self.max_cutoff = get_max_cutoff(self.cell)
 
-        # get cell matrices for wrapping coordinates
-        self.cell_transpose = self.cell.transpose()
-        self.cell_transpose_inverse = np.linalg.inv(self.cell_transpose)
-        self.cell_dot = self.get_cell_dot()
-        self.cell_dot_inverse = np.linalg.inv(self.cell_dot)
-
-        # set positions
+        # Set positions.
         self.positions = np.array(positions)
-        self.wrapped_positions = self.wrap_positions(in_place=False)
 
         # If species are strings, convert species to integers by atomic number
         if species_labels is None:
@@ -84,12 +75,11 @@ class Structure:
         if prev_positions is None:
             self.prev_positions = np.copy(self.positions)
         else:
-            assert len(positions) == len(prev_positions), 'Previous ' \
-                                                          'positions and ' \
-                                                          'positions are not' \
-                                                          'same length'
+            assert len(positions) == len(prev_positions), \
+                'Previous positions and positions are not same length'
             self.prev_positions = prev_positions
 
+        # Set forces, energies, and stresses and their uncertainties.
         if forces is not None:
             self.forces = np.array(forces)
         else:
@@ -99,6 +89,14 @@ class Structure:
             self.stds = np.array(stds)
         else:
             self.stds = np.zeros((len(positions), 3))
+
+        self.local_energies = None
+        self.local_energy_stds = None
+        self.partial_stresses = None
+        self.partial_stress_stds = None
+        self.stress = None
+        self.stress_stds = None
+        self.potential_energy = None
 
         self.mass_dict = mass_dict
 
@@ -111,7 +109,65 @@ class Structure:
                     if elt.isnumeric():
                         mass_dict[int(elt)] = mass_dict[elt]
 
-    def get_cell_dot(self):
+    @property
+    def positions(self):
+        return self._positions
+    
+    @property
+    def wrapped_positions(self):
+        return self._wrapped_positions
+
+    @positions.setter
+    def positions(self, position_array):
+        self._positions = position_array
+        self._wrapped_positions = self.wrap_positions()
+
+    @property
+    def cell(self):
+        return self._cell
+
+    @property
+    def vec1(self):
+        return self._vec1
+
+    @property
+    def vec2(self):
+        return self._vec2
+
+    @property
+    def vec3(self):
+        return self._vec3
+
+    @property
+    def cell_transpose(self):
+        return self._cell_transpose
+
+    @property
+    def cell_transpose_inverse(self):
+        return self._cell_transpose_inverse
+
+    @property
+    def cell_dot(self):
+        return self._cell_dot
+
+    @property
+    def cell_dot_inverse(self):
+        return self._cell_dot_inverse
+
+    @cell.setter
+    def cell(self, cell_array):
+        """Set the cell and related properties."""
+        self._cell = cell_array
+        self._vec1 = cell_array[0, :]
+        self._vec2 = cell_array[1, :]
+        self._vec3 = cell_array[2, :]
+        self._cell_transpose = cell_array.transpose()
+        self._cell_transpose_inverse = np.linalg.inv(self._cell_transpose)
+        self._cell_dot = self.get_cell_dot(cell_array)
+        self._cell_dot_inverse = np.linalg.inv(self._cell_dot)
+
+    @staticmethod
+    def get_cell_dot(cell_array):
         """
         Compute 3x3 array of dot products of cell vectors used to
         fold atoms back to the unit cell.
@@ -124,7 +180,7 @@ class Structure:
 
         for m in range(3):
             for n in range(3):
-                cell_dot[m, n] = np.dot(self.cell[m], self.cell[n])
+                cell_dot[m, n] = np.dot(cell_array[m], cell_array[n])
 
         return cell_dot
 
@@ -170,14 +226,12 @@ class Structure:
         return np.matmul(np.matmul(relative_positions, cell_dot),
                          cell_transpose_inverse)
 
-    def wrap_positions(self, in_place: bool = True) -> 'ndarray':
+    def wrap_positions(self) -> 'ndarray':
         """
         Convenience function which folds atoms outside of the unit cell back
         into the unit cell. in_place flag controls if the wrapped positions
         are set in the class.
 
-        :param in_place: If true, set the current structure positions to be
-            the wrapped positions.
         :return: Cartesian coordinates of positions all in unit cell
         :rtype: np.ndarray
         """
@@ -189,9 +243,6 @@ class Structure:
 
         pos_wrap = self.relative_to_raw(rel_wrap, self.cell_transpose_inverse,
                                         self.cell_dot)
-
-        if in_place:
-            self.wrapped_positions = pos_wrap
 
         return pos_wrap
 
@@ -253,8 +304,8 @@ class Structure:
         :param dictionary: dict describing structure parameters.
         :return: FLARE structure assembled from dictionary
         """
-        struc = Structure(cell=np.array(dictionary['cell']),
-                          positions=np.array(dictionary['positions']),
+        struc = Structure(cell=np.array(dictionary['_cell']),
+                          positions=np.array(dictionary['_positions']),
                           species=dictionary['coded_species'],
                           forces=np.array(dictionary.get('forces')),
                           mass_dict=dictionary.get('mass_dict'),
@@ -276,8 +327,7 @@ class Structure:
 
         if cell is None:
             cell = np.array(atoms.cell)
-        struc = Structure(cell=cell,
-                          positions=atoms.positions,
+        struc = Structure(cell=cell, positions=atoms.positions,
                           species=atoms.get_chemical_symbols())
         return struc
 
@@ -377,6 +427,7 @@ class Structure:
                 forces = self.forces
             if print_max_stds:
                 xyz_str += ':max_std:R:1'
+                stds = self.stds
             xyz_str += '\n'
         else:
             xyz_str += '\n'

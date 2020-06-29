@@ -17,6 +17,7 @@ def test_stk(kernels, component, nspecie):
     properly"""
 
     try:
-        k, kg, ek, efk = stks(kernels, component, {'nspecie': nspecie})
+        k, kg, ek, efk, _, _, _ = \
+            stks(kernels, component, {'nspecie': nspecie})
     except:
         raise RuntimeError(f"fail to return kernel {kernels} {component} {nspecie}")

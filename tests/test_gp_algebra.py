@@ -6,6 +6,15 @@ import flare.gp_algebra
 from flare.env import AtomicEnvironment
 from flare.kernels.utils import str_to_kernel_set
 from flare.struc import Structure
+from flare.kernels.mc_simple import two_plus_three_body_mc, \
+    two_plus_three_body_mc_grad, two_plus_three_mc_en,\
+    two_plus_three_mc_force_en, two_plus_three_efs_energy, \
+    two_plus_three_efs_force
+from flare.kernels.mc_sephyps import two_plus_three_body_mc \
+        as two_plus_three_body_mc_multi
+from flare.kernels.mc_sephyps import two_plus_three_body_mc_grad \
+        as two_plus_three_body_mc_grad_multi
+from flare.kernels import mc_sephyps
 from flare.utils.parameter_helper import ParameterHelper
 
 from flare.gp_algebra import get_like_grad_from_mats, \
@@ -14,7 +23,7 @@ from flare.gp_algebra import get_like_grad_from_mats, \
         force_energy_vector, get_kernel_vector, en_kern_vec, \
         get_ky_mat_update, get_ky_and_hyp, get_energy_block, \
         get_Ky_mat, update_force_block, update_energy_block, \
-        update_force_energy_block
+        update_force_energy_block, efs_kern_vec
 
 from tests.fake_gp import get_tstp
 
@@ -269,6 +278,35 @@ def test_en_kern_vec(params, ihyps):
 
     assert (all(np.equal(vec, vec_par))), "parallel implementation is wrong"
     assert (vec.shape[0] == size1 * 3 + size2)
+
+
+@pytest.mark.parametrize('ihyps', [4])
+def test_efs_kern_vec(params, ihyps):
+    name, cutoffs, hyps_mask_list, _ = params
+
+    np.random.seed(10)
+    test_point = get_tstp()
+
+    size1 = len(flare.gp_algebra._global_training_data[name])
+    size2 = len(flare.gp_algebra._global_training_structures[name])
+
+    hyps_mask = hyps_mask_list[ihyps]
+    hyps = hyps_mask['hyps']
+    kernel = str_to_kernel_set(hyps_mask['kernels'], 'mc', hyps_mask)
+
+    test_point = get_tstp()
+
+    energy_vector, force_array, stress_array = \
+        efs_kern_vec(name, kernel[5], kernel[4], test_point, hyps, cutoffs,
+                     hyps_mask)
+
+    energy_vector_par, force_array_par, stress_array_par = \
+        efs_kern_vec(name, kernel[5], kernel[4], test_point, hyps, cutoffs,
+                     hyps_mask, n_cpus=2, n_sample=100)
+
+    assert (np.equal(energy_vector, energy_vector_par).all())
+    assert (np.equal(force_array, force_array_par).all())
+    assert (np.equal(stress_array, stress_array_par).all())
 
 
 @pytest.mark.parametrize('ihyps', [0, 1, 2, 3, 4])
