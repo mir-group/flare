@@ -537,6 +537,6 @@ def predict_on_structure_mgp(structure, mgp, output=None,
                                 write_to_structure)
 
     if energy:
-        return forces, stds, np.sum(local_energy)
+        return forces, stds, local_energy
     else:
         return forces, stds

@@ -51,7 +51,8 @@ class Structure:
     def __init__(self, cell: 'ndarray', species: Union[List[str], List[int]],
                  positions: 'ndarray', mass_dict: dict = None,
                  prev_positions: 'ndarray' = None,
-                 species_labels: List[str] = None, forces=None, stds=None):
+                 species_labels: List[str] = None,
+                 forces=None, stds=None, energy=None):
 
         # Define cell (each row is a Bravais lattice vector).
         self.cell = np.array(cell)
@@ -90,6 +91,8 @@ class Structure:
         else:
             self.stds = np.zeros((len(positions), 3))
 
+        self.energy = energy
+
         self.local_energies = None
         self.local_energy_stds = None
         self.partial_stresses = None
@@ -112,7 +115,7 @@ class Structure:
     @property
     def positions(self):
         return self._positions
-    
+
     @property
     def wrapped_positions(self):
         return self._wrapped_positions
@@ -309,7 +312,8 @@ class Structure:
                           species=dictionary['coded_species'],
                           forces=np.array(dictionary.get('forces')),
                           mass_dict=dictionary.get('mass_dict'),
-                          species_labels=dictionary.get('species_labels'))
+                          species_labels=dictionary.get('species_labels'),
+                          energy=dictionary.get('energy', None))
 
         struc.stds = np.array(dictionary.get('stds'))
 

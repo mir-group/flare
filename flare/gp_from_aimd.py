@@ -394,7 +394,7 @@ class TrajectoryTrainer:
             self.output.write_gp_dft_comparison(
                 curr_step=i, frame=dummy_frame, start_time=time.time(),
                 dft_forces=dft_forces, dft_energy=dft_energy, error=error,
-                local_energies=local_energies)
+                local_energies=local_energies, KE=0)
 
             logger.debug(
                 f'Single frame calculation time {time.time()-frame_start_time}')
