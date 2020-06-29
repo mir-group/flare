@@ -123,6 +123,7 @@ set(FLARE_SOURCES
 
 set(PYBIND_SOURCES
     Sources/Descriptor/py_descriptor.cpp
+    Sources/Structure/py_structure.cpp
     Sources/pyflare.cpp)
 
 # Include sources.
