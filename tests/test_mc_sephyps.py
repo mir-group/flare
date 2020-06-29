@@ -11,7 +11,6 @@ from flare.kernels.utils import from_mask_to_args, str_to_kernel_set
 from flare.kernels.cutoffs import quadratic_cutoff_bound
 from flare.parameters import Parameters
 from flare.utils.parameter_helper import ParameterHelper
-from flare_o.kernels.utils import str_to_kernel_set as str_to_kernel_set_o
 
 from .fake_gp import generate_mb_envs, generate_mb_twin_envs
 
@@ -413,7 +412,6 @@ def test_hyps_grad(kernels, diff_cutoff, constraint, d1, d2):
     cutoffs, hyps, hm = generate_diff_hm(kernels, diff_cutoff, constraint=constraint)
     args = from_mask_to_args(hyps, cutoffs, hm)
     kernel, kernel_grad, _, __ = str_to_kernel_set(kernels, "mc", hm)
-    _, kg, __, ___ = str_to_kernel_set_o(kernels, 'mc', hm)
 
     np.random.seed(0)
     env1 = generate_mb_envs(cutoffs, np.eye(3)*100, delta, d1)
