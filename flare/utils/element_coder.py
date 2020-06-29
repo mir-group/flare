@@ -35,8 +35,8 @@ def inject_user_definition(element: str, Z: int):
     :param Z: corresponding Z
     :type Z: int
     """
-    _user_element_to_Z[ele] = Z
-    _user_Z_to_element[Z] = ele
+    _user_element_to_Z[element] = Z
+    _user_Z_to_element[Z] = element
 
 
 # Dictionary mapping elements to their atomic number (Z)
