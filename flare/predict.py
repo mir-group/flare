@@ -510,7 +510,7 @@ def predict_on_structure_mgp(structure, mgp, output=None,
                              output_name=None, n_cpus=None,
                              write_to_structure=True,
                              selective_atoms: List[int] = None,
-                             skipped_atom_value=0):  # changed
+                             skipped_atom_value=0, energy=False):  # changed
     """
     Assign forces to structure based on an mgp
     """
@@ -519,6 +519,7 @@ def predict_on_structure_mgp(structure, mgp, output=None,
 
     forces = np.zeros(shape=(structure.nat, 3))
     stds = np.zeros(shape=(structure.nat, 3))
+    local_energy = np.zeros(shape=(structure.nat))
 
     if selective_atoms:
         forces.fill(skipped_atom_value)
@@ -531,8 +532,11 @@ def predict_on_structure_mgp(structure, mgp, output=None,
         if n not in selective_atoms and selective_atoms:
             continue
 
-        forces[n, :], stds[n, :], _ = \
+        forces[n, :], stds[n, :], local_energy[n] = \
             predict_on_atom_mgp(n, structure, mgp,
                                 write_to_structure)
 
-    return forces, stds
+    if energy:
+        return forces, stds, np.sum(local_energy)
+    else:
+        return forces, stds

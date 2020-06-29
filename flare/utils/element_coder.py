@@ -8,6 +8,12 @@ from math import inf
 
 import numpy as np
 
+_user_element_to_Z = {}
+_user_Z_to_element = {}
+
+def inject_user_definition(ele:str, Z:int):
+    _user_element_to_Z[ele] = Z
+    _user_Z_to_element[Z] = ele
 
 # Dictionary mapping elements to their atomic number (Z)
 _element_to_Z = {'H': 1,
@@ -142,6 +148,9 @@ def element_to_Z(element: str) -> int:
     :return:
     """
 
+    if element in _user_element_to_Z:
+        return _user_element_to_Z[element]
+
     # If already integer, do nothing
     if isinstance(element, (int, np.integer)):
         return element
@@ -155,10 +164,10 @@ def element_to_Z(element: str) -> int:
 
     # Check that a valid element was passed in then return
     if _element_to_Z.get(element, None) is None:
-        warn('Element as specified not found in list of element-Z mappings. '
+        warn(f'Element as specified not found in list of element-Z mappings. '
              'If you would like to specify a custom element, use an integer '
-             'of your choosing instead. Setting element {} to integer '
-             '0'.format(element))
+             'of your choosing instead. Setting element {element} to integer '
+             '0')
     return _element_to_Z.get(element, 0)
 
 
@@ -200,6 +209,9 @@ def Z_to_element(Z: int) -> str:
     :return: One or two-letter name of element.
     """
 
+    if Z in _user_Z_to_element:
+        return _user_Z_to_element[Z]
+
     # Check proper formatting
     if isinstance(Z, str):
         if Z.isnumeric():
@@ -207,6 +219,7 @@ def Z_to_element(Z: int) -> str:
         else:
             raise ValueError("Input Z is not a number. It should be an "
                              "integer")
+
     return _Z_to_element[Z]
 
 _Z_to_mass = {1:1.0079,
