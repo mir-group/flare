@@ -7,8 +7,6 @@ from flare.env import AtomicEnvironment
 from flare.kernels.utils import str_to_kernel_set
 from flare.struc import Structure
 from flare.utils.parameter_helper import ParameterHelper
-from flare_o.kernels.utils import str_to_kernel_set as str_to_kernel_set_o
-import flare_o.gp_algebra as gpao
 
 from flare.gp_algebra import get_like_grad_from_mats, \
         get_force_block, get_force_energy_block, \
@@ -122,11 +120,6 @@ def get_random_training_set(nenv, nstruc):
     flare.gp_algebra._global_training_structures[name] = training_structures
     flare.gp_algebra._global_energy_labels[name] = energy_labels
 
-    gpao._global_training_data[name] = training_data
-    gpao._global_training_labels[name] = training_labels
-    gpao._global_training_structures[name] = training_structures
-    gpao._global_energy_labels[name] = energy_labels
-
     energy_noise = 0.01
 
     return name, cutoffs, hyps_mask_list, energy_noise
@@ -221,11 +214,6 @@ def test_ky_mat_update(params, ihyps):
     assert np.isclose(ky_mat, ky_mat0, rtol=1e-10).all(), \
             "update function is wrong"
 
-    kernel_o = str_to_kernel_set_o(hyps_mask['kernels'], 'mc', hyps_mask)
-    ky_mat_o = gpao.get_ky_mat_update(ky_mat_old, n, hyps, name, kernel_o[0], kernel_o[2],
-                                      kernel_o[3], energy_noise, cutoffs, hyps_mask)
-    assert np.isclose(ky_mat, ky_mat_o, rtol=1e-5).all()
-
     # parallel version
     ky_mat = func[1](ky_mat_old, n, hyps, name, kernel[0], kernel[2],
                      kernel[3], energy_noise, cutoffs, hyps_mask, n_cpus=2,
@@ -253,11 +241,6 @@ def test_kernel_vector(params, ihyps):
     vec = get_kernel_vector(name, kernel[0], kernel[3], test_point,
                             hyps, cutoffs, hyps_mask)
 
-    kernel_o = str_to_kernel_set_o(hyps_mask['kernels'], 'mc', hyps_mask)
-    vec_o = gpao.get_kernel_vector(name, kernel_o[0], kernel_o[3], test_point, 1,
-                                   hyps, cutoffs, hyps_mask)
-    assert np.isclose(vec[:, 0], vec_o, rtol=1e-5).all()
-
     vec_par = \
         get_kernel_vector(name, kernel[0], kernel[3], test_point, hyps,
                           cutoffs, hyps_mask, n_cpus=2, n_sample=100)
@@ -282,11 +265,6 @@ def test_en_kern_vec(params, ihyps):
 
     # test the parallel implementation for multihyps
     vec = en_kern_vec(name, kernel[3], kernel[2], test_point, hyps, cutoffs, hyps_mask)
-
-    kernel_o = str_to_kernel_set_o(hyps_mask['kernels'], 'mc', hyps_mask)
-    vec_o = gpao.en_kern_vec(name, kernel_o[3], kernel_o[2], test_point,
-                             hyps, cutoffs, hyps_mask)
-    assert np.isclose(vec, vec_o, rtol=1e-5).all()
 
     vec_par = \
         en_kern_vec(name, kernel[3], kernel[2], test_point, hyps, cutoffs, hyps_mask,
