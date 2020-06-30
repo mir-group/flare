@@ -148,7 +148,6 @@ StructureDescriptor :: StructureDescriptor(const Eigen::MatrixXd & cell,
 }
 
 void StructureDescriptor :: compute_environments(){
-    // int noa = species.size();
     LocalEnvironment env;
 
     for (int i = 0; i < noa; i ++){
@@ -158,7 +157,6 @@ void StructureDescriptor :: compute_environments(){
 }
 
 void StructureDescriptor :: compute_nested_environments(){
-    // int noa = species.size();
     LocalEnvironment env;
 
     for (int i = 0; i < noa; i ++){
@@ -168,7 +166,6 @@ void StructureDescriptor :: compute_nested_environments(){
 }
 
 void StructureDescriptor :: compute_descriptors(){
-    // int noa = species.size();
     LocalEnvironment env;
 
     for (int i = 0; i < noa; i ++){
@@ -180,7 +177,6 @@ void StructureDescriptor :: compute_descriptors(){
 }
 
 void StructureDescriptor :: nested_descriptors(){
-    // int noa = species.size();
     LocalEnvironment env;
 
     for (int i = 0; i < noa; i ++){

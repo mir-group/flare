@@ -9,19 +9,17 @@
 namespace py = pybind11;
 
 void AddStructureModule(py::module m) {
-    // Structure module
     py::class_<Structure>(m, "Structure")
         .def(py::init<const Eigen::MatrixXd &,
                       const std::vector<int> &,
                       const Eigen::MatrixXd &>())
         .def_property("cell", &Structure::get_cell, &Structure::set_cell)
         .def_property("positions", &Structure::get_positions,
-                      &Structure::set_positions);
-        // .def_readwrite("cell", &Structure::cell)
-        // .def_readwrite("species", &Structure::species)          
-        // .def_readwrite("positions", &Structure::positions)
-        // .def_readwrite("cell_transpose", &Structure::cell_transpose)
-        // .def_readwrite("wrapped_positions", &Structure::wrapped_positions)
-        // .def_readwrite("volume", &Structure::volume)
-        // .def("wrap_positions", &Structure::wrap_positions);
+                      &Structure::set_positions)
+        .def_property_readonly("wrapped_positions",
+            &Structure::get_wrapped_positions)
+        .def_readonly("species", &Structure::species)
+        .def_readonly("volume", &Structure::volume)
+        .def_readonly("noa", &Structure::noa)
+        .def_readonly("max_cutoff", &Structure::max_cutoff);
 }
