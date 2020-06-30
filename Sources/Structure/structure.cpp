@@ -5,9 +5,11 @@
 
 Structure :: Structure(){}
 
-Structure :: Structure(const Eigen::MatrixXd & cell,
-                       const std::vector<int> & species,
-                       const Eigen::MatrixXd & positions){
+Structure::Structure(const Eigen::MatrixXd & cell,
+    const std::vector<int> & species, const Eigen::MatrixXd & positions,
+    const std::unordered_map<int, double> & mass_dict,
+    const Eigen::MatrixXd & prev_positions,
+    const std::vector<std::string> & species_labels){
 
     // Set cell, species, and positions.
     set_cell(cell);
@@ -15,6 +17,18 @@ Structure :: Structure(const Eigen::MatrixXd & cell,
     this->species = species;
     max_cutoff = get_max_cutoff();
     noa = species.size();
+
+    // Set mass dictionary.
+    this->mass_dict = mass_dict;
+
+    // Set previous positions.
+    if (prev_positions.rows() == 0){
+        this->prev_positions = positions;
+    }
+    else{
+        this->prev_positions = prev_positions;
+    }
+
 }
 
 void Structure :: set_cell(const Eigen::MatrixXd & cell){

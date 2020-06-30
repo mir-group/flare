@@ -2,6 +2,7 @@
 #define STRUCTURE_H
 
 #include <vector>
+#include <unordered_map>
 #include <Eigen/Dense>
 
 #include "Descriptor/descriptor.h"
@@ -18,8 +19,14 @@ class Structure{
         Structure();
 
         Structure(const Eigen::MatrixXd & cell,
-                  const std::vector<int> & species,
-                  const Eigen::MatrixXd & positions);
+            const std::vector<int> & species,
+            const Eigen::MatrixXd & positions,
+            const std::unordered_map<int, double> & mass_dict =
+                std::unordered_map<int, double> {},
+            const Eigen::MatrixXd & prev_positions =
+                Eigen::MatrixXd::Zero(0, 3),
+            const std::vector<std::string> & species_labels =
+                std::vector<std::string> {});
 
         // Cell setter and getter.
         void set_cell(const Eigen::MatrixXd & cell);
@@ -34,6 +41,8 @@ class Structure{
         double get_max_cutoff();
 
         std::vector<int> species;
+        std::unordered_map<int, double> mass_dict;
+        Eigen::MatrixXd prev_positions;
         double max_cutoff, volume;
         int noa;
 };
