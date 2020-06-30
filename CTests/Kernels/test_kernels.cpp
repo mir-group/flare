@@ -124,11 +124,11 @@ TEST_F(KernelTest, EnvForceTest){
 TEST_F(KernelTest, ForceTest){
     // Perturb the coordinates of the environment atoms.
     double thresh = 1e-6;
-    int noa = 5;
+    int nat = 5;
     double delta = 1e-8;
     Eigen::VectorXd kern_pert;
     double fin_val, exact_val, abs_diff;
-    for (int p = 0; p < noa; p ++){
+    for (int p = 0; p < nat; p ++){
         for (int m = 0; m < 3; m ++){
             positions_3 = positions;
             positions_3(p, m) += delta;
@@ -148,11 +148,11 @@ TEST_F(KernelTest, ForceTest){
 TEST_F(KernelTest, TwoBodyForceTest){
     // Perturb the coordinates of the environment atoms.
     double thresh = 1e-5;
-    int noa = 5;
+    int nat = 5;
     double delta = 1e-8;
     Eigen::VectorXd kern_pert;
     double fin_val, exact_val, abs_diff;
-    for (int p = 0; p < noa; p ++){
+    for (int p = 0; p < nat; p ++){
         for (int m = 0; m < 3; m ++){
             positions_3 = positions;
             positions_3(p, m) += delta;
@@ -170,11 +170,11 @@ TEST_F(KernelTest, TwoBodyForceTest){
 
 TEST_F(KernelTest, ThreeBodyForceTest){
     double thresh = 1e-5;
-    int noa = 5;
+    int nat = 5;
     double delta = 1e-8;
     Eigen::VectorXd kern_pert;
     double fin_val, exact_val, abs_diff;
-    for (int p = 0; p < noa; p ++){
+    for (int p = 0; p < nat; p ++){
         for (int m = 0; m < 3; m ++){
             positions_3 = positions;
             positions_3(p, m) += delta;
@@ -192,7 +192,7 @@ TEST_F(KernelTest, ThreeBodyForceTest){
 
 TEST_F(KernelTest, StressTest){
     double thresh = 1e-6;
-    int noa = 5;
+    int nat = 5;
     double delta = 1e-8;
     Eigen::VectorXd kern_pert;
     double fin_val, exact_val, abs_diff;
@@ -207,7 +207,7 @@ TEST_F(KernelTest, StressTest){
             cell_2(0, m) += cell(0, n) * delta;
             cell_2(1, m) += cell(1, n) * delta;
             cell_2(2, m) += cell(2, n) * delta;
-            for (int k = 0; k < noa; k ++){
+            for (int k = 0; k < nat; k ++){
                 positions_3(k, m) += positions(k, n) * delta;
             }
 
@@ -217,7 +217,7 @@ TEST_F(KernelTest, StressTest){
 
             kern_pert = kernel.env_struc(test_env, test_struc_3);
             fin_val = -(kern_pert(0) - kern_vec(0)) / delta;
-            exact_val = kern_vec(1 + 3 * noa + stress_count)
+            exact_val = kern_vec(1 + 3 * nat + stress_count)
                 * test_struc.volume;
             abs_diff = abs(fin_val - exact_val); 
 
@@ -230,7 +230,7 @@ TEST_F(KernelTest, StressTest){
 
 TEST_F(KernelTest, TwoBodyStressTest){
     double thresh = 1e-5;
-    int noa = 5;
+    int nat = 5;
     double delta = 1e-8;
     Eigen::VectorXd kern_pert;
     double fin_val, exact_val, abs_diff;
@@ -245,7 +245,7 @@ TEST_F(KernelTest, TwoBodyStressTest){
             cell_2(0, m) += cell(0, n) * delta;
             cell_2(1, m) += cell(1, n) * delta;
             cell_2(2, m) += cell(2, n) * delta;
-            for (int k = 0; k < noa; k ++){
+            for (int k = 0; k < nat; k ++){
                 positions_3(k, m) += positions(k, n) * delta;
             }
 
@@ -255,7 +255,7 @@ TEST_F(KernelTest, TwoBodyStressTest){
 
             kern_pert = two_body_kernel.env_struc(test_env, test_struc_3);
             fin_val = -(kern_pert(0) - kern_vec_2(0)) / delta;
-            exact_val = kern_vec_2(1 + 3 * noa + stress_count)
+            exact_val = kern_vec_2(1 + 3 * nat + stress_count)
                 * test_struc.volume;
             abs_diff = abs(fin_val - exact_val); 
 
@@ -268,7 +268,7 @@ TEST_F(KernelTest, TwoBodyStressTest){
 
 TEST_F(KernelTest, ThreeBodyStressTest){
     double thresh = 1e-5;
-    int noa = 5;
+    int nat = 5;
     double delta = 1e-8;
     Eigen::VectorXd kern_pert;
     double fin_val, exact_val, abs_diff;
@@ -283,7 +283,7 @@ TEST_F(KernelTest, ThreeBodyStressTest){
             cell_2(0, m) += cell(0, n) * delta;
             cell_2(1, m) += cell(1, n) * delta;
             cell_2(2, m) += cell(2, n) * delta;
-            for (int k = 0; k < noa; k ++){
+            for (int k = 0; k < nat; k ++){
                 positions_3(k, m) += positions(k, n) * delta;
             }
 
@@ -293,7 +293,7 @@ TEST_F(KernelTest, ThreeBodyStressTest){
 
             kern_pert = three_body_kernel.env_struc(test_env, test_struc_3);
             fin_val = -(kern_pert(0) - kern_vec_3(0)) / delta;
-            exact_val = kern_vec_3(1 + 3 * noa + stress_count)
+            exact_val = kern_vec_3(1 + 3 * nat + stress_count)
                 * test_struc.volume;
             abs_diff = abs(fin_val - exact_val); 
 
@@ -346,7 +346,7 @@ TEST_F(KernelTest, TwoBodySelfTest){
 
     // Check stress/stress kernel.
     int stress_count = 0;
-    int noa = 5;
+    int nat = 5;
     double vol_sq = test_struc.volume * test_struc.volume;
     for (int m = 0; m < 3; m ++){
         for (int n = m; n < 3; n ++){
@@ -362,7 +362,7 @@ TEST_F(KernelTest, TwoBodySelfTest){
             cell_4(1, m) -= cell(1, n) * delta;
             cell_4(2, m) -= cell(2, n) * delta;
 
-            for (int k = 0; k < noa; k ++){
+            for (int k = 0; k < nat; k ++){
                 positions_3(k, m) += positions_2(k, n) * delta;
                 positions_4(k, m) -= positions_2(k, n) * delta;
             }
@@ -386,7 +386,7 @@ TEST_F(KernelTest, TwoBodySelfTest){
                 (4*delta*delta);
 
             // Check that the values match.
-            double exact_val = self_kern(1 + 3 * noa + stress_count)
+            double exact_val = self_kern(1 + 3 * nat + stress_count)
                 * vol_sq;
             double abs_diff = abs(kern_finite_diff - exact_val); 
 
@@ -441,7 +441,7 @@ TEST_F(KernelTest, TwoBodySelfTest){
 
 //     // Check stress/stress kernel.
 //     int stress_count = 0;
-//     int noa = 5;
+//     int nat = 5;
 //     double vol_sq = test_struc.volume * test_struc.volume;
 //     for (int m = 0; m < 3; m ++){
 //         for (int n = m; n < 3; n ++){
@@ -457,7 +457,7 @@ TEST_F(KernelTest, TwoBodySelfTest){
 //             cell_4(1, m) -= cell(1, n) * delta;
 //             cell_4(2, m) -= cell(2, n) * delta;
 
-//             for (int k = 0; k < noa; k ++){
+//             for (int k = 0; k < nat; k ++){
 //                 positions_3(k, m) += positions_2(k, n) * delta;
 //                 positions_4(k, m) -= positions_2(k, n) * delta;
 //             }
@@ -483,7 +483,7 @@ TEST_F(KernelTest, TwoBodySelfTest){
 //             std::cout << 9 * kern_finite_diff / 4 << std::endl;
 
 //             // // Check that the values match.
-//             // double exact_val = self_kern(1 + 3 * noa + stress_count)
+//             // double exact_val = self_kern(1 + 3 * nat + stress_count)
 //             //     * vol_sq;
 //             // double abs_diff = abs(kern_finite_diff - exact_val); 
 
@@ -510,7 +510,7 @@ TEST_F(KernelTest, TwoBodySelfStrucTest){
     double delta = 1e-4;
     double thresh = 1e-4;
 
-    for (int m = 0; m < test_struc_2.noa; m++){
+    for (int m = 0; m < test_struc_2.nat; m++){
         for (int n = 0; n < 3; n ++){
             positions_3 = positions_2;
             positions_3(m, n) += delta;
@@ -542,7 +542,7 @@ TEST_F(KernelTest, TwoBodySelfStrucTest){
 
     // Check stress/stress kernel.
     int stress_count = 0;
-    int noa = 5;
+    int nat = 5;
     double vol_sq = test_struc.volume * test_struc.volume;
     for (int m = 0; m < 3; m ++){
         for (int n = m; n < 3; n ++){
@@ -558,7 +558,7 @@ TEST_F(KernelTest, TwoBodySelfStrucTest){
             cell_4(1, m) -= cell(1, n) * delta;
             cell_4(2, m) -= cell(2, n) * delta;
 
-            for (int k = 0; k < noa; k ++){
+            for (int k = 0; k < nat; k ++){
                 positions_3(k, m) += positions_2(k, n) * delta;
                 positions_4(k, m) -= positions_2(k, n) * delta;
             }
@@ -584,7 +584,7 @@ TEST_F(KernelTest, TwoBodySelfStrucTest){
                 (4*delta*delta);
 
             // Check that the values match.
-            double exact_val = self_kern(1 + 3 * noa + stress_count)
+            double exact_val = self_kern(1 + 3 * nat + stress_count)
                 * vol_sq;
             double abs_diff = abs(kern_finite_diff - exact_val); 
 
@@ -610,7 +610,7 @@ TEST_F(KernelTest, ThreeBodySelfStrucTest){
     double delta = 1e-4;
     double thresh = 1e-4;
 
-    for (int m = 0; m < test_struc_2.noa; m++){
+    for (int m = 0; m < test_struc_2.nat; m++){
         for (int n = 0; n < 3; n ++){
             positions_3 = positions_2;
             positions_3(m, n) += delta;
@@ -642,7 +642,7 @@ TEST_F(KernelTest, ThreeBodySelfStrucTest){
 
     // Check stress/stress kernel.
     int stress_count = 0;
-    int noa = 5;
+    int nat = 5;
     double vol_sq = test_struc.volume * test_struc.volume;
     for (int m = 0; m < 3; m ++){
         for (int n = m; n < 3; n ++){
@@ -658,7 +658,7 @@ TEST_F(KernelTest, ThreeBodySelfStrucTest){
             cell_4(1, m) -= cell(1, n) * delta;
             cell_4(2, m) -= cell(2, n) * delta;
 
-            for (int k = 0; k < noa; k ++){
+            for (int k = 0; k < nat; k ++){
                 positions_3(k, m) += positions_2(k, n) * delta;
                 positions_4(k, m) -= positions_2(k, n) * delta;
             }
@@ -684,7 +684,7 @@ TEST_F(KernelTest, ThreeBodySelfStrucTest){
                 (4*delta*delta);
 
             // Check that the values match.
-            double exact_val = self_kern(1 + 3 * noa + stress_count)
+            double exact_val = self_kern(1 + 3 * nat + stress_count)
                 * vol_sq;
             double abs_diff = abs(kern_finite_diff - exact_val); 
 
@@ -712,7 +712,7 @@ TEST_F(KernelTest, ManyBodySelfStrucTest){
     double delta = 1e-4;
     double thresh = 1e-4;
 
-    for (int m = 0; m < test_struc_2.noa; m++){
+    for (int m = 0; m < test_struc_2.nat; m++){
         for (int n = 0; n < 3; n ++){
             positions_3 = positions_2;
             positions_3(m, n) += delta;
@@ -744,7 +744,7 @@ TEST_F(KernelTest, ManyBodySelfStrucTest){
 
     // Check stress/stress kernel.
     int stress_count = 0;
-    int noa = 5;
+    int nat = 5;
     double vol_sq = test_struc.volume * test_struc.volume;
     for (int m = 0; m < 3; m ++){
         for (int n = m; n < 3; n ++){
@@ -760,7 +760,7 @@ TEST_F(KernelTest, ManyBodySelfStrucTest){
             cell_4(1, m) -= cell(1, n) * delta;
             cell_4(2, m) -= cell(2, n) * delta;
 
-            for (int k = 0; k < noa; k ++){
+            for (int k = 0; k < nat; k ++){
                 positions_3(k, m) += positions_2(k, n) * delta;
                 positions_4(k, m) -= positions_2(k, n) * delta;
             }
@@ -786,7 +786,7 @@ TEST_F(KernelTest, ManyBodySelfStrucTest){
                 (4*delta*delta);
 
             // Check that the values match.
-            double exact_val = self_kern(1 + 3 * noa + stress_count)
+            double exact_val = self_kern(1 + 3 * nat + stress_count)
                 * vol_sq;
             double abs_diff = abs(kern_finite_diff - exact_val); 
 

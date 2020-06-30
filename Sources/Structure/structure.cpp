@@ -16,7 +16,7 @@ Structure::Structure(const Eigen::MatrixXd & cell,
     set_positions(positions);
     this->species = species;
     max_cutoff = get_max_cutoff();
-    noa = species.size();
+    nat = species.size();
 
     // Set mass dictionary.
     this->mass_dict = mass_dict;
@@ -164,7 +164,7 @@ StructureDescriptor :: StructureDescriptor(const Eigen::MatrixXd & cell,
 void StructureDescriptor :: compute_environments(){
     LocalEnvironment env;
 
-    for (int i = 0; i < noa; i ++){
+    for (int i = 0; i < nat; i ++){
         env = LocalEnvironment(*this, i, cutoff);
         local_environments.push_back(env);
     }
@@ -173,7 +173,7 @@ void StructureDescriptor :: compute_environments(){
 void StructureDescriptor :: compute_nested_environments(){
     LocalEnvironment env;
 
-    for (int i = 0; i < noa; i ++){
+    for (int i = 0; i < nat; i ++){
         env = LocalEnvironment(*this, i, cutoff, n_body_cutoffs);
         local_environments.push_back(env);
     }
@@ -182,7 +182,7 @@ void StructureDescriptor :: compute_nested_environments(){
 void StructureDescriptor :: compute_descriptors(){
     LocalEnvironment env;
 
-    for (int i = 0; i < noa; i ++){
+    for (int i = 0; i < nat; i ++){
         env = LocalEnvironment(*this, i, cutoff, many_body_cutoffs,
             descriptor_calculators);
         env.compute_descriptors_and_gradients();
@@ -193,7 +193,7 @@ void StructureDescriptor :: compute_descriptors(){
 void StructureDescriptor :: nested_descriptors(){
     LocalEnvironment env;
 
-    for (int i = 0; i < noa; i ++){
+    for (int i = 0; i < nat; i ++){
         env = LocalEnvironment(*this, i, cutoff, n_body_cutoffs,
             many_body_cutoffs, descriptor_calculators);
         env.compute_descriptors_and_gradients();

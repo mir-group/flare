@@ -44,7 +44,7 @@ class Structure{
         std::unordered_map<int, double> mass_dict;
         Eigen::MatrixXd prev_positions;
         double max_cutoff, volume;
-        int noa;
+        int nat;
 };
 
 // Structure descriptor. Stores the atomic environments in a structure.

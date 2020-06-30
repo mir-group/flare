@@ -27,7 +27,7 @@ void AddStructureModule(py::module m) {
             &Structure::get_wrapped_positions)
         .def_readonly("species", &Structure::species)
         .def_readonly("volume", &Structure::volume)
-        .def_readonly("noa", &Structure::noa)
+        .def_readonly("nat", &Structure::nat)
         .def_readonly("max_cutoff", &Structure::max_cutoff)
         .def_readwrite("prev_positions", &Structure::prev_positions)
         .def_readwrite("mass_dict", &Structure::mass_dict);

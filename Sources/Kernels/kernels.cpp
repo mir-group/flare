@@ -16,9 +16,9 @@ double Kernel :: struc_struc_en(
 
     // Double loop over environments.
     LocalEnvironment env1, env2;
-    for (int i = 0; i < struc1.noa; i ++){
+    for (int i = 0; i < struc1.nat; i ++){
         env1 = struc1.local_environments[i];
-        for (int j = 0; j < struc2.noa; j ++){
+        for (int j = 0; j < struc2.nat; j ++){
             env2 = struc2.local_environments[j];
             kern_val += env_env(env1, env2);
         }
@@ -105,7 +105,7 @@ Eigen::VectorXd TwoBodyKernel :: self_kernel_env(
     const StructureDescriptor & struc1, int atom){
 
     LocalEnvironment env_curr = struc1.local_environments[atom];
-    int no_elements = 1 + 3 * struc1.noa + 6;
+    int no_elements = 1 + 3 * struc1.nat + 6;
     Eigen::VectorXd kernel_vector =
         Eigen::VectorXd::Zero(no_elements);
     double ri, fi, fj, fdj, c1, c2, c3, c4, en_kern,
@@ -207,7 +207,7 @@ Eigen::VectorXd TwoBodyKernel :: self_kernel_env(
 Eigen::VectorXd TwoBodyKernel :: self_kernel_struc(
     const StructureDescriptor & struc){
 
-    int no_elements = 1 + 3 * struc.noa + 6;
+    int no_elements = 1 + 3 * struc.nat + 6;
     Eigen::VectorXd kernel_vector =
         Eigen::VectorXd::Zero(no_elements);
     double ri, fi, fj, fdj, c1, c2, c3, c4, en_kern,
@@ -227,12 +227,12 @@ Eigen::VectorXd TwoBodyKernel :: self_kernel_struc(
 
     // Double loop over environments.
     LocalEnvironment env1, env2;
-    for (int i = 0; i < struc.noa; i ++){
+    for (int i = 0; i < struc.nat; i ++){
         env1 = struc.local_environments[i];
         cut1 = env1.n_body_cutoffs[0];
         cent1 = env1.central_species;
         inds1 = env1.n_body_indices[0];
-        for (int j = i; j < struc.noa; j ++){
+        for (int j = i; j < struc.nat; j ++){
             env2 = struc.local_environments[j];
             cut2 = env2.n_body_cutoffs[0];
             cent2 = env2.central_species;
@@ -339,7 +339,7 @@ Eigen::VectorXd TwoBodyKernel :: env_struc_partial(
     const LocalEnvironment & env1, const StructureDescriptor & struc1,
     int atom){
 
-    int no_elements = 1 + 3 * struc1.noa + 6;
+    int no_elements = 1 + 3 * struc1.nat + 6;
     Eigen::VectorXd kernel_vector =
         Eigen::VectorXd::Zero(no_elements);
     double ri, rj, fi, fj, fdj, rdiff, c1, c2, c3, c4, fx, fy, fz, xval, yval,
@@ -431,11 +431,11 @@ Eigen::VectorXd TwoBodyKernel :: env_struc_partial(
 Eigen::VectorXd TwoBodyKernel :: env_struc(const LocalEnvironment & env1,
     const StructureDescriptor & struc1){
     
-    int no_elements = 1 + 3 * struc1.noa + 6;
+    int no_elements = 1 + 3 * struc1.nat + 6;
     Eigen::VectorXd kernel_vector =
         Eigen::VectorXd::Zero(no_elements);
 
-    for (int i = 0; i < struc1.noa; i ++){
+    for (int i = 0; i < struc1.nat; i ++){
         kernel_vector += env_struc_partial(env1, struc1, i);
     }
 
@@ -610,7 +610,7 @@ Eigen::VectorXd ThreeBodyKernel :: self_kernel_env(
     const StructureDescriptor & struc1, int atom){
 
     LocalEnvironment env_curr = struc1.local_environments[atom];
-    int no_elements = 1 + 3 * struc1.noa + 6;
+    int no_elements = 1 + 3 * struc1.nat + 6;
     Eigen::VectorXd kernel_vector =
         Eigen::VectorXd::Zero(no_elements);
 
@@ -832,7 +832,7 @@ Eigen::VectorXd ThreeBodyKernel :: self_kernel_env(
 Eigen::VectorXd ThreeBodyKernel :: self_kernel_struc(
     const StructureDescriptor & struc){
 
-    int no_elements = 1 + 3 * struc.noa + 6;
+    int no_elements = 1 + 3 * struc.nat + 6;
     Eigen::VectorXd kernel_vector =
         Eigen::VectorXd::Zero(no_elements);
 
@@ -864,13 +864,13 @@ Eigen::VectorXd ThreeBodyKernel :: self_kernel_struc(
 
     // Double loop over environments.
     LocalEnvironment env1, env2;
-    for (int i = 0; i < struc.noa; i ++){
+    for (int i = 0; i < struc.nat; i ++){
         env1 = struc.local_environments[i];
         cut1 = env1.n_body_cutoffs[1];
         c1 = env1.central_species;
         inds1 = env1.n_body_indices[1];
 
-        for (int j = i; j < struc.noa; j ++){
+        for (int j = i; j < struc.nat; j ++){
             env2 = struc.local_environments[j];
             cut2 = env2.n_body_cutoffs[1];
             c2 = env2.central_species;
@@ -1078,7 +1078,7 @@ Eigen::VectorXd ThreeBodyKernel :: env_struc_partial(
     const LocalEnvironment & env1, const StructureDescriptor & struc1,
     int atom){
 
-    int no_elements = 1 + 3 * struc1.noa + 6;
+    int no_elements = 1 + 3 * struc1.nat + 6;
     Eigen::VectorXd kernel_vector =
         Eigen::VectorXd::Zero(no_elements);
 
@@ -1232,11 +1232,11 @@ Eigen::VectorXd ThreeBodyKernel :: env_struc_partial(
 Eigen::VectorXd ThreeBodyKernel :: env_struc(const LocalEnvironment & env1,
     const StructureDescriptor & struc1){
 
-    int no_elements = 1 + 3 * struc1.noa + 6;
+    int no_elements = 1 + 3 * struc1.nat + 6;
     Eigen::VectorXd kernel_vector =
         Eigen::VectorXd::Zero(no_elements);
 
-    for (int i = 0; i < struc1.noa; i ++){
+    for (int i = 0; i < struc1.nat; i ++){
        kernel_vector += env_struc_partial(env1, struc1, i);
     }
 
@@ -1955,7 +1955,7 @@ Eigen::VectorXd DotProductKernel :: env_env_force(
 Eigen::VectorXd DotProductKernel :: self_kernel_env(
     const StructureDescriptor & struc1, int atom){
 
-    int no_elements = 1 + 3 * struc1.noa + 6;
+    int no_elements = 1 + 3 * struc1.nat + 6;
     Eigen::VectorXd kernel_vector =
         Eigen::VectorXd::Zero(no_elements);
     
@@ -1967,7 +1967,7 @@ Eigen::VectorXd DotProductKernel :: self_kernel_env(
 Eigen::VectorXd DotProductKernel :: self_kernel_struc(
     const StructureDescriptor & struc){
 
-    int no_elements = 1 + 3 * struc.noa + 6;
+    int no_elements = 1 + 3 * struc.nat + 6;
     Eigen::VectorXd kernel_vector =
         Eigen::VectorXd::Zero(no_elements);
     double empty_thresh = 1e-8;
@@ -1975,7 +1975,7 @@ Eigen::VectorXd DotProductKernel :: self_kernel_struc(
     double vol_inv_sq = vol_inv * vol_inv;
     
     LocalEnvironment env1, env2;
-    for (int m = 0; m < struc.noa; m ++){
+    for (int m = 0; m < struc.nat; m ++){
         env1 = struc.local_environments[m];
 
         // Check that d1 is nonzero.
@@ -1985,7 +1985,7 @@ Eigen::VectorXd DotProductKernel :: self_kernel_struc(
         }
         double d1_cubed = d1 * d1 * d1;
 
-        for (int n = m; n < struc.noa; n ++){
+        for (int n = m; n < struc.nat; n ++){
             env2 = struc.local_environments[n];
 
             // Check that the environments have the same central species.
@@ -2040,7 +2040,7 @@ Eigen::VectorXd DotProductKernel :: self_kernel_struc(
             v6 = env1.force_dot[descriptor_index].array() * env2.force_dot[descriptor_index].array() * norm_dot / (d1 * d1 * d2 * d2);
 
             force_kern = c1 * (v1.array() * v2.array()).matrix() + c2 * (v3 - v4 - v5 + v6);
-            kernel_vector.segment(1, struc.noa * 3) +=
+            kernel_vector.segment(1, struc.nat * 3) +=
                 sig2 * mult_fac * force_kern;
 
             // Stress kernel
@@ -2079,7 +2079,7 @@ Eigen::VectorXd DotProductKernel :: env_struc_partial(
     const LocalEnvironment & env1, const StructureDescriptor & struc1,
     int atom){
 
-    Eigen::VectorXd kern_vec = Eigen::VectorXd::Zero(1 + struc1.noa * 3 + 6);
+    Eigen::VectorXd kern_vec = Eigen::VectorXd::Zero(1 + struc1.nat * 3 + 6);
 
     // Account for edge case where d1 is zero.
     double empty_thresh = 1e-8;
@@ -2087,7 +2087,7 @@ Eigen::VectorXd DotProductKernel :: env_struc_partial(
     if (d1 < empty_thresh) return kern_vec;
 
     double en_kern = 0;
-    Eigen::VectorXd force_kern = Eigen::VectorXd::Zero(struc1.noa * 3);
+    Eigen::VectorXd force_kern = Eigen::VectorXd::Zero(struc1.nat * 3);
     Eigen::VectorXd stress_kern = Eigen::VectorXd::Zero(6);
 
     Eigen::VectorXd force_dot, stress_dot, f1, s1;
@@ -2129,7 +2129,7 @@ Eigen::VectorXd DotProductKernel :: env_struc_partial(
     stress_kern += dval * s1;
 
     kern_vec(0) = sig2 * en_kern;
-    kern_vec.segment(1, struc1.noa * 3) = -sig2 * force_kern;
+    kern_vec.segment(1, struc1.nat * 3) = -sig2 * force_kern;
     kern_vec.tail(6) = -sig2 * stress_kern * vol_inv;
     return kern_vec;
 }
@@ -2137,9 +2137,9 @@ Eigen::VectorXd DotProductKernel :: env_struc_partial(
 Eigen::VectorXd DotProductKernel :: env_struc(const LocalEnvironment & env1,
     const StructureDescriptor & struc1){
 
-    Eigen::VectorXd kern_vec = Eigen::VectorXd::Zero(1 + struc1.noa * 3 + 6);
+    Eigen::VectorXd kern_vec = Eigen::VectorXd::Zero(1 + struc1.nat * 3 + 6);
 
-    for (int i = 0; i < struc1.noa; i ++){
+    for (int i = 0; i < struc1.nat; i ++){
         kern_vec += env_struc_partial(env1, struc1, i);
     }
 

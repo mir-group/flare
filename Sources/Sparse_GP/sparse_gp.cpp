@@ -98,7 +98,7 @@ void SparseGP :: add_sparse_environment(const LocalEnvironment & env){
         }
         index = initial_index;
 
-        int n_atoms = training_structures[i].noa;
+        int n_atoms = training_structures[i].nat;
         Eigen::VectorXd kernel_vector =\
             Eigen::VectorXd::Zero(1 + 3 * n_atoms + 6);
         for (int j = 0; j < n_kernels; j ++){
@@ -222,7 +222,7 @@ void SparseGP :: add_training_structure(
 
     int n_labels = training_structure.energy.size() +
         training_structure.forces.size() + training_structure.stresses.size();
-    int n_atoms = training_structure.noa;
+    int n_atoms = training_structure.nat;
     int n_sparse = sparse_environments.size();
     int n_kernels = kernels.size();
 
@@ -725,7 +725,7 @@ void SparseGP::write_beta(std::string file_name, std::string contributor,
 }
 
 Eigen::VectorXd SparseGP::predict(const StructureDescriptor & test_structure){
-    int n_atoms = test_structure.noa;
+    int n_atoms = test_structure.nat;
     int n_out = 1 + 3 * n_atoms + 6;
     int n_sparse = sparse_environments.size();
     int n_kernels = kernels.size();
