@@ -14,11 +14,14 @@ void AddStructureModule(py::module m) {
         .def(py::init<const Eigen::MatrixXd &,
                       const std::vector<int> &,
                       const Eigen::MatrixXd &>())
-        .def_readwrite("cell", &Structure::cell)
-        .def_readwrite("species", &Structure::species)          
-        .def_readwrite("positions", &Structure::positions)
-        .def_readwrite("cell_transpose", &Structure::cell_transpose)
-        .def_readwrite("wrapped_positions", &Structure::wrapped_positions)
-        .def_readwrite("volume", &Structure::volume)
-        .def("wrap_positions", &Structure::wrap_positions);
+        .def_property("cell", &Structure::get_cell, &Structure::set_cell)
+        .def_property("positions", &Structure::get_positions,
+                      &Structure::set_positions);
+        // .def_readwrite("cell", &Structure::cell)
+        // .def_readwrite("species", &Structure::species)          
+        // .def_readwrite("positions", &Structure::positions)
+        // .def_readwrite("cell_transpose", &Structure::cell_transpose)
+        // .def_readwrite("wrapped_positions", &Structure::wrapped_positions)
+        // .def_readwrite("volume", &Structure::volume)
+        // .def("wrap_positions", &Structure::wrap_positions);
 }

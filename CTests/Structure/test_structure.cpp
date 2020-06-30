@@ -48,11 +48,14 @@ TEST_F(StructureTest, TestWrapped){
 
     // Take positions minus wrapped positions.
     Eigen::MatrixXd wrap_diff =
-        test_struc.positions - test_struc.wrapped_positions;
+        test_struc.get_positions() - test_struc.get_wrapped_positions();
     
+    Eigen::MatrixXd cell = test_struc.get_cell();
+    Eigen::MatrixXd cell_dot_inverse = 
+        (cell * cell.transpose()).inverse();
+
     Eigen::MatrixXd wrap_rel =
-        (wrap_diff * test_struc.cell_transpose) *
-        test_struc.cell_dot_inverse;
+        (wrap_diff * cell.transpose()) * cell_dot_inverse;
 
     // Check that it maps to the origin under lattice translations.
     Eigen::MatrixXd check_lat =

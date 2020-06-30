@@ -5,26 +5,37 @@
 #include <Eigen/Dense>
 
 #include "Descriptor/descriptor.h"
+class LocalEnvironment;
 
 // Structure class.
 class Structure{
-    public:
-        Eigen::MatrixXd cell, cell_transpose, cell_transpose_inverse,
-                        cell_dot, cell_dot_inverse, positions,
-                        wrapped_positions;
-        std::vector<int> species;
-        double max_cutoff, volume;
-        int noa;
+    friend class LocalEnvironment;
 
+    Eigen::MatrixXd cell, cell_transpose, cell_transpose_inverse,
+        cell_dot, cell_dot_inverse, positions, wrapped_positions;
+
+    public:
         Structure();
 
         Structure(const Eigen::MatrixXd & cell,
                   const std::vector<int> & species,
                   const Eigen::MatrixXd & positions);
 
-        Eigen::MatrixXd wrap_positions();
+        // Cell setter and getter.
+        void set_cell(const Eigen::MatrixXd & cell);
+        const Eigen::MatrixXd & get_cell();
 
+        // Position setter and getter.
+        void set_positions(const Eigen::MatrixXd & positions);
+        const Eigen::MatrixXd & get_positions();
+        const Eigen::MatrixXd & get_wrapped_positions();
+
+        Eigen::MatrixXd wrap_positions();
         double get_max_cutoff();
+
+        std::vector<int> species;
+        double max_cutoff, volume;
+        int noa;
 };
 
 // Structure descriptor. Stores the atomic environments in a structure.

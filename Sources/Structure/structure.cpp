@@ -8,22 +8,39 @@ Structure :: Structure(){}
 Structure :: Structure(const Eigen::MatrixXd & cell,
                        const std::vector<int> & species,
                        const Eigen::MatrixXd & positions){
-    // Set cell, species, and positions.
-    this->cell = cell;
-    this->species = species;
-    this->positions = positions;
-    max_cutoff = get_max_cutoff();
-    volume = abs(cell.determinant());
-    noa = species.size();
 
+    // Set cell, species, and positions.
+    set_cell(cell);
+    set_positions(positions);
+    this->species = species;
+    max_cutoff = get_max_cutoff();
+    noa = species.size();
+}
+
+void Structure :: set_cell(const Eigen::MatrixXd & cell){
+    this->cell = cell;
     cell_transpose = cell.transpose();
     cell_transpose_inverse = cell_transpose.inverse();
     cell_dot = cell * cell_transpose;
     cell_dot_inverse = cell_dot.inverse();
+    volume = abs(cell.determinant());
+}
 
-    // Store wrapped positions.
+const Eigen::MatrixXd & Structure :: get_cell(){
+    return cell;
+}
+
+void Structure :: set_positions(const Eigen::MatrixXd & positions){
+    this->positions = positions;
     this->wrapped_positions = wrap_positions();
+}
 
+const Eigen::MatrixXd & Structure :: get_positions(){
+    return positions;
+}
+
+const Eigen::MatrixXd & Structure::get_wrapped_positions(){
+    return wrapped_positions;
 }
 
 Eigen::MatrixXd Structure :: wrap_positions(){
@@ -131,7 +148,7 @@ StructureDescriptor :: StructureDescriptor(const Eigen::MatrixXd & cell,
 }
 
 void StructureDescriptor :: compute_environments(){
-    int noa = species.size();
+    // int noa = species.size();
     LocalEnvironment env;
 
     for (int i = 0; i < noa; i ++){
@@ -141,7 +158,7 @@ void StructureDescriptor :: compute_environments(){
 }
 
 void StructureDescriptor :: compute_nested_environments(){
-    int noa = species.size();
+    // int noa = species.size();
     LocalEnvironment env;
 
     for (int i = 0; i < noa; i ++){
@@ -151,7 +168,7 @@ void StructureDescriptor :: compute_nested_environments(){
 }
 
 void StructureDescriptor :: compute_descriptors(){
-    int noa = species.size();
+    // int noa = species.size();
     LocalEnvironment env;
 
     for (int i = 0; i < noa; i ++){
@@ -163,7 +180,7 @@ void StructureDescriptor :: compute_descriptors(){
 }
 
 void StructureDescriptor :: nested_descriptors(){
-    int noa = species.size();
+    // int noa = species.size();
     LocalEnvironment env;
 
     for (int i = 0; i < noa; i ++){
