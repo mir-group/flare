@@ -17,7 +17,7 @@ before_install:
       v7.1.0/cp2k-7.1-Linux-x86_64.sopt"
     - chmod u+x lmp
     - chmod u+x cp2k-7.1-Linux-x86_64.sopt
-    - pip install -r requirements.txt
+    - pip install .
 
 script:
     - pwd
