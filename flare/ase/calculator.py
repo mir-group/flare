@@ -40,12 +40,11 @@ class FLARE_Calculator(Calculator):
         self.par = par
         self.results = {}
 
-    def get_property(self, name, atoms=None, allow_calculation=True,
-                     structure=None):
+    def get_property(self, name, atoms=None, allow_calculation=True):
         if name not in self.results.keys():
             if not allow_calculation:
                 return None
-            self.calculate(atoms, structure)
+            self.calculate(atoms)
         return self.results[name]
 
     def get_potential_energy(self, atoms=None, force_consistent=False):
@@ -57,43 +56,38 @@ class FLARE_Calculator(Calculator):
     def get_stress(self, atoms):
         return self.get_property('stress', atoms)
 
-    def calculate(self, atoms, structure):
+    def calculate(self, atoms):
         '''
         Calculate properties including: energy, local energies, forces,
             stress, uncertainties.
 
-        :param atoms: ASE Atoms object
-        :type atoms: Atoms
+        Args:
+            atoms (FLARE_Atoms): FLARE_Atoms object
         '''
 
-        # If a structure isn't given, create one based on the atoms object.
-        if structure is None:
-            structure = Structure(
-                np.array(atoms.cell), atoms.get_atomic_numbers(),
-                atoms.positions)
-
         if self.use_mapping:
-            if self.par:
-                self.calculate_mgp_par(atoms, structure)
-            else:
-                self.calculate_mgp_serial(atoms, structure)
+            self.calculate_mgp(atoms)
         else:
-            self.calculate_gp(atoms, structure)
+            self.calculate_gp(atoms)
 
-    def calculate_gp(self, atoms, structure):
-        # Compute energy, forces, and stresses and their uncertainties, and
-        # write them to the structure object.
+    def calculate_gp(self, atoms):
+        # Compute energy, forces, and stresses and their uncertainties
         if self.par:
-            _ = predict_on_structure_efs_par(structure, self.gp_model)
+            res = predict_on_structure_efs_par(atoms, self.gp_model,
+                    write_to_structure=False)
         else:
-            _ = predict_on_structure_efs(structure, self.gp_model)
+            res = predict_on_structure_efs(atoms, self.gp_model,
+                    write_to_structure=False)
 
         # Set the energy, force, and stress attributes of the calculator.
-        self.results['energy'] = structure.potential_energy
-        self.results['forces'] = structure.forces
-        self.results['stress'] = structure.stress
+        res_name = ['local_energies', 'forces', 'partial_stresses', \
+                'local_energy_stds', 'force_stds', 'partial_stress_stds']
+        res_dims = [1, 3, 6, 1, 3, 6]
+        for i in range(len(res_name)):
+            assert res[i].shape[1] = res_dims[i], "shape doesn't match"
+            self.results[res_name[i]] = res[i]
 
-    def calculate_mgp_serial(self, atoms, structure):
+    def calculate_mgp(self, atoms):
         nat = len(atoms)
 
         self.results['forces'] = np.zeros((nat, 3))
@@ -101,38 +95,59 @@ class FLARE_Calculator(Calculator):
         stds = np.zeros((nat, 3))
         local_energies = np.zeros(nat)
 
+        rebuild_list = []
+        new_bound_list = []
+        repredict_atoms = []
         for n in range(nat):
             chemenv = AtomicEnvironment(
-                structure, n, self.gp_model.cutoffs,
+                atoms, n, self.gp_model.cutoffs,
                 cutoffs_mask=self.mgp_model.hyps_mask)
 
             # TODO: Check that stress is being calculated correctly.
             try:
                 f, v, vir, e = self.mgp_model.predict(chemenv)
-            except ValueError: # if lower_bound error is raised
+                self.results['forces'][n] = f
+                self.results['partial_stresses'][n] = vir
+                self.results['stds'][n] = np.sqrt(np.absolute(v))
+                self.results['local_energies'][n] = e
+
+            except ValueError as err_msg: # if lower_bound error is raised
                 warnings.warn('Re-build map with a new lower bound')
-                self.mgp_model.build_map(self.gp_model)
+                map_name = (err_msg.args[0], err_msg.args[1])
+                min_dist = err_msg.args[2]
+                if map_name in rebuild_list:
+                    remap_ind = rebuild_list.index(map_name)
+                    if min_dist < new_bound_list[remap_ind]:
+                        new_bound_list[remap_ind] = min_dist
+                else:
+                    rebuild_list.append(map_name)
+                    new_bound_list.append(min_dist)
+                repredict_atoms.append((n, chemenv))
+
+        if len(rebuild_list) > 0: 
+            # rebuild map for those problematic species
+            for rl in range(len(rebuild_list)):
+                kernel_name, spc = rebuild_list[rl]
+                map_ind = self.mgp_model.maps[kernel_name].find_map_index(spc)
+                rebuild_map = self.mgp_model.maps[kernel_name].maps[map_ind]
+                rebuild_map.set_bounds(new_bound_list[rl], rebuild_map.bounds[1])
+                rebuild_map.build_map(self.gp_model)
+
+            # re-predict forces, energies, etc. for those problematic atoms
+            for ra in repredict_atoms:
+                n, chemenv = ra
                 f, v, vir, e = self.mgp_model.predict(chemenv)
+                self.results['forces'][n] = f
+                self.results['partial_stresses'][n] = vir
+                self.results['stds'][n] = np.sqrt(np.absolute(v))
+                self.results['local_energies'][n] = e
 
-            self.results['forces'][n] = f
-            partial_stresses[n] = vir
-            stds[n] = np.sqrt(np.absolute(v))
-            local_energies[n] = e
-
+        # get global properties
         volume = atoms.get_volume()
         total_stress = np.sum(partial_stresses, axis=0)
         self.results['stress'] = total_stress / volume
         self.results['energy'] = np.sum(local_energies)
 
-        # Record structure attributes.
-        structure.local_energies = local_energies
-        structure.forces = np.copy(self.results['forces'])
-        structure.partial_stresses = partial_stresses
-        structure.stds = stds
-
-    def calculate_mgp_par(self, atoms, structure):
-        # TODO: to be done
-        self.calculate_mgp_serial(atoms, structure)
 
     def calculation_required(self, atoms, quantities):
         return True

@@ -119,12 +119,6 @@ class MapXbody:
         if len(atom_env.bond_array_2) == 0:
             return f_spcs, vir_spcs, kern, v_spcs, e_spcs   
 
-        min_dist = atom_env.bond_array_2[0][0]
-        lower_bound = np.max(self.maps[0].bounds[0][0])
-        if min_dist < lower_bound:
-            raise ValueError(f'The minimal distance {min_dist:.3f} is below the'
-                f' mgp lower bound {lower_bound:.3f}')
-
         force_kernel, en_kernel, _, cutoffs, hyps, hyps_mask = self.kernel_info
 
         args = from_mask_to_args(hyps, cutoffs, hyps_mask)
@@ -634,6 +628,12 @@ class SingleMapXbody:
 
         assert map_force == self.map_force, f'The mapping is built for'\
             'map_force={self.map_force}, can not predict for map_force={map_force}'
+
+        min_dist = np.min(lengths) 
+        if min_dist < np.max(self.bounds[0][0]):
+            raise ValueError(self.kernel_name, self.species, min_dist,\
+                    f'The minimal distance {min_dist:.3f}'\
+                    f' is below the mgp lower bound {lower_bound:.3f}')
 
         lengths = np.array(lengths)
         xyzs = np.array(xyzs)
