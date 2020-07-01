@@ -128,6 +128,7 @@ set(PYBIND_SOURCES
 
 # Include sources.
 include_directories(Sources)
+find_package(Eigen3 REQUIRED)
 
 # Create shared library for unit tests.
 add_library(flare SHARED ${FLARE_SOURCES})
