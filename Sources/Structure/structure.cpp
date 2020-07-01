@@ -1,5 +1,6 @@
 #include "Structure/structure.h"
 #include "Environment/local_environment.h"
+#include "element_coder.h"
 #include <cmath>
 #include <iostream>
 
@@ -7,6 +8,46 @@ Structure :: Structure(){}
 
 Structure::Structure(const Eigen::MatrixXd & cell,
     const std::vector<int> & species, const Eigen::MatrixXd & positions,
+    const std::unordered_map<int, double> & mass_dict,
+    const Eigen::MatrixXd & prev_positions,
+    const std::vector<std::string> & species_labels){
+
+    set_structure(cell, species, positions, mass_dict, prev_positions,
+        species_labels);
+}
+
+Structure::Structure(const Eigen::MatrixXd & cell,
+    const std::vector<std::string> & species,
+    const Eigen::MatrixXd & positions,
+    const std::unordered_map<int, double> & mass_dict,
+    const Eigen::MatrixXd & prev_positions,
+    const std::vector<std::string> & species_labels){
+
+    // Convert strings to integers.
+    std::vector<int> coded_species;
+    for (int n = 0; n < species.size(); n ++){
+        coded_species.push_back(_element_to_Z[species[n]]);
+    }
+
+    // Set species labels.
+    std::vector<std::string> label_input;
+    if (species_labels.size() == 0){
+        label_input = species;
+    }
+    else{
+        label_input = species_labels;
+    }
+
+    // Call main constructor.
+    // TODO: This doesn't work; need to make a set_structure method that can
+    // be called by both.
+    set_structure(cell, coded_species, positions, mass_dict, prev_positions,
+        label_input);
+}
+
+void Structure::set_structure(const Eigen::MatrixXd & cell,
+    const std::vector<int> & species,
+    const Eigen::MatrixXd & positions,
     const std::unordered_map<int, double> & mass_dict,
     const Eigen::MatrixXd & prev_positions,
     const std::vector<std::string> & species_labels){
@@ -21,6 +62,16 @@ Structure::Structure(const Eigen::MatrixXd & cell,
     // Set mass dictionary.
     this->mass_dict = mass_dict;
 
+    // Set species labels.
+    if (species_labels.size() == 0){
+        for(int n = 0; n < nat; n ++){
+            this->species_labels.push_back(std::to_string(species[n]));
+        }
+    }
+    else{
+        this->species_labels = species_labels;
+    }
+
     // Set previous positions.
     if (prev_positions.rows() == 0){
         this->prev_positions = positions;
@@ -29,6 +80,9 @@ Structure::Structure(const Eigen::MatrixXd & cell,
         this->prev_positions = prev_positions;
     }
 
+    // Initialize forces and stds to zero.
+    forces = Eigen::MatrixXd::Zero(nat, 3);
+    stds = Eigen::MatrixXd::Zero(nat, 3);
 }
 
 void Structure :: set_cell(const Eigen::MatrixXd & cell){

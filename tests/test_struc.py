@@ -58,14 +58,15 @@ def test_raw_to_relative():
     species = ['Al'] * len(positions)
 
     test_struc = Structure(cell, species, positions)
-    rel_vals = test_struc.raw_to_relative(test_struc.positions,
-                                          test_struc.cell_transpose,
-                                          test_struc.cell_dot_inverse)
+
+    cell_dot_inverse = np.linalg.inv(np.matmul(cell, cell.transpose()))
+    rel_vals = \
+        np.matmul(np.matmul(positions, cell.transpose()), cell_dot_inverse)
 
     ind = np.random.randint(0, noa)
-    assert (np.isclose(positions[ind], rel_vals[ind, 0] * test_struc.vec1 +
-                       rel_vals[ind, 1] * test_struc.vec2 +
-                       rel_vals[ind, 2] * test_struc.vec3).all())
+    assert (np.isclose(positions[ind], rel_vals[ind, 0] * test_struc.cell[0] +
+                       rel_vals[ind, 1] * test_struc.cell[1] +
+                       rel_vals[ind, 2] * test_struc.cell[2]).all())
 
 
 def test_wrapped_coordinates():
@@ -77,11 +78,12 @@ def test_wrapped_coordinates():
     species = ['Al'] * len(positions)
 
     test_struc = Structure(cell, species, positions)
-
     wrap_diff = test_struc.positions - test_struc.wrapped_positions
-    wrap_rel = test_struc.raw_to_relative(wrap_diff,
-                                          test_struc.cell_transpose,
-                                          test_struc.cell_dot_inverse)
+
+    cell_dot_inverse = np.linalg.inv(np.matmul(cell, cell.transpose()))
+
+    wrap_rel = \
+        np.matmul(np.matmul(wrap_diff, cell.transpose()), cell_dot_inverse)
 
     assert (np.isclose(np.round(wrap_rel) - wrap_rel,
                        np.zeros(positions.shape)).all())
@@ -165,7 +167,7 @@ def test_from_pmg_structure():
     assert len(new_struc) == 1
 
     assert np.equal(new_struc.positions, np.array([.25, .5, 0])).all()
-    assert new_struc.coded_species == [1]
+    assert new_struc.species == [1]
     assert new_struc.species_labels[0] == 'H'
     assert np.equal(new_struc.forces, np.array([1., 1., 1.])).all()
 
@@ -182,7 +184,7 @@ def test_from_pmg_structure():
     assert len(new_struc) == 1
 
     assert np.equal(new_struc.positions, np.array([.25, .5, 0])).all()
-    assert new_struc.coded_species == [1]
+    assert new_struc.species == [1]
     assert new_struc.species_labels[0] == 'H'
     assert np.equal(new_struc.forces, np.array([1., 1., 1.])).all()
 
@@ -193,7 +195,8 @@ def test_to_pmg_structure(varied_test_struc):
     new_struc = Structure.to_pmg_structure(varied_test_struc)
     assert len(varied_test_struc) == len(varied_test_struc)
     assert np.equal(new_struc.cart_coords, varied_test_struc.positions).all()
-    assert (new_struc.atomic_numbers == varied_test_struc.coded_species).all()
+    assert (list(new_struc.atomic_numbers) == varied_test_struc.species)
+
 
 def test_to_xyz(varied_test_struc):
 
