@@ -126,12 +126,7 @@ class OTF:
             self.dft_module = force_source
 
         # parse input file
-        positions, species, cell, masses = \
-            self.dft_module.parse_dft_input(self.dft_input)
-
-        self.structure = struc.Structure(
-            cell=cell, species=species, positions=positions, mass_dict=masses,
-            prev_positions=prev_pos_init, species_labels=species)
+        self.get_structure_from_input(prev_pos_init)
 
         self.noa = self.structure.positions.shape[0]
         self.atom_list = list(range(self.noa))
@@ -263,6 +258,14 @@ class OTF:
 
         if self.write_model >= 1:
             self.gp.write_model(self.output_name+"_model")
+
+    def get_structure_from_input(self, prev_pos_init):
+        positions, species, cell, masses = \
+            self.dft_module.parse_dft_input(self.dft_input)
+
+        self.structure = struc.Structure(
+            cell=cell, species=species, positions=positions, mass_dict=masses,
+            prev_positions=prev_pos_init, species_labels=species)
 
     def initialize_train(self):
         # call dft and update positions
