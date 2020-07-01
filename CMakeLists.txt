@@ -138,7 +138,7 @@ target_link_libraries(flare_module PRIVATE pybind11)
 set_target_properties(flare_module PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}"
                                               SUFFIX "${PYTHON_MODULE_EXTENSION}")
 
-add_dependencies(flare_module pybind11_project)
+add_dependencies(flare_module eigen_project pybind11_project)
 set_target_properties(flare_module PROPERTIES OUTPUT_NAME "_C_flare")
 
 # Add test directory.
