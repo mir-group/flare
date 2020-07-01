@@ -134,7 +134,7 @@ add_library(flare SHARED ${FLARE_SOURCES})
 
 # Create pybind module.
 add_library(flare_module SHARED ${FLARE_SOURCES} ${PYBIND_SOURCES})
-target_link_libraries(flare_module PRIVATE pybind11)
+target_link_libraries(flare_module PRIVATE pybind11 Eigen3)
 set_target_properties(flare_module PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}"
                                               SUFFIX "${PYTHON_MODULE_EXTENSION}")
 
