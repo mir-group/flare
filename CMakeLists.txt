@@ -74,8 +74,10 @@ ExternalProject_Add(
     INSTALL_COMMAND ""
 )
 ExternalProject_Get_Property(eigen_project SOURCE_DIR)
-add_library(Eigen3 INTERFACE)
-target_include_directories(Eigen3 SYSTEM INTERFACE ${SOURCE_DIR})
+add_library(Eigen3 STATIC IMPORTED)
+message(${SOURCE_DIR})
+include_directories(${SOURCE_DIR})
+# target_include_directories(Eigen3 SYSTEM INTERFACE ${SOURCE_DIR})
 
 # pybind11
 ###############################################################################
@@ -128,14 +130,13 @@ set(PYBIND_SOURCES
 
 # Include sources.
 include_directories(Sources)
-find_package(Eigen3 REQUIRED)
 
 # Create shared library for unit tests.
 add_library(flare SHARED ${FLARE_SOURCES})
 
 # Create pybind module.
 add_library(flare_module SHARED ${FLARE_SOURCES} ${PYBIND_SOURCES})
-target_link_libraries(flare_module PRIVATE pybind11 Eigen3)
+target_link_libraries(flare_module PRIVATE pybind11)
 set_target_properties(flare_module PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}"
                                               SUFFIX "${PYTHON_MODULE_EXTENSION}")
 
