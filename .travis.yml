@@ -21,6 +21,10 @@ before_install:
 
 script:
     - pwd
+    - ls
+    - cd flare
+    - ls
+    - cd ..
     - cd tests
     - ls test_files
     - PWSCF_COMMAND=pw.x
