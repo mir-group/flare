@@ -11,9 +11,8 @@ from flare.kernels.cutoffs import quadratic_cutoff
 from flare.kernels.utils import str_to_kernel_set
 from flare.parameters import Parameters
 
-import flare.mgp.grid_kernels_2b as gk2b
-import flare.mgp.grid_kernels_3b as gk3b
-
+from flare.mgp import grid_kernels_2b
+from flare.mgp import grid_kernels_3b
 
 
 def str_to_mapped_kernel(name: str, component: str = "mc",
@@ -56,14 +55,14 @@ def str_to_mapped_kernel(name: str, component: str = "mc",
 
     if b3:
          if multihyps:
-             return gk3b.grid_kernel_sephyps, None, gk3b.self_kernel_sephyps, None, None, None, None
+             return grid_kernels_3b.grid_kernel_sephyps, None, grid_kernels_3b.self_kernel_sephyps, None, None, None, None
          else:
-             return gk3b.grid_kernel, None, gk3b.self_kernel, None, None, None, None
+             return grid_kernels_3b.grid_kernel, None, grid_kernels_3b.self_kernel, None, None, None, None
     elif b2:
         if multihyps:
-            return gk2b.grid_kernel_sephyps, None, gk2b.self_kernel_sephyps, None, None, None, None
+            return grid_kernels_2b.grid_kernel_sephyps, None, grid_kernels_2b.self_kernel_sephyps, None, None, None, None
         else:
-            return gk2b.grid_kernel, None, gk2b.self_kernel, None, None, None, None
+            return grid_kernels_2b.grid_kernel, None, grid_kernels_2b.self_kernel, None, None, None, None
     else:
         warnings.warn('The mapped kernel for many-body is not implemented.')
         return None
