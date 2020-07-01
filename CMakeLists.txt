@@ -74,10 +74,8 @@ ExternalProject_Add(
     INSTALL_COMMAND ""
 )
 ExternalProject_Get_Property(eigen_project SOURCE_DIR)
-add_library(Eigen3 STATIC IMPORTED)
-message(${SOURCE_DIR})
-include_directories(${SOURCE_DIR})
-# target_include_directories(Eigen3 SYSTEM INTERFACE ${SOURCE_DIR})
+add_library(Eigen3 INTERFACE)
+target_include_directories(Eigen3 SYSTEM INTERFACE ${SOURCE_DIR})
 
 # pybind11
 ###############################################################################
