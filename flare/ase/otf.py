@@ -16,11 +16,10 @@ from ase.md.verlet import VelocityVerlet
 from ase.md.langevin import Langevin
 from ase import units
 
-from flare.struc import Structure
-from flare.gp import GaussianProcess
 from flare.otf import OTF
 from flare.utils.learner import is_std_in_bound
 
+from flare.ase.atoms import FLARE_Atoms
 from flare.ase.calculator import FLARE_Calculator
 import flare.ase.dft as dft_source 
 
@@ -107,7 +106,7 @@ class ASE_OTF(OTF):
         self.md = MD(atoms=atoms, timestep=timestep, trajectory=trajectory,
                      **md_kwargs)
 
-        self.atoms = atoms
+        self.atoms = FLARE_Atoms.from_ase_atoms(atoms)
         force_source = dft_source
         self.flare_calc = self.atoms.calc
 
@@ -118,6 +117,9 @@ class ASE_OTF(OTF):
             dt=flare_dt, number_of_steps=number_of_steps,
             gp=self.flare_calc.gp_model, force_source=force_source,
             dft_loc=dft_calc, dft_input=self.atoms, **otf_kwargs)
+
+    def get_structure_from_input(self):
+        self.structure = self.atoms 
 
     def initialize_train(self):
         super().initialize_train()

@@ -6,10 +6,12 @@ from copy import deepcopy
 
 import numpy as np
 from ase import Atoms
+from flare.utils.learner import get_max_cutoff
 
-class AtomsStruc(Atoms):
+class FLARE_Atoms(Atoms):
     '''
-    The `OTF_Atoms` class is a child class of ASE `Atoms`, 
+    The `FLARE_Atoms` class is a child class of ASE `Atoms`, 
+    which has completely the same usage as the primitive ASE `Atoms`, and
     in the meanwhile mimic `Structure` class. It is used in the `OTF` module
     with ASE engine (by `OTF_ASE` module). It enables attributes to be 
     obtained by both the name from ASE `Atoms` and `Structure`.
@@ -19,9 +21,11 @@ class AtomsStruc(Atoms):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        
+        self.prev_positions = np.zeros_like(self.positions)
 
-    # TODO: See otf.py and output.py to add more properties
+    @static
+    def from_ase_atoms(atoms):
+        return FLARE_Atoms(**atoms.__dict__)
 
     @property
     def nat(self):
@@ -40,7 +44,7 @@ class AtomsStruc(Atoms):
         return self.atoms.calc.get_forces()
 
     @property
-    def energy(self):
+    def potential_energy(self):
         return self.atoms.calc.get_potential_energy()
 
     @property
@@ -48,5 +52,24 @@ class AtomsStruc(Atoms):
         return self.atoms.calc.get_stress()
 
     @property
+    def stress_stds(self):
+        raise NotImplementedError
+
+    @property
+    def local_energy_stds(self):
+        raise NotImplementedError
+
+    @property
     def stds(self):
         return self.atoms.calc.get_uncertainties()  
+
+    def wrap_positions(self):
+        return self.get_positions(wrap=True)
+
+    @property
+    def wrapped_positions(self):
+        return self.get_positions(wrap=True)
+
+    @property
+    def max_cutoff(self):
+        return get_max_cutoff(self.cell)
