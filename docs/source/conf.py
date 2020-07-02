@@ -18,7 +18,8 @@ sys.path.append('../..')
 #sys.path.append('../../flare')
 #sys.path.append('../../flare/mgp')
 #sys.path.append('../../flare/ase')
-autodoc_mock_imports = ["numpy", "scipy", "numba", "pymatgen", "ase"]
+autodoc_mock_imports = ["numpy", "scipy", "numba", "pymatgen", "ase",
+                        "flare._C_flare"]
 
 import sphinx_rtd_theme
 
