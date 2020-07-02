@@ -27,21 +27,21 @@ input coordinates don't need to lie inside the box.
         as values. The format of the species keyword should match the format 
         of the species input. For example, if the species are given as strings,
         mass_dict might take the form {'H': 1.0, 'He': 2.0}.
-    :type mass_dict: dict
-    :param prev_positions: (Optional) Nx3 array of previous atomic coordinates
+    :type mass_dict: dict, optional
+    :param prev_positions: Nx3 array of previous atomic coordinates
         used in MD simulations. If not specified, prev_positions is set equal
         to the positions input.
-    :type prev_positions: np.ndarray
-    :param species_labels: (Optional) List of chemical symbols used in the
+    :type prev_positions: np.ndarray, optional
+    :param species_labels: List of chemical symbols used in the
         output file of on-the-fly runs. If not specified, species_labels is
         set equal to the species input.
-    :type species_labels: List[str]
+    :type species_labels: List[str], optional
 
-    ..py:method:: positions()
+    .. py:method:: positions()
         :property:
-    ..py:method:: cell()
+    .. py:method:: cell()
         :property:
-    ..py:attribute:: coded_species
+    .. py:attribute:: coded_species
 
 Python methods
 --------------
