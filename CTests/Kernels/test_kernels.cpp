@@ -106,7 +106,7 @@ TEST_F(KernelTest, EnvForceTest){
     // Compute descriptors of environment 1.
     env_bare_1.compute_descriptors();
 
-    for (int atom2 = 0; atom2 < struc_bare_2.species.size(); atom2 ++){
+    for (int atom2 = 0; atom2 < struc_bare_2.coded_species.size(); atom2 ++){
         env_bare_2 = LocalEnvironment(struc_bare_2, atom2, cutoff,
             many_body_cutoffs, descriptor_calculators);
         // Compute neighbor descriptors of environment 2.

@@ -25,7 +25,7 @@ from flare.gp_algebra import get_like_grad_from_mats, \
         get_Ky_mat, update_force_block, update_energy_block, \
         update_force_energy_block, efs_kern_vec
 
-from tests.fake_gp import get_tstp
+from fake_gp import get_tstp
 
 
 @pytest.fixture(scope='module')

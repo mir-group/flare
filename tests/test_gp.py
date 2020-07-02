@@ -17,7 +17,7 @@ import flare.kernels.sc as en
 import flare.kernels.mc_simple as mc_simple
 from flare.otf_parser import OtfAnalysis
 
-from .fake_gp import generate_hm, get_tstp, get_random_structure
+from fake_gp import generate_hm, get_tstp, get_random_structure
 from copy import deepcopy
 multihyps_list = [True, False]
 

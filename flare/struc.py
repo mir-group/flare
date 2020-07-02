@@ -30,7 +30,7 @@ def indices_of_specie(self, specie: Union[int, str]) -> List[int]:
     :return: The indices in the structure at which this element occurs
     :rtype: List[str]
     """
-    return [i for i, spec in enumerate(self.species)
+    return [i for i, spec in enumerate(self.coded_species)
             if spec == specie]
 
 
@@ -65,7 +65,7 @@ def as_dict(self) -> dict:
     :rtype: dict
     """
     return {'positions': self.positions, 'cell': self.cell,
-            'species': self.species, 'mass_dict': self.mass_dict,
+            'species': self.coded_species, 'mass_dict': self.mass_dict,
             'prev_positions': self.prev_positions,
             'species_labels': self.species_labels,
             'forces': self.forces, 'stds': self.stds}
@@ -194,9 +194,9 @@ def to_xyz(self, extended_xyz: bool = True, print_stds: bool = False,
     :param write_file:
     :return:
     """
-    species_list = [Z_to_element(x) for x in self.species]
+    species_list = [Z_to_element(x) for x in self.coded_species]
     xyz_str = ''
-    xyz_str += f'{len(self.species)} \n'
+    xyz_str += f'{len(self.coded_species)} \n'
 
     # Add header line with info about lattice and properties if extended
     #  xyz option is called.

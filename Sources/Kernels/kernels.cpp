@@ -1928,7 +1928,7 @@ Eigen::VectorXd DotProductKernel :: env_env_force(
 
     // Compute force kernel (3-element vector)
     for (int n = 0; n < n_neighbors; n ++){
-        env_spec = env2.structure.species[env2.neighbor_list[n]];
+        env_spec = env2.structure.coded_species[env2.neighbor_list[n]];
         if (env_spec != env1.central_species){
             continue;
         }

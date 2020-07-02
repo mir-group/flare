@@ -51,17 +51,17 @@ class Structure{
 
         // Cell setter and getter.
         void set_cell(const Eigen::MatrixXd & cell);
-        const Eigen::MatrixXd & get_cell();
+        const Eigen::MatrixXd & get_cell() const;
 
         // Position setter and getter.
         void set_positions(const Eigen::MatrixXd & positions);
-        const Eigen::MatrixXd & get_positions();
+        const Eigen::MatrixXd & get_positions() const;
         const Eigen::MatrixXd & get_wrapped_positions();
 
         Eigen::MatrixXd wrap_positions();
         double get_max_cutoff();
 
-        std::vector<int> species;
+        std::vector<int> coded_species;
         std::vector<std::string> species_labels;
         std::unordered_map<int, double> mass_dict;
         Eigen::MatrixXd prev_positions, forces, stds;

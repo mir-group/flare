@@ -55,7 +55,7 @@ void Structure::set_structure(const Eigen::MatrixXd & cell,
     // Set cell, species, and positions.
     set_cell(cell);
     set_positions(positions);
-    this->species = species;
+    this->coded_species = species;
     max_cutoff = get_max_cutoff();
     nat = species.size();
 
@@ -94,7 +94,7 @@ void Structure :: set_cell(const Eigen::MatrixXd & cell){
     volume = abs(cell.determinant());
 }
 
-const Eigen::MatrixXd & Structure :: get_cell(){
+const Eigen::MatrixXd & Structure :: get_cell() const{
     return cell;
 }
 
@@ -103,7 +103,7 @@ void Structure :: set_positions(const Eigen::MatrixXd & positions){
     this->wrapped_positions = wrap_positions();
 }
 
-const Eigen::MatrixXd & Structure :: get_positions(){
+const Eigen::MatrixXd & Structure :: get_positions() const{
     return positions;
 }
 

@@ -71,7 +71,7 @@ TEST_F(StructureTest, TestWrapped){
 TEST_F(StructureTest, StructureDescriptor){
     // Check that structure descriptors match environment descriptors.
     LocalEnvironment env;
-    for (int i = 0; i < test_struc.species.size(); i ++){
+    for (int i = 0; i < test_struc.coded_species.size(); i ++){
         env = LocalEnvironment(test_struc, i, cutoff, many_body_cutoffs,
             descriptor_calculators);
         desc1.compute(env);
@@ -80,7 +80,7 @@ TEST_F(StructureTest, StructureDescriptor){
             EXPECT_EQ(desc1.descriptor_vals(j),
                       test_struc.local_environments[i]
                         .descriptor_vals[0](j));
-            for (int k = 0; k < test_struc.species.size(); k ++){
+            for (int k = 0; k < test_struc.coded_species.size(); k ++){
                 EXPECT_EQ(desc1.descriptor_force_dervs(k, j),
                           test_struc.local_environments[i]
                             .descriptor_force_dervs[0](k, j));

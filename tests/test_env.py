@@ -1,7 +1,7 @@
 import pytest
 import numpy as np
 
-from copy import deepcopy
+from copy import deepcopy, copy
 from flare.struc import Structure
 from flare.env import AtomicEnvironment
 
@@ -100,7 +100,7 @@ def test_backwards_compatibility(structure, mask, cutoff, result):
     else:
         mask = None
 
-    env_test = deepcopy(AtomicEnvironment(structure,
+    env_test = copy(AtomicEnvironment(structure,
                                  atom=0,
                                  cutoffs=cutoff,
                                  cutoffs_mask=mask))

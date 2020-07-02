@@ -11,7 +11,7 @@ from flare.predict import predict_on_structure_par, \
     predict_on_atom, predict_on_atom_en, \
     predict_on_structure_par_en
 
-from .fake_gp import generate_hm, get_tstp, get_random_structure
+from fake_gp import generate_hm, get_tstp, get_random_structure
 from flare.predict import predict_on_structure, predict_on_structure_par, \
     predict_on_structure_efs, predict_on_structure_efs_par
 import pytest

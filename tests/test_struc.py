@@ -2,7 +2,7 @@ import pytest
 import numpy as np
 import os
 
-from tests.test_gp import get_random_structure
+from test_gp import get_random_structure
 from flare.struc import Structure
 from json import loads, dumps
 from flare.utils.element_coder import Z_to_element, NumpyEncoder
@@ -12,7 +12,7 @@ try:
 except ImportError:
     _test_pmg = False
 
-from .test_gp import dumpcompare
+from test_gp import dumpcompare
 
 
 def test_random_structure_setup():
@@ -167,7 +167,7 @@ def test_from_pmg_structure():
     assert len(new_struc) == 1
 
     assert np.equal(new_struc.positions, np.array([.25, .5, 0])).all()
-    assert new_struc.species == [1]
+    assert new_struc.coded_species == [1]
     assert new_struc.species_labels[0] == 'H'
     assert np.equal(new_struc.forces, np.array([1., 1., 1.])).all()
 
@@ -184,7 +184,7 @@ def test_from_pmg_structure():
     assert len(new_struc) == 1
 
     assert np.equal(new_struc.positions, np.array([.25, .5, 0])).all()
-    assert new_struc.species == [1]
+    assert new_struc.coded_species == [1]
     assert new_struc.species_labels[0] == 'H'
     assert np.equal(new_struc.forces, np.array([1., 1., 1.])).all()
 
@@ -195,7 +195,7 @@ def test_to_pmg_structure(varied_test_struc):
     new_struc = Structure.to_pmg_structure(varied_test_struc)
     assert len(varied_test_struc) == len(varied_test_struc)
     assert np.equal(new_struc.cart_coords, varied_test_struc.positions).all()
-    assert (list(new_struc.atomic_numbers) == varied_test_struc.species)
+    assert (list(new_struc.atomic_numbers) == varied_test_struc.coded_species)
 
 
 def test_to_xyz(varied_test_struc):

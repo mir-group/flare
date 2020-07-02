@@ -11,7 +11,7 @@ from flare.lammps import lammps_calculator
 from flare.utils.element_coder import _Z_to_mass, _element_to_Z
 from ase.calculators.lammpsrun import LAMMPS
 
-from tests.fake_gp import get_gp, get_random_structure
+from fake_gp import get_gp, get_random_structure
 
 curr_path = os.getcwd()
 force_block_only = True

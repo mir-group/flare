@@ -40,7 +40,7 @@ void AddStructureModule(py::module m) {
                       &Structure::set_positions)
         .def_property_readonly("wrapped_positions",
             &Structure::get_wrapped_positions)
-        .def_readonly("species", &Structure::species)
+        .def_readonly("coded_species", &Structure::coded_species)
         .def_readonly("volume", &Structure::volume)
         .def_readonly("nat", &Structure::nat)
         .def_readonly("max_cutoff", &Structure::max_cutoff)
@@ -48,5 +48,28 @@ void AddStructureModule(py::module m) {
         .def_readwrite("species_labels", &Structure::species_labels)
         .def_readwrite("mass_dict", &Structure::mass_dict)
         .def_readwrite("forces", &Structure::forces)
-        .def_readwrite("stds", &Structure::stds);
+        .def_readwrite("stds", &Structure::stds)
+
+        // Make the structure object picklable.
+        .def(py::pickle(
+            [](const Structure &s) { // __getstate__
+                /* Return a tuple that fully encodes the state of the object */
+                return py::make_tuple(s.get_cell(), s.coded_species,
+                    s.get_positions(), s.mass_dict, s.species_labels,
+                    s.prev_positions, s.forces, s.stds);
+            },
+            [](py::tuple t) { // __setstate__
+                if (t.size() != 8)
+                    throw std::runtime_error("Invalid state!");
+
+                /* Create a new C++ instance */
+                Structure p(t[0].cast<Eigen::MatrixXd>(),
+                    t[1].cast<std::vector<int>>(),
+                    t[2].cast<Eigen::MatrixXd>());
+
+                // /* Assign any additional state */
+                // p.setExtra(t[1].cast<int>());
+
+                return p;
+            }));
 }

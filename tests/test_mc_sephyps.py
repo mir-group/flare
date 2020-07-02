@@ -11,7 +11,7 @@ from flare.kernels.cutoffs import quadratic_cutoff_bound
 from flare.parameters import Parameters
 from flare.utils.parameter_helper import ParameterHelper
 
-from .fake_gp import generate_mb_envs, generate_mb_twin_envs
+from fake_gp import generate_mb_envs, generate_mb_twin_envs
 
 list_to_test = [['twobody'], ['threebody'],
                 ['twobody', 'threebody'],

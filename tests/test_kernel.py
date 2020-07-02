@@ -8,7 +8,7 @@ from numpy.random import random, randint
 from flare import env, struc, gp
 from flare.kernels.utils import str_to_kernel_set
 
-from .fake_gp import generate_mb_envs
+from fake_gp import generate_mb_envs
 
 list_to_test = [['2'], ['3'],
                 ['2', '3'],

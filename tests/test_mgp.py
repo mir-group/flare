@@ -15,7 +15,7 @@ from flare.mgp import MappedGaussianProcess
 from flare.lammps import lammps_calculator
 from flare.utils.element_coder import _Z_to_mass, _Z_to_element
 
-from .fake_gp import get_gp, get_random_structure
+from fake_gp import get_gp, get_random_structure
 
 body_list = ['2', '3']
 multi_list = [False, True]

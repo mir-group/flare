@@ -9,7 +9,7 @@ LocalEnvironment :: LocalEnvironment(const Structure & structure, int atom,
     this->cutoff = cutoff;
     this->structure = structure;
     central_index = atom;
-    central_species = structure.species[atom];
+    central_species = structure.coded_species[atom];
     noa = structure.wrapped_positions.rows();
     structure_volume = structure.volume;
 
@@ -138,7 +138,7 @@ void LocalEnvironment :: compute_environment(
     counter = 0;
 
     for (int m = 0; m < noa; m++){
-        spec_curr = structure.species[m];
+        spec_curr = structure.coded_species[m];
 
         // Add central atom to the neighbor list.
         unique_check = 0;
