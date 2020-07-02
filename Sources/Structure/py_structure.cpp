@@ -27,7 +27,7 @@ void AddStructureModule(py::module m) {
         .def(py::init<const Eigen::MatrixXd &,
                       const std::vector<std::string> &,
                       const Eigen::MatrixXd &,
-                      const std::unordered_map<int, double> &,
+                      const std::unordered_map<std::string, double> &,
                       const Eigen::MatrixXd &,
                       const std::vector<std::string> &>(),
              py::arg("cell"), py::arg("species"), py::arg("positions"),

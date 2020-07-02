@@ -19,14 +19,20 @@ Structure::Structure(const Eigen::MatrixXd & cell,
 Structure::Structure(const Eigen::MatrixXd & cell,
     const std::vector<std::string> & species,
     const Eigen::MatrixXd & positions,
-    const std::unordered_map<int, double> & mass_dict,
+    const std::unordered_map<std::string, double> & mass_dict,
     const Eigen::MatrixXd & prev_positions,
     const std::vector<std::string> & species_labels){
 
-    // Convert strings to integers.
+    // Convert species strings to integers.
     std::vector<int> coded_species;
     for (int n = 0; n < species.size(); n ++){
         coded_species.push_back(_element_to_Z[species[n]]);
+    }
+
+    // Convert mass strings to integers.
+    std::unordered_map<int, double> coded_mass_dict;
+    for (auto itr = mass_dict.begin(); itr!=mass_dict.end(); itr++){
+        coded_mass_dict.insert({{_element_to_Z[itr->first], itr->second}});
     }
 
     // Set species labels.
@@ -41,8 +47,8 @@ Structure::Structure(const Eigen::MatrixXd & cell,
     // Call main constructor.
     // TODO: This doesn't work; need to make a set_structure method that can
     // be called by both.
-    set_structure(cell, coded_species, positions, mass_dict, prev_positions,
-        label_input);
+    set_structure(cell, coded_species, positions, coded_mass_dict,
+        prev_positions, label_input);
 }
 
 void Structure::set_structure(const Eigen::MatrixXd & cell,

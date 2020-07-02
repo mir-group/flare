@@ -32,8 +32,8 @@ class Structure{
         Structure(const Eigen::MatrixXd & cell,
             const std::vector<std::string> & species,
             const Eigen::MatrixXd & positions,
-            const std::unordered_map<int, double> & mass_dict =
-                std::unordered_map<int, double> {},
+            const std::unordered_map<std::string, double> & mass_dict =
+                std::unordered_map<std::string, double> {},
             const Eigen::MatrixXd & prev_positions =
                 Eigen::MatrixXd::Zero(0, 3),
             const std::vector<std::string> & species_labels =
