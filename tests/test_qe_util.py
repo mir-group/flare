@@ -107,17 +107,16 @@ def test_espresso_input_edit():
     """
     os.system('cp test_files/qe_input_1.in .')
     positions, species, cell, masses = parse_dft_input('./qe_input_1.in')
-    _, coded_species = get_unique_species(species)
-    structure = Structure(cell, coded_species, positions, masses,
+    structure = Structure(cell, species, positions, masses,
                           species_labels=species)
 
-    structure.positions[0] += np.random.randn(3)
+    structure.positions = np.random.rand(structure.nat, 3)
 
     new_file = edit_dft_input_positions('./qe_input_1.in', structure=structure)
 
     positions, species, cell, masses = parse_dft_input(new_file)
 
     assert np.equal(positions[0], structure.positions[0]).all()
-    assert np.equal(structure.vec1, cell[0, :]).all()
+    assert np.equal(structure.cell[0], cell[0, :]).all()
 
     os.remove('qe_input_1.in')

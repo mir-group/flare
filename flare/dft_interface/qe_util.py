@@ -236,10 +236,10 @@ def edit_dft_input_positions(dft_input: str, structure):
                             file_pos_index + nat):
         lines[line_index] = ''
 
-    lines[cell_index] = ' '.join([str(x) for x in structure.vec1]) + '\n'
-    lines[cell_index + 1] = ' '.join([str(x) for x in structure.vec2]) \
+    lines[cell_index] = ' '.join([str(x) for x in structure.cell[0]]) + '\n'
+    lines[cell_index + 1] = ' '.join([str(x) for x in structure.cell[1]]) \
                             + '\n'
-    lines[cell_index + 2] = ' '.join([str(x) for x in structure.vec3]) \
+    lines[cell_index + 2] = ' '.join([str(x) for x in structure.cell[2]]) \
                             + '\n'
 
     newfilename = dft_input + "_run"
