@@ -65,7 +65,7 @@ def as_dict(self) -> dict:
     :rtype: dict
     """
     return {'positions': self.positions, 'cell': self.cell,
-            'species': self.coded_species, 'mass_dict': self.mass_dict,
+            'coded_species': self.coded_species, 'mass_dict': self.mass_dict,
             'prev_positions': self.prev_positions,
             'species_labels': self.species_labels,
             'forces': self.forces, 'stds': self.stds}
@@ -92,7 +92,7 @@ def from_dict(dictionary: dict) -> 'flare.struc.Structure':
     struc = Structure(
         cell=np.array(dictionary['cell']),
         positions=np.array(dictionary['positions']),
-        species=dictionary['species'],
+        species=dictionary['coded_species'],
         mass_dict=dictionary.get('mass_dict'),
         species_labels=dictionary.get('species_labels'))
 

@@ -78,8 +78,9 @@ void AddStructureModule(py::module m) {
                     t[1].cast<std::vector<int>>(),
                     t[2].cast<Eigen::MatrixXd>());
 
-                // /* Assign any additional state */
-                // p.setExtra(t[1].cast<int>());
+                /* Assign any additional state */
+                p.forces = t[6].cast<Eigen::MatrixXd>();
+                p.stds = t[7].cast<Eigen::MatrixXd>();
 
                 return p;
             }));
