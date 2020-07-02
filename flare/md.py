@@ -8,7 +8,7 @@ def update_positions(dt, noa, structure):
     new_pos = np.zeros((noa, 3))
 
     for i, pre_pos in enumerate(structure.prev_positions):
-        mass = structure.mass_dict[structure.species_labels[i]]
+        mass = structure.mass_dict[structure.coded_species[i]]
         pos = structure.positions[i]
         forces = structure.forces[i]
 
@@ -17,7 +17,6 @@ def update_positions(dt, noa, structure):
     # Update previous and current positions.
     structure.prev_positions = np.copy(structure.positions)
     structure.positions = new_pos
-    structure.wrap_positions()
 
 
 def calculate_temperature(structure, dt, noa):
@@ -28,7 +27,7 @@ def calculate_temperature(structure, dt, noa):
     for i in range(len(structure.positions)):
         for j in range(3):
             KE += 0.5 * \
-                structure.mass_dict[structure.species_labels[i]] * \
+                structure.mass_dict[structure.coded_species[i]] * \
                 velocities[i][j] * velocities[i][j]
 
     # see conversions.nb for derivation

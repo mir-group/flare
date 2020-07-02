@@ -146,9 +146,9 @@ def predict_on_structure(structure: Structure, gp: GaussianProcess,
             forces[n][i] = float(force)
             stds[n][i] = float(np.sqrt(np.absolute(var)))
 
-            if write_to_structure:
-                structure.forces[n][i] = force
-                structure.stds[n][i] = np.sqrt(np.abs(var))
+    if write_to_structure:
+        structure.forces = forces
+        structure.stds = stds
 
     return forces, stds
 
@@ -407,11 +407,11 @@ def predict_on_structure_en(structure: Structure, gp: GaussianProcess,
             forces[n][i] = float(force)
             stds[n][i] = np.sqrt(np.abs(var))
 
-            if write_to_structure and structure.forces is not None:
-                structure.forces[n][i] = float(force)
-                structure.stds[n][i] = np.sqrt(np.abs(var))
-
         local_energies[n] = gp.predict_local_energy(chemenv)
+    
+    if write_to_structure and structure.forces is not None:
+        structure.forces = forces
+        structure.stds = stds
 
     return forces, stds, local_energies
 
@@ -483,9 +483,9 @@ def predict_on_structure_par_en(structure: Structure, gp: GaussianProcess,
         stds[i][:] = r[1]
         local_energies[i] = r[2]
 
-        if write_to_structure:
-            structure.forces[i] = forces[i]
-            structure.stds[i] = stds[i]
+    if write_to_structure:
+        structure.forces = forces
+        structure.stds = stds
 
     return forces, stds, local_energies
 
@@ -500,8 +500,12 @@ def predict_on_atom_mgp(atom: int, structure, mgp,
     stds = np.sqrt(np.absolute(var))
 
     if write_to_structure:
-        structure.forces[atom][:] = force
-        structure.stds[atom][:] = stds
+        forces = structure.forces
+        stds = structure.stds
+        forces[atom] = force
+        stds[atom] = stds
+        structure.forces = forces
+        structure.stds = stds
 
     return comps, stds, local_energy
 
