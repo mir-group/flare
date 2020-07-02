@@ -154,7 +154,7 @@ def generate_mb_envs(cutoffs, cell, delt, d1, mask=None, kern_type='mc'):
     np.random.shuffle(threebody)
     species_1 = np.hstack([threebody, randint(1, 2)])
     if kern_type == 'sc':
-        species_1 = np.ones(species_1.shape)
+        species_1 = np.ones(species_1.shape, dtype=np.int)
     return generate_mb_envs_pos(positions0, species_1, cutoffs, cell, delt, d1, mask)
 
 
