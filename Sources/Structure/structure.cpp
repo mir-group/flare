@@ -44,9 +44,6 @@ Structure::Structure(const Eigen::MatrixXd & cell,
         label_input = species_labels;
     }
 
-    // Call main constructor.
-    // TODO: This doesn't work; need to make a set_structure method that can
-    // be called by both.
     set_structure(cell, coded_species, positions, coded_mass_dict,
         prev_positions, label_input);
 }

@@ -47,10 +47,21 @@ void AddStructureModule(py::module m) {
         .def_readwrite("prev_positions", &Structure::prev_positions)
         .def_readwrite("species_labels", &Structure::species_labels)
         .def_readwrite("mass_dict", &Structure::mass_dict)
+
+        // Add computed properties. (Consider combining these in a
+        // separate class.)
         .def_readwrite("forces", &Structure::forces)
         .def_readwrite("stds", &Structure::stds)
+        .def_readwrite("local_energies", &Structure::local_energies)
+        .def_readwrite("local_energy_stds", &Structure::local_energy_stds)
+        .def_readwrite("partial_stresses", &Structure::partial_stresses)
+        .def_readwrite("partial_stress_stds", &Structure::partial_stress_stds)
+        .def_readwrite("stress", &Structure::stress)
+        .def_readwrite("stress_stds", &Structure::stress_stds)
+        .def_readwrite("potential_energy", &Structure::potential_energy)
 
         // Make the structure object picklable.
+        // See https://pybind11.readthedocs.io/en/stable/advanced/classes.html#pickling-support
         .def(py::pickle(
             [](const Structure &s) { // __getstate__
                 /* Return a tuple that fully encodes the state of the object */

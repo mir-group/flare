@@ -129,6 +129,10 @@ class OTF:
         positions, species, cell, masses = \
             self.dft_module.parse_dft_input(self.dft_input)
 
+        # Set previous positions to positions if none are given.
+        if prev_pos_init is None:
+            prev_pos_init = positions
+
         self.structure = struc.Structure(
             cell=cell, species=species, positions=positions, mass_dict=masses,
             prev_positions=prev_pos_init, species_labels=species)

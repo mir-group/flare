@@ -64,8 +64,10 @@ class Structure{
         std::vector<int> coded_species;
         std::vector<std::string> species_labels;
         std::unordered_map<int, double> mass_dict;
-        Eigen::MatrixXd prev_positions, forces, stds;
-        double max_cutoff, volume;
+        Eigen::MatrixXd prev_positions, forces, stds, local_energies,
+            local_energy_stds, partial_stresses, partial_stress_stds,
+            stress, stress_stds;
+        double max_cutoff, volume, potential_energy;
         int nat;
 };
 
