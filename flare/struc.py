@@ -1,10 +1,3 @@
-"""
-The :class:`Structure` object is a collection of atoms in a periodic box.
-The mandatory inputs are the cell vectors of the box and the chemical species
-and *Cartesian coordinates* of the atoms.
-The atoms are automatically folded back into the primary cell, so the
-input coordinates don't need to lie inside the box.
-"""
 import numpy as np
 from flare._C_flare import Structure
 from flare.utils.element_coder import element_to_Z, Z_to_element, NumpyEncoder
