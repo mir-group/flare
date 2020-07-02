@@ -110,13 +110,14 @@ def test_vasp_input_edit():
     os.system('cp test_files/test_POSCAR ./POSCAR')
     structure = dft_input_to_structure('./test_files/test_POSCAR')
 
-    structure.positions[0] += np.random.randn(3)
+    structure.positions = np.random.rand(structure.nat, 3)
 
     new_file = edit_dft_input_positions('./POSCAR', structure=structure)
 
     final_structure = dft_input_to_structure(new_file)
 
-    assert np.isclose(final_structure.vec1, structure.vec1, atol=1e-4).all()
+    assert np.isclose(final_structure.cell[0], structure.cell[0],
+                      atol=1e-4).all()
     assert np.isclose(final_structure.positions[0],
                       structure.positions[0], atol=1e-4).all()
 
@@ -159,7 +160,7 @@ def test_md_trajectory():
     assert len(structures) == 2
     for struct in structures:
         assert struct.forces.shape == (6, 3)
-        assert struct.energy is not None
+        assert struct.potential_energy is not None
         assert struct.stress.shape == (3, 3)
     structures = md_trajectory_from_vasprun('test_files/test_vasprun.xml',
                                             ionic_step_skips=2)

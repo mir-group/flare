@@ -190,7 +190,7 @@ def md_trajectory_from_vasprun(vasprun: Union[str, Vasprun],
     struc_lst = []
     for step in vasprun.ionic_steps[::ionic_step_skips]:
         structure = Structure.from_pmg_structure(step["structure"])
-        structure.energy = step["electronic_steps"][-1]["e_0_energy"]
+        structure.potential_energy = step["electronic_steps"][-1]["e_0_energy"]
         # TODO should choose e_wo_entrp or e_fr_energy?
         structure.forces = np.array(step.get("forces"))
         structure.stress = np.array(step.get("stress"))
