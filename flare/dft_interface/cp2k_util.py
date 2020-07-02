@@ -238,11 +238,12 @@ def edit_dft_input_positions(dft_input: str, structure):
     #                         file_pos_index + nat):
     #     lines[line_index] = ''
 
-    lines[cell_index] = 'A '+' '.join([str(x) for x in structure.vec1]) + '\n'
-    lines[cell_index + 1] = 'B '+' '.join([str(x) for x in structure.vec2]) \
-                            + '\n'
-    lines[cell_index + 2] = 'C '+' '.join([str(x) for x in structure.vec3]) \
-                            + '\n'
+    lines[cell_index] = \
+        'A '+' '.join([str(x) for x in structure.cell[0]]) + '\n'
+    lines[cell_index + 1] = \
+        'B '+' '.join([str(x) for x in structure.cell[1]]) + '\n'
+    lines[cell_index + 2] = \
+        'C '+' '.join([str(x) for x in structure.cell[2]]) + '\n'
 
     newfilename = dft_input+"_run"
 
