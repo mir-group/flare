@@ -14,7 +14,6 @@ from flare.mgp.grid_kernels_3b import triplet_cutoff
 
 
 class Map3body(MapXbody):
-
     def __init__(self, **kwargs):
 
         self.kernel_name = "threebody"
@@ -24,11 +23,10 @@ class Map3body(MapXbody):
         self.spc_perm = [[0, 1, 2], [0, 2, 1]]
         super().__init__(**kwargs)
 
-
     def build_bond_struc(self, species_list):
-        '''
+        """
         build a bond structure, used in grid generating
-        '''
+        """
 
         # 2 body (2 atoms (1 bond) config)
         self.spc = []
@@ -41,19 +39,22 @@ class Map3body(MapXbody):
                         self.spc.append(species)
         else:
             for spc1 in species_list:
-                for spc2_ind in range(N_spc):  
+                for spc2_ind in range(N_spc):
                     spc2 = species_list[spc2_ind]
-                    for spc3 in species_list[spc2_ind:]: 
+                    for spc3 in species_list[spc2_ind:]:
                         species = [spc1, spc2, spc3]
                         self.spc.append(species)
 
-
     def get_arrays(self, atom_env):
 
-        spcs, comp_r, comp_xyz = \
-            get_triplets(atom_env.ctype, atom_env.etypes,
-                    atom_env.bond_array_3, atom_env.cross_bond_inds,
-                    atom_env.cross_bond_dists, atom_env.triplet_counts)
+        spcs, comp_r, comp_xyz = get_triplets(
+            atom_env.ctype,
+            atom_env.etypes,
+            atom_env.bond_array_3,
+            atom_env.cross_bond_inds,
+            atom_env.cross_bond_dists,
+            atom_env.triplet_counts,
+        )
 
         return spcs, comp_r, comp_xyz
 
@@ -62,30 +63,31 @@ class Map3body(MapXbody):
 
 
 class SingleMap3body(SingleMapXbody):
-
     def __init__(self, **kwargs):
-        '''
+        """
         Build 3-body MGP
 
-        '''
+        """
 
         self.bodies = 3
         self.grid_dim = 3
-        self.kernel_name = 'threebody'
+        self.kernel_name = "threebody"
         self.pred_perm = [[0, 1, 2], [1, 0, 2]]
 
         super().__init__(**kwargs)
 
         # initialize bounds
-        self.set_bounds(0, np.ones(3))
-
-        self.grid_interval = np.min((self.bounds[1]-self.bounds[0])/self.grid_num)
+        self.set_bounds(None, None)
 
         spc = self.species
-        self.species_code = Z_to_element(spc[0]) + '_' + \
-            Z_to_element(spc[1]) + '_' + Z_to_element(spc[2])
-        self.kv3name = f'kv3_{self.species_code}'
-
+        self.species_code = (
+            Z_to_element(spc[0])
+            + "_"
+            + Z_to_element(spc[1])
+            + "_"
+            + Z_to_element(spc[2])
+        )
+        self.kv3name = f"kv3_{self.species_code}"
 
     def set_bounds(self, lower_bound, upper_bound):
         if self.auto_lower:
@@ -99,27 +101,27 @@ class SingleMap3body(SingleMapXbody):
             else:
                 self.bounds[1] = upper_bound
 
-
     def construct_grids(self):
-        '''
+        """
         Return:
             An array of shape (n_grid, 3)
-        '''
+        """
         # build grids in each dimension
         triplets = []
         for d in range(3):
-            bonds = np.linspace(self.bounds[0][d], self.bounds[1][d],
-                self.grid_num[d], dtype=np.float64)
+            bonds = np.linspace(
+                self.bounds[0][d], self.bounds[1][d], self.grid_num[d], dtype=np.float64
+            )
             triplets.append(bonds)
 
-#        r1 = np.tile(bonds1, (nb12, nb2, 1))
-#        r1 = np.moveaxis(r1, -1, 0)
-#        r2 = np.tile(bonds2, (nb1, nb12, 1))
-#        r2 = np.moveaxis(r2, -1, 1)
-#        r12 = np.tile(bonds12, (nb1, nb2, 1))
+        #        r1 = np.tile(bonds1, (nb12, nb2, 1))
+        #        r1 = np.moveaxis(r1, -1, 0)
+        #        r2 = np.tile(bonds2, (nb1, nb12, 1))
+        #        r2 = np.moveaxis(r2, -1, 1)
+        #        r12 = np.tile(bonds12, (nb1, nb2, 1))
 
         # concatenate into one array: n_grid x 3
-        mesh = np.meshgrid(*triplets, indexing='ij')
+        mesh = np.meshgrid(*triplets, indexing="ij")
         del triplets
 
         mesh_list = []
@@ -131,7 +133,6 @@ class SingleMap3body(SingleMapXbody):
 
         return mesh_list
 
-
     def set_env(self, grid_env, grid_pt):
         r1, r2, r12 = grid_pt
         dist12 = r12
@@ -140,23 +141,9 @@ class SingleMap3body(SingleMapXbody):
 
         return grid_env
 
-
     def skip_grid(self, grid_pt):
         r1, r2, r12 = grid_pt
-
         return False
-
-        if not self.map_force:
-            relaxation = 1/2 * np.max(self.grid_num) * self.grid_interval
-            if r1 + r2 < r12 - relaxation:
-                return True
-            if r1 + r12 < r2 - relaxation:
-                return True
-            if r12 + r2 < r1 - relaxation:
-                return True
-
-        return False
-
 
     def _gengrid_numba(self, name, env12, kernel_info, force_block, s, e):
         """
@@ -173,26 +160,28 @@ class SingleMap3body(SingleMapXbody):
         grid_kernel, _, _, cutoffs, hyps, hyps_mask = kernel_info
 
         args = from_mask_to_args(hyps, cutoffs, hyps_mask)
-        r_cut = cutoffs['threebody']
+        r_cut = cutoffs["threebody"]
 
         grids = self.construct_grids()
-        coords = np.zeros((grids.shape[0], 9), dtype=np.float64) # padding 0
+        coords = np.zeros((grids.shape[0], 9), dtype=np.float64)  # padding 0
         coords[:, 0] = np.ones_like(coords[:, 0])
 
-        fj, fdj = triplet_cutoff(grids, r_cut, coords, derivative=True) # TODO: add cutoff func
+        fj, fdj = triplet_cutoff(
+            grids, r_cut, coords, derivative=True
+        )  # TODO: add cutoff func
         fdj = fdj[:, [0]]
 
         if self.map_force:
-            prefix = 'force'
+            prefix = "force"
         else:
-            prefix = 'energy'
+            prefix = "energy"
 
         if force_block:
             training_data = _global_training_data[name]
-            kern_type = f'{prefix}_force'
+            kern_type = f"{prefix}_force"
         else:
             training_data = _global_training_structures[name]
-            kern_type = f'{prefix}_energy'
+            kern_type = f"{prefix}_energy"
 
         k_v = []
         chunk_size = 32 ** 3
@@ -211,8 +200,16 @@ class SingleMap3body(SingleMapXbody):
                 grid_chunk = grids[gs:ge, :]
                 fj_chunk = fj[gs:ge, :]
                 fdj_chunk = fdj[gs:ge, :]
-                kv_chunk = grid_kernel(kern_type, data, grid_chunk, fj_chunk, fdj_chunk,
-                                       env12.ctype, env12.etypes, *args)
+                kv_chunk = grid_kernel(
+                    kern_type,
+                    data,
+                    grid_chunk,
+                    fj_chunk,
+                    fdj_chunk,
+                    env12.ctype,
+                    env12.etypes,
+                    *args,
+                )
                 kern_vec.append(kv_chunk)
             kern_vec = np.hstack(kern_vec)
             k_v.append(kern_vec)

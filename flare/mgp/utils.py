@@ -15,8 +15,7 @@ from flare.mgp import grid_kernels_2b
 from flare.mgp import grid_kernels_3b
 
 
-def str_to_mapped_kernel(name: str, component: str = "mc",
-                         hyps_mask: dict = None):
+def str_to_mapped_kernel(name: str, component: str = "mc", hyps_mask: dict = None):
     """
     Return kernels and kernel gradient function based on a string.
     If it contains 'sc', it will use the kernel in sc module;
@@ -38,34 +37,67 @@ def str_to_mapped_kernel(name: str, component: str = "mc",
     multihyps = True
     if hyps_mask is None:
         multihyps = False
-    elif hyps_mask['nspecie'] == 1:
+    elif hyps_mask["nspecie"] == 1:
         multihyps = False
 
     # b2 = Two body in use, b3 = Three body in use
     b2 = False
     many = False
     b3 = False
-    for s in ['2', 'two']:
+    for s in ["2", "two"]:
         if s in name.lower() or s == name.lower():
             b2 = True
 
-    for s in ['3', 'three']:
+    for s in ["3", "three"]:
         if s in name.lower() or s == name.lower():
             b3 = True
 
     if b3:
-         if multihyps:
-             return grid_kernels_3b.grid_kernel_sephyps, None, grid_kernels_3b.self_kernel_sephyps, None, None, None, None
-         else:
-             return grid_kernels_3b.grid_kernel, None, grid_kernels_3b.self_kernel, None, None, None, None
+        if multihyps:
+            return (
+                grid_kernels_3b.grid_kernel_sephyps,
+                None,
+                grid_kernels_3b.self_kernel_sephyps,
+                None,
+                None,
+                None,
+                None,
+            )
+        else:
+            return (
+                grid_kernels_3b.grid_kernel,
+                None,
+                grid_kernels_3b.self_kernel,
+                None,
+                None,
+                None,
+                None,
+            )
     elif b2:
         if multihyps:
-            return grid_kernels_2b.grid_kernel_sephyps, None, grid_kernels_2b.self_kernel_sephyps, None, None, None, None
+            return (
+                grid_kernels_2b.grid_kernel_sephyps,
+                None,
+                grid_kernels_2b.self_kernel_sephyps,
+                None,
+                None,
+                None,
+                None,
+            )
         else:
-            return grid_kernels_2b.grid_kernel, None, grid_kernels_2b.self_kernel, None, None, None, None
+            return (
+                grid_kernels_2b.grid_kernel,
+                None,
+                grid_kernels_2b.self_kernel,
+                None,
+                None,
+                None,
+                None,
+            )
     else:
-        warnings.warn('The mapped kernel for many-body is not implemented.')
+        warnings.warn("The mapped kernel for many-body is not implemented.")
         return None
+
 
 def get_kernel_term(kernel_name, component, hyps_mask, hyps, grid_kernel=False):
     """
@@ -77,15 +109,16 @@ def get_kernel_term(kernel_name, component, hyps_mask, hyps, grid_kernel=False):
         kernel_name_list = kernel_name
     else:
         stks = str_to_kernel_set
-        kernel_name_list = [kernel_name] 
+        kernel_name_list = [kernel_name]
 
     kernel, _, ek, efk, _, _, _ = stks(kernel_name_list, component, hyps_mask)
 
     # hyps_mask is modified here
-    hyps, cutoffs, hyps_mask = Parameters.get_component_mask(hyps_mask, kernel_name, hyps=hyps)
+    hyps, cutoffs, hyps_mask = Parameters.get_component_mask(
+        hyps_mask, kernel_name, hyps=hyps
+    )
 
     return (kernel, ek, efk, cutoffs, hyps, hyps_mask)
-
 
 
 @njit
@@ -114,8 +147,9 @@ def get_bonds(ctype, etypes, bond_array):
 
 
 @njit
-def get_triplets(ctype, etypes, bond_array, cross_bond_inds,
-                 cross_bond_dists, triplets):
+def get_triplets(
+    ctype, etypes, bond_array, cross_bond_inds, cross_bond_dists, triplets
+):
     exist_species = []
     tris = []
     tri_dir = []
@@ -126,13 +160,13 @@ def get_triplets(ctype, etypes, bond_array, cross_bond_inds,
         spc1 = etypes[m]
 
         for n in range(triplets[m]):
-            ind1 = cross_bond_inds[m, m+n+1]
+            ind1 = cross_bond_inds[m, m + n + 1]
             r2 = bond_array[ind1, 0]
             c2 = bond_array[ind1, 1:]
             spc2 = etypes[ind1]
 
-            c12 = np.sum(c1*c2)
-            r12 = np.sqrt(r1**2 + r2**2 - 2*r1*r2*c12)
+            c12 = np.sum(c1 * c2)
+            r12 = np.sqrt(r1 ** 2 + r2 ** 2 - 2 * r1 * r2 * c12)
 
             if spc1 <= spc2:
                 spcs = [ctype, spc1, spc2]

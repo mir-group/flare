@@ -7,42 +7,67 @@ from flare.kernels.cutoffs import quadratic_cutoff
 
 from time import time
 
-def grid_kernel_sephyps(kern_type,
-                  data, grids, fj, fdj,
-                  c2, etypes2, 
-                  cutoff_2b, cutoff_3b, cutoff_mb,
-                  nspec, spec_mask,
-                  nbond, bond_mask,
-                  ntriplet, triplet_mask,
-                  ncut3b, cut3b_mask,
-                  nmb, mb_mask,
-                  sig2, ls2, sig3, ls3, sigm, lsm,
-                  cutoff_func=quadratic_cutoff):
-    '''
+
+def grid_kernel_sephyps(
+    kern_type,
+    data,
+    grids,
+    fj,
+    fdj,
+    c2,
+    etypes2,
+    cutoff_2b,
+    cutoff_3b,
+    cutoff_mb,
+    nspec,
+    spec_mask,
+    nbond,
+    bond_mask,
+    ntriplet,
+    triplet_mask,
+    ncut3b,
+    cut3b_mask,
+    nmb,
+    mb_mask,
+    sig2,
+    ls2,
+    sig3,
+    ls3,
+    sigm,
+    lsm,
+    cutoff_func=quadratic_cutoff,
+):
+    """
     Args:
         data: a single env of a list of envs
-    '''
+    """
 
     bc1 = spec_mask[c2]
     bc2 = spec_mask[etypes2[0]]
     bc3 = spec_mask[etypes2[1]]
-    ttype = triplet_mask[nspec * nspec * bc1 + nspec*bc2 + bc3]
+    ttype = triplet_mask[nspec * nspec * bc1 + nspec * bc2 + bc3]
     ls = ls3[ttype]
     sig = sig3[ttype]
-    cutoffs = [cutoff_2b, cutoff_3b] # TODO: check if this is correct
+    cutoffs = [cutoff_2b, cutoff_3b]  # TODO: check if this is correct
 
     hyps = [sig, ls]
-    return grid_kernel(kern_type,
-                   data, grids, fj, fdj,
-                   c2, etypes2, 
-                   hyps, cutoffs, cutoff_func)
+    return grid_kernel(
+        kern_type, data, grids, fj, fdj, c2, etypes2, hyps, cutoffs, cutoff_func
+    )
 
 
-def grid_kernel(kern_type,
-                struc, grids, fj, fdj,
-                c2, etypes2, 
-                hyps: 'ndarray', cutoffs,
-                cutoff_func: Callable = quadratic_cutoff):
+def grid_kernel(
+    kern_type,
+    struc,
+    grids,
+    fj,
+    fdj,
+    c2,
+    etypes2,
+    hyps: "ndarray",
+    cutoffs,
+    cutoff_func: Callable = quadratic_cutoff,
+):
 
     r_cut = cutoffs[1]
 
@@ -51,19 +76,25 @@ def grid_kernel(kern_type,
 
     kern = 0
     for env in struc:
-        kern += grid_kernel_env(kern_type,
-                    env, grids, fj, fdj,
-                    c2, etypes2, 
-                    hyps, r_cut, cutoff_func)
+        kern += grid_kernel_env(
+            kern_type, env, grids, fj, fdj, c2, etypes2, hyps, r_cut, cutoff_func
+        )
 
     return kern
 
 
-def grid_kernel_env(kern_type,
-                env1, grids, fj, fdj,
-                c2, etypes2, 
-                hyps: 'ndarray', r_cut: float,
-                cutoff_func: Callable = quadratic_cutoff):
+def grid_kernel_env(
+    kern_type,
+    env1,
+    grids,
+    fj,
+    fdj,
+    c2,
+    etypes2,
+    hyps: "ndarray",
+    r_cut: float,
+    cutoff_func: Callable = quadratic_cutoff,
+):
 
     # pre-compute constants that appear in the inner loop
     sig = hyps[0]
@@ -71,19 +102,26 @@ def grid_kernel_env(kern_type,
     derivative = derv_dict[kern_type]
 
     # collect all the triplets in this training env
-    triplet_coord_list = get_triplets_for_kern(env1.bond_array_3, env1.ctype, env1.etypes,
-        env1.cross_bond_inds, env1.cross_bond_dists, env1.triplet_counts,
-        c2, etypes2)
+    triplet_coord_list = get_triplets_for_kern(
+        env1.bond_array_3,
+        env1.ctype,
+        env1.etypes,
+        env1.cross_bond_inds,
+        env1.cross_bond_dists,
+        env1.triplet_counts,
+        c2,
+        etypes2,
+    )
 
-    if len(triplet_coord_list) == 0: # no triplets
+    if len(triplet_coord_list) == 0:  # no triplets
         if derivative:
             return np.zeros((3, grids.shape[0]), dtype=np.float64)
         else:
             return np.zeros(grids.shape[0], dtype=np.float64)
 
     triplet_coord_list = np.array(triplet_coord_list)
-    triplet_list = triplet_coord_list[:, :3] # (n_triplets, 3)
-    coord_list = triplet_coord_list[:, 3:] # ((n_triplets, 9)
+    triplet_list = triplet_coord_list[:, :3]  # (n_triplets, 3)
+    coord_list = triplet_coord_list[:, 3:]  # ((n_triplets, 9)
     del triplet_coord_list
 
     # calculate distance difference & exponential part
@@ -93,36 +131,35 @@ def grid_kernel_env(kern_type,
     for r in range(3):
         rj, ri = np.meshgrid(grids[:, r], triplet_list[:, r])
         rij = ri - rj
-        D += rij * rij # (n_triplets, n_grids)
+        D += rij * rij  # (n_triplets, n_grids)
         rij_list.append(rij)
 
-    kern_exp = (sig * sig) * np.exp(- D * ls1)
+    kern_exp = (sig * sig) * np.exp(-D * ls1)
     del D
 
     # calculate cutoff of the triplets
-    fi, fdi = triplet_cutoff(triplet_list, r_cut, coord_list, derivative,
-        cutoff_func) # (n_triplets, 1)
+    fi, fdi = triplet_cutoff(
+        triplet_list, r_cut, coord_list, derivative, cutoff_func
+    )  # (n_triplets, 1)
     del triplet_list
 
     # calculate the derivative part
     kern_func = kern_dict[kern_type]
-    kern = kern_func(kern_exp, fi, fj, fdi, fdj,
-             rij_list, coord_list, ls)
+    kern = kern_func(kern_exp, fi, fj, fdi, fdj, rij_list, coord_list, ls)
 
     return kern
 
 
 def en_en(kern_exp, fi, fj, *args):
-    '''energy map + energy block'''
-    fifj = fi @ fj.T # (n_triplets, n_grids)
-    kern = np.sum(kern_exp * fifj, axis=0) / 9 # (n_grids,)
+    """energy map + energy block"""
+    fifj = fi @ fj.T  # (n_triplets, n_grids)
+    kern = np.sum(kern_exp * fifj, axis=0) / 9  # (n_grids,)
     return kern
 
 
-def en_force(kern_exp, fi, fj, fdi, fdj, 
-             rij_list, coord_list, ls):
-    '''energy map + force block'''
-    fifj = fi @ fj.T # (n_triplets, n_grids)
+def en_force(kern_exp, fi, fj, fdi, fdj, rij_list, coord_list, ls):
+    """energy map + force block"""
+    fifj = fi @ fj.T  # (n_triplets, n_grids)
     ls2 = 1 / (ls * ls)
     n_trplt, n_grids = kern_exp.shape
     kern = np.zeros((3, n_grids), dtype=np.float64)
@@ -133,50 +170,52 @@ def en_force(kern_exp, fi, fj, fdi, fdj,
             rij = rij_list[r]
             # column-wise multiplication
             # coord_list[:, [r]].shape = (n_triplets, 1)
-            B += rij * coord_list[:, [3*d+r]] # (n_triplets, n_grids)
+            B += rij * coord_list[:, [3 * d + r]]  # (n_triplets, n_grids)
 
-        kern[d, :] = - np.sum(kern_exp * (B * ls2 * fifj + fdij), axis=0) / 3 # (n_grids,)
+        kern[d, :] = (
+            -np.sum(kern_exp * (B * ls2 * fifj + fdij), axis=0) / 3
+        )  # (n_grids,)
     return kern
 
 
-def force_en(kern_exp, fi, fj, fdi, fdj, 
-             rij_list, coord_list, ls):
-    '''force map + energy block'''
+def force_en(kern_exp, fi, fj, fdi, fdj, rij_list, coord_list, ls):
+    """force map + energy block"""
     ls2 = 1 / (ls * ls)
-    fifj = fi @ fj.T # (n_triplets, n_grids)
+    fifj = fi @ fj.T  # (n_triplets, n_grids)
     fdji = fi @ fdj.T
     # only r = 0 is non zero, since the grid coords are all (1, 0, 0)
-    B = rij_list[0] # (n_triplets, n_grids)
-    kern = np.sum(kern_exp * (B * ls2 * fifj - fdji), axis=0) / 3 # (n_grids,)
+    B = rij_list[0]  # (n_triplets, n_grids)
+    kern = np.sum(kern_exp * (B * ls2 * fifj - fdji), axis=0) / 3  # (n_grids,)
     return kern
 
 
-def force_force(kern_exp, fi, fj, fdi, fdj, 
-                rij_list, coord_list, ls):
-    '''force map + force block'''
+def force_force(kern_exp, fi, fj, fdi, fdj, rij_list, coord_list, ls):
+    """force map + force block"""
     ls2 = 1 / (ls * ls)
-    ls3 = ls2 * ls2 
-    
+    ls3 = ls2 * ls2
+
     n_trplt, n_grids = kern_exp.shape
     kern = np.zeros((3, n_grids), dtype=np.float64)
 
-    fifj = fi @ fj.T # (n_triplets, n_grids)
+    fifj = fi @ fj.T  # (n_triplets, n_grids)
     fdji = (fi * ls2) @ fdj.T
 
-    B = rij_list[0] * ls3 # B and C both have opposite signs with that in the three_body_helper_1
-    
+    B = (
+        rij_list[0] * ls3
+    )  # B and C both have opposite signs with that in the three_body_helper_1
+
     for d in range(3):
         fdij = (fdi[:, [d]] * ls2) @ fj.T
         I = fdi[:, [d]] @ fdj.T
-        J = rij_list[0] * fdij # (n_triplets, n_grids)
+        J = rij_list[0] * fdij  # (n_triplets, n_grids)
 
-        A = np.repeat(ls2 * coord_list[:, [3*d]], n_grids, axis=1)
+        A = np.repeat(ls2 * coord_list[:, [3 * d]], n_grids, axis=1)
         C = 0
         for r in range(3):
             rij = rij_list[r]
             # column-wise multiplication
             # coord_list[:, [r]].shape = (n_triplets, 1)
-            C += rij * coord_list[:, [3*d+r]] # (n_triplets, n_grids)
+            C += rij * coord_list[:, [3 * d + r]]  # (n_triplets, n_grids)
 
         IJKL = I - J + C * fdji + (A - B * C) * fifj
         kern[d, :] = np.sum(kern_exp * IJKL, axis=0)
@@ -184,8 +223,9 @@ def force_force(kern_exp, fi, fj, fdi, fdj,
     return kern
 
 
-
-def triplet_cutoff(triplets, r_cut, coords, derivative=False, cutoff_func=quadratic_cutoff):
+def triplet_cutoff(
+    triplets, r_cut, coords, derivative=False, cutoff_func=quadratic_cutoff
+):
 
     dfj_list = np.zeros((len(triplets), 3), dtype=np.float64)
 
@@ -194,14 +234,16 @@ def triplet_cutoff(triplets, r_cut, coords, derivative=False, cutoff_func=quadra
             s = 3 * d
             e = 3 * (d + 1)
             f0, df0 = cutoff_func(r_cut, triplets, coords[:, s:e])
-            dfj = df0[:, 0] *  f0[:, 1] *  f0[:, 2] + \
-                   f0[:, 0] * df0[:, 1] *  f0[:, 2] + \
-                   f0[:, 0] *  f0[:, 1] * df0[:, 2]
+            dfj = (
+                df0[:, 0] * f0[:, 1] * f0[:, 2]
+                + f0[:, 0] * df0[:, 1] * f0[:, 2]
+                + f0[:, 0] * f0[:, 1] * df0[:, 2]
+            )
             dfj_list[:, d] = dfj
     else:
-        f0, _ = cutoff_func(r_cut, triplets, 0) # (n_grid, 3)
+        f0, _ = cutoff_func(r_cut, triplets, 0)  # (n_grid, 3)
 
-    fj = f0[:, 0] * f0[:, 1] * f0[:, 2] # (n_grid,)
+    fj = f0[:, 0] * f0[:, 1] * f0[:, 2]  # (n_grid,)
     fj = np.expand_dims(fj, axis=1)
 
     return fj, dfj_list
@@ -210,25 +252,37 @@ def triplet_cutoff(triplets, r_cut, coords, derivative=False, cutoff_func=quadra
 @njit
 def get_permutations(c1, ei1, ei2, c2, ej1, ej2):
     perms = []
-    if (c1 == c2):
-        if (ei1 == ej1) and (ei2 == ej2): perms.append([0, 1, 2])
-        if (ei1 == ej2) and (ei2 == ej1): perms.append([1, 0, 2])
-    if (c1 == ej1):
-        if (ei1 == ej2) and (ei2 == c2):  perms.append([1, 2, 0])
-        if (ei1 == c2) and (ei2 == ej2):  perms.append([0, 2, 1])
-    if (c1 == ej2):
-        if (ei1 == ej1) and (ei2 == c2):  perms.append([2, 1, 0])
-        if (ei1 == c2) and (ei2 == ej1):  perms.append([2, 0, 1])
+    if c1 == c2:
+        if (ei1 == ej1) and (ei2 == ej2):
+            perms.append([0, 1, 2])
+        if (ei1 == ej2) and (ei2 == ej1):
+            perms.append([1, 0, 2])
+    if c1 == ej1:
+        if (ei1 == ej2) and (ei2 == c2):
+            perms.append([1, 2, 0])
+        if (ei1 == c2) and (ei2 == ej2):
+            perms.append([0, 2, 1])
+    if c1 == ej2:
+        if (ei1 == ej1) and (ei2 == c2):
+            perms.append([2, 1, 0])
+        if (ei1 == c2) and (ei2 == ej1):
+            perms.append([2, 0, 1])
     return perms
 
 
 @njit
-def get_triplets_for_kern(bond_array_1, c1, etypes1,
-                          cross_bond_inds_1, cross_bond_dists_1,
-                          triplets_1,
-                          c2, etypes2):
+def get_triplets_for_kern(
+    bond_array_1,
+    c1,
+    etypes1,
+    cross_bond_inds_1,
+    cross_bond_dists_1,
+    triplets_1,
+    c2,
+    etypes2,
+):
 
-    #triplet_list = np.empty((0, 6), dtype=np.float64)
+    # triplet_list = np.empty((0, 6), dtype=np.float64)
     triplet_list = []
 
     ej1 = etypes2[0]
@@ -249,7 +303,7 @@ def get_triplets_for_kern(bond_array_1, c1, etypes1,
             ei1 = etypes1[m]
 
             two_spec = [all_spec[0], all_spec[1]]
-            if (ei1 in two_spec):
+            if ei1 in two_spec:
 
                 ei1_ind = ind_list[0] if ei1 == two_spec[0] else ind_list[1]
                 two_spec.remove(ei1)
@@ -260,7 +314,7 @@ def get_triplets_for_kern(bond_array_1, c1, etypes1,
                 for n in range(triplets_1[m]):
                     ind1 = cross_bond_inds_1[m, m + n + 1]
                     ei2 = etypes1[ind1]
-                    if (ei2 == one_spec):
+                    if ei2 == one_spec:
 
                         ri2 = bond_array_1[ind1, 0]
                         ci2 = bond_array_1[ind1, 1:]
@@ -270,7 +324,7 @@ def get_triplets_for_kern(bond_array_1, c1, etypes1,
 
                         perms = get_permutations(c1, ei1, ei2, c2, ej1, ej2)
 
-                        tri  = np.array([ri1, ri2, ri3])
+                        tri = np.array([ri1, ri2, ri3])
                         crd1 = np.array([ci1[0], ci2[0], ci3[0]])
                         crd2 = np.array([ci1[1], ci2[1], ci3[1]])
                         crd3 = np.array([ci1[2], ci2[2], ci3[2]])
@@ -289,37 +343,64 @@ def get_triplets_for_kern(bond_array_1, c1, etypes1,
     return triplet_list
 
 
-def self_kernel_sephyps(map_force,
-                  grids, fj, fdj,
-                  c2, etypes2, 
-                  cutoff_2b, cutoff_3b, cutoff_mb,
-                  nspec, spec_mask,
-                  nbond, bond_mask,
-                  ntriplet, triplet_mask,
-                  ncut3b, cut3b_mask,
-                  nmb, mb_mask,
-                  sig2, ls2, sig3, ls3, sigm, lsm,
-                  cutoff_func=quadratic_cutoff):
-    '''
+def self_kernel_sephyps(
+    map_force,
+    grids,
+    fj,
+    fdj,
+    c2,
+    etypes2,
+    cutoff_2b,
+    cutoff_3b,
+    cutoff_mb,
+    nspec,
+    spec_mask,
+    nbond,
+    bond_mask,
+    ntriplet,
+    triplet_mask,
+    ncut3b,
+    cut3b_mask,
+    nmb,
+    mb_mask,
+    sig2,
+    ls2,
+    sig3,
+    ls3,
+    sigm,
+    lsm,
+    cutoff_func=quadratic_cutoff,
+):
+    """
     Args:
         data: a single env of a list of envs
-    '''
+    """
 
     bc1 = spec_mask[c2]
     bc2 = spec_mask[etypes2[0]]
     bc3 = spec_mask[etypes2[1]]
-    ttype = triplet_mask[nspec * nspec * bc1 + nspec*bc2 + bc3]
+    ttype = triplet_mask[nspec * nspec * bc1 + nspec * bc2 + bc3]
     ls = ls3[ttype]
     sig = sig3[ttype]
     cutoffs = [cutoff_2b, cutoff_3b]
 
     hyps = [sig, ls]
-    return self_kernel(map_force, grids, fj, fdj, c2, etypes2, hyps, 
-                       cutoffs, cutoff_func)
+    return self_kernel(
+        map_force, grids, fj, fdj, c2, etypes2, hyps, cutoffs, cutoff_func
+    )
 
 
-def self_kernel(map_force, grids, fj, fdj, c2, etypes2, hyps, cutoffs,
-                cutoff_func: Callable = quadratic_cutoff):
+def self_kernel(
+    map_force,
+    grids,
+    fj,
+    fdj,
+    c2,
+    etypes2,
+    hyps,
+    cutoffs,
+    cutoff_func: Callable = quadratic_cutoff,
+):
 
     kern = 0
 
@@ -331,17 +412,17 @@ def self_kernel(map_force, grids, fj, fdj, c2, etypes2, hyps, cutoffs,
     ls1 = 1 / (2 * ls * ls)
     ls2 = 1 / (ls * ls)
     ls3 = ls2 * ls2
- 
+
     ej1 = etypes2[0]
     ej2 = etypes2[1]
 
     perm_list = get_permutations(c2, ej1, ej2, c2, ej1, ej2)
-    ci = np.array([1., 0., 0.])
+    ci = np.array([1.0, 0.0, 0.0])
 
     for perm in perm_list:
         perm_grids = np.take(grids, perm, axis=1)
         rij = grids - perm_grids
-        D = np.sum(rij * rij, axis=1) # (n_grids, ) adding up three bonds
+        D = np.sum(rij * rij, axis=1)  # (n_grids, ) adding up three bonds
         kern_exp = np.exp(-D * ls1) * sig2
         fjfj = fj ** 2
         if map_force:
@@ -354,24 +435,26 @@ def self_kernel(map_force, grids, fj, fdj, c2, etypes2, hyps, cutoffs,
 
             I = fdj ** 2
             J = B * ls2 * fj * fdj
-            K = - C * ls2 * fdj * fj
+            K = -C * ls2 * fdj * fj
             L = (A * ls2 - B * C * ls3) * fjfj
             IJKL = np.sum(I + J + K + L, axis=1)
             kern += IJKL * kern_exp
         else:
-            kern += kern_exp * np.sum(fjfj, axis=1) / 9 # (n_grids,)
+            kern += kern_exp * np.sum(fjfj, axis=1) / 9  # (n_grids,)
 
     return kern
- 
 
 
-kern_dict = {'energy_energy': en_en,
-             'energy_force': en_force,
-             'force_energy': force_en,
-             'force_force': force_force}
+kern_dict = {
+    "energy_energy": en_en,
+    "energy_force": en_force,
+    "force_energy": force_en,
+    "force_force": force_force,
+}
 
-derv_dict = {'energy_energy': False,
-             'energy_force': True,
-             'force_energy': False,
-             'force_force': True}
-
+derv_dict = {
+    "energy_energy": False,
+    "energy_force": True,
+    "force_energy": False,
+    "force_force": True,
+}
