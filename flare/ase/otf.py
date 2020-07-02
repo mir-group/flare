@@ -1,7 +1,7 @@
-'''
+"""
 :class:`OTF` is the on-the-fly training module for ASE, WITHOUT molecular dynamics engine. 
 It needs to be used adjointly with ASE MD engine. 
-'''
+"""
 import os
 import sys
 import inspect
@@ -21,12 +21,12 @@ from flare.utils.learner import is_std_in_bound
 
 from flare.ase.atoms import FLARE_Atoms
 from flare.ase.calculator import FLARE_Calculator
-import flare.ase.dft as dft_source 
+import flare.ase.dft as dft_source
 
 
 class ASE_OTF(OTF):
 
-    '''
+    """
     On-the-fly training module using ASE MD engine, a subclass of OTF.
 
     Args:
@@ -82,31 +82,40 @@ class ASE_OTF(OTF):
 
         n_cpus (int, optional): Number of cpus used during training.
             Defaults to 1.
-    '''
+    """
 
-    def __init__(self, atoms, timestep, number_of_steps, dft_calc,
-                 md_engine, md_kwargs, trajectory=None, **otf_kwargs):
-
-        self.atoms = atoms
-        self.md_engine = md_engine
-
-        if md_engine == 'VelocityVerlet':
-            MD = VelocityVerlet
-        elif md_engine == 'NVTBerendsen':
-            MD = NVTBerendsen
-        elif md_engine == 'NPTBerendsen':
-            MD = NPTBerendsen
-        elif md_engine == 'NPT':
-            MD = NPT
-        elif md_engine == 'Langevin':
-            MD = Langevin
-        else:
-            raise NotImplementedError(md_engine+' is not implemented in ASE')
-
-        self.md = MD(atoms=atoms, timestep=timestep, trajectory=trajectory,
-                     **md_kwargs)
+    def __init__(
+        self,
+        atoms,
+        timestep,
+        number_of_steps,
+        dft_calc,
+        md_engine,
+        md_kwargs,
+        trajectory=None,
+        **otf_kwargs
+    ):
 
         self.atoms = FLARE_Atoms.from_ase_atoms(atoms)
+        self.md_engine = md_engine
+
+        if md_engine == "VelocityVerlet":
+            MD = VelocityVerlet
+        elif md_engine == "NVTBerendsen":
+            MD = NVTBerendsen
+        elif md_engine == "NPTBerendsen":
+            MD = NPTBerendsen
+        elif md_engine == "NPT":
+            MD = NPT
+        elif md_engine == "Langevin":
+            MD = Langevin
+        else:
+            raise NotImplementedError(md_engine + " is not implemented in ASE")
+
+        self.md = MD(
+            atoms=self.atoms, timestep=timestep, trajectory=trajectory, **md_kwargs
+        )
+
         force_source = dft_source
         self.flare_calc = self.atoms.calc
 
@@ -114,42 +123,55 @@ class ASE_OTF(OTF):
         flare_dt = timestep / (units.fs * 1e3)
 
         super().__init__(
-            dt=flare_dt, number_of_steps=number_of_steps,
-            gp=self.flare_calc.gp_model, force_source=force_source,
-            dft_loc=dft_calc, dft_input=self.atoms, **otf_kwargs)
+            dt=flare_dt,
+            number_of_steps=number_of_steps,
+            gp=self.flare_calc.gp_model,
+            force_source=force_source,
+            dft_loc=dft_calc,
+            dft_input=self.atoms,
+            **otf_kwargs
+        )
 
-    def get_structure_from_input(self):
-        self.structure = self.atoms 
+    def get_structure_from_input(self, prev_pos_init):
+        self.structure = self.atoms
+        if prev_pos_init is None:
+            self.atoms.prev_positions = np.copy(self.atoms.positions)
+        else:
+            assert len(self.atoms.positions) == len(
+                self.atoms.prev_positions
+            ), "Previous positions and positions are not same length"
+            self.atoms.prev_positions = prev_pos_init
 
     def initialize_train(self):
         super().initialize_train()
 
-        if self.md_engine == 'NPT':
+        if self.md_engine == "NPT":
             if not self.md.initialized:
                 self.md.initialize()
             else:
                 if self.md.have_the_atoms_been_changed():
                     raise NotImplementedError(
-                        "You have modified the atoms since the last timestep.")
+                        "You have modified the atoms since the last timestep."
+                    )
 
     def compute_properties(self):
-        '''
+        """
         Compute energies, forces, stresses, and their uncertainties with
             the FLARE ASE calcuator, and write the results to the
             OTF structure object.
-        '''
+        """
 
         # Reset FLARE calculator if necessary.
         if not isinstance(self.atoms.calc, FLARE_Calculator):
             self.atoms.set_calculator(self.flare_calc)
 
-        self.atoms.calc.calculate(self.atoms, self.structure)
+        self.atoms.calc.calculate(self.atoms)
 
     def md_step(self):
-        '''
+        """
         Get new position in molecular dynamics based on the forces predicted by
         FLARE_Calculator or DFT calculator
-        '''
+        """
         # Update previous positions.
         self.structure.prev_positions = np.copy(self.structure.positions)
 
