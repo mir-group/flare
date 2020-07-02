@@ -218,9 +218,10 @@ def predict_on_structure_par(
         r = results[i].get()
         forces[i] = r[0]
         stds[i] = r[1]
-        if write_to_structure:
-            structure.forces[i] = r[0]
-            structure.stds[i] = r[1]
+
+    if write_to_structure:
+        structure.forces = forces
+        structure.stds = stds
 
     return forces, stds
 
@@ -408,7 +409,7 @@ def predict_on_structure_en(structure: Structure, gp: GaussianProcess,
             stds[n][i] = np.sqrt(np.abs(var))
 
         local_energies[n] = gp.predict_local_energy(chemenv)
-    
+
     if write_to_structure and structure.forces is not None:
         structure.forces = forces
         structure.stds = stds
@@ -444,8 +445,6 @@ def predict_on_structure_par_en(structure: Structure, gp: GaussianProcess,
     forces = np.zeros((structure.nat, 3))
     stds = np.zeros((structure.nat, 3))
     local_energies = np.zeros(structure.nat)
-    forces = np.zeros(shape=(structure.nat, 3))
-    stds = np.zeros(shape=(structure.nat, 3))
 
     if selective_atoms:
         forces.fill(skipped_atom_value)
