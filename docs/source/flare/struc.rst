@@ -7,10 +7,7 @@ and Cartesian coordinates of the atoms.
 The atoms are automatically folded back into the primary cell, so the
 input coordinates don't need to lie inside the box.
 
-.. py:class:: Structure(
-    cell: np.array, species: List[str] or List[int], positions: np.array,
-    mass_dict: dict = {}, prev_positions: ndarray = [],
-    species_labels: List[str] = [])
+.. py:class:: Structure(cell: np.array, species: List[str] or List[int], positions: np.array, mass_dict: dict = {}, prev_positions: ndarray = [], species_labels: List[str] = [])
 
     Contains information about a periodic structure of atoms, including the
     periodic cell boundaries, atomic species, and coordinates. Note that input
@@ -23,7 +20,7 @@ input coordinates don't need to lie inside the box.
         atomic numbers (integers) or chemical symbols (string of one or two
         characters, e.g. 'H' for Helium). The species are stored in the coded_species attribute.
     :type species: List[int] or List[str]
-    :param positions: Nx3 array of atomic coordinates in A.
+    :param positions: Nx3 array of atomic coordinates in Angstrom.
     :type positions: np.array
     :param mass_dict: Dictionary of atomic masses used in MD simulations, with
         species as keywords (either as integers or strings) and masses in amu
@@ -39,6 +36,12 @@ input coordinates don't need to lie inside the box.
         output file of on-the-fly runs. If not specified, species_labels is
         set equal to the species input.
     :type species_labels: List[str]
+
+    ..py:method:: positions()
+        :property:
+    ..py:method:: cell()
+        :property:
+    ..py:attribute:: coded_species
 
 Python methods
 --------------
