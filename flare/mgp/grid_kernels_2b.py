@@ -227,7 +227,6 @@ def get_bonds_for_kern(bond_array_1, c1, etypes1, c2, etypes2):
 
 
 def self_kernel_sephyps(
-    map_force,
     grids,
     fj,
     fdj,
@@ -268,12 +267,11 @@ def self_kernel_sephyps(
     hyps = [sig, ls]
 
     return self_kernel(
-        map_force, grids, fj, fdj, c2, etypes2, hyps, cutoffs, cutoff_func
+        grids, fj, fdj, c2, etypes2, hyps, cutoffs, cutoff_func
     )
 
 
 def self_kernel(
-    map_force,
     grids,
     fj,
     fdj,
@@ -292,14 +290,8 @@ def self_kernel(
     ls2 = 1 / (ls * ls)
     ls3 = ls2 * ls2
 
-    if map_force:
-        I = fdj ** 2
-        L = ls2 * fj ** 2
-        kern = sig2 * (I + L)
-        return np.sum(kern, axis=1)
-    else:
-        kern = (sig2 / 4) * fj ** 2  # (n_grids,)
-        return np.sum(kern, axis=1)
+    kern = (sig2 / 4) * fj ** 2  # (n_grids,)
+    return np.sum(kern, axis=1)
 
 
 kern_dict = {

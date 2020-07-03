@@ -344,7 +344,6 @@ def get_triplets_for_kern(
 
 
 def self_kernel_sephyps(
-    map_force,
     grids,
     fj,
     fdj,
@@ -386,12 +385,11 @@ def self_kernel_sephyps(
 
     hyps = [sig, ls]
     return self_kernel(
-        map_force, grids, fj, fdj, c2, etypes2, hyps, cutoffs, cutoff_func
+        grids, fj, fdj, c2, etypes2, hyps, cutoffs, cutoff_func
     )
 
 
 def self_kernel(
-    map_force,
     grids,
     fj,
     fdj,
@@ -425,22 +423,7 @@ def self_kernel(
         D = np.sum(rij * rij, axis=1)  # (n_grids, ) adding up three bonds
         kern_exp = np.exp(-D * ls1) * sig2
         fjfj = fj ** 2
-        if map_force:
-            cj = np.take(ci, perm)
-            A = ci[0] * cj[0]
-            B = rij[:, [0]] * ci[0]
-            C = 0
-            for d in range(3):
-                C += rij[:, [d]] * cj[d]
-
-            I = fdj ** 2
-            J = B * ls2 * fj * fdj
-            K = -C * ls2 * fdj * fj
-            L = (A * ls2 - B * C * ls3) * fjfj
-            IJKL = np.sum(I + J + K + L, axis=1)
-            kern += IJKL * kern_exp
-        else:
-            kern += kern_exp * np.sum(fjfj, axis=1) / 9  # (n_grids,)
+        kern += kern_exp * np.sum(fjfj, axis=1) / 9  # (n_grids,)
 
     return kern
 

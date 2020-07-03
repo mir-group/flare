@@ -31,19 +31,12 @@ class Map3body(MapXbody):
         # 2 body (2 atoms (1 bond) config)
         self.spc = []
         N_spc = len(species_list)
-        if self.map_force:
-            for spc1 in species_list:
-                for spc2 in species_list:
-                    for spc3 in species_list:
-                        species = [spc1, spc2, spc3]
-                        self.spc.append(species)
-        else:
-            for spc1 in species_list:
-                for spc2_ind in range(N_spc):
-                    spc2 = species_list[spc2_ind]
-                    for spc3 in species_list[spc2_ind:]:
-                        species = [spc1, spc2, spc3]
-                        self.spc.append(species)
+        for spc1 in species_list:
+            for spc2_ind in range(N_spc):
+                spc2 = species_list[spc2_ind]
+                for spc3 in species_list[spc2_ind:]:
+                    species = [spc1, spc2, spc3]
+                    self.spc.append(species)
 
     def get_arrays(self, atom_env):
 
@@ -114,12 +107,6 @@ class SingleMap3body(SingleMapXbody):
             )
             triplets.append(bonds)
 
-        #        r1 = np.tile(bonds1, (nb12, nb2, 1))
-        #        r1 = np.moveaxis(r1, -1, 0)
-        #        r2 = np.tile(bonds2, (nb1, nb12, 1))
-        #        r2 = np.moveaxis(r2, -1, 1)
-        #        r12 = np.tile(bonds12, (nb1, nb2, 1))
-
         # concatenate into one array: n_grid x 3
         mesh = np.meshgrid(*triplets, indexing="ij")
         del triplets
@@ -132,94 +119,6 @@ class SingleMap3body(SingleMapXbody):
         mesh_list = np.array(mesh_list).T
 
         return mesh_list
-
-    def set_env(self, grid_env, grid_pt):
-        r1, r2, r12 = grid_pt
-        dist12 = r12
-        grid_env.bond_array_3 = np.array([[r1, 1, 0, 0], [r2, 0, 0, 0]])
-        grid_env.cross_bond_dists = np.array([[0, dist12], [dist12, 0]])
-
-        return grid_env
-
-    def skip_grid(self, grid_pt):
-        r1, r2, r12 = grid_pt
-        return False
-
-    def _gengrid_numba(self, name, env12, kernel_info, force_block, s, e):
-        """
-        Loop over different parts of the training set. from element s to element e
-
-        Args:
-            name: name of the gp instance
-            s: start index of the training data parition
-            e: end index of the training data parition
-            env12: AtomicEnvironment container of the triplet
-            kernel_info: return value of the get_3b_kernel
-        """
-
-        grid_kernel, _, _, cutoffs, hyps, hyps_mask = kernel_info
-
-        args = from_mask_to_args(hyps, cutoffs, hyps_mask)
-        r_cut = cutoffs["threebody"]
-
-        grids = self.construct_grids()
-        coords = np.zeros((grids.shape[0], 9), dtype=np.float64)  # padding 0
-        coords[:, 0] = np.ones_like(coords[:, 0])
-
-        fj, fdj = triplet_cutoff(
-            grids, r_cut, coords, derivative=True
-        )  # TODO: add cutoff func
-        fdj = fdj[:, [0]]
-
-        if self.map_force:
-            prefix = "force"
-        else:
-            prefix = "energy"
-
-        if force_block:
-            training_data = _global_training_data[name]
-            kern_type = f"{prefix}_force"
-        else:
-            training_data = _global_training_structures[name]
-            kern_type = f"{prefix}_energy"
-
-        k_v = []
-        chunk_size = 32 ** 3
-        n_grids = grids.shape[0]
-        if n_grids > chunk_size:
-            n_chunk = ceil(n_grids / chunk_size)
-        else:
-            n_chunk = 1
-
-        for m_index in range(s, e):
-            data = training_data[m_index]
-            kern_vec = []
-            for g in range(n_chunk):
-                gs = chunk_size * g
-                ge = np.min((chunk_size * (g + 1), n_grids))
-                grid_chunk = grids[gs:ge, :]
-                fj_chunk = fj[gs:ge, :]
-                fdj_chunk = fdj[gs:ge, :]
-                kv_chunk = grid_kernel(
-                    kern_type,
-                    data,
-                    grid_chunk,
-                    fj_chunk,
-                    fdj_chunk,
-                    env12.ctype,
-                    env12.etypes,
-                    *args,
-                )
-                kern_vec.append(kv_chunk)
-            kern_vec = np.hstack(kern_vec)
-            k_v.append(kern_vec)
-
-        if len(k_v) > 0:
-            k_v = np.vstack(k_v).T
-        else:
-            k_v = np.zeros((grids.shape[0], 0))
-
-        return k_v
 
     def grid_cutoff(self, bonds, r_cut, coords, derivative, cutoff_func):
         return triplet_cutoff(bonds, r_cut, coords, derivative, cutoff_func)

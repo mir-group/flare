@@ -30,8 +30,6 @@ class MappedGaussianProcess:
             grid size of spline fit, etc. As described below.
         unique_species (dict): List of all the (unique) species included during
             the training that need to be mapped
-        map_force (bool): if True, do force mapping; otherwise do energy mapping,
-            default is False
         GP (GaussianProcess): None or a GaussianProcess object. If a GP is input,
             and container_only is False, automatically build a mapping corresponding
             to the GaussianProcess.
@@ -96,7 +94,6 @@ class MappedGaussianProcess:
         self,
         grid_params: dict,
         unique_species: list = [],
-        map_force: bool = False,
         GP: GaussianProcess = None,
         var_map: str = None,
         container_only: bool = True,
@@ -106,7 +103,6 @@ class MappedGaussianProcess:
     ):
 
         # load all arguments as attributes
-        self.map_force = map_force
         self.var_map = var_map
         self.lmp_file_name = lmp_file_name
         self.n_cpus = n_cpus
@@ -292,7 +288,6 @@ class MappedGaussianProcess:
         init_arg_name = [
             "grid_params",
             "unique_species",
-            "map_force",
             "GP",
             "var_map",
             "container_only",

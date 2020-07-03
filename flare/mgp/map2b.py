@@ -92,12 +92,5 @@ class SingleMap2body(SingleMapXbody):
         bond_lengths = np.expand_dims(bond_lengths, axis=1)
         return bond_lengths
 
-    def set_env(self, grid_env, grid_pt):
-        grid_env.bond_array_2 = np.array([[grid_pt[0], 1.0, 0.0, 0.0]])
-        return grid_env
-
-    def skip_grid(self, r):
-        return False
-
     def grid_cutoff(self, bonds, r_cut, coords, derivative, cutoff_func):
         return bond_cutoff(bonds, r_cut, coords, derivative, cutoff_func)

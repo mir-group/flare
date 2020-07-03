@@ -169,7 +169,7 @@ def predict_atom_diag_var_3b(atom_env, gp_model, force_kernel):
     return var       
 
 
-def predict_atom_diag_var(atom_env, gp_model, kernel_name, force_kernel):
+def predict_atom_diag_var(atom_env, gp_model, kernel_name, force_kernel=False):
     print('predict diag var')
     if kernel_name == 'twobody':
         return predict_atom_diag_var_2b(atom_env, gp_model, force_kernel)

@@ -40,7 +40,6 @@ class MapXbody:
         upper_bound: List or str = "auto",
         svd_rank="auto",
         coded_species: list = [],
-        map_force: bool = False,
         var_map: str = None,
         container_only: bool = True,
         lmp_file_name: str = "lmp.mgp",
@@ -60,7 +59,6 @@ class MapXbody:
         self.upper_bound = upper_bound
         self.svd_rank = svd_rank
         self.coded_species = coded_species
-        self.map_force = map_force
         self.var_map = var_map
         self.lmp_file_name = lmp_file_name
         self.load_grid = load_grid
@@ -120,7 +118,7 @@ class MapXbody:
 
         f_spcs = np.zeros(3)
         vir_spcs = np.zeros(6)
-        v_spcs = np.zeros(3) if self.map_force else 0
+        v_spcs = 0
         e_spcs = 0
         kern = 0
 
@@ -132,12 +130,7 @@ class MapXbody:
         args = from_mask_to_args(hyps, cutoffs, hyps_mask)
 
         if self.var_map == "pca":
-            if self.map_force:
-                kern = np.zeros(3)
-                for d in range(3):
-                    kern[d] = force_kernel(atom_env, atom_env, d + 1, d + 1, *args)
-            else:
-                kern = en_kernel(atom_env, atom_env, *args)
+            kern = en_kernel(atom_env, atom_env, *args)
 
         spcs, comp_r, comp_xyz = self.get_arrays(atom_env)
 
@@ -149,27 +142,10 @@ class MapXbody:
             xyzs = np.array(comp_xyz[i])
             map_ind = self.find_map_index(spc)
             try:
-                f, vir, v, e = self.maps[map_ind].predict(lengths, xyzs, self.map_force)
+                f, vir, v, e = self.maps[map_ind].predict(lengths, xyzs)
             except ValueError as err_msg:
                 rebuild_spc.append(err_msg.args[0])
                 new_bounds.append(err_msg.args[1])
-
-            # the force mapping is not symmetric, need to permute and use
-            # another map
-            if self.map_force:
-                for b in range(1, self.bodies - 1):
-                    spc = np.array(spc)
-                    spc_perm = spc[self.spc_perm[b]].tolist()
-                    map_ind = self.find_map_index(spc_perm)
-                    f_b, vir_b, v_b, e_b = self.maps[map_ind].predict(
-                        lengths[:, self.pred_perm[b]],
-                        xyzs[:, self.pred_perm[b]],
-                        self.map_force,
-                    )
-                    f += f_b
-                    vir += vir_b
-                    v += v_b
-                    e += e_b
 
             if len(rebuild_spc) > 0:
                 raise ValueError(
@@ -246,7 +222,6 @@ class SingleMapXbody:
         grid_num: int = 1,
         bounds="auto",
         species: list = [],
-        map_force=False,
         svd_rank=0,
         var_map: str = None,
         load_grid=None,
@@ -259,19 +234,12 @@ class SingleMapXbody:
         self.grid_num = grid_num
         self.bounds = deepcopy(bounds)
         self.species = species
-        self.map_force = map_force
         self.svd_rank = svd_rank
         self.var_map = var_map
         self.load_grid = load_grid
         self.lower_bound_relax = lower_bound_relax
         self.n_cpus = n_cpus
         self.n_sample = n_sample
-
-        if (self.bodies == 3) and self.map_force and (self.var_map == "simple"):
-            raise NotImplementedError(
-                "var_map='simple' is not implemented for 3b force map, "
-                "please set to None or 'pca'"
-            )
 
         self.auto_lower = bounds[0] == "auto"
         if self.auto_lower:
@@ -298,28 +266,6 @@ class SingleMapXbody:
 
     def construct_grids(self):
         raise NotImplementedError("need to be implemented in child class")
-
-    def set_env(self, grid_env, r):
-        raise NotImplementedError("need to be implemented in child class")
-
-    def skip_grid(self, r):
-        raise NotImplementedError("need to be implemented in child class")
-
-    def get_grid_env(self, GP):
-        if isinstance(GP.cutoffs, dict):
-            max_cut = np.max(list(GP.cutoffs.values()))
-        else:
-            max_cut = np.max(GP.cutoffs)
-        big_cell = np.eye(3) * (2 * max_cut + 1)
-        positions = [
-            [(i + 1) / (self.bodies + 1) * 0.1, 0, 0] for i in range(self.bodies)
-        ]
-        grid_struc = Structure(big_cell, self.species, positions)
-        grid_env = AtomicEnvironment(
-            grid_struc, 0, GP.cutoffs, cutoffs_mask=GP.hyps_mask
-        )
-
-        return grid_env
 
     def GenGrid(self, GP):
         """
@@ -356,8 +302,6 @@ class SingleMapXbody:
         else:
             grid_vars = None
 
-        grid_env = self.get_grid_env(GP)
-
         # ------- call gengrid functions ---------------
         kernel_info = get_kernel_term(
             self.kernel_name, GP.component, GP.hyps_mask, GP.hyps, grid_kernel=False
@@ -378,8 +322,8 @@ class SingleMapXbody:
             self.kernel_name, GP.component, GP.hyps_mask, GP.hyps, grid_kernel=True
         )
 
-        args = [GP.name, grid_env, kernel_info]
-        args_var = [GP.name, grid_env, kernel_var]
+        args = [GP.name, kernel_info]
+        args_var = [GP.name, kernel_var]
 
         k12_v_force = self._gengrid_par(args, True, n_envs, processes)
         k12_v_energy = self._gengrid_par(args, False, n_strucs, processes)
@@ -445,7 +389,7 @@ class SingleMapXbody:
 
         return k12_v_force
 
-    def _gengrid_inner(self, name, env12, kernel_info, force_block, s, e):
+    def _gengrid_inner(self, name, kernel_info, force_block, s, e):
         """
         Loop over different parts of the training set. from element s to element e
 
@@ -453,7 +397,6 @@ class SingleMapXbody:
             name: name of the gp instance
             s: start index of the training data parition
             e: end index of the training data parition
-            env12: AtomicEnvironment container of the triplet
             kernel_info: return value of the get_3b_kernel
         """
 
@@ -473,17 +416,12 @@ class SingleMapXbody:
         )
         fdj = fdj[:, [0]]
 
-        if self.map_force:
-            prefix = "force"
-        else:
-            prefix = "energy"
-
         if force_block:
             training_data = _global_training_data[name]
-            kern_type = f"{prefix}_force"
+            kern_type = f"energy_force"
         else:
             training_data = _global_training_structures[name]
-            kern_type = f"{prefix}_energy"
+            kern_type = f"energy_energy"
 
         k_v = []
         chunk_size = 32 ** 3
@@ -493,6 +431,8 @@ class SingleMapXbody:
         else:
             n_chunk = 1
 
+        ctype = self.species[0]
+        etypes = np.array(self.species[1:])
         for m_index in range(s, e):
             data = training_data[m_index]
             kern_vec = []
@@ -508,8 +448,8 @@ class SingleMapXbody:
                     grid_chunk,
                     fj_chunk,
                     fdj_chunk,
-                    env12.ctype,
-                    env12.etypes,
+                    ctype,
+                    etypes,
                     *args,
                 )
                 kern_vec.append(kv_chunk)
@@ -523,7 +463,7 @@ class SingleMapXbody:
 
         return k_v
 
-    def _gengrid_var_simple(self, name, grid_env, kernel_info):
+    def _gengrid_var_simple(self, name, kernel_info):
         """
         Generate grids for variance upper bound, based on the inequality:
         V(c, p)^2 <= V(c, c) V(p, p)
@@ -546,8 +486,10 @@ class SingleMapXbody:
         )
         fdj = fdj[:, [0]]
 
+        ctype = self.species[0]
+        etypes = np.array(self.species[1:])
         return self_kernel(
-            self.map_force, grids, fj, fdj, grid_env.ctype, grid_env.etypes, *args
+            grids, fj, fdj, ctype, etypes, *args
         )
 
     def build_map_container(self):
@@ -645,11 +587,6 @@ class SingleMapXbody:
         lower bound relaxation: {self.lower_bound_relax}
         load grid from: {self.load_grid}\n"""
 
-        if self.map_force:
-            info += f"        build force mapping\n"
-        else:
-            info += f"        build energy mapping\n"
-
         if self.var_map is None:
             info += f"        without variance\n"
         elif self.var_map == "pca":
@@ -682,15 +619,10 @@ class SingleMapXbody:
 
         return lower_bound
 
-    def predict(self, lengths, xyzs, map_force):
+    def predict(self, lengths, xyzs):
         """
         predict force and variance contribution of one component
         """
-
-        assert map_force == self.map_force, (
-            f"The mapping is built for"
-            "map_force={self.map_force}, can not predict for map_force={map_force}"
-        )
 
         min_dist = np.min(lengths)
         if min_dist < np.max(self.bounds[0][0]):
@@ -704,54 +636,25 @@ class SingleMapXbody:
         lengths = np.array(lengths)
         xyzs = np.array(xyzs)
 
-        if self.map_force:
-            n_neigh = 1
-            # predict forces and energy
-            e = 0
-            f_d = np.zeros((lengths.shape[0], n_neigh, 3))
-            for b in range(n_neigh):
-                f_0 = self.mean(lengths[:, self.pred_perm[b]])
-                f_d[:, b, :] = np.diag(f_0) @ xyzs[:, b]
-            f = np.sum(f_d, axis=(0, 1))
+        n_neigh = self.bodies - 1
+        # predict forces and energy
+        e_0, f_0 = self.mean(lengths, with_derivatives=True)
+        e = np.sum(e_0)  # energy
+        f_d = np.zeros((lengths.shape[0], n_neigh, 3))
+        for b in range(n_neigh):
+            f_d[:, b, :] = np.diag(f_0[:, b, 0]) @ xyzs[:, b]
+        f = self.bodies * np.sum(f_d, axis=(0, 1))
 
-            # predict var
-            # v = np.zeros((lengths.shape[0], 3))
-            v = np.zeros(3)
-            if self.var_map == "simple":
-                for b in range(n_neigh):
-                    # v_0 = sqrt(d^2k/dr^2), v = sqrt(d^2k/dr^2 * coord * coord)
-                    v_0 = self.var(lengths[:, self.pred_perm[b]])
-                    v += v_0 @ np.abs(xyzs[:, b])
-                    # for d in range(3):
-                    #    v[:, d] = v_0 * xyzs[:, b, d]
-
-            elif self.var_map == "pca":
-                v_d = np.zeros((lengths.shape[0], 3))
-                for b in range(n_neigh):
-                    v_0 = self.var(lengths[:, self.pred_perm[b]])
-                    v_d += v_0 @ xyzs[:, b]
-                v = self.var.V @ v_d
-
-        else:
-            n_neigh = self.bodies - 1
-            # predict forces and energy
-            e_0, f_0 = self.mean(lengths, with_derivatives=True)
-            e = np.sum(e_0)  # energy
-            f_d = np.zeros((lengths.shape[0], n_neigh, 3))
-            for b in range(n_neigh):
-                f_d[:, b, :] = np.diag(f_0[:, b, 0]) @ xyzs[:, b]
-            f = self.bodies * np.sum(f_d, axis=(0, 1))
-
-            # predict var
-            v = 0
-            if self.var_map == "simple":
-                v_0 = self.var(lengths)
-                v = np.sum(v_0)
-            elif self.var_map == "pca":
-                v_0 = self.var(lengths)
-                v_0 = np.sum(v_0, axis=1)
-                v_0 = np.expand_dims(v_0, axis=1)
-                v = self.var.V @ v_0
+        # predict var
+        v = 0
+        if self.var_map == "simple":
+            v_0 = self.var(lengths)
+            v = np.sum(v_0)
+        elif self.var_map == "pca":
+            v_0 = self.var(lengths)
+            v_0 = np.sum(v_0, axis=1)
+            v_0 = np.expand_dims(v_0, axis=1)
+            v = self.var.V @ v_0
 
         # predict virial stress
         vir = np.zeros(6)
