@@ -61,7 +61,7 @@ def mgp_model(gp_model):
     species_list = [1, 2, 3]
     lammps_location = f'tmp_lmp.mgp'
     mapped_model = MappedGaussianProcess(grid_params=grid_params, unique_species=species_list, n_cpus=1,
-                map_force=False, lmp_file_name=lammps_location, var_map=None)
+                lmp_file_name=lammps_location, var_map=None)
 
     # import flare.mgp.mapxb
     # flare.mgp.mapxb.global_use_grid_kern = False
