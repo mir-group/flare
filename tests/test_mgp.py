@@ -18,7 +18,7 @@ from flare.utils.element_coder import _Z_to_mass, _Z_to_element
 from .fake_gp import get_gp, get_random_structure
 from .mgp_test import clean, compare_triplet, predict_atom_diag_var
 
-body_list = ['2', '3']
+body_list = ['333'] #, '3']
 multi_list = [False, True]
 force_block_only = False
 
@@ -78,7 +78,7 @@ def test_init(bodies, multihyps, all_mgp, all_gp):
     try:       
         mgp_model = MappedGaussianProcess(grid_params=grid_params, 
             unique_species=data['species'], n_cpus=1, 
-            lmp_file_name=lammps_location, var_map='simple')
+            lmp_file_name=lammps_location, var_map=None) #'simple')
     except:
         mgp_model = MappedGaussianProcess(grid_params=grid_params, 
             unique_species=data['species'], n_cpus=1, 

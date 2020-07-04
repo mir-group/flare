@@ -1,4 +1,5 @@
 import numpy as np
+from numba import njit
 
 from typing import List
 
@@ -6,8 +7,7 @@ from flare.struc import Structure
 from flare.utils.element_coder import Z_to_element
 
 from flare.mgp.mapxb import MapXbody, SingleMapXbody
-from flare.mgp.utils import get_bonds
-from flare.mgp.grid_kernels_2b import bond_cutoff
+from flare.mgp.grid_kernels import grid_kernel
 
 from flare.kernels.utils import from_mask_to_args
 
@@ -41,7 +41,6 @@ class Map2body(MapXbody):
                 self.spc.append(sorted(species))
 
     def get_arrays(self, atom_env):
-
         return get_bonds(atom_env.ctype, atom_env.etypes, atom_env.bond_array_2)
 
     def find_map_index(self, spc):
@@ -93,9 +92,92 @@ class SingleMap2body(SingleMapXbody):
         return bond_lengths
 
     def grid_cutoff(self, bonds, r_cut, coords, derivative, cutoff_func):
-        fj, dfj = cutoff_func(r_cut, bonds, coords)
-        return fj, dfj
+        return bonds_cutoff(bonds, r_cut, coords, derivative, cutoff_func)
 
+    def get_grid_kernel(
+        self,
+        kern_type,
+        data,
+        grid_chunk,
+        fj_chunk,
+        fdj_chunk,
+        ctype,
+        etypes,
+        hyps,
+        cutoffs,
+        hyps_mask,
+    ):
+        hyps, r_cut = get_hyps_for_kern(hyps, cutoffs, hyps_mask, ctype, etypes)
+        return grid_kernel(
+            data,
+            self.bodies,
+            kern_type,
+            get_bonds_for_kern,
+            bonds_cutoff,
+            grid_chunk,
+            fj_chunk,
+            fdj_chunk,
+            ctype,
+            etypes,
+            hyps,
+            r_cut,
+        )
+
+
+# -----------------------------------------------------------------------------
+#                               Functions
+# -----------------------------------------------------------------------------
+
+
+def bonds_cutoff(bonds, r_cut, coords, derivative, cutoff_func):
+    fj, dfj = cutoff_func(r_cut, bonds, coords)
+    return fj, dfj
+
+
+def get_hyps_for_kern(hyps, cutoffs, hyps_mask, c2, etypes2):
+    """
+    Args:
+        data: a single env of a list of envs
+    """
+
+    args = from_mask_to_args(hyps, cutoffs, hyps_mask)
+
+    if len(args) == 2:
+        hyps, cutoffs = args
+        r_cut = cutoffs[0]
+
+    else:
+        (
+            cutoff_2b,
+            cutoff_3b,
+            cutoff_mb,
+            nspec,
+            spec_mask,
+            nbond,
+            bond_mask,
+            ntriplet,
+            triplet_mask,
+            ncut3b,
+            cut3b_mask,
+            nmb,
+            mb_mask,
+            sig2,
+            ls2,
+            sig3,
+            ls3,
+            sigm,
+            lsm,
+        ) = args
+
+        bc1 = spec_mask[c2]
+        bc2 = spec_mask[etypes2[0]]
+        btype = bond_mask[nspec * bc1 + bc2]
+        ls = ls2[btype]
+        sig = sig2[btype]
+        r_cut = cutoff_2b[btype]
+        hyps = [sig, ls]
+
+    return hyps, r_cut
 
 
 @njit
@@ -123,9 +205,12 @@ def get_bonds(ctype, etypes, bond_array):
     return exist_species, bond_lengths, bond_dirs
 
 
+def get_bonds_for_kern(env, c2, etypes2):
+    return get_bonds_for_kern_jit(env.bond_array_2, env.ctype, env.etypes, c2, etypes2)
+
 
 @njit
-def get_bonds_for_kern(bond_array_1, c1, etypes1, c2, etypes2):
+def get_bonds_for_kern_jit(bond_array_1, c1, etypes1, c2, etypes2):
 
     e2 = etypes2[0]
 
@@ -139,5 +224,3 @@ def get_bonds_for_kern(bond_array_1, c1, etypes1, c2, etypes2):
             bond_list.append([ri, ci[0], ci[1], ci[2]])
 
     return bond_list
-
-

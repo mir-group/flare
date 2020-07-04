@@ -1,15 +1,16 @@
 import numpy as np
+from numba import njit
 from math import floor, ceil
 
 from typing import List
 
 from flare.struc import Structure
 from flare.utils.element_coder import Z_to_element
-from flare.gp_algebra import _global_training_data, _global_training_structures
-from flare.kernels.utils import from_mask_to_args
 
 from flare.mgp.mapxb import MapXbody, SingleMapXbody
-from flare.mgp.utils import get_kernel_term
+from flare.mgp.grid_kernels import grid_kernel
+
+from flare.kernels.utils import from_mask_to_args
 
 
 class Map3body(MapXbody):
@@ -119,8 +120,112 @@ class SingleMap3body(SingleMapXbody):
 
         return mesh_list
 
-    def grid_cutoff(self, bonds, r_cut, coords, derivative, cutoff_func):
-        return triplet_cutoff(bonds, r_cut, coords, derivative, cutoff_func)
+    def grid_cutoff(self, triplets, r_cut, coords, derivative, cutoff_func):
+        return bonds_cutoff(triplets, r_cut, coords, derivative, cutoff_func)
+
+    def get_grid_kernel(
+        self,
+        kern_type,
+        data,
+        grid_chunk,
+        fj_chunk,
+        fdj_chunk,
+        ctype,
+        etypes,
+        hyps,
+        cutoffs,
+        hyps_mask,
+    ):
+        hyps, r_cut = get_hyps_for_kern(hyps, cutoffs, hyps_mask, ctype, etypes)
+        return grid_kernel(
+            data,
+            self.bodies,
+            kern_type,
+            get_bonds_for_kern,
+            bonds_cutoff,
+            grid_chunk,
+            fj_chunk,
+            fdj_chunk,
+            ctype,
+            etypes,
+            hyps,
+            r_cut,
+        )
+
+
+# -----------------------------------------------------------------------------
+#                               Functions
+# -----------------------------------------------------------------------------
+
+
+def bonds_cutoff(triplets, r_cut, coords, derivative, cutoff_func):
+    dfj_list = np.zeros((len(triplets), 3), dtype=np.float64)
+
+    if derivative:
+        for d in range(3):
+            s = 3 * d
+            e = 3 * (d + 1)
+            f0, df0 = cutoff_func(r_cut, triplets, coords[:, s:e])
+            dfj = (
+                df0[:, 0] * f0[:, 1] * f0[:, 2]
+                + f0[:, 0] * df0[:, 1] * f0[:, 2]
+                + f0[:, 0] * f0[:, 1] * df0[:, 2]
+            )
+            dfj_list[:, d] = dfj
+    else:
+        f0, _ = cutoff_func(r_cut, triplets, 0)  # (n_grid, 3)
+
+    fj = f0[:, 0] * f0[:, 1] * f0[:, 2]  # (n_grid,)
+    fj = np.expand_dims(fj, axis=1)
+
+    return fj, dfj_list
+
+
+def get_hyps_for_kern(hyps, cutoffs, hyps_mask, c2, etypes2):
+    """
+    Args:
+        data: a single env of a list of envs
+    """
+
+    args = from_mask_to_args(hyps, cutoffs, hyps_mask)
+
+    if len(args) == 2:
+        hyps, cutoffs = args
+        r_cut = cutoffs[0]
+
+    else:
+        (
+            cutoff_2b,
+            cutoff_3b,
+            cutoff_mb,
+            nspec,
+            spec_mask,
+            nbond,
+            bond_mask,
+            ntriplet,
+            triplet_mask,
+            ncut3b,
+            cut3b_mask,
+            nmb,
+            mb_mask,
+            sig2,
+            ls2,
+            sig3,
+            ls3,
+            sigm,
+            lsm,
+        ) = args
+
+        bc1 = spec_mask[c2]
+        bc2 = spec_mask[etypes2[0]]
+        bc3 = spec_mask[etypes2[1]]
+        ttype = triplet_mask[nspec * nspec * bc1 + nspec * bc2 + bc3]
+        ls = ls3[ttype]
+        sig = sig3[ttype]
+        r_cut = cutoff_3b
+        hyps = [sig, ls]
+
+    return hyps, r_cut
 
 
 @njit
@@ -147,11 +252,11 @@ def get_triplets(
 
             if spc1 <= spc2:
                 spcs = [ctype, spc1, spc2]
-                triplet = array([r1, r2, r12])
+                triplet = np.array([r1, r2, r12])
                 coord = [c1, c2, np.zeros(3)]
             else:
                 spcs = [ctype, spc2, spc1]
-                triplet = array([r2, r1, r12])
+                triplet = np.array([r2, r1, r12])
                 coord = [c2, c1, np.zeros(3)]
 
             if spcs not in exist_species:
@@ -164,32 +269,6 @@ def get_triplets(
                 tri_dir[k].append(coord)
 
     return exist_species, tris, tri_dir
-
-
-def triplet_cutoff(
-    triplets, r_cut, coords, derivative=False, cutoff_func=quadratic_cutoff
-):
-
-    dfj_list = np.zeros((len(triplets), 3), dtype=np.float64)
-
-    if derivative:
-        for d in range(3):
-            s = 3 * d
-            e = 3 * (d + 1)
-            f0, df0 = cutoff_func(r_cut, triplets, coords[:, s:e])
-            dfj = (
-                df0[:, 0] * f0[:, 1] * f0[:, 2]
-                + f0[:, 0] * df0[:, 1] * f0[:, 2]
-                + f0[:, 0] * f0[:, 1] * df0[:, 2]
-            )
-            dfj_list[:, d] = dfj
-    else:
-        f0, _ = cutoff_func(r_cut, triplets, 0)  # (n_grid, 3)
-
-    fj = f0[:, 0] * f0[:, 1] * f0[:, 2]  # (n_grid,)
-    fj = np.expand_dims(fj, axis=1)
-
-    return fj, dfj_list
 
 
 @njit
@@ -213,8 +292,21 @@ def get_permutations(c1, ei1, ei2, c2, ej1, ej2):
     return perms
 
 
+def get_bonds_for_kern(env, c2, etypes2):
+    return get_triplets_for_kern_jit(
+        env.bond_array_3,
+        env.ctype,
+        env.etypes,
+        env.cross_bond_inds,
+        env.cross_bond_dists,
+        env.triplet_counts,
+        c2,
+        etypes2,
+    )
+
+
 @njit
-def get_triplets_for_kern(
+def get_triplets_for_kern_jit(
     bond_array_1,
     c1,
     etypes1,
@@ -281,9 +373,9 @@ def get_triplets_for_kern(
                             crd2_p = np.take(crd2, perm)
                             crd3_p = np.take(crd3, perm)
                             crd_p = np.vstack((crd1_p, crd2_p, crd3_p)).T
-                            tricrd = np.hstack((tricrd, crd_p[0,:], crd2_p[1,:], crd3_p[2,:]))
+                            tricrd = np.hstack(
+                                (tricrd, crd_p[0, :], crd_p[1, :], crd_p[2, :])
+                            )
                             triplet_list.append(tricrd)
 
     return triplet_list
-
-

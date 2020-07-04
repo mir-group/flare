@@ -402,7 +402,6 @@ class SingleMapXbody:
 
         grid_kernel, _, _, cutoffs, hyps, hyps_mask = kernel_info
 
-        args = from_mask_to_args(hyps, cutoffs, hyps_mask)
         r_cut = cutoffs[self.kernel_name]
 
         grids = self.construct_grids()
@@ -442,7 +441,7 @@ class SingleMapXbody:
                 grid_chunk = grids[gs:ge, :]
                 fj_chunk = fj[gs:ge, :]
                 fdj_chunk = fdj[gs:ge, :]
-                kv_chunk = grid_kernel(
+                kv_chunk = self.get_grid_kernel(
                     kern_type,
                     data,
                     grid_chunk,
@@ -450,7 +449,9 @@ class SingleMapXbody:
                     fdj_chunk,
                     ctype,
                     etypes,
-                    *args,
+                    hyps,
+                    cutoffs,
+                    hyps_mask,
                 )
                 kern_vec.append(kv_chunk)
             kern_vec = np.hstack(kern_vec)
@@ -488,9 +489,7 @@ class SingleMapXbody:
 
         ctype = self.species[0]
         etypes = np.array(self.species[1:])
-        return self_kernel(
-            grids, fj, fdj, ctype, etypes, *args
-        )
+        return self_kernel(grids, fj, fdj, ctype, etypes, *args)
 
     def build_map_container(self):
         """

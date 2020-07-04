@@ -11,7 +11,6 @@ from flare.kernels.cutoffs import quadratic_cutoff
 from flare.kernels.utils import str_to_kernel_set
 from flare.parameters import Parameters
 
-import flare.mgp.grid_kernels as gk 
 
 def str_to_mapped_kernel(name: str, component: str = "mc", hyps_mask: dict = None):
     """
@@ -50,12 +49,12 @@ def str_to_mapped_kernel(name: str, component: str = "mc", hyps_mask: dict = Non
         if s in name.lower() or s == name.lower():
             b3 = True
 
-    if b3:
+    if b2:
         if multihyps:
             return (
-                grid_kernels_3b.grid_kernel_sephyps,
                 None,
-                grid_kernels_3b.self_kernel_sephyps,
+                None,
+                None,
                 None,
                 None,
                 None,
@@ -63,20 +62,20 @@ def str_to_mapped_kernel(name: str, component: str = "mc", hyps_mask: dict = Non
             )
         else:
             return (
-                grid_kernels_3b.grid_kernel,
                 None,
-                grid_kernels_3b.self_kernel,
+                None,
+                None,
                 None,
                 None,
                 None,
                 None,
             )
-    elif b2:
+    elif b3:
         if multihyps:
             return (
-                grid_kernels_2b.grid_kernel_sephyps,
                 None,
-                grid_kernels_2b.self_kernel_sephyps,
+                None,
+                None,
                 None,
                 None,
                 None,
@@ -84,9 +83,9 @@ def str_to_mapped_kernel(name: str, component: str = "mc", hyps_mask: dict = Non
             )
         else:
             return (
-                grid_kernels_2b.grid_kernel,
                 None,
-                grid_kernels_2b.self_kernel,
+                None,
+                None,
                 None,
                 None,
                 None,
@@ -117,6 +116,3 @@ def get_kernel_term(kernel_name, component, hyps_mask, hyps, grid_kernel=False):
     )
 
     return (kernel, ek, efk, cutoffs, hyps, hyps_mask)
-
-
-
