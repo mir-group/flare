@@ -11,7 +11,7 @@ from scipy.linalg import solve_triangular
 from typing import List
 
 from flare.env import AtomicEnvironment
-from flare.kernels.utils import from_mask_to_args
+from flare.kernels.utils import from_mask_to_args, str_to_kernel_set
 import flare.kernels.cutoffs as cf
 from flare.gp import GaussianProcess
 from flare.gp_algebra import (
@@ -26,10 +26,8 @@ from flare.gp_algebra import (
 from flare.parameters import Parameters
 from flare.struc import Structure
 
-from flare.mgp.utils import get_kernel_term
 from flare.mgp.splines_methods import PCASplines, CubicSpline
 
-global_use_grid_kern = True
 
 
 class MapXbody:
@@ -101,14 +99,14 @@ class MapXbody:
         generate/load grids and get spline coefficients
         """
 
-        self.kernel_info = get_kernel_term(
-            self.kernel_name, GP.component, GP.hyps_mask, GP.hyps
-        )
+
+        self.kernel_info = get_kernel_term(self.kernel_name, GP.hyps_mask, GP.hyps)
         self.hyps_mask = GP.hyps_mask
         self.hyps = GP.hyps
 
         for m in self.maps:
             m.build_map(GP)
+
 
     def predict(self, atom_env):
 
@@ -125,7 +123,7 @@ class MapXbody:
         if len(atom_env.bond_array_2) == 0:
             return f_spcs, vir_spcs, kern, v_spcs, e_spcs
 
-        force_kernel, en_kernel, _, cutoffs, hyps, hyps_mask = self.kernel_info
+        en_kernel, cutoffs, hyps, hyps_mask = self.kernel_info
 
         args = from_mask_to_args(hyps, cutoffs, hyps_mask)
 
@@ -198,7 +196,7 @@ class MapXbody:
 
         # Restore kernel_info
         new_mgp.kernel_info = get_kernel_term(
-            dictionary["kernel_name"], "mc", dictionary["hyps_mask"], dictionary["hyps"]
+            dictionary['kernel_name'], dictionary['hyps_mask'], dictionary['hyps']
         )
 
         # Fill up the model with the saved coeffs
@@ -256,7 +254,6 @@ class SingleMapXbody:
         self.set_bounds(lower_bound, upper_bound)
 
         self.hyps_mask = None
-        self.use_grid_kern = global_use_grid_kern
 
         if not self.auto_lower and not self.auto_upper:
             self.build_map_container()
@@ -303,27 +300,8 @@ class SingleMapXbody:
             grid_vars = None
 
         # ------- call gengrid functions ---------------
-        kernel_info = get_kernel_term(
-            self.kernel_name, GP.component, GP.hyps_mask, GP.hyps, grid_kernel=False
-        )
-        if self.use_grid_kern:
-            try:
-                kernel_info = get_kernel_term(
-                    self.kernel_name,
-                    GP.component,
-                    GP.hyps_mask,
-                    GP.hyps,
-                    grid_kernel=True,
-                )
-            except:
-                self.use_grid_kern = False
-
-        kernel_var = get_kernel_term(
-            self.kernel_name, GP.component, GP.hyps_mask, GP.hyps, grid_kernel=True
-        )
-
+        kernel_info = get_kernel_term(self.kernel_name, GP.hyps_mask, GP.hyps)
         args = [GP.name, kernel_info]
-        args_var = [GP.name, kernel_var]
 
         k12_v_force = self._gengrid_par(args, True, n_envs, processes)
         k12_v_energy = self._gengrid_par(args, False, n_strucs, processes)
@@ -340,7 +318,7 @@ class SingleMapXbody:
             grid_vars = solve_triangular(GP.l_mat, k12_v_all.T, lower=True).T
 
             if self.var_map == "simple":
-                self_kern = self._gengrid_var_simple(*args_var)
+                self_kern = self._gengrid_var_simple(*args)
                 grid_vars = np.sqrt(self_kern - np.sum(grid_vars ** 2, axis=1))
                 grid_vars = np.expand_dims(grid_vars, axis=1)
 
@@ -400,7 +378,7 @@ class SingleMapXbody:
             kernel_info: return value of the get_3b_kernel
         """
 
-        grid_kernel, _, _, cutoffs, hyps, hyps_mask = kernel_info
+        _, cutoffs, hyps, hyps_mask = kernel_info
 
         r_cut = cutoffs[self.kernel_name]
 
@@ -471,7 +449,7 @@ class SingleMapXbody:
         where c, p are two bonds/triplets or environments
         """
 
-        _, self_kernel, _, cutoffs, hyps, hyps_mask = kernel_info
+        _, cutoffs, hyps, hyps_mask = kernel_info
 
         args = from_mask_to_args(hyps, cutoffs, hyps_mask)
         r_cut = cutoffs[self.kernel_name]
@@ -717,3 +695,13 @@ class SingleMapXbody:
             if c % 5 == 4 and c != len(coefs) - 1:
                 f.write("\n")
         f.write("\n")
+
+
+def get_kernel_term(kernel_name, hyps_mask, hyps):
+    hyps, cutoffs, hyps_mask = Parameters.get_component_mask(
+        hyps_mask, kernel_name, hyps=hyps
+    )
+    kernel, _, ek, efk, _, _, _ = str_to_kernel_set([kernel_name], 'mc', hyps_mask)
+    return (ek, cutoffs, hyps, hyps_mask)
+
+
