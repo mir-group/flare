@@ -93,4 +93,51 @@ class SingleMap2body(SingleMapXbody):
         return bond_lengths
 
     def grid_cutoff(self, bonds, r_cut, coords, derivative, cutoff_func):
-        return bond_cutoff(bonds, r_cut, coords, derivative, cutoff_func)
+        fj, dfj = cutoff_func(r_cut, bonds, coords)
+        return fj, dfj
+
+
+
+@njit
+def get_bonds(ctype, etypes, bond_array):
+    exist_species = []
+    bond_lengths = []
+    bond_dirs = []
+    for i in range(len(bond_array)):
+        bond = bond_array[i]
+        if ctype <= etypes[i]:
+            spc = [ctype, etypes[i]]
+            b_dir = bond[1:]
+        else:
+            spc = [etypes[i], ctype]
+            b_dir = bond[1:]
+
+        if spc in exist_species:
+            ind = exist_species.index(spc)
+            bond_lengths[ind].append([bond[0]])
+            bond_dirs[ind].append([b_dir])
+        else:
+            exist_species.append(spc)
+            bond_lengths.append([[bond[0]]])
+            bond_dirs.append([[b_dir]])
+    return exist_species, bond_lengths, bond_dirs
+
+
+
+@njit
+def get_bonds_for_kern(bond_array_1, c1, etypes1, c2, etypes2):
+
+    e2 = etypes2[0]
+
+    bond_list = []
+    for m in range(bond_array_1.shape[0]):
+        ri = bond_array_1[m, 0]
+        ci = bond_array_1[m, 1:]
+        e1 = etypes1[m]
+
+        if (c1 == c2 and e1 == e2) or (c1 == e2 and c2 == e1):
+            bond_list.append([ri, ci[0], ci[1], ci[2]])
+
+    return bond_list
+
+

@@ -6,79 +6,6 @@ from typing import Callable
 from flare.kernels.cutoffs import quadratic_cutoff
 
 
-def grid_kernel_sephyps(
-    kern_type,
-    data,
-    grids,
-    fj,
-    fdj,
-    c2,
-    etypes2,
-    cutoff_2b,
-    cutoff_3b,
-    cutoff_mb,
-    nspec,
-    spec_mask,
-    nbond,
-    bond_mask,
-    ntriplet,
-    triplet_mask,
-    ncut3b,
-    cut3b_mask,
-    nmb,
-    mb_mask,
-    sig2,
-    ls2,
-    sig3,
-    ls3,
-    sigm,
-    lsm,
-    cutoff_func=quadratic_cutoff,
-):
-    """
-    Args:
-        data: a single env of a list of envs
-    """
-
-    bc1 = spec_mask[c2]
-    bc2 = spec_mask[etypes2[0]]
-    btype = bond_mask[nspec * bc1 + bc2]
-    ls = ls2[btype]
-    sig = sig2[btype]
-    cutoffs = [cutoff_2b[btype]]
-    hyps = [sig, ls]
-
-    return grid_kernel(
-        kern_type, data, grids, fj, fdj, c2, etypes2, hyps, cutoffs, cutoff_func
-    )
-
-
-def grid_kernel(
-    kern_type,
-    struc,
-    grids,
-    fj,
-    fdj,
-    c2,
-    etypes2,
-    hyps: "ndarray",
-    cutoffs,
-    cutoff_func: Callable = quadratic_cutoff,
-):
-
-    r_cut = cutoffs[0]
-
-    if not isinstance(struc, list):
-        struc = [struc]
-
-    kern = 0
-    for env in struc:
-        kern += grid_kernel_env(
-            kern_type, env, grids, fj, fdj, c2, etypes2, hyps, r_cut, cutoff_func
-        )
-
-    return kern
-
 
 def grid_kernel_env(
     kern_type,
@@ -202,28 +129,6 @@ def force_force(kern_exp, fi, fj, fdi, fdj, rij_list, coord_list, ls):
         kern[d, :] = np.sum(kern_exp * IJKL, axis=0)
 
     return kern
-
-
-def bond_cutoff(bonds, r_cut, coords, derivative=False, cutoff_func=quadratic_cutoff):
-    fj, dfj = cutoff_func(r_cut, bonds, coords)
-    return fj, dfj
-
-
-@njit
-def get_bonds_for_kern(bond_array_1, c1, etypes1, c2, etypes2):
-
-    e2 = etypes2[0]
-
-    bond_list = []
-    for m in range(bond_array_1.shape[0]):
-        ri = bond_array_1[m, 0]
-        ci = bond_array_1[m, 1:]
-        e1 = etypes1[m]
-
-        if (c1 == c2 and e1 == e2) or (c1 == e2 and c2 == e1):
-            bond_list.append([ri, ci[0], ci[1], ci[2]])
-
-    return bond_list
 
 
 def self_kernel_sephyps(

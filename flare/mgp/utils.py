@@ -11,9 +11,7 @@ from flare.kernels.cutoffs import quadratic_cutoff
 from flare.kernels.utils import str_to_kernel_set
 from flare.parameters import Parameters
 
-from flare.mgp import grid_kernels_2b
-from flare.mgp import grid_kernels_3b
-
+import flare.mgp.grid_kernels as gk 
 
 def str_to_mapped_kernel(name: str, component: str = "mc", hyps_mask: dict = None):
     """
@@ -121,69 +119,4 @@ def get_kernel_term(kernel_name, component, hyps_mask, hyps, grid_kernel=False):
     return (kernel, ek, efk, cutoffs, hyps, hyps_mask)
 
 
-@njit
-def get_bonds(ctype, etypes, bond_array):
-    exist_species = []
-    bond_lengths = []
-    bond_dirs = []
-    for i in range(len(bond_array)):
-        bond = bond_array[i]
-        if ctype <= etypes[i]:
-            spc = [ctype, etypes[i]]
-            b_dir = bond[1:]
-        else:
-            spc = [etypes[i], ctype]
-            b_dir = bond[1:]
 
-        if spc in exist_species:
-            ind = exist_species.index(spc)
-            bond_lengths[ind].append([bond[0]])
-            bond_dirs[ind].append([b_dir])
-        else:
-            exist_species.append(spc)
-            bond_lengths.append([[bond[0]]])
-            bond_dirs.append([[b_dir]])
-    return exist_species, bond_lengths, bond_dirs
-
-
-@njit
-def get_triplets(
-    ctype, etypes, bond_array, cross_bond_inds, cross_bond_dists, triplets
-):
-    exist_species = []
-    tris = []
-    tri_dir = []
-
-    for m in range(bond_array.shape[0]):
-        r1 = bond_array[m, 0]
-        c1 = bond_array[m, 1:]
-        spc1 = etypes[m]
-
-        for n in range(triplets[m]):
-            ind1 = cross_bond_inds[m, m + n + 1]
-            r2 = bond_array[ind1, 0]
-            c2 = bond_array[ind1, 1:]
-            spc2 = etypes[ind1]
-
-            c12 = np.sum(c1 * c2)
-            r12 = np.sqrt(r1 ** 2 + r2 ** 2 - 2 * r1 * r2 * c12)
-
-            if spc1 <= spc2:
-                spcs = [ctype, spc1, spc2]
-                triplet = array([r1, r2, r12])
-                coord = [c1, c2, np.zeros(3)]
-            else:
-                spcs = [ctype, spc2, spc1]
-                triplet = array([r2, r1, r12])
-                coord = [c2, c1, np.zeros(3)]
-
-            if spcs not in exist_species:
-                exist_species.append(spcs)
-                tris.append([triplet])
-                tri_dir.append([coord])
-            else:
-                k = exist_species.index(spcs)
-                tris[k].append(triplet)
-                tri_dir[k].append(coord)
-
-    return exist_species, tris, tri_dir
