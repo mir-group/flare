@@ -252,7 +252,7 @@ class MappedGaussianProcess:
         out_dict.pop("maps")
 
         # Uncertainty mappings currently not serializable;
-        if self.var_map is not None:
+        if self.var_map == 'pca':
             warnings.warn(
                 "Uncertainty mappings cannot be serialized, "
                 "and so the MGP dict outputted will not have "

@@ -164,12 +164,16 @@ class MapXbody:
         out_dict = deepcopy(dict(vars(self)))
         out_dict.pop("kernel_info")
 
-        # Uncertainty mappings currently not serializable;
-        if self.var_map is not None:
-            out_dict["var_map"] = None
+        # only save the mean coefficients and var if var_map == 'simple'
+        if self.var_map == 'simple':
+            out_dict["maps"] = [[m.mean.__coeffs__ for m in self.maps],
+                                [m.var.__coeffs__ for m in self.maps]]
+        else:
+            out_dict["maps"] = [[m.mean.__coeffs__ for m in self.maps]]
+            if self.var_map == 'pca':
+                warnings.warn("var_map='pca' is too heavy to dump, change to var_map=None")
+                out_dict["var_map"] = None
 
-        # only save the mean coefficients
-        out_dict["maps"] = [m.mean.__coeffs__ for m in self.maps]
         out_dict["bounds"] = [m.bounds for m in self.maps]
 
         # rm keys since they are built in the __init__ function
@@ -202,7 +206,9 @@ class MapXbody:
             bounds = dictionary["bounds"][m]
             singlexb.set_bounds(bounds[0], bounds[1])
             singlexb.build_map_container()
-            singlexb.mean.__coeffs__ = np.array(dictionary["maps"][m])
+            singlexb.mean.__coeffs__ = np.array(dictionary["maps"][0][m])
+            if new_mgp.var_map == 'simple':
+                singlexb.var.__coeffs__ = np.array(dictionary["maps"][1][m])
 
         return new_mgp
 
