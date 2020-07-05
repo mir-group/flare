@@ -18,7 +18,7 @@ from flare.utils.element_coder import _Z_to_mass, _Z_to_element
 from .fake_gp import get_gp, get_random_structure
 from .mgp_test import clean, compare_triplet, predict_atom_diag_var
 
-body_list = ['3'] #, '3']
+body_list = ['2', '3']
 multi_list = [False, True]
 force_block_only = False
 
@@ -36,7 +36,7 @@ def all_gp():
     for bodies in body_list:
         for multihyps in multi_list:
             gp_model = get_gp(bodies, 'mc', multihyps, cellabc=[1.5, 1, 2],
-                              force_only=force_block_only, noa=5) #int(bodies)**2)
+                              force_only=force_block_only, noa=8) #int(bodies)**2)
             gp_model.parallel = True
             gp_model.n_cpus = 2
 
@@ -238,7 +238,7 @@ def test_predict(all_gp, all_mgp, bodies, multihyps):
     print('gp_pred', gp_pred[0])
 
     print("isclose?", mgp_pred[0]-gp_pred[0], gp_pred[0])
-    assert(np.allclose(mgp_pred[0], gp_pred[0], rtol=5e-3)), \
+    assert(np.allclose(mgp_pred[0], gp_pred[0], rtol=1e-2)), \
             f"{bodies} body {map_str} mapping is wrong"
 
 

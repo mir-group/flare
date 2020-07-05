@@ -163,9 +163,8 @@ def bonds_cutoff(triplets, r_cut, coords, derivative, cutoff_func):
 
     if derivative:
         for d in range(3):
-            s = 3 * d
-            e = 3 * (d + 1)
-            f0, df0 = cutoff_func(r_cut, triplets, coords[:, s:e])
+            inds = np.arange(3) * 3 + d
+            f0, df0 = cutoff_func(r_cut, triplets, coords[:, inds])
             dfj = (
                 df0[:, 0] * f0[:, 1] * f0[:, 2]
                 + f0[:, 0] * df0[:, 1] * f0[:, 2]
@@ -191,7 +190,7 @@ def get_hyps_for_kern(hyps, cutoffs, hyps_mask, c2, etypes2):
 
     if len(args) == 2:
         hyps, cutoffs = args
-        r_cut = cutoffs[0]
+        r_cut = cutoffs[1]
 
     else:
         (
@@ -362,9 +361,7 @@ def get_triplets_for_kern_jit(
                         ri3 = cross_bond_dists_1[m, m + n + 1]
                         ci3 = np.zeros(3)
 
-                        perms = get_permutations(
-                            c1, np.array([ei1, ei2]), c2, etypes2,
-                        )
+                        perms = get_permutations(c1, np.array([ei1, ei2]), c2, etypes2,)
 
                         tri = np.array([ri1, ri2, ri3])
                         crd1 = np.array([ci1[0], ci2[0], ci3[0]])
@@ -379,11 +376,10 @@ def get_triplets_for_kern_jit(
                             crd1_p = np.take(crd1, perm)
                             crd2_p = np.take(crd2, perm)
                             crd3_p = np.take(crd3, perm)
-                            #crd_p = np.vstack((crd1_p, crd2_p, crd3_p)).T
-                            #tricrd = np.hstack(
-                            #    (tricrd, crd_p[0, :], crd_p[1, :], crd_p[2, :])
-                            #)
-                            tricrd = np.hstack((tricrd, crd1_p, crd2_p, crd3_p))
+                            crd_p = np.vstack((crd1_p, crd2_p, crd3_p))
+                            tricrd = np.hstack(
+                                (tricrd, crd_p[:, 0], crd_p[:, 1], crd_p[:, 2])
+                            )
                             triplet_list.append(tricrd)
 
     return triplet_list

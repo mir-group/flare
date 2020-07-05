@@ -104,7 +104,7 @@ def en_force(bodies, grid_dim, kern_exp, fi, fj, fdi, fdj, rij_list, coord_list,
             rij = rij_list[r]
             # column-wise multiplication
             # coord_list[:, [r]].shape = (n_triplets, 1)
-            B += rij * coord_list[:, [3 * d + r]]  # (n_triplets, n_grids)
+            B += rij * coord_list[:, [3 * r + d]]  # (n_triplets, n_grids)
 
         kern[d, :] = (
             -np.sum(kern_exp * (B * ls2 * fifj + fdij), axis=0) / bodies
