@@ -26,13 +26,13 @@ def grid_kernel_env(
     kern_type,
     get_bonds_func,
     bonds_cutoff_func,
+    c2,
+    etypes2,
+    hyps,
+    r_cut,
     grids,
     fj,
     fdj,
-    c2,
-    etypes2,
-    hyps: "ndarray",
-    r_cut: float,
     cutoff_func: Callable = quadratic_cutoff,
 ):
 
@@ -104,7 +104,7 @@ def en_force(bodies, grid_dim, kern_exp, fi, fj, fdi, fdj, rij_list, coord_list,
             rij = rij_list[r]
             # column-wise multiplication
             # coord_list[:, [r]].shape = (n_triplets, 1)
-            B += rij * coord_list[:, [3 * r + d]]  # (n_triplets, n_grids)
+            B += rij * coord_list[:, [3 * d + r]]  # (n_triplets, n_grids)
 
         kern[d, :] = (
             -np.sum(kern_exp * (B * ls2 * fifj + fdij), axis=0) / bodies
@@ -112,131 +112,22 @@ def en_force(bodies, grid_dim, kern_exp, fi, fj, fdi, fdj, rij_list, coord_list,
     return kern
 
 
-def self_kernel_2b_sephyps(
-    grids,
-    fj,
-    fdj,
-    c2,
-    etypes2,
-    cutoff_2b,
-    cutoff_3b,
-    cutoff_mb,
-    nspec,
-    spec_mask,
-    nbond,
-    bond_mask,
-    ntriplet,
-    triplet_mask,
-    ncut3b,
-    cut3b_mask,
-    nmb,
-    mb_mask,
-    sig2,
-    ls2,
-    sig3,
-    ls3,
-    sigm,
-    lsm,
-    cutoff_func=quadratic_cutoff,
-):
-    """
-    Args:
-        data: a single env of a list of envs
-    """
-
-    bc1 = spec_mask[c2]
-    bc2 = spec_mask[etypes2[0]]
-    btype = bond_mask[nspec * bc1 + bc2]
-    ls = ls2[btype]
-    sig = sig2[btype]
-    cutoffs = [cutoff_2b[btype]]
-    hyps = [sig, ls]
-
-    return self_kernel(grids, fj, fdj, c2, etypes2, hyps, cutoffs, cutoff_func)
-
-
-def self_kernel_2b(
-    grids,
-    fj,
-    fdj,
+def self_kernel(
+    bodies,
+    get_permutations,
     c2,
     etypes2,
     hyps,
-    cutoffs,
-    cutoff_func: Callable = quadratic_cutoff,
-):
-
-    # pre-compute constants
-    r_cut = cutoffs[0]
-    sig = hyps[0]
-    ls = hyps[1]
-    sig2 = sig * sig
-    ls2 = 1 / (ls * ls)
-    ls3 = ls2 * ls2
-
-    kern = (sig2 / 4) * fj ** 2  # (n_grids,)
-    return np.sum(kern, axis=1)
-
-
-def self_kernel_3b_sephyps(
+    r_cut,
     grids,
     fj,
     fdj,
-    c2,
-    etypes2,
-    cutoff_2b,
-    cutoff_3b,
-    cutoff_mb,
-    nspec,
-    spec_mask,
-    nbond,
-    bond_mask,
-    ntriplet,
-    triplet_mask,
-    ncut3b,
-    cut3b_mask,
-    nmb,
-    mb_mask,
-    sig2,
-    ls2,
-    sig3,
-    ls3,
-    sigm,
-    lsm,
-    cutoff_func=quadratic_cutoff,
-):
-    """
-    Args:
-        data: a single env of a list of envs
-    """
-
-    bc1 = spec_mask[c2]
-    bc2 = spec_mask[etypes2[0]]
-    bc3 = spec_mask[etypes2[1]]
-    ttype = triplet_mask[nspec * nspec * bc1 + nspec * bc2 + bc3]
-    ls = ls3[ttype]
-    sig = sig3[ttype]
-    cutoffs = [cutoff_2b, cutoff_3b]
-
-    hyps = [sig, ls]
-    return self_kernel(grids, fj, fdj, c2, etypes2, hyps, cutoffs, cutoff_func)
-
-
-def self_kernel_3b(
-    grids,
-    fj,
-    fdj,
-    c2,
-    etypes2,
-    hyps,
-    cutoffs,
     cutoff_func: Callable = quadratic_cutoff,
 ):
 
     kern = 0
 
     # pre-compute constants
-    r_cut = cutoffs[1]
     sig = hyps[0]
     ls = hyps[1]
     sig2 = sig * sig
@@ -244,11 +135,7 @@ def self_kernel_3b(
     ls2 = 1 / (ls * ls)
     ls3 = ls2 * ls2
 
-    ej1 = etypes2[0]
-    ej2 = etypes2[1]
-
-    perm_list = get_permutations(c2, ej1, ej2, c2, ej1, ej2)
-    ci = np.array([1.0, 0.0, 0.0])
+    perm_list = get_permutations(c2, etypes2, c2, etypes2)
 
     for perm in perm_list:
         perm_grids = np.take(grids, perm, axis=1)
@@ -256,7 +143,7 @@ def self_kernel_3b(
         D = np.sum(rij * rij, axis=1)  # (n_grids, ) adding up three bonds
         kern_exp = np.exp(-D * ls1) * sig2
         fjfj = fj ** 2
-        kern += kern_exp * np.sum(fjfj, axis=1) / 9  # (n_grids,)
+        kern += kern_exp * np.sum(fjfj, axis=1) / bodies ** 2  # (n_grids,)
 
     return kern
 

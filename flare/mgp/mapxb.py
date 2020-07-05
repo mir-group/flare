@@ -29,7 +29,6 @@ from flare.struc import Structure
 from flare.mgp.splines_methods import PCASplines, CubicSpline
 
 
-
 class MapXbody:
     def __init__(
         self,
@@ -99,14 +98,12 @@ class MapXbody:
         generate/load grids and get spline coefficients
         """
 
-
         self.kernel_info = get_kernel_term(self.kernel_name, GP.hyps_mask, GP.hyps)
         self.hyps_mask = GP.hyps_mask
         self.hyps = GP.hyps
 
         for m in self.maps:
             m.build_map(GP)
-
 
     def predict(self, atom_env):
 
@@ -196,7 +193,7 @@ class MapXbody:
 
         # Restore kernel_info
         new_mgp.kernel_info = get_kernel_term(
-            dictionary['kernel_name'], dictionary['hyps_mask'], dictionary['hyps']
+            dictionary["kernel_name"], dictionary["hyps_mask"], dictionary["hyps"]
         )
 
         # Fill up the model with the saved coeffs
@@ -318,7 +315,7 @@ class SingleMapXbody:
             grid_vars = solve_triangular(GP.l_mat, k12_v_all.T, lower=True).T
 
             if self.var_map == "simple":
-                self_kern = self._gengrid_var_simple(*args)
+                self_kern = self._gengrid_var_simple(kernel_info)
                 grid_vars = np.sqrt(self_kern - np.sum(grid_vars ** 2, axis=1))
                 grid_vars = np.expand_dims(grid_vars, axis=1)
 
@@ -408,8 +405,6 @@ class SingleMapXbody:
         else:
             n_chunk = 1
 
-        ctype = self.species[0]
-        etypes = np.array(self.species[1:])
         for m_index in range(s, e):
             data = training_data[m_index]
             kern_vec = []
@@ -420,16 +415,7 @@ class SingleMapXbody:
                 fj_chunk = fj[gs:ge, :]
                 fdj_chunk = fdj[gs:ge, :]
                 kv_chunk = self.get_grid_kernel(
-                    kern_type,
-                    data,
-                    grid_chunk,
-                    fj_chunk,
-                    fdj_chunk,
-                    ctype,
-                    etypes,
-                    hyps,
-                    cutoffs,
-                    hyps_mask,
+                    kern_type, data, kernel_info, grid_chunk, fj_chunk, fdj_chunk,
                 )
                 kern_vec.append(kv_chunk)
             kern_vec = np.hstack(kern_vec)
@@ -442,7 +428,7 @@ class SingleMapXbody:
 
         return k_v
 
-    def _gengrid_var_simple(self, name, kernel_info):
+    def _gengrid_var_simple(self, kernel_info):
         """
         Generate grids for variance upper bound, based on the inequality:
         V(c, p)^2 <= V(c, c) V(p, p)
@@ -451,7 +437,6 @@ class SingleMapXbody:
 
         _, cutoffs, hyps, hyps_mask = kernel_info
 
-        args = from_mask_to_args(hyps, cutoffs, hyps_mask)
         r_cut = cutoffs[self.kernel_name]
 
         grids = self.construct_grids()
@@ -465,9 +450,7 @@ class SingleMapXbody:
         )
         fdj = fdj[:, [0]]
 
-        ctype = self.species[0]
-        etypes = np.array(self.species[1:])
-        return self_kernel(grids, fj, fdj, ctype, etypes, *args)
+        return self.get_self_kernel(kernel_info, grids, fj, fdj)
 
     def build_map_container(self):
         """
@@ -697,11 +680,14 @@ class SingleMapXbody:
         f.write("\n")
 
 
+# -----------------------------------------------------------------------------
+#                               Functions
+# -----------------------------------------------------------------------------
+
+
 def get_kernel_term(kernel_name, hyps_mask, hyps):
     hyps, cutoffs, hyps_mask = Parameters.get_component_mask(
         hyps_mask, kernel_name, hyps=hyps
     )
-    kernel, _, ek, efk, _, _, _ = str_to_kernel_set([kernel_name], 'mc', hyps_mask)
+    kernel, _, ek, efk, _, _, _ = str_to_kernel_set([kernel_name], "mc", hyps_mask)
     return (ek, cutoffs, hyps, hyps_mask)
-
-

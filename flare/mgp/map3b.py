@@ -8,7 +8,7 @@ from flare.struc import Structure
 from flare.utils.element_coder import Z_to_element
 
 from flare.mgp.mapxb import MapXbody, SingleMapXbody
-from flare.mgp.grid_kernels import grid_kernel
+from flare.mgp.grid_kernels import grid_kernel, self_kernel
 
 from flare.kernels.utils import from_mask_to_args
 
@@ -32,11 +32,11 @@ class Map3body(MapXbody):
         self.spc = []
         N_spc = len(species_list)
         for spc1 in species_list:
-            for spc2_ind in range(N_spc):
-                spc2 = species_list[spc2_ind]
-                for spc3 in species_list[spc2_ind:]:
-                    species = [spc1, spc2, spc3]
-                    self.spc.append(species)
+            for spc2 in species_list:
+                for spc3 in species_list:
+                    if spc2 <= spc3:
+                        species = [spc1, spc2, spc3]
+                        self.spc.append(species)
 
     def get_arrays(self, atom_env):
 
@@ -123,33 +123,33 @@ class SingleMap3body(SingleMapXbody):
     def grid_cutoff(self, triplets, r_cut, coords, derivative, cutoff_func):
         return bonds_cutoff(triplets, r_cut, coords, derivative, cutoff_func)
 
-    def get_grid_kernel(
-        self,
-        kern_type,
-        data,
-        grid_chunk,
-        fj_chunk,
-        fdj_chunk,
-        ctype,
-        etypes,
-        hyps,
-        cutoffs,
-        hyps_mask,
-    ):
-        hyps, r_cut = get_hyps_for_kern(hyps, cutoffs, hyps_mask, ctype, etypes)
+    def get_grid_kernel(self, kern_type, data, kernel_info, *grid_arrays):
+        c2 = self.species[0]
+        etypes2 = np.array(self.species[1:])
+
+        _, cutoffs, hyps, hyps_mask = kernel_info
+        hyps, r_cut = get_hyps_for_kern(hyps, cutoffs, hyps_mask, c2, etypes2)
         return grid_kernel(
             data,
             self.bodies,
             kern_type,
             get_bonds_for_kern,
             bonds_cutoff,
-            grid_chunk,
-            fj_chunk,
-            fdj_chunk,
-            ctype,
-            etypes,
+            c2,
+            etypes2,
             hyps,
             r_cut,
+            *grid_arrays,
+        )
+
+    def get_self_kernel(self, kernel_info, *grid_arrays):
+        c2 = self.species[0]
+        etypes2 = np.array(self.species[1:])
+
+        _, cutoffs, hyps, hyps_mask = kernel_info
+        hyps, r_cut = get_hyps_for_kern(hyps, cutoffs, hyps_mask, c2, etypes2)
+        return self_kernel(
+            self.bodies, get_permutations, c2, etypes2, hyps, r_cut, *grid_arrays
         )
 
 
@@ -272,7 +272,12 @@ def get_triplets(
 
 
 @njit
-def get_permutations(c1, ei1, ei2, c2, ej1, ej2):
+def get_permutations(c1, etypes1, c2, etypes2):
+    ei1 = etypes1[0]
+    ei2 = etypes1[1]
+    ej1 = etypes2[0]
+    ej2 = etypes2[1]
+
     perms = []
     if c1 == c2:
         if (ei1 == ej1) and (ei2 == ej2):
@@ -357,7 +362,9 @@ def get_triplets_for_kern_jit(
                         ri3 = cross_bond_dists_1[m, m + n + 1]
                         ci3 = np.zeros(3)
 
-                        perms = get_permutations(c1, ei1, ei2, c2, ej1, ej2)
+                        perms = get_permutations(
+                            c1, np.array([ei1, ei2]), c2, etypes2,
+                        )
 
                         tri = np.array([ri1, ri2, ri3])
                         crd1 = np.array([ci1[0], ci2[0], ci3[0]])
@@ -372,10 +379,11 @@ def get_triplets_for_kern_jit(
                             crd1_p = np.take(crd1, perm)
                             crd2_p = np.take(crd2, perm)
                             crd3_p = np.take(crd3, perm)
-                            crd_p = np.vstack((crd1_p, crd2_p, crd3_p)).T
-                            tricrd = np.hstack(
-                                (tricrd, crd_p[0, :], crd_p[1, :], crd_p[2, :])
-                            )
+                            #crd_p = np.vstack((crd1_p, crd2_p, crd3_p)).T
+                            #tricrd = np.hstack(
+                            #    (tricrd, crd_p[0, :], crd_p[1, :], crd_p[2, :])
+                            #)
+                            tricrd = np.hstack((tricrd, crd1_p, crd2_p, crd3_p))
                             triplet_list.append(tricrd)
 
     return triplet_list

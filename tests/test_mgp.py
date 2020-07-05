@@ -18,7 +18,7 @@ from flare.utils.element_coder import _Z_to_mass, _Z_to_element
 from .fake_gp import get_gp, get_random_structure
 from .mgp_test import clean, compare_triplet, predict_atom_diag_var
 
-body_list = ['333'] #, '3']
+body_list = ['3'] #, '3']
 multi_list = [False, True]
 force_block_only = False
 
@@ -32,7 +32,7 @@ force_block_only = False
 def all_gp():
 
     allgp_dict = {}
-    np.random.seed(123)
+    np.random.seed(13)
     for bodies in body_list:
         for multihyps in multi_list:
             gp_model = get_gp(bodies, 'mc', multihyps, cellabc=[1.5, 1, 2],

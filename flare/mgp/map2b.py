@@ -7,7 +7,7 @@ from flare.struc import Structure
 from flare.utils.element_coder import Z_to_element
 
 from flare.mgp.mapxb import MapXbody, SingleMapXbody
-from flare.mgp.grid_kernels import grid_kernel
+from flare.mgp.grid_kernels import grid_kernel, self_kernel
 
 from flare.kernels.utils import from_mask_to_args
 
@@ -94,33 +94,33 @@ class SingleMap2body(SingleMapXbody):
     def grid_cutoff(self, bonds, r_cut, coords, derivative, cutoff_func):
         return bonds_cutoff(bonds, r_cut, coords, derivative, cutoff_func)
 
-    def get_grid_kernel(
-        self,
-        kern_type,
-        data,
-        grid_chunk,
-        fj_chunk,
-        fdj_chunk,
-        ctype,
-        etypes,
-        hyps,
-        cutoffs,
-        hyps_mask,
-    ):
-        hyps, r_cut = get_hyps_for_kern(hyps, cutoffs, hyps_mask, ctype, etypes)
+    def get_grid_kernel(self, kern_type, data, kernel_info, *grid_arrays):
+        c2 = self.species[0]
+        etypes2 = np.array(self.species[1:])
+
+        _, cutoffs, hyps, hyps_mask = kernel_info
+        hyps, r_cut = get_hyps_for_kern(hyps, cutoffs, hyps_mask, c2, etypes2)
         return grid_kernel(
             data,
             self.bodies,
             kern_type,
             get_bonds_for_kern,
             bonds_cutoff,
-            grid_chunk,
-            fj_chunk,
-            fdj_chunk,
-            ctype,
-            etypes,
+            c2,
+            etypes2,
             hyps,
             r_cut,
+            *grid_arrays,
+        )
+
+    def get_self_kernel(self, kernel_info, *grid_arrays):
+        c2 = self.species[0]
+        etypes2 = np.array(self.species[1:])
+
+        _, cutoffs, hyps, hyps_mask = kernel_info
+        hyps, r_cut = get_hyps_for_kern(hyps, cutoffs, hyps_mask, c2, etypes2)
+        return self_kernel(
+            self.bodies, get_permutations, c2, etypes2, hyps, r_cut, *grid_arrays
         )
 
 
@@ -203,6 +203,11 @@ def get_bonds(ctype, etypes, bond_array):
             bond_lengths.append([[bond[0]]])
             bond_dirs.append([[b_dir]])
     return exist_species, bond_lengths, bond_dirs
+
+
+@njit
+def get_permutations(c1, etypes1, c2, etypes2):
+    return [[0]]
 
 
 def get_bonds_for_kern(env, c2, etypes2):
