@@ -52,7 +52,7 @@ class Structure:
                  positions: 'ndarray', mass_dict: dict = None,
                  prev_positions: 'ndarray' = None,
                  species_labels: List[str] = None,
-                 forces=None, stds=None, energy=None):
+                 forces=None, stds=None, energy: float=None):
 
         # Define cell (each row is a Bravais lattice vector).
         self.cell = np.array(cell)
