@@ -303,4 +303,4 @@ def parse_dft_forces(outfile: str):
     """
 
     f, e = parse_dft_forces_and_energy(outfile)
-    return f
+    return f, e

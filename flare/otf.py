@@ -231,6 +231,7 @@ class OTF:
                     self.dft_step = True
                     self.run_dft()
                     dft_frcs = deepcopy(self.structure.forces)
+                    dft_ener = deepcopy(self.structure.energy)
 
                     # run MD step & record the state
                     self.record_state()
@@ -291,12 +292,13 @@ class OTF:
         f.info('\nCalling DFT...\n')
 
         # calculate DFT forces
-        forces = self.dft_module.run_dft_par(
+        forces, energy = self.dft_module.run_dft_par(
             self.dft_input, self.structure, self.dft_loc, n_cpus=self.n_cpus,
             dft_out=self.dft_output, npool=self.npool, mpi=self.mpi,
             dft_kwargs=self.dft_kwargs)
 
         self.structure.forces = forces
+        self.structure.energy = energy
 
         # write wall time of DFT calculation
         self.dft_count += 1
