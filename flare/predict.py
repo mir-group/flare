@@ -6,7 +6,7 @@ cast atoms into their respective atomic environments.
 import numpy as np
 import multiprocessing as mp
 
-from typing import Tuple, List
+from typing import Tuple, List, Union
 from flare.env import AtomicEnvironment
 from flare.gp import GaussianProcess
 from flare.mgp import MappedGaussianProcess
@@ -504,15 +504,18 @@ def predict_on_atom_mgp(atom: int, structure, mgp,
     if write_to_structure:
         structure.forces[atom][:] = force
         structure.stds[atom][:] = stds
+        if structure.local_energy is None:
+            structure.local_energy = np.zeros(structure.nat)
+        structure.local_energy[atom] = local_energy
 
     return comps, stds, local_energy
 
 
-def predict_on_structure_mgp(structure: Structure, mgp; MappedGaussianProcess, output=None,
+def predict_on_structure_mgp(structure: Structure, mgp: MappedGaussianProcess, output=None,
                              output_name=None, n_cpus: int = None,
                              write_to_structure: bool = True,
                              selective_atoms: List[int] = None,
-                             skipped_atom_value: Union[float,int, nan] = 0, energy: bool=False):
+                             skipped_atom_value: Union[float,int] = 0, energy: bool=False):
     """
     Assign forces to structure based on an mgp
     """
