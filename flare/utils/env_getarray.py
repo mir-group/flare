@@ -4,9 +4,56 @@ import numpy as np
 import flare.kernels.cutoffs as cf
 from flare.kernels.kernels import coordination_number, q_value_mc
 
+
+def get_2_body_arrays(positions, atom, cell, r_cut, cutoff_2, species,
+                      sweep, nspecie, specie_mask, twobody_mask):
+    if len(specie_mask) == 0:
+        specie_mask = None
+    if len(twobody_mask) == 0:
+        twobody_mask = None
+    if len(cutoff_2) == 0:
+        cutoff_2 = None
+
+    return get_2_body_arrays_jit(
+        positions, atom, cell, r_cut, cutoff_2, species, sweep, nspecie,
+        specie_mask, twobody_mask)
+
+
+def get_3_body_arrays(bond_array_2, bond_positions_2, ctype, etypes, r_cut,
+                      cutoff_3, nspecie, specie_mask, cut3b_mask):
+    if len(specie_mask) == 0:
+        specie_mask = None
+    if len(cut3b_mask) == 0:
+        cut3b_mask = None
+    if len(cutoff_3) == 0:
+        cutoff_3 = None
+
+    return get_3_body_arrays_jit(
+        bond_array_2, bond_positions_2, ctype, etypes, r_cut, cutoff_3,
+        nspecie, specie_mask, cut3b_mask)
+
+
+def get_m2_body_arrays(
+ positions, atom: int, cell, r_cut, manybody_cutoff_list, species,
+ sweep: np.ndarray, nspec, spec_mask, manybody_mask,
+ cutoff_func=cf.quadratic_cutoff):
+
+    if len(spec_mask) == 0:
+        spec_mask = None
+    if len(manybody_mask) == 0:
+        manybody_mask = None
+    if len(manybody_cutoff_list) == 0:
+        manybody_cutoff_list = None
+
+    return get_m2_body_arrays_jit(
+        positions, atom, cell, r_cut, manybody_cutoff_list, species,
+        sweep, nspec, spec_mask, manybody_mask,
+        cutoff_func=cf.quadratic_cutoff)
+
+
 @njit
-def get_2_body_arrays(positions, atom: int, cell, r_cut, cutoff_2, species, sweep,
-                      nspecie, specie_mask, twobody_mask):
+def get_2_body_arrays_jit(positions, atom: int, cell, r_cut, cutoff_2, species,
+                          sweep, nspecie, specie_mask, twobody_mask):
     """Returns distances, coordinates, species of atoms, and indices of neighbors
     in the 2-body local environment. This method is implemented outside
     the AtomicEnvironment class to allow for njit acceleration with Numba.
@@ -117,9 +164,9 @@ def get_2_body_arrays(positions, atom: int, cell, r_cut, cutoff_2, species, swee
 
 
 @njit
-def get_3_body_arrays(bond_array_2, bond_positions_2, ctype,
-                      etypes, r_cut, cutoff_3,
-                      nspecie, specie_mask, cut3b_mask):
+def get_3_body_arrays_jit(bond_array_2, bond_positions_2, ctype,
+                          etypes, r_cut, cutoff_3,
+                          nspecie, specie_mask, cut3b_mask):
     """Returns distances and coordinates of triplets of atoms in the
     3-body local environment.
 
@@ -226,10 +273,13 @@ def get_3_body_arrays(bond_array_2, bond_positions_2, ctype,
 
     return bond_array_3, cross_bond_inds, cross_bond_dists, triplet_counts
 
+
 @njit
-def get_m2_body_arrays(positions, atom: int, cell, r_cut, manybody_cutoff_list,
-    species, sweep: np.ndarray, nspec, spec_mask, manybody_mask,
-    cutoff_func=cf.quadratic_cutoff):
+def get_m2_body_arrays_jit(
+ positions, atom: int, cell, r_cut, manybody_cutoff_list, species,
+ sweep: np.ndarray, nspec, spec_mask, manybody_mask,
+ cutoff_func=cf.quadratic_cutoff):
+
     # TODO:
     # 1. need to deal with the conflict of cutoff functions if other funcs are used
     # 2. complete the docs of "Return"

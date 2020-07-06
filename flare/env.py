@@ -8,7 +8,7 @@ from flare.struc import Structure
 import flare.kernels.cutoffs as cf
 from flare.utils.env_getarray import get_2_body_arrays, get_3_body_arrays, \
     get_m2_body_arrays
-
+from flare._C_flare import HypsMask
 
 
 class AtomicEnvironment:
@@ -94,9 +94,10 @@ class AtomicEnvironment:
             cutoffs = newcutoffs
 
         if cutoffs_mask is None:
-            cutoffs_mask = {'cutoffs': cutoffs}
+            cutoffs_mask = HypsMask()
+            cutoffs_mask.cutoffs = cutoffs
         elif cutoffs is not None:
-            cutoffs_mask['cutoffs'] = deepcopy(cutoffs)
+            cutoffs_mask.cutoffs = deepcopy(cutoffs)
 
         # Set the sweep array based on the max cutoff.
         sweep_val = ceil(np.max(list(cutoffs.values())) / structure.max_cutoff)
@@ -150,11 +151,10 @@ class AtomicEnvironment:
 
     def setup_mask(self, cutoffs_mask):
 
-        self.cutoffs_mask = deepcopy(cutoffs_mask)
-        self.cutoffs = cutoffs_mask['cutoffs']
+        self.cutoffs_mask = cutoffs_mask
+        self.cutoffs = cutoffs_mask.cutoffs
 
         for kernel in AtomicEnvironment.all_kernel_types:
-            ndim = AtomicEnvironment.ndim[kernel]
             if kernel in self.cutoffs:
                 setattr(self, kernel + '_cutoff', self.cutoffs[kernel])
 
@@ -164,13 +164,10 @@ class AtomicEnvironment:
 
             self.cutoffs['twobody'] = self.twobody_cutoff
 
-        self.nspecie = cutoffs_mask.get('nspecie', 1)
-        if 'specie_mask' in cutoffs_mask:
-            self.specie_mask = np.array(cutoffs_mask['specie_mask'],
-                                        dtype=np.int)
+        self.nspecie = cutoffs_mask.nspecie
+        self.specie_mask = np.array(cutoffs_mask.specie_mask, dtype=np.int)
 
         for kernel in AtomicEnvironment.all_kernel_types:
-            ndim = AtomicEnvironment.ndim[kernel]
             if kernel in self.cutoffs:
                 setattr(self, kernel + '_cutoff', self.cutoffs[kernel])
                 setattr(self, 'n' + kernel, 1)
@@ -178,16 +175,13 @@ class AtomicEnvironment:
                     name_list = [kernel + '_cutoff_list',
                                  'n' + kernel, kernel + '_mask']
                     for name in name_list:
-                        if name in cutoffs_mask:
-                            setattr(self, name, cutoffs_mask[name])
+                        setattr(self, name, getattr(cutoffs_mask, name))
                 else:
-                    self.ncut3b = cutoffs_mask.get('ncut3b', 1)
-                    self.cut3b_mask = cutoffs_mask.get('cut3b_mask', None)
-                    if 'threebody_cutoff_list' in cutoffs_mask:
-                        self.threebody_cutoff_list = \
-                            np.array(cutoffs_mask['threebody_cutoff_list'],
-                                     dtype=np.float)
-
+                    self.ncut3b = cutoffs_mask.ncut3b
+                    self.cut3b_mask = cutoffs_mask.cut3b_mask
+                    self.threebody_cutoff_list = \
+                        np.array(cutoffs_mask.threebody_cutoff_list,
+                                 dtype=np.float)
 
     def compute_env(self):
 

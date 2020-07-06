@@ -92,6 +92,7 @@ def test_initialization3():
                                      'cutoff_twobody': 2, 'cutoff_threebody': 1},
                          verbose="DEBUG")
     hm = pm.as_dict()
+    hm_object = pm.as_object()
     Parameters.check_instantiation(
         hm['hyps'], hm['cutoffs'], hm['kernels'], hm)
 

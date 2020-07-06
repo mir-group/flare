@@ -120,11 +120,13 @@ set(FLARE_SOURCES
     Sources/Structure/structure.cpp
     Sources/Environment/local_environment.cpp
     Sources/Kernels/kernels.cpp
-    Sources/Sparse_GP/sparse_gp.cpp)
+    Sources/Sparse_GP/sparse_gp.cpp
+    Sources/Parameters/hyps_mask.cpp)
 
 set(PYBIND_SOURCES
     Sources/Descriptor/py_descriptor.cpp
     Sources/Structure/py_structure.cpp
+    Sources/Parameters/py_hyps_mask.cpp
     Sources/pyflare.cpp)
 
 # Include sources.

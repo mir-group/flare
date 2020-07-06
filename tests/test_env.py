@@ -4,6 +4,7 @@ import numpy as np
 from copy import deepcopy, copy
 from flare.struc import Structure
 from flare.env import AtomicEnvironment
+from flare._C_flare import HypsMask
 
 np.random.seed(0)
 
@@ -41,16 +42,24 @@ def test_2bspecies_count(structure, mask, cutoff, result):
     else:
         mask = None
 
-    env_test = AtomicEnvironment(structure=structure,
-                                 atom=0,
-                                 cutoffs=cutoff,
-                                 cutoffs_mask=mask)
+    env_test = AtomicEnvironment(
+        structure=structure, atom=0, cutoffs=cutoff, cutoffs_mask=mask)
+
     assert (len(structure.positions) == len(structure.coded_species))
-    print(env_test.__dict__)
 
     assert (len(env_test.bond_array_2) == len(env_test.etypes))
     assert (isinstance(env_test.etypes[0], np.int8))
     assert (len(env_test.bond_array_2) == result[0])
+
+    print('2bspecies count test')
+    print('cutoffs mask')
+    print(env_test.cutoffs_mask)
+    print('cutoffs mask.cutoffs')
+    print(env_test.cutoffs_mask.cutoffs)
+    print('ncut3b')
+    print(env_test.ncut3b)
+    print('triplet counts')
+    print(env_test.triplet_counts)
 
     if len(cutoff) > 1:
         assert (np.sum(env_test.triplet_counts) == result[1])
@@ -119,16 +128,69 @@ def test_backwards_compatibility(structure, mask, cutoff, result):
     assert str(new_env) == str(env_test)
 
 
+# def generate_mask(cutoff):
+#     ncutoff = len(cutoff)
+#     if ncutoff == 1:
+#         # (1, 1) uses 0.5 cutoff,  (1, 2) (1, 3) (2, 3) use 0.9 cutoff
+#         mask = {'nspecie': 2, 'specie_mask': np.ones(118, dtype=int)}
+#         mask['specie_mask'][1] = 0
+#         mask['twobody_cutoff_list'] = np.array([0.5, 0.9])
+#         mask['ntwobody'] = 2
+#         mask['twobody_mask'] = np.ones(4, dtype=int)
+#         mask['twobody_mask'][0] = 0
+
+#     elif ncutoff == 2:
+#         # the 3b mask is the same structure as 2b
+#         nspecie = 3
+#         specie_mask = np.zeros(118, dtype=int)
+#         chem_spec = [1, 2, 3]
+#         specie_mask[chem_spec] = np.arange(3)
+
+#         # from type 1 to 4 is
+#         # (1, 1) (1, 2) (1, 3) (2, 3) (*, *)
+#         # correspond to cutoff 0.5, 0.9, 0.8, 0.9, 0.05
+#         ncut3b = 5
+#         tmask = np.ones(nspecie ** 2, dtype=int) * (ncut3b - 1)
+#         count = 0
+#         for i, j in [(1, 1), (1, 2), (1, 3), (2, 3)]:
+#             cs1 = specie_mask[i]
+#             cs2 = specie_mask[j]
+#             tmask[cs1 * nspecie + cs2] = count
+#             tmask[cs2 * nspecie + cs1] = count
+#             count += 1
+
+#         mask = {'nspecie': nspecie,
+#                 'specie_mask': specie_mask,
+#                 'threebody_cutoff_list': np.array([0.5, 0.9, 0.8, 0.9, 0.05]),
+#                 'ncut3b': ncut3b,
+#                 'cut3b_mask': tmask}
+
+#     elif ncutoff == 3:
+#         # (1, 1) uses 0.5 cutoff,  (1, 2) (1, 3) (2, 3) use 0.9 cutoff
+#         mask = {'nspecie': 2, 'specie_mask': np.ones(118, dtype=int)}
+#         mask['specie_mask'][1] = 0
+#         mask['manybody_cutoff_list'] = np.array([0.5, 0.9])
+#         mask['nmanybody'] = 2
+#         mask['manybody_mask'] = np.ones(4, dtype=int)
+#         mask['manybody_mask'][0] = 0
+#     mask['cutoffs'] = cutoff
+#     return mask
+
+
 def generate_mask(cutoff):
+    mask = HypsMask()
     ncutoff = len(cutoff)
     if ncutoff == 1:
         # (1, 1) uses 0.5 cutoff,  (1, 2) (1, 3) (2, 3) use 0.9 cutoff
-        mask = {'nspecie': 2, 'specie_mask': np.ones(118, dtype=int)}
-        mask['specie_mask'][1] = 0
-        mask['twobody_cutoff_list'] = np.array([0.5, 0.9])
-        mask['ntwobody'] = 2
-        mask['twobody_mask'] = np.ones(4, dtype=int)
-        mask['twobody_mask'][0] = 0
+        mask.nspecie = 2
+        specie_mask = np.ones(118, dtype=int)
+        specie_mask[1] = 0
+        mask.specie_mask = specie_mask
+        mask.twobody_cutoff_list = np.array([0.5, 0.9])
+        mask.ntwobody = 2
+        twobody_mask = np.ones(4, dtype=int)
+        twobody_mask[0] = 0
+        mask.twobody_mask = twobody_mask
 
     elif ncutoff == 2:
         # the 3b mask is the same structure as 2b
@@ -150,21 +212,33 @@ def generate_mask(cutoff):
             tmask[cs2 * nspecie + cs1] = count
             count += 1
 
-        mask = {'nspecie': nspecie,
-                'specie_mask': specie_mask,
-                'threebody_cutoff_list': np.array([0.5, 0.9, 0.8, 0.9, 0.05]),
-                'ncut3b': ncut3b,
-                'cut3b_mask': tmask}
+        mask.nspecie = nspecie
+        mask.specie_mask = specie_mask
+        mask.threebody_cutoff_list = np.array([0.5, 0.9, 0.8, 0.9, 0.05])
+        mask.ncut3b = ncut3b
+        mask.cut3b_mask = tmask
 
     elif ncutoff == 3:
         # (1, 1) uses 0.5 cutoff,  (1, 2) (1, 3) (2, 3) use 0.9 cutoff
-        mask = {'nspecie': 2, 'specie_mask': np.ones(118, dtype=int)}
-        mask['specie_mask'][1] = 0
-        mask['manybody_cutoff_list'] = np.array([0.5, 0.9])
-        mask['nmanybody'] = 2
-        mask['manybody_mask'] = np.ones(4, dtype=int)
-        mask['manybody_mask'][0] = 0
-    mask['cutoffs'] = cutoff
+        mask.nspecie = 2
+        specie_mask = np.ones(118, dtype=int)
+        specie_mask[1] = 0
+        mask.specie_mask = specie_mask
+        mask.manybody_cutoff_list = np.array([0.5, 0.9])
+        mask.nmanybody = 2
+        manybody_mask = np.ones(4, dtype=int)
+        manybody_mask[0] = 0
+        mask.manybody_mask = manybody_mask
+    mask.cutoffs = cutoff
+
+    print('test')
+    print('cutoff dict')
+    print(cutoff)
+    print('ncutoff')
+    print(ncutoff)
+    print('ncut3b')
+    print(mask.ncut3b)
+
     return mask
 
 

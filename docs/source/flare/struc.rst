@@ -18,7 +18,7 @@ input coordinates don't need to lie inside the box.
     :type cell: np.ndarray
     :param species: List of atomic species, which can be given as either
         atomic numbers (integers) or chemical symbols (string of one or two
-        characters, e.g. 'H' for Helium). The species are stored in the coded_species attribute.
+        characters, e.g. 'He' for Helium).
     :type species: List[int] or List[str]
     :param positions: Nx3 array of atomic coordinates in Angstrom.
     :type positions: np.array
@@ -30,17 +30,19 @@ input coordinates don't need to lie inside the box.
     :type mass_dict: dict, optional
     :param prev_positions: Nx3 array of previous atomic coordinates
         used in MD simulations. If not specified, prev_positions is set equal
-        to the positions input.
+        to positions.
     :type prev_positions: np.ndarray, optional
     :param species_labels: List of chemical symbols used in the
         output file of on-the-fly runs. If not specified, species_labels is
-        set equal to the species input.
+        set equal to species.
     :type species_labels: List[str], optional
 
     .. py:method:: positions()
         :property:
+
     .. py:method:: cell()
         :property:
+
     .. py:attribute:: coded_species
 
 Python methods

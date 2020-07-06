@@ -113,6 +113,7 @@ from typing import List, Callable, Union
 from flare.output import set_logger
 from flare.parameters import Parameters
 from flare.utils.element_coder import element_to_Z, Z_to_element
+from flare._C_flare import HypsMask
 
 
 class ParameterHelper():
@@ -1060,6 +1061,105 @@ class ParameterHelper():
         hyps_mask['cutoffs'] = cutoff_dict
         hyps_mask['hyps'] = newhyps
         hyps_mask['hyp_labels'] = new_labels
+
+        logging.debug(str(hyps_mask))
+
+        return hyps_mask
+
+    def as_object(self):
+        """Object representation of the mask. The output can be used for
+            AtomicEnvironment or the GaussianProcess.
+        """
+        hyps_mask = HypsMask()
+
+        self.summarize_group('specie')
+        for ktype in self.cutoff_types:
+            self.summarize_group(ktype)
+        for ktype in ParameterHelper.additional_groups:
+            self.summarize_group(ktype)
+        for ktype in ParameterHelper.all_kernel_types:
+            self.summarize_group(ktype)
+
+        cutoff_dict = {}
+
+        hyps_mask.nspecie = self.n['specie']
+        if self.n['specie'] > 1:
+            hyps_mask.specie_mask = self.specie_mask
+
+        hyps = []
+        hyp_labels = []
+        opt = []
+        for group in self.kernels:
+            setattr(hyps_mask, 'n'+group, self.n[group])
+            setattr(hyps_mask, group+'_start', len(hyps))
+            hyps += [self.hyps_sig[group]]
+            hyps += [self.hyps_ls[group]]
+            hyps = list(np.hstack(hyps))
+            opt += [self.hyps_opt[group]]
+            cutoff_dict[group] = self.universal['cutoff_'+group]
+
+            if self.n[group] > 1:
+                setattr(hyps_mask, group+'_mask', self.mask[group])
+                # check parameters
+                aeg = self.all_group_names[group]
+                for idt in range(self.n[group]):
+                    hyp_labels += ['Signal std '+aeg[idt]]
+                for idt in range(self.n[group]):
+                    hyp_labels += ['Length scale '+group]
+            else:
+                hyp_labels += ['Signal std '+group]
+                hyp_labels += ['Length scale '+group]
+
+            if group in self.cutoff_list:
+                setattr(hyps_mask, group+'_cutoff_list',
+                        self.cutoff_list[group])
+
+        for cutoff_name in self.cutoff_types:
+            if self.n.get(cutoff_name, 0) >= 1:
+                setattr(hyps_mask, 'n'+cutoff_name, self.n[cutoff_name])
+                setattr(hyps_mask, cutoff_name+'_mask', self.mask[cutoff_name])
+                setattr(hyps_mask, self.cutoff_types[cutoff_name] +
+                        '_cutoff_list', self.cutoff_list[cutoff_name])
+
+        hyps_mask.train_noise = self.opt['noise']
+        hyps_mask.energy_noise = self.energy_noise
+
+        opt += [self.opt['noise']]
+        hyp_labels += ['Noise std']
+        hyps += [self.noise]
+        hyps = np.hstack(hyps)
+        opt = np.hstack(opt)
+
+        # handle partial optimization if any constraints are defined
+        if not opt.all():
+            nhyps = len(hyps)
+            hyps_mask.original_hyps = hyps
+            hyps_mask.original_labels = hyp_labels
+            mapping = []
+            new_labels = []
+            for i in range(nhyps):
+                if opt[i]:
+                    mapping += [i]
+                    new_labels += [hyp_labels[i]]
+            newhyps = hyps[mapping]
+            hyps_mask.map = np.array(mapping, dtype=np.int)
+        elif opt.any():
+            newhyps = hyps
+            new_labels = hyp_labels
+        else:
+            raise RuntimeError("hyps has length zero."
+                               "at least one component of the hyper-parameters"
+                               "should be allowed to be optimized. \n")
+
+        if self.n['specie'] < 2:
+            self.logger.debug(
+                "only one type of elements was defined. Please use multihyps=False")
+
+        hyps_mask.kernels = self.kernels
+        hyps_mask.kernel_name = "+".join(hyps_mask.kernels)
+        hyps_mask.cutoffs = cutoff_dict
+        hyps_mask.hyps = newhyps
+        hyps_mask.hyp_labels = new_labels
 
         logging.debug(str(hyps_mask))
 
