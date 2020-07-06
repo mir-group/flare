@@ -108,7 +108,7 @@ def test_backwards_compatibility(structure, mask, cutoff, result):
 
     test_dict = env_test.as_dict()
 
-    assert pre_test_dict['cutoffs_mask'].cutoffs == \
+    assert pre_test_dict['cutoffs_mask']['cutoffs'] == \
         test_dict['cutoffs']
 
     new_env = AtomicEnvironment.from_dict(test_dict)
