@@ -71,7 +71,7 @@ class TrajectoryTrainer:
                  validate_ratio: float = 0.0,
                  calculate_energy: bool = False,
                  output_name: str = 'gp_from_aimd',
-                 print_xyz: bool = False,
+                 print_as_xyz: bool = False,
                  pre_train_max_iter: int = 50,
                  max_atoms_from_frame: int = np.inf,
                  max_trains: int = np.inf,
@@ -108,7 +108,7 @@ class TrajectoryTrainer:
         :param skip: Skip through frames
         :param calculate_energy: Use local energy kernel or not
         :param output_name: Write output of training to this file
-        :param print_xyz: If True, print the configurations in xyz format
+        :param print_as_xyz: If True, print the configurations in xyz format
         :param max_atoms_from_frame: Largest # of atoms added from one frame
         :param min_atoms_per_train: Only train when this many atoms have been
             added
@@ -211,7 +211,7 @@ class TrajectoryTrainer:
 
         # Output parameters
         self.output = Output(output_name, verbose,
-                             print_xyz=print_xyz, always_flush=True)
+                             print_xyz=print_as_xyz, always_flush=True)
         self.logger_name = self.output.basename+'log'
         self.train_checkpoint_interval = train_checkpoint_interval or \
             checkpoint_interval
