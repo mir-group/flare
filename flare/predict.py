@@ -9,7 +9,9 @@ import multiprocessing as mp
 from typing import Tuple, List
 from flare.env import AtomicEnvironment
 from flare.gp import GaussianProcess
+from flare.mgp import MappedGaussianProcess
 from flare.struc import Structure
+from math import nan
 
 
 def predict_on_atom(param: Tuple[Structure, int, GaussianProcess]) -> (
@@ -506,11 +508,11 @@ def predict_on_atom_mgp(atom: int, structure, mgp,
     return comps, stds, local_energy
 
 
-def predict_on_structure_mgp(structure, mgp, output=None,
-                             output_name=None, n_cpus=None,
-                             write_to_structure=True,
+def predict_on_structure_mgp(structure: Structure, mgp; MappedGaussianProcess, output=None,
+                             output_name=None, n_cpus: int = None,
+                             write_to_structure: bool = True,
                              selective_atoms: List[int] = None,
-                             skipped_atom_value=0, energy=False):
+                             skipped_atom_value: Union[float,int, nan] = 0, energy: bool=False):
     """
     Assign forces to structure based on an mgp
     """
