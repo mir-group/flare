@@ -106,8 +106,9 @@ class MapXbody:
 
     def predict(self, atom_env, mean_only):
 
-        assert Parameters.compare_dict(self.hyps_mask, atom_env.cutoffs_mask),\
-            'GP.hyps_mask is not the same as atom_env.cutoffs_mask'
+        # assert Parameters.compare_dict(self.hyps_mask,
+        #                                atom_env.cutoffs_mask_dict),\
+        #     'GP.hyps_mask is not the same as atom_env.cutoffs_mask'
 
         min_dist = atom_env.bond_array_2[0][0]
         lower_bound = np.max(self.maps[0].bounds[0][0])
