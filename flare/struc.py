@@ -396,7 +396,9 @@ class Structure:
 
     def to_xyz(self, extended_xyz: bool = True, print_stds: bool = False,
                print_forces: bool = False, print_max_stds: bool = False,
-               write_file: str = '') -> str:
+               print_energies: bool = False, predict_energy = None,
+               dft_forces = None, dft_energy = None, timestep=-1,
+               write_file: str = '', append: bool = False) -> str:
         """
         Convenience function which turns a structure into an extended .xyz
         file; useful for further input into visualization programs like VESTA
@@ -421,6 +423,12 @@ class Structure:
             xyz_str += f'Lattice="{cell[0,0]} {cell[0,1]} {cell[0,2]}'
             xyz_str += f' {cell[1,0]} {cell[1,1]} {cell[1,2]}'
             xyz_str += f' {cell[2,0]} {cell[2,1]} {cell[2,2]}"'
+            if timestep > 0:
+                xyz_str += f' Timestep={timestep}'
+            if predict_energy:
+                xyz_str += f' PE={predict_energy}'
+            if dft_energy is not None:
+                xyz_str += f' DFT_PE={dft_energy}'
             xyz_str += f' Proprties="species:S:1:pos:R:3'
 
             if print_stds:
@@ -432,6 +440,14 @@ class Structure:
             if print_max_stds:
                 xyz_str += ':max_std:R:1'
                 stds = self.stds
+            if print_energies:
+                if self.local_energies is None:
+                    print_energies = False
+                else:
+                    xyz_str += ':local_energy:R:1'
+                    local_energies = self.local_energies
+            if dft_forces is not None:
+                xyz_str += ':dft_forces:R:3'
             xyz_str += '\n'
         else:
             xyz_str += '\n'
@@ -445,14 +461,25 @@ class Structure:
                 xyz_str += f" {stds[i,0]} {stds[i,1]} {stds[i,2]}"
             if print_forces and extended_xyz:
                 xyz_str += f" {forces[i,0]} {forces[i,1]} {forces[i,2]}"
+            if print_energies and extended_xyz:
+                xyz_str += f" {local_energies[i]}"
             if print_max_stds and extended_xyz:
                 xyz_str += f" {np.max(stds[i,:])} "
-            xyz_str += '\n'
+            if dft_forces is not None:
+                xyz_str += f' {dft_forces[i, 0]} {dft_forces[i,1]} ' \
+                          f'{dft_forces[i, 2]}'
+            if i < (len(self.positions)-1):
+                xyz_str += '\n'
 
         # Write to file, optionally
         if write_file:
-            with open(write_file, 'w') as f:
+            if append:
+                fmt = 'a'
+            else:
+                fmt = 'w'
+            with open(write_file, fmt) as f:
                 f.write(xyz_str)
+                f.write("\n")
 
         return xyz_str
 
