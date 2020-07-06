@@ -27,6 +27,7 @@ from flare.output import Output, set_logger
 from flare.parameters import Parameters
 from flare.struc import Structure
 from flare.utils.element_coder import NumpyEncoder, Z_to_element
+from flare._C_flare import HypsMask
 
 
 class GaussianProcess:
@@ -788,13 +789,18 @@ class GaussianProcess:
             self.hyps_mask = new_hyps_mask
         else:
             hm = self.hyps_mask
+        
+        # Convert to hyps mask object.
+        mask_object = HypsMask()
+        for key in hm:
+            setattr(mask_object, key, hm[key])
 
         # update environment
         nenv = len(self.training_data)
         for i in range(nenv):
             self.training_data[i].cutoffs = new_cutoffs
-            self.training_data[i].cutoffs_mask = hm
-            self.training_data[i].setup_mask(hm)
+            self.training_data[i].cutoffs_mask = mask_object
+            self.training_data[i].setup_mask(mask_object)
             self.training_data[i].compute_env()
 
         # Ensure that training data and labels are still consistent

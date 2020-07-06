@@ -96,12 +96,17 @@ class AtomicEnvironment:
         if cutoffs_mask is None:
             cutoffs_mask = HypsMask()
             cutoffs_mask.cutoffs = cutoffs
+        # Convert cutoff mask to object if given as a dictionary.
+        elif isinstance(cutoffs_mask, dict):
+            mask_object = HypsMask()
+            for key in cutoffs_mask:
+                setattr(mask_object, key, cutoffs_mask[key])
+            cutoffs_mask = mask_object
         elif cutoffs is not None:
             cutoffs_mask.cutoffs = deepcopy(cutoffs)
 
-        # TODO: eliminate redundant attributes (specie_mask, twobody_mask, 
-        # etc.)
-        self.cutoffs_mask = cutoffs_mask
+        # TODO: make cutoffs mask an attribute and eliminate redundant
+        # attributes (specie_mask, twobody_mask, etc.)
 
         # Set the sweep array based on the max cutoff.
         sweep_val = ceil(np.max(list(cutoffs.values())) / structure.max_cutoff)
@@ -155,7 +160,7 @@ class AtomicEnvironment:
 
     def setup_mask(self, cutoffs_mask):
 
-        self.cutoffs_mask = cutoffs_mask
+        # self.cutoffs_mask = cutoffs_mask
         self.cutoffs = cutoffs_mask.cutoffs
 
         for kernel in AtomicEnvironment.all_kernel_types:

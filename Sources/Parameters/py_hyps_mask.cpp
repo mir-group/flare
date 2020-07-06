@@ -39,5 +39,23 @@ void AddParametersModule(py::module m) {
         .def_readwrite("train_noise", &HypsMask::train_noise)
         .def_readwrite("energy_noise", &HypsMask::energy_noise)
         .def_readwrite("kernel_name", &HypsMask::kernel_name)
-        .def_readwrite("cutoffs", &HypsMask::cutoffs);
+        .def_readwrite("cutoffs", &HypsMask::cutoffs)
+
+        // TODO: complete pickle definition
+        .def(py::pickle(
+            [](const HypsMask &s) { // __getstate__
+                /* Return a tuple that fully encodes the state of the object */
+                return py::make_tuple(s.cutoffs);
+            },
+            [](py::tuple t) { // __setstate__
+
+                /* Create a new C++ instance */
+                HypsMask p;
+
+                /* Assign any additional state */
+                p.cutoffs = 
+                    t[0].cast<std::unordered_map<std::string, double>>();
+
+                return p;
+            }));
 }

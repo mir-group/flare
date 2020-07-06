@@ -399,6 +399,14 @@ def dumpcompare(obj1, obj2):
                 if (obj1[k1] is None):
                     continue
                 else:
+                    print('k1:')
+                    print(k1)
+                    print('k2:')
+                    print(k2)
+                    print('obj k1')
+                    print(obj1[k1])
+                    print('obj k2')
+                    print(obj2[k2])
                     assert dumpcompare(obj1[k1], obj2[k2]
                                    ), f"value {k1} is not the same as {k2}"
 
