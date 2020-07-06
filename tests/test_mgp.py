@@ -290,6 +290,10 @@ def test_predict(all_gp, all_mgp, bodies, multihyps, map_force):
     gp_pred_en, gp_pred_envar = gp_model.predict_local_energy_and_var(test_envi)
     gp_pred = gp_model.predict(test_envi)
     mgp_pred = mgp_model.predict(test_envi, mean_only=True)
+    if not map_force:
+        print('energy', gp_pred_en, mgp_pred[3])
+        assert(np.allclose(mgp_pred[3], gp_pred_en, atol=5e-3)), \
+                f"{bodies} body mapping is wrong"
 
 
     # check mgp is within 2 meV/A of the gp

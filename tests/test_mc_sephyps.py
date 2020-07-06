@@ -395,7 +395,7 @@ def test_force(kernels, diff_cutoff, d1, d2):
     args = from_mask_to_args(hyps, cutoffs, hm)
     kern_analytical = kernel(env1[0][0], env2[0][0], *args)
     kern_analytical = kern_analytical[d1-1, d2-1]
-
+    print(kern_finite_diff, kern_analytical)
     assert(isclose(kern_finite_diff, kern_analytical, rtol=tol))
 
 
