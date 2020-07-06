@@ -301,7 +301,7 @@ class GaussianProcess:
         if train:
             self.train(**kwargs)
 
-    def train(self, logger_name=None, custom_bounds=None,
+    def train(self, logger_name: str=None, custom_bounds=None,
               grad_tol: float = 1e-4,
               x_tol: float = 1e-5,
               line_steps: int = 20,
