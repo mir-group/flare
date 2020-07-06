@@ -47,8 +47,7 @@ def get_m2_body_arrays(
 
     return get_m2_body_arrays_jit(
         positions, atom, cell, r_cut, manybody_cutoff_list, species,
-        sweep, nspec, spec_mask, manybody_mask,
-        cutoff_func=cf.quadratic_cutoff)
+        sweep, nspec, spec_mask, manybody_mask, cutoff_func)
 
 
 @njit
@@ -299,7 +298,7 @@ def get_m2_body_arrays_jit(
         environment.
     """
     # Get distances, positions, species and indexes of neighbouring atoms
-    bond_array_mb, _, etypes, bond_inds = get_2_body_arrays(
+    bond_array_mb, _, etypes, bond_inds = get_2_body_arrays_jit(
         positions, atom, cell, r_cut, manybody_cutoff_list, species, sweep,
         nspec, spec_mask, manybody_mask)
 
@@ -333,8 +332,8 @@ def get_m2_body_arrays_jit(
             ben = be * nspec
 
         neigh_bond_array, __, neigh_etypes, ___ = \
-            get_2_body_arrays(positions, bond_inds[i], cell, r_cut,
-                              manybody_cutoff_list, species, sweep, nspec, spec_mask, manybody_mask)
+            get_2_body_arrays_jit(positions, bond_inds[i], cell, r_cut,
+                                  manybody_cutoff_list, species, sweep, nspec, spec_mask, manybody_mask)
         for s in range(n_specs):
             if sepcut and (spec_mask is not None) and (manybody_mask is not None) and (manybody_cutoff_list is not None):
                 bs = spec_mask[species_list[s]]

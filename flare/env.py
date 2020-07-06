@@ -99,6 +99,10 @@ class AtomicEnvironment:
         elif cutoffs is not None:
             cutoffs_mask.cutoffs = deepcopy(cutoffs)
 
+        # TODO: eliminate redundant attributes (specie_mask, twobody_mask, 
+        # etc.)
+        self.cutoffs_mask = cutoffs_mask
+
         # Set the sweep array based on the max cutoff.
         sweep_val = ceil(np.max(list(cutoffs.values())) / structure.max_cutoff)
         self.sweep_val = sweep_val
@@ -231,14 +235,6 @@ class AtomicEnvironment:
         dictionary = dict(vars(self))
         dictionary['object'] = 'AtomicEnvironment'
         dictionary['forces'] = self.structure.forces
-
-        # Backward compatibility for older models: Cutoffs mask.
-        # Can be deleted one day if support is dropped for older (Pre June
-        # 2020) pickled environment objects.
-        cutoffs_mask = getattr(self, 'cutoffs_mask', {'cutoffs': self.cutoffs})
-        if not hasattr(self, 'cutoffs_mask'):
-            self.cutoffs_mask = cutoffs_mask
-        dictionary['cutoffs_mask'] = cutoffs_mask
 
         if not include_structure:
             del dictionary['structure']

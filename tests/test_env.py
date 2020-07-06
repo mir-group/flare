@@ -99,17 +99,17 @@ def test_backwards_compatibility(structure, mask, cutoff, result):
     else:
         mask = None
 
-    env_test = copy(AtomicEnvironment(structure,
-                                 atom=0,
-                                 cutoffs=cutoff,
-                                 cutoffs_mask=mask))
+    env_test = copy(AtomicEnvironment(
+        structure, atom=0, cutoffs=cutoff, cutoffs_mask=mask))
+
     pre_test_dict = env_test.as_dict()
 
     delattr(env_test, 'cutoffs_mask')
 
     test_dict = env_test.as_dict()
 
-    assert pre_test_dict['cutoffs_mask'] == test_dict['cutoffs_mask']
+    assert pre_test_dict['cutoffs_mask'].cutoffs == \
+        test_dict['cutoffs']
 
     new_env = AtomicEnvironment.from_dict(test_dict)
 
@@ -220,14 +220,6 @@ def generate_mask(cutoff):
         manybody_mask[0] = 0
         mask.manybody_mask = manybody_mask
     mask.cutoffs = cutoff
-
-    print('test')
-    print('cutoff dict')
-    print(cutoff)
-    print('ncutoff')
-    print(ncutoff)
-    print('ncut3b')
-    print(mask.ncut3b)
 
     return mask
 
