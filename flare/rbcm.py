@@ -338,9 +338,10 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
 
             # bound signal noise below to avoid overfitting
             if self.bounds is None:
-                bounds = np.array([(1e-6, np.inf)] * len(x_0))
-                bounds[-1, 0] = 1e-3
-                bounds[-1, 1] = self.prior_variance
+                bounds = np.array([(1e-6, 100)] * len(x_0))
+                if self.hyps_mask.get('train_noise', True):
+                    bounds[-1, 0] = 1e-3
+                    bounds[-1, 1] = self.prior_variance
             else:
                 bounds = self.bounds
 
@@ -886,6 +887,14 @@ def rbcm_get_neg_like_grad(hyps, n_experts, name, kernel_grad, logger_name, cuto
     logger.info(f'Total Likelihood: {-neg_like}')
     logger.info(f'Total Likelihood Gradient: {list(neg_like_grad)}')
     logger.info(f"One step {time.time()-time0}")
+
+    ohyps, label = Parameters.get_hyps(
+                hyps_mask, hyps, constraint=False,
+                label=True)
+    if label:
+        logger.info(f'oHyp_array: {list(ohyps)}')
+        for i, l in enumerate(label):
+            logger.info(f'oHyp {l}: {ohyps[i]}')
 
     return neg_like, neg_like_grad
 
