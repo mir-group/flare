@@ -107,6 +107,7 @@ class AtomicEnvironment:
 
         # TODO: make cutoffs mask an attribute and eliminate redundant
         # attributes (specie_mask, twobody_mask, etc.)
+        self.cutoffs_mask = cutoffs_mask
 
         # Set the sweep array based on the max cutoff.
         sweep_val = ceil(np.max(list(cutoffs.values())) / structure.max_cutoff)
@@ -160,7 +161,7 @@ class AtomicEnvironment:
 
     def setup_mask(self, cutoffs_mask):
 
-        # self.cutoffs_mask = cutoffs_mask
+        self.cutoffs_mask = cutoffs_mask
         self.cutoffs = cutoffs_mask.cutoffs
 
         for kernel in AtomicEnvironment.all_kernel_types:
@@ -240,6 +241,17 @@ class AtomicEnvironment:
         dictionary = dict(vars(self))
         dictionary['object'] = 'AtomicEnvironment'
         dictionary['forces'] = self.structure.forces
+
+        # Record hyperparameter mask as a dictionary if the mask attribute is
+        # present.
+        # This makes environment objects json serializable.
+        if hasattr(self, 'cutoffs_mask'):
+            hyp_dict = {}
+            for attribute in dir(self.cutoffs_mask):
+                # Only save user-definable attributes.
+                if attribute[0] != '_':
+                    hyp_dict[attribute] = getattr(self.cutoffs_mask, attribute)
+            dictionary['cutoffs_mask'] = hyp_dict
 
         if not include_structure:
             del dictionary['structure']
