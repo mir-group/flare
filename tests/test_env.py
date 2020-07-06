@@ -51,16 +51,6 @@ def test_2bspecies_count(structure, mask, cutoff, result):
     assert (isinstance(env_test.etypes[0], np.int8))
     assert (len(env_test.bond_array_2) == result[0])
 
-    print('2bspecies count test')
-    print('cutoffs mask')
-    print(env_test.cutoffs_mask)
-    print('cutoffs mask.cutoffs')
-    print(env_test.cutoffs_mask.cutoffs)
-    print('ncut3b')
-    print(env_test.ncut3b)
-    print('triplet counts')
-    print(env_test.triplet_counts)
-
     if len(cutoff) > 1:
         assert (np.sum(env_test.triplet_counts) == result[1])
 

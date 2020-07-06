@@ -11,7 +11,7 @@ class HypsMask{
 
         // Base attributes on the as_dict method of parameter_helper.py
         int nspecie = 1, ntwobody = 1, nthreebody = 1, nmanybody = 1,
-            twobody_start, threebody_start, manybody_start, ncut3b = 0;
+            twobody_start, threebody_start, manybody_start, ncut3b = 1;
         std::vector<int> specie_mask, twobody_mask, threebody_mask,
             manybody_mask, cut3b_mask, map;
         std::vector<double> twobody_cutoff_list, threebody_cutoff_list,
