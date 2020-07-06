@@ -211,7 +211,7 @@ class TrajectoryTrainer:
 
         # Output parameters
         self.output = Output(output_name, verbose,
-                             print_xyz=print_as_xyz, always_flush=True)
+                             print_as_xyz=print_as_xyz, always_flush=True)
         self.logger_name = self.output.basename+'log'
         self.train_checkpoint_interval = train_checkpoint_interval or \
             checkpoint_interval
