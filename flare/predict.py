@@ -89,6 +89,10 @@ def predict_on_structure(structure: Structure, gp: GaussianProcess,
     else:
         selective_atoms = []
 
+    if write_to_structure and energy:
+        if structure.local_energies is None:
+            structure.local_energies = np.zeros(structure.nat)
+
     # Loop through atoms in structure and predict forces, uncertainties,
     # and energies
     for n in range(structure.nat):
@@ -109,6 +113,8 @@ def predict_on_structure(structure: Structure, gp: GaussianProcess,
 
         if energy:
             local_energies[n] = gp.predict_local_energy(chemenv)
+            if write_to_structure:
+                structure.local_energies[n] = local_energies[n]
 
     if energy:
         return forces, stds, local_energies
@@ -190,6 +196,8 @@ def predict_on_structure_par(structure: Structure, gp: GaussianProcess,
             structure.stds[i] = stds[i]
 
     if energy:
+        if write_to_structure:
+            structure.local_energies = np.copy(local_energies)
         return forces, stds, local_energies
     return forces, stds
 
@@ -207,6 +215,7 @@ def predict_on_atom_mgp(atom: int, structure, mgp,
     if write_to_structure:
         structure.forces[atom][:] = force
         structure.stds[atom][:] = stds
+        structure.local_energies[atom] = local_energy
 
     return comps, stds, local_energy
 
@@ -225,6 +234,8 @@ def predict_on_structure_mgp(structure, mgp, output=None,
     forces = np.zeros(shape=(structure.nat, 3))
     stds = np.zeros(shape=(structure.nat, 3))
     energy = np.zeros(shape=(structure.nat))
+    if write_to_structure and structure.local_energies is None:
+        structure.local_energies = np.zeros(shape=(structure.nat))
 
     if selective_atoms:
         forces.fill(skipped_atom_value)
