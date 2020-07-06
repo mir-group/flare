@@ -1308,7 +1308,7 @@ def get_like_from_mats(ky_mat, l_mat, alpha, name):
 
 
 def get_neg_like_grad(hyps: np.ndarray, name: str,
-                      kernel_grad, logger_name=None,
+                      kernel_grad, logger_name: str=None,
                       cutoffs=None, hyps_mask=None,
                       n_cpus=1, n_sample=100):
     """compute the log likelihood and its gradients
