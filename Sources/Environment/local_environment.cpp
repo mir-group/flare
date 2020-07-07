@@ -6,6 +6,13 @@ LocalEnvironment :: LocalEnvironment(){}
 
 LocalEnvironment :: LocalEnvironment(const Structure & structure, int atom,
                                      double cutoff){
+
+    set_attributes(structure, atom, cutoff);
+}
+
+void LocalEnvironment :: set_attributes(const Structure & structure, int atom,
+    double cutoff){
+
     this->cutoff = cutoff;
     this->structure = structure;
     central_index = atom;
@@ -36,6 +43,56 @@ LocalEnvironment :: LocalEnvironment(const Structure & structure, int atom,
     this->yrel = yrel;
     this->zrel = zrel;
 }
+
+// Constructor that mirrors the Python version.
+LocalEnvironment :: LocalEnvironment(const Structure & structure, int atom,
+    std::unordered_map<std::string, double> cutoffs, HypsMask cutoffs_mask){
+    
+    // Find the maximum cutoff in the map.
+    bool two_present = false, three_present = false, many_present = false;
+    double twobody_cutoff, threebody_cutoff, manybody_cutoff;
+    double max_cutoff = 0;
+    for (auto itr = cutoffs.begin(); itr!=cutoffs.end(); itr++){
+        if (itr->first == "twobody"){
+            two_present = true;
+            twobody_cutoff = itr->second;
+            if (twobody_cutoff > max_cutoff) max_cutoff = twobody_cutoff;
+        } else if (itr->first == "threebody"){
+            three_present = true;
+            threebody_cutoff = itr->second;
+            if (threebody_cutoff > max_cutoff) max_cutoff = threebody_cutoff;
+        } else if (itr->first == "manybody"){
+            many_present = true;
+            manybody_cutoff = itr->second;
+            if (manybody_cutoff > max_cutoff) max_cutoff = manybody_cutoff;
+        }
+    }
+
+    // Set the hyperparameter mask.
+    this->cutoffs_mask = cutoffs_mask;
+
+    // Set primary structure attributes.
+    // TODO: Add attributes that are present in the Python version.
+    set_attributes(structure, atom, max_cutoff);
+
+    // Create n_body cutoffs list.
+    std::vector<double> n_body_cutoffs;
+    if (two_present && !three_present){
+        n_body_cutoffs = {twobody_cutoff};
+    } else if (!two_present && three_present){
+        n_body_cutoffs = {threebody_cutoff, threebody_cutoff};
+    } else if (two_present && three_present){
+        n_body_cutoffs = {twobody_cutoff, threebody_cutoff};
+    }
+
+    // Compute n-body indices.
+    // TODO: Make compute_indices method sensitive to the hyperparameter mask.
+    this->n_body_cutoffs = n_body_cutoffs;
+    compute_indices();
+
+    // For the sake of compatibility with the Python version of the code, compute EAM attributes. This should be switched to a descriptor calculator later.
+
+    }
 
 // n-body
 LocalEnvironment :: LocalEnvironment(const Structure & structure, int atom,
@@ -201,7 +258,7 @@ void LocalEnvironment :: compute_indices(){
     for (int i = 0; i < no_atoms; i ++){
         double r_curr = rs[i];
         
-        // Store n-body index
+        // Store n-body indices.
         for (int j = 0; j < n_cutoffs; j ++){
             current_cutoff = n_body_cutoffs[j];
             if (r_curr < current_cutoff){
@@ -209,7 +266,7 @@ void LocalEnvironment :: compute_indices(){
             }
         }
 
-        // Store body index
+        // Store many-body indices.
         for (int j = 0; j < n_mb_cutoffs; j ++){
             current_cutoff = many_body_cutoffs[j];
             if (r_curr < current_cutoff){

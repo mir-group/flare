@@ -3,6 +3,7 @@
 
 #include "Structure/structure.h"
 #include "Descriptor/descriptor.h"
+#include "Parameters/hyps_mask.h"
 
 // Local environment class.
 class LocalEnvironment{
@@ -37,10 +38,18 @@ class LocalEnvironment{
             descriptor_stress_dervs, force_dot, stress_dot;
         std::vector<double> descriptor_norm;
 
+        // The cutoffs mask attribute gives the option to assign different pairs of species different cutoffs.
+        HypsMask cutoffs_mask;
+
         LocalEnvironment();
 
         LocalEnvironment(const Structure & structure, int atom,
                          double cutoff);
+        
+        // To maintain consistency with the Python version, include a constructor that takes in the cutoffs as a dictionary.
+        LocalEnvironment(const Structure & structure, int atom,
+            std::unordered_map<std::string, double> cutoffs,
+            HypsMask cutoffs_mask = HypsMask{});
 
         // n-body
         LocalEnvironment(const Structure & structure, int atom,
@@ -74,6 +83,8 @@ class LocalEnvironment{
                                  std::vector<double> & zrel);
 
         // Compute descriptor and descriptor norm of a bare environment.
+        void set_attributes(const Structure & structure, int atom,
+            double cutoff);
         void compute_descriptors();
         void compute_descriptors_and_gradients();
         void compute_neighbor_descriptors();

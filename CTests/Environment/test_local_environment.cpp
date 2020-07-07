@@ -114,14 +114,12 @@ TEST_F(EnvironmentTest, NeighborTest){
         test_struc.local_environments[neighbor_ind].descriptor_force_dervs[0](3 * test_env.central_index + force_comp, desc_el);
 
     EXPECT_EQ(val3, val4);
-
-    // std::cout << test_struc.local_environments[neighbor_ind].descriptor_norm[0] << std::endl;
-    // std::cout << test_env.neighbor_descriptor_norms[neighbor][0] << std::endl;
-    // std::cout << test_env.neighbor_force_dots[neighbor][0] << std::endl;
 }
 
-// TEST_F(EnvironmentTest, NestedTest){
-//     NestedEnvironment nest =  NestedEnvironment(test_struc, 0, cutoff, 3, 2, 1);
-//     std::cout << nest.three_body_indices.size() << std::endl;
-//     std::cout << nest.cross_bond_dists.size() << std::endl;
-// }
+
+TEST_F(EnvironmentTest, PythonConstructor){
+
+    std::unordered_map<std::string, double> cutoffs;
+    cutoffs.insert({{"threebody", 2}});
+    test_env = LocalEnvironment(test_struc, atom, cutoffs);
+}
