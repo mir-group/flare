@@ -93,6 +93,20 @@ Define a 9-parameter 2+3 kernel
 
 See more examples in functions ``ParameterHelper.define_group`` , ``ParameterHelper.set_parameters``,
 and in the tests ``tests/test_parameters.py``
+
+If you want to add in a new hyperparameter set to an already-existing GP, you can perform the 
+following steps:
+
+>>hyps_mask = pm.as_dict()
+>>hyps = hyps_mask['hyps']
+>>cutoffs = hyps_mask['cutoffs']
+>>kernels = hyps_mask['kernels']
+>>gp_model.update_kernel(kernels, 'mc', hyps_mask)
+
+And here, you can optionally re-set L alpha now and/or train now, but make sure to do both
+before you try to make predictions with the GP model again.
+
+>>gp_model.adjust_cutoffs(new_cutoffs = cutoffs, reset_L_alpha= False, train = False) 
 """
 
 import inspect
