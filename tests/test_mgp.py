@@ -32,11 +32,11 @@ force_block_only = False
 def all_gp():
 
     allgp_dict = {}
-    np.random.seed(13)
+    np.random.seed(123)
     for bodies in body_list:
         for multihyps in multi_list:
             gp_model = get_gp(bodies, 'mc', multihyps, cellabc=[1.5, 1, 2],
-                              force_only=force_block_only, noa=8) #int(bodies)**2)
+                              force_only=force_block_only, noa=5)
             gp_model.parallel = True
             gp_model.n_cpus = 2
 
@@ -204,7 +204,7 @@ def test_predict(all_gp, all_mgp, bodies, multihyps):
     # with open(filename, 'rb') as f:
     #     mgp_model = pickle.load(f)
 
-    nenv = 5
+    nenv = 8
     cell = 1.0 * np.eye(3)
     cutoffs = gp_model.cutoffs
     unique_species = gp_model.training_statistics['species']
