@@ -73,9 +73,6 @@ class AtomicEnvironment:
 
     """
 
-    all_kernel_types = ['twobody', 'threebody', 'manybody']
-    ndim = {'twobody': 2, 'threebody': 3, 'manybody': 2, 'cut3b': 2}
-
     def __init__(self, structure: Structure, atom: int, cutoffs,
                  cutoffs_mask=None):
 
@@ -107,6 +104,11 @@ class AtomicEnvironment:
         elif cutoffs is not None:
             cutoffs_mask.cutoffs = deepcopy(cutoffs)
 
+        # If present, the 2-body cutoff should be the largest.
+        self.max_cutoff = np.max(list(cutoffs.values()))
+        if 'twobody' in cutoffs:
+            assert(cutoffs['twobody'] >= self.max_cutoff)
+
         self.cutoffs = cutoffs
         self.cutoffs_mask = cutoffs_mask
 
@@ -123,15 +125,14 @@ class AtomicEnvironment:
     def compute_env(self):
 
         # get 2-body arrays
-        if 'twobody' in self.cutoffs:
-            bond_array_2, bond_positions_2, etypes, bond_inds = \
-                get_2_body_arrays(
-                    self.positions, self.atom, self.cell, self.species,
-                    self.sweep_array, self.cutoffs_mask)
+        bond_array_2, bond_positions_2, etypes, bond_inds = \
+            get_2_body_arrays(
+                self.positions, self.atom, self.cell, self.species,
+                self.sweep_array, self.cutoffs_mask)
 
-            self.bond_array_2 = bond_array_2
-            self.etypes = etypes
-            self.bond_inds = bond_inds
+        self.bond_array_2 = bond_array_2
+        self.etypes = etypes
+        self.bond_inds = bond_inds
 
         # if 2 cutoffs are given, create 3-body arrays
         if 'threebody' in self.cutoffs:

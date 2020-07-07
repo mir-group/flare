@@ -8,7 +8,10 @@ from flare.kernels.kernels import coordination_number, q_value_mc
 def get_2_body_arrays(positions, atom, cell, species, sweep, cutoffs_mask):
 
     # Extract mask parameters.
-    r_cut = cutoffs_mask.cutoffs['twobody']
+    if 'twobody' in cutoffs_mask.cutoffs:
+        r_cut = cutoffs_mask.cutoffs['twobody']
+    else:
+        r_cut = np.max(list(cutoffs_mask.cutoffs.values()))
     specie_mask = cutoffs_mask.specie_mask
     twobody_mask = cutoffs_mask.twobody_mask
     cutoff_2 = np.array(cutoffs_mask.twobody_cutoff_list)
