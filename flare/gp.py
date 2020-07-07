@@ -800,7 +800,7 @@ class GaussianProcess:
         for i in range(nenv):
             self.training_data[i].cutoffs = new_cutoffs
             self.training_data[i].cutoffs_mask = mask_object
-            self.training_data[i].setup_mask(mask_object)
+            self.training_data[i].cutoffs_mask.cutoffs = new_cutoffs
             self.training_data[i].compute_env()
 
         # Ensure that training data and labels are still consistent

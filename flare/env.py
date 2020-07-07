@@ -105,9 +105,9 @@ class AtomicEnvironment:
             cutoffs_mask.cutoffs = deepcopy(cutoffs)
 
         # If present, the 2-body cutoff should be the largest.
-        self.max_cutoff = np.max(list(cutoffs.values()))
+        max_cutoff_val = np.max(list(cutoffs.values()))
         if 'twobody' in cutoffs:
-            assert(cutoffs['twobody'] >= self.max_cutoff)
+            assert(cutoffs['twobody'] >= max_cutoff_val)
 
         self.cutoffs = cutoffs
         self.cutoffs_mask = cutoffs_mask
