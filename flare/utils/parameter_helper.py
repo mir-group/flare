@@ -1004,12 +1004,12 @@ class ParameterHelper():
                 # check parameters
                 aeg = self.all_group_names[group]
                 for idt in range(self.n[group]):
-                    hyp_labels += ['Signal std '+aeg[idt]]
+                    hyp_labels += ['Signal Std '+aeg[idt]]
                 for idt in range(self.n[group]):
-                    hyp_labels += ['Length scale '+group]
+                    hyp_labels += ['Length Scale '+aeg[idt]]
             else:
-                hyp_labels += ['Signal std '+group]
-                hyp_labels += ['Length scale '+group]
+                hyp_labels += ['Signal Std '+group]
+                hyp_labels += ['Length Scale '+group]
 
             if group in self.cutoff_list:
                 hyps_mask[group+'_cutoff_list'] = self.cutoff_list[group]

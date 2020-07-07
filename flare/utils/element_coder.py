@@ -8,6 +8,36 @@ from math import inf
 
 import numpy as np
 
+_user_element_to_Z = {}
+_user_Z_to_element = {}
+
+
+def inject_user_definition(element: str, Z: int):
+    """ Allow user-defined element. The definition
+    will override the default ones from the periodic table.
+
+    Example:
+
+    >>> import flare.utils
+    >>> import flare.utils.element_coder as ec
+    >>> ec.inject_user_definition('C1', 6)
+    >>> ec.inject_user_definition('C2', 7)
+    >>> ec.inject_user_definition('H1', 1)
+    >>> ec.inject_user_definition('H2', 2)
+
+    This block should be executed before any other
+    flare modules are imported. And user has to
+    be very careful to not let Z overlap with other
+    elements in the system
+
+    :param element: string symbol of the element
+    :type element: str
+    :param Z: corresponding Z
+    :type Z: int
+    """
+    _user_element_to_Z[element] = Z
+    _user_Z_to_element[Z] = element
+
 
 # Dictionary mapping elements to their atomic number (Z)
 _element_to_Z = {'H': 1,
@@ -142,6 +172,9 @@ def element_to_Z(element: str) -> int:
     :return:
     """
 
+    if element in _user_element_to_Z:
+        return _user_element_to_Z[element]
+
     # If already integer, do nothing
     if isinstance(element, (int, np.integer)):
         return element
@@ -155,10 +188,10 @@ def element_to_Z(element: str) -> int:
 
     # Check that a valid element was passed in then return
     if _element_to_Z.get(element, None) is None:
-        warn('Element as specified not found in list of element-Z mappings. '
+        warn(f'Element as specified not found in list of element-Z mappings. '
              'If you would like to specify a custom element, use an integer '
-             'of your choosing instead. Setting element {} to integer '
-             '0'.format(element))
+             'of your choosing instead. Setting element {element} to integer '
+             '0')
     return _element_to_Z.get(element, 0)
 
 
@@ -200,6 +233,9 @@ def Z_to_element(Z: int) -> str:
     :return: One or two-letter name of element.
     """
 
+    if Z in _user_Z_to_element:
+        return _user_Z_to_element[Z]
+
     # Check proper formatting
     if isinstance(Z, str):
         if Z.isnumeric():
@@ -207,115 +243,117 @@ def Z_to_element(Z: int) -> str:
         else:
             raise ValueError("Input Z is not a number. It should be an "
                              "integer")
+
     return _Z_to_element[Z]
 
-_Z_to_mass = {1:1.0079,
-              2:4.0026,
-              3:6.941,
-              4:9.0122,
-              5:10.811,
-              6:12.0107,
-              7:14.0067,
-              8:15.9994,
-              9:18.9984,
-              10:20.1797,
-              11:22.9897,
-              12:24.305,
-              13:26.9815,
-              14:28.0855,
-              15:30.9738,
-              16:32.065,
-              17:35.453,
-              19:39.0983,
-              18:39.948,
-              20:40.078,
-              21:44.9559,
-              22:47.867,
-              23:50.9415,
-              24:51.9961,
-              25:54.938,
-              26:55.845,
-              28:58.6934,
-              27:58.9332,
-              29:63.546,
-              30:65.39,
-              31:69.723,
-              32:72.64,
-              33:74.9216,
-              34:78.96,
-              35:79.904,
-              36:83.8,
-              37:85.4678,
-              38:87.62,
-              39:88.9059,
-              40:91.224,
-              41:92.9064,
-              42:95.94,
-              43:98,
-              44:101.07,
-              45:102.9055,
-              46:106.42,
-              47:107.8682,
-              48:112.411,
-              49:114.818,
-              50:118.71,
-              51:121.76,
-              53:126.9045,
-              52:127.6,
-              54:131.293,
-              55:132.9055,
-              56:137.327,
-              57:138.9055,
-              58:140.116,
-              59:140.9077,
-              60:144.24,
-              61:145,
-              62:150.36,
-              63:151.964,
-              64:157.25,
-              65:158.9253,
-              66:162.5,
-              67:164.9303,
-              68:167.259,
-              69:168.9342,
-              70:173.04,
-              71:174.967,
-              72:178.49,
-              73:180.9479,
-              74:183.84,
-              75:186.207,
-              76:190.23,
-              77:192.217,
-              78:195.078,
-              79:196.9665,
-              80:200.59,
-              81:204.3833,
-              82:207.2,
-              83:208.9804,
-              84:209,
-              85:210,
-              86:222,
-              87:223,
-              88:226,
-              89:227,
-              91:231.0359,
-              90:232.0381,
-              93:237,
-              92:238.0289,
-              95:243,
-              94:244,
-              96:247,
-              97:247,
-              98:251,
-              99:252,
-              100:257,
-              101:258,
-              102:259,
-              104:261,
-              103:262,
-              105:262,
-              107:264,
-              106:266,
-              109:268,
-              111:272,
-              108:277}
+
+_Z_to_mass = {1: 1.0079,
+              2: 4.0026,
+              3: 6.941,
+              4: 9.0122,
+              5: 10.811,
+              6: 12.0107,
+              7: 14.0067,
+              8: 15.9994,
+              9: 18.9984,
+              10: 20.1797,
+              11: 22.9897,
+              12: 24.305,
+              13: 26.9815,
+              14: 28.0855,
+              15: 30.9738,
+              16: 32.065,
+              17: 35.453,
+              19: 39.0983,
+              18: 39.948,
+              20: 40.078,
+              21: 44.9559,
+              22: 47.867,
+              23: 50.9415,
+              24: 51.9961,
+              25: 54.938,
+              26: 55.845,
+              28: 58.6934,
+              27: 58.9332,
+              29: 63.546,
+              30: 65.39,
+              31: 69.723,
+              32: 72.64,
+              33: 74.9216,
+              34: 78.96,
+              35: 79.904,
+              36: 83.8,
+              37: 85.4678,
+              38: 87.62,
+              39: 88.9059,
+              40: 91.224,
+              41: 92.9064,
+              42: 95.94,
+              43: 98,
+              44: 101.07,
+              45: 102.9055,
+              46: 106.42,
+              47: 107.8682,
+              48: 112.411,
+              49: 114.818,
+              50: 118.71,
+              51: 121.76,
+              53: 126.9045,
+              52: 127.6,
+              54: 131.293,
+              55: 132.9055,
+              56: 137.327,
+              57: 138.9055,
+              58: 140.116,
+              59: 140.9077,
+              60: 144.24,
+              61: 145,
+              62: 150.36,
+              63: 151.964,
+              64: 157.25,
+              65: 158.9253,
+              66: 162.5,
+              67: 164.9303,
+              68: 167.259,
+              69: 168.9342,
+              70: 173.04,
+              71: 174.967,
+              72: 178.49,
+              73: 180.9479,
+              74: 183.84,
+              75: 186.207,
+              76: 190.23,
+              77: 192.217,
+              78: 195.078,
+              79: 196.9665,
+              80: 200.59,
+              81: 204.3833,
+              82: 207.2,
+              83: 208.9804,
+              84: 209,
+              85: 210,
+              86: 222,
+              87: 223,
+              88: 226,
+              89: 227,
+              91: 231.0359,
+              90: 232.0381,
+              93: 237,
+              92: 238.0289,
+              95: 243,
+              94: 244,
+              96: 247,
+              97: 247,
+              98: 251,
+              99: 252,
+              100: 257,
+              101: 258,
+              102: 259,
+              104: 261,
+              103: 262,
+              105: 262,
+              107: 264,
+              106: 266,
+              109: 268,
+              111: 272,
+              108: 277}

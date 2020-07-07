@@ -1,3 +1,4 @@
+import logging
 import math
 import multiprocessing as mp
 import numpy as np
@@ -1307,7 +1308,7 @@ def get_like_from_mats(ky_mat, l_mat, alpha, name):
 
 
 def get_neg_like_grad(hyps: np.ndarray, name: str,
-                      kernel_grad, logger=None,
+                      kernel_grad, logger_name: str=None,
                       cutoffs=None, hyps_mask=None,
                       n_cpus=1, n_sample=100):
     """compute the log likelihood and its gradients
@@ -1316,9 +1317,9 @@ def get_neg_like_grad(hyps: np.ndarray, name: str,
     :type hyps: np.ndarray
     :param name: name of the gp instance.
     :param kernel_grad: function object of the kernel gradient
-    :param output: Output object for dumping every hyper-parameter
+    :param logger_name: name of logger object for dumping every hyper-parameter
                    sets computed
-    :type output: logger
+    :type logger_name: str
     :param cutoffs: The cutoff values used for the atomic environments
     :type cutoffs: list of 2 float numbers
     :param hyps_mask: dictionary used for multi-group hyperparmeters
@@ -1334,6 +1335,7 @@ def get_neg_like_grad(hyps: np.ndarray, name: str,
         get_ky_and_hyp(hyps, name, kernel_grad, cutoffs=cutoffs,
                        hyps_mask=hyps_mask, n_cpus=n_cpus, n_sample=n_sample)
 
+    logger = logging.getLogger(logger_name)
     logger.debug(f"get_ky_and_hyp {time.time()-time0}")
 
     time0 = time.time()

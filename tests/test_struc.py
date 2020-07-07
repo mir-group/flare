@@ -202,7 +202,7 @@ def test_to_xyz(varied_test_struc):
 
     simple_str_by_line = simple_str.split('\n')
 
-    assert len(simple_str_by_line)-3 == len(varied_test_struc)
+    assert len(simple_str_by_line)-2 == len(varied_test_struc)
 
     for i, atom_line in enumerate(simple_str_by_line[2:-1]):
         split_line = atom_line.split()
@@ -215,7 +215,7 @@ def test_to_xyz(varied_test_struc):
     complex_str = varied_test_struc.to_xyz(True,True,True,True)
     complex_str_by_line = complex_str.split('\n')
 
-    assert len(complex_str_by_line)-3 == len(varied_test_struc)
+    assert len(complex_str_by_line)-2 == len(varied_test_struc)
 
     for i, atom_line in enumerate(complex_str_by_line[2:-1]):
         split_line = atom_line.split()
