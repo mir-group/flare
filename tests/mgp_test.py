@@ -44,12 +44,10 @@ def compare_triplet(mgp_model, gp_model, atom_env):
         map_ind = mgp_model.find_map_index(spc)
         xyzs = np.zeros_like(xyzs)
         xyzs[:, 0] = np.ones_like(xyzs[:, 0])
-        f, _, _, e = mgp_model.maps[map_ind].predict(lengths, xyzs,
-            mgp_model.map_force)
+        f, _, _, e = mgp_model.maps[map_ind].predict(lengths, xyzs)
 
         assert np.allclose(gp_force, f, rtol=1e-2)
-        if not mgp_model.map_force:
-            assert np.allclose(gp_energy, e, rtol=1e-2)
+        assert np.allclose(gp_energy, e, rtol=1e-2)
 
 
 def get_triplet_env(r1, r2, r12, grid_env):
@@ -169,7 +167,7 @@ def predict_atom_diag_var_3b(atom_env, gp_model, force_kernel):
     return var       
 
 
-def predict_atom_diag_var(atom_env, gp_model, kernel_name, force_kernel):
+def predict_atom_diag_var(atom_env, gp_model, kernel_name, force_kernel=False):
     print('predict diag var')
     if kernel_name == 'twobody':
         return predict_atom_diag_var_2b(atom_env, gp_model, force_kernel)
