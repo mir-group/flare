@@ -230,7 +230,6 @@ class GaussianProcess:
         
         if hyps_mask is not None:
             self.hyps_mask = hyps_mask
-            if 
             if self.cutoffs!= hyps_mask['cutoffs']:
                 self.adjust_cutoffs(hyps_mask['cutoffs'],train = False,
                                    new_hyps_mask = hyps_mask)
