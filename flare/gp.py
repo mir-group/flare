@@ -779,7 +779,7 @@ class GaussianProcess:
             self.alpha = np.matmul(self.ky_mat_inv, self.all_labels)
 
 
-    def adjust_cutoffs(self, new_cutoffs: Union[list, tuple, 'np.ndarray'],
+    def adjust_cutoffs(self, new_cutoffs: Union[list, tuple, 'np.ndarray'] = None,
                        reset_L_alpha=True, train=True, new_hyps_mask=None):
         """
         Loop through atomic environment objects stored in the training data,
@@ -800,11 +800,17 @@ class GaussianProcess:
         :return:
         """
 
-        if (new_hyps_mask is not None):
+        if new_hyps_mask is not None:
             hm = new_hyps_mask
             self.hyps_mask = new_hyps_mask
         else:
             hm = self.hyps_mask
+        if new_cutoffs is None:
+            try:
+                new_cutoffs = hm['cutoffs']
+            except KeyError:
+                raise KeyError("New cutoffs not found in the hyps_mask"
+                               "dictionary via call to 'cutoffs' key.")
 
         # update environment
         nenv = len(self.training_data)
