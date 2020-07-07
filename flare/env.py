@@ -118,20 +118,6 @@ class AtomicEnvironment:
         self.atom = atom
         self.ctype = structure.coded_species[atom]
 
-        self.bond_array_2 = None
-        self.etypes = None
-        self.bond_inds = None
-        self.bond_array_3 = None
-        self.cross_bond_inds = None
-        self.cross_bond_dists = None
-        self.triplet_counts = None
-        self.q_array = None
-        self.q_neigh_array = None
-        self.q_grads = None
-        self.q_neigh_grads = None
-        self.unique_species = None
-        self.etypes_mb = None
-
         self.compute_env()
 
     def compute_env(self):
