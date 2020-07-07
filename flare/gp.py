@@ -219,7 +219,7 @@ class GaussianProcess:
 
         self.bounds = deepcopy(self.hyps_mask.get('bounds', None))
 
-    def update_kernel(self, kernels, component="mc", hyps_mask=None):
+    def update_kernel(self, kernels: List[str], component: str = "mc", hyps_mask: dict=None):
         kernel, grad, ek, efk, _, _, _ = str_to_kernel_set(
             kernels, component, hyps_mask)
         self.kernel = kernel
@@ -233,6 +233,7 @@ class GaussianProcess:
             if not np.array_equal(self.cutoffs, hyps_mask['cutoffs']):
                 self.adjust_cutoffs(hyps_mask['cutoffs'],train = False,
                                    new_hyps_mask = hyps_mask)
+            self.hyps = hyps_mask['hyps']
 
     def update_db(self, struc: Structure, forces: List,
                   custom_range: List[int] = (), energy: float = None):
