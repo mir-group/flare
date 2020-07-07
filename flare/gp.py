@@ -797,6 +797,7 @@ class GaussianProcess:
         >> hyps = hyps_mask['hyps']
         >> kernels = hyps_mask['kernels']
         >> gp_model.update_kernel(kernels, 'mc', hyps_mask)
+        >> gp_model.hyps = hyps
         
         :param new_cutoffs:
         :return:
