@@ -61,10 +61,11 @@ TEST_F(EnvironmentTest, SweepTest){
     // Check that the number of atoms in the local environment is correct.
     std::vector<int> env_ind, env_spec, unique_ind;
     std::vector<double> rs, xs, ys, zs, xrel, yrel, zrel;
+    Eigen::MatrixXd bond_array_2;
     int sweep_val = test_env.sweep + 3;
     LocalEnvironment :: compute_environment(
         test_struc, test_env.noa, atom, cutoff, sweep_val, env_ind, env_spec,
-        unique_ind, rs, xs, ys, zs, xrel, yrel, zrel);
+        unique_ind, rs, xs, ys, zs, xrel, yrel, zrel, bond_array_2);
     int expanded_count = rs.size();
     EXPECT_EQ(test_env.rs.size(), expanded_count);
     EXPECT_EQ(test_env.neighbor_list.size(), 5);
@@ -122,4 +123,5 @@ TEST_F(EnvironmentTest, PythonConstructor){
     std::unordered_map<std::string, double> cutoffs;
     cutoffs.insert({{"threebody", 2}});
     test_env = LocalEnvironment(test_struc, atom, cutoffs);
+    std::cout << test_env.bond_array_2 << std::endl;
 }

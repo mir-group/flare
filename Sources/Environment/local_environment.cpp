@@ -26,11 +26,12 @@ void LocalEnvironment :: set_attributes(const Structure & structure, int atom,
     std::vector<int> environment_indices, environment_species,
         neighbor_list;
     std::vector<double> rs, xs, ys, zs, xrel, yrel, zrel;
+    Eigen::MatrixXd bond_array_2;
 
     compute_environment(structure, noa, atom, cutoff, sweep_val, 
                         environment_indices, environment_species,
                         neighbor_list,
-                        rs, xs, ys, zs, xrel, yrel, zrel);
+                        rs, xs, ys, zs, xrel, yrel, zrel, bond_array_2);
 
     this->environment_indices = environment_indices;
     this->environment_species = environment_species;
@@ -42,6 +43,7 @@ void LocalEnvironment :: set_attributes(const Structure & structure, int atom,
     this->xrel = xrel;
     this->yrel = yrel;
     this->zrel = zrel;
+    this->bond_array_2 = bond_array_2;
 }
 
 // Constructor that mirrors the Python version.
@@ -72,7 +74,8 @@ LocalEnvironment :: LocalEnvironment(const Structure & structure, int atom,
     this->cutoffs_mask = cutoffs_mask;
 
     // Set primary structure attributes.
-    // TODO: Add attributes that are present in the Python version.
+    // TODO: Add attributes that are present in the Python version:
+    // bond_array_2, bond_array_3, cross_bond_inds, cross_bond_dists, etc.
     set_attributes(structure, atom, max_cutoff);
 
     // Create n_body cutoffs list.
@@ -136,7 +139,8 @@ void LocalEnvironment :: compute_environment(
     std::vector<double> & rs, std::vector<double> & xs,
     std::vector<double> & ys, std::vector<double> & zs,
     std::vector<double> & xrel, std::vector<double> & yrel,
-    std::vector<double> & zrel){
+    std::vector<double> & zrel,
+    Eigen::MatrixXd & bond_array_2){
 
     Eigen::MatrixXd pos_atom = structure.wrapped_positions.row(atom);
 
@@ -189,8 +193,9 @@ void LocalEnvironment :: compute_environment(
     xrel.resize(cutoff_count);
     yrel.resize(cutoff_count);
     zrel.resize(cutoff_count);
+    bond_array_2.conservativeResize(cutoff_count, 4);
     int spec_curr, unique_check;
-    double dist_curr, xcurr, ycurr, zcurr;
+    double dist_curr, xcurr, ycurr, zcurr, xr, yr, zr;
     int bond_count = 0;
     counter = 0;
 
@@ -214,13 +219,22 @@ void LocalEnvironment :: compute_environment(
                 ycurr = yvals[counter];
                 zcurr = zvals[counter];
 
+                xr = xcurr / dist_curr;
+                yr = ycurr / dist_curr;
+                zr = zcurr / dist_curr;
+
                 rs[bond_count] = dist_curr;
                 xs[bond_count] = xcurr;
                 ys[bond_count] = ycurr;
                 zs[bond_count] = zcurr;
-                xrel[bond_count] = xcurr / dist_curr;
-                yrel[bond_count] = ycurr / dist_curr;
-                zrel[bond_count] = zcurr / dist_curr;
+                xrel[bond_count] = xr;
+                yrel[bond_count] = yr;
+                zrel[bond_count] = zr;
+
+                bond_array_2(bond_count, 0) = dist_curr;
+                bond_array_2(bond_count, 1) = xr;
+                bond_array_2(bond_count, 2) = yr;
+                bond_array_2(bond_count, 3) = zr;
 
                 bond_count ++;
 
