@@ -118,55 +118,6 @@ def test_backwards_compatibility(structure, mask, cutoff, result):
     assert str(new_env) == str(env_test)
 
 
-# def generate_mask(cutoff):
-#     ncutoff = len(cutoff)
-#     if ncutoff == 1:
-#         # (1, 1) uses 0.5 cutoff,  (1, 2) (1, 3) (2, 3) use 0.9 cutoff
-#         mask = {'nspecie': 2, 'specie_mask': np.ones(118, dtype=int)}
-#         mask['specie_mask'][1] = 0
-#         mask['twobody_cutoff_list'] = np.array([0.5, 0.9])
-#         mask['ntwobody'] = 2
-#         mask['twobody_mask'] = np.ones(4, dtype=int)
-#         mask['twobody_mask'][0] = 0
-
-#     elif ncutoff == 2:
-#         # the 3b mask is the same structure as 2b
-#         nspecie = 3
-#         specie_mask = np.zeros(118, dtype=int)
-#         chem_spec = [1, 2, 3]
-#         specie_mask[chem_spec] = np.arange(3)
-
-#         # from type 1 to 4 is
-#         # (1, 1) (1, 2) (1, 3) (2, 3) (*, *)
-#         # correspond to cutoff 0.5, 0.9, 0.8, 0.9, 0.05
-#         ncut3b = 5
-#         tmask = np.ones(nspecie ** 2, dtype=int) * (ncut3b - 1)
-#         count = 0
-#         for i, j in [(1, 1), (1, 2), (1, 3), (2, 3)]:
-#             cs1 = specie_mask[i]
-#             cs2 = specie_mask[j]
-#             tmask[cs1 * nspecie + cs2] = count
-#             tmask[cs2 * nspecie + cs1] = count
-#             count += 1
-
-#         mask = {'nspecie': nspecie,
-#                 'specie_mask': specie_mask,
-#                 'threebody_cutoff_list': np.array([0.5, 0.9, 0.8, 0.9, 0.05]),
-#                 'ncut3b': ncut3b,
-#                 'cut3b_mask': tmask}
-
-#     elif ncutoff == 3:
-#         # (1, 1) uses 0.5 cutoff,  (1, 2) (1, 3) (2, 3) use 0.9 cutoff
-#         mask = {'nspecie': 2, 'specie_mask': np.ones(118, dtype=int)}
-#         mask['specie_mask'][1] = 0
-#         mask['manybody_cutoff_list'] = np.array([0.5, 0.9])
-#         mask['nmanybody'] = 2
-#         mask['manybody_mask'] = np.ones(4, dtype=int)
-#         mask['manybody_mask'][0] = 0
-#     mask['cutoffs'] = cutoff
-#     return mask
-
-
 def generate_mask(cutoff):
     mask = HypsMask()
     ncutoff = len(cutoff)
