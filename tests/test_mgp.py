@@ -72,9 +72,9 @@ def test_init(bodies, multihyps, map_force, all_mgp, all_gp):
     if ('2' in bodies):
         grid_params['twobody'] = {'grid_num': [128], 'lower_bound': [0.01]}
     if ('3' in bodies):
-        grid_params['threebody'] = {'grid_num': [31, 32, 33], 'lower_bound':[0.01]*3}
+        grid_params['threebody'] = {'grid_num': [31, 32, 33], 'lower_bound':[0.02]*3}
 
-    lammps_location = f'{bodies}{multihyps}{map_force}.mgp'
+    lammps_location = f'{bodies}{multihyps}{map_force}'
     data = gp_model.training_statistics
 
     try:       
@@ -258,7 +258,6 @@ def test_predict(all_gp, all_mgp, bodies, multihyps, map_force):
         gp_var = predict_atom_diag_var(test_envi, gp_model, kernel_name, map_force)
         print('mgp_var, gp_var', mgp_var, gp_var)
         assert np.allclose(mgp_var, gp_var, rtol=1e-2)
-
 
     clean()
 

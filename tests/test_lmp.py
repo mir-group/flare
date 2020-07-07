@@ -6,6 +6,7 @@ import os, pickle, re, shutil
 from flare import struc, env, gp
 from flare import otf_parser
 from flare.ase.calculator import FLARE_Calculator
+from flare.ase.atoms import FLARE_Atoms
 from flare.mgp import MappedGaussianProcess
 from flare.lammps import lammps_calculator
 from flare.utils.element_coder import _Z_to_mass, _element_to_Z
@@ -143,6 +144,7 @@ def test_lmp_predict(gp_model, mgp_model, ase_calculator, lmp_calculator):
 
     # build ase atom from struc
     ase_atoms_flare = struc_test.to_ase_atoms()
+    ase_atoms_flare = FLARE_Atoms.from_ase_atoms(ase_atoms_flare)
     ase_atoms_flare.set_calculator(ase_calculator)
 
     ase_atoms_lmp = struc_test.to_ase_atoms()

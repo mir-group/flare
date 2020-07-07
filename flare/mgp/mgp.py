@@ -98,7 +98,7 @@ class MappedGaussianProcess:
                  GP: GaussianProcess=None,
                  var_map: str=None,
                  container_only: bool=True,
-                 lmp_file_name: str='lmp.mgp',
+                 lmp_file_name: str='lmp',
                  n_cpus: int=None,
                  n_sample: int=100):
 
@@ -169,7 +169,9 @@ class MappedGaussianProcess:
             self.maps[xb].build_map(GP)
 
         # write to lammps pair style coefficient file
-        self.write_lmp_file(self.lmp_file_name)
+        self.write_lmp_file(self.lmp_file_name + '.mgp', write_var=False)
+        if self.var_map == 'simple':
+            self.write_lmp_file(self.lmp_file_name + '.var', write_var=True)
 
 
     def predict(self, atom_env: AtomicEnvironment) \
@@ -205,7 +207,7 @@ class MappedGaussianProcess:
         return force, variance, virial, energy
 
 
-    def write_lmp_file(self, lammps_name):
+    def write_lmp_file(self, lammps_name, write_var=False):
         '''
         write the coefficients to a file that can be used by lammps pair style
         '''
@@ -227,7 +229,7 @@ class MappedGaussianProcess:
 
         # write coefficients
         for xb in self.maps:
-            self.maps[xb].write(f)
+            self.maps[xb].write(f, write_var)
 
         f.close()
 

@@ -219,9 +219,9 @@ class MapXbody:
         return new_mgp
 
 
-    def write(self, f):
+    def write(self, f, write_var):
         for m in self.maps:
-            m.write(f)
+            m.write(f, write_var)
 
 
 
@@ -700,7 +700,7 @@ class SingleMapXbody:
         return f, vir, v, e
 
 
-    def write(self, f):
+    def write(self, f, write_var):
         '''
         Write LAMMPS coefficient file
 
@@ -725,7 +725,10 @@ class SingleMapXbody:
         f.write(header + '\n')
 
         # write coefficients
-        coefs = self.mean.__coeffs__
+        if write_var:
+            coefs = self.var.__coeffs__
+        else:
+            coefs = self.mean.__coeffs__
         self.write_flatten_coeff(f, coefs)
 
     def write_flatten_coeff(self, f, coefs):
