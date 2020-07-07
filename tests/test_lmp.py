@@ -60,7 +60,7 @@ def mgp_model(gp_model):
                                   'lower_bound':[0.1]*3,
                                   'svd_rank': 14}
     species_list = [1, 2, 3]
-    lammps_location = f'tmp_lmp.mgp'
+    lammps_location = f'tmp_lmp'
     mapped_model = MappedGaussianProcess(grid_params=grid_params, unique_species=species_list, n_cpus=1,
                 lmp_file_name=lammps_location, var_map=None)
 

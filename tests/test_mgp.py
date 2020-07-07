@@ -72,7 +72,7 @@ def test_init(bodies, multihyps, all_mgp, all_gp):
     if ('3' in bodies):
         grid_params['threebody'] = {'grid_num': [31, 32, 33], 'lower_bound':[0.02]*3}
 
-    lammps_location = f'{bodies}{multihyps}{map_force}'
+    lammps_location = f'{bodies}{multihyps}'
     data = gp_model.training_statistics
 
     try:       
