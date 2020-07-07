@@ -93,6 +93,7 @@ class AtomicEnvironment:
                 newcutoffs['manybody'] = cutoffs[2]
             cutoffs = newcutoffs
 
+        # If no mask is given, create a default mask.
         if cutoffs_mask is None:
             cutoffs_mask = HypsMask()
             cutoffs_mask.cutoffs = cutoffs
@@ -102,11 +103,11 @@ class AtomicEnvironment:
             for key in cutoffs_mask:
                 setattr(mask_object, key, cutoffs_mask[key])
             cutoffs_mask = mask_object
+        # Make sure that the given cutoffs match the mask cutoffs.
         elif cutoffs is not None:
             cutoffs_mask.cutoffs = deepcopy(cutoffs)
 
-        # TODO: make cutoffs mask an attribute and eliminate redundant
-        # attributes (specie_mask, twobody_mask, etc.)
+        self.cutoffs = cutoffs
         self.cutoffs_mask = cutoffs_mask
 
         # Set the sweep array based on the max cutoff.
@@ -116,32 +117,6 @@ class AtomicEnvironment:
 
         self.atom = atom
         self.ctype = structure.coded_species[atom]
-
-        self.twobody_cutoff = 0
-        self.threebody_cutoff = 0
-        self.manybody_cutoff = 0
-
-        self.ntwobody = 1
-        self.ncut3b = 0
-        self.nmanybody = 0
-
-        self.nspecie = 1
-        self.specie_mask = None
-        self.twobody_mask = None
-        self.threebody_mask = None
-        self.manybody_mask = None
-        self.twobody_cutoff_list = None
-        self.threebody_cutoff_list = None
-        self.manybody_cutoff_list = None
-
-        self.setup_mask(cutoffs_mask)
-
-        assert self.threebody_cutoff <= self.twobody_cutoff, \
-            "2b cutoff has to be larger than 3b cutoff"
-        # # TO DO, once the mb function is updated to use the bond_array_2
-        # # this block should be activated.
-        # assert self.manybody_cutoff <= self.twobody_cutoff, \
-        #         "mb cutoff has to be larger than mb cutoff"
 
         self.bond_array_2 = None
         self.etypes = None
@@ -159,61 +134,25 @@ class AtomicEnvironment:
 
         self.compute_env()
 
-    def setup_mask(self, cutoffs_mask):
-
-        self.cutoffs_mask = cutoffs_mask
-        self.cutoffs = cutoffs_mask.cutoffs
-
-        for kernel in AtomicEnvironment.all_kernel_types:
-            if kernel in self.cutoffs:
-                setattr(self, kernel + '_cutoff', self.cutoffs[kernel])
-
-        if (self.twobody_cutoff == 0):
-            self.twobody_cutoff = \
-                np.max([self.threebody_cutoff, self.manybody_cutoff])
-
-            self.cutoffs['twobody'] = self.twobody_cutoff
-
-        self.nspecie = cutoffs_mask.nspecie
-        self.specie_mask = np.array(cutoffs_mask.specie_mask, dtype=np.int)
-
-        for kernel in AtomicEnvironment.all_kernel_types:
-            if kernel in self.cutoffs:
-                setattr(self, kernel + '_cutoff', self.cutoffs[kernel])
-                setattr(self, 'n' + kernel, 1)
-                if kernel != 'threebody':
-                    name_list = [kernel + '_cutoff_list',
-                                 'n' + kernel, kernel + '_mask']
-                    for name in name_list:
-                        setattr(self, name, getattr(cutoffs_mask, name))
-                else:
-                    self.ncut3b = cutoffs_mask.ncut3b
-                    self.cut3b_mask = cutoffs_mask.cut3b_mask
-                    self.threebody_cutoff_list = \
-                        np.array(cutoffs_mask.threebody_cutoff_list,
-                                 dtype=np.float)
-
     def compute_env(self):
 
         # get 2-body arrays
-        if self.ntwobody >= 1:
+        if 'twobody' in self.cutoffs:
             bond_array_2, bond_positions_2, etypes, bond_inds = \
                 get_2_body_arrays(
-                    self.positions, self.atom, self.cell, self.twobody_cutoff,
-                    self.twobody_cutoff_list, self.species, self.sweep_array,
-                    self.nspecie, self.specie_mask, self.twobody_mask)
+                    self.positions, self.atom, self.cell, self.species,
+                    self.sweep_array, self.cutoffs_mask)
 
             self.bond_array_2 = bond_array_2
             self.etypes = etypes
             self.bond_inds = bond_inds
 
         # if 2 cutoffs are given, create 3-body arrays
-        if self.ncut3b > 0:
+        if 'threebody' in self.cutoffs:
             bond_array_3, cross_bond_inds, cross_bond_dists, triplet_counts = \
                 get_3_body_arrays(
                     bond_array_2, bond_positions_2, self.species[self.atom],
-                    etypes, self.threebody_cutoff, self.threebody_cutoff_list,
-                    self.nspecie, self.specie_mask, self.cut3b_mask)
+                    etypes, self.cutoffs_mask)
 
             self.bond_array_3 = bond_array_3
             self.cross_bond_inds = cross_bond_inds
@@ -221,13 +160,12 @@ class AtomicEnvironment:
             self.triplet_counts = triplet_counts
 
         # if 3 cutoffs are given, create many-body arrays
-        if self.nmanybody > 0:
+        if 'manybody' in self.cutoffs:
             self.q_array, self.q_neigh_array, self.q_grads, \
                 self.q_neigh_grads, self.unique_species, self.etypes_mb = \
                 get_m2_body_arrays(
-                    self.positions, self.atom, self.cell, self.manybody_cutoff,
-                    self.manybody_cutoff_list, self.species, self.sweep_array,
-                    self.nspecie, self.specie_mask, self.manybody_mask,
+                    self.positions, self.atom, self.cell, self.species,
+                    self.sweep_array, self.cutoffs_mask,
                     cf.quadratic_cutoff)
 
     def as_dict(self, include_structure: bool = False):

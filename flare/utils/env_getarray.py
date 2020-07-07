@@ -5,8 +5,15 @@ import flare.kernels.cutoffs as cf
 from flare.kernels.kernels import coordination_number, q_value_mc
 
 
-def get_2_body_arrays(positions, atom, cell, r_cut, cutoff_2, species,
-                      sweep, nspecie, specie_mask, twobody_mask):
+def get_2_body_arrays(positions, atom, cell, species, sweep, cutoffs_mask):
+
+    # Extract mask parameters.
+    r_cut = cutoffs_mask.cutoffs['twobody']
+    specie_mask = cutoffs_mask.specie_mask
+    twobody_mask = cutoffs_mask.twobody_mask
+    cutoff_2 = np.array(cutoffs_mask.twobody_cutoff_list)
+    nspecie = cutoffs_mask.nspecie
+
     if len(specie_mask) == 0:
         specie_mask = None
     if len(twobody_mask) == 0:
@@ -19,8 +26,16 @@ def get_2_body_arrays(positions, atom, cell, r_cut, cutoff_2, species,
         specie_mask, twobody_mask)
 
 
-def get_3_body_arrays(bond_array_2, bond_positions_2, ctype, etypes, r_cut,
-                      cutoff_3, nspecie, specie_mask, cut3b_mask):
+def get_3_body_arrays(bond_array_2, bond_positions_2, ctype, etypes,
+                      cutoffs_mask):
+
+    # Extract mask parameters.
+    r_cut = cutoffs_mask.cutoffs['threebody']
+    specie_mask = cutoffs_mask.specie_mask
+    cut3b_mask = cutoffs_mask.cut3b_mask
+    cutoff_3 = np.array(cutoffs_mask.threebody_cutoff_list)
+    nspecie = cutoffs_mask.nspecie
+
     if len(specie_mask) == 0:
         specie_mask = None
     if len(cut3b_mask) == 0:
@@ -33,10 +48,15 @@ def get_3_body_arrays(bond_array_2, bond_positions_2, ctype, etypes, r_cut,
         nspecie, specie_mask, cut3b_mask)
 
 
-def get_m2_body_arrays(
- positions, atom: int, cell, r_cut, manybody_cutoff_list, species,
- sweep: np.ndarray, nspec, spec_mask, manybody_mask,
- cutoff_func=cf.quadratic_cutoff):
+def get_m2_body_arrays(positions, atom: int, cell, species, sweep,
+                       cutoffs_mask, cutoff_func=cf.quadratic_cutoff):
+
+    # Extract mask parameters.
+    r_cut = cutoffs_mask.cutoffs['manybody']
+    manybody_cutoff_list = np.array(cutoffs_mask.manybody_cutoff_list)
+    spec_mask = cutoffs_mask.specie_mask
+    manybody_mask = cutoffs_mask.manybody_mask
+    nspec = cutoffs_mask.nspecie
 
     if len(spec_mask) == 0:
         spec_mask = None
