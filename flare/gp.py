@@ -229,8 +229,10 @@ class GaussianProcess:
         self.kernels = kernel_str_to_array(kernel.__name__)
         
         if hyps_mask is not None:
-            self.adjust_cutoffs(hyps_mask['cutoffs'],train = False,
-                               new_hyps_mask = hyps_mask)
+            self.hyps_mask = hyps_mask
+            if not np.array_equal(self.cutoffs, hyps_mask['cutoffs']):
+                self.adjust_cutoffs(hyps_mask['cutoffs'],train = False,
+                                   new_hyps_mask = hyps_mask)
 
     def update_db(self, struc: Structure, forces: List,
                   custom_range: List[int] = (), energy: float = None):
