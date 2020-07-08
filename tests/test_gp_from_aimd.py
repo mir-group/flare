@@ -1,6 +1,7 @@
-import numpy as np
 import pickle
 import pytest
+import os as os
+import numpy as np
 
 from copy import deepcopy
 from json import loads
@@ -13,10 +14,13 @@ from flare.gp import GaussianProcess
 from flare.mgp import MappedGaussianProcess
 from flare.gp_from_aimd import TrajectoryTrainer,\
                                     parse_trajectory_trainer_output
-from flare.utils.learner import subset_of_frame_by_element
 
-from tests.test_mgp import all_mgp, all_gp, get_random_structure
+from tests.test_mgp import get_random_structure
 from .fake_gp import get_gp
+
+TEST_DIR = os.path.dirname(__file__)
+TEST_FILE_DIR = os.path.join(TEST_DIR, 'test_files')
+
 
 @pytest.fixture
 def methanol_gp():
@@ -27,7 +31,7 @@ def methanol_gp():
         cutoffs=np.array([7, 7]), hyp_labels=['l2', 's2', 'l3', 's3', 'n0'],
         maxiter=1, opt_algorithm='L-BFGS-B')
 
-    with open('./test_files/methanol_envs.json') as f:
+    with open(os.path.join(TEST_FILE_DIR, 'methanol_envs.json'),'r') as f:
         dicts = [loads(s) for s in f.readlines()]
 
     for cur_dict in dicts:
@@ -65,7 +69,7 @@ def test_instantiation_of_trajectory_trainer(fake_gp):
 
 
 def test_load_trained_gp_and_run(methanol_gp):
-    with open('./test_files/methanol_frames.json', 'r') as f:
+    with open(os.path.join(TEST_FILE_DIR, 'methanol_frames.json'), 'r') as f:
         frames = [Structure.from_dict(loads(s)) for s in f.readlines()]
 
     tt = TrajectoryTrainer(active_frames=frames,
@@ -89,7 +93,7 @@ def test_load_one_frame_and_run():
                              maxiter=1,
                              opt_algorithm='L-BFGS-B')
 
-    with open('./test_files/methanol_frames.json', 'r') as f:
+    with open(os.path.join(TEST_FILE_DIR, 'methanol_frames.json'), 'r') as f:
         frames = [Structure.from_dict(loads(s)) for s in f.readlines()]
 
     tt = TrajectoryTrainer(active_frames=frames,
@@ -114,10 +118,10 @@ def test_seed_and_run():
                              maxiter=1,
                              opt_algorithm='L-BFGS-B')
 
-    with open('./test_files/methanol_frames.json', 'r') as f:
+    with open(os.path.join(TEST_FILE_DIR, 'methanol_frames.json'), 'r') as f:
         frames = [Structure.from_dict(loads(s)) for s in f.readlines()]
 
-    with open('./test_files/methanol_envs.json', 'r') as f:
+    with open(os.path.join(TEST_FILE_DIR, 'methanol_envs.json'), 'r') as f:
         data_dicts = [loads(s) for s in f.readlines()[:6]]
         envs = [AtomicEnvironment.from_dict(d) for d in data_dicts]
         forces = [np.array(d['forces']) for d in data_dicts]
@@ -160,10 +164,10 @@ def test_pred_on_elements():
                              maxiter=1,
                              opt_algorithm='L-BFGS-B')
 
-    with open('./test_files/methanol_frames.json', 'r') as f:
+    with open(os.path.join(TEST_FILE_DIR, 'methanol_frames.json'), 'r') as f:
         frames = [Structure.from_dict(loads(s)) for s in f.readlines()]
 
-    with open('./test_files/methanol_envs.json', 'r') as f:
+    with open(os.path.join(TEST_FILE_DIR, 'methanol_envs.json'), 'r') as f:
         data_dicts = [loads(s) for s in f.readlines()[:6]]
         envs = [AtomicEnvironment.from_dict(d) for d in data_dicts]
         forces = [np.array(d['forces']) for d in data_dicts]
@@ -204,7 +208,7 @@ def test_pred_on_elements():
         remove(f)
 
 
-def test_mgp_gpfa(all_mgp, all_gp):
+def test_mgp_gpfa():
     '''
     Ensure that passing in an MGP also works for the trajectory trainer
     :param all_mgp:
@@ -216,11 +220,10 @@ def test_mgp_gpfa(all_mgp, all_gp):
     gp_model  = get_gp('3', 'mc', False)
     gp_model.set_L_alpha()
 
-    grid_num_2 = 5
     grid_num_3 = 3
     lower_cut = 0.01
-    grid_params_3b = {'lower_bound': [lower_cut for d in range(3)],
-                      'grid_num': [grid_num_3 for d in range(3)],
+    grid_params_3b = {'lower_bound': [lower_cut]*3,
+                      'grid_num': [grid_num_3]*3,
                       'svd_rank': 'auto'}
     grid_params = {'load_grid': None,
                    'update': False}
@@ -254,7 +257,7 @@ def test_parse_gpfa_output():
     :return:
     """
     frames, gp_data = parse_trajectory_trainer_output(
-        './test_files/gpfa_parse_test.out', True)
+        os.path.join(TEST_FILE_DIR, 'gpfa_parse_test.out'), True)
 
     assert len(frames) == 5
     assert isinstance(frames[0], dict)
