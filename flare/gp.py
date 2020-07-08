@@ -423,7 +423,15 @@ class GaussianProcess:
             (float, float): Mean and epistemic variance of the prediction.
         """
 
-        assert (d in [1, 2, 3]), "d should be 1, 2, or 3"
+        # Checks on input and model integrity
+        assert (d in [1, 2, 3]), "d must be 1, 2, or 3"
+        if len(self.training_data) == 0:
+            logger = logging.getLogger(self.logger_name)
+            logger.warning("GP has no internal dataset! Try growing "
+                           "the training set using an on-the-fly run or "
+                           "previously existing Ab Initio Molecular Dynamics "
+                           "trajectory.")
+            return 0, np.inf
 
         # Kernel vector allows for evaluation of atomic environments.
         if self.parallel and not self.per_atom_par:
@@ -432,6 +440,7 @@ class GaussianProcess:
             n_cpus = 1
 
         self.sync_data()
+        self.check_L_alpha()
 
         k_v = \
             get_kernel_vector(self.name, self.kernel, self.energy_force_kernel,
@@ -439,8 +448,6 @@ class GaussianProcess:
                               hyps_mask=self.hyps_mask, n_cpus=n_cpus,
                               n_sample=self.n_sample)
 
-        # Guarantee that alpha is up to date with training set
-        self.check_L_alpha()
 
         # get predictive mean
         pred_mean = np.matmul(k_v, self.alpha)
@@ -1002,6 +1009,13 @@ class GaussianProcess:
         data['envs_by_species'] = dict(Counter(present_species))
 
         return data
+    @property
+    def __len__(self):
+        """
+        Make neighbor Tuple-like to retain backwards compatibility.
+        """
+        return len(self.training_data)
+
 
     @property
     def par(self):

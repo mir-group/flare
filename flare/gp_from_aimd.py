@@ -79,6 +79,7 @@ class TrajectoryTrainer:
 
                  max_atoms_from_frame: int = np.inf,
                  min_atoms_added_per_train: int = 1,
+                 max_model_size: int = np.inf,
 
                  passive_on_active_skips: int = -1,
                  passive_train_max_iter: int = 50,
@@ -101,12 +102,21 @@ class TrajectoryTrainer:
 
         All arguments are divided between 'passive' learning and 'active'
         learning. By default, when run is called, a 'passive' learning run
-        is called which either adds all 'seed' data to the model,
-        or a randomized subset. Active learning will add data to the dataset
-        based on
+        is called which either adds all 'seed' environments to the model,
+        or a randomized subset of atoms from the frames. If no arguments are
+        specified, the very first frame of the active learning
+        frames will be used.
 
-        There are a variety of options which can give you a finer control
-        over the training process.
+        "Passive" learning will add data based on random selection of atoms
+        from a given ab-initio frame.
+
+        "Active" learning will add data to the dataset based on the
+        performance of the GP itself: the force error and the GP's internal
+        uncertainty estimate.
+
+
+        There are a widevariety of options which can give you a finer
+        control over the training process.
 
         :param active_frames: List of structures to evaluate / train GP on
         :param gp: Gaussian Process object
@@ -165,6 +175,7 @@ class TrajectoryTrainer:
         self.max_trains = active_max_trains
         self.max_atoms_from_frame = max_atoms_from_frame
         self.min_atoms_per_train = min_atoms_added_per_train
+        self.max_model_size = max_model_size
         self.predict_atoms_per_element = predict_atoms_per_element
         self.train_count = 0
         self.calculate_energy = calculate_energy
@@ -184,11 +195,11 @@ class TrajectoryTrainer:
         # Parameters for negotiating with the training active_frames
 
         # To later be filled in using the time library
-        self.start_time = None
+        self.start_time = time.time()
 
         self.skip = active_skip
-        assert (isinstance(active_skip, int) and active_skip >= 1), "Skip needs to be a " \
-                                                      "positive integer."
+        assert (isinstance(active_skip, int) and active_skip >= 1), \
+            "Skip needs to be a  positive integer."
         self.validate_ratio = validate_ratio
         assert (0 <= validate_ratio <= 1), \
             "validate_ratio needs to be [0,1]"
@@ -202,9 +213,9 @@ class TrajectoryTrainer:
             else passive_frames
 
         self.pre_train_env_per_species = {} if passive_atoms_per_element \
-                                               is None else passive_atoms_per_element
+                                        is None else passive_atoms_per_element
         self.train_env_per_species = {} if active_max_element_from_frame \
-                                           is None else active_max_element_from_frame
+                                    is None else active_max_element_from_frame
 
         # Convert to Coded Species
         if self.pre_train_env_per_species:
@@ -228,7 +239,7 @@ class TrajectoryTrainer:
         self.train_count = 0
         self.start_time = time.time()
 
-    def pre_run(self):
+    def passive_run(self):
         """
         Various tasks to set up the AIMD training before commencing
         the run through the AIMD trajectory.
@@ -330,7 +341,7 @@ class TrajectoryTrainer:
             self.gp.write_model(f'{self.output_name}_prerun',
                                 self.model_format)
 
-    def run(self):
+    def run(self, perform_passive_run: bool = True):
         """
         Loop through frames and record the error between
         the GP predictions and the ground-truth forces. Train the GP and update
@@ -344,7 +355,13 @@ class TrajectoryTrainer:
         logger = logging.getLogger(self.logger_name)
         logger.debug("Commencing run with pre-run...")
         if not self.mgp:
-            self.pre_run()
+            if perform_passive_run:
+                self.passive_run()
+            elif len(self.gp) == 0:
+                logger.warning("You are attempting to train a model with no "
+                              "data in your Gausian Process; it is "
+                               "recommended that you begin with "
+                               "a passive training process.")
 
         # Past this frame, stop adding atoms to the training set
         #  (used for validation of model)
@@ -374,7 +391,8 @@ class TrajectoryTrainer:
             if self.mgp:
                 pred_forces, pred_stds, local_energies = self.pred_func(
                     structure=cur_frame, mgp=self.gp, write_to_structure=False,
-                    selective_atoms=predict_atoms, skipped_atom_value=np.nan, energy=True)
+                    selective_atoms=predict_atoms, skipped_atom_value=np.nan,
+                    energy=True)
             elif self.calculate_energy:
                 pred_forces, pred_stds, local_energies = self.pred_func(
                     structure=cur_frame, gp=self.gp, n_cpus=self.n_cpus,
@@ -404,7 +422,8 @@ class TrajectoryTrainer:
             logger.debug(
                 f'Single frame calculation time {time.time()-frame_start_time}')
 
-            if i < train_frame:
+            if i < train_frame and not self.mgp and len(self.gp) <= \
+                    self.max_model_size:
                 # Noise hyperparameter & relative std tolerance is not for mgp.
                 if self.mgp:
                     noise = 0
