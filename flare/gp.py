@@ -1014,7 +1014,8 @@ class GaussianProcess:
         """
         Return size of training data.
         """
-        return len(self.training_data)
+        return len(self.training_data) + len([len(struc) for struc in
+                                              self.training_structures])
 
     @property
     def par(self):
