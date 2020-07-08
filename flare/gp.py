@@ -1009,13 +1009,12 @@ class GaussianProcess:
         data['envs_by_species'] = dict(Counter(present_species))
 
         return data
-    @property
+
     def __len__(self):
         """
-        Make neighbor Tuple-like to retain backwards compatibility.
+        Return size of training data.
         """
         return len(self.training_data)
-
 
     @property
     def par(self):

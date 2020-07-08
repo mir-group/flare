@@ -424,6 +424,7 @@ class TrajectoryTrainer:
 
             if i < train_frame and not self.mgp and len(self.gp) <= \
                     self.max_model_size:
+
                 # Noise hyperparameter & relative std tolerance is not for mgp.
                 if self.mgp:
                     noise = 0

@@ -53,19 +53,22 @@ def test_instantiation_of_trajectory_trainer(fake_gp):
     assert isinstance(a, TrajectoryTrainer)
 
     fake_gp.parallel = True
-    _ = TrajectoryTrainer([], fake_gp, n_cpus=2, calculate_energy=True)
+    _ = TrajectoryTrainer(active_frames=[], gp= fake_gp, n_cpus=2,
+                          calculate_energy=True)
     _ = TrajectoryTrainer([], fake_gp, n_cpus=2, calculate_energy=False)
 
     fake_gp.parallel = False
-    _ = TrajectoryTrainer([], fake_gp, n_cpus=2, calculate_energy=True)
-    _ = TrajectoryTrainer([], fake_gp, n_cpus=2, calculate_energy=False)
+    _ = TrajectoryTrainer(active_frames=[], gp=fake_gp, n_cpus=2,
+                          calculate_energy=True)
+    _ = TrajectoryTrainer(active_frames=[], gp=fake_gp, n_cpus=2,
+                          calculate_energy=False)
 
 
 def test_load_trained_gp_and_run(methanol_gp):
     with open('./test_files/methanol_frames.json', 'r') as f:
         frames = [Structure.from_dict(loads(s)) for s in f.readlines()]
 
-    tt = TrajectoryTrainer(frames,
+    tt = TrajectoryTrainer(active_frames=frames,
                            gp=methanol_gp,
                            active_rel_var_tol=0,
                            active_abs_var_tol=0,
@@ -89,7 +92,7 @@ def test_load_one_frame_and_run():
     with open('./test_files/methanol_frames.json', 'r') as f:
         frames = [Structure.from_dict(loads(s)) for s in f.readlines()]
 
-    tt = TrajectoryTrainer(frames,
+    tt = TrajectoryTrainer(active_frames=frames,
                            gp=the_gp, shuffle_active_frames=True,
                            print_as_xyz=True,
                            active_rel_var_tol=0,
@@ -120,7 +123,7 @@ def test_seed_and_run():
         forces = [np.array(d['forces']) for d in data_dicts]
         seeds = list(zip(envs, forces))
 
-    tt = TrajectoryTrainer(frames,
+    tt = TrajectoryTrainer(active_frames=frames,
                            gp=the_gp, shuffle_active_frames=True,
                            active_rel_var_tol=0,
                            active_abs_var_tol=0,
@@ -167,7 +170,7 @@ def test_pred_on_elements():
         seeds = list(zip(envs, forces))
 
     all_frames = deepcopy(frames)
-    tt = TrajectoryTrainer(frames,
+    tt = TrajectoryTrainer(active_frames=frames,
                            gp=the_gp, shuffle_active_frames=False,
                            active_rel_var_tol=0,
                            active_abs_var_tol=0,
@@ -182,7 +185,7 @@ def test_pred_on_elements():
                            written_model_format='json',
                            checkpoint_interval_atom=50,
                            passive_atoms_per_element={'H': 1},
-                           predict_atoms_per_element={'H': 0,'C': 1,'O': 0})
+                           predict_atoms_per_element={'H': 0, 'C': 1, 'O': 0})
     # Set to predict only on Carbon after training on H to ensure errors are
     #  high and that they get added to the gp
     tt.run()
@@ -224,8 +227,9 @@ def test_mgp_gpfa(all_mgp, all_gp):
     grid_params['threebody'] = grid_params_3b
     unique_species = gp_model.training_statistics['species']
 
-    mgp_model = MappedGaussianProcess(grid_params=grid_params, unique_species=unique_species, n_cpus=1,
-                map_force=False)
+    mgp_model = MappedGaussianProcess(grid_params=grid_params,
+                                      unique_species=unique_species, n_cpus=1,
+                                      map_force=False)
 
     mgp_model.build_map(gp_model)
 
@@ -237,7 +241,8 @@ def test_mgp_gpfa(all_mgp, all_gp):
 
     frames = [struc]
 
-    tt = TrajectoryTrainer(frames, mgp_model, active_rel_var_tol=0,
+    tt = TrajectoryTrainer(active_frames=frames, gp=mgp_model,
+                           active_rel_var_tol=0,
                            active_abs_var_tol=0, active_abs_error_tol=0)
     assert tt.mgp is True
     tt.run()
