@@ -93,7 +93,7 @@ def test_load_one_frame_and_run():
         frames = [Structure.from_dict(loads(s)) for s in f.readlines()]
 
     tt = TrajectoryTrainer(active_frames=frames,
-                           gp=the_gp, shuffle_active_frames=True,
+                           gp=the_gp, active_frame_shuffle=True,
                            print_as_xyz=True,
                            active_rel_var_tol=0,
                            active_abs_var_tol=0,
@@ -124,7 +124,7 @@ def test_seed_and_run():
         seeds = list(zip(envs, forces))
 
     tt = TrajectoryTrainer(active_frames=frames,
-                           gp=the_gp, shuffle_active_frames=True,
+                           gp=the_gp, active_frame_shuffle=True,
                            active_rel_var_tol=0,
                            active_abs_var_tol=0,
                            active_skip=10,
@@ -171,7 +171,7 @@ def test_pred_on_elements():
 
     all_frames = deepcopy(frames)
     tt = TrajectoryTrainer(active_frames=frames,
-                           gp=the_gp, shuffle_active_frames=False,
+                           gp=the_gp, active_frame_shuffle=False,
                            active_rel_var_tol=0,
                            active_abs_var_tol=0,
                            active_abs_error_tol=.001,
