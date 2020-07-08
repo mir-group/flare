@@ -1,3 +1,3 @@
 #include "hyps_mask.h"
 
-HypsMask :: HypsMask(){}
+HypsMask ::HypsMask() {}
