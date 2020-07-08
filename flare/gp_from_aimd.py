@@ -59,70 +59,81 @@ from flare.parameters import Parameters
 
 class TrajectoryTrainer:
 
-    def __init__(self, frames: List[Structure],
-                 gp: Union[GaussianProcess, MappedGaussianProcess],
-                 rel_std_tolerance: float = 4,
-                 abs_std_tolerance: float = 1,
-                 abs_force_tolerance: float = 0,
-                 max_force_error: float = inf,
-                 parallel: bool = False,
+    def __init__(self, gp: Union[GaussianProcess, MappedGaussianProcess],
+                 active_frames: List[Structure] = None,
+                 passive_frames: List[Structure] = None,
+                 passive_envs: List[Tuple[AtomicEnvironment,
+                                          'np.array']] = None,
+
+                 active_rel_var_tol: float = 4,
+                 active_abs_var_tol: float = 1,
+                 active_abs_error_tol: float = 0,
+                 active_error_tol_cutoff: float = inf,
+                 active_max_trains: int = np.inf,
+                 active_max_element_from_frame: dict = None,
+
+                 checkpoint_interval_train: int = 1,
+                 checkpoint_interval_atom: int = 100,
+
+                 predict_atoms_per_element: dict = None,
+
+                 max_atoms_from_frame: int = np.inf,
+                 min_atoms_added_per_train: int = 1,
+
+                 passive_on_active_skips: int = -1,
+                 passive_train_max_iter: int = 50,
+                 passive_atoms_per_element: dict = None,
+
+                 active_skip: int = 1,
+                 shuffle_active_frames: bool = False,
+
                  n_cpus: int = 1,
-                 skip: int = 1,
                  validate_ratio: float = 0.0,
                  calculate_energy: bool = False,
+
                  output_name: str = 'gp_from_aimd',
                  print_as_xyz: bool = False,
-                 pre_train_max_iter: int = 50,
-                 max_atoms_from_frame: int = np.inf,
-                 max_trains: int = np.inf,
-                 min_atoms_per_train: int = 1,
-                 shuffle_frames: bool = False,
                  verbose: str = "INFO",
-                 pre_train_on_skips: int = -1,
-                 pre_train_seed_frames: List[Structure] = None,
-                 pre_train_seed_envs: List[Tuple[AtomicEnvironment,
-                                                 'np.array']] = None,
-                 pre_train_atoms_per_element: dict = None,
-                 train_atoms_per_element: dict = None,
-                 predict_atoms_per_element: dict = None,
-                 train_checkpoint_interval: int = 1,
-                 checkpoint_interval: int = 1,
-                 atom_checkpoint_interval: int = 100,
-                 model_format: str = 'json'):
+                 written_model_format: str = 'json'):
         """
         Class which trains a GP off of an AIMD trajectory, and generates
         error statistics between the DFT and GP calls.
 
+        All arguments are divided between 'passive' learning and 'active'
+        learning. By default, when run is called, a 'passive' learning run
+        is called which either adds all 'seed' data to the model,
+        or a randomized subset. Active learning will add data to the dataset
+        based on
+
         There are a variety of options which can give you a finer control
         over the training process.
 
-        :param frames: List of structures to evaluate / train GP on
+        :param active_frames: List of structures to evaluate / train GP on
         :param gp: Gaussian Process object
-        :param rel_std_tolerance: Train if uncertainty is above this *
+        :param active_rel_var_tol: Train if uncertainty is above this *
             noise variance hyperparameter
-        :param abs_std_tolerance: Train if uncertainty is above this
-        :param abs_force_tolerance: Add atom force error exceeds this
-        :param max_force_error: Don't add atom if force error exceeds this
-        :param parallel: Use parallel functions or not
+        :param active_abs_var_tol: Train if uncertainty is above this
+        :param active_abs_error_tol: Add atom force error exceeds this
+        :param active_error_tol_cutoff: Don't add atom if force error exceeds this
         :param validate_ratio: Fraction of frames used for validation
-        :param skip: Skip through frames
+        :param active_skip: Skip through frames
         :param calculate_energy: Use local energy kernel or not
         :param output_name: Write output of training to this file
         :param print_as_xyz: If True, print the configurations in xyz format
         :param max_atoms_from_frame: Largest # of atoms added from one frame
-        :param min_atoms_per_train: Only train when this many atoms have been
+        :param min_atoms_added_per_train: Only train when this many atoms have been
             added
-        :param max_trains: Stop training GP after this many calls to train
+        :param active_max_trains: Stop training GP after this many calls to train
         :param n_cpus: Number of CPUs to parallelize over for parallelization
                 over atoms
-        :param shuffle_frames: Randomize order of frames for better training
+        :param shuffle_active_frames: Randomize order of frames for better training
         :param verbose: same as logging level, "WARNING", "INFO", "DEBUG"
-        :param pre_train_on_skips: Train model on every n frames before running
-        :param pre_train_seed_frames: Frames to train on before running
-        :param pre_train_seed_envs: Environments to train on before running
-        :param pre_train_atoms_per_element: Max # of environments to add from
+        :param passive_on_active_skips: Train model on every n frames before running
+        :param passive_frames: Frames to train on before running
+        :param passive_envs: Environments to train on before running
+        :param passive_atoms_per_element: Max # of environments to add from
             each species in the seed pre-training steps
-        :param train_atoms_per_element: Max # of environments to add from
+        :param active_max_element_from_frame: Max # of environments to add from
             each species in the training steps
         :param predict_atoms_per_element: Choose a random subset of N random
             atoms from each specified element to predict on. For instance,
@@ -131,40 +142,33 @@ class TrajectoryTrainer:
             specified will be predicted as normal. This is useful for
             systems where you are most interested in a subset of elements.
             This will result in a faster but less exhaustive learning process.
-        :param checkpoint_interval: Will be deprecated. Same as
-                            train_checkpoint_interval
-        :param train_checkpoint_interval: How often to write model after
+        :param checkpoint_interval_train: How often to write model after
                         trainings
-        :param atom_checkpoint_interval: How often to write model after atoms are
+        :param checkpoint_interval_atom: How often to write model after atoms are
             added (since atoms may be added without training)
-        :param model_format: Format to write GP model to
+        :param written_model_format: Format to write GP model to
         """
 
         # Set up parameters
-        self.frames = frames
-        if shuffle_frames:
-            np.random.shuffle(frames)
+        self.frames = active_frames
+        if shuffle_active_frames:
+            np.random.shuffle(active_frames)
 
         # GP Training and Execution parameters
         self.gp = gp
         # Check to see if GP is MGP for later flagging
         self.mgp = isinstance(gp, MappedGaussianProcess)
-        self.rel_std_tolerance = rel_std_tolerance
-        self.abs_std_tolerance = abs_std_tolerance
-        self.abs_force_tolerance = abs_force_tolerance
-        self.max_force_error = max_force_error
-        self.max_trains = max_trains
+        self.rel_std_tolerance = active_rel_var_tol
+        self.abs_std_tolerance = active_abs_var_tol
+        self.abs_force_tolerance = active_abs_error_tol
+        self.max_force_error = active_error_tol_cutoff
+        self.max_trains = active_max_trains
         self.max_atoms_from_frame = max_atoms_from_frame
-        self.min_atoms_per_train = min_atoms_per_train
+        self.min_atoms_per_train = min_atoms_added_per_train
         self.predict_atoms_per_element = predict_atoms_per_element
         self.train_count = 0
         self.calculate_energy = calculate_energy
         self.n_cpus = n_cpus
-
-        if parallel is True:
-            warnings.warn("Parallel flag will be deprecated;"
-                          "we will instead use n_cpu alone.",
-                          DeprecationWarning)
 
         # Set prediction function based on if forces or energies are
         # desired, and parallelization accordingly
@@ -177,30 +181,30 @@ class TrajectoryTrainer:
         elif self.mgp:
             self.pred_func = predict_on_structure_mgp
 
-        # Parameters for negotiating with the training frames
+        # Parameters for negotiating with the training active_frames
 
         # To later be filled in using the time library
         self.start_time = None
 
-        self.skip = skip
-        assert (isinstance(skip, int) and skip >= 1), "Skip needs to be a " \
+        self.skip = active_skip
+        assert (isinstance(active_skip, int) and active_skip >= 1), "Skip needs to be a " \
                                                       "positive integer."
         self.validate_ratio = validate_ratio
         assert (0 <= validate_ratio <= 1), \
             "validate_ratio needs to be [0,1]"
 
         # Set up for pretraining
-        self.pre_train_max_iter = pre_train_max_iter
-        self.pre_train_on_skips = pre_train_on_skips
-        self.seed_envs = [] if pre_train_seed_envs is None else \
-            pre_train_seed_envs
-        self.seed_frames = [] if pre_train_seed_frames is None \
-            else pre_train_seed_frames
+        self.pre_train_max_iter = passive_train_max_iter
+        self.pre_train_on_skips = passive_on_active_skips
+        self.seed_envs = [] if passive_envs is None else \
+            passive_envs
+        self.seed_frames = [] if passive_frames is None \
+            else passive_frames
 
-        self.pre_train_env_per_species = {} if pre_train_atoms_per_element \
-            is None else pre_train_atoms_per_element
-        self.train_env_per_species = {} if train_atoms_per_element \
-            is None else train_atoms_per_element
+        self.pre_train_env_per_species = {} if passive_atoms_per_element \
+                                               is None else passive_atoms_per_element
+        self.train_env_per_species = {} if active_max_element_from_frame \
+                                           is None else active_max_element_from_frame
 
         # Convert to Coded Species
         if self.pre_train_env_per_species:
@@ -213,11 +217,10 @@ class TrajectoryTrainer:
         self.output = Output(output_name, verbose,
                              print_as_xyz=print_as_xyz, always_flush=True)
         self.logger_name = self.output.basename+'log'
-        self.train_checkpoint_interval = train_checkpoint_interval or \
-            checkpoint_interval
-        self.atom_checkpoint_interval = atom_checkpoint_interval
+        self.train_checkpoint_interval = checkpoint_interval_train
+        self.atom_checkpoint_interval = checkpoint_interval_atom
 
-        self.model_format = model_format
+        self.model_format = written_model_format
         self.output_name = output_name
 
         # Defining variables to be used later

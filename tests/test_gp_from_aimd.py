@@ -48,7 +48,7 @@ def fake_gp():
 
 
 def test_instantiation_of_trajectory_trainer(fake_gp):
-    a = TrajectoryTrainer(frames=[], gp=fake_gp)
+    a = TrajectoryTrainer(active_frames=[], gp=fake_gp)
 
     assert isinstance(a, TrajectoryTrainer)
 
@@ -67,9 +67,9 @@ def test_load_trained_gp_and_run(methanol_gp):
 
     tt = TrajectoryTrainer(frames,
                            gp=methanol_gp,
-                           rel_std_tolerance=0,
-                           abs_std_tolerance=0,
-                           skip=15, train_checkpoint_interval=10)
+                           active_rel_var_tol=0,
+                           active_abs_var_tol=0,
+                           active_skip=15, checkpoint_interval_train=10)
 
     tt.run()
     for f in glob(f"gp_from_aimd*"):
@@ -90,11 +90,11 @@ def test_load_one_frame_and_run():
         frames = [Structure.from_dict(loads(s)) for s in f.readlines()]
 
     tt = TrajectoryTrainer(frames,
-                           gp=the_gp, shuffle_frames=True,
+                           gp=the_gp, shuffle_active_frames=True,
                            print_as_xyz=True,
-                           rel_std_tolerance=0,
-                           abs_std_tolerance=0,
-                           skip=15)
+                           active_rel_var_tol=0,
+                           active_abs_var_tol=0,
+                           active_skip=15)
 
     tt.run()
     for f in glob(f"gp_from_aimd*"):
@@ -121,17 +121,17 @@ def test_seed_and_run():
         seeds = list(zip(envs, forces))
 
     tt = TrajectoryTrainer(frames,
-                           gp=the_gp, shuffle_frames=True,
-                           rel_std_tolerance=0,
-                           abs_std_tolerance=0,
-                           skip=10,
-                           pre_train_seed_envs=seeds,
-                           pre_train_seed_frames=[frames[-1]],
+                           gp=the_gp, shuffle_active_frames=True,
+                           active_rel_var_tol=0,
+                           active_abs_var_tol=0,
+                           active_skip=10,
+                           passive_envs=seeds,
+                           passive_frames=[frames[-1]],
                            max_atoms_from_frame=4,
                            output_name='meth_test',
-                           model_format='pickle',
-                           train_checkpoint_interval=1,
-                           pre_train_atoms_per_element={'H': 1})
+                           written_model_format='pickle',
+                           checkpoint_interval_train=1,
+                           passive_atoms_per_element={'H': 1})
 
     tt.run()
 
@@ -168,20 +168,20 @@ def test_pred_on_elements():
 
     all_frames = deepcopy(frames)
     tt = TrajectoryTrainer(frames,
-                           gp=the_gp, shuffle_frames=False,
-                           rel_std_tolerance=0,
-                           abs_std_tolerance=0,
-                           abs_force_tolerance=.001,
-                           skip=5,
-                           min_atoms_per_train=100,
-                           pre_train_seed_envs=seeds,
-                           pre_train_seed_frames=[frames[-1]],
+                           gp=the_gp, shuffle_active_frames=False,
+                           active_rel_var_tol=0,
+                           active_abs_var_tol=0,
+                           active_abs_error_tol=.001,
+                           active_skip=5,
+                           min_atoms_added_per_train=100,
+                           passive_envs=seeds,
+                           passive_frames=[frames[-1]],
                            max_atoms_from_frame=4,
                            output_name='meth_test',
                            print_as_xyz=True,
-                           model_format='json',
-                           atom_checkpoint_interval=50,
-                           pre_train_atoms_per_element={'H': 1},
+                           written_model_format='json',
+                           checkpoint_interval_atom=50,
+                           passive_atoms_per_element={'H': 1},
                            predict_atoms_per_element={'H': 0,'C': 1,'O': 0})
     # Set to predict only on Carbon after training on H to ensure errors are
     #  high and that they get added to the gp
@@ -237,8 +237,8 @@ def test_mgp_gpfa(all_mgp, all_gp):
 
     frames = [struc]
 
-    tt = TrajectoryTrainer(frames, mgp_model, rel_std_tolerance=0,
-                           abs_std_tolerance=0, abs_force_tolerance=0)
+    tt = TrajectoryTrainer(frames, mgp_model, active_rel_var_tol=0,
+                           active_abs_var_tol=0, active_abs_error_tol=0)
     assert tt.mgp is True
     tt.run()
 
