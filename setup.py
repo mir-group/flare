@@ -136,7 +136,7 @@ class CMakeBuild(build_ext):
                     # Build step
                     n_procs = "{}".format(multiprocessing.cpu_count() * 2)
                     output = subprocess.check_output(
-                        ["cmake", "--build", "."],
+                        ["cmake", "--build", ".", "--parallel", n_procs],
                         stderr=subprocess.STDOUT,
                     )
                     if self.distribution.verbose:
