@@ -21,6 +21,9 @@ if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
 endif()
 
+# print cmake release flags
+# message(${CMAKE_CXX_FLAGS_RELEASE})
+
 
 #
 # Dependencies
@@ -104,6 +107,7 @@ set(PYBIND_SOURCES
     Sources/Descriptor/py_descriptor.cpp
     Sources/Structure/py_structure.cpp
     Sources/Parameters/py_hyps_mask.cpp
+    Sources/Environment/py_local_environment.cpp
     Sources/pyflare.cpp)
 
 # Include sources.
@@ -111,6 +115,7 @@ include_directories(Sources)
 
 # Create shared library for unit tests.
 add_library(flare SHARED ${FLARE_SOURCES})
+add_dependencies(flare eigen_project)
 
 # Create pybind module.
 add_library(flare_module SHARED ${FLARE_SOURCES} ${PYBIND_SOURCES})

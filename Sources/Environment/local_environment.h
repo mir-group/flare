@@ -29,9 +29,15 @@ public:
   std::vector<std::vector<int>> n_body_indices, many_body_indices;
 
   // Triplet indices and cross bond distances are stored only if the 3-body
-  // kernel is used
+  // kernel is used.
   std::vector<std::vector<int>> three_body_indices;
   std::vector<double> cross_bond_dists;
+
+  // Add attributes to ensure compatibility with the Python version.
+  Eigen::MatrixXd bond_array_3;
+  Eigen::MatrixXi cross_bond_inds;
+  Eigen::MatrixXd cross_bond_dists_py;
+  Eigen::VectorXi triplet_counts;
 
   // Store descriptor calculators for each many body cutoff.
   std::vector<DescriptorCalculator *> descriptor_calculators;

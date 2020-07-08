@@ -295,15 +295,32 @@ void LocalEnvironment ::compute_indices() {
 
   // Store triplets if the 3-body cutoff is nonzero.
   if (n_cutoffs > 1) {
+    int n_3body = n_body_indices[1].size();
     double three_body_cutoff = n_body_cutoffs[1];
-    double cross_bond_dist, x1, y1, z1, x2, y2, z2, x_diff, y_diff, z_diff;
+    double cross_bond_dist, x1, y1, z1, x2, y2, z2, r1, x_diff, y_diff, z_diff;
+
+    bond_array_3.conservativeResize(n_3body, 4);
+    cross_bond_inds = Eigen::MatrixXi::Constant(n_3body, n_3body, -1);
+    cross_bond_dists_py.conservativeResize(n_3body, n_3body);
+    triplet_counts = Eigen::VectorXi::Zero(n_3body);
+
     int ind1, ind2;
     std::vector<int> triplet = std::vector<int>{0, 0};
-    for (int i = 0; i < n_body_indices[1].size(); i++) {
+    int count;
+    for (int i = 0; i < n_3body; i++) {
       ind1 = n_body_indices[1][i];
       x1 = xs[ind1];
       y1 = ys[ind1];
       z1 = zs[ind1];
+      r1 = rs[ind1];
+
+      // Populate the 3-body bond array.
+      bond_array_3(i, 0) = r1;
+      bond_array_3(i, 1) = x1 / r1;
+      bond_array_3(i, 2) = y1 / r1;
+      bond_array_3(i, 3) = z1 / r1;
+
+      count = i + 1;
       for (int j = i + 1; j < n_body_indices[1].size(); j++) {
         ind2 = n_body_indices[1][j];
         x_diff = x1 - xs[ind2];
@@ -316,6 +333,11 @@ void LocalEnvironment ::compute_indices() {
           triplet[0] = ind1;
           triplet[1] = ind2;
           three_body_indices.push_back(triplet);
+          
+          cross_bond_inds(i, count) = ind2;
+          cross_bond_dists_py(i, count) = cross_bond_dist;
+          triplet_counts(i) += 1;
+          count ++;
         }
       }
     }
