@@ -59,39 +59,39 @@ from flare.parameters import Parameters
 
 class TrajectoryTrainer:
 
-    def __init__(self, gp: Union[GaussianProcess, MappedGaussianProcess],
+    def __init__(self,
+                 gp: Union[GaussianProcess, MappedGaussianProcess],
+                 # Data to be used to augment and/or validate the GP
                  active_frames: List[Structure] = None,
                  passive_frames: List[Structure] = None,
                  passive_envs: List[Tuple[AtomicEnvironment,
                                           'np.array']] = None,
-
+                 # Active learning arguments
                  active_rel_var_tol: float = 4,
                  active_abs_var_tol: float = 1,
                  active_abs_error_tol: float = 0,
                  active_error_tol_cutoff: float = inf,
                  active_max_trains: int = np.inf,
                  active_max_element_from_frame: dict = None,
-
-                 checkpoint_interval_train: int = 1,
-                 checkpoint_interval_atom: int = 100,
-
                  predict_atoms_per_element: dict = None,
-
-                 max_atoms_from_frame: int = np.inf,
-                 min_atoms_added_per_train: int = 1,
-                 max_model_size: int = np.inf,
-
+                 active_skip: int = 1,
+                 active_frame_shuffle: bool = False,
+                 validate_ratio: float = 0.0,
+                 # Passive learning arguments
                  passive_on_active_skips: int = -1,
                  passive_train_max_iter: int = 50,
                  passive_atoms_per_element: dict = None,
-
-                 active_skip: int = 1,
-                 shuffle_active_frames: bool = False,
-
+                 # Model checkpoint writing arguments
+                 checkpoint_interval_train: int = 1,
+                 checkpoint_interval_atom: int = 100,
+                 # Args to control rate of GP growth
+                 max_atoms_from_frame: int = np.inf,
+                 min_atoms_added_per_train: int = 1,
+                 max_model_size: int = np.inf,
+                 # Misc settings
                  n_cpus: int = 1,
-                 validate_ratio: float = 0.0,
                  calculate_energy: bool = False,
-
+                 # Output args
                  output_name: str = 'gp_from_aimd',
                  print_as_xyz: bool = False,
                  verbose: str = "INFO",
@@ -136,7 +136,7 @@ class TrajectoryTrainer:
         :param active_max_trains: Stop training GP after this many calls to train
         :param n_cpus: Number of CPUs to parallelize over for parallelization
                 over atoms
-        :param shuffle_active_frames: Randomize order of frames for better training
+        :param active_frame_shuffle: Randomize order of frames for better training
         :param verbose: same as logging level, "WARNING", "INFO", "DEBUG"
         :param passive_on_active_skips: Train model on every n frames before running
         :param passive_frames: Frames to train on before running
@@ -161,7 +161,7 @@ class TrajectoryTrainer:
 
         # Set up parameters
         self.frames = active_frames
-        if shuffle_active_frames:
+        if active_frame_shuffle:
             np.random.shuffle(active_frames)
 
         # GP Training and Execution parameters
