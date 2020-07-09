@@ -70,7 +70,7 @@ def test_vasp_calling(cmd, poscar):
 
     forces1 = run_dft('.', cmd, structure=structure, en=False)
     forces2, energy2 = run_dft('.', cmd, structure=structure, en=True)
-    forces3 = parse_dft_forces('./test_files/test_vasprun.xml')
+    forces3, pe3 = parse_dft_forces('./test_files/test_vasprun.xml')
     forces4, energy4 = parse_dft_forces_and_energy(
         './test_files/test_vasprun.xml')
 

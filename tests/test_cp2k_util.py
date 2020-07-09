@@ -88,7 +88,7 @@ def test_cp2k_calling(cp2k_input, cp2k_output):
     forces = run_dft_par('cp2k.in',
                          structure, dft_loc)
 
-    ref_forces = parse_dft_forces(cp2k_output)
+    ref_forces, ref_pe = parse_dft_forces(cp2k_output)
 
     assert len(forces) == len(ref_forces)
 

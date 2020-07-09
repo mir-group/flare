@@ -285,41 +285,4 @@ def parse_dft_forces(outfile: str):
     forces = [conversion_factor * force for force in forces]
     forces = np.array(forces)
 
-    return forces
-
-
-def parse_dft_forces_and_energy(outfile: str):
-    """
-    Get forces from a pwscf file in eV/A
-
-    :param outfile: str, Path to pwscf output file
-    :return: list[nparray] , List of forces acting on atoms
-    """
-    forces = []
-    total_energy = np.nan
-
-    with open(outfile, 'r') as outf:
-        for line in outf:
-            if line.lower().startswith('!    total energy'):
-                total_energy = float(line.split()[-2])
-
-            if line.find('force') != -1 and line.find('atom') != -1:
-                line = line.split('force =')[-1]
-                line = line.strip()
-                line = line.split(' ')
-                line = [x for x in line if x != '']
-                temp_forces = []
-                for x in line:
-                    temp_forces.append(float(x))
-                forces.append(np.array(list(temp_forces)))
-
-    assert total_energy != np.nan, "Quantum ESPRESSO parser failed to read " \
-                                   "the file {}. Run failed.".format(outfile)
-
-    # Convert from ry/au to ev/angstrom
-    conversion_factor = 25.71104309541616
-
-    forces = [conversion_factor * force for force in forces]
-    forces = np.array(forces)
-
     return forces, total_energy

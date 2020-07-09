@@ -157,16 +157,6 @@ def edit_dft_input_positions(output_name: str, structure: Structure):
 
 def parse_dft_forces(vasprun: Union[str, Vasprun]):
     """
-    Parses the DFT forces from the last ionic step of a VASP vasprun.xml file
-    :param vasprun: pymatgen Vasprun object or vasprun filename
-    """
-    vasprun = check_vasprun(vasprun)
-    istep = vasprun.ionic_steps[-1]
-    return np.array(istep['forces'])
-
-
-def parse_dft_forces_and_energy(vasprun: Union[str, Vasprun]):
-    """
     Parses the DFT forces and energy from a VASP vasprun.xml file
     :param vasprun: pymatgen Vasprun object or vasprun filename
     """

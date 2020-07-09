@@ -88,7 +88,7 @@ def test_espresso_calling(qe_input, qe_output):
 
     forces = run_dft_par('pwscf.in', structure, dft_loc, dft_out='pwscf.out')
 
-    ref_forces = parse_dft_forces('pwscf.out')
+    ref_forces, ref_e = parse_dft_forces('pwscf.out')
 
     assert len(forces) == len(ref_forces)
 
