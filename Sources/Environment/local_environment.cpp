@@ -80,9 +80,6 @@ LocalEnvironment ::LocalEnvironment(
   // TODO: Make compute_indices method sensitive to the hyperparameter mask.
   this->n_body_cutoffs = n_body_cutoffs;
   compute_indices();
-
-  // For the sake of compatibility with the Python version of the code, compute
-  // EAM attributes. This should be switched to a descriptor calculator later.
 }
 
 // n-body
