@@ -11,7 +11,6 @@ public:
   std::vector<int> environment_indices, environment_species, neighbor_list;
   int central_index, central_species, noa, sweep;
   std::vector<double> rs, xs, ys, zs, xrel, yrel, zrel;
-  Eigen::MatrixXd bond_array_2;
   double cutoff, structure_volume;
   Structure structure;
   Eigen::VectorXd force; // Force on the central atom
@@ -34,6 +33,12 @@ public:
   std::vector<double> cross_bond_dists;
 
   // Add attributes to ensure compatibility with the Python version.
+  // 2-body attributes.
+  std::vector<int> etypes;
+  std::vector<int> bond_inds;
+  Eigen::MatrixXd bond_array_2;
+
+  // 3-body attributes.
   Eigen::MatrixXd bond_array_3;
   Eigen::MatrixXi cross_bond_inds;
   Eigen::MatrixXd cross_bond_dists_py;
@@ -82,7 +87,9 @@ public:
       std::vector<double> &rs, std::vector<double> &xs, std::vector<double> &ys,
       std::vector<double> &zs, std::vector<double> &xrel,
       std::vector<double> &yrel, std::vector<double> &zrel,
-      Eigen::MatrixXd &bond_array_2);
+      Eigen::MatrixXd &bond_array_2, const HypsMask & cutoffs_mask,
+      int central_species, std::vector<int> & etypes,
+      std::vector<int> & bond_inds);
 
   // Compute descriptor and descriptor norm of a bare environment.
   void set_attributes(const Structure &structure, int atom, double cutoff);

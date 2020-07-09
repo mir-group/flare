@@ -29,7 +29,8 @@ void LocalEnvironment ::set_attributes(const Structure &structure, int atom,
 
   compute_environment(structure, noa, atom, cutoff, sweep_val,
                       environment_indices, environment_species, neighbor_list,
-                      rs, xs, ys, zs, xrel, yrel, zrel, bond_array_2);
+                      rs, xs, ys, zs, xrel, yrel, zrel, bond_array_2,
+                      cutoffs_mask, central_species, etypes, bond_inds);
 
   this->environment_indices = environment_indices;
   this->environment_species = environment_species;
@@ -141,7 +142,9 @@ void LocalEnvironment ::compute_environment(
     std::vector<double> &rs, std::vector<double> &xs, std::vector<double> &ys,
     std::vector<double> &zs, std::vector<double> &xrel,
     std::vector<double> &yrel, std::vector<double> &zrel,
-    Eigen::MatrixXd &bond_array_2) {
+    Eigen::MatrixXd &bond_array_2, const HypsMask & cutoffs_mask,
+    int central_species, std::vector<int> & etypes,
+    std::vector<int> & bond_inds) {
 
   Eigen::MatrixXd pos_atom = structure.wrapped_positions.row(atom);
 
@@ -200,6 +203,19 @@ void LocalEnvironment ::compute_environment(
   int bond_count = 0;
   counter = 0;
 
+  // Check if separate cutoffs are given for the 2-body sphere.
+  bool sepcut = false;
+  int bc, bcn, bn;
+  double sepcut_value = cutoff;
+  if (cutoffs_mask.nspecie > 1
+      && cutoffs_mask.twobody_mask.size() > 1
+      && cutoffs_mask.twobody_cutoff_list.size() > 1
+      && cutoffs_mask.specie_mask.size() > 1){
+          sepcut = true;
+          bc = cutoffs_mask.specie_mask[central_species];
+          bcn = cutoffs_mask.nspecie * bc;
+      }
+
   for (int m = 0; m < noa; m++) {
     spec_curr = structure.coded_species[m];
 
@@ -208,6 +224,14 @@ void LocalEnvironment ::compute_environment(
     if (m == atom) {
       neighbor_list.push_back(m);
       unique_check = 1;
+    }
+
+    // If separate cutoffs are given, find the cutoff corresponding to the
+    // current atom.
+    if (sepcut){
+        bn = cutoffs_mask.specie_mask[spec_curr];
+        sepcut_value = cutoffs_mask.twobody_cutoff_list[
+            cutoffs_mask.twobody_mask[bcn + bn]];
     }
 
     for (int n = 0; n < sweep_no; n++) {
@@ -232,10 +256,15 @@ void LocalEnvironment ::compute_environment(
         yrel[bond_count] = yr;
         zrel[bond_count] = zr;
 
-        bond_array_2(bond_count, 0) = dist_curr;
-        bond_array_2(bond_count, 1) = xr;
-        bond_array_2(bond_count, 2) = yr;
-        bond_array_2(bond_count, 3) = zr;
+        // Populate Python attributes.
+        if (dist_curr < sepcut_value){
+            bond_array_2(bond_count, 0) = dist_curr;
+            bond_array_2(bond_count, 1) = xr;
+            bond_array_2(bond_count, 2) = yr;
+            bond_array_2(bond_count, 3) = zr;
+            etypes.push_back(spec_curr);
+            bond_inds.push_back(m);
+        }
 
         bond_count++;
 
@@ -297,12 +326,27 @@ void LocalEnvironment ::compute_indices() {
   if (n_cutoffs > 1) {
     int n_3body = n_body_indices[1].size();
     double three_body_cutoff = n_body_cutoffs[1];
-    double cross_bond_dist, x1, y1, z1, x2, y2, z2, r1, x_diff, y_diff, z_diff;
+    double cross_bond_dist, x1, y1, z1, x2, y2, z2, r1, r2, x_diff, y_diff,
+        z_diff;
 
     bond_array_3.conservativeResize(n_3body, 4);
     cross_bond_inds = Eigen::MatrixXi::Constant(n_3body, n_3body, -1);
     cross_bond_dists_py.conservativeResize(n_3body, n_3body);
     triplet_counts = Eigen::VectorXi::Zero(n_3body);
+
+    // Check if separate cutoffs are given for the 3-body sphere.
+    bool sepcut = false;
+    int bc, bcn, bn, bm, bmn, btype_m, btype_n, btype_mn;
+    double sepcut_value_1 = three_body_cutoff,
+        sepcut_value_2 = three_body_cutoff, sepcut_value_3 = three_body_cutoff;
+    if (cutoffs_mask.nspecie > 1
+        && cutoffs_mask.threebody_mask.size() > 1
+        && cutoffs_mask.threebody_cutoff_list.size() > 1
+        && cutoffs_mask.specie_mask.size() > 1){
+            sepcut = true;
+            bc = cutoffs_mask.specie_mask[central_species];
+            bcn = cutoffs_mask.nspecie * bc;
+        }
 
     int ind1, ind2;
     std::vector<int> triplet = std::vector<int>{0, 0};
@@ -320,15 +364,35 @@ void LocalEnvironment ::compute_indices() {
       bond_array_3(i, 2) = y1 / r1;
       bond_array_3(i, 3) = z1 / r1;
 
+      // If separate cutoffs are given, find the cutoff corresponding to the
+      // current atom.
+      if (sepcut){
+          bm = cutoffs_mask.specie_mask[environment_species[ind1]];
+          btype_m = cutoffs_mask.cut3b_mask[bm + bcn];
+          sepcut_value_1 = cutoffs_mask.threebody_cutoff_list[btype_m];
+          bmn = cutoffs_mask.nspecie * bm;
+      }
+
       count = i + 1;
       for (int j = i + 1; j < n_body_indices[1].size(); j++) {
         ind2 = n_body_indices[1][j];
+        r2 = rs[ind2];
         x_diff = x1 - xs[ind2];
         y_diff = y1 - ys[ind2];
         z_diff = z1 - zs[ind2];
         cross_bond_dist =
             sqrt(x_diff * x_diff + y_diff * y_diff + z_diff * z_diff);
-        if (cross_bond_dist <= three_body_cutoff) {
+        
+        if (sepcut){
+            bn = cutoffs_mask.specie_mask[environment_species[ind2]];
+            btype_n = cutoffs_mask.cut3b_mask[bn + bcn];
+            sepcut_value_2 = cutoffs_mask.threebody_cutoff_list[btype_n];
+            btype_mn = cutoffs_mask.cut3b_mask[bn + bmn];
+            sepcut_value_3 = cutoffs_mask.threebody_cutoff_list[btype_mn];
+        }
+
+        if (r1 <= sepcut_value_1 && r2 <= sepcut_value_2
+            && cross_bond_dist <= sepcut_value_3) {
           cross_bond_dists.push_back(cross_bond_dist);
           triplet[0] = ind1;
           triplet[1] = ind2;
