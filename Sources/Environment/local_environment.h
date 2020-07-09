@@ -80,16 +80,7 @@ public:
                    std::vector<double> many_body_cutoffs,
                    std::vector<DescriptorCalculator *> descriptor_calculator);
 
-  static void compute_environment(
-      const Structure &structure, int noa, int atom, double cutoff,
-      int sweep_val, std::vector<int> &environment_indices,
-      std::vector<int> &environment_species, std::vector<int> &neighbor_list,
-      std::vector<double> &rs, std::vector<double> &xs, std::vector<double> &ys,
-      std::vector<double> &zs, std::vector<double> &xrel,
-      std::vector<double> &yrel, std::vector<double> &zrel,
-      Eigen::MatrixXd &bond_array_2, const HypsMask & cutoffs_mask,
-      int central_species, std::vector<int> & etypes,
-      std::vector<int> & bond_inds);
+  void compute_environment();
 
   // Compute descriptor and descriptor norm of a bare environment.
   void set_attributes(const Structure &structure, int atom, double cutoff);

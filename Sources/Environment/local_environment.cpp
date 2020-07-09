@@ -27,22 +27,7 @@ void LocalEnvironment ::set_attributes(const Structure &structure, int atom,
   std::vector<double> rs, xs, ys, zs, xrel, yrel, zrel;
   Eigen::MatrixXd bond_array_2;
 
-  compute_environment(structure, noa, atom, cutoff, sweep_val,
-                      environment_indices, environment_species, neighbor_list,
-                      rs, xs, ys, zs, xrel, yrel, zrel, bond_array_2,
-                      cutoffs_mask, central_species, etypes, bond_inds);
-
-  this->environment_indices = environment_indices;
-  this->environment_species = environment_species;
-  this->neighbor_list = neighbor_list;
-  this->rs = rs;
-  this->xs = xs;
-  this->ys = ys;
-  this->zs = zs;
-  this->xrel = xrel;
-  this->yrel = yrel;
-  this->zrel = zrel;
-  this->bond_array_2 = bond_array_2;
+  compute_environment();
 }
 
 // Constructor that mirrors the Python version.
@@ -135,25 +120,16 @@ LocalEnvironment ::LocalEnvironment(
   compute_indices();
 }
 
-void LocalEnvironment ::compute_environment(
-    const Structure &structure, int noa, int atom, double cutoff, int sweep_val,
-    std::vector<int> &environment_indices,
-    std::vector<int> &environment_species, std::vector<int> &neighbor_list,
-    std::vector<double> &rs, std::vector<double> &xs, std::vector<double> &ys,
-    std::vector<double> &zs, std::vector<double> &xrel,
-    std::vector<double> &yrel, std::vector<double> &zrel,
-    Eigen::MatrixXd &bond_array_2, const HypsMask & cutoffs_mask,
-    int central_species, std::vector<int> & etypes,
-    std::vector<int> & bond_inds) {
+void LocalEnvironment ::compute_environment() {
 
-  Eigen::MatrixXd pos_atom = structure.wrapped_positions.row(atom);
+  Eigen::MatrixXd pos_atom = structure.wrapped_positions.row(central_index);
 
   Eigen::MatrixXd vec1 = structure.cell.row(0);
   Eigen::MatrixXd vec2 = structure.cell.row(1);
   Eigen::MatrixXd vec3 = structure.cell.row(2);
 
   int sweep_no =
-      (2 * sweep_val + 1) * (2 * sweep_val + 1) * (2 * sweep_val + 1);
+      (2 * sweep + 1) * (2 * sweep + 1) * (2 * sweep + 1);
 
   double *dists = new double[noa * sweep_no]();
   double *xvals = new double[noa * sweep_no]();
@@ -169,9 +145,9 @@ void LocalEnvironment ::compute_environment(
   // Record the distance and position of every image in the cutoff sphere.
   for (int n = 0; n < noa; n++) {
     diff_curr = structure.wrapped_positions.row(n) - pos_atom;
-    for (int s1 = -sweep_val; s1 < sweep_val + 1; s1++) {
-      for (int s2 = -sweep_val; s2 < sweep_val + 1; s2++) {
-        for (int s3 = -sweep_val; s3 < sweep_val + 1; s3++) {
+    for (int s1 = -sweep; s1 < sweep + 1; s1++) {
+      for (int s2 = -sweep; s2 < sweep + 1; s2++) {
+        for (int s3 = -sweep; s3 < sweep + 1; s3++) {
           im = diff_curr + s1 * vec1 + s2 * vec2 + s3 * vec3;
           dist = sqrt(im(0) * im(0) + im(1) * im(1) + im(2) * im(2));
           if ((dist < cutoff) && (dist != 0)) {
@@ -197,6 +173,9 @@ void LocalEnvironment ::compute_environment(
   xrel.resize(cutoff_count);
   yrel.resize(cutoff_count);
   zrel.resize(cutoff_count);
+  neighbor_list.resize(0);
+  etypes.resize(0);
+  bond_inds.resize(0);
   bond_array_2.conservativeResize(cutoff_count, 4);
   int spec_curr, unique_check;
   double dist_curr, xcurr, ycurr, zcurr, xr, yr, zr;
@@ -221,7 +200,7 @@ void LocalEnvironment ::compute_environment(
 
     // Add central atom to the neighbor list.
     unique_check = 0;
-    if (m == atom) {
+    if (m == central_index) {
       neighbor_list.push_back(m);
       unique_check = 1;
     }

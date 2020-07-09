@@ -54,17 +54,11 @@ TEST_F(EnvironmentTest, SweepTest) {
   EXPECT_EQ(ceil(cutoff / test_struc.max_cutoff), test_env.sweep);
 
   // Check that the number of atoms in the local environment is correct.
-  std::vector<int> env_ind, env_spec, unique_ind;
-  std::vector<double> rs, xs, ys, zs, xrel, yrel, zrel;
-  Eigen::MatrixXd bond_array_2;
-  int sweep_val = test_env.sweep + 3;
-  LocalEnvironment ::compute_environment(
-      test_struc, test_env.noa, atom, cutoff, sweep_val, env_ind, env_spec,
-      unique_ind, rs, xs, ys, zs, xrel, yrel, zrel, bond_array_2,
-      test_env.cutoffs_mask, test_env.central_species,
-      test_env.etypes, test_env.bond_inds);
-  int expanded_count = rs.size();
-  EXPECT_EQ(test_env.rs.size(), expanded_count);
+  int prev_count = test_env.rs.size();
+  test_env.sweep = test_env.sweep + 3;
+  test_env.compute_environment();
+  int expanded_count = test_env.rs.size();
+  EXPECT_EQ(prev_count, expanded_count);
   EXPECT_EQ(test_env.neighbor_list.size(), 5);
 
   // Check that the relative coordinates are computed correctly.

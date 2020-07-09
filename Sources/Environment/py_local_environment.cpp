@@ -21,5 +21,7 @@ void AddLocalEnvironmentModule(py::module m) {
           py::arg("cutoffs_mask") = HypsMask{})
 
       .def_readonly("bond_array_2", &LocalEnvironment::bond_array_2)
+      .def_readonly("etypes", &LocalEnvironment::etypes)
+      .def_readonly("bond_inds", &LocalEnvironment::bond_inds)
       .def_readonly("bond_array_3", &LocalEnvironment::bond_array_3);
 }
