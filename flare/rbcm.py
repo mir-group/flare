@@ -12,7 +12,8 @@ from collections import Counter
 from copy import deepcopy
 from numpy.random import random
 from scipy.linalg import solve_triangular
-from scipy.optimize import minimize
+from scipy.optimize import minimize, basinhopping, \
+     differential_evolution, dual_annealing
 from typing import List, Callable, Union
 
 from flare.env import AtomicEnvironment
@@ -285,7 +286,8 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
               grad_tol: float = 1e-4,
               x_tol: float = 1e-5,
               line_steps: int = 20,
-              print_progress: bool = False):
+              print_progress: bool = False,
+              **kwargs):
         """Train Gaussian Process model on training data. Tunes the
         hyperparameters to maximize the likelihood, then computes L and alpha
         (related to the covariance matrix of the training set).
@@ -325,26 +327,53 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
 
         x_0 = self.hyps
 
+        opt_algorithm = f'{self.opt_algorithm}'
+
         args = (self.n_experts, self.name, self.kernel_grad,
                 logger_name, self.cutoffs, self.hyps_mask,
                 self.n_cpus, self.n_sample, self.per_expert_parallel)
-
         func = rbcm_get_neg_like_grad
+
+        if opt_algorithm in ['differential evolution', 'dual annealing']:
+            args0 = (self.n_experts, self.name, self.kernel,
+                    logger_name, self.cutoffs, self.hyps_mask,
+                    self.n_cpus, self.n_sample, self.per_expert_parallel)
+            func0 = rbcm_get_neg_like
 
 
         res = None
 
-        if self.opt_algorithm == 'L-BFGS-B':
+        if self.bounds is None:
+            bounds = np.array([(1e-6, 100)] * len(x_0))
+            if self.hyps_mask.get('train_noise', True):
+                bounds[-1, 0] = 1e-3
+                bounds[-1, 1] = self.prior_variance
+        elif custom_bounds is not None:
+            bounds = custom_bounds
+        else:
+            bounds = self.bounds
+
+        if opt_algorithm == 'basin hopping':
+            minimizer_kwargs = {"method":"L-BFGS-B", "jac":True,
+                                "args":args, "maxiter":200}
+            res = basinhopping(func, x_0,
+                               minimizer_kwargs=minimizer_kwargs,
+                               niter=self.maxiter)
+
+        if opt_algorithm == 'differential evolution':
+            res = differential_evolution(func0, bounds, args=args0,
+                                   maxiter=self.maxiter, polish=False,
+                                   **kwargs)
+            opt_algorithm = 'L-BFGS-B'
+
+        if opt_algorithm == 'dual annealining':
+
+            res = dual_annealing(func0, bounds, args=args0,
+                    maxiter=self.maxiter, x0=x_0, **kwargs)
+
+        if opt_algorithm == 'L-BFGS-B':
 
             # bound signal noise below to avoid overfitting
-            if self.bounds is None:
-                bounds = np.array([(1e-6, 100)] * len(x_0))
-                if self.hyps_mask.get('train_noise', True):
-                    bounds[-1, 0] = 1e-3
-                    bounds[-1, 1] = self.prior_variance
-            else:
-                bounds = self.bounds
-
             # Catch linear algebra errors and switch to BFGS if necessary
             try:
                 res = minimize(func, x_0, args,
@@ -356,20 +385,14 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
                 logger = logging.getLogger(self.logger_name)
                 logger.warning("Algorithm for L-BFGS-B failed. Changing to "
                                "BFGS for remainder of run.")
-                self.opt_algorithm = 'BFGS'
+                opt_algorithm = 'BFGS'
 
-        if custom_bounds is not None:
-            res = minimize(func, x_0, args,
-                           method='L-BFGS-B', jac=True, bounds=custom_bounds,
-                           options={'disp': disp, 'gtol': grad_tol,
-                                    'maxls': line_steps,
-                                    'maxiter': self.maxiter})
-
-        elif self.opt_algorithm == 'BFGS':
+        if opt_algorithm == 'BFGS':
             res = minimize(func, x_0, args,
                            method='BFGS', jac=True,
                            options={'disp': disp, 'gtol': grad_tol,
                                     'maxiter': self.maxiter})
+
 
         if res is None:
             raise RuntimeError("Optimization failed for some reason.")
@@ -898,3 +921,50 @@ def rbcm_get_neg_like_grad(hyps, n_experts, name, kernel_grad, logger_name, cuto
 
     return neg_like, neg_like_grad
 
+
+def rbcm_get_neg_like(hyps, n_experts, name, force_kernel, logger_name, cutoffs, hyps_mask, n_cpus, n_sample, per_expert_parallel):
+
+    neg_like = 0
+    neg_like_grad = None
+
+    logger = logging.getLogger(logger_name)
+    time0 = time.time()
+    if per_expert_parallel and n_cpus > 1:
+
+        with mp.Pool(processes=n_cpus) as pool:
+
+            results = []
+            for i in range(n_experts):
+                results.append(
+                        pool.apply_async(get_neg_like,
+                                         (hyps, f"{name}_{i}",
+                                          force_kernel, logger_name,
+                                          cutoffs, hyps_mask, 1,
+                                          n_sample)))
+            for i in range(n_experts):
+                chunk = results[i].get()
+                neg_like_ = chunk
+                neg_like += neg_like_
+            pool.close()
+            pool.join()
+    else:
+        for i in range(n_experts):
+            neg_like_ = get_neg_like(hyps, f"{name}_{i}", force_kernel, logger_name,
+                                  cutoffs, hyps_mask, n_cpus,
+                                  n_sample)
+            neg_like += neg_like_
+
+    logger.info('')
+    logger.info(f'Hyperparameters: {list(hyps)}')
+    logger.info(f'Total Likelihood: {-neg_like}')
+    logger.info(f"One step {time.time()-time0}")
+
+    ohyps, label = Parameters.get_hyps(
+                hyps_mask, hyps, constraint=False,
+                label=True)
+    if label:
+        logger.info(f'oHyp_array: {list(ohyps)}')
+        for i, l in enumerate(label):
+            logger.info(f'oHyp {l}: {ohyps[i]}')
+
+    return neg_like

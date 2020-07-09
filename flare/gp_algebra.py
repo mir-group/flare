@@ -1193,6 +1193,64 @@ def get_like_from_mats(ky_mat, l_mat, alpha, name):
 
     return like
 
+def get_neg_like(hyps: np.ndarray, name: str,
+                 force_kernel, logger_name=None,
+                 cutoffs=None, hyps_mask=None,
+                 n_cpus=1, n_sample=100):
+    """compute the log likelihood and its gradients
+
+    :param hyps: list of hyper-parameters
+    :type hyps: np.ndarray
+    :param name: name of the gp instance.
+    :param kernel_grad: function object of the kernel gradient
+    :param output: Output object for dumping every hyper-parameter
+                   sets computed
+    :type output: logger_name
+    :param cutoffs: The cutoff values used for the atomic environments
+    :type cutoffs: list of 2 float numbers
+    :param hyps_mask: dictionary used for multi-group hyperparmeters
+    :param n_cpus: number of cpus to use.
+    :param n_sample: the size of block for matrix to compute
+
+    :return: float, np.array
+    """
+
+    time0 = time.time()
+
+    ky_mat = \
+        get_force_block(hyps, name, force_kernel, cutoffs=cutoffs,
+                       hyps_mask=hyps_mask, n_cpus=n_cpus, n_sample=n_sample)
+
+    logger = logging.getLogger(logger_name)
+    logger.debug(f"{name} get_ky_and_hyp {time.time()-time0}")
+
+    time0 = time.time()
+
+    # catch linear algebra errors
+    try:
+        ky_mat_inv = np.linalg.inv(ky_mat)
+        l_mat = np.linalg.cholesky(ky_mat)
+    except np.linalg.LinAlgError:
+        return -1e8, np.zeros(number_of_hyps)
+
+    labels = _global_training_labels[name]
+
+    alpha = np.matmul(ky_mat_inv, labels)
+    alpha_mat = np.matmul(alpha.reshape(-1, 1), alpha.reshape(1, -1))
+    like_mat = alpha_mat - ky_mat_inv
+
+    # calculate likelihood
+    like = (-0.5 * np.matmul(labels, alpha) -
+            np.sum(np.log(np.diagonal(l_mat))) -
+            math.log(2 * np.pi) * ky_mat.shape[1] / 2)
+
+    logger.debug(f"get_like_from_mats {time.time()-time0}")
+
+    logger.debug(f'{name} Hyperparameters: {list(hyps)}')
+    logger.debug(f'{name} Likelihood: {like}')
+
+    return -like
+
 
 def get_neg_like_grad(hyps: np.ndarray, name: str,
                       kernel_grad, logger_name=None,
