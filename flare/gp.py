@@ -232,6 +232,10 @@ class GaussianProcess:
 
         if hyps_mask is not None:
             self.hyps_mask = hyps_mask
+        # Cutoffs argument will override hyps mask's cutoffs key, if present
+        if isinstance(hyps_mask,dict) and cutoffs is None:
+            cutoffs = hyps_mask.get('cutoffs', None)
+            
         if cutoffs is not None:
             if self.cutoffs!= cutoffs:
                 self.adjust_cutoffs(cutoffs,train = False,
