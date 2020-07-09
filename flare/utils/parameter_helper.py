@@ -23,7 +23,7 @@ Example:
 ...                            'threebody0':[1, 0.5], 'threebody1':[2, 0.2],
 ...                            'cutoff_threebody':1},
 ...                      constraints={'twobody0':[False, True]})
->>> hm = pm.hyps_mask
+>>> hm = pm.as_dict()
 >>> hyps = hm['hyps']
 >>> cutoffs = hm['cutoffs']
 >>> kernels = hm['kernels']
@@ -94,7 +94,7 @@ Define a 9-parameter 2+3 kernel
 See more examples in functions ``ParameterHelper.define_group`` , ``ParameterHelper.set_parameters``,
 and in the tests ``tests/test_parameters.py``
 
-If you want to add in a new hyperparameter set to an already-existing GP, you can perform the 
+If you want to add in a new hyperparameter set to an already-existing GP, you can perform the
 following steps:
 
 >> hyps_mask = pm.as_dict()

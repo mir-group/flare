@@ -192,8 +192,7 @@ class TestConstraint():
 
         test_gp.hyps_mask = hm
         test_gp.hyp_labels = hm['hyp_labels']
-        test_gp.hyps = hyps
-        test_gp.update_kernel(hm['kernel_name'], "mc", hm)
+        test_gp.update_kernel(hm['kernel_name'], "mc", hyps, cutoffs, hm)
         test_gp.set_L_alpha()
 
         hyp = list(test_gp.hyps)
@@ -268,7 +267,7 @@ class TestAlgebra():
 
         test_structure, forces = \
             get_random_structure(params['cell'], params['unique_species'], 2)
-        energy = 3.14                 
+        energy = 3.14
         test_gp.check_L_alpha()
         test_gp.update_db(test_structure, forces, energy=energy)
         test_gp.update_L_alpha()

@@ -33,12 +33,12 @@ class GaussianProcess:
     """Gaussian process force field. Implementation is based on Algorithm 2.1
     (pg. 19) of "Gaussian Processes for Machine Learning" by Rasmussen and
     Williams.
-    
-    Methods within GaussianProcess allow you to make predictions on 
-    AtomicEnvironment objects (see env.py) generated from 
+
+    Methods within GaussianProcess allow you to make predictions on
+    AtomicEnvironment objects (see env.py) generated from
     FLARE Structures (see struc.py), and after data points are added,
     optimize hyperparameters based on available training data (train method).
-    
+
     Args:
         kernels (list, optional): Determine the type of kernels. Example:
             ['2', '3'], ['2', '3', 'mb'], ['2']. Defaults to ['2', '3']
@@ -62,7 +62,7 @@ class GaussianProcess:
             during optimization. Defaults to None.
         hyps_mask (dict, optional): hyps_mask can set up which hyper parameter
             is used for what interaction. Details see kernels/mc_sephyps.py
-        name (str, optional): Name for the GP instance which dictates global 
+        name (str, optional): Name for the GP instance which dictates global
             memory access.
     """
 
@@ -219,7 +219,9 @@ class GaussianProcess:
 
         self.bounds = deepcopy(self.hyps_mask.get('bounds', None))
 
-    def update_kernel(self, kernels: List[str], component: str = "mc", hyps_mask: dict=None):
+    def update_kernel(self, kernels: List[str], component: str = "mc",
+                      hyps = None, cutoffs: dict = None,
+                      hyps_mask: dict=None):
         kernel, grad, ek, efk, _, _, _ = str_to_kernel_set(
             kernels, component, hyps_mask)
         self.kernel = kernel
@@ -227,12 +229,15 @@ class GaussianProcess:
         self.energy_force_kernel = efk
         self.energy_kernel = ek
         self.kernels = kernel_str_to_array(kernel.__name__)
-        
+
         if hyps_mask is not None:
             self.hyps_mask = hyps_mask
-            if self.cutoffs!= hyps_mask['cutoffs']:
-                self.adjust_cutoffs(hyps_mask['cutoffs'],train = False,
+        if cutoffs is not None:
+            if self.cutoffs!= cutoffs:
+                self.adjust_cutoffs(cutoffs,train = False,
                                    new_hyps_mask = hyps_mask)
+            self.cutoffs = cutoffs
+        if hyps is not None:
             self.hyps = hyps_mask['hyps']
 
     def update_db(self, struc: Structure, forces: List,
@@ -792,15 +797,15 @@ class GaussianProcess:
         *exactly* what you are doing for some development or test purpose,
         it is **highly** suggested that you call set_L_alpha and
         re-optimize your hyperparameters afterwards as is default here.
-        
+
         A helpful way to update the cutoffs and kernel for an extant
         GP is to perform the following commands:
         >> hyps_mask = pm.as_dict()
         >> hyps = hyps_mask['hyps']
+        >> cutoffs = hyps_mask['cutoffs']
         >> kernels = hyps_mask['kernels']
-        >> gp_model.update_kernel(kernels, 'mc', hyps_mask)
-        >> gp_model.hyps = hyps
-        
+        >> gp_model.update_kernel(kernels, 'mc', hyps, cutoffs, hyps_mask)
+
         :param new_cutoffs:
         :return:
         """
