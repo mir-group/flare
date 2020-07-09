@@ -23,7 +23,7 @@ Example:
 ...                            'threebody0':[1, 0.5], 'threebody1':[2, 0.2],
 ...                            'cutoff_threebody':1},
 ...                      constraints={'twobody0':[False, True]})
->>> hm = pm.hyps_mask
+>>> hm = pm.as_dict()
 >>> hyps = hm['hyps']
 >>> cutoffs = hm['cutoffs']
 >>> kernels = hm['kernels']
