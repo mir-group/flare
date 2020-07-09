@@ -80,13 +80,10 @@ def run_dft(calc_dir: str, dft_loc: str,
             os.chdir(calc_dir)
         call(vasp_cmd.format(dft_loc).split())
 
-        if en:
-            parse_func = parse_dft_forces_and_energy
-        else:
-            parse_func = parse_dft_forces
+        parse_func = parse_dft_forces
 
         try:
-            forces = parse_func("vasprun.xml")
+            forces, en = parse_func("vasprun.xml")
         except FileNotFoundError:
             os.chdir(currdir)
             raise FileNotFoundError("Could not load vasprun.xml."\
@@ -94,7 +91,7 @@ def run_dft(calc_dir: str, dft_loc: str,
                                     f"Current directory is {os.getcwd()}")
 
         os.chdir(currdir)
-        return forces
+        return forces, en
 
     except Exception as e:
         os.chdir(currdir)

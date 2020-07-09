@@ -7,7 +7,7 @@ from pymatgen.io.vasp.outputs import Vasprun
 from flare.struc import Structure, get_unique_species
 from flare.dft_interface.vasp_util import parse_dft_forces, run_dft, \
     edit_dft_input_positions, dft_input_to_structure, \
-    parse_dft_forces_and_energy, md_trajectory_from_vasprun, \
+    md_trajectory_from_vasprun, \
     check_vasprun, run_dft_par
 from pytest import raises
 
@@ -68,10 +68,10 @@ def test_vasp_calling(cmd, poscar):
 
     structure = dft_input_to_structure(poscar)
 
-    forces1 = run_dft('.', cmd, structure=structure, en=False)
+    forces1, energy1 = run_dft('.', cmd, structure=structure, en=False)
     forces2, energy2 = run_dft('.', cmd, structure=structure, en=True)
     forces3, pe3 = parse_dft_forces('./test_files/test_vasprun.xml')
-    forces4, energy4 = parse_dft_forces_and_energy(
+    forces4, energy4 = parse_dft_forces(
         './test_files/test_vasprun.xml')
 
     vr_step = Vasprun('./test_files/test_vasprun.xml').ionic_steps[-1]
