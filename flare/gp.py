@@ -241,8 +241,12 @@ class GaussianProcess:
                 self.adjust_cutoffs(cutoffs,train = False,
                                    new_hyps_mask = hyps_mask)
             self.cutoffs = cutoffs
+            
+        if isinstance(hyps_mask,dict) and hyps is None:
+            hyps = hyps_mask.get('hyps', None)
+
         if hyps is not None:
-            self.hyps = hyps_mask['hyps']
+            self.hyps = hyps
 
     def update_db(self, struc: Structure, forces: List,
                   custom_range: List[int] = (), energy: float = None):
