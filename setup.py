@@ -26,7 +26,7 @@ def steal_cmake_flags(args):
     strings usually equal to ``sys.argv``. All arguments of the form
     ``--cmake-args=...`` are extracted (i.e. removed from ``args``!) and
     accumulated. If there are no arguments of the specified form,
-    ``NETKET_CMAKE_FLAGS`` environment variable is used instead.
+    ``FLARE_CMAKE_FLAGS`` environment variable is used instead.
     """
     _ARG_PREFIX = "--cmake-args="
 
@@ -49,7 +49,7 @@ def steal_cmake_flags(args):
         )
     else:
         try:
-            cmake_args = shlex.split(os.environ["NETKET_CMAKE_FLAGS"])
+            cmake_args = shlex.split(os.environ["FLARE_CMAKE_FLAGS"])
         except KeyError:
             cmake_args = []
     return cmake_args
@@ -111,7 +111,7 @@ class CMakeBuild(build_ext):
             # Options to pass to CMake during configuration
             cmake_args = _CMAKE_FLAGS
             cmake_args.append(
-                "-DNETKET_PYTHON_VERSION={}.{}.{}".format(*sys.version_info[:3])
+                "-DFLARE_PYTHON_VERSION={}.{}.{}".format(*sys.version_info[:3])
             )
             cmake_args.append("-DCMAKE_LIBRARY_OUTPUT_DIRECTORY={}".format(lib_dir))
             if not _generator_specified(cmake_args) and _have_ninja():
