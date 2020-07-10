@@ -19,6 +19,14 @@ from scipy.cluster.hierarchy import dendrogram, \
     linkage, fcluster, optimal_leaf_ordering
 from typing import List, Callable, Union
 
+import matplotlib
+import matplotlib.pyplot as plt
+import matplotlib.colors as colors
+import matplotlib.cm as cmx
+plt.switch_backend('agg')
+from matplotlib.colors import LinearSegmentedColormap
+from matplotlib.patches import Rectangle
+
 from flare.env import AtomicEnvironment
 from flare.gp import GaussianProcess
 from flare.gp_algebra import get_like_from_mats, get_neg_like_grad, \
@@ -214,8 +222,6 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
             for i in range(expert_id-self.n_experts+1):
                 self.add_container()
                 self.n_experts += 1
-
-        print(f"adding data to expert {expert_id}")
 
         # By default, use all atoms in the structure
         noa = len(struc.positions)
