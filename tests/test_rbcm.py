@@ -435,4 +435,7 @@ class TestIO():
 #         test_gp.hyps_mask['cutoffs']=new_cutoffs
 #         test_gp.adjust_cutoffs(new_cutoffs, train=False, new_hyps_mask=test_gp.hyps_mask)
 #
-#         assert n
+#         assert np.array_equal(list(test_gp.cutoffs.values()), np.array(list(old_cutoffs.values()), dtype=float) + .5)
+#
+#         for env in test_gp.training_data:
+#             assert env.cutoffs == test_gp.cutoffs

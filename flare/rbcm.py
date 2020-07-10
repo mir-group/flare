@@ -735,7 +735,7 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
         self.ky_mat_inv[expert_id] = ky_mat_inv
         self.n_envs_prev[expert_id] = len(self.training_data[expert_id])
 
-    def redistribute_training_data(self):
+    def redistribute_training_data(self, figure_name="default"):
         """ redistribute data """
 
         joint_data = []
@@ -760,12 +760,24 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
             norm = np.sqrt(kmat[i, i])
             kmat[i, :] /= norm
             kmat[:, i] /= norm
+        plot_mat(kmat, f"{figure_name}_unsorted_dmat.png")
 
         iu1 = np.triu_indices(kmat.shape[0], 1)
         upper_triang = kmat[iu1]
-        Z = linkage(upper_triang, 'average')
-        dn = dendrogram(Z)
-        new_indices = list(map(int, dn['ivl']))
+        Z = linkage(upper_triang, method='average')
+        K = fcluster(Z, t=0.5, criterion='distance')
+
+        ncluster = int(np.max(K))
+        new_indices = []
+        sizes = []
+        for i in range(ncluster):
+            index = np.where(K==(i+1))[0]
+            new_indices += [index]
+            sizes += [len(index)]
+        new_indices = np.hstack(new_indices)
+
+        plot_mat(sort_matrix(kmat, new_indices),
+                 f"{figure_name}_sorted_dmat.png")
 
         for i in new_indices:
             self.add_one_env(
@@ -1041,3 +1053,19 @@ def rbcm_get_neg_like(hyps, n_experts, name, force_kernel, logger_name, cutoffs,
             logger.info(f'oHyp {l}: {ohyps[i]}')
 
     return neg_like
+
+def sort_matrix(matrix, new_order):
+    n_obs = matrix.shape[0]
+    new_mat = np.zeros_like(matrix)
+    for i in range(n_obs):
+        for j in range(n_obs):
+            new_mat[i, j] = matrix[new_order[i], new_order[j]]
+    return new_mat
+
+def plot_mat(distance_mat, filename):
+    fig = plt.figure()
+    plt.imshow(distance_mat)
+    plt.title("distance matrix (1-normalized(<en|en>)")
+    plt.tight_layout()
+    fig.savefig(filename)
+    plt.close()
