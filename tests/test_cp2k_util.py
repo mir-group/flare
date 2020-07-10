@@ -85,7 +85,7 @@ def test_cp2k_calling(cp2k_input, cp2k_output):
                           positions=positions,
                           mass_dict=masses, species_labels=species)
 
-    forces = run_dft_par('cp2k.in',
+    forces, energy = run_dft_par('cp2k.in',
                          structure, dft_loc)
 
     ref_forces, ref_pe = parse_dft_forces(cp2k_output)
