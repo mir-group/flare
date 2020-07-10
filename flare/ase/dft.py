@@ -27,7 +27,8 @@ def run_dft_par(atoms, structure, dft_calc, **dft_kwargs):
     calc = deepcopy(dft_calc)
     atoms.set_calculator(calc)
 
-    # calculate DFT forces 
+    # calculate DFT forces
     forces = atoms.get_forces()
+    energy = atoms.get_potential_energy()
 
-    return forces
+    return forces, energy

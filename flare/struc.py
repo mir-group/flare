@@ -101,6 +101,7 @@ class Structure:
             self.stds = np.zeros((len(positions), 3))
 
         self.energy = energy
+        self.local_energies = None
 
         self.mass_dict = mass_dict
 
