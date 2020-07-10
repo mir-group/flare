@@ -243,8 +243,8 @@ class TestIO():
         assert 'Model Likelihood: ' in the_str
         if not multihyps:
             assert 'Length ' in the_str
-            assert 'Signal Var. ' in the_str
-            assert "Noise Var." in the_str
+            assert 'Signal ' in the_str
+            assert "Noise " in the_str
 
     @pytest.mark.parametrize('multihyps', multihyps_list)
     def test_serialization_method(self, all_gps, validation_env, multihyps):

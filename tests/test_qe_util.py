@@ -86,7 +86,7 @@ def test_espresso_calling(qe_input, qe_output):
                           positions=positions,
                           mass_dict=masses, species_labels=species)
 
-    forces = run_dft_par('pwscf.in', structure, dft_loc, dft_out='pwscf.out')
+    forces, energy = run_dft_par('pwscf.in', structure, dft_loc, dft_out='pwscf.out')
 
     ref_forces, ref_e = parse_dft_forces('pwscf.out')
 
