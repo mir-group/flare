@@ -63,6 +63,8 @@ def test_init(bodies, multihyps, all_mgp, all_gp):
     test the init function
     """
 
+    clean()
+
     gp_model = all_gp[f'{bodies}{multihyps}']
 
     # grid parameters
@@ -78,7 +80,7 @@ def test_init(bodies, multihyps, all_mgp, all_gp):
     try:       
         mgp_model = MappedGaussianProcess(grid_params=grid_params, 
             unique_species=data['species'], n_cpus=1, 
-            lmp_file_name=lammps_location, var_map=None) #'simple')
+            lmp_file_name=lammps_location, var_map='simple')
     except:
         mgp_model = MappedGaussianProcess(grid_params=grid_params, 
             unique_species=data['species'], n_cpus=1, 
@@ -244,13 +246,16 @@ def test_predict(all_gp, all_mgp, bodies, multihyps):
 
 
     if mgp_model.var_map == 'simple':
-        mgp_var = mgp_pred[1]
-        gp_var = predict_atom_diag_var(test_envi, gp_model, kernel_name)
-        print('mgp_var, gp_var', mgp_var, gp_var)
-        assert np.allclose(mgp_var, gp_var, rtol=1e-2)
+        print(bodies, multihyps)
+        for i in range(struc_test.nat):
+            test_envi = env.AtomicEnvironment(struc_test, i, cutoffs, cutoffs_mask=gp_model.hyps_mask)
+            mgp_pred = mgp_model.predict(test_envi)
+            mgp_var = mgp_pred[1]
+            gp_var = predict_atom_diag_var(test_envi, gp_model, kernel_name)
+            print('mgp_var, gp_var', mgp_var, gp_var)
+            assert np.allclose(mgp_var, gp_var, rtol=1e-2)
 
-    clean()
-
+    print('struc_test positions', struc_test.positions, struc_test.species_labels)
 
 
 @pytest.mark.skipif(not os.environ.get('lmp',
@@ -265,18 +270,13 @@ def test_lmp_predict(all_gp, all_mgp, bodies, multihyps):
     test the lammps implementation
     """
 
-    clean()
-    
     pytest.skip()
 
-    prefix = f'tmp{bodies}{multihyps}'
+    prefix = f'{bodies}{multihyps}'
 
     mgp_model = all_mgp[f'{bodies}{multihyps}']
     gp_model = all_gp[f'{bodies}{multihyps}']
     lammps_location = mgp_model.lmp_file_name
-
-    # lmp file is automatically written now every time MGP is constructed
-    mgp_model.write_lmp_file(lammps_location)
 
     # create test structure
     cell = 5*np.eye(3)
@@ -309,7 +309,8 @@ def test_lmp_predict(all_gp, all_mgp, bodies, multihyps):
 
     style_string = 'mgp'
 
-    coeff_string = f'* * {lammps_location} {specie_symbol_list} {by} {ty}'
+    coeff_string = f'* * {lammps_location}.mgp {specie_symbol_list} {by} {ty}'
+    std_string = f'{lammps_location}.var {specie_symbol_list} {by} {ty}'
     lammps_executable = os.environ.get('lmp')
     dump_file_name = f'{prefix}.dump'
     input_file_name = f'{prefix}.in'
@@ -317,18 +318,24 @@ def test_lmp_predict(all_gp, all_mgp, bodies, multihyps):
     input_text = \
         lammps_calculator.generic_lammps_input(data_file_name, style_string,
                                                coeff_string, dump_file_name,
-                                               newton=True)
+                                               newton=False, std_string=std_string)
     lammps_calculator.write_text(input_file_name, input_text)
 
     lammps_calculator.run_lammps(lammps_executable, input_file_name,
                                  output_file_name)
 
-    lammps_forces = lammps_calculator.lammps_parser(dump_file_name)
-    mgp_forces = mgp_model.predict(test_envi)
+    pred_std = True
+    lammps_forces, lammps_stds = lammps_calculator.lammps_parser(dump_file_name, std=pred_std)
+    mgp_pred = mgp_model.predict(test_envi)
 
     # check that lammps agrees with gp to within 1 meV/A
     for i in range(3):
-        print("isclose? diff:", lammps_forces[atom_num, i]-mgp_forces[0][i], "mgp value", mgp_forces[0][i])
-        assert np.isclose(lammps_forces[atom_num, i], mgp_forces[0][i], rtol=1e-2)
+        print("isclose? diff:", lammps_forces[atom_num, i]-mgp_pred[0][i], "mgp value", mgp_pred[0][i])
+        assert np.isclose(lammps_forces[atom_num, i], mgp_pred[0][i], rtol=1e-2)
 
-    clean()
+    # check the lmp var
+    mgp_std = np.sqrt(mgp_pred[1])
+    print("isclose? diff:", lammps_stds[atom_num]-mgp_std, "mgp value", mgp_std)
+    assert np.isclose(lammps_stds[atom_num], mgp_std, rtol=1e-2)
+
+    clean(prefix=prefix)

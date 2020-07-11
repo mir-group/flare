@@ -53,16 +53,14 @@ def mgp_model(gp_model):
     grid_params={}
     if 'twobody' in gp_model.kernels:
         grid_params['twobody']={'grid_num': [64],
-                                'lower_bound':[0.1],
-                                'svd_rank': 14}
+                                'lower_bound':[0.1]}
     if 'threebody' in gp_model.kernels:
         grid_params['threebody']={'grid_num': [16]*3,
-                                  'lower_bound':[0.1]*3,
-                                  'svd_rank': 14}
+                                  'lower_bound':[0.1]*3}
     species_list = [1, 2, 3]
     lammps_location = f'tmp_lmp'
     mapped_model = MappedGaussianProcess(grid_params=grid_params, unique_species=species_list, n_cpus=1,
-                lmp_file_name=lammps_location, var_map=None)
+                lmp_file_name=lammps_location, var_map='simple')
 
     # import flare.mgp.mapxb
     # flare.mgp.mapxb.global_use_grid_kern = False

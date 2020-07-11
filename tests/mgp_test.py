@@ -2,19 +2,17 @@ import os, shutil, re
 import numpy as np
 from flare import env, struc
 
-def clean():
+def clean(prefix='tmp'):
     for f in os.listdir("./"):
         if re.search("mgp_grids", f):
             shutil.rmtree(f)
         if re.search("kv3", f):
             os.rmdir(f)
-        if 'tmp' in f:
+        if prefix in f:
             if os.path.isdir(f):
                 shutil.rmtree(f)
             else:
                 os.remove(f)
-        if '.mgp' in f and 'tmp' not in f:
-            os.remove(f)
 
 
 def compare_triplet(mgp_model, gp_model, atom_env):
