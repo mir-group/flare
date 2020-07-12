@@ -78,7 +78,7 @@ def test_init(bodies, multihyps, all_mgp, all_gp):
     try:       
         mgp_model = MappedGaussianProcess(grid_params=grid_params, 
             unique_species=data['species'], n_cpus=1, 
-            lmp_file_name=lammps_location, var_map=None) #'simple')
+            lmp_file_name=lammps_location, var_map='simple')
     except:
         mgp_model = MappedGaussianProcess(grid_params=grid_params, 
             unique_species=data['species'], n_cpus=1, 
