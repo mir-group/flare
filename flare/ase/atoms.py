@@ -97,7 +97,7 @@ class FLARE_Atoms(Atoms):
     @property
     def stds(self):
         try:  # when self.calc is not FLARE, there's no get_uncertainties()
-            stds = self.get_uncertainties()
+            stds = self.calc.results["stds"]
         except:
             stds = np.zeros_like(self.positions)
         return stds

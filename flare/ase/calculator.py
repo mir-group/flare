@@ -20,6 +20,25 @@ from flare.predict import (
 from ase.calculators.calculator import Calculator
 
 
+def get_rebuild_from_err(err_msg, rebuild_dict, newbound_dict):
+    warnings.warn("Re-build map with a new lower bound")
+    re_dict = err_msg.args[0]
+    nb_dict = err_msg.args[1]
+    for xb in re_dict:  # collect two & three body maps
+        if xb in rebuild_dict:
+            for s_ind, spc in enumerate(re_dict[xb]):  # collect all species
+                if spc in rebuild_dict[xb]:
+                    spc_ind = rebuild_dict[xb].index(spc)
+                    if nb_dict[xb][s_ind] < newbound_dict[xb][spc_ind]:
+                        newbound_dict[xb][spc_ind] = nb_dict[xb][s_ind]
+                else:
+                    rebuild_dict[xb].append(spc)
+                    newbound_dict[xb].append(nb_dict[xb][s_ind])
+        else:
+            rebuild_dict[xb] = re_dict[xb]
+            newbound_dict[xb] = nb_dict[xb]
+
+
 class FLARE_Calculator(Calculator):
     """
     Build FLARE as an ASE Calculator, which is compatible with ASE Atoms and
@@ -59,6 +78,9 @@ class FLARE_Calculator(Calculator):
     def get_stress(self, atoms):
         return self.get_property("stress", atoms)
 
+    def get_uncertainties(self, atoms):
+        return self.get_property("stds", atoms)
+
     def calculate(self, atoms):
         """
         Calculate properties including: energy, local energies, forces,
@@ -72,6 +94,12 @@ class FLARE_Calculator(Calculator):
             self.calculate_mgp(atoms)
         else:
             self.calculate_gp(atoms)
+
+        # get global properties
+        volume = atoms.get_volume()
+        total_stress = np.sum(self.results["partial_stresses"], axis=0)
+        self.results["stress"] = total_stress / volume
+        self.results["energy"] = np.sum(self.results["local_energies"])
 
     def calculate_gp(self, atoms):
         # Compute energy, forces, and stresses and their uncertainties
@@ -90,12 +118,20 @@ class FLARE_Calculator(Calculator):
             "forces",
             "partial_stresses",
             "local_energy_stds",
-            "force_stds",
+            "stds",
             "partial_stress_stds",
         ]
         res_dims = [1, 3, 6, 1, 3, 6]
         for i in range(len(res_name)):
-            assert (res[i].shape[1] == res_dims[i], "shape doesn't match")
+            if len(res[i].shape) == 2:
+                assert (
+                    res[i].shape[1] == res_dims[i],
+                    f"{res_name[i]} shape doesn't match, "
+                    f"{res[i].shape[1]} and {res_dims[i]}",
+                )
+            elif len(res[i].shape) == 1:
+                assert res_dims[i] == 1
+
             self.results[res_name[i]] = res[i]
 
     def calculate_mgp(self, atoms):
@@ -123,23 +159,7 @@ class FLARE_Calculator(Calculator):
                 self.results["local_energies"][n] = e
 
             except ValueError as err_msg:  # if lower_bound error is raised
-                warnings.warn("Re-build map with a new lower bound")
-                re_dict = err_msg.args[0]
-                nb_dict = err_msg.args[1]
-                for xb in re_dict:  # collect two & three body maps
-                    if xb in rebuild_dict:
-                        for s_ind, spc in enumerate(re_dict[xb]):  # collect all species
-                            if spc in rebuild_dict[xb]:
-                                spc_ind = rebuild_dict[xb].index(spc)
-                                if nb_dict[xb][s_ind] < newbound_dict[xb][spc_ind]:
-                                    newbound_dict[xb][spc_ind] = nb_dict[xb][s_ind]
-                            else:
-                                rebuild_dict[xb].append(spc)
-                                newbound_dict[xb].append(nb_dict[xb][s_ind])
-                    else:
-                        rebuild_dict[xb] = re_dict[xb]
-                        newbound_dict[xb] = nb_dict[xb]
-
+                get_rebuild_from_err(err_msg, rebuild_dict, newbound_dict)
                 repredict_atoms.append((n, chemenv))
 
         if len(rebuild_dict) > 0:
@@ -162,12 +182,6 @@ class FLARE_Calculator(Calculator):
                 self.results["partial_stresses"][n] = vir
                 self.results["stds"][n] = np.sqrt(np.absolute(v))
                 self.results["local_energies"][n] = e
-
-        # get global properties
-        volume = atoms.get_volume()
-        total_stress = np.sum(self.results["partial_stresses"], axis=0)
-        self.results["stress"] = total_stress / volume
-        self.results["energy"] = np.sum(self.results["local_energies"])
 
     def calculation_required(self, atoms, quantities):
         return True

@@ -387,7 +387,7 @@ class OTF:
         else:
             self.structure.prev_positions = self.structure.positions
         self.structure.positions = new_pos
-        self.structure.positions[:] = structure.wrap_positions()
+        self.structure.positions[:] = self.structure.wrap_positions()
 
     def update_temperature(self):
         """Updates the instantaneous temperatures of the system.
