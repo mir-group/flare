@@ -1012,11 +1012,11 @@ class GaussianProcess:
         return self.parallel
 
     def __del__(self):
-        if (self is None):
+        if self is None:
             return
-        if (self.name in _global_training_labels):
-            _global_training_labels.pop(self.name, None)
-            _global_training_data.pop(self.name, None)
+        if self.name in _global_training_labels:
+            return _global_training_data.pop(self.name, None), \
+                   _global_training_labels.pop(self.name, None)
 
     @staticmethod
     def backward_arguments(kwargs, new_args={}):
