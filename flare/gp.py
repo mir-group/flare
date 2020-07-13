@@ -220,7 +220,7 @@ class GaussianProcess:
         self.bounds = deepcopy(self.hyps_mask.get('bounds', None))
 
     def update_kernel(self, kernels: List[str], component: str = "mc",
-                      hyps = None, cutoffs: dict = None,
+                      hyps=None, cutoffs: dict = None,
                       hyps_mask: dict=None):
         kernel, grad, ek, efk, _, _, _ = str_to_kernel_set(
             kernels, component, hyps_mask)
@@ -233,16 +233,16 @@ class GaussianProcess:
         if hyps_mask is not None:
             self.hyps_mask = hyps_mask
         # Cutoffs argument will override hyps mask's cutoffs key, if present
-        if isinstance(hyps_mask,dict) and cutoffs is None:
+        if isinstance(hyps_mask, dict) and cutoffs is None:
             cutoffs = hyps_mask.get('cutoffs', None)
             
         if cutoffs is not None:
-            if self.cutoffs!= cutoffs:
-                self.adjust_cutoffs(cutoffs,train = False,
-                                   new_hyps_mask = hyps_mask)
+            if self.cutoffs != cutoffs:
+                self.adjust_cutoffs(cutoffs, train=False,
+                                   new_hyps_mask=hyps_mask)
             self.cutoffs = cutoffs
             
-        if isinstance(hyps_mask,dict) and hyps is None:
+        if isinstance(hyps_mask, dict) and hyps is None:
             hyps = hyps_mask.get('hyps', None)
 
         if hyps is not None:

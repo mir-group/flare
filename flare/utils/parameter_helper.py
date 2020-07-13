@@ -24,10 +24,8 @@ Example:
 ...                            'cutoff_threebody':1},
 ...                      constraints={'twobody0':[False, True]})
 >>> hm = pm.as_dict()
->>> hyps = hm['hyps']
->>> cutoffs = hm['cutoffs']
 >>> kernels = hm['kernels']
->>> gp_model = GaussianProcess(kernels=kernels, cutoffs=cutoffs,
+>>> gp_model = GaussianProcess(kernels=kernels,
 ...                            hyps=hyps, hyps_mask=hm)
 
 In this example, four atomic species are involved. There are many kinds
