@@ -591,6 +591,19 @@ class TrajectoryTrainer:
                                hyps_mask=self.gp.hyps_mask)
         self.train_count += 1
 
+    @staticmethod
+    def backward_arguments(kwargs:dict,
+                           tt_dict:dict):
+
+        deprecated_arguments = {'rel_std_tolerance': 'active_rel_var_tol',
+                                'abs_std_tolerance': 'active_abs_var_tol',
+                                'abs_force_tolerance':'active_abs_error_tol',
+                                'max_force_error':'active_error_tol_cutoff',
+                                'parallel':None,
+                                'skip':'active_skip',
+                                'pre_train_max_iter': 'passive_train_max_iter'}
+
+
 
 def parse_trajectory_trainer_output(file: str, return_gp_data: bool = False) \
         -> Union[List[dict], Tuple[List[dict], dict]]:
