@@ -4,13 +4,13 @@
 #include <vector>
 
 // Radial cutoff functions.
-void quadratic_cutoff(double * rcut_vals, double r, double rcut,
+void quadratic_cutoff(double *rcut_vals, double r, double rcut,
                       std::vector<double> cutoff_hyps);
 
-void cos_cutoff(double * rcut_vals, double r, double rcut,
+void cos_cutoff(double *rcut_vals, double r, double rcut,
                 std::vector<double> cutoff_hyps);
 
-void hard_cutoff(double * rcut_vals, double r, double rcut,
+void hard_cutoff(double *rcut_vals, double r, double rcut,
                  std::vector<double> cutoff_hyps);
 
 #endif
