@@ -239,7 +239,8 @@ class TrajectoryTrainer:
         self.train_count = 0
         self.start_time = time.time()
 
-    def passive_run(self):
+    def passive_run(self, frames: List[Structure],
+                          envs: List[Tuple[AtomicEnvironment,'np.ndarray']]):
         """
         Various tasks to set up the AIMD training before commencing
         the run through the AIMD trajectory.
@@ -341,7 +342,8 @@ class TrajectoryTrainer:
             self.gp.write_model(f'{self.output_name}_prerun',
                                 self.model_format)
 
-    def run(self, perform_passive_run: bool = True):
+    def active_run(self, perform_passive_run: bool = True,
+                            passive_kwargs: dict = {}):
         """
         Loop through frames and record the error between
         the GP predictions and the ground-truth forces. Train the GP and update
@@ -356,7 +358,7 @@ class TrajectoryTrainer:
         logger.debug("Commencing run with pre-run...")
         if not self.mgp:
             if perform_passive_run:
-                self.passive_run()
+                self.passive_run(**passive_kwargs)
             elif len(self.gp) == 0:
                 logger.warning("You are attempting to train a model with no "
                               "data in your Gausian Process; it is "
@@ -590,18 +592,6 @@ class TrajectoryTrainer:
                                self.gp.likelihood_gradient,
                                hyps_mask=self.gp.hyps_mask)
         self.train_count += 1
-
-    @staticmethod
-    def backward_arguments(kwargs:dict,
-                           tt_dict:dict):
-
-        deprecated_arguments = {'rel_std_tolerance': 'active_rel_var_tol',
-                                'abs_std_tolerance': 'active_abs_var_tol',
-                                'abs_force_tolerance':'active_abs_error_tol',
-                                'max_force_error':'active_error_tol_cutoff',
-                                'parallel':None,
-                                'skip':'active_skip',
-                                'pre_train_max_iter': 'passive_train_max_iter'}
 
 
 

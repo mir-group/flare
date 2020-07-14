@@ -78,7 +78,7 @@ def test_load_trained_gp_and_run(methanol_gp):
                            active_abs_var_tol=0,
                            active_skip=15, checkpoint_interval_train=10)
 
-    tt.run()
+    tt.active_run()
     for f in glob(f"gp_from_aimd*"):
         remove(f)
 
@@ -103,7 +103,7 @@ def test_load_one_frame_and_run():
                            active_abs_var_tol=0,
                            active_skip=15)
 
-    tt.run()
+    tt.active_run()
     for f in glob(f"gp_from_aimd*"):
         remove(f)
 
@@ -140,7 +140,7 @@ def test_seed_and_run():
                            checkpoint_interval_train=1,
                            passive_atoms_per_element={'H': 1})
 
-    tt.run()
+    tt.active_run()
 
     with open('meth_test_model.pickle', 'rb') as f:
         new_gp = pickle.load(f)
@@ -192,7 +192,7 @@ def test_pred_on_elements():
                            predict_atoms_per_element={'H': 0, 'C': 1, 'O': 0})
     # Set to predict only on Carbon after training on H to ensure errors are
     #  high and that they get added to the gp
-    tt.run()
+    tt.active_run()
 
     # Ensure forces weren't written directly to structure
     for i in range(len(all_frames)):
@@ -248,7 +248,7 @@ def test_mgp_gpfa():
                            active_rel_var_tol=0,
                            active_abs_var_tol=0, active_abs_error_tol=0)
     assert tt.mgp is True
-    tt.run()
+    tt.active_run()
 
 
 def test_parse_gpfa_output():
