@@ -45,7 +45,9 @@ class GaussianProcess:
         component (str, optional): Determine single- ("sc") or multi-
             component ("mc") kernel to use. Defaults to "mc"
         hyps (np.ndarray, optional): Hyperparameters of the GP.
-        cutoffs (Dict, optional): Cutoffs of the GP kernel.
+        cutoffs (Dict, optional): Cutoffs of the GP kernel. For simple hyper-
+            parameter setups, formatted like {"twobody":7, "threebody":4.5}, 
+            etc.
         hyp_labels (List, optional): List of hyperparameter labels. Defaults
             to None.
         opt_algorithm (str, optional): Hyperparameter optimization algorithm.
