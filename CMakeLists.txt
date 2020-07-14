@@ -99,7 +99,8 @@ set(FLARE_SOURCES
     src/flare_pp/two_body_kernel.cpp
     src/flare_pp/three_body_kernel.cpp
     src/flare_pp/dot_product_kernel.cpp
-    src/flare_pp/sparse_gp.cpp)
+    src/flare_pp/sparse_gp.cpp
+    src/flare_pp/sparse_gp_dtc.cpp)
 
 set(PYBIND_SOURCES
     src/ace_binding.cpp)
