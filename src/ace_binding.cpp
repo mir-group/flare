@@ -4,6 +4,9 @@
 #include "descriptor.h"
 #include "sparse_gp.h"
 #include "kernels.h"
+#include "two_body_kernel.h"
+#include "three_body_kernel.h"
+#include "dot_product_kernel.h"
 
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>

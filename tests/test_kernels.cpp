@@ -1,5 +1,8 @@
 #include "gtest/gtest.h"
 #include "kernels.h"
+#include "two_body_kernel.h"
+#include "three_body_kernel.h"
+#include "dot_product_kernel.h"
 #include "structure.h"
 #include "local_environment.h"
 #include "cutoffs.h"

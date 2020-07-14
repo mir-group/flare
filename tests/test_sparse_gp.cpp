@@ -1,5 +1,8 @@
 #include "gtest/gtest.h"
 #include "sparse_gp.h"
+#include "two_body_kernel.h"
+#include "three_body_kernel.h"
+#include "dot_product_kernel.h"
 #include "descriptor.h"
 #include "omp.h"
 #include <chrono>

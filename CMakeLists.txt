@@ -96,6 +96,9 @@ set(FLARE_SOURCES
     src/flare_pp/structure.cpp
     src/flare_pp/local_environment.cpp
     src/flare_pp/kernels.cpp
+    src/flare_pp/two_body_kernel.cpp
+    src/flare_pp/three_body_kernel.cpp
+    src/flare_pp/dot_product_kernel.cpp
     src/flare_pp/sparse_gp.cpp)
 
 set(PYBIND_SOURCES
