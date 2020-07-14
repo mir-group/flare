@@ -108,9 +108,10 @@ class TestInitialization():
         Run through some common permutations of input sequences
         to ensure that the GP correctly initializes.
         """
-        for kernel_list in [['2'], ['3'], ['2', '3'],
-                            ['3', '2', 'mb']]:
+        for kernel_list in [['2'], ['3'], ['2', '3']]:
             GaussianProcess(kernels=kernel_list)
+        with raises(ValueError):
+            GaussianProcess(kernels=['2', '3', 'mb'])
         full_kernel_list = ['2', '3']
         for component in ['sc', 'mc']:
             GaussianProcess(kernels=full_kernel_list,

@@ -186,6 +186,9 @@ class GaussianProcess:
                 cutoffs['twobody'] = 7
             if 'threebody' in self.kernels:
                 cutoffs['threebody'] = 3.5
+            if 'manybody' in self.kernels:
+                raise ValueError("No cutoff was set for the manybody kernel."
+                                 "A default value will not be set by default.")
 
             self.cutoffs = cutoffs
             logger.warning("Warning: No cutoffs were set for your GP."
