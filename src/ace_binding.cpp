@@ -14,7 +14,7 @@
 
 namespace py = pybind11;
 
-PYBIND11_MODULE(ace, m){
+PYBIND11_MODULE(_C_flare, m){
     // Structure
     py::class_<Structure>(m, "Structure")
         .def(py::init<const Eigen::MatrixXd &,

@@ -1,39 +1,127 @@
-# set minimum required version of cmake
-cmake_minimum_required(VERSION 3.1...3.15)
+cmake_minimum_required(VERSION 3.14.5)
 
-if(${CMAKE_VERSION} VERSION_LESS 3.12)
-    cmake_policy(VERSION ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION})
-endif()
+set(CMAKE_DISABLE_SOURCE_CHANGES ON)
+set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
 
-# set the project name
-project(flare_pp VERSION 1.0
-	    DESCRIPTION "High performance implementation of the atomic cluster expansion."
-	    LANGUAGES CXX)
+project(flare LANGUAGES CXX)
+
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules/)
+
+include(ExternalProject)
+
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+set(FLARE_PYTHON_VERSION "" CACHE STRING "Python version to use for compiling modules")
 
 if(NOT CMAKE_BUILD_TYPE)
+  message(STATUS "[flare] CMAKE_BUILD_TYPE not specified, setting it to "
+                 "Release. Use `-DCMAKE_BUILD_TYPE=...` to overwrite.")
   set(CMAKE_BUILD_TYPE Release)
 endif()
 
-set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+#
+# Dependencies
+#
 
-find_package(Eigen3 REQUIRED)
-INCLUDE_DIRECTORIES ("${EIGEN3_INCLUDE_DIR}")
+include(FetchContent)
 
-set(ACE_ROOT_DIR $ENV{ACE})
+# googletest
+################################################################################
 
-# specify the C++ standard
-set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_STANDARD_REQUIRED True)
+FetchContent_Declare(googletest
+    GIT_REPOSITORY https://github.com/google/googletest.git
+    SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/External/googletest
+    UPDATE_COMMAND ""
+)
+FetchContent_MakeAvailable(googletest)
 
-# add subdirectories
-add_subdirectory(src)
+# Eigen3
+################################################################################
+
+ExternalProject_Add(
+    eigen_project
+    SOURCE_DIR "${CMAKE_BINARY_DIR}/External/Eigen3"
+    URL "https://github.com/eigenteam/eigen-git-mirror/archive/3.3.7.tar.gz"
+    URL_HASH MD5=77a2c934eaf35943c43ee600a83b72df
+    CONFIGURE_COMMAND ""
+    BUILD_COMMAND ""
+    INSTALL_COMMAND ""
+)
+ExternalProject_Get_Property(eigen_project SOURCE_DIR)
+add_library(Eigen3 INTERFACE)
+target_include_directories(Eigen3 SYSTEM INTERFACE ${SOURCE_DIR})
+include_directories(${SOURCE_DIR})
+
+# pybind11
+###############################################################################
+ExternalProject_Add(
+    pybind11_project
+    SOURCE_DIR "${CMAKE_BINARY_DIR}/External/pybind11"
+    URL "https://github.com/pybind/pybind11/archive/v2.3.0.tar.gz"
+    URL_HASH MD5=e2120c5b0e3c20a93f2dfcdc55026ba8
+    CONFIGURE_COMMAND ""
+    BUILD_COMMAND ""
+    INSTALL_COMMAND ""
+)
+if (NOT FLARE_PYTHON_VERSION)
+    set(Python_ADDITIONAL_VERSIONS 3.7 3.6 3.5)
+endif()
+find_package(PythonLibsNew ${FLARE_PYTHON_VERSION} REQUIRED)
+
+add_library(pybind11 INTERFACE)
+ExternalProject_Get_Property(pybind11_project SOURCE_DIR)
+target_include_directories(pybind11 SYSTEM INTERFACE ${SOURCE_DIR}/include)
+target_include_directories(pybind11 SYSTEM INTERFACE ${PYTHON_INCLUDE_DIRS})
+
+if(APPLE)
+      TARGET_LINK_LIBRARIES(pybind11 INTERFACE "-undefined dynamic_lookup")
+      message(STATUS "Building in conda environment on MAC")
+else()
+      target_link_libraries(pybind11 INTERFACE ${PYTHON_LIBRARIES})
+endif()
+
+# Greatly reduces the code bloat
+target_compile_options(pybind11 INTERFACE "-fvisibility=hidden")
+###############################################################################
+
+# Specify source files.
+set(FLARE_SOURCES
+    src/flare_pp/y_grad.cpp
+    src/flare_pp/radial.cpp
+    src/flare_pp/cutoffs.cpp
+    src/flare_pp/single_bond.cpp
+    src/flare_pp/descriptor.cpp
+    src/flare_pp/structure.cpp
+    src/flare_pp/local_environment.cpp
+    src/flare_pp/kernels.cpp
+    src/flare_pp/sparse_gp.cpp)
+
+set(PYBIND_SOURCES
+    src/ace_binding.cpp)
+
+# Include sources.
+include_directories(src/flare_pp)
+
+# Create shared library for unit tests.
+add_library(flare SHARED ${FLARE_SOURCES})
+add_dependencies(flare eigen_project)
+
+# Create pybind module.
+add_library(flare_module SHARED ${FLARE_SOURCES} ${PYBIND_SOURCES})
+target_link_libraries(flare_module PRIVATE pybind11)
+set_target_properties(flare_module PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}"
+                                              SUFFIX "${PYTHON_MODULE_EXTENSION}")
+
+add_dependencies(flare_module eigen_project pybind11_project)
+set_target_properties(flare_module PROPERTIES OUTPUT_NAME "_C_flare")
+
+# Find OpenMP.
+find_package(OpenMP)
+if(OpenMP_CXX_FOUND)
+    target_link_libraries(flare PUBLIC OpenMP::OpenMP_CXX)
+endif()
+
+# Add test directory.
 add_subdirectory(tests)
-add_subdirectory(timing)
-add_subdirectory(googletest)
-add_subdirectory(parallel_tests)
-
-# make python bindings
-add_subdirectory(pybind11)
-pybind11_add_module(ace SHARED src/ace_binding.cpp)
-target_link_libraries(ace PRIVATE flare_pp)
-target_include_directories(ace PRIVATE ${ACE_INCLUDE_DIR})
