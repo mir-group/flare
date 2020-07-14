@@ -515,8 +515,11 @@ def add_file(logger: Logger, filename: str, verbose: str = "info"):
     if not file_defined:
 
         # back up
+        cur_filename = f'{filename}'
+        while isfile(cur_filename):
+            cur_filename = f'{cur_filename}-bak'
         if isfile(filename):
-            movefile(filename, filename+"-bak")
+            movefile(filename, cur_filename)
 
         fh = FileHandler(filename)
         verbose = getattr(logging, verbose.upper())

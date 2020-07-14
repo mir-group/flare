@@ -1040,6 +1040,10 @@ class GaussianProcess:
             dictionary['training_labels'] = []
             dictionary['training_labels_np'] = np.empty(0,)
 
+        if ('all_labels' not in dictionary):
+            dictionary['all_labels'] = np.hstack((dictionary['training_labels_np'],
+                                                          dictionary['energy_labels_np']))
+
         if ('energy_noise' not in dictionary):
             dictionary['energy_noise'] = 0.01
 

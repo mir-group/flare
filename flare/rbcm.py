@@ -766,7 +766,11 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
             norm = np.sqrt(kmat[i, i])
             kmat[i, :] /= norm
             kmat[:, i] /= norm
+        kmat = np.max(kmat) - kmat
+        print(np.min(kmat), np.max(kmat))
+
         plot_mat(kmat, f"{figure_name}_unsorted_dmat.png")
+        # np.save(f"{figure_name}_unsorted_dmat.npy", kmat)
 
         iu1 = np.triu_indices(kmat.shape[0], 1)
         upper_triang = kmat[iu1]
@@ -784,6 +788,7 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
 
         plot_mat(sort_matrix(kmat, new_indices),
                  f"{figure_name}_sorted_dmat.png")
+        # np.save(f"{figure_name}_sorted_dmat.npy", kmat)
 
         for i in new_indices:
             self.add_one_env(
@@ -811,6 +816,13 @@ class RobustBayesianCommitteeMachine(GaussianProcess):
         kmat = kernel_distance_mat(self.hyps, self.name+"_join",
                                    self.energy_kernel, self.cutoffs,
                                    self.hyps_mask, self.n_cpus, self.n_sample)
+        for i in range(kmat.shape[0]):
+            norm = np.sqrt(kmat[i, i])
+            kmat[i, :] /= norm
+            kmat[:, i] /= norm
+        print(np.min(kmat), np.max(kmat))
+        kmat = np.max(kmat) - kmat
+
         del _global_training_data[f"{self.name}_join"]
         del _global_training_structures[f"{self.name}_join"]
         del joint_data
