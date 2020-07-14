@@ -152,7 +152,7 @@ class Parameters():
 
         assert isinstance(param_dict, dict)
         assert isinstance(cutoffs, dict)
-        assert isinstance(kernels, (list))
+        assert isinstance(kernels, list)
 
         param_dict['cutoffs'] = cutoffs
 
@@ -179,7 +179,7 @@ class Parameters():
                 assert n > 0, f"{kernel} has 0 hyperparameters defined"
 
                 # check all corresponding keys exist
-                assert kernel in cutoffs
+                assert kernel in cutoffs.keys()
                 assert kernel+"_start" in param_dict
 
                 # check the partition of hyperparameters are not used
