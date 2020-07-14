@@ -166,7 +166,6 @@ class GaussianProcess:
 
         # File used for reading / writing model if model is large
         self.ky_mat_file = None
-
         self.check_instantiation()
 
     def check_instantiation(self):
