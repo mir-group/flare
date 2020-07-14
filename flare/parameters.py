@@ -176,7 +176,7 @@ class Parameters():
 
             if kernel not in list(Parameters.cutoff_types.keys()):
                 hyps_length += Parameters.n_kernel_parameters[kernel]*n
-                assert n > 0, f"{kernel} has n 0"
+                assert n > 0, f"{kernel} has 0 hyperparameters defined"
 
                 # check all corresponding keys exist
                 assert kernel in cutoffs
