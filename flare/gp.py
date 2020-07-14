@@ -36,7 +36,8 @@ class GaussianProcess:
 
     Args:
         kernels (list, optional): Determine the type of kernels. Example:
-            ['2', '3'], ['2', '3', 'mb'], ['2']. Defaults to ['2', '3']
+            ['twbody', 'threebody'], ['2', '3', 'mb'], ['2']. Defaults to [
+            'twboody', 'threebody']
         component (str, optional): Determine single- ("sc") or multi-
             component ("mc") kernel to use. Defaults to "mc"
         hyps (np.ndarray, optional): Hyperparameters of the GP.
@@ -60,10 +61,10 @@ class GaussianProcess:
         name (str, optional): Name for the GP instance.
     """
 
-    def __init__(self, kernels: List[str] = ['two', 'three'],
+    def __init__(self, kernels: List[str] = None,
                  component: str = 'mc',
-                 hyps: 'ndarray' = None, cutoffs={},
-                 hyps_mask: dict = {},
+                 hyps: 'ndarray' = None, cutoffs: dict=None,
+                 hyps_mask: dict = None,
                  hyp_labels: List = None, opt_algorithm: str = 'L-BFGS-B',
                  maxiter: int = 10, parallel: bool = False,
                  per_atom_par: bool = True, n_cpus: int = 1,
@@ -87,10 +88,11 @@ class GaussianProcess:
         self.parallel = parallel
 
         self.component = component
-        self.kernels = kernels
-        self.cutoffs = cutoffs
+        self.kernels = ['twobody', 'threebody'] if kernels is None else \
+            kernel_str_to_array(''.join(kernels))
+        self.cutoffs = {} if cutoffs is None else cutoffs
         self.hyp_labels = hyp_labels
-        self.hyps_mask = hyps_mask
+        self.hyps_mask = {} if hyps_mask is None else hyps_mask
         self.hyps = hyps
 
         GaussianProcess.backward_arguments(kwargs, self.__dict__)
@@ -107,7 +109,7 @@ class GaussianProcess:
 
         if self.hyps is None:
             # If no hyperparameters are passed in, assume 2 hyps for each
-            # cutoff, plus one noise hyperparameter, and use a guess value
+            # kernel, plus one noise hyperparameter, and use a guess value
             self.hyps = np.array([0.1]*(1+2*len(self.kernels)))
         else:
             self.hyps = np.array(self.hyps, dtype=np.float64)
@@ -159,16 +161,6 @@ class GaussianProcess:
         # File used for reading / writing model if model is large
         self.ky_mat_file = None
 
-        self.check_instantiation()
-
-    def check_instantiation(self):
-        """
-        Runs a series of checks to ensure that the user has not supplied
-        contradictory arguments which will result in undefined behavior
-        with multiple hyperparameters.
-        :return:
-        """
-
         if self.logger_name is None:
             if self.output is None:
                 self.logger_name = self.name+"GaussianProcess"
@@ -178,6 +170,31 @@ class GaussianProcess:
                 self.logger_name = self.output.basename+'log'
         logger = logging.getLogger(self.logger_name)
 
+        if self.cutoffs == {}:
+            # If no cutoffs are passed in, assume 7 A for 2 body, 3.5 for
+            # 3-body.
+            cutoffs = {}
+            if 'twobody' in self.kernels:
+                cutoffs['twobody'] = 7
+            if 'threebody' in self.kernels:
+                cutoffs['threebody'] = 3.5
+
+            self.cutoffs = cutoffs
+            logger.warning("Warning: No cutoffs were set for your GP."
+                           "Default values have been assigned but you "
+                           "should think carefully about which are "
+                           "appropriate for your use case.")
+
+        self.check_instantiation()
+
+    def check_instantiation(self):
+        """
+        Runs a series of checks to ensure that the user has not supplied
+        contradictory arguments which will result in undefined behavior
+        with multiple hyperparameters.
+        :return:
+        """
+        logger = logging.getLogger(self.logger_name)
 
         # check whether it's be loaded before
         loaded = False
@@ -192,14 +209,14 @@ class GaussianProcess:
 
             base = f'{self.name}'
             count = 2
-            while (self.name in _global_training_labels and count < 100):
+            while self.name in _global_training_labels and count < 100:
                 time.sleep(random())
                 self.name = f'{base}_{count}'
                 logger.debug("Specified GP name is present in global memory; "
                        "Attempting to rename the "
                             f"GP instance to {self.name}")
                 count += 1
-            if (self.name in _global_training_labels):
+            if self.name in _global_training_labels:
                 milliseconds = int(round(time.time() * 1000) % 10000000)
                 self.name = f"{base}_{milliseconds}"
                 logger.debug("Specified GP name still present in global memory: "
@@ -209,7 +226,8 @@ class GaussianProcess:
         self.sync_data()
 
         self.hyps_mask = Parameters.check_instantiation(
-            self.hyps, self.cutoffs, self.kernels, self.hyps_mask)
+            hyps=self.hyps, cutoffs=self.cutoffs, kernels=self.kernels,
+            param_dict=self.hyps_mask)
 
         self.bounds = deepcopy(self.hyps_mask.get('bounds', None))
 
