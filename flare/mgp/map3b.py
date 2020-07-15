@@ -180,6 +180,7 @@ def bonds_cutoff(triplets, r_cut, coords, derivative, cutoff_func):
     return fj, dfj_list
 
 
+# TODO: move this func to Parameters class
 def get_hyps_for_kern(hyps, cutoffs, hyps_mask, c2, etypes2):
     """
     Args:
