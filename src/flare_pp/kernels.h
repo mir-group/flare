@@ -34,6 +34,9 @@ public:
   virtual Eigen::VectorXd env_struc(const LocalEnvironment &env1,
                                     const StructureDescriptor &struc1) = 0;
 
+  virtual Eigen::VectorXd
+    self_kernel_struc(const StructureDescriptor &struc) = 0;
+
   virtual ~Kernel() = default;
 };
 
