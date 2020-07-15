@@ -18,7 +18,7 @@ from_grad_to_mask(grad, hyps_mask) converts the gradient matrix to the actual
 
 
 def str_to_kernel_set(kernels: list = ['twobody', 'threebody'],
-                      component: str = "sc",
+                      component: str = "mc",
                       hyps_mask: dict = None):
     """
     return kernels and kernel gradient function base on a string.

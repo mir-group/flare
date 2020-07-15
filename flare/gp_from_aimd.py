@@ -54,6 +54,7 @@ from flare.utils.element_coder import element_to_Z, Z_to_element, NumpyEncoder
 from flare.utils.learner import subset_of_frame_by_element, \
     is_std_in_bound_per_species, is_force_in_bound_per_species
 from flare.mgp import MappedGaussianProcess
+from flare.parameters import Parameters
 
 
 class TrajectoryTrainer:
@@ -70,6 +71,7 @@ class TrajectoryTrainer:
                  validate_ratio: float = 0.0,
                  calculate_energy: bool = False,
                  output_name: str = 'gp_from_aimd',
+                 print_as_xyz: bool = False,
                  pre_train_max_iter: int = 50,
                  max_atoms_from_frame: int = np.inf,
                  max_trains: int = np.inf,
@@ -106,6 +108,7 @@ class TrajectoryTrainer:
         :param skip: Skip through frames
         :param calculate_energy: Use local energy kernel or not
         :param output_name: Write output of training to this file
+        :param print_as_xyz: If True, print the configurations in xyz format
         :param max_atoms_from_frame: Largest # of atoms added from one frame
         :param min_atoms_per_train: Only train when this many atoms have been
             added
@@ -207,7 +210,8 @@ class TrajectoryTrainer:
                     self.pre_train_env_per_species[key]
 
         # Output parameters
-        self.output = Output(output_name, verbose, always_flush=True)
+        self.output = Output(output_name, verbose,
+                             print_as_xyz=print_as_xyz, always_flush=True)
         self.logger_name = self.output.basename+'log'
         self.train_checkpoint_interval = train_checkpoint_interval or \
             checkpoint_interval
@@ -219,7 +223,7 @@ class TrajectoryTrainer:
         # Defining variables to be used later
         self.curr_step = 0
         self.train_count = 0
-        self.start_time = None
+        self.start_time = time.time()
 
     def pre_run(self):
         """
@@ -309,11 +313,15 @@ class TrajectoryTrainer:
                 (self.pre_train_max_iter or self.max_trains):
             logger.debug("Now commencing pre-run training of GP (which has "
                          "non-empty training set)")
+            time0 = time.time()
             self.train_gp(max_iter=self.pre_train_max_iter)
+            logger.debug(f"Done train_gp {time.time()-time0}")
         else:
             logger.debug("Now commencing pre-run set up of GP (which has "
                          "non-empty training set)")
+            time0 = time.time()
             self.gp.check_L_alpha()
+            logger.debug(f"Done check_L_alpha {time.time()-time0}")
 
         if self.model_format and not self.mgp:
             self.gp.write_model(f'{self.output_name}_prerun',
@@ -347,6 +355,7 @@ class TrajectoryTrainer:
 
         for i, cur_frame in enumerate(self.frames[::self.skip]):
 
+            frame_start_time = time.time()
             logger.info(f"=====NOW ON FRAME {i}=====")
 
             # If no predict_atoms_per_element was specified, predict_atoms
@@ -360,9 +369,9 @@ class TrajectoryTrainer:
             # Three different predictions: Either MGP, GP with energy,
             # or GP without
             if self.mgp:
-                pred_forces, pred_stds = self.pred_func(
+                pred_forces, pred_stds, local_energies = self.pred_func(
                     structure=cur_frame, mgp=self.gp, write_to_structure=False,
-                    selective_atoms=predict_atoms, skipped_atom_value=np.nan)
+                    selective_atoms=predict_atoms, skipped_atom_value=np.nan, energy=True)
             elif self.calculate_energy:
                 pred_forces, pred_stds, local_energies = self.pred_func(
                     structure=cur_frame, gp=self.gp, n_cpus=self.n_cpus,
@@ -376,6 +385,7 @@ class TrajectoryTrainer:
 
             # Get Error
             dft_forces = cur_frame.forces
+            dft_energy = cur_frame.energy
             error = np.abs(pred_forces - dft_forces)
 
             # Create dummy frame with the predicted forces written
@@ -385,15 +395,19 @@ class TrajectoryTrainer:
 
             self.output.write_gp_dft_comparison(
                 curr_step=i, frame=dummy_frame, start_time=time.time(),
-                dft_forces=dft_forces, error=error,
-                local_energies=local_energies)
+                dft_forces=dft_forces, dft_energy=dft_energy, error=error,
+                local_energies=local_energies, KE=0)
+
+            logger.debug(
+                f'Single frame calculation time {time.time()-frame_start_time}')
 
             if i < train_frame:
                 # Noise hyperparameter & relative std tolerance is not for mgp.
                 if self.mgp:
                     noise = 0
                 else:
-                    noise = self.gp.hyps[-1]
+                    noise = Parameters.get_noise(
+                        self.gp.hyps_mask, self.gp.hyps, constraint=False)
                 std_in_bound, std_train_atoms = is_std_in_bound_per_species(
                     rel_std_tolerance=self.rel_std_tolerance,
                     abs_std_tolerance=self.abs_std_tolerance,
@@ -447,14 +461,14 @@ class TrajectoryTrainer:
                     if self.train_checkpoint_interval and \
                             cur_trains_done_write and \
                             self.train_checkpoint_interval \
-                    <= cur_trains_done_write:
+                        <= cur_trains_done_write:
                         will_write = True
                         cur_trains_done_write = 0
 
                     if self.atom_checkpoint_interval \
                             and cur_atoms_added_write \
                             and self.atom_checkpoint_interval \
-                    <= cur_atoms_added_write:
+                        <= cur_atoms_added_write:
                         will_write = True
                         cur_atoms_added_write = 0
 
@@ -527,7 +541,7 @@ class TrajectoryTrainer:
         logger = logging.getLogger(self.logger_name)
         logger.debug('Train GP')
 
-        logger_train = logging.getLogger(self.output.basename+'hyps')
+        logger_train = self.output.basename+'hyps'
 
         # TODO: Improve flexibility in GP training to make this next step
         # unnecessary, so maxiter can be passed as an argument
@@ -538,12 +552,16 @@ class TrajectoryTrainer:
         elif max_iter is not None:
             temp_maxiter = self.gp.maxiter
             self.gp.maxiter = max_iter
-            self.gp.train(logger=logger_train)
+            self.gp.train(logger_name=logger_train)
             self.gp.maxiter = temp_maxiter
         else:
-            self.gp.train(logger=logger_train)
+            self.gp.train(logger_name=logger_train)
 
-        self.output.write_hyps(self.gp.hyp_labels, self.gp.hyps,
+        hyps, labels = Parameters.get_hyps(self.gp.hyps_mask, self.gp.hyps, constraint=False,
+                        label=True)
+        if labels is None:
+            labels = self.gp.hyp_labels
+        self.output.write_hyps(labels, hyps,
                                self.start_time,
                                self.gp.likelihood,
                                self.gp.likelihood_gradient,

@@ -91,6 +91,7 @@ def test_load_one_frame_and_run():
 
     tt = TrajectoryTrainer(frames,
                            gp=the_gp, shuffle_frames=True,
+                           print_as_xyz=True,
                            rel_std_tolerance=0,
                            abs_std_tolerance=0,
                            skip=15)
@@ -177,6 +178,7 @@ def test_pred_on_elements():
                            pre_train_seed_frames=[frames[-1]],
                            max_atoms_from_frame=4,
                            output_name='meth_test',
+                           print_as_xyz=True,
                            model_format='json',
                            atom_checkpoint_interval=50,
                            pre_train_atoms_per_element={'H': 1},

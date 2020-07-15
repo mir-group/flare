@@ -97,6 +97,32 @@ def validation_env() -> AtomicEnvironment:
 #                   test GP methods
 # ------------------------------------------------------
 
+
+class TestInitialization():
+
+    def test_simple_initialization(self):
+        GaussianProcess()
+
+    def test_permuted_initalization(self):
+        """
+        Run through some common permutations of input sequences
+        to ensure that the GP correctly initializes.
+        """
+        for kernel_list in [['2'], ['3'], ['2', '3']]:
+            GaussianProcess(kernels=kernel_list)
+        with raises(ValueError):
+            GaussianProcess(kernels=['2', '3', 'mb'])
+        full_kernel_list = ['2', '3']
+        for component in ['sc', 'mc']:
+            GaussianProcess(kernels=full_kernel_list,
+                            component=component)
+        for parallel in [True, False]:
+            GaussianProcess(parallel=parallel)
+        for per_atom_par in [True, False]:
+            GaussianProcess(per_atom_par=per_atom_par)
+
+
+
 class TestDataUpdating():
 
     @pytest.mark.parametrize('multihyps', multihyps_list)
@@ -192,8 +218,7 @@ class TestConstraint():
 
         test_gp.hyps_mask = hm
         test_gp.hyp_labels = hm['hyp_labels']
-        test_gp.hyps = hyps
-        test_gp.update_kernel(hm['kernel_name'], "mc", hm)
+        test_gp.update_kernel(hm['kernel_name'], "mc", hyps, cutoffs, hm)
         test_gp.set_L_alpha()
 
         hyp = list(test_gp.hyps)
@@ -268,7 +293,7 @@ class TestAlgebra():
 
         test_structure, forces = \
             get_random_structure(params['cell'], params['unique_species'], 2)
-        energy = 3.14                 
+        energy = 3.14
         test_gp.check_L_alpha()
         test_gp.update_db(test_structure, forces, energy=energy)
         test_gp.update_L_alpha()

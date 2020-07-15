@@ -152,7 +152,7 @@ class Parameters():
 
         assert isinstance(param_dict, dict)
         assert isinstance(cutoffs, dict)
-        assert isinstance(kernels, (list))
+        assert isinstance(kernels, list)
 
         param_dict['cutoffs'] = cutoffs
 
@@ -176,10 +176,10 @@ class Parameters():
 
             if kernel not in list(Parameters.cutoff_types.keys()):
                 hyps_length += Parameters.n_kernel_parameters[kernel]*n
-                assert n > 0, f"{kernel} has n 0"
+                assert n > 0, f"{kernel} has 0 hyperparameters defined"
 
                 # check all corresponding keys exist
-                assert kernel in cutoffs
+                assert kernel in cutoffs.keys()
                 assert kernel+"_start" in param_dict
 
                 # check the partition of hyperparameters are not used
@@ -230,8 +230,10 @@ class Parameters():
                             f'number of cutoffs should be the same as n {n}'
                         assert npmax(cutoff_list) <= cutoffs[kernel]
             else:
-                assert f'{kernel}_mask' not in param_dict
-                assert f'{kernel}_cutof_list' not in param_dict
+                assert f'{kernel}_mask' not in param_dict,\
+                        f'{kernel}_mask should not be in param_dict'
+                assert f'{kernel}_cutoff_list' not in param_dict, \
+                        f'{kernel}_cutoff_list should not be in param_dict'
 
         if 'map' in param_dict:
 
@@ -421,7 +423,7 @@ class Parameters():
                 return [universal_cutoff]*3
 
     @staticmethod
-    def get_hyps(param_dict, hyps=None, constraint=False):
+    def get_hyps(param_dict, hyps=None, constraint=False, label=False):
         '''
         get the cutoff
 
@@ -437,19 +439,27 @@ class Parameters():
             hyps = param_dict['hyps']
 
         if 'map' in param_dict:
+            label_key = 'original_labels'
             newhyps = np.copy(param_dict['original_hyps'])
             opt = np.zeros_like(newhyps, dtype=bool)
             for i, ori in enumerate(param_dict['map']):
                 newhyps[ori] = hyps[i]
                 opt[ori] = True
         else:
+            label_key = 'hyp_labels'
             newhyps = np.copy(hyps)
             opt = np.zeros_like(hyps, dtype=bool)
 
         if constraint:
-            return newhyps, opt
+            if label:
+                return newhyps, opt, param_dict.get(label_key, None)
+            else:
+                return newhyps, opt
         else:
-            return newhyps
+            if label:
+                return newhyps, param_dict.get(label_key, None)
+            else:
+                return newhyps
 
     @staticmethod
     def compare_dict(dict1, dict2):

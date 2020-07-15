@@ -51,7 +51,8 @@ class Structure:
     def __init__(self, cell: 'ndarray', species: Union[List[str], List[int]],
                  positions: 'ndarray', mass_dict: dict = None,
                  prev_positions: 'ndarray' = None,
-                 species_labels: List[str] = None, forces=None, stds=None):
+                 species_labels: List[str] = None,
+                 forces=None, stds=None, energy: float=None):
 
         # Define cell (each row is a Bravais lattice vector).
         self.cell = np.array(cell)
@@ -90,6 +91,8 @@ class Structure:
         else:
             self.stds = np.zeros((len(positions), 3))
 
+        self.energy = energy
+
         self.local_energies = None
         self.local_energy_stds = None
         self.partial_stresses = None
@@ -112,7 +115,7 @@ class Structure:
     @property
     def positions(self):
         return self._positions
-    
+
     @property
     def wrapped_positions(self):
         return self._wrapped_positions
@@ -309,7 +312,8 @@ class Structure:
                           species=dictionary['coded_species'],
                           forces=np.array(dictionary.get('forces')),
                           mass_dict=dictionary.get('mass_dict'),
-                          species_labels=dictionary.get('species_labels'))
+                          species_labels=dictionary.get('species_labels'),
+                          energy=dictionary.get('energy', None))
 
         struc.stds = np.array(dictionary.get('stds'))
 
@@ -390,9 +394,23 @@ class Structure:
 
         return new_struc
 
+    def is_valid(self, tolerance: float = .4)->bool:
+        """
+        Plugin to pymatgen's is_valid method to gauge if a structure
+        has atoms packed too closely together, which is likely
+        to cause unphysically large forces / energies or present convergence
+        issues in DFT.
+        :return:
+        """
+        pmg_structure = self.to_pmg_structure()
+        return pmg_structure.is_valid(tol=tolerance)
+
+
     def to_xyz(self, extended_xyz: bool = True, print_stds: bool = False,
                print_forces: bool = False, print_max_stds: bool = False,
-               write_file: str = '') -> str:
+               print_energies: bool = False, predict_energy = None,
+               dft_forces = None, dft_energy = None, timestep=-1,
+               write_file: str = '', append: bool = False) -> str:
         """
         Convenience function which turns a structure into an extended .xyz
         file; useful for further input into visualization programs like VESTA
@@ -417,6 +435,12 @@ class Structure:
             xyz_str += f'Lattice="{cell[0,0]} {cell[0,1]} {cell[0,2]}'
             xyz_str += f' {cell[1,0]} {cell[1,1]} {cell[1,2]}'
             xyz_str += f' {cell[2,0]} {cell[2,1]} {cell[2,2]}"'
+            if timestep > 0:
+                xyz_str += f' Timestep={timestep}'
+            if predict_energy:
+                xyz_str += f' PE={predict_energy}'
+            if dft_energy is not None:
+                xyz_str += f' DFT_PE={dft_energy}'
             xyz_str += f' Proprties="species:S:1:pos:R:3'
 
             if print_stds:
@@ -428,6 +452,14 @@ class Structure:
             if print_max_stds:
                 xyz_str += ':max_std:R:1'
                 stds = self.stds
+            if print_energies:
+                if self.local_energies is None:
+                    print_energies = False
+                else:
+                    xyz_str += ':local_energy:R:1'
+                    local_energies = self.local_energies
+            if dft_forces is not None:
+                xyz_str += ':dft_forces:R:3'
             xyz_str += '\n'
         else:
             xyz_str += '\n'
@@ -441,14 +473,25 @@ class Structure:
                 xyz_str += f" {stds[i,0]} {stds[i,1]} {stds[i,2]}"
             if print_forces and extended_xyz:
                 xyz_str += f" {forces[i,0]} {forces[i,1]} {forces[i,2]}"
+            if print_energies and extended_xyz:
+                xyz_str += f" {local_energies[i]}"
             if print_max_stds and extended_xyz:
                 xyz_str += f" {np.max(stds[i,:])} "
-            xyz_str += '\n'
+            if dft_forces is not None:
+                xyz_str += f' {dft_forces[i, 0]} {dft_forces[i,1]} ' \
+                          f'{dft_forces[i, 2]}'
+            if i < (len(self.positions)-1):
+                xyz_str += '\n'
 
         # Write to file, optionally
         if write_file:
-            with open(write_file, 'w') as f:
+            if append:
+                fmt = 'a'
+            else:
+                fmt = 'w'
+            with open(write_file, fmt) as f:
                 f.write(xyz_str)
+                f.write("\n")
 
         return xyz_str
 

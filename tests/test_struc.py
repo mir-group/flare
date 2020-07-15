@@ -202,7 +202,7 @@ def test_to_xyz(varied_test_struc):
 
     simple_str_by_line = simple_str.split('\n')
 
-    assert len(simple_str_by_line)-3 == len(varied_test_struc)
+    assert len(simple_str_by_line)-2 == len(varied_test_struc)
 
     for i, atom_line in enumerate(simple_str_by_line[2:-1]):
         split_line = atom_line.split()
@@ -215,7 +215,7 @@ def test_to_xyz(varied_test_struc):
     complex_str = varied_test_struc.to_xyz(True,True,True,True)
     complex_str_by_line = complex_str.split('\n')
 
-    assert len(complex_str_by_line)-3 == len(varied_test_struc)
+    assert len(complex_str_by_line)-2 == len(varied_test_struc)
 
     for i, atom_line in enumerate(complex_str_by_line[2:-1]):
         split_line = atom_line.split()
@@ -267,3 +267,19 @@ def test_file_load():
     vasp_struct = Structure.from_file('./test_files/test_POSCAR')
     assert isinstance(vasp_struct, Structure)
     assert len(vasp_struct) == 6
+
+def test_is_valid():
+    """
+    Try a trivial case of 1-len structure and then one above and below
+    tolerance
+    :return:
+    """
+    test_struc = Structure(cell=np.eye(3), species=['H'],
+                           positions=np.array([[0, 0, 0]]))
+
+    assert test_struc.is_valid()
+
+    test_struc = Structure(cell=np.eye(3), species=['H', 'H'],
+                           positions=[[0, 0, 0], [.3, 0, 0]])
+    assert not test_struc.is_valid()
+    assert test_struc.is_valid(tolerance=.25)
