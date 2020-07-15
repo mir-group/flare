@@ -394,6 +394,18 @@ class Structure:
 
         return new_struc
 
+    def is_valid(self, tolerance: float = .4)->bool:
+        """
+        Plugin to pymatgen's is_valid method to gauge if a structure
+        has atoms packed too closely together, which is likely
+        to cause unphysically large forces / energies or present convergence
+        issues in DFT.
+        :return:
+        """
+        pmg_structure = self.to_pmg_structure()
+        return pmg_structure.is_valid(tol=tolerance)
+
+
     def to_xyz(self, extended_xyz: bool = True, print_stds: bool = False,
                print_forces: bool = False, print_max_stds: bool = False,
                print_energies: bool = False, predict_energy = None,

@@ -267,3 +267,19 @@ def test_file_load():
     vasp_struct = Structure.from_file('./test_files/test_POSCAR')
     assert isinstance(vasp_struct, Structure)
     assert len(vasp_struct) == 6
+
+def test_is_valid():
+    """
+    Try a trivial case of 1-len structure and then one above and below
+    tolerance
+    :return:
+    """
+    test_struc = Structure(cell=np.eye(3), species=['H'],
+                           positions=np.array([[0, 0, 0]]))
+
+    assert test_struc.is_valid()
+
+    test_struc = Structure(cell=np.eye(3), species=['H', 'H'],
+                           positions=[[0, 0, 0], [.3, 0, 0]])
+    assert not test_struc.is_valid()
+    assert test_struc.is_valid(tolerance=.25)
