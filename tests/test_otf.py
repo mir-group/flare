@@ -5,12 +5,14 @@ import glob, os, re, shutil
 import numpy as np
 
 from flare.otf import OTF
+from flare.otf_parser import OtfAnalysis
 from flare.gp import GaussianProcess
 from flare.struc import Structure
 
 
 cmd = {'cp2k':'CP2K_COMMAND', 'qe':'PWSCF_COMMAND'}
-software_list = ['cp2k', 'qe']
+#software_list = ['cp2k', 'qe']
+software_list = ['qe']
 example_list = [1, 2]
 name_list = {1:'h2', 2:'al'}
 
@@ -59,6 +61,9 @@ def test_otf(software, example):
     Test that an otf run can survive going for more steps
     :return:
     """
+
+    #TODO: remove skip
+    pytest.skip()
 
     print('running test_otf.py')
     print('current working directory:')
@@ -141,7 +146,7 @@ def test_otf_par(software, per_atom_par, n_cpus):
     shutil.copy(f'./test_files/{software}_input_{example}.in', dft_input)
 
     dt = 0.0001
-    number_of_steps = 5
+    number_of_steps = 3
     dft_loc = os.environ.get(cmd[software])
     std_tolerance_factor = -0.1
 
@@ -161,6 +166,17 @@ def test_otf_par(software, per_atom_par, n_cpus):
               store_dft_output=([dft_output, dft_input], '.'))
 
     otf.run()
+
+
+
+@pytest.mark.parametrize('software', software_list)
+@pytest.mark.parametrize('per_atom_par', [True, False])
+def test_otf_parser(software, per_atom_par):
+    
+    example = 1
+    casename = name_list[example]
+    output_name = f'{casename}_otf_{software}.out'
+    otf_traj = OtfAnalysis(output_name)
 
     if not os.path.isdir(outdir):
          os.mkdir(outdir)
