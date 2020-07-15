@@ -119,12 +119,12 @@ class OtfAnalysis:
         n_steps = 0
 
         for index, line in enumerate(lines):
-            if line.startswith("number of atoms"):
+            if line.startswith("Number of atoms"):
                 at_line = line.split()
                 noa = int(at_line[3])
 
             # number of hyperparameters
-            if line.startswith("number of hyperparameters"):
+            if line.startswith("Number of hyperparameters"):
                 line_curr = line.split(':')
                 noh = int(line_curr[-1])
 
