@@ -241,7 +241,7 @@ def test_predict(all_gp, all_mgp, bodies, multihyps):
     print('gp_pred', gp_pred[0])
 
     print("isclose?", mgp_pred[0]-gp_pred[0], gp_pred[0])
-    assert(np.allclose(mgp_pred[0], gp_pred[0], rtol=1e-2)), \
+    assert(np.allclose(mgp_pred[0], gp_pred[0], atol=1e-3)), \
             f"{bodies} body {map_str} mapping is wrong"
 
 
