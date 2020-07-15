@@ -67,11 +67,7 @@ class GaussianProcess:
 
     def __init__(self, kernels: List[str] = None,
                  component: str = 'mc',
-<<<<<<< HEAD
-                 hyps: 'ndarray' = None, cutoffs: dict=None,
-=======
                  hyps: 'ndarray' = None, cutoffs: dict = None,
->>>>>>> fd9e290fcbcd37d32e0565d30c1010e98c15ec85
                  hyps_mask: dict = None,
                  hyp_labels: List = None, opt_algorithm: str = 'L-BFGS-B',
                  maxiter: int = 10, parallel: bool = False,
