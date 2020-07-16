@@ -16,23 +16,11 @@ from flare.lammps import lammps_calculator
 from flare.utils.element_coder import _Z_to_mass, _Z_to_element
 
 from .fake_gp import get_gp, get_random_structure
+from .mgp_test import clean, compare_triplet, predict_atom_diag_var
 
 body_list = ['2', '3']
 multi_list = [False, True]
-map_force_list = [False, True]
 force_block_only = False
-
-def clean():
-    for f in os.listdir("./"):
-        if re.search("mgp_grids", f):
-            shutil.rmtree(f)
-        if re.search("kv3", f):
-            os.rmdir(f)
-        if 'tmp' in f:
-            if os.path.isdir(f):
-                shutil.rmtree(f)
-            else:
-                os.remove(f)
 
 
 @pytest.mark.skipif(not os.environ.get('lmp',
@@ -44,11 +32,11 @@ def clean():
 def all_gp():
 
     allgp_dict = {}
-    np.random.seed(0)
+    np.random.seed(123)
     for bodies in body_list:
         for multihyps in multi_list:
             gp_model = get_gp(bodies, 'mc', multihyps, cellabc=[1.5, 1, 2],
-                              force_only=force_block_only, noa=5) #int(bodies)**2)
+                              force_only=force_block_only, noa=5)
             gp_model.parallel = True
             gp_model.n_cpus = 2
 
@@ -70,89 +58,94 @@ def all_mgp():
 
 @pytest.mark.parametrize('bodies', body_list)
 @pytest.mark.parametrize('multihyps', multi_list)
-@pytest.mark.parametrize('map_force', map_force_list)
-def test_init(bodies, multihyps, map_force, all_mgp, all_gp):
+def test_init(bodies, multihyps, all_mgp, all_gp):
     """
     test the init function
     """
+
+    clean()
 
     gp_model = all_gp[f'{bodies}{multihyps}']
 
     # grid parameters
     grid_params = {}
     if ('2' in bodies):
-        grid_params['twobody'] = {'grid_num': [64], 'lower_bound': [0.05]}
+        grid_params['twobody'] = {'grid_num': [128], 'lower_bound': [0.01]}
     if ('3' in bodies):
-        grid_params['threebody'] = {'grid_num': [24, 25, 26], 'lower_bound':[0.05]*3}
+        grid_params['threebody'] = {'grid_num': [31, 32, 33], 'lower_bound':[0.02]*3}
 
-    lammps_location = f'{bodies}{multihyps}{map_force}.mgp'
+    lammps_location = f'{bodies}{multihyps}'
     data = gp_model.training_statistics
 
-    mgp_model = MappedGaussianProcess(grid_params=grid_params, unique_species=data['species'], n_cpus=1,
-                map_force=map_force, lmp_file_name=lammps_location)#, mean_only=False)
-    all_mgp[f'{bodies}{multihyps}{map_force}'] = mgp_model
+    try:       
+        mgp_model = MappedGaussianProcess(grid_params=grid_params, 
+            unique_species=data['species'], n_cpus=1, 
+            lmp_file_name=lammps_location, var_map='simple')
+    except:
+        mgp_model = MappedGaussianProcess(grid_params=grid_params, 
+            unique_species=data['species'], n_cpus=1, 
+            lmp_file_name=lammps_location, var_map=None)
+       
+    all_mgp[f'{bodies}{multihyps}'] = mgp_model
 
 
 
 @pytest.mark.parametrize('bodies', body_list)
 @pytest.mark.parametrize('multihyps', multi_list)
-@pytest.mark.parametrize('map_force', map_force_list)
-def test_build_map(all_gp, all_mgp, bodies, multihyps, map_force):
+def test_build_map(all_gp, all_mgp, bodies, multihyps):
     """
     test the mapping for mc_simple kernel
     """
     gp_model = all_gp[f'{bodies}{multihyps}']
-    mgp_model = all_mgp[f'{bodies}{multihyps}{map_force}']
+    mgp_model = all_mgp[f'{bodies}{multihyps}']
     mgp_model.build_map(gp_model)
-#    with open(f'grid_{bodies}_{multihyps}_{map_force}.pickle', 'wb') as f:
+#    with open(f'grid_{bodies}_{multihyps}.pickle', 'wb') as f:
 #        pickle.dump(mgp_model, f)
 
 
 @pytest.mark.parametrize('bodies', body_list)
 @pytest.mark.parametrize('multihyps', multi_list)
-@pytest.mark.parametrize('map_force', map_force_list)
-def test_write_model(all_mgp, bodies, multihyps, map_force):
+def test_write_model(all_mgp, bodies, multihyps):
     """
     test the mapping for mc_simple kernel
     """
-    mgp_model = all_mgp[f'{bodies}{multihyps}{map_force}']
-    mgp_model.mean_only = True
-    mgp_model.write_model(f'my_mgp_{bodies}_{multihyps}_{map_force}')
+    mgp_model = all_mgp[f'{bodies}{multihyps}']
+    mgp_model.write_model(f'my_mgp_{bodies}_{multihyps}')
 
-    mgp_model.write_model(f'my_mgp_{bodies}_{multihyps}_{map_force}', format='pickle')
+    mgp_model.write_model(f'my_mgp_{bodies}_{multihyps}', format='pickle')
 
     # Ensure that user is warned when a non-mean_only
     # model is serialized into a Dictionary
     with pytest.warns(Warning):
-        mgp_model.mean_only = False
+        mgp_model.var_map = 'pca'
         mgp_model.as_dict()
-        mgp_model.mean_only = True
+    
+    mgp_model.var_map = 'simple'
+    mgp_model.as_dict()
 
 
 @pytest.mark.parametrize('bodies', body_list)
 @pytest.mark.parametrize('multihyps', multi_list)
-@pytest.mark.parametrize('map_force', map_force_list)
-def test_load_model(all_mgp, bodies, multihyps, map_force):
+def test_load_model(all_mgp, bodies, multihyps):
     """
     test the mapping for mc_simple kernel
     """
-    name = f'my_mgp_{bodies}_{multihyps}_{map_force}.json'
+    name = f'my_mgp_{bodies}_{multihyps}.json'
     all_mgp[f'{bodies}{multihyps}'] = MappedGaussianProcess.from_file(name)
     os.remove(name)
 
-    name = f'my_mgp_{bodies}_{multihyps}_{map_force}.pickle'
+    name = f'my_mgp_{bodies}_{multihyps}.pickle'
     all_mgp[f'{bodies}{multihyps}'] = MappedGaussianProcess.from_file(name)
     os.remove(name)
 
 @pytest.mark.parametrize('bodies', body_list)
 @pytest.mark.parametrize('multihyps', multi_list)
-@pytest.mark.parametrize('map_force', map_force_list)
-def test_cubic_spline(all_gp, all_mgp, bodies, multihyps, map_force):
+def test_cubic_spline(all_gp, all_mgp, bodies, multihyps):
     """
     test the predict for mc_simple kernel
     """
 
-    mgp_model = all_mgp[f'{bodies}{multihyps}{map_force}']
+    mgp_model = all_mgp[f'{bodies}{multihyps}']
     delta = 1e-4
 
     if '3' in bodies:
@@ -197,82 +190,23 @@ def test_cubic_spline(all_gp, all_mgp, bodies, multihyps, map_force):
                 print("spline", num_derv, cderv)
                 assert np.isclose(num_derv, cderv, rtol=1e-2)
 
-def compare_triplet(mgp_model, gp_model, atom_env):
-    spcs, comp_r, comp_xyz = mgp_model.get_arrays(atom_env)
-    for i, spc in enumerate(spcs):
-        lengths = np.array(comp_r[i])
-        xyzs = np.array(comp_xyz[i])
-
-        print('compare triplet spc, lengths, xyz', spc)
-        print(np.hstack([lengths, xyzs]))
-
-        gp_f = []
-        gp_e = []
-        grid_env = get_grid_env(gp_model, spc, 3)
-        for l in range(lengths.shape[0]):
-            r1, r2, r12 = lengths[l, :]
-            grid_env = get_triplet_env(r1, r2, r12, grid_env)
-            gp_pred = np.array([gp_model.predict(grid_env, d+1) for d in range(3)]).T
-            gp_en, _ = gp_model.predict_local_energy_and_var(grid_env)
-            gp_f.append(gp_pred[0])
-            gp_e.append(gp_en)
-        gp_force = np.sum(gp_f, axis=0)
-        gp_energy = np.sum(gp_e, axis=0)
-        print('gp_e', gp_e)
-        print('gp_f')
-        print(gp_f)
-
-        map_ind = mgp_model.find_map_index(spc)
-        xyzs = np.zeros_like(xyzs)
-        xyzs[:, 0] = np.ones_like(xyzs[:, 0])
-        f, _, _, e = mgp_model.maps[map_ind].predict(lengths, xyzs,
-            mgp_model.map_force, mean_only=True)
-
-        assert np.allclose(gp_force, f, rtol=1e-2)
-        if not mgp_model.map_force:
-            assert np.allclose(gp_energy, e, rtol=1e-2)
-
-
-def get_triplet_env(r1, r2, r12, grid_env):
-    grid_env.bond_array_3 = np.array([[r1, 1, 0, 0], [r2, 0, 0, 0]])
-    grid_env.cross_bond_dists = np.array([[0, r12], [r12, 0]])
-    print(grid_env.ctype, grid_env.etypes)
-
-    return grid_env
-
-
-def get_grid_env(GP, species, bodies):
-    if isinstance(GP.cutoffs, dict):
-        max_cut = np.max(list(GP.cutoffs.values()))
-    else:
-        max_cut = np.max(GP.cutoffs)
-    big_cell = np.eye(3) * 100
-    positions = [[(i+1)/(bodies+1)*0.1, 0, 0]
-                 for i in range(bodies)]
-    grid_struc = struc.Structure(big_cell, species, positions)
-    grid_env = env.AtomicEnvironment(grid_struc, 0, GP.cutoffs,
-        cutoffs_mask=GP.hyps_mask)
-
-    return grid_env
-
 
 @pytest.mark.parametrize('bodies', body_list)
 @pytest.mark.parametrize('multihyps', multi_list)
-@pytest.mark.parametrize('map_force', map_force_list)
-def test_predict(all_gp, all_mgp, bodies, multihyps, map_force):
+def test_predict(all_gp, all_mgp, bodies, multihyps):
     """
     test the predict for mc_simple kernel
     """
 
     gp_model = all_gp[f'{bodies}{multihyps}']
-    mgp_model = all_mgp[f'{bodies}{multihyps}{map_force}']
+    mgp_model = all_mgp[f'{bodies}{multihyps}']
 
     # # debug
-    # filename = f'grid_{bodies}_{multihyps}_{map_force}.pickle'
+    # filename = f'grid_{bodies}_{multihyps}.pickle'
     # with open(filename, 'rb') as f:
     #     mgp_model = pickle.load(f)
 
-    nenv = 3
+    nenv = 8
     cell = 1.0 * np.eye(3)
     cutoffs = gp_model.cutoffs
     unique_species = gp_model.training_statistics['species']
@@ -283,25 +217,22 @@ def test_predict(all_gp, all_mgp, bodies, multihyps, map_force):
         kernel_name = 'twobody'
     elif '3' in bodies:
         kernel_name = 'threebody'
-        compare_triplet(mgp_model.maps['threebody'], gp_model, test_envi)
+        #compare_triplet(mgp_model.maps['threebody'], gp_model, test_envi)
 
     assert Parameters.compare_dict(gp_model.hyps_mask, mgp_model.maps[kernel_name].hyps_mask)
 
     gp_pred_en, gp_pred_envar = gp_model.predict_local_energy_and_var(test_envi)
     gp_pred = np.array([gp_model.predict(test_envi, d+1) for d in range(3)]).T
-    mgp_pred = mgp_model.predict(test_envi, mean_only=True)
+    print('mgp pred')
+    mgp_pred = mgp_model.predict(test_envi)
 
 
     # check mgp is within 2 meV/A of the gp
-    if map_force:
-        map_str = 'force'
-        gp_pred_var = gp_pred[1]
-    else:
-        map_str = 'energy'
-        gp_pred_var = gp_pred_envar
-    # TODO: energy block accuracy
-#        assert(np.abs(mgp_pred[3] - gp_pred_en) < 2e-3), \
-#                f"{bodies} body {map_str} mapping is wrong"
+    map_str = 'energy'
+    gp_pred_var = gp_pred_envar
+    print('mgp_en, gp_en', mgp_pred[3], gp_pred_en)
+    assert(np.allclose(mgp_pred[3], gp_pred_en, rtol=2e-3), \
+            f"{bodies} body {map_str} mapping is wrong")
 
 #    if multihyps and ('3' in bodies):
 #        pytest.skip()
@@ -310,14 +241,22 @@ def test_predict(all_gp, all_mgp, bodies, multihyps, map_force):
     print('gp_pred', gp_pred[0])
 
     print("isclose?", mgp_pred[0]-gp_pred[0], gp_pred[0])
-    assert(np.allclose(mgp_pred[0], gp_pred[0], atol=5e-3)), \
+    assert(np.allclose(mgp_pred[0], gp_pred[0], atol=1e-3)), \
             f"{bodies} body {map_str} mapping is wrong"
 
-    # TODO: energy block accuracy
-#    assert(np.abs(mgp_pred[1] - gp_pred_var) < 2e-3), \
-#            f"{bodies} body {map_str} mapping var is wrong"
 
-    clean()
+    if mgp_model.var_map == 'simple':
+        print(bodies, multihyps)
+        for i in range(struc_test.nat):
+            test_envi = env.AtomicEnvironment(struc_test, i, cutoffs, cutoffs_mask=gp_model.hyps_mask)
+            mgp_pred = mgp_model.predict(test_envi)
+            mgp_var = mgp_pred[1]
+            gp_var = predict_atom_diag_var(test_envi, gp_model, kernel_name)
+            print('mgp_var, gp_var', mgp_var, gp_var)
+            assert np.allclose(mgp_var, gp_var, rtol=1e-2)
+
+    print('struc_test positions', struc_test.positions, struc_test.species_labels)
+
 
 @pytest.mark.skipif(not os.environ.get('lmp',
                           False), reason='lmp not found '
@@ -326,23 +265,18 @@ def test_predict(all_gp, all_mgp, bodies, multihyps, map_force):
                                   'variable to point to the executatble.')
 @pytest.mark.parametrize('bodies', body_list)
 @pytest.mark.parametrize('multihyps', multi_list)
-@pytest.mark.parametrize('map_force', map_force_list)
-def test_lmp_predict(all_gp, all_mgp, bodies, multihyps, map_force):
+def test_lmp_predict(all_gp, all_mgp, bodies, multihyps):
     """
     test the lammps implementation
     """
-    clean()
-    prefix = f'tmp{bodies}{multihyps}{map_force}'
 
-    if ('3' in bodies) and map_force:
-        pytest.skip()
+    pytest.skip()
 
-    mgp_model = all_mgp[f'{bodies}{multihyps}{map_force}']
+    prefix = f'{bodies}{multihyps}'
+
+    mgp_model = all_mgp[f'{bodies}{multihyps}']
     gp_model = all_gp[f'{bodies}{multihyps}']
     lammps_location = mgp_model.lmp_file_name
-
-    # lmp file is automatically written now every time MGP is constructed
-    mgp_model.write_lmp_file(lammps_location)
 
     # create test structure
     cell = 5*np.eye(3)
@@ -373,12 +307,10 @@ def test_lmp_predict(all_gp, all_mgp, bodies, multihyps, map_force):
     if '3' in bodies:
         ty = 'yes'
 
-    if map_force:
-        style_string = 'mgpf'
-    else:
-        style_string = 'mgp'
+    style_string = 'mgp'
 
-    coeff_string = f'* * {lammps_location} {specie_symbol_list} {by} {ty}'
+    coeff_string = f'* * {lammps_location}.mgp {specie_symbol_list} {by} {ty}'
+    std_string = f'{lammps_location}.var {specie_symbol_list} {by} {ty}'
     lammps_executable = os.environ.get('lmp')
     dump_file_name = f'{prefix}.dump'
     input_file_name = f'{prefix}.in'
@@ -386,18 +318,24 @@ def test_lmp_predict(all_gp, all_mgp, bodies, multihyps, map_force):
     input_text = \
         lammps_calculator.generic_lammps_input(data_file_name, style_string,
                                                coeff_string, dump_file_name,
-                                               newton=True)
+                                               newton=False, std_string=std_string)
     lammps_calculator.write_text(input_file_name, input_text)
 
     lammps_calculator.run_lammps(lammps_executable, input_file_name,
                                  output_file_name)
 
-    lammps_forces = lammps_calculator.lammps_parser(dump_file_name)
-    mgp_forces = mgp_model.predict(test_envi, mean_only=True)
+    pred_std = True
+    lammps_forces, lammps_stds = lammps_calculator.lammps_parser(dump_file_name, std=pred_std)
+    mgp_pred = mgp_model.predict(test_envi)
 
     # check that lammps agrees with gp to within 1 meV/A
     for i in range(3):
-        print("isclose? diff:", lammps_forces[atom_num, i]-mgp_forces[0][i], "mgp value", mgp_forces[0][i])
-        assert np.isclose(lammps_forces[atom_num, i], mgp_forces[0][i], rtol=1e-2)
+        print("isclose? diff:", lammps_forces[atom_num, i]-mgp_pred[0][i], "mgp value", mgp_pred[0][i])
+        assert np.isclose(lammps_forces[atom_num, i], mgp_pred[0][i], rtol=1e-2)
 
-    clean()
+    # check the lmp var
+    mgp_std = np.sqrt(mgp_pred[1])
+    print("isclose? diff:", lammps_stds[atom_num]-mgp_std, "mgp value", mgp_std)
+    assert np.isclose(lammps_stds[atom_num], mgp_std, rtol=1e-2)
+
+    clean(prefix=prefix)

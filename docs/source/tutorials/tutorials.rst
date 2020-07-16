@@ -6,7 +6,7 @@ Tutorials
 
    prepare_data
    gpfa
-   otf_al
+   otf
    ase
    after_training
    lammps

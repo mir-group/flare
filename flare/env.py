@@ -81,7 +81,7 @@ class AtomicEnvironment:
 
         self.structure = structure
         self.positions = structure.wrapped_positions
-        self.cell = structure.cell
+        self.cell = np.array(structure.cell)
         self.species = structure.coded_species
 
         # backward compatability

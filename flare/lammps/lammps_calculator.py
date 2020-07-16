@@ -22,7 +22,7 @@ def run_lammps(lammps_executable, input_file, output_file):
         subprocess.call(lammps_command.split(), stdout=fout)
 
 
-def lammps_parser(dump_file):
+def lammps_parser(dump_file, std=False):
     """Parses LAMMPS dump file. Assumes the forces are the final quantities \
 to get dumped.
 
@@ -32,6 +32,7 @@ to get dumped.
     :rtype: np.ndarray
     """
     forces = []
+    stds = []
 
     with open(dump_file, 'r') as outf:
         lines = outf.readlines()
@@ -42,11 +43,17 @@ to get dumped.
 
     for line in lines[force_start+1:]:
         fline = line.split()
-        forces.append([float(fline[-3]),
-                       float(fline[-2]),
-                       float(fline[-1])])
+        if std:
+            forces.append([float(fline[-4]),
+                           float(fline[-3]),
+                           float(fline[-2])])
+            stds.append(float(fline[-1]))
+        else:
+            forces.append([float(fline[-3]),
+                           float(fline[-2]),
+                           float(fline[-1])])
 
-    return np.array(forces)
+    return np.array(forces), np.array(stds)
 
 
 # -----------------------------------------------------------------------------
@@ -172,13 +179,21 @@ def write_text(file, text):
 # -----------------------------------------------------------------------------
 
 
-def generic_lammps_input(dat_file, style_string, coeff_string, dump_file, newton=True):
+def generic_lammps_input(dat_file, style_string, coeff_string, dump_file, 
+        newton=False, std_string=''):
     """Create text for generic LAMMPS input file."""
 
-    if newton is True:
+    if newton:
         ntn = 'on'
     else:
         ntn = 'off'
+
+    if std_string != '':
+        compute_cmd = f"compute std all uncertainty/atom {std_string}"
+        c_std = "c_std"
+    else:
+        compute_cmd = ""
+        c_std = ""
 
     input_text = f"""# generic lammps input file
 units metal
@@ -192,7 +207,8 @@ pair_style {style_string}
 pair_coeff {coeff_string}
 
 thermo_style one
-dump 1 all custom 1 {dump_file} id type x y z fx fy fz
+{compute_cmd}
+dump 1 all custom 1 {dump_file} id type x y z fx fy fz {c_std}
 dump_modify 1 sort id
 run 0
 """

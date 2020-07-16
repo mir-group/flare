@@ -6,6 +6,7 @@ import os, pickle, re, shutil
 from flare import struc, env, gp
 from flare import otf_parser
 from flare.ase.calculator import FLARE_Calculator
+from flare.ase.atoms import FLARE_Atoms
 from flare.mgp import MappedGaussianProcess
 from flare.lammps import lammps_calculator
 from flare.utils.element_coder import _Z_to_mass, _element_to_Z
@@ -52,16 +53,14 @@ def mgp_model(gp_model):
     grid_params={}
     if 'twobody' in gp_model.kernels:
         grid_params['twobody']={'grid_num': [64],
-                                'lower_bound':[0.1],
-                                'svd_rank': 14}
+                                'lower_bound':[0.1]}
     if 'threebody' in gp_model.kernels:
         grid_params['threebody']={'grid_num': [16]*3,
-                                  'lower_bound':[0.1]*3,
-                                  'svd_rank': 14}
+                                  'lower_bound':[0.1]*3}
     species_list = [1, 2, 3]
-    lammps_location = f'tmp_lmp.mgp'
+    lammps_location = f'tmp_lmp'
     mapped_model = MappedGaussianProcess(grid_params=grid_params, unique_species=species_list, n_cpus=1,
-                map_force=False, lmp_file_name=lammps_location, mean_only=True)
+                lmp_file_name=lammps_location, var_map='simple')
 
     # import flare.mgp.mapxb
     # flare.mgp.mapxb.global_use_grid_kern = False
@@ -143,6 +142,7 @@ def test_lmp_predict(gp_model, mgp_model, ase_calculator, lmp_calculator):
 
     # build ase atom from struc
     ase_atoms_flare = struc_test.to_ase_atoms()
+    ase_atoms_flare = FLARE_Atoms.from_ase_atoms(ase_atoms_flare)
     ase_atoms_flare.set_calculator(ase_calculator)
 
     ase_atoms_lmp = struc_test.to_ase_atoms()
