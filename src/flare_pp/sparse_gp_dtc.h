@@ -6,6 +6,7 @@
 
 class SparseGP_DTC : public SparseGP {
 public:
+  // TODO: Modify "add" methods to keep track of each kernel contribution.
   std::vector<Eigen::MatrixXd> Kuf_kernels, Kuu_kernels;
   Eigen::MatrixXd Sigma, Kuu_inverse;
 
@@ -24,7 +25,7 @@ public:
 
   // Calculate the log marginal likelihood of the current hyperparameters and its gradient.
   // TODO: Find a way to optimize the hyperparameters.
-  double compute_likelihood();
+  void compute_likelihood();
 
   // Change the model hyperparameters and covariance matrices.
   // With the dot product kernel, should never have to recompute kernels;
