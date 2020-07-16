@@ -176,7 +176,6 @@ class OtfAnalysis:
 
                     msds.append(np.mean((positions - position_list[0]) ** 2))
 
-
     def output_md_structures(self):
         """
         Returns structure objects corresponding to the MD frames of an OTF run.
