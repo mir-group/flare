@@ -5,7 +5,7 @@ import os
 from tests.test_gp import get_random_structure
 from flare.struc import Structure
 from json import loads, dumps
-from flare.util import Z_to_element, NumpyEncoder
+from flare.utils.element_coder import Z_to_element, NumpyEncoder
 try:
     import pymatgen.core.structure as pmgstruc
     _test_pmg = True
@@ -147,7 +147,7 @@ def test_struc_to_ase():
     assert np.all(uc.positions == new_atoms.get_positions())
     assert np.all(uc.cell == new_atoms.get_cell())
 
-   
+
 @pytest.mark.skipif(not _test_pmg,reason='Pymatgen not present in available '
                                         'packages.')
 def test_from_pmg_structure():
@@ -202,7 +202,7 @@ def test_to_xyz(varied_test_struc):
 
     simple_str_by_line = simple_str.split('\n')
 
-    assert len(simple_str_by_line)-3 == len(varied_test_struc)
+    assert len(simple_str_by_line)-2 == len(varied_test_struc)
 
     for i, atom_line in enumerate(simple_str_by_line[2:-1]):
         split_line = atom_line.split()
@@ -215,7 +215,7 @@ def test_to_xyz(varied_test_struc):
     complex_str = varied_test_struc.to_xyz(True,True,True,True)
     complex_str_by_line = complex_str.split('\n')
 
-    assert len(complex_str_by_line)-3 == len(varied_test_struc)
+    assert len(complex_str_by_line)-2 == len(varied_test_struc)
 
     for i, atom_line in enumerate(complex_str_by_line[2:-1]):
         split_line = atom_line.split()
@@ -231,23 +231,21 @@ def test_to_xyz(varied_test_struc):
 
 
 def test_file_load():
-
     struct1, forces = get_random_structure(cell=np.eye(3),
-                                          unique_species=[1, 2],
-                                          noa=2)
-
+                                           unique_species=[1, 2],
+                                           noa=2)
     struct2, forces = get_random_structure(cell=np.eye(3),
-                                          unique_species=[1, 2],
-                                          noa=2)
+                                           unique_species=[1, 2],
+                                           noa=2)
 
     with open("test_write.json",'w') as f:
-        f.write(dumps(struct1.as_dict(),cls=NumpyEncoder))
+        f.write(dumps(struct1.as_dict(), cls=NumpyEncoder))
 
     with pytest.raises(NotImplementedError):
         Structure.from_file(file_name='test_write.json', format='xyz')
 
     struct1a = Structure.from_file('test_write.json')
-    assert dumpcompare(struct1.as_dict() , struct1a.as_dict())
+    assert dumpcompare(struct1.as_dict(), struct1a.as_dict())
     os.remove('test_write.json')
 
     with open("test_write_set.json", 'w') as f:
@@ -270,5 +268,18 @@ def test_file_load():
     assert isinstance(vasp_struct, Structure)
     assert len(vasp_struct) == 6
 
+def test_is_valid():
+    """
+    Try a trivial case of 1-len structure and then one above and below
+    tolerance
+    :return:
+    """
+    test_struc = Structure(cell=np.eye(3), species=['H'],
+                           positions=np.array([[0, 0, 0]]))
 
+    assert test_struc.is_valid()
 
+    test_struc = Structure(cell=np.eye(3), species=['H', 'H'],
+                           positions=[[0, 0, 0], [.3, 0, 0]])
+    assert not test_struc.is_valid()
+    assert test_struc.is_valid(tolerance=.25)

@@ -4,11 +4,10 @@ The mandatory inputs are the cell vectors of the box and the chemical species
 and *Cartesian coordinates* of the atoms.
 The atoms are automatically folded back into the primary cell, so the
 input coordinates don't need to lie inside the box.
-Energy, force, and stress information can be included which can then be
-used to train ML models.
 """
 import numpy as np
-from flare.util import element_to_Z, Z_to_element, NumpyEncoder
+from flare.utils.element_coder import element_to_Z, Z_to_element, NumpyEncoder
+from flare.utils.learner import get_max_cutoff
 from json import dumps, loads
 
 from typing import List, Union, Any
@@ -49,30 +48,21 @@ class Structure:
     :type stds: np.ndarray
     """
 
-    def __init__(self, cell: 'ndarray', species: Union[List[str],
-                                                          List[int]],
-                 positions: 'ndarray',
-                 mass_dict: dict = None,
-                 prev_positions: 'ndarray' =None,
+    def __init__(self, cell: 'ndarray', species: Union[List[str], List[int]],
+                 positions: 'ndarray', mass_dict: dict = None,
+                 prev_positions: 'ndarray' = None,
                  species_labels: List[str] = None,
-                 forces=None,
-                 stds=None):
+                 forces=None, stds=None, energy: float=None):
 
-        # Set up individual Bravais lattice vectors
+        # Define cell (each row is a Bravais lattice vector).
         self.cell = np.array(cell)
-        self.vec1 = self.cell[0, :]
-        self.vec2 = self.cell[1, :]
-        self.vec3 = self.cell[2, :]
 
-        # get cell matrices for wrapping coordinates
-        self.cell_transpose = self.cell.transpose()
-        self.cell_transpose_inverse = np.linalg.inv(self.cell_transpose)
-        self.cell_dot = self.get_cell_dot()
-        self.cell_dot_inverse = np.linalg.inv(self.cell_dot)
+        # Compute the max cutoff compatible with a 3x3x3 supercell of the
+        # structure.
+        self.max_cutoff = get_max_cutoff(self.cell)
 
-        # set positions
+        # Set positions.
         self.positions = np.array(positions)
-        self.wrapped_positions = self.wrap_positions(in_place=False)
 
         # If species are strings, convert species to integers by atomic number
         if species_labels is None:
@@ -86,15 +76,11 @@ class Structure:
         if prev_positions is None:
             self.prev_positions = np.copy(self.positions)
         else:
-            assert len(positions) == len(prev_positions), 'Previous ' \
-                                                          'positions and ' \
-                                                          'positions are not' \
-                                                          'same length'
+            assert len(positions) == len(prev_positions), \
+                'Previous positions and positions are not same length'
             self.prev_positions = prev_positions
 
-        self.energy = None
-        self.stress = None
-
+        # Set forces, energies, and stresses and their uncertainties.
         if forces is not None:
             self.forces = np.array(forces)
         else:
@@ -104,6 +90,16 @@ class Structure:
             self.stds = np.array(stds)
         else:
             self.stds = np.zeros((len(positions), 3))
+
+        self.energy = energy
+
+        self.local_energies = None
+        self.local_energy_stds = None
+        self.partial_stresses = None
+        self.partial_stress_stds = None
+        self.stress = None
+        self.stress_stds = None
+        self.potential_energy = None
 
         self.mass_dict = mass_dict
 
@@ -116,7 +112,65 @@ class Structure:
                     if elt.isnumeric():
                         mass_dict[int(elt)] = mass_dict[elt]
 
-    def get_cell_dot(self):
+    @property
+    def positions(self):
+        return self._positions
+
+    @property
+    def wrapped_positions(self):
+        return self._wrapped_positions
+
+    @positions.setter
+    def positions(self, position_array):
+        self._positions = position_array
+        self._wrapped_positions = self.wrap_positions()
+
+    @property
+    def cell(self):
+        return self._cell
+
+    @property
+    def vec1(self):
+        return self._vec1
+
+    @property
+    def vec2(self):
+        return self._vec2
+
+    @property
+    def vec3(self):
+        return self._vec3
+
+    @property
+    def cell_transpose(self):
+        return self._cell_transpose
+
+    @property
+    def cell_transpose_inverse(self):
+        return self._cell_transpose_inverse
+
+    @property
+    def cell_dot(self):
+        return self._cell_dot
+
+    @property
+    def cell_dot_inverse(self):
+        return self._cell_dot_inverse
+
+    @cell.setter
+    def cell(self, cell_array):
+        """Set the cell and related properties."""
+        self._cell = cell_array
+        self._vec1 = cell_array[0, :]
+        self._vec2 = cell_array[1, :]
+        self._vec3 = cell_array[2, :]
+        self._cell_transpose = cell_array.transpose()
+        self._cell_transpose_inverse = np.linalg.inv(self._cell_transpose)
+        self._cell_dot = self.get_cell_dot(cell_array)
+        self._cell_dot_inverse = np.linalg.inv(self._cell_dot)
+
+    @staticmethod
+    def get_cell_dot(cell_array):
         """
         Compute 3x3 array of dot products of cell vectors used to
         fold atoms back to the unit cell.
@@ -129,13 +183,13 @@ class Structure:
 
         for m in range(3):
             for n in range(3):
-                cell_dot[m, n] = np.dot(self.cell[m], self.cell[n])
+                cell_dot[m, n] = np.dot(cell_array[m], cell_array[n])
 
         return cell_dot
 
     @staticmethod
     def raw_to_relative(positions: 'ndarray', cell_transpose: 'ndarray',
-                        cell_dot_inverse: 'ndarray')-> 'ndarray':
+                        cell_dot_inverse: 'ndarray') -> 'ndarray':
         """Convert Cartesian coordinates to relative (fractional) coordinates,
         expressed in terms of the cell vectors set in self.cell.
 
@@ -159,7 +213,7 @@ class Structure:
     @staticmethod
     def relative_to_raw(relative_positions: 'ndarray',
                         cell_transpose_inverse: 'ndarray',
-                        cell_dot: 'ndarray')-> 'ndarray':
+                        cell_dot: 'ndarray') -> 'ndarray':
         """Convert fractional coordinates to raw (Cartesian) coordinates.
 
         :param relative_positions: fractional coordinates.
@@ -175,16 +229,14 @@ class Structure:
         return np.matmul(np.matmul(relative_positions, cell_dot),
                          cell_transpose_inverse)
 
-    def wrap_positions(self, in_place: bool = True)-> 'ndarray':
+    def wrap_positions(self) -> 'ndarray':
         """
         Convenience function which folds atoms outside of the unit cell back
         into the unit cell. in_place flag controls if the wrapped positions
         are set in the class.
 
-        :param in_place: If true, set the current structure 
-		positions to be the wrapped positions.
         :return: Cartesian coordinates of positions all in unit cell
-	:rtype: np.ndarray
+        :rtype: np.ndarray
         """
         rel_pos = \
             self.raw_to_relative(self.positions, self.cell_transpose,
@@ -194,9 +246,6 @@ class Structure:
 
         pos_wrap = self.relative_to_raw(rel_wrap, self.cell_transpose_inverse,
                                         self.cell_dot)
-
-        if in_place:
-            self.wrapped_positions = pos_wrap
 
         return pos_wrap
 
@@ -251,28 +300,27 @@ class Structure:
         return dumps(self.as_dict(), cls=NumpyEncoder)
 
     @staticmethod
-    def from_dict(dictionary: dict)-> 'flare.struc.Structure':
+    def from_dict(dictionary: dict) -> 'flare.struc.Structure':
         """
         Assembles a Structure object from a dictionary parameterizing one.
 
         :param dictionary: dict describing structure parameters.
         :return: FLARE structure assembled from dictionary
         """
-        struc = Structure(cell=np.array(dictionary['cell']),
-                          positions=np.array(dictionary['positions']),
+        struc = Structure(cell=np.array(dictionary['_cell']),
+                          positions=np.array(dictionary['_positions']),
                           species=dictionary['coded_species'],
-                          forces=dictionary.get('forces'),
+                          forces=np.array(dictionary.get('forces')),
                           mass_dict=dictionary.get('mass_dict'),
-                          species_labels=dictionary.get('species_labels'))
+                          species_labels=dictionary.get('species_labels'),
+                          energy=dictionary.get('energy', None))
 
-        struc.energy = dictionary.get('energy')
-        struc.stress = dictionary.get('stress')
         struc.stds = np.array(dictionary.get('stds'))
 
         return struc
 
     @staticmethod
-    def from_ase_atoms(atoms: 'ase.Atoms')-> 'flare.struc.Structure':
+    def from_ase_atoms(atoms: 'ase.Atoms', cell=None) -> 'flare.struc.Structure':
         """
         From an ASE Atoms object, return a FLARE structure
 
@@ -280,18 +328,17 @@ class Structure:
         :type atoms: ASE Atoms object
         :return: A FLARE structure from an ASE atoms object
         """
-        struc = Structure(cell=np.array(atoms.cell),
-                          positions=atoms.positions,
+
+        if cell is None:
+            cell = np.array(atoms.cell)
+        struc = Structure(cell=cell, positions=atoms.positions,
                           species=atoms.get_chemical_symbols())
         return struc
 
-    def to_ase_atoms(self)-> 'ase.Atoms':
+    def to_ase_atoms(self) -> 'ase.Atoms':
         from ase import Atoms
-        return Atoms(self.species_labels,
-                     positions=self.positions,
-                     cell=self.cell, 
-                     pbc=True)
-
+        return Atoms(self.species_labels, positions=self.positions,
+                     cell=self.cell, pbc=True)
 
     def to_pmg_structure(self):
         """
@@ -304,7 +351,11 @@ class Structure:
             raise ModuleNotFoundError("Pymatgen is not present. Please "
                                       "install Pymatgen and try again")
 
-        site_properties = {'force:': self.forces, 'std': self.stds}
+        if self.forces is None:
+            forces_temp = np.zeros((len(self.positions), 3))
+            site_properties = {'force:': forces_temp, 'std': self.stds}
+        else:
+            site_properties = {'force:': self.forces, 'std': self.stds}
 
         return pmgstruc.Structure(lattice=self.cell,
                                   species=self.species_labels,
@@ -314,7 +365,7 @@ class Structure:
                                   )
 
     @staticmethod
-    def from_pmg_structure(structure: 'pymatgen Structure')-> \
+    def from_pmg_structure(structure: 'pymatgen Structure') -> \
             'flare Structure':
         """
         Returns Pymatgen structure as FLARE structure.
@@ -343,11 +394,23 @@ class Structure:
 
         return new_struc
 
-    def to_xyz(self, extended_xyz: bool = True,
-                     print_stds: bool = False,
-                     print_forces : bool = False,
-                     print_max_stds: bool = False,
-                     write_file: str = '')->str:
+    def is_valid(self, tolerance: float = .4)->bool:
+        """
+        Plugin to pymatgen's is_valid method to gauge if a structure
+        has atoms packed too closely together, which is likely
+        to cause unphysically large forces / energies or present convergence
+        issues in DFT.
+        :return:
+        """
+        pmg_structure = self.to_pmg_structure()
+        return pmg_structure.is_valid(tol=tolerance)
+
+
+    def to_xyz(self, extended_xyz: bool = True, print_stds: bool = False,
+               print_forces: bool = False, print_max_stds: bool = False,
+               print_energies: bool = False, predict_energy = None,
+               dft_forces = None, dft_energy = None, timestep=-1,
+               write_file: str = '', append: bool = False) -> str:
         """
         Convenience function which turns a structure into an extended .xyz
         file; useful for further input into visualization programs like VESTA
@@ -372,6 +435,12 @@ class Structure:
             xyz_str += f'Lattice="{cell[0,0]} {cell[0,1]} {cell[0,2]}'
             xyz_str += f' {cell[1,0]} {cell[1,1]} {cell[1,2]}'
             xyz_str += f' {cell[2,0]} {cell[2,1]} {cell[2,2]}"'
+            if timestep > 0:
+                xyz_str += f' Timestep={timestep}'
+            if predict_energy:
+                xyz_str += f' PE={predict_energy}'
+            if dft_energy is not None:
+                xyz_str += f' DFT_PE={dft_energy}'
             xyz_str += f' Proprties="species:S:1:pos:R:3'
 
             if print_stds:
@@ -382,6 +451,15 @@ class Structure:
                 forces = self.forces
             if print_max_stds:
                 xyz_str += ':max_std:R:1'
+                stds = self.stds
+            if print_energies:
+                if self.local_energies is None:
+                    print_energies = False
+                else:
+                    xyz_str += ':local_energy:R:1'
+                    local_energies = self.local_energies
+            if dft_forces is not None:
+                xyz_str += ':dft_forces:R:3'
             xyz_str += '\n'
         else:
             xyz_str += '\n'
@@ -395,20 +473,32 @@ class Structure:
                 xyz_str += f" {stds[i,0]} {stds[i,1]} {stds[i,2]}"
             if print_forces and extended_xyz:
                 xyz_str += f" {forces[i,0]} {forces[i,1]} {forces[i,2]}"
+            if print_energies and extended_xyz:
+                xyz_str += f" {local_energies[i]}"
             if print_max_stds and extended_xyz:
                 xyz_str += f" {np.max(stds[i,:])} "
-            xyz_str += '\n'
+            if dft_forces is not None:
+                xyz_str += f' {dft_forces[i, 0]} {dft_forces[i,1]} ' \
+                          f'{dft_forces[i, 2]}'
+            if i < (len(self.positions)-1):
+                xyz_str += '\n'
 
         # Write to file, optionally
         if write_file:
-            with open(write_file, 'w') as f:
+            if append:
+                fmt = 'a'
+            else:
+                fmt = 'w'
+            with open(write_file, fmt) as f:
                 f.write(xyz_str)
+                f.write("\n")
 
         return xyz_str
 
     @staticmethod
     def from_file(file_name, format='') -> Union['flare.struc.Structure',
-                                                List['flare.struc.Structure']]:
+                                                 List['flare.struc.Structure']
+                                                 ]:
         """
         Load a FLARE structure from a file or a series of FLARE structures
         :param file_name:
@@ -416,11 +506,9 @@ class Structure:
         :return:
         """
 
-        try:
-            with open(file_name, 'r') as _:
-                pass
-        except:
-            raise FileNotFoundError
+        # Ensure the file specified exists.
+        with open(file_name, 'r') as _:
+            pass
 
         if 'xyz' in file_name or 'xyz' in format.lower():
             raise NotImplementedError
@@ -442,17 +530,17 @@ class Structure:
             else:
                 return structures
 
-        is_poscar = 'POSCAR' in file_name or 'CONTCAR' in file_name or 'vasp' in format.lower()
+        is_poscar = 'POSCAR' in file_name or 'CONTCAR' in file_name \
+            or 'vasp' in format.lower()
         if is_poscar and _pmg_present:
             pmg_structure = pmgvaspio.Poscar.from_file(file_name).structure
             return Structure.from_pmg_structure(pmg_structure)
         elif is_poscar and not _pmg_present:
-            raise ImportError("Pymatgen not imported; " \
+            raise ImportError("Pymatgen not imported; "
                               "functionality requires pymatgen.")
 
 
-
-def get_unique_species(species: List[Any])-> (List, List[int]):
+def get_unique_species(species: List[Any]) -> (List, List[int]):
     """
     Returns a list of the unique species passed in, and a list of
     integers indexing them.
@@ -471,5 +559,3 @@ def get_unique_species(species: List[Any])-> (List, List[int]):
     coded_species = np.array(coded_species)
 
     return unique_species, coded_species
-
-

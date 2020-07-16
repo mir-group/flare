@@ -1,16 +1,18 @@
 import numpy as np
-import os, shutil
+import os
+import shutil
+
+from json import dump, load
+from subprocess import call
+from typing import List, Union
 
 from pymatgen.io.vasp.inputs import Poscar
 from pymatgen.io.vasp.outputs import Vasprun
 from pymatgen.io.vasp.sets import VaspInputSet
 from pymatgen.core.periodic_table import Element
 
-from subprocess import call
 from flare.struc import Structure
-from typing import List, Union
-from json import dump, load
-from flare.util import NumpyEncoder
+from flare.utils.element_coder import NumpyEncoder
 
 name="VASP"
 
@@ -86,9 +88,10 @@ def run_dft(calc_dir: str, dft_loc: str,
         try:
             forces = parse_func("vasprun.xml")
         except FileNotFoundError:
-            raise FileNotFoundError("""Could not load vasprun.xml.
-            The calculation may not have finished.
-            Current directory is %s""" % os.getcwd())
+            os.chdir(currdir)
+            raise FileNotFoundError("Could not load vasprun.xml."\
+                                    "The calculation may not have finished."
+                                    f"Current directory is {os.getcwd()}")
 
         os.chdir(currdir)
         return forces
@@ -103,11 +106,12 @@ def run_dft_par(dft_input: str, structure: Structure,
                 dft_out="vasprun.xml",
                 parallel_prefix="mpi",
                 mpi = None, npool = None,
+                screen_out='vasp.out',
                 **dft_kwargs):
     # TODO Incorporate Custodian.
     edit_dft_input_positions(dft_input, structure)
 
-    if dft_command is None and not os.environ.get('VASP_COMMAND'):
+    if dft_command is None or not os.environ.get('VASP_COMMAND'):
         raise FileNotFoundError\
             ("Warning: No VASP Command passed, or stored in "
             "environment as VASP_COMMAND. ")
@@ -123,7 +127,8 @@ def run_dft_par(dft_input: str, structure: Structure,
         serial_prefix = dft_kwargs.get('serial_prefix', '')
         dft_command = f'{serial_prefix} {dft_command}'
 
-    call(dft_command, shell=True)
+    with open(screen_out, "w+") as fout:
+        call(dft_command.split(), stdout=fout)
 
     return parse_dft_forces(dft_out)
 

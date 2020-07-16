@@ -5,6 +5,7 @@
 __pycache__/
 build/
 dist/
+test_outputs_qe
 flare.egg-info/
 mir_flare.egg-info/
 tags
@@ -19,6 +20,9 @@ pwscf.save/
 /tests/test_ase/__pycache__/
 /tests/test_outputs/*
 test_files/qe_output_*.out
+/tests/*log*
+/tests/*.pickle
+/tests/*.npy
 /tests/*.xyz
 /tests/*.gp
 /tests/*-bak
@@ -29,7 +33,7 @@ test_files/qe_output_*.out
 /tests/h2_otf.out-f.xyz-bak
 /tests/pwscf.wfc*
 /tests/pwscf.in
-/tests/pwscf.xml
+/tests/*.xml
 /tests/*-RESTART.kp*
 /tests/*.wfn*
 /tests/*.pwi*
@@ -44,5 +48,7 @@ test_files/qe_output_*.out
 /tests/*.txt
 /tests/*.mgp
 /tests/*.log
+/tests/mgp_grids/
 /tests/POSCAR*
 .idea/
+.coverage

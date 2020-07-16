@@ -2,8 +2,9 @@ import pytest
 import os, shutil, glob
 import numpy as np
 from flare.struc import Structure, get_unique_species
-from flare.dft_interface.qe_util import parse_dft_input, parse_dft_forces, run_dft_par, \
-    edit_dft_input_positions, dft_input_to_structure
+from flare.dft_interface.qe_util import parse_dft_input, parse_dft_forces, \
+    run_dft_par, edit_dft_input_positions, dft_input_to_structure
+
 
 def cleanup_espresso_run(basename: str):
     for f in glob.glob(f"{basename}*"):
@@ -110,7 +111,6 @@ def test_espresso_input_edit():
     structure = Structure(cell, coded_species, positions, masses,
                           species_labels=species)
 
-    structure.vec1 += np.random.randn(3)
     structure.positions[0] += np.random.randn(3)
 
     new_file = edit_dft_input_positions('./qe_input_1.in', structure=structure)

@@ -33,23 +33,28 @@ of atoms which are added from a given seed frame.
 
 """
 import json as json
+import logging
+import numpy as np
 import time
 import warnings
+
 from copy import deepcopy
 from math import inf
 from typing import List, Tuple, Union
 
-import numpy as np
 from flare.env import AtomicEnvironment
 from flare.gp import GaussianProcess
-from flare.mgp.mgp_en import MappedGaussianProcess
-from flare.mgp.otf import predict_on_structure_mgp
+from flare.mgp.mgp import MappedGaussianProcess
 from flare.output import Output
-from flare.predict import predict_on_structure_par, predict_on_structure_par_en
+from flare.predict import predict_on_atom, predict_on_atom_en, \
+    predict_on_structure_par, predict_on_structure_par_en, \
+    predict_on_structure_mgp
 from flare.struc import Structure
-from flare.util import element_to_Z, \
-    is_std_in_bound_per_species, is_force_in_bound_per_species, \
-    Z_to_element, subset_of_frame_by_element, NumpyEncoder
+from flare.utils.element_coder import element_to_Z, Z_to_element, NumpyEncoder
+from flare.utils.learner import subset_of_frame_by_element, \
+    is_std_in_bound_per_species, is_force_in_bound_per_species
+from flare.mgp import MappedGaussianProcess
+from flare.parameters import Parameters
 
 
 class TrajectoryTrainer:
@@ -66,12 +71,13 @@ class TrajectoryTrainer:
                  validate_ratio: float = 0.0,
                  calculate_energy: bool = False,
                  output_name: str = 'gp_from_aimd',
+                 print_as_xyz: bool = False,
                  pre_train_max_iter: int = 50,
                  max_atoms_from_frame: int = np.inf,
                  max_trains: int = np.inf,
                  min_atoms_per_train: int = 1,
                  shuffle_frames: bool = False,
-                 verbose: int = 1,
+                 verbose: str = "INFO",
                  pre_train_on_skips: int = -1,
                  pre_train_seed_frames: List[Structure] = None,
                  pre_train_seed_envs: List[Tuple[AtomicEnvironment,
@@ -102,6 +108,7 @@ class TrajectoryTrainer:
         :param skip: Skip through frames
         :param calculate_energy: Use local energy kernel or not
         :param output_name: Write output of training to this file
+        :param print_as_xyz: If True, print the configurations in xyz format
         :param max_atoms_from_frame: Largest # of atoms added from one frame
         :param min_atoms_per_train: Only train when this many atoms have been
             added
@@ -109,9 +116,7 @@ class TrajectoryTrainer:
         :param n_cpus: Number of CPUs to parallelize over for parallelization
                 over atoms
         :param shuffle_frames: Randomize order of frames for better training
-        :param verbose: 0: Silent, NO output written or printed at all.
-                        1: Minimal,
-                        2: Lots of information
+        :param verbose: same as logging level, "WARNING", "INFO", "DEBUG"
         :param pre_train_on_skips: Train model on every n frames before running
         :param pre_train_seed_frames: Frames to train on before running
         :param pre_train_seed_envs: Environments to train on before running
@@ -152,7 +157,6 @@ class TrajectoryTrainer:
         self.max_atoms_from_frame = max_atoms_from_frame
         self.min_atoms_per_train = min_atoms_per_train
         self.predict_atoms_per_element = predict_atoms_per_element
-        self.verbose = verbose
         self.train_count = 0
         self.calculate_energy = calculate_energy
         self.n_cpus = n_cpus
@@ -194,9 +198,9 @@ class TrajectoryTrainer:
             else pre_train_seed_frames
 
         self.pre_train_env_per_species = {} if pre_train_atoms_per_element \
-                                       is None else pre_train_atoms_per_element
+            is None else pre_train_atoms_per_element
         self.train_env_per_species = {} if train_atoms_per_element \
-                                           is None else train_atoms_per_element
+            is None else train_atoms_per_element
 
         # Convert to Coded Species
         if self.pre_train_env_per_species:
@@ -206,13 +210,11 @@ class TrajectoryTrainer:
                     self.pre_train_env_per_species[key]
 
         # Output parameters
-        self.verbose = verbose
-        if self.verbose:
-            self.output = Output(output_name, always_flush=True)
-        else:
-            self.output = None
+        self.output = Output(output_name, verbose,
+                             print_as_xyz=print_as_xyz, always_flush=True)
+        self.logger_name = self.output.basename+'log'
         self.train_checkpoint_interval = train_checkpoint_interval or \
-                                         checkpoint_interval
+            checkpoint_interval
         self.atom_checkpoint_interval = atom_checkpoint_interval
 
         self.model_format = model_format
@@ -221,7 +223,7 @@ class TrajectoryTrainer:
         # Defining variables to be used later
         self.curr_step = 0
         self.train_count = 0
-        self.start_time = None
+        self.start_time = time.time()
 
     def pre_run(self):
         """
@@ -236,27 +238,23 @@ class TrajectoryTrainer:
         if self.mgp:
             raise NotImplementedError("Pre-running not"
                                       "yet configured for MGP")
-        if self.verbose:
-            self.output.write_header(self.gp.cutoffs,
-                                     self.gp.kernel_name,
-                                     self.gp.hyps,
-                                     self.gp.opt_algorithm,
-                                     dt=0,
-                                     Nsteps=len(self.frames),
-                                     structure=None,
-                                     std_tolerance=(self.rel_std_tolerance,
-                                                    self.abs_std_tolerance),
-                                     optional={
-                                         'GP Statistics':
-                                             json.dumps(
-                                                 self.gp.training_statistics),
-                                         'GP Name': self.gp.name,
-                                         'GP Write Name':
-                             self.output_name + "_model." + self.model_format})
+        self.output.write_header(str(self.gp),
+                                 dt=0,
+                                 Nsteps=len(self.frames),
+                                 structure=None,
+                                 std_tolerance=(self.rel_std_tolerance,
+                                                self.abs_std_tolerance),
+                                 optional={
+                                     'GP Statistics':
+                                         json.dumps(
+                                             self.gp.training_statistics),
+                                     'GP Name': self.gp.name,
+                                     'GP Write Name':
+            self.output_name + "_model." + self.model_format})
 
         self.start_time = time.time()
-        if self.verbose >= 3:
-            print("Now beginning pre-run activity.")
+        logger = logging.getLogger(self.logger_name)
+        logger.debug("Now beginning pre-run activity.")
         # If seed environments were passed in, add them to the GP.
 
         for point in self.seed_envs:
@@ -304,24 +302,26 @@ class TrajectoryTrainer:
                                      train_atoms=train_atoms,
                                      uncertainties=[], train=False)
 
-        if self.verbose and atom_count > 0:
-            self.output.write_to_log(f"Added {atom_count} atoms to "
-                                     f"pretrain.\n"
-                                     f"Pre-run GP Statistics: "
-                             f"{json.dumps(self.gp.training_statistics)} \n",
-                                     flush=True)
+        logger = logging.getLogger(self.logger_name)
+        if atom_count > 0:
+            logger.info(f"Added {atom_count} atoms to "
+                        f"pretrain.\n"
+                        f"Pre-run GP Statistics: "
+                        f"{json.dumps(self.gp.training_statistics)} ")
 
         if (self.seed_envs or atom_count or self.seed_frames) and \
                 (self.pre_train_max_iter or self.max_trains):
-            if self.verbose >= 3:
-                print("Now commencing pre-run training of GP (which has "
-                      "non-empty training set)")
+            logger.debug("Now commencing pre-run training of GP (which has "
+                         "non-empty training set)")
+            time0 = time.time()
             self.train_gp(max_iter=self.pre_train_max_iter)
+            logger.debug(f"Done train_gp {time.time()-time0}")
         else:
-            if self.verbose >= 3:
-                print("Now commencing pre-run set up of GP (which has "
-                      "non-empty training set)")
-            self.gp.set_L_alpha()
+            logger.debug("Now commencing pre-run set up of GP (which has "
+                         "non-empty training set)")
+            time0 = time.time()
+            self.gp.check_L_alpha()
+            logger.debug(f"Done check_L_alpha {time.time()-time0}")
 
         if self.model_format and not self.mgp:
             self.gp.write_model(f'{self.output_name}_prerun',
@@ -338,8 +338,8 @@ class TrajectoryTrainer:
         """
 
         # Perform pre-run, in which seed trames are used.
-        if self.verbose >= 3:
-            print("Commencing run with pre-run...")
+        logger = logging.getLogger(self.logger_name)
+        logger.debug("Commencing run with pre-run...")
         if not self.mgp:
             self.pre_run()
 
@@ -355,38 +355,37 @@ class TrajectoryTrainer:
 
         for i, cur_frame in enumerate(self.frames[::self.skip]):
 
-            if self.verbose >= 2:
-                print(f"=====NOW ON FRAME {i}=====")
+            frame_start_time = time.time()
+            logger.info(f"=====NOW ON FRAME {i}=====")
 
             # If no predict_atoms_per_element was specified, predict_atoms
             # will be equal to every atom in the frame.
-            predict_atoms = subset_of_frame_by_element(cur_frame,
-                                               self.predict_atoms_per_element)
+            predict_atoms = subset_of_frame_by_element(
+                cur_frame, self.predict_atoms_per_element)
+
             # Atoms which are skipped will have NaN as their force / std values
             local_energies = None
 
             # Three different predictions: Either MGP, GP with energy,
             # or GP without
             if self.mgp:
-                pred_forces, pred_stds = self.pred_func(
+                pred_forces, pred_stds, local_energies = self.pred_func(
                     structure=cur_frame, mgp=self.gp, write_to_structure=False,
-                    selective_atoms=predict_atoms, skipped_atom_value=
-                    np.nan)
+                    selective_atoms=predict_atoms, skipped_atom_value=np.nan, energy=True)
             elif self.calculate_energy:
                 pred_forces, pred_stds, local_energies = self.pred_func(
                     structure=cur_frame, gp=self.gp, n_cpus=self.n_cpus,
                     write_to_structure=False, selective_atoms=predict_atoms,
                     skipped_atom_value=np.nan)
             else:
-                pred_forces, pred_stds = self.pred_func(structure=cur_frame,
-                                                gp=self.gp,
-                                                n_cpus=self.n_cpus,
-                                                write_to_structure=False,
-                                                selective_atoms=predict_atoms,
-                                                skipped_atom_value=np.nan)
+                pred_forces, pred_stds = self.pred_func(
+                    structure=cur_frame, gp=self.gp, n_cpus=self.n_cpus,
+                    write_to_structure=False, selective_atoms=predict_atoms,
+                    skipped_atom_value=np.nan)
 
             # Get Error
             dft_forces = cur_frame.forces
+            dft_energy = cur_frame.energy
             error = np.abs(pred_forces - dft_forces)
 
             # Create dummy frame with the predicted forces written
@@ -394,20 +393,21 @@ class TrajectoryTrainer:
             dummy_frame.forces = pred_forces
             dummy_frame.stds = pred_stds
 
-            if self.verbose:
-                self.output.write_gp_dft_comparison(
-                    curr_step=i, frame=dummy_frame,
-                    start_time=time.time(),
-                    dft_forces=dft_forces,
-                    error=error,
-                    local_energies=local_energies)
+            self.output.write_gp_dft_comparison(
+                curr_step=i, frame=dummy_frame, start_time=time.time(),
+                dft_forces=dft_forces, dft_energy=dft_energy, error=error,
+                local_energies=local_energies, KE=0)
+
+            logger.debug(
+                f'Single frame calculation time {time.time()-frame_start_time}')
 
             if i < train_frame:
                 # Noise hyperparameter & relative std tolerance is not for mgp.
                 if self.mgp:
                     noise = 0
                 else:
-                    noise = self.gp.hyps[-1]
+                    noise = Parameters.get_noise(
+                        self.gp.hyps_mask, self.gp.hyps, constraint=False)
                 std_in_bound, std_train_atoms = is_std_in_bound_per_species(
                     rel_std_tolerance=self.rel_std_tolerance,
                     abs_std_tolerance=self.abs_std_tolerance,
@@ -461,14 +461,14 @@ class TrajectoryTrainer:
                     if self.train_checkpoint_interval and \
                             cur_trains_done_write and \
                             self.train_checkpoint_interval \
-                            % cur_trains_done_write == 0:
+                        <= cur_trains_done_write:
                         will_write = True
                         cur_trains_done_write = 0
 
                     if self.atom_checkpoint_interval \
                             and cur_atoms_added_write \
                             and self.atom_checkpoint_interval \
-                            % cur_atoms_added_write == 0:
+                        <= cur_atoms_added_write:
                         will_write = True
                         cur_atoms_added_write = 0
 
@@ -479,8 +479,7 @@ class TrajectoryTrainer:
                 if (i + 1) == train_frame and not self.mgp:
                     self.gp.check_L_alpha()
 
-        if self.verbose:
-            self.output.conclude_run()
+        self.output.conclude_run()
 
         if self.model_format and not self.mgp:
             self.gp.write_model(f'{self.output_name}_model',
@@ -508,18 +507,17 @@ class TrajectoryTrainer:
         for atom, spec in zip(train_atoms, added_species):
             added_atoms[spec].append(atom)
 
-        if self.verbose:
-            self.output.write_to_log('\nAdding atom(s) '
-                             f'{json.dumps(added_atoms,cls=NumpyEncoder)}'
-                                     ' to the training set.\n')
+        logger = logging.getLogger(self.logger_name)
+        logger.info('Adding atom(s) '
+                    f'{json.dumps(added_atoms,cls=NumpyEncoder)}'
+                    ' to the training set.')
 
         if uncertainties is None or len(uncertainties) != 0:
             uncertainties = frame.stds[train_atoms]
 
-        if self.verbose and len(uncertainties) != 0:
-            self.output.write_to_log(f'Uncertainties: '
-                                     f'{uncertainties}.\n',
-                                     flush=True)
+        if len(uncertainties) != 0:
+            logger.info(f'Uncertainties: '
+                        f'{uncertainties}.')
 
         # update gp model; handling differently if it's an MGP
         if not self.mgp:
@@ -540,8 +538,10 @@ class TrajectoryTrainer:
         :type max_iter: int
         """
 
-        if self.verbose >= 1:
-            self.output.write_to_log('Train GP\n')
+        logger = logging.getLogger(self.logger_name)
+        logger.debug('Train GP')
+
+        logger_train = self.output.basename+'hyps'
 
         # TODO: Improve flexibility in GP training to make this next step
         # unnecessary, so maxiter can be passed as an argument
@@ -552,17 +552,20 @@ class TrajectoryTrainer:
         elif max_iter is not None:
             temp_maxiter = self.gp.maxiter
             self.gp.maxiter = max_iter
-            self.gp.train(output=self.output if self.verbose >= 2 else None)
+            self.gp.train(logger_name=logger_train)
             self.gp.maxiter = temp_maxiter
         else:
-            self.gp.train(output=self.output if self.verbose >= 2 else None)
+            self.gp.train(logger_name=logger_train)
 
-        if self.verbose:
-            self.output.write_hyps(self.gp.hyp_labels, self.gp.hyps,
-                                   self.start_time,
-                                   self.gp.likelihood,
-                                   self.gp.likelihood_gradient,
-                                   hyps_mask=self.gp.hyps_mask)
+        hyps, labels = Parameters.get_hyps(self.gp.hyps_mask, self.gp.hyps, constraint=False,
+                        label=True)
+        if labels is None:
+            labels = self.gp.hyp_labels
+        self.output.write_hyps(labels, hyps,
+                               self.start_time,
+                               self.gp.likelihood,
+                               self.gp.likelihood_gradient,
+                               hyps_mask=self.gp.hyps_mask)
         self.train_count += 1
 
 

@@ -59,9 +59,9 @@ We will then set up the ``GaussianProcess`` object.
 
 .. code-block:: python
 
-	gp = GaussianProcess(kernel_name="2+3mc", 
+	gp = GaussianProcess(kernels=['twobody', 'threebody'],
 	hyps=[0.01, 0.01, 0.01, 0.01, 0.01],
-	cutoffs = (7,7),
+	cutoffs = {'twobody':7, 'threebody':3},
 	hyp_labels=['Two-Body Signal Variance','Two-Body Length Scale','Three-Body Signal Variance',
 	'Three-Body Length Scale', 'Noise Variance']
 			)
