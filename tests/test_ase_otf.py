@@ -4,6 +4,7 @@ import pytest
 import numpy as np
 
 from flare import otf, kernels
+from flare.otf_parser import OtfAnalysis
 from flare.gp import GaussianProcess
 from flare.mgp import MappedGaussianProcess
 from flare.ase.calculator import FLARE_Calculator
@@ -173,11 +174,6 @@ def test_otf_md(md_engine, md_params, super_cell, flare_calc, qe_calc):
     # TODO: test if mgp matches gp
     # TODO: see if there's difference between MD timestep & OTF timestep
 
-    # set up logger
-#    otf_logger = OTFLogger(test_otf, super_cell,
-#        logfile=md_engine+'.log', mode="w", data_in_logfile=True)
-#    test_otf.attach(otf_logger, interval=1)
-
     test_otf.run()
 
     for f in glob.glob("scf*.pw*"):
@@ -190,9 +186,18 @@ def test_otf_md(md_engine, md_params, super_cell, flare_calc, qe_calc):
         shutil.rmtree(f, ignore_errors=True)
     for f in glob.glob("out"):
         shutil.rmtree(f, ignore_errors=True)
-
     for f in os.listdir("./"):
-        if md_engine in f or 'lmp.mgp' in f:
+        if '.mgp' in f or '.var' in f:
             os.remove(f)
         if 'slurm' in f:
             os.remove(f)
+
+
+def test_otf_parser():
+    
+    output_name = f'{md_list[0]}.out'
+    otf_traj = OtfAnalysis(output_name)
+    print('ase otf traj parsed')
+
+    for f in glob.glob("*.out"):
+        os.remove(f)
