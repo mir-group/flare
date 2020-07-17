@@ -7,9 +7,10 @@
 class SparseGP_DTC : public SparseGP {
 public:
   // TODO: Modify "add" methods to keep track of each kernel contribution.
-  std::vector<Eigen::MatrixXd> Kuf_kernels, Kuu_kernels;
+  std::vector<Eigen::MatrixXd> Kuf_env_kernels, Kuf_struc_kernels, Kuu_kernels;
   Eigen::VectorXd noise_vector, y;
   Eigen::MatrixXd Sigma, Kuu_inverse, Kuf;
+  int max_labels = 0;
 
   // Likelihood attributes.
   double log_marginal_likelihood, data_fit, complexity_penalty, trace_term,
@@ -19,6 +20,15 @@ public:
   SparseGP_DTC();
   SparseGP_DTC(std::vector<Kernel *> kernels, double sigma_e, double sigma_f,
                double sigma_s);
+
+  // Methods for augmenting the training set.
+  void add_sparse_environments(const std::vector<LocalEnvironment> &envs);
+  void add_training_structure(const StructureDescriptor &training_structure);
+
+  // Not implemented (yet):
+  void add_sparse_environment(const LocalEnvironment &env);
+  void add_training_environment(const LocalEnvironment &training_environment);
+  void add_training_environments(const std::vector<LocalEnvironment> &envs);
 
   // Update matrices and vectors needed for mean and variance prediction:
   // Sigma, Kuu_inverse, and alpha.
