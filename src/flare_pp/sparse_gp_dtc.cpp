@@ -11,24 +11,23 @@ void SparseGP_DTC ::update_matrices() {
   int n_sparse = Kuf_struc.rows();
   int n_struc_labels = Kuf_struc.cols();
   int n_env_labels = Kuf_env.cols();
-  Eigen::MatrixXd Kuf =
-      Eigen::MatrixXd::Zero(n_sparse, n_struc_labels + n_env_labels);
+  Kuf = Eigen::MatrixXd::Zero(n_sparse, n_struc_labels + n_env_labels);
   Kuf.block(0, 0, n_sparse, n_struc_labels) = Kuf_struc;
   Kuf.block(0, n_struc_labels, n_sparse, n_env_labels) = Kuf_env;
 
   // Combine noise_struc and noise_env.
-  Eigen::VectorXd noise = Eigen::VectorXd::Zero(n_struc_labels + n_env_labels);
-  noise.segment(0, n_struc_labels) = noise_struc;
-  noise.segment(n_struc_labels, n_env_labels) = noise_env;
+  noise_vector = Eigen::VectorXd::Zero(n_struc_labels + n_env_labels);
+  noise_vector.segment(0, n_struc_labels) = noise_struc;
+  noise_vector.segment(n_struc_labels, n_env_labels) = noise_env;
 
   // Combine training labels.
-  Eigen::VectorXd y = Eigen::VectorXd::Zero(n_struc_labels + n_env_labels);
+  y = Eigen::VectorXd::Zero(n_struc_labels + n_env_labels);
   y.segment(0, n_struc_labels) = y_struc;
   y.segment(n_struc_labels, n_env_labels) = y_env;
 
   // Calculate Sigma.
   Eigen::MatrixXd sigma_inv =
-      Kuu + Kuf * noise.asDiagonal() * Kuf.transpose() +
+      Kuu + Kuf * noise_vector.asDiagonal() * Kuf.transpose() +
       Kuu_jitter * Eigen::MatrixXd::Identity(Kuu.rows(), Kuu.cols());
 
   Sigma = sigma_inv.inverse();
@@ -37,7 +36,7 @@ void SparseGP_DTC ::update_matrices() {
   Kuu_inverse = Kuu.inverse();
 
   // Calculate alpha.
-  alpha = Sigma * Kuf * noise.asDiagonal() * y;
+  alpha = Sigma * Kuf * noise_vector.asDiagonal() * y;
 }
 
 void SparseGP_DTC ::predict_DTC(
@@ -92,4 +91,25 @@ void SparseGP_DTC ::predict_DTC(
   V_SOR = (kern_mat * Sigma * kern_mat.transpose()).diagonal();
 
   variance_vector = K_self - Q_self + V_SOR;
+}
+
+void SparseGP_DTC ::compute_DTC_likelihood(){
+    int n_train = Kuf.cols();
+
+    Eigen::MatrixXd Qff_plus_lambda = 
+        Kuf.transpose() * Kuu_inverse * Kuf +
+        noise_vector.asDiagonal() * Eigen::MatrixXd::Identity(n_train, n_train);
+
+    double Q_det = Qff_plus_lambda.determinant();
+    Eigen::MatrixXd Q_inv = Qff_plus_lambda.inverse();
+
+    double half = 1.0 / 2.0;
+    complexity_penalty = -half * log(Q_det);
+    data_fit = -half * y.transpose() * Q_inv * y;
+    constant_term = -half * n_train * log(2 * M_PI);
+    log_marginal_likelihood = complexity_penalty + data_fit + constant_term;
+}
+
+void SparseGP_DTC ::compute_VFE_likelihood(){
+
 }

@@ -46,4 +46,9 @@ TEST_F(SparseTest, DTC_Prediction){
       EXPECT_GE(variance_vector[i], 0);
   }
 
+  // Compute the marginal likelihood.
+  sparse_gp.compute_DTC_likelihood();
+  EXPECT_EQ(sparse_gp.data_fit + sparse_gp.complexity_penalty +
+            sparse_gp.constant_term, sparse_gp.log_marginal_likelihood);
+
 }

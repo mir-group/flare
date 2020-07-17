@@ -28,10 +28,6 @@ public:
 
   double sigma_e, sigma_f, sigma_s, Kuu_jitter;
 
-  // Likelihood attributes.
-  double log_marginal_likelihood, data_fit, complexity_penalty;
-  Eigen::VectorXd likelihood_gradient;
-
   SparseGP();
 
   SparseGP(std::vector<Kernel *> kernels, double sigma_e, double sigma_f,
