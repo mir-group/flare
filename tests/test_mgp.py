@@ -70,7 +70,7 @@ def test_init(bodies, multihyps, all_mgp, all_gp):
     # grid parameters
     grid_params = {}
     if ('2' in bodies):
-        grid_params['twobody'] = {'grid_num': [128], 'lower_bound': [0.01]}
+        grid_params['twobody'] = {'grid_num': [128], 'lower_bound': [0.02]}
     if ('3' in bodies):
         grid_params['threebody'] = {'grid_num': [31, 32, 33], 'lower_bound':[0.02]*3}
 
@@ -206,7 +206,7 @@ def test_predict(all_gp, all_mgp, bodies, multihyps):
     # with open(filename, 'rb') as f:
     #     mgp_model = pickle.load(f)
 
-    nenv = 8
+    nenv = 6
     cell = 1.0 * np.eye(3)
     cutoffs = gp_model.cutoffs
     unique_species = gp_model.training_statistics['species']
@@ -241,7 +241,7 @@ def test_predict(all_gp, all_mgp, bodies, multihyps):
     print('gp_pred', gp_pred[0])
 
     print("isclose?", mgp_pred[0]-gp_pred[0], gp_pred[0])
-    assert(np.allclose(mgp_pred[0], gp_pred[0], rtol=1e-2)), \
+    assert(np.allclose(mgp_pred[0], gp_pred[0], atol=1e-3)), \
             f"{bodies} body {map_str} mapping is wrong"
 
 
