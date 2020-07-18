@@ -170,14 +170,14 @@ def test_otf_par(software, per_atom_par, n_cpus):
 
 
 @pytest.mark.parametrize('software', software_list)
-@pytest.mark.parametrize('per_atom_par', [True, False])
-def test_otf_parser(software, per_atom_par):
+def test_otf_parser(software):
     
     example = 1
     casename = name_list[example]
     output_name = f'{casename}_otf_{software}.out'
     otf_traj = OtfAnalysis(output_name)
 
+    outdir = f'test_outputs_{software}'
     if not os.path.isdir(outdir):
          os.mkdir(outdir)
     for f in os.listdir("./"):
