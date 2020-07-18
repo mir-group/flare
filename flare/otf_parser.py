@@ -150,6 +150,7 @@ class OtfAnalysis:
                         self.maf_list,
                         self.gp_atom_list,
                         self.gp_hyp_list,
+                        self.noh,
                     )
 
                 # MD frame
@@ -423,7 +424,7 @@ def get_thermostat(thermostat, kw, line):
             thermostat[kw] = [value]
 
 
-def extract_gp_info(block, mae_list, maf_list, atoms_list, hyps_list):
+def extract_gp_info(block, mae_list, maf_list, atoms_list, hyps_list, noh):
     """
     Exclusively parses DFT run information
     :param filename:
@@ -452,7 +453,7 @@ def extract_gp_info(block, mae_list, maf_list, atoms_list, hyps_list):
         # keep track of hyperparameters
         if line.startswith("GP hyperparameters:"):
             hyps = []
-            for hyp_line in block[(ind + 1) : (ind + 1 + self.noh)]:
+            for hyp_line in block[(ind + 1) : (ind + 1 + noh)]:
                 hyp_line = hyp_line.split()
                 hyps.append(float(hyp_line[-1]))
             hyps = np.array(hyps)
