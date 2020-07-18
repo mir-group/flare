@@ -179,7 +179,8 @@ def predict_on_structure_par(
     :rtype: (np.ndarray, np.ndarray)
     """
     # Just work in serial in the number of cpus is 1
-    if n_cpus == 1:
+    # or the gp is not parallelized by atoms
+    if (n_cpus is 1) or (gp.per_atom_par):
         return predict_on_structure(
             structure=structure, gp=gp, n_cpus=n_cpus,
             write_to_structure=write_to_structure,
@@ -274,8 +275,9 @@ def predict_on_structure_efs_par(
  write_to_structure: bool = True, selective_atoms: List[int] = None,
  skipped_atom_value=0):
 
-    # Just work in serial in the number of cpus is 1
-    if n_cpus is 1:
+    # Just work in serial in the number of cpus is 1, 
+    # or the gp is not parallelized by atoms
+    if (n_cpus is 1) or (gp.per_atom_par):
         return predict_on_structure_efs(
             structure=structure, gp=gp, n_cpus=n_cpus,
             write_to_structure=write_to_structure,
@@ -437,7 +439,8 @@ def predict_on_structure_par_en(structure: Structure, gp: GaussianProcess,
     :rtype: (np.ndarray, np.ndarray, np.ndarray)
     """
     # Work in serial if the number of cpus is 1
-    if n_cpus == 1:
+    # or the gp is not parallelized by atoms
+    if (n_cpus is 1) or (gp.per_atom_par):
         predict_on_structure_en(structure, gp,
                                 n_cpus, write_to_structure,
                                 selective_atoms,

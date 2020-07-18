@@ -174,6 +174,7 @@ class OtfAnalysis:
                         self.noh,
                     )
 
+                    post_frame = block[index + 3 + self.noa :]
                     extract_global_info(
                         self.cell_list, self.stress_list, self.thermostat, post_frame,
                     )

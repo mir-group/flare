@@ -5,10 +5,12 @@ It needs to be used adjointly with ASE MD engine.
 import os
 import sys
 import inspect
+import logging
 from time import time
 from copy import deepcopy
 
 import numpy as np
+from ase.io import write
 from ase.md.npt import NPT
 from ase.md.nvtberendsen import NVTBerendsen
 from ase.md.nptberendsen import NPTBerendsen
@@ -119,6 +121,11 @@ class ASE_OTF(OTF):
         force_source = dft_source
         self.flare_calc = self.atoms.calc
 
+        # to be modified in the functions
+        self.structure = None
+        self.otf_frames = None
+        self.dft_frames = None
+
         # Convert ASE timestep to ps for the output file.
         flare_dt = timestep / (units.fs * 1e3)
 
@@ -131,6 +138,7 @@ class ASE_OTF(OTF):
             dft_input=self.atoms,
             **otf_kwargs
         )
+
 
     def get_structure_from_input(self, prev_pos_init):
         self.structure = self.atoms
@@ -207,3 +215,21 @@ class ASE_OTF(OTF):
 
         if self.flare_calc.use_mapping:
             self.flare_calc.mgp_model.build_map(self.flare_calc.gp_model)
+
+    def record_state(self):
+        if self.curr_step == 0:
+            append = False
+        else:
+            append = True
+        
+        string = self.output.write_md_header(self.dt, self.curr_step, self.dft_step)
+        logger = logging.getLogger(self.output.basename+'log')
+        logger.info(string)
+
+        self.output.write_wall_time(self.start_time)
+
+        self.atoms.info['Frame'] = self.curr_step
+        if self.dft_step:
+            self.dft_frames = write(self.output_name + '_dft.xyz', self.atoms, append=append)
+        else:
+            self.otf_frames = write(self.output_name + '.xyz', self.atoms, append=append)

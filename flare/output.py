@@ -170,6 +170,20 @@ class Output:
         if self.always_flush:
             f.handlers[0].flush()
 
+
+    def write_md_header(self, dt, curr_step, dft_step):
+        string = ''
+        # Mark if a frame had DFT forces with an asterisk
+        if not dft_step:
+            string += '-' * 80 + '\n'
+            string += f"-Frame: {curr_step} "
+        else:
+            string += f"\n*-Frame: {curr_step} "
+
+        string += f'\nSimulation Time: {(dt * curr_step):.3} ps \n'
+        return string
+
+
     def write_md_config(
             self, dt, curr_step, structure, temperature, KE, start_time, dft_step,
             velocities):
@@ -188,16 +202,7 @@ class Output:
         :return:
         """
 
-        string = ''
-
-        # Mark if a frame had DFT forces with an asterisk
-        if not dft_step:
-            string += '-' * 80 + '\n'
-            string += f"-Frame: {curr_step} "
-        else:
-            string += f"\n*-Frame: {curr_step} "
-
-        string += f'\nSimulation Time: {(dt * curr_step):.3} ps \n'
+        string = self.write_md_header(dt, curr_step, dft_step)
 
         # Construct Header line
         n_space = 30

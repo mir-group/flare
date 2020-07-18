@@ -11,8 +11,6 @@ from flare.ase.calculator import FLARE_Calculator
 from flare.ase.otf import ASE_OTF
 from flare.utils.parameter_helper import ParameterHelper
 
-# from flare.ase.logger import OTFLogger
-
 from ase import units
 from ase.md.velocitydistribution import (
     MaxwellBoltzmannDistribution,
@@ -54,15 +52,16 @@ md_list = ["VelocityVerlet" , 'NVTBerendsen', 'NPTBerendsen', 'NPT', 'Langevin']
 def md_params():
 
     md_dict = {"temperature": 500}
+    print(md_list)
     for md_engine in md_list:
         if md_engine == "VelocityVerlet":
             md_dict[md_engine] = {}
         else:
             md_dict[md_engine] = {"temperature": md_dict["temperature"]}
 
-        md_dict['NVTBerendsen'].update({'taut': 0.5e3 * units.fs})
-        md_dict['NPT'].update({'externalstress': 0, 'ttime': 25, 'pfactor': 3375})
-        md_dict['Langevin'].update({'friction': 0.02})
+    md_dict['NVTBerendsen'].update({'taut': 0.5e3 * units.fs})
+    md_dict['NPT'].update({'externalstress': 0, 'ttime': 25, 'pfactor': 3375})
+    md_dict['Langevin'].update({'friction': 0.02})
 
     yield md_dict
     del md_dict
@@ -212,5 +211,5 @@ def test_otf_parser():
     otf_traj = OtfAnalysis(output_name)
     print("ase otf traj parsed")
 
-    for f in glob.glob("*.out"):
-        os.remove(f)
+#    for f in glob.glob("*.out"):
+#        os.remove(f)
