@@ -11,8 +11,7 @@ from flare.struc import Structure
 
 
 cmd = {'cp2k':'CP2K_COMMAND', 'qe':'PWSCF_COMMAND'}
-#software_list = ['cp2k', 'qe']
-software_list = ['qe']
+software_list = ['cp2k', 'qe']
 example_list = [1, 2]
 name_list = {1:'h2', 2:'al'}
 
@@ -61,9 +60,6 @@ def test_otf(software, example):
     Test that an otf run can survive going for more steps
     :return:
     """
-
-    #TODO: remove skip
-    pytest.skip()
 
     print('running test_otf.py')
     print('current working directory:')
