@@ -20,7 +20,9 @@ class OtfAnalysis:
         self.noh = self.header["n_hyps"]
 
         self.position_list = []
+        self.cell_list = []
         self.force_list = []
+        self.stress_list = []
         self.uncertainty_list = []
         self.velocity_list = []
         self.temperatures = []
@@ -29,15 +31,19 @@ class OtfAnalysis:
         self.times = []
         self.msds = []
         self.energies = []
+        self.thermostat = {}
 
         self.gp_position_list = []
+        self.gp_cell_list = []
         self.gp_force_list = []
+        self.gp_stress_list = []
         self.gp_uncertainty_list = []
         self.gp_velocity_list = []
         self.gp_atom_list = []
         self.gp_hyp_list = []
         self.gp_species_list = []
         self.gp_atom_count = []
+        self.gp_thermostat = {}
 
         self.mae_list = []
         self.maf_list = []
@@ -113,7 +119,7 @@ class OtfAnalysis:
                 if line.startswith("*-Frame"):
                     dft_frame_line = line.split()
                     self.dft_frames.append(int(dft_frame_line[1]))
-                    dft_time_line = lines[index + 1].split()
+                    dft_time_line = block[index + 1].split()
                     self.dft_times.append(float(dft_time_line[-2]))
 
                     # TODO: generalize this to account for arbitrary starting list
@@ -149,9 +155,9 @@ class OtfAnalysis:
                 # MD frame
                 if line.startswith("-Frame"):
                     n_steps += 1
-                    time_line = lines[index + 1].split()
+                    time_line = block[index + 1].split()
                     sim_time = float(time_line[2])
-                    times.append(sim_time)
+                    self.times.append(sim_time)
 
                     # TODO: generalize this to account for arbitrary starting list
                     append_atom_lists(
@@ -168,13 +174,12 @@ class OtfAnalysis:
                     )
 
                     extract_global_info(
-                        self.gp_cell_list,
-                        self.gp_stress_list,
-                        self.gp_thermostat,
-                        post_frame,
+                        self.cell_list, self.stress_list, self.thermostat, post_frame,
                     )
 
-                    msds.append(np.mean((positions - position_list[0]) ** 2))
+                    self.msds.append(
+                        np.mean((self.position_list[-1] - self.position_list[0]) ** 2)
+                    )
 
     def output_md_structures(self):
         """
@@ -282,7 +287,7 @@ def parse_header_information(lines) -> dict:
 
 def get_header_item(line, pattern, header_info, kw, value_type):
     if pattern in line:
-        header_dict[kw] = value_type(line.split(":")[1].strip())
+        header_info[kw] = value_type(line.split(":")[1].strip())
 
 
 header_dict = {
@@ -386,7 +391,7 @@ def extract_global_info(
     for ind, line in enumerate(block):
         if "cell" in line:
             vectors = []
-            for cell_line in lines[i + 1 : i + 4]:
+            for cell_line in block[ind + 1 : ind + 4]:
                 cell_line = cell_line.strip().replace("[", "").replace("]", "")
                 vec = cell_line.split()
                 vector = [float(vec[0]), float(vec[1]), float(vec[2])]
@@ -447,7 +452,7 @@ def extract_gp_info(block, mae_list, maf_list, atoms_list, hyps_list):
         # keep track of hyperparameters
         if line.startswith("GP hyperparameters:"):
             hyps = []
-            for hyp_line in lines[(ind_count + 1) : (ind_count + 1 + noh)]:
+            for hyp_line in block[(ind + 1) : (ind + 1 + self.noh)]:
                 hyp_line = hyp_line.split()
                 hyps.append(float(hyp_line[-1]))
             hyps = np.array(hyps)

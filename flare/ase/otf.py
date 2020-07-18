@@ -177,6 +177,7 @@ class ASE_OTF(OTF):
 
         # Take MD step.
         self.md.step()
+        self.md.call_observers()
 
         # Update the positions and cell of the structure object.
         self.structure.cell = np.copy(self.atoms.cell)
