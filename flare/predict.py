@@ -180,7 +180,7 @@ def predict_on_structure_par(
     """
     # Just work in serial in the number of cpus is 1
     # or the gp is not parallelized by atoms
-    if (n_cpus is 1) or (gp.per_atom_par):
+    if (n_cpus is 1) or (not gp.per_atom_par):
         return predict_on_structure(
             structure=structure, gp=gp, n_cpus=n_cpus,
             write_to_structure=write_to_structure,
@@ -277,7 +277,7 @@ def predict_on_structure_efs_par(
 
     # Just work in serial in the number of cpus is 1, 
     # or the gp is not parallelized by atoms
-    if (n_cpus is 1) or (gp.per_atom_par):
+    if (n_cpus is 1) or (not gp.per_atom_par):
         return predict_on_structure_efs(
             structure=structure, gp=gp, n_cpus=n_cpus,
             write_to_structure=write_to_structure,
@@ -440,7 +440,7 @@ def predict_on_structure_par_en(structure: Structure, gp: GaussianProcess,
     """
     # Work in serial if the number of cpus is 1
     # or the gp is not parallelized by atoms
-    if (n_cpus is 1) or (gp.per_atom_par):
+    if (n_cpus is 1) or (not gp.per_atom_par):
         predict_on_structure_en(structure, gp,
                                 n_cpus, write_to_structure,
                                 selective_atoms,
