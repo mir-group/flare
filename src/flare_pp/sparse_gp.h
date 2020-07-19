@@ -16,7 +16,7 @@ public:
       noise_struc;
   std::vector<Kernel *> kernels;
 
-  double model_size, sparse_size, training_size, Kuu_size, Kuf_env_size,
+  int model_size, sparse_size, training_size, Kuu_size, Kuf_env_size,
       noise_env_size;
 
   std::vector<LocalEnvironment> sparse_environments, training_environments;

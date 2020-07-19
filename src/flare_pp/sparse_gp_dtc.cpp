@@ -1,4 +1,5 @@
 #include "sparse_gp_dtc.h"
+#include <iostream>
 
 SparseGP_DTC ::SparseGP_DTC() {}
 
@@ -11,10 +12,14 @@ SparseGP_DTC ::SparseGP_DTC(std::vector<Kernel *> kernels, double sigma_e,
     for (int i = 0; i < kernels.size(); i++){
         Kuf_env_kernels.push_back(empty_matrix);
         Kuf_struc_kernels.push_back(empty_matrix);
+        Kuf_struc_energy.push_back(empty_matrix);
+        Kuf_struc_force.push_back(empty_matrix);
+        Kuf_struc_stress.push_back(empty_matrix);
         Kuu_kernels.push_back(empty_matrix);
     }
     }
 
+// TODO: Break Kuf_struc into energy, force, and stress blocks.
 void SparseGP_DTC ::add_sparse_environments(
     const std::vector<LocalEnvironment> &envs) {
 
@@ -141,31 +146,27 @@ void SparseGP_DTC ::add_sparse_environments(
   }
 }
 
-// TODO: Update kernel lists.
 void SparseGP_DTC ::add_training_structure(
     const StructureDescriptor &training_structure) {
 
-  int n_labels = training_structure.energy.size() +
-                 training_structure.forces.size() +
-                 training_structure.stresses.size();
-
-  if (n_labels > max_labels) max_labels = n_labels;
+  int n_energy = training_structure.energy.size();
+  int n_force = training_structure.forces.size();
+  int n_stress = training_structure.stresses.size();
+  int n_labels = n_energy + n_force + n_stress;
 
   int n_atoms = training_structure.noa;
   int n_sparse = sparse_environments.size();
   int n_kernels = kernels.size();
 
-  // Update label counts.
-  int prev_count;
-  int curr_size = label_count.size();
-  if (label_count.size() == 0) {
-    label_count.push_back(n_labels);
-  } else {
-    prev_count = label_count[curr_size - 1];
-    label_count.push_back(n_labels + prev_count);
+  // Calculate kernels between sparse environments and training structure.
+  std::vector<Eigen::MatrixXd> energy_kernels, force_kernels, stress_kernels;
+
+  for (int i = 0; i < n_kernels; i++){
+      energy_kernels.push_back(Eigen::MatrixXd::Zero(n_sparse, n_energy));
+      force_kernels.push_back(Eigen::MatrixXd::Zero(n_sparse, n_force));
+      stress_kernels.push_back(Eigen::MatrixXd::Zero(n_sparse, n_stress));
   }
 
-  // Calculate kernels between sparse environments and training structure.
   Eigen::MatrixXd kernel_block = Eigen::MatrixXd::Zero(n_sparse, n_labels);
 
 #pragma omp parallel for schedule(static)
@@ -174,61 +175,86 @@ void SparseGP_DTC ::add_training_structure(
     for (int j = 0; j < n_kernels; j++) {
       kernel_vector +=
           kernels[j]->env_struc(sparse_environments[i], training_structure);
-    }
+    
+      // Store energy, force, and stress kernels.
+      if (n_energy > 0) {
+          energy_kernels[j](i, 0) = kernel_vector(0);
+      }
 
-    // Update kernel block.
-    int count = 0;
-    if (training_structure.energy.size() != 0) {
-      kernel_block(i, 0) = kernel_vector(0);
-      count += 1;
-    }
+      if (n_force > 0) {
+          force_kernels[j].row(i) = kernel_vector.segment(1, n_atoms * 3);
+      }
 
-    if (training_structure.forces.size() != 0) {
-      kernel_block.row(i).segment(count, n_atoms * 3) =
-          kernel_vector.segment(1, n_atoms * 3);
-    }
-
-    if (training_structure.stresses.size() != 0) {
-      kernel_block.row(i).tail(6) = kernel_vector.tail(6);
+      if (n_stress > 0){
+          stress_kernels[j].row(i) = kernel_vector.tail(6);
+      }
     }
   }
 
-  // Add kernel block to Kuf_struc.
-  int prev_cols = Kuf_struc.cols();
-  Kuf_struc.conservativeResize(n_sparse, prev_cols + n_labels);
-  Kuf_struc.block(0, prev_cols, n_sparse, n_labels) = kernel_block;
+  // Update Kuf kernels.
+  for (int i = 0; i < n_kernels; i++){
+      Kuf_struc_energy[i].conservativeResize(
+          n_sparse, n_energy_labels + n_energy);
+      Kuf_struc_force[i].conservativeResize(
+          n_sparse, n_force_labels + n_force);
+      Kuf_struc_stress[i].conservativeResize(
+          n_sparse, n_stress_labels + n_stress);
+
+      Kuf_struc_energy[i].block(0, n_energy_labels, n_sparse, n_energy) =
+        energy_kernels[i];
+      Kuf_struc_force[i].block(0, n_force_labels, n_sparse, n_force) =
+        force_kernels[i];
+      Kuf_struc_stress[i].block(0, n_stress_labels, n_sparse, n_stress) =
+        stress_kernels[i];
+  }
+
+  // Update label count.
+  n_energy_labels += n_energy;
+  n_force_labels += n_force;
+  n_stress_labels += n_stress;
+
+  // Form full Kuf struc matrix.
+  Kuf_struc = Eigen::MatrixXd::Zero(
+      n_sparse, n_energy_labels + n_force_labels + n_stress_labels);
+
+  for (int i = 0; i < n_kernels; i ++){
+      Kuf_struc.block(0, 0, n_sparse, n_energy_labels) +=
+        Kuf_struc_energy[i];
+      Kuf_struc.block(0, n_energy_labels, n_sparse, n_force_labels) +=
+        Kuf_struc_force[i];
+      Kuf_struc.block(0, n_energy_labels + n_force_labels, n_sparse,
+                      n_stress_labels) +=
+        Kuf_struc_stress[i];
+  }
 
   // Store training structure.
   training_structures.push_back(training_structure);
 
-  // Update y vector and noise matrix.
-  Eigen::VectorXd labels = Eigen::VectorXd::Zero(n_labels);
-  Eigen::VectorXd noise_vector = Eigen::VectorXd::Zero(n_labels);
+  // Update labels.
+  energy_labels.conservativeResize(n_energy_labels);
+  force_labels.conservativeResize(n_force_labels);
+  stress_labels.conservativeResize(n_stress_labels);
 
-  int count = 0;
-  if (training_structure.energy.size() != 0) {
-    labels.head(1) = training_structure.energy;
-    noise_vector(0) = 1 / (sigma_e * sigma_e);
-    count++;
-  }
+  energy_labels.tail(n_energy) = training_structure.energy;
+  force_labels.tail(n_force) = training_structure.forces;
+  stress_labels.tail(n_stress) = training_structure.stresses;
 
-  if (training_structure.forces.size() != 0) {
-    labels.segment(count, n_atoms * 3) = training_structure.forces;
-    noise_vector.segment(count, n_atoms * 3) =
-        Eigen::VectorXd::Constant(n_atoms * 3, 1 / (sigma_f * sigma_f));
-  }
+  y_struc.conservativeResize(
+      n_energy_labels + n_force_labels + n_stress_labels);
+  y_struc.segment(0, n_energy_labels) = energy_labels;
+  y_struc.segment(n_energy_labels, n_force_labels) = force_labels;
+  y_struc.segment(n_energy_labels + n_force_labels, n_stress_labels) =
+    stress_labels;
 
-  if (training_structure.stresses.size() != 0) {
-    labels.tail(6) = training_structure.stresses;
-    noise_vector.tail(6) =
-        Eigen::VectorXd::Constant(6, 1 / (sigma_s * sigma_s));
-  }
-
-  y_struc.conservativeResize(y_struc.size() + n_labels);
-  y_struc.tail(n_labels) = labels;
-
-  noise_struc.conservativeResize(prev_cols + n_labels);
-  noise_struc.tail(n_labels) = noise_vector;
+  // Update noise.
+  noise_struc.conservativeResize(
+      n_energy_labels + n_force_labels + n_stress_labels);
+  noise_struc.segment(0, n_energy_labels) =
+    Eigen::VectorXd::Constant(n_energy_labels, 1 / (sigma_e * sigma_e));
+  noise_struc.segment(n_energy_labels, n_force_labels) =
+    Eigen::VectorXd::Constant(n_force_labels, 1 / (sigma_f * sigma_f));
+  noise_struc.segment(n_energy_labels + n_force_labels, n_stress_labels) =
+    Eigen::VectorXd::Constant(n_stress_labels, 1 / (sigma_s * sigma_s));
 }
 
 
