@@ -17,6 +17,7 @@ from ase.md.nptberendsen import NPTBerendsen
 from ase.md.verlet import VelocityVerlet
 from ase.md.langevin import Langevin
 from ase import units
+from ase.constraints import FixAtoms
 
 from flare.otf import OTF
 from flare.utils.learner import is_std_in_bound
@@ -138,6 +139,15 @@ class ASE_OTF(OTF):
             dft_input=self.atoms,
             **otf_kwargs
         )
+
+        # frozen atoms
+        if len(atoms.constraints) > 0:
+            self.atoms.set_constraint(atoms.constraints)
+
+            # currently only supports FixAtoms
+            if isinstance(self.atoms.constraints[0], FixAtoms):
+                self.fix_atoms = self.atoms.constraints[0].index
+
 
 
     def get_structure_from_input(self, prev_pos_init):

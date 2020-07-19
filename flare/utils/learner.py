@@ -10,7 +10,8 @@ import numpy as np
 
 def is_std_in_bound(std_tolerance: float, noise: float,
                     structure: 'flare.struc.Structure',
-                    max_atoms_added: int = inf) -> (bool, List[int]):
+                    max_atoms_added: int = inf,
+                    exclude_indices = []) -> (bool, List[int]):
     """
     Given an uncertainty tolerance and a structure decorated with atoms,
     species, and associated uncertainties, return those which are above a
@@ -47,6 +48,7 @@ def is_std_in_bound(std_tolerance: float, noise: float,
     for atom, std in enumerate(structure.stds):
         max_stds[atom] = np.max(std)
     stds_sorted = np.argsort(max_stds)
+    stds_sorted = stds_sorted[~np.isin(stds_sorted, exclude_indices)]
     target_atoms = list(stds_sorted[-max_atoms_added:])
 
     # if above threshold, return atom
