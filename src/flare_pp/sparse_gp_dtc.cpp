@@ -11,7 +11,6 @@ SparseGP_DTC ::SparseGP_DTC(std::vector<Kernel *> kernels, double sigma_e,
     Eigen::MatrixXd empty_matrix;
     for (int i = 0; i < kernels.size(); i++){
         Kuf_env_kernels.push_back(empty_matrix);
-        Kuf_struc_kernels.push_back(empty_matrix);
         Kuf_struc_energy.push_back(empty_matrix);
         Kuf_struc_force.push_back(empty_matrix);
         Kuf_struc_stress.push_back(empty_matrix);
@@ -19,7 +18,6 @@ SparseGP_DTC ::SparseGP_DTC(std::vector<Kernel *> kernels, double sigma_e,
     }
     }
 
-// TODO: Break Kuf_struc into energy, force, and stress blocks.
 void SparseGP_DTC ::add_sparse_environments(
     const std::vector<LocalEnvironment> &envs) {
 
@@ -83,25 +81,20 @@ void SparseGP_DTC ::add_sparse_environments(
   Kuu.block(n_sparse, n_sparse, n_envs, n_envs) = self_block;
 
   // Compute kernels between new sparse environment and training structures.
-  std::vector<Eigen::MatrixXd> uf_blocks;
+  std::vector<Eigen::MatrixXd> energy_kernels, force_kernels, stress_kernels;
   for (int i = 0; i < n_kernels; i++){
-      uf_blocks.push_back(Eigen::MatrixXd::Zero(n_envs, n_labels));
+      energy_kernels.push_back(Eigen::MatrixXd::Zero(n_envs, n_energy_labels));
+      force_kernels.push_back(Eigen::MatrixXd::Zero(n_envs, n_force_labels));
+      stress_kernels.push_back(Eigen::MatrixXd::Zero(n_envs, n_stress_labels));
   }
 
 // TODO: Check parallel version -- may need to eliminate kernel vector initialization inside the second for loop.
   #pragma omp parallel for schedule(static)
   for (int i = 0; i < n_envs; i++){
+    int e_count = 0;
+    int f_count = 0;
+    int s_count = 0;
     for (int j = 0; j < n_strucs; j++) {
-        int initial_index, index;
-
-        // Get initial index.
-        if (j == 0) {
-            initial_index = 0;
-        } else {
-            initial_index = label_count[j - 1];
-        }
-        index = initial_index;
-
         // Initialize kernel vector.
         int n_atoms = training_structures[j].noa;
         Eigen::VectorXd kernel_vector = 
@@ -112,33 +105,53 @@ void SparseGP_DTC ::add_sparse_environments(
                 kernels[k]->env_struc(envs[i], training_structures[j]);
 
             if (training_structures[j].energy.size() != 0) {
-                uf_blocks[k](i, index) = kernel_vector(0);
-                index += 1;
+                energy_kernels[k](i, e_count) = kernel_vector(0);
+                e_count += 1;
             }
 
             if (training_structures[j].forces.size() != 0) {
-                uf_blocks[k].row(i).segment(index, n_atoms * 3) =
+                force_kernels[k].row(i).segment(f_count, n_atoms * 3) =
                     kernel_vector.segment(1, n_atoms * 3);
-                index += n_atoms * 3;
+                f_count += n_atoms * 3;
             }
 
             if (training_structures[j].stresses.size() != 0) {
-                uf_blocks[k].row(i).segment(index, 6) = kernel_vector.tail(6);
+                stress_kernels[k].row(i).segment(s_count, 6) =
+                    kernel_vector.tail(6);
+                s_count += 6;
             }
         }
     }
   }
+
   // Update Kuf_struc matrices.
   Eigen::MatrixXd uf_block = Eigen::MatrixXd::Zero(n_envs, n_labels);
   for (int i = 0; i < n_kernels; i++){
-    Kuf_struc_kernels[i].conservativeResize(n_sparse + n_envs, n_labels);
-    Kuf_struc_kernels[i].block(n_sparse, 0, n_envs, n_labels) = uf_blocks[i];
+    Kuf_struc_energy[i].conservativeResize(n_sparse + n_envs, n_energy_labels);
+    Kuf_struc_force[i].conservativeResize(n_sparse + n_envs, n_force_labels);
+    Kuf_struc_stress[i].conservativeResize(n_sparse + n_envs, n_stress_labels);
 
-    uf_block += uf_blocks[i];
+    Kuf_struc_energy[i].block(n_sparse, 0, n_envs, n_energy_labels) =
+        energy_kernels[i];
+    Kuf_struc_force[i].block(n_sparse, 0, n_envs, n_force_labels) =
+        force_kernels[i];
+    Kuf_struc_stress[i].block(n_sparse, 0, n_envs, n_stress_labels) =
+        stress_kernels[i];
   }
 
-  Kuf_struc.conservativeResize(n_sparse + n_envs, n_labels);
-  Kuf_struc.block(n_sparse, 0, n_envs, n_labels) = uf_block;
+  // Form full Kuf struc matrix.
+  Kuf_struc = Eigen::MatrixXd::Zero(
+      n_sparse + n_envs, n_energy_labels + n_force_labels + n_stress_labels);
+
+  for (int i = 0; i < n_kernels; i ++){
+      Kuf_struc.block(0, 0, n_sparse + n_envs, n_energy_labels) +=
+        Kuf_struc_energy[i];
+      Kuf_struc.block(0, n_energy_labels, n_sparse + n_envs, n_force_labels) +=
+        Kuf_struc_force[i];
+      Kuf_struc.block(0, n_energy_labels + n_force_labels, n_sparse + n_envs,
+                      n_stress_labels) +=
+        Kuf_struc_stress[i];
+  }
 
   // Store sparse environments.
   for (int i = 0; i < n_envs; i++) {
