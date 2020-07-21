@@ -82,17 +82,9 @@ TEST_F(SparseTest, DTC_Prediction){
   EXPECT_EQ(sparse_gp.data_fit + sparse_gp.complexity_penalty +
             sparse_gp.constant_term, sparse_gp.log_marginal_likelihood);
 
-}
-
-TEST_F(SparseTest, LikelihoodFunction){
-
-  double sigma_e = 1;
-  double sigma_f = 2;
-  double sigma_s = 3;
-
-  SparseGP_DTC sparse_gp = SparseGP_DTC(kernels, sigma_e, sigma_f, sigma_s);
-  Eigen::VectorXd hyps;
+  // Check the likelihood function.
+  Eigen::VectorXd hyps = sparse_gp.hyperparameters;
   double likelihood = compute_likelihood(sparse_gp, hyps);
-  std::cout << "likelihood" << std::endl;
-  std::cout << likelihood << std::endl;
+
+  EXPECT_EQ(sparse_gp.log_marginal_likelihood, likelihood);
 }
