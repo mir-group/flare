@@ -149,6 +149,11 @@ class TrajectoryTrainer:
         self.frames = frames
         if shuffle_frames:
             np.random.shuffle(frames)
+            if print_training_plan:
+                warnings.warn("Frames are shuffled so training plan will not"
+                              " map onto the structures used; Try to "
+                              "shuffle the frames outside of the GPFA module "
+                              "for now.")
 
         # GP Training and Execution parameters
         self.gp = gp
