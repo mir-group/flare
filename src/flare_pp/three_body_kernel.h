@@ -36,7 +36,7 @@ public:
                             const StructureDescriptor &struc1);
 
   Eigen::MatrixXd kernel_transform(Eigen::MatrixXd kernels,
-                                   std::vector<double> new_hyps);
+                                   Eigen::VectorXd new_hyps);
 
   void env_struc_update(Eigen::VectorXd &kernel_vector, int no_elements, int i,
                         double vol_inv, double r11, double r22, double r33,

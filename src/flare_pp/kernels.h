@@ -9,11 +9,11 @@ class StructureDescriptor;
 
 class Kernel {
 public:
-  std::vector<double> kernel_hyperparameters;
+  Eigen::VectorXd kernel_hyperparameters;
 
   Kernel();
 
-  Kernel(std::vector<double> kernel_hyperparameters);
+  Kernel(Eigen::VectorXd kernel_hyperparameters);
 
   virtual double env_env(const LocalEnvironment &env1,
                          const LocalEnvironment &env2) = 0;
@@ -39,7 +39,7 @@ public:
 
   virtual Eigen::MatrixXd
     kernel_transform(Eigen::MatrixXd kernels,
-                     std::vector<double> new_hyps) = 0;
+                     Eigen::VectorXd new_hyps) = 0;
 
   virtual ~Kernel() = default;
 };

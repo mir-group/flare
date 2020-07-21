@@ -34,7 +34,7 @@ public:
                             const StructureDescriptor &struc1);
 
   Eigen::MatrixXd kernel_transform(Eigen::MatrixXd kernels,
-                                   std::vector<double> new_hyps);
+                                   Eigen::VectorXd new_hyps);
 };
 
 #endif

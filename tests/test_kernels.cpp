@@ -764,3 +764,10 @@ TEST_F(KernelTest, ManyBodySelfStrucTest) {
     }
   }
 }
+
+TEST(MatTest, MatTest){
+    std::cout << "hello world" << std::endl;
+    Eigen::VectorXd test(3);
+    test << 1, 2, 3;
+    std::cout << test << std::endl;
+}

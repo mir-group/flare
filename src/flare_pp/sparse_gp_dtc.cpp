@@ -378,3 +378,18 @@ void SparseGP_DTC ::compute_DTC_likelihood(){
 void SparseGP_DTC ::compute_VFE_likelihood(){
 
 }
+
+double compute_likelihood(const SparseGP_DTC &sparse_gp,
+                          const Eigen::VectorXd &hyperparameters){
+
+    // // Transform kernels.
+    // int n_kernels = sparse_gp.kernels.size();
+    // std::vector<Eigen::MatrixXd> Kuu_kernels, Kuf_struc_energy,
+    //     Kuf_struc_force, Kuf_struc_stress;
+    // for (int i = 0; i < n_kernels; i++){
+    //     int n_hyps = sparse_gp.kernels[i]->kernel_hyperparameters.size();
+    //     Kuu_kernels.push_back(
+    //         sparse_gp.kernels[i]->kernel_transform(sparse_gp.Kuu_kernels[i],)
+    // }
+    return 0.0;
+}

@@ -5,7 +5,7 @@
 #include <iostream>
 
 Kernel ::Kernel(){};
-Kernel ::Kernel(std::vector<double> kernel_hyperparameters) {
+Kernel ::Kernel(Eigen::VectorXd kernel_hyperparameters) {
   this->kernel_hyperparameters = kernel_hyperparameters;
 };
 

@@ -23,13 +23,13 @@ SparseGP ::SparseGP(std::vector<Kernel *> kernels, double sigma_e,
 
   // Set the kernel hyperparameters.
   hyperparameters = Eigen::VectorXd::Zero(n_hyps + 3);
-  std::vector<double> hyps_curr;
+  Eigen::VectorXd hyps_curr;
   int hyp_counter = 0;
   for (int i = 0; i < kernels.size(); i++) {
     hyps_curr = kernels[i]->kernel_hyperparameters;
 
     for (int j = 0; j < hyps_curr.size(); j++) {
-      hyperparameters(hyp_counter) = hyps_curr[j];
+      hyperparameters(hyp_counter) = hyps_curr(j);
       hyp_counter++;
     }
   }

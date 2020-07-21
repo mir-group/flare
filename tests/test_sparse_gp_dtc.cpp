@@ -84,10 +84,15 @@ TEST_F(SparseTest, DTC_Prediction){
 
 }
 
-TEST(MatrixTest, MatrixTest){
-    Eigen::MatrixXd test = Eigen::MatrixXd::Constant(3, 3, 3);
-    Eigen::MatrixXd test2 = test;
-    test2 /= 2;
-    std::cout << test << std::endl;
-    std::cout << test2 << std::endl;
+TEST_F(SparseTest, LikelihoodFunction){
+
+  double sigma_e = 1;
+  double sigma_f = 2;
+  double sigma_s = 3;
+
+  SparseGP_DTC sparse_gp = SparseGP_DTC(kernels, sigma_e, sigma_f, sigma_s);
+  Eigen::VectorXd hyps;
+  double likelihood = compute_likelihood(sparse_gp, hyps);
+  std::cout << "likelihood" << std::endl;
+  std::cout << likelihood << std::endl;
 }

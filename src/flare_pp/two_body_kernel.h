@@ -36,7 +36,7 @@ public:
                             const StructureDescriptor &struc1);
 
   Eigen::MatrixXd kernel_transform(Eigen::MatrixXd kernels,
-                                   std::vector<double> new_hyps);
+                                   Eigen::VectorXd new_hyps);
 };
 
 double force_helper(double rel1_rel2, double diff_rel1, double diff_rel2,

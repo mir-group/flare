@@ -19,7 +19,10 @@ ThreeBodyKernel ::ThreeBodyKernel(double sigma, double ls,
   ls3 = ls2 * ls2;
   this->cutoff_hyps = cutoff_hyps;
 
-  kernel_hyperparameters = std::vector<double>{sigma, ls};
+  // Set kernel hyperparameters.
+  Eigen::VectorXd hyps(2);
+  hyps << sigma, ls;
+  kernel_hyperparameters = hyps;
 
   if (cutoff_function == "quadratic") {
     this->cutoff_pointer = quadratic_cutoff;
@@ -1328,7 +1331,7 @@ std::vector<double> ThreeBodyKernel ::force_stress_helper_2(
 }
 
 Eigen::MatrixXd ThreeBodyKernel ::kernel_transform(Eigen::MatrixXd kernels,
-    std::vector<double> new_hyps){
+    Eigen::VectorXd new_hyps){
 
     // Not implemented.
     return Eigen::MatrixXd::Zero(0, 0);

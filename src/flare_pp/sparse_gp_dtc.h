@@ -52,4 +52,7 @@ public:
   void set_hyperparameters(Eigen::VectorXd hyperparameters);
 };
 
+double compute_likelihood(const SparseGP_DTC &sparse_gp,
+                          const Eigen::VectorXd &hyperparameters);
+
 #endif
