@@ -34,6 +34,9 @@ public:
 
   Eigen::VectorXd env_struc(const LocalEnvironment &env1,
                             const StructureDescriptor &struc1);
+
+  Eigen::MatrixXd kernel_transform(Eigen::MatrixXd kernels,
+                                   std::vector<double> new_hyps);
 };
 
 double force_helper(double rel1_rel2, double diff_rel1, double diff_rel2,

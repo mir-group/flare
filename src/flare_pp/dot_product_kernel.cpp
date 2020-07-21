@@ -14,7 +14,7 @@ DotProductKernel ::DotProductKernel(double sigma, double power,
   this->power = power;
   this->descriptor_index = descriptor_index;
 
-  kernel_hyperparameters = std::vector<double>{sigma, power};
+  kernel_hyperparameters = std::vector<double>{sigma};
 }
 
 double DotProductKernel ::env_env(const LocalEnvironment &env1,
@@ -282,3 +282,13 @@ DotProductKernel ::env_struc(const LocalEnvironment &env1,
 
   return kern_vec;
 }
+
+Eigen::MatrixXd DotProductKernel ::kernel_transform(Eigen::MatrixXd kernels,
+    std::vector<double> new_hyps){
+    
+    Eigen::MatrixXd new_kernels = kernels;
+    new_kernels /= sig2;
+    new_kernels *= new_hyps[0] * new_hyps[0];
+
+    return new_kernels;
+    }

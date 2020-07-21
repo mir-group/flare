@@ -1326,3 +1326,10 @@ std::vector<double> ThreeBodyKernel ::force_stress_helper_2(
 
   return force_stress_vals;
 }
+
+Eigen::MatrixXd ThreeBodyKernel ::kernel_transform(Eigen::MatrixXd kernels,
+    std::vector<double> new_hyps){
+
+    // Not implemented.
+    return Eigen::MatrixXd::Zero(0, 0);
+    };

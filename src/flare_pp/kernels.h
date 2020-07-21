@@ -37,6 +37,10 @@ public:
   virtual Eigen::VectorXd
     self_kernel_struc(const StructureDescriptor &struc) = 0;
 
+  virtual Eigen::MatrixXd
+    kernel_transform(Eigen::MatrixXd kernels,
+                     std::vector<double> new_hyps) = 0;
+
   virtual ~Kernel() = default;
 };
 

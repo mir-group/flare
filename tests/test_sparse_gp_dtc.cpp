@@ -83,3 +83,11 @@ TEST_F(SparseTest, DTC_Prediction){
             sparse_gp.constant_term, sparse_gp.log_marginal_likelihood);
 
 }
+
+TEST(MatrixTest, MatrixTest){
+    Eigen::MatrixXd test = Eigen::MatrixXd::Constant(3, 3, 3);
+    Eigen::MatrixXd test2 = test;
+    test2 /= 2;
+    std::cout << test << std::endl;
+    std::cout << test2 << std::endl;
+}
