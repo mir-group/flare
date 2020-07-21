@@ -134,6 +134,7 @@ class OTF:
         self.curr_step = 0
 
         self.max_atoms_added = max_atoms_added
+        self.fix_atoms = []
 
         # initialize local energies
         if calculate_energy:
@@ -224,7 +225,7 @@ class OTF:
                         self.gp.hyps_mask, self.gp.hyps, constraint=False)
                 std_in_bound, target_atoms = is_std_in_bound(
                     self.std_tolerance, noise_sig, self.structure,
-                    self.max_atoms_added)
+                    self.max_atoms_added, self.fix_atoms)
 
                 if not std_in_bound:
                     # record GP forces
@@ -350,7 +351,7 @@ class OTF:
 
         self.gp.set_L_alpha()
 
-        # write model
+        # if the hyps need training 
         if (self.dft_count-1) < self.freeze_hyps:
             self.train_gp()
             if self.write_model == 2:

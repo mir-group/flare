@@ -11,6 +11,7 @@ from flare.ase.calculator import FLARE_Calculator
 from flare.ase.otf import ASE_OTF
 from flare.utils.parameter_helper import ParameterHelper
 
+from ase.constraints import FixAtoms
 from ase import units
 from ase.md.velocitydistribution import (
     MaxwellBoltzmannDistribution,
@@ -85,6 +86,8 @@ def super_cell():
     for atom_pos in atoms.positions:
         for coord in range(3):
             atom_pos[coord] += (2 * np.random.random() - 1) * 0.5
+
+    atoms.set_constraint(FixAtoms(indices=[0]))
 
     yield atoms
     del atoms
