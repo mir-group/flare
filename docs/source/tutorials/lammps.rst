@@ -2,6 +2,9 @@ Compile LAMMPS with MGP Pair Style
 ==================================
 Anders Johansson
 
+
+After downloading MGP pair style files (`pair_mgp.*`, `pair_mgpf.*`), please follow the instruction below to compile the LAMMPS executable.
+
 MPI
 ---
 
@@ -16,8 +19,8 @@ Compiling
     cd /path/to/lammps/src
     make -j$(nproc) mpi
 
-You can replace ``mpi`` with your favourite Makefile, e.g. ``intel_cpu_intelmpi``, or use the CMake build system.
 
+You can replace ``mpi`` with your favourite Makefile, e.g. ``intel_cpu_intelmpi``, or use the CMake build system.
 
 Running
 *******
@@ -27,6 +30,7 @@ Running
     mpirun /path/to/lammps/src/lmp_mpi -in in.lammps
 
 as usual, but your LAMMPS script ``in.lammps`` needs to specify ``newton off``.
+
 
 MPI+OpenMP through Kokkos
 -------------------------
@@ -76,6 +80,7 @@ A sample SLURM job script for 4 nodes, each with 48 cores, may look something li
 
 When running on Knight's Landing or other heavily hyperthreaded systems, you may want to try using more than one thread per CPU.
 
+
 MPI+CUDA through Kokkos
 -----------------------
 
@@ -124,6 +129,7 @@ A sample SLURM job script for 4 nodes, each with 2 GPUs, may look something like
     #SBATCH --cpus-per-task=1
     #SBATCH --gpus-per-node=2
     mpirun -np $SLURM_NTASKS /path/to/lammps/src/lmp_kokkos_cuda_mpi -k on g $SLURM_GPUS_PER_NODE -sf kk -package kokkos newton off neigh full -in in.lammps
+
 
 Notes on Newton (only relevant with Kokkos)
 -------------------------------------------

@@ -1,52 +1,53 @@
 import numpy as np
+from numba import njit
 from math import floor, ceil
 
 from typing import List
 
 from flare.struc import Structure
 from flare.utils.element_coder import Z_to_element
-from flare.gp_algebra import _global_training_data, _global_training_structures
-from flare.kernels.utils import from_mask_to_args
 
 from flare.mgp.mapxb import MapXbody, SingleMapXbody
-from flare.mgp.utils import get_triplets, get_kernel_term
-from flare.mgp.grid_kernels_3b import triplet_cutoff
+from flare.mgp.grid_kernels import grid_kernel, self_kernel
+
+from flare.kernels.utils import from_mask_to_args
 
 
 class Map3body(MapXbody):
-
     def __init__(self, **kwargs):
 
         self.kernel_name = "threebody"
         self.singlexbody = SingleMap3body
         self.bodies = 3
+        self.pred_perm = [[0, 1, 2], [1, 0, 2]]
+        self.spc_perm = [[0, 1, 2], [0, 2, 1]]
         super().__init__(**kwargs)
 
-
     def build_bond_struc(self, species_list):
-        '''
+        """
         build a bond structure, used in grid generating
-        '''
+        """
 
         # 2 body (2 atoms (1 bond) config)
         self.spc = []
         N_spc = len(species_list)
-        for spc1_ind in range(N_spc):
-            spc1 = species_list[spc1_ind]
-            for spc2_ind in range(N_spc):  # (spc1_ind, N_spc):
-                spc2 = species_list[spc2_ind]
-                for spc3_ind in range(N_spc):  # (spc2_ind, N_spc):
-                    spc3 = species_list[spc3_ind]
-                    species = [spc1, spc2, spc3]
-                    self.spc.append(species)
-
+        for spc1 in species_list:
+            for spc2 in species_list:
+                for spc3 in species_list:
+                    if spc2 <= spc3:
+                        species = [spc1, spc2, spc3]
+                        self.spc.append(species)
 
     def get_arrays(self, atom_env):
 
-        spcs, comp_r, comp_xyz = \
-            get_triplets(atom_env.ctype, atom_env.etypes,
-                    atom_env.bond_array_3, atom_env.cross_bond_inds,
-                    atom_env.cross_bond_dists, atom_env.triplet_counts)
+        spcs, comp_r, comp_xyz = get_triplets(
+            atom_env.ctype,
+            atom_env.etypes,
+            atom_env.bond_array_3,
+            atom_env.cross_bond_inds,
+            atom_env.cross_bond_dists,
+            atom_env.triplet_counts,
+        )
 
         return spcs, comp_r, comp_xyz
 
@@ -55,28 +56,31 @@ class Map3body(MapXbody):
 
 
 class SingleMap3body(SingleMapXbody):
-
     def __init__(self, **kwargs):
-        '''
+        """
         Build 3-body MGP
 
-        '''
+        """
 
         self.bodies = 3
-        self.kernel_name = 'threebody'
+        self.grid_dim = 3
+        self.kernel_name = "threebody"
+        self.pred_perm = [[0, 1, 2], [1, 0, 2]]
 
         super().__init__(**kwargs)
 
         # initialize bounds
-        self.set_bounds(0, np.ones(3))
-
-        self.grid_interval = np.min((self.bounds[1]-self.bounds[0])/self.grid_num)
+        self.set_bounds(None, None)
 
         spc = self.species
-        self.species_code = Z_to_element(spc[0]) + '_' + \
-            Z_to_element(spc[1]) + '_' + Z_to_element(spc[2])
-        self.kv3name = f'kv3_{self.species_code}'
-
+        self.species_code = (
+            Z_to_element(spc[0])
+            + "_"
+            + Z_to_element(spc[1])
+            + "_"
+            + Z_to_element(spc[2])
+        )
+        self.kv3name = f"kv3_{self.species_code}"
 
     def set_bounds(self, lower_bound, upper_bound):
         if self.auto_lower:
@@ -90,27 +94,21 @@ class SingleMap3body(SingleMapXbody):
             else:
                 self.bounds[1] = upper_bound
 
-
     def construct_grids(self):
-        '''
+        """
         Return:
             An array of shape (n_grid, 3)
-        '''
+        """
         # build grids in each dimension
         triplets = []
         for d in range(3):
-            bonds = np.linspace(self.bounds[0][d], self.bounds[1][d],
-                self.grid_num[d], dtype=np.float64)
+            bonds = np.linspace(
+                self.bounds[0][d], self.bounds[1][d], self.grid_num[d], dtype=np.float64
+            )
             triplets.append(bonds)
 
-#        r1 = np.tile(bonds1, (nb12, nb2, 1))
-#        r1 = np.moveaxis(r1, -1, 0)
-#        r2 = np.tile(bonds2, (nb1, nb12, 1))
-#        r2 = np.moveaxis(r2, -1, 1)
-#        r12 = np.tile(bonds12, (nb1, nb2, 1))
-
         # concatenate into one array: n_grid x 3
-        mesh = np.meshgrid(*triplets, indexing='ij')
+        mesh = np.meshgrid(*triplets, indexing="ij")
         del triplets
 
         mesh_list = []
@@ -122,98 +120,267 @@ class SingleMap3body(SingleMapXbody):
 
         return mesh_list
 
+    def grid_cutoff(self, triplets, r_cut, coords, derivative, cutoff_func):
+        return bonds_cutoff(triplets, r_cut, coords, derivative, cutoff_func)
 
-    def set_env(self, grid_env, grid_pt):
-        r1, r2, r12 = grid_pt
-        dist12 = r12
-        grid_env.bond_array_3 = np.array([[r1, 1, 0, 0], [r2, 0, 0, 0]])
-        grid_env.cross_bond_dists = np.array([[0, dist12], [dist12, 0]])
+    def get_grid_kernel(self, kern_type, data, kernel_info, *grid_arrays):
+        c2 = self.species[0]
+        etypes2 = np.array(self.species[1:])
 
-        return grid_env
+        _, cutoffs, hyps, hyps_mask = kernel_info
+        hyps, r_cut = get_hyps_for_kern(hyps, cutoffs, hyps_mask, c2, etypes2)
+        return grid_kernel(
+            data,
+            self.bodies,
+            kern_type,
+            get_bonds_for_kern,
+            bonds_cutoff,
+            c2,
+            etypes2,
+            hyps,
+            r_cut,
+            *grid_arrays,
+        )
+
+    def get_self_kernel(self, kernel_info, *grid_arrays):
+        c2 = self.species[0]
+        etypes2 = np.array(self.species[1:])
+
+        _, cutoffs, hyps, hyps_mask = kernel_info
+        hyps, r_cut = get_hyps_for_kern(hyps, cutoffs, hyps_mask, c2, etypes2)
+        return self_kernel(
+            self.bodies, get_permutations, c2, etypes2, hyps, r_cut, *grid_arrays
+        )
 
 
-    def skip_grid(self, grid_pt):
-        r1, r2, r12 = grid_pt
-
-        return False
-
-        if not self.map_force:
-            relaxation = 1/2 * np.max(self.grid_num) * self.grid_interval
-            if r1 + r2 < r12 - relaxation:
-                return True
-            if r1 + r12 < r2 - relaxation:
-                return True
-            if r12 + r2 < r1 - relaxation:
-                return True
-
-        return False
+# -----------------------------------------------------------------------------
+#                               Functions
+# -----------------------------------------------------------------------------
 
 
-    def _gengrid_numba(self, name, env12, kernel_info, force_block, s, e):
-        """
-        Loop over different parts of the training set. from element s to element e
+def bonds_cutoff(triplets, r_cut, coords, derivative, cutoff_func):
+    dfj_list = np.zeros((len(triplets), 3), dtype=np.float64)
 
-        Args:
-            name: name of the gp instance
-            s: start index of the training data parition
-            e: end index of the training data parition
-            env12: AtomicEnvironment container of the triplet
-            kernel_info: return value of the get_3b_kernel
-        """
+    if derivative:
+        for d in range(3):
+            inds = np.arange(3) * 3 + d
+            f0, df0 = cutoff_func(r_cut, triplets, coords[:, inds])
+            dfj = (
+                df0[:, 0] * f0[:, 1] * f0[:, 2]
+                + f0[:, 0] * df0[:, 1] * f0[:, 2]
+                + f0[:, 0] * f0[:, 1] * df0[:, 2]
+            )
+            dfj_list[:, d] = dfj
+    else:
+        f0, _ = cutoff_func(r_cut, triplets, 0)  # (n_grid, 3)
 
-        grid_kernel, _, _, cutoffs, hyps, hyps_mask = kernel_info
+    fj = f0[:, 0] * f0[:, 1] * f0[:, 2]  # (n_grid,)
+    fj = np.expand_dims(fj, axis=1)
 
-        args = from_mask_to_args(hyps, cutoffs, hyps_mask)
-        r_cut = cutoffs['threebody']
+    return fj, dfj_list
 
-        grids = self.construct_grids()
 
-        if (e-s) == 0:
-            return np.empty((grids.shape[0], 0), dtype=np.float64)
-        coords = np.zeros((grids.shape[0], 9), dtype=np.float64) # padding 0
-        coords[:, 0] = np.ones_like(coords[:, 0])
+# TODO: move this func to Parameters class
+def get_hyps_for_kern(hyps, cutoffs, hyps_mask, c2, etypes2):
+    """
+    Args:
+        data: a single env of a list of envs
+    """
 
-        fj, fdj = triplet_cutoff(grids, r_cut, coords, derivative=True) # TODO: add cutoff func
-        fdj = fdj[:, [0]]
+    args = from_mask_to_args(hyps, cutoffs, hyps_mask)
 
-        if self.map_force:
-            prefix = 'force'
-        else:
-            prefix = 'energy'
+    if len(args) == 2:
+        hyps, cutoffs = args
+        r_cut = cutoffs[1]
 
-        if force_block:
-            training_data = _global_training_data[name]
-            kern_type = f'{prefix}_force'
-        else:
-            training_data = _global_training_structures[name]
-            kern_type = f'{prefix}_energy'
+    else:
+        (
+            cutoff_2b,
+            cutoff_3b,
+            cutoff_mb,
+            nspec,
+            spec_mask,
+            nbond,
+            bond_mask,
+            ntriplet,
+            triplet_mask,
+            ncut3b,
+            cut3b_mask,
+            nmb,
+            mb_mask,
+            sig2,
+            ls2,
+            sig3,
+            ls3,
+            sigm,
+            lsm,
+        ) = args
 
-        k_v = []
-        chunk_size = 32 ** 3
-        n_grids = grids.shape[0]
-        if n_grids > chunk_size:
-            n_chunk = ceil(n_grids / chunk_size)
-        else:
-            n_chunk = 1
+        bc1 = spec_mask[c2]
+        bc2 = spec_mask[etypes2[0]]
+        bc3 = spec_mask[etypes2[1]]
+        ttype = triplet_mask[nspec * nspec * bc1 + nspec * bc2 + bc3]
+        ls = ls3[ttype]
+        sig = sig3[ttype]
+        r_cut = cutoff_3b
+        hyps = [sig, ls]
 
-        for m_index in range(s, e):
-            data = training_data[m_index]
-            kern_vec = []
-            for g in range(n_chunk):
-                gs = chunk_size * g
-                ge = np.min((chunk_size * (g + 1), n_grids))
-                grid_chunk = grids[gs:ge, :]
-                fj_chunk = fj[gs:ge, :]
-                fdj_chunk = fdj[gs:ge, :]
-                kv_chunk = grid_kernel(kern_type, data, grid_chunk, fj_chunk, fdj_chunk,
-                                       env12.ctype, env12.etypes, *args)
-                kern_vec.append(kv_chunk)
-            kern_vec = np.hstack(kern_vec)
-            k_v.append(kern_vec)
+    return hyps, r_cut
 
-        if len(k_v) > 0:
-            k_v = np.vstack(k_v).T
-        else:
-            k_v = np.zeros((grids.shape[0], 0))
 
-        return k_v
+@njit
+def get_triplets(
+    ctype, etypes, bond_array, cross_bond_inds, cross_bond_dists, triplets
+):
+    exist_species = []
+    tris = []
+    tri_dir = []
+
+    for m in range(bond_array.shape[0]):
+        r1 = bond_array[m, 0]
+        c1 = bond_array[m, 1:]
+        spc1 = etypes[m]
+
+        for n in range(triplets[m]):
+            ind1 = cross_bond_inds[m, m + n + 1]
+            r2 = bond_array[ind1, 0]
+            c2 = bond_array[ind1, 1:]
+            spc2 = etypes[ind1]
+
+            c12 = np.sum(c1 * c2)
+            r12 = np.sqrt(r1 ** 2 + r2 ** 2 - 2 * r1 * r2 * c12)
+
+            if spc1 <= spc2:
+                spcs = [ctype, spc1, spc2]
+                triplet = np.array([r1, r2, r12])
+                coord = [c1, c2, np.zeros(3)]
+            else:
+                spcs = [ctype, spc2, spc1]
+                triplet = np.array([r2, r1, r12])
+                coord = [c2, c1, np.zeros(3)]
+
+            if spcs not in exist_species:
+                exist_species.append(spcs)
+                tris.append([triplet])
+                tri_dir.append([coord])
+            else:
+                k = exist_species.index(spcs)
+                tris[k].append(triplet)
+                tri_dir[k].append(coord)
+
+    return exist_species, tris, tri_dir
+
+
+@njit
+def get_permutations(c1, etypes1, c2, etypes2):
+    ei1 = etypes1[0]
+    ei2 = etypes1[1]
+    ej1 = etypes2[0]
+    ej2 = etypes2[1]
+
+    perms = []
+    if c1 == c2:
+        if (ei1 == ej1) and (ei2 == ej2):
+            perms.append([0, 1, 2])
+        if (ei1 == ej2) and (ei2 == ej1):
+            perms.append([1, 0, 2])
+    if c1 == ej1:
+        if (ei1 == ej2) and (ei2 == c2):
+            perms.append([1, 2, 0])
+        if (ei1 == c2) and (ei2 == ej2):
+            perms.append([0, 2, 1])
+    if c1 == ej2:
+        if (ei1 == ej1) and (ei2 == c2):
+            perms.append([2, 1, 0])
+        if (ei1 == c2) and (ei2 == ej1):
+            perms.append([2, 0, 1])
+    return perms
+
+
+def get_bonds_for_kern(env, c2, etypes2):
+    return get_triplets_for_kern_jit(
+        env.bond_array_3,
+        env.ctype,
+        env.etypes,
+        env.cross_bond_inds,
+        env.cross_bond_dists,
+        env.triplet_counts,
+        c2,
+        etypes2,
+    )
+
+
+@njit
+def get_triplets_for_kern_jit(
+    bond_array_1,
+    c1,
+    etypes1,
+    cross_bond_inds_1,
+    cross_bond_dists_1,
+    triplets_1,
+    c2,
+    etypes2,
+):
+
+    # triplet_list = np.empty((0, 6), dtype=np.float64)
+    triplet_list = []
+
+    ej1 = etypes2[0]
+    ej2 = etypes2[1]
+
+    all_spec = [c2, ej1, ej2]
+    if c1 in all_spec:
+        c1_ind = all_spec.index(c1)
+        ind_list = [0, 1, 2]
+        ind_list.remove(c1_ind)
+        all_spec.remove(c1)
+
+        for m in range(bond_array_1.shape[0]):
+            two_inds = ind_list.copy()
+
+            ri1 = bond_array_1[m, 0]
+            ci1 = bond_array_1[m, 1:]
+            ei1 = etypes1[m]
+
+            two_spec = [all_spec[0], all_spec[1]]
+            if ei1 in two_spec:
+
+                ei1_ind = ind_list[0] if ei1 == two_spec[0] else ind_list[1]
+                two_spec.remove(ei1)
+                two_inds.remove(ei1_ind)
+                one_spec = two_spec[0]
+                ei2_ind = two_inds[0]
+
+                for n in range(triplets_1[m]):
+                    ind1 = cross_bond_inds_1[m, m + n + 1]
+                    ei2 = etypes1[ind1]
+                    if ei2 == one_spec:
+
+                        ri2 = bond_array_1[ind1, 0]
+                        ci2 = bond_array_1[ind1, 1:]
+
+                        ri3 = cross_bond_dists_1[m, m + n + 1]
+                        ci3 = np.zeros(3)
+
+                        perms = get_permutations(c1, np.array([ei1, ei2]), c2, etypes2,)
+
+                        tri = np.array([ri1, ri2, ri3])
+                        crd1 = np.array([ci1[0], ci2[0], ci3[0]])
+                        crd2 = np.array([ci1[1], ci2[1], ci3[1]])
+                        crd3 = np.array([ci1[2], ci2[2], ci3[2]])
+
+                        # append permutations
+                        nperm = len(perms)
+                        for iperm in range(nperm):
+                            perm = perms[iperm]
+                            tricrd = np.take(tri, perm)
+                            crd1_p = np.take(crd1, perm)
+                            crd2_p = np.take(crd2, perm)
+                            crd3_p = np.take(crd3, perm)
+                            crd_p = np.vstack((crd1_p, crd2_p, crd3_p))
+                            tricrd = np.hstack(
+                                (tricrd, crd_p[:, 0], crd_p[:, 1], crd_p[:, 2])
+                            )
+                            triplet_list.append(tricrd)
+
+    return triplet_list

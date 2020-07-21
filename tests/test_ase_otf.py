@@ -119,8 +119,7 @@ def flare_calc():
         mgp_model = MappedGaussianProcess(grid_params = grid_params,
                                           unique_species = [1, 2],
                                           n_cpus = 1,
-                                          map_force = False,
-                                          mean_only = False)
+                                          var_map = 'pca')
 
         # ------------ create ASE's flare calculator -----------------------
         flare_calculator = FLARE_Calculator(gp_model, mgp_model=mgp_model,
@@ -193,7 +192,7 @@ def test_otf_md(md_engine, md_params, super_cell, flare_calc, qe_calc):
         shutil.rmtree(f, ignore_errors=True)
 
     for f in os.listdir("./"):
-        if f in [f'{md_engine}.out', f'{md_engine}-hyps.dat', 'lmp.mgp']:
+        if md_engine in f or 'lmp.mgp' in f:
             os.remove(f)
         if 'slurm' in f:
             os.remove(f)
