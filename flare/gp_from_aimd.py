@@ -385,7 +385,8 @@ class TrajectoryTrainer:
             if self.mgp:
                 pred_forces, pred_stds, local_energies = self.pred_func(
                     structure=cur_frame, mgp=self.gp, write_to_structure=False,
-                    selective_atoms=predict_atoms, skipped_atom_value=np.nan, energy=True)
+                    selective_atoms=predict_atoms, skipped_atom_value=np.nan,
+                    energy=True)
             elif self.calculate_energy:
                 pred_forces, pred_stds, local_energies = self.pred_func(
                     structure=cur_frame, gp=self.gp, n_cpus=self.n_cpus,
@@ -446,6 +447,7 @@ class TrajectoryTrainer:
                     # so filter that out and the use sets to remove repeats
                     train_atoms = list(set(std_train_atoms).union(
                         force_train_atoms) - {-1})
+
                     training_plan[int(i)] = [int(a) for a in train_atoms]
 
                     # Compute mae and write to output;
@@ -593,7 +595,8 @@ class TrajectoryTrainer:
         self.train_count += 1
 
 
-def parse_trajectory_trainer_output(file: str, return_gp_data: bool = False) \
+def parse_trajectory_trainer_output(file: str, return_gp_data: bool = False,
+                                    compute_errors: bool = True) \
         -> Union[List[dict], Tuple[List[dict], dict]]:
     """
     Reads output of a TrajectoryTrainer run by frame. return_gp_data returns
@@ -602,6 +605,7 @@ def parse_trajectory_trainer_output(file: str, return_gp_data: bool = False) \
 
     :param file: filename of output
     :param return_gp_data: flag for returning extra GP data
+    :param compute_errors: Compute deviation from GP and DFT forces.
     :return: List of dictionaries with keys 'species', 'positions',
         'gp_forces', 'dft_forces', 'gp_stds', 'added_atoms', and
         'maes_by_species', optionally, gp_data dictionary
@@ -666,13 +670,16 @@ def parse_trajectory_trainer_output(file: str, return_gp_data: bool = False) \
                 frame_species_maes[cur_line[1]] = float(cur_line[3])
 
         cur_frame_stats = {'species': frame_atoms,
-                           'positions': frame_positions,
-                           'gp_forces': gp_forces,
-                           'dft_forces': dft_forces,
-                           'gp_stds': stds,
+                           'positions': np.array(frame_positions),
+                           'gp_forces': np.array(gp_forces),
+                           'dft_forces': np.array(dft_forces),
+                           'gp_stds': np.array(stds),
                            'added_atoms': added_atoms,
                            'maes_by_species': frame_species_maes}
 
+        if compute_errors:
+            cur_frame_stats['force_errors'] = np.array(gp_forces) \
+                                             - np.array(dft_forces)
         frames.append(cur_frame_stats)
 
     if not return_gp_data:
