@@ -299,8 +299,12 @@ Eigen::MatrixXd DotProductKernel ::kernel_transform(Eigen::MatrixXd kernels,
 std::vector<Eigen::MatrixXd> DotProductKernel ::kernel_gradient(
     Eigen::MatrixXd kernels, Eigen::VectorXd new_hyps){
 
-    // Not implemented.
-    std::vector<Eigen::MatrixXd> grads;
-    return grads;
+    std::vector<Eigen::MatrixXd> kernel_gradients;
+    Eigen::MatrixXd sigma_gradient = kernels;
+    sigma_gradient /= sig2;
+    sigma_gradient *= 2 * new_hyps(0);
+    kernel_gradients.push_back(sigma_gradient);
+
+    return kernel_gradients;
 
     }
