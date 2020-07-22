@@ -401,6 +401,15 @@ Eigen::MatrixXd TwoBodyKernel ::kernel_transform(Eigen::MatrixXd kernels,
     return Eigen::MatrixXd::Zero(0, 0);
     };
 
+std::vector<Eigen::MatrixXd> TwoBodyKernel ::kernel_gradient(
+    Eigen::MatrixXd kernels, Eigen::VectorXd new_hyps){
+
+    // Not implemented.
+    std::vector<Eigen::MatrixXd> grads;
+    return grads;
+
+    }
+
 double force_helper(double rel1_rel2, double diff_rel1, double diff_rel2,
                     double diff_sq, double fi, double fj, double fdi,
                     double fdj, double l1, double l2, double l3, double s2) {

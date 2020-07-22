@@ -295,3 +295,12 @@ Eigen::MatrixXd DotProductKernel ::kernel_transform(Eigen::MatrixXd kernels,
 
     return new_kernels;
     }
+
+std::vector<Eigen::MatrixXd> DotProductKernel ::kernel_gradient(
+    Eigen::MatrixXd kernels, Eigen::VectorXd new_hyps){
+
+    // Not implemented.
+    std::vector<Eigen::MatrixXd> grads;
+    return grads;
+
+    }

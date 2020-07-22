@@ -41,6 +41,10 @@ public:
     kernel_transform(Eigen::MatrixXd kernels,
                      Eigen::VectorXd new_hyps) = 0;
 
+  virtual std::vector<Eigen::MatrixXd>
+    kernel_gradient(Eigen::MatrixXd kernels,
+                    Eigen::VectorXd new_hyps) = 0;
+
   virtual ~Kernel() = default;
 };
 

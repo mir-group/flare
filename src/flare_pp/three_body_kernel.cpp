@@ -1336,3 +1336,12 @@ Eigen::MatrixXd ThreeBodyKernel ::kernel_transform(Eigen::MatrixXd kernels,
     // Not implemented.
     return Eigen::MatrixXd::Zero(0, 0);
     };
+
+std::vector<Eigen::MatrixXd> ThreeBodyKernel ::kernel_gradient(
+    Eigen::MatrixXd kernels, Eigen::VectorXd new_hyps){
+
+    // Not implemented.
+    std::vector<Eigen::MatrixXd> grads;
+    return grads;
+
+    }

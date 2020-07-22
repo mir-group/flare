@@ -38,6 +38,9 @@ public:
   Eigen::MatrixXd kernel_transform(Eigen::MatrixXd kernels,
                                    Eigen::VectorXd new_hyps);
 
+  std::vector<Eigen::MatrixXd> kernel_gradient(Eigen::MatrixXd kernels,
+                                               Eigen::VectorXd new_hyps);
+
   void env_struc_update(Eigen::VectorXd &kernel_vector, int no_elements, int i,
                         double vol_inv, double r11, double r22, double r33,
                         double fi, double fj, double fdjx1, double fdjx2,
