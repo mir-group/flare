@@ -88,6 +88,7 @@ class TrajectoryTrainer:
                  train_checkpoint_interval: int = 1,
                  checkpoint_interval: int = 1,
                  atom_checkpoint_interval: int = 100,
+                 print_training_plan: bool = True,
                  model_format: str = 'json'):
         """
         Class which trains a GP off of an AIMD trajectory, and generates
@@ -138,12 +139,21 @@ class TrajectoryTrainer:
         :param atom_checkpoint_interval: How often to write model after atoms are
             added (since atoms may be added without training)
         :param model_format: Format to write GP model to
+        :param print_training_plan: Write which atoms in which frames that
+            triggered uncertainty or force conditions, so that training can
+            be 'fast-forwarded' later. Also useful for gauging MGP results and
+            then applying the atoms with high uncertainty and error to a GP.
         """
 
         # Set up parameters
         self.frames = frames
         if shuffle_frames:
             np.random.shuffle(frames)
+            if print_training_plan:
+                warnings.warn("Frames are shuffled so training plan will not"
+                              " map onto the structures used; Try to "
+                              "shuffle the frames outside of the GPFA module "
+                              "for now.")
 
         # GP Training and Execution parameters
         self.gp = gp
@@ -219,6 +229,7 @@ class TrajectoryTrainer:
 
         self.model_format = model_format
         self.output_name = output_name
+        self.print_training_plan = print_training_plan
 
         # Defining variables to be used later
         self.curr_step = 0
@@ -353,6 +364,9 @@ class TrajectoryTrainer:
         cur_atoms_added_write = 0  # Track atoms added for writing
         cur_trains_done_write = 0  # Track training done for writing
 
+        # Keep track of which atoms trigger force / uncertainty condition
+        training_plan = {}
+
         for i, cur_frame in enumerate(self.frames[::self.skip]):
 
             frame_start_time = time.time()
@@ -432,6 +446,7 @@ class TrajectoryTrainer:
                     # so filter that out and the use sets to remove repeats
                     train_atoms = list(set(std_train_atoms).union(
                         force_train_atoms) - {-1})
+                    training_plan[int(i)] = [int(a) for a in train_atoms]
 
                     # Compute mae and write to output;
                     # Add max uncertainty atoms to training set
@@ -481,6 +496,10 @@ class TrajectoryTrainer:
 
         self.output.conclude_run()
 
+        if self.print_training_plan:
+            with open(f'{self.output_name}_training_plan.json', 'w') as f:
+                f.write(json.dumps(training_plan, cls=NumpyEncoder))
+
         if self.model_format and not self.mgp:
             self.gp.write_model(f'{self.output_name}_model',
                                 self.model_format)
@@ -527,7 +546,8 @@ class TrajectoryTrainer:
                 self.train_gp()
 
         else:
-            raise NotImplementedError
+            logger.warning("Warning: Adding data to an MGP is not yet "
+                           "supported.")
 
     def train_gp(self, max_iter: int = None):
         """
@@ -537,8 +557,12 @@ class TrajectoryTrainer:
             overriding the Gaussian Process's internally set maxiter.
         :type max_iter: int
         """
-
         logger = logging.getLogger(self.logger_name)
+
+        if self.mgp:
+            logger.debug("Training skipped because of MGP")
+            return
+
         logger.debug('Train GP')
 
         logger_train = self.output.basename+'hyps'
