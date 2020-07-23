@@ -203,6 +203,9 @@ void SparseGP_DTC ::add_training_structure(
   }
 
   // Update Kuf kernels.
+  Kuf_struc = Eigen::MatrixXd::Zero(
+    n_sparse, n_energy_labels + n_energy + n_force_labels + n_force +
+              n_stress_labels + n_stress);
   for (int i = 0; i < n_kernels; i++) {
     Kuf_struc_energy[i].conservativeResize(n_sparse,
                                            n_energy_labels + n_energy);
@@ -216,24 +219,19 @@ void SparseGP_DTC ::add_training_structure(
         force_kernels[i];
     Kuf_struc_stress[i].block(0, n_stress_labels, n_sparse, n_stress) =
         stress_kernels[i];
+
+    Kuf_struc.block(0, 0, n_sparse, n_energy_labels + n_energy) +=
+        Kuf_struc_energy[i];
+    Kuf_struc.block(0, n_energy_labels + n_energy, n_sparse,
+        n_force_labels + n_force) += Kuf_struc_force[i];
+    Kuf_struc.block(0, n_energy_labels + n_energy + n_force_labels + n_force,
+        n_sparse, n_stress_labels + n_stress) += Kuf_struc_stress[i];
   }
 
   // Update label count.
   n_energy_labels += n_energy;
   n_force_labels += n_force;
   n_stress_labels += n_stress;
-
-  // Form full Kuf struc matrix.
-  Kuf_struc = Eigen::MatrixXd::Zero(n_sparse, n_energy_labels + n_force_labels +
-                                                  n_stress_labels);
-
-  for (int i = 0; i < n_kernels; i++) {
-    Kuf_struc.block(0, 0, n_sparse, n_energy_labels) += Kuf_struc_energy[i];
-    Kuf_struc.block(0, n_energy_labels, n_sparse, n_force_labels) +=
-        Kuf_struc_force[i];
-    Kuf_struc.block(0, n_energy_labels + n_force_labels, n_sparse,
-                    n_stress_labels) += Kuf_struc_stress[i];
-  }
 
   // Store training structure.
   training_structures.push_back(training_structure);
@@ -369,7 +367,61 @@ void SparseGP_DTC ::compute_DTC_likelihood() {
   log_marginal_likelihood = complexity_penalty + data_fit + constant_term;
 }
 
-void SparseGP_DTC ::compute_VFE_likelihood() {}
+void SparseGP_DTC ::set_hyperparameters(Eigen::VectorXd hyperparameters){
+
+    // Reset Kuu and Kuf matrices.
+    int n_kernels = kernels.size();
+    int n_sparse = Kuf_struc.rows();
+    int n_labels = Kuf_struc.cols();
+    int n_hyps, hyp_index = 0;
+    Eigen::VectorXd new_hyps;
+
+    Kuf_struc = Eigen::MatrixXd::Zero(n_sparse, n_labels);
+    Kuu = Eigen::MatrixXd::Zero(n_sparse, n_sparse);
+    for (int i = 0; i < n_kernels; i++) {
+        n_hyps = kernels[i]->kernel_hyperparameters.size();
+        new_hyps = hyperparameters.segment(hyp_index, n_hyps);
+        kernels[i]->set_hyperparameters(new_hyps);
+
+        Kuu_kernels[i] = kernels[i]->kernel_transform(
+            Kuu_kernels[i], new_hyps);
+        Kuf_struc_energy[i] = kernels[i]->kernel_transform(
+            Kuf_struc_energy[i], new_hyps);
+        Kuf_struc_force[i] = kernels[i]->kernel_transform(
+            Kuf_struc_force[i], new_hyps);
+        Kuf_struc_stress[i] = kernels[i]->kernel_transform(
+            Kuf_struc_stress[i], new_hyps);
+        
+        Kuu += Kuu_kernels[i];
+        Kuf_struc.block(0, 0, n_sparse, n_energy_labels) +=
+            Kuf_struc_energy[i];
+        Kuf_struc.block(0, n_energy_labels, n_sparse, n_force_labels) += Kuf_struc_force[i];
+        Kuf_struc.block(0, n_energy_labels + n_force_labels, n_sparse,
+            n_stress_labels) += Kuf_struc_stress[i];
+
+        hyp_index += n_hyps;
+    }
+
+    this->hyperparameters = hyperparameters;
+    sigma_e = hyperparameters(hyp_index);
+    sigma_f = hyperparameters(hyp_index + 1);
+    sigma_s = hyperparameters(hyp_index + 2);
+
+    // Update noise.
+    noise_struc.segment(0, n_energy_labels) =
+        Eigen::VectorXd::Constant(n_energy_labels, 1 / (sigma_e * sigma_e));
+    noise_struc.segment(n_energy_labels, n_force_labels) =
+        Eigen::VectorXd::Constant(n_force_labels, 1 / (sigma_f * sigma_f));
+    noise_struc.segment(n_energy_labels + n_force_labels, n_stress_labels) =
+        Eigen::VectorXd::Constant(n_stress_labels, 1 / (sigma_s * sigma_s));
+    
+    // Update remaining matrices.
+    update_matrices();
+}
+
+void SparseGP_DTC ::compute_VFE_likelihood() {
+    // Not implemented.
+}
 
 double compute_likelihood(const SparseGP_DTC &sparse_gp,
                           const Eigen::VectorXd &hyperparameters) {

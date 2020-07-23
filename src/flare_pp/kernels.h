@@ -45,6 +45,8 @@ public:
     kernel_gradient(Eigen::MatrixXd kernels,
                     Eigen::VectorXd new_hyps) = 0;
 
+  virtual void set_hyperparameters(Eigen::VectorXd new_hyps) = 0;
+
   virtual ~Kernel() = default;
 };
 

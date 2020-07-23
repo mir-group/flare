@@ -38,6 +38,8 @@ public:
 
   std::vector<Eigen::MatrixXd> kernel_gradient(Eigen::MatrixXd kernels,
                                                Eigen::VectorXd new_hyps);
+
+  void set_hyperparameters(Eigen::VectorXd new_hyps);
 };
 
 #endif

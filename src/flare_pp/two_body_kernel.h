@@ -40,6 +40,10 @@ public:
 
   std::vector<Eigen::MatrixXd> kernel_gradient(Eigen::MatrixXd kernels,
                                                Eigen::VectorXd new_hyps);
+
+  void set_hyperparameters(Eigen::VectorXd new_hyps){
+      // Not implemented.
+  };
 };
 
 double force_helper(double rel1_rel2, double diff_rel1, double diff_rel2,

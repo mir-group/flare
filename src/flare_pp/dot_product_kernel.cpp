@@ -308,3 +308,10 @@ std::vector<Eigen::MatrixXd> DotProductKernel ::kernel_gradient(
     return kernel_gradients;
 
     }
+
+void DotProductKernel ::set_hyperparameters(Eigen::VectorXd new_hyps){
+
+    sigma = new_hyps(0);
+    sig2 = sigma * sigma;
+    kernel_hyperparameters = new_hyps;
+}
