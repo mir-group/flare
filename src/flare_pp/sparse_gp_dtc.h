@@ -42,18 +42,12 @@ public:
       std::vector<Eigen::VectorXd> & mean_contributions);
 
   // Calculate the log marginal likelihood of the current hyperparameters and its gradient.
-  // TODO: Find a way to optimize the hyperparameters.
   void compute_DTC_likelihood();
   void compute_VFE_likelihood();
 
   // Change the model hyperparameters and covariance matrices.
-  // With the dot product kernel, should never have to recompute kernels;
-  // just rescale them.
   void set_hyperparameters(Eigen::VectorXd hyperparameters);
 };
-
-double compute_likelihood(const SparseGP_DTC &sparse_gp,
-                          const Eigen::VectorXd &hyperparameters);
 
 double compute_likelihood_gradient(const SparseGP_DTC &sparse_gp,
                                    const Eigen::VectorXd &hyperparameters,
