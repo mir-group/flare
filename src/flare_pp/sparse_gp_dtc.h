@@ -55,4 +55,8 @@ public:
 double compute_likelihood(const SparseGP_DTC &sparse_gp,
                           const Eigen::VectorXd &hyperparameters);
 
+double compute_likelihood_gradient(const SparseGP_DTC &sparse_gp,
+                                   const Eigen::VectorXd &hyperparameters,
+                                   Eigen::VectorXd &like_grad);
+
 #endif

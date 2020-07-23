@@ -84,7 +84,11 @@ TEST_F(SparseTest, DTC_Prediction){
 
   // Check the likelihood function.
   Eigen::VectorXd hyps = sparse_gp.hyperparameters;
-  double likelihood = compute_likelihood(sparse_gp, hyps);
+  Eigen::VectorXd like_grad;
+  double likelihood = compute_likelihood_gradient(sparse_gp, hyps, like_grad);
+
+  std::cout << "likelihood gradient" << std::endl;
+  std::cout << like_grad << std::endl;
 
   EXPECT_EQ(sparse_gp.log_marginal_likelihood, likelihood);
 }
