@@ -194,7 +194,15 @@ class ASE_OTF(OTF):
         self.structure.prev_positions = np.copy(self.structure.positions)
 
         # Take MD step.
-        self.md.step()
+        if self.md_engine != 'NPT':
+            if self.dft_step: # TODO: in md.step(), the dft will be called the 2nd 
+                              # time, this is a temporary solution
+                f = self.atoms.get_forces()
+                self.atoms.set_calculator(self.flare_calc)
+            new_f = self.md.step(f)
+        else:
+            self.md.step()
+            new_f = None
         self.md.call_observers()
 
         # Update the positions and cell of the structure object.
