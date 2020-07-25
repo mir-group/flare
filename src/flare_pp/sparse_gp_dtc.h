@@ -49,6 +49,7 @@ public:
   void set_hyperparameters(Eigen::VectorXd hyperparameters);
 };
 
+// TODO: Invert noise in likelihood expression.
 double compute_likelihood_gradient(const SparseGP_DTC &sparse_gp,
                                    const Eigen::VectorXd &hyperparameters,
                                    Eigen::VectorXd &like_grad);

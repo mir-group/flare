@@ -3,6 +3,7 @@
 #include "kernels.h"
 #include "local_environment.h"
 #include "sparse_gp.h"
+#include "sparse_gp_dtc.h"
 #include "structure.h"
 #include "three_body_kernel.h"
 #include "two_body_kernel.h"
@@ -160,4 +161,18 @@ PYBIND11_MODULE(_C_flare, m) {
       .def_readwrite("training_structures", &SparseGP::training_structures)
       .def_readwrite("training_environments", &SparseGP::training_environments)
       .def_readwrite("Kuf_env", &SparseGP::Kuf_env);
+    
+  // Sparse GP DTC
+  py::class_<SparseGP_DTC>(m, "SparseGP_DTC")
+    .def(py::init<std::vector<Kernel *>, double, double, double>())
+    .def("set_hyperparameters", &SparseGP_DTC::set_hyperparameters)
+    .def("predict_DTC", &SparseGP_DTC::predict_DTC)
+    .def("add_sparse_environments", &SparseGP_DTC::add_sparse_environments)
+    .def("add_training_structure", &SparseGP_DTC::add_training_structure)
+    .def("update_matrices", &SparseGP_DTC::update_matrices)
+    .def("compute_DTC_likelihood", &SparseGP_DTC::compute_DTC_likelihood)
+    .def_readonly("log_marginal_likelihood",
+        &SparseGP_DTC::log_marginal_likelihood);
+
+  m.def("compute_likelihood_gradient", &compute_likelihood_gradient);
 }
