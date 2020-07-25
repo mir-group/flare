@@ -41,9 +41,8 @@ public:
       Eigen::VectorXd & mean_vector, Eigen::VectorXd & variance_vector,
       std::vector<Eigen::VectorXd> & mean_contributions);
 
-  // Calculate the log marginal likelihood of the current hyperparameters and its gradient.
-  void compute_DTC_likelihood();
-  void compute_VFE_likelihood();
+  // Calculate the log marginal likelihood of the current hyperparameters.
+  void compute_likelihood();
 
   // Change the model hyperparameters and covariance matrices.
   void set_hyperparameters(Eigen::VectorXd hyperparameters);

@@ -78,7 +78,7 @@ TEST_F(SparseTest, DTC_Prediction){
   }
 
   // Compute the marginal likelihood.
-  sparse_gp.compute_DTC_likelihood();
+  sparse_gp.compute_likelihood();
   EXPECT_EQ(sparse_gp.data_fit + sparse_gp.complexity_penalty +
             sparse_gp.constant_term, sparse_gp.log_marginal_likelihood);
 
@@ -124,8 +124,8 @@ TEST_F(SparseTest, Set_Hyps){
     sparse_gp_2.update_matrices();
 
     // Compute likelihoods.
-    sparse_gp_1.compute_DTC_likelihood();
-    sparse_gp_2.compute_DTC_likelihood();
+    sparse_gp_1.compute_likelihood();
+    sparse_gp_2.compute_likelihood();
 
     EXPECT_NE(sparse_gp_1.log_marginal_likelihood,
         sparse_gp_2.log_marginal_likelihood);
@@ -135,7 +135,7 @@ TEST_F(SparseTest, Set_Hyps){
     new_hyps << sig1, sig2, sig_e_1, sig_f_1, sig_s_1;
     sparse_gp_2.set_hyperparameters(new_hyps);
 
-    sparse_gp_2.compute_DTC_likelihood();
+    sparse_gp_2.compute_likelihood();
 
     EXPECT_EQ(sparse_gp_1.log_marginal_likelihood,
         sparse_gp_2.log_marginal_likelihood);

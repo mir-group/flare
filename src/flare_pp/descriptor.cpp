@@ -180,6 +180,8 @@ void B2_Calculator ::compute(const LocalEnvironment &env) {
 
   // Initialize B2 vectors.
   descriptor_vals = Eigen::VectorXd::Zero(no_descriptors);
+  // Note: Can reduce memory by only storing gradients of atoms in the
+  // environment, rather than all atoms in the structure.
   descriptor_force_dervs = Eigen::MatrixXd::Zero(env.noa * 3, no_descriptors);
   descriptor_stress_dervs = Eigen::MatrixXd::Zero(6, no_descriptors);
 

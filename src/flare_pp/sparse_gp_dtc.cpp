@@ -349,12 +349,22 @@ void SparseGP_DTC ::predict_DTC(
   variance_vector = K_self - Q_self + V_SOR;
 }
 
-void SparseGP_DTC ::compute_DTC_likelihood() {
+void SparseGP_DTC ::compute_likelihood() {
   int n_train = Kuf.cols();
+
+  // Construct noise vector.
+  Eigen::VectorXd noise = Eigen::VectorXd::Zero(
+      n_energy_labels + n_force_labels + n_stress_labels);
+  noise.segment(0, n_energy_labels) =
+      Eigen::VectorXd::Constant(n_energy_labels, sigma_e * sigma_e);
+  noise.segment(n_energy_labels, n_force_labels) =
+      Eigen::VectorXd::Constant(n_force_labels, sigma_f * sigma_f);
+  noise.segment(n_energy_labels + n_force_labels, n_stress_labels) =
+      Eigen::VectorXd::Constant(n_stress_labels, sigma_s * sigma_s);
 
   Eigen::MatrixXd Qff_plus_lambda =
       Kuf.transpose() * Kuu_inverse * Kuf +
-      noise_vector.asDiagonal() * Eigen::MatrixXd::Identity(n_train, n_train);
+      noise.asDiagonal() * Eigen::MatrixXd::Identity(n_train, n_train);
 
   double Q_det = Qff_plus_lambda.determinant();
   Eigen::MatrixXd Q_inv = Qff_plus_lambda.inverse();
@@ -417,10 +427,6 @@ void SparseGP_DTC ::set_hyperparameters(Eigen::VectorXd hyps){
 
     // Update remaining matrices.
     update_matrices();
-}
-
-void SparseGP_DTC ::compute_VFE_likelihood() {
-    // Not implemented.
 }
 
 double compute_likelihood_gradient(const SparseGP_DTC &sparse_gp,
@@ -499,11 +505,11 @@ double compute_likelihood_gradient(const SparseGP_DTC &sparse_gp,
   double sigma_s = hyperparameters(hyp_index + 2);
 
   noise_vector.segment(0, n_energy_labels) =
-      Eigen::VectorXd::Constant(n_energy_labels, 1 / (sigma_e * sigma_e));
+      Eigen::VectorXd::Constant(n_energy_labels, sigma_e * sigma_e);
   noise_vector.segment(n_energy_labels, n_force_labels) =
-      Eigen::VectorXd::Constant(n_force_labels, 1 / (sigma_f * sigma_f));
+      Eigen::VectorXd::Constant(n_force_labels, sigma_f * sigma_f);
   noise_vector.segment(n_energy_labels + n_force_labels, n_stress_labels) =
-      Eigen::VectorXd::Constant(n_stress_labels, 1 / (sigma_s * sigma_s));
+      Eigen::VectorXd::Constant(n_stress_labels, sigma_s * sigma_s);
 
   // Compute Qff grads.
   std::vector<Eigen::MatrixXd> Qff_grads;
@@ -528,13 +534,13 @@ double compute_likelihood_gradient(const SparseGP_DTC &sparse_gp,
 
   e_noise_grad.segment(0, n_energy_labels) =
     Eigen::VectorXd::Constant(
-        n_energy_labels, -2 / (sigma_e * sigma_e * sigma_e));
+        n_energy_labels, 2 * sigma_e);
   f_noise_grad.segment(n_energy_labels, n_force_labels) =
     Eigen::VectorXd::Constant(
-        n_force_labels, -2 / (sigma_f * sigma_f * sigma_f));
+        n_force_labels, 2 * sigma_f);
   s_noise_grad.segment(n_energy_labels + n_force_labels, n_stress_labels) =
     Eigen::VectorXd::Constant(
-        n_stress_labels, -2 / (sigma_s * sigma_s * sigma_s));
+        n_stress_labels, 2 * sigma_s);
 
   Qff_grads.push_back(e_noise_grad.asDiagonal() *
                       Eigen::MatrixXd::Identity(n_labels, n_labels));
