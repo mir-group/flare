@@ -81,13 +81,14 @@ TEST_F(SparseTest, DTC_Prediction){
   sparse_gp.compute_likelihood();
   EXPECT_EQ(sparse_gp.data_fit + sparse_gp.complexity_penalty +
             sparse_gp.constant_term, sparse_gp.log_marginal_likelihood);
+  double like1 = sparse_gp.log_marginal_likelihood;
 
+  std::cout << sparse_gp.likelihood_gradient << std::endl;
   // Check the likelihood function.
   Eigen::VectorXd hyps = sparse_gp.hyperparameters;
-  Eigen::VectorXd like_grad;
-  double likelihood = compute_likelihood_gradient(sparse_gp, hyps, like_grad);
+  sparse_gp.compute_likelihood_gradient(hyps);
 
-  EXPECT_EQ(sparse_gp.log_marginal_likelihood, likelihood);
+  EXPECT_EQ(like1, sparse_gp.log_marginal_likelihood);
 }
 
 TEST_F(SparseTest, Set_Hyps){
@@ -163,11 +164,11 @@ TEST_F(SparseTest, LikeGrad){
 
     // Check the likelihood function.
     Eigen::VectorXd hyps = sparse_gp.hyperparameters;
-    Eigen::VectorXd like_grad;
-    double likelihood = compute_likelihood_gradient(sparse_gp, hyps, like_grad);
+    sparse_gp.compute_likelihood_gradient(hyps);
+    Eigen::VectorXd like_grad = sparse_gp.likelihood_gradient;
 
     int n_hyps = hyps.size();
-    Eigen::VectorXd pert_grad, hyps_up, hyps_down;
+    Eigen::VectorXd hyps_up, hyps_down;
     double pert = 1e-4, like_up, like_down, fin_diff;
 
     for (int i = 0; i < n_hyps; i++){
@@ -176,10 +177,11 @@ TEST_F(SparseTest, LikeGrad){
         hyps_up(i) += pert;
         hyps_down(i) -= pert;
 
-        like_up = compute_likelihood_gradient(sparse_gp, hyps_up, pert_grad);
+        like_up = 
+            sparse_gp.compute_likelihood_gradient(hyps_up);
         like_down =
-            compute_likelihood_gradient(sparse_gp, hyps_down, pert_grad);
-        
+            sparse_gp.compute_likelihood_gradient(hyps_down);
+
         fin_diff = (like_up - like_down) / (2 * pert);
 
         EXPECT_NEAR(like_grad(i), fin_diff, 1e-8);

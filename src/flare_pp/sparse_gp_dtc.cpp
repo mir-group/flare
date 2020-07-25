@@ -349,33 +349,6 @@ void SparseGP_DTC ::predict_DTC(
   variance_vector = K_self - Q_self + V_SOR;
 }
 
-void SparseGP_DTC ::compute_likelihood() {
-  int n_train = Kuf.cols();
-
-  // Construct noise vector.
-  Eigen::VectorXd noise = Eigen::VectorXd::Zero(
-      n_energy_labels + n_force_labels + n_stress_labels);
-  noise.segment(0, n_energy_labels) =
-      Eigen::VectorXd::Constant(n_energy_labels, sigma_e * sigma_e);
-  noise.segment(n_energy_labels, n_force_labels) =
-      Eigen::VectorXd::Constant(n_force_labels, sigma_f * sigma_f);
-  noise.segment(n_energy_labels + n_force_labels, n_stress_labels) =
-      Eigen::VectorXd::Constant(n_stress_labels, sigma_s * sigma_s);
-
-  Eigen::MatrixXd Qff_plus_lambda =
-      Kuf.transpose() * Kuu_inverse * Kuf +
-      noise.asDiagonal() * Eigen::MatrixXd::Identity(n_train, n_train);
-
-  double Q_det = Qff_plus_lambda.determinant();
-  Eigen::MatrixXd Q_inv = Qff_plus_lambda.inverse();
-
-  double half = 1.0 / 2.0;
-  complexity_penalty = -half * log(Q_det);
-  data_fit = -half * y.transpose() * Q_inv * y;
-  constant_term = -half * n_train * log(2 * M_PI);
-  log_marginal_likelihood = complexity_penalty + data_fit + constant_term;
-}
-
 void SparseGP_DTC ::set_hyperparameters(Eigen::VectorXd hyps){
 
     // Reset Kuu and Kuf matrices.
@@ -429,21 +402,47 @@ void SparseGP_DTC ::set_hyperparameters(Eigen::VectorXd hyps){
     update_matrices();
 }
 
-double compute_likelihood_gradient(const SparseGP_DTC &sparse_gp,
-                                   const Eigen::VectorXd &hyperparameters,
-                                   Eigen::VectorXd &like_grad){
+void SparseGP_DTC ::compute_likelihood() {
+  int n_train = Kuf.cols();
+
+  // Construct noise vector.
+  Eigen::VectorXd noise = Eigen::VectorXd::Zero(
+      n_energy_labels + n_force_labels + n_stress_labels);
+  noise.segment(0, n_energy_labels) =
+      Eigen::VectorXd::Constant(n_energy_labels, sigma_e * sigma_e);
+  noise.segment(n_energy_labels, n_force_labels) =
+      Eigen::VectorXd::Constant(n_force_labels, sigma_f * sigma_f);
+  noise.segment(n_energy_labels + n_force_labels, n_stress_labels) =
+      Eigen::VectorXd::Constant(n_stress_labels, sigma_s * sigma_s);
+
+  Eigen::MatrixXd Qff_plus_lambda =
+      Kuf.transpose() * Kuu_inverse * Kuf +
+      noise.asDiagonal() * Eigen::MatrixXd::Identity(n_train, n_train);
+
+  double Q_det = Qff_plus_lambda.determinant();
+  Eigen::MatrixXd Q_inv = Qff_plus_lambda.inverse();
+
+  double half = 1.0 / 2.0;
+  complexity_penalty = -half * log(Q_det);
+  data_fit = -half * y.transpose() * Q_inv * y;
+  constant_term = -half * n_train * log(2 * M_PI);
+  log_marginal_likelihood = complexity_penalty + data_fit + constant_term;
+}
+
+double SparseGP_DTC ::compute_likelihood_gradient(
+    const Eigen::VectorXd &hyperparameters){
 
   // Compute Kuu and Kuf gradients.
-  int n_kernels = sparse_gp.kernels.size();
-  int n_sparse = sparse_gp.Kuf_struc.rows();
-  int n_labels = sparse_gp.Kuf_struc.cols();
-  int n_energy_labels = sparse_gp.n_energy_labels;
-  int n_force_labels = sparse_gp.n_force_labels;
-  int n_stress_labels = sparse_gp.n_stress_labels;
-  int n_hyps_total = sparse_gp.hyperparameters.size();
+  int n_kernels = kernels.size();
+  int n_sparse = Kuf_struc.rows();
+  int n_labels = Kuf_struc.cols();
+  int n_energy_labels = this->n_energy_labels;
+  int n_force_labels = this->n_force_labels;
+  int n_stress_labels = this->n_stress_labels;
+  int n_hyps_total = hyperparameters.size();
 
-  Eigen::MatrixXd Kuu = Eigen::MatrixXd::Zero(n_sparse, n_sparse);
-  Eigen::MatrixXd Kuf = Eigen::MatrixXd::Zero(n_sparse, n_labels);
+  Eigen::MatrixXd Kuu_mat = Eigen::MatrixXd::Zero(n_sparse, n_sparse);
+  Eigen::MatrixXd Kuf_mat = Eigen::MatrixXd::Zero(n_sparse, n_labels);
 
   std::vector<Eigen::MatrixXd> Kuu_grad, e_grad, f_grad, s_grad,
     Kuu_grads, Kuf_grads;
@@ -452,18 +451,18 @@ double compute_likelihood_gradient(const SparseGP_DTC &sparse_gp,
   Eigen::VectorXd hyps_curr;
 
   for (int i = 0; i < n_kernels; i++) {
-    n_hyps = sparse_gp.kernels[i]->kernel_hyperparameters.size();
+    n_hyps = kernels[i]->kernel_hyperparameters.size();
     hyps_curr = hyperparameters.segment(hyp_index, n_hyps);
 
-    Kuu_grad = sparse_gp.kernels[i]->
-        kernel_gradient(sparse_gp.Kuu_kernels[i], hyps_curr);
+    Kuu_grad = kernels[i]->
+        kernel_gradient(Kuu_kernels[i], hyps_curr);
 
-    e_grad = sparse_gp.kernels[i]->
-        kernel_gradient(sparse_gp.Kuf_struc_energy[i], hyps_curr);
-    f_grad = sparse_gp.kernels[i]->
-        kernel_gradient(sparse_gp.Kuf_struc_force[i], hyps_curr);
-    s_grad = sparse_gp.kernels[i]->
-        kernel_gradient(sparse_gp.Kuf_struc_stress[i], hyps_curr);
+    e_grad = kernels[i]->
+        kernel_gradient(Kuf_struc_energy[i], hyps_curr);
+    f_grad = kernels[i]->
+        kernel_gradient(Kuf_struc_force[i], hyps_curr);
+    s_grad = kernels[i]->
+        kernel_gradient(Kuf_struc_stress[i], hyps_curr);
 
     for (int j = 0; j < n_hyps; j ++){
         Kuu_grads.push_back(Kuu_grad[j]);
@@ -479,49 +478,46 @@ double compute_likelihood_gradient(const SparseGP_DTC &sparse_gp,
         grad_index ++;
     }
 
-    Kuu += sparse_gp.kernels[i]->kernel_transform(sparse_gp.Kuu_kernels[i],
-                                                  hyps_curr);
+    Kuu_mat += kernels[i]->kernel_transform(Kuu_kernels[i], hyps_curr);
 
-    Kuf.block(0, 0, n_sparse, n_energy_labels) +=
-        sparse_gp.kernels[i]->kernel_transform(sparse_gp.Kuf_struc_energy[i],
-                                               hyps_curr);
-    Kuf.block(0, n_energy_labels, n_sparse, n_force_labels) +=
-        sparse_gp.kernels[i]->kernel_transform(sparse_gp.Kuf_struc_force[i],
-                                               hyps_curr);
-    Kuf.block(0, n_energy_labels + n_force_labels, n_sparse, n_stress_labels) +=
-        sparse_gp.kernels[i]->kernel_transform(sparse_gp.Kuf_struc_stress[i],
-                                               hyps_curr);
+    Kuf_mat.block(0, 0, n_sparse, n_energy_labels) +=
+        kernels[i]->kernel_transform(Kuf_struc_energy[i], hyps_curr);
+    Kuf_mat.block(0, n_energy_labels, n_sparse, n_force_labels) +=
+        kernels[i]->kernel_transform(Kuf_struc_force[i], hyps_curr);
+    Kuf_mat.block(0, n_energy_labels + n_force_labels, n_sparse,
+                  n_stress_labels) +=
+        kernels[i]->kernel_transform(Kuf_struc_stress[i], hyps_curr);
 
     hyp_index += n_hyps;
   }
 
-  Eigen::MatrixXd Kuu_inverse = Kuu.inverse();
+  Eigen::MatrixXd Kuu_inverse = Kuu_mat.inverse();
 
   // Construct updated noise vector.
-  Eigen::VectorXd noise_vector = Eigen::VectorXd::Zero(
+  Eigen::VectorXd noise_vec = Eigen::VectorXd::Zero(
       n_energy_labels + n_force_labels + n_stress_labels);
   double sigma_e = hyperparameters(hyp_index);
   double sigma_f = hyperparameters(hyp_index + 1);
   double sigma_s = hyperparameters(hyp_index + 2);
 
-  noise_vector.segment(0, n_energy_labels) =
+  noise_vec.segment(0, n_energy_labels) =
       Eigen::VectorXd::Constant(n_energy_labels, sigma_e * sigma_e);
-  noise_vector.segment(n_energy_labels, n_force_labels) =
+  noise_vec.segment(n_energy_labels, n_force_labels) =
       Eigen::VectorXd::Constant(n_force_labels, sigma_f * sigma_f);
-  noise_vector.segment(n_energy_labels + n_force_labels, n_stress_labels) =
+  noise_vec.segment(n_energy_labels + n_force_labels, n_stress_labels) =
       Eigen::VectorXd::Constant(n_stress_labels, sigma_s * sigma_s);
 
   // Compute Qff grads.
   std::vector<Eigen::MatrixXd> Qff_grads;
   grad_index = 0;
   for (int i = 0; i < n_kernels; i++){
-      n_hyps = sparse_gp.kernels[i]->kernel_hyperparameters.size();
+      n_hyps = kernels[i]->kernel_hyperparameters.size();
       for (int j = 0; j < n_hyps; j ++){
         Qff_grads.push_back(
-            Kuf_grads[grad_index].transpose() * Kuu_inverse * Kuf -
-            Kuf.transpose() * Kuu_inverse * Kuu_grads[grad_index] *
-                Kuu_inverse * Kuf +
-            Kuf.transpose() * Kuu_inverse * Kuf_grads[grad_index]);
+            Kuf_grads[grad_index].transpose() * Kuu_inverse * Kuf_mat -
+            Kuf_mat.transpose() * Kuu_inverse * Kuu_grads[grad_index] *
+                Kuu_inverse * Kuf_mat +
+            Kuf_mat.transpose() * Kuu_inverse * Kuf_grads[grad_index]);
 
         grad_index ++;
     }
@@ -551,26 +547,25 @@ double compute_likelihood_gradient(const SparseGP_DTC &sparse_gp,
 
   // Compute likelihood.
   Eigen::MatrixXd Qff_plus_lambda =
-      Kuf.transpose() * Kuu_inverse * Kuf +
-      noise_vector.asDiagonal() * Eigen::MatrixXd::Identity(n_labels, n_labels);
+      Kuf_mat.transpose() * Kuu_inverse * Kuf_mat +
+      noise_vec.asDiagonal() * Eigen::MatrixXd::Identity(n_labels, n_labels);
 
   double Q_det = Qff_plus_lambda.determinant();
   Eigen::MatrixXd Q_inv = Qff_plus_lambda.inverse();
 
   double half = 1.0 / 2.0;
   double complexity_penalty = -half * log(Q_det);
-  double data_fit = -half * sparse_gp.y.transpose() * Q_inv * sparse_gp.y;
+  double data_fit = -half * y.transpose() * Q_inv * y;
   double constant_term = -half * n_labels * log(2 * M_PI);
   double log_marginal_likelihood =
     complexity_penalty + data_fit + constant_term;
 
   // Compute likelihood gradient.
-  like_grad = Eigen::VectorXd::Zero(n_hyps_total);
+  likelihood_gradient = Eigen::VectorXd::Zero(n_hyps_total);
   for (int i = 0; i < n_hyps_total; i ++){
-      like_grad(i) =
+      likelihood_gradient(i) =
         -half * (Q_inv * Qff_grads[i]).trace() +
-        half * sparse_gp.y.transpose() * Q_inv * Qff_grads[i] * Q_inv *
-            sparse_gp.y;
+        half * y.transpose() * Q_inv * Qff_grads[i] * Q_inv * y;
   }
 
   return log_marginal_likelihood;

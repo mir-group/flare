@@ -42,15 +42,13 @@ public:
       std::vector<Eigen::VectorXd> & mean_contributions);
 
   // Calculate the log marginal likelihood of the current hyperparameters.
+  // TODO: Change compute likelihood to set likelihood, and set both the
+  // likelihood and its gradient.
   void compute_likelihood();
+  double compute_likelihood_gradient(const Eigen::VectorXd &hyperparameters);
 
   // Change the model hyperparameters and covariance matrices.
   void set_hyperparameters(Eigen::VectorXd hyperparameters);
 };
-
-// TODO: Invert noise in likelihood expression.
-double compute_likelihood_gradient(const SparseGP_DTC &sparse_gp,
-                                   const Eigen::VectorXd &hyperparameters,
-                                   Eigen::VectorXd &like_grad);
 
 #endif
