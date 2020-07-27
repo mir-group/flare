@@ -176,5 +176,6 @@ PYBIND11_MODULE(_C_flare, m) {
     .def_readonly("log_marginal_likelihood",
         &SparseGP_DTC::log_marginal_likelihood)
     .def_readonly("likelihood_gradient",
-        &SparseGP_DTC::likelihood_gradient);
+        &SparseGP_DTC::likelihood_gradient)
+    .def_readonly("hyperparameters", &SparseGP_DTC::hyperparameters);
 }

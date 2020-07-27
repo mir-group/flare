@@ -188,3 +188,39 @@ TEST_F(SparseTest, LikeGrad){
 
     }
 }
+
+TEST_F(SparseTest, AddOrder){
+  double sigma_e = 1;
+  double sigma_f = 2;
+  double sigma_s = 3;
+
+  SparseGP_DTC sparse_gp_1 = SparseGP_DTC(kernels, sigma_e, sigma_f, sigma_s);
+  SparseGP_DTC sparse_gp_2 = SparseGP_DTC(kernels, sigma_e, sigma_f, sigma_s);
+
+  LocalEnvironment env1 = test_struc.local_environments[0];
+  LocalEnvironment env2 = test_struc.local_environments[1];
+  std::vector<LocalEnvironment> sparse_envs {env1, env2};
+
+  // Add structure first.
+  sparse_gp_1.add_training_structure(test_struc);
+  sparse_gp_1.add_sparse_environments(sparse_envs);
+  sparse_gp_1.update_matrices();
+
+  // Add environments first.
+  sparse_gp_2.add_sparse_environments(sparse_envs);
+  sparse_gp_2.add_training_structure(test_struc);
+  sparse_gp_2.update_matrices();
+
+  // Check that matrices match.
+  for (int i = 0; i < sparse_gp_1.Kuf.rows(); i++){
+      for (int j = 0; j < sparse_gp_1.Kuf.cols(); j++){
+          EXPECT_EQ(sparse_gp_1.Kuf(i, j), sparse_gp_2.Kuf(i, j));
+      }
+  }
+
+  for (int i = 0; i < sparse_gp_1.Kuu.rows(); i++){
+      for (int j = 0; j < sparse_gp_1.Kuu.cols(); j++){
+          EXPECT_EQ(sparse_gp_1.Kuu(i, j), sparse_gp_2.Kuu(i, j));
+      }
+  }
+}

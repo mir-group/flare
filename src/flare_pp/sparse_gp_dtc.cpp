@@ -92,32 +92,35 @@ void SparseGP_DTC ::add_sparse_environments(
   // initialization inside the second for loop.
 #pragma omp parallel for schedule(static)
   for (int i = 0; i < n_envs; i++) {
-    int e_count = 0;
-    int f_count = 0;
-    int s_count = 0;
-    for (int j = 0; j < n_strucs; j++) {
-      // Initialize kernel vector.
-      int n_atoms = training_structures[j].noa;
-      Eigen::VectorXd kernel_vector;
+    for (int k = 0; k < n_kernels; k++) {
+        int e_count = 0;
+        int f_count = 0;
+        int s_count = 0;
 
-      for (int k = 0; k < n_kernels; k++) {
-        kernel_vector = kernels[k]->env_struc(envs[i], training_structures[j]);
+        for (int j = 0; j < n_strucs; j++) {
+            // Initialize kernel vector.
+            int n_atoms = training_structures[j].noa;
+            Eigen::VectorXd kernel_vector;
 
-        if (training_structures[j].energy.size() != 0) {
-          energy_kernels[k](i, e_count) = kernel_vector(0);
-          e_count += 1;
-        }
+            kernel_vector = kernels[k]->
+                env_struc(envs[i], training_structures[j]);
 
-        if (training_structures[j].forces.size() != 0) {
-          force_kernels[k].row(i).segment(f_count, n_atoms * 3) =
-              kernel_vector.segment(1, n_atoms * 3);
-          f_count += n_atoms * 3;
-        }
+            if (training_structures[j].energy.size() != 0) {
+            energy_kernels[k](i, e_count) = kernel_vector(0);
+            e_count += 1;
+            }
 
-        if (training_structures[j].stresses.size() != 0) {
-          stress_kernels[k].row(i).segment(s_count, 6) = kernel_vector.tail(6);
-          s_count += 6;
-        }
+            if (training_structures[j].forces.size() != 0) {
+            force_kernels[k].row(i).segment(f_count, n_atoms * 3) =
+                kernel_vector.segment(1, n_atoms * 3);
+            f_count += n_atoms * 3;
+            }
+
+            if (training_structures[j].stresses.size() != 0) {
+            stress_kernels[k].row(i).segment(s_count, 6) =
+                kernel_vector.tail(6);
+            s_count += 6;
+            }
       }
     }
   }
