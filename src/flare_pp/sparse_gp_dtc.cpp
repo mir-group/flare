@@ -422,11 +422,10 @@ void SparseGP_DTC ::compute_likelihood() {
       Kuf.transpose() * Kuu_inverse * Kuf +
       noise.asDiagonal() * Eigen::MatrixXd::Identity(n_train, n_train);
 
-  // Avoid naive matrix inverse by using the Cholesky decomposition.
+  // Perform in place Cholesky decomposition.
   Eigen::LLT<Eigen::Ref<Eigen::MatrixXd>> llt(Qff_plus_lambda);
   Eigen::VectorXd Q_inv_y = llt.solve(y);
-  Eigen::MatrixXd Q_chol = llt.matrixL();
-  Eigen::ArrayXd Q_chol_diag = Q_chol.diagonal();
+  Eigen::ArrayXd Q_chol_diag = Qff_plus_lambda.diagonal();
 
   double half = 1.0 / 2.0;
   complexity_penalty = -Q_chol_diag.log().sum();
@@ -558,11 +557,16 @@ double SparseGP_DTC ::compute_likelihood_gradient(
       Kuf_mat.transpose() * Kuu_inverse * Kuf_mat +
       noise_vec.asDiagonal() * Eigen::MatrixXd::Identity(n_labels, n_labels);
 
-  double Q_det = Qff_plus_lambda.determinant();
+  // Perform Cholesky decomposition (needed to avoid infinities in the complexity term).
+  Eigen::LLT<Eigen::MatrixXd> llt(Qff_plus_lambda);
+  Eigen::MatrixXd Q_chol = llt.matrixL();
+  Eigen::ArrayXd Q_chol_diag = Q_chol.diagonal();
+
+  // Compute inverse (needed for likelihood gradient).
   Eigen::MatrixXd Q_inv = Qff_plus_lambda.inverse();
 
   double half = 1.0 / 2.0;
-  double complexity_penalty = -half * log(Q_det);
+  double complexity_penalty = -Q_chol_diag.log().sum();
   double data_fit = -half * y.transpose() * Q_inv * y;
   double constant_term = -half * n_labels * log(2 * M_PI);
   double log_marginal_likelihood =
