@@ -422,16 +422,21 @@ void SparseGP_DTC ::compute_likelihood() {
       Kuf.transpose() * Kuu_inverse * Kuf +
       noise.asDiagonal() * Eigen::MatrixXd::Identity(n_train, n_train);
 
-  double Q_det = Qff_plus_lambda.determinant();
-  Eigen::MatrixXd Q_inv = Qff_plus_lambda.inverse();
+  // Avoid naive matrix inverse by using the Cholesky decomposition.
+  Eigen::LLT<Eigen::Ref<Eigen::MatrixXd>> llt(Qff_plus_lambda);
+  Eigen::VectorXd Q_inv_y = llt.solve(y);
+  Eigen::MatrixXd Q_chol = llt.matrixL();
+  Eigen::ArrayXd Q_chol_diag = Q_chol.diagonal();
 
   double half = 1.0 / 2.0;
-  complexity_penalty = -half * log(Q_det);
-  data_fit = -half * y.transpose() * Q_inv * y;
+  complexity_penalty = -Q_chol_diag.log().sum();
+  data_fit = -half * y.transpose() * Q_inv_y;
   constant_term = -half * n_train * log(2 * M_PI);
   log_marginal_likelihood = complexity_penalty + data_fit + constant_term;
 }
 
+// TODO: Compute likelihood and gradient with Cholesky decomposition.
+// TODO: Split this method into a few helper functions.
 double SparseGP_DTC ::compute_likelihood_gradient(
     const Eigen::VectorXd &hyperparameters){
 

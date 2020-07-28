@@ -173,9 +173,14 @@ PYBIND11_MODULE(_C_flare, m) {
     .def("compute_likelihood", &SparseGP_DTC::compute_likelihood)
     .def("compute_likelihood_gradient",
         &SparseGP_DTC::compute_likelihood_gradient)
+    .def_readwrite("Kuu_jitter", &SparseGP::Kuu_jitter)
+    .def_readonly("complexity_penalty", &SparseGP_DTC::complexity_penalty)
+    .def_readonly("data_fit", &SparseGP_DTC::data_fit)
+    .def_readonly("constant_term", &SparseGP_DTC::constant_term)
     .def_readonly("log_marginal_likelihood",
         &SparseGP_DTC::log_marginal_likelihood)
     .def_readonly("likelihood_gradient",
         &SparseGP_DTC::likelihood_gradient)
-    .def_readonly("hyperparameters", &SparseGP_DTC::hyperparameters);
+    .def_readonly("hyperparameters", &SparseGP_DTC::hyperparameters)
+    .def_readonly("training_structures", &SparseGP::training_structures);
 }

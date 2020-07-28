@@ -83,12 +83,11 @@ TEST_F(SparseTest, DTC_Prediction){
             sparse_gp.constant_term, sparse_gp.log_marginal_likelihood);
   double like1 = sparse_gp.log_marginal_likelihood;
 
-  std::cout << sparse_gp.likelihood_gradient << std::endl;
   // Check the likelihood function.
   Eigen::VectorXd hyps = sparse_gp.hyperparameters;
-  sparse_gp.compute_likelihood_gradient(hyps);
+  double like2 = sparse_gp.compute_likelihood_gradient(hyps);
 
-  EXPECT_EQ(like1, sparse_gp.log_marginal_likelihood);
+  EXPECT_EQ(like1, like2);
 }
 
 TEST_F(SparseTest, Set_Hyps){
