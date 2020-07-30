@@ -182,5 +182,8 @@ PYBIND11_MODULE(_C_flare, m) {
     .def_readwrite("likelihood_gradient",
         &SparseGP_DTC::likelihood_gradient)
     .def_readonly("hyperparameters", &SparseGP_DTC::hyperparameters)
-    .def_readonly("training_structures", &SparseGP::training_structures);
+    .def_readonly("training_structures", &SparseGP::training_structures)
+    .def_readonly("n_energy_labels", &SparseGP_DTC::n_energy_labels)
+    .def_readonly("n_force_labels", &SparseGP_DTC::n_force_labels)
+    .def_readonly("n_stress_labels", &SparseGP_DTC::n_stress_labels);
 }

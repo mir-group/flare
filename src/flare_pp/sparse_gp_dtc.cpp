@@ -234,6 +234,7 @@ void SparseGP_DTC ::add_training_structure(
   n_energy_labels += n_energy;
   n_force_labels += n_force;
   n_stress_labels += n_stress;
+  n_labels += n_energy + n_force + n_stress;
 
   // Store training structure.
   training_structures.push_back(training_structure);

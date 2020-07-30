@@ -12,7 +12,8 @@ public:
   Eigen::VectorXd noise_vector, y, energy_labels, force_labels, stress_labels;
   Eigen::MatrixXd Sigma, Kuu_inverse, Kuf;
 
-  int n_energy_labels = 0, n_force_labels = 0, n_stress_labels = 0;
+  int n_energy_labels = 0, n_force_labels = 0, n_stress_labels = 0,
+    n_labels;
 
   // Likelihood attributes.
   double log_marginal_likelihood, data_fit, complexity_penalty, trace_term,
