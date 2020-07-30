@@ -38,9 +38,7 @@ public:
   void update_matrices();
 
   // Compute the DTC mean and variance.
-  void predict_DTC(StructureDescriptor test_structure,
-      Eigen::VectorXd & mean_vector, Eigen::VectorXd & variance_vector,
-      std::vector<Eigen::VectorXd> & mean_contributions);
+  void predict_on_structure(StructureDescriptor &test_structure);
 
   // Calculate the log marginal likelihood of the current hyperparameters.
   // TODO: Change compute likelihood to set likelihood, and set both the

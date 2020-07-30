@@ -299,10 +299,7 @@ void SparseGP_DTC ::update_matrices() {
   alpha = Sigma * Kuf * noise_vector.asDiagonal() * y;
 }
 
-void SparseGP_DTC ::predict_DTC(
-    StructureDescriptor test_structure, Eigen::VectorXd &mean_vector,
-    Eigen::VectorXd &variance_vector,
-    std::vector<Eigen::VectorXd> &mean_contributions) {
+void SparseGP_DTC ::predict_on_structure(StructureDescriptor &test_structure) {
 
   int n_atoms = test_structure.noa;
   int n_out = 1 + 3 * n_atoms + 6;
@@ -332,12 +329,12 @@ void SparseGP_DTC ::predict_DTC(
   }
 
   // Compute mean contributions and total mean prediction.
-  mean_contributions = std::vector<Eigen::VectorXd>{};
+  test_structure.mean_contributions = std::vector<Eigen::VectorXd>{};
   for (int i = 0; i < n_kernels; i++) {
-    mean_contributions.push_back(kern_mats[i] * alpha);
+    test_structure.mean_contributions.push_back(kern_mats[i] * alpha);
   }
 
-  mean_vector = kern_mat * alpha;
+  test_structure.mean_efs = kern_mat * alpha;
 
   // Compute variances.
   Eigen::VectorXd V_SOR, Q_self, K_self = Eigen::VectorXd::Zero(n_out);
@@ -350,7 +347,7 @@ void SparseGP_DTC ::predict_DTC(
   Q_self = (kern_mat * Kuu_inverse * kern_mat.transpose()).diagonal();
   V_SOR = (kern_mat * Sigma * kern_mat.transpose()).diagonal();
 
-  variance_vector = K_self - Q_self + V_SOR;
+  test_structure.variance_efs = K_self - Q_self + V_SOR;
 }
 
 void SparseGP_DTC ::set_hyperparameters(Eigen::VectorXd hyps){

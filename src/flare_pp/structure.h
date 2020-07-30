@@ -35,9 +35,8 @@ public:
   std::vector<double> many_body_cutoffs;
 
   // Make structure labels empty by default.
-  Eigen::VectorXd energy;
-  Eigen::VectorXd forces;
-  Eigen::VectorXd stresses;
+  Eigen::VectorXd energy, forces, stresses, mean_efs, variance_efs;
+  std::vector<Eigen::VectorXd> mean_contributions;
 
   StructureDescriptor();
 

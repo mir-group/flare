@@ -22,22 +22,19 @@ TEST_F(SparseTest, DTC_Prediction){
   EXPECT_EQ(sparse_gp.sparse_environments.size(), sparse_gp.Sigma.rows());
   EXPECT_EQ(sparse_gp.sparse_environments.size(), sparse_gp.Kuu_inverse.rows());
 
-  Eigen::VectorXd mean_vector, variance_vector;
-  std::vector<Eigen::VectorXd> mean_contributions;
-  sparse_gp.predict_DTC(test_struc, mean_vector, variance_vector,
-                        mean_contributions);
+  sparse_gp.predict_on_structure(test_struc);
 
   // Check that mean contributions sum to the total.
-  int mean_size = mean_vector.rows();
+  int mean_size = test_struc.mean_efs.size();
   EXPECT_EQ(mean_size, 1 + test_struc.noa * 3 + 6);
   Eigen::VectorXd mean_sum = Eigen::VectorXd::Zero(mean_size);
   for (int i = 0; i < sparse_gp.kernels.size(); i++){
-      mean_sum += mean_contributions[i];
+      mean_sum += test_struc.mean_contributions[i];
   }
 
   double threshold = 1e-8;
   for (int i = 0; i < mean_size; i++){
-      EXPECT_NEAR(mean_sum[i], mean_vector[i], threshold);
+      EXPECT_NEAR(mean_sum[i], test_struc.mean_efs[i], threshold);
   }
 
   // Check that Kuu and Kuf kernels sum to the total.
@@ -74,7 +71,7 @@ TEST_F(SparseTest, DTC_Prediction){
 
   // Check that the variances on all quantities are positive.
   for (int i = 0; i < mean_size; i++){
-      EXPECT_GE(variance_vector[i], 0);
+      EXPECT_GE(test_struc.variance_efs[i], 0);
   }
 
   // Compute the marginal likelihood.
