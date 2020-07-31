@@ -220,10 +220,8 @@ class OTF:
                 self.compute_properties()
 
                 # get max uncertainty atoms
-                noise_sig = Parameters.get_noise(
-                        self.gp.hyps_mask, self.gp.hyps, constraint=False)
                 std_in_bound, target_atoms = is_std_in_bound(
-                    self.std_tolerance, noise_sig, self.structure,
+                    self.std_tolerance, self.gp.force_noise, self.structure,
                     self.max_atoms_added)
 
                 if not std_in_bound:

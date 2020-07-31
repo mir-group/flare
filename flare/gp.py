@@ -195,6 +195,11 @@ class GaussianProcess:
 
         self.check_instantiation()
 
+    @property
+    def force_noise(self):
+        return Parameters.get_noise(self.hyps_mask, self.hyps,
+                                    constraint=False)
+
     def check_instantiation(self):
         """
         Runs a series of checks to ensure that the user has not supplied
