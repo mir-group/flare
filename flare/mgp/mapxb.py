@@ -386,6 +386,14 @@ class SingleMapXbody:
 
         r_cut = cutoffs[self.kernel_name]
 
+        n_grids = np.prod(self.grid_num)
+
+        if np.any(np.array(self.bounds[1]) <= 0.0):
+            if force_block:
+                return np.zeros((n_grids, (e-s)*3))
+            else:
+                return np.zeros((n_grids, e-s))
+ 
         grids = self.construct_grids()
         coords = np.zeros(
             (grids.shape[0], self.grid_dim * 3), dtype=np.float64
@@ -406,7 +414,6 @@ class SingleMapXbody:
 
         k_v = []
         chunk_size = 32 ** 3
-        n_grids = grids.shape[0]
         if n_grids > chunk_size:
             n_chunk = ceil(n_grids / chunk_size)
         else:
@@ -431,7 +438,7 @@ class SingleMapXbody:
         if len(k_v) > 0:
             k_v = np.vstack(k_v).T
         else:
-            k_v = np.zeros((grids.shape[0], 0))
+            k_v = np.zeros((n_grids, 0))
 
         return k_v
 
@@ -463,7 +470,12 @@ class SingleMapXbody:
         """
         build 1-d spline function for mean, 2-d for var
         """
-        self.mean = CubicSpline(self.bounds[0], self.bounds[1], orders=self.grid_num)
+        if np.any(np.array(self.bounds[1]) <= 0.0):
+            bounds = [np.zeros_like(self.bounds[0]), np.ones_like(self.bounds[1])]
+        else:
+            bounds = self.bounds
+
+        self.mean = CubicSpline(bounds[0], bounds[1], orders=self.grid_num)
 
         if self.var_map == "pca":
             if self.svd_rank == "auto":
@@ -473,14 +485,14 @@ class SingleMapXbody:
 
             elif isinstance(self.svd_rank, int):
                 self.var = PCASplines(
-                    self.bounds[0],
-                    self.bounds[1],
+                    bounds[0],
+                    bounds[1],
                     orders=self.grid_num,
                     svd_rank=self.svd_rank,
                 )
 
         if self.var_map == "simple":
-            self.var = CubicSpline(self.bounds[0], self.bounds[1], orders=self.grid_num)
+            self.var = CubicSpline(bounds[0], bounds[1], orders=self.grid_num)
 
     def update_bounds(self, GP):
         rebuild_container = False
