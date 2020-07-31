@@ -11,7 +11,6 @@ import flare.predict as predict
 from flare import struc, gp, env, md
 from flare.dft_interface import dft_software
 from flare.output import Output
-from flare.parameters import Parameters
 from flare.utils.learner import is_std_in_bound
 
 
