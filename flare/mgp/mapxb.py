@@ -138,21 +138,20 @@ class MapXbody:
             map_ind = self.find_map_index(spc)
             try:
                 f, vir, v, e = self.maps[map_ind].predict(lengths, xyzs)
+                f_spcs += f
+                vir_spcs += vir
+                v_spcs += v
+                e_spcs += e
             except ValueError as err_msg:
                 rebuild_spc.append(err_msg.args[0])
                 new_bounds.append(err_msg.args[1])
 
-            if len(rebuild_spc) > 0:
-                raise ValueError(
-                    rebuild_spc,
-                    new_bounds,
-                    f"The {self.kernel_name} map needs re-constructing.",
-                )
-
-            f_spcs += f
-            vir_spcs += vir
-            v_spcs += v
-            e_spcs += e
+        if len(rebuild_spc) > 0:
+            raise ValueError(
+                rebuild_spc,
+                new_bounds,
+                f"The {self.kernel_name} map needs re-constructing.",
+            )
 
         return f_spcs, vir_spcs, kern, v_spcs, e_spcs
 
