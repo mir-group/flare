@@ -203,7 +203,7 @@ class GaussianProcess:
     @property
     def hyps_and_labels(self):
         return Parameters.get_hyps(
-            self.gp.hyps_mask, self.gp.hyps, constraint=False, label=True)
+            self.hyps_mask, self.hyps, constraint=False, label=True)
 
     def check_instantiation(self):
         """
