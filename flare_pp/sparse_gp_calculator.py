@@ -1,5 +1,6 @@
 from ase.calculators.calculator import Calculator
 from _C_flare import SparseGP_DTC, StructureDescriptor
+import numpy as np
 
 
 class SGP_Calculator(Calculator):
@@ -24,7 +25,17 @@ class SGP_Calculator(Calculator):
         n_atoms = structure_descriptor.noa
         self.results["energy"] = structure_descriptor.mean_efs[0]
         self.results["forces"] = \
-            structure_descriptor.mean_efs[1:-1].reshape()
+            structure_descriptor.mean_efs[1:-6].reshape(-1, 3)
+
+        # Convert stress to ASE format.
+        flare_stress = structure_descriptor.mean_efs[-6:]
+        ase_stress = \
+            -np.array([flare_stress[0], flare_stress[3], flare_stress[5],
+                       flare_stress[4], flare_stress[2], flare_stress[1]])
+        self.results["stress"] = ase_stress
+
+        self.results["stds"] = \
+            np.sqrt(structure_descriptor.variance_efs[1:-6].reshape(-1, 3))
 
     #     predict_DTC(StructureDescriptor test_structure,
     #   Eigen::VectorXd & mean_vector, Eigen::VectorXd & variance_vector,
