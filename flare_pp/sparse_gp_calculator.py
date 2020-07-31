@@ -18,8 +18,13 @@ class SGP_Calculator(Calculator):
             self.gp_model.descriptor_calculators)
 
         # Predict on structure.
+        self.gp_model.predict_on_structure(structure_descriptor)
 
         # Set results.
+        n_atoms = structure_descriptor.noa
+        self.results["energy"] = structure_descriptor.mean_efs[0]
+        self.results["forces"] = \
+            structure_descriptor.mean_efs[1:-1].reshape()
 
     #     predict_DTC(StructureDescriptor test_structure,
     #   Eigen::VectorXd & mean_vector, Eigen::VectorXd & variance_vector,
