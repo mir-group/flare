@@ -200,6 +200,11 @@ class GaussianProcess:
         return Parameters.get_noise(self.hyps_mask, self.hyps,
                                     constraint=False)
 
+    @property
+    def hyps_and_labels(self):
+        return Parameters.get_hyps(
+            self.gp.hyps_mask, self.gp.hyps, constraint=False, label=True)
+
     def check_instantiation(self):
         """
         Runs a series of checks to ensure that the user has not supplied

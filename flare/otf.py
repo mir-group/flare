@@ -361,11 +361,11 @@ class OTF:
         """Optimizes the hyperparameters of the current GP model."""
 
         self.gp.train(logger_name=self.output.basename+'hyps')
-        hyps, labels = Parameters.get_hyps(
-                self.gp.hyps_mask, self.gp.hyps, constraint=False,
-                label=True)
+
+        hyps, labels = self.gp.hyps_and_labels
         if labels is None:
             labels = self.gp.hyp_labels
+
         self.output.write_hyps(labels, hyps,
                                self.start_time,
                                self.gp.likelihood, self.gp.likelihood_gradient,
