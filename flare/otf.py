@@ -332,7 +332,8 @@ class OTF:
             for ofile in to_copy:
                 copyfile(ofile, dest+'/'+dt_string+ofile)
 
-    def update_gp(self, train_atoms: List[int], dft_frcs: 'ndarray'):
+    def update_gp(self, train_atoms: List[int], dft_frcs: 'ndarray',
+                  dft_energy: float = None, dft_stress: 'ndarray' = None):
         """
         Updates the current GP model.
 
@@ -345,8 +346,8 @@ class OTF:
         self.output.add_atom_info(train_atoms, self.structure.stds)
 
         # update gp model
-        self.gp.update_db(self.structure, dft_frcs,
-                          custom_range=train_atoms)
+        self.gp.update_db(self.structure, dft_frcs, custom_range=train_atoms,
+                          energy=dft_energy, stress=dft_stress)
 
         self.gp.set_L_alpha()
 
