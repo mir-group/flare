@@ -1,6 +1,7 @@
 import numpy as np
 import pickle
 import pytest
+import json as json
 
 from copy import deepcopy
 from json import loads
@@ -224,7 +225,9 @@ def test_mgp_gpfa(all_mgp, all_gp):
     grid_params['threebody'] = grid_params_3b
     unique_species = gp_model.training_statistics['species']
 
-    mgp_model = MappedGaussianProcess(grid_params=grid_params, unique_species=unique_species, n_cpus=1)
+    mgp_model = MappedGaussianProcess(grid_params=grid_params,
+                                      unique_species=unique_species,
+                                      n_cpus=1)
 
     mgp_model.build_map(gp_model)
 
@@ -237,9 +240,18 @@ def test_mgp_gpfa(all_mgp, all_gp):
     frames = [struc]
 
     tt = TrajectoryTrainer(frames, mgp_model, rel_std_tolerance=0,
-                           abs_std_tolerance=0, abs_force_tolerance=0)
+                           abs_std_tolerance=0, abs_force_tolerance=1e-8,
+                           print_training_plan=True)
     assert tt.mgp is True
     tt.run()
+
+    # Test that training plan is properly written
+    with open('gp_from_aimd_training_plan.json', 'r') as f:
+        plan = json.loads(f.readline())
+    assert plan == {'0': list(range(len(struc)))}
+
+    for f in glob(f"gp_from_aimd*"):
+        remove(f)
 
 
 def test_parse_gpfa_output():

@@ -313,17 +313,18 @@ class MappedGaussianProcess:
 
         return new_mgp
 
-    def write_model(self, name: str, format="json"):
+    def write_model(self, name: str, format: str="json"):
         """
         Write everything necessary to re-load and re-use the model
         :param model_name:
         :return:
         """
-        if "json" in format.lower():
+        if "json" in format.lower() or 'json' in name:
             with open(f"{name}.json", "w") as f:
                 json.dump(self.as_dict(), f, cls=NumpyEncoder)
 
-        elif "pickle" in format.lower() or "binary" in format.lower():
+        elif "pickle" in format.lower() or "binary" in format.lower()\
+                or 'pickle' in name or 'binary' in name:
             with open(f"{name}.pickle", "wb") as f:
                 pickle.dump(self, f)
 
@@ -331,13 +332,13 @@ class MappedGaussianProcess:
             raise ValueError("Requested format not found.")
 
     @staticmethod
-    def from_file(filename: str):
-        if ".json" in filename:
+    def from_file(filename: str, format: str = ''):
+        if ".json" in filename or format.lower() == 'json':
             with open(filename, "r") as f:
                 model = MappedGaussianProcess.from_dict(json.loads(f.readline()))
             return model
 
-        elif "pickle" in filename:
+        elif "pickle" in filename or format.lower() in ['binary', 'pickle']:
             with open(filename, "rb") as f:
                 return pickle.load(f)
         else:

@@ -394,7 +394,7 @@ class Structure:
 
         return new_struc
 
-    def is_valid(self, tolerance: float = .4)->bool:
+    def is_valid(self, tolerance: float = .5)->bool:
         """
         Plugin to pymatgen's is_valid method to gauge if a structure
         has atoms packed too closely together, which is likely
