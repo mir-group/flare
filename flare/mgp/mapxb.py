@@ -657,7 +657,7 @@ class SingleMapXbody:
         return f, vir, v, e
 
 
-    def write(self, f, write_var):
+    def write(self, f, write_var, species_code=None):
         """ 
         Write LAMMPS coefficient file
 
@@ -670,7 +670,10 @@ class SingleMapXbody:
         """
 
         # write header
-        elems = self.species_code.split("_")
+        if species_code is None:
+            species_code = self.species_code
+        elems = species_code.split("_")
+
         a = self.bounds[0]
         b = self.bounds[1]
         order = self.grid_num

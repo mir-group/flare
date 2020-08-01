@@ -234,7 +234,7 @@ class MappedGaussianProcess:
         xbodies = ["twobody", "threebody"]
         for xb in xbodies:
             if xb in self.maps:
-                num = len(self.maps[xb].maps)
+                num = self.maps[xb].num_lmp_maps #len(self.maps[xb].maps)
             else:
                 num = 0
             header += f"{num} "

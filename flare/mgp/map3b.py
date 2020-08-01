@@ -21,6 +21,7 @@ class Map3body(MapXbody):
         self.bodies = 3
         self.pred_perm = [[0, 1, 2], [1, 0, 2]]
         self.spc_perm = [[0, 1, 2], [0, 2, 1]]
+        self.num_lmp_maps = 0
         super().__init__(**kwargs)
 
     def build_bond_struc(self, species_list):
@@ -31,6 +32,7 @@ class Map3body(MapXbody):
         # 2 body (2 atoms (1 bond) config)
         self.spc = []
         N_spc = len(species_list)
+        self.num_lmp_maps = N_spc ** 3
         for spc1 in species_list:
             for spc2 in species_list:
                 for spc3 in species_list:
@@ -73,13 +75,7 @@ class SingleMap3body(SingleMapXbody):
         self.set_bounds(None, None)
 
         spc = self.species
-        self.species_code = (
-            Z_to_element(spc[0])
-            + "_"
-            + Z_to_element(spc[1])
-            + "_"
-            + Z_to_element(spc[2])
-        )
+        self.species_code = "_".join([Z_to_element(spc) for spc in self.species])
         self.kv3name = f"kv3_{self.species_code}"
 
     def set_bounds(self, lower_bound, upper_bound):
@@ -153,6 +149,12 @@ class SingleMap3body(SingleMapXbody):
         )
 
 
+    def write(self, f, write_var, species_code=None):
+        super().write(f, write_var, species_code=None)
+        if self.species[1] != self.species[2]:
+            spc_codes = self.species_code.split("_")
+            exchange_species_code = "_".join([spc_codes[i] for i in [0, 2, 1]])
+            super().write(f, write_var, exchange_species_code)
 # -----------------------------------------------------------------------------
 #                               Functions
 # -----------------------------------------------------------------------------
