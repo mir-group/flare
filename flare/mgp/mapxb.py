@@ -44,7 +44,7 @@ class MapXbody:
         lower_bound_relax: float = 0.1,
         GP: GaussianProcess = None,
         n_cpus: int = None,
-        n_sample: int = 100,
+        n_sample: int = 10,
         hyps_mask: dict = None,
         hyps: list = None,
         **kwargs,
@@ -435,6 +435,7 @@ class SingleMapXbody:
         for m_index in range(s, e):
             data = training_data[m_index]
             kern_vec = []
+            print(f'{s}/{e}')
             for g in range(n_chunk):
                 gs = chunk_size * g
                 ge = np.min((chunk_size * (g + 1), n_grids))
