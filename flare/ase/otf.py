@@ -24,6 +24,15 @@ from flare.ase.calculator import FLARE_Calculator
 import flare.ase.dft as dft_source
 
 
+def reset_npt_momenta(npt_engine, force):
+    # in the last step, the momenta was set by flare forces, change to dft forces
+    npt_engine._calculate_q_future(force)
+    npt_engine.atoms.set_momenta(
+        np.dot(npt_engine.q_future - npt_engine.q_past, npt_engine.h / (2 * npt_engine.dt))
+        * npt_engine._getmasses()
+    )
+
+
 class ASE_OTF(OTF):
 
     """
@@ -107,6 +116,8 @@ class ASE_OTF(OTF):
             MD = NPTBerendsen
         elif md_engine == "NPT":
             MD = NPT
+            # TODO: solve the md step 
+            assert md_kwargs['pfactor'] is None, "Current MD OTF only supports pfactor=None"
         elif md_engine == "Langevin":
             MD = Langevin
         else:
@@ -165,7 +176,8 @@ class ASE_OTF(OTF):
         if not isinstance(self.atoms.calc, FLARE_Calculator):
             self.atoms.set_calculator(self.flare_calc)
 
-        self.atoms.calc.calculate(self.atoms)
+        if not self.flare_calc.results:
+            self.atoms.calc.calculate(self.atoms)
 
     def md_step(self):
         """
@@ -176,7 +188,22 @@ class ASE_OTF(OTF):
         self.structure.prev_positions = np.copy(self.structure.positions)
 
         # Take MD step.
-        self.md.step()
+        f = self.atoms.get_forces()
+
+        if self.md_engine == "NPT":
+            self.flare_calc.results = {}  # init flare calculator
+
+            if self.dft_step:
+                reset_npt_momenta(self.md, f) 
+                self.atoms.set_calculator(self.flare_calc)
+
+            self.md.step()  # use flare to get force for next step
+        else:
+            self.flare_calc.results = {}  # init flare calculator
+            if self.dft_step:
+                self.atoms.set_calculator(self.flare_calc)
+
+            self.md.step(f)
 
         # Update the positions and cell of the structure object.
         self.structure.cell = np.copy(self.atoms.cell)
@@ -201,10 +228,10 @@ class ASE_OTF(OTF):
         # Convert velocities to Angstrom / ps.
         self.velocities = self.atoms.get_velocities() * units.fs * 1e3
 
-    def update_gp(self, train_atoms, dft_frcs, dft_energy=None,
-                  dft_stress=None):
-        super().update_gp(train_atoms, dft_frcs, dft_energy=dft_energy,
-                          dft_stress=dft_stress)
+    def update_gp(self, train_atoms, dft_frcs, dft_energy=None, dft_stress=None):
+        super().update_gp(
+            train_atoms, dft_frcs, dft_energy=dft_energy, dft_stress=dft_stress
+        )
 
         if self.flare_calc.use_mapping:
             self.flare_calc.mgp_model.build_map(self.flare_calc.gp_model)

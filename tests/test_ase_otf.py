@@ -61,7 +61,7 @@ def md_params():
             md_dict[md_engine] = {"temperature": md_dict["temperature"]}
 
     md_dict["NVTBerendsen"].update({"taut": 0.5e3 * units.fs})
-    md_dict["NPT"].update({"externalstress": 0, "ttime": 25, "pfactor": 3375})
+    md_dict["NPT"].update({"externalstress": 0, "ttime": 25, "pfactor": None})
     md_dict["Langevin"].update({"friction": 0.02})
 
     yield md_dict
