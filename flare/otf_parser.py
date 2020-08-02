@@ -60,13 +60,10 @@ class OtfAnalysis:
         if call_no is None:
             call_no = len(self.gp_position_list)
         if hyp_no is None:
-            hyp_no = call_no
+            hyp_no = len(self.gp_hyp_list) # use the last hyps by default
         if hyps is None:
             # check out the last non-empty element from the list
-            for icall in reversed(range(hyp_no)):
-                if len(self.gp_hyp_list[icall]) > 0:
-                    hyps = self.gp_hyp_list[icall][-1]
-                    break
+            hyps = self.gp_hyp_list[hyp_no-1]
         if cell is None:
             cell = self.header["cell"]
 
@@ -260,6 +257,8 @@ def parse_header_information(lines) -> dict:
             get_header_item(
                 line_lower, header_dict[kw][0], header_info, kw, header_dict[kw][1]
             )
+        if "optimization algorithm" in line:
+            header_info["algo"] = str(line.split(":")[1].strip()).upper()
 
         if "system species" in line_lower:
             line = line.split(":")[1]
@@ -294,7 +293,6 @@ def get_header_item(line, pattern, header_info, kw, value_type):
 
 header_dict = {
     "n_hyps": ["number of hyperparameters", int],
-    "algo": ["optimization algorithm", str],
     "frames": ["frames", int],
     "atoms": ["number of atoms", int],
     "dt": ["timestep", float],
