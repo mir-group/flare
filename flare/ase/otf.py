@@ -228,8 +228,10 @@ class ASE_OTF(OTF):
         # Convert velocities to Angstrom / ps.
         self.velocities = self.atoms.get_velocities() * units.fs * 1e3
 
-    def update_gp(self, train_atoms, dft_frcs):
-        super().update_gp(train_atoms, dft_frcs)
+    def update_gp(self, train_atoms, dft_frcs, dft_energy=None,
+                  dft_stress=None):
+        super().update_gp(train_atoms, dft_frcs, dft_energy=dft_energy,
+                          dft_stress=dft_stress)
 
         if self.flare_calc.use_mapping:
             self.flare_calc.mgp_model.build_map(self.flare_calc.gp_model)

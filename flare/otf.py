@@ -11,7 +11,6 @@ import flare.predict as predict
 from flare import struc, gp, env, md
 from flare.dft_interface import dft_software
 from flare.output import Output
-from flare.parameters import Parameters
 from flare.utils.learner import is_std_in_bound
 
 
@@ -222,11 +221,9 @@ class OTF:
                 print('compute_properties', time.time()-self.start_time, flush=True)
 
                 # get max uncertainty atoms
-                noise_sig = Parameters.get_noise(
-                        self.gp.hyps_mask, self.gp.hyps, constraint=False)
                 std_in_bound, target_atoms = is_std_in_bound(
-                    self.std_tolerance, noise_sig, self.structure,
-                    self.max_atoms_added, self.fix_atoms)
+                    self.std_tolerance, self.gp.force_noise, self.structure,
+                    self.max_atoms_added)
 
                 if not std_in_bound:
                     # record GP forces
@@ -340,7 +337,8 @@ class OTF:
             for ofile in to_copy:
                 copyfile(ofile, dest+'/'+dt_string+ofile)
 
-    def update_gp(self, train_atoms: List[int], dft_frcs: 'ndarray'):
+    def update_gp(self, train_atoms: List[int], dft_frcs: 'ndarray',
+                  dft_energy: float = None, dft_stress: 'ndarray' = None):
         """
         Updates the current GP model.
 
@@ -353,8 +351,8 @@ class OTF:
         self.output.add_atom_info(train_atoms, self.structure.stds)
 
         # update gp model
-        self.gp.update_db(self.structure, dft_frcs,
-                          custom_range=train_atoms)
+        self.gp.update_db(self.structure, dft_frcs, custom_range=train_atoms,
+                          energy=dft_energy, stress=dft_stress)
 
         self.gp.set_L_alpha()
         print('update_db & set_L_alpha', time.time()-self.start_time, flush=True)
@@ -373,11 +371,11 @@ class OTF:
         """Optimizes the hyperparameters of the current GP model."""
 
         self.gp.train(logger_name=self.output.basename+'hyps')
-        hyps, labels = Parameters.get_hyps(
-                self.gp.hyps_mask, self.gp.hyps, constraint=False,
-                label=True)
+
+        hyps, labels = self.gp.hyps_and_labels
         if labels is None:
             labels = self.gp.hyp_labels
+
         self.output.write_hyps(labels, hyps,
                                self.start_time,
                                self.gp.likelihood, self.gp.likelihood_gradient,

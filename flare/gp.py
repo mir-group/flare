@@ -195,6 +195,16 @@ class GaussianProcess:
 
         self.check_instantiation()
 
+    @property
+    def force_noise(self):
+        return Parameters.get_noise(self.hyps_mask, self.hyps,
+                                    constraint=False)
+
+    @property
+    def hyps_and_labels(self):
+        return Parameters.get_hyps(
+            self.hyps_mask, self.hyps, constraint=False, label=True)
+
     def check_instantiation(self):
         """
         Runs a series of checks to ensure that the user has not supplied
@@ -271,8 +281,9 @@ class GaussianProcess:
         if hyps is not None:
             self.hyps = hyps
 
-    def update_db(self, struc: Structure, forces: List,
-                  custom_range: List[int] = (), energy: float = None):
+    def update_db(self, struc: Structure, forces: 'ndarray',
+                  custom_range: List[int] = (), energy: float = None,
+                  stress: 'ndarray' = None):
         """Given a structure and forces, add local environments from the
         structure to the training set of the GP. If energy is given, add the
         entire structure to the training set.
@@ -287,6 +298,10 @@ class GaussianProcess:
                 environments will be added to the training set of the GP.
 
             energy (float): Energy of the structure.
+
+            stress (np.ndarray): Stress tensor of the structure. The stress
+                tensor components should be given in the following order:
+                xx, xy, xz, yy, yz, zz.
         """
 
         # By default, use all atoms in the structure
