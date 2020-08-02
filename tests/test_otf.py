@@ -199,6 +199,9 @@ def test_otf_par(software, per_atom_par, n_cpus):
 @pytest.mark.parametrize("software", software_list)
 def test_otf_parser(software):
 
+    if software == "cp2k":
+        pytest.skip()
+
     example = 1
     casename = name_list[example]
     output_name = f"{casename}_otf_{software}.out"
