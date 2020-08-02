@@ -5,19 +5,16 @@ It needs to be used adjointly with ASE MD engine.
 import os
 import sys
 import inspect
-import logging
 from time import time
 from copy import deepcopy
 
 import numpy as np
-from ase.io import write
 from ase.md.npt import NPT
 from ase.md.nvtberendsen import NVTBerendsen
 from ase.md.nptberendsen import NPTBerendsen
 from ase.md.verlet import VelocityVerlet
 from ase.md.langevin import Langevin
 from ase import units
-from ase.constraints import FixAtoms
 
 from flare.otf import OTF
 from flare.utils.learner import is_std_in_bound
@@ -122,11 +119,6 @@ class ASE_OTF(OTF):
         force_source = dft_source
         self.flare_calc = self.atoms.calc
 
-        # to be modified in the functions
-        self.structure = None
-        self.otf_frames = None
-        self.dft_frames = None
-
         # Convert ASE timestep to ps for the output file.
         flare_dt = timestep / (units.fs * 1e3)
 
@@ -139,16 +131,6 @@ class ASE_OTF(OTF):
             dft_input=self.atoms,
             **otf_kwargs
         )
-
-        # frozen atoms
-        if len(atoms.constraints) > 0:
-            self.atoms.set_constraint(atoms.constraints)
-
-            # currently only supports FixAtoms
-            if isinstance(self.atoms.constraints[0], FixAtoms):
-                self.fix_atoms = self.atoms.constraints[0].index
-
-
 
     def get_structure_from_input(self, prev_pos_init):
         self.structure = self.atoms
@@ -194,16 +176,7 @@ class ASE_OTF(OTF):
         self.structure.prev_positions = np.copy(self.structure.positions)
 
         # Take MD step.
-        if self.md_engine != 'NPT':
-            if self.dft_step: # TODO: in md.step(), the dft will be called the 2nd 
-                              # time, this is a temporary solution
-                f = self.atoms.get_forces()
-                self.atoms.set_calculator(self.flare_calc)
-            new_f = self.md.step(f)
-        else:
-            self.md.step()
-            new_f = None
-        self.md.call_observers()
+        self.md.step()
 
         # Update the positions and cell of the structure object.
         self.structure.cell = np.copy(self.atoms.cell)
@@ -235,21 +208,3 @@ class ASE_OTF(OTF):
 
         if self.flare_calc.use_mapping:
             self.flare_calc.mgp_model.build_map(self.flare_calc.gp_model)
-
-    def record_state(self):
-        if self.curr_step == 0:
-            append = False
-        else:
-            append = True
-        
-        string = self.output.write_md_header(self.dt, self.curr_step, self.dft_step)
-        logger = logging.getLogger(self.output.basename+'log')
-        logger.info(string)
-
-        self.output.write_wall_time(self.start_time)
-
-        self.atoms.info['Frame'] = self.curr_step
-        if self.dft_step:
-            self.dft_frames = write(self.output_name + '_dft.xyz', self.atoms, append=append)
-        else:
-            self.otf_frames = write(self.output_name + '.xyz', self.atoms, append=append)

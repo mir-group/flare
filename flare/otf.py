@@ -133,7 +133,6 @@ class OTF:
         self.curr_step = 0
 
         self.max_atoms_added = max_atoms_added
-        self.fix_atoms = []
 
         # initialize local energies
         if calculate_energy:
@@ -218,7 +217,6 @@ class OTF:
                 # compute forces and stds with GP
                 self.dft_step = False
                 self.compute_properties()
-                print('compute_properties', time.time()-self.start_time, flush=True)
 
                 # get max uncertainty atoms
                 std_in_bound, target_atoms = is_std_in_bound(
@@ -230,25 +228,20 @@ class OTF:
                     self.update_temperature()
                     self.record_state()
                     gp_frcs = deepcopy(self.structure.forces)
-                    print('update temp & record', time.time()-self.start_time, flush=True)
 
                     # run DFT and record forces
                     self.dft_step = True
                     self.run_dft()
                     dft_frcs = deepcopy(self.structure.forces)
-                    print('dft', time.time()-self.start_time, flush=True)
 
                     # run MD step & record the state
                     self.record_state()
-                    print('record', time.time()-self.start_time, flush=True)
 
                     # compute mae and write to output
                     self.compute_mae(gp_frcs, dft_frcs)
-                    print('mae', time.time()-self.start_time, flush=True)
 
                     # add max uncertainty atoms to training set
                     self.update_gp(target_atoms, dft_frcs)
-                    print('update_gp', time.time()-self.start_time, flush=True)
 
             # write gp forces
             if counter >= self.skip and not self.dft_step:
@@ -259,7 +252,6 @@ class OTF:
             counter += 1
             # TODO: Reinstate velocity rescaling.
             self.md_step()
-            print('md_step', time.time()-self.start_time, flush=True)
             self.curr_step += 1
 
         self.output.conclude_run()
@@ -310,7 +302,7 @@ class OTF:
 
         # calculate DFT forces
         # TODO: Return stress and energy
-        forces = self.dft_module.run_dft_par( # TODO: dft n_cpus should be different
+        forces = self.dft_module.run_dft_par(
             self.dft_input, self.structure, self.dft_loc, n_cpus=self.n_cpus,
             dft_out=self.dft_output, npool=self.npool, mpi=self.mpi,
             dft_kwargs=self.dft_kwargs)
@@ -355,15 +347,12 @@ class OTF:
                           energy=dft_energy, stress=dft_stress)
 
         self.gp.set_L_alpha()
-        print('update_db & set_L_alpha', time.time()-self.start_time, flush=True)
 
-        # if the hyps need training 
+        # write model
         if (self.dft_count-1) < self.freeze_hyps:
             self.train_gp()
-            print('train_gp', time.time()-self.start_time, flush=True)
             if self.write_model == 2:
                 self.gp.write_model(self.output_name+"_model")
-            print('write_gp 2', time.time()-self.start_time, flush=True)
         if self.write_model == 3:
             self.gp.write_model(self.output_name+'_model')
 
