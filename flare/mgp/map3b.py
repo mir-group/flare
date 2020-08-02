@@ -36,9 +36,8 @@ class Map3body(MapXbody):
         for spc1 in species_list:
             for spc2 in species_list:
                 for spc3 in species_list:
-                    if spc2 <= spc3:
-                        species = [spc1, spc2, spc3]
-                        self.spc.append(species)
+                    species = [spc1, spc2, spc3]
+                    self.spc.append(species)
 
     def get_arrays(self, atom_env):
 
@@ -55,6 +54,7 @@ class Map3body(MapXbody):
 
     def find_map_index(self, spc):
         return self.spc.index(spc)
+
 
 
 class SingleMap3body(SingleMapXbody):
@@ -149,12 +149,6 @@ class SingleMap3body(SingleMapXbody):
         )
 
 
-    def write(self, f, write_var, species_code=None):
-        super().write(f, write_var, species_code=None)
-        if self.species[1] != self.species[2]:
-            spc_codes = self.species_code.split("_")
-            exchange_species_code = "_".join([spc_codes[i] for i in [0, 2, 1]])
-            super().write(f, write_var, exchange_species_code)
 # -----------------------------------------------------------------------------
 #                               Functions
 # -----------------------------------------------------------------------------

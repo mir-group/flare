@@ -267,6 +267,17 @@ class SingleMapXbody:
     def construct_grids(self):
         raise NotImplementedError("need to be implemented in child class")
 
+    def LoadGrid(self):
+        if "mgp_grids" not in os.listdir(self.load_grid):
+            raise FileNotFoundError(
+                "Please set 'load_grid' as the location of mgp_grids folder"
+            )
+
+        grid_path = f"{self.load_grid}/mgp_grids/{self.bodies}_{self.species_code}"
+        grid_mean = np.load(f"{grid_path}_mean.npy")
+        grid_vars = np.load(f"{grid_path}_var.npy", allow_pickle=True)
+        return grid_mean, grid_vars
+
     def GenGrid(self, GP):
         """
         To use GP to predict value on each grid point, we need to generate the
@@ -280,6 +291,9 @@ class SingleMapXbody:
            and calculate the grid value by multiplying the complete kv vector
            with GP.alpha
         """
+
+        if self.load_grid is not None:
+            return self.LoadGrid()
 
         if self.n_cpus is None:
             processes = mp.cpu_count()
@@ -529,18 +543,7 @@ class SingleMapXbody:
 
         self.update_bounds(GP)
 
-        if not self.load_grid:
-            y_mean, y_var = self.GenGrid(GP)
-        else:
-            if "mgp_grids" not in os.listdir(self.load_grid):
-                raise FileNotFoundError(
-                    "Please set 'load_grid' as the location of mgp_grids folder"
-                )
-
-            grid_path = f"{self.load_grid}/mgp_grids/{self.bodies}_{self.species_code}"
-            y_mean = np.load(f"{grid_path}_mean.npy")
-            y_var = np.load(f"{grid_path}_var.npy", allow_pickle=True)
-
+        y_mean, y_var = self.GenGrid(GP)
         self.mean.set_values(y_mean)
 
         if self.var_map == "pca" and self.svd_rank == "auto":
@@ -649,7 +652,7 @@ class SingleMapXbody:
                 vir_i = (
                     f_d[:, b, vir_order[i][0]]
                     * xyzs[:, b, vir_order[i][1]]
-                    * lengths[:, 0]
+                    * lengths[:, b]
                 )
                 vir[i] += np.sum(vir_i)
 
@@ -657,7 +660,7 @@ class SingleMapXbody:
         return f, vir, v, e
 
 
-    def write(self, f, write_var, species_code=None):
+    def write(self, f, write_var, permute=False):
         """ 
         Write LAMMPS coefficient file
 
@@ -670,9 +673,7 @@ class SingleMapXbody:
         """
 
         # write header
-        if species_code is None:
-            species_code = self.species_code
-        elems = species_code.split("_")
+        elems = self.species_code.split("_")
 
         a = self.bounds[0]
         b = self.bounds[1]
@@ -684,12 +685,14 @@ class SingleMapXbody:
         header += " " + " ".join(map(str, order))
         f.write(header + "\n")
 
-        # write coefficients
+        # write coeffs
         if write_var:
             coefs = self.var.__coeffs__
         else:
             coefs = self.mean.__coeffs__
+
         self.write_flatten_coeff(f, coefs)
+
 
     def write_flatten_coeff(self, f, coefs):
         """
