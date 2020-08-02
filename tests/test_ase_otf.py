@@ -46,7 +46,7 @@ def read_qe_results(self):
     self.results = output.calc.results
 
 
-md_list = ["VelocityVerlet" , 'NVTBerendsen', 'NPTBerendsen', 'NPT', 'Langevin']
+md_list = ["VelocityVerlet", "NVTBerendsen", "NPTBerendsen", "NPT", "Langevin"]
 
 
 @pytest.fixture(scope="module")
@@ -60,9 +60,9 @@ def md_params():
         else:
             md_dict[md_engine] = {"temperature": md_dict["temperature"]}
 
-    md_dict['NVTBerendsen'].update({'taut': 0.5e3 * units.fs})
-    md_dict['NPT'].update({'externalstress': 0, 'ttime': 25, 'pfactor': 3375})
-    md_dict['Langevin'].update({'friction': 0.02})
+    md_dict["NVTBerendsen"].update({"taut": 0.5e3 * units.fs})
+    md_dict["NPT"].update({"externalstress": 0, "ttime": 25, "pfactor": 3375})
+    md_dict["Langevin"].update({"friction": 0.02})
 
     yield md_dict
     del md_dict
@@ -213,6 +213,7 @@ def test_otf_parser():
     output_name = f"{md_list[0]}.out"
     otf_traj = OtfAnalysis(output_name)
     print("ase otf traj parsed")
+
 
 #    for f in glob.glob("*.out"):
 #        os.remove(f)

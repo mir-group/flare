@@ -60,10 +60,10 @@ class OtfAnalysis:
         if call_no is None:
             call_no = len(self.gp_position_list)
         if hyp_no is None:
-            hyp_no = len(self.gp_hyp_list) # use the last hyps by default
+            hyp_no = len(self.gp_hyp_list)  # use the last hyps by default
         if hyps is None:
             # check out the last non-empty element from the list
-            hyps = self.gp_hyp_list[hyp_no-1]
+            hyps = self.gp_hyp_list[hyp_no - 1]
         if cell is None:
             cell = self.header["cell"]
 
