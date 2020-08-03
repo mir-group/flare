@@ -9,7 +9,7 @@ import warnings
 import numpy as np
 import multiprocessing as mp
 from flare.env import AtomicEnvironment
-from flare.struc import Structure
+from flare.gp import GaussianProcess
 from flare.mgp import MappedGaussianProcess
 from flare.predict import (
     predict_on_structure_par_en,
@@ -54,7 +54,7 @@ class FLARE_Calculator(Calculator):
             by default.
     """
 
-    def __init__(self, gp_model, mgp_model=None, par=False, use_mapping=False):
+    def __init__(self, gp_model, mgp_model=None, par=False, use_mapping=False, **kwargs):
         super().__init__()  # all set to default values, TODO: change
         self.mgp_model = mgp_model
         self.gp_model = gp_model
@@ -185,3 +185,32 @@ class FLARE_Calculator(Calculator):
 
     def calculation_required(self, atoms, quantities):
         return True
+
+    def as_dict(self):
+        outdict = {}
+
+        gp_dict = self.gp_model.as_dict()
+        outdict['gp_model'] = gp_dict
+
+        outdict['use_mapping'] = self.use_mapping
+        if self.use_mapping:
+            mgp_dict = self.mgp_model.as_dict()
+            outdict['mgp_model'] = mgp_dict
+        else:
+            outdict['mgp_model'] = None
+
+        outdict['par'] = self.par
+        outdict['results'] = self.results
+        return outdict
+
+    @staticmethod
+    def from_dict(dct):
+        dct['gp_model'] = GaussianProcess.from_dict(dct['gp_model'])
+        if dct['use_mapping']:
+            dct['mgp_model'] = MappedGaussianProcess.from_dict(dct['mgp_model'])
+        calc = FLARE_Calculator(**dct)
+        calc.results = dct['results']
+        return calc
+
+    def write_model(self):
+

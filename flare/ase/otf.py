@@ -209,6 +209,9 @@ class ASE_OTF(OTF):
         self.structure.cell = np.copy(self.atoms.cell)
         self.structure.positions = np.copy(self.atoms.positions)
 
+    def write_model(self):
+        self.flare_calc
+
     def update_positions(self, new_pos):
         # call OTF method
         super().update_positions(new_pos)
@@ -235,3 +238,6 @@ class ASE_OTF(OTF):
 
         if self.flare_calc.use_mapping:
             self.flare_calc.mgp_model.build_map(self.flare_calc.gp_model)
+
+    def as_dict(self):
+
