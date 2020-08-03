@@ -21,6 +21,7 @@ class Map3body(MapXbody):
         self.bodies = 3
         self.pred_perm = [[0, 1, 2], [1, 0, 2]]
         self.spc_perm = [[0, 1, 2], [0, 2, 1]]
+        self.num_lmp_maps = 0
         super().__init__(**kwargs)
 
     def build_bond_struc(self, species_list):
@@ -31,12 +32,12 @@ class Map3body(MapXbody):
         # 2 body (2 atoms (1 bond) config)
         self.spc = []
         N_spc = len(species_list)
+        self.num_lmp_maps = N_spc ** 3
         for spc1 in species_list:
             for spc2 in species_list:
                 for spc3 in species_list:
-                    if spc2 <= spc3:
-                        species = [spc1, spc2, spc3]
-                        self.spc.append(species)
+                    species = [spc1, spc2, spc3]
+                    self.spc.append(species)
 
     def get_arrays(self, atom_env):
 
@@ -53,6 +54,7 @@ class Map3body(MapXbody):
 
     def find_map_index(self, spc):
         return self.spc.index(spc)
+
 
 
 class SingleMap3body(SingleMapXbody):
@@ -73,13 +75,7 @@ class SingleMap3body(SingleMapXbody):
         self.set_bounds(None, None)
 
         spc = self.species
-        self.species_code = (
-            Z_to_element(spc[0])
-            + "_"
-            + Z_to_element(spc[1])
-            + "_"
-            + Z_to_element(spc[2])
-        )
+        self.species_code = "_".join([Z_to_element(spc) for spc in self.species])
         self.kv3name = f"kv3_{self.species_code}"
 
     def set_bounds(self, lower_bound, upper_bound):
