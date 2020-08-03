@@ -207,6 +207,9 @@ def test_otf_md(md_engine, md_params, super_cell, flare_calc, qe_calc):
         if "slurm" in f:
             os.remove(f)
 
+@pytest.mark.parametrize("md_engine", md_list)
+def test_load_checkpoint(md_engine):
+    otf_model = ASE_OTF.from_checkpoint(md_engine + "_checkpt.json")
 
 def test_otf_parser():
 
@@ -215,6 +218,7 @@ def test_otf_parser():
     otf_traj.make_gp()
     print("ase otf traj parsed")
 
-
-#    for f in glob.glob("*.out"):
-#        os.remove(f)
+    for f in glob.glob("*.out"):
+        os.remove(f)
+    for f in glob.glob("*.out-bak"):
+        os.remove(f)
