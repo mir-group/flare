@@ -111,7 +111,9 @@ class ASE_OTF(OTF):
     ):
 
         self.atoms = FLARE_Atoms.from_ase_atoms(atoms)
+        self.timestep = timestep
         self.md_engine = md_engine
+        self.md_kwargs = md_kwargs
 
         if md_engine == "VelocityVerlet":
             MD = VelocityVerlet
@@ -152,7 +154,7 @@ class ASE_OTF(OTF):
 
         self.flare_name = self.output_name + "_flare.json"
         self.dft_name = self.output_name + "_dft.pickle"
-        self.atoms_name = self.output_name + "atoms.json"
+        self.atoms_name = self.output_name + "_atoms.json"
 
     def get_structure_from_input(self, prev_pos_init):
         self.structure = self.atoms
@@ -259,7 +261,8 @@ class ASE_OTF(OTF):
         write(self.atoms_name, self.atoms)
         dct["atoms"] = self.atoms_name
 
-        dct["flare_calc"] = self.flare_calc.as_dict()
+        self.flare_calc.write_model(self.flare_name)
+        dct["flare_calc"] = self.flare_name 
 
         with open(self.dft_name, "wb") as f:
             pickle.dump(self.dft_loc, f) # dft_loc is the dft calculator 
@@ -273,4 +276,19 @@ class ASE_OTF(OTF):
 
     @staticmethod
     def from_dict(dct):
-        pass
+        flare_calc = FLARE_Calculator.from_file(dct["flare_calc"])
+        dct["atoms"] = read(dct["atoms"])
+        dct["atoms"].set_calculator(flare_calc)
+
+        with open(dct["dft_loc"], "rb") as f:
+            dct["dft_calc"] = pickle.load(f)
+
+        for key in ["dt", "dft_loc"]:
+            if dct.get(key) is not None:
+                del dct[key]
+        
+        new_otf = ASE_OTF(**dct)
+        new_otf.dft_count = dct['dft_count']
+        new_otf.curr_step = dct['curr_step']
+
+        return new_otf

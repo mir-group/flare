@@ -467,9 +467,9 @@ class OTF:
         with open(name, 'w') as f:
             json.dump(self.as_dict(), f, cls=NumpyEncoder)
 
-    @staticmethod
-    def from_checkpoint(filename):
+    @classmethod
+    def from_checkpoint(cls, filename):
         with open(filename, 'r') as f:
-            otf_model = OTF.from_dict(json.loads(f.readline()))
+            otf_model = cls.from_dict(json.loads(f.readline()))
 
         return otf_model

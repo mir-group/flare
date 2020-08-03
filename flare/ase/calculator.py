@@ -8,6 +8,7 @@ and `ASE Calculator tutorial <https://wiki.fysik.dtu.dk/ase/ase/atoms.html#addin
 import warnings
 import numpy as np
 import multiprocessing as mp
+import json
 
 from flare.env import AtomicEnvironment
 from flare.gp import GaussianProcess
@@ -81,6 +82,7 @@ class FLARE_Calculator(Calculator):
         return self.get_property("forces", atoms)
 
     def get_stress(self, atoms):
+        print(self.get_property("stress", atoms), type(self.get_property("stress", atoms)))
         return self.get_property("stress", atoms)
 
     def get_uncertainties(self, atoms):
@@ -213,8 +215,15 @@ class FLARE_Calculator(Calculator):
         dct["gp_model"] = GaussianProcess.from_dict(dct["gp_model"])
         if dct["use_mapping"]:
             dct["mgp_model"] = MappedGaussianProcess.from_dict(dct["mgp_model"])
+
         calc = FLARE_Calculator(**dct)
-        calc.results = dct["results"]
+        res = dct["results"]
+        for key in res:
+            if isinstance(res[key], float):
+                calc.results[key] = res[key]
+            if isinstance(res[key], list):
+                calc.results[key] = np.array(res[key])
+
         return calc
 
     def write_model(self, name):
@@ -222,3 +231,10 @@ class FLARE_Calculator(Calculator):
             name += ".json"
         with open(name, "w") as f:
             json.dump(self.as_dict(), f, cls=NumpyEncoder)
+
+    @staticmethod
+    def from_file(name):
+        with open(name, 'r') as f:
+            calc = FLARE_Calculator.from_dict(json.loads(f.readline()))
+
+        return calc

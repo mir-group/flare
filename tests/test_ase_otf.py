@@ -47,7 +47,8 @@ def read_qe_results(self):
 
 
 md_list = ["VelocityVerlet", "NVTBerendsen", "NPTBerendsen", "NPT", "Langevin"]
-
+md_list = ["VelocityVerlet"]
+number_of_steps = 3
 
 @pytest.fixture(scope="module")
 def md_params():
@@ -60,9 +61,9 @@ def md_params():
         else:
             md_dict[md_engine] = {"temperature": md_dict["temperature"]}
 
-    md_dict["NVTBerendsen"].update({"taut": 0.5e3 * units.fs})
-    md_dict["NPT"].update({"externalstress": 0, "ttime": 25, "pfactor": None})
-    md_dict["Langevin"].update({"friction": 0.02})
+#    md_dict["NVTBerendsen"].update({"taut": 0.5e3 * units.fs})
+#    md_dict["NPT"].update({"externalstress": 0, "ttime": 25, "pfactor": None})
+#    md_dict["Langevin"].update({"friction": 0.02})
 
     yield md_dict
     del md_dict
@@ -178,11 +179,11 @@ def test_otf_md(md_engine, md_params, super_cell, flare_calc, qe_calc):
     test_otf = ASE_OTF(
         super_cell,
         timestep=1 * units.fs,
-        number_of_steps=3,
+        number_of_steps=number_of_steps,
         dft_calc=qe_calc,
         md_engine=md_engine,
         md_kwargs=md_kwargs,
-        trajectory="ase_otf.traj",
+        trajectory=None,#"ase_otf.traj",
         **otf_params,
     )
 
@@ -209,13 +210,21 @@ def test_otf_md(md_engine, md_params, super_cell, flare_calc, qe_calc):
 
 @pytest.mark.parametrize("md_engine", md_list)
 def test_load_checkpoint(md_engine):
-    otf_model = ASE_OTF.from_checkpoint(md_engine + "_checkpt.json")
+    new_otf = ASE_OTF.from_checkpoint(md_engine + "_checkpt.json")
+    assert new_otf.curr_step == number_of_steps
+    new_otf.number_of_steps = new_otf.number_of_steps + 2
+    new_otf.run()
 
 def test_otf_parser():
-
-    output_name = f"{md_list[0]}.out"
+    md_engine = md_list[0]
+    output_name = f"{md_engine}.out"
     otf_traj = OtfAnalysis(output_name)
-    otf_traj.make_gp()
+    try:
+        replicated_gp = otf_traj.make_gp()
+    except:
+        init_flare = FLARE_Calculator.from_file(md_engine + "_flare.json")
+        replicated_gp = otf_traj.make_gp(init_gp=init_flare.gp_model)
+
     print("ase otf traj parsed")
 
     for f in glob.glob("*.out"):
