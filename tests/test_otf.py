@@ -15,6 +15,9 @@ software_list = ["cp2k", "qe"]
 example_list = [1, 2]
 name_list = {1: "h2", 2: "al"}
 
+dt = 0.0001
+number_of_steps = 3
+
 print("running test_otf.py")
 print("current working directory:")
 print(os.getcwd())
@@ -93,8 +96,6 @@ def test_otf(software, example):
     dft_output = f"{software}.out"
     shutil.copy(f"./test_files/{software}_input_{example}.in", dft_input)
 
-    dt = 0.0001
-    number_of_steps = 5
     dft_loc = os.environ.get(cmd[software])
     std_tolerance_factor = -0.1
 
@@ -164,8 +165,6 @@ def test_otf_par(software, per_atom_par, n_cpus):
     dft_output = f"{software}.out"
     shutil.copy(f"./test_files/{software}_input_{example}.in", dft_input)
 
-    dt = 0.0001
-    number_of_steps = 3
     dft_loc = os.environ.get(cmd[software])
     std_tolerance_factor = -0.1
 
@@ -177,6 +176,7 @@ def test_otf_par(software, per_atom_par, n_cpus):
         dt=dt,
         number_of_steps=number_of_steps,
         gp=gp,
+        write_model=3,
         std_tolerance_factor=std_tolerance_factor,
         init_atoms=[0],
         calculate_energy=True,
@@ -195,12 +195,37 @@ def test_otf_par(software, per_atom_par, n_cpus):
 
     otf.run()
 
+@pytest.mark.parametrize("software", software_list)
+def test_load_checkpoint(software):
+
+    if not os.environ.get(cmd[software], False):
+        pytest.skip(
+            f"{cmd[software]} not found in environment:"
+            f" Please install the code "
+            f" and set the {cmd[software]} env. "
+            "variable to point to the executable."
+        )
+
+    example = 1
+    casename = name_list[example]
+    log_name = f"{casename}_otf_{software}"
+    new_otf = OTF.from_checkpoint(log_name + "_checkpt.json")
+    print("loaded from checkpoint", log_name)
+    assert new_otf.curr_step == number_of_steps
+    new_otf.number_of_steps = new_otf.number_of_steps + 2
+    new_otf.run()
+
 
 @pytest.mark.parametrize("software", software_list)
 def test_otf_parser(software):
 
-    if software == "cp2k":
-        pytest.skip()
+    if not os.environ.get(cmd[software], False):
+        pytest.skip(
+            f"{cmd[software]} not found in environment:"
+            f" Please install the code "
+            f" and set the {cmd[software]} env. "
+            "variable to point to the executable."
+        )
 
     example = 1
     casename = name_list[example]

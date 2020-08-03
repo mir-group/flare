@@ -2,6 +2,7 @@ import logging
 import json
 import numpy as np
 import time
+import warnings
 
 from copy import deepcopy
 from datetime import datetime
@@ -109,7 +110,7 @@ class OTF:
      dft_kwargs=None,
      store_dft_output: Tuple[Union[str, List[str]], str] = None,
      # other args
-     n_cpus: int = 1, checkpt_name: str = "otf_model.json"):
+     n_cpus: int = 1, **kwargs):
 
 
         # set DFT
@@ -157,7 +158,6 @@ class OTF:
         self.store_dft_output = store_dft_output
 
         # other args
-        self.checkpt_name = checkpt_name
         self.atom_list = list(range(self.noa))
         self.curr_step = 0
 
@@ -183,7 +183,8 @@ class OTF:
         # set logger
         self.output = Output(output_name, always_flush=True)
         self.output_name = output_name
-        self.gp_name = self.output_name + '_gp'
+        self.gp_name = self.output_name + '_gp.json'
+        self.checkpt_name = self.output_name + '_checkpt.json'
 
         self.write_model = write_model
 
@@ -432,8 +433,28 @@ class OTF:
 
         return out_dict
 
-    def from_dict(self):
-        pass
+    @staticmethod
+    def from_dict(in_dict):
+        if in_dict['write_model'] <= 1: # TODO: detect GP version
+            warnings.warn("The GP model might not be the latest")
+       
+        gp_model = gp.GaussianProcess.from_file(in_dict['gp'])
+        in_dict['gp'] = gp_model
+        in_dict['structure'] = struc.Structure.from_dict(in_dict['structure'])
+
+        if 'flare.dft_interface' in in_dict['dft_module']:
+            for dft_name in ['qe', 'cp2k', 'vasp']:
+                if dft_name in in_dict['dft_module']:
+                    in_dict['force_source'] = dft_name
+                    break
+        else: # if force source is a module
+            in_dict['force_source'] = eval(in_dict['dft_module'])
+
+        new_otf = OTF(**in_dict)
+        new_otf.structure = in_dict['structure']
+        new_otf.dft_count = in_dict['dft_count']
+        new_otf.curr_step = in_dict['curr_step']
+        return new_otf
 
     def checkpoint(self):
         name = self.checkpt_name
@@ -441,3 +462,12 @@ class OTF:
             name += '.json'
         with open(name, 'w') as f:
             json.dump(self.as_dict(), f, cls=NumpyEncoder)
+
+    @staticmethod
+    def from_checkpoint(filename):
+        with open(filename, 'r') as f:
+            otf_model = OTF.from_dict(json.loads(f.readline()))
+
+        return otf_model
+
+
