@@ -40,10 +40,11 @@ class OtfAnalysis:
         self.gp_uncertainty_list = []
         self.gp_velocity_list = []
         self.gp_atom_list = []
-        self.gp_hyp_list = []
         self.gp_species_list = []
         self.gp_atom_count = []
         self.gp_thermostat = {}
+
+        self.gp_hyp_list = [self.header["hyps"]]
 
         self.mae_list = []
         self.maf_list = []
@@ -56,6 +57,10 @@ class OtfAnalysis:
     def make_gp(
         self, cell=None, call_no=None, hyps=None, init_gp=None, hyp_no=None, **kwargs,
     ):
+
+        if self.header["restart"] > 0:
+            assert init_gp is not None, "Please input the init_gp as the gp model dumpped"\
+                    "before restarting otf."
 
         if call_no is None:
             call_no = len(self.gp_position_list)
@@ -82,11 +87,10 @@ class OtfAnalysis:
             gp_model = init_gp
             gp_model.hyps = hyps
 
-        for (positions, forces, atoms, _, species) in zip(
+        for (positions, forces, atoms, species) in zip(
             self.gp_position_list[:call_no],
             self.gp_force_list[:call_no],
             self.gp_atom_list[:call_no],
-            self.gp_hyp_list[:call_no],
             self.gp_species_list[:call_no],
         ):
 
@@ -243,6 +247,25 @@ def parse_header_information(lines) -> dict:
                         cutoffs.append(float(val[:-1]))
             header_info["cutoffs"] = cutoffs
 
+        if "number of hyperparameters" in line_lower:
+            n_hyps = int(line.split(":")[1].strip())
+            header_info["n_hyps"] = n_hyps 
+            
+            # parse hyps
+            new_line = lines[i+1].replace("[", "")
+            new_line = new_line.replace("]", "")
+            assert "Hyperparameter array" in new_line
+
+            hyps_array = new_line.split()[2:]
+            if len(hyps_array) < n_hyps:
+                next_new_line = lines[i+2].replace("[", "")
+                next_new_line = next_new_line.replace("]", "")
+                hyps_array += next_new_line.split()
+            assert len(hyps_array) == n_hyps
+
+            hyps_array = [float(h.strip()) for h in hyps_array]
+            header_info["hyps"] = np.array(hyps_array)
+
         if "kernel_name" in line_lower:
             header_info["kernel_name"] = line.split(":")[1].strip()
         elif "kernels" in line_lower:
@@ -255,7 +278,7 @@ def parse_header_information(lines) -> dict:
 
         for kw in header_dict:
             get_header_item(
-                line_lower, header_dict[kw][0], header_info, kw, header_dict[kw][1]
+                line, header_dict[kw][0], header_info, kw, header_dict[kw][1]
             )
         if "optimization algorithm" in line:
             header_info["algo"] = str(line.split(":")[1].strip()).upper()
@@ -292,10 +315,10 @@ def get_header_item(line, pattern, header_info, kw, value_type):
 
 
 header_dict = {
-    "n_hyps": ["number of hyperparameters", int],
-    "frames": ["frames", int],
-    "atoms": ["number of atoms", int],
-    "dt": ["timestep", float],
+    "restart": ["Restart", int],
+    "frames": ["Frames", int],
+    "atoms": ["Number of atoms", int],
+    "dt": ["Timestep", float],
 }
 
 

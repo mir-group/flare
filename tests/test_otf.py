@@ -196,6 +196,24 @@ def test_otf_par(software, per_atom_par, n_cpus):
     otf.run()
 
 @pytest.mark.parametrize("software", software_list)
+def test_otf_parser(software):
+
+    if not os.environ.get(cmd[software], False):
+        pytest.skip(
+            f"{cmd[software]} not found in environment:"
+            f" Please install the code "
+            f" and set the {cmd[software]} env. "
+            "variable to point to the executable."
+        )
+
+    example = 1
+    casename = name_list[example]
+    output_name = f"{casename}_otf_{software}.out"
+    otf_traj = OtfAnalysis(output_name)
+    replicated_gp = otf_traj.make_gp()
+
+
+@pytest.mark.parametrize("software", software_list)
 def test_load_checkpoint(software):
 
     if not os.environ.get(cmd[software], False):
@@ -217,7 +235,7 @@ def test_load_checkpoint(software):
 
 
 @pytest.mark.parametrize("software", software_list)
-def test_otf_parser(software):
+def test_otf_parser_from_checkpt(software):
 
     if not os.environ.get(cmd[software], False):
         pytest.skip(
@@ -229,9 +247,14 @@ def test_otf_parser(software):
 
     example = 1
     casename = name_list[example]
-    output_name = f"{casename}_otf_{software}.out"
+    log_name = f"{casename}_otf_{software}"
+    output_name = f"{log_name}.out"
     otf_traj = OtfAnalysis(output_name)
-    replicated_gp = otf_traj.make_gp()
+    try:
+        replicated_gp = otf_traj.make_gp()
+    except:
+        init_gp = GaussianProcess.from_file(log_name + "_gp.json")
+        replicated_gp = otf_traj.make_gp(init_gp=init_gp)
 
     outdir = f"test_outputs_{software}"
     if not os.path.isdir(outdir):

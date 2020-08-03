@@ -197,9 +197,10 @@ class OTF:
         'Year.Month.Day:Hour:Minute:Second:'.
         """
 
+        optional_dict = {"Restart": self.curr_step}
         self.output.write_header(
             str(self.gp), self.dt, self.number_of_steps, self.structure,
-            self.std_tolerance)
+            self.std_tolerance, optional_dict)
 
         counter = 0
         self.start_time = time.time()
