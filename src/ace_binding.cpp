@@ -188,5 +188,7 @@ PYBIND11_MODULE(_C_flare, m) {
     .def_readonly("n_stress_labels", &SparseGP_DTC::n_stress_labels)
     .def_readonly("sigma_f", &SparseGP_DTC::sigma_f)
     .def_readonly("sigma_e", &SparseGP_DTC::sigma_e)
-    .def_readonly("sigma_s", &SparseGP_DTC::sigma_s);
+    .def_readonly("sigma_s", &SparseGP_DTC::sigma_s)
+    .def_readonly("Kuu", &SparseGP::Kuu)
+    .def_readonly("Kuf_struc", &SparseGP::Kuf_struc);
 }

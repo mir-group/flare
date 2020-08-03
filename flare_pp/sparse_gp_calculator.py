@@ -1,5 +1,5 @@
 from ase.calculators.calculator import Calculator
-from _C_flare import SparseGP_DTC, StructureDescriptor
+from build._C_flare import SparseGP_DTC, StructureDescriptor
 import numpy as np
 
 
@@ -22,7 +22,6 @@ class SGP_Calculator(Calculator):
         self.gp_model.predict_on_structure(structure_descriptor)
 
         # Set results.
-        n_atoms = structure_descriptor.noa
         self.results["energy"] = structure_descriptor.mean_efs[0]
         self.results["forces"] = \
             structure_descriptor.mean_efs[1:-6].reshape(-1, 3)
@@ -36,11 +35,6 @@ class SGP_Calculator(Calculator):
 
         self.results["stds"] = \
             np.sqrt(structure_descriptor.variance_efs[1:-6].reshape(-1, 3))
-
-    #     predict_DTC(StructureDescriptor test_structure,
-    #   Eigen::VectorXd & mean_vector, Eigen::VectorXd & variance_vector,
-    #   std::vector<Eigen::VectorXd> & mean_contributions)
-        pass
 
     def get_property(self, name, atoms=None, allow_calculation=True):
         if name not in self.results.keys():

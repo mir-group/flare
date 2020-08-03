@@ -1,12 +1,12 @@
 import numpy as np
-from _C_flare import SparseGP_DTC, StructureDescriptor
+from build._C_flare import SparseGP_DTC, StructureDescriptor
 from scipy.optimize import minimize
 from typing import List
 
 
 class SparseGP:
     """Wrapper class used to make the C++ sparse GP object compatible with
-    OTF."""
+    OTF. Methods and properties are designed to mirror the GP class."""
 
     def __init__(self, kernels: List, descriptor_calculators: List,
                  cutoff: float, many_body_cutoffs, sigma_e: float,
@@ -30,10 +30,6 @@ class SparseGP:
     @property
     def hyps(self):
         return self.sparse_gp.hyperparameters
-
-    @property
-    def hyp_labels(self):
-        return self.hyp_labels
 
     @property
     def hyps_and_labels(self):
@@ -73,11 +69,11 @@ class SparseGP:
             structure_descriptor.forces = forces.reshape(-1)
 
         if energy is not None:
-            energy_array = np.array(energy)
+            energy_array = np.array([[energy]])
             structure_descriptor.energy = energy_array
 
         if stress is not None:
-            structure_descriptor.stress = stress
+            structure_descriptor.stresses = stress
 
         # Assemble sparse environments.
         sparse_environments = []
@@ -87,14 +83,15 @@ class SparseGP:
 
         # Update the sparse GP.
         self.sparse_gp.add_training_structure(structure_descriptor)
-        self.sparse_gp.add_training_environments(sparse_environments)
+        self.sparse_gp.add_sparse_environments(sparse_environments)
         self.sparse_gp.update_matrices()
 
     def set_L_alpha(self):
-        self.sparse_gp.update_matrices()
+        # Taken care of in the update_db method.
+        pass
 
-    def train(self, logger_name=None):
-        optimize_hyperparameters(self.sparse_gp)
+    def train(self, logger_name=None, max_iterations=10):
+        optimize_hyperparameters(self.sparse_gp, max_iterations=max_iterations)
 
 
 def compute_negative_likelihood(hyperparameters, sparse_gp):
