@@ -5,6 +5,7 @@ It needs to be used adjointly with ASE MD engine.
 import os
 import sys
 import inspect
+import pickle
 from time import time
 from copy import deepcopy
 
@@ -15,7 +16,9 @@ from ase.md.nptberendsen import NPTBerendsen
 from ase.md.verlet import VelocityVerlet
 from ase.md.langevin import Langevin
 from ase import units
+from ase.io import read, write
 
+import flare
 from flare.otf import OTF
 from flare.utils.learner import is_std_in_bound
 
@@ -28,7 +31,9 @@ def reset_npt_momenta(npt_engine, force):
     # in the last step, the momenta was set by flare forces, change to dft forces
     npt_engine._calculate_q_future(force)
     npt_engine.atoms.set_momenta(
-        np.dot(npt_engine.q_future - npt_engine.q_past, npt_engine.h / (2 * npt_engine.dt))
+        np.dot(
+            npt_engine.q_future - npt_engine.q_past, npt_engine.h / (2 * npt_engine.dt)
+        )
         * npt_engine._getmasses()
     )
 
@@ -116,8 +121,10 @@ class ASE_OTF(OTF):
             MD = NPTBerendsen
         elif md_engine == "NPT":
             MD = NPT
-            # TODO: solve the md step 
-            assert md_kwargs['pfactor'] is None, "Current MD OTF only supports pfactor=None"
+            # TODO: solve the md step
+            assert (
+                md_kwargs["pfactor"] is None
+            ), "Current MD OTF only supports pfactor=None"
         elif md_engine == "Langevin":
             MD = Langevin
         else:
@@ -142,6 +149,10 @@ class ASE_OTF(OTF):
             dft_input=self.atoms,
             **otf_kwargs
         )
+
+        self.flare_name = self.output_name + "_flare.json"
+        self.dft_name = self.output_name + "_dft.pickle"
+        self.atoms_name = self.output_name + "atoms.json"
 
     def get_structure_from_input(self, prev_pos_init):
         self.structure = self.atoms
@@ -194,7 +205,7 @@ class ASE_OTF(OTF):
             self.flare_calc.results = {}  # init flare calculator
 
             if self.dft_step:
-                reset_npt_momenta(self.md, f) 
+                reset_npt_momenta(self.md, f)
                 self.atoms.set_calculator(self.flare_calc)
 
             self.md.step()  # use flare to get force for next step
@@ -210,7 +221,7 @@ class ASE_OTF(OTF):
         self.structure.positions = np.copy(self.atoms.positions)
 
     def write_model(self):
-        self.flare_calc
+        self.flare_calc.write_model(self.flare_name)
 
     def update_positions(self, new_pos):
         # call OTF method
@@ -240,4 +251,26 @@ class ASE_OTF(OTF):
             self.flare_calc.mgp_model.build_map(self.flare_calc.gp_model)
 
     def as_dict(self):
+        # TODO: if trajectory is not None, deepcopy will be issue
+        self.dft_module = self.dft_module.__name__
+        dct = deepcopy(dict(vars(self)))
+        self.dft_module = eval(self.dft_module)
 
+        write(self.atoms_name, self.atoms)
+        dct["atoms"] = self.atoms_name
+
+        dct["flare_calc"] = self.flare_calc.as_dict()
+
+        with open(self.dft_name, "wb") as f:
+            pickle.dump(self.dft_loc, f) # dft_loc is the dft calculator 
+        dct["dft_loc"] = self.dft_name
+
+        for key in ["gp", "output", "pred_func", "structure", "dft_input", "md"]:
+            if dct.get(key) is not None:
+                del dct[key]
+        
+        return dct
+
+    @staticmethod
+    def from_dict(dct):
+        pass
