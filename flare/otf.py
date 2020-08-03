@@ -1,4 +1,5 @@
 import logging
+import json
 import numpy as np
 import time
 
@@ -7,12 +8,13 @@ from datetime import datetime
 from shutil import copyfile
 from typing import List, Tuple, Union
 
+import flare
 import flare.predict as predict
 from flare import struc, gp, env, md
 from flare.dft_interface import dft_software
 from flare.output import Output
 from flare.utils.learner import is_std_in_bound
-
+from flare.utils.element_coder import NumpyEncoder
 
 class OTF:
     """Trains a Gaussian process force field on the fly during
@@ -106,47 +108,58 @@ class OTF:
      dft_loc: str = None, dft_input: str = None, dft_output='dft.out',
      dft_kwargs=None,
      store_dft_output: Tuple[Union[str, List[str]], str] = None,
-     # par args
-     n_cpus: int = 1):
+     # other args
+     n_cpus: int = 1, checkpt_name: str = "otf_model.json"):
 
+
+        # set DFT
+        self.dft_loc = dft_loc
         self.dft_input = dft_input
         self.dft_output = dft_output
-        self.dt = dt
-        self.number_of_steps = number_of_steps
-        self.gp = gp
-        self.dft_loc = dft_loc
-        self.std_tolerance = std_tolerance_factor
-        self.skip = skip
         self.dft_step = True
-        self.freeze_hyps = freeze_hyps
-
+        self.dft_count = 0
         if isinstance(force_source, str):
             self.dft_module = dft_software[force_source]
         else:
             self.dft_module = force_source
 
-        # parse input file
-        self.get_structure_from_input(prev_pos_init)
-
+        # set md
+        self.dt = dt
+        self.number_of_steps = number_of_steps
+        self.get_structure_from_input(prev_pos_init) # parse input file
         self.noa = self.structure.positions.shape[0]
-        self.atom_list = list(range(self.noa))
-        self.curr_step = 0
+        self.rescale_steps = rescale_steps
+        self.rescale_temps = rescale_temps
 
-        self.max_atoms_added = max_atoms_added
-
+        # set flare
+        self.gp = gp
         # initialize local energies
         if calculate_energy:
             self.local_energies = np.zeros(self.noa)
         else:
             self.local_energies = None
 
-        # set atom list for initial dft run
-        if init_atoms is None:
+        # set otf
+        self.std_tolerance = std_tolerance_factor
+        self.skip = skip
+        self.max_atoms_added = max_atoms_added
+        self.freeze_hyps = freeze_hyps
+        if init_atoms is None: # set atom list for initial dft run
             self.init_atoms = [int(n) for n in range(self.noa)]
         else:
             self.init_atoms = init_atoms
 
-        self.dft_count = 0
+        self.n_cpus = n_cpus # set number of cpus and npool for DFT runs
+        self.npool = npool
+        self.mpi = mpi
+
+        self.dft_kwargs = dft_kwargs
+        self.store_dft_output = store_dft_output
+
+        # other args
+        self.checkpt_name = checkpt_name
+        self.atom_list = list(range(self.noa))
+        self.curr_step = 0
 
         # Set the prediction function based on user inputs.
         # Force only prediction.
@@ -167,21 +180,11 @@ class OTF:
         else:
             self.pred_func = predict.predict_on_structure_efs
 
-        # set rescale attributes
-        self.rescale_steps = rescale_steps
-        self.rescale_temps = rescale_temps
-
         # set logger
         self.output = Output(output_name, always_flush=True)
         self.output_name = output_name
+        self.gp_name = self.output_name + '_gp'
 
-        # set number of cpus and npool for DFT runs
-        self.n_cpus = n_cpus
-        self.npool = npool
-        self.mpi = mpi
-
-        self.dft_kwargs = dft_kwargs
-        self.store_dft_output = store_dft_output
         self.write_model = write_model
 
     def run(self):
@@ -251,11 +254,13 @@ class OTF:
             # TODO: Reinstate velocity rescaling.
             self.md_step()
             self.curr_step += 1
+            self.checkpoint()
 
         self.output.conclude_run()
 
         if self.write_model >= 1:
-            self.gp.write_model(self.output_name+"_model")
+            self.gp.write_model(self.gp_name)
+            self.checkpoint()
 
     def get_structure_from_input(self, prev_pos_init):
         positions, species, cell, masses = \
@@ -353,9 +358,9 @@ class OTF:
         if (self.dft_count-1) < self.freeze_hyps:
             self.train_gp()
             if self.write_model == 2:
-                self.gp.write_model(self.output_name+"_model")
+                self.gp.write_model(self.gp_name)
         if self.write_model == 3:
-            self.gp.write_model(self.output_name+'_model')
+            self.gp.write_model(self.gp_name)
 
     def train_gp(self):
         """Optimizes the hyperparameters of the current GP model."""
@@ -412,3 +417,27 @@ class OTF:
         self.output.write_md_config(
             self.dt, self.curr_step, self.structure, self.temperature,
             self.KE, self.start_time, self.dft_step, self.velocities)
+
+    def as_dict(self):
+        self.dft_module = self.dft_module.__name__
+        out_dict = deepcopy(dict(vars(self)))
+        self.dft_module = eval(self.dft_module)
+
+        out_dict['gp'] = self.gp_name
+        out_dict['structure'] = self.structure.as_dict()
+
+        for key in ['output', 'pred_func']:
+            if out_dict.get(key) is not None:
+                del out_dict[key]
+
+        return out_dict
+
+    def from_dict(self):
+        pass
+
+    def checkpoint(self):
+        name = self.checkpt_name
+        if '.json' != name[-5:]:
+            name += '.json'
+        with open(name, 'w') as f:
+            json.dump(self.as_dict(), f, cls=NumpyEncoder)
