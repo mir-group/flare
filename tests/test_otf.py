@@ -206,6 +206,7 @@ def test_otf_parser(software):
     casename = name_list[example]
     output_name = f"{casename}_otf_{software}.out"
     otf_traj = OtfAnalysis(output_name)
+    replicated_gp = otf_traj.make_gp()
 
     outdir = f"test_outputs_{software}"
     if not os.path.isdir(outdir):
