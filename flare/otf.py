@@ -261,7 +261,7 @@ class OTF:
         self.output.conclude_run()
 
         if self.write_model >= 1:
-            self.gp.write_model(self.gp_name)
+            self.write_model()
             self.checkpoint()
 
     def get_structure_from_input(self, prev_pos_init):
@@ -295,6 +295,9 @@ class OTF:
         Take an MD step. This updates the positions of the structure.
         '''
         md.update_positions(self.dt, self.noa, self.structure)
+
+    def write_model(self):
+        self.gp.write_model(self.gp_name)
 
     def run_dft(self):
         """Calculates DFT forces on atoms in the current structure.
@@ -360,9 +363,9 @@ class OTF:
         if (self.dft_count-1) < self.freeze_hyps:
             self.train_gp()
             if self.write_model == 2:
-                self.gp.write_model(self.gp_name)
+                self.write_model()
         if self.write_model == 3:
-            self.gp.write_model(self.gp_name)
+            self.write_model()
 
     def train_gp(self):
         """Optimizes the hyperparameters of the current GP model."""
@@ -470,5 +473,3 @@ class OTF:
             otf_model = OTF.from_dict(json.loads(f.readline()))
 
         return otf_model
-
-
