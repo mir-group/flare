@@ -212,6 +212,7 @@ def test_otf_parser():
 
     output_name = f"{md_list[0]}.out"
     otf_traj = OtfAnalysis(output_name)
+    otf_traj.make_gp()
     print("ase otf traj parsed")
 
 
