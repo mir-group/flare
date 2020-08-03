@@ -209,8 +209,6 @@ class OTF:
                 # When DFT is called, ASE energy, forces, and stresses should
                 # get updated.
                 self.initialize_train()
-                self.update_temperature()
-                self.record_state()
 
             # after step 1, try predicting with GP model
             else:
@@ -271,6 +269,9 @@ class OTF:
         # call dft and update positions
         self.run_dft()
         dft_frcs = deepcopy(self.structure.forces)
+
+        self.update_temperature()
+        self.record_state()
 
         # make initial gp model and predict forces
         self.update_gp(self.init_atoms, dft_frcs)
