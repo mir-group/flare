@@ -77,7 +77,7 @@ def super_cell():
 
     from ase.spacegroup import crystal
 
-    a = 3.855
+    a = 10.0
     alpha = 90
     atoms = crystal(
         ["H", "He"],
@@ -186,7 +186,7 @@ def test_otf_md(md_engine, md_params, super_cell, flare_calc, qe_calc):
         dft_calc=qe_calc,
         md_engine=md_engine,
         md_kwargs=md_kwargs,
-        trajectory="ase_otf.traj",
+        trajectory=md_engine+"_otf.traj",
         **otf_params,
     )
 
@@ -218,8 +218,8 @@ def test_load_checkpoint(md_engine):
     new_otf.number_of_steps = new_otf.number_of_steps + 2
     new_otf.run()
 
-def test_otf_parser():
-    md_engine = md_list[0]
+@pytest.mark.parametrize("md_engine", md_list)
+def test_otf_parser(md_engine):
     output_name = f"{md_engine}.out"
     otf_traj = OtfAnalysis(output_name)
     try:
