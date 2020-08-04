@@ -106,11 +106,6 @@ class MapXbody:
             m.build_map(GP)
 
     def predict(self, atom_env):
-
-        assert Parameters.compare_dict(
-            self.hyps_mask, atom_env.cutoffs_mask
-        ), "GP.hyps_mask is not the same as atom_env.cutoffs_mask"
-
         f_spcs = np.zeros(3)
         vir_spcs = np.zeros(6)
         v_spcs = 0
@@ -612,12 +607,21 @@ class SingleMapXbody:
         """
 
         min_dist = np.min(lengths)
-        if min_dist < np.max(self.bounds[0][0]):
+        if min_dist < np.max(self.bounds[0]):
             raise ValueError(
                 self.species,
                 min_dist,
                 f"The minimal distance {min_dist:.3f}"
                 f" is below the mgp lower bound {self.bounds[0]}",
+            )
+        
+        max_dist = np.max(lengths)
+        if max_dist > np.min(self.bounds[1]):
+            raise Exception(
+                self.species,
+                max_dist,
+                f"The atomic environment should have cutoff smaller"
+                f" than the GP cutoff"
             )
 
         lengths = np.array(lengths)
