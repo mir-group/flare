@@ -47,7 +47,6 @@ def read_qe_results(self):
 
 
 md_list = ["VelocityVerlet", "NVTBerendsen", "NPTBerendsen", "NPT", "Langevin"]
-md_list = ["VelocityVerlet"]
 number_of_steps = 3
 
 @pytest.fixture(scope="module")
@@ -55,15 +54,19 @@ def md_params():
 
     md_dict = {"temperature": 500}
     print(md_list)
+
     for md_engine in md_list:
+        for f in glob.glob(md_engine + "*"):
+            os.remove(f)
+
         if md_engine == "VelocityVerlet":
             md_dict[md_engine] = {}
         else:
             md_dict[md_engine] = {"temperature": md_dict["temperature"]}
 
-#    md_dict["NVTBerendsen"].update({"taut": 0.5e3 * units.fs})
-#    md_dict["NPT"].update({"externalstress": 0, "ttime": 25, "pfactor": None})
-#    md_dict["Langevin"].update({"friction": 0.02})
+    md_dict["NVTBerendsen"].update({"taut": 0.5e3 * units.fs})
+    md_dict["NPT"].update({"externalstress": 0, "ttime": 25, "pfactor": None})
+    md_dict["Langevin"].update({"friction": 0.02})
 
     yield md_dict
     del md_dict
@@ -183,7 +186,7 @@ def test_otf_md(md_engine, md_params, super_cell, flare_calc, qe_calc):
         dft_calc=qe_calc,
         md_engine=md_engine,
         md_kwargs=md_kwargs,
-        trajectory=None,#"ase_otf.traj",
+        trajectory="ase_otf.traj",
         **otf_params,
     )
 
@@ -227,7 +230,5 @@ def test_otf_parser():
 
     print("ase otf traj parsed")
 
-    for f in glob.glob("*.out"):
-        os.remove(f)
-    for f in glob.glob("*.out-bak"):
+    for f in glob.glob(md_engine + "*"):
         os.remove(f)
