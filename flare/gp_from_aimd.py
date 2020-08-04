@@ -496,12 +496,11 @@ class TrajectoryTrainer:
                 if (i + 1) == train_frame and not self.mgp:
                     self.gp.check_L_alpha()
 
-        # If GP, print training statistics
+        #Print training statistics for GP model used
         conclusion_strings = []
-        if isinstance(self.gp, GaussianProcess):
-            conclusion_strings.append('Final GP statistics:'
-                                      + json.dumps(self.gp.training_statistics)
-                                      )
+        conclusion_strings.append('Final GP statistics:'
+                                  + json.dumps(self.gp.training_statistics)
+                                  )
         self.output.conclude_run(conclusion_strings)
 
         if self.print_training_plan:
