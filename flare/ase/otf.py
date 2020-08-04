@@ -222,7 +222,7 @@ class ASE_OTF(OTF):
         self.structure.cell = np.copy(self.atoms.cell)
         self.structure.positions = np.copy(self.atoms.positions)
 
-    def write_model(self):
+    def write_gp(self):
         self.flare_calc.write_model(self.flare_name)
 
     def update_positions(self, new_pos):
@@ -253,17 +253,24 @@ class ASE_OTF(OTF):
             self.flare_calc.mgp_model.build_map(self.flare_calc.gp_model)
 
     def as_dict(self):
-        # TODO: if trajectory is not None, deepcopy will be issue
+
+        # DFT module and Trajectory will cause issue in deepcopy
         self.dft_module = self.dft_module.__name__
+        observers = self.md.observers
+        self.md.observers = ()
+
         dct = deepcopy(dict(vars(self)))
         self.dft_module = eval(self.dft_module)
+        self.md.observers = observers
 
+        # write atoms and flare calculator to separate files
         write(self.atoms_name, self.atoms)
         dct["atoms"] = self.atoms_name
 
         self.flare_calc.write_model(self.flare_name)
         dct["flare_calc"] = self.flare_name 
 
+        # dump dft calculator as pickle
         with open(self.dft_name, "wb") as f:
             pickle.dump(self.dft_loc, f) # dft_loc is the dft calculator 
         dct["dft_loc"] = self.dft_name
