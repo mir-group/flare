@@ -58,7 +58,7 @@ class OtfAnalysis:
         self, cell=None, call_no=None, hyps=None, init_gp=None, hyp_no=None, **kwargs,
     ):
 
-        if self.header["restart"] > 0:
+        if "restart" in self.header and self.header["restart"] > 0:
             assert init_gp is not None, "Please input the init_gp as the gp model dumpped"\
                     "before restarting otf."
 
@@ -254,9 +254,9 @@ def parse_header_information(lines) -> dict:
             # parse hyps
             new_line = lines[i+1].replace("[", "")
             new_line = new_line.replace("]", "")
-            assert "Hyperparameter array" in new_line
+            assert "hyperparameter" in new_line.lower()
 
-            hyps_array = new_line.split()[2:]
+            hyps_array = new_line[new_line.find(":")+1:].split()
             if len(hyps_array) < n_hyps:
                 next_new_line = lines[i+2].replace("[", "")
                 next_new_line = next_new_line.replace("]", "")
@@ -277,9 +277,8 @@ def parse_header_information(lines) -> dict:
             header_info["kernel_name"] = line.split(":")[1].strip()
 
         for kw in header_dict:
-            get_header_item(
-                line, header_dict[kw][0], header_info, kw, header_dict[kw][1]
-            )
+            get_header_item(line, header_info, kw)
+
         if "optimization algorithm" in line:
             header_info["algo"] = str(line.split(":")[1].strip()).upper()
 
@@ -309,16 +308,26 @@ def parse_header_information(lines) -> dict:
     return header_info
 
 
-def get_header_item(line, pattern, header_info, kw, value_type):
+def get_header_item(line, header_info, kw):
+    if not isinstance(line, str):
+        return
+
+    pattern = header_dict[kw][0]
+    value_type = header_dict[kw][1]
+
+    if header_dict[kw][2]:
+        pattern = pattern.lower()
+        line = line.lower()
+
     if pattern in line:
         header_info[kw] = value_type(line.split(":")[1].strip())
 
 
 header_dict = {
-    "restart": ["Restart", int],
-    "frames": ["Frames", int],
-    "atoms": ["Number of atoms", int],
-    "dt": ["Timestep", float],
+    "restart": ["Restart", int, False],
+    "frames": ["Frames", int, True],
+    "atoms": ["Number of atoms", int, True],
+    "dt": ["Timestep", float, True],
 }
 
 
