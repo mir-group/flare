@@ -11,7 +11,7 @@ import numpy as np
 from logging import FileHandler, StreamHandler, Logger
 from os.path import isfile
 from shutil import move as movefile
-from typing import Union
+from typing import Union, List
 
 from flare.struc import Structure
 from flare.utils.element_coder import Z_to_element
@@ -58,7 +58,7 @@ class Output:
         for filetype in filesuffix:
             self.open_new_log(filetype, filesuffix[filetype], verbose)
 
-    def conclude_run(self):
+    def conclude_run(self, extra_strings: List[str] = None):
         """
         destruction function that closes all files
         """
@@ -66,6 +66,9 @@ class Output:
         logger = logging.getLogger(self.basename+'log')
         logger.info('-' * 20)
         logger.info('Run complete.')
+        if extra_strings is not None:
+            for string in extra_strings:
+                logger.info(string)
         logging.shutdown()
         self.logger = []
 

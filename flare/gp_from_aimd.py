@@ -496,7 +496,13 @@ class TrajectoryTrainer:
                 if (i + 1) == train_frame and not self.mgp:
                     self.gp.check_L_alpha()
 
-        self.output.conclude_run()
+        # If GP, print training statistics
+        conclusion_strings = []
+        if isinstance(self.gp, GaussianProcess):
+            conclusion_strings.append('Final GP statistics:'
+                                      + json.dumps(self.gp.training_statistics)
+                                      )
+        self.output.conclude_run(conclusion_strings)
 
         if self.print_training_plan:
             with open(f'{self.output_name}_training_plan.json', 'w') as f:
