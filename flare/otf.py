@@ -261,7 +261,7 @@ class OTF:
         self.output.conclude_run()
 
         if self.write_model >= 1:
-            self.write_model()
+            self.write_gp()
             self.checkpoint()
 
     def get_structure_from_input(self, prev_pos_init):
@@ -296,7 +296,7 @@ class OTF:
         '''
         md.update_positions(self.dt, self.noa, self.structure)
 
-    def write_model(self):
+    def write_gp(self):
         self.gp.write_model(self.gp_name)
 
     def run_dft(self):
@@ -363,9 +363,9 @@ class OTF:
         if (self.dft_count-1) < self.freeze_hyps:
             self.train_gp()
             if self.write_model == 2:
-                self.write_model()
+                self.write_gp()
         if self.write_model == 3:
-            self.write_model()
+            self.write_gp()
 
     def train_gp(self):
         """Optimizes the hyperparameters of the current GP model."""
