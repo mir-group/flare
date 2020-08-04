@@ -224,7 +224,8 @@ class FLARE_Calculator(Calculator):
                 calc.results[key] = np.array(res[key])
 
         for xb in calc.mgp_model.maps:
-            calc.mgp_model.maps[xb].hyps_mask = calc.gp_model.hyps_mask
+            xb_map = calc.mgp_model.maps[xb]
+            xb_map.hyps_mask = calc.gp_model.hyps_mask 
 
         return calc
 
