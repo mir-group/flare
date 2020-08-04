@@ -82,7 +82,6 @@ class FLARE_Calculator(Calculator):
         return self.get_property("forces", atoms)
 
     def get_stress(self, atoms):
-        print(self.get_property("stress", atoms), type(self.get_property("stress", atoms)))
         return self.get_property("stress", atoms)
 
     def get_uncertainties(self, atoms):
@@ -223,6 +222,9 @@ class FLARE_Calculator(Calculator):
                 calc.results[key] = res[key]
             if isinstance(res[key], list):
                 calc.results[key] = np.array(res[key])
+
+        for xb in calc.mgp_model.maps:
+            calc.mgp_model.maps[xb].hyps_mask = calc.gp_model.hyps_mask
 
         return calc
 
