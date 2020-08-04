@@ -256,12 +256,12 @@ class ASE_OTF(OTF):
 
         # DFT module and Trajectory will cause issue in deepcopy
         self.dft_module = self.dft_module.__name__
-        observers = self.md.observers
-        self.md.observers = ()
+        md = self.md
+        self.md = None
 
         dct = deepcopy(dict(vars(self)))
         self.dft_module = eval(self.dft_module)
-        self.md.observers = observers
+        self.md = md
 
         # write atoms and flare calculator to separate files
         write(self.atoms_name, self.atoms)
@@ -297,5 +297,9 @@ class ASE_OTF(OTF):
         new_otf = ASE_OTF(**dct)
         new_otf.dft_count = dct['dft_count']
         new_otf.curr_step = dct['curr_step']
+
+        if new_otf.md_engine == "NPT":
+            if not new_otf.md.initialized:
+                new_otf.md.initialize()
 
         return new_otf
