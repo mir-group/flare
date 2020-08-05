@@ -90,8 +90,8 @@ TEST(ChebyTest, ChebySupport) {
   int N = 10;
   std::vector<double> hyps = {r1, r2};
 
-  double *g = new double[N]();
-  double *gderv = new double[N]();
+  std::vector<double> g = std::vector<double> (N, 0);
+  std::vector<double> gderv = std::vector<double> (N, 0);
 
   chebyshev(g, gderv, r, N, hyps);
   for (int n = 0; n < N; n++) {
@@ -103,9 +103,6 @@ TEST(ChebyTest, ChebySupport) {
   for (int n = 0; n < N; n++) {
     EXPECT_EQ(g[n], 0);
   }
-
-  delete[] g;
-  delete[] gderv;
 }
 
 TEST(ChebyTest, ChebyDerv) {
@@ -120,14 +117,12 @@ TEST(ChebyTest, ChebyDerv) {
   double tolerance = 1e-4;
   std::vector<double> hyps = {r1, r2};
 
-  double *g, *gderv, *g_rdelt, *gderv_rdelt, *g_rdelt_2, *gderv_rdelt_2;
-
-  g = new double[N]();
-  gderv = new double[N]();
-  g_rdelt = new double[N]();
-  gderv_rdelt = new double[N]();
-  g_rdelt_2 = new double[N]();
-  gderv_rdelt_2 = new double[N]();
+  std::vector<double> g = std::vector<double> (N, 0);
+  std::vector<double> gderv = std::vector<double> (N, 0);
+  std::vector<double> g_rdelt = std::vector<double> (N, 0);
+  std::vector<double> gderv_rdelt = std::vector<double> (N, 0);
+  std::vector<double> g_rdelt_2 = std::vector<double> (N, 0);
+  std::vector<double> gderv_rdelt_2 = std::vector<double> (N, 0);
 
   chebyshev(g, gderv, r, N, hyps);
   chebyshev(g_rdelt, gderv_rdelt, rdelt, N, hyps);
@@ -139,12 +134,6 @@ TEST(ChebyTest, ChebyDerv) {
     r_diff = abs(r_finite_diff - gderv[n]);
     EXPECT_LE(r_diff, tolerance);
   }
-
-  delete[] g;
-  delete[] g_rdelt;
-  delete[] gderv;
-  delete[] g_rdelt_2;
-  delete[] gderv_rdelt_2;
 }
 
 TEST(ChebyTest, PositiveChebyDerv) {
@@ -159,14 +148,12 @@ TEST(ChebyTest, PositiveChebyDerv) {
   double tolerance = 1e-4;
   std::vector<double> hyps = {r1, r2};
 
-  double *g, *gderv, *g_rdelt, *gderv_rdelt, *g_rdelt_2, *gderv_rdelt_2;
-
-  g = new double[N]();
-  gderv = new double[N]();
-  g_rdelt = new double[N]();
-  gderv_rdelt = new double[N]();
-  g_rdelt_2 = new double[N]();
-  gderv_rdelt_2 = new double[N]();
+  std::vector<double> g = std::vector<double> (N, 0);
+  std::vector<double> gderv = std::vector<double> (N, 0);
+  std::vector<double> g_rdelt = std::vector<double> (N, 0);
+  std::vector<double> gderv_rdelt = std::vector<double> (N, 0);
+  std::vector<double> g_rdelt_2 = std::vector<double> (N, 0);
+  std::vector<double> gderv_rdelt_2 = std::vector<double> (N, 0);
 
   positive_chebyshev(g, gderv, r, N, hyps);
   positive_chebyshev(g_rdelt, gderv_rdelt, rdelt, N, hyps);
@@ -177,12 +164,6 @@ TEST(ChebyTest, PositiveChebyDerv) {
     r_diff = abs(r_finite_diff - gderv[n]);
     EXPECT_LE(r_diff, tolerance);
   }
-
-  delete[] g;
-  delete[] g_rdelt;
-  delete[] gderv;
-  delete[] g_rdelt_2;
-  delete[] gderv_rdelt_2;
 }
 
 TEST(ChebyTest, WeightedChebyDerv) {
@@ -198,14 +179,12 @@ TEST(ChebyTest, WeightedChebyDerv) {
   double tolerance = 1e-4;
   std::vector<double> hyps = {r1, r2, lambda};
 
-  double *g, *gderv, *g_rdelt, *gderv_rdelt, *g_rdelt_2, *gderv_rdelt_2;
-
-  g = new double[N]();
-  gderv = new double[N]();
-  g_rdelt = new double[N]();
-  gderv_rdelt = new double[N]();
-  g_rdelt_2 = new double[N]();
-  gderv_rdelt_2 = new double[N]();
+  std::vector<double> g = std::vector<double> (N, 0);
+  std::vector<double> gderv = std::vector<double> (N, 0);
+  std::vector<double> g_rdelt = std::vector<double> (N, 0);
+  std::vector<double> gderv_rdelt = std::vector<double> (N, 0);
+  std::vector<double> g_rdelt_2 = std::vector<double> (N, 0);
+  std::vector<double> gderv_rdelt_2 = std::vector<double> (N, 0);
 
   weighted_chebyshev(g, gderv, r, N, hyps);
   weighted_chebyshev(g_rdelt, gderv_rdelt, rdelt, N, hyps);
@@ -215,16 +194,7 @@ TEST(ChebyTest, WeightedChebyDerv) {
     r_finite_diff = (g_rdelt[n] - g_rdelt_2[n]) / (2 * delta);
     r_diff = abs(r_finite_diff - gderv[n]);
     EXPECT_LE(r_diff, tolerance);
-
-    // std::cout << g_rdelt[n] << std::endl;
-    // std::cout << gderv[n] << std::endl;
   }
-
-  delete[] g;
-  delete[] g_rdelt;
-  delete[] gderv;
-  delete[] g_rdelt_2;
-  delete[] gderv_rdelt_2;
 }
 
 TEST_F(RadialTest, GnDerv) {
@@ -235,10 +205,10 @@ TEST_F(RadialTest, GnDerv) {
   int N = 10;
   std::vector<double> hyps = {sigma, first_gauss, final_gauss};
 
-  double *g = new double[N];
-  double *gderv = new double[N];
-  double *g_rdelt = new double[N];
-  double *gderv_rdelt = new double[N];
+  std::vector<double> g = std::vector<double> (N, 0);
+  std::vector<double> gderv = std::vector<double> (N, 0);
+  std::vector<double> g_rdelt = std::vector<double> (N, 0);
+  std::vector<double> gderv_rdelt = std::vector<double> (N, 0);
 
   equispaced_gaussians(g, gderv, r, N, hyps);
   equispaced_gaussians(g_rdelt, gderv_rdelt, r_delt, N, hyps);
@@ -252,11 +222,6 @@ TEST_F(RadialTest, GnDerv) {
     r_diff = abs(r_finite_diff - gderv[n]);
     EXPECT_LE(r_diff, tolerance);
   }
-
-  delete[] g;
-  delete[] gderv;
-  delete[] g_rdelt;
-  delete[] gderv_rdelt;
 }
 
 TEST_F(RadialTest, CombDerv) {
@@ -268,22 +233,20 @@ TEST_F(RadialTest, CombDerv) {
   std::vector<double> radial_hyps = {sigma, first_gauss, final_gauss};
   std::vector<double> cutoff_hyps;
 
-  // Initialize arrays.
-  double *g = new double[N];
-  double *gx = new double[N];
-  double *gy = new double[N];
-  double *gz = new double[N];
-
-  double *g_xdelt = new double[N];
-  double *g_ydelt = new double[N];
-  double *g_zdelt = new double[N];
-
-  double *gx_delt = new double[N];
-  double *gy_delt = new double[N];
-  double *gz_delt = new double[N];
+  std::vector<double> g = std::vector<double> (N, 0);
+  std::vector<double> gx = std::vector<double> (N, 0);
+  std::vector<double> gy = std::vector<double> (N, 0);
+  std::vector<double> gz = std::vector<double> (N, 0);
+  std::vector<double> g_xdelt = std::vector<double> (N, 0);
+  std::vector<double> g_ydelt = std::vector<double> (N, 0);
+  std::vector<double> g_zdelt = std::vector<double> (N, 0);
+  std::vector<double> gx_delt = std::vector<double> (N, 0);
+  std::vector<double> gy_delt = std::vector<double> (N, 0);
+  std::vector<double> gz_delt = std::vector<double> (N, 0);
 
   // Set the basis and cutoff function.
-  void (*basis_function)(double *, double *, double, int, std::vector<double>) =
+  std::function<void(std::vector<double> &, std::vector<double> &, double, int,
+                       std::vector<double>)> basis_function =
       equispaced_gaussians;
   void (*cutoff_function)(double *, double, double, std::vector<double>) =
       cos_cutoff;
@@ -318,15 +281,4 @@ TEST_F(RadialTest, CombDerv) {
     z_diff = abs(z_finite_diff - gz[n]);
     EXPECT_LE(z_diff, tolerance);
   }
-
-  delete[] g;
-  delete[] gx;
-  delete[] gy;
-  delete[] gz;
-  delete[] g_xdelt;
-  delete[] g_ydelt;
-  delete[] g_zdelt;
-  delete[] gx_delt;
-  delete[] gy_delt;
-  delete[] gz_delt;
 }

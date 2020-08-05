@@ -51,8 +51,8 @@ protected:
   int N = 10;
   int no_desc = N * nos;
   std::vector<double> radial_hyps = {first_gauss, final_gauss};
-  void (*basis_function)(double *, double *, double, int,
-                         std::vector<double>) = equispaced_gaussians;
+  std::function<void(std::vector<double> &, std::vector<double> &, double, int,
+    std::vector<double>)> basis_function = equispaced_gaussians;
 
   // Initialize matrices.
   int no_descriptors = nos * N * number_of_harmonics;

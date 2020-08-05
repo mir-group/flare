@@ -4,22 +4,21 @@
 #include "y_grad.h"
 #include <cmath>
 #include <iostream>
-using namespace std;
 
 void single_bond_update_env(
     Eigen::VectorXd &single_bond_vals, Eigen::MatrixXd &force_dervs,
     Eigen::MatrixXd &stress_dervs,
-    void (*basis_function)(double *, double *, double, int, vector<double>),
-    void (*cutoff_function)(double *, double, double, vector<double>), double x,
-    double y, double z, double r, int s, int environoment_index,
+    std::function<void(std::vector<double> &, std::vector<double> &, double,
+                       int, std::vector<double>)> basis_function,
+    void (*cutoff_function)(double *, double, double, std::vector<double>), double x, double y, double z, double r, int s, int environoment_index,
     int central_index, double rcut, int N, int lmax,
-    const vector<double> &radial_hyps, const vector<double> &cutoff_hyps) {
+    const std::vector<double> &radial_hyps, const std::vector<double> &cutoff_hyps) {
 
   // Calculate radial basis values.
-  double *g = new double[N];
-  double *gx = new double[N];
-  double *gy = new double[N];
-  double *gz = new double[N];
+  std::vector<double> g = std::vector<double> (N, 0);
+  std::vector<double> gx = std::vector<double> (N, 0);
+  std::vector<double> gy = std::vector<double> (N, 0);
+  std::vector<double> gz = std::vector<double> (N, 0);
 
   calculate_radial(g, gx, gy, gz, basis_function, cutoff_function, x, y, z, r,
                    rcut, N, radial_hyps, cutoff_hyps);
@@ -27,10 +26,10 @@ void single_bond_update_env(
   // Calculate spherical harmonics.
   int number_of_harmonics = (lmax + 1) * (lmax + 1);
 
-  vector<double> h = vector<double>(number_of_harmonics, 0);
-  vector<double> hx = vector<double>(number_of_harmonics, 0);
-  vector<double> hy = vector<double>(number_of_harmonics, 0);
-  vector<double> hz = vector<double>(number_of_harmonics, 0);
+  std::vector<double> h = std::vector<double>(number_of_harmonics, 0);
+  std::vector<double> hx = std::vector<double>(number_of_harmonics, 0);
+  std::vector<double> hy = std::vector<double>(number_of_harmonics, 0);
+  std::vector<double> hz = std::vector<double>(number_of_harmonics, 0);
 
   get_Y(h, hx, hy, hz, x, y, z, lmax);
 
@@ -78,21 +77,16 @@ void single_bond_update_env(
       descriptor_counter++;
     }
   }
-
-  // Deallocate memory.
-  delete[] g;
-  delete[] gx;
-  delete[] gy;
-  delete[] gz;
 }
 
 void single_bond_sum_env(
     Eigen::VectorXd &single_bond_vals, Eigen::MatrixXd &force_dervs,
     Eigen::MatrixXd &stress_dervs,
-    void (*basis_function)(double *, double *, double, int, vector<double>),
-    void (*cutoff_function)(double *, double, double, vector<double>),
+    std::function<void(std::vector<double> &, std::vector<double> &, double,
+                       int, std::vector<double>)> basis_function,
+    void (*cutoff_function)(double *, double, double, std::vector<double>),
     const LocalEnvironment &env, int descriptor_index, int N, int lmax,
-    const vector<double> &radial_hyps, const vector<double> &cutoff_hyps) {
+    const std::vector<double> &radial_hyps, const std::vector<double> &cutoff_hyps) {
 
   int noa = env.many_body_indices[descriptor_index].size();
   int cent_ind = env.central_index;
@@ -116,13 +110,37 @@ void single_bond_sum_env(
   }
 }
 
-// TODO: Implement.
+// TODO: Finish implementing.
 void from_lammps(double **x, int atom_index, int *type, int inum,
     int *ilist, int *numneigh, int **firstneigh,
-    void (*basis_function)(double *, double, double, std::vector<double>),
+    std::function<void(std::vector<double>, std::vector<double>, double, int,
+                       std::vector<double>)> basis_function,
     void (*cutoff_function)(double *, double, double, std::vector<double>),
-    int N, int lmax, Eigen::VectorXd &single_bond_vals,
+    double cutoff, int N, int lmax, Eigen::VectorXd &single_bond_vals,
     Eigen::MatrixXd &environment_force_dervs,
     Eigen::MatrixXd &central_force_dervs){
 
+    int i = ilist[atom_index];
+    double xtmp = x[i][0];
+    double ytmp = x[i][1];
+    double ztmp = x[i][2];
+    int itype = type[i];
+    int *jlist = firstneigh[i];
+    int jnum = numneigh[i];
+    double delx, dely, delz, rsq;
+    int j;
+    double cutforcesq = cutoff * cutoff;
+
+    for (int jj = 0; jj < jnum; jj++) {
+      j = jlist[jj];
+
+      delx = x[j][0] - xtmp;
+      dely = x[j][1] - ytmp;
+      delz = x[j][2] - ztmp;
+      rsq = delx * delx + dely * dely + delz * delz;
+
+      if (rsq < cutforcesq){
+
+      }
+    }
 }

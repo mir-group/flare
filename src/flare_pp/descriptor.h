@@ -9,7 +9,8 @@ class LocalEnvironment;
 // Descriptor calculator.
 class DescriptorCalculator {
 protected:
-  void (*radial_pointer)(double *, double *, double, int, std::vector<double>);
+  std::function<void(std::vector<double> &, std::vector<double> &, double, int,
+                     std::vector<double>)> radial_pointer;
   void (*cutoff_pointer)(double *, double, double, std::vector<double>);
 
 public:

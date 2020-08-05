@@ -2,32 +2,38 @@
 #define RADIAL_H
 
 #include <vector>
+#include <functional>
 
 // Radial basis sets.
-void equispaced_gaussians(double *basis_vals, double *basis_derivs, double r,
-                          int N, std::vector<double> radial_hyps);
+void equispaced_gaussians(std::vector<double> &basis_vals,
+    std::vector<double> &basis_derivs, double r,
+    int N, std::vector<double> radial_hyps);
 
-void chebyshev(double *basis_vals, double *basis_derivs, double r, int N,
-               std::vector<double> radial_hyps);
+void chebyshev(std::vector<double> &basis_vals,
+    std::vector<double> &basis_derivs, double r, int N,
+    std::vector<double> radial_hyps);
 
-void positive_chebyshev(double *basis_vals, double *basis_derivs, double r,
-                        int N, std::vector<double> radial_hyps);
+void positive_chebyshev(std::vector<double> &basis_vals,
+    std::vector<double> &basis_derivs, double r,
+    int N, std::vector<double> radial_hyps);
 
 // The weighted Chebyshev radial basis set is based on Eqs. 21-24 of Drautz,
 // Ralf. "Atomic cluster expansion for accurate and transferable interatomic
 // potentials." Physical Review B 99.1 (2019): 014104. Atoms closer to the
 // central atom are given exponentially more weight.
-void weighted_chebyshev(double *basis_vals, double *basis_derivs, double r,
-                        int N, std::vector<double> radial_hyps);
+void weighted_chebyshev(std::vector<double> &basis_vals,
+    std::vector<double> &basis_derivs, double r,
+    int N, std::vector<double> radial_hyps);
 
-void weighted_positive_chebyshev(double *basis_vals, double *basis_derivs,
-                                 double r, int N,
-                                 std::vector<double> radial_hyps);
+void weighted_positive_chebyshev(std::vector<double> &basis_vals,
+    std::vector<double> &basis_derivs, double r, int N,
+    std::vector<double> radial_hyps);
 
 void calculate_radial(
-    double *comb_vals, double *comb_x, double *comb_y, double *comb_z,
-    void (*basis_function)(double *, double *, double, int,
-                           std::vector<double>),
+    std::vector<double> &comb_vals, std::vector<double> &comb_x,
+    std::vector<double> &comb_y, std::vector<double> &comb_z,
+    std::function<void(std::vector<double> &, std::vector<double> &, double,
+                       int, std::vector<double>)> basis_function,
     void (*cutoff_function)(double *, double, double, std::vector<double>),
     double x, double y, double z, double r, double rcut, int N,
     std::vector<double> radial_hyps, std::vector<double> cutoff_hyps);
