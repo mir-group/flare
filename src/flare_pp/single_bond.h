@@ -28,4 +28,12 @@ void single_bond_sum_env(
     const std::vector<double> &radial_hyps,
     const std::vector<double> &cutoff_hyps);
 
+void from_lammps(double **x, int atom_index, int *type, int inum,
+    int *ilist, int *numneigh, int **firstneigh,
+    void (*basis_function)(double *, double, double, std::vector<double>),
+    void (*cutoff_function)(double *, double, double, std::vector<double>),
+    int N, int lmax, Eigen::VectorXd &single_bond_vals,
+    Eigen::MatrixXd &environment_force_dervs,
+    Eigen::MatrixXd &central_force_dervs);
+
 #endif
